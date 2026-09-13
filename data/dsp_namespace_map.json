@@ -338,6 +338,36 @@
       "confidence": "confirmed",
       "source": "src/map/lua/lua_base_entity.cpp:6090 (SOL_REGISTER at :20715), signature void renameEntity(const std::string& newName, const sol::object& arg2=silent)",
       "evidence": "setName (invented -- no such binding exists anywhere in lua_base_entity.cpp) was used as a single-arg call (npc:setName(realName)). renameEntity(newName) matches that exact call shape (the second arg is an optional silent-log bool, unused either way) and its real doc example is literally mob:renameEntity(\"NewName\"). Also sets updatemask |= UPDATE_NAME, same queued-broadcast-not-immediate semantics the calling file already had to work around for Topaz's setName() -- found in periqia's Hunched_Figure.lua (remaining_7_packages_binding_audit_2026-09-13.md)."
+    },
+    "setAnimationSub": {
+      "dsp_name": "AnimationSub",
+      "confidence": "confirmed",
+      "source": "old-dsp-reference/src/map/lua/lua_baseentity.cpp:4544 (LUNAR_DECLARE_METHOD at :11482)",
+      "evidence": "setAnimationSub/getAnimationSub (LandSandBoat-shaped split accessor names, checked against the wrong codebase in an earlier pass) do not exist in old-dsp-reference -- real binding is a single unified AnimationSub(value) getter/setter (get when called with no args, set when called with one), same pattern as the already-fixed speed(). AnimationSub(value) also pushes a real CCharUpdatePacket/CEntityUpdatePacket itself on every set, making a separate forceRespawn()/updateToEntireZone() broadcast call unnecessary after it. Found via backport_binding_audit.py 2026-09-13."
+    },
+    "getAnimationSub": {
+      "dsp_name": "AnimationSub",
+      "confidence": "confirmed",
+      "source": "old-dsp-reference/src/map/lua/lua_baseentity.cpp:4544 (LUNAR_DECLARE_METHOD at :11482)",
+      "evidence": "Same unified accessor as setAnimationSub above -- AnimationSub() with no args returns the current value."
+    },
+    "delEffectFlag": {
+      "dsp_name": "unsetFlag",
+      "confidence": "confirmed",
+      "source": "old-dsp-reference/src/map/lua/lua_statuseffect.cpp:301 (LUNAR_DECLARE_METHOD at :338), CStatusEffect::UnsetFlag (status_effect.cpp:128)",
+      "evidence": "delEffectFlag is Topaz's own convenience alias for the same real setFlag/unsetFlag pair (confirmed: Topaz's own lua_statuseffect.cpp registers \"delEffectFlag\" -> CLuaStatusEffect::unsetFlag directly) -- old-dsp-reference never had the alias, only the real unsetFlag name. Found via backport_binding_audit.py 2026-09-13, nyzul_isle_investigation package."
+    },
+    "isEngaged": {
+      "dsp_name": "isEngaged",
+      "confidence": "confirmed_via_new_cpp_addition",
+      "source": "old-dsp-reference/src/map/lua/lua_baseentity.cpp (dsp-engine-changes/isengaged/), ported from CAIContainer::IsEngaged() (src/map/ai/ai_container.cpp:406)",
+      "evidence": "Did not exist as a Lua binding in old-dsp-reference at all (confirmed absent) -- real underlying C++ capability (CAIContainer::IsEngaged(), PAI declared on every CBaseEntity) already existed, just never exposed. Added as a new C++ binding, same name as Topaz's own isEngaged() (lua_baseentity.cpp:8880) -- no Lua-side rename needed once compiled. See dsp-engine-changes/isengaged/README.md."
+    },
+    "forceRespawn": {
+      "dsp_name": "forceRespawn",
+      "confidence": "confirmed_via_new_cpp_addition",
+      "source": "old-dsp-reference/src/map/lua/lua_baseentity.cpp (dsp-engine-changes/forcerespawn/), ported from Topaz's own forceRespawn() (lua_baseentity.cpp:4145)",
+      "evidence": "Did not exist in old-dsp-reference at all (confirmed absent) -- ported directly using pieces already real and in-use in this codebase (CEntityUpdatePacket/ENTITY_DESPAWN/ENTITY_SPAWN/UPDATE_ALL_MOB/PAI->QueueAction, same pattern this file's own hideNPC() already uses). No Lua-side rename needed once compiled. See dsp-engine-changes/forcerespawn/README.md."
     }
   },
   "whole_call_renames": {
@@ -383,54 +413,210 @@
   },
   "old_dsp_reference_verified_2026-09-13": {
     "_readme": "Entries actually checked against D:\\Claude\\old-dsp-reference (the real Valhalla target), grep-confirmed 2026-09-13. Supersedes any conflicting landsandboat-reference entry above for these specific names.",
-    "getShortID": { "checked_against": "old-dsp-reference", "status": "confirmed: no rename needed, Topaz's own name (getShortID) is already correct -- LUNAR_DECLARE_METHOD(CLuaBaseEntity,getShortID) exists verbatim." },
-    "SetAutoAttackEnabled": { "checked_against": "old-dsp-reference", "status": "confirmed: no rename needed, Topaz's own name is already correct (exact spelling incl. capital S)." },
-    "untargetable": { "checked_against": "old-dsp-reference", "status": "confirmed: no rename needed, Topaz's own bare untargetable(bool) toggle exists verbatim in old-dsp-reference." },
-    "PrintToPlayer": { "checked_against": "old-dsp-reference", "status": "confirmed: no rename needed, LUNAR_DECLARE_METHOD(CLuaBaseEntity,PrintToPlayer) exists verbatim (capital P, NOT LandSandBoat's lowercase printToPlayer)." },
-    "addCharVar": { "checked_against": "old-dsp-reference", "status": "real gap: no addCharVar AND no incrementCharVar binding found in src/map/lua/lua_baseentity.cpp or luautils.cpp. Needs further tracing (may live under a different name, e.g. a generic setCharVar) before deciding between a rename and a genuine C++ gap." },
-    "setName": { "checked_against": "old-dsp-reference", "status": "RESOLVED 2026-09-13: setName(name) added as a new C++ binding (dsp-engine-changes/setname/), ported directly from Topaz's own CLuaBaseEntity::setName (lua_baseentity.cpp:4090), adapted to old-dsp-reference's raw lua_State/Lunar style. Call sites unchanged (identical calling convention)." },
-    "goToEntity": { "checked_against": "old-dsp-reference", "status": "NOT PORTED (documented gap, dsp-engine-changes/gotoentity_gap/README.md): Topaz's goToEntity depends on a dedicated inter-process MSG_SEND_TO_ENTITY message type old-dsp-reference's MSGSERVTYPE enum (src/common/mmo.h) has no equivalent for -- real new engine plumbing, not a binding-only port. The one real call site (assault_gm_debug_tools/gotoinstid.lua) was rewritten to report 'not found in current instance/zone' instead of calling a nonexistent binding." },
-    "setSpeed_setBaseSpeed": { "checked_against": "old-dsp-reference", "status": "RESOLVED 2026-09-13: all 3 files with real setSpeed/setBaseSpeed/getSpeed/getBaseSpeed call sites (Lebros_Cavern/mobs/Dahak.lua, Mamool_Ja_Training_Grounds/mobs/Sagelord_Molaal_Ja.lua, Periqia/mobs/Excaliace.lua) rewritten to the unified speed()/speed(x) convention and re-verified by grep (zero remaining setSpeed/setBaseSpeed/getSpeed/getBaseSpeed references)." },
-    "isAggroable_setIsAggroable": { "checked_against": "old-dsp-reference", "status": "RESOLVED 2026-09-13 (user-directed): confirmed updateEnmity is a real binding (LUNAR_DECLARE_METHOD(CLuaBaseEntity,updateEnmity), lua_baseentity.cpp:11496). Restored the original manual-aggro workaround (mob:updateEnmity(npc)) in Excaliace.lua's checkMobAggro() and Clavauert_B_Chanoix.lua's aggroNearbyThreats()/THREAT_IDS/tick() call site, sourced from the un-converted Topaz originals under mission-packages/*/lua/. Removed the now-wrong setIsAggroable(true) calls from both files' onMobSpawn (binding does not exist)." },
-    "checkNavPath_family": { "checked_against": "old-dsp-reference", "status": "RESOLVED 2026-09-13: checkNavPath(x1,y1,z1,x2,y2,z2) and checkNavPosition(x,y,z) added as new CLuaZone bindings (dsp-engine-changes/checknavpath_checknavposition/), ported from Topaz's own CLuaZone::checkNavPath/checkNavPosition (lua_zone.cpp) since old-dsp-reference's underlying navmesh engine (src/map/navmesh.h/.cpp, CNavMesh::findPath/validPosition) already matches Topaz's shape -- confirmed a Lua-binding-only addition, not new engine work. checknav.lua and navdebug.lua rewritten to use the real bindings (isNavigablePoint reverted, was a LandSandBoat-only name)." },
-    "messageSpecialFrom_showText": { "checked_against": "old-dsp-reference", "status": "RESOLVED 2026-09-13: showText() extended with an optional 7th showName bool arg (dsp-engine-changes/showtext_showname/), passed through to CMessageSpecialPacket's already-existing ShowName parameter (message_special.h:50) -- purely additive, no existing showText behavior changed. All 4 files with real messageSpecialFrom call sites (appraisal.lua, Mulwahah.lua, Hunched_Figure.lua; Drahbah.lua only had it in a comment) renamed to showText() -- identical argument order, no reordering needed." },
-    "cmdprops_shape": { "checked_against": "old-dsp-reference", "status": "confirmed: bare `cmdprops = {...}` / `onTrigger = function(...)` globals, no commandObj wrapper, no return statement -- identical to Topaz's own convention. All 11 landsandboat-style commandObj-wrapped GM/mercenary command files were reverted to this bare shape 2026-09-13." },
-    "zone_id_shape_IDs_lua_zones": { "checked_against": "old-dsp-reference", "status": "confirmed for Periqia/Lebros_Cavern/Leujaoam_Sanctum only: a real IDs.lua exists as a bare global table (`Periqia = {text=..,mobs=..,npcs=..}`, `Lebros = {...}`, `Leujaoam = {...}` -- note the global name is SHORTENED, not the full zone folder name), consumed directly as `local ID = Periqia` (or the package's own equivalent) with NO zones[] wrapping table and NO xi.zone/tpz.zone indexing at all. Corrected in all 3 packages' lua-dsp trees 2026-09-13. RESOLVED 2026-09-13 (zone-shape restructuring pass, see per_zone_flat_id_shape_findings_2026-09-13 below): Ilrusi_Atoll, Mamool_Ja_Training_Grounds, Aht_Urhgan_Whitegate, Bhaflau_Thickets, Caedarva_Mire, Mount_Zhayolm, Wajaom_Woodlands (Al_Zahbi/Nashmau never actually needed conversion -- see below) all restructured to real flat bare-global TextIDs.lua files, with every ID.mob[N].X/ID.npc.X reference (no real old-dsp-reference equivalent exists for either shape) hardcoded as a literal at each real call site, matching old-dsp-reference's own Rune_of_Release.lua/Ancient_Lockbox.lua convention exactly." }
+    "getShortID": {
+      "checked_against": "old-dsp-reference",
+      "status": "confirmed: no rename needed, Topaz's own name (getShortID) is already correct -- LUNAR_DECLARE_METHOD(CLuaBaseEntity,getShortID) exists verbatim."
+    },
+    "SetAutoAttackEnabled": {
+      "checked_against": "old-dsp-reference",
+      "status": "confirmed: no rename needed, Topaz's own name is already correct (exact spelling incl. capital S)."
+    },
+    "untargetable": {
+      "checked_against": "old-dsp-reference",
+      "status": "confirmed: no rename needed, Topaz's own bare untargetable(bool) toggle exists verbatim in old-dsp-reference."
+    },
+    "PrintToPlayer": {
+      "checked_against": "old-dsp-reference",
+      "status": "confirmed: no rename needed, LUNAR_DECLARE_METHOD(CLuaBaseEntity,PrintToPlayer) exists verbatim (capital P, NOT LandSandBoat's lowercase printToPlayer)."
+    },
+    "addCharVar": {
+      "checked_against": "old-dsp-reference",
+      "status": "real gap: no addCharVar AND no incrementCharVar binding found in src/map/lua/lua_baseentity.cpp or luautils.cpp. Needs further tracing (may live under a different name, e.g. a generic setCharVar) before deciding between a rename and a genuine C++ gap."
+    },
+    "setName": {
+      "checked_against": "old-dsp-reference",
+      "status": "RESOLVED 2026-09-13: setName(name) added as a new C++ binding (dsp-engine-changes/setname/), ported directly from Topaz's own CLuaBaseEntity::setName (lua_baseentity.cpp:4090), adapted to old-dsp-reference's raw lua_State/Lunar style. Call sites unchanged (identical calling convention)."
+    },
+    "goToEntity": {
+      "checked_against": "old-dsp-reference",
+      "status": "NOT PORTED (documented gap, dsp-engine-changes/gotoentity_gap/README.md): Topaz's goToEntity depends on a dedicated inter-process MSG_SEND_TO_ENTITY message type old-dsp-reference's MSGSERVTYPE enum (src/common/mmo.h) has no equivalent for -- real new engine plumbing, not a binding-only port. The one real call site (assault_gm_debug_tools/gotoinstid.lua) was rewritten to report 'not found in current instance/zone' instead of calling a nonexistent binding."
+    },
+    "setSpeed_setBaseSpeed": {
+      "checked_against": "old-dsp-reference",
+      "status": "RESOLVED 2026-09-13: all 3 files with real setSpeed/setBaseSpeed/getSpeed/getBaseSpeed call sites (Lebros_Cavern/mobs/Dahak.lua, Mamool_Ja_Training_Grounds/mobs/Sagelord_Molaal_Ja.lua, Periqia/mobs/Excaliace.lua) rewritten to the unified speed()/speed(x) convention and re-verified by grep (zero remaining setSpeed/setBaseSpeed/getSpeed/getBaseSpeed references)."
+    },
+    "isAggroable_setIsAggroable": {
+      "checked_against": "old-dsp-reference",
+      "status": "RESOLVED 2026-09-13 (user-directed): confirmed updateEnmity is a real binding (LUNAR_DECLARE_METHOD(CLuaBaseEntity,updateEnmity), lua_baseentity.cpp:11496). Restored the original manual-aggro workaround (mob:updateEnmity(npc)) in Excaliace.lua's checkMobAggro() and Clavauert_B_Chanoix.lua's aggroNearbyThreats()/THREAT_IDS/tick() call site, sourced from the un-converted Topaz originals under mission-packages/*/lua/. Removed the now-wrong setIsAggroable(true) calls from both files' onMobSpawn (binding does not exist)."
+    },
+    "checkNavPath_family": {
+      "checked_against": "old-dsp-reference",
+      "status": "RESOLVED 2026-09-13: checkNavPath(x1,y1,z1,x2,y2,z2) and checkNavPosition(x,y,z) added as new CLuaZone bindings (dsp-engine-changes/checknavpath_checknavposition/), ported from Topaz's own CLuaZone::checkNavPath/checkNavPosition (lua_zone.cpp) since old-dsp-reference's underlying navmesh engine (src/map/navmesh.h/.cpp, CNavMesh::findPath/validPosition) already matches Topaz's shape -- confirmed a Lua-binding-only addition, not new engine work. checknav.lua and navdebug.lua rewritten to use the real bindings (isNavigablePoint reverted, was a LandSandBoat-only name)."
+    },
+    "messageSpecialFrom_showText": {
+      "checked_against": "old-dsp-reference",
+      "status": "RESOLVED 2026-09-13: showText() extended with an optional 7th showName bool arg (dsp-engine-changes/showtext_showname/), passed through to CMessageSpecialPacket's already-existing ShowName parameter (message_special.h:50) -- purely additive, no existing showText behavior changed. All 4 files with real messageSpecialFrom call sites (appraisal.lua, Mulwahah.lua, Hunched_Figure.lua; Drahbah.lua only had it in a comment) renamed to showText() -- identical argument order, no reordering needed."
+    },
+    "cmdprops_shape": {
+      "checked_against": "old-dsp-reference",
+      "status": "confirmed: bare `cmdprops = {...}` / `onTrigger = function(...)` globals, no commandObj wrapper, no return statement -- identical to Topaz's own convention. All 11 landsandboat-style commandObj-wrapped GM/mercenary command files were reverted to this bare shape 2026-09-13."
+    },
+    "zone_id_shape_IDs_lua_zones": {
+      "checked_against": "old-dsp-reference",
+      "status": "confirmed for Periqia/Lebros_Cavern/Leujaoam_Sanctum only: a real IDs.lua exists as a bare global table (`Periqia = {text=..,mobs=..,npcs=..}`, `Lebros = {...}`, `Leujaoam = {...}` -- note the global name is SHORTENED, not the full zone folder name), consumed directly as `local ID = Periqia` (or the package's own equivalent) with NO zones[] wrapping table and NO xi.zone/tpz.zone indexing at all. Corrected in all 3 packages' lua-dsp trees 2026-09-13. RESOLVED 2026-09-13 (zone-shape restructuring pass, see per_zone_flat_id_shape_findings_2026-09-13 below): Ilrusi_Atoll, Mamool_Ja_Training_Grounds, Aht_Urhgan_Whitegate, Bhaflau_Thickets, Caedarva_Mire, Mount_Zhayolm, Wajaom_Woodlands (Al_Zahbi/Nashmau never actually needed conversion -- see below) all restructured to real flat bare-global TextIDs.lua files, with every ID.mob[N].X/ID.npc.X reference (no real old-dsp-reference equivalent exists for either shape) hardcoded as a literal at each real call site, matching old-dsp-reference's own Rune_of_Release.lua/Ancient_Lockbox.lua convention exactly."
+    }
   },
   "per_zone_flat_id_shape_findings_2026-09-13": {
     "_readme": "Per-zone real-file-structure findings from the zones[xi.zone.X] -> flat-TextIDs.lua restructuring pass (2026-09-13), covering the 9 zones flagged as open in zone_id_shape_IDs_lua_zones / namespace_family_index_2026-09-13's 'zone' entry. Each zone's real old-dsp-reference folder was read directly (ls + TextIDs.lua + at least one real consumer file) before converting -- see reports/old_dsp_reference_zone_shape_restructuring_2026-09-13.md for full detail and per-file verification notes.",
-    "Ilrusi_Atoll": { "real_files": "TextIDs.lua, Zone.lua, mobs/, npcs/ -- NO MobIDs.lua, NO IDs.lua of any kind", "consumption": "require()'d with the package.loaded[...]=nil / require(...) reset pattern seen at the top of every real consumer file (e.g. npcs/Ancient_Lockbox.lua, npcs/Rune_of_Release.lua); text ids used as bare globals directly, e.g. `player:startEvent(0x0064,4)` alongside bare ITEM_CANNOT_BE_OBTAINED-style names. Mob/npc numeric ids (17002xxx) are hardcoded as raw literals directly in each real consumer script -- confirmed by reading Ancient_Lockbox.lua and Rune_of_Release.lua in full, zero shared id table of any kind for non-text ids.", "converted": "TextIDs.lua created (bare globals, full real text block). All ID.mob[N].X/ID.npc.X references across 15 consumer files hardcoded as literals. One special case: CURSED_CHEST_SLOTS (a large project-original position/id data table with zero old-dsp-reference equivalent) moved to a new project-owned module GoldenSalvageData.lua rather than invented into a fake old-dsp shape." },
-    "Mamool_Ja_Training_Grounds": { "real_files": "TextIDs.lua, Zone.lua, mobs/ -- NO MobIDs.lua, NO IDs.lua of any kind (same shape as Ilrusi_Atoll)", "consumption": "same require()'d bare-global pattern as Ilrusi_Atoll, confirmed structurally identical (both zones share the same package/header style).", "converted": "TextIDs.lua created (bare globals, full real text block, including the non-numeric QIQIRN_SPY_DIR_EXACT/_VAGUE/_REAL_HINT_POOL/AZURE_AILMENTS_CHECK sub-tables kept verbatim as they were already real per-effect/per-direction lookup tables, not per-zone id shape). All ID.mob[N].X/ID.npc.X references across 9 consumer files hardcoded as literals (4 per-instance mob groups replaced with local literal arrays: MOB_GROUP_1/2/13/14)." },
-    "Aht_Urhgan_Whitegate": { "real_files": "Shared.lua, TextIDs.lua, Zone.lua, npcs/ -- NO MobIDs.lua", "consumption": "same bare-global require() pattern.", "converted": "TextIDs.lua created (bare globals, full real text block -- this project's own mob{}/npc{} tables for this zone were already empty under the old zones[xi.zone.X] shape, so no literal substitution was needed for non-text ids). 8 consumer files converted (7 npcs + shared lance_corporal_common.lua helper, whose fillTestTube() signature was simplified to drop its now-meaningless zoneID table-passing parameter in favor of ambient bare globals)." },
-    "Bhaflau_Thickets": { "real_files": "MobIDs.lua, TextIDs.lua, Zone.lua, mobs/, npcs/ -- DOES have a real MobIDs.lua (flat bare globals + name_PH placeholder tables, e.g. `Mahishasura = 16990306; Mahishasura_PH = {[16990296]='1'}`)", "consumption": "MobIDs.lua required via the same package.loaded/require reset pattern (confirmed in mobs/Mahishasura.lua: `require(\"scripts/zones/Bhaflau_Thickets/MobIDs\")`).", "converted": "TextIDs.lua created (bare globals). This project's own content for this zone (Mythralline_Wellspring.lua, Warhorse_Hoofprint.lua) only ever referenced text ids, never mob ids, so no MobIDs.lua was needed for this project's own files despite the real zone having one." },
-    "Mount_Zhayolm": { "real_files": "MobIDs.lua, TextIDs.lua, Zone.lua, mobs/, npcs/ -- same real shape as Bhaflau_Thickets", "consumption": "same.", "converted": "TextIDs.lua created (bare globals). Same as Bhaflau_Thickets -- this project's own content (Warhorse_Hoofprint.lua only) never referenced mob ids for this zone, so no MobIDs.lua needed." },
-    "Caedarva_Mire": { "real_files": "TextIDs.lua, Zone.lua, mobs/, npcs/ -- NO MobIDs.lua", "consumption": "same bare-global require() pattern.", "converted": "TextIDs.lua created (bare globals). This project's own content (Warhorse_Hoofprint.lua only) never referenced mob/npc ids for this zone." },
-    "Wajaom_Woodlands": { "real_files": "MobIDs.lua, TextIDs.lua, Zone.lua, mobs/, npcs/ -- DOES have a real MobIDs.lua", "consumption": "same.", "converted": "TextIDs.lua created (bare globals). This project's own content references ONE npc id (MYTHRALLINE_WELLSPRING_1, used to compute an offset across 4 real spring rows) that has no place in a real MobIDs.lua (that file's real shape only ever holds mob spawn/PH data, not generic npc props) -- hardcoded as a literal (16986733) directly in npcs/Mythralline_Wellspring.lua instead, per old-dsp-reference's own no-npc-id-file convention." },
-    "Al_Zahbi": { "real_files": "TextIDs.lua, Zone.lua, npcs/ -- NO MobIDs.lua", "consumption": "n/a for this pass", "converted": "NOT TOUCHED -- confirmed this project's own assault_lockbox_appraisal package files for this zone (Chochoroon.lua) never actually referenced `zones[xi.zone.AL_ZAHBI]` at all (already using bare globals from an earlier namespace-correction pass); no IDs.lua of any shape existed in this project for Al_Zahbi to begin with, so there was nothing to restructure." },
-    "Nashmau": { "real_files": "TextIDs.lua, Zone.lua, npcs/ -- NO MobIDs.lua", "consumption": "n/a for this pass", "converted": "NOT TOUCHED -- same finding as Al_Zahbi (Memeroon.lua already used bare globals, no project IDs.lua existed for this zone)." }
+    "Ilrusi_Atoll": {
+      "real_files": "TextIDs.lua, Zone.lua, mobs/, npcs/ -- NO MobIDs.lua, NO IDs.lua of any kind",
+      "consumption": "require()'d with the package.loaded[...]=nil / require(...) reset pattern seen at the top of every real consumer file (e.g. npcs/Ancient_Lockbox.lua, npcs/Rune_of_Release.lua); text ids used as bare globals directly, e.g. `player:startEvent(0x0064,4)` alongside bare ITEM_CANNOT_BE_OBTAINED-style names. Mob/npc numeric ids (17002xxx) are hardcoded as raw literals directly in each real consumer script -- confirmed by reading Ancient_Lockbox.lua and Rune_of_Release.lua in full, zero shared id table of any kind for non-text ids.",
+      "converted": "TextIDs.lua created (bare globals, full real text block). All ID.mob[N].X/ID.npc.X references across 15 consumer files hardcoded as literals. One special case: CURSED_CHEST_SLOTS (a large project-original position/id data table with zero old-dsp-reference equivalent) moved to a new project-owned module GoldenSalvageData.lua rather than invented into a fake old-dsp shape."
+    },
+    "Mamool_Ja_Training_Grounds": {
+      "real_files": "TextIDs.lua, Zone.lua, mobs/ -- NO MobIDs.lua, NO IDs.lua of any kind (same shape as Ilrusi_Atoll)",
+      "consumption": "same require()'d bare-global pattern as Ilrusi_Atoll, confirmed structurally identical (both zones share the same package/header style).",
+      "converted": "TextIDs.lua created (bare globals, full real text block, including the non-numeric QIQIRN_SPY_DIR_EXACT/_VAGUE/_REAL_HINT_POOL/AZURE_AILMENTS_CHECK sub-tables kept verbatim as they were already real per-effect/per-direction lookup tables, not per-zone id shape). All ID.mob[N].X/ID.npc.X references across 9 consumer files hardcoded as literals (4 per-instance mob groups replaced with local literal arrays: MOB_GROUP_1/2/13/14)."
+    },
+    "Aht_Urhgan_Whitegate": {
+      "real_files": "Shared.lua, TextIDs.lua, Zone.lua, npcs/ -- NO MobIDs.lua",
+      "consumption": "same bare-global require() pattern.",
+      "converted": "TextIDs.lua created (bare globals, full real text block -- this project's own mob{}/npc{} tables for this zone were already empty under the old zones[xi.zone.X] shape, so no literal substitution was needed for non-text ids). 8 consumer files converted (7 npcs + shared lance_corporal_common.lua helper, whose fillTestTube() signature was simplified to drop its now-meaningless zoneID table-passing parameter in favor of ambient bare globals)."
+    },
+    "Bhaflau_Thickets": {
+      "real_files": "MobIDs.lua, TextIDs.lua, Zone.lua, mobs/, npcs/ -- DOES have a real MobIDs.lua (flat bare globals + name_PH placeholder tables, e.g. `Mahishasura = 16990306; Mahishasura_PH = {[16990296]='1'}`)",
+      "consumption": "MobIDs.lua required via the same package.loaded/require reset pattern (confirmed in mobs/Mahishasura.lua: `require(\"scripts/zones/Bhaflau_Thickets/MobIDs\")`).",
+      "converted": "TextIDs.lua created (bare globals). This project's own content for this zone (Mythralline_Wellspring.lua, Warhorse_Hoofprint.lua) only ever referenced text ids, never mob ids, so no MobIDs.lua was needed for this project's own files despite the real zone having one."
+    },
+    "Mount_Zhayolm": {
+      "real_files": "MobIDs.lua, TextIDs.lua, Zone.lua, mobs/, npcs/ -- same real shape as Bhaflau_Thickets",
+      "consumption": "same.",
+      "converted": "TextIDs.lua created (bare globals). Same as Bhaflau_Thickets -- this project's own content (Warhorse_Hoofprint.lua only) never referenced mob ids for this zone, so no MobIDs.lua needed."
+    },
+    "Caedarva_Mire": {
+      "real_files": "TextIDs.lua, Zone.lua, mobs/, npcs/ -- NO MobIDs.lua",
+      "consumption": "same bare-global require() pattern.",
+      "converted": "TextIDs.lua created (bare globals). This project's own content (Warhorse_Hoofprint.lua only) never referenced mob/npc ids for this zone."
+    },
+    "Wajaom_Woodlands": {
+      "real_files": "MobIDs.lua, TextIDs.lua, Zone.lua, mobs/, npcs/ -- DOES have a real MobIDs.lua",
+      "consumption": "same.",
+      "converted": "TextIDs.lua created (bare globals). This project's own content references ONE npc id (MYTHRALLINE_WELLSPRING_1, used to compute an offset across 4 real spring rows) that has no place in a real MobIDs.lua (that file's real shape only ever holds mob spawn/PH data, not generic npc props) -- hardcoded as a literal (16986733) directly in npcs/Mythralline_Wellspring.lua instead, per old-dsp-reference's own no-npc-id-file convention."
+    },
+    "Al_Zahbi": {
+      "real_files": "TextIDs.lua, Zone.lua, npcs/ -- NO MobIDs.lua",
+      "consumption": "n/a for this pass",
+      "converted": "NOT TOUCHED -- confirmed this project's own assault_lockbox_appraisal package files for this zone (Chochoroon.lua) never actually referenced `zones[xi.zone.AL_ZAHBI]` at all (already using bare globals from an earlier namespace-correction pass); no IDs.lua of any shape existed in this project for Al_Zahbi to begin with, so there was nothing to restructure."
+    },
+    "Nashmau": {
+      "real_files": "TextIDs.lua, Zone.lua, npcs/ -- NO MobIDs.lua",
+      "consumption": "n/a for this pass",
+      "converted": "NOT TOUCHED -- same finding as Al_Zahbi (Memeroon.lua already used bare globals, no project IDs.lua existed for this zone)."
+    }
   },
   "namespace_family_index_2026-09-13": {
     "_readme": "Full catalogue of every distinct tpz.*/xi.* family found across all 8 packages' lua-dsp/ trees during the 2026-09-13 full-remediation pass (grep for \\btpz\\.[a-zA-Z_]+ and \\bxi\\.[a-zA-Z_]+, deduped by family). This supersedes dsp_namespace_map.json's earlier landsandboat-era family entries for old-dsp-reference purposes -- use this section, not the top-level 'simple_families'/'reshaped_families' sections above, when converting for target=old_dsp_reference. Every row cites the real old-dsp-reference file/line checked, or explicit absence.",
-    "mission": { "shape": "bare global, no prefix at all (not even a mission-area scope)", "evidence": "scripts/globals/missions.lua:195-197 (IMMORTAL_SENTRIES=1, PRESIDENT_SALAHEEM=2, KNIGHT_OF_GOLD=3, etc.)", "log_id_table": "bare per-nation global table (TOAU, SANDORIA, etc.), scripts/globals/log_ids.lua:90 -- tpz.mission.log_id.TOAU -> bare TOAU", "status": "fixed: Naja_Salaheem.lua (mercenary_rank_promotions), 74 references, all converted to bare globals + bare TOAU table." },
-    "besieged": { "shape": "mostly bare global FUNCTIONS in scripts/globals/besieged.lua (hasRunicPortal, getMercenaryRank, getAstralCandescence, getRecommendedAssaultLevel, getSanctionDuration, getImperialDefenseStats, getISPItem, getMapBitmask, hasAssaultOrders)", "evidence": "scripts/globals/besieged.lua:21-256, function-by-function read", "status": "PARTIAL: tpz.besieged.getMercenaryRank -> bare getMercenaryRank confirmed and fixed (same badge-id array, besieged.lua:97-107). tpz.besieged.badges/mercenaryRank/PROMOTION_POINTS_REQUIRED/PROMOTION_POINTS_CAP/canPromote/promoteRank/capPromotionPoints/warhorseHoofprintTrigger are GENUINE GAPS -- confirmed absent from old-dsp-reference's besieged.lua entirely (this is Topaz's OWN later addition on top of the shared badge-array concept, C:\\topaz\\scripts\\globals\\besieged.lua:115-239, not present in this 2017-vintage snapshot at all). canPromote/promoteRank/capPromotionPoints also transitively depend on getCharVar/setCharVar, which were NOT FOUND as any Lua binding in old-dsp-reference's lua_baseentity.cpp either (grepped case-insensitively for 'charvar', zero matches) -- a second, deeper gap. NOT fixed: left as tpz.besieged.* in Rune_of_Release.lua (5 zones), resetmercrank.lua, and Naja_Salaheem.lua (canPromote/promoteRank only) -- these will error at runtime on this target until both gaps are resolved with real engine/content work, which is out of scope for a namespace-correction pass." },
-    "appraisal": { "shape": "self-contained project module, not a core-engine family at all", "evidence": "assault_lockbox_appraisal/lua-dsp/scripts/globals/appraisal.lua itself defines and only references its own table", "status": "fixed: tpz.appraisal (which required a bare `tpz = tpz or {}` init that would fail on this target) renamed to bare global `Appraisal` throughout appraisal.lua and its 3 real call sites (Drahbah.lua, Chochoroon.lua, Memeroon.lua)." },
-    "assault": { "shape": "n/a -- tpz.assault.chestTrigger/xi.assault.mission never actually defined or called anywhere in this project, comment-only mentions", "evidence": "grep across all lua-dsp/ trees: every tpz.assault./xi.assault. hit is inside a `--` comment", "status": "no fix needed -- no live code references." },
-    "mobMod": { "shape": "bare global, MOBMOD_ prefix", "evidence": "scripts/globals/status.lua:1908 (MOBMOD_NO_DESPAWN=17), :1956 (MOBMOD_NO_MOVE=65), :1958 (MOBMOD_CHECK_AS_NM=67, itself a prior-session C++ addition, see dsp-engine-changes/check_as_nm/)", "status": "fixed: nyzul.lua's 2 tpz.mobMod.CHECK_AS_NM references -> bare MOBMOD_CHECK_AS_NM. xi.mobMod.DONT_ROAM_HOME is comment-only, no live reference." },
-    "effect / effectFlag": { "shape": "bare global, EFFECT_/EFFECTFLAG_ prefix", "evidence": "scripts/globals/status.lua:129 (EFFECT_KO=0...) and :791 (EFFECTFLAG_NONE=0x0000...), plus EFFECTFLAG_EMPATHY/INFLUENCE/OFFLINE_TICK/AURA already added by the prior session's dsp-engine-changes/effectflag_influence/ patch", "status": "no live tpz.effect/xi.effectFlag code references found -- both hits are comment-only (IDs.lua doc comment, nyzul/pathos.lua doc comment). No fix needed; family confirmed for future reference." },
-    "status": { "shape": "bare global, STATUS_ prefix", "evidence": "scripts/globals/status.lua:45-52 (STATUS_NORMAL=0, etc.)", "status": "no live tpz.status code reference found (1 hit is a comment in Cursed_Chest.lua). No fix needed." },
-    "magic.spellGroup": { "shape": "bare global, SPELLGROUP_ prefix", "evidence": "scripts/globals/status.lua:1882 (SPELLGROUP_BLACK=2), :1886 (SPELLGROUP_WHITE=6)", "status": "fixed: mercenary_rank_promotions/npc_util.lua's 2 references (tpz.magic.spellGroup.BLACK/WHITE) -> bare SPELLGROUP_BLACK/SPELLGROUP_WHITE." },
-    "ki (key items)": { "shape": "bare global, per-item, no ki. prefix", "evidence": "scripts/globals/keyitems.lua (standard DSP convention, same pattern as missions/quests)", "status": "no live tpz.ki.X code reference found outside comments/docs (MERGE_DECISIONS.md is documentation, not shipped Lua). No fix applied in this pass; flag for a future session doing deeper keyitems.lua id verification (see topaz_keyitems_lua_id_verification_gap memory note -- a pre-existing, separate open question about tpz.ki enum value accuracy)." },
-    "damageType / attackType": { "shape": "not verified this pass -- 2 comment-only hits (nyzul_isle_investigation mobskills docs, 'DSP-PORT-MERGE' notes already flagging DSP's own MOBSKILL_MAGICAL/etc. naming)", "evidence": "fulmination.lua:65, gates_of_hades.lua:64 comments only", "status": "no live code reference -- no fix needed this pass." },
-    "title": { "shape": "bare global, per-title, no title. prefix, in old-dsp-reference's OWN core scripts/globals/titles.lua", "evidence": "scripts/globals/titles.lua:450 (PRIVATE_SECOND_CLASS=444)", "status": "core-title references (PRIVATE_SECOND_CLASS etc.) already used bare correctly in Naja_Salaheem.lua before this pass. Separately, mercenary_rank_promotions ships its OWN additive titles.lua (project-authored custom mission-reward titles, ids 1,2,3...) under a tpz.title table -- fixed by renaming to bare global `Titles` (self-contained, no consumers found elsewhere). NOTE: these custom title ids (1,2,3,...) look like placeholder/sequential values, not verified against a real client title-id source -- flagged as a possible pre-existing fabricated-id issue, OUT OF SCOPE for this namespace-only pass (no rename needed for that issue, just flagging it)." },
-    "quest.id": { "shape": "bare global, per-quest, no quest. prefix; per-nation area tables (SANDORIA etc.) bare in log_ids.lua", "evidence": "scripts/globals/quests.lua:27 (ROSEL_THE_ARMORER=2), scripts/globals/log_ids.lua:6 (SANDORIA table)", "status": "only reference found is inside a `--[[ ]]` doc-comment example in npc_util.lua (not live code) -- left as-is, illustrative only." },
-    "path.flag / pathflag": { "shape": "bare global, PATHFLAG_ prefix (confirmed via existing project comments referencing PATHFLAG_RUN/PATHFLAG_WALLHACK/PATHFLAG_SCRIPT numeric values already in use project-wide)", "evidence": "Excaliace.lua/Dahak.lua's own existing PATHFLAG_RUN_SCRIPT local constants (already bare, already correct)", "status": "no live tpz.path.flag/xi.pathflag code reference found -- comment-only. No fix needed." },
-    "item / xi.item": { "shape": "no name-enum exists at all in old-dsp-reference for items (confirmed absent, unlike keyitems.lua for key items) -- items are referenced by raw numeric id everywhere in this codebase", "evidence": "lance_corporal_common.lua's own comment: 'this codebase has no tpz.item.* name enum (unlike tpz.ki for key items)'", "status": "genuine gap (naming convenience only, not a functional blocker since raw item ids already work) -- no live tpz.item/xi.item code reference found needing a rename." },
-    "immunity / xi.immunity": { "shape": "DB-only (mob_pools.immunity bitmask column), NOT a Lua constant table at all", "evidence": "scripts/globals/status.lua's own IMMUNITY comment: 'This only works from the db, not scripts' (per Dahak.lua's own existing research note)", "status": "genuine gap, pre-existing and already documented in Dahak.lua's own header -- no live code reference, no fix needed this pass." },
-    "settings / xi.settings.map": { "shape": "scripts/globals/settings.lua exists with its own bare-global convention", "evidence": "referenced only in a comment (Excaliace.lua:245, 'xi.settings.map.BASE_SPEED, landsandboat-reference/settings/')", "status": "comment-only, explicitly already marked as a landsandboat-only reference by the comment itself -- no live code reference, no fix needed." },
-    "battlefield": { "shape": "not deeply verified this pass -- 1 comment-only hit (Ancient_Lockbox.lua mentioning tpz.battlefield.HandleLootRolls for BCNM Armoury Crates, doc note only)", "evidence": "comment only", "status": "no live code reference -- no fix needed this pass." },
-    "anim (xi.anim, fishing)": { "shape": "bare global, ANIMATION_ prefix, ANIMATION_FISHING/_START/_FISH/_CAUGHT/_ROD_BREAK/_LINE_BREAK/_STOP (no separate '_NPC' value -- mapped to the base ANIMATION_FISHING=6, the closest semantic match for the idle/return state)", "evidence": "scripts/globals/status.lua:2164-2182", "status": "fixed: mercenary_rank_promotions/npc_util.lua's 10 xi.anim.FISHING_* references converted to bare ANIMATION_FISHING* globals. Separately, npcsub.lua's dynamic xi.anim[name] lookup (GM debug command, arbitrary animation-by-name) rewritten to a generic _G[name] lookup against real bare ANIMATION_* globals -- not fishing-specific, so no direct rename target existed for it." },
-    "nyzul (xi.nyzul.*)": { "shape": "n/a -- comment-only historical notes ('ported from LSB's xi.nyzul.X'), the actual Nyzul package code uses its own already-converted bare-global functions", "evidence": "nyzul.lua/pathos.lua comments only", "status": "no live code reference -- no fix needed this pass." },
-    "zone (xi.zone.*)": { "shape": "was a GENUINE STRUCTURAL GAP, not a rename -- see zone_id_shape_IDs_lua_zones and per_zone_flat_id_shape_findings_2026-09-13 for the full finding.", "evidence": "confirmed by reading old-dsp-reference/scripts/zones/Ilrusi_Atoll/TextIDs.lua directly -- flat bare globals, no zones[] table, no xi.zone enum of any kind exists in old-dsp-reference at all", "status": "RESOLVED 2026-09-13 (zone-shape restructuring pass): all real `zones[xi.zone.X]` references across all 8 packages converted -- Ilrusi_Atoll/Mamool_Ja_Training_Grounds/Aht_Urhgan_Whitegate/Bhaflau_Thickets/Mount_Zhayolm/Caedarva_Mire/Wajaom_Woodlands restructured to real TextIDs.lua files with mob/npc ids hardcoded as literals (per-zone details in per_zone_flat_id_shape_findings_2026-09-13); Al_Zahbi/Nashmau needed no changes (never actually referenced the old shape). tools/audit_lua_dsp_ids.py re-confirmed clean across all 7 auditable packages afterward." }
+    "mission": {
+      "shape": "bare global, no prefix at all (not even a mission-area scope)",
+      "evidence": "scripts/globals/missions.lua:195-197 (IMMORTAL_SENTRIES=1, PRESIDENT_SALAHEEM=2, KNIGHT_OF_GOLD=3, etc.)",
+      "log_id_table": "bare per-nation global table (TOAU, SANDORIA, etc.), scripts/globals/log_ids.lua:90 -- tpz.mission.log_id.TOAU -> bare TOAU",
+      "status": "fixed: Naja_Salaheem.lua (mercenary_rank_promotions), 74 references, all converted to bare globals + bare TOAU table."
+    },
+    "besieged": {
+      "shape": "mostly bare global FUNCTIONS in scripts/globals/besieged.lua (hasRunicPortal, getMercenaryRank, getAstralCandescence, getRecommendedAssaultLevel, getSanctionDuration, getImperialDefenseStats, getISPItem, getMapBitmask, hasAssaultOrders)",
+      "evidence": "scripts/globals/besieged.lua:21-256, function-by-function read",
+      "status": "PARTIAL: tpz.besieged.getMercenaryRank -> bare getMercenaryRank confirmed and fixed (same badge-id array, besieged.lua:97-107). tpz.besieged.badges/mercenaryRank/PROMOTION_POINTS_REQUIRED/PROMOTION_POINTS_CAP/canPromote/promoteRank/capPromotionPoints/warhorseHoofprintTrigger are GENUINE GAPS -- confirmed absent from old-dsp-reference's besieged.lua entirely (this is Topaz's OWN later addition on top of the shared badge-array concept, C:\\topaz\\scripts\\globals\\besieged.lua:115-239, not present in this 2017-vintage snapshot at all). canPromote/promoteRank/capPromotionPoints also transitively depend on getCharVar/setCharVar, which were NOT FOUND as any Lua binding in old-dsp-reference's lua_baseentity.cpp either (grepped case-insensitively for 'charvar', zero matches) -- a second, deeper gap. NOT fixed: left as tpz.besieged.* in Rune_of_Release.lua (5 zones), resetmercrank.lua, and Naja_Salaheem.lua (canPromote/promoteRank only) -- these will error at runtime on this target until both gaps are resolved with real engine/content work, which is out of scope for a namespace-correction pass."
+    },
+    "appraisal": {
+      "shape": "self-contained project module, not a core-engine family at all",
+      "evidence": "assault_lockbox_appraisal/lua-dsp/scripts/globals/appraisal.lua itself defines and only references its own table",
+      "status": "fixed: tpz.appraisal (which required a bare `tpz = tpz or {}` init that would fail on this target) renamed to bare global `Appraisal` throughout appraisal.lua and its 3 real call sites (Drahbah.lua, Chochoroon.lua, Memeroon.lua)."
+    },
+    "assault": {
+      "shape": "n/a -- tpz.assault.chestTrigger/xi.assault.mission never actually defined or called anywhere in this project, comment-only mentions",
+      "evidence": "grep across all lua-dsp/ trees: every tpz.assault./xi.assault. hit is inside a `--` comment",
+      "status": "no fix needed -- no live code references."
+    },
+    "mobMod": {
+      "shape": "bare global, MOBMOD_ prefix",
+      "evidence": "scripts/globals/status.lua:1908 (MOBMOD_NO_DESPAWN=17), :1956 (MOBMOD_NO_MOVE=65), :1958 (MOBMOD_CHECK_AS_NM=67, itself a prior-session C++ addition, see dsp-engine-changes/check_as_nm/)",
+      "status": "fixed: nyzul.lua's 2 tpz.mobMod.CHECK_AS_NM references -> bare MOBMOD_CHECK_AS_NM. xi.mobMod.DONT_ROAM_HOME is comment-only, no live reference."
+    },
+    "effect / effectFlag": {
+      "shape": "bare global, EFFECT_/EFFECTFLAG_ prefix",
+      "evidence": "scripts/globals/status.lua:129 (EFFECT_KO=0...) and :791 (EFFECTFLAG_NONE=0x0000...), plus EFFECTFLAG_EMPATHY/INFLUENCE/OFFLINE_TICK/AURA already added by the prior session's dsp-engine-changes/effectflag_influence/ patch",
+      "status": "no live tpz.effect/xi.effectFlag code references found -- both hits are comment-only (IDs.lua doc comment, nyzul/pathos.lua doc comment). No fix needed; family confirmed for future reference."
+    },
+    "status": {
+      "shape": "bare global, STATUS_ prefix",
+      "evidence": "scripts/globals/status.lua:45-52 (STATUS_NORMAL=0, etc.)",
+      "status": "no live tpz.status code reference found (1 hit is a comment in Cursed_Chest.lua). No fix needed."
+    },
+    "magic.spellGroup": {
+      "shape": "bare global, SPELLGROUP_ prefix",
+      "evidence": "scripts/globals/status.lua:1882 (SPELLGROUP_BLACK=2), :1886 (SPELLGROUP_WHITE=6)",
+      "status": "fixed: mercenary_rank_promotions/npc_util.lua's 2 references (tpz.magic.spellGroup.BLACK/WHITE) -> bare SPELLGROUP_BLACK/SPELLGROUP_WHITE."
+    },
+    "ki (key items)": {
+      "shape": "bare global, per-item, no ki. prefix",
+      "evidence": "scripts/globals/keyitems.lua (standard DSP convention, same pattern as missions/quests)",
+      "status": "no live tpz.ki.X code reference found outside comments/docs (MERGE_DECISIONS.md is documentation, not shipped Lua). No fix applied in this pass; flag for a future session doing deeper keyitems.lua id verification (see topaz_keyitems_lua_id_verification_gap memory note -- a pre-existing, separate open question about tpz.ki enum value accuracy)."
+    },
+    "damageType / attackType": {
+      "shape": "not verified this pass -- 2 comment-only hits (nyzul_isle_investigation mobskills docs, 'DSP-PORT-MERGE' notes already flagging DSP's own MOBSKILL_MAGICAL/etc. naming)",
+      "evidence": "fulmination.lua:65, gates_of_hades.lua:64 comments only",
+      "status": "no live code reference -- no fix needed this pass."
+    },
+    "title": {
+      "shape": "bare global, per-title, no title. prefix, in old-dsp-reference's OWN core scripts/globals/titles.lua",
+      "evidence": "scripts/globals/titles.lua:450 (PRIVATE_SECOND_CLASS=444)",
+      "status": "core-title references (PRIVATE_SECOND_CLASS etc.) already used bare correctly in Naja_Salaheem.lua before this pass. Separately, mercenary_rank_promotions ships its OWN additive titles.lua (project-authored custom mission-reward titles, ids 1,2,3...) under a tpz.title table -- fixed by renaming to bare global `Titles` (self-contained, no consumers found elsewhere). NOTE: these custom title ids (1,2,3,...) look like placeholder/sequential values, not verified against a real client title-id source -- flagged as a possible pre-existing fabricated-id issue, OUT OF SCOPE for this namespace-only pass (no rename needed for that issue, just flagging it)."
+    },
+    "quest.id": {
+      "shape": "bare global, per-quest, no quest. prefix; per-nation area tables (SANDORIA etc.) bare in log_ids.lua",
+      "evidence": "scripts/globals/quests.lua:27 (ROSEL_THE_ARMORER=2), scripts/globals/log_ids.lua:6 (SANDORIA table)",
+      "status": "only reference found is inside a `--[[ ]]` doc-comment example in npc_util.lua (not live code) -- left as-is, illustrative only."
+    },
+    "path.flag / pathflag": {
+      "shape": "bare global, PATHFLAG_ prefix (confirmed via existing project comments referencing PATHFLAG_RUN/PATHFLAG_WALLHACK/PATHFLAG_SCRIPT numeric values already in use project-wide)",
+      "evidence": "Excaliace.lua/Dahak.lua's own existing PATHFLAG_RUN_SCRIPT local constants (already bare, already correct)",
+      "status": "no live tpz.path.flag/xi.pathflag code reference found -- comment-only. No fix needed."
+    },
+    "item / xi.item": {
+      "shape": "no name-enum exists at all in old-dsp-reference for items (confirmed absent, unlike keyitems.lua for key items) -- items are referenced by raw numeric id everywhere in this codebase",
+      "evidence": "lance_corporal_common.lua's own comment: 'this codebase has no tpz.item.* name enum (unlike tpz.ki for key items)'",
+      "status": "genuine gap (naming convenience only, not a functional blocker since raw item ids already work) -- no live tpz.item/xi.item code reference found needing a rename."
+    },
+    "immunity / xi.immunity": {
+      "shape": "DB-only (mob_pools.immunity bitmask column), NOT a Lua constant table at all",
+      "evidence": "scripts/globals/status.lua's own IMMUNITY comment: 'This only works from the db, not scripts' (per Dahak.lua's own existing research note)",
+      "status": "genuine gap, pre-existing and already documented in Dahak.lua's own header -- no live code reference, no fix needed this pass."
+    },
+    "settings / xi.settings.map": {
+      "shape": "scripts/globals/settings.lua exists with its own bare-global convention",
+      "evidence": "referenced only in a comment (Excaliace.lua:245, 'xi.settings.map.BASE_SPEED, landsandboat-reference/settings/')",
+      "status": "comment-only, explicitly already marked as a landsandboat-only reference by the comment itself -- no live code reference, no fix needed."
+    },
+    "battlefield": {
+      "shape": "not deeply verified this pass -- 1 comment-only hit (Ancient_Lockbox.lua mentioning tpz.battlefield.HandleLootRolls for BCNM Armoury Crates, doc note only)",
+      "evidence": "comment only",
+      "status": "no live code reference -- no fix needed this pass."
+    },
+    "anim (xi.anim, fishing)": {
+      "shape": "bare global, ANIMATION_ prefix, ANIMATION_FISHING/_START/_FISH/_CAUGHT/_ROD_BREAK/_LINE_BREAK/_STOP (no separate '_NPC' value -- mapped to the base ANIMATION_FISHING=6, the closest semantic match for the idle/return state)",
+      "evidence": "scripts/globals/status.lua:2164-2182",
+      "status": "fixed: mercenary_rank_promotions/npc_util.lua's 10 xi.anim.FISHING_* references converted to bare ANIMATION_FISHING* globals. Separately, npcsub.lua's dynamic xi.anim[name] lookup (GM debug command, arbitrary animation-by-name) rewritten to a generic _G[name] lookup against real bare ANIMATION_* globals -- not fishing-specific, so no direct rename target existed for it."
+    },
+    "nyzul (xi.nyzul.*)": {
+      "shape": "n/a -- comment-only historical notes ('ported from LSB's xi.nyzul.X'), the actual Nyzul package code uses its own already-converted bare-global functions",
+      "evidence": "nyzul.lua/pathos.lua comments only",
+      "status": "no live code reference -- no fix needed this pass."
+    },
+    "zone (xi.zone.*)": {
+      "shape": "was a GENUINE STRUCTURAL GAP, not a rename -- see zone_id_shape_IDs_lua_zones and per_zone_flat_id_shape_findings_2026-09-13 for the full finding.",
+      "evidence": "confirmed by reading old-dsp-reference/scripts/zones/Ilrusi_Atoll/TextIDs.lua directly -- flat bare globals, no zones[] table, no xi.zone enum of any kind exists in old-dsp-reference at all",
+      "status": "RESOLVED 2026-09-13 (zone-shape restructuring pass): all real `zones[xi.zone.X]` references across all 8 packages converted -- Ilrusi_Atoll/Mamool_Ja_Training_Grounds/Aht_Urhgan_Whitegate/Bhaflau_Thickets/Mount_Zhayolm/Caedarva_Mire/Wajaom_Woodlands restructured to real TextIDs.lua files with mob/npc ids hardcoded as literals (per-zone details in per_zone_flat_id_shape_findings_2026-09-13); Al_Zahbi/Nashmau needed no changes (never actually referenced the old shape). tools/audit_lua_dsp_ids.py re-confirmed clean across all 7 auditable packages afterward."
+    }
   },
   "script_shape": {
     "_readme": "The file-level Lua convention differs from Topaz's current style across the whole DSP snapshot, not per-zone.",
