@@ -1,0 +1,19 @@
+# Local secrets -- never commit
+.openwebui_key
+toolkit_config.txt
+
+# Generated/cached state -- see DIST_PACKAGING.md's "Confirmed: strip" list
+ffxi_zone_database.db
+ffxi_zone_database-pre-reset-*.db
+ffxi_zone_database.db-wal
+ffxi_zone_database.db-shm
+db_backups/
+mission_reports/
+__pycache__/
+*.pyc
+.venv/
+gui_server.log
+LandSandBoat/
+FFXI-DATS/
+FFXI-Resources-dist/
+xi-tinkerer/target/
