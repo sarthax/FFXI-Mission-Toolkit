@@ -1,0 +1,407 @@
+{
+  "_CORRECTION_NOTICE_2026-09-13": "CRITICAL: every entry in this file (method_renames, reshaped_families, simple_families, per_zone_id_file_conventions.shape_C_zones_table_global, script_shape's SOL_REGISTER-style examples) was checked against D:\\Claude\\landsandboat-reference (LandSandBoat/server, a MODERN sol2-based fork) -- but the real production target ('Valhalla') actually runs D:\\Claude\\old-dsp-reference (DarkstarProject/darkstar, last commit 2017-10-22, an OLDER Lunar-binding-style codebase that predates even Topaz's own tpz.* namespace tables). These are NOT the same codebase. See D:\\Claude\\Topaz-Assault-Backport\\reports\\old_dsp_reference_correction_2026-09-13.md for the full corrected binding-by-binding table. Every entry below is real research and stays valid IF this project ever targets LandSandBoat -- but treat it as 'checked_against: landsandboat-reference (NOT this project's real target)' unless a given entry has been explicitly re-confirmed against old-dsp-reference and marked so. KEY OLD-DSP-REFERENCE FACTS CONFIRMED 2026-09-13 (grep-verified against the real checkout): (1) binding registration uses LUNAR_DECLARE_METHOD(CLuaBaseEntity,X) in src/map/lua/lua_baseentity.cpp (no underscore in filename), not SOL_REGISTER; (2) getShortID, SetAutoAttackEnabled, untargetable all exist in old-dsp-reference under Topaz's OWN exact spelling -- the landsandboat-based renames to getTargID/setAutoAttackEnabled/setUntargetable are WRONG for the real target and were reverted; (3) old-dsp-reference has NO setName, NO goToEntity/gotoEntity (only gotoPlayer), NO setSpeed/setBaseSpeed (only a unified 'speed' method), NO isAggroable/setIsAggroable Lua binding, and NO checkNavPath/checkNavPosition/isNavigablePoint binding anywhere in src/map/lua/*.cpp -- these are real gaps needing further investigation/C++ work, not simple renames; (4) old-dsp-reference does NOT even use a tpz.* or xi.* namespace table for most constant families (e.g. MOD_DEF is a bare global, not tpz.mod.DEF or xi.mod.DEF) -- this is a MUCH older convention than either Topaz's current tpz.* or LandSandBoat's xi.*, and most of this file's family mappings need re-verification against that fact; (5) GM commands use bare `cmdprops`/`onTrigger` globals (matching Topaz's own convention exactly, confirmed via src/map/commandhandler.cpp's lua_getglobal(m_LState,\"cmdprops\")), NOT LandSandBoat's commandObj-wrapper shape; (6) zone id files in old-dsp-reference are inconsistent per-zone: Periqia/Lebros_Cavern/Leujaoam_Sanctum have a real IDs.lua with a bare capitalized-but-SHORTENED global table name (Periqia, Lebros, Leujaoam -- not the full folder name), consumed via `local ID = zones[xi.zone.X]` in the WRONG (landsandboat) conversion and corrected to `local ID = <BareName>` directly (no zones[] indirection at all in old-dsp-reference) -- while Ilrusi_Atoll, Mamool_Ja_Training_Grounds, and Aht_Urhgan_Whitegate instead use a split TextIDs.lua/MobIDs.lua convention with NO consolidated IDs.lua at all, which has NOT yet been fully re-converted (flagged as remaining work).",
+  "_readme": "Confirmed Topaz(tpz.*) -> DSP(darkstar-cd74c6d43c3d219b41490512f74a30b866e818a0) namespace mappings. Each entry was verified against real DSP source (not guessed from a general pattern) -- see 'source' and 'evidence' fields. 'confidence' is 'confirmed' (numeric/behavioral match checked), 'confirmed_pattern' (2+ spot-checked values matched, rest inferred safe), or 'engine_gap' (does not exist in DSP, needs a C++ addition before Lua can use it -- never auto-convert these). Regenerate/extend this file every time a new zone package surfaces a family not yet covered here -- don't re-derive from scratch, and don't guess a mapping without checking real DSP source the way every entry here was checked.",
+  "simple_families": {
+    "_readme": "shape: 'tpz.<family>.<KEY>' -> '<dsp_prefix><KEY>' (or a lookup in 'renames' for keys whose NAME differs, not just the prefix). Safe for the converter to auto-apply.",
+    "status": {
+      "dsp_prefix": "STATUS_",
+      "confidence": "confirmed",
+      "source": "scripts/globals/status.lua",
+      "evidence": "STATUS_NORMAL=0, STATUS_CUTSCENE_ONLY=6 exact match"
+    },
+    "slot": {
+      "dsp_prefix": "SLOT_",
+      "confidence": "confirmed",
+      "source": "scripts/globals/status.lua",
+      "evidence": "SLOT_BODY=5 exact match"
+    },
+    "effect": {
+      "dsp_prefix": "EFFECT_",
+      "confidence": "confirmed",
+      "source": "scripts/globals/status.lua",
+      "evidence": "17 values spot-checked, all exact matches (STUN=10, DEBILITATION=263, OMERTA=262, etc). A separate SUBEFFECT_* family exists in the same file -- confirmed unrelated (proc/message category, not status effect id) -- never use it for tpz.effect.*."
+    },
+    "effectFlag": {
+      "dsp_prefix": "EFFECTFLAG_",
+      "confidence": "confirmed_pattern",
+      "source": "src/map/status_effect.h",
+      "evidence": "DISPELABLE=0x0001, ERASABLE=0x0002 exact match, actively used in ~15 real DSP scripts. INFLUENCE/OFFLINE_TICK/AURA/EMPATHY were all confirmed missing (backport_map_confidence_check.py full-usage sweep) and RESOLVED 2026-09-13 -- see engine_gaps.effectFlag_INFLUENCE, now ported. ON_ZONE_PATHOS is a dead reference even in Topaz's own source -- never appears in real code, comment-only, no action needed."
+    },
+    "mod": {
+      "dsp_prefix": "MOD_",
+      "confidence": "confirmed_pattern",
+      "source": "scripts/globals/status.lua",
+      "evidence": "MOD_FIRE_ABSORB=459, MOD_DARK_ABSORB=466 exact match for the elemental *_ABSORB family; other tpz.mod.* members not individually re-checked, verify before relying on an unconfirmed one. KNOWN LARGE DECAY AREA (backport_map_confidence_check.py full-usage sweep, 2026-09-12): of 469 real tpz.mod.* members used anywhere in Topaz, 69 (~15%) have no MOD_<name> identifier anywhere in this DSP snapshot at all -- this DSP checkout's MOD_ enum is simply older/smaller than modern Topaz's, missing many newer roll/augment/job-trait modifiers (e.g. PHANTOM_ROLL, DESPOIL, FAST_CAST, most WS_<STAT>_BONUS entries). NOT individually engine_gap'd member-by-member (69 entries is too many to usefully enumerate here) -- treat any tpz.mod.* reference in a real conversion as needing an explicit per-member check against this DSP snapshot's mod.h/status.lua before trusting the blind prefix rule, rather than assuming the pattern holds. Re-run backport_map_confidence_check.py --family mod for the current full list."
+    },
+    "act": {
+      "dsp_prefix": "ACTION_",
+      "confidence": "confirmed",
+      "source": "scripts/globals/status.lua",
+      "evidence": "ACTION_MOBABILITY_START=33, ACTION_MOBABILITY_USING=34, ACTION_MOBABILITY_FINISH=11 -- all 3 exact match"
+    },
+    "inv": {
+      "renames": {
+        "TEMPITEMS": "LOC_TEMPITEMS"
+      },
+      "confidence": "confirmed",
+      "source": "scripts/globals/status.lua",
+      "evidence": "LOC_TEMPITEMS=3 exact match, name differs (LOC_ not INV_). tpz.inv is itself just an alias of tpz.inventoryLocation in Topaz (status.lua: 'tpz.inv = tpz.inventoryLocation') -- this same rule applies under either spelling."
+    },
+    "inventoryLocation": {
+      "renames": {
+        "TEMPITEMS": "LOC_TEMPITEMS"
+      },
+      "confidence": "confirmed",
+      "source": "scripts/globals/status.lua (both Topaz and DSP)",
+      "evidence": "same table as tpz.inv (Topaz aliases inv=inventoryLocation) -- found via a real zone file (Ilrusi_Atoll/instances/apkallu_seizure.lua) using the unaliased spelling, which the converter did not previously recognize. LOC_TEMPITEMS=3 exact match in DSP."
+    },
+    "mobMod": {
+      "dsp_prefix": "MOBMOD_",
+      "confidence": "confirmed_pattern",
+      "source": "src/map/mob_modifier.h",
+      "evidence": "Spot-checked against 6 zones outside the Nyzul package (Bhaflau_Remnants, Ilrusi_Atoll, Lebros_Cavern): SIGHT_RANGE=4, DRAW_IN=12, SKILL_LIST=14, NO_DESPAWN=17, TP_USE_CHANCE=20, SPECIAL_SKILL=30, ROAM_DISTANCE=31, ROAM_COOL=36, ROAM_TURNS=51, NO_MOVE=65 -- all exact name+value matches. EXCEPTION: NO_REST does not exist in DSP's MOBMODIFIER enum at all -- engine_gap, see engine_gaps section. Always grep mob_modifier.h for a specific member before trusting the prefix pattern blindly (CHECK_AS_NM already proved one member can be missing)."
+    },
+    "animation": {
+      "dsp_prefix": "ANIMATION_",
+      "confidence": "confirmed",
+      "source": "scripts/globals/status.lua",
+      "evidence": "ANIMATION_OPEN_DOOR=8, ANIMATION_CLOSE_DOOR=9 exact match, found via Bhaflau_Remnants/door_util.lua."
+    },
+    "objType": {
+      "dsp_prefix": "TYPE_",
+      "confidence": "confirmed",
+      "source": "scripts/globals/status.lua",
+      "evidence": "TYPE_PC=0x01, TYPE_NPC=0x02, TYPE_MOB=0x04, TYPE_PET=0x08, TYPE_SHIP=0x10 -- all exact match, bare globals (not a table) in DSP vs Topaz's tpz.objType.* table."
+    },
+    "path_flag": {
+      "topaz_path": "tpz.path.flag.*",
+      "dsp_prefix": "PATHFLAG_",
+      "confidence": "confirmed",
+      "source": "src/map/ai/helpers/pathfind.h, scripts/globals/pathfind.lua",
+      "evidence": "PATHFLAG_NONE=0, RUN=1, WALLHACK=2, REVERSE=4 exact match. DSP additionally HAS a PATHFLAG_SCRIPT=8 and PATHFLAG_SLIDE=0x10 that Topaz's own tpz.path.flag table (as shipped in this Topaz checkout) does NOT define at all -- confirmed real, currently-live bug in Ilrusi_Atoll/npcs/QiqirnDiver_Common.lua referencing tpz.path.flag.SCRIPT (which is nil in Topaz, throwing on every pathTo() call using it -- see [[topaz_pathto_wallhack_default]] memory). Rule: tpz.path.flag.X -> bare PATHFLAG_X (drop the whole tpz.path.flag. prefix, not just tpz.)."
+    },
+    "title": {
+      "dsp_prefix": "",
+      "confidence": "confirmed",
+      "source": "scripts/globals/titles.lua",
+      "evidence": "THE_HORNSPLITTER=25 exact match, bare global with NO prefix at all"
+    },
+    "zone": {
+      "dsp_prefix": "",
+      "confidence": "confirmed",
+      "source": "scripts/globals/zone.lua",
+      "evidence": "NYZUL_ISLE=77, ALZADAAL_UNDERSEA_RUINS=72, AHT_URHGAN_WHITEGATE=50 -- all exact match, bare globals with NO prefix (same file also defines tpz.region/nation/etc, which are NOT bare globals in DSP and are NOT covered by this entry -- see already_present_no_port_needed.globals_zone_missions_teleports)."
+    },
+    "ki": {
+      "dsp_prefix": "",
+      "confidence": "confirmed",
+      "source": "scripts/globals/keyitems.lua",
+      "evidence": "RUNIC_DISC=879, RUNIC_KEY=880, NYZUL_ISLE_ASSAULT_ORDERS=878, NYZUL_ISLE_ROUTE=898 -- all exact match, bare globals, same names as Topaz's tpz.ki.* keys"
+    },
+    "keyItem": {
+      "dsp_prefix": "",
+      "confidence": "confirmed",
+      "note": "tpz.keyItem is a Topaz-side alias of tpz.ki (tpz.ki = tpz.keyItem) -- same DSP mapping applies"
+    }
+  },
+  "reshaped_families": {
+    "_readme": "shape differs from a simple prefix swap -- table nesting added/removed, or the table name itself changes. Each needs its own substitution rule, not a blind prefix replace.",
+    "job": {
+      "dsp_table": "JOBS",
+      "confidence": "confirmed",
+      "source": "scripts/globals/ability.lua, automatonweaponskills.lua",
+      "evidence": "JOBS.COR, JOBS.THF used live -- a table like Topaz's own tpz.job, NOT a bare JOBTYPE_WAR global the general prefix pattern would suggest. Rule: tpz.job.X -> JOBS.X (drop tpz., keep the two-level shape)."
+    },
+    "magic_ele": {
+      "topaz_path": "tpz.magic.ele.*",
+      "dsp_prefix": "ELE_",
+      "confidence": "confirmed",
+      "source": "scripts/globals/magic.lua",
+      "evidence": "ELE_FIRE=1 exact match. Rule: tpz.magic.ele.X -> ELE_X (flatten, drop nesting)."
+    },
+    "teleport": {
+      "topaz_path": "tpz.teleport.<type_value>",
+      "dsp_prefix": "TELEPORT_",
+      "confidence": "confirmed_pattern",
+      "source": "scripts/globals/teleports.lua",
+      "evidence": "TELEPORT_ESCAPE=8 exact match. Rule: tpz.teleport.X (a type CONSTANT, not the table's other fields like .to/.id/.type) -> TELEPORT_X, bare. The whole globals/teleports.lua calling convention differs beyond this one value -- read both files side by side before porting any script that builds a tpz.teleport{} call table."
+    },
+    "nyzul": {
+      "dsp_table": "Nyzul",
+      "confidence": "our_own_convention",
+      "source": "n/a -- tpz.nyzul is Topaz's own bespoke module, DSP has no Nyzul Isle Investigation implementation to match against",
+      "evidence": "Design decision, not a discovery: renamed to a capitalized bare-global table `Nyzul` matching DSP's own convention for shared utility modules (npcUtil, chatType, msgBasic all follow this bare-capitalized-table shape). Rule: tpz.nyzul.X -> Nyzul.X. Applies to globals/nyzul.lua and globals/nyzul/*.lua's own internal cross-references too, not just call sites in mob/npc/instance scripts. If a future package introduces its own bespoke Topaz-only module (not present in DSP at all), add it here the same way -- pick a bare-capitalized name, document it as 'our_own_convention', don't leave it unmapped."
+    },
+    "instance_updateInstanceTime": {
+      "topaz_path": "tpz.instance.updateInstanceTime",
+      "dsp_bare": "updateInstanceTime",
+      "confidence": "confirmed",
+      "source": "scripts/globals/instance.lua",
+      "evidence": "DSP already ships a complete, working updateInstanceTime(instance, elapsed, texttable) as a bare global function -- identical signature to Topaz's tpz.instance.updateInstanceTime. Rule: drop the ENTIRE tpz.instance. prefix (not just tpz.), call bare. Do not port globals/instance.lua's Topaz version -- DSP's own already does the job."
+    },
+    "msg_basic": {
+      "topaz_path": "tpz.msg.basic.*",
+      "dsp_table": "msgBasic",
+      "confidence": "confirmed_pattern",
+      "source": "scripts/globals/msg.lua",
+      "evidence": "msgBasic.REQUIRES_A_PET=215, msgBasic.DISAPPEAR_NUM=231 exact match. msgBasic.NO_EFFECT=189 matches tpz.msg.basic.SKILL_NO_EFFECT (name differs). DSP's msgBasic table is a smaller subset of Topaz's -- a value used in Topaz may need a NEW line added to DSP's own msg.lua (pure data, e.g. 'RECOVERS_HP = 24,') rather than an existing name to map to. Check every key individually with grep before assuming it exists."
+    },
+    "anim_table": {
+      "dsp_table": "xi.anim",
+      "confidence": "confirmed",
+      "source": "landsandboat-reference/scripts/commands/animatenpc.lua (DSP's own real, native file), which does animationId = tonumber(animationId) or xi.anim[string.upper(animationId)]",
+      "evidence": "Direct table rename, same [KEY] dynamic-lookup shape as Topaz's tpz.anim -- confirmed by reading DSP's own native animatenpc.lua rather than guessing. Rule: tpz.anim -> xi.anim (bare table reference, not a per-key rename since callers index it dynamically with string.upper(arg), not a fixed named key)."
+    }
+  },
+  "engine_gaps": {
+    "_readme": "Confirmed absent from DSP at the C++ level, not just missing a Lua-side name. NEVER auto-convert these -- the converter must flag them as TODOs requiring a C++ change (see DSP_ENGINE_CHANGES.md) before the Lua can be ported.",
+    "mobMod_CHECK_AS_NM": {
+      "topaz": "tpz.mobMod.CHECK_AS_NM",
+      "checked": "src/map/mob_modifier.h's MOBMODIFIER enum, src/map/packet_system.cpp's /check handler (SmallPacket0x0DD)",
+      "status": "RESOLVED -- ported to D:\\Claude\\Topaz-Assault-Backport\\dsp-engine-changes\\check_as_nm\\ (applied as a working-tree change to old-dsp-reference, see that folder's check_as_nm.diff/README.md). Added MOBMOD_CHECK_AS_NM=67 to the enum (67, not Topaz's 49 -- that number was already taken by MOBMOD_SCRIPTED_2HOUR in this DSP snapshot, confirming this family is name-mapped not numeric-mapped), wired '|| PTarget->getMobMod(MOBMOD_CHECK_AS_NM) > 0' into the same /check condition Topaz uses (packet_system.cpp:5154 in Topaz, SmallPacket0x0DD in DSP), and mirrored the bare Lua constant in scripts/globals/status.lua. getMobMod/setMobMod were already bound to Lua generically -- no new binding needed.",
+      "fix": "already ported -- still needs a coder to compile this DSP checkout and live-test the /check path"
+    },
+    "mobMod_NO_REST": {
+      "topaz": "tpz.mobMod.NO_REST",
+      "checked": "src/map/mob_modifier.h's MOBMODIFIER enum",
+      "status": "no NO_REST entry at all -- found via Lebros_Cavern/mobs/Brittle_Rock.lua during the outside-Nyzul stress test",
+      "fix": "needs a new MOBMODIFIER enum value + a check in the mob's rest/regen logic (not yet traced -- needs a DSP-familiar coder)"
+    },
+    "mobMod_NO_AGGRO": {
+      "topaz": "tpz.mobMod.NO_AGGRO",
+      "checked": "src/map/mob_modifier.h's MOBMODIFIER enum",
+      "status": "no NO_AGGRO entry -- found via backport_map_confidence_check.py's full-usage sweep 2026-09-12. DSP has ALWAYS_AGGRO=37 (the opposite polarity) but nothing for suppressing normal aggro on a mob that would otherwise have it.",
+      "fix": "needs a new MOBMODIFIER enum value + a check wherever DSP's aggro-check logic runs (not yet traced -- needs a DSP-familiar coder)"
+    },
+    "mobMod_NO_LINK": {
+      "topaz": "tpz.mobMod.NO_LINK",
+      "checked": "src/map/mob_modifier.h's MOBMODIFIER enum",
+      "status": "no NO_LINK entry -- found via backport_map_confidence_check.py's full-usage sweep 2026-09-12. DSP has SUBLINK=10/LINK_RADIUS=11/SUPERLINK=26 (link-GROUP membership) but nothing that suppresses linking outright on a mob that would otherwise link.",
+      "fix": "needs a new MOBMODIFIER enum value + a check in the mob's link-aggro logic (not yet traced -- needs a DSP-familiar coder)"
+    },
+    "effectFlag_INFLUENCE": {
+      "topaz": "tpz.effectFlag.INFLUENCE",
+      "checked": "src/map/status_effect.h's enum EFFECTFLAG",
+      "status": "RESOLVED -- ported to D:\\Claude\\Topaz-Assault-Backport\\dsp-engine-changes\\effectflag_influence\\ (applied as a working-tree change to old-dsp-reference, see that folder's effectflag_influence.diff/README.md). Added EFFECTFLAG_INFLUENCE=0x1000000, OFFLINE_TICK=0x2000000, AURA=0x4000000 past the enum's real ceiling (NO_CANCEL=0x800000), matching Topaz's own values exactly. Also added EFFECTFLAG_EMPATHY=0x0008 -- a separate, lower-value Topaz flag this DSP snapshot's enum had skipped entirely (jumped ATTACK=0x0004 straight to DAMAGE=0x0010), found via backport_map_confidence_check.py's full-usage sweep 2026-09-13, not part of the original 3-bit-short finding but the same engine_gap class. Mirrored all 4 as bare Lua globals in scripts/globals/status.lua. Storage was already a plain uint32 with headroom -- no other subsystem touched.",
+      "fix": "already ported -- still needs a coder to compile and confirm no other packed-flag assumption breaks"
+    },
+    "instance_localvars": {
+      "topaz": "instance:getLocalVar/setLocalVar",
+      "checked": "src/map/instance.h, src/map/lua/lua_instance.cpp",
+      "status": "RESOLVED as of the Nyzul Isle package -- CInstance/CLuaInstance now have getLocalVar/setLocalVar/resetLocalVars, mirroring CBaseEntity's existing pattern. See mission-packages/nyzul_isle_investigation/cpp-engine-reference-dsp/ for the applied diff.",
+      "fix": "already applied -- still needs a coder to compile it against a real DSP build"
+    },
+    "takeDamage_binding": {
+      "topaz": "target:takeDamage(dmg, mob, attackType, damageType)",
+      "checked": "src/map/lua/lua_baseentity.cpp",
+      "status": "no such Lua binding exists in DSP at all",
+      "fix": "not a gap to fix -- DSP's real convention is target:delHP(dmg) after computing dmg via MobFinalAdjustments(dmg, mob, skill, target, MOBSKILL_X, MOBPARAM_Y, shadowbehav). Use damage_type_family below to map the attackType/damageType arguments."
+    }
+  },
+  "incompatible_enums": {
+    "_readme": "A DSP family with the SAME general shape as a Topaz one but INCOMPATIBLE VALUES past a partial overlap -- converting by number instead of by name silently corrupts behavior. Never numeric-map these; always name-map via the explicit table.",
+    "damage_type_family": {
+      "topaz_attackType": "tpz.attackType.*",
+      "dsp_attackType_table": "MOBSKILL_*",
+      "topaz_damageType": "tpz.damageType.*",
+      "dsp_damageType_table": "MOBPARAM_*",
+      "source": "scripts/globals/monstertpmoves.lua",
+      "name_map": {
+        "attackType": {
+          "PHYSICAL": "MOBSKILL_PHYSICAL",
+          "MAGICAL": "MOBSKILL_MAGICAL",
+          "RANGED": "MOBSKILL_RANGED",
+          "SPECIAL": "MOBSKILL_SPECIAL",
+          "BREATH": "MOBSKILL_BREATH"
+        },
+        "damageType": {
+          "FIRE": "MOBPARAM_FIRE",
+          "EARTH": "MOBPARAM_EARTH",
+          "WATER": "MOBPARAM_WATER",
+          "WIND": "MOBPARAM_WIND",
+          "ICE": "MOBPARAM_ICE",
+          "LIGHTNING": "MOBPARAM_THUNDER",
+          "LIGHT": "MOBPARAM_LIGHT",
+          "DARK": "MOBPARAM_DARK",
+          "NONE": "MOBPARAM_NONE",
+          "PIERCING": "MOBPARAM_PIERCE",
+          "SLASHING": "MOBPARAM_SLASH",
+          "BLUNT": "MOBPARAM_BLUNT",
+          "HTH": "MOBPARAM_H2H"
+        }
+      },
+      "warning": "tpz.attackType.MAGICAL(=2) vs MOBSKILL_MAGICAL(=1): DSP has no NONE=0 slot, entire enum is offset by one from Topaz's. tpz.damageType.FIRE(=6) coincidentally equals MOBPARAM_FIRE(=6), but LIGHTNING(=10 in Topaz) would silently become DSP's own ICE(=10) if ported by number -- confirmed by tracing a real DSP mobskill (10000_needles.lua). The PHYSICAL half of damageType (PIERCING/SLASHING/BLUNT/HTH) was found missing from this map entirely during the outside-Nyzul stress test (Lebros_Cavern/mobs/Qiqirn_Mine.lua uses tpz.attackType.PHYSICAL/tpz.damageType.NONE) -- DSP's physical MOBPARAM_* names don't even share Topaz's spelling (SLASH not SLASHING, PIERCE not PIERCING, H2H not HTH), confirmed against scripts/globals/monstertpmoves.lua. tpz.damageType.ELEMENTAL(=5, a generic/unused Topaz value per its own source comment) has NO DSP equivalent at all -- if a real call site ever uses it (none found yet in any zone checked), treat as a new engine_gap rather than guessing a mapping. ALWAYS use the name_map above, never the numeric value.",
+      "call_convention_change": "target:takeDamage(dmg, mob, attackType, damageType) does not exist in DSP -- rewrite as: local dmg = MobFinalAdjustments(rawDmg, mob, skill, target, MOBSKILL_X, MOBPARAM_Y, shadowbehav); target:delHP(dmg)"
+    }
+  },
+  "already_present_no_port_needed": {
+    "_readme": "DSP already ships a complete, working implementation -- do NOT port Topaz's version of these, just call DSP's existing one. Confirmed by reading real DSP source, not assumed from the name matching.",
+    "updateInstanceTime": {
+      "dsp_signature": "updateInstanceTime(instance, elapsed, texttable)",
+      "source": "scripts/globals/instance.lua",
+      "note": "bare global function, functionally identical to Topaz's tpz.instance.updateInstanceTime -- same call site shape, just drop the tpz.instance. prefix"
+    },
+    "npcUtil.giveKeyItem": {
+      "dsp_signature": "npcUtil.giveKeyItem(player, keyitem)",
+      "source": "scripts/globals/npc_util.lua",
+      "note": "identical signature to Topaz's, npcUtil is already a real bare global table in DSP"
+    },
+    "SpawnMob_DespawnMob_GetMobByID_GetNPCByID": {
+      "note": "core engine globals, confirmed identical signatures via real working DSP scripts (path_of_darkness.lua etc) -- no change needed"
+    },
+    "globals_zone_missions_teleports": {
+      "note": "DSP already has its own complete, independently-evolved scripts/globals/zone.lua, missions.lua, and teleports.lua. For the Nyzul Isle package specifically, nothing Nyzul-specific called into their region/nation/continent internals -- these 3 files were dropped from that package's conversion scope entirely. CHECK PER PACKAGE: a different mission might call something inside one of these that Topaz added and DSP's version lacks -- don't assume this generalizes blindly, but don't wholesale-replace these files by default either."
+    },
+    "mission_tracking": {
+      "note": "DSP's own scripts/globals/log_ids.lua + missions.lua implement mission tracking with a DIFFERENT calling convention than Topaz's tpz.mission.* tables -- DSP's nation/log argument (e.g. TOAU) is a whole table object ({mission_log=4,...}), not Topaz's bare int. Where DSP already has a working script for the same mechanic (e.g. Nyzul's own _20m.lua entry-gating), prefer diffing against DSP's existing file for genuinely new content rather than porting Topaz's rewritten version wholesale."
+    },
+    "Rytaal": {
+      "dsp_path": "scripts/zones/Aht_Urhgan_Whitegate/npcs/Rytaal.lua",
+      "confidence": "confirmed",
+      "source": "read in full, 2026-09-13",
+      "note": "The real NPC that dispenses IMPERIAL_ARMY_ID_TAG (daily id_tags currency, up to 3 banked) -- a load-bearing dependency for EVERY Assault zone's mission giver (Sorrowful_Sage.lua and its 5 siblings all gate on player:hasKeyItem(IMPERIAL_ARMY_ID_TAG)), not Nyzul-specific. DSP's own copy is a complete, working, non-stub implementation (unlike Sorrowful_Sage.lua's original disabled-stub state) -- its onEventFinish already explicitly checks for and consumes NYZUL_ISLE_ASSAULT_ORDERS by name alongside the other 5 zones' order key items, meaning it already natively supports Nyzul Isle with zero changes needed. Do not port Topaz's version -- confirmed via direct file read, not name-matching. CHECK PER PACKAGE for any future zone: this file is shared/global to the whole Assault system, not per-zone, so it only needs checking once, not once per package."
+    }
+  },
+  "missing_lua_modules": {
+    "_readme": "Found during the outside-Nyzul stress test: Topaz call sites reference whole modules/functions that have NO DSP equivalent anywhere (not renamed, not reshaped -- genuinely absent), but which are pure Lua (no C++ engine change needed, unlike engine_gaps). These need a real ported/written Lua file added to the target DSP tree, the same way globals/nyzul.lua was handled for the Nyzul package -- NEVER auto-convert, always flag.",
+    "caskets": {
+      "topaz_call": "tpz.caskets.onTrigger(...)",
+      "checked": "scripts/globals/ (no caskets.lua in DSP) AND every real call site of tpz.caskets.* across all of scripts/zones/",
+      "status": "NOT NEEDED FOR ASSAULT SCOPE -- re-investigated 2026-09-12: every real caller of tpz.caskets.onTrigger/onTrade/onEventFinish is the general open-world Treasure Casket system in ~60 ordinary field zones (Zeruhn_Mines, Yuhtunga_Jungle, etc), none of them Assault instances. The only 2 hits inside Assault zones (Ilrusi_Atoll/mobs/Cursed_Chest.lua, Periqia/npcs/Bridge_Switch.lua) are comment-only mentions citing it as prior art for an unrelated animationsub convention, not an actual call. This ~990-line module (with its own scripts/globals/casket_loot.lua per-zone drop tables and tpz.roe dependency) is a large, disconnected port for zero real Assault dependencies -- do not port unless a future package's real code (not a comment) calls into it.",
+      "fix": "no action -- documented as out of scope, see D:\\Claude\\Topaz-Assault-Backport\\dsp-shared-globals\\README.md"
+    },
+    "assault_lockbox": {
+      "topaz_call": "tpz.assault.chestTrigger(player, npc, qItemPools, regItemPools, xpReward, gilReward)",
+      "checked": "scripts/globals/ (no assault_lockbox.lua in DSP), plus src/map/lua/lua_baseentity.cpp, lua_instance.cpp, scripts/globals/npc_util.lua for every API call it makes",
+      "status": "RESOLVED -- ported to D:\\Claude\\Topaz-Assault-Backport\\dsp-shared-globals\\assault_lockbox.lua (target path scripts/globals/assault_lockbox.lua). Real call sites confirmed in Lebros_Cavern, Mamool_Ja_Training_Grounds, and Periqia's own Ancient_Lockbox.lua npc scripts -- each supplies its own qItemPools/regItemPools/xpReward/gilReward, only the roll/give logic itself is shared (see [[topaz_dsp_no_central_lockbox]] memory -- the calling zone scripts themselves are NOT centralized, only this one already-shared-in-Topaz helper function). Every DSP API it calls (addTreasure, addGil, addExp, entityAnimationPacket, npcUtil.giveItem, instance:getChars) confirmed present with an identical signature.",
+      "fix": "already ported -- see whole_call_renames.assault_chestTrigger for the namespace substitution applied. Still needs: each zone's own Ancient_Lockbox.lua individually ported with a require(\"scripts/globals/assault_lockbox\") + AssaultLockbox.chestTrigger(...) call site, and the file compiled/dropped into a real DSP checkout."
+    },
+    "besieged_capPromotionPoints": {
+      "topaz_call": "tpz.besieged.capPromotionPoints(player, currentPromotion)",
+      "checked": "scripts/globals/besieged.lua (DSP's own version, which already covers getMercenaryRank)",
+      "status": "function does not exist in DSP's besieged.lua",
+      "fix": "found via Ilrusi_Atoll/npcs/Rune_of_Release.lua -- read Topaz's real implementation and either add the function to DSP's existing besieged.lua or confirm DSP has no promotion-point-cap mechanic at all (may be a Topaz-only addition, not yet checked)"
+    },
+    "battlefield_HandleLootRolls": {
+      "topaz_call": "tpz.battlefield.HandleLootRolls(...)",
+      "checked": "scripts/globals/effects/battlefield.lua (DSP's file exists at this path but under a different sub-path than Topaz's globals/battlefield.lua)",
+      "status": "function not found in DSP's battlefield.lua",
+      "fix": "not yet traced which zone/instance file calls this or why -- read the real Topaz call site before deciding whether this is a full battlefield-loot-roll port or a narrower single-function addition"
+    }
+  },
+  "method_renames": {
+    "_readme": "Confirmed Lua METHOD-NAME differences (not tpz.* namespace substitutions) -- same entity, same purpose, different binding name between Topaz and DSP. Safe for the converter to auto-apply via a colon-call regex (':<old>(' -> ':<new>('), confirmed by reading the real C++ binding in both codebases.",
+    "getCharVar": {
+      "dsp_name": "getVar",
+      "confidence": "confirmed",
+      "source": "src/map/lua/lua_baseentity.cpp",
+      "evidence": "DSP's getVar/setVar are PC-only (asserts objtype==TYPE_PC) and persist to a char_vars SQL table -- same semantics as Topaz's getCharVar/setCharVar, just renamed. Rule: player:getCharVar(x) -> player:getVar(x)."
+    },
+    "setCharVar": {
+      "dsp_name": "setVar",
+      "confidence": "confirmed",
+      "source": "src/map/lua/lua_baseentity.cpp",
+      "evidence": "see getCharVar -- same pairing. Rule: player:setCharVar(x, v) -> player:setVar(x, v)."
+    },
+    "PrintToPlayer": {
+      "dsp_name": "printToPlayer",
+      "confidence": "confirmed",
+      "source": "src/map/lua/lua_base_entity.cpp:20485 (SOL_REGISTER), also confirmed via DSP's own real scripts/commands/animatenpc.lua which calls player:printToPlayer(...)",
+      "evidence": "Case-only difference -- DSP registers lowercase printToPlayer, not PrintToPlayer. Found auditing assault_gm_debug_tools (all 10 GM command files used the Topaz-style capital-P spelling)."
+    },
+    "goToEntity": {
+      "dsp_name": "gotoEntity",
+      "confidence": "confirmed",
+      "source": "src/map/lua/lua_base_entity.cpp:20649 (SOL_REGISTER), function itself defined at line 4280",
+      "evidence": "Case-only difference (capital T -> lowercase t in \"to\") -- DSP registers gotoEntity, not goToEntity. Found in gotoinstid.lua."
+    },
+    "untargetable": {
+      "dsp_name": "setUntargetable",
+      "confidence": "confirmed",
+      "source": "src/map/lua/lua_base_entity.cpp:21286 (SOL_REGISTER \"setUntargetable\"), function at line 18404",
+      "evidence": "Not a case difference -- Topaz's bare untargetable(bool) toggle does not exist in DSP at all under any casing; the real binding is setUntargetable(bool), same single-bool-arg signature. Found in navdebug.lua."
+    },
+    "addCharVar": {
+      "dsp_name": "incrementCharVar",
+      "confidence": "confirmed",
+      "source": "src/map/lua/lua_base_entity.cpp:735 (SOL_REGISTER at :20504), signature void incrementCharVar(const std::string& varName, int32 value)",
+      "evidence": "addCharVar (invented -- no such binding exists anywhere in lua_base_entity.cpp) was used exclusively as v:addCharVar(\"AssaultsCompleted\", 1) in every zone Rune_of_Release.lua, i.e. a true increment-by-value call. incrementCharVar has the identical (varName, value) signature and real increment semantics (charutils::IncrementCharVar) -- exact match, not just a plausible substitute. Found auditing the 5 zone packages (remaining_7_packages_binding_audit_2026-09-13.md)."
+    },
+    "getShortID": {
+      "dsp_name": "getTargID",
+      "confidence": "confirmed",
+      "source": "src/map/lua/lua_base_entity.cpp:1744 (SOL_REGISTER at :20544), returns m_PBaseEntity->targid (uint16)",
+      "evidence": "getShortID (invented -- no such binding exists anywhere in lua_base_entity.cpp) was used exclusively as the single argument to :engage(...) (e.g. mob:engage(target:getShortID())). engage(uint16 requestedTarget) (src/map/lua/lua_base_entity.cpp:13063) expects exactly the targid getTargID() returns -- confirmed matching signature/purpose, not a guess. Found across 4 of 5 zone packages auditing the 5 zone packages (remaining_7_packages_binding_audit_2026-09-13.md)."
+    },
+    "setName": {
+      "dsp_name": "renameEntity",
+      "confidence": "confirmed",
+      "source": "src/map/lua/lua_base_entity.cpp:6090 (SOL_REGISTER at :20715), signature void renameEntity(const std::string& newName, const sol::object& arg2=silent)",
+      "evidence": "setName (invented -- no such binding exists anywhere in lua_base_entity.cpp) was used as a single-arg call (npc:setName(realName)). renameEntity(newName) matches that exact call shape (the second arg is an optional silent-log bool, unused either way) and its real doc example is literally mob:renameEntity(\"NewName\"). Also sets updatemask |= UPDATE_NAME, same queued-broadcast-not-immediate semantics the calling file already had to work around for Topaz's setName() -- found in periqia's Hunched_Figure.lua (remaining_7_packages_binding_audit_2026-09-13.md)."
+    }
+  },
+  "whole_call_renames": {
+    "_readme": "Confirmed whole-function-call renames -- Topaz's tpz.<module>.<fn>(...) maps to a differently-named DSP bare global function with the same behavior, not just a namespace-prefix swap (the function name itself changed). Regex-safe: 'tpz.<module>.<fn>(' -> '<dsp_fn>('.",
+    "besieged_getAssaultRank": {
+      "topaz_call": "tpz.besieged.getAssaultRank(",
+      "dsp_call": "getMercenaryRank(",
+      "confidence": "confirmed",
+      "source": "scripts/globals/besieged.lua",
+      "evidence": "DSP's own besieged.lua already has a real, working getMercenaryRank(player) bare global function -- functionally identical purpose to Topaz's tpz.besieged.getAssaultRank(player), confirmed via real usage in DSP's own Sorrowful_Sage.lua ('local rank = getMercenaryRank(player)'). Do not port Topaz's besieged.lua for this -- DSP's own already covers it."
+    },
+    "assault_chestTrigger": {
+      "topaz_call": "tpz.assault.chestTrigger(",
+      "dsp_call": "AssaultLockbox.chestTrigger(",
+      "confidence": "confirmed",
+      "source": "D:\\Claude\\Topaz-Assault-Backport\\dsp-shared-globals\\assault_lockbox.lua",
+      "evidence": "the shared roller function itself was ported (DSP had no equivalent at all -- see missing_lua_modules.assault_lockbox), renamed to a bare-capitalized table matching this DSP snapshot's convention for bespoke shared modules with no Topaz-namespace equivalent to preserve (same pattern as reshaped_families.nyzul). Each calling zone's own Ancient_Lockbox.lua still needs individual porting -- only this helper is shared, per [[topaz_dsp_no_central_lockbox]]."
+    }
+  },
+  "per_zone_id_file_conventions": {
+    "_readme": "CRITICAL: the id-constants file name AND shape is NOT uniform across zones in this DSP snapshot -- always check what already exists for a given zone before assuming a convention. Two known shapes so far:",
+    "shape_A_nested_table": {
+      "example_zone": "Nyzul_Isle",
+      "filename": "IDs.lua",
+      "shape": "a single global table named after the zone (e.g. `NyzulIsle = { text = {...}, mobs = {...}, npcs = {...} }`), closely matching Topaz's own IDs.lua shape -- just a bare global instead of `local ID = require(...)`",
+      "conversion_rule": "keep the filename `IDs.lua` and the zone-table name; change `local ID = require(\"scripts/zones/X/IDs\")` to `require(\"scripts/zones/X/IDs\")` (no local assignment) and `ID.text.X`/`ID.npc.X`/`ID.mob[N].X` to `ZoneTable.text.X`/`ZoneTable.npcs.X`/`ZoneTable.mobs[N].X` (note: DSP pluralizes to `mobs`/`npcs`, Topaz uses singular `mob`/`npc` -- check this per zone too)."
+    },
+    "shape_B_flat_bare_globals": {
+      "example_zones": "Aht_Urhgan_Whitegate, Alzadaal_Undersea_Ruins",
+      "filename": "TextIDs.lua",
+      "shape": "flat bare global constants, no wrapping table at all (e.g. `REQUIRES_A_PET = 215;`)",
+      "conversion_rule": "keep the filename `TextIDs.lua`; change `local ID = require(\"scripts/zones/X/IDs\")` to `require(\"scripts/zones/X/TextIDs\")`; change every `ID.text.X` to bare `X`. This shape has NO established convention for npc/mob id tables (only text ids were found) -- when a zone's Topaz IDs.lua has real npc/mob id tables and DSP's TextIDs.lua doesn't, either add them as new bare globals in TextIDs.lua (matching this shape) or hardcode the numeric literal at each call site (matching how DSP's own real scripts for that zone already do it) -- check the zone's own existing scripts for the established local precedent before choosing."
+    },
+    "shape_C_zones_table_global": {
+      "example_zones": "Periqia, Leujaoam_Sanctum, Mamool_Ja_Training_Grounds, Lebros_Cavern, Ilrusi_Atoll, Aht_Urhgan_Whitegate, Bhaflau_Thickets, Caedarva_Mire (Al_Zahbi/Nashmau/Wajaom_Woodlands/Mount_Zhayolm structurally identical by inspection of their IDs.lua header, not each individually read line-by-line)",
+      "filename": "IDs.lua",
+      "discovered": "2026-09-13, during the 7-new-package DSP conversion pass -- neither shape_A nor shape_B (both from the Nyzul package, 2026-09-xx) matched this DSP snapshot's CURRENT IDs.lua for any of these zones, including Aht_Urhgan_Whitegate itself -- shape_B (TextIDs.lua) is STALE for Whitegate in this checkout: it now has a real IDs.lua in shape_C, no TextIDs.lua at all. This snapshot has evolved since the Nyzul package; shape_B may be entirely obsolete now -- re-verify before trusting it for any zone.",
+      "shape": "`zones = zones or {}` then `zones[xi.zone.<ZONE>] = { text = {...}, mob = {...}, npc = {...} }`, file ends with `return zones[xi.zone.<ZONE>]`. Field names are SINGULAR (`mob`/`npc`, not `mobs`/`npcs`) -- same spelling as Topaz's own IDs.lua. Some npc (and occasionally mob, see Lebros_Cavern's WAMOURA_OFFSET) entries resolve via `GetFirstID('Name')`/`GetTableOfIDs('Name')` instead of a hardcoded numeric literal (Ilrusi_Atoll is the only zone checked that hardcodes every value instead).",
+      "real_consumption_pattern": "DSP's own instance/mob/npc scripts in these zones read it back via `local ID = zones[xi.zone.<ZONE>]` (a global table lookup, NOT `require(...)`) -- confirmed by reading scripts/zones/Mamool_Ja_Training_Grounds/instances/preemptive_strike.lua, imperial_agent_rescue.lua, Mamool_Ja_Warder.lua, Dilapidated_Gate.lua, globals/zoneUtil.lua; scripts/zones/Ilrusi_Atoll/npcs/Cursed_Chest.lua, mobs/Carrion_{Toad,Slime,Leech,Crab}.lua, instances/{golden_salvage,extermination}.lua; scripts/zones/Lebros_Cavern/mobs/Qiqirn_{Volcanist,Mine,Ceramist}.lua, mobs/Brittle_Rock.lua, instances/{wamoura_farm_raid,troll_fugitives,excavation_duty}.lua; scripts/zones/Periqia/instances/{shades_of_vengeance,seagull_grounded,requiem}.lua -- all 22 real files use `local ID = zones[xi.zone.X]`, zero use require().",
+      "conversion_rule": "keep filename IDs.lua. Rewrite ONLY the require line: `local ID = require(\"scripts/zones/X/IDs\")` -> `local ID = zones[xi.zone.X]` (bare table lookup, uppercase zone enum, no require/local-module semantics). Every `ID.text.X`/`ID.mob[N].X`/`ID.mob.X`/`ID.npc.X` call site is UNCHANGED -- Topaz's own singular shape already matches DSP's shape_C exactly, so LESS conversion work is needed here than shape_A's Nyzul case, not more. Implemented in backport_lua_convert.py as id_shape='zones_table' (zone_table param repurposed to carry the bare xi.zone.* enum name, e.g. 'PERIQIA') -- _convert_id_references() is a no-op for this shape, _convert_id_requires_zones_table() handles the require rewrite, and _flag_unhandled()'s 'unconverted ID.*' check is suppressed for this shape since the lack of conversion is correct, not a gap."
+    },
+    "how_to_check_a_new_zone": "1) does scripts/zones/<Zone>/IDs.lua or TextIDs.lua (or neither) already exist in DSP? 2) if it exists, read it in FULL (not head/tail) -- is it a wrapping table under a DIFFERENT name than the zone (shape A), flat bare globals (shape B), or `zones[xi.zone.X]={...}` read back as `local ID = zones[xi.zone.X]` (shape C)? shape C has been the answer for every zone checked as of 2026-09-13 (10 zones across 2 packages) -- treat it as the current default expectation, and re-verify shape A/B claims from the Nyzul package before relying on them, since this snapshot visibly evolved since then (Whitegate itself moved off shape B). 3) if NEITHER file exists, this is a genuinely new zone for DSP -- pick shape C as the default now (supersedes the old shape-A-default guidance), since it's both the closer match to Topaz's own structure AND the actually-observed current convention."
+  },
+  "old_dsp_reference_verified_2026-09-13": {
+    "_readme": "Entries actually checked against D:\\Claude\\old-dsp-reference (the real Valhalla target), grep-confirmed 2026-09-13. Supersedes any conflicting landsandboat-reference entry above for these specific names.",
+    "getShortID": { "checked_against": "old-dsp-reference", "status": "confirmed: no rename needed, Topaz's own name (getShortID) is already correct -- LUNAR_DECLARE_METHOD(CLuaBaseEntity,getShortID) exists verbatim." },
+    "SetAutoAttackEnabled": { "checked_against": "old-dsp-reference", "status": "confirmed: no rename needed, Topaz's own name is already correct (exact spelling incl. capital S)." },
+    "untargetable": { "checked_against": "old-dsp-reference", "status": "confirmed: no rename needed, Topaz's own bare untargetable(bool) toggle exists verbatim in old-dsp-reference." },
+    "PrintToPlayer": { "checked_against": "old-dsp-reference", "status": "confirmed: no rename needed, LUNAR_DECLARE_METHOD(CLuaBaseEntity,PrintToPlayer) exists verbatim (capital P, NOT LandSandBoat's lowercase printToPlayer)." },
+    "addCharVar": { "checked_against": "old-dsp-reference", "status": "real gap: no addCharVar AND no incrementCharVar binding found in src/map/lua/lua_baseentity.cpp or luautils.cpp. Needs further tracing (may live under a different name, e.g. a generic setCharVar) before deciding between a rename and a genuine C++ gap." },
+    "setName": { "checked_against": "old-dsp-reference", "status": "real gap: only getName/setPetName/getAutomatonName/hideName exist -- no setName and no renameEntity binding at all. A real gap requiring either a C++ addition mirroring Topaz's setName, or confirmation the affected call sites (e.g. Periqia/Hunched_Figure.lua) can use hideName/nameplate tricks instead. NOT yet fixed in the lua-dsp trees -- flagged as open work." },
+    "goToEntity": { "checked_against": "old-dsp-reference", "status": "real gap: only gotoPlayer exists (no gotoEntity/goToEntity of any casing). Needs a human decision: add a goToEntity C++ binding mirroring gotoPlayer's implementation, or rewrite call sites to use gotoPlayer against a resolved player-equivalent target. NOT yet fixed in the lua-dsp trees -- flagged as open work." },
+    "setSpeed_setBaseSpeed": { "checked_against": "old-dsp-reference", "status": "real difference: no setSpeed/setBaseSpeed/GetSpeedMod bindings exist; old-dsp-reference instead exposes a single unified 'speed' method (LUNAR_DECLARE_METHOD(CLuaBaseEntity,speed)) that both gets and sets depending on whether an argument is passed. Call sites need speed(x) not setSpeed(x). NOT yet fixed in the lua-dsp trees -- flagged as open work." },
+    "isAggroable_setIsAggroable": { "checked_against": "old-dsp-reference", "status": "real gap: no isAggroable/setIsAggroable Lua binding exists anywhere; mob aggro (m_Aggro) is set only from internal C++ paths, not exposed to Lua. This means the ORIGINAL Topaz-side updateEnmity() manual-aggro workaround (present in some already-converted files before the landsandboat pass removed it) may have been the CORRECT approach for old-dsp-reference all along and should likely be restored rather than left removed. Needs a human decision -- flagged as open work, not yet restored." },
+    "checkNavPath_family": { "checked_against": "old-dsp-reference", "status": "real gap: no checkNavPath/checkNavPosition/isNavigablePoint binding exists in any src/map/lua/*.cpp file in old-dsp-reference. The assault_gm_debug_tools checknav.lua/navdebug.lua GM commands (built around Topaz's own !checknav mechanism) have no working equivalent to call in old-dsp-reference at all -- needs either a C++ addition or these 2 debug commands staying Topaz/Valhalla-incompatible until one is written. Flagged as open work, not yet resolved." },
+    "messageSpecialFrom_showText": { "checked_against": "old-dsp-reference", "status": "partial: old-dsp-reference has showText(entity, messageID, p0, p1, p2, p3) using the same CMessageSpecialPacket class-instantiation style as Topaz's own messageSpecialFrom, but showText has NO showName boolean parameter that several real call sites pass true for. Whether the missing showName matters for these specific call sites' real client text has NOT been determined -- open question for a human, or a small C++ addition mirroring Topaz's messageSpecialFrom (lua_baseentity.cpp:425 in Topaz) is the fallback. Flagged as open work." },
+    "cmdprops_shape": { "checked_against": "old-dsp-reference", "status": "confirmed: bare `cmdprops = {...}` / `onTrigger = function(...)` globals, no commandObj wrapper, no return statement -- identical to Topaz's own convention. All 11 landsandboat-style commandObj-wrapped GM/mercenary command files were reverted to this bare shape 2026-09-13." },
+    "zone_id_shape_IDs_lua_zones": { "checked_against": "old-dsp-reference", "status": "confirmed for Periqia/Lebros_Cavern/Leujaoam_Sanctum only: a real IDs.lua exists as a bare global table (`Periqia = {text=..,mobs=..,npcs=..}`, `Lebros = {...}`, `Leujaoam = {...}` -- note the global name is SHORTENED, not the full zone folder name), consumed directly as `local ID = Periqia` (or the package's own equivalent) with NO zones[] wrapping table and NO xi.zone/tpz.zone indexing at all. Corrected in all 3 packages' lua-dsp trees 2026-09-13. Ilrusi_Atoll, Mamool_Ja_Training_Grounds, and Aht_Urhgan_Whitegate have NO IDs.lua in old-dsp-reference at all -- they use a split TextIDs.lua (+MobIDs.lua for some zones) convention instead, which has NOT yet been re-converted in those 3 packages -- flagged as open, scoped follow-up work (a real file-split refactor, not a simple rename)." }
+  },
+  "script_shape": {
+    "_readme": "The file-level Lua convention differs from Topaz's current style across the whole DSP snapshot, not per-zone.",
+    "topaz_shape": "local entity = {}\nentity.onTrigger = function(player, npc) ... end\nreturn entity",
+    "dsp_shape": "function onTrigger(player, npc) ... end",
+    "conversion_rule": "for every `entity.<hook> = function(<args>) <body> end` block, emit `function <hook>(<args>) <body> end` at the same position; drop the `local entity = {}` line and the trailing `return entity` line. Preserve all other code (comments, local functions, requires) verbatim in position.",
+    "id_require_rule": "`local ID = require(\"scripts/zones/X/IDs\")` -> `require(\"scripts/zones/X/<filename per per_zone_id_file_conventions>\")` with no local assignment (DSP's convention loads these as side-effecting global-defining files, not modules that return a table to capture)."
+  }
+}
