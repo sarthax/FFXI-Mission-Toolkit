@@ -366,6 +366,21 @@ def convert(text: str, zone_table: str | None = None, id_shape: str | None = Non
     reading old-dsp-reference/scripts/zones/Ilrusi_Atoll/TextIDs.lua directly to be the REAL shape
     for Ilrusi_Atoll/Mamool_Ja_Training_Grounds/Aht_Urhgan_Whitegate and mercenary_rank_promotions's
     other 6 zones -- that restructuring should use this existing "flat" path, not new tooling.
+
+    2026-09-13 zone-shape restructuring pass (follow-up, completed): the "flat" path above was
+    used AS-IS for the ID.text.X -> bare X rewrite across all 7 affected zones (Ilrusi_Atoll,
+    Mamool_Ja_Training_Grounds, Aht_Urhgan_Whitegate, Bhaflau_Thickets, Mount_Zhayolm,
+    Caedarva_Mire, Wajaom_Woodlands -- Al_Zahbi/Nashmau needed no changes, see
+    per_zone_flat_id_shape_findings_2026-09-13 in the map). It was NOT extended for ID.mob[N].X/
+    ID.npc.X: confirmed by reading real old-dsp-reference consumer files (Ilrusi_Atoll/npcs/
+    Rune_of_Release.lua, Ancient_Lockbox.lua) that this shape has no shared id-table convention for
+    non-text ids at all -- every real mob/npc numeric id is hardcoded as a raw literal directly in
+    each consumer script. That substitution is inherently value-dependent (needs the actual old
+    IDs.lua's real numeric mapping, not a generic rename), so it was done with a one-off
+    per-zone script (extract name->value pairs, substitute at each call site, hand-verify every
+    resulting file) rather than by extending this generic converter -- see the zone-shape
+    restructuring report for the exact method. A future session doing another "flat"-shape zone
+    should follow the same method, not assume this function alone suffices.
     """
     if ns_map is None:
         ns_map = load_map()
