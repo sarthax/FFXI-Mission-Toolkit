@@ -1376,15 +1376,31 @@ def iddrift_detail(request: Request, slug: str, q: str = "", zone: str = "", pag
     })
 
 
+def _target_flavor_banner() -> dict:
+    """Live fingerprint of whatever DSP checkout Settings has configured -- surfaced on every
+    load of this page so a mismatch between the configured target and what a conversion is about
+    to assume is visible BEFORE running one, not discovered later. This is the GUI-side half of
+    the same lesson backport_lua_convert.detect_target_flavor()/verify_target_or_raise() exist
+    for: an entire session's worth of DSP work was once checked against the wrong codebase with
+    nothing surfacing that fact anywhere."""
+    dsp_root = settings_mod.get_dsp_root()
+    if not dsp_root:
+        return {"dsp_root": None, "flavor": None}
+    flavor = backport_lua_convert.detect_target_flavor(dsp_root)
+    return {"dsp_root": str(dsp_root), "flavor": flavor}
+
+
 @app.get("/backport/lua-convert", response_class=HTMLResponse)
 def lua_convert_form(request: Request):
-    """Paste-a-file-in, get-a-converted-file-out page for the Topaz -> DSP Lua conversion built
-    during the Nyzul Isle Investigation backport package. Same backport_enabled() gate as ID Drift
-    -- this only matters to someone actually doing Topaz/DSP backport work."""
-    ns_map = backport_lua_convert.load_map()
+    """Paste-a-file-in, get-a-converted-file-out page for the Topaz -> DSP Lua conversion. Same
+    backport_enabled() gate as ID Drift -- this only matters to someone actually doing Topaz/DSP
+    backport work. Defaults target/id_shape to old_dsp_reference/flat -- the REAL production
+    target (Valhalla) -- not landsandboat/nested, which was this page's stale default from before
+    the 2026-09-13 correction (old_dsp_reference_full_remediation_2026-09-13.md)."""
     return templates.TemplateResponse(request, "backport_lua_convert.html", {
-        "source": "", "converted": "", "flagged": [], "zone_table": "", "id_shape": "nested",
-        "id_file_hint": "", "ran": False, "map_path": str(backport_lua_convert.MAP_PATH),
+        "source": "", "converted": "", "flagged": [], "zone_table": "", "id_shape": "flat",
+        "target": "old_dsp_reference", "id_file_hint": "", "ran": False,
+        "map_path": str(backport_lua_convert.MAP_PATH), **_target_flavor_banner(),
     })
 
 
@@ -1393,16 +1409,18 @@ async def lua_convert_submit(request: Request):
     form = await request.form()
     source = form.get("source") or ""
     zone_table = (form.get("zone_table") or "").strip() or None
-    id_shape = form.get("id_shape") or "nested"
+    id_shape = form.get("id_shape") or "flat"
+    target = form.get("target") or "old_dsp_reference"
     id_file_hint = (form.get("id_file_hint") or "").strip() or None
 
     result = backport_lua_convert.convert(
-        source, zone_table=zone_table, id_shape=id_shape, id_file_hint=id_file_hint,
+        source, zone_table=zone_table, id_shape=id_shape, id_file_hint=id_file_hint, target=target,
     )
     return templates.TemplateResponse(request, "backport_lua_convert.html", {
         "source": source, "converted": result.converted, "flagged": result.flagged,
-        "zone_table": zone_table or "", "id_shape": id_shape, "id_file_hint": id_file_hint or "",
-        "ran": True, "map_path": str(backport_lua_convert.MAP_PATH),
+        "zone_table": zone_table or "", "id_shape": id_shape, "target": target,
+        "id_file_hint": id_file_hint or "", "ran": True,
+        "map_path": str(backport_lua_convert.MAP_PATH), **_target_flavor_banner(),
     })
 
 

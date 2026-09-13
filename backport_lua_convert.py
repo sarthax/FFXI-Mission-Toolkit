@@ -28,6 +28,59 @@ def load_map() -> dict:
     return json.loads(MAP_PATH.read_text(encoding="utf-8"))
 
 
+# ---------------------------------------------------------------------------
+# Target-flavor fingerprinting -- added 2026-09-13 after an entire session's worth of DSP binding
+# work was silently checked against D:\Claude\landsandboat-reference (LandSandBoat/server, a modern
+# sol2-based fork) instead of the real production target D:\Claude\old-dsp-reference
+# (DarkstarProject/darkstar, 2017-vintage, Lunar-binding-library style) -- nothing in this toolkit
+# ever confirmed the configured DSP checkout actually matched what a conversion assumed. This closes
+# that gap: fingerprint the real checkout by its binding-registration style before trusting `target`.
+# ---------------------------------------------------------------------------
+TARGET_FINGERPRINTS = {
+    # (relative path to check, marker string, flavor name)
+    "old_dsp_reference": ("src/map/lua/lua_baseentity.cpp", "LUNAR_DECLARE_METHOD"),
+    "landsandboat": ("src/map/lua/lua_base_entity.cpp", "SOL_REGISTER"),
+}
+
+
+class TargetMismatchError(RuntimeError):
+    """Raised when a DSP checkout's real binding style doesn't match the `target` a conversion
+    was about to run with -- never silently proceed past this, it's exactly the class of mistake
+    that cost an entire session's worth of rework once already."""
+
+
+def detect_target_flavor(dsp_root: Path) -> str | None:
+    """Returns "old_dsp_reference", "landsandboat", or None (neither fingerprint file/marker
+    found -- an unrecognized or not-yet-checked-out target, not necessarily an error, but callers
+    should treat None as "cannot confirm" rather than assuming either flavor)."""
+    for flavor, (rel_path, marker) in TARGET_FINGERPRINTS.items():
+        path = dsp_root / rel_path
+        if path.exists():
+            try:
+                if marker in path.read_text(encoding="utf-8", errors="replace"):
+                    return flavor
+            except OSError:
+                continue
+    return None
+
+
+def verify_target_or_raise(dsp_root: Path, target: str) -> None:
+    """Call this before running a conversion pass against a real checkout (drivers, the GUI page)
+    -- NOT called automatically inside convert() itself, since convert() operates on raw text with
+    no filesystem access of its own. Raises TargetMismatchError on a confirmed mismatch; silently
+    passes if the flavor can't be determined at all (missing checkout, unrecognized structure) --
+    that's a different, separately-visible failure (the file read itself will fail downstream), not
+    something this check should mask by being falsely confident either way."""
+    detected = detect_target_flavor(dsp_root)
+    if detected is not None and detected != target:
+        raise TargetMismatchError(
+            f"Refusing to convert: {dsp_root} fingerprints as '{detected}' "
+            f"(found {TARGET_FINGERPRINTS[detected][1]} in {TARGET_FINGERPRINTS[detected][0]}), "
+            f"but this conversion was about to run with target='{target}'. "
+            f"Pass target='{detected}' instead, or double-check dsp_root is what you think it is."
+        )
+
+
 LOCAL_TABLE_DECL_RE = re.compile(r"^[ \t]*local\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*\{\}\s*$", re.MULTILINE)
 ID_REQUIRE_RE = re.compile(r'local\s+ID\s*=\s*require\("([^"]+)"\)')
 

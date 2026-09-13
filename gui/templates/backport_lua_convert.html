@@ -6,10 +6,29 @@
 <p class="muted">Converts one Topaz Lua file's source (entity-table style, <code>tpz.*</code>
 namespaces) to the target DSP checkout's own convention (global-function style, bare-global
 namespaces), applying every mapping confirmed in
-<code>data/dsp_namespace_map.json</code>. Built during the Nyzul Isle Investigation backport
-package -- extend that map file (not this page) when a new zone surfaces an unmapped
-<code>tpz.*</code> family; check real DSP source the way every existing entry was checked, don't
-guess a mapping just to clear a flag.</p>
+<code>data/dsp_namespace_map.json</code>. Extend that map file (not this page) when a new zone
+surfaces an unmapped <code>tpz.*</code> family; check real DSP source the way every existing
+entry was checked, don't guess a mapping just to clear a flag.</p>
+
+{% if dsp_root %}
+  {% if flavor == target %}
+  <p class="muted">Configured DSP checkout (<code class="chip">{{ dsp_root }}</code>) fingerprints as
+    <span style="color:var(--accent);">{{ flavor }}</span> -- matches the selected target below.</p>
+  {% elif flavor %}
+  <div class="warn" style="color:var(--red);">Configured DSP checkout (<code class="chip">{{ dsp_root }}</code>)
+    fingerprints as <strong>{{ flavor }}</strong>, but the target selected below is
+    <strong>{{ target }}</strong> -- this is the exact mistake that cost an entire session's worth of
+    rework once already (see <code>reports/old_dsp_reference_correction_2026-09-13.md</code>). Pick
+    "{{ flavor }}" below, or double-check the DSP path on the <a class="inline" href="/settings">Settings</a> page.</div>
+  {% else %}
+  <p class="muted" style="color:var(--red);">Configured DSP checkout (<code class="chip">{{ dsp_root }}</code>)
+    doesn't fingerprint as either known flavor (old_dsp_reference/landsandboat) -- can't confirm it
+    matches the target below.</p>
+  {% endif %}
+{% else %}
+<p class="muted">No DSP checkout configured on the <a class="inline" href="/settings">Settings</a>
+  page -- target-flavor mismatch can't be checked automatically.</p>
+{% endif %}
 
 <form method="post" style="display:flex; flex-direction:column; gap:10px;">
   <label>Topaz Lua source
@@ -18,13 +37,20 @@ guess a mapping just to clear a flag.</p>
   </label>
 
   <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end;">
+    <label>Target
+      <br><select name="target">
+        <option value="old_dsp_reference" {% if target == "old_dsp_reference" %}selected{% endif %}>old_dsp_reference (Valhalla's real production target -- DarkstarProject/darkstar)</option>
+        <option value="landsandboat" {% if target == "landsandboat" %}selected{% endif %}>landsandboat (LandSandBoat/server -- NOT this project's real target, reference only)</option>
+      </select>
+    </label>
     <label>Zone id-table name (optional)
-      <br><input type="text" name="zone_table" value="{{ zone_table }}" placeholder="e.g. NyzulIsle">
+      <br><input type="text" name="zone_table" value="{{ zone_table }}" placeholder="e.g. Periqia">
     </label>
     <label>Zone id-table shape
       <br><select name="id_shape">
-        <option value="nested" {% if id_shape == "nested" %}selected{% endif %}>nested (one wrapping table, e.g. NyzulIsle.text.X / .npcs.X / .mobs[N].X)</option>
-        <option value="flat" {% if id_shape == "flat" %}selected{% endif %}>flat bare globals (TextIDs.lua style, ID.text.X -> bare X only)</option>
+        <option value="flat" {% if id_shape == "flat" %}selected{% endif %}>flat bare globals (old_dsp_reference's real TextIDs.lua convention, ID.text.X -> bare X only)</option>
+        <option value="nested" {% if id_shape == "nested" %}selected{% endif %}>nested (one wrapping table, e.g. Periqia.text.X / .npc.X / .mob[N].X -- old_dsp_reference's own zone-table shape)</option>
+        <option value="zones_table" {% if id_shape == "zones_table" %}selected{% endif %}>zones_table (landsandboat-only shape_C, zones[xi.zone.X] -- do not use for old_dsp_reference)</option>
       </select>
     </label>
     <label>require() path rename (optional)
@@ -33,10 +59,11 @@ guess a mapping just to clear a flag.</p>
     <button type="submit">Convert</button>
   </div>
   <p class="muted" style="margin:0;">Check the target zone's existing DSP checkout first (does
-    <code>scripts/zones/&lt;Zone&gt;/IDs.lua</code> or <code>TextIDs.lua</code> already exist, and
-    which shape does it use?) rather than guessing -- see
-    <code>per_zone_id_file_conventions</code> in the namespace map for the two known shapes and how
-    to tell them apart.</p>
+    <code>scripts/zones/&lt;Zone&gt;/TextIDs.lua</code>, a bare zone-table <code>IDs.lua</code>, or
+    neither already exist, and which shape does it use?) rather than guessing -- see
+    <code>per_zone_id_file_conventions</code> / <code>namespace_family_index_2026-09-13</code> /
+    <code>per_zone_flat_id_shape_findings_2026-09-13</code> in the namespace map for the known
+    shapes and how to tell them apart.</p>
 </form>
 
 {% if ran %}
