@@ -2,6 +2,12 @@
 .openwebui_key
 toolkit_config.txt
 
+# Purely mechanical dumps regenerable via backport_binding_index.py --build -- no hand curation,
+# unlike dsp_namespace_map.json, so no reason to track diffs of a full re-grep every time either
+# codebase changes.
+data/topaz_binding_index.json
+data/old_dsp_reference_binding_index.json
+
 # Generated/cached state -- see DIST_PACKAGING.md's "Confirmed: strip" list
 ffxi_zone_database.db
 ffxi_zone_database-pre-reset-*.db

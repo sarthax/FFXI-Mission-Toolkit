@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""
+r"""
 backport_binding_audit.py -- mechanizes the manual process used repeatedly this session to find
 every invented/mis-cased binding (SetAutoAttackEnabled, addCharVar, getShortID, setName,
 PrintToPlayer, goToEntity, untargetable...): extract every `:method(` call in a package's lua-dsp/
@@ -16,6 +16,13 @@ Target flavor is auto-detected via backport_lua_convert.detect_target_flavor() -
 guess if the checkout doesn't fingerprint as one of the two known flavors, since a binding
 "confirmed" against the wrong codebase is exactly the mistake this project already made once.
 
+Uses backport_binding_index.py's cached DSP-side index (data/old_dsp_reference_binding_index.json)
+when present, instead of re-grepping every src/map/lua/*.cpp file on every single lookup --
+falls back to a live grep automatically if the cache is missing (e.g. --build was never run, or
+a different --dsp-root is passed than what the cache was built from) so this never silently goes
+stale-but-fast; run `py -3 backport_binding_index.py --build` after any real DSP engine change
+to refresh it.
+
 Usage:
     py -3 backport_binding_audit.py mission-packages/periqia_missions_1-4/lua-dsp
     py -3 backport_binding_audit.py --all-packages
@@ -27,6 +34,8 @@ import argparse
 import re
 import sys
 from pathlib import Path
+
+import backport_binding_index as bbi
 
 import backport_lua_convert as blc
 
@@ -78,12 +87,38 @@ def _lua_binding_files(dsp_root: Path) -> list[Path]:
     return sorted(d.glob("*.cpp")) if d.is_dir() else []
 
 
-def check_binding(name: str, dsp_root: Path, flavor: str) -> tuple[bool, str]:
-    """Returns (found, evidence_or_reason). Searches every real class-binding source file for the
-    detected flavor's own registration macro/call -- LUNAR_DECLARE_METHOD(AnyClass,name) for
-    old_dsp_reference, SOL_REGISTER("name", for landsandboat -- not tied to one specific class,
-    since a real binding for an entity-shaped call site can legitimately live on CLuaInstance,
-    CLuaZone, etc. instead of CLuaBaseEntity."""
+def _load_cached_index(dsp_root: Path, flavor: str) -> dict[str, list[dict]] | None:
+    """Returns the cached index if it exists AND was built from this same dsp_root (checked via
+    one real file's path recorded in the index -- a cache built from a different checkout at the
+    same flavor would silently give wrong answers otherwise, e.g. a differently-patched fork).
+    None if unusable for any reason -- callers fall back to a live grep, never guess."""
+    if flavor != "old_dsp_reference":
+        return None  # only old-dsp-reference has a cache built by default; landsandboat is reference-only
+    try:
+        index = bbi.load_index(bbi.DSP_INDEX_PATH)
+    except FileNotFoundError:
+        return None
+    # Sanity check: every recorded file path should actually exist under dsp_root.
+    for entries in list(index.values())[:3]:
+        if entries and not (dsp_root / entries[0]["file"]).exists():
+            return None
+    return index
+
+
+def check_binding(name: str, dsp_root: Path, flavor: str, cached_index: dict | None = None) -> tuple[bool, str]:
+    """Returns (found, evidence_or_reason). Uses the cached index (backport_binding_index.py) when
+    available and confirmed built from this same dsp_root; otherwise searches every real
+    class-binding source file directly for the detected flavor's own registration macro/call --
+    LUNAR_DECLARE_METHOD(AnyClass,name) for old_dsp_reference, SOL_REGISTER("name", for
+    landsandboat -- not tied to one specific class, since a real binding for an entity-shaped call
+    site can legitimately live on CLuaInstance, CLuaZone, etc. instead of CLuaBaseEntity."""
+    if cached_index is not None:
+        entries = cached_index.get(name)
+        if entries:
+            e = entries[0]
+            return True, f"{e['file']}:{e['line']} (cached index)"
+        return False, f"no matching registration for '{name}' found in cached index ({bbi.DSP_INDEX_PATH.name})"
+
     if flavor == "old_dsp_reference":
         pattern = re.compile(r"LUNAR_DECLARE_METHOD\(\s*\w+\s*,\s*" + re.escape(name) + r"\s*\)")
     else:
@@ -99,10 +134,11 @@ def check_binding(name: str, dsp_root: Path, flavor: str) -> tuple[bool, str]:
 
 
 def audit_package(pkg_lua_dsp: Path, dsp_root: Path, flavor: str) -> dict:
+    cached_index = _load_cached_index(dsp_root, flavor)
     calls = collect_method_calls(pkg_lua_dsp)
     confirmed, missing = [], []
     for name, files in sorted(calls.items()):
-        found, evidence = check_binding(name, dsp_root, flavor)
+        found, evidence = check_binding(name, dsp_root, flavor, cached_index=cached_index)
         (confirmed if found else missing).append((name, evidence, files))
     return {"confirmed": confirmed, "missing": missing}
 

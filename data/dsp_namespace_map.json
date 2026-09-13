@@ -368,6 +368,18 @@
       "confidence": "confirmed_via_new_cpp_addition",
       "source": "old-dsp-reference/src/map/lua/lua_baseentity.cpp (dsp-engine-changes/forcerespawn/), ported from Topaz's own forceRespawn() (lua_baseentity.cpp:4145)",
       "evidence": "Did not exist in old-dsp-reference at all (confirmed absent) -- ported directly using pieces already real and in-use in this codebase (CEntityUpdatePacket/ENTITY_DESPAWN/ENTITY_SPAWN/UPDATE_ALL_MOB/PAI->QueueAction, same pattern this file's own hideNPC() already uses). No Lua-side rename needed once compiled. See dsp-engine-changes/forcerespawn/README.md."
+    },
+    "getNPCs": {
+      "dsp_name": "getNpcs",
+      "confidence": "confirmed",
+      "source": "backport_binding_index.py --diff, case-only match: Topaz SOL_REGISTER(\"getNPCs\",...) vs old-dsp-reference LUNAR_DECLARE_METHOD(CLuaInstance,getNpcs)",
+      "evidence": "Not currently used by any package in this project -- found by the new full-inventory diff, documented proactively so a future zone that calls it doesn't need to rediscover this by hand."
+    },
+    "leaveGame": {
+      "dsp_name": "leavegame",
+      "confidence": "confirmed",
+      "source": "backport_binding_index.py --diff, case-only match",
+      "evidence": "Not currently used by any package in this project -- found by the new full-inventory diff, documented proactively."
     }
   },
   "whole_call_renames": {
