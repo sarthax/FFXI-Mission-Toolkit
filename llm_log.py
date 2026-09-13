@@ -17,6 +17,7 @@ mechanism per tool.
 """
 from __future__ import annotations
 
+import json
 import sqlite3
 import time
 from datetime import datetime
@@ -40,10 +41,17 @@ def init_db(con: sqlite3.Connection):
             model TEXT NOT NULL,
             prompt TEXT NOT NULL,
             response TEXT,
-            error TEXT
+            error TEXT,
+            usage_json TEXT
         )
     """)
     con.commit()
+    # Additive migration for rows created before usage_json existed -- ALTER TABLE ADD COLUMN is a
+    # no-op error if it already exists, so probe first rather than try/except-swallow every call.
+    cols = {row[1] for row in con.execute("PRAGMA table_info(llm_call_log)").fetchall()}
+    if "usage_json" not in cols:
+        con.execute("ALTER TABLE llm_call_log ADD COLUMN usage_json TEXT")
+        con.commit()
 
 
 def _truncate(text: str | None) -> str | None:
@@ -55,31 +63,50 @@ def _truncate(text: str | None) -> str | None:
 
 
 def record(source: str, model: str, prompt: str, response: str | None = None,
-           error: str | None = None) -> None:
+           error: str | None = None, usage: dict | None = None) -> None:
     """`source` is a short caller-chosen label -- "manual" for the GUI's LLM Assistant page, or
     a tool's own name (e.g. "capture_log_summarizer") for automated calls. Exactly one of
     `response`/`error` should normally be set (a call either succeeded or it didn't), but both
-    being None just means "no response text to show," not an error in this function itself."""
+    being None just means "no response text to show," not an error in this function itself.
+    `usage` is llm_client.chat_full()'s own `usage` dict (response_token/s, total_duration,
+    prompt/completion token counts, etc.) -- stored verbatim as JSON, no schema assumed."""
     con = sqlite3.connect(str(DB_PATH))
     try:
         init_db(con)
         con.execute(
-            "INSERT INTO llm_call_log (created_at, source, model, prompt, response, error) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
-            (time.time(), source, model, _truncate(prompt), _truncate(response), _truncate(error)),
+            "INSERT INTO llm_call_log (created_at, source, model, prompt, response, error, usage_json) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (time.time(), source, model, _truncate(prompt), _truncate(response), _truncate(error),
+             json.dumps(usage) if usage else None),
         )
         con.commit()
     finally:
         con.close()
 
 
-def recent(limit: int = 50) -> list[dict]:
+def recent(limit: int = 50, source: str | None = None, model: str | None = None,
+           q: str | None = None) -> list[dict]:
+    """`source`/`model` filter on an exact match (both are short caller-chosen/model-id strings,
+    not free text); `q` is a simple case-insensitive substring match against prompt OR response,
+    for finding a specific past call once the log has more than a page's worth of rows."""
     con = sqlite3.connect(str(DB_PATH))
     try:
         init_db(con)
         con.row_factory = sqlite3.Row
+        clauses, params = [], []
+        if source:
+            clauses.append("source = ?")
+            params.append(source)
+        if model:
+            clauses.append("model = ?")
+            params.append(model)
+        if q:
+            clauses.append("(prompt LIKE ? OR response LIKE ?)")
+            params.extend([f"%{q}%", f"%{q}%"])
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        params.append(limit)
         rows = con.execute(
-            "SELECT * FROM llm_call_log ORDER BY id DESC LIMIT ?", (limit,)
+            f"SELECT * FROM llm_call_log {where} ORDER BY id DESC LIMIT ?", params
         ).fetchall()
         out = []
         for r in rows:
@@ -88,7 +115,27 @@ def recent(limit: int = 50) -> list[dict]:
             # (gui_server.py formats every other displayed timestamp in Python before the
             # template ever sees it, e.g. its own "ts_display"/"mtime" fields).
             d["created_display"] = datetime.fromtimestamp(d["created_at"]).strftime("%Y-%m-%d %H:%M:%S")
+            usage = json.loads(d["usage_json"]) if d.get("usage_json") else {}
+            tok_s = usage.get("response_token/s")
+            total_s = usage.get("total_duration")
+            d["usage_display"] = (
+                f"{tok_s:.0f} tok/s, {total_s / 1e9:.1f}s" if tok_s and total_s
+                else (f"{tok_s:.0f} tok/s" if tok_s else "")
+            )
             out.append(d)
         return out
+    finally:
+        con.close()
+
+
+def distinct_sources() -> list[str]:
+    """Every source label seen so far -- populates the log page's filter dropdown without
+    hardcoding "manual" plus whatever automated tool names happen to exist."""
+    con = sqlite3.connect(str(DB_PATH))
+    try:
+        init_db(con)
+        return [r[0] for r in con.execute(
+            "SELECT DISTINCT source FROM llm_call_log ORDER BY source"
+        ).fetchall()]
     finally:
         con.close()

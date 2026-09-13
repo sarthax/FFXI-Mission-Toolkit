@@ -13,6 +13,7 @@ Run:
     py -3 gui_server.py
     then open http://localhost:8420
 """
+import base64
 import colorsys
 import csv
 import gzip
@@ -1444,32 +1445,47 @@ async def sql_convert_submit(request: Request):
     })
 
 
+# Files this large take a while even on the faster 7B models, and gemma4:26b longer still --
+# a longer timeout than llm_client's own 60s default so a real (if slow) response isn't cut off
+# and mistaken for a dead server. Bumped further per-call below when a file/image is attached.
+LLM_PAGE_TIMEOUT = 180
+
+# Hard cap on how much of a file gets pasted into a prompt -- past this, a summary request just
+# turns into "the model reads half a truncated file," not a real summary. Anything longer should
+# be chunked by a real automated tool (not built yet), not force-fed here.
+LLM_FILE_SUMMARY_MAX_CHARS = 40000
+
+
+def _llm_models(base_url: str) -> tuple[list[dict], str | None]:
+    if not llm_client.has_api_key():
+        return [], "No API key configured -- set one on the Settings page first."
+    try:
+        return llm_client.list_models(base_url=base_url), None
+    except llm_client.LLMClientError as e:
+        return [], str(e)
+
+
 @app.get("/llm", response_class=HTMLResponse)
-def llm_page(request: Request):
+def llm_page(request: Request, source: str = "", model_filter: str = "", q: str = ""):
     """Manual "pass off a prompt, see the response" page for the local Open WebUI/Ollama
-    instance, plus a visible log of every call made through llm_client.py -- both this page's own
-    manual calls and anything an automated tool records via llm_log.record(). Never assume the
-    server is reachable/configured: a missing key or a down server degrades to an inline error,
-    not a crashed page."""
+    instance, plus a visible, filterable log of every call made through llm_client.py -- both
+    this page's own manual calls and anything an automated tool records via llm_log.record().
+    Never assume the server is reachable/configured: a missing key or a down server degrades to
+    an inline error, not a crashed page."""
     con = get_con()
     values = settings_mod.get_all(con)
     con.close()
 
-    models: list[dict] = []
-    models_error = None
-    if llm_client.has_api_key():
-        try:
-            models = llm_client.list_models(base_url=values["llm_base_url"])
-        except llm_client.LLMClientError as e:
-            models_error = str(e)
-    else:
-        models_error = "No API key configured -- set one on the Settings page first."
+    models, models_error = _llm_models(values["llm_base_url"])
 
     return templates.TemplateResponse(request, "llm.html", {
         "values": values, "models": models, "models_error": models_error,
-        "prompt": "", "system": "", "model": values["llm_default_model"],
-        "response": None, "call_error": None, "ran": False,
-        "log": llm_log.recent(), "draft_tag": llm_client.LLM_DRAFT_TAG,
+        "prompt": "", "system": "", "file_path": "", "model": values["llm_default_model"],
+        "response": None, "usage_display": None, "call_error": None, "ran": False,
+        "log": llm_log.recent(source=source or None, model=model_filter or None, q=q or None),
+        "log_sources": llm_log.distinct_sources(),
+        "filter_source": source, "filter_model": model_filter, "filter_q": q,
+        "draft_tag": llm_client.LLM_DRAFT_TAG,
     })
 
 
@@ -1478,38 +1494,174 @@ async def llm_submit(request: Request):
     form = await request.form()
     prompt = form.get("prompt", "")
     system = form.get("system", "").strip() or None
+    file_path = form.get("file_path", "").strip()
+    image_upload = form.get("image")
+
     con = get_con()
     values = settings_mod.get_all(con)
     con.close()
     model = form.get("model", "").strip() or values["llm_default_model"]
 
-    response_text = None
-    call_error = None
-    if not prompt.strip():
-        call_error = "Prompt is required."
-    else:
-        try:
-            response_text = llm_client.chat(
-                prompt, model=model, system=system, base_url=values["llm_base_url"],
-            )
-            llm_log.record("manual", model, prompt, response=response_text)
-        except llm_client.LLMClientError as e:
-            call_error = str(e)
-            llm_log.record("manual", model, prompt, error=call_error)
+    # File-path summarize input: read the file server-side and fold it into the prompt, rather
+    # than requiring it be pasted by hand. A prompt AND a file both given appends the file's
+    # content after the user's own instructions instead of overwriting -- e.g. "focus on the
+    # mission-fail conditions" as the prompt, with the actual doc attached below it.
+    file_error = None
+    if file_path:
+        target = Path(file_path)
+        if not target.is_file():
+            file_error = f"Not a file: {file_path}"
+        else:
+            try:
+                content = target.read_text(encoding="utf-8", errors="replace")
+            except OSError as e:
+                file_error = f"Could not read {file_path}: {e}"
+            else:
+                truncated = len(content) > LLM_FILE_SUMMARY_MAX_CHARS
+                if truncated:
+                    content = content[:LLM_FILE_SUMMARY_MAX_CHARS]
+                file_block = (
+                    f"\n\n--- {target.name}{' (truncated)' if truncated else ''} ---\n{content}"
+                )
+                prompt = (prompt.strip() + file_block) if prompt.strip() else (
+                    f"Summarize the following file ({target.name}) for someone unfamiliar with it:"
+                    f"{file_block}"
+                )
 
-    models: list[dict] = []
-    models_error = None
-    try:
-        models = llm_client.list_models(base_url=values["llm_base_url"])
-    except llm_client.LLMClientError as e:
-        models_error = str(e)
+    image_b64 = None
+    if image_upload and getattr(image_upload, "filename", ""):
+        image_bytes = await image_upload.read()
+        if image_bytes:
+            image_b64 = base64.b64encode(image_bytes).decode("ascii")
+
+    response_text = None
+    usage_display = None
+    call_error = file_error
+    if not call_error:
+        if not prompt.strip():
+            call_error = "Prompt (or a file path) is required."
+        else:
+            try:
+                timeout = LLM_PAGE_TIMEOUT * (2 if image_b64 else 1)
+                result = llm_client.chat_full(
+                    prompt, model=model, system=system, base_url=values["llm_base_url"],
+                    timeout=timeout, image_b64=image_b64,
+                )
+                response_text = result["content"]
+                usage = result["usage"]
+                tok_s = usage.get("response_token/s")
+                total_s = usage.get("total_duration")
+                usage_display = (
+                    f"{tok_s:.0f} tok/s, {total_s / 1e9:.1f}s" if tok_s and total_s else ""
+                )
+                llm_log.record("manual", model, prompt, response=response_text, usage=usage)
+            except llm_client.LLMClientError as e:
+                call_error = str(e)
+                llm_log.record("manual", model, prompt, error=call_error)
+
+    models, models_error = _llm_models(values["llm_base_url"])
 
     return templates.TemplateResponse(request, "llm.html", {
         "values": values, "models": models, "models_error": models_error,
-        "prompt": prompt, "system": system or "", "model": model,
-        "response": response_text, "call_error": call_error, "ran": True,
-        "log": llm_log.recent(), "draft_tag": llm_client.LLM_DRAFT_TAG,
+        "prompt": prompt, "system": system or "", "file_path": file_path, "model": model,
+        "response": response_text, "usage_display": usage_display, "call_error": call_error,
+        "ran": True, "log": llm_log.recent(), "log_sources": llm_log.distinct_sources(),
+        "filter_source": "", "filter_model": "", "filter_q": "",
+        "draft_tag": llm_client.LLM_DRAFT_TAG,
     })
+
+
+@app.post("/llm/suggest-grep", response_class=HTMLResponse)
+async def llm_suggest_grep(request: Request):
+    """Quick action from the Lua Converter page: given one flagged line (a real tpz.* reference
+    the namespace map doesn't cover yet) plus whatever citation text the converter already
+    attached, ask the model to draft a suggestion for WHERE a human should go grep in the real
+    DSP source to resolve it -- never an answer, just a starting point, same draft-only boundary
+    as everything else in llm_client.py. Returns a small HTML fragment (not a full page) for the
+    calling page to insert inline next to the flagged row."""
+    form = await request.form()
+    line_text = form.get("line_text", "").strip()
+    citation = form.get("citation", "").strip()
+    if not line_text:
+        return HTMLResponse('<p class="muted" style="color:var(--red);">No line text given.</p>')
+
+    con = get_con()
+    values = settings_mod.get_all(con)
+    con.close()
+
+    prompt = (
+        "A Topaz FFXI server Lua line failed to convert to our DSP target automatically:\n\n"
+        f"{line_text}\n\n"
+        + (f"Known context: {citation}\n\n" if citation else "")
+        + "In one or two sentences, suggest what a real DSP C++/Lua source file and function name "
+          "to grep for might plausibly be, to find the equivalent. Be concise. Do not claim "
+          "certainty -- this is only a starting point for a human to go verify against real source."
+    )
+    try:
+        model = values["llm_default_model"]
+        text = llm_client.chat(prompt, model=model, base_url=values["llm_base_url"], timeout=LLM_PAGE_TIMEOUT)
+        llm_log.record("lua_converter_suggest_grep", model, prompt, response=text)
+    except llm_client.LLMClientError as e:
+        return HTMLResponse(f'<p class="muted" style="color:var(--red);">error: {e}</p>')
+
+    return HTMLResponse(
+        f'<div class="warn" style="border-left-color:var(--accent); background:var(--accent-soft); margin-top:6px;">'
+        f'<strong>{llm_client.LLM_DRAFT_TAG}</strong><br>{text}</div>'
+    )
+
+
+@app.post("/llm/summarize-capture/{capture_id}", response_class=HTMLResponse)
+def llm_summarize_capture(capture_id: int):
+    """Quick action from the capture detail page: builds a plain-text summary of this capture's
+    already-indexed structured data (no raw file read needed -- it's all in the DB) and asks the
+    model for a one-paragraph human-readable summary. Useful for a capture with a long/unclear
+    label, or before deciding whether it's worth watching the linked video."""
+    con = get_con()
+    row = con.execute("SELECT * FROM captures WHERE capture_id=?", (capture_id,)).fetchone()
+    if not row:
+        con.close()
+        return HTMLResponse('<p class="muted" style="color:var(--red);">Capture not found.</p>')
+    cap = dict(row)
+    tags = build_capture_index.get_capture_tags(con, capture_id)
+    hp_events = con.execute(
+        "SELECT mob_name, hp_low, hp_high FROM capture_hp_events WHERE capture_id=? ORDER BY seq LIMIT 30",
+        (capture_id,)).fetchall()
+    n_history = con.execute("SELECT COUNT(*) FROM capture_npc_history WHERE capture_id=?", (capture_id,)).fetchone()[0]
+    n_events = con.execute("SELECT COUNT(*) FROM capture_events WHERE capture_id=?", (capture_id,)).fetchone()[0]
+    values = settings_mod.get_all(con)
+    con.close()
+
+    zones = json.loads(cap["zones"]) if cap.get("zones") else []
+    lines = [
+        f"label: {cap.get('capture_label')}",
+        f"content_type: {cap.get('content_type')}",
+        f"mission: {cap.get('mission_name') or '(unresolved)'}",
+        f"zones: {', '.join(zones) or '(none recorded)'}",
+        f"capturer: {cap.get('capturer') or '(unknown)'}",
+        f"tags: {', '.join(tags) or '(none)'}",
+        f"npc history deltas: {n_history}, real events: {n_events}",
+    ]
+    if hp_events:
+        lines.append("HP events (mob, hp% range): " + "; ".join(
+            f"{h['mob_name']} {h['hp_low']}-{h['hp_high']}%" for h in hp_events
+        ))
+    prompt = (
+        "Here is metadata for one FFXI Assault-mission gameplay capture. Write a single, plain "
+        "one-paragraph summary a developer could read to quickly understand what this capture "
+        "shows, without restating every field verbatim:\n\n" + "\n".join(lines)
+    )
+
+    try:
+        model = values["llm_default_model"]
+        text = llm_client.chat(prompt, model=model, base_url=values["llm_base_url"], timeout=LLM_PAGE_TIMEOUT)
+        llm_log.record("capture_summarize", model, prompt, response=text)
+    except llm_client.LLMClientError as e:
+        return HTMLResponse(f'<p class="muted" style="color:var(--red);">error: {e}</p>')
+
+    return HTMLResponse(
+        f'<div class="warn" style="border-left-color:var(--accent); background:var(--accent-soft); margin-top:6px;">'
+        f'<strong>{llm_client.LLM_DRAFT_TAG}</strong><br>{text}</div>'
+    )
 
 
 ENTITY_PAGE_SIZE = 50

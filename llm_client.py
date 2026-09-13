@@ -125,6 +125,45 @@ def list_models(base_url: str | None = None) -> list[dict]:
     return result.get("data", [])
 
 
+def chat_full(
+    prompt: str,
+    model: str = DEFAULT_MODEL,
+    system: str | None = None,
+    temperature: float = 0.2,
+    timeout: float = 60.0,
+    base_url: str | None = None,
+    image_b64: str | list[str] | None = None,
+) -> dict:
+    """One-shot chat completion, returning the full result: {"content": str, "usage": dict}.
+    `usage` is Open WebUI's own reported stats for the call (response_token/s, total_duration,
+    prompt/completion token counts, etc.) -- whatever it sent back, passed through as-is so a
+    caller can show real timing/cost info without this module guessing at a schema.
+
+    `image_b64`: one or more base64-encoded images (no data: URI prefix) to attach for a
+    vision-capable model (see list_models()' "vision" capability tag) -- passed through in
+    Ollama's own multimodal shape (`images` on the user message), which is what Open WebUI's
+    `/api/chat/completions` proxies to Ollama as-is. Ignored (not an error) if the model doesn't
+    support vision -- Ollama itself decides whether to use it."""
+    user_message: dict = {"role": "user", "content": prompt}
+    if image_b64:
+        user_message["images"] = [image_b64] if isinstance(image_b64, str) else list(image_b64)
+
+    messages = []
+    if system:
+        messages.append({"role": "system", "content": system})
+    messages.append(user_message)
+
+    payload = {"model": model, "messages": messages, "stream": False, "temperature": temperature}
+    result = _request("/api/chat/completions", payload, timeout=timeout, base_url=base_url)
+
+    try:
+        content = result["choices"][0]["message"]["content"]
+    except (KeyError, IndexError) as e:
+        raise LLMClientError(f"Unexpected response shape: {result}") from e
+
+    return {"content": content, "usage": result.get("usage", {})}
+
+
 def chat(
     prompt: str,
     model: str = DEFAULT_MODEL,
@@ -134,19 +173,10 @@ def chat(
     base_url: str | None = None,
 ) -> str:
     """One-shot chat completion. Returns the assistant's raw text -- caller decides whether/how
-    to tag it as a draft (see LLM_DRAFT_TAG) before it touches any real file."""
-    messages = []
-    if system:
-        messages.append({"role": "system", "content": system})
-    messages.append({"role": "user", "content": prompt})
-
-    payload = {"model": model, "messages": messages, "stream": False, "temperature": temperature}
-    result = _request("/api/chat/completions", payload, timeout=timeout, base_url=base_url)
-
-    try:
-        return result["choices"][0]["message"]["content"]
-    except (KeyError, IndexError) as e:
-        raise LLMClientError(f"Unexpected response shape: {result}") from e
+    to tag it as a draft (see LLM_DRAFT_TAG) before it touches any real file. Thin wrapper around
+    chat_full() for callers that don't need usage stats or image input."""
+    return chat_full(prompt, model=model, system=system, temperature=temperature,
+                      timeout=timeout, base_url=base_url)["content"]
 
 
 def main():
