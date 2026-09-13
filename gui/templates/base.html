@@ -1,0 +1,118 @@
+<!doctype html>
+<html data-theme="{{ current_theme() }}">
+<head>
+<meta charset="utf-8">
+<title>{% block title %}Mission Toolkit{% endblock %}</title>
+<style>
+  :root {
+    --bg: #f4f6f8; --surface: #fff; --border: #d5dbe0; --ink: #1c2530; --muted: #667080;
+    --accent: #2f6f6a; --accent-soft: #e2efee; --red: #b33f3f; --red-soft: #f6e3e3;
+    --amber: #9a6a12; --amber-soft: #f4ecd8; --code-bg: #eef1f3;
+  }
+  html { color-scheme: light; }
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #14181d; --surface: #1c2229; --border: #333c46; --ink: #dde3e9; --muted: #8b96a3;
+    --accent: #5fb3ac; --accent-soft: #1f3634; --red: #e08080; --red-soft: #3a2323;
+    --amber: #d9ab5c; --amber-soft: #3a3020; --code-bg: #232a32;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; font: 14px/1.5 -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--ink);
+         display: flex; flex-direction: column; overflow: hidden; }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .navrow { padding: 8px 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .navrow + .navrow { border-top: 1px solid var(--border); }
+  .navrow .navlabel { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+                       font-weight: 700; margin-right: 2px; }
+  header a { color: var(--ink); text-decoration: none; font-weight: 600; }
+  header a:hover { color: var(--accent); }
+  header .brand, header .brand-spacer { display: inline-flex; align-items: center; width: 132px; flex-shrink: 0; }
+  header .brand { font-weight: 700; color: var(--accent); gap: 6px; }
+  header .brand img { height: 22px; width: 22px; }
+  .theme-toggle { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
+                   padding: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--surface);
+                   color: var(--ink); cursor: pointer; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  header .brand-spacer { font-size: 10px; color: var(--muted); font-weight: 600; }
+  main { max-width: 980px; margin: 0 auto; padding: 24px 20px 60px; width: 100%; flex: 1; overflow-y: auto; }
+  h1 { font-size: 20px; margin: 0 0 14px; }
+  h2 { font-size: 15px; margin: 22px 0 8px; }
+  form.search { display: flex; gap: 8px; margin-bottom: 18px; }
+  input[type=text], select { padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background: var(--surface); color: var(--ink); }
+  input[type=text]::placeholder { color: var(--muted); }
+  select option { background: var(--surface); color: var(--ink); }
+  input[type=text] { flex: 1; }
+  button { padding: 7px 14px; border: 1px solid var(--accent); background: var(--accent); color: #fff; border-radius: 6px; cursor: pointer; font-size: 14px; }
+  button:hover { opacity: 0.9; }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+  table { border-collapse: collapse; width: 100%; min-width: 480px; background: var(--surface); }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; font-size: 13px; }
+  th { background: var(--code-bg); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  tr:last-child td { border-bottom: none; }
+  code, .mono { font-family: ui-monospace, Consolas, monospace; }
+  .chip { display: inline-block; background: var(--code-bg); border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; font-size: 12px; }
+  .pill { display: inline-block; border-radius: 100px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+  .pill.match { background: var(--accent-soft); color: var(--accent); }
+  .pill.mismatch { background: var(--red-soft); color: var(--red); }
+  .pill.no_real_entry { background: var(--amber-soft); color: var(--amber); }
+  .pill.unannotated { background: var(--code-bg); color: var(--muted); }
+  .warn { background: var(--amber-soft); border-left: 3px solid var(--amber); padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 10px 0; font-size: 13px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 24px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+  .stat .n { font-size: 22px; font-weight: 700; color: var(--accent); }
+  .stat .l { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+  .muted { color: var(--muted); }
+  a.zonelink { color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <div class="navrow">
+    <a href="/" class="brand"><img src="/static/valhalla_logo.png" alt=""> ValhallaXI</a>
+    <span class="navlabel">Tools</span>
+    <a href="/captures">Captures</a>
+    <a href="/captures/query">Capture Query</a>
+    <a href="/entity">Entity Lookup</a>
+    <a href="/wiki">Wiki Compiler</a>
+    <a href="/packets">Packet Decoder</a>
+    <a href="/llm">LLM Assistant</a>
+    <span style="margin-left:auto; display:flex; gap:16px; align-items:center;">
+      <form method="post" action="/theme/toggle" style="display:contents;">
+        <button type="submit" class="theme-toggle" title="{{ 'Switch to light theme' if current_theme() == 'dark' else 'Switch to dark theme' }}">
+          {% if current_theme() == "dark" %}
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8L6 18M18 6l1.8-1.8"/></svg>
+          {% else %}
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z"/></svg>
+          {% endif %}
+        </button>
+      </form>
+      <a href="/roadmap">Roadmap</a>
+      <a href="/help">Help</a>
+      <a href="/settings">Settings</a>
+    </span>
+  </div>
+  <div class="navrow">
+    <span class="brand-spacer">Mission Toolkit</span>
+    <span class="navlabel">Research</span>
+    <a href="/dialog">Dialog Search</a>
+    <a href="/zones">Browse by Zone</a>
+    <a href="/gaps">Zero-Position / Unregistered</a>
+    <a href="/sql">SQL Index</a>
+    <a href="/events">Events / CSIDs</a>
+    <a href="/missions">Assault Missions</a>
+    <a href="/keyitems">Key Items</a>
+    <a href="/items">Item Browser</a>
+    {% if backport_enabled() %}
+    <span class="navlabel">Backport</span>
+    <a href="/iddrift">ID Drift</a>
+    <a href="/backport/lua-convert">Lua Converter</a>
+    <a href="/backport/sql-convert">SQL Converter</a>
+    {% endif %}
+  </div>
+</header>
+<main>
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

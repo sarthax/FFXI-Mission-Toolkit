@@ -75,8 +75,29 @@ def _load_api_key() -> str:
     )
 
 
-def _request(path: str, payload: dict | None = None, timeout: float = 60.0) -> dict:
-    url = f"{BASE_URL}{path}"
+def save_api_key(key: str) -> None:
+    """Writes the key to KEY_FILE (gitignored). Overwrites whatever was there before -- callers
+    (e.g. the Settings page) should treat an empty/whitespace-only submission as "leave the
+    existing key alone" and simply not call this, rather than calling it with an empty string."""
+    key = key.strip()
+    if not key:
+        raise LLMClientError("Refusing to save an empty API key.")
+    KEY_FILE.write_text(key, encoding="utf-8")
+
+
+def has_api_key() -> bool:
+    """True if a key is resolvable right now (env var or KEY_FILE) -- lets a caller show
+    "configured: yes/no" without ever reading the key's actual value back out for display."""
+    try:
+        _load_api_key()
+        return True
+    except LLMClientError:
+        return False
+
+
+def _request(path: str, payload: dict | None = None, timeout: float = 60.0,
+             base_url: str | None = None) -> dict:
+    url = f"{(base_url or BASE_URL).rstrip('/')}{path}"
     key = _load_api_key()
     headers = {"Authorization": f"Bearer {key}"}
     data = None
@@ -97,10 +118,10 @@ def _request(path: str, payload: dict | None = None, timeout: float = 60.0) -> d
         ) from e
 
 
-def list_models() -> list[dict]:
+def list_models(base_url: str | None = None) -> list[dict]:
     """Every model Open WebUI currently reports (loaded via Ollama or otherwise). Each entry's
     `id` is what `chat(model=...)` expects."""
-    result = _request("/api/models")
+    result = _request("/api/models", base_url=base_url)
     return result.get("data", [])
 
 
@@ -110,6 +131,7 @@ def chat(
     system: str | None = None,
     temperature: float = 0.2,
     timeout: float = 60.0,
+    base_url: str | None = None,
 ) -> str:
     """One-shot chat completion. Returns the assistant's raw text -- caller decides whether/how
     to tag it as a draft (see LLM_DRAFT_TAG) before it touches any real file."""
@@ -119,7 +141,7 @@ def chat(
     messages.append({"role": "user", "content": prompt})
 
     payload = {"model": model, "messages": messages, "stream": False, "temperature": temperature}
-    result = _request("/api/chat/completions", payload, timeout=timeout)
+    result = _request("/api/chat/completions", payload, timeout=timeout, base_url=base_url)
 
     try:
         return result["choices"][0]["message"]["content"]
