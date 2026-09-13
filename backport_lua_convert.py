@@ -352,6 +352,20 @@ def convert(text: str, zone_table: str | None = None, id_shape: str | None = Non
       target="old_dsp_reference".
     id_file_hint: "IDs" or "TextIDs" -- rewrites the require() path's trailing segment to match
       what DSP actually calls the file for this zone.
+
+    2026-09-13 namespace full-remediation note: data/dsp_namespace_map.json's new
+    "namespace_family_index_2026-09-13" section is the authoritative tpz.*/xi.* family catalogue
+    for target=old_dsp_reference (supersedes simple_families/reshaped_families above for this
+    target), but is NOT YET wired into this function's automatic conversion path below -- the
+    families it documents as "fixed" were fixed by hand across the 8 packages' lua-dsp/ trees in
+    that pass, not by re-running this converter. A future session should decide whether to extend
+    _convert_simple_families()/this docstring's data-driven path to read that section directly, or
+    leave per-family fixes manual (most remaining tpz.*/xi.* hits are one-off, not a repeating
+    mechanical pattern this generic converter was designed for). The one exception is the
+    zone-id "flat" shape (id_shape="flat", already implemented below) -- confirmed 2026-09-13 by
+    reading old-dsp-reference/scripts/zones/Ilrusi_Atoll/TextIDs.lua directly to be the REAL shape
+    for Ilrusi_Atoll/Mamool_Ja_Training_Grounds/Aht_Urhgan_Whitegate and mercenary_rank_promotions's
+    other 6 zones -- that restructuring should use this existing "flat" path, not new tooling.
     """
     if ns_map is None:
         ns_map = load_map()
