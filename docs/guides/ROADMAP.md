@@ -305,6 +305,31 @@ what's done and lay out what's next per the user's request to track future featu
     0x0CA, 0x0CC, 0x0D3, 0x0DC, 0x0E1, 0x0E2, 0x0E4, 0x0F4, 0x110, 0x113, 0x0FA), each verified
     against real LandSandBoat struct source and, where real capture data existed, decode-validated.
     Two opcodes (0x00A Zone In, 0x0B4 Config) remain genuinely unresolved — see Known Gaps below.
+- **2026-09-14: `backport_package.py` — end-to-end package backport orchestrator, plus a bundled
+  turnkey `backport-workspace/` scaffold**:
+  - Chains together every already-built per-file/per-table backport tool into one run over a whole
+    package folder instead of four separate manual invocations: converts every `.lua` file
+    (`backport_lua_convert.py`) and every `.sql` file (`backport_sql_convert.py`), then runs the
+    binding audit, the Lua sanity check, and the SQL id-collision check (against real indexed DSP
+    data) over the whole converted result, and writes one consolidated `BACKPORT_REPORT.md`.
+    `--verify-only` re-runs just the 3 checks against an already-converted `lua-dsp/` without
+    re-converting.
+  - Validated against a real, large package (`nyzul_isle_investigation`, 10 SQL tables + dozens of
+    Lua files): correctly reproduced the already-known `mob_groups`/`mob_skill_lists` server-global
+    id-collision findings from the original Nyzul backport, and surfaced genuine new
+    case-mismatch collisions (`Friars_Lantern`/`Friar_s_Lantern`, `Puk`/`Puk_WW`,
+    `homing_missile`/`pw_homing_missile`) in the same single-report run.
+  - Explicit, documented non-goals (see the script's own docstring): does not auto-discover which
+    files belong to a mission across zone/npc/mob/ability layers (a harder problem this project
+    already tried and rejected automating once, per `package_mission.py`'s own docstring) --
+    operates on a package folder someone has already assembled. Does not auto-detect per-file
+    zone-table/id-shape for multi-zone packages -- one `--zone-table`/`--id-shape` setting applies
+    to the whole run, same as manually repeating the GUI converter's settings per file.
+  - New `backport-workspace/` folder bundled into the repo (real `mission-packages/<name>/{lua,
+    lua-dsp}`, `dsp-engine-changes/<name>/{README,.diff}`, `reports/` shapes, one small real
+    already-verified example package, zero real Assault project content) -- `settings.
+    get_backport_root()` now defaults to it instead of returning `None`, so the `--all-packages`
+    CLI tools (and `backport_package.py`) work turnkey on a fresh clone with zero configuration.
 
 ## Known Gaps (blocked on real data, not effort)
 
