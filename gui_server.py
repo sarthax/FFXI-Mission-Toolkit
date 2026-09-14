@@ -1842,10 +1842,12 @@ async def llm_submit(request: Request):
                 )
 
     image_b64 = None
+    image_mime = "image/png"
     if image_upload and getattr(image_upload, "filename", ""):
         image_bytes = await image_upload.read()
         if image_bytes:
             image_b64 = base64.b64encode(image_bytes).decode("ascii")
+            image_mime = getattr(image_upload, "content_type", None) or "image/png"
 
     response_text = None
     usage_display = None
@@ -1874,7 +1876,7 @@ async def llm_submit(request: Request):
                 else:
                     result = llm_client.chat_full(
                         prompt, model=model, system=system, base_url=values["llm_base_url"],
-                        timeout=timeout, image_b64=image_b64,
+                        timeout=timeout, image_b64=image_b64, image_mime=image_mime,
                     )
                 response_text = result["content"]
                 usage = result["usage"]

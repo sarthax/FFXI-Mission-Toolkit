@@ -155,6 +155,7 @@ def chat_full(
     timeout: float = 60.0,
     base_url: str | None = None,
     image_b64: str | list[str] | None = None,
+    image_mime: str | list[str] = "image/png",
 ) -> dict:
     """One-shot chat completion, returning the full result: {"content": str, "usage": dict}.
     `usage` is Open WebUI's own reported stats for the call (response_token/s, total_duration,
@@ -162,13 +163,24 @@ def chat_full(
     caller can show real timing/cost info without this module guessing at a schema.
 
     `image_b64`: one or more base64-encoded images (no data: URI prefix) to attach for a
-    vision-capable model (see list_models()' "vision" capability tag) -- passed through in
-    Ollama's own multimodal shape (`images` on the user message), which is what Open WebUI's
-    `/api/chat/completions` proxies to Ollama as-is. Ignored (not an error) if the model doesn't
-    support vision -- Ollama itself decides whether to use it."""
-    user_message: dict = {"role": "user", "content": prompt}
+    vision-capable model (see list_models()' "vision" capability tag). Real bug found live
+    2026-09-14: this used to pass images via Ollama's own native multimodal shape (`images` on
+    the user message) -- that's silently ignored by Open WebUI's `/api/chat/completions`, which is
+    an OpenAI-COMPATIBLE endpoint, not a raw Ollama proxy, and expects the OpenAI vision shape
+    instead (`content` as an array with an `image_url` data: URI entry). Verified live: the
+    `images`-field version gets "there is no image attached" from a real vision model; the
+    `image_url` version correctly identifies the image's real content. `image_mime` (default
+    image/png) sets the data: URI's declared type -- pass the real upload's content-type when
+    known (e.g. "image/jpeg") rather than assuming PNG."""
     if image_b64:
-        user_message["images"] = [image_b64] if isinstance(image_b64, str) else list(image_b64)
+        images = [image_b64] if isinstance(image_b64, str) else list(image_b64)
+        mimes = [image_mime] * len(images) if isinstance(image_mime, str) else list(image_mime)
+        content: list[dict] = [{"type": "text", "text": prompt}]
+        for img, mime in zip(images, mimes):
+            content.append({"type": "image_url", "image_url": {"url": f"data:{mime};base64,{img}"}})
+        user_message: dict = {"role": "user", "content": content}
+    else:
+        user_message = {"role": "user", "content": prompt}
 
     messages = []
     if system:
