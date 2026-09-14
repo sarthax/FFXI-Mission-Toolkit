@@ -1722,15 +1722,22 @@ To call a tool, respond with ONLY a single JSON object on one line, nothing else
 Do NOT call list_tables as your first move for an ordinary question -- it dumps 100+ table names
 and wastes your limited number of tool calls. Instead, go straight to query_sql against whichever
 of these real, commonly-useful tables actually fits the question (call describe_table first only
-if you're unsure of a column name):
+if you're unsure of a column name -- it ALSO returns any known real relationship to other tables,
+e.g. calling it on mob_groups tells you dropid links to mob_droplist.dropid, so use it before
+guessing at a join column or giving up on a multi-table question):
 - dsp_mob_pools (poolid, name, norm_name, familyid, modelid) -- one row per mob TYPE (not spawn).
+- dsp_mob_groups (zoneid, groupid, poolid, name, respawntime, minLevel, maxLevel, dropid) -- one
+  row per spawned mob GROUP; links a zone+pool to its level range and real drop table.
 - dsp_mob_skills (mob_skill_id, mob_anim_id, name, norm_name, aoe, distance, ...) -- one row per
   mob skill definition, matched by `name` (e.g. WHERE name = 'firespit').
 - dsp_mob_spawn_points (mobid, mobname, norm_name, groupid, pos_x/y/z, pos_rot) -- one row per
-  actual spawned mob instance in the world.
+  actual spawned mob instance in the world; groupid links to mob_groups.groupid.
 - dsp_npc_list (npcid, name, norm_name, zoneid, pos_x/y/z, entityFlags) -- non-mob NPCs.
 - dsp_item_basic (itemid, name, norm_name, stackSize, ...) -- items.
-- dsp_mob_droplist (dropid, dropType, groupId, groupRate, itemId, itemRate) -- drop tables.
+- dsp_mob_droplist (dropid, dropType, groupId, groupRate, itemId, itemRate) -- drop tables;
+  itemId links to item_basic.itemid.
+- zones (zoneid, name, geometry_mapid, geometry_rom_path) -- the ONE shared, unprefixed table
+  (every other table above has real dsp_/lsb_/topaz_/sql_ copies; zones does not).
 Prefix swap for a different source: lsb_*, topaz_*, sql_* mirror the same dsp_* shapes above for
 the other three data sources this toolkit cross-references.
 
