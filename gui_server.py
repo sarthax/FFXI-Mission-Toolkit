@@ -53,6 +53,9 @@ import build_lsb_index
 import backport_lua_convert
 import backport_sql_convert
 import backport_binding_index
+import backport_binding_audit
+import backport_lua_sanity_check
+import backport_package
 import build_dsp_index
 import build_topaz_index
 import llm_client
@@ -1562,6 +1565,119 @@ async def sql_convert_submit(request: Request):
         "warnings": result.warnings, "collisions": collisions, "ran": True,
         "tables": sorted(schema_map.keys() - {"_readme"}), "map_path": str(backport_sql_convert.MAP_PATH),
     })
+
+
+def _backport_packages_root() -> Path:
+    return settings_mod.get_backport_root() / "mission-packages"
+
+
+def _list_backport_packages() -> list[str]:
+    """Every subfolder of the packages root that has a real lua/ tree -- same convention
+    backport_binding_audit.py --all-packages / backport_lua_sanity_check.py --all-packages glob
+    for (*/lua-dsp), just checking the SOURCE side here since a package may not be converted yet."""
+    root = _backport_packages_root()
+    if not root.is_dir():
+        return []
+    return sorted(p.name for p in root.iterdir() if p.is_dir() and (p / "lua").is_dir())
+
+
+@app.get("/backport/package", response_class=HTMLResponse)
+def backport_package_form(request: Request):
+    """Point-and-run end-to-end package backport: pick a package folder already sitting under
+    backport_root/mission-packages/, run backport_package.py's full convert+verify pipeline
+    against it, see the consolidated report inline -- the GUI front end for the same tool a user
+    would otherwise run from a terminal after editing a package's Lua/SQL, so a change can be
+    re-checked for gaps (missing bindings, flagged conversions, real SQL id collisions) without
+    leaving the browser. Still per-package, not a cross-package/cross-zone dependency crawl."""
+    return templates.TemplateResponse(request, "backport_package.html", {
+        "packages": _list_backport_packages(), "packages_root": str(_backport_packages_root()),
+        "package": "", "target": "old_dsp_reference", "id_shape": "flat", "zone_table": "",
+        "id_file_hint": "", "verify_only": False, "ran": False, "report": None, "error": None,
+        **_target_flavor_banner(),
+    })
+
+
+@app.post("/backport/package", response_class=HTMLResponse)
+async def backport_package_submit(request: Request):
+    form = await request.form()
+    package = (form.get("package") or "").strip()
+    target = form.get("target") or "old_dsp_reference"
+    id_shape = form.get("id_shape") or "flat"
+    zone_table = (form.get("zone_table") or "").strip() or None
+    id_file_hint = (form.get("id_file_hint") or "").strip() or None
+    verify_only = form.get("verify_only") == "on"
+
+    ctx = {
+        "packages": _list_backport_packages(), "packages_root": str(_backport_packages_root()),
+        "package": package, "target": target, "id_shape": id_shape, "zone_table": zone_table or "",
+        "id_file_hint": id_file_hint or "", "verify_only": verify_only, "ran": True, "report": None,
+        "error": None, **_target_flavor_banner(),
+    }
+
+    packages_root = _backport_packages_root()
+    package_dir = packages_root / package if package else None
+    if not package or not package_dir.is_dir():
+        ctx["error"] = f"No such package under {packages_root}: {package!r}"
+        return templates.TemplateResponse(request, "backport_package.html", ctx)
+
+    dsp_root = settings_mod.get_dsp_root()
+    if dsp_root is None:
+        ctx["error"] = "No DSP checkout configured -- set it on the Settings page first."
+        return templates.TemplateResponse(request, "backport_package.html", ctx)
+    flavor = backport_lua_convert.detect_target_flavor(dsp_root)
+    if flavor is None:
+        ctx["error"] = f"{dsp_root} does not fingerprint as either known DSP flavor -- check the path on Settings."
+        return templates.TemplateResponse(request, "backport_package.html", ctx)
+    if flavor != target:
+        ctx["error"] = f"Configured DSP checkout fingerprints as '{flavor}', but target is '{target}' -- pick '{flavor}' above."
+        return templates.TemplateResponse(request, "backport_package.html", ctx)
+
+    lua_src, lua_dst = package_dir / "lua", package_dir / "lua-dsp"
+    sql_src, sql_dst = package_dir / "sql", package_dir / "sql-dsp"
+
+    lua_result = None
+    sql_result = None
+    if not verify_only:
+        if lua_src.is_dir():
+            lua_result = backport_package.convert_lua_tree(
+                lua_src, lua_dst, target, zone_table, id_shape, id_file_hint)
+        schema_map = backport_sql_convert.load_schema_map()
+        sql_result = backport_package.convert_sql_tree(sql_src, sql_dst, schema_map)
+    elif not lua_dst.is_dir():
+        ctx["error"] = f"Verify-only needs an existing {lua_dst} -- run a real conversion first."
+        return templates.TemplateResponse(request, "backport_package.html", ctx)
+
+    binding_result = backport_binding_audit.audit_package(lua_dst, dsp_root, flavor) if lua_dst.is_dir() else \
+        {"confirmed": [], "missing": []}
+    sanity_result = backport_lua_sanity_check.check_package(lua_dst) if lua_dst.is_dir() else \
+        {"syntax_errors": [], "undeclared_globals": []}
+
+    collision_results = {}
+    if sql_result and sql_result["ids_by_table"]:
+        collision_results = backport_package.run_id_collision_checks(
+            sql_result["ids_by_table"], sql_result["id_to_name_by_table"],
+            backport_sql_convert.load_schema_map())
+
+    report_md = backport_package.build_report(
+        package_dir, target, dsp_root, flavor, lua_result, sql_result,
+        binding_result, sanity_result, collision_results)
+    (package_dir / "BACKPORT_REPORT.md").write_text(report_md, encoding="utf-8", newline="\n")
+
+    overall_clean = (
+        (lua_result is None or lua_result["total_flags"] == 0)
+        and not binding_result["missing"]
+        and not sanity_result["syntax_errors"]
+        and not sanity_result["undeclared_globals"]
+        and not any(r.get("name_mismatch") for r in collision_results.values())
+    )
+
+    ctx["report"] = {
+        "lua_result": lua_result, "sql_result": sql_result, "binding_result": binding_result,
+        "sanity_result": sanity_result, "collision_results": collision_results,
+        "overall_clean": overall_clean, "report_path": str(package_dir / "BACKPORT_REPORT.md"),
+        "report_md": report_md,
+    }
+    return templates.TemplateResponse(request, "backport_package.html", ctx)
 
 
 # Files this large take a while even on the faster 7B models, and gemma4:26b longer still --

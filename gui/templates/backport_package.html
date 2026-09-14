@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}Backport Package{% endblock %}
+
+{% block content %}
+<h1>Backport Package</h1>
+<p class="muted">Runs the full <code>backport_package.py</code> pipeline against one package folder
+under <code class="chip">{{ packages_root }}</code>: converts every <code>.lua</code>/<code>.sql</code>
+file, then runs the binding audit, Lua sanity check, and SQL id-collision check over the whole
+result, and writes one consolidated <code>BACKPORT_REPORT.md</code> next to the package. Run this
+again any time after editing a package's Lua or SQL to re-check for gaps -- missing bindings,
+flagged conversions, real SQL id collisions -- without leaving the browser. Still per-package, not
+a cross-package/cross-zone dependency crawl (see the script's own docstring for the honest
+boundary on what it does and doesn't automate).</p>
+
+{% if dsp_root %}
+  {% if flavor == target %}
+  <p class="muted">Configured DSP checkout (<code class="chip">{{ dsp_root }}</code>) fingerprints as
+    <span style="color:var(--accent);">{{ flavor }}</span> -- matches the selected target below.</p>
+  {% elif flavor %}
+  <div class="warn" style="color:var(--red);">Configured DSP checkout (<code class="chip">{{ dsp_root }}</code>)
+    fingerprints as <strong>{{ flavor }}</strong>, but the target selected below is
+    <strong>{{ target }}</strong>. Pick "{{ flavor }}" below, or double-check the DSP path on the
+    <a class="inline" href="/settings">Settings</a> page.</div>
+  {% else %}
+  <p class="muted" style="color:var(--red);">Configured DSP checkout (<code class="chip">{{ dsp_root }}</code>)
+    doesn't fingerprint as either known flavor -- can't confirm it matches the target below.</p>
+  {% endif %}
+{% else %}
+<p class="muted">No DSP checkout configured on the <a class="inline" href="/settings">Settings</a> page.</p>
+{% endif %}
+
+{% if not packages %}
+<div class="warn">No packages found under <code class="chip">{{ packages_root }}</code> (a
+  subfolder with its own <code>lua/</code> tree). Point <code>backport_root</code> on the
+  <a class="inline" href="/settings">Settings</a> page at a checkout that has one, or use the
+  bundled <code>backport-workspace/mission-packages/_example_godmode/</code> default.</div>
+{% endif %}
+
+<form method="post" style="display:flex; flex-direction:column; gap:10px;">
+  <label>Package
+    <br><select name="package">
+      <option value="">-- select --</option>
+      {% for p in packages %}
+      <option value="{{ p }}" {% if p == package %}selected{% endif %}>{{ p }}</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end;">
+    <label>Target
+      <br><select name="target">
+        <option value="old_dsp_reference" {% if target == "old_dsp_reference" %}selected{% endif %}>old_dsp_reference (Valhalla's real production target)</option>
+        <option value="landsandboat" {% if target == "landsandboat" %}selected{% endif %}>landsandboat</option>
+      </select>
+    </label>
+    <label>Zone id-table name (optional, applies to every .lua file)
+      <br><input type="text" name="zone_table" value="{{ zone_table }}" placeholder="e.g. Periqia">
+    </label>
+    <label>Zone id-table shape
+      <br><select name="id_shape">
+        <option value="flat" {% if id_shape == "flat" %}selected{% endif %}>flat bare globals</option>
+        <option value="nested" {% if id_shape == "nested" %}selected{% endif %}>nested</option>
+        <option value="zones_table" {% if id_shape == "zones_table" %}selected{% endif %}>zones table</option>
+      </select>
+    </label>
+    <label>require() path rename (optional)
+      <br><input type="text" name="id_file_hint" value="{{ id_file_hint }}" placeholder="IDs or TextIDs">
+    </label>
+    <label style="display:flex; align-items:center; gap:6px;">
+      <input type="checkbox" name="verify_only" {% if verify_only %}checked{% endif %}>
+      Verify-only (skip conversion, re-run checks against existing lua-dsp/)
+    </label>
+    <button type="submit">Run</button>
+  </div>
+</form>
+
+{% if error %}
+<div class="warn" style="color:var(--red);">{{ error }}</div>
+{% endif %}
+
+{% if ran and report %}
+<h2>Report -- {{ package }}</h2>
+<p>
+  {% if report.overall_clean %}
+  <span class="badge badge-ok">CLEAN</span> nothing flagged, no missing bindings, no sanity errors, no real id collisions.
+  {% else %}
+  <span class="badge badge-empty">NEEDS REVIEW</span> see below for what to check by hand.
+  {% endif %}
+  <span class="muted">Written to <code class="chip">{{ report.report_path }}</code></span>
+</p>
+
+{% if report.lua_result is not none %}
+<h3>Lua conversion</h3>
+<p>{{ report.lua_result.converted|length }} file(s) converted,
+  <span class="badge {{ 'badge-ok' if report.lua_result.total_flags == 0 else 'badge-empty' }}">{{ report.lua_result.total_flags }}</span>
+  line(s) flagged across {{ report.lua_result.flagged|length }} file(s).</p>
+{% if report.lua_result.flagged %}
+<div class="table-wrap"><table>
+  <tr><th>File</th><th>Flagged lines</th></tr>
+  {% for rel, count in report.lua_result.flagged %}
+  <tr><td class="mono">{{ rel }}</td><td class="mono">{{ count }}</td></tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+{% endif %}
+
+{% if report.sql_result is not none and report.sql_result.converted %}
+<h3>SQL conversion</h3>
+<p>{{ report.sql_result.converted|length }} file(s) converted.</p>
+{% if report.sql_result.warnings %}
+<p><span class="badge badge-empty">{{ report.sql_result.warnings|length }}</span> warning(s):</p>
+<div class="table-wrap"><table>
+  <tr><th>File</th><th>Table</th><th>Reason</th></tr>
+  {% for w in report.sql_result.warnings %}
+  <tr><td class="mono">{{ w.file }}</td><td class="mono">{{ w.table }}</td><td class="muted">{{ w.reason }}</td></tr>
+  {% endfor %}
+</table></div>
+{% else %}
+<p><span class="badge badge-ok">0</span> warnings.</p>
+{% endif %}
+{% endif %}
+
+<h3>Binding audit</h3>
+<p><span class="badge badge-ok">{{ report.binding_result.confirmed|length }}</span> confirmed,
+  <span class="badge {{ 'badge-ok' if not report.binding_result.missing else 'badge-empty' }}">{{ report.binding_result.missing|length }}</span> missing.</p>
+{% if report.binding_result.missing %}
+<div class="table-wrap"><table>
+  <tr><th>Binding</th><th>Reason</th><th>Used in</th></tr>
+  {% for name, reason, files in report.binding_result.missing %}
+  <tr><td class="mono">:{{ name }}(</td><td class="muted">{{ reason }}</td>
+    <td class="mono">{{ files[:3]|map(attribute="name")|join(", ") }}{% if files|length > 3 %} (+{{ files|length - 3 }} more){% endif %}</td></tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+
+<h3>Lua sanity check</h3>
+{% if not report.sanity_result.syntax_errors and not report.sanity_result.undeclared_globals %}
+<p><span class="badge badge-ok">clean</span> no syntax errors, no undeclared global references.</p>
+{% else %}
+{% if report.sanity_result.syntax_errors %}
+<p><span class="badge badge-empty">{{ report.sanity_result.syntax_errors|length }}</span> syntax error(s):</p>
+<div class="table-wrap"><table>
+  <tr><th>File</th><th>Error</th></tr>
+  {% for f, err in report.sanity_result.syntax_errors %}
+  <tr><td class="mono">{{ f.name }}</td><td class="muted">{{ err }}</td></tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+{% if report.sanity_result.undeclared_globals %}
+<p><span class="badge badge-empty">{{ report.sanity_result.undeclared_globals|length }}</span> undeclared global reference(s):</p>
+<div class="table-wrap"><table>
+  <tr><th>File</th><th>Global</th></tr>
+  {% for f, name in report.sanity_result.undeclared_globals %}
+  <tr><td class="mono">{{ f.name }}</td><td class="mono">{{ name }}</td></tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+{% endif %}
+
+{% if report.collision_results %}
+<h3>SQL id-collision check (against real indexed DSP data)</h3>
+{% for table, c in report.collision_results.items() %}
+<h4><code class="chip">{{ table }}</code> -&gt; <code class="chip">{{ c.checked_table }}</code></h4>
+{% if c.note %}<p class="muted">{{ c.note }}</p>{% endif %}
+{% if c.same_entity %}
+<p><span class="badge badge-ok">{{ c.same_entity|length }}</span> id(s) already exist in DSP under the SAME name (safe).</p>
+{% endif %}
+{% if c.name_mismatch %}
+<p><span class="badge badge-empty">{{ c.name_mismatch|length }}</span> id(s) collide under a DIFFERENT name -- real conflict, needs a human decision:</p>
+<div class="table-wrap"><table>
+  <tr><th>Id</th><th>DSP's existing name</th><th>This package's name</th></tr>
+  {% for m in c.name_mismatch %}
+  <tr><td class="mono">{{ m.id }}</td><td class="mono">{{ m.dsp_name }}</td><td class="mono">{{ m.topaz_name }}</td></tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+{% if c.unclassified %}
+<p><span class="badge badge-empty">{{ c.unclassified|length }}</span> id(s) collide but couldn't be name-classified (no name column to compare) -- treat as needing a look.</p>
+{% endif %}
+{% endfor %}
+{% endif %}
+
+<h3>Raw report</h3>
+<textarea readonly rows="16" style="width:100%; font-family:monospace; font-size:0.85em;">{{ report.report_md }}</textarea>
+{% endif %}
+
+<style>
+.badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 3px; font-size: 0.85em; font-weight: 600; color: #fff; }
+.badge-ok { background: #1e7e34; }
+.badge-empty { background: #b33f3f; }
+</style>
+{% endblock %}
