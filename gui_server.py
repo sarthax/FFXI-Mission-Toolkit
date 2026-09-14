@@ -1714,13 +1714,39 @@ def _model_supports_vision(models: list[dict], model_id: str) -> bool:
 LLM_TOOLS_SYSTEM_PROMPT = (
     "You can use tools to answer questions using this project's real, live database. Available tools:\n"
     + "\n".join(f"- {desc}" for _fn, desc in llm_db_tools.TOOLS.values())
-    + "\n\nTo call a tool, respond with ONLY a single JSON object on one line, nothing else:\n"
-    '{"tool": "<name>", "args": {...}}\n\n'
-    "Once you have enough real information to answer, respond in plain text (not JSON) -- never "
-    "guess at data you haven't actually queried, and never claim a number/fact you didn't get "
-    "from a tool result."
+    + """
+
+To call a tool, respond with ONLY a single JSON object on one line, nothing else:
+{"tool": "<name>", "args": {...}}
+
+Do NOT call list_tables as your first move for an ordinary question -- it dumps 100+ table names
+and wastes your limited number of tool calls. Instead, go straight to query_sql against whichever
+of these real, commonly-useful tables actually fits the question (call describe_table first only
+if you're unsure of a column name):
+- dsp_mob_pools (poolid, name, norm_name, familyid, modelid) -- one row per mob TYPE (not spawn).
+- dsp_mob_skills (mob_skill_id, mob_anim_id, name, norm_name, aoe, distance, ...) -- one row per
+  mob skill definition, matched by `name` (e.g. WHERE name = 'firespit').
+- dsp_mob_spawn_points (mobid, mobname, norm_name, groupid, pos_x/y/z, pos_rot) -- one row per
+  actual spawned mob instance in the world.
+- dsp_npc_list (npcid, name, norm_name, zoneid, pos_x/y/z, entityFlags) -- non-mob NPCs.
+- dsp_item_basic (itemid, name, norm_name, stackSize, ...) -- items.
+- dsp_mob_droplist (dropid, dropType, groupId, groupRate, itemId, itemRate) -- drop tables.
+Prefix swap for a different source: lsb_*, topaz_*, sql_* mirror the same dsp_* shapes above for
+the other three data sources this toolkit cross-references.
+
+KNOWN REAL GAP, be honest about it: there is no indexed join table linking a specific mob to the
+list of mob skills it uses (mob_pools has no skill_list_id/similar column in what's queryable
+here) -- querying dsp_mob_skills can confirm a skill NAME/id exists, but cannot tell you WHICH
+mobs use it. If a question needs that link, say plainly that this isn't answerable from the
+tables available rather than answering vaguely (e.g. never say something like "used by multiple
+NPCs" unless you actually queried and named which ones).
+
+Once you have enough real information to answer, respond in plain text (not JSON). Never guess at
+data you haven't actually queried, never claim a number/fact you didn't get from a real tool
+result, and never pad out an answer with a vague-sounding claim to cover for a query that returned
+nothing or a question the schema can't actually answer -- say so plainly instead."""
 )
-MAX_TOOL_ROUNDS = 5
+MAX_TOOL_ROUNDS = 8
 _CODE_FENCE_RE = re.compile(r"^```(?:json)?\s*\n?(.*?)\n?```$", re.DOTALL)
 
 
