@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<h1>Settings</h1>
+{% if saved %}<div class="warn" style="border-left-color:var(--accent);background:var(--accent-soft);">Saved.</div>{% endif %}
+{% if backup_result %}
+<div class="warn" style="{{ 'border-left-color:var(--accent);background:var(--accent-soft);' if backup_ok else '' }}">{{ backup_result }}</div>
+{% endif %}
+
+<form method="post" action="/settings" id="settings-form">
+  <h2>Paths</h2>
+  <p class="muted">Consumed by every SQL/Lua-grepping tool (Entity Lookup, SQL Index, Wiki
+    Compiler, Zero-Position/Unregistered) and by zone geometry rendering (the path plot's
+    coordinate-aligned overlay). Each module reads its root once at startup, so a change here
+    takes effect the next time <code class="chip">gui_server.py</code> is restarted, not on the
+    next request.</p>
+  <div class="table-wrap" style="padding:14px; display:flex; flex-direction:column; gap:14px;">
+    <div>
+      <label class="muted">Topaz server root (e.g. C:\topaz) -- blank uses C:\topaz</label><br>
+      <input type="text" name="topaz_server_path" value="{{ values.topaz_server_path }}" style="width:100%; margin-top:6px;">
+    </div>
+    <div>
+      <label class="muted">Old-DSP server checkout root (optional -- a real pre-existing local checkout,
+        not something this toolkit downloads; blank disables the DSP cross-reference)</label><br>
+      <input type="text" name="dsp_server_path" value="{{ values.dsp_server_path }}" style="width:100%; margin-top:6px;">
+    </div>
+    <div>
+      <label class="muted">FFXI client install path -- blank auto-detects via the Windows registry</label><br>
+      <input type="text" name="ffxi_install_path" value="{{ values.ffxi_install_path }}" style="width:100%; margin-top:6px;">
+    </div>
+    <div>
+      <label class="muted">Backport checkout root (the repo holding mission-packages/, dsp-engine-changes/,
+        reports/ -- optional, only needed for the backport-package CLI tools; blank disables them)</label><br>
+      <input type="text" name="backport_root" value="{{ values.backport_root }}" style="width:100%; margin-top:6px;">
+    </div>
+  </div>
+
+  <h2>3D model viewer</h2>
+  <p class="muted">Entity Lookup's "view 3D model" link opens
+    <a class="inline" href="https://github.com/vekien/xi-model-viewer" target="_blank">xi-model-viewer</a>
+    at this URL with a real <code class="chip">?npc=&lt;file_id&gt;</code> deep link -- run its dev
+    server (<code class="chip">npm run dev</code> from <code class="chip">xi-model-viewer/ui</code>,
+    plus <code class="chip">py -3 scripts/serve.py</code> for the file-read backend) and it opens
+    that exact entity's model directly, no manual browsing.</p>
+  <div class="table-wrap" style="padding:14px;">
+    <label class="muted">xi-model-viewer URL -- blank uses its documented default dev port</label><br>
+    <input type="text" name="xi_model_viewer_url" value="{{ values.xi_model_viewer_url }}" style="width:100%; margin-top:6px;">
+  </div>
+
+  <h2>Local LLM (Open WebUI / Ollama)</h2>
+  <p class="muted">Used by the <a class="inline" href="/llm">LLM Assistant</a> page and any
+    automated tool built on <code class="chip">llm_client.py</code> for draft-only offload work
+    (summarizing, triage, first-pass suggestions) -- never for anything that writes an id/binding
+    directly into a shipped package without a human/grep verification pass after it. Generate the
+    API key yourself in Open WebUI's own UI (Settings &rarr; Account &rarr; API Keys) -- this
+    toolkit has no way to create one for you.</p>
+  <div class="table-wrap" style="padding:14px; display:flex; flex-direction:column; gap:14px;">
+    <div>
+      <label class="muted">Open WebUI base URL</label><br>
+      <input type="text" name="llm_base_url" value="{{ values.llm_base_url }}" style="width:100%; margin-top:6px;">
+    </div>
+    <div>
+      <label class="muted">Default model (see the <a class="inline" href="/llm">LLM Assistant</a> page for the full list currently loaded)</label><br>
+      <input type="text" name="llm_default_model" value="{{ values.llm_default_model }}" style="width:100%; margin-top:6px;">
+    </div>
+    <div>
+      <label class="muted">API key --
+        {% if llm_key_configured %}<span style="color:var(--accent);">configured</span>{% else %}<span style="color:var(--red);">not configured</span>{% endif %}
+        -- leave blank to keep the existing key; the real value is never shown back here</label><br>
+      <input type="password" name="llm_api_key" value="" autocomplete="off" placeholder="{{ 'unchanged' if llm_key_configured else 'sk-...' }}" style="width:100%; margin-top:6px;">
+    </div>
+  </div>
+
+  <div style="margin-top:18px;"><button type="submit">Save</button></div>
+</form>
+
+<h2 style="margin-top:24px;">Server</h2>
+<p class="muted">The port this toolkit listens on, plus controls for the server process itself.
+  A port change (or any Paths change above) only takes effect on the next restart -- Restart
+  does that for you without needing a terminal.</p>
+<div class="table-wrap" style="padding:14px; display:flex; flex-direction:column; gap:14px;">
+  <div>
+    <label class="muted">Port -- remember the URL you open in your browser changes too
+      (<code class="chip">http://127.0.0.1:&lt;port&gt;</code>)</label><br>
+    <input type="number" name="port" form="settings-form" value="{{ values.port }}" min="1" max="65535" style="width:140px; margin-top:6px;">
+  </div>
+  <div style="display:flex; gap:10px;">
+    <button type="submit" form="settings-form">Save</button>
+    <form method="post" action="/restart" onsubmit="return confirm('Restart the toolkit now? The page will reload itself once it\'s back up (usually a few seconds).');">
+      <button type="submit">Restart toolkit</button>
+    </form>
+    <form method="post" action="/shutdown" onsubmit="return confirm('Shut down the toolkit? You\'ll need to run start.bat again to bring it back.');">
+      <button type="submit" style="background:var(--red); border-color:var(--red);">Shut down toolkit</button>
+    </form>
+  </div>
+</div>
+
+<h2 style="margin-top:24px;">Database backups</h2>
+<p class="muted">A timestamped copy is taken automatically before any Rebuild click or CLI
+  rebuild (at most once per 5 minutes). Use these if a rebuild ever goes wrong -- restoring
+  replaces the live database with the chosen backup (a safety copy of the current state is taken
+  first, so this is itself undoable) and restarts the toolkit.</p>
+<div class="table-wrap" style="padding:14px;">
+  <div style="margin-bottom:14px;">
+    <label class="muted">Keep this many backups -- oldest are deleted past this count (each is a
+      full copy of the database, so this is a real disk-space knob)</label><br>
+    <input type="number" name="backup_retention_count" form="settings-form" value="{{ values.backup_retention_count }}" min="1" max="100" style="width:100px; margin-top:6px;">
+    <button type="submit" form="settings-form" style="margin-left:8px;">Save</button>
+  </div>
+  <form method="post" action="/backup/create" style="margin-bottom:14px;">
+    <button type="submit">Backup now</button>
+  </form>
+  {% if backups %}
+  <table>
+    <tr><th>file</th><th>created</th><th>size</th><th></th></tr>
+    {% for b in backups %}
+    <tr>
+      <td class="mono">{{ b.name }}</td>
+      <td>{{ b.mtime }}</td>
+      <td>{{ b.size_mb }} MB</td>
+      <td style="display:flex; gap:8px;">
+        <a class="chip" href="/backup/restore/{{ b.name }}/confirm">Restore</a>
+        <a class="chip" href="/backup/delete/{{ b.name }}/confirm" style="background:var(--red-soft); color:var(--red);">Delete</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">No backups yet -- one is taken automatically the first time you click a
+    Rebuild button, or click "Backup now" above.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}New Capture{% endblock %}
+{% block content %}
+<h1>New capture</h1>
+<p class="muted">Starts a real capture record with no source file yet -- you'll drop individual
+  logs/dbs (or a whole zip) onto it on the next page, one at a time or all at once, whenever you
+  have them.</p>
+
+{% if error %}<div class="warn">{{ error }}</div>{% endif %}
+
+<form method="post" action="/captures/new">
+  <div class="table-wrap" style="padding:14px; display:flex; flex-direction:column; gap:14px; max-width:520px;">
+    <div>
+      <label class="muted">Label</label><br>
+      <input type="text" name="label" placeholder="e.g. Nyzul Isle - manual test 1" style="width:100%; margin-top:6px;" required>
+    </div>
+    <div>
+      <label class="muted">Content type</label><br>
+      <select name="content_type" style="margin-top:6px;">
+        <option value="instances">instances</option>
+        <option value="overworld">overworld</option>
+        <option value="unclassified">unclassified</option>
+      </select>
+    </div>
+    <div>
+      <label class="muted">Mission name (optional)</label><br>
+      <input type="text" name="mission_name" placeholder="leave blank if unknown" style="width:100%; margin-top:6px;">
+    </div>
+    <div>
+      <label class="muted">Content categories (tag as many as apply)</label><br>
+      <div style="display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:6px;">
+        {% for t in all_tags %}
+        <label style="display:flex; align-items:center; gap:4px; font-weight:normal;">
+          <input type="checkbox" name="tags" value="{{ t }}"> {{ t }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:18px;"><button type="submit">Create</button></div>
+</form>
+{% endblock %}

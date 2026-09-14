@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Rebuild {{ row.label }}{% endblock %}
+{% block content %}
+<p><a class="inline" href="/">&larr; back to homepage</a></p>
+
+<h1>Rebuild <span class="chip mono">{{ row.label }}</span>?</h1>
+
+<div class="warn">
+  {{ row.rebuild_note }}
+  <br><br>
+  A real timestamped backup of the whole database is taken automatically first (see
+  <a class="inline" href="/settings">Settings &rarr; Database backups</a> to restore it if
+  anything looks wrong afterward) -- this only re-indexes {{ row.label }}'s own data, it never
+  touches any other source's tables.
+</div>
+
+<p class="muted">Currently: {{ row.detail }}</p>
+
+<form method="post" action="/rebuild/{{ source }}" style="margin-top:20px;">
+  <button type="submit">Yes, rebuild {{ row.label }}</button>
+  <a class="chip" href="/" style="margin-left:10px;">Cancel</a>
+</form>
+{% endblock %}

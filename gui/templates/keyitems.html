@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Key Items{% endblock %}
+
+{% macro pager() %}
+{% if total_pages > 1 %}
+<form method="get" style="display:flex;gap:8px;align-items:center;margin:12px 0;">
+  <input type="hidden" name="q" value="{{ q }}">
+  {% if page > 1 %}
+  <a class="chip" href="/keyitems?q={{ q }}&page={{ page - 1 }}">&larr; prev</a>
+  {% endif %}
+  <span class="muted">page</span>
+  <input type="number" name="page" value="{{ page }}" min="1" max="{{ total_pages }}" style="width:70px;">
+  <span class="muted">of {{ total_pages }}</span>
+  <button type="submit">Go</button>
+  {% if page < total_pages %}
+  <a class="chip" href="/keyitems?q={{ q }}&page={{ page + 1 }}">next &rarr;</a>
+  {% endif %}
+</form>
+{% endif %}
+{% endmacro %}
+
+{% block content %}
+<h1>Key Items</h1>
+<p class="muted">Real client name/description (from key-items.xml) cross-referenced against
+LSB's own <code class="chip">scripts/enum/key_item.lua</code> enum
+(<code class="chip">xi.keyItem</code>), with a readiness check and the real scripting constant
+name for each.</p>
+<form class="search" method="get">
+  <input type="text" name="q" value="{{ q }}" placeholder="search by name, e.g. Zeruhn">
+  <button type="submit">Search</button>
+</form>
+{% if q %}
+<p class="muted">{{ total }} result(s) for "{{ q }}" -- page {{ page }} of {{ total_pages }}</p>
+{{ pager() }}
+<div class="table-wrap"><table>
+  <tr><th>id</th><th>name</th><th>readiness</th><th>enum / scripting constant</th><th>description</th>
+    {% if backport_enabled() %}<th>Topaz readiness (backport)</th><th>Topaz enum constant</th>{% endif %}
+  </tr>
+  {% for r in rows %}
+  {% set rd = r.readiness %}
+  <tr>
+    <td class="mono">{{ r.keyitem_id }}</td>
+    <td>{{ r.name }}</td>
+    <td>
+      {% if rd.status == "clean" %}<span class="pill exists">clean</span>
+      {% elif rd.status == "drifted" %}<span class="pill gap">drifted</span>
+      {% elif rd.status == "wrong_name" %}<span class="pill mismatch">wrong name at this id</span>
+      {% else %}<span class="pill mismatch">missing</span>{% endif %}
+    </td>
+    <td class="mono">
+      {% if rd.status == "clean" %}
+        xi.keyItem.{{ rd.id_match }}
+      {% elif rd.status == "drifted" %}
+        xi.keyItem.{{ rd.name_match[1] }} <span class="muted">(real id {{ rd.name_match[0] }}, not {{ r.keyitem_id }})</span>
+      {% elif rd.status == "wrong_name" %}
+        xi.keyItem.{{ rd.id_match }} <span class="muted">(this id is really something else in LSB)</span>
+      {% else %}
+        <span class="muted">not implemented</span>
+      {% endif %}
+    </td>
+    <td>{{ r.description[:120] }}</td>
+    {% if r.topaz_readiness %}
+    {% set trd = r.topaz_readiness %}
+    <td>
+      {% if trd.status == "clean" %}<span class="pill exists">clean</span>
+      {% elif trd.status == "drifted" %}<span class="pill gap">drifted</span>
+      {% elif trd.status == "wrong_name" %}<span class="pill mismatch">wrong name at this id</span>
+      {% else %}<span class="pill mismatch">missing</span>{% endif %}
+    </td>
+    <td class="mono">
+      {% if trd.status == "clean" %}
+        tpz.keyItem.{{ trd.id_match }}
+      {% elif trd.status == "drifted" %}
+        tpz.keyItem.{{ trd.name_match[1] }} <span class="muted">(real id {{ trd.name_match[0] }}, not {{ r.keyitem_id }})</span>
+      {% elif trd.status == "wrong_name" %}
+        tpz.keyItem.{{ trd.id_match }} <span class="muted">(this id is really something else in Topaz)</span>
+      {% else %}
+        <span class="muted">not implemented</span>
+      {% endif %}
+    </td>
+    {% elif backport_enabled() %}
+    <td></td><td></td>
+    {% endif %}
+  </tr>
+  {% if r.capture_events %}
+  <tr>
+    <td></td>
+    <td colspan="{{ 6 if backport_enabled() else 4 }}">
+      <span class="muted">observed in real captures:</span>
+      {% for ev in r.capture_events %}
+      <a class="chip mono" href="/captures/{{ ev.capture_id }}" title="{{ ev.zone_name }} ({{ '%.1f'|format(ev.x) }}, {{ '%.1f'|format(ev.y) }}, {{ '%.1f'|format(ev.z) }})">#{{ ev.capture_id }} {{ ev.event_type }} @ {{ ev.zone_name }}</a>
+      {% endfor %}
+    </td>
+  </tr>
+  {% endif %}
+  {% endfor %}
+</table></div>
+{{ pager() }}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,506 @@
+=====================================================
+PACKETLYZER DB - MERGE CONFLICT REPORT
+Generated: 2026-07-27 19:17:27
+=====================================================
+
+These entries have a field from the server source at a position
+that already has a DIFFERENT field name in packetlyzer_db.xml.
+Review manually - the XML version may have custom/resolved names.
+
+Format: [section] opcode (desc)
+  SOURCE: type name @ pos N
+  XML:    type name @ pos N
+=====================================================
+
+[c2s] 0x00A (GP_CLI_COMMAND_LOGIN)
+  SOURCE: uint16 unknown00 @ pos 6
+  XML:    uint16 unknown06 @ pos 6
+
+  SOURCE: uint32 unknown01 @ pos 8
+  XML:    uint32 unknown08 @ pos 8
+
+[c2s] 0x011 (GP_CLI_COMMAND_ZONE_TRANSITION)
+  SOURCE: byte unknown00 @ pos 4
+  XML:    byte unknown05 @ pos 4
+
+  SOURCE: byte unknown01 @ pos 5
+  XML:    byte unknown06 @ pos 5
+
+[c2s] 0x015 (Standard Client Position)
+  SOURCE: uint16 facetarget @ pos 21
+  XML:    bits unused @ pos 21
+
+[c2s] 0x01A (Action Request)
+  SOURCE: uint32 CastMagic @ pos 12
+  XML:    uint16 param @ pos 12
+
+  SOURCE: uint32 Weaponskill @ pos 12
+  XML:    uint16 param @ pos 12
+
+  SOURCE: uint32 JobAbility @ pos 12
+  XML:    uint16 param @ pos 12
+
+  SOURCE: uint32 MonsterSkill @ pos 12
+  XML:    uint16 param @ pos 12
+
+  SOURCE: uint32 HomepointMenu @ pos 12
+  XML:    uint16 param @ pos 12
+
+  SOURCE: uint32 TractorMenu @ pos 12
+  XML:    uint16 param @ pos 12
+
+  SOURCE: uint32 BlockAid @ pos 12
+  XML:    uint16 param @ pos 12
+
+  SOURCE: uint32 Mount @ pos 12
+  XML:    uint16 param @ pos 12
+
+[c2s] 0x01C (GP_CLI_COMMAND_UNKNOWN)
+  SOURCE: uint16 unknown00 @ pos 4
+  XML:    uint16 unknown04 @ pos 4
+
+  SOURCE: uint32 unknown01 @ pos 8
+  XML:    uint32 unknown08 @ pos 8
+
+[c2s] 0x02B (GP_CLI_COMMAND_TRANSLATE)
+  SOURCE: uint32 ToIndex @ pos 8
+  XML:    a Name @ pos 8
+
+[c2s] 0x036 (Synth Start)
+  SOURCE: a ItemNumTbl @ pos 8
+  XML:    byte ingredient_count @ pos 8
+
+[c2s] 0x03B (GP_CLI_COMMAND_SUBCONTAINER)
+  SOURCE: uint32 unknown00 @ pos 24
+  XML:    uint32 Category3 @ pos 24
+
+  SOURCE: byte unknown01 @ pos 28
+  XML:    byte ItemIndex3 @ pos 28
+
+[c2s] 0x03C (GP_CLI_COMMAND_BLACK_LIST)
+  SOURCE: uint32 unknown00 @ pos 4
+  XML:    uint32 unknown04 @ pos 4
+
+  SOURCE: uint32 unknown01 @ pos 8
+  XML:    uint32 unknown08 @ pos 8
+
+  SOURCE: uint32 unknown02 @ pos 12
+  XML:    uint32 unknown0C @ pos 12
+
+  SOURCE: uint32 unknown03 @ pos 16
+  XML:    uint32 unknown10 @ pos 16
+
+  SOURCE: uint32 unknown04 @ pos 20
+  XML:    uint32 unknown14 @ pos 20
+
+  SOURCE: byte unknown05 @ pos 24
+  XML:    byte unknown18 @ pos 24
+
+[c2s] 0x03D (GP_CLI_COMMAND_BLACK_EDIT)
+  SOURCE: uint32 Data @ pos 4
+  XML:    uint32 ID @ pos 4
+
+  SOURCE: int8 Mode @ pos 8
+  XML:    a Name @ pos 8
+
+[c2s] 0x04E (Auction House)
+  SOURCE: int8 AucWorkIndex @ pos 8
+  XML:    uint16 item_id @ pos 8
+
+  SOURCE: uint32 Parcel @ pos 15
+  XML:    byte padding03 @ pos 15
+
+[c2s] 0x052 (GP_CLI_COMMAND_EQUIPSET_CHECK)
+  SOURCE: uint32 ItemChange @ pos 8
+  XML:    bits Category @ pos 8
+
+[c2s] 0x061 (GP_CLI_COMMAND_CLISTATUS)
+  SOURCE: byte unknown00 @ pos 4
+  XML:    byte unknown04 @ pos 4
+
+[c2s] 0x0A2 (GP_CLI_COMMAND_DICE)
+  SOURCE: uint32 unknown00 @ pos 4
+  XML:    uint32 unknown04 @ pos 4
+
+[c2s] 0x0B5 (Chat Outgoing)
+  SOURCE: byte unknown00 @ pos 5
+  XML:    byte gm_flag @ pos 5
+
+  SOURCE: a Str @ pos 6
+  XML:    t message @ pos 6
+
+[c2s] 0x0B6 (Tell Outgoing)
+  SOURCE: a Mes @ pos 21
+  XML:    t message @ pos 21
+
+[c2s] 0x0B7 (GP_CLI_COMMAND_ASSIST_CHANNEL)
+  SOURCE: byte unknown00 @ pos 5
+  XML:    byte unknown05 @ pos 5
+
+[c2s] 0x0C1 (GP_CLI_COMMAND_ALTER_EGO_POINTS)
+  SOURCE: uint16 CategoryIndex @ pos 4
+  XML:    uint16 Kind @ pos 4
+
+[c2s] 0x0C4 (GP_CLI_COMMAND_GROUP_COMLINK_ACTIVE)
+  SOURCE: byte ItemIndex @ pos 4
+  XML:    bits r @ pos 4
+
+  SOURCE: byte ActiveFlg @ pos 6
+  XML:    byte ItemIndex @ pos 6
+
+[c2s] 0x0D3 (GP_CLI_COMMAND_FAQ_GMCALL)
+  SOURCE: a Data @ pos 4
+  XML:    bits type @ pos 4
+
+[c2s] 0x0DB (GP_CLI_COMMAND_CONFIG_LANGUAGE)
+  SOURCE: byte unknown00 @ pos 4
+  XML:    byte unknown04 @ pos 4
+
+  SOURCE: byte unknown01 @ pos 5
+  XML:    byte unknown05 @ pos 5
+
+[c2s] 0x0DC (GP_CLI_COMMAND_CONFIG)
+  SOURCE: uint32 unused00 @ pos 4
+  XML:    bits InviteFlg @ pos 4
+
+  SOURCE: uint32 unused01 @ pos 8
+  XML:    uint32 unused00 @ pos 8
+
+  SOURCE: byte SetFlg @ pos 12
+  XML:    uint32 unused01 @ pos 12
+
+[c2s] 0x0E1 (GP_CLI_COMMAND_GET_LSMSG)
+  SOURCE: byte Category @ pos 4
+  XML:    bits unknown00 @ pos 4
+
+  SOURCE: byte ItemIndex @ pos 5
+  XML:    bits readLevel @ pos 5
+
+  SOURCE: uint16 seqId @ pos 8
+  XML:    a padding08 @ pos 8
+
+  SOURCE: uint32 uniqNo @ pos 10
+  XML:    uint16 seqId @ pos 10
+
+[c2s] 0x0E2 (GP_CLI_COMMAND_SET_LSMSG)
+  SOURCE: byte Category @ pos 4
+  XML:    bits unknown00 @ pos 4
+
+  SOURCE: byte ItemIndex @ pos 5
+  XML:    bits readLevel @ pos 5
+
+  SOURCE: uint16 seqId @ pos 8
+  XML:    a padding08 @ pos 8
+
+  SOURCE: uint32 uniqNo @ pos 10
+  XML:    uint16 seqId @ pos 10
+
+[c2s] 0x0E4 (GP_CLI_COMMAND_GET_LSPRIV)
+  SOURCE: byte Category @ pos 4
+  XML:    bits unknown00 @ pos 4
+
+  SOURCE: byte ItemIndex @ pos 5
+  XML:    bits readLevel @ pos 5
+
+  SOURCE: uint16 seqId @ pos 8
+  XML:    a padding08 @ pos 8
+
+  SOURCE: uint32 uniqNo @ pos 10
+  XML:    uint16 seqId @ pos 10
+
+[c2s] 0x102 (GP_CLI_COMMAND_EXTENDED_JOB)
+  SOURCE: uint32 bluData @ pos 4
+  XML:    a Data @ pos 4
+
+  SOURCE: uint32 pupData @ pos 4
+  XML:    a Data @ pos 4
+
+  SOURCE: uint32 monData @ pos 4
+  XML:    a Data @ pos 4
+
+[c2s] 0x110 (GP_CLI_COMMAND_FISHING_2)
+  SOURCE: byte unknown00 @ pos 15
+  XML:    byte padding0F @ pos 15
+
+[s2c] 0x00A (Zone In)
+  SOURCE: uint32 PosHead @ pos 4
+  XML:    uint32 player_id @ pos 4
+
+  SOURCE: uint32 ZoneNo @ pos 8
+  XML:    uint16 target_index @ pos 8
+
+  SOURCE: uint32 ntTime @ pos 12
+  XML:    float x @ pos 12
+
+  SOURCE: uint32 ntTimeSec @ pos 16
+  XML:    float z @ pos 16
+
+  SOURCE: uint32 GameTime @ pos 20
+  XML:    float y @ pos 20
+
+  SOURCE: uint16 EventNo @ pos 24
+  XML:    uint32 flags1 @ pos 24
+
+  SOURCE: a GrapIDTbl @ pos 28
+  XML:    byte Speed @ pos 28
+
+  SOURCE: uint16 SubMapNumber @ pos 56
+  XML:    uint32 ntTimeSec @ pos 56
+
+  SOURCE: uint16 EventPara @ pos 60
+  XML:    uint32 GameTime @ pos 60
+
+  SOURCE: uint16 WeatherNumber @ pos 64
+  XML:    uint16 EventNo @ pos 64
+
+  SOURCE: uint16 WeatherNumber2 @ pos 66
+  XML:    uint16 MapNumber @ pos 66
+
+  SOURCE: uint32 WeatherTime @ pos 68
+  XML:    a GrapIDTbl @ pos 68
+
+  SOURCE: uint16 IsMonstrosity @ pos 86
+  XML:    a MusicNum @ pos 86
+
+  SOURCE: a certificate @ pos 108
+  XML:    uint32 WeatherTime @ pos 108
+
+  SOURCE: uint16 unknown9C @ pos 116
+  XML:    uint32 WeatherOffsetTime @ pos 116
+
+  SOURCE: uint32 PlayTime @ pos 120
+  XML:    uint32 ShipStart @ pos 120
+
+  SOURCE: uint32 DeadCounter @ pos 124
+  XML:    uint16 ShipEnd @ pos 124
+
+  SOURCE: byte MyroomSubMapNumber @ pos 128
+  XML:    uint32 LoginState @ pos 128
+
+  SOURCE: uint16 SendCount @ pos 132
+  XML:    t name @ pos 132
+
+[s2c] 0x017 (Incoming Chat)
+  SOURCE: byte Attr @ pos 8
+  XML:    t sender_name @ pos 8
+
+[s2c] 0x01B (Job Info)
+  SOURCE: uint32 dancer @ pos 4
+  XML:    byte dancer0x44 @ pos 4
+
+  SOURCE: uint32 encumbrance @ pos 8
+  XML:    byte main_job @ pos 8
+
+  SOURCE: byte can_thumbs_up_mentor @ pos 12
+  XML:    byte main_job_level @ pos 12
+
+  SOURCE: byte mentor_rank @ pos 13
+  XML:    byte padding67 @ pos 13
+
+  SOURCE: byte mastery_rank @ pos 14
+  XML:    byte sub_job @ pos 14
+
+  SOURCE: uint32 job_mastery_flags @ pos 16
+  XML:    byte sub_job_level @ pos 16
+
+[s2c] 0x026 (GP_SERV_COMMAND_ITEM_SUBCONTAINER)
+  SOURCE: byte is_used @ pos 4
+  XML:    a data @ pos 4
+
+[s2c] 0x031 (GP_SERV_COMMAND_RECIPE)
+  SOURCE: uint32 Details @ pos 4
+  XML:    a Data @ pos 4
+
+[s2c] 0x033 (GP_SERV_COMMAND_EVENTSTR)
+  SOURCE: a Data @ pos 16
+  XML:    t String4 @ pos 16
+
+[s2c] 0x038 (GP_SERV_COMMAND_SCHEDULOR)
+  SOURCE: uint32 id @ pos 12
+  XML:    uint16 ActIndexCast @ pos 12
+
+[s2c] 0x039 (GP_SERV_COMMAND_MAPSCHEDULOR)
+  SOURCE: uint32 id @ pos 12
+  XML:    uint16 ActIndexCast @ pos 12
+
+[s2c] 0x041 (GP_SERV_COMMAND_BLACK_LIST)
+  SOURCE: int8 Stat @ pos 4
+  XML:    uint32 ID @ pos 4
+
+[s2c] 0x042 (GP_SERV_COMMAND_BLACK_EDIT)
+  SOURCE: uint32 Data @ pos 4
+  XML:    uint32 ID @ pos 4
+
+  SOURCE: uint32 Mode @ pos 8
+  XML:    a Name @ pos 8
+
+[s2c] 0x044 (Job Points)
+  SOURCE: a SetSpells @ pos 8
+  XML:    uint16 job_points @ pos 8
+
+[s2c] 0x048 (GP_SERV_COMMAND_LINK_CONCIERGE)
+  SOURCE: a Sentinel @ pos 4
+  XML:    a data @ pos 4
+
+[s2c] 0x04C (GP_SERV_COMMAND_AUC)
+  SOURCE: int8 AucWorkIndex @ pos 8
+  XML:    uint32 param @ pos 8
+
+  SOURCE: uint32 Parcel @ pos 15
+  XML:    byte padding03 @ pos 15
+
+[s2c] 0x04D (Server Message)
+  SOURCE: uint32 totalEntries @ pos 24
+  XML:    t message @ pos 24
+
+[s2c] 0x05E (Conquest/Besieged)
+  SOURCE: uint32 Conquest @ pos 4
+  XML:    byte type @ pos 4
+
+  SOURCE: uint32 Besieged @ pos 8
+  XML:    uint32 sandoria_influence @ pos 8
+
+[s2c] 0x061 (Character Stats)
+  SOURCE: uint32 statusdata @ pos 4
+  XML:    uint16 hp_max @ pos 4
+
+[s2c] 0x06F (GP_SERV_COMMAND_COMBINE_ANS)
+  SOURCE: int8 Grade @ pos 8
+  XML:    uint16 ItemNo @ pos 8
+
+[s2c] 0x070 (GP_SERV_COMMAND_COMBINE_INF)
+  SOURCE: int8 Grade @ pos 8
+  XML:    uint16 ItemNo @ pos 8
+
+[s2c] 0x075 (GP_SERV_COMMAND_BATTLEFIELD)
+  SOURCE: byte FenceGateId @ pos 38
+  XML:    byte unknown26 @ pos 38
+
+  SOURCE: uint32 Scoreboard @ pos 168
+  XML:    uint16 MesNumTitle @ pos 168
+
+[s2c] 0x077 (GP_SERV_COMMAND_ENTITY_VIS)
+  SOURCE: a UniqueNo @ pos 8
+  XML:    a Data @ pos 8
+
+[s2c] 0x083 (GP_SERV_COMMAND_GUILD_BUYLIST)
+  SOURCE: byte Count @ pos 4
+  XML:    uint16 ItemNo @ pos 4
+
+[s2c] 0x085 (GP_SERV_COMMAND_GUILD_SELLLIST)
+  SOURCE: byte Count @ pos 4
+  XML:    uint16 ItemNo @ pos 4
+
+[s2c] 0x08E (GP_SERV_PACKET_ALTER_EGO_POINTS)
+  SOURCE: a Upgrades @ pos 8
+  XML:    a count @ pos 8
+
+  SOURCE: a Costs @ pos 40
+  XML:    a next @ pos 40
+
+[s2c] 0x0B4 (GP_SERV_COMMAND_CONFIG)
+  SOURCE: uint32 ConfData @ pos 4
+  XML:    bits InviteFlg @ pos 4
+
+  SOURCE: byte unknown00 @ pos 8
+  XML:    bits say @ pos 8
+
+[s2c] 0x0C9 (GP_SERV_COMMAND_EQUIP_INSPECT)
+  SOURCE: byte EquipCount @ pos 11
+  XML:    byte padding0F @ pos 11
+
+[s2c] 0x0CA (Bazaar Message)
+  SOURCE: a sName @ pos 127
+  XML:    bits Race @ pos 127
+
+[s2c] 0x0CC (Linkshell Message)
+  SOURCE: uint16 seqId @ pos 4
+  XML:    t message @ pos 4
+
+  SOURCE: a sMessage @ pos 6
+  XML:    uint16 seqId @ pos 6
+
+  SOURCE: a encodedLsName @ pos 158
+  XML:    uint16 padding9E @ pos 158
+
+[s2c] 0x0D3 (GP_SERV_COMMAND_TROPHY_SOLUTION)
+  SOURCE: int16 EntryPoint @ pos 16
+  XML:    bits EntryActIndex @ pos 16
+
+  SOURCE: byte TrophyItemIndex @ pos 18
+  XML:    int16 EntryPoint @ pos 18
+
+  SOURCE: a sLootName @ pos 20
+  XML:    byte TrophyItemIndex @ pos 20
+
+[s2c] 0x0DD (GP_SERV_COMMAND_GROUP_LIST)
+  SOURCE: uint32 GAttr @ pos 20
+  XML:    bits PartyNo @ pos 20
+
+[s2c] 0x0E2 (GP_SERV_COMMAND_GROUP_LIST2)
+  SOURCE: uint32 GAttr @ pos 20
+  XML:    bits PartyNo @ pos 20
+
+[s2c] 0x0F4 (GP_SERV_COMMAND_TRACKING_LIST)
+  SOURCE: int16 x @ pos 4
+  XML:    bits ActIndex @ pos 4
+
+  SOURCE: a sName @ pos 8
+  XML:    int16 x @ pos 8
+
+[s2c] 0x0F5 (GP_SERV_COMMAND_TRACKING_POS)
+  SOURCE: byte unused @ pos 17
+  XML:    byte padding11 @ pos 17
+
+[s2c] 0x110 (GP_SERV_COMMAND_UNITY)
+  SOURCE: uint16 Deeds @ pos 4
+  XML:    bits Sparks @ pos 4
+
+  SOURCE: byte RoEUnityShared @ pos 8
+  XML:    uint16 Deeds @ pos 8
+
+  SOURCE: a unknown0E @ pos 10
+  XML:    uint16 padding0A @ pos 10
+
+[s2c] 0x113 (GP_SERV_COMMAND_CURRENCIES_1)
+  SOURCE: uint16 reclamation_marks @ pos 216
+  XML:    bits bloodshed_plans_stored @ pos 216
+
+  SOURCE: uint16 fire_crystals_stored @ pos 224
+  XML:    uint16 reclamation_marks @ pos 224
+
+  SOURCE: uint16 ice_crystals_stored @ pos 226
+  XML:    uint16 paddingE2 @ pos 226
+
+  SOURCE: uint16 wind_crystals_stored @ pos 228
+  XML:    int32 unity_accolades @ pos 228
+
+  SOURCE: uint16 lightning_crystals_stored @ pos 232
+  XML:    uint16 fire_crystals_stored @ pos 232
+
+  SOURCE: uint16 water_crystals_stored @ pos 234
+  XML:    uint16 ice_crystals_stored @ pos 234
+
+  SOURCE: uint16 light_crystals_stored @ pos 236
+  XML:    uint16 wind_crystals_stored @ pos 236
+
+  SOURCE: uint16 dark_crystals_stored @ pos 238
+  XML:    uint16 earth_crystals_stored @ pos 238
+
+  SOURCE: uint16 deeds @ pos 240
+  XML:    uint16 lightning_crystals_stored @ pos 240
+
+[s2c] 0x119 (GP_SERV_COMMAND_ABIL_RECAST)
+  SOURCE: uint32 MountRecast @ pos 4
+  XML:    uint16 Timer @ pos 4
+
+  SOURCE: uint32 MountRecastId @ pos 8
+  XML:    uint16 Calc2 @ pos 8
+
+[s2c] 0x11A (GP_SERV_COMMAND_EMOTE_LIST)
+  SOURCE: uint32 JobEmotes @ pos 4
+  XML:    bits unused @ pos 4
+
+  SOURCE: uint32 Chairs @ pos 8
+  XML:    bits Chair1 @ pos 8
+

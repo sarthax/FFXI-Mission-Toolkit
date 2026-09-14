@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Drift · {{ zone_name }}{% endblock %}
+{% block content %}
+<p><a class="chip" href="/zones">&larr; browse by zone</a></p>
+<h1>{{ zone_name }} -- dialog drift report</h1>
+
+<form class="search" method="get" action="#" onsubmit="return false;">
+  <select onchange="if (this.value) location = '/zone/' + this.value + '/drift';">
+    <option value="">Jump to another zone...</option>
+    {% for z in zones %}
+    <option value="{{ z.name }}" {% if zone_name|upper == z.name %}selected{% endif %}>{{ z.name }}</option>
+    {% endfor %}
+  </select>
+</form>
+
+{% if content_tags %}
+<div class="warn"><strong>Zone hosts other tagged content:</strong> {{ content_tags }} -- see entity
+lookup's caution note before assuming any entity here is Assault-owned.</div>
+{% endif %}
+
+{% if not rows %}
+<p class="muted">No report built yet for this zone. Run: <code class="chip">py -3 build_dialog_index.py --zone {{ zone_name }}</code></p>
+{% else %}
+<div class="table-wrap"><table class="drift-table">
+  <colgroup>
+    <col style="width:8%"><col style="width:16%"><col style="width:8%"><col style="width:34%"><col style="width:34%">
+  </colgroup>
+  <tr><th>status</th><th>constant</th><th>id</th><th>wired comment</th><th>real text</th></tr>
+  {% for r in rows %}
+  <tr>
+    <td><span class="pill {{ r.status }}">{{ r.status }}</span></td>
+    <td class="mono">{{ r.constant_name }}</td>
+    <td class="mono">{{ r.wired_id }}</td>
+    <td>{{ r.commented_text or "" }}</td>
+    <td>{{ r.real_text or "" }}</td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+
+<style>
+/* Fixed layout so the browser wraps long dialog text within its own column instead of letting
+   the table grow past the viewport and forcing a horizontal scrollbar (base.html's generic
+   table CSS has no table-layout/width rule, so a wide 5-column table like this one otherwise
+   sizes each column to its widest un-wrapped content across every row). */
+.drift-table { table-layout: fixed; width: 100%; min-width: 0; }
+.drift-table td, .drift-table th { overflow-wrap: break-word; word-break: break-word; }
+</style>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Raw Packets{% endblock %}
+
+{% macro pager() %}
+{% if total_pages > 1 %}
+<form method="get" style="display:flex;gap:8px;align-items:center;margin:12px 0;">
+  <input type="hidden" name="category" value="{{ category }}">
+  <input type="hidden" name="opcode" value="{{ opcode }}">
+  <input type="hidden" name="direction" value="{{ direction }}">
+  {% if page > 1 %}
+  <a class="chip" href="?category={{ category }}&opcode={{ opcode }}&direction={{ direction }}&page={{ page - 1 }}">&larr; prev</a>
+  {% endif %}
+  <span class="muted">page</span>
+  <input type="number" name="page" value="{{ page }}" min="1" max="{{ total_pages }}" style="width:70px;">
+  <span class="muted">of {{ total_pages }}</span>
+  <button type="submit">Go</button>
+  {% if page < total_pages %}
+  <a class="chip" href="?category={{ category }}&opcode={{ opcode }}&direction={{ direction }}&page={{ page + 1 }}">next &rarr;</a>
+  {% endif %}
+</form>
+{% endif %}
+{% endmacro %}
+
+{% block content %}
+<p><a class="inline" href="/captures/{{ capture_id }}">&larr; back to capture #{{ capture_id }}</a>
+  &nbsp;&middot;&nbsp; <a class="inline" href="/captures/{{ capture_id }}/timeline">event timeline &rarr;</a></p>
+
+<h1 style="margin-bottom:2px;">{{ cap.capture_label }} <span class="chip mono">#{{ capture_id }}</span> &mdash; raw packets</h1>
+<p class="muted">Every real opcode PacketLogger observed in this capture (<code class="chip">capture_raw_packets</code>),
+  decoded on demand via <code class="chip">packet_decode.py</code> -- not just dialog/event
+  packets, but battle actions, item grants, shop transactions, everything. Category is a
+  real, data-derived classification (<code class="chip">packet_decode.categorize_opcode</code>)
+  from the actual 318 known opcode names, not a guessed handful.</p>
+
+<form class="search" method="get">
+  <select name="category">
+    <option value="">(all categories)</option>
+    {% for c in categories %}
+    <option value="{{ c }}" {% if c == category %}selected{% endif %}>{{ c }}</option>
+    {% endfor %}
+  </select>
+  <select name="opcode">
+    <option value="">(all opcodes)</option>
+    {% for o in opcode_catalog %}
+    <option value="{{ o.opcode }}" {% if o.opcode == opcode %}selected{% endif %}>{{ o.opcode }} &mdash; {{ o.description }} [{{ o.category }}]</option>
+    {% endfor %}
+  </select>
+  <select name="direction">
+    <option value="">(any direction)</option>
+    <option value="incoming" {% if direction == 'incoming' %}selected{% endif %}>incoming (s2c)</option>
+    <option value="outgoing" {% if direction == 'outgoing' %}selected{% endif %}>outgoing (c2s)</option>
+  </select>
+  <button type="submit">Filter</button>
+</form>
+
+<p class="muted">{{ total }} packet(s) &mdash; page {{ page }} of {{ total_pages }}.</p>
+{{ pager() }}
+
+<div class="table-wrap"><table>
+  <tr><th>seq</th><th>ts</th><th>dir</th><th>opcode</th><th>description</th><th>fields</th></tr>
+  {% for r in rows %}
+  <tr>
+    <td class="mono">{{ r.seq }}</td>
+    <td class="mono">{{ r.ts }}</td>
+    <td>{{ r.direction }}</td>
+    <td class="mono">{{ r.opcode }}</td>
+    <td>{{ r.description or '(no definition)' }}
+      <br><a class="inline" style="font-size:11px;"
+         href="/packets/decode?direction={{ r.pd_direction }}&opcode={{ r.opcode }}&hex_bytes={{ r.raw_hex }}">open in manual decoder &rarr;</a>
+    </td>
+    <td>
+      {% if r.fields %}
+      <table style="margin:0;">
+        {% for f in r.fields %}
+        <tr>
+          <td class="mono muted">{{ f.name }}</td>
+          <td class="mono">{{ f.value }}{% if f.out_of_range %} <span class="chip">out of range</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% elif r.decode_error %}
+      <span class="muted">decode error: {{ r.decode_error }}</span>
+      {% else %}
+      <span class="muted">(no fields)</span>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table></div>
+{{ pager() }}
+{% endblock %}

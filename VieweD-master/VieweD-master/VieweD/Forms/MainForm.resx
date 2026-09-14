@@ -1,0 +1,1717 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Microsoft ResX Schema 
+
+    Version 2.0
+
+    The primary goals of this format is to allow a simple XML format
+    that is mostly human readable. The generation and parsing of the
+    various data types are done through the TypeConverter classes
+    associated with the data types.
+
+    Example:
+
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+
+    There are any number of "resheader" rows that contain simple
+    name/value pairs.
+
+    Each data row contains a name, and value. The row also contains a
+    type or mimetype. Type corresponds to a .NET class that support
+    text/value conversion through the TypeConverter architecture.
+    Classes that don't support this are serialized and stored with the
+    mimetype set.
+
+    The mimetype is used for serialized objects, and tells the
+    ResXResourceReader how to depersist the object. This is currently not
+    extensible. For a given mimetype the value must be set accordingly:
+
+    Note - application/x-microsoft.net.object.binary.base64 is the format
+    that the ResXResourceWriter will generate, however the reader can
+    read any of the formats listed below.
+
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <metadata name="MM.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>17, 17</value>
+  </metadata>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="MMFileOpen.ShortcutKeys" type="System.Windows.Forms.Keys, System.Windows.Forms">
+    <value>Ctrl+O</value>
+  </data>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="MMFileOpen.Size" type="System.Drawing.Size, System.Drawing">
+    <value>180, 22</value>
+  </data>
+  <data name="MMFileOpen.Text" xml:space="preserve">
+    <value>&amp;Open ...</value>
+  </data>
+  <data name="MMOpenRecentFile.Size" type="System.Drawing.Size, System.Drawing">
+    <value>180, 22</value>
+  </data>
+  <data name="MMOpenRecentFile.Text" xml:space="preserve">
+    <value>filename</value>
+  </data>
+  <data name="MMFileRecent.Size" type="System.Drawing.Size, System.Drawing">
+    <value>180, 22</value>
+  </data>
+  <data name="MMFileRecent.Text" xml:space="preserve">
+    <value>Open recent</value>
+  </data>
+  <data name="MMFileN3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>177, 6</value>
+  </data>
+  <data name="MMFileImportFromCommunity.Size" type="System.Drawing.Size, System.Drawing">
+    <value>238, 22</value>
+  </data>
+  <data name="MMFileImportFromCommunity.Text" xml:space="preserve">
+    <value>Import from community post ...</value>
+  </data>
+  <data name="MMFileImportFromClipboard.Size" type="System.Drawing.Size, System.Drawing">
+    <value>238, 22</value>
+  </data>
+  <data name="MMFileImportFromClipboard.Text" xml:space="preserve">
+    <value>Import from clipboard</value>
+  </data>
+  <data name="MMFileN4.Size" type="System.Drawing.Size, System.Drawing">
+    <value>235, 6</value>
+  </data>
+  <data name="MMFileImportVpx.Size" type="System.Drawing.Size, System.Drawing">
+    <value>238, 22</value>
+  </data>
+  <data name="MMFileImportVpx.Text" xml:space="preserve">
+    <value>Import from VPX ...</value>
+  </data>
+  <data name="MMFileExportVpx.Size" type="System.Drawing.Size, System.Drawing">
+    <value>238, 22</value>
+  </data>
+  <data name="MMFileExportVpx.Text" xml:space="preserve">
+    <value>Export packets to VPX ...</value>
+  </data>
+  <data name="MMFileImport.Size" type="System.Drawing.Size, System.Drawing">
+    <value>180, 22</value>
+  </data>
+  <data name="MMFileImport.Text" xml:space="preserve">
+    <value>&amp;Import / Export</value>
+  </data>
+  <data name="MMFileN1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>177, 6</value>
+  </data>
+  <data name="MMFileSettings.Size" type="System.Drawing.Size, System.Drawing">
+    <value>180, 22</value>
+  </data>
+  <data name="MMFileSettings.Text" xml:space="preserve">
+    <value>Program &amp;settings</value>
+  </data>
+  <data name="MMFileN2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>177, 6</value>
+  </data>
+  <data name="MMFileExit.ShortcutKeys" type="System.Windows.Forms.Keys, System.Windows.Forms">
+    <value>Alt+F4</value>
+  </data>
+  <data name="MMFileExit.Size" type="System.Drawing.Size, System.Drawing">
+    <value>180, 22</value>
+  </data>
+  <data name="MMFileExit.Text" xml:space="preserve">
+    <value>E&amp;xit</value>
+  </data>
+  <data name="MMFile.Size" type="System.Drawing.Size, System.Drawing">
+    <value>37, 20</value>
+  </data>
+  <data name="MMFile.Text" xml:space="preserve">
+    <value>&amp;File</value>
+  </data>
+  <assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="MMVersion.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="MMVersion.Size" type="System.Drawing.Size, System.Drawing">
+    <value>57, 20</value>
+  </data>
+  <data name="MMVersion.Text" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="MMProjectSave.ShortcutKeys" type="System.Windows.Forms.Keys, System.Windows.Forms">
+    <value>Ctrl+S</value>
+  </data>
+  <data name="MMProjectSave.Size" type="System.Drawing.Size, System.Drawing">
+    <value>211, 22</value>
+  </data>
+  <data name="MMProjectSave.Text" xml:space="preserve">
+    <value>&amp;Save</value>
+  </data>
+  <data name="toolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>208, 6</value>
+  </data>
+  <data name="MMProjectCopySelectedPackets.ShortcutKeys" type="System.Windows.Forms.Keys, System.Windows.Forms">
+    <value>Ctrl+Shift+C</value>
+  </data>
+  <data name="MMProjectCopySelectedPackets.Size" type="System.Drawing.Size, System.Drawing">
+    <value>211, 22</value>
+  </data>
+  <data name="MMProjectCopySelectedPackets.Text" xml:space="preserve">
+    <value>Cop&amp;y Packet</value>
+  </data>
+  <data name="toolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>208, 6</value>
+  </data>
+  <data name="MMProjectGameData.Size" type="System.Drawing.Size, System.Drawing">
+    <value>211, 22</value>
+  </data>
+  <data name="MMProjectGameData.Text" xml:space="preserve">
+    <value>&amp;Game Data ...</value>
+  </data>
+  <data name="MMProjectVideo.Size" type="System.Drawing.Size, System.Drawing">
+    <value>211, 22</value>
+  </data>
+  <data name="MMProjectVideo.Text" xml:space="preserve">
+    <value>&amp;Video Link ...</value>
+  </data>
+  <data name="MMProjectN1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>208, 6</value>
+  </data>
+  <data name="MMProjectSettings.ShortcutKeys" type="System.Windows.Forms.Keys, System.Windows.Forms">
+    <value>Ctrl+P</value>
+  </data>
+  <data name="MMProjectSettings.Size" type="System.Drawing.Size, System.Drawing">
+    <value>211, 22</value>
+  </data>
+  <data name="MMProjectSettings.Text" xml:space="preserve">
+    <value>Se&amp;ttings ...</value>
+  </data>
+  <data name="MMProjectPack.Size" type="System.Drawing.Size, System.Drawing">
+    <value>211, 22</value>
+  </data>
+  <data name="MMProjectPack.Text" xml:space="preserve">
+    <value>Pack project to .&amp;zip ...</value>
+  </data>
+  <data name="MMProjectN2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>208, 6</value>
+  </data>
+  <data name="MMProjectClose.ShortcutKeys" type="System.Windows.Forms.Keys, System.Windows.Forms">
+    <value>Ctrl+W</value>
+  </data>
+  <data name="MMProjectClose.Size" type="System.Drawing.Size, System.Drawing">
+    <value>211, 22</value>
+  </data>
+  <data name="MMProjectClose.Text" xml:space="preserve">
+    <value>&amp;Close</value>
+  </data>
+  <data name="MMProject.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="MMProject.Size" type="System.Drawing.Size, System.Drawing">
+    <value>56, 20</value>
+  </data>
+  <data name="MMProject.Text" xml:space="preserve">
+    <value>&amp;Project</value>
+  </data>
+  <data name="MMSearchFind.ShortcutKeys" type="System.Windows.Forms.Keys, System.Windows.Forms">
+    <value>Ctrl+F</value>
+  </data>
+  <data name="MMSearchFind.Size" type="System.Drawing.Size, System.Drawing">
+    <value>206, 22</value>
+  </data>
+  <data name="MMSearchFind.Text" xml:space="preserve">
+    <value>&amp;Find ...</value>
+  </data>
+  <data name="MMSearchFindNext.ShortcutKeys" type="System.Windows.Forms.Keys, System.Windows.Forms">
+    <value>F3</value>
+  </data>
+  <data name="MMSearchFindNext.Size" type="System.Drawing.Size, System.Drawing">
+    <value>206, 22</value>
+  </data>
+  <data name="MMSearchFindNext.Text" xml:space="preserve">
+    <value>Find &amp;Next</value>
+  </data>
+  <data name="MMSearchN1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 6</value>
+  </data>
+  <data name="MMSearchInvalid.Size" type="System.Drawing.Size, System.Drawing">
+    <value>206, 22</value>
+  </data>
+  <data name="MMSearchInvalid.Text" xml:space="preserve">
+    <value>Find Next &amp;Invalid</value>
+  </data>
+  <data name="MMSearchN2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>203, 6</value>
+  </data>
+  <data name="MMSearchEditFilter.ShortcutKeys" type="System.Windows.Forms.Keys, System.Windows.Forms">
+    <value>Ctrl+Shift+F</value>
+  </data>
+  <data name="MMSearchEditFilter.Size" type="System.Drawing.Size, System.Drawing">
+    <value>206, 22</value>
+  </data>
+  <data name="MMSearchEditFilter.Text" xml:space="preserve">
+    <value>&amp;Edit Filter ...</value>
+  </data>
+  <data name="MMSearchApplyReset.Size" type="System.Drawing.Size, System.Drawing">
+    <value>102, 22</value>
+  </data>
+  <data name="MMSearchApplyReset.Text" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="MMSearchApplyMenuN1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>99, 6</value>
+  </data>
+  <data name="MMSearchApplyMenu.Size" type="System.Drawing.Size, System.Drawing">
+    <value>206, 22</value>
+  </data>
+  <data name="MMSearchApplyMenu.Text" xml:space="preserve">
+    <value>Apply &amp;Filter</value>
+  </data>
+  <data name="MMSearchHighlightReset.Size" type="System.Drawing.Size, System.Drawing">
+    <value>102, 22</value>
+  </data>
+  <data name="MMSearchHighlightReset.Text" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="MMSearchHighlightMenuN1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>99, 6</value>
+  </data>
+  <data name="MMSearchHighlightMenu.Size" type="System.Drawing.Size, System.Drawing">
+    <value>206, 22</value>
+  </data>
+  <data name="MMSearchHighlightMenu.Text" xml:space="preserve">
+    <value>&amp;Highlight Filter</value>
+  </data>
+  <data name="MMSearch.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="MMSearch.Size" type="System.Drawing.Size, System.Drawing">
+    <value>111, 20</value>
+  </data>
+  <data name="MMSearch.Text" xml:space="preserve">
+    <value>&amp;Search and Filters</value>
+  </data>
+  <data name="MMToolsEditTemplateItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>121, 22</value>
+  </data>
+  <data name="MMToolsEditTemplateItem.Text" xml:space="preserve">
+    <value>Template</value>
+  </data>
+  <data name="MMToolsEditTemplates.Size" type="System.Drawing.Size, System.Drawing">
+    <value>157, 22</value>
+  </data>
+  <data name="MMToolsEditTemplates.Text" xml:space="preserve">
+    <value>Edit &amp;Templates</value>
+  </data>
+  <data name="toolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>154, 6</value>
+  </data>
+  <data name="MMToolsExportCSV.Size" type="System.Drawing.Size, System.Drawing">
+    <value>157, 22</value>
+  </data>
+  <data name="MMToolsExportCSV.Text" xml:space="preserve">
+    <value>Export as &amp;CSV ...</value>
+  </data>
+  <data name="dataToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>98, 22</value>
+  </data>
+  <data name="dataToolStripMenuItem.Text" xml:space="preserve">
+    <value>Data</value>
+  </data>
+  <data name="MMToolExportData.Size" type="System.Drawing.Size, System.Drawing">
+    <value>157, 22</value>
+  </data>
+  <data name="MMToolExportData.Text" xml:space="preserve">
+    <value>Export &amp;Data</value>
+  </data>
+  <data name="MMTools.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="MMTools.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 20</value>
+  </data>
+  <data name="MMTools.Text" xml:space="preserve">
+    <value>&amp;Tools</value>
+  </data>
+  <data name="MMLinksWiki.Size" type="System.Drawing.Size, System.Drawing">
+    <value>198, 22</value>
+  </data>
+  <data name="MMLinksWiki.Text" xml:space="preserve">
+    <value>Wiki / Help</value>
+  </data>
+  <data name="MMLinksGitHub.Size" type="System.Drawing.Size, System.Drawing">
+    <value>198, 22</value>
+  </data>
+  <data name="MMLinksGitHub.Text" xml:space="preserve">
+    <value>Source Code on GitHub</value>
+  </data>
+  <data name="MMLinksDikscord.Size" type="System.Drawing.Size, System.Drawing">
+    <value>198, 22</value>
+  </data>
+  <data name="MMLinksDikscord.Text" xml:space="preserve">
+    <value>Join Discord</value>
+  </data>
+  <data name="MMLinksN1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>195, 6</value>
+  </data>
+  <data name="MMLinksKoFi.Size" type="System.Drawing.Size, System.Drawing">
+    <value>198, 22</value>
+  </data>
+  <data name="MMLinksKoFi.Text" xml:space="preserve">
+    <value>Buy me a coffee</value>
+  </data>
+  <data name="MMLinksN2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>195, 6</value>
+  </data>
+  <data name="MMLinksVLC.Size" type="System.Drawing.Size, System.Drawing">
+    <value>198, 22</value>
+  </data>
+  <data name="MMLinksVLC.Text" xml:space="preserve">
+    <value>Visit VideoLAN VLC site</value>
+  </data>
+  <data name="MMLinksWireshark.Size" type="System.Drawing.Size, System.Drawing">
+    <value>198, 22</value>
+  </data>
+  <data name="MMLinksWireshark.Text" xml:space="preserve">
+    <value>Visit Wireshark site</value>
+  </data>
+  <data name="MMLinks.Size" type="System.Drawing.Size, System.Drawing">
+    <value>46, 20</value>
+  </data>
+  <data name="MMLinks.Text" xml:space="preserve">
+    <value>&amp;Links</value>
+  </data>
+  <data name="MM.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="MM.Size" type="System.Drawing.Size, System.Drawing">
+    <value>1084, 24</value>
+  </data>
+  <data name="MM.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="MM.Text" xml:space="preserve">
+    <value>mainmenu</value>
+  </data>
+  <data name="&gt;&gt;MM.Name" xml:space="preserve">
+    <value>MM</value>
+  </data>
+  <data name="&gt;&gt;MM.Type" xml:space="preserve">
+    <value>System.Windows.Forms.MenuStrip, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MM.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;MM.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <metadata name="StatusBar.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>91, 17</value>
+  </metadata>
+  <data name="StatusBarProgressBar.AutoSize" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="StatusBarProgressBar.Size" type="System.Drawing.Size, System.Drawing">
+    <value>150, 19</value>
+  </data>
+  <data name="StatusBarEngineName.ImageAlign" type="System.Drawing.ContentAlignment, System.Drawing">
+    <value>MiddleLeft</value>
+  </data>
+  <data name="StatusBarEngineName.Size" type="System.Drawing.Size, System.Drawing">
+    <value>54, 20</value>
+  </data>
+  <data name="StatusBarEngineName.Text" xml:space="preserve">
+    <value>&lt;none&gt;</value>
+  </data>
+  <data name="StatusBarEngineName.TextAlign" type="System.Drawing.ContentAlignment, System.Drawing">
+    <value>MiddleLeft</value>
+  </data>
+  <data name="StatusBarProject.ImageAlign" type="System.Drawing.ContentAlignment, System.Drawing">
+    <value>MiddleLeft</value>
+  </data>
+  <data name="StatusBarProject.Size" type="System.Drawing.Size, System.Drawing">
+    <value>863, 20</value>
+  </data>
+  <data name="StatusBarProject.Text" xml:space="preserve">
+    <value>Project folder:</value>
+  </data>
+  <data name="StatusBarProject.TextAlign" type="System.Drawing.ContentAlignment, System.Drawing">
+    <value>MiddleLeft</value>
+  </data>
+  <data name="StatusBar.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 616</value>
+  </data>
+  <data name="StatusBar.Size" type="System.Drawing.Size, System.Drawing">
+    <value>1084, 25</value>
+  </data>
+  <data name="StatusBar.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="StatusBar.Text" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="&gt;&gt;StatusBar.Name" xml:space="preserve">
+    <value>StatusBar</value>
+  </data>
+  <data name="&gt;&gt;StatusBar.Type" xml:space="preserve">
+    <value>System.Windows.Forms.StatusStrip, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;StatusBar.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;StatusBar.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="TCProjects.Alignment" type="System.Windows.Forms.TabAlignment, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <data name="TPWelcomeLayout.ColumnCount" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="RichTextWelcome.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Top, Bottom, Left, Right</value>
+  </data>
+  <data name="RichTextWelcome.Location" type="System.Drawing.Point, System.Drawing">
+    <value>3, 3</value>
+  </data>
+  <data name="RichTextWelcome.Size" type="System.Drawing.Size, System.Drawing">
+    <value>300, 538</value>
+  </data>
+  <data name="RichTextWelcome.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="RichTextWelcome.Text" xml:space="preserve">
+    <value />
+  </data>
+  <data name="&gt;&gt;RichTextWelcome.Name" xml:space="preserve">
+    <value>RichTextWelcome</value>
+  </data>
+  <data name="&gt;&gt;RichTextWelcome.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RichTextBox, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;RichTextWelcome.Parent" xml:space="preserve">
+    <value>TPWelcomeLayout</value>
+  </data>
+  <data name="&gt;&gt;RichTextWelcome.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="TPWelcomeBtnClose.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Top, Bottom, Left, Right</value>
+  </data>
+  <data name="TPWelcomeBtnClose.Location" type="System.Drawing.Point, System.Drawing">
+    <value>3, 547</value>
+  </data>
+  <data name="TPWelcomeBtnClose.Size" type="System.Drawing.Size, System.Drawing">
+    <value>300, 28</value>
+  </data>
+  <data name="TPWelcomeBtnClose.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="TPWelcomeBtnClose.Text" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="&gt;&gt;TPWelcomeBtnClose.Name" xml:space="preserve">
+    <value>TPWelcomeBtnClose</value>
+  </data>
+  <data name="&gt;&gt;TPWelcomeBtnClose.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;TPWelcomeBtnClose.Parent" xml:space="preserve">
+    <value>TPWelcomeLayout</value>
+  </data>
+  <data name="&gt;&gt;TPWelcomeBtnClose.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="TPWelcomeLayout.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
+  </data>
+  <data name="TPWelcomeLayout.Location" type="System.Drawing.Point, System.Drawing">
+    <value>3, 3</value>
+  </data>
+  <data name="TPWelcomeLayout.RowCount" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="TPWelcomeLayout.Size" type="System.Drawing.Size, System.Drawing">
+    <value>303, 578</value>
+  </data>
+  <data name="TPWelcomeLayout.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;TPWelcomeLayout.Name" xml:space="preserve">
+    <value>TPWelcomeLayout</value>
+  </data>
+  <data name="&gt;&gt;TPWelcomeLayout.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;TPWelcomeLayout.Parent" xml:space="preserve">
+    <value>TPWelcome</value>
+  </data>
+  <data name="&gt;&gt;TPWelcomeLayout.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="TPWelcomeLayout.LayoutSettings" type="System.Windows.Forms.TableLayoutSettings, System.Windows.Forms">
+    <value>&lt;?xml version="1.0" encoding="utf-16"?&gt;&lt;TableLayoutSettings&gt;&lt;Controls&gt;&lt;Control Name="RichTextWelcome" Row="0" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="TPWelcomeBtnClose" Row="1" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;/Controls&gt;&lt;Columns Styles="AutoSize,0" /&gt;&lt;Rows Styles="Percent,100,Absolute,34" /&gt;&lt;/TableLayoutSettings&gt;</value>
+  </data>
+  <data name="TPWelcome.ImageIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="TPWelcome.Location" type="System.Drawing.Point, System.Drawing">
+    <value>27, 4</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="TPWelcome.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>3, 3, 3, 3</value>
+  </data>
+  <data name="TPWelcome.Size" type="System.Drawing.Size, System.Drawing">
+    <value>309, 584</value>
+  </data>
+  <data name="TPWelcome.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="TPWelcome.Text" xml:space="preserve">
+    <value>Welcome</value>
+  </data>
+  <data name="&gt;&gt;TPWelcome.Name" xml:space="preserve">
+    <value>TPWelcome</value>
+  </data>
+  <data name="&gt;&gt;TPWelcome.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabPage, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;TPWelcome.Parent" xml:space="preserve">
+    <value>TCProjects</value>
+  </data>
+  <data name="&gt;&gt;TPWelcome.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="TCProjects.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
+  </data>
+  <metadata name="ILTabs.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>365, 17</value>
+  </metadata>
+  <data name="ILTabs.ImageStream" mimetype="application/x-microsoft.net.object.binary.base64">
+    <value>
+        AAEAAAD/////AQAAAAAAAAAMAgAAAEZTeXN0ZW0uV2luZG93cy5Gb3JtcywgQ3VsdHVyZT1uZXV0cmFs
+        LCBQdWJsaWNLZXlUb2tlbj1iNzdhNWM1NjE5MzRlMDg5BQEAAAAmU3lzdGVtLldpbmRvd3MuRm9ybXMu
+        SW1hZ2VMaXN0U3RyZWFtZXIBAAAABERhdGEHAgIAAAAJAwAAAA8DAAAAbAwAAAJNU0Z0AUkBTAIBAQUB
+        AAH4AQIB+AECARABAAEQAQAE/wEJAQAI/wFCAU0BNgEEBgABNgEEAgABKAMAAUADAAEgAwABAQEAAQgG
+        AAEIGAABgAIAAYADAAKAAQABgAMAAYABAAGAAQACgAIAA8ABAAHAAdwBwAEAAfABygGmAQABMwUAATMB
+        AAEzAQABMwEAAjMCAAMWAQADHAEAAyIBAAMpAQADVQEAA00BAANCAQADOQEAAYABfAH/AQACUAH/AQAB
+        kwEAAdYBAAH/AewBzAEAAcYB1gHvAQAB1gLnAQABkAGpAa0CAAH/ATMDAAFmAwABmQMAAcwCAAEzAwAC
+        MwIAATMBZgIAATMBmQIAATMBzAIAATMB/wIAAWYDAAFmATMCAAJmAgABZgGZAgABZgHMAgABZgH/AgAB
+        mQMAAZkBMwIAAZkBZgIAApkCAAGZAcwCAAGZAf8CAAHMAwABzAEzAgABzAFmAgABzAGZAgACzAIAAcwB
+        /wIAAf8BZgIAAf8BmQIAAf8BzAEAATMB/wIAAf8BAAEzAQABMwEAAWYBAAEzAQABmQEAATMBAAHMAQAB
+        MwEAAf8BAAH/ATMCAAMzAQACMwFmAQACMwGZAQACMwHMAQACMwH/AQABMwFmAgABMwFmATMBAAEzAmYB
+        AAEzAWYBmQEAATMBZgHMAQABMwFmAf8BAAEzAZkCAAEzAZkBMwEAATMBmQFmAQABMwKZAQABMwGZAcwB
+        AAEzAZkB/wEAATMBzAIAATMBzAEzAQABMwHMAWYBAAEzAcwBmQEAATMCzAEAATMBzAH/AQABMwH/ATMB
+        AAEzAf8BZgEAATMB/wGZAQABMwH/AcwBAAEzAv8BAAFmAwABZgEAATMBAAFmAQABZgEAAWYBAAGZAQAB
+        ZgEAAcwBAAFmAQAB/wEAAWYBMwIAAWYCMwEAAWYBMwFmAQABZgEzAZkBAAFmATMBzAEAAWYBMwH/AQAC
+        ZgIAAmYBMwEAA2YBAAJmAZkBAAJmAcwBAAFmAZkCAAFmAZkBMwEAAWYBmQFmAQABZgKZAQABZgGZAcwB
+        AAFmAZkB/wEAAWYBzAIAAWYBzAEzAQABZgHMAZkBAAFmAswBAAFmAcwB/wEAAWYB/wIAAWYB/wEzAQAB
+        ZgH/AZkBAAFmAf8BzAEAAcwBAAH/AQAB/wEAAcwBAAKZAgABmQEzAZkBAAGZAQABmQEAAZkBAAHMAQAB
+        mQMAAZkCMwEAAZkBAAFmAQABmQEzAcwBAAGZAQAB/wEAAZkBZgIAAZkBZgEzAQABmQEzAWYBAAGZAWYB
+        mQEAAZkBZgHMAQABmQEzAf8BAAKZATMBAAKZAWYBAAOZAQACmQHMAQACmQH/AQABmQHMAgABmQHMATMB
+        AAFmAcwBZgEAAZkBzAGZAQABmQLMAQABmQHMAf8BAAGZAf8CAAGZAf8BMwEAAZkBzAFmAQABmQH/AZkB
+        AAGZAf8BzAEAAZkC/wEAAcwDAAGZAQABMwEAAcwBAAFmAQABzAEAAZkBAAHMAQABzAEAAZkBMwIAAcwC
+        MwEAAcwBMwFmAQABzAEzAZkBAAHMATMBzAEAAcwBMwH/AQABzAFmAgABzAFmATMBAAGZAmYBAAHMAWYB
+        mQEAAcwBZgHMAQABmQFmAf8BAAHMAZkCAAHMAZkBMwEAAcwBmQFmAQABzAKZAQABzAGZAcwBAAHMAZkB
+        /wEAAswCAALMATMBAALMAWYBAALMAZkBAAPMAQACzAH/AQABzAH/AgABzAH/ATMBAAGZAf8BZgEAAcwB
+        /wGZAQABzAH/AcwBAAHMAv8BAAHMAQABMwEAAf8BAAFmAQAB/wEAAZkBAAHMATMCAAH/AjMBAAH/ATMB
+        ZgEAAf8BMwGZAQAB/wEzAcwBAAH/ATMB/wEAAf8BZgIAAf8BZgEzAQABzAJmAQAB/wFmAZkBAAH/AWYB
+        zAEAAcwBZgH/AQAB/wGZAgAB/wGZATMBAAH/AZkBZgEAAf8CmQEAAf8BmQHMAQAB/wGZAf8BAAH/AcwC
+        AAH/AcwBMwEAAf8BzAFmAQAB/wHMAZkBAAH/AswBAAH/AcwB/wEAAv8BMwEAAcwB/wFmAQAC/wGZAQAC
+        /wHMAQACZgH/AQABZgH/AWYBAAFmAv8BAAH/AmYBAAH/AWYB/wEAAv8BZgEAASEBAAGlAQADXwEAA3cB
+        AAOGAQADlgEAA8sBAAOyAQAD1wEAA90BAAPjAQAD6gEAA/EBAAP4AQAB8AH7Af8BAAGkAqABAAOAAwAB
+        /wIAAf8DAAL/AQAB/wMAAf8BAAH/AQAC/wIAA///AAcAAf8B7QIVAe0B/zkAAfQBEwEHAv8BBwETAf84
+        AAHtAQcB8gETARIB8gEHAe00AAHzAf8CAAEVAf8BEwIRARIB/wEVAgAB/wHzMAAB7QHwAgABFQH/ARMB
+        EQLzAf8BEwIAAQcB7DAAAfQBEwHzAQAB7QEHAfIBEwHzAQABBwGSAQAB8gEUAfQxAAHzARMB8AH0ARMB
+        BwL/AQcBEwH0AbwBFAHzMwAB9ALrAe8BbQERAUMBbQHvARIB6wH0NgAB8gH3AeoCQwHqAfcB8v8ABgAB
+        /wHyAfEJBwH/GAAB8ALrAfMXAAH0ARQBEwn/AfQXAAHwAewCRAGSAfIJAAHzAf8EAAH/AfMB/wUAAfAB
+        FQH3BvAC/wH0CAAE6wkAAf8B8gFtAeoCkwEVAZIB8wYAAf8BGgFNAXUB/wIAAf8BmQFNARoB/wUAAZIB
+        FAHtBbwC/wH0CAABcwJ6AesJAAHyAQAB6gGTArcBkwFEAesGAAHzAXQCTAF1Af8BAAGZAkwBTQHzBQAB
+        7QHvARUB7QEHA/AB9AH/AfQIAAFLAnoB6wgAAfABbQHqAY4BlAK3AZQB7QHqAesB8wQAAf8BGgFNAUwB
+        TQGZARoBTQFMAU0BmQH/BQAB7QH/AZIBQwH3AbwB7wEHAfMB8gHzCAABSwJ6AVAHAAHwAewB6gGTAZQE
+        twGUAe0BRAGSAfIEAAH/ARoBdQRNAXUBmQH/BgAB7QH/AfMB7wGSAQcB7wG7AZIB8gH0Af8DAAJSAlEB
+        UgGaAXoCSwFQAusCAAHyAW0B6gGOB7cBlAGTARUBkgHzBQABGgIWAXUBFgEaAf8HAAHtAf8C9AG8ARkB
+        4gL0AQAB8AH/AwABUgeaA3oBcwMAAeoBkwq3AZMBRAHrBAAB/wEaBOMBGgH/BwAB7QH/Ae8BtQEJAt0B
+        8AG9AbwBGQL/AgABMQmaAXoBSwMAAeoBkwq3AZMBRAHrAwAB/wEaBhYBmQH/BgAB7QH/AggBGQHiAcIB
+        8QG9AfABGQHyAwABWAIxAlICmgJRAVICSwIAAe8BbQFuAZMHtwGUAZMB6gHsAfACAAH/ARoDFgIaAxYB
+        twH/BQAB7QH/AfMB8gLiA/QB/wEZAfIHAAExApoBUgcAAfcBbQFuApQEtwGUAY4B6gFtAfADAAH0AXUB
+        FgF1ARoB/wEAARoBdQEWAXUB8wUAAe0D/wHdAvQB/wG8AfAB3QH/BwABMQKaAVIIAAHvARABbgGUBLcB
+        kwHqAQAB8gUAAfMBlAEaAf8CAAH/ARoBlAHzAf8FAAHtA/8B9AEZAQABCAHyAQkB8ggAAVgCmgExCAAB
+        9AEHARABbgGTArcBjgHqAW0B8gH/BgAB9AH/BAAB/wH0BwAB7QX/AfEB7wGSARYJAAE3A1gJAAH0Ae8B
+        bQFuApMB6gHsAfAXAAHtBvcBEgFpARcB/xcAAfcBbQLqAW0B8CAAAfIBbwH/GAAB7wIAAfIGAAFCAU0B
+        PgcAAT4DAAEoAwABQAMAASADAAEBAQABAQYAAQEWAAP/AQAC/wYAAv8GAAL/BgAC/wYAAfgBHwYAAfAB
+        DwYAAfABDwYAATABDAYAATABDAYAARABSAYAAYABAQYAAcABAwYAAfABDwYAAv8GAAL/BgAC/wYAAv8B
+        gAEDAv8B/AE/Av8BgAEDAv8B+AEfAfMBxwHAAQMB/AE/AeABDwHBAYMB4AEDAfwBPwHgAQ8BwAGDAeAB
+        AwH8AT8BwAEDAcABAwHgAQMB/AE/AYABAQHgAQcB4AEBAcABAwIAAfgBDwHgAQEBwAEDAgAB8AEPAeAB
+        AAHAAQMCAAHgAQcB4AEBAcABAwIAAcABAwHgAQEB/AE/AYABAQHAAYMB4AEBAfwBPwHAAQMB4QGDAeAB
+        AwH8AT8BwAEDAfMBzwHgAQcB/AE/AeABDwL/AeABAwL/AfgBHwP/AeMC/wH8AT8L
+</value>
+  </data>
+  <data name="TCProjects.ItemSize" type="System.Drawing.Size, System.Drawing">
+    <value>128, 23</value>
+  </data>
+  <data name="TCProjects.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="TCProjects.Size" type="System.Drawing.Size, System.Drawing">
+    <value>340, 592</value>
+  </data>
+  <data name="TCProjects.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;TCProjects.Name" xml:space="preserve">
+    <value>TCProjects</value>
+  </data>
+  <data name="&gt;&gt;TCProjects.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TabControl, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;TCProjects.Parent" xml:space="preserve">
+    <value>SplitContainerListAndFields.Panel1</value>
+  </data>
+  <data name="&gt;&gt;TCProjects.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <metadata name="DgvPosition.UserAddedColumn" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <data name="DgvPosition.HeaderText" xml:space="preserve">
+    <value>Position</value>
+  </data>
+  <data name="DgvPosition.MinimumWidth" type="System.Int32, mscorlib">
+    <value>20</value>
+  </data>
+  <data name="DgvPosition.Width" type="System.Int32, mscorlib">
+    <value>80</value>
+  </data>
+  <metadata name="DgvName.UserAddedColumn" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <data name="DgvName.HeaderText" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="DgvName.MinimumWidth" type="System.Int32, mscorlib">
+    <value>20</value>
+  </data>
+  <data name="DgvName.Width" type="System.Int32, mscorlib">
+    <value>150</value>
+  </data>
+  <metadata name="DgvValue.UserAddedColumn" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <data name="DgvValue.HeaderText" xml:space="preserve">
+    <value>Value</value>
+  </data>
+  <data name="DgvValue.MinimumWidth" type="System.Int32, mscorlib">
+    <value>20</value>
+  </data>
+  <metadata name="MiFieldView.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>451, 17</value>
+  </metadata>
+  <data name="MiFieldFields.Size" type="System.Drawing.Size, System.Drawing">
+    <value>174, 22</value>
+  </data>
+  <data name="MiFieldFields.Text" xml:space="preserve">
+    <value>Fields</value>
+  </data>
+  <data name="MIFieldLocalVars.Size" type="System.Drawing.Size, System.Drawing">
+    <value>174, 22</value>
+  </data>
+  <data name="MIFieldLocalVars.Text" xml:space="preserve">
+    <value>Local Vars</value>
+  </data>
+  <data name="MiFieldN1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>171, 6</value>
+  </data>
+  <data name="MiFieldDebug.Size" type="System.Drawing.Size, System.Drawing">
+    <value>174, 22</value>
+  </data>
+  <data name="MiFieldDebug.Text" xml:space="preserve">
+    <value>Debug information</value>
+  </data>
+  <data name="MiFieldView.Size" type="System.Drawing.Size, System.Drawing">
+    <value>175, 76</value>
+  </data>
+  <data name="&gt;&gt;MiFieldView.Name" xml:space="preserve">
+    <value>MiFieldView</value>
+  </data>
+  <data name="&gt;&gt;MiFieldView.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ContextMenuStrip, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DgvParsed.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
+  </data>
+  <data name="DgvParsed.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="DgvParsed.RowHeadersWidth" type="System.Int32, mscorlib">
+    <value>8</value>
+  </data>
+  <data name="DgvParsed.Size" type="System.Drawing.Size, System.Drawing">
+    <value>740, 446</value>
+  </data>
+  <data name="DgvParsed.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;DgvParsed.Name" xml:space="preserve">
+    <value>DgvParsed</value>
+  </data>
+  <data name="&gt;&gt;DgvParsed.Type" xml:space="preserve">
+    <value>System.Windows.Forms.DataGridView, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;DgvParsed.Parent" xml:space="preserve">
+    <value>SplitContainerFieldsAndRawData.Panel1</value>
+  </data>
+  <data name="&gt;&gt;DgvParsed.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <metadata name="OpenProjectFileDialog.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>193, 14</value>
+  </metadata>
+  <data name="OpenProjectFileDialog.Filter" xml:space="preserve">
+    <value>All files|*.*</value>
+  </data>
+  <data name="OpenProjectFileDialog.Title" xml:space="preserve">
+    <value>Open Project or Log file</value>
+  </data>
+  <data name="SplitContainerListAndFields.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
+  </data>
+  <data name="SplitContainerListAndFields.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 24</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerListAndFields.Panel1.Name" xml:space="preserve">
+    <value>SplitContainerListAndFields.Panel1</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerListAndFields.Panel1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.SplitterPanel, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerListAndFields.Panel1.Parent" xml:space="preserve">
+    <value>SplitContainerListAndFields</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerListAndFields.Panel1.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="SplitContainerListAndFields.Panel1MinSize" type="System.Int32, mscorlib">
+    <value>150</value>
+  </data>
+  <data name="SplitContainerFieldsAndRawData.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
+  </data>
+  <data name="SplitContainerFieldsAndRawData.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="SplitContainerFieldsAndRawData.Orientation" type="System.Windows.Forms.Orientation, System.Windows.Forms">
+    <value>Horizontal</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerFieldsAndRawData.Panel1.Name" xml:space="preserve">
+    <value>SplitContainerFieldsAndRawData.Panel1</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerFieldsAndRawData.Panel1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.SplitterPanel, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerFieldsAndRawData.Panel1.Parent" xml:space="preserve">
+    <value>SplitContainerFieldsAndRawData</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerFieldsAndRawData.Panel1.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="SplitContainerFieldsAndRawData.Panel1MinSize" type="System.Int32, mscorlib">
+    <value>50</value>
+  </data>
+  <data name="LayoutRawAndSuggested.ColumnCount" type="System.Int32, mscorlib">
+    <value>2</value>
+  </data>
+  <data name="RichTextData.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
+  </data>
+  <data name="RichTextData.Location" type="System.Drawing.Point, System.Drawing">
+    <value>3, 3</value>
+  </data>
+  <data name="RichTextData.Size" type="System.Drawing.Size, System.Drawing">
+    <value>509, 136</value>
+  </data>
+  <data name="RichTextData.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="RichTextData.Text" xml:space="preserve">
+    <value />
+  </data>
+  <data name="&gt;&gt;RichTextData.Name" xml:space="preserve">
+    <value>RichTextData</value>
+  </data>
+  <data name="&gt;&gt;RichTextData.Type" xml:space="preserve">
+    <value>System.Windows.Forms.RichTextBox, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;RichTextData.Parent" xml:space="preserve">
+    <value>LayoutRawAndSuggested</value>
+  </data>
+  <data name="&gt;&gt;RichTextData.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <metadata name="PMSuggestion.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>736, 17</value>
+  </metadata>
+  <data name="PMSuggestIntergers.Size" type="System.Drawing.Size, System.Drawing">
+    <value>159, 22</value>
+  </data>
+  <data name="PMSuggestIntergers.Text" xml:space="preserve">
+    <value>Integers</value>
+  </data>
+  <data name="PMSuggestFloats.Size" type="System.Drawing.Size, System.Drawing">
+    <value>159, 22</value>
+  </data>
+  <data name="PMSuggestFloats.Text" xml:space="preserve">
+    <value>Floating points</value>
+  </data>
+  <data name="PMSuggestDateTime.Size" type="System.Drawing.Size, System.Drawing">
+    <value>159, 22</value>
+  </data>
+  <data name="PMSuggestDateTime.Text" xml:space="preserve">
+    <value>DateTime</value>
+  </data>
+  <data name="PMSuggestN1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>156, 6</value>
+  </data>
+  <data name="PMSuggestLookup.Size" type="System.Drawing.Size, System.Drawing">
+    <value>159, 22</value>
+  </data>
+  <data name="PMSuggestLookup.Text" xml:space="preserve">
+    <value>Lookup lists</value>
+  </data>
+  <data name="PMSuggestCustomLookup.Size" type="System.Drawing.Size, System.Drawing">
+    <value>159, 22</value>
+  </data>
+  <data name="PMSuggestCustomLookup.Text" xml:space="preserve">
+    <value>Custom lookups</value>
+  </data>
+  <data name="PMSuggestion.Size" type="System.Drawing.Size, System.Drawing">
+    <value>160, 120</value>
+  </data>
+  <data name="PMSuggestion.Text" xml:space="preserve">
+    <value>Suggestion Settings</value>
+  </data>
+  <data name="&gt;&gt;PMSuggestion.Name" xml:space="preserve">
+    <value>PMSuggestion</value>
+  </data>
+  <data name="&gt;&gt;PMSuggestion.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ContextMenuStrip, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="SuggestionListBox.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
+  </data>
+  <data name="SuggestionListBox.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Segoe UI, 7pt</value>
+  </data>
+  <data name="SuggestionListBox.ItemHeight" type="System.Int32, mscorlib">
+    <value>12</value>
+  </data>
+  <data name="SuggestionListBox.Location" type="System.Drawing.Point, System.Drawing">
+    <value>518, 3</value>
+  </data>
+  <data name="SuggestionListBox.Size" type="System.Drawing.Size, System.Drawing">
+    <value>219, 136</value>
+  </data>
+  <data name="SuggestionListBox.TabIndex" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="&gt;&gt;SuggestionListBox.Name" xml:space="preserve">
+    <value>SuggestionListBox</value>
+  </data>
+  <data name="&gt;&gt;SuggestionListBox.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ListBox, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SuggestionListBox.Parent" xml:space="preserve">
+    <value>LayoutRawAndSuggested</value>
+  </data>
+  <data name="&gt;&gt;SuggestionListBox.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="LayoutRawAndSuggested.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
+    <value>Fill</value>
+  </data>
+  <data name="LayoutRawAndSuggested.Location" type="System.Drawing.Point, System.Drawing">
+    <value>0, 0</value>
+  </data>
+  <data name="LayoutRawAndSuggested.RowCount" type="System.Int32, mscorlib">
+    <value>1</value>
+  </data>
+  <data name="LayoutRawAndSuggested.Size" type="System.Drawing.Size, System.Drawing">
+    <value>740, 142</value>
+  </data>
+  <data name="LayoutRawAndSuggested.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;LayoutRawAndSuggested.Name" xml:space="preserve">
+    <value>LayoutRawAndSuggested</value>
+  </data>
+  <data name="&gt;&gt;LayoutRawAndSuggested.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;LayoutRawAndSuggested.Parent" xml:space="preserve">
+    <value>SplitContainerFieldsAndRawData.Panel2</value>
+  </data>
+  <data name="&gt;&gt;LayoutRawAndSuggested.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="LayoutRawAndSuggested.LayoutSettings" type="System.Windows.Forms.TableLayoutSettings, System.Windows.Forms">
+    <value>&lt;?xml version="1.0" encoding="utf-16"?&gt;&lt;TableLayoutSettings&gt;&lt;Controls&gt;&lt;Control Name="RichTextData" Row="0" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="SuggestionListBox" Row="0" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;/Controls&gt;&lt;Columns Styles="Absolute,515,Percent,100" /&gt;&lt;Rows Styles="Percent,100" /&gt;&lt;/TableLayoutSettings&gt;</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerFieldsAndRawData.Panel2.Name" xml:space="preserve">
+    <value>SplitContainerFieldsAndRawData.Panel2</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerFieldsAndRawData.Panel2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.SplitterPanel, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerFieldsAndRawData.Panel2.Parent" xml:space="preserve">
+    <value>SplitContainerFieldsAndRawData</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerFieldsAndRawData.Panel2.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="SplitContainerFieldsAndRawData.Panel2MinSize" type="System.Int32, mscorlib">
+    <value>120</value>
+  </data>
+  <data name="SplitContainerFieldsAndRawData.Size" type="System.Drawing.Size, System.Drawing">
+    <value>740, 592</value>
+  </data>
+  <data name="SplitContainerFieldsAndRawData.SplitterDistance" type="System.Int32, mscorlib">
+    <value>446</value>
+  </data>
+  <data name="SplitContainerFieldsAndRawData.TabIndex" type="System.Int32, mscorlib">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerFieldsAndRawData.Name" xml:space="preserve">
+    <value>SplitContainerFieldsAndRawData</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerFieldsAndRawData.Type" xml:space="preserve">
+    <value>System.Windows.Forms.SplitContainer, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerFieldsAndRawData.Parent" xml:space="preserve">
+    <value>SplitContainerListAndFields.Panel2</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerFieldsAndRawData.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerListAndFields.Panel2.Name" xml:space="preserve">
+    <value>SplitContainerListAndFields.Panel2</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerListAndFields.Panel2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.SplitterPanel, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerListAndFields.Panel2.Parent" xml:space="preserve">
+    <value>SplitContainerListAndFields</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerListAndFields.Panel2.ZOrder" xml:space="preserve">
+    <value>1</value>
+  </data>
+  <data name="SplitContainerListAndFields.Size" type="System.Drawing.Size, System.Drawing">
+    <value>1084, 592</value>
+  </data>
+  <data name="SplitContainerListAndFields.SplitterDistance" type="System.Int32, mscorlib">
+    <value>340</value>
+  </data>
+  <data name="SplitContainerListAndFields.TabIndex" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerListAndFields.Name" xml:space="preserve">
+    <value>SplitContainerListAndFields</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerListAndFields.Type" xml:space="preserve">
+    <value>System.Windows.Forms.SplitContainer, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerListAndFields.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;SplitContainerListAndFields.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <metadata name="SaveProjectFileDialog.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>568, 17</value>
+  </metadata>
+  <data name="SaveProjectFileDialog.Filter" xml:space="preserve">
+    <value>VieweD Project|*.pvd|All files|*.*</value>
+  </data>
+  <metadata name="ExportSaveFileDialog.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>17, 56</value>
+  </metadata>
+  <data name="ExportSaveFileDialog.Filter" xml:space="preserve">
+    <value>VieweD Packet Export|*.vpx|All files|*.*</value>
+  </data>
+  <data name="ExportSaveFileDialog.Title" xml:space="preserve">
+    <value>Export Packets</value>
+  </data>
+  <metadata name="ImportParsedDataFileDialog.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>194, 53</value>
+  </metadata>
+  <data name="ImportParsedDataFileDialog.Filter" xml:space="preserve">
+    <value>VieweD Packet Export|*.vpx|All files|*.*</value>
+  </data>
+  <data name="ImportParsedDataFileDialog.Title" xml:space="preserve">
+    <value>Open Parsed Data file</value>
+  </data>
+  <metadata name="ImportFolderBrowserDialog.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>398, 53</value>
+  </metadata>
+  <data name="ImportFolderBrowserDialog.Description" xml:space="preserve">
+    <value>Select target directory</value>
+  </data>
+  <data name="ImportFolderBrowserDialog.UseDescriptionForTitle" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>True</value>
+  </metadata>
+  <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
+    <value>7, 16</value>
+  </data>
+  <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
+    <value>1084, 641</value>
+  </data>
+  <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        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
+</value>
+  </data>
+  <data name="$this.MinimumSize" type="System.Drawing.Size, System.Drawing">
+    <value>450, 264</value>
+  </data>
+  <data name="$this.Text" xml:space="preserve">
+    <value>VieweD</value>
+  </data>
+  <data name="&gt;&gt;MMFile.Name" xml:space="preserve">
+    <value>MMFile</value>
+  </data>
+  <data name="&gt;&gt;MMFile.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMFileOpen.Name" xml:space="preserve">
+    <value>MMFileOpen</value>
+  </data>
+  <data name="&gt;&gt;MMFileOpen.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMFileRecent.Name" xml:space="preserve">
+    <value>MMFileRecent</value>
+  </data>
+  <data name="&gt;&gt;MMFileRecent.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMOpenRecentFile.Name" xml:space="preserve">
+    <value>MMOpenRecentFile</value>
+  </data>
+  <data name="&gt;&gt;MMOpenRecentFile.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMFileN3.Name" xml:space="preserve">
+    <value>MMFileN3</value>
+  </data>
+  <data name="&gt;&gt;MMFileN3.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMFileImport.Name" xml:space="preserve">
+    <value>MMFileImport</value>
+  </data>
+  <data name="&gt;&gt;MMFileImport.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMFileImportFromCommunity.Name" xml:space="preserve">
+    <value>MMFileImportFromCommunity</value>
+  </data>
+  <data name="&gt;&gt;MMFileImportFromCommunity.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMFileImportFromClipboard.Name" xml:space="preserve">
+    <value>MMFileImportFromClipboard</value>
+  </data>
+  <data name="&gt;&gt;MMFileImportFromClipboard.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMFileN4.Name" xml:space="preserve">
+    <value>MMFileN4</value>
+  </data>
+  <data name="&gt;&gt;MMFileN4.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMFileImportVpx.Name" xml:space="preserve">
+    <value>MMFileImportVpx</value>
+  </data>
+  <data name="&gt;&gt;MMFileImportVpx.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMFileExportVpx.Name" xml:space="preserve">
+    <value>MMFileExportVpx</value>
+  </data>
+  <data name="&gt;&gt;MMFileExportVpx.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMFileN1.Name" xml:space="preserve">
+    <value>MMFileN1</value>
+  </data>
+  <data name="&gt;&gt;MMFileN1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMFileSettings.Name" xml:space="preserve">
+    <value>MMFileSettings</value>
+  </data>
+  <data name="&gt;&gt;MMFileSettings.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMFileN2.Name" xml:space="preserve">
+    <value>MMFileN2</value>
+  </data>
+  <data name="&gt;&gt;MMFileN2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMFileExit.Name" xml:space="preserve">
+    <value>MMFileExit</value>
+  </data>
+  <data name="&gt;&gt;MMFileExit.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMVersion.Name" xml:space="preserve">
+    <value>MMVersion</value>
+  </data>
+  <data name="&gt;&gt;MMVersion.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMProject.Name" xml:space="preserve">
+    <value>MMProject</value>
+  </data>
+  <data name="&gt;&gt;MMProject.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMProjectSave.Name" xml:space="preserve">
+    <value>MMProjectSave</value>
+  </data>
+  <data name="&gt;&gt;MMProjectSave.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;toolStripMenuItem1.Name" xml:space="preserve">
+    <value>toolStripMenuItem1</value>
+  </data>
+  <data name="&gt;&gt;toolStripMenuItem1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMProjectCopySelectedPackets.Name" xml:space="preserve">
+    <value>MMProjectCopySelectedPackets</value>
+  </data>
+  <data name="&gt;&gt;MMProjectCopySelectedPackets.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;toolStripMenuItem3.Name" xml:space="preserve">
+    <value>toolStripMenuItem3</value>
+  </data>
+  <data name="&gt;&gt;toolStripMenuItem3.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMProjectGameData.Name" xml:space="preserve">
+    <value>MMProjectGameData</value>
+  </data>
+  <data name="&gt;&gt;MMProjectGameData.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMProjectVideo.Name" xml:space="preserve">
+    <value>MMProjectVideo</value>
+  </data>
+  <data name="&gt;&gt;MMProjectVideo.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMProjectN1.Name" xml:space="preserve">
+    <value>MMProjectN1</value>
+  </data>
+  <data name="&gt;&gt;MMProjectN1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMProjectSettings.Name" xml:space="preserve">
+    <value>MMProjectSettings</value>
+  </data>
+  <data name="&gt;&gt;MMProjectSettings.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMProjectPack.Name" xml:space="preserve">
+    <value>MMProjectPack</value>
+  </data>
+  <data name="&gt;&gt;MMProjectPack.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMProjectN2.Name" xml:space="preserve">
+    <value>MMProjectN2</value>
+  </data>
+  <data name="&gt;&gt;MMProjectN2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMProjectClose.Name" xml:space="preserve">
+    <value>MMProjectClose</value>
+  </data>
+  <data name="&gt;&gt;MMProjectClose.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMSearch.Name" xml:space="preserve">
+    <value>MMSearch</value>
+  </data>
+  <data name="&gt;&gt;MMSearch.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMSearchFind.Name" xml:space="preserve">
+    <value>MMSearchFind</value>
+  </data>
+  <data name="&gt;&gt;MMSearchFind.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMSearchFindNext.Name" xml:space="preserve">
+    <value>MMSearchFindNext</value>
+  </data>
+  <data name="&gt;&gt;MMSearchFindNext.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMSearchN1.Name" xml:space="preserve">
+    <value>MMSearchN1</value>
+  </data>
+  <data name="&gt;&gt;MMSearchN1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMSearchInvalid.Name" xml:space="preserve">
+    <value>MMSearchInvalid</value>
+  </data>
+  <data name="&gt;&gt;MMSearchInvalid.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMSearchN2.Name" xml:space="preserve">
+    <value>MMSearchN2</value>
+  </data>
+  <data name="&gt;&gt;MMSearchN2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMSearchEditFilter.Name" xml:space="preserve">
+    <value>MMSearchEditFilter</value>
+  </data>
+  <data name="&gt;&gt;MMSearchEditFilter.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMSearchApplyMenu.Name" xml:space="preserve">
+    <value>MMSearchApplyMenu</value>
+  </data>
+  <data name="&gt;&gt;MMSearchApplyMenu.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMSearchApplyReset.Name" xml:space="preserve">
+    <value>MMSearchApplyReset</value>
+  </data>
+  <data name="&gt;&gt;MMSearchApplyReset.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMSearchApplyMenuN1.Name" xml:space="preserve">
+    <value>MMSearchApplyMenuN1</value>
+  </data>
+  <data name="&gt;&gt;MMSearchApplyMenuN1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMSearchHighlightMenu.Name" xml:space="preserve">
+    <value>MMSearchHighlightMenu</value>
+  </data>
+  <data name="&gt;&gt;MMSearchHighlightMenu.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMSearchHighlightReset.Name" xml:space="preserve">
+    <value>MMSearchHighlightReset</value>
+  </data>
+  <data name="&gt;&gt;MMSearchHighlightReset.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMSearchHighlightMenuN1.Name" xml:space="preserve">
+    <value>MMSearchHighlightMenuN1</value>
+  </data>
+  <data name="&gt;&gt;MMSearchHighlightMenuN1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMTools.Name" xml:space="preserve">
+    <value>MMTools</value>
+  </data>
+  <data name="&gt;&gt;MMTools.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMToolsEditTemplates.Name" xml:space="preserve">
+    <value>MMToolsEditTemplates</value>
+  </data>
+  <data name="&gt;&gt;MMToolsEditTemplates.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMToolsEditTemplateItem.Name" xml:space="preserve">
+    <value>MMToolsEditTemplateItem</value>
+  </data>
+  <data name="&gt;&gt;MMToolsEditTemplateItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;toolStripMenuItem2.Name" xml:space="preserve">
+    <value>toolStripMenuItem2</value>
+  </data>
+  <data name="&gt;&gt;toolStripMenuItem2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMToolsExportCSV.Name" xml:space="preserve">
+    <value>MMToolsExportCSV</value>
+  </data>
+  <data name="&gt;&gt;MMToolsExportCSV.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMToolExportData.Name" xml:space="preserve">
+    <value>MMToolExportData</value>
+  </data>
+  <data name="&gt;&gt;MMToolExportData.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;dataToolStripMenuItem.Name" xml:space="preserve">
+    <value>dataToolStripMenuItem</value>
+  </data>
+  <data name="&gt;&gt;dataToolStripMenuItem.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMLinks.Name" xml:space="preserve">
+    <value>MMLinks</value>
+  </data>
+  <data name="&gt;&gt;MMLinks.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMLinksWiki.Name" xml:space="preserve">
+    <value>MMLinksWiki</value>
+  </data>
+  <data name="&gt;&gt;MMLinksWiki.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMLinksGitHub.Name" xml:space="preserve">
+    <value>MMLinksGitHub</value>
+  </data>
+  <data name="&gt;&gt;MMLinksGitHub.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMLinksDikscord.Name" xml:space="preserve">
+    <value>MMLinksDikscord</value>
+  </data>
+  <data name="&gt;&gt;MMLinksDikscord.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMLinksN1.Name" xml:space="preserve">
+    <value>MMLinksN1</value>
+  </data>
+  <data name="&gt;&gt;MMLinksN1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMLinksKoFi.Name" xml:space="preserve">
+    <value>MMLinksKoFi</value>
+  </data>
+  <data name="&gt;&gt;MMLinksKoFi.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMLinksN2.Name" xml:space="preserve">
+    <value>MMLinksN2</value>
+  </data>
+  <data name="&gt;&gt;MMLinksN2.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMLinksVLC.Name" xml:space="preserve">
+    <value>MMLinksVLC</value>
+  </data>
+  <data name="&gt;&gt;MMLinksVLC.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MMLinksWireshark.Name" xml:space="preserve">
+    <value>MMLinksWireshark</value>
+  </data>
+  <data name="&gt;&gt;MMLinksWireshark.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;StatusBarProgressBar.Name" xml:space="preserve">
+    <value>StatusBarProgressBar</value>
+  </data>
+  <data name="&gt;&gt;StatusBarProgressBar.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripProgressBar, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;StatusBarEngineName.Name" xml:space="preserve">
+    <value>StatusBarEngineName</value>
+  </data>
+  <data name="&gt;&gt;StatusBarEngineName.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripStatusLabel, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;StatusBarProject.Name" xml:space="preserve">
+    <value>StatusBarProject</value>
+  </data>
+  <data name="&gt;&gt;StatusBarProject.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripStatusLabel, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ILTabs.Name" xml:space="preserve">
+    <value>ILTabs</value>
+  </data>
+  <data name="&gt;&gt;ILTabs.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ImageList, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;DgvPosition.Name" xml:space="preserve">
+    <value>DgvPosition</value>
+  </data>
+  <data name="&gt;&gt;DgvPosition.Type" xml:space="preserve">
+    <value>System.Windows.Forms.DataGridViewTextBoxColumn, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;DgvName.Name" xml:space="preserve">
+    <value>DgvName</value>
+  </data>
+  <data name="&gt;&gt;DgvName.Type" xml:space="preserve">
+    <value>System.Windows.Forms.DataGridViewTextBoxColumn, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;DgvValue.Name" xml:space="preserve">
+    <value>DgvValue</value>
+  </data>
+  <data name="&gt;&gt;DgvValue.Type" xml:space="preserve">
+    <value>System.Windows.Forms.DataGridViewTextBoxColumn, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MiFieldFields.Name" xml:space="preserve">
+    <value>MiFieldFields</value>
+  </data>
+  <data name="&gt;&gt;MiFieldFields.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MIFieldLocalVars.Name" xml:space="preserve">
+    <value>MIFieldLocalVars</value>
+  </data>
+  <data name="&gt;&gt;MIFieldLocalVars.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MiFieldN1.Name" xml:space="preserve">
+    <value>MiFieldN1</value>
+  </data>
+  <data name="&gt;&gt;MiFieldN1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;MiFieldDebug.Name" xml:space="preserve">
+    <value>MiFieldDebug</value>
+  </data>
+  <data name="&gt;&gt;MiFieldDebug.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;OpenProjectFileDialog.Name" xml:space="preserve">
+    <value>OpenProjectFileDialog</value>
+  </data>
+  <data name="&gt;&gt;OpenProjectFileDialog.Type" xml:space="preserve">
+    <value>System.Windows.Forms.OpenFileDialog, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;PMSuggestIntergers.Name" xml:space="preserve">
+    <value>PMSuggestIntergers</value>
+  </data>
+  <data name="&gt;&gt;PMSuggestIntergers.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;PMSuggestFloats.Name" xml:space="preserve">
+    <value>PMSuggestFloats</value>
+  </data>
+  <data name="&gt;&gt;PMSuggestFloats.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;PMSuggestDateTime.Name" xml:space="preserve">
+    <value>PMSuggestDateTime</value>
+  </data>
+  <data name="&gt;&gt;PMSuggestDateTime.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;PMSuggestN1.Name" xml:space="preserve">
+    <value>PMSuggestN1</value>
+  </data>
+  <data name="&gt;&gt;PMSuggestN1.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripSeparator, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;PMSuggestLookup.Name" xml:space="preserve">
+    <value>PMSuggestLookup</value>
+  </data>
+  <data name="&gt;&gt;PMSuggestLookup.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;PMSuggestCustomLookup.Name" xml:space="preserve">
+    <value>PMSuggestCustomLookup</value>
+  </data>
+  <data name="&gt;&gt;PMSuggestCustomLookup.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;SaveProjectFileDialog.Name" xml:space="preserve">
+    <value>SaveProjectFileDialog</value>
+  </data>
+  <data name="&gt;&gt;SaveProjectFileDialog.Type" xml:space="preserve">
+    <value>System.Windows.Forms.SaveFileDialog, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ExportSaveFileDialog.Name" xml:space="preserve">
+    <value>ExportSaveFileDialog</value>
+  </data>
+  <data name="&gt;&gt;ExportSaveFileDialog.Type" xml:space="preserve">
+    <value>System.Windows.Forms.SaveFileDialog, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ImportParsedDataFileDialog.Name" xml:space="preserve">
+    <value>ImportParsedDataFileDialog</value>
+  </data>
+  <data name="&gt;&gt;ImportParsedDataFileDialog.Type" xml:space="preserve">
+    <value>System.Windows.Forms.OpenFileDialog, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;ImportFolderBrowserDialog.Name" xml:space="preserve">
+    <value>ImportFolderBrowserDialog</value>
+  </data>
+  <data name="&gt;&gt;ImportFolderBrowserDialog.Type" xml:space="preserve">
+    <value>System.Windows.Forms.FolderBrowserDialog, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;$this.Name" xml:space="preserve">
+    <value>MainForm</value>
+  </data>
+  <data name="&gt;&gt;$this.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Form, System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+</root>

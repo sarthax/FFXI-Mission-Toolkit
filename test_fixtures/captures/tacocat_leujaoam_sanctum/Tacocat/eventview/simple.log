@@ -1,0 +1,36 @@
+INCOMING < CS Event + Params (0x034):  NPC: 17101281 (Runic Seal)
+Event: 140
+Params: 3, -4, 0, 60, 0, 0, 3, 0
+
+OUTGOING > Event Option (0x05B):  NPC: 17101281 (Runic Seal)
+Event: 140
+Option: 0
+
+INCOMING < CS Event + Params (0x034):  NPC: 17101327 (Nareema)
+Event: 149
+Params: 50, 87122, 0, 60, 0, 0, 3, 0
+
+OUTGOING > Event Option (0x05B):  NPC: 17101327 (Nareema)
+Event: 149
+Option: 1
+
+INCOMING < CS Event + Params (0x034):  NPC: 17101327 (Nareema)
+Event: 7
+Params: 1, 87122, 0, 60, 0, 0, 3, 0
+
+OUTGOING > Event Option (0x05B):  NPC: 17101327 (Nareema)
+Event: 7
+Option: 0
+
+INCOMING < CS Event + Params (0x034):  NPC: 17101281 (Runic Seal)
+Event: 140
+Params: 3, -4, 0, 60, 0, 1, 3, 0
+
+OUTGOING > Event Option (0x05B):  NPC: 17101281 (Runic Seal)
+Event: 140
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 17101281 (Runic Seal)
+Event: 140
+Option: 4
+

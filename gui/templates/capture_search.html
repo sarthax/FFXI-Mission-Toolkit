@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Capture Search{% endblock %}
+
+{% macro pager() %}
+{% if total_pages > 1 %}
+<form method="get" action="/captures/search" style="display:flex;gap:8px;align-items:center;margin:12px 0;flex-wrap:wrap;">
+  {% for k, v in qs_pairs %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+  <span class="muted">page</span>
+  <input type="number" name="page" value="{{ page }}" min="1" max="{{ total_pages }}" style="width:70px;">
+  <span class="muted">of {{ total_pages }}</span>
+  <button type="submit">Go</button>
+</form>
+{% endif %}
+{% endmacro %}
+
+{% block content %}
+<p><a class="inline" href="/captures">&larr; back to Captures</a></p>
+<h1>Capture Search</h1>
+<p class="muted">Cross-capture search across all 84 ingested captures at once -- find every time
+  an NPC said something, or every real observed instance of a packet type, anywhere in the corpus,
+  not just one capture at a time.</p>
+
+<div style="display:flex; gap:8px; margin-bottom:12px;">
+  <a class="chip {% if mode == 'events' %}chip-active{% endif %}" href="/captures/search?mode=events">Events / Dialogue</a>
+  <a class="chip {% if mode == 'packets' %}chip-active{% endif %}" href="/captures/search?mode=packets">Raw Packets</a>
+</div>
+
+{% if mode == 'events' %}
+<form class="search" method="get">
+  <input type="hidden" name="mode" value="events">
+  <input type="text" name="entity" value="{{ entity }}" placeholder="NPC name">
+  <input type="text" name="message_id" value="{{ message_id }}" placeholder="message id (exact)">
+  <div style="display:flex; flex-wrap:wrap; gap:4px 14px; align-items:center;">
+    <span class="muted">opcodes:</span>
+    {% for o in available_ev_opcodes %}
+    <label style="display:flex; align-items:center; gap:4px; font-weight:normal;">
+      <input type="checkbox" name="ev_opcodes" value="{{ o.opcode }}" {% if o.opcode in ev_opcodes %}checked{% endif %}>
+      <span class="mono">{{ o.opcode }}</span> {{ o.opcode_name }}
+    </label>
+    {% endfor %}
+  </div>
+  <button type="submit">Search</button>
+</form>
+
+{% if events %}
+<p class="muted">{{ total }} result(s) -- page {{ page }} of {{ total_pages }}.</p>
+{{ pager() }}
+<div class="table-wrap"><table>
+  <tr><th>capture</th><th>seq</th><th>dir</th><th>opcode</th><th>entity</th><th>csid</th><th>option</th><th>message</th><th>dialogue</th></tr>
+  {% for e in events %}
+  <tr>
+    <td><a href="/captures/{{ e.capture_id }}/timeline">#{{ e.capture_id }}</a> <span class="muted">{{ e.capture_label }}</span></td>
+    <td class="mono">{{ e.seq }}</td>
+    <td>{{ e.direction }}</td>
+    <td><span class="chip mono">{{ e.opcode }}</span> {{ e.opcode_name }}</td>
+    <td>{{ e.entity_name or '' }}</td>
+    <td class="mono">{{ e.event_hex or '' }}</td>
+    <td class="mono">{{ e.option if e.option is not none else '' }}</td>
+    <td class="mono">{{ e.message_id if e.message_id is not none else '' }}</td>
+    <td>{{ e.dialog_text or '' }}</td>
+  </tr>
+  {% endfor %}
+</table></div>
+{{ pager() }}
+{% elif entity or message_id or ev_opcode %}
+<p class="muted">No matches.</p>
+{% endif %}
+
+{% else %}
+<form class="search" method="get">
+  <input type="hidden" name="mode" value="packets">
+  <select name="pk_category">
+    <option value="">(choose a category)</option>
+    {% for c in categories %}
+    <option value="{{ c }}" {% if c == pk_category %}selected{% endif %}>{{ c }}</option>
+    {% endfor %}
+  </select>
+  <input type="text" name="pk_opcode" value="{{ pk_opcode }}" placeholder="or exact opcode, e.g. 0x020">
+  <button type="submit">Search</button>
+</form>
+
+{% if packets %}
+<p class="muted">{{ total }} result(s) -- page {{ page }} of {{ total_pages }}.</p>
+{{ pager() }}
+<div class="table-wrap"><table>
+  <tr><th>capture</th><th>seq</th><th>ts</th><th>dir</th><th>opcode</th><th>description</th><th>fields</th></tr>
+  {% for p in packets %}
+  <tr>
+    <td><a href="/captures/{{ p.capture_id }}/packets?opcode={{ p.opcode }}">#{{ p.capture_id }}</a> <span class="muted">{{ p.capture_label }}</span></td>
+    <td class="mono">{{ p.seq }}</td>
+    <td class="mono">{{ p.ts }}</td>
+    <td>{{ p.direction }}</td>
+    <td class="mono">{{ p.opcode }}</td>
+    <td>{{ p.description or '' }}</td>
+    <td>
+      {% if p.fields %}
+      <table style="margin:0;">
+        {% for f in p.fields %}
+        <tr><td class="mono muted">{{ f.name }}</td><td class="mono">{{ f.value }}</td></tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table></div>
+{{ pager() }}
+{% elif pk_category or pk_opcode %}
+<p class="muted">No matches.</p>
+{% endif %}
+{% endif %}
+{% endblock %}

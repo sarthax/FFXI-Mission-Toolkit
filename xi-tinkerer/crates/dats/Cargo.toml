@@ -1,0 +1,23 @@
+[package]
+name = "dats"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+thiserror = "2.0.11"
+common = { path = "../common" }
+encoding = { path = "../encoding" }
+anyhow = "1.0.96"
+serde = { version = "1.0.162", features = ["derive"] }
+serde_derive = "1.0.162"
+regex = "1.9.1"
+base64 = "0.22.1"
+bitflags = "2.4.0"
+num_enum = "0.7.0"
+specta = { version = "2.0.0-rc.21", optional = true }
+
+[dev-dependencies]
+serde_yaml = "0.9.25"
+
+[features]
+specta = ["dep:specta"]

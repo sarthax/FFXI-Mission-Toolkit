@@ -1,0 +1,667 @@
+Source Key,Zone,Mission,??? Item Type,Appraisal Result,Reference Source,itemid,is_equipment
+LEUJAOAM_SANCTUM_LEUJAOAM_CLEANSING_RING,Leujaoam Sanctum,Leujaoam Cleansing,??? Ring,Imperial Ring,FFXIclopedia,15773,Y
+LEUJAOAM_SANCTUM_LEUJAOAM_CLEANSING_RING,Leujaoam Sanctum,Leujaoam Cleansing,??? Ring,Archer's Ring,FFXIclopedia,13514,Y
+LEUJAOAM_SANCTUM_LEUJAOAM_CLEANSING_RING,Leujaoam Sanctum,Leujaoam Cleansing,??? Ring,Brass Ring,FFXIclopedia,13465,Y
+LEUJAOAM_SANCTUM_LEUJAOAM_CLEANSING_RING,Leujaoam Sanctum,Leujaoam Cleansing,??? Ring,Copper Ring,FFXIclopedia,13454,Y
+LEUJAOAM_SANCTUM_LEUJAOAM_CLEANSING_BOX,Leujaoam Sanctum,Leujaoam Cleansing,??? Box,White Rock,FFXIclopedia,776,N
+LEUJAOAM_SANCTUM_LEUJAOAM_CLEANSING_BOX,Leujaoam Sanctum,Leujaoam Cleansing,??? Box,Phalaenopsis,FFXIclopedia,1411,N
+LEUJAOAM_SANCTUM_LEUJAOAM_CLEANSING_BOX,Leujaoam Sanctum,Leujaoam Cleansing,??? Box,Lakerda,FFXIclopedia,5450,N
+LEUJAOAM_SANCTUM_LEUJAOAM_CLEANSING_BOX,Leujaoam Sanctum,Leujaoam Cleansing,??? Box,Tsurara,FFXIclopedia,1164,N
+LEUJAOAM_SANCTUM_LEUJAOAM_CLEANSING_BOX,Leujaoam Sanctum,Leujaoam Cleansing,??? Box,Ice Crystal,FFXIclopedia,4097,N
+LEUJAOAM_SANCTUM_LEUJAOAM_CLEANSING_BOX,Leujaoam Sanctum,Leujaoam Cleansing,??? Box,Merrow Scale,FFXIclopedia,2146,N
+LEUJAOAM_SANCTUM_LEUJAOAM_CLEANSING_BOX,Leujaoam Sanctum,Leujaoam Cleansing,??? Box,Soulflayer Staff,FFXIclopedia,2336,N
+LEUJAOAM_SANCTUM_LEUJAOAM_CLEANSING_BOX,Leujaoam Sanctum,Leujaoam Cleansing,??? Box,Iron Bullet Pouch,FFXIclopedia,5353,N
+LEUJAOAM_SANCTUM_LEUJAOAM_CLEANSING_BOX,Leujaoam Sanctum,Leujaoam Cleansing,??? Box,Glass Sheet,FFXIclopedia,1887,
+LEUJAOAM_SANCTUM_LEUJAOAM_CLEANSING_BOX,Leujaoam Sanctum,Leujaoam Cleansing,??? Box,Gardenia Seed,FFXIclopedia,1472,N
+LEUJAOAM_SANCTUM_LEUJAOAM_CLEANSING_BOX,Leujaoam Sanctum,Leujaoam Cleansing,??? Box,Toolbag (Jusa),FFXIclopedia,5315,N
+LEUJAOAM_SANCTUM_ORICHALCUM_SURVEY_GLOVES,Leujaoam Sanctum,Orichalcum Survey,??? Gloves,Storm Gages,FFXIclopedia,14937,Y
+LEUJAOAM_SANCTUM_ORICHALCUM_SURVEY_NECKLACE,Leujaoam Sanctum,Orichalcum Survey,??? Necklace,Storm Muffler,FFXIclopedia,15519,Y
+LEUJAOAM_SANCTUM_ORICHALCUM_SURVEY_NECKLACE,Leujaoam Sanctum,Orichalcum Survey,??? Necklace,Jagd Gorget,FFXIclopedia,13165,Y
+LEUJAOAM_SANCTUM_ORICHALCUM_SURVEY_NECKLACE,Leujaoam Sanctum,Orichalcum Survey,??? Necklace,Feather Collar,FFXIclopedia,13075,Y
+LEUJAOAM_SANCTUM_ORICHALCUM_SURVEY_NECKLACE,Leujaoam Sanctum,Orichalcum Survey,??? Necklace,Gorget +1,FFXIclopedia,13065,Y
+LEUJAOAM_SANCTUM_ORICHALCUM_SURVEY_BOX,Leujaoam Sanctum,Orichalcum Survey,??? Box,Eggplant,FFXIclopedia,4388,N
+LEUJAOAM_SANCTUM_ORICHALCUM_SURVEY_BOX,Leujaoam Sanctum,Orichalcum Survey,??? Box,Gardenia Seed,FFXIclopedia,1472,N
+LEUJAOAM_SANCTUM_ORICHALCUM_SURVEY_BOX,Leujaoam Sanctum,Orichalcum Survey,??? Box,Ice Crystal,FFXIclopedia,4097,N
+LEUJAOAM_SANCTUM_ORICHALCUM_SURVEY_BOX,Leujaoam Sanctum,Orichalcum Survey,??? Box,Kabura Quiver,FFXIclopedia,5332,N
+LEUJAOAM_SANCTUM_ORICHALCUM_SURVEY_BOX,Leujaoam Sanctum,Orichalcum Survey,??? Box,Linen Cloth,FFXIclopedia,826,N
+LEUJAOAM_SANCTUM_ORICHALCUM_SURVEY_BOX,Leujaoam Sanctum,Orichalcum Survey,??? Box,Merrow Scale,FFXIclopedia,2146,N
+LEUJAOAM_SANCTUM_ORICHALCUM_SURVEY_BOX,Leujaoam Sanctum,Orichalcum Survey,??? Box,Phalaenopsis,FFXIclopedia,1411,N
+LEUJAOAM_SANCTUM_ORICHALCUM_SURVEY_BOX,Leujaoam Sanctum,Orichalcum Survey,??? Box,Poroggo Hat,FFXIclopedia,2334,N
+LEUJAOAM_SANCTUM_ORICHALCUM_SURVEY_BOX,Leujaoam Sanctum,Orichalcum Survey,??? Box,Soulflayer Staff,FFXIclopedia,2336,N
+LEUJAOAM_SANCTUM_ORICHALCUM_SURVEY_BOX,Leujaoam Sanctum,Orichalcum Survey,??? Box,Tsurara,FFXIclopedia,1164,N
+LEUJAOAM_SANCTUM_ORICHALCUM_SURVEY_BOX,Leujaoam Sanctum,Orichalcum Survey,??? Box,White Rock,FFXIclopedia,776,N
+LEUJAOAM_SANCTUM_ESCORT_PROFESSOR_CHANOIX_CAPE,Leujaoam Sanctum,Escort Professor Chanoix,??? Cape,Cotton Cape +1,FFXIclopedia,13601,Y
+LEUJAOAM_SANCTUM_ESCORT_PROFESSOR_CHANOIX_CAPE,Leujaoam Sanctum,Escort Professor Chanoix,??? Cape,Dhalmel Mantle +1,FFXIclopedia,13600,Y
+LEUJAOAM_SANCTUM_ESCORT_PROFESSOR_CHANOIX_CAPE,Leujaoam Sanctum,Escort Professor Chanoix,??? Cape,Lizard Mantle +1,FFXIclopedia,13608,Y
+LEUJAOAM_SANCTUM_ESCORT_PROFESSOR_CHANOIX_CAPE,Leujaoam Sanctum,Escort Professor Chanoix,??? Cape,Red Cape +1,FFXIclopedia,13611,Y
+LEUJAOAM_SANCTUM_ESCORT_PROFESSOR_CHANOIX_CAPE,Leujaoam Sanctum,Escort Professor Chanoix,??? Cape,Storm Mantle,FFXIclopedia,15483,Y
+LEUJAOAM_SANCTUM_SHANARHA_GRASS_CONSERVATION_BOX,Leujaoam Sanctum,Shanarha Grass Conservation,??? Box,Gardenia Seed,BGWiki,1472,N
+LEUJAOAM_SANCTUM_SHANARHA_GRASS_CONSERVATION_BOX,Leujaoam Sanctum,Shanarha Grass Conservation,??? Box,Ice Crystal,BGWiki,4097,N
+LEUJAOAM_SANCTUM_SHANARHA_GRASS_CONSERVATION_BOX,Leujaoam Sanctum,Shanarha Grass Conservation,??? Box,Lamp Marimo,BGWiki,2216,N
+LEUJAOAM_SANCTUM_SHANARHA_GRASS_CONSERVATION_BOX,Leujaoam Sanctum,Shanarha Grass Conservation,??? Box,Phalaenopsis,BGWiki,1411,N
+LEUJAOAM_SANCTUM_SHANARHA_GRASS_CONSERVATION_BOX,Leujaoam Sanctum,Shanarha Grass Conservation,??? Box,Tsurara,BGWiki,1164,N
+LEUJAOAM_SANCTUM_SHANARHA_GRASS_CONSERVATION_BOX,Leujaoam Sanctum,Shanarha Grass Conservation,??? Box,White Rock,BGWiki,776,N
+LEUJAOAM_SANCTUM_SHANARHA_GRASS_CONSERVATION_SASH,Leujaoam Sanctum,Shanarha Grass Conservation,??? Sash,Deductive Gold Obi,ZenithXI,15460,Y
+LEUJAOAM_SANCTUM_SHANARHA_GRASS_CONSERVATION_SASH,Leujaoam Sanctum,Shanarha Grass Conservation,??? Sash,Enthralling Gold Obi,ZenithXI,15461,Y
+LEUJAOAM_SANCTUM_SHANARHA_GRASS_CONSERVATION_SASH,Leujaoam Sanctum,Shanarha Grass Conservation,??? Sash,Little Worm Belt,ZenithXI,15454,Y
+LEUJAOAM_SANCTUM_SHANARHA_GRASS_CONSERVATION_SASH,Leujaoam Sanctum,Shanarha Grass Conservation,??? Sash,Lugworm Belt,ZenithXI,15453,Y
+LEUJAOAM_SANCTUM_SHANARHA_GRASS_CONSERVATION_SASH,Leujaoam Sanctum,Shanarha Grass Conservation,??? Sash,Silver Obi +1,ZenithXI,13224,Y
+LEUJAOAM_SANCTUM_SHANARHA_GRASS_CONSERVATION_SASH,Leujaoam Sanctum,Shanarha Grass Conservation,??? Sash,Storm Belt,ZenithXI,15882,Y
+LEUJAOAM_SANCTUM_SHANARHA_GRASS_CONSERVATION_SASH,Leujaoam Sanctum,Shanarha Grass Conservation,??? Sash,Talisman Obi,ZenithXI,15881,Y
+LEUJAOAM_SANCTUM_COUNTING_SHEEP_BOX,Leujaoam Sanctum,Counting Sheep,??? Box,Gardenia Seed,BGWiki,1472,N
+LEUJAOAM_SANCTUM_COUNTING_SHEEP_BOX,Leujaoam Sanctum,Counting Sheep,??? Box,Ice Crystal,BGWiki,4097,N
+LEUJAOAM_SANCTUM_COUNTING_SHEEP_BOX,Leujaoam Sanctum,Counting Sheep,??? Box,Phalaenopsis,BGWiki,1411,N
+LEUJAOAM_SANCTUM_COUNTING_SHEEP_BOX,Leujaoam Sanctum,Counting Sheep,??? Box,Soulflayer Staff,BGWiki,2336,N
+LEUJAOAM_SANCTUM_COUNTING_SHEEP_BOX,Leujaoam Sanctum,Counting Sheep,??? Box,Tsurara,BGWiki,1164,N
+LEUJAOAM_SANCTUM_COUNTING_SHEEP_BOX,Leujaoam Sanctum,Counting Sheep,??? Box,White Rock,BGWiki,776,N
+LEUJAOAM_SANCTUM_COUNTING_SHEEP_DAGGER,Leujaoam Sanctum,Counting Sheep,??? Dagger,Hushed Dagger,BGWiki,18008,Y
+LEUJAOAM_SANCTUM_COUNTING_SHEEP_DAGGER,Leujaoam Sanctum,Counting Sheep,??? Dagger,Katars,BGWiki,16399,Y
+LEUJAOAM_SANCTUM_COUNTING_SHEEP_DAGGER,Leujaoam Sanctum,Counting Sheep,??? Dagger,Kyofu,BGWiki,17780,Y
+LEUJAOAM_SANCTUM_COUNTING_SHEEP_DAGGER,Leujaoam Sanctum,Counting Sheep,??? Dagger,Pahluwan Katars,BGWiki,18364,Y
+LEUJAOAM_SANCTUM_COUNTING_SHEEP_DAGGER,Leujaoam Sanctum,Counting Sheep,??? Dagger,Ponderous Gully,BGWiki,17625,Y
+LEUJAOAM_SANCTUM_COUNTING_SHEEP_DAGGER,Leujaoam Sanctum,Counting Sheep,??? Dagger,Ponderous Manoples,BGWiki,18361,Y
+LEUJAOAM_SANCTUM_COUNTING_SHEEP_DAGGER,Leujaoam Sanctum,Counting Sheep,??? Dagger,Spark Dagger,BGWiki,17984,Y
+LEUJAOAM_SANCTUM_SUPPLIES_RECOVERY_DAGGER,Leujaoam Sanctum,Supplies Recovery,??? Dagger,Hushed Dagger,ClassicFFXI,18008,Y
+LEUJAOAM_SANCTUM_SUPPLIES_RECOVERY_DAGGER,Leujaoam Sanctum,Supplies Recovery,??? Dagger,Spark Dagger,ClassicFFXI,17984,Y
+LEUJAOAM_SANCTUM_SUPPLIES_RECOVERY_DAGGER,Leujaoam Sanctum,Supplies Recovery,??? Dagger,Argent Dagger,ClassicFFXI,17997,Y
+LEUJAOAM_SANCTUM_SUPPLIES_RECOVERY_DAGGER,Leujaoam Sanctum,Supplies Recovery,??? Dagger,Palladium Dagger,ClassicFFXI,18027,Y
+LEUJAOAM_SANCTUM_SUPPLIES_RECOVERY_DAGGER,Leujaoam Sanctum,Supplies Recovery,??? Dagger,Kyofu,ClassicFFXI,17780,Y
+LEUJAOAM_SANCTUM_SUPPLIES_RECOVERY_GLOVES,Leujaoam Sanctum,Supplies Recovery,??? Gloves,Bronze Mittens +1,ClassicFFXI,12695,Y
+LEUJAOAM_SANCTUM_SUPPLIES_RECOVERY_GLOVES,Leujaoam Sanctum,Supplies Recovery,??? Gloves,Leather Gloves,ClassicFFXI,12696,Y
+LEUJAOAM_SANCTUM_SUPPLIES_RECOVERY_GLOVES,Leujaoam Sanctum,Supplies Recovery,??? Gloves,Cotton Gloves,ClassicFFXI,12721,Y
+LEUJAOAM_SANCTUM_SUPPLIES_RECOVERY_GLOVES,Leujaoam Sanctum,Supplies Recovery,??? Gloves,Cuffs,ClassicFFXI,12728,Y
+LEUJAOAM_SANCTUM_SUPPLIES_RECOVERY_GLOVES,Leujaoam Sanctum,Supplies Recovery,??? Gloves,Dragon Kote,ClassicFFXI,14951,Y
+LEUJAOAM_SANCTUM_SUPPLIES_RECOVERY_GLOVES,Leujaoam Sanctum,Supplies Recovery,??? Gloves,Trainer's Gloves,ClassicFFXI,14871,Y
+LEUJAOAM_SANCTUM_SUPPLIES_RECOVERY_BOX,Leujaoam Sanctum,Supplies Recovery,??? Box,White Rock,ClassicFFXI,776,N
+LEUJAOAM_SANCTUM_SUPPLIES_RECOVERY_BOX,Leujaoam Sanctum,Supplies Recovery,??? Box,Phalaenopsis,ClassicFFXI,1411,N
+LEUJAOAM_SANCTUM_SUPPLIES_RECOVERY_BOX,Leujaoam Sanctum,Supplies Recovery,??? Box,Tsurara,ClassicFFXI,1164,N
+LEUJAOAM_SANCTUM_SUPPLIES_RECOVERY_BOX,Leujaoam Sanctum,Supplies Recovery,??? Box,Ice Crystal,ClassicFFXI,4097,N
+LEUJAOAM_SANCTUM_AZURE_EXPERIMENTS_FOOTWEAR,Leujaoam Sanctum,Azure Experiments,??? Footwear,Ataractic Solea,FFXIclopedia,15705,Y
+LEUJAOAM_SANCTUM_AZURE_EXPERIMENTS_FOOTWEAR,Leujaoam Sanctum,Azure Experiments,??? Footwear,Ash Clogs,FFXIclopedia,12984,Y
+LEUJAOAM_SANCTUM_AZURE_EXPERIMENTS_FOOTWEAR,Leujaoam Sanctum,Azure Experiments,??? Footwear,Bronze Leggings +1,FFXIclopedia,12951,Y
+LEUJAOAM_SANCTUM_AZURE_EXPERIMENTS_FOOTWEAR,Leujaoam Sanctum,Azure Experiments,??? Footwear,Leather Highboots,FFXIclopedia,12952,Y
+LEUJAOAM_SANCTUM_AZURE_EXPERIMENTS_FOOTWEAR,Leujaoam Sanctum,Azure Experiments,??? Footwear,Evoker's Boots,FFXIclopedia,15325,Y
+LEUJAOAM_SANCTUM_AZURE_EXPERIMENTS_FOOTWEAR,Leujaoam Sanctum,Azure Experiments,??? Footwear,Solea,FFXIclopedia,12992,Y
+LEUJAOAM_SANCTUM_BLOODY_RONDO_BOX,Leujaoam Sanctum,Bloody Rondo,??? Box,Bloody Bolt Quiver,FFXIclopedia,5339,N
+LEUJAOAM_SANCTUM_BLOODY_RONDO_BOX,Leujaoam Sanctum,Bloody Rondo,??? Box,Gardenia Seed,FFXIclopedia,1472,N
+LEUJAOAM_SANCTUM_BLOODY_RONDO_BOX,Leujaoam Sanctum,Bloody Rondo,??? Box,Merrow Scale,FFXIclopedia,2146,N
+LEUJAOAM_SANCTUM_BLOODY_RONDO_BOX,Leujaoam Sanctum,Bloody Rondo,??? Box,Mythril Bolt Quiver,FFXIclopedia,4228,N
+LEUJAOAM_SANCTUM_BLOODY_RONDO_BOX,Leujaoam Sanctum,Bloody Rondo,??? Box,Sleep Quiver,FFXIclopedia,5333,N
+LEUJAOAM_SANCTUM_BLOODY_RONDO_BOX,Leujaoam Sanctum,Bloody Rondo,??? Box,Soulflayer Staff,FFXIclopedia,2336,N
+LEUJAOAM_SANCTUM_BLOODY_RONDO_BOX,Leujaoam Sanctum,Bloody Rondo,??? Box,Toolbag (Tsura),FFXIclopedia,5309,N
+LEUJAOAM_SANCTUM_BLOODY_RONDO_BOX,Leujaoam Sanctum,Bloody Rondo,??? Box,Acid Bolt Quiver,FFXIclopedia,5335,N
+LEUJAOAM_SANCTUM_BLOODY_RONDO_GLOVES,Leujaoam Sanctum,Bloody Rondo,??? Gloves,Bronze Mittens +1,BGWiki,12695,Y
+LEUJAOAM_SANCTUM_BLOODY_RONDO_GLOVES,Leujaoam Sanctum,Bloody Rondo,??? Gloves,Caballero Gauntlets,BGWiki,15000,Y
+LEUJAOAM_SANCTUM_BLOODY_RONDO_GLOVES,Leujaoam Sanctum,Bloody Rondo,??? Gloves,Cotton Gloves,BGWiki,12721,Y
+LEUJAOAM_SANCTUM_BLOODY_RONDO_GLOVES,Leujaoam Sanctum,Bloody Rondo,??? Gloves,Cuffs,BGWiki,12728,Y
+LEUJAOAM_SANCTUM_BLOODY_RONDO_GLOVES,Leujaoam Sanctum,Bloody Rondo,??? Gloves,Leather Gloves +1,BGWiki,12784,Y
+LEUJAOAM_SANCTUM_BLOODY_RONDO_GLOVES,Leujaoam Sanctum,Bloody Rondo,??? Gloves,Vampiric Mitts,BGWiki,14999,Y
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_AGENT_RESCUE_BOX,Mamool Ja Training Grounds,Imperial Agent Rescue,??? Box,Eggplant,BGWiki,4388,N
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_AGENT_RESCUE_BOX,Mamool Ja Training Grounds,Imperial Agent Rescue,??? Box,Imperial Tea Leaves,BGWiki,2156,N
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_AGENT_RESCUE_BOX,Mamool Ja Training Grounds,Imperial Agent Rescue,??? Box,Sage,BGWiki,638,N
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_AGENT_RESCUE_BOX,Mamool Ja Training Grounds,Imperial Agent Rescue,??? Box,Silk Cloth,BGWiki,829,N
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_AGENT_RESCUE_BOX,Mamool Ja Training Grounds,Imperial Agent Rescue,??? Box,Wild Onion,BGWiki,4387,N
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_AGENT_RESCUE_RING,Mamool Ja Training Grounds,Imperial Agent Rescue,??? Ring,Brass Ring,BGWiki,13465,Y
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_AGENT_RESCUE_RING,Mamool Ja Training Grounds,Imperial Agent Rescue,??? Ring,Copper Ring,BGWiki,13454,Y
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_AGENT_RESCUE_RING,Mamool Ja Training Grounds,Imperial Agent Rescue,??? Ring,Ether Ring,BGWiki,13549,Y
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_AGENT_RESCUE_RING,Mamool Ja Training Grounds,Imperial Agent Rescue,??? Ring,Storm Ring,BGWiki,15774,Y
+MAMOOL_JA_TRAINING_GROUNDS_PREEMPTIVE_STRIKE_NECKLACE,Mamool Ja Training Grounds,Preemptive Strike,??? Necklace,Storm Torque,FFXIclopedia,15520,Y
+MAMOOL_JA_TRAINING_GROUNDS_PREEMPTIVE_STRIKE_NECKLACE,Mamool Ja Training Grounds,Preemptive Strike,??? Necklace,Spectacles,FFXIclopedia,13128,Y
+MAMOOL_JA_TRAINING_GROUNDS_PREEMPTIVE_STRIKE_NECKLACE,Mamool Ja Training Grounds,Preemptive Strike,??? Necklace,Feather Collar,FFXIclopedia,13075,Y
+MAMOOL_JA_TRAINING_GROUNDS_PREEMPTIVE_STRIKE_NECKLACE,Mamool Ja Training Grounds,Preemptive Strike,??? Necklace,Gorget +1,FFXIclopedia,13065,Y
+MAMOOL_JA_TRAINING_GROUNDS_PREEMPTIVE_STRIKE_BOX,Mamool Ja Training Grounds,Preemptive Strike,??? Box,Eggplant,FFXIclopedia,4388,N
+MAMOOL_JA_TRAINING_GROUNDS_PREEMPTIVE_STRIKE_BOX,Mamool Ja Training Grounds,Preemptive Strike,??? Box,Sage,FFXIclopedia,638,N
+MAMOOL_JA_TRAINING_GROUNDS_PREEMPTIVE_STRIKE_BOX,Mamool Ja Training Grounds,Preemptive Strike,??? Box,Imperial Tea Leaves,FFXIclopedia,2156,N
+MAMOOL_JA_TRAINING_GROUNDS_PREEMPTIVE_STRIKE_BOX,Mamool Ja Training Grounds,Preemptive Strike,??? Box,Wild Onion,FFXIclopedia,4387,N
+MAMOOL_JA_TRAINING_GROUNDS_PREEMPTIVE_STRIKE_BOX,Mamool Ja Training Grounds,Preemptive Strike,??? Box,Red Grass Thread,FFXIclopedia,1828,N
+MAMOOL_JA_TRAINING_GROUNDS_PREEMPTIVE_STRIKE_BOX,Mamool Ja Training Grounds,Preemptive Strike,??? Box,Mamool Ja Collar,FFXIclopedia,2227,N
+MAMOOL_JA_TRAINING_GROUNDS_PREEMPTIVE_STRIKE_BOX,Mamool Ja Training Grounds,Preemptive Strike,??? Box,Toolbag (Sairui-ran),FFXIclopedia,5317,N
+MAMOOL_JA_TRAINING_GROUNDS_PREEMPTIVE_STRIKE_BOX,Mamool Ja Training Grounds,Preemptive Strike,??? Box,Toolbag (Shihei),FFXIclopedia,5314,N
+MAMOOL_JA_TRAINING_GROUNDS_PREEMPTIVE_STRIKE_BOX,Mamool Ja Training Grounds,Preemptive Strike,??? Box,Toolbag (Jusa),FFXIclopedia,5315,N
+MAMOOL_JA_TRAINING_GROUNDS_PREEMPTIVE_STRIKE_BOX,Mamool Ja Training Grounds,Preemptive Strike,??? Box,Toolbag (Kodo),FFXIclopedia,5318,N
+MAMOOL_JA_TRAINING_GROUNDS_PREEMPTIVE_STRIKE_BOX,Mamool Ja Training Grounds,Preemptive Strike,??? Box,Kaolin,FFXIclopedia,2475,N
+MAMOOL_JA_TRAINING_GROUNDS_PREEMPTIVE_STRIKE_BOX,Mamool Ja Training Grounds,Preemptive Strike,??? Box,Poroggo Hat,FFXIclopedia,2334,N
+MAMOOL_JA_TRAINING_GROUNDS_SAGELORD_ELIMINATION_HEADPIECE,Mamool Ja Training Grounds,Sagelord Elimination,??? Headpiece,Bronze Cap +1,BGWiki,12463,Y
+MAMOOL_JA_TRAINING_GROUNDS_SAGELORD_ELIMINATION_HEADPIECE,Mamool Ja Training Grounds,Sagelord Elimination,??? Headpiece,Circlet,BGWiki,12472,Y
+MAMOOL_JA_TRAINING_GROUNDS_SAGELORD_ELIMINATION_HEADPIECE,Mamool Ja Training Grounds,Sagelord Elimination,??? Headpiece,Cotton Headgear,BGWiki,12465,Y
+MAMOOL_JA_TRAINING_GROUNDS_SAGELORD_ELIMINATION_HEADPIECE,Mamool Ja Training Grounds,Sagelord Elimination,??? Headpiece,Storm Zucchetto,BGWiki,16065,Y
+MAMOOL_JA_TRAINING_GROUNDS_SAGELORD_ELIMINATION_POLEARM,Mamool Ja Training Grounds,Sagelord Elimination,??? Polearm,Spark Spear,BGWiki,18076,Y
+MAMOOL_JA_TRAINING_GROUNDS_SAGELORD_ELIMINATION_SWORD,Mamool Ja Training Grounds,Sagelord Elimination,??? Sword,Djinnbringer,BGWiki,18387,Y
+MAMOOL_JA_TRAINING_GROUNDS_SAGELORD_ELIMINATION_SWORD,Mamool Ja Training Grounds,Sagelord Elimination,??? Sword,Gust Claymore,BGWiki,18366,Y
+MAMOOL_JA_TRAINING_GROUNDS_SAGELORD_ELIMINATION_SWORD,Mamool Ja Training Grounds,Sagelord Elimination,??? Sword,Uchigatana +1,BGWiki,16978,Y
+MAMOOL_JA_TRAINING_GROUNDS_SAGELORD_ELIMINATION_BOX,Mamool Ja Training Grounds,Sagelord Elimination,??? Box,Sage,ClassicFFXI,638,N
+MAMOOL_JA_TRAINING_GROUNDS_SAGELORD_ELIMINATION_BOX,Mamool Ja Training Grounds,Sagelord Elimination,??? Box,Eggplant,ClassicFFXI,4388,N
+MAMOOL_JA_TRAINING_GROUNDS_SAGELORD_ELIMINATION_BOX,Mamool Ja Training Grounds,Sagelord Elimination,??? Box,Imperial Tea Leaves,ClassicFFXI,2156,N
+MAMOOL_JA_TRAINING_GROUNDS_SAGELORD_ELIMINATION_BOX,Mamool Ja Training Grounds,Sagelord Elimination,??? Box,Poroggo Hat,ClassicFFXI,2334,N
+MAMOOL_JA_TRAINING_GROUNDS_SAGELORD_ELIMINATION_BOX,Mamool Ja Training Grounds,Sagelord Elimination,??? Box,Soulflayer Staff,ClassicFFXI,2336,N
+MAMOOL_JA_TRAINING_GROUNDS_SAGELORD_ELIMINATION_BOX,Mamool Ja Training Grounds,Sagelord Elimination,??? Box,Toolbag (Shihei),ClassicFFXI,5314,N
+MAMOOL_JA_TRAINING_GROUNDS_SAGELORD_ELIMINATION_BOX,Mamool Ja Training Grounds,Sagelord Elimination,??? Box,Toolbag (Jusa),ClassicFFXI,5315,N
+MAMOOL_JA_TRAINING_GROUNDS_SAGELORD_ELIMINATION_BOX,Mamool Ja Training Grounds,Sagelord Elimination,??? Box,Toolbag (Mizu),ClassicFFXI,5313,N
+MAMOOL_JA_TRAINING_GROUNDS_BREAKING_MORALE_POLEARM,Mamool Ja Training Grounds,Breaking Morale,??? Polearm,Spark Spear,ClassicFFXI,18076,Y
+MAMOOL_JA_TRAINING_GROUNDS_BREAKING_MORALE_SWORD,Mamool Ja Training Grounds,Breaking Morale,??? Sword,Storm Scimitar,ClassicFFXI,17661,Y
+MAMOOL_JA_TRAINING_GROUNDS_BREAKING_MORALE_SWORD,Mamool Ja Training Grounds,Breaking Morale,??? Sword,Gust Claymore,ClassicFFXI,18366,Y
+MAMOOL_JA_TRAINING_GROUNDS_BREAKING_MORALE_SWORD,Mamool Ja Training Grounds,Breaking Morale,??? Sword,Uchigatana +1,ClassicFFXI,16978,Y
+MAMOOL_JA_TRAINING_GROUNDS_BREAKING_MORALE_SWORD,Mamool Ja Training Grounds,Breaking Morale,??? Sword,Pealing Anelace,ClassicFFXI,17703,Y
+MAMOOL_JA_TRAINING_GROUNDS_BREAKING_MORALE_SWORD,Mamool Ja Training Grounds,Breaking Morale,??? Sword,Kagiroi,ClassicFFXI,18433,Y
+MAMOOL_JA_TRAINING_GROUNDS_BREAKING_MORALE_BOX,Mamool Ja Training Grounds,Breaking Morale,??? Box,Eggplant,ClassicFFXI,4388,N
+MAMOOL_JA_TRAINING_GROUNDS_BREAKING_MORALE_BOX,Mamool Ja Training Grounds,Breaking Morale,??? Box,Imperial Tea Leaves,ClassicFFXI,2156,N
+MAMOOL_JA_TRAINING_GROUNDS_BREAKING_MORALE_BOX,Mamool Ja Training Grounds,Breaking Morale,??? Box,Date,ClassicFFXI,5566,N
+MAMOOL_JA_TRAINING_GROUNDS_BREAKING_MORALE_BOX,Mamool Ja Training Grounds,Breaking Morale,??? Box,Lamian Armlet,ClassicFFXI,2167,N
+MAMOOL_JA_TRAINING_GROUNDS_BREAKING_MORALE_BOX,Mamool Ja Training Grounds,Breaking Morale,??? Box,Mamool Ja Collar,ClassicFFXI,2227,N
+MAMOOL_JA_TRAINING_GROUNDS_BREAKING_MORALE_BOX,Mamool Ja Training Grounds,Breaking Morale,??? Box,Sage,ClassicFFXI,638,N
+MAMOOL_JA_TRAINING_GROUNDS_BREAKING_MORALE_BOX,Mamool Ja Training Grounds,Breaking Morale,??? Box,Wild Onion,ClassicFFXI,4387,N
+MAMOOL_JA_TRAINING_GROUNDS_BREAKING_MORALE_BOX,Mamool Ja Training Grounds,Breaking Morale,??? Box,Wamoura Cloth,ClassicFFXI,2289,N
+MAMOOL_JA_TRAINING_GROUNDS_BREAKING_MORALE_BOX,Mamool Ja Training Grounds,Breaking Morale,??? Box,Toolbag (Mizu),ClassicFFXI,5313,N
+MAMOOL_JA_TRAINING_GROUNDS_BREAKING_MORALE_BOX,Mamool Ja Training Grounds,Breaking Morale,??? Box,Toolbag (Kawa),ClassicFFXI,5310,N
+MAMOOL_JA_TRAINING_GROUNDS_BREAKING_MORALE_BOX,Mamool Ja Training Grounds,Breaking Morale,??? Box,Poroggo Hat,ClassicFFXI,2334,N
+MAMOOL_JA_TRAINING_GROUNDS_BREAKING_MORALE_BOX,Mamool Ja Training Grounds,Breaking Morale,??? Box,Kaolin,ClassicFFXI,2475,N
+MAMOOL_JA_TRAINING_GROUNDS_THE_DOUBLE_AGENT_SWORD,Mamool Ja Training Grounds,The Double Agent,??? Sword,Djinnbringer,FFXIclopedia,18387,Y
+MAMOOL_JA_TRAINING_GROUNDS_THE_DOUBLE_AGENT_SWORD,Mamool Ja Training Grounds,The Double Agent,??? Sword,Gust Claymore,FFXIclopedia,18366,Y
+MAMOOL_JA_TRAINING_GROUNDS_THE_DOUBLE_AGENT_SWORD,Mamool Ja Training Grounds,The Double Agent,??? Sword,Pealing Nagan,FFXIclopedia,16954,Y
+MAMOOL_JA_TRAINING_GROUNDS_THE_DOUBLE_AGENT_SWORD,Mamool Ja Training Grounds,The Double Agent,??? Sword,Uchigatana +1,FFXIclopedia,16978,Y
+MAMOOL_JA_TRAINING_GROUNDS_THE_DOUBLE_AGENT_SWORD,Mamool Ja Training Grounds,The Double Agent,??? Sword,Kagiroi,FFXIclopedia,18433,Y
+MAMOOL_JA_TRAINING_GROUNDS_THE_DOUBLE_AGENT_POLEARM,Mamool Ja Training Grounds,The Double Agent,??? Polearm,Spark Spear,FFXIclopedia,18076,Y
+MAMOOL_JA_TRAINING_GROUNDS_THE_DOUBLE_AGENT_BOX,Mamool Ja Training Grounds,The Double Agent,??? Box,Date,FFXIclopedia,5566,N
+MAMOOL_JA_TRAINING_GROUNDS_THE_DOUBLE_AGENT_BOX,Mamool Ja Training Grounds,The Double Agent,??? Box,Eggplant,FFXIclopedia,4388,N
+MAMOOL_JA_TRAINING_GROUNDS_THE_DOUBLE_AGENT_BOX,Mamool Ja Training Grounds,The Double Agent,??? Box,Ice Crystal,FFXIclopedia,4097,N
+MAMOOL_JA_TRAINING_GROUNDS_THE_DOUBLE_AGENT_BOX,Mamool Ja Training Grounds,The Double Agent,??? Box,Imperial Cermet,FFXIclopedia,2290,N
+MAMOOL_JA_TRAINING_GROUNDS_THE_DOUBLE_AGENT_BOX,Mamool Ja Training Grounds,The Double Agent,??? Box,Imperial Tea Leaves,FFXIclopedia,2156,N
+MAMOOL_JA_TRAINING_GROUNDS_THE_DOUBLE_AGENT_BOX,Mamool Ja Training Grounds,The Double Agent,??? Box,Mamool Ja Collar,FFXIclopedia,2227,N
+MAMOOL_JA_TRAINING_GROUNDS_THE_DOUBLE_AGENT_BOX,Mamool Ja Training Grounds,The Double Agent,??? Box,Sage,FFXIclopedia,638,N
+MAMOOL_JA_TRAINING_GROUNDS_THE_DOUBLE_AGENT_BOX,Mamool Ja Training Grounds,The Double Agent,??? Box,Soulflayer Staff,FFXIclopedia,2336,N
+MAMOOL_JA_TRAINING_GROUNDS_THE_DOUBLE_AGENT_BOX,Mamool Ja Training Grounds,The Double Agent,??? Box,Wild Onion,FFXIclopedia,4387,N
+MAMOOL_JA_TRAINING_GROUNDS_THE_DOUBLE_AGENT_BOX,Mamool Ja Training Grounds,The Double Agent,??? Box,Poroggo Hat,FFXIclopedia,2334,N
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_TREASURE_RETRIEVAL_CAPE,Mamool Ja Training Grounds,Imperial Treasure Retrieval,??? Cape,Lizard Mantle +1,FFXIclopedia,13608,Y
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_TREASURE_RETRIEVAL_CAPE,Mamool Ja Training Grounds,Imperial Treasure Retrieval,??? Cape,Dhalmel Mantle +1,FFXIclopedia,13600,Y
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_TREASURE_RETRIEVAL_CAPE,Mamool Ja Training Grounds,Imperial Treasure Retrieval,??? Cape,Cotton Cape +1,FFXIclopedia,13601,Y
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_TREASURE_RETRIEVAL_CAPE,Mamool Ja Training Grounds,Imperial Treasure Retrieval,??? Cape,Sniper's Mantle,FFXIclopedia,13678,Y
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_TREASURE_RETRIEVAL_CAPE,Mamool Ja Training Grounds,Imperial Treasure Retrieval,??? Cape,Volitional Mantle,FFXIclopedia,16220,Y
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_TREASURE_RETRIEVAL_RING,Mamool Ja Training Grounds,Imperial Treasure Retrieval,??? Ring,Brass Ring,FFXIclopedia,13465,Y
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_TREASURE_RETRIEVAL_RING,Mamool Ja Training Grounds,Imperial Treasure Retrieval,??? Ring,Copper Ring,FFXIclopedia,13454,Y
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_TREASURE_RETRIEVAL_RING,Mamool Ja Training Grounds,Imperial Treasure Retrieval,??? Ring,Horizon Ring,FFXIclopedia,15787,Y
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_TREASURE_RETRIEVAL_BOX,Mamool Ja Training Grounds,Imperial Treasure Retrieval,??? Box,Date,FFXIclopedia,5566,N
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_TREASURE_RETRIEVAL_BOX,Mamool Ja Training Grounds,Imperial Treasure Retrieval,??? Box,Eggplant,FFXIclopedia,4388,N
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_TREASURE_RETRIEVAL_BOX,Mamool Ja Training Grounds,Imperial Treasure Retrieval,??? Box,Imperial Tea Leaves,FFXIclopedia,2156,N
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_TREASURE_RETRIEVAL_BOX,Mamool Ja Training Grounds,Imperial Treasure Retrieval,??? Box,Mamool Ja Collar,FFXIclopedia,2227,N
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_TREASURE_RETRIEVAL_BOX,Mamool Ja Training Grounds,Imperial Treasure Retrieval,??? Box,Mizu-Deppo,FFXIclopedia,1176,N
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_TREASURE_RETRIEVAL_BOX,Mamool Ja Training Grounds,Imperial Treasure Retrieval,??? Box,Poroggo Hat,FFXIclopedia,2334,N
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_TREASURE_RETRIEVAL_BOX,Mamool Ja Training Grounds,Imperial Treasure Retrieval,??? Box,Soulflayer Staff,FFXIclopedia,2336,N
+MAMOOL_JA_TRAINING_GROUNDS_IMPERIAL_TREASURE_RETRIEVAL_BOX,Mamool Ja Training Grounds,Imperial Treasure Retrieval,??? Box,Wild Onion,FFXIclopedia,4387,N
+MAMOOL_JA_TRAINING_GROUNDS_BLITZKRIEG_SWORD,Mamool Ja Training Grounds,Blitzkrieg,??? Sword,Gust Claymore,FFXIclopedia,18366,Y
+MAMOOL_JA_TRAINING_GROUNDS_BLITZKRIEG_SWORD,Mamool Ja Training Grounds,Blitzkrieg,??? Sword,Uchigatana +1,FFXIclopedia,16978,Y
+MAMOOL_JA_TRAINING_GROUNDS_BLITZKRIEG_SWORD,Mamool Ja Training Grounds,Blitzkrieg,??? Sword,Durandal,FFXIclopedia,17700,Y
+MAMOOL_JA_TRAINING_GROUNDS_BLITZKRIEG_SWORD,Mamool Ja Training Grounds,Blitzkrieg,??? Sword,Sanguine Sword,FFXIclopedia,17721,Y
+MAMOOL_JA_TRAINING_GROUNDS_BLITZKRIEG_POLEARM,Mamool Ja Training Grounds,Blitzkrieg,??? Polearm,Spark Spear,FFXIclopedia,18076,Y
+MAMOOL_JA_TRAINING_GROUNDS_BLITZKRIEG_SHIELD,Mamool Ja Training Grounds,Blitzkrieg,??? Shield,Tariqah -1,FFXIclopedia,16167,Y
+MAMOOL_JA_TRAINING_GROUNDS_BLITZKRIEG_HEADPIECE,Mamool Ja Training Grounds,Blitzkrieg,??? Headpiece,Circlet,FFXIclopedia,12472,Y
+MAMOOL_JA_TRAINING_GROUNDS_BLITZKRIEG_HEADPIECE,Mamool Ja Training Grounds,Blitzkrieg,??? Headpiece,Bronze Cap +1,FFXIclopedia,12463,Y
+MAMOOL_JA_TRAINING_GROUNDS_BLITZKRIEG_HEADPIECE,Mamool Ja Training Grounds,Blitzkrieg,??? Headpiece,Leather Bandana,FFXIclopedia,12440,Y
+MAMOOL_JA_TRAINING_GROUNDS_BLITZKRIEG_HEADPIECE,Mamool Ja Training Grounds,Blitzkrieg,??? Headpiece,Cotton Headgear,FFXIclopedia,12465,Y
+MAMOOL_JA_TRAINING_GROUNDS_BLITZKRIEG_HEADPIECE,Mamool Ja Training Grounds,Blitzkrieg,??? Headpiece,Curate's Hat,FFXIclopedia,16081,Y
+MAMOOL_JA_TRAINING_GROUNDS_BLITZKRIEG_HEADPIECE,Mamool Ja Training Grounds,Blitzkrieg,??? Headpiece,Pineal Hat,FFXIclopedia,15181,Y
+MAMOOL_JA_TRAINING_GROUNDS_BLITZKRIEG_BOX,Mamool Ja Training Grounds,Blitzkrieg,??? Box,Eggplant,FFXIclopedia,4388,N
+MAMOOL_JA_TRAINING_GROUNDS_BLITZKRIEG_BOX,Mamool Ja Training Grounds,Blitzkrieg,??? Box,Imperial Tea Leaves,FFXIclopedia,2156,N
+MAMOOL_JA_TRAINING_GROUNDS_BLITZKRIEG_BOX,Mamool Ja Training Grounds,Blitzkrieg,??? Box,Mamool Ja Collar,FFXIclopedia,2227,N
+MAMOOL_JA_TRAINING_GROUNDS_BLITZKRIEG_BOX,Mamool Ja Training Grounds,Blitzkrieg,??? Box,Poroggo Hat,FFXIclopedia,2334,N
+MAMOOL_JA_TRAINING_GROUNDS_BLITZKRIEG_BOX,Mamool Ja Training Grounds,Blitzkrieg,??? Box,Sage,FFXIclopedia,638,N
+MAMOOL_JA_TRAINING_GROUNDS_BLITZKRIEG_BOX,Mamool Ja Training Grounds,Blitzkrieg,??? Box,Toolbag (Hira),FFXIclopedia,5312,N
+MAMOOL_JA_TRAINING_GROUNDS_BLITZKRIEG_BOX,Mamool Ja Training Grounds,Blitzkrieg,??? Box,Toolbag (Kagi),FFXIclopedia,5316,N
+MAMOOL_JA_TRAINING_GROUNDS_BLITZKRIEG_BOX,Mamool Ja Training Grounds,Blitzkrieg,??? Box,Toolbag (Maki),FFXIclopedia,5311,N
+MAMOOL_JA_TRAINING_GROUNDS_BLITZKRIEG_BOX,Mamool Ja Training Grounds,Blitzkrieg,??? Box,Wild Onion,FFXIclopedia,4387,N
+MAMOOL_JA_TRAINING_GROUNDS_MARIDS_IN_THE_MIST_BOX,Mamool Ja Training Grounds,Marids in the Mist,??? Box,Eggplant,BGWiki,4388,N
+MAMOOL_JA_TRAINING_GROUNDS_MARIDS_IN_THE_MIST_BOX,Mamool Ja Training Grounds,Marids in the Mist,??? Box,Imperial Tea Leaves,BGWiki,2156,N
+MAMOOL_JA_TRAINING_GROUNDS_MARIDS_IN_THE_MIST_BOX,Mamool Ja Training Grounds,Marids in the Mist,??? Box,Poroggo Hat,BGWiki,2334,N
+MAMOOL_JA_TRAINING_GROUNDS_MARIDS_IN_THE_MIST_BOX,Mamool Ja Training Grounds,Marids in the Mist,??? Box,Sage,BGWiki,638,N
+MAMOOL_JA_TRAINING_GROUNDS_MARIDS_IN_THE_MIST_NECKLACE,Mamool Ja Training Grounds,Marids in the Mist,??? Necklace,Feather Collar,BGWiki,13075,Y
+MAMOOL_JA_TRAINING_GROUNDS_MARIDS_IN_THE_MIST_NECKLACE,Mamool Ja Training Grounds,Marids in the Mist,??? Necklace,Gorget +1,BGWiki,13065,Y
+MAMOOL_JA_TRAINING_GROUNDS_MARIDS_IN_THE_MIST_NECKLACE,Mamool Ja Training Grounds,Marids in the Mist,??? Necklace,Kappa Necklace,BGWiki,15537,Y
+MAMOOL_JA_TRAINING_GROUNDS_MARIDS_IN_THE_MIST_RING,Mamool Ja Training Grounds,Marids in the Mist,??? Ring,Brass Ring,BGWiki,13465,Y
+MAMOOL_JA_TRAINING_GROUNDS_MARIDS_IN_THE_MIST_RING,Mamool Ja Training Grounds,Marids in the Mist,??? Ring,Copper Ring,BGWiki,13454,Y
+MAMOOL_JA_TRAINING_GROUNDS_MARIDS_IN_THE_MIST_RING,Mamool Ja Training Grounds,Marids in the Mist,??? Ring,Tau Ring,BGWiki,15795,Y
+MAMOOL_JA_TRAINING_GROUNDS_AZURE_AILMENTS_SASH,Mamool Ja Training Grounds,Azure Ailments,??? Sash,Ksi Sash,FFXIclopedia,15903,Y
+MAMOOL_JA_TRAINING_GROUNDS_AZURE_AILMENTS_SASH,Mamool Ja Training Grounds,Azure Ailments,??? Sash,Talisman Obi,FFXIclopedia,15881,Y
+MAMOOL_JA_TRAINING_GROUNDS_AZURE_AILMENTS_SASH,Mamool Ja Training Grounds,Azure Ailments,??? Sash,Lugworm Belt,FFXIclopedia,15453,Y
+MAMOOL_JA_TRAINING_GROUNDS_AZURE_AILMENTS_SASH,Mamool Ja Training Grounds,Azure Ailments,??? Sash,Little Worm Belt,FFXIclopedia,15454,Y
+MAMOOL_JA_TRAINING_GROUNDS_AZURE_AILMENTS_SASH,Mamool Ja Training Grounds,Azure Ailments,??? Sash,Silver Obi +1,FFXIclopedia,13224,Y
+MAMOOL_JA_TRAINING_GROUNDS_AZURE_AILMENTS_BOX,Mamool Ja Training Grounds,Azure Ailments,??? Box,Wild Onion,FFXIclopedia,4387,N
+MAMOOL_JA_TRAINING_GROUNDS_AZURE_AILMENTS_BOX,Mamool Ja Training Grounds,Azure Ailments,??? Box,Kaolin,FFXIclopedia,2475,N
+MAMOOL_JA_TRAINING_GROUNDS_AZURE_AILMENTS_BOX,Mamool Ja Training Grounds,Azure Ailments,??? Box,Mamool Ja Collar,FFXIclopedia,2227,N
+MAMOOL_JA_TRAINING_GROUNDS_AZURE_AILMENTS_BOX,Mamool Ja Training Grounds,Azure Ailments,??? Box,Toolbag (Kodo),FFXIclopedia,5318,N
+MAMOOL_JA_TRAINING_GROUNDS_AZURE_AILMENTS_BOX,Mamool Ja Training Grounds,Azure Ailments,??? Box,Toolbag (Jusa),FFXIclopedia,5315,N
+MAMOOL_JA_TRAINING_GROUNDS_AZURE_AILMENTS_BOX,Mamool Ja Training Grounds,Azure Ailments,??? Box,Toolbag (Maki),FFXIclopedia,5311,N
+MAMOOL_JA_TRAINING_GROUNDS_AZURE_AILMENTS_BOX,Mamool Ja Training Grounds,Azure Ailments,??? Box,Remedy,FFXIclopedia,4155,N
+MAMOOL_JA_TRAINING_GROUNDS_AZURE_AILMENTS_BOX,Mamool Ja Training Grounds,Azure Ailments,??? Box,Date,FFXIclopedia,5566,N
+MAMOOL_JA_TRAINING_GROUNDS_AZURE_AILMENTS_BOX,Mamool Ja Training Grounds,Azure Ailments,??? Box,Poroggo Hat,FFXIclopedia,2334,N
+MAMOOL_JA_TRAINING_GROUNDS_AZURE_AILMENTS_EARRING,Mamool Ja Training Grounds,Azure Ailments,??? Earring,Beetle Earring,FFXIclopedia,13323,Y
+MAMOOL_JA_TRAINING_GROUNDS_AZURE_AILMENTS_EARRING,Mamool Ja Training Grounds,Azure Ailments,??? Earring,Bone Earring,FFXIclopedia,13321,Y
+MAMOOL_JA_TRAINING_GROUNDS_AZURE_AILMENTS_EARRING,Mamool Ja Training Grounds,Azure Ailments,??? Earring,Silver Earring,FFXIclopedia,13327,Y
+MAMOOL_JA_TRAINING_GROUNDS_AZURE_AILMENTS_EARRING,Mamool Ja Training Grounds,Azure Ailments,??? Earring,Eta Earring,FFXIclopedia,15986,Y
+MAMOOL_JA_TRAINING_GROUNDS_THE_SUSANOO_SHUFFLE_BOX,Mamool Ja Training Grounds,The Susanoo Shuffle,??? Box,Mamool Ja Collar,FFXIclopedia,2227,N
+MAMOOL_JA_TRAINING_GROUNDS_THE_SUSANOO_SHUFFLE_BOX,Mamool Ja Training Grounds,The Susanoo Shuffle,??? Box,Date,FFXIclopedia,5566,N
+MAMOOL_JA_TRAINING_GROUNDS_THE_SUSANOO_SHUFFLE_BOX,Mamool Ja Training Grounds,The Susanoo Shuffle,??? Box,Poroggo Hat,FFXIclopedia,2334,N
+MAMOOL_JA_TRAINING_GROUNDS_THE_SUSANOO_SHUFFLE_BOX,Mamool Ja Training Grounds,The Susanoo Shuffle,??? Box,Toolbag (Shino),FFXIclopedia,5319,N
+MAMOOL_JA_TRAINING_GROUNDS_THE_SUSANOO_SHUFFLE_FOOTWEAR,Mamool Ja Training Grounds,The Susanoo Shuffle,??? Footwear,Ash Clogs,FFXIclopedia,12984,Y
+MAMOOL_JA_TRAINING_GROUNDS_THE_SUSANOO_SHUFFLE_FOOTWEAR,Mamool Ja Training Grounds,The Susanoo Shuffle,??? Footwear,Bowman's Ledelsens,FFXIclopedia,15744,Y
+LEBROS_CAVERN_EXCAVATION_DUTY_EARRING,Lebros Cavern,Excavation Duty,??? Earring,Storm Loop,FFXIclopedia,15968,Y
+LEBROS_CAVERN_EXCAVATION_DUTY_EARRING,Lebros Cavern,Excavation Duty,??? Earring,Reraise Earring,FFXIclopedia,14790,Y
+LEBROS_CAVERN_EXCAVATION_DUTY_EARRING,Lebros Cavern,Excavation Duty,??? Earring,Beetle Earring,FFXIclopedia,13323,Y
+LEBROS_CAVERN_EXCAVATION_DUTY_EARRING,Lebros Cavern,Excavation Duty,??? Earring,Silver Earring,FFXIclopedia,13327,Y
+LEBROS_CAVERN_EXCAVATION_DUTY_EARRING,Lebros Cavern,Excavation Duty,??? Earring,Bone Earring,FFXIclopedia,13321,Y
+LEBROS_CAVERN_EXCAVATION_DUTY_EARRING,Lebros Cavern,Excavation Duty,??? Earring,Shell Earring,FFXIclopedia,13313,Y
+LEBROS_CAVERN_EXCAVATION_DUTY_BOX,Lebros Cavern,Excavation Duty,??? Box,Velvet Cloth,ClassicFFXI,828,N
+LEBROS_CAVERN_EXCAVATION_DUTY_BOX,Lebros Cavern,Excavation Duty,??? Box,Red Rock,ClassicFFXI,769,N
+LEBROS_CAVERN_EXCAVATION_DUTY_BOX,Lebros Cavern,Excavation Duty,??? Box,Bomb Ash,ClassicFFXI,928,N
+LEBROS_CAVERN_EXCAVATION_DUTY_BOX,Lebros Cavern,Excavation Duty,??? Box,Sulfur,ClassicFFXI,1108,N
+LEBROS_CAVERN_EXCAVATION_DUTY_BOX,Lebros Cavern,Excavation Duty,??? Box,Copper Ore,ClassicFFXI,640,N
+LEBROS_CAVERN_EXCAVATION_DUTY_BOX,Lebros Cavern,Excavation Duty,??? Box,Spartan Bullet Pouch,ClassicFFXI,5341,N
+LEBROS_CAVERN_EXCAVATION_DUTY_BOX,Lebros Cavern,Excavation Duty,??? Box,Holy Basil,ClassicFFXI,1590,N
+LEBROS_CAVERN_EXCAVATION_DUTY_BOX,Lebros Cavern,Excavation Duty,??? Box,Troll Pauldron,ClassicFFXI,2160,N
+LEBROS_CAVERN_EXCAVATION_DUTY_BOX,Lebros Cavern,Excavation Duty,??? Box,Bronze Bullet Pouch,ClassicFFXI,5359,N
+LEBROS_CAVERN_EXCAVATION_DUTY_BOX,Lebros Cavern,Excavation Duty,??? Box,Silver Bullet Pouch,ClassicFFXI,5340,N
+LEBROS_CAVERN_EXCAVATION_DUTY_BOX,Lebros Cavern,Excavation Duty,??? Box,Iron Bullet Pouch,ClassicFFXI,5353,N
+LEBROS_CAVERN_EXCAVATION_DUTY_BOX,Lebros Cavern,Excavation Duty,??? Box,Bullet Pouch,ClassicFFXI,5363,N
+LEBROS_CAVERN_EXCAVATION_DUTY_BOX,Lebros Cavern,Excavation Duty,??? Box,Flan Meat,ClassicFFXI,2175,N
+LEBROS_CAVERN_LEBROS_SUPPLIES_CAPE,Lebros Cavern,Lebros Supplies,??? Cape,Storm Cape,FFXIclopedia,15489,Y
+LEBROS_CAVERN_LEBROS_SUPPLIES_CAPE,Lebros Cavern,Lebros Supplies,??? Cape,Cotton Cape +1,FFXIclopedia,13601,Y
+LEBROS_CAVERN_LEBROS_SUPPLIES_CAPE,Lebros Cavern,Lebros Supplies,??? Cape,Dhalmel Mantle +1,FFXIclopedia,13600,Y
+LEBROS_CAVERN_LEBROS_SUPPLIES_CAPE,Lebros Cavern,Lebros Supplies,??? Cape,Lizard Mantle +1,FFXIclopedia,13608,Y
+LEBROS_CAVERN_LEBROS_SUPPLIES_CAPE,Lebros Cavern,Lebros Supplies,??? Cape,Enhancing Mantle,FFXIclopedia,13624,Y
+LEBROS_CAVERN_LEBROS_SUPPLIES_BOX,Lebros Cavern,Lebros Supplies,??? Box,Sulfur,FFXIclopedia,1108,N
+LEBROS_CAVERN_LEBROS_SUPPLIES_BOX,Lebros Cavern,Lebros Supplies,??? Box,Flan Meat,FFXIclopedia,2175,N
+LEBROS_CAVERN_LEBROS_SUPPLIES_BOX,Lebros Cavern,Lebros Supplies,??? Box,Bullet Pouch,FFXIclopedia,5363,N
+LEBROS_CAVERN_LEBROS_SUPPLIES_BOX,Lebros Cavern,Lebros Supplies,??? Box,Troll Pauldron,FFXIclopedia,2160,N
+LEBROS_CAVERN_LEBROS_SUPPLIES_BOX,Lebros Cavern,Lebros Supplies,??? Box,Spartan Bullet Pouch,FFXIclopedia,5341,N
+LEBROS_CAVERN_LEBROS_SUPPLIES_BOX,Lebros Cavern,Lebros Supplies,??? Box,Holy Basil,FFXIclopedia,1590,N
+LEBROS_CAVERN_TROLL_FUGITIVES_AXE,Lebros Cavern,Troll Fugitives,??? Axe,Wamoura Axe,FFXIclopedia,18484,Y
+LEBROS_CAVERN_TROLL_FUGITIVES_AXE,Lebros Cavern,Troll Fugitives,??? Axe,Hatchet,FFXIclopedia,1021,N
+LEBROS_CAVERN_TROLL_FUGITIVES_AXE,Lebros Cavern,Troll Fugitives,??? Axe,Prominence Axe,FFXIclopedia,18220,Y
+LEBROS_CAVERN_TROLL_FUGITIVES_AXE,Lebros Cavern,Troll Fugitives,??? Axe,Tomahawk +1,FFXIclopedia,17943,Y
+LEBROS_CAVERN_TROLL_FUGITIVES_POLEARM,Lebros Cavern,Troll Fugitives,??? Polearm,Sickle,FFXIclopedia,1020,N
+LEBROS_CAVERN_TROLL_FUGITIVES_HEADPIECE,Lebros Cavern,Troll Fugitives,??? Headpiece,Storm Turban,FFXIclopedia,16066,Y
+LEBROS_CAVERN_TROLL_FUGITIVES_HEADPIECE,Lebros Cavern,Troll Fugitives,??? Headpiece,Cotton Headgear,FFXIclopedia,12465,Y
+LEBROS_CAVERN_TROLL_FUGITIVES_HEADPIECE,Lebros Cavern,Troll Fugitives,??? Headpiece,Bronze Cap +1,FFXIclopedia,12463,Y
+LEBROS_CAVERN_EVADE_AND_ESCAPE_DAGGER,Lebros Cavern,Evade and Escape,??? Dagger,Karasuageha,FFXIclopedia,18416,Y
+LEBROS_CAVERN_EVADE_AND_ESCAPE_DAGGER,Lebros Cavern,Evade and Escape,??? Dagger,Hushed Dagger,FFXIclopedia,18008,Y
+LEBROS_CAVERN_EVADE_AND_ESCAPE_DAGGER,Lebros Cavern,Evade and Escape,??? Dagger,Katars,FFXIclopedia,16399,Y
+LEBROS_CAVERN_EVADE_AND_ESCAPE_DAGGER,Lebros Cavern,Evade and Escape,??? Dagger,Kyofu,FFXIclopedia,17780,Y
+LEBROS_CAVERN_EVADE_AND_ESCAPE_DAGGER,Lebros Cavern,Evade and Escape,??? Dagger,Spark Dagger,FFXIclopedia,17984,Y
+LEBROS_CAVERN_EVADE_AND_ESCAPE_DAGGER,Lebros Cavern,Evade and Escape,??? Dagger,Tojaku,FFXIclopedia,18415,Y
+LEBROS_CAVERN_EVADE_AND_ESCAPE_DAGGER,Lebros Cavern,Evade and Escape,??? Dagger,Ponderous Gully,FFXIclopedia,17625,Y
+LEBROS_CAVERN_EVADE_AND_ESCAPE_DAGGER,Lebros Cavern,Evade and Escape,??? Dagger,Ponderous Manoples,FFXIclopedia,18361,Y
+LEBROS_CAVERN_EVADE_AND_ESCAPE_BOX,Lebros Cavern,Evade and Escape,??? Box,Copper Ore,FFXIclopedia,640,N
+LEBROS_CAVERN_EVADE_AND_ESCAPE_BOX,Lebros Cavern,Evade and Escape,??? Box,Sulfur,FFXIclopedia,1108,N
+LEBROS_CAVERN_EVADE_AND_ESCAPE_BOX,Lebros Cavern,Evade and Escape,??? Box,Red Rock,FFXIclopedia,769,N
+LEBROS_CAVERN_EVADE_AND_ESCAPE_BOX,Lebros Cavern,Evade and Escape,??? Box,Bomb Ash,FFXIclopedia,928,N
+LEBROS_CAVERN_EVADE_AND_ESCAPE_BOX,Lebros Cavern,Evade and Escape,??? Box,Troll Bronze Sheet,FFXIclopedia,2303,N
+LEBROS_CAVERN_EVADE_AND_ESCAPE_BOX,Lebros Cavern,Evade and Escape,??? Box,Troll Bronze Ingot,FFXIclopedia,2302,N
+LEBROS_CAVERN_EVADE_AND_ESCAPE_BOX,Lebros Cavern,Evade and Escape,??? Box,Holy Basil,FFXIclopedia,1590,N
+LEBROS_CAVERN_EVADE_AND_ESCAPE_BOX,Lebros Cavern,Evade and Escape,??? Box,Troll Pauldron,FFXIclopedia,2160,N
+LEBROS_CAVERN_EVADE_AND_ESCAPE_BOX,Lebros Cavern,Evade and Escape,??? Box,Iron Bullet Pouch,FFXIclopedia,5353,N
+LEBROS_CAVERN_EVADE_AND_ESCAPE_BOX,Lebros Cavern,Evade and Escape,??? Box,Silver Bullet Pouch,FFXIclopedia,5340,N
+LEBROS_CAVERN_EVADE_AND_ESCAPE_BOX,Lebros Cavern,Evade and Escape,??? Box,Bronze Bullet Pouch,FFXIclopedia,5359,N
+LEBROS_CAVERN_EVADE_AND_ESCAPE_BOX,Lebros Cavern,Evade and Escape,??? Box,Spartan Bullet Pouch,FFXIclopedia,5341,N
+LEBROS_CAVERN_EVADE_AND_ESCAPE_BOX,Lebros Cavern,Evade and Escape,??? Box,Flan Meat,FFXIclopedia,2175,N
+LEBROS_CAVERN_EVADE_AND_ESCAPE_BOX,Lebros Cavern,Evade and Escape,??? Box,Bullet Pouch,FFXIclopedia,5363,N
+LEBROS_CAVERN_SIEGEMASTER_ASSASSINATION_POLEARM,Lebros Cavern,Siegemaster Assassination,??? Polearm,Imperial Wand,FFXIclopedia,18407,Y
+LEBROS_CAVERN_SIEGEMASTER_ASSASSINATION_POLEARM,Lebros Cavern,Siegemaster Assassination,??? Polearm,Brass Zaghnal,FFXIclopedia,16769,Y
+LEBROS_CAVERN_SIEGEMASTER_ASSASSINATION_POLEARM,Lebros Cavern,Siegemaster Assassination,??? Polearm,Holly Staff +1,FFXIclopedia,17125,Y
+LEBROS_CAVERN_SIEGEMASTER_ASSASSINATION_POLEARM,Lebros Cavern,Siegemaster Assassination,??? Polearm,Spark Spear,FFXIclopedia,18076,Y
+LEBROS_CAVERN_SIEGEMASTER_ASSASSINATION_POLEARM,Lebros Cavern,Siegemaster Assassination,??? Polearm,Steel-splitter,FFXIclopedia,17596,Y
+LEBROS_CAVERN_SIEGEMASTER_ASSASSINATION_POLEARM,Lebros Cavern,Siegemaster Assassination,??? Polearm,Willow Wand +1,FFXIclopedia,17138,Y
+LEBROS_CAVERN_SIEGEMASTER_ASSASSINATION_POLEARM,Lebros Cavern,Siegemaster Assassination,??? Polearm,Pealing Buzdygan,FFXIclopedia,17470,Y
+LEBROS_CAVERN_SIEGEMASTER_ASSASSINATION_AXE,Lebros Cavern,Siegemaster Assassination,??? Axe,Pickaxe,FFXIclopedia,605,N
+LEBROS_CAVERN_SIEGEMASTER_ASSASSINATION_BOX,Lebros Cavern,Siegemaster Assassination,??? Box,Bomb Ash,FFXIclopedia,928,N
+LEBROS_CAVERN_SIEGEMASTER_ASSASSINATION_BOX,Lebros Cavern,Siegemaster Assassination,??? Box,Copper Ore,FFXIclopedia,640,N
+LEBROS_CAVERN_SIEGEMASTER_ASSASSINATION_BOX,Lebros Cavern,Siegemaster Assassination,??? Box,Red Rock,FFXIclopedia,769,N
+LEBROS_CAVERN_SIEGEMASTER_ASSASSINATION_BOX,Lebros Cavern,Siegemaster Assassination,??? Box,Bronze Bullet Pouch,FFXIclopedia,5359,N
+LEBROS_CAVERN_SIEGEMASTER_ASSASSINATION_BOX,Lebros Cavern,Siegemaster Assassination,??? Box,Silver Bullet Pouch,FFXIclopedia,5340,N
+LEBROS_CAVERN_SIEGEMASTER_ASSASSINATION_BOX,Lebros Cavern,Siegemaster Assassination,??? Box,Flan Meat,FFXIclopedia,2175,N
+LEBROS_CAVERN_SIEGEMASTER_ASSASSINATION_BOX,Lebros Cavern,Siegemaster Assassination,??? Box,Sulfur,FFXIclopedia,1108,N
+LEBROS_CAVERN_SIEGEMASTER_ASSASSINATION_BOX,Lebros Cavern,Siegemaster Assassination,??? Box,Holy Basil,FFXIclopedia,1590,N
+LEBROS_CAVERN_SIEGEMASTER_ASSASSINATION_BOX,Lebros Cavern,Siegemaster Assassination,??? Box,Toolbag (Hira),FFXIclopedia,5312,N
+LEBROS_CAVERN_SIEGEMASTER_ASSASSINATION_BOX,Lebros Cavern,Siegemaster Assassination,??? Box,Troll Pauldron,FFXIclopedia,2160,N
+LEBROS_CAVERN_APKALLU_BREEDING_EARRING,Lebros Cavern,Apkallu Breeding,??? Earring,Magnifying Earring,FFXIclopedia,15980,Y
+LEBROS_CAVERN_APKALLU_BREEDING_EARRING,Lebros Cavern,Apkallu Breeding,??? Earring,Bone Earring,FFXIclopedia,13321,Y
+LEBROS_CAVERN_APKALLU_BREEDING_EARRING,Lebros Cavern,Apkallu Breeding,??? Earring,Beetle Earring,FFXIclopedia,13323,Y
+LEBROS_CAVERN_APKALLU_BREEDING_EARRING,Lebros Cavern,Apkallu Breeding,??? Earring,Elusive Earring,FFXIclopedia,14761,Y
+LEBROS_CAVERN_APKALLU_BREEDING_EARRING,Lebros Cavern,Apkallu Breeding,??? Earring,Silver Earring,FFXIclopedia,13327,Y
+LEBROS_CAVERN_APKALLU_BREEDING_EARRING,Lebros Cavern,Apkallu Breeding,??? Earring,Shell Earring,FFXIclopedia,13313,Y
+LEBROS_CAVERN_APKALLU_BREEDING_SASH,Lebros Cavern,Apkallu Breeding,??? Sash,Grace Corset,FFXIclopedia,15897,Y
+LEBROS_CAVERN_APKALLU_BREEDING_SASH,Lebros Cavern,Apkallu Breeding,??? Sash,Lugworm Belt,FFXIclopedia,15453,Y
+LEBROS_CAVERN_APKALLU_BREEDING_SASH,Lebros Cavern,Apkallu Breeding,??? Sash,Silver Obi +1,FFXIclopedia,13224,Y
+LEBROS_CAVERN_APKALLU_BREEDING_SASH,Lebros Cavern,Apkallu Breeding,??? Sash,Talisman Obi,FFXIclopedia,15881,Y
+LEBROS_CAVERN_APKALLU_BREEDING_SASH,Lebros Cavern,Apkallu Breeding,??? Sash,Gleeman's Belt,FFXIclopedia,15293,Y
+LEBROS_CAVERN_APKALLU_BREEDING_BOX,Lebros Cavern,Apkallu Breeding,??? Box,Apkallu Egg,FFXIclopedia,5568,N
+LEBROS_CAVERN_APKALLU_BREEDING_BOX,Lebros Cavern,Apkallu Breeding,??? Box,Bomb Ash,FFXIclopedia,928,N
+LEBROS_CAVERN_APKALLU_BREEDING_BOX,Lebros Cavern,Apkallu Breeding,??? Box,Copper Ore,FFXIclopedia,640,N
+LEBROS_CAVERN_APKALLU_BREEDING_BOX,Lebros Cavern,Apkallu Breeding,??? Box,Flan Meat,FFXIclopedia,2175,N
+LEBROS_CAVERN_APKALLU_BREEDING_BOX,Lebros Cavern,Apkallu Breeding,??? Box,Iron Bullet Pouch,FFXIclopedia,5353,N
+LEBROS_CAVERN_APKALLU_BREEDING_BOX,Lebros Cavern,Apkallu Breeding,??? Box,Red Rock,FFXIclopedia,769,N
+LEBROS_CAVERN_APKALLU_BREEDING_BOX,Lebros Cavern,Apkallu Breeding,??? Box,Silver Bullet Pouch,FFXIclopedia,5340,N
+LEBROS_CAVERN_APKALLU_BREEDING_BOX,Lebros Cavern,Apkallu Breeding,??? Box,Sulfur,FFXIclopedia,1108,N
+LEBROS_CAVERN_APKALLU_BREEDING_BOX,Lebros Cavern,Apkallu Breeding,??? Box,Troll Bronze Ingot,FFXIclopedia,2302,N
+LEBROS_CAVERN_APKALLU_BREEDING_BOX,Lebros Cavern,Apkallu Breeding,??? Box,Spartan Bullet Pouch,FFXIclopedia,5341,N
+LEBROS_CAVERN_APKALLU_BREEDING_BOX,Lebros Cavern,Apkallu Breeding,??? Box,Troll Pauldron,FFXIclopedia,2160,N
+LEBROS_CAVERN_APKALLU_BREEDING_BOX,Lebros Cavern,Apkallu Breeding,??? Box,Holy Basil,FFXIclopedia,1590,N
+LEBROS_CAVERN_WAMOURA_FARM_RAID_BOX,Lebros Cavern,Wamoura Farm Raid,??? Box,Bomb Ash,BGWiki,928,N
+LEBROS_CAVERN_WAMOURA_FARM_RAID_BOX,Lebros Cavern,Wamoura Farm Raid,??? Box,Copper Ore,BGWiki,640,N
+LEBROS_CAVERN_WAMOURA_FARM_RAID_BOX,Lebros Cavern,Wamoura Farm Raid,??? Box,Flan Meat,BGWiki,2175,N
+LEBROS_CAVERN_WAMOURA_FARM_RAID_BOX,Lebros Cavern,Wamoura Farm Raid,??? Box,Red Rock,BGWiki,769,N
+LEBROS_CAVERN_WAMOURA_FARM_RAID_BOX,Lebros Cavern,Wamoura Farm Raid,??? Box,Sulfur,BGWiki,1108,N
+LEBROS_CAVERN_WAMOURA_FARM_RAID_AXE,Lebros Cavern,Wamoura Farm Raid,??? Axe,Pickaxe,BGWiki,605,N
+LEBROS_CAVERN_WAMOURA_FARM_RAID_POLEARM,Lebros Cavern,Wamoura Farm Raid,??? Polearm,Brass Zaghnal,BGWiki,16769,Y
+LEBROS_CAVERN_WAMOURA_FARM_RAID_POLEARM,Lebros Cavern,Wamoura Farm Raid,??? Polearm,Flan Smasher,BGWiki,18843,Y
+LEBROS_CAVERN_WAMOURA_FARM_RAID_POLEARM,Lebros Cavern,Wamoura Farm Raid,??? Polearm,Holly Pole +1,BGWiki,17124,Y
+LEBROS_CAVERN_WAMOURA_FARM_RAID_POLEARM,Lebros Cavern,Wamoura Farm Raid,??? Polearm,Spark Spear,BGWiki,18076,Y
+LEBROS_CAVERN_WAMOURA_FARM_RAID_POLEARM,Lebros Cavern,Wamoura Farm Raid,??? Polearm,Willow Wand +1,BGWiki,17138,Y
+LEBROS_CAVERN_OPERATION_BLACK_PEARL_EARRING,Lebros Cavern,Operation: Black Pearl,??? Earring,Bone Earring,FFXIclopedia,13321,Y
+LEBROS_CAVERN_OPERATION_BLACK_PEARL_EARRING,Lebros Cavern,Operation: Black Pearl,??? Earring,Beetle Earring,FFXIclopedia,13323,Y
+LEBROS_CAVERN_OPERATION_BLACK_PEARL_EARRING,Lebros Cavern,Operation: Black Pearl,??? Earring,Shell Earring,FFXIclopedia,13313,Y
+LEBROS_CAVERN_OPERATION_BLACK_PEARL_EARRING,Lebros Cavern,Operation: Black Pearl,??? Earring,Epsilon Earring,FFXIclopedia,15987,Y
+LEBROS_CAVERN_OPERATION_BLACK_PEARL_SASH,Lebros Cavern,Operation: Black Pearl,??? Sash,Lugworm Belt,FFXIclopedia,15453,Y
+LEBROS_CAVERN_OPERATION_BLACK_PEARL_SASH,Lebros Cavern,Operation: Black Pearl,??? Sash,Silver Obi +1,FFXIclopedia,13224,Y
+LEBROS_CAVERN_OPERATION_BLACK_PEARL_SASH,Lebros Cavern,Operation: Black Pearl,??? Sash,Talisman Obi,FFXIclopedia,15881,Y
+LEBROS_CAVERN_OPERATION_BLACK_PEARL_SASH,Lebros Cavern,Operation: Black Pearl,??? Sash,Lambda Sash,FFXIclopedia,15902,Y
+LEBROS_CAVERN_OPERATION_BLACK_PEARL_BOX,Lebros Cavern,Operation: Black Pearl,??? Box,Copper Ore,FFXIclopedia,640,N
+LEBROS_CAVERN_OPERATION_BLACK_PEARL_BOX,Lebros Cavern,Operation: Black Pearl,??? Box,Flan Meat,FFXIclopedia,2175,N
+LEBROS_CAVERN_OPERATION_BLACK_PEARL_BOX,Lebros Cavern,Operation: Black Pearl,??? Box,Holy Basil,FFXIclopedia,1590,N
+LEBROS_CAVERN_OPERATION_BLACK_PEARL_BOX,Lebros Cavern,Operation: Black Pearl,??? Box,Spartan Bullet Pouch,FFXIclopedia,5341,N
+LEBROS_CAVERN_OPERATION_BLACK_PEARL_BOX,Lebros Cavern,Operation: Black Pearl,??? Box,Troll Pauldron,FFXIclopedia,2160,N
+PERIQIA_SEAGULL_GROUNDED_GLOVES,Periqia,Seagull Grounded,??? Gloves,Storm Manopolas,FFXIclopedia,14936,Y
+PERIQIA_SEAGULL_GROUNDED_GLOVES,Periqia,Seagull Grounded,??? Gloves,Cuffs,FFXIclopedia,12728,Y
+PERIQIA_SEAGULL_GROUNDED_GLOVES,Periqia,Seagull Grounded,??? Gloves,Cotton Gloves,FFXIclopedia,12721,Y
+PERIQIA_SEAGULL_GROUNDED_GLOVES,Periqia,Seagull Grounded,??? Gloves,Leather Gloves,FFXIclopedia,12696,Y
+PERIQIA_SEAGULL_GROUNDED_GLOVES,Periqia,Seagull Grounded,??? Gloves,Bronze Mittens +1,FFXIclopedia,12695,Y
+PERIQIA_SEAGULL_GROUNDED_SWORD,Periqia,Seagull Grounded,??? Sword,Kosetsusamonji,BGWiki,18434,Y
+PERIQIA_SEAGULL_GROUNDED_SWORD,Periqia,Seagull Grounded,??? Sword,Gust Claymore,BGWiki,18366,Y
+PERIQIA_SEAGULL_GROUNDED_SWORD,Periqia,Seagull Grounded,??? Sword,Uchigatana +1,BGWiki,16978,Y
+PERIQIA_REQUIEM_GLOVES,Periqia,Requiem,??? Gloves,Storm Gages,FFXIclopedia,14937,Y
+PERIQIA_REQUIEM_GLOVES,Periqia,Requiem,??? Gloves,Cuffs,FFXIclopedia,12728,Y
+PERIQIA_REQUIEM_GLOVES,Periqia,Requiem,??? Gloves,Bronze Mittens +1,FFXIclopedia,12695,Y
+PERIQIA_REQUIEM_GLOVES,Periqia,Requiem,??? Gloves,Leather Gloves,FFXIclopedia,12696,Y
+PERIQIA_REQUIEM_GLOVES,Periqia,Requiem,??? Gloves,Cotton Gloves,FFXIclopedia,12721,Y
+PERIQIA_REQUIEM_POLEARM,Periqia,Requiem,??? Polearm,Puk Lance,FFXIclopedia,18112,Y
+PERIQIA_REQUIEM_POLEARM,Periqia,Requiem,??? Polearm,Willow Wand +1,FFXIclopedia,17138,Y
+PERIQIA_REQUIEM_POLEARM,Periqia,Requiem,??? Polearm,Brass Zaghnal,FFXIclopedia,16769,Y
+PERIQIA_REQUIEM_POLEARM,Periqia,Requiem,??? Polearm,Holly Staff +1,FFXIclopedia,17125,Y
+PERIQIA_REQUIEM_POLEARM,Periqia,Requiem,??? Polearm,Spark Spear,FFXIclopedia,18076,Y
+PERIQIA_REQUIEM_AXE,Periqia,Requiem,??? Axe,Pickaxe,FFXIclopedia,605,N
+PERIQIA_REQUIEM_BOX,Periqia,Requiem,??? Box,Igneous Rock,BGWiki,1654,N
+PERIQIA_REQUIEM_BOX,Periqia,Requiem,??? Box,Rotten Quiver,BGWiki,4196,N
+PERIQIA_REQUIEM_BOX,Periqia,Requiem,??? Box,Bone Chip,BGWiki,880,N
+PERIQIA_REQUIEM_BOX,Periqia,Requiem,??? Box,Cleaning Tool Set,BGWiki,113,N
+PERIQIA_REQUIEM_BOX,Periqia,Requiem,??? Box,Dragon Scales,BGWiki,867,N
+PERIQIA_SAVING_PRIVATE_RYAAF_SHIELD,Periqia,Saving Private Ryaaf,??? Shield,Storm Shield,ClassicFFXI,16165,Y
+PERIQIA_SAVING_PRIVATE_RYAAF_SHIELD,Periqia,Saving Private Ryaaf,??? Shield,Maple Shield,ClassicFFXI,12290,Y
+PERIQIA_SAVING_PRIVATE_RYAAF_SHIELD,Periqia,Saving Private Ryaaf,??? Shield,Mahogany Shield,ClassicFFXI,12292,Y
+PERIQIA_SAVING_PRIVATE_RYAAF_SHIELD,Periqia,Saving Private Ryaaf,??? Shield,Lauan Shield,ClassicFFXI,12289,Y
+PERIQIA_SAVING_PRIVATE_RYAAF_BOX,Periqia,Saving Private Ryaaf,??? Box,Cleaning Tool Set,ClassicFFXI,113,N
+PERIQIA_SAVING_PRIVATE_RYAAF_BOX,Periqia,Saving Private Ryaaf,??? Box,Brz. Subligar +1,ClassicFFXI,12823,Y
+PERIQIA_SAVING_PRIVATE_RYAAF_BOX,Periqia,Saving Private Ryaaf,??? Box,Slacks,ClassicFFXI,12864,Y
+PERIQIA_SAVING_PRIVATE_RYAAF_BOX,Periqia,Saving Private Ryaaf,??? Box,Slops,ClassicFFXI,12856,Y
+PERIQIA_SAVING_PRIVATE_RYAAF_BOX,Periqia,Saving Private Ryaaf,??? Box,Igneous Rock,ClassicFFXI,1654,N
+PERIQIA_SAVING_PRIVATE_RYAAF_BOX,Periqia,Saving Private Ryaaf,??? Box,Rotten Quiver,ClassicFFXI,4196,N
+PERIQIA_SAVING_PRIVATE_RYAAF_BOX,Periqia,Saving Private Ryaaf,??? Box,Bone Chip,ClassicFFXI,880,N
+PERIQIA_SAVING_PRIVATE_RYAAF_BOX,Periqia,Saving Private Ryaaf,??? Box,Leather Trousers,ClassicFFXI,12824,Y
+PERIQIA_SAVING_PRIVATE_RYAAF_BOX,Periqia,Saving Private Ryaaf,??? Box,Gold Ore,ClassicFFXI,737,
+PERIQIA_SAVING_PRIVATE_RYAAF_BOX,Periqia,Saving Private Ryaaf,??? Box,Qiqirn Sandbag,ClassicFFXI,2153,N
+PERIQIA_SAVING_PRIVATE_RYAAF_BOX,Periqia,Saving Private Ryaaf,??? Box,Apple Mint,ClassicFFXI,1523,N
+PERIQIA_SAVING_PRIVATE_RYAAF_BOX,Periqia,Saving Private Ryaaf,??? Box,Acid Bolt Quiver,ClassicFFXI,5335,N
+PERIQIA_SAVING_PRIVATE_RYAAF_AXE,Periqia,Saving Private Ryaaf,??? Axe,Pickaxe,ClassicFFXI,605,N
+PERIQIA_SAVING_PRIVATE_RYAAF_POLEARM,Periqia,Saving Private Ryaaf,??? Polearm,Brass Zaghnal,ClassicFFXI,16769,Y
+PERIQIA_SAVING_PRIVATE_RYAAF_POLEARM,Periqia,Saving Private Ryaaf,??? Polearm,Holly Pole +1,ClassicFFXI,17124,Y
+PERIQIA_SAVING_PRIVATE_RYAAF_POLEARM,Periqia,Saving Private Ryaaf,??? Polearm,Spark Spear,ClassicFFXI,18076,Y
+PERIQIA_SAVING_PRIVATE_RYAAF_POLEARM,Periqia,Saving Private Ryaaf,??? Polearm,Willow Wand +1,ClassicFFXI,17138,Y
+PERIQIA_SAVING_PRIVATE_RYAAF_POLEARM,Periqia,Saving Private Ryaaf,??? Polearm,Yigit Staff,ClassicFFXI,18582,Y
+PERIQIA_SHOOTING_DOWN_THE_BARON_BOW,Periqia,Shooting Down the Baron,??? Bow,Crossbow +1,FFXIclopedia,17225,Y
+PERIQIA_SHOOTING_DOWN_THE_BARON_BOW,Periqia,Shooting Down the Baron,??? Bow,Longbow +1,FFXIclopedia,17177,Y
+PERIQIA_SHOOTING_DOWN_THE_BARON_BOW,Periqia,Shooting Down the Baron,??? Bow,Culverin,FFXIclopedia,17252,Y
+PERIQIA_SHOOTING_DOWN_THE_BARON_BOW,Periqia,Shooting Down the Baron,??? Bow,Culverin +1,FFXIclopedia,18147,Y
+PERIQIA_SHOOTING_DOWN_THE_BARON_BOW,Periqia,Shooting Down the Baron,??? Bow,Storm Zamburak,FFXIclopedia,18684,Y
+PERIQIA_SHOOTING_DOWN_THE_BARON_BOX,Periqia,Shooting Down the Baron,??? Box,Apple Mint,FFXIclopedia,1523,N
+PERIQIA_SHOOTING_DOWN_THE_BARON_BOX,Periqia,Shooting Down the Baron,??? Box,Bone Chip,FFXIclopedia,880,N
+PERIQIA_SHOOTING_DOWN_THE_BARON_BOX,Periqia,Shooting Down the Baron,??? Box,Bronze Bolt Quiver,FFXIclopedia,4227,N
+PERIQIA_SHOOTING_DOWN_THE_BARON_BOX,Periqia,Shooting Down the Baron,??? Box,Cleaning Tool Set,FFXIclopedia,113,N
+PERIQIA_SHOOTING_DOWN_THE_BARON_BOX,Periqia,Shooting Down the Baron,??? Box,Igneous Rock,FFXIclopedia,1654,N
+PERIQIA_SHOOTING_DOWN_THE_BARON_BOX,Periqia,Shooting Down the Baron,??? Box,Imp Wing,FFXIclopedia,2163,N
+PERIQIA_SHOOTING_DOWN_THE_BARON_BOX,Periqia,Shooting Down the Baron,??? Box,Karakul Cloth,FFXIclopedia,2288,N
+PERIQIA_SHOOTING_DOWN_THE_BARON_BOX,Periqia,Shooting Down the Baron,??? Box,Qiqirn Sandbag,FFXIclopedia,2153,N
+PERIQIA_SHOOTING_DOWN_THE_BARON_BOX,Periqia,Shooting Down the Baron,??? Box,Rotten Quiver,FFXIclopedia,4196,N
+PERIQIA_BUILDING_BRIDGES_BOX,Periqia,Building Bridges,??? Box,Bone Chip,BGWiki,880,N
+PERIQIA_BUILDING_BRIDGES_BOX,Periqia,Building Bridges,??? Box,Cleaning Tool Set,BGWiki,113,N
+PERIQIA_BUILDING_BRIDGES_BOX,Periqia,Building Bridges,??? Box,Igneous Rock,BGWiki,1654,N
+PERIQIA_BUILDING_BRIDGES_BOX,Periqia,Building Bridges,??? Box,Imp Wing,BGWiki,2163,N
+PERIQIA_BUILDING_BRIDGES_BOX,Periqia,Building Bridges,??? Box,Rotten Quiver,BGWiki,4196,N
+PERIQIA_BUILDING_BRIDGES_AXE,Periqia,Building Bridges,??? Axe,Blizzard Toporok,BGWiki,18225,Y
+PERIQIA_BUILDING_BRIDGES_AXE,Periqia,Building Bridges,??? Axe,Hatchet,BGWiki,1021,N
+PERIQIA_BUILDING_BRIDGES_AXE,Periqia,Building Bridges,??? Axe,Marid Ancus,BGWiki,17950,Y
+PERIQIA_BUILDING_BRIDGES_AXE,Periqia,Building Bridges,??? Axe,Prominence Axe,BGWiki,18220,Y
+PERIQIA_BUILDING_BRIDGES_AXE,Periqia,Building Bridges,??? Axe,Tomahawk +1,BGWiki,17943,Y
+PERIQIA_BUILDING_BRIDGES_POLEARM,Periqia,Building Bridges,??? Polearm,Sickle,BGWiki,1020,N
+PERIQIA_STOP_THE_BLOODSHED_CAPE,Periqia,Stop the Bloodshed,??? Cape,Lizard Mantle +1,FFXIclopedia,13608,Y
+PERIQIA_STOP_THE_BLOODSHED_CAPE,Periqia,Stop the Bloodshed,??? Cape,Dhalmel Mantle +1,FFXIclopedia,13600,Y
+PERIQIA_STOP_THE_BLOODSHED_CAPE,Periqia,Stop the Bloodshed,??? Cape,Cotton Cape +1,FFXIclopedia,13601,Y
+PERIQIA_STOP_THE_BLOODSHED_CAPE,Periqia,Stop the Bloodshed,??? Cape,Templar's Mantle,FFXIclopedia,13679,Y
+PERIQIA_STOP_THE_BLOODSHED_CAPE,Periqia,Stop the Bloodshed,??? Cape,Aileron Mantle,FFXIclopedia,16221,Y
+PERIQIA_STOP_THE_BLOODSHED_SWORD,Periqia,Stop the Bloodshed,??? Sword,Gust Claymore,FFXIclopedia,18366,Y
+PERIQIA_STOP_THE_BLOODSHED_SWORD,Periqia,Stop the Bloodshed,??? Sword,Uchigatana +1,FFXIclopedia,16978,Y
+PERIQIA_STOP_THE_BLOODSHED_SWORD,Periqia,Stop the Bloodshed,??? Sword,Immortal's Shotel,FFXIclopedia,17726,Y
+PERIQIA_STOP_THE_BLOODSHED_BOX,Periqia,Stop the Bloodshed,??? Box,Cleaning Tool Set,FFXIclopedia,113,N
+PERIQIA_STOP_THE_BLOODSHED_BOX,Periqia,Stop the Bloodshed,??? Box,Igneous Rock,FFXIclopedia,1654,N
+PERIQIA_STOP_THE_BLOODSHED_BOX,Periqia,Stop the Bloodshed,??? Box,Rotten Quiver,FFXIclopedia,4196,N
+PERIQIA_STOP_THE_BLOODSHED_BOX,Periqia,Stop the Bloodshed,??? Box,Apple Mint,FFXIclopedia,1523,N
+PERIQIA_STOP_THE_BLOODSHED_BOX,Periqia,Stop the Bloodshed,??? Box,Qiqirn Sandbag,FFXIclopedia,2153,N
+PERIQIA_STOP_THE_BLOODSHED_BOX,Periqia,Stop the Bloodshed,??? Box,Imp Wing,FFXIclopedia,2163,N
+PERIQIA_STOP_THE_BLOODSHED_BOX,Periqia,Stop the Bloodshed,??? Box,Blind Bolt Quiver,FFXIclopedia,5334,N
+PERIQIA_STOP_THE_BLOODSHED_BOX,Periqia,Stop the Bloodshed,??? Box,Mythril Bolt Quiver,FFXIclopedia,4228,N
+PERIQIA_STOP_THE_BLOODSHED_BOX,Periqia,Stop the Bloodshed,??? Box,Venom Bolt Quiver,FFXIclopedia,5338,N
+PERIQIA_STOP_THE_BLOODSHED_POLEARM,Periqia,Stop the Bloodshed,??? Polearm,Spark Spear,FFXIclopedia,18076,Y
+PERIQIA_STOP_THE_BLOODSHED_POLEARM,Periqia,Stop the Bloodshed,??? Polearm,Spark Lance,FFXIclopedia,18078,Y
+PERIQIA_DEFUSE_THE_THREAT_POLEARM,Periqia,Defuse the Threat,??? Polearm,Jadagna -1,FFXIclopedia,18409,Y
+PERIQIA_DEFUSE_THE_THREAT_NECKLACE,Periqia,Defuse the Threat,??? Necklace,Gorget +1,FFXIclopedia,13065,Y
+PERIQIA_DEFUSE_THE_THREAT_NECKLACE,Periqia,Defuse the Threat,??? Necklace,Feather Collar,FFXIclopedia,13075,Y
+PERIQIA_DEFUSE_THE_THREAT_NECKLACE,Periqia,Defuse the Threat,??? Necklace,Philomath Stole,FFXIclopedia,13176,Y
+PERIQIA_DEFUSE_THE_THREAT_NECKLACE,Periqia,Defuse the Threat,??? Necklace,Sniper's Collar,FFXIclopedia,15517,Y
+PERIQIA_DEFUSE_THE_THREAT_GLOVES,Periqia,Defuse the Threat,??? Gloves,Beak Gloves +1,FFXIclopedia,13960,Y
+PERIQIA_DEFUSE_THE_THREAT_GLOVES,Periqia,Defuse the Threat,??? Gloves,Ice Gauntlets,FFXIclopedia,14952,Y
+PERIQIA_DEFUSE_THE_THREAT_BOX,Periqia,Defuse the Threat,??? Box,Apple Mint,FFXIclopedia,1523,N
+PERIQIA_DEFUSE_THE_THREAT_BOX,Periqia,Defuse the Threat,??? Box,Bronze Bolt Quiver,FFXIclopedia,4227,N
+PERIQIA_DEFUSE_THE_THREAT_BOX,Periqia,Defuse the Threat,??? Box,Bone Chip,FFXIclopedia,880,N
+PERIQIA_DEFUSE_THE_THREAT_BOX,Periqia,Defuse the Threat,??? Box,Blind Bolt Quiver,FFXIclopedia,5334,N
+PERIQIA_DEFUSE_THE_THREAT_BOX,Periqia,Defuse the Threat,??? Box,Cleaning Tool Set,FFXIclopedia,113,N
+PERIQIA_DEFUSE_THE_THREAT_BOX,Periqia,Defuse the Threat,??? Box,Igneous Rock,FFXIclopedia,1654,N
+PERIQIA_OPERATION_SNAKE_EYES_BOX,Periqia,Operation: Snake Eyes,??? Box,Acid Bolt Quiver,FFXIclopedia,5335,N
+PERIQIA_OPERATION_SNAKE_EYES_BOX,Periqia,Operation: Snake Eyes,??? Box,Apple Mint,FFXIclopedia,1523,N
+PERIQIA_OPERATION_SNAKE_EYES_BOX,Periqia,Operation: Snake Eyes,??? Box,Blind Bolt Quiver,FFXIclopedia,5334,N
+PERIQIA_OPERATION_SNAKE_EYES_BOX,Periqia,Operation: Snake Eyes,??? Box,Bloody Bolt Quiver,FFXIclopedia,5339,N
+PERIQIA_OPERATION_SNAKE_EYES_BOX,Periqia,Operation: Snake Eyes,??? Box,Igneous Rock,FFXIclopedia,1654,N
+PERIQIA_OPERATION_SNAKE_EYES_BOX,Periqia,Operation: Snake Eyes,??? Box,Imp Wing,FFXIclopedia,2163,N
+PERIQIA_OPERATION_SNAKE_EYES_BOX,Periqia,Operation: Snake Eyes,??? Box,Karakul Cloth,FFXIclopedia,2288,N
+PERIQIA_OPERATION_SNAKE_EYES_BOX,Periqia,Operation: Snake Eyes,??? Box,Mythril Bolt Quiver,FFXIclopedia,4228,N
+PERIQIA_OPERATION_SNAKE_EYES_BOX,Periqia,Operation: Snake Eyes,??? Box,Qiqirn Sandbag,FFXIclopedia,2153,N
+PERIQIA_OPERATION_SNAKE_EYES_NECKLACE,Periqia,Operation: Snake Eyes,??? Necklace,Gorget +1,FFXIclopedia,13065,Y
+PERIQIA_OPERATION_SNAKE_EYES_NECKLACE,Periqia,Operation: Snake Eyes,??? Necklace,Feather Collar,FFXIclopedia,13075,Y
+PERIQIA_OPERATION_SNAKE_EYES_NECKLACE,Periqia,Operation: Snake Eyes,??? Necklace,Chi Necklace,FFXIclopedia,15535,Y
+PERIQIA_OPERATION_SNAKE_EYES_RING,Periqia,Operation: Snake Eyes,??? Ring,Copper Ring,FFXIclopedia,13454,Y
+PERIQIA_OPERATION_SNAKE_EYES_RING,Periqia,Operation: Snake Eyes,??? Ring,Brass Ring,FFXIclopedia,13465,Y
+PERIQIA_OPERATION_SNAKE_EYES_RING,Periqia,Operation: Snake Eyes,??? Ring,Pi Ring,FFXIclopedia,15797,Y
+PERIQIA_WAKE_THE_PUPPET_EARRING,Periqia,Wake the Puppet,??? Earring,Beetle Earring,FFXIclopedia,13323,Y
+PERIQIA_WAKE_THE_PUPPET_EARRING,Periqia,Wake the Puppet,??? Earring,Beta Earring,FFXIclopedia,15988,Y
+PERIQIA_WAKE_THE_PUPPET_EARRING,Periqia,Wake the Puppet,??? Earring,Silver Earring,FFXIclopedia,13327,Y
+PERIQIA_WAKE_THE_PUPPET_SASH,Periqia,Wake the Puppet,??? Sash,Talisman Obi,FFXIclopedia,15881,Y
+PERIQIA_WAKE_THE_PUPPET_SASH,Periqia,Wake the Puppet,??? Sash,Zeta Sash,FFXIclopedia,15901,Y
+PERIQIA_WAKE_THE_PUPPET_SASH,Periqia,Wake the Puppet,??? Sash,Silver Obi +1,FFXIclopedia,13224,Y
+PERIQIA_WAKE_THE_PUPPET_SASH,Periqia,Wake the Puppet,??? Sash,Lugworm Belt,FFXIclopedia,15453,Y
+PERIQIA_WAKE_THE_PUPPET_BOX,Periqia,Wake the Puppet,??? Box,Acid Bolt Quiver,FFXIclopedia,5335,N
+PERIQIA_WAKE_THE_PUPPET_BOX,Periqia,Wake the Puppet,??? Box,Apple Mint,FFXIclopedia,1523,N
+PERIQIA_WAKE_THE_PUPPET_BOX,Periqia,Wake the Puppet,??? Box,Bone Chip,FFXIclopedia,880,N
+PERIQIA_WAKE_THE_PUPPET_BOX,Periqia,Wake the Puppet,??? Box,Karakul Cloth,FFXIclopedia,2288,N
+PERIQIA_WAKE_THE_PUPPET_BOX,Periqia,Wake the Puppet,??? Box,Qiqirn Sandbag,FFXIclopedia,2153,N
+PERIQIA_WAKE_THE_PUPPET_BOX,Periqia,Wake the Puppet,??? Box,Rotten Quiver,FFXIclopedia,4196,N
+PERIQIA_WAKE_THE_PUPPET_BOX,Periqia,Wake the Puppet,??? Box,Scorpion Quiver,FFXIclopedia,4223,N
+PERIQIA_WAKE_THE_PUPPET_BOX,Periqia,Wake the Puppet,??? Box,Sleep Bolt Quiver,FFXIclopedia,5337,N
+PERIQIA_WAKE_THE_PUPPET_BOX,Periqia,Wake the Puppet,??? Box,Target Marker,FFXIclopedia,2326,N
+PERIQIA_THE_PRICE_IS_RIGHT_GLOVES,Periqia,The Price is Right,??? Gloves,Breeder Mufflers,FFXIclopedia,15001,Y
+PERIQIA_THE_PRICE_IS_RIGHT_GLOVES,Periqia,The Price is Right,??? Gloves,Cotton Gloves,FFXIclopedia,12721,Y
+PERIQIA_THE_PRICE_IS_RIGHT_GLOVES,Periqia,The Price is Right,??? Gloves,Leather Gloves,FFXIclopedia,12696,Y
+PERIQIA_THE_PRICE_IS_RIGHT_GLOVES,Periqia,The Price is Right,??? Gloves,Bronze Mittens +1,FFXIclopedia,12695,Y
+PERIQIA_THE_PRICE_IS_RIGHT_EARRING,Periqia,The Price is Right,??? Earring,Bone Earring,FFXIclopedia,13321,Y
+PERIQIA_THE_PRICE_IS_RIGHT_EARRING,Periqia,The Price is Right,??? Earring,Beetle Earring,FFXIclopedia,13323,Y
+PERIQIA_THE_PRICE_IS_RIGHT_EARRING,Periqia,The Price is Right,??? Earring,Shell Earring,FFXIclopedia,13313,Y
+PERIQIA_THE_PRICE_IS_RIGHT_EARRING,Periqia,The Price is Right,??? Earring,Carline Earring,FFXIclopedia,15995,Y
+PERIQIA_THE_PRICE_IS_RIGHT_BOX,Periqia,The Price is Right,??? Box,Imp Wing,FFXIclopedia,2163,N
+PERIQIA_THE_PRICE_IS_RIGHT_BOX,Periqia,The Price is Right,??? Box,Apple Mint,FFXIclopedia,1523,N
+PERIQIA_THE_PRICE_IS_RIGHT_BOX,Periqia,The Price is Right,??? Box,Bronze Bolt Quiver,FFXIclopedia,4227,N
+PERIQIA_THE_PRICE_IS_RIGHT_BOX,Periqia,The Price is Right,??? Box,Qiqirn Sandbag,FFXIclopedia,2153,N
+PERIQIA_THE_PRICE_IS_RIGHT_BOX,Periqia,The Price is Right,??? Box,Mythril Bolt Quiver,FFXIclopedia,4228,N
+ILRUSI_ATOLL_GOLDEN_SALVAGE_EARRING,Ilrusi Atoll,Golden Salvage,??? Earring,Storm Earring,BGWiki,15969,Y
+ILRUSI_ATOLL_LAMIA_NO_13_BOX,Ilrusi Atoll,Lamia No.13,??? Box,Cleaning Tool Set,BGWiki,113,N
+ILRUSI_ATOLL_LAMIA_NO_13_BOX,Ilrusi Atoll,Lamia No.13,??? Box,Distilled Water,BGWiki,4509,N
+ILRUSI_ATOLL_LAMIA_NO_13_BOX,Ilrusi Atoll,Lamia No.13,??? Box,Imperial Tea Leaves,BGWiki,2156,N
+ILRUSI_ATOLL_LAMIA_NO_13_BOX,Ilrusi Atoll,Lamia No.13,??? Box,Lamian Armlet,BGWiki,2167,N
+ILRUSI_ATOLL_LAMIA_NO_13_BOX,Ilrusi Atoll,Lamia No.13,??? Box,Light Spirit Pact,BGWiki,4902,N
+ILRUSI_ATOLL_LAMIA_NO_13_BOX,Ilrusi Atoll,Lamia No.13,??? Box,Little Worm,BGWiki,17396,Y
+ILRUSI_ATOLL_LAMIA_NO_13_BOX,Ilrusi Atoll,Lamia No.13,??? Box,Rusty Bucket,BGWiki,90,N
+ILRUSI_ATOLL_LAMIA_NO_13_BOX,Ilrusi Atoll,Lamia No.13,??? Box,Sleep Quiver,BGWiki,5333,N
+ILRUSI_ATOLL_LAMIA_NO_13_BOX,Ilrusi Atoll,Lamia No.13,??? Box,Willow Fishing Rod,BGWiki,17391,Y
+ILRUSI_ATOLL_LAMIA_NO_13_NECKLACE,Ilrusi Atoll,Lamia No.13,??? Necklace,Gorget +1,BGWiki,13065,Y
+ILRUSI_ATOLL_LAMIA_NO_13_NECKLACE,Ilrusi Atoll,Lamia No.13,??? Necklace,Spectacles,BGWiki,13128,Y
+ILRUSI_ATOLL_LAMIA_NO_13_FOOTWEAR,Ilrusi Atoll,Lamia No.13,??? Footwear,Ash Clogs,BGWiki,12984,Y
+ILRUSI_ATOLL_LAMIA_NO_13_FOOTWEAR,Ilrusi Atoll,Lamia No.13,??? Footwear,Bronze Leggings +1,BGWiki,12951,Y
+ILRUSI_ATOLL_LAMIA_NO_13_FOOTWEAR,Ilrusi Atoll,Lamia No.13,??? Footwear,Leather Highboots,BGWiki,12952,Y
+ILRUSI_ATOLL_LAMIA_NO_13_FOOTWEAR,Ilrusi Atoll,Lamia No.13,??? Footwear,Solea,BGWiki,12992,Y
+ILRUSI_ATOLL_LAMIA_NO_13_FOOTWEAR,Ilrusi Atoll,Lamia No.13,??? Footwear,Storm Gambieras,BGWiki,15691,Y
+ILRUSI_ATOLL_LAMIA_NO_13_BOW,Ilrusi Atoll,Lamia No.13,??? Bow,Crossbow +1,BGWiki,17225,Y
+ILRUSI_ATOLL_LAMIA_NO_13_BOW,Ilrusi Atoll,Lamia No.13,??? Bow,Imperial Bow,BGWiki,18683,Y
+ILRUSI_ATOLL_LAMIA_NO_13_BOW,Ilrusi Atoll,Lamia No.13,??? Bow,Longbow +1,BGWiki,17177,Y
+ILRUSI_ATOLL_EXTERMINATION_BOX,Ilrusi Atoll,Extermination,??? Box,Rusty Bucket,ClassicFFXI,90,N
+ILRUSI_ATOLL_EXTERMINATION_BOX,Ilrusi Atoll,Extermination,??? Box,Little Worm,ClassicFFXI,17396,Y
+ILRUSI_ATOLL_EXTERMINATION_BOX,Ilrusi Atoll,Extermination,??? Box,Distilled Water,ClassicFFXI,4509,N
+ILRUSI_ATOLL_EXTERMINATION_BOX,Ilrusi Atoll,Extermination,??? Box,Lamian Armlet,ClassicFFXI,2167,N
+ILRUSI_ATOLL_EXTERMINATION_AXE,Ilrusi Atoll,Extermination,??? Axe,Pickaxe,ClassicFFXI,605,N
+ILRUSI_ATOLL_EXTERMINATION_FOOTWEAR,Ilrusi Atoll,Extermination,??? Footwear,Bronze Leggings +1,ClassicFFXI,12951,Y
+ILRUSI_ATOLL_EXTERMINATION_FOOTWEAR,Ilrusi Atoll,Extermination,??? Footwear,Storm Crackows,ClassicFFXI,15692,Y
+ILRUSI_ATOLL_EXTERMINATION_FOOTWEAR,Ilrusi Atoll,Extermination,??? Footwear,Ash Clogs,ClassicFFXI,12984,Y
+ILRUSI_ATOLL_EXTERMINATION_FOOTWEAR,Ilrusi Atoll,Extermination,??? Footwear,Leather Highboots,ClassicFFXI,12952,Y
+ILRUSI_ATOLL_EXTERMINATION_POLEARM,Ilrusi Atoll,Extermination,??? Polearm,Spark Spear,ClassicFFXI,18076,Y
+ILRUSI_ATOLL_EXTERMINATION_POLEARM,Ilrusi Atoll,Extermination,??? Polearm,Volunteer's Scythe,ClassicFFXI,18064,Y
+ILRUSI_ATOLL_EXTERMINATION_POLEARM,Ilrusi Atoll,Extermination,??? Polearm,Holly Staff +1,ClassicFFXI,17125,Y
+ILRUSI_ATOLL_EXTERMINATION_POLEARM,Ilrusi Atoll,Extermination,??? Polearm,Brass Zaghnal,ClassicFFXI,16769,Y
+ILRUSI_ATOLL_EXTERMINATION_POLEARM,Ilrusi Atoll,Extermination,??? Polearm,Willow Wand +1,ClassicFFXI,17138,Y
+ILRUSI_ATOLL_DEMOLITION_DUTY_SASH,Ilrusi Atoll,Demolition Duty,??? Sash,Talisman Obi,FFXIclopedia,15881,Y
+ILRUSI_ATOLL_DEMOLITION_DUTY_SASH,Ilrusi Atoll,Demolition Duty,??? Sash,Silver Obi +1,FFXIclopedia,13224,Y
+ILRUSI_ATOLL_DEMOLITION_DUTY_SASH,Ilrusi Atoll,Demolition Duty,??? Sash,Lugworm Belt,FFXIclopedia,15453,Y
+ILRUSI_ATOLL_DEMOLITION_DUTY_SASH,Ilrusi Atoll,Demolition Duty,??? Sash,Czar's Belt,FFXIclopedia,15868,Y
+ILRUSI_ATOLL_DEMOLITION_DUTY_SASH,Ilrusi Atoll,Demolition Duty,??? Sash,Maharaja's Belt,FFXIclopedia,15870,Y
+ILRUSI_ATOLL_DEMOLITION_DUTY_SASH,Ilrusi Atoll,Demolition Duty,??? Sash,Sultan's Belt,FFXIclopedia,15867,Y
+ILRUSI_ATOLL_DEMOLITION_DUTY_SASH,Ilrusi Atoll,Demolition Duty,??? Sash,Storm Sash,FFXIclopedia,15883,Y
+ILRUSI_ATOLL_DEMOLITION_DUTY_BOX,Ilrusi Atoll,Demolition Duty,??? Box,Aht Urhgan Brass Ingot,FFXIclopedia,2418,N
+ILRUSI_ATOLL_DEMOLITION_DUTY_BOX,Ilrusi Atoll,Demolition Duty,??? Box,Betta,FFXIclopedia,5139,N
+ILRUSI_ATOLL_DEMOLITION_DUTY_BOX,Ilrusi Atoll,Demolition Duty,??? Box,Demon Quiver,FFXIclopedia,4224,N
+ILRUSI_ATOLL_DEMOLITION_DUTY_BOX,Ilrusi Atoll,Demolition Duty,??? Box,Distilled Water,FFXIclopedia,4509,N
+ILRUSI_ATOLL_DEMOLITION_DUTY_BOX,Ilrusi Atoll,Demolition Duty,??? Box,Istakoz,FFXIclopedia,5453,N
+ILRUSI_ATOLL_DEMOLITION_DUTY_BOX,Ilrusi Atoll,Demolition Duty,??? Box,Lamian Armlet,FFXIclopedia,2167,N
+ILRUSI_ATOLL_DEMOLITION_DUTY_BOX,Ilrusi Atoll,Demolition Duty,??? Box,Karakul Cloth,FFXIclopedia,2288,N
+ILRUSI_ATOLL_DEMOLITION_DUTY_BOX,Ilrusi Atoll,Demolition Duty,??? Box,Qutrub Gorget,FFXIclopedia,2165,N
+ILRUSI_ATOLL_DEMOLITION_DUTY_BOX,Ilrusi Atoll,Demolition Duty,??? Box,Rusty Bucket,FFXIclopedia,90,N
+ILRUSI_ATOLL_DEMOLITION_DUTY_BOX,Ilrusi Atoll,Demolition Duty,??? Box,Scorpion Quiver,FFXIclopedia,4223,N
+ILRUSI_ATOLL_DEMOLITION_DUTY_BOX,Ilrusi Atoll,Demolition Duty,??? Box,Kabura Quiver,FFXIclopedia,5332,N
+ILRUSI_ATOLL_DEMOLITION_DUTY_BOX,Ilrusi Atoll,Demolition Duty,??? Box,Willow Fishing Rod,FFXIclopedia,17391,Y
+ILRUSI_ATOLL_SEARAT_SALVATION_DAGGER,Ilrusi Atoll,Searat Salvation,??? Dagger,Assassin's Jambiya,FFXIclopedia,18017,Y
+ILRUSI_ATOLL_SEARAT_SALVATION_DAGGER,Ilrusi Atoll,Searat Salvation,??? Dagger,Hushed Dagger,FFXIclopedia,18008,Y
+ILRUSI_ATOLL_SEARAT_SALVATION_DAGGER,Ilrusi Atoll,Searat Salvation,??? Dagger,Katars,FFXIclopedia,16399,Y
+ILRUSI_ATOLL_SEARAT_SALVATION_DAGGER,Ilrusi Atoll,Searat Salvation,??? Dagger,Kyofu,FFXIclopedia,17780,Y
+ILRUSI_ATOLL_SEARAT_SALVATION_DAGGER,Ilrusi Atoll,Searat Salvation,??? Dagger,Ponderous Gully,FFXIclopedia,17625,Y
+ILRUSI_ATOLL_SEARAT_SALVATION_DAGGER,Ilrusi Atoll,Searat Salvation,??? Dagger,Ponderous Manoples,FFXIclopedia,18361,Y
+ILRUSI_ATOLL_SEARAT_SALVATION_DAGGER,Ilrusi Atoll,Searat Salvation,??? Dagger,Spark Dagger,FFXIclopedia,17984,Y
+ILRUSI_ATOLL_SEARAT_SALVATION_DAGGER,Ilrusi Atoll,Searat Salvation,??? Dagger,Tojaku,FFXIclopedia,18415,Y
+ILRUSI_ATOLL_SEARAT_SALVATION_BOX,Ilrusi Atoll,Searat Salvation,??? Box,Beetle Quiver,FFXIclopedia,4221,N
+ILRUSI_ATOLL_SEARAT_SALVATION_BOX,Ilrusi Atoll,Searat Salvation,??? Box,Black Ghost,FFXIclopedia,5138,N
+ILRUSI_ATOLL_SEARAT_SALVATION_BOX,Ilrusi Atoll,Searat Salvation,??? Box,Date,FFXIclopedia,5566,N
+ILRUSI_ATOLL_SEARAT_SALVATION_BOX,Ilrusi Atoll,Searat Salvation,??? Box,Istakoz,FFXIclopedia,5453,N
+ILRUSI_ATOLL_SEARAT_SALVATION_BOX,Ilrusi Atoll,Searat Salvation,??? Box,Lamian Armlet,FFXIclopedia,2167,N
+ILRUSI_ATOLL_SEARAT_SALVATION_BOX,Ilrusi Atoll,Searat Salvation,??? Box,Little Worm,FFXIclopedia,17396,Y
+ILRUSI_ATOLL_SEARAT_SALVATION_BOX,Ilrusi Atoll,Searat Salvation,??? Box,Rusty Bucket,FFXIclopedia,90,N
+ILRUSI_ATOLL_APKALLU_SEIZURE_BOX,Ilrusi Atoll,Apkallu Seizure,??? Box,Willow Fishing Rod,FFXIclopedia,17391,Y
+ILRUSI_ATOLL_APKALLU_SEIZURE_BOX,Ilrusi Atoll,Apkallu Seizure,??? Box,Distilled Water,FFXIclopedia,4509,N
+ILRUSI_ATOLL_APKALLU_SEIZURE_BOX,Ilrusi Atoll,Apkallu Seizure,??? Box,Little Worm,FFXIclopedia,17396,Y
+ILRUSI_ATOLL_APKALLU_SEIZURE_BOX,Ilrusi Atoll,Apkallu Seizure,??? Box,Kabura Quiver,FFXIclopedia,5332,N
+ILRUSI_ATOLL_APKALLU_SEIZURE_BOX,Ilrusi Atoll,Apkallu Seizure,??? Box,Horn Quiver,FFXIclopedia,4222,N
+ILRUSI_ATOLL_APKALLU_SEIZURE_BOX,Ilrusi Atoll,Apkallu Seizure,??? Box,Istakoz,FFXIclopedia,5453,N
+ILRUSI_ATOLL_APKALLU_SEIZURE_BOX,Ilrusi Atoll,Apkallu Seizure,??? Box,Lamian Armlet,FFXIclopedia,2167,N
+ILRUSI_ATOLL_APKALLU_SEIZURE_BOX,Ilrusi Atoll,Apkallu Seizure,??? Box,Qutrub Gorget,FFXIclopedia,2165,N
+ILRUSI_ATOLL_APKALLU_SEIZURE_AXE,Ilrusi Atoll,Apkallu Seizure,??? Axe,Hatchet,FFXIclopedia,1021,N
+ILRUSI_ATOLL_APKALLU_SEIZURE_AXE,Ilrusi Atoll,Apkallu Seizure,??? Axe,Pickaxe,FFXIclopedia,605,N
+ILRUSI_ATOLL_APKALLU_SEIZURE_AXE,Ilrusi Atoll,Apkallu Seizure,??? Axe,Tomahawk +1,FFXIclopedia,17943,Y
+ILRUSI_ATOLL_APKALLU_SEIZURE_AXE,Ilrusi Atoll,Apkallu Seizure,??? Axe,Rampager,FFXIclopedia,18217,Y
+ILRUSI_ATOLL_APKALLU_SEIZURE_AXE,Ilrusi Atoll,Apkallu Seizure,??? Axe,Erik's Axe,FFXIclopedia,18487,Y
+ILRUSI_ATOLL_APKALLU_SEIZURE_AXE,Ilrusi Atoll,Apkallu Seizure,??? Axe,Prominence Axe,FFXIclopedia,18220,Y
+ILRUSI_ATOLL_APKALLU_SEIZURE_POLEARM,Ilrusi Atoll,Apkallu Seizure,??? Polearm,Spark Spear,FFXIclopedia,18076,Y
+ILRUSI_ATOLL_APKALLU_SEIZURE_POLEARM,Ilrusi Atoll,Apkallu Seizure,??? Polearm,Wyvern Perch,FFXIclopedia,17579,Y
+ILRUSI_ATOLL_APKALLU_SEIZURE_POLEARM,Ilrusi Atoll,Apkallu Seizure,??? Polearm,Kinnara Pole,FFXIclopedia,18585,Y
+ILRUSI_ATOLL_APKALLU_SEIZURE_POLEARM,Ilrusi Atoll,Apkallu Seizure,??? Polearm,Willow Wand +1,FFXIclopedia,17138,Y
+ILRUSI_ATOLL_APKALLU_SEIZURE_POLEARM,Ilrusi Atoll,Apkallu Seizure,??? Polearm,Brass Zaghnal,FFXIclopedia,16769,Y
+ILRUSI_ATOLL_APKALLU_SEIZURE_POLEARM,Ilrusi Atoll,Apkallu Seizure,??? Polearm,Holly Staff +1,FFXIclopedia,17125,Y
+ILRUSI_ATOLL_LOST_AND_FOUND_GLOVES,Ilrusi Atoll,Lost and Found,??? Gloves,Akinji Bazubands,FFXIclopedia,14939,Y
+ILRUSI_ATOLL_LOST_AND_FOUND_GLOVES,Ilrusi Atoll,Lost and Found,??? Gloves,Cotton Gloves,FFXIclopedia,12721,Y
+ILRUSI_ATOLL_LOST_AND_FOUND_GLOVES,Ilrusi Atoll,Lost and Found,??? Gloves,Cuffs,FFXIclopedia,12728,Y
+ILRUSI_ATOLL_LOST_AND_FOUND_GLOVES,Ilrusi Atoll,Lost and Found,??? Gloves,Leather Gloves,FFXIclopedia,12696,Y
+ILRUSI_ATOLL_LOST_AND_FOUND_GLOVES,Ilrusi Atoll,Lost and Found,??? Gloves,Bronze Mittens +1,FFXIclopedia,12695,Y
+ILRUSI_ATOLL_LOST_AND_FOUND_GLOVES,Ilrusi Atoll,Lost and Found,??? Gloves,Sadhu Bracelets,FFXIclopedia,14953,Y
+ILRUSI_ATOLL_LOST_AND_FOUND_GLOVES,Ilrusi Atoll,Lost and Found,??? Gloves,Sadhu Cuffs,FFXIclopedia,14954,Y
+ILRUSI_ATOLL_LOST_AND_FOUND_GLOVES,Ilrusi Atoll,Lost and Found,??? Gloves,Scorpion Mittens +1,FFXIclopedia,13956,Y
+ILRUSI_ATOLL_LOST_AND_FOUND_BOW,Ilrusi Atoll,Lost and Found,??? Bow,Lamian Kaman -1,FFXIclopedia,18688,Y
+ILRUSI_ATOLL_LOST_AND_FOUND_BOW,Ilrusi Atoll,Lost and Found,??? Bow,Kabura Quiver,FFXIclopedia,5332,N
+ILRUSI_ATOLL_LOST_AND_FOUND_BOX,Ilrusi Atoll,Lost and Found,??? Box,Aht Urhgan Brass Ingot,FFXIclopedia,2418,N
+ILRUSI_ATOLL_LOST_AND_FOUND_BOX,Ilrusi Atoll,Lost and Found,??? Box,Distilled Water,FFXIclopedia,4509,N
+ILRUSI_ATOLL_LOST_AND_FOUND_BOX,Ilrusi Atoll,Lost and Found,??? Box,Istakoz,FFXIclopedia,5453,N
+ILRUSI_ATOLL_LOST_AND_FOUND_BOX,Ilrusi Atoll,Lost and Found,??? Box,Lamian Armlet,FFXIclopedia,2167,N
+ILRUSI_ATOLL_LOST_AND_FOUND_BOX,Ilrusi Atoll,Lost and Found,??? Box,Little Worm,FFXIclopedia,17396,Y
+ILRUSI_ATOLL_LOST_AND_FOUND_BOX,Ilrusi Atoll,Lost and Found,??? Box,Qutrub Gorget,FFXIclopedia,2165,N
+ILRUSI_ATOLL_LOST_AND_FOUND_BOX,Ilrusi Atoll,Lost and Found,??? Box,Rusty Bucket,FFXIclopedia,90,N
+ILRUSI_ATOLL_LOST_AND_FOUND_BOX,Ilrusi Atoll,Lost and Found,??? Box,Willow Fishing Rod,FFXIclopedia,17391,Y
+ILRUSI_ATOLL_LOST_AND_FOUND_BOX,Ilrusi Atoll,Lost and Found,??? Box,Sleep Quiver,FFXIclopedia,5333,N
+ILRUSI_ATOLL_DESERTER_NECKLACE,Ilrusi Atoll,Deserter,??? Necklace,Gorget +1,FFXIclopedia,13065,Y
+ILRUSI_ATOLL_DESERTER_NECKLACE,Ilrusi Atoll,Deserter,??? Necklace,Feather Collar,FFXIclopedia,13075,Y
+ILRUSI_ATOLL_DESERTER_NECKLACE,Ilrusi Atoll,Deserter,??? Necklace,Mu Necklace,FFXIclopedia,15534,Y
+ILRUSI_ATOLL_DESERTER_RING,Ilrusi Atoll,Deserter,??? Ring,Copper Ring,FFXIclopedia,13454,Y
+ILRUSI_ATOLL_DESERTER_RING,Ilrusi Atoll,Deserter,??? Ring,Brass Ring,FFXIclopedia,13465,Y
+ILRUSI_ATOLL_DESERTER_RING,Ilrusi Atoll,Deserter,??? Ring,Epsilon Ring,FFXIclopedia,15798,Y
+ILRUSI_ATOLL_DESERTER_BOX,Ilrusi Atoll,Deserter,??? Box,Beetle Quiver,FFXIclopedia,4221,N
+ILRUSI_ATOLL_DESERTER_BOX,Ilrusi Atoll,Deserter,??? Box,Bone Quiver,FFXIclopedia,4220,N
+ILRUSI_ATOLL_DESERTER_BOX,Ilrusi Atoll,Deserter,??? Box,Iron Quiver,FFXIclopedia,4225,N
+ILRUSI_ATOLL_DESERTER_BOX,Ilrusi Atoll,Deserter,??? Box,Distilled Water,FFXIclopedia,4509,N
+ILRUSI_ATOLL_DESERTER_BOX,Ilrusi Atoll,Deserter,??? Box,Istakoz,FFXIclopedia,5453,N
+ILRUSI_ATOLL_DESERTER_BOX,Ilrusi Atoll,Deserter,??? Box,Lamian Armlet,FFXIclopedia,2167,N
+ILRUSI_ATOLL_DESERTER_BOX,Ilrusi Atoll,Deserter,??? Box,Little Worm,FFXIclopedia,17396,Y
+ILRUSI_ATOLL_DESERTER_BOX,Ilrusi Atoll,Deserter,??? Box,Qutrub Gorget,FFXIclopedia,2165,N
+ILRUSI_ATOLL_DESERTER_BOX,Ilrusi Atoll,Deserter,??? Box,Rusty Bucket,FFXIclopedia,90,N
+ILRUSI_ATOLL_DESERTER_BOX,Ilrusi Atoll,Deserter,??? Box,Stone Quiver,FFXIclopedia,4219,N
+ILRUSI_ATOLL_DESPERATELY_SEEKING_CEPHALOPODS_EARRING,Ilrusi Atoll,Desperately Seeking Cephalopods,??? Earring,Bone Earring,FFXIclopedia,13321,Y
+ILRUSI_ATOLL_DESPERATELY_SEEKING_CEPHALOPODS_EARRING,Ilrusi Atoll,Desperately Seeking Cephalopods,??? Earring,Shell Earring,FFXIclopedia,13313,Y
+ILRUSI_ATOLL_DESPERATELY_SEEKING_CEPHALOPODS_EARRING,Ilrusi Atoll,Desperately Seeking Cephalopods,??? Earring,Silver Earring,FFXIclopedia,13327,Y
+ILRUSI_ATOLL_DESPERATELY_SEEKING_CEPHALOPODS_EARRING,Ilrusi Atoll,Desperately Seeking Cephalopods,??? Earring,Gamma Earring,FFXIclopedia,15989,Y
+ILRUSI_ATOLL_DESPERATELY_SEEKING_CEPHALOPODS_SASH,Ilrusi Atoll,Desperately Seeking Cephalopods,??? Sash,Silver Obi +1,FFXIclopedia,13224,Y
+ILRUSI_ATOLL_DESPERATELY_SEEKING_CEPHALOPODS_SASH,Ilrusi Atoll,Desperately Seeking Cephalopods,??? Sash,Little Worm Belt,FFXIclopedia,15454,Y
+ILRUSI_ATOLL_DESPERATELY_SEEKING_CEPHALOPODS_SASH,Ilrusi Atoll,Desperately Seeking Cephalopods,??? Sash,Lugworm Belt,FFXIclopedia,15453,Y
+ILRUSI_ATOLL_DESPERATELY_SEEKING_CEPHALOPODS_SASH,Ilrusi Atoll,Desperately Seeking Cephalopods,??? Sash,Nu Sash,FFXIclopedia,15900,Y
+ILRUSI_ATOLL_DESPERATELY_SEEKING_CEPHALOPODS_SASH,Ilrusi Atoll,Desperately Seeking Cephalopods,??? Sash,Talisman Obi,FFXIclopedia,15881,Y
+ILRUSI_ATOLL_DESPERATELY_SEEKING_CEPHALOPODS_BOX,Ilrusi Atoll,Desperately Seeking Cephalopods,??? Box,Distilled Water,FFXIclopedia,4509,N
+ILRUSI_ATOLL_DESPERATELY_SEEKING_CEPHALOPODS_BOX,Ilrusi Atoll,Desperately Seeking Cephalopods,??? Box,Istakoz,FFXIclopedia,5453,N
+ILRUSI_ATOLL_DESPERATELY_SEEKING_CEPHALOPODS_BOX,Ilrusi Atoll,Desperately Seeking Cephalopods,??? Box,Lamian Armlet,FFXIclopedia,2167,N
+ILRUSI_ATOLL_DESPERATELY_SEEKING_CEPHALOPODS_BOX,Ilrusi Atoll,Desperately Seeking Cephalopods,??? Box,Qiqirn Sandbag,FFXIclopedia,2153,N
+ILRUSI_ATOLL_DESPERATELY_SEEKING_CEPHALOPODS_BOX,Ilrusi Atoll,Desperately Seeking Cephalopods,??? Box,Qutrub Gorget,FFXIclopedia,2165,N
+ILRUSI_ATOLL_DESPERATELY_SEEKING_CEPHALOPODS_BOX,Ilrusi Atoll,Desperately Seeking Cephalopods,??? Box,Rusty Bucket,FFXIclopedia,90,N
+ILRUSI_ATOLL_BELLEROPHON_S_BLISS_HEADPIECE,Ilrusi Atoll,Bellerophon's Bliss,??? Headpiece,Bronze Cap +1,FFXIclopedia,12463,Y
+ILRUSI_ATOLL_BELLEROPHON_S_BLISS_HEADPIECE,Ilrusi Atoll,Bellerophon's Bliss,??? Headpiece,Leather Bandana,FFXIclopedia,12440,Y
+ILRUSI_ATOLL_BELLEROPHON_S_BLISS_HEADPIECE,Ilrusi Atoll,Bellerophon's Bliss,??? Headpiece,Circlet,FFXIclopedia,12472,Y
+ILRUSI_ATOLL_BELLEROPHON_S_BLISS_HEADPIECE,Ilrusi Atoll,Bellerophon's Bliss,??? Headpiece,Cotton Headgear,FFXIclopedia,12465,Y
+ILRUSI_ATOLL_BELLEROPHON_S_BLISS_HEADPIECE,Ilrusi Atoll,Bellerophon's Bliss,??? Headpiece,Bowman's Mask,FFXIclopedia,16126,Y
+ILRUSI_ATOLL_BELLEROPHON_S_BLISS_HEADPIECE,Ilrusi Atoll,Bellerophon's Bliss,??? Headpiece,Carline Ribbon,FFXIclopedia,16127,Y
+ILRUSI_ATOLL_BELLEROPHON_S_BLISS_BOX,Ilrusi Atoll,Bellerophon's Bliss,??? Box,Demon Quiver,FFXIclopedia,4224,N
+ILRUSI_ATOLL_BELLEROPHON_S_BLISS_BOX,Ilrusi Atoll,Bellerophon's Bliss,??? Box,Istakoz,FFXIclopedia,5453,N
+ILRUSI_ATOLL_BELLEROPHON_S_BLISS_BOX,Ilrusi Atoll,Bellerophon's Bliss,??? Box,Khimaira Horn,FFXIclopedia,2371,N
+ILRUSI_ATOLL_BELLEROPHON_S_BLISS_BOX,Ilrusi Atoll,Bellerophon's Bliss,??? Box,Lamian Armlet,FFXIclopedia,2167,N
+ILRUSI_ATOLL_BELLEROPHON_S_BLISS_BOX,Ilrusi Atoll,Bellerophon's Bliss,??? Box,Qutrub Gorget,FFXIclopedia,2165,N
+ILRUSI_ATOLL_BELLEROPHON_S_BLISS_BOX,Ilrusi Atoll,Bellerophon's Bliss,??? Box,Silver Quiver,FFXIclopedia,4226,N
+ILRUSI_ATOLL_BELLEROPHON_S_BLISS_BOX,Ilrusi Atoll,Bellerophon's Bliss,??? Box,Aht Urhgan Brass Ingot,FFXIclopedia,2418,N

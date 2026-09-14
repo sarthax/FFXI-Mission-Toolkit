@@ -1,0 +1,395 @@
+INCOMING < CS Event (0x032):  NPC: 17084889 (Gilded Doors)
+Event: 300
+
+OUTGOING > Event Option (0x05B):  NPC: 17084889 (Gilded Doors)
+Event: 300
+Option: 1
+
+INCOMING < NPC Chat (0x036):  NPC: 362906 (Foxmulder)
+Message: 7213
+
+INCOMING < NPC Chat (0x036):  NPC: 362906 (Foxmulder)
+Message: 7219
+
+INCOMING < NPC Chat (0x036):  NPC: 362906 (Foxmulder)
+Message: 7219
+
+INCOMING < NPC Chat (0x036):  NPC: 362906 (Foxmulder)
+Message: 7220
+
+INCOMING < NPC Chat (0x036):  NPC: 362906 (Foxmulder)
+Message: 7221
+
+INCOMING < NPC Chat (0x036):  NPC: 362906 (Foxmulder)
+Message: 7221
+
+INCOMING < NPC Chat (0x036):  NPC: 362906 (Foxmulder)
+Message: 7222
+
+INCOMING < NPC Chat (0x036):  NPC: 362906 (Foxmulder)
+Message: 7223
+
+INCOMING < NPC Chat (0x036):  NPC: 362906 (Foxmulder)
+Message: 7229
+
+INCOMING < NPC Chat (0x036):  NPC: 362906 (Foxmulder)
+Message: 7231
+
+INCOMING < CS Event (0x032):  NPC: 17084891 (Gilded Doors)
+Event: 300
+
+OUTGOING > Event Option (0x05B):  NPC: 17084891 (Gilded Doors)
+Event: 300
+Option: 1
+
+INCOMING < NPC Chat (0x036):  NPC: 362906 (Foxmulder)
+Message: 7217
+
+INCOMING < NPC Chat (0x036):  NPC: 362906 (Foxmulder)
+Message: 7217
+
+INCOMING < NPC Chat (0x036):  NPC: 362906 (Foxmulder)
+Message: 7218
+
+INCOMING < NPC Chat (0x036):  NPC: 362906 (Foxmulder)
+Message: 7214
+
+INCOMING < CS Event + Params (0x034):  NPC: 17084423 (Armoury Crate)
+Event: 2
+Params: 70973, 5400, 136503, 5400, 5400, 5400, 5400, 5400
+
+OUTGOING > Event Option (0x05B):  NPC: 17084423 (Armoury Crate)
+Event: 2
+Option: 1
+
+OUTGOING > Event Option (0x05B):  NPC: 17084423 (Armoury Crate)
+Event: 2
+Option: 1
+
+INCOMING < CS Event + Params (0x034):  NPC: 17084423 (Armoury Crate)
+Event: 2
+Params: 5437, 5400, 136503, 5400, 5400, 5400, 5400, 5400
+
+OUTGOING > Event Option (0x05B):  NPC: 17084423 (Armoury Crate)
+Event: 2
+Option: 3
+
+INCOMING < CS Event (0x032):  NPC: 17084688 (Dormant Rampart)
+Event: 3
+
+OUTGOING > Event Option (0x05B):  NPC: 17084688 (Dormant Rampart)
+Event: 3
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 17084688 (Dormant Rampart)
+Event: 3
+Option: 1
+
+INCOMING < CS Event (0x032):  NPC: 362906 (Foxmulder)
+Event: 5
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 5
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 5
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 5
+Option: 0
+
+INCOMING < CS Event (0x032):  NPC: 362906 (Foxmulder)
+Event: 5
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 5
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 5
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 5
+Option: 0
+
+INCOMING < CS Event (0x032):  NPC: 17084892 (Gilded Doors)
+Event: 300
+
+OUTGOING > Event Option (0x05B):  NPC: 17084892 (Gilded Doors)
+Event: 300
+Option: 1
+
+INCOMING < CS Event (0x032):  NPC: 17084893 (Gilded Doors)
+Event: 300
+
+INCOMING < CS Event (0x032):  NPC: 17084893 (Gilded Doors)
+Event: 300
+
+OUTGOING > Event Option (0x05B):  NPC: 17084893 (Gilded Doors)
+Event: 300
+Option: 1
+
+INCOMING < CS Event (0x032):  NPC: 17084894 (Gilded Doors)
+Event: 300
+
+OUTGOING > Event Option (0x05B):  NPC: 17084894 (Gilded Doors)
+Event: 300
+Option: 1
+
+INCOMING < CS Event (0x032):  NPC: 17084898 (Gilded Doors)
+Event: 300
+
+OUTGOING > Event Option (0x05B):  NPC: 17084898 (Gilded Doors)
+Event: 300
+Option: 1
+
+INCOMING < CS Event (0x032):  NPC: 17084899 (Gilded Doors)
+Event: 300
+
+OUTGOING > Event Option (0x05B):  NPC: 17084899 (Gilded Doors)
+Event: 300
+Option: 1
+
+INCOMING < CS Event (0x032):  NPC: 362906 (Foxmulder)
+Event: 200
+
+INCOMING < CS Event (0x032):  NPC: 362906 (Foxmulder)
+Event: 200
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 200
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 200
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 200
+Option: 1
+
+INCOMING < CS Event (0x032):  NPC: 17084689 (Dormant Rampart)
+Event: 3
+
+INCOMING < CS Event (0x032):  NPC: 17084689 (Dormant Rampart)
+Event: 3
+
+OUTGOING > Event Option (0x05B):  NPC: 17084689 (Dormant Rampart)
+Event: 3
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 17084689 (Dormant Rampart)
+Event: 3
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 17084689 (Dormant Rampart)
+Event: 3
+Option: 1
+
+INCOMING < CS Event (0x032):  NPC: 362906 (Foxmulder)
+Event: 5
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 5
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 5
+Option: 0
+
+INCOMING < CS Event (0x032):  NPC: 362906 (Foxmulder)
+Event: 5
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 5
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 5
+Option: 0
+
+INCOMING < CS Event (0x032):  NPC: 17084901 (Gilded Doors)
+Event: 300
+
+OUTGOING > Event Option (0x05B):  NPC: 17084901 (Gilded Doors)
+Event: 300
+Option: 1
+
+INCOMING < NPC Chat (0x036):  NPC: 17084856 (Socket)
+Message: 7431
+
+INCOMING < NPC Chat (0x036):  NPC: 17084856 (Socket)
+Message: 7431
+
+INCOMING < CS Event (0x032):  NPC: 17084904 (Gilded Doors)
+Event: 300
+
+INCOMING < CS Event (0x032):  NPC: 17084904 (Gilded Doors)
+Event: 300
+
+OUTGOING > Event Option (0x05B):  NPC: 17084904 (Gilded Doors)
+Event: 300
+Option: 1
+
+OUTGOING > Event Option (0x05B):  NPC: 17084904 (Gilded Doors)
+Event: 300
+Option: 1
+
+INCOMING < NPC Chat (0x036):  NPC: 362906 (Foxmulder)
+Message: 7224
+
+INCOMING < CS Event (0x032):  NPC: 17084908 (Gilded Doors)
+Event: 300
+
+OUTGOING > Event Option (0x05B):  NPC: 17084908 (Gilded Doors)
+Event: 300
+Option: 1
+
+INCOMING < CS Event (0x032):  NPC: 362906 (Foxmulder)
+Event: 203
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 203
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 203
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 203
+Option: 1
+
+INCOMING < CS Event (0x032):  NPC: 17084913 (Gilded Doors)
+Event: 300
+
+INCOMING < CS Event (0x032):  NPC: 17084913 (Gilded Doors)
+Event: 300
+
+OUTGOING > Event Option (0x05B):  NPC: 17084913 (Gilded Doors)
+Event: 300
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 17084913 (Gilded Doors)
+Event: 300
+Option: 0
+
+INCOMING < CS Event (0x032):  NPC: 17084913 (Gilded Doors)
+Event: 300
+
+OUTGOING > Event Option (0x05B):  NPC: 17084913 (Gilded Doors)
+Event: 300
+Option: 1
+
+INCOMING < CS Event (0x032):  NPC: 17084917 (Gilded Doors)
+Event: 300
+
+OUTGOING > Event Option (0x05B):  NPC: 17084917 (Gilded Doors)
+Event: 300
+Option: 1
+
+INCOMING < CS Event (0x032):  NPC: 17084690 (Dormant Rampart)
+Event: 3
+
+OUTGOING > Event Option (0x05B):  NPC: 17084690 (Dormant Rampart)
+Event: 3
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 17084690 (Dormant Rampart)
+Event: 3
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 17084690 (Dormant Rampart)
+Event: 3
+Option: 1
+
+OUTGOING > Event Option (0x05B):  NPC: 17084690 (Dormant Rampart)
+Event: 3
+Option: 1
+
+INCOMING < CS Event (0x032):  NPC: 362906 (Foxmulder)
+Event: 5
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 5
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 5
+Option: 0
+
+INCOMING < CS Event (0x032):  NPC: 362906 (Foxmulder)
+Event: 5
+
+INCOMING < CS Event (0x032):  NPC: 362906 (Foxmulder)
+Event: 5
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 5
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 5
+Option: 0
+
+INCOMING < CS Event (0x032):  NPC: 17084911 (Gilded Doors)
+Event: 300
+
+OUTGOING > Event Option (0x05B):  NPC: 17084911 (Gilded Doors)
+Event: 300
+Option: 1
+
+OUTGOING > Event Option (0x05B):  NPC: 17084911 (Gilded Doors)
+Event: 300
+Option: 1
+
+INCOMING < CS Event (0x032):  NPC: 362906 (Foxmulder)
+Event: 205
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 205
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 205
+Option: 1
+
+INCOMING < CS Event (0x032):  NPC: 17084918 (Gilded Doors)
+Event: 300
+
+INCOMING < CS Event (0x032):  NPC: 17084918 (Gilded Doors)
+Event: 300
+
+OUTGOING > Event Option (0x05B):  NPC: 17084918 (Gilded Doors)
+Event: 300
+Option: 1
+
+OUTGOING > Event Option (0x05B):  NPC: 17084918 (Gilded Doors)
+Event: 300
+Option: 1
+
+INCOMING < CS Event (0x032):  NPC: 362906 (Foxmulder)
+Event: 207
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 207
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 207
+Option: 0
+
+OUTGOING > Event Option (0x05B):  NPC: 362906 (Foxmulder)
+Event: 207
+Option: 1
+
+INCOMING < CS Event (0x032):  NPC: 17084920 (Gilded Doors)
+Event: 300
+
+OUTGOING > Event Option (0x05B):  NPC: 17084920 (Gilded Doors)
+Event: 300
+Option: 1
+

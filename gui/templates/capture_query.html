@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Capture Query{% endblock %}
+
+{% macro pager() %}
+{% if total_pages > 1 %}
+<form method="get" style="display:flex;gap:8px;align-items:center;margin:12px 0;">
+  <input type="hidden" name="table" value="{{ table }}">
+  <input type="hidden" name="capture_id" value="{{ capture_id }}">
+  <input type="hidden" name="q" value="{{ q }}">
+  {% if page > 1 %}
+  <a class="chip" href="/captures/query?table={{ table }}&capture_id={{ capture_id }}&q={{ q }}&page={{ page - 1 }}">&larr; prev</a>
+  {% endif %}
+  <span class="muted">page</span>
+  <input type="number" name="page" value="{{ page }}" min="1" max="{{ total_pages }}" style="width:70px;">
+  <span class="muted">of {{ total_pages }}</span>
+  <button type="submit">Go</button>
+  {% if page < total_pages %}
+  <a class="chip" href="/captures/query?table={{ table }}&capture_id={{ capture_id }}&q={{ q }}&page={{ page + 1 }}">next &rarr;</a>
+  {% endif %}
+</form>
+{% endif %}
+{% endmacro %}
+
+{% block content %}
+<h1>Capture Query</h1>
+<p class="muted">Direct search over the real <code class="chip">capture_*</code> tables every ingested
+  capture writes into -- for pulling specific rows out across one capture or all of them, not the
+  summarized/truncated view <a href="/captures">a capture's own detail page</a> shows. Leave
+  Capture ID blank to search across every capture.</p>
+
+<form class="search" method="get" style="flex-wrap:wrap;">
+  <select name="table">
+    {% for t in tables %}
+    <option value="{{ t }}" {% if table == t %}selected{% endif %}>{{ t }}</option>
+    {% endfor %}
+  </select>
+  <input type="text" name="capture_id" value="{{ capture_id }}" placeholder="capture id (blank = all)" style="width:170px;">
+  <input type="text" name="q" value="{{ q }}" placeholder="id (exact) or name/text (substring)">
+  <button type="submit">Search</button>
+  <a class="chip" href="/captures/query.csv?table={{ table }}&capture_id={{ capture_id }}&q={{ q }}">Export matching rows as CSV</a>
+</form>
+
+<h2>{{ total }} row(s) in {{ table }}{% if capture_id %} for capture #{{ capture_id }}{% endif %} -- page {{ page }} of {{ total_pages }}</h2>
+{% if not rows %}
+<p class="muted">No matches.</p>
+{% else %}
+{{ pager() }}
+<div class="table-wrap"><table>
+  <tr>{% for c in cols %}<th>{{ c }}</th>{% endfor %}</tr>
+  {% for r in rows %}
+  <tr>{% for c in cols %}<td class="mono">{% if c == 'capture_id' %}<a href="/captures/{{ r[c] }}">{{ r[c] }}</a>{% elif c == 'entity_id' and r[c] %}<a href="/entity/{{ r[c] }}">{{ r[c] }}</a>{% else %}{{ r[c] }}{% endif %}</td>{% endfor %}</tr>
+  {% endfor %}
+</table></div>
+{{ pager() }}
+{% endif %}
+{% endblock %}

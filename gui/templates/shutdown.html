@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ "Restarting" if mode == "restart" else "Shut down" }}{% endblock %}
+{% block content %}
+{% if mode == "restart" %}
+<h1>Restarting the toolkit&hellip;</h1>
+<p class="muted">This page will reload automatically in a few seconds once it's back up.</p>
+<script>setTimeout(() => location.reload(), 4000);</script>
+{% else %}
+<h1>Toolkit stopped</h1>
+<p class="muted">The server process has exited. Close this tab, or run
+  <code class="chip">start.bat</code> again when you want it back.</p>
+{% endif %}
+{% endblock %}

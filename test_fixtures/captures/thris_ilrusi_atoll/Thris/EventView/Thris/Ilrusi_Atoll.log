@@ -1,0 +1,2689 @@
+[2025-11-05 15:15:40] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 0,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40275,
+  MessageNumber = 7507,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 0,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 5
+  },
+  num = {
+    46,
+    0,
+    0,
+    0
+  }
+}
+
+[2025-11-05 15:15:41] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 0,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40290,
+  MessageNumber = 7522,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 0,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 6
+  },
+  num = {
+    30,
+    0,
+    0,
+    0
+  }
+}
+
+[2025-11-05 15:15:51] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM) - NPC Chat (0x036)
+{
+  ActIndex = 163,
+  MesNum = 7586,
+  Type = 2,
+  UniqueNo = 17002659,
+  header = {
+    id = 54,
+    size = 4,
+    sync = 31
+  },
+  padding00 = 68,
+  padding01 = 13825
+}
+
+[2025-11-05 15:15:51] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 31
+  }
+}
+
+[2025-11-05 15:15:51] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM) - NPC Chat (0x036)
+{
+  ActIndex = 163,
+  MesNum = 7586,
+  Type = 2,
+  UniqueNo = 17002659,
+  header = {
+    id = 54,
+    size = 4,
+    sync = 31
+  },
+  padding00 = 68,
+  padding01 = 13825
+}
+
+[2025-11-05 15:15:51] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 31
+  }
+}
+
+[2025-11-05 15:15:59] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM) - NPC Chat (0x036)
+{
+  ActIndex = 163,
+  MesNum = 7587,
+  Type = 2,
+  UniqueNo = 17002659,
+  header = {
+    id = 54,
+    size = 4,
+    sync = 50
+  },
+  padding00 = 61,
+  padding01 = 12805
+}
+
+[2025-11-05 15:15:59] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 50
+  }
+}
+
+[2025-11-05 15:16:06] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM) - NPC Chat (0x036)
+{
+  ActIndex = 163,
+  MesNum = 7586,
+  Type = 2,
+  UniqueNo = 17002659,
+  header = {
+    id = 54,
+    size = 4,
+    sync = 66
+  },
+  padding00 = 44,
+  padding01 = 3590
+}
+
+[2025-11-05 15:16:06] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 66
+  }
+}
+
+[2025-11-05 15:18:22] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 170,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40350,
+  MessageNumber = 7582,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002666,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 396
+  },
+  num = {
+    5449,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:18:22] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 396
+  }
+}
+
+[2025-11-05 15:18:25] << [0x038] CEntityAnimationPacket (GP_SERV_COMMAND_SCHEDULOR)
+{
+  ActIndexCast = 81,
+  ActIndexTar = 81,
+  FourCCString = "kesu",
+  UniqueNoCas = 17002577,
+  UniqueNoTar = 17002577,
+  header = {
+    id = 56,
+    size = 5,
+    sync = 403
+  },
+  id = 1970496875
+}
+
+[2025-11-05 15:18:49] << [0x038] CEntityAnimationPacket (GP_SERV_COMMAND_SCHEDULOR)
+{
+  ActIndexCast = 83,
+  ActIndexTar = 83,
+  FourCCString = "kesu",
+  UniqueNoCas = 17002579,
+  UniqueNoTar = 17002579,
+  header = {
+    id = 56,
+    size = 5,
+    sync = 461
+  },
+  id = 1970496875
+}
+
+[2025-11-05 15:18:51] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 164,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002660,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 466
+  },
+  num = {
+    75,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:18:51] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 466
+  }
+}
+
+[2025-11-05 15:19:15] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 164,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002660,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 522
+  },
+  num = {
+    3,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:19:15] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 522
+  }
+}
+
+[2025-11-05 15:19:17] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 164,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002660,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 528
+  },
+  num = {
+    5,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:19:17] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 528
+  }
+}
+
+[2025-11-05 15:19:20] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 164,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002660,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 535
+  },
+  num = {
+    8,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:19:20] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 535
+  }
+}
+
+[2025-11-05 15:19:29] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 164,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002660,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 557
+  },
+  num = {
+    1,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:19:36] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 164,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002660,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 573
+  },
+  num = {
+    8,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:19:41] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 164,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002660,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 586
+  },
+  num = {
+    13,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:19:41] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 586
+  }
+}
+
+[2025-11-05 15:19:43] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 164,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002660,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 591
+  },
+  num = {
+    15,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:19:43] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 591
+  }
+}
+
+[2025-11-05 15:20:19] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 678
+  },
+  num = {
+    67,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:20:29] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 702
+  },
+  num = {
+    77,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:20:33] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 711
+  },
+  num = {
+    65,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:20:33] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 711
+  }
+}
+
+[2025-11-05 15:21:30] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 848
+  },
+  num = {
+    10,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:21:39] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 869
+  },
+  num = {
+    2,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:22:11] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 948
+  },
+  num = {
+    3,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:22:14] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40346,
+  MessageNumber = 7578,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 954
+  },
+  num = {
+    6,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:22:20] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40348,
+  MessageNumber = 7580,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 969
+  },
+  num = {
+    12,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:22:28] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 988
+  },
+  num = {
+    68,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:22:34] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40346,
+  MessageNumber = 7578,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1001
+  },
+  num = {
+    74,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:22:37] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40348,
+  MessageNumber = 7580,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1009
+  },
+  num = {
+    77,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:22:53] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1047
+  },
+  num = {
+    77,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:22:58] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1061
+  },
+  num = {
+    67,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:23:09] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1085
+  },
+  num = {
+    77,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:23:14] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40346,
+  MessageNumber = 7578,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1099
+  },
+  num = {
+    66,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:23:15] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1100
+  },
+  num = {
+    67,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:23:49] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1182
+  },
+  num = {
+    5,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:23:56] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1200
+  },
+  num = {
+    12,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:24:00] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40351,
+  MessageNumber = 7583,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1208
+  },
+  num = {
+    5449,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:24:00] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40342,
+  MessageNumber = 7574,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1208
+  },
+  num = {
+    5449,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:24:00] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 1208
+  }
+}
+
+[2025-11-05 15:24:02] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM) - NPC Chat (0x036)
+{
+  ActIndex = 166,
+  MesNum = 40344,
+  Type = 4,
+  UniqueNo = 17002662,
+  header = {
+    id = 54,
+    size = 4,
+    sync = 1215
+  },
+  padding00 = 0,
+  padding01 = 0
+}
+
+[2025-11-05 15:24:15] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1246
+  },
+  num = {
+    15,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:24:15] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 1246
+  }
+}
+
+[2025-11-05 15:24:36] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 169,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40350,
+  MessageNumber = 7582,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002665,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1295
+  },
+  num = {
+    5449,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:24:36] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 1295
+  }
+}
+
+[2025-11-05 15:24:43] << [0x038] CEntityAnimationPacket (GP_SERV_COMMAND_SCHEDULOR)
+{
+  ActIndexCast = 82,
+  ActIndexTar = 82,
+  FourCCString = "kesu",
+  UniqueNoCas = 17002578,
+  UniqueNoTar = 17002578,
+  header = {
+    id = 56,
+    size = 5,
+    sync = 1313
+  },
+  id = 1970496875
+}
+
+[2025-11-05 15:24:57] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM) - NPC Chat (0x036)
+{
+  ActIndex = 163,
+  MesNum = 7587,
+  Type = 2,
+  UniqueNo = 17002659,
+  header = {
+    id = 54,
+    size = 4,
+    sync = 1346
+  },
+  padding00 = 0,
+  padding01 = 0
+}
+
+[2025-11-05 15:24:57] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 1346
+  }
+}
+
+[2025-11-05 15:24:59] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM) - NPC Chat (0x036)
+{
+  ActIndex = 163,
+  MesNum = 7586,
+  Type = 2,
+  UniqueNo = 17002659,
+  header = {
+    id = 54,
+    size = 4,
+    sync = 1353
+  },
+  padding00 = 37,
+  padding01 = 50142
+}
+
+[2025-11-05 15:24:59] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 1353
+  }
+}
+
+[2025-11-05 15:25:26] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 164,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002660,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1417
+  },
+  num = {
+    70,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:25:27] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 164,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40346,
+  MessageNumber = 7578,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002660,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1419
+  },
+  num = {
+    71,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:25:30] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 164,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40348,
+  MessageNumber = 7580,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002660,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1427
+  },
+  num = {
+    74,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:25:41] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 164,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002660,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1452
+  },
+  num = {
+    5,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:25:43] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 164,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40346,
+  MessageNumber = 7578,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002660,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1459
+  },
+  num = {
+    7,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:25:46] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 164,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40348,
+  MessageNumber = 7580,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002660,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1465
+  },
+  num = {
+    10,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:25:58] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 164,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40351,
+  MessageNumber = 7583,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002660,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1494
+  },
+  num = {
+    5449,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:25:58] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 164,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40342,
+  MessageNumber = 7574,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002660,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1494
+  },
+  num = {
+    5449,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:25:58] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 1494
+  }
+}
+
+[2025-11-05 15:26:01] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM) - NPC Chat (0x036)
+{
+  ActIndex = 164,
+  MesNum = 40344,
+  Type = 4,
+  UniqueNo = 17002660,
+  header = {
+    id = 54,
+    size = 4,
+    sync = 1502
+  },
+  padding00 = 0,
+  padding01 = 0
+}
+
+[2025-11-05 15:26:34] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 170,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40350,
+  MessageNumber = 7582,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002666,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1581
+  },
+  num = {
+    5449,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:26:34] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 1581
+  }
+}
+
+[2025-11-05 15:26:39] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 164,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002660,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1593
+  },
+  num = {
+    15,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:26:49] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 164,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002660,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1616
+  },
+  num = {
+    73,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:27:05] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 165,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002661,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1656
+  },
+  num = {
+    73,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:27:09] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 165,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40346,
+  MessageNumber = 7578,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002661,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1665
+  },
+  num = {
+    77,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:27:11] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 165,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40348,
+  MessageNumber = 7580,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002661,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1671
+  },
+  num = {
+    79,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:27:16] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 165,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40351,
+  MessageNumber = 7583,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002661,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1683
+  },
+  num = {
+    5449,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:27:16] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 165,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40342,
+  MessageNumber = 7574,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002661,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1683
+  },
+  num = {
+    5449,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:27:16] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 1683
+  }
+}
+
+[2025-11-05 15:27:23] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM) - NPC Chat (0x036)
+{
+  ActIndex = 165,
+  MesNum = 40344,
+  Type = 4,
+  UniqueNo = 17002661,
+  header = {
+    id = 54,
+    size = 4,
+    sync = 1700
+  },
+  padding00 = 190,
+  padding01 = 50192
+}
+
+[2025-11-05 15:27:34] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 165,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002661,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1725
+  },
+  num = {
+    70,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:27:37] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 165,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002661,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1733
+  },
+  num = {
+    73,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:27:47] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 165,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002661,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1756
+  },
+  num = {
+    3,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:27:47] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 1756
+  }
+}
+
+[2025-11-05 15:27:50] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 165,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002661,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1764
+  },
+  num = {
+    6,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:27:54] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 165,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40346,
+  MessageNumber = 7578,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002661,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1774
+  },
+  num = {
+    10,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:27:55] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 165,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002661,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1776
+  },
+  num = {
+    11,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:27:57] << [0x038] CEntityAnimationPacket (GP_SERV_COMMAND_SCHEDULOR)
+{
+  ActIndexCast = 85,
+  ActIndexTar = 85,
+  FourCCString = "kesu",
+  UniqueNoCas = 17002581,
+  UniqueNoTar = 17002581,
+  header = {
+    id = 56,
+    size = 5,
+    sync = 1780
+  },
+  id = 1970496875
+}
+
+[2025-11-05 15:28:17] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 165,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002661,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1829
+  },
+  num = {
+    1,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:28:21] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 165,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002661,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1839
+  },
+  num = {
+    5,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:28:33] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 165,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002661,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1868
+  },
+  num = {
+    1,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:28:37] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 165,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002661,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1877
+  },
+  num = {
+    5,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:29:02] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 164,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002660,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1938
+  },
+  num = {
+    78,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:29:07] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 164,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002660,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1949
+  },
+  num = {
+    67,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:29:18] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 167,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002663,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1976
+  },
+  num = {
+    78,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:29:21] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 167,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002663,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1984
+  },
+  num = {
+    65,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:29:24] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 170,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40350,
+  MessageNumber = 7582,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002666,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 1990
+  },
+  num = {
+    5449,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:29:24] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 1990
+  }
+}
+
+[2025-11-05 15:29:31] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 167,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40351,
+  MessageNumber = 7583,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002663,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 2008
+  },
+  num = {
+    5449,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:29:31] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 167,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40342,
+  MessageNumber = 7574,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002663,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 2008
+  },
+  num = {
+    5449,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:29:31] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 2008
+  }
+}
+
+[2025-11-05 15:29:34] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM) - NPC Chat (0x036)
+{
+  ActIndex = 167,
+  MesNum = 40344,
+  Type = 4,
+  UniqueNo = 17002663,
+  header = {
+    id = 54,
+    size = 4,
+    sync = 2016
+  },
+  padding00 = 0,
+  padding01 = 0
+}
+
+[2025-11-05 15:30:41] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 2177
+  },
+  num = {
+    1,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:30:46] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 166,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002662,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 2189
+  },
+  num = {
+    6,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:31:34] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 167,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002663,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 2304
+  },
+  num = {
+    70,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:31:38] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 167,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002663,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 2314
+  },
+  num = {
+    75,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:31:42] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 167,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002663,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 2322
+  },
+  num = {
+    78,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:31:42] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 2322
+  }
+}
+
+[2025-11-05 15:31:51] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 167,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002663,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 2345
+  },
+  num = {
+    71,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:31:54] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 167,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002663,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 2352
+  },
+  num = {
+    74,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:31:54] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 2352
+  }
+}
+
+[2025-11-05 15:31:56] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 167,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002663,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 2356
+  },
+  num = {
+    76,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:32:00] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 171,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40350,
+  MessageNumber = 7582,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002667,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 2367
+  },
+  num = {
+    5449,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:32:00] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 2367
+  }
+}
+
+[2025-11-05 15:32:18] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 167,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002663,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 2409
+  },
+  num = {
+    2,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:32:21] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 167,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40346,
+  MessageNumber = 7578,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002663,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 2415
+  },
+  num = {
+    5,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:32:24] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 167,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40348,
+  MessageNumber = 7580,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002663,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 2422
+  },
+  num = {
+    7,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:32:24] << [0x038] CEntityAnimationPacket (GP_SERV_COMMAND_SCHEDULOR)
+{
+  ActIndexCast = 87,
+  ActIndexTar = 87,
+  FourCCString = "kesu",
+  UniqueNoCas = 17002583,
+  UniqueNoTar = 17002583,
+  header = {
+    id = 56,
+    size = 5,
+    sync = 2423
+  },
+  id = 1970496875
+}
+
+[2025-11-05 15:32:27] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 167,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40351,
+  MessageNumber = 7583,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002663,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 2430
+  },
+  num = {
+    5449,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:32:27] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 167,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40342,
+  MessageNumber = 7574,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002663,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 2430
+  },
+  num = {
+    5449,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:32:27] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 2430
+  }
+}
+
+[2025-11-05 15:32:31] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM) - NPC Chat (0x036)
+{
+  ActIndex = 167,
+  MesNum = 40344,
+  Type = 4,
+  UniqueNo = 17002663,
+  header = {
+    id = 54,
+    size = 4,
+    sync = 2440
+  },
+  padding00 = 145,
+  padding01 = 50172
+}
+
+[2025-11-05 15:32:43] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 167,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002663,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 2469
+  },
+  num = {
+    11,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:32:48] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 167,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002663,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 2480
+  },
+  num = {
+    0,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:33:01] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 167,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002663,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 2512
+  },
+  num = {
+    13,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:33:06] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 167,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40345,
+  MessageNumber = 7577,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002663,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 2524
+  },
+  num = {
+    66,
+    4,
+    1757,
+    0
+  }
+}
+
+[2025-11-05 15:33:16] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+{
+  ActIndex = 167,
+  Flag = 0,
+  IgnoreValidation = true,
+  MesNum = 40343,
+  MessageNumber = 7575,
+  SpeakerName = "",
+  String = "",
+  Type = 6,
+  TypeLookup = 148,
+  UniqueNo = 17002663,
+  header = {
+    id = 42,
+    size = 8,
+    sync = 2548
+  },
+  num = {
+    76,
+    4,
+    1757,
+    0
+  }
+}
+

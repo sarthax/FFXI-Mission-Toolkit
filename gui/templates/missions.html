@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Assault Missions{% endblock %}
+{% block content %}
+<h1>Assault Missions</h1>
+<p class="muted">Real client text (area/objective/recruitment/orders), from missions-assault.xml.</p>
+<form class="search" method="get">
+  <input type="text" name="q" value="{{ q }}" placeholder="filter by name">
+  <button type="submit">Filter</button>
+</form>
+{% for r in rows %}
+{% set roll = rollups[r.mission_id] %}
+<h2>{{ r.mission_id }}. {{ r.name }}</h2>
+<pre style="white-space:pre-wrap;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">{{ r.full_text }}</pre>
+
+{% if roll.n_entities %}
+<div style="display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 4px;">
+  <span class="chip">{{ roll.n_entities }} entities wired</span>
+  <span class="chip" title="have a real NPCLogger/idview capture observation">{{ roll.n_captured }} captured</span>
+  <span class="chip" title="have real observed abilities from a capture">{{ roll.n_with_abilities }} with observed abilities</span>
+  <span class="chip" title="have a real, non-empty drop table (mob_groups.dropid)">{{ roll.n_with_drops }} with known drops</span>
+</div>
+{% if roll.captures %}
+<p class="muted">Captures tagged with this mission:
+  {% for c in roll.captures %}<a class="inline" href="/captures/{{ c.capture_id }}">#{{ c.capture_id }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
+</p>
+{% endif %}
+{% elif roll.is_placeholder %}
+<p class="muted">Unresolved client placeholder ("ASミッション..") -- real client text was never
+  substituted in for this mission_id, so it isn't rolled up (its id may coincidentally reuse a
+  real BCNM/Salvage/other instance's numbering, which would otherwise show wrong data).</p>
+{% else %}
+<p class="muted">No entities found in instance_entities.sql for this mission_id -- either not yet wired, or this row isn't Assault content.</p>
+{% endif %}
+{% endfor %}
+{% endblock %}

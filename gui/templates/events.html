@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Events / CSID Browser{% endblock %}
+{% block content %}
+<h1>Events / CSID Browser</h1>
+<p class="muted">Every real entity/CSID pair in a zone's events.yml (mission_toolkit.py export).
+Click a row to decompile it with real dialog text substituted in and cross-checked against our
+own dialog_text index -- the same thing explore_event.py does on the CLI.</p>
+
+<form class="search" method="get">
+  <select name="zone">
+    <option value="">Pick a zone...</option>
+    {% for z in zones %}
+    <option value="{{ z.name }}" {% if zone|upper == z.name %}selected{% endif %}>{{ z.name }}</option>
+    {% endfor %}
+  </select>
+  <input type="text" name="q" value="{{ q }}" placeholder="filter by entity id or name">
+  <button type="submit">Browse</button>
+</form>
+
+{% if generated_note %}<p class="muted">{{ generated_note }} (this can take a minute the first time.)</p>{% endif %}
+
+{% if zone %}
+<h2>{{ rows|length }} event(s) in {{ zone }}</h2>
+{% if not rows %}
+<p class="muted">No events found (or no cached/generatable export for this zone).</p>
+{% else %}
+<div class="table-wrap"><table>
+  <tr><th>entity id</th><th>name</th><th>csid</th><th></th></tr>
+  {% for r in rows %}
+  <tr>
+    <td class="mono">{{ r.entity_id }}</td>
+    <td>{{ r.name or "" }}</td>
+    <td class="mono">{{ r.csid }}</td>
+    <td><a href="/events/view?zone={{ zone }}&entity={{ r.entity_id }}&csid={{ r.csid }}">decompile</a></td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+{% endif %}
+{% endblock %}

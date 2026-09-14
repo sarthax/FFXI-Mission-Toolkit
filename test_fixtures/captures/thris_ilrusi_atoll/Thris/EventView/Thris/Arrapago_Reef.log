@@ -1,0 +1,175 @@
+[2025-11-05 15:14:53] << [0x034] CEventPacket* (GP_SERV_COMMAND_EVENTNUM) - CS Event + Params (0x034)
+{
+  ActIndex = 596,
+  EventNum = 54,
+  EventNum2 = 54,
+  EventPara = 219,
+  EventPara2 = 0,
+  Mode = 8,
+  UniqueNo = 16998996,
+  header = {
+    id = 52,
+    size = 13,
+    sync = 1156
+  },
+  num = {
+    46,
+    -1,
+    0,
+    70,
+    4,
+    1,
+    3,
+    0
+  }
+}
+
+[2025-11-05 15:14:53] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 1156
+  }
+}
+
+[2025-11-05 15:15:02] >> [0x05B] GP_CLI_COMMAND_EVENTEND (GP_CLI_COMMAND_EVENTEND) - Event Option (0x05B)
+{
+  ActIndex = 596,
+  EndPara = 1073741824,
+  EventNum = 54,
+  EventPara = 219,
+  Mode = 0,
+  UniqueNo = 16998996,
+  header = {
+    id = 91,
+    size = 5,
+    sync = 1180
+  }
+}
+
+[2025-11-05 15:15:02] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 1,
+  ModeDescription = "Reset event receive pending flag",
+  ModeType = 1,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 1179
+  }
+}
+
+[2025-11-05 15:15:04] << [0x034] CEventPacket* (GP_SERV_COMMAND_EVENTNUM) - CS Event + Params (0x034)
+{
+  ActIndex = 596,
+  EventNum = 54,
+  EventNum2 = 54,
+  EventPara = 219,
+  EventPara2 = 0,
+  Mode = 8,
+  UniqueNo = 16998996,
+  header = {
+    id = 52,
+    size = 13,
+    sync = 1183
+  },
+  num = {
+    46,
+    -1,
+    0,
+    70,
+    4,
+    1,
+    3,
+    0
+  }
+}
+
+[2025-11-05 15:15:04] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 0,
+  ModeDescription = "Standard control adjust (Reset event flags)",
+  ModeType = 0,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 1183
+  }
+}
+
+[2025-11-05 15:15:09] >> [0x05B] GP_CLI_COMMAND_EVENTEND (GP_CLI_COMMAND_EVENTEND) - Event Option (0x05B)
+{
+  ActIndex = 596,
+  EndPara = 262144,
+  EventNum = 54,
+  EventPara = 219,
+  Mode = 1,
+  UniqueNo = 16998996,
+  header = {
+    id = 91,
+    size = 5,
+    sync = 1197
+  }
+}
+
+[2025-11-05 15:15:15] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+{
+  Mode = 1,
+  ModeDescription = "Reset event receive pending flag",
+  ModeType = 1,
+  header = {
+    id = 82,
+    size = 2,
+    sync = 1209
+  }
+}
+
+[2025-11-05 15:15:30] >> [0x05B] GP_CLI_COMMAND_EVENTEND (GP_CLI_COMMAND_EVENTEND) - Event Option (0x05B)
+{
+  ActIndex = 596,
+  EndPara = 4,
+  EventNum = 54,
+  EventPara = 219,
+  Mode = 0,
+  UniqueNo = 16998996,
+  header = {
+    id = 91,
+    size = 5,
+    sync = 1248
+  }
+}
+
+[2025-11-05 15:33:26] << [0x039] CEntityVisualPacket (GP_SERV_COMMAND_MAPSCHEDULOR)
+{
+  ActIndexCast = 0,
+  ActIndexTar = 0,
+  FourCCString = "1pb1",
+  UniqueNoCas = 0,
+  UniqueNoTar = 0,
+  header = {
+    id = 57,
+    size = 5,
+    sync = 5
+  },
+  id = 828534833
+}
+
+[2025-11-05 15:33:26] << [0x039] CEntityVisualPacket (GP_SERV_COMMAND_MAPSCHEDULOR)
+{
+  ActIndexCast = 0,
+  ActIndexTar = 0,
+  FourCCString = "2pb1",
+  UniqueNoCas = 0,
+  UniqueNoTar = 0,
+  header = {
+    id = 57,
+    size = 5,
+    sync = 5
+  },
+  id = 828534834
+}
+

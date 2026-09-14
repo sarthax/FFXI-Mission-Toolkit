@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>net9.0;net9.0-windows</TargetFrameworks>
+		<OutputType>Exe</OutputType>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<!-- 2026-08-24: avoids a CoreCLR CET/shadow-stack assert crash on this machine
+		     (threads.cpp:7954, !AreShadowStacksEnabled()) seen when running the built exe. -->
+		<CETCompat>false</CETCompat>
+	</PropertyGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="fixes.xml"/>
+		<EmbeddedResource Include="MapDats.json"/>
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="System.Drawing.Common" Version="8.0.8"/>
+	</ItemGroup>
+</Project>

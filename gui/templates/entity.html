@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Entity Lookup{% endblock %}
+
+{% macro pager() %}
+{% if total_pages > 1 %}
+<form method="get" style="display:flex;gap:8px;align-items:center;margin:12px 0;">
+  <input type="hidden" name="q" value="{{ q }}">
+  {% if page > 1 %}
+  <a class="chip" href="/entity?q={{ q }}&page={{ page - 1 }}">&larr; prev</a>
+  {% endif %}
+  <span class="muted">page</span>
+  <input type="number" name="page" value="{{ page }}" min="1" max="{{ total_pages }}" style="width:70px;">
+  <span class="muted">of {{ total_pages }}</span>
+  <button type="submit">Go</button>
+  {% if page < total_pages %}
+  <a class="chip" href="/entity?q={{ q }}&page={{ page + 1 }}">next &rarr;</a>
+  {% endif %}
+</form>
+{% endif %}
+{% endmacro %}
+
+{% block content %}
+<h1>Entity Lookup</h1>
+<p class="muted">One canonical profile per entity (<code class="chip">entity_profile.py</code>) --
+the same builder Wiki Compiler's npc/mob resolution and the CLI both use, so this page can't
+silently disagree with them anymore. A single id search jumps straight to its profile page;
+a name search lists matches here to click through.</p>
+<form class="search" method="get">
+  <input type="text" name="q" value="{{ q }}" placeholder="npc/mob id, or a name substring (e.g. Vending Box)">
+  <button type="submit">Look up</button>
+</form>
+
+{% if matches %}
+<p>{{ total }} name match(es) -- page {{ page }} of {{ total_pages }} -- click one to open its profile:</p>
+{{ pager() }}
+<div class="table-wrap"><table>
+  <tr><th>id</th><th>name</th><th>zone id</th><th>zone name</th></tr>
+  {% for npcid, name, zoneid in matches %}
+  <tr><td class="mono"><a href="/entity/{{ npcid }}?q={{ q }}&page={{ page }}">{{ npcid }}</a></td><td>{{ name }}</td><td class="mono">{{ zoneid }}</td><td>{{ zone_names.get(zoneid, "") }}</td></tr>
+  {% endfor %}
+</table></div>
+{{ pager() }}
+{% elif q %}
+<p class="muted">No matches for "{{ q }}".</p>
+{% endif %}
+{% endblock %}

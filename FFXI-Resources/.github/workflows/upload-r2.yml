@@ -1,0 +1,65 @@
+name: Upload to R2
+
+on:
+  release:
+    types: [published, edited]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to upload (defaults to latest)"
+        required: false
+
+permissions:
+  contents: read
+
+# Serialize index rebuilds across runs. New runs queue (cancel-in-progress: false).
+concurrency:
+  group: r2-index-rebuild
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    env:
+      ENDPOINT: https://5ab2e190b7cfef75dcbfebcf15b14352.r2.cloudflarestorage.com
+      BUCKET: ffxi-resources
+      R2_KEY_ID: ${{ secrets.RESOURCES_BUCKET_KEY_ID }}
+      R2_APP_KEY: ${{ secrets.RESOURCES_BUCKET_APP_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install -q boto3
+
+      - name: Resolve target tag
+        id: tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_TAG: ${{ inputs.tag }}
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if [ -n "$EVENT_TAG" ]; then
+            echo "tag=$EVENT_TAG" >> "$GITHUB_OUTPUT"
+          elif [ -n "$INPUT_TAG" ]; then
+            echo "tag=$INPUT_TAG" >> "$GITHUB_OUTPUT"
+          else
+            tag=$(gh release view --json tagName --jq .tagName)
+            echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          mkdir -p dist
+          gh release download "$TAG" --dir dist
+
+      - name: Upload version artifacts
+        run: python3 scripts/r2_upload.py upload-version "${{ steps.tag.outputs.tag }}" dist
+
+      - name: Rebuild versions.json
+        run: python3 scripts/r2_upload.py rebuild-index

@@ -1,0 +1,27 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ "master" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Check out Windower server repo
+      uses: actions/checkout@v4
+      with:
+        repository: Windower/Server
+        path: .server
+        token: ${{secrets.WINDOWER_SERVER_REPO_PAT}}
+    - name: Upload artifacts to Windower server
+      uses: ./.server/.github/actions/upload
+      with:
+        api-key: ${{secrets.WINDOWER_SERVER_API_KEY}}
+        repository: ${{github.event.repository.name}}
+        directory: resources_data
+        extension: lua

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Packet Decoder{% endblock %}
+{% block content %}
+<h1>Packet Decoder</h1>
+<p class="muted">Decodes a raw captured packet into named, typed fields using real field definitions
+(315+ known opcodes) -- no manual byte-offset math required. Captures from PacketViewer/NPCLogger
+are already plaintext (decrypted at the client/addon layer), so this just maps the raw hex onto
+its real field layout, with lookup-table resolution (item/npc/zone names, etc.) where available.</p>
+
+<h2>Decode a packet</h2>
+<form class="search" method="get" action="/packets/decode" style="flex-wrap:wrap;">
+  <input type="hidden" name="q" value="{{ q }}">
+  <select name="direction">
+    <option value="s2c" {% if direction == "s2c" %}selected{% endif %}>s2c / incoming (server&rarr;client)</option>
+    <option value="c2s" {% if direction == "c2s" %}selected{% endif %}>c2s / outgoing (client&rarr;server)</option>
+  </select>
+  <input type="text" name="opcode" placeholder="opcode, e.g. 0x02A" style="width:120px;">
+  <input type="text" name="hex_bytes" placeholder="raw hex bytes (spaces ok)" style="flex:1;min-width:280px;">
+  <button type="submit">Decode</button>
+</form>
+
+<p><a class="inline" href="/packets/bulk">bulk-decode a whole raw log file &rarr;</a></p>
+
+<h2 style="margin-top:32px;">Browse known opcodes</h2>
+<form class="search" method="get">
+  <input type="hidden" name="direction" value="{{ direction }}">
+  <input type="text" name="q" value="{{ q }}" placeholder="search opcode description, e.g. dialog">
+  <button type="submit">Search</button>
+</form>
+<p class="muted">{{ opcodes|length }} of 318 real opcodes{% if q %} matching "{{ q }}"{% endif %}.
+  Click "use" to open the decoder pre-filled for that opcode -- your browser's back button
+  returns you to this list at the same scroll position.</p>
+<div class="table-wrap"><table>
+  <tr><th>dir</th><th>opcode</th><th>description</th><th>fields</th><th></th></tr>
+  {% for o in opcodes %}
+  <tr>
+    <td class="mono">{{ o.direction }}</td>
+    <td class="mono">{{ o.opcode_hex }}</td>
+    <td>{{ o.description }}</td>
+    <td>{{ o.field_count }}</td>
+    <td><a href="/packets/decode?direction={{ o.direction }}&opcode={{ o.opcode_hex }}&q={{ q }}">use</a></td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% endblock %}

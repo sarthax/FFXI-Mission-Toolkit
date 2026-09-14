@@ -1,0 +1,22 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install luaparser black
+      - name: black --check
+        run: black --check xi_events scripts tests
+      - name: smoke test
+        env:
+          PYTHONPATH: .
+        run: python tests/test_horatius.py

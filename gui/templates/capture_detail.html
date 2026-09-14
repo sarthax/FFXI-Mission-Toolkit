@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}Capture Detail{% endblock %}
+
+{% block content %}
+<p><a class="inline" href="/captures?content_type={{ content_type }}&q={{ q }}">&larr; back to captures list</a>
+  &nbsp;&middot;&nbsp; <a class="inline" href="/captures/{{ detail.capture_id }}/add">add more files &rarr;</a>
+  &nbsp;&middot;&nbsp; <a class="inline" href="/captures/{{ detail.capture_id }}/timeline">browse event timeline &rarr;</a>
+  &nbsp;&middot;&nbsp; <a class="inline" href="/captures/query?capture_id={{ detail.capture_id }}">query this capture's raw data &rarr;</a>
+  &nbsp;&middot;&nbsp; <a class="inline" href="/captures/{{ detail.capture_id }}/export.zip">export all data (.zip) &darr;</a>
+  &nbsp;&middot;&nbsp; <a class="inline" href="/captures/{{ detail.capture_id }}/delete" style="color:var(--red);">delete capture</a>
+  &nbsp;&middot;&nbsp; <button type="button" class="chip" id="summarize-capture-btn" style="cursor:pointer;">summarize with LLM &rarr;</button></p>
+<div id="summarize-capture-result"></div>
+
+<div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:6px;">
+  <h1 style="margin:0;">{{ detail.capture_label }} <span class="chip mono">#{{ detail.capture_id }}</span></h1>
+  <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+    {% if prev_id %}
+    <a class="chip" href="/captures/{{ prev_id }}?content_type={{ content_type }}&q={{ q }}">&larr; prev</a>
+    {% endif %}
+    {% if position %}<span class="muted mono">{{ position }}</span>{% endif %}
+    {% if next_id %}
+    <a class="chip" href="/captures/{{ next_id }}?content_type={{ content_type }}&q={{ q }}">next &rarr;</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="table-wrap"><table>
+  <tr><td>content_type</td><td><span class="chip">{{ detail.content_type }}</span></td></tr>
+  <tr><td>tags</td><td>
+    {% for t in detail.tags %}<span class="chip">{{ t }}</span>{% endfor %}
+    {% if not detail.tags %}<span class="muted">none yet</span>{% endif %}
+  </td></tr>
+  <tr><td>zones</td><td>{{ detail.zones | join(', ') }}</td></tr>
+  <tr><td>mission</td><td>{{ detail.mission_name or '(unresolved)' }}</td></tr>
+  <tr><td>capturer</td><td>{{ detail.capturer or '(unknown)' }}</td></tr>
+  <tr><td>video</td><td>
+    {% if detail.video_url %}<a class="inline" href="{{ detail.video_url }}" target="_blank" rel="noopener">{{ detail.video_url }}</a>
+    {% else %}<span class="muted">none linked</span>{% endif %}
+  </td></tr>
+  <tr><td>client build</td><td class="mono">{{ detail.client_build }}</td></tr>
+  <tr><td>source</td><td class="mono">{{ detail.source_path }}</td></tr>
+  <tr><td>npc history deltas</td><td>{{ detail.n_history }}</td></tr>
+  <tr><td>path points</td><td>{{ detail.n_path }}</td></tr>
+  <tr><td>actions</td><td>{{ detail.n_actions }}</td></tr>
+  <tr><td>events</td><td>{{ detail.n_events }} <a class="inline" href="/captures/{{ detail.capture_id }}/timeline">browse &rarr;</a></td></tr>
+  <tr><td>key items obtained</td><td>{{ detail.n_ki_events }}</td></tr>
+  <tr><td>raw packets</td><td>{{ detail.n_raw_packets }} <a class="inline" href="/captures/{{ detail.capture_id }}/packets">browse &rarr;</a></td></tr>
+  <tr><td>capturer's own path (PC trace)</td><td>
+    {% if detail.pc_path_zones %}
+      {% for zdb in detail.pc_path_zones %}
+      <a class="chip" href="/captures/plot?capture_id={{ detail.capture_id }}&pc=1&zone_db={{ zdb | urlencode }}">{{ zdb }}</a>
+      {% endfor %}
+    {% else %}<span class="muted">none</span>{% endif %}
+  </td></tr>
+</table></div>
+
+<details style="margin-top:10px;">
+  <summary class="muted" style="cursor:pointer;">edit mission / content type / capturer / video</summary>
+  <form method="post" action="/captures/{{ detail.capture_id }}/details" style="margin-top:8px; display:flex; flex-direction:column; gap:10px; max-width:480px;">
+    <div>
+      <label class="muted">Mission name</label><br>
+      <input type="text" name="mission_name" value="{{ detail.mission_name or '' }}" placeholder="leave blank to clear / mark unresolved" style="width:100%; margin-top:6px;">
+    </div>
+    <div>
+      <label class="muted">Content type</label><br>
+      <select name="content_type" style="margin-top:6px;">
+        <option value="instances" {% if detail.content_type == 'instances' %}selected{% endif %}>instances</option>
+        <option value="overworld" {% if detail.content_type == 'overworld' %}selected{% endif %}>overworld</option>
+        <option value="unclassified" {% if detail.content_type == 'unclassified' %}selected{% endif %}>unclassified</option>
+      </select>
+    </div>
+    <div>
+      <label class="muted">Capturer</label><br>
+      <input type="text" name="capturer" value="{{ detail.capturer or '' }}" placeholder="leave blank to clear / mark unknown" style="width:100%; margin-top:6px;">
+    </div>
+    <div>
+      <label class="muted">Video URL -- a recording of this same session (YouTube, a local file share, etc.)</label><br>
+      <input type="text" name="video_url" value="{{ detail.video_url or '' }}" placeholder="https://... -- leave blank to clear" style="width:100%; margin-top:6px;">
+    </div>
+    <div><button type="submit">Save</button></div>
+  </form>
+</details>
+
+<details style="margin-top:10px;">
+  <summary class="muted" style="cursor:pointer;">edit tags</summary>
+  <form method="post" action="/captures/{{ detail.capture_id }}/tags" style="margin-top:8px;">
+    <div style="display:flex; flex-wrap:wrap; gap:6px 14px;">
+      {% for t in all_tags %}
+      <label style="display:flex; align-items:center; gap:4px; font-weight:normal;">
+        <input type="checkbox" name="tags" value="{{ t }}" {% if t in detail.tags %}checked{% endif %}> {{ t }}
+      </label>
+      {% endfor %}
+    </div>
+    <button type="submit" style="margin-top:10px;">Save tags</button>
+  </form>
+</details>
+
+{% if detail.hp_events %}
+<h2>HP events</h2>
+<div class="table-wrap"><table>
+  <tr><th>mob</th><th>hp range</th></tr>
+  {% for mob, lo, hi in detail.hp_events %}
+  <tr><td>{{ mob }}</td><td class="mono">{{ lo }}&ndash;{{ hi }}</td></tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+
+<h2>NPC entries {% if detail.npc_entries|length == 200 %}<span class="muted">(first 200)</span>{% endif %}</h2>
+<p><a class="inline" href="/captures/plot_all?capture_id={{ detail.capture_id }}">plot all paths together &rarr;</a></p>
+<div class="table-wrap"><table>
+  <tr><th>id</th><th>name</th><th>model</th><th>pos</th><th>hp%</th><th>zone</th><th></th></tr>
+  {% for eid, name, model, x, y, z, hpp, zone_db in detail.npc_entries %}
+  <tr>
+    <td class="mono"><a href="/entity/{{ eid }}">{{ eid }}</a></td>
+    <td>{{ name or '?' }}</td>
+    <td class="mono">{{ model if model is not none else '?' }}</td>
+    <td class="mono">{% if x is not none %}({{ '%.1f'|format(x) }}, {{ '%.1f'|format(y) }}, {{ '%.1f'|format(z) }}){% else %}?{% endif %}</td>
+    <td>{{ hpp if hpp is not none else '?' }}</td>
+    <td>{{ zone_db }}</td>
+    <td><a class="inline" href="/captures/plot?capture_id={{ detail.capture_id }}&entity_id={{ eid }}">plot path</a></td>
+  </tr>
+  {% endfor %}
+</table></div>
+
+<div style="display:flex; justify-content:space-between; margin-top:16px;">
+  {% if prev_id %}<a class="chip" href="/captures/{{ prev_id }}?content_type={{ content_type }}&q={{ q }}">&larr; prev</a>{% else %}<span></span>{% endif %}
+  {% if next_id %}<a class="chip" href="/captures/{{ next_id }}?content_type={{ content_type }}&q={{ q }}">next &rarr;</a>{% endif %}
+</div>
+
+<script>
+document.getElementById("summarize-capture-btn").addEventListener("click", async function () {
+  var btn = this;
+  var out = document.getElementById("summarize-capture-result");
+  btn.disabled = true;
+  btn.textContent = "Summarizing...";
+  out.innerHTML = "";
+  try {
+    var resp = await fetch("/llm/summarize-capture/{{ detail.capture_id }}", { method: "POST" });
+    out.innerHTML = await resp.text();
+  } catch (e) {
+    out.innerHTML = '<p class="muted" style="color:var(--red);">request failed: ' + e + '</p>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "summarize with LLM →";
+  }
+});
+</script>
+{% endblock %}

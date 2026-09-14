@@ -1,0 +1,8 @@
+1=Hume Male
+2=Hume Female
+3=Elvaan Male
+4=Elvaan Female
+5=Tarutaru Male
+6=Tarutaru Female
+7=Mithra
+8=Galka

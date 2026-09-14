@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}All Paths{% endblock %}
+
+{% block content %}
+<h1>All paths <span class="chip mono">capture #{{ capture_id }}</span></h1>
+<p><a class="inline" href="/captures/{{ capture_id }}">&larr; back to capture #{{ capture_id }}</a>
+  {% if zoneid %}&nbsp;&middot;&nbsp; <a class="inline" href="/zones/{{ zoneid }}/view3d_all?capture_id={{ capture_id }}&zone_db={{ zone_db }}">view in 3D &rarr;</a>{% endif %}</p>
+
+{% if cap %}<p>{{ cap.capture_label }}{% if cap.mission_name %} &mdash; {{ cap.mission_name }}{% endif %}</p>{% endif %}
+
+<form method="get" style="display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
+  <input type="hidden" name="capture_id" value="{{ capture_id }}">
+  {% if zones|length > 1 %}
+  <span class="muted">zone:</span>
+  <select name="zone_db">
+    {% for z in zones %}
+    <option value="{{ z }}" {% if z == zone_db %}selected{% endif %}>{{ z }}</option>
+    {% endfor %}
+  </select>
+  {% endif %}
+  <span class="muted">padding:</span>
+  <input type="number" name="pad_yalms" value="{{ pad_yalms }}" min="10" max="2000" step="10" style="width:80px;">
+  <span class="muted">yalms</span>
+  <input type="hidden" name="detail" value="{{ detail }}">
+  <button type="submit">Apply</button>
+  {% if variants.collision and variants.detailed %}
+  <span class="muted" style="margin-left:auto;">mesh:</span>
+  <a class="chip" style="{% if not detail %}background:var(--accent-soft);color:var(--accent);{% endif %}"
+     href="/captures/plot_all?capture_id={{ capture_id }}&zone_db={{ zone_db }}&pad_yalms={{ pad_yalms }}&detail=0">collision (clean)</a>
+  <a class="chip" style="{% if detail %}background:var(--accent-soft);color:var(--accent);{% endif %}"
+     href="/captures/plot_all?capture_id={{ capture_id }}&zone_db={{ zone_db }}&pad_yalms={{ pad_yalms }}&detail=1">visual (detailed)</a>
+  {% endif %}
+</form>
+
+{% if truncated %}
+<div class="warn">Showing the first {{ limit }} of {{ entities|length }} entities with path data in this zone -- plotting all of them would be illegible.</div>
+{% endif %}
+
+{% if topdown_available and entities %}
+<div id="plot-viewport" style="overflow:hidden; border:1px solid var(--border); border-radius:8px; max-width:640px; cursor:grab; background:var(--code-bg);">
+  <img id="plot-img" src="/captures/plot_all.png?capture_id={{ capture_id }}&zone_db={{ zone_db }}&pad_yalms={{ pad_yalms }}&detail={{ detail }}"
+       style="display:block; width:100%; transform-origin:0 0; user-select:none;" draggable="false">
+</div>
+<p class="muted">Scroll to zoom, drag to pan, double-click to reset. Each entity gets its own color (dot = start of its path), drawn on the same real coordinate-aligned mesh silhouette as the single-entity plot. "Collision" is the clean walkable-space outline; "visual" shows real wall/prop/terrain detail but some zones (caverns with lava, in particular) carry decorative overlay geometry that renders as solid blocks from directly above -- pick whichever reads better for this zone.</p>
+
+<h2>Legend</h2>
+<div class="table-wrap"><table>
+  <tr><th></th><th>id</th><th>name</th></tr>
+  {% for l in legend %}
+  <tr>
+    <td><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:{{ l.color }};"></span></td>
+    <td class="mono"><a href="/captures/plot?capture_id={{ capture_id }}&entity_id={{ l.entity_id }}">{{ l.entity_id }}</a></td>
+    <td>{{ l.name }}</td>
+  </tr>
+  {% endfor %}
+</table></div>
+
+<script>
+(function() {
+  const viewport = document.getElementById('plot-viewport');
+  const img = document.getElementById('plot-img');
+  let scale = 1, tx = 0, ty = 0, dragging = false, lastX = 0, lastY = 0;
+
+  function apply() {
+    img.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+  }
+
+  viewport.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const rect = viewport.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+    const newScale = Math.min(8, Math.max(1, scale * factor));
+    tx = mx - (mx - tx) * (newScale / scale);
+    ty = my - (my - ty) * (newScale / scale);
+    scale = newScale;
+    if (scale === 1) { tx = 0; ty = 0; }
+    apply();
+  }, { passive: false });
+
+  viewport.addEventListener('mousedown', (e) => {
+    dragging = true; lastX = e.clientX; lastY = e.clientY;
+    viewport.style.cursor = 'grabbing';
+  });
+  window.addEventListener('mouseup', () => { dragging = false; viewport.style.cursor = 'grab'; });
+  window.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    tx += e.clientX - lastX; ty += e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    apply();
+  });
+  viewport.addEventListener('dblclick', () => { scale = 1; tx = 0; ty = 0; apply(); });
+})();
+</script>
+{% elif not entities %}
+<p class="muted">No entities with path data found for this zone in this capture.</p>
+{% else %}
+<p class="muted">No zone-geometry cache available for this zone yet.</p>
+{% endif %}
+{% endblock %}

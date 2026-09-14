@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Bulk Packet Decode{% endblock %}
+{% block content %}
+<p><a class="inline" href="/packets">&larr; back to Packet Decoder</a></p>
+<h1>Bulk decode a raw log file</h1>
+<p class="muted">Paste one real PacketLogger/PacketViewer per-opcode log file (the shape
+  <code class="chip">incoming/0x034.log</code> etc. take inside a capture zip) and decode every
+  real packet block in it at once -- for checking a log before committing to a full capture
+  ingest, or just exploring one file's real content ad hoc. Uses the exact same parser
+  (<code class="chip">build_capture_index.parse_packetlogger_log</code>) the real ingestion
+  pipeline uses, so what you see here is what would actually get ingested.</p>
+
+<form method="post" action="/packets/bulk" style="display:flex; flex-direction:column; gap:10px;">
+  <div style="display:flex; gap:10px; align-items:center;">
+    <select name="direction">
+      <option value="s2c" {% if direction == "s2c" %}selected{% endif %}>s2c / incoming (server&rarr;client)</option>
+      <option value="c2s" {% if direction == "c2s" %}selected{% endif %}>c2s / outgoing (client&rarr;server)</option>
+    </select>
+    <input type="text" name="opcode" value="{{ opcode }}" placeholder="opcode, e.g. 0x034 -- this file's own filename" style="width:220px;">
+    <span class="muted">(the opcode this whole file is for -- PacketLogger/PacketViewer names one file per opcode)</span>
+  </div>
+  <textarea name="log_text" rows="10" placeholder="paste the raw log file's full text here" style="font-family:ui-monospace,Consolas,monospace; font-size:12px; padding:10px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--ink);">{{ log_text }}</textarea>
+  <div><button type="submit">Decode all</button></div>
+</form>
+
+{% if parse_error %}
+<div class="warn" style="margin-top:16px;"><strong>Could not decode:</strong> {{ parse_error }}</div>
+{% elif rows %}
+<p style="margin-top:16px;">{{ rows|length }} real packet(s) found.</p>
+<div class="table-wrap"><table>
+  <tr><th>ts</th><th>description</th><th>fields</th></tr>
+  {% for r in rows %}
+  <tr>
+    <td class="mono">{{ r.ts }}</td>
+    <td>{{ r.description or '(no definition)' }}</td>
+    <td>
+      {% if r.fields %}
+      <table style="margin:0;">
+        {% for f in r.fields %}
+        <tr>
+          <td class="mono muted">{{ f.name }}</td>
+          <td class="mono">{{ f.value }}{% if f.out_of_range %} <span class="chip">out of range</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% elif r.decode_error %}
+      <span class="muted">decode error: {{ r.decode_error }}</span>
+      {% else %}
+      <span class="muted">(no fields)</span>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+{% endblock %}

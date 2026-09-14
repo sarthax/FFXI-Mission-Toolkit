@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Lua Backport Converter{% endblock %}
+
+{% block content %}
+<h1>Lua Backport Converter</h1>
+<p class="tabs" style="margin:-6px 0 14px;">
+  <a class="chip" href="/backport/lua-convert" style="background:var(--accent);color:#fff;">Convert</a>
+  <a class="chip" href="/backport/bindings">Binding Reference &rarr;</a>
+</p>
+<p class="muted">Converts one Topaz Lua file's source (entity-table style, <code>tpz.*</code>
+namespaces) to the target DSP checkout's own convention (global-function style, bare-global
+namespaces), applying every mapping confirmed in
+<code>data/dsp_namespace_map.json</code>. Extend that map file (not this page) when a new zone
+surfaces an unmapped <code>tpz.*</code> family; check real DSP source the way every existing
+entry was checked, don't guess a mapping just to clear a flag. Looking up a binding by name outside
+a conversion run? Use the <a class="inline" href="/backport/bindings">Binding Reference</a> page.</p>
+
+{% if dsp_root %}
+  {% if flavor == target %}
+  <p class="muted">Configured DSP checkout (<code class="chip">{{ dsp_root }}</code>) fingerprints as
+    <span style="color:var(--accent);">{{ flavor }}</span> -- matches the selected target below.</p>
+  {% elif flavor %}
+  <div class="warn" style="color:var(--red);">Configured DSP checkout (<code class="chip">{{ dsp_root }}</code>)
+    fingerprints as <strong>{{ flavor }}</strong>, but the target selected below is
+    <strong>{{ target }}</strong> -- this is the exact mistake that cost an entire session's worth of
+    rework once already (see <code>reports/old_dsp_reference_correction_2026-09-13.md</code>). Pick
+    "{{ flavor }}" below, or double-check the DSP path on the <a class="inline" href="/settings">Settings</a> page.</div>
+  {% else %}
+  <p class="muted" style="color:var(--red);">Configured DSP checkout (<code class="chip">{{ dsp_root }}</code>)
+    doesn't fingerprint as either known flavor (old_dsp_reference/landsandboat) -- can't confirm it
+    matches the target below.</p>
+  {% endif %}
+{% else %}
+<p class="muted">No DSP checkout configured on the <a class="inline" href="/settings">Settings</a>
+  page -- target-flavor mismatch can't be checked automatically.</p>
+{% endif %}
+
+<form method="post" style="display:flex; flex-direction:column; gap:10px;">
+  <label>Topaz Lua source
+    <textarea name="source" rows="18" style="width:100%; font-family:monospace; font-size:0.85em;"
+      placeholder="Paste a Topaz .lua file's contents here...">{{ source }}</textarea>
+  </label>
+
+  <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end;">
+    <label>Target
+      <br><select name="target">
+        <option value="old_dsp_reference" {% if target == "old_dsp_reference" %}selected{% endif %}>old_dsp_reference (Valhalla's real production target -- DarkstarProject/darkstar)</option>
+        <option value="landsandboat" {% if target == "landsandboat" %}selected{% endif %}>landsandboat (LandSandBoat/server -- NOT this project's real target, reference only)</option>
+      </select>
+    </label>
+    <label>Zone id-table name (optional)
+      <br><input type="text" name="zone_table" value="{{ zone_table }}" placeholder="e.g. Periqia">
+    </label>
+    <label>Zone id-table shape
+      <br><select name="id_shape">
+        <option value="flat" {% if id_shape == "flat" %}selected{% endif %}>flat bare globals (old_dsp_reference's real TextIDs.lua convention, ID.text.X -> bare X only)</option>
+        <option value="nested" {% if id_shape == "nested" %}selected{% endif %}>nested (one wrapping table, e.g. Periqia.text.X / .npc.X / .mob[N].X -- old_dsp_reference's own zone-table shape)</option>
+        <option value="zones_table" {% if id_shape == "zones_table" %}selected{% endif %}>zones_table (landsandboat-only shape_C, zones[xi.zone.X] -- do not use for old_dsp_reference)</option>
+      </select>
+    </label>
+    <label>require() path rename (optional)
+      <br><input type="text" name="id_file_hint" value="{{ id_file_hint }}" placeholder="IDs or TextIDs">
+    </label>
+    <button type="submit">Convert</button>
+  </div>
+  <p class="muted" style="margin:0;">Check the target zone's existing DSP checkout first (does
+    <code>scripts/zones/&lt;Zone&gt;/TextIDs.lua</code>, a bare zone-table <code>IDs.lua</code>, or
+    neither already exist, and which shape does it use?) rather than guessing -- see
+    <code>per_zone_id_file_conventions</code> / <code>namespace_family_index_2026-09-13</code> /
+    <code>per_zone_flat_id_shape_findings_2026-09-13</code> in the namespace map for the known
+    shapes and how to tell them apart.</p>
+</form>
+
+{% if ran %}
+<h2>Converted</h2>
+{% if flagged %}
+<p><span class="badge badge-empty">{{ flagged|length }}</span> line(s) need manual review --
+  these were left as their original Topaz reference (wrapped in a
+  <code>-- DSP-PORT-TODO</code> comment) rather than guessed:</p>
+<div class="table-wrap"><table>
+  <tr><th>Line</th><th>Code</th><th>Why / evidence</th></tr>
+  {% for f in flagged %}
+  <tr>
+    <td class="mono">{{ f.line }}</td>
+    <td class="mono">{{ f.text }}</td>
+    <td>
+      {% for c in f.citations %}
+      <div class="evidence-item">
+        <div class="evidence-label">{{ c.label }}{% if c.section %} <span class="muted">({{ c.section }}{% if c.key %}.{{ c.key }}{% endif %})</span>{% endif %}</div>
+        {% if c.evidence %}<div class="evidence-body">{{ c.evidence }}</div>{% endif %}
+        {% if c.checked %}<div class="evidence-checked muted">checked: {{ c.checked }}</div>{% endif %}
+        {% if c.fix %}<div class="evidence-fix"><strong>fix:</strong> {{ c.fix }}</div>{% endif %}
+      </div>
+      {% endfor %}
+      <button type="button" class="chip suggest-grep-btn"
+        data-line="{{ f.text }}"
+        data-citation="{{ f.citations|map(attribute='evidence')|select|join(' | ') }}"
+        style="margin-top:4px;">Ask LLM: what to grep for?</button>
+      <div class="suggest-grep-result"></div>
+    </td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% else %}
+<p><span class="badge badge-ok">0</span> flagged lines -- every <code>tpz.*</code>/entity-table
+  reference in this file had a confirmed mapping.</p>
+{% endif %}
+
+<textarea readonly rows="24" style="width:100%; font-family:monospace; font-size:0.85em;">{{ converted }}</textarea>
+{% endif %}
+
+<style>
+.badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 3px; font-size: 0.85em; font-weight: 600; color: #fff; }
+.badge-ok { background: #1e7e34; }
+.badge-empty { background: #b33f3f; }
+.evidence-item { margin: 0 0 8px; padding: 0 0 8px; border-bottom: 1px solid var(--border); font-size: 0.85em; }
+.evidence-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+.evidence-label { font-weight: 600; margin-bottom: 2px; }
+.evidence-body { margin-bottom: 2px; }
+.evidence-checked { font-size: 0.9em; font-family: monospace; }
+.evidence-fix { font-size: 0.95em; }
+</style>
+<script>
+document.querySelectorAll(".suggest-grep-btn").forEach(function (btn) {
+  btn.addEventListener("click", async function () {
+    var resultDiv = btn.nextElementSibling;
+    btn.disabled = true;
+    btn.textContent = "Asking...";
+    resultDiv.innerHTML = "";
+    try {
+      var body = new URLSearchParams({ line_text: btn.dataset.line, citation: btn.dataset.citation });
+      var resp = await fetch("/llm/suggest-grep", { method: "POST", body: body });
+      resultDiv.innerHTML = await resp.text();
+    } catch (e) {
+      resultDiv.innerHTML = '<p class="muted" style="color:var(--red);">request failed: ' + e + '</p>';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Ask LLM: what to grep for?";
+    }
+  });
+});
+</script>
+{% endblock %}

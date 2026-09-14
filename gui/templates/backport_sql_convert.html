@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}SQL Backport Converter{% endblock %}
+
+{% block content %}
+<h1>SQL Backport Converter</h1>
+<p class="muted">Converts one Topaz table's <code>INSERT INTO ... VALUES (...)</code> statements to
+DSP's real column order/shape, applying every mapping confirmed in
+<code>data/dsp_sql_schema_map.json</code>, then checks every row's id against DSP's real,
+already-indexed data (<code>build_dsp_index.py</code>'s <code>dsp_*</code> tables) for a genuine
+collision -- not just a raw dump diff. Extend the schema map (not this page) when a new table
+surfaces a real schema difference; check both real <code>CREATE TABLE</code> statements the way
+every existing entry was checked, don't guess a column mapping just to clear a warning.</p>
+
+<form method="post" style="display:flex; flex-direction:column; gap:10px;">
+  <label>Table
+    <br><select name="table">
+      {% for t in tables %}
+      <option value="{{ t }}" {% if t == table %}selected{% endif %}>{{ t }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Topaz SQL source (one or more <code>INSERT INTO</code> statements)
+    <textarea name="source" rows="14" style="width:100%; font-family:monospace; font-size:0.85em;"
+      placeholder="Paste Topaz INSERT INTO ... VALUES (...); statements here...">{{ source }}</textarea>
+  </label>
+  <div><button type="submit">Convert</button></div>
+</form>
+
+{% if ran %}
+<h2>Converted</h2>
+{% if warnings %}
+<p><span class="badge badge-empty">{{ warnings|length }}</span> item(s) need manual review:</p>
+<div class="table-wrap"><table>
+  <tr><th>Reason</th><th>Detail</th></tr>
+  {% for w in warnings %}
+  <tr><td class="mono">{{ w.reason }}</td><td class="muted">{{ w.detail }}</td></tr>
+  {% endfor %}
+</table></div>
+{% else %}
+<p><span class="badge badge-ok">0</span> warnings -- this table's schema is identical between
+  Topaz and DSP.</p>
+{% endif %}
+
+{% if collisions %}
+<h3>Id collision check -- <code>{{ collisions.checked_table }}.{{ collisions.id_column }}</code></h3>
+<p>{{ collisions.note }}</p>
+{% if collisions.name_mismatch %}
+<p><span class="badge badge-empty">{{ collisions.name_mismatch|length }}</span> REAL collision(s)
+  -- DSP already has a DIFFERENT entity at this id. Since a script's lookup is keyed by the real
+  entity name, this needs a human decision: rename DSP's row to match, or move this row to a free id.</p>
+<div class="table-wrap"><table>
+  <tr><th>Id</th><th>DSP's existing name</th><th>This package's name</th></tr>
+  {% for m in collisions.name_mismatch %}
+  <tr><td class="mono">{{ m.id }}</td><td class="mono">{{ m.dsp_name }}</td><td class="mono">{{ m.topaz_name }}</td></tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+{% if collisions.same_entity %}
+<p><span class="badge badge-ok">{{ collisions.same_entity|length }}</span> id(s) already present in
+  DSP as the SAME entity (safe -- not an id-space conflict, may still need data reconciliation).</p>
+{% endif %}
+{% if collisions.unclassified %}
+<p><span class="badge badge-empty">{{ collisions.unclassified|length }}</span> id(s) collide but
+  couldn't be name-classified (no name column to compare, e.g. <code>mob_groups</code>'s global
+  groupid space) -- treat every one of these as a REAL collision requiring a human decision until
+  proven otherwise.</p>
+<div class="table-wrap"><table>
+  <tr><th>Id</th><th>DSP's existing name (if any)</th></tr>
+  {% for u in collisions.unclassified %}
+  <tr><td class="mono">{{ u.id }}</td><td class="mono">{{ u.dsp_name or "" }}</td></tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+{% endif %}
+
+<h3>Converted SQL</h3>
+<textarea readonly rows="20" style="width:100%; font-family:monospace; font-size:0.85em;">{{ converted }}</textarea>
+{% endif %}
+
+<style>
+.badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 3px; font-size: 0.85em; font-weight: 600; color: #fff; }
+.badge-ok { background: #1e7e34; }
+.badge-empty { background: #b33f3f; }
+</style>
+{% endblock %}

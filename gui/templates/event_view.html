@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Event {{ csid }} · {{ zone }}{% endblock %}
+{% block content %}
+<h1>{{ zone }} -- entity {{ entity }}, CSID {{ csid }}</h1>
+<p><a href="/events?zone={{ zone }}">&larr; back to event list</a></p>
+
+{% if error %}
+<div class="warn"><strong>Could not decompile:</strong><br><span class="mono">{{ error }}</span></div>
+{% else %}
+<pre style="white-space:pre-wrap;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-size:12.5px;overflow-x:auto;">{{ decompiled }}</pre>
+
+<h2>Cross-check against our own dialog_text index</h2>
+{% if not checks %}
+<p class="muted">(no systemMessage/dialog/messageSpecial calls found to check)</p>
+{% else %}
+<div class="table-wrap"><table>
+  <tr><th>message id</th><th>status</th><th>our text</th></tr>
+  {% for msg_id, our_text, note in checks %}
+  <tr>
+    <td class="mono">{{ msg_id }}</td>
+    <td>{% if note == "OK" %}<span class="pill match">OK</span>{% else %}<span class="pill mismatch">{{ note }}</span>{% endif %}</td>
+    <td>{{ (our_text or "")[:120] }}</td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+{% block title %}Capture Timeline{% endblock %}
+
+{% block content %}
+<style>
+  .tabbar { display:flex; gap:6px; flex-wrap:wrap; border-bottom:1px solid var(--border); margin:14px 0 0; padding-bottom:0; }
+  .tabbtn { background:none; border:1px solid var(--border); border-bottom:none; border-radius:8px 8px 0 0;
+            padding:8px 14px; cursor:pointer; color:var(--fg); font:inherit; }
+  .tabbtn.active { background:var(--surface); border-color:var(--border); font-weight:bold; }
+  .tabpanel { border:1px solid var(--border); border-top:none; padding:14px; border-radius:0 0 8px 8px; margin-bottom:20px; }
+  .tabpanel[hidden] { display:none; }
+  .nodata { border:1px dashed var(--border); border-radius:8px; padding:14px; color:var(--muted); }
+  .nodata.filtered { border-color:#c99; }
+</style>
+
+<p><a class="inline" href="/captures/{{ capture_id }}">&larr; back to capture #{{ capture_id }}</a></p>
+
+<h1 style="margin-bottom:2px;">{{ cap.capture_label }} <span class="chip mono">#{{ capture_id }}</span></h1>
+<p class="muted">Real call-and-response data for this capture, split into tabs so you're not
+  scrolling through everything at once. Message ids are resolved live against
+  <code class="chip">dialog_text</code> where a matching zone/idx exists.</p>
+
+<div class="tabbar" role="tablist">
+  <button type="button" class="tabbtn" data-tab="events">Events ({{ events|length }})</button>
+  <button type="button" class="tabbtn" data-tab="battle">Battle ({{ actions|length }})</button>
+  <button type="button" class="tabbtn" data-tab="ki">Key Items ({{ ki_events|length }})</button>
+  <button type="button" class="tabbtn" data-tab="items">Items Obtained ({{ items|length }})</button>
+  <button type="button" class="tabbtn" data-tab="raw">Dialogue / Packet Log ({{ eventview|length }})</button>
+</div>
+
+<div class="tabpanel" data-panel="events" hidden>
+  <p class="muted">Real seq order from <code class="chip">capture_events</code> -- NPC Chat &rarr;
+    CS Event+Params &rarr; Event Option, exactly the sequence the live interaction produced.
+    Empty for most captures (the older idview format only) -- see the Dialogue / Packet Log tab.</p>
+  <form class="search" method="get">
+    <input type="hidden" name="tab" value="events">
+    <input type="text" name="entity" value="{{ entity }}" placeholder="filter by NPC name">
+    <select name="direction">
+      <option value="">(any direction)</option>
+      {% for d in directions %}
+      <option value="{{ d }}" {% if d == direction %}selected{% endif %}>{{ d }}</option>
+      {% endfor %}
+    </select>
+    <input type="hidden" name="show_raw" value="{{ show_raw }}">
+    <input type="hidden" name="show_items" value="{{ show_items }}">
+    <input type="hidden" name="ev_gp" value="{{ ev_gp }}">
+    <div style="display:flex; flex-wrap:wrap; gap:4px 14px; align-items:center;">
+      <span class="muted">opcodes:</span>
+      {% for o in available_opcodes %}
+      <label style="display:flex; align-items:center; gap:4px; font-weight:normal;">
+        <input type="checkbox" name="opcodes" value="{{ o.opcode }}" {% if o.opcode in opcodes %}checked{% endif %}>
+        <span class="mono">{{ o.opcode }}</span> {{ o.opcode_name }}
+      </label>
+      {% endfor %}
+    </div>
+    <button type="submit">Filter</button>
+  </form>
+
+  {% if events %}
+  <p class="muted">{{ events|length }} event(s){% if events|length != events_total %} of {{ events_total }} total{% endif %}.</p>
+  <div class="table-wrap"><table>
+    <tr>
+      <th>seq</th><th>dir</th><th>opcode</th><th>entity</th><th>csid</th>
+      <th>option</th><th>message</th><th>dialogue</th><th>params</th>
+    </tr>
+    {% for e in events %}
+    <tr>
+      <td class="mono">{{ e.seq }}</td>
+      <td>{{ e.direction }}</td>
+      <td><span class="chip mono">{{ e.opcode }}</span> {{ e.opcode_name }}</td>
+      <td>{% if e.entity_id %}<a href="/entity/{{ e.entity_id }}">{{ e.entity_name or e.entity_id }}</a>{% endif %}</td>
+      <td class="mono">{{ e.event_hex or '' }}</td>
+      <td class="mono">{{ e.option if e.option is not none else '' }}</td>
+      <td class="mono">{{ e.message_id if e.message_id is not none else '' }}</td>
+      <td>{% if e.dialog_text %}{{ e.dialog_text }}{% elif e.message_id is not none %}<span class="muted">(no dialog_text match)</span>{% endif %}</td>
+      <td class="mono muted" style="max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ e.params_raw }}">{{ e.params_raw or '' }}</td>
+    </tr>
+    {% endfor %}
+  </table></div>
+  {% elif events_total == 0 %}
+  <div class="nodata"><strong>No data.</strong> This capture has 0 real capture_events rows --
+    genuinely absent from the source (no idview/simple log in this bundle, or it didn't match
+    either known real format). Not a filter, not bad data elsewhere -- this specific source is
+    empty.</div>
+  {% else %}
+  <div class="nodata filtered"><strong>No rows match your filter.</strong>
+    {{ events_total }} real event(s) exist for this capture -- clear the entity/opcode/direction
+    filters above to see them.</div>
+  {% endif %}
+</div>
+
+<div class="tabpanel" data-panel="battle" hidden>
+  <p class="muted">Real ability/mobskill/spell usage from <code class="chip">capture_actions</code>
+    (ActionView.db) -- own real ts axis. Only present when this capture used the newer
+    "Thris Nov2025" ActionView-based logger, genuinely absent otherwise (not filtered out).</p>
+  {% if actions %}
+  <div class="table-wrap"><table>
+    <tr><th>ts</th><th>actor</th><th>type</th><th>name</th><th>animation</th><th>category</th><th>message</th></tr>
+    {% for a in actions %}
+    <tr>
+      <td class="mono">{{ a.ts_display }}</td>
+      <td>{% if a.actor %}<a href="/entity/{{ a.actor }}">{{ a.actor_name or a.actor }}</a>{% else %}{{ a.actor_name or '' }}{% endif %}</td>
+      <td>{{ a.action_type }}</td>
+      <td>{{ a.name }}</td>
+      <td class="mono">{{ a.animation if a.animation is not none else '' }}</td>
+      <td class="mono">{{ a.category if a.category is not none else '' }}</td>
+      <td class="mono">{{ a.message if a.message is not none else '' }}</td>
+    </tr>
+    {% endfor %}
+  </table></div>
+  {% else %}
+  <div class="nodata"><strong>No data.</strong> This capture has 0 capture_actions rows -- there is
+    no ActionView.db in this capture's source bundle at all. Not a filter -- there's no filter UI
+    on this tab -- and not bad data elsewhere; this bundle simply predates or doesn't include the
+    ActionView logger.</div>
+  {% endif %}
+</div>
+
+<div class="tabpanel" data-panel="ki" hidden>
+  <p class="muted">Own real seq/timestamp axis -- not merged with any other tab. KITrack logs the
+    capturing character's OWN key items only -- the real source data has no per-row entity/player
+    field (confirmed by reading the raw KITrack log), so every row here belongs to
+    {% if cap.capturer %}<strong>{{ cap.capturer }}</strong>{% else %}<span class="muted">this capture's (unnamed) capturer</span>{% endif %}.</p>
+  {% if ki_events %}
+  <div class="table-wrap"><table>
+    <tr><th>seq</th><th>ts</th><th>event</th><th>key item</th><th>pos</th><th>zone</th></tr>
+    {% for k in ki_events %}
+    <tr>
+      <td class="mono">{{ k.seq }}</td>
+      <td class="mono">{{ k.ts }}</td>
+      <td>{{ k.event_type }}</td>
+      <td>{{ k.keyitem_name }} <span class="muted mono">({{ k.keyitem_id }})</span></td>
+      <td class="mono">{% if k.x is not none %}({{ '%.1f'|format(k.x) }}, {{ '%.1f'|format(k.y) }}, {{ '%.1f'|format(k.z) }}){% endif %}</td>
+      <td>{{ k.zone_name }}</td>
+    </tr>
+    {% endfor %}
+  </table></div>
+  {% else %}
+  <div class="nodata"><strong>No data.</strong> This capture has 0 capture_ki_events rows -- there
+    is no KITrack log in this capture's source bundle at all. Not a filter -- there's no filter UI
+    on this tab -- and not bad data elsewhere; this bundle simply has no KITrack capture, likely
+    because the capturer never lost/obtained a key item during this session, or didn't run the
+    KITrack addon.</div>
+  {% endif %}
+</div>
+
+<div class="tabpanel" data-panel="items" hidden>
+  <p class="muted">Real inventory changes from <code class="chip">capture_raw_packets</code>' own
+    0x020 (GP_SERV_COMMAND_ITEM_ATTR) packets -- separate from key items, since a temp item (e.g.
+    a Nyzul vending-box drink or an Assault temp item) is never a KITrack event, only a real 0x020
+    packet. This is intentionally narrower than earlier versions of this tab, which also showed
+    every other opcode under packet_decode's broad "item_shop" bucket (full-inventory-sync dumps
+    sent on every zone/login, plus unrelated Synth/Auction/Currency traffic) -- 0x020 alone is the
+    real per-change signal. This packet fires on ANY inventory change (a slot being cleared
+    included, not only gains), so quantity/item can go down as well as up -- read it as "this slot
+    changed", not strictly "obtained". Every row is inherently self-only -- the server telling the
+    capturing client about ITS OWN inventory, no per-packet entity field exists to show (confirmed
+    by decoding real samples). Every row belongs to
+    {% if cap.capturer %}<strong>{{ cap.capturer }}</strong>{% else %}<span class="muted">this capture's (unnamed) capturer</span>{% endif %}.</p>
+  <p class="muted">0x020 also fires on Mog House containers (Mog Safe, Storage, Locker, Satchel,
+    Sack, Case, eight Wardrobes, a second Mog Safe, the Recycle Bin) -- a capturer browsing storage
+    between missions generates just as many rows as anything actually obtained during play
+    (confirmed live: 77% of one real capture's 0x020 rows were non-inventory containers). Even
+    within Inventory/Temp Items, LandSandBoat's own <code class="chip">SendInventory()</code> is
+    called only from the client's zone-in handshake and pushes a real 0x020 for EVERY item the
+    character already owns, all at once -- confirmed live as clusters of up to 34 rows sharing the
+    exact same timestamp. "Acquired only" keeps just isolated rows (no other Inventory/Temp Items
+    row at that same instant) -- a real treasure-pool win or reward is never bundled with a dozen
+    others. This is a heuristic (two genuinely distinct events landing in the same rounded second
+    would also get excluded), not a certainty.</p>
+  <form class="search" method="get">
+    <input type="hidden" name="tab" value="items">
+    <input type="hidden" name="entity" value="{{ entity }}">
+    <input type="hidden" name="direction" value="{{ direction }}">
+    <input type="hidden" name="show_raw" value="{{ show_raw }}">
+    <label style="display:flex; align-items:center; gap:6px; font-weight:normal;">
+      <input type="radio" name="item_containers" value="acquired" {% if item_containers == 'acquired' %}checked{% endif %}
+             onchange="this.form.submit()"> Acquired only (exclude zone-in resync)
+    </label>
+    <label style="display:flex; align-items:center; gap:6px; font-weight:normal;">
+      <input type="radio" name="item_containers" value="session" {% if item_containers not in ('all', 'acquired') %}checked{% endif %}
+             onchange="this.form.submit()"> Session only (Inventory + Temp Items)
+    </label>
+    <label style="display:flex; align-items:center; gap:6px; font-weight:normal;">
+      <input type="radio" name="item_containers" value="all" {% if item_containers == 'all' %}checked{% endif %}
+             onchange="this.form.submit()"> All containers (incl. Mog House storage)
+    </label>
+  </form>
+  {% if items %}
+  <p class="muted">{{ items|length }} row(s){% if items_matching_total > items|length %} of {{ items_matching_total }} matching{% endif %}{% if items|length == 300 %} <span class="chip">capped at 300</span>{% endif %}.
+    Item name is resolved live against items_ours/items_external by the real item id (ItemNo) --
+    id 65535 is FFXI's own real "gil" pseudo-item id, not a bad decode.</p>
+  <div class="table-wrap"><table>
+    <tr><th>seq</th><th>ts</th><th>dir</th><th>item</th><th>quantity</th><th>bag</th><th>slot</th><th>fields</th></tr>
+    {% for r in items %}
+    <tr>
+      <td class="mono">{{ r.seq }}</td>
+      <td class="mono">{{ r.ts }}</td>
+      <td>{{ r.direction }}</td>
+      <td>{% if r.item_name %}{{ r.item_name }}{% endif %} <span class="chip mono">{{ r.item_id }}</span></td>
+      <td class="mono">{{ r.quantity }}</td>
+      <td><span class="chip">{{ r.bag_name }}</span></td>
+      <td class="mono">{{ r.slot }}</td>
+      <td>
+        {% if r.fields %}
+        <table style="margin:0;">
+          {% for f in r.fields %}
+          <tr><td class="mono muted">{{ f.name }}</td><td class="mono">{{ f.value }}</td></tr>
+          {% endfor %}
+        </table>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table></div>
+  {% elif raw_packets_total == 0 %}
+  <div class="nodata"><strong>No data.</strong> This capture has 0 capture_raw_packets rows at all
+    -- no PacketLogger/PacketViewer log in this capture's source bundle. Not a filter -- not bad
+    data; this bundle simply doesn't have raw packet captures.</div>
+  {% elif items_matching_total == 0 and item_containers != 'all' %}
+  <div class="nodata"><strong>No data for the current filter.</strong> This capture has real 0x020
+    rows, but none in the Inventory or Temp Items containers -- try
+    <a class="inline" href="?tab=items&item_containers=all&entity={{ entity }}&direction={{ direction }}&show_raw={{ show_raw }}">All containers</a>
+    to see Mog House activity instead.</div>
+  {% else %}
+  <div class="nodata"><strong>No data.</strong> This capture has {{ raw_packets_total }} raw
+    packet(s) total, but none are 0x020 (Inventory Item) -- genuinely no item-grant traffic
+    observed in this session, not filtered off (see the Dialogue / Packet Log or full
+    <a class="inline" href="/captures/{{ capture_id }}/packets">Raw Packets browser</a> to check
+    the other {{ raw_packets_total }} packets directly).</div>
+  {% endif %}
+</div>
+
+<div class="tabpanel" data-panel="raw" hidden>
+  <p class="muted">capture_eventview -- for most captures this is the ONLY real dialogue source
+    (capture_events is empty); own independent seq axis.</p>
+  <form class="search" method="get">
+    <input type="hidden" name="tab" value="raw">
+    <input type="hidden" name="entity" value="{{ entity }}">
+    <input type="hidden" name="direction" value="{{ direction }}">
+    <input type="hidden" name="show_items" value="{{ show_items }}">
+    <input type="hidden" name="show_raw" value="1">
+    <input type="text" name="ev_gp" value="{{ ev_gp }}" placeholder="filter by gp_command or packet class">
+    <button type="submit">Filter</button>
+  </form>
+  {% if eventview %}
+  <p class="muted">{{ eventview|length }} row(s){% if eventview|length != eventview_total %} of {{ eventview_total }} total{% endif %}{% if eventview|length == 500 %} <span class="chip">capped at 500</span>{% endif %}.</p>
+  <div class="table-wrap"><table>
+    <tr><th>seq</th><th>ts</th><th>dir</th><th>opcode</th><th>class</th><th>gp_command</th><th>entity</th><th>message</th><th>dialogue</th></tr>
+    {% for r in eventview %}
+    <tr>
+      <td class="mono">{{ r.seq }}</td>
+      <td class="mono">{{ r.ts }}</td>
+      <td>{{ r.direction }}</td>
+      <td class="mono">{{ r.opcode }}</td>
+      <td>{{ r.packet_class }}</td>
+      <td class="mono">{{ r.gp_command }}</td>
+      <td>{{ r.entity_id or '' }}</td>
+      <td class="mono">{{ r.message_number if r.message_number is not none else '' }}</td>
+      <td>{% if r.dialog_text %}{{ r.dialog_text }}{% else %}<span class="mono muted" style="max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ r.fields_json }}">{{ r.fields_json }}</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table></div>
+  {% elif eventview_total == 0 %}
+  <div class="nodata"><strong>No data.</strong> This capture has 0 capture_eventview rows -- no
+    EventView log in this capture's source bundle at all. Not a filter (the gp_command box above
+    is empty by default) and not bad data elsewhere; this bundle simply has no EventView capture.</div>
+  {% else %}
+  <div class="nodata filtered"><strong>No rows match your filter.</strong>
+    {{ eventview_total }} real row(s) exist for this capture -- clear the gp_command/packet class
+    filter above to see them.</div>
+  {% endif %}
+</div>
+
+<script>
+(function() {
+  var buttons = document.querySelectorAll('.tabbtn');
+  var panels = document.querySelectorAll('.tabpanel');
+  function activate(name) {
+    buttons.forEach(function(b) { b.classList.toggle('active', b.dataset.tab === name); });
+    panels.forEach(function(p) { p.hidden = (p.dataset.panel !== name); });
+  }
+  buttons.forEach(function(b) {
+    b.addEventListener('click', function() { activate(b.dataset.tab); });
+  });
+  // Land on whichever tab the last filter form submitted from (?tab=...), or the server-computed
+  // smart default (default_tab -- events if it has real rows, otherwise whichever tab actually
+  // has data for this capture).
+  var params = new URLSearchParams(window.location.search);
+  var initial = params.get('tab') || {{ default_tab | tojson }};
+  activate(initial);
+})();
+</script>
+{% endblock %}

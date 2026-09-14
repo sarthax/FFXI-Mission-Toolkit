@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Captures{% endblock %}
+
+{% block content %}
+<h1>Captures</h1>
+<p><a class="inline" href="/captures/new">+ new capture (build from scratch, drop files in over time)</a>
+  &nbsp;&middot;&nbsp; <a class="inline" href="/captures/search">cross-capture search (events / raw packets) &rarr;</a></p>
+<p class="muted">Every ingested capture bundle (<code class="chip">build_capture_index.py</code>),
+tagged by <strong>content_type</strong> so future non-Assault captures can't get silently
+conflated with this data -- every row here is explicitly typed, not inferred from folder location.</p>
+
+<form class="search" method="get">
+  <input type="text" name="q" value="{{ q }}" placeholder="filter by mission or label" list="mission-list">
+  <datalist id="mission-list">
+    {% for m in missions %}<option value="{{ m }}">{% endfor %}
+  </datalist>
+  <select name="content_type">
+    <option value="">(all content types)</option>
+    {% for ct in content_types %}
+    <option value="{{ ct }}" {% if ct == content_type %}selected{% endif %}>{{ ct }}</option>
+    {% endfor %}
+  </select>
+  <select name="tag">
+    <option value="">(all tags)</option>
+    {% for t in all_tags %}
+    <option value="{{ t }}" {% if t == tag %}selected{% endif %}>{{ t }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit">Filter</button>
+</form>
+
+<p class="muted">{{ rows|length }} capture(s). Click a row to open it on its own page --
+  Prev/Next there cycles through this same filtered list, and your browser's back button returns
+  you here at the same scroll position.</p>
+<div class="table-wrap"><table>
+  <tr><th>id</th><th>type</th><th>tags</th><th>zones</th><th>mission</th><th>npc</th><th>source file</th></tr>
+  {% for r in rows %}
+  <tr>
+    <td class="mono"><a href="/captures/{{ r.capture_id }}?content_type={{ content_type }}&q={{ q }}">{{ r.capture_id }}</a></td>
+    <td><span class="chip">{{ r.content_type or '?' }}</span></td>
+    <td>{% for t in r.tags %}<span class="chip">{{ t }}</span>{% endfor %}</td>
+    <td>{{ r.zones | join(', ') }}</td>
+    <td>{% if r.mission_name %}<a href="/captures/{{ r.capture_id }}?content_type={{ content_type }}&q={{ q }}">{{ r.mission_name }}</a>{% else %}<span class="muted">(unresolved)</span>{% endif %}</td>
+    <td>{{ r.n_npc }}</td>
+    <td class="muted" style="max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ r.capture_label }}">{{ r.capture_label }}</td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% endblock %}

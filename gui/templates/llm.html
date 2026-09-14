@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}LLM Assistant{% endblock %}
+
+{% block content %}
+<h1>LLM Assistant</h1>
+<div class="warn">Every response here is a <strong>{{ draft_tag }}</strong>. This project's whole
+  methodology runs on citing real source for every id/binding/mapping -- never paste a response
+  from here into a real file without the same grep/human verification pass everything else in
+  this toolkit gets. Good fits: summarizing a long capture log or doc, triaging/classifying a
+  list, drafting a first-pass suggestion for what to go verify. Bad fits: anything that decides
+  a real id, binding name, or mapping on its own.</div>
+
+{% if models_error %}
+<p class="muted" style="color:var(--red);">{{ models_error }}
+  {% if "No API key" in models_error %}See <a class="inline" href="/settings">Settings</a>.{% endif %}</p>
+{% endif %}
+
+<form method="post" action="/llm" enctype="multipart/form-data" id="llm-form" style="display:flex; flex-direction:column; gap:10px;">
+  <label>Prompt
+    <textarea name="prompt" rows="8" style="width:100%; font-family:monospace; font-size:0.9em;"
+      placeholder="Ask the local model something...">{{ prompt }}</textarea>
+  </label>
+
+  <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end;">
+    <label>Or summarize a file (server-side path, e.g. a doc or capture log)
+      <br><input type="text" name="file_path" value="{{ file_path }}" style="width:420px;" placeholder="e.g. D:\Claude\Topaz-Assault-Backport\source\documentation\Assault_Fix_Log.md">
+    </label>
+    <label>Or attach an image (needs a vision-capable model, e.g. ornith-1.5:9b, gemma4:26b)
+      <br><input type="file" name="image" accept="image/*">
+    </label>
+  </div>
+
+  <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end;">
+    <label>Model
+      <br><select name="model">
+        {% if models %}
+          {% for m in models %}
+          <option value="{{ m.id }}" {% if m.id == model %}selected{% endif %}>{{ m.id }}
+            {% set caps = m.get('ollama', {}).get('capabilities', []) %}
+            {% if caps %}({{ caps|join(', ') }}){% endif %}
+          </option>
+          {% endfor %}
+        {% else %}
+          <option value="{{ model }}" selected>{{ model }} (model list unavailable -- typed default)</option>
+        {% endif %}
+      </select>
+    </label>
+    <label>System prompt (optional)
+      <br><input type="text" name="system" value="{{ system }}" style="width:340px;" placeholder="e.g. You are terse.">
+    </label>
+    <button type="submit" id="llm-submit-btn">Send</button>
+    <span id="llm-spinner" class="muted" style="display:none;">Waiting for the model (larger models can take a while)...</span>
+  </div>
+</form>
+
+{% if ran %}
+<h2>Response</h2>
+{% if call_error %}
+<p class="muted" style="color:var(--red);">error: {{ call_error }}</p>
+{% else %}
+<div class="warn" style="border-left-color:var(--accent); background:var(--accent-soft); display:flex; justify-content:space-between; align-items:center; gap:12px;">
+  <span><strong>{{ draft_tag }}</strong>{% if usage_display %} <span class="muted mono">({{ usage_display }})</span>{% endif %}</span>
+  <button type="button" id="copy-as-comment-btn" class="chip" style="cursor:pointer; white-space:nowrap;">Copy as -- LLM-DRAFT comment</button>
+</div>
+<textarea id="llm-response-text" readonly rows="14" style="width:100%; font-family:monospace; font-size:0.9em;">{{ response }}</textarea>
+{% endif %}
+{% endif %}
+
+<h2 style="margin-top:24px;">Recent calls</h2>
+<p class="muted">Every call through <code class="chip">llm_client.py</code> lands here -- manual
+  (this page), quick actions from other pages (Lua Converter's "ask LLM", a capture's "summarize
+  with LLM"), and anything else an automated tool records via
+  <code class="chip">llm_log.record()</code> -- so what's been sent/received stays visible in one
+  place as automation gets built out.</p>
+
+<form method="get" action="/llm" style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-bottom:10px;">
+  <label class="muted">Source
+    <br><select name="source">
+      <option value="" {% if not filter_source %}selected{% endif %}>(all)</option>
+      {% for s in log_sources %}
+      <option value="{{ s }}" {% if s == filter_source %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="muted">Model
+    <br><input type="text" name="model_filter" value="{{ filter_model }}" placeholder="exact model id" style="width:160px;">
+  </label>
+  <label class="muted">Search prompt/response
+    <br><input type="text" name="q" value="{{ filter_q }}" style="width:220px;">
+  </label>
+  <button type="submit">Filter</button>
+  {% if filter_source or filter_model or filter_q %}<a class="chip" href="/llm">clear</a>{% endif %}
+</form>
+
+{% if log %}
+<div class="table-wrap"><table>
+  <tr><th>When</th><th>Source</th><th>Model</th><th>Usage</th><th>Prompt</th><th>Result</th></tr>
+  {% for row in log %}
+  <tr>
+    <td class="mono">{{ row.created_display }}</td>
+    <td>{{ row.source }}</td>
+    <td class="mono">{{ row.model }}</td>
+    <td class="mono">{{ row.usage_display }}</td>
+    <td class="mono" style="max-width:320px; white-space:pre-wrap;">{{ row.prompt[:200] }}{% if row.prompt|length > 200 %}...{% endif %}</td>
+    <td class="mono" style="max-width:320px; white-space:pre-wrap;">
+      {% if row.error %}<span style="color:var(--red);">error: {{ row.error[:200] }}</span>
+      {% else %}{{ (row.response or "")[:200] }}{% if row.response and row.response|length > 200 %}...{% endif %}{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% else %}
+<p class="muted">No calls yet{% if filter_source or filter_model or filter_q %} matching this filter{% endif %}.</p>
+{% endif %}
+
+<script>
+document.getElementById("llm-form").addEventListener("submit", function () {
+  document.getElementById("llm-submit-btn").disabled = true;
+  document.getElementById("llm-spinner").style.display = "inline";
+});
+
+var copyBtn = document.getElementById("copy-as-comment-btn");
+if (copyBtn) {
+  copyBtn.addEventListener("click", function () {
+    var text = document.getElementById("llm-response-text").value;
+    var commented = text.split("\n").map(function (line) { return "-- " + line; }).join("\n");
+    commented = "-- {{ draft_tag }}\n" + commented;
+    navigator.clipboard.writeText(commented).then(function () {
+      copyBtn.textContent = "Copied!";
+      setTimeout(function () { copyBtn.textContent = "Copy as -- LLM-DRAFT comment"; }, 1500);
+    });
+  });
+}
+</script>
+{% endblock %}

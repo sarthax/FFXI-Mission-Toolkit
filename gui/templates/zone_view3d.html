@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}3D Zone Viewer{% endblock %}
+{% block content %}
+<h1>3D Zone Viewer <span class="chip mono">{{ zone_name }} ({{ zoneid }})</span></h1>
+<p class="muted">Real client visual mesh (walls/buildings/props -- not the invisible collision
+  mesh the 2D top-down view uses), via a new <code class="chip">xi-tinkerer-py</code> binding onto
+  xi-tinkerer's own real MMB/MZB parser. No textures/materials -- Topaz's own chunk parsing
+  doesn't carry per-triangle texture assignment out to this layer, so this is real geometry,
+  honestly untextured (flat-shaded). Drag to orbit, scroll to zoom.
+  {% if multi %}Showing every entity with path data from capture
+  <a class="inline" href="/captures/{{ capture_id }}">#{{ capture_id }}</a> in {{ zone_db }}.
+  {% elif entity_name %}Showing {{ entity_name }}'s real path from capture
+  <a class="inline" href="/captures/{{ capture_id }}">#{{ capture_id }}</a>.{% endif %}</p>
+
+{% if multi %}
+<form method="get" style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+  <input type="hidden" name="capture_id" value="{{ capture_id }}">
+  {% if zones|length > 1 %}
+  <span class="muted">zone:</span>
+  <select name="zone_db">
+    {% for z in zones %}<option value="{{ z }}" {% if z == zone_db %}selected{% endif %}>{{ z }}</option>{% endfor %}
+  </select>
+  <button type="submit">Switch</button>
+  {% endif %}
+  <a class="inline" href="/captures/plot_all?capture_id={{ capture_id }}" style="margin-left:auto;">view 2D top-down instead &rarr;</a>
+</form>
+{% if truncated %}
+<div class="warn">Showing the first {{ limit }} entities with path data in this zone -- plotting more would be illegible.</div>
+{% endif %}
+{% elif capture_id %}
+<p><a class="inline" href="/captures/plot?capture_id={{ capture_id }}&{% if pc %}pc=1&zone_db={{ zone_db | urlencode }}{% else %}entity_id={{ entity_id }}{% endif %}">&larr; back to 2D path plot</a></p>
+{% endif %}
+
+{% if not obj_available %}
+<div class="warn">No cached visual mesh for this zone yet.
+  <form method="post" action="/zones/{{ zoneid }}/build_visual_cache" style="display:inline;">
+    <input type="hidden" name="return_to" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+    <button type="submit">Build it now</button>
+  </form>
+  Zone meshes run 30-75MB and take a real parse (up to a minute) -- or run
+  <code class="chip">py -3 build_zone_visual_cache.py {{ zoneid }}</code> from a terminal instead.</div>
+{% else %}
+<div id="viewer-container" style="width:100%; height:640px; border:1px solid var(--border); border-radius:8px; background:#0a0d10; position:relative;">
+  <div id="viewer-loading" class="muted" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">Loading mesh&hellip;</div>
+</div>
+
+{% if multi and legend %}
+<h2 style="margin-top:16px;">Legend</h2>
+<div class="table-wrap"><table>
+  <tr><th></th><th>name</th></tr>
+  {% for p in legend %}
+  <tr>
+    <td><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:{{ p.color }};"></span></td>
+    <td>{{ p.name }}</td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+
+const paths = {{ paths_json | safe }};
+
+const container = document.getElementById('viewer-container');
+const loadingEl = document.getElementById('viewer-loading');
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0d10);
+scene.fog = new THREE.Fog(0x0a0d10, 200, 1400);
+
+const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 5000);
+camera.position.set(0, 60, 120);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+container.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+// Basic day-like lighting -- a simplified, fixed version of Vanalytics' own day/night curve
+// idea, not the full time-of-day system (out of scope for this pass).
+scene.add(new THREE.AmbientLight(0x8899aa, 1.1));
+const sun = new THREE.DirectionalLight(0xfff2e0, 1.4);
+sun.position.set(300, 500, 200);
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0x6688aa, 0.4);
+fill.position.set(-300, 200, -200);
+scene.add(fill);
+
+const loader = new OBJLoader();
+loader.load('/static/zone_visual/{{ zoneid }}.obj', (obj) => {
+  obj.traverse((child) => {
+    if (child.isMesh) {
+      child.material = new THREE.MeshStandardMaterial({ color: 0x4a5a68, roughness: 0.9, metalness: 0.0, side: THREE.DoubleSide });
+    }
+  });
+  scene.add(obj);
+  loadingEl.hidden = true;
+
+  // Frame the camera on either the path (if we have one) or the whole mesh's bounding box.
+  const box = new THREE.Box3().setFromObject(obj);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+
+  if (paths.length > 0) {
+    // Raise every path slightly above the real floor surface -- drawn AT ground height otherwise
+    // z-fights with/hides inside floor geometry from most angles.
+    const LIFT = 0.6;
+    const allLiftedPts = [];
+
+    for (const p of paths) {
+      const color = new THREE.Color(p.color);
+      // Real capture (x,y,z) mapped into the SAME model space the mesh export uses: (x, -y, -z) --
+      // verified empirically against this exact mesh (avg 0.91 units to nearest vertex).
+      const liftedPts = p.points.map(pt => new THREE.Vector3(pt.x, -pt.y + LIFT, -pt.z));
+      allLiftedPts.push(...liftedPts);
+
+      const geom = new THREE.BufferGeometry().setFromPoints(liftedPts);
+      const line = new THREE.Line(geom, new THREE.LineBasicMaterial({ color, depthTest: false }));
+      line.renderOrder = 1;
+      scene.add(line);
+
+      // Small waypoint spheres along the whole path -- LineBasicMaterial's linewidth is ignored by
+      // most GPU/driver combos (a real, long-standing WebGL limitation), so a thin single-pixel
+      // line alone is easy to lose against real terrain detail at this scale.
+      const waypointGeom = new THREE.SphereGeometry(0.4, 8, 8);
+      const waypointMat = new THREE.MeshBasicMaterial({ color, depthTest: false });
+      for (let i = 1; i < liftedPts.length - 1; i++) {
+        const wp = new THREE.Mesh(waypointGeom, waypointMat);
+        wp.position.copy(liftedPts[i]);
+        wp.renderOrder = 1;
+        scene.add(wp);
+      }
+
+      const markerGeom = new THREE.SphereGeometry(2.2, 16, 16);
+      const start = new THREE.Mesh(markerGeom, new THREE.MeshBasicMaterial({ color: 0x3f9e5b, depthTest: false }));
+      start.position.copy(liftedPts[0]);
+      start.renderOrder = 2;
+      scene.add(start);
+      const end = new THREE.Mesh(markerGeom, new THREE.MeshBasicMaterial({ color: 0xe08080, depthTest: false }));
+      end.position.copy(liftedPts[liftedPts.length - 1]);
+      end.renderOrder = 2;
+      scene.add(end);
+    }
+
+    // Frame the camera relative to the combined extent of ALL paths, not a fixed offset -- a
+    // fixed +40 unit offset (the original attempt) landed the camera inside nearby wall/terrain
+    // geometry for a short path and much too close for a long one. A floor on maxPathDim also
+    // keeps a single-point or very short path from zooming in absurdly tight.
+    const pathBox = new THREE.Box3().setFromPoints(allLiftedPts);
+    const pathCenter = pathBox.getCenter(new THREE.Vector3());
+    const pathSize = pathBox.getSize(new THREE.Vector3());
+    const maxPathDim = Math.max(pathSize.x, pathSize.y, pathSize.z, 20);
+    const dist = maxPathDim * 1.6;
+    controls.target.copy(pathCenter);
+    camera.position.set(pathCenter.x + dist * 0.7, pathCenter.y + dist * 0.55, pathCenter.z + dist * 0.7);
+    controls.minDistance = maxPathDim * 0.15;
+    controls.maxDistance = maxPathDim * 8;
+  } else {
+    controls.target.copy(center);
+    const maxDim = Math.max(size.x, size.y, size.z);
+    camera.position.set(center.x + maxDim * 0.5, center.y + maxDim * 0.4, center.z + maxDim * 0.5);
+  }
+  controls.update();
+}, undefined, (err) => {
+  loadingEl.textContent = 'Failed to load mesh: ' + err.message;
+});
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(container.clientWidth, container.clientHeight);
+});
+</script>
+{% endif %}
+{% endblock %}
