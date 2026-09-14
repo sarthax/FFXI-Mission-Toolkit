@@ -40,8 +40,7 @@ import backport_binding_index as bbi
 import backport_lua_convert as blc
 import settings
 
-_backport_root = settings.get_backport_root()
-DEFAULT_PACKAGES_ROOT = (_backport_root / "mission-packages") if _backport_root else None
+DEFAULT_PACKAGES_ROOT = settings.get_backport_root() / "mission-packages"
 DEFAULT_DSP_ROOT = settings.get_dsp_root()
 
 METHOD_CALL_RE = re.compile(r":([A-Za-z_][A-Za-z0-9_]*)\s*\(")
@@ -151,8 +150,9 @@ def main():
     ap.add_argument("--all-packages", action="store_true", help="Audit every mission-packages/*/lua-dsp/ tree")
     ap.add_argument("--dsp-root", default=str(DEFAULT_DSP_ROOT) if DEFAULT_DSP_ROOT else None,
                      help="Real DSP checkout to check against (else Settings' dsp_server_path)")
-    ap.add_argument("--packages-root", default=str(DEFAULT_PACKAGES_ROOT) if DEFAULT_PACKAGES_ROOT else None,
-                     help="mission-packages/ root for --all-packages (else Settings' backport_root)")
+    ap.add_argument("--packages-root", default=str(DEFAULT_PACKAGES_ROOT),
+                     help="mission-packages/ root for --all-packages (else Settings' backport_root, "
+                          "else the bundled backport-workspace/ scaffold)")
     ap.add_argument("--show-confirmed", action="store_true", help="Also list confirmed (not just missing) bindings")
     args = ap.parse_args()
 
@@ -167,8 +167,6 @@ def main():
     print(f"Target: {dsp_root} (detected flavor: {flavor})\n")
 
     if args.all_packages:
-        if not args.packages_root:
-            ap.error("No backport checkout configured -- set Settings' backport_root or pass --packages-root.")
         targets = sorted(Path(args.packages_root).glob("*/lua-dsp"))
     elif args.path:
         targets = [Path(args.path)]

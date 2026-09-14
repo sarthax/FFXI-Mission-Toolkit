@@ -40,8 +40,7 @@ except ImportError:
 
 import settings
 
-_backport_root = settings.get_backport_root()
-DEFAULT_PACKAGES_ROOT = (_backport_root / "mission-packages") if _backport_root else None
+DEFAULT_PACKAGES_ROOT = settings.get_backport_root() / "mission-packages"
 
 # `local ID = Periqia` or `local ID = zones[Periqia]`/`zones[xi.zone.PERIQIA]` (the shape this
 # project has shipped both wrong and right this session -- catch references to a bare capitalized
@@ -93,8 +92,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("path", nargs="?", help="A lua-dsp/ directory to check")
     ap.add_argument("--all-packages", action="store_true", help="Check every mission-packages/*/lua-dsp/ tree")
-    ap.add_argument("--packages-root", default=str(DEFAULT_PACKAGES_ROOT) if DEFAULT_PACKAGES_ROOT else None,
-                     help="mission-packages/ root for --all-packages (else Settings' backport_root)")
+    ap.add_argument("--packages-root", default=str(DEFAULT_PACKAGES_ROOT),
+                     help="mission-packages/ root for --all-packages (else Settings' backport_root, "
+                          "else the bundled backport-workspace/ scaffold)")
     args = ap.parse_args()
 
     if lua_ast is None:
@@ -103,8 +103,6 @@ def main():
               file=sys.stderr)
 
     if args.all_packages:
-        if not args.packages_root:
-            ap.error("No backport checkout configured -- set Settings' backport_root or pass --packages-root.")
         targets = sorted(Path(args.packages_root).glob("*/lua-dsp"))
     elif args.path:
         targets = [Path(args.path)]

@@ -31,7 +31,8 @@
     </div>
     <div>
       <label class="muted">Backport checkout root (the repo holding mission-packages/, dsp-engine-changes/,
-        reports/ -- optional, only needed for the backport-package CLI tools; blank disables them)</label><br>
+        reports/ -- used by the backport-package CLI tools; blank uses the bundled
+        backport-workspace/ scaffold, point this at your own real backport project instead)</label><br>
       <input type="text" name="backport_root" value="{{ values.backport_root }}" style="width:100%; margin-top:6px;">
     </div>
   </div>
