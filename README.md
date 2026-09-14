@@ -16,8 +16,9 @@ digging through raw DAT files or SQL dumps by hand.
 - **Entity Lookup** — one canonical profile per NPC/mob id: model, spawn group, mission, real drop
   table, cross-zone name matches.
 - **Browse by Zone** — every NPC/mob/dialog entry for a single zone at a glance.
-- **SQL Index / ID Drift** — your Topaz server's own SQL indexed and diffed against LandSandBoat,
-  to catch id mismatches between the two.
+- **SQL Index / ID Drift** — your Topaz server's own SQL indexed and diffed against
+  LandSandBoat, and optionally against a real old-DSP (Darkstar/Valhalla-style) checkout too, to
+  catch id mismatches across any combination of them.
 - **Events / CSIDs** — per-zone event data, decoded on first view and cached after.
 - **Captures** — ingest and browse real packet-capture sessions (multiple capture tool formats
   supported) alongside everything else.
@@ -25,6 +26,12 @@ digging through raw DAT files or SQL dumps by hand.
 - **Packet Decoder** — inspect raw packet bytes against a documented opcode table.
 - **Assault Missions / Key Items / Zero-Position audit** — a few more focused lookup pages, all
   built on the same indexed data.
+- **Backport module** (optional, needs a DSP checkout configured in Settings) — a Topaz→DSP Lua
+  converter, a searchable Binding Reference cross-referencing every Lua method both codebases
+  register, and a SQL converter with real id-collision checking against the DSP target.
+- **LLM Assistant** (optional, needs a local Open WebUI/Ollama instance) — draft-only offload for
+  summarizing/triaging captures and other first-pass suggestions; never used to write an id or
+  binding directly into a shipped package without a human verification pass after.
 
 ## Screenshots
 
@@ -46,6 +53,26 @@ digging through raw DAT files or SQL dumps by hand.
 ![Cross-capture search](docs/screenshots/captures-search.png)
 *Capture Search — full-text search across every capture's events and raw packets at once.*
 
+![ID Drift](docs/screenshots/iddrift.png)
+*ID Drift — cross-checks LandSandBoat (and optionally a real DSP checkout) against your Topaz
+server, category by category, so a wrong id shows up here instead of only in-game.*
+
+![Lua Backport Converter](docs/screenshots/lua-convert.png)
+*Lua Backport Converter — converts a Topaz Lua file to a DSP checkout's own convention, applying
+every confirmed namespace/binding mapping and flagging anything unmapped for human review.*
+
+![Binding Reference](docs/screenshots/binding-reference.png)
+*Binding Reference — every Lua method binding registered in Topaz and in DSP, cross-referenced
+with real evidence, searchable and filterable outside a conversion run.*
+
+![SQL Backport Converter](docs/screenshots/sql-convert.png)
+*SQL Backport Converter — converts Topaz `INSERT INTO` rows to DSP's schema and checks every id
+against DSP's real indexed data for genuine collisions, not just a raw dump diff.*
+
+![LLM Assistant](docs/screenshots/llm-assistant.png)
+*LLM Assistant — optional draft-only offload (summaries, triage, first-pass suggestions) against a
+local Open WebUI/Ollama instance, with every call logged for visibility.*
+
 ## Dependencies
 
 - **Python 3.11+**
@@ -54,9 +81,12 @@ digging through raw DAT files or SQL dumps by hand.
 - **A Topaz server checkout** (reads your own `conf/map.conf` and SQL)
 - [`xi-tinkerer`](https://github.com/InoUno/xi-tinkerer) / `xi-tinkerer-py` — DAT parsing, installed
   automatically by setup
-- A handful of smaller third-party tools bundled as subfolders (dat extraction, resource
+- A handful of smaller third-party tools bundled under `vendor/` (dat extraction, resource
   parsing/building, packet capture) — see [`TOOLING_OVERVIEW.md`](docs/guides/TOOLING_OVERVIEW.md) for the
   full list. Each keeps its own license in its own folder (see **License** below).
+- Optional, for the Backport module: **a DSP server checkout** and/or **a backport-package
+  checkout** (Topaz→DSP mission conversion work). Configure all of these on the **Settings** page —
+  every path in this toolkit is user-configurable, nothing is hardcoded to a specific machine.
 
 ## Setup
 
@@ -89,10 +119,11 @@ no command line needed for normal use.
 
 This repo's own code (the Python toolkit and web UI) is released under the [MIT License](LICENSE).
 
-Several bundled third-party tools carry **their own** licenses in their own subfolders — most
-notably GPL-3.0 (`xi-model-viewer`, `Packetlyzer`) and AGPL-3.0 (`xi-tinkerer`). Those licenses
-apply to those tools specifically, not to this repo's own code, and their `LICENSE` files are kept
-intact as shipped. If you redistribute this repo, keep those subfolders' licenses with them.
+Several bundled third-party tools under `vendor/` carry **their own** licenses in their own
+subfolders — most notably GPL-3.0 (`vendor/xi-model-viewer`, `vendor/Packetlyzer`) and AGPL-3.0
+(`vendor/xi-tinkerer`). Those licenses apply to those tools specifically, not to this repo's own
+code, and their `LICENSE` files are kept intact as shipped. If you redistribute this repo, keep
+those subfolders' licenses with them.
 
 No FFXI game data (DAT files, extracted text, models, etc.) is included in this repo — the setup
 process reads it from your own legally-owned client install.
