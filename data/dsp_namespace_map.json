@@ -309,12 +309,6 @@
       "source": "src/map/lua/lua_base_entity.cpp:20485 (SOL_REGISTER), also confirmed via DSP's own real scripts/commands/animatenpc.lua which calls player:printToPlayer(...)",
       "evidence": "Case-only difference -- DSP registers lowercase printToPlayer, not PrintToPlayer. Found auditing assault_gm_debug_tools (all 10 GM command files used the Topaz-style capital-P spelling)."
     },
-    "goToEntity": {
-      "dsp_name": "gotoEntity",
-      "confidence": "confirmed",
-      "source": "src/map/lua/lua_base_entity.cpp:20649 (SOL_REGISTER), function itself defined at line 4280",
-      "evidence": "Case-only difference (capital T -> lowercase t in \"to\") -- DSP registers gotoEntity, not goToEntity. Found in gotoinstid.lua."
-    },
     "untargetable": {
       "dsp_name": "setUntargetable",
       "confidence": "confirmed",
@@ -451,7 +445,7 @@
     },
     "goToEntity": {
       "checked_against": "old-dsp-reference",
-      "status": "NOT PORTED (documented gap, dsp-engine-changes/gotoentity_gap/README.md): Topaz's goToEntity depends on a dedicated inter-process MSG_SEND_TO_ENTITY message type old-dsp-reference's MSGSERVTYPE enum (src/common/mmo.h) has no equivalent for -- real new engine plumbing, not a binding-only port. The one real call site (assault_gm_debug_tools/gotoinstid.lua) was rewritten to report 'not found in current instance/zone' instead of calling a nonexistent binding."
+      "status": "RESOLVED 2026-09-13 (dsp-engine-changes/gotoentity/): real new engine plumbing added end-to-end -- MSG_SEND_TO_ENTITY added to MSGSERVTYPE (src/common/mmo.h), CLuaBaseEntity::goToEntity(lua_State*) added and registered (same name/signature as Topaz, no rename needed), the two-hop map-side handler (src/map/message.cpp) and login-side zone_settings routing (src/login/message_server.cpp) both ported byte-for-byte from Topaz's real protocol. Built clean, verified live in-game for both a same-zone and a cross-zone target (the exact scenario that was broken). Supersedes dsp-engine-changes/gotoentity_gap/README.md's original 'not ported' analysis, which is preserved for reference. The one real call site (assault_gm_debug_tools/gotoinstid.lua) was left as its 'not found' rewrite from the gap analysis -- its actual use case is instance-scoped lookup, which this fix doesn't address; revisit separately if needed."
     },
     "setSpeed_setBaseSpeed": {
       "checked_against": "old-dsp-reference",

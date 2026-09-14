@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Binding Reference{% endblock %}
+
+{% macro pager() %}
+{% if total_pages > 1 %}
+<form method="get" style="display:flex;gap:8px;align-items:center;margin:12px 0;">
+  <input type="hidden" name="q" value="{{ q }}">
+  <input type="hidden" name="status" value="{{ status }}">
+  {% if page > 1 %}
+  <a class="chip" href="/backport/bindings?q={{ q }}&status={{ status }}&page={{ page - 1 }}">&larr; prev</a>
+  {% endif %}
+  <span class="muted">page</span>
+  <input type="number" name="page" value="{{ page }}" min="1" max="{{ total_pages }}" style="width:70px;">
+  <span class="muted">of {{ total_pages }}</span>
+  <button type="submit">Go</button>
+  {% if page < total_pages %}
+  <a class="chip" href="/backport/bindings?q={{ q }}&status={{ status }}&page={{ page + 1 }}">next &rarr;</a>
+  {% endif %}
+</form>
+{% endif %}
+{% endmacro %}
+
+{% block content %}
+<h1>Binding Reference</h1>
+<p class="tabs" style="margin:-6px 0 14px;">
+  <a class="chip" href="/backport/lua-convert">&larr; Convert</a>
+  <a class="chip" href="/backport/bindings" style="background:var(--accent);color:#fff;">Binding Reference</a>
+</p>
+<p class="muted">Every Lua method binding registered in Topaz (<code>SOL_REGISTER</code>) and in
+old-dsp-reference (<code>LUNAR_DECLARE_METHOD</code>), cross-referenced against
+<code>data/dsp_namespace_map.json</code>'s confirmed renames. Built for reference/lookup outside a
+conversion run -- e.g. checking what a name is called before writing new Lua by hand. Regenerate
+the underlying indexes after a DSP engine patch with
+<code>py -3 backport_binding_index.py --build</code>.</p>
+
+{% if index_missing %}
+<div class="warn">
+  Binding index not built yet: {{ index_missing }}<br>
+  Run <code>py -3 backport_binding_index.py --build</code> from the mission_toolkit directory first.
+</div>
+{% else %}
+
+<div class="table-wrap" style="margin-bottom:12px;">
+<table>
+  <tr>
+    {% for key, label in status_labels.items() %}
+    <th><a href="/backport/bindings?status={{ key }}">{{ label }}</a></th>
+    {% endfor %}
+  </tr>
+  <tr>
+    {% for key, label in status_labels.items() %}
+    <td class="mono">
+      <span class="badge {{ 'badge-ok' if key in ('exact', 'renamed') else ('badge-warn' if key == 'case_only' else 'badge-empty') }}">
+        {{ counts.get(key, 0) }}
+      </span>
+    </td>
+    {% endfor %}
+  </tr>
+</table>
+</div>
+
+<form class="search" method="get">
+  <select name="status">
+    <option value="">All statuses</option>
+    {% for key, label in status_labels.items() %}
+    <option value="{{ key }}" {% if status == key %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <input type="text" name="q" value="{{ q }}" placeholder="search by Topaz or DSP name">
+  <button type="submit">Filter</button>
+  {% if q or status %}<a class="chip" href="/backport/bindings">clear</a>{% endif %}
+</form>
+
+<p>{{ total }} binding(s){{ " for \"%s\"" % q if q else "" }} -- page {{ page }} of {{ total_pages }}</p>
+{{ pager() }}
+
+{% if rows %}
+<div class="table-wrap"><table>
+  <tr><th>Topaz name</th><th>DSP name</th><th>Status</th><th>Evidence</th><th>Locations</th></tr>
+  {% for row in rows %}
+  <tr>
+    <td class="mono">{{ row.name if row.name else "" }}</td>
+    <td class="mono">{{ row.dsp_name if row.dsp_name else "" }}</td>
+    <td>
+      <span class="badge {{ 'badge-ok' if row.status in ('exact', 'renamed') else ('badge-warn' if row.status == 'case_only' else 'badge-empty') }}">
+        {{ status_labels[row.status] }}
+      </span>
+    </td>
+    <td class="muted" style="max-width:420px;">
+      {% if row.rename_evidence %}
+        {{ row.rename_evidence }}
+        {% if row.rename_source %}<br><span class="mono">{{ row.rename_source }}</span>{% endif %}
+      {% elif row.status == "case_only" %}
+        Same name, different casing -- high-confidence rename candidate.
+      {% elif row.status == "topaz_only" %}
+        No match under any casing in old-dsp-reference -- either spelled completely differently,
+        or a genuine gap. Needs a human/grep look.
+      {% elif row.status == "dsp_only" %}
+        No Topaz name maps to this -- a real DSP binding with no current caller from a ported package.
+      {% endif %}
+    </td>
+    <td class="mono" style="font-size:0.85em;">
+      {% for loc in row.topaz_locations %}
+        <div>topaz: {{ loc.class }} ({{ loc.file }}:{{ loc.line }})</div>
+      {% endfor %}
+      {% for loc in row.dsp_locations %}
+        <div>dsp: {{ loc.class }} ({{ loc.file }}:{{ loc.line }})</div>
+      {% endfor %}
+    </td>
+  </tr>
+  {% endfor %}
+</table></div>
+{{ pager() }}
+{% else %}
+<p class="muted">No bindings found{{ " for \"%s\"" % q if q else "" }}.</p>
+{% endif %}
+{% endif %}
+
+<style>
+.badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 3px; font-size: 0.85em; font-weight: 600; color: #fff; }
+.badge-ok { background: #1e7e34; }
+.badge-warn { background: #b3893f; }
+.badge-empty { background: #b33f3f; }
+</style>
+{% endblock %}

@@ -3,12 +3,17 @@
 
 {% block content %}
 <h1>Lua Backport Converter</h1>
+<p class="tabs" style="margin:-6px 0 14px;">
+  <a class="chip" href="/backport/lua-convert" style="background:var(--accent);color:#fff;">Convert</a>
+  <a class="chip" href="/backport/bindings">Binding Reference &rarr;</a>
+</p>
 <p class="muted">Converts one Topaz Lua file's source (entity-table style, <code>tpz.*</code>
 namespaces) to the target DSP checkout's own convention (global-function style, bare-global
 namespaces), applying every mapping confirmed in
 <code>data/dsp_namespace_map.json</code>. Extend that map file (not this page) when a new zone
 surfaces an unmapped <code>tpz.*</code> family; check real DSP source the way every existing
-entry was checked, don't guess a mapping just to clear a flag.</p>
+entry was checked, don't guess a mapping just to clear a flag. Looking up a binding by name outside
+a conversion run? Use the <a class="inline" href="/backport/bindings">Binding Reference</a> page.</p>
 
 {% if dsp_root %}
   {% if flavor == target %}

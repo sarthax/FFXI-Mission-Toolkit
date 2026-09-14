@@ -52,6 +52,7 @@ import install_external_tools
 import build_lsb_index
 import backport_lua_convert
 import backport_sql_convert
+import backport_binding_index
 import build_dsp_index
 import build_topaz_index
 import llm_client
@@ -1421,6 +1422,106 @@ async def lua_convert_submit(request: Request):
         "zone_table": zone_table or "", "id_shape": id_shape, "target": target,
         "id_file_hint": id_file_hint or "", "ran": True,
         "map_path": str(backport_lua_convert.MAP_PATH), **_target_flavor_banner(),
+    })
+
+
+BINDINGS_PAGE_SIZE = 100
+
+
+def _bindings_rows() -> list[dict]:
+    """Full Topaz-vs-old-dsp-reference binding inventory, one row per distinct name from EITHER
+    side, cross-referenced against dsp_namespace_map.json's method_renames -- so this page answers
+    "what does DSP call this" for a name a converter run flagged, without leaving the browser to
+    grep two codebases by hand (the exact workflow backport_binding_index.py --diff was built for,
+    surfaced here for browsing/searching instead of a one-shot CLI dump). Recomputed on every
+    request from the cached indexes (data/*_binding_index.json) -- cheap (in-memory dict work over
+    ~1300 names), so no need to cache further; run backport_binding_index.py --build to refresh the
+    underlying indexes after a DSP engine patch adds/renames a binding."""
+    topaz = backport_binding_index.load_index(backport_binding_index.TOPAZ_INDEX_PATH)
+    dsp = backport_binding_index.load_index(backport_binding_index.DSP_INDEX_PATH)
+    dsp_lower = {name.lower(): name for name in dsp}
+
+    namespace_map = backport_lua_convert.load_map()
+    method_renames = namespace_map.get("method_renames", {})
+
+    rows = []
+    seen_dsp_names = set()
+    for name in sorted(topaz):
+        renamed = method_renames.get(name)
+        if renamed:
+            dsp_name = renamed.get("dsp_name")
+            status = "renamed"
+        elif name in dsp:
+            dsp_name = name
+            status = "exact"
+        elif name.lower() in dsp_lower:
+            dsp_name = dsp_lower[name.lower()]
+            status = "case_only"
+        else:
+            dsp_name = None
+            status = "topaz_only"
+        if dsp_name:
+            seen_dsp_names.add(dsp_name)
+        rows.append({
+            "name": name, "topaz_locations": topaz[name],
+            "dsp_name": dsp_name, "dsp_locations": dsp.get(dsp_name, []) if dsp_name else [],
+            "status": status,
+            "rename_evidence": renamed.get("evidence") if renamed else None,
+            "rename_source": renamed.get("source") if renamed else None,
+        })
+
+    # DSP-only names (no Topaz name maps to them at all, renamed or otherwise) -- real bindings
+    # this codebase has that Topaz never had a reason to call, still worth being able to find here.
+    for name in sorted(set(dsp) - seen_dsp_names):
+        rows.append({
+            "name": None, "topaz_locations": [],
+            "dsp_name": name, "dsp_locations": dsp[name],
+            "status": "dsp_only", "rename_evidence": None, "rename_source": None,
+        })
+    return rows
+
+
+STATUS_LABELS = {
+    "exact": "Exact match", "renamed": "Confirmed rename", "case_only": "Case-only mismatch",
+    "topaz_only": "Topaz-only (needs a look)", "dsp_only": "DSP-only (no Topaz caller)",
+}
+
+
+@app.get("/backport/bindings", response_class=HTMLResponse)
+def bindings_index(request: Request, q: str = "", status: str = "", page: int = 1):
+    """Dedicated browse/search page over the full Topaz<->old-dsp-reference binding inventory --
+    separate from the Lua Converter (which only surfaces bindings actually hit by whatever source
+    got pasted in) so a name can be looked up for reference at any time, not just mid-conversion."""
+    try:
+        all_rows_full = _bindings_rows()
+        index_missing = None
+    except FileNotFoundError as e:
+        all_rows_full = []
+        index_missing = str(e)
+
+    counts = {}
+    for r in all_rows_full:
+        counts[r["status"]] = counts.get(r["status"], 0) + 1
+
+    all_rows = all_rows_full
+    q_lower = q.strip().lower()
+    if q_lower:
+        all_rows = [r for r in all_rows
+                    if (r["name"] and q_lower in r["name"].lower())
+                    or (r["dsp_name"] and q_lower in r["dsp_name"].lower())]
+    if status:
+        all_rows = [r for r in all_rows if r["status"] == status]
+
+    page = max(1, page)
+    total = len(all_rows)
+    total_pages = max(1, (total + BINDINGS_PAGE_SIZE - 1) // BINDINGS_PAGE_SIZE)
+    offset = (page - 1) * BINDINGS_PAGE_SIZE
+    page_rows = all_rows[offset:offset + BINDINGS_PAGE_SIZE]
+
+    return templates.TemplateResponse(request, "backport_bindings.html", {
+        "rows": page_rows, "total": total, "q": q, "status": status,
+        "page": page, "total_pages": total_pages, "counts": counts,
+        "status_labels": STATUS_LABELS, "index_missing": index_missing,
     })
 
 
