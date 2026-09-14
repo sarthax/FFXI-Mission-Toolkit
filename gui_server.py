@@ -1701,6 +1701,16 @@ def _llm_models(base_url: str) -> tuple[list[dict], str | None]:
         return [], str(e)
 
 
+def _model_supports_vision(models: list[dict], model_id: str) -> bool:
+    """True if `model_id` is one of `models` (from _llm_models()) AND reports the "vision"
+    capability. False (not True) for a model_id not found in the list at all -- an unknown/stale
+    selection should never be treated as vision-capable by default."""
+    for m in models:
+        if m.get("id") == model_id:
+            return "vision" in m.get("ollama", {}).get("capabilities", [])
+    return False
+
+
 LLM_TOOLS_SYSTEM_PROMPT = (
     "You can use tools to answer questions using this project's real, live database. Available tools:\n"
     + "\n".join(f"- {desc}" for _fn, desc in llm_db_tools.TOOLS.values())
@@ -1814,6 +1824,7 @@ async def llm_submit(request: Request):
     values = settings_mod.get_all(con)
     con.close()
     model = form.get("model", "").strip() or values["llm_default_model"]
+    models, models_error = _llm_models(values["llm_base_url"])
 
     # File-path summarize input: read the file server-side and fold it into the prompt, rather
     # than requiring it be pasted by hand. A prompt AND a file both given appends the file's
@@ -1859,6 +1870,16 @@ async def llm_submit(request: Request):
             call_error = "Prompt (or a file path) is required."
         elif use_db_tools and image_b64:
             call_error = "Read-only DB tools and image attachments can't be combined -- pick one."
+        elif image_b64 and not _model_supports_vision(models, model):
+            # Real error found live 2026-09-14: sending an image to a non-vision model gets a
+            # generic "Multimodal data provided, but model does not support multimodal requests"
+            # from Open WebUI -- correct but unhelpful (doesn't say WHICH models would work).
+            # Caught here with a clear, actionable message instead of surfacing the raw API error;
+            # the model dropdown's own JS also filters to vision models once an image is chosen,
+            # so this is a safety net for a stale selection, not the primary defense.
+            vision_models = ", ".join(m["id"] for m in models if "vision" in m.get("ollama", {}).get("capabilities", [])) or "(none currently loaded)"
+            call_error = (f"'{model}' doesn't support image input. Vision-capable models "
+                          f"currently loaded: {vision_models}.")
         else:
             try:
                 timeout = LLM_PAGE_TIMEOUT * (2 if image_b64 else 1)
@@ -1892,8 +1913,6 @@ async def llm_submit(request: Request):
             except llm_client.LLMClientError as e:
                 call_error = str(e)
                 llm_log.record(log_source, model, prompt, error=call_error)
-
-    models, models_error = _llm_models(values["llm_base_url"])
 
     return templates.TemplateResponse(request, "llm.html", {
         "values": values, "models": models, "models_error": models_error,

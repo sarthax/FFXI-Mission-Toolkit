@@ -45,16 +45,20 @@
       <br><input type="text" name="file_path" value="{{ file_path }}" style="width:420px;" placeholder="e.g. C:\your\backport\checkout\reports\some_report.md">
     </label>
     <label>Or attach an image (needs a vision-capable model, e.g. ornith-1.5:9b, gemma4:26b)
-      <br><input type="file" name="image" accept="image/*">
+      <br><input type="file" name="image" accept="image/*" id="llm-image-input">
     </label>
   </div>
+  <p id="llm-image-model-warning" class="muted" style="color:var(--red); display:none; margin:0;">
+    An image is attached -- switched to a vision-capable model. Non-vision models are hidden from
+    the list below while an image is attached (sending one to a non-vision model always fails).</p>
 
   <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end;">
     <label>Model
-      <br><select name="model">
+      <br><select name="model" id="llm-model-select">
         {% if models %}
           {% for m in models %}
-          <option value="{{ m.id }}" {% if m.id == model %}selected{% endif %}>{{ m.id }}
+          <option value="{{ m.id }}" {% if m.id == model %}selected{% endif %}
+            data-vision="{{ 'vision' in m.get('ollama', {}).get('capabilities', []) }}">{{ m.id }}
             {% set caps = m.get('ollama', {}).get('capabilities', []) %}
             {% if caps %}({{ caps|join(', ') }}){% endif %}
           </option>
@@ -163,6 +167,36 @@ document.getElementById("llm-form").addEventListener("submit", function () {
   document.getElementById("llm-submit-btn").disabled = true;
   document.getElementById("llm-spinner").style.display = "inline";
 });
+
+// An image attached to a non-vision model always fails server-side (Open WebUI's own error:
+// "Multimodal data provided, but model does not support multimodal requests") -- filter the
+// model list down to vision-capable ones the moment an image is chosen, and switch away from a
+// non-vision selection automatically, rather than letting that failure happen at all.
+var imageInput = document.getElementById("llm-image-input");
+var modelSelect = document.getElementById("llm-model-select");
+var imageWarning = document.getElementById("llm-image-model-warning");
+
+function applyVisionFilter() {
+  var hasImage = imageInput.files && imageInput.files.length > 0;
+  var options = Array.from(modelSelect.options);
+  var currentIsVision = false;
+  options.forEach(function (opt) {
+    var isVision = opt.dataset.vision === "True" || opt.dataset.vision === "true";
+    opt.hidden = hasImage && !isVision;
+    if (opt.selected && isVision) currentIsVision = true;
+  });
+  imageWarning.style.display = hasImage ? "block" : "none";
+  if (hasImage && !currentIsVision) {
+    var firstVision = options.find(function (opt) {
+      return opt.dataset.vision === "True" || opt.dataset.vision === "true";
+    });
+    if (firstVision) modelSelect.value = firstVision.value;
+  }
+}
+if (imageInput && modelSelect) {
+  imageInput.addEventListener("change", applyVisionFilter);
+  applyVisionFilter();
+}
 
 var QUICK_ACTIONS = {{ quick_actions|tojson }};
 var qaSelect = document.getElementById("quick-action-select");
