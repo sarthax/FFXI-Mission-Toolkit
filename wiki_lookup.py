@@ -20,7 +20,7 @@ import json
 import re
 from pathlib import Path
 
-DUMP_PATH = Path(__file__).parent / "ffxi-wiki-dumps-dist/bg-wiki.jsonl.gz"
+DUMP_PATH = Path(__file__).parent / "vendor/ffxi-wiki-dumps-dist/bg-wiki.jsonl.gz"
 
 
 def load_pages():

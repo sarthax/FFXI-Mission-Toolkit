@@ -10,14 +10,14 @@ install would otherwise have to regenerate the slow way.
 An addon is a single self-contained .zip under addons/, containing:
   - manifest.json -- {"name", "description", "created" (ISO date), "files": {relpath: sha256}}
   - the real data file(s) themselves, at whatever relative-to-TOOLS_ROOT paths manifest.json's
-    "files" keys say (e.g. "ffxi-wiki-dumps-dist/bg-wiki.jsonl.gz")
+    "files" keys say (e.g. "vendor/ffxi-wiki-dumps-dist/bg-wiki.jsonl.gz")
 
 Usage:
     py -3 addon_tools.py list
     py -3 addon_tools.py install bg-wiki-dump
     py -3 addon_tools.py install bg-wiki-dump --force     # overwrite an existing different file
     py -3 addon_tools.py package bg-wiki-dump \\
-        ffxi-wiki-dumps-dist/bg-wiki.jsonl.gz \\
+        vendor/ffxi-wiki-dumps-dist/bg-wiki.jsonl.gz \\
         --description "BG Wiki page dump (real scraped content, see scrape_bg_wiki.py)"
 """
 import argparse

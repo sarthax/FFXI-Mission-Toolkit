@@ -33,7 +33,7 @@ import urllib.request
 from pathlib import Path
 
 TOOLS_ROOT = Path(__file__).parent
-DUMP_PATH = TOOLS_ROOT / "ffxi-wiki-dumps-dist" / "bg-wiki.jsonl.gz"
+DUMP_PATH = TOOLS_ROOT / "vendor/ffxi-wiki-dumps-dist" / "bg-wiki.jsonl.gz"
 API_URL = "https://www.bg-wiki.com/api.php"
 USER_AGENT = "mission-toolkit-bgwiki-sync/1.0 (local FFXI/Topaz private-server toolkit; incremental sync bot)"
 CRAWL_DELAY_SECONDS = 30  # real value from https://www.bg-wiki.com/robots.txt's `User-agent: *` block

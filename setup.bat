@@ -147,7 +147,7 @@ echo Indexing dialog text for every zone (this can take a few minutes)...
 %PY% build_dialog_index.py --all --quiet --ffxi-path "%FFXI_PATH%"
 
 REM --- 11. Create remaining tables the web pages expect (Assault mission text, key items) ---
-REM Real source data for these (MassExtractor_output/) isn't bundled -- see SETUP.md. This just
+REM Real source data for these (MassExtractor_output/) isn't bundled -- see docs\guides\SETUP.md. This just
 REM creates the tables so the pages don't error; they'll show 0 entries until that data exists.
 echo.
 echo Setting up remaining reference tables...
@@ -176,7 +176,7 @@ if exist "%~dp0LandSandBoat\sql" (
     echo   %~dp0LandSandBoat
 )
 
-REM --- 14. BG Wiki page dump -- ships pre-bundled (ffxi-wiki-dumps-dist\bg-wiki.jsonl.gz), so this
+REM --- 14. BG Wiki page dump -- ships pre-bundled (vendor\ffxi-wiki-dumps-dist\bg-wiki.jsonl.gz), so this
 REM is just a quick incremental sync to catch anything the wiki has changed since that snapshot
 REM was taken. Never blocks setup -- if it fails, the homepage's own "Rebuild" button retries it.
 echo.

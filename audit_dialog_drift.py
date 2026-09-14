@@ -26,7 +26,7 @@ TOOLS_ROOT = Path(__file__).parent
 import settings
 
 TOPAZ_ROOT = settings.get_topaz_root()
-XI_TINKERER_EXE = TOOLS_ROOT / "xi-tinkerer/target/release/xi-tinkerer-cli.exe"
+XI_TINKERER_EXE = TOOLS_ROOT / "vendor/xi-tinkerer/target/release/xi-tinkerer-cli.exe"
 # Settings' ffxi_install_path if configured (registry-autodetected too, see get_ffxi_install()),
 # else this literal -- kept only as a documented last-resort example, not assumed to match anyone
 # else's real install location.

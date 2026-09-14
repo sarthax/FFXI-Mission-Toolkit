@@ -93,17 +93,29 @@ creates a new one from any real file(s) already present.
   hand-authored content; `gui/static/` otherwise doesn't exist until a zone is viewed. Added to
   `reset_install.py`'s `TARGET_DIRS`.
 
+## Consolidated under `vendor/` (settled 2026-09-14)
+
+The vendored/cloned third-party tool checkouts flagged below were never individually resolved as
+strip-vs-keep -- instead, consolidated under one `vendor/` directory (repo-root cleanup, requested
+separately from the strip-vs-keep question) so they're at least visibly separated from this
+project's own code, even though the strip-vs-keep decision for each is still genuinely open:
+`xi-model-viewer/`, `xi-tinkerer/`, `dat-extractor/`, `xi-events-py/`, `xi-tinkerer-py/`,
+`Packetlyzer/`, `ResourceBuilder/`, `ResourceExtractor/`, `Resources/`, `VieweD-master/`,
+`XiEvents/`, `FFXI-EventsDump/`, `FFXI-Resources/`, `FFXIDat/`, `ffxi/`, `reference_addons/`,
+`upx/`, `ffxi-wiki-dumps-dist/`. Every real code path referencing one of these
+(`TOOLS_ROOT / "..."` style constants, ~20 across the codebase) was updated to the new
+`vendor/<name>` location and verified live (GUI homepage/Packet Decoder pages load with zero
+errors, `addons/bg-wiki-dump.zip`'s manifest re-packaged since it hardcoded the old path).
+`FFXI-DATS/`, `FFXI-Resources-dist/`, and `LandSandBoat/` deliberately stay at the repo root, not
+under `vendor/` -- they're gitignored, re-fetched install artifacts (see "Confirmed: strip" above),
+not checked-in vendored source.
+
 ## Needs a follow-up check before deciding (flagged, not yet settled)
 
-- `xi-model-viewer/` (~75MB), `xi-tinkerer/` (~16MB, minus the fetched .exe above),
-  `dat-extractor/` (~1.5MB), `xi-events-py/`, `xi-tinkerer-py/`, `Packetlyzer/`, `ResourceBuilder/`
-  (~15MB), `ResourceExtractor/`, `Resources/` (~14MB), `VieweD-master/` (~9.6MB), `XiEvents/`,
-  `FFXI-EventsDump/`, `FFXI-Resources/`, `FFXIDat/`, `ffxi/` (~11MB) -- all look like vendored/
-  cloned external tool checkouts (per TOOLING_OVERVIEW.md) rather than this project's own code, but
-  none has been individually confirmed yet as "safe to strip and re-clone" vs. "modified locally /
-  no upstream to re-fetch from." Check each against TOOLING_OVERVIEW.md and whether
-  install_external_tools.py / install_xi_tinkerer.py (or another install script) actually manages
-  it before stripping.
+The `vendor/` directories above are still not individually confirmed as "safe to strip and
+re-clone" vs. "modified locally / no upstream to re-fetch from." Check each against
+`TOOLING_OVERVIEW.md` and whether `install_external_tools.py` / `install_xi_tinkerer.py` (or
+another install script) actually manages it before stripping.
 
 ## How to use this doc
 

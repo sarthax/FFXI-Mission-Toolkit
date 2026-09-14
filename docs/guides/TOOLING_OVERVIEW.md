@@ -1,5 +1,13 @@
 # FFXI-Tools Complete Inventory
 
+**Note (2026-09-14):** this is a historical snapshot from when these tools lived under a separate
+`D:/Claude/FFXI-Tools/` checkout, since consolidated into this repo. Every directory named below
+(`dat-extractor/`, `xi-tinkerer/`, `XiEvents/`, `Packetlyzer/`, etc.) now lives under this repo's
+own `vendor/` directory instead -- e.g. `dat-extractor/` mentioned below is `vendor/dat-extractor/`
+here. Kept as-is otherwise (not rewritten) since it's a dated snapshot of what changed in one past
+session, not a living reference -- see `TOOLING_OVERVIEW.md`'s own per-tool sections for what each
+one actually does, just resolve its path through `vendor/` first.
+
 Full inventory of the FFXI research/tooling pipeline as of 2026-08-31: what existed before, what changed this session, and what was newly built. All paths relative to `D:/Claude/FFXI-Tools/` unless noted. "Ground truth" tools (real client dats, real Topaz source) are called out explicitly vs. reference-only sources (wikis, external retail dumps).
 
 ---

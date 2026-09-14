@@ -38,7 +38,7 @@ import wiki_lookup
 TOOLS_ROOT = Path(__file__).parent
 TOPAZ_ROOT = settings.get_topaz_root()
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
-DUMP_PATH = TOOLS_ROOT / "ffxi-wiki-dumps-dist/bg-wiki.jsonl.gz"
+DUMP_PATH = TOOLS_ROOT / "vendor/ffxi-wiki-dumps-dist/bg-wiki.jsonl.gz"
 
 # Non-entity link namespaces -- real MediaWiki convention, not something specific to BG Wiki.
 NON_ENTITY_PREFIXES = ("image:", "file:", "category:", "media:", "template:", "user:", "special:")

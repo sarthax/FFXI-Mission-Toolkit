@@ -67,9 +67,9 @@ import settings
 TOOLS_ROOT = Path(__file__).parent
 TOPAZ_ROOT = settings.get_topaz_root()
 DEFAULT_FFXI_PATH = settings.get_ffxi_install() or "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
-DAT_EXTRACTOR_DLL = TOOLS_ROOT / "dat-extractor/bin/Debug/net9.0/dat-extractor.dll"
-ALTANA_ZONES_CSV = TOOLS_ROOT / "ffxi/reference/AltanaViewer_zones.csv"
-OPCODE_TABLE = json.loads((TOOLS_ROOT / "XiEvents/opcode_table.json").read_text())
+DAT_EXTRACTOR_DLL = TOOLS_ROOT / "vendor/dat-extractor/bin/Debug/net9.0/dat-extractor.dll"
+ALTANA_ZONES_CSV = TOOLS_ROOT / "vendor/ffxi/reference/AltanaViewer_zones.csv"
+OPCODE_TABLE = json.loads((TOOLS_ROOT / "vendor/XiEvents/opcode_table.json").read_text())
 SIZES = {int(k): v for k, v in OPCODE_TABLE["sizes"].items()}
 NAMES = {int(k): v for k, v in OPCODE_TABLE["names"].items()}
 

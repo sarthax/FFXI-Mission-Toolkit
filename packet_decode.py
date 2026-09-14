@@ -33,7 +33,7 @@ import sys
 from pathlib import Path
 
 TOOLS_ROOT = Path(__file__).parent
-PACKETLYZER_ROOT = TOOLS_ROOT / "Packetlyzer"
+PACKETLYZER_ROOT = TOOLS_ROOT / "vendor" / "Packetlyzer"
 sys.path.insert(0, str(PACKETLYZER_ROOT))
 
 from analyzer.decoder import PacketDecoder, DecodedPacket, DecodedField  # noqa: E402

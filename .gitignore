@@ -22,5 +22,5 @@ gui_server.log
 LandSandBoat/
 FFXI-DATS/
 FFXI-Resources-dist/
-xi-tinkerer/target/
+vendor/xi-tinkerer/target/
 gui/static/zone_visual/

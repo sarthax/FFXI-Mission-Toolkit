@@ -29,7 +29,7 @@ def install_xi_tinkerer_cli() -> tuple[bool, str]:
     """Downloads the real prebuilt xi-tinkerer-cli.exe from InoUno/xi-tinkerer's latest real
     (non-prerelease) GitHub release -- confirmed live this session that this repo actually ships
     a ready-to-run Windows exe as a release asset, no Rust/cargo build needed at all."""
-    dest = TOOLS_ROOT / "xi-tinkerer" / "target" / "release" / "xi-tinkerer-cli.exe"
+    dest = TOOLS_ROOT / "vendor" / "xi-tinkerer" / "target" / "release" / "xi-tinkerer-cli.exe"
     if dest.exists():
         return True, "already installed"
 

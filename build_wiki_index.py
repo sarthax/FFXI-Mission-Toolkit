@@ -24,7 +24,7 @@ import wiki_compile
 
 TOOLS_ROOT = Path(__file__).parent
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
-DUMP_PATH = TOOLS_ROOT / "ffxi-wiki-dumps-dist/bg-wiki.jsonl.gz"
+DUMP_PATH = TOOLS_ROOT / "vendor/ffxi-wiki-dumps-dist/bg-wiki.jsonl.gz"
 
 
 def normalize(name: str) -> str:

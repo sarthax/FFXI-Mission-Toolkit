@@ -69,7 +69,7 @@ TEMPLATES_DIR = TOOLS_ROOT / "gui" / "templates"
 # Real in-game 2D zone map PNGs, extracted straight from client DAT files by ResourceExtractor's
 # MapParser (see MapDats.json) -- "{zoneid}_{mapindex}.png", one file per submap/floor. Served
 # directly from ResourceExtractor's own output dir rather than duplicating 164MB into gui/static.
-MAPS_DIR = TOOLS_ROOT / "ResourceExtractor" / "bin" / "Release" / "net9.0-windows" / "resources" / "maps"
+MAPS_DIR = TOOLS_ROOT / "vendor" / "ResourceExtractor" / "bin" / "Release" / "net9.0-windows" / "resources" / "maps"
 # Real, coordinate-aligned top-down silhouettes rasterized from the client's own collision mesh
 # (build_zone_topdown.py) -- unlike MAPS_DIR's decorative minimap PNGs, a path plotted using this
 # cache's own transform.json lands in the right place by construction (verified empirically
@@ -294,7 +294,7 @@ def rebuild_global_tables(ffxi_path: str) -> tuple[int, int]:
 # Where each optional (not bundled) external data source is expected to land, and where to get
 # it if it isn't there -- real repos/tools already confirmed this session, not guessed.
 FFXI_DATS_DIR = TOOLS_ROOT / "FFXI-DATS"
-XI_TINKERER_CLI = TOOLS_ROOT / "xi-tinkerer" / "target" / "release" / "xi-tinkerer-cli.exe"
+XI_TINKERER_CLI = TOOLS_ROOT / "vendor" / "xi-tinkerer" / "target" / "release" / "xi-tinkerer-cli.exe"
 
 
 def system_status(con: sqlite3.Connection) -> list[dict]:
@@ -471,7 +471,7 @@ def system_status(con: sqlite3.Connection) -> list[dict]:
             "rebuild": "bgwiki" if bg_wiki_page_count else None,
             "rebuild_note": "incremental sync against bg-wiki.com's own API (only pages changed since the last sync) -- usually seconds to a few minutes",
             "missing": None if bg_wiki_page_count else {
-                "what": "the BG Wiki dump (D:\\Claude\\mission_toolkit\\ffxi-wiki-dumps-dist\\bg-wiki.jsonl.gz)",
+                "what": "the BG Wiki dump (vendor/ffxi-wiki-dumps-dist/bg-wiki.jsonl.gz)",
                 "where_label": "bg-wiki.com (fetched live via its own API)",
                 "where_url": "https://www.bg-wiki.com/",
                 "how": (
@@ -482,7 +482,7 @@ def system_status(con: sqlite3.Connection) -> list[dict]:
                     "~8 hour crawl (respects the site's own Crawl-Delay: 30), not something to "
                     "trigger from this button. If another install of this toolkit already has the "
                     "dump, `py -3 addon_tools.py package bg-wiki-dump "
-                    "ffxi-wiki-dumps-dist/bg-wiki.jsonl.gz` there packages it for this button "
+                    "vendor/ffxi-wiki-dumps-dist/bg-wiki.jsonl.gz` there packages it for this button "
                     "instead of re-crawling."
                 ),
                 "install_tool": (

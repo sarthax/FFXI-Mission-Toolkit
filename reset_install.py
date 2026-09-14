@@ -43,8 +43,8 @@ TARGET_FILES = [
     ("ffxi_zone_database.db-shm", "SQLite shared-memory index"),
     ("gui_server.log", "runtime log"),
     ("toolkit_config.txt", "setup.bat's saved FFXI/Topaz path answers"),
-    ("xi-tinkerer/target/release/xi-tinkerer-cli.exe", "fetched xi-tinkerer binary (not the rest "
-                                                         "of xi-tinkerer/, which is real source)"),
+    ("vendor/xi-tinkerer/target/release/xi-tinkerer-cli.exe", "fetched xi-tinkerer binary (not the "
+                                                                "rest of xi-tinkerer/, which is real source)"),
 ]
 # __pycache__ can appear under any subdirectory, not just the root -- found via rglob rather than
 # a fixed path list.

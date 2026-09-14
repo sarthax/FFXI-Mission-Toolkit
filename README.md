@@ -55,7 +55,7 @@ digging through raw DAT files or SQL dumps by hand.
 - [`xi-tinkerer`](https://github.com/InoUno/xi-tinkerer) / `xi-tinkerer-py` — DAT parsing, installed
   automatically by setup
 - A handful of smaller third-party tools bundled as subfolders (dat extraction, resource
-  parsing/building, packet capture) — see [`TOOLING_OVERVIEW.md`](TOOLING_OVERVIEW.md) for the
+  parsing/building, packet capture) — see [`TOOLING_OVERVIEW.md`](docs/guides/TOOLING_OVERVIEW.md) for the
   full list. Each keeps its own license in its own folder (see **License** below).
 
 ## Setup
@@ -70,7 +70,7 @@ digging through raw DAT files or SQL dumps by hand.
    of this reads every zone in the game); later runs are instant.
 5. It opens automatically at **http://127.0.0.1:8420**.
 
-Full detail, including how to rebuild individual pieces later, is in [`SETUP.md`](SETUP.md).
+Full detail, including how to rebuild individual pieces later, is in [`SETUP.md`](docs/guides/SETUP.md).
 
 ## Build & Run
 

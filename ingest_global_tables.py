@@ -32,7 +32,7 @@ import xi_tinkerer
 TOOLS_ROOT = Path(__file__).parent
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
 MASS_EXTRACTOR_DIR = TOOLS_ROOT / "MassExtractor_output"
-DAT_EXTRACTOR_EXE = TOOLS_ROOT / "dat-extractor/bin/Debug/net9.0/dat-extractor.exe"
+DAT_EXTRACTOR_EXE = TOOLS_ROOT / "vendor/dat-extractor/bin/Debug/net9.0/dat-extractor.exe"
 DEFAULT_FFXI_PATH = "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
 
 # 2026-09-06: real fix -- these two tables don't actually need MassExtractor at all. Both are

@@ -34,7 +34,7 @@ import settings
 TOOLS_ROOT = Path(__file__).parent
 TOPAZ_ROOT = settings.get_topaz_root()
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
-DAT_EXTRACTOR_EXE = TOOLS_ROOT / "dat-extractor/bin/Debug/net9.0/dat-extractor.exe"
+DAT_EXTRACTOR_EXE = TOOLS_ROOT / "vendor/dat-extractor/bin/Debug/net9.0/dat-extractor.exe"
 DEFAULT_FFXI_PATH = "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
 
 # NAME = 1234[, -- optional comment] -- matches every entry in a zone's IDs.lua text{} block,

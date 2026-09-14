@@ -30,7 +30,7 @@ from pathlib import Path
 TOOLS_ROOT = Path(__file__).parent
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
 MISSION_REPORTS = TOOLS_ROOT / "mission_reports"
-XI_EVENTS_BRIDGE = TOOLS_ROOT / "xi-events-py/decompile_from_mission_toolkit.py"
+XI_EVENTS_BRIDGE = TOOLS_ROOT / "vendor/xi-events-py/decompile_from_mission_toolkit.py"
 DEFAULT_FFXI_PATH = "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
 
 

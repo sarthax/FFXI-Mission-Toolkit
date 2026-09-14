@@ -32,7 +32,7 @@ import struct
 from pathlib import Path
 
 TOOLS_ROOT = Path(__file__).parent
-DAT_EXTRACTOR_DLL = TOOLS_ROOT / "dat-extractor/bin/Debug/net9.0/dat-extractor.dll"
+DAT_EXTRACTOR_DLL = TOOLS_ROOT / "vendor/dat-extractor/bin/Debug/net9.0/dat-extractor.dll"
 DEFAULT_FFXI_PATH = "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
 ENTITY_MODEL_OFFSET = 98239  # xi-model-viewer dat/modelids.js -- monster/NPC flat model range
 
