@@ -77,6 +77,12 @@
     <a href="/wiki">Wiki Compiler</a>
     <a href="/packets">Packet Decoder</a>
     <a href="/llm">LLM Assistant</a>
+    {% if backport_enabled() %}
+    <span class="navlabel">Backport</span>
+    <a href="/iddrift">ID Drift</a>
+    <a href="/backport/lua-convert">Lua Converter</a>
+    <a href="/backport/sql-convert">SQL Converter</a>
+    {% endif %}
     <span style="margin-left:auto; display:flex; gap:16px; align-items:center;">
       <form method="post" action="/theme/toggle" style="display:contents;">
         <button type="submit" class="theme-toggle" title="{{ 'Switch to light theme' if current_theme() == 'dark' else 'Switch to dark theme' }}">
@@ -104,11 +110,7 @@
     <a href="/keyitems">Key Items</a>
     <a href="/items">Item Browser</a>
     {% if backport_enabled() %}
-    <span class="navlabel">Backport</span>
-    <a href="/iddrift">ID Drift</a>
-    <a href="/backport/lua-convert">Lua Converter</a>
     <a href="/backport/bindings">Binding Reference</a>
-    <a href="/backport/sql-convert">SQL Converter</a>
     {% endif %}
   </div>
 </header>
