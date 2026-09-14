@@ -1826,17 +1826,41 @@ def _suggest_grep_prompt(line_text: str, citation: str = "") -> str:
 
 
 def _capture_summary_prompt(con: sqlite3.Connection, capture_id: int) -> str | None:
-    """Shared with /llm/quick-action-prompt -- returns None if the capture doesn't exist."""
+    """Shared with /llm/quick-action-prompt -- returns None if the capture doesn't exist.
+
+    Pulls real sampled CONTENT (named entities, combat actions, events, chat) from the capture's
+    own indexed tables, not just metadata/row counts -- a model asked to summarize "139 npc
+    entries, 74 events" has nothing to actually describe; a model given "Qutrub cast Thunder,
+    Absorb-STR, Stun; Lamia Graverobber cast Waterga III" can write something a developer would
+    actually find useful. Every table is queried defensively (a capture format that doesn't
+    populate a given table, e.g. no chat log, just contributes an empty section, not an error)."""
     row = con.execute("SELECT * FROM captures WHERE capture_id=?", (capture_id,)).fetchone()
     if not row:
         return None
     cap = dict(row)
     tags = build_capture_index.get_capture_tags(con, capture_id)
+
     hp_events = con.execute(
         "SELECT mob_name, hp_low, hp_high FROM capture_hp_events WHERE capture_id=? ORDER BY seq LIMIT 30",
         (capture_id,)).fetchall()
     n_history = con.execute("SELECT COUNT(*) FROM capture_npc_history WHERE capture_id=?", (capture_id,)).fetchone()[0]
     n_events = con.execute("SELECT COUNT(*) FROM capture_events WHERE capture_id=?", (capture_id,)).fetchone()[0]
+
+    named_entities = con.execute(
+        "SELECT DISTINCT name FROM capture_npc_entries WHERE capture_id=? AND name IS NOT NULL "
+        "AND name NOT LIKE '\\_%' ESCAPE '\\' ORDER BY name LIMIT 25", (capture_id,)).fetchall()
+    actions = con.execute(
+        "SELECT actor_name, name FROM capture_actions WHERE capture_id=? AND name IS NOT NULL "
+        "ORDER BY ts LIMIT 25", (capture_id,)).fetchall()
+    events = con.execute(
+        "SELECT DISTINCT opcode_name, entity_name FROM capture_events WHERE capture_id=? "
+        "AND entity_name IS NOT NULL ORDER BY seq LIMIT 25", (capture_id,)).fetchall()
+    chat = con.execute(
+        "SELECT text FROM capture_caplog_chat WHERE capture_id=? AND text IS NOT NULL "
+        "ORDER BY seq LIMIT 15", (capture_id,)).fetchall()
+    ki_events = con.execute(
+        "SELECT keyitem_name FROM capture_ki_events WHERE capture_id=? AND keyitem_name IS NOT NULL "
+        "ORDER BY seq LIMIT 15", (capture_id,)).fetchall()
 
     zones = json.loads(cap["zones"]) if cap.get("zones") else []
     lines = [
@@ -1848,6 +1872,20 @@ def _capture_summary_prompt(con: sqlite3.Connection, capture_id: int) -> str | N
         f"tags: {', '.join(tags) or '(none)'}",
         f"npc history deltas: {n_history}, real events: {n_events}",
     ]
+    if named_entities:
+        lines.append("Named entities present (sample): " + ", ".join(r["name"] for r in named_entities))
+    if actions:
+        lines.append("Combat/ability actions in order (actor: action, sample): " + "; ".join(
+            f"{a['actor_name']}: {a['name']}" for a in actions if a["actor_name"]
+        ))
+    if events:
+        lines.append("Notable events (type -- entity, sample): " + "; ".join(
+            f"{e['opcode_name']} -- {e['entity_name']}" for e in events
+        ))
+    if chat:
+        lines.append("Chat/system text (sample): " + " | ".join(c["text"] for c in chat if c["text"]))
+    if ki_events:
+        lines.append("Key items obtained (sample): " + ", ".join(k["keyitem_name"] for k in ki_events))
     if hp_events:
         lines.append("HP events (mob, hp% range): " + "; ".join(
             f"{h['mob_name']} {h['hp_low']}-{h['hp_high']}%" for h in hp_events
