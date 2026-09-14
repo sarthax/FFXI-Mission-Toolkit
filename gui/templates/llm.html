@@ -15,7 +15,26 @@
   {% if "No API key" in models_error %}See <a class="inline" href="/settings">Settings</a>.{% endif %}</p>
 {% endif %}
 
+<div class="table-wrap" style="padding:14px; margin-bottom:14px;">
+  <label class="muted">Quick action -- loads the SAME real prompt template a quick-action button
+    elsewhere in the toolkit sends (Lua Converter's "Ask LLM", a capture's "summarize with LLM"),
+    so you can use/inspect them here without hunting for the page they normally live on.</label>
+  <br>
+  <select id="quick-action-select">
+    <option value="">(none -- write your own prompt below)</option>
+    {% for key, action in quick_actions.items() %}
+    <option value="{{ key }}">{{ action.label }}</option>
+    {% endfor %}
+  </select>
+  <div id="quick-action-fields" style="display:none; margin-top:10px; display:flex; flex-direction:column; gap:8px;"></div>
+  <div id="quick-action-error" class="muted" style="color:var(--red); display:none; margin-top:6px;"></div>
+  <div style="margin-top:8px; display:none;" id="quick-action-load-row">
+    <button type="button" id="quick-action-load-btn">Load prompt below</button>
+  </div>
+</div>
+
 <form method="post" action="/llm" enctype="multipart/form-data" id="llm-form" style="display:flex; flex-direction:column; gap:10px;">
+  <input type="hidden" name="quick_action" id="quick-action-hidden" value="">
   <label>Prompt
     <textarea name="prompt" rows="8" style="width:100%; font-family:monospace; font-size:0.9em;"
       placeholder="Ask the local model something...">{{ prompt }}</textarea>
@@ -117,6 +136,78 @@
 document.getElementById("llm-form").addEventListener("submit", function () {
   document.getElementById("llm-submit-btn").disabled = true;
   document.getElementById("llm-spinner").style.display = "inline";
+});
+
+var QUICK_ACTIONS = {{ quick_actions|tojson }};
+var qaSelect = document.getElementById("quick-action-select");
+var qaFieldsDiv = document.getElementById("quick-action-fields");
+var qaErrorDiv = document.getElementById("quick-action-error");
+var qaLoadRow = document.getElementById("quick-action-load-row");
+var qaHidden = document.getElementById("quick-action-hidden");
+var promptBox = document.querySelector('textarea[name="prompt"]');
+
+qaSelect.addEventListener("change", function () {
+  qaErrorDiv.style.display = "none";
+  qaFieldsDiv.innerHTML = "";
+  var key = qaSelect.value;
+  if (!key) {
+    qaFieldsDiv.style.display = "none";
+    qaLoadRow.style.display = "none";
+    return;
+  }
+  var action = QUICK_ACTIONS[key];
+  action.fields.forEach(function (f) {
+    var label = document.createElement("label");
+    label.className = "muted";
+    label.textContent = f.label;
+    var input = document.createElement(f.type === "textarea" ? "textarea" : "input");
+    input.name = "qa_" + f.name;
+    input.style.width = "100%";
+    input.style.fontFamily = "monospace";
+    if (f.type === "textarea") { input.rows = 3; } else { input.type = f.type; }
+    label.appendChild(document.createElement("br"));
+    label.appendChild(input);
+    qaFieldsDiv.appendChild(label);
+  });
+  qaFieldsDiv.style.display = "flex";
+  qaLoadRow.style.display = "block";
+});
+
+document.getElementById("quick-action-load-btn").addEventListener("click", async function () {
+  var key = qaSelect.value;
+  if (!key) return;
+  qaErrorDiv.style.display = "none";
+  var fd = new FormData();
+  fd.append("action", key);
+  QUICK_ACTIONS[key].fields.forEach(function (f) {
+    var input = qaFieldsDiv.querySelector('[name="qa_' + f.name + '"]');
+    fd.append(f.name, input.value);
+  });
+  var btn = this;
+  btn.disabled = true;
+  try {
+    var resp = await fetch("/llm/quick-action-prompt", { method: "POST", body: fd });
+    var data = await resp.json();
+    if (!resp.ok) {
+      qaErrorDiv.textContent = data.error || "Could not load this quick action's prompt.";
+      qaErrorDiv.style.display = "block";
+    } else {
+      promptBox.value = data.prompt;
+      qaHidden.value = key;
+    }
+  } catch (e) {
+    qaErrorDiv.textContent = "Request failed: " + e;
+    qaErrorDiv.style.display = "block";
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// Editing the prompt after loading a quick action means it's no longer exactly that action's
+// template -- revert the log tag to "manual" (empty quick_action) rather than mislabeling an
+// edited prompt as the original quick action.
+promptBox.addEventListener("input", function () {
+  qaHidden.value = "";
 });
 
 var copyBtn = document.getElementById("copy-as-comment-btn");
