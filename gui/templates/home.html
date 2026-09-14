@@ -1,9 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Mission Toolkit{% endblock %}
 {% block content %}
-<h1>Mission Toolkit</h1>
-<p class="muted">Local browsable front end over the indexed real client/server data. Read-only.</p>
-
 {% if rebuilt %}
 <div class="flash {{ 'flash-ok' if rebuilt_ok else 'flash-error' }}">
   {% if rebuilt_ok %}
@@ -13,15 +10,6 @@
   {% endif %}
 </div>
 {% endif %}
-
-<div class="stats">
-  <div class="stat"><div class="n">{{ "{:,}".format(stats.dialog_entries) }}</div><div class="l">dialog entries · {{ stats.dialog_zones }} zones</div></div>
-  <a class="stat" href="/entity" style="text-decoration:none; color:inherit;"><div class="n">{{ "{:,}".format(stats.npc_entries) }}</div><div class="l">NPC/mob names · {{ stats.npc_zones }} zones</div></a>
-  <div class="stat"><div class="n">{{ stats.missions }}</div><div class="l">Assault missions</div></div>
-  <div class="stat"><div class="n">{{ "{:,}".format(stats.keyitems) }}</div><div class="l">key items</div></div>
-  <div class="stat"><div class="n">{{ "{:,}".format(stats.sql_npc_list) }}</div><div class="l">sql npc_list rows indexed</div></div>
-  <div class="stat"><div class="n">{{ "{:,}".format(stats.drift_mismatches) }}</div><div class="l">dialog drift mismatches found</div></div>
-</div>
 
 <h2>Data &amp; Tools</h2>
 <p class="muted">What's actually loaded right now, and how to get anything that's missing.</p>
