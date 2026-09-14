@@ -25,11 +25,13 @@ from pathlib import Path
 
 DB_PATH = Path(__file__).parent / "ffxi_zone_database.db"
 
-# Keep the stored prompt/response bounded -- this is a review log, not a full transcript archive;
-# a multi-thousand-line generated Lua conversion or capture-log summary would otherwise bloat the
-# settings DB for no real benefit (the full text is always still on disk wherever the caller wrote
-# it, if it wrote it anywhere at all).
-MAX_STORED_CHARS = 4000
+# Keep the stored prompt/response bounded -- this is a review log, not an unbounded archive. Set
+# to match LLM_FILE_SUMMARY_MAX_CHARS (gui_server.py) -- the file-summarize quick action alone
+# already builds prompts up to that size, so a lower cap here was silently truncating away a
+# real, common case's own input before it ever reached the log, not just some hypothetical huge
+# prompt. Any single call still over this (a very long tool-call transcript, a huge file) gets
+# truncated with a visible marker rather than silently dropped.
+MAX_STORED_CHARS = 40000
 
 
 def init_db(con: sqlite3.Connection):
@@ -124,6 +126,24 @@ def recent(limit: int = 50, source: str | None = None, model: str | None = None,
             )
             out.append(d)
         return out
+    finally:
+        con.close()
+
+
+def get_by_id(log_id: int) -> dict | None:
+    """One full row (up to MAX_STORED_CHARS per field, same as recent() -- there is no separate
+    unbounded copy anywhere) for the log detail page. None if no such id."""
+    con = sqlite3.connect(str(DB_PATH))
+    try:
+        init_db(con)
+        con.row_factory = sqlite3.Row
+        row = con.execute("SELECT * FROM llm_call_log WHERE id = ?", (log_id,)).fetchone()
+        if row is None:
+            return None
+        d = dict(row)
+        d["created_display"] = datetime.fromtimestamp(d["created_at"]).strftime("%Y-%m-%d %H:%M:%S")
+        d["usage"] = json.loads(d["usage_json"]) if d.get("usage_json") else {}
+        return d
     finally:
         con.close()
 

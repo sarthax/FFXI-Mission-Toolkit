@@ -143,7 +143,7 @@
 
 {% if log %}
 <div class="table-wrap"><table>
-  <tr><th>When</th><th>Source</th><th>Model</th><th>Usage</th><th>Prompt</th><th>Result</th></tr>
+  <tr><th>When</th><th>Source</th><th>Model</th><th>Usage</th><th>Prompt</th><th>Result</th><th></th></tr>
   {% for row in log %}
   <tr>
     <td class="mono">{{ row.created_display }}</td>
@@ -155,6 +155,7 @@
       {% if row.error %}<span style="color:var(--red);">error: {{ row.error[:200] }}</span>
       {% else %}{{ (row.response or "")[:200] }}{% if row.response and row.response|length > 200 %}...{% endif %}{% endif %}
     </td>
+    <td><a class="chip" href="/llm/log/{{ row.id }}">view full &rarr;</a></td>
   </tr>
   {% endfor %}
 </table></div>

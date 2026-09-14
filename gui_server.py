@@ -1781,6 +1781,20 @@ def _run_tool_chat(prompt: str, model: str, system: str | None, base_url: str, t
     return {"content": content, "transcript": transcript, "usage": usage, "hit_round_limit": True}
 
 
+@app.get("/llm/log/{log_id}", response_class=HTMLResponse)
+def llm_log_detail(request: Request, log_id: int):
+    """Full-text view of one Recent Calls row -- the log table itself only shows the first 200
+    chars per field (readability in a compact table), and even the DB only ever stores up to
+    llm_log.MAX_STORED_CHARS -- there is no un-truncated copy beyond that anywhere. This page just
+    stops throwing away the rest of what WAS actually stored."""
+    row = llm_log.get_by_id(log_id)
+    if row is None:
+        return HTMLResponse(f'<p class="muted" style="color:var(--red);">No log entry with id {log_id}.</p>', status_code=404)
+    return templates.TemplateResponse(request, "llm_log_detail.html", {
+        "row": row, "draft_tag": llm_client.LLM_DRAFT_TAG,
+    })
+
+
 @app.get("/llm", response_class=HTMLResponse)
 def llm_page(request: Request, source: str = "", model_filter: str = "", q: str = ""):
     """Manual "pass off a prompt, see the response" page for the local Open WebUI/Ollama
