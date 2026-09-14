@@ -35,43 +35,43 @@ digging through raw DAT files or SQL dumps by hand.
 
 ## Screenshots
 
-![Homepage](docs/screenshots/homepage.png)
 *Homepage — what's loaded, real counts, one-click rebuild per data source.*
+![Homepage](docs/screenshots/homepage.png)
 
-![Entity search results](docs/screenshots/entity-search.png)
 *Entity Lookup — searching "Khimaira" surfaces every real copy across every zone.*
+![Entity search results](docs/screenshots/entity-search.png)
 
-![Entity profile](docs/screenshots/entity-profile.png)
 *Entity profile — model, mob group/level, mission, and real (decoded) drop table for one id.*
+![Entity profile](docs/screenshots/entity-profile.png)
 
-![Captures list](docs/screenshots/captures-list.png)
 *Captures — every ingested capture session, filterable by mission/tag/content type.*
+![Captures list](docs/screenshots/captures-list.png)
 
-![New capture](docs/screenshots/captures-new.png)
 *Capture New — start a record, then drop logs/DBs onto it as you get them.*
+![New capture](docs/screenshots/captures-new.png)
 
-![Cross-capture search](docs/screenshots/captures-search.png)
 *Capture Search — full-text search across every capture's events and raw packets at once.*
+![Cross-capture search](docs/screenshots/captures-search.png)
 
-![ID Drift](docs/screenshots/iddrift.png)
 *ID Drift — cross-checks LandSandBoat (and optionally a real DSP checkout) against your Topaz
 server, category by category, so a wrong id shows up here instead of only in-game.*
+![ID Drift](docs/screenshots/iddrift.png)
 
-![Lua Backport Converter](docs/screenshots/lua-convert.png)
 *Lua Backport Converter — converts a Topaz Lua file to a DSP checkout's own convention, applying
 every confirmed namespace/binding mapping and flagging anything unmapped for human review.*
+![Lua Backport Converter](docs/screenshots/lua-convert.png)
 
-![Binding Reference](docs/screenshots/binding-reference.png)
 *Binding Reference — every Lua method binding registered in Topaz and in DSP, cross-referenced
 with real evidence, searchable and filterable outside a conversion run.*
+![Binding Reference](docs/screenshots/binding-reference.png)
 
-![SQL Backport Converter](docs/screenshots/sql-convert.png)
 *SQL Backport Converter — converts Topaz `INSERT INTO` rows to DSP's schema and checks every id
 against DSP's real indexed data for genuine collisions, not just a raw dump diff.*
+![SQL Backport Converter](docs/screenshots/sql-convert.png)
 
-![LLM Assistant](docs/screenshots/llm-assistant.png)
 *LLM Assistant — optional draft-only offload (summaries, triage, first-pass suggestions) against a
 local Open WebUI/Ollama instance, with every call logged for visibility.*
+![LLM Assistant](docs/screenshots/llm-assistant.png)
 
 ## Dependencies
 
