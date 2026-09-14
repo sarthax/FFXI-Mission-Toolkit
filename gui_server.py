@@ -60,6 +60,7 @@ import build_dsp_index
 import build_topaz_index
 import llm_client
 import llm_log
+import llm_db_tools
 import scrape_bg_wiki
 import lookup_entity
 import packet_decode
@@ -1700,6 +1701,76 @@ def _llm_models(base_url: str) -> tuple[list[dict], str | None]:
         return [], str(e)
 
 
+LLM_TOOLS_SYSTEM_PROMPT = (
+    "You can use tools to answer questions using this project's real, live database. Available tools:\n"
+    + "\n".join(f"- {desc}" for _fn, desc in llm_db_tools.TOOLS.values())
+    + "\n\nTo call a tool, respond with ONLY a single JSON object on one line, nothing else:\n"
+    '{"tool": "<name>", "args": {...}}\n\n'
+    "Once you have enough real information to answer, respond in plain text (not JSON) -- never "
+    "guess at data you haven't actually queried, and never claim a number/fact you didn't get "
+    "from a tool result."
+)
+MAX_TOOL_ROUNDS = 5
+_CODE_FENCE_RE = re.compile(r"^```(?:json)?\s*\n?(.*?)\n?```$", re.DOTALL)
+
+
+def _parse_tool_call(content: str) -> dict | None:
+    """Returns the parsed {"tool": ..., "args": {...}} dict if `content` starts with (or, wrapped
+    in a markdown code fence, contains) a tool-call JSON object, else None. Two real robustness
+    gaps found live 2026-09-14, both handled here:
+      1. The model doesn't always emit bare JSON as instructed -- it sometimes wraps it in a
+         ```json ... ``` fence. A naive "does the whole string look like {...}" check misses this
+         entirely, silently treating a real tool-call attempt as a final answer instead.
+      2. The model sometimes emits SEVERAL tool-call JSON objects back to back in one response
+         (guessing ahead at a whole call sequence) instead of one at a time as instructed. Using
+         json.loads() on the whole string then fails (trailing data), again silently falling
+         through to "final answer". json.JSONDecoder().raw_decode() parses just the FIRST JSON
+         value and ignores anything after it -- exactly right here: only ever act on the first
+         call, then let the real tool result drive what the model does next, rather than trusting
+         a guessed-ahead sequence that assumed the wrong result for an earlier call."""
+    stripped = content.strip()
+    fence = _CODE_FENCE_RE.match(stripped)
+    if fence:
+        stripped = fence.group(1).strip()
+    if not stripped.startswith("{"):
+        return None
+    try:
+        parsed, _end = json.JSONDecoder().raw_decode(stripped)
+    except json.JSONDecodeError:
+        return None
+    return parsed if isinstance(parsed, dict) and "tool" in parsed else None
+
+
+def _run_tool_chat(prompt: str, model: str, system: str | None, base_url: str, timeout: float) -> dict:
+    """Real, prompt-based ReAct-style tool loop (see llm_db_tools.py's own docstring for why this
+    project uses this instead of the formal OpenAI tools/tool_calls API field -- verified live
+    that field doesn't round-trip reliably against this project's actual local Open WebUI/Ollama
+    setup). Every tool call is read-only (llm_db_tools.call_tool's own guarantee) and every round
+    is recorded in the returned transcript for the caller to display -- the model's DB access is
+    never a black box. Returns {"content": final_text, "transcript": [...], "usage": dict,
+    "hit_round_limit": bool}."""
+    combined_system = (system + "\n\n" if system else "") + LLM_TOOLS_SYSTEM_PROMPT
+    messages = [{"role": "system", "content": combined_system}, {"role": "user", "content": prompt}]
+    transcript: list[dict] = []
+    content, usage = "", {}
+    for _round in range(MAX_TOOL_ROUNDS):
+        result = llm_client.chat_messages(messages, model=model, base_url=base_url, timeout=timeout)
+        content, usage = result["content"], result["usage"]
+
+        parsed = _parse_tool_call(content)
+        if parsed is None:
+            return {"content": content, "transcript": transcript, "usage": usage, "hit_round_limit": False}
+
+        tool_name = parsed.get("tool")
+        tool_args = parsed.get("args") or {}
+        tool_result = llm_db_tools.call_tool(tool_name, tool_args)
+        transcript.append({"tool": tool_name, "args": tool_args, "result": tool_result})
+        messages.append({"role": "assistant", "content": content})
+        messages.append({"role": "user", "content": "Tool result: " + json.dumps(tool_result)})
+
+    return {"content": content, "transcript": transcript, "usage": usage, "hit_round_limit": True}
+
+
 @app.get("/llm", response_class=HTMLResponse)
 def llm_page(request: Request, source: str = "", model_filter: str = "", q: str = ""):
     """Manual "pass off a prompt, see the response" page for the local Open WebUI/Ollama
@@ -1717,6 +1788,7 @@ def llm_page(request: Request, source: str = "", model_filter: str = "", q: str 
         "values": values, "models": models, "models_error": models_error,
         "prompt": "", "system": "", "file_path": "", "model": values["llm_default_model"],
         "response": None, "usage_display": None, "call_error": None, "ran": False,
+        "tool_transcript": None, "hit_round_limit": False, "use_db_tools": False,
         "log": llm_log.recent(source=source or None, model=model_filter or None, q=q or None),
         "log_sources": llm_log.distinct_sources(),
         "filter_source": source, "filter_model": model_filter, "filter_q": q,
@@ -1736,6 +1808,7 @@ async def llm_submit(request: Request):
     # than a free-form manual prompt -- lets the log correctly attribute it instead of every
     # quick-action-originated call collapsing into "manual".
     log_source = form.get("quick_action", "").strip() or "manual"
+    use_db_tools = form.get("use_db_tools") == "on"
 
     con = get_con()
     values = settings_mod.get_all(con)
@@ -1776,17 +1849,33 @@ async def llm_submit(request: Request):
 
     response_text = None
     usage_display = None
+    tool_transcript = None
+    hit_round_limit = False
     call_error = file_error
     if not call_error:
         if not prompt.strip():
             call_error = "Prompt (or a file path) is required."
+        elif use_db_tools and image_b64:
+            call_error = "Read-only DB tools and image attachments can't be combined -- pick one."
         else:
             try:
                 timeout = LLM_PAGE_TIMEOUT * (2 if image_b64 else 1)
-                result = llm_client.chat_full(
-                    prompt, model=model, system=system, base_url=values["llm_base_url"],
-                    timeout=timeout, image_b64=image_b64,
-                )
+                if use_db_tools:
+                    # Tool rounds each cost their own model call, so give this real headroom --
+                    # MAX_TOOL_ROUNDS sequential calls, not one.
+                    result = _run_tool_chat(
+                        prompt, model, system, values["llm_base_url"], timeout=LLM_PAGE_TIMEOUT)
+                    tool_transcript = result["transcript"]
+                    hit_round_limit = result["hit_round_limit"]
+                    if hit_round_limit:
+                        log_source = "manual_db_tools_truncated"
+                    elif tool_transcript:
+                        log_source = "manual_db_tools"
+                else:
+                    result = llm_client.chat_full(
+                        prompt, model=model, system=system, base_url=values["llm_base_url"],
+                        timeout=timeout, image_b64=image_b64,
+                    )
                 response_text = result["content"]
                 usage = result["usage"]
                 tok_s = usage.get("response_token/s")
@@ -1794,7 +1883,10 @@ async def llm_submit(request: Request):
                 usage_display = (
                     f"{tok_s:.0f} tok/s, {total_s / 1e9:.1f}s" if tok_s and total_s else ""
                 )
-                llm_log.record(log_source, model, prompt, response=response_text, usage=usage)
+                log_prompt = prompt if not tool_transcript else (
+                    prompt + "\n\n[tool calls: " + json.dumps(tool_transcript) + "]"
+                )
+                llm_log.record(log_source, model, log_prompt, response=response_text, usage=usage)
             except llm_client.LLMClientError as e:
                 call_error = str(e)
                 llm_log.record(log_source, model, prompt, error=call_error)
@@ -1805,6 +1897,8 @@ async def llm_submit(request: Request):
         "values": values, "models": models, "models_error": models_error,
         "prompt": prompt, "system": system or "", "file_path": file_path, "model": model,
         "response": response_text, "usage_display": usage_display, "call_error": call_error,
+        "tool_transcript": tool_transcript, "hit_round_limit": hit_round_limit,
+        "use_db_tools": use_db_tools,
         "ran": True, "log": llm_log.recent(), "log_sources": llm_log.distinct_sources(),
         "filter_source": "", "filter_model": "", "filter_q": "",
         "draft_tag": llm_client.LLM_DRAFT_TAG, "quick_actions": QUICK_ACTIONS,

@@ -67,6 +67,10 @@
     <label>System prompt (optional)
       <br><input type="text" name="system" value="{{ system }}" style="width:340px;" placeholder="e.g. You are terse.">
     </label>
+    <label style="display:flex; align-items:center; gap:6px;" title="Lets the model query this toolkit's own database on demand (list_tables/describe_table/query_sql) instead of relying only on what's in the prompt. Read-only, physically enforced -- see llm_db_tools.py. Every query made is shown below the response.">
+      <input type="checkbox" name="use_db_tools" {% if use_db_tools %}checked{% endif %}>
+      Allow read-only DB tool access
+    </label>
     <button type="submit" id="llm-submit-btn">Send</button>
     <span id="llm-spinner" class="muted" style="display:none;">Waiting for the model (larger models can take a while)...</span>
   </div>
@@ -77,6 +81,28 @@
 {% if call_error %}
 <p class="muted" style="color:var(--red);">error: {{ call_error }}</p>
 {% else %}
+{% if tool_transcript %}
+<h3>Tool calls made (read-only, real queries against this toolkit's own database)</h3>
+{% if hit_round_limit %}
+<div class="warn">Hit the {{ tool_transcript|length }}-round tool-call limit before the model gave
+  a final answer -- the response below is its last message, which may still be a tool call rather
+  than an actual answer. Try a narrower question.</div>
+{% endif %}
+<div class="table-wrap"><table>
+  <tr><th>#</th><th>Tool</th><th>Args</th><th>Result</th></tr>
+  {% for call in tool_transcript %}
+  <tr>
+    <td class="mono">{{ loop.index }}</td>
+    <td class="mono">{{ call.tool }}</td>
+    <td class="mono" style="max-width:200px; white-space:pre-wrap;">{{ call.args|tojson }}</td>
+    <td class="mono" style="max-width:420px; white-space:pre-wrap;">
+      {% if call.result.error %}<span style="color:var(--red);">{{ call.result.error }}</span>
+      {% else %}{{ call.result|tojson(indent=2) }}{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% endif %}
 <div class="warn" style="border-left-color:var(--accent); background:var(--accent-soft); display:flex; justify-content:space-between; align-items:center; gap:12px;">
   <span><strong>{{ draft_tag }}</strong>{% if usage_display %} <span class="muted mono">({{ usage_display }})</span>{% endif %}</span>
   <button type="button" id="copy-as-comment-btn" class="chip" style="cursor:pointer; white-space:nowrap;">Copy as -- LLM-DRAFT comment</button>

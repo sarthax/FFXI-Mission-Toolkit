@@ -125,6 +125,28 @@ def list_models(base_url: str | None = None) -> list[dict]:
     return result.get("data", [])
 
 
+def chat_messages(
+    messages: list[dict],
+    model: str = DEFAULT_MODEL,
+    temperature: float = 0.2,
+    timeout: float = 60.0,
+    base_url: str | None = None,
+) -> dict:
+    """Lower-level call for a caller that needs to manage its own multi-turn message history
+    (e.g. gui_server.py's read-only-DB-tool ReAct loop) -- chat_full() is a thin single-turn
+    wrapper around this for everything else. Returns {"content": str, "usage": dict}, same shape
+    as chat_full()."""
+    payload = {"model": model, "messages": messages, "stream": False, "temperature": temperature}
+    result = _request("/api/chat/completions", payload, timeout=timeout, base_url=base_url)
+
+    try:
+        content = result["choices"][0]["message"]["content"]
+    except (KeyError, IndexError) as e:
+        raise LLMClientError(f"Unexpected response shape: {result}") from e
+
+    return {"content": content, "usage": result.get("usage", {})}
+
+
 def chat_full(
     prompt: str,
     model: str = DEFAULT_MODEL,
@@ -153,15 +175,7 @@ def chat_full(
         messages.append({"role": "system", "content": system})
     messages.append(user_message)
 
-    payload = {"model": model, "messages": messages, "stream": False, "temperature": temperature}
-    result = _request("/api/chat/completions", payload, timeout=timeout, base_url=base_url)
-
-    try:
-        content = result["choices"][0]["message"]["content"]
-    except (KeyError, IndexError) as e:
-        raise LLMClientError(f"Unexpected response shape: {result}") from e
-
-    return {"content": content, "usage": result.get("usage", {})}
+    return chat_messages(messages, model=model, temperature=temperature, timeout=timeout, base_url=base_url)
 
 
 def chat(
