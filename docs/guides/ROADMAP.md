@@ -6,6 +6,37 @@ what's done and lay out what's next per the user's request to track future featu
 
 ## Completed
 
+- **2026-09-15: content-duplication checking, closing a real gap id-collision checking left open**
+  — a real incident (`D:\Claude\Topaz-Assault-Backport\reports\dsp_repair_2026-09-15\
+  INCIDENT_REPORT.md`) showed multiple Topaz→DSP backport passes, run at different times, each
+  minting a FRESH, genuinely-unused `groupid` for `mob_groups` content a prior pass had already
+  backported. Every pass used a numeric range that was genuinely free, so the existing
+  `check_id_collisions()` reported "clear" every single time — it structurally cannot catch "this
+  content already exists under a different id," only "this exact id is taken." 195 live rows ended
+  up silently pulling wrong loot as a result (the live-wired duplicate used a raw, unconverted
+  `dropid` that collided with unrelated DSP-native content, while the correctly-remapped duplicate
+  from an earlier pass sat orphaned with zero spawns). Repaired live (195 rows fixed, 270 harmless
+  duplicates cleaned up, verified `0` live-wrong-loot cases remain) and closed at the tooling level:
+  - `backport_sql_convert.py`: new `CONTENT_KEY_COLUMNS` map (currently `mob_groups` →
+    `(poolid, zoneid)`, its real identity per `dsp_sql_schema_map.json`'s own composite-PK note)
+    and `check_content_duplication()`, the offline (indexed-snapshot) counterpart to
+    `check_id_collisions()`.
+  - `backport_sql_live_check.py`: `check_live_content_duplication()` (classifies each match by real
+    live impact — `harmless` / `live_conflict` / `orphaned` / `ambiguous`, using a real
+    `mob_spawn_points` join, not just presence/absence) and a new `--scan-duplicates TABLE` flag
+    for a standalone, periodic full-DB health check independent of any candidate package.
+  - `backport_package.py`: wired into the existing `run_id_collision_checks()`/`build_report()`
+    flow automatically for any table in `CONTENT_KEY_COLUMNS` — a duplicate now fails the overall
+    "Clean" verdict the same way a real id-collision already did.
+  - GUI: both `/backport/sql-convert` and `/backport/package` now render a "Content-duplication
+    check" section alongside the existing id-collision section.
+  - Validated end-to-end against the real live DSP database, not just the offline snapshot: the
+    live scan correctly reports `0` live-wrong-loot cases post-repair (distinguishing the 27
+    remaining duplicate `(poolid, zoneid)` pairs as legitimate same-poolid-different-in-world-name
+    variants, a real, common FFXI pattern — not a bug), and re-running the full package check
+    against `nyzul_isle_investigation` correctly flags that re-applying it today would recreate the
+    incident (97 of 112 content keys already exist live).
+
 - **2026-09-08: dedicated `.venv` for this toolkit's Python dependencies** — real incident, not
   precautionary: `luaparser>=4.0` (needed by `xi-events-py`'s event decompiler) permanently pins
   `antlr4-python3-runtime==4.13.2` — confirmed every `luaparser` release since 4.0 pins the exact

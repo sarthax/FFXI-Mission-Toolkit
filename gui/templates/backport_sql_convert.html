@@ -73,6 +73,36 @@ every existing entry was checked, don't guess a column mapping just to clear a w
 {% endif %}
 {% endif %}
 
+{% if duplication %}
+<h3>Content-duplication check -- <code>{{ duplication.checked_table }}</code>
+  (key: {{ duplication.content_key_columns|join(", ") }})</h3>
+<p>{{ duplication.note }}</p>
+<p class="muted">Checks the row's REAL identity (e.g. mob_groups' <code>(poolid, zoneid)</code> --
+  NOT <code>groupid</code>, which is just DSP's storage-level id), not just the id column. Added
+  2026-09-15 after a real incident where id-collision checking alone missed 195 rows of content
+  that had already been backported under a different id in a prior pass -- see
+  <code>data/dsp_sql_schema_map.json</code>'s <code>mob_groups</code> warning for the full writeup.</p>
+{% if duplication.duplicates %}
+<p><span class="badge badge-empty">{{ duplication.duplicates|length }}</span> content key(s) already
+  exist in DSP under a DIFFERENT id -- do not ship these as new rows without reviewing first. Run
+  <code>backport_sql_live_check.py --package &lt;dir&gt;</code> against the real live server for a
+  real-impact classification (live spawns/loot) before deciding whether to reuse the existing id or
+  keep both.</p>
+<div class="table-wrap"><table>
+  <tr><th>Content key</th><th>This row's candidate id</th><th>DSP's existing id(s)</th></tr>
+  {% for d in duplication.duplicates %}
+  <tr>
+    <td class="mono">{{ d.content_key }}</td>
+    <td class="mono">{{ d.candidate_id }}</td>
+    <td class="mono">{% for e in d.existing %}{{ e.groupid }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% else %}
+<p><span class="badge badge-ok">0</span> content keys already exist in DSP under a different id.</p>
+{% endif %}
+{% endif %}
+
 <h3>Converted SQL</h3>
 <textarea readonly rows="20" style="width:100%; font-family:monospace; font-size:0.85em;">{{ converted }}</textarea>
 {% endif %}

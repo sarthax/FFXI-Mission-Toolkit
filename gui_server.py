@@ -705,8 +705,19 @@ def items_search(request: Request, q: str = "", status: str = "all", page: int =
     con = get_con()
     page = max(1, page)
 
-    name_params: list = [f"%{q}%", f"%{q}%"] if q else []
-    name_clause = "AND (io.name LIKE ? OR ie.name LIKE ?)" if q else ""
+    # A purely-numeric query also matches by exact item ID (ours or external), in addition to the
+    # existing name-substring match -- lets a user paste a known itemid straight in, not just a name.
+    q_id = int(q) if q.strip().isdigit() else None
+
+    if q_id is not None:
+        name_params = [f"%{q}%", f"%{q}%", q_id, q_id]
+        name_clause = "AND (io.name LIKE ? OR ie.name LIKE ? OR io.itemid = ? OR ie.id = ?)"
+    elif q:
+        name_params = [f"%{q}%", f"%{q}%"]
+        name_clause = "AND (io.name LIKE ? OR ie.name LIKE ?)"
+    else:
+        name_params = []
+        name_clause = ""
     rows = con.execute(f"""
         SELECT io.itemid AS our_id, io.name AS our_name,
                ie.id AS ext_id, ie.name AS ext_name,
@@ -725,8 +736,15 @@ def items_search(request: Request, q: str = "", status: str = "all", page: int =
         ORDER BY io.itemid
     """, name_params).fetchall()
 
-    ext_params: list = [f"%{q}%"] if q else []
-    ext_clause = "AND ie.name LIKE ?" if q else ""
+    if q_id is not None:
+        ext_params = [f"%{q}%", q_id]
+        ext_clause = "AND (ie.name LIKE ? OR ie.id = ?)"
+    elif q:
+        ext_params = [f"%{q}%"]
+        ext_clause = "AND ie.name LIKE ?"
+    else:
+        ext_params = []
+        ext_clause = ""
     ext_only_rows = con.execute(f"""
         SELECT ie.id AS ext_id, ie.name AS ext_name
         FROM items_external ie
@@ -1532,10 +1550,12 @@ def bindings_index(request: Request, q: str = "", status: str = "", page: int = 
 @app.get("/backport/sql-convert", response_class=HTMLResponse)
 def sql_convert_form(request: Request):
     """Paste-INSERT-statements-in, get-DSP-shaped-INSERTs-out page, plus a real id-collision check
-    against DSP's already-indexed data (dsp_* tables from build_dsp_index.py) -- not just a raw
-    dump diff. Same backport_enabled() gate as the Lua converter/ID Drift."""
+    AND a real content-duplication check (added 2026-09-15, see data/dsp_sql_schema_map.json's
+    mob_groups warning) against DSP's already-indexed data (dsp_* tables from build_dsp_index.py)
+    -- not just a raw dump diff. Same backport_enabled() gate as the Lua converter/ID Drift."""
     return templates.TemplateResponse(request, "backport_sql_convert.html", {
         "source": "", "table": "npc_list", "converted": "", "warnings": [], "collisions": None,
+        "duplication": None,
         "ran": False, "tables": sorted(backport_sql_convert.load_schema_map().keys() - {"_readme"}),
         "map_path": str(backport_sql_convert.MAP_PATH),
     })
@@ -1552,18 +1572,21 @@ async def sql_convert_submit(request: Request):
     result = backport_sql_convert.convert_table(table, rows, schema_map)
 
     collisions = None
+    duplication = None
     if result.converted_ids:
         con = get_con()
         try:
             collisions = backport_sql_convert.check_id_collisions(
                 con, table, result.converted_ids, schema_map, id_to_name=result.id_to_name,
             )
+            if table in backport_sql_convert.CONTENT_KEY_COLUMNS:
+                duplication = backport_sql_convert.check_content_duplication(con, table, rows, schema_map)
         finally:
             con.close()
 
     return templates.TemplateResponse(request, "backport_sql_convert.html", {
         "source": source, "table": table, "converted": result.converted_sql,
-        "warnings": result.warnings, "collisions": collisions, "ran": True,
+        "warnings": result.warnings, "collisions": collisions, "duplication": duplication, "ran": True,
         "tables": sorted(schema_map.keys() - {"_readme"}), "map_path": str(backport_sql_convert.MAP_PATH),
     })
 
@@ -1636,13 +1659,13 @@ async def backport_package_submit(request: Request):
     lua_src, lua_dst = package_dir / "lua", package_dir / "lua-dsp"
     sql_src, sql_dst = package_dir / "sql", package_dir / "sql-dsp"
 
+    schema_map = backport_sql_convert.load_schema_map()
     lua_result = None
     sql_result = None
     if not verify_only:
         if lua_src.is_dir():
             lua_result = backport_package.convert_lua_tree(
                 lua_src, lua_dst, target, zone_table, id_shape, id_file_hint)
-        schema_map = backport_sql_convert.load_schema_map()
         sql_result = backport_package.convert_sql_tree(sql_src, sql_dst, schema_map)
     elif not lua_dst.is_dir():
         ctx["error"] = f"Verify-only needs an existing {lua_dst} -- run a real conversion first."
@@ -1654,14 +1677,16 @@ async def backport_package_submit(request: Request):
         {"syntax_errors": [], "undeclared_globals": []}
 
     collision_results = {}
+    duplication_results = {}
     if sql_result and sql_result["ids_by_table"]:
         collision_results = backport_package.run_id_collision_checks(
-            sql_result["ids_by_table"], sql_result["id_to_name_by_table"],
-            backport_sql_convert.load_schema_map())
+            sql_result["ids_by_table"], sql_result["id_to_name_by_table"], schema_map)
+        duplication_results = backport_package.run_content_duplication_checks(
+            sql_result.get("rows_by_table", {}), schema_map)
 
     report_md = backport_package.build_report(
         package_dir, target, dsp_root, flavor, lua_result, sql_result,
-        binding_result, sanity_result, collision_results)
+        binding_result, sanity_result, collision_results, duplication_results, schema_map)
     (package_dir / "BACKPORT_REPORT.md").write_text(report_md, encoding="utf-8", newline="\n")
 
     overall_clean = (
@@ -1670,13 +1695,15 @@ async def backport_package_submit(request: Request):
         and not sanity_result["syntax_errors"]
         and not sanity_result["undeclared_globals"]
         and not any(r.get("name_mismatch") for r in collision_results.values())
+        and not any(r.get("duplicates") for r in duplication_results.values())
     )
 
     ctx["report"] = {
         "lua_result": lua_result, "sql_result": sql_result, "binding_result": binding_result,
         "sanity_result": sanity_result, "collision_results": collision_results,
+        "duplication_results": duplication_results,
         "overall_clean": overall_clean, "report_path": str(package_dir / "BACKPORT_REPORT.md"),
-        "report_md": report_md,
+        "report_md": report_md, "schema_map": schema_map,
     }
     return templates.TemplateResponse(request, "backport_package.html", ctx)
 

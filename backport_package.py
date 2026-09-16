@@ -80,20 +80,27 @@ def convert_lua_tree(src_root: Path, dst_root: Path, target: str, zone_table: st
 def convert_sql_tree(src_root: Path, dst_root: Path, schema_map: dict) -> dict:
     """Converts every .sql file under src_root (table name = file stem) into the mirrored path
     under dst_root. Returns {"converted": [rel_paths], "warnings": [...], "ids_by_table": {table:
-    [raw_ids]}, "id_to_name_by_table": {table: {id: name}}} -- the last two feed the id-collision
-    check without re-parsing the converted output back out."""
+    [raw_ids]}, "id_to_name_by_table": {table: {id: name}}, "rows_by_table": {table: [rows]}} --
+    the last three feed the id-collision and content-duplication checks without re-parsing the
+    converted output back out. rows_by_table keeps the ORIGINAL Topaz-shaped rows (not converted_sql
+    text), since check_content_duplication() needs multiple raw columns together per row (e.g.
+    mob_groups' poolid AND zoneid), not a flattened id list."""
     if not src_root.is_dir():
-        return {"converted": [], "warnings": [], "ids_by_table": {}, "id_to_name_by_table": {}}
+        return {"converted": [], "warnings": [], "ids_by_table": {}, "id_to_name_by_table": {},
+                "rows_by_table": {}}
 
     converted, warnings = [], []
     ids_by_table: dict[str, list[str]] = {}
     id_to_name_by_table: dict[str, dict[int, str]] = {}
+    rows_by_table: dict[str, list[list[str]]] = {}
     for src in sorted(src_root.glob("*.sql")):
         table = src.stem
         dst = dst_root / src.name
         dst_root.mkdir(parents=True, exist_ok=True)
         text = src.read_text(encoding="utf-8", errors="replace")
         rows = [r for t, r in bsc.parse_insert_values(text) if t == table]
+        if rows:
+            rows_by_table.setdefault(table, []).extend(rows)
         result = bsc.convert_table(table, rows, schema_map)
         dst.write_text(result.converted_sql, encoding="utf-8", newline="\n")
         converted.append(src.name)
@@ -103,7 +110,7 @@ def convert_sql_tree(src_root: Path, dst_root: Path, schema_map: dict) -> dict:
             ids_by_table.setdefault(table, []).extend(result.converted_ids)
             id_to_name_by_table.setdefault(table, {}).update(result.id_to_name)
     return {"converted": converted, "warnings": warnings, "ids_by_table": ids_by_table,
-            "id_to_name_by_table": id_to_name_by_table}
+            "id_to_name_by_table": id_to_name_by_table, "rows_by_table": rows_by_table}
 
 
 def run_id_collision_checks(ids_by_table: dict, id_to_name_by_table: dict, schema_map: dict) -> dict:
@@ -124,9 +131,33 @@ def run_id_collision_checks(ids_by_table: dict, id_to_name_by_table: dict, schem
         con.close()
 
 
+def run_content_duplication_checks(rows_by_table: dict, schema_map: dict) -> dict:
+    """Runs backport_sql_convert.check_content_duplication for every table that has a
+    CONTENT_KEY_COLUMNS entry (currently just mob_groups), against the real indexed DSP data.
+    Added 2026-09-15 after a real incident (see D:\\Claude\\Topaz-Assault-Backport\\reports\\
+    dsp_repair_2026-09-15\\INCIDENT_REPORT.md) where id-collision checking alone missed 195 rows of
+    content that had already been backported under a DIFFERENT groupid in a prior pass -- every
+    pass used a genuinely-free id, so run_id_collision_checks() reported clean every time. This is
+    the offline (indexed-snapshot) check; for a real-impact classification (does the existing DSP
+    row actually have live spawns, is the loot genuinely wrong) use backport_sql_live_check.py's
+    --package mode against the real live server before applying anything this flags."""
+    tables = [t for t in rows_by_table if t in bsc.CONTENT_KEY_COLUMNS]
+    if not tables:
+        return {}
+    con = sqlite3.connect(str(settings.DB_PATH))
+    try:
+        return {
+            table: bsc.check_content_duplication(con, table, rows_by_table[table], schema_map)
+            for table in tables
+        }
+    finally:
+        con.close()
+
+
 def build_report(package_dir: Path, target: str, dsp_root: Path, flavor: str,
                   lua_result: dict | None, sql_result: dict | None,
-                  binding_result: dict, sanity_result: dict, collision_results: dict) -> str:
+                  binding_result: dict, sanity_result: dict, collision_results: dict,
+                  duplication_results: dict | None = None, schema_map: dict | None = None) -> str:
     lines = [f"# Backport report -- {package_dir.name}", "",
               f"Target: `{dsp_root}` (detected flavor: `{flavor}`)", ""]
 
@@ -191,16 +222,43 @@ def build_report(package_dir: Path, target: str, dsp_root: Path, flavor: str,
                              f"(no name column to compare) -- treat as needing a look.")
         lines.append("")
 
+    duplication_results = duplication_results or {}
+    if duplication_results:
+        lines.append("## SQL content-duplication check (against real indexed DSP data)")
+        lines.append("Checks whether this package's content (e.g. mob_groups' real identity, "
+                      "(poolid, zoneid) -- NOT groupid, which is just DSP's storage-level id) "
+                      "already exists in DSP under a DIFFERENT id. Added 2026-09-15 after a real "
+                      "incident where id-collision checking alone missed this -- see "
+                      "data/dsp_sql_schema_map.json's mob_groups warning for the full writeup.")
+        for table, result in duplication_results.items():
+            lines.append(f"### `{table}` -> `{result['checked_table']}`")
+            if result.get("note"):
+                lines.append(result["note"])
+            dupes = result.get("duplicates", [])
+            if dupes:
+                lines.append(f"- **{len(dupes)} content key(s) already exist in DSP under a "
+                             f"different id -- do not ship as new rows without reviewing first:**")
+                id_col = (schema_map or {}).get(table, {}).get("id_column", "id")
+                for d in dupes[:20]:
+                    existing_ids = [e.get(id_col) for e in d["existing"]]
+                    lines.append(f"  - content_key={d['content_key']} candidate_id={d['candidate_id']} "
+                                 f"-- DSP already has this under id(s) {existing_ids}")
+                lines.append("  Run `backport_sql_live_check.py --package <this dir>` against the "
+                             "real live server for a real-impact classification (live spawns/loot) "
+                             "before deciding whether to reuse or keep both.")
+        lines.append("")
+
     overall_clean = (
         (lua_result is None or lua_result["total_flags"] == 0)
         and not binding_result["missing"]
         and not sanity_result["syntax_errors"]
         and not sanity_result["undeclared_globals"]
         and not any(r.get("name_mismatch") for r in collision_results.values())
+        and not any(r.get("duplicates") for r in duplication_results.values())
     )
     lines.append("## Overall")
     lines.append("**Clean** -- nothing flagged, no missing bindings, no sanity errors, no real id "
-                 "collisions." if overall_clean else
+                 "collisions, no content duplication." if overall_clean else
                  "**Needs review** -- see the sections above for what to check by hand before "
                  "treating this package as done.")
     return "\n".join(lines) + "\n"
@@ -265,14 +323,20 @@ def main():
     sanity_result = blsc.check_package(lua_dst) if lua_dst.is_dir() else \
         {"syntax_errors": [], "undeclared_globals": []}
 
+    schema_map = bsc.load_schema_map()
     collision_results = {}
+    duplication_results = {}
     if sql_result and sql_result["ids_by_table"]:
         print("Running SQL id-collision check against indexed DSP data...")
         collision_results = run_id_collision_checks(
-            sql_result["ids_by_table"], sql_result["id_to_name_by_table"], bsc.load_schema_map())
+            sql_result["ids_by_table"], sql_result["id_to_name_by_table"], schema_map)
+        print("Running SQL content-duplication check against indexed DSP data...")
+        duplication_results = run_content_duplication_checks(
+            sql_result.get("rows_by_table", {}), schema_map)
 
     report = build_report(package_dir, args.target, dsp_root, flavor,
-                           lua_result, sql_result, binding_result, sanity_result, collision_results)
+                           lua_result, sql_result, binding_result, sanity_result, collision_results,
+                           duplication_results, schema_map)
     report_path = package_dir / "BACKPORT_REPORT.md"
     report_path.write_text(report, encoding="utf-8", newline="\n")
     print(f"\nReport written to {report_path}")
@@ -283,6 +347,7 @@ def main():
         or binding_result["missing"]
         or sanity_result["syntax_errors"] or sanity_result["undeclared_globals"]
         or any(r.get("name_mismatch") for r in collision_results.values())
+        or any(r.get("duplicates") for r in duplication_results.values())
     )
     sys.exit(1 if any_issue else 0)
 

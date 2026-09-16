@@ -180,6 +180,37 @@ boundary on what it does and doesn't automate).</p>
 {% endfor %}
 {% endif %}
 
+{% if report.duplication_results %}
+<h3>SQL content-duplication check (against real indexed DSP data)</h3>
+<p class="muted">Checks each row's REAL identity (e.g. mob_groups' <code>(poolid, zoneid)</code> --
+  NOT the id column, which is just DSP's storage-level PK). Added 2026-09-15 after a real incident
+  where id-collision checking alone missed 195 rows already backported under a different id in a
+  prior pass -- see <code>data/dsp_sql_schema_map.json</code>'s <code>mob_groups</code> warning.</p>
+{% for table, d in report.duplication_results.items() %}
+<h4><code class="chip">{{ table }}</code> -&gt; <code class="chip">{{ d.checked_table }}</code></h4>
+{% if d.note %}<p class="muted">{{ d.note }}</p>{% endif %}
+{% if d.duplicates %}
+<p><span class="badge badge-empty">{{ d.duplicates|length }}</span> content key(s) already exist in
+  DSP under a different id -- do not ship as new rows without reviewing first. Run
+  <code>backport_sql_live_check.py --package &lt;this dir&gt;</code> against the real live server
+  for a real-impact classification (live spawns/loot) before deciding whether to reuse or keep both.</p>
+<div class="table-wrap"><table>
+  <tr><th>Content key</th><th>Candidate id</th><th>DSP's existing id(s)</th></tr>
+  {% set id_col = (report.schema_map.get(table, {}).get("id_column")) or "id" %}
+  {% for dup in d.duplicates %}
+  <tr>
+    <td class="mono">{{ dup.content_key }}</td>
+    <td class="mono">{{ dup.candidate_id }}</td>
+    <td class="mono">{% for e in dup.existing %}{{ e.get(id_col) }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% else %}
+<p><span class="badge badge-ok">0</span> content keys already exist in DSP under a different id.</p>
+{% endif %}
+{% endfor %}
+{% endif %}
+
 <h3>Raw report</h3>
 <textarea readonly rows="16" style="width:100%; font-family:monospace; font-size:0.85em;">{{ report.report_md }}</textarea>
 {% endif %}

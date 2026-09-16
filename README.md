@@ -28,7 +28,10 @@ digging through raw DAT files or SQL dumps by hand.
   built on the same indexed data.
 - **Backport module** (optional, needs a DSP checkout configured in Settings) — a Topaz→DSP Lua
   converter, a searchable Binding Reference cross-referencing every Lua method both codebases
-  register, and a SQL converter with real id-collision checking against the DSP target.
+  register, and a SQL converter with real id-collision AND content-duplication checking against
+  the DSP target (the latter added 2026-09-15, after a real incident where id-collision checking
+  alone missed content already backported under a different id — see
+  `data/dsp_sql_schema_map.json`'s `mob_groups` warning).
 - **LLM Assistant** (optional, needs a local Open WebUI/Ollama instance) — draft-only offload for
   summarizing/triaging captures and other first-pass suggestions; never used to write an id or
   binding directly into a shipped package without a human verification pass after.

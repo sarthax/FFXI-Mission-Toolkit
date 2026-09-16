@@ -145,6 +145,53 @@ def test_check_id_collisions_dedupes_non_unique_id_table():
     check("dropId 5 counted exactly once despite 3 underlying rows", total == 1, result)
 
 
+def test_check_content_duplication_finds_existing_row_under_different_id():
+    print("check_content_duplication (mob_groups -- real 2026-09-15 incident shape: a fresh, "
+          "non-colliding candidate groupid, but DSP already has this (poolid, zoneid) elsewhere)")
+    schema_map = bsc.load_schema_map()
+    con = sqlite3.connect(":memory:")
+    con.execute("CREATE TABLE dsp_mob_groups (zoneid INTEGER, groupid INTEGER, poolid INTEGER, "
+                "name TEXT, respawntime INTEGER, dropid INTEGER)")
+    # DSP already has poolid=2394/zoneid=77 under groupid=2593 -- a prior, correctly-remapped
+    # backport pass. The candidate row below uses a totally different, genuinely-free groupid (36,
+    # the raw Topaz id) for the SAME content -- exactly the shape that let the real incident happen.
+    con.execute("INSERT INTO dsp_mob_groups VALUES (77, 2593, 2394, 'Leshy', 0, 2042)")
+    topaz_cols = schema_map["mob_groups"]["topaz_columns"]
+    row = ["36" if c == "groupid" else "2394" if c == "poolid" else "77" if c == "zoneid" else
+           "'Leshy'" if c == "name" else "503" if c == "dropid" else "0" for c in topaz_cols]
+    result = bsc.check_content_duplication(con, "mob_groups", [row], schema_map)
+    check("exactly 1 duplicate found", len(result["duplicates"]) == 1, result)
+    dup = result["duplicates"][0]
+    check("content_key is (poolid, zoneid)", dup["content_key"] == {"poolid": 2394, "zoneid": 77}, dup)
+    check("candidate_id is the candidate row's own groupid", dup["candidate_id"] == 36, dup)
+    check("existing row's real groupid (2593) surfaced, not the candidate's (36)",
+          dup["existing"][0]["groupid"] == 2593, dup)
+
+
+def test_check_content_duplication_no_existing_content():
+    print("check_content_duplication (candidate content key genuinely new -- no false positive)")
+    schema_map = bsc.load_schema_map()
+    con = sqlite3.connect(":memory:")
+    con.execute("CREATE TABLE dsp_mob_groups (zoneid INTEGER, groupid INTEGER, poolid INTEGER, "
+                "name TEXT, respawntime INTEGER, dropid INTEGER)")
+    con.execute("INSERT INTO dsp_mob_groups VALUES (77, 2593, 2394, 'Leshy', 0, 2042)")
+    topaz_cols = schema_map["mob_groups"]["topaz_columns"]
+    row = ["999" if c == "groupid" else "888888" if c == "poolid" else "999999" if c == "zoneid" else
+           "'Nobody'" if c == "name" else "0" for c in topaz_cols]
+    result = bsc.check_content_duplication(con, "mob_groups", [row], schema_map)
+    check("no duplicates found for genuinely new content", result["duplicates"] == [], result)
+
+
+def test_check_content_duplication_no_key_columns_defined():
+    print("check_content_duplication (table with no CONTENT_KEY_COLUMNS entry -- explicit note, not a crash)")
+    schema_map = bsc.load_schema_map()
+    con = sqlite3.connect(":memory:")
+    result = bsc.check_content_duplication(con, "npc_list", [["1"]], schema_map)
+    check("no duplicates reported", result["duplicates"] == [], result)
+    check("note explains why (no content-key columns defined)",
+          "No content-key columns defined" in result["note"], result["note"])
+
+
 TESTS = [
     test_parse_insert_values_basic,
     test_parse_insert_values_skips_commented_out_rows,
@@ -157,6 +204,9 @@ TESTS = [
     test_check_id_collisions_same_entity_vs_mismatch,
     test_check_id_collisions_no_collision,
     test_check_id_collisions_dedupes_non_unique_id_table,
+    test_check_content_duplication_finds_existing_row_under_different_id,
+    test_check_content_duplication_no_existing_content,
+    test_check_content_duplication_no_key_columns_defined,
 ]
 
 
