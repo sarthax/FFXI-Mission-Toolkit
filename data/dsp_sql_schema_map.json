@@ -1,0 +1,353 @@
+{
+  "_readme": "Confirmed Topaz -> DSP (darkstar-cd74c6d43c3d219b41490512f74a30b866e818a0) SQL schema mappings, same evidence discipline as dsp_namespace_map.json -- every entry checked against the real CREATE TABLE in both C:\\topaz\\sql\\<table>.sql and D:\\Claude\\old-dsp-reference\\sql\\<table>.sql, not guessed. 'topaz_columns'/'dsp_columns' are the REAL, full, ordered column lists (name only -- see the real .sql file for types/defaults). 'dropped_from_topaz' are columns Topaz has that DSP's INSERT statement has no slot for at all (must be silently discarded, not converted -- if the dropped column carries real data, note where DSP gets that data from instead, e.g. a join). 'added_by_dsp' are columns DSP requires that Topaz doesn't have (need an explicit default value supplied by the converter, not left blank). 'primary_key_topaz'/'primary_key_dsp' matter most for tables where the PK shape itself changed (e.g. mob_groups: composite (zoneid,groupid) in Topaz vs bare groupid in DSP -- means DSP's groupid space is GLOBAL, not per-zone, so a straight zone-scoped id range from Topaz can collide with an unrelated zone's existing DSP groupid).",
+  "npc_list": {
+    "topaz_columns": [
+      "npcid",
+      "name",
+      "polutils_name",
+      "pos_rot",
+      "pos_x",
+      "pos_y",
+      "pos_z",
+      "flag",
+      "speed",
+      "speedsub",
+      "animation",
+      "animationsub",
+      "namevis",
+      "status",
+      "entityFlags",
+      "look",
+      "name_prefix",
+      "content_tag",
+      "widescan"
+    ],
+    "dsp_columns": [
+      "npcid",
+      "name",
+      "polutils_name",
+      "pos_rot",
+      "pos_x",
+      "pos_y",
+      "pos_z",
+      "flag",
+      "speed",
+      "speedsub",
+      "animation",
+      "animationsub",
+      "namevis",
+      "status",
+      "entityFlags",
+      "look",
+      "name_prefix",
+      "content_tag",
+      "widescan"
+    ],
+    "dropped_from_topaz": [],
+    "added_by_dsp": [],
+    "primary_key_topaz": [
+      "npcid"
+    ],
+    "primary_key_dsp": [
+      "npcid"
+    ],
+    "id_column": "npcid",
+    "confidence": "confirmed",
+    "evidence": "Identical, column-for-column, both CREATE TABLE statements checked directly. No conversion needed beyond a straight column-order copy (which is already identical).",
+    "name_column": "name"
+  },
+  "mob_pools": {
+    "topaz_columns": [
+      "poolid",
+      "name",
+      "packet_name",
+      "familyid",
+      "modelid",
+      "mJob",
+      "sJob",
+      "cmbSkill",
+      "cmbDelay",
+      "cmbDmgMult",
+      "behavior",
+      "aggro",
+      "true_detection",
+      "links",
+      "mobType",
+      "immunity",
+      "name_prefix",
+      "flag",
+      "entityFlags",
+      "animationsub",
+      "hasSpellScript",
+      "spellList",
+      "namevis",
+      "roamflag",
+      "skill_list_id"
+    ],
+    "dsp_columns": [
+      "poolid",
+      "name",
+      "packet_name",
+      "familyid",
+      "modelid",
+      "mJob",
+      "sJob",
+      "cmbSkill",
+      "cmbDelay",
+      "cmbDmgMult",
+      "behavior",
+      "aggro",
+      "true_detection",
+      "links",
+      "mobType",
+      "immunity",
+      "name_prefix",
+      "flag",
+      "entityFlags",
+      "animationsub",
+      "hasSpellScript",
+      "spellList",
+      "namevis",
+      "roamflag",
+      "skill_list_id"
+    ],
+    "dropped_from_topaz": [],
+    "added_by_dsp": [],
+    "primary_key_topaz": [
+      "poolid"
+    ],
+    "primary_key_dsp": [
+      "poolid"
+    ],
+    "id_column": "poolid",
+    "confidence": "confirmed",
+    "evidence": "Identical, all 25 columns, both CREATE TABLE statements checked directly.",
+    "name_column": "name"
+  },
+  "mob_droplist": {
+    "topaz_columns": [
+      "dropId",
+      "dropType",
+      "groupId",
+      "groupRate",
+      "itemId",
+      "itemRate"
+    ],
+    "dsp_columns": [
+      "dropId",
+      "dropType",
+      "groupId",
+      "groupRate",
+      "itemId",
+      "itemRate"
+    ],
+    "dropped_from_topaz": [],
+    "added_by_dsp": [],
+    "primary_key_topaz": [],
+    "primary_key_dsp": [],
+    "id_column": "dropId",
+    "confidence": "confirmed",
+    "evidence": "Identical, both CREATE TABLE statements checked directly. Neither has a real PRIMARY KEY (dropId is a plain KEY/index, one dropId groups many rows)."
+  },
+  "mob_spawn_points": {
+    "topaz_columns": [
+      "mobid",
+      "mobname",
+      "polutils_name",
+      "groupid",
+      "pos_x",
+      "pos_y",
+      "pos_z",
+      "pos_rot"
+    ],
+    "dsp_columns": [
+      "mobid",
+      "mobname",
+      "polutils_name",
+      "groupid",
+      "pos_x",
+      "pos_y",
+      "pos_z",
+      "pos_rot"
+    ],
+    "dropped_from_topaz": [],
+    "added_by_dsp": [],
+    "primary_key_topaz": [
+      "mobid"
+    ],
+    "primary_key_dsp": [
+      "mobid"
+    ],
+    "id_column": "mobid",
+    "confidence": "confirmed",
+    "evidence": "Identical, both CREATE TABLE statements checked directly. NOTE (already documented elsewhere, [[topaz_zero_pos_mob_load_exclusion]]): DSP's instance_loader.cpp silently excludes any row at exactly (0,0,0) from ever loading -- not a schema difference, but check it before shipping a spawn point at the origin.",
+    "name_column": "mobname"
+  },
+  "mob_pool_mods": {
+    "topaz_columns": [
+      "poolid",
+      "modid",
+      "value",
+      "is_mob_mod"
+    ],
+    "dsp_columns": [
+      "poolid",
+      "modid",
+      "value",
+      "is_mob_mod"
+    ],
+    "dropped_from_topaz": [],
+    "added_by_dsp": [],
+    "primary_key_topaz": [
+      "poolid",
+      "modid"
+    ],
+    "primary_key_dsp": [
+      "poolid",
+      "modid"
+    ],
+    "id_column": null,
+    "confidence": "confirmed",
+    "evidence": "Identical, both CREATE TABLE statements checked directly. 'modid' values are MOD_*/MOBMOD_* enum numbers -- if a modid came from a family with confirmed name-only (not numeric) compatibility between Topaz/DSP (see dsp_namespace_map.json's incompatible_enums/mobMod decay notes), re-verify the NUMBER used here resolves to the same real modifier in DSP, not just that the column shape matches."
+  },
+  "instance_entities": {
+    "topaz_columns": [
+      "instanceid",
+      "id"
+    ],
+    "dsp_columns": [
+      "instanceid",
+      "id"
+    ],
+    "dropped_from_topaz": [],
+    "added_by_dsp": [],
+    "primary_key_topaz": [
+      "instanceid",
+      "id"
+    ],
+    "primary_key_dsp": [
+      "instanceid",
+      "id"
+    ],
+    "id_column": "id",
+    "confidence": "confirmed",
+    "evidence": "Identical, both CREATE TABLE statements checked directly."
+  },
+  "instance_list": {
+    "topaz_columns": [
+      "instanceid",
+      "instance_name",
+      "instance_zone",
+      "entrance_zone",
+      "time_limit",
+      "start_x",
+      "start_y",
+      "start_z",
+      "start_rot",
+      "music_day",
+      "music_night",
+      "battlesolo",
+      "battlemulti"
+    ],
+    "dsp_columns": [
+      "instanceid",
+      "instance_name",
+      "entrance_zone",
+      "time_limit",
+      "start_x",
+      "start_y",
+      "start_z",
+      "start_rot",
+      "music_day",
+      "music_night",
+      "battlesolo",
+      "battlemulti"
+    ],
+    "dropped_from_topaz": [
+      "instance_zone"
+    ],
+    "added_by_dsp": [],
+    "primary_key_topaz": [
+      "instanceid"
+    ],
+    "primary_key_dsp": [
+      "instanceid"
+    ],
+    "id_column": "instanceid",
+    "confidence": "confirmed",
+    "evidence": "Topaz has one extra column, 'instance_zone' (the zone the instance itself lives in, distinct from 'entrance_zone' which is where a player warps in FROM), sitting right after instance_name. DSP's CREATE TABLE has no slot for it at all -- silently dropped by this converter (flagged, not guessed at) since DSP apparently derives this some other way (not yet traced -- if a real DSP instance script needs to know its own zone, check how an existing one does it before assuming this data is simply unused).",
+    "name_column": "instance_name"
+  },
+  "mob_groups": {
+    "topaz_columns": [
+      "groupid",
+      "poolid",
+      "zoneid",
+      "name",
+      "respawntime",
+      "spawntype",
+      "dropid",
+      "HP",
+      "MP",
+      "minLevel",
+      "maxLevel",
+      "allegiance"
+    ],
+    "dsp_columns": [
+      "groupid",
+      "poolid",
+      "zoneid",
+      "respawntime",
+      "spawntype",
+      "dropid",
+      "HP",
+      "MP",
+      "minLevel",
+      "maxLevel",
+      "allegiance"
+    ],
+    "dropped_from_topaz": [
+      "name"
+    ],
+    "added_by_dsp": [],
+    "primary_key_topaz": [
+      "zoneid",
+      "groupid"
+    ],
+    "primary_key_dsp": [
+      "groupid"
+    ],
+    "id_column": "groupid",
+    "confidence": "confirmed",
+    "evidence": "Real, previously-documented incompatibility (DSP_TRANSITION_PLAN.md task 4/9): DSP's mob_groups has NO 'name' column at all (11 cols vs Topaz's 12) -- a display name is instead derived by joining mob_pools.name via poolid (confirmed in build_dsp_index.py's own load_mob_groups()). MORE IMPORTANTLY: the primary key itself changed shape -- Topaz's PK is the COMPOSITE (zoneid, groupid), meaning groupid only needs to be unique WITHIN a zone; DSP's PK is bare groupid ALONE, meaning groupid must be unique ACROSS THE ENTIRE SERVER. A groupid range that's perfectly safe in Topaz (unique only within its own zone) can silently collide with a totally unrelated zone's existing DSP groupid. This is exactly why task 4/9's real live-DB collision check exists -- never assume a Topaz groupid range is safe in DSP without checking DSP's REAL, GLOBAL groupid space first, not just the target zone's own range.",
+    "warning": "ALWAYS run an id-collision check against DSP's real, global groupid space (not just the target zone) before shipping mob_groups rows -- see backport_sql_convert.py's check_id_collisions(). THAT ALONE IS NOT ENOUGH: a real 2026-09-15 incident (D:\\Claude\\Topaz-Assault-Backport\\reports\\dsp_repair_2026-09-15\\INCIDENT_REPORT.md) showed multiple backport passes each minting a FRESH, genuinely-unused groupid for content a prior pass had already backported -- id-collision checking reported 'clear' every single time since the real identity of a mob_groups row is (poolid, zoneid), not groupid, which is just DSP's storage-level PK. 195 live rows ended up silently pulling wrong loot as a result. ALSO run check_content_duplication() (offline, backport_sql_convert.py) and/or check_live_content_duplication()/--scan-duplicates (live, backport_sql_live_check.py) before shipping -- these check the (poolid, zoneid) content key, not just groupid."
+  },
+
+  "mob_skills": {
+    "topaz_columns": ["mob_skill_id", "mob_anim_id", "mob_skill_name", "mob_skill_aoe", "mob_skill_distance", "mob_anim_time", "mob_prepare_time", "mob_valid_targets", "mob_skill_flag", "mob_skill_param", "knockback", "primary_sc", "secondary_sc", "tertiary_sc"],
+    "dsp_columns": ["mob_skill_id", "mob_anim_id", "mob_skill_name", "mob_skill_aoe", "mob_skill_distance", "mob_anim_time", "mob_prepare_time", "mob_valid_targets", "mob_skill_flag", "mob_skill_param", "knockback", "primary_sc", "secondary_sc", "tertiary_sc"],
+    "dropped_from_topaz": [],
+    "added_by_dsp": [],
+    "primary_key_topaz": ["mob_skill_id"],
+    "primary_key_dsp": ["mob_skill_id"],
+    "id_column": "mob_skill_id",
+    "name_column": "mob_skill_name",
+    "index_name_column": "name",
+    "confidence": "confirmed",
+    "evidence": "Identical, all 14 columns, both CREATE TABLE statements checked directly. mob_skill_id is a real, server-global FFXI mobskill id (shared retail data) -- checked the Nyzul package's 293 rows against DSP's real indexed data: 280 already present as the exact same skill (safe), 2 real value-level mismatches at the SAME id (2045 'rail_cannon_3' vs DSP's 'pl_rail_cannon' -- also differs in mob_anim_id/distance, a real tuning difference not just a name; 2058 'homing_missile' vs DSP's 'pw_homing_missile', name-only), 11 genuinely new to DSP (real new Nyzul content, e.g. perdition/synergism/reprobation/artificial_gravity -- safe to insert as new rows). NOTE: build_dsp_index.py's indexed dsp_mob_skills table renames this column to plain 'name' -- 'index_name_column' records that so check_id_collisions() queries the right column name against the SNAPSHOT table, while 'name_column' stays the real raw-SQL column name used for parsing/converting actual INSERT statements."
+  },
+
+  "mob_skill_lists": {
+    "topaz_columns": ["skill_list_name", "skill_list_id", "mob_skill_id"],
+    "dsp_columns": ["skill_list_name", "skill_list_id", "mob_skill_id"],
+    "dropped_from_topaz": [],
+    "added_by_dsp": [],
+    "primary_key_topaz": ["skill_list_id", "mob_skill_id"],
+    "primary_key_dsp": ["skill_list_id", "mob_skill_id"],
+    "id_column": "skill_list_id",
+    "name_column": "skill_list_name",
+    "confidence": "confirmed",
+    "evidence": "Identical, all 3 columns, both CREATE TABLE statements checked directly. NOT indexed in ffxi_zone_database.db (no dsp_mob_skill_lists table) -- check_id_collisions()/DSP_INDEX_TABLE has no entry for this table; use backport_sql_convert.parse_insert_values() directly against old-dsp-reference's real sql/mob_skill_lists.sql instead, the way the Nyzul package's own collision check did (2026-09-13).",
+    "warning": "skill_list_id is server-global (like mob_groups.groupid) -- referenced by mob_pools.skill_list_id, which is what actually selects a mob's moveset. Found a REAL collision in the Nyzul package: skill_list_id 234 ('Soulflayer_NM' in the package) already belongs to DSP's own 'Spheroid' family, and 236 ('Spider' in the package) already belongs to DSP's own 'Structure' family -- both genuinely referenced by real Nyzul mob_pools rows (poolid 2834 Nepionic_Soulflayer, poolid 6337 Spinner_NI). Renumbered to 999/1000 (DSP's real max skill_list_id was 998) in both mob_skill_lists.sql and the referencing mob_pools.sql rows -- see ID_COLLISION_REPORT.md."
+  }
+}

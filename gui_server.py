@@ -32,7 +32,7 @@ from datetime import datetime
 from pathlib import Path
 
 from fastapi import FastAPI, Form, Query, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
 import yaml
@@ -53,10 +53,14 @@ import build_lsb_index
 import backport_lua_convert
 import backport_sql_convert
 import backport_binding_index
+import backport_binding_audit
+import backport_lua_sanity_check
+import backport_package
 import build_dsp_index
 import build_topaz_index
 import llm_client
 import llm_log
+import llm_db_tools
 import scrape_bg_wiki
 import lookup_entity
 import packet_decode
@@ -69,7 +73,7 @@ TEMPLATES_DIR = TOOLS_ROOT / "gui" / "templates"
 # Real in-game 2D zone map PNGs, extracted straight from client DAT files by ResourceExtractor's
 # MapParser (see MapDats.json) -- "{zoneid}_{mapindex}.png", one file per submap/floor. Served
 # directly from ResourceExtractor's own output dir rather than duplicating 164MB into gui/static.
-MAPS_DIR = TOOLS_ROOT / "ResourceExtractor" / "bin" / "Release" / "net9.0-windows" / "resources" / "maps"
+MAPS_DIR = TOOLS_ROOT / "vendor" / "ResourceExtractor" / "bin" / "Release" / "net9.0-windows" / "resources" / "maps"
 # Real, coordinate-aligned top-down silhouettes rasterized from the client's own collision mesh
 # (build_zone_topdown.py) -- unlike MAPS_DIR's decorative minimap PNGs, a path plotted using this
 # cache's own transform.json lands in the right place by construction (verified empirically
@@ -294,7 +298,7 @@ def rebuild_global_tables(ffxi_path: str) -> tuple[int, int]:
 # Where each optional (not bundled) external data source is expected to land, and where to get
 # it if it isn't there -- real repos/tools already confirmed this session, not guessed.
 FFXI_DATS_DIR = TOOLS_ROOT / "FFXI-DATS"
-XI_TINKERER_CLI = TOOLS_ROOT / "xi-tinkerer" / "target" / "release" / "xi-tinkerer-cli.exe"
+XI_TINKERER_CLI = TOOLS_ROOT / "vendor" / "xi-tinkerer" / "target" / "release" / "xi-tinkerer-cli.exe"
 
 
 def system_status(con: sqlite3.Connection) -> list[dict]:
@@ -471,7 +475,7 @@ def system_status(con: sqlite3.Connection) -> list[dict]:
             "rebuild": "bgwiki" if bg_wiki_page_count else None,
             "rebuild_note": "incremental sync against bg-wiki.com's own API (only pages changed since the last sync) -- usually seconds to a few minutes",
             "missing": None if bg_wiki_page_count else {
-                "what": "the BG Wiki dump (D:\\Claude\\mission_toolkit\\ffxi-wiki-dumps-dist\\bg-wiki.jsonl.gz)",
+                "what": "the BG Wiki dump (vendor/ffxi-wiki-dumps-dist/bg-wiki.jsonl.gz)",
                 "where_label": "bg-wiki.com (fetched live via its own API)",
                 "where_url": "https://www.bg-wiki.com/",
                 "how": (
@@ -482,7 +486,7 @@ def system_status(con: sqlite3.Connection) -> list[dict]:
                     "~8 hour crawl (respects the site's own Crawl-Delay: 30), not something to "
                     "trigger from this button. If another install of this toolkit already has the "
                     "dump, `py -3 addon_tools.py package bg-wiki-dump "
-                    "ffxi-wiki-dumps-dist/bg-wiki.jsonl.gz` there packages it for this button "
+                    "vendor/ffxi-wiki-dumps-dist/bg-wiki.jsonl.gz` there packages it for this button "
                     "instead of re-crawling."
                 ),
                 "install_tool": (
@@ -701,8 +705,19 @@ def items_search(request: Request, q: str = "", status: str = "all", page: int =
     con = get_con()
     page = max(1, page)
 
-    name_params: list = [f"%{q}%", f"%{q}%"] if q else []
-    name_clause = "AND (io.name LIKE ? OR ie.name LIKE ?)" if q else ""
+    # A purely-numeric query also matches by exact item ID (ours or external), in addition to the
+    # existing name-substring match -- lets a user paste a known itemid straight in, not just a name.
+    q_id = int(q) if q.strip().isdigit() else None
+
+    if q_id is not None:
+        name_params = [f"%{q}%", f"%{q}%", q_id, q_id]
+        name_clause = "AND (io.name LIKE ? OR ie.name LIKE ? OR io.itemid = ? OR ie.id = ?)"
+    elif q:
+        name_params = [f"%{q}%", f"%{q}%"]
+        name_clause = "AND (io.name LIKE ? OR ie.name LIKE ?)"
+    else:
+        name_params = []
+        name_clause = ""
     rows = con.execute(f"""
         SELECT io.itemid AS our_id, io.name AS our_name,
                ie.id AS ext_id, ie.name AS ext_name,
@@ -721,8 +736,15 @@ def items_search(request: Request, q: str = "", status: str = "all", page: int =
         ORDER BY io.itemid
     """, name_params).fetchall()
 
-    ext_params: list = [f"%{q}%"] if q else []
-    ext_clause = "AND ie.name LIKE ?" if q else ""
+    if q_id is not None:
+        ext_params = [f"%{q}%", q_id]
+        ext_clause = "AND (ie.name LIKE ? OR ie.id = ?)"
+    elif q:
+        ext_params = [f"%{q}%"]
+        ext_clause = "AND ie.name LIKE ?"
+    else:
+        ext_params = []
+        ext_clause = ""
     ext_only_rows = con.execute(f"""
         SELECT ie.id AS ext_id, ie.name AS ext_name
         FROM items_external ie
@@ -1528,10 +1550,12 @@ def bindings_index(request: Request, q: str = "", status: str = "", page: int = 
 @app.get("/backport/sql-convert", response_class=HTMLResponse)
 def sql_convert_form(request: Request):
     """Paste-INSERT-statements-in, get-DSP-shaped-INSERTs-out page, plus a real id-collision check
-    against DSP's already-indexed data (dsp_* tables from build_dsp_index.py) -- not just a raw
-    dump diff. Same backport_enabled() gate as the Lua converter/ID Drift."""
+    AND a real content-duplication check (added 2026-09-15, see data/dsp_sql_schema_map.json's
+    mob_groups warning) against DSP's already-indexed data (dsp_* tables from build_dsp_index.py)
+    -- not just a raw dump diff. Same backport_enabled() gate as the Lua converter/ID Drift."""
     return templates.TemplateResponse(request, "backport_sql_convert.html", {
         "source": "", "table": "npc_list", "converted": "", "warnings": [], "collisions": None,
+        "duplication": None,
         "ran": False, "tables": sorted(backport_sql_convert.load_schema_map().keys() - {"_readme"}),
         "map_path": str(backport_sql_convert.MAP_PATH),
     })
@@ -1548,20 +1572,140 @@ async def sql_convert_submit(request: Request):
     result = backport_sql_convert.convert_table(table, rows, schema_map)
 
     collisions = None
+    duplication = None
     if result.converted_ids:
         con = get_con()
         try:
             collisions = backport_sql_convert.check_id_collisions(
                 con, table, result.converted_ids, schema_map, id_to_name=result.id_to_name,
             )
+            if table in backport_sql_convert.CONTENT_KEY_COLUMNS:
+                duplication = backport_sql_convert.check_content_duplication(con, table, rows, schema_map)
         finally:
             con.close()
 
     return templates.TemplateResponse(request, "backport_sql_convert.html", {
         "source": source, "table": table, "converted": result.converted_sql,
-        "warnings": result.warnings, "collisions": collisions, "ran": True,
+        "warnings": result.warnings, "collisions": collisions, "duplication": duplication, "ran": True,
         "tables": sorted(schema_map.keys() - {"_readme"}), "map_path": str(backport_sql_convert.MAP_PATH),
     })
+
+
+def _backport_packages_root() -> Path:
+    return settings_mod.get_backport_root() / "mission-packages"
+
+
+def _list_backport_packages() -> list[str]:
+    """Every subfolder of the packages root that has a real lua/ tree -- same convention
+    backport_binding_audit.py --all-packages / backport_lua_sanity_check.py --all-packages glob
+    for (*/lua-dsp), just checking the SOURCE side here since a package may not be converted yet."""
+    root = _backport_packages_root()
+    if not root.is_dir():
+        return []
+    return sorted(p.name for p in root.iterdir() if p.is_dir() and (p / "lua").is_dir())
+
+
+@app.get("/backport/package", response_class=HTMLResponse)
+def backport_package_form(request: Request):
+    """Point-and-run end-to-end package backport: pick a package folder already sitting under
+    backport_root/mission-packages/, run backport_package.py's full convert+verify pipeline
+    against it, see the consolidated report inline -- the GUI front end for the same tool a user
+    would otherwise run from a terminal after editing a package's Lua/SQL, so a change can be
+    re-checked for gaps (missing bindings, flagged conversions, real SQL id collisions) without
+    leaving the browser. Still per-package, not a cross-package/cross-zone dependency crawl."""
+    return templates.TemplateResponse(request, "backport_package.html", {
+        "packages": _list_backport_packages(), "packages_root": str(_backport_packages_root()),
+        "package": "", "target": "old_dsp_reference", "id_shape": "flat", "zone_table": "",
+        "id_file_hint": "", "verify_only": False, "ran": False, "report": None, "error": None,
+        **_target_flavor_banner(),
+    })
+
+
+@app.post("/backport/package", response_class=HTMLResponse)
+async def backport_package_submit(request: Request):
+    form = await request.form()
+    package = (form.get("package") or "").strip()
+    target = form.get("target") or "old_dsp_reference"
+    id_shape = form.get("id_shape") or "flat"
+    zone_table = (form.get("zone_table") or "").strip() or None
+    id_file_hint = (form.get("id_file_hint") or "").strip() or None
+    verify_only = form.get("verify_only") == "on"
+
+    ctx = {
+        "packages": _list_backport_packages(), "packages_root": str(_backport_packages_root()),
+        "package": package, "target": target, "id_shape": id_shape, "zone_table": zone_table or "",
+        "id_file_hint": id_file_hint or "", "verify_only": verify_only, "ran": True, "report": None,
+        "error": None, **_target_flavor_banner(),
+    }
+
+    packages_root = _backport_packages_root()
+    package_dir = packages_root / package if package else None
+    if not package or not package_dir.is_dir():
+        ctx["error"] = f"No such package under {packages_root}: {package!r}"
+        return templates.TemplateResponse(request, "backport_package.html", ctx)
+
+    dsp_root = settings_mod.get_dsp_root()
+    if dsp_root is None:
+        ctx["error"] = "No DSP checkout configured -- set it on the Settings page first."
+        return templates.TemplateResponse(request, "backport_package.html", ctx)
+    flavor = backport_lua_convert.detect_target_flavor(dsp_root)
+    if flavor is None:
+        ctx["error"] = f"{dsp_root} does not fingerprint as either known DSP flavor -- check the path on Settings."
+        return templates.TemplateResponse(request, "backport_package.html", ctx)
+    if flavor != target:
+        ctx["error"] = f"Configured DSP checkout fingerprints as '{flavor}', but target is '{target}' -- pick '{flavor}' above."
+        return templates.TemplateResponse(request, "backport_package.html", ctx)
+
+    lua_src, lua_dst = package_dir / "lua", package_dir / "lua-dsp"
+    sql_src, sql_dst = package_dir / "sql", package_dir / "sql-dsp"
+
+    schema_map = backport_sql_convert.load_schema_map()
+    lua_result = None
+    sql_result = None
+    if not verify_only:
+        if lua_src.is_dir():
+            lua_result = backport_package.convert_lua_tree(
+                lua_src, lua_dst, target, zone_table, id_shape, id_file_hint)
+        sql_result = backport_package.convert_sql_tree(sql_src, sql_dst, schema_map)
+    elif not lua_dst.is_dir():
+        ctx["error"] = f"Verify-only needs an existing {lua_dst} -- run a real conversion first."
+        return templates.TemplateResponse(request, "backport_package.html", ctx)
+
+    binding_result = backport_binding_audit.audit_package(lua_dst, dsp_root, flavor) if lua_dst.is_dir() else \
+        {"confirmed": [], "missing": []}
+    sanity_result = backport_lua_sanity_check.check_package(lua_dst) if lua_dst.is_dir() else \
+        {"syntax_errors": [], "undeclared_globals": []}
+
+    collision_results = {}
+    duplication_results = {}
+    if sql_result and sql_result["ids_by_table"]:
+        collision_results = backport_package.run_id_collision_checks(
+            sql_result["ids_by_table"], sql_result["id_to_name_by_table"], schema_map)
+        duplication_results = backport_package.run_content_duplication_checks(
+            sql_result.get("rows_by_table", {}), schema_map)
+
+    report_md = backport_package.build_report(
+        package_dir, target, dsp_root, flavor, lua_result, sql_result,
+        binding_result, sanity_result, collision_results, duplication_results, schema_map)
+    (package_dir / "BACKPORT_REPORT.md").write_text(report_md, encoding="utf-8", newline="\n")
+
+    overall_clean = (
+        (lua_result is None or lua_result["total_flags"] == 0)
+        and not binding_result["missing"]
+        and not sanity_result["syntax_errors"]
+        and not sanity_result["undeclared_globals"]
+        and not any(r.get("name_mismatch") for r in collision_results.values())
+        and not any(r.get("duplicates") for r in duplication_results.values())
+    )
+
+    ctx["report"] = {
+        "lua_result": lua_result, "sql_result": sql_result, "binding_result": binding_result,
+        "sanity_result": sanity_result, "collision_results": collision_results,
+        "duplication_results": duplication_results,
+        "overall_clean": overall_clean, "report_path": str(package_dir / "BACKPORT_REPORT.md"),
+        "report_md": report_md, "schema_map": schema_map,
+    }
+    return templates.TemplateResponse(request, "backport_package.html", ctx)
 
 
 # Files this large take a while even on the faster 7B models, and gemma4:26b longer still --
@@ -1584,6 +1728,133 @@ def _llm_models(base_url: str) -> tuple[list[dict], str | None]:
         return [], str(e)
 
 
+def _model_supports_vision(models: list[dict], model_id: str) -> bool:
+    """True if `model_id` is one of `models` (from _llm_models()) AND reports the "vision"
+    capability. False (not True) for a model_id not found in the list at all -- an unknown/stale
+    selection should never be treated as vision-capable by default."""
+    for m in models:
+        if m.get("id") == model_id:
+            return "vision" in m.get("ollama", {}).get("capabilities", [])
+    return False
+
+
+LLM_TOOLS_SYSTEM_PROMPT = (
+    "You can use tools to answer questions using this project's real, live database. Available tools:\n"
+    + "\n".join(f"- {desc}" for _fn, desc in llm_db_tools.TOOLS.values())
+    + """
+
+To call a tool, respond with ONLY a single JSON object on one line, nothing else:
+{"tool": "<name>", "args": {...}}
+
+Do NOT call list_tables as your first move for an ordinary question -- it dumps 100+ table names
+and wastes your limited number of tool calls. Instead, go straight to query_sql against whichever
+of these real, commonly-useful tables actually fits the question (call describe_table first only
+if you're unsure of a column name -- it ALSO returns any known real relationship to other tables,
+e.g. calling it on mob_groups tells you dropid links to mob_droplist.dropid, so use it before
+guessing at a join column or giving up on a multi-table question):
+- dsp_mob_pools (poolid, name, norm_name, familyid, modelid) -- one row per mob TYPE (not spawn).
+- dsp_mob_groups (zoneid, groupid, poolid, name, respawntime, minLevel, maxLevel, dropid) -- one
+  row per spawned mob GROUP; links a zone+pool to its level range and real drop table.
+- dsp_mob_skills (mob_skill_id, mob_anim_id, name, norm_name, aoe, distance, ...) -- one row per
+  mob skill definition, matched by `name` (e.g. WHERE name = 'firespit').
+- dsp_mob_spawn_points (mobid, mobname, norm_name, groupid, pos_x/y/z, pos_rot) -- one row per
+  actual spawned mob instance in the world; groupid links to mob_groups.groupid.
+- dsp_npc_list (npcid, name, norm_name, zoneid, pos_x/y/z, entityFlags) -- non-mob NPCs.
+- dsp_item_basic (itemid, name, norm_name, stackSize, ...) -- items.
+- dsp_mob_droplist (dropid, dropType, groupId, groupRate, itemId, itemRate) -- drop tables;
+  itemId links to item_basic.itemid.
+- zones (zoneid, name, geometry_mapid, geometry_rom_path) -- the ONE shared, unprefixed table
+  (every other table above has real dsp_/lsb_/topaz_/sql_ copies; zones does not).
+Prefix swap for a different source: lsb_*, topaz_*, sql_* mirror the same dsp_* shapes above for
+the other three data sources this toolkit cross-references.
+
+KNOWN REAL GAP, be honest about it: there is no indexed join table linking a specific mob to the
+list of mob skills it uses (mob_pools has no skill_list_id/similar column in what's queryable
+here) -- querying dsp_mob_skills can confirm a skill NAME/id exists, but cannot tell you WHICH
+mobs use it. If a question needs that link, say plainly that this isn't answerable from the
+tables available rather than answering vaguely (e.g. never say something like "used by multiple
+NPCs" unless you actually queried and named which ones).
+
+Once you have enough real information to answer, respond in plain text (not JSON). Never guess at
+data you haven't actually queried, never claim a number/fact you didn't get from a real tool
+result, and never pad out an answer with a vague-sounding claim to cover for a query that returned
+nothing or a question the schema can't actually answer -- say so plainly instead."""
+)
+MAX_TOOL_ROUNDS = 8
+_CODE_FENCE_RE = re.compile(r"^```(?:json)?\s*\n?(.*?)\n?```$", re.DOTALL)
+
+
+def _parse_tool_call(content: str) -> dict | None:
+    """Returns the parsed {"tool": ..., "args": {...}} dict if `content` starts with (or, wrapped
+    in a markdown code fence, contains) a tool-call JSON object, else None. Two real robustness
+    gaps found live 2026-09-14, both handled here:
+      1. The model doesn't always emit bare JSON as instructed -- it sometimes wraps it in a
+         ```json ... ``` fence. A naive "does the whole string look like {...}" check misses this
+         entirely, silently treating a real tool-call attempt as a final answer instead.
+      2. The model sometimes emits SEVERAL tool-call JSON objects back to back in one response
+         (guessing ahead at a whole call sequence) instead of one at a time as instructed. Using
+         json.loads() on the whole string then fails (trailing data), again silently falling
+         through to "final answer". json.JSONDecoder().raw_decode() parses just the FIRST JSON
+         value and ignores anything after it -- exactly right here: only ever act on the first
+         call, then let the real tool result drive what the model does next, rather than trusting
+         a guessed-ahead sequence that assumed the wrong result for an earlier call."""
+    stripped = content.strip()
+    fence = _CODE_FENCE_RE.match(stripped)
+    if fence:
+        stripped = fence.group(1).strip()
+    if not stripped.startswith("{"):
+        return None
+    try:
+        parsed, _end = json.JSONDecoder().raw_decode(stripped)
+    except json.JSONDecodeError:
+        return None
+    return parsed if isinstance(parsed, dict) and "tool" in parsed else None
+
+
+def _run_tool_chat(prompt: str, model: str, system: str | None, base_url: str, timeout: float) -> dict:
+    """Real, prompt-based ReAct-style tool loop (see llm_db_tools.py's own docstring for why this
+    project uses this instead of the formal OpenAI tools/tool_calls API field -- verified live
+    that field doesn't round-trip reliably against this project's actual local Open WebUI/Ollama
+    setup). Every tool call is read-only (llm_db_tools.call_tool's own guarantee) and every round
+    is recorded in the returned transcript for the caller to display -- the model's DB access is
+    never a black box. Returns {"content": final_text, "transcript": [...], "usage": dict,
+    "hit_round_limit": bool}."""
+    combined_system = (system + "\n\n" if system else "") + LLM_TOOLS_SYSTEM_PROMPT
+    messages = [{"role": "system", "content": combined_system}, {"role": "user", "content": prompt}]
+    transcript: list[dict] = []
+    content, usage = "", {}
+    for _round in range(MAX_TOOL_ROUNDS):
+        result = llm_client.chat_messages(messages, model=model, base_url=base_url, timeout=timeout)
+        content, usage = result["content"], result["usage"]
+
+        parsed = _parse_tool_call(content)
+        if parsed is None:
+            return {"content": content, "transcript": transcript, "usage": usage, "hit_round_limit": False}
+
+        tool_name = parsed.get("tool")
+        tool_args = parsed.get("args") or {}
+        tool_result = llm_db_tools.call_tool(tool_name, tool_args)
+        transcript.append({"tool": tool_name, "args": tool_args, "result": tool_result})
+        messages.append({"role": "assistant", "content": content})
+        messages.append({"role": "user", "content": "Tool result: " + json.dumps(tool_result)})
+
+    return {"content": content, "transcript": transcript, "usage": usage, "hit_round_limit": True}
+
+
+@app.get("/llm/log/{log_id}", response_class=HTMLResponse)
+def llm_log_detail(request: Request, log_id: int):
+    """Full-text view of one Recent Calls row -- the log table itself only shows the first 200
+    chars per field (readability in a compact table), and even the DB only ever stores up to
+    llm_log.MAX_STORED_CHARS -- there is no un-truncated copy beyond that anywhere. This page just
+    stops throwing away the rest of what WAS actually stored."""
+    row = llm_log.get_by_id(log_id)
+    if row is None:
+        return HTMLResponse(f'<p class="muted" style="color:var(--red);">No log entry with id {log_id}.</p>', status_code=404)
+    return templates.TemplateResponse(request, "llm_log_detail.html", {
+        "row": row, "draft_tag": llm_client.LLM_DRAFT_TAG,
+    })
+
+
 @app.get("/llm", response_class=HTMLResponse)
 def llm_page(request: Request, source: str = "", model_filter: str = "", q: str = ""):
     """Manual "pass off a prompt, see the response" page for the local Open WebUI/Ollama
@@ -1601,10 +1872,11 @@ def llm_page(request: Request, source: str = "", model_filter: str = "", q: str 
         "values": values, "models": models, "models_error": models_error,
         "prompt": "", "system": "", "file_path": "", "model": values["llm_default_model"],
         "response": None, "usage_display": None, "call_error": None, "ran": False,
+        "tool_transcript": None, "hit_round_limit": False, "use_db_tools": False,
         "log": llm_log.recent(source=source or None, model=model_filter or None, q=q or None),
         "log_sources": llm_log.distinct_sources(),
         "filter_source": source, "filter_model": model_filter, "filter_q": q,
-        "draft_tag": llm_client.LLM_DRAFT_TAG,
+        "draft_tag": llm_client.LLM_DRAFT_TAG, "quick_actions": QUICK_ACTIONS,
     })
 
 
@@ -1615,11 +1887,18 @@ async def llm_submit(request: Request):
     system = form.get("system", "").strip() or None
     file_path = form.get("file_path", "").strip()
     image_upload = form.get("image")
+    # Set when the Prompt box was loaded from the quick-action dropdown (see
+    # /llm/quick-action-prompt) and left unedited enough to still count as that action, rather
+    # than a free-form manual prompt -- lets the log correctly attribute it instead of every
+    # quick-action-originated call collapsing into "manual".
+    log_source = form.get("quick_action", "").strip() or "manual"
+    use_db_tools = form.get("use_db_tools") == "on"
 
     con = get_con()
     values = settings_mod.get_all(con)
     con.close()
     model = form.get("model", "").strip() or values["llm_default_model"]
+    models, models_error = _llm_models(values["llm_base_url"])
 
     # File-path summarize input: read the file server-side and fold it into the prompt, rather
     # than requiring it be pasted by hand. A prompt AND a file both given appends the file's
@@ -1648,24 +1927,52 @@ async def llm_submit(request: Request):
                 )
 
     image_b64 = None
+    image_mime = "image/png"
     if image_upload and getattr(image_upload, "filename", ""):
         image_bytes = await image_upload.read()
         if image_bytes:
             image_b64 = base64.b64encode(image_bytes).decode("ascii")
+            image_mime = getattr(image_upload, "content_type", None) or "image/png"
 
     response_text = None
     usage_display = None
+    tool_transcript = None
+    hit_round_limit = False
     call_error = file_error
     if not call_error:
         if not prompt.strip():
             call_error = "Prompt (or a file path) is required."
+        elif use_db_tools and image_b64:
+            call_error = "Read-only DB tools and image attachments can't be combined -- pick one."
+        elif image_b64 and not _model_supports_vision(models, model):
+            # Real error found live 2026-09-14: sending an image to a non-vision model gets a
+            # generic "Multimodal data provided, but model does not support multimodal requests"
+            # from Open WebUI -- correct but unhelpful (doesn't say WHICH models would work).
+            # Caught here with a clear, actionable message instead of surfacing the raw API error;
+            # the model dropdown's own JS also filters to vision models once an image is chosen,
+            # so this is a safety net for a stale selection, not the primary defense.
+            vision_models = ", ".join(m["id"] for m in models if "vision" in m.get("ollama", {}).get("capabilities", [])) or "(none currently loaded)"
+            call_error = (f"'{model}' doesn't support image input. Vision-capable models "
+                          f"currently loaded: {vision_models}.")
         else:
             try:
                 timeout = LLM_PAGE_TIMEOUT * (2 if image_b64 else 1)
-                result = llm_client.chat_full(
-                    prompt, model=model, system=system, base_url=values["llm_base_url"],
-                    timeout=timeout, image_b64=image_b64,
-                )
+                if use_db_tools:
+                    # Tool rounds each cost their own model call, so give this real headroom --
+                    # MAX_TOOL_ROUNDS sequential calls, not one.
+                    result = _run_tool_chat(
+                        prompt, model, system, values["llm_base_url"], timeout=LLM_PAGE_TIMEOUT)
+                    tool_transcript = result["transcript"]
+                    hit_round_limit = result["hit_round_limit"]
+                    if hit_round_limit:
+                        log_source = "manual_db_tools_truncated"
+                    elif tool_transcript:
+                        log_source = "manual_db_tools"
+                else:
+                    result = llm_client.chat_full(
+                        prompt, model=model, system=system, base_url=values["llm_base_url"],
+                        timeout=timeout, image_b64=image_b64, image_mime=image_mime,
+                    )
                 response_text = result["content"]
                 usage = result["usage"]
                 tok_s = usage.get("response_token/s")
@@ -1673,21 +1980,154 @@ async def llm_submit(request: Request):
                 usage_display = (
                     f"{tok_s:.0f} tok/s, {total_s / 1e9:.1f}s" if tok_s and total_s else ""
                 )
-                llm_log.record("manual", model, prompt, response=response_text, usage=usage)
+                log_prompt = prompt if not tool_transcript else (
+                    prompt + "\n\n[tool calls: " + json.dumps(tool_transcript) + "]"
+                )
+                llm_log.record(log_source, model, log_prompt, response=response_text, usage=usage)
             except llm_client.LLMClientError as e:
                 call_error = str(e)
-                llm_log.record("manual", model, prompt, error=call_error)
-
-    models, models_error = _llm_models(values["llm_base_url"])
+                llm_log.record(log_source, model, prompt, error=call_error)
 
     return templates.TemplateResponse(request, "llm.html", {
         "values": values, "models": models, "models_error": models_error,
         "prompt": prompt, "system": system or "", "file_path": file_path, "model": model,
         "response": response_text, "usage_display": usage_display, "call_error": call_error,
+        "tool_transcript": tool_transcript, "hit_round_limit": hit_round_limit,
+        "use_db_tools": use_db_tools,
         "ran": True, "log": llm_log.recent(), "log_sources": llm_log.distinct_sources(),
         "filter_source": "", "filter_model": "", "filter_q": "",
-        "draft_tag": llm_client.LLM_DRAFT_TAG,
+        "draft_tag": llm_client.LLM_DRAFT_TAG, "quick_actions": QUICK_ACTIONS,
     })
+
+
+def _suggest_grep_prompt(line_text: str, citation: str = "") -> str:
+    """Shared with /llm/quick-action-prompt so the main LLM Assistant page's quick-action dropdown
+    builds the EXACT same prompt this route sends -- one real template, not two copies to keep in
+    sync."""
+    return (
+        "A Topaz FFXI server Lua line failed to convert to our DSP target automatically:\n\n"
+        f"{line_text}\n\n"
+        + (f"Known context: {citation}\n\n" if citation else "")
+        + "In one or two sentences, suggest what a real DSP C++/Lua source file and function name "
+          "to grep for might plausibly be, to find the equivalent. Be concise. Do not claim "
+          "certainty -- this is only a starting point for a human to go verify against real source."
+    )
+
+
+def _capture_summary_prompt(con: sqlite3.Connection, capture_id: int) -> str | None:
+    """Shared with /llm/quick-action-prompt -- returns None if the capture doesn't exist.
+
+    Pulls real sampled CONTENT (named entities, combat actions, events, chat) from the capture's
+    own indexed tables, not just metadata/row counts -- a model asked to summarize "139 npc
+    entries, 74 events" has nothing to actually describe; a model given "Qutrub cast Thunder,
+    Absorb-STR, Stun; Lamia Graverobber cast Waterga III" can write something a developer would
+    actually find useful. Every table is queried defensively (a capture format that doesn't
+    populate a given table, e.g. no chat log, just contributes an empty section, not an error)."""
+    row = con.execute("SELECT * FROM captures WHERE capture_id=?", (capture_id,)).fetchone()
+    if not row:
+        return None
+    cap = dict(row)
+    tags = build_capture_index.get_capture_tags(con, capture_id)
+
+    hp_events = con.execute(
+        "SELECT mob_name, hp_low, hp_high FROM capture_hp_events WHERE capture_id=? ORDER BY seq LIMIT 30",
+        (capture_id,)).fetchall()
+    n_history = con.execute("SELECT COUNT(*) FROM capture_npc_history WHERE capture_id=?", (capture_id,)).fetchone()[0]
+    n_events = con.execute("SELECT COUNT(*) FROM capture_events WHERE capture_id=?", (capture_id,)).fetchone()[0]
+
+    named_entities = con.execute(
+        "SELECT DISTINCT name FROM capture_npc_entries WHERE capture_id=? AND name IS NOT NULL "
+        "AND name NOT LIKE '\\_%' ESCAPE '\\' ORDER BY name LIMIT 25", (capture_id,)).fetchall()
+    actions = con.execute(
+        "SELECT actor_name, name FROM capture_actions WHERE capture_id=? AND name IS NOT NULL "
+        "ORDER BY ts LIMIT 25", (capture_id,)).fetchall()
+    events = con.execute(
+        "SELECT DISTINCT opcode_name, entity_name FROM capture_events WHERE capture_id=? "
+        "AND entity_name IS NOT NULL ORDER BY seq LIMIT 25", (capture_id,)).fetchall()
+    chat = con.execute(
+        "SELECT text FROM capture_caplog_chat WHERE capture_id=? AND text IS NOT NULL "
+        "ORDER BY seq LIMIT 15", (capture_id,)).fetchall()
+    ki_events = con.execute(
+        "SELECT keyitem_name FROM capture_ki_events WHERE capture_id=? AND keyitem_name IS NOT NULL "
+        "ORDER BY seq LIMIT 15", (capture_id,)).fetchall()
+
+    zones = json.loads(cap["zones"]) if cap.get("zones") else []
+    lines = [
+        f"label: {cap.get('capture_label')}",
+        f"content_type: {cap.get('content_type')}",
+        f"mission: {cap.get('mission_name') or '(unresolved)'}",
+        f"zones: {', '.join(zones) or '(none recorded)'}",
+        f"capturer: {cap.get('capturer') or '(unknown)'}",
+        f"tags: {', '.join(tags) or '(none)'}",
+        f"npc history deltas: {n_history}, real events: {n_events}",
+    ]
+    if named_entities:
+        lines.append("Named entities present (sample): " + ", ".join(r["name"] for r in named_entities))
+    if actions:
+        lines.append("Combat/ability actions in order (actor: action, sample): " + "; ".join(
+            f"{a['actor_name']}: {a['name']}" for a in actions if a["actor_name"]
+        ))
+    if events:
+        lines.append("Notable events (type -- entity, sample): " + "; ".join(
+            f"{e['opcode_name']} -- {e['entity_name']}" for e in events
+        ))
+    if chat:
+        lines.append("Chat/system text (sample): " + " | ".join(c["text"] for c in chat if c["text"]))
+    if ki_events:
+        lines.append("Key items obtained (sample): " + ", ".join(k["keyitem_name"] for k in ki_events))
+    if hp_events:
+        lines.append("HP events (mob, hp% range): " + "; ".join(
+            f"{h['mob_name']} {h['hp_low']}-{h['hp_high']}%" for h in hp_events
+        ))
+    return (
+        "Here is metadata for one FFXI Assault-mission gameplay capture. Write a single, plain "
+        "one-paragraph summary a developer could read to quickly understand what this capture "
+        "shows, without restating every field verbatim:\n\n" + "\n".join(lines)
+    )
+
+
+QUICK_ACTIONS = {
+    "lua_converter_suggest_grep": {
+        "label": "Lua Converter: suggest a grep target for a flagged line",
+        "fields": [
+            {"name": "line_text", "label": "Flagged line text", "type": "textarea"},
+            {"name": "citation", "label": "Known context (optional)", "type": "text"},
+        ],
+    },
+    "capture_summarize": {
+        "label": "Captures: summarize one capture's indexed data",
+        "fields": [{"name": "capture_id", "label": "Capture id", "type": "number"}],
+    },
+}
+
+
+@app.post("/llm/quick-action-prompt")
+async def llm_quick_action_prompt(request: Request):
+    """Builds the real prompt text for one of QUICK_ACTIONS server-side (same helper functions
+    the dedicated routes below use) and returns it as JSON, so the main LLM Assistant page's
+    dropdown can load the exact real template into the Prompt box instead of a user having to
+    know these actions exist at all, let alone reconstruct their wording by hand."""
+    form = await request.form()
+    action = form.get("action", "")
+    if action == "lua_converter_suggest_grep":
+        line_text = form.get("line_text", "").strip()
+        if not line_text:
+            return JSONResponse({"error": "Flagged line text is required."}, status_code=400)
+        return JSONResponse({"prompt": _suggest_grep_prompt(line_text, form.get("citation", "").strip())})
+    if action == "capture_summarize":
+        try:
+            capture_id = int(form.get("capture_id", ""))
+        except ValueError:
+            return JSONResponse({"error": "Capture id must be a number."}, status_code=400)
+        con = get_con()
+        try:
+            prompt = _capture_summary_prompt(con, capture_id)
+        finally:
+            con.close()
+        if prompt is None:
+            return JSONResponse({"error": f"No capture with id {capture_id}."}, status_code=404)
+        return JSONResponse({"prompt": prompt})
+    return JSONResponse({"error": f"Unknown quick action: {action!r}"}, status_code=400)
 
 
 @app.post("/llm/suggest-grep", response_class=HTMLResponse)
@@ -1708,14 +2148,7 @@ async def llm_suggest_grep(request: Request):
     values = settings_mod.get_all(con)
     con.close()
 
-    prompt = (
-        "A Topaz FFXI server Lua line failed to convert to our DSP target automatically:\n\n"
-        f"{line_text}\n\n"
-        + (f"Known context: {citation}\n\n" if citation else "")
-        + "In one or two sentences, suggest what a real DSP C++/Lua source file and function name "
-          "to grep for might plausibly be, to find the equivalent. Be concise. Do not claim "
-          "certainty -- this is only a starting point for a human to go verify against real source."
-    )
+    prompt = _suggest_grep_prompt(line_text, citation)
     try:
         model = values["llm_default_model"]
         text = llm_client.chat(prompt, model=model, base_url=values["llm_base_url"], timeout=LLM_PAGE_TIMEOUT)
@@ -1736,39 +2169,12 @@ def llm_summarize_capture(capture_id: int):
     model for a one-paragraph human-readable summary. Useful for a capture with a long/unclear
     label, or before deciding whether it's worth watching the linked video."""
     con = get_con()
-    row = con.execute("SELECT * FROM captures WHERE capture_id=?", (capture_id,)).fetchone()
-    if not row:
+    prompt = _capture_summary_prompt(con, capture_id)
+    if prompt is None:
         con.close()
         return HTMLResponse('<p class="muted" style="color:var(--red);">Capture not found.</p>')
-    cap = dict(row)
-    tags = build_capture_index.get_capture_tags(con, capture_id)
-    hp_events = con.execute(
-        "SELECT mob_name, hp_low, hp_high FROM capture_hp_events WHERE capture_id=? ORDER BY seq LIMIT 30",
-        (capture_id,)).fetchall()
-    n_history = con.execute("SELECT COUNT(*) FROM capture_npc_history WHERE capture_id=?", (capture_id,)).fetchone()[0]
-    n_events = con.execute("SELECT COUNT(*) FROM capture_events WHERE capture_id=?", (capture_id,)).fetchone()[0]
     values = settings_mod.get_all(con)
     con.close()
-
-    zones = json.loads(cap["zones"]) if cap.get("zones") else []
-    lines = [
-        f"label: {cap.get('capture_label')}",
-        f"content_type: {cap.get('content_type')}",
-        f"mission: {cap.get('mission_name') or '(unresolved)'}",
-        f"zones: {', '.join(zones) or '(none recorded)'}",
-        f"capturer: {cap.get('capturer') or '(unknown)'}",
-        f"tags: {', '.join(tags) or '(none)'}",
-        f"npc history deltas: {n_history}, real events: {n_events}",
-    ]
-    if hp_events:
-        lines.append("HP events (mob, hp% range): " + "; ".join(
-            f"{h['mob_name']} {h['hp_low']}-{h['hp_high']}%" for h in hp_events
-        ))
-    prompt = (
-        "Here is metadata for one FFXI Assault-mission gameplay capture. Write a single, plain "
-        "one-paragraph summary a developer could read to quickly understand what this capture "
-        "shows, without restating every field verbatim:\n\n" + "\n".join(lines)
-    )
 
     try:
         model = values["llm_default_model"]
@@ -3850,6 +4256,7 @@ async def settings_save(request: Request):
         # reset it to "light" on every Settings save (form.get() with no theme field present).
         "topaz_server_path": form.get("topaz_server_path", "").strip(),
         "dsp_server_path": form.get("dsp_server_path", "").strip(),
+        "backport_root": form.get("backport_root", "").strip(),
         "ffxi_install_path": form.get("ffxi_install_path", "").strip(),
         "xi_model_viewer_url": form.get("xi_model_viewer_url", "").strip(),
         "port": port_value,
