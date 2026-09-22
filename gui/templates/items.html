@@ -28,7 +28,7 @@ build_database.py already computes (norm_name). Shows where our id agrees with t
 where the name matches but the id drifted, and what exists only on one side.</p>
 
 <form class="search" method="get">
-  <input type="text" name="q" value="{{ q }}" placeholder="item name substring (e.g. Ridill)">
+  <input type="text" name="q" value="{{ q }}" placeholder="item name substring or exact item ID (e.g. Ridill or 16416)">
   <select name="status">
     <option value="all" {{ "selected" if status == "all" }}>all ({{ counts.all }})</option>
     <option value="matched" {{ "selected" if status == "matched" }}>matched ({{ counts.matched }})</option>

@@ -29,6 +29,7 @@ DEFAULTS = {
     "theme": "light",              # light | dark
     "topaz_server_path": "",       # empty = use DEFAULT_TOPAZ_ROOT, see get_topaz_root()
     "dsp_server_path": "",         # empty = DSP cross-reference disabled, see get_dsp_root()
+    "zoneplot_server": "topaz",    # "topaz" | "dsp" -- which live DB Zone Plot's level editor targets
     "backport_root": "",           # empty = use the bundled backport-workspace/ scaffold, see get_backport_root()
     "ffxi_install_path": "",       # empty = detect via Windows registry, see get_ffxi_install()
     # xi-model-viewer's own dev server (npm run dev, ui/vite.config.js) -- default matches its

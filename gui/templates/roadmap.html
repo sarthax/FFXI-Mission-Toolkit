@@ -242,6 +242,29 @@
 <h2 class="rm">Phases</h2>
 
 <div class="phase">
+  <div class="phase-head"><span class="phase-num">F</span><h3>Zone Plot: server-agnostic level editor, Add-tab UX, render-race fixes</h3></div>
+  <div class="phase-meta"><span class="meta-chip built">Built 2026-09-21</span><span class="meta-chip">Live DB writes</span><span class="meta-chip">Topaz + DSP</span></div>
+  <p>Zone Plot (<code class="chip">/zoneplot</code>) draws every mob/NPC/door spawn row of a zone
+    straight from the <strong>live</strong> server DB over the real client mesh and navmesh, and
+    can add/move/delete rows directly against MariaDB with an auto-backup per edit. It was
+    hardcoded to <code class="chip">C:\topaz</code>; a new <code class="chip">zoneplot_server</code>
+    setting now lets it target either Topaz or a real DSP checkout, switching live with no restart.
+    Real schema drift between the two servers is handled explicitly rather than assumed away --
+    DSP's <code class="chip">mob_groups</code> has no <code class="chip">name</code> column at all
+    (falls back to <code class="chip">mob_spawn_points.mobname</code>), and DSP's
+    <code class="chip">instance_list</code> has no reliable "which zone does this instance run in"
+    column, fixed by decoding each instance's real zone from its own
+    <code class="chip">instance_entities</code> ids instead of trusting the column. The Add tab was
+    reworked per direct feedback that it was cumbersome: a persistent marker now shows exactly
+    where a click or drag-and-drop will place a new entity, a cursor-coordinate readout appears on
+    hover, and adding now flies the camera to the new entity instead of leaving the view
+    unchanged. Also fixed two viewer bugs: a zone-switch race where a still-loading navmesh from
+    the <em>previous</em> zone could resolve late and overlay onto the new one, and OrbitControls'
+    default pan (which scales with camera-zoom distance) making right-drag panning nearly
+    unusable when zoomed in close.</p>
+</div>
+
+<div class="phase">
   <div class="phase-head"><span class="phase-num">E</span><h3>LSB-primary core module + Topaz/DSP backport module</h3></div>
   <div class="phase-meta"><span class="meta-chip built">Built 2026-09-08</span><span class="meta-chip">4 phases, see CORE_AGNOSTIC_DESIGN.md</span></div>
   <p>The toolkit's default target flipped from Topaz-primary to <strong>LSB-primary</strong>, with
