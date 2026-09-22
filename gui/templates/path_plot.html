@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Path Plot{% endblock %}
+
+{% block content %}
+{% set qs_id = ('pc=1&zone_db=' + (zone_db|urlencode)) if pc else ('entity_id=' + entity_id|string) %}
+<h1>Path plot {% if pc %}<span class="chip">PC trace</span>{% else %}<span class="chip mono">{{ entity_id }}</span>{% endif %}</h1>
+<p><a class="inline" href="/captures/{{ capture_id }}">&larr; back to capture #{{ capture_id }}</a>
+  {% if zoneid %}&nbsp;&middot;&nbsp; <a class="inline" href="/zones/{{ zoneid }}/view3d?capture_id={{ capture_id }}&{{ qs_id }}">view in 3D &rarr;</a>{% endif %}</p>
+
+{% if entry %}
+<p>{% if pc %}Capturing character's own path{% else %}{{ entry.name or '?' }}{% endif %} in <strong>{{ entry.zone_db }}</strong>
+  {% if svg %}-- {{ svg.n_points }} real position samples{% endif %}</p>
+{% endif %}
+
+{% if topdown_available and svg %}
+<h2>Aligned overlay</h2>
+
+<form method="get" style="display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
+  <input type="hidden" name="capture_id" value="{{ capture_id }}">
+  {% if pc %}
+  <input type="hidden" name="pc" value="1">
+  <input type="hidden" name="zone_db" value="{{ zone_db }}">
+  {% else %}
+  <input type="hidden" name="entity_id" value="{{ entity_id }}">
+  {% endif %}
+  <input type="hidden" name="detail" value="{{ detail }}">
+  <span class="muted">padding around path:</span>
+  <input type="number" name="pad_yalms" value="{{ pad_yalms }}" min="10" max="2000" step="10" style="width:80px;">
+  <span class="muted">yalms</span>
+  <button type="submit">Apply</button>
+  <a class="chip" href="/captures/plot?capture_id={{ capture_id }}&{{ qs_id }}&pad_yalms=100000&detail={{ detail }}">view whole zone</a>
+  {% if variants.collision and variants.detailed %}
+  <span class="muted" style="margin-left:auto;">mesh:</span>
+  <a class="chip" style="{% if not detail %}background:var(--accent-soft);color:var(--accent);{% endif %}"
+     href="/captures/plot?capture_id={{ capture_id }}&{{ qs_id }}&pad_yalms={{ pad_yalms }}&detail=0">collision (clean)</a>
+  <a class="chip" style="{% if detail %}background:var(--accent-soft);color:var(--accent);{% endif %}"
+     href="/captures/plot?capture_id={{ capture_id }}&{{ qs_id }}&pad_yalms={{ pad_yalms }}&detail=1">visual (detailed)</a>
+  {% endif %}
+</form>
+
+<div id="plot-viewport" style="overflow:hidden; border:1px solid var(--border); border-radius:8px; max-width:520px; cursor:grab; background:var(--code-bg);">
+  <img id="plot-img" src="/captures/plot.png?capture_id={{ capture_id }}&{{ qs_id }}&pad_yalms={{ pad_yalms }}&detail={{ detail }}"
+       style="display:block; width:100%; transform-origin:0 0; user-select:none;" draggable="false">
+</div>
+<p class="muted">Scroll to zoom, drag to pan, double-click to reset. Green = first position, red =
+  last. Drawn directly onto a real top-down silhouette of the zone's own collision mesh (client
+  geometry, not the decorative in-game minimap) -- coordinate-aligned by construction, empirically
+  verified against real capture data (avg. 1.33 units from nearest mesh vertex vs. 15-33 for the
+  wrong axis-sign combinations). Zones are often stitched together from several sub-areas, so this
+  crops to the path's own bounding box by default rather than showing the whole zone.</p>
+<script>
+(function() {
+  const viewport = document.getElementById('plot-viewport');
+  const img = document.getElementById('plot-img');
+  let scale = 1, tx = 0, ty = 0, dragging = false, lastX = 0, lastY = 0;
+
+  function apply() {
+    img.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+  }
+
+  viewport.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const rect = viewport.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+    const newScale = Math.min(8, Math.max(1, scale * factor));
+    tx = mx - (mx - tx) * (newScale / scale);
+    ty = my - (my - ty) * (newScale / scale);
+    scale = newScale;
+    if (scale === 1) { tx = 0; ty = 0; }
+    apply();
+  }, { passive: false });
+
+  viewport.addEventListener('mousedown', (e) => {
+    dragging = true; lastX = e.clientX; lastY = e.clientY;
+    viewport.style.cursor = 'grabbing';
+  });
+  window.addEventListener('mouseup', () => { dragging = false; viewport.style.cursor = 'grab'; });
+  window.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    tx += e.clientX - lastX; ty += e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    apply();
+  });
+  viewport.addEventListener('dblclick', () => { scale = 1; tx = 0; ty = 0; apply(); });
+})();
+</script>
+{% endif %}
+
+<div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start;">
+  <div>
+    <h2>Path (autoscaled to real x/z coordinates)</h2>
+    {% if svg %}
+    <svg width="{{ svg.size }}" height="{{ svg.size }}" viewBox="0 0 {{ svg.size }} {{ svg.size }}"
+         style="background:var(--code-bg); border:1px solid var(--border); border-radius:8px;">
+      <polyline points="{{ svg.polyline }}" fill="none" stroke="var(--accent)" stroke-width="2" />
+      <circle cx="{{ svg.start[0] }}" cy="{{ svg.start[1] }}" r="6" fill="#3f9e5b" />
+      <circle cx="{{ svg.end[0] }}" cy="{{ svg.end[1] }}" r="6" fill="var(--red)" />
+    </svg>
+    <p class="muted">Green = first observed position, red = last. Axes are the real x/z ground
+      plane (y/height dropped) -- NOT yet aligned to the map image's own pixel scale/offset, see
+      note below.</p>
+    {% else %}
+    <div class="warn">No path or position-history data found for this entity in this capture --
+      it may be a fixed prop/NPC with only NPCLogger snapshot rows, not PathLog/history deltas.</div>
+    {% endif %}
+  </div>
+
+  <div>
+    <h2>In-game minimap{{ 's' if map_files|length != 1 else '' }} (decorative, reference only)</h2>
+    {% if map_files %}
+    <p class="muted">Real client-extracted minimap{{ 's' if map_files|length != 1 else '' }} for
+      zoneid {{ zoneid }} ({{ map_files|length }} submap{{ 's' if map_files|length != 1 else '' }}
+      -- pick whichever matches this area). These are hand-drawn/stylized, and their own pixel
+      scale/offset still hasn't been located -- use the aligned collision-mesh overlay above for
+      anything that needs real coordinates; these are just for visually recognizing the area.</p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      {% for f in map_files %}
+      <img src="/maps/{{ f }}" width="200" height="200" style="border:1px solid var(--border); border-radius:6px;" title="{{ f }}">
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">No map found for this zone (zoneid={{ zoneid }}).</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

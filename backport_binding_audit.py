@@ -38,9 +38,10 @@ from pathlib import Path
 import backport_binding_index as bbi
 
 import backport_lua_convert as blc
+import settings
 
-PACKAGES_ROOT = Path(r"D:\Claude\Topaz-Assault-Backport\mission-packages")
-DEFAULT_DSP_ROOT = Path(r"D:\Claude\old-dsp-reference")
+DEFAULT_PACKAGES_ROOT = settings.get_backport_root() / "mission-packages"
+DEFAULT_DSP_ROOT = settings.get_dsp_root()
 
 METHOD_CALL_RE = re.compile(r":([A-Za-z_][A-Za-z0-9_]*)\s*\(")
 
@@ -147,10 +148,16 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("path", nargs="?", help="A lua-dsp/ directory to audit")
     ap.add_argument("--all-packages", action="store_true", help="Audit every mission-packages/*/lua-dsp/ tree")
-    ap.add_argument("--dsp-root", default=str(DEFAULT_DSP_ROOT), help="Real DSP checkout to check against")
+    ap.add_argument("--dsp-root", default=str(DEFAULT_DSP_ROOT) if DEFAULT_DSP_ROOT else None,
+                     help="Real DSP checkout to check against (else Settings' dsp_server_path)")
+    ap.add_argument("--packages-root", default=str(DEFAULT_PACKAGES_ROOT),
+                     help="mission-packages/ root for --all-packages (else Settings' backport_root, "
+                          "else the bundled backport-workspace/ scaffold)")
     ap.add_argument("--show-confirmed", action="store_true", help="Also list confirmed (not just missing) bindings")
     args = ap.parse_args()
 
+    if not args.dsp_root:
+        ap.error("No DSP checkout configured -- set Settings' dsp_server_path or pass --dsp-root.")
     dsp_root = Path(args.dsp_root)
     flavor = blc.detect_target_flavor(dsp_root)
     if flavor is None:
@@ -160,7 +167,7 @@ def main():
     print(f"Target: {dsp_root} (detected flavor: {flavor})\n")
 
     if args.all_packages:
-        targets = sorted(PACKAGES_ROOT.glob("*/lua-dsp"))
+        targets = sorted(Path(args.packages_root).glob("*/lua-dsp"))
     elif args.path:
         targets = [Path(args.path)]
     else:

@@ -137,6 +137,18 @@ def _build_simple_rules(ns_map: dict) -> list[tuple[re.Pattern, object]]:
         if topaz_call and dsp_call:
             rules.append((re.compile(re.escape(topaz_call)), dsp_call))
 
+    # call_reshapes: a real API SHAPE difference (same function name on both sides, different real
+    # argument types) -- these can't be a plain string substitution like whole_call_renames since
+    # the argument itself varies per call site, so each one needs its own hand-written
+    # regex-capture rule here. See data/dsp_namespace_map.json's call_reshapes._readme for why this
+    # category exists and what it can't catch on its own (backport_binding_audit.py can't detect a
+    # shape mismatch at all -- only a live server crash surfaced the first one, 2026-09-14).
+    if "GetNPCByID_instance_arg" in ns_map.get("call_reshapes", {}):
+        rules.append((
+            re.compile(r"GetNPCByID\(([^,()]+),\s*instance\)"),
+            lambda m: f"instance:getEntity(bit.band({m.group(1).strip()}, 0xFFF), TYPE_NPC)",
+        ))
+
     return rules
 
 

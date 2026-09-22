@@ -1,0 +1,15 @@
+[project]
+name = "xi-events"
+version = "0.0.1"
+description = "FFXI event-script bytecode decompiler"
+requires-python = ">=3.11"
+dependencies = [
+    "luaparser>=4.0",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["xi_events*"]

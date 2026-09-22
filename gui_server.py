@@ -32,7 +32,7 @@ from datetime import datetime
 from pathlib import Path
 
 from fastapi import FastAPI, Form, Query, Request
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
 import yaml
@@ -4400,6 +4400,192 @@ def restart_server(request: Request):
     request."."""
     _relaunch_and_exit()
     return templates.TemplateResponse(request, "shutdown.html", {"mode": "restart"})
+
+
+# ---- Nyzul Isle plot tool (nyzul_plot.py) ---------------------------------------------------
+import nyzul_plot
+
+
+@app.get("/nyzul", response_class=HTMLResponse)
+def nyzul_page(request: Request):
+    return templates.TemplateResponse(request, "nyzul_plot.html", {
+        "request": request, "obj_available": (ZONE_VISUAL_DIR / "77.obj").exists()})
+
+
+@app.get("/nyzul/data.json")
+def nyzul_data():
+    d = nyzul_plot.load_data()
+    d["reach"] = nyzul_plot.reachability()
+    d["exclusions"] = nyzul_plot.load_exclusions()
+    return JSONResponse(d)
+
+
+@app.get("/nyzul/navmesh.bin")
+def nyzul_navmesh():
+    return Response(nyzul_plot.nav_triangles_bytes(), media_type="application/octet-stream")
+
+
+@app.post("/nyzul/exclusions")
+async def nyzul_save_exclusions(request: Request):
+    nyzul_plot.save_exclusions(await request.json())
+    return {"ok": True}
+
+
+# ---- Generic zone plot (zone_plot.py) -------------------------------------------------------
+import zone_plot
+
+
+@app.get("/zoneplot", response_class=HTMLResponse)
+def zoneplot_page(request: Request):
+    return templates.TemplateResponse(request, "zone_plot.html", {"request": request})
+
+
+@app.get("/zoneplot/server.json")
+def zoneplot_server_get():
+    import settings
+    return JSONResponse({"server": zone_plot.get_server(), "dsp_configured": settings.get_dsp_root() is not None})
+
+
+@app.post("/zoneplot/server.json")
+async def zoneplot_server_set(request: Request):
+    b = await request.json()
+    try:
+        zone_plot.set_server(b["server"])
+        return JSONResponse({"server": zone_plot.get_server()})
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.get("/zoneplot/zones.json")
+def zoneplot_zones():
+    return JSONResponse(zone_plot.zone_list())
+
+
+@app.get("/zoneplot/descriptors.json")
+def zoneplot_descriptors():
+    import json as _j
+    d = Path(__file__).parent / "plot_descriptors"
+    return JSONResponse([_j.loads(f.read_text()) for f in sorted(d.glob("*.json"))])
+
+
+@app.get("/zoneplot/{zid}/data.json")
+def zoneplot_data(zid: int, instance: int = 0):
+    d = zone_plot.zone_data(zid, instance)
+    d["obj"] = True  # /mesh.zmesh builds the cache on demand; empty response if the zone has no geometry
+    return JSONResponse(d)
+
+
+@app.get("/zoneplot/{zid}/reach.json")
+def zoneplot_reach(zid: int, instance: int = 0, ax: float = None, ay: float = 0.0, az: float = 0.0):
+    return JSONResponse(zone_plot.reach(zid, (ax, ay, az) if ax is not None else None, instance))
+
+
+@app.get("/zoneplot/{zid}/mesh.zmesh")
+def zoneplot_mesh(zid: int, lod: int = 0):
+    import zmesh
+    if not (ZONE_VISUAL_DIR / f"{zid}.obj").exists():  # build the visual-mesh cache on demand
+        import sqlite3, settings, build_zone_visual_cache as bz
+        ffxi = settings.get_ffxi_install()
+        if ffxi:
+            con = sqlite3.connect(str(bz.DB_PATH))
+            try:
+                bz.build_one(con, zid, ffxi)
+            finally:
+                con.close()
+    p = zmesh.convert(zid, lod=lod if lod in zmesh.LODS else 0)
+    if not p:
+        return Response(b"", media_type="application/octet-stream")
+    return FileResponse(p, media_type="application/octet-stream")
+
+
+@app.get("/zoneplot/{zid}/mesh_info.json")
+def zoneplot_mesh_info(zid: int):
+    """Base (LOD 0) triangle count, without downloading the mesh -- lets the client pick a sane default LOD
+    before it commits to fetching a potentially huge zone (e.g. zone 34 is ~4.7M tris / 44MB at Full)."""
+    import zmesh
+    if not (ZONE_VISUAL_DIR / f"{zid}.obj").exists():
+        import sqlite3, settings, build_zone_visual_cache as bz
+        ffxi = settings.get_ffxi_install()
+        if ffxi:
+            con = sqlite3.connect(str(bz.DB_PATH))
+            try:
+                bz.build_one(con, zid, ffxi)
+            finally:
+                con.close()
+    p = zmesh.convert(zid, lod=0)
+    if not p:
+        return JSONResponse({"ntris": 0, "nverts": 0})
+    import struct
+    b = p.read_bytes()
+    nv, nt = struct.unpack_from("<II", b, 4)
+    return JSONResponse({"ntris": nt, "nverts": nv, "bytes": p.stat().st_size})
+
+
+@app.post("/zoneplot/edit")
+async def zoneplot_edit(request: Request):
+    import zone_edit
+    b = await request.json()
+    try:
+        return JSONResponse(zone_edit.update_position(b["k"], b["id"], b["x"], b["y"], b["z"], b.get("r", 0), b.get("comment", "")))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/zoneplot/delete")
+async def zoneplot_delete(request: Request):
+    import zone_edit
+    b = await request.json()
+    try:
+        return JSONResponse(zone_edit.delete_entity(b["k"], b["id"], b.get("comment", "")))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.get("/zoneplot/catalogue.json")
+def zoneplot_catalogue(kind: str, q: str = ""):
+    import zone_edit
+    return JSONResponse(zone_edit.catalogue(kind, q))
+
+
+@app.post("/zoneplot/add")
+async def zoneplot_add(request: Request):
+    import zone_edit
+    b = await request.json()
+    try:
+        return JSONResponse(zone_edit.add_entity(b["k"], b["zone"], b["src"], b["x"], b["y"], b["z"], b.get("r", 0), b.get("name", ""), b.get("comment", "")))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.get("/zoneplot/backups.json")
+def zoneplot_backups():
+    import zone_edit
+    return JSONResponse(zone_edit.list_backups())
+
+
+@app.post("/zoneplot/{zid}/snapshot")
+def zoneplot_snapshot(zid: int, label: str = ""):
+    import zone_edit
+    return JSONResponse({"id": zone_edit.snapshot_zone(zid, label)})
+
+
+@app.post("/zoneplot/restore")
+async def zoneplot_restore(request: Request):
+    import zone_edit
+    b = await request.json()
+    try:
+        return JSONResponse(zone_edit.restore(b["id"], b.get("exact", False)))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.get("/zoneplot/{zid}/navmesh.bin")
+def zoneplot_nav(zid: int):
+    d = zone_plot.zone_data(zid)
+    p = zone_plot.nav_path(d["zone"])
+    if not p:
+        return Response(b"", media_type="application/octet-stream")
+    return Response(zone_plot.nav.nav_triangles_bytes(p), media_type="application/octet-stream")
 
 
 if __name__ == "__main__":

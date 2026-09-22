@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Wiki Compiler{% endblock %}
+{% block content %}
+<h1>Wiki Compiler</h1>
+<p class="muted">Real <code class="chip">[[wikilinks]]</code> and <code class="chip">{{ '{{' }}Item Tooltip{{ '}}' }}</code>
+references from a BG Wiki page (via <code class="chip">mwparserfromhell</code>, a real MediaWiki
+parser -- not free-text NLP or an LLM), resolved against the indexed
+zones/NPCs/mobs/key items/items. Reference only -- verify anything load-bearing against Topaz's
+own SQL/Lua before relying on it.</p>
+
+<form class="search" method="get">
+  <input type="text" name="title" value="{{ title }}" placeholder="wiki page title or URL, e.g. Leujaoam Cleansing">
+  <button type="submit">Compile</button>
+</form>
+
+{% if report %}
+{% if report.error %}
+<div class="warn">{{ report.error }}</div>
+{% else %}
+<h2>{{ report.title }}</h2>
+<p class="muted"><a class="inline" href="{{ report.url }}" target="_blank">{{ report.url }}</a></p>
+<p>{{ report.rows|length }} real linked entities:
+  <span class="pill exists">{{ report.counts.found }} found</span>
+  <span class="pill gap">{{ report.counts.ambiguous }} ambiguous</span>
+  <span class="pill mismatch">{{ report.counts.not_found }} not found</span>
+  &nbsp;&nbsp;<a class="inline" href="/wiki/export?title={{ title }}" target="_blank">&#8681; export handoff packet (.md)</a>
+</p>
+
+{% if report.excerpt.client_text %}
+<h3>Mission text <span class="muted">(real client text, missions-assault.xml)</span></h3>
+<pre style="white-space:pre-wrap;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12.5px;">{{ report.excerpt.client_text }}</pre>
+{% endif %}
+{% for heading, body in report.excerpt.sections.items() %}
+<h3>{{ heading }} <span class="muted">(wiki text, BG Wiki -- reference only)</span></h3>
+<pre style="white-space:pre-wrap;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12.5px;">{{ body }}</pre>
+{% endfor %}
+{% if report.excerpt.fallback_text %}
+<h3>Page text <span class="muted">({{ report.excerpt.fallback_source }})</span></h3>
+<pre style="white-space:pre-wrap;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12.5px;">{{ report.excerpt.fallback_text }}</pre>
+{% endif %}
+
+{% for kind, entries in report.sections %}
+<h3 style="margin-top:24px;">{{ kind }} <span class="muted">({{ entries|length }})</span></h3>
+<div class="table-wrap"><table>
+  <tr><th>status</th><th>wiki name</th><th>match</th></tr>
+  {% for e in entries %}
+  {% for h in e.hits %}
+  <tr>
+    <td>
+      {% if e.status == "found" %}<span class="pill exists">&#9989;</span>
+      {% elif e.status == "ambiguous" %}<span class="pill gap">&#10067;</span>
+      {% else %}<span class="pill mismatch">&#128308;</span>{% endif %}
+    </td>
+    <td>{{ e.name }}</td>
+    <td class="mono" style="font-size:12px;">
+      {% if kind == "key item" %}
+        {% set rd = h.readiness %}
+        (<a class="inline" href="/keyitems?q={{ h.name }}" target="_blank">{{ h.id }}, {{ h.name }}</a>)
+        {% if rd.status == "clean" %}<span class="pill exists">tpz.keyItem.{{ rd.id_match }}</span>
+        {% elif rd.status == "drifted" %}<span class="pill gap">tpz.keyItem.{{ rd.name_match[1] }} (real id {{ rd.name_match[0] }}, not {{ h.id }})</span>
+        {% elif rd.status == "wrong_name" %}<span class="pill mismatch">id {{ h.id }} is a different item in Topaz</span>
+        {% else %}<span class="pill mismatch">not implemented</span>{% endif %}
+      {% elif kind == "npc/mob" %}
+        (<a class="inline" href="/entity/{{ h.id }}" target="_blank">{{ h.id }}, {{ h.name }}</a>, zone {{ h.zoneid }}{{ " (%s)" % h.zone_name if h.zone_name else "" }})
+        {% if "not registered" in h.wiring %}<span class="pill mismatch">{{ h.wiring }}</span>
+        {% elif "NOT in any" in h.wiring %}<span class="pill gap">{{ h.wiring }}</span>
+        {% else %}<span class="pill exists">{{ h.wiring }}</span>{% endif %}
+      {% else %}
+        {{ h }}
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  {% endfor %}
+</table></div>
+{% endfor %}
+
+{% if report.not_found_names %}
+<h3 style="margin-top:24px;">not found <span class="muted">({{ report.not_found_names|length }})</span></h3>
+<div class="table-wrap"><table>
+  <tr><th>wiki name</th></tr>
+  {% for name in report.not_found_names %}
+  <tr><td><span class="pill mismatch">&#128308;</span> {{ name }}</td></tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+{% endif %}
+{% endif %}
+{% endblock %}

@@ -15,7 +15,26 @@
   {% if "No API key" in models_error %}See <a class="inline" href="/settings">Settings</a>.{% endif %}</p>
 {% endif %}
 
+<div class="table-wrap" style="padding:14px; margin-bottom:14px;">
+  <label class="muted">Quick action -- loads the SAME real prompt template a quick-action button
+    elsewhere in the toolkit sends (Lua Converter's "Ask LLM", a capture's "summarize with LLM"),
+    so you can use/inspect them here without hunting for the page they normally live on.</label>
+  <br>
+  <select id="quick-action-select">
+    <option value="">(none -- write your own prompt below)</option>
+    {% for key, action in quick_actions.items() %}
+    <option value="{{ key }}">{{ action.label }}</option>
+    {% endfor %}
+  </select>
+  <div id="quick-action-fields" style="display:none; margin-top:10px; display:flex; flex-direction:column; gap:8px;"></div>
+  <div id="quick-action-error" class="muted" style="color:var(--red); display:none; margin-top:6px;"></div>
+  <div style="margin-top:8px; display:none;" id="quick-action-load-row">
+    <button type="button" id="quick-action-load-btn">Load prompt below</button>
+  </div>
+</div>
+
 <form method="post" action="/llm" enctype="multipart/form-data" id="llm-form" style="display:flex; flex-direction:column; gap:10px;">
+  <input type="hidden" name="quick_action" id="quick-action-hidden" value="">
   <label>Prompt
     <textarea name="prompt" rows="8" style="width:100%; font-family:monospace; font-size:0.9em;"
       placeholder="Ask the local model something...">{{ prompt }}</textarea>
@@ -23,19 +42,23 @@
 
   <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end;">
     <label>Or summarize a file (server-side path, e.g. a doc or capture log)
-      <br><input type="text" name="file_path" value="{{ file_path }}" style="width:420px;" placeholder="e.g. D:\Claude\Topaz-Assault-Backport\source\documentation\Assault_Fix_Log.md">
+      <br><input type="text" name="file_path" value="{{ file_path }}" style="width:420px;" placeholder="e.g. C:\your\backport\checkout\reports\some_report.md">
     </label>
     <label>Or attach an image (needs a vision-capable model, e.g. ornith-1.5:9b, gemma4:26b)
-      <br><input type="file" name="image" accept="image/*">
+      <br><input type="file" name="image" accept="image/*" id="llm-image-input">
     </label>
   </div>
+  <p id="llm-image-model-warning" class="muted" style="color:var(--red); display:none; margin:0;">
+    An image is attached -- switched to a vision-capable model. Non-vision models are hidden from
+    the list below while an image is attached (sending one to a non-vision model always fails).</p>
 
   <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end;">
     <label>Model
-      <br><select name="model">
+      <br><select name="model" id="llm-model-select">
         {% if models %}
           {% for m in models %}
-          <option value="{{ m.id }}" {% if m.id == model %}selected{% endif %}>{{ m.id }}
+          <option value="{{ m.id }}" {% if m.id == model %}selected{% endif %}
+            data-vision="{{ 'vision' in m.get('ollama', {}).get('capabilities', []) }}">{{ m.id }}
             {% set caps = m.get('ollama', {}).get('capabilities', []) %}
             {% if caps %}({{ caps|join(', ') }}){% endif %}
           </option>
@@ -48,6 +71,10 @@
     <label>System prompt (optional)
       <br><input type="text" name="system" value="{{ system }}" style="width:340px;" placeholder="e.g. You are terse.">
     </label>
+    <label style="display:flex; align-items:center; gap:6px;" title="Lets the model query this toolkit's own database on demand (list_tables/describe_table/query_sql) instead of relying only on what's in the prompt. Read-only, physically enforced -- see llm_db_tools.py. Every query made is shown below the response.">
+      <input type="checkbox" name="use_db_tools" {% if use_db_tools %}checked{% endif %}>
+      Allow read-only DB tool access
+    </label>
     <button type="submit" id="llm-submit-btn">Send</button>
     <span id="llm-spinner" class="muted" style="display:none;">Waiting for the model (larger models can take a while)...</span>
   </div>
@@ -58,6 +85,28 @@
 {% if call_error %}
 <p class="muted" style="color:var(--red);">error: {{ call_error }}</p>
 {% else %}
+{% if tool_transcript %}
+<h3>Tool calls made (read-only, real queries against this toolkit's own database)</h3>
+{% if hit_round_limit %}
+<div class="warn">Hit the {{ tool_transcript|length }}-round tool-call limit before the model gave
+  a final answer -- the response below is its last message, which may still be a tool call rather
+  than an actual answer. Try a narrower question.</div>
+{% endif %}
+<div class="table-wrap"><table>
+  <tr><th>#</th><th>Tool</th><th>Args</th><th>Result</th></tr>
+  {% for call in tool_transcript %}
+  <tr>
+    <td class="mono">{{ loop.index }}</td>
+    <td class="mono">{{ call.tool }}</td>
+    <td class="mono" style="max-width:200px; white-space:pre-wrap;">{{ call.args|tojson }}</td>
+    <td class="mono" style="max-width:420px; white-space:pre-wrap;">
+      {% if call.result.error %}<span style="color:var(--red);">{{ call.result.error }}</span>
+      {% else %}{{ call.result|tojson(indent=2) }}{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% endif %}
 <div class="warn" style="border-left-color:var(--accent); background:var(--accent-soft); display:flex; justify-content:space-between; align-items:center; gap:12px;">
   <span><strong>{{ draft_tag }}</strong>{% if usage_display %} <span class="muted mono">({{ usage_display }})</span>{% endif %}</span>
   <button type="button" id="copy-as-comment-btn" class="chip" style="cursor:pointer; white-space:nowrap;">Copy as -- LLM-DRAFT comment</button>
@@ -94,17 +143,18 @@
 
 {% if log %}
 <div class="table-wrap"><table>
-  <tr><th>When</th><th>Source</th><th>Model</th><th>Usage</th><th>Prompt</th><th>Result</th></tr>
+  <tr><th>When</th><th>Source</th><th>Model</th><th>Usage</th><th></th><th>Prompt</th><th>Result</th></tr>
   {% for row in log %}
   <tr>
     <td class="mono">{{ row.created_display }}</td>
     <td>{{ row.source }}</td>
     <td class="mono">{{ row.model }}</td>
     <td class="mono">{{ row.usage_display }}</td>
-    <td class="mono" style="max-width:320px; white-space:pre-wrap;">{{ row.prompt[:200] }}{% if row.prompt|length > 200 %}...{% endif %}</td>
-    <td class="mono" style="max-width:320px; white-space:pre-wrap;">
-      {% if row.error %}<span style="color:var(--red);">error: {{ row.error[:200] }}</span>
-      {% else %}{{ (row.response or "")[:200] }}{% if row.response and row.response|length > 200 %}...{% endif %}{% endif %}
+    <td><a class="chip" href="/llm/log/{{ row.id }}" style="white-space:nowrap;">view full &rarr;</a></td>
+    <td class="mono" style="max-width:220px; white-space:pre-wrap;">{{ row.prompt[:150] }}{% if row.prompt|length > 150 %}...{% endif %}</td>
+    <td class="mono" style="max-width:220px; white-space:pre-wrap;">
+      {% if row.error %}<span style="color:var(--red);">error: {{ row.error[:150] }}</span>
+      {% else %}{{ (row.response or "")[:150] }}{% if row.response and row.response|length > 150 %}...{% endif %}{% endif %}
     </td>
   </tr>
   {% endfor %}
@@ -117,6 +167,108 @@
 document.getElementById("llm-form").addEventListener("submit", function () {
   document.getElementById("llm-submit-btn").disabled = true;
   document.getElementById("llm-spinner").style.display = "inline";
+});
+
+// An image attached to a non-vision model always fails server-side (Open WebUI's own error:
+// "Multimodal data provided, but model does not support multimodal requests") -- filter the
+// model list down to vision-capable ones the moment an image is chosen, and switch away from a
+// non-vision selection automatically, rather than letting that failure happen at all.
+var imageInput = document.getElementById("llm-image-input");
+var modelSelect = document.getElementById("llm-model-select");
+var imageWarning = document.getElementById("llm-image-model-warning");
+
+function applyVisionFilter() {
+  var hasImage = imageInput.files && imageInput.files.length > 0;
+  var options = Array.from(modelSelect.options);
+  var currentIsVision = false;
+  options.forEach(function (opt) {
+    var isVision = opt.dataset.vision === "True" || opt.dataset.vision === "true";
+    opt.hidden = hasImage && !isVision;
+    if (opt.selected && isVision) currentIsVision = true;
+  });
+  imageWarning.style.display = hasImage ? "block" : "none";
+  if (hasImage && !currentIsVision) {
+    var firstVision = options.find(function (opt) {
+      return opt.dataset.vision === "True" || opt.dataset.vision === "true";
+    });
+    if (firstVision) modelSelect.value = firstVision.value;
+  }
+}
+if (imageInput && modelSelect) {
+  imageInput.addEventListener("change", applyVisionFilter);
+  applyVisionFilter();
+}
+
+var QUICK_ACTIONS = {{ quick_actions|tojson }};
+var qaSelect = document.getElementById("quick-action-select");
+var qaFieldsDiv = document.getElementById("quick-action-fields");
+var qaErrorDiv = document.getElementById("quick-action-error");
+var qaLoadRow = document.getElementById("quick-action-load-row");
+var qaHidden = document.getElementById("quick-action-hidden");
+var promptBox = document.querySelector('textarea[name="prompt"]');
+
+qaSelect.addEventListener("change", function () {
+  qaErrorDiv.style.display = "none";
+  qaFieldsDiv.innerHTML = "";
+  var key = qaSelect.value;
+  if (!key) {
+    qaFieldsDiv.style.display = "none";
+    qaLoadRow.style.display = "none";
+    return;
+  }
+  var action = QUICK_ACTIONS[key];
+  action.fields.forEach(function (f) {
+    var label = document.createElement("label");
+    label.className = "muted";
+    label.textContent = f.label;
+    var input = document.createElement(f.type === "textarea" ? "textarea" : "input");
+    input.name = "qa_" + f.name;
+    input.style.width = "100%";
+    input.style.fontFamily = "monospace";
+    if (f.type === "textarea") { input.rows = 3; } else { input.type = f.type; }
+    label.appendChild(document.createElement("br"));
+    label.appendChild(input);
+    qaFieldsDiv.appendChild(label);
+  });
+  qaFieldsDiv.style.display = "flex";
+  qaLoadRow.style.display = "block";
+});
+
+document.getElementById("quick-action-load-btn").addEventListener("click", async function () {
+  var key = qaSelect.value;
+  if (!key) return;
+  qaErrorDiv.style.display = "none";
+  var fd = new FormData();
+  fd.append("action", key);
+  QUICK_ACTIONS[key].fields.forEach(function (f) {
+    var input = qaFieldsDiv.querySelector('[name="qa_' + f.name + '"]');
+    fd.append(f.name, input.value);
+  });
+  var btn = this;
+  btn.disabled = true;
+  try {
+    var resp = await fetch("/llm/quick-action-prompt", { method: "POST", body: fd });
+    var data = await resp.json();
+    if (!resp.ok) {
+      qaErrorDiv.textContent = data.error || "Could not load this quick action's prompt.";
+      qaErrorDiv.style.display = "block";
+    } else {
+      promptBox.value = data.prompt;
+      qaHidden.value = key;
+    }
+  } catch (e) {
+    qaErrorDiv.textContent = "Request failed: " + e;
+    qaErrorDiv.style.display = "block";
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// Editing the prompt after loading a quick action means it's no longer exactly that action's
+// template -- revert the log tag to "manual" (empty quick_action) rather than mislabeling an
+// edited prompt as the original quick action.
+promptBox.addEventListener("input", function () {
+  qaHidden.value = "";
 });
 
 var copyBtn = document.getElementById("copy-as-comment-btn");

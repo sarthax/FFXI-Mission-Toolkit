@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Dialog Search{% endblock %}
+
+{% macro pager() %}
+{% if total_pages > 1 %}
+<form method="get" style="display:flex;gap:8px;align-items:center;margin:12px 0;">
+  <input type="hidden" name="q" value="{{ q }}">
+  <input type="hidden" name="zone" value="{{ zone }}">
+  {% if page > 1 %}
+  <a class="chip" href="/dialog?q={{ q }}&zone={{ zone }}&page={{ page - 1 }}">&larr; prev</a>
+  {% endif %}
+  <span class="muted">page</span>
+  <input type="number" name="page" value="{{ page }}" min="1" max="{{ total_pages }}" style="width:70px;">
+  <span class="muted">of {{ total_pages }}</span>
+  <button type="submit">Go</button>
+  {% if page < total_pages %}
+  <a class="chip" href="/dialog?q={{ q }}&zone={{ zone }}&page={{ page + 1 }}">next &rarr;</a>
+  {% endif %}
+</form>
+{% endif %}
+{% endmacro %}
+
+{% block content %}
+<h1>Dialog Search</h1>
+<form class="search" method="get">
+  <input type="text" name="q" value="{{ q }}" placeholder="text to search for, or a dialog id (e.g. 7465)">
+  <select name="zone">
+    <option value="">All zones</option>
+    {% for z in zones %}
+    <option value="{{ z.name }}" {% if zone|upper == z.name %}selected{% endif %}>{{ z.name }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit">Search</button>
+</form>
+
+<details style="margin-bottom:18px;">
+  <summary class="muted" style="cursor:pointer;">look up a zone's dialog drift report</summary>
+  <form class="search" action="/zone/redirect" method="get" style="margin-top:8px;"
+        onsubmit="window.location.href='/zone/' + document.getElementById('zsel').value + '/drift'; return false;">
+    <select id="zsel" name="zone">
+      {% for z in zones %}
+      <option value="{{ z.name }}">{{ z.name }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">View drift report</button>
+  </form>
+</details>
+
+{% if q %}
+<p>{{ total }} result(s) for "{{ q }}"{% if zone %} in {{ zone }}{% endif %} -- page {{ page }} of {{ total_pages }}:</p>
+{% elif zone %}
+<p>Browsing {{ total }} indexed dialog entries in {{ zone }} -- page {{ page }} of {{ total_pages }}:</p>
+<form method="get" style="display:flex;gap:8px;align-items:center;margin:6px 0 16px;">
+  <input type="hidden" name="zone" value="{{ zone }}">
+  <span class="muted">Jump to id:</span>
+  <input type="number" name="jump_id" placeholder="e.g. 7465" style="width:110px;">
+  <button type="submit">Jump</button>
+</form>
+{% endif %}
+{% if q or zone %}
+{{ pager() }}
+<div class="table-wrap"><table>
+  <tr><th>zone</th><th>id</th><th>text</th></tr>
+  {% for r in results %}
+  <tr {% if not q and jump_id and r.idx == jump_id %}style="background:var(--accent-soft);"{% endif %}>
+    <td>{{ r.zone }}</td><td class="mono">{{ r.idx }}</td><td>{{ r.text }}</td>
+  </tr>
+  {% endfor %}
+</table></div>
+{{ pager() }}
+{% endif %}
+{% endblock %}

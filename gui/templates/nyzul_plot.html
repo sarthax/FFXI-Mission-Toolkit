@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block title %}Nyzul Plot{% endblock %}
+{% block content %}
+<h1>Nyzul Isle Plot <span class="chip mono">zone 77</span></h1>
+<p class="muted">Reads the DSP repo live (floor_layouts.lua, nyzul.lua, IDs.lua, Nyzul_Isle.nav). Pick a layout and
+  drive the same rolls DSP's <code class="chip">finishPickSetPoint</code> makes (or let them roll from a seed); every spawn
+  point, lamp point and generated entity is drawn on the client mesh with a label. <b>Click a dot to exclude/include it</b>
+  (saved server-side; export as Lua below). Dot colour on candidates = navmesh reachability from the entrance
+  (green ok, red disconnected, orange off-mesh). Note: if the navmesh was baked with doors open, everything reads green &mdash; use the
+  visual mesh to spot points behind doors.</p>
+
+{% if not obj_available %}
+<div class="warn">No cached visual mesh for zone 77 &mdash; run <code class="chip">py -3 build_zone_visual_cache.py 77</code>.</div>
+{% endif %}
+
+<div style="display:flex; gap:12px; align-items:flex-start;">
+<div style="width:300px; flex:none; font-size:13px;" id="panel">
+  <style>
+    #panel label{display:flex;justify-content:space-between;align-items:center;margin:3px 0;gap:6px}
+    #panel select,#panel input[type=number]{width:170px}
+    #panel h3{margin:10px 0 4px;font-size:13px}
+    #out{max-height:260px;overflow:auto;font-family:monospace;font-size:11px;white-space:pre;border:1px solid var(--border);padding:4px}
+    .lbl{color:#fff;font:11px monospace;background:rgba(0,0,0,.65);padding:0 3px;border-radius:3px;pointer-events:none;white-space:nowrap}
+  </style>
+  <h3>Floor</h3>
+  <label>Floor # <input type="number" id="floor" value="1" min="1" max="100"></label>
+  <label>Layout <select id="layout"></select></label>
+  <label>Objective <select id="objective">
+    <option value="0">Random (1-6 roll)</option>
+    <option value="1">Free floor</option><option value="2">Eliminate all</option>
+    <option value="3">Eliminate leader</option><option value="4">Specified enemies (group)</option>
+    <option value="5">Activate lamps</option><option value="6">Specified enemy</option></select></label>
+  <label>Lamp mode <select id="lampmode"><option value="0">Random</option><option value="1">Register</option>
+    <option value="2">Activate all</option><option value="3">Order</option></select></label>
+  <label>Party size <input type="number" id="party" value="6" min="3" max="6"></label>
+  <h3>Mobs</h3>
+  <label>Family <select id="family"></select></label>
+  <label>Spec. group <select id="group"></select></label>
+  <label>Leader <select id="leader"></select></label>
+  <label>Boss <select id="boss"></select></label>
+  <label>Gear obj <select id="gear"><option value="-1">Roll (20%)</option><option value="0">None</option>
+    <option value="1">Avoid agro</option><option value="2">Do not destroy</option></select></label>
+  <label>NM rolls <select id="nm"><option value="-1">Roll (20% x2)</option><option value="0">None</option><option value="2">Force 2</option></select></label>
+  <h3>RNG / rules</h3>
+  <label>Seed <input type="number" id="seed" value="1"></label>
+  <label><span>Share point pool across helpers (LSB)</span><input type="checkbox" id="shared"></label>
+  <label><span>Respect exclusions</span><input type="checkbox" id="useexcl" checked></label>
+  <div style="display:flex;gap:6px;margin-top:6px">
+    <button id="gen">Generate</button><button id="rnd">Next seed</button><button id="clr">Clear</button></div>
+  <h3>Display</h3>
+  <label><span>Candidate points</span><input type="checkbox" id="showpts" checked></label>
+  <label><span>Point index labels</span><input type="checkbox" id="showidx" checked></label>
+  <label><span>Navmesh overlay</span><input type="checkbox" id="shownav" checked></label>
+  <label>Mesh opacity <input type="range" id="opac" min="0.05" max="1" step="0.05" value="0.5"></label>
+  <label>Nav+points y-lift <input type="range" id="lift" min="0" max="3" step="0.1" value="0.6"></label>
+  <div style="display:flex;gap:6px;margin-top:6px"><button id="focus">Fly to entrance</button></div>
+  <h3>Result</h3>
+  <div id="out"></div>
+  <h3>Exclusions <span class="muted" id="exn"></span></h3>
+  <div style="display:flex;gap:6px"><button id="exp">Show Lua</button><button id="exclr">Clear layout</button></div>
+  <textarea id="lua" rows="6" style="width:100%;font:11px monospace;margin-top:4px" readonly></textarea>
+</div>
+<div id="viewer-container" style="flex:1; height:820px; border:1px solid var(--border); border-radius:8px; background:#0a0d10; position:relative; overflow:hidden;">
+  <div id="viewer-loading" class="muted" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">Loading data + mesh&hellip;</div>
+  <div id="hover" class="lbl" style="position:absolute;left:8px;bottom:8px;font-size:12px"></div>
+</div>
+</div>
+
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+const $ = id => document.getElementById(id);
+const container = $('viewer-container');
+const D = await (await fetch('/nyzul/data.json')).json();
+let EXC = D.exclusions || {}; EXC.points = EXC.points || {}; EXC.lamps = EXC.lamps || {};
+
+// ---------- scene ----------
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0a0d10);
+const camera = new THREE.PerspectiveCamera(60, container.clientWidth/container.clientHeight, 0.1, 6000);
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(container.clientWidth, container.clientHeight); container.appendChild(renderer.domElement);
+const lr = new CSS2DRenderer(); lr.setSize(container.clientWidth, container.clientHeight);
+lr.domElement.style.cssText='position:absolute;top:0;left:0;pointer-events:none'; container.appendChild(lr.domElement);
+const controls = new OrbitControls(camera, renderer.domElement); controls.enableDamping = true;
+scene.add(new THREE.AmbientLight(0x8899aa, 1.1));
+const sun = new THREE.DirectionalLight(0xfff2e0, 1.4); sun.position.set(300,500,200); scene.add(sun);
+
+const V = (p, lift=0) => new THREE.Vector3(p[0], -p[1] + parseFloat($('lift').value)*0 + lift, -p[2]);
+const LIFTV = () => parseFloat($('lift').value);
+
+let meshObj = null;
+new OBJLoader().load('/static/zone_visual/77.obj', obj => {
+  obj.traverse(c => { if (c.isMesh) c.material = new THREE.MeshStandardMaterial({color:0x4a5a68, roughness:.9, transparent:true, opacity:.5, side:THREE.DoubleSide, depthWrite:false}); });
+  meshObj = obj; scene.add(obj); $('viewer-loading').hidden = true; setOpacity();
+}, undefined, () => { $('viewer-loading').textContent = 'Mesh failed to load (dots still work).'; });
+function setOpacity(){ if(meshObj) meshObj.traverse(c=>{ if(c.isMesh) c.material.opacity=parseFloat($('opac').value); }); }
+
+// navmesh overlay (raw triangles are FFXI world; viewer = (x,-y,-z))
+let navMesh = null;
+{
+  const buf = new Float32Array(await (await fetch('/nyzul/navmesh.bin')).arrayBuffer());
+  for (let i=0;i<buf.length;i+=3){ buf[i+1] = -buf[i+1]; buf[i+2] = -buf[i+2]; }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(buf,3));
+  navMesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({color:0x2a9d8f, wireframe:true, transparent:true, opacity:.35}));
+  scene.add(navMesh);
+}
+
+// ---------- populate selects ----------
+const layouts = Object.keys(D.points).map(Number).sort((a,b)=>a-b);
+$('layout').innerHTML = '<option value="0">Random (1-15, boss=16)</option>' + layouts.map(l=>`<option value="${l}">Layout ${l} (${D.points[l].length} pts, ${(D.lamps[l]||[]).length} lamps)</option>`).join('');
+$('family').innerHTML = '<option value="0">Random</option>' + Object.entries(D.families).map(([k,f])=>`<option value="${k}">${k}: ${f.label}</option>`).join('');
+$('group').innerHTML = '<option value="-1">Random</option>' + D.groups.map((g,i)=>`<option value="${i}">${g.name} x${g.count}</option>`).join('');
+const shortName = n => n.length > 28 ? n.slice(0,26)+'..' : n;
+$('leader').innerHTML = '<option value="-1">Random</option>' + D.leaders.map((l,i)=>`<option value="${i}">${shortName(l.name)} (${l.id})</option>`).join('');
+const B = D.bosses;
+const BOSSES = [['Adamantoise',B.ADAMANTOISE],['Behemoth',B.BEHEMOTH],['Fafnir',B.FAFNIR],['Khimaira',B.KHIMAIRA],['Hydra',B.HYDRA],['Cerberus',B.CERBERUS]];
+$('boss').innerHTML = '<option value="-1">Random (by floor)</option>' + BOSSES.map((b,i)=>`<option value="${i}">${b[0]}</option>`).join('');
+
+// ---------- RNG (mulberry32) ----------
+function makeRng(seed){ let a = seed>>>0; return ()=>{ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+let rnd;
+const rint = (a,b)=> a + Math.floor(rnd()*(b-a+1));
+
+// ---------- generator: port of DSP finishPickSetPoint & helpers ----------
+const OBJ = {1:'Free floor',2:'Eliminate all',3:'Eliminate leader',4:'Specified enemies',5:'Activate lamps',6:'Specified enemy'};
+const LAMPMODE = {1:'Register',2:'Activate all',3:'Order'};
+const exSet = (kind, L) => new Set(($('useexcl').checked ? (EXC[kind][L]||[]) : []));
+function freshPool(L){ const ex=exSet('points',L); return (D.points[L]||[]).map((p,i)=>({i:i+1,p})).filter(o=>!ex.has(o.i)); }
+function famMobs(f){ const out=[]; for(const g of f.groups) for(let k=0;k<g.count;k++) out.push({id:g.id+k,name:g.name}); return out; }
+
+function generate(){
+  rnd = makeRng(parseInt($('seed').value)||1);
+  const floor = parseInt($('floor').value)||1;
+  const boss = floor>0 && floor%20===0;
+  let L = parseInt($('layout').value);
+  if (!L) L = boss ? 16 : rint(1,15);
+  const items = [], log = [];
+  const shared = $('shared').checked; let sharedPool = freshPool(L);
+  const pool = () => shared ? sharedPool : freshPool(L);
+  const take = (pl, tag) => { if(!pl.length) return null; const k=rint(0,pl.length-1); const o=pl[k]; pl.splice(k,1); return o; };
+  const add = (kind,label,o,extra={}) => o && items.push({kind,label,L,idx:o.i,p:o.p,...extra});
+  const fams = Object.keys(D.families);
+  const pickFam = () => { const s=parseInt($('family').value); const k = s? String(s): fams[rint(0,fams.length-1)]; return {k, f:D.families[k]}; };
+  function enemyLayout(){ const {k,f}=pickFam(); log.push('family '+k+' '+f.label); const pl=pool(); let n=0;
+    for(const m of famMobs(f)){ const o=take(pl); if(!o) break; add('mob',m.name,o,{id:m.id}); n++; } return n; }
+  function leaderPick(){ const s=parseInt($('leader').value); const l = D.leaders[s>=0?s:rint(0,D.leaders.length-1)]; const o=D.points[L]?null:null; return l; }
+  let stage;
+  if (boss) {
+    stage = 3; const bi = parseInt($('boss').value);
+    const list = floor>=60 ? [3,4,5] : [0,1,2]; const b = BOSSES[bi>=0?bi:list[rint(0,2)]];
+    items.push({kind:'boss',label:b[0]+' (fixed)',L,idx:0,p:[-390.5986,0,-380.1431],id:b[1]});
+    items.push({kind:'boss',label:'Archaic Rampart (fixed)',L,idx:0,p:[-406.7906,0,-365.0887],id:B.ARCHAIC_RAMPART});
+    log.push('boss floor: fixed positions, no pool draw');
+  } else {
+    let roll = parseInt($('objective').value) || rint(1,6); stage = roll;
+    log.push('objective '+roll+' '+OBJ[roll]);
+    if (roll===2){ const n=enemyLayout(); log.push('Eliminate count '+n); }
+    else if (roll===3){ const l=leaderPick(); const o=take(pool()); add('leader',l.name,o,{id:l.id}); }
+    else if (roll===4){ enemyLayout(); const gi=parseInt($('group').value); const g=D.groups[gi>=0?gi:rint(0,D.groups.length-1)]; log.push('group '+g.name);
+      const pl=pool(); for(let k=0;k<g.count;k++){ const o=take(pl); if(!o) break; add('spec',g.name+' #'+(k+1),o,{id:g.id+k}); } }
+    else if (roll===5){
+      let m=parseInt($('lampmode').value)||rint(1,3); log.push('lamp mode '+LAMPMODE[m]);
+      const ex=exSet('lamps',L); let lp=(D.lamps[L]||[]).map((p,i)=>({i:i+1,p})).filter(o=>!ex.has(o.i));
+      const party=Math.min(5,Math.max(3,parseInt($('party').value)||6));
+      if (m===1){ const o=take(lp); add('lamp','Lamp (register)',o); }
+      else if (m===2){ const n=rint(2,Math.max(2,party-1))+1; for(let k=0;k<n;k++){ const o=take(lp); if(!o)break; add('lamp','Lamp '+(k+1),o);} }
+      else { const n=rint(2,4)+1; const ord=[...Array(n).keys()].map(k=>k+1); for(let k=0;k<n;k++){ const o=take(lp); const r=rint(0,ord.length-1); const ordv=ord.splice(r,1)[0]; if(o) add('lamp','Lamp order '+ordv,o);} }
+    }
+    else if (roll===6){ const {k,f}=pickFam(); log.push('family '+k+' '+f.label); const pl=famMobs(f); const pp=pool();
+      const amt=Math.min(pl.length, rint(6,12)); let first=true;
+      for(let n=0;n<amt;n++){ if(!pp.length||!pl.length)break; const mi=rint(0,pl.length-1); const m=pl.splice(mi,1)[0]; const o=take(pp); add(first?'target':'mob',(first?'TARGET ':'')+m.name,o,{id:m.id}); first=false; } }
+    else if (roll===1){ log.push('free floor: 3 crates, positions fixed by npc_list (not in pool)'); }
+  }
+  // gear
+  let gear = parseInt($('gear').value); if (gear<0) gear = rnd()*100<=20 ? rint(1,2) : 0;
+  if (gear>0){ log.push('gear objective '+gear); const pl=pool(); for(let k=0;k<6;k++){ const o=take(pl); if(!o)break; add('gear',(k<3?'Archaic Gear ':'Archaic Gears ')+(k%3+1),o,{id:B.GEAR_OFFSET+2+k}); } }
+  // NMs
+  const nmMode = parseInt($('nm').value);
+  if (!boss || true){
+    const sect=Math.min(5,Math.floor((floor-1)/20)+1); const ids=(floor%2===0?D.nm.NM_EVEN:D.nm.NM_ODD)[sect-1];
+    const nmPool=[...Array(9).keys()].map(k=>ids+k); const pp=pool();
+    for(let n=0;n<2;n++){ const hit = nmMode===2 ? true : nmMode===0 ? false : rnd()*100<=20;
+      if(hit && pp.length && nmPool.length){ const mi=rint(0,nmPool.length-1); const id=nmPool.splice(mi,1)[0]; const o=take(pp); add('nm','NM '+id,o,{id}); } }
+    if (stage===2 && nmMode!==0 && pp.length && rnd()*100<=20){ const o=take(pp); add('nm','Dahak',o,{id:B.DAHAK}); }
+  }
+  return {L, floor, stage, items, log};
+}
+
+// ---------- rendering ----------
+const COL = {mob:0xe74c3c, leader:0xf1c40f, spec:0xe67e22, target:0xff2ea6, lamp:0x3498db, gear:0x9b59b6, nm:0xffffff, boss:0xff0000};
+const REACH = {ok:0x2ecc71, blocked:0xe74c3c, off:0xe08a1e};
+const group = new THREE.Group(); scene.add(group);
+let pickables = [], lastRes = null;
+const sphereGeo = new THREE.SphereGeometry(1,12,10);
+function label(text, pos, dy=1.6){ const d=document.createElement('div'); d.className='lbl'; d.textContent=text; const o=new CSS2DObject(d); o.position.copy(pos); o.position.y+=dy; return o; }
+function dot(pos, color, r, extra){ const m=new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({color, depthTest:false, transparent:true})); m.renderOrder=10; m.position.copy(pos); m.scale.setScalar(r); Object.assign(m.userData, extra||{}); return m; }
+
+function redraw(){
+  while(group.children.length){ const c=group.children.pop(); c.traverse(o=>{ if(o.element) o.element.remove(); }); }
+  pickables=[];
+  const L = lastRes ? lastRes.L : (parseInt($('layout').value)||1);
+  const lift = LIFTV();
+  const ex = EXC.points[L]||[], exl = EXC.lamps[L]||[];
+  const reach = D.reach[L] || {points:[],lamps:[]};
+  // entrance
+  const ent = D.entrances[L]; if (ent){ const e=dot(V(ent,lift), 0xffffff, 1.6, {info:`Entrance / player spawn L${L} (${ent.join(', ')})`}); group.add(e); pickables.push(e);
+     group.add((()=>{const o=label('PLAYER SPAWN L'+L, V(ent,lift),3); return o;})()); }
+  if ($('showpts').checked){
+    (D.points[L]||[]).forEach((p,k)=>{ const i=k+1, x=ex.includes(i);
+      const d=dot(V(p,lift), x?0x555555:REACH[reach.points[k]]||0x888888, x?.5:.7, {kind:'points',L,i,info:`L${L} pt ${i} (${p.join(', ')}) ${reach.points[k]||''}${x?' EXCLUDED':''}`});
+      group.add(d); pickables.push(d);
+      if ($('showidx').checked) group.add(label(String(i), V(p,lift), 1.0)); });
+    (D.lamps[L]||[]).forEach((p,k)=>{ const i=k+1, x=exl.includes(i);
+      const d=dot(V(p,lift), x?0x555555:0x00c8ff, x?.5:.9, {kind:'lamps',L,i,info:`L${L} LAMP pt ${i} (${p.join(', ')}) ${reach.lamps[k]||''}${x?' EXCLUDED':''}`});
+      d.scale.setScalar(x?.5:.9); group.add(d); pickables.push(d);
+      if ($('showidx').checked) group.add(label('lamp '+i, V(p,lift), 1.0)); });
+  }
+  if (lastRes) for (const it of lastRes.items){
+    const pos=V(it.p,lift+0.4); const d=dot(pos, COL[it.kind]||0xffffff, 1.4, {info:`${it.kind}: ${it.label} id=${it.id||'-'} pt=${it.idx} (${it.p.join(', ')})`});
+    group.add(d); pickables.push(d); group.add(label(`${it.label}${it.idx?' [pt '+it.idx+']':''}`, pos, 2.4));
+  }
+  $('exn').textContent = `(L${L}: ${ex.length} pts, ${exl.length} lamps)`;
+  if (navMesh){ navMesh.visible=$('shownav').checked; }
+}
+
+function run(){
+  lastRes = generate();
+  const r=lastRes; const out=[`floor ${r.floor}  layout ${r.L}  stage ${r.stage} ${OBJ[r.stage]||''}`, ...r.log, ''];
+  for (const it of r.items) out.push(`${it.kind.padEnd(6)} ${it.label}  pt${it.idx}  (${it.p.join(', ')})`);
+  $('out').textContent = out.join('\n'); redraw(); frame(r.L);
+}
+function frame(L){ const e=D.entrances[L]; if(!e) return; const c=V(e); controls.target.copy(c); camera.position.set(c.x+90, c.y+120, c.z+90); controls.update(); }
+
+// ---------- interaction ----------
+const ray = new THREE.Raycaster(); const mouse = new THREE.Vector2();
+function pick(ev){ const r=renderer.domElement.getBoundingClientRect(); mouse.set(((ev.clientX-r.left)/r.width)*2-1, -((ev.clientY-r.top)/r.height)*2+1); ray.setFromCamera(mouse,camera);
+  const h=ray.intersectObjects(pickables,false); return h.length?h[0].object:null; }
+renderer.domElement.addEventListener('mousemove', ev => { const o=pick(ev); $('hover').textContent = o? o.userData.info||'' : ''; });
+let down=null; renderer.domElement.addEventListener('pointerdown', ev=>down=[ev.clientX,ev.clientY]);
+renderer.domElement.addEventListener('pointerup', async ev => {
+  if(!down || Math.hypot(ev.clientX-down[0],ev.clientY-down[1])>4) return;
+  const o=pick(ev); if(!o||!o.userData.kind) return; const {kind,L,i}=o.userData;
+  const a=(EXC[kind][L] ||= []); const k=a.indexOf(i); if(k>=0) a.splice(k,1); else a.push(i);
+  if(!a.length) delete EXC[kind][L];
+  await fetch('/nyzul/exclusions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(EXC)});
+  redraw();
+});
+$('gen').onclick=run; $('rnd').onclick=()=>{ $('seed').value=(parseInt($('seed').value)||0)+1; run(); };
+$('clr').onclick=()=>{ lastRes=null; $('out').textContent=''; redraw(); };
+['showpts','showidx','shownav','lift'].forEach(id=>$(id).addEventListener('input',redraw));
+$('opac').addEventListener('input',setOpacity);
+$('layout').addEventListener('change',()=>{ const L=parseInt($('layout').value); if(L){ lastRes=null; redraw(); frame(L);} });
+$('focus').onclick=()=>frame(lastRes?lastRes.L:(parseInt($('layout').value)||1));
+$('exclr').onclick=async()=>{ const L=lastRes?lastRes.L:parseInt($('layout').value); if(!L)return; delete EXC.points[L]; delete EXC.lamps[L];
+  await fetch('/nyzul/exclusions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(EXC)}); redraw(); };
+$('exp').onclick=()=>{ const f=(o)=>Object.keys(o).sort((a,b)=>a-b).map(L=>`    [${L}] = { ${o[L].slice().sort((a,b)=>a-b).join(', ')} },`).join('\n');
+  $('lua').value = `-- indices into Nyzul.layoutSpawnPoints / lampSpawnPoints to skip (unreachable: door-blocked)\nNyzul.excludedSpawnPoints =\n{\n${f(EXC.points)}\n}\nNyzul.excludedLampPoints =\n{\n${f(EXC.lamps)}\n}`; };
+
+window.addEventListener('resize',()=>{ const w=container.clientWidth,h=container.clientHeight; camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h); lr.setSize(w,h); });
+(function loop(){ requestAnimationFrame(loop); controls.update(); renderer.render(scene,camera); lr.render(scene,camera); })();
+$('layout').value='1'; frame(1); redraw();
+window.__nyz = {D, run, generate};
+</script>
+{% endblock %}

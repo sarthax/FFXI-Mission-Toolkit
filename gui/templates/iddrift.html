@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}ID Drift{% endblock %}
+
+{% block content %}
+<h1>ID Drift</h1>
+<p class="muted">Cross-checks LandSandBoat (what this content was backported from, full repo)
+against your Topaz server's own code/SQL and, for items, the external retail reference -- three
+layers, so a wrong event/npc/item/mobskill/effect id shows up here instead of only in-game. Click
+a category to browse its mismatches.</p>
+
+<div class="table-wrap"><table>
+  <tr><th>Category</th><th></th><th>Mismatches</th></tr>
+  {% for cat in categories %}
+  <tr>
+    <td><a href="/iddrift/{{ cat.slug }}">{{ cat.label }}</a></td>
+    <td class="muted">{{ cat.description }}</td>
+    <td class="mono">
+      {% if cat.count > 0 %}<span class="badge badge-empty">{{ cat.count }}</span>
+      {% else %}<span class="badge badge-ok">0</span>{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table></div>
+
+<style>
+.badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 3px; font-size: 0.85em; font-weight: 600; color: #fff; }
+.badge-ok { background: #1e7e34; }
+.badge-empty { background: #b33f3f; }
+</style>
+{% endblock %}

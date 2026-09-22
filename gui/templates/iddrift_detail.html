@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ label }} - ID Drift{% endblock %}
+
+{% macro pager() %}
+{% if total_pages > 1 %}
+<form method="get" style="display:flex;gap:8px;align-items:center;margin:12px 0;">
+  <input type="hidden" name="q" value="{{ q }}">
+  <input type="hidden" name="zone" value="{{ zone }}">
+  {% if page > 1 %}
+  <a class="chip" href="/iddrift/{{ slug }}?q={{ q }}&zone={{ zone }}&page={{ page - 1 }}">&larr; prev</a>
+  {% endif %}
+  <span class="muted">page</span>
+  <input type="number" name="page" value="{{ page }}" min="1" max="{{ total_pages }}" style="width:70px;">
+  <span class="muted">of {{ total_pages }}</span>
+  <button type="submit">Go</button>
+  {% if page < total_pages %}
+  <a class="chip" href="/iddrift/{{ slug }}?q={{ q }}&zone={{ zone }}&page={{ page + 1 }}">next &rarr;</a>
+  {% endif %}
+</form>
+{% endif %}
+{% endmacro %}
+
+{% block content %}
+<p><a class="chip" href="/iddrift">&larr; all categories</a></p>
+<h1>{{ label }}</h1>
+<p class="muted">{{ description }}</p>
+
+<form class="search" method="get">
+  {% if zone_scoped %}
+  <select name="zone">
+    <option value="">All zones</option>
+    {% for z in zones %}
+    <option value="{{ z.name }}" {% if zone|upper == z.name %}selected{% endif %}>{{ z.name }}</option>
+    {% endfor %}
+  </select>
+  {% endif %}
+  <input type="text" name="q" value="{{ q }}" placeholder="filter by name substring">
+  <button type="submit">Filter</button>
+</form>
+
+{% if zone_offset_summary %}
+<div class="warn">
+  <strong>Block-shifted zones detected:</strong> these aren't scattered per-npc mismatches, the
+  whole zone's npc id range is offset by one constant amount vs LSB.
+  <ul style="margin:6px 0 0;">
+  {% for z in zone_offset_summary %}
+    <li>zone {{ z.zoneid }}{{ " (%s)" % zone_names[z.zoneid] if z.zoneid in zone_names else "" }}: LSB = ours {{ "+%d"|format(z.delta) if z.delta > 0 else z.delta }}, across {{ z.hits }} of {{ z.total }} mismatched npcs</li>
+  {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<p>{{ total }} mismatch(es){{ " for \"%s\"" % q if q else "" }} -- page {{ page }} of {{ total_pages }}</p>
+{{ pager() }}
+
+{% if rows %}
+<div class="table-wrap"><table>
+  <tr>{% for key, header in columns %}<th>{{ header }}</th>{% endfor %}</tr>
+  {% for row in rows %}
+  <tr>
+    {% for key, header in columns %}
+    <td class="{{ 'mono' if key.endswith('id') or key.endswith('csid') or key.endswith('count') or key.endswith('range') or key == 'zoneid' else '' }}">
+      {% if link_col and key == link_col[0] %}
+        <a href="{{ link_col[1] }}{{ row[link_col[2]] }}">{{ row[key] }}</a>
+      {% elif row[key] is sameas true %}
+        <span style="color:var(--red);font-weight:600;">yes</span>
+      {% elif row[key] is sameas false %}
+        no
+      {% elif key == "zoneid" %}
+        {{ row[key] }}{% if row[key] in zone_names %} <span class="muted">({{ zone_names[row[key]] }})</span>{% endif %}
+      {% else %}
+        {{ row[key] if row[key] is not none else "" }}
+      {% endif %}
+    </td>
+    {% endfor %}
+  </tr>
+  {% endfor %}
+</table></div>
+{{ pager() }}
+{% else %}
+<p class="muted">No mismatches found{{ " for \"%s\"" % q if q else "" }}.</p>
+{% endif %}
+{% endblock %}

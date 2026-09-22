@@ -38,7 +38,9 @@ try:
 except ImportError:
     lua_ast = None
 
-PACKAGES_ROOT = Path(r"D:\Claude\Topaz-Assault-Backport\mission-packages")
+import settings
+
+DEFAULT_PACKAGES_ROOT = settings.get_backport_root() / "mission-packages"
 
 # `local ID = Periqia` or `local ID = zones[Periqia]`/`zones[xi.zone.PERIQIA]` (the shape this
 # project has shipped both wrong and right this session -- catch references to a bare capitalized
@@ -90,6 +92,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("path", nargs="?", help="A lua-dsp/ directory to check")
     ap.add_argument("--all-packages", action="store_true", help="Check every mission-packages/*/lua-dsp/ tree")
+    ap.add_argument("--packages-root", default=str(DEFAULT_PACKAGES_ROOT),
+                     help="mission-packages/ root for --all-packages (else Settings' backport_root, "
+                          "else the bundled backport-workspace/ scaffold)")
     args = ap.parse_args()
 
     if lua_ast is None:
@@ -98,7 +103,7 @@ def main():
               file=sys.stderr)
 
     if args.all_packages:
-        targets = sorted(PACKAGES_ROOT.glob("*/lua-dsp"))
+        targets = sorted(Path(args.packages_root).glob("*/lua-dsp"))
     elif args.path:
         targets = [Path(args.path)]
     else:

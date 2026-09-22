@@ -1,0 +1,12 @@
+0=Say
+1=Shout
+2=Tell
+3=Party
+4=Linkshell
+5=Emote
+6=Yell
+8=NPC
+13=GM Tell
+14=System (1)
+26=System (2)
+27=Linkshell 2

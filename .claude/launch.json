@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "mission-toolkit",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["gui_server.py"],
+      "port": 8420
+    }
+  ]
+}

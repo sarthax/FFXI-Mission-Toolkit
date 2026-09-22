@@ -1,0 +1,8 @@
+dist/
+__pycache__/
+*.egg-info/
+.idea/
+.claude/
+SESSION_NOTES.md
+docs/UNMAPPED_DATS.md
+ruvector.db

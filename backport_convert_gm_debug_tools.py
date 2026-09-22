@@ -11,16 +11,22 @@ tpz.anim->xi.anim reshape, all added to dsp_namespace_map.json for this package'
 """
 from pathlib import Path
 import backport_lua_convert as blc
+import settings
 
-PKG_ROOT = Path(r"D:\Claude\Topaz-Assault-Backport\mission-packages\assault_gm_debug_tools")
+_backport_root = settings.get_backport_root()
+if _backport_root is None:
+    raise SystemExit("No backport checkout configured -- set Settings' backport_root first.")
+PKG_ROOT = _backport_root / "mission-packages" / "assault_gm_debug_tools"
 SRC_ROOT = PKG_ROOT / "lua"
 OUT_ROOT = PKG_ROOT / "lua-dsp"
 
 
-DSP_ROOT = Path(r"D:\Claude\old-dsp-reference")
+DSP_ROOT = settings.get_dsp_root()
 
 
 def main():
+    if DSP_ROOT is None:
+        raise SystemExit("No DSP checkout configured -- set Settings' dsp_server_path first.")
     blc.verify_target_or_raise(DSP_ROOT, "old_dsp_reference")
     ns_map = blc.load_map()
     report = {"converted": [], "flagged": []}

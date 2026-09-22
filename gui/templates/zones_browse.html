@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Browse by Zone{% endblock %}
+
+{% macro pager() %}
+{% if total_pages > 1 %}
+<form method="get" style="display:flex;gap:8px;align-items:center;margin:12px 0;">
+  <input type="hidden" name="zone" value="{{ zone }}">
+  <input type="hidden" name="tag" value="{{ tag }}">
+  {% if page > 1 %}
+  <a class="chip" href="/zones?zone={{ zone }}&tag={{ tag }}&page={{ page - 1 }}">&larr; prev</a>
+  {% endif %}
+  <span class="muted">page</span>
+  <input type="number" name="page" value="{{ page }}" min="1" max="{{ total_pages }}" style="width:70px;">
+  <span class="muted">of {{ total_pages }}</span>
+  <button type="submit">Go</button>
+  {% if page < total_pages %}
+  <a class="chip" href="/zones?zone={{ zone }}&tag={{ tag }}&page={{ page + 1 }}">next &rarr;</a>
+  {% endif %}
+</form>
+{% endif %}
+{% endmacro %}
+
+{% block content %}
+<h1>Browse by Zone</h1>
+<p class="muted">Filter by zone, by <strong>content_tag</strong>, or both -- either works alone.
+  content_tag is a real, server-side content-category flag from
+  <code class="chip">sql/npc_list.sql</code> (e.g. TOAU, SOA), NOT proof an entity belongs to any
+  specific mission. Each result links to its own profile.</p>
+
+<form class="search" method="get">
+  <select name="zone">
+    <option value="">(all zones)</option>
+    {% for z in zones %}
+    <option value="{{ z.name }}" {% if zone|upper == z.name %}selected{% endif %}>{{ z.name }}</option>
+    {% endfor %}
+  </select>
+  <select name="tag">
+    <option value="">(all content tags)</option>
+    {% for t, n in all_tags %}
+    <option value="{{ t }}" {% if t == tag %}selected{% endif %}>{{ t }} ({{ n }})</option>
+    {% endfor %}
+  </select>
+  <button type="submit">Browse</button>
+</form>
+
+{% if zone or tag %}
+{% if not entities %}
+<p class="muted">No entities found{% if zone %} in {{ zone }}{% endif %}{% if tag %} tagged "{{ tag }}"{% endif %}.</p>
+{% else %}
+<h2>{{ total }} entit{{ 'y' if total == 1 else 'ies' }}{% if zone %} in {{ zone }}{% endif %}{% if tag %} tagged "{{ tag }}"{% endif %}
+  -- page {{ page }} of {{ total_pages }}</h2>
+{{ pager() }}
+<div class="table-wrap"><table>
+  <tr><th>id</th><th>name</th>{% if show_zone_col %}<th>zone</th>{% endif %}<th>content_tag</th></tr>
+  {% for npcid, name, ctag, zone_name in entities %}
+  <tr>
+    <td class="mono"><a href="/entity/{{ npcid }}">{{ npcid }}</a></td>
+    <td>{{ name }}</td>
+    {% if show_zone_col %}<td><a class="inline" href="/zones?zone={{ zone_name }}">{{ zone_name }}</a></td>{% endif %}
+    <td>{% if ctag %}<span class="chip">{{ ctag }}</span>{% else %}<span class="muted">&mdash;</span>{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table></div>
+{{ pager() }}
+{% endif %}
+{% endif %}
+{% endblock %}

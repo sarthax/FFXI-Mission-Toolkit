@@ -1,0 +1,1964 @@
+{
+ "0": {
+  "opcode": 0,
+  "hex": "0x0000",
+  "size": 1,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "No",
+  "description": "Ends the current `ReqStack` execution; resetting it back to defaults.",
+  "description_full": "Ends the current `ReqStack` execution; resetting it back to defaults."
+ },
+ "1": {
+  "opcode": 1,
+  "hex": "0x0001",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Directly sets the `ExecPointer` position. This does not make use of the jump stack and is not intended to be returned from without directly setting the position again. _(This works similar to a `goto` statement in most programming languages.)_",
+  "description_full": "Directly sets the `ExecPointer` position. \n\nThis does not make use of the jump stack and is not intended to be returned from without directly setting the position again. _(This works similar to a `goto` statement in most programming languages.)_"
+ },
+ "2": {
+  "opcode": 2,
+  "hex": "0x0002",
+  "size": 8,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handles multiple types of `if` conditional statements. The data read from the byte code is as follows: * Offset 1 - _`(2 bytes)`_ Used as one of the condition values in the statement. _`(Referred to below as val1.)`_ * Offset 3 - _`(2 bytes)`_ Used as one of the condition values in the statement. _`(Referred to below as val2.)`_ * Offset 5 - _`(1 bytes)`_ Used to determine the `if` statement type. * Offset 6 - _`(2 bytes)`_ Used as the `else` jump offset to move the `ExecPointer` to if the condition fails. _`(Referred to below as val3.)`_ The `if` condition is determined via: `EventData[ExecPointer + 5] & 0x0F`",
+  "description_full": "Handles multiple types of `if` conditional statements.\n\nThe data read from the byte code is as follows:\n\n  * Offset 1 - _`(2 bytes)`_ Used as one of the condition values in the statement. _`(Referred to below as val1.)`_\n  * Offset 3 - _`(2 bytes)`_ Used as one of the condition values in the statement. _`(Referred to below as val2.)`_\n  * Offset 5 - _`(1 bytes)`_ Used to determine the `if` statement type.\n  * Offset 6 - _`(2 bytes)`_ Used as the `else` jump offset to move the `ExecPointer` to if the condition fails. _`(Referred to below as val3.)`_\n\nThe `if` condition is determined via: `EventData[ExecPointer + 5] & 0x0F`"
+ },
+ "3": {
+  "opcode": 3,
+  "hex": "0x0003",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Gets a value then stores it.",
+  "description_full": "Gets a value then stores it."
+ },
+ "4": {
+  "opcode": 4,
+  "hex": "0x0004",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Deprecated. This opcode appears to be deprecated, it does nothing.",
+  "description_full": "Deprecated. This opcode appears to be deprecated, it does nothing."
+ },
+ "5": {
+  "opcode": 5,
+  "hex": "0x0005",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets a value to `1`.",
+  "description_full": "Sets a value to `1`."
+ },
+ "6": {
+  "opcode": 6,
+  "hex": "0x0006",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets a value to `0`.",
+  "description_full": "Sets a value to `0`."
+ },
+ "7": {
+  "opcode": 7,
+  "hex": "0x0007",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Adds two values then stores the result.",
+  "description_full": "Adds two values then stores the result."
+ },
+ "8": {
+  "opcode": 8,
+  "hex": "0x0008",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Subtracts two values then stores the result.",
+  "description_full": "Subtracts two values then stores the result."
+ },
+ "9": {
+  "opcode": 9,
+  "hex": "0x0009",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets a bit flag value then stores the result.",
+  "description_full": "Sets a bit flag value then stores the result."
+ },
+ "10": {
+  "opcode": 10,
+  "hex": "0x000A",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Clears a bit flag value then stores the result.",
+  "description_full": "Clears a bit flag value then stores the result."
+ },
+ "11": {
+  "opcode": 11,
+  "hex": "0x000B",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Increments a value then store it.",
+  "description_full": "Increments a value then store it."
+ },
+ "12": {
+  "opcode": 12,
+  "hex": "0x000C",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Decrements a value then store it.",
+  "description_full": "Decrements a value then store it."
+ },
+ "13": {
+  "opcode": 13,
+  "hex": "0x000D",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Gets the bitwise AND result of two values and stores it.",
+  "description_full": "Gets the bitwise AND result of two values and stores it."
+ },
+ "14": {
+  "opcode": 14,
+  "hex": "0x000E",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Gets the bitwise OR result of two values and stores it.",
+  "description_full": "Gets the bitwise OR result of two values and stores it."
+ },
+ "15": {
+  "opcode": 15,
+  "hex": "0x000F",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Gets the bitwise XOR result of two values and stores it.",
+  "description_full": "Gets the bitwise XOR result of two values and stores it."
+ },
+ "16": {
+  "opcode": 16,
+  "hex": "0x0010",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Gets the bitwise left-shift result of two values and stores it.",
+  "description_full": "Gets the bitwise left-shift result of two values and stores it."
+ },
+ "17": {
+  "opcode": 17,
+  "hex": "0x0011",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Gets the bitwise right-shift result of two values and stores it.",
+  "description_full": "Gets the bitwise right-shift result of two values and stores it."
+ },
+ "18": {
+  "opcode": 18,
+  "hex": "0x0012",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Generates a random number via `rand()` and stores it.",
+  "description_full": "Generates a random number via `rand()` and stores it."
+ },
+ "19": {
+  "opcode": 19,
+  "hex": "0x0013",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Generates a random number via `rand()`, with a given remainder, and stores it.",
+  "description_full": "Generates a random number via `rand()`, with a given remainder, and stores it."
+ },
+ "20": {
+  "opcode": 20,
+  "hex": "0x0014",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Gets the product of two values and stores it.",
+  "description_full": "Gets the product of two values and stores it."
+ },
+ "21": {
+  "opcode": 21,
+  "hex": "0x0015",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Gets the quotient of two values and stores it.",
+  "description_full": "Gets the quotient of two values and stores it."
+ },
+ "22": {
+  "opcode": 22,
+  "hex": "0x0016",
+  "size": 7,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Performs a `sin` operation on two values and stores the result.",
+  "description_full": "Performs a `sin` operation on two values and stores the result."
+ },
+ "23": {
+  "opcode": 23,
+  "hex": "0x0017",
+  "size": 7,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Performs a `cos` operation on two values and stores the result.",
+  "description_full": "Performs a `cos` operation on two values and stores the result."
+ },
+ "24": {
+  "opcode": 24,
+  "hex": "0x0018",
+  "size": 7,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Performs an `atan2` operation on two values and stores the result.",
+  "description_full": "Performs an `atan2` operation on two values and stores the result."
+ },
+ "25": {
+  "opcode": 25,
+  "hex": "0x0019",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Reads two values and stores them in flipped order. (Endian swap.)",
+  "description_full": "Reads two values and stores them in flipped order. (Endian swap.)"
+ },
+ "26": {
+  "opcode": 26,
+  "hex": "0x001A",
+  "size": 3,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Jumps to a new position in the event data. Jumps work similar to making a call to a function, where the function can return back to where the jump took place. The event VM allows up to 8 jumps to be taken at the same time, meaning you can make up to 8 jumps without returning from a previous jump. If the byte code attempts a 9th jump, it will fail and the `ReqStack` execution will be killed by setting the `RetFlag`. When a jump is performed, the jump position is read from the byte code value. The `ExecPointer` is then moved `+3` ahead to step over the jump opcode. This new position is then stored into the next slot of the `JumpTable` stack. The `ExecPointer` is then set to the read value from the byte code and execution continues at the new location. Jumps are returned with opcode: `0x001B`",
+  "description_full": "Jumps to a new position in the event data.\n\nJumps work similar to making a call to a function, where the function can return back to where the jump took place. The event VM allows up to 8 jumps to be taken at the same time, meaning you can make up to 8 jumps without returning from a previous jump. If the byte code attempts a 9th jump, it will fail and the `ReqStack` execution will be killed by setting the `RetFlag`.\n\nWhen a jump is performed, the jump position is read from the byte code value. The `ExecPointer` is then moved `+3` ahead to step over the jump opcode. This new position is then stored into the next slot of the `JumpTable` stack. The `ExecPointer` is then set to the read value from the byte code and execution continues at the new location.\n\nJumps are returned with opcode: `0x001B`"
+ },
+ "27": {
+  "opcode": 27,
+  "hex": "0x001B",
+  "size": 1,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Returns from the most recent jump on the `JumpStack`. If there is no current jump in the `JumpStack`, then the function fails and the current `ReqStack` that is executing is reset to defaults and `RetFlag` is set to 1.",
+  "description_full": "Returns from the most recent jump on the `JumpStack`.\n\nIf there is no current jump in the `JumpStack`, then the function fails and the current `ReqStack` that is executing is reset to defaults and `RetFlag` is set to 1."
+ },
+ "28": {
+  "opcode": 28,
+  "hex": "0x001C",
+  "size": 3,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets, or updates (decreases), the current `ReqStack[RunPos].WaitTime` value. This opcode works similar to a coroutine being yielded. When first called, this opcode will check if the `ReqStack[RunPos].WaitTime` is < 0.0. If true, then the `WaitTime` will be set from the value read from the opcode. Next, the handler will begin ticking the `WaitTime` down every time the handler is called again. Each time the handler is called, `RetFlag` is set to 1, breaking the `XiEvent::ExecProg` loop every tick. The opcode does not advance the `ExecPointer` forward until the `WaitTime` reaches < 0.0 again.",
+  "description_full": "Sets, or updates (decreases), the current `ReqStack[RunPos].WaitTime` value.\n\nThis opcode works similar to a coroutine being yielded. \n\nWhen first called, this opcode will check if the `ReqStack[RunPos].WaitTime` is < 0.0. If true, then the `WaitTime` will be set from the value read from the opcode. \n\nNext, the handler will begin ticking the `WaitTime` down every time the handler is called again. Each time the handler is called, `RetFlag` is set to 1, breaking the `XiEvent::ExecProg` loop every tick. The opcode does not advance the `ExecPointer` forward until the `WaitTime` reaches < 0.0 again."
+ },
+ "29": {
+  "opcode": 29,
+  "hex": "0x001D",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Loads and prints an event message to chat, using `EntityTargetIndex[1]` as the speaker.",
+  "description_full": "Loads and prints an event message to chat, using `EntityTargetIndex[1]` as the speaker."
+ },
+ "30": {
+  "opcode": 30,
+  "hex": "0x001E",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Tells an entity to look at another entity and begin 'talking'. (This puts the 'talking' entity into an animation where their mouth moves.)",
+  "description_full": "Tells an entity to look at another entity and begin 'talking'. (This puts the 'talking' entity into an animation where their mouth moves.)"
+ },
+ "31": {
+  "opcode": 31,
+  "hex": "0x001F",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Updates the event position information. This handler has multiple operating modes depending on some conditions. When it is first called, the second byte passed with the opcode is `00` telling the opcode to set the initial `ReqStack[RunPos]->MovePosition` preparing the entity to begin moving towards the desired location. The next call will pass `01` instead, which will tell the handler to update the current `ExtData[1]->EventPos`, moving it closer to the desired end result position that is stored in `ReqStack[RunPos]->MovePosition`. If the entity is not within a certain distance to the goal position, the function yields to itself and allows the client to move the entity towards the goal. Each tick will releat the `01` mode until the entity reaches the goal. Once the goal is reached, the handler will set the position to the goal position exactly, then `ExecPointer` is incremented beyond the opcode and execution continues. This method also makes use of the `FUNC_VCalibrate1` and `FUNC_VCalibrate2` functions, ensuring the entity is properly walking on the floor.",
+  "description_full": "Updates the event position information.\n\nThis handler has multiple operating modes depending on some conditions. When it is first called, the second byte passed with the opcode is `00` telling the opcode to set the initial `ReqStack[RunPos]->MovePosition` preparing the entity to begin moving towards the desired location. The next call will pass `01` instead, which will tell the handler to update the current `ExtData[1]->EventPos`, moving it closer to the desired end result position that is stored in `ReqStack[RunPos]->MovePosition`.\n\nIf the entity is not within a certain distance to the goal position, the function yields to itself and allows the client to move the entity towards the goal. Each tick will releat the `01` mode until the entity reaches the goal. Once the goal is reached, the handler will set the position to the goal position exactly, then `ExecPointer` is incremented beyond the opcode and execution continues.\n\nThis method also makes use of the `FUNC_VCalibrate1` and `FUNC_VCalibrate2` functions, ensuring the entity is properly walking on the floor."
+ },
+ "32": {
+  "opcode": 32,
+  "hex": "0x0020",
+  "size": 2,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets the `CliEventUcFlag` flag value. _(This flag is used to lock the player from controlling their character.)_",
+  "description_full": "Sets the `CliEventUcFlag` flag value. _(This flag is used to lock the player from controlling their character.)_"
+ },
+ "33": {
+  "opcode": 33,
+  "hex": "0x0021",
+  "size": 1,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "No",
+  "description": "Sets the `EventExecEnd` flag value to `1`. `EventExecEnd` is a flag that is checked when `XiEvent::EventIdle` is called before the `XiEvent::ExecProg` loop beings. If true, then the loop will not start for the current tick. `PTR_UnknownFlag` is currently unknown for its entire purpose. However, it is used to tell the client to cleanup the previous event state in some ways. This flag has 3 values (0, 1, 2) which is stepped through as the client is cleaning up from an ended event. This is used while looping the full entity map looking for valid entities who have a current `EventPointer` value and proper render flags for an event or event related task. (Talking, movement, etc.) This value is used to reset the entities event information back to defaults. _This flag is used in a pretty long function, but for now it's not too important to dig into more._",
+  "description_full": "Sets the `EventExecEnd` flag value to `1`.\n\n`EventExecEnd` is a flag that is checked when `XiEvent::EventIdle` is called before the `XiEvent::ExecProg` loop beings. If true, then the loop will not start for the current tick.\n\n`PTR_UnknownFlag` is currently unknown for its entire purpose. However, it is used to tell the client to cleanup the previous event state in some ways. This flag has 3 values (0, 1, 2) which is stepped through as the client is cleaning up from an ended event. This is used while looping the full entity map looking for valid entities who have a current `EventPointer` value and proper render flags for an event or event related task. (Talking, movement, etc.) This value is used to reset the entities event information back to defaults.\n\n_This flag is used in a pretty long function, but for now it's not too important to dig into more._"
+ },
+ "34": {
+  "opcode": 34,
+  "hex": "0x0022",
+  "size": 2,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Calls `XiAtelBuff::SetEventHideFlag` for the current event entity.",
+  "description_full": "Calls `XiAtelBuff::SetEventHideFlag` for the current event entity."
+ },
+ "35": {
+  "opcode": 35,
+  "hex": "0x0023",
+  "size": 1,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Waits for the local player to interact with a dialog message. If a dialog is open and waiting for an interaction, the function will act like a yielding coroutine. Internally, `PTR_CliEventMessOpenFlag` will be set to 2 elsewhere and the `XiEvent::ExecProg` loop will hault until the user has made a selection. However, if `PTR_CliEventMessOpenFlag` is already 2 when this is called, then the state is considered invalid and the event is stopped by force. If no dialog is opened/present, then the current `MouthIndex` entitiy, if one is set, is updated to stop talking and `MouthIndex` is reset to 0.",
+  "description_full": "Waits for the local player to interact with a dialog message.\n\nIf a dialog is open and waiting for an interaction, the function will act like a yielding coroutine. Internally, `PTR_CliEventMessOpenFlag` will be set to 2 elsewhere and the `XiEvent::ExecProg` loop will hault until the user has made a selection. However, if `PTR_CliEventMessOpenFlag` is already 2 when this is called, then the state is considered invalid and the event is stopped by force.\n\nIf no dialog is opened/present, then the current `MouthIndex` entitiy, if one is set, is updated to stop talking and `MouthIndex` is reset to 0."
+ },
+ "36": {
+  "opcode": 36,
+  "hex": "0x0024",
+  "size": 7,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Creates a dialog window with selectable options for the player to choose from. This function operates like a yielded coroutine. When the opcode is first handled and no previous dialog message is loaded and ready, then the main `else` case is handled first. This block will prepare the client for a new dialog box to be displayed. The first steps are to cleanup any previous dialog instance and information, and then reset the client back into a state to prepare a new one. Once the client is prepared, then the full raw dialog message is loaded. Afterward, the beginning steps to creating the new dialog happen with a call to `XiAtelMess::XiAtelMess`. Afterward, `QueryReqFlag` is set letting the client know that a dialog is being loaded and then `RetFlag` is set to yield the handler. On the next tick, before the handler is called again, the client runs some calls to prepare the event system for the next tick. During these checks, `QueryReqFlag` is checked and then the dialog is further prepared. The loaded dialog message is copied into the dialog buffer, preparing it for usage and then `PTR_QueryEndFlag` is set letting the event VM know that the query dialog is finished loading and can be used. After that, the opcode handler is called again as the `else` case did not move the `ExecPointer`. This time, the main `if` condition is handled. This is where the dialog options are populated and the default cursor position is set.",
+  "description_full": "Creates a dialog window with selectable options for the player to choose from.\n\nThis function operates like a yielded coroutine. When the opcode is first handled and no previous dialog message is loaded and ready, then the main `else` case is handled first. This block will prepare the client for a new dialog box to be displayed. The first steps are to cleanup any previous dialog instance and information, and then reset the client back into a state to prepare a new one.\n\nOnce the client is prepared, then the full raw dialog message is loaded. Afterward, the beginning steps to creating the new dialog happen with a call to `XiAtelMess::XiAtelMess`. Afterward, `QueryReqFlag` is set letting the client know that a dialog is being loaded and then `RetFlag` is set to yield the handler.\n\nOn the next tick, before the handler is called again, the client runs some calls to prepare the event system for the next tick. During these checks, `QueryReqFlag` is checked and then the dialog is further prepared. The loaded dialog message is copied into the dialog buffer, preparing it for usage and then `PTR_QueryEndFlag` is set letting the event VM know that the query dialog is finished loading and can be used.\n\nAfter that, the opcode handler is called again as the `else` case did not move the `ExecPointer`. This time, the main `if` condition is handled. This is where the dialog options are populated and the default cursor position is set."
+ },
+ "37": {
+  "opcode": 37,
+  "hex": "0x0025",
+  "size": 1,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Waits for a dialog select (created by opcode `0x0024`) to be made by the player. This function operates like a yielded coroutine. When first called, the handler checks to ensure a dialog has been created. If not, the handler moves the `ExecPointer` ahead beyond the opcode and sets the `RetFlag`, effectively skipping the opcode. `_(**Note:** This is odd as it does not error handle bad dialog loads and could cause you to select a dialog option you didn't want.)_ If a dialog is found, then the handler will instead check and make sure the dialog is valid. Afterward, a call to `CTkQueryControl::IsOK` is made, which is kind of misleading name wise. This is actually the way to get the players selection index. This function will return `0` until a selection is made. Pressing escape or forcing the dialog closed will cause it to return `255` as an invalid index, this lets the handler know that the player has exited the dialog without making a selection. When the user exits the dialog without a selection, `254` is stored into `Work_Zone[0]`. If the user makes a selection, then `selectedIndex - 1` is stored into `Work_Zone[0]` instead.",
+  "description_full": "Waits for a dialog select (created by opcode `0x0024`) to be made by the player.\n\nThis function operates like a yielded coroutine. When first called, the handler checks to ensure a dialog has been created. If not, the handler moves the `ExecPointer` ahead beyond the opcode and sets the `RetFlag`, effectively skipping the opcode. `_(**Note:** This is odd as it does not error handle bad dialog loads and could cause you to select a dialog option you didn't want.)_ If a dialog is found, then the handler will instead check and make sure the dialog is valid.\n\nAfterward, a call to `CTkQueryControl::IsOK` is made, which is kind of misleading name wise. This is actually the way to get the players selection index. This function will return `0` until a selection is made. Pressing escape or forcing the dialog closed will cause it to return `255` as an invalid index, this lets the handler know that the player has exited the dialog without making a selection.\n\nWhen the user exits the dialog without a selection, `254` is stored into `Work_Zone[0]`. If the user makes a selection, then `selectedIndex - 1` is stored into `Work_Zone[0]` instead."
+ },
+ "38": {
+  "opcode": 38,
+  "hex": "0x0026",
+  "size": 1,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "No",
+  "description": "Yields the event VM. _**Note:** This opcode may be deprecated. Since it only ever sets the `RetFlag` the opcode will never advance further leaving it in an endless self-handled cycle each time the VM is ticked._",
+  "description_full": "Yields the event VM.\n\n_**Note:** This opcode may be deprecated. Since it only ever sets the `RetFlag` the opcode will never advance further leaving it in an endless self-handled cycle each time the VM is ticked._"
+ },
+ "39": {
+  "opcode": 39,
+  "hex": "0x0027",
+  "size": 7,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Calls a helper `FUNC_REQSet` which in turn calls `XiEvent::ReqSet` after checking some conditions. For more information on `XiEvent::ReqSet`, see: [XiEvent::ReqSet](../Event%20VM%20Functions.md#xieventreqset)",
+  "description_full": "Calls a helper `FUNC_REQSet` which in turn calls `XiEvent::ReqSet` after checking some conditions.\n\nFor more information on `XiEvent::ReqSet`, see: [XiEvent::ReqSet](../Event%20VM%20Functions.md#xieventreqset)"
+ },
+ "40": {
+  "opcode": 40,
+  "hex": "0x0028",
+  "size": 7,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Similar to opcode `0x0027`, but with extra checks/conditions. The function starts by checking for the current `ReqStack[RunPos].ReqFlag` being set, then will do a similar check setup to `FUNC_REQSet` but will end with calling `XiEvent::GetReqStatus` instead. If `ReqStack[RunPos].ReqFlag` isn't set, then the function acts similar to opcode `0x0027`. * For more information on `XiEvent::ReqSet`, see: [XiEvent::ReqSet](../Event%20VM%20Functions.md#xieventreqset) * For more information on `XiEvent::GetReqStatus`, see [XiEvent::GetReqStatus](../Event%20VM%20Functions.md#xieventgetreqstatus)",
+  "description_full": "Similar to opcode `0x0027`, but with extra checks/conditions. The function starts by checking for the current `ReqStack[RunPos].ReqFlag` being set, then will do a similar check setup to `FUNC_REQSet` but will end with calling `XiEvent::GetReqStatus` instead.\n\nIf `ReqStack[RunPos].ReqFlag` isn't set, then the function acts similar to opcode `0x0027`.\n\n  * For more information on `XiEvent::ReqSet`, see: [XiEvent::ReqSet](../Event%20VM%20Functions.md#xieventreqset)\n  * For more information on `XiEvent::GetReqStatus`, see [XiEvent::GetReqStatus](../Event%20VM%20Functions.md#xieventgetreqstatus)"
+ },
+ "41": {
+  "opcode": 41,
+  "hex": "0x0029",
+  "size": 7,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Similar to opcode `0x0028`. * For more information on `XiEvent::ReqSet`, see: [XiEvent::ReqSet](../Event%20VM%20Functions.md#xieventreqset) * For more information on `XiEvent::GetReqStatus`, see [XiEvent::GetReqStatus](../Event%20VM%20Functions.md#xieventgetreqstatus)",
+  "description_full": "Similar to opcode `0x0028`.\n\n  * For more information on `XiEvent::ReqSet`, see: [XiEvent::ReqSet](../Event%20VM%20Functions.md#xieventreqset)\n  * For more information on `XiEvent::GetReqStatus`, see [XiEvent::GetReqStatus](../Event%20VM%20Functions.md#xieventgetreqstatus)"
+ },
+ "42": {
+  "opcode": 42,
+  "hex": "0x002A",
+  "size": 6,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Similar to opcode `0x0028`. * For more information on `XiEvent::GetReqLevel`, see [XiEvent::GetReqStatus](../Event%20VM%20Functions.md#xieventgetreqlevel)",
+  "description_full": "Similar to opcode `0x0028`.\n\n  * For more information on `XiEvent::GetReqLevel`, see [XiEvent::GetReqStatus](../Event%20VM%20Functions.md#xieventgetreqlevel)"
+ },
+ "43": {
+  "opcode": 43,
+  "hex": "0x002B",
+  "size": 7,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Loads and prints an event message with the given entity as the speaker. This handler works similar to `0x001D`, however, the opcode holds the entity information used as the speaker.",
+  "description_full": "Loads and prints an event message with the given entity as the speaker.\n\nThis handler works similar to `0x001D`, however, the opcode holds the entity information used as the speaker."
+ },
+ "44": {
+  "opcode": 44,
+  "hex": "0x002C",
+  "size": 13,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Creates and loads a `CMoSchedularTask` on the desired entity. (Appears to set an entity action.)",
+  "description_full": "Creates and loads a `CMoSchedularTask` on the desired entity. (Appears to set an entity action.)"
+ },
+ "45": {
+  "opcode": 45,
+  "hex": "0x002D",
+  "size": 13,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Creates and loads a zone based `CMoSchedularTask` on the desired entities. (Appears to schedule a zone action.)",
+  "description_full": "Creates and loads a zone based `CMoSchedularTask` on the desired entities. (Appears to schedule a zone action.)"
+ },
+ "46": {
+  "opcode": 46,
+  "hex": "0x002E",
+  "size": 1,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets the `CliEventCancelSetData` flag. If `CliEventCancelSetFlag` is set, also sets the `CliEventCancelFlag` flag.",
+  "description_full": "Sets the `CliEventCancelSetData` flag. If `CliEventCancelSetFlag` is set, also sets the `CliEventCancelFlag` flag."
+ },
+ "47": {
+  "opcode": 47,
+  "hex": "0x002F",
+  "size": 6,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Adjusts the given entities `Render.Flag0` value.",
+  "description_full": "Adjusts the given entities `Render.Flag0` value."
+ },
+ "48": {
+  "opcode": 48,
+  "hex": "0x0030",
+  "size": 1,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets the `ucoff_continue` flag to 0. This flag is used with the `CliEventUcFlag` and `CliEventCancelFlag` to determine how the client handles locking and unlocking character control of the local player.",
+  "description_full": "Sets the `ucoff_continue` flag to 0.\n\nThis flag is used with the `CliEventUcFlag` and `CliEventCancelFlag` to determine how the client handles locking and unlocking character control of the local player."
+ },
+ "49": {
+  "opcode": 49,
+  "hex": "0x0031",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Updates the event position information. This handler has multiple operating modes depending on some conditions. When it is first called, the second byte passed with the opcode is `00` telling the opcode to set the initial `ReqStack[RunPos]->MovePosition` preparing the entity to begin moving towards the desired location. The next call will pass `01` instead, which will tell the handler to update the current `ExtData[1]->EventPos`, moving it closer to the desired end result position that is stored in `ReqStack[RunPos]->MovePosition`. If the entity is not within a certain distance to the goal position, the function yields to itself and allows the client to move the entity towards the goal. Each tick will releat the `01` mode until the entity reaches the goal. Once the goal is reached, the handler will set the position to the goal position exactly, then `ExecPointer` is incremented beyond the opcode and execution continues. This method also makes use of the `FUNC_VCalibrate1` and `FUNC_VCalibrate2` functions, ensuring the entity is properly walking on the floor. This handler works similar to opcode `0x001F`, but has more precision and adjustments, such as controlling the `MoveTime` while moving the entity.",
+  "description_full": "Updates the event position information.\n\nThis handler has multiple operating modes depending on some conditions. When it is first called, the second byte passed with the opcode is `00` telling the opcode to set the initial `ReqStack[RunPos]->MovePosition` preparing the entity to begin moving towards the desired location. The next call will pass `01` instead, which will tell the handler to update the current `ExtData[1]->EventPos`, moving it closer to the desired end result position that is stored in `ReqStack[RunPos]->MovePosition`.\n\nIf the entity is not within a certain distance to the goal position, the function yields to itself and allows the client to move the entity towards the goal. Each tick will releat the `01` mode until the entity reaches the goal. Once the goal is reached, the handler will set the position to the goal position exactly, then `ExecPointer` is incremented beyond the opcode and execution continues.\n\nThis method also makes use of the `FUNC_VCalibrate1` and `FUNC_VCalibrate2` functions, ensuring the entity is properly walking on the floor.\n\nThis handler works similar to opcode `0x001F`, but has more precision and adjustments, such as controlling the `MoveTime` while moving the entity."
+ },
+ "50": {
+  "opcode": 50,
+  "hex": "0x0032",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets the `ExtData[1]->MainSpeed` value.",
+  "description_full": "Sets the `ExtData[1]->MainSpeed` value."
+ },
+ "51": {
+  "opcode": 51,
+  "hex": "0x0033",
+  "size": 2,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Adjusts the event entities `Render.Flags0` value.",
+  "description_full": "Adjusts the event entities `Render.Flags0` value."
+ },
+ "52": {
+  "opcode": 52,
+  "hex": "0x0034",
+  "size": 3,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Appears to load and unload an additional zone to be used with the event. `PTR_UnknownValue0000` and `PTR_UnknownValue0001` are only used inside of opcode `0x0034` and opcode `0x0035` handlers. (They are both initialized to 0 elsewhere but not actually used besides these two handlers.)",
+  "description_full": "Appears to load and unload an additional zone to be used with the event.\n\n`PTR_UnknownValue0000` and `PTR_UnknownValue0001` are only used inside of opcode `0x0034` and opcode `0x0035` handlers. (They are both initialized to 0 elsewhere but not actually used besides these two handlers.)"
+ },
+ "53": {
+  "opcode": 53,
+  "hex": "0x0035",
+  "size": 3,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Similar to opcode `0x0034`. This appears to load an additional zone for the event, however this handler does not have a call to `XiZone::Close`. `PTR_UnknownValue0000` and `PTR_UnknownValue0001` are only used inside of opcode `0x0034` and opcode `0x0035` handlers. (They are both initialized to 0 elsewhere but not actually used besides these two handlers.)",
+  "description_full": "Similar to opcode `0x0034`. This appears to load an additional zone for the event, however this handler does not have a call to `XiZone::Close`.\n\n`PTR_UnknownValue0000` and `PTR_UnknownValue0001` are only used inside of opcode `0x0034` and opcode `0x0035` handlers. (They are both initialized to 0 elsewhere but not actually used besides these two handlers.)"
+ },
+ "54": {
+  "opcode": 54,
+  "hex": "0x0036",
+  "size": 7,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Updates the current `ExtData[1]->EventPos` information, calibrates the current event entity position then calls `XiAtelBuff::CopyAllPosEvent` and `XiAtelBuff::ReqExecHitCheck`.",
+  "description_full": "Updates the current `ExtData[1]->EventPos` information, calibrates the current event entity position then calls `XiAtelBuff::CopyAllPosEvent` and `XiAtelBuff::ReqExecHitCheck`."
+ },
+ "55": {
+  "opcode": 55,
+  "hex": "0x0037",
+  "size": 9,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Updates the current `ExtData[1]->EventPos` and `ExtData[1]->EventDir[1]` information, calibrates the current event entity position then calls `XiAtelBuff::CopyAllPosEvent` and `XiAtelBuff::ReqExecHitCheck`. Similar to opcode `0x0036`, this also updates the `ExtData[1]->EventDir[1]` as well.",
+  "description_full": "Updates the current `ExtData[1]->EventPos` and `ExtData[1]->EventDir[1]` information, calibrates the current event entity position then calls `XiAtelBuff::CopyAllPosEvent` and `XiAtelBuff::ReqExecHitCheck`.\n\nSimilar to opcode `0x0036`, this also updates the `ExtData[1]->EventDir[1]` as well."
+ },
+ "56": {
+  "opcode": 56,
+  "hex": "0x0038",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets the lower-word of `CliEventModeLocal` to a masked value. `CliEventModeLocal` is used to tell the client how the event should alter the client state. This includes things like: * Hiding the local player entity to allow the game to control the camera. * Hiding the various UI elements during an event. (Compass, target window, party window, etc.) * Moving the camera separate from the local player entity. * Altering how movement works (probably to allow for certain camera adjustments/movements.) * etc. For example, `Ailevia` in Southern San d'Oria has an event that will take control of the camera and point it left/right explaining the area. \\ This sets this flag to `0x2003` when this happens.",
+  "description_full": "Sets the lower-word of `CliEventModeLocal` to a masked value.\n\n`CliEventModeLocal` is used to tell the client how the event should alter the client state. This includes things like:\n\n  * Hiding the local player entity to allow the game to control the camera.\n  * Hiding the various UI elements during an event. (Compass, target window, party window, etc.)\n  * Moving the camera separate from the local player entity.\n  * Altering how movement works (probably to allow for certain camera adjustments/movements.)\n  * etc.\n\nFor example, `Ailevia` in Southern San d'Oria has an event that will take control of the camera and point it left/right explaining the area. \\\nThis sets this flag to `0x2003` when this happens."
+ },
+ "57": {
+  "opcode": 57,
+  "hex": "0x0039",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets the current `ExtData[1]->EventDir[1]` value.",
+  "description_full": "Sets the current `ExtData[1]->EventDir[1]` value."
+ },
+ "58": {
+  "opcode": 58,
+  "hex": "0x003A",
+  "size": 7,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Converts a float `Yaw` value to it's single byte representation and stores it.",
+  "description_full": "Converts a float `Yaw` value to it's single byte representation and stores it."
+ },
+ "59": {
+  "opcode": 59,
+  "hex": "0x003B",
+  "size": 11,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Gets the current position of the given entity (or uses the `ExtData[1]->EventPos` depending on flags) and stores it.",
+  "description_full": "Gets the current position of the given entity (or uses the `ExtData[1]->EventPos` depending on flags) and stores it."
+ },
+ "60": {
+  "opcode": 60,
+  "hex": "0x003C",
+  "size": 7,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Compares two values (using a shift). If condition is met, sets a bit flag and stores the result.",
+  "description_full": "Compares two values (using a shift). If condition is met, sets a bit flag and stores the result."
+ },
+ "61": {
+  "opcode": 61,
+  "hex": "0x003D",
+  "size": 7,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Compares two values (using a shift). If condition is met, clears a bit flag and stores the result.",
+  "description_full": "Compares two values (using a shift). If condition is met, clears a bit flag and stores the result."
+ },
+ "62": {
+  "opcode": 62,
+  "hex": "0x003E",
+  "size": 7,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Tests if a bit is set. Adjusts the `ExecPointer` based on the state of the flag. This operates like an `if` statement. If the flag is set, then the `ExecPointer` is adjusted by 7 and the true condition is executed. If it is not set, then the `ExecPointer` is adjusted by a given amount to move past the true condition code.",
+  "description_full": "Tests if a bit is set. Adjusts the `ExecPointer` based on the state of the flag. \n\nThis operates like an `if` statement. If the flag is set, then the `ExecPointer` is adjusted by 7 and the true condition is executed. If it is not set, then the `ExecPointer` is adjusted by a given amount to move past the true condition code."
+ },
+ "63": {
+  "opcode": 63,
+  "hex": "0x003F",
+  "size": 7,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Calculates the remainder of two values and stores the result.",
+  "description_full": "Calculates the remainder of two values and stores the result."
+ },
+ "64": {
+  "opcode": 64,
+  "hex": "0x0040",
+  "size": 9,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets a bit flag value and stores it. One usage of this opcode is to tell the client which dialog menu options are enabled/available. An example of what uses this function is the menus displayed when talking to Homepoint crystals. For example, this is called twice when talking to a crystal in San d'Oria on a new character. The information used for this would be seen as the following for each call: Call 1: * 1: 0x0000 * 3: 0x000F * 5: 0x0000 * 7: 0x0008 * Set: 0x0008 Call 2: * 1: 0x0010 * 3: 0x001F * 5: 0x0008 * 7: 0x0000 * Set: 0x0008",
+  "description_full": "Sets a bit flag value and stores it. One usage of this opcode is to tell the client which dialog menu options are enabled/available.\n\nAn example of what uses this function is the menus displayed when talking to Homepoint crystals. For example, this is called twice when talking to a crystal in San d'Oria on a new character. The information used for this would be seen as the following for each call:\n\nCall 1:\n\n  * 1: 0x0000\n  * 3: 0x000F\n  * 5: 0x0000\n  * 7: 0x0008\n  * Set: 0x0008\n\nCall 2:\n\n  * 1: 0x0010\n  * 3: 0x001F\n  * 5: 0x0008\n  * 7: 0x0000\n  * Set: 0x0008"
+ },
+ "65": {
+  "opcode": 65,
+  "hex": "0x0041",
+  "size": 9,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Gets a bit flag value and stores it. One usage of this opcode is to tell the client which dialog menu options are enabled/available. This works similar to opcode `0x0040` and is generally used together to test for and read bit flags for available menu options.",
+  "description_full": "Gets a bit flag value and stores it. One usage of this opcode is to tell the client which dialog menu options are enabled/available.\n\nThis works similar to opcode `0x0040` and is generally used together to test for and read bit flags for available menu options."
+ },
+ "66": {
+  "opcode": 66,
+  "hex": "0x0042",
+  "size": 1,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets the `CliEventCancelSetData` flag to 0. If `CliEventCancelSetFlag` is set, then `CliEventCancelFlag` is also set to 0.",
+  "description_full": "Sets the `CliEventCancelSetData` flag to 0. If `CliEventCancelSetFlag` is set, then `CliEventCancelFlag` is also set to 0."
+ },
+ "67": {
+  "opcode": 67,
+  "hex": "0x0043",
+  "size": 2,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Used to tell the server the server when the client has updated an event or has completed it. Depending on what is passed with the opcode, this can result in the client sending an `0x005B` packet via the `FUNC_SendPendingTag` function.",
+  "description_full": "Used to tell the server the server when the client has updated an event or has completed it.\n\nDepending on what is passed with the opcode, this can result in the client sending an `0x005B` packet via the `FUNC_SendPendingTag` function."
+ },
+ "68": {
+  "opcode": 68,
+  "hex": "0x0044",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Tests if the given entity is valid. Adjusts the `ExecPointer` based on the result. This operates like an `if` statement. If the entity is valid, then the `ExecPointer` is adjusted by 5 and the true condition is executed. If it is not set, then the `ExecPointer` is adjusted by a given amount to move past the true condition code.",
+  "description_full": "Tests if the given entity is valid. Adjusts the `ExecPointer` based on the result.\n\nThis operates like an `if` statement. If the entity is valid, then the `ExecPointer` is adjusted by 5 and the true condition is executed. If it is not set, then the `ExecPointer` is adjusted by a given amount to move past the true condition code."
+ },
+ "69": {
+  "opcode": 69,
+  "hex": "0x0045",
+  "size": 17,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Loads and starts a scheduled task with the given two entities.",
+  "description_full": "Loads and starts a scheduled task with the given two entities."
+ },
+ "70": {
+  "opcode": 70,
+  "hex": "0x0046",
+  "size": null,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Enables and disables the player camera control. Also disables rendering some menus to allow the game to play cutscenes without unneeded info on screen. Handler can also be used to query the current status of the camera control. `PTR_IsUserCameraControlEnabled` is set to 0 when `FUNC_XiActor_DisableUserControlCamera` is called, and set to 1 when `FUNC_XiActor_EnableUserControlCamera` is called.",
+  "description_full": "Enables and disables the player camera control. Also disables rendering some menus to allow the game to play cutscenes without unneeded info on screen.\n\nHandler can also be used to query the current status of the camera control.\n\n`PTR_IsUserCameraControlEnabled` is set to 0 when `FUNC_XiActor_DisableUserControlCamera` is called, and set to 1 when `FUNC_XiActor_EnableUserControlCamera` is called."
+ },
+ "71": {
+  "opcode": 71,
+  "hex": "0x0047",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Updates the players location during an event. This opcode will send an `0x005C` packet to the server to inform it of your position change. When this is called, the `RecPendingFlag` and `RecPendingXZYFlag` are set to 1 to inform the event system that it is pending a response. This handler is also used to query and wait until the flags have been reset.",
+  "description_full": "Updates the players location during an event. This opcode will send an `0x005C` packet to the server to inform it of your position change.\n\nWhen this is called, the `RecPendingFlag` and `RecPendingXZYFlag` are set to 1 to inform the event system that it is pending a response.\n\nThis handler is also used to query and wait until the flags have been reset."
+ },
+ "72": {
+  "opcode": 72,
+  "hex": "0x0048",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Loads and prints an event message to chat, without a speaker entity. Sets two unknown pointers to 0.",
+  "description_full": "Loads and prints an event message to chat, without a speaker entity.\n\nSets two unknown pointers to 0."
+ },
+ "73": {
+  "opcode": 73,
+  "hex": "0x0049",
+  "size": 7,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Loads and prints an event message to chat, without a speaker entity. Sets two unknown pointers to the target entities index.",
+  "description_full": "Loads and prints an event message to chat, without a speaker entity.\n\nSets two unknown pointers to the target entities index."
+ },
+ "74": {
+  "opcode": 74,
+  "hex": "0x004A",
+  "size": 9,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Tells an entity to look at another entity. This opcode is similar to `0x001E`.",
+  "description_full": "Tells an entity to look at another entity.\n\nThis opcode is similar to `0x001E`."
+ },
+ "75": {
+  "opcode": 75,
+  "hex": "0x004B",
+  "size": 7,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Updates the given entities yaw direction.",
+  "description_full": "Updates the given entities yaw direction."
+ },
+ "76": {
+  "opcode": 76,
+  "hex": "0x004C",
+  "size": 1,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets the event entities `StatusEvent` to 8 if a specific `Render.Flags0` bit is not set. (Open door.)",
+  "description_full": "Sets the event entities `StatusEvent` to 8 if a specific `Render.Flags0` bit is not set. (Open door.)"
+ },
+ "77": {
+  "opcode": 77,
+  "hex": "0x004D",
+  "size": 1,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets the event entities `StatusEvent` to 9 if a specific `Render.Flags0` bit is not set. (Close door.)",
+  "description_full": "Sets the event entities `StatusEvent` to 9 if a specific `Render.Flags0` bit is not set. (Close door.)"
+ },
+ "78": {
+  "opcode": 78,
+  "hex": "0x004E",
+  "size": 6,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets the entities event hide flag within `Render.Flags0`.",
+  "description_full": "Sets the entities event hide flag within `Render.Flags0`."
+ },
+ "79": {
+  "opcode": 79,
+  "hex": "0x004F",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets the event entities `StatusEvent` to the given value if a specific `Render.Flags0` bit is not set.",
+  "description_full": "Sets the event entities `StatusEvent` to the given value if a specific `Render.Flags0` bit is not set."
+ },
+ "80": {
+  "opcode": 80,
+  "hex": "0x0050",
+  "size": 13,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Ends a `CMoSchedularTask`.",
+  "description_full": "Ends a `CMoSchedularTask`."
+ },
+ "81": {
+  "opcode": 81,
+  "hex": "0x0051",
+  "size": 13,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Ends a zone based `CMoSchedularTask`.",
+  "description_full": "Ends a zone based `CMoSchedularTask`."
+ },
+ "82": {
+  "opcode": 82,
+  "hex": "0x0052",
+  "size": 15,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Ends a `CMoSchedularTask`. (Load / Main)",
+  "description_full": "Ends a `CMoSchedularTask`. (Load / Main)"
+ },
+ "83": {
+  "opcode": 83,
+  "hex": "0x0053",
+  "size": 13,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Waits for the given entities schedular to finish its current action.",
+  "description_full": "Waits for the given entities schedular to finish its current action."
+ },
+ "84": {
+  "opcode": 84,
+  "hex": "0x0054",
+  "size": 13,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Waits for the zone schedular to finish its current action.",
+  "description_full": "Waits for the zone schedular to finish its current action."
+ },
+ "85": {
+  "opcode": 85,
+  "hex": "0x0055",
+  "size": 15,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Waits for the Main/Load schedular to finish its current action.",
+  "description_full": "Waits for the Main/Load schedular to finish its current action."
+ },
+ "86": {
+  "opcode": 86,
+  "hex": "0x0056",
+  "size": 5,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Deprecated. This opcode does not do anything with the values it reads anymore. This appears to be deprecated.",
+  "description_full": "Deprecated. This opcode does not do anything with the values it reads anymore. This appears to be deprecated."
+ },
+ "87": {
+  "opcode": 87,
+  "hex": "0x0057",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Creates a frame delay from the current frame delay value and stores it.",
+  "description_full": "Creates a frame delay from the current frame delay value and stores it."
+ },
+ "88": {
+  "opcode": 88,
+  "hex": "0x0058",
+  "size": 1,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Yields the event VM.",
+  "description_full": "Yields the event VM."
+ },
+ "89": {
+  "opcode": 89,
+  "hex": "0x0059",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Handles multiple cases regarding updating an entities data for events.",
+  "description_full": "Handles multiple cases regarding updating an entities data for events."
+ },
+ "90": {
+  "opcode": 90,
+  "hex": "0x005A",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Updates the event position information. This handler has multiple operating modes depending on some conditions. When it is first called, the second byte passed with the opcode is `00` telling the opcode to set the initial `ReqStack[RunPos]->MovePosition` preparing the entity to begin moving towards the desired location. The next call will pass `01` instead, which will tell the handler to update the current `ExtData[1]->EventPos`, moving it closer to the desired end result position that is stored in `ReqStack[RunPos]->MovePosition`. If the entity is not within a certain distance to the goal position, the function yields to itself and allows the client to move the entity towards the goal. Each tick will releat the `01` mode until the entity reaches the goal. Once the goal is reached, the handler will set the position to the goal position exactly, then `ExecPointer` is incremented beyond the opcode and execution continues. This handler works similar to opcode `0x001F`, but does not calibrate the entity.",
+  "description_full": "Updates the event position information.\n\nThis handler has multiple operating modes depending on some conditions. When it is first called, the second byte passed with the opcode is `00` telling the opcode to set the initial `ReqStack[RunPos]->MovePosition` preparing the entity to begin moving towards the desired location. The next call will pass `01` instead, which will tell the handler to update the current `ExtData[1]->EventPos`, moving it closer to the desired end result position that is stored in `ReqStack[RunPos]->MovePosition`.\n\nIf the entity is not within a certain distance to the goal position, the function yields to itself and allows the client to move the entity towards the goal. Each tick will releat the `01` mode until the entity reaches the goal. Once the goal is reached, the handler will set the position to the goal position exactly, then `ExecPointer` is incremented beyond the opcode and execution continues.\n\nThis handler works similar to opcode `0x001F`, but does not calibrate the entity."
+ },
+ "91": {
+  "opcode": 91,
+  "hex": "0x005B",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Loads an extended schedular task. _Note: This is not fully reversed at this time. The pseudo code is a fairly rough draft._",
+  "description_full": "Loads an extended schedular task.\n\n_Note: This is not fully reversed at this time. The pseudo code is a fairly rough draft._"
+ },
+ "92": {
+  "opcode": 92,
+  "hex": "0x005C",
+  "size": null,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handles multiple cases regarding the music player. `PTR_MusicBuff` - Points to a uint16_t array of song ids for the various elements of the game. `PTR_MusicStartVolumes` - Points to a int16_t array of starting volumes for each of the song types. In some cases, the song is told to start softer than full volume, then `FUNC_YmMusicServer_Volume` can be used to ease the volume higher, or directly set it to a higher amount. `FUNC_YmMusicServer_Volume` - Sets the current playing music volume. Takes two parameters, the first being the desired volume level to [eventually] set, the second is the amount of time to ease into the desired volume. 0 would immediately set the volume. Music indexes are: * 0 - Idle (Day Time) * 1 - Idle (Night Time) * 2 - Combat (Solo) * 3 - Combat (Party) * 4 - Chocobo/Mount * 5 - Death * 6 - ??? * 7 - ???",
+  "description_full": "Handles multiple cases regarding the music player.\n\n`PTR_MusicBuff` - Points to a uint16_t array of song ids for the various elements of the game.\n\n`PTR_MusicStartVolumes` - Points to a int16_t array of starting volumes for each of the song types. In some cases, the song is told to start softer than full volume, then `FUNC_YmMusicServer_Volume` can be used to ease the volume higher, or directly set it to a higher amount.\n\n`FUNC_YmMusicServer_Volume` - Sets the current playing music volume. Takes two parameters, the first being the desired volume level to [eventually] set, the second is the amount of time to ease into the desired volume. 0 would immediately set the volume.\n\nMusic indexes are:\n\n  * 0 - Idle (Day Time)\n  * 1 - Idle (Night Time)\n  * 2 - Combat (Solo)\n  * 3 - Combat (Party)\n  * 4 - Chocobo/Mount\n  * 5 - Death\n  * 6 - ???\n  * 7 - ???"
+ },
+ "93": {
+  "opcode": 93,
+  "hex": "0x005D",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets, or eases, the current playing music to a new volume. `FUNC_YmMusicServer_Volume` - Sets the current playing music volume. Takes two parameters, the first being the desired volume level to [eventually] set, the second is the amount of time to ease into the desired volume. 0 would immediately set the volume.",
+  "description_full": "Sets, or eases, the current playing music to a new volume.\n\n`FUNC_YmMusicServer_Volume` - Sets the current playing music volume. Takes two parameters, the first being the desired volume level to [eventually] set, the second is the amount of time to ease into the desired volume. 0 would immediately set the volume."
+ },
+ "94": {
+  "opcode": 94,
+  "hex": "0x005E",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Appears to stop the event entities current action and reset them back to an idle motion.",
+  "description_full": "Appears to stop the event entities current action and reset them back to an idle motion."
+ },
+ "95": {
+  "opcode": 95,
+  "hex": "0x005F",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "This handler has a few cases, most of which call other opcode handlers and react based on their returns. * See: [OpCode: `0x0053`](OpCodes/0x0053.md) * See: [OpCode: `0x005B`](OpCodes/0x005B.md) * See: [OpCode: `0x00C1`](OpCodes/0x00C1.md)",
+  "description_full": "This handler has a few cases, most of which call other opcode handlers and react based on their returns.\n\n  * See: [OpCode: `0x0053`](OpCodes/0x0053.md)\n  * See: [OpCode: `0x005B`](OpCodes/0x005B.md)\n  * See: [OpCode: `0x00C1`](OpCodes/0x00C1.md)"
+ },
+ "96": {
+  "opcode": 96,
+  "hex": "0x0060",
+  "size": null,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler with multiple use cases. The default case where the opcode was two bytes long was deprecated and just skipped now. Adjusts the event entities `Render.Flags1` value.",
+  "description_full": "Handler with multiple use cases.\n\nThe default case where the opcode was two bytes long was deprecated and just skipped now.\n\nAdjusts the event entities `Render.Flags1` value."
+ },
+ "97": {
+  "opcode": 97,
+  "hex": "0x0061",
+  "size": 2,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Adjusts the event entities `Render.Flags2` value.",
+  "description_full": "Adjusts the event entities `Render.Flags2` value."
+ },
+ "98": {
+  "opcode": 98,
+  "hex": "0x0062",
+  "size": 17,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0045`, just with a different second argument. See [OpCode `0x0045`](OpCodes/0x0045.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0045`, just with a different second argument.\n\nSee [OpCode `0x0045`](OpCodes/0x0045.md) for more information."
+ },
+ "99": {
+  "opcode": 99,
+  "hex": "0x0063",
+  "size": 3,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets the event entity to play an animation then waits for it to complete.",
+  "description_full": "Sets the event entity to play an animation then waits for it to complete."
+ },
+ "100": {
+  "opcode": 100,
+  "hex": "0x0064",
+  "size": 11,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Calculates and stores the distance between the given points.",
+  "description_full": "Calculates and stores the distance between the given points."
+ },
+ "101": {
+  "opcode": 101,
+  "hex": "0x0065",
+  "size": 11,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Calculates and stores the 3D distance between the given entities.",
+  "description_full": "Calculates and stores the 3D distance between the given entities."
+ },
+ "102": {
+  "opcode": 102,
+  "hex": "0x0066",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x005B`, just with a different arguments. See [OpCode `0x005B`](OpCodes/0x005B.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x005B`, just with a different arguments.\n\nSee [OpCode `0x005B`](OpCodes/0x005B.md) for more information."
+ },
+ "103": {
+  "opcode": 103,
+  "hex": "0x0067",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Tells the client to hide the entire HUD UI elements during the cutscene. (ie. The compass, status icons, chat, menus, etc.)",
+  "description_full": "Tells the client to hide the entire HUD UI elements during the cutscene. (ie. The compass, status icons, chat, menus, etc.)"
+ },
+ "104": {
+  "opcode": 104,
+  "hex": "0x0068",
+  "size": 1,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Tells the client to unhide the entire HUD UI elements. (ie. The compass, status icons, chat, menus, etc.)",
+  "description_full": "Tells the client to unhide the entire HUD UI elements. (ie. The compass, status icons, chat, menus, etc.)"
+ },
+ "105": {
+  "opcode": 105,
+  "hex": "0x0069",
+  "size": 4,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets the sound volume of the desired sound type. Sound types are: * `0x01` - Effect * `0x02` - System * `0x04` - Zone * `0x08` - Master * `0x10` - Special Chat (Chat messages that trigger unique sound effects.)",
+  "description_full": "Sets the sound volume of the desired sound type.\n\nSound types are:\n\n  * `0x01` - Effect\n  * `0x02` - System\n  * `0x04` - Zone\n  * `0x08` - Master\n  * `0x10` - Special Chat (Chat messages that trigger unique sound effects.)"
+ },
+ "106": {
+  "opcode": 106,
+  "hex": "0x006A",
+  "size": 7,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Changes the sound volume of the desired sound type. Sound types are: * `0x01` - Effect * `0x02` - System * `0x04` - Zone * `0x08` - Master",
+  "description_full": "Changes the sound volume of the desired sound type.\n\nSound types are:\n\n  * `0x01` - Effect\n  * `0x02` - System\n  * `0x04` - Zone\n  * `0x08` - Master"
+ },
+ "107": {
+  "opcode": 107,
+  "hex": "0x006B",
+  "size": 9,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Appears to stop the given entities current action and reset them back to an idle motion.",
+  "description_full": "Appears to stop the given entities current action and reset them back to an idle motion."
+ },
+ "108": {
+  "opcode": 108,
+  "hex": "0x006C",
+  "size": 9,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Fades an enities color in and out. This can be used to both set just the alpha of the entity, but also the color. This works in stages to allow the color to fade in and/or out smoothly, or immediately, depending on the time values set.",
+  "description_full": "Fades an enities color in and out. This can be used to both set just the alpha of the entity, but also the color. This works in stages to allow the color to fade in and/or out smoothly, or immediately, depending on the time values set."
+ },
+ "109": {
+  "opcode": 109,
+  "hex": "0x006D",
+  "size": 7,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Deprecated. This opcode appears to be deprecated, it does nothing.",
+  "description_full": "Deprecated. This opcode appears to be deprecated, it does nothing."
+ },
+ "110": {
+  "opcode": 110,
+  "hex": "0x006E",
+  "size": 7,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets the given entity to play an emote animation.",
+  "description_full": "Sets the given entity to play an emote animation."
+ },
+ "111": {
+  "opcode": 111,
+  "hex": "0x006F",
+  "size": 1,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Delays the event VM execution until `ReqStack[RunPos].WaitTime` has reached 0. Used as a yieldable sleep call.",
+  "description_full": "Delays the event VM execution until `ReqStack[RunPos].WaitTime` has reached 0. Used as a yieldable sleep call."
+ },
+ "112": {
+  "opcode": 112,
+  "hex": "0x0070",
+  "size": 1,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Checks the event entity for a render flag, yields if set. Otherwise, cancels the entity movement and advances.",
+  "description_full": "Checks the event entity for a render flag, yields if set. Otherwise, cancels the entity movement and advances."
+ },
+ "113": {
+  "opcode": 113,
+  "hex": "0x0071",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Handles the usage of string input from the player during events. Such as password prompts and similar. Has some other handlers for linkshell related things and some unknown window usage. Notes for the specific cases: * Case `0x00` - _(string input)_ Used to open the general password input dialog for events. (Castle Oztroja, Strange Apparatus, etc.) * Case `0x01` - _(string input)_ Used to test if the player has given input or exited the event by pressing escape. (Sends `0x0060` packet to the server with the players input, even if they escape out of the event.) * Case `0x02` - _(string input)_ Used to test if the server has responded yet, allowing the event to yield and wait for the server to respond. * Case `0x03` - _(string input)_ Used to test if the given input is vulgar. (Passes the input through the games vulgar filter and stores the result.) * Case `0x10` - _(number input)_ Used to open the numerical input dialog for events. (Magian Moogles / Delivery Crate, Shami seal storage etc.) * Case `0x11` - _(number input)_ Used to test if the player has given input or exited the event by pressing escape. (Sends `0x0060` packet to the server with the players input, even if they escape out of the event.) * Case `0x12` - _(number input)_ Used to open the numerical input dialog for events. (Unknown usage at this time.) * Case `0x13` - _(number input)_ Used the same way as case `0x11`. * Case `0x20` - _(unknown input)_ Used to open an input dialog for events. (Appears to be used with Moblin Maze Mongers.) * Case `0x21` - _(unknown input)_ Used to send the users selection/input information to the server. (Sends `0x00D8` packet to the server.) * Case `0x30` - _(number input)_ Used to open the numerical input dialog for events. (Unknown, asks for Quill amount.) * Case `0x31` - _(number input)_ Used to test if the player has given input or exited the event by pressing escape. (Stores the value when completed.) * Case `0x32` - _(unknown input)_ Used to open the input dialog for events. (Unknown, allows both the type and size params to be customized.) * Case `0x40` - _(indirect input)_ Used to open the Linkshell Concierge window. (Input is handled by the client internally.) * Case `0x41` - _(indirect input)_ Used to test if the player has made a choice in the Linkshell Concierge window. (Once a choice is made the callback passed with the window creation during case 0x40 is called to set the values then they are stored.) * Case `0x50` - Unknown usage at this time. * Case `0x51` - Unknown usage at this time. * Case `0x52` - Unknown usage at this time. * Case `0x53` - Unknown usage at this time. * Case `0x54` - Unknown usage at this time. * Case `0x55` - Unknown usage at this time.",
+  "description_full": "Handles the usage of string input from the player during events. Such as password prompts and similar.\n\nHas some other handlers for linkshell related things and some unknown window usage.\n\nNotes for the specific cases:\n\n  * Case `0x00` - _(string input)_ Used to open the general password input dialog for events. (Castle Oztroja, Strange Apparatus, etc.)\n  * Case `0x01` - _(string input)_ Used to test if the player has given input or exited the event by pressing escape. (Sends `0x0060` packet to the server with the players input, even if they escape out of the event.)\n  * Case `0x02` - _(string input)_ Used to test if the server has responded yet, allowing the event to yield and wait for the server to respond.\n  * Case `0x03` - _(string input)_ Used to test if the given input is vulgar. (Passes the input through the games vulgar filter and stores the result.)\n  * Case `0x10` - _(number input)_ Used to open the numerical input dialog for events. (Magian Moogles / Delivery Crate, Shami seal storage etc.)\n  * Case `0x11` - _(number input)_ Used to test if the player has given input or exited the event by pressing escape. (Sends `0x0060` packet to the server with the players input, even if they escape out of the event.)\n  * Case `0x12` - _(number input)_ Used to open the numerical input dialog for events. (Unknown usage at this time.)\n  * Case `0x13` - _(number input)_ Used the same way as case `0x11`.\n  * Case `0x20` - _(unknown input)_ Used to open an input dialog for events. (Appears to be used with Moblin Maze Mongers.)\n  * Case `0x21` - _(unknown input)_ Used to send the users selection/input information to the server. (Sends `0x00D8` packet to the server.)\n  * Case `0x30` - _(number input)_ Used to open the numerical input dialog for events. (Unknown, asks for Quill amount.)\n  * Case `0x31` - _(number input)_ Used to test if the player has given input or exited the event by pressing escape. (Stores the value when completed.)\n  * Case `0x32` - _(unknown input)_ Used to open the input dialog for events. (Unknown, allows both the type and size params to be customized.)\n  * Case `0x40` - _(indirect input)_ Used to open the Linkshell Concierge window. (Input is handled by the client internally.)\n  * Case `0x41` - _(indirect input)_ Used to test if the player has made a choice in the Linkshell Concierge window. (Once a choice is made the callback passed with the window creation during case 0x40 is called to set the values then they are stored.)\n  * Case `0x50` - Unknown usage at this time.\n  * Case `0x51` - Unknown usage at this time.\n  * Case `0x52` - Unknown usage at this time.\n  * Case `0x53` - Unknown usage at this time.\n  * Case `0x54` - Unknown usage at this time.\n  * Case `0x55` - Unknown usage at this time."
+ },
+ "114": {
+  "opcode": 114,
+  "hex": "0x0072",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Appears to load event based weather information and update the weather accordingly for it.",
+  "description_full": "Appears to load event based weather information and update the weather accordingly for it."
+ },
+ "115": {
+  "opcode": 115,
+  "hex": "0x0073",
+  "size": 11,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Schedules tasks for casting magic on the two given entities. This uses a bunch of virtualized functions, further reversing needed to determine specifically which is which function. This sub-handler is used for other opcodes. Thus, the `param1` value is used to step over additional bytes in the other opcodes. Opcode `0x0073` is currently only 11 bytes long, always. The param is always 0 when the sub-handler is called.",
+  "description_full": "Schedules tasks for casting magic on the two given entities.\n\nThis uses a bunch of virtualized functions, further reversing needed to determine specifically which is which function.\n\nThis sub-handler is used for other opcodes. Thus, the `param1` value is used to step over additional bytes in the other opcodes. Opcode `0x0073` is currently only 11 bytes long, always. The param is always 0 when the sub-handler is called."
+ },
+ "116": {
+  "opcode": 116,
+  "hex": "0x0074",
+  "size": 2,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Adjusts the event entities `Render.Flags1` value.",
+  "description_full": "Adjusts the event entities `Render.Flags1` value."
+ },
+ "117": {
+  "opcode": 117,
+  "hex": "0x0075",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Loads a room and updates the players sub-region with the server. `FUNC_ZoneSubMapChangeSet` sends a `0x00F2` packet which is used to set the players current sub-region within the current zone.",
+  "description_full": "Loads a room and updates the players sub-region with the server.\n\n`FUNC_ZoneSubMapChangeSet` sends a `0x00F2` packet which is used to set the players current sub-region within the current zone."
+ },
+ "118": {
+  "opcode": 118,
+  "hex": "0x0076",
+  "size": 5,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Checks the given entities `Render.Flags0` and `Render.Flags3` and yields if successful. Calls `FUNC_XiAtelBuff_TurnCancel` if both checks fail.",
+  "description_full": "Checks the given entities `Render.Flags0` and `Render.Flags3` and yields if successful.\n\nCalls `FUNC_XiAtelBuff_TurnCancel` if both checks fail."
+ },
+ "119": {
+  "opcode": 119,
+  "hex": "0x0077",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Disables the game clock and sets the client to a specific time for the event. Can also set the weather at the same time.",
+  "description_full": "Disables the game clock and sets the client to a specific time for the event. Can also set the weather at the same time."
+ },
+ "120": {
+  "opcode": 120,
+  "hex": "0x0078",
+  "size": 1,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Enables the game timer and resets the zone weather. `PTR_UnknownFlag` is set to 1 by opcode `0x00A9`, which appears to be a flag to tell some of the time calculation functions that they are being overridden.",
+  "description_full": "Enables the game timer and resets the zone weather.\n\n`PTR_UnknownFlag` is set to 1 by opcode `0x00A9`, which appears to be a flag to tell some of the time calculation functions that they are being overridden."
+ },
+ "121": {
+  "opcode": 121,
+  "hex": "0x0079",
+  "size": null,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Used to look at / rotate towards another entity.",
+  "description_full": "Used to look at / rotate towards another entity."
+ },
+ "122": {
+  "opcode": 122,
+  "hex": "0x007A",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Case `0` appears to reset the given entities entire event VM. `ExecPointer`, `RunPos`, `JumpTableIndex` are all set back to 0. All `ReqStack` entries are set to their default values. Case `1` appears to reset the given entities specific `ReqStack` with the given `TagNum`. If the `TagNum` isn't found, nothing happens, otherwise the `ReqStack` containing it will be reset to defaults. Case `2` appears to allow entities to copy/share their `ExtData` buffers. This will set the current event VMs mutable `EntityTargetIndex`, `EntityServerId`, and `ExtData` values to the given entities. Allowing the event VM to target a specific entity. (Case 3 undoes this.) Case `3` appears to uncopy/unshare the `EntityTargetIndex`, `EntityServerId`, and `ExtData` values set from case 2. This will reset the event VMs current mutable values back to the original static ones. Case `4` appears to be used to make copies of some data. The data is copied as follows: * `if (this->Unknown0002 == 255)` * `this->Unknown0002` is set to `this->EventData[this->ExecPointer + 2]`. * `this->Unknown0003` is set to `this->EventOffsets[this->EventData[this->ExecPointer + 7]]`. * `this->Unknown0005` is set to `this->EventData[this->ExecPointer + 7]`. * `this->Unknown0007` is set to `this->EntityServerId[1]`. Case `5` appears to be used to reset the state that case 4 can cause. If the entity is valid, then `entity->EventPointer->Unknown0002` is reset back to 255. Allowing for future case 4 attempts to work.",
+  "description_full": "Case `0` appears to reset the given entities entire event VM. `ExecPointer`, `RunPos`, `JumpTableIndex` are all set back to 0. All `ReqStack` entries are set to their default values.\n\nCase `1` appears to reset the given entities specific `ReqStack` with the given `TagNum`. If the `TagNum` isn't found, nothing happens, otherwise the `ReqStack` containing it will be reset to defaults.\n\nCase `2` appears to allow entities to copy/share their `ExtData` buffers. This will set the current event VMs mutable `EntityTargetIndex`, `EntityServerId`, and `ExtData` values to the given entities. Allowing the event VM to target a specific entity. (Case 3 undoes this.)\n\nCase `3` appears to uncopy/unshare the `EntityTargetIndex`, `EntityServerId`, and `ExtData` values set from case 2. This will reset the event VMs current mutable values back to the original static ones.\n\nCase `4` appears to be used to make copies of some data. The data is copied as follows:\n\n  * `if (this->Unknown0002 == 255)`\n    * `this->Unknown0002` is set to `this->EventData[this->ExecPointer + 2]`.\n    * `this->Unknown0003` is set to `this->EventOffsets[this->EventData[this->ExecPointer + 7]]`.\n    * `this->Unknown0005` is set to `this->EventData[this->ExecPointer + 7]`.\n    * `this->Unknown0007` is set to `this->EntityServerId[1]`.\n\nCase `5` appears to be used to reset the state that case 4 can cause. If the entity is valid, then `entity->EventPointer->Unknown0002` is reset back to 255. Allowing for future case 4 attempts to work."
+ },
+ "123": {
+  "opcode": 123,
+  "hex": "0x007B",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Unsets the given entities talking status, setting their `NpcSpeechFrame` back to -1.",
+  "description_full": "Unsets the given entities talking status, setting their `NpcSpeechFrame` back to -1."
+ },
+ "124": {
+  "opcode": 124,
+  "hex": "0x007C",
+  "size": 6,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Adjusts the given entities `Render.Flags2` value.",
+  "description_full": "Adjusts the given entities `Render.Flags2` value."
+ },
+ "125": {
+  "opcode": 125,
+  "hex": "0x007D",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Loads and starts a scheduled task using the local player as the entity. (Appears to be used to display rank up animations.)",
+  "description_full": "Loads and starts a scheduled task using the local player as the entity. (Appears to be used to display rank up animations.)"
+ },
+ "126": {
+  "opcode": 126,
+  "hex": "0x007E",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Multi-purpose opcode relating to chocobos and mounts. * Case `0` and `5` - Sets the given entities event status to 0. * Case `1` - _(Chocobo)_ Sets the given entities event status to 5. (Adjusts render flags as well.) * Case `2` - _(Unknown)_ Executes an attachment function if the entity has a set `Attachments[0]` entry. * Case `3` - _(Chocobo)_ Sets the given entities event status to 5. (Adjusts render flags and updates the entities `CustomProperties`.) * Case `6` - _(Chocobo)_ Sets the given entities event status to 5. (Adjusts render flags and updates the entities `CustomProperties`.) * Case `7` - _(Mount)_ Sets the given entities event status to 85. (Also sets their `MountId` value.) * Case `8` - _(Mount)_ Sets the given entities event status to 0. (Also sets their `MountId` value back to 0.)",
+  "description_full": "Multi-purpose opcode relating to chocobos and mounts.\n\n  * Case `0` and `5` - Sets the given entities event status to 0.\n  * Case `1` - _(Chocobo)_ Sets the given entities event status to 5. (Adjusts render flags as well.)\n  * Case `2` - _(Unknown)_ Executes an attachment function if the entity has a set `Attachments[0]` entry.\n  * Case `3` - _(Chocobo)_ Sets the given entities event status to 5. (Adjusts render flags and updates the entities `CustomProperties`.)\n  * Case `6` - _(Chocobo)_ Sets the given entities event status to 5. (Adjusts render flags and updates the entities `CustomProperties`.)\n  * Case `7` - _(Mount)_ Sets the given entities event status to 85. (Also sets their `MountId` value.)\n  * Case `8` - _(Mount)_ Sets the given entities event status to 0. (Also sets their `MountId` value back to 0.)"
+ },
+ "127": {
+  "opcode": 127,
+  "hex": "0x007F",
+  "size": 1,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Waits for a dialog select to be made by the player. This opcode works similar to opcode `0x0025`. With very slight changes to how the result is stored.",
+  "description_full": "Waits for a dialog select to be made by the player. \n\nThis opcode works similar to opcode `0x0025`. With very slight changes to how the result is stored."
+ },
+ "128": {
+  "opcode": 128,
+  "hex": "0x0080",
+  "size": 5,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Tests the given entity for several conditions. Yields or moves forward depending on the results. _(Appears to be used to check if the entity is loading an action or similar.)_",
+  "description_full": "Tests the given entity for several conditions. Yields or moves forward depending on the results. _(Appears to be used to check if the entity is loading an action or similar.)_"
+ },
+ "129": {
+  "opcode": 129,
+  "hex": "0x0081",
+  "size": 6,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets if the given entity is blinking.",
+  "description_full": "Sets if the given entity is blinking."
+ },
+ "130": {
+  "opcode": 130,
+  "hex": "0x0082",
+  "size": 7,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Finds and hit tests a rect based on the current event entities position. This operates like an `if` statement. If the condition is valid, then the `ExecPointer` is adjusted by 7 and the true condition is executed. If it is not valid, then the `ExecPointer` is adjusted by a given amount to move past the true condition code.",
+  "description_full": "Finds and hit tests a rect based on the current event entities position.\n\nThis operates like an `if` statement. If the condition is valid, then the `ExecPointer` is adjusted by 7 and the true condition is executed. If it is not valid, then the `ExecPointer` is adjusted by a given amount to move past the true condition code."
+ },
+ "131": {
+  "opcode": 131,
+  "hex": "0x0083",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Gets and stores the current game time.",
+  "description_full": "Gets and stores the current game time."
+ },
+ "132": {
+  "opcode": 132,
+  "hex": "0x0084",
+  "size": 1,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Adjusts the event entities `Render.Flags3` value.",
+  "description_full": "Adjusts the event entities `Render.Flags3` value."
+ },
+ "133": {
+  "opcode": 133,
+  "hex": "0x0085",
+  "size": 1,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Opens a mog house sub-menu depending on the passed parameter. * `0` - Opens the normal moogle menu. _(Same as when you're in your mog house.)_ * `1` - Opens the nomad moogle menu. _(Storage, Delivery Box, Change Jobs)_ _If certain client conditions are met, passing `0` will result in the `Layout` submenu being opened instead._",
+  "description_full": "Opens a mog house sub-menu depending on the passed parameter.\n\n  * `0` - Opens the normal moogle menu. _(Same as when you're in your mog house.)_\n  * `1` - Opens the nomad moogle menu. _(Storage, Delivery Box, Change Jobs)_\n\n_If certain client conditions are met, passing `0` will result in the `Layout` submenu being opened instead._"
+ },
+ "134": {
+  "opcode": 134,
+  "hex": "0x0086",
+  "size": 6,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Adjusts the given entities `Render.Flags3` value.",
+  "description_full": "Adjusts the given entities `Render.Flags3` value."
+ },
+ "135": {
+  "opcode": 135,
+  "hex": "0x0087",
+  "size": 2,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Used for handling the generation of world passes. Sends `0x001B` packets to handle the various world pass functionalities. This function will set `PR_RecFriendPassFlag` then yield until the server responds.",
+  "description_full": "Used for handling the generation of world passes. Sends `0x001B` packets to handle the various world pass functionalities.\n\nThis function will set `PR_RecFriendPassFlag` then yield until the server responds."
+ },
+ "136": {
+  "opcode": 136,
+  "hex": "0x0088",
+  "size": 2,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Used for handling the generation of world passes. Sends `0x001B` packets to handle the various world pass functionalities. This function will set `PR_RecFriendPassFlag` then yield until the server responds. This handler is a copy of `0x0087`, except the packet field is changed for the two cases.",
+  "description_full": "Used for handling the generation of world passes. Sends `0x001B` packets to handle the various world pass functionalities.\n\nThis function will set `PR_RecFriendPassFlag` then yield until the server responds.\n\nThis handler is a copy of `0x0087`, except the packet field is changed for the two cases."
+ },
+ "137": {
+  "opcode": 137,
+  "hex": "0x0089",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Opens the desired map (ie. `/map`), preparing it for usage within the event. (ie. NPCs that mark your map/show you around.) The read value from the opcode is the desired map id to open.",
+  "description_full": "Opens the desired map (ie. `/map`), preparing it for usage within the event. (ie. NPCs that mark your map/show you around.)\n\nThe read value from the opcode is the desired map id to open."
+ },
+ "138": {
+  "opcode": 138,
+  "hex": "0x008A",
+  "size": 1,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Closes the map window. (ie. after being opened via opcode `0x0089`)",
+  "description_full": "Closes the map window. (ie. after being opened via opcode `0x0089`)"
+ },
+ "139": {
+  "opcode": 139,
+  "hex": "0x008B",
+  "size": 25,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets, or updates, a marker point on the players map. (ie. Used by NPCs that help new players and mark your map.)",
+  "description_full": "Sets, or updates, a marker point on the players map. (ie. Used by NPCs that help new players and mark your map.)"
+ },
+ "140": {
+  "opcode": 140,
+  "hex": "0x008C",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "This handler is used for multiple purposes, related to crafting. (ie. Requesting recipes, synth support, and similar.) Sends `0x0058` packets and waits for responses.",
+  "description_full": "This handler is used for multiple purposes, related to crafting. (ie. Requesting recipes, synth support, and similar.)\n\nSends `0x0058` packets and waits for responses."
+ },
+ "141": {
+  "opcode": 141,
+  "hex": "0x008D",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Opens the map window with the given properties. This handler is used mainly when an NPC opens your map but it is not with the sub-menus visible. Mainly to show an overview of the map with no extra bloat on screen or markings on the map. For example, `Luthiaque` in `Southern San d'Oria` will open the full map of Sandy showing how the various areas connect to each other.",
+  "description_full": "Opens the map window with the given properties. This handler is used mainly when an NPC opens your map but it is not with the sub-menus visible. Mainly to show an overview of the map with no extra bloat on screen or markings on the map.\n\nFor example, `Luthiaque` in `Southern San d'Oria` will open the full map of Sandy showing how the various areas connect to each other."
+ },
+ "142": {
+  "opcode": 142,
+  "hex": "0x008E",
+  "size": 1,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets the event entities event status to `45` if valid.",
+  "description_full": "Sets the event entities event status to `45` if valid."
+ },
+ "143": {
+  "opcode": 143,
+  "hex": "0x008F",
+  "size": 1,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets the event entities event status to `46` if valid.",
+  "description_full": "Sets the event entities event status to `46` if valid."
+ },
+ "144": {
+  "opcode": 144,
+  "hex": "0x0090",
+  "size": 1,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Adjusts the event entities `Render.Flags0` and `Render.Flags1` values.",
+  "description_full": "Adjusts the event entities `Render.Flags0` and `Render.Flags1` values."
+ },
+ "145": {
+  "opcode": 145,
+  "hex": "0x0091",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets the `ExtData[1].MainSpeedBase` value.",
+  "description_full": "Sets the `ExtData[1].MainSpeedBase` value."
+ },
+ "146": {
+  "opcode": 146,
+  "hex": "0x0092",
+  "size": 6,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Adjusts the given entities `Render.Flags3` value.",
+  "description_full": "Adjusts the given entities `Render.Flags3` value."
+ },
+ "147": {
+  "opcode": 147,
+  "hex": "0x0093",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Appears to display an items information. _(Perhaps the same manner with how crafting shows results?)_",
+  "description_full": "Appears to display an items information. _(Perhaps the same manner with how crafting shows results?)_"
+ },
+ "148": {
+  "opcode": 148,
+  "hex": "0x0094",
+  "size": 6,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Adjusts the given entities `Render.Flags3` value.",
+  "description_full": "Adjusts the given entities `Render.Flags3` value."
+ },
+ "149": {
+  "opcode": 149,
+  "hex": "0x0095",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets the event entity up for being an event based npc. Cleans up the event entities attachments.",
+  "description_full": "Sets the event entity up for being an event based npc.\n\nCleans up the event entities attachments."
+ },
+ "150": {
+  "opcode": 150,
+  "hex": "0x0096",
+  "size": 1,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Unsets the event entity from being an event based npc. Cleans up the event entities attachments. See [OpCode `0x0095`](OpCodes/0x0095.md) for more information regarding `FUNC_XiAtelBuff_ObjectDelete`.",
+  "description_full": "Unsets the event entity from being an event based npc.\n\nCleans up the event entities attachments.\n\nSee [OpCode `0x0095`](OpCodes/0x0095.md) for more information regarding `FUNC_XiAtelBuff_ObjectDelete`."
+ },
+ "151": {
+  "opcode": 151,
+  "hex": "0x0097",
+  "size": 5,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Saves the current zone `WindBase` and `WindWidth` values then sets new ones. _Unknown at this time what these are for. Naming suggests its used for the zone wind with weather, but doesn't seem to do anything related to it._",
+  "description_full": "Saves the current zone `WindBase` and `WindWidth` values then sets new ones. \n\n_Unknown at this time what these are for. Naming suggests its used for the zone wind with weather, but doesn't seem to do anything related to it._"
+ },
+ "152": {
+  "opcode": 152,
+  "hex": "0x0098",
+  "size": 1,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Yields if the zone is loading data, continues otherwise.",
+  "description_full": "Yields if the zone is loading data, continues otherwise."
+ },
+ "153": {
+  "opcode": 153,
+  "hex": "0x0099",
+  "size": 5,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Yields if the given entity is playing an animation, continues otherwise.",
+  "description_full": "Yields if the given entity is playing an animation, continues otherwise."
+ },
+ "154": {
+  "opcode": 154,
+  "hex": "0x009A",
+  "size": 1,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Yields until the music server is no longer reading data.",
+  "description_full": "Yields until the music server is no longer reading data."
+ },
+ "155": {
+  "opcode": 155,
+  "hex": "0x009B",
+  "size": 1,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Yields if the event entity is playing an animation, continues otherwise.",
+  "description_full": "Yields if the event entity is playing an animation, continues otherwise."
+ },
+ "156": {
+  "opcode": 156,
+  "hex": "0x009C",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Stores the client language id. The way this function operates is kind of dumb. The client was updated to prevent old language versions from working and instead defaults itself to Japanese or English. For a short period, it also supported two European translations but those were discontinued. Instead, the client defaults to English now if those are selected. * `0` - Japanese - _(Handler will return: 1)_ * `1` - English - _(Handler will return: 2)_ * `2` - European (French) - _(Handler will return: 2)_ * `3` - European (Deutsch) - _(Handler will return: 2)_ _All other results will return 1. `PTR_ValueUnknown` has never been observed to be anything other than `128` which is -1 as it's signed. This is static inside of FFXiMain.dll_",
+  "description_full": "Stores the client language id.\n\nThe way this function operates is kind of dumb. The client was updated to prevent old language versions from working and instead defaults itself to Japanese or English. For a short period, it also supported two European translations but those were discontinued. Instead, the client defaults to English now if those are selected.\n\n  * `0` - Japanese - _(Handler will return: 1)_\n  * `1` - English - _(Handler will return: 2)_\n  * `2` - European (French) - _(Handler will return: 2)_\n  * `3` - European (Deutsch) - _(Handler will return: 2)_\n\n_All other results will return 1. `PTR_ValueUnknown` has never been observed to be anything other than `128` which is -1 as it's signed. This is static inside of FFXiMain.dll_"
+ },
+ "157": {
+  "opcode": 157,
+  "hex": "0x009D",
+  "size": null,
+  "sets_ret_flag": "No` _(Can set RetFlag if the jump fails.)_",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that has multiple purposes, mainly focused around handling strings. * Case `0x00` - Steps the `ExecPointer` forward, reads a value, stores it and then restores the `ExecPointer`. * Case `0x01` - Steps the `ExecPointer` forward, reads a string, stores it and then restores the `ExecPointer`. * Case `0x02` - Stores the `EventData` and `References` into the `PTR_Ptr_Work_Zone` and `PTR_Ptr_Refs_Zone` arrays. * Case `0x03` - Sets the event VM `ExecPointer` to 0 and `EventData` and `References` to temporary instances, reads and stores a value, then restores them. * Case `0x04` - Reads a string value from a stored `PTR_Ptr_Work_Zone` instance, then stores it. * Case `0x05` - Sets the `ExecPointer` to a given position, reads a value, stores it, then resets and steps the `ExecPointer` forward. * Case `0x06` - Reads a string value, sets the `ExecPointer`, stores the string value, then restores and advances the `ExecPointer`. * Case `0x07` - Reads a value, sets the `ExecPointer`, reads another value, restores the `ExecPointer`, sets a jump. (Same call as opcode `0x001A`) * Case `0x08` - Reads a value, copies two strings (1 from a given value, 1 from the opcode bytes), checks and tests a flag, does string compares against the two strings, moves the `ExecPointer` based on the results of the compares. (This seems to work like an `if` style compare/check.) * Case `0x09` - Reads a value, copies two strings (both from given values), checks and tests a flag, does string compares against the two strings, moves the `ExecPointer` based on the results of the compares. (This seems to work like an `if` style compare/check.) * Case `0x0A` - Reads two values, does a compare if first is > 0, moves the `ExecPointer` gets another value based on the first compare, resets the `ExecPointer`, stores the value and moves the `ExecPointer` forward. * Case `0x0B` - Reads two values, does a compare if first is > 0, moves the `ExecPointer` gets another value (string) based on the first compare, resets the `ExecPointer`, stores the value and moves the `ExecPointer` forward. * Case `0x0C` - Reads two values, does a compare / adjustment of the 2nd value, stores the `EventData` and `References` pointers into `PTR_Ptr_Work_Zone` and `PTR_Ptr_Refs_Zone`, moves the `ExecPointer` forward. * Case `0x0D` - Sets the event VM `ExecPointer` to 0 and `EventData` and `References` to temporary instances, reads and stores a value, then restores them. * Case `0x0E` - Reads two values, validates the `PTR_Ptr_Work_Zone` entry exists, reads a string and stores it, then moves the `ExecPointer` forward. * Case `0x0F` - Reads two values, does a compare / adjustment of the 2nd value, reads another value, moves the `ExecPointer`, sets a value, then restores and moves the `ExecPointer` forward. * Case `0x10` - Reads two values, reads a string, reads another value, sets the `ExecPointer`, stores the string value, then restores and moves the `ExecPointer` forward. See [OpCode `0x001A`](OpCodes/0x001A.md) for more information.",
+  "description_full": "Handler that has multiple purposes, mainly focused around handling strings.\n\n  * Case `0x00` - Steps the `ExecPointer` forward, reads a value, stores it and then restores the `ExecPointer`.\n  * Case `0x01` - Steps the `ExecPointer` forward, reads a string, stores it and then restores the `ExecPointer`.\n  * Case `0x02` - Stores the `EventData` and `References` into the `PTR_Ptr_Work_Zone` and `PTR_Ptr_Refs_Zone` arrays.\n  * Case `0x03` - Sets the event VM `ExecPointer` to 0 and `EventData` and `References` to temporary instances, reads and stores a value, then restores them.\n  * Case `0x04` - Reads a string value from a stored `PTR_Ptr_Work_Zone` instance, then stores it.\n  * Case `0x05` - Sets the `ExecPointer` to a given position, reads a value, stores it, then resets and steps the `ExecPointer` forward.\n  * Case `0x06` - Reads a string value, sets the `ExecPointer`, stores the string value, then restores and advances the `ExecPointer`.\n  * Case `0x07` - Reads a value, sets the `ExecPointer`, reads another value, restores the `ExecPointer`, sets a jump. (Same call as opcode `0x001A`)\n  * Case `0x08` - Reads a value, copies two strings (1 from a given value, 1 from the opcode bytes), checks and tests a flag, does string compares against the two strings, moves the `ExecPointer` based on the results of the compares. (This seems to work like an `if` style compare/check.)\n  * Case `0x09` - Reads a value, copies two strings (both from given values), checks and tests a flag, does string compares against the two strings, moves the `ExecPointer` based on the results of the compares. (This seems to work like an `if` style compare/check.)\n  * Case `0x0A` - Reads two values, does a compare if first is > 0, moves the `ExecPointer` gets another value based on the first compare, resets the `ExecPointer`, stores the value and moves the `ExecPointer` forward.\n  * Case `0x0B` - Reads two values, does a compare if first is > 0, moves the `ExecPointer` gets another value (string) based on the first compare, resets the `ExecPointer`, stores the value and moves the `ExecPointer` forward.\n  * Case `0x0C` - Reads two values, does a compare / adjustment of the 2nd value, stores the `EventData` and `References` pointers into `PTR_Ptr_Work_Zone` and `PTR_Ptr_Refs_Zone`, moves the `ExecPointer` forward.\n  * Case `0x0D` - Sets the event VM `ExecPointer` to 0 and `EventData` and `References` to temporary instances, reads and stores a value, then restores them.\n  * Case `0x0E` - Reads two values, validates the `PTR_Ptr_Work_Zone` entry exists, reads a string and stores it, then moves the `ExecPointer` forward.\n  * Case `0x0F` - Reads two values, does a compare / adjustment of the 2nd value, reads another value, moves the `ExecPointer`, sets a value, then restores and moves the `ExecPointer` forward.\n  * Case `0x10` - Reads two values, reads a string, reads another value, sets the `ExecPointer`, stores the string value, then restores and moves the `ExecPointer` forward.\n\nSee [OpCode `0x001A`](OpCodes/0x001A.md) for more information."
+ },
+ "158": {
+  "opcode": 158,
+  "hex": "0x009E",
+  "size": 2,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets the `PTR_RectEventSendFlag` value. This flag is used when loading areas in a zone while the event is happening. This tells the client how the areas should be loaded, such as if it's simply a visual look of the area, or if the player is being moved to that location. This flag tells the client if it should send region updates (packet `0x00F2`) or not based on if the event is moving the player.",
+  "description_full": "Sets the `PTR_RectEventSendFlag` value.\n\nThis flag is used when loading areas in a zone while the event is happening. This tells the client how the areas should be loaded, such as if it's simply a visual look of the area, or if the player is being moved to that location. This flag tells the client if it should send region updates (packet `0x00F2`) or not based on if the event is moving the player."
+ },
+ "159": {
+  "opcode": 159,
+  "hex": "0x009F",
+  "size": 17,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0045`, just with a different second argument. See [OpCode `0x0045`](OpCodes/0x0045.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0045`, just with a different second argument.\n\nSee [OpCode `0x0045`](OpCodes/0x0045.md) for more information."
+ },
+ "160": {
+  "opcode": 160,
+  "hex": "0x00A0",
+  "size": 15,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0055`, just with a different second argument. See [OpCode `0x0055`](OpCodes/0x0055.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0055`, just with a different second argument.\n\nSee [OpCode `0x0055`](OpCodes/0x0055.md) for more information."
+ },
+ "161": {
+  "opcode": 161,
+  "hex": "0x00A1",
+  "size": 15,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0052`, just with a different second argument. See [OpCode `0x0052`](OpCodes/0x0052.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0052`, just with a different second argument.\n\nSee [OpCode `0x0052`](OpCodes/0x0052.md) for more information."
+ },
+ "162": {
+  "opcode": 162,
+  "hex": "0x00A2",
+  "size": 15,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0055`, just with a different second argument. See [OpCode `0x0055`](OpCodes/0x0055.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0055`, just with a different second argument.\n\nSee [OpCode `0x0055`](OpCodes/0x0055.md) for more information."
+ },
+ "163": {
+  "opcode": 163,
+  "hex": "0x00A3",
+  "size": 15,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0052`, just with a different second argument. See [OpCode `0x0052`](OpCodes/0x0052.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0052`, just with a different second argument.\n\nSee [OpCode `0x0052`](OpCodes/0x0052.md) for more information."
+ },
+ "164": {
+  "opcode": 164,
+  "hex": "0x00A4",
+  "size": 2,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Adjusts the event entities `Render.Flags3` value.",
+  "description_full": "Adjusts the event entities `Render.Flags3` value."
+ },
+ "165": {
+  "opcode": 165,
+  "hex": "0x00A5",
+  "size": 2,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Adjusts the event entities `Render.Flags3` value.",
+  "description_full": "Adjusts the event entities `Render.Flags3` value."
+ },
+ "166": {
+  "opcode": 166,
+  "hex": "0x00A6",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Requests the event map number from the server by sending a `0x00EB` packet. Sets the `PTR_RecvEventMapNumFlag` to mark the client as awaiting for a response and then yields until it is unset. The server will respond with an `0x010E` packet which has the requested map number.",
+  "description_full": "Requests the event map number from the server by sending a `0x00EB` packet. Sets the `PTR_RecvEventMapNumFlag` to mark the client as awaiting for a response and then yields until it is unset.\n\nThe server will respond with an `0x010E` packet which has the requested map number."
+ },
+ "167": {
+  "opcode": 167,
+  "hex": "0x00A7",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Waits for the server to respond to a client request. This is used with battlefield registration NPCs. _(ie. Dynamis, Moblin Maze Mongers, Salvage, etc.)_ Makes use of `ExtData[1]->Unknown0003` _(response await flag)_ and `ExtData[1]->Unknown0004` _(response result value)_.",
+  "description_full": "Waits for the server to respond to a client request. This is used with battlefield registration NPCs. _(ie. Dynamis, Moblin Maze Mongers, Salvage, etc.)_\n\nMakes use of `ExtData[1]->Unknown0003` _(response await flag)_ and `ExtData[1]->Unknown0004` _(response result value)_."
+ },
+ "168": {
+  "opcode": 168,
+  "hex": "0x00A8",
+  "size": 6,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Opens the map (if requested), unlocks and renames markers. This appears to be used to reset the NPC made map markers back to default values before their marking event happens again to allow them to pop in as they are placed. This has been observed to only set NPC markers back to empty named 'dead' entries.",
+  "description_full": "Opens the map (if requested), unlocks and renames markers.\n\nThis appears to be used to reset the NPC made map markers back to default values before their marking event happens again to allow them to pop in as they are placed. This has been observed to only set NPC markers back to empty named 'dead' entries."
+ },
+ "169": {
+  "opcode": 169,
+  "hex": "0x00A9",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Disables the game time and sets it to a specific given time.",
+  "description_full": "Disables the game time and sets it to a specific given time."
+ },
+ "170": {
+  "opcode": 170,
+  "hex": "0x00AA",
+  "size": 17,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Gets a value to be used as a Vana'diel timestamp. Converts that timestamp into the various time parts and stores them.",
+  "description_full": "Gets a value to be used as a Vana'diel timestamp. Converts that timestamp into the various time parts and stores them."
+ },
+ "171": {
+  "opcode": 171,
+  "hex": "0x00AB",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Handles various sub-cases; mostly dealing with altering entity render flags. * Case `0x00` - Steps the `ExecPointer` forward. _(Deprecated case?)_ * Case `0x01` - Adjusts the event entities `Render.Flags0` value. * Case `0x02` - Adjusts the event entities `Render.Flags0` value. * Case `0x03` - Adjusts the event entities `Render.Flags0` value. * Case `0x04` - Adjusts the event entities `Render.Flags0` value. (Validates the entity is in an event status or not playing an animation first. Yields otherwise.) * Case `0x05` - Adjusts the event entities `Render.Flags0` value. * Case `0x06` - Adjusts the event entities `Render.Flags0` value. * Case `0x07` - Adjusts the event entities `Render.Flags2` value. * Case `0x08` - Adjusts the event entities `Render.Flags2` value. * Case `0x09` - Enables an unknown flag. * Case `0x0A` - Disables an unknown flag. * Case `0x0B` - Adjusts the event entities `Render.Flags0` value. * Case `0x0C` - Adjusts the event entities `Render.Flags0` value. * Case `0x0D` - Adjusts the event entities `Render.Flags4` value. * Case `0x0E` - Adjusts the event entities `Render.Flags4` value. * Case `0x0F` - Enables an unknown flag. * Case `0x10` - Disables an unknown flag. * Case `0x11` - Sets an unknown value. * Case `0x12` - Adjusts the event entities `Render.Flags2` value. * Case `0x13` - Adjusts the event entities `Render.Flags2` value. * Case `0x14` - Unknown helper functions that alter flags for the event entity. * Case `0x15` - Unknown helper functions that alter flags for the event entity. * Case `0x16` - Unknown helper functions that alter flags for the event entity. * Case `0x17` - Unknown helper functions that alter flags for the event entity. * Case `0x18` - Unknown helper functions that alter flags for the event entity. * Case `0x19` - Adjusts the event entities `Render.Flags7` value. * Case `0x1A` - Adjusts the event entities `Render.Flags7` value. * Case `0x1B` - Adjusts the given entities `Render.Flags7` value. * Case `0x1C` - Adjusts the given entities `Render.Flags7` value.",
+  "description_full": "Handles various sub-cases; mostly dealing with altering entity render flags.\n\n  * Case `0x00` - Steps the `ExecPointer` forward. _(Deprecated case?)_\n  * Case `0x01` - Adjusts the event entities `Render.Flags0` value.\n  * Case `0x02` - Adjusts the event entities `Render.Flags0` value.\n  * Case `0x03` - Adjusts the event entities `Render.Flags0` value.\n  * Case `0x04` - Adjusts the event entities `Render.Flags0` value. (Validates the entity is in an event status or not playing an animation first. Yields otherwise.)\n  * Case `0x05` - Adjusts the event entities `Render.Flags0` value.\n  * Case `0x06` - Adjusts the event entities `Render.Flags0` value.\n  * Case `0x07` - Adjusts the event entities `Render.Flags2` value.\n  * Case `0x08` - Adjusts the event entities `Render.Flags2` value.\n  * Case `0x09` - Enables an unknown flag.\n  * Case `0x0A` - Disables an unknown flag.\n  * Case `0x0B` - Adjusts the event entities `Render.Flags0` value.\n  * Case `0x0C` - Adjusts the event entities `Render.Flags0` value.\n  * Case `0x0D` - Adjusts the event entities `Render.Flags4` value.\n  * Case `0x0E` - Adjusts the event entities `Render.Flags4` value.\n  * Case `0x0F` - Enables an unknown flag.\n  * Case `0x10` - Disables an unknown flag.\n  * Case `0x11` - Sets an unknown value.\n  * Case `0x12` - Adjusts the event entities `Render.Flags2` value.\n  * Case `0x13` - Adjusts the event entities `Render.Flags2` value.\n  * Case `0x14` - Unknown helper functions that alter flags for the event entity.\n  * Case `0x15` - Unknown helper functions that alter flags for the event entity.\n  * Case `0x16` - Unknown helper functions that alter flags for the event entity.\n  * Case `0x17` - Unknown helper functions that alter flags for the event entity.\n  * Case `0x18` - Unknown helper functions that alter flags for the event entity.\n  * Case `0x19` - Adjusts the event entities `Render.Flags7` value.\n  * Case `0x1A` - Adjusts the event entities `Render.Flags7` value.\n  * Case `0x1B` - Adjusts the given entities `Render.Flags7` value.\n  * Case `0x1C` - Adjusts the given entities `Render.Flags7` value."
+ },
+ "172": {
+  "opcode": 172,
+  "hex": "0x00AC",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Handles multiple sub-cases. * Case `0x00` - Sets the event entities `StatusServer` value. * Case `0x01` - Sets the event entities `StatusEvent` value. * Case `0x02` - Gets the given entity, sets its `Render.Flags6` value if valid, if not requests the entity by sending an `0x0016` packet and yields. * Case `0x03` - _Same as 0x02._ * Case `0x04` - Gets the given entity, sets its `Render.Flags7` value if valid.",
+  "description_full": "Handles multiple sub-cases.\n\n  * Case `0x00` - Sets the event entities `StatusServer` value.\n  * Case `0x01` - Sets the event entities `StatusEvent` value.\n  * Case `0x02` - Gets the given entity, sets its `Render.Flags6` value if valid, if not requests the entity by sending an `0x0016` packet and yields.\n  * Case `0x03` - _Same as 0x02._\n  * Case `0x04` - Gets the given entity, sets its `Render.Flags7` value if valid."
+ },
+ "173": {
+  "opcode": 173,
+  "hex": "0x00AD",
+  "size": 12,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler with multiple sub-cases, used to do various scheduler actions against the two given entities. Each `FUNC_XiActor_UnknownCall` is different, these are virtualized so debugging is the only means of determing each specific usage. _(To be determined later.)_",
+  "description_full": "Handler with multiple sub-cases, used to do various scheduler actions against the two given entities.\n\nEach `FUNC_XiActor_UnknownCall` is different, these are virtualized so debugging is the only means of determing each specific usage. _(To be determined later.)_"
+ },
+ "174": {
+  "opcode": 174,
+  "hex": "0x00AE",
+  "size": null,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handles multiple sub-cases. Doesn't seem to have any specific purpose. * Case `0x00` - Appears to be weather related. * Case `0x01` - Adjusts the given entities name color. * Case `0x02` - _Same as case 0x01._ * Case `0x03` - Adjusts the given entities `Mou4` value. * Case `0x04` - _Same as case 0x03._ * Case `0x05` - Sets the given entities `ActorPointer->Unknown` value to the other given entities `ActorPointer`. * Case `0x06` - Unsets the given entities `ActorPointer->Unknown`. * Case `0x07` - Sets the given entities `EnvironmentAreaId` value. * Case `0x08` - Sets the given entities `EnvironmentAreaId` value to 0.",
+  "description_full": "Handles multiple sub-cases. Doesn't seem to have any specific purpose.\n\n  * Case `0x00` - Appears to be weather related.\n  * Case `0x01` - Adjusts the given entities name color.\n  * Case `0x02` - _Same as case 0x01._\n  * Case `0x03` - Adjusts the given entities `Mou4` value.\n  * Case `0x04` - _Same as case 0x03._\n  * Case `0x05` - Sets the given entities `ActorPointer->Unknown` value to the other given entities `ActorPointer`.\n  * Case `0x06` - Unsets the given entities `ActorPointer->Unknown`.\n  * Case `0x07` - Sets the given entities `EnvironmentAreaId` value.\n  * Case `0x08` - Sets the given entities `EnvironmentAreaId` value to 0."
+ },
+ "175": {
+  "opcode": 175,
+  "hex": "0x00AF",
+  "size": 8,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Gets and stores the camera position values.",
+  "description_full": "Gets and stores the camera position values."
+ },
+ "176": {
+  "opcode": 176,
+  "hex": "0x00B0",
+  "size": 12,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Loads and prints an event message to chat. Uses the given entities as the speaker and listener.",
+  "description_full": "Loads and prints an event message to chat. Uses the given entities as the speaker and listener."
+ },
+ "177": {
+  "opcode": 177,
+  "hex": "0x00B1",
+  "size": 4,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Gets and stores the value of a flag. `PTR_UnknownValue` is part of the main `app` object which is initialized to `128`. This valid doesn't seem to ever change, and has been the same since the original beta of the game. _At this time, the purpose of this value is unknown._",
+  "description_full": "Gets and stores the value of a flag. `PTR_UnknownValue` is part of the main `app` object which is initialized to `128`. This valid doesn't seem to ever change, and has been the same since the original beta of the game. _At this time, the purpose of this value is unknown._"
+ },
+ "178": {
+  "opcode": 178,
+  "hex": "0x00B2",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler has two modes. The first mode requests opening the delivery box. The second mode is to wait a certain amount of time, used to wait for the delivery box to open.",
+  "description_full": "Handler has two modes. The first mode requests opening the delivery box. The second mode is to wait a certain amount of time, used to wait for the delivery box to open."
+ },
+ "179": {
+  "opcode": 179,
+  "hex": "0x00B3",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "This handler is used for dealing with the rankings boards. For example, the fishing rank boards with `Chenon` in Selbina. _The pseudo code for this is rough, not really any efficient way to debug this at the moment._",
+  "description_full": "This handler is used for dealing with the rankings boards. For example, the fishing rank boards with `Chenon` in Selbina.\n\n_The pseudo code for this is rough, not really any efficient way to debug this at the moment._"
+ },
+ "180": {
+  "opcode": 180,
+  "hex": "0x00B4",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler with multiple sub-usages. * Case `0x00` - Copies a string from the opcode and stores it. * Case `0x01` - Copies a string from the event strings table and stores it. _(These are populated from packet `0x005D`.)_ * Case `0x02` - Updates the target window and tells it to draw. * Case `0x03` - Destroys the target window. * Case `0x04` - Copies a string into the shared event/world pass buffer, and the event strings buffer. * Case `0x05` - Toggles/sets a value inside of the event message object. * Case `0x06` - Toggles/sets a value inside of the query message object. * Case `0x07` - Opens the cast bar/time window. * Case `0x08` - Destroys the cast bar/time window. * Case `0x09` - Obtains the current cast bar `Count` value and stores it. * Case `0x0A` - Opens the event time window. * Case `0x0B` - Destroys the event time window. * Case `0x0C` - Obtains the current event time `Count` value and stores it. * Case `0x0D` - Sets an unknown flag to `1`. * Case `0x0E` - Sets an unknown flag to `0`. * Case `0x0F` - Opens the chocobo racing window. * Case `0x10` - Closes the chocobo racing window. * Case `0x11` - Opens the chocobo racing card window. * Case `0x12` - Closes the chocobo racing card window. * Case `0x13` - Copies a string from the opcode and stores it. _(Changes any @ to a space.)_ * Case `0x14` - Makes an unknown call on the main map window object. _(Updates its values.)_ * Case `0x15` - Tests if the main map window object is valid.",
+  "description_full": "Handler with multiple sub-usages.\n\n  * Case `0x00` - Copies a string from the opcode and stores it.\n  * Case `0x01` - Copies a string from the event strings table and stores it. _(These are populated from packet `0x005D`.)_\n  * Case `0x02` - Updates the target window and tells it to draw.\n  * Case `0x03` - Destroys the target window.\n  * Case `0x04` - Copies a string into the shared event/world pass buffer, and the event strings buffer.\n  * Case `0x05` - Toggles/sets a value inside of the event message object.\n  * Case `0x06` - Toggles/sets a value inside of the query message object.\n  * Case `0x07` - Opens the cast bar/time window.\n  * Case `0x08` - Destroys the cast bar/time window.\n  * Case `0x09` - Obtains the current cast bar `Count` value and stores it.\n  * Case `0x0A` - Opens the event time window.\n  * Case `0x0B` - Destroys the event time window.\n  * Case `0x0C` - Obtains the current event time `Count` value and stores it.\n  * Case `0x0D` - Sets an unknown flag to `1`.\n  * Case `0x0E` - Sets an unknown flag to `0`.\n  * Case `0x0F` - Opens the chocobo racing window.\n  * Case `0x10` - Closes the chocobo racing window.\n  * Case `0x11` - Opens the chocobo racing card window.\n  * Case `0x12` - Closes the chocobo racing card window.\n  * Case `0x13` - Copies a string from the opcode and stores it. _(Changes any @ to a space.)_\n  * Case `0x14` - Makes an unknown call on the main map window object. _(Updates its values.)_\n  * Case `0x15` - Tests if the main map window object is valid."
+ },
+ "181": {
+  "opcode": 181,
+  "hex": "0x00B5",
+  "size": 4,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets the current event entities name.",
+  "description_full": "Sets the current event entities name."
+ },
+ "182": {
+  "opcode": 182,
+  "hex": "0x00B6",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler with multiple sub-usages. Related to entity looks / gear visuals. * Case `0x00` - Updates the event entities `Look.Hair` style. * Case `0x01` - Updates the event entities `Race`. * Case `0x02` - Updates the event entities `Look.Hair` style. * Case `0x03` - Updates the event entities `Look.Head` model id. * Case `0x04` - Updates the event entities `Look.Body` model id. * Case `0x05` - Updates the event entities `Look.Hands` model id. * Case `0x06` - Updates the event entities `Look.Legs` model id. * Case `0x07` - Updates the event entities `Look.Feet` model id. * Case `0x08` - Updates the event entities `Look.Main` model id. * Case `0x09` - Updates the event entities `Look.Sub` model id. * Case `0x0A` - Updates the event entities `Look.Ranged` model id. * Case `0x0B` - Updates the event entities full look. (`Race` included.) * Case `0x0C` - Sets the event entities `Type` to 7. Updates its `Look.Hair` and `Look.Unknown0000` values. * Case `0x0D` - Updates the event entities full look. (`Race` included. Adjusts `Render.Flags0`.) * Case `0x0E` - Updates the event entities full look. (`Race` included. Adjusts `Render.Flags0`.) * Case `0x0F` - Updates the event entities model size. * Case `0x10` - Tests if the current player entity is valid. * Case `0x11` - Unknown; does an unknown call on the event entity. * Case `0x12` - Adjusts the event entities `Render.Flags2` value. * Case `0x13` - Adjusts the event entities `Render.Flags2` value. * Case `0x14` - Adjusts the given entities `Render.Flags2` value. * Case `0x15` - Adjusts the given entities `Render.Flags2` value.",
+  "description_full": "Handler with multiple sub-usages. Related to entity looks / gear visuals.\n\n  * Case `0x00` - Updates the event entities `Look.Hair` style.\n  * Case `0x01` - Updates the event entities `Race`.\n  * Case `0x02` - Updates the event entities `Look.Hair` style.\n  * Case `0x03` - Updates the event entities `Look.Head` model id.\n  * Case `0x04` - Updates the event entities `Look.Body` model id.\n  * Case `0x05` - Updates the event entities `Look.Hands` model id.\n  * Case `0x06` - Updates the event entities `Look.Legs` model id.\n  * Case `0x07` - Updates the event entities `Look.Feet` model id.\n  * Case `0x08` - Updates the event entities `Look.Main` model id.\n  * Case `0x09` - Updates the event entities `Look.Sub` model id.\n  * Case `0x0A` - Updates the event entities `Look.Ranged` model id.\n  * Case `0x0B` - Updates the event entities full look. (`Race` included.)\n  * Case `0x0C` - Sets the event entities `Type` to 7. Updates its `Look.Hair` and `Look.Unknown0000` values.\n  * Case `0x0D` - Updates the event entities full look. (`Race` included. Adjusts `Render.Flags0`.)\n  * Case `0x0E` - Updates the event entities full look. (`Race` included. Adjusts `Render.Flags0`.)\n  * Case `0x0F` - Updates the event entities model size.\n  * Case `0x10` - Tests if the current player entity is valid.\n  * Case `0x11` - Unknown; does an unknown call on the event entity.\n  * Case `0x12` - Adjusts the event entities `Render.Flags2` value.\n  * Case `0x13` - Adjusts the event entities `Render.Flags2` value.\n  * Case `0x14` - Adjusts the given entities `Render.Flags2` value.\n  * Case `0x15` - Adjusts the given entities `Render.Flags2` value."
+ },
+ "183": {
+  "opcode": 183,
+  "hex": "0x00B7",
+  "size": null,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler with multiple sub-usages. * Case `0x00` - Obtains a given entity, if valid, stores a value into its event VM. * Case `0x01` - Obtains a given entity, if valid, sets its name. _(If not, the name is stored in the event read buffer.)_ * Case `0x02` - Obtains a given entity, if valid, stores its server id. _(0 if stored if not valid.)_ * Case `0x03` - Obtains a given entity, if valid, stores its server id. _(-1 if stored if not valid.)_ * Case `0x04` - Obtains a given entity, if valid, stores its index into the `ActUserIndex` array. _(-1 if stored if not valid.)_",
+  "description_full": "Handler with multiple sub-usages.\n\n  * Case `0x00` - Obtains a given entity, if valid, stores a value into its event VM.\n  * Case `0x01` - Obtains a given entity, if valid, sets its name. _(If not, the name is stored in the event read buffer.)_\n  * Case `0x02` - Obtains a given entity, if valid, stores its server id. _(0 if stored if not valid.)_\n  * Case `0x03` - Obtains a given entity, if valid, stores its server id. _(-1 if stored if not valid.)_\n  * Case `0x04` - Obtains a given entity, if valid, stores its index into the `ActUserIndex` array. _(-1 if stored if not valid.)_"
+ },
+ "184": {
+  "opcode": 184,
+  "hex": "0x00B8",
+  "size": 27,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Opens the map (if requested), adds and sets markers.",
+  "description_full": "Opens the map (if requested), adds and sets markers."
+ },
+ "185": {
+  "opcode": 185,
+  "hex": "0x00B9",
+  "size": 8,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Opens the map (if requested), edits and renames a marker. _(Name is taken from the event Read buffer.)_",
+  "description_full": "Opens the map (if requested), edits and renames a marker. _(Name is taken from the event Read buffer.)_"
+ },
+ "186": {
+  "opcode": 186,
+  "hex": "0x00BA",
+  "size": 13,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Obtains the given entity, if valid, attempts to calibrate its position then calls `XiAtelBuff::CopyAllPosEvent` and `XiAtelBuff::ReqExecHitCheck`.",
+  "description_full": "Obtains the given entity, if valid, attempts to calibrate its position then calls `XiAtelBuff::CopyAllPosEvent` and `XiAtelBuff::ReqExecHitCheck`."
+ },
+ "187": {
+  "opcode": 187,
+  "hex": "0x00BB",
+  "size": 17,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0045`, just with a different second argument. See [OpCode `0x0045`](OpCodes/0x0045.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0045`, just with a different second argument.\n\nSee [OpCode `0x0045`](OpCodes/0x0045.md) for more information."
+ },
+ "188": {
+  "opcode": 188,
+  "hex": "0x00BC",
+  "size": 15,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0055`, just with a different second argument. See [OpCode `0x0055`](OpCodes/0x0055.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0055`, just with a different second argument.\n\nSee [OpCode `0x0055`](OpCodes/0x0055.md) for more information."
+ },
+ "189": {
+  "opcode": 189,
+  "hex": "0x00BD",
+  "size": 15,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0052`, just with a different second argument. See [OpCode `0x0052`](OpCodes/0x0052.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0052`, just with a different second argument.\n\nSee [OpCode `0x0052`](OpCodes/0x0052.md) for more information."
+ },
+ "190": {
+  "opcode": 190,
+  "hex": "0x00BE",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Stores the current `ReqStack[RunPos].WhoServerId` value.",
+  "description_full": "Stores the current `ReqStack[RunPos].WhoServerId` value."
+ },
+ "191": {
+  "opcode": 191,
+  "hex": "0x00BF",
+  "size": null,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that is used for chocobo racing. This handler has debug messages left in, so it can be translated to actual opcode names. * Case `0x00` - Attempts to get and store a race parameter. _(`chocoborace_get_raceparam`)_ * Case `0x20` - Attempts to get and store a chocobo parameter. _(`chocoborace_get_chocoboparam`)_ * Case `0x40` - Attempts to get and store a section parameter. _(`chocoborace_get_sectionparam`)_ * Case `0x60` - Attempts to get and store a result parameter. _(`chocoborace_get_resultparam`)_",
+  "description_full": "Handler that is used for chocobo racing. This handler has debug messages left in, so it can be translated to actual opcode names.\n\n* Case `0x00` - Attempts to get and store a race parameter. _(`chocoborace_get_raceparam`)_\n* Case `0x20` - Attempts to get and store a chocobo parameter. _(`chocoborace_get_chocoboparam`)_\n* Case `0x40` - Attempts to get and store a section parameter. _(`chocoborace_get_sectionparam`)_\n* Case `0x60` - Attempts to get and store a result parameter. _(`chocoborace_get_resultparam`)_"
+ },
+ "192": {
+  "opcode": 192,
+  "hex": "0x00C0",
+  "size": 3,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Adjusts the event entities `Render.Flags3` value.",
+  "description_full": "Adjusts the event entities `Render.Flags3` value."
+ },
+ "193": {
+  "opcode": 193,
+  "hex": "0x00C1",
+  "size": 5,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Obtains the given entity, tests it for something. If successful, then the last action is killed and its resp data is deleted.",
+  "description_full": "Obtains the given entity, tests it for something. If successful, then the last action is killed and its resp data is deleted."
+ },
+ "194": {
+  "opcode": 194,
+  "hex": "0x00C2",
+  "size": null,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "The purpose of this opcode is currently unknown. _This makes use of the internal party state object, checking for flags/values. These check if a flag is set that is more recently added to the party structure._",
+  "description_full": "The purpose of this opcode is currently unknown. \n\n_This makes use of the internal party state object, checking for flags/values. These check if a flag is set that is more recently added to the party structure._"
+ },
+ "195": {
+  "opcode": 195,
+  "hex": "0x00C3",
+  "size": 7,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Copies a string value into an unknown buffer array. _`PTR_UnknownArray` appears to be a string array that can hold 8 entries, each 20 bytes long._",
+  "description_full": "Copies a string value into an unknown buffer array.\n\n_`PTR_UnknownArray` appears to be a string array that can hold 8 entries, each 20 bytes long._"
+ },
+ "196": {
+  "opcode": 196,
+  "hex": "0x00C4",
+  "size": 11,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0073`, just with a different arguments. See [OpCode `0x0073`](OpCodes/0x0073.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0073`, just with a different arguments.\n\nSee [OpCode `0x0073`](OpCodes/0x0073.md) for more information."
+ },
+ "197": {
+  "opcode": 197,
+  "hex": "0x00C5",
+  "size": 17,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0045`, just with a different second argument. See [OpCode `0x0045`](OpCodes/0x0045.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0045`, just with a different second argument.\n\nSee [OpCode `0x0045`](OpCodes/0x0045.md) for more information."
+ },
+ "198": {
+  "opcode": 198,
+  "hex": "0x00C6",
+  "size": 15,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0055`, just with a different second argument. See [OpCode `0x0055`](OpCodes/0x0055.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0055`, just with a different second argument.\n\nSee [OpCode `0x0055`](OpCodes/0x0055.md) for more information."
+ },
+ "199": {
+  "opcode": 199,
+  "hex": "0x00C7",
+  "size": 15,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0052`, just with a different second argument. See [OpCode `0x0052`](OpCodes/0x0052.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0052`, just with a different second argument.\n\nSee [OpCode `0x0052`](OpCodes/0x0052.md) for more information."
+ },
+ "200": {
+  "opcode": 200,
+  "hex": "0x00C8",
+  "size": 7,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Opens the map window with the given parameters.",
+  "description_full": "Opens the map window with the given parameters."
+ },
+ "201": {
+  "opcode": 201,
+  "hex": "0x00C9",
+  "size": 1,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Enables the game timer. `PTR_UnknownFlag` is set to 1 by opcode `0x00A9`, which appears to be a flag to tell some of the time calculation functions that they are being overridden.",
+  "description_full": "Enables the game timer.\n\n`PTR_UnknownFlag` is set to 1 by opcode `0x00A9`, which appears to be a flag to tell some of the time calculation functions that they are being overridden."
+ },
+ "202": {
+  "opcode": 202,
+  "hex": "0x00CA",
+  "size": null,
+  "sets_ret_flag": "N/A",
+  "sets_exec_pointer": "N/A",
+  "description": "Deprecated. No handler exists for this opcode at this time.",
+  "description_full": "Deprecated. No handler exists for this opcode at this time."
+ },
+ "203": {
+  "opcode": 203,
+  "hex": "0x00CB",
+  "size": null,
+  "sets_ret_flag": "N/A",
+  "sets_exec_pointer": "N/A",
+  "description": "Deprecated. No handler exists for this opcode at this time.",
+  "description_full": "Deprecated. No handler exists for this opcode at this time."
+ },
+ "204": {
+  "opcode": 204,
+  "hex": "0x00CC",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "This opcode appears to be used to open and display information windows for various things. Mainly items.",
+  "description_full": "This opcode appears to be used to open and display information windows for various things. Mainly items."
+ },
+ "205": {
+  "opcode": 205,
+  "hex": "0x00CD",
+  "size": 17,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0045`, just with a different second argument. See [OpCode `0x0045`](OpCodes/0x0045.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0045`, just with a different second argument.\n\nSee [OpCode `0x0045`](OpCodes/0x0045.md) for more information."
+ },
+ "206": {
+  "opcode": 206,
+  "hex": "0x00CE",
+  "size": 15,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0055`, just with a different second argument. See [OpCode `0x0055`](OpCodes/0x0055.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0055`, just with a different second argument.\n\nSee [OpCode `0x0055`](OpCodes/0x0055.md) for more information."
+ },
+ "207": {
+  "opcode": 207,
+  "hex": "0x00CF",
+  "size": 15,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0052`, just with a different second argument. See [OpCode `0x0052`](OpCodes/0x0052.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0052`, just with a different second argument.\n\nSee [OpCode `0x0052`](OpCodes/0x0052.md) for more information."
+ },
+ "208": {
+  "opcode": 208,
+  "hex": "0x00D0",
+  "size": 17,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0045`, just with a different second argument. See [OpCode `0x0045`](OpCodes/0x0045.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0045`, just with a different second argument.\n\nSee [OpCode `0x0045`](OpCodes/0x0045.md) for more information."
+ },
+ "209": {
+  "opcode": 209,
+  "hex": "0x00D1",
+  "size": 15,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0055`, just with a different second argument. See [OpCode `0x0055`](OpCodes/0x0055.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0055`, just with a different second argument.\n\nSee [OpCode `0x0055`](OpCodes/0x0055.md) for more information."
+ },
+ "210": {
+  "opcode": 210,
+  "hex": "0x00D2",
+  "size": 15,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0052`, just with a different second argument. See [OpCode `0x0052`](OpCodes/0x0052.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0052`, just with a different second argument.\n\nSee [OpCode `0x0052`](OpCodes/0x0052.md) for more information."
+ },
+ "211": {
+  "opcode": 211,
+  "hex": "0x00D3",
+  "size": 6,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Gets the given entity and calls a helper function that clears its motion queue lists. `FUNC_XiActor_Unknown` is a wrapper that will call `KzMotionQueList::DeleteAll`.",
+  "description_full": "Gets the given entity and calls a helper function that clears its motion queue lists.\n\n`FUNC_XiActor_Unknown` is a wrapper that will call `KzMotionQueList::DeleteAll`."
+ },
+ "212": {
+  "opcode": 212,
+  "hex": "0x00D4",
+  "size": null,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Handles multiple sub-opcodes. These appear to be related to opening the map and querying the user for input.",
+  "description_full": "Handles multiple sub-opcodes. These appear to be related to opening the map and querying the user for input."
+ },
+ "213": {
+  "opcode": 213,
+  "hex": "0x00D5",
+  "size": 17,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0045`, just with a different second argument. See [OpCode `0x0045`](OpCodes/0x0045.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0045`, just with a different second argument.\n\nSee [OpCode `0x0045`](OpCodes/0x0045.md) for more information."
+ },
+ "214": {
+  "opcode": 214,
+  "hex": "0x00D6",
+  "size": 15,
+  "sets_ret_flag": "Yes",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0055`, just with a different second argument. See [OpCode `0x0055`](OpCodes/0x0055.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0055`, just with a different second argument.\n\nSee [OpCode `0x0055`](OpCodes/0x0055.md) for more information."
+ },
+ "215": {
+  "opcode": 215,
+  "hex": "0x00D7",
+  "size": 15,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Handler that calls the same helper call as opcode `0x0052`, just with a different second argument. See [OpCode `0x0052`](OpCodes/0x0052.md) for more information.",
+  "description_full": "Handler that calls the same helper call as opcode `0x0052`, just with a different second argument.\n\nSee [OpCode `0x0052`](OpCodes/0x0052.md) for more information."
+ },
+ "216": {
+  "opcode": 216,
+  "hex": "0x00D8",
+  "size": null,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets the `ExtData[1]->EventDir` information for the given entity. * Case `0x00` - Copies the entities `Movement.LastPosition` into the `ExtData[1]->EventDir`. _(Roll, Yaw, Pitch, Unknown0001)_ * Case `0x01` - Sets the `ExtData[1]->EventDir[0]` value. * Case `0x02` - Sets the `ExtData[1]->EventDir[1]` value. * Case `0x03` - Sets the `ExtData[1]->EventDir[2]` value. * Case `0x04` - Sets the `ExtData[1]->EventDir` data. _(Index 0, 1 and 2.)_",
+  "description_full": "Sets the `ExtData[1]->EventDir` information for the given entity.\n\n  * Case `0x00` - Copies the entities `Movement.LastPosition` into the `ExtData[1]->EventDir`. _(Roll, Yaw, Pitch, Unknown0001)_\n  * Case `0x01` - Sets the `ExtData[1]->EventDir[0]` value.\n  * Case `0x02` - Sets the `ExtData[1]->EventDir[1]` value.\n  * Case `0x03` - Sets the `ExtData[1]->EventDir[2]` value.\n  * Case `0x04` - Sets the `ExtData[1]->EventDir` data. _(Index 0, 1 and 2.)_"
+ },
+ "217": {
+  "opcode": 217,
+  "hex": "0x00D9",
+  "size": 2,
+  "sets_ret_flag": "No",
+  "sets_exec_pointer": "Yes",
+  "description": "Sets an unknown flag value. _Appears to be related to playing sound effects, and removing a limit on how many can play at once? Default appears to be 12 in the client internally, then this allows that to be uncapped to 20._",
+  "description_full": "Sets an unknown flag value.\n\n_Appears to be related to playing sound effects, and removing a limit on how many can play at once? Default appears to be 12 in the client internally, then this allows that to be uncapped to 20._"
+ }
+}

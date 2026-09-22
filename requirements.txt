@@ -1,0 +1,20 @@
+# Mission Toolkit -- Python package dependencies (installed via: pip install -r requirements.txt)
+#
+# NOT included here: xi_tinkerer. It's a compiled Rust wheel, not a normal PyPI package -- see
+# SETUP.md for how to get it. setup.bat checks for it and tells you exactly what's missing.
+
+fastapi
+uvicorn
+jinja2
+python-multipart
+pillow
+pyyaml
+mwparserfromhell
+# luaparser>=4.0 (xi-events-py's own real pin, see xi-events-py/pyproject.toml) pulls in
+# antlr4-python3-runtime==4.13.2 exactly -- confirmed 2026-09-08 this conflicts permanently with
+# at least one other real package (omegaconf, which needs antlr4-python3-runtime==4.9.*) on a
+# shared system Python install; every luaparser release >=4.0 pins the same antlr4 version, so
+# there's no compatible version to fall back to. This is exactly why setup.bat creates its own
+# .venv instead of installing into the system Python -- installing this here is safe precisely
+# because it's isolated, not because the conflict stopped being real.
+luaparser>=4.0

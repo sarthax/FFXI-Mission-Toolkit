@@ -1,0 +1,230 @@
+[19:40:07] [Capture] (AView v007) (PV v001) (Info v004) 
+[19:40:07] [Capture] (NPCL v001) (EView v008) (CapLog v002) 
+[19:40:07] [Capture] (HPT v003) 
+[19:40:08] [PV] Logging started: //capture pv l file both
+[19:40:08] [NPCL] Always auto-widescanning! (Persists across zones; packets sent when normally impossible!)
+[19:40:08] [Capture] Capture started!
+[19:40:10] [NPCL] New: 17101281 (_272)
+[19:40:15] (Tacocat) Assault 3: Escort Professor Chanoix
+[19:40:15] There are no party members.
+[19:40:17] [ID View] INCOMING < CS Event + Params (0x034): NPC: 17101281 (Runic Seal), Event: 140, Params: 3, -4, 0, 60, 0, 0, 3, 0
+[19:40:19] You are not in possession of an Assault armband.Unable to enter area.
+[19:40:20] [ID View] OUTGOING > Event Option (0x05B): NPC: 17101281 (Runic Seal), Event: 140, Option: 0
+[19:40:32] [ID View] INCOMING < CS Event + Params (0x034): NPC: 17101327 (Nareema), Event: 149, Params: 50, 87122, 0, 60, 0, 0, 3, 0
+[19:40:32] Nareema : Greetings, mercenary.I am Nareema of the Immortals.
+[19:40:32] Nareema : You are here on an Assault mission?Then you'll be wanting command verification.
+[19:40:33] [NPCL] New: 17101280 (_270)
+[19:40:34] Nareema : If you have 50 credits available from your Imperial Standing, I will recognize your ability to lead this Assault mission.
+[19:40:35] Nareema : Very well.Consider your command of this mission verified.
+[19:40:35] Nareema : With this in your possession, you will be able to pass through the runic seal and enter the Assault area.Good luck.
+[19:40:35] [ID View] OUTGOING > Event Option (0x05B): NPC: 17101327 (Nareema), Event: 149, Option: 1
+[19:40:35] Obtained key item: Assault armband.
+[19:40:37] [ID View] INCOMING < CS Event + Params (0x034): NPC: 17101327 (Nareema), Event: 7, Params: 1, 87122, 0, 60, 0, 0, 3, 0
+[19:40:38] Tacocat's mercenary badge flashes.
+[19:40:40] Nareema : Is this the mark of the wildcat? So you're a mercenary now, are you?I hope that all the fighting doesn't change you...
+[19:40:40] Nareema : Long ago, I used to be an adventurer... I was so free back then. I don't want you to ever lose that youthful innocence.
+[19:40:40] [ID View] OUTGOING > Event Option (0x05B): NPC: 17101327 (Nareema), Event: 7, Option: 0
+[19:40:41] [NPCL] New: 17101326 (Nahshib)
+[19:40:51] [ID View] INCOMING < CS Event + Params (0x034): NPC: 17101281 (Runic Seal), Event: 140, Params: 3, -4, 0, 60, 0, 1, 3, 0
+[19:40:53] The suggested level for Escort Professor Chanoix is 60.Place a level restriction on the party?
+[19:40:54] Your party's level will be unrestricted for ‡²Escort Professor Chanoix.‡³ 
+[19:40:55] Only nearby party members with the same objective will accompany you to Leujaoam Sanctum.
+[19:40:55] Please confirm that all party members are cleared to enter Leujaoam Sanctum.
+[19:40:55] All party members with the appropriate clearance will now be transported to Leujaoam Sanctum. Are you ready?
+[19:40:56] Connecting to server.Please wait.
+[19:40:56] [ID View] OUTGOING > Event Option (0x05B): NPC: 17101281 (Runic Seal), Event: 140, Option: 0
+[19:41:02] Commencing transport to Leujaoam Sanctum!
+[19:41:03] [NPCL] New: 17101282 (RunicPortal)
+[19:41:10] [NPCL] New NPC information saved to database! (4 NPCs)
+[19:41:17] [ID View] OUTGOING > Event Option (0x05B): NPC: 17101281 (Runic Seal), Event: 140, Option: 4
+[19:41:22] === Area: Leujaoam Sanctum ===
+[19:41:33] Commencing Escort Professor Chanoix!Objective: Protect the professor
+[19:41:33] You have 30 minutes (Earth time) to complete this mission.
+[19:41:34] [NPCL] New: 17059874 (_MLFRMD_ASCII:125_16_115_32_115_48_115_64_115_80_)
+[19:41:34] [NPCL] New: 17060121 (_1x2)
+[19:41:34] [NPCL] New: 17060166 (_jxb)
+[19:41:37] Tacocat starts casting Carbuncle on Tacocat.
+[19:41:43] [NPCL] New: 17061888 (Carbuncle)
+[19:41:43] [NPCL] New Widescan information! (1 NPCs)
+[19:41:44] Tacocat starts casting Protect III on Tacocat.
+[19:41:49] Tacocat starts casting Shell on Tacocat.
+[19:41:50] Tacocat casts Protect III.Tacocat gains the effect of Protect.
+[19:41:53] Tacocat starts casting Refresh on Tacocat.
+[19:41:54] Tacocat casts Shell.Tacocat gains the effect of Shell.
+[19:42:02] Tacocat starts casting Sneak on Tacocat.
+[19:42:02] Tacocat casts Refresh.Tacocat gains the effect of Refresh.
+[19:42:09] Tacocat casts Sneak.Tacocat gains the effect of Sneak.
+[19:42:17] [NPCL] New: 17060163 (_jx8)
+[19:42:22] Tacocat starts casting Protect III on Clavauert B Chanoix.
+[19:42:27] Tacocat starts casting Shell on Clavauert B Chanoix.
+[19:42:28] Tacocat casts Protect III.Clavauert B Chanoix gains the effect of Protect.
+[19:42:32] Tacocat casts Shell.Clavauert B Chanoix gains the effect of Shell.
+[19:42:34] [NPCL] New NPC information saved to database! (5 NPCs)
+[19:42:50] (Tacocat) 3
+[19:42:50] There are no party members.
+[19:43:01] [NPCL] New: 17059875 (FrozenBones)
+[19:43:02] [NPCL] New: 17059890 (GelidBhoot)
+[19:43:03] [NPCL] New: 17059878 (FrozenBones)
+[19:43:03] [NPCL] New: 17059879 (FrozenBones)
+[19:43:03] [ID View] INCOMING < NPC Chat (0x036): NPC: 17059874 (Clavauert B Chanoix), Message: 7547
+[19:43:03] Clavauert B Chanoix : Oh dear...There was no such branching of passages on the map I was given...
+[19:43:04] [ID View] INCOMING < NPC Chat (0x036): NPC: 17059874 (Clavauert B Chanoix), Message: 7547
+[19:43:13] [ID View] INCOMING < NPC Chat (0x036): NPC: 17059874 (Clavauert B Chanoix), Message: 7548
+[19:43:13] Clavauert B Chanoix : Atelloune was right.The map the society sent me is barely fit for starting a fire...
+[19:43:15] [NPCL] New: 17059881 (FrozenBones)
+[19:43:22] [NPCL] New: 17060157 (_jx2)
+[19:43:23] The Gelid Bhoot starts casting Blizzard IV.
+[19:43:24] Carbuncle hits the Gelid Bhoot for 474 points of damage.
+[19:43:27] [AView] Blizzard IV > Cat: 4 ID: 152 Anim: 152 Msg: 2
+[19:43:29] Carbuncle hits the Gelid Bhoot for 417 points of damage.
+[19:43:31] The Gelid Bhoot casts Blizzard IV.Carbuncle takes 36 points of damage.
+[19:43:32] The Gelid Bhoot misses Carbuncle.
+[19:43:34] Carbuncle hits the Gelid Bhoot for 466 points of damage.
+[19:43:34] [NPCL] New: 17059880 (FrozenBones)
+[19:43:34] [NPCL] New: 17059876 (FrozenBones)
+[19:43:36] The Gelid Bhoot misses Carbuncle.
+[19:43:39] [NPCL] New: 17060158 (_jx3)
+[19:43:40] [NPCL] New: 17059888 (GelidBhoot)
+[19:43:41] [NPCL] New: 17059877 (FrozenBones)
+[19:43:45] Tacocat starts casting Carbuncle on Tacocat.
+[19:43:46] The Frozen Bones starts casting Burst.
+[19:43:52] The Gelid Bhoot starts casting Blizzaga III.
+[19:43:52] [NPCL] New: 17061889 (Carbuncle)
+[19:43:57] Carbuncle scores a critical hit!The Frozen Bones takes 557 points of damage.
+[19:43:57] [AView] Databases saved!
+[19:43:58] The Frozen Bones's spikes deal 0 points of damage to Carbuncle.
+[19:44:01] [NPCL] New NPC information saved to database! (12 NPCs)
+[19:44:01] Records of Eminence: Deal 500+ Damage.
+[19:44:01] Progress: 20/200.
+[19:44:08] [ID View] INCOMING < NPC Chat (0x036): NPC: 17059874 (Clavauert B Chanoix), Message: 7549
+[19:44:08] Clavauert B Chanoix : I seem to have taken a wrong turning somewhere...
+[19:44:13] The Frozen Bones starts casting Ice Spikes.
+[19:44:14] Tacocat's Sneak effect wears off.
+[19:44:15] The Gelid Bhoot misses Tacocat.
+[19:44:16] [AView] Ice Spikes > Cat: 4 ID: 250 Anim: 250 Msg: 230
+[19:44:18] The Frozen Bones casts Ice Spikes.The Frozen Bones gains the effect of Ice Spikes.
+[19:44:19] Tacocat hits the Gelid Bhoot for 236 points of damage.
+[19:44:19] The Gelid Bhoot misses Tacocat.
+[19:44:21] [NPCL] New: 17059884 (GelidBhoot)
+[19:44:21] Records of Eminence: Spoils (Earth Crystal).
+[19:44:21] Progress: 5/10.
+[19:44:21] Records of Eminence: Vanquish Multiple Enemies I.
+[19:44:21] Progress: 39/200.
+[19:44:23] Tacocat gains 211 limit points.
+[19:44:23] You find an earth crystal on the Frozen Bones.
+[19:44:23] Tacocat obtains an earth crystal.
+[19:44:23] The Gelid Bhoot misses Tacocat.
+[19:44:23] Tacocat scores a critical hit!The Gelid Bhoot takes 368 points of damage.
+[19:44:28] The Gelid Bhoot misses Tacocat.
+[19:44:28] [ID View] INCOMING < NPC Chat (0x036): NPC: 17059874 (Clavauert B Chanoix), Message: 7550
+[19:44:28] Clavauert B Chanoix : The map says it's this way, but...
+[19:44:28] Tacocat's Refresh effect wears off.
+[19:44:28] Tacocat hits the Gelid Bhoot for 227 points of damage.
+[19:44:29] The Gelid Bhoot starts casting Blizzard IV.
+[19:44:29] Carbuncle hits the Gelid Bhoot for 459 points of damage.
+[19:44:30] The Frozen Bones misses Carbuncle.
+[19:44:32] [HP Track] Killed 17059890 (Gelid Bhoot): 2648~2896HP, Est.HP: 2701 (Mthd: L)
+[19:44:32] Records of Eminence: Vanquish Multiple Enemies I.
+[19:44:32] Progress: 40/200.
+[19:44:32] Tacocat hits the Gelid Bhoot for 249 points of damage.
+[19:44:34] Tacocat defeats the Gelid Bhoot.
+[19:44:34] Tacocat gains 332 limit points.
+[19:44:35] The Frozen Bones hits Carbuncle for 12 points of damage.
+[19:44:36] The Gelid Bhoot starts casting Ice Spikes.
+[19:44:38] [AView] Ice Spikes > Cat: 4 ID: 250 Anim: 250 Msg: 230
+[19:44:39] The Frozen Bones misses Carbuncle.
+[19:44:39] The Frozen Bones starts casting Flood.
+[19:44:40] The Gelid Bhoot casts Ice Spikes.The Gelid Bhoot gains the effect of Ice Spikes.
+[19:44:41] Carbuncle hits the Frozen Bones for 557 points of damage.
+[19:44:42] The Frozen Bones's spikes deal 0 points of damage to Carbuncle.
+[19:44:42] The Gelid Bhoot misses Tacocat.
+[19:44:46] [AView] Databases saved!
+[19:44:46] Carbuncle scores a critical hit!The Gelid Bhoot takes 467 points of damage.
+[19:44:47] The Gelid Bhoot misses Carbuncle.
+[19:44:47] The Gelid Bhoot's spikes deal 0 points of damage to Carbuncle.
+[19:45:09] Tacocat starts casting Carbuncle on Tacocat.
+[19:45:16] [NPCL] New: 17061890 (Carbuncle)
+[19:45:19] The Frozen Bones hits Clavauert B Chanoix for 108 points of damage.
+[19:45:20] The Frozen Bones hits Clavauert B Chanoix for 128 points of damage.
+[19:45:21] [NPCL] New NPC information saved to database! (3 NPCs)
+[19:45:22] The Frozen Bones hits Clavauert B Chanoix for 95 points of damage.
+[19:45:23] The Frozen Bones hits Clavauert B Chanoix for 89 points of damage.
+[19:45:24] [NPCL] New: 17060155 (_jx0)
+[19:45:27] The Frozen Bones hits Clavauert B Chanoix for 88 points of damage.
+[19:45:28] Tacocat starts casting Cure IV on Clavauert B Chanoix.
+[19:45:28] The Frozen Bones scores a critical hit!Clavauert B Chanoix takes 214 points of damage.
+[19:45:32] The Frozen Bones hits Clavauert B Chanoix for 100 points of damage.
+[19:45:32] Unable to use job ability.
+[19:45:33] The Frozen Bones hits Clavauert B Chanoix for 109 points of damage.
+[19:45:35] Tacocat casts Cure IV.Clavauert B Chanoix recovers 447 HP.
+[19:45:36] The Frozen Bones hits Clavauert B Chanoix for 105 points of damage.
+[19:45:37] The Frozen Bones hits Clavauert B Chanoix for 125 points of damage.
+[19:45:39] The Frozen Bones hits Clavauert B Chanoix for 108 points of damage.
+[19:45:40] The Frozen Bones hits Clavauert B Chanoix for 91 points of damage.
+[19:45:41] [NPCL] New: 17059887 (GelidBhoot)
+[19:45:41] The Frozen Bones hits Clavauert B Chanoix for 92 points of damage.
+[19:45:42] The Frozen Bones scores a critical hit!Clavauert B Chanoix takes 230 points of damage.
+[19:45:43] [ID View] INCOMING < NPC Chat (0x036): NPC: 17059874 (Clavauert B Chanoix), Message: 7551
+[19:45:43] Clavauert B Chanoix : Oh dear...
+[19:45:45] The Frozen Bones hits Clavauert B Chanoix for 131 points of damage.
+[19:45:45] Tacocat starts casting Cure IV on Clavauert B Chanoix.
+[19:45:46] The Frozen Bones hits Clavauert B Chanoix for 93 points of damage.
+[19:45:47] The Frozen Bones scores a critical hit!Clavauert B Chanoix takes 183 points of damage.
+[19:45:48] The Frozen Bones hits Clavauert B Chanoix for 125 points of damage.
+[19:45:49] The Frozen Bones is out of range.
+[19:45:50] The Frozen Bones hits Clavauert B Chanoix for 115 points of damage.
+[19:45:51] The Frozen Bones hits Clavauert B Chanoix for 113 points of damage.
+[19:45:52] Tacocat casts Cure IV.Clavauert B Chanoix recovers 447 HP.
+[19:45:53] The Frozen Bones scores a critical hit!Clavauert B Chanoix takes 185 points of damage.
+[19:45:53] Tacocat hits the Frozen Bones for 705 points of damage.
+[19:45:54] The Frozen Bones misses Tacocat.
+[19:45:55] The Frozen Bones hits Clavauert B Chanoix for 95 points of damage.
+[19:45:57] The Frozen Bones hits Clavauert B Chanoix for 120 points of damage.
+[19:45:57] Records of Eminence: Deal 500+ Damage.
+[19:45:57] Progress: 30/200.
+[19:45:57] Tacocat starts casting Cure IV on Clavauert B Chanoix.
+[19:45:58] Tacocat hits the Frozen Bones for 640 points of damage.
+[19:45:58] The Frozen Bones misses Tacocat.
+[19:45:59] The Frozen Bones hits Clavauert B Chanoix for 111 points of damage.
+[19:46:01] The Frozen Bones hits Clavauert B Chanoix for 87 points of damage.
+[19:46:03] Records of Eminence: Vanquish Multiple Enemies I.
+[19:46:03] Progress: 41/200.
+[19:46:03] The Frozen Bones misses Tacocat.
+[19:46:03] The Frozen Bones hits Clavauert B Chanoix for 123 points of damage.
+[19:46:04] Tacocat casts Cure IV.Clavauert B Chanoix recovers 447 HP.
+[19:46:05] Tacocat starts casting Carbuncle on Tacocat.
+[19:46:05] The Frozen Bones hits Clavauert B Chanoix for 131 points of damage.
+[19:46:05] Tacocat gains 211 limit points.
+[19:46:05] You find a revival tree root on the Frozen Bones.
+[19:46:05] Tacocat obtains a revival tree root.
+[19:46:07] The Frozen Bones misses Tacocat.
+[19:46:07] The Frozen Bones hits Clavauert B Chanoix for 93 points of damage.
+[19:46:09] The Frozen Bones hits Clavauert B Chanoix for 94 points of damage.
+[19:46:11] The Frozen Bones misses Tacocat.
+[19:46:11] The Frozen Bones hits Clavauert B Chanoix for 96 points of damage.
+[19:46:12] [NPCL] New: 17061891 (Carbuncle)
+[19:46:13] The Frozen Bones hits Clavauert B Chanoix for 88 points of damage.
+[19:46:13] [ID View] INCOMING < NPC Chat (0x036): NPC: 17059874 (Clavauert B Chanoix), Message: 7552
+[19:46:13] Clavauert B Chanoix : I was certain I was on the right track...
+[19:46:15] Time left: (0:00:02)
+[19:46:15] Unable to use job ability.
+[19:46:15] The Frozen Bones misses Tacocat.
+[19:46:15] The Frozen Bones misses Clavauert B Chanoix.
+[19:46:16] Carbuncle hits the Frozen Bones for 539 points of damage.
+[19:46:16] Tacocat hits the Frozen Bones for 676 points of damage.
+[19:46:17] The Gelid Bhoot misses Tacocat.
+[19:46:17] The Frozen Bones scores a critical hit!Clavauert B Chanoix takes 209 points of damage.
+[19:46:19] The Frozen Bones misses Tacocat.
+[19:46:19] The Frozen Bones misses Carbuncle.
+[19:46:20] Carbuncle hits the Frozen Bones for 561 points of damage.
+[19:46:21] [HP Track] Killed 17059874 (Clavauert B Chanoix): 2534~2640HP, Est.HP: 2558 (Mthd: I)
+[19:46:21] The Gelid Bhoot starts casting Blizzard IV.
+[19:46:21] The mission has failed. Leaving area.
+[19:46:21] [ID View] INCOMING < CS Event (0x032): NPC: 449586 (Tacocat), Event: 102
+
+[19:46:21] The Frozen Bones hits Clavauert B Chanoix for 107 points of damage.
+[19:46:23] The Frozen Bones defeats Clavauert B Chanoix.
+[19:46:24] [NPCL] New NPC information saved to database! (3 NPCs)
+[19:46:25] [ID View] OUTGOING > Event Option (0x05B): NPC: 449586 (Tacocat), Event: 102, Option: 0
+[19:46:30] === Area: Caedarva Mire ===
+[19:46:39] Capture stopped.

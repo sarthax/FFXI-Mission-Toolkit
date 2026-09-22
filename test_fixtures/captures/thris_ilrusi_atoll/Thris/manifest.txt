@@ -1,0 +1,36 @@
+{
+  Captain = {
+    Addons = {
+      "VersCheck",
+      "CapLog",
+      "NPCLogger",
+      "CraftTrack",
+      "ZoneDump",
+      "LevelRangeTrack",
+      "PacketBridge",
+      "ActionView",
+      "CheckParam",
+      "AttackDelay",
+      "AutoWidescan",
+      "SpawnTrack",
+      "PacketLogger",
+      "WeatherTrack",
+      "OBS",
+      "TargetInfo",
+      "GuildStock",
+      "ShopStock",
+      "EventView",
+      "PlayerInfo",
+      "PathLog",
+      "HPTrack",
+      "KITrack"
+    },
+    Version = "1.6.1"
+  },
+  FFXI = {
+    Build = "[[ [  [  Version 18:48:06 Oct  2 2025  ]  ] ]]\n",
+    IsRetail = true,
+    ZoneIP = "124.150.152.156"
+  },
+  StartTime = 1762384491
+}

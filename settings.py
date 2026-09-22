@@ -20,11 +20,17 @@ TOOLS_ROOT = Path(__file__).parent
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
 
 DEFAULT_TOPAZ_ROOT = "C:/topaz"
+# Bundled turnkey scaffold (backport-workspace/README.md) -- real folder shape + one small, real,
+# already-verified example package, but none of a real backport project's own content. A user
+# pointing backport_root at their own real checkout overrides this via the setting below.
+DEFAULT_BACKPORT_ROOT = TOOLS_ROOT / "backport-workspace"
 
 DEFAULTS = {
     "theme": "light",              # light | dark
     "topaz_server_path": "",       # empty = use DEFAULT_TOPAZ_ROOT, see get_topaz_root()
     "dsp_server_path": "",         # empty = DSP cross-reference disabled, see get_dsp_root()
+    "zoneplot_server": "topaz",    # "topaz" | "dsp" -- which live DB Zone Plot's level editor targets
+    "backport_root": "",           # empty = use the bundled backport-workspace/ scaffold, see get_backport_root()
     "ffxi_install_path": "",       # empty = detect via Windows registry, see get_ffxi_install()
     # xi-model-viewer's own dev server (npm run dev, ui/vite.config.js) -- default matches its
     # documented default port (5173). Used to build "?npc=<file_id>" deep links (see
@@ -103,6 +109,21 @@ def get_dsp_root() -> Path | None:
     finally:
         con.close()
     return Path(value) if value else None
+
+
+def get_backport_root() -> Path:
+    """The backport checkout root (holds mission-packages/, dsp-engine-changes/, reports/) --
+    Settings' backport_root if set (point this at your own real backport project), else the
+    bundled backport-workspace/ scaffold (real folder shape + one small, real, verified example
+    package, no project-specific content) so the --all-packages CLI tools work turnkey with zero
+    configuration. Unlike get_dsp_root(), this never returns None -- the bundled default always
+    exists on disk (shipped with this repo), so there's always something real to point at."""
+    con = sqlite3.connect(str(DB_PATH))
+    try:
+        value = get(con, "backport_root")
+    finally:
+        con.close()
+    return Path(value) if value else DEFAULT_BACKPORT_ROOT
 
 
 def get_ffxi_install() -> str | None:

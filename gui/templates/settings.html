@@ -29,13 +29,19 @@
       <label class="muted">FFXI client install path -- blank auto-detects via the Windows registry</label><br>
       <input type="text" name="ffxi_install_path" value="{{ values.ffxi_install_path }}" style="width:100%; margin-top:6px;">
     </div>
+    <div>
+      <label class="muted">Backport checkout root (the repo holding mission-packages/, dsp-engine-changes/,
+        reports/ -- used by the backport-package CLI tools; blank uses the bundled
+        backport-workspace/ scaffold, point this at your own real backport project instead)</label><br>
+      <input type="text" name="backport_root" value="{{ values.backport_root }}" style="width:100%; margin-top:6px;">
+    </div>
   </div>
 
   <h2>3D model viewer</h2>
   <p class="muted">Entity Lookup's "view 3D model" link opens
     <a class="inline" href="https://github.com/vekien/xi-model-viewer" target="_blank">xi-model-viewer</a>
     at this URL with a real <code class="chip">?npc=&lt;file_id&gt;</code> deep link -- run its dev
-    server (<code class="chip">npm run dev</code> from <code class="chip">xi-model-viewer/ui</code>,
+    server (<code class="chip">npm run dev</code> from <code class="chip">vendor/xi-model-viewer/ui</code>,
     plus <code class="chip">py -3 scripts/serve.py</code> for the file-read backend) and it opens
     that exact entity's model directly, no manual browsing.</p>
   <div class="table-wrap" style="padding:14px;">

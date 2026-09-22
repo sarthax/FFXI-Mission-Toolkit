@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Packet Decode{% endblock %}
+{% block content %}
+<p><a class="inline" href="/packets?direction={{ direction }}&q={{ q }}">&larr; back to opcode browse</a></p>
+<h1>Packet Decoder</h1>
+
+<form class="search" method="get" action="/packets/decode" style="flex-wrap:wrap;">
+  <input type="hidden" name="q" value="{{ q }}">
+  <select name="direction">
+    <option value="s2c" {% if direction == "s2c" %}selected{% endif %}>s2c / incoming (server&rarr;client)</option>
+    <option value="c2s" {% if direction == "c2s" %}selected{% endif %}>c2s / outgoing (client&rarr;server)</option>
+  </select>
+  <input type="text" name="opcode" value="{{ opcode }}" placeholder="opcode, e.g. 0x02A" style="width:120px;">
+  <input type="text" name="hex_bytes" value="{{ hex_bytes }}" placeholder="raw hex bytes (spaces ok)" style="flex:1;min-width:280px;">
+  <button type="submit">Decode</button>
+</form>
+
+{% if decode_error %}
+<div class="warn"><strong>Could not decode:</strong> {{ decode_error }}</div>
+{% endif %}
+
+{% if schema is not none %}
+<h3 style="margin-top:18px;">
+  {% if decoded %}{{ decoded.description }}{% else %}Field reference for this opcode{% endif %}
+  {% if not schema %}<span class="pill mismatch">no fields defined</span>{% endif %}
+</h3>
+{% if not decoded %}
+<p class="muted">This is every real field this opcode's definition declares -- enter hex bytes
+  above and decode to populate real values into this same table.</p>
+{% endif %}
+{% if schema %}
+<div class="table-wrap"><table>
+  <tr><th>field</th><th>type</th><th>pos</th>{% if decoded %}<th>value</th>{% endif %}</tr>
+  {% for f in schema %}
+  <tr {% if f.out_of_range %}style="color:var(--muted);"{% endif %}>
+    <td>{{ f.name }}{% if f.comment %} <span class="muted" style="font-size:11px;">({{ f.comment }})</span>{% endif %}
+      {% if f.lookup %} <span class="chip">lookup: {{ f.lookup }}</span>{% endif %}</td>
+    <td class="mono">{{ f.type }}</td>
+    <td class="mono">{{ f.pos }}{% if f.size %} (+{{ f.size }}){% endif %}</td>
+    {% if decoded %}<td class="mono">{{ f.value if f.value is defined else '—' }}</td>{% endif %}
+  </tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+
+{% if decoded and decoded.has_definition %}
+<div class="warn">
+  <strong>Don't trust a decoded id at face value.</strong> The decode itself is byte-accurate, but
+  an id-shaped field (npc_id, UniqueNo, target_id, etc.) can still resolve to the wrong entity if
+  the client and capture disagree on id assignment -- a structurally valid id can still look up to
+  an unrelated entity in a different zone. Cross-reference any decoded id against Entity Lookup
+  and verify by real text/position rather than assuming a lookup match is the entity you expect.
+</div>
+{% endif %}
+{% elif not decode_error %}
+<p class="muted">Enter an opcode above (with or without hex bytes) to see its real field
+  reference, or pick one from the
+  <a class="inline" href="/packets?direction={{ direction }}&q={{ q }}">opcode browse list</a>.</p>
+{% endif %}
+{% endblock %}

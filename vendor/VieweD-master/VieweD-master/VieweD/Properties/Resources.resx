@@ -1,0 +1,663 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="7zip_x64" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\icons\7zip_x64.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="add" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\add.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="AppTitle" xml:space="preserve">
+    <value>VieweD .NET 6.0</value>
+    <comment>Title bar text</comment>
+  </data>
+  <data name="auto-translate" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\auto-translate.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="close" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\close.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="cone_altglass_2_x48" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\icons\cone_altglass_2_x48.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="DirectionIn" xml:space="preserve">
+    <value>IN </value>
+  </data>
+  <data name="DirectionOut" xml:space="preserve">
+    <value>OUT</value>
+  </data>
+  <data name="DirectionUnknown" xml:space="preserve">
+    <value>???</value>
+    <comment>Unknown, packet list view only</comment>
+  </data>
+  <data name="discord_x32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\icons\discord_x32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FilterFailToLoad" xml:space="preserve">
+    <value>Failed to load {0}\r\nException: {1}"</value>
+    <comment>0: Filename 1:Exception.Message</comment>
+  </data>
+  <data name="FilterFailToLoadTitle" xml:space="preserve">
+    <value>Load filter error</value>
+  </data>
+  <data name="github-mark" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\icons\github-mark.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="InputReaderError" xml:space="preserve">
+    <value>Input reader error</value>
+  </data>
+  <data name="kofi_p_logo_nolabel_x32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\icons\kofi_p_logo_nolabel_x32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MenuVersion" xml:space="preserve">
+    <value>Version {0}</value>
+    <comment>0: Version</comment>
+  </data>
+  <data name="mini_in_icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\packetlist\mini_in_icon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="mini_in_ticon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\packetlist\mini_in_ticon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="mini_out_icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\packetlist\mini_out_icon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="mini_out_ticon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\packetlist\mini_out_ticon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="mini_unk_icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\packetlist\mini_unk_icon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="mini_unk_ticon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\packetlist\mini_unk_ticon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="mini_video_icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\packetlist\mini_video_icon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ParsePackets" xml:space="preserve">
+    <value>Parsing packet data using {0}</value>
+  </data>
+  <data name="PopulateListBox" xml:space="preserve">
+    <value>Updating packet list, please wait ...</value>
+  </data>
+  <data name="StatusNoEngine" xml:space="preserve">
+    <value>&lt;none&gt;</value>
+  </data>
+  <data name="StatusProjectFolder" xml:space="preserve">
+    <value>Project folder: {0}</value>
+    <comment>0: ProjectFolder</comment>
+  </data>
+  <data name="StatusProjectFolderNotLoaded" xml:space="preserve">
+    <value>No project has been loaded</value>
+  </data>
+  <data name="TypeUnknown" xml:space="preserve">
+    <value>???</value>
+    <comment>3 questionmarks</comment>
+  </data>
+  <data name="UnableToFindInputReader" xml:space="preserve">
+    <value>Was unable to find a suitable reader for this file</value>
+  </data>
+  <data name="UnableToOpenFile" xml:space="preserve">
+    <value>Unable to open {0}</value>
+    <comment>0: Filename</comment>
+  </data>
+  <data name="usgaiji-10" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\usgaiji-10.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="usgaiji-9" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\usgaiji-9.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="wireshark_x48" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\icons\wireshark_x48.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="UnableToOpenProject" xml:space="preserve">
+    <value>Unable to open project file {0}</value>
+    <comment>0: Project Filename</comment>
+  </data>
+  <data name="ProjectReadingError" xml:space="preserve">
+    <value>Project Reading Error</value>
+  </data>
+  <data name="UnableToFindParser" xml:space="preserve">
+    <value>Unable to find parser</value>
+  </data>
+  <data name="ParserError" xml:space="preserve">
+    <value>Parser Error</value>
+  </data>
+  <data name="ConfirmClose" xml:space="preserve">
+    <value>Confirm close</value>
+  </data>
+  <data name="CloseFile" xml:space="preserve">
+    <value>Close {0} ?</value>
+  </data>
+  <data name="application-exit-16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\application-exit-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="application-menu-16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\application-menu-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="document-open-16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\document-open-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="document-open-32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\document-open-32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="document-open-folder-16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\document-open-folder-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="document-properties-16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\document-properties-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="document-save-16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\document-save-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="document-save-all-16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\document-save-all-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="document-save-as-16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\document-save-as-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="project-open-16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\project-open-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="document_close_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\document-close-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="view_close_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\view-close-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="window_close_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\window-close-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FailedToOpenUrl" xml:space="preserve">
+    <value>Failed to open {0} with error {1} </value>
+  </data>
+  <data name="FailedToOpen" xml:space="preserve">
+    <value>Failed to open</value>
+  </data>
+  <data name="PopupEditRule" xml:space="preserve">
+    <value>Edit {0} =&gt; {1}</value>
+    <comment>0: loolkup key  1: rule name</comment>
+  </data>
+  <data name="PopupUnknownDirection" xml:space="preserve">
+    <value>Unknown direction, unable to edit</value>
+  </data>
+  <data name="PopupNoRuleAssigned" xml:space="preserve">
+    <value>No rule assigned</value>
+  </data>
+  <data name="PopupCreateRule" xml:space="preserve">
+    <value>Create {0}</value>
+    <comment>0: packet name</comment>
+  </data>
+  <data name="PopupNothingToEdit" xml:space="preserve">
+    <value>Nothing to edit</value>
+  </data>
+  <data name="view_hidden_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\view-hidden-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="view_visible_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\view-visible-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="document_decrypt_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\document-decrypt-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="NoRuleData" xml:space="preserve">
+    <value>No rule data</value>
+  </data>
+  <data name="RuleError" xml:space="preserve">
+    <value>Rule Error</value>
+  </data>
+  <data name="FailedToSaveRulesFile" xml:space="preserve">
+    <value>Failed to save rules file: {0}</value>
+    <comment>0: filename</comment>
+  </data>
+  <data name="ApplyChanges" xml:space="preserve">
+    <value>Apply changes</value>
+  </data>
+  <data name="ErrorInRulesFile" xml:space="preserve">
+    <value>Error in rules file: 
+
+{0}</value>
+    <comment>0: filename</comment>
+  </data>
+  <data name="PopupReplace" xml:space="preserve">
+    <value>Replace</value>
+  </data>
+  <data name="PopupInsert" xml:space="preserve">
+    <value>Insert</value>
+  </data>
+  <data name="SaveProject" xml:space="preserve">
+    <value>Save project</value>
+  </data>
+  <data name="SaveCancelled" xml:space="preserve">
+    <value>Save cancelled</value>
+  </data>
+  <data name="LoadedOldProjectTypeAndNeedSave" xml:space="preserve">
+    <value>The current project was loaded from a lmog file or a older project format, you will need to save it into the new project format</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="NothingToSearch" xml:space="preserve">
+    <value>Nothing to search in!</value>
+  </data>
+  <data name="NothingFound" xml:space="preserve">
+    <value>No matches found!</value>
+  </data>
+  <data name="SearchAsNewTab" xml:space="preserve">
+    <value>Search as New Tab</value>
+  </data>
+  <data name="NoRuleAttachedToThisPacketCreateNewRule" xml:space="preserve">
+    <value>No rule attached to this packet, create a new one?</value>
+  </data>
+  <data name="EditRulesFile" xml:space="preserve">
+    <value>Edit rules file</value>
+  </data>
+  <data name="NoRuleLinkedToThisPacket" xml:space="preserve">
+    <value>No rule linked to this packet</value>
+  </data>
+  <data name="NoRuleFound" xml:space="preserve">
+    <value>No rule found</value>
+  </data>
+  <data name="CannotSaveVirtualProject" xml:space="preserve">
+    <value>Can only save projects that originate directly from a log file.</value>
+  </data>
+  <data name="media_playback_pause_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\media-playback-pause-32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="media_playback_start_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\media-playback-start-32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="media_playback_stop_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\media-playback-stop-32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="media_playlist_repeat_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\media-playlist-repeat-32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="media_playlist_shuffle_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\media-playlist-shuffle-32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="media_eject_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\media-eject-32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="media_record_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\media-record-32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="media_seek_backward_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\media-seek-backward-32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="media_seek_forward_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\media-seek-forward-32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="media_skip_backward_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\media-skip-backward-32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="media_skip_forward_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\media-skip-forward-32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="audio_on_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\audio-on-32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="audio_volume_muted_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\audio-volume-muted-32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="NothingSelected" xml:space="preserve">
+    <value>Nothing selected</value>
+  </data>
+  <data name="MissingRulesFileForProject" xml:space="preserve">
+    <value>Missing rules file for project {0}</value>
+  </data>
+  <data name="SaveRulesFileFailed" xml:space="preserve">
+    <value>Failed to save rules: {0}
+{1}</value>
+    <comment>0: file  1: exception</comment>
+  </data>
+  <data name="RulesChangedReparsingProject" xml:space="preserve">
+    <value>Rules file changed, re-parsing the project</value>
+  </data>
+  <data name="UnParsedFieldName" xml:space="preserve">
+    <value>Unparsed</value>
+  </data>
+  <data name="UnParsedFieldDescription" xml:space="preserve">
+    <value>Unparsed data below</value>
+  </data>
+  <data name="CompilingPluginsTitle" xml:space="preserve">
+    <value>Compiling plugins ...</value>
+  </data>
+  <data name="ExpandingPackets" xml:space="preserve">
+    <value>Expanding packet data using {0}</value>
+    <comment>0: parser name</comment>
+  </data>
+  <data name="OverwriteFileTitle" xml:space="preserve">
+    <value>Overwrite file</value>
+  </data>
+  <data name="AppendToCurrentFile" xml:space="preserve">
+    <value>Do you want to append to the currently existing file ?
+{0}</value>
+    <comment>0: filename</comment>
+  </data>
+  <data name="ExportedXItems" xml:space="preserve">
+    <value>Exported {0} item(s)</value>
+    <comment>0: item count</comment>
+  </data>
+  <data name="NoDataExported" xml:space="preserve">
+    <value>No data exported</value>
+  </data>
+  <data name="ExportDataTitle" xml:space="preserve">
+    <value>Export data</value>
+  </data>
+  <data name="ReadAllDataUnknownCommand" xml:space="preserve">
+    <value>Unknown cmd type: {0} 
+@{1}</value>
+    <comment>0: command name  1: position</comment>
+  </data>
+  <data name="ReadAllDataFileFormatErrorTitle" xml:space="preserve">
+    <value>File Format Error</value>
+  </data>
+  <data name="CopyToClipboardTitle" xml:space="preserve">
+    <value>Copy to Clipboard</value>
+  </data>
+  <data name="PluginCompileError" xml:space="preserve">
+    <value>Plugin Compile Error</value>
+  </data>
+  <data name="WelcomeFileNotFound" xml:space="preserve">
+    <value>Welcome file not found!</value>
+  </data>
+  <data name="AlreadySyncedToThisPosition" xml:space="preserve">
+    <value>Already synced to this position</value>
+  </data>
+  <data name="SyncWithProjectTitle" xml:space="preserve">
+    <value>Sync with project</value>
+  </data>
+  <data name="UpdateToNewVideoOffset" xml:space="preserve">
+    <value>Do you want to update the video syncronization offset to
+{0}?
+
+Previous offset was
+{1}
+
+Difference = {2}</value>
+    <comment>0: new offset  1: old offset  2: delta</comment>
+  </data>
+  <data name="SaveChangesToProject" xml:space="preserve">
+    <value>Save changes to project: {0} ?</value>
+    <comment>0: project name</comment>
+  </data>
+  <data name="AddToArchiveTitle" xml:space="preserve">
+    <value>Add files to archive</value>
+  </data>
+  <data name="application_zip_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\application-zip-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="document_export_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\document-export-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="document_import_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\document-import-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="edit_copy_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\edit-copy-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="edit_cut_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\edit-cut-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="edit_delete_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\edit-delete-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="edit_download_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\edit-download-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="edit_find_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\edit-find-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="edit_find_replace_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\edit-find-replace-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="edit_guides_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\edit-guides-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="edit_move_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\edit-move-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="edit_node_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\edit-node-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="edit_paste_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\edit-paste-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="edit_redo_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\edit-redo-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="edit_reset_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\edit-reset-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="edit_select_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\edit-select-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="edit_select_all_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\edit-select-all-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="edit_select_invert_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\edit-select-invert-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="edit_select_none_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\edit-select-none-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="edit_select_original_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\edit-select-original-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="edit_undo_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\edit-undo-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="tag_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\tag-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="tag_delete_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\tag-delete-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="tag_edit_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\tag-edit-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="tag_new_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\tag-new-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="document_edit_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\document-edit-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="gnumeric_autofilter_delete_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\gnumeric-autofilter-delete-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="text_csv_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\text-csv-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="view_filter_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\view-filter-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="gnumeric_link_url_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\gnumeric-link-url-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="im_youtube_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\im-youtube-16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="im_youtube_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\kde-icons\im-youtube-32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FileExistsOverrideQuestion" xml:space="preserve">
+    <value>Target file already exists, do you want to override it?
+{0}</value>
+    <comment>0: filename</comment>
+  </data>
+  <data name="Download" xml:space="preserve">
+    <value>Download</value>
+  </data>
+  <data name="DownloadErrorTitle" xml:space="preserve">
+    <value>Download error</value>
+  </data>
+  <data name="DownloadFileError" xml:space="preserve">
+    <value>Error downloading file !
+{0}</value>
+    <comment>0: filename</comment>
+  </data>
+  <data name="YouTubeErrorNoStreams" xml:space="preserve">
+    <value>This videos has no streams</value>
+  </data>
+  <data name="VideoLinkUpdatedAfterDownload" xml:space="preserve">
+    <value>VideoLink updated to use: {0}</value>
+    <comment>0: new filename</comment>
+  </data>
+  <data name="NoFileData" xml:space="preserve">
+    <value>It looks like there is no useable data in the opened file</value>
+  </data>
+  <data name="PCapNotInstalled" xml:space="preserve">
+    <value>Failed to open "{0}", likely no compatible library installed that supports pcap.
+
+{1}</value>
+    <comment>0: FileName  1: exception</comment>
+  </data>
+  <data name="PlaybackErrorTitle" xml:space="preserve">
+    <value>Playback Error</value>
+  </data>
+  <data name="FailedToLoadVideoURI" xml:space="preserve">
+    <value>Failed to load video from:
+{0}
+</value>
+  </data>
+  <data name="ReParseProject" xml:space="preserve">
+    <value>Do you want to reparse the project?</value>
+  </data>
+  <data name="FailedToExport" xml:space="preserve">
+    <value>Failed to export!</value>
+  </data>
+  <data name="ImportFromClipboard" xml:space="preserve">
+    <value>Import from clipboard</value>
+  </data>
+  <data name="NoDataOnClipboard" xml:space="preserve">
+    <value>No data on clipboard</value>
+  </data>
+  <data name="ClipboardNoPacketData" xml:space="preserve">
+    <value>Clipboard does not seem to contain packet data</value>
+  </data>
+  <data name="ClipboardTabName" xml:space="preserve">
+    <value>Clipboard</value>
+  </data>
+  <data name="FailedToDeleteExportFileAborting" xml:space="preserve">
+    <value>Failed to delete {0}, aborting</value>
+    <comment>0: export file</comment>
+  </data>
+</root>

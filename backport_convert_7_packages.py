@@ -11,8 +11,12 @@ the full evidence trail.
 """
 from pathlib import Path
 import backport_lua_convert as blc
+import settings
 
-PKG_ROOT_BASE = Path(r"D:\Claude\Topaz-Assault-Backport\mission-packages")
+_backport_root = settings.get_backport_root()
+if _backport_root is None:
+    raise SystemExit("No backport checkout configured -- set Settings' backport_root first.")
+PKG_ROOT_BASE = _backport_root / "mission-packages"
 
 PACKAGES = [
     "leujaoam_sanctum_missions_1-4",
@@ -89,10 +93,12 @@ def convert_package(pkg_name: str, ns_map: dict) -> dict:
     return report
 
 
-DSP_ROOT = Path(r"D:\Claude\old-dsp-reference")
+DSP_ROOT = settings.get_dsp_root()
 
 
 def main():
+    if DSP_ROOT is None:
+        raise SystemExit("No DSP checkout configured -- set Settings' dsp_server_path first.")
     blc.verify_target_or_raise(DSP_ROOT, "old_dsp_reference")
     ns_map = blc.load_map()
     all_reports = [convert_package(p, ns_map) for p in PACKAGES]

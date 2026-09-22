@@ -1,0 +1,46 @@
+# Event {{ event_id }}
+
+## Metadata
+
+{{ metadata_table }}
+
+```
+      00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F
+      -- -- -- -- -- -- -- --  -- -- -- -- -- -- -- --
+{% for line in hex_dump %}
+{{ line }}
+{% endfor %}
+```
+
+## Opcodes
+
+```
+{% for subroutine in event_code.subroutines -%}
+{% if subroutine.label -%}
+{% if loop.index > 1 %}
+
+{% endif -%}
+{{ subroutine.label }}:
+{% endif -%}
+{% for inst in subroutine.instructions -%}
+{{ '%3d' | format(inst.num) }}: 0x{{ '%04X' | format(inst.offset) }} [0x{{ '%02X' | format(inst.opcode) }}] {{ inst.description }}
+{% endfor -%}
+{% endfor -%}
+```
+{% if event_code.data_sections or event_code.dead_code_sections %}
+
+## Data or dead code:
+
+```
+{% for data_section in event_code.data_sections -%}
+{% for line in data_section.format_hex_dump() -%}
+{{ line }}
+{% endfor -%}
+{% endfor -%}
+{% for dead_section in event_code.dead_code_sections -%}
+{% for line in dead_section.format_lines() -%}
+{{ line }}
+{% endfor -%}
+{% endfor -%}
+```
+{%- endif %}

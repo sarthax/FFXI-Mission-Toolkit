@@ -1,0 +1,56 @@
+{
+ "id": "arrapago_remnants",
+ "zone": 74,
+ "title": "Arrapago Remnants - stage 1 mobs + region-triggered group",
+ "source": "scripts/zones/Arrapago_Remnants/IDs.lua + instances/arrapago_remnants.lua",
+ "notes": "Stage 1 (fixed) = mobs_start..mobs_end plus rampart and sabotender. One region group is spawned by the region event that fires (not a random draw); astrologer is a fixed spawn.",
+ "ops": [
+  {
+   "op": "spawnIds",
+   "label": "Stage1",
+   "ranges": [
+    [
+     17080323,
+     17080395
+    ]
+   ],
+   "ids": [
+    17080321,
+    17080322
+   ]
+  },
+  {
+   "op": "groupChoice",
+   "label": "Region group",
+   "groups": [
+    {
+     "name": "Region 1 group",
+     "from": 17080421,
+     "to": 17080430
+    },
+    {
+     "name": "Region 2 group",
+     "from": 17080413,
+     "to": 17080420
+    },
+    {
+     "name": "Region 3 group",
+     "from": 17080404,
+     "to": 17080412
+    },
+    {
+     "name": "Region 4 group",
+     "from": 17080396,
+     "to": 17080403
+    }
+   ]
+  },
+  {
+   "op": "spawnIds",
+   "label": "Astrologer",
+   "ids": [
+    17080431
+   ]
+  }
+ ]
+}

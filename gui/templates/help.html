@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Help{% endblock %}
+{% block content %}
+<h1>Help &amp; Overview</h1>
+<p class="muted">A local, read-only browser over indexed FFXI client/server reference data plus
+  real captured gameplay sessions. Everything here reads from an already-built local database --
+  nothing here modifies a live server.</p>
+
+<h2>Tools</h2>
+<p class="muted">The things you work in day to day.</p>
+<div class="table-wrap"><table>
+  <tr><th>page</th><th>what it's for</th></tr>
+  <tr>
+    <td><a class="inline" href="/captures">Captures</a></td>
+    <td>Upload, browse, and cross-reference real captured gameplay sessions. Each capture gets a
+      timeline (events, battle actions, key items, dialogue, raw packets), position plots (2D
+      top-down and 3D), and a search across every ingested capture at once. Supports .zip and .7z
+      bundles, or dropping individual log files onto an existing capture.</td>
+  </tr>
+  <tr>
+    <td><a class="inline" href="/entity">Entity Lookup</a></td>
+    <td>One canonical profile per NPC/mob id -- real position, model, drops, observed abilities,
+      dialogue/events, level range, attack timing, and every capture it's appeared in, all cross-
+      referenced from whichever real sources have data for it. Search by id, or by name in any
+      style the client actually stored it in ("Lamia No.13", "Qiqirn_Treasure_Hunter", etc -- all
+      normalize to the same match).</td>
+  </tr>
+  <tr>
+    <td><a class="inline" href="/wiki">Wiki Compiler</a></td>
+    <td>Pulls real item/NPC/mob references out of a wiki page and resolves them against the
+      indexed data -- a reference aid, not a replacement for verifying against the real SQL/Lua.</td>
+  </tr>
+  <tr>
+    <td><a class="inline" href="/packets">Packet Decoder</a></td>
+    <td>Decodes a raw captured packet into named, typed fields -- pick an opcode to see its full
+      field reference, then decode real hex to populate real values into the same table. Also
+      supports bulk-decoding a whole raw log file at once.</td>
+  </tr>
+</table></div>
+
+<h2 style="margin-top:24px;">Research</h2>
+<p class="muted">Reference lookups for answering a specific question.</p>
+<div class="table-wrap"><table>
+  <tr><th>page</th><th>what it's for</th></tr>
+  <tr><td><a class="inline" href="/dialog">Dialog Search</a></td>
+    <td>Search or browse indexed dialogue text by keyword, id, or zone. Also has a zone drift
+      report (comparing indexed dialogue against a zone's own live client data).</td></tr>
+  <tr><td><a class="inline" href="/zones">Browse by Zone</a></td>
+    <td>List every entity/mob in a zone, a content-category tag, or both combined.</td></tr>
+  <tr><td><a class="inline" href="/gaps">Zero-Position / Unregistered</a></td>
+    <td>Finds entities with an unset position, or entities missing from a content type's
+      registration table -- worth a look, not automatically a bug.</td></tr>
+  <tr><td><a class="inline" href="/sql">SQL Index</a></td>
+    <td>Direct search over the indexed SQL tables (npc_list, mob_spawn_points, mob_groups, etc.)
+      by id or name. Any row whose id is a real npcid (npc_list, mob_spawn_points,
+      instance_entities) links straight through to its full Entity Lookup profile.</td></tr>
+  <tr><td><a class="inline" href="/events">Events / CSIDs</a></td>
+    <td>Per-zone list of every real cutscene/event id an entity can trigger. Generates itself
+      automatically the first time you pick a zone you haven't looked at before.</td></tr>
+  <tr><td><a class="inline" href="/missions">Assault Missions</a></td>
+    <td>Reference list of missions with their real zone/rank/prerequisites.</td></tr>
+  <tr><td><a class="inline" href="/keyitems">Key Items</a></td>
+    <td>Search key items by name, with a readiness check against the scripting enum and any real
+      capture evidence of that item being granted/removed.</td></tr>
+  <tr><td><a class="inline" href="/items">Item Browser</a></td>
+    <td>Our own item_basic/equipment/weapon/usable data next to the external retail reference and
+      LandSandBoat, by normalized name -- shows id matches, id drift, and items either side is
+      missing.</td></tr>
+  <tr><td><a class="inline" href="/iddrift">ID Drift</a></td>
+    <td>The real fix for "wrong id" backport bugs: cross-checks LandSandBoat (what this content
+      was ported from) against your Topaz server's own code/SQL across items, npcs, mob groups,
+      mob skills, spells, abilities, weapon skills, traits, Blue Magic wiring, pets, status
+      effects, and event/csid literals scraped straight out of both sides' npc scripts. Browse by
+      category; zone-scoped categories have their own zone picker and a block-shift detector for
+      "this whole zone's ids are off by a constant amount" bugs.</td></tr>
+</table></div>
+
+<h2 style="margin-top:24px;">Tips</h2>
+<ul>
+  <li><strong>Pagination</strong>: every list that can exceed one page shows a real total count
+    and a page-jump control (type a page number, click Go) -- a page never silently truncates
+    results without telling you.</li>
+  <li><strong>Search filters combine</strong>: where a page has more than one filter (e.g. Browse
+    by Zone's zone + tag), each works alone or together -- you don't need to pick one first.</li>
+  <li><strong>Cross-linking</strong>: ids, zones, and opcodes link to their own dedicated page
+    wherever they appear (SQL Index &rarr; Entity Lookup, Wiki Compiler &rarr; Entity Lookup, ID
+    Drift &rarr; Item Browser, a capture's NPC &rarr; its full entity profile &rarr; every other
+    capture it appeared in), so you can follow a thread without re-searching.</li>
+</ul>
+
+<h2 style="margin-top:24px;">Keeping data current</h2>
+<p class="muted">The <a class="inline" href="/">homepage</a>'s "Data &amp; Tools" table is where
+  everything gets built or refreshed -- no command prompt needed. Each row is one real data
+  source (Dialog text, your LSB server's own SQL, LandSandBoat cross-reference, your Topaz
+  server's own SQL, BG Wiki, per-zone events, etc):</p>
+<ul>
+  <li><strong>Rebuild</strong> re-indexes that source from whatever's already on disk (your
+    Topaz checkout, the bundled LandSandBoat/ checkout, etc) -- click it after you edit your
+    server's scripts, or whenever you want the freshest cross-reference.</li>
+  <li><strong>Install</strong> appears instead when a source needs something that isn't
+    downloaded yet (LandSandBoat, FFXI-DATS, xi-tinkerer-cli) -- one click fetches it from its
+    real source, no manual download.</li>
+  <li>BG Wiki's Rebuild does an <em>incremental</em> sync (only pages that changed since last
+    time, seconds to minutes) -- a full from-scratch crawl is a deliberate command-line-only
+    step (<code class="chip">scrape_bg_wiki.py --full</code>) since it takes hours.</li>
+</ul>
+
+<h2 style="margin-top:24px;">Settings</h2>
+<p class="muted">Local configuration -- FFXI install path and similar environment settings. See
+  <a class="inline" href="/settings">Settings</a>.</p>
+{% endblock %}

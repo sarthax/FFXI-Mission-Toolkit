@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Mission Toolkit{% endblock %}
+{% block content %}
+{% if rebuilt %}
+<div class="flash {{ 'flash-ok' if rebuilt_ok else 'flash-error' }}">
+  {% if rebuilt_ok %}
+    <strong>{{ rebuilt }}</strong>: {{ rebuilt_detail }}
+  {% else %}
+    <strong>{{ rebuilt }}</strong> failed: {{ rebuilt_detail }}
+  {% endif %}
+</div>
+{% endif %}
+
+<h2>Data &amp; Tools</h2>
+<p class="muted">What's actually loaded right now, and how to get anything that's missing.</p>
+
+<table class="status-table">
+  <thead>
+    <tr><th>Source</th><th>Status</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for s in status %}
+    <tr>
+      <td>{{ s.label }}</td>
+      <td>
+        {% if s.count > 0 %}
+          <span class="badge badge-ok">loaded</span> {{ s.detail }}
+        {% else %}
+          <span class="badge badge-empty">empty</span> {{ s.detail }}
+        {% endif %}
+        {% if s.missing %}
+          <div class="missing-tool">
+            Needs: {{ s.missing.what }}<br>
+            {% if s.missing.where_url %}
+              Get it: <a href="{{ s.missing.where_url }}" target="_blank" rel="noopener">{{ s.missing.where_label }}</a><br>
+            {% endif %}
+            {{ s.missing.how }}
+          </div>
+        {% endif %}
+      </td>
+      <td>
+        {% if s.rebuild %}
+          <a href="/rebuild/{{ s.rebuild }}/confirm" class="btn-rebuild" style="text-decoration:none; display:inline-block;">Rebuild</a>
+        {% endif %}
+        {% if s.missing and s.missing.install_tool %}
+          <form method="post" action="/install/{{ s.missing.install_tool }}" onsubmit="return confirm('Download and install this now? {{ s.missing.how }}');">
+            <button type="submit" class="btn-rebuild">Install</button>
+          </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<style>
+.status-table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+.status-table th, .status-table td { text-align: left; padding: 0.5rem 0.75rem; vertical-align: top; border-bottom: 1px solid var(--border, #ddd); }
+.badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 3px; font-size: 0.85em; font-weight: 600; margin-right: 0.4rem; }
+.badge-ok { background: #1e7e34; color: #fff; }
+.badge-empty { background: #888; color: #fff; }
+.missing-tool { margin-top: 0.35rem; font-size: 0.9em; color: var(--muted, #666); }
+.btn-rebuild { padding: 0.3rem 0.8rem; cursor: pointer; border: 1px solid var(--accent); background: var(--accent);
+               color: #fff; border-radius: 6px; font-size: 14px; text-align: center; }
+.flash { padding: 0.6rem 1rem; border-radius: 4px; margin-bottom: 1rem; }
+.flash-ok { background: #d4edda; color: #155724; }
+.flash-error { background: #f8d7da; color: #721c24; }
+</style>
+{% endblock %}

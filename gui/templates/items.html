@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Item Browser{% endblock %}
+
+{% macro pager() %}
+{% if total_pages > 1 %}
+<form method="get" style="display:flex;gap:8px;align-items:center;margin:12px 0;">
+  <input type="hidden" name="q" value="{{ q }}">
+  <input type="hidden" name="status" value="{{ status }}">
+  {% if page > 1 %}
+  <a class="chip" href="/items?q={{ q }}&status={{ status }}&page={{ page - 1 }}">&larr; prev</a>
+  {% endif %}
+  <span class="muted">page</span>
+  <input type="number" name="page" value="{{ page }}" min="1" max="{{ total_pages }}" style="width:70px;">
+  <span class="muted">of {{ total_pages }}</span>
+  <button type="submit">Go</button>
+  {% if page < total_pages %}
+  <a class="chip" href="/items?q={{ q }}&status={{ status }}&page={{ page + 1 }}">next &rarr;</a>
+  {% endif %}
+</form>
+{% endif %}
+{% endmacro %}
+
+{% block content %}
+<h1>Item Browser</h1>
+<p class="muted">Our server's items (item_basic/item_equipment/item_weapon/item_usable) matched
+against the bundled external reference catalogue by normalized name -- same join key
+build_database.py already computes (norm_name). Shows where our id agrees with the reference,
+where the name matches but the id drifted, and what exists only on one side.</p>
+
+<form class="search" method="get">
+  <input type="text" name="q" value="{{ q }}" placeholder="item name substring or exact item ID (e.g. Ridill or 16416)">
+  <select name="status">
+    <option value="all" {{ "selected" if status == "all" }}>all ({{ counts.all }})</option>
+    <option value="matched" {{ "selected" if status == "matched" }}>matched ({{ counts.matched }})</option>
+    <option value="drift" {{ "selected" if status == "drift" }}>id drift ({{ counts.drift }})</option>
+    <option value="ours_only" {{ "selected" if status == "ours_only" }}>ours only ({{ counts.ours_only }})</option>
+    <option value="external_only" {{ "selected" if status == "external_only" }}>external only ({{ counts.external_only }})</option>
+  </select>
+  <button type="submit">Filter</button>
+</form>
+
+<p>{{ total }} item(s) -- page {{ page }} of {{ total_pages }}</p>
+{{ pager() }}
+<div class="table-wrap"><table>
+  <tr><th>our id</th><th>our name</th><th>category</th><th>ext id</th><th>ext name</th><th>status</th></tr>
+  {% for i in items %}
+  <tr>
+    <td class="mono">{% if i.our_id %}<a href="/items/{{ i.our_id }}?q={{ q }}&status={{ status }}&page={{ page }}">{{ i.our_id }}</a>{% endif %}</td>
+    <td>{{ i.our_name or "" }}</td>
+    <td>{{ i.category or "" }}</td>
+    <td class="mono">{% if i.ext_id and i.our_id %}<a href="/items/{{ i.our_id }}?q={{ q }}&status={{ status }}&page={{ page }}">{{ i.ext_id }}</a>{% elif i.ext_id %}{{ i.ext_id }}{% endif %}</td>
+    <td>{{ i.ext_name or "" }}</td>
+    <td>
+      {% if i.status == "matched" %}<span class="badge badge-ok">matched</span>
+      {% elif i.status == "drift" %}<span class="badge badge-empty">id drift</span>
+      {% elif i.status == "ours_only" %}<span class="badge badge-empty">ours only</span>
+      {% else %}<span class="badge badge-empty">external only</span>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table></div>
+{{ pager() }}
+
+<style>
+.badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 3px; font-size: 0.85em; font-weight: 600; }
+.badge-ok { background: #1e7e34; color: #fff; }
+.badge-empty { background: #888; color: #fff; }
+</style>
+{% endblock %}

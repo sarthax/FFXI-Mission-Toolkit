@@ -1,0 +1,516 @@
+{% extends "base.html" %}
+{% block title %}Roadmap{% endblock %}
+{% block content %}
+<style>
+  .phase { background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+           padding: 16px 20px; margin: 14px 0; }
+  .phase-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+  .phase-num { font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: var(--accent);
+               background: var(--accent-soft); border-radius: 100px; width: 22px; height: 22px;
+               display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 700; }
+  .phase-head h3 { margin: 0; font-size: 15px; }
+  .phase-meta { display: flex; gap: 6px; margin: 6px 0 10px; flex-wrap: wrap; }
+  .meta-chip { font-family: ui-monospace, Consolas, monospace; font-size: 10.5px; padding: 2px 8px;
+               border-radius: 100px; border: 1px solid var(--border); color: var(--muted); }
+  .meta-chip.built { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+  .meta-chip.future { background: var(--amber-soft); color: var(--amber); border-color: transparent; }
+  .phase p, .phase li { font-size: 13.5px; }
+  .phase ul { margin: 8px 0; }
+  .req-box { border-left: 3px solid var(--amber); background: var(--amber-soft); border-radius: 0 6px 6px 0;
+             padding: 10px 14px; margin: 10px 0; font-size: 13px; }
+  .req-box ul { margin: 6px 0 0; }
+  h2.rm { margin-top: 36px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+</style>
+
+<h1>Roadmap</h1>
+<p class="muted">Status report and revised roadmap for the Mission Toolkit -- also published as a
+  standalone artifact for sharing outside this app. Started as a proposal for turning the
+  dat-extraction / capture-mining pipeline into something browsable; every phase below is either
+  built and running, on hold, or a newly-scoped future phase with a concrete build-requirements
+  breakdown, not a one-line wish.</p>
+
+<h2 class="rm">What's built and live</h2>
+<div class="table-wrap"><table>
+  <tr><th>Page</th><th>Backed by</th><th>Real, verified stats</th></tr>
+  <tr><td>Home</td><td class="muted">live stats query</td><td>Real dialog/NPC/SQL/drift counts, updated live</td></tr>
+  <tr><td>Entity Lookup</td><td class="muted"><code class="chip">entity_profile.py</code></td>
+    <td>One canonical per-entity profile -- position, model, mob group, drop table, SQL/Lua refs,
+      wiki refs (canonical page vs. incidental mentions, split), observed abilities, EventView
+      packets, attack timing, level range, capture appearances -- each cross-checked live against
+      the matching SQL value, full field-by-field provenance table.</td></tr>
+  <tr><td>Dialog Search</td><td class="muted"><code class="chip">build_dialog_index.py</code></td>
+    <td>Full-text or exact-id search, paginated, or browse a whole zone's table</td></tr>
+  <tr><td>Zero-Position / Unregistered</td><td class="muted"><code class="chip">build_sql_index.py</code></td>
+    <td>Per-zone gap sweep across the real SQL data</td></tr>
+  <tr><td>ID Drift <span class="pill match">updated 2026-09-08</span></td>
+    <td class="muted"><code class="chip">build_topaz_index.py</code>, <code class="chip">build_lsb_index.py</code>, <code class="chip">build_dsp_index.py</code></td>
+    <td>Real cross-source comparison across 21 categories (events, items, keyitems, npcs, mobgroups,
+      spells, effects, and more) with <strong>LandSandBoat as the real baseline</strong> Topaz/DSP
+      diff against (flipped from the original Topaz-baseline direction as part of this session's
+      LSB-primary rework) -- Topaz gets its own dedicated <code class="chip">topaz_*</code> tables now,
+      DSP stays configurable via Settings' <code class="chip">dsp_server_path</code> since (unlike LSB,
+      bundled) a DSP checkout is something the user already has locally. Only appears in the nav at
+      all when a real Topaz or DSP checkout is actually present on disk. Real schema differences
+      handled explicitly: DSP's <code class="chip">item_armor.sql</code> (not
+      <code class="chip">item_equipment.sql</code>), <code class="chip">mob_groups</code> with no
+      <code class="chip">name</code> column (joined through <code class="chip">mob_pools.name</code>
+      via <code class="chip">poolid</code> instead), missing <code class="chip">instance_zone</code>/
+      <code class="chip">family</code>/<code class="chip">meritid</code> columns, and far heavier
+      trailing-comment prevalence than LSB's own dumps.</td></tr>
+  <tr><td>SQL Index</td><td class="muted"><code class="chip">build_sql_index.py</code></td>
+    <td>Direct search across 7 structured tables: npc_list, mob_spawn_points, mob_groups
+      (+ real <code class="chip">dropid</code>), mob_pools, mob_droplist, instance_entities,
+      instance_list</td></tr>
+  <tr><td>Events / CSIDs</td><td class="muted"><code class="chip">explore_event.py</code></td>
+    <td>Every entity/CSID pair per zone -- click to decompile with real text substituted in</td></tr>
+  <tr><td>Packet Decoder</td><td class="muted"><code class="chip">packet_decode.py</code>, Packetlyzer's real decoder</td>
+    <td>Paste or upload a raw capture packet -- opcode, decoded fields, drift-caution banner</td></tr>
+  <tr><td>Wiki Compiler</td><td class="muted"><code class="chip">wiki_compile.py</code></td>
+    <td>BG Wiki page -- sectioned readiness report with real Walkthrough/Notes text, key-item enum
+      cross-check, Markdown handoff export; CatsEyeXI private-server content excluded at the index</td></tr>
+  <tr><td>Captures <span class="pill match">updated</span></td><td class="muted"><code class="chip">build_capture_index.py</code></td>
+    <td>225+ real captures ingested (up from 83) across seven distinct log/db formats (NPCLogger,
+      ActionView, HPTrack, idview, KITrack, EventView, LevelRangeTrack, AttackDelay), including a
+      147-zip bulk sweep of the full Assault/Salvage corpus this session.
+      <code class="chip">/captures/&#123;id&#125;/add</code> accepts a whole picked folder, not
+      just files/zip -- a client-side script preserves each file's real relative path (native form
+      submission can't) and the server reconstructs a real directory tree before running the same
+      <code class="chip">ingest_from_source()</code> dispatch the CLI ingester calls, now with the
+      two upload options clearly labeled ("pick individual files" vs. "pick a whole folder") instead
+      of two identical unlabeled file pickers. Every upload reports real <strong>per-file pass/fail</strong>
+      instead of one opaque bundle-wide row.
+      <span class="pill match">new 2026-09-08</span> a real <strong>CapLog</strong> parser -- a
+      merged multi-addon session log format (confirmed directly against the real Windower addon
+      source, not guessed from samples) -- extracts ID-View events, HP-Track kills, and genuinely
+      unique in-game chat/system text (item drops, mission announcements, combat log) into their
+      real home tables, with a fixed seq offset so it can never collide with the same data already
+      ingested from a sibling standalone file in the same capture. Three more real capturer-layout
+      variants fixed (<code class="chip">npclogger/logs/</code> missing its optional capturer
+      folder, flat <code class="chip">eventview/raw.log</code>/<code class="chip">simple.log</code>
+      and <code class="chip">packetviewer/full.log</code>/<code class="chip">incoming.log</code>/
+      <code class="chip">outgoing.log</code> combined-session dumps recognized as real, deliberately
+      unattributable duplicates rather than reported as failures). A permanent regression-test
+      fixture pair (real Foxmulder- and Tacocat-capturer trees, <code class="chip">test_capture_ingestion.py</code>)
+      now guards against a fix for one capturer's layout silently re-breaking another's, plus a
+      content-sniffing fallback that upgrades a genuinely unrecognized file's error message from a
+      bare "not recognized" into "looks like a real &lt;format&gt;, path pattern may need updating."</td></tr>
+  <tr><td>Capture Query <span class="pill match">new 2026-09-08</span></td><td class="muted"><code class="chip">gui_server.py</code></td>
+    <td>General ad-hoc search across every real <code class="chip">capture_*</code> table (not just
+      the summarized/truncated view a capture's own detail page shows), filterable by table, capture
+      id, and an id/text match, with a CSV export of the current filtered result set. A capture's own
+      detail page also gained a one-click <strong>"export all data (.zip)"</strong> link -- one CSV
+      per <code class="chip">capture_*</code> table that actually has rows for that capture, empty
+      tables skipped rather than shipped blank.</td></tr>
+  <tr><td>3D Zone Viewer</td><td class="muted"><code class="chip">xi-tinkerer-py</code>, Three.js via CDN</td>
+    <td>Real client visual mesh in an orbitable 3D scene with real entity paths, single- or
+      multi-entity, in-page "Build it now" for any uncached zone</td></tr>
+  <tr><td>Settings <span class="pill match">updated</span></td><td class="muted"><code class="chip">settings.py</code></td>
+    <td>Theme now a header sun/moon toggle, consolidated Server section, configurable backup
+      retention with create/restore/delete UI (double-confirmed), Paths extended with
+      <code class="chip">dsp_server_path</code></td></tr>
+  <tr><td>Install/test tooling <span class="pill match">new 2026-09-08</span></td>
+    <td class="muted"><code class="chip">reset_install.py</code>, <code class="chip">addon_tools.py</code></td>
+    <td><code class="chip">reset_install.py</code>/<code class="chip">reset_install.bat</code> strip an
+      install back to source-only (database, backups, generated reports, LandSandBoat/FFXI-DATS/
+      FFXI-Resources-dist) for testing <code class="chip">setup.bat</code> from scratch, matching
+      DIST_PACKAGING.md's confirmed strip list exactly -- dry-run by default, double-confirmed
+      (<code class="chip">--i-am-sure</code>) to actually delete, backs up the DB first.
+      <code class="chip">addon_tools.py</code> packages real, already-fetched data (e.g. the real
+      BG-Wiki page dump, ~19MB/47,608 pages) into a small checksummed portable <code class="chip">.zip</code>
+      one install can hand to another instead of regenerating it the slow way -- verifies a real
+      sha256 per file on install, never silently overwrites different real content without
+      <code class="chip">--force</code>.</td></tr>
+  <tr><td>Dedicated <code class="chip">.venv</code> <span class="pill match">new 2026-09-08</span></td>
+    <td class="muted"><code class="chip">setup.bat</code>, <code class="chip">start.bat</code></td>
+    <td>Real incident, not precautionary: <code class="chip">luaparser&gt;=4.0</code> (needed by the
+      event decompiler) permanently pins <code class="chip">antlr4-python3-runtime==4.13.2</code> --
+      no release since 4.0 avoids this pin -- which silently broke a real, unrelated package
+      (<code class="chip">omegaconf</code>, pinned to <code class="chip">==4.9.*</code>) the first
+      time this was installed into a shared system Python. Both scripts now create/use a dedicated
+      <code class="chip">.venv/</code> for every Python invocation instead, so this toolkit's own
+      dependencies can never conflict with anything else already on a user's machine.</td></tr>
+  <tr><td>Backport Lua Converter <span class="pill match">new 2026-09-12</span></td>
+    <td class="muted"><code class="chip">backport_lua_convert.py</code>, <code class="chip">data/dsp_namespace_map.json</code>,
+      <code class="chip">backport_coverage_check.py</code></td>
+    <td>Paste-in Topaz&rarr;DSP Lua converter at <code class="chip">/backport/lua-convert</code>
+      (gated behind the same <code class="chip">backport_enabled()</code> check as ID Drift) --
+      applies every confirmed namespace mapping in <code class="chip">dsp_namespace_map.json</code>
+      (simple prefix families, reshaped tables, incompatible-enum name-maps, whole-call/method
+      renames, script-shape conversion, per-zone ID-file conventions) and flags anything unmapped
+      or a known engine gap for human review instead of guessing. Real production output: the full
+      <strong>Nyzul Isle Investigation</strong> package -- 194 files converted mechanically with
+      zero unexpected flags, 10 more hand-merged with a full decision trail
+      (<code class="chip">MERGE_DECISIONS.md</code>), surfacing two real bugs in the process (a
+      live undeclared-<code class="chip">party</code> global in DSP's own shipped
+      <code class="chip">_20m.lua</code>, and an operator-precedence regression in Topaz's own
+      rewrite of the same file that was deliberately NOT ported).
+      <span class="pill match">new 2026-09-12</span> <strong><code class="chip">backport_coverage_check.py</code></strong>
+      -- a permanent regression check (not a one-off script) that runs the converter against every
+      real <code class="chip">.lua</code> file under the actual Topaz checkout's
+      <code class="chip">scripts/zones/</code> tree (<code class="chip">--zone</code> to scope it,
+      <code class="chip">--report</code> for a Markdown report), built after a manual 6-zone stress
+      test outside the Nyzul package surfaced 97 real unflagged-leftover lines. Fixed each with the
+      same evidence-checked discipline as every other map entry (new
+      <code class="chip">mobMod</code>/<code class="chip">animation</code>/<code class="chip">objType</code>/
+      <code class="chip">path_flag</code> families, the missing physical half of the
+      attackType/damageType incompatible-enum map, a real new engine gap
+      <code class="chip">MOBMOD_NO_REST</code>) plus a new <code class="chip">missing_lua_modules</code>
+      map section for genuinely-absent-but-portable Lua (not C++) dependencies. Re-ran against the
+      <strong>full 290-zone tree (9,380 files): zero unflagged gaps.</strong> One of those modules,
+      <code class="chip">assault_lockbox.lua</code> (the shared Ancient Lockbox roll/give logic used
+      by 3+ Assault zones), was then ported to
+      <code class="chip">Topaz-Assault-Backport/dsp-shared-globals/</code> -- confirmed every DSP
+      API call it makes exists with an identical signature before porting; only the shared roller
+      function is centralized, each zone's own calling script and reward tables stay separate per
+      mission. The other flagged module, <code class="chip">caskets.lua</code>, turned out on
+      inspection to have zero real Assault callers at all (every hit is either the unrelated
+      general open-world Treasure Casket system or a comment-only mention) -- documented as out of
+      scope rather than porting an unused ~990-line module.
+      <span class="pill match">new 2026-09-12</span> <strong><code class="chip">test_backport_lua_convert.py</code></strong>
+      -- a permanent, pytest-free suite (16 test functions, matching this project's existing
+      <code class="chip">test_capture_ingestion.py</code> convention) checking converter mechanics
+      against small fixed snippets, one per code path (every family shape, both script-shape
+      regression guards, both ID-shape conventions, incompatible-enum/missing-module flagging).
+      <strong><code class="chip">backport_map_confidence_check.py</code></strong> -- a decay check
+      for <code class="chip">confirmed_pattern</code> map entries: scans every real
+      <code class="chip">tpz.&lt;family&gt;.&lt;KEY&gt;</code> actually used anywhere in Topaz and
+      checks whether its mapped DSP identifier exists anywhere in real DSP source. First run found
+      2 more genuinely-missing <code class="chip">mobMod</code> members
+      (<code class="chip">NO_AGGRO</code>/<code class="chip">NO_LINK</code>) and one more missing
+      <code class="chip">effectFlag</code> member (<code class="chip">EMPATHY</code>), plus a much
+      larger expected gap: 69 of 469 real <code class="chip">tpz.mod.*</code> members used in Topaz
+      have no matching identifier anywhere in this (older/smaller) DSP snapshot at all. The GUI
+      converter page itself now surfaces each flagged line's real evidence/fix/checked citation
+      inline instead of a bare regex string.</td></tr>
+  <tr><td>Backport SQL Converter <span class="pill match">new 2026-09-13</span></td>
+    <td class="muted"><code class="chip">backport_sql_convert.py</code>, <code class="chip">data/dsp_sql_schema_map.json</code>,
+      <code class="chip">backport_sql_live_check.py</code></td>
+    <td>Paste-in Topaz&rarr;DSP SQL converter at <code class="chip">/backport/sql-convert</code>
+      (same <code class="chip">backport_enabled()</code> gate). Reformats Topaz
+      <code class="chip">INSERT INTO</code> statements to DSP's real column order per table
+      (checked column-for-column against both real <code class="chip">CREATE TABLE</code>
+      statements, 8 tables mapped so far), and checks every row's id against DSP's REAL,
+      already-indexed data (<code class="chip">ffxi_zone_database.db</code>'s
+      <code class="chip">dsp_*</code> tables from <code class="chip">build_dsp_index.py</code>) --
+      classifying each collision as a safe already-present entity vs. a real conflict, not just a
+      bare id-overlap count. Proven against the real Nyzul package: found DSP's
+      <code class="chip">mob_groups</code> primary key is server-global (not per-zone like Topaz's)
+      -- all 100 of the package's groupids collided with unrelated existing DSP zones -- and, by
+      comparing actual item rows (not just id numbers), that all 59
+      <code class="chip">mob_droplist</code> dropIds collided too (this package's dropId 15 drops a
+      real Nyzul item; DSP's existing dropId 15 belongs to an unrelated mob entirely). Both
+      renumbered into confirmed-free blocks with every downstream reference
+      (<code class="chip">mob_spawn_points.groupid</code>, <code class="chip">mob_groups.dropid</code>)
+      updated to match; 5 more real name-mismatch collisions found and listed for a human decision.
+      Full write-up in <code class="chip">ID_COLLISION_REPORT.md</code>.
+      <strong><code class="chip">backport_sql_live_check.py</code></strong> -- a read-only
+      live-MySQL counterpart, ready to hand to whoever has actual Valhalla-target DB access to
+      re-verify the renumbered ranges are still free against real current data, not just this
+      snapshot (see <code class="chip">LIVE_DB_COLLISION_CHECK.md</code>). 10-test regression suite
+      (<code class="chip">test_backport_sql_convert.py</code>), matching the Lua converter's
+      testing discipline.</td></tr>
+</table></div>
+
+<h2 class="rm">Real bugs found this session</h2>
+<ul>
+  <li><strong>The Items Obtained tab was showing junk -- two compounding bugs.</strong> It pulled
+    every opcode under packet_decode's broad "item_shop" category (full-inventory-sync dumps sent
+    on every zone/login, plus unrelated Synth/Auction/Currency traffic), and opcode
+    <code class="chip">0x020</code> itself (the one real per-change signal) had a corrupted field
+    definition in <code class="chip">packetlyzer_db.xml</code> -- two conflicting field layouts
+    concatenated into one packet block, so item id always read back <code class="chip">0</code> and
+    quantity read back garbage. Fixed both; validated across 147 real capture zips (264,479+
+    item-attribute rows, zero decode errors, zero unresolved item ids beyond the expected "empty
+    slot"/gil sentinel).</li>
+  <li><strong>The same corruption pattern affected ~36 other opcodes</strong> in the same packet
+    database. 34 fixed this session, each verified against the real LandSandBoat struct and,
+    where real capture data existed, decode-validated. Two remain open (<code class="chip">0x00A</code>
+    Zone In, <code class="chip">0x0B4</code> Config) -- both need a real captured sample to resolve
+    safely rather than a guess.</li>
+  <li><strong>A real capture (Bhaflau Remnants) was silently dropping genuine event data</strong>
+    because its <code class="chip">eventview</code> folder was nested one level deeper than the
+    ingest pattern expected. Fixed by broadening the pattern; recovered 112 real event rows that
+    were previously silently absent.</li>
+  <li><strong>A capture zip reported as "failed to import" was a genuinely corrupted download</strong>,
+    confirmed independently via PowerShell's own <code class="chip">Expand-Archive</code> -- the
+    honest per-file error pointed straight at the real cause instead of masking it as a parser bug.</li>
+</ul>
+<div class="warn">Earlier real bugs (FTS5 corruption, newline-crossing regex, backslash-escaped SQL,
+  the real drop-table foreign key, dark-mode contrast, multi-session capture bundles, and more) are
+  preserved in the full external write-up -- this page focuses on what changed most recently.</div>
+
+<h2 class="rm">Phases</h2>
+
+<div class="phase">
+  <div class="phase-head"><span class="phase-num">F</span><h3>Zone Plot: server-agnostic level editor, Add-tab UX, render-race fixes</h3></div>
+  <div class="phase-meta"><span class="meta-chip built">Built 2026-09-21</span><span class="meta-chip">Live DB writes</span><span class="meta-chip">Topaz + DSP</span></div>
+  <p>Zone Plot (<code class="chip">/zoneplot</code>) draws every mob/NPC/door spawn row of a zone
+    straight from the <strong>live</strong> server DB over the real client mesh and navmesh, and
+    can add/move/delete rows directly against MariaDB with an auto-backup per edit. It was
+    hardcoded to <code class="chip">C:\topaz</code>; a new <code class="chip">zoneplot_server</code>
+    setting now lets it target either Topaz or a real DSP checkout, switching live with no restart.
+    Real schema drift between the two servers is handled explicitly rather than assumed away --
+    DSP's <code class="chip">mob_groups</code> has no <code class="chip">name</code> column at all
+    (falls back to <code class="chip">mob_spawn_points.mobname</code>), and DSP's
+    <code class="chip">instance_list</code> has no reliable "which zone does this instance run in"
+    column, fixed by decoding each instance's real zone from its own
+    <code class="chip">instance_entities</code> ids instead of trusting the column. The Add tab was
+    reworked per direct feedback that it was cumbersome: a persistent marker now shows exactly
+    where a click or drag-and-drop will place a new entity, a cursor-coordinate readout appears on
+    hover, and adding now flies the camera to the new entity instead of leaving the view
+    unchanged. Also fixed two viewer bugs: a zone-switch race where a still-loading navmesh from
+    the <em>previous</em> zone could resolve late and overlay onto the new one, and OrbitControls'
+    default pan (which scales with camera-zoom distance) making right-drag panning nearly
+    unusable when zoomed in close.</p>
+</div>
+
+<div class="phase">
+  <div class="phase-head"><span class="phase-num">E</span><h3>LSB-primary core module + Topaz/DSP backport module</h3></div>
+  <div class="phase-meta"><span class="meta-chip built">Built 2026-09-08</span><span class="meta-chip">4 phases, see CORE_AGNOSTIC_DESIGN.md</span></div>
+  <p>The toolkit's default target flipped from Topaz-primary to <strong>LSB-primary</strong>, with
+    Topaz/DSP demoted to an optional backport module rather than a required setup step -- most
+    servers that started on Topaz have since moved to LSB, and LSB is the only actively-developed
+    core. Phase 1 rewrote <code class="chip">build_sql_index.py</code> to parse the bundled
+    LandSandBoat checkout instead of a Topaz server (same <code class="chip">sql_*</code> table
+    names/shapes every core page already depends on, just a different real source underneath).
+    Phase 2 added a new <code class="chip">build_topaz_index.py</code>, structurally parallel to
+    <code class="chip">build_dsp_index.py</code>, giving Topaz its own <code class="chip">topaz_*</code>
+    tables for the backport module. Phase 3 flipped ID Drift's diff direction (Topaz/DSP vs. LSB as
+    baseline, not the reverse) and gated its nav entry behind a real
+    <code class="chip">backport_enabled()</code> check (a real Topaz/DSP checkout present on disk,
+    not just a saved setting string). Phase 4 un-hardcoded <code class="chip">setup.bat</code> (LSB
+    fetch now required, Topaz path now optional/skippable) and relabeled the homepage's stat rows.
+    A follow-up pass the same day fixed <code class="chip">build_database.py</code>'s separate,
+    previously-missed hardcoded Topaz path (<code class="chip">items_ours</code>/
+    <code class="chip">keyitems_ours</code> now genuinely read LSB's own
+    <code class="chip">item_basic.sql</code>/<code class="chip">key_item.lua</code>), added a new
+    <code class="chip">topaz_keyitems</code> table so the backport module keeps real keyitem-drift
+    coverage, and fixed two comparison panels (Item Browser's <code class="chip">/items/&#123;id&#125;</code>
+    detail page, ID Drift's item/keyitem categories) that had silently started comparing LSB against
+    itself once the primary source changed underneath them.</p>
+</div>
+
+<div class="phase">
+  <div class="phase-head"><span class="phase-num">D</span><h3>ID drift &amp; cross-source verification</h3></div>
+  <div class="phase-meta"><span class="meta-chip built">Built</span><span class="meta-chip">Read-only</span><span class="meta-chip">Extended this session: DSP</span></div>
+  <p>Cross-references Topaz's own SQL against LandSandBoat and now a real fourth source, old-DSP,
+    across 19 real comparison categories. A full schema audit came first: DSP's real column
+    differences (item_armor rename, mob_groups with no name column, missing instance_zone/family/
+    meritid) are handled explicitly, and DSP's zero <code class="chip">@variable</code> usage but
+    much heavier trailing-comment prevalence than LSB's own dumps is confirmed, not assumed.</p>
+</div>
+
+<div class="phase">
+  <div class="phase-head"><span class="phase-num">C</span><h3>Capture ingestion</h3></div>
+  <div class="phase-meta"><span class="meta-chip built">Built</span><span class="meta-chip">225+ captures, 7 log formats</span></div>
+  <p>Folder upload (real relative-path reconstruction server-side), real per-file pass/fail
+    reporting replacing one opaque bundle result, and a backfilled eventview capturer-nesting fix
+    round out this session's work on top of the existing seven-format ingestion pipeline.</p>
+</div>
+
+<div class="phase">
+  <div class="phase-head"><span class="phase-num">5</span><h3>Guided drafting (write path)</h3></div>
+  <div class="phase-meta"><span class="meta-chip future">On hold</span><span class="meta-chip">Writes files</span></div>
+  <p>Deprioritized by the DSP pivot when originally scoped for Topaz specifically -- now that a
+    real DSP target exists (this session's <code class="chip">build_dsp_index.py</code>), this may
+    connect directly to Future Phase 10 below rather than staying separately paused.</p>
+</div>
+
+<h2 class="rm">Future phases (requested 2026-09-06)</h2>
+<p class="muted">Seven new features, not yet started. Each carries a concrete "what this actually
+  requires" breakdown -- real dependencies and real open decisions, not a one-line wish.</p>
+
+<div class="phase">
+  <div class="phase-head"><span class="phase-num">6</span><h3>Video linking, timestamp alignment, transcription</h3></div>
+  <div class="phase-meta"><span class="meta-chip future">Not started</span><span class="meta-chip">Schema change</span><span class="meta-chip">New external dependency</span></div>
+  <p>Associate a capture with a recording of the same session, seek the video to match any
+    event/action/item row, and optionally make the audio searchable.</p>
+  <div class="req-box"><strong>What this actually requires:</strong>
+    <ul>
+      <li>A <code class="chip">video_path</code>/<code class="chip">video_url</code> column on
+        <code class="chip">captures</code> -- referenced by path, not uploaded as a blob (real
+        recordings run into GB).</li>
+      <li><strong>Alignment is the real problem, not the seek bar.</strong> No field says the
+        video's clock and the capture tool's clock agree. Needs a manual one-time sync: pick one
+        known event, mark where it occurs in the video, compute every other row's offset from
+        that single anchor.</li>
+      <li>Playback UI (an HTML5 <code class="chip">&lt;video&gt;</code> with <code class="chip">currentTime</code>
+        driven by a row click) is straightforward once alignment exists.</li>
+      <li>Transcription is a materially bigger, separable piece -- needs a real speech-to-text
+        engine (<code class="chip">faster-whisper</code>/<code class="chip">whisper.cpp</code>) run
+        offline per video, a new timestamped-segment table indexed like <code class="chip">dialog_text</code>,
+        and accuracy on in-game audio is genuinely uncertain until tried. Scope as an optional
+        sub-phase after alignment ships.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="phase">
+  <div class="phase-head"><span class="phase-num">7</span><h3>Online hosting and access</h3></div>
+  <div class="phase-meta"><span class="meta-chip future">Not started</span><span class="meta-chip">Security-sensitive</span><span class="meta-chip">No auth exists today</span></div>
+  <p>Move the toolkit (or a read-only view) from local-only to something reachable remotely.</p>
+  <div class="req-box"><strong>What this actually requires:</strong>
+    <ul>
+      <li><strong>Auth doesn't exist at all today.</strong> Every route assumes a trusted local
+        user. Minimum viable is HTTP Basic behind a reverse proxy; a proper login system if more
+        than one person needs distinct access.</li>
+      <li><strong>The destructive routes are the actual risk</strong> -- Settings, rebuild, and
+        backup restore/delete need real auth (or exclusion from anything hosted) given this
+        project's own history of a near-miss full-database wipe, guarded against locally with
+        <code class="chip">safe_rebuild()</code> and dual-flag confirmation, neither of which
+        assumes a hostile remote user today.</li>
+      <li>Concurrency: SQLite tolerates one writer -- fine locally, needs a real decision (locking/
+        queueing vs. admin-only writes) once remote.</li>
+      <li>Networking: real domain+TLS for public hosting, or a lighter tunnel (Tailscale/WireGuard)
+        if "online" really means "reachable by a known small group" -- worth deciding which this
+        means before building either.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="phase">
+  <div class="phase-head"><span class="phase-num">8</span><h3>Auto-ingestion from a Windower/Ashita addon</h3></div>
+  <div class="phase-meta"><span class="meta-chip future">Not started</span><span class="meta-chip">New addon (Lua)</span><span class="meta-chip">New capture model</span></div>
+  <p>A live capture path feeding this toolkit directly from an in-game addon, instead of
+    capture-then-zip-then-upload.</p>
+  <div class="req-box"><strong>What this actually requires:</strong>
+    <ul>
+      <li><strong>Two very different ambition levels.</strong> Low-risk: the addon writes the
+        exact same known log formats already parsed, to a watched folder, and a background
+        process auto-calls the existing ingest functions on file change -- no new protocol needed.
+        High-ambition: a true live stream needs a real network endpoint, a "capture that's still
+        growing" concept the current one-shot model doesn't have, and an auto-refreshing UI.
+        Recommend starting with the watched-folder version as its own phase.</li>
+      <li>The addon itself is new Lua work in a different ecosystem than this Python toolkit.</li>
+      <li>Even the low-risk version needs a real decision on when a "session" starts/ends for
+        auto-created captures -- zone change, or a manual in-game command?</li>
+    </ul>
+  </div>
+</div>
+
+<div class="phase">
+  <div class="phase-head"><span class="phase-num">9</span><h3>Workflow for requesting missing capture data</h3></div>
+  <div class="phase-meta"><span class="meta-chip future">Not started</span><span class="meta-chip">Schema change</span><span class="meta-chip">Shares a table with Phase 12</span></div>
+  <p>A way to flag "this capture is missing X" and track it through to being filled.</p>
+  <div class="req-box"><strong>What this actually requires:</strong>
+    <ul>
+      <li>A new entity distinct from a capture -- what's missing, which capture/mission/zone,
+        status (open/fulfilled), who asked and when.</li>
+      <li><strong>Auto-detecting fulfillment is hard; start manual.</strong> The honest "closes
+        when a future capture supplies it" version needs Phase 11's checklist logic to exist
+        first -- ship as manually-marked-fulfilled initially.</li>
+      <li><strong>Shares real schema with Phase 12</strong> (flagging bad/missing data) -- worth
+        one <code class="chip">capture_annotations</code>-style table (type: request | flag,
+        scope: whole capture | specific row/field, note, status) rather than two systems
+        duplicating the same shape.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="phase">
+  <div class="phase-head"><span class="phase-num">10</span><h3>Capture&rarr;server-data export pipeline</h3></div>
+  <div class="phase-meta"><span class="meta-chip future">Not started</span><span class="meta-chip">Connects to the paused Phase 5</span><span class="meta-chip">Needs a concrete target schema</span></div>
+  <p>A pipeline from a capture to an output format ready for external development into a real
+    private server.</p>
+  <div class="req-box"><strong>What this actually requires:</strong>
+    <ul>
+      <li><strong>This is the write-path already scoped and paused as Phase 5</strong>, put on
+        hold when it targeted Topaz and no real DSP target existed yet. That target now exists
+        (this session's <code class="chip">build_dsp_index.py</code>) -- the real open question is
+        whether this unblocks Phase 5 directly or wants its own separate design, not whether to
+        start from scratch.</li>
+      <li>The transform layer needs to be schema-real: capture_npc_entries &rarr; npc_list-shaped
+        rows, real path data &rarr; mob_spawn_points-shaped rows, resolved Items Obtained ids &rarr;
+        loot-table-shaped rows, each checked against the target codebase's confirmed real column
+        shapes -- the same discipline already used for the ID Drift phase's schema differences.</li>
+      <li>Same review discipline as Phase 5: every generated line cites its real source, output is
+        always a reviewable diff, never an automatic write into a live server checkout.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="phase">
+  <div class="phase-head"><span class="phase-num">11</span><h3>Tag/category-based completeness checklist</h3></div>
+  <div class="phase-meta"><span class="meta-chip future">Not started</span><span class="meta-chip">Needs a hand-authored rule set</span><span class="meta-chip">Feeds Phase 9</span></div>
+  <p>Given a capture's tags/content_type, surface what's typically expected and what's actually
+    present.</p>
+  <div class="req-box"><strong>What this actually requires:</strong>
+    <ul>
+      <li><strong>"Complete" isn't defined anywhere today.</strong> <code class="chip">content_type</code>
+        is a free label with no attached expectations -- needs a real, hand-authored rule set
+        (e.g. a real Assault capture should have NPCLogger data, EventView/idview dialogue, and
+        real <code class="chip">0x020</code> item-attr rows), a domain-knowledge task, not
+        derivable automatically.</li>
+      <li>Implementation shape: a <code class="chip">checklist_rules</code> table mapping
+        content_type to expected categories, each backed by a real evaluable predicate (e.g.
+        <code class="chip">COUNT(capture_npc_entries) &gt; 0</code>), rendered as a checklist on
+        the capture detail page.</li>
+      <li>Directly feeds Phase 9 -- a missing checklist item is the natural trigger for "request
+        this data."</li>
+    </ul>
+  </div>
+</div>
+
+<div class="phase">
+  <div class="phase-head"><span class="phase-num">12</span><h3>Flag missing or invalid capture data</h3></div>
+  <div class="phase-meta"><span class="meta-chip future">Not started</span><span class="meta-chip">Shares a table with Phase 9</span></div>
+  <p>Let a person mark a specific row, table, or a whole capture as wrong or incomplete --
+    distinct from the automatic per-file ingest status already built this session, which only
+    reports parse success/failure, not semantic correctness.</p>
+  <div class="req-box"><strong>What this actually requires:</strong>
+    <ul>
+      <li>Same <code class="chip">capture_annotations</code>-shaped table proposed for Phase 9 --
+        a flag is the same shape as a request, just a different <code class="chip">type</code>.</li>
+      <li>UI: an inline flag control on capture detail rows plus a central open-flags list --
+        natural to combine with Phase 9's request list.</li>
+      <li>Distinct from, not a replacement for, this session's per-file pass/fail reporting --
+        that reports "did this file parse," this reports "is this data actually right," which
+        automation fundamentally can't determine for most of what a capture records.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="phase">
+  <div class="phase-head"><span class="phase-num">13</span><h3>Discord integration</h3></div>
+  <div class="phase-meta"><span class="meta-chip future">Not started</span><span class="meta-chip">New external dependency</span><span class="meta-chip">Needs server admin consent</span></div>
+  <p>Two related capabilities, discussed 2026-09-07: (a) a bot connected directly to the Discord
+    API instead of manually browsing/screen-scraping, and (b) retroactively scanning a channel's
+    real message history to index posted video links (YouTube etc.) and file-host links
+    (Dropbox/Google Drive/Mega) -- catalog only, no downloading.</p>
+  <div class="req-box"><strong>What this actually requires:</strong>
+    <ul>
+      <li><strong>A real bot registration and a real permission from someone else.</strong> A
+        Discord Application + Bot token from Discord's developer portal (free), then someone with
+        actual admin rights on the target server has to invite the bot with read-message-history
+        permission -- this is the one true gate; nothing else here matters until that happens.</li>
+      <li><strong>History scan is genuinely tractable.</strong> A bot (via <code class="chip">discord.py</code>
+        or similar) can walk a channel's full history through Discord's own REST API
+        (<code class="chip">GET /channels/&#123;id&#125;/messages</code>, paginated) and regex-match
+        message text for known link patterns -- no file downloads, no per-message cost beyond the
+        API call itself.</li>
+      <li><strong>Native Discord attachments are free to size; third-party links are not.</strong>
+        A file someone uploaded directly to Discord carries a real <code class="chip">size</code>
+        field straight from the API. A Dropbox/Drive/Mega link does not expose real file size in
+        either the raw URL or Discord's own link embed -- getting a real size means a second,
+        separate API integration per hosting service (Dropbox's own API, Google Drive's API),
+        each with its own auth setup. Build link cataloging (URL, channel, poster, timestamp, host
+        type) first since it stands alone; treat real size lookups as a follow-on once it's clear
+        which hosts actually show up in practice.</li>
+      <li><strong>Standard bot-hygiene risks, not unique to this idea:</strong> the bot token is a
+        real secret (env var, never committed, rotate if it leaks); request only the permissions
+        actually needed (read history, not manage/kick/ban); a bot needs an always-on host to run
+        reliably (idle on a personal PC only when that PC is on); scanning many/large channels
+        needs to respect Discord's rate limits; and once indexed, the local DB holds other
+        members' message metadata (who posted what, when) -- worth a real retention/visibility
+        decision, not an afterthought, given it's other people's activity, not just the user's own.</li>
+      <li>Naturally connects to Future Phase 8 (auto-ingestion from a Windower/Ashita addon) --
+        a bot already watching a channel for capture links is the same "watch for new real data,
+        ingest automatically" shape as that phase's low-risk watched-folder version.</li>
+    </ul>
+  </div>
+</div>
+
+<p class="muted" style="margin-top:28px;">Full external write-up (design history, provenance
+  layer, open questions, and every earlier bug this session's changes build on) is published as
+  the "Mission Toolkit GUI" artifact for sharing outside this app.</p>
+{% endblock %}

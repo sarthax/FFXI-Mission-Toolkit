@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+{% block title %}Entity Detail{% endblock %}
+
+{% block content %}
+<p><a class="inline" href="/entity?q={{ q }}&page={{ page }}">&larr; back to search</a></p>
+
+{% if profile and not profile.error %}
+{% set d = profile.id_decode %}
+<div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:6px;">
+  <h1 style="margin:0;">{{ profile.name }} <span class="chip mono">{{ profile.npcid }}</span> <span class="chip mono">{{ d.hex }}</span></h1>
+  {% if prev_id or next_id %}
+  <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+    {% if prev_id %}<a class="chip" href="/entity/{{ prev_id }}?q={{ q }}&page={{ page }}">&larr; prev</a>{% endif %}
+    {% if position %}<span class="muted mono">{{ position }}</span>{% endif %}
+    {% if next_id %}<a class="chip" href="/entity/{{ next_id }}?q={{ q }}&page={{ page }}">next &rarr;</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+<p>Zone: <strong>{{ profile.zone_name }}</strong> ({{ profile.zoneid }})
+  <span class="muted">-- id-decoded zone_bits={{ d.zone_bits }}, local_bits={{ d.local_bits }}</span>
+  {% if profile.zoneid is not none and d.zone_bits != profile.zoneid %}
+  <span class="pill mismatch">id's own zone bits disagree with indexed zoneid -- worth a closer look</span>
+  {% endif %}
+</p>
+
+{% if profile.npc_list %}
+  {% set rd = profile.npc_list %}
+  {% set pos = rd.pos %}
+  <p>Position: <span class="mono">({{ pos[0] }}, {{ pos[1] }}, {{ pos[2] }}), rot={{ rd.pos_rot }}</span>
+    {% if pos[0] == 0 and pos[1] == 0 and pos[2] == 0 %}<span class="pill mismatch">zero -- never positioned</span>{% endif %}
+  </p>
+
+  <div class="table-wrap"><table>
+    <tr><th>field</th><th>value</th></tr>
+    <tr><td>animation</td><td class="mono">{{ rd.animation }}</td></tr>
+    <tr><td>animationsub</td><td class="mono">{{ rd.animationsub }}</td></tr>
+    <tr><td>status</td><td class="mono">{{ rd.status }}</td></tr>
+    <tr><td>speed / speedsub</td><td class="mono">{{ rd.speed }} / {{ rd.speedsub }}</td></tr>
+    <tr><td>flag</td><td class="mono">{{ rd.flag }}</td></tr>
+    <tr><td>namevis</td><td class="mono">{{ rd.namevis }}</td></tr>
+    <tr><td>widescan</td><td class="mono">{{ rd.widescan }}</td></tr>
+    <tr><td>name_prefix</td><td class="mono">{{ rd.name_prefix }}</td></tr>
+    <tr><td>look</td><td class="mono">{{ rd.look }}</td></tr>
+    <tr>
+      <td>entityFlags</td>
+      <td class="mono">{{ rd.entity_flags }} (0x{{ "%X"|format(rd.entity_flags) }})
+        {% if rd.untargetable %}<span class="pill mismatch">FLAG_UNTARGETABLE set</span>{% endif %}
+      </td>
+    </tr>
+  </table></div>
+
+{% endif %}
+
+{% if profile.model %}
+  {% set m = profile.model %}
+  <h2>Model</h2>
+  {% if m.kind == "flat" %}
+  <p>{{ m.model_type }} -- file_id <span class="mono">{{ m.file_id }}</span>
+    {% if xi_model_viewer_url %}
+    <a class="inline" href="{{ xi_model_viewer_url }}/?npc={{ m.file_id }}" target="_blank">view 3D model &rarr;</a>
+    {% endif %}
+    <span class="muted">(py -3 model_schedule_dump.py --file-id {{ m.file_id }})</span></p>
+  {% if m.shared_with_n_other_pools %}
+  <div class="warn">
+    <strong>Likely placeholder, not this mob's real model.</strong> This exact raw
+    <code class="chip">modelid</code> value is shared with {{ m.shared_with_n_other_pools }}
+    other real, distinct mob pool(s) in Topaz's own SQL -- the same "generic placeholder, copy-
+    pasted and never individually fixed" pattern already found elsewhere in this data (e.g. the
+    invisible-placeholder <code class="chip">look</code> value). The decoded file_id above is
+    real math on real stored data, but the stored data itself is likely wrong for this specific
+    mob -- treat the linked model as unconfirmed until a real capture verifies it.
+  </div>
+  {% endif %}
+  {% elif m.kind == "gear" %}
+  <p>{{ m.model_type }} -- race {{ m.race_name }} -- composite, no single DAT
+    <span class="muted">({{ m.note }})</span></p>
+  {% elif m.kind == "prop" %}
+  <p>{{ m.model_type }} -- not a renderable model (door/elevator/ship prop)</p>
+  {% endif %}
+{% endif %}
+
+{% if profile.mob_chain and profile.mob_chain.pool_name %}
+  {% set mc = profile.mob_chain %}
+  <h2>Mob group</h2>
+  <p>Group <span class="mono">{{ mc.groupid }}</span>: {{ mc.group_name }}
+    &mdash; level {{ mc.min_level }}&ndash;{{ mc.max_level }}, respawn {{ mc.respawntime }}s</p>
+  <p>Pool <span class="mono">{{ mc.poolid }}</span>: {{ mc.pool_name }}
+    (family {{ mc.familyid }}, packet name <span class="mono">{{ mc.packet_name }}</span>)</p>
+  {% if profile.capture_level_range %}
+  <p class="muted">Real observed level range (LevelRangeTrack, real captures):
+    {% for lr in profile.capture_level_range %}<span class="chip mono">{{ lr.min }}&ndash;{{ lr.max }}</span>{% endfor %}
+    {% if profile.capture_level_range|selectattr("min", "ne", mc.min_level)|list or profile.capture_level_range|selectattr("max", "ne", mc.max_level)|list %}
+    <span class="pill mismatch">differs from sql_mob_groups ({{ mc.min_level }}&ndash;{{ mc.max_level }})</span>
+    {% else %}
+    <span class="pill match">matches sql_mob_groups</span>
+    {% endif %}
+  </p>
+  {% endif %}
+  {% if profile.capture_attack_delay %}
+  <h3 style="margin-top:14px; font-size:14px;">Attack timing <span class="muted">(AttackDelay, real captures)</span></h3>
+  <div class="table-wrap"><table>
+    <tr><th>capture</th><th>hits</th><th>delay range</th><th>avg</th><th>median</th><th>reverse-calc</th><th>multi-hit</th></tr>
+    {% for a in profile.capture_attack_delay %}
+    <tr>
+      <td><a class="inline" href="/captures/{{ a.capture_id }}">#{{ a.capture_id }}</a></td>
+      <td>{{ a.hits }}</td>
+      <td class="mono">{{ a.min }}&ndash;{{ a.max }}</td>
+      <td class="mono">{{ a.avg }}</td>
+      <td class="mono">{{ a.median }}</td>
+      <td class="mono">
+        {{ a.reverse_calc }} ({{ a.reverse_samples }} samples)
+        {% if mc.cmb_delay is defined and a.reverse_calc != mc.cmb_delay %}
+        <span class="pill mismatch">sql cmbDelay={{ mc.cmb_delay }}</span>
+        {% elif mc.cmb_delay is defined %}
+        <span class="pill match">matches sql cmbDelay</span>
+        {% endif %}
+      </td>
+      <td class="mono">{{ a.multihit }}</td>
+    </tr>
+    {% endfor %}
+  </table></div>
+  {% endif %}
+{% endif %}
+
+{% if profile.assault_mission %}
+  <h2>Assault mission</h2>
+  <p><a class="inline" href="/missions?q={{ profile.assault_mission.name }}">#{{ profile.assault_mission.id }} {{ profile.assault_mission.name }}</a></p>
+{% endif %}
+
+{% if profile.drops %}
+  <h2>Drops</h2>
+  <p class="muted">mob_groups.dropid {{ profile.mob_chain.dropid }} -- effective % = groupRate/1000 &times; itemRate/1000.</p>
+  <div class="table-wrap"><table>
+    <tr><th>group</th><th>item</th><th>group rate</th><th>item rate</th><th>effective</th></tr>
+    {% for d in profile.drops %}
+    <tr>
+      <td class="mono">{{ d.group_id }}</td>
+      <td>{{ d.item_name or ('item#' ~ d.item_id) }} <span class="muted mono">({{ d.item_id }})</span></td>
+      <td class="mono">{{ d.group_rate }}</td>
+      <td class="mono">{{ d.item_rate }}</td>
+      <td class="mono">{{ d.effective_pct }}%</td>
+    </tr>
+    {% endfor %}
+  </table></div>
+{% elif profile.mob_chain and profile.mob_chain.dropid == 0 %}
+  <h2>Drops</h2>
+  <p class="muted">dropid=0 -- no drop table configured for this mob's group (a real, valid state, not a lookup miss).</p>
+{% endif %}
+
+{% if profile.capture_abilities %}
+  <h2>Observed abilities <span class="muted">(from real captures)</span></h2>
+  <div class="table-wrap"><table>
+    <tr><th>name</th><th>type</th><th>animation</th><th>category</th><th>message</th><th>times seen</th></tr>
+    {% for a in profile.capture_abilities %}
+    <tr>
+      <td>{{ a.name }}</td>
+      <td class="mono">{{ a.action_type }}</td>
+      <td class="mono">{{ a.animation }}</td>
+      <td class="mono">{{ a.category }}</td>
+      <td class="mono">{{ a.message }}</td>
+      <td>{{ a.count }}</td>
+    </tr>
+    {% endfor %}
+  </table></div>
+{% endif %}
+
+{% if profile.capture_events %}
+  <h2>Observed events / dialogue <span class="muted">(from real idview captures)</span></h2>
+  <div class="table-wrap"><table>
+    <tr><th>event (CSID hex)</th><th>message id</th><th>times seen</th></tr>
+    {% for e in profile.capture_events %}
+    <tr>
+      <td class="mono">{{ e.event_hex or '?' }}</td>
+      <td class="mono">{% if e.message_id %}<a href="/dialog?q={{ e.message_id }}">{{ e.message_id }}</a>{% else %}?{% endif %}</td>
+      <td>{{ e.count }}</td>
+    </tr>
+    {% endfor %}
+  </table></div>
+{% endif %}
+
+{% if profile.capture_eventview %}
+  <h2>EventView packets <span class="muted">(from real captures -- already-decoded, real timestamps)</span></h2>
+  <div class="table-wrap"><table>
+    <tr><th>packet class</th><th>GP_SERV_COMMAND</th><th>MesNum</th><th>MessageNumber</th><th>times seen</th></tr>
+    {% for e in profile.capture_eventview %}
+    <tr>
+      <td class="mono">{{ e.packet_class }}</td>
+      <td class="mono">{{ e.gp_command }}</td>
+      <td class="mono">{% if e.mes_num %}<a href="/dialog?q={{ e.mes_num }}">{{ e.mes_num }}</a>{% else %}?{% endif %}</td>
+      <td class="mono">{% if e.message_number %}<a href="/dialog?q={{ e.message_number }}">{{ e.message_number }}</a>{% else %}?{% endif %}</td>
+      <td>{{ e.count }}</td>
+    </tr>
+    {% endfor %}
+  </table></div>
+{% endif %}
+
+{% if profile.capture_appearances %}
+  <h2>Capture appearances</h2>
+  <p class="muted">door_id/act_index are real NPCLogger.db columns (DoorId/ActIndex) -- a real
+    door/trigger prop this entity's tied to, and the mission's own act/objective index at the
+    moment this entity was observed. Blank means the addon didn't populate it for this
+    entity/capture, not a missing lookup.</p>
+  <div class="table-wrap"><table>
+    <tr><th>capture</th><th>mission</th><th>door_id</th><th>act_index</th></tr>
+    {% for c in profile.capture_appearances %}
+    <tr>
+      <td><a class="inline" href="/captures/{{ c.capture_id }}">#{{ c.capture_id }}</a></td>
+      <td>{{ c.mission_name or c.label }}</td>
+      <td class="mono">{{ c.door_id or '' }}</td>
+      <td class="mono">{{ c.act_index or '' }}</td>
+    </tr>
+    {% endfor %}
+  </table></div>
+{% endif %}
+
+{% if profile.gap_warning %}
+<div class="warn">
+  <strong>Registered in npc_list/mob_spawn_points but NOT in instance_entities.sql</strong> --
+  the most common real gap for an instanced entity to have.
+</div>
+{% endif %}
+
+{% if profile.script_name_guess %}<p class="muted">Likely script filename: <span class="chip mono">{{ profile.script_name_guess }}.lua</span></p>{% endif %}
+
+<h2>SQL references</h2>
+{% if profile.sql_hits %}
+<div class="table-wrap"><table>
+  <tr><th>file</th><th>rows</th></tr>
+  {% for fname, lines in profile.sql_hits.items() %}
+  <tr><td class="mono">{{ fname }}</td><td>{{ lines|length }}</td></tr>
+  {% endfor %}
+</table></div>
+{% else %}<p class="muted">(none found)</p>{% endif %}
+
+<h2>Lua references</h2>
+{% if profile.lua_hits %}
+<div class="table-wrap"><table>
+  {% for fname in profile.lua_hits %}
+  <tr><td class="mono">{{ fname }}</td></tr>
+  {% endfor %}
+</table></div>
+{% else %}<p class="muted">(none found)</p>{% endif %}
+
+<h2>Wiki references</h2>
+{% if profile.wiki_references %}
+<div class="table-wrap"><table>
+  <tr><th>page</th><th></th></tr>
+  {% for ref in profile.wiki_references %}
+  <tr><td><a class="inline" href="{{ ref.url }}" target="_blank">{{ ref.title }}</a>
+    &nbsp;<a class="inline" href="/wiki?title={{ ref.title }}">compile</a></td>
+    <td>{% if ref.kind == "primary" %}<span class="pill match">canonical page</span>
+        {% else %}<span class="pill unannotated">mentions it</span>{% endif %}</td></tr>
+  {% endfor %}
+</table></div>
+{% if profile.wiki_references and profile.wiki_references[0].kind != "primary" %}
+<p class="muted">No page on BG Wiki is titled exactly "{{ profile.name }}" -- these only mention it.</p>
+{% endif %}
+{% else %}<p class="muted">(none found)</p>{% endif %}
+
+<h2>Field provenance</h2>
+<p class="muted">Every fact above, tagged by source. Multiple sources on one field is real
+confidence; disagreeing values are flagged, never silently picked for you.</p>
+<div class="table-wrap"><table>
+  <tr><th>field</th><th>sources</th></tr>
+  {% for field_name, sources in profile.field_sources.items() %}
+  {% set values = sources|map(attribute='value')|unique|list %}
+  <tr>
+    <td class="mono">{{ field_name }}</td>
+    <td>
+      {% for s in sources %}
+      <span class="chip mono" title="{{ s.confidence }}">{{ s.source }}={{ s.value[:60] }}</span>
+      {% endfor %}
+      {% if values|length > 1 %}<span class="pill mismatch">CONFLICT</span>{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table></div>
+
+{% if prev_id or next_id %}
+<div style="display:flex; justify-content:space-between; margin-top:16px;">
+  {% if prev_id %}<a class="chip" href="/entity/{{ prev_id }}?q={{ q }}&page={{ page }}">&larr; prev</a>{% else %}<span></span>{% endif %}
+  {% if next_id %}<a class="chip" href="/entity/{{ next_id }}?q={{ q }}&page={{ page }}">next &rarr;</a>{% endif %}
+</div>
+{% endif %}
+{% elif profile and profile.error %}
+<div class="warn">{{ profile.error }}</div>
+{% endif %}
+{% endblock %}

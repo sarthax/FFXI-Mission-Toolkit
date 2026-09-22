@@ -1,0 +1,3483 @@
+[
+  {
+    "code": 0,
+    "name": "END_REQSTACK",
+    "operands": [],
+    "variable_length": false,
+    "terminal": true,
+    "branch_operand": null
+  },
+  {
+    "code": 1,
+    "name": "GOTO",
+    "operands": [
+      {
+        "name": "offset",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": true,
+    "branch_operand": "offset"
+  },
+  {
+    "code": 2,
+    "name": "IF_CONDITIONAL",
+    "operands": [
+      {
+        "name": "val1",
+        "type": "u16"
+      },
+      {
+        "name": "val2",
+        "type": "u16"
+      },
+      {
+        "name": "condition_type",
+        "type": "u8"
+      },
+      {
+        "name": "else_offset",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": "else_offset"
+  },
+  {
+    "code": 3,
+    "name": "COPY_WORK_VALUE",
+    "operands": [
+      {
+        "name": "dest_offset",
+        "type": "u16"
+      },
+      {
+        "name": "source_offset",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 4,
+    "name": "DEPRECATED_NOP",
+    "operands": [
+      {
+        "name": "unused",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 5,
+    "name": "SET_ONE",
+    "operands": [
+      {
+        "name": "target",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 6,
+    "name": "SET_ZERO",
+    "operands": [
+      {
+        "name": "target",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 7,
+    "name": "ADD_VALUES",
+    "operands": [
+      {
+        "name": "dest_value",
+        "type": "u16"
+      },
+      {
+        "name": "source_value",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 8,
+    "name": "SUBTRACT_VALUES",
+    "operands": [
+      {
+        "name": "dest_value",
+        "type": "u16"
+      },
+      {
+        "name": "source_value",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 9,
+    "name": "SET_BIT_FLAG",
+    "operands": [
+      {
+        "name": "target",
+        "type": "u16"
+      },
+      {
+        "name": "bit_position",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 10,
+    "name": "CLEAR_BIT_FLAG",
+    "operands": [
+      {
+        "name": "target",
+        "type": "u16"
+      },
+      {
+        "name": "bit_position",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 11,
+    "name": "INCREMENT_VALUE",
+    "operands": [
+      {
+        "name": "target",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 12,
+    "name": "DECREMENT_VALUE",
+    "operands": [
+      {
+        "name": "target",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 13,
+    "name": "BITWISE_AND",
+    "operands": [
+      {
+        "name": "dest_value",
+        "type": "u16"
+      },
+      {
+        "name": "source_value",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 14,
+    "name": "BITWISE_OR",
+    "operands": [
+      {
+        "name": "dest_value",
+        "type": "u16"
+      },
+      {
+        "name": "source_value",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 15,
+    "name": "BITWISE_XOR",
+    "operands": [
+      {
+        "name": "dest_value",
+        "type": "u16"
+      },
+      {
+        "name": "source_value",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 16,
+    "name": "BITWISE_LEFT_SHIFT",
+    "operands": [
+      {
+        "name": "dest_value",
+        "type": "u16"
+      },
+      {
+        "name": "source_value",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 17,
+    "name": "BITWISE_RIGHT_SHIFT",
+    "operands": [
+      {
+        "name": "dest_value",
+        "type": "u16"
+      },
+      {
+        "name": "source_value",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 18,
+    "name": "GENERATE_RANDOM",
+    "operands": [
+      {
+        "name": "target",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 19,
+    "name": "GENERATE_RANDOM_RANGE",
+    "operands": [
+      {
+        "name": "target",
+        "type": "u16"
+      },
+      {
+        "name": "max_value",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 20,
+    "name": "MULTIPLY_VALUES",
+    "operands": [
+      {
+        "name": "dest_value",
+        "type": "u16"
+      },
+      {
+        "name": "source_value",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 21,
+    "name": "DIVIDE_VALUES",
+    "operands": [
+      {
+        "name": "dest_value",
+        "type": "u16"
+      },
+      {
+        "name": "source_value",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 22,
+    "name": "SINE_CALCULATION",
+    "operands": [
+      {
+        "name": "result",
+        "type": "u16"
+      },
+      {
+        "name": "input",
+        "type": "u16"
+      },
+      {
+        "name": "multiplier",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 23,
+    "name": "COSINE_CALCULATION",
+    "operands": [
+      {
+        "name": "result",
+        "type": "u16"
+      },
+      {
+        "name": "input",
+        "type": "u16"
+      },
+      {
+        "name": "multiplier",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 24,
+    "name": "ATAN2_CALCULATION",
+    "operands": [
+      {
+        "name": "result",
+        "type": "u16"
+      },
+      {
+        "name": "y_input",
+        "type": "u16"
+      },
+      {
+        "name": "x_input",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 25,
+    "name": "SWAP_VALUES",
+    "operands": [
+      {
+        "name": "first_offset",
+        "type": "u16"
+      },
+      {
+        "name": "second_offset",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 26,
+    "name": "JUMP_TO_POSITION",
+    "operands": [
+      {
+        "name": "offset",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": "offset"
+  },
+  {
+    "code": 27,
+    "name": "RETURN_FROM_JUMP",
+    "operands": [],
+    "variable_length": false,
+    "terminal": true,
+    "branch_operand": null
+  },
+  {
+    "code": 28,
+    "name": "WAIT_TIME",
+    "operands": [
+      {
+        "name": "wait_value",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 29,
+    "name": "PRINT_EVENT_MESSAGE",
+    "operands": [
+      {
+        "name": "message_id",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 30,
+    "name": "ENTITY_LOOK_AT_AND_TALK",
+    "operands": [
+      {
+        "name": "target_entity",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 31,
+    "name": "MOVE_ENTITY",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 32,
+    "name": "SET_CLI_EVENT_UC_FLAG",
+    "operands": [
+      {
+        "name": "flag_value",
+        "type": "u8"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 33,
+    "name": "END_EVENT",
+    "operands": [],
+    "variable_length": false,
+    "terminal": true,
+    "branch_operand": null
+  },
+  {
+    "code": 34,
+    "name": "ENTITY_HIDE_FLAG",
+    "operands": [
+      {
+        "name": "enabled",
+        "type": "u8"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 35,
+    "name": "WAIT_FOR_DIALOG_INTERACTION",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 36,
+    "name": "CREATE_DIALOG",
+    "operands": [
+      {
+        "name": "message_id",
+        "type": "u16"
+      },
+      {
+        "name": "default_option",
+        "type": "u16"
+      },
+      {
+        "name": "option_flags",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 37,
+    "name": "WAIT_DIALOG_SELECT",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 38,
+    "name": "YIELD_VM",
+    "operands": [],
+    "variable_length": false,
+    "terminal": true,
+    "branch_operand": null
+  },
+  {
+    "code": 39,
+    "name": "REQ_SET",
+    "operands": [
+      {
+        "name": "priority",
+        "type": "u8"
+      },
+      {
+        "name": "entity_id",
+        "type": "u32"
+      },
+      {
+        "name": "tag_num",
+        "type": "u8"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 40,
+    "name": "REQ_SET_WITH_CONDITIONS",
+    "operands": [
+      {
+        "name": "priority",
+        "type": "u8"
+      },
+      {
+        "name": "entity_id",
+        "type": "u32"
+      },
+      {
+        "name": "tag_num",
+        "type": "u8"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 41,
+    "name": "REQ_SET_WAIT",
+    "operands": [
+      {
+        "name": "priority",
+        "type": "u8"
+      },
+      {
+        "name": "server_id1",
+        "type": "u16"
+      },
+      {
+        "name": "server_id2",
+        "type": "u16"
+      },
+      {
+        "name": "tag_num",
+        "type": "u8"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 42,
+    "name": "GET_REQ_LEVEL",
+    "operands": [
+      {
+        "name": "level",
+        "type": "u8"
+      },
+      {
+        "name": "entity_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 43,
+    "name": "PRINT_ENTITY_MESSAGE",
+    "operands": [
+      {
+        "name": "entity_id",
+        "type": "u32"
+      },
+      {
+        "name": "message",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 44,
+    "name": "CREATE_SCHEDULER_TASK",
+    "operands": [
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 45,
+    "name": "CREATE_ZONE_SCHEDULER_TASK",
+    "operands": [
+      {
+        "name": "entity1",
+        "type": "u32"
+      },
+      {
+        "name": "entity2",
+        "type": "u32"
+      },
+      {
+        "name": "zone_action",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 46,
+    "name": "SET_CLI_EVENT_CANCEL_FLAGS",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 47,
+    "name": "ADJUST_RENDER_FLAGS0",
+    "operands": [
+      {
+        "name": "flag",
+        "type": "u8"
+      },
+      {
+        "name": "entity_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 48,
+    "name": "SET_UCOFF_CONTINUE_ZERO",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 49,
+    "name": "UPDATE_ENTITY_POSITION",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 50,
+    "name": "SET_MAIN_SPEED",
+    "operands": [
+      {
+        "name": "speed",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 51,
+    "name": "ADJUST_EVENT_RENDER_FLAGS0",
+    "operands": [
+      {
+        "name": "flag",
+        "type": "u8"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 52,
+    "name": "LOAD_UNLOAD_ZONE",
+    "operands": [
+      {
+        "name": "zone_id",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 53,
+    "name": "LOAD_ZONE_NO_CLOSE",
+    "operands": [
+      {
+        "name": "zone_id",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 54,
+    "name": "SET_ENTITY_EVENT_POSITION",
+    "operands": [
+      {
+        "name": "x_position",
+        "type": "u16"
+      },
+      {
+        "name": "z_position",
+        "type": "u16"
+      },
+      {
+        "name": "y_position",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 55,
+    "name": "UPDATE_EVENT_POSITION_AND_DIR",
+    "operands": [
+      {
+        "name": "x",
+        "type": "u16"
+      },
+      {
+        "name": "z",
+        "type": "u16"
+      },
+      {
+        "name": "y",
+        "type": "u16"
+      },
+      {
+        "name": "dir",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 56,
+    "name": "SET_CLIENT_EVENT_MODE",
+    "operands": [
+      {
+        "name": "mode",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 57,
+    "name": "SET_ENTITY_DIRECTION",
+    "operands": [
+      {
+        "name": "direction",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 58,
+    "name": "CONVERT_YAW_TO_BYTE",
+    "operands": [
+      {
+        "name": "entity_id",
+        "type": "u32"
+      },
+      {
+        "name": "result_destination",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 59,
+    "name": "GET_ENTITY_POSITION",
+    "operands": [
+      {
+        "name": "entity_id",
+        "type": "u32"
+      },
+      {
+        "name": "x_destination",
+        "type": "u16"
+      },
+      {
+        "name": "y_destination",
+        "type": "u16"
+      },
+      {
+        "name": "z_destination",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 60,
+    "name": "SET_BIT_FLAG_CONDITIONAL",
+    "operands": [
+      {
+        "name": "target_work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "bit_index_work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "condition_work_offset",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 61,
+    "name": "CLEAR_BIT_FLAG_CONDITIONAL",
+    "operands": [
+      {
+        "name": "target_work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "bit_index_work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "condition_work_offset",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 62,
+    "name": "TEST_BIT_AND_BRANCH",
+    "operands": [
+      {
+        "name": "target_work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "bit_index_work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "jump_offset",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": "jump_offset"
+  },
+  {
+    "code": 63,
+    "name": "MODULO_OPERATION",
+    "operands": [
+      {
+        "name": "target",
+        "type": "u16"
+      },
+      {
+        "name": "dividend",
+        "type": "u16"
+      },
+      {
+        "name": "divisor",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 64,
+    "name": "SET_BIT_WORK_RANGE",
+    "operands": [
+      {
+        "name": "start_bit",
+        "type": "u16"
+      },
+      {
+        "name": "end_bit",
+        "type": "u16"
+      },
+      {
+        "name": "target",
+        "type": "u16"
+      },
+      {
+        "name": "source",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 65,
+    "name": "GET_BIT_WORK_RANGE",
+    "operands": [
+      {
+        "name": "start_bit",
+        "type": "u16"
+      },
+      {
+        "name": "end_bit",
+        "type": "u16"
+      },
+      {
+        "name": "source",
+        "type": "u16"
+      },
+      {
+        "name": "result",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 66,
+    "name": "SET_CLI_EVENT_CANCEL_DATA",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 67,
+    "name": "SEND_EVENT_UPDATE",
+    "operands": [
+      {
+        "name": "update_flag",
+        "type": "u8"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 68,
+    "name": "IF_ENTITY_VALID",
+    "operands": [
+      {
+        "name": "entity_id",
+        "type": "u16"
+      },
+      {
+        "name": "else_offset",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": "else_offset"
+  },
+  {
+    "code": 69,
+    "name": "LOAD_SCHEDULED_TASK",
+    "operands": [
+      {
+        "name": "first_work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "entity1",
+        "type": "u32"
+      },
+      {
+        "name": "entity2",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      },
+      {
+        "name": "second_work_offset",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 70,
+    "name": "CAMERA_CONTROL",
+    "operands": [
+      {
+        "name": "mode",
+        "type": "u8"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 71,
+    "name": "UPDATE_PLAYER_LOCATION",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 72,
+    "name": "PRINT_MESSAGE",
+    "operands": [
+      {
+        "name": "message_id",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 73,
+    "name": "PRINT_EVENT_MESSAGE_NO_SPEAKER",
+    "operands": [
+      {
+        "name": "target_entity",
+        "type": "u32"
+      },
+      {
+        "name": "message_id",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 74,
+    "name": "ENTITY_LOOK_AT",
+    "operands": [
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 75,
+    "name": "UPDATE_ENTITY_YAW",
+    "operands": [
+      {
+        "name": "entity",
+        "type": "u32"
+      },
+      {
+        "name": "yaw",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 76,
+    "name": "SET_ENTITY_STATUS_EVENT_DOOR",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 77,
+    "name": "SET_ENTITY_STATUS_EVENT_CLOSE_DOOR",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 78,
+    "name": "SET_ENTITY_HIDE_FLAG",
+    "operands": [
+      {
+        "name": "flag",
+        "type": "u8"
+      },
+      {
+        "name": "entity_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 79,
+    "name": "SET_ENTITY_STATUS_EVENT_CUSTOM",
+    "operands": [
+      {
+        "name": "status",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 80,
+    "name": "END_SCHEDULER_TASK",
+    "operands": [
+      {
+        "name": "first_entity",
+        "type": "u16"
+      },
+      {
+        "name": "first_param",
+        "type": "u16"
+      },
+      {
+        "name": "second_entity",
+        "type": "u16"
+      },
+      {
+        "name": "second_param",
+        "type": "u16"
+      },
+      {
+        "name": "action_id",
+        "type": "u16"
+      },
+      {
+        "name": "third_param",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 81,
+    "name": "END_MAP_SCHEDULER",
+    "operands": [
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 82,
+    "name": "END_LOAD_SCHEDULER",
+    "operands": [
+      {
+        "name": "work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 83,
+    "name": "WAIT_SCHEDULER_TASK",
+    "operands": [
+      {
+        "name": "entity1",
+        "type": "u32"
+      },
+      {
+        "name": "entity2",
+        "type": "u32"
+      },
+      {
+        "name": "action_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 84,
+    "name": "WAIT_MAP_SCHEDULER",
+    "operands": [
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "action_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 85,
+    "name": "WAIT_LOAD_SCHEDULER",
+    "operands": [
+      {
+        "name": "scheduler_work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "entity1",
+        "type": "u32"
+      },
+      {
+        "name": "entity2",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 86,
+    "name": "GET_ACTOR_INDEX_DEPRECATED",
+    "operands": [
+      {
+        "name": "entity",
+        "type": "u16"
+      },
+      {
+        "name": "unused_data",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 87,
+    "name": "CREATE_FRAME_DELAY",
+    "operands": [
+      {
+        "name": "delay_work_offset",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 88,
+    "name": "YIELD_EVENT_VM",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 89,
+    "name": "UPDATE_ENTITY_DATA_MULTI",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 90,
+    "name": "UPDATE_EVENT_POSITION",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 91,
+    "name": "LOAD_EXT_SCHEDULER",
+    "operands": [
+      {
+        "name": "scheduler_work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "action_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 92,
+    "name": "MUSIC_CONTROL",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 93,
+    "name": "SET_MUSIC_VOLUME",
+    "operands": [
+      {
+        "name": "volume",
+        "type": "u16"
+      },
+      {
+        "name": "fade_time",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 94,
+    "name": "STOP_ENTITY_ACTION_RESET_IDLE",
+    "operands": [
+      {
+        "name": "animation_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 95,
+    "name": "MULTI_HANDLER_COMPLEX",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 96,
+    "name": "ADJUST_RENDER_FLAGS1_MULTI",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 97,
+    "name": "ADJUST_RENDER_FLAGS2",
+    "operands": [
+      {
+        "name": "flag_value",
+        "type": "u8"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 98,
+    "name": "LOAD_EVENT_SCHEDULER",
+    "operands": [
+      {
+        "name": "work_offset1",
+        "type": "u16"
+      },
+      {
+        "name": "entity1",
+        "type": "u32"
+      },
+      {
+        "name": "entity2",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      },
+      {
+        "name": "work_offset2",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 99,
+    "name": "PLAY_ANIMATION_WAIT",
+    "operands": [
+      {
+        "name": "animation_id",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 100,
+    "name": "CALCULATE_DISTANCE",
+    "operands": [
+      {
+        "name": "dest_offset",
+        "type": "u16"
+      },
+      {
+        "name": "x1_offset",
+        "type": "u16"
+      },
+      {
+        "name": "z1_offset",
+        "type": "u16"
+      },
+      {
+        "name": "x2_offset",
+        "type": "u16"
+      },
+      {
+        "name": "z2_offset",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 101,
+    "name": "CALCULATE_3D_DISTANCE",
+    "operands": [
+      {
+        "name": "result",
+        "type": "u16"
+      },
+      {
+        "name": "entity1",
+        "type": "u32"
+      },
+      {
+        "name": "entity2",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 102,
+    "name": "LOAD_EXT_SCHEDULER_MAIN",
+    "operands": [
+      {
+        "name": "unknown1",
+        "type": "u16"
+      },
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "action_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 103,
+    "name": "HIDE_HUD_ELEMENTS",
+    "operands": [
+      {
+        "name": "param1",
+        "type": "u16"
+      },
+      {
+        "name": "param2",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 104,
+    "name": "SHOW_HUD_ELEMENTS",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 105,
+    "name": "SET_SOUND_VOLUME",
+    "operands": [
+      {
+        "name": "mute_flag",
+        "type": "u8"
+      },
+      {
+        "name": "sound_types",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 106,
+    "name": "CHANGE_SOUND_VOLUME",
+    "operands": [
+      {
+        "name": "volume",
+        "type": "u16"
+      },
+      {
+        "name": "fade_time",
+        "type": "u16"
+      },
+      {
+        "name": "sound_types",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 107,
+    "name": "ENTITY_IDLE_MOTION",
+    "operands": [
+      {
+        "name": "animation_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 108,
+    "name": "FADE_ENTITY_COLOR",
+    "operands": [
+      {
+        "name": "entity_id",
+        "type": "u32"
+      },
+      {
+        "name": "end_alpha",
+        "type": "u16"
+      },
+      {
+        "name": "fade_time",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 109,
+    "name": "DEPRECATED_OPCODE",
+    "operands": [
+      {
+        "name": "unused1",
+        "type": "u16"
+      },
+      {
+        "name": "unused2",
+        "type": "u16"
+      },
+      {
+        "name": "unused3",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 110,
+    "name": "PLAY_EMOTE",
+    "operands": [
+      {
+        "name": "entity_id",
+        "type": "u32"
+      },
+      {
+        "name": "emote_data",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 111,
+    "name": "WAIT_FRAME_DELAY",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 112,
+    "name": "WAIT_ENTITY_RENDER_FLAG",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 113,
+    "name": "HANDLE_STRING_INPUT",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 114,
+    "name": "LOAD_EVENT_WEATHER",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 115,
+    "name": "SCHEDULE_MAGIC_CASTING",
+    "operands": [
+      {
+        "name": "magic_id",
+        "type": "u16"
+      },
+      {
+        "name": "caster_entity",
+        "type": "u32"
+      },
+      {
+        "name": "target_entity",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 116,
+    "name": "ADJUST_RENDER_FLAGS1",
+    "operands": [
+      {
+        "name": "flag",
+        "type": "u8"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 117,
+    "name": "LOAD_ROOM",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 118,
+    "name": "CHECK_ENTITY_RENDER_FLAGS",
+    "operands": [
+      {
+        "name": "entity",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 119,
+    "name": "SET_EVENT_TIME_WEATHER",
+    "operands": [
+      {
+        "name": "hour",
+        "type": "u16"
+      },
+      {
+        "name": "weather",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 120,
+    "name": "ENABLE_GAME_TIMER_RESET_WEATHER",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 121,
+    "name": "LOOK_AT_ENTITY",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 122,
+    "name": "VM_CONTROL",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 123,
+    "name": "UNSET_ENTITY_TALKING",
+    "operands": [
+      {
+        "name": "entity_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 124,
+    "name": "ADJUST_RENDER_FLAGS2",
+    "operands": [
+      {
+        "name": "enable_flag",
+        "type": "u8"
+      },
+      {
+        "name": "entity_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 125,
+    "name": "LOAD_START_SCHEDULER_PLAYER",
+    "operands": [
+      {
+        "name": "animation_id",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 126,
+    "name": "CHOCOBO_MOUNT_HANDLER",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 127,
+    "name": "WAIT_DIALOG_SELECT_ALT",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 128,
+    "name": "LOAD_WAIT",
+    "operands": [
+      {
+        "name": "entity",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 129,
+    "name": "SET_ENTITY_BLINKING",
+    "operands": [
+      {
+        "name": "blink_flag",
+        "type": "u8"
+      },
+      {
+        "name": "entity",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 130,
+    "name": "RECT_HIT_TEST_BRANCH",
+    "operands": [
+      {
+        "name": "rect_id",
+        "type": "u32"
+      },
+      {
+        "name": "jump_offset",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": "jump_offset"
+  },
+  {
+    "code": 131,
+    "name": "GET_GAME_TIME",
+    "operands": [
+      {
+        "name": "target",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 132,
+    "name": "ADJUST_RENDER_FLAGS3_BIT0",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 133,
+    "name": "OPEN_MOOGLE_MENU",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 134,
+    "name": "ADJUST_RENDER_FLAGS3",
+    "operands": [
+      {
+        "name": "flag_value",
+        "type": "u8"
+      },
+      {
+        "name": "entity_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 135,
+    "name": "WORLD_PASS_HANDLER_A",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 136,
+    "name": "WORLD_PASS_HANDLER_B",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 137,
+    "name": "OPEN_MAP",
+    "operands": [
+      {
+        "name": "map_id",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 138,
+    "name": "CLOSE_MAP",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 139,
+    "name": "SET_EVENT_MARK",
+    "operands": [
+      {
+        "name": "map_id",
+        "type": "u16"
+      },
+      {
+        "name": "point_index",
+        "type": "u16"
+      },
+      {
+        "name": "pos_x",
+        "type": "u16"
+      },
+      {
+        "name": "pos_y",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 140,
+    "name": "CRAFTING_HANDLER",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 141,
+    "name": "OPEN_MAP_WITH_PROPERTIES",
+    "operands": [
+      {
+        "name": "map_id",
+        "type": "u16"
+      },
+      {
+        "name": "properties",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 142,
+    "name": "SET_ENTITY_STATUS_EVENT_45",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 143,
+    "name": "SET_ENTITY_STATUS_EVENT_46",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 144,
+    "name": "ADJUST_ENTITY_RENDER_FLAGS0_FLAGS1",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 145,
+    "name": "SET_MAIN_SPEED_BASE",
+    "operands": [
+      {
+        "name": "speed_value",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 146,
+    "name": "ADJUST_RENDER_FLAGS3",
+    "operands": [
+      {
+        "name": "flag",
+        "type": "u8"
+      },
+      {
+        "name": "entity_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 147,
+    "name": "DISPLAY_ITEM_INFO",
+    "operands": [
+      {
+        "name": "item_id",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 148,
+    "name": "ADJUST_RENDER_FLAGS3_ALT",
+    "operands": [
+      {
+        "name": "flag",
+        "type": "u8"
+      },
+      {
+        "name": "entity_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 149,
+    "name": "SETUP_EVENT_NPC",
+    "operands": [
+      {
+        "name": "npc_param",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 150,
+    "name": "UNSET_EVENT_NPC",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 151,
+    "name": "SAVE_SET_WIND_VALUES",
+    "operands": [
+      {
+        "name": "wind_base",
+        "type": "u16"
+      },
+      {
+        "name": "wind_width",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 152,
+    "name": "YIELD_IF_ZONE_LOADING",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 153,
+    "name": "WAIT_ANIMATION",
+    "operands": [
+      {
+        "name": "entity_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 154,
+    "name": "WAIT_MUSIC_SERVER",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 155,
+    "name": "WAIT_ENTITY_ANIMATION",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 156,
+    "name": "STORE_CLIENT_LANGUAGE_ID",
+    "operands": [
+      {
+        "name": "result",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 157,
+    "name": "OPCODE_9D",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 158,
+    "name": "SET_RECT_EVENT_SEND_FLAG",
+    "operands": [
+      {
+        "name": "flag_value",
+        "type": "u8"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 159,
+    "name": "LOAD_SCHEDULED_TASK_ALT",
+    "operands": [
+      {
+        "name": "work_offset1",
+        "type": "u16"
+      },
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      },
+      {
+        "name": "work_offset2",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 160,
+    "name": "WAIT_LOAD_SCHEDULER_MAIN_ALT2",
+    "operands": [
+      {
+        "name": "work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 161,
+    "name": "END_LOAD_SCHEDULER_MAIN",
+    "operands": [
+      {
+        "name": "work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 162,
+    "name": "WAIT_LOAD_SCHEDULER_MAIN",
+    "operands": [
+      {
+        "name": "work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 163,
+    "name": "END_LOAD_SCHEDULER_MAIN_ALT",
+    "operands": [
+      {
+        "name": "work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 164,
+    "name": "ADJUST_RENDER_FLAGS3_BIT26",
+    "operands": [
+      {
+        "name": "flag_value",
+        "type": "u8"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 165,
+    "name": "ADJUST_RENDER_FLAGS3_BIT11",
+    "operands": [
+      {
+        "name": "flag_value",
+        "type": "u8"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 166,
+    "name": "REQUEST_EVENT_MAP_NUMBER",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 167,
+    "name": "BATTLEFIELD_SERVER_RESPONSE_WAIT",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 168,
+    "name": "MAP_MARKER_CONTROL",
+    "operands": [
+      {
+        "name": "map_flag",
+        "type": "u8"
+      },
+      {
+        "name": "zone_offset",
+        "type": "u16"
+      },
+      {
+        "name": "marker_offset",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 169,
+    "name": "DISABLE_GAME_TIME_SET_SPECIFIC",
+    "operands": [
+      {
+        "name": "time_offset",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 170,
+    "name": "VANA_DIEL_TIMESTAMP_CONVERTER",
+    "operands": [
+      {
+        "name": "timestamp",
+        "type": "u16"
+      },
+      {
+        "name": "year",
+        "type": "u16"
+      },
+      {
+        "name": "month",
+        "type": "u16"
+      },
+      {
+        "name": "day",
+        "type": "u16"
+      },
+      {
+        "name": "weekday",
+        "type": "u16"
+      },
+      {
+        "name": "hour",
+        "type": "u16"
+      },
+      {
+        "name": "minute",
+        "type": "u16"
+      },
+      {
+        "name": "moon",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 171,
+    "name": "ADJUST_ENTITY_FLAGS",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 172,
+    "name": "ENTITY_STATUS_HANDLER",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 173,
+    "name": "DUAL_ENTITY_SCHEDULER_HANDLER",
+    "operands": [
+      {
+        "name": "sub_case",
+        "type": "u8"
+      },
+      {
+        "name": "param",
+        "type": "u16"
+      },
+      {
+        "name": "entity1",
+        "type": "u32"
+      },
+      {
+        "name": "entity2",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 174,
+    "name": "MULTI_PURPOSE_ENTITY_HANDLER",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 175,
+    "name": "GET_CAMERA_POSITION",
+    "operands": [
+      {
+        "name": "mode",
+        "type": "u8"
+      },
+      {
+        "name": "x",
+        "type": "u16"
+      },
+      {
+        "name": "z",
+        "type": "u16"
+      },
+      {
+        "name": "y",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 176,
+    "name": "PRINT_EVENT_MESSAGE",
+    "operands": [
+      {
+        "name": "unknown1",
+        "type": "u8"
+      },
+      {
+        "name": "speaker_id",
+        "type": "u32"
+      },
+      {
+        "name": "listener_id",
+        "type": "u32"
+      },
+      {
+        "name": "message_offset",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 177,
+    "name": "GET_APP_FLAG",
+    "operands": [
+      {
+        "name": "flag_type",
+        "type": "u8"
+      },
+      {
+        "name": "dest_offset",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 178,
+    "name": "DELIVERY_BOX_HANDLER",
+    "operands": [
+      {
+        "name": "mode",
+        "type": "u8"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 179,
+    "name": "RANKINGS_BOARD_HANDLER",
+    "operands": [
+      {
+        "name": "case_type",
+        "type": "u8"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 180,
+    "name": "UI_WINDOW_STRING_HANDLER",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 181,
+    "name": "SET_EVENT_ENTITY_NAME",
+    "operands": [
+      {
+        "name": "mode",
+        "type": "u8"
+      },
+      {
+        "name": "name_string",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 182,
+    "name": "ENTITY_APPEARANCE_HANDLER",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 183,
+    "name": "ENTITY_DATA_HANDLER",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 184,
+    "name": "MAP_ADD_MARKER_WITH_NAME",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 185,
+    "name": "MAP_EDIT_MARKER_FROM_BUFFER",
+    "operands": [
+      {
+        "name": "map_flag",
+        "type": "u8"
+      },
+      {
+        "name": "zone",
+        "type": "u16"
+      },
+      {
+        "name": "submap",
+        "type": "u16"
+      },
+      {
+        "name": "marker_id",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 186,
+    "name": "SET_ENTITY_POSITION",
+    "operands": [
+      {
+        "name": "entity_id",
+        "type": "u32"
+      },
+      {
+        "name": "pos_x",
+        "type": "u16"
+      },
+      {
+        "name": "pos_z",
+        "type": "u16"
+      },
+      {
+        "name": "pos_y",
+        "type": "u16"
+      },
+      {
+        "name": "direction",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 187,
+    "name": "LOAD_EVENT_SCHEDULER_ALT",
+    "operands": [
+      {
+        "name": "work_offset1",
+        "type": "u16"
+      },
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      },
+      {
+        "name": "work_offset2",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 188,
+    "name": "WAIT_LOAD_SCHEDULER_ALT2",
+    "operands": [
+      {
+        "name": "work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 189,
+    "name": "END_LOAD_SCHEDULER_MAIN_ALT6",
+    "operands": [
+      {
+        "name": "work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 190,
+    "name": "STORE_REQ_WHO_SERVER_ID",
+    "operands": [
+      {
+        "name": "work_offset",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 191,
+    "name": "CHOCOBO_RACING_PARAMETER_GETTER",
+    "operands": [
+      {
+        "name": "param_type",
+        "type": "u8"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 192,
+    "name": "ADJUST_RENDER_FLAGS3_BIT12",
+    "operands": [
+      {
+        "name": "flag_value",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 193,
+    "name": "KILL_ENTITY_ACTION",
+    "operands": [
+      {
+        "name": "entity_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 194,
+    "name": "PARTY_STATE_CHECK",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 195,
+    "name": "COPY_STRING_TO_ARRAY",
+    "operands": [
+      {
+        "name": "array_index",
+        "type": "u16"
+      },
+      {
+        "name": "string_value",
+        "type": "u16"
+      },
+      {
+        "name": "additional_value",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 196,
+    "name": "HELPER_CALL_ALT",
+    "operands": [
+      {
+        "name": "mode",
+        "type": "u8"
+      },
+      {
+        "name": "magic_id",
+        "type": "u16"
+      },
+      {
+        "name": "caster_entity",
+        "type": "u32"
+      },
+      {
+        "name": "target_entity",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 197,
+    "name": "LOAD_SCHEDULED_TASK_ALT3",
+    "operands": [
+      {
+        "name": "work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "task_param",
+        "type": "u16"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 198,
+    "name": "WAIT_LOAD_SCHEDULER_ALT3",
+    "operands": [
+      {
+        "name": "work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 199,
+    "name": "END_LOAD_SCHEDULER_ALT3",
+    "operands": [
+      {
+        "name": "work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 200,
+    "name": "OPEN_MAP_WINDOW",
+    "operands": [
+      {
+        "name": "zone",
+        "type": "u16"
+      },
+      {
+        "name": "submap",
+        "type": "u16"
+      },
+      {
+        "name": "flag",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 201,
+    "name": "ENABLE_GAME_TIMER",
+    "operands": [],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 202,
+    "name": "DEPRECATED_OPCODE_CA",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 203,
+    "name": "DEPRECATED_OPCODE_CB",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 204,
+    "name": "ITEM_INFO_WINDOW_HANDLER",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 205,
+    "name": "LOAD_SCHEDULED_TASK_ALT4",
+    "operands": [
+      {
+        "name": "work_offset1",
+        "type": "u16"
+      },
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      },
+      {
+        "name": "work_offset2",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 206,
+    "name": "WAIT_LOAD_SCHEDULER_ALT4",
+    "operands": [
+      {
+        "name": "work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "entity1",
+        "type": "u32"
+      },
+      {
+        "name": "entity2",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 207,
+    "name": "END_LOAD_SCHEDULER_ALT4",
+    "operands": [
+      {
+        "name": "work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 208,
+    "name": "LOAD_SCHEDULED_TASK_ALT5",
+    "operands": [
+      {
+        "name": "work_offset1",
+        "type": "u16"
+      },
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      },
+      {
+        "name": "work_offset2",
+        "type": "u16"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 209,
+    "name": "WAIT_LOAD_SCHEDULER_ALT5",
+    "operands": [
+      {
+        "name": "work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "entity1",
+        "type": "u32"
+      },
+      {
+        "name": "entity2",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 210,
+    "name": "END_LOAD_SCHEDULER_MAIN_ALT7",
+    "operands": [
+      {
+        "name": "unknown1",
+        "type": "u8"
+      },
+      {
+        "name": "unknown2",
+        "type": "u8"
+      },
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_param",
+        "type": "u16"
+      },
+      {
+        "name": "unknown3",
+        "type": "u8"
+      },
+      {
+        "name": "work_offset",
+        "type": "u8"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 211,
+    "name": "CLEAR_ENTITY_MOTION_QUEUE",
+    "operands": [
+      {
+        "name": "condition_flag",
+        "type": "u8"
+      },
+      {
+        "name": "entity_server_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 212,
+    "name": "MAP_QUERY_WINDOW_HANDLER",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 213,
+    "name": "LOAD_EVENT_SCHEDULER_ALT8",
+    "operands": [
+      {
+        "name": "unknown1",
+        "type": "u8"
+      },
+      {
+        "name": "unknown2",
+        "type": "u8"
+      },
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "task_param",
+        "type": "u16"
+      },
+      {
+        "name": "unknown3",
+        "type": "u8"
+      },
+      {
+        "name": "unknown4",
+        "type": "u8"
+      },
+      {
+        "name": "work_offset",
+        "type": "u8"
+      },
+      {
+        "name": "unknown5",
+        "type": "u8"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 214,
+    "name": "WAIT_LOAD_SCHEDULER_ALT6",
+    "operands": [
+      {
+        "name": "work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 215,
+    "name": "END_LOAD_SCHEDULER_ALT6",
+    "operands": [
+      {
+        "name": "work_offset",
+        "type": "u16"
+      },
+      {
+        "name": "entity1_id",
+        "type": "u32"
+      },
+      {
+        "name": "entity2_id",
+        "type": "u32"
+      },
+      {
+        "name": "scheduler_id",
+        "type": "u32"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 216,
+    "name": "SET_ENTITY_EVENT_DIR",
+    "operands": [],
+    "variable_length": true,
+    "terminal": false,
+    "branch_operand": null
+  },
+  {
+    "code": 217,
+    "name": "SET_SOUND_EFFECT_LIMIT_FLAG",
+    "operands": [
+      {
+        "name": "flag_value",
+        "type": "u8"
+      }
+    ],
+    "variable_length": false,
+    "terminal": false,
+    "branch_operand": null
+  }
+]

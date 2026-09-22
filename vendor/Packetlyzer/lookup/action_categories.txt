@@ -1,0 +1,15 @@
+1=Melee Attack
+2=Ranged Attack
+3=Weaponskill Finish
+4=Magic Finish
+5=Item Use Finish
+6=Job Ability
+7=Weaponskill Begin
+8=Magic Begin
+9=Item Use Begin
+10=Monster TP Finish (unblinkable)
+11=Monster TP Finish
+12=Ranged Attack Finish
+13=Pet Ability
+14=Job Ability (DNC)
+15=Job Ability (RUN)

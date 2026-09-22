@@ -1,0 +1,2952 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<rule>
+  <s2c>
+    <packet type="0x005" desc="GP_SERV_COMMAND_PACKETCONTROL">
+      <data type="uint32" name="PacketCnt" pos="4" />
+      <data type="a" name="padding08" pos="8" size="20" />
+    </packet>
+    <packet type="0x006" desc="GP_SERV_COMMAND_NARAKU" />
+    <packet type="0x008" desc="GP_SERV_COMMAND_ENTERZONE">
+      <data type="a" name="EnterZoneTbl" pos="4" size="48" />
+    </packet>
+    <packet type="0x009" desc="Standard Message">
+      <data type="uint32" name="player_id" pos="4" />
+      <data type="uint16" name="target_index" pos="8" />
+      <data type="uint16" name="message_id" pos="10" />
+      <data type="uint32" name="param_1" pos="12" />
+      <data type="byte" name="Attr" pos="12" />
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="uint16" name="MesNo" pos="10" />
+      <data type="a" name="Data" pos="13" size="128" />
+    </packet>
+    <packet type="0x00A" desc="Zone In">
+      <data type="uint32" name="player_id" pos="4" />
+      <data type="uint16" name="target_index" pos="8" />
+      <data type="uint32" name="timestamp" pos="36" />
+      <data type="uint16" name="zone_id" pos="48" lookup="zones" />
+      <data type="uint16" name="weather" pos="52" />
+      <data type="byte" name="padding06" pos="10" />
+      <data type="int8" name="dir" pos="11" />
+      <data type="float" name="x" pos="12" />
+      <data type="float" name="z" pos="16" />
+      <data type="float" name="y" pos="20" />
+      <data type="uint32" name="flags1" pos="24" />
+      <data type="byte" name="Speed" pos="28" />
+      <data type="byte" name="server_status" pos="31" />
+      <data type="uint32" name="flags2" pos="32" />
+      <data type="uint32" name="flags3" pos="36" />
+      <data type="uint32" name="flags4" pos="40" />
+      <data type="uint32" name="ntTime" pos="52" />
+      <data type="uint32" name="ntTimeSec" pos="56" />
+      <data type="t" name="name" pos="132" size="16" />
+      <data type="a" name="certificate" pos="148" size="8" />
+      <data type="uint16" name="unknown9C" pos="156" />
+      <data type="byte" name="unknownA9" pos="169" />
+      <data type="uint16" name="mon_no" pos="176" />
+      <data type="uint16" name="face_no" pos="178" />
+      <data type="byte" name="mjob_no" pos="180" />
+      <data type="byte" name="hair_no" pos="181" />
+      <data type="byte" name="sjob_no" pos="182" />
+      <data type="uint32" name="get_job_flag" pos="183" />
+      <data type="a" name="job_lev" pos="187" size="16" />
+      <data type="a" name="bp_base" pos="203" size="14" />
+      <data type="a" name="bp_adj" pos="217" size="14" />
+      <data type="int32" name="mpmax" pos="235" />
+      <data type="byte" name="sjobflg" pos="239" />
+      <data type="a" name="unknown41" pos="240" size="3" />
+      <data type="a" name="unknown00" pos="243" size="12" />
+      <data type="uint32" name="Ex" pos="255" />
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="byte" name="SpeedBase" pos="29" />
+      <data type="byte" name="HpMax" pos="30" />
+      <data type="uint32" name="BtTargetID" pos="44" />
+      <data type="uint32" name="ZoneNo" pos="48" />
+      <data type="uint32" name="GameTime" pos="60" />
+      <data type="uint16" name="EventNo" pos="64" />
+      <data type="uint16" name="MapNumber" pos="66" />
+      <data type="a" name="GrapIDTbl" pos="68" size="18" />
+      <data type="a" name="MusicNum" pos="86" size="10" />
+      <data type="uint16" name="SubMapNumber" pos="96" />
+      <data type="uint16" name="EventNum" pos="98" />
+      <data type="uint16" name="EventPara" pos="100" />
+      <data type="uint16" name="EventMode" pos="102" />
+      <data type="uint16" name="WeatherNumber" pos="104" />
+      <data type="uint16" name="WeatherNumber2" pos="106" />
+      <data type="uint32" name="WeatherTime" pos="108" />
+      <data type="uint32" name="WeatherTime2" pos="112" />
+      <data type="uint32" name="WeatherOffsetTime" pos="116" />
+      <data type="uint32" name="ShipStart" pos="120" />
+      <data type="uint16" name="ShipEnd" pos="124" />
+      <data type="uint16" name="IsMonstrosity" pos="126" />
+      <data type="uint32" name="LoginState" pos="128" />
+      <data type="uint16" name="ZoneSubNo" pos="158" />
+      <data type="uint32" name="PlayTime" pos="160" />
+      <data type="uint32" name="DeadCounter" pos="164" />
+      <data type="byte" name="MyroomSubMapNumber" pos="168" />
+      <data type="uint16" name="MyroomMapNumber" pos="170" />
+      <data type="uint16" name="SendCount" pos="172" />
+      <data type="byte" name="MyRoomExitBit" pos="174" />
+      <data type="byte" name="MogZoneFlag" pos="175" />
+      <data type="uint16" name="MapNumber" pos="26" />
+      <data type="a" name="MusicNum" pos="46" size="10" />
+      <data type="uint16" name="EventNum" pos="58" />
+      <data type="uint16" name="EventMode" pos="62" />
+      <data type="uint32" name="WeatherTime2" pos="72" />
+      <data type="uint32" name="WeatherOffsetTime" pos="76" />
+      <data type="uint32" name="ShipStart" pos="80" />
+      <data type="uint16" name="ShipEnd" pos="84" />
+      <data type="uint32" name="LoginState" pos="88" />
+      <data type="a" name="name" pos="92" size="16" />
+      <data type="uint16" name="ZoneSubNo" pos="118" />
+      <data type="byte" name="unknownA9" pos="129" />
+      <data type="uint16" name="MyroomMapNumber" pos="130" />
+      <data type="byte" name="MyRoomExitBit" pos="134" />
+      <data type="byte" name="MogZoneFlag" pos="135" />
+      <data type="uint32" name="Dancer" pos="136" />
+      <data type="uint32" name="ConfData" pos="140" />
+      <data type="uint32" name="Ex" pos="144" />
+    </packet>
+    <packet type="0x00B" desc="GP_SERV_COMMAND_LOGOUT">
+      <data type="uint32" name="LogoutState" pos="4" />
+      <data type="a" name="Iwasaki" pos="8" size="16" />
+      <data type="uint32" name="cliErrCode" pos="24" />
+    </packet>
+    <packet type="0x00D" desc="Player Update">
+      <data type="uint32" name="player_id" pos="4" />
+      <data type="uint16" name="target_index" pos="8" />
+      <data type="byte" name="update_flags" pos="10" />
+      <data type="float" name="x" pos="12" />
+      <data type="float" name="y" pos="16" />
+      <data type="float" name="z" pos="20" />
+      <data type="byte" name="heading" pos="24" />
+      <data type="byte" name="run_count" pos="26" />
+      <data type="uint16" name="speed" pos="28" />
+      <data type="byte" name="animation" pos="30" />
+      <data type="byte" name="main_job" pos="32" lookup="jobs" />
+      <data type="byte" name="sub_job" pos="34" lookup="jobs" />
+      <data type="byte" name="main_job_level" pos="36" />
+      <data type="byte" name="sub_job_level" pos="37" />
+      <data type="bits" name="Position" pos="10" bits="1" />
+      <data type="bits" name="General" pos="10" bits="1" />
+      <data type="bits" name="Name" pos="10" bits="1" />
+      <data type="bits" name="Model" pos="10" bits="1" />
+      <data type="bits" name="Despawn" pos="10" bits="1" />
+      <data type="bits" name="unused" pos="10" bits="2" />
+      <data type="byte" name="dir" pos="11" />
+      <data type="bits" name="unknown_1_6" pos="24" bits="1" />
+      <data type="bits" name="facetarget" pos="24" bits="15" />
+      <data type="byte" name="Hpp" pos="30" />
+      <data type="byte" name="server_status" pos="31" />
+      <data type="bits" name="unknown_0_3" pos="32" bits="1" />
+      <data type="bits" name="unknown_0_4" pos="32" bits="1" />
+      <data type="bits" name="Gender" pos="32" bits="1" />
+      <data type="bits" name="unknown_2_5" pos="32" bits="1" />
+      <data type="bits" name="unknown_2_6" pos="32" bits="1" />
+      <data type="bits" name="unknown_2_7" pos="32" bits="1" />
+      <data type="bits" name="unknown_3_4" pos="32" bits="1" />
+      <data type="bits" name="r" pos="36" bits="8" />
+      <data type="bits" name="g" pos="36" bits="8" />
+      <data type="bits" name="b" pos="36" bits="8" />
+      <data type="bits" name="unknown_2_3" pos="40" bits="1" />
+      <data type="bits" name="unknown_2_4" pos="40" bits="1" />
+      <data type="bits" name="unknown_3_1" pos="40" bits="1" />
+      <data type="bits" name="unknown_3_2" pos="40" bits="1" />
+      <data type="bits" name="unknown_3_3" pos="40" bits="1" />
+      <data type="bits" name="unknown_3_5" pos="40" bits="1" />
+      <data type="bits" name="unknown_3_6" pos="40" bits="1" />
+      <data type="bits" name="unknown_3_7" pos="40" bits="1" />
+      <data type="bits" name="unknown_0_0" pos="51" bits="1" />
+      <data type="bits" name="unknown_0_2" pos="51" bits="2" />
+      <data type="bits" name="unknown_0_7" pos="51" bits="1" />
+      <data type="bits" name="unknown_1_3" pos="68" bits="20" />
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="bits" name="ClaimStatus" pos="10" bits="1" bit="1" />
+      <data type="bits" name="MovTime" pos="24" bits="13" />
+      <data type="bits" name="RunMode" pos="24" bits="1" bit="13" />
+      <data type="bits" name="GroundFlag" pos="24" bits="1" bit="15" />
+      <data type="bits" name="KingFlag" pos="24" bits="1" bit="16" />
+      <data type="byte" name="SpeedBase" pos="29" />
+      <data type="bits" name="MonsterFlag" pos="32" bits="1" />
+      <data type="bits" name="HideFlag" pos="32" bits="1" bit="1" />
+      <data type="bits" name="SleepFlag" pos="32" bits="1" bit="2" />
+      <data type="bits" name="ChocoboIndex" pos="32" bits="3" bit="5" />
+      <data type="bits" name="CliPosInitFlag" pos="32" bits="1" bit="8" />
+      <data type="bits" name="GraphSize" pos="32" bits="2" bit="9" />
+      <data type="bits" name="LfgFlag" pos="32" bits="1" bit="11" />
+      <data type="bits" name="AnonymousFlag" pos="32" bits="1" bit="12" />
+      <data type="bits" name="YellFlag" pos="32" bits="1" bit="13" />
+      <data type="bits" name="AwayFlag" pos="32" bits="1" bit="14" />
+      <data type="bits" name="PlayOnelineFlag" pos="32" bits="1" bit="16" />
+      <data type="bits" name="LinkShellFlag" pos="32" bits="1" bit="17" />
+      <data type="bits" name="LinkDeadFlag" pos="32" bits="1" bit="18" />
+      <data type="bits" name="TargetOffFlag" pos="32" bits="1" bit="19" />
+      <data type="bits" name="TalkUcoffFlag" pos="32" bits="1" bit="20" />
+      <data type="bits" name="GmLevel" pos="32" bits="3" bit="24" />
+      <data type="bits" name="HackMove" pos="32" bits="1" bit="27" />
+      <data type="bits" name="InvisFlag" pos="32" bits="1" bit="29" />
+      <data type="bits" name="TurnFlag" pos="32" bits="1" bit="30" />
+      <data type="bits" name="BazaarFlag" pos="32" bits="1" bit="31" />
+      <data type="bits" name="PvPFlag" pos="36" bits="1" bit="24" />
+      <data type="bits" name="ShadowFlag" pos="36" bits="1" bit="25" />
+      <data type="bits" name="ShipStartMode" pos="36" bits="1" bit="26" />
+      <data type="bits" name="CharmFlag" pos="36" bits="1" bit="27" />
+      <data type="bits" name="GmIconFlag" pos="36" bits="1" bit="28" />
+      <data type="bits" name="NamedFlag" pos="36" bits="1" bit="29" />
+      <data type="bits" name="SingleFlag" pos="36" bits="1" bit="30" />
+      <data type="bits" name="AutoPartyFlag" pos="36" bits="1" bit="31" />
+      <data type="bits" name="TrustFlag" pos="40" bits="1" />
+      <data type="bits" name="LfgMasterFlag" pos="40" bits="1" bit="1" />
+      <data type="bits" name="PetNewFlag" pos="40" bits="1" bit="2" />
+      <data type="bits" name="MotStopFlag" pos="40" bits="1" bit="4" />
+      <data type="bits" name="CliPriorityFlag" pos="40" bits="1" bit="5" />
+      <data type="bits" name="PetFlag" pos="40" bits="1" bit="6" />
+      <data type="bits" name="OcclusionoffFlag" pos="40" bits="1" bit="7" />
+      <data type="bits" name="BallistaTeam" pos="40" bits="8" bit="8" />
+      <data type="bits" name="MonStat" pos="40" bits="3" bit="16" />
+      <data type="bits" name="SilenceFlag" pos="40" bits="1" bit="21" />
+      <data type="bits" name="NewCharacterFlag" pos="40" bits="1" bit="23" />
+      <data type="bits" name="MentorFlag" pos="40" bits="1" bit="24" />
+      <data type="uint32" name="BtTargetID" pos="44" />
+      <data type="uint16" name="CostumeId" pos="48" />
+      <data type="byte" name="BallistaInfo" pos="50" />
+      <data type="bits" name="TrialFlag" pos="51" bits="1" bit="1" />
+      <data type="bits" name="JobMasterFlag" pos="51" bits="1" bit="6" />
+      <data type="a" name="CustomProperties" pos="52" size="8" />
+      <data type="uint16" name="PetActIndex" pos="60" />
+      <data type="uint16" name="MonstrosityFlags" pos="62" />
+      <data type="byte" name="MonstrosityNameId1" pos="64" />
+      <data type="byte" name="MonstrosityNameId2" pos="65" />
+      <data type="bits" name="GeoIndiElement" pos="66" bits="4" />
+      <data type="bits" name="GeoIndiSize" pos="66" bits="2" bit="4" />
+      <data type="bits" name="GeoIndiFlag" pos="66" bits="1" bit="6" />
+      <data type="byte" name="ModelHitboxSize" pos="67" />
+      <data type="bits" name="GateId" pos="68" bits="4" />
+      <data type="bits" name="MountIndex" pos="68" bits="8" bit="4" />
+      <data type="a" name="GrapIDTbl" pos="72" size="18" />
+    </packet>
+    <packet type="0x00E" desc="NPC Update">
+      <data type="uint32" name="npc_id" pos="4" />
+      <data type="uint16" name="target_index" pos="8" />
+      <data type="byte" name="update_flags" pos="10" />
+      <data type="float" name="x" pos="12" />
+      <data type="float" name="y" pos="16" />
+      <data type="float" name="z" pos="20" />
+      <data type="byte" name="heading" pos="24" />
+      <data type="byte" name="hp_percent" pos="30" />
+      <data type="byte" name="status" pos="31" />
+      <data type="t" name="name" pos="34" size="16" />
+      <data type="bits" name="Position" pos="10" bits="1" />
+      <data type="bits" name="General" pos="10" bits="1" />
+      <data type="bits" name="Model" pos="10" bits="1" />
+      <data type="bits" name="Despawn" pos="10" bits="1" />
+      <data type="bits" name="Name2" pos="10" bits="1" />
+      <data type="bits" name="unused" pos="10" bits="1" />
+      <data type="byte" name="dir" pos="11" />
+      <data type="bits" name="unknown_1_6" pos="24" bits="1" />
+      <data type="bits" name="facetarget" pos="24" bits="15" />
+      <data type="byte" name="Speed" pos="28" />
+      <data type="byte" name="Hpp" pos="30" />
+      <data type="byte" name="server_status" pos="31" />
+      <data type="bits" name="unknown_0_3" pos="32" bits="1" />
+      <data type="bits" name="unknown_0_4" pos="32" bits="1" />
+      <data type="bits" name="Gender" pos="32" bits="1" />
+      <data type="bits" name="unknown_2_5" pos="32" bits="1" />
+      <data type="bits" name="unknown_2_6" pos="32" bits="1" />
+      <data type="bits" name="unknown_2_7" pos="32" bits="1" />
+      <data type="bits" name="unknown_3_4" pos="32" bits="1" />
+      <data type="bits" name="r" pos="36" bits="8" />
+      <data type="bits" name="g" pos="36" bits="8" />
+      <data type="bits" name="b" pos="36" bits="8" />
+      <data type="bits" name="unknown_2_3" pos="40" bits="1" />
+      <data type="bits" name="unknown_2_4" pos="40" bits="1" />
+      <data type="bits" name="unknown_3_1" pos="40" bits="1" />
+      <data type="bits" name="unknown_3_2" pos="40" bits="1" />
+      <data type="bits" name="unknown_3_3" pos="40" bits="1" />
+      <data type="bits" name="unknown_3_5" pos="40" bits="1" />
+      <data type="bits" name="unknown_3_6" pos="40" bits="1" />
+      <data type="bits" name="unknown_3_7" pos="40" bits="1" />
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="bits" name="ClaimStatus" pos="10" bits="1" bit="1" />
+      <data type="bits" name="MovTime" pos="24" bits="13" />
+      <data type="bits" name="RunMode" pos="24" bits="1" bit="13" />
+      <data type="bits" name="GroundFlag" pos="24" bits="1" bit="15" />
+      <data type="bits" name="KingFlag" pos="24" bits="1" bit="16" />
+      <data type="byte" name="SpeedBase" pos="29" />
+      <data type="bits" name="MonsterFlag" pos="32" bits="1" />
+      <data type="bits" name="HideFlag" pos="32" bits="1" bit="1" />
+      <data type="bits" name="SleepFlag" pos="32" bits="1" bit="2" />
+      <data type="bits" name="ChocoboIndex" pos="32" bits="3" bit="5" />
+      <data type="bits" name="CliPosInitFlag" pos="32" bits="1" bit="8" />
+      <data type="bits" name="GraphSize" pos="32" bits="2" bit="9" />
+      <data type="bits" name="LfgFlag" pos="32" bits="1" bit="11" />
+      <data type="bits" name="AnonymousFlag" pos="32" bits="1" bit="12" />
+      <data type="bits" name="YellFlag" pos="32" bits="1" bit="13" />
+      <data type="bits" name="AwayFlag" pos="32" bits="1" bit="14" />
+      <data type="bits" name="PlayOnelineFlag" pos="32" bits="1" bit="16" />
+      <data type="bits" name="LinkShellFlag" pos="32" bits="1" bit="17" />
+      <data type="bits" name="LinkDeadFlag" pos="32" bits="1" bit="18" />
+      <data type="bits" name="TargetOffFlag" pos="32" bits="1" bit="19" />
+      <data type="bits" name="TalkUcoffFlag" pos="32" bits="1" bit="20" />
+      <data type="bits" name="GmLevel" pos="32" bits="3" bit="24" />
+      <data type="bits" name="HackMove" pos="32" bits="1" bit="27" />
+      <data type="bits" name="InvisFlag" pos="32" bits="1" bit="29" />
+      <data type="bits" name="TurnFlag" pos="32" bits="1" bit="30" />
+      <data type="bits" name="BazaarFlag" pos="32" bits="1" bit="31" />
+      <data type="bits" name="PvPFlag" pos="36" bits="1" bit="24" />
+      <data type="bits" name="ShadowFlag" pos="36" bits="1" bit="25" />
+      <data type="bits" name="ShipStartMode" pos="36" bits="1" bit="26" />
+      <data type="bits" name="CharmFlag" pos="36" bits="1" bit="27" />
+      <data type="bits" name="GmIconFlag" pos="36" bits="1" bit="28" />
+      <data type="bits" name="NamedFlag" pos="36" bits="1" bit="29" />
+      <data type="bits" name="SingleFlag" pos="36" bits="1" bit="30" />
+      <data type="bits" name="AutoPartyFlag" pos="36" bits="1" bit="31" />
+      <data type="bits" name="TrustFlag" pos="40" bits="1" />
+      <data type="bits" name="LfgMasterFlag" pos="40" bits="1" bit="1" />
+      <data type="bits" name="PetNewFlag" pos="40" bits="1" bit="2" />
+      <data type="bits" name="MotStopFlag" pos="40" bits="1" bit="4" />
+      <data type="bits" name="CliPriorityFlag" pos="40" bits="1" bit="5" />
+      <data type="bits" name="PetFlag" pos="40" bits="1" bit="6" />
+      <data type="bits" name="OcclusionoffFlag" pos="40" bits="1" bit="7" />
+      <data type="bits" name="BallistaTeam" pos="40" bits="8" bit="8" />
+      <data type="bits" name="MonStat" pos="40" bits="3" bit="16" />
+      <data type="bits" name="SilenceFlag" pos="40" bits="1" bit="21" />
+      <data type="bits" name="NewCharacterFlag" pos="40" bits="1" bit="23" />
+      <data type="bits" name="MentorFlag" pos="40" bits="1" bit="24" />
+      <data type="uint32" name="BtTargetID" pos="44" />
+      <data type="bits" name="SubKind" pos="48" bits="3" />
+    </packet>
+    <packet type="0x012" desc="GP_SERV_COMMAND_GM">
+      <data type="a" name="Mes" pos="4" size="248" />
+    </packet>
+    <packet type="0x013" desc="GP_SERV_COMMAND_GMCOMMAND">
+      <data type="uint32" name="GMUniqueNo" pos="4" />
+      <data type="a" name="Mes" pos="8" size="244" />
+    </packet>
+    <packet type="0x014" desc="GP_SERV_COMMAND_TELL">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="byte" name="Attr" pos="10" />
+      <data type="byte" name="padding0B" pos="11" />
+    </packet>
+    <packet type="0x016" desc="GP_SERV_COMMAND_TALK">
+      <data type="byte" name="Attr" pos="4" />
+      <data type="byte" name="Channel" pos="5" />
+      <data type="byte" name="Type" pos="6" />
+    </packet>
+    <packet type="0x017" desc="Incoming Chat">
+      <data type="byte" name="chat_type" pos="4" />
+      <data type="byte" name="gm_flag" pos="5" />
+      <data type="uint16" name="zone_id" pos="6" lookup="zones" />
+      <data type="t" name="sender_name" pos="8" size="16" />
+      <data type="t" name="message" pos="24" size="150" />
+      <data type="byte" name="Kind" pos="4" />
+      <data type="byte" name="Attr" pos="5" />
+      <data type="uint16" name="Data" pos="6" />
+      <data type="a" name="sName" pos="8" size="15" />
+      <data type="a" name="Mes" pos="26" size="150" />
+    </packet>
+    <packet type="0x01B" desc="Job Info">
+      <data type="byte" name="main_job" pos="8" lookup="jobs" />
+      <data type="byte" name="main_job_level" pos="12" />
+      <data type="byte" name="sub_job" pos="14" lookup="jobs" />
+      <data type="byte" name="sub_job_level" pos="16" />
+      <data type="byte" name="dancer0x44" pos="4" />
+      <data type="byte" name="job_lev20x18" pos="5" />
+      <data type="uint32" name="encumbrance" pos="6" />
+      <data type="byte" name="can_thumbs_up_mentor" pos="10" />
+      <data type="byte" name="mentor_rank" pos="11" />
+      <data type="byte" name="mastery_rank" pos="12" />
+      <data type="byte" name="padding67" pos="13" />
+      <data type="uint32" name="job_mastery_flags" pos="14" />
+      <data type="byte" name="job_mastery_levels0x18" pos="18" />
+    </packet>
+    <packet type="0x01C" desc="GP_SERV_COMMAND_ITEM_MAX">
+      <data type="a" name="ItemNum" pos="4" size="18" />
+      <data type="a" name="padding16" pos="22" size="14" />
+      <data type="a" name="ItemNum2" pos="36" size="36" />
+      <data type="a" name="padding48" pos="72" size="28" />
+    </packet>
+    <packet type="0x01D" desc="Inventory Count">
+      <data type="byte" name="State" pos="4" />
+      <data type="a" name="padding05" pos="5" size="3" />
+      <data type="uint32" name="Flags" pos="8" />
+    </packet>
+    <packet type="0x01E" desc="Inventory Finish">
+      <data type="byte" name="Category" pos="8" />
+      <data type="uint32" name="ItemNum" pos="4" />
+      <data type="byte" name="ItemIndex" pos="9" />
+      <data type="byte" name="LockFlg" pos="10" />
+    </packet>
+    <packet type="0x01F" desc="GP_SERV_COMMAND_ITEM_LIST">
+      <data type="uint32" name="ItemNum" pos="4" />
+      <data type="uint16" name="ItemNo" pos="8" />
+      <data type="byte" name="Category" pos="10" />
+      <data type="byte" name="ItemIndex" pos="11" />
+      <data type="byte" name="LockFlg" pos="12" />
+      <data type="a" name="padding0D" pos="13" size="3" />
+    </packet>
+    <packet type="0x020" desc="Inventory Item">
+      <!-- 2026-09-06: this entry used to be two different field layouts concatenated into one
+           packet block (bag_id/slot/status/item_id/quantity/... at pos 4 to 14, then a second,
+           mutually overlapping ItemNum/ItemNo/ItemIndex/LockFlg/Attr set at pos 4 to 40, with
+           ItemIndex/LockFlg/Attr each declared twice at conflicting offsets/types), a real data
+           bug confirmed by decoding actual captured 0x020 packets: item_id always read back 0
+           and quantity read back garbage (e.g. 4294901760) because those two names were reading
+           the wrong overlapping bytes. Replaced with the single correct layout, verified directly
+           against LandSandBoat's real GP_SERV_COMMAND_ITEM_ATTR struct
+           (src/map/packets/s2c/0x020_item_attr.h): ItemNum(qty)/Price/ItemNo(real item id)/
+           Category(bag)/ItemIndex(slot)/LockFlg/Attr(24-byte extdata). -->
+      <data type="uint32" name="ItemNum" pos="4" />
+      <data type="uint32" name="Price" pos="8" />
+      <data type="uint16" name="ItemNo" pos="12" />
+      <data type="byte" name="Category" pos="14" />
+      <data type="byte" name="ItemIndex" pos="15" />
+      <data type="byte" name="LockFlg" pos="16" />
+      <data type="a" name="Attr" pos="17" size="24" />
+    </packet>
+    <packet type="0x021" desc="GP_SERV_COMMAND_ITEM_TRADE_REQ">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="uint16" name="padding0A" pos="10" />
+    </packet>
+    <packet type="0x022" desc="GP_SERV_COMMAND_ITEM_TRADE_RES">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint32" name="Kind" pos="8" />
+      <data type="uint16" name="ActIndex" pos="12" />
+      <data type="a" name="padding0E" pos="14" size="2" />
+    </packet>
+    <packet type="0x023" desc="GP_SERV_COMMAND_ITEM_TRADE_LIST">
+      <data type="uint32" name="ItemNum" pos="4" />
+      <data type="uint16" name="TradeCounter" pos="8" />
+      <data type="uint16" name="ItemNo" pos="10" />
+      <data type="byte" name="ItemFreeSpaceNum" pos="12" />
+      <data type="byte" name="TradeIndex" pos="13" />
+      <data type="a" name="Attr" pos="14" size="24" />
+      <data type="a" name="padding26" pos="38" size="2" />
+    </packet>
+    <packet type="0x024" desc="GP_SERV_COMMAND_ITEM_PRESENT">
+      <data type="uint32" name="ItemNum" pos="4" />
+      <data type="uint16" name="ItemNo" pos="8" />
+      <data type="byte" name="ReqID" pos="10" />
+      <data type="byte" name="ReqIndex" pos="11" />
+    </packet>
+    <packet type="0x025" desc="GP_SERV_COMMAND_ITEM_TRADE_MYLIST">
+      <data type="uint32" name="ItemNum" pos="4" />
+      <data type="uint16" name="ItemNo" pos="8" />
+      <data type="byte" name="TradeIndex" pos="10" />
+      <data type="byte" name="ItemIndex" pos="11" />
+    </packet>
+    <packet type="0x026" desc="GP_SERV_COMMAND_ITEM_SUBCONTAINER">
+      <data type="a" name="data" pos="4" size="24" />
+      <data type="uint32" name="container" pos="5" />
+      <data type="byte" name="index" pos="9" />
+      <data type="byte" name="unknown00" pos="10" />
+      <data type="a" name="unknown01" pos="11" size="2" />
+      <data type="uint16" name="model_id_race_hair" pos="13" />
+      <data type="uint16" name="model_id_head" pos="15" />
+      <data type="uint16" name="model_id_body" pos="17" />
+      <data type="uint16" name="model_id_hands" pos="19" />
+      <data type="uint16" name="model_id_legs" pos="21" />
+      <data type="uint16" name="model_id_feet" pos="23" />
+      <data type="uint16" name="model_id_main" pos="25" />
+      <data type="uint16" name="model_id_sub" pos="27" />
+      <data type="uint16" name="model_id_range" pos="29" />
+      <data type="byte" name="race" pos="31" />
+      <data type="byte" name="pose" pos="32" />
+    </packet>
+    <packet type="0x027" desc="GP_SERV_COMMAND_TALKNUMWORK2">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="uint16" name="MesNum" pos="10" />
+      <data type="uint16" name="Type" pos="12" />
+      <data type="byte" name="Flags" pos="14" />
+      <data type="byte" name="padding0F" pos="15" />
+      <data type="a" name="Num1" pos="16" size="16" />
+      <data type="a" name="String1" pos="32" size="32" />
+      <data type="a" name="String2" pos="64" size="16" />
+      <data type="a" name="Num2" pos="80" size="32" />
+    </packet>
+    <packet type="0x028" desc="Action Message">
+      <data type="uint32" name="actor_id" pos="4" />
+      <data type="uint32" name="target_count" pos="8" />
+      <data type="uint16" name="category" pos="12" lookup="action_categories" />
+      <data type="uint32" name="m_ppCasterAtel" pos="4" />
+      <data type="uint32" name="m_uID" pos="8" />
+      <data type="uint32" name="cmd_no" pos="12" />
+      <data type="a" name="cmd_arg" pos="16" size="4" />
+      <data type="uint32" name="info" pos="20" />
+      <data type="uint32" name="res_sum" pos="24" />
+      <data type="uint32" name="trg_sum" pos="28" />
+      <data type="uint32" name="m_ppTargetAtel" pos="32" />
+      <data type="uint32" name="result_sum" pos="40" />
+      <data type="uint32" name="miss" pos="44" />
+      <data type="uint16" name="kind" pos="48" />
+      <data type="uint16" name="sub_kind" pos="50" />
+      <data type="uint16" name="scale" pos="54" />
+      <data type="uint32" name="value" pos="56" />
+      <data type="uint32" name="message" pos="60" />
+      <data type="uint32" name="bit" pos="64" />
+      <data type="uint16" name="proc_kind" pos="68" />
+      <data type="uint16" name="proc_info" pos="70" />
+      <data type="uint32" name="proc_value" pos="72" />
+      <data type="uint16" name="proc_message" pos="76" />
+      <data type="uint16" name="react_kind" pos="78" />
+      <data type="uint16" name="react_info" pos="80" />
+      <data type="uint16" name="react_value" pos="82" />
+      <data type="uint16" name="react_message" pos="84" />
+      <data type="t" name="m_bMessagePutFlag" pos="48" size="64" />
+    </packet>
+    <packet type="0x029" desc="Basic Action">
+      <data type="uint32" name="Data" pos="12" />
+      <data type="uint32" name="Data2" pos="16" />
+      <data type="uint32" name="UniqueNoCas" pos="4" />
+      <data type="uint32" name="UniqueNoTar" pos="8" />
+      <data type="uint16" name="ActIndexCas" pos="20" />
+      <data type="uint16" name="ActIndexTar" pos="22" />
+      <data type="uint16" name="MessageNum" pos="24" />
+      <data type="byte" name="Type" pos="28" />
+    </packet>
+    <packet type="0x02A" desc="GP_SERV_COMMAND_TALKNUMWORK">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="a" name="num" pos="8" size="16" />
+      <data type="uint16" name="ActIndex" pos="24" />
+      <data type="uint16" name="MesNum" pos="26" />
+      <data type="byte" name="Type" pos="28" />
+      <data type="byte" name="Flag" pos="29" />
+      <data type="a" name="String" pos="30" size="32" />
+      <data type="a" name="padding3E" pos="62" size="2" />
+    </packet>
+    <packet type="0x02B" desc="GP_SERV_COMMAND_CHANNEL_ITEM">
+      <data type="byte" name="PropertyItemIndex" pos="4" />
+      <data type="byte" name="ChannelIndex" pos="5" />
+    </packet>
+    <packet type="0x02C" desc="GP_SERV_COMMAND_CHANNEL_STATE">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint32" name="ZoneNo" pos="8" />
+      <data type="uint32" name="IP" pos="12" />
+      <data type="uint16" name="ActIndex" pos="16" />
+      <data type="uint16" name="Port" pos="18" />
+      <data type="byte" name="ChannelIndex" pos="20" />
+      <data type="byte" name="HP" pos="21" />
+      <data type="a" name="padding16" pos="22" size="2" />
+    </packet>
+    <packet type="0x02D" desc="GP_SERV_COMMAND_BATTLE_MESSAGE2">
+      <data type="uint32" name="UniqueNoCas" pos="4" />
+      <data type="uint32" name="UniqueNoTar" pos="8" />
+      <data type="uint16" name="ActIndexCas" pos="12" />
+      <data type="uint16" name="ActIndexTar" pos="14" />
+      <data type="uint32" name="Data" pos="16" />
+      <data type="uint32" name="Data2" pos="20" />
+      <data type="uint16" name="MessageNum" pos="24" />
+      <data type="byte" name="Type" pos="26" />
+      <data type="byte" name="padding1B" pos="27" />
+    </packet>
+    <packet type="0x02E" desc="GP_SERV_COMMAND_OPENMOGMENU" />
+    <packet type="0x02F" desc="GP_SERV_COMMAND_DIG">
+      <data type="uint32" name="TarUniqueNo" pos="4" />
+      <data type="uint16" name="TarActIndex" pos="8" />
+      <data type="byte" name="Flags" pos="10" />
+      <data type="byte" name="padding0B" pos="11" />
+    </packet>
+    <packet type="0x030" desc="GP_SERV_COMMAND_EFFECT">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="int16" name="EffectNum" pos="10" />
+      <data type="int8" name="Type" pos="12" />
+      <data type="int8" name="Status" pos="13" />
+      <data type="uint16" name="Timer" pos="14" />
+    </packet>
+    <packet type="0x031" desc="GP_SERV_COMMAND_RECIPE">
+      <data type="a" name="Data" pos="4" size="40" />
+      <data type="uint16" name="Type" pos="44" />
+      <data type="uint16" name="unknown2E" pos="46" />
+      <data type="uint32" name="padding30" pos="48" />
+      <data type="uint32" name="List" pos="8" />
+    </packet>
+    <packet type="0x032" desc="GP_SERV_COMMAND_EVENT">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="uint16" name="EventNum" pos="10" />
+      <data type="uint16" name="EventPara" pos="12" />
+      <data type="uint16" name="Mode" pos="14" />
+      <data type="uint16" name="EventNum2" pos="16" />
+      <data type="uint16" name="EventPara2" pos="18" />
+    </packet>
+    <packet type="0x033" desc="GP_SERV_COMMAND_EVENTSTR">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="uint16" name="EventNum" pos="10" />
+      <data type="uint16" name="EventPara" pos="12" />
+      <data type="uint16" name="Mode" pos="14" />
+      <data type="t" name="String4" pos="16" size="16" />
+      <data type="a" name="Data" pos="32" size="32" />
+    </packet>
+    <packet type="0x034" desc="GP_SERV_COMMAND_EVENTNUM">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="a" name="num" pos="8" size="32" />
+      <data type="uint16" name="ActIndex" pos="40" />
+      <data type="uint16" name="EventNum" pos="42" />
+      <data type="uint16" name="EventPara" pos="44" />
+      <data type="uint16" name="Mode" pos="46" />
+      <data type="uint16" name="EventNum2" pos="48" />
+      <data type="uint16" name="EventPara2" pos="50" />
+    </packet>
+    <packet type="0x036" desc="GP_SERV_COMMAND_TALKNUM">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="uint16" name="MesNum" pos="10" />
+      <data type="byte" name="Type" pos="12" />
+      <data type="byte" name="padding0D" pos="13" />
+      <data type="uint16" name="padding0E" pos="14" />
+    </packet>
+    <packet type="0x037" desc="Synth Result">
+      <data type="byte" name="result" pos="4" />
+      <data type="byte" name="quality" pos="5" />
+      <data type="uint16" name="item_id" pos="6" />
+      <data type="byte" name="count" pos="8" />
+      <data type="bits" name="Gender" pos="40" bits="1" />
+      <data type="bits" name="unknown_1_9" pos="40" bits="1" />
+      <data type="bits" name="unknown_1_10" pos="40" bits="1" />
+      <data type="bits" name="hpp" pos="40" bits="8" />
+      <data type="bits" name="unknown_3_28" pos="40" bits="1" />
+      <data type="bits" name="Speed" pos="44" bits="12" />
+      <data type="bits" name="Hackmove" pos="44" bits="1" />
+      <data type="bits" name="unknown_1_14" pos="44" bits="1" />
+      <data type="bits" name="unknown_3_25" pos="44" bits="4" />
+      <data type="byte" name="server_status" pos="48" />
+      <data type="byte" name="r" pos="49" />
+      <data type="byte" name="g" pos="50" />
+      <data type="byte" name="b" pos="51" />
+      <data type="bits" name="unknown_3_29" pos="52" bits="3" />
+      <data type="bits" name="unknown_0_2" pos="56" bits="1" />
+      <data type="bits" name="unknown_0_5" pos="56" bits="1" />
+      <data type="bits" name="unknown_0_6" pos="56" bits="1" />
+      <data type="bits" name="unknown_0_7" pos="56" bits="1" />
+      <data type="bits" name="unknown_2_16" pos="56" bits="16" />
+      <data type="uint32" name="dead_counter1" pos="60" />
+      <data type="uint32" name="dead_counter2" pos="64" />
+      <data type="uint16" name="costume_id" pos="68" />
+      <data type="uint16" name="warp_target_index" pos="70" />
+      <data type="uint16" name="fellow_target_index" pos="72" />
+      <data type="byte" name="fishing_timer" pos="74" />
+      <data type="byte" name="padding4B" pos="75" />
+      <data type="bits" name="Status1" pos="76" bits="2" />
+      <data type="bits" name="Status2" pos="76" bits="2" />
+      <data type="bits" name="Status3" pos="76" bits="2" />
+      <data type="bits" name="Status4" pos="76" bits="2" />
+      <data type="bits" name="Status5" pos="77" bits="2" />
+      <data type="bits" name="Status6" pos="77" bits="2" />
+      <data type="bits" name="Status7" pos="77" bits="2" />
+      <data type="bits" name="Status8" pos="77" bits="2" />
+      <data type="bits" name="Status9" pos="78" bits="2" />
+      <data type="bits" name="Status10" pos="78" bits="2" />
+      <data type="bits" name="Status11" pos="78" bits="2" />
+      <data type="bits" name="Status12" pos="78" bits="2" />
+      <data type="bits" name="Status13" pos="79" bits="2" />
+      <data type="bits" name="Status14" pos="79" bits="2" />
+      <data type="bits" name="Status15" pos="79" bits="2" />
+      <data type="bits" name="Status16" pos="79" bits="2" />
+      <data type="bits" name="Status17" pos="80" bits="2" />
+      <data type="bits" name="Status18" pos="80" bits="2" />
+      <data type="bits" name="Status19" pos="80" bits="2" />
+      <data type="bits" name="Status20" pos="80" bits="2" />
+      <data type="bits" name="Status21" pos="81" bits="2" />
+      <data type="bits" name="Status22" pos="81" bits="2" />
+      <data type="bits" name="Status23" pos="81" bits="2" />
+      <data type="bits" name="Status24" pos="81" bits="2" />
+      <data type="bits" name="Status25" pos="82" bits="2" />
+      <data type="bits" name="Status26" pos="82" bits="2" />
+      <data type="bits" name="Status27" pos="82" bits="2" />
+      <data type="bits" name="Status28" pos="82" bits="2" />
+      <data type="bits" name="Status29" pos="83" bits="2" />
+      <data type="bits" name="Status30" pos="83" bits="2" />
+      <data type="bits" name="Status31" pos="83" bits="2" />
+      <data type="bits" name="Status32" pos="83" bits="2" />
+      <data type="uint16" name="monstrosity_info" pos="84" />
+      <data type="byte" name="monstrosity_name_id1" pos="86" />
+      <data type="byte" name="monstrosity_name_id2" pos="87" />
+      <data type="byte" name="model_hitbox_size" pos="89" />
+      <data type="bits" name="unknown_0_0" pos="90" bits="2" />
+      <data type="bits" name="unknown_0_4" pos="90" bits="4" />
+      <data type="byte" name="mount_id" pos="91" />
+      <data type="bits" name="unknown_0_1" pos="92" bits="1" />
+      <data type="bits" name="unknown_0_3" pos="92" bits="1" />
+      <data type="a" name="BufStatus" pos="4" size="32" />
+      <data type="uint32" name="UniqueNo" pos="36" />
+      <data type="bits" name="HideFlag" pos="40" bits="1" />
+      <data type="bits" name="SleepFlag" pos="40" bits="1" bit="1" />
+      <data type="bits" name="GroundFlag" pos="40" bits="1" bit="2" />
+      <data type="bits" name="CliPosInitFlag" pos="40" bits="1" bit="3" />
+      <data type="bits" name="LfgFlag" pos="40" bits="1" bit="4" />
+      <data type="bits" name="AnonymousFlag" pos="40" bits="1" bit="5" />
+      <data type="bits" name="CfhFlag" pos="40" bits="1" bit="6" />
+      <data type="bits" name="AwayFlag" pos="40" bits="1" bit="7" />
+      <data type="bits" name="GraphSize" pos="40" bits="2" bit="11" />
+      <data type="bits" name="Chocobo_Index" pos="40" bits="3" bit="13" />
+      <data type="bits" name="PlayOnelineFlag" pos="40" bits="1" bit="24" />
+      <data type="bits" name="LinkShellFlag" pos="40" bits="1" bit="25" />
+      <data type="bits" name="LinkDeadFlag" pos="40" bits="1" bit="26" />
+      <data type="bits" name="TargetOffFlag" pos="40" bits="1" bit="27" />
+      <data type="bits" name="GmLevel" pos="40" bits="3" bit="29" />
+      <data type="bits" name="FreezeFlag" pos="44" bits="1" bit="13" />
+      <data type="bits" name="InvisFlag" pos="44" bits="1" bit="15" />
+      <data type="bits" name="GateBreachFlg" pos="44" bits="1" bit="16" />
+      <data type="bits" name="SpeedBase" pos="44" bits="8" bit="17" />
+      <data type="bits" name="BazaarFlag" pos="44" bits="1" bit="29" />
+      <data type="bits" name="CharmFlag" pos="44" bits="1" bit="30" />
+      <data type="bits" name="GmIconFlag" pos="44" bits="1" bit="31" />
+      <data type="bits" name="NamedFlag" pos="52" bits="1" />
+      <data type="bits" name="SingleFlag" pos="52" bits="1" bit="1" />
+      <data type="bits" name="AutoPartyFlag" pos="52" bits="1" bit="2" />
+      <data type="bits" name="PetIndex" pos="52" bits="16" bit="3" />
+      <data type="bits" name="MotStopFlag" pos="52" bits="1" bit="19" />
+      <data type="bits" name="CliPriorityFlag" pos="52" bits="1" bit="20" />
+      <data type="bits" name="BallistaFlg" pos="52" bits="8" bit="21" />
+      <data type="bits" name="LfgMasterFlag" pos="56" bits="1" />
+      <data type="bits" name="TrialFlag" pos="56" bits="1" bit="1" />
+      <data type="bits" name="NewCharacterFlag" pos="56" bits="1" bit="3" />
+      <data type="bits" name="MentorFlag" pos="56" bits="1" bit="4" />
+      <data type="bits" name="BallistaTeam" pos="56" bits="8" bit="8" />
+      <data type="bits" name="GeoIndiElement" pos="88" bits="4" />
+      <data type="bits" name="GeoIndiSize" pos="88" bits="2" bit="4" />
+      <data type="bits" name="GeoIndiFlag" pos="88" bits="1" bit="6" />
+      <data type="bits" name="JobMasterFlag" pos="88" bits="1" bit="7" />
+    </packet>
+    <packet type="0x038" desc="GP_SERV_COMMAND_SCHEDULOR">
+      <data type="uint32" name="UniqueNoCas" pos="4" />
+      <data type="uint32" name="UniqueNoTar" pos="8" />
+      <data type="uint16" name="ActIndexCast" pos="16" />
+      <data type="uint16" name="ActIndexTar" pos="18" />
+    </packet>
+    <packet type="0x039" desc="GP_SERV_COMMAND_MAPSCHEDULOR">
+      <data type="uint32" name="UniqueNoCas" pos="4" />
+      <data type="uint32" name="UniqueNoTar" pos="8" />
+      <data type="uint16" name="ActIndexCast" pos="16" />
+      <data type="uint16" name="ActIndexTar" pos="18" />
+    </packet>
+    <packet type="0x03A" desc="GP_SERV_COMMAND_MAGICSCHEDULOR">
+      <data type="uint32" name="UniqueNoCas" pos="4" />
+      <data type="uint32" name="UniqueNoTar" pos="8" />
+      <data type="uint16" name="ActIndexCast" pos="12" />
+      <data type="uint16" name="ActIndexTar" pos="14" />
+      <data type="uint16" name="fileNum" pos="16" />
+      <data type="byte" name="type" pos="18" />
+      <data type="byte" name="padding13" pos="19" />
+    </packet>
+    <packet type="0x03B" desc="GP_SERV_COMMAND_EVENTMES">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="uint16" name="Number" pos="10" />
+    </packet>
+    <packet type="0x03C" desc="Shop Item List">
+      <data type="uint16" name="item_id" pos="4" />
+      <data type="uint32" name="price" pos="8" />
+      <data type="byte" name="shop_slot" pos="12" />
+      <data type="byte" name="Flags" pos="6" />
+      <data type="byte" name="padding07" pos="7" />
+      <data type="uint16" name="Skill" pos="16" />
+      <data type="uint16" name="ShopItemOffsetIndex" pos="4" />
+      <data type="uint32" name="ItemPrice" pos="8" />
+      <data type="uint16" name="ItemNo" pos="12" />
+      <data type="byte" name="ShopIndex" pos="14" />
+      <data type="uint16" name="GuildInfo" pos="18" />
+    </packet>
+    <packet type="0x03D" desc="GP_SERV_COMMAND_SHOP_SELL">
+      <data type="uint32" name="Price" pos="4" />
+      <data type="byte" name="PropertyItemIndex" pos="8" />
+      <data type="byte" name="Type" pos="9" />
+      <data type="uint16" name="padding0A" pos="10" />
+      <data type="uint32" name="Count" pos="12" />
+    </packet>
+    <packet type="0x03E" desc="GP_SERV_COMMAND_SHOP_OPEN">
+      <data type="uint16" name="ShopListNum" pos="4" />
+      <data type="uint16" name="padding006" pos="6" />
+    </packet>
+    <packet type="0x03F" desc="GP_SERV_COMMAND_SHOP_BUY">
+      <data type="uint16" name="ShopItemIndex" pos="4" />
+      <data type="byte" name="BuyState" pos="6" />
+      <data type="byte" name="padding07" pos="7" />
+      <data type="uint32" name="Count" pos="8" />
+    </packet>
+    <packet type="0x040" desc="Unknown - Packet: 0x0040" />
+    <packet type="0x041" desc="GP_SERV_COMMAND_BLACK_LIST">
+      <data type="uint32" name="ID" pos="4" />
+      <data type="a" name="Name" pos="8" size="16" />
+      <data type="int8" name="Stat" pos="24" />
+      <data type="int8" name="Num" pos="25" />
+      <data type="uint16" name="paddingF6" pos="26" />
+    </packet>
+    <packet type="0x042" desc="GP_SERV_COMMAND_BLACK_EDIT">
+      <data type="uint32" name="ID" pos="4" />
+      <data type="a" name="Name" pos="8" size="16" />
+      <data type="int8" name="Mode" pos="24" />
+      <data type="a" name="padding19" pos="25" size="3" />
+    </packet>
+    <packet type="0x043" desc="GP_SERV_COMMAND_TALKNUMNAME">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="uint16" name="MesNum" pos="10" />
+      <data type="byte" name="Type" pos="12" />
+      <data type="byte" name="padding0D" pos="13" />
+      <data type="uint16" name="padding0E" pos="14" />
+      <data type="a" name="sName" pos="16" size="16" />
+    </packet>
+    <packet type="0x044" desc="Job Points">
+      <data type="byte" name="job" pos="4" lookup="jobs" />
+      <data type="uint16" name="capacity_points" pos="6" />
+      <data type="uint16" name="job_points" pos="8" />
+      <data type="uint16" name="job_points_spent" pos="10" />
+      <data type="a" name="Data" pos="6" size="154" />
+      <data type="byte" name="JobId" pos="4" />
+      <data type="byte" name="IsSubJob" pos="5" />
+      <data type="a" name="unknown01" pos="28" size="132" />
+    </packet>
+    <packet type="0x047" desc="GP_SERV_COMMAND_TRANSLATE">
+      <data type="uint16" name="ItemNo" pos="4" />
+      <data type="byte" name="FromIndex" pos="6" />
+      <data type="byte" name="ToIndex" pos="7" />
+      <data type="a" name="FromString" pos="8" size="64" />
+      <data type="a" name="ToString" pos="72" size="64" />
+    </packet>
+    <packet type="0x048" desc="GP_SERV_COMMAND_LINK_CONCIERGE">
+      <data type="a" name="data" pos="4" size="124" />
+      <data type="uint16" name="SlotIndex" pos="8" />
+      <data type="uint16" name="ListingFlag" pos="10" />
+      <data type="a" name="PostedDays" pos="28" size="3" />
+      <data type="byte" name="Registered" pos="48" />
+    </packet>
+    <packet type="0x049" desc="GP_SERV_COMMAND_ITEMSEARCH">
+      <data type="byte" name="Flag" pos="6" />
+      <data type="byte" name="padding07" pos="7" />
+      <data type="uint16" name="ItemNo" pos="4" />
+      <data type="a" name="ItemName" pos="8" size="64" />
+    </packet>
+    <packet type="0x04B" desc="Delivery Box">
+      <data type="byte" name="type" pos="4" />
+      <data type="byte" name="box_type" pos="5" />
+      <data type="byte" name="slot_index" pos="6" />
+      <data type="byte" name="count" pos="8" />
+      <data type="uint16" name="item_id" pos="10" />
+      <data type="t" name="sender_name" pos="22" size="16" />
+      <data type="byte" name="Command" pos="4" />
+      <data type="int8" name="Result" pos="12" />
+      <data type="a" name="Represent" pos="16" size="4" />
+      <data type="int8" name="BoxNo" pos="5" />
+      <data type="int8" name="PostWorkNo" pos="6" />
+      <data type="int8" name="ItemWorkNo" pos="7" />
+      <data type="int32" name="ItemStacks" pos="8" />
+      <data type="int8" name="ResParam1" pos="13" />
+      <data type="int8" name="ResParam2" pos="14" />
+      <data type="int8" name="ResParam3" pos="15" />
+      <data type="uint32" name="State" pos="20" />
+    </packet>
+    <packet type="0x04C" desc="GP_SERV_COMMAND_AUC">
+      <data type="byte" name="Command" pos="4" />
+      <data type="byte" name="AucWorkIndex" pos="5" />
+      <data type="byte" name="Result" pos="6" />
+      <data type="byte" name="ResultStatus" pos="7" />
+      <data type="uint32" name="param" pos="8" />
+      <data type="byte" name="Stat" pos="12" />
+      <data type="byte" name="padding01" pos="13" />
+      <data type="byte" name="ItemIndex" pos="14" />
+      <data type="byte" name="padding03" pos="15" />
+      <data type="a" name="Name" pos="16" size="16" />
+      <data type="uint16" name="ItemNo" pos="32" />
+      <data type="byte" name="ItemQuantity" pos="34" />
+      <data type="byte" name="ItemCategory" pos="35" />
+      <data type="uint32" name="Price" pos="36" />
+      <data type="uint32" name="MarketNo" pos="40" />
+      <data type="uint32" name="LotNo" pos="44" />
+      <data type="uint32" name="TimeStamp" pos="48" />
+    </packet>
+    <packet type="0x04D" desc="Server Message">
+      <data type="uint16" name="message_id" pos="4" />
+      <data type="uint16" name="flags" pos="6" />
+      <data type="uint32" name="param_1" pos="8" />
+      <data type="uint32" name="param_2" pos="12" />
+      <data type="uint32" name="param_3" pos="16" />
+      <data type="uint32" name="param_4" pos="20" />
+      <data type="t" name="message" pos="24" size="128" />
+      <data type="byte" name="Command" pos="4" />
+      <data type="int8" name="Result" pos="5" />
+      <data type="byte" name="value1" pos="6" />
+      <data type="byte" name="value2" pos="7" />
+      <data type="int32" name="timestamp" pos="8" />
+      <data type="int32" name="size_total" pos="12" />
+      <data type="int32" name="offset" pos="16" />
+      <data type="int32" name="data_size" pos="20" />
+    </packet>
+    <packet type="0x04F" desc="GP_SERV_COMMAND_EQUIP_CLEAR">
+      <data type="uint32" name="padding04" pos="4" />
+    </packet>
+    <packet type="0x050" desc="Equipment">
+      <data type="byte" name="slot_id" pos="4" />
+      <data type="uint16" name="item_id" pos="6" />
+      <data type="byte" name="bag_id" pos="8" />
+      <data type="byte" name="Category" pos="9" />
+      <data type="byte" name="padding07" pos="10" />
+      <data type="byte" name="PropertyItemIndex" pos="4" />
+      <data type="uint32" name="EquipKind" pos="5" />
+    </packet>
+    <packet type="0x051" desc="GP_SERV_COMMAND_GRAP_LIST">
+      <data type="a" name="GrapIDTbl" pos="4" size="18" />
+      <data type="uint16" name="padding16" pos="22" />
+    </packet>
+    <packet type="0x052" desc="GP_SERV_COMMAND_EVENTUCOFF">
+      <data type="uint32" name="Mode" pos="4" />
+    </packet>
+    <packet type="0x053" desc="GP_SERV_COMMAND_SYSTEMMES">
+      <data type="uint32" name="para" pos="4" />
+      <data type="uint32" name="para2" pos="8" />
+      <data type="uint16" name="Number" pos="12" />
+      <data type="uint16" name="padding0E" pos="14" />
+    </packet>
+    <packet type="0x054" desc="GP_SERV_COMMAND_DEBUGPRINT">
+      <data type="int32" name="data" pos="4" />
+      <data type="byte" name="port" pos="8" />
+      <data type="a" name="padding09" pos="9" size="3" />
+    </packet>
+    <packet type="0x055" desc="GP_SERV_COMMAND_SCENARIOITEM">
+      <data type="a" name="GetItemFlag" pos="4" size="64" />
+      <data type="a" name="LookItemFlag" pos="68" size="64" />
+      <data type="uint16" name="TableIndex" pos="132" />
+      <data type="uint16" name="padding86" pos="134" />
+    </packet>
+    <packet type="0x056" desc="GP_SERV_COMMAND_MISSION">
+      <data type="a" name="data" pos="4" size="32" />
+      <data type="uint16" name="Port" pos="36" />
+      <data type="uint16" name="padding26" pos="38" />
+    </packet>
+    <packet type="0x057" desc="GP_SERV_COMMAND_WEATHER">
+      <data type="uint32" name="StartTime" pos="4" />
+      <data type="uint16" name="WeatherNumber" pos="8" />
+      <data type="uint16" name="WeatherOffsetTime" pos="10" />
+    </packet>
+    <packet type="0x058" desc="GP_SERV_COMMAND_ASSIST">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint32" name="AssistNo" pos="8" />
+      <data type="uint16" name="ActIndex" pos="12" />
+      <data type="uint16" name="padding0E" pos="14" />
+    </packet>
+    <packet type="0x059" desc="GP_SERV_COMMAND_FRIENDPASS">
+      <data type="int32" name="leftNum" pos="4" />
+      <data type="int32" name="leftDays" pos="8" />
+      <data type="int32" name="passPop" pos="12" />
+      <data type="t" name="String" pos="16" size="16" />
+      <data type="byte" name="Type" pos="32" />
+      <data type="byte" name="unknown21" pos="33" />
+      <data type="uint16" name="padding22" pos="34" />
+    </packet>
+    <packet type="0x05A" desc="GP_SERV_COMMAND_MOTIONMES">
+      <data type="uint32" name="CasUniqueNo" pos="4" />
+      <data type="uint32" name="TarUniqueNo" pos="8" />
+      <data type="uint16" name="CasActIndex" pos="12" />
+      <data type="uint16" name="TarActIndex" pos="14" />
+      <data type="uint16" name="MesNum" pos="16" />
+      <data type="uint16" name="Param" pos="18" />
+      <data type="uint16" name="unknown14" pos="20" />
+      <data type="byte" name="Mode" pos="22" />
+      <data type="byte" name="padding17" pos="23" />
+      <data type="a" name="FaithUniqueNo" pos="24" size="20" />
+      <data type="a" name="FaithActIndex" pos="44" size="10" />
+      <data type="uint16" name="padding36" pos="54" />
+    </packet>
+    <packet type="0x05B" desc="GP_SERV_COMMAND_WPOS">
+      <data type="float" name="x" pos="4" />
+      <data type="float" name="y" pos="8" />
+      <data type="float" name="z" pos="12" />
+      <data type="uint32" name="UniqueNo" pos="16" />
+      <data type="uint16" name="ActIndex" pos="20" />
+      <data type="byte" name="Mode" pos="22" />
+      <data type="byte" name="dir" pos="23" />
+      <data type="uint32" name="padding18" pos="24" />
+    </packet>
+    <packet type="0x05C" desc="GP_SERV_COMMAND_PENDINGNUM">
+      <data type="a" name="num" pos="4" size="32" />
+    </packet>
+    <packet type="0x05D" desc="GP_SERV_COMMAND_PENDINGSTR">
+      <data type="a" name="num" pos="4" size="36" />
+      <data type="t" name="string1" pos="40" size="16" />
+      <data type="t" name="string2" pos="56" size="16" />
+      <data type="t" name="string3" pos="72" size="16" />
+      <data type="t" name="string4" pos="88" size="16" />
+    </packet>
+    <packet type="0x05E" desc="Conquest/Besieged">
+      <data type="byte" name="type" pos="4" />
+      <data type="uint32" name="sandoria_influence" pos="8" />
+      <data type="uint32" name="bastok_influence" pos="12" />
+      <data type="uint32" name="windurst_influence" pos="16" />
+    </packet>
+    <packet type="0x05F" desc="GP_SERV_COMMAND_MUSIC">
+      <data type="uint16" name="Slot" pos="4" />
+      <data type="uint16" name="MusicNum" pos="6" />
+    </packet>
+    <packet type="0x060" desc="GP_SERV_COMMAND_MUSICVOLUME">
+      <data type="uint16" name="time" pos="4" />
+      <data type="uint16" name="volume" pos="6" />
+    </packet>
+    <packet type="0x061" desc="Character Stats">
+      <data type="uint16" name="hp_max" pos="4" />
+      <data type="uint16" name="mp_max" pos="6" />
+      <data type="byte" name="main_job" pos="8" lookup="jobs" />
+      <data type="byte" name="main_job_level" pos="9" />
+      <data type="byte" name="sub_job" pos="10" lookup="jobs" />
+      <data type="byte" name="sub_job_level" pos="11" />
+      <data type="uint16" name="current_hp" pos="12" />
+      <data type="uint16" name="current_mp" pos="14" />
+      <data type="uint16" name="str" pos="16" />
+      <data type="uint16" name="dex" pos="18" />
+      <data type="uint16" name="vit" pos="20" />
+      <data type="uint16" name="agi" pos="22" />
+      <data type="uint16" name="int" pos="24" />
+      <data type="uint16" name="mnd" pos="26" />
+      <data type="uint16" name="chr" pos="28" />
+      <data type="int32" name="hpmax" pos="4" />
+      <data type="int32" name="mpmax" pos="8" />
+      <data type="byte" name="mjob_no" pos="12" />
+      <data type="byte" name="mjob_lv" pos="13" />
+      <data type="byte" name="sjob_no" pos="14" />
+      <data type="byte" name="sjob_lv" pos="15" />
+      <data type="int16" name="exp_now" pos="16" />
+      <data type="int16" name="exp_next" pos="18" />
+      <data type="a" name="bp_base" pos="20" size="14" />
+      <data type="a" name="bp_adj" pos="34" size="14" />
+      <data type="int16" name="atk" pos="48" />
+      <data type="int16" name="def" pos="50" />
+      <data type="a" name="def_elem" pos="52" size="16" />
+      <data type="uint16" name="designation" pos="68" />
+      <data type="uint16" name="rank" pos="70" />
+      <data type="uint16" name="rankbar" pos="72" />
+      <data type="byte" name="nation" pos="80" />
+      <data type="byte" name="myroom" pos="81" />
+      <data type="byte" name="su_lv" pos="82" />
+      <data type="byte" name="padding4F" pos="83" />
+      <data type="byte" name="highest_ilvl" pos="84" />
+      <data type="byte" name="ilvl" pos="85" />
+      <data type="byte" name="ilvl_mhand" pos="86" />
+      <data type="byte" name="ilvl_ranged" pos="87" />
+      <data type="uint32" name="unity_info" pos="88" />
+      <data type="uint16" name="unity_points1" pos="92" />
+      <data type="uint16" name="unity_points2" pos="94" />
+      <data type="uint32" name="unity_chat_color_flag" pos="96" />
+      <data type="uint32" name="mastery_info" pos="100" />
+      <data type="uint32" name="mastery_exp_now" pos="104" />
+      <data type="uint32" name="mastery_exp_next" pos="108" />
+      <data type="uint16" name="BindZoneNo" pos="74" />
+      <data type="uint32" name="MonsterBuster" pos="76" />
+    </packet>
+    <packet type="0x062" desc="GP_SERV_COMMAND_CLISTATUS2">
+      <data type="a" name="CommandRecast" pos="4" size="124" />
+      <data type="a" name="skill_base" pos="128" size="128" />
+    </packet>
+    <packet type="0x063" desc="Buffs">
+      <data type="a" name="buff_ids" pos="4" size="64" />
+      <data type="uint16" name="type" pos="4" />
+      <data type="uint16" name="unknown06" pos="6" />
+      <data type="a" name="homePoint" pos="8" size="16" />
+      <data type="a" name="survivalGuide" pos="24" size="16" />
+      <data type="a" name="waypoint" pos="40" size="16" />
+      <data type="uint32" name="telepoint" pos="56" />
+      <data type="uint32" name="atmos" pos="60" />
+      <data type="uint32" name="eschanPortal" pos="64" />
+      <data type="uint32" name="unknown00" pos="68" />
+    </packet>
+    <packet type="0x064" desc="GP_SERV_COMMAND_PREFERENCE_DATA">
+      <data type="int32" name="ContentLen" pos="4" />
+      <data type="int32" name="SegmentIndex" pos="8" />
+      <data type="t" name="PreferenceData" pos="12" size="50" />
+      <data type="byte" name="SendDone" pos="62" />
+      <data type="byte" name="padding3F" pos="63" />
+    </packet>
+    <packet type="0x065" desc="GP_SERV_COMMAND_WPOS2">
+      <data type="float" name="x" pos="4" />
+      <data type="float" name="y" pos="8" />
+      <data type="float" name="z" pos="12" />
+      <data type="uint32" name="UniqueNo" pos="16" />
+      <data type="uint16" name="ActIndex" pos="20" />
+      <data type="byte" name="Mode" pos="22" />
+      <data type="byte" name="dir" pos="23" />
+      <data type="uint32" name="padding18" pos="24" />
+    </packet>
+    <packet type="0x067" desc="Party Member Update">
+      <data type="uint32" name="player_id" pos="4" />
+      <data type="uint16" name="hp" pos="8" />
+      <data type="uint16" name="mp" pos="10" />
+      <data type="uint16" name="tp" pos="12" />
+      <data type="byte" name="hp_percent" pos="14" />
+      <data type="byte" name="mp_percent" pos="15" />
+      <data type="uint16" name="zone_id" pos="16" lookup="zones" />
+      <data type="byte" name="main_job" pos="20" lookup="jobs" />
+      <data type="byte" name="main_job_level" pos="21" />
+      <data type="byte" name="sub_job" pos="22" lookup="jobs" />
+      <data type="byte" name="sub_job_level" pos="23" />
+      <data type="bits" name="Mode" pos="4" bits="6" />
+      <data type="bits" name="Length" pos="4" bits="10" />
+    </packet>
+    <packet type="0x068" desc="GP_SERV_COMMAND_ENTITY_UPDATE2">
+      <data type="bits" name="Mode" pos="4" bits="6" />
+      <data type="bits" name="Length" pos="4" bits="10" />
+    </packet>
+    <packet type="0x069" desc="GP_SERV_COMMAND_CHOCOBO_RACING">
+      <data type="byte" name="Mode" pos="4" />
+      <data type="a" name="RaceParams" pos="8" size="8" />
+      <data type="a" name="junk00" pos="16" size="184" />
+    </packet>
+    <packet type="0x06F" desc="GP_SERV_COMMAND_COMBINE_ANS">
+      <data type="byte" name="Result" pos="4" />
+      <data type="int8" name="Grade" pos="5" />
+      <data type="byte" name="Count" pos="6" />
+      <data type="byte" name="padding07" pos="7" />
+      <data type="uint16" name="ItemNo" pos="8" />
+      <data type="a" name="BreakNo" pos="10" size="16" />
+      <data type="a" name="UpKind" pos="26" size="4" />
+      <data type="a" name="UpLevel" pos="30" size="4" />
+      <data type="uint16" name="CrystalNo" pos="34" />
+      <data type="a" name="MaterialNo" pos="36" size="16" />
+      <data type="uint32" name="padding34" pos="52" />
+    </packet>
+    <packet type="0x070" desc="GP_SERV_COMMAND_COMBINE_INF">
+      <data type="byte" name="Result" pos="4" />
+      <data type="int8" name="Grade" pos="5" />
+      <data type="byte" name="Count" pos="6" />
+      <data type="byte" name="padding07" pos="7" />
+      <data type="uint16" name="ItemNo" pos="8" />
+      <data type="a" name="BreakNo" pos="10" size="16" />
+      <data type="uint16" name="UniqueNo" pos="26" />
+      <data type="uint16" name="ActIndex" pos="28" />
+      <data type="a" name="name" pos="30" size="16" />
+      <data type="a" name="padding2E" pos="46" size="2" />
+    </packet>
+    <packet type="0x071" desc="GP_SERV_COMMAND_INFLUENCE">
+      <data type="byte" name="Mode" pos="4" />
+      <data type="uint16" name="Length" pos="9" />
+      <data type="byte" name="ZoneOffset" pos="12" />
+      <data type="int32" name="AlliedNotes" pos="15" />
+      <data type="uint32" name="ControlledAreas" pos="19" />
+      <data type="uint32" name="Nations" pos="23" />
+    </packet>
+    <packet type="0x073" desc="GP_SERV_COMMAND_CHOCOBO_TOTEBOARD">
+      <data type="uint32" name="SlotIndex" pos="4" />
+      <data type="uint32" name="Ident" pos="8" />
+      <data type="uint32" name="padding00" pos="12" />
+      <data type="a" name="Odds" pos="16" size="56" />
+    </packet>
+    <packet type="0x074" desc="GP_SERV_COMMAND_CHOCOBO_LIST">
+      <data type="uint32" name="SlotIndex" pos="4" />
+      <data type="a" name="padding04" pos="8" size="8" />
+      <data type="uint16" name="Mode" pos="16" />
+      <data type="uint16" name="ParamSize" pos="18" />
+      <data type="a" name="RaceParams" pos="20" size="8" />
+      <data type="a" name="junk00" pos="28" size="152" />
+    </packet>
+    <packet type="0x072" desc="GP_SERV_COMMAND_UNKNOWN_072" />
+    <packet type="0x075" desc="GP_SERV_COMMAND_BATTLEFIELD">
+      <data type="uint32" name="Mode" pos="4" />
+      <data type="uint32" name="Timestamp" pos="8" />
+      <data type="uint32" name="Duration" pos="12" />
+      <data type="byte" name="Flags" pos="36" />
+      <data type="byte" name="unknown26" pos="38" />
+      <data type="byte" name="padding27" pos="39" />
+      <data type="a" name="Data" pos="40" size="128" />
+      <data type="uint32" name="DurationWarn" pos="16" />
+      <data type="int32" name="FenceX" pos="20" />
+      <data type="int32" name="FenceY" pos="24" />
+      <data type="uint32" name="FenceRadius" pos="28" />
+      <data type="uint32" name="FenceRotation" pos="32" />
+      <data type="byte" name="FenceColor" pos="37" />
+      <data type="uint16" name="MesNumTitle" pos="168" />
+      <data type="uint16" name="MesNumDescription" pos="170" />
+      <data type="uint32" name="Progress" pos="172" />
+    </packet>
+    <packet type="0x076" desc="GP_SERV_COMMAND_GROUP_EFFECTS">
+      <data type="uint16" name="padding06" pos="10" />
+      <data type="uint32" name="Bits_low" pos="12" />
+      <data type="uint32" name="Bits_high" pos="16" />
+      <data type="a" name="Buffs" pos="20" size="32" />
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+    </packet>
+    <packet type="0x077" desc="GP_SERV_COMMAND_ENTITY_VIS">
+      <data type="byte" name="Flags" pos="4" />
+      <data type="a" name="padding05" pos="5" size="3" />
+      <data type="a" name="Data" pos="8" size="128" />
+    </packet>
+    <packet type="0x078" desc="GP_SERV_COMMAND_SWITCH_START">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint32" name="AllNum" pos="8" />
+      <data type="uint16" name="ActIndex" pos="12" />
+      <data type="a" name="sName" pos="14" size="15" />
+      <data type="byte" name="Kind" pos="29" />
+      <data type="a" name="Str" pos="33" size="224" />
+    </packet>
+    <packet type="0x079" desc="GP_SERV_COMMAND_SWITCH_PROC">
+      <data type="uint32" name="AllNum" pos="4" />
+      <data type="a" name="VoteNumTbl" pos="8" size="18" />
+      <data type="byte" name="Kind" pos="26" />
+      <data type="byte" name="State" pos="27" />
+      <data type="byte" name="QuestionNum" pos="28" />
+      <data type="a" name="sPropName" pos="29" size="15" />
+      <data type="a" name="Str" pos="44" size="256" />
+    </packet>
+    <packet type="0x081" desc="GP_SERV_COMMAND_UNKNOWN_081" />
+    <packet type="0x082" desc="GP_SERV_COMMAND_GUILD_BUY">
+      <data type="uint16" name="ItemNo" pos="4" />
+      <data type="byte" name="Count" pos="6" />
+      <data type="int8" name="Trade" pos="7" />
+    </packet>
+    <packet type="0x083" desc="GP_SERV_COMMAND_GUILD_BUYLIST">
+      <data type="uint16" name="ItemNo" pos="4" />
+      <data type="byte" name="Count" pos="6" />
+      <data type="byte" name="Max" pos="7" />
+      <data type="int32" name="Price" pos="8" />
+      <data type="byte" name="Count" pos="12" />
+      <data type="byte" name="Stat" pos="13" />
+      <data type="a" name="paddingF6" pos="14" size="2" />
+    </packet>
+    <packet type="0x084" desc="GP_SERV_COMMAND_GUILD_SELL">
+      <data type="uint16" name="ItemNo" pos="4" />
+      <data type="byte" name="Count" pos="6" />
+      <data type="int8" name="Trade" pos="7" />
+    </packet>
+    <packet type="0x085" desc="GP_SERV_COMMAND_GUILD_SELLLIST">
+      <data type="uint16" name="ItemNo" pos="4" />
+      <data type="byte" name="Count" pos="6" />
+      <data type="byte" name="Max" pos="7" />
+      <data type="int32" name="Price" pos="8" />
+      <data type="byte" name="Count" pos="12" />
+      <data type="byte" name="Stat" pos="13" />
+      <data type="a" name="paddingF6" pos="14" size="2" />
+    </packet>
+    <packet type="0x086" desc="GP_SERV_COMMAND_GUILD_OPEN">
+      <data type="byte" name="Stat" pos="4" />
+      <data type="a" name="padding05" pos="5" size="3" />
+      <data type="uint32" name="Time" pos="8" />
+    </packet>
+    <packet type="0x08C" desc="GP_SERV_COMMAND_MERIT">
+      <data type="uint16" name="merit_count" pos="4" />
+      <data type="uint16" name="padding06" pos="6" />
+      <data type="uint16" name="index" pos="8" />
+      <data type="byte" name="next" pos="10" />
+      <data type="byte" name="count" pos="11" />
+    </packet>
+    <packet type="0x08D" desc="GP_SERV_COMMAND_JOB_POINTS">
+      <data type="bits" name="index" pos="4" bits="5" />
+      <data type="bits" name="job_no" pos="4" bits="11" />
+      <data type="bits" name="next" pos="6" bits="10" />
+      <data type="bits" name="level" pos="6" bits="6" />
+    </packet>
+    <packet type="0x08E" desc="GP_SERV_PACKET_ALTER_EGO_POINTS">
+      <data type="uint16" name="points" pos="4" />
+      <data type="a" name="padding06" pos="6" size="2" />
+      <data type="a" name="count" pos="8" size="32" />
+      <data type="a" name="next" pos="40" size="64" />
+    </packet>
+    <packet type="0x096" desc="GP_SERV_COMMAND_MYROOM_ENTER">
+      <data type="byte" name="Result" pos="4" />
+      <data type="a" name="padding05" pos="5" size="3" />
+    </packet>
+    <packet type="0x097" desc="GP_SERV_COMMAND_MYROOM_EXIT">
+      <data type="byte" name="Result" pos="4" />
+      <data type="a" name="padding05" pos="5" size="3" />
+    </packet>
+    <packet type="0x098" desc="GP_SERV_COMMAND_MYROOM_IS">
+      <data type="byte" name="Result" pos="4" />
+      <data type="a" name="padding05" pos="5" size="3" />
+    </packet>
+    <packet type="0x099" desc="GP_SERV_COMMAND_MYROOM_EXIST">
+      <data type="byte" name="Result" pos="4" />
+      <data type="a" name="padding05" pos="5" size="3" />
+    </packet>
+    <packet type="0x09A" desc="GP_SERV_COMMAND_MYROOM_PLANT">
+      <data type="byte" name="Result" pos="4" />
+      <data type="a" name="padding05" pos="5" size="3" />
+    </packet>
+    <packet type="0x09B" desc="GP_SERV_COMMAND_MYROOM_RAISE">
+      <data type="byte" name="Result" pos="4" />
+      <data type="a" name="padding05" pos="5" size="3" />
+    </packet>
+    <packet type="0x09C" desc="GP_SERV_COMMAND_MYROOM_HARVEST">
+      <data type="byte" name="Result" pos="4" />
+      <data type="a" name="padding05" pos="5" size="3" />
+    </packet>
+    <packet type="0x09D" desc="GP_SERV_COMMAND_MYROOM_DIARY">
+      <data type="uint32" name="KillCount" pos="4" />
+      <data type="uint32" name="DeadCount" pos="8" />
+      <data type="a" name="Rare" pos="12" size="20" />
+      <data type="a" name="Event" pos="32" size="20" />
+    </packet>
+    <packet type="0x09E" desc="GP_SERV_COMMAND_MYROOM_PLACE">
+      <data type="a" name="job_lev" pos="4" size="16" />
+      <data type="a" name="curjob" pos="20" size="2" />
+      <data type="int8" name="second" pos="22" />
+      <data type="byte" name="padding17" pos="23" />
+    </packet>
+    <packet type="0x0A0" desc="GP_SERV_COMMAND_MAP_GROUP">
+      <data type="uint32" name="UniqueID" pos="4" />
+      <data type="int16" name="zone" pos="8" />
+      <data type="uint16" name="padding0A" pos="10" />
+      <data type="float" name="x" pos="12" />
+      <data type="float" name="y" pos="16" />
+      <data type="float" name="z" pos="20" />
+    </packet>
+    <packet type="0x0AA" desc="Test Packet">
+      <data type="uint32" name="test" pos="0" />
+      <data type="a" name="MagicDataTbl" pos="4" size="128" />
+    </packet>
+    <packet type="0x0AB" desc="GP_SERV_COMMAND_FEAT_DATA">
+      <data type="a" name="FeatDataTbl" pos="4" size="20" />
+    </packet>
+    <packet type="0x0AC" desc="GP_SERV_COMMAND_COMMAND_DATA">
+      <data type="a" name="CommandDataTbl" pos="4" size="224" />
+    </packet>
+    <packet type="0x0AD" desc="GP_SERV_COMMAND_DUNGEON">
+      <data type="a" name="Vouchers" pos="4" size="8" />
+      <data type="a" name="Runes" pos="12" size="64" />
+      <data type="a" name="unused00" pos="76" size="56" />
+    </packet>
+    <packet type="0x0AE" desc="GP_SERV_COMMAND_MOUNT_DATA">
+      <data type="a" name="MountDataTbl" pos="4" size="8" />
+    </packet>
+    <packet type="0x0B4" desc="GP_SERV_COMMAND_CONFIG">
+      <data type="bits" name="InviteFlg" pos="4" bits="1" />
+      <data type="bits" name="AwayFlg" pos="4" bits="1" bit="1" />
+      <data type="bits" name="AnonymityFlg" pos="4" bits="1" bit="2" />
+      <data type="bits" name="Language" pos="4" bits="2" bit="3" />
+      <data type="bits" name="unknown05" pos="4" bits="3" bit="5" />
+      <data type="bits" name="unknown08" pos="5" bits="1" />
+      <data type="bits" name="unknown09" pos="5" bits="1" bit="1" />
+      <data type="bits" name="unknown10" pos="5" bits="1" bit="2" />
+      <data type="bits" name="SysMesFilterLevel" pos="5" bits="2" bit="3" />
+      <data type="bits" name="unknown13" pos="5" bits="1" bit="5" />
+      <data type="bits" name="AutoTargetOffFlg" pos="5" bits="1" bit="6" />
+      <data type="bits" name="AutoPartyFlg" pos="5" bits="1" bit="7" />
+      <data type="bits" name="unknown16" pos="6" bits="8" />
+      <data type="bits" name="MentorUnlockedFlg" pos="7" bits="1" />
+      <data type="bits" name="MentorFlg" pos="7" bits="1" bit="1" />
+      <data type="bits" name="NewAdventurerOffFlg" pos="7" bits="1" bit="2" />
+      <data type="bits" name="DisplayHeadOffFlg" pos="7" bits="1" bit="3" />
+      <data type="bits" name="unknown28" pos="7" bits="1" bit="4" />
+      <data type="bits" name="RecruitFlg" pos="7" bits="1" bit="5" />
+      <data type="bits" name="unused" pos="7" bits="2" bit="6" />
+      <data type="bits" name="say" pos="8" bits="1" />
+      <data type="bits" name="shout" pos="8" bits="1" bit="1" />
+      <data type="bits" name="unused02" pos="8" bits="1" bit="2" />
+      <data type="bits" name="emotes" pos="8" bits="1" bit="3" />
+      <data type="bits" name="special_actions_started_on_by_you" pos="8" bits="1" bit="4" />
+      <data type="bits" name="special_action_effects_on_by_you" pos="8" bits="1" bit="5" />
+      <data type="bits" name="attacks_by_you" pos="8" bits="1" bit="6" />
+      <data type="bits" name="missed_attacks_by_you" pos="8" bits="1" bit="7" />
+      <data type="bits" name="attacks_you_evade" pos="8" bits="1" bit="8" />
+      <data type="bits" name="damage_you_take" pos="8" bits="1" bit="9" />
+      <data type="bits" name="special_action_effects_on_by_npcs" pos="8" bits="1" bit="10" />
+      <data type="bits" name="attacks_by_npcs" pos="8" bits="1" bit="11" />
+      <data type="bits" name="missed_attacks_by_npcs" pos="8" bits="1" bit="12" />
+      <data type="bits" name="special_action_effects_on_by_party" pos="8" bits="1" bit="13" />
+      <data type="bits" name="attacks_by_party" pos="8" bits="1" bit="14" />
+      <data type="bits" name="missed_attacks_by_party" pos="8" bits="1" bit="15" />
+      <data type="bits" name="attacks_evaded_by_party" pos="8" bits="1" bit="16" />
+      <data type="bits" name="damage_taken_by_party" pos="8" bits="1" bit="17" />
+      <data type="bits" name="special_action_effects_on_by_allies" pos="8" bits="1" bit="18" />
+      <data type="bits" name="attacks_by_allies" pos="8" bits="1" bit="19" />
+      <data type="bits" name="missed_attacks_by_allies" pos="8" bits="1" bit="20" />
+      <data type="bits" name="attacks_evaded_by_allies" pos="8" bits="1" bit="21" />
+      <data type="bits" name="damage_taken_by_allies" pos="8" bits="1" bit="22" />
+      <data type="bits" name="special_actions_started_on_by_party" pos="8" bits="1" bit="23" />
+      <data type="bits" name="special_actions_started_on_by_allies" pos="8" bits="1" bit="24" />
+      <data type="bits" name="special_actions_started_on_by_npcs" pos="8" bits="1" bit="25" />
+      <data type="bits" name="others_synthesis_and_fishing_results" pos="8" bits="1" bit="26" />
+      <data type="bits" name="lot_results" pos="8" bits="1" bit="27" />
+      <data type="bits" name="attacks_by_others" pos="8" bits="1" bit="28" />
+      <data type="bits" name="missed_attacks_by_others" pos="8" bits="1" bit="29" />
+      <data type="bits" name="unused30" pos="8" bits="1" bit="30" />
+      <data type="bits" name="unused31" pos="8" bits="1" bit="31" />
+      <data type="bits" name="attacks_evaded_by_others" pos="12" bits="1" />
+      <data type="bits" name="damage_taken_by_others" pos="12" bits="1" bit="1" />
+      <data type="bits" name="special_action_effects_on_by_others" pos="12" bits="1" bit="2" />
+      <data type="bits" name="special_actions_started_on_by_others" pos="12" bits="1" bit="3" />
+      <data type="bits" name="attacks_by_foes" pos="12" bits="1" bit="4" />
+      <data type="bits" name="missed_attacks_by_foes" pos="12" bits="1" bit="5" />
+      <data type="bits" name="attacks_evaded_by_foes" pos="12" bits="1" bit="6" />
+      <data type="bits" name="damage_taken_by_foes" pos="12" bits="1" bit="7" />
+      <data type="bits" name="special_action_effects_on_by_foes" pos="12" bits="1" bit="8" />
+      <data type="bits" name="special_actions_started_on_by_foes" pos="12" bits="1" bit="9" />
+      <data type="bits" name="campaign_related_data" pos="12" bits="1" bit="10" />
+      <data type="bits" name="tell_messages_deemed_spam" pos="12" bits="1" bit="11" />
+      <data type="bits" name="shout_yell_messages_deemed_spam" pos="12" bits="1" bit="12" />
+      <data type="bits" name="unused13" pos="12" bits="1" bit="13" />
+      <data type="bits" name="unused14" pos="12" bits="1" bit="14" />
+      <data type="bits" name="job_specific_emote" pos="12" bits="1" bit="15" />
+      <data type="bits" name="yell" pos="12" bits="1" bit="16" />
+      <data type="bits" name="messages_from_alter_egos" pos="12" bits="1" bit="17" />
+      <data type="bits" name="unused18" pos="12" bits="1" bit="18" />
+      <data type="bits" name="assist_j" pos="12" bits="1" bit="19" />
+      <data type="bits" name="assist_e" pos="12" bits="1" bit="20" />
+      <data type="bits" name="unused21" pos="12" bits="1" bit="21" />
+      <data type="bits" name="unused22" pos="12" bits="1" bit="22" />
+      <data type="bits" name="unused23" pos="12" bits="1" bit="23" />
+      <data type="bits" name="unused24" pos="12" bits="1" bit="24" />
+      <data type="bits" name="unused25" pos="12" bits="1" bit="25" />
+      <data type="bits" name="unused26" pos="12" bits="1" bit="26" />
+      <data type="bits" name="unused27" pos="12" bits="1" bit="27" />
+      <data type="bits" name="unused28" pos="12" bits="1" bit="28" />
+      <data type="bits" name="unused29" pos="12" bits="1" bit="29" />
+      <data type="bits" name="unused30" pos="12" bits="1" bit="30" />
+      <data type="bits" name="unused31" pos="12" bits="1" bit="31" />
+      <data type="uint16" name="PvpFlg" pos="16" />
+      <data type="byte" name="AreaCode" pos="18" />
+      <data type="byte" name="unknown00" pos="19" />
+      <data type="bits" name="Japanese" pos="20" bits="1" />
+      <data type="bits" name="English" pos="20" bits="1" bit="1" />
+      <data type="bits" name="German" pos="20" bits="1" bit="2" />
+      <data type="bits" name="French" pos="20" bits="1" bit="3" />
+      <data type="bits" name="Other" pos="20" bits="1" bit="4" />
+      <data type="bits" name="unused" pos="20" bits="3" bit="5" />
+      <data type="a" name="padding16" pos="21" size="2" />
+      <data type="uint32" name="PartyLanguages" pos="9" />
+      <data type="a" name="unknown01" pos="13" size="3" />
+    </packet>
+    <packet type="0x0B5" desc="GP_SERV_COMMAND_FAQ_GMPARAM">
+      <data type="uint32" name="RescueCount" pos="4" />
+      <data type="a" name="params" pos="8" size="16" />
+      <data type="uint16" name="Id" pos="24" />
+      <data type="uint16" name="Option" pos="26" />
+      <data type="uint16" name="Status" pos="28" />
+      <data type="uint16" name="RescueTime" pos="30" />
+    </packet>
+    <packet type="0x0B6" desc="GP_SERV_COMMAND_SET_GMMSG">
+      <data type="uint32" name="msgId" pos="4" />
+      <data type="uint16" name="seqId" pos="8" />
+      <data type="uint16" name="pktNum" pos="10" />
+      <data type="a" name="Msg" pos="12" size="244" />
+    </packet>
+    <packet type="0x0B7" desc="GP_SERV_COMMAND_GMSCITEM">
+      <data type="a" name="ItemFlag" pos="4" size="64" />
+      <data type="uint32" name="UniqueNo" pos="68" />
+      <data type="a" name="sName" pos="72" size="16" />
+      <data type="uint16" name="TableIndex" pos="88" />
+    </packet>
+    <packet type="0x0BF" desc="GP_SERV_COMMAND_REGISTRATION">
+      <data type="uint16" name="unknown04" pos="4" />
+      <data type="uint16" name="Result" pos="6" />
+      <data type="uint32" name="unknown08" pos="8" />
+      <data type="a" name="padding10" pos="16" size="12" />
+      <data type="uint32" name="ActIndex" pos="12" />
+    </packet>
+    <packet type="0x0C8" desc="GP_SERV_COMMAND_GROUP_TBL">
+      <data type="byte" name="Kind" pos="4" />
+      <data type="a" name="padding05" pos="5" size="3" />
+      <data type="uint32" name="UniqueNo" pos="8" />
+      <data type="uint16" name="ActIndex" pos="12" />
+      <data type="bits" name="PartyNo" pos="14" bits="2" />
+      <data type="bits" name="PartyLeaderFlg" pos="14" bits="1" bit="2" />
+      <data type="bits" name="AllianceLeaderFlg" pos="14" bits="1" bit="3" />
+      <data type="bits" name="PartyRFlg" pos="14" bits="1" bit="4" />
+      <data type="bits" name="AllianceRFlg" pos="14" bits="1" bit="5" />
+      <data type="bits" name="unknown06" pos="14" bits="1" bit="6" />
+      <data type="bits" name="unknown07" pos="14" bits="1" bit="7" />
+      <data type="byte" name="padding07" pos="15" />
+      <data type="uint16" name="ZoneNo" pos="16" />
+      <data type="uint16" name="padding0A" pos="18" />
+    </packet>
+    <packet type="0x0C9" desc="GP_SERV_COMMAND_EQUIP_INSPECT">
+      <data type="uint32" name="UniqNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="byte" name="OptionFlag" pos="10" />
+      <data type="byte" name="padding0F" pos="11" />
+      <data type="uint16" name="ItemNo" pos="12" />
+      <data type="uint32" name="EquipKind" pos="14" />
+    </packet>
+    <packet type="0x0CA" desc="Bazaar Message">
+      <data type="a" name="sInspectMessage" pos="4" size="123" />
+      <data type="bits" name="Race" pos="127" bits="6" bit="2" />
+      <data type="a" name="sName" pos="128" size="16" />
+      <data type="bits" name="BazaarFlag" pos="127" bits="1" />
+      <data type="bits" name="MyFlag" pos="127" bits="1" bit="1" />
+      <data type="uint32" name="DesignationNo" pos="144" />
+    </packet>
+    <packet type="0x0CC" desc="Linkshell Message">
+      <data type="bits" name="stat" pos="4" bits="4" />
+      <data type="bits" name="attr" pos="4" bits="4" />
+      <data type="bits" name="readLevel" pos="5" bits="2" />
+      <data type="bits" name="writeLevel" pos="5" bits="2" />
+      <data type="bits" name="pubEditLevel" pos="5" bits="2" />
+      <data type="bits" name="linkshell_index" pos="5" bits="2" />
+      <data type="uint16" name="seqId" pos="6" />
+      <data type="a" name="sMessage" pos="8" size="128" />
+      <data type="uint32" name="updateTime" pos="136" />
+      <data type="a" name="modifier" pos="140" size="16" />
+      <data type="uint16" name="opType" pos="156" />
+      <data type="uint16" name="padding9E" pos="158" />
+      <data type="a" name="encodedLsName" pos="160" size="16" />
+    </packet>
+    <packet type="0x0D2" desc="GP_SERV_COMMAND_TROPHY_LIST">
+      <data type="uint32" name="TrophyItemNum" pos="4" />
+      <data type="uint32" name="TargetUniqueNo" pos="8" />
+      <data type="uint16" name="Gold" pos="12" />
+      <data type="uint16" name="padding0E" pos="14" />
+      <data type="uint16" name="TrophyItemNo" pos="16" />
+      <data type="uint16" name="TargetActIndex" pos="18" />
+      <data type="byte" name="TrophyItemIndex" pos="20" />
+      <data type="byte" name="Entry" pos="21" />
+      <data type="byte" name="IsContainer" pos="22" />
+      <data type="byte" name="padding17" pos="23" />
+      <data type="uint32" name="StartTime" pos="24" />
+      <data type="uint16" name="IsLocallyLotted" pos="28" />
+      <data type="uint16" name="Point" pos="30" />
+      <data type="uint32" name="LootUniqueNo" pos="32" />
+      <data type="uint16" name="LootActIndex" pos="36" />
+      <data type="uint16" name="LootPoint" pos="38" />
+      <data type="a" name="LootActName" pos="40" size="16" />
+      <data type="bits" name="NamedFlag" pos="56" bits="1" />
+      <data type="bits" name="SingleFlag" pos="56" bits="1" bit="1" />
+      <data type="bits" name="Flags_2" pos="56" bits="2" bit="2" />
+      <data type="bits" name="Flags_4" pos="56" bits="1" bit="4" />
+      <data type="bits" name="Flags_5" pos="56" bits="1" bit="5" />
+      <data type="bits" name="Flags_6" pos="56" bits="1" bit="6" />
+      <data type="bits" name="Flags_7" pos="56" bits="1" bit="7" />
+      <data type="a" name="padding39" pos="57" size="3" />
+    </packet>
+    <packet type="0x0D3" desc="GP_SERV_COMMAND_TROPHY_SOLUTION">
+      <data type="uint32" name="LootUniqueNo" pos="4" />
+      <data type="uint32" name="EntryUniqueNo" pos="8" />
+      <data type="uint16" name="LootActIndex" pos="12" />
+      <data type="int16" name="LootPoint" pos="14" />
+      <data type="bits" name="EntryActIndex" pos="16" bits="15" />
+      <data type="bits" name="EntryFlg" pos="16" bits="1" bit="15" />
+      <data type="int16" name="EntryPoint" pos="18" />
+      <data type="byte" name="TrophyItemIndex" pos="20" />
+      <data type="byte" name="JudgeFlg" pos="21" />
+      <data type="a" name="sLootName" pos="22" size="16" />
+      <data type="a" name="sLootName2" pos="38" size="16" />
+      <data type="a" name="padding36" pos="54" size="6" />
+    </packet>
+    <packet type="0x0DC" desc="GP_SERV_COMMAND_GROUP_SOLICIT_REQ">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="byte" name="AnonFlag" pos="10" />
+      <data type="byte" name="Kind" pos="11" />
+      <data type="a" name="sName" pos="12" size="16" />
+      <data type="uint16" name="RaceNo" pos="28" />
+      <data type="a" name="padding1E" pos="30" size="2" />
+    </packet>
+    <packet type="0x0DD" desc="GP_SERV_COMMAND_GROUP_LIST">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint32" name="Hp" pos="8" />
+      <data type="uint32" name="Mp" pos="12" />
+      <data type="uint32" name="Tp" pos="16" />
+      <data type="bits" name="PartyNo" pos="20" bits="2" />
+      <data type="bits" name="PartyLeaderFlg" pos="20" bits="1" bit="2" />
+      <data type="bits" name="AllianceLeaderFlg" pos="20" bits="1" bit="3" />
+      <data type="bits" name="PartyRFlg" pos="20" bits="1" bit="4" />
+      <data type="bits" name="AllianceRFlg" pos="20" bits="1" bit="5" />
+      <data type="bits" name="unknown06" pos="20" bits="1" bit="6" />
+      <data type="bits" name="unknown07" pos="20" bits="1" bit="7" />
+      <data type="bits" name="LevelSyncFlg" pos="20" bits="1" bit="8" />
+      <data type="bits" name="unused" pos="20" bits="23" bit="9" />
+      <data type="uint16" name="ActIndex" pos="24" />
+      <data type="byte" name="MemberNumber" pos="26" />
+      <data type="byte" name="MoghouseFlg" pos="27" />
+      <data type="byte" name="Kind" pos="28" />
+      <data type="byte" name="Hpp" pos="29" />
+      <data type="byte" name="Mpp" pos="30" />
+      <data type="byte" name="padding1F" pos="31" />
+      <data type="uint16" name="ZoneNo" pos="32" />
+      <data type="byte" name="mjob_no" pos="34" />
+      <data type="byte" name="mjob_lv" pos="35" />
+      <data type="byte" name="sjob_no" pos="36" />
+      <data type="byte" name="sjob_lv" pos="37" />
+      <data type="byte" name="masterjob_lv" pos="38" />
+      <data type="byte" name="masterjob_flags" pos="39" />
+      <data type="a" name="Name" pos="40" size="16" />
+    </packet>
+    <packet type="0x0DE" desc="GP_SERV_COMMAND_GROUP_SOLICIT_NO">
+      <data type="byte" name="Reason" pos="4" />
+      <data type="a" name="padding05" pos="5" size="3" />
+    </packet>
+    <packet type="0x0DF" desc="Character Update (HP/MP/TP)">
+      <data type="uint32" name="player_id" pos="4" />
+      <data type="uint32" name="hp" pos="8" />
+      <data type="uint32" name="mp" pos="12" />
+      <data type="uint32" name="tp" pos="16" />
+      <data type="byte" name="Hpp" pos="22" />
+      <data type="byte" name="Mpp" pos="23" />
+      <data type="byte" name="Kind" pos="24" />
+      <data type="byte" name="mjob_no" pos="32" />
+      <data type="byte" name="mjob_lv" pos="33" />
+      <data type="byte" name="sjob_no" pos="34" />
+      <data type="byte" name="sjob_lv" pos="35" />
+      <data type="byte" name="masterjob_lv" pos="36" />
+      <data type="byte" name="masterjob_flags" pos="37" />
+      <data type="a" name="padding26" pos="38" size="2" />
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="20" />
+      <data type="byte" name="MoghouseFlg" pos="25" />
+      <data type="uint16" name="ZoneNo" pos="26" />
+      <data type="uint16" name="MonstrosityFlag" pos="28" />
+      <data type="uint16" name="MonstrosityNameId" pos="30" />
+    </packet>
+    <packet type="0x0E0" desc="GP_SERV_COMMAND_GROUP_COMLINK">
+      <data type="byte" name="LinkshellNum" pos="4" />
+      <data type="byte" name="ItemIndex" pos="5" />
+      <data type="byte" name="Category" pos="6" />
+      <data type="byte" name="padding07" pos="7" />
+    </packet>
+    <packet type="0x0E1" desc="GP_SERV_COMMAND_GROUP_CHECKID">
+      <data type="uint32" name="GroupID" pos="4" />
+    </packet>
+    <packet type="0x0E2" desc="GP_SERV_COMMAND_GROUP_LIST2">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint32" name="Hp" pos="8" />
+      <data type="uint32" name="Mp" pos="12" />
+      <data type="uint32" name="Tp" pos="16" />
+      <data type="bits" name="PartyNo" pos="20" bits="2" />
+      <data type="bits" name="PartyLeaderFlg" pos="20" bits="1" bit="2" />
+      <data type="bits" name="AllianceLeaderFlg" pos="20" bits="1" bit="3" />
+      <data type="bits" name="PartyRFlg" pos="20" bits="1" bit="4" />
+      <data type="bits" name="AllianceRFlg" pos="20" bits="1" bit="5" />
+      <data type="bits" name="unknown06" pos="20" bits="1" bit="6" />
+      <data type="bits" name="unknown07" pos="20" bits="1" bit="7" />
+      <data type="bits" name="LevelSyncFlg" pos="20" bits="1" bit="8" />
+      <data type="bits" name="unused" pos="20" bits="23" bit="9" />
+      <data type="uint16" name="ActIndex" pos="24" />
+      <data type="byte" name="MemberNumber" pos="26" />
+      <data type="byte" name="MoghouseFlg" pos="27" />
+      <data type="byte" name="Kind" pos="28" />
+      <data type="byte" name="Hpp" pos="29" />
+      <data type="byte" name="Mpp" pos="30" />
+      <data type="byte" name="padding1F" pos="31" />
+      <data type="uint16" name="ZoneNo" pos="32" />
+      <data type="byte" name="mjob_no" pos="34" />
+      <data type="byte" name="mjob_lv" pos="35" />
+      <data type="byte" name="sjob_no" pos="36" />
+      <data type="byte" name="sjob_lv" pos="37" />
+      <data type="byte" name="masterjob_lv" pos="38" />
+      <data type="byte" name="masterjob_flags" pos="39" />
+      <data type="a" name="Name" pos="40" size="16" />
+    </packet>
+    <packet type="0x0E6" desc="GP_SERV_COMMAND_BALLISTA">
+      <data type="bits" name="Flags" pos="4" bits="6" />
+      <data type="bits" name="Mode" pos="4" bits="10" />
+      <data type="int32" name="PetraCount" pos="6" />
+      <data type="a" name="Score" pos="10" size="12" />
+      <data type="a" name="Scoreboard" pos="22" size="4" />
+      <data type="a" name="MatchPoints" pos="26" size="3" />
+      <data type="byte" name="MatchSet" pos="29" />
+      <data type="uint32" name="Flammes" pos="30" />
+      <data type="int32" name="FlammeFlg" pos="34" />
+    </packet>
+    <packet type="0x0F4" desc="GP_SERV_COMMAND_TRACKING_LIST">
+      <data type="bits" name="ActIndex" pos="4" bits="16" />
+      <data type="bits" name="Level" pos="4" bits="8" bit="16" />
+      <data type="bits" name="Type" pos="4" bits="3" bit="24" />
+      <data type="bits" name="unused" pos="4" bits="5" bit="27" />
+      <data type="int16" name="x" pos="8" />
+      <data type="int16" name="z" pos="10" />
+      <data type="a" name="sName" pos="12" size="16" />
+    </packet>
+    <packet type="0x0F5" desc="GP_SERV_COMMAND_TRACKING_POS">
+      <data type="float" name="x" pos="4" />
+      <data type="float" name="y" pos="8" />
+      <data type="float" name="z" pos="12" />
+      <data type="byte" name="Level" pos="16" />
+      <data type="byte" name="padding11" pos="17" />
+      <data type="uint16" name="ActIndex" pos="18" />
+      <data type="uint32" name="State" pos="20" />
+    </packet>
+    <packet type="0x0F6" desc="GP_SERV_COMMAND_TRACKING_STATE">
+      <data type="uint32" name="State" pos="4" />
+    </packet>
+    <packet type="0x0F9" desc="GP_SERV_COMMAND_RES">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="uint16" name="type" pos="10" />
+    </packet>
+    <packet type="0x0FA" desc="GP_SERV_COMMAND_MYROOM_OPERATION">
+      <!-- 2026-09-06: neither half of the original corrupted block matched the real struct.
+           Reconstructed from scratch against LandSandBoat's confirmed real
+           GP_SERV_COMMAND_MYROOM_OPERATION (src/map/packets/s2c/0x0fa_myroom_operation.h):
+           MyroomItemNo is uint16_t, not uint32, and Result's enum
+           (GP_SERV_COMMAND_MYROOM_OPERATION_RESULT) is explicitly declared uint8_t in that same
+           header; neither original fragment had that right. No decoded real samples exist in
+           this project's capture corpus for this opcode (Mog House furniture/plant operations
+           aren't part of any Assault/Salvage capture), so this is struct-verified only, not
+           decode-verified; flag if a real 0x0FA sample ever surfaces and looks wrong. -->
+      <data type="uint16" name="MyroomItemNo" pos="4" />
+      <data type="byte" name="Result" pos="6" />
+      <data type="uint16" name="unknown00" pos="7" />
+      <data type="byte" name="MyroomItemIndex" pos="9" />
+      <data type="byte" name="MyroomCategory" pos="10" />
+      <data type="uint16" name="unknown01" pos="11" />
+    </packet>
+    <packet type="0x105" desc="GP_SERV_COMMAND_BAZAAR_LIST">
+      <data type="uint32" name="Price" pos="4" />
+      <data type="uint32" name="ItemNum" pos="8" />
+      <data type="uint16" name="TaxRate" pos="12" />
+      <data type="uint16" name="ItemNo" pos="14" />
+      <data type="byte" name="ItemIndex" pos="16" />
+      <data type="a" name="Attr" pos="17" size="24" />
+      <data type="a" name="padding29" pos="41" size="3" />
+    </packet>
+    <packet type="0x106" desc="GP_SERV_COMMAND_BAZAAR_BUY">
+      <data type="uint32" name="State" pos="4" />
+      <data type="a" name="sName" pos="8" size="16" />
+      <data type="a" name="padding18" pos="24" size="4" />
+    </packet>
+    <packet type="0x107" desc="GP_SERV_COMMAND_BAZAAR_CLOSE">
+      <data type="a" name="sName" pos="4" size="16" />
+      <data type="a" name="padding14" pos="20" size="4" />
+    </packet>
+    <packet type="0x108" desc="GP_SERV_COMMAND_BAZAAR_SHOPPING">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint32" name="State" pos="8" />
+      <data type="byte" name="HideLevel" pos="12" />
+      <data type="byte" name="padding0D" pos="13" />
+      <data type="uint16" name="ActIndex" pos="14" />
+      <data type="a" name="sName" pos="16" size="16" />
+    </packet>
+    <packet type="0x109" desc="GP_SERV_COMMAND_BAZAAR_SELL">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint32" name="ItemNum" pos="8" />
+      <data type="uint16" name="ActIndex" pos="12" />
+      <data type="uint16" name="BazaarActIndex" pos="14" />
+      <data type="a" name="sName" pos="16" size="16" />
+      <data type="byte" name="ItemIndex" pos="32" />
+      <data type="a" name="padding21" pos="33" size="3" />
+    </packet>
+    <packet type="0x10A" desc="GP_SERV_COMMAND_BAZAAR_SALE">
+      <data type="uint32" name="ItemNum" pos="4" />
+      <data type="uint16" name="ItemNo" pos="8" />
+      <data type="a" name="sName" pos="10" size="16" />
+      <data type="a" name="padding1A" pos="26" size="2" />
+    </packet>
+    <packet type="0x10E" desc="GP_SERV_COMMAND_REQSUBMAPNUM">
+      <data type="uint32" name="MapNum" pos="4" />
+    </packet>
+    <packet type="0x10F" desc="GP_SERV_COMMAND_REQLOGOUTINFO">
+      <data type="uint32" name="Mode" pos="4" />
+    </packet>
+    <packet type="0x110" desc="GP_SERV_COMMAND_UNITY">
+      <data type="bits" name="Sparks" pos="4" bits="24" />
+      <data type="bits" name="unused" pos="4" bits="8" />
+      <data type="uint16" name="Deeds" pos="8" />
+      <data type="uint16" name="Plaudits" pos="10" />
+      <data type="a" name="unknown0E" pos="14" size="6" />
+      <data type="byte" name="RoEUnityShared" pos="12" />
+      <data type="byte" name="RoEUnityLeader" pos="13" />
+    </packet>
+    <packet type="0x111" desc="GP_SERV_COMMAND_ROE_ACTIVELOG">
+      <data type="a" name="records" pos="4" size="256" />
+    </packet>
+    <packet type="0x112" desc="GP_SERV_COMMAND_ROE_LOG">
+      <data type="a" name="Data" pos="4" size="128" />
+      <data type="uint16" name="Offset" pos="132" />
+      <data type="uint16" name="padding086" pos="134" />
+    </packet>
+    <packet type="0x113" desc="GP_SERV_COMMAND_CURRENCIES_1">
+      <data type="int32" name="conquest_points_sandoria" pos="4" />
+      <data type="int32" name="conquest_points_bastok" pos="8" />
+      <data type="int32" name="conquest_points_windurst" pos="12" />
+      <data type="uint16" name="beastmans_seals_stored" pos="16" />
+      <data type="uint16" name="kindreds_seals_stored" pos="18" />
+      <data type="uint16" name="kindreds_crests_stored" pos="20" />
+      <data type="uint16" name="high_kindreds_crests_stored" pos="22" />
+      <data type="uint16" name="sacred_kindreds_crests_stored" pos="24" />
+      <data type="uint16" name="ancient_beastcoins_stored" pos="26" />
+      <data type="uint16" name="valor_points" pos="28" />
+      <data type="uint16" name="scylds" pos="30" />
+      <data type="int32" name="guild_points_fishing" pos="32" />
+      <data type="int32" name="guild_points_woodworking" pos="36" />
+      <data type="int32" name="guild_points_smithing" pos="40" />
+      <data type="int32" name="guild_points_goldsmithing" pos="44" />
+      <data type="int32" name="guild_points_weaving" pos="48" />
+      <data type="int32" name="guild_points_leathercraft" pos="52" />
+      <data type="int32" name="guild_points_bonecraft" pos="56" />
+      <data type="int32" name="guild_points_alchemy" pos="60" />
+      <data type="int32" name="guild_points_cooking" pos="64" />
+      <data type="int32" name="cinders" pos="68" />
+      <data type="byte" name="synergy_fewell_fire" pos="72" />
+      <data type="byte" name="synergy_fewell_ice" pos="73" />
+      <data type="byte" name="synergy_fewell_wind" pos="74" />
+      <data type="byte" name="synergy_fewell_earth" pos="75" />
+      <data type="byte" name="synergy_fewell_lightning" pos="76" />
+      <data type="byte" name="synergy_fewell_water" pos="77" />
+      <data type="byte" name="synergy_fewell_light" pos="78" />
+      <data type="byte" name="synergy_fewell_dark" pos="79" />
+      <data type="int32" name="ballista_points" pos="80" />
+      <data type="int32" name="fellow_points" pos="84" />
+      <data type="uint16" name="chocobucks_sandoria_team" pos="88" />
+      <data type="uint16" name="chocobucks_bastok_team" pos="90" />
+      <data type="uint16" name="chocobucks_windurst_team" pos="92" />
+      <data type="uint16" name="daily_tally" pos="94" />
+      <data type="int32" name="research_marks" pos="96" />
+      <data type="byte" name="wizened_tunnel_worms" pos="100" />
+      <data type="byte" name="wizened_morion_worms" pos="101" />
+      <data type="byte" name="wizened_phantom_worms" pos="102" />
+      <data type="byte" name="unknown67" pos="103" />
+      <data type="int32" name="moblin_marbles" pos="104" />
+      <data type="uint16" name="infamy" pos="108" />
+      <data type="uint16" name="prestige" pos="110" />
+      <data type="int32" name="legion_points" pos="112" />
+      <data type="int32" name="sparks_of_eminence" pos="116" />
+      <data type="int32" name="shining_stars" pos="120" />
+      <data type="int32" name="imperial_standing" pos="124" />
+      <data type="int32" name="assault_points_l_sanctum" pos="128" />
+      <data type="int32" name="assault_points_mjtg" pos="132" />
+      <data type="int32" name="assault_points_l_cavern" pos="136" />
+      <data type="int32" name="assault_points_periqia" pos="140" />
+      <data type="int32" name="assault_points_ilrusi_atoll" pos="144" />
+      <data type="int32" name="tokens" pos="148" />
+      <data type="int32" name="zeni" pos="152" />
+      <data type="int32" name="jettons" pos="156" />
+      <data type="int32" name="therion_ichor" pos="160" />
+      <data type="int32" name="allied_notes" pos="164" />
+      <data type="uint16" name="copper_aman_vouchers_stored" pos="168" />
+      <data type="uint16" name="login_points" pos="170" />
+      <data type="int32" name="cruor" pos="172" />
+      <data type="int32" name="resistance_credits" pos="176" />
+      <data type="int32" name="dominion_notes" pos="180" />
+      <data type="byte" name="echelon_battle_trophies_5th" pos="184" />
+      <data type="byte" name="echelon_battle_trophies_4th" pos="185" />
+      <data type="byte" name="echelon_battle_trophies_3rd" pos="186" />
+      <data type="byte" name="echelon_battle_trophies_2nd" pos="187" />
+      <data type="byte" name="echelon_battle_trophies_1st" pos="188" />
+      <data type="byte" name="cave_conservation_points" pos="189" />
+      <data type="byte" name="imperial_army_id_tags" pos="190" />
+      <data type="byte" name="op_credits" pos="191" />
+      <data type="int32" name="traverser_stones" pos="192" />
+      <data type="int32" name="voidstones" pos="196" />
+      <data type="int32" name="kupofrieds_corundums" pos="200" />
+      <data type="byte" name="moblin_pheromone_sacks" pos="204" />
+      <data type="byte" name="unknownCD" pos="205" />
+      <data type="byte" name="rems_tale_chapters_1_stored" pos="206" />
+      <data type="byte" name="rems_tale_chapters_2_stored" pos="207" />
+      <data type="byte" name="rems_tale_chapters_3_stored" pos="208" />
+      <data type="byte" name="rems_tale_chapters_4_stored" pos="209" />
+      <data type="byte" name="rems_tale_chapters_5_stored" pos="210" />
+      <data type="byte" name="rems_tale_chapters_6_stored" pos="211" />
+      <data type="byte" name="rems_tale_chapters_7_stored" pos="212" />
+      <data type="byte" name="rems_tale_chapters_8_stored" pos="213" />
+      <data type="byte" name="rems_tale_chapters_9_stored" pos="214" />
+      <data type="byte" name="rems_tale_chapters_10_stored" pos="215" />
+      <data type="bits" name="bloodshed_plans_stored" pos="216" bits="9" />
+      <data type="bits" name="umbrage_plans_stored" pos="216" bits="9" />
+      <data type="bits" name="ritualistic_plans_stored" pos="216" bits="9" />
+      <data type="bits" name="tutelary_plans_stored" pos="216" bits="9" />
+      <data type="bits" name="primacy_plans_stored" pos="216" bits="9" />
+      <data type="bits" name="unused" pos="216" bits="19" />
+      <data type="uint16" name="reclamation_marks" pos="224" />
+      <data type="uint16" name="paddingE2" pos="226" />
+      <data type="int32" name="unity_accolades" pos="228" />
+      <data type="uint16" name="fire_crystals_stored" pos="232" />
+      <data type="uint16" name="ice_crystals_stored" pos="234" />
+      <data type="uint16" name="wind_crystals_stored" pos="236" />
+      <data type="uint16" name="earth_crystals_stored" pos="238" />
+      <data type="uint16" name="lightning_crystals_stored" pos="240" />
+      <data type="uint16" name="water_crystals_stored" pos="242" />
+      <data type="uint16" name="light_crystals_stored" pos="244" />
+      <data type="uint16" name="dark_crystals_stored" pos="246" />
+      <data type="uint16" name="deeds" pos="248" />
+      <data type="uint16" name="paddingFA" pos="250" />
+    </packet>
+    <packet type="0x115" desc="GP_SERV_COMMAND_FISH">
+      <data type="uint16" name="stamina" pos="4" />
+      <data type="uint16" name="arrow_delay" pos="6" />
+      <data type="uint16" name="regen" pos="8" />
+      <data type="uint16" name="move_frequency" pos="10" />
+      <data type="uint16" name="arrow_damage" pos="12" />
+      <data type="uint16" name="arrow_regen" pos="14" />
+      <data type="uint16" name="time" pos="16" />
+      <data type="byte" name="angler_sense" pos="18" />
+      <data type="byte" name="padding13" pos="19" />
+      <data type="uint32" name="intuition" pos="20" />
+    </packet>
+    <packet type="0x116" desc="GP_SERV_COMMAND_EQUIPSET_VALID">
+      <data type="bits" name="Category" pos="4" bits="6" />
+      <data type="bits" name="HasItemFlg" pos="4" bits="1" />
+      <data type="bits" name="RemoveItemFlg" pos="4" bits="1" bit="1" />
+      <data type="byte" name="ItemIndex" pos="5" />
+      <data type="uint16" name="ItemNo" pos="6" />
+    </packet>
+    <packet type="0x117" desc="GP_SERV_COMMAND_EQUIPSET_RES">
+      <data type="byte" name="Count" pos="4" />
+      <data type="a" name="padding05" pos="5" size="3" />
+      <data type="byte" name="Category" pos="10" />
+      <data type="byte" name="padding03" pos="11" />
+      <data type="byte" name="ItemIndex" pos="8" />
+      <data type="byte" name="EquipKind" pos="9" />
+    </packet>
+    <packet type="0x118" desc="GP_SERV_COMMAND_CURRENCIES_2">
+      <data type="int32" name="bayld" pos="4" />
+      <data type="uint16" name="kinetic_units" pos="8" />
+      <data type="byte" name="coalition_imprimaturs" pos="10" />
+      <data type="byte" name="mystical_canteens" pos="11" />
+      <data type="int32" name="obsidian_fragments" pos="12" />
+      <data type="uint16" name="lebondopt_wings_stored" pos="16" />
+      <data type="uint16" name="pulchridopt_wings_stored" pos="18" />
+      <data type="int32" name="mweya_plasm_corpuscles" pos="20" />
+      <data type="byte" name="ghastly_stones_stored" pos="24" />
+      <data type="byte" name="ghastly_stones_plus1_stored" pos="25" />
+      <data type="byte" name="ghastly_stones_plus2_stored" pos="26" />
+      <data type="byte" name="verdigris_stones_stored" pos="27" />
+      <data type="byte" name="verdigris_stones_plus1_stored" pos="28" />
+      <data type="byte" name="verdigris_stones_plus2_stored" pos="29" />
+      <data type="byte" name="wailing_stones_stored" pos="30" />
+      <data type="byte" name="wailing_stones_plus1_stored" pos="31" />
+      <data type="byte" name="wailing_stones_plus2_stored" pos="32" />
+      <data type="byte" name="snowslit_stones_stored" pos="33" />
+      <data type="byte" name="snowslit_stones_plus1_stored" pos="34" />
+      <data type="byte" name="snowslit_stones_plus2_stored" pos="35" />
+      <data type="byte" name="snowtip_stones_stored" pos="36" />
+      <data type="byte" name="snowtip_stones_plus1_stored" pos="37" />
+      <data type="byte" name="snowtip_stones_plus2_stored" pos="38" />
+      <data type="byte" name="snowdim_stones_stored" pos="39" />
+      <data type="byte" name="snowdim_stones_plus1_stored" pos="40" />
+      <data type="byte" name="snowdim_stones_plus2_stored" pos="41" />
+      <data type="byte" name="snoworb_stones_stored" pos="42" />
+      <data type="byte" name="snoworb_stones_plus1_stored" pos="43" />
+      <data type="byte" name="snoworb_stones_plus2_stored" pos="44" />
+      <data type="byte" name="leafslit_stones_stored" pos="45" />
+      <data type="byte" name="leafslit_stones_plus1_stored" pos="46" />
+      <data type="byte" name="leafslit_stones_plus2_stored" pos="47" />
+      <data type="byte" name="leaftip_stones_stored" pos="48" />
+      <data type="byte" name="leaftip_stones_plus1_stored" pos="49" />
+      <data type="byte" name="leaftip_stones_plus2_stored" pos="50" />
+      <data type="byte" name="leafdim_stones_stored" pos="51" />
+      <data type="byte" name="leafdim_stones_plus1_stored" pos="52" />
+      <data type="byte" name="leafdim_stones_plus2_stored" pos="53" />
+      <data type="byte" name="leaforb_stones_stored" pos="54" />
+      <data type="byte" name="leaforb_stones_plus1_stored" pos="55" />
+      <data type="byte" name="leaforb_stones_plus2_stored" pos="56" />
+      <data type="byte" name="duskslit_stones_stored" pos="57" />
+      <data type="byte" name="duskslit_stones_plus1_stored" pos="58" />
+      <data type="byte" name="duskslit_stones_plus2_stored" pos="59" />
+      <data type="byte" name="dusktip_stones_stored" pos="60" />
+      <data type="byte" name="dusktip_stones_plus1_stored" pos="61" />
+      <data type="byte" name="dusktip_stones_plus2_stored" pos="62" />
+      <data type="byte" name="duskdim_stones_stored" pos="63" />
+      <data type="byte" name="duskdim_stones_plus1_stored" pos="64" />
+      <data type="byte" name="duskdim_stones_plus2_stored" pos="65" />
+      <data type="byte" name="duskorb_stones_stored" pos="66" />
+      <data type="byte" name="duskorb_stones_plus1_stored" pos="67" />
+      <data type="byte" name="duskorb_stones_plus2_stored" pos="68" />
+      <data type="byte" name="pellucid_stones_stored" pos="69" />
+      <data type="byte" name="fern_stones_stored" pos="70" />
+      <data type="byte" name="taupe_stones_stored" pos="71" />
+      <data type="uint16" name="mellidopt_wings_stored" pos="72" />
+      <data type="uint16" name="escha_beads" pos="74" />
+      <data type="int32" name="escha_silt" pos="76" />
+      <data type="int32" name="potpourri" pos="80" />
+      <data type="int32" name="hallmarks" pos="84" />
+      <data type="int32" name="total_hallmarks" pos="88" />
+      <data type="int32" name="badges_of_gallantry" pos="92" />
+      <data type="int32" name="crafter_points" pos="96" />
+      <data type="byte" name="fire_crystals_set" pos="100" />
+      <data type="byte" name="ice_crystals_set" pos="101" />
+      <data type="byte" name="wind_crystals_set" pos="102" />
+      <data type="byte" name="earth_crystals_set" pos="103" />
+      <data type="byte" name="lightning_crystals_set" pos="104" />
+      <data type="byte" name="water_crystals_set" pos="105" />
+      <data type="byte" name="light_crystals_set" pos="106" />
+      <data type="byte" name="dark_crystals_set" pos="107" />
+      <data type="byte" name="mc_i_sr01s_set" pos="108" />
+      <data type="byte" name="mc_i_sr02s_set" pos="109" />
+      <data type="byte" name="mc_i_sr03s_set" pos="110" />
+      <data type="byte" name="liquefactions_spheres_set" pos="111" />
+      <data type="byte" name="induration_spheres_set" pos="112" />
+      <data type="byte" name="dentonation_spheres_set" pos="113" />
+      <data type="byte" name="scission_spheres_set" pos="114" />
+      <data type="byte" name="impaction_spheres_set" pos="115" />
+      <data type="byte" name="reverberation_spheres_set" pos="116" />
+      <data type="byte" name="transfixion_spheres_set" pos="117" />
+      <data type="byte" name="compression_spheres_set" pos="118" />
+      <data type="byte" name="fusion_spheres_set" pos="119" />
+      <data type="byte" name="distortion_spheres_set" pos="120" />
+      <data type="byte" name="fragmentation_spheres_set" pos="121" />
+      <data type="byte" name="gravitation_spheres_set" pos="122" />
+      <data type="byte" name="light_spheres_set" pos="123" />
+      <data type="byte" name="darkness_spheres_set" pos="124" />
+      <data type="a" name="padding7D" pos="125" size="3" />
+      <data type="int32" name="silver_aman_vouchers_stored" pos="128" />
+      <data type="int32" name="domain_points" pos="132" />
+      <data type="int32" name="domain_points_earned_today" pos="136" />
+      <data type="int32" name="mog_segments" pos="140" />
+      <data type="int32" name="gallimaufry" pos="144" />
+      <data type="uint16" name="is_accolades" pos="148" />
+      <data type="int32" name="temenos_units" pos="152" />
+      <data type="int32" name="apollyon_units" pos="156" />
+    </packet>
+    <packet type="0x119" desc="GP_SERV_COMMAND_ABIL_RECAST">
+      <data type="uint16" name="Timer" pos="4" />
+      <data type="byte" name="Calc1" pos="6" />
+      <data type="uint16" name="Calc2" pos="8" />
+      <data type="uint16" name="padding06" pos="10" />
+      <data type="byte" name="TimerId" pos="7" />
+      <data type="uint32" name="MountRecast" pos="12" />
+      <data type="uint32" name="MountRecastId" pos="16" />
+    </packet>
+    <packet type="0x11A" desc="GP_SERV_COMMAND_EMOTE_LIST">
+      <data type="bits" name="unused" pos="4" bits="10" />
+      <data type="bits" name="Chair1" pos="8" bits="1" />
+      <data type="bits" name="Chair2" pos="8" bits="1" />
+      <data type="bits" name="Chair3" pos="8" bits="1" />
+      <data type="bits" name="Chair4" pos="8" bits="1" />
+      <data type="bits" name="Chair5" pos="8" bits="1" />
+      <data type="bits" name="Chair6" pos="8" bits="1" />
+      <data type="bits" name="Chair7" pos="8" bits="1" />
+      <data type="bits" name="Chair8" pos="8" bits="1" />
+      <data type="bits" name="Chair9" pos="8" bits="1" />
+      <data type="bits" name="Chair10" pos="8" bits="1" />
+      <data type="bits" name="Chair11" pos="8" bits="1" />
+      <data type="uint16" name="padding0A" pos="10" />
+      <data type="bits" name="WAR" pos="4" bits="1" />
+      <data type="bits" name="MNK" pos="4" bits="1" bit="1" />
+      <data type="bits" name="WHM" pos="4" bits="1" bit="2" />
+      <data type="bits" name="BLM" pos="4" bits="1" bit="3" />
+      <data type="bits" name="RDM" pos="4" bits="1" bit="4" />
+      <data type="bits" name="THF" pos="4" bits="1" bit="5" />
+      <data type="bits" name="PLD" pos="4" bits="1" bit="6" />
+      <data type="bits" name="DRK" pos="4" bits="1" bit="7" />
+      <data type="bits" name="BST" pos="4" bits="1" bit="8" />
+      <data type="bits" name="BRD" pos="4" bits="1" bit="9" />
+      <data type="bits" name="RNG" pos="4" bits="1" bit="10" />
+      <data type="bits" name="SAM" pos="4" bits="1" bit="11" />
+      <data type="bits" name="NIN" pos="4" bits="1" bit="12" />
+      <data type="bits" name="DRG" pos="4" bits="1" bit="13" />
+      <data type="bits" name="SMN" pos="4" bits="1" bit="14" />
+      <data type="bits" name="BLU" pos="4" bits="1" bit="15" />
+      <data type="bits" name="COR" pos="4" bits="1" bit="16" />
+      <data type="bits" name="PUP" pos="4" bits="1" bit="17" />
+      <data type="bits" name="DNC" pos="4" bits="1" bit="18" />
+      <data type="bits" name="SCH" pos="4" bits="1" bit="19" />
+      <data type="bits" name="GEO" pos="4" bits="1" bit="20" />
+      <data type="bits" name="RUN" pos="4" bits="1" bit="21" />
+    </packet>
+    <packet type="0x11B" desc="GP_SERV_COMMAND_LOCKSTYLE_ERROR">
+      <data type="byte" name="Status" pos="4" />
+      <data type="a" name="padding05" pos="5" size="3" />
+    </packet>
+    <packet type="0x11C" desc="GP_SERV_COMMAND_LOCKSTYLE_ERROR">
+      <data type="byte" name="Count" pos="4" />
+      <data type="a" name="padding05" pos="5" size="3" />
+      <data type="a" name="ItemNo" pos="8" size="32" />
+    </packet>
+    <packet type="0x11D" desc="GP_SERV_COMMAND_PARTYREQ">
+      <data type="byte" name="Flags" pos="10" />
+      <data type="byte" name="Status" pos="11" />
+      <data type="a" name="sName" pos="12" size="16" />
+      <data type="uint16" name="Race" pos="28" />
+      <data type="a" name="padding1E" pos="30" size="2" />
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+    </packet>
+    <packet type="0x11E" desc="GP_SERV_COMMAND_JUMP">
+      <data type="a" name="padding06" pos="6" size="2" />
+      <data type="uint16" name="ActIndex" pos="4" />
+    </packet>
+  </s2c>
+  <c2s>
+    <packet type="0x00A" desc="GP_CLI_COMMAND_LOGIN">
+      <data type="byte" name="LoginPacketCheck" pos="4" />
+      <data type="byte" name="padding05" pos="5" />
+      <data type="uint16" name="unknown06" pos="6" />
+      <data type="uint32" name="unknown08" pos="8" />
+      <data type="uint32" name="UniqueNo" pos="12" />
+      <data type="a" name="GrapIDTbl" pos="16" size="18" />
+      <data type="t" name="sName" pos="34" size="15" />
+      <data type="t" name="sAccunt" pos="49" size="15" />
+      <data type="a" name="Ticket" pos="64" size="16" />
+      <data type="uint32" name="Ver" pos="80" />
+      <data type="a" name="sPlatform" pos="84" size="4" />
+      <data type="uint16" name="uCliLang" pos="88" />
+      <data type="uint16" name="dammyArea" pos="90" />
+    </packet>
+    <packet type="0x00B" desc="Zone Out">
+      <data type="byte" name="type" pos="4" />
+      <data type="uint16" name="zone_id" pos="8" lookup="zones" />
+      <data type="int32" name="x" pos="12" />
+      <data type="int32" name="y" pos="16" />
+      <data type="int32" name="z" pos="20" />
+      <data type="uint16" name="State" pos="24" />
+      <data type="byte" name="padding1A" pos="26" />
+      <data type="byte" name="dir" pos="27" />
+      <data type="uint32" name="ZoneNo" pos="4" />
+      <data type="uint32" name="MapNo" pos="8" />
+    </packet>
+    <packet type="0x00C" desc="GP_CLI_COMMAND_GAMEOK">
+      <data type="uint32" name="ClientState" pos="4" />
+      <data type="bits" name="DebugClientFlg" pos="8" bits="1" />
+      <data type="bits" name="unused" pos="8" bits="31" bit="1" />
+    </packet>
+    <packet type="0x00D" desc="GP_CLI_COMMAND_NETEND">
+      <data type="uint16" name="State" pos="4" />
+      <data type="uint16" name="padding06" pos="6" />
+    </packet>
+    <packet type="0x00F" desc="GP_CLI_COMMAND_CLSTAT">
+      <data type="a" name="stat" pos="4" size="32" />
+    </packet>
+    <packet type="0x011" desc="GP_CLI_COMMAND_ZONE_TRANSITION">
+      <data type="byte" name="unknown05" pos="4" />
+      <data type="byte" name="unknown06" pos="5" />
+    </packet>
+    <packet type="0x015" desc="Standard Client Position">
+      <data type="float" name="x" pos="4" />
+      <data type="float" name="z" pos="8" />
+      <data type="float" name="y" pos="12" />
+      <data type="int8" name="dir" pos="20" />
+      <data type="bits" name="unused" pos="21" bits="5" bit="3" />
+      <data type="uint16" name="facetarget" pos="22" />
+      <data type="uint32" name="padding001C" pos="28" />
+      <data type="uint16" name="MovTime" pos="16" />
+      <data type="uint16" name="MoveFlame" pos="18" />
+      <data type="bits" name="TargetMode" pos="21" bits="1" />
+      <data type="bits" name="RunMode" pos="21" bits="1" bit="1" />
+      <data type="bits" name="GroundMode" pos="21" bits="1" bit="2" />
+      <data type="uint32" name="TimeNow" pos="24" />
+    </packet>
+    <packet type="0x016" desc="Client Update">
+      <data type="uint16" name="target_index" pos="4" />
+      <data type="uint16" name="padding06" pos="6" />
+      <data type="uint16" name="ActIndex" pos="4" />
+    </packet>
+    <packet type="0x017" desc="GP_CLI_COMMAND_CHARREQ2">
+      <data type="uint16" name="ActIndex" pos="4" />
+      <data type="uint16" name="padding06" pos="6" />
+      <data type="uint32" name="UniqueNo2" pos="8" />
+      <data type="uint32" name="UniqueNo3" pos="12" />
+      <data type="uint16" name="Flg" pos="16" />
+      <data type="uint16" name="Flg2" pos="18" />
+    </packet>
+    <packet type="0x01A" desc="Action Request">
+      <data type="uint32" name="target_id" pos="4" />
+      <data type="uint16" name="target_index" pos="8" />
+      <data type="uint16" name="category" pos="10" lookup="action_categories" />
+      <data type="uint16" name="param" pos="12" />
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="uint16" name="ActionID" pos="10" />
+      <data type="a" name="ActionBuf" pos="12" size="16" />
+    </packet>
+    <packet type="0x01B" desc="GP_CLI_COMMAND_FRIENDPASS">
+      <data type="uint16" name="Para" pos="4" />
+      <data type="a" name="padding06" pos="6" size="22" />
+    </packet>
+    <packet type="0x01C" desc="GP_CLI_COMMAND_UNKNOWN">
+      <data type="uint16" name="unknown04" pos="4" />
+      <data type="uint16" name="padding06" pos="6" />
+      <data type="uint32" name="unknown08" pos="8" />
+    </packet>
+    <packet type="0x01E" desc="GP_CLI_COMMAND_GM">
+      <data type="a" name="Command" pos="4" size="115" />
+    </packet>
+    <packet type="0x01F" desc="GP_CLI_COMMAND_GMCOMMAND">
+      <data type="uint32" name="GMUniqueNo" pos="4" />
+      <data type="a" name="Command" pos="8" size="128" />
+    </packet>
+    <packet type="0x028" desc="GP_CLI_COMMAND_ITEM_DUMP">
+      <data type="uint32" name="ItemNum" pos="4" />
+      <data type="byte" name="Category" pos="8" />
+      <data type="byte" name="ItemIndex" pos="9" />
+      <data type="a" name="padding0A" pos="10" size="2" />
+    </packet>
+    <packet type="0x029" desc="GP_CLI_COMMAND_ITEM_MOVE">
+      <data type="uint32" name="ItemNum" pos="4" />
+      <data type="byte" name="Category1" pos="8" />
+      <data type="byte" name="Category2" pos="9" />
+      <data type="byte" name="ItemIndex1" pos="10" />
+      <data type="byte" name="ItemIndex2" pos="11" />
+    </packet>
+    <packet type="0x02A" desc="GP_CLI_COMMAND_ITEM_ATTR">
+      <data type="byte" name="Category" pos="4" />
+      <data type="byte" name="ItemIndex" pos="5" />
+    </packet>
+    <packet type="0x02B" desc="GP_CLI_COMMAND_TRANSLATE">
+      <data type="uint16" name="padding06" pos="6" />
+      <data type="a" name="Name" pos="8" size="64" />
+      <data type="byte" name="FromIndex" pos="4" />
+      <data type="byte" name="ToIndex" pos="5" />
+    </packet>
+    <packet type="0x02C" desc="GP_CLI_COMMAND_ITEMSEARCH">
+      <data type="byte" name="Language" pos="4" />
+      <data type="a" name="padding05" pos="5" size="3" />
+      <data type="a" name="Name" pos="8" size="64" />
+    </packet>
+    <packet type="0x032" desc="GP_CLI_COMMAND_ITEM_TRADE_REQ">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="uint16" name="padding0A" pos="10" />
+    </packet>
+    <packet type="0x033" desc="GP_CLI_COMMAND_ITEM_TRADE_RES">
+      <data type="uint32" name="Kind" pos="4" />
+      <data type="uint16" name="TradeCounter" pos="8" />
+      <data type="a" name="padding0A" pos="10" size="2" />
+    </packet>
+    <packet type="0x034" desc="GP_CLI_COMMAND_TRADE_LIST">
+      <data type="uint32" name="ItemNum" pos="4" />
+      <data type="uint16" name="ItemNo" pos="8" />
+      <data type="byte" name="ItemIndex" pos="10" />
+      <data type="byte" name="TradeIndex" pos="11" />
+    </packet>
+    <packet type="0x036" desc="Synth Start">
+      <data type="uint16" name="crystal_item_id" pos="6" />
+      <data type="byte" name="ingredient_count" pos="8" />
+      <data type="uint16" name="ingredient_1" pos="10" />
+      <data type="uint16" name="ingredient_2" pos="12" />
+      <data type="uint16" name="ingredient_3" pos="14" />
+      <data type="uint16" name="ingredient_4" pos="16" />
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="a" name="PropertyItemIndexTbl" pos="48" size="10" />
+      <data type="uint16" name="ActIndex" pos="58" />
+      <data type="byte" name="ItemNum" pos="60" />
+    </packet>
+    <packet type="0x037" desc="GP_CLI_COMMAND_ITEM_USE">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint32" name="ItemNum" pos="8" />
+      <data type="uint16" name="ActIndex" pos="12" />
+      <data type="byte" name="PropertyItemIndex" pos="14" />
+      <data type="byte" name="padding00" pos="15" />
+      <data type="uint32" name="Category" pos="16" />
+    </packet>
+    <packet type="0x038" desc="GP_CLI_COMMAND_ITEM_MAKE">
+      <data type="uint32" name="ItemNum" pos="4" />
+      <data type="uint16" name="ItemNo" pos="8" />
+      <data type="uint16" name="padding0A" pos="10" />
+    </packet>
+    <packet type="0x03A" desc="GP_CLI_COMMAND_ITEM_STACK">
+      <data type="uint32" name="Category" pos="4" />
+    </packet>
+    <packet type="0x03B" desc="GP_CLI_COMMAND_SUBCONTAINER">
+      <data type="uint32" name="Kind" pos="4" />
+      <data type="uint32" name="Category1" pos="8" />
+      <data type="uint16" name="padding0E" pos="14" />
+      <data type="uint32" name="Category2" pos="16" />
+      <data type="a" name="padding15" pos="21" size="3" />
+      <data type="uint32" name="Category3" pos="24" />
+      <data type="a" name="padding1D" pos="29" size="3" />
+      <data type="byte" name="ItemIndex1" pos="12" />
+      <data type="byte" name="ContainerIndex" pos="13" />
+      <data type="byte" name="ItemIndex2" pos="20" />
+      <data type="byte" name="ItemIndex3" pos="28" />
+    </packet>
+    <packet type="0x03C" desc="GP_CLI_COMMAND_BLACK_LIST">
+      <data type="uint32" name="unknown04" pos="4" />
+      <data type="uint32" name="unknown08" pos="8" />
+      <data type="uint32" name="unknown0C" pos="12" />
+      <data type="uint32" name="unknown10" pos="16" />
+      <data type="uint32" name="unknown14" pos="20" />
+      <data type="byte" name="unknown18" pos="24" />
+      <data type="a" name="padding19" pos="25" size="3" />
+    </packet>
+    <packet type="0x03D" desc="GP_CLI_COMMAND_BLACK_EDIT">
+      <data type="uint32" name="ID" pos="4" />
+      <data type="a" name="Name" pos="8" size="16" />
+      <data type="int8" name="Mode" pos="24" />
+      <data type="a" name="padding19" pos="25" size="3" />
+    </packet>
+    <packet type="0x041" desc="GP_CLI_COMMAND_TROPHY_ENTRY">
+      <data type="byte" name="TrophyItemIndex" pos="4" />
+      <data type="byte" name="PropertyItemIndex" pos="5" />
+      <data type="a" name="padding06" pos="6" size="2" />
+    </packet>
+    <packet type="0x042" desc="GP_CLI_COMMAND_TROPHY_ABSENCE">
+      <data type="byte" name="TrophyItemIndex" pos="4" />
+      <data type="byte" name="padding05" pos="5" />
+    </packet>
+    <packet type="0x04B" desc="Delivery Box Request">
+      <data type="byte" name="type" pos="4" />
+      <data type="byte" name="box_type" pos="5" />
+      <data type="byte" name="slot_index" pos="6" />
+      <data type="byte" name="Command" pos="4" />
+      <data type="int8" name="Result" pos="5" />
+      <data type="byte" name="value1" pos="6" />
+      <data type="byte" name="value2" pos="7" />
+      <data type="int32" name="timestamp" pos="8" />
+      <data type="int32" name="size_total" pos="12" />
+      <data type="int32" name="offset" pos="16" />
+      <data type="int32" name="data_size" pos="20" />
+    </packet>
+    <packet type="0x04D" desc="GP_CLI_COMMAND_PBX">
+      <data type="byte" name="Command" pos="4" />
+      <data type="int8" name="BoxNo" pos="5" />
+      <data type="int8" name="PostWorkNo" pos="6" />
+      <data type="int8" name="ItemWorkNo" pos="7" />
+      <data type="int32" name="ItemStacks" pos="8" />
+      <data type="int8" name="Result" pos="12" />
+      <data type="int8" name="ResParam1" pos="13" />
+      <data type="int8" name="ResParam2" pos="14" />
+      <data type="int8" name="ResParam3" pos="15" />
+      <data type="a" name="TargetName" pos="16" size="16" />
+    </packet>
+    <packet type="0x04E" desc="Auction House">
+      <data type="byte" name="Command" pos="4" />
+      <data type="int8" name="Result" pos="6" />
+      <data type="uint32" name="param" pos="8" />
+      <data type="byte" name="Stat" pos="12" />
+      <data type="byte" name="padding01" pos="13" />
+      <data type="byte" name="padding03" pos="15" />
+      <data type="a" name="Name" pos="16" size="16" />
+      <data type="int8" name="AucWorkIndex" pos="5" />
+      <data type="int8" name="ResultStatus" pos="7" />
+      <data type="byte" name="ItemIndex" pos="14" />
+      <data type="uint16" name="ItemNo" pos="32" />
+      <data type="byte" name="ItemQuantity" pos="34" />
+      <data type="byte" name="ItemCategory" pos="35" />
+      <data type="uint32" name="MarketNo" pos="40" />
+      <data type="uint32" name="LotNo" pos="44" />
+      <data type="uint32" name="TimeStamp" pos="48" />
+    </packet>
+    <packet type="0x050" desc="Equipment Change">
+      <data type="byte" name="equip_slot" pos="4" />
+      <data type="byte" name="inventory_slot" pos="5" />
+      <data type="byte" name="bag_id" pos="6" />
+      <data type="byte" name="Category" pos="6" />
+      <data type="byte" name="PropertyItemIndex" pos="4" />
+      <data type="byte" name="EquipKind" pos="5" />
+    </packet>
+    <packet type="0x051" desc="GP_CLI_COMMAND_EQUIPSET_SET">
+      <data type="byte" name="Count" pos="4" />
+      <data type="a" name="padding05" pos="5" size="3" />
+      <data type="byte" name="Category" pos="10" />
+      <data type="byte" name="padding03" pos="11" />
+      <data type="byte" name="ItemIndex" pos="8" />
+      <data type="byte" name="EquipKind" pos="9" />
+    </packet>
+    <packet type="0x052" desc="GP_CLI_COMMAND_EQUIPSET_CHECK">
+      <data type="a" name="padding05" pos="5" size="3" />
+      <data type="bits" name="Category" pos="8" bits="6" />
+      <data type="byte" name="EquipKind" pos="4" />
+      <data type="bits" name="HasItemFlg" pos="8" bits="1" />
+      <data type="bits" name="RemoveItemFlg" pos="8" bits="1" bit="1" />
+      <data type="byte" name="ItemIndex" pos="9" />
+      <data type="uint16" name="ItemNo" pos="10" />
+    </packet>
+    <packet type="0x053" desc="GP_CLI_COMMAND_LOCKSTYLE">
+      <data type="byte" name="Count" pos="4" />
+      <data type="byte" name="Mode" pos="5" />
+      <data type="byte" name="Flags" pos="6" />
+      <data type="byte" name="padding07" pos="7" />
+      <data type="byte" name="Category" pos="10" />
+      <data type="byte" name="padding03" pos="11" />
+      <data type="uint16" name="padding06" pos="14" />
+      <data type="byte" name="ItemIndex" pos="8" />
+      <data type="byte" name="EquipKind" pos="9" />
+      <data type="uint16" name="ItemNo" pos="12" />
+    </packet>
+    <packet type="0x058" desc="GP_CLI_COMMAND_RECIPE">
+      <data type="uint16" name="skill" pos="4" />
+      <data type="uint16" name="level" pos="6" />
+      <data type="uint16" name="Param0" pos="8" />
+      <data type="uint16" name="Mode" pos="10" />
+      <data type="uint16" name="Param1" pos="12" />
+      <data type="uint16" name="Param2" pos="14" />
+      <data type="uint16" name="Param3" pos="16" />
+      <data type="uint16" name="Param4" pos="18" />
+    </packet>
+    <packet type="0x059" desc="GP_CLI_COMMAND_EFFECTEND">
+      <data type="uint32" name="effectpara" pos="4" />
+      <data type="a" name="padding08" pos="8" size="8" />
+    </packet>
+    <packet type="0x05A" desc="GP_CLI_COMMAND_REQCONQUEST" />
+    <packet type="0x05B" desc="GP_CLI_COMMAND_EVENTEND">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint32" name="EndPara" pos="8" />
+      <data type="uint16" name="ActIndex" pos="12" />
+      <data type="uint16" name="Mode" pos="14" />
+      <data type="uint16" name="EventNum" pos="16" />
+      <data type="uint16" name="EventPara" pos="18" />
+    </packet>
+    <packet type="0x05C" desc="Quest/Mission Request">
+      <data type="byte" name="request_type" pos="4" />
+      <data type="float" name="x" pos="4" />
+      <data type="float" name="y" pos="8" />
+      <data type="float" name="z" pos="12" />
+      <data type="byte" name="Mode" pos="30" />
+      <data type="int8" name="dir" pos="31" />
+      <data type="uint32" name="UniqueNo" pos="16" />
+      <data type="uint32" name="EndPara" pos="20" />
+      <data type="uint16" name="EventNum" pos="24" />
+      <data type="uint16" name="EventPara" pos="26" />
+      <data type="uint16" name="ActIndex" pos="28" />
+    </packet>
+    <packet type="0x05D" desc="Item Use">
+      <data type="uint32" name="target_id" pos="4" />
+      <data type="uint16" name="target_index" pos="8" />
+      <data type="byte" name="bag_slot" pos="12" />
+      <data type="byte" name="bag_id" pos="14" />
+      <data type="byte" name="Number" pos="10" />
+      <data type="byte" name="Mode" pos="11" />
+      <data type="uint16" name="Param" pos="12" />
+      <data type="uint16" name="padding0E" pos="14" />
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+    </packet>
+    <packet type="0x05E" desc="Item Move">
+      <data type="byte" name="quantity" pos="4" />
+      <data type="byte" name="source_bag" pos="6" />
+      <data type="byte" name="source_slot" pos="7" />
+      <data type="byte" name="dest_bag" pos="8" />
+      <data type="float" name="x" pos="8" />
+      <data type="float" name="y" pos="12" />
+      <data type="float" name="z" pos="16" />
+      <data type="uint32" name="RectID" pos="4" />
+      <data type="uint16" name="ActIndex" pos="20" />
+      <data type="byte" name="MyRoomExitBit" pos="22" />
+      <data type="byte" name="MyRoomExitMode" pos="23" />
+    </packet>
+    <packet type="0x060" desc="GP_CLI_COMMAND_PASSWARDS">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="uint16" name="padding0A" pos="10" />
+      <data type="a" name="String" pos="12" size="16" />
+    </packet>
+    <packet type="0x061" desc="GP_CLI_COMMAND_CLISTATUS">
+      <data type="byte" name="unknown04" pos="4" />
+      <data type="byte" name="padding05" pos="5" />
+    </packet>
+    <packet type="0x063" desc="GP_CLI_COMMAND_DIG">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint32" name="para" pos="8" />
+      <data type="uint16" name="ActIndex" pos="12" />
+      <data type="byte" name="mode" pos="14" />
+      <data type="byte" name="padding0F" pos="15" />
+    </packet>
+    <packet type="0x064" desc="GP_CLI_COMMAND_SCENARIOITEM">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="a" name="LookItemFlag" pos="8" size="64" />
+      <data type="uint16" name="ActIndex" pos="72" />
+      <data type="uint16" name="TableIndex" pos="74" />
+    </packet>
+    <packet type="0x066" desc="GP_CLI_COMMAND_FISHING">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="int32" name="para" pos="8" />
+      <data type="uint16" name="ActIndex" pos="12" />
+      <data type="int8" name="mode" pos="14" />
+      <data type="byte" name="unknown0F" pos="15" />
+      <data type="int32" name="para2" pos="16" />
+    </packet>
+    <packet type="0x06E" desc="GP_CLI_COMMAND_GROUP_SOLICIT_REQ">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="byte" name="Kind" pos="10" />
+      <data type="byte" name="padding0B" pos="11" />
+    </packet>
+    <packet type="0x06F" desc="GP_CLI_COMMAND_GROUP_LEAVE">
+      <data type="byte" name="Kind" pos="4" />
+    </packet>
+    <packet type="0x070" desc="GP_CLI_COMMAND_GROUP_BREAKUP">
+      <data type="byte" name="Kind" pos="4" />
+    </packet>
+    <packet type="0x071" desc="GP_CLI_COMMAND_GROUP_STRIKE">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="byte" name="Kind" pos="10" />
+      <data type="byte" name="padding0B" pos="11" />
+      <data type="a" name="sName" pos="12" size="15" />
+    </packet>
+    <packet type="0x072" desc="GP_CLI_COMMAND_GROUP_KICK">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="byte" name="Kind" pos="10" />
+      <data type="byte" name="padding0B" pos="11" />
+      <data type="a" name="sName" pos="12" size="15" />
+    </packet>
+    <packet type="0x073" desc="GP_CLI_COMMAND_GROUP_CHANGE">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="byte" name="Kind" pos="10" />
+      <data type="byte" name="ChangeKind" pos="11" />
+    </packet>
+    <packet type="0x074" desc="GP_CLI_COMMAND_GROUP_SOLICIT_RES">
+      <data type="byte" name="Res" pos="4" />
+      <data type="byte" name="padding05" pos="5" />
+    </packet>
+    <packet type="0x073" desc="GP_SERV_COMMAND_CHOCOBO_TOTEBOARD">
+      <data type="uint32" name="SlotIndex" pos="4" />
+      <data type="uint32" name="Ident" pos="8" />
+      <data type="uint32" name="padding00" pos="12" />
+      <data type="a" name="Odds" pos="16" size="56" />
+    </packet>
+    <packet type="0x074" desc="GP_SERV_COMMAND_CHOCOBO_LIST">
+      <data type="uint32" name="SlotIndex" pos="4" />
+      <data type="a" name="padding04" pos="8" size="8" />
+      <data type="uint16" name="Mode" pos="16" />
+      <data type="uint16" name="ParamSize" pos="18" />
+    </packet>
+    <packet type="0x072" desc="GP_SERV_COMMAND_UNKNOWN_072" />
+    <packet type="0x075" desc="GP_CLI_COMMAND_GROUP_TALK">
+      <data type="uint16" name="padding04" pos="4" />
+      <data type="byte" name="Kind" pos="6" />
+      <data type="byte" name="Attr" pos="7" />
+    </packet>
+    <packet type="0x076" desc="Party Invite">
+      <data type="uint32" name="target_id" pos="4" />
+      <data type="byte" name="Kind" pos="4" />
+    </packet>
+    <packet type="0x077" desc="GP_CLI_COMMAND_GROUP_CHANGE2">
+      <data type="a" name="sName" pos="4" size="16" />
+      <data type="byte" name="Kind" pos="20" />
+      <data type="byte" name="ChangeKind" pos="21" />
+    </packet>
+    <packet type="0x078" desc="GP_CLI_COMMAND_GROUP_CHECKID" />
+    <packet type="0x082" desc="GP_CLI_COMMAND_SHOP_REQ">
+      <data type="uint16" name="ShopNo" pos="4" />
+      <data type="byte" name="ShopItemOffsetIndex" pos="6" />
+      <data type="byte" name="padding07" pos="7" />
+    </packet>
+    <packet type="0x083" desc="GP_CLI_COMMAND_SHOP_BUY">
+      <data type="uint32" name="ItemNum" pos="4" />
+      <data type="uint16" name="ShopNo" pos="8" />
+      <data type="uint16" name="ShopItemIndex" pos="10" />
+      <data type="byte" name="PropertyItemIndex" pos="12" />
+      <data type="a" name="padding0D" pos="13" size="3" />
+    </packet>
+    <packet type="0x084" desc="GP_CLI_COMMAND_SHOP_SELL_REQ">
+      <data type="uint32" name="ItemNum" pos="4" />
+      <data type="uint16" name="ItemNo" pos="8" />
+      <data type="byte" name="ItemIndex" pos="10" />
+      <data type="byte" name="padding0B" pos="11" />
+    </packet>
+    <packet type="0x085" desc="GP_CLI_COMMAND_SHOP_SELL_SET">
+      <data type="uint16" name="SellFlag" pos="4" />
+    </packet>
+    <packet type="0x08C" desc="GP_CLI_COMMAND_PREFERENCE_READ">
+      <data type="uint16" name="padding04" pos="4" />
+    </packet>
+    <packet type="0x08D" desc="GP_CLI_COMMAND_PREFERENCE_SAVE">
+      <data type="int32" name="ContentLen" pos="4" />
+      <data type="int32" name="SegmentIndex" pos="8" />
+      <data type="t" name="PreferenceData" pos="12" size="50" />
+      <data type="byte" name="SendDone" pos="62" />
+    </packet>
+    <packet type="0x096" desc="GP_CLI_COMMAND_COMBINE_ASK">
+      <data type="byte" name="HashNo" pos="4" />
+      <data type="byte" name="padding05" pos="5" />
+      <data type="uint16" name="Crystal" pos="6" />
+      <data type="byte" name="CrystalIdx" pos="8" />
+      <data type="byte" name="Items" pos="9" />
+      <data type="a" name="ItemNo" pos="10" size="16" />
+      <data type="a" name="TableNo" pos="26" size="8" />
+    </packet>
+    <packet type="0x09B" desc="GP_CLI_COMMAND_CHOCOBO_RACE_REQ">
+      <data type="uint32" name="Param" pos="4" />
+      <data type="uint32" name="Kind" pos="8" />
+    </packet>
+    <packet type="0x0A0" desc="GP_CLI_COMMAND_SWITCH_PROPOSAL">
+      <data type="byte" name="Kind" pos="4" />
+      <data type="a" name="Str" pos="8" size="128" />
+    </packet>
+    <packet type="0x0A1" desc="GP_CLI_COMMAND_SWITCH_VOTE">
+      <data type="byte" name="Index" pos="4" />
+      <data type="a" name="Name" pos="5" size="15" />
+    </packet>
+    <packet type="0x0A2" desc="GP_CLI_COMMAND_DICE">
+      <data type="uint32" name="unknown04" pos="4" />
+    </packet>
+    <packet type="0x0AA" desc="GP_CLI_COMMAND_GUILD_BUY">
+      <data type="uint16" name="ItemNo" pos="4" />
+      <data type="byte" name="PropertyItemIndex" pos="6" />
+      <data type="byte" name="ItemNum" pos="7" />
+    </packet>
+    <packet type="0x0AB" desc="GP_CLI_COMMAND_GUILD_BUYLIST" />
+    <packet type="0x0AC" desc="GP_CLI_COMMAND_GUILD_SELL">
+      <data type="uint16" name="ItemNo" pos="4" />
+      <data type="byte" name="PropertyItemIndex" pos="6" />
+      <data type="byte" name="ItemNum" pos="7" />
+    </packet>
+    <packet type="0x0AD" desc="GP_CLI_COMMAND_GUILD_SELLLIST" />
+    <packet type="0x0B5" desc="Chat Outgoing">
+      <data type="byte" name="chat_type" pos="4" />
+      <data type="byte" name="gm_flag" pos="5" />
+      <data type="t" name="message" pos="6" size="150" />
+      <data type="byte" name="Kind" pos="4" />
+      <data type="byte" name="unknown05" pos="5" />
+    </packet>
+    <packet type="0x0B6" desc="Tell Outgoing">
+      <data type="byte" name="chat_type" pos="4" />
+      <data type="t" name="target_name" pos="5" size="16" />
+      <data type="t" name="message" pos="21" size="150" />
+      <data type="byte" name="unknown04" pos="4" />
+      <data type="byte" name="unknown05" pos="5" />
+      <data type="a" name="sName" pos="6" size="15" />
+    </packet>
+    <packet type="0x0B7" desc="GP_CLI_COMMAND_ASSIST_CHANNEL">
+      <data type="byte" name="Kind" pos="4" />
+      <data type="byte" name="unknown05" pos="5" />
+      <data type="a" name="sName" pos="6" size="15" />
+      <data type="a" name="Mes" pos="21" size="1" />
+    </packet>
+    <packet type="0x0BE" desc="GP_CLI_COMMAND_MERITS">
+      <data type="byte" name="Kind" pos="4" />
+      <data type="byte" name="Param1" pos="5" />
+      <data type="uint16" name="Param2" pos="6" />
+      <data type="uint32" name="Param3" pos="8" />
+    </packet>
+    <packet type="0x0BF" desc="GP_CLI_COMMAND_JOB_POINTS_SPEND">
+      <data type="uint16" name="Index" pos="4" />
+      <data type="uint16" name="padding06" pos="6" />
+    </packet>
+    <packet type="0x0C0" desc="GP_CLI_COMMAND_JOB_POINTS_REQ" />
+    <packet type="0x0C1" desc="GP_CLI_COMMAND_ALTER_EGO_POINTS">
+      <data type="uint16" name="Kind" pos="4" />
+      <data type="a" name="padding06" pos="6" size="2" />
+    </packet>
+    <packet type="0x0C3" desc="GP_CLI_COMMAND_GROUP_COMLINK_MAKE">
+      <data type="byte" name="State" pos="4" />
+      <data type="byte" name="LinkshellId" pos="5" />
+    </packet>
+    <packet type="0x0C4" desc="GP_CLI_COMMAND_GROUP_COMLINK_ACTIVE">
+      <data type="bits" name="r" pos="4" bits="4" />
+      <data type="bits" name="g" pos="4" bits="4" bit="4" />
+      <data type="bits" name="b" pos="4" bits="4" bit="8" />
+      <data type="bits" name="a" pos="4" bits="4" bit="12" />
+      <data type="byte" name="ItemIndex" pos="6" />
+      <data type="byte" name="Category" pos="7" />
+      <data type="byte" name="ActiveFlg" pos="8" />
+      <data type="a" name="padding09" pos="9" size="3" />
+      <data type="a" name="sComLinkName" pos="12" size="15" />
+      <data type="byte" name="LinkshellId" pos="27" />
+    </packet>
+    <packet type="0x0C9" desc="GP_CLI_COMMAND_MYROOM_ENTER">
+      <data type="uint16" name="No" pos="4" />
+      <data type="uint16" name="unknown06" pos="6" />
+    </packet>
+    <packet type="0x0CA" desc="GP_CLI_COMMAND_MYROOM_EXIT">
+      <data type="uint16" name="No" pos="4" />
+      <data type="uint16" name="unknown06" pos="6" />
+    </packet>
+    <packet type="0x0CB" desc="GP_CLI_COMMAND_MYROOM_IS">
+      <data type="byte" name="Kind" pos="4" />
+      <data type="byte" name="Param1" pos="5" />
+      <data type="uint16" name="Param2" pos="6" />
+    </packet>
+    <packet type="0x0CD" desc="GP_CLI_COMMAND_MYROOM_PLANT">
+      <data type="uint16" name="unknown04" pos="4" />
+      <data type="uint16" name="unknown06" pos="6" />
+      <data type="byte" name="unknown08" pos="8" />
+      <data type="byte" name="unknown09" pos="9" />
+    </packet>
+    <packet type="0x0CE" desc="GP_CLI_COMMAND_MYROOM_RAISE">
+      <data type="uint16" name="unknown04" pos="4" />
+      <data type="uint16" name="unknown06" pos="6" />
+      <data type="byte" name="unknown08" pos="8" />
+      <data type="byte" name="unknown09" pos="9" />
+    </packet>
+    <packet type="0x0CF" desc="GP_CLI_COMMAND_MYROOM_HARVEST">
+      <data type="uint16" name="unknown04" pos="4" />
+      <data type="uint16" name="unknown06" pos="6" />
+      <data type="byte" name="unknown08" pos="8" />
+      <data type="byte" name="unknown09" pos="9" />
+    </packet>
+    <packet type="0x0D1" desc="GP_CLI_COMMAND_MYROOM_PLACE">
+      <data type="uint16" name="ItemNo" pos="4" />
+      <data type="int8" name="X" pos="6" />
+      <data type="int8" name="Y" pos="7" />
+      <data type="int8" name="Z" pos="8" />
+      <data type="int8" name="V" pos="9" />
+      <data type="byte" name="TableNo" pos="10" />
+      <data type="byte" name="padding0B" pos="11" />
+    </packet>
+    <packet type="0x0D2" desc="GP_CLI_COMMAND_MAP_GROUP">
+      <data type="uint32" name="ZoneNo" pos="4" />
+    </packet>
+    <packet type="0x0D3" desc="GP_CLI_COMMAND_FAQ_GMCALL">
+      <data type="bits" name="type" pos="4" bits="4" />
+      <data type="bits" name="vers" pos="4" bits="4" bit="4" />
+      <data type="bits" name="pktId" pos="4" bits="8" bit="8" />
+      <data type="bits" name="seq" pos="6" bits="7" />
+      <data type="bits" name="eos" pos="6" bits="1" bit="7" />
+      <data type="bits" name="blkNum" pos="6" bits="8" bit="8" />
+    </packet>
+    <packet type="0x0D4" desc="GP_CLI_COMMAND_FAQ_GMPARAM">
+      <data type="uint16" name="Id" pos="4" />
+      <data type="uint16" name="Option" pos="6" />
+    </packet>
+    <packet type="0x0D5" desc="GP_CLI_COMMAND_ACK_GMMSG">
+      <data type="uint32" name="msgId" pos="4" />
+      <data type="uint16" name="seqId" pos="8" />
+      <data type="uint16" name="seqNum" pos="10" />
+    </packet>
+    <packet type="0x0D8" desc="GP_CLI_COMMAND_DUNGEON_PARAM">
+      <data type="uint16" name="Param1" pos="6" />
+      <data type="byte" name="Param2" pos="8" />
+      <data type="a" name="padding09" pos="9" size="3" />
+      <data type="a" name="Data" pos="16" size="24" />
+      <data type="uint16" name="ActIndex" pos="4" />
+      <data type="uint32" name="UniqueNo" pos="12" />
+    </packet>
+    <packet type="0x0DB" desc="GP_CLI_COMMAND_CONFIG_LANGUAGE">
+      <data type="byte" name="unknown04" pos="4" />
+      <data type="byte" name="unknown05" pos="5" />
+      <data type="byte" name="Kind" pos="6" />
+      <data type="byte" name="padding07" pos="7" />
+      <data type="a" name="padding14" pos="20" size="16" />
+      <data type="uint32" name="Param" pos="36" />
+      <data type="a" name="ConfigSys" pos="8" size="12" />
+    </packet>
+    <packet type="0x0DC" desc="GP_CLI_COMMAND_CONFIG">
+      <data type="bits" name="InviteFlg" pos="4" bits="1" />
+      <data type="bits" name="AwayFlg" pos="4" bits="1" bit="1" />
+      <data type="bits" name="AnonymityFlg" pos="4" bits="1" bit="2" />
+      <data type="bits" name="Language" pos="4" bits="2" bit="3" />
+      <data type="bits" name="unused05" pos="4" bits="3" bit="5" />
+      <data type="bits" name="unused08" pos="5" bits="1" />
+      <data type="bits" name="unused09" pos="5" bits="1" bit="1" />
+      <data type="bits" name="unused10" pos="5" bits="1" bit="2" />
+      <data type="bits" name="unused11" pos="5" bits="2" bit="3" />
+      <data type="bits" name="unused13" pos="5" bits="1" bit="5" />
+      <data type="bits" name="AutoTargetOffFlg" pos="5" bits="1" bit="6" />
+      <data type="bits" name="AutoPartyFlg" pos="5" bits="1" bit="7" />
+      <data type="bits" name="unused16" pos="6" bits="8" />
+      <data type="bits" name="unused24" pos="7" bits="1" />
+      <data type="bits" name="MentorFlg" pos="7" bits="1" bit="1" />
+      <data type="bits" name="NewAdventurerOffFlg" pos="7" bits="1" bit="2" />
+      <data type="bits" name="DisplayHeadOffFlg" pos="7" bits="1" bit="3" />
+      <data type="bits" name="unused28" pos="7" bits="1" bit="4" />
+      <data type="bits" name="RecruitFlg" pos="7" bits="1" bit="5" />
+      <data type="bits" name="unused30" pos="7" bits="2" bit="6" />
+      <data type="uint32" name="unused00" pos="8" />
+      <data type="uint32" name="unused01" pos="12" />
+      <data type="byte" name="SetFlg" pos="16" />
+      <data type="a" name="padding11" pos="17" size="3" />
+    </packet>
+    <packet type="0x0DD" desc="GP_CLI_COMMAND_EQUIP_INSPECT">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint32" name="ActIndex" pos="8" />
+      <data type="byte" name="Kind" pos="12" />
+      <data type="a" name="padding0D" pos="13" size="3" />
+    </packet>
+    <packet type="0x0DE" desc="GP_CLI_COMMAND_INSPECT_MESSAGE">
+      <data type="a" name="sInspectMessage" pos="4" size="123" />
+      <data type="byte" name="padding7F" pos="127" />
+    </packet>
+    <packet type="0x0E0" desc="GP_CLI_COMMAND_SET_USERMSG">
+      <data type="a" name="sMessage" pos="4" size="128" />
+      <data type="uint32" name="installTime" pos="132" />
+      <data type="a" name="platform" pos="136" size="4" />
+      <data type="uint32" name="srvExCode" pos="140" />
+      <data type="uint32" name="cliExCode" pos="144" />
+      <data type="uint32" name="msgType" pos="148" />
+    </packet>
+    <packet type="0x0E1" desc="GP_CLI_COMMAND_GET_LSMSG">
+      <data type="bits" name="unknown00" pos="4" bits="4" />
+      <data type="bits" name="unknown04" pos="4" bits="1" bit="4" />
+      <data type="bits" name="unknown05" pos="4" bits="1" bit="5" />
+      <data type="bits" name="unknown06" pos="4" bits="1" bit="6" />
+      <data type="bits" name="unknown07" pos="4" bits="1" bit="7" />
+      <data type="bits" name="readLevel" pos="5" bits="2" />
+      <data type="bits" name="writeLevel" pos="5" bits="2" bit="2" />
+      <data type="bits" name="pubEditLevel" pos="5" bits="2" bit="4" />
+      <data type="bits" name="LinkshellId" pos="5" bits="2" bit="6" />
+      <data type="byte" name="Category" pos="6" />
+      <data type="byte" name="ItemIndex" pos="7" />
+      <data type="a" name="padding08" pos="8" size="2" />
+      <data type="uint16" name="seqId" pos="10" />
+      <data type="uint32" name="uniqNo" pos="12" />
+      <data type="a" name="sMessage" pos="16" size="128" />
+    </packet>
+    <packet type="0x0E2" desc="GP_CLI_COMMAND_SET_LSMSG">
+      <data type="bits" name="unknown00" pos="4" bits="4" />
+      <data type="bits" name="unknown04" pos="4" bits="1" bit="4" />
+      <data type="bits" name="unknown05" pos="4" bits="1" bit="5" />
+      <data type="bits" name="unknown06" pos="4" bits="1" bit="6" />
+      <data type="bits" name="unknown07" pos="4" bits="1" bit="7" />
+      <data type="bits" name="readLevel" pos="5" bits="2" />
+      <data type="bits" name="writeLevel" pos="5" bits="2" bit="2" />
+      <data type="bits" name="pubEditLevel" pos="5" bits="2" bit="4" />
+      <data type="bits" name="LinkshellId" pos="5" bits="2" bit="6" />
+      <data type="byte" name="Category" pos="6" />
+      <data type="byte" name="ItemIndex" pos="7" />
+      <data type="a" name="padding08" pos="8" size="2" />
+      <data type="uint16" name="seqId" pos="10" />
+      <data type="uint32" name="uniqNo" pos="12" />
+      <data type="a" name="sMessage" pos="16" size="128" />
+    </packet>
+    <packet type="0x0E4" desc="GP_CLI_COMMAND_GET_LSPRIV">
+      <data type="bits" name="unknown00" pos="4" bits="4" />
+      <data type="bits" name="unknown04" pos="4" bits="1" bit="4" />
+      <data type="bits" name="unknown05" pos="4" bits="1" bit="5" />
+      <data type="bits" name="unknown06" pos="4" bits="1" bit="6" />
+      <data type="bits" name="unknown07" pos="4" bits="1" bit="7" />
+      <data type="bits" name="readLevel" pos="5" bits="2" />
+      <data type="bits" name="writeLevel" pos="5" bits="2" bit="2" />
+      <data type="bits" name="pubEditLevel" pos="5" bits="2" bit="4" />
+      <data type="bits" name="LinkshellId" pos="5" bits="2" bit="6" />
+      <data type="byte" name="Category" pos="6" />
+      <data type="byte" name="ItemIndex" pos="7" />
+      <data type="a" name="padding08" pos="8" size="2" />
+      <data type="uint16" name="seqId" pos="10" />
+      <data type="uint32" name="uniqNo" pos="12" />
+      <data type="a" name="sMessage" pos="16" size="128" />
+    </packet>
+    <packet type="0x0E7" desc="GP_CLI_COMMAND_REQLOGOUT">
+      <data type="uint16" name="Mode" pos="4" />
+      <data type="uint16" name="Kind" pos="6" />
+    </packet>
+    <packet type="0x0E8" desc="GP_CLI_COMMAND_CAMP">
+      <data type="uint32" name="Mode" pos="4" />
+    </packet>
+    <packet type="0x0E9" desc="GP_CLI_COMMAND_GLOBALUNIQUENO_REQ">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="uint16" name="padding0A" pos="10" />
+    </packet>
+    <packet type="0x0EA" desc="GP_CLI_COMMAND_SIT">
+      <data type="uint32" name="Mode" pos="4" />
+    </packet>
+    <packet type="0x0EB" desc="GP_CLI_COMMAND_REQSUBMAPNUM" />
+    <packet type="0x0F0" desc="GP_CLI_COMMAND_RESCUE">
+      <data type="uint32" name="State" pos="4" />
+    </packet>
+    <packet type="0x0F1" desc="GP_CLI_COMMAND_BUFFCANCEL">
+      <data type="uint16" name="BuffNo" pos="4" />
+      <data type="uint16" name="padding06" pos="6" />
+    </packet>
+    <packet type="0x0F2" desc="GP_CLI_COMMAND_SUBMAPCHANGE">
+      <data type="uint16" name="State" pos="4" />
+      <data type="uint16" name="SubMapNumber" pos="6" />
+    </packet>
+    <packet type="0x0F4" desc="GP_CLI_COMMAND_TRACKING_LIST">
+      <data type="uint32" name="SendFlg" pos="4" />
+    </packet>
+    <packet type="0x0F5" desc="GP_CLI_COMMAND_TRACKING_START">
+      <data type="uint32" name="ActIndex" pos="4" />
+    </packet>
+    <packet type="0x0F6" desc="GP_CLI_COMMAND_TRACKING_END">
+      <data type="uint32" name="padding04" pos="4" />
+    </packet>
+    <packet type="0x0FA" desc="GP_CLI_COMMAND_MYROOM_LAYOUT">
+      <data type="uint16" name="MyroomItemNo" pos="4" />
+      <data type="byte" name="MyroomItemIndex" pos="6" />
+      <data type="byte" name="MyroomCategory" pos="7" />
+      <data type="byte" name="MyroomFloorFlg" pos="8" />
+      <data type="byte" name="x" pos="9" />
+      <data type="byte" name="y" pos="10" />
+      <data type="byte" name="z" pos="11" />
+      <data type="byte" name="v" pos="12" />
+      <data type="a" name="padding0D" pos="13" size="3" />
+    </packet>
+    <packet type="0x0FB" desc="GP_CLI_COMMAND_MYROOM_BANKIN">
+      <data type="uint16" name="MyroomItemNo" pos="4" />
+      <data type="byte" name="MyroomItemIndex" pos="6" />
+      <data type="byte" name="MyroomCategory" pos="7" />
+    </packet>
+    <packet type="0x0FC" desc="GP_CLI_COMMAND_MYROOM_PLANT_ADD">
+      <data type="uint16" name="MyroomPlantItemNo" pos="4" />
+      <data type="uint16" name="MyroomAddItemNo" pos="6" />
+      <data type="byte" name="MyroomPlantItemIndex" pos="8" />
+      <data type="byte" name="MyroomAddItemIndex" pos="9" />
+      <data type="byte" name="MyroomPlantCategory" pos="10" />
+      <data type="byte" name="MyroomAddCategory" pos="11" />
+    </packet>
+    <packet type="0x0FD" desc="GP_CLI_COMMAND_MYROOM_PLANT_CHECK">
+      <data type="uint16" name="MyroomPlantItemNo" pos="4" />
+      <data type="byte" name="MyroomPlantItemIndex" pos="6" />
+      <data type="byte" name="MyroomPlantCategory" pos="7" />
+    </packet>
+    <packet type="0x0FE" desc="GP_CLI_COMMAND_MYROOM_PLANT_CROP">
+      <data type="uint16" name="MyroomPlantItemNo" pos="4" />
+      <data type="byte" name="MyroomPlantItemIndex" pos="6" />
+      <data type="byte" name="MyroomPlantCategory" pos="7" />
+      <data type="byte" name="CancellFlg" pos="8" />
+      <data type="a" name="padding09" pos="9" size="3" />
+    </packet>
+    <packet type="0x0FF" desc="GP_CLI_COMMAND_MYROOM_PLANT_STOP">
+      <data type="uint16" name="MyroomPlantItemNo" pos="4" />
+      <data type="byte" name="MyroomPlantItemIndex" pos="6" />
+      <data type="byte" name="MyroomPlantCategory" pos="7" />
+    </packet>
+    <packet type="0x100" desc="Job Change">
+      <data type="byte" name="main_job" pos="4" lookup="jobs" />
+      <data type="byte" name="sub_job" pos="5" lookup="jobs" />
+      <data type="byte" name="MainJobIndex" pos="4" />
+      <data type="byte" name="SupportJobIndex" pos="5" />
+    </packet>
+    <packet type="0x102" desc="GP_CLI_COMMAND_EXTENDED_JOB">
+      <data type="a" name="Data" pos="4" size="160" />
+    </packet>
+    <packet type="0x104" desc="GP_CLI_COMMAND_BAZAAR_EXIT" />
+    <packet type="0x105" desc="GP_CLI_COMMAND_BAZAAR_LIST">
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+      <data type="uint16" name="padding0A" pos="10" />
+    </packet>
+    <packet type="0x106" desc="GP_CLI_COMMAND_BAZAAR_BUY">
+      <data type="byte" name="BazaarItemIndex" pos="4" />
+      <data type="a" name="padding05" pos="5" size="3" />
+      <data type="uint32" name="BuyNum" pos="8" />
+    </packet>
+    <packet type="0x109" desc="GP_CLI_COMMAND_BAZAAR_OPEN" />
+    <packet type="0x10A" desc="GP_CLI_COMMAND_BAZAAR_ITEMSET">
+      <data type="byte" name="ItemIndex" pos="4" />
+      <data type="a" name="padding05" pos="5" size="3" />
+      <data type="uint32" name="Price" pos="8" />
+    </packet>
+    <packet type="0x10B" desc="GP_CLI_COMMAND_BAZAAR_CLOSE">
+      <data type="uint32" name="AllListClearFlg" pos="4" />
+    </packet>
+    <packet type="0x10C" desc="GP_CLI_COMMAND_ROE_START">
+      <data type="uint16" name="padding06" pos="6" />
+      <data type="uint16" name="ObjectiveId" pos="4" />
+    </packet>
+    <packet type="0x10D" desc="GP_CLI_COMMAND_ROE_REMOVE">
+      <data type="uint16" name="padding06" pos="6" />
+      <data type="uint16" name="ObjectiveId" pos="4" />
+    </packet>
+    <packet type="0x10E" desc="GP_CLI_COMMAND_ROE_CLAIM">
+      <data type="uint16" name="padding06" pos="6" />
+      <data type="uint16" name="ObjectiveId" pos="4" />
+    </packet>
+    <packet type="0x10F" desc="GP_CLI_COMMAND_CURRENCIES_1" />
+    <packet type="0x110" desc="GP_CLI_COMMAND_FISHING_2">
+      <data type="int32" name="para" pos="8" />
+      <data type="int8" name="mode" pos="14" />
+      <data type="byte" name="padding0F" pos="15" />
+      <data type="int32" name="para2" pos="16" />
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="12" />
+    </packet>
+    <packet type="0x111" desc="GP_CLI_COMMAND_BATTLEFIELD_REQ">
+      <data type="uint32" name="Status" pos="4" />
+    </packet>
+    <packet type="0x112" desc="GP_CLI_COMMAND_BATTLEFIELD_REQ">
+      <data type="byte" name="Kind" pos="4" />
+      <data type="byte" name="padding05" pos="5" />
+    </packet>
+    <packet type="0x113" desc="GP_CLI_COMMAND_SITCHAIR">
+      <data type="uint32" name="Mode" pos="4" />
+      <data type="uint32" name="ChairId" pos="8" />
+    </packet>
+    <packet type="0x114" desc="GP_CLI_COMMAND_MAP_MARKERS" />
+    <packet type="0x115" desc="GP_CLI_COMMAND_CURRENCIES_2" />
+    <packet type="0x116" desc="GP_CLI_COMMAND_UNITY_MENU">
+      <data type="uint32" name="Kind" pos="4" />
+    </packet>
+    <packet type="0x117" desc="GP_CLI_COMMAND_UNITY_QUEST">
+      <data type="uint32" name="Kind" pos="4" />
+    </packet>
+    <packet type="0x118" desc="GP_CLI_COMMAND_UNITY_TOGGLE">
+      <data type="byte" name="Mode" pos="4" />
+      <data type="a" name="padding05" pos="5" size="3" />
+    </packet>
+    <packet type="0x119" desc="GP_CLI_COMMAND_EMOTE_LIST" />
+    <packet type="0x11A" desc="GP_CLI_COMMAND_EMOTE_LIST" />
+    <packet type="0x11B" desc="GP_CLI_COMMAND_MASTERY_DISPLAY">
+      <data type="byte" name="Mode" pos="4" />
+      <data type="a" name="padding05" pos="5" size="3" />
+    </packet>
+    <packet type="0x11C" desc="GP_CLI_COMMAND_PARTY_REQUEST">
+      <data type="byte" name="Kind" pos="10" />
+      <data type="byte" name="padding0B" pos="11" />
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+    </packet>
+    <packet type="0x11D" desc="GP_CLI_COMMAND_JUMP">
+      <data type="a" name="padding0A" pos="10" size="2" />
+      <data type="uint32" name="UniqueNo" pos="4" />
+      <data type="uint16" name="ActIndex" pos="8" />
+    </packet>
+  </c2s>
+</rule>

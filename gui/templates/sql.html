@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}SQL Index Browser{% endblock %}
+
+{% macro pager() %}
+{% if total_pages > 1 %}
+<form method="get" style="display:flex;gap:8px;align-items:center;margin:12px 0;">
+  <input type="hidden" name="q" value="{{ q }}">
+  <input type="hidden" name="table" value="{{ table }}">
+  {% if page > 1 %}
+  <a class="chip" href="/sql?q={{ q }}&table={{ table }}&page={{ page - 1 }}">&larr; prev</a>
+  {% endif %}
+  <span class="muted">page</span>
+  <input type="number" name="page" value="{{ page }}" min="1" max="{{ total_pages }}" style="width:70px;">
+  <span class="muted">of {{ total_pages }}</span>
+  <button type="submit">Go</button>
+  {% if page < total_pages %}
+  <a class="chip" href="/sql?q={{ q }}&table={{ table }}&page={{ page + 1 }}">next &rarr;</a>
+  {% endif %}
+</form>
+{% endif %}
+{% endmacro %}
+
+{% block content %}
+<h1>SQL Index Browser</h1>
+<p class="muted">Direct search over the indexed SQL tables (real column names and types) --
+  for browsing/spot-checking the raw data itself, not a specific entity's full cross-reference
+  (use Entity Lookup for that).</p>
+
+<form class="search" method="get">
+  <select name="table">
+    {% for t in tables %}
+    <option value="{{ t }}" {% if table == t %}selected{% endif %}>{{ t }}</option>
+    {% endfor %}
+  </select>
+  <input type="text" name="q" value="{{ q }}" placeholder="id (exact) or name (substring)">
+  <button type="submit">Search</button>
+</form>
+
+{% if q %}
+<h2>{{ total }} result(s) in {{ table }} -- page {{ page }} of {{ total_pages }}</h2>
+{% if not rows %}
+<p class="muted">No matches.</p>
+{% else %}
+{{ pager() }}
+<div class="table-wrap"><table>
+  <tr>{% for c in cols %}<th>{{ c }}</th>{% endfor %}</tr>
+  {% for r in rows %}
+  <tr>{% for c in cols %}<td class="mono">{% if entity_col and c == entity_col and r[c] %}<a href="/entity/{{ r[c] }}">{{ r[c] }}</a>{% else %}{{ r[c] }}{% endif %}</td>{% endfor %}</tr>
+  {% endfor %}
+</table></div>
+{{ pager() }}
+{% endif %}
+{% endif %}
+{% endblock %}

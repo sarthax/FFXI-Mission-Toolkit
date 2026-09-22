@@ -1,0 +1,3 @@
+This is a placeholder, not a real diff -- see the sibling README.md. A real entry here would be
+the actual output of `git diff` (or a hand-scoped subset of it, if other unrelated changes share
+the same file) run against your target DSP checkout's working tree.

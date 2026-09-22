@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}LLM Call Detail{% endblock %}
+
+{% block content %}
+<p><a class="inline" href="/llm">&larr; back to LLM Assistant</a></p>
+<h1>LLM Call #{{ row.id }}</h1>
+<p class="muted">
+  {{ row.created_display }} &middot; source: <code class="chip">{{ row.source }}</code>
+  &middot; model: <code class="chip">{{ row.model }}</code>
+  {% if row.usage.get('response_token/s') %}
+  &middot; {{ "%.0f"|format(row.usage['response_token/s']) }} tok/s
+  {% if row.usage.get('total_duration') %}, {{ "%.1f"|format(row.usage['total_duration'] / 1e9) }}s{% endif %}
+  {% endif %}
+</p>
+<p class="muted">Stored up to <code class="chip">llm_log.MAX_STORED_CHARS</code> per field -- if a
+  field below ends with a "[truncated, N chars total]" marker, that's genuinely as much as was
+  ever kept; there is no further copy to recover beyond it.</p>
+
+<h2>Prompt</h2>
+<textarea readonly rows="16" style="width:100%; font-family:monospace; font-size:0.85em;">{{ row.prompt }}</textarea>
+
+{% if row.error %}
+<h2>Error</h2>
+<p class="muted" style="color:var(--red); white-space:pre-wrap;">{{ row.error }}</p>
+{% endif %}
+
+{% if row.response %}
+<h2>Response</h2>
+<div class="warn" style="border-left-color:var(--accent); background:var(--accent-soft);">
+  <strong>{{ draft_tag }}</strong>
+</div>
+<textarea readonly rows="16" style="width:100%; font-family:monospace; font-size:0.85em;">{{ row.response }}</textarea>
+{% endif %}
+
+{% if row.usage %}
+<h2>Raw usage</h2>
+<textarea readonly rows="6" style="width:100%; font-family:monospace; font-size:0.85em;">{{ row.usage|tojson(indent=2) }}</textarea>
+{% endif %}
+{% endblock %}

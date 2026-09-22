@@ -6,6 +6,44 @@ what's done and lay out what's next per the user's request to track future featu
 
 ## Completed
 
+- **2026-09-21: Zone Plot (`zone_plot.py`/`zone_edit.py`/`gui/templates/zone_plot.html`) — server-
+  agnostic live level editor, Add-tab UX overhaul, and a zone-switch rendering race fix.** Zone
+  Plot (View/Edit/Add/Backups on `/zoneplot`) draws every mob/NPC/door spawn row of a zone from
+  the *live* server DB over the real client mesh + navmesh, and can add/move/delete rows straight
+  against MariaDB with an auto-backup per edit. It was hardcoded to `C:\topaz`; this pass made it
+  target either Topaz or a real DSP checkout (`old-dsp-reference`), picked per-request via a new
+  `zoneplot_server` setting so switching servers takes effect immediately, no restart:
+  - `zone_plot._db()`/`_server_root()`/`_conf_path()` resolve the live DB from either server's conf
+    file (Topaz `conf/map.conf` vs DSP `conf/map_darkstar.conf` — same `key: value` line format).
+  - Real schema drift handled explicitly rather than assumed away: DSP's `mob_groups` has no
+    `name` column at all (group identity is `poolid`-only) — `zone_data()`, `zone_edit.catalogue()`,
+    and `zone_edit.add_entity()` all needed a schema-detection fallback to DSP's `mob_spawn_points.
+    mobname` instead. DSP's `instance_list` also has no reliable "which zone does this instance run
+    in" column (`entrance_zone` means *enter from*, not *runs in* — e.g. Nyzul Isle enters from
+    zone 72 but runs in 77) — fixed by deriving each instance's real zone from decoding one of its
+    own `instance_entities` ids (`((id-16777216)>>12)&511`), the same formula already used for
+    `mob_spawn_points`/`npc_list` zone filtering, instead of trusting either column name.
+  - Add tab reworked per user feedback that it was "cumbersome": a persistent cyan Three.js marker
+    now shows exactly where a click or drag-and-drop set the pending X/Y/Z (previously nothing
+    visually confirmed a drop landed), clicking anywhere in the viewport sets position without a
+    separate "enable placement" checkbox, a continuous cursor-coordinate readout appears on hover
+    over empty mesh/navmesh, and adding an entity now flies the camera to and selects it instead of
+    leaving the view unchanged.
+  - Fixed a real rendering race: `loadNav()` ran un-awaited with no staleness check, so switching
+    zones while a slow `navmesh.bin` fetch for the *previous* zone was still in flight would apply
+    late and silently overlay that old zone's navmesh onto the new one — including a "no nav" zone
+    that should have shown none at all. Fixed with a `loadGen` generation counter threaded through
+    every async step of `loadZone()` (`data.json`, `computeReach()`, `loadZMesh()`, `loadNav()`);
+    each discards its own result if the user has since switched zone/instance away from it.
+  - Fixed OrbitControls' default right-drag pan, which scales the pan offset by camera-target
+    distance (its normal, intentional perspective-camera behavior) — at a close zoom that distance
+    is tiny, so a full drag barely moved anything ("zoom is inversely proportional to how much the
+    map moves" per report). Countered by setting `controls.panSpeed = BASE_PAN/distance` at the
+    start of each drag, canceling that built-in scaling so pan covers roughly the same world-space
+    distance regardless of zoom level. Also raised `zoomSpeed` (1 → 2.5) and lowered `minDistance`/
+    camera near-plane (0.1 → 0.05/0.01) — zooming in on a large zone needed many scroll ticks and
+    could start clipping into the near plane before getting close, which read as a hard zoom cap.
+
 - **2026-09-15: content-duplication checking, closing a real gap id-collision checking left open**
   — a real incident (`D:\Claude\Topaz-Assault-Backport\reports\dsp_repair_2026-09-15\
   INCIDENT_REPORT.md`) showed multiple Topaz→DSP backport passes, run at different times, each

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Zero-Position / Unregistered{% endblock %}
+{% block content %}
+<h1>Zero-Position / Unregistered Entities</h1>
+<p class="muted">Finds entities with a zero/unset position in SQL, and entities that exist in
+npc_list/mob_spawn_points but were never registered in instance_entities.sql. Neither list is
+automatically a bug: some entities are legitimately repositioned dynamically via Lua (setPos)
+rather than through their static SQL row, and a zone shared with other content types may hold
+entities that were never meant to be registered for this content type at all -- check
+content_tag and cross-reference with Entity Lookup before assuming anything here needs fixing.</p>
+
+<form class="search" method="get">
+  <select name="zone">
+    <option value="">Pick a zone...</option>
+    {% for z in zones %}
+    <option value="{{ z.name }}" {% if zone|upper == z.name %}selected{% endif %}>{{ z.name }}</option>
+    {% endfor %}
+  </select>
+  <select name="mode">
+    <option value="zero_position" {% if mode == "zero_position" %}selected{% endif %}>Zero-position (0,0,0)</option>
+    <option value="unregistered" {% if mode == "unregistered" %}selected{% endif %}>Unregistered (no instance_entities / mob_spawn_points)</option>
+  </select>
+  <button type="submit">Browse</button>
+</form>
+
+{% if zone %}
+<h2>{{ rows|length }} result(s) in {{ zone }}</h2>
+{% if not rows %}
+<p class="muted">None found -- either genuinely clean, or this zone hasn't been indexed yet
+(run <code class="chip">py -3 build_npc_index.py --zone {{ zone }}</code> and
+<code class="chip">py -3 build_sql_index.py</code> first).</p>
+{% else %}
+<div class="table-wrap"><table>
+  <tr><th>id</th><th>name</th><th>content_tag</th><th></th></tr>
+  {% for npcid, name, tag in rows %}
+  <tr>
+    <td class="mono">{{ npcid }}</td>
+    <td>{{ name }}</td>
+    <td>{% if tag %}<span class="chip">{{ tag }}</span>{% endif %}</td>
+    <td><a href="/entity/{{ npcid }}">details</a></td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+{% endif %}
+{% endblock %}

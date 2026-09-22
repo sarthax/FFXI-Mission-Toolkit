@@ -1,0 +1,738 @@
+[15:14:53][EView] << [0x034] CEventPacket* (GP_SERV_COMMAND_EVENTNUM)
+UniqueNo: 16998996 (Runic Seal), EventPara: 219, EventNum: 54, EventPara2: 0, EventNum2: 54, Mode: 8, num: {46, -1, 0, 70, 4, 1, 3, 0}
+[15:14:53][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:14:54]The suggested level for Apkallu Seizure is 70.
+Place a level restriction on the party?
+[15:14:54][15:14:54] The suggested level for Apkallu Seizure is 70.
+[15:14:54] Place a level restriction on the party?
+[15:14:54][15:14:54] The suggested level for Apkallu Seizure is 70.
+[15:14:54] Place a level restriction on the party?
+[15:14:55]Your party's level will be unrestricted for á≤Apkallu Seizure.á≥ 
+[15:14:55][15:14:55] Your party's level will be unrestricted for á≤Apkallu Seizure.á≥ 
+[15:14:55][15:14:55] Your party's level will be unrestricted for á≤Apkallu Seizure.á≥ 
+[15:14:56]Only nearby party members with the same objective will accompany you to Ilrusi Atoll.
+[15:14:56][15:14:56] Only nearby party members with the same objective will accompany you to Ilrusi Atoll.
+[15:14:56][15:14:56] Only nearby party members with the same objective will accompany you to Ilrusi Atoll.
+[15:14:58][2]<Kyouryoku> They really need to change it to have a higher rate for the job you use it on.
+[15:15:00]Please confirm that all party members are cleared to enter Ilrusi Atoll.
+[15:15:00][15:15:00] Please confirm that all party members are cleared to enter Ilrusi Atoll.
+[15:15:00][15:15:00] Please confirm that all party members are cleared to enter Ilrusi Atoll.
+[15:15:00]All party members with the appropriate clearance will now be transported to Ilrusi Atoll. Are you ready?
+[15:15:00][15:15:00] All party members with the appropriate clearance will now be transported to Ilrusi Atoll. Are you ready?
+[15:15:00][15:15:00] All party members with the appropriate clearance will now be transported to Ilrusi Atoll. Are you ready?
+[15:15:01]Entry into Ilrusi Atoll has been suspended.
+[15:15:01][15:15:01] Entry into Ilrusi Atoll has been suspended.
+[15:15:01][15:15:01] Entry into Ilrusi Atoll has been suspended.
+[15:15:02][EView] >> [0x05B] GP_CLI_COMMAND_EVENTEND (GP_CLI_COMMAND_EVENTEND)
+UniqueNo: 16998996 (Runic Seal), EndPara: 1073741824, Mode: 0, EventNum: 54, EventPara: 219
+[15:15:02][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 1, ModeType: 1
+[15:15:04][EView] << [0x034] CEventPacket* (GP_SERV_COMMAND_EVENTNUM)
+UniqueNo: 16998996 (Runic Seal), EventPara: 219, EventNum: 54, EventPara2: 0, EventNum2: 54, Mode: 8, num: {46, -1, 0, 70, 4, 1, 3, 0}
+[15:15:04][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:15:05]The suggested level for Apkallu Seizure is 70.
+Place a level restriction on the party?
+[15:15:05][15:15:05] The suggested level for Apkallu Seizure is 70.
+[15:15:05] Place a level restriction on the party?
+[15:15:05][15:15:05] The suggested level for Apkallu Seizure is 70.
+[15:15:05] Place a level restriction on the party?
+[15:15:06]Your party's level will be unrestricted for á≤Apkallu Seizure.á≥ 
+[15:15:06][15:15:06] Your party's level will be unrestricted for á≤Apkallu Seizure.á≥ 
+[15:15:06][15:15:06] Your party's level will be unrestricted for á≤Apkallu Seizure.á≥ 
+[15:15:07]Only nearby party members with the same objective will accompany you to Ilrusi Atoll.
+[15:15:07][15:15:07] Only nearby party members with the same objective will accompany you to Ilrusi Atoll.
+[15:15:07][15:15:07] Only nearby party members with the same objective will accompany you to Ilrusi Atoll.
+[15:15:07]Please confirm that all party members are cleared to enter Ilrusi Atoll.
+[15:15:07][15:15:07] Please confirm that all party members are cleared to enter Ilrusi Atoll.
+[15:15:07][15:15:07] Please confirm that all party members are cleared to enter Ilrusi Atoll.
+[15:15:07]All party members with the appropriate clearance will now be transported to Ilrusi Atoll. Are you ready?
+[15:15:07][15:15:07] All party members with the appropriate clearance will now be transported to Ilrusi Atoll. Are you ready?
+[15:15:07][15:15:07] All party members with the appropriate clearance will now be transported to Ilrusi Atoll. Are you ready?
+[15:15:09]Connecting to server.
+Please wait.
+[15:15:09][15:15:09] Connecting to server.
+[15:15:09] Please wait.
+[15:15:09][15:15:09] Connecting to server.
+[15:15:09] Please wait.
+[15:15:09][EView] >> [0x05B] GP_CLI_COMMAND_EVENTEND (GP_CLI_COMMAND_EVENTEND)
+UniqueNo: 16998996 (Runic Seal), EndPara: 262144, Mode: 1, EventNum: 54, EventPara: 219
+[15:15:10][2]<Misterfifi> they need to also make the roe monthly
+[15:15:15][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 1, ModeType: 1
+[15:15:15]Commencing transport to Ilrusi Atoll!
+[15:15:15][15:15:15] Commencing transport to Ilrusi Atoll!
+[15:15:15][15:15:15] Commencing transport to Ilrusi Atoll!
+[15:15:18][2]<Misterfifi> and not one time only.. they made a +2 case for a one time objective
+[15:15:30][EView] >> [0x05B] GP_CLI_COMMAND_EVENTEND (GP_CLI_COMMAND_EVENTEND)
+UniqueNo: 16998996 (Runic Seal), EndPara: 4, Mode: 0, EventNum: 54, EventPara: 219
+[15:15:34]=== Area: Ilrusi Atoll ===
+[15:15:40][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 0, MessageNumber: 7507, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {46, 0, 0, 0}, TypeLookup: 148, SpeakerName: 
+[15:15:41][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 0, MessageNumber: 7522, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {30, 0, 0, 0}, TypeLookup: 148, SpeakerName: 
+[15:15:41][2]<Kyouryoku> Yeah, but that's if you beat Biggus Dickus.
+[15:15:42][2]<Moonsshadow> SE: "go get 5 million galli  Also SE: one time RoE
+[15:15:45][2]<Misterfifi> ya
+[15:15:45]Commencing Apkallu Seizure!
+Objective: Capture the apkallu
+[15:15:45]You have 30 minutes (Earth time) to complete this mission.
+[15:15:47][2]<Misterfifi> and ya
+[15:15:47][2]<Celtie> biggus
+[15:15:49][2]<Misterfifi> to be fair
+[15:15:51][EView] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM)
+UniqueNo: 17002659 (Clavauert B Chanoix), MesNum: 7586, Type: 2
+[15:15:51][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:15:51]Clavauert B Chanoix : Fairy Apkallu are very cautious creatures. To catch one, you must sneak up behind it very quietly. Remember, never approach an apkallu from the front.
+[15:15:51][EView] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM)
+UniqueNo: 17002659 (Clavauert B Chanoix), MesNum: 7586, Type: 2
+[15:15:51][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:15:53][NPCLogger] Database updated. 3 NPCs (4 new, 123 updates, 0 WS updates)
+[15:15:54][2]<Misterfifi> you could probably cheese normal mode aminon
+[15:15:57][2]<Misterfifi> using sch helix spam
+[15:15:59][EView] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM)
+UniqueNo: 17002659 (Clavauert B Chanoix), MesNum: 7587, Type: 2
+[15:15:59][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:15:59]Clavauert B Chanoix : Fairy Apkallu are some of the most cautious animals in all of Vana'diel. You can draw their attention with gestures or use their favorite food, hamsi, to assure them that you are not a danger.
+[15:16:06][EView] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM)
+UniqueNo: 17002659 (Clavauert B Chanoix), MesNum: 7586, Type: 2
+[15:16:06][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:16:06]Clavauert B Chanoix : Fairy Apkallu are very cautious creatures. To catch one, you must sneak up behind it very quietly. Remember, never approach an apkallu from the front.
+[15:16:15][2]<Kyouryoku> I'm not even allowed to upgrade my weapon again until I can upgrade it 2 times in a row
+[15:16:16][AutoWidescan] Received updates for 9 entities.
+[15:16:16][AutoWidescan] Received updates for 9 entities.
+[15:16:26]The Kelp Pugil is out of range.
+[15:16:29]Unable to see the Kelp Pugil.
+[15:16:29]Thris hits the Kelp Pugil for 686 points of damage.
+[15:16:30]Additional effect: 213 points of damage.
+[15:16:30]The Kelp Pugil misses Thris.
+[15:16:32]Thris starts casting Gravity on the Kelp Pugil.
+[15:16:33][2]<Misterfifi> i will say this also. {Pflug} stage 5s
+[15:16:35]The Kelp Pugil misses Thris.
+[15:16:36]Unable to see the Kelp Pugil.
+[15:16:36]Thris starts casting Bind on the Kelp Pugil.
+[15:16:38]Thris casts Gravity.
+The Kelp Pugil is weighed down.
+[15:16:38][AutoWidescan] Received updates for 10 entities.
+[15:16:40]The Kelp Pugil misses Thris.
+[15:16:41]Thris starts casting Paralyze on the Kelp Pugil.
+[15:16:42]Unable to see the Kelp Pugil.
+[15:16:43]Thris casts Bind.
+The Kelp Pugil is bound.
+[15:16:44][2]<Misterfifi> also why not ky
+[15:16:45]The Kelp Pugil misses Thris.
+[15:16:47]Thris starts casting Blind on the Kelp Pugil.
+[15:16:49]Thris casts Paralyze.
+The Kelp Pugil is paralyzed.
+[15:16:49]Unable to see the Kelp Pugil.
+[15:16:49]The Kelp Pugil hits Thris for 16 points of damage.
+[15:16:52][2]<Misterfifi> if you can use it in shortie, may get you more points
+[15:16:53]Thris starts casting Slow on the Kelp Pugil.
+[15:16:54]Thris casts Blind.
+The Kelp Pugil is blinded.
+[15:16:54]The Kelp Pugil misses Thris.
+[15:16:56][2]<Kyouryoku> Doesn't it just make things harder?
+[15:16:56]Unable to see the Kelp Pugil.
+[15:16:56][NPCLogger] Database updated. 10 NPCs (7 new, 238 updates, 7 WS updates)
+[15:16:58]Thris starts casting Poison on the Kelp Pugil.
+[15:16:59]The Kelp Pugil misses Thris.
+[15:16:59][2]<Misterfifi> nope
+[15:17:00]Thris casts Slow.
+The Kelp Pugil is slowed.
+[15:17:02]Unable to see the Kelp Pugil.
+[15:17:02]Thris starts casting Temporal Shift on the Kelp Pugil.
+[15:17:03][2]<Misterfifi> they got rid of that shit
+[15:17:04]Thris casts Poison.
+Å®The Kelp Pugil resists the spell.
+Å®Immunobreak!
+[15:17:07]Thris starts casting MP Drainkiss on the Kelp Pugil.
+[15:17:07]Thris casts Temporal Shift.
+The Kelp Pugil receives the effect of stun.
+[15:17:08]The Kelp Pugil is no longer bound.
+[15:17:09]Unable to see the Kelp Pugil.
+[15:17:10]The Kelp Pugil is no longer stunned.
+[15:17:11]The Kelp Pugil misses Thris.
+[15:17:12][2]<Misterfifi> stage 4 would make the basement bosses all rage for no reason. but they patched it 
+[15:17:14]Thris casts MP Drainkiss.
+0 MP drained from the Kelp Pugil.
+[15:17:14][2]<Kyouryoku> oh, they did something that made sense?
+[15:17:15]Thris starts casting Jettatura on the Kelp Pugil.
+[15:17:16]Unable to see the Kelp Pugil.
+[15:17:19]Thris starts casting Dispel on the Kelp Pugil.
+[15:17:20][2]<Misterfifi> kinda
+[15:17:20]Thris casts Jettatura.
+The Kelp Pugil receives the effect of terror.
+[15:17:21]The Kelp Pugil is no longer terrorized.
+[15:17:23]Unable to see the Kelp Pugil.
+[15:17:23]The Kelp Pugil misses Thris.
+[15:17:25]Thris starts casting Lowing on the Kelp Pugil.
+[15:17:27][2]<Misterfifi> and hard mode aminon is now an option if someone has stage 4
+[15:17:27]Thris's Dispel has no effect on the Kelp Pugil.
+[15:17:29]The Kelp Pugil misses Thris.
+[15:17:29]Unable to see the Kelp Pugil.
+[15:17:31][2]<Misterfifi> not forced if someone has stage 4
+[15:17:34]Thris starts casting Chaotic Eye on the Kelp Pugil.
+[15:17:35]The Kelp Pugil is paralyzed.
+[15:17:36]Unable to see the Kelp Pugil.
+[15:17:36]Thris casts Lowing.
+The Kelp Pugil receives the effect of plague.
+[15:17:39][AutoWidescan] Received updates for 10 entities.
+[15:17:41]The Kelp Pugil misses Thris.
+[15:17:41]Thris starts casting Sheep Song on the Kelp Pugil.
+[15:17:41]Thris casts Chaotic Eye.
+The Kelp Pugil receives the effect of silence.
+[15:17:43]Unable to see the Kelp Pugil.
+[15:17:44][2]<Hyuudo> "rawrrrr!  you're not allowed to use that weapon!!  it makes me irrationally angry!!!!"
+[15:17:48]Thris starts casting Poison on the Kelp Pugil.
+[15:17:49][2]<Kyouryoku> I'm going to reactivate all of my mules tonight so they can start getting login points.
+[15:17:50]Thris casts Sheep Song.
+The Kelp Pugil receives the effect of sleep.
+[15:17:50]Unable to see the Kelp Pugil.
+[15:17:53]Thris starts casting Dia on the Kelp Pugil.
+[15:17:53]Thris casts Poison.
+The Kelp Pugil resists the spell.
+[15:17:54][2]<Misterfifi> ya idk what the fuck  they were doing
+[15:17:54]The Kelp Pugil is no longer asleep.
+[15:17:56][2]<Celtie> level up
+[15:17:56]Unable to see the Kelp Pugil.
+[15:17:59]Thris casts Dia.
+The Kelp Pugil takes 2 points of damage.
+[15:17:59]The Kelp Pugil misses Thris.
+[15:18:00][NPCLogger] Database updated. 11 NPCs (1 new, 370 updates, 7 WS updates)
+[15:18:02][2]<Misterfifi> why would you making something harder for NO gain?
+[15:18:03]Unable to see the Kelp Pugil.
+[15:18:03]Thris starts casting Soporific on the Kelp Pugil.
+[15:18:05]The Kelp Pugil misses Thris.
+[15:18:07]The Kelp Pugil is no longer asleep.
+[15:18:08]The Kelp Pugil is no longer plagued.
+[15:18:10]Unable to see the Kelp Pugil.
+[15:18:10]Thris casts Soporific.
+The Kelp Pugil receives the effect of sleep.
+[15:18:10][AttackDelay] Kelp Pugil (12 hits) - Delay: 270-1087
+[15:18:10][AttackDelay]   Avg: 474 | Med: 323 | StdDev: 273
+[15:18:10][AttackDelay]   Reverse calculation: 280 (1 samples)
+[15:18:10][AttackDelay]   Multi-hit: 1-hit: 100%
+[15:18:10][AttackDelay]   Slots/rnd: MH:1.00
+[15:18:10][HPTrack] Defeated Kelp Pugil: 902~1867 HP
+[15:18:11]Thris scores a critical hit!
+The Kelp Pugil takes 966 points of damage.
+[15:18:12]Thris defeats the Kelp Pugil.
+[15:18:22][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002666 (???), MessageNumber: 7582, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {5449, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:18:22][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:18:22]Obtained temporary item: a hamsi!
+[15:18:23][2]<Misterfifi> but yeah, can make stage 3-4 without worry
+[15:18:25][EView] << [0x038] CEntityAnimationPacket (GP_SERV_COMMAND_SCHEDULOR)
+UniqueNoCas: 17002577 (Kelp Pugil), UniqueNoTar: 17002577 (Kelp Pugil), FourCCString: kesu
+[15:18:28]The Kelp Pugil is out of range.
+[15:18:31]Records of Eminence: Deal 500+ Damage.
+[15:18:31]Progress: 30/200.
+[15:18:31]Thris hits the Kelp Pugil for 750 points of damage.
+[15:18:32]Additional effect: 213 points of damage.
+[15:18:33]The Kelp Pugil misses Thris.
+[15:18:34][HPTrack] Defeated Kelp Pugil: 964~1945 HP
+[15:18:35]Thris scores a critical hit!
+The Kelp Pugil takes 982 points of damage.
+[15:18:35][2]<Misterfifi> and you dont need to make stage 5 either for it to be usable
+[15:18:35][2]<Celtie> {word}
+[15:18:36]Thris defeats the Kelp Pugil.
+[15:18:41][AutoWidescan] Received updates for 13 entities.
+[15:18:46]Thris can't eat the hamsi.
+[15:18:48][2]<Misterfifi> stage 4 to 5 isnt much difference, the only notable one is the glow
+[15:18:49][EView] << [0x038] CEntityAnimationPacket (GP_SERV_COMMAND_SCHEDULOR)
+UniqueNoCas: 17002579 (Kelp Pugil), UniqueNoTar: 17002579 (Kelp Pugil), FourCCString: kesu
+[15:18:51][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002660 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {75, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:18:51][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:18:51]The fairy apkallu is wary of your presence.
+[15:18:54]Target out of range.
+[15:18:55]Target out of range.
+[15:18:56]Target out of range.
+[15:18:57]Target out of range.
+[15:19:03][NPCLogger] Database updated. 14 NPCs (3 new, 386 updates, 7 WS updates)
+[15:19:11][2]<Kyouryoku> Sadly, I need to make gaxe and gsword, so it'll be years before I finish, if ever.
+[15:19:15][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002660 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {3, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:19:15][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:19:15]The fairy apkallu is wary of your presence.
+[15:19:16][2]<Misterfifi> the only other notable one is the instrument at stage 5 replaces empy harp i think
+[15:19:17][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002660 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {5, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:19:17][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:19:17]The fairy apkallu is wary of your presence.
+[15:19:20][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002660 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {8, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:19:20][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:19:20]The fairy apkallu is wary of your presence.
+[15:19:25]Thris can't eat the hamsi.
+[15:19:28]Thris can't eat the hamsi.
+[15:19:29][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002660 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {1, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:19:29]The fairy apkallu is staring at you.
+[15:19:36][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002660 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {8, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:19:36]The fairy apkallu is wary of your presence.
+[15:19:39][2]<Misterfifi> im making gk and maybe scythe
+[15:19:41][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002660 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {13, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:19:41][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:19:41]The fairy apkallu is wary of your presence.
+[15:19:42][AutoWidescan] Received updates for 12 entities.
+[15:19:43][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002660 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {15, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:19:43][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:19:43]The fairy apkallu is wary of your presence.
+[15:19:46][2]<Stoutheart> Still need the Empy Harp for {Lullaby} Radius.
+[15:19:47][AutoWidescan] Received updates for 12 entities.
+[15:19:50][2]<Misterfifi> fair
+[15:20:07][NPCLogger] Database updated. 15 NPCs (1 new, 279 updates, 12 WS updates)
+[15:20:19][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {67, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:20:19]The fairy apkallu is staring at you.
+[15:20:20][2]<Kyouryoku> You use the blurred harp +1 for sleeps.
+[15:20:25][2]<Misterfifi> but, prime instrument at stage 5 has 2 add song + all songs +4, so you dont need to do dummy songs anymore
+[15:20:27][2]<Kyouryoku> Not empy harp.
+[15:20:29][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {77, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:20:29]The fairy apkallu is wary of your presence.
+[15:20:33][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {65, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:20:33][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:20:33][2]<Stoutheart> IF you can find it...
+[15:20:33]The fairy apkallu is wary of your presence.
+[15:20:42][AutoWidescan] Received updates for 8 entities.
+[15:20:42][2]<Misterfifi> i have nq blurred
+[15:20:46][2]<Celtie> kyour {Found it!}
+[15:20:50][2]<Misterfifi> oh dear
+[15:20:50]Thris waves to Fairy Apkallu.
+[15:20:55]Thris cheers Fairy Apkallu on!
+[15:21:18][2]<Misterfifi> the fucked up thing with the primes though... is i cant even get points on mr for instrument. because i need
+[15:21:21][2]<Misterfifi> to do fuckton of missions
+[15:21:30][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {10, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:21:30]The fairy apkallu is staring at you.
+[15:21:35][2]<Misterfifi> so i will probably get stage 3 on main before i can even start getting points again on mr
+[15:21:39][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {2, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:21:39]The fairy apkallu is wary of your presence.
+[15:21:40]Thris bows courteously to Fairy Apkallu.
+[15:21:43][AutoWidescan] Received updates for 7 entities.
+[15:21:45]Thris welcomes Fairy Apkallu.
+[15:21:50]Thris welcomes Fairy Apkallu.
+[15:22:11][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {3, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:22:11]The fairy apkallu is staring at you.
+[15:22:14]Thris bows courteously to Fairy Apkallu.
+[15:22:14][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7578, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {6, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:22:14]The fairy apkallu seems to have let down its guard a bit.
+[15:22:20]Thris welcomes Fairy Apkallu.
+[15:22:20][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7580, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {12, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:22:20]The fairy apkallu seems to like you.
+[15:22:28][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {68, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:22:28]The fairy apkallu is staring at you.
+[15:22:33]Thris bows courteously to Fairy Apkallu.
+[15:22:34][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7578, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {74, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:22:34]The fairy apkallu seems to have let down its guard a bit.
+[15:22:37]Thris welcomes Fairy Apkallu.
+[15:22:37][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7580, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {77, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:22:37]The fairy apkallu seems to like you.
+[15:22:44][AutoWidescan] Received updates for 8 entities.
+[15:22:53][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {77, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:22:53]The Kelp Pugil is out of range.
+[15:22:53]The fairy apkallu is staring at you.
+[15:22:55]The Kelp Pugil is out of range.
+[15:22:58][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {67, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:22:58]The fairy apkallu is wary of your presence.
+[15:22:59]Thris bows courteously to Fairy Apkallu.
+[15:23:09][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {77, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:23:09]The fairy apkallu is staring at you.
+[15:23:14]Thris bows courteously to Fairy Apkallu.
+[15:23:14][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7578, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {66, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:23:14]The fairy apkallu seems to have let down its guard a bit.
+[15:23:15][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {67, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:23:15]The fairy apkallu is wary of your presence.
+[15:23:16]Thris welcomes Fairy Apkallu.
+[15:23:20][2]<Misterfifi> at least i can buy this useless old case. i should recap before update (so i can reforge empy
+[15:23:45][AutoWidescan] Received updates for 8 entities.
+[15:23:49][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {5, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:23:49]The fairy apkallu is staring at you.
+[15:23:50]Thris bows courteously to Fairy Apkallu.
+[15:23:53]Thris bows courteously to Fairy Apkallu.
+[15:23:56][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {12, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:23:56]The fairy apkallu is wary of your presence.
+[15:23:57]Thris bows courteously to Fairy Apkallu.
+[15:24:00][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7583, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {5449, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:24:00][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7574, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {5449, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:24:00][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:24:00][2]<Celtie> im going through lots of {blood}
+[15:24:00]You give the hamsi to the fairy apkallu.
+[15:24:00]You successfully capture the fairy apkallu!
+[15:24:02][EView] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM)
+UniqueNo: 17002662 (Fairy Apkallu), MesNum: 7576, Type: 4
+[15:24:03]The fairy apkallu runs away!
+[15:24:15][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {15, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:24:15][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:24:15]The fairy apkallu is wary of your presence.
+[15:24:18]Thris bows courteously to Fairy Apkallu.
+[15:24:28][HPTrack] Defeated Kelp Pugil: 1124~2012 HP
+[15:24:28]Thris scores a critical hit!
+The Kelp Pugil takes 910 points of damage.
+[15:24:29]Additional effect: 213 points of damage.
+[15:24:29]Thris scores a critical hit!
+The Kelp Pugil takes 889 points of damage.
+[15:24:30]Thris defeats the Kelp Pugil.
+[15:24:36][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002665 (???), MessageNumber: 7582, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {5449, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:24:36][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:24:36]Obtained temporary item: a hamsi!
+[15:24:40][AutoWidescan] Received updates for 8 entities.
+[15:24:43][EView] << [0x038] CEntityAnimationPacket (GP_SERV_COMMAND_SCHEDULOR)
+UniqueNoCas: 17002578 (Kelp Pugil), UniqueNoTar: 17002578 (Kelp Pugil), FourCCString: kesu
+[15:24:46][AutoWidescan] Received updates for 5 entities.
+[15:24:57][EView] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM)
+UniqueNo: 17002659 (Clavauert B Chanoix), MesNum: 7587, Type: 2
+[15:24:57][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:24:57]Clavauert B Chanoix : Fairy Apkallu are some of the most cautious animals in all of Vana'diel. You can draw their attention with gestures or use their favorite food, hamsi, to assure them that you are not a danger.
+[15:24:59][EView] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM)
+UniqueNo: 17002659 (Clavauert B Chanoix), MesNum: 7586, Type: 2
+[15:24:59][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:24:59]Clavauert B Chanoix : Fairy Apkallu are very cautious creatures. To catch one, you must sneak up behind it very quietly. Remember, never approach an apkallu from the front.
+[15:25:26][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002660 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {70, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:25:26]The fairy apkallu is staring at you.
+[15:25:27]Thris bows courteously to Fairy Apkallu.
+[15:25:27][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002660 (Fairy Apkallu), MessageNumber: 7578, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {71, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:25:27]The fairy apkallu seems to have let down its guard a bit.
+[15:25:30]Thris welcomes Fairy Apkallu.
+[15:25:30][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002660 (Fairy Apkallu), MessageNumber: 7580, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {74, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:25:30]The fairy apkallu seems to like you.
+[15:25:41][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002660 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {5, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:25:41]The fairy apkallu is staring at you.
+[15:25:43]Thris bows courteously to Fairy Apkallu.
+[15:25:43][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002660 (Fairy Apkallu), MessageNumber: 7578, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {7, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:25:44]The fairy apkallu seems to have let down its guard a bit.
+[15:25:46]Thris welcomes Fairy Apkallu.
+[15:25:46]>> /welcome
+[15:25:46]...A command error occurred.
+[15:25:46][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002660 (Fairy Apkallu), MessageNumber: 7580, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {10, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:25:46]The fairy apkallu seems to like you.
+[15:25:47]Thris welcomes Fairy Apkallu.
+[15:25:47][AutoWidescan] Received updates for 11 entities.
+[15:25:58][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002660 (Fairy Apkallu), MessageNumber: 7583, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {5449, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:25:58][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002660 (Fairy Apkallu), MessageNumber: 7574, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {5449, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:25:58][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:25:58]You give the hamsi to the fairy apkallu.
+[15:25:58]You successfully capture the fairy apkallu!
+[15:26:01][EView] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM)
+UniqueNo: 17002660 (Fairy Apkallu), MesNum: 7576, Type: 4
+[15:26:01]The fairy apkallu runs away!
+[15:26:24][AutoWidescan] Received updates for 9 entities.
+[15:26:34][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002666 (???), MessageNumber: 7582, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {5449, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:26:34][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:26:34]Obtained temporary item: a hamsi!
+[15:26:39][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002660 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {15, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:26:39]The fairy apkallu is staring at you.
+[15:26:48]Unable to see the Kelp Pugil.
+[15:26:48][AutoWidescan] Received updates for 8 entities.
+[15:26:49][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002660 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {73, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:26:49]The fairy apkallu is wary of your presence.
+[15:26:51]The Kelp Pugil misses Thris.
+[15:26:57]Thris bows courteously to Fairy Apkallu.
+[15:27:02]The Kelp Pugil misses Thris.
+[15:27:05][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002661 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {73, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:27:05]The fairy apkallu is staring at you.
+[15:27:06]The Kelp Pugil misses Thris.
+[15:27:09]Thris bows courteously to Fairy Apkallu.
+[15:27:09][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002661 (Fairy Apkallu), MessageNumber: 7578, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {77, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:27:09]The fairy apkallu seems to have let down its guard a bit.
+[15:27:11]The Kelp Pugil misses Thris.
+[15:27:11]Thris welcomes Fairy Apkallu.
+[15:27:11][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002661 (Fairy Apkallu), MessageNumber: 7580, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {79, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:27:11]The fairy apkallu seems to like you.
+[15:27:12]>> /welcome
+[15:27:12]...A command error occurred.
+[15:27:16]The Kelp Pugil misses Thris.
+[15:27:16][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002661 (Fairy Apkallu), MessageNumber: 7583, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {5449, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:27:16][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002661 (Fairy Apkallu), MessageNumber: 7574, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {5449, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:27:16][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:27:16]You give the hamsi to the fairy apkallu.
+[15:27:16]You successfully capture the fairy apkallu!
+[15:27:21]The Kelp Pugil misses Thris.
+[15:27:23][EView] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM)
+UniqueNo: 17002661 (Fairy Apkallu), MesNum: 7576, Type: 4
+[15:27:23]The fairy apkallu runs away!
+[15:27:25]The Kelp Pugil misses Thris.
+[15:27:29][NPCLogger] Database updated. 22 NPCs (7 new, 1765 updates, 46 WS updates)
+[15:27:30]The Kelp Pugil hits Thris for 34 points of damage.
+[15:27:34][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002661 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {70, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:27:34]The fairy apkallu is staring at you.
+[15:27:35]The Kelp Pugil hits Thris for 14 points of damage.
+[15:27:37][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002661 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {73, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:27:37]The fairy apkallu is wary of your presence.
+[15:27:39]Thris scores a critical hit!
+The Kelp Pugil takes 983 points of damage.
+[15:27:39]Additional effect: 213 points of damage.
+[15:27:40]Thris parries the Kelp Pugil's attack with her weapon.
+[15:27:41][AttackDelay] Kelp Pugil (9 hits) - Delay: 270-645
+[15:27:41][AttackDelay]   Avg: 325 | Med: 295 | StdDev: 120
+[15:27:41][AttackDelay]   Reverse calculation: 280 (1 samples)
+[15:27:41][AttackDelay]   Multi-hit: 1-hit: 100%
+[15:27:41][AttackDelay]   Slots/rnd: MH:1.00
+[15:27:41][HPTrack] Defeated Kelp Pugil: 1197~2173 HP
+[15:27:42][2]<Celtie> who let the {Bird} out
+[15:27:42]Thris scores a critical hit!
+The Kelp Pugil takes 977 points of damage.
+[15:27:43]Thris defeats the Kelp Pugil.
+[15:27:47][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002661 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {3, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:27:47][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:27:47]The fairy apkallu is wary of your presence.
+[15:27:49][AutoWidescan] Received updates for 7 entities.
+[15:27:50]Thris bows courteously to Fairy Apkallu.
+[15:27:50][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002661 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {6, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:27:50]The fairy apkallu is staring at you.
+[15:27:53]Thris welcomes Fairy Apkallu.
+[15:27:54]Thris bows courteously to Fairy Apkallu.
+[15:27:54]>> /bow
+[15:27:54]...A command error occurred.
+[15:27:54][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002661 (Fairy Apkallu), MessageNumber: 7578, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {10, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:27:54]The fairy apkallu seems to have let down its guard a bit.
+[15:27:54]>> /bow
+[15:27:54]...A command error occurred.
+[15:27:55][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002661 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {11, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:27:55]The fairy apkallu is wary of your presence.
+[15:27:56]>> /welcome
+[15:27:56]...A command error occurred.
+[15:27:56]Thris welcomes Fairy Apkallu.
+[15:27:56]>> /welcome
+[15:27:56]...A command error occurred.
+[15:27:57][EView] << [0x038] CEntityAnimationPacket (GP_SERV_COMMAND_SCHEDULOR)
+UniqueNoCas: 17002581 (Kelp Pugil), UniqueNoTar: 17002581 (Kelp Pugil), FourCCString: kesu
+[15:27:57]Thris welcomes Fairy Apkallu.
+[15:28:03]Thris welcomes Fairy Apkallu.
+[15:28:10]Thris bows courteously to Fairy Apkallu.
+[15:28:12]>> /welcome
+[15:28:12]...A command error occurred.
+[15:28:12]Thris welcomes Fairy Apkallu.
+[15:28:17][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002661 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {1, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:28:17]The fairy apkallu is staring at you.
+[15:28:21][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002661 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {5, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:28:21]The fairy apkallu is wary of your presence.
+[15:28:33][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002661 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {1, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:28:33]The fairy apkallu is staring at you.
+[15:28:36]Thris bows courteously to Fairy Apkallu.
+[15:28:37][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002661 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {5, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:28:37]The fairy apkallu is wary of your presence.
+[15:28:39]Thris welcomes Fairy Apkallu.
+[15:28:50][AutoWidescan] Received updates for 6 entities.
+[15:28:59][2]<Greeder> Gulool Ja Ja
+[15:29:02][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002660 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {78, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:29:02]The fairy apkallu is staring at you.
+[15:29:04][2]<Hyuudo> Bless you
+[15:29:07][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002660 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {67, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:29:07]The fairy apkallu is wary of your presence.
+[15:29:17]Thris welcomes Fairy Apkallu.
+[15:29:18][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002663 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {78, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:29:18]The fairy apkallu is staring at you.
+[15:29:21][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002663 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {65, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:29:21]The fairy apkallu is wary of your presence.
+[15:29:22][2]<Greeder> heading to {Al Zahbi}
+[15:29:24][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002666 (???), MessageNumber: 7582, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {5449, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:29:24][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:29:24]Obtained temporary item: a hamsi!
+[15:29:27][2]<Misterfifi> kill it lol
+[15:29:31][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002663 (Fairy Apkallu), MessageNumber: 7583, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {5449, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:29:31][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002663 (Fairy Apkallu), MessageNumber: 7574, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {5449, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:29:31][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:29:31]You give the hamsi to the fairy apkallu.
+[15:29:31]You successfully capture the fairy apkallu!
+[15:29:34][EView] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM)
+UniqueNo: 17002663 (Fairy Apkallu), MesNum: 7576, Type: 4
+[15:29:34]The fairy apkallu runs away!
+[15:29:36][NPCLogger] Database updated. 23 NPCs (1 new, 442 updates, 11 WS updates)
+[15:29:42][AutoWidescan] Received updates for 7 entities.
+[15:29:49][2]<Greeder> have tried in {Wajaom Woodlands} before. they just keep running
+[15:29:51][AutoWidescan] Received updates for 8 entities.
+[15:30:03][2]<Mistressfifi> it used to be possible before ilvl
+[15:30:41][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {1, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:30:41]The fairy apkallu is staring at you.
+[15:30:46][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002662 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {6, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:30:46]The fairy apkallu is wary of your presence.
+[15:30:52][AutoWidescan] Received updates for 9 entities.
+[15:30:53][AutoWidescan] Received updates for 9 entities.
+[15:31:16][2]<Mistressfifi> to kill them while theyre running anyway
+[15:31:34][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002663 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {70, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:31:34]The fairy apkallu is staring at you.
+[15:31:38][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002663 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {75, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:31:38]The fairy apkallu is wary of your presence.
+[15:31:38]Thris bows courteously to Fairy Apkallu.
+[15:31:42][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002663 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {78, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:31:42][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:31:42]The fairy apkallu is wary of your presence.
+[15:31:42][NPCLogger] Database updated. 24 NPCs (1 new, 634 updates, 32 WS updates)
+[15:31:43]Thris motions in welcome.
+[15:31:45]Thris welcomes Fairy Apkallu.
+[15:31:51][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002663 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {71, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:31:51]The fairy apkallu is staring at you.
+[15:31:53][AutoWidescan] Received updates for 10 entities.
+[15:31:54][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002663 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {74, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:31:54][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:31:54]The fairy apkallu is wary of your presence.
+[15:31:56][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002663 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {76, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:31:56]The fairy apkallu is wary of your presence.
+[15:32:00][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002667 (???), MessageNumber: 7582, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {5449, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:32:00][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:32:00]Obtained temporary item: a hamsi!
+[15:32:03]Unable to see the Kelp Pugil.
+[15:32:03]The Kelp Pugil misses Thris.
+[15:32:06]Thris hits the Kelp Pugil for 687 points of damage.
+[15:32:06]Additional effect: 213 points of damage.
+[15:32:08]The Kelp Pugil hits Thris for 25 points of damage.
+[15:32:09][AttackDelay] Kelp Pugil (1 hits) - Delay: 268-268
+[15:32:09][AttackDelay]   Avg: 268 | Med: 268 | StdDev: 0
+[15:32:09][AttackDelay]   Reverse calculation: 280 (1 samples)
+[15:32:09][AttackDelay]   Multi-hit: 1-hit: 100%
+[15:32:09][AttackDelay]   Slots/rnd: MH:1.00
+[15:32:09][HPTrack] Defeated Kelp Pugil: 901~1650 HP
+[15:32:10]Thris hits the Kelp Pugil for 750 points of damage.
+[15:32:11]Thris defeats the Kelp Pugil.
+[15:32:14][2]<Mistressfifi> oh, by the way: new skillchain for boss E > ageha kagero koki shoha fudo
+[15:32:18][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002663 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {2, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:32:18]The fairy apkallu is staring at you.
+[15:32:20]Thris bows courteously to Fairy Apkallu.
+[15:32:21][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002663 (Fairy Apkallu), MessageNumber: 7578, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {5, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:32:21]The fairy apkallu seems to have let down its guard a bit.
+[15:32:23]Thris welcomes Fairy Apkallu.
+[15:32:23]>> /welcome
+[15:32:23]...A command error occurred.
+[15:32:24][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002663 (Fairy Apkallu), MessageNumber: 7580, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {7, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:32:24]The fairy apkallu seems to like you.
+[15:32:24][EView] << [0x038] CEntityAnimationPacket (GP_SERV_COMMAND_SCHEDULOR)
+UniqueNoCas: 17002583 (Kelp Pugil), UniqueNoTar: 17002583 (Kelp Pugil), FourCCString: kesu
+[15:32:27][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002663 (Fairy Apkallu), MessageNumber: 7583, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {5449, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:32:27][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002663 (Fairy Apkallu), MessageNumber: 7574, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {5449, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:32:27][EView] << [0x052] CReleasePacket (GP_SERV_COMMAND_EVENTUCOFF)
+Mode: 0, ModeType: 0
+[15:32:27]You give the hamsi to the fairy apkallu.
+[15:32:27]You successfully capture the fairy apkallu!
+[15:32:30][2]<Mistressfifi> rotates 5 ws, makes sure def down is up, capitalizes on insane kagero dmg
+[15:32:31][EView] << [0x036] CMessageTextPacket (GP_SERV_COMMAND_TALKNUM)
+UniqueNo: 17002663 (Fairy Apkallu), MesNum: 7576, Type: 4
+[15:32:31]The fairy apkallu runs away!
+[15:32:32][2]<Celtie> nice
+[15:32:43][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002663 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {11, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:32:43]The fairy apkallu is staring at you.
+[15:32:44][2]<Mistressfifi> didnt even use yaeg for boss e lol
+[15:32:48][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002663 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {0, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:32:48]The fairy apkallu is wary of your presence.
+[15:32:52](Thris) lmao, I'm going to kms
+[15:32:52]There are no party members.
+[15:32:54][AutoWidescan] Received updates for 9 entities.
+[15:32:59][2]<Mistressfifi> didnt have rolanberry either i should go get some +1
+[15:33:01][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002663 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {13, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:33:01]The fairy apkallu is staring at you.
+[15:33:03]Thris uses a cage of Reef fireflies.
+[15:33:06][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002663 (Fairy Apkallu), MessageNumber: 7577, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {66, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:33:06]The fairy apkallu is wary of your presence.
+[15:33:16][EView] << [0x02A] CMessageSpecialPacket (GP_SERV_COMMAND_TALKNUMWORK)
+UniqueNo: 17002663 (Fairy Apkallu), MessageNumber: 7575, IgnoreValidation: true, Type: 6, Flag: 0, String: , num: {76, 4, 1757, 0}, TypeLookup: 148, SpeakerName: 
+[15:33:16]The fairy apkallu is staring at you.
+[15:33:21]=== Area: Arrapago Reef ===
+[15:33:26][EView] << [0x039] CEntityVisualPacket (GP_SERV_COMMAND_MAPSCHEDULOR)
+UniqueNoCas: 0, UniqueNoTar: 0, FourCCString: 1pb1
+[15:33:26][EView] << [0x039] CEntityVisualPacket (GP_SERV_COMMAND_MAPSCHEDULOR)
+UniqueNoCas: 0, UniqueNoTar: 0, FourCCString: 2pb1
+[15:33:27][KITrack] Lost Key Item
+ID: 1869, Name: map of Ilrusi Atoll, X: +009.304, Y: +620.133, Z: -007.376, Zone: Arrapago Reef
+[15:33:33][captain] Stopping capture

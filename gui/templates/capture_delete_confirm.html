@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Delete Capture{% endblock %}
+{% block content %}
+<p><a class="inline" href="/captures/{{ cap.capture_id }}">&larr; back to capture #{{ cap.capture_id }}</a></p>
+
+<h1>Delete capture <span class="chip mono">#{{ cap.capture_id }}</span>?</h1>
+
+<div class="warn">
+  <strong>This is permanent -- there is no undo.</strong> Deleting
+  <strong>{{ cap.capture_label }}</strong> removes it and every real row it owns
+  ({{ total_rows }} total) across every table below. If you just want to fix a wrong field
+  instead, use <a class="inline" href="/captures/{{ cap.capture_id }}">edit mission / content
+  type / tags</a> on the capture's own page rather than deleting it.
+</div>
+
+<div class="table-wrap" style="margin-top:16px;"><table>
+  <tr><th>table</th><th>rows that will be deleted</th></tr>
+  {% for t, n in row_counts.items() %}
+  <tr><td class="mono">{{ t }}</td><td>{{ n }}</td></tr>
+  {% endfor %}
+  <tr><td><strong>captures (the record itself)</strong></td><td>1</td></tr>
+</table></div>
+
+<form method="post" action="/captures/{{ cap.capture_id }}/delete" style="margin-top:20px;">
+  <button type="submit" style="background:var(--red); color:white;">Yes, permanently delete this capture</button>
+  <a class="chip" href="/captures/{{ cap.capture_id }}" style="margin-left:10px;">Cancel</a>
+</form>
+{% endblock %}

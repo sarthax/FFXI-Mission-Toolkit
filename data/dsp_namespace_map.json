@@ -153,6 +153,18 @@
       "evidence": "Direct table rename, same [KEY] dynamic-lookup shape as Topaz's tpz.anim -- confirmed by reading DSP's own native animatenpc.lua rather than guessing. Rule: tpz.anim -> xi.anim (bare table reference, not a per-key rename since callers index it dynamically with string.upper(arg), not a fixed named key)."
     }
   },
+  "call_reshapes": {
+    "_readme": "A real, confirmed API SHAPE difference between Topaz and old-dsp-reference for a function that exists with the SAME NAME on both sides -- not a rename, not a missing binding. backport_binding_audit.py cannot catch this class of bug at all (it only checks whether the binding NAME exists, never the argument shape), and it slipped through an entire live-server integration test undetected across 37 files/193 call sites before being caught by an actual server crash. Each entry here needs a real regex-capture-based transform (not a simple string substitution like whole_call_renames), applied in backport_lua_convert.py's _build_simple_rules().",
+    "GetNPCByID_instance_arg": {
+      "topaz_call": "GetNPCByID(id, instanceObj)",
+      "topaz_signature": "auto GetNPCByID(uint32 npcid, sol::object const& instanceObj) -> std::optional<CLuaBaseEntity> (src/map/lua/luautils.h:132) -- genuinely accepts an instance object directly as arg 2, confirmed real and correct Topaz usage.",
+      "dsp_signature": "int32 GetNPCByID(lua_State* L) (src/map/lua/luautils.cpp:335) -- arg 2 is checked via Lunar<CLuaBaseEntity>::check(L, 2), i.e. it must be an ENTITY (any CBaseEntity), from which it reads ->PInstance internally. Passing a CLuaInstance userdata directly throws 'bad argument #2 to GetNPCByID (CBaseEntity expected, got userdata)' -- a live, confirmed map-server crash (2026-09-14 integration test), not a guess.",
+      "dsp_call": "instance:getEntity(bit.band(id, 0xFFF), TYPE_NPC)",
+      "evidence": "old-dsp-reference's own real CLuaInstance::getEntity (src/map/lua/lua_instance.cpp:248) is the correct, already-working equivalent -- confirmed via this codebase's own native pre-existing stub for scripts/zones/Leujaoam_Sanctum/instances/leujaoam_cleansing.lua, which already used exactly this shape (instance:getEntity(bit.band(Leujaoam.npcs.RUNE_OF_RELEASE, 0xFFF), TYPE_NPC)) before this package's own converted version overwrote it with the broken Topaz-shaped call.",
+      "fixed": "2026-09-14 -- mechanically converted all 193 real call sites across 37 files in this project's own packages (mission_toolkit fixer script, not by hand) after a live map-server crash surfaced the first instance. Every future zone/mission conversion needs this same transform -- see TODO below for wiring it into backport_lua_convert.py itself so it's automatic, not just documented.",
+      "not_the_same_bug": "GetMobByID(id, instance) is a DIFFERENT, unrelated real bug -- its Lua-side call shape is already correct for old-dsp-reference (CLuaInstance IS the right type there), but old-dsp-reference's own C++ implementation (luautils.cpp:399-402) computes PInstance->GetEntity(...) and never assigns it to PMob, so it silently always returns nil for any instance-scoped mob lookup. Fixed directly in old-dsp-reference's C++ (src/map/lua/luautils.cpp) the same session -- no Lua-side change needed or wanted for GetMobByID calls."
+    }
+  },
   "engine_gaps": {
     "_readme": "Confirmed absent from DSP at the C++ level, not just missing a Lua-side name. NEVER auto-convert these -- the converter must flag them as TODOs requiring a C++ change (see DSP_ENGINE_CHANGES.md) before the Lua can be ported.",
     "mobMod_CHECK_AS_NM": {
@@ -302,18 +314,6 @@
       "confidence": "confirmed",
       "source": "src/map/lua/lua_baseentity.cpp",
       "evidence": "see getCharVar -- same pairing. Rule: player:setCharVar(x, v) -> player:setVar(x, v)."
-    },
-    "PrintToPlayer": {
-      "dsp_name": "printToPlayer",
-      "confidence": "confirmed",
-      "source": "src/map/lua/lua_base_entity.cpp:20485 (SOL_REGISTER), also confirmed via DSP's own real scripts/commands/animatenpc.lua which calls player:printToPlayer(...)",
-      "evidence": "Case-only difference -- DSP registers lowercase printToPlayer, not PrintToPlayer. Found auditing assault_gm_debug_tools (all 10 GM command files used the Topaz-style capital-P spelling)."
-    },
-    "untargetable": {
-      "dsp_name": "setUntargetable",
-      "confidence": "confirmed",
-      "source": "src/map/lua/lua_base_entity.cpp:21286 (SOL_REGISTER \"setUntargetable\"), function at line 18404",
-      "evidence": "Not a case difference -- Topaz's bare untargetable(bool) toggle does not exist in DSP at all under any casing; the real binding is setUntargetable(bool), same single-bool-arg signature. Found in navdebug.lua."
     },
     "addCharVar": {
       "dsp_name": "addVar",

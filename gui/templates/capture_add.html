@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Add Files{% endblock %}
+{% block content %}
+<p><a class="inline" href="/captures/{{ cap.capture_id }}">&larr; back to capture #{{ cap.capture_id }}</a></p>
+<h1>Add files <span class="chip mono">#{{ cap.capture_id }}</span></h1>
+<p>{{ cap.capture_label }} <span class="chip">{{ cap.content_type }}</span>
+  {% if cap.mission_name %}&mdash; {{ cap.mission_name }}{% endif %}</p>
+
+<p class="muted">Drop any real capture log/db here -- NPCLogger/ActionView/LevelRangeTrack <code class="chip">.db</code>,
+  KITrack/EventView/idview-simple/ActionView-simple/AttackDelay/HPTrack/Npclogger-tables <code class="chip">.log/.lua</code>,
+  or a whole bundle as <code class="chip">.zip</code> or <code class="chip">.7z</code>. Format is
+  detected from real content, not the filename or folder path -- a bare dropped file has neither.
+  PathLog CSVs need their real folder path for zone context -- use "Choose a folder" below (or a
+  zip/7z upload) for those, not the bare-files picker. <strong>RAR archives aren't supported</strong>
+  (re-compress as .zip or .7z first) -- if a file can't be read at all, you'll see a clear reason
+  below rather than it silently doing nothing.</p>
+
+<form method="post" action="/captures/{{ cap.capture_id }}/add" enctype="multipart/form-data" id="add-files-form">
+  <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:14px;">
+    <div style="flex:1; min-width:260px; border:1px solid var(--border); border-radius:8px; padding:12px 14px; background:var(--surface);">
+      <label for="files-input" style="display:block; font-weight:600; margin-bottom:2px;">Option A &mdash; Pick individual files</label>
+      <p class="muted" style="margin:0 0 8px;">One or more loose <code class="chip">.log</code>/<code class="chip">.lua</code>/<code class="chip">.db</code> files, a single <code class="chip">.zip</code>/<code class="chip">.7z</code> bundle, or several at once. No folder structure is preserved -- fine for anything whose format is detected from content alone.</p>
+      <input type="file" name="files" id="files-input" multiple>
+    </div>
+    <div style="flex:1; min-width:260px; border:1px solid var(--border); border-radius:8px; padding:12px 14px; background:var(--surface);">
+      <label for="folder-input" style="display:block; font-weight:600; margin-bottom:2px;">Option B &mdash; Pick a whole folder</label>
+      <p class="muted" style="margin:0 0 8px;">Upload an entire capture folder (with all its real subfolders, e.g. <code class="chip">actionview/</code>, <code class="chip">npclogger/</code>, <code class="chip">PathLog/</code>) in one go, preserving the real directory layout some formats need for zone context. <strong>Use this one</strong> if you're not sure which to pick.</p>
+      <input type="file" id="folder-input" webkitdirectory directory multiple>
+    </div>
+  </div>
+  <div><button type="submit">Upload &amp; ingest</button></div>
+</form>
+<script>
+  // Native multipart submission only ever sends a bare basename for each file's
+  // Content-Disposition filename -- webkitRelativePath (the real "ZoneName/17002517.csv" folder
+  // path a directory-picker selection carries) is a JS-only File property, invisible to a plain
+  // form POST. So a folder pick is submitted here via fetch with a hand-built FormData, passing
+  // each file's webkitRelativePath as its filename -- the server then reconstructs the real
+  // directory tree from those paths and ingests it exactly like a dropped zip (see
+  // gui_server.py's captures_add_submit).
+  document.getElementById("add-files-form").addEventListener("submit", function (ev) {
+    var folderFiles = document.getElementById("folder-input").files;
+    if (!folderFiles || folderFiles.length === 0) return; // plain files-only: let native POST run
+    ev.preventDefault();
+    var fd = new FormData();
+    var plainFiles = document.getElementById("files-input").files;
+    for (var i = 0; i < plainFiles.length; i++) fd.append("files", plainFiles[i]);
+    for (var i = 0; i < folderFiles.length; i++) {
+      var f = folderFiles[i];
+      fd.append("files", f, f.webkitRelativePath || f.name);
+    }
+    var btn = ev.target.querySelector("button[type=submit]");
+    btn.disabled = true;
+    btn.textContent = "Uploading...";
+    fetch(ev.target.action, { method: "POST", body: fd })
+      .then(function (resp) { return resp.text(); })
+      .then(function (html) { document.open(); document.write(html); document.close(); })
+      .catch(function (err) { btn.disabled = false; btn.textContent = "Upload & ingest"; alert("Upload failed: " + err); });
+  });
+</script>
+
+{% if last_results is not none %}
+<h2 style="margin-top:24px;">Just added</h2>
+<div class="table-wrap"><table>
+  <tr><th>file</th><th>detected format</th><th>rows</th><th></th></tr>
+  {% for r in last_results %}
+  <tr>
+    <td class="mono">{{ r.filename }}</td>
+    <td>{% if r.format %}<span class="chip">{{ r.format }}</span>{% else %}<span class="muted">--</span>{% endif %}</td>
+    <td>{{ r.rows if r.rows is not none else "--" }}</td>
+    <td>{% if r.error %}<span class="pill mismatch">{{ r.error }}</span>{% else %}<span class="pill match">ok</span>{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+
+<h2 style="margin-top:24px;">All files added so far</h2>
+{% if files %}
+<div class="table-wrap"><table>
+  <tr><th>file</th><th>format</th><th>rows</th><th>status</th><th>when</th></tr>
+  {% for f in files %}
+  <tr>
+    <td class="mono">{{ f.filename }}</td>
+    <td>{% if f.format_detected %}<span class="chip">{{ f.format_detected }}</span>{% else %}<span class="muted">unrecognized</span>{% endif %}</td>
+    <td>{{ f.row_count if f.row_count is not none else "--" }}</td>
+    <td>{% if f.error %}<span class="pill mismatch">{{ f.error }}</span>{% else %}<span class="pill match">ok</span>{% endif %}</td>
+    <td class="muted">{{ f.ingested_at }}</td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% else %}
+<p class="muted">Nothing added yet.</p>
+{% endif %}
+{% endblock %}

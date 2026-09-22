@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Restore Backup{% endblock %}
+{% block content %}
+<p><a class="inline" href="/settings">&larr; back to Settings</a></p>
+
+<h1>Restore <span class="chip mono">{{ backup.name }}</span>?</h1>
+
+<div class="warn">
+  <strong>This replaces the entire live database.</strong> Everything currently in
+  <code class="chip">ffxi_zone_database.db</code> -- including anything indexed since this backup
+  was made on {{ backup.mtime }} -- will be overwritten by this {{ backup.size_mb }} MB backup.
+  A safety copy of the CURRENT state is taken first, so this action is itself undoable from the
+  Settings page afterward, but nothing else protects you here -- there is no further confirmation
+  after this page. The toolkit will restart automatically once the restore finishes.
+</div>
+
+<form method="post" action="/backup/restore" style="margin-top:20px;">
+  <input type="hidden" name="name" value="{{ backup.name }}">
+  <button type="submit" style="background:var(--red); color:white;">Yes, restore this backup and restart</button>
+  <a class="chip" href="/settings" style="margin-left:10px;">Cancel</a>
+</form>
+{% endblock %}

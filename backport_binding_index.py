@@ -31,8 +31,10 @@ import json
 import re
 from pathlib import Path
 
-TOPAZ_ROOT = Path(r"C:\topaz")
-DSP_ROOT = Path(r"D:\Claude\old-dsp-reference")
+import settings
+
+TOPAZ_ROOT = settings.get_topaz_root()
+DSP_ROOT = settings.get_dsp_root()
 DATA_DIR = Path(__file__).resolve().parent / "data"
 
 TOPAZ_INDEX_PATH = DATA_DIR / "topaz_binding_index.json"
@@ -75,10 +77,15 @@ def build_dsp_index(root: Path = DSP_ROOT) -> dict[str, list[dict]]:
     return index
 
 
-def save_indexes():
+def save_indexes(topaz_root: Path = TOPAZ_ROOT, dsp_root: Path | None = DSP_ROOT):
+    if dsp_root is None:
+        raise SystemExit(
+            "No DSP checkout configured -- set it on the Settings page (dsp_server_path) or "
+            "pass --dsp-root."
+        )
     DATA_DIR.mkdir(exist_ok=True)
-    topaz_index = build_topaz_index()
-    dsp_index = build_dsp_index()
+    topaz_index = build_topaz_index(topaz_root)
+    dsp_index = build_dsp_index(dsp_root)
     TOPAZ_INDEX_PATH.write_text(json.dumps(topaz_index, indent=2, sort_keys=True), encoding="utf-8")
     DSP_INDEX_PATH.write_text(json.dumps(dsp_index, indent=2, sort_keys=True), encoding="utf-8")
     print(f"Topaz: {len(topaz_index)} distinct binding names -> {TOPAZ_INDEX_PATH}")
@@ -112,10 +119,12 @@ def main():
     ap.add_argument("--build", action="store_true", help="(Re)generate both cached indexes from real source")
     ap.add_argument("--diff", action="store_true", help="Print the classified Topaz-vs-old-dsp-reference diff")
     ap.add_argument("--topaz-only", action="store_true", help="With --diff, only print the topaz_only bucket")
+    ap.add_argument("--topaz-root", type=Path, default=TOPAZ_ROOT, help="Override Settings' Topaz path")
+    ap.add_argument("--dsp-root", type=Path, default=DSP_ROOT, help="Override Settings' DSP path")
     args = ap.parse_args()
 
     if args.build:
-        save_indexes()
+        save_indexes(args.topaz_root, args.dsp_root)
 
     if args.diff:
         result = classify_diff()

@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Item {{ itemid }}{% endblock %}
+
+{% block content %}
+<h1>Item {{ itemid }}</h1>
+<p><a class="chip" href="/items">&larr; back to Item Browser</a></p>
+
+{% if not our_row and not ext_row %}
+<p class="muted">No record found for item id {{ itemid }} on either side.</p>
+{% endif %}
+
+<div class="table-wrap" style="display:flex; gap:2rem; flex-wrap:wrap;">
+  <div style="min-width:320px;">
+    <h2>Our server</h2>
+    {% if our_row %}
+    <table>
+      <tr><th>itemid</th><td class="mono">{{ our_row.itemid }}</td></tr>
+      <tr><th>name</th><td>{{ our_row.name }}</td></tr>
+      {% if basic %}
+      <tr><th>stackSize</th><td>{{ basic.stackSize }}</td></tr>
+      <tr><th>flags</th><td class="mono">{{ basic.flags }}</td></tr>
+      <tr><th>AH</th><td>{{ basic.aH }}</td></tr>
+      <tr><th>NoSale</th><td>{{ basic.NoSale }}</td></tr>
+      <tr><th>BaseSell</th><td>{{ basic.BaseSell }}</td></tr>
+      {% endif %}
+    </table>
+    {% else %}
+    <p class="muted">Not found in items_ours (not present in our item_basic.sql).</p>
+    {% endif %}
+
+    {% if equipment %}
+    <h3>Equipment</h3>
+    <table>
+      <tr><th>level</th><td>{{ equipment.level }}</td></tr>
+      <tr><th>ilevel</th><td>{{ equipment.ilevel }}</td></tr>
+      <tr><th>jobs</th><td class="mono">{{ equipment.jobs }}</td></tr>
+      <tr><th>slot</th><td>{{ equipment.slot }}</td></tr>
+      <tr><th>rslot</th><td>{{ equipment.rslot }}</td></tr>
+      <tr><th>shieldSize</th><td>{{ equipment.shieldSize }}</td></tr>
+      <tr><th>scriptType</th><td>{{ equipment.scriptType }}</td></tr>
+      <tr><th>MId</th><td>{{ equipment.MId }}</td></tr>
+    </table>
+    {% endif %}
+
+    {% if weapon %}
+    <h3>Weapon</h3>
+    <table>
+      <tr><th>skill</th><td>{{ weapon.skill }}</td></tr>
+      <tr><th>subskill</th><td>{{ weapon.subskill }}</td></tr>
+      <tr><th>dmgType</th><td>{{ weapon.dmgType }}</td></tr>
+      <tr><th>hit</th><td>{{ weapon.hit }}</td></tr>
+      <tr><th>delay</th><td>{{ weapon.delay }}</td></tr>
+      <tr><th>dmg</th><td>{{ weapon.dmg }}</td></tr>
+      <tr><th>ilvl_skill</th><td>{{ weapon.ilvl_skill }}</td></tr>
+      <tr><th>ilvl_parry</th><td>{{ weapon.ilvl_parry }}</td></tr>
+      <tr><th>ilvl_macc</th><td>{{ weapon.ilvl_macc }}</td></tr>
+      <tr><th>unlock_points</th><td>{{ weapon.unlock_points }}</td></tr>
+    </table>
+    {% endif %}
+
+    {% if usable %}
+    <h3>Usable</h3>
+    <table>
+      <tr><th>validTargets</th><td>{{ usable.validTargets }}</td></tr>
+      <tr><th>activation</th><td>{{ usable.activation }}</td></tr>
+      <tr><th>animation</th><td>{{ usable.animation }}</td></tr>
+      <tr><th>animationTime</th><td>{{ usable.animationTime }}</td></tr>
+      <tr><th>maxCharges</th><td>{{ usable.maxCharges }}</td></tr>
+      <tr><th>useDelay</th><td>{{ usable.useDelay }}</td></tr>
+      <tr><th>reuseDelay</th><td>{{ usable.reuseDelay }}</td></tr>
+      <tr><th>aoe</th><td>{{ usable.aoe }}</td></tr>
+    </table>
+    {% endif %}
+  </div>
+
+  {% if backport_enabled() %}
+  <div style="min-width:320px;">
+    <h2>Topaz (backport source)</h2>
+    {% if topaz_row %}
+    <table>
+      <tr><th>itemid</th><td class="mono">{{ topaz_row.itemid }}</td></tr>
+      <tr><th>name</th><td>{{ topaz_row.name }}</td></tr>
+    </table>
+    {% if our_row and topaz_row.itemid != our_row.itemid %}
+    <p class="muted" style="color:var(--red);">id drift: Topaz uses {{ topaz_row.itemid }}, LSB uses {{ our_row.itemid }}</p>
+    {% endif %}
+    {% else %}
+    <p class="muted">No matching name found in the configured Topaz checkout.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div style="min-width:320px;">
+    <h2>External reference</h2>
+    {% if ext_row %}
+    <table>
+      <tr><th>id</th><td class="mono">{{ ext_row.id }}</td></tr>
+      <tr><th>name</th><td>{{ ext_row.name }}</td></tr>
+    </table>
+    {% if external_detail %}
+    <table>
+      <tr><th>type</th><td>{{ external_detail.type }}</td></tr>
+      <tr><th>stack_size</th><td>{{ external_detail.stack_size }}</td></tr>
+      <tr><th>flags</th><td class="mono">{{ external_detail.flags }}</td></tr>
+      <tr><th>targets</th><td class="mono">{{ external_detail.targets }}</td></tr>
+      {% if external_detail.description and external_detail.description.english %}
+      <tr><th>description</th><td>{{ external_detail.description.english }}</td></tr>
+      {% endif %}
+    </table>
+    {% else %}
+    <p class="muted">Matched by name, but no detail record found in items.ndjson.gz for id {{ ext_row.id }}.</p>
+    {% endif %}
+    {% else %}
+    <p class="muted">No matching name found in the external reference catalogue.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
