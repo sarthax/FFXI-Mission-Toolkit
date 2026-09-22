@@ -81,8 +81,9 @@ against DSP's real indexed data for genuine collisions, not just a raw dump diff
 local Open WebUI/Ollama instance, with every call logged for visibility.*
 ![LLM Assistant](docs/screenshots/llm-assistant.png)
 
-*Zone Plot — a zone's real navmesh, rendered live over the client mesh; mob/NPC/door spawn dots
-(not shown here) overlay on top, colour-coded by reachability from a chosen anchor.*
+*Zone Plot — a zone's real navmesh, rendered live over the client mesh, with the View/Edit/Add
+control panel alongside; mob/NPC/door spawn dots (labeled, bottom right) overlay on top,
+colour-coded by reachability from a chosen anchor.*
 ![Zone Plot](docs/screenshots/zone-plot.png)
 
 ## Dependencies
