@@ -26,6 +26,11 @@ digging through raw DAT files or SQL dumps by hand.
 - **Packet Decoder** — inspect raw packet bytes against a documented opcode table.
 - **Assault Missions / Key Items / Zero-Position audit** — a few more focused lookup pages, all
   built on the same indexed data.
+- **Zone Plot** — a live level editor: every mob/NPC/door spawn row of a zone drawn straight from
+  the *live* server DB over the real client mesh + navmesh overlay (dots colour-coded by
+  navmesh reachability), with Add/Edit tabs that write directly to MariaDB and auto-backup per
+  edit. Works against either a Topaz or a real DSP checkout, switchable live from Settings with
+  no restart.
 - **Backport module** (optional, needs a DSP checkout configured in Settings) — a Topaz→DSP Lua
   converter, a searchable Binding Reference cross-referencing every Lua method both codebases
   register, and a SQL converter with real id-collision AND content-duplication checking against
@@ -75,6 +80,10 @@ against DSP's real indexed data for genuine collisions, not just a raw dump diff
 *LLM Assistant — optional draft-only offload (summaries, triage, first-pass suggestions) against a
 local Open WebUI/Ollama instance, with every call logged for visibility.*
 ![LLM Assistant](docs/screenshots/llm-assistant.png)
+
+*Zone Plot — a zone's real navmesh, rendered live over the client mesh; mob/NPC/door spawn dots
+(not shown here) overlay on top, colour-coded by reachability from a chosen anchor.*
+![Zone Plot](docs/screenshots/zone-plot.png)
 
 ## Dependencies
 
