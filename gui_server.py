@@ -2986,8 +2986,24 @@ def zone_view3d(request: Request, zoneid: int, capture_id: int = 0, entity_id: i
     against Three.js, informed by Vanalytics' approach (place markers in the real 3D mesh, orbit
     camera, basic lighting) rather than its exact code."""
     con = get_con()
-    zone_row = con.execute("SELECT name FROM zones WHERE zoneid=?", (zoneid,)).fetchone()
+    if zoneid == 0:
+        # Nav-bar entry point has no zone context yet -- land on the first real zone and let the
+        # page's own zone dropdown take it from there, same pattern as /zoneplot's implicit default.
+        first = con.execute("SELECT zoneid FROM zones WHERE zoneid > 0 ORDER BY name LIMIT 1").fetchone()
+        con.close()
+        if first:
+            return RedirectResponse(url=f"/zones/{first[0]}/view3d")
+        return HTMLResponse("No zones in database yet.", status_code=404)
+    all_zones = con.execute("SELECT zoneid, name FROM zones WHERE zoneid > 0 ORDER BY name").fetchall()
+    zone_row = con.execute("SELECT name, geometry_rom_path FROM zones WHERE zoneid=?", (zoneid,)).fetchone()
     zone_name = zone_row[0] if zone_row else f"zone {zoneid}"
+    geometry_rom_path = zone_row[1] if zone_row else None
+    ffxi_path = settings_mod.get_ffxi_install()
+    # Phase 3: live in-browser MZB/MMB parse (gui/static/ffxi-dat, vendored from Vanalytics) gives
+    # real textures/water/instancing straight from the DAT bytes -- no offline OBJ bake needed when
+    # both the install path and this zone's geometry DAT are known. Falls back to the pre-baked OBJ
+    # (build_zone_visual_cache.py) below when either is missing.
+    live_parse_available = bool(ffxi_path and geometry_rom_path)
 
     paths = []
     entity_name = None
@@ -3011,6 +3027,10 @@ def zone_view3d(request: Request, zoneid: int, capture_id: int = 0, entity_id: i
         "zoneid": zoneid, "zone_name": zone_name, "capture_id": capture_id, "entity_id": entity_id,
         "entity_name": entity_name, "paths_json": json.dumps(paths), "legend": paths,
         "obj_available": obj_available, "pc": pc, "zone_db": zone_db,
+        "live_parse_available": live_parse_available,
+        "ffxi_path_json": json.dumps(ffxi_path or ""),
+        "geometry_rom_path_json": json.dumps(geometry_rom_path or ""),
+        "all_zones": [{"zoneid": z[0], "name": z[1]} for z in all_zones],
     })
 
 
@@ -3093,6 +3113,7 @@ def zone_view3d_all(request: Request, zoneid: int, capture_id: int, zone_db: str
         "entity_name": None, "paths_json": json.dumps(paths), "legend": paths,
         "obj_available": obj_available, "multi": True, "zone_db": zone_db, "zones": zones,
         "truncated": len(entities) > MULTI_PLOT_LIMIT, "limit": MULTI_PLOT_LIMIT,
+        "all_zones": [],
     })
 
 
@@ -4404,6 +4425,7 @@ def restart_server(request: Request):
 
 # ---- Nyzul Isle plot tool (nyzul_plot.py) ---------------------------------------------------
 import nyzul_plot
+import zone_plot  # reused below for zone 77's live door/prop rows (npc_list "_"-named entities)
 
 
 @app.get("/nyzul", response_class=HTMLResponse)
@@ -4417,6 +4439,14 @@ def nyzul_data():
     d = nyzul_plot.load_data()
     d["reach"] = nyzul_plot.reachability()
     d["exclusions"] = nyzul_plot.load_exclusions()
+    # Door/wall props for zone 77, straight from the live DB -- same npc_list "_"-prefixed-name
+    # convention Zone Plot already uses to tell doors/props apart from real NPCs (zone_plot.py's
+    # zone_data()), reused here rather than re-deriving it.
+    try:
+        d["doors"] = [e for e in zone_plot.zone_data(77, server="dsp")["entities"] if e["k"] == "d"]
+    except Exception as ex:
+        d["doors"] = []
+        d["doors_error"] = str(ex)
     return JSONResponse(d)
 
 
@@ -4432,7 +4462,7 @@ async def nyzul_save_exclusions(request: Request):
 
 
 # ---- Generic zone plot (zone_plot.py) -------------------------------------------------------
-import zone_plot
+# (imported above, alongside nyzul_plot)
 
 
 @app.get("/zoneplot", response_class=HTMLResponse)
@@ -4459,6 +4489,23 @@ async def zoneplot_server_set(request: Request):
 @app.get("/zoneplot/zones.json")
 def zoneplot_zones():
     return JSONResponse(zone_plot.zone_list())
+
+
+@app.get("/zoneplot/{zid}/live_info.json")
+def zoneplot_live_info(zid: int):
+    """Same live-parse availability check as zone_view3d (Phase 3) -- reused by zone_plot.html's
+    'Live (textured)' mesh complexity option so it can fetch+parse the real zone DAT client-side
+    instead of the untextured .zmesh/OBJ pipeline."""
+    con = get_con()
+    zone_row = con.execute("SELECT geometry_rom_path FROM zones WHERE zoneid=?", (zid,)).fetchone()
+    con.close()
+    geometry_rom_path = zone_row[0] if zone_row else None
+    ffxi_path = settings_mod.get_ffxi_install()
+    return JSONResponse({
+        "available": bool(ffxi_path and geometry_rom_path),
+        "ffxi_path": ffxi_path or "",
+        "geometry_rom_path": geometry_rom_path or "",
+    })
 
 
 @app.get("/zoneplot/descriptors.json")
@@ -4531,6 +4578,16 @@ async def zoneplot_edit(request: Request):
         return JSONResponse({"error": str(ex)}, status_code=400)
 
 
+@app.post("/zoneplot/animate")
+async def zoneplot_animate(request: Request):
+    import zone_edit
+    b = await request.json()
+    try:
+        return JSONResponse(zone_edit.update_animation(b["k"], b["id"], b["animation"], b["animationsub"], b.get("comment", "")))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
 @app.post("/zoneplot/delete")
 async def zoneplot_delete(request: Request):
     import zone_edit
@@ -4547,12 +4604,91 @@ def zoneplot_catalogue(kind: str, q: str = ""):
     return JSONResponse(zone_edit.catalogue(kind, q))
 
 
+@app.get("/zoneplot/{eid}/drops.json")
+def zoneplot_drops(eid: int):
+    import zone_edit
+    try:
+        return JSONResponse(zone_edit.get_drops(eid))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/zoneplot/drops/dropid")
+async def zoneplot_drops_dropid(request: Request):
+    import zone_edit
+    b = await request.json()
+    try:
+        return JSONResponse(zone_edit.set_group_dropid(b["mobid"], b["dropid"], b.get("comment", "")))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/zoneplot/drops/save")
+async def zoneplot_drops_save(request: Request):
+    import zone_edit
+    b = await request.json()
+    try:
+        return JSONResponse(zone_edit.save_drop_row(
+            b["dropid"], b.get("drop_type", 0), b["group_id"], b["item_id"], b["group_rate"], b["item_rate"],
+            b.get("orig_drop_type"), b.get("orig_group_id"), b.get("orig_item_id"), b.get("comment", "")))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/zoneplot/drops/delete")
+async def zoneplot_drops_delete(request: Request):
+    import zone_edit
+    b = await request.json()
+    try:
+        return JSONResponse(zone_edit.delete_drop_row(b["dropid"], b.get("drop_type", 0), b["group_id"], b["item_id"], b.get("comment", "")))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.get("/zoneplot/items.json")
+def zoneplot_items(q: str = ""):
+    import zone_edit
+    return JSONResponse(zone_edit.item_catalogue(q))
+
+
 @app.post("/zoneplot/add")
 async def zoneplot_add(request: Request):
     import zone_edit
     b = await request.json()
     try:
         return JSONResponse(zone_edit.add_entity(b["k"], b["zone"], b["src"], b["x"], b["y"], b["z"], b.get("r", 0), b.get("name", ""), b.get("comment", "")))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/zoneplot/sync_sql/entity")
+async def zoneplot_sync_sql_entity(request: Request):
+    import zone_edit
+    b = await request.json()
+    try:
+        return JSONResponse(zone_edit.sync_entity_sql(b["k"], b["id"]))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/zoneplot/sync_sql/dropid")
+async def zoneplot_sync_sql_dropid(request: Request):
+    import zone_edit
+    b = await request.json()
+    try:
+        return JSONResponse(zone_edit.sync_group_dropid_sql(b["mobid"]))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/zoneplot/sync_sql/drop_row")
+async def zoneplot_sync_sql_drop_row(request: Request):
+    import zone_edit
+    b = await request.json()
+    try:
+        return JSONResponse(zone_edit.sync_drop_row_sql(
+            b["dropid"], b.get("drop_type", 0), b["group_id"], b["item_id"],
+            b.get("orig_drop_type"), b.get("orig_group_id"), b.get("orig_item_id")))
     except Exception as ex:
         return JSONResponse({"error": str(ex)}, status_code=400)
 
@@ -4586,6 +4722,47 @@ def zoneplot_nav(zid: int):
     if not p:
         return Response(b"", media_type="application/octet-stream")
     return Response(zone_plot.nav.nav_triangles_bytes(p), media_type="application/octet-stream")
+
+
+@app.get("/zoneplot/{zid}/navmesh_meta.bin")
+def zoneplot_nav_meta(zid: int):
+    """Per-triangle (yMin, yMax, area, polyType) float32 quads, same triangle order as
+    navmesh.bin, for the hover readout's Placement-Y / area-type display."""
+    d = zone_plot.zone_data(zid)
+    p = zone_plot.nav_path(d["zone"])
+    if not p:
+        return Response(b"", media_type="application/octet-stream")
+    return Response(zone_plot.nav.nav_triangle_meta_bytes(p), media_type="application/octet-stream")
+
+
+# ---- Model viewer (model_viewer.py) ----------------------------------------------------------
+# Resolves an NPC/mob's real model DAT via mob_look_decode.py + model_schedule_dump.py's
+# dat-extractor-backed FTABLE/VTABLE resolution, and serves the raw DAT bytes for gui/static/
+# ffxi-dat/index.js (vendored from github.com/Soverance/Vanalytics, MIT license) to parse and
+# render client-side with three.js. See gui/static/ffxi-dat/README.md for provenance.
+
+@app.get("/modelviewer", response_class=HTMLResponse)
+def modelviewer_page(request: Request):
+    return templates.TemplateResponse(request, "model_viewer.html", {"request": request})
+
+
+@app.get("/modelviewer/resolve.json")
+def modelviewer_resolve(kind: str, id: int, server: str = None):
+    import model_viewer
+    try:
+        return JSONResponse(model_viewer.resolve(kind, id, server))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.get("/modelviewer/dat")
+def modelviewer_dat(ffxi_path: str, rom_path: str):
+    import model_viewer
+    try:
+        data = model_viewer.read_dat_bytes(ffxi_path, rom_path)
+        return Response(data, media_type="application/octet-stream")
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
 
 
 if __name__ == "__main__":

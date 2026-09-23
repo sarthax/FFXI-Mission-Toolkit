@@ -51,6 +51,7 @@
   <label><span>Candidate points</span><input type="checkbox" id="showpts" checked></label>
   <label><span>Point index labels</span><input type="checkbox" id="showidx" checked></label>
   <label><span>Navmesh overlay</span><input type="checkbox" id="shownav" checked></label>
+  <label><span>Doors / walls <span class="muted" id="doorn"></span></span><input type="checkbox" id="showdoors" checked></label>
   <label>Mesh opacity <input type="range" id="opac" min="0.05" max="1" step="0.05" value="0.5"></label>
   <label>Nav+points y-lift <input type="range" id="lift" min="0" max="3" step="0.1" value="0.6"></label>
   <div style="display:flex;gap:6px;margin-top:6px"><button id="focus">Fly to entrance</button></div>
@@ -196,12 +197,17 @@ function generate(){
 
 // ---------- rendering ----------
 const COL = {mob:0xe74c3c, leader:0xf1c40f, spec:0xe67e22, target:0xff2ea6, lamp:0x3498db, gear:0x9b59b6, nm:0xffffff, boss:0xff0000};
+const DOOR_COL = 0x00e0c0; // door/wall props -- distinct teal-ish so they don't collide with mob/lamp colours
+const DOORS = D.doors || [];
+$('doorn').textContent = `(${DOORS.length})` + (D.doors_error ? ' load failed: ' + D.doors_error : '');
 const REACH = {ok:0x2ecc71, blocked:0xe74c3c, off:0xe08a1e};
 const group = new THREE.Group(); scene.add(group);
 let pickables = [], lastRes = null;
 const sphereGeo = new THREE.SphereGeometry(1,12,10);
+const boxGeo = new THREE.BoxGeometry(1,1,1);
 function label(text, pos, dy=1.6){ const d=document.createElement('div'); d.className='lbl'; d.textContent=text; const o=new CSS2DObject(d); o.position.copy(pos); o.position.y+=dy; return o; }
 function dot(pos, color, r, extra){ const m=new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({color, depthTest:false, transparent:true})); m.renderOrder=10; m.position.copy(pos); m.scale.setScalar(r); Object.assign(m.userData, extra||{}); return m; }
+function box(pos, color, r, extra){ const m=new THREE.Mesh(boxGeo, new THREE.MeshBasicMaterial({color, depthTest:false, transparent:true, opacity:.85})); m.renderOrder=10; m.position.copy(pos); m.scale.setScalar(r); Object.assign(m.userData, extra||{}); return m; }
 
 function redraw(){
   while(group.children.length){ const c=group.children.pop(); c.traverse(o=>{ if(o.element) o.element.remove(); }); }
@@ -226,6 +232,15 @@ function redraw(){
   if (lastRes) for (const it of lastRes.items){
     const pos=V(it.p,lift+0.4); const d=dot(pos, COL[it.kind]||0xffffff, 1.4, {info:`${it.kind}: ${it.label} id=${it.id||'-'} pt=${it.idx} (${it.p.join(', ')})`});
     group.add(d); pickables.push(d); group.add(label(`${it.label}${it.idx?' [pt '+it.idx+']':''}`, pos, 2.4));
+  }
+  // Doors/walls: static npc_list "_"-named rows for zone 77, same set regardless of layout --
+  // these gate which spawn points a given floor's navmesh actually connects to (see the page's
+  // own note above: a navmesh baked with doors open reads everything green, hiding this).
+  if ($('showdoors').checked) for (const dr of DOORS){
+    const pos=V([dr.x,dr.y,dr.z],lift);
+    const b=box(pos, DOOR_COL, 2.2, {info:`door: ${dr.n} id=${dr.id} (${dr.x.toFixed(1)}, ${dr.y.toFixed(1)}, ${dr.z.toFixed(1)}) rot=${dr.r}`});
+    group.add(b); pickables.push(b);
+    if ($('showidx').checked) group.add(label(dr.n, pos, 2.0));
   }
   $('exn').textContent = `(L${L}: ${ex.length} pts, ${exl.length} lamps)`;
   if (navMesh){ navMesh.visible=$('shownav').checked; }
@@ -255,7 +270,7 @@ renderer.domElement.addEventListener('pointerup', async ev => {
 });
 $('gen').onclick=run; $('rnd').onclick=()=>{ $('seed').value=(parseInt($('seed').value)||0)+1; run(); };
 $('clr').onclick=()=>{ lastRes=null; $('out').textContent=''; redraw(); };
-['showpts','showidx','shownav','lift'].forEach(id=>$(id).addEventListener('input',redraw));
+['showpts','showidx','shownav','showdoors','lift'].forEach(id=>$(id).addEventListener('input',redraw));
 $('opac').addEventListener('input',setOpacity);
 $('layout').addEventListener('change',()=>{ const L=parseInt($('layout').value); if(L){ lastRes=null; redraw(); frame(L);} });
 $('focus').onclick=()=>frame(lastRes?lastRes.L:(parseInt($('layout').value)||1));

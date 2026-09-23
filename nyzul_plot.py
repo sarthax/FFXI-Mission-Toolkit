@@ -1,18 +1,41 @@
 """Nyzul Isle plot tool backend: parses the DSP Lua spawn data + Nyzul_Isle.nav (pure Python)
 and computes per-layout reachability (connected components of the navmesh from each entrance).
-Everything is read live from the DSP repo so re-running picks up edits."""
+Everything is read live from the DSP repo (Settings' dsp_server_path) so re-running picks up
+edits. zone_plot.py also imports this module's generic nav_polys()/nav_triangles_bytes() for
+every zone (Topaz included), so the DSP root below is resolved lazily per-call, never at import
+time -- importing this module must not require dsp_server_path to be configured."""
 import json
 import math
 import re
 import struct
 from pathlib import Path
 
-DSP = Path(r"D:\Claude\dsp-fresh")
-FLOOR_LAYOUTS = DSP / "scripts/globals/nyzul/floor_layouts.lua"
-NYZUL_LUA = DSP / "scripts/globals/nyzul.lua"
-IDS_LUA = DSP / "scripts/zones/Nyzul_Isle/IDs.lua"
-NAV = DSP / "navmeshes/Nyzul_Isle.nav"
+import settings
+
 EXCL_FILE = Path(__file__).parent / "data" / "nyzul_exclusions.json"
+
+
+def _dsp_root() -> Path:
+    root = settings.get_dsp_root()
+    if root is None:
+        raise ValueError("DSP server path isn't configured yet -- set it on the Settings page first")
+    return root
+
+
+def _floor_layouts() -> Path:
+    return _dsp_root() / "scripts/globals/nyzul/floor_layouts.lua"
+
+
+def _nyzul_lua() -> Path:
+    return _dsp_root() / "scripts/globals/nyzul.lua"
+
+
+def _ids_lua() -> Path:
+    return _dsp_root() / "scripts/zones/Nyzul_Isle/IDs.lua"
+
+
+def _default_nav() -> Path:
+    return _dsp_root() / "navmeshes/Nyzul_Isle.nav"
 
 NUM = r"(-?\d+(?:\.\d+)?)"
 
@@ -47,18 +70,18 @@ def _per_layout(block, item_re):
 
 
 def load_data():
-    fl = FLOOR_LAYOUTS.read_text(encoding="utf-8", errors="replace")
+    fl = _floor_layouts().read_text(encoding="utf-8", errors="replace")
     lamp_blk = _block(fl, r"(?m)^Nyzul\.lampSpawnPoints\s*=")
     lay_blk = _block(fl, r"(?m)^Nyzul\.layoutSpawnPoints\s*=")
     lamps = _per_layout(lamp_blk, r"\{\s*" + NUM + r"\s*,\s*" + NUM + r"\s*,\s*" + NUM + r"\s*\}")
     points = _per_layout(lay_blk, r"x\s*=\s*" + NUM + r"\s*,\s*y\s*=\s*" + NUM + r"\s*,\s*z\s*=\s*" + NUM)
 
-    nz = NYZUL_LUA.read_text(encoding="utf-8", errors="replace")
+    nz = _nyzul_lua().read_text(encoding="utf-8", errors="replace")
     ent = {}
     for m in re.finditer(r"\[\s*(\d+)\]\s*=\s*\{\s*" + NUM + r",\s*" + NUM + r",\s*" + NUM + r"\s*\}", _block(nz, r"Nyzul\.FloorLayout\s*=")):
         ent[int(m.group(1))] = [float(m.group(2)), float(m.group(3)), float(m.group(4))]
 
-    ids = IDS_LUA.read_text(encoding="utf-8", errors="replace")
+    ids = _ids_lua().read_text(encoding="utf-8", errors="replace")
     fam = {}
     for m in re.finditer(r"\[(\d+)\]\s*=\s*\{\s*--\s*([^\n]*)\n(.*?)\n\s*\},", _block(ids, r"ENEMY_LAYOUTS\s*="), re.S):
         fam[int(m.group(1))] = {
@@ -89,7 +112,7 @@ _nav_cache = {}
 
 def nav_polys(path=None):
     """Return list of polygons, each a list of (x,y,z) in FFXI world coords."""
-    path = Path(path or NAV)
+    path = Path(path or _default_nav())
     if ("polys", path) in _nav_cache:
         return _nav_cache[("polys", path)]
     b = path.read_bytes()
@@ -132,9 +155,64 @@ def nav_triangles_bytes(path=None):
     return arr.tobytes()
 
 
+def nav_polys_with_area(path=None):
+    """Same triangulation as nav_polys(), but each polygon also carries its raw dtPoly
+    areaAndtype byte (offset 31 of the 32-byte dtPoly record -- area = low 6 bits,
+    polyType = top 2 bits, per the standard Recast/Detour dtPoly layout; verified against
+    this file's existing p+4/p+30 (verts/vertCount) field offsets, which the FFXI client's
+    navmesh already confirms are correct)."""
+    path = Path(path or _default_nav())
+    if ("polys_area", path) in _nav_cache:
+        return _nav_cache[("polys_area", path)]
+    b = path.read_bytes()
+    assert b[:4] == b"TESM", "not a navmeshset"
+    ntiles = struct.unpack_from("<i", b, 8)[0]
+    off, polys = 40, []
+    for _ in range(ntiles):
+        if off + 8 > len(b):
+            break
+        size = struct.unpack_from("<i", b, off + 4)[0]
+        off += 8
+        ts = off
+        off += size
+        if size <= 0 or b[ts:ts + 4] != b"VAND":
+            continue
+        pc, vc = struct.unpack_from("<ii", b, ts + 24)
+        omb = struct.unpack_from("<i", b, ts + 56)[0]
+        vo = ts + 100
+        verts = [(lambda x, y, z: (x, -y, -z))(*struct.unpack_from("<fff", b, vo + i * 12)) for i in range(vc)]
+        po = vo + vc * 12
+        n = min(pc, omb) if omb > 0 else pc
+        for i in range(n):
+            p = po + i * 32
+            nv = b[p + 30]
+            if nv < 3:
+                continue
+            idx = struct.unpack_from("<6H", b, p + 4)
+            areaAndtype = b[p + 31]
+            polys.append(([verts[k] for k in idx[:nv]], areaAndtype & 0x3f, areaAndtype >> 6))
+    _nav_cache[("polys_area", path)] = polys
+    return polys
+
+
+def nav_triangle_meta_bytes(path=None):
+    """Per-triangle metadata parallel to nav_triangles_bytes()'s triangle order: for each
+    triangle, (yMin, yMax, area, polyType) as 4 float32s. yMin/yMax are the real min/max Y
+    (already sign-flipped to FFXI world coords) across that triangle's *source polygon*
+    vertices -- i.e. the vertical band the polygon occupies, not a guess."""
+    import array
+    arr = array.array("f")
+    for poly, area, ptype in nav_polys_with_area(path):
+        ys = [v[1] for v in poly]
+        ymin, ymax = min(ys), max(ys)
+        for i in range(1, len(poly) - 1):
+            arr.extend((ymin, ymax, float(area), float(ptype)))
+    return arr.tobytes()
+
+
 def _components(path=None):
     """Weld vertices, union polys that share an edge. Returns (poly->comp, spatial grid)."""
-    path = Path(path or NAV)
+    path = Path(path or _default_nav())
     if ("comp", path) in _nav_cache:
         return _nav_cache[("comp", path)]
     polys = nav_polys(path)

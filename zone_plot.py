@@ -16,10 +16,6 @@ import settings
 # Conf filenames to try, in order, under whichever server root is active.
 CONF_NAMES = ["conf/map.conf", "conf/map_darkstar.conf"]
 
-# Extra navmesh search dirs tried after the active server's own navmeshes/ folder.
-EXTRA_NAV_DIRS = [Path(r"D:\Claude\dsp-fresh\navmeshes")]
-
-
 def get_server() -> str:
     """Which server Zone Plot is currently pointed at: "topaz" or "dsp"."""
     con = sqlite3.connect(str(settings.DB_PATH))
@@ -61,7 +57,7 @@ def _conf_path(root: Path) -> Path:
 
 
 def _nav_dirs(server=None):
-    return [_server_root(server) / "navmeshes"] + EXTRA_NAV_DIRS
+    return [_server_root(server) / "navmeshes"]
 
 
 def _db(server=None):
@@ -137,11 +133,11 @@ def zone_data(zid, instance=0, server=None):
                   where ((s.mobid-16777216)>>12)&511=%s""", (zid, zid))
     for i, n, x, y, z, gn, lo, hi, rot in cu.fetchall():
         ents.append({"k": "m", "id": i, "n": n, "x": float(x), "y": float(y), "z": float(z), "r": int(rot or 0), "g": gn, "lv": f"{lo}-{hi}"})
-    cu.execute("""select npcid,name,polutils_name,pos_x,pos_y,pos_z,status,entityFlags,pos_rot from npc_list
+    cu.execute("""select npcid,name,polutils_name,pos_x,pos_y,pos_z,status,entityFlags,pos_rot,animation,animationsub from npc_list
                   where ((npcid-16777216)>>12)&511=%s""", (zid,))
-    for i, n, pn, x, y, z, st, fl, rot in cu.fetchall():
+    for i, n, pn, x, y, z, st, fl, rot, an, asub in cu.fetchall():
         ents.append({"k": "d" if (n or "").strip().startswith("_") else "n", "r": int(rot or 0), "id": i, "n": pn or n, "x": float(x), "y": float(y), "z": float(z), "g": n, "lv": "",
-                     "fl": int(fl or 0), "st": int(st or 0)})
+                     "fl": int(fl or 0), "st": int(st or 0), "an": int(an or 0), "asub": int(asub or 0)})
     db.close()
     if inst_ids is not None:
         ents = [e for e in ents if e["id"] in inst_ids]

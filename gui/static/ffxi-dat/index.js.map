@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../index.ts"],
+  "sourcesContent": ["export { DatReader } from './DatReader'\nexport { parseDatFile, parseSkeletonDat } from './DatFile'\nexport { parseMeshes, parseVertexBlock, triangleStripToList } from './MeshParser'\nexport { parseTextures, parseTextureBlock, decompressDXT1, decompressDXT3 } from './TextureParser'\nexport { parseSkeleton, SKELETON_PATHS, mat4TransformPoint } from './SkeletonParser'\nexport { FileTableResolver, modelToPath, resolveModelPaths } from './FileTableResolver'\nexport type { ParsedMesh, ParsedTexture, ParsedSkeleton, ParsedBone, ParsedDatFile, ParsedZoneMesh, ZoneMeshInstance, ParsedZone } from './types'\nexport { parseZoneFile, parseTexturesFromDat } from './ZoneFile'\nexport { parseAnimationDat } from './AnimationParser'\nexport type { ParsedAnimation, AnimationBone } from './types'\n"],
+  "mappings": "AAAA,SAAS,iBAAiB;AAC1B,SAAS,cAAc,wBAAwB;AAC/C,SAAS,aAAa,kBAAkB,2BAA2B;AACnE,SAAS,eAAe,mBAAmB,gBAAgB,sBAAsB;AACjF,SAAS,eAAe,gBAAgB,0BAA0B;AAClE,SAAS,mBAAmB,aAAa,yBAAyB;AAElE,SAAS,eAAe,4BAA4B;AACpD,SAAS,yBAAyB;",
+  "names": []
+}

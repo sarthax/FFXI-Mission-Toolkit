@@ -3,10 +3,13 @@
 {% block content %}
 <h1>3D Zone Viewer <span class="chip mono">{{ zone_name }} ({{ zoneid }})</span></h1>
 <p class="muted">Real client visual mesh (walls/buildings/props -- not the invisible collision
-  mesh the 2D top-down view uses), via a new <code class="chip">xi-tinkerer-py</code> binding onto
-  xi-tinkerer's own real MMB/MZB parser. No textures/materials -- Topaz's own chunk parsing
-  doesn't carry per-triangle texture assignment out to this layer, so this is real geometry,
-  honestly untextured (flat-shaded). Drag to orbit, scroll to zoom.
+  mesh the 2D top-down view uses).
+  {% if live_parse_available %}Parsed live from the zone's own DAT in-browser (real textures,
+  water, day/night sky) via the vendored <code class="chip">ffxi-dat</code> bindings.
+  {% else %}No textures/materials -- Topaz's own chunk parsing doesn't carry per-triangle texture
+  assignment out to the pre-baked mesh cache this falls back to (flat-shaded), because the FFXI
+  install path or this zone's geometry DAT isn't configured/known. {% endif %}
+  Drag to orbit, scroll to zoom.
   {% if multi %}Showing every entity with path data from capture
   <a class="inline" href="/captures/{{ capture_id }}">#{{ capture_id }}</a> in {{ zone_db }}.
   {% elif entity_name %}Showing {{ entity_name }}'s real path from capture
@@ -31,8 +34,23 @@
 <p><a class="inline" href="/captures/plot?capture_id={{ capture_id }}&{% if pc %}pc=1&zone_db={{ zone_db | urlencode }}{% else %}entity_id={{ entity_id }}{% endif %}">&larr; back to 2D path plot</a></p>
 {% endif %}
 
-{% if not obj_available %}
-<div class="warn">No cached visual mesh for this zone yet.
+{% if not multi and all_zones %}
+<div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+  <span class="muted">zone:</span>
+  <select id="zone-select">
+    {% for z in all_zones %}<option value="{{ z.zoneid }}" {% if z.zoneid == zoneid %}selected{% endif %}>{{ z.name }} ({{ z.zoneid }})</option>{% endfor %}
+  </select>
+</div>
+<script>
+document.getElementById('zone-select').addEventListener('change', (e) => {
+  window.location.href = '/zones/' + e.target.value + '/view3d';
+});
+</script>
+{% endif %}
+
+{% if not live_parse_available and not obj_available %}
+<div class="warn">No cached visual mesh for this zone yet, and live in-browser parsing isn't
+  available (FFXI install path or this zone's geometry DAT is unknown).
   <form method="post" action="/zones/{{ zoneid }}/build_visual_cache" style="display:inline;">
     <input type="hidden" name="return_to" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
     <button type="submit">Build it now</button>
@@ -40,8 +58,21 @@
   Zone meshes run 30-75MB and take a real parse (up to a minute) -- or run
   <code class="chip">py -3 build_zone_visual_cache.py {{ zoneid }}</code> from a terminal instead.</div>
 {% else %}
+<div style="display:flex; gap:12px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
+  <label class="muted" for="tod-slider">Time of day</label>
+  <input type="range" id="tod-slider" min="0" max="24" step="0.1" value="12" style="width:220px;">
+  <span id="tod-label" class="chip mono">12:00</span>
+  <button type="button" id="fly-toggle">Fly mode</button>
+  <span id="fly-speed-label" class="chip mono" style="display:none;">speed 1.0</span>
+  <label class="muted" style="display:flex; align-items:center; gap:4px;"><input type="checkbox" id="walk-toggle"> Walk on navmesh (fly mode)</label>
+  <label class="muted" for="xray-slider">Wall opacity</label>
+  <input type="range" id="xray-slider" min="0.15" max="1" step="0.05" value="1" style="width:120px;">
+  <label class="muted" style="display:flex; align-items:center; gap:4px;"><input type="checkbox" id="shownav-toggle" disabled> Show navmesh</label>
+  {% if not multi %}<a class="inline" href="/zoneplot?zone={{ zoneid }}" style="margin-left:auto;">Edit this zone &rarr;</a>{% endif %}
+</div>
 <div id="viewer-container" style="width:100%; height:640px; border:1px solid var(--border); border-radius:8px; background:#0a0d10; position:relative;">
   <div id="viewer-loading" class="muted" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">Loading mesh&hellip;</div>
+  <div id="fly-hint" class="muted mono" style="display:none; position:absolute; bottom:10px; left:10px; background:rgba(10,13,16,0.85); border:1px solid var(--border); border-radius:4px; padding:6px 10px; font-size:12px;">Click to lock mouse &middot; WASD move &middot; Space/Shift up/down &middot; scroll = speed &middot; Esc to release</div>
 </div>
 
 {% if multi and legend %}
@@ -69,15 +100,223 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { parseZoneFile } from '/static/ffxi-dat/index.js';
+
+const LIVE_PARSE_AVAILABLE = {{ 'true' if live_parse_available else 'false' }};
+const FFXI_PATH = {{ ffxi_path_json | safe }};
+const GEOMETRY_ROM_PATH = {{ geometry_rom_path_json | safe }};
 
 const paths = {{ paths_json | safe }};
+const ZONEID = {{ zoneid }};
 
 const container = document.getElementById('viewer-container');
 const loadingEl = document.getElementById('viewer-loading');
 
+// ---- Spawn markers (Phase 1) -- reuses zone_plot.py's existing /zoneplot/{zid}/data.json
+// live-DB query (same data the 2D top-down plotter uses), ported here as instanced spheres
+// color-coded like Vanalytics' SpawnMarkers.tsx (monster=red, npc=blue, door/prop=green).
+const SPAWN_COLORS = { m: 0xff4444, n: 0x4488ff, d: 0x44cc88 };
+const spawnTooltip = document.createElement('div');
+spawnTooltip.style.cssText = 'position:absolute; pointer-events:none; display:none; background:rgba(10,13,16,0.92); color:#e8e8e8; border:1px solid var(--border); border-radius:4px; padding:4px 8px; font-size:12px; font-family:monospace; z-index:10; white-space:nowrap;';
+container.appendChild(spawnTooltip);
+let spawnEntities = [];
+let spawnMesh = null;
+let navMesh = null;
+
+// Fly-mode proximity labels -- pointer is locked/hidden while flying, so the existing
+// raycast-from-cursor hover tooltip never fires; instead label whatever's within range of the
+// camera each frame, projected to its on-screen position. Small reusable pool, not one div per
+// entity (zones can have dozens of spawns).
+const FLY_LABEL_RADIUS = 25;
+const FLY_LABEL_MAX = 6;
+const flyLabelPool = [];
+for (let i = 0; i < FLY_LABEL_MAX; i++) {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:absolute; pointer-events:none; display:none; background:rgba(10,13,16,0.92); color:#e8e8e8; border:1px solid var(--border); border-radius:4px; padding:3px 7px; font-size:11px; font-family:monospace; z-index:10; white-space:nowrap; transform:translate(-50%,-100%);';
+  container.appendChild(el);
+  flyLabelPool.push(el);
+}
+const flyLabelProj = new THREE.Vector3();
+const wallMaterials = [];
+
+fetch(`/zoneplot/${ZONEID}/data.json`).then(r => r.json()).then(d => {
+  spawnEntities = (d.entities || []).filter(e => !e.zero);
+  buildSpawnMarkers();
+  if (d.has_nav) {
+    const shownavToggle = document.getElementById('shownav-toggle');
+    shownavToggle.disabled = false;
+    fetch(`/zoneplot/${ZONEID}/navmesh.bin`).then(r => r.arrayBuffer()).then(buf => {
+      const arr = new Float32Array(buf);
+      if (!arr.length) return;
+      // Same (x, -y, -z) model-space mapping as spawn markers/paths/mesh above.
+      for (let i = 0; i < arr.length; i += 3) { arr[i + 1] = -arr[i + 1]; arr[i + 2] = -arr[i + 2]; }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+      navMesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0x2a9d8f, wireframe: true, transparent: true, opacity: 0.3, depthTest: false }));
+      navMesh.visible = shownavToggle.checked;
+      navMesh.renderOrder = 5;
+      scene.add(navMesh);
+    }).catch(() => {});
+  }
+}).catch(() => {});
+
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0a0d10);
-scene.fog = new THREE.Fog(0x0a0d10, 200, 1400);
+scene.fog = new THREE.FogExp2(0x0a0d10, 0.0025);
+
+// ---- Time-of-day sky + fog (Phase 2) -- ported from Vanalytics' ThreeZoneViewer.tsx
+// getTimeOfDayParams()/sky ShaderMaterial (MIT), translated to vanilla JS/GLSL (no R3F).
+function getTimeOfDayParams(hour) {
+  const h = ((hour % 24) + 24) % 24;
+  const stops = [
+    { t: 0,  sky: [0.05, 0.05, 0.12], horizon: [0.08, 0.08, 0.15], zenith: [0.02, 0.02, 0.08], fog: '#1a1a2e', exposure: 0.25 },
+    { t: 5,  sky: [0.08, 0.07, 0.18], horizon: [0.25, 0.15, 0.25], zenith: [0.04, 0.04, 0.12], fog: '#2a1a30', exposure: 0.4 },
+    { t: 6,  sky: [0.35, 0.25, 0.35], horizon: [0.85, 0.45, 0.30], zenith: [0.15, 0.12, 0.30], fog: '#c8886a', exposure: 0.75 },
+    { t: 7,  sky: [0.50, 0.55, 0.70], horizon: [0.90, 0.70, 0.50], zenith: [0.25, 0.30, 0.55], fog: '#d4a878', exposure: 0.95 },
+    { t: 10, sky: [0.45, 0.58, 0.78], horizon: [0.72, 0.78, 0.85], zenith: [0.28, 0.38, 0.62], fog: '#b8c8d8', exposure: 1.1 },
+    { t: 14, sky: [0.45, 0.58, 0.78], horizon: [0.72, 0.78, 0.85], zenith: [0.28, 0.38, 0.62], fog: '#b8c8d8', exposure: 1.1 },
+    { t: 17, sky: [0.55, 0.45, 0.50], horizon: [0.90, 0.55, 0.30], zenith: [0.30, 0.25, 0.45], fog: '#d09060', exposure: 0.95 },
+    { t: 18, sky: [0.40, 0.25, 0.40], horizon: [0.80, 0.35, 0.25], zenith: [0.18, 0.12, 0.32], fog: '#a06048', exposure: 0.6 },
+    { t: 19, sky: [0.12, 0.10, 0.22], horizon: [0.30, 0.18, 0.25], zenith: [0.06, 0.05, 0.15], fog: '#2a1a30', exposure: 0.4 },
+    { t: 21, sky: [0.05, 0.05, 0.12], horizon: [0.08, 0.08, 0.15], zenith: [0.02, 0.02, 0.08], fog: '#1a1a2e', exposure: 0.25 },
+    { t: 24, sky: [0.05, 0.05, 0.12], horizon: [0.08, 0.08, 0.15], zenith: [0.02, 0.02, 0.08], fog: '#1a1a2e', exposure: 0.25 },
+  ];
+  let lo = stops[0], hi = stops[1];
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (h >= stops[i].t && h <= stops[i + 1].t) { lo = stops[i]; hi = stops[i + 1]; break; }
+  }
+  const range = hi.t - lo.t || 1;
+  const f = (h - lo.t) / range;
+  const lerp = (a, b) => a + (b - a) * f;
+  const lerpArr = (a, b) => a.map((v, i) => lerp(v, b[i]));
+  const lc = new THREE.Color(lo.fog), hc = new THREE.Color(hi.fog);
+  return {
+    sky: lerpArr(lo.sky, hi.sky), horizon: lerpArr(lo.horizon, hi.horizon), zenith: lerpArr(lo.zenith, hi.zenith),
+    fogColor: '#' + lc.clone().lerp(hc, f).getHexString(),
+    exposure: lerp(lo.exposure, hi.exposure),
+    nightFactor: h >= 19 || h <= 5 ? 1.0 : h >= 18 ? (h - 18) : h <= 6 ? (6 - h) : 0.0,
+  };
+}
+
+const initTod = getTimeOfDayParams(12);
+const skyMaterial = new THREE.ShaderMaterial({
+  side: THREE.BackSide,
+  depthWrite: false,
+  uniforms: {
+    skyColor: { value: new THREE.Vector3(...initTod.sky) },
+    horizonColor: { value: new THREE.Vector3(...initTod.horizon) },
+    zenithColor: { value: new THREE.Vector3(...initTod.zenith) },
+    nightFactor: { value: initTod.nightFactor },
+    sunDir: { value: new THREE.Vector3(0, 1, -0.3).normalize() },
+  },
+  vertexShader: `
+    varying vec3 vWorldPosition;
+    void main() {
+      vec4 worldPos = modelMatrix * vec4(position, 1.0);
+      vWorldPosition = worldPos.xyz;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform vec3 skyColor; uniform vec3 horizonColor; uniform vec3 zenithColor;
+    uniform float nightFactor; uniform vec3 sunDir;
+    varying vec3 vWorldPosition;
+    float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float noise(vec2 p) {
+      vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f);
+      return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+    }
+    float fbm(vec2 p) { float v = 0.0; v += 0.5*noise(p); p*=2.01; v += 0.25*noise(p); p*=2.02; v += 0.125*noise(p); return v; }
+    void main() {
+      vec3 dir = normalize(vWorldPosition);
+      float y = dir.y;
+      vec3 groundColor = zenithColor * 0.3;
+      vec3 color;
+      if (y < 0.0) {
+        float t = smoothstep(-0.4, 0.0, y);
+        color = mix(groundColor, horizonColor, t);
+      } else {
+        float t = smoothstep(0.0, 0.4, y);
+        float t2 = smoothstep(0.4, 1.0, y);
+        color = mix(horizonColor, skyColor, t);
+        color = mix(color, zenithColor, t2);
+        if (y > 0.05) {
+          vec2 uv = dir.xz / (y + 0.1) * 0.3;
+          float clouds = fbm(uv * 3.0);
+          clouds = smoothstep(0.35, 0.65, clouds);
+          float cloudFade = smoothstep(0.05, 0.25, y) * (1.0 - smoothstep(0.6, 0.9, y));
+          vec3 cloudColor = mix(vec3(0.9, 0.92, 0.95), horizonColor * 1.2, nightFactor);
+          color = mix(color, cloudColor, clouds * cloudFade * 0.5 * (1.0 - nightFactor * 0.6));
+        }
+        if (nightFactor > 0.0 && y > 0.1) {
+          float phi = atan(dir.x, dir.z); float theta = asin(clamp(dir.y, -1.0, 1.0));
+          for (int layer = 0; layer < 2; layer++) {
+            float scale = layer == 0 ? 80.0 : 140.0;
+            float threshold = layer == 0 ? 0.985 : 0.99;
+            vec2 sv = vec2(phi, theta) * scale + float(layer) * vec2(37.0, 13.0);
+            vec2 cell = floor(sv); vec2 f = fract(sv) - 0.5;
+            float h = hash(cell);
+            if (h > threshold) {
+              float d = length(f);
+              float point = smoothstep(0.25, 0.0, d);
+              float brightness = 0.4 + 0.6 * hash(cell + vec2(7.0, 13.0));
+              color += vec3(point * brightness * nightFactor * 0.6 * smoothstep(0.1, 0.35, y));
+            }
+          }
+        }
+        float sunDot = max(dot(dir, sunDir), 0.0);
+        if (sunDir.y > -0.1) {
+          float sunGlow = pow(sunDot, 64.0) * 0.8;
+          float sunHalo = pow(sunDot, 8.0) * 0.15;
+          vec3 sunColor = mix(vec3(1.0, 0.95, 0.8), vec3(1.0, 0.5, 0.2), smoothstep(0.1, -0.05, sunDir.y));
+          color += sunColor * (sunGlow + sunHalo) * (1.0 - nightFactor);
+        }
+        if (nightFactor > 0.3) {
+          float moonDot = max(dot(dir, -sunDir), 0.0);
+          float moonGlow = pow(moonDot, 128.0) * 0.6;
+          float moonHalo = pow(moonDot, 16.0) * 0.08;
+          color += vec3(0.7, 0.75, 0.9) * (moonGlow + moonHalo) * nightFactor;
+        }
+      }
+      gl_FragColor = vec4(color, 1.0);
+    }
+  `,
+});
+const skyDome = new THREE.Mesh(new THREE.SphereGeometry(3000, 32, 16), skyMaterial);
+scene.add(skyDome);
+
+let timeOfDay = 12;
+const todSlider = document.getElementById('tod-slider');
+const todLabel = document.getElementById('tod-label');
+function fmtTod(h) {
+  const hh = Math.floor(h) % 24, mm = Math.round((h % 1) * 60);
+  return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+}
+todSlider.addEventListener('input', () => {
+  timeOfDay = parseFloat(todSlider.value);
+  todLabel.textContent = fmtTod(timeOfDay);
+});
+
+document.getElementById('shownav-toggle').addEventListener('change', (e) => {
+  if (navMesh) navMesh.visible = e.target.checked;
+});
+document.getElementById('xray-slider').addEventListener('input', (e) => {
+  const v = parseFloat(e.target.value);
+  for (const m of wallMaterials) { m.transparent = v < 1; m.opacity = v; m.depthWrite = v >= 1; }
+});
+
+function updateTimeOfDay() {
+  const p = getTimeOfDayParams(timeOfDay);
+  const u = skyMaterial.uniforms;
+  u.skyColor.value.set(...p.sky);
+  u.horizonColor.value.set(...p.horizon);
+  u.zenithColor.value.set(...p.zenith);
+  u.nightFactor.value = p.nightFactor;
+  const sunAngle = ((timeOfDay - 6) / 12) * Math.PI;
+  u.sunDir.value.set(Math.cos(sunAngle), Math.sin(sunAngle), -0.3).normalize();
+  renderer.toneMappingExposure = p.exposure;
+  if (scene.fog) scene.fog.color.set(p.fogColor);
+}
 
 const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 5000);
 camera.position.set(0, 60, 120);
@@ -85,10 +324,91 @@ camera.position.set(0, 60, 120);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(container.clientWidth, container.clientHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
 container.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+
+// ---- First-person fly-through -- ported (vanilla JS, not copy-pasted) from Vanalytics'
+// FlyCamera component: pointer-lock mouselook + WASD/Space/Shift movement, camera-relative
+// (so Space/Shift move along the camera's own up/down, matching the reference exactly).
+// Coexists with OrbitControls as a separate mode toggled by the "Fly mode" button, rather than
+// replacing it, since orbit is still the better default for general zone review.
+const flyToggleBtn = document.getElementById('fly-toggle');
+const flyHint = document.getElementById('fly-hint');
+const flySpeedLabel = document.getElementById('fly-speed-label');
+let flyModeOn = false;
+let pointerLocked = false;
+let flySpeed = 5;
+const moveState = { forward: false, backward: false, left: false, right: false, up: false, down: false };
+const walkToggle = document.getElementById('walk-toggle');
+const groundRay = new THREE.Raycaster();
+let eyeHeight = 4;
+
+function updateFlySpeedLabel() { flySpeedLabel.textContent = 'speed ' + flySpeed.toFixed(1); }
+
+function enterFlyMode() {
+  flyModeOn = true;
+  controls.enabled = false;
+  spawnTooltip.style.display = 'none';
+  flyToggleBtn.textContent = 'Exit fly mode (Esc)';
+  flyHint.style.display = 'block';
+  flySpeedLabel.style.display = 'inline';
+  updateFlySpeedLabel();
+}
+function exitFlyMode() {
+  flyModeOn = false;
+  moveState.forward = moveState.backward = moveState.left = moveState.right = moveState.up = moveState.down = false;
+  if (document.pointerLockElement === renderer.domElement) document.exitPointerLock();
+  // Re-target OrbitControls at a point in front of where the fly camera ended up, so orbit
+  // doesn't snap the view back to wherever it was pointed before entering fly mode.
+  const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+  controls.target.copy(camera.position).add(fwd.multiplyScalar(30));
+  controls.enabled = true;
+  flyToggleBtn.textContent = 'Fly mode';
+  flyHint.style.display = 'none';
+  flySpeedLabel.style.display = 'none';
+  for (const el of flyLabelPool) el.style.display = 'none';
+}
+flyToggleBtn.addEventListener('click', () => { flyModeOn ? exitFlyMode() : enterFlyMode(); });
+
+document.addEventListener('pointerlockchange', () => {
+  pointerLocked = document.pointerLockElement === renderer.domElement;
+});
+document.addEventListener('mousemove', (e) => {
+  if (!pointerLocked || !flyModeOn) return;
+  const euler = new THREE.Euler(0, 0, 0, 'YXZ');
+  euler.setFromQuaternion(camera.quaternion);
+  euler.y -= e.movementX * 0.002;
+  euler.x -= e.movementY * 0.002;
+  euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x));
+  camera.quaternion.setFromEuler(euler);
+});
+renderer.domElement.addEventListener('wheel', (e) => {
+  if (!flyModeOn) return;
+  e.preventDefault();
+  flySpeed = Math.max(0.5, flySpeed * (e.deltaY > 0 ? 1.2 : 0.83));
+  updateFlySpeedLabel();
+}, { passive: false });
+window.addEventListener('keydown', (e) => {
+  if (!flyModeOn) return;
+  if (e.code === 'KeyW') moveState.forward = true;
+  if (e.code === 'KeyS') moveState.backward = true;
+  if (e.code === 'KeyA') moveState.left = true;
+  if (e.code === 'KeyD') moveState.right = true;
+  if (e.code === 'Space' || e.code === 'KeyE') { moveState.up = true; e.preventDefault(); }
+  if (e.code === 'ShiftLeft' || e.code === 'KeyQ') moveState.down = true;
+  if (e.code === 'Escape') exitFlyMode();
+});
+window.addEventListener('keyup', (e) => {
+  if (e.code === 'KeyW') moveState.forward = false;
+  if (e.code === 'KeyS') moveState.backward = false;
+  if (e.code === 'KeyA') moveState.left = false;
+  if (e.code === 'KeyD') moveState.right = false;
+  if (e.code === 'Space' || e.code === 'KeyE') moveState.up = false;
+  if (e.code === 'ShiftLeft' || e.code === 'KeyQ') moveState.down = false;
+});
 
 // Basic day-like lighting -- a simplified, fixed version of Vanalytics' own day/night curve
 // idea, not the full time-of-day system (out of scope for this pass).
@@ -100,13 +420,300 @@ const fill = new THREE.DirectionalLight(0x6688aa, 0.4);
 fill.position.set(-300, 200, -200);
 scene.add(fill);
 
-const loader = new OBJLoader();
-loader.load('/static/zone_visual/{{ zoneid }}.obj', (obj) => {
-  obj.traverse((child) => {
-    if (child.isMesh) {
-      child.material = new THREE.MeshStandardMaterial({ color: 0x4a5a68, roughness: 0.9, metalness: 0.0, side: THREE.DoubleSide });
-    }
+function buildSpawnMarkers() {
+  if (spawnMesh) { scene.remove(spawnMesh); spawnMesh.geometry.dispose(); spawnMesh.material.dispose(); spawnMesh = null; }
+  if (spawnEntities.length === 0) return;
+  const geom = new THREE.SphereGeometry(0.8, 10, 10);
+  // depthTest:false + high renderOrder: indoor wall/roof geometry otherwise fully occludes these
+  // (reported: "textures are masking the npcs and mobs when indoors") -- always draw markers on top.
+  const mat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.8, depthTest: false });
+  const mesh = new THREE.InstancedMesh(geom, mat, spawnEntities.length);
+  mesh.frustumCulled = false;
+  mesh.renderOrder = 10;
+  const dummy = new THREE.Object3D();
+  const color = new THREE.Color();
+  // Same model-space mapping as the capture paths above: (x, -y, -z).
+  spawnEntities.forEach((e, i) => {
+    dummy.position.set(e.x, -e.y, -e.z);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(i, dummy.matrix);
+    mesh.setColorAt(i, color.set(SPAWN_COLORS[e.k] ?? 0x44cc88));
   });
+  mesh.instanceMatrix.needsUpdate = true;
+  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  scene.add(mesh);
+  spawnMesh = mesh;
+}
+
+// Hover tooltip + click-to-fly, raycast against the instanced spawn mesh each frame.
+const raycaster = new THREE.Raycaster();
+const pointerNdc = new THREE.Vector2();
+let hoveredSpawnId = null;
+let lastClientXY = { x: 0, y: 0 };
+
+renderer.domElement.addEventListener('mousemove', (ev) => {
+  const rect = renderer.domElement.getBoundingClientRect();
+  pointerNdc.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
+  pointerNdc.y = -((ev.clientY - rect.top) / rect.height) * 2 + 1;
+  lastClientXY = { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
+});
+
+renderer.domElement.addEventListener('click', () => {
+  if (flyModeOn) { Promise.resolve(renderer.domElement.requestPointerLock()).catch(() => {}); return; }
+  if (hoveredSpawnId == null || !spawnMesh) return;
+  const m = new THREE.Matrix4();
+  spawnMesh.getMatrixAt(hoveredSpawnId, m);
+  const pos = new THREE.Vector3().setFromMatrixPosition(m);
+  flyTo(pos);
+});
+
+// Smooth ease-out camera fly, ported from Vanalytics' CameraFlyTo idea.
+let flyAnim = null;
+function flyTo(target) {
+  const startPos = camera.position.clone();
+  const startTarget = controls.target.clone();
+  const dir = startPos.clone().sub(startTarget).normalize();
+  const endPos = target.clone().add(dir.multiplyScalar(18));
+  const t0 = performance.now();
+  const DUR = 700;
+  flyAnim = (now) => {
+    const t = Math.min(1, (now - t0) / DUR);
+    const e = 1 - Math.pow(1 - t, 3); // ease-out cubic
+    camera.position.lerpVectors(startPos, endPos, e);
+    controls.target.lerpVectors(startTarget, target, e);
+    if (t >= 1) flyAnim = null;
+  };
+}
+
+function updateSpawnHover() {
+  if (!spawnMesh) return;
+  raycaster.setFromCamera(pointerNdc, camera);
+  const hits = raycaster.intersectObject(spawnMesh);
+  if (hits.length > 0 && hits[0].instanceId != null) {
+    const id = hits[0].instanceId;
+    hoveredSpawnId = id;
+    const e = spawnEntities[id];
+    const kindLabel = e.k === 'm' ? 'monster' : e.k === 'n' ? 'npc' : 'door/prop';
+    spawnTooltip.innerHTML = `<b>${e.n || '?'}</b> (${kindLabel})${e.lv ? ' Lv' + e.lv : ''}<br>id ${e.id}`;
+    spawnTooltip.style.left = (lastClientXY.x + 12) + 'px';
+    spawnTooltip.style.top = (lastClientXY.y + 12) + 'px';
+    spawnTooltip.style.display = 'block';
+  } else {
+    hoveredSpawnId = null;
+    spawnTooltip.style.display = 'none';
+  }
+}
+
+function updateFlyLabels() {
+  if (spawnEntities.length === 0) { for (const el of flyLabelPool) el.style.display = 'none'; return; }
+  const camPos = camera.position;
+  const nearby = [];
+  for (const e of spawnEntities) {
+    const dx = e.x - camPos.x, dy = (-e.y) - camPos.y, dz = (-e.z) - camPos.z;
+    const distSq = dx * dx + dy * dy + dz * dz;
+    if (distSq < FLY_LABEL_RADIUS * FLY_LABEL_RADIUS) nearby.push({ e, distSq, x: e.x, y: -e.y, z: -e.z });
+  }
+  nearby.sort((a, b) => a.distSq - b.distSq);
+  const rect = container.getBoundingClientRect();
+  let shown = 0;
+  for (let i = 0; i < nearby.length && shown < FLY_LABEL_MAX; i++) {
+    const { e, x, y, z } = nearby[i];
+    flyLabelProj.set(x, y, z).project(camera);
+    if (flyLabelProj.z > 1) continue; // behind camera
+    const px = (flyLabelProj.x * 0.5 + 0.5) * rect.width;
+    const py = (-flyLabelProj.y * 0.5 + 0.5) * rect.height;
+    if (px < 0 || px > rect.width || py < 0 || py > rect.height) continue;
+    const kindLabel = e.k === 'm' ? 'monster' : e.k === 'n' ? 'npc' : 'door/prop';
+    const el = flyLabelPool[shown];
+    el.innerHTML = `<b>${e.n || '?'}</b> (${kindLabel})${e.lv ? ' Lv' + e.lv : ''}`;
+    el.style.left = px + 'px';
+    el.style.top = py + 'px';
+    el.style.display = 'block';
+    shown++;
+  }
+  for (let i = shown; i < FLY_LABEL_MAX; i++) flyLabelPool[i].style.display = 'none';
+}
+
+const fogUniforms = { fogHeightBase: { value: 0 }, fogHeightRange: { value: 100 } };
+
+function patchHeightFogMaterial(mat) {
+  // Height-based fog patch (Phase 2) -- ported from Vanalytics' patchZoneShader: fog is
+  // thickest below fogHeightBase, fading out over fogHeightRange as you go up, so interiors/
+  // low terrain read hazier than rooftops instead of THREE's flat uniform fog.
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.fogHeightBase = fogUniforms.fogHeightBase;
+    shader.uniforms.fogHeightRange = fogUniforms.fogHeightRange;
+    shader.vertexShader = shader.vertexShader.replace('#include <fog_pars_vertex>', `#include <fog_pars_vertex>\nvarying float vWorldY;`);
+    shader.vertexShader = shader.vertexShader.replace('#include <fog_vertex>', `#include <fog_vertex>\n#ifdef USE_INSTANCING\nvWorldY = (modelMatrix * instanceMatrix * vec4(position, 1.0)).y;\n#else\nvWorldY = (modelMatrix * vec4(position, 1.0)).y;\n#endif`);
+    shader.fragmentShader = shader.fragmentShader.replace('#include <fog_pars_fragment>', `#include <fog_pars_fragment>\nvarying float vWorldY;\nuniform float fogHeightBase;\nuniform float fogHeightRange;`);
+    shader.fragmentShader = shader.fragmentShader.replace('#include <fog_fragment>', `#ifdef USE_FOG
+      #ifdef FOG_EXP2
+        float fogFactor = 1.0 - exp(-fogDensity * fogDensity * vFogDepth * vFogDepth);
+      #else
+        float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
+      #endif
+      float heightAtten = 1.0 - smoothstep(fogHeightBase, fogHeightBase + fogHeightRange, vWorldY);
+      fogFactor *= max(heightAtten, 0.06);
+      gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, clamp(fogFactor, 0.0, 1.0));
+    #endif`);
+  };
+  mat.customProgramCacheKey = () => 'zone-height-fog';
+}
+
+// ---- Water shader (Phase 2 leftover, now usable) -- ported verbatim from Vanalytics'
+// WATER_VERT/WATER_FRAG: dual-UV animated wave motion, fresnel transparency, ripple specular.
+const WATER_NAME_RE = /water|sea|umi|wtr|river|wave|pool|lake|aqua|suimen|suime|mizu|ike|kawa|taki/i;
+const SKY_WEATHER_RE = /^(aura|fine|suny|wind|star|moon|effect|lf\d+)\s/i;
+const WATER_VERT = `
+  attribute vec3 color;
+  varying vec2 vUv; varying vec3 vWorldPos; varying vec3 vViewDir; varying vec3 vWorldNormal; varying vec3 vColor;
+  void main() {
+    vUv = uv; vColor = color;
+    #ifdef USE_INSTANCING
+      vec4 worldPos = modelMatrix * instanceMatrix * vec4(position, 1.0);
+      vWorldNormal = normalize(mat3(modelMatrix * instanceMatrix) * normal);
+      vec4 mvPosition = modelViewMatrix * instanceMatrix * vec4(position, 1.0);
+    #else
+      vec4 worldPos = modelMatrix * vec4(position, 1.0);
+      vWorldNormal = normalize(mat3(modelMatrix) * normal);
+      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    #endif
+    vWorldPos = worldPos.xyz;
+    vViewDir = normalize(cameraPosition - worldPos.xyz);
+    gl_Position = projectionMatrix * mvPosition;
+  }
+`;
+const WATER_FRAG = `
+  uniform sampler2D map; uniform float time;
+  varying vec2 vUv; varying vec3 vWorldPos; varying vec3 vViewDir; varying vec3 vWorldNormal; varying vec3 vColor;
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float noise(vec2 p) {
+    vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+  }
+  void main() {
+    vec2 uv1 = vUv + vec2(time * 0.03, time * 0.02);
+    vec2 uv2 = vUv * 1.3 + vec2(-time * 0.02, time * 0.035);
+    vec4 tex = mix(texture2D(map, uv1), texture2D(map, uv2), 0.5);
+    vec3 color = tex.rgb * vColor;
+    float ripple = noise(vWorldPos.xz * 0.5 + time * 0.8);
+    color += vec3(0.04) * smoothstep(0.55, 0.8, ripple);
+    float fresnel = pow(1.0 - max(dot(normalize(vViewDir), normalize(vWorldNormal)), 0.0), 3.0);
+    float alpha = mix(0.3, 0.8, fresnel) * tex.a;
+    if (alpha < 0.01) discard;
+    gl_FragColor = vec4(color, alpha);
+  }
+`;
+function createWaterMaterial(texture) {
+  const uniforms = { time: { value: 0 } };
+  if (texture) uniforms.map = { value: texture };
+  return new THREE.ShaderMaterial({
+    uniforms, vertexShader: WATER_VERT, fragmentShader: WATER_FRAG,
+    transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: false,
+  });
+}
+const waterMaterials = [];
+
+function isWaterMesh(prefab) { return WATER_NAME_RE.test(prefab.textureName || ''); }
+function isSkyWeatherMesh(prefab) { return SKY_WEATHER_RE.test(prefab.textureName || ''); }
+
+// ---- Phase 3: live in-browser MZB/MMB parse -- ported from Vanalytics' ThreeZoneViewer.tsx
+// scene-construction block (real textures/water/mirrored-instance winding), replacing the
+// untextured pre-baked OBJ this viewer used before. Falls back to the OBJ cache when the FFXI
+// install or this zone's geometry DAT path isn't known.
+function buildLiveZoneGroup(zoneData) {
+  const group = new THREE.Group();
+  const geoMap = new Map();
+  const matMap = new Map();
+
+  for (let prefabIdx = 0; prefabIdx < zoneData.prefabs.length; prefabIdx++) {
+    const prefab = zoneData.prefabs[prefabIdx];
+    if (isSkyWeatherMesh(prefab)) continue;
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(prefab.vertices), 3));
+    geometry.setAttribute('normal', new THREE.Float32BufferAttribute(new Float32Array(prefab.normals), 3));
+    const rgbColors = [];
+    for (let i = 0; i < prefab.colors.length; i += 4) rgbColors.push(prefab.colors[i], prefab.colors[i + 1], prefab.colors[i + 2]);
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(rgbColors), 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(prefab.uvs), 2));
+    let maxIndex = 0;
+    for (let i = 0; i < prefab.indices.length; i++) if (prefab.indices[i] > maxIndex) maxIndex = prefab.indices[i];
+    geometry.setIndex(new THREE.BufferAttribute(maxIndex > 65535 ? new Uint32Array(prefab.indices) : new Uint16Array(prefab.indices), 1));
+    geometry.computeBoundingBox();
+    geoMap.set(prefabIdx, geometry);
+
+    const tex = zoneData.textures[prefab.materialIndex];
+    let texture = null;
+    if (tex) {
+      texture = new THREE.DataTexture(new Uint8Array(tex.rgba), tex.width, tex.height, THREE.RGBAFormat);
+      texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping;
+      texture.needsUpdate = true;
+      texture.magFilter = THREE.LinearFilter; texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texture.generateMipmaps = true; texture.flipY = false;
+    }
+
+    if (isWaterMesh(prefab)) {
+      const waterMat = createWaterMaterial(texture);
+      waterMaterials.push(waterMat);
+      matMap.set(prefabIdx, waterMat);
+    } else {
+      const useAlpha = prefab.blending > 0;
+      const mat = new THREE.MeshBasicMaterial({
+        ...(texture && { map: texture }),
+        vertexColors: true, side: THREE.DoubleSide,
+        ...(useAlpha && { alphaTest: 0.1, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
+      });
+      patchHeightFogMaterial(mat);
+      matMap.set(prefabIdx, mat);
+      wallMaterials.push(mat);
+    }
+  }
+
+  // Group instances by prefab, split by transform determinant sign -- mirrored instances need
+  // reversed triangle winding to keep correct face orientation (Vanalytics' cloneWithFlippedWinding).
+  const normalGroups = new Map(), mirroredGroups = new Map();
+  for (const inst of zoneData.instances) {
+    if (!geoMap.has(inst.meshIndex)) continue;
+    const matrix = new THREE.Matrix4().fromArray(inst.transform);
+    const target = matrix.determinant() < 0 ? mirroredGroups : normalGroups;
+    let arr = target.get(inst.meshIndex);
+    if (!arr) { arr = []; target.set(inst.meshIndex, arr); }
+    arr.push(matrix);
+  }
+  function cloneWithFlippedWinding(src) {
+    const clone = src.clone();
+    const index = clone.index;
+    if (index) {
+      const arr = index.array;
+      for (let i = 0; i < arr.length; i += 3) { const tmp = arr[i + 1]; arr[i + 1] = arr[i + 2]; arr[i + 2] = tmp; }
+      index.needsUpdate = true;
+    }
+    return clone;
+  }
+  for (const [meshIdx, matrices] of normalGroups) {
+    const geo = geoMap.get(meshIdx), mat = matMap.get(meshIdx);
+    if (!geo || !mat) continue;
+    const mesh = new THREE.InstancedMesh(geo, mat, matrices.length);
+    mesh.frustumCulled = false;
+    matrices.forEach((m, i) => mesh.setMatrixAt(i, m));
+    mesh.instanceMatrix.needsUpdate = true;
+    group.add(mesh);
+  }
+  for (const [meshIdx, matrices] of mirroredGroups) {
+    const geo = geoMap.get(meshIdx), mat = matMap.get(meshIdx);
+    if (!geo || !mat) continue;
+    const flippedGeo = cloneWithFlippedWinding(geo);
+    const mesh = new THREE.InstancedMesh(flippedGeo, mat, matrices.length);
+    mesh.frustumCulled = false;
+    matrices.forEach((m, i) => mesh.setMatrixAt(i, m));
+    mesh.instanceMatrix.needsUpdate = true;
+    group.add(mesh);
+  }
+  return group;
+}
+
+function onZoneMeshReady(obj) {
   scene.add(obj);
   loadingEl.hidden = true;
 
@@ -114,6 +721,15 @@ loader.load('/static/zone_visual/{{ zoneid }}.obj', (obj) => {
   const box = new THREE.Box3().setFromObject(obj);
   const center = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
+  flySpeed = Math.max(size.x, size.y, size.z) * 0.01;
+  // Fixed, NOT zone-size-relative -- a size-relative eye height put the camera well above head
+  // height in large zones (poking through ceilings/walls in walk mode). This matches the scale
+  // already used for spawn markers/path lift elsewhere in this file (marker radius 0.8, path
+  // lift 0.6), i.e. real in-engine units, not a fraction of the zone's bounding box.
+  eyeHeight = 3.2;
+  fogUniforms.fogHeightBase.value = box.min.y;
+  fogUniforms.fogHeightRange.value = Math.max(size.y, 20);
+  scene.fog.density = 1.8 / Math.max(size.x, size.z, 200);
 
   if (paths.length > 0) {
     // Raise every path slightly above the real floor surface -- drawn AT ground height otherwise
@@ -175,13 +791,90 @@ loader.load('/static/zone_visual/{{ zoneid }}.obj', (obj) => {
     camera.position.set(center.x + maxDim * 0.5, center.y + maxDim * 0.4, center.z + maxDim * 0.5);
   }
   controls.update();
-}, undefined, (err) => {
-  loadingEl.textContent = 'Failed to load mesh: ' + err.message;
-});
+}
 
+function loadObjFallback() {
+  const loader = new OBJLoader();
+  loader.load('/static/zone_visual/{{ zoneid }}.obj', (obj) => {
+    obj.traverse((child) => {
+      if (child.isMesh) {
+        const mat = new THREE.MeshStandardMaterial({ color: 0x4a5a68, roughness: 0.9, metalness: 0.0, side: THREE.DoubleSide, fog: true });
+        patchHeightFogMaterial(mat);
+        child.material = mat;
+        wallMaterials.push(mat);
+      }
+    });
+    onZoneMeshReady(obj);
+  }, undefined, (err) => {
+    loadingEl.textContent = 'Failed to load mesh: ' + err.message;
+  });
+}
+
+if (LIVE_PARSE_AVAILABLE) {
+  const datUrl = `/modelviewer/dat?ffxi_path=${encodeURIComponent(FFXI_PATH)}&rom_path=${encodeURIComponent(GEOMETRY_ROM_PATH)}`;
+  loadingEl.textContent = 'Fetching zone DAT…';
+  fetch(datUrl).then(r => {
+    if (!r.ok) throw new Error(`dat fetch ${r.status}`);
+    return r.arrayBuffer();
+  }).then(buffer => {
+    loadingEl.textContent = 'Parsing zone geometry…';
+    const zoneData = parseZoneFile(buffer, (msg) => { loadingEl.textContent = msg; });
+    if (zoneData.prefabs.length === 0 || zoneData.instances.length === 0) throw new Error('live parse produced no geometry');
+    const group = buildLiveZoneGroup(zoneData);
+    // Raw parseZoneFile() output uses the client's own coordinate convention, which does not
+    // match the (x, -y, -z) convention this app's spawn markers/capture paths/legacy OBJ bake
+    // all use (confirmed empirically against zone_plot.html's navmesh overlay for zone 77 —
+    // the live mesh was Z-mirrored). All materials here are DoubleSide, so the winding flip
+    // from a negative scale doesn't affect visibility.
+    group.scale.set(1, -1, -1);
+    onZoneMeshReady(group);
+  }).catch(err => {
+    console.warn('[ZoneViewer] live parse failed, falling back to cached OBJ:', err);
+    loadingEl.textContent = 'Live parse failed — loading cached mesh…';
+    loadObjFallback();
+  });
+} else {
+  loadObjFallback();
+}
+
+const clock = new THREE.Clock();
 function animate() {
   requestAnimationFrame(animate);
-  controls.update();
+  if (flyModeOn) {
+    if (pointerLocked) {
+      const walking = walkToggle.checked && navMesh;
+      const s = flySpeed;
+      const dir = new THREE.Vector3();
+      if (moveState.forward) dir.z -= s;
+      if (moveState.backward) dir.z += s;
+      if (moveState.left) dir.x -= s;
+      if (moveState.right) dir.x += s;
+      // Walk mode ignores free vertical fly input -- height comes from the navmesh raycast below.
+      if (!walking) {
+        if (moveState.up) dir.y += s;
+        if (moveState.down) dir.y -= s;
+      }
+      dir.applyQuaternion(camera.quaternion);
+      if (walking) { dir.y = 0; }
+      camera.position.add(dir);
+      if (walking) {
+        groundRay.set(new THREE.Vector3(camera.position.x, camera.position.y + 200, camera.position.z), new THREE.Vector3(0, -1, 0));
+        const hits = groundRay.intersectObject(navMesh, false);
+        if (hits.length > 0) camera.position.y = hits[0].point.y + eyeHeight;
+      }
+    }
+    updateFlyLabels();
+  } else {
+    if (flyAnim) flyAnim(performance.now());
+    controls.update();
+    updateSpawnHover();
+  }
+  updateTimeOfDay();
+  skyDome.position.copy(camera.position);
+  if (waterMaterials.length > 0) {
+    const t = clock.getElapsedTime();
+    for (const m of waterMaterials) m.uniforms.time.value = t;
+  }
   renderer.render(scene, camera);
 }
 animate();

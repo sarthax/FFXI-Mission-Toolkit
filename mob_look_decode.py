@@ -25,13 +25,18 @@ Ground truth, read directly from Topaz source (2026-08-31):
 `look_t.size` doubles as the MODELTYPE discriminator (first field in the struct) -- read it
 before touching the rest.
 
-CONFIRMED, NOT YET VERIFIED: the per-slot ids sent for MODEL_EQUIPED (head/body/hands/legs/
-feet/main/sub/ranged) do NOT fall inside xi-model-viewer's own GEAR_TABLES ranges for the
-matching race+slot (checked by hand against a real Topaz row, see below) -- so whatever
-numbering scheme Topaz/retail actually uses here is NOT simply "the same file id as
-GEAR_TABLES". Do not treat this script's slot output as a direct file id or feed it into
-model_schedule_dump.py until that numbering is verified against a real capture that also shows
-the resulting visual appearance -- flagging this honestly rather than guessing an offset.
+CONFIRMED 2026-09-21: the raw per-slot value stored/sent for MODEL_EQUIPED/CHOCOBO encodes as
+    raw = slot_index * 4096 + model_id
+(slot_index: head=1, body=2, hands=3, legs=4, feet=5, main=6, sub=7, ranged=8; raw==0 means
+unequipped). `model_id` is NOT a file_id itself -- it's the cumulative per-slot index that
+xi-model-viewer's GEAR_TABLES (ported to gear_tables.py) uses to look up the real file_id via
+its group tables. Verified end-to-end against a live Topaz-DSP DB row (Laiteconce, npcid
+16781339, ElvaanFemale): head=4116 -> model_id=20 -> file_id=16660 -> dat-extractor resolves a
+real ROM/42/41.DAT on disk; main=24576 -> model_id=0 -> file_id=17920 -> ROM/43/65.DAT, also
+real. See gear_tables.py for the full table + resolver. entity_update.cpp's packet-send code
+applies no transform (straight memcpy of look_t), so this raw encoding is exactly what a real
+client receives and must already know how to interpret -- confirming it's the genuine scheme,
+not a Topaz-specific quirk.
 
 Usage:
     python mob_look_decode.py --hex 0x0000640100000000000000000000000000000000
@@ -42,9 +47,15 @@ import re
 import struct
 from pathlib import Path
 
+import gear_tables
+import mob_model_tables
 import settings
 
 TOPAZ_ROOT = settings.get_topaz_root()
+# DISPROVEN 2026-09-22 as a universal monster-model offset (it's a fileId classification
+# threshold in xi-model-viewer's own source, dattypes.js:138 -- never an additive offset). Kept
+# only as an explicitly-marked-unverified LAST RESORT below for families with no real table entry
+# yet in mob_model_tables.py -- never trust a "flat" result with unverified=True.
 ENTITY_MODEL_OFFSET = 98239
 
 MODEL_TYPES = {
@@ -60,11 +71,18 @@ RACE_NAMES = {
 }
 
 
-def decode_look_data(blob: bytes) -> dict:
+def decode_look_data(blob: bytes, familyid: int | None = None) -> dict:
     """Same real decode as decode_look() below, returning structured data instead of printing --
     for programmatic use (entity_profile.py) rather than CLI output. Kept as a separate function
     rather than refactoring decode_look() itself, to avoid any risk of changing that function's
-    already-correct, already-used CLI print behavior."""
+    already-correct, already-used CLI print behavior.
+
+    familyid (mob_pools.familyid, when known -- NPCs don't have one) is used to look up a real,
+    per-family-verified modelid->file_id table (mob_model_tables.py) instead of the disproven
+    universal ENTITY_MODEL_OFFSET formula. If the family has no verified table entry yet (or
+    familyid wasn't supplied, e.g. for an NPC), the old offset is still computed as a fallback but
+    explicitly flagged "unverified" -- callers must not treat it as trustworthy for anything
+    beyond a rough guess pending real verification (see mob_model_tables.py docstring)."""
     if len(blob) != 20:
         return {"error": f"expected a 20-byte look_t blob, got {len(blob)} bytes"}
     size = struct.unpack_from("<H", blob, 0)[0]
@@ -72,20 +90,41 @@ def decode_look_data(blob: bytes) -> dict:
     result = {"model_type": model_type, "size": size}
     if size in FLAT_MODEL_TYPES:
         modelid = struct.unpack_from("<H", blob, 2)[0]
-        result.update({
-            "kind": "flat", "modelid": modelid,
-            "file_id": ENTITY_MODEL_OFFSET + modelid,
-        })
+        result.update({"kind": "flat", "modelid": modelid})
+        verified_file_id = (
+            mob_model_tables.resolve_family_file_id(familyid, modelid)
+            if familyid is not None else None
+        )
+        if verified_file_id is not None:
+            result.update({
+                "file_id": verified_file_id,
+                "file_id_source": "mob_model_tables (verified per-family table)",
+                "unverified": False,
+            })
+        else:
+            result.update({
+                "file_id": ENTITY_MODEL_OFFSET + modelid,
+                "file_id_source": "ENTITY_MODEL_OFFSET fallback -- NOT VERIFIED, do not trust",
+                "unverified": True,
+            })
     elif size in GEAR_MODEL_TYPES:
         face, race = blob[2], blob[3]
         head, body, hands, legs, feet, main, sub, ranged = struct.unpack_from("<8H", blob, 4)
+        race_name = RACE_NAMES.get(race, f"unknown race id {race}")
+        gear = {"head": head, "body": body, "hands": hands, "legs": legs,
+                "feet": feet, "main": main, "sub": sub, "ranged": ranged}
+        composer_race = gear_tables.GEAR_TABLE_RACE_TO_COMPOSER.get(race_name)
         result.update({
             "kind": "gear", "face": face, "race": race,
-            "race_name": RACE_NAMES.get(race, f"unknown race id {race}"),
-            "gear": {"head": head, "body": body, "hands": hands, "legs": legs,
-                     "feet": feet, "main": main, "sub": sub, "ranged": ranged},
-            "note": "NOT verified against a live capture -- see module docstring",
+            "race_name": race_name,
+            "gear": gear,
+            "skeleton_path": gear_tables.RACE_SKELETON_RELS.get(composer_race) if composer_race else None,
         })
+        if race_name in gear_tables.GEAR_TABLES:
+            result["gear_resolved"] = gear_tables.resolve_gear_file_ids(race_name, gear)
+        else:
+            result["gear_resolved"] = {}
+            result["error"] = f"no GEAR_TABLES entry for race {race_name!r}"
     else:
         result["kind"] = "prop"
     return result

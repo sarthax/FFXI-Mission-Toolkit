@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Model Viewer</title>
+<style>
+  :root{--bg:#0a0d10;--panel:#12171c;--border:#26313a;--fg:#d7dee3;--muted:#8b98a1;--accent:#4fc3f7}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:#d7dee3;font:13px/1.4 system-ui,sans-serif;height:100vh;display:flex}
+  #panel{width:340px;flex:none;background:#12171c;border-right:1px solid #26313a;padding:12px;overflow-y:auto}
+  #viewer-container{flex:1;position:relative}
+  h1{font-size:14px;margin:0 0 10px}
+  label{display:block;margin:8px 0 3px;color:#8b98a1;font-size:11px}
+  input,select{width:100%;background:#0d1216;border:1px solid #26313a;color:#d7dee3;padding:5px 6px;border-radius:4px;font:inherit}
+  button{margin-top:10px;width:100%;background:#1b2833;border:1px solid #2f4353;color:#d7dee3;padding:7px;border-radius:4px;cursor:pointer;font:inherit}
+  button:hover{background:#233240}
+  .row{display:flex;gap:6px}
+  .row>*{flex:1}
+  .muted{color:#8b98a1}
+  .mono{font-family:ui-monospace,Consolas,monospace}
+  #info{margin-top:12px;font-size:11px;white-space:pre-wrap;word-break:break-all}
+  #info .err{color:#ff8a80}
+  #info .warn{color:#ffcc80}
+  a{color:#4fc3f7}
+  #loading{position:absolute;top:10px;left:10px;color:#8b98a1;font-size:12px}
+</style>
+</head>
+<body>
+<div id="panel">
+  <h1>Model Viewer</h1>
+  <div class="muted">Renders an NPC/mob's real model DAT(s), resolved live from the DB via <span class="mono">mob_look_decode.py</span> + <span class="mono">gear_tables.py</span> + dat-extractor. Single-DAT ("flat") entities render one file; gear-composite humanoids render the race skeleton DAT plus every equipped slot's gear DAT, skinned to the shared skeleton. Find an id first on the <a href="/entity" target="_blank">Entity search</a> page.</div>
+
+  <label>Server</label>
+  <select id="server"><option value="topaz">topaz</option><option value="dsp">dsp</option></select>
+
+  <label>Kind</label>
+  <select id="kind"><option value="n">NPC (npc_list)</option><option value="m">Mob (mob_spawn_points)</option></select>
+
+  <label>ID</label>
+  <input type="number" id="eid" placeholder="e.g. 16781331">
+
+  <button id="load">Resolve &amp; render</button>
+
+  <div id="anim-controls" style="display:none">
+    <label>Animation</label>
+    <div class="row">
+      <button id="playpause" style="margin-top:0">Play</button>
+    </div>
+    <label>Frame <span id="frame-label" class="mono">0</span></label>
+    <input type="range" id="frame" min="0" max="0" value="0" step="1">
+  </div>
+
+  <div id="info"></div>
+</div>
+<div id="viewer-container"><div id="loading"></div></div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+  "ffxi-dat": "/static/ffxi-dat/index.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { parseDatFile } from 'ffxi-dat';
+
+const $ = id => document.getElementById(id);
+const container = $('viewer-container');
+const info = $('info');
+const loading = $('loading');
+
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0a0d10);
+const camera = new THREE.PerspectiveCamera(50, container.clientWidth/container.clientHeight, 0.01, 2000);
+camera.position.set(3, 2, 4);
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(container.clientWidth, container.clientHeight);
+container.appendChild(renderer.domElement);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+scene.add(new THREE.AmbientLight(0x8899aa, 1.1));
+const sun = new THREE.DirectionalLight(0xfff2e0, 1.4); sun.position.set(3,5,2); scene.add(sun);
+const grid = new THREE.GridHelper(4, 16, 0x334455, 0x1c262e); scene.add(grid);
+
+new ResizeObserver(() => {
+  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(container.clientWidth, container.clientHeight);
+}).observe(container);
+
+(function animate(){ requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); })();
+
+let modelGroup = null;
+let currentAnim = null;   // { animations: ParsedAnimation[], bones: THREE.Bone[], maxFrame, frame, playing }
+let animRafId = null;
+let lastFrameTime = 0;
+const ANIM_FPS = 15; // vendored data has no verified real-time speed semantics -- fixed approximation, see info panel note
+
+function setInfo(html) { info.innerHTML = html; }
+function esc(s) { return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+// Applies one animation frame to the live THREE.Bone hierarchy. All ParsedAnimation "layers" in the
+// DAT (per AnimationParser.ts, typically 1-3 per DAT for upper/lower/additional body sections -- there
+// is no clip name/id, just simultaneous layers) are applied in array order, later layers overwriting
+// any bone earlier layers already touched. This is a reasonable interpretation, not verified against a
+// real capture -- flagged honestly rather than presented as confirmed retail blending behavior.
+function applyAnimFrame(frame) {
+  if (!currentAnim) return;
+  for (const layer of currentAnim.animations) {
+    const f = layer.frameCount > 0 ? frame % layer.frameCount : 0;
+    for (const ab of layer.bones) {
+      const bone = currentAnim.bones[ab.boneIndex];
+      if (!bone) continue;
+      if (ab.rotationKeyframes) {
+        const o = f * 4;
+        bone.quaternion.set(ab.rotationKeyframes[o], ab.rotationKeyframes[o+1], ab.rotationKeyframes[o+2], ab.rotationKeyframes[o+3]);
+      } else {
+        bone.quaternion.set(...ab.rotationDefault);
+      }
+      if (ab.translationKeyframes) {
+        const o = f * 3;
+        bone.position.set(ab.translationKeyframes[o], ab.translationKeyframes[o+1], ab.translationKeyframes[o+2]);
+      } else {
+        bone.position.set(...ab.translationDefault);
+      }
+    }
+  }
+}
+
+function animTick(t) {
+  animRafId = requestAnimationFrame(animTick);
+  if (!currentAnim || !currentAnim.playing) return;
+  if (t - lastFrameTime < 1000 / ANIM_FPS) return;
+  lastFrameTime = t;
+  currentAnim.frame = (currentAnim.frame + 1) % currentAnim.maxFrame;
+  applyAnimFrame(currentAnim.frame);
+  $('frame').value = currentAnim.frame;
+  $('frame-label').textContent = currentAnim.frame;
+}
+animRafId = requestAnimationFrame(animTick);
+
+$('playpause').addEventListener('click', () => {
+  if (!currentAnim) return;
+  currentAnim.playing = !currentAnim.playing;
+  $('playpause').textContent = currentAnim.playing ? 'Pause' : 'Play';
+});
+$('frame').addEventListener('input', () => {
+  if (!currentAnim) return;
+  currentAnim.playing = false;
+  $('playpause').textContent = 'Play';
+  currentAnim.frame = parseInt($('frame').value, 10);
+  applyAnimFrame(currentAnim.frame);
+});
+
+async function fetchDat(ffxiPath, romPath) {
+  return fetch(`/modelviewer/dat?ffxi_path=${encodeURIComponent(ffxiPath)}&rom_path=${encodeURIComponent(romPath)}`)
+    .then(x => { if (!x.ok) throw new Error(`DAT fetch failed (${romPath}): ${x.status}`); return x.arrayBuffer(); });
+}
+
+// Builds a live THREE.Bone hierarchy + THREE.Skeleton from a parsed DAT's skeleton block. Shared by
+// the flat-model path and the gear-composite path (race skeleton DAT), see the flat path below for
+// why this reproduces the library's bind-pose world matrices with no manual matrix math.
+function buildSkeleton(parsedSkeleton) {
+  const skelBones = parsedSkeleton.bones.map(pb => {
+    const b = new THREE.Bone();
+    b.position.set(...pb.position);
+    b.quaternion.set(...pb.rotation); // [qi,qj,qk,qw] === three's (x,y,z,w)
+    return b;
+  });
+  parsedSkeleton.bones.forEach((pb, i) => {
+    if (pb.parentIndex >= 0) skelBones[pb.parentIndex].add(skelBones[i]);
+  });
+  const roots = skelBones.filter((_, i) => parsedSkeleton.bones[i].parentIndex < 0);
+  roots.forEach(r => r.updateMatrixWorld(true)); // sync matrixWorld before calculateInverses() runs
+  return { skeleton: new THREE.Skeleton(skelBones), skelBones, roots };
+}
+
+// Builds one THREE.Mesh/SkinnedMesh per mesh in a parsed DAT and adds it to `group`. When `skeleton`
+// is given and the mesh carries bone weights, it's bound to that shared skeleton (gear-slot DATs
+// skin against the race's own skeleton, not one embedded in the slot DAT itself).
+function addParsedMeshes(parsed, group, skeleton) {
+  for (const mesh of parsed.meshes) {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(mesh.vertices, 3));
+    if (mesh.normals?.length) geo.setAttribute('normal', new THREE.BufferAttribute(mesh.normals, 3));
+    if (mesh.uvs?.length) geo.setAttribute('uv', new THREE.BufferAttribute(mesh.uvs, 2));
+    // NOTE: mesh.indices from the vendored parser is a zero-filled placeholder (positions are already
+    // expanded per-face/non-indexed, 3 unique verts per triangle) -- do NOT call geo.setIndex() with
+    // it, that would draw every triangle collapsed onto vertex 0. Non-indexed draw is correct here.
+
+    let material;
+    const tex = parsed.textures[mesh.materialIndex];
+    if (tex) {
+      const texture = new THREE.DataTexture(tex.rgba, tex.width, tex.height, THREE.RGBAFormat);
+      texture.flipY = true; texture.needsUpdate = true;
+      material = new THREE.MeshStandardMaterial({map: texture, side: THREE.DoubleSide});
+    } else {
+      material = new THREE.MeshStandardMaterial({color: 0x9fb4c2, side: THREE.DoubleSide});
+    }
+
+    if (skeleton && mesh.boneIndices?.length) {
+      const nv = mesh.vertices.length / 3;
+      // Prefer dualBoneWeights (the real per-vertex authored w1/w2 blend weights, present for both
+      // MV1 and MV2 verts) over boneWeights, whose MV2 entries the vendored parser stores as a flat
+      // (1.0, 1.0) placeholder rather than the true weights -- using that as-is would double a dual-
+      // bone vertex's displacement away from bind pose. boneIndices itself is correct either way.
+      const skinIndex = new Uint16Array(nv * 4);
+      const skinWeight = new Float32Array(nv * 4);
+      for (let v = 0; v < nv; v++) {
+        skinIndex[v*4] = mesh.boneIndices[v*4]; skinIndex[v*4+1] = mesh.boneIndices[v*4+1];
+        skinIndex[v*4+2] = mesh.boneIndices[v*4+2]; skinIndex[v*4+3] = mesh.boneIndices[v*4+3];
+        if (mesh.dualBoneWeights) {
+          skinWeight[v*4] = mesh.dualBoneWeights[v*2]; skinWeight[v*4+1] = mesh.dualBoneWeights[v*2+1];
+        } else {
+          skinWeight[v*4] = mesh.boneWeights[v*4]; skinWeight[v*4+1] = mesh.boneWeights[v*4+1];
+          skinWeight[v*4+2] = mesh.boneWeights[v*4+2]; skinWeight[v*4+3] = mesh.boneWeights[v*4+3];
+        }
+      }
+      geo.setAttribute('skinIndex', new THREE.BufferAttribute(skinIndex, 4));
+      geo.setAttribute('skinWeight', new THREE.BufferAttribute(skinWeight, 4));
+      const smesh = new THREE.SkinnedMesh(geo, material);
+      smesh.bind(skeleton);
+      group.add(smesh);
+    } else {
+      group.add(new THREE.Mesh(geo, material));
+    }
+  }
+}
+
+async function loadGearModel(r) {
+  let msg = `<b>${esc(r.name)}</b> &mdash; ${esc(r.model_type)}, ${esc(r.race_name)}, face ${r.face}`;
+  if (!r.skeleton_rom_path) {
+    setInfo(msg + `<br><span class="err">${esc((r.errors || ['no skeleton DAT resolved']).join('; '))}</span>`);
+    loading.textContent = ''; return;
+  }
+
+  loading.textContent = 'fetching skeleton...';
+  const skelBuf = await fetchDat(r.ffxi_path, r.skeleton_rom_path);
+  const skelParsed = parseDatFile(skelBuf);
+  if (!skelParsed.skeleton) {
+    setInfo(msg + `<br><span class="err">skeleton DAT ${esc(r.skeleton_rom_path)} has no skeleton block</span>`);
+    loading.textContent = ''; return;
+  }
+
+  const { skeleton, skelBones } = buildSkeleton(skelParsed.skeleton);
+  modelGroup = new THREE.Group();
+  // CONFIRMED 2026-09-21 by direct measurement (fetched Laiteconce/ElvaanFemale's race skeleton +
+  // gear meshes, checked world-space Y after baking): "up the body" is the NEGATIVE-Y direction in
+  // this DAT's coordinate space -- feet sit at Y~0 (near the root bone), legs run Y~-0.55..-1.18,
+  // head is the most negative at Y~-1.85..-1.88. That's inverted from three.js's Y-up convention
+  // (up = increasing Y), which is exactly why the composite rendered upside-down (feet near the
+  // top, head at the bottom). A single Y scale flip on the whole hierarchy's parent group mirrors
+  // both the pre-baked mesh vertices and the live skeleton uniformly -- it applies as the outer
+  // scene-graph transform on top of the skin computation, so it needs no changes to the vendored
+  // parser's bind-pose math and doesn't care about bind timing. Materials are already DoubleSide,
+  // so the resulting winding/handedness flip doesn't introduce backface culling artifacts.
+  modelGroup.scale.y = -1;
+  skelParsed.skeleton.bones.forEach((pb, i) => { if (pb.parentIndex < 0) modelGroup.add(skelBones[i]); });
+  // The skeleton DAT itself carries no mesh (confirmed: player-race skeleton files are skeleton-only,
+  // see module history) -- only per-slot gear DATs below contribute geometry.
+  addParsedMeshes(skelParsed, modelGroup, skeleton);
+
+  currentAnim = null;
+  $('anim-controls').style.display = 'none';
+
+  const slotLines = [];
+  let meshCount = 0, texCount = 0;
+  for (const [slot, resolved] of Object.entries(r.gear_resolved || {})) {
+    if (!resolved.rom_path) {
+      slotLines.push(`  ${slot}: model_id ${resolved.model_id} &mdash; <span class="err">${resolved.error || 'no ROM file resolved'}</span>`);
+      continue;
+    }
+    loading.textContent = `fetching ${slot}...`;
+    try {
+      const buf = await fetchDat(r.ffxi_path, resolved.rom_path);
+      // Equipment DATs carry vertices in BONE-LOCAL space, not world space -- parseDatFile must
+      // be given the race skeleton's pre-computed world matrices (skelParsed.skeleton.matrices)
+      // so MeshParser.transformVertices can bake each vertex into bind-pose world space itself.
+      // Without this 2nd arg, parseVertexBlock takes its "no skeleton" branch (meant for weapons)
+      // and leaves vertices raw/bone-local -- every slot collapses onto its own bone origins,
+      // which is exactly the jumbled-blob bug found by browser-testing this render.
+      const parsed = parseDatFile(buf, skelParsed.skeleton.matrices);
+      addParsedMeshes(parsed, modelGroup, skeleton);
+      meshCount += parsed.meshes.length;
+      texCount += parsed.textures.length;
+      slotLines.push(`  ${slot}: model_id ${resolved.model_id}, file_id ${resolved.file_id}, ${esc(resolved.rom_path)} (${parsed.meshes.length} mesh[es])`);
+    } catch (ex) {
+      slotLines.push(`  ${slot}: model_id ${resolved.model_id} &mdash; <span class="err">${esc(ex.message || String(ex))}</span>`);
+    }
+  }
+
+  scene.add(modelGroup);
+  const box = new THREE.Box3().setFromObject(modelGroup);
+  const size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
+  const dist = Math.max(size.x, size.y, size.z, 0.5) * 2;
+  controls.target.copy(center);
+  camera.position.copy(center).add(new THREE.Vector3(dist, dist*0.6, dist));
+  camera.near = Math.max(dist / 1000, 0.001); camera.far = dist * 50; camera.updateProjectionMatrix();
+  controls.update();
+
+  setInfo(msg + `<br>skeleton: ${esc(r.skeleton_rom_path)}, ${skelParsed.skeleton.bones.length} bone(s)<br>` +
+    slotLines.join('<br>') + `<br>${meshCount} total mesh(es), ${texCount} total texture(s)` +
+    ((r.errors && r.errors.length) ? `<br><span class="warn">${r.errors.map(esc).join('; ')}</span>` : ''));
+  loading.textContent = '';
+}
+
+async function loadModel() {
+  const server = $('server').value, kind = $('kind').value, eid = $('eid').value;
+  if (!eid) { setInfo('<span class="err">enter an id</span>'); return; }
+  if (modelGroup) { scene.remove(modelGroup); modelGroup = null; }
+  loading.textContent = 'resolving...';
+  setInfo('');
+  try {
+    const r = await fetch(`/modelviewer/resolve.json?kind=${kind}&id=${eid}&server=${server}`).then(x => x.json());
+    if (r.error && r.kind === undefined) { setInfo(`<span class="err">${esc(r.error)}</span>`); loading.textContent=''; return; }
+
+    if (r.kind === 'prop') {
+      setInfo(`<b>${esc(r.name)}</b>: ${esc(r.model_type)} &mdash; not a model (door/elevator/ship prop), nothing to render.`);
+      loading.textContent = ''; return;
+    }
+    if (r.kind === 'gear') {
+      if (r.error) { setInfo(`<span class="err">${esc(r.error)}</span>`); loading.textContent=''; return; }
+      await loadGearModel(r);
+      return;
+    }
+    // kind === 'flat'
+    let msg = `<b>${esc(r.name)}</b> &mdash; ${esc(r.model_type)}, modelid ${r.modelid}, file_id ${r.file_id}`;
+    if (r.error) { setInfo(msg + `<br><span class="err">${esc(r.error)}</span>`); loading.textContent=''; return; }
+    msg += `<br>${esc(r.rom_path)}`;
+    setInfo(msg);
+
+    loading.textContent = 'fetching DAT...';
+    const buf = await fetch(`/modelviewer/dat?ffxi_path=${encodeURIComponent(r.ffxi_path)}&rom_path=${encodeURIComponent(r.rom_path)}`)
+      .then(x => { if (!x.ok) throw new Error('DAT fetch failed: ' + x.status); return x.arrayBuffer(); });
+
+    loading.textContent = 'parsing...';
+    const parsed = parseDatFile(buf);
+    if (!parsed.meshes.length) { setInfo(msg + '<br><span class="warn">parsed 0 meshes from this DAT</span>'); loading.textContent=''; return; }
+
+    currentAnim = null;
+    $('anim-controls').style.display = 'none';
+
+    // Build a live THREE.Bone hierarchy from parsed.skeleton, if present. ParsedBone.position/rotation
+    // are LOCAL (parent-relative); quatToMatrix's element layout in the vendored source is identical to
+    // THREE.Matrix4's own column-major quaternion-to-matrix layout, so building real THREE.Bone objects
+    // from these local values and letting THREE compute matrixWorld natively reproduces the same
+    // bind-pose world matrices the library used to bake mesh.vertices -- no manual matrix math needed.
+    let skeleton = null, skelBones = null;
+    if (parsed.skeleton) {
+      skelBones = parsed.skeleton.bones.map(pb => {
+        const b = new THREE.Bone();
+        b.position.set(...pb.position);
+        b.quaternion.set(...pb.rotation); // [qi,qj,qk,qw] === three's (x,y,z,w)
+        return b;
+      });
+      parsed.skeleton.bones.forEach((pb, i) => {
+        if (pb.parentIndex >= 0) skelBones[pb.parentIndex].add(skelBones[i]);
+      });
+      const roots = skelBones.filter((_, i) => parsed.skeleton.bones[i].parentIndex < 0);
+      roots.forEach(r => r.updateMatrixWorld(true)); // sync matrixWorld before calculateInverses() runs
+      skeleton = new THREE.Skeleton(skelBones);
+    }
+
+    modelGroup = new THREE.Group();
+    window.__dbg = { scene, THREE, camera, controls, get modelGroup() { return modelGroup; } }; // TEMP diagnostic, revert after use
+    if (skeleton) parsed.skeleton.bones.forEach((pb, i) => { if (pb.parentIndex < 0) modelGroup.add(skelBones[i]); });
+
+    for (const mesh of parsed.meshes) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(mesh.vertices, 3));
+      if (mesh.normals?.length) geo.setAttribute('normal', new THREE.BufferAttribute(mesh.normals, 3));
+      if (mesh.uvs?.length) geo.setAttribute('uv', new THREE.BufferAttribute(mesh.uvs, 2));
+      // NOTE: mesh.indices from the vendored parser is a zero-filled placeholder (positions are already
+      // expanded per-face/non-indexed, 3 unique verts per triangle) -- do NOT call geo.setIndex() with
+      // it, that would draw every triangle collapsed onto vertex 0. Non-indexed draw is correct here.
+
+      let material;
+      const tex = parsed.textures[mesh.materialIndex];
+      if (tex) {
+        const texture = new THREE.DataTexture(tex.rgba, tex.width, tex.height, THREE.RGBAFormat);
+        texture.flipY = true; texture.needsUpdate = true;
+        material = new THREE.MeshStandardMaterial({map: texture, side: THREE.DoubleSide});
+      } else {
+        material = new THREE.MeshStandardMaterial({color: 0x9fb4c2, side: THREE.DoubleSide});
+      }
+
+      if (skeleton && mesh.boneIndices?.length) {
+        const nv = mesh.vertices.length / 3;
+        // Prefer dualBoneWeights (the real per-vertex authored w1/w2 blend weights, present for both
+        // MV1 and MV2 verts) over boneWeights, whose MV2 entries the vendored parser stores as a flat
+        // (1.0, 1.0) placeholder rather than the true weights -- using that as-is would double a dual-
+        // bone vertex's displacement away from bind pose. boneIndices itself is correct either way.
+        const skinIndex = new Uint16Array(nv * 4);
+        const skinWeight = new Float32Array(nv * 4);
+        for (let v = 0; v < nv; v++) {
+          skinIndex[v*4] = mesh.boneIndices[v*4]; skinIndex[v*4+1] = mesh.boneIndices[v*4+1];
+          skinIndex[v*4+2] = mesh.boneIndices[v*4+2]; skinIndex[v*4+3] = mesh.boneIndices[v*4+3];
+          if (mesh.dualBoneWeights) {
+            skinWeight[v*4] = mesh.dualBoneWeights[v*2]; skinWeight[v*4+1] = mesh.dualBoneWeights[v*2+1];
+          } else {
+            skinWeight[v*4] = mesh.boneWeights[v*4]; skinWeight[v*4+1] = mesh.boneWeights[v*4+1];
+            skinWeight[v*4+2] = mesh.boneWeights[v*4+2]; skinWeight[v*4+3] = mesh.boneWeights[v*4+3];
+          }
+        }
+        geo.setAttribute('skinIndex', new THREE.BufferAttribute(skinIndex, 4));
+        geo.setAttribute('skinWeight', new THREE.BufferAttribute(skinWeight, 4));
+        const smesh = new THREE.SkinnedMesh(geo, material);
+        smesh.bind(skeleton);
+        modelGroup.add(smesh);
+      } else {
+        modelGroup.add(new THREE.Mesh(geo, material));
+      }
+    }
+    scene.add(modelGroup);
+
+    const box = new THREE.Box3().setFromObject(modelGroup);
+    const size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
+    const dist = Math.max(size.x, size.y, size.z, 0.5) * 2;
+    controls.target.copy(center);
+    camera.position.copy(center).add(new THREE.Vector3(dist, dist*0.6, dist));
+    camera.near = Math.max(dist / 1000, 0.001); camera.far = dist * 50; camera.updateProjectionMatrix();
+    controls.update();
+
+    let animMsg = '';
+    if (parsed.skeleton) animMsg += `, ${parsed.skeleton.bones.length} bone(s)`;
+    if (skeleton && parsed.animations.length) {
+      const maxFrame = Math.max(...parsed.animations.map(a => a.frameCount), 1);
+      currentAnim = { animations: parsed.animations, bones: skelBones, maxFrame, frame: 0, playing: true };
+      applyAnimFrame(0);
+      $('anim-controls').style.display = '';
+      $('frame').max = String(maxFrame - 1);
+      $('frame').value = '0'; $('frame-label').textContent = '0';
+      $('playpause').textContent = 'Pause';
+      animMsg += `, ${parsed.animations.length} animation layer(s), ${maxFrame} frame(s) (playback rate is an unverified ${ANIM_FPS}fps approximation -- real per-clip timing isn't decoded)`;
+    } else if (parsed.skeleton) {
+      animMsg += ' (no embedded animation in this DAT, bind pose only)';
+    }
+
+    setInfo(msg + `<br>${parsed.meshes.length} mesh(es), ${parsed.textures.length} texture(s)` + animMsg);
+    loading.textContent = '';
+  } catch (ex) {
+    setInfo(`<span class="err">${esc(ex.message || String(ex))}</span>`);
+    loading.textContent = '';
+  }
+}
+
+$('load').addEventListener('click', loadModel);
+$('eid').addEventListener('keydown', ev => { if (ev.key === 'Enter') loadModel(); });
+</script>
+</body>
+</html>

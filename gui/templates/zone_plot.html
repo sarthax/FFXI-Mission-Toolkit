@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Zone Plot{% endblock %}
 {% block content %}
+<style>main{max-width:none !important;}</style>
 <h1>Zone Plot <span class="chip mono" id="zname"></span></h1>
 <p class="muted">Every mob and NPC spawn row of any zone (live server DB) drawn on the client mesh with the navmesh overlay.
   Dots are one instanced mesh, so thousands are fine; labels show only for the hovered/selected dots and the nearest ones.
@@ -10,10 +11,10 @@
   swap in real time when you change the dropdown, typically 1-4s. If a level ever looks wrong (holes, missing walls) that is a bug in the LOD triangle
   filter, not by design &mdash; use Legacy OBJ to compare against the untouched geometry.</p>
 <div style="display:flex; gap:12px; align-items:flex-start;">
-<div style="width:300px; flex:none; font-size:13px;" id="panel">
+<div style="width:480px; flex:none; font-size:13px; height:820px; overflow-y:auto; overflow-x:auto; position:sticky; top:8px; padding-right:8px;" id="panel">
   <style>
     #panel label{display:flex;justify-content:space-between;align-items:center;margin:3px 0;gap:6px}
-    #panel select,#panel input[type=text],#panel input[type=number]{width:170px}
+    #panel select,#panel input[type=text],#panel input[type=number]{width:230px}
     #panel h3{margin:10px 0 4px;font-size:13px}
     .tabb.on{background:#3a6ea5;color:#fff}
     #list{max-height:220px;overflow:auto;font:11px monospace;border:1px solid var(--border);padding:4px}
@@ -31,7 +32,7 @@
   <label><span>Doors / props (_names)</span><input type="checkbox" id="showd" checked></label>
   <label>Colour by <select id="mode"><option value="reach">Reachability</option><option value="kind">Kind</option><option value="comp">Nav region</option></select></label>
   <label><span>Navmesh overlay</span><input type="checkbox" id="shownav" checked></label>
-  <label>Mesh complexity <select id="lod"><option value="0">Full</option><option value="1">High (drop &lt;0.75u)</option><option value="2">Medium (&lt;1.5u)</option><option value="3">Low (&lt;3u)</option><option value="obj">Legacy OBJ (full)</option></select></label>
+  <label>Mesh complexity <select id="lod"><option value="live">Live (textured)</option><option value="0">Full</option><option value="1">High (drop &lt;0.75u)</option><option value="2">Medium (&lt;1.5u)</option><option value="3">Low (&lt;3u)</option><option value="obj">Legacy OBJ (full)</option></select></label>
   <label>Mesh opacity <input type="range" id="opac" min="0.05" max="1" step="0.05" value="0.35"></label>
   <label>Dot size <input type="range" id="dsz" min="0.3" max="4" step="0.1" value="1.2"></label>
   <label>Nearest labels <input type="number" id="nlab" value="40" min="0" max="300"></label>
@@ -59,8 +60,41 @@
         <button data-n="x-">X&minus;</button><button data-n="y-">Y&minus; (up)</button><button data-n="z-">Z&minus;</button>
         <button data-n="x+">X+</button><button data-n="y+">Y+ (down)</button><button data-n="z+">Z+</button></div>
       <label><span>Click mesh to place</span><input type="checkbox" id="eplace"></label>
+      <div id="ed-anim" hidden>
+        <hr style="border-color:var(--border);margin:6px 0">
+        <div class="muted" style="font-size:11px">npc_list-only. Both fields are raw bytes (baseentity.h `animation`/`animationsub`) sent straight to the client's own per-model animation table &mdash; the server has no dispatch table beyond a few engine-special-cased values, so anything not listed below is genuinely model-dependent, not universal. Confirmed values come from <span class="mono">scripts/globals/status.lua</span>'s ANIMATION_* enum and real per-object scripts (Switch.lua, entity_update.cpp); everything else is an open question, not a guess &mdash; use custom and test live.</div>
+        <label>Animation <select id="ean">
+          <option value="0">0 &mdash; none (engine default)</option>
+          <option value="8">8 &mdash; open door (confirmed, 163 real uses)</option>
+          <option value="9">9 &mdash; close door (confirmed, 135 real uses)</option>
+          <option value="10">10 &mdash; elevator up (confirmed, transport.cpp)</option>
+          <option value="11">11 &mdash; elevator down (confirmed, transport.cpp)</option>
+          <option value="1">1 &mdash; attack (player/mob anim, not door-relevant)</option>
+          <option value="3">3 &mdash; death (player/mob anim, not door-relevant)</option>
+          <option value="custom">custom&hellip;</option>
+        </select></label>
+        <input type="number" step="1" min="0" max="255" id="eanRaw" style="width:60px;display:none" placeholder="0-255">
+        <label>Animation Sub <select id="easub">
+          <option value="0">0 &mdash; seen as "closed" (Rune of Transfer/Runic Lamp)</option>
+          <option value="1">1 &mdash; seen as "open/lit" (Rune of Transfer/Runic Lamp)</option>
+          <option value="4">4 &mdash; seen as inactive (Lebros_Cavern Switch.lua)</option>
+          <option value="5">5 &mdash; seen as activated (Lebros_Cavern Switch.lua)</option>
+          <option value="custom">custom&hellip;</option>
+        </select></label>
+        <input type="number" step="1" min="0" max="255" id="easubRaw" style="width:60px;display:none" placeholder="0-255">
+        <div style="margin-top:4px"><button id="eanimsave">Save animation to live DB</button></div>
+        <div id="eanimmsg" class="mono" style="font-size:11px;margin-top:4px;white-space:pre-wrap"></div>
+      </div>
+      <div id="ed-drops" hidden>
+        <hr style="border-color:var(--border);margin:6px 0">
+        <div class="muted" style="font-size:11px">mob_spawn_points -&gt; mob_groups.dropid -&gt; mob_droplist, joined against item_basic for real names. A dropid is shared by the whole mob_groups group, so a dropid change or a row edit here affects every spawn using it (<span id="edrops-n"></span>), not just this one mob.</div>
+        <div id="edrops-body" style="font-size:11px;margin-top:4px"></div>
+        <div style="margin-top:6px"><button id="edropsyncsql">Sync last drop change to SQL file</button></div>
+      </div>
       <label style="align-items:flex-start">Comment <textarea id="ecomment" rows="2" style="width:170px" placeholder="why (goes in the SQL as -- comment)"></textarea></label>
       <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap"><button id="esave">Save to live DB</button><button id="erev">Revert</button><button id="ecopy">Copy SQL</button><button id="edel" style="color:#e74c3c">Delete entity&hellip;</button></div>
+      <div class="muted" style="font-size:11px;margin-top:6px">"Save to live DB" above does NOT touch the checked-in sql/*.sql files -- a later dbtool.py reimport would silently revert it. Use this once you're happy with the change:</div>
+      <div style="margin-top:4px"><button id="esyncsql">Sync to SQL file</button></div>
       <div id="emsg" class="mono" style="font-size:11px;margin-top:4px;white-space:pre-wrap"></div>
     </div>
   </div>
@@ -102,6 +136,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { parseZoneFile } from '/static/ffxi-dat/index.js';
 const $ = id => document.getElementById(id);
 const container = $('viewer-container');
 
@@ -112,6 +147,8 @@ renderer.setSize(container.clientWidth, container.clientHeight); container.appen
 const lr = new CSS2DRenderer(); lr.setSize(container.clientWidth, container.clientHeight);
 lr.domElement.style.cssText='position:absolute;top:0;left:0;pointer-events:none'; container.appendChild(lr.domElement);
 const controls = new OrbitControls(camera, renderer.domElement); controls.enableDamping = true;
+controls.zoomToCursor = true;  // scroll-zoom converges on the point under the cursor instead of always
+                                // the orbit target, so the user isn't forced to re-pan after every zoom.
 controls.zoomSpeed = 2.5;      // default (1) needs a huge number of scroll ticks to close in on a large
                                 // zone's bounding box -- felt like a hard zoom-in cap, it's just slow.
 controls.minDistance = 0.05;   // was unset (defaults to 0, fine) but the camera's near plane (below)
@@ -154,6 +191,184 @@ const mat = new THREE.MeshBasicMaterial({depthTest:false, transparent:true});
 const COL = {ok:0x2ecc71, blocked:0xe74c3c, off:0xe08a1e, zero:0x888888, none:0x8899aa, m:0xe74c3c, n:0x3498db, d:0xf1c40f};
 const P = e => new THREE.Vector3(e.x, -e.y, -e.z);
 const hsl = c => new THREE.Color().setHSL(((c*2654435761)>>>0)%360/360, .7, .55);
+
+// ---- Live (textured) mesh -- ported from zone_view3d.html's Phase 3 (real in-browser MZB/MMB
+// parse via gui/static/ffxi-dat, from Soverance/Vanalytics MIT). No height-fog/sky here (this
+// viewer has no scene.fog / time-of-day system) -- purely the textured geometry itself, as an
+// alternative to the untextured .zmesh/OBJ LOD pipeline the Edit/Add tools already work against.
+const WATER_NAME_RE = /water|sea|umi|wtr|river|wave|pool|lake|aqua|suimen|suime|mizu|ike|kawa|taki/i;
+const SKY_WEATHER_RE = /^(aura|fine|suny|wind|star|moon|effect|lf\d+)\s/i;
+const WATER_VERT = `
+  attribute vec3 color;
+  varying vec2 vUv; varying vec3 vWorldPos; varying vec3 vViewDir; varying vec3 vWorldNormal; varying vec3 vColor;
+  void main() {
+    vUv = uv; vColor = color;
+    #ifdef USE_INSTANCING
+      vec4 worldPos = modelMatrix * instanceMatrix * vec4(position, 1.0);
+      vWorldNormal = normalize(mat3(modelMatrix * instanceMatrix) * normal);
+      vec4 mvPosition = modelViewMatrix * instanceMatrix * vec4(position, 1.0);
+    #else
+      vec4 worldPos = modelMatrix * vec4(position, 1.0);
+      vWorldNormal = normalize(mat3(modelMatrix) * normal);
+      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    #endif
+    vWorldPos = worldPos.xyz;
+    vViewDir = normalize(cameraPosition - worldPos.xyz);
+    gl_Position = projectionMatrix * mvPosition;
+  }
+`;
+const WATER_FRAG = `
+  uniform sampler2D map; uniform float time;
+  varying vec2 vUv; varying vec3 vWorldPos; varying vec3 vViewDir; varying vec3 vWorldNormal; varying vec3 vColor;
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float noise(vec2 p) {
+    vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+  }
+  void main() {
+    vec2 uv1 = vUv + vec2(time * 0.03, time * 0.02);
+    vec2 uv2 = vUv * 1.3 + vec2(-time * 0.02, time * 0.035);
+    vec4 tex = mix(texture2D(map, uv1), texture2D(map, uv2), 0.5);
+    vec3 color = tex.rgb * vColor;
+    float ripple = noise(vWorldPos.xz * 0.5 + time * 0.8);
+    color += vec3(0.04) * smoothstep(0.55, 0.8, ripple);
+    float fresnel = pow(1.0 - max(dot(normalize(vViewDir), normalize(vWorldNormal)), 0.0), 3.0);
+    float alpha = mix(0.3, 0.8, fresnel) * tex.a;
+    if (alpha < 0.01) discard;
+    gl_FragColor = vec4(color, alpha);
+  }
+`;
+function createWaterMaterial(texture) {
+  const uniforms = { time: { value: 0 } };
+  if (texture) uniforms.map = { value: texture };
+  return new THREE.ShaderMaterial({
+    uniforms, vertexShader: WATER_VERT, fragmentShader: WATER_FRAG,
+    transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: false,
+  });
+}
+let waterMaterials = [];
+function isWaterMesh(prefab) { return WATER_NAME_RE.test(prefab.textureName || ''); }
+function isSkyWeatherMesh(prefab) { return SKY_WEATHER_RE.test(prefab.textureName || ''); }
+
+function buildLiveZoneGroup(zoneData) {
+  const group = new THREE.Group();
+  const geoMap = new Map();
+  const matMap = new Map();
+  const curOpacity = +$('opac').value;
+
+  for (let prefabIdx = 0; prefabIdx < zoneData.prefabs.length; prefabIdx++) {
+    const prefab = zoneData.prefabs[prefabIdx];
+    if (isSkyWeatherMesh(prefab)) continue;
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(prefab.vertices), 3));
+    geometry.setAttribute('normal', new THREE.Float32BufferAttribute(new Float32Array(prefab.normals), 3));
+    const rgbColors = [];
+    for (let i = 0; i < prefab.colors.length; i += 4) rgbColors.push(prefab.colors[i], prefab.colors[i + 1], prefab.colors[i + 2]);
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(rgbColors), 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(prefab.uvs), 2));
+    let maxIndex = 0;
+    for (let i = 0; i < prefab.indices.length; i++) if (prefab.indices[i] > maxIndex) maxIndex = prefab.indices[i];
+    geometry.setIndex(new THREE.BufferAttribute(maxIndex > 65535 ? new Uint32Array(prefab.indices) : new Uint16Array(prefab.indices), 1));
+    geometry.computeBoundingBox();
+    geoMap.set(prefabIdx, geometry);
+
+    const tex = zoneData.textures[prefab.materialIndex];
+    let texture = null;
+    if (tex) {
+      texture = new THREE.DataTexture(new Uint8Array(tex.rgba), tex.width, tex.height, THREE.RGBAFormat);
+      texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping;
+      texture.needsUpdate = true;
+      texture.magFilter = THREE.LinearFilter; texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texture.generateMipmaps = true; texture.flipY = false;
+    }
+
+    if (isWaterMesh(prefab)) {
+      const waterMat = createWaterMaterial(texture);
+      waterMaterials.push(waterMat);
+      matMap.set(prefabIdx, waterMat);
+    } else {
+      const useAlpha = prefab.blending > 0;
+      const mat = new THREE.MeshBasicMaterial({
+        ...(texture && { map: texture }),
+        vertexColors: true, side: THREE.DoubleSide, transparent: true, opacity: curOpacity, depthWrite: false,
+        ...(useAlpha && { alphaTest: 0.1, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
+      });
+      matMap.set(prefabIdx, mat);
+    }
+  }
+
+  const normalGroups = new Map(), mirroredGroups = new Map();
+  for (const inst of zoneData.instances) {
+    if (!geoMap.has(inst.meshIndex)) continue;
+    const matrix = new THREE.Matrix4().fromArray(inst.transform);
+    const target = matrix.determinant() < 0 ? mirroredGroups : normalGroups;
+    let arr = target.get(inst.meshIndex);
+    if (!arr) { arr = []; target.set(inst.meshIndex, arr); }
+    arr.push(matrix);
+  }
+  function cloneWithFlippedWinding(src) {
+    const clone = src.clone();
+    const index = clone.index;
+    if (index) {
+      const arr = index.array;
+      for (let i = 0; i < arr.length; i += 3) { const tmp = arr[i + 1]; arr[i + 1] = arr[i + 2]; arr[i + 2] = tmp; }
+      index.needsUpdate = true;
+    }
+    return clone;
+  }
+  for (const [meshIdx, matrices] of normalGroups) {
+    const geo = geoMap.get(meshIdx), mat = matMap.get(meshIdx);
+    if (!geo || !mat) continue;
+    const mesh = new THREE.InstancedMesh(geo, mat, matrices.length);
+    mesh.frustumCulled = false;
+    matrices.forEach((m, i) => mesh.setMatrixAt(i, m));
+    mesh.instanceMatrix.needsUpdate = true;
+    group.add(mesh);
+  }
+  for (const [meshIdx, matrices] of mirroredGroups) {
+    const geo = geoMap.get(meshIdx), mat = matMap.get(meshIdx);
+    if (!geo || !mat) continue;
+    const flippedGeo = cloneWithFlippedWinding(geo);
+    const mesh = new THREE.InstancedMesh(flippedGeo, mat, matrices.length);
+    mesh.frustumCulled = false;
+    matrices.forEach((m, i) => mesh.setMatrixAt(i, m));
+    mesh.instanceMatrix.needsUpdate = true;
+    group.add(mesh);
+  }
+  return group;
+}
+const liveInfoCache = new Map();
+async function getLiveInfo(zid) {
+  if (liveInfoCache.has(zid)) return liveInfoCache.get(zid);
+  const info = await (await fetch(`/zoneplot/${zid}/live_info.json`)).json();
+  liveInfoCache.set(zid, info);
+  return info;
+}
+async function loadLiveMesh(zid, gen) {
+  const info = await getLiveInfo(zid);
+  if (+$('zone').value !== zid || $('lod').value !== 'live' || (gen !== undefined && gen !== loadGen)) return;
+  if (!info.available) {
+    if (meshObj) { scene.remove(meshObj); meshObj = null; }
+    $('sum').textContent += '\n(live textured mesh unavailable: FFXI install path or this zone\'s geometry DAT is unknown -- pick another mesh complexity)';
+    return;
+  }
+  const datUrl = `/modelviewer/dat?ffxi_path=${encodeURIComponent(info.ffxi_path)}&rom_path=${encodeURIComponent(info.geometry_rom_path)}`;
+  const buffer = await (await fetch(datUrl)).arrayBuffer();
+  if (+$('zone').value !== zid || $('lod').value !== 'live' || (gen !== undefined && gen !== loadGen)) return;
+  const zoneData = parseZoneFile(buffer, () => {});
+  if (zoneData.prefabs.length === 0 || zoneData.instances.length === 0) throw new Error('live parse produced no geometry');
+  waterMaterials = [];
+  const group = buildLiveZoneGroup(zoneData);
+  // Raw parseZoneFile() output uses the client's own coordinate convention, which does not
+  // match the (x, -y, -z) convention this app's navmesh/spawn-markers/legacy OBJ bake all use
+  // (confirmed empirically: zone 77 live-mesh bbox is Z-mirrored vs navmesh bbox). All materials
+  // here are DoubleSide, so the winding flip from a negative scale doesn't affect visibility.
+  group.scale.set(1, -1, -1);
+  if (+$('zone').value !== zid || $('lod').value !== 'live' || (gen !== undefined && gen !== loadGen)) return;
+  if (meshObj) { scene.remove(meshObj); }
+  meshObj = group; scene.add(meshObj);
+}
 
 // ---- server + zones ----
 let ZL = {zones:[],instances:[]};
@@ -224,7 +439,13 @@ async function autoLodAndLoad(zid, gen){
   await loadZMesh(zid, gen);
 }
 async function loadZMesh(zid, gen){
-  const lod=$('lod').value; if (meshObj){ scene.remove(meshObj); meshObj=null; }
+  const lod=$('lod').value;
+  if (lod==='live'){
+    try { await loadLiveMesh(zid, gen); }
+    catch(e){ console.warn('[ZonePlot] live mesh load failed:', e); $('sum').textContent += '\n(live textured mesh failed: '+e.message+')'; }
+    return;
+  }
+  if (meshObj){ scene.remove(meshObj); meshObj=null; }
   if (lod==='obj'){ new OBJLoader().load(`/static/zone_visual/${zid}.obj`, o=>{
     if(+$('zone').value!==zid || $('lod').value!=='obj' || (gen!==undefined && gen!==loadGen)) return;
     o.traverse(c=>{ if(c.isMesh) c.material=new THREE.MeshStandardMaterial({color:0x4a5a68,roughness:.9,transparent:true,opacity:+$('opac').value,side:THREE.DoubleSide,depthWrite:false}); }); meshObj=o; scene.add(o); }); return; }
@@ -238,8 +459,12 @@ async function loadZMesh(zid, gen){
   if (meshObj){ scene.remove(meshObj); }  // in case another in-flight load for this same still-current zid finished first
   meshObj = new THREE.Group(); meshObj.add(m); scene.add(meshObj);
 }
+let navMeta=null;  // Float32Array, 4 values (yMin,yMax,area,polyType) per triangle, same order as navMesh's faces
 async function loadNav(zid, gen){
-  const buf = new Float32Array(await (await fetch(`/zoneplot/${zid}/navmesh.bin`)).arrayBuffer());
+  const [buf, metaBuf] = await Promise.all([
+    (async()=>new Float32Array(await (await fetch(`/zoneplot/${zid}/navmesh.bin`)).arrayBuffer()))(),
+    (async()=>new Float32Array(await (await fetch(`/zoneplot/${zid}/navmesh_meta.bin`)).arrayBuffer()))(),
+  ]);
   // Bail if empty, OR if the user has since switched zone/instance away from this load (gen stale) --
   // without this check a slow navmesh.bin fetch for a zone the user has already left resolves late
   // and silently overlays that old zone's navmesh onto whatever's showing now, including a "no nav"
@@ -250,6 +475,7 @@ async function loadNav(zid, gen){
   if (navMesh){ scene.remove(navMesh); }  // in case another in-flight load for this same still-current zid finished first
   navMesh=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:0x2a9d8f,wireframe:true,transparent:true,opacity:.3}));
   navMesh.visible=$('shownav').checked; scene.add(navMesh);
+  navMeta = metaBuf.length===(buf.length/9)*4 ? metaBuf : null;  // one (yMin,yMax,area,type) quad per triangle
 }
 async function computeReach(){
   if (!Z.has_nav){ R=null; return; }
@@ -307,8 +533,15 @@ function pick(ev){ if(!inst) return -1; const r=renderer.domElement.getBoundingC
   ray.setFromCamera(mouse,camera); const h=ray.intersectObject(inst,false); return h.length?visible[h[0].instanceId]:-1; }
 let lastCoord=0;
 renderer.domElement.addEventListener('mousemove',ev=>{ const i=pick(ev); if(i!==hoverI){ hoverI=i; if(i>=0){ const e=Z.entities[i]; $('hover').textContent=`${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${txt(e)}  (${e.x}, ${e.y}, ${e.z})  ${stateOf(i)}`; } }
-  if(i<0){ const now=performance.now(); if(now-lastCoord>60){ lastCoord=now; const p=screenToWorld(ev);
-    $('hover').textContent = p ? `Cursor: (${p.x.toFixed(2)}, ${(-p.y).toFixed(2)}, ${(-p.z).toFixed(2)})` : ''; } } });
+  if(i<0){ const now=performance.now(); if(now-lastCoord>60){ lastCoord=now;
+    const nh=screenToNav(ev);
+    if(nh){ const p=nh.point, m=nh.meta;
+      // nh.meta's yMin/yMax come straight from nav_polys_with_area() server-side, which is already
+      // in the same (unflipped) DB/display space as the (-p.y) conversion below -- do NOT negate
+      // them again, unlike p itself (which is in Three scene space and needs the flip).
+      $('hover').textContent = `Cursor: (${p.x.toFixed(2)}, ${(-p.y).toFixed(2)}, ${(-p.z).toFixed(2)})` +
+        (m ? `  |  placement Y: ${m.ymin.toFixed(2)} to ${m.ymax.toFixed(2)}  area=${m.area} type=${m.ptype}` : ''); }
+    else { const p=screenToWorld(ev); $('hover').textContent = p ? `Cursor: (${p.x.toFixed(2)}, ${(-p.y).toFixed(2)}, ${(-p.z).toFixed(2)})  (visual mesh, no navmesh here)` : ''; } } } });
 let down=null; renderer.domElement.addEventListener('pointerdown',ev=>down=[ev.clientX,ev.clientY]);
 renderer.domElement.addEventListener('pointerup',async ev=>{ if(!down||Math.hypot(ev.clientX-down[0],ev.clientY-down[1])>4) return; const i=pick(ev); if(i<0) return;
   if (ev.shiftKey){ const e=Z.entities[i]; anchor={x:e.x,y:e.y,z:e.z}; await computeReach(); rebuild(); } else select(i,false); });
@@ -320,7 +553,10 @@ $('opac').oninput=()=>meshObj&&meshObj.traverse(c=>{ if(c.isMesh) c.material.opa
 $('reachbtn').onclick=async()=>{ await computeReach(); rebuild(); };
 $('clran').onclick=async()=>{ anchor=null; await computeReach(); rebuild(); };
 window.addEventListener('resize',()=>{ const w=container.clientWidth,h=container.clientHeight; camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h); lr.setSize(w,h); });
-(function loop(){ requestAnimationFrame(loop); controls.update(); updateLabels(); renderer.render(scene,camera); lr.render(scene,camera); })();
+const liveClock = new THREE.Clock();
+(function loop(){ requestAnimationFrame(loop); controls.update(); updateLabels();
+  if (waterMaterials.length>0){ const t=liveClock.getElapsedTime(); for(const m of waterMaterials) m.uniforms.time.value=t; }
+  renderer.render(scene,camera); lr.render(scene,camera); })();
 const qz=new URLSearchParams(location.search); if(qz.get('zone')) $('zone').value=qz.get('zone');
 fillInst(); loadZone();
 
@@ -378,27 +614,182 @@ let orig=null;
 function loadEditor(i){ const e=Z.entities[i]; if(!e){ $('ed').hidden=true; $('ed-none').hidden=false; return; }
   $('ed').hidden=false; $('ed-none').hidden=true; orig={x:e.x,y:e.y,z:e.z,r:e.r||0};
   $('ed-title').textContent=`${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${e.id}  ${e.n||e.g}`;
-  $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r||0; $('emsg').textContent=''; $('ecomment').value=''; }
+  $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r||0; $('emsg').textContent=''; $('ecomment').value='';
+  if (e.k==='n' || e.k==='d'){
+    $('ed-anim').hidden=false;
+    setAnimSelect('ean','eanRaw', e.an||0);
+    setAnimSelect('easub','easubRaw', e.asub||0);
+    $('eanimmsg').textContent='';
+  } else { $('ed-anim').hidden=true; }
+  if (e.k==='m'){ $('ed-drops').hidden=false; loadDrops(e.id); } else { $('ed-drops').hidden=true; }
+}
+let dropsState=null;
+async function loadDrops(mobid){
+  $('edrops-body').innerHTML='<span class="muted">loading&hellip;</span>';
+  const r=await fetch(`/zoneplot/${mobid}/drops.json`); const j=await r.json();
+  if(j.error){ $('edrops-body').innerHTML='ERROR: '+j.error; return; }
+  dropsState=j; $('edrops-n').textContent=`${j.n_sharing_group} mob(s) share groupid ${j.groupid}`;
+  renderDrops();
+}
+function renderDrops(){
+  const j=dropsState; if(!j) return;
+  let h=`<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+    <span>dropid</span><input type="number" id="edropid" value="${j.dropid||0}" style="width:70px">
+    <button id="edropid-save">Save dropid</button>
+    <button id="edropid-new">Assign new dropid</button>
+    <button id="edropid-syncsql">Sync to SQL file</button></div>`;
+  if(!j.dropid){ h+=`<div class="muted">No drop table assigned to this group yet -- click "Assign new dropid" to create one, then add items.</div>`;
+    $('edrops-body').innerHTML=h; $('edropid-save').onclick=()=>saveDropid($('edropid').value); $('edropid-new').onclick=()=>saveDropid('new');
+    $('edropid-syncsql').onclick=()=>syncDropidSql(); return; }
+  h+=`<table class="mono" style="width:100%;border-collapse:collapse"><tr style="text-align:left">
+    <th>type</th><th>group</th><th>item</th><th>group%</th><th>item%</th><th>eff%</th><th></th></tr>`;
+  (j.drops||[]).forEach((d,i)=>{
+    h+=`<tr data-i="${i}">
+      <td><input type="number" class="dtype" value="${d.drop_type}" style="width:28px"></td>
+      <td><input type="number" class="dgroup" value="${d.group_id}" style="width:32px"></td>
+      <td><input type="text" class="ditemname" value="${(d.item_name||'item#'+d.item_id).replace(/"/g,'&quot;')}" style="width:110px" placeholder="type to search&hellip;">
+          <input type="hidden" class="ditemid" value="${d.item_id}">
+          <div class="ditem-results" style="position:relative"></div></td>
+      <td><input type="number" class="dgrate" value="${d.group_rate}" min="0" max="1000" style="width:50px"></td>
+      <td><input type="number" class="dirate" value="${d.item_rate}" min="0" max="1000" style="width:50px"></td>
+      <td class="deff">${d.effective_pct}%</td>
+      <td><button class="dsave" data-ot="${d.drop_type}" data-og="${d.group_id}" data-oi="${d.item_id}">Save</button>
+          <button class="ddel" data-ot="${d.drop_type}" data-og="${d.group_id}" data-oi="${d.item_id}" style="color:#e74c3c">Del</button></td></tr>`;
+  });
+  h+=`<tr data-i="new">
+      <td><input type="number" class="dtype" value="0" style="width:28px"></td>
+      <td><input type="number" class="dgroup" value="0" style="width:32px"></td>
+      <td><input type="text" class="ditemname" style="width:110px" placeholder="type to search&hellip;">
+          <input type="hidden" class="ditemid" value="">
+          <div class="ditem-results" style="position:relative"></div></td>
+      <td><input type="number" class="dgrate" value="1000" min="0" max="1000" style="width:50px"></td>
+      <td><input type="number" class="dirate" value="1000" min="0" max="1000" style="width:50px"></td>
+      <td class="deff"></td>
+      <td><button class="dadd">Add</button></td></tr>`;
+  h+=`</table><div id="edropsmsg" class="mono" style="font-size:11px;margin-top:4px;white-space:pre-wrap"></div>`;
+  $('edrops-body').innerHTML=h;
+  wireItemSearch();
+  $('edropid-save').onclick=()=>saveDropid($('edropid').value);
+  $('edropid-new').onclick=()=>saveDropid('new');
+  $('edropid-syncsql').onclick=()=>syncDropidSql();
+  $('edrops-body').querySelectorAll('.dsave').forEach(b=>b.onclick=()=>saveDropRow(b.closest('tr'), b.dataset.ot, b.dataset.og, b.dataset.oi));
+  $('edrops-body').querySelectorAll('.ddel').forEach(b=>b.onclick=()=>delDropRow(b.dataset.ot, b.dataset.og, b.dataset.oi));
+  $('edrops-body').querySelector('.dadd').onclick=()=>saveDropRow($('edrops-body').querySelector('tr[data-i="new"]'), null, null, null);
+}
+function wireItemSearch(){
+  $('edrops-body').querySelectorAll('.ditemname').forEach(inp=>{
+    let t=null;
+    inp.addEventListener('input',()=>{ clearTimeout(t); const box=inp.nextElementSibling.nextElementSibling;
+      t=setTimeout(async()=>{ const q=inp.value.trim(); if(q.length<2){ box.innerHTML=''; return; }
+        const rows=await (await fetch('/zoneplot/items.json?q='+encodeURIComponent(q))).json();
+        box.innerHTML = rows.length ? `<div style="position:absolute;z-index:9;background:var(--surface);border:1px solid var(--border);max-height:140px;overflow:auto;width:220px">
+          ${rows.map(r=>`<div data-id="${r.itemid}" data-n="${r.name.replace(/"/g,'&quot;')}" style="padding:2px 4px;cursor:pointer">${r.name} <span class="muted">#${r.itemid}</span></div>`).join('')}
+          </div>` : '';
+        box.querySelectorAll('[data-id]').forEach(d=>d.onclick=()=>{ inp.value=d.dataset.n; inp.previousElementSibling.value=d.dataset.id; box.innerHTML=''; }); }, 250); }); });
+}
+async function saveDropid(dropid){
+  if(!dropsState) return;
+  const r=await fetch('/zoneplot/drops/dropid',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({mobid:dropsState.mobid,dropid,comment:$('ecomment').value})}); const j=await r.json();
+  if(j.error){ $('edropsmsg').textContent='ERROR: '+j.error; return; }
+  $('edropsmsg').textContent=`Saved to live DB (backup ${j.backup}).\n`+j.sql;
+  await loadDrops(dropsState.mobid);
+}
+let lastDropSync=null; // args to re-post to /zoneplot/sync_sql/drop_row for the last live-DB drop-row write
+async function syncDropidSql(){
+  if(!dropsState){ $('edropsmsg').textContent='No mob selected.'; return; }
+  const r=await fetch('/zoneplot/sync_sql/dropid',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mobid:dropsState.mobid})}); const j=await r.json();
+  $('edropsmsg').textContent = j.error ? 'SYNC ERROR: '+j.error : `SQL file ${j.action}: ${j.file}`;
+}
+async function syncDropRowSql(){
+  if(!lastDropSync){ $('edropsmsg').textContent='Nothing saved to the live DB yet this session -- Save or Delete a drop row first.'; return; }
+  const r=await fetch('/zoneplot/sync_sql/drop_row',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lastDropSync)}); const j=await r.json();
+  $('edropsmsg').textContent = j.error ? 'SYNC ERROR: '+j.error : j.results.map(x=>`${x.action}: ${x.file}`).join('\n');
+}
+async function saveDropRow(tr, origType, origGroup, origItem){
+  if(!dropsState) return;
+  const itemId=tr.querySelector('.ditemid').value;
+  if(!itemId){ $('edropsmsg').textContent='Pick a real item from the search results first.'; return; }
+  const drop_type=+tr.querySelector('.dtype').value, group_id=+tr.querySelector('.dgroup').value, item_id=+itemId;
+  const body={dropid: dropsState.dropid, drop_type, group_id, item_id,
+    group_rate:+tr.querySelector('.dgrate').value, item_rate:+tr.querySelector('.dirate').value,
+    comment:$('ecomment').value};
+  const hasOrig = origGroup!==null && origGroup!==undefined;
+  if(hasOrig){ body.orig_drop_type=+origType; body.orig_group_id=+origGroup; body.orig_item_id=+origItem; }
+  const r=await fetch('/zoneplot/drops/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const j=await r.json();
+  if(j.error){ $('edropsmsg').textContent='ERROR: '+j.error; return; }
+  lastDropSync={dropid:dropsState.dropid, drop_type, group_id, item_id,
+    orig_drop_type: hasOrig?+origType:undefined, orig_group_id: hasOrig?+origGroup:undefined, orig_item_id: hasOrig?+origItem:undefined};
+  $('edropsmsg').textContent=`Saved to live DB (backup ${j.backup}).\n`+j.sql;
+  await loadDrops(dropsState.mobid);
+}
+async function delDropRow(origType, origGroup, origItem){
+  if(!dropsState) return;
+  if(!confirm(`Delete this drop row from dropid ${dropsState.dropid}?`)) return;
+  const r=await fetch('/zoneplot/drops/delete',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({dropid:dropsState.dropid,drop_type:+origType,group_id:+origGroup,item_id:+origItem,comment:$('ecomment').value})}); const j=await r.json();
+  if(j.error){ $('edropsmsg').textContent='ERROR: '+j.error; return; }
+  lastDropSync={dropid:dropsState.dropid, drop_type:+origType, group_id:+origGroup, item_id:+origItem};
+  $('edropsmsg').textContent=`Deleted (backup ${j.backup}).\n`+j.sql;
+  await loadDrops(dropsState.mobid);
+}
+function setAnimSelect(selId, rawId, val){
+  const sel=$(selId), raw=$(rawId);
+  const has=[...sel.options].some(o=>o.value===String(val) && o.value!=='custom');
+  if (has){ sel.value=String(val); raw.style.display='none'; }
+  else { sel.value='custom'; raw.style.display=''; raw.value=val; }
+}
+function animSelectVal(selId, rawId){
+  const sel=$(selId), raw=$(rawId);
+  return sel.value==='custom' ? (+raw.value||0) : +sel.value;
+}
+['ean','easub'].forEach(id=>$(id).addEventListener('change',()=>{
+  const raw=$(id+'Raw'); raw.style.display = $(id).value==='custom' ? '' : 'none';
+}));
+$('eanimsave').onclick=async()=>{ const e=Z.entities[selected]; if(!e) return;
+  const animation=animSelectVal('ean','eanRaw'), animationsub=animSelectVal('easub','easubRaw');
+  const r=await fetch('/zoneplot/animate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:e.k,id:e.id,animation,animationsub,comment:$('ecomment').value})}); const j=await r.json();
+  if(j.error){ $('eanimmsg').textContent='ERROR: '+j.error; return; }
+  e.an=animation; e.asub=animationsub; lastTouched={k:e.k,id:e.id};
+  $('eanimmsg').textContent=`Saved to live DB (backup ${j.backup}).\n`+j.sql; };
 function previewEdit(){ if(selected<0) return; const e=Z.entities[selected]; e.x=+$('ex').value; e.y=+$('ey').value; e.z=+$('ez').value; e.r=+$('er').value; rebuild(); select(selected,false); }
 ['ex','ey','ez','er'].forEach(id=>$(id).addEventListener('change',previewEdit));
 document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{ const a=b.dataset.n[0], sg=b.dataset.n[1]==='+'?1:-1; const f=$('e'+a); f.value=(+f.value+sg*(+$('estep').value)).toFixed(3); previewEdit(); });
 $('erev').onclick=()=>{ if(!orig) return; $('ex').value=orig.x; $('ey').value=orig.y; $('ez').value=orig.z; $('er').value=orig.r; previewEdit(); };
 let lastSql='';
+let lastTouched=null; // {k,id} of the last entity successfully written to the live DB -- what "Sync to SQL file" targets
 $('esave').onclick=async()=>{ const e=Z.entities[selected]; if(!e) return; previewEdit();
   const r=await fetch('/zoneplot/edit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:e.k,id:e.id,x:e.x,y:e.y,z:e.z,r:e.r,comment:$('ecomment').value})}); const j=await r.json();
   if(j.error){ $('emsg').textContent='ERROR: '+j.error; return; }
-  lastSql=j.sql; orig={x:e.x,y:e.y,z:e.z,r:e.r}; $('emsg').textContent=`Saved to live DB (backup ${j.backup}).\n`+j.sql; await computeReach(); rebuild(); select(selected,false); };
+  lastSql=j.sql; orig={x:e.x,y:e.y,z:e.z,r:e.r}; lastTouched={k:e.k,id:e.id}; $('emsg').textContent=`Saved to live DB (backup ${j.backup}).\n`+j.sql; await computeReach(); rebuild(); select(selected,false); };
 $('ecopy').onclick=()=>{ if(lastSql) navigator.clipboard.writeText(lastSql); };
 $('edel').onclick=async()=>{ const e=Z.entities[selected]; if(!e) return;
   if(!confirm(`Delete ${e.k==='m'?'MOB':'NPC'} ${e.id} (${e.n||e.g}) from the live DB?`)) return;
+  const touched={k:e.k,id:e.id};
   const r=await fetch('/zoneplot/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:e.k,id:e.id,comment:$('ecomment').value})}); const j=await r.json();
   if(j.error){ $('emsg').textContent='ERROR: '+j.error; return; }
+  lastTouched=touched;
   $('emsg').textContent=`Deleted (backup ${j.backup}).${j.warning?'\nWARNING: '+j.warning:''}\n`+j.sql;
   Z.entities.splice(selected,1); selected=-1; loadEditor(-1); await computeReach(); rebuild(); };
+$('esyncsql').onclick=async()=>{ if(!lastTouched){ $('emsg').textContent='Nothing saved to the live DB yet this session -- click "Save to live DB" (or Delete) first.'; return; }
+  const r=await fetch('/zoneplot/sync_sql/entity',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lastTouched)}); const j=await r.json();
+  $('emsg').textContent = j.error ? 'SYNC ERROR: '+j.error : `SQL file ${j.action}: ${j.file}`; };
+$('edropsyncsql').onclick=()=>syncDropRowSql();
 function screenToWorld(ev){
   const r=renderer.domElement.getBoundingClientRect(); mouse.set(((ev.clientX-r.left)/r.width)*2-1,-((ev.clientY-r.top)/r.height)*2+1); ray.setFromCamera(mouse,camera);
   const tgt=navMesh||meshObj; if(!tgt) return null;
   const h=ray.intersectObject(tgt,true); return h.length ? h[0].point : null;
+}
+// Like screenToWorld, but only raycasts the navmesh (never the visual mesh) and also returns
+// this hit triangle's meta quad (yMin,yMax,area,polyType) from navMeta, when available -- used
+// by the hover readout so it can show the same kind of per-point info xi-visualizer surfaces.
+function screenToNav(ev){
+  if (!navMesh) return null;
+  const r=renderer.domElement.getBoundingClientRect(); mouse.set(((ev.clientX-r.left)/r.width)*2-1,-((ev.clientY-r.top)/r.height)*2+1); ray.setFromCamera(mouse,camera);
+  const h=ray.intersectObject(navMesh,true); if(!h.length) return null;
+  const fi=h[0].faceIndex;
+  const meta = (navMeta && fi!==undefined && (fi*4+3)<navMeta.length) ? {ymin:navMeta[fi*4],ymax:navMeta[fi*4+1],area:navMeta[fi*4+2],ptype:navMeta[fi*4+3]} : null;
+  return {point:h[0].point, meta};
 }
 renderer.domElement.addEventListener('click',ev=>{
   if($('eplace').checked && !$('tab-edit').hidden && selected>=0){ const p=screenToWorld(ev); if(!p) return;
@@ -448,6 +839,7 @@ $('aadd').onclick=async()=>{ if(!aSel||!Z){ $('amsg').textContent='Pick a source
   const r=await fetch('/zoneplot/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const j=await r.json();
   if(j.error){ $('amsg').textContent='ERROR: '+j.error; return; }
   $('amsg').textContent=`Added as id ${j.id} (backup ${j.backup}).\n`+j.sql;
+  lastTouched={k:kind,id:j.id};
   addMarker.visible=false;
   await loadZone();
   const idx=Z.entities.findIndex(e=>e.k===kind && +e.id===+j.id);

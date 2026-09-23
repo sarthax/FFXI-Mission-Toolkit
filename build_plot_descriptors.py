@@ -8,7 +8,12 @@ Lua sources, so re-running after Lua edits refreshes them. Descriptor ops (see z
 import json, re
 from pathlib import Path
 
-Z = Path(r"D:\Claude\dsp-fresh\scripts\zones")
+import settings
+
+_dsp_root = settings.get_dsp_root()
+if _dsp_root is None:
+    raise SystemExit("DSP server path isn't configured yet -- set it on the Settings page first")
+Z = _dsp_root / "scripts/zones"
 OUT = Path(__file__).parent / "plot_descriptors"
 OUT.mkdir(exist_ok=True)
 NUM = r"(-?\d+(?:\.\d+)?)"
