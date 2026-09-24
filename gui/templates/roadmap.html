@@ -209,6 +209,31 @@
       snapshot (see <code class="chip">LIVE_DB_COLLISION_CHECK.md</code>). 10-test regression suite
       (<code class="chip">test_backport_sql_convert.py</code>), matching the Lua converter's
       testing discipline.</td></tr>
+  <tr><td>Item Editor <span class="pill match">new 2026-09-23</span></td>
+    <td class="muted"><code class="chip">item_edit.py</code>, <code class="chip">item_dat_tools.py</code></td>
+    <td>Search any live item and edit every column its class actually has, across all six
+      <code class="chip">item_*</code> tables (<code class="chip">item_basic</code>,
+      <code class="chip">item_equipment</code>, <code class="chip">item_weapon</code>,
+      <code class="chip">item_usable</code>, <code class="chip">item_puppet</code>,
+      <code class="chip">item_furnishing</code>). Fields the FFXI client itself enforces
+      independently of the server (level/jobs/slots on equipment, dmg/delay/skill on weapons,
+      flags/stack on general items) are mirrored into the real client DAT record on save. Same
+      backup+journal convention as Zone Plot; create-new-item allocates a real free client-DAT slot,
+      never a fabricated id.
+      <span class="pill match">new 2026-09-23</span> a bitmask-decode UI
+      (<code class="chip">GET /itemedit/bitmasks.json</code>) turns raw flag/enum integers into
+      labeled checkboxes -- only CONFIRMED bit mappings decoded (<code class="chip">item_basic.flags</code>,
+      <code class="chip">item_equipment.jobs</code>/<code class="chip">slot</code>,
+      <code class="chip">item_usable.validTargets</code>), each cross-checked against the real
+      <code class="chip">battleentity.h</code> enums, not guessed. Extended same-day to a second
+      schema shape, packed-nibble fields (<code class="chip">type: "nibbles"</code>), for
+      <code class="chip">item_puppet.element</code> -- confirmed via <code class="chip">puppetutils.cpp</code>
+      to be 8 packed 4-bit elemental-capacity values (fire/ice/wind/earth/thunder/water/light/dark),
+      not a flag bitmask, rendered as 8 labeled number inputs instead of checkboxes. Per-attachment
+      combat stat values (what an Automaton Attachment Assistant NPC like Tateeya ultimately grants)
+      were traced to be Lua-only (<code class="chip">scripts/globals/abilities/pets/attachments/</code>,
+      dispatched by item name in <code class="chip">luautils.cpp</code>), confirmed out of scope for
+      a row-level DB/DAT editor.</td></tr>
 </table></div>
 
 <h2 class="rm">Real bugs found this session</h2>
@@ -240,6 +265,30 @@
   preserved in the full external write-up -- this page focuses on what changed most recently.</div>
 
 <h2 class="rm">Phases</h2>
+
+<div class="phase">
+  <div class="phase-head"><span class="phase-num">G</span><h3>Item Editor + bitmask/nibble decode UI, item_puppet DAT-side research</h3></div>
+  <div class="phase-meta"><span class="meta-chip built">Built 2026-09-23</span><span class="meta-chip">Live DB + client DAT writes</span></div>
+  <p>New <code class="chip">/itemedit</code> page: search any live item and edit every column its
+    class actually has, across all six <code class="chip">item_*</code> tables. Fields the client
+    enforces independently of the server (level/jobs/slots, dmg/delay/skill, flags/stack) sync into
+    the real client DAT record on save; every write is backed up and journalled like Zone Plot.
+    A bitmask-decode layer turns raw flag/enum ints into labeled checkboxes for confirmed fields
+    only (<code class="chip">item_basic.flags</code>, <code class="chip">item_equipment.jobs</code>/
+    <code class="chip">slot</code>, <code class="chip">item_usable.validTargets</code>) --
+    deliberately left as plain numbers where no real bit-decode exists in the Topaz source
+    (<code class="chip">item_equipment.races</code>, <code class="chip">item_usable.activation</code>,
+    <code class="chip">item_furnishing.element</code>/<code class="chip">aura</code>).
+    Follow-up investigation (user asked about Tateeya, the Automaton Attachment Assistant NPC)
+    traced <code class="chip">item_puppet.element</code> to a packed-nibble field (8x 4-bit
+    elemental capacities, confirmed via <code class="chip">puppetutils.cpp</code>), added as a new
+    "nibbles" schema type alongside the existing "bits" one, and confirmed that per-attachment
+    combat stats are Lua-only (per-item files under
+    <code class="chip">scripts/globals/abilities/pets/attachments/</code>) and out of scope for a
+    row-level editor. Live-verified end to end against real item 8193
+    (<code class="chip">harlequin_head</code>): correct nibble decode and correct raw-value
+    recomputation on edit.</p>
+</div>
 
 <div class="phase">
   <div class="phase-head"><span class="phase-num">F</span><h3>Zone Plot: server-agnostic level editor, Add-tab UX, render-race fixes</h3></div>

@@ -13,7 +13,7 @@ own dialog_text index -- the same thing explore_event.py does on the CLI.</p>
     <option value="{{ z.name }}" {% if zone|upper == z.name %}selected{% endif %}>{{ z.name }}</option>
     {% endfor %}
   </select>
-  <input type="text" name="q" value="{{ q }}" placeholder="filter by entity id or name">
+  <input type="text" name="q" value="{{ q }}" placeholder="filter by entity id, name, or csid">
   <button type="submit">Browse</button>
 </form>
 

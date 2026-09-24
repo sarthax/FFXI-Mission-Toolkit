@@ -1,0 +1,741 @@
+{% extends "base.html" %}
+{% block title %}Item Editor{% endblock %}
+
+{% block content %}
+<h1>Item Editor</h1>
+<p class="muted">Search any live item and edit every column its class actually has, across all six
+item_* tables (item_basic, item_equipment, item_weapon, item_usable, item_puppet, item_furnishing).
+Edits to a field the FFXI client itself enforces (level/jobs/slots/races/superior_level on
+item_equipment; dmg/delay/skill on item_weapon; flags/stack on item_basic) are mirrored into the
+real client DAT record automatically, since the client checks its own copy independently of the
+server's permission gate. Every write is backed up first and journalled to
+<code>data/item_edit_log.sql</code>, same as Zone Plot.</p>
+
+<div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+  <label>Server <select id="srv" onchange="setItemServer()"><option value="topaz">Topaz</option><option value="dsp">DSP</option></select></label>
+  <span class="muted" style="font-size:11px;">shares the same live-DB target as Zone Plot / the NPC-mob editor -- switching here switches it everywhere.</span>
+</div>
+
+<form class="search" onsubmit="doSearch(event)">
+  <input type="text" id="q" placeholder="item name substring (min 2 chars), or an item id">
+  <select id="category">
+    <option value="">all classes</option>
+    <option value="armor">armor</option>
+    <option value="weapon">weapon</option>
+    <option value="general/other">general / consumable / other</option>
+  </select>
+  <button type="submit">Search</button>
+</form>
+
+<div id="results" class="table-wrap" style="display:none;">
+  <table>
+    <tr><th>id</th><th>name</th><th>class</th><th>level</th><th>jobs</th><th>skill</th><th>dmg</th><th>delay</th></tr>
+    <tbody id="resultsBody"></tbody>
+  </table>
+</div>
+
+<style>
+  #editorWrap .edit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin-bottom: 14px; align-items: start; }
+  #editorWrap .edit-card { border: 1px solid rgba(128,128,128,.35); border-radius: 6px; padding: 8px 12px 10px; }
+  #editorWrap .edit-card.wide { grid-column: 1 / -1; }
+  #editorWrap .edit-card h3 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; opacity: .75; }
+  #editorWrap .edit-card h3 .hint { display: block; text-transform: none; letter-spacing: 0; font-size: 10.5px; opacity: .85; margin-top: 2px; }
+  #editorWrap .field-row { display: flex; align-items: center; gap: 8px; padding: 2px 0; font-size: 12px; }
+  #editorWrap .field-row > label { flex: 0 0 128px; color: inherit; opacity: .7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #editorWrap .field-row input[type=text], #editorWrap .field-row input[type=number], #editorWrap .field-row select { flex: 1; min-width: 0; font-size: 12px; padding: 2px 4px; }
+  #editorWrap .mask-row { display: flex; flex-direction: column; gap: 3px; padding: 3px 0; font-size: 12px; }
+  #editorWrap .mask-row .mask-label { opacity: .7; display: flex; justify-content: space-between; }
+  #editorWrap .mask-flags { display: flex; flex-wrap: wrap; gap: 3px 12px; }
+  #editorWrap .mask-flags label { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; white-space: nowrap; }
+  #editorWrap .mask-flags input[type=number] { width: 46px; }
+  #editorWrap .rowtable-wrap { max-height: 260px; overflow-y: auto; }
+  #editorWrap .rowtable-wrap table { font-size: 12px; }
+  #editorWrap .rowtable-wrap th, #editorWrap .rowtable-wrap td { padding: 3px 6px; }
+  #editorWrap .lists-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 12px; }
+</style>
+
+<div id="editorWrap" style="display:none; margin-top:24px;">
+  <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+    <h2 id="editorTitle" style="margin:0;"></h2>
+    <input type="text" id="editComment" style="flex:1; min-width:220px;" placeholder="Comment for SQL journal (e.g. lowering to level 90 for X quest reward)">
+    <button onclick="saveAll()">Save All Changes</button>
+    <span id="saveStatus" class="muted"></span>
+  </div>
+  <div id="clientMismatch" class="warn" style="display:none; margin-top:8px;"></div>
+
+  <div id="datInfoCard" class="edit-card wide" style="margin-top:8px; display:none;">
+    <h3>Client DAT <span class="hint">the real client-side .DAT record backing this item, and where edits to it get written</span></h3>
+    <div class="field-row"><label>ROM path</label><span class="mono" id="datRomPath">--</span></div>
+    <div class="field-row"><label>Category / record#</label><span class="mono" id="datCatIdx">--</span></div>
+    <div class="field-row"><label>Format</label><span class="mono" id="datFormat">--</span></div>
+    <div class="field-row"><label>Backed up?</label><span class="mono" id="datBackedUp">--</span></div>
+    <div class="field-row">
+      <label>Write target</label>
+      <select id="datTarget" onchange="setDatTarget()">
+        <option value="live">Live install (edits the real game DAT directly)</option>
+        <option value="pivot">Xi-Pivot overlay (separate distributable folder, live install untouched)</option>
+      </select>
+    </div>
+    <div id="pivotRootLine" class="muted" style="font-size:11px; margin:2px 0 0 136px; display:none;"></div>
+    <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+      <button onclick="refreshDatBackups()">Show DAT backup history</button>
+      <button type="button" onclick="downloadXiPivot()">Download Xi-Pivot.zip</button>
+    </div>
+    <div class="muted" style="font-size:11px; margin-top:6px;">A snapshot of this DAT file is taken automatically before every edit (not just the first), so you can restore to right before any specific edit, not only all the way back to pristine.</div>
+    <div id="datBackupList" class="rowtable-wrap table-wrap" style="margin-top:8px;"></div>
+  </div>
+
+  <div id="editorTables" class="edit-grid" style="margin-top:12px;"></div>
+  <div id="editorLists" class="lists-row"></div>
+
+  <div class="edit-card wide" style="margin-top:12px;">
+    <h3>Backups <span class="hint">every edit/add/delete on this item is auto-backed-up first (across all item_* tables, mods, pet mods and latents) -- restore any of them here</span></h3>
+    <div style="display:flex; gap:8px; margin-bottom:6px;">
+      <button onclick="refreshItemBackups()">Refresh list</button>
+    </div>
+    <div id="itemBackupList" class="rowtable-wrap table-wrap"></div>
+    <div id="itemBackupMsg" class="mono muted" style="margin-top:6px; white-space:pre-wrap; font-size:11px;"></div>
+  </div>
+
+  <div class="edit-card wide" style="margin-top:12px; border-color:#a33;">
+    <h3 style="color:#c55;">Delete this item <span class="hint">removes every server-side row this item touches (item_basic/equipment/weapon/usable/puppet/furnishing + mods + pet mods + latents), all in one backed-up, journalled operation. Restorable from the Backups list above afterward. Does NOT free or alter the client DAT slot -- the DAT record stays in place, just orphaned server-side.</span></h3>
+    <button onclick="deleteItem()" style="background:#a33; color:#fff;">Delete this item from the server DB</button>
+    <div id="deleteItemMsg" class="mono muted" style="margin-top:6px; white-space:pre-wrap; font-size:11px;"></div>
+  </div>
+</div>
+
+<h2>Create New Item</h2>
+<p class="muted">Allocates a real free client-DAT slot (never a fabricated id), writes the new
+record there, then inserts matching rows server-side at that same id.</p>
+<div style="display:flex; gap:10px; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
+  <input type="number" id="cloneSourceId" placeholder="clone from item ID" style="width:150px;">
+  <button type="button" onclick="loadCloneTemplate()">Load as template</button>
+  <label class="muted" style="display:flex; align-items:center; gap:4px;"><input type="checkbox" id="cloneModsToo" checked> also copy mods/pet mods/latents</label>
+  <span id="cloneStatus" class="muted"></span>
+</div>
+<div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+  <select id="newCategory">
+    <option value="Items_1">Items_1 (general)</option>
+    <option value="Items_2">Items_2 (general)</option>
+    <option value="Consumable">Consumable</option>
+    <option value="Armor_1">Armor_1</option>
+    <option value="Armor_2">Armor_2</option>
+    <option value="Weapons">Weapons</option>
+    <option value="Puppet">Puppet</option>
+  </select>
+  <select id="newType">
+    <option value="0">general (0)</option>
+    <option value="1">consumable (1)</option>
+    <option value="3">armor (3)</option>
+    <option value="4">weapon (4)</option>
+    <option value="5">puppet (5)</option>
+    <option value="6">furnishing (6)</option>
+  </select>
+  <input type="text" id="newName" placeholder="item name">
+  <button onclick="createItem()">Create</button>
+</div>
+<div id="createStatus" class="muted"></div>
+
+<datalist id="dl_mods"></datalist>
+<datalist id="dl_pettypes"></datalist>
+<datalist id="dl_latents"></datalist>
+
+<script>
+const TABLE_FIELDS = {
+  item_basic:      ["subid","name","sortname","stackSize","flags","aH","NoSale","BaseSell"],
+  item_equipment:  ["name","level","ilevel","jobs","MId","shieldSize","scriptType","slot","rslot"],
+  item_weapon:     ["name","skill","subskill","ilvl_skill","ilvl_parry","ilvl_macc","dmgType","hit","delay","dmg","unlock_points"],
+  item_usable:     ["name","validTargets","activation","animation","animationTime","maxCharges","useDelay","reuseDelay","aoe"],
+  item_puppet:     ["name","slot","element"],
+  item_furnishing: ["name","storage","moghancement","element","aura"],
+};
+let currentItemId = null;
+let BITMASK_SCHEMA = {};
+fetch('/itemedit/bitmasks.json').then(r => r.json()).then(j => { BITMASK_SCHEMA = j; });
+// Searchable id-pickers: each is a text <input list="dl_x"> paired with a <datalist> of
+// "id -- name" options (native browser autocomplete/filtering -- no custom dropdown JS needed).
+// pickerValue() below resolves whatever the user typed/picked back to a numeric id.
+function fillDatalist(datalistEl, namesObj) {
+  datalistEl.innerHTML = Object.entries(namesObj).sort((a, b) => Number(a[0]) - Number(b[0]))
+    .map(([id, name]) => `<option value="${id} -- ${name}">`).join('');
+}
+function pickerValue(inputId, namesObj) {
+  const raw = document.getElementById(inputId).value.trim();
+  if (raw === '') return null;
+  const m = raw.match(/^(\d+)/);
+  if (m) return Number(m[1]);
+  const hit = Object.entries(namesObj).find(([, name]) => name.toLowerCase() === raw.toLowerCase());
+  return hit ? Number(hit[0]) : null;
+}
+
+let MOD_NAMES = {};
+fetch('/itemedit/modnames.json').then(r => r.json()).then(j => { MOD_NAMES = j; fillDatalist(document.getElementById('dl_mods'), j); });
+let PET_TYPE_NAMES = {};
+fetch('/itemedit/pettypes.json').then(r => r.json()).then(j => { PET_TYPE_NAMES = j; fillDatalist(document.getElementById('dl_pettypes'), j); });
+let LATENT_NAMES = {};
+fetch('/itemedit/latentnames.json').then(r => r.json()).then(j => { LATENT_NAMES = j; fillDatalist(document.getElementById('dl_latents'), j); });
+
+(async () => {
+  try {
+    const sr = await (await fetch('/zoneplot/server.json')).json();
+    document.getElementById('srv').value = sr.server;
+    if (!sr.dsp_configured) document.getElementById('srv').querySelector('option[value=dsp]').textContent = 'DSP (not configured)';
+  } catch (e) { console.warn('server.json', e); }
+})();
+
+async function setItemServer() {
+  const srv = document.getElementById('srv');
+  const server = srv.value;
+  const res = await fetch('/zoneplot/server.json', {
+    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({server})
+  });
+  const j = await res.json();
+  if (j.error) { alert(j.error); srv.value = server === 'dsp' ? 'topaz' : 'dsp'; return; }
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('editorWrap').style.display = 'none';
+  currentItemId = null;
+}
+
+async function doSearch(ev) {
+  ev.preventDefault();
+  const q = document.getElementById('q').value.trim();
+  const category = document.getElementById('category').value;
+  if (/^\d+$/.test(q)) {
+    document.getElementById('results').style.display = 'none';
+    return loadItem(Number(q));
+  }
+  if (q.length < 2) { alert('type at least 2 characters, or enter a numeric item id'); return; }
+  const res = await fetch(`/itemedit/search.json?q=${encodeURIComponent(q)}&category=${encodeURIComponent(category)}`);
+  const rows = await res.json();
+  const body = document.getElementById('resultsBody');
+  body.innerHTML = '';
+  for (const r of rows) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="mono"><a href="#" onclick="loadItem(${r.itemid});return false;">${r.itemid}</a></td>
+      <td>${r.name || ''}</td><td>${r.type_name || ''}</td><td>${r.level ?? ''}</td>
+      <td>${r.jobs ?? ''}</td><td>${r.skill ?? ''}</td><td>${r.dmg ?? ''}</td><td>${r.delay ?? ''}</td>`;
+    body.appendChild(tr);
+  }
+  document.getElementById('results').style.display = rows.length ? '' : 'none';
+}
+
+async function loadItem(itemid) {
+  const res = await fetch(`/itemedit/${itemid}.json`);
+  if (!res.ok) { alert(await res.text()); return; }
+  const data = await res.json();
+  currentItemId = itemid;
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('editorTitle').textContent =
+    `Item ${itemid} -- ${data.server.item_basic.name}`;
+
+  const mismatchBox = document.getElementById('clientMismatch');
+  if (data.client) {
+    const eq = data.server.item_equipment;
+    const diffs = [];
+    if (eq && data.client.level !== undefined && eq.level !== data.client.level)
+      diffs.push(`server level=${eq.level} vs client level=${data.client.level}`);
+    if (diffs.length) {
+      mismatchBox.style.display = '';
+      mismatchBox.textContent = 'Client/server disagree: ' + diffs.join('; ') + ' -- saving will resync them.';
+    } else {
+      mismatchBox.style.display = 'none';
+    }
+  } else {
+    mismatchBox.style.display = '';
+    mismatchBox.textContent = 'No client DAT record found for this item (FFXI install not configured, or this id has no client-side record) -- edits will be server-only.';
+  }
+  refreshDatInfo(data);
+
+  const wrap = document.getElementById('editorTables');
+  wrap.innerHTML = '';
+  for (const [table, row] of Object.entries(data.server)) {
+    const fields = TABLE_FIELDS[table] || Object.keys(row);
+    const schemaForTable = BITMASK_SCHEMA[table] || {};
+    const box = document.createElement('div');
+    box.className = 'edit-card';
+    box.innerHTML = `<h3>${table}</h3>
+        ${fields.filter(f => f in row).map(f => {
+          const schema = schemaForTable[f];
+          const val = Number(row[f]) || 0;
+          if (schema && schema.type === 'bits') {
+            return `<div class="mask-row">
+                <div class="mask-label"><span>${f}</span><span class="mono">raw: <span data-mask-display="${table}.${f}">${val}</span></span></div>
+                <div class="mask-flags" data-mask-group="${table}.${f}" data-mask-type="bits" data-table="${table}" data-field="${f}">
+                ${schema.bits.map(b => `<label>
+                    <input type="checkbox" data-mask-bit="${b.bit}" ${(val & b.bit) ? 'checked' : ''}
+                           onchange="recomputeMask('${table}','${f}')">${b.label}</input>
+                  </label>`).join('')}
+              </div></div>`;
+          }
+          if (schema && schema.type === 'enum') {
+            const known = schema.options.some(o => o.value === val);
+            const opts = known ? schema.options : [{value: val, label: '(undocumented value)'}, ...schema.options];
+            return `<div class="field-row"><label>${f}</label>
+              <select data-table="${table}" data-field="${f}">
+                ${opts.map(o => `<option value="${o.value}" ${o.value === val ? 'selected' : ''}>${o.value} -- ${o.label}</option>`).join('')}
+              </select>
+            </div>`;
+          }
+          if (schema && schema.type === 'nibbles') {
+            const maxVal = (1 << schema.width) - 1;
+            return `<div class="mask-row">
+                <div class="mask-label"><span>${f}</span><span class="mono">raw: <span data-mask-display="${table}.${f}">${val}</span></span></div>
+                <div class="mask-flags" data-mask-group="${table}.${f}" data-mask-type="nibbles" data-mask-width="${schema.width}" data-table="${table}" data-field="${f}">
+                ${schema.fields.map(fl => `<label>
+                    ${fl.label}
+                    <input type="number" min="0" max="${maxVal}" data-mask-shift="${fl.shift}"
+                           value="${(val >> fl.shift) & maxVal}"
+                           onchange="recomputeMask('${table}','${f}')">
+                  </label>`).join('')}
+              </div></div>`;
+          }
+          return `<div class="field-row"><label>${f}</label>
+            <input type="text" data-table="${table}" data-field="${f}"
+                   value="${row[f] === null ? '' : String(row[f]).replace(/"/g,'&quot;')}">
+          </div>`;
+        }).join('')}`;
+    wrap.appendChild(box);
+  }
+  const listsWrap = document.getElementById('editorLists');
+  listsWrap.innerHTML = '';
+  renderMods(data.mods || []);
+  renderPetMods(data.pet_mods || []);
+  renderLatents(data.latents || []);
+  document.getElementById('editorWrap').style.display = '';
+  document.getElementById('saveStatus').textContent = '';
+  document.getElementById('itemBackupMsg').textContent = '';
+  refreshItemBackups();
+}
+
+function refreshDatInfo(data) {
+  const card = document.getElementById('datInfoCard');
+  const st = data.dat_status || {};
+  if (!data.client) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  document.getElementById('datRomPath').textContent = st.dat_ui || '(unknown)';
+  document.getElementById('datCatIdx').textContent = `${st.category || '?'} / #${st.record_index ?? '?'}`;
+  document.getElementById('datFormat').textContent = st.format || '?';
+  document.getElementById('datBackedUp').textContent = st.has_backup
+    ? 'yes (pristine .orig on disk)' : 'not yet -- made automatically on first edit';
+  document.getElementById('datTarget').value = st.target || 'live';
+  const pivotLine = document.getElementById('pivotRootLine');
+  if (st.target === 'pivot') {
+    pivotLine.style.display = '';
+    pivotLine.textContent = `Writing into: ${st.pivot_root}`;
+  } else {
+    pivotLine.style.display = 'none';
+  }
+  document.getElementById('datBackupList').innerHTML = '';
+}
+
+async function refreshDatBackups() {
+  const romPath = document.getElementById('datRomPath').textContent;
+  const box = document.getElementById('datBackupList');
+  if (!romPath || romPath === '(unknown)') { box.innerHTML = ''; return; }
+  const key = romPath.replace(/\//g, '_').replace(/\\/g, '_');
+  const all = await (await fetch('/itemedit/dat-backups.json')).json();
+  const mine = all.filter(b => b.key === key);
+  if (!mine.length) { box.innerHTML = '<p class="muted" style="padding:8px;">No backups on disk yet for this DAT.</p>'; return; }
+  const rows = mine.map(b => {
+    const when = new Date(b.mtime * 1000).toLocaleString();
+    const label = b.kind === 'pristine' ? 'pristine (first-ever-seen state)' : when;
+    return `<tr>
+      <td class="mono">${label}</td>
+      <td class="mono">${b.kind}</td>
+      <td class="mono">${(b.size / 1024).toFixed(1)} KB</td>
+      <td style="width:70px;"><button data-restore-dat="${b.id}">Restore</button></td>
+    </tr>`;
+  }).join('');
+  box.innerHTML = `<table><thead><tr><th>When</th><th>Kind</th><th>Size</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  box.querySelectorAll('[data-restore-dat]').forEach(btn =>
+    btn.onclick = () => restoreDatBackup(btn.dataset.restoreDat));
+}
+
+async function setDatTarget() {
+  const sel = document.getElementById('datTarget');
+  const prev = sel.value === 'pivot' ? 'live' : 'pivot';
+  const res = await fetch('/itemedit/dat-target.json', {
+    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({target: sel.value})
+  });
+  const j = await res.json();
+  if (j.error) { alert(j.error); sel.value = prev; return; }
+  if (currentItemId) loadItem(currentItemId);
+}
+
+async function restoreDatBackup(backupId) {
+  const romPath = document.getElementById('datRomPath').textContent;
+  if (!romPath || romPath === '(unknown)') return;
+  const what = backupId === 'orig' ? 'the pristine (first-ever-seen) backup' : `the snapshot from ${backupId}`;
+  if (!confirm(`Restore ${what} of ${romPath} over the LIVE install copy? This does not touch any Xi-Pivot overlay copy.`)) return;
+  const res = await fetch('/itemedit/dat-backups/restore', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({dat_ui: romPath, backup_id: backupId})
+  });
+  const j = await res.json();
+  alert(j.error ? ('ERROR: ' + j.error) : `Restored to ${j.restored_to} (from ${j.restored_from})`);
+  if (currentItemId) loadItem(currentItemId);
+}
+
+async function downloadXiPivot() {
+  const manifest = await (await fetch('/itemedit/xi-pivot/manifest.json')).json();
+  if (!manifest.files || !manifest.files.length) {
+    alert('Xi-Pivot folder is empty -- no edits have been written to it yet. Switch "Write target" to Xi-Pivot overlay and make an edit first.');
+    return;
+  }
+  if (!confirm(`Download Xi-Pivot.zip -- ${manifest.files.length} DAT file(s) from ${manifest.root}, packaged for distribution?`)) return;
+  window.location.href = '/itemedit/xi-pivot/export.zip';
+}
+
+async function refreshItemBackups() {
+  const list = document.getElementById('itemBackupList');
+  if (!currentItemId) { list.innerHTML = ''; return; }
+  const rows = (await (await fetch('/itemedit/backups.json')).json())
+    .filter(b => b.item_id === currentItemId);
+  list.innerHTML = rows.length ? `<table><tbody>
+      ${rows.map(b => `<tr>
+          <td class="mono" style="width:140px;">${b.ts}</td>
+          <td>${b.label}</td>
+          <td style="width:60px;">${b.rows} row(s)</td>
+          <td style="width:70px;"><button data-restore-backup="${b.id}">Restore</button></td>
+        </tr>`).join('')}
+    </tbody></table>` : `<div class="muted" style="padding:6px;">No backups yet for this item.</div>`;
+  list.querySelectorAll('[data-restore-backup]').forEach(btn =>
+    btn.onclick = () => doItemRestore(btn.dataset.restoreBackup));
+}
+
+async function doItemRestore(bid) {
+  if (!confirm(`Restore backup ${bid}? This writes to the live DB now (the current state is itself backed up first).`)) return;
+  const res = await fetch('/itemedit/restore', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({id: bid})
+  });
+  const j = await res.json();
+  const msg = document.getElementById('itemBackupMsg');
+  msg.textContent = j.error ? 'ERROR: ' + j.error
+    : `Restored ${j.restored} row(s). Pre-restore state saved as backup ${j.pre_restore_backup}.`;
+  if (!j.error) loadItem(currentItemId);
+}
+
+async function deleteItem() {
+  if (!currentItemId) return;
+  if (!confirm(`Delete item ${currentItemId} from the server DB? This removes its rows from every item_* table plus mods/pet mods/latents. A backup is taken first (restorable from the list above), but the client DAT slot is left in place and will show as an orphaned/unusable item id until something else is written there. Continue?`)) return;
+  const comment = document.getElementById('editComment').value;
+  const res = await fetch('/itemedit/delete', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({item_id: currentItemId, comment})
+  });
+  const j = await res.json();
+  const msg = document.getElementById('deleteItemMsg');
+  if (j.error) { msg.textContent = 'ERROR: ' + j.error; return; }
+  msg.textContent = `Deleted item ${currentItemId} (backup ${j.backup}). Restore it from the Backups list if this was a mistake.`;
+  document.getElementById('editorWrap').style.display = 'none';
+  currentItemId = null;
+}
+
+function renderMods(mods) {
+  const wrap = document.getElementById('editorLists');
+  const box = document.createElement('div');
+  box.className = 'edit-card';
+  box.innerHTML = `<h3>item_mods<span class="hint">stat/effect bonuses granted by this item -- saved individually, not part of Save All</span></h3>
+    <div class="rowtable-wrap table-wrap"><table><tbody>
+      ${mods.map(m => `<tr>
+          <td style="width:36px;">${m.modId}</td>
+          <td>${m.name || '(unconfirmed modId)'}</td>
+          <td style="width:70px;"><input type="number" data-mod-id="${m.modId}" data-mod-value value="${m.value}" style="width:64px;"></td>
+          <td style="width:110px;">
+            <button onclick="saveMod(${m.modId})">save</button>
+            <button onclick="deleteMod(${m.modId})">remove</button>
+          </td>
+        </tr>`).join('') || `<tr><td class="muted">no mods on this item</td></tr>`}
+      <tr>
+        <td colspan="2"><input type="text" id="newModId" list="dl_mods" placeholder="type to search mods..." style="width:100%;"></td>
+        <td><input type="number" id="newModValue" value="0" style="width:64px;"></td>
+        <td><button onclick="addMod()">add</button></td>
+      </tr>
+    </tbody></table></div>`;
+  wrap.appendChild(box);
+}
+
+async function saveMod(modId) {
+  const inp = document.querySelector(`input[data-mod-value][data-mod-id="${modId}"]`);
+  const comment = document.getElementById('editComment').value;
+  const res = await fetch('/itemedit/mods/set', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({item_id: currentItemId, mod_id: modId, value: Number(inp.value) || 0, comment})
+  });
+  const j = await res.json();
+  if (j.error) { alert(j.error); return; }
+  loadItem(currentItemId);
+}
+
+async function deleteMod(modId) {
+  if (!confirm(`Remove modId ${modId} from item ${currentItemId}?`)) return;
+  const comment = document.getElementById('editComment').value;
+  const res = await fetch('/itemedit/mods/delete', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({item_id: currentItemId, mod_id: modId, comment})
+  });
+  const j = await res.json();
+  if (j.error) { alert(j.error); return; }
+  loadItem(currentItemId);
+}
+
+async function addMod() {
+  const modId = pickerValue('newModId', MOD_NAMES);
+  if (modId === null) { alert('pick a mod'); return; }
+  const value = Number(document.getElementById('newModValue').value) || 0;
+  const comment = document.getElementById('editComment').value;
+  const res = await fetch('/itemedit/mods/set', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({item_id: currentItemId, mod_id: modId, value, comment})
+  });
+  const j = await res.json();
+  if (j.error) { alert(j.error); return; }
+  loadItem(currentItemId);
+}
+
+function renderPetMods(petMods) {
+  const wrap = document.getElementById('editorLists');
+  const box = document.createElement('div');
+  box.className = 'edit-card';
+  box.innerHTML = `<h3>item_mods_pet<span class="hint">bonuses applied to your pet (avatar/wyvern/automaton/etc) while equipped -- saved individually, not part of Save All</span></h3>
+    <div class="rowtable-wrap table-wrap"><table><tbody>
+      ${petMods.map(m => `<tr>
+          <td style="width:36px;">${m.modId}</td>
+          <td>${m.name || '(unconfirmed modId)'}</td>
+          <td style="width:80px;">${m.petTypeName || `pet ${m.petType}`}</td>
+          <td style="width:70px;"><input type="number" data-petmod-id="${m.modId}" data-petmod-pettype="${m.petType}" data-petmod-value value="${m.value}" style="width:64px;"></td>
+          <td style="width:110px;">
+            <button onclick="savePetMod(${m.modId}, ${m.petType})">save</button>
+            <button onclick="deletePetMod(${m.modId}, ${m.petType})">remove</button>
+          </td>
+        </tr>`).join('') || `<tr><td class="muted">no pet mods on this item</td></tr>`}
+      <tr>
+        <td colspan="2"><input type="text" id="newPetModId" list="dl_mods" placeholder="type to search mods..." style="width:100%;"></td>
+        <td><input type="text" id="newPetModType" list="dl_pettypes" placeholder="pet type..." style="width:100%;"></td>
+        <td><input type="number" id="newPetModValue" value="0" style="width:64px;"></td>
+        <td><button onclick="addPetMod()">add</button></td>
+      </tr>
+    </tbody></table></div>`;
+  wrap.appendChild(box);
+}
+
+function renderLatents(latents) {
+  const wrap = document.getElementById('editorLists');
+  const box = document.createElement('div');
+  box.className = 'edit-card';
+  box.innerHTML = `<h3>item_latents<span class="hint">conditional/hidden effects (e.g. Vs. Undead, HP under X%) -- value is part of the row's key, so rows are add/remove only, not part of Save All</span></h3>
+    <div class="rowtable-wrap table-wrap"><table><tbody>
+      ${latents.map(l => `<tr>
+          <td style="width:36px;">${l.modId}</td>
+          <td>${l.name || '(unconfirmed modId)'}</td>
+          <td style="width:50px;">${l.value}</td>
+          <td>${l.latentName || `latent ${l.latentId}`}</td>
+          <td style="width:50px;">param ${l.latentParam}</td>
+          <td style="width:70px;">
+            <button onclick="deleteLatent(${l.modId}, ${l.value}, ${l.latentId}, ${l.latentParam})">remove</button>
+          </td>
+        </tr>`).join('') || `<tr><td class="muted">no latents on this item</td></tr>`}
+      <tr>
+        <td colspan="2"><input type="text" id="newLatentModId" list="dl_mods" placeholder="type to search mods..." style="width:100%;"></td>
+        <td><input type="number" id="newLatentValue" value="0" style="width:44px;" title="value"></td>
+        <td><input type="text" id="newLatentId" list="dl_latents" placeholder="type to search conditions..." style="width:100%;"></td>
+        <td><input type="number" id="newLatentParam" value="0" style="width:44px;" title="param"></td>
+        <td><button onclick="addLatent()">add</button></td>
+      </tr>
+    </tbody></table></div>`;
+  wrap.appendChild(box);
+}
+
+async function addLatent() {
+  const modId = pickerValue('newLatentModId', MOD_NAMES);
+  if (modId === null) { alert('pick a mod'); return; }
+  const value = Number(document.getElementById('newLatentValue').value) || 0;
+  const latentId = pickerValue('newLatentId', LATENT_NAMES);
+  if (latentId === null) { alert('pick a latent condition'); return; }
+  const latentParam = Number(document.getElementById('newLatentParam').value) || 0;
+  const comment = document.getElementById('editComment').value;
+  const res = await fetch('/itemedit/latents/add', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({item_id: currentItemId, mod_id: modId, value, latent_id: latentId, latent_param: latentParam, comment})
+  });
+  const j = await res.json();
+  if (j.error) { alert(j.error); return; }
+  loadItem(currentItemId);
+}
+
+async function deleteLatent(modId, value, latentId, latentParam) {
+  if (!confirm(`Remove this latent row from item ${currentItemId}?`)) return;
+  const comment = document.getElementById('editComment').value;
+  const res = await fetch('/itemedit/latents/delete', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({item_id: currentItemId, mod_id: modId, value, latent_id: latentId, latent_param: latentParam, comment})
+  });
+  const j = await res.json();
+  if (j.error) { alert(j.error); return; }
+  loadItem(currentItemId);
+}
+
+async function savePetMod(modId, petType) {
+  const inp = document.querySelector(`input[data-petmod-value][data-petmod-id="${modId}"][data-petmod-pettype="${petType}"]`);
+  const comment = document.getElementById('editComment').value;
+  const res = await fetch('/itemedit/petmods/set', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({item_id: currentItemId, mod_id: modId, pet_type: petType, value: Number(inp.value) || 0, comment})
+  });
+  const j = await res.json();
+  if (j.error) { alert(j.error); return; }
+  loadItem(currentItemId);
+}
+
+async function deletePetMod(modId, petType) {
+  if (!confirm(`Remove modId ${modId} (petType ${petType}) from item ${currentItemId}?`)) return;
+  const comment = document.getElementById('editComment').value;
+  const res = await fetch('/itemedit/petmods/delete', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({item_id: currentItemId, mod_id: modId, pet_type: petType, comment})
+  });
+  const j = await res.json();
+  if (j.error) { alert(j.error); return; }
+  loadItem(currentItemId);
+}
+
+async function addPetMod() {
+  const modId = pickerValue('newPetModId', MOD_NAMES);
+  if (modId === null) { alert('pick a mod'); return; }
+  const petType = pickerValue('newPetModType', PET_TYPE_NAMES) || 0;
+  const value = Number(document.getElementById('newPetModValue').value) || 0;
+  const comment = document.getElementById('editComment').value;
+  const res = await fetch('/itemedit/petmods/set', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({item_id: currentItemId, mod_id: modId, pet_type: petType, value, comment})
+  });
+  const j = await res.json();
+  if (j.error) { alert(j.error); return; }
+  loadItem(currentItemId);
+}
+
+function recomputeMask(table, field) {
+  const group = document.querySelector(`[data-mask-group="${table}.${field}"]`);
+  let val = 0;
+  if (group.dataset.maskType === 'nibbles') {
+    const width = Number(group.dataset.maskWidth);
+    const maxVal = (1 << width) - 1;
+    group.querySelectorAll('input[data-mask-shift]').forEach(inp => {
+      const v = Math.max(0, Math.min(maxVal, Number(inp.value) || 0));
+      inp.value = v;
+      val |= v << Number(inp.dataset.maskShift);
+    });
+  } else {
+    group.querySelectorAll('input[data-mask-bit]').forEach(cb => {
+      if (cb.checked) val |= Number(cb.dataset.maskBit);
+    });
+  }
+  document.querySelector(`[data-mask-display="${table}.${field}"]`).textContent = val;
+  group.dataset.maskValue = val;
+}
+
+async function saveAll() {
+  if (!currentItemId) return;
+  const comment = document.getElementById('editComment').value;
+  const inputs = document.querySelectorAll('#editorTables input[data-table], #editorTables select[data-table]');
+  const byTable = {};
+  for (const inp of inputs) {
+    const t = inp.dataset.table, f = inp.dataset.field;
+    (byTable[t] ||= {})[f] = inp.value;
+  }
+  const maskGroups = document.querySelectorAll('#editorTables [data-mask-group]');
+  for (const g of maskGroups) {
+    const t = g.dataset.table, f = g.dataset.field;
+    let val = 0;
+    if (g.dataset.maskType === 'nibbles') {
+      g.querySelectorAll('input[data-mask-shift]').forEach(inp => { val |= (Number(inp.value) || 0) << Number(inp.dataset.maskShift); });
+    } else {
+      g.querySelectorAll('input[data-mask-bit]').forEach(cb => { if (cb.checked) val |= Number(cb.dataset.maskBit); });
+    }
+    (byTable[t] ||= {})[f] = val;
+  }
+  const status = document.getElementById('saveStatus');
+  status.textContent = 'Saving...';
+  const reports = [];
+  for (const [table, fields] of Object.entries(byTable)) {
+    const res = await fetch('/itemedit/update', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({item_id: currentItemId, table, fields, comment}),
+    });
+    const j = await res.json();
+    if (!res.ok) { status.textContent = `Error on ${table}: ${j.error || res.statusText}`; return; }
+    reports.push(`${table}: saved (backup ${j.backup})`);
+  }
+  status.textContent = reports.join(' | ');
+  loadItem(currentItemId);
+}
+
+let cloneTemplate = null;
+
+async function loadCloneTemplate() {
+  const srcId = document.getElementById('cloneSourceId').value.trim();
+  const status = document.getElementById('cloneStatus');
+  if (!srcId) { status.textContent = ''; cloneTemplate = null; return; }
+  status.textContent = 'Loading...';
+  const res = await fetch(`/itemedit/clone-template.json?item_id=${encodeURIComponent(srcId)}`);
+  const j = await res.json();
+  if (!res.ok) { status.textContent = `Error: ${j.error || res.statusText}`; cloneTemplate = null; return; }
+  cloneTemplate = j;
+  const catSel = document.getElementById('newCategory');
+  if (![...catSel.options].some(o => o.value === j.category)) {
+    catSel.add(new Option(j.category, j.category));
+  }
+  catSel.value = j.category;
+  document.getElementById('newType').value = String(j.item_type);
+  document.getElementById('newName').value = j.entry.name || '';
+  const modCount = (j.mods || []).length + (j.pet_mods || []).length + (j.latents || []).length;
+  status.textContent = `Template loaded from item ${j.source_item_id} (${j.entry.name}) -- ${modCount} mod/latent row(s) available to copy. Review the fields below, then Create.`;
+}
+
+async function createItem() {
+  const category = document.getElementById('newCategory').value;
+  const item_type = document.getElementById('newType').value;
+  const name = document.getElementById('newName').value.trim();
+  if (!name) { alert('enter a name'); return; }
+  const status = document.getElementById('createStatus');
+  status.textContent = 'Creating...';
+  // Start from the loaded clone template's full field set (if any), but always use the name
+  // field's current value -- the user may have edited it after loading the template.
+  const entry = cloneTemplate ? {...cloneTemplate.entry, name} : {name};
+  const res = await fetch('/itemedit/create', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({category, item_type, entry}),
+  });
+  const j = await res.json();
+  if (!res.ok) { status.textContent = `Error: ${j.error || res.statusText}`; return; }
+  status.textContent = `Created item ${j.item_id} (backup ${j.backup})`;
+
+  if (cloneTemplate && document.getElementById('cloneModsToo').checked) {
+    const newId = j.item_id;
+    let copied = 0, failed = 0;
+    for (const m of cloneTemplate.mods || []) {
+      const r = await fetch('/itemedit/mods/set', {method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({item_id: newId, mod_id: m.modId, value: m.value, comment: `cloned from item ${cloneTemplate.source_item_id}`})});
+      r.ok ? copied++ : failed++;
+    }
+    for (const m of cloneTemplate.pet_mods || []) {
+      const r = await fetch('/itemedit/petmods/set', {method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({item_id: newId, mod_id: m.modId, pet_type: m.petType, value: m.value, comment: `cloned from item ${cloneTemplate.source_item_id}`})});
+      r.ok ? copied++ : failed++;
+    }
+    for (const l of cloneTemplate.latents || []) {
+      const r = await fetch('/itemedit/latents/add', {method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({item_id: newId, mod_id: l.modId, value: l.value, latent_id: l.latentId, latent_param: l.latentParam, comment: `cloned from item ${cloneTemplate.source_item_id}`})});
+      r.ok ? copied++ : failed++;
+    }
+    status.textContent += ` | copied ${copied} mod/latent row(s)${failed ? `, ${failed} failed` : ''}`;
+  }
+
+  cloneTemplate = null;
+  document.getElementById('cloneSourceId').value = '';
+  document.getElementById('cloneStatus').textContent = '';
+  loadItem(j.item_id);
+}
+</script>
+{% endblock %}

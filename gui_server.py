@@ -2763,10 +2763,18 @@ def events_browse(request: Request, zone: str = "", q: str = ""):
                     "SELECT name FROM npc_names WHERE zoneid = ? AND npcid = ?", (zoneid, entity_id)
                 ).fetchone()
             name = name_row[0] if name_row else None
-            if q and q.lower() not in str(entity_id).lower() and (not name or q.lower() not in name.lower()):
-                continue
+            q_stripped = q.strip() if q else ""
+            entity_match = bool(q_stripped) and (
+                q_stripped.lower() in str(entity_id).lower() or (name and q_stripped.lower() in name.lower())
+            )
+            # A bare/negative digit string is treated as a candidate csid too, matched exactly (not
+            # substring) -- a substring match on entity_id alone let unrelated entities with the
+            # csid embedded in their id (e.g. entity 16982289 for csid 289) shadow the real hit.
+            q_csid = int(q_stripped) if q_stripped.lstrip("-").isdigit() else None
             for eid in b["event_ids"]:
                 if eid == 65535:  # LSB/Topaz sentinel for "no event", not a real CSID
+                    continue
+                if q_stripped and not entity_match and eid != q_csid:
                     continue
                 rows.append({"entity_id": entity_id, "name": name, "csid": eid})
     con.close()
@@ -4568,6 +4576,29 @@ def zoneplot_mesh_info(zid: int):
     return JSONResponse({"ntris": nt, "nverts": nv, "bytes": p.stat().st_size})
 
 
+@app.post("/zoneplot/{zid}/build_cache")
+def zoneplot_build_cache(zid: int):
+    """UI-triggered equivalent of `py -3 build_zone_visual_cache.py <zid>` -- builds the Legacy OBJ
+    cache on demand so Zone Plot users never have to drop to a terminal for it. Captures build_one's
+    own print() diagnostics (dat path missing, no geometry_rom_path, parse failure, etc.) so the
+    button can surface the real reason instead of just a bare pass/fail."""
+    import contextlib
+    import io
+    import sqlite3
+    import build_zone_visual_cache as bz
+    ffxi = settings_mod.get_ffxi_install()
+    if not ffxi:
+        return JSONResponse({"ok": False, "log": "FFXI install path isn't configured -- set it on the Settings page first"}, status_code=400)
+    buf = io.StringIO()
+    con = sqlite3.connect(str(bz.DB_PATH))
+    try:
+        with contextlib.redirect_stdout(buf):
+            ok = bz.build_one(con, zid, ffxi)
+    finally:
+        con.close()
+    return JSONResponse({"ok": ok, "log": buf.getvalue().strip()})
+
+
 @app.post("/zoneplot/edit")
 async def zoneplot_edit(request: Request):
     import zone_edit
@@ -4733,6 +4764,236 @@ def zoneplot_nav_meta(zid: int):
     if not p:
         return Response(b"", media_type="application/octet-stream")
     return Response(zone_plot.nav.nav_triangle_meta_bytes(p), media_type="application/octet-stream")
+
+
+# ---- Item Editor (item_edit.py / item_dat_tools.py) ------------------------------------------
+# Live search-and-edit GUI for all item classes across item_basic/item_equipment/item_weapon/
+# item_usable/item_puppet/item_furnishing, plus the real client-DAT record the FFXI client
+# independently enforces (level etc.) -- see item_edit.py's module docstring. Separate from the
+# existing /items page, which is a read-only LSB<->external id-drift comparison tool.
+
+@app.get("/itemedit", response_class=HTMLResponse)
+def itemedit_page(request: Request):
+    return templates.TemplateResponse(request, "itemedit.html", {})
+
+
+@app.get("/itemedit/search.json")
+def itemedit_search(q: str = "", category: str = ""):
+    import item_edit
+    try:
+        return JSONResponse(item_edit.search(q, category))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.get("/itemedit/backups.json")
+def itemedit_backups():
+    import item_edit
+    return JSONResponse(item_edit.list_backups())
+
+
+@app.get("/itemedit/bitmasks.json")
+def itemedit_bitmasks():
+    import item_edit
+    return JSONResponse(item_edit.bitmask_schema())
+
+
+@app.get("/itemedit/modnames.json")
+def itemedit_modnames():
+    import item_edit
+    return JSONResponse(item_edit.mod_names())
+
+
+@app.get("/itemedit/pettypes.json")
+def itemedit_pettypes():
+    import item_edit
+    return JSONResponse(item_edit.pet_type_names())
+
+
+@app.get("/itemedit/latentnames.json")
+def itemedit_latentnames():
+    import item_edit
+    return JSONResponse(item_edit.latent_names())
+
+
+@app.get("/itemedit/dat-target.json")
+def itemedit_dat_target_get():
+    import item_dat_tools
+    return JSONResponse({
+        "target": item_dat_tools.dat_target(),
+        "pivot_root": str(item_dat_tools.pivot_root()),
+    })
+
+
+@app.post("/itemedit/dat-target.json")
+async def itemedit_dat_target_set(request: Request):
+    import item_dat_tools
+    b = await request.json()
+    try:
+        item_dat_tools.set_dat_target(b["target"])
+        return JSONResponse({"target": item_dat_tools.dat_target(), "pivot_root": str(item_dat_tools.pivot_root())})
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.get("/itemedit/dat-backups.json")
+def itemedit_dat_backups():
+    import item_dat_tools
+    return JSONResponse(item_dat_tools.list_dat_backups())
+
+
+@app.post("/itemedit/dat-backups/restore")
+async def itemedit_dat_backups_restore(request: Request):
+    import item_dat_tools
+    b = await request.json()
+    try:
+        return JSONResponse(item_dat_tools.restore_dat_backup(b["dat_ui"], b.get("backup_id")))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.get("/itemedit/xi-pivot/manifest.json")
+def itemedit_xi_pivot_manifest():
+    import item_dat_tools
+    return JSONResponse(item_dat_tools.pivot_manifest())
+
+
+@app.get("/itemedit/xi-pivot/export.zip")
+def itemedit_xi_pivot_export():
+    """Zips the current Xi-Pivot overlay folder (mirrors the ROM/x/y.DAT layout) for
+    distribution -- drop the extracted "ROM" folder from this zip next to the game install per
+    whatever DAT-overlay loader the user is pairing Xi-Pivot with; the real install is never
+    touched to produce this."""
+    import item_dat_tools
+    manifest = item_dat_tools.pivot_manifest()
+    root = Path(manifest["root"])
+    if not manifest["files"]:
+        return JSONResponse({"error": "Xi-Pivot folder is empty -- no edits have been written to it yet"}, status_code=400)
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for f in manifest["files"]:
+            zf.write(root / f["rom_path"], arcname=f["rom_path"])
+    buf.seek(0)
+    return Response(buf.read(), media_type="application/zip",
+                     headers={"Content-Disposition": 'attachment; filename="Xi-Pivot.zip"'})
+
+
+@app.get("/itemedit/clone-template.json")
+def itemedit_clone_template(item_id: int):
+    import item_edit
+    try:
+        return JSONResponse(item_edit.clone_template(item_id))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.get("/itemedit/{itemid}.json")
+def itemedit_get(itemid: int):
+    import item_edit
+    try:
+        return JSONResponse(item_edit.get_item(itemid))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/itemedit/update")
+async def itemedit_update(request: Request):
+    import item_edit
+    b = await request.json()
+    try:
+        return JSONResponse(item_edit.update_item(b["item_id"], b["table"], b["fields"], b.get("comment", "")))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/itemedit/create")
+async def itemedit_create(request: Request):
+    import item_edit
+    b = await request.json()
+    try:
+        return JSONResponse(item_edit.create_item(b["category"], b["item_type"], b["entry"], b.get("comment", "")))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/itemedit/delete")
+async def itemedit_delete(request: Request):
+    import item_edit
+    b = await request.json()
+    try:
+        return JSONResponse(item_edit.delete_item(b["item_id"], b.get("comment", "")))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/itemedit/restore")
+async def itemedit_restore(request: Request):
+    import item_edit
+    b = await request.json()
+    try:
+        return JSONResponse(item_edit.restore(b["id"]))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/itemedit/mods/set")
+async def itemedit_mods_set(request: Request):
+    import item_edit
+    b = await request.json()
+    try:
+        return JSONResponse(item_edit.set_item_mod(b["item_id"], b["mod_id"], b["value"], b.get("comment", "")))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/itemedit/mods/delete")
+async def itemedit_mods_delete(request: Request):
+    import item_edit
+    b = await request.json()
+    try:
+        return JSONResponse(item_edit.delete_item_mod(b["item_id"], b["mod_id"], b.get("comment", "")))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/itemedit/petmods/set")
+async def itemedit_petmods_set(request: Request):
+    import item_edit
+    b = await request.json()
+    try:
+        return JSONResponse(item_edit.set_item_pet_mod(b["item_id"], b["mod_id"], b["pet_type"], b["value"], b.get("comment", "")))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/itemedit/petmods/delete")
+async def itemedit_petmods_delete(request: Request):
+    import item_edit
+    b = await request.json()
+    try:
+        return JSONResponse(item_edit.delete_item_pet_mod(b["item_id"], b["mod_id"], b["pet_type"], b.get("comment", "")))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/itemedit/latents/add")
+async def itemedit_latents_add(request: Request):
+    import item_edit
+    b = await request.json()
+    try:
+        return JSONResponse(item_edit.add_item_latent(b["item_id"], b["mod_id"], b["value"], b["latent_id"], b["latent_param"], b.get("comment", "")))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/itemedit/latents/delete")
+async def itemedit_latents_delete(request: Request):
+    import item_edit
+    b = await request.json()
+    try:
+        return JSONResponse(item_edit.delete_item_latent(b["item_id"], b["mod_id"], b["value"], b["latent_id"], b["latent_param"], b.get("comment", "")))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
 
 
 # ---- Model viewer (model_viewer.py) ----------------------------------------------------------

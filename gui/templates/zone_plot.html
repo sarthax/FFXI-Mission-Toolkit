@@ -33,6 +33,7 @@
   <label>Colour by <select id="mode"><option value="reach">Reachability</option><option value="kind">Kind</option><option value="comp">Nav region</option></select></label>
   <label><span>Navmesh overlay</span><input type="checkbox" id="shownav" checked></label>
   <label>Mesh complexity <select id="lod"><option value="live">Live (textured)</option><option value="0">Full</option><option value="1">High (drop &lt;0.75u)</option><option value="2">Medium (&lt;1.5u)</option><option value="3">Low (&lt;3u)</option><option value="obj">Legacy OBJ (full)</option></select></label>
+  <button id="buildCacheBtn" hidden style="margin-top:4px">Build visual mesh cache for this zone</button>
   <label>Mesh opacity <input type="range" id="opac" min="0.05" max="1" step="0.05" value="0.35"></label>
   <label>Dot size <input type="range" id="dsz" min="0.3" max="4" step="0.1" value="1.2"></label>
   <label>Nearest labels <input type="number" id="nlab" value="40" min="0" max="300"></label>
@@ -446,9 +447,16 @@ async function loadZMesh(zid, gen){
     return;
   }
   if (meshObj){ scene.remove(meshObj); meshObj=null; }
-  if (lod==='obj'){ new OBJLoader().load(`/static/zone_visual/${zid}.obj`, o=>{
-    if(+$('zone').value!==zid || $('lod').value!=='obj' || (gen!==undefined && gen!==loadGen)) return;
-    o.traverse(c=>{ if(c.isMesh) c.material=new THREE.MeshStandardMaterial({color:0x4a5a68,roughness:.9,transparent:true,opacity:+$('opac').value,side:THREE.DoubleSide,depthWrite:false}); }); meshObj=o; scene.add(o); }); return; }
+  if (lod==='obj'){
+    $('buildCacheBtn').hidden = true;
+    new OBJLoader().load(`/static/zone_visual/${zid}.obj`, o=>{
+      if(+$('zone').value!==zid || $('lod').value!=='obj' || (gen!==undefined && gen!==loadGen)) return;
+      o.traverse(c=>{ if(c.isMesh) c.material=new THREE.MeshStandardMaterial({color:0x4a5a68,roughness:.9,transparent:true,opacity:+$('opac').value,side:THREE.DoubleSide,depthWrite:false}); }); meshObj=o; scene.add(o); },
+      undefined,
+      ()=>{ if(+$('zone').value!==zid || $('lod').value!=='obj' || (gen!==undefined && gen!==loadGen)) return;
+        $('sum').textContent += '\n(no cached Legacy OBJ mesh for this zone yet)';
+        $('buildCacheBtn').hidden = false; });
+    return; }
   const buf = await (await fetch(`/zoneplot/${zid}/mesh.zmesh?lod=${lod}`)).arrayBuffer();
   if (+$('zone').value!==zid || $('lod').value!==lod || buf.byteLength<12 || (gen!==undefined && gen!==loadGen)) return;
   const hd = new Uint32Array(buf,4,2), nv=hd[0], nt=hd[1];
@@ -545,11 +553,24 @@ renderer.domElement.addEventListener('mousemove',ev=>{ const i=pick(ev); if(i!==
 let down=null; renderer.domElement.addEventListener('pointerdown',ev=>down=[ev.clientX,ev.clientY]);
 renderer.domElement.addEventListener('pointerup',async ev=>{ if(!down||Math.hypot(ev.clientX-down[0],ev.clientY-down[1])>4) return; const i=pick(ev); if(i<0) return;
   if (ev.shiftKey){ const e=Z.entities[i]; anchor={x:e.x,y:e.y,z:e.z}; await computeReach(); rebuild(); } else select(i,false); });
-$('zone').onchange=()=>{ fillInst(); loadZone(); }; $('inst').onchange=loadZone; $('lod').onchange=()=>Z&&loadZMesh(Z.zid);
+$('zone').onchange=()=>{ $('buildCacheBtn').hidden=true; fillInst(); loadZone(); }; $('inst').onchange=loadZone;
+$('lod').onchange=()=>{ if($('lod').value!=='obj') $('buildCacheBtn').hidden=true; Z&&loadZMesh(Z.zid); };
 ['showm','shown','showd','mode','dsz'].forEach(id=>$(id).addEventListener('input',()=>Z&&rebuild()));
 $('q').addEventListener('input',()=>Z&&rebuild());
 $('shownav').onchange=()=>{ if(navMesh) navMesh.visible=$('shownav').checked; };
 $('opac').oninput=()=>meshObj&&meshObj.traverse(c=>{ if(c.isMesh) c.material.opacity=+$('opac').value; });
+$('buildCacheBtn').onclick=async()=>{
+  const zid=+$('zone').value, btn=$('buildCacheBtn');
+  btn.disabled=true; btn.textContent='Building…';
+  try {
+    const r=await fetch(`/zoneplot/${zid}/build_cache`,{method:'POST'});
+    const j=await r.json();
+    $('sum').textContent += '\n'+(j.log || (j.ok?'(build succeeded)':'(build failed)'));
+    if (j.ok && $('lod').value==='obj') await loadZMesh(zid);
+    else if (!j.ok) btn.hidden=false;
+  } catch(e){ $('sum').textContent += '\n(build request failed: '+e.message+')'; btn.hidden=false; }
+  finally { btn.disabled=false; btn.textContent='Build visual mesh cache for this zone'; }
+};
 $('reachbtn').onclick=async()=>{ await computeReach(); rebuild(); };
 $('clran').onclick=async()=>{ anchor=null; await computeReach(); rebuild(); };
 window.addEventListener('resize',()=>{ const w=container.clientWidth,h=container.clientHeight; camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h); lr.setSize(w,h); });

@@ -122,14 +122,27 @@ def load_zones(conn):
             path_part, csv_name = line.split(",", 1)
             parts = path_part.split("/")
             if len(parts) == 2:
+                # A 2-part entry ("254/8") is a direct (dir, file) pair meant to be resolved
+                # through the BASE client's own FTABLE.DAT/VTABLE.DAT -- i.e. it lives under the
+                # plain "ROM" folder as ROM\<dir>\<file>.DAT, NOT under a folder literally named
+                # "ROM<dir>". Confirmed 2026-09-23 against a real client: for zone 216 (Abyssea -
+                # Misareaux), dat-extractor's real VTABLE/FTABLE resolver proved the zone's other
+                # assets exist under plain ROM, and ROM\254\8.DAT itself exists and parses as a
+                # valid 1.1M-vert zone mesh via xi_tinkerer.parse_zone_visual_obj -- while
+                # ROM254\0\8.DAT (the old, wrong construction) doesn't exist at all. The previous
+                # "ROM{dir_}\\0\\{file_}.DAT" form only ever worked by coincidence for dir_ 0-9.
                 dir_, file_ = int(parts[0]), int(parts[1])
                 sub = 0
+                rom_path = f"ROM\\{dir_}\\{file_}.DAT"
             elif len(parts) == 3:
+                # A 3-part entry ("3/0/24") is a literal ROM<n> folder suffix plus its own
+                # dir/file -- these have their own separate VTABLE<n>/FTABLE<n> and really do
+                # live under a folder named "ROM<n>" on disk. Unaffected by the above.
                 dir_, sub, file_ = int(parts[0]), int(parts[1]), int(parts[2])
+                rom_path = f"ROM{'' if dir_ == 0 else dir_}\\{sub}\\{file_}.DAT"
             else:
                 continue
             mapid = dir_ * 1_000_000 + sub * 1000 + file_
-            rom_path = f"ROM{'' if dir_ == 0 else dir_}\\{sub}\\{file_}.DAT"
             geo_by_name[normalize(csv_name)] = (mapid, rom_path)
 
     rows = []

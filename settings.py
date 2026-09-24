@@ -32,6 +32,8 @@ DEFAULTS = {
     "zoneplot_server": "topaz",    # "topaz" | "dsp" -- which live DB Zone Plot's level editor targets
     "backport_root": "",           # empty = use the bundled backport-workspace/ scaffold, see get_backport_root()
     "ffxi_install_path": "",       # empty = detect via Windows registry, see get_ffxi_install()
+    "item_dat_target": "live",     # "live" | "pivot" -- see item_dat_tools.dat_target()
+    "xi_pivot_root": "",           # empty = bundled default, see item_dat_tools.pivot_root()
     # xi-model-viewer's own dev server (npm run dev, ui/vite.config.js) -- default matches its
     # documented default port (5173). Used to build "?npc=<file_id>" deep links (see
     # xi-model-viewer/ui/js/launch.js) from Entity Lookup's own real per-entity model_file_id.
