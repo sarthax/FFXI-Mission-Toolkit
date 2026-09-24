@@ -663,13 +663,13 @@ def clone_template(item_id):
             "source_item_id": item_id, "mods": data["mods"], "pet_mods": data["pet_mods"], "latents": data["latents"]}
 
 
-def delete_item(item_id, comment=""):
-    """Remove an item's rows from every item_* table it appears in. Does NOT touch the client
-    DAT record (there is no 'empty' terminator write path here -- the slot is simply left as-is
-    and will show up again as a free slot the next time item_dat_tools.free_slots() scans past
-    it, since its name string is untouched... note this only actually frees the slot if the DAT
-    record's name is blanked separately; left as a manual follow-up, matching zone_edit.py's
-    stance of surfacing rather than auto-cleaning ambiguous state)."""
+def delete_item(item_id, comment="", clear_dat=False):
+    """Remove an item's rows from every item_* table it appears in. `clear_dat=True` also
+    directly blanks the item's client-DAT record via item_dat_tools.delete_client_item()
+    (its own DAT snapshot is taken first) so the slot immediately reads as free again;
+    left False, the DAT record is not touched (it stays orphaned server-side until cleared
+    separately -- matching zone_edit.py's stance of surfacing rather than auto-cleaning
+    ambiguous state)."""
     item_id = int(item_id)
     db = zone_plot._db(); cu = db.cursor()
     ops = []
@@ -718,6 +718,19 @@ def delete_item(item_id, comment=""):
         cu.execute(f"delete from {table} where {key}=%s", (item_id,))
         lines.append(f"DELETE FROM {table} WHERE {key}={item_id};")
     db.commit(); db.close()
-    _journal(comment, [f"-- backup {bid}"] + lines)
-    return {"sql": "\n".join(lines), "backup": bid,
-            "warning": "client DAT record left in place (see delete_item docstring) -- clear its name manually via the edit form if you want the slot to read as free"}
+    dat_result = None
+    dat_warning = "client DAT record left in place -- clear it separately if you want the slot to read as free"
+    if clear_dat:
+        try:
+            dat_result = dat.delete_client_item(item_id)
+            dat_warning = None
+        except ValueError as ex:
+            dat_warning = f"client DAT record NOT cleared: {ex}"
+    journal_lines = [f"-- backup {bid}"]
+    if dat_result:
+        journal_lines.append(f"-- client DAT cleared: {dat_result}")
+    _journal(comment, journal_lines + lines)
+    result = {"sql": "\n".join(lines), "backup": bid, "client_dat_cleared": dat_result is not None}
+    if dat_warning:
+        result["warning"] = dat_warning
+    return result

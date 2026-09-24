@@ -4921,7 +4921,7 @@ async def itemedit_delete(request: Request):
     import item_edit
     b = await request.json()
     try:
-        return JSONResponse(item_edit.delete_item(b["item_id"], b.get("comment", "")))
+        return JSONResponse(item_edit.delete_item(b["item_id"], b.get("comment", ""), bool(b.get("clear_dat", False))))
     except Exception as ex:
         return JSONResponse({"error": str(ex)}, status_code=400)
 

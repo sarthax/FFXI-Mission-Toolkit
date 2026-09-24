@@ -98,8 +98,15 @@ server's permission gate. Every write is backed up first and journalled to
   </div>
 
   <div class="edit-card wide" style="margin-top:12px; border-color:#a33;">
-    <h3 style="color:#c55;">Delete this item <span class="hint">removes every server-side row this item touches (item_basic/equipment/weapon/usable/puppet/furnishing + mods + pet mods + latents), all in one backed-up, journalled operation. Restorable from the Backups list above afterward. Does NOT free or alter the client DAT slot -- the DAT record stays in place, just orphaned server-side.</span></h3>
-    <button onclick="deleteItem()" style="background:#a33; color:#fff;">Delete this item from the server DB</button>
+    <h3 style="color:#c55;">Delete this item <span class="hint">removes every server-side row this item touches (item_basic/equipment/weapon/usable/puppet/furnishing + mods + pet mods + latents), all in one backed-up, journalled operation. Restorable from the Backups list above afterward.</span></h3>
+    <label class="muted" style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+      <input type="checkbox" id="deleteClearDat"> also clear the client DAT record (frees the slot immediately; snapshot taken first, restorable from DAT backup history above)
+    </label>
+    <label class="muted" style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
+      <input type="checkbox" id="deleteConfirmCheck" onchange="document.getElementById('deleteItemBtn').disabled = !this.checked;">
+      I understand this permanently removes item <span id="deleteConfirmItemId" class="mono"></span>'s server rows (and its client DAT record, if checked above)
+    </label>
+    <button id="deleteItemBtn" onclick="deleteItem()" style="background:#a33; color:#fff;" disabled>Delete this item</button>
     <div id="deleteItemMsg" class="mono muted" style="margin-top:6px; white-space:pre-wrap; font-size:11px;"></div>
   </div>
 </div>
@@ -132,9 +139,20 @@ record there, then inserts matching rows server-side at that same id.</p>
     <option value="6">furnishing (6)</option>
   </select>
   <input type="text" id="newName" placeholder="item name">
-  <button onclick="createItem()">Create</button>
+  <button onclick="startDraft()">Load into editor</button>
 </div>
 <div id="createStatus" class="muted"></div>
+
+<div id="draftWrap" style="display:none; margin-top:16px;">
+  <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+    <h3 style="margin:0;">New item draft -- nothing is saved yet</h3>
+    <input type="text" id="draftComment" style="flex:1; min-width:220px;" placeholder="Comment for SQL journal (e.g. new drop for X quest)">
+    <button onclick="saveDraft()">Save New Item (writes SQL + client DAT)</button>
+    <span id="draftSaveStatus" class="muted"></span>
+  </div>
+  <p class="muted" style="font-size:11px;">Review/edit every field below, then click Save. Nothing is written to the database or the client DAT until you save -- this only allocates the real free DAT slot and reserves the item id at save time.</p>
+  <div id="draftTables" class="edit-grid" style="margin-top:8px;"></div>
+</div>
 
 <datalist id="dl_mods"></datalist>
 <datalist id="dl_pettypes"></datalist>
@@ -219,36 +237,11 @@ async function doSearch(ev) {
   document.getElementById('results').style.display = rows.length ? '' : 'none';
 }
 
-async function loadItem(itemid) {
-  const res = await fetch(`/itemedit/${itemid}.json`);
-  if (!res.ok) { alert(await res.text()); return; }
-  const data = await res.json();
-  currentItemId = itemid;
-  document.getElementById('results').style.display = 'none';
-  document.getElementById('editorTitle').textContent =
-    `Item ${itemid} -- ${data.server.item_basic.name}`;
-
-  const mismatchBox = document.getElementById('clientMismatch');
-  if (data.client) {
-    const eq = data.server.item_equipment;
-    const diffs = [];
-    if (eq && data.client.level !== undefined && eq.level !== data.client.level)
-      diffs.push(`server level=${eq.level} vs client level=${data.client.level}`);
-    if (diffs.length) {
-      mismatchBox.style.display = '';
-      mismatchBox.textContent = 'Client/server disagree: ' + diffs.join('; ') + ' -- saving will resync them.';
-    } else {
-      mismatchBox.style.display = 'none';
-    }
-  } else {
-    mismatchBox.style.display = '';
-    mismatchBox.textContent = 'No client DAT record found for this item (FFXI install not configured, or this id has no client-side record) -- edits will be server-only.';
-  }
-  refreshDatInfo(data);
-
-  const wrap = document.getElementById('editorTables');
+// Shared by loadItem() (a real existing item) and startDraft()/refreshDraftGrid() (a new item
+// that hasn't been saved yet) -- same field/bitmask/enum rendering either way.
+function buildTablesGrid(wrap, serverObj) {
   wrap.innerHTML = '';
-  for (const [table, row] of Object.entries(data.server)) {
+  for (const [table, row] of Object.entries(serverObj)) {
     const fields = TABLE_FIELDS[table] || Object.keys(row);
     const schemaForTable = BITMASK_SCHEMA[table] || {};
     const box = document.createElement('div');
@@ -262,8 +255,8 @@ async function loadItem(itemid) {
                 <div class="mask-label"><span>${f}</span><span class="mono">raw: <span data-mask-display="${table}.${f}">${val}</span></span></div>
                 <div class="mask-flags" data-mask-group="${table}.${f}" data-mask-type="bits" data-table="${table}" data-field="${f}">
                 ${schema.bits.map(b => `<label>
-                    <input type="checkbox" data-mask-bit="${b.bit}" ${(val & b.bit) ? 'checked' : ''}
-                           onchange="recomputeMask('${table}','${f}')">${b.label}</input>
+                    <input type="checkbox" data-mask-bit="${b.bit}" data-mask-label="${b.label}" ${(val & b.bit) ? 'checked' : ''}
+                           onchange="${table === 'item_equipment' && f === 'slot' ? `slotCheckboxChanged(this,'${table}','${f}')` : `recomputeMask('${table}','${f}')`}">${b.label}</input>
                   </label>`).join('')}
               </div></div>`;
           }
@@ -296,6 +289,38 @@ async function loadItem(itemid) {
         }).join('')}`;
     wrap.appendChild(box);
   }
+}
+
+async function loadItem(itemid) {
+  const res = await fetch(`/itemedit/${itemid}.json`);
+  if (!res.ok) { alert(await res.text()); return; }
+  const data = await res.json();
+  currentItemId = itemid;
+  draftMode = false;
+  document.getElementById('draftWrap').style.display = 'none';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('editorTitle').textContent =
+    `Item ${itemid} -- ${data.server.item_basic.name}`;
+
+  const mismatchBox = document.getElementById('clientMismatch');
+  if (data.client) {
+    const eq = data.server.item_equipment;
+    const diffs = [];
+    if (eq && data.client.level !== undefined && eq.level !== data.client.level)
+      diffs.push(`server level=${eq.level} vs client level=${data.client.level}`);
+    if (diffs.length) {
+      mismatchBox.style.display = '';
+      mismatchBox.textContent = 'Client/server disagree: ' + diffs.join('; ') + ' -- saving will resync them.';
+    } else {
+      mismatchBox.style.display = 'none';
+    }
+  } else {
+    mismatchBox.style.display = '';
+    mismatchBox.textContent = 'No client DAT record found for this item (FFXI install not configured, or this id has no client-side record) -- edits will be server-only.';
+  }
+  refreshDatInfo(data);
+
+  buildTablesGrid(document.getElementById('editorTables'), data.server);
   const listsWrap = document.getElementById('editorLists');
   listsWrap.innerHTML = '';
   renderMods(data.mods || []);
@@ -304,6 +329,11 @@ async function loadItem(itemid) {
   document.getElementById('editorWrap').style.display = '';
   document.getElementById('saveStatus').textContent = '';
   document.getElementById('itemBackupMsg').textContent = '';
+  document.getElementById('deleteItemMsg').textContent = '';
+  document.getElementById('deleteConfirmItemId').textContent = itemid;
+  document.getElementById('deleteConfirmCheck').checked = false;
+  document.getElementById('deleteClearDat').checked = false;
+  document.getElementById('deleteItemBtn').disabled = true;
   refreshItemBackups();
 }
 
@@ -418,16 +448,25 @@ async function doItemRestore(bid) {
 
 async function deleteItem() {
   if (!currentItemId) return;
-  if (!confirm(`Delete item ${currentItemId} from the server DB? This removes its rows from every item_* table plus mods/pet mods/latents. A backup is taken first (restorable from the list above), but the client DAT slot is left in place and will show as an orphaned/unusable item id until something else is written there. Continue?`)) return;
+  if (!document.getElementById('deleteConfirmCheck').checked) return;
+  const clearDat = document.getElementById('deleteClearDat').checked;
+  const warn = clearDat
+    ? `Delete item ${currentItemId} from the server DB AND clear its client DAT record? This removes its rows from every item_* table plus mods/pet mods/latents, and blanks the DAT slot so it reads as free again. Both are backed up first (restorable from the lists above). This cannot be undone from here. Continue?`
+    : `Delete item ${currentItemId} from the server DB? This removes its rows from every item_* table plus mods/pet mods/latents. A backup is taken first (restorable from the list above), but the client DAT slot is left in place and will show as an orphaned/unusable item id until something else is written there. Continue?`;
+  if (!confirm(warn)) return;
   const comment = document.getElementById('editComment').value;
   const res = await fetch('/itemedit/delete', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({item_id: currentItemId, comment})
+    body: JSON.stringify({item_id: currentItemId, comment, clear_dat: clearDat})
   });
   const j = await res.json();
   const msg = document.getElementById('deleteItemMsg');
   if (j.error) { msg.textContent = 'ERROR: ' + j.error; return; }
-  msg.textContent = `Deleted item ${currentItemId} (backup ${j.backup}). Restore it from the Backups list if this was a mistake.`;
+  document.getElementById('deleteConfirmCheck').checked = false;
+  document.getElementById('deleteItemBtn').disabled = true;
+  msg.textContent = `Deleted item ${currentItemId} (backup ${j.backup})`
+    + (j.client_dat_cleared ? ', client DAT record cleared.' : j.warning ? ` -- ${j.warning}` : '.')
+    + ' Restore it from the Backups list if this was a mistake.';
   document.getElementById('editorWrap').style.display = 'none';
   currentItemId = null;
 }
@@ -615,6 +654,38 @@ async function addPetMod() {
   loadItem(currentItemId);
 }
 
+// item_equipment.slot is a bitmask of dat.SLOTS positions, but the client (and real gear data)
+// never actually treats it as an arbitrary multi-select: an item goes in exactly one slot, with
+// two documented exceptions where a pair of bits together mean "either of this pair" (rings,
+// earrings), and one pair that's genuinely independent (main/sub -- e.g. a one-handed sword can
+// be wielded in either hand, so both those bits can be set on the SAME item without meaning
+// "either/or" the way the ring/ear pairs do). Enforced here so the checkboxes can't drift into a
+// combination the client was never built to equip.
+const SLOT_LINKED_PAIR = {ring1: 'ring2', ring2: 'ring1', ear1: 'ear2', ear2: 'ear1'};
+const SLOT_INDEPENDENT = new Set(['main', 'sub']);
+function slotCheckboxChanged(cb, table, field) {
+  const group = document.querySelector(`[data-mask-group="${table}.${field}"]`);
+  const boxes = [...group.querySelectorAll('input[data-mask-bit]')];
+  const byLabel = name => boxes.find(b => b.dataset.maskLabel === name);
+  const label = cb.dataset.maskLabel;
+  if (cb.checked) {
+    const pairLabel = SLOT_LINKED_PAIR[label];
+    if (pairLabel) {
+      const pair = byLabel(pairLabel);
+      if (pair) pair.checked = true;
+      boxes.forEach(b => { if (b !== cb && b !== pair) b.checked = false; });
+    } else if (SLOT_INDEPENDENT.has(label)) {
+      boxes.forEach(b => { if (b !== cb && !SLOT_INDEPENDENT.has(b.dataset.maskLabel)) b.checked = false; });
+    } else {
+      boxes.forEach(b => { if (b !== cb) b.checked = false; });
+    }
+  } else if (SLOT_LINKED_PAIR[label]) {
+    const pair = byLabel(SLOT_LINKED_PAIR[label]);
+    if (pair) pair.checked = false;
+  }
+  recomputeMask(table, field);
+}
+
 function recomputeMask(table, field) {
   const group = document.querySelector(`[data-mask-group="${table}.${field}"]`);
   let val = 0;
@@ -690,22 +761,95 @@ async function loadCloneTemplate() {
   document.getElementById('newType').value = String(j.item_type);
   document.getElementById('newName').value = j.entry.name || '';
   const modCount = (j.mods || []).length + (j.pet_mods || []).length + (j.latents || []).length;
-  status.textContent = `Template loaded from item ${j.source_item_id} (${j.entry.name}) -- ${modCount} mod/latent row(s) available to copy. Review the fields below, then Create.`;
+  status.textContent = `Template loaded from item ${j.source_item_id} (${j.entry.name}) -- ${modCount} mod/latent row(s) available to copy. Review the fields below, then "Load into editor".`;
 }
 
-async function createItem() {
+// entry-name (item_dat_tools/create_item convention) for each editable column, per table --
+// the create-item draft grid renders real SQL column names (same TABLE_FIELDS/BITMASK_SCHEMA
+// as the existing-item editor), but /itemedit/create expects item_dat_tools' own field names,
+// which differ for a few columns (item_equipment.slot -> 'slots', shieldSize -> 'shield_size',
+// item_usable.maxCharges -> 'max_charges', etc.) -- mirrors item_edit.create_item()'s own
+// entry.get(...) fallback chains exactly, so this must stay in sync with that function.
+const COLUMN_TO_ENTRY = {
+  item_basic:      {name: 'name', stackSize: 'stack', flags: 'flags', aH: 'aH', NoSale: 'NoSale', BaseSell: 'BaseSell'},
+  item_equipment:  {name: 'name', level: 'level', ilevel: 'ilevel', jobs: 'jobs', MId: 'MId', shieldSize: 'shield_size', scriptType: 'scriptType', slot: 'slots', rslot: 'rslot'},
+  item_weapon:     {name: 'name', skill: 'skill', subskill: 'subskill', ilvl_skill: 'ilvl_skill', ilvl_parry: 'ilvl_parry', ilvl_macc: 'ilvl_macc', dmgType: 'dmgType', hit: 'hit', delay: 'delay', dmg: 'dmg', unlock_points: 'unlock_points'},
+  item_usable:     {name: 'name', validTargets: 'validTargets', activation: 'activation', animation: 'animation', animationTime: 'animationTime', maxCharges: 'max_charges', useDelay: 'use_delay', reuseDelay: 'reuse_delay', aoe: 'aoe'},
+  item_puppet:     {name: 'name', slot: 'puppet_slot', element: 'element_charge'},
+  item_furnishing: {name: 'name', storage: 'storage', moghancement: 'moghancement', element: 'element', aura: 'aura'},
+};
+// Mirrors item_edit.TYPE_TABLES exactly -- which extra table(s) a draft needs fields for.
+const TYPE_TABLES_JS = {0: [], 1: ['item_usable'], 3: ['item_equipment'], 4: ['item_equipment', 'item_weapon'], 5: ['item_puppet'], 6: ['item_furnishing']};
+
+let draftMode = false, draftCategory = null, draftItemType = null;
+
+function buildDraftRow(table, name) {
+  const row = {};
+  for (const [col, entryKey] of Object.entries(COLUMN_TO_ENTRY[table])) {
+    let v = cloneTemplate ? cloneTemplate.entry[entryKey] : undefined;
+    if (v === undefined) v = (col === 'name') ? name : 0;
+    row[col] = v;
+  }
+  return row;
+}
+
+// Step 1 of 2: build the draft in the browser only -- nothing is written to the DB or the
+// client DAT yet. A real free DAT slot (and therefore the item's real id) is only allocated
+// when saveDraft() actually calls /itemedit/create.
+function startDraft() {
   const category = document.getElementById('newCategory').value;
-  const item_type = document.getElementById('newType').value;
+  const item_type = Number(document.getElementById('newType').value);
   const name = document.getElementById('newName').value.trim();
   if (!name) { alert('enter a name'); return; }
-  const status = document.getElementById('createStatus');
-  status.textContent = 'Creating...';
-  // Start from the loaded clone template's full field set (if any), but always use the name
-  // field's current value -- the user may have edited it after loading the template.
-  const entry = cloneTemplate ? {...cloneTemplate.entry, name} : {name};
+  draftMode = true; draftCategory = category; draftItemType = item_type;
+
+  const serverObj = {item_basic: buildDraftRow('item_basic', name)};
+  for (const t of TYPE_TABLES_JS[item_type] || []) serverObj[t] = buildDraftRow(t, name);
+
+  buildTablesGrid(document.getElementById('draftTables'), serverObj);
+  document.getElementById('draftWrap').style.display = '';
+  document.getElementById('draftSaveStatus').textContent = '';
+  document.getElementById('createStatus').textContent =
+    `Draft loaded for ${category} (type ${item_type}) -- review the fields below, nothing is saved yet.`;
+}
+
+// Step 2 of 2: the only place that actually calls /itemedit/create (allocates the real DAT
+// slot + writes the SQL rows), gated behind the explicit "Save New Item" click.
+async function saveDraft() {
+  if (!draftMode) return;
+  const status = document.getElementById('draftSaveStatus');
+  const inputs = document.querySelectorAll('#draftTables input[data-table], #draftTables select[data-table]');
+  const byTable = {};
+  for (const inp of inputs) {
+    const t = inp.dataset.table, f = inp.dataset.field;
+    (byTable[t] ||= {})[f] = inp.value;
+  }
+  document.querySelectorAll('#draftTables [data-mask-group]').forEach(g => {
+    const t = g.dataset.table, f = g.dataset.field;
+    let val = 0;
+    if (g.dataset.maskType === 'nibbles') {
+      g.querySelectorAll('input[data-mask-shift]').forEach(inp => { val |= (Number(inp.value) || 0) << Number(inp.dataset.maskShift); });
+    } else {
+      g.querySelectorAll('input[data-mask-bit]').forEach(cb => { if (cb.checked) val |= Number(cb.dataset.maskBit); });
+    }
+    (byTable[t] ||= {})[f] = val;
+  });
+
+  const entry = {};
+  for (const [table, cols] of Object.entries(byTable)) {
+    const mapping = COLUMN_TO_ENTRY[table] || {};
+    for (const [col, val] of Object.entries(cols)) entry[mapping[col] || col] = val;
+  }
+  // item_weapon.dmgType (server column) doubles as the client DAT's per-weapon 'kind' field --
+  // create_item()/build_record() read that back under the key 'kind', not 'dmgType'.
+  if (draftItemType === 4 && entry.dmgType !== undefined) entry.kind = entry.dmgType;
+  if (!entry.name) { status.textContent = 'name is required'; return; }
+
+  status.textContent = 'Saving (allocating DAT slot + writing SQL)...';
+  const comment = document.getElementById('draftComment').value;
   const res = await fetch('/itemedit/create', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({category, item_type, entry}),
+    body: JSON.stringify({category: draftCategory, item_type: draftItemType, entry, comment}),
   });
   const j = await res.json();
   if (!res.ok) { status.textContent = `Error: ${j.error || res.statusText}`; return; }
@@ -732,9 +876,10 @@ async function createItem() {
     status.textContent += ` | copied ${copied} mod/latent row(s)${failed ? `, ${failed} failed` : ''}`;
   }
 
-  cloneTemplate = null;
+  draftMode = false; cloneTemplate = null;
   document.getElementById('cloneSourceId').value = '';
   document.getElementById('cloneStatus').textContent = '';
+  document.getElementById('draftWrap').style.display = 'none';
   loadItem(j.item_id);
 }
 </script>
