@@ -226,7 +226,10 @@ class ResearchSessionStore:
             if session["permission_profile"]=="READ_ONLY_RESEARCH":
                 raise PermissionError("READ_ONLY_RESEARCH sessions cannot create change/finding proposals.")
             con.execute(
-                "INSERT INTO research_proposals VALUES (?,?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO research_proposals "
+                "(proposal_id,research_session_id,proposal_type,subject_id,status,payload_json,"
+                "supporting_evidence_ids_json,contradicting_evidence_ids_json,verification_requirement,created_at) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?)",
                 (
                     proposal_id,research_session_id,proposal_type,subject_id,"PROPOSED",
                     json.dumps(payload,sort_keys=True,default=str),
