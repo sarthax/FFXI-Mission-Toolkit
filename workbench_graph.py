@@ -243,7 +243,10 @@ def import_json(path: Path, db: Path):
 
 def self_test() -> None:
     from tempfile import NamedTemporaryFile
-    from workbench_schema import Artifact, Feature, MigrationAction, ValidationResult, ValidationRun, Implementation, AnalysisResult
+    from workbench_schema import (
+        Artifact, Feature, MigrationAction, ValidationResult, ValidationRun,
+        Implementation, AnalysisResult, Function, Binding, EnumDefinition, DependencyEdge,
+    )
     with NamedTemporaryFile(suffix=".db") as tmp:
         con = init_db(Path(tmp.name))
         insert_record(con, Feature("f", "Feature", "system", "domain", "src", "dst"))
@@ -253,13 +256,24 @@ def self_test() -> None:
         insert_record(con, ValidationResult("v", "syntax", "a", "VERIFIED"))
         insert_record(con, Implementation("i", "f", "src", "dst", "a", "LUA", "MIGRATED"))
         insert_record(con, AnalysisResult("ar", "TEST", "src"))
+        fn = Function("fn", "Foo::bar", "bar", class_name="Foo", definition=True)
+        insert_record(con, fn)
+        insert_record(con, Binding("b", "bar", "SOL2", "Foo::bar", "Foo", "fn", status="RESOLVED"))
+        insert_record(con, EnumDefinition("e", "State", None, "state.h", 1, "CXX_ENUM", "1", "READY"))
+        insert_record(con, DependencyEdge("de", "packet:1", "cpp-symbol:Foo::bar", "HANDLED_BY", confidence="VERIFIED"))
+        resolve_relationships(con)
         con.commit()
         expected = {
             "features": 1, "artifacts": 1, "migration_actions": 1,
             "validation_results": 1, "validation_runs": 1, "implementations": 1, "analysis_results": 1,
+            "functions": 1, "bindings": 1, "enum_definitions": 1, "entity_relationships": 2,
         }
         actual = {k: con.execute(f"SELECT COUNT(*) FROM {k}").fetchone()[0] for k in expected}
         assert actual == expected, (actual, expected)
+        target = con.execute("SELECT target_node, confidence FROM entity_relationships WHERE relationship_id='de'").fetchone()
+        assert target == ("fn", "VERIFIED"), target
+        binding = con.execute("SELECT relationship, target_node, confidence FROM entity_relationships WHERE relationship_id='binds:b:fn'").fetchone()
+        assert binding == ("BINDS", "fn", "VERIFIED"), binding
         con.close()
 
 def main():
