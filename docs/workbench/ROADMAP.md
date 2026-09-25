@@ -92,9 +92,9 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - [x] Formalize Feature/Implementation/Dependency.
 - [x] Add machine-readable analysis outputs.
 - [x] Implement generic SQLite-backed canonical graph store.
-- [ ] Connect existing entity_profile, map confidence, capture, packet, and backport reports.
+- [ ] Connect existing entity_profile, map confidence, capture, packet, and backport reports. Initial capture graph connector is now present; broader adapters remain.
 - [x] Add generic bidirectional Feature Trace over canonical graph relationships.
-- [ ] Add Feature Checker requirements/status evaluation on top of Feature Trace.
+- [x] Add Feature Checker requirements/status evaluation on top of Feature Trace.
 - [x] Add build-condition/generated-source analyzer.
 
 ### Phase 2 — Server adapters and migration engine (P0)
@@ -162,7 +162,7 @@ A trace may start from any canonical node ID, or from an unambiguous partial nam
 Wiki/reference indexing is intentionally a **launch/navigation layer**, not a source of truth. A future ReferenceAdapter should resolve a wiki result to a canonical entity/feature ID and then invoke Feature Trace. Reference facts remain reference evidence and are never silently promoted to server/client truth.
 
 ## Immediate audit queue
-1. Add Feature Checker requirement evaluation over capabilities and trace evidence.
+1. Complete capture → Lua event → binding/C++ semantic resolution using the new Lua event surface index.
 2. Resolve real packet handlers from actual server dispatch sources when a server source root is indexed.
 3. Connect bindings -> C++ symbols -> enums/constants -> packets -> build targets.
 4. Extend Backport Package Analyzer to import canonical graph records.
