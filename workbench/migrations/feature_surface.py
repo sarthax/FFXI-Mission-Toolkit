@@ -18,12 +18,21 @@ class SurfaceArtifact:
 
 
 @dataclass(frozen=True)
+class SurfaceCapability:
+    name: str
+    status: str = "VERIFIED"
+    evidence: tuple[str, ...] = ()
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
 class FeatureSurface:
     feature_id: str
     family: str
     artifacts: tuple[SurfaceArtifact, ...] = ()
     entity_ids: tuple[int, ...] = ()
     metadata: dict[str, Any] = field(default_factory=dict)
+    capabilities: tuple[SurfaceCapability, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -39,6 +48,11 @@ class FeatureSurfaceComparison:
     source_only_entity_ids: tuple[int, ...]
     target_only_entity_ids: tuple[int, ...]
     status: str
+    shared_capabilities: tuple[str, ...] = ()
+    source_only_capabilities: tuple[str, ...] = ()
+    target_only_capabilities: tuple[str, ...] = ()
+    capability_status_drift: tuple[dict[str, Any], ...] = ()
+    capability_coverage_status: str = "NO_CAPABILITIES_DECLARED"
 
 
 def _by_role(artifacts: Iterable[SurfaceArtifact]) -> dict[str, list[SurfaceArtifact]]:
@@ -46,6 +60,15 @@ def _by_role(artifacts: Iterable[SurfaceArtifact]) -> dict[str, list[SurfaceArti
     for artifact in artifacts:
         out.setdefault(artifact.role, []).append(artifact)
     return out
+
+
+def _capabilities_by_name(capabilities: Iterable[SurfaceCapability]) -> dict[str, SurfaceCapability]:
+    result={}
+    for capability in capabilities:
+        if capability.name in result:
+            raise ValueError(f"Duplicate surface capability: {capability.name}")
+        result[capability.name]=capability
+    return result
 
 
 def compare_feature_surfaces(source: FeatureSurface, target: FeatureSurface) -> FeatureSurfaceComparison:
@@ -75,6 +98,29 @@ def compare_feature_surfaces(source: FeatureSurface, target: FeatureSurface) -> 
     source_only_entities=tuple(sorted(src_entities-dst_entities))
     target_only_entities=tuple(sorted(dst_entities-src_entities))
 
+    src_caps=_capabilities_by_name(source.capabilities)
+    dst_caps=_capabilities_by_name(target.capabilities)
+    shared_caps=sorted(set(src_caps) & set(dst_caps))
+    source_only_caps=sorted(set(src_caps)-set(dst_caps))
+    target_only_caps=sorted(set(dst_caps)-set(src_caps))
+    cap_status_drift=[
+        {
+            "capability":name,
+            "source_status":src_caps[name].status,
+            "target_status":dst_caps[name].status,
+        }
+        for name in shared_caps
+        if src_caps[name].status != dst_caps[name].status
+    ]
+    if not src_caps and not dst_caps:
+        capability_coverage_status="NO_CAPABILITIES_DECLARED"
+    elif source_only_caps or target_only_caps:
+        capability_coverage_status="CAPABILITY_COVERAGE_DRIFT"
+    elif cap_status_drift:
+        capability_coverage_status="CAPABILITY_STATUS_DRIFT"
+    else:
+        capability_coverage_status="CAPABILITIES_ALIGNED"
+
     if not src_only and not dst_only and not source_only_entities and not target_only_entities:
         status="ROLE_AND_ENTITY_COVERAGE_ALIGNED"
     elif source_only_entities or target_only_entities:
@@ -94,4 +140,9 @@ def compare_feature_surfaces(source: FeatureSurface, target: FeatureSurface) -> 
         source_only_entity_ids=source_only_entities,
         target_only_entity_ids=target_only_entities,
         status=status,
+        shared_capabilities=tuple(shared_caps),
+        source_only_capabilities=tuple(source_only_caps),
+        target_only_capabilities=tuple(target_only_caps),
+        capability_status_drift=tuple(cap_status_drift),
+        capability_coverage_status=capability_coverage_status,
     )
