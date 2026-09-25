@@ -182,6 +182,16 @@ def insert_record(con: sqlite3.Connection, record: Any, record_type: str | None 
         con.execute("INSERT OR REPLACE INTO validation_results VALUES (?,?,?,?,?,?,?,?,?)",
                     (d["validation_id"], d.get("run_id"), d["validation_type"], d["subject_id"],
                      d["status"], d["evidence_id"], d["source"], d["target"], _json(d["notes"])))
+        validation_node=f"validation:{d['validation_id']}"
+        con.execute("INSERT OR REPLACE INTO entities(entity_id,entity_type,display_name,metadata_json) VALUES(?,?,?,?)",
+                    (validation_node,"VALIDATION",d["validation_type"],
+                     _json({"validation_id":d["validation_id"],"run_id":d.get("run_id"),"status":d["status"]})))
+        con.execute("INSERT OR REPLACE INTO entity_relationships VALUES (?,?,?,?,?,?,?,?,?)",
+                    (f"validated-by:{d['validation_id']}",d["subject_id"],validation_node,
+                     "VALIDATED_BY",d.get("evidence_id"),
+                     "VERIFIED" if d.get("status")=="VERIFIED" else "UNKNOWN",
+                     d.get("status") or "UNKNOWN",
+                     _json({"validation_type":d["validation_type"],"run_id":d.get("run_id")}),None))
     elif cls == "Evidence":
         con.execute("INSERT OR REPLACE INTO evidence VALUES (?,?,?,?,?,?)",
                     (d["evidence_id"], d["evidence_type"], d["source"], d["location"], d["snapshot"], d["notes"]))
