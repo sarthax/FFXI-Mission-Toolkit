@@ -195,3 +195,11 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 - Exact qualified C++ symbols remain preferred. An unqualified symbol is promoted to a canonical function only when the C++ API index contains exactly one matching function name; ambiguous short names deliberately remain unresolved.
 - Added `test_fixtures/test_graph_cpp_symbol_resolution.py` covering unique unqualified resolution, exact qualified resolution, and preservation of ambiguous candidates.
 - This closes a practical gap between direct switch/case packet dispatch extraction and the canonical C++ function graph without guessing namespaces/classes.
+
+
+## 2026-09-25 — handler dependency and build-target chain
+
+- C++ dependency extraction now scopes namespace-qualified enum/constant uses and packet-token uses to the containing indexed C++ function definition when a conservative function span is available; file-level fallback remains for unresolved scope.
+- Canonical graph resolution now maps a dependency target to an enum/constant record only when exactly one indexed symbol matches. Ambiguous symbols remain unresolved.
+- Build integration now emits function → build-target `BUILDS_INTO` edges when a function definition resides in a source file explicitly associated with a CMake target. This preserves the existing caveat that CMake condition/generator evaluation has not been executed.
+- Together with direct packet handler resolution, the graph can now represent `packet → handler function → enum/constant` and `packet → handler function → build target` without promoting ambiguous lexical matches.
