@@ -463,3 +463,10 @@ Ancient Vows now uses this path for its mission_script role. Its package contain
 Review-only patch operations can now be packaged as a machine-readable WORKBENCH_PATCH_PLAN artifact. Each target entry records the exact operations, source SHA-256, preview SHA-256, and preview validation status so later approval/apply tooling can detect target drift before modifying files.
 
 Ancient Vows now packages a patch plan covering its Justinius and Riverne mission gaps alongside the human-readable proposal artifacts. The plan is proposal-only and does not authorize application.
+
+
+## 2026-09-25 — Drift-aware patch approval gate
+
+Review-only WORKBENCH_PATCH_PLAN artifacts now have a drift-aware approval assessment. Before a plan can reach READY_FOR_APPROVAL, every target file must still match the reviewed source SHA-256, the exact patch anchors must replay cleanly, and the resulting in-memory preview must reproduce the reviewed preview SHA-256.
+
+Ancient Vows now exercises this gate against the pinned DSP target. READY_FOR_APPROVAL is still not an apply action and does not modify target files.
