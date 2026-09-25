@@ -105,6 +105,8 @@ jobs:
           python test_fixtures/test_research_provider.py
           python test_fixtures/test_research_graph_registry.py
           python test_fixtures/test_research_runner.py
+          python test_fixtures/test_research_domain_registry.py
+          python test_fixtures/test_research_domain_tools.py
           python test_fixtures/test_research_graph_tools.py
           python test_fixtures/test_map_confidence_graph_bridge.py
           python test_fixtures/test_entity_profile_graph_bridge.py
