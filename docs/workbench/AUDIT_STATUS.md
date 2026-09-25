@@ -51,6 +51,7 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 - [x] Lua binding -> C++ resolution (conservative exact matching).
 - [x] C++ dependency graph (conservative lexical edges).
 - [x] Build-system integration analyzer (conservative source-list evidence).
+- [x] Build-target records and explicit CMake source -> target relationships (lexical evidence only).
 - [x] Compile-condition/generated-source analyzer (conservative evidence).
 - [x] Engine migration classifier (conservative API/binding comparison).
 - [x] Packet dispatch/opcode extraction patterns (conservative; requires an indexed server source tree).
@@ -58,6 +59,7 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 ### P0/P1 — Client
 - [x] Item DAT architecture audited.
 - [x] Client/server authority concept defined.
+- [x] General Capability record and canonical graph storage.
 - [ ] General ClientCapability service.
 - [ ] DAT asset resolver consolidation.
 - [ ] Dialog drift service.
@@ -78,6 +80,8 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 - [ ] Formalize LLM evidence workflow.
 - [ ] Consolidate duplicated ID/entity logic.
 - [x] Standardize source snapshot fingerprints (deterministic content/path SHA-256).
+- [x] Attach source snapshot provenance to C++ API, dependency, build-target, finding, and analysis records.
+- [x] Add generic Capability record and canonical graph persistence.
 
 ### P1+ — Domain plugins
 - [ ] Assault plugin.
@@ -92,3 +96,10 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 - Binding records already create canonical `BINDS` relationships to resolved C++ functions.
 - Added conservative `build_condition_index.py` for preprocessor conditions and build-generation markers; it intentionally does not evaluate compiler environments or claim exact generated-artifact mappings.
 - Packet opcode self-test CLI syntax was corrected and retained as a deterministic dispatch regression check.
+
+### Latest continuation — provenance and capability foundation
+- Added deterministic snapshot attachment to C++ API, C++ dependency, and build integration analysis output.
+- Build-target source relationships now carry snapshot provenance.
+- Added generic `Capability` core record and persisted capabilities in the canonical SQLite graph.
+- Canonical graph self-test now exercises capability persistence and dependency-edge snapshot storage.
+- Client capability remains an evidence-driven service; no EXE/DLL capability is asserted until the actual binaries are available.
