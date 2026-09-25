@@ -53,6 +53,13 @@ def main():
         assert group_d.fields["name"] is None
         assert any("mob_pools join" in note for note in group_d.notes),group_d.notes
 
+        pool_d=dsp.normalize_rows("mob_pools",[{"poolid":5,"name":"Mob","familyid":10,"modelid":"0x01"}])
+        enriched=dsp.normalize_rows("mob_groups",[{
+            "groupid":2,"poolid":5,"zoneid":55,"respawntime":300,"dropid":8,
+        }],{"mob_pools":pool_d})
+        assert enriched[0].fields["name"]=="Mob",enriched
+        assert any("Derived logical mob-group name" in note for note in enriched[0].notes),enriched[0].notes
+
         ie_t=topaz.normalize_row("instance_entities",{"instanceid":7,"id":17001000})
         ie_l=lsb.normalize_row("instance_entities",{"instanceId":7,"entity_id":17001000})
         assert compare_records(ie_t,ie_l).status=="EQUIVALENT"
