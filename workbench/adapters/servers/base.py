@@ -7,7 +7,25 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from typing import Any, Mapping
 from pathlib import Path
+
+
+@dataclass(frozen=True)
+class FieldMapping:
+    logical_name: str
+    physical_names: tuple[str, ...]
+    required: bool = False
+
+
+@dataclass(frozen=True)
+class LogicalRecord:
+    logical_type: str
+    identity: tuple[tuple[str, Any], ...]
+    fields: dict[str, Any]
+    source_family: str
+    source_table: str
+    notes: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -18,6 +36,8 @@ class TableShape:
     aliases: tuple[str, ...] = ()
     required_columns: tuple[str, ...] = ()
     optional_columns: tuple[str, ...] = ()
+    field_mappings: tuple[FieldMapping, ...] = ()
+    identity_fields: tuple[str, ...] = ()
     notes: tuple[str, ...] = ()
 
 
@@ -64,6 +84,38 @@ class ServerAdapter(ABC):
     def source_path(self, logical_name: str) -> Path | None:
         shape = self.resolve_table(logical_name)
         return self.root / "sql" / shape.source_file if shape else None
+
+    def normalize_row(self, logical_name: str, row: Mapping[str, Any]) -> LogicalRecord:
+        shape = self.resolve_table(logical_name)
+        if shape is None:
+            raise KeyError(f"Unknown logical table: {logical_name}")
+        lowered = {str(key).lower(): value for key, value in row.items()}
+        fields: dict[str, Any] = {}
+        missing: list[str] = []
+        for mapping in shape.field_mappings:
+            value = None
+            found = False
+            for physical in mapping.physical_names:
+                key = physical.lower()
+                if key in lowered:
+                    value = lowered[key]
+                    found = True
+                    break
+            fields[mapping.logical_name] = value
+            if mapping.required and not found:
+                missing.append(mapping.logical_name)
+        identity = tuple((name, fields.get(name)) for name in shape.identity_fields)
+        notes = list(shape.notes)
+        if missing:
+            notes.append("Missing required physical fields: " + ", ".join(sorted(missing)))
+        return LogicalRecord(
+            logical_type=logical_name,
+            identity=identity,
+            fields=fields,
+            source_family=self.family,
+            source_table=shape.physical_table,
+            notes=tuple(notes),
+        )
 
     def probe(self) -> AdapterProbe:
         required = [self.root / "sql"]
