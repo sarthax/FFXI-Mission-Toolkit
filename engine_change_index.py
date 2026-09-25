@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Index durable DSP engine-change records into a machine-readable audit index."""
+"""Index durable DSP engine-change records into the generic Workbench model."""
 from __future__ import annotations
 import argparse, json, re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
+from workbench_schema import Implementation
 
 DIFF_FILE_RE = re.compile(r"^diff --git a/(.+?) b/(.+?)$", re.MULTILINE)
 HUNK_RE = re.compile(r"^@@ .*? @@(?:\s*(.*))?$", re.MULTILINE)
@@ -65,6 +66,31 @@ def index(root: Path):
         out.append(EngineChange(d.name, str(d.relative_to(root)), readme, diff, status, files, hunks, symbols, notes))
     return out
 
+def to_implementations(records):
+    return [
+        Implementation(
+            implementation_id=f"engine-change:{r.change_id}",
+            feature_id=None,
+            source_snapshot_id=None,
+            target_snapshot_id=None,
+            artifact_id=r.change_id,
+            artifact_type="ENGINE_CHANGE",
+            status={
+                "RECORDED": "IMPLEMENTED",
+                "PARTIAL": "UNKNOWN",
+                "TEMPLATE": "UNKNOWN",
+                "INCOMPLETE": "UNKNOWN",
+            }.get(r.evidence_status, "UNKNOWN"),
+            language="C++",
+            path=r.path,
+            symbol=", ".join(r.symbol_hints) if r.symbol_hints else None,
+            change_type="PATCH",
+            requires_build=True,
+            notes=r.notes,
+        )
+        for r in records
+    ]
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("root", type=Path)
@@ -72,7 +98,12 @@ def main():
     ap.add_argument("--markdown", type=Path, default=None)
     args = ap.parse_args()
     records = index(args.root)
-    payload = {"schema": 1, "source": str(args.root), "records": [asdict(r) for r in records]}
+    payload = {
+        "schema": 2,
+        "source": str(args.root),
+        "records": [asdict(r) for r in records],
+        "implementations": [asdict(x) for x in to_implementations(records)],
+    }
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)
         args.json.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
@@ -80,13 +111,16 @@ def main():
         args.markdown.parent.mkdir(parents=True, exist_ok=True)
         lines = ["# DSP Engine Change Index", "", f"Records: {len(records)}", ""]
         for r in records:
-            lines += [f"## {r.change_id}", f"- Status: **{r.evidence_status}**",
-                      f"- README: {'yes' if r.readme_present else 'NO'}",
-                      f"- Diff: {'yes' if r.diff_present else 'NO'}"]
+            lines += [
+                f"## {r.change_id}",
+                f"- Status: **{r.evidence_status}**",
+                f"- README: {'yes' if r.readme_present else 'NO'}",
+                f"- Diff: {'yes' if r.diff_present else 'NO'}",
+            ]
             if r.changed_files:
-                lines.append("- Changed files: " + ", ".join(f"{x}" for x in r.changed_files))
+                lines.append("- Changed files: " + ", ".join(f"`{x}`" for x in r.changed_files))
             if r.symbol_hints:
-                lines.append("- Symbol hints: " + ", ".join(f"{x}" for x in r.symbol_hints))
+                lines.append("- Symbol hints: " + ", ".join(f"`{x}`" for x in r.symbol_hints))
             for note in r.notes:
                 lines.append(f"- Note: {note}")
             lines.append("")
