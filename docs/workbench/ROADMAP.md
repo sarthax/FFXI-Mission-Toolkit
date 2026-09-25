@@ -117,6 +117,7 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - [x] C++ dependency graph (conservative)
 - [x] packet dispatch pattern extraction (deterministic switch/registration evidence; full handler resolution remains source-dependent)
 - [x] build-system inclusion (conservative)
+- [x] build-target records and explicit CMake source-to-target relationships
 - [x] compile conditions/generated-source syntax analyzer (conservative; no environment evaluation)
 - [x] engine migration classification
 
