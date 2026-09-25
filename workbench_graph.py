@@ -198,6 +198,12 @@ def insert_record(con: sqlite3.Connection, record: Any, record_type: str | None 
         con.execute("INSERT OR REPLACE INTO capability_requirements VALUES (?,?,?,?,?,?,?)",
                     (d["requirement_id"], d["feature_id"], d["capability_id"], int(d["required"]),
                      d["status"], d["evidence_id"], _json(d["notes"])))
+        # Requirements are first-class graph edges so feature tracing can move from a
+        # feature to the client/server capability it depends on.
+        con.execute("INSERT OR REPLACE INTO entity_relationships VALUES (?,?,?,?,?,?,?,?,?)",
+                    (f"requires:{d['requirement_id']}", d["feature_id"], d["capability_id"],
+                     "REQUIRES", d.get("evidence_id"), "VERIFIED",
+                     "DISCOVERED", _json({"required": bool(d["required"]), "requirement_id": d["requirement_id"]}), None))
     elif cls == "Finding":
         con.execute("INSERT OR REPLACE INTO findings VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                     (d["finding_id"], d["analysis_id"], d["subject_id"], d["field"], _json(d["value"]),
@@ -279,7 +285,7 @@ def self_test() -> None:
     from tempfile import NamedTemporaryFile
     from workbench_schema import (
         Artifact, Feature, MigrationAction, ValidationResult, ValidationRun,
-        Implementation, AnalysisResult, Function, Binding, EnumDefinition, DependencyEdge, Capability,
+        Implementation, AnalysisResult, Function, Binding, EnumDefinition, DependencyEdge, Capability, CapabilityRequirement,
     )
     with NamedTemporaryFile(suffix=".db") as tmp:
         con = init_db(Path(tmp.name))
@@ -296,12 +302,13 @@ def self_test() -> None:
         insert_record(con, EnumDefinition("e", "State", None, "state.h", 1, "CXX_ENUM", "1", "READY"))
         insert_record(con, DependencyEdge("de", "packet:1", "cpp-symbol:Foo::bar", "HANDLED_BY", confidence="VERIFIED", source_snapshot_id="src"))
         insert_record(con, Capability("cap", "wardrobe_slots", "CLIENT", subject_id="client:test", status="UNKNOWN"))
+        insert_record(con, CapabilityRequirement("req", "f", "cap", required=True, status="UNKNOWN"))
         resolve_relationships(con)
         con.commit()
         expected = {
             "features": 1, "artifacts": 1, "migration_actions": 1,
             "validation_results": 1, "validation_runs": 1, "implementations": 1, "analysis_results": 1,
-            "functions": 1, "bindings": 1, "enum_definitions": 1, "entity_relationships": 2, "capabilities": 1,
+            "functions": 1, "bindings": 1, "enum_definitions": 1, "entity_relationships": 3, "capabilities": 1, "capability_requirements": 1,
         }
         actual = {k: con.execute(f"SELECT COUNT(*) FROM {k}").fetchone()[0] for k in expected}
         assert actual == expected, (actual, expected)
@@ -309,6 +316,8 @@ def self_test() -> None:
         assert target == ("fn", "VERIFIED"), target
         binding = con.execute("SELECT relationship, target_node, confidence FROM entity_relationships WHERE relationship_id='binds:b:fn'").fetchone()
         assert binding == ("BINDS", "fn", "VERIFIED"), binding
+        requirement = con.execute("SELECT source_node, target_node, relationship, confidence FROM entity_relationships WHERE relationship_id='requires:req'").fetchone()
+        assert requirement == ("f", "cap", "REQUIRES", "VERIFIED"), requirement
         con.close()
 
 def main():
