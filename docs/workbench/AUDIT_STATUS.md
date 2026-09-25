@@ -470,3 +470,10 @@ Ancient Vows now packages a patch plan covering its Justinius and Riverne missio
 Review-only WORKBENCH_PATCH_PLAN artifacts now have a drift-aware approval assessment. Before a plan can reach READY_FOR_APPROVAL, every target file must still match the reviewed source SHA-256, the exact patch anchors must replay cleanly, and the resulting in-memory preview must reproduce the reviewed preview SHA-256.
 
 Ancient Vows now exercises this gate against the pinned DSP target. READY_FOR_APPROVAL is still not an apply action and does not modify target files.
+
+
+## 2026-09-25 — Explicit human patch approval state
+
+Technical patch readiness and human approval are now separate states. A patch plan that passes drift checks can reach READY_FOR_APPROVAL, but deterministic apply remains ineligible until a matching WORKBENCH_PATCH_APPROVAL_REQUEST record is explicitly APPROVED. Approval records are bound to the exact patch-plan SHA-256.
+
+Ancient Vows now packages a PENDING approval request for its mission-gap patch plan and verifies execution eligibility remains AWAITING_APPROVAL.
