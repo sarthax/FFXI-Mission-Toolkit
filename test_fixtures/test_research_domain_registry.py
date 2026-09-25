@@ -58,6 +58,7 @@ def main():
         for name in (
             "feature.inspect","entity.lookup","binding.lookup",
             "packet.lookup","validation.inspect",
+            "server.symbol","server.enum","server.build-target",
         ):
             assert specs[name]["access"]=="READ",specs
 
