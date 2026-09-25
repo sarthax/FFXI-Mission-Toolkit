@@ -296,7 +296,7 @@ Use different fixtures for different architectural questions rather than treatin
 4. [x] Extend Backport Package Analyzer to emit/import canonical Feature, Artifact, DependencyEdge, Migration, and MigrationAction graph records.
 5. [x] Connect entity_profile/map-confidence/capture/packet outputs to the canonical graph with evidence/confidence preserved.
 6. [x] Add ValidationRun suite orchestration with independent dimensions, canonical ValidationResult persistence, and CLI/graph support.
-7. Continue GUI/service extraction without rewriting the GUI wholesale.
+7. Continue GUI/service extraction without rewriting the GUI wholesale. [in progress: `/backport/package` orchestration extracted behind `workbench.migrations.legacy_package_service` with regression coverage.]
 8. Build the evidence-aware LLM research/orchestration layer described in Phase 8; begin with typed Workbench tools and reproducible ResearchSession records rather than expanding free-form SQL access.
 9. Resume client EXE/DLL analysis when the actual binaries are available.
 
