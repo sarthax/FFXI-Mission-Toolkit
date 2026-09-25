@@ -12,6 +12,7 @@ from typing import Iterable
 from workbench.core.schema import Artifact
 from workbench.migrations.package_plan import PackagePlan
 from workbench.migrations.backend_registry import default_backend_registry
+from workbench.migrations.generated_output import GeneratedOutput
 
 
 def _backend_for(artifact: Artifact | None) -> str:
@@ -115,3 +116,41 @@ def converter_scope(manifest: dict, backend: str) -> tuple[str, ...]:
         if path:
             paths.append(str(path).replace("\\","/"))
     return tuple(paths)
+
+
+def attach_generated_outputs(
+    manifest: dict,
+    outputs: Iterable[GeneratedOutput],
+) -> dict:
+    """Attach already-target-formatted generated artifacts to a package manifest.
+
+    Generated outputs do not require a source converter backend. They remain explicit
+    generated artifacts and are validated separately before any apply step.
+    """
+    result={
+        **manifest,
+        "migration":dict(manifest.get("migration",{})),
+        "execution":{
+            **dict(manifest.get("execution",{})),
+            "steps":[dict(step) for step in manifest.get("execution",{}).get("steps",[])],
+        },
+        "artifacts":[dict(a) for a in manifest.get("artifacts",[])],
+        "generated_artifacts":[dict(a) for a in manifest.get("generated_artifacts",[])],
+    }
+    generated=result["generated_artifacts"]
+    known={str(item.get("output_id")) for item in generated}
+    for output in outputs:
+        if output.output_id in known:
+            raise ValueError(f"Duplicate generated output in package manifest: {output.output_id}")
+        generated.append({
+            "output_id":output.output_id,
+            "path":output.relative_path.replace("\\","/"),
+            "artifact_type":output.artifact_type,
+            "generator":output.generator,
+            "metadata":dict(output.metadata),
+            "target_formatted":True,
+            "conversion_status":"NOT_REQUIRED",
+        })
+        known.add(output.output_id)
+    generated.sort(key=lambda item:item["output_id"])
+    return result
