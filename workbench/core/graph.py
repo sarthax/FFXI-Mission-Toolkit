@@ -260,7 +260,9 @@ def resolve_relationships(con: sqlite3.Connection) -> int:
     changed = 0
     rows = con.execute("SELECT relationship_id, target_node, relationship, metadata_json FROM entity_relationships").fetchall()
     for rid, target, relationship, metadata_json in rows:
-        metadata = json.loads(metadata_json or "{}")
+        metadata = json.loads(metadata_json or "{}") or {}
+        if not isinstance(metadata,dict):
+            metadata={"raw_metadata":metadata}
         if relationship == "USES_ENUM" and target and not target.startswith(("cpp-symbol:","enum:","constant:")):
             if "::" in target:
                 enum_name,symbol=target.rsplit("::",1)
