@@ -47,6 +47,7 @@ jobs:
           python test_fixtures/test_feature_surface_graph.py
           python test_fixtures/test_feature_surface_validation.py
           python test_fixtures/test_domain_plugin_registry.py
+          python test_fixtures/test_binding_index_provenance.py
           python test_fixtures/test_logical_migration_planner.py
           python test_fixtures/test_migration_backend_registry.py
           python test_fixtures/test_migration_backend_probe.py
