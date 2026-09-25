@@ -74,7 +74,10 @@ def index_server(root:Path,opcodes):
                                       "relationship":"HANDLED_BY","confidence":"VERIFIED","status":"DISCOVERED",
                                       "source_location":f"{p}:{n}","notes":["Explicit packet-handler registration pattern matched."]})
             for tok,val in normalized.items():
-                if re.search(rf'(?<![A-Za-z0-9_])(?:0x)?{re.escape(tok)}(?![A-Za-z0-9_])',line,re.I):
+                hex_digits=tok[2:]
+                decimal=str(val)
+                token_re=rf'(?<![A-Za-z0-9_])(?:0x0*{re.escape(hex_digits)}|{re.escape(decimal)})(?![A-Za-z0-9_])'
+                if re.search(token_re,line,re.I):
                     if not any(e["source_node"]==packet_node_id(tok) and e["source_location"]==f"{p}:{n}" and e["relationship"]=="HANDLED_BY" for e in edges):
                         edges.append({"source_node":packet_node_id(tok),"target_node":f"cpp:{p.relative_to(root).as_posix()}:{n}",
                                       "relationship":"REFERENCES","confidence":"INFERRED","status":"DISCOVERED",
