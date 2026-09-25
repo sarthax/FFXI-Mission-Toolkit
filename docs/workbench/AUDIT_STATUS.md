@@ -259,3 +259,17 @@ Priority implementation order:
 7. optional additional providers only behind the same tool/evidence contract.
 
 Models may research broadly and propose changes, but they do not receive arbitrary write access to source trees, SQLite databases, DATs, or generated packages. Deterministic migration/validation services remain the only application path.
+
+
+## 2026-09-25 — First real cross-fork mission E2E
+
+A pinned public-repository end-to-end comparison now runs Excavation Duty from LandSandBoat commit `3747feee0e38ab5c0283c4fe8deea7f0a9022351` against legacy Darkstar commit `ee1f489efbdee2d95a4f1a6c842790da9f54306e`.
+
+Executed CI verified:
+- semantic mission match by unique normalized name `excavation_duty`;
+- source instance ID `6300` maps to legacy DSP instance ID `21`;
+- the migration planner emits `RENUMBER / AUTO_MIGRATABLE` rather than treating the numeric drift as unrelated records;
+- instance membership contains 33 shared entity IDs, 1 LSB-only entity ID (`17035542`), and 8 legacy-DSP-only entity IDs in the pinned snapshots;
+- the implementation script moved from modern LSB `scripts/assaults/Lebros_Cavern/excavation_duty.lua` to legacy DSP `scripts/zones/Lebros_Cavern/instances/excavation_duty.lua`, recorded as path drift rather than absence.
+
+This is the first executed source-to-target feature slice using two real external FFXI server repositories. It validates the adapter/logical matching direction while also demonstrating that entity membership and script layout require explicit migration analysis beyond ID renumbering.
