@@ -378,3 +378,8 @@ The flagship Ancient Vows LSB→DSP E2E now verifies the fully assembled migrati
 ## 2026-09-25 — Apply-readiness gate
 
 Assembled migration packages now have an explicit apply-readiness assessment. A package is READY only when package cohesion passes and validation status is READY. MANUAL_REQUIRED validation remains review-only, while cohesion failures, blocked validation, missing validation metadata, or unknown validation states block application. This gate does not apply SQL to a live database.
+
+
+## 2026-09-25 — Ancient Vows apply-readiness boundary
+
+The flagship Ancient Vows package now proves the intended safety boundary: the assembled workspace is internally COHERENT, but apply readiness remains MANUAL_REQUIRED because the LSB→DSP converter route is not yet registered as supported. Package integrity therefore does not bypass converter/validation readiness.
