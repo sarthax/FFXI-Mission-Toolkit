@@ -1,7 +1,8 @@
 """Compare generic instance feature slices across server adapters."""
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Iterable
+import hashlib
+import json
 
 from workbench.adapters.servers.base import LogicalRecord
 from workbench.adapters.servers.logical import LogicalComparison, compare_records
@@ -46,7 +47,9 @@ def compare_instance_slices(source: InstanceFeatureSlice, target: InstanceFeatur
         target_record=target_map.get(key)
         if target_record is None:
             actions.append(MigrationAction(
-                action_id=f"missing-target:{source_record.logical_type}:{hash(str(key)) & 0xffffffff:08x}",
+                action_id=f"missing-target:{source_record.logical_type}:" + hashlib.sha256(
+                    json.dumps([source_record.logical_type,list(source_record.identity)],sort_keys=True,default=str).encode("utf-8")
+                ).hexdigest()[:12],
                 migration_id=migration_id,
                 action="IMPLEMENT",
                 status="MANUAL_REQUIRED",
