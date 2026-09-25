@@ -165,7 +165,7 @@ Wiki/reference indexing is intentionally a **launch/navigation layer**, not a so
 A staged package-layout migration is now part of the rework. Package namespaces have been introduced without moving mature root scripts yet. The mass move is intentionally deferred until shared service boundaries stabilize; root compatibility wrappers will preserve existing workflows during each subsystem migration. See `docs/workbench/REPOSITORY_STRUCTURE.md`.
 
 ## Immediate audit queue
-1. Refine capture → Lua event → binding/C++ semantic resolution, including class-aware binding candidates and direct graph validation.
+1. Validate and extend class-aware capture → Lua event → binding/C++ resolution, adding evidence-backed local/returned-object typing without guessing.
 2. Resolve real packet handlers from actual server dispatch sources when a server source root is indexed.
 3. Connect bindings -> C++ symbols -> enums/constants -> packets -> build targets.
 4. Extend Backport Package Analyzer to import canonical graph records.
@@ -195,3 +195,7 @@ Add FFXIclopedia as an independent reference adapter alongside BG Wiki. Prefer r
 
 ### 2026-09-25 continuation milestone
 The server graph connector now accepts the Lua event-surface index and independently verifies event identity against `npc_event_refs` before creating event → Lua function relationships. Lua method calls are preserved as inferred binding candidates rather than asserted class resolutions.
+
+
+### Class-aware Lua candidate milestone
+Lua event indexing now carries conservative callback-parameter class hints, and graph connectors use those hints to narrow binding candidates. The hint does not upgrade a call to VERIFIED; semantic typing of locals/returned objects remains future work.
