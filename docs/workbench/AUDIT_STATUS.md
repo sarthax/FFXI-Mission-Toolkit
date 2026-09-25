@@ -3,7 +3,7 @@
 Last updated: 2026-09-25
 
 ## Current milestone
-Foundation preserved; engine-change workspace audited; C++ API/dependency/build evidence passes are available; a generic canonical SQLite graph store is now implemented; migration classification is next.
+Foundation preserved; engine-change workspace audited; C++ API/dependency/build evidence passes are available; a generic canonical SQLite graph store is now implemented; migration classification is now available; feature/package graph integration and validation standardization are next.
 
 ## New work completed
 - [x] Directly inspected the bundled dsp-engine-changes/_example_change scaffold.
@@ -46,7 +46,7 @@ Foundation preserved; engine-change workspace audited; C++ API/dependency/build 
 - [x] Lua binding -> C++ resolution (conservative exact matching).
 - [x] C++ dependency graph (conservative lexical edges).
 - [x] Build-system integration analyzer (conservative source-list evidence).
-- [ ] Engine migration classifier.
+- [x] Engine migration classifier (conservative API/binding comparison).
 
 ### P0/P1 — Client
 - [x] Item DAT architecture audited.
