@@ -64,9 +64,24 @@ def index_server(root:Path,opcodes):
                                       "source_location":f"{p}:{n}","notes":["Opcode token occurrence only; not proof this code is the runtime handler."]})
     return edges
 
+def self_test():
+    """Exercise only deterministic dispatch patterns with a tiny synthetic source fixture."""
+    from tempfile import TemporaryDirectory
+    with TemporaryDirectory() as td:
+        root=Path(td)
+        packet_db=root/"packets.xml"
+        server=root/"server.cpp"
+        packet_db.write_text('<packet opcode="0x02A" />', encoding="utf-8")
+        server.write_text('switch (opcode) {\\n  case 0x02A: handle_dialog(); break;\\n}\\n', encoding="utf-8")
+        ops=index_packet_db(packet_db)
+        edges=index_server(root,[ops[0]])
+        assert any(e["relationship"]=="HANDLED_BY" and e["confidence"]=="VERIFIED" for e in edges)
+        assert any(e["relationship"]=="REFERENCES" for e in edges) is False
+
+
 def main():
-    ap=argparse.ArgumentParser(); ap.add_argument("packet_db",type=Path); ap.add_argument("--server-root",type=Path); ap.add_argument("--json",type=Path); a=ap.parse_args()
-    ops=index_packet_db(a.packet_db)
+    ap=argparse.ArgumentParser(); ap.add_argument("--self-test",action="store_true"); ap.add_argument("packet_db",type=Path,nargs="?"); ap.add_argument("--server-root",type=Path); ap.add_argument("--json",type=Path); a=ap.parse_args()
+    if a.self_test:\n        self_test(); print("packet_opcode_index self-test: PASS"); return\n    if not a.packet_db: ap.error("packet_db is required unless --self-test")\n    ops=index_packet_db(a.packet_db)
     edges=index_server(a.server_root,ops) if a.server_root else []
     out={"schema":2,"analysis":{"analysis_id":"packet-opcode-index","analysis_type":"PACKET_OPCODE_SURFACE","source":str(a.packet_db),"status":"ANALYZED"},
          "opcodes":ops,"edges":edges}
