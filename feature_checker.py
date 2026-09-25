@@ -137,8 +137,8 @@ def check_feature(con: sqlite3.Connection, feature: dict) -> dict:
     validations = []
     for row in con.execute(
         "SELECT validation_id, run_id, validation_type, subject_id, status, evidence_id, source, target, notes_json "
-        "FROM validation_results WHERE subject_id=? OR subject_id=? ORDER BY validation_id",
-        (fid, fid),
+        "FROM validation_results WHERE subject_id=? ORDER BY validation_id",
+        (fid,),
     ):
         validations.append({
             "validation_id": row[0], "run_id": row[1], "validation_type": row[2],
