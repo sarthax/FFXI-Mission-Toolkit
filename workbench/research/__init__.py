@@ -26,3 +26,5 @@ from .crawler import BoundedSourceCrawler, CrawlPolicy
 from .runner import ResearchRunner
 
 from .domain_tools import WorkbenchDomainReader
+
+from .extended_tools import CaptureResearchReader, ReferenceResearchReader, ClientResearchReader
