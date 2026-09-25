@@ -73,3 +73,14 @@ This pipeline is deliberately read-only. It does not patch binaries, inject hook
 or promote feature-specific conclusions automatically. Deeper disassembly/xref analyzers can be
 added later as optional evidence producers while retaining the same hash/snapshot/provenance
 boundary.
+
+
+## Real FFXI validation notes
+
+The pipeline has been validated against real FFXI PE32/i386 client modules. In particular,
+FFXiMain.dll may use a nonstandard executable `POL1` section and may report a virtual
+executable `.text` section with zero raw bytes. The indexer therefore emits layout warnings
+instead of assuming every executable RVA can be mapped to ordinary raw `.text` bytes.
+
+This matters for later disassembly/xref work: imports, exports, hashes, resources, and string
+evidence may still be usable even when ordinary code-section mapping is incomplete.
