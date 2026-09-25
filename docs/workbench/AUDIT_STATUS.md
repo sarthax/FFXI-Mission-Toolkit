@@ -563,3 +563,10 @@ Capture/packet graph integration already existed, so this closes the immediate e
 The validation layer now supports deterministic multi-validator suites. Independent dimensions remain separate, each validator produces a canonical ValidationResult, and the suite produces one canonical ValidationRun with per-dimension status metadata. Required failures determine the overall run state without hiding optional or dimension-specific results.
 
 The legacy single-validator CLI remains compatible, while `validation_pipeline.py --suite ... --graph-db ...` can execute a suite manifest and persist the run/results into the Workbench graph.
+
+
+## 2026-09-25 — Backport package GUI service extraction
+
+The `/backport/package` GUI route now delegates conversion, binding/sanity checks, SQL collision/duplication checks, and report generation to `workbench.migrations.legacy_package_service`. The route retains its existing form/template contract while business orchestration moves behind a reusable Workbench service.
+
+A service-level regression covers successful workflow execution plus invalid-package and verify-only error boundaries. This is one bounded extraction step; the GUI remains intentionally incremental rather than being rewritten wholesale.
