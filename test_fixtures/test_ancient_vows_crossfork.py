@@ -15,6 +15,7 @@ from workbench.migrations.feature_surface_plan import plan_feature_surface
 from workbench.migrations.package_manifest import build_package_manifest
 from workbench.migrations.package_validation import build_validation_package
 from workbench.migrations.package_materialize import materialize_package, write_materialization_journal
+from workbench.migrations.backend_probe import probe_lsb_to_dsp_lua
 from workbench.core import graph
 from workbench.core.schema import Artifact, CapabilityRequirement, DependencyEdge, Feature, MigrationAction
 from workbench.core.services.feature_surface_graph import persist_feature_surface
@@ -106,6 +107,10 @@ def main():
 
     source_mission=surfaces["lsb_mission"].read_text(encoding="utf-8",errors="ignore")
     source_battlefield=surfaces["lsb_battlefield"].read_text(encoding="utf-8",errors="ignore")
+    lsb_lua_probes={
+        "mission":probe_lsb_to_dsp_lua(source_mission),
+        "battlefield":probe_lsb_to_dsp_lua(source_battlefield),
+    }
     target_battlefield=surfaces["dsp_battlefield"].read_text(encoding="utf-8",errors="ignore")
     source_mob=surfaces["lsb_mammet"].read_text(encoding="utf-8",errors="ignore")
     target_mob=surfaces["dsp_mammet"].read_text(encoding="utf-8",errors="ignore")
@@ -342,6 +347,14 @@ def main():
             "semantic_action_count":len(semantic_actions),
             "semantic_migration_required":any(action.action!="NOT_REQUIRED" for action in semantic_actions),
             "plugin_migration_findings":len(migration_findings),
+            "lsb_dsp_lua_probe":{
+                name:{
+                    "status":probe.status,
+                    "flagged_count":probe.flagged_count,
+                    "leftover_count":probe.leftover_count,
+                }
+                for name,probe in lsb_lua_probes.items()
+            },
         },
         "domain_plugins":{
             "active":active_plugins,
