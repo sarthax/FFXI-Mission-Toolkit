@@ -42,6 +42,29 @@ def main():
     assert battlefield_rules,battlefield_rules
     assert battlefield_rules[0].metadata["proposed_action"]=="NOT_REQUIRED",battlefield_rules
 
+
+    gap=PluginContext(
+        feature_id="feature:test:battlefield-gap",
+        source_family="LSB",
+        target_family="DSP",
+        metadata={
+            "systems":["MISSION_BATTLEFIELD"],
+            "capability_coverage_status":"CAPABILITY_COVERAGE_DRIFT",
+            "entity_coverage_aligned":False,
+        },
+    )
+    gap_findings=registry.migration_findings(gap)
+    reshapes={
+        f.metadata.get("reshape")
+        for f in gap_findings
+        if f.plugin_id=="framework.battlefield" and f.finding_type=="MIGRATION_RESHAPE"
+    }
+    assert {
+        "BATTLEFIELD_POLICY_TO_REGISTRY_SQL",
+        "BATTLEFIELD_GROUPS_TO_MEMBERSHIP_SQL",
+        "FRAMEWORK_ORCHESTRATION_TO_DSP_CALLBACKS",
+    } <= reshapes,reshapes
+
     assault_ctx=PluginContext(
         feature_id="feature:assault:excavation_duty",
         metadata={"systems":["ASSAULT"]},
