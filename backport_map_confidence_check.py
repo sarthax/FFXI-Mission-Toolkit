@@ -30,12 +30,15 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
 
 import backport_lua_convert as blc
 import settings
+from workbench.core.provenance import snapshot_id
+from workbench.core.services.map_confidence_graph import import_map_confidence_results
 
 def get_dsp_root() -> Path | None:
     """Settings' dsp_server_path if configured and real, else None -- no hardcoded machine-specific
@@ -106,6 +109,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--all", action="store_true", help="Also check 'confirmed' families, not just 'confirmed_pattern'")
     ap.add_argument("--family", type=str, default=None, help="Limit to one simple_families family name")
+    ap.add_argument("--json", type=Path, help="Optional machine-readable result output.")
+    ap.add_argument("--graph-db", type=Path, help="Optionally import results into the canonical Workbench graph.")
     args = ap.parse_args()
 
     ns_map = blc.load_map()
@@ -121,6 +126,7 @@ def main():
 
     any_missing = False
     checked_any = False
+    results = []
     for family, spec in families.items():
         if family.startswith("_"):
             continue
@@ -130,6 +136,8 @@ def main():
             continue
         checked_any = True
         result = check_simple_family(topaz_root, dsp_root, family, spec)
+        result["mapping_confidence"] = spec.get("confidence")
+        results.append(result)
         print(f"\n=== {family} (confidence: {spec.get('confidence')}, {result['used_count']} real key(s) used in Topaz) ===")
         if result["missing"]:
             any_missing = True
@@ -138,6 +146,26 @@ def main():
                 print(f"    tpz.{family}.{key} -> {dsp_name}  (not found)")
         else:
             print(f"  OK -- all {len(result['confirmed'])} real used key(s) resolve to a real DSP identifier")
+
+    payload = {
+        "schema": 1,
+        "source": str(topaz_root),
+        "target": str(dsp_root),
+        "results": results,
+        "has_missing": any_missing,
+    }
+    if args.json:
+        args.json.parent.mkdir(parents=True, exist_ok=True)
+        args.json.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    if args.graph_db:
+        import_map_confidence_results(
+            results,
+            args.graph_db,
+            source=str(topaz_root),
+            target=str(dsp_root),
+            source_snapshot_id=snapshot_id(topaz_root),
+            target_snapshot_id=snapshot_id(dsp_root),
+        )
 
     if not checked_any:
         print("No matching families to check (nothing at the requested confidence level, or --family didn't match).")
