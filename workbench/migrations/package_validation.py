@@ -30,6 +30,10 @@ def build_validation_package(manifest: dict) -> dict:
         step for step in steps
         if step.get("backend") in {"lua","sql"} and step.get("conversion_status")=="UNSUPPORTED"
     )
+    conditional=tuple(
+        step for step in steps
+        if step.get("backend") in {"lua","sql"} and step.get("conversion_status")=="CONDITIONAL"
+    )
     if lua:
         checks.extend([
             ValidationCheck("lua-sanity","LUA_SANITY",True,lua),
@@ -56,11 +60,19 @@ def build_validation_package(manifest: dict) -> dict:
             tuple(sorted(str(step.get("path")) for step in unsupported if step.get("path"))),
             {"unsupported_count":len(unsupported)},
         ))
+    if conditional:
+        checks.append(ValidationCheck(
+            "converter-preflight",
+            "CONVERTER_PREFLIGHT_REQUIRED",
+            True,
+            tuple(sorted(str(step.get("path")) for step in conditional if step.get("path"))),
+            {"conditional_count":len(conditional)},
+        ))
 
     migration_status=manifest.get("migration",{}).get("status")
     if migration_status=="BLOCKED":
         status="BLOCKED"
-    elif unsupported:
+    elif unsupported or conditional:
         status="MANUAL_REQUIRED"
     else:
         status="READY"
