@@ -21,7 +21,7 @@ from workbench.core import graph
 from workbench.core.schema import Artifact, CapabilityRequirement, DependencyEdge, Feature, MigrationAction
 from workbench.core.services.feature_surface_graph import persist_feature_surface
 from workbench.core.services.feature_surface_validation import build_feature_surface_validation
-from workbench.plugins.domain import PluginContext, default_registry
+from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership
 from feature_checker import resolve_feature, check_feature
 import tempfile
 import backport_binding_audit as bba
@@ -32,6 +32,11 @@ BATTLEFIELD_ID=960
 ZONE_ID=31
 MAMMET_TEMPLATE="Mammet-19_Epsilon"
 EXPECTED_MAMMETS=set(range(16904193,16904202))
+EXPECTED_MAMMET_GROUPS=(
+    (16904193,16904194,16904195),
+    (16904196,16904197,16904198),
+    (16904199,16904200,16904201),
+)
 
 def one(records,pred):
     matches=[r for r in records if pred(r)]
@@ -89,6 +94,13 @@ def main():
         if r.fields["battlefield_id"]==BATTLEFIELD_ID
     }
     assert target_mammets==EXPECTED_MAMMETS,target_mammets
+    membership_proposal=propose_dsp_battlefield_membership(
+        BATTLEFIELD_ID,
+        EXPECTED_MAMMET_GROUPS,
+        target_members,
+    )
+    assert membership_proposal.status=="EQUIVALENT",membership_proposal
+    assert not membership_proposal.insert_sql,membership_proposal
 
     source_mammets=set(yaml_mob_template_spawns(
         lsb_root/"data"/"zones"/"monarch_linn"/"mobs.yaml",
@@ -352,6 +364,8 @@ def main():
         "registry_representation_drift":sorted(registry_fields),
         "mammet_membership":{
             "expected_count":len(EXPECTED_MAMMETS),
+            "dsp_reshape_status":membership_proposal.status,
+            "generated_insert_count":len(membership_proposal.insert_sql),
             "source_template_spawn_count":len(source_mammets),
             "target_battlefield_member_count":len(target_mammets),
             "shared_expected_ids":sorted(target_mammets & source_mammets),
