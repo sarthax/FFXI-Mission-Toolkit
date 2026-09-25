@@ -166,7 +166,8 @@ def check_feature(con: sqlite3.Connection, feature: dict) -> dict:
         "created_at": datetime.now(timezone.utc).isoformat(),
         "feature": feature,
         "status": aggregate,
-        "requirements": checks,\n        "semantic_relationships": semantic_relationships,
+        "requirements": checks,
+        "semantic_relationships": semantic_relationships,
         "implementation_records": implementations,
         "validation_results": validations,
         "notes": [
