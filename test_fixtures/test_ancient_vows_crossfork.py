@@ -24,7 +24,7 @@ from workbench.core import graph
 from workbench.core.schema import Artifact, CapabilityRequirement, DependencyEdge, Feature, MigrationAction
 from workbench.core.services.feature_surface_graph import persist_feature_surface
 from workbench.core.services.feature_surface_validation import build_feature_surface_validation
-from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy, analyze_dsp_battlefield_callbacks, plan_dsp_battlefield_callback_adaptation, generated_outputs_for_dsp_battlefield, extract_lsb_battlefield_policy, extract_lsb_mission_level_cap, extract_lsb_battlefield_mob_groups, validate_dsp_battlefield_proposals
+from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy, analyze_dsp_battlefield_callbacks, plan_dsp_battlefield_callback_adaptation, generated_outputs_for_dsp_battlefield, extract_lsb_battlefield_policy, extract_lsb_mission_level_cap, extract_lsb_battlefield_mob_groups, validate_dsp_battlefield_proposals, plan_dsp_battlefield_representation
 from feature_checker import resolve_feature, check_feature
 import tempfile
 import backport_binding_audit as bba
@@ -200,6 +200,15 @@ def main():
     )
     assert policy_proposal.status=="EQUIVALENT",policy_proposal
     assert policy_proposal.update_sql is None,policy_proposal
+    representation_plan=plan_dsp_battlefield_representation(
+        membership_proposal,
+        policy_proposal,
+        callback_plan,
+    )
+    assert representation_plan.status=="READY",representation_plan
+    assert representation_plan.callback_status=="NOT_REQUIRED",representation_plan
+    assert not representation_plan.manual_surfaces,representation_plan
+
     generated_dsp_outputs=generated_outputs_for_dsp_battlefield(
         membership_proposal,
         policy_proposal,
@@ -484,6 +493,7 @@ def main():
             "lua_conversion_status":"CONDITIONAL",
             "lua_preflight_status":"MANUAL_REQUIRED",
             "sql_conversion_status":"UNSUPPORTED",
+            "battlefield_representation_status":"READY",
             "package_assembly_status":"MANUAL_REQUIRED",
             "semantic_action_count":len(semantic_actions),
             "semantic_migration_required":any(action.action!="NOT_REQUIRED" for action in semantic_actions),
