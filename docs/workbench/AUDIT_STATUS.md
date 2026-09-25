@@ -361,3 +361,10 @@ The reusable battlefield plugin now models the modern LSB → legacy DSP represe
 The corrected Ancient Vows flagship confirms four real engine binding candidates are present in DSP with zero missing bindings, while its framework methods remain a structural representation concern. Source-derived policy, membership, and callback checks all resolve equivalent against the pinned DSP target, so no target SQL is generated.
 
 Safe reshape proposals can now emit target-ready generated SQL artifacts, attach them to package manifests, stage them with SHA-256 provenance, and receive validation-package checks. Unified package assembly writes the manifest, validation package, source materialization journal, and generated-output journal without touching a live database.
+
+
+## 2026-09-25 — Package cohesion verification
+
+The migration package pipeline now includes a cohesion verifier for assembled workspaces. It verifies that the package manifest, validation package, source materialization journal, generated-output journal, staged files, and recorded SHA-256 hashes agree. Missing or tampered package artifacts are reported as package failures before any target application step.
+
+This closes the review-package integrity gap between package assembly and later apply/rollback workflows.
