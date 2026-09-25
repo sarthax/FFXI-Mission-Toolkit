@@ -3,7 +3,7 @@
 Last updated: 2026-09-25
 
 ## Current milestone
-Foundation preserved; engine-change workspace audited; C++ API surface index added; binding-to-C++ resolution and enum/constant indexing are now available as conservative evidence passes; build-system analysis is next.
+Foundation preserved; engine-change workspace audited; C++ API surface, conservative dependency, and build-integration evidence passes are now available; migration classification and canonical graph integration are next.
 
 ## New work completed
 - [x] Directly inspected the bundled dsp-engine-changes/_example_change scaffold.
@@ -44,8 +44,8 @@ Foundation preserved; engine-change workspace audited; C++ API surface index add
 - [x] C++ definition/symbol index.
 - [x] Enum/constant index.
 - [x] Lua binding -> C++ resolution (conservative exact matching).
-- [ ] C++ dependency graph.
-- [ ] Build-system integration analyzer.
+- [x] C++ dependency graph (conservative lexical edges).
+- [x] Build-system integration analyzer (conservative source-list evidence).
 - [ ] Engine migration classifier.
 
 ### P0/P1 — Client
