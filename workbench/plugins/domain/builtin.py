@@ -141,6 +141,14 @@ class BattlefieldFamilyPlugin(MetadataPlugin):
         metadata={
             "representation_profiles":("legacy_sql_plus_zone_lua","modular_lua_plus_data_registry"),
             "intended_reuse":("BCNM","KSNM","ISNM","ENM","mission battlefields"),
+            "legacy_dsp_callback_surface":(
+                "onBattlefieldTick",
+                "onBattlefieldRegister",
+                "onBattlefieldEnter",
+                "onBattlefieldLeave",
+                "onEventUpdate",
+                "onEventFinish",
+            ),
         },
     )
 
