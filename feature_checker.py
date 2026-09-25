@@ -173,7 +173,10 @@ def check_feature(con: sqlite3.Connection, feature: dict) -> dict:
             "source": row[6], "target": row[7], "notes": _json_value(row[8]) or [],
         })
 
-    implementation_status = implementation_dimension(implementations)\n    validation_status = validation_dimension(validations)\n\n    required = [c for c in checks if c["required"]]
+    implementation_status = implementation_dimension(implementations)
+    validation_status = validation_dimension(validations)
+
+    required = [c for c in checks if c["required"]]
     if not required:
         aggregate = "NO_REQUIREMENTS_DECLARED"
     elif any(c["observed_status"] == "CONTRADICTED" for c in required):
@@ -192,7 +195,12 @@ def check_feature(con: sqlite3.Connection, feature: dict) -> dict:
         "check_id": f"feature-check:{fid}",
         "created_at": datetime.now(timezone.utc).isoformat(),
         "feature": feature,
-        "status": aggregate,\n        "dimensions": {\n            "requirements": aggregate,\n            "implementation": implementation_status,\n            "validation": validation_status,\n        },
+        "status": aggregate,
+        "dimensions": {
+            "requirements": aggregate,
+            "implementation": implementation_status,
+            "validation": validation_status,
+        },
         "requirements": checks,
         "semantic_relationships": semantic_relationships,
         "implementation_records": implementations,
@@ -200,7 +208,8 @@ def check_feature(con: sqlite3.Connection, feature: dict) -> dict:
         "notes": [
             "Capability checks are evaluated independently.",
             "Implementation records and validation results are supporting evidence, not substitutes for missing capability evidence.",
-            "No single numeric score is produced.",\n            "Requirements, implementation, and validation remain separate status dimensions.",
+            "No single numeric score is produced.",
+            "Requirements, implementation, and validation remain separate status dimensions.",
         ],
     }
 
