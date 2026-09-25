@@ -29,6 +29,19 @@ def main():
     assert battlefield.identify(ancient)
     assert registry.get("framework.quest_mission").identify(ancient)
 
+    aligned=PluginContext(
+        feature_id="feature:cop:ancient_vows",
+        metadata={
+            "systems":["MISSION_BATTLEFIELD","MISSION"],
+            "capability_coverage_status":"CAPABILITIES_ALIGNED",
+            "entity_coverage_aligned":True,
+        },
+    )
+    findings=registry.migration_findings(aligned)
+    battlefield_rules=[f for f in findings if f.plugin_id=="framework.battlefield"]
+    assert battlefield_rules,battlefield_rules
+    assert battlefield_rules[0].metadata["proposed_action"]=="NOT_REQUIRED",battlefield_rules
+
     assault_ctx=PluginContext(
         feature_id="feature:assault:excavation_duty",
         metadata={"systems":["ASSAULT"]},
