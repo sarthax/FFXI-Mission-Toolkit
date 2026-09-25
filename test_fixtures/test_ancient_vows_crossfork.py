@@ -17,6 +17,7 @@ from workbench.migrations.package_validation import build_validation_package
 from workbench.migrations.package_assembly import assemble_migration_package
 from workbench.migrations.package_cohesion import verify_package_cohesion
 from workbench.migrations.package_apply_gate import assess_apply_readiness
+from workbench.migrations.package_preflight import preflight_manifest_artifacts
 from workbench.migrations.backend_probe import probe_lsb_to_dsp_lua
 from workbench.migrations.backend_probe_plan import plan_lsb_dsp_lua_probe
 from workbench.core import graph
@@ -307,7 +308,17 @@ def main():
     ]
     assert lua_steps and all(step["conversion_status"]=="CONDITIONAL" for step in lua_steps),package_manifest
     assert sql_steps and all(step["conversion_status"]=="UNSUPPORTED" for step in sql_steps),package_manifest
-    validation_package=build_validation_package(package_manifest)
+    preflighted_manifest,preflight_results=preflight_manifest_artifacts(package_manifest,lsb_root)
+    assert preflight_results,preflight_results
+    lua_preflight=[result for result in preflight_results if result.path.endswith(".lua")]
+    assert len(lua_preflight)==2,lua_preflight
+    assert all(result.status=="MANUAL_REQUIRED" for result in lua_preflight),lua_preflight
+    assert all(
+        step["conversion_status"]=="CONDITIONAL"
+        for step in preflighted_manifest["execution"]["steps"]
+        if step["backend"]=="lua"
+    ),preflighted_manifest
+    validation_package=build_validation_package(preflighted_manifest)
     with tempfile.TemporaryDirectory() as package_td:
         package_root=Path(package_td)/"ancient-vows-package"
         assembled=assemble_migration_package(
@@ -471,6 +482,7 @@ def main():
             "package_cohesion":"COHERENT",
             "apply_readiness":"MANUAL_REQUIRED",
             "lua_conversion_status":"CONDITIONAL",
+            "lua_preflight_status":"MANUAL_REQUIRED",
             "sql_conversion_status":"UNSUPPORTED",
             "package_assembly_status":"MANUAL_REQUIRED",
             "semantic_action_count":len(semantic_actions),
