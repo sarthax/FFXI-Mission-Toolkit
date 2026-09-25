@@ -86,7 +86,8 @@ def self_test():
         server.write_text('switch (opcode) {\n  case 0x02A: handle_dialog(); break;\n}\n', encoding="utf-8")
         ops=index_packet_db(packet_db)
         edges=index_server(root,[ops[0]])
-        assert any(e["relationship"]=="HANDLED_BY" and e["target_node"]=="cpp-symbol:handle_dialog" and e["confidence"]=="VERIFIED" for e in edges)\n        assert any(e["relationship"]=="REFERENCES" for e in edges) is False
+        assert any(e["relationship"]=="HANDLED_BY" and e["target_node"]=="cpp-symbol:handle_dialog" and e["confidence"]=="VERIFIED" for e in edges)
+        assert any(e["relationship"]=="REFERENCES" for e in edges) is False
 
 
 def main():
