@@ -168,13 +168,15 @@ Additional fields:
 Lua call -> binding -> C++ function -> declaration/implementation -> dependencies/enums/constants/packets -> build target
 
 ## Unresolved items
-1. Actual dsp-engine-changes artifact contents need direct inspection.
-2. C++ AST/symbol extraction implementation has not yet been added to the toolkit.
-3. Build-system analyzer has not yet been implemented.
-4. Actual client pol.exe / FFXiMain.dll bytes are not presently available to this audit pass; exact offsets and binary patches remain unverified.
-5. Canonical schema migration from current SQLite tables into the generalized graph is not implemented yet.
-6. GUI service extraction remains partial.
-7. The LLM/research layer needs implementation of the new ResearchSession/provider/tool-registry architecture; current Open WebUI/Ollama + read-only SQLite integration remains a narrow draft assistant.
+1. General server adapters need broader logical field coverage and Topaz-Next/custom-fork handling beyond the current Topaz/DSP/LSB profiles.
+2. The general Feature Migration Engine is only partially implemented; logical comparison/planning exists, but dependency-aware package generation and source-to-target conversion remain incomplete.
+3. Multi-validator ValidationRun orchestration remains incomplete even though core regression and external-source CI are operational.
+4. ClientCapability, DAT asset resolver consolidation, dialog drift, and client/server synchronization services remain incomplete.
+5. Actual client pol.exe / FFXiMain.dll bytes are not presently available to this audit pass; exact offsets and binary patches remain unverified.
+6. Repository/service migration remains staged; many mature root scripts still need package service extraction and compatibility shims.
+7. GUI service extraction remains partial.
+8. The LLM/research layer needs implementation of the new ResearchSession/provider/tool-registry architecture; current Open WebUI/Ollama + read-only SQLite integration remains a narrow draft assistant.
+9. Domain plugins remain to be implemented on the generalized extension interface, with Assault as the first end-to-end proving ground.
 
 ## Audit discipline
 Every future audit pass should update:
