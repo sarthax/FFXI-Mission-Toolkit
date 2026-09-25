@@ -491,3 +491,10 @@ Regression coverage uses temporary files only. Ancient Vows remains AWAITING_APP
 Package cohesion now verifies that every packaged WORKBENCH_PATCH_APPROVAL_REQUEST is cryptographically linked to an actual packaged WORKBENCH_PATCH_PLAN by SHA-256. A swapped, stale, missing, or malformed approval request/patch plan pair now fails the top-level package cohesion gate.
 
 Ancient Vows exercises this linkage because its package contains both the mission-gap patch plan and its PENDING approval request.
+
+
+## 2026-09-25 — Unified patch lifecycle status
+
+Patch-package consumers now have one lifecycle assessment instead of reconstructing state from multiple artifacts. The lifecycle service evaluates package cohesion, patch-plan technical readiness, approval state, optional apply journals, and target drift to report states such as AWAITING_APPROVAL, ELIGIBLE_FOR_DETERMINISTIC_APPLY, APPLIED, ROLLED_BACK, DRIFTED, or PACKAGE_FAILED.
+
+Ancient Vows now reports AWAITING_APPROVAL directly from its assembled package and pinned DSP target.
