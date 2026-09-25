@@ -390,3 +390,8 @@ The flagship Ancient Vows package now proves the intended safety boundary: the a
 The migration backend registry now recognizes LSB→DSP Lua through a dedicated conditional backend instead of reusing the Topaz→DSP converter implicitly. The backend only auto-converts a narrow proven-safe residual subset. Modern `xi.*` namespaces and LSB framework-object orchestration remain MANUAL_REQUIRED pending dedicated evidence-backed rewrite rules.
 
 Package manifests preserve this as `CONDITIONAL`, validation adds a converter-preflight requirement, and the legacy package runner refuses conditional steps until preflight clears them. Ancient Vows now reports conditional Lua conversion while SQL remains unsupported, so apply readiness stays MANUAL_REQUIRED.
+
+
+## 2026-09-25 — Artifact-level converter preflight
+
+Conditional migration backends can now preflight each artifact independently against real source text. Passing files are promoted from CONDITIONAL to SUPPORTED in a derived manifest, while framework-heavy, namespace-unsafe, missing, or otherwise unresolved files remain conditional/manual-review. This does not mutate the original manifest or authorize target application by itself.
