@@ -585,3 +585,21 @@ The evidence-aware research layer now has an implemented foundation rather than 
 - a bounded provider/tool research runner that enforces tool/provider-call budgets and persists only a DRAFT/INCOMPLETE report state.
 
 No model-generated conclusion is promoted directly to canonical truth, and no research path receives direct source/package/database mutation authority.
+
+
+## 2026-09-25 — Typed research domain tool expansion
+
+The research layer now exposes typed read-only Workbench tools beyond generic graph/source access:
+
+- feature.inspect / feature.check
+- entity.lookup
+- binding.lookup
+- packet.lookup / packet.handlers
+- validation.inspect / validation.status
+- server.symbol / cpp.symbol
+- server.enum / enum.lookup
+- server.build-target / build.target
+- capability.inspect
+- migration.inspect
+
+These tools read canonical Workbench records, return evidence IDs/confidence/status where available, and run through the permission-aware ResearchToolRegistry so calls are recorded in ResearchSession transcripts. They do not expose arbitrary write operations or bypass canonical evidence semantics.
