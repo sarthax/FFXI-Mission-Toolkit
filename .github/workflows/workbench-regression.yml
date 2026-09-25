@@ -45,6 +45,7 @@ jobs:
           python test_fixtures/test_feature_surface.py
           python test_fixtures/test_feature_surface_graph.py
           python test_fixtures/test_feature_surface_validation.py
+          python test_fixtures/test_domain_plugin_registry.py
           python test_fixtures/test_logical_migration_planner.py
           python test_fixtures/test_semantic_instance_matching.py
           python test_fixtures/test_entity_symbol_identity.py
