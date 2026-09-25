@@ -40,7 +40,7 @@ def main():
         con.execute(
             "INSERT INTO entity_relationships(relationship_id,source_node,target_node,relationship,evidence_id,confidence,status,metadata_json,source_snapshot_id) "
             "VALUES(?,?,?,?,?,?,?,?,?)",
-            ("edge:packet","packet:0x02A","function:packet","HANDLED_BY","evidence:client","VERIFIED","DISCOVERED","{}","src"),
+            ("edge:packet","packet:0x02a","function:packet","HANDLED_BY","evidence:client","VERIFIED","DISCOVERED","{}","src"),
         )
         con.commit(); con.close()
         captures=CaptureResearchReader(capture_db,graph_db)
@@ -50,7 +50,7 @@ def main():
         traced=captures.backtrace(1)
         assert traced["status"]=="OK",traced
         packet_checks=[c for c in traced["checks"] if c.get("kind")=="PACKET"]
-        assert packet_checks and packet_checks[0]["canonical_packet_node"]=="packet:0x02A",traced
+        assert packet_checks and packet_checks[0]["canonical_packet_node"]=="packet:0x02a",traced
 
         client=ClientResearchReader(graph_db)
         cap=client.capability("wardrobe")
