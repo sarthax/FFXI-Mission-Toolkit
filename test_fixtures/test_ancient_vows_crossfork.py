@@ -16,6 +16,7 @@ from workbench.migrations.package_manifest import build_package_manifest
 from workbench.migrations.package_validation import build_validation_package
 from workbench.migrations.package_assembly import assemble_migration_package
 from workbench.migrations.package_cohesion import verify_package_cohesion
+from workbench.migrations.package_apply_gate import assess_apply_readiness
 from workbench.migrations.backend_probe import probe_lsb_to_dsp_lua
 from workbench.migrations.backend_probe_plan import plan_lsb_dsp_lua_probe
 from workbench.core import graph
@@ -320,6 +321,8 @@ def main():
         assert assembled.generated_journal_path.exists(),assembled
         cohesion=verify_package_cohesion(package_root)
         assert cohesion.status=="COHERENT",cohesion
+        apply_readiness=assess_apply_readiness(package_root)
+        assert apply_readiness.status=="MANUAL_REQUIRED",apply_readiness
     assert package_plan.status=="READY",package_plan
     assert [step["action_id"] for step in package_manifest["execution"]["steps"]]==[
         "action:ancient-vows:registry",
@@ -460,6 +463,7 @@ def main():
             "validation_check_count":len(validation_package["checks"]),
             "materialized_artifact_count":3,
             "package_cohesion":"COHERENT",
+            "apply_readiness":"MANUAL_REQUIRED",
             "package_assembly_status":"MANUAL_REQUIRED",
             "semantic_action_count":len(semantic_actions),
             "semantic_migration_required":any(action.action!="NOT_REQUIRED" for action in semantic_actions),
