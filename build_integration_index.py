@@ -10,6 +10,7 @@ from dataclasses import asdict
 from pathlib import Path
 from source_snapshot import snapshot_id
 from workbench_schema import AnalysisResult, Finding, BuildTarget, DependencyEdge
+from cpp_api_index import index as index_api
 
 CPP_EXTENSIONS={".cpp",".cc",".cxx",".c",".h",".hpp",".hh",".hxx"}
 BUILD_FILES={"CMakeLists.txt","Makefile","makefile","GNUmakefile"}
@@ -97,6 +98,26 @@ def index(root):
                 discovered_by="build_integration_index", source_location=target_id,
                 notes=["Source token occurs in an explicit CMake target source list; target configuration/generator evaluation was not performed."]
             ))
+            # Function-level build edges let packet/Lua traces continue from a resolved C++ symbol
+            # to its build target. The target association is verified lexically; build conditions
+            # are still not evaluated.
+            candidates=[rel]
+            candidates.extend(path for path in all_paths if Path(path).name==Path(rel).name)
+            for path in sorted(set(candidates)):
+                if path not in all_paths: continue
+                try:
+                    funcs, _enums, _bindings = index_api(root)
+                except Exception:
+                    funcs=[]
+                for fn in funcs:
+                    if fn.path==path and fn.definition:
+                        edges.append(DependencyEdge(
+                            edge_id=f"function-builds-into:{fn.function_id}:{target_id}",
+                            source_node=fn.function_id,target_node=target_id,relationship="BUILDS_INTO",
+                            confidence="VERIFIED",status="DISCOVERED",discovered_by="build_integration_index",
+                            source_location=target_id,
+                            notes=["Function definition is in a source file explicitly associated with this CMake target; conditional build evaluation not performed."]
+                        ))
     return builders,findings,targets,edges
 
 def main():
