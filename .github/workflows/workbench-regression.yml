@@ -42,6 +42,7 @@ jobs:
           python test_fixtures/test_server_entity_logical_mappings.py
           python test_fixtures/test_server_sql_logical_extraction.py
           python test_fixtures/test_logical_migration_planner.py
+          python test_fixtures/test_instance_feature_slice.py
           python test_fixtures/test_feature_trace_enum_nodes.py
           python test_fixtures/test_feature_candidates.py
           python test_fixtures/test_feature_dimension_policy.py
