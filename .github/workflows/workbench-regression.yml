@@ -1,0 +1,40 @@
+name: Workbench Regression
+
+on:
+  push:
+    branches:
+      - workbench-rework/audit-foundation
+  pull_request:
+    paths:
+      - "workbench/**"
+      - "test_fixtures/**"
+      - "feature_*.py"
+      - "capture_*.py"
+      - "packet_*.py"
+      - "workbench_*.py"
+      - ".github/workflows/workbench-regression.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run Workbench core regression fixtures
+        run: |
+          set -euo pipefail
+          python test_fixtures/test_packet_identity.py
+          python test_fixtures/test_graph_cpp_symbol_resolution.py
+          python test_fixtures/test_graph_enum_resolution.py
+          python test_fixtures/test_feature_trace_enum_nodes.py
+          python test_fixtures/test_feature_candidates.py
+          python test_fixtures/test_feature_dimension_policy.py
+          python test_fixtures/test_semantic_graph_mirror.py
+          python test_fixtures/test_capture_packet_graph.py
