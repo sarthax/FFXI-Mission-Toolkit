@@ -92,7 +92,7 @@ def main():
         con.execute(
             "INSERT INTO migration_actions(action_id,migration_id,action,artifact_id,status,reason,metadata_json) "
             "VALUES(?,?,?,?,?,?,?)",
-            ("action:test","migration:test","MANUAL_REVIEW",NULL,"MANUAL_REQUIRED","fixture",'{}'),
+            ("action:test","migration:test","MANUAL_REVIEW",None,"MANUAL_REQUIRED","fixture",'{}'),
         )
         graph.insert_record(con,ValidationRun(
             "run:test","test run","src","dst","feature:test","VERIFIED"
