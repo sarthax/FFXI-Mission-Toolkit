@@ -20,6 +20,10 @@ def build_validation_package(manifest: dict) -> dict:
     sql=tuple(sorted({s["path"] for s in steps if s.get("backend")=="sql" and s.get("path")}))
 
     checks=[]
+    unsupported=tuple(
+        step for step in steps
+        if step.get("backend") in {"lua","sql"} and step.get("conversion_status")=="UNSUPPORTED"
+    )
     if lua:
         checks.extend([
             ValidationCheck("lua-sanity","LUA_SANITY",True,lua),
@@ -30,6 +34,22 @@ def build_validation_package(manifest: dict) -> dict:
             ValidationCheck("sql-collision","SQL_ID_COLLISION",True,sql),
             ValidationCheck("sql-duplication","SQL_CONTENT_DUPLICATION",True,sql),
         ])
+    if unsupported:
+        checks.append(ValidationCheck(
+            "converter-backend",
+            "CONVERTER_BACKEND_SUPPORT",
+            True,
+            tuple(sorted(str(step.get("path")) for step in unsupported if step.get("path"))),
+            {"unsupported_count":len(unsupported)},
+        ))
+
+    migration_status=manifest.get("migration",{}).get("status")
+    if migration_status=="BLOCKED":
+        status="BLOCKED"
+    elif unsupported:
+        status="MANUAL_REQUIRED"
+    else:
+        status="READY"
 
     return {
         "schema":1,
@@ -45,5 +65,5 @@ def build_validation_package(manifest: dict) -> dict:
             }
             for c in checks
         ],
-        "status":"READY" if manifest.get("migration",{}).get("status")!="BLOCKED" else "BLOCKED",
+        "status":status,
     }
