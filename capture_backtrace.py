@@ -3,7 +3,7 @@
 from __future__ import annotations
 import argparse, json, sqlite3
 from pathlib import Path
-from datetime import datetime, timezone
+from datetime import datetime, timezone\nfrom feature_candidates import candidates as feature_candidates
 
 SCHEMA=1
 
@@ -105,7 +105,7 @@ def backtrace(db,capture_id,graph_db=None):
                 item["canonical_packet_matches"]=graph_matches(g,node_id=packet_node)
                 handler=rows(g,"SELECT source_node,target_node,relationship,status,confidence FROM entity_relationships WHERE source_node=? OR target_node=? ORDER BY relationship_id",(packet_node,packet_node))
                 item["graph_relationships"]=[dict(zip(("source","target","relationship","status","confidence"),r)) for r in handler]
-                item["implementation_path"]=graph_walk(g,packet_node,4)
+                item["implementation_path"]=graph_walk(g,packet_node,4)\n                item["feature_candidates"]=feature_candidates(g,packet_node,6)["candidates"]
                 item["server_handler_status"]="PRESENT" if any(r[2]=="HANDLED_BY" for r in handler) else "UNKNOWN"
             report["checks"].append(item)
     message_ids=set()
