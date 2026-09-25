@@ -4,7 +4,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 from .base import LogicalRecord, ServerAdapter, SchemaProfile
-from .profiles import DSP, LSB, TOPAZ
+from .profiles import DSP, LSB, TOPAZ, TOPAZ_NEXT
 
 
 class ProfileServerAdapter(ServerAdapter):
@@ -19,6 +19,12 @@ class TopazAdapter(ProfileServerAdapter):
     adapter_id = "topaz"
     family = "TOPAZ"
     profile = TOPAZ
+
+
+class TopazNextAdapter(ProfileServerAdapter):
+    adapter_id = "topaz-next"
+    family = "TOPAZ_NEXT"
+    profile = TOPAZ_NEXT
 
 
 class DSPAdapter(ProfileServerAdapter):
@@ -62,10 +68,53 @@ class LSBAdapter(ProfileServerAdapter):
     profile = LSB
 
 
+class CustomForkAdapter(ProfileServerAdapter):
+    """Explicit custom-fork adapter.
+
+    A custom fork must declare the schema profile it is based on. The Workbench
+    does not infer a lineage from filenames or directory names because doing so
+    can silently hide fork-specific schema drift.
+    """
+
+    family = "CUSTOM"
+
+    def __init__(
+        self,
+        root: Path,
+        *,
+        fork_id: str,
+        base_profile: SchemaProfile,
+        table_overrides: Mapping[str, Any] | None = None,
+        notes: Sequence[str] = (),
+    ):
+        super().__init__(root)
+        normalized=fork_id.strip()
+        if not normalized:
+            raise ValueError("fork_id is required for CustomForkAdapter")
+        tables=dict(base_profile.tables)
+        if table_overrides:
+            tables.update(table_overrides)
+        self.adapter_id=f"custom:{normalized}"
+        self.family=f"CUSTOM:{normalized}"
+        self.profile=SchemaProfile(
+            profile_id=f"custom:{normalized}",
+            family=self.family,
+            tables=tables,
+            version_hint=base_profile.version_hint,
+            notes=(
+                f"Custom fork derived explicitly from schema profile {base_profile.profile_id}.",
+                *base_profile.notes,
+                *tuple(notes),
+            ),
+        )
+
+
 def adapter_for(family: str, root: Path) -> ServerAdapter:
     key = family.strip().lower()
-    if key in {"topaz", "topaz-next", "topaz_next"}:
+    if key == "topaz":
         return TopazAdapter(root)
+    if key in {"topaz-next", "topaz_next"}:
+        return TopazNextAdapter(root)
     if key in {"dsp", "darkstar", "darkstarproject"}:
         return DSPAdapter(root)
     if key in {"lsb", "landsandboat", "land-sand-boat"}:
