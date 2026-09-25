@@ -91,8 +91,8 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - [x] Formalize Evidence/Finding.
 - [x] Formalize Feature/Implementation/Dependency.
 - [x] Add machine-readable analysis outputs.
-- Implement a generic SQLite-backed canonical graph store.
-- Connect existing entity_profile, map confidence, capture, packet, and backport reports.
+- [x] Implement generic SQLite-backed canonical graph store.
+- [ ] Connect existing entity_profile, map confidence, capture, packet, and backport reports.
 
 ### Phase 2 — Server adapters and migration engine (P0)
 - TopazAdapter
@@ -114,9 +114,9 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - [x] enums/constants/macros
 - [x] Lua bindings
 - [x] C++ dependency graph (conservative)
-- [ ] packet handlers
+- [ ] packet handlers from real server dispatch
 - [x] build-system inclusion (conservative)
-- [ ] compile conditions/generated sources
+- [x] compile conditions/generated sources (conservative)
 - [x] engine migration classification
 
 ### Phase 4 — Client capability and synchronization (P0/P1)
@@ -134,7 +134,6 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - packet evidence
 - test fixtures
 - validation runs/results
-- regression reports
 
 ### Phase 6 — Domain plugins (P1+)
 - Assault analyzer
@@ -152,15 +151,14 @@ Domain plugins may introduce system-specific dependency rules without contaminat
 - rollback/journal support
 
 ## Immediate audit queue
-1. Connect bindings -> C++ symbols -> enums/constants -> packets -> build targets.
-2. Add packet handler/opcode relationship extraction.
-3. Model compile conditions and generated sources.
-4. Extend existing Backport Package Analyzer to import canonical graph records.
-5. Connect entity_profile/map-confidence/capture/packet outputs to the graph.
+1. Resolve real packet handlers from actual server dispatch sources when a server source root is indexed.
+2. Connect bindings -> C++ symbols -> enums/constants -> packets -> build targets.
+3. Extend Backport Package Analyzer to import canonical graph records.
+4. Connect entity_profile/map-confidence/capture/packet outputs to the graph.
+5. Add full ValidationRun orchestration and independent regression dimensions.
 6. Continue GUI/service extraction without rewriting the GUI wholesale.
-7. Continue GUI/service extraction without rewriting the GUI wholesale.
-8. Audit LLM/research tooling and make it evidence-aware.
-9. Resume client EXE/DLL analysis when the actual binaries are available.
+7. Audit LLM/research tooling and make it evidence-aware.
+8. Resume client EXE/DLL analysis when the actual binaries are available.
 
 ## Definition of done
 The workbench is structurally ready when a feature can be traced from source/version through implementation dependencies, migration actions, client/server requirements, and validation evidence, with every conclusion carrying provenance and an explicit status.
