@@ -38,6 +38,7 @@ def node_info(con: sqlite3.Connection, node_id: str) -> dict:
         ("bindings", "binding_id", "binding_system", "lua_name", "notes_json"),
         ("build_targets", "target_id", "build_system", "name", "notes_json"),
         ("artifacts", "artifact_id", "artifact_type", "path", "metadata_json"),
+        ("enum_definitions", "enum_id", "format", "symbol", "notes_json"),
     ]
     for table, key, type_col, name_col, meta_col in queries:
         row = con.execute(
@@ -70,6 +71,7 @@ def search_nodes(con: sqlite3.Connection, term: str) -> list[dict]:
         ("bindings", "binding_id", "binding_system", "lua_name"),
         ("build_targets", "target_id", "build_system", "name"),
         ("artifacts", "artifact_id", "artifact_type", "path"),
+        ("enum_definitions", "enum_id", "format", "symbol"),
     ]
     for table, key, type_col, name_col in queries:
         rows = con.execute(
