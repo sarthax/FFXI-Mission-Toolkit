@@ -50,7 +50,7 @@ def verify_package_cohesion(package_root: Path) -> PackageCohesionResult:
             issues.append(f"Hash mismatch for staged source artifact: {rel}")
 
     for record in generated_journal.get("outputs",generated_journal.get("artifacts",[])):
-        rel=record.get("package_path") or record.get("path")
+        rel=record.get("package_path") or record.get("relative_path") or record.get("path")
         expected=record.get("sha256")
         path=package_root/rel if rel else None
         if path is None or not path.is_file():
