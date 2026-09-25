@@ -383,3 +383,10 @@ Assembled migration packages now have an explicit apply-readiness assessment. A 
 ## 2026-09-25 — Ancient Vows apply-readiness boundary
 
 The flagship Ancient Vows package now proves the intended safety boundary: the assembled workspace is internally COHERENT, but apply readiness remains MANUAL_REQUIRED because the LSB→DSP converter route is not yet registered as supported. Package integrity therefore does not bypass converter/validation readiness.
+
+
+## 2026-09-25 — Conditional LSB→DSP Lua backend
+
+The migration backend registry now recognizes LSB→DSP Lua through a dedicated conditional backend instead of reusing the Topaz→DSP converter implicitly. The backend only auto-converts a narrow proven-safe residual subset. Modern `xi.*` namespaces and LSB framework-object orchestration remain MANUAL_REQUIRED pending dedicated evidence-backed rewrite rules.
+
+Package manifests preserve this as `CONDITIONAL`, validation adds a converter-preflight requirement, and the legacy package runner refuses conditional steps until preflight clears them. Ancient Vows now reports conditional Lua conversion while SQL remains unsupported, so apply readiness stays MANUAL_REQUIRED.
