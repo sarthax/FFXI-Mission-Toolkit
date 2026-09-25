@@ -10,6 +10,7 @@ import json
 from workbench.core.schema import MigrationAction
 from workbench.adapters.servers.logical import LogicalComparison
 from workbench.migrations.record_match import RecordMatch
+from workbench.migrations.entity_identity import EntityIdentityDrift
 
 
 def _stable_suffix(comparison: LogicalComparison) -> str:
@@ -69,6 +70,30 @@ def plan_record_match(match: RecordMatch, migration_id: str) -> list[MigrationAc
                 "target_value":target_value,
                 "source_identity":list(match.source.identity),
                 "target_identity":list(match.target.identity),
+            },
+        ))
+    return actions
+
+
+def plan_entity_identity_drifts(
+    drifts: list[EntityIdentityDrift] | tuple[EntityIdentityDrift, ...],
+    migration_id: str,
+) -> list[MigrationAction]:
+    actions=[]
+    for drift in drifts:
+        actions.append(MigrationAction(
+            action_id=f"entity-renumber:{drift.symbol}:{drift.source_id}:{drift.target_id}",
+            migration_id=migration_id,
+            action="RENUMBER",
+            status="AUTO_MIGRATABLE",
+            reason="The same symbolic entity identity resolves to different numeric IDs across source and target snapshots.",
+            metadata={
+                "logical_type":"entity",
+                "symbol":drift.symbol,
+                "source_value":drift.source_id,
+                "target_value":drift.target_id,
+                "classification":drift.classification,
+                "match_basis":"SYMBOL_IDENTITY",
             },
         ))
     return actions
