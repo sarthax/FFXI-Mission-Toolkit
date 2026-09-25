@@ -66,6 +66,33 @@ def resolve_feature(con: sqlite3.Connection, value: str) -> dict | None:
     }
 
 
+
+def implementation_dimension(records: list[dict]) -> str:
+    statuses = [record["status"] for record in records]
+    if not records:
+        return "NO_IMPLEMENTATION_RECORDS"
+    if any(status in ("CONTRADICTED", "FAILED") for status in statuses):
+        return "CONTRADICTED"
+    if all(status == "VERIFIED" for status in statuses):
+        return "IMPLEMENTATIONS_VERIFIED"
+    if any(status in ("VERIFIED", "IMPLEMENTED") for status in statuses):
+        return "IMPLEMENTATIONS_PRESENT_UNVERIFIED"
+    return "IMPLEMENTATION_STATUS_UNKNOWN"
+
+
+def validation_dimension(records: list[dict]) -> str:
+    statuses = [record["status"] for record in records]
+    if not records:
+        return "NO_VALIDATION_RECORDS"
+    if any(status in ("CONTRADICTED", "FAILED") for status in statuses):
+        return "VALIDATION_FAILED"
+    if all(status == "VERIFIED" for status in statuses):
+        return "VALIDATIONS_VERIFIED"
+    if any(status == "VERIFIED" for status in statuses):
+        return "PARTIALLY_VALIDATED"
+    return "VALIDATION_STATUS_UNKNOWN"
+
+
 def check_feature(con: sqlite3.Connection, feature: dict) -> dict:
     fid = feature["feature_id"]
     requirements = con.execute(
@@ -146,31 +173,7 @@ def check_feature(con: sqlite3.Connection, feature: dict) -> dict:
             "source": row[6], "target": row[7], "notes": _json_value(row[8]) or [],
         })
 
-    implementation_statuses = [r["status"] for r in implementations]
-    if not implementations:
-        implementation_status = "NO_IMPLEMENTATION_RECORDS"
-    elif any(s in ("CONTRADICTED","FAILED") for s in implementation_statuses):
-        implementation_status = "CONTRADICTED"
-    elif all(s == "VERIFIED" for s in implementation_statuses):
-        implementation_status = "IMPLEMENTATIONS_VERIFIED"
-    elif any(s in ("VERIFIED","IMPLEMENTED") for s in implementation_statuses):
-        implementation_status = "IMPLEMENTATIONS_PRESENT_UNVERIFIED"
-    else:
-        implementation_status = "IMPLEMENTATION_STATUS_UNKNOWN"
-
-    validation_statuses = [r["status"] for r in validations]
-    if not validations:
-        validation_status = "NO_VALIDATION_RECORDS"
-    elif any(s in ("CONTRADICTED","FAILED") for s in validation_statuses):
-        validation_status = "VALIDATION_FAILED"
-    elif all(s == "VERIFIED" for s in validation_statuses):
-        validation_status = "VALIDATIONS_VERIFIED"
-    elif any(s == "VERIFIED" for s in validation_statuses):
-        validation_status = "PARTIALLY_VALIDATED"
-    else:
-        validation_status = "VALIDATION_STATUS_UNKNOWN"
-
-    required = [c for c in checks if c["required"]]
+    implementation_status = implementation_dimension(implementations)\n    validation_status = validation_dimension(validations)\n\n    required = [c for c in checks if c["required"]]
     if not required:
         aggregate = "NO_REQUIREMENTS_DECLARED"
     elif any(c["observed_status"] == "CONTRADICTED" for c in required):
