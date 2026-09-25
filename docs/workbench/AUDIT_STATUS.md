@@ -229,3 +229,8 @@ Requirements, implementation, and validation remain independent evidence dimensi
 ## 2026-09-25 — Workbench core regression CI
 
 A dedicated GitHub Actions workflow now executes the self-contained Workbench regression fixtures on both branch pushes and pull requests. The suite is green on commit `2decb508243ea4d2b58c5424b683f17ec04b73a1` for both the push and PR #2 runs. This provides executed validation for packet identity, graph symbol/enum resolution, Feature Trace enum nodes, feature-candidate traversal, Feature Checker dimensions, semantic graph mirroring, and capture packet graph paths. Client binaries, live game runtime, and server/database integration remain outside this CI scope.
+
+
+## 2026-09-25 — Evidence confidence tightening
+
+Function-scoped enum/constant references remain INFERRED even when enum identity is exact, because lexical function ownership is not semantic proof. Qualified enum identities such as `State::READY` are now recognized against the extracted enum index. Function-to-build-target mapping now uses VERIFIED confidence only for exact source-path matches; a basename fallback is accepted only when unique and remains INFERRED, while ambiguous duplicate basenames produce no function-level build edge. The expanded Workbench regression suite is green on commit `78e8bb26847115b6bc450124eadcf14d8f09109e` for both push and PR #2 runs.
