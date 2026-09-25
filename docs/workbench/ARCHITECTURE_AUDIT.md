@@ -169,14 +169,14 @@ Lua call -> binding -> C++ function -> declaration/implementation -> dependencie
 
 ## Unresolved items
 1. General server adapters need broader logical field coverage and Topaz-Next/custom-fork handling beyond the current Topaz/DSP/LSB profiles.
-2. The general Feature Migration Engine is only partially implemented; logical comparison/planning exists, but dependency-aware package generation and source-to-target conversion remain incomplete.
+2. The general Feature Migration Engine is partially implemented: logical comparison/planning, dependency-aware package generation, package assembly, generated outputs, provenance journals, validation metadata, cohesion checks, and reversible file apply journaling now exist. Remaining work is broader source-to-target conversion/reshape coverage and safe database-level application/rollback.
 3. Multi-validator ValidationRun orchestration remains incomplete even though core regression and external-source CI are operational.
 4. ClientCapability, DAT asset resolver consolidation, dialog drift, and client/server synchronization services remain incomplete.
 5. Actual client pol.exe / FFXiMain.dll bytes are not presently available to this audit pass; exact offsets and binary patches remain unverified.
 6. Repository/service migration remains staged; many mature root scripts still need package service extraction and compatibility shims.
 7. GUI service extraction remains partial.
 8. The LLM/research layer needs implementation of the new ResearchSession/provider/tool-registry architecture; current Open WebUI/Ollama + read-only SQLite integration remains a narrow draft assistant.
-9. Domain plugins remain to be implemented on the generalized extension interface, with Assault as the first end-to-end proving ground.
+9. Domain plugins now have a generalized extension interface and the reusable battlefield framework has active migration/reshape logic. Assault-specific analyzers and other system plugins remain future work.
 
 ## Audit discipline
 Every future audit pass should update:
