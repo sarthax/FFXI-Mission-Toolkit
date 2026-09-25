@@ -23,6 +23,8 @@ from workbench.core.services.feature_surface_validation import build_feature_sur
 from workbench.plugins.domain import PluginContext, default_registry
 from feature_checker import resolve_feature, check_feature
 import tempfile
+import backport_binding_audit as bba
+import backport_lua_sanity_check as blsc
 
 FEATURE_NAME="ancient_vows"
 BATTLEFIELD_ID=960
@@ -111,6 +113,12 @@ def main():
         "mission":probe_lsb_to_dsp_lua(source_mission),
         "battlefield":probe_lsb_to_dsp_lua(source_battlefield),
     }
+    with tempfile.TemporaryDirectory() as probe_td:
+        probe_root=Path(probe_td)
+        for name,probe in lsb_lua_probes.items():
+            (probe_root/f"{name}.lua").write_text(probe.converted_text,encoding="utf-8")
+        binding_probe=bba.audit_package(probe_root,dsp_root,"old_dsp_reference")
+        sanity_probe=blsc.check_package(probe_root)
     target_battlefield=surfaces["dsp_battlefield"].read_text(encoding="utf-8",errors="ignore")
     source_mob=surfaces["lsb_mammet"].read_text(encoding="utf-8",errors="ignore")
     target_mob=surfaces["dsp_mammet"].read_text(encoding="utf-8",errors="ignore")
@@ -348,12 +356,18 @@ def main():
             "semantic_migration_required":any(action.action!="NOT_REQUIRED" for action in semantic_actions),
             "plugin_migration_findings":len(migration_findings),
             "lsb_dsp_lua_probe":{
-                name:{
-                    "status":probe.status,
-                    "flagged_count":probe.flagged_count,
-                    "leftover_count":probe.leftover_count,
-                }
-                for name,probe in lsb_lua_probes.items()
+                "files":{
+                    name:{
+                        "status":probe.status,
+                        "flagged_count":probe.flagged_count,
+                        "leftover_count":probe.leftover_count,
+                    }
+                    for name,probe in lsb_lua_probes.items()
+                },
+                "binding_confirmed":len(binding_probe["confirmed"]),
+                "binding_missing":len(binding_probe["missing"]),
+                "sanity_syntax_errors":len(sanity_probe["syntax_errors"]),
+                "sanity_undeclared_globals":len(sanity_probe["undeclared_globals"]),
             },
         },
         "domain_plugins":{
