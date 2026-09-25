@@ -14,6 +14,7 @@ from workbench.core import graph
 from workbench.core.schema import Feature
 from workbench.core.services.feature_surface_graph import persist_feature_surface
 from workbench.core.services.feature_surface_validation import build_feature_surface_validation
+from feature_checker import resolve_feature, check_feature
 import tempfile
 
 FEATURE_NAME="ancient_vows"
@@ -151,6 +152,14 @@ def main():
             (validation_results[0].validation_id,),
         ).fetchone()[0]
         assert validation_status=="VERIFIED",validation_status
+
+        resolved_feature=resolve_feature(con,feature.feature_id)
+        assert resolved_feature is not None
+        checker=check_feature(con,resolved_feature)
+        assert checker["dimensions"]["implementation"]=="IMPLEMENTATIONS_VERIFIED",checker
+        assert checker["dimensions"]["validation"]=="VALIDATIONS_VERIFIED",checker
+        assert checker["dimensions"]["requirements"]=="NO_REQUIREMENTS_DECLARED",checker
+        checker_dimensions=checker["dimensions"]
         con.close()
 
     assert "BattlefieldMission:new" in source_battlefield
@@ -191,6 +200,7 @@ def main():
             "uses_id_edge_count":uses_id_count,
             "snapshot_scoped_entity_refs":True,
             "entity_coverage_validation":validation_status,
+            "feature_checker_dimensions":checker_dimensions,
         },
         "e2e_status":"PUBLIC_CROSS_FORK_FEATURE_SURFACE_VERIFIED",
     }
