@@ -182,6 +182,7 @@ def main():
                 value=b.cpp_symbol,
                 status="UNKNOWN",
                 confidence="INFERRED",
+                source_snapshot_id=sid,
                 notes=b.notes,
             ))
     result = AnalysisResult(
@@ -191,7 +192,7 @@ def main():
         status="ANALYZED",
         notes=[f"Source snapshot: {sid}.", "Conservative regex extraction; results require parser/semantic verification for ambiguous C++."],
         findings=[x.finding_id for x in findings],
-        
+        source_snapshot_id=sid,
     )
     payload = {
         "schema": 1,
