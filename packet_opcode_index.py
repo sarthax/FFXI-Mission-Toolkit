@@ -8,6 +8,10 @@ from __future__ import annotations
 import argparse,json,re
 from pathlib import Path
 
+# Only explicit dispatch/registration patterns become HANDLED_BY. Generic opcode references remain REFERENCES.
+SWITCH_CASE_RE=re.compile(r'\\bcase\\s+(0x[0-9A-Fa-f]+|\\d+)\\s*:',re.I)
+DISPATCH_RE=re.compile(r'\\b(?:register|add|set)[A-Za-z_]*(?:Handler|PacketHandler|CommandHandler)\\s*\\(\\s*(0x[0-9A-Fa-f]+|\\d+)\\s*,\\s*&?([A-Za-z_][A-Za-z0-9_:]*)',re.I)
+
 OP_RE=re.compile(r'\b(?:0x)?([0-9A-Fa-f]{2,4})\b')
 HANDLER_RE=re.compile(r'\b(?:opcode|packet|command|type)\s*\(?\s*([0-9A-Fa-fx]+)',re.I)
 
@@ -23,24 +27,48 @@ def index_packet_db(path:Path):
 
 def index_server(root:Path,opcodes):
     edges=[]
+    known={str(op.get("opcode","")) for op in opcodes if op.get("opcode")}
+    normalized={}
+    for token in known:
+        try: normalized[token.lower()]=int(token,0)
+        except ValueError:
+            try: normalized[token.lower()]=int(token,16)
+            except ValueError: pass
     for p in root.rglob("*"):
         if not p.is_file() or p.suffix.lower() not in {".cpp",".h",".hpp",".cc",".cxx"}: continue
         t=p.read_text(encoding="utf-8",errors="replace")
-        for op in opcodes:
-            token=str(op.get("opcode",""))
-            if token and token in t:
-                line=t[:t.find(token)].count("\n")+1
-                edges.append({"source_node":f"packet:{token}","target_node":f"cpp:{p.relative_to(root).as_posix()}:{line}",
-                              "relationship":"REFERENCES","confidence":"INFERRED",
-                              "source_location":f"{p}:{line}",
-                              "notes":["Opcode token occurrence only; not proof this code is the runtime handler."]})
+        for n,line in enumerate(t.splitlines(),1):
+            m=SWITCH_CASE_RE.search(line)
+            if m:
+                try: value=int(m.group(1),0)
+                except ValueError: continue
+                for tok,val in normalized.items():
+                    if val==value:
+                        edges.append({"source_node":f"packet:{tok}","target_node":f"cpp:{p.relative_to(root).as_posix()}:{n}",
+                                      "relationship":"HANDLED_BY","confidence":"VERIFIED","status":"DISCOVERED",
+                                      "source_location":f"{p}:{n}","notes":["Explicit switch/case opcode dispatch; downstream handler resolution is not inferred."]})
+            m=DISPATCH_RE.search(line)
+            if m:
+                try: value=int(m.group(1),0)
+                except ValueError: continue
+                for tok,val in normalized.items():
+                    if val==value:
+                        edges.append({"source_node":f"packet:{tok}","target_node":f"cpp-symbol:{m.group(2)}",
+                                      "relationship":"HANDLED_BY","confidence":"VERIFIED","status":"DISCOVERED",
+                                      "source_location":f"{p}:{n}","notes":["Explicit packet-handler registration pattern matched."]})
+            for tok,val in normalized.items():
+                if re.search(rf'(?<![A-Za-z0-9_])(?:0x)?{re.escape(tok)}(?![A-Za-z0-9_])',line,re.I):
+                    if not any(e["source_node"]==f"packet:{tok}" and e["source_location"]==f"{p}:{n}" for e in edges):
+                        edges.append({"source_node":f"packet:{tok}","target_node":f"cpp:{p.relative_to(root).as_posix()}:{n}",
+                                      "relationship":"REFERENCES","confidence":"INFERRED","status":"DISCOVERED",
+                                      "source_location":f"{p}:{n}","notes":["Opcode token occurrence only; not proof this code is the runtime handler."]})
     return edges
 
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument("packet_db",type=Path); ap.add_argument("--server-root",type=Path); ap.add_argument("--json",type=Path); a=ap.parse_args()
     ops=index_packet_db(a.packet_db)
     edges=index_server(a.server_root,ops) if a.server_root else []
-    out={"schema":1,"analysis":{"analysis_id":"packet-opcode-index","analysis_type":"PACKET_OPCODE_SURFACE","source":str(a.packet_db),"status":"ANALYZED"},
+    out={"schema":2,"analysis":{"analysis_id":"packet-opcode-index","analysis_type":"PACKET_OPCODE_SURFACE","source":str(a.packet_db),"status":"ANALYZED"},
          "opcodes":ops,"edges":edges}
     s=json.dumps(out,indent=2)+"\n"
     if a.json: a.json.parent.mkdir(parents=True,exist_ok=True); a.json.write_text(s,encoding="utf-8")
