@@ -682,4 +682,4 @@ Confidence boundary:
 - raw VA/RVA matches are INFERRED because constants may be data;
 - PE entry point/export RVAs are verified seeds, while direct-call function candidates remain INFERRED and no function-body recovery is claimed.
 
-The original FFXI DLL uploads are not stored in source control and are not available to every execution runtime. The deeper tools therefore return `BINARY_UNAVAILABLE` when an index exists but its recorded source binary cannot be opened. This preserves provenance instead of treating absence from the current runtime as absence from the client.
+The original FFXI DLL uploads are not stored in source control and are not available to every execution runtime. The deeper tools therefore return `BINARY_UNAVAILABLE` when an index exists but its recorded source binary cannot be opened. This preserves provenance instead of treating absence from the current runtime as absence from the client.\n\nValidation: Workbench Regression run #1074 is green on commit `d2d55bdcb3d0553e72e62b98c5bbd2460430a040`, including `test_client_binary_index.py`, `test_client_binary_research.py`, and the new `test_client_binary_deep.py` fixture.
