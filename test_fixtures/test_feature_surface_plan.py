@@ -26,8 +26,11 @@ def main():
     )
     comparison=compare_feature_surfaces(source,target)
     actions=plan_feature_surface(source,comparison,"migration:test")
-    assert actions and all(a.action=="NOT_REQUIRED" for a in actions),actions
-    assert all(a.status=="COMPATIBLE" for a in actions),actions
+    by_role={a.metadata["source_role"]:a for a in actions}
+    assert by_role["registry_sql"].action=="NOT_REQUIRED",actions
+    assert by_role["registry_sql"].status=="COMPATIBLE",actions
+    assert by_role["mission_script"].action=="MANUAL_REVIEW",actions
+    assert by_role["mission_script"].status=="MANUAL_REQUIRED",actions
 
     target_gap=FeatureSurface(
         feature_id="feature:test",
