@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse, json, sqlite3
 from pathlib import Path
 from workbench.core import graph as workbench_graph
+from workbench.core.services.packet_identity import canonical_opcode, packet_node_id
 
 def edge(con, row):
     con.execute("INSERT OR REPLACE INTO entity_relationships VALUES (?,?,?,?,?,?,?,?,?)", (
