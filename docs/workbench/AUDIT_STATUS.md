@@ -3,7 +3,7 @@
 Last updated: 2026-09-25
 
 ## Current milestone
-Foundation preserved; engine-change workspace audited; C++ API/dependency/build evidence passes are available; a generic canonical SQLite graph store is now implemented; migration classification is now available; feature/package graph integration and validation standardization are next.
+Foundation preserved; canonical graph storage now has schema-checked core records; build-condition/generated-source evidence is indexed conservatively; packet opcode surface indexing remains deliberately non-semantic until a real server packet-dispatch source is supplied/indexed.
 
 ## New work completed
 - [x] Directly inspected the bundled dsp-engine-changes/_example_change scaffold.
@@ -15,6 +15,10 @@ Foundation preserved; engine-change workspace audited; C++ API/dependency/build 
 - [x] Added generic Function/FunctionSignature/Binding/EnumDefinition records.
 - [x] Added conservative external-root C++ API indexing.
 - [x] Added standardized AnalysisResult/Finding records.
+- [x] Corrected canonical graph feature schema to match the Feature record (8 fields rather than the earlier 5-field table).
+- [x] Added graph persistence for ValidationRun and a self-test covering Feature, Artifact, MigrationAction, ValidationResult, Implementation, and AnalysisResult records.
+- [x] Added build_condition_index.py for conditional-compilation and generated-source evidence. It records conditions and GENERATED_FROM relationships without evaluating unknown build environments.
+- [x] Kept packet opcode indexing explicitly evidence-first: token occurrence is not classified as a runtime handler.
 
 ## Priority queue
 ### P0 — Core
@@ -47,7 +51,9 @@ Foundation preserved; engine-change workspace audited; C++ API/dependency/build 
 - [x] Lua binding -> C++ resolution (conservative exact matching).
 - [x] C++ dependency graph (conservative lexical edges).
 - [x] Build-system integration analyzer (conservative source-list evidence).
+- [x] Compile-condition/generated-source analyzer (conservative evidence).
 - [x] Engine migration classifier (conservative API/binding comparison).
+- [ ] Packet handler/opcode extraction from real server dispatch.
 
 ### P0/P1 — Client
 - [x] Item DAT architecture audited.
@@ -62,8 +68,8 @@ Foundation preserved; engine-change workspace audited; C++ API/dependency/build 
 - [x] Packet decoder audited.
 - [ ] Packet -> handler -> feature relationships.
 - [x] ValidationResult core record defined.
-- [x] ValidationResult core record defined.
 - [x] Initial validation pipeline adapter.
+- [ ] ValidationRun orchestration across multiple validators.
 - [ ] Automated regression fixtures.
 
 ### P1 — Architecture cleanup
