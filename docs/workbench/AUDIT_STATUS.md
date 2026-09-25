@@ -615,3 +615,22 @@ The evidence-aware research layer now includes three additional read-only typed 
 - dat.lookup / dat.describe — read-only client item DAT record and DAT layout/capacity inspection through the existing client DAT decoder.
 
 The capture backtrace path also received a latent packet-node identity fix so packet observations use the canonical packet identity helper. None of these tools expose DAT patch/injection, capture mutation, reference writes, or client file writes.
+
+
+## 2026-09-25 — Research proposal verification gate
+
+Research-generated changes now pass through a deterministic proposal gate before any canonical Workbench record can be created.
+
+Implemented proposal types:
+- FindingProposal
+- MigrationActionProposal
+- ValidationResultProposal
+
+Authority is separated:
+- PROPOSE_CHANGES may stage proposals;
+- READ_ONLY_RESEARCH may inspect proposal status;
+- VALIDATION_ORCHESTRATOR may verify and promote.
+
+Verification fails closed on missing supporting evidence, missing canonical parent records, unsupported proposal shapes/actions/statuses, or contradicting evidence. VERIFIED Findings and ValidationResults additionally require at least one non-REFERENCE evidence source, so wiki/reference evidence alone cannot become canonical verified truth.
+
+Successful promotion writes only the supported canonical record type and records verification metadata plus the promoted record id back on the staged proposal. The research runner itself still has no direct canonical mutation authority.
