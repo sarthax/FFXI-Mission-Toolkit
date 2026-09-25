@@ -74,21 +74,21 @@ class ProposalVerifier:
         item["contradicting_evidence_ids"]=json.loads(item.pop("contradicting_evidence_ids_json"))
         return item
 
-    def _evidence_checks(self, con, proposal) -> tuple[list[dict[str,Any]], bool]:
+    def _evidence_checks(self, con, proposal) -> tuple[list[dict[str,Any]], bool, dict[str,str]]:
         checks=[]
         support=list(proposal["supporting_evidence_ids"])
         contradict=list(proposal["contradicting_evidence_ids"])
         all_ids=sorted(set(support+contradict))
         existing=set()
+        evidence_types={}
         if all_ids:
             placeholders=",".join("?" for _ in all_ids)
-            existing={
-                row[0]
-                for row in con.execute(
-                    f"SELECT evidence_id FROM evidence WHERE evidence_id IN ({placeholders})",
-                    tuple(all_ids),
-                ).fetchall()
-            }
+            evidence_rows=con.execute(
+                f"SELECT evidence_id,evidence_type FROM evidence WHERE evidence_id IN ({placeholders})",
+                tuple(all_ids),
+            ).fetchall()
+            existing={row[0] for row in evidence_rows}
+            evidence_types={row[0]:row[1] for row in evidence_rows}
         missing=[eid for eid in all_ids if eid not in existing]
         checks.append({
             "check":"evidence_exists",
@@ -105,7 +105,7 @@ class ProposalVerifier:
             "status":"VERIFIED" if support else "FAILED",
             "supporting_evidence_ids":support,
         })
-        return checks, (not missing and not contradict and bool(support))
+        return checks, (not missing and not contradict and bool(support)), evidence_types
 
     def verify(self, proposal_id: str, *, promote: bool = False) -> dict[str,Any]:
         con=self._connect()
@@ -121,7 +121,7 @@ class ProposalVerifier:
                     "verification":json.loads(proposal.get("verification_json") or "{}"),
                 }
 
-            checks,evidence_ok=self._evidence_checks(con,proposal)
+            checks,evidence_ok,evidence_types=self._evidence_checks(con,proposal)
             ptype=proposal["proposal_type"]
             payload=proposal["payload"]
             type_ok=False
@@ -138,7 +138,15 @@ class ProposalVerifier:
                     "missing_fields":missing,
                     "confidence":confidence,
                 })
-                type_ok=not missing and valid_confidence
+                support_types={evidence_types.get(eid) for eid in proposal["supporting_evidence_ids"]}
+                authoritative=bool(support_types - {"REFERENCE",None})
+                checks.append({
+                    "check":"finding_evidence_authority",
+                    "status":"VERIFIED" if confidence!="VERIFIED" or authoritative else "FAILED",
+                    "supporting_evidence_types":sorted(t for t in support_types if t),
+                    "rule":"VERIFIED findings require at least one non-REFERENCE evidence source.",
+                })
+                type_ok=not missing and valid_confidence and (confidence!="VERIFIED" or authoritative)
                 if type_ok:
                     canonical_record=Finding(
                         finding_id=str(payload.get("finding_id") or f"finding:{proposal_id}"),
@@ -203,7 +211,18 @@ class ProposalVerifier:
                     "run_exists":bool(parent),
                     "validation_status":result_status,
                 })
-                type_ok=bool(run_id and parent and validation_type and subject_id and valid_status)
+                support_types={evidence_types.get(eid) for eid in proposal["supporting_evidence_ids"]}
+                authoritative=bool(support_types - {"REFERENCE",None})
+                checks.append({
+                    "check":"validation_evidence_authority",
+                    "status":"VERIFIED" if result_status!="VERIFIED" or authoritative else "FAILED",
+                    "supporting_evidence_types":sorted(t for t in support_types if t),
+                    "rule":"VERIFIED validation results require at least one non-REFERENCE evidence source.",
+                })
+                type_ok=bool(
+                    run_id and parent and validation_type and subject_id and valid_status
+                    and (result_status!="VERIFIED" or authoritative)
+                )
                 if type_ok:
                     canonical_record=ValidationResult(
                         validation_id=str(payload.get("validation_id") or f"validation:{proposal_id}"),
