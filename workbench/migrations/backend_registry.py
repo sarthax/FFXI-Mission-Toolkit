@@ -11,6 +11,7 @@ from typing import Any, Protocol
 
 import backport_lua_convert as legacy_lua
 import backport_sql_convert as legacy_sql
+from workbench.migrations.backend_probe import classify_lsb_lua_methods
 
 
 @dataclass(frozen=True)
@@ -23,11 +24,13 @@ class BackendResult:
 
 class MigrationBackend(Protocol):
     backend_id: str
+    support_level: str
     def supports(self, source_family: str, target_family: str, artifact_type: str) -> bool: ...
 
 
 class LegacyTopazDspLuaBackend:
     backend_id="legacy.topaz_to_dsp.lua"
+    support_level="SUPPORTED"
 
     def supports(self, source_family: str, target_family: str, artifact_type: str) -> bool:
         return (
@@ -54,6 +57,7 @@ class LegacyTopazDspLuaBackend:
 
 class LegacyTopazDspSqlBackend:
     backend_id="legacy.topaz_to_dsp.sql"
+    support_level="SUPPORTED"
 
     def supports(self, source_family: str, target_family: str, artifact_type: str) -> bool:
         return (
@@ -70,6 +74,65 @@ class LegacyTopazDspSqlBackend:
             status="MANUAL_REQUIRED" if result.warnings else "CONVERTED",
             output=result.converted_sql,
             issues=tuple(result.warnings),
+        )
+
+
+class ConditionalLsbDspLuaBackend:
+    """First conservative LSB->DSP Lua backend.
+
+    This backend is route-aware but content-gated. It refuses modern xi.* namespaces
+    and LSB framework-object orchestration until dedicated, evidence-backed reshape
+    rules exist. Only the proven-safe residual subset is passed through the legacy
+    deterministic Lua converter.
+    """
+    backend_id="conditional.lsb_to_dsp.lua"
+    support_level="CONDITIONAL"
+
+    def supports(self, source_family: str, target_family: str, artifact_type: str) -> bool:
+        return (
+            source_family.upper()=="LSB"
+            and target_family.upper()=="DSP"
+            and artifact_type.upper()=="LUA"
+        )
+
+    def convert(self, text: str, **options: Any) -> BackendResult:
+        surface=classify_lsb_lua_methods(text)
+        issues=[]
+
+        if surface.framework_methods:
+            issues.append({
+                "type":"STRUCTURAL_FRAMEWORK_ADAPTATION",
+                "methods":list(surface.framework_methods),
+                "message":"LSB framework-object methods require target-specific structural adaptation.",
+            })
+
+        if "xi." in text:
+            issues.append({
+                "type":"UNVERIFIED_XI_NAMESPACE",
+                "message":"Modern xi.* namespace conversion is not yet proven safe for legacy DSP.",
+            })
+
+        if issues:
+            return BackendResult(
+                backend_id=self.backend_id,
+                status="MANUAL_REQUIRED",
+                output=text,
+                issues=tuple(issues),
+            )
+
+        result=legacy_lua.convert(
+            text,
+            zone_table=options.get("zone_table"),
+            id_shape=options.get("id_shape"),
+            id_file_hint=options.get("id_file_hint"),
+            target="old_dsp_reference",
+        )
+        converter_issues=tuple(result.flagged)+tuple(result.unflagged_leftovers())
+        return BackendResult(
+            backend_id=self.backend_id,
+            status="MANUAL_REQUIRED" if converter_issues else "CONVERTED",
+            output=result.converted,
+            issues=converter_issues,
         )
 
 
@@ -102,4 +165,5 @@ def default_backend_registry() -> MigrationBackendRegistry:
     registry=MigrationBackendRegistry()
     registry.register(LegacyTopazDspLuaBackend())
     registry.register(LegacyTopazDspSqlBackend())
+    registry.register(ConditionalLsbDspLuaBackend())
     return registry
