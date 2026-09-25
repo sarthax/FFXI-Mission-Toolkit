@@ -7,7 +7,7 @@ from dataclasses import asdict
 from workbench.adapters.servers import DSPAdapter, LSBAdapter
 from workbench.adapters.servers.sql_extract import extract_logical_records
 from workbench.migrations.record_match import match_records, compare_instance_membership
-from workbench.migrations.logical_planner import plan_record_match
+from workbench.migrations.logical_planner import plan_record_match, plan_entity_identity_drifts
 from workbench.migrations.entity_identity import compare_symbol_maps, semantic_membership
 from workbench.adapters.servers.entity_symbols import lua_numeric_symbols, yaml_npc_script_symbols
 
@@ -52,6 +52,8 @@ def main():
     renumbered={d.symbol:(d.source_id,d.target_id) for d in symbol_diff["renumbered"]}
     assert renumbered.get("_jr1")== (17035542,17035541),renumbered
     assert renumbered.get("_1rx")== (17035538,17035537),renumbered
+    entity_actions=plan_entity_identity_drifts(symbol_diff["renumbered"],"migration:assault:excavation_duty")
+    assert entity_actions and all(a.action=="RENUMBER" for a in entity_actions),entity_actions
 
     source_membership_ids=set(membership["shared"]) | set(membership["source_only"])
     target_membership_ids=set(membership["shared"]) | set(membership["target_only"])
@@ -84,6 +86,7 @@ def main():
             "stable":symbol_diff["stable"],
             "source_only_symbols":symbol_diff["source_only_symbols"],
             "target_only_symbols":symbol_diff["target_only_symbols"],
+            "migration_actions":[asdict(a) for a in entity_actions],
             "source_membership_symbols":source_semantic["symbols"],
             "target_membership_symbols":target_semantic["symbols"],
         },
