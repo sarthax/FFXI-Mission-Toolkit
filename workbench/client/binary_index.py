@@ -334,3 +334,21 @@ def write_index(payload: dict[str,Any], output: Path) -> None:
     output=Path(output)
     output.parent.mkdir(parents=True,exist_ok=True)
     output.write_text(json.dumps(payload,indent=2,sort_keys=True)+"\n",encoding="utf-8")
+
+
+def record_token(category: str, row: dict[str,Any]) -> str:
+    return hashlib.sha256(
+        (category+json.dumps(row,sort_keys=True,default=str)).encode("utf-8")
+    ).hexdigest()[:20]
+
+def binary_header_evidence_id(payload: dict[str,Any]) -> str:
+    sha256=str((payload.get("binary") or {}).get("sha256") or "")
+    return f"evidence:client-binary:{sha256[:24]}:pe"
+
+def binary_string_corpus_evidence_id(payload: dict[str,Any]) -> str:
+    sha256=str((payload.get("binary") or {}).get("sha256") or "")
+    return f"evidence:client-binary:{sha256[:24]}:strings"
+
+def binary_record_evidence_id(category: str, row: dict[str,Any]) -> str:
+    singular={"sections":"section","imports":"import","exports":"export"}.get(category,category.rstrip("s"))
+    return f"evidence:client-binary-{singular}:{record_token(category,row)}"
