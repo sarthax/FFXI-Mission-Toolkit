@@ -173,7 +173,7 @@ Reusable framework plugins:
 - [ ] Generic minigame/puzzle plugin.
 
 System-specific packages compose reusable frameworks rather than reimplementing them:
-- [ ] Assault package — its own bounded 50+ mission family, ranks/AP/tags/appraisal/lockboxes/assault instance conventions.
+- [ ] Assault package — framework composition exists, but Assault-specific analyzers/migration rules for ranks/AP/tags/appraisal/lockboxes/instance conventions remain incomplete.
 - [ ] Nyzul package — floor progression, objectives, lamps, tokens, boss floors, randomized objective framework.
 - [ ] Salvage package — cells, path/room progression, restrictions, NM/boss structures, rewards.
 - [ ] Abyssea package — Atma/Cruor/visitant/time extensions/triggers and zone-system rules.
@@ -193,6 +193,9 @@ Design requirements:
 - [x] migration action plans — ordered generic actions are emitted into a machine-readable package manifest.
 - [x] target-specific conversion bridge — existing Lua/SQL package conversion can be scoped by a Workbench plan while preserving legacy full-folder behavior.
 - [x] validation package — planned Lua/SQL plus generated target SQL artifacts generate independent validation requirements.
+- [x] package assembly + provenance — source and generated artifacts are staged with SHA-256 journals and review metadata.
+- [x] package cohesion verification — assembled manifest, validation metadata, journals, staged files, generated outputs, and recorded hashes are checked for internal consistency before apply.
+- [x] reversible file apply journal foundation — explicit file application can be rolled back; live SQL/database apply and rollback remain future work.
 - [x] rollback/journal foundation — staged source/generated artifacts are hashed/journaled and explicit file apply operations can be rolled back; live SQL/database rollback remains future work.
 - [x] generated target-artifact foundation — safe domain reshape proposals can emit target-ready staged artifacts with provenance without applying them.
 
