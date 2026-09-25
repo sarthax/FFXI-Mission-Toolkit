@@ -79,6 +79,26 @@ def _common(equipment_file: str = "item_equipment.sql") -> dict[str, TableShape]
         FieldMapping("instance_id",("instanceid","instanceId"),True),
         FieldMapping("entity_id",("id","entity_id"),True),
     )
+    battlefield_fields=(
+        FieldMapping("battlefield_id",("bcnmId","bcnmid"),True),
+        FieldMapping("zone_id",("zoneId","zoneid"),True),
+        FieldMapping("name",("name",),True),
+        FieldMapping("fastest_name",("fastestName","fastestname")),
+        FieldMapping("fastest_party_size",("fastestPartySize","fastestpartysize")),
+        FieldMapping("fastest_time",("fastestTime","fastesttime")),
+        FieldMapping("time_limit",("timeLimit","timelimit")),
+        FieldMapping("level_cap",("levelCap","levelcap")),
+        FieldMapping("party_size",("partySize","partysize")),
+        FieldMapping("loot_drop_id",("lootDropId","lootdropid")),
+        FieldMapping("rules",("rules",)),
+        FieldMapping("is_mission",("isMission","ismission")),
+    )
+    battlefield_member_fields=(
+        FieldMapping("battlefield_id",("bcnmId","bcnmid"),True),
+        FieldMapping("battlefield_number",("battlefieldNumber","battlefieldnumber"),True),
+        FieldMapping("entity_id",("monsterId","monsterid"),True),
+        FieldMapping("conditions",("conditions",)),
+    )
     npc_columns=("npcid","name","polutils_name","pos_rot","pos_x","pos_y","pos_z","flag","speed","speedsub","animation","animationsub","namevis","status","entityFlags","look","name_prefix","content_tag","widescan")
     topaz_group_columns=("groupid","poolid","zoneid","name","respawntime","spawntype","dropid","HP","MP","minLevel","maxLevel","allegiance")
     dsp_group_columns=("groupid","poolid","zoneid","respawntime","spawntype","dropid","HP","MP","minLevel","maxLevel","allegiance")
@@ -112,6 +132,11 @@ def _common(equipment_file: str = "item_equipment.sql") -> dict[str, TableShape]
             parse_columns=instance_entity_columns, field_mappings=instance_entity_fields, identity_fields=("instance_id","entity_id")),
         "instances": TableShape("instances", "instance_list.sql", "instance_list",
             parse_columns=topaz_instance_columns, field_mappings=instance_fields, identity_fields=("instance_id",)),
+        "battlefields": TableShape(
+            "battlefields","bcnm_info.sql","bcnm_records",
+            parse_columns=("bcnmId","zoneId","name","fastestName","fastestPartySize","fastestTime"),
+            field_mappings=battlefield_fields, identity_fields=("battlefield_id",),
+        ),
         "spells": TableShape("spells", "spell_list.sql", "spell_list"),
         "traits": TableShape("traits", "traits.sql", "traits"),
     }
@@ -148,6 +173,20 @@ DSP = SchemaProfile(
             field_mappings=_common()["instances"].field_mappings,
             identity_fields=("instance_id",),
             notes=("DSP legacy shape lacks instance_zone.",),
+        ),
+        "battlefields": TableShape(
+            "battlefields","bcnm_info.sql","bcnm_info",
+            parse_columns=("bcnmId","zoneId","name","fastestName","fastestPartySize","fastestTime","timeLimit","levelCap","partySize","lootDropId","rules","isMission"),
+            field_mappings=_common()["battlefields"].field_mappings,
+            identity_fields=("battlefield_id",),
+            notes=("Legacy DSP stores battlefield policy fields directly in bcnm_info; modern LSB moves much of this policy into Lua content definitions.",),
+        ),
+        "battlefield_members": TableShape(
+            "battlefield_members","bcnm_battlefield.sql","bcnm_battlefield",
+            parse_columns=("bcnmId","battlefieldNumber","monsterId","conditions"),
+            field_mappings=battlefield_member_fields,
+            identity_fields=("battlefield_id","battlefield_number","entity_id"),
+            notes=("Legacy DSP battlefield membership is SQL-driven; modern LSB expresses groups primarily in Lua/YAML.",),
         ),
         "spells": TableShape(
             "spells", "spell_list.sql", "spell_list",
@@ -190,6 +229,13 @@ LSB = SchemaProfile(
             parse_columns=("instanceid","instance_name","instance_zone","entrance_zone","overlay_id","time_limit","start_x","start_y","start_z","start_rot","music_day","music_night","battlesolo","battlemulti"),
             field_mappings=_common()["instances"].field_mappings,
             identity_fields=("instance_id",),
+        ),
+        "battlefields": TableShape(
+            "battlefields","bcnm_info.sql","bcnm_records",
+            parse_columns=("bcnmId","zoneId","name","fastestName","fastestPartySize","fastestTime"),
+            field_mappings=_common()["battlefields"].field_mappings,
+            identity_fields=("battlefield_id",),
+            notes=("Modern LSB bcnm_records keeps registry identity/history; battlefield policy is implemented in Lua content definitions.",),
         ),
     },
     notes=(
