@@ -26,6 +26,23 @@ def graph_matches(con,node_id=None,name=None):
                 out.append({"table":table,"id":r[0],"name":r[1]})
     return out
 
+def canonical_opcode(value):
+    raw=str(value)
+    try: return f"0x{int(raw,0):03x}"
+    except (TypeError,ValueError): return raw.lower()
+
+def graph_walk(con,start,max_depth=4):
+    seen={start}; frontier=[start]; edges=[]
+    for depth in range(max_depth):
+        if not frontier: break
+        nxt=[]
+        for node in frontier:
+            for r in rows(con,"SELECT source_node,target_node,relationship,status,confidence,evidence_id FROM entity_relationships WHERE source_node=? ORDER BY relationship_id",(node,)):
+                edge=dict(zip(("source","target","relationship","status","confidence","evidence_id"),r))
+                edge["depth"]=depth+1; edges.append(edge)
+                if r[1] not in seen: seen.add(r[1]); nxt.append(r[1])
+        frontier=nxt
+    return edges
 def capability_status(con,name):
     hits=rows(con,"SELECT capability_id,name,status,value_json FROM capabilities WHERE name LIKE ? ORDER BY capability_id",(f"%{name}%",))
     if not hits: return {"status":"UNKNOWN","matches":[]}
@@ -83,9 +100,12 @@ def backtrace(db,capture_id,graph_db=None):
         for opcode,count in rows(src,"SELECT opcode,COUNT(*) FROM capture_raw_packets WHERE capture_id=? GROUP BY opcode ORDER BY opcode",(capture_id,)):
             item={"kind":"PACKET","opcode":opcode,"observed_count":count}
             if g:
-                item["canonical_packet_matches"]=graph_matches(g,node_id=f"packet:{opcode}")
-                handler=rows(g,"SELECT source_node,target_node,relationship,status,confidence FROM entity_relationships WHERE source_node=? OR target_node=? ORDER BY relationship_id",(f"packet:{opcode}",f"packet:{opcode}"))
+                packet_node=f"packet:{canonical_opcode(opcode)}"
+                item["canonical_packet_node"]=packet_node
+                item["canonical_packet_matches"]=graph_matches(g,node_id=packet_node)
+                handler=rows(g,"SELECT source_node,target_node,relationship,status,confidence FROM entity_relationships WHERE source_node=? OR target_node=? ORDER BY relationship_id",(packet_node,packet_node))
                 item["graph_relationships"]=[dict(zip(("source","target","relationship","status","confidence"),r)) for r in handler]
+                item["implementation_path"]=graph_walk(g,packet_node,4)
                 item["server_handler_status"]="PRESENT" if any(r[2]=="HANDLED_BY" for r in handler) else "UNKNOWN"
             report["checks"].append(item)
     message_ids=set()
