@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from workbench.plugins.domain import PluginContext, default_registry
 from workbench.plugins.domain.planning import plugin_findings_to_actions
+from workbench.migrations.package_plan import build_package_plan
+from workbench.migrations.package_manifest import build_package_manifest
 
 
 def main():
@@ -24,6 +26,23 @@ def main():
         "FRAMEWORK_ORCHESTRATION_TO_DSP_CALLBACKS",
     } <= reshape,actions
     assert all(a.status=="MANUAL_REQUIRED" for a in actions),actions
+
+    plan=build_package_plan(actions)
+    assert plan.status=="MANUAL_REQUIRED",plan
+    manifest=build_package_manifest(
+        plan,
+        feature_id="feature:test",
+        source_family="LSB",
+        target_family="DSP",
+    )
+    manifest_reshapes={
+        step["metadata"].get("reshape")
+        for step in manifest["execution"]["steps"]
+        if step["action"]=="RESHAPE"
+    }
+    assert reshape <= manifest_reshapes,manifest
+    assert all(step["backend"]=="manual" for step in manifest["execution"]["steps"]),manifest
+
     print("domain plugin migration action self-test: PASS")
 
 
