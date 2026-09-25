@@ -49,11 +49,13 @@ def main():
         source_family="LSB",
         target_family="DSP",
     )
-    assert all(
-        step["conversion_status"]=="UNSUPPORTED"
-        for step in unsupported["execution"]["steps"]
-        if step["backend"] in {"lua","sql"}
-    ),unsupported
+    lua_steps=[step for step in unsupported["execution"]["steps"] if step["backend"]=="lua"]
+    sql_steps=[step for step in unsupported["execution"]["steps"] if step["backend"]=="sql"]
+    assert lua_steps and all(step["conversion_status"]=="CONDITIONAL" for step in lua_steps),unsupported
+    assert sql_steps and all(step["conversion_status"]=="UNSUPPORTED" for step in sql_steps),unsupported
+    validation=build_validation_package(unsupported)
+    assert validation["status"]=="MANUAL_REQUIRED",validation
+    assert any(check["validation_type"]=="CONVERTER_PREFLIGHT_REQUIRED" for check in validation["checks"]),validation
     print("migration package manifest self-test: PASS")
 
 
