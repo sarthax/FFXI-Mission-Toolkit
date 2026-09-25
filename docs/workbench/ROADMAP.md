@@ -154,6 +154,44 @@ Domain plugins may introduce system-specific dependency rules without contaminat
 - validation package
 - rollback/journal support
 
+### Phase 8 — Evidence-aware LLM research and analysis workspace (P1)
+Current state is a useful draft assistant: Open WebUI/Ollama chat plus read-only SQLite tools and logging. The rework should promote this into a bounded research/orchestration layer over the Workbench rather than a free-form chatbot.
+
+Goals:
+- [ ] Introduce an LLMProvider interface so Open WebUI/Ollama is one provider rather than the architecture.
+- [ ] Add an LLM Research Session model with prompt, model/provider, source snapshots, tool calls, evidence references, outputs, and verification state.
+- [ ] Replace raw-table-only research with typed tools over Feature Trace, Feature Checker, server adapters, entity lookup, packet/capture indexes, client capability, wiki/reference adapters, migration plans, and validation results.
+- [ ] Allow bounded repository/source crawling over configured server/client/reference roots with explicit scope, depth, file-type, and size limits.
+- [ ] Add cross-source comparison tools so an LLM can ask for LSB vs Topaz vs DSP implementations of the same logical feature/entity.
+- [ ] Add evidence retrieval that returns canonical node IDs, Evidence IDs, source snapshots, file paths/lines, confidence, and authority with every research result.
+- [ ] Add research-plan execution: decompose a question into tool calls, gather evidence, synthesize a report, identify contradictions/gaps, and propose next deterministic analyzer/tool actions.
+- [ ] Add a FindingProposal/ResearchFinding staging layer. LLM conclusions remain DRAFT/PROPOSED until deterministic evidence or a human/validator promotes them.
+- [ ] Permit write actions only through explicit generated proposals/patch plans; never grant an LLM arbitrary filesystem/SQL mutation.
+- [ ] Add patch/package proposal generation that emits diffs or MigrationAction proposals for human review and later deterministic application.
+- [ ] Add long-context artifact bundles for a feature: relevant Lua, SQL logical records, C++ functions/bindings, packets, build targets, client capabilities, captures, and references.
+- [ ] Add semantic search/indexing over source snapshots and canonical graph metadata while retaining exact grep/SQL/graph tools for verification.
+- [ ] Add contradiction detection across server forks, client evidence, captures, and reference sites.
+- [ ] Add research notebooks/reports that can be reopened and reproduced against the same pinned snapshots.
+- [ ] Add permission profiles such as READ_ONLY_RESEARCH, PROPOSE_CHANGES, and VALIDATION_ORCHESTRATOR.
+- [ ] Add budget/timeout/tool-call limits and complete audit logging for every autonomous research run.
+- [ ] Add LLM regression/evaluation fixtures using canned tool responses so provider/model changes cannot silently weaken evidence discipline.
+
+Recommended LLM tool surface:
+- graph.trace / graph.search
+- feature.check / feature.candidates
+- server.logical_record / server.compare / server.schema
+- entity.lookup / entity.relationships
+- packet.lookup / packet.handlers / capture.backtrace
+- cpp.symbol / binding.lookup / build.target
+- client.capability / dat.lookup
+- migration.plan / migration.explain
+- validation.status / validation.run-plan
+- reference.search / reference.compare
+- source.search / source.read (bounded, snapshot-scoped)
+- report.create_research_draft
+
+The LLM layer must never convert graph reachability into proof, must preserve UNKNOWN/INFERRED states, and must carry canonical evidence/provenance into every substantive claim.
+
 ## Feature Trace architecture
 Feature Trace is the central navigation layer between indexed sources. It is deliberately separate from the Feature Checker: a trace answers “what is connected to this subject?” while the checker answers “which declared requirements/capabilities have evidence?” without treating graph connectivity as proof of implementation.
 
@@ -172,7 +210,7 @@ A staged package-layout migration is now part of the rework. Package namespaces 
 5. Connect entity_profile/map-confidence/capture/packet outputs to the graph.
 6. Add full ValidationRun orchestration and independent regression dimensions.
 7. Continue GUI/service extraction without rewriting the GUI wholesale.
-8. Audit LLM/research tooling and make it evidence-aware.
+8. Build the evidence-aware LLM research/orchestration layer described in Phase 8; begin with typed Workbench tools and reproducible ResearchSession records rather than expanding free-form SQL access.
 9. Resume client EXE/DLL analysis when the actual binaries are available.
 
 ## Definition of done
