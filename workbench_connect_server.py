@@ -50,7 +50,7 @@ def import_payload(path, db, lua_json=None, zone_db=None):
     # consolidated source index independently verifies the same zone/script/event ID.
     if lua_json is not None and lua_json.exists() and zone_db is not None and zone_db.exists():
         lua_payload=json.loads(lua_json.read_text(encoding="utf-8"))
-        lua_sid=lua_payload.get("source_snapshot_id"); lua_source=lua_payload.get("source",str(lua_path))
+        lua_sid=lua_payload.get("source_snapshot_id"); lua_source=lua_payload.get("source",str(lua_json))
         src=sqlite3.connect(zone_db)
         try:
             has_refs=src.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='npc_event_refs'").fetchone()
