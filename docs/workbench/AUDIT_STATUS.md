@@ -522,3 +522,10 @@ The consolidated package review summary is now exposed through `python -m workbe
 Lua event analysis now preserves conservative wrapper-class hints beyond callback parameters. Direct local aliases inherit the callback parameter class, and returned-object classes can be supplied through an explicit return-type hint table. The server graph bridge preserves the hint source (parameter, alias, or configured return type) while CALLS edges remain INFERRED.
 
 No method-name guessing or confidence upgrade is performed.
+
+
+## 2026-09-25 — Evidence-backed Lua return typing
+
+Lua event analysis can now derive returned-object wrapper hints directly from the indexed C++ API surface. A hint is accepted only when a Lua binding resolves to a C++ function whose indexed return type names another wrapper class present in the same binding surface. Local aliases and returned objects therefore carry provenance-rich class hints without method-name guessing.
+
+The server graph bridge preserves these hints as INFERRED CALLS evidence; no class hint upgrades an implementation edge to VERIFIED.
