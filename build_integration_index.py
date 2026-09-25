@@ -8,7 +8,7 @@ from __future__ import annotations
 import argparse, json, re
 from dataclasses import asdict
 from pathlib import Path
-from workbench_schema import AnalysisResult, Finding, BuildTarget
+from workbench_schema import AnalysisResult, Finding, BuildTarget, DependencyEdge
 
 CPP_EXTENSIONS={".cpp",".cc",".cxx",".c",".h",".hpp",".hh",".hxx"}
 BUILD_FILES={"CMakeLists.txt","Makefile","makefile","GNUmakefile"}
@@ -27,17 +27,21 @@ def tokens(text):
 
 def extract_targets(root, build_text):
     targets=[]
+    edges=[]
+    target_sources={}
+
     for p,text in build_text:
         for block in CMAKE_ADD_RE.findall(text):
             toks=tokens(block)
             if toks:
                 name=toks[0]
+                target_id=f"build-target:{p.relative_to(root).as_posix()}:{name}"
                 targets.append(BuildTarget(
-                    target_id=f"build-target:{p.relative_to(root).as_posix()}:{name}",
-                    name=name, build_system="CMAKE", path=p.relative_to(root).as_posix(),
+                    target_id=target_id, name=name, build_system="CMAKE", path=p.relative_to(root).as_posix(),
                     notes=["Target discovered from add_library/add_executable; configuration/generator evaluation not performed."]
                 ))
-    return targets
+                target_sources[target_id]=set(toks[1:])
+    return targets, target_sources
 
 def index(root):
     builders=build_files(root)
@@ -54,7 +58,7 @@ def index(root):
                 if Path(token).suffix.lower() in CPP_EXTENSIONS:
                     included.setdefault(Path(token).as_posix(),[]).append(p.relative_to(root).as_posix())
     findings=[]
-    targets=extract_targets(root, build_text)
+    targets,target_sources=extract_targets(root, build_text)
     all_paths={p.relative_to(root).as_posix():p for p in source_files(root)}
     for rel in sorted(all_paths):
         refs=included.get(rel,[])
@@ -83,14 +87,23 @@ def index(root):
             confidence=conf,
             notes=notes,
         ))
-    return builders,findings,targets
+    edges=[]
+    for target_id, paths in target_sources.items():
+        for rel in paths:
+            edges.append(DependencyEdge(
+                edge_id=f"builds-into:{rel}:{target_id}", source_node=rel, target_node=target_id,
+                relationship="BUILDS_INTO", confidence="INFERRED", status="DISCOVERED",
+                discovered_by="build_integration_index", source_location=target_id,
+                notes=["Source token occurs in an add_library/add_executable argument list; build configuration was not executed."]
+            ))
+    return builders,findings,targets,edges
 
 def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("root",type=Path)
     ap.add_argument("--json",type=Path)
     args=ap.parse_args()
-    builders,findings,targets=index(args.root)
+    builders,findings,targets,edges=index(args.root)
     result=AnalysisResult(
         analysis_id="build-integration-index",
         analysis_type="BUILD_INTEGRATION",
@@ -99,7 +112,7 @@ def main():
         findings=[f.finding_id for f in findings],
         notes=[f"Scanned {len(builders)} recognized build files.","No build was executed."],
     )
-    payload={"schema":2,"analysis":asdict(result),"build_files":[p.relative_to(args.root).as_posix() for p in builders],"build_targets":[asdict(t) for t in targets],"findings":[asdict(f) for f in findings]}
+    payload={"schema":2,"analysis":asdict(result),"build_files":[p.relative_to(args.root).as_posix() for p in builders],"build_targets":[asdict(t) for t in targets],"edges":[asdict(e) for e in edges],"findings":[asdict(f) for f in findings]}
     if args.json:
         args.json.parent.mkdir(parents=True,exist_ok=True); args.json.write_text(json.dumps(payload,indent=2)+"\n",encoding="utf-8")
     else: print(json.dumps(payload,indent=2))
