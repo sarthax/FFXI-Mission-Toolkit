@@ -7,6 +7,7 @@ Conflicting or extra target rows force manual review; no DELETE/UPDATE SQL is em
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Any, Iterable, Mapping, Sequence
 
 
@@ -193,4 +194,30 @@ def propose_dsp_battlefield_policy(
         update_sql=sql,
         status=status,
         safe_to_generate=safe,
+    )
+
+
+_DSP_CALLBACK_RE=re.compile(r"^\s*function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(",re.MULTILINE)
+
+
+@dataclass(frozen=True)
+class DspBattlefieldCallbackSurface:
+    present_callbacks: tuple[str, ...]
+    expected_callbacks: tuple[str, ...]
+    missing_callbacks: tuple[str, ...]
+    status: str
+
+
+def analyze_dsp_battlefield_callbacks(
+    lua_text: str,
+    expected_callbacks: Sequence[str] = (),
+) -> DspBattlefieldCallbackSurface:
+    present=tuple(sorted(set(_DSP_CALLBACK_RE.findall(lua_text))))
+    expected=tuple(dict.fromkeys(str(x) for x in expected_callbacks))
+    missing=tuple(sorted(set(expected)-set(present)))
+    return DspBattlefieldCallbackSurface(
+        present_callbacks=present,
+        expected_callbacks=expected,
+        missing_callbacks=missing,
+        status="COVERAGE_ALIGNED" if not missing else "CALLBACK_GAPS",
     )
