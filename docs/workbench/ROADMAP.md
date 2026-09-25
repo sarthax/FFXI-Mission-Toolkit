@@ -324,3 +324,9 @@ The server graph connector now accepts the Lua event-surface index and independe
 
 ### Class-aware Lua candidate milestone
 Lua event indexing now carries conservative callback-parameter class hints, and graph connectors use those hints to narrow binding candidates. The hint does not upgrade a call to VERIFIED; semantic typing of locals/returned objects remains future work.
+
+
+### 2026-09-25 Lua typing continuation
+- [x] local alias type propagation for callback-scoped Lua analysis.
+- [x] explicit returned-object hint support without method-name guessing.
+- [ ] derive returned-object hints from indexed C++ API signatures and preserve evidence provenance.
