@@ -99,6 +99,17 @@ class EnumDefinition:
     notes: list[str] = field(default_factory=list)
 
 @dataclass
+class BuildTarget:
+    target_id: str
+    name: str
+    build_system: str
+    path: str | None = None
+    source_snapshot_id: str | None = None
+    artifact_id: str | None = None
+    status: str = "DISCOVERED"
+    notes: list[str] = field(default_factory=list)
+
+@dataclass
 class DependencyEdge:
     edge_id: str
     source_node: str
