@@ -162,3 +162,11 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 - A Lua event is connected to a canonical server-event node only when `npc_event_refs` independently confirms the same literal event ID in the same zone and NPC script.
 - Verified event → Lua function edges retain server-source snapshot provenance; Lua colon-call → binding edges remain `INFERRED` name-only candidates until object/class semantics are proven.
 - The bridge therefore produces a traversable capture/event → Lua function → binding → C++ path without converting ambiguous Lua method names into false-positive class resolutions.
+
+
+## 2026-09-25 — class-aware Lua binding candidate refinement
+
+- Extended the packaged Lua event analyzer to record function parameters and conservative wrapper-class hints for conventional FFXI callback names such as `player`/`npc`/`mob` → `CLuaBaseEntity` and `instance` → `CLuaInstance`.
+- These mappings are explicitly hints, not semantic proof. Unknown/local object names remain untyped.
+- Updated both the server graph connector and capture graph connector to use a class hint to narrow same-name binding candidates when available; unresolved calls continue as name-only inferred candidates.
+- This materially reduces false candidate fan-out for overloaded Lua API names such as `getID` while preserving conservative evidence status.
