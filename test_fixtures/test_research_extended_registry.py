@@ -93,7 +93,7 @@ def main():
         for name in (
             "capture.search","capture.backtrace",
             "reference.search","reference.compare",
-            "client.capability","dat.lookup",
+            "client.capability","dat.lookup","dat.describe",
         ):
             assert specs[name]["access"]=="READ",specs
 
