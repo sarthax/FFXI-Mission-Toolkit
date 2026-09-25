@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import json
 import sqlite3
+from workbench.core.services.packet_identity import canonical_opcode, packet_node_id
 from pathlib import Path
 
 import workbench_graph
@@ -139,13 +140,10 @@ def connect(db: Path, graph_db: Path, limit: int | None = None) -> dict:
         for cap_id, opcode, direction in src.execute(
             "SELECT DISTINCT capture_id,opcode,direction FROM capture_raw_packets ORDER BY capture_id,opcode,direction"
         ):
-            raw = str(opcode)
-            try:
-                value = int(raw, 0)
-                canonical = f"0x{value:03x}"
-            except (TypeError, ValueError):
-                canonical = raw.lower()
-            pid = f"packet:{canonical}"
+            canonical = canonical_opcode(opcode)
+            pid = packet_node_id(opcode)
+            if pid is None:
+                continue
             add_entity(pid, "PACKET", str(opcode), {"opcode": opcode})
             add_identifier(pid, "opcode", opcode)
             cev = f"evidence:capture-packet:{cap_id}:{opcode}:{direction}"
