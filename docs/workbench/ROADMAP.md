@@ -114,7 +114,7 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - [x] enums/constants/macros
 - [x] Lua bindings
 - [x] C++ dependency graph (conservative)
-- [ ] packet handlers from real server dispatch
+- [x] packet dispatch pattern extraction (deterministic switch/registration evidence; full handler resolution remains source-dependent)
 - [x] build-system inclusion (conservative)
 - [x] compile conditions/generated sources (conservative)
 - [x] engine migration classification
