@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from workbench.client.binary_index import binary_header_evidence_id, binary_record_evidence_id, binary_string_corpus_evidence_id
+from workbench.client.binary_diff import diff_binary_indexes
 
 
 class ClientBinaryResearchReader:
@@ -126,6 +127,31 @@ class ClientBinaryResearchReader:
             "status":"OK","query":query,"matches":matches,"truncated":False,
             "evidence_ids":sorted({row["evidence_id"] for row in matches}),
         }
+
+    def binary_diff(self, left: str, right: str, *, max_items: int = 500) -> dict[str,Any]:
+        resolved={}
+        for path,payload in self._indexes():
+            info=payload.get("binary") or {}
+            keys={str(info.get("label") or ""),str(info.get("filename") or ""),str(info.get("sha256") or ""),str(path)}
+            for query in (left,right):
+                if query in resolved:
+                    continue
+                if query in keys or any(query.lower() in key.lower() for key in keys if key):
+                    resolved[query]=(path,payload)
+        if left not in resolved or right not in resolved:
+            return {
+                "status":"NOT_FOUND",
+                "missing":[query for query in (left,right) if query not in resolved],
+            }
+        result=diff_binary_indexes(resolved[left][1],resolved[right][1],max_items=max_items)
+        result["evidence_ids"]=sorted({
+            binary_header_evidence_id(resolved[left][1]),
+            binary_header_evidence_id(resolved[right][1]),
+            binary_string_corpus_evidence_id(resolved[left][1]),
+            binary_string_corpus_evidence_id(resolved[right][1]),
+        })
+        result["authority"]="CLIENT_BINARY"
+        return result
 
     def address_evidence(
         self,
