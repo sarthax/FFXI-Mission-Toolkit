@@ -166,6 +166,18 @@ class MigrationAction:
     metadata: dict[str, Any] = field(default_factory=dict)
 
 @dataclass
+class ValidationRun:
+    run_id: str
+    name: str
+    source_snapshot_id: str | None = None
+    target_snapshot_id: str | None = None
+    feature_id: str | None = None
+    status: str = "UNKNOWN"
+    started_at: str | None = None
+    finished_at: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+@dataclass
 class ValidationResult:
     validation_id: str
     validation_type: str
