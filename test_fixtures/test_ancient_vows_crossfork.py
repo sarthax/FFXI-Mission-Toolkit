@@ -21,7 +21,7 @@ from workbench.core import graph
 from workbench.core.schema import Artifact, CapabilityRequirement, DependencyEdge, Feature, MigrationAction
 from workbench.core.services.feature_surface_graph import persist_feature_surface
 from workbench.core.services.feature_surface_validation import build_feature_surface_validation
-from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy, analyze_dsp_battlefield_callbacks
+from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy, analyze_dsp_battlefield_callbacks, extract_lsb_battlefield_policy, extract_lsb_mission_level_cap
 from feature_checker import resolve_feature, check_feature
 import tempfile
 import backport_binding_audit as bba
@@ -169,18 +169,18 @@ def main():
     source_mob=surfaces["lsb_mammet"].read_text(encoding="utf-8",errors="ignore")
     target_mob=surfaces["dsp_mammet"].read_text(encoding="utf-8",errors="ignore")
     source_level_cap=surfaces["lsb_level_cap_policy"].read_text(encoding="utf-8",errors="ignore")
-    assert "timeLimit     = utils.minutes(30)" in source_battlefield
-    assert "maxPlayers    = 6" in source_battlefield
-    assert "isMission     = true" in source_battlefield
-    assert "ANCIENT_VOWS,                         40" in source_level_cap
+    source_policy=extract_lsb_battlefield_policy(source_battlefield)
+    era_level_cap=extract_lsb_mission_level_cap(source_level_cap,"ANCIENT_VOWS")
+    assert source_policy.resolved_fields["time_limit"]==1800,source_policy
+    assert source_policy.resolved_fields["party_size"]==6,source_policy
+    assert source_policy.resolved_fields["is_mission"] is True,source_policy
+    assert source_policy.unresolved_fields.get("level_cap")=="xi.settings.main.MAX_LEVEL",source_policy
+    assert era_level_cap==40,era_level_cap
+    desired_policy=dict(source_policy.resolved_fields)
+    desired_policy["level_cap"]=era_level_cap
     policy_proposal=propose_dsp_battlefield_policy(
         BATTLEFIELD_ID,
-        {
-            "time_limit":1800,
-            "level_cap":40,
-            "party_size":6,
-            "is_mission":True,
-        },
+        desired_policy,
         target_registry,
     )
     assert policy_proposal.status=="EQUIVALENT",policy_proposal
@@ -387,6 +387,7 @@ def main():
             "dsp_membership_reshape_status":membership_proposal.status,
             "generated_insert_count":len(membership_proposal.insert_sql),
             "dsp_policy_reshape_status":policy_proposal.status,
+            "source_policy_fields":dict(sorted(desired_policy.items())),
             "generated_policy_update":policy_proposal.update_sql is not None,
             "dsp_callback_surface_status":callback_surface.status,
             "missing_callback_count":len(callback_surface.missing_callbacks),
