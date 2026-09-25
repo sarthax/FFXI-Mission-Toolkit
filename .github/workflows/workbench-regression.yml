@@ -60,6 +60,7 @@ jobs:
           python test_fixtures/test_package_manifest.py
           python test_fixtures/test_package_materialize.py
           python test_fixtures/test_package_assembly.py
+          python test_fixtures/test_package_cohesion.py
           python test_fixtures/test_generated_output.py
           python test_fixtures/test_generated_sql_validation.py
           python test_fixtures/test_validation_apply_journal.py
