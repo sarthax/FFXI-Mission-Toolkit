@@ -13,6 +13,7 @@ from workbench.migrations.feature_surface import FeatureSurface, SurfaceArtifact
 from workbench.core import graph
 from workbench.core.schema import Feature
 from workbench.core.services.feature_surface_graph import persist_feature_surface
+from workbench.core.services.feature_surface_validation import build_feature_surface_validation
 import tempfile
 
 FEATURE_NAME="ancient_vows"
@@ -136,6 +137,20 @@ def main():
         ).fetchone()[0]
         assert implementation_count==len(source_surface.artifacts)+len(target_surface.artifacts),(implementation_count,src_counts,dst_counts)
         assert uses_id_count==18,uses_id_count
+        validation_run,validation_results=build_feature_surface_validation(
+            surface_comparison,
+            run_id="validation:cop:ancient_vows:surface",
+            source_snapshot_id="lsb:3747feee0e38",
+            target_snapshot_id="dsp:ee1f489efbde",
+        )
+        graph.insert_record(con,validation_run)
+        for result in validation_results:
+            graph.insert_record(con,result)
+        validation_status=con.execute(
+            "SELECT status FROM validation_results WHERE validation_id=?",
+            (validation_results[0].validation_id,),
+        ).fetchone()[0]
+        assert validation_status=="VERIFIED",validation_status
         con.close()
 
     assert "BattlefieldMission:new" in source_battlefield
@@ -175,6 +190,7 @@ def main():
             "implementation_count":implementation_count,
             "uses_id_edge_count":uses_id_count,
             "snapshot_scoped_entity_refs":true,
+            "entity_coverage_validation":validation_status,
         },
         "e2e_status":"PUBLIC_CROSS_FORK_FEATURE_SURFACE_VERIFIED",
     }
