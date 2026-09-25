@@ -70,7 +70,7 @@ Foundation preserved; engine-change workspace audited; C++ API/dependency/build 
 - [ ] Extract GUI domain services incrementally.
 - [ ] Formalize LLM evidence workflow.
 - [ ] Consolidate duplicated ID/entity logic.
-- [ ] Standardize source snapshot fingerprints.
+- [x] Standardize source snapshot fingerprints (deterministic content/path SHA-256).
 
 ### P1+ — Domain plugins
 - [ ] Assault plugin.
