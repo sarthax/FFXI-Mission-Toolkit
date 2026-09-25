@@ -14,6 +14,7 @@ from workbench.core import graph
 from workbench.core.schema import CapabilityRequirement, Feature
 from workbench.core.services.feature_surface_graph import persist_feature_surface
 from workbench.core.services.feature_surface_validation import build_feature_surface_validation
+from workbench.plugins.domain import PluginContext, default_registry
 from feature_checker import resolve_feature, check_feature
 import tempfile
 
@@ -36,6 +37,23 @@ def main():
     lsb=LSBAdapter(lsb_root); dsp=DSPAdapter(dsp_root)
     assert lsb.probe().compatible
     assert dsp.probe().compatible
+
+    plugin_registry=default_registry()
+    plugin_context=PluginContext(
+        feature_id="feature:cop:ancient_vows",
+        source_family="LSB",
+        target_family="DSP",
+        source_snapshot_id="lsb:3747feee0e38",
+        target_snapshot_id="dsp:ee1f489efbde",
+        metadata={"systems":["MISSION_BATTLEFIELD","MISSION"]},
+    )
+    active_plugins=[
+        plugin.spec.plugin_id for plugin in plugin_registry.plugins()
+        if plugin.identify(plugin_context)
+    ]
+    assert "framework.battlefield" in active_plugins,active_plugins
+    assert "framework.quest_mission" in active_plugins,active_plugins
+    assert "system.assault" not in active_plugins,active_plugins
 
     source_registry=one(
         extract_logical_records(lsb,"battlefields"),
@@ -244,6 +262,15 @@ def main():
             "snapshot_scoped_entity_refs":True,
             "entity_coverage_validation":validation_status,
             "feature_checker_dimensions":checker_dimensions,
+        },
+        "domain_plugins":{
+            "active":active_plugins,
+            "archetypes":sorted({
+                archetype
+                for plugin in plugin_registry.plugins()
+                if plugin.spec.plugin_id in active_plugins
+                for archetype in plugin.classify_archetypes(plugin_context)
+            }),
         },
         "e2e_status":"PUBLIC_CROSS_FORK_FEATURE_SURFACE_VERIFIED",
     }
