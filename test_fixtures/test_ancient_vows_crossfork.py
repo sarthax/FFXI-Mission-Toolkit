@@ -21,6 +21,7 @@ from workbench.migrations.package_preflight import preflight_manifest_artifacts
 from workbench.migrations.backend_probe import probe_lsb_to_dsp_lua
 from workbench.migrations.backend_probe_plan import plan_lsb_dsp_lua_probe
 from workbench.migrations.patch_operations import PatchOperation, preview_patch_operations
+from workbench.migrations.patch_plan import build_patch_plan_output
 from workbench.core import graph
 from workbench.core.schema import Artifact, CapabilityRequirement, DependencyEdge, Feature, MigrationAction
 from workbench.core.services.feature_surface_graph import persist_feature_surface
@@ -294,47 +295,63 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
         len(mission_patch_outputs),
     )
 
+    justinius_patch_operations=(
+        PatchOperation(
+            "ancient-vows:justinius-128",
+            "scripts/zones/Tavnazian_Safehold/npcs/Justinius.lua",
+            "INSERT_BEFORE",
+            "    else\n        player:startEvent(123);\n    end",
+            "    elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then\n        player:startEvent(128);\n",
+        ),
+    )
+    riverne_patch_operations=(
+        PatchOperation(
+            "ancient-vows:riverne-require-missions",
+            "scripts/zones/Riverne-Site_A01/Zone.lua",
+            "INSERT_AFTER",
+            'require("scripts/globals/status");\n',
+            'require("scripts/globals/missions");\n',
+        ),
+        PatchOperation(
+            "ancient-vows:riverne-zonein",
+            "scripts/zones/Riverne-Site_A01/Zone.lua",
+            "INSERT_BEFORE",
+            "    return cs;\n",
+            '    if (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS and player:getCharVar("PromathiaStatus") == 1) then\n        cs = 100;\n    end\n\n',
+        ),
+        PatchOperation(
+            "ancient-vows:riverne-eventfinish",
+            "scripts/zones/Riverne-Site_A01/Zone.lua",
+            "REPLACE_EXACT",
+            "function onEventFinish(player,csid,option)\nend;",
+            'function onEventFinish(player,csid,option)\n    if (csid == 100) then\n        player:setCharVar("PromathiaStatus",2);\n    end\nend;',
+        ),
+    )
+
     justinius_patch_preview=preview_patch_operations(
         target_justinius,
-        (
-            PatchOperation(
-                "ancient-vows:justinius-128",
-                "scripts/zones/Tavnazian_Safehold/npcs/Justinius.lua",
-                "INSERT_BEFORE",
-                "    else\n        player:startEvent(123);\n    end",
-                "    elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then\n        player:startEvent(128);\n",
-            ),
-        ),
+        justinius_patch_operations,
     )
     assert justinius_patch_preview.status=="READY",justinius_patch_preview
-
     riverne_patch_preview=preview_patch_operations(
         target_riverne_zone,
-        (
-            PatchOperation(
-                "ancient-vows:riverne-require-missions",
-                "scripts/zones/Riverne-Site_A01/Zone.lua",
-                "INSERT_AFTER",
-                'require("scripts/globals/status");\n',
-                'require("scripts/globals/missions");\n',
-            ),
-            PatchOperation(
-                "ancient-vows:riverne-zonein",
-                "scripts/zones/Riverne-Site_A01/Zone.lua",
-                "INSERT_BEFORE",
-                "    return cs;\n",
-                '    if (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS and player:getCharVar("PromathiaStatus") == 1) then\n        cs = 100;\n    end\n\n',
-            ),
-            PatchOperation(
-                "ancient-vows:riverne-eventfinish",
-                "scripts/zones/Riverne-Site_A01/Zone.lua",
-                "REPLACE_EXACT",
-                "function onEventFinish(player,csid,option)\nend;",
-                'function onEventFinish(player,csid,option)\n    if (csid == 100) then\n        player:setCharVar("PromathiaStatus",2);\n    end\nend;',
-            ),
-        ),
+        riverne_patch_operations,
     )
     assert riverne_patch_preview.status=="READY",riverne_patch_preview
+
+    mission_patch_plan=build_patch_plan_output(
+        "ancient-vows-mission-gaps",
+        {
+            "scripts/zones/Tavnazian_Safehold/npcs/Justinius.lua":target_justinius,
+            "scripts/zones/Riverne-Site_A01/Zone.lua":target_riverne_zone,
+        },
+        {
+            "scripts/zones/Tavnazian_Safehold/npcs/Justinius.lua":justinius_patch_operations,
+            "scripts/zones/Riverne-Site_A01/Zone.lua":riverne_patch_operations,
+        },
+    )
+    assert mission_patch_plan.status=="READY",mission_patch_plan
+    assert mission_patch_plan.output.metadata.get("proposal_only") is True,mission_patch_plan
     source_policy=extract_lsb_battlefield_policy(source_battlefield)
     era_level_cap=extract_lsb_mission_level_cap(source_level_cap,"ANCIENT_VOWS")
     assert source_policy.resolved_fields["time_limit"]==1800,source_policy
@@ -369,7 +386,7 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
         policy_proposal,
     )
     assert not generated_dsp_outputs,generated_dsp_outputs
-    package_generated_outputs=generated_dsp_outputs+mission_patch_outputs
+    package_generated_outputs=generated_dsp_outputs+mission_patch_outputs+(mission_patch_plan.output,)
     generated_sql_validations=validate_dsp_battlefield_proposals(
         membership_proposal,
         policy_proposal,
@@ -514,7 +531,7 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
         assert assembled.status=="MANUAL_REQUIRED",assembled
         assert len(assembled.source_result.copied)==0,assembled
         assert len(assembled.source_result.artifacts)==0,assembled
-        assert len(assembled.generated_result.records)==2,assembled
+        assert len(assembled.generated_result.records)==3,assembled
         assert assembled.manifest_path.exists(),assembled
         assert assembled.validation_path.exists(),assembled
         assert assembled.source_journal_path.exists(),assembled
@@ -675,6 +692,7 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
                 "justinius":justinius_patch_preview.status,
                 "riverne":riverne_patch_preview.status,
             },
+            "mission_patch_plan_status":mission_patch_plan.status,
             "mission_package_action":"REVIEW_PROPOSALS",
             "package_assembly_status":"MANUAL_REQUIRED",
             "semantic_action_count":len(semantic_actions),
