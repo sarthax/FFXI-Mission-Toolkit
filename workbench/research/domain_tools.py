@@ -234,6 +234,161 @@ class WorkbenchDomainReader:
         finally:
             con.close()
 
+    def server_symbol_lookup(
+        self,
+        symbol: str,
+        *,
+        limit: int = 30,
+    ) -> dict[str,Any]:
+        con=self._connect()
+        try:
+            rows=con.execute(
+                "SELECT function_id,qualified_name,name,namespace,class_name,source_snapshot_id,"
+                "path,line,kind,declaration,definition,signature_json,evidence_id,notes_json "
+                "FROM functions WHERE qualified_name LIKE ? OR name LIKE ? "
+                "ORDER BY definition DESC,qualified_name,function_id LIMIT ?",
+                (f"%{symbol}%",f"%{symbol}%",limit),
+            ).fetchall()
+            matches=[]
+            evidence_ids=set()
+            for row in rows:
+                item=dict(row)
+                item["signature"]=_json(item.pop("signature_json")) or {}
+                item["notes"]=_json(item.pop("notes_json")) or []
+                item["declaration"]=bool(item["declaration"])
+                item["definition"]=bool(item["definition"])
+                if item.get("evidence_id"):
+                    evidence_ids.add(item["evidence_id"])
+                bindings=[
+                    dict(b)
+                    for b in con.execute(
+                        "SELECT binding_id,lua_name,binding_system,class_name,status,evidence_id,path,line "
+                        "FROM bindings WHERE function_id=? ORDER BY binding_id",
+                        (item["function_id"],),
+                    ).fetchall()
+                ]
+                for binding in bindings:
+                    if binding.get("evidence_id"):
+                        evidence_ids.add(binding["evidence_id"])
+                relationships=[]
+                for edge in con.execute(
+                    "SELECT relationship_id,source_node,target_node,relationship,evidence_id,confidence,status,"
+                    "metadata_json,source_snapshot_id FROM entity_relationships "
+                    "WHERE source_node=? OR target_node=? ORDER BY relationship_id",
+                    (item["function_id"],item["function_id"]),
+                ).fetchall():
+                    record=dict(edge)
+                    record["metadata"]=_json(record.pop("metadata_json")) or {}
+                    if record.get("evidence_id"):
+                        evidence_ids.add(record["evidence_id"])
+                    relationships.append(record)
+                item["bindings"]=bindings
+                item["relationships"]=relationships
+                matches.append(item)
+            return {
+                "status":"OK",
+                "query":symbol,
+                "matches":matches,
+                "evidence_ids":sorted(evidence_ids),
+                "truncated":len(matches)>=limit,
+            }
+        finally:
+            con.close()
+
+    def server_enum_lookup(
+        self,
+        symbol: str,
+        *,
+        enum_name: str | None = None,
+        limit: int = 50,
+    ) -> dict[str,Any]:
+        con=self._connect()
+        try:
+            where=["(symbol LIKE ? OR enum_name LIKE ?)"]
+            params=[f"%{symbol}%",f"%{symbol}%"]
+            if enum_name:
+                where.append("enum_name=?")
+                params.append(enum_name)
+            rows=con.execute(
+                "SELECT enum_id,enum_name,source_snapshot_id,path,line,format,value,symbol,evidence_id,notes_json "
+                f"FROM enum_definitions WHERE {' AND '.join(where)} ORDER BY enum_name,symbol,enum_id LIMIT ?",
+                (*params,limit),
+            ).fetchall()
+            matches=[]
+            evidence_ids=set()
+            for row in rows:
+                item=dict(row)
+                item["notes"]=_json(item.pop("notes_json")) or []
+                if item.get("evidence_id"):
+                    evidence_ids.add(item["evidence_id"])
+                usage=[]
+                for edge in con.execute(
+                    "SELECT relationship_id,source_node,target_node,relationship,evidence_id,confidence,status,"
+                    "metadata_json,source_snapshot_id FROM entity_relationships "
+                    "WHERE target_node=? ORDER BY relationship_id",
+                    (item["enum_id"],),
+                ).fetchall():
+                    record=dict(edge)
+                    record["metadata"]=_json(record.pop("metadata_json")) or {}
+                    if record.get("evidence_id"):
+                        evidence_ids.add(record["evidence_id"])
+                    usage.append(record)
+                item["usage"]=usage
+                matches.append(item)
+            return {
+                "status":"OK",
+                "query":symbol,
+                "enum_name":enum_name,
+                "matches":matches,
+                "evidence_ids":sorted(evidence_ids),
+                "truncated":len(matches)>=limit,
+            }
+        finally:
+            con.close()
+
+    def server_build_target_lookup(
+        self,
+        target: str,
+        *,
+        limit: int = 30,
+    ) -> dict[str,Any]:
+        con=self._connect()
+        try:
+            rows=con.execute(
+                "SELECT target_id,name,build_system,path,source_snapshot_id,artifact_id,status,notes_json "
+                "FROM build_targets WHERE target_id LIKE ? OR name LIKE ? "
+                "ORDER BY name,target_id LIMIT ?",
+                (f"%{target}%",f"%{target}%",limit),
+            ).fetchall()
+            matches=[]
+            evidence_ids=set()
+            for row in rows:
+                item=dict(row)
+                item["notes"]=_json(item.pop("notes_json")) or []
+                relationships=[]
+                for edge in con.execute(
+                    "SELECT relationship_id,source_node,target_node,relationship,evidence_id,confidence,status,"
+                    "metadata_json,source_snapshot_id FROM entity_relationships "
+                    "WHERE target_node=? OR source_node=? ORDER BY relationship_id",
+                    (item["target_id"],item["target_id"]),
+                ).fetchall():
+                    record=dict(edge)
+                    record["metadata"]=_json(record.pop("metadata_json")) or {}
+                    if record.get("evidence_id"):
+                        evidence_ids.add(record["evidence_id"])
+                    relationships.append(record)
+                item["relationships"]=relationships
+                matches.append(item)
+            return {
+                "status":"OK",
+                "query":target,
+                "matches":matches,
+                "evidence_ids":sorted(evidence_ids),
+                "truncated":len(matches)>=limit,
+            }
+        finally:
+            con.close()
+
     def validation_inspect(
         self,
         *,
