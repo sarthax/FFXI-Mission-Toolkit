@@ -37,6 +37,16 @@ def main():
         sanity=backport_lua_sanity_check.check_package(lua_root,selected)
         assert sanity["file_count"]==1,sanity
 
+        unsupported=json.loads(json.dumps(manifest))
+        unsupported["execution"]["steps"][0]["conversion_status"]="UNSUPPORTED"
+        path.write_text(json.dumps(unsupported),encoding="utf-8")
+        try:
+            backport_package.load_workbench_plan(path)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("unsupported converter route must be rejected")
+
         blocked=dict(manifest)
         blocked["migration"]=dict(manifest["migration"],status="BLOCKED")
         path.write_text(json.dumps(blocked),encoding="utf-8")
