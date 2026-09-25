@@ -90,20 +90,15 @@ def search_nodes(con: sqlite3.Connection, term: str) -> list[dict]:
 
 def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
           relationships: set[str] | None = None) -> dict:
-    queue = deque([(root, 0)])
+    queue = deque([(root, 0, [root], [])])
     visited = {root}
     edges = []
     paths = []
     while queue:
-        node, level = queue.popleft()
+        node, level, node_path, edge_path = queue.popleft()
         if level >= depth:
             continue
         params = [node]
-        where = []
-        if direction in ("out", "both"):
-            where.append("source_node=?")
-        if direction in ("in", "both"):
-            where.append("target_node=?")
         clauses = []
         if direction == "out":
             clauses = ["source_node=?"]
@@ -141,18 +136,13 @@ def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
             edges.append(edge)
             if neighbor not in visited:
                 visited.add(neighbor)
-                queue.append((neighbor, level + 1))
+                next_nodes = node_path + [neighbor]
+                next_edges = edge_path + [rid]
+                queue.append((neighbor, level + 1, next_nodes, next_edges))
                 paths.append({
                     "root": root,
-                    "nodes": [root, neighbor],
-                    "edge_ids": [rid],
-                    "depth": level + 1,
-                })
-            else:
-                paths.append({
-                    "root": root,
-                    "nodes": [node, neighbor],
-                    "edge_ids": [rid],
+                    "nodes": next_nodes,
+                    "edge_ids": next_edges,
                     "depth": level + 1,
                 })
 
