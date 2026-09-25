@@ -449,3 +449,10 @@ This closes a real package-integrity blind spot discovered by the Ancient Vows f
 The Workbench now has review-only source patch operations with exact anchors and in-memory preview validation. Patch operations require an exact expected occurrence count and never write target files.
 
 Ancient Vows uses this layer to prove that both missing mission lifecycle proposals are structurally placeable in the pinned DSP target: a Justinius event-128 branch and the Riverne Site #A01 mission-status/event-100 progression. These remain proposal/review artifacts and are not auto-applied.
+
+
+## 2026-09-25 — Proposal-backed package actions
+
+The migration planner can now replace a monolithic source artifact action with an explicit REVIEW_PROPOSALS action when a domain plugin has decomposed the remaining behavior into reviewable target proposals. REVIEW_PROPOSALS stays MANUAL_REQUIRED, does not resolve to a converter backend, and does not stage the original source file.
+
+Ancient Vows now uses this path for its mission_script role. Its package contains the two generated mission patch proposals and no longer queues or materializes the original LSB mission Lua.
