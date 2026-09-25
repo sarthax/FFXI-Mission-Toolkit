@@ -216,3 +216,21 @@ def register_domain_tools(registry: ResearchToolRegistry, reader) -> None:
         handler=reader.validation_inspect,
         access=ACCESS_READ,
     ))
+    registry.register(ResearchTool(
+        name="server.symbol",
+        description="Inspect canonical C++ function symbols, linked Lua bindings, and implementation relationships.",
+        handler=reader.server_symbol_lookup,
+        access=ACCESS_READ,
+    ))
+    registry.register(ResearchTool(
+        name="server.enum",
+        description="Inspect canonical enum/constant definitions and usage relationships.",
+        handler=reader.server_enum_lookup,
+        access=ACCESS_READ,
+    ))
+    registry.register(ResearchTool(
+        name="server.build-target",
+        description="Inspect canonical build targets and relationships connecting implementation symbols/artifacts.",
+        handler=reader.server_build_target_lookup,
+        access=ACCESS_READ,
+    ))
