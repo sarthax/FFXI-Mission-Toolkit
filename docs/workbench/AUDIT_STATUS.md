@@ -556,3 +556,10 @@ Regression coverage verifies the analyzed package becomes queryable through cano
 The remaining legacy evidence paths now feed canonical graph records. `entity_profile` field provenance can import as Evidence + Finding records with explicit contradiction findings when sources disagree, reusing an existing NPC identifier when possible. Namespace-map confidence checks can import identifier-presence Evidence + Findings while preserving that name presence is only INFERRED semantic confidence.
 
 Capture/packet graph integration already existed, so this closes the immediate entity_profile/map-confidence/capture/packet ingestion queue item.
+
+
+## 2026-09-25 — ValidationRun suite orchestration
+
+The validation layer now supports deterministic multi-validator suites. Independent dimensions remain separate, each validator produces a canonical ValidationResult, and the suite produces one canonical ValidationRun with per-dimension status metadata. Required failures determine the overall run state without hiding optional or dimension-specific results.
+
+The legacy single-validator CLI remains compatible, while `validation_pipeline.py --suite ... --graph-db ...` can execute a suite manifest and persist the run/results into the Workbench graph.
