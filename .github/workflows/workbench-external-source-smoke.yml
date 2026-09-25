@@ -6,6 +6,7 @@ on:
       - workbench-rework/audit-foundation
     paths:
       - "workbench/adapters/servers/**"
+      - "workbench/migrations/**"
       - "cpp_api_index.py"
       - "cpp_dependency_index.py"
       - "build_integration_index.py"
