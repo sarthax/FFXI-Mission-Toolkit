@@ -95,6 +95,8 @@ jobs:
           python test_fixtures/test_semantic_graph_mirror.py
           python test_fixtures/test_capture_packet_graph.py
           python test_fixtures/test_capture_event_packet_graph.py
+          python test_fixtures/test_lua_event_typing.py
+          python test_fixtures/test_server_lua_graph_bridge.py
           python test_fixtures/test_packet_dispatch_resolution.py
           python test_fixtures/test_implementation_dependency_chain.py
           python test_fixtures/test_feature_package_graph_import.py
