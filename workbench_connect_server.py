@@ -28,7 +28,7 @@ def import_payload(path, db, lua_json=None, zone_db=None):
     analysis=payload.get("analysis",{})
     sid=analysis.get("source_snapshot_id")
     source=analysis.get("source",str(path))
-    imported={"functions":0,"bindings":0,"enums":0,"targets":0,"edges":0,"lua_functions":0,"lua_calls":0,"event_nodes":0}
+    imported={"functions":0,"bindings":0,"enums":0,"targets":0,"packets":0,"edges":0,"lua_functions":0,"lua_calls":0,"event_nodes":0}
     for row in payload.get("functions",[]):
         workbench_graph.insert_record(con,row,"Function"); imported["functions"]+=1
         eid=row.get("evidence_id") or (f"snapshot:{sid}" if sid else None)
@@ -44,6 +44,17 @@ def import_payload(path, db, lua_json=None, zone_db=None):
         if eid: evidence(con,eid,"SERVER_SOURCE",source,row.get("path"),sid)
     for row in payload.get("build_targets",[]):
         workbench_graph.insert_record(con,row,"BuildTarget"); imported["targets"]+=1
+    for row in payload.get("opcodes",[]):
+        opcode=row.get("opcode")
+        if not opcode: continue
+        try: canonical=f"0x{int(str(opcode),0):03X}"
+        except ValueError: canonical=str(opcode)
+        node=f"packet:{str(opcode).lower()}"
+        con.execute("INSERT OR REPLACE INTO entities(entity_id,entity_type,display_name,metadata_json) VALUES(?,?,?,?)",
+                    (node,"PACKET",canonical,json.dumps({"opcode":opcode,"location":row.get("location")},sort_keys=True)))
+        con.execute("INSERT OR IGNORE INTO entity_identifiers(entity_id,identifier_type,identifier_value,source_snapshot_id) VALUES(?,?,?,?)",
+                    (node,"opcode",str(opcode),sid))
+        imported["packets"]+=1
     for row in payload.get("edges",[]):
         edge(con,row); imported["edges"]+=1
     # Optional Lua event-surface bridge. Event identity is only accepted when the
