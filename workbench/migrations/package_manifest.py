@@ -51,7 +51,7 @@ def build_package_manifest(
             if backend_registry is not None and source_family and target_family:
                 resolved=backend_registry.resolve(source_family,target_family,artifact.artifact_type)
                 converter_backend_id=resolved.backend_id if resolved else None
-                conversion_status="SUPPORTED" if resolved else "UNSUPPORTED"
+                conversion_status=(getattr(resolved,"support_level","SUPPORTED") if resolved else "UNSUPPORTED")
             else:
                 conversion_status="UNSPECIFIED"
         steps.append({
