@@ -95,3 +95,4 @@ jobs:
           python test_fixtures/test_capture_packet_graph.py
           python test_fixtures/test_capture_event_packet_graph.py
           python test_fixtures/test_packet_dispatch_resolution.py
+          python test_fixtures/test_implementation_dependency_chain.py
