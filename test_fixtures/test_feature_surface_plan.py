@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from workbench.migrations.feature_surface import FeatureSurface, SurfaceArtifact, SurfaceCapability, compare_feature_surfaces
-from workbench.migrations.feature_surface_plan import plan_feature_surface
+from workbench.migrations.feature_surface_plan import plan_feature_surface, bind_surface_actions_to_artifacts
 
 
 def main():
@@ -31,6 +31,11 @@ def main():
     assert by_role["registry_sql"].status=="COMPATIBLE",actions
     assert by_role["mission_script"].action=="MANUAL_REVIEW",actions
     assert by_role["mission_script"].status=="MANUAL_REQUIRED",actions
+    bound=bind_surface_actions_to_artifacts(
+        actions,
+        {"mission_script":"artifact:mission","registry_sql":"artifact:registry"},
+    )
+    assert {a.artifact_id for a in bound}=={"artifact:mission","artifact:registry"},bound
 
     target_gap=FeatureSurface(
         feature_id="feature:test",
