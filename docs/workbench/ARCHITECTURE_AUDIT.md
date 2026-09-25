@@ -73,12 +73,12 @@ Client/server field bindings distinguish SERVER authoritative, CLIENT authoritat
 | Database | Audited | Research/index cache |
 | GUI | Partially audited | API/presentation |
 | LLM | Partially audited | Research assistant |
-| C++ analysis | Architecture defined; implementation audit pending | P0 |
-| Enum analysis | Architecture defined; implementation audit pending | P0/P1 |
+| C++ analysis | Implemented; conservative regex/API/dependency indexing with executed regression coverage | P0 |
+| Enum analysis | Implemented; enum/constant indexing, scoped resolution, and confidence boundaries covered by CI | P0/P1 |
 | Client EXE/DLL | Deferred pending actual binaries | P2 |
-| Feature graph | Architecture defined; implementation pending | P0 |
-| Provenance | Partially present; standardization pending | P0 |
-| Package analyzer | Partially present; extension pending | P0 |
+| Feature graph | Implemented; canonical SQLite graph, Feature Trace, Feature Checker, semantic mirrors, and candidate traversal | P0 |
+| Provenance | Implemented for core server/C++/build/packet analysis; broader adapter consolidation still pending | P0 |
+| Package analyzer | Initial integration present; dependency-aware migration/package generation still pending | P0 |
 | System plugins | Not implemented | P1+ |
 
 ## Key findings
@@ -188,3 +188,17 @@ Every future audit pass should update:
 - audit milestone
 
 No finding should be upgraded to VERIFIED without source evidence.
+
+
+## Current end-to-end validation strategy
+
+The first architecture-level end-to-end test does not require the user's local DSP installation. Use a pinned public server-source snapshot (prefer LandSandBoat and/or Topaz) as an external source fixture, run the Workbench analyzers/adapters against it, import the results into the canonical graph, and verify trace/compatibility/migration outputs with deterministic CI assertions.
+
+This proves the Workbench pipeline and source-adapter boundaries. It does **not** prove that a generated migration works on the user's specific DSP database/server/client. That later validation requires either a representative DSP target snapshot in CI or the user's local/server environment for SQL application, server startup, instance behavior, runtime packet capture, and client capability validation.
+
+Recommended progression:
+1. External public-source integration smoke test in CI.
+2. Source-to-synthetic-target migration test in CI.
+3. Source-to-real DSP repository/schema snapshot validation.
+4. Local/live DSP runtime validation.
+5. Client DAT/EXE/DLL validation when the actual client files are available.
