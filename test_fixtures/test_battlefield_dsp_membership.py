@@ -4,6 +4,7 @@ from workbench.plugins.domain.battlefield_dsp import (
     propose_dsp_battlefield_policy,
     analyze_dsp_battlefield_callbacks,
     generated_outputs_for_dsp_battlefield,
+    plan_dsp_battlefield_callback_adaptation,
 )
 
 
@@ -83,6 +84,22 @@ def main():
     gap=analyze_dsp_battlefield_callbacks("function onBattlefieldTick() end",callbacks)
     assert gap.status=="CALLBACK_GAPS",gap
     assert "onEventFinish" in gap.missing_callbacks,gap
+
+    aligned_plan=plan_dsp_battlefield_callback_adaptation(
+        complete,
+        source_framework_methods=("new","register"),
+    )
+    assert aligned_plan.status=="COVERAGE_ALIGNED",aligned_plan
+    assert not aligned_plan.missing_callbacks,aligned_plan
+    assert not aligned_plan.safe_to_generate,aligned_plan
+
+    gap_plan=plan_dsp_battlefield_callback_adaptation(
+        gap,
+        source_framework_methods=("new","register"),
+    )
+    assert gap_plan.status=="MANUAL_REQUIRED",gap_plan
+    assert "onEventFinish" in gap_plan.missing_callbacks,gap_plan
+    assert not gap_plan.safe_to_generate,gap_plan
 
     generated=generated_outputs_for_dsp_battlefield(additive,update_policy)
     assert len(generated)==2,generated
