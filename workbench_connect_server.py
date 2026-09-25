@@ -90,6 +90,7 @@ def import_payload(path, db, lua_json=None, zone_db=None):
                                     "FUNCTION_PARAMETER_NAME":"PARAMETER_CLASS_HINT",
                                     "LOCAL_ALIAS":"LOCAL_ALIAS_CLASS_HINT",
                                     "CONFIGURED_RETURN_TYPE":"RETURN_TYPE_CLASS_HINT",
+                                    "API_RETURN_TYPE":"API_RETURN_TYPE_CLASS_HINT",
                                 }.get(hint_source,"CLASS_HINT")
                                 confidence="INFERRED"
                             else:
@@ -103,7 +104,7 @@ def import_payload(path, db, lua_json=None, zone_db=None):
                                     "Lua method name matched indexed binding; class/object semantics remain unresolved."
                                 )
                                 con.execute("INSERT OR REPLACE INTO evidence VALUES(?,?,?,?,?,?)",(be,"SERVER_SOURCE",lua_source,path,lua_sid,note))
-                                con.execute("INSERT OR REPLACE INTO entity_relationships VALUES(?,?,?,?,?,?,?,?,?)",(f"lua-call:{fnode}:{bid}",fnode,bid,"CALLS",be,confidence,"DISCOVERED",json.dumps({"object":call.get("object"),"method":method,"line":call.get("line"),"cpp_symbol":cpp_symbol,"function_id":function_id,"class_name":class_name,"class_hint":class_hint,"class_hint_source":call.get("class_hint_source"),"resolution":resolution},sort_keys=True),lua_sid))
+                                con.execute("INSERT OR REPLACE INTO entity_relationships VALUES(?,?,?,?,?,?,?,?,?)",(f"lua-call:{fnode}:{bid}",fnode,bid,"CALLS",be,confidence,"DISCOVERED",json.dumps({"object":call.get("object"),"method":method,"line":call.get("line"),"cpp_symbol":cpp_symbol,"function_id":function_id,"class_name":class_name,"class_hint":class_hint,"class_hint_source":call.get("class_hint_source"),"class_hint_trace":call.get("class_hint_trace",[]),"class_hint_evidence":call.get("class_hint_evidence",{}),"resolution":resolution},sort_keys=True),lua_sid))
                                 imported["lua_calls"]+=1
         finally:
             src.close()
