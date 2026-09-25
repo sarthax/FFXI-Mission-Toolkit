@@ -22,7 +22,7 @@ def evidence(con, eid, typ, source, location, snapshot):
     con.execute("INSERT OR REPLACE INTO evidence VALUES (?,?,?,?,?,?)",
                 (eid,typ,source,location,snapshot,"Imported analyzer evidence."))
 
-def import_payload(path, db):
+def import_payload(path, db, lua_json=None, zone_db=None):
     payload=json.loads(path.read_text(encoding="utf-8"))
     con=workbench_graph.init_db(db)
     analysis=payload.get("analysis",{})
@@ -48,10 +48,8 @@ def import_payload(path, db):
         edge(con,row); imported["edges"]+=1
     # Optional Lua event-surface bridge. Event identity is only accepted when the
     # consolidated source index independently verifies the same zone/script/event ID.
-    lua_path = getattr(import_payload, "_lua_json", None)
-    zone_db = getattr(import_payload, "_zone_db", None)
-    if lua_path is not None and lua_path.exists() and zone_db is not None and zone_db.exists():
-        lua_payload=json.loads(lua_path.read_text(encoding="utf-8"))
+    if lua_json is not None and lua_json.exists() and zone_db is not None and zone_db.exists():
+        lua_payload=json.loads(lua_json.read_text(encoding="utf-8"))
         lua_sid=lua_payload.get("source_snapshot_id"); lua_source=lua_payload.get("source",str(lua_path))
         src=sqlite3.connect(zone_db)
         try:
@@ -95,9 +93,7 @@ def main():
     ap.add_argument("--zone-db",type=Path,help="Consolidated DB used to independently verify Lua event IDs.")
     ap.add_argument("--json",type=Path)
     a=ap.parse_args()
-    import_payload._lua_json=a.lua_json
-    import_payload._zone_db=a.zone_db
-    out=json.dumps(import_payload(a.input,a.graph_db),indent=2,sort_keys=True)
+    out=json.dumps(import_payload(a.input,a.graph_db,a.lua_json,a.zone_db),indent=2,sort_keys=True)
     if a.json:
         a.json.parent.mkdir(parents=True,exist_ok=True); a.json.write_text(out+"\n",encoding="utf-8")
     else: print(out)
