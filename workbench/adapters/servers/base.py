@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 from pathlib import Path
 
 
@@ -116,6 +116,14 @@ class ServerAdapter(ABC):
             source_table=shape.physical_table,
             notes=tuple(notes),
         )
+
+    def normalize_rows(
+        self,
+        logical_name: str,
+        rows: Sequence[Mapping[str, Any]],
+        related_records: Mapping[str, Sequence[LogicalRecord]] | None = None,
+    ) -> list[LogicalRecord]:
+        return [self.normalize_row(logical_name, row) for row in rows]
 
     def probe(self) -> AdapterProbe:
         required = [self.root / "sql"]
