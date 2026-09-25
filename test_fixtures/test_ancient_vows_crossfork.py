@@ -113,12 +113,30 @@ def main():
         "mission":probe_lsb_to_dsp_lua(source_mission),
         "battlefield":probe_lsb_to_dsp_lua(source_battlefield),
     }
+    framework_methods={
+        method
+        for probe in lsb_lua_probes.values()
+        if probe.method_surface is not None
+        for method in probe.method_surface.framework_methods
+    }
+    binding_candidate_methods={
+        method
+        for probe in lsb_lua_probes.values()
+        if probe.method_surface is not None
+        for method in probe.method_surface.binding_candidate_methods
+    }
     with tempfile.TemporaryDirectory() as probe_td:
         probe_root=Path(probe_td)
         for name,probe in lsb_lua_probes.items():
             (probe_root/f"{name}.lua").write_text(probe.converted_text,encoding="utf-8")
-        binding_probe=bba.audit_package(probe_root,dsp_root,"old_dsp_reference")
+        binding_probe=bba.audit_package(
+            probe_root,
+            dsp_root,
+            "old_dsp_reference",
+            ignore_methods=framework_methods,
+        )
         sanity_probe=blsc.check_package(probe_root)
+    assert not binding_probe["missing"],binding_probe
     target_battlefield=surfaces["dsp_battlefield"].read_text(encoding="utf-8",errors="ignore")
     source_mob=surfaces["lsb_mammet"].read_text(encoding="utf-8",errors="ignore")
     target_mob=surfaces["dsp_mammet"].read_text(encoding="utf-8",errors="ignore")
@@ -364,6 +382,8 @@ def main():
                     }
                     for name,probe in lsb_lua_probes.items()
                 },
+                "framework_methods":sorted(framework_methods),
+                "binding_candidate_methods":sorted(binding_candidate_methods),
                 "binding_confirmed":len(binding_probe["confirmed"]),
                 "binding_missing":len(binding_probe["missing"]),
                 "missing_binding_names":[name for name,_reason,_files in binding_probe["missing"]],
