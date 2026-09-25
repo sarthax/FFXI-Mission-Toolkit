@@ -12,7 +12,7 @@ from workbench.adapters.servers.entity_symbols import yaml_mob_template_spawns
 from workbench.migrations.feature_surface import FeatureSurface, SurfaceArtifact, SurfaceCapability, compare_feature_surfaces
 from workbench.migrations.package_plan import build_package_plan
 from workbench.migrations.feature_surface_plan import plan_feature_surface, bind_surface_actions_to_artifacts
-from workbench.migrations.package_manifest import build_package_manifest
+from workbench.migrations.package_manifest import build_package_manifest, attach_generated_outputs
 from workbench.migrations.package_validation import build_validation_package
 from workbench.migrations.package_assembly import assemble_migration_package
 from workbench.migrations.package_cohesion import verify_package_cohesion
@@ -24,7 +24,7 @@ from workbench.core import graph
 from workbench.core.schema import Artifact, CapabilityRequirement, DependencyEdge, Feature, MigrationAction
 from workbench.core.services.feature_surface_graph import persist_feature_surface
 from workbench.core.services.feature_surface_validation import build_feature_surface_validation
-from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy, analyze_dsp_battlefield_callbacks, plan_dsp_battlefield_callback_adaptation, generated_outputs_for_dsp_battlefield, extract_lsb_battlefield_policy, extract_lsb_mission_level_cap, extract_lsb_battlefield_mob_groups, validate_dsp_battlefield_proposals, plan_dsp_battlefield_representation, battlefield_representation_finding, apply_plugin_reshape_findings, MissionRequirement, MissionRepresentation, plan_mission_representation
+from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy, analyze_dsp_battlefield_callbacks, plan_dsp_battlefield_callback_adaptation, generated_outputs_for_dsp_battlefield, extract_lsb_battlefield_policy, extract_lsb_mission_level_cap, extract_lsb_battlefield_mob_groups, validate_dsp_battlefield_proposals, plan_dsp_battlefield_representation, battlefield_representation_finding, apply_plugin_reshape_findings, MissionRequirement, MissionRepresentation, plan_mission_representation, MissionPatchProposal, generated_mission_patch_proposals
 from feature_checker import resolve_feature, check_feature
 import tempfile
 import backport_binding_audit as bba
@@ -257,6 +257,36 @@ def main():
         "justinius_128",
         "riverne_1_to_2",
     },mission_representation_plan
+
+    mission_patch_outputs=generated_mission_patch_proposals(
+        mission_representation_plan,
+        (
+            MissionPatchProposal(
+                "justinius_128",
+                "scripts/zones/Tavnazian_Safehold/npcs/Justinius.lua",
+                """-- REVIEW PROPOSAL: add an Ancient Vows branch before the default Justinius event.
+elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
+    player:startEvent(128);
+""",
+                "LSB Ancient Vows replaces Justinius' default interaction with event 128 while this mission is active.",
+            ),
+            MissionPatchProposal(
+                "riverne_1_to_2",
+                "scripts/zones/Riverne-Site_A01/Zone.lua",
+                """-- REVIEW PROPOSAL: Riverne Ancient Vows progression.
+-- Ensure scripts/globals/missions is required by the target zone script.
+-- In onZoneIn(player, prevZone), set cs = 100 when:
+--   player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS
+--   and player:getCharVar("PromathiaStatus") == 1
+-- In onEventFinish(player, csid, option), when csid == 100:
+--   player:setCharVar("PromathiaStatus", 2)
+""",
+                "LSB advances Ancient Vows from mission status 1 to 2 on Riverne Site #A01 event 100; the pinned DSP zone script has no equivalent progression.",
+            ),
+        ),
+    )
+    assert len(mission_patch_outputs)==2,mission_patch_outputs
+    assert all(output.metadata.get("proposal_only") is True for output in mission_patch_outputs),mission_patch_outputs
     source_policy=extract_lsb_battlefield_policy(source_battlefield)
     era_level_cap=extract_lsb_mission_level_cap(source_level_cap,"ANCIENT_VOWS")
     assert source_policy.resolved_fields["time_limit"]==1800,source_policy
@@ -291,6 +321,7 @@ def main():
         policy_proposal,
     )
     assert not generated_dsp_outputs,generated_dsp_outputs
+    package_generated_outputs=generated_dsp_outputs+mission_patch_outputs
     generated_sql_validations=validate_dsp_battlefield_proposals(
         membership_proposal,
         policy_proposal,
@@ -401,6 +432,7 @@ def main():
         source_family="LSB",
         target_family="DSP",
     )
+    package_manifest=attach_generated_outputs(package_manifest,package_generated_outputs)
     lua_steps=[
         step for step in package_manifest["execution"]["steps"]
         if step["backend"]=="lua"
@@ -430,12 +462,12 @@ def main():
             package_manifest,
             lsb_root,
             package_root,
-            generated_outputs=generated_dsp_outputs,
+            generated_outputs=package_generated_outputs,
         )
         assert assembled.status=="MANUAL_REQUIRED",assembled
         assert len(assembled.source_result.copied)==1,assembled
         assert len(assembled.source_result.artifacts)==1,assembled
-        assert not assembled.generated_result.records,assembled
+        assert len(assembled.generated_result.records)==2,assembled
         assert assembled.manifest_path.exists(),assembled
         assert assembled.validation_path.exists(),assembled
         assert assembled.source_journal_path.exists(),assembled
@@ -450,6 +482,7 @@ def main():
     assert validation_package["status"]=="MANUAL_REQUIRED",validation_package
     assert not any(check["validation_type"]=="CONVERTER_BACKEND_SUPPORT" for check in validation_package["checks"]),validation_package
     assert any(check["validation_type"]=="CONVERTER_PREFLIGHT_REQUIRED" for check in validation_package["checks"]),validation_package
+    assert any(check["validation_type"]=="GENERATED_PROPOSAL_REVIEW" for check in validation_package["checks"]),validation_package
     assert not surface_comparison.source_only_entity_ids,surface_comparison
     assert not surface_comparison.target_only_entity_ids,surface_comparison
     assert surface_comparison.capability_coverage_status=="CAPABILITIES_ALIGNED",surface_comparison
@@ -547,6 +580,7 @@ def main():
             "source_policy_fields":dict(sorted(desired_policy.items())),
             "generated_policy_update":policy_proposal.update_sql is not None,
             "generated_target_sql_count":len(generated_dsp_outputs),
+            "generated_mission_proposal_count":len(mission_patch_outputs),
             "generated_sql_validation_statuses":[result.status for result in generated_sql_validations],
             "dsp_callback_surface_status":callback_surface.status,
             "dsp_callback_adaptation_status":callback_plan.status,
