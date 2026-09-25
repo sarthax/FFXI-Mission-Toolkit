@@ -1,6 +1,6 @@
 # Evidence-Aware LLM Research Architecture
 
-Status: ROADMAP / P1
+Status: IMPLEMENTATION IN PROGRESS / P1
 Baseline: 2026-09-25
 
 ## Current state
@@ -10,7 +10,7 @@ The toolkit already has a useful but narrow local-model integration:
 - `llm_db_tools.py` exposes read-only SQLite research tools.
 - `llm_log.py` and the GUI preserve model interaction history.
 
-Those constraints are good and should remain. The rework should expand capability by giving the model better *typed access to Workbench evidence*, not by relaxing evidence discipline.
+Those constraints remain. The rework now includes the first implementation slice: persistent ResearchSession records, provider-neutral adapters, a permission-aware typed tool registry, bounded source crawling, canonical graph search/trace tools, and a bounded research runner. Capability should continue expanding through typed Workbench evidence, not by relaxing evidence discipline.
 
 ## Architectural goal
 
