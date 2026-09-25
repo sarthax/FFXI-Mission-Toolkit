@@ -243,3 +243,19 @@ The existing LLM integration was audited as a narrow but useful draft assistant:
 ## 2026-09-25 — First public source-to-target migration smoke
 
 The Workbench now performs a real public repository migration smoke using pinned snapshots: LandSandBoat/server `3747feee0e38ab5c0283c4fe8deea7f0a9022351` as source and archived DarkstarProject/darkstar `ee1f489efbdee2d95a4f1a6c842790da9f54306e` as target. Generic instance slicing for Excavation Duty (instance 6300) resolves the LSB SQL dependency slice and compares it against the DSP logical schema. The executed CI job found 217 source logical records requiring IMPLEMENT because the archived DSP snapshot contains no matching instance-6300 feature slice. LSB source counts were: 1 instance, 34 instance-entity memberships, 7 NPCs, 27 mob spawns, 73 mob groups, 48 mob pools, and 27 drop rows. This is an architecture/migration-gap test, not proof that all 217 records should be copied literally; later dependency-aware conversion and target-ID/collision rules must refine these actions before package generation.
+
+
+## 2026-09-25 — LLM Research & Agent backlog
+
+The existing LLM integration is confirmed to be a narrow local-model layer: `llm_client.py` connects to Open WebUI/Ollama, `llm_db_tools.py` exposes read-only SQLite research calls, `llm_log.py` records interactions, and the GUI exposes prompt/tool transcripts. The rework will preserve those safety properties but promote LLM functionality into a first-class evidence-aware research subsystem.
+
+Priority implementation order:
+1. provider abstraction and ResearchSession persistence;
+2. typed Workbench tools for graph/feature/server/entity/C++/packet/capture/source queries;
+3. bounded crawling of configured/pinned source repositories;
+4. FindingProposal and MigrationAction proposal staging;
+5. validation orchestration tools;
+6. GUI evidence/proposal trails;
+7. optional additional providers only behind the same tool/evidence contract.
+
+Models may research broadly and propose changes, but they do not receive arbitrary write access to source trees, SQLite databases, DATs, or generated packages. Deterministic migration/validation services remain the only application path.
