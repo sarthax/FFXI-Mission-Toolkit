@@ -30,10 +30,14 @@ def plan_feature_surface(
     target_roles=set(comparison.shared_roles) | set(comparison.target_only_roles)
     actions=[]
     for artifact in source.artifacts:
-        if semantic_aligned:
+        if semantic_aligned and artifact.role in comparison.shared_roles:
             action="NOT_REQUIRED"
             status="COMPATIBLE"
-            reason="Target feature has aligned behavioral capabilities and entity coverage; representation drift alone does not require migration."
+            reason="Target feature has aligned behavior and a matching implementation role."
+        elif semantic_aligned:
+            action="MANUAL_REVIEW"
+            status="MANUAL_REQUIRED"
+            reason="Behavior is aligned, but this source-only artifact role still requires an explicit representation rule before migration can be suppressed."
         elif artifact.role in target_roles:
             action="MANUAL_REVIEW"
             status="MANUAL_REQUIRED"
@@ -55,6 +59,7 @@ def plan_feature_surface(
                 "source_path":artifact.path,
                 "artifact_type":artifact.artifact_type,
                 "semantic_alignment":semantic_aligned,
+                "role_alignment":"SHARED" if artifact.role in comparison.shared_roles else "SOURCE_ONLY",
                 "capability_coverage_status":comparison.capability_coverage_status,
                 "entity_coverage_aligned":entity_aligned,
             },
