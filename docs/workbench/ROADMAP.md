@@ -193,7 +193,7 @@ Design requirements:
 - [x] migration action plans — ordered generic actions are emitted into a machine-readable package manifest.
 - [x] target-specific conversion bridge — existing Lua/SQL package conversion can be scoped by a Workbench plan while preserving legacy full-folder behavior.
 - [x] conditional LSB→DSP Lua backend — route recognition and conservative content gating exist; modern `xi.*` and framework-object rewrites remain manual until verified rules are added.
-- [x] artifact-level converter preflight — individual conditional artifacts can be promoted to SUPPORTED only after deterministic source-text preflight passes.
+- [x] artifact-level converter preflight — individual conditional artifacts can be promoted to SUPPORTED only after deterministic source-text preflight passes; Ancient Vows confirms both framework-heavy Lua artifacts remain MANUAL_REQUIRED.
 - [x] validation package — planned Lua/SQL plus generated target SQL artifacts generate independent validation requirements.
 - [x] package assembly + provenance — source and generated artifacts are staged with SHA-256 journals and review metadata.
 - [x] package cohesion verification — assembled manifest, validation metadata, journals, staged files, generated outputs, and recorded hashes are checked for internal consistency before apply; the flagship Ancient Vows E2E now exercises this gate.
