@@ -107,3 +107,90 @@ def propose_dsp_battlefield_membership(
         status=status,
         safe_to_generate=safe,
     )
+
+
+_DSP_POLICY_COLUMNS={
+    "time_limit":"timeLimit",
+    "level_cap":"levelCap",
+    "party_size":"partySize",
+    "loot_drop_id":"lootDropId",
+    "rules":"rules",
+    "is_mission":"isMission",
+}
+
+
+@dataclass(frozen=True)
+class DspBattlefieldPolicyProposal:
+    battlefield_id: int
+    desired_fields: Mapping[str, Any]
+    target_fields: Mapping[str, Any]
+    differences: tuple[tuple[str, Any, Any], ...]
+    update_sql: str | None
+    status: str
+    safe_to_generate: bool
+
+
+def _sql_scalar(value: Any) -> str:
+    if isinstance(value,bool):
+        return "1" if value else "0"
+    if isinstance(value,(int,float)):
+        return str(value)
+    raise TypeError(f"Unsupported battlefield policy SQL value: {value!r}")
+
+
+def propose_dsp_battlefield_policy(
+    battlefield_id: int,
+    desired_fields: Mapping[str, Any],
+    target_record: Any | None,
+) -> DspBattlefieldPolicyProposal:
+    unknown=set(desired_fields)-set(_DSP_POLICY_COLUMNS)
+    if unknown:
+        raise ValueError(f"Unsupported DSP battlefield policy fields: {sorted(unknown)}")
+
+    desired=dict(desired_fields)
+    if target_record is None:
+        return DspBattlefieldPolicyProposal(
+            battlefield_id=battlefield_id,
+            desired_fields=desired,
+            target_fields={},
+            differences=(),
+            update_sql=None,
+            status="MISSING_TARGET",
+            safe_to_generate=False,
+        )
+
+    target=dict(_mapping(target_record))
+    if int(target.get("battlefield_id",-1)) != battlefield_id:
+        raise ValueError("Target battlefield record identity does not match requested battlefield_id")
+
+    differences=tuple(
+        (field,desired[field],target.get(field))
+        for field in sorted(desired)
+        if desired[field] != target.get(field)
+        and not (
+            isinstance(desired[field],bool)
+            and int(bool(desired[field])) == target.get(field)
+        )
+    )
+    if not differences:
+        status="EQUIVALENT"
+        sql=None
+        safe=True
+    else:
+        assignments=", ".join(
+            f"`{_DSP_POLICY_COLUMNS[field]}`={_sql_scalar(source_value)}"
+            for field,source_value,_target_value in differences
+        )
+        sql=f"UPDATE `bcnm_info` SET {assignments} WHERE `bcnmId`={battlefield_id};"
+        status="UPDATE_PROPOSAL"
+        safe=True
+
+    return DspBattlefieldPolicyProposal(
+        battlefield_id=battlefield_id,
+        desired_fields=desired,
+        target_fields=target,
+        differences=differences,
+        update_sql=sql,
+        status=status,
+        safe_to_generate=safe,
+    )
