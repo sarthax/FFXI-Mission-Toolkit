@@ -3,7 +3,7 @@
 Last updated: 2026-09-25
 
 ## Current milestone
-Foundation preserved; canonical graph storage now has schema-checked core records; build-condition/generated-source evidence is indexed conservatively; packet opcode surface indexing remains deliberately non-semantic until a real server packet-dispatch source is supplied/indexed.
+Foundation preserved; canonical graph storage now has schema-checked core records; build-condition/generated-source evidence is indexed conservatively; packet opcode indexing now recognizes explicit switch/case and handler-registration patterns, while remaining lexical-only when no deterministic dispatch evidence exists.
 
 ## New work completed
 - [x] Directly inspected the bundled dsp-engine-changes/_example_change scaffold.
@@ -53,7 +53,7 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 - [x] Build-system integration analyzer (conservative source-list evidence).
 - [x] Compile-condition/generated-source analyzer (conservative evidence).
 - [x] Engine migration classifier (conservative API/binding comparison).
-- [ ] Packet handler/opcode extraction from real server dispatch.
+- [x] Packet dispatch/opcode extraction patterns (conservative; requires an indexed server source tree).
 
 ### P0/P1 — Client
 - [x] Item DAT architecture audited.
@@ -69,7 +69,8 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 - [ ] Packet -> handler -> feature relationships.
 - [x] ValidationResult core record defined.
 - [x] Initial validation pipeline adapter.
-- [ ] ValidationRun orchestration across multiple validators.
+- [x] ValidationRun canonical record and single-run orchestration envelope.
+- [ ] Multi-validator ValidationRun orchestration.
 - [ ] Automated regression fixtures.
 
 ### P1 — Architecture cleanup
