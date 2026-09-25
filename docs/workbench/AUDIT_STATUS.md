@@ -498,3 +498,8 @@ Ancient Vows exercises this linkage because its package contains both the missio
 Patch-package consumers now have one lifecycle assessment instead of reconstructing state from multiple artifacts. The lifecycle service evaluates package cohesion, patch-plan technical readiness, approval state, optional apply journals, and target drift to report states such as AWAITING_APPROVAL, ELIGIBLE_FOR_DETERMINISTIC_APPLY, APPLIED, ROLLED_BACK, DRIFTED, or PACKAGE_FAILED.
 
 Ancient Vows now reports AWAITING_APPROVAL directly from its assembled package and pinned DSP target.
+
+
+## 2026-09-25 — Read-only patch lifecycle CLI
+
+The unified patch lifecycle service is now exposed through `python -m workbench.cli.patch_status <package_root> <target_root>`. The command is read-only, reports the authoritative lifecycle as JSON, and can optionally consume an apply journal. It does not approve or apply patches.
