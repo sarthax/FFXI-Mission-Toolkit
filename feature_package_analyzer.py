@@ -7,8 +7,9 @@ dependencies from require() chains; explicit manifest edges and deterministic ar
 are preferred.
 """
 from __future__ import annotations
-import argparse, json, re
+import argparse, json, re, tempfile
 from pathlib import Path
+from workbench.core import graph as workbench_graph
 
 STATES={"DISCOVERED","ANALYZED","COMPATIBLE","AUTO_MIGRATABLE","MANUAL_REQUIRED","MIGRATED","IMPLEMENTED","VALIDATING","VERIFIED","FAILED","UNKNOWN","CONTRADICTED","BLOCKED"}
 
@@ -69,11 +70,37 @@ def analyze(package: Path):
         action_state="UNKNOWN"
     for i,a in enumerate(arts):
         actions.append({"action_id":f"action:{feature_id}:{i}","migration_id":f"migration:{feature_id}","action":"CONVERT" if a["artifact_type"] in {"LUA","SQL"} else "MANUAL_REVIEW","artifact_id":a["artifact_id"],"status":action_state,"reason":"TARGET_ALREADY_HAS" if mig_state=="VERIFIED" else "UNRESOLVED"})
-    return {"schema":1,"feature":{"feature_id":feature_id,"name":name,"feature_type":feature.get("type"),"domain_id":feature.get("domain"),"status":mig_state},"artifacts":arts,"dependencies":deps,"migration":{"migration_id":f"migration:{feature_id}","status":mig_state},"actions":actions,"report":report}
+    return {
+        "schema":2,
+        "feature":{"feature_id":feature_id,"name":name,"feature_type":feature.get("type"),"domain_id":feature.get("domain"),"status":mig_state},
+        "artifacts":arts,
+        "dependencies":deps,
+        "edges":deps,
+        "migration":{"migration_id":f"migration:{feature_id}","feature_id":feature_id,"status":mig_state},
+        "actions":actions,
+        "migration_actions":actions,
+        "report":report,
+    }
+
+def import_to_graph(payload, db: Path):
+    """Import analyzer output through the canonical graph importer."""
+    with tempfile.NamedTemporaryFile("w",suffix=".json",encoding="utf-8",delete=False) as tmp:
+        json.dump(payload,tmp)
+        tmp_path=Path(tmp.name)
+    try:
+        workbench_graph.import_json(tmp_path,db)
+    finally:
+        tmp_path.unlink(missing_ok=True)
 
 def main():
-    ap=argparse.ArgumentParser(); ap.add_argument("package",type=Path); ap.add_argument("--json",type=Path); args=ap.parse_args()
+    ap=argparse.ArgumentParser()
+    ap.add_argument("package",type=Path)
+    ap.add_argument("--json",type=Path)
+    ap.add_argument("--graph-db",type=Path,help="Optionally import canonical feature/artifact/edge/migration/action records into the Workbench graph.")
+    args=ap.parse_args()
     out=analyze(args.package)
+    if args.graph_db:
+        import_to_graph(out,args.graph_db)
     if args.json:
         args.json.parent.mkdir(parents=True,exist_ok=True); args.json.write_text(json.dumps(out,indent=2)+"\n",encoding="utf-8")
     else: print(json.dumps(out,indent=2))
