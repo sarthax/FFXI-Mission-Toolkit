@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+
+from workbench.client.binary_index import binary_header_evidence_id, binary_record_evidence_id, binary_string_corpus_evidence_id
 from pathlib import Path
 from typing import Any
 
@@ -51,7 +53,7 @@ def ingest_client_binary_index(
             },
         ))
 
-        header_evidence=f"evidence:client-binary:{sha256[:24]}:pe"
+        header_evidence=binary_header_evidence_id(payload)
         graph.insert_record(con,Evidence(
             header_evidence,
             "CLIENT_SOURCE",
@@ -83,7 +85,7 @@ def ingest_client_binary_index(
 
         for section in payload.get("sections",[]):
             token=_safe_id(json.dumps(section,sort_keys=True))
-            eid=f"evidence:client-binary-section:{token}"
+            eid=binary_record_evidence_id("sections",section)
             fid=f"finding:client-binary-section:{token}"
             graph.insert_record(con,Evidence(
                 eid,"CLIENT_SOURCE",binary.get("filename") or "client-binary",
@@ -99,7 +101,7 @@ def ingest_client_binary_index(
         for category in ("imports","exports"):
             for row in payload.get(category,[]):
                 token=_safe_id(category+json.dumps(row,sort_keys=True))
-                eid=f"evidence:client-binary-{category[:-1]}:{token}"
+                eid=binary_record_evidence_id(category,row)
                 fid=f"finding:client-binary-{category[:-1]}:{token}"
                 graph.insert_record(con,Evidence(
                     eid,"CLIENT_SOURCE",binary.get("filename") or "client-binary",
@@ -112,6 +114,17 @@ def ingest_client_binary_index(
                     "VERIFIED","VERIFIED",eid,snapshot,
                 ))
                 evidence_ids.append(eid); finding_ids.append(fid)
+
+        strings_evidence=binary_string_corpus_evidence_id(payload)
+        graph.insert_record(con,Evidence(
+            strings_evidence,
+            "CLIENT_SOURCE",
+            binary.get("filename") or "client-binary",
+            location=binary.get("path"),
+            snapshot=snapshot,
+            notes=f"Static extracted string corpus ({len(payload.get('strings',[]))} bounded strings).",
+        ))
+        evidence_ids.append(strings_evidence)
 
         graph.insert_record(con,AnalysisResult(
             analysis_id,
