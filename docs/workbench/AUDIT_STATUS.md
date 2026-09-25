@@ -214,3 +214,8 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 ## 2026-09-25 — feature candidate traversal design
 
 Runtime observations should reach features only through recorded canonical relationships. Candidate paths must retain relationship IDs, evidence IDs, confidence, status, and graph distance. Reachability is navigation evidence and must not be promoted to feature ownership or requirement semantics without an explicit relationship proving that meaning.
+
+
+## 2026-09-25 — explicit feature semantics
+
+Feature Checker now reports explicit semantic graph relationships separately from capability requirement records. Only REQUIRES, IMPLEMENTS, IMPLEMENTED_BY, USES_CLIENT_CAPABILITY, and VALIDATED_BY edges sourced from the feature are surfaced in this semantic section. Generic REFERENCES or graph reachability remain navigation evidence and do not change the aggregate capability verdict.
