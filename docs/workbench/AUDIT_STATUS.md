@@ -352,3 +352,12 @@ Ancient Vows now exercises the package-plan and validation-package layers in the
 Migration package steps now bind to an exact converter backend when one exists. The existing Topaz→legacy-DSP Lua and SQL converters are registered behind a generic backend registry. Unsupported routes, including current LSB→DSP artifact conversion, are marked explicitly and rejected by the legacy package converter instead of silently reusing the wrong transformation logic.
 
 Validation-package readiness now propagates converter support: semantic compatibility and staging can still succeed while conversion readiness remains MANUAL_REQUIRED. Domain plugins can also contribute conservative migration guidance; the reusable battlefield plugin reports NOT_REQUIRED only when capability and entity coverage are aligned.
+
+
+## 2026-09-25 — Battlefield reshape and generated-package milestone
+
+The reusable battlefield plugin now models the modern LSB → legacy DSP representation split without leaking battlefield rules into the universal core. It can derive LSB battlefield policy and mob-group structure from source evidence, compare/propose DSP `bcnm_info` policy and `bcnm_battlefield` membership changes, verify legacy DSP callback-surface coverage, and classify framework-object Lua as structural adaptation rather than missing engine bindings.
+
+The corrected Ancient Vows flagship confirms four real engine binding candidates are present in DSP with zero missing bindings, while its framework methods remain a structural representation concern. Source-derived policy, membership, and callback checks all resolve equivalent against the pinned DSP target, so no target SQL is generated.
+
+Safe reshape proposals can now emit target-ready generated SQL artifacts, attach them to package manifests, stage them with SHA-256 provenance, and receive validation-package checks. Unified package assembly writes the manifest, validation package, source materialization journal, and generated-output journal without touching a live database.
