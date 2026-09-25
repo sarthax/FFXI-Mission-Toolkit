@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import hashlib
+from dataclasses import replace
+from typing import Iterable, Mapping
 
 from workbench.core.schema import MigrationAction
 from workbench.migrations.feature_surface import FeatureSurface, FeatureSurfaceComparison
@@ -80,3 +82,17 @@ def plan_feature_surface(
         ))
 
     return actions
+
+
+def bind_surface_actions_to_artifacts(
+    actions: Iterable[MigrationAction],
+    role_artifact_ids: Mapping[str,str],
+) -> tuple[MigrationAction, ...]:
+    """Attach canonical artifact IDs to role-based feature-surface actions."""
+    bound=[]
+    for action in actions:
+        role=str(action.metadata.get("source_role") or "")
+        artifact_id=role_artifact_ids.get(role)
+        if artifact_id:
+            bound.append(replace(action,artifact_id=artifact_id))
+    return tuple(bound)
