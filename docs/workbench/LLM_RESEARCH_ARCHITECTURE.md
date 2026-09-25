@@ -106,7 +106,7 @@ Implemented typed tools (current slice):
 - server.build-target / build.target
 - capability.inspect
 - migration.inspect
-- source.search / source.read
+- source.search / source.read\n- dat.lookup / dat.describe\n- reference.search / reference.compare\n- capture.search / capture.backtrace
 
 Every result should include provenance fields where available:
 - canonical node ID
