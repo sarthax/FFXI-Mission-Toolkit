@@ -40,9 +40,6 @@ jobs:
             scripts/missions/cop/2_5_Ancient_Vows.lua
             scripts/battlefields/Monarch_Linn/ancient_vows.lua
             scripts/zones/Monarch_Linn/mobs/Mammet-19_Epsilon.lua
-            scripts/zones/Riverne-Site_A01/Zone.lua
-            scripts/zones/Misareaux_Coast/npcs/_0p2.lua
-            scripts/zones/Tavnazian_Safehold/npcs/Justinius.lua
             modules/era/lua/battlefields/mission_level_caps.lua
           sparse-checkout-cone-mode: false
 
@@ -57,6 +54,9 @@ jobs:
             sql/bcnm_battlefield.sql
             scripts/zones/Monarch_Linn/bcnms/ancient_vows.lua
             scripts/zones/Monarch_Linn/mobs/Mammet-19_Epsilon.lua
+            scripts/zones/Tavnazian_Safehold/npcs/Justinius.lua
+            scripts/zones/Misareaux_Coast/npcs/_0p2.lua
+            scripts/zones/Riverne-Site_A01/Zone.lua
             src/map/lua/*.cpp
           sparse-checkout-cone-mode: false
 
