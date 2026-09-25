@@ -536,3 +536,10 @@ The server graph bridge preserves these hints as INFERRED CALLS evidence; no cla
 Packet indexing now recognizes the pinned legacy DSP runtime dispatch table pattern `PacketParser[opcode] = &SmallPacket...` and emits VERIFIED HANDLED_BY edges directly to the real C++ handler symbol. Generic opcode references remain INFERRED and are not promoted to runtime handlers.
 
 A focused regression fixture now covers this dispatch path.
+
+
+## 2026-09-25 — Canonical implementation dependency chain
+
+The graph resolver now resolves exact namespaced enum dependencies such as `State::READY` to canonical enum nodes while preserving the original edge confidence. Combined with existing binding→function and function→build-target edges plus verified packet-handler resolution, the Workbench can represent packet→handler, binding→function, function→enum/constant, and function→build-target relationships in one canonical graph.
+
+A dedicated integration regression covers this chain.
