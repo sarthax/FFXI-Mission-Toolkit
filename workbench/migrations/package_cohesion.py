@@ -6,6 +6,8 @@ from pathlib import Path
 import hashlib
 import json
 
+from workbench.migrations.patch_package_integrity import verify_patch_package_integrity
+
 
 @dataclass(frozen=True)
 class PackageCohesionResult:
@@ -57,6 +59,9 @@ def verify_package_cohesion(package_root: Path) -> PackageCohesionResult:
             issues.append(f"Missing generated artifact: {rel}")
         elif expected and _sha256(path)!=expected:
             issues.append(f"Hash mismatch for generated artifact: {rel}")
+
+    patch_integrity=verify_patch_package_integrity(package_root)
+    issues.extend(patch_integrity.issues)
 
     status="COHERENT" if not issues else "FAILED"
     return PackageCohesionResult(status,tuple(issues))
