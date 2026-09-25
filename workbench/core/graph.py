@@ -215,6 +215,14 @@ def insert_record(con: sqlite3.Connection, record: Any, record_type: str | None 
                      d["artifact_id"], d["artifact_type"], d["status"], d["language"], d["path"], d["symbol"],
                      d["change_type"], d["scope"], int(d["requires_build"]), d["build_target"],
                      d["evidence_id"], _json(d["notes"])))
+        if d.get("feature_id"):
+            con.execute("INSERT OR REPLACE INTO entity_relationships VALUES (?,?,?,?,?,?,?,?,?)",
+                        (f"implements:{d['implementation_id']}", d["feature_id"], d["artifact_id"],
+                         "IMPLEMENTED_BY", d.get("evidence_id"),
+                         "VERIFIED" if d.get("status") == "VERIFIED" else "UNKNOWN",
+                         d.get("status") or "UNKNOWN",
+                         _json({"implementation_id": d["implementation_id"], "artifact_type": d["artifact_type"]}),
+                         d.get("source_snapshot_id")))
     elif cls == "AnalysisResult":
         con.execute("INSERT OR REPLACE INTO analysis_results VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                     (d["analysis_id"], d["analysis_type"], d["source"], d["target"], d["feature_id"],
