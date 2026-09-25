@@ -4,7 +4,7 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 from workbench.core import graph
-from workbench_schema import Feature,CapabilityRequirement,Implementation
+from workbench_schema import Feature,CapabilityRequirement,Implementation,ValidationResult
 
 def main():
     with tempfile.TemporaryDirectory() as td:
@@ -16,6 +16,11 @@ def main():
         impl=con.execute("SELECT target_node,relationship,evidence_id,confidence FROM entity_relationships WHERE relationship_id='implements:impl:test'").fetchone()
         assert req==("cap:test","REQUIRES","ev:req"),req
         assert impl==("artifact:test","IMPLEMENTED_BY","ev:impl","VERIFIED"),impl
+        graph.insert_record(con,ValidationResult("val:test","RUNTIME","feature:test","VERIFIED","ev:val","capture","server"))
+        val=con.execute("SELECT target_node,relationship,evidence_id,confidence FROM entity_relationships WHERE relationship_id='validated-by:val:test'").fetchone()
+        vnode=con.execute("SELECT entity_type,display_name FROM entities WHERE entity_id='validation:val:test'").fetchone()
+        assert val==("validation:val:test","VALIDATED_BY","ev:val","VERIFIED"),val
+        assert vnode==("VALIDATION","RUNTIME"),vnode
         con.close()
     print("semantic graph mirror self-test: PASS")
 if __name__=="__main__": main()
