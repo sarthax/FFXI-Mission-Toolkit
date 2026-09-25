@@ -273,3 +273,20 @@ Executed CI verified:
 - the implementation script moved from modern LSB `scripts/assaults/Lebros_Cavern/excavation_duty.lua` to legacy DSP `scripts/zones/Lebros_Cavern/instances/excavation_duty.lua`, recorded as path drift rather than absence.
 
 This is the first executed source-to-target feature slice using two real external FFXI server repositories. It validates the adapter/logical matching direction while also demonstrating that entity membership and script layout require explicit migration analysis beyond ID renumbering.
+
+
+## 2026-09-25 — Flagship public cross-fork E2E moved to Ancient Vows
+
+Assault remains in CI as a migration-drift and incomplete-content stress test, but it is no longer treated as the public completeness benchmark. The flagship public-source E2E now uses Chains of Promathia 2-5, Ancient Vows, across pinned LandSandBoat and legacy Darkstar snapshots.
+
+The first executed Ancient Vows run verified:
+- exact battlefield registry identity: BCNM/battlefield ID 960, zone 31, name `ancient_vows`;
+- exact nine-Mammet entity coverage for IDs 16904193 through 16904201 between LSB YAML/template data and DSP `bcnm_battlefield.sql`;
+- real implementation surfaces on both sides for the battlefield and Mammet behavior;
+- modern LSB mission orchestration and era level-cap policy surfaces;
+- legacy DSP mission completion embedded in the battlefield script;
+- representation drift where legacy DSP stores battlefield policy/membership in SQL while modern LSB moves substantial policy into Lua/YAML.
+
+A generic `FeatureSurface` comparison layer now models semantic artifact roles and entity coverage separately from physical paths. This allows path/layout drift to be reported without treating a different repository layout as missing implementation.
+
+Limbus remains a candidate for legacy-preservation/audit testing rather than the primary modern-source completeness E2E because current LSB preserves old Limbus primarily under documentation after retail client-data changes.
