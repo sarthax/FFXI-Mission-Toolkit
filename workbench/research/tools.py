@@ -377,3 +377,4 @@ def register_client_binary_tools(registry: ResearchToolRegistry, reader) -> None
     registry.register(ResearchTool("client.exports","Search PE export-table entries in an indexed client binary.",reader.exports,ACCESS_READ))
     registry.register(ResearchTool("client.string-search","Search bounded ASCII/UTF-16 strings extracted from indexed client binaries.",reader.string_search,ACCESS_READ))
     registry.register(ResearchTool("client.address-evidence","Map an RVA/file offset to PE section/VA context and nearby extracted strings.",reader.address_evidence,ACCESS_READ))
+    registry.register(ResearchTool("client.binary-diff","Compare two precomputed client binary indexes by metadata, sections, imports, exports, and strings.",reader.binary_diff,ACCESS_READ))
