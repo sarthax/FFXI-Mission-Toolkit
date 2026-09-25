@@ -32,6 +32,7 @@ Foundation preserved; engine-change workspace audited; C++ API/dependency/build 
 - [x] SQL converter audited.
 - [x] Binding audit audited.
 - [x] SQL live validation audited.
+- [x] Initial Feature/Package graph analyzer integrated with existing package reports.
 - [ ] General Feature Migration Engine.
 - [ ] Dependency-aware package analyzer.
 - [ ] Generalized validation pipeline.
@@ -60,6 +61,7 @@ Foundation preserved; engine-change workspace audited; C++ API/dependency/build 
 - [x] Capture indexing audited.
 - [x] Packet decoder audited.
 - [ ] Packet -> handler -> feature relationships.
+- [x] ValidationResult core record defined.
 - [ ] ValidationRun/ValidationResult standardization.
 - [ ] Automated regression fixtures.
 
