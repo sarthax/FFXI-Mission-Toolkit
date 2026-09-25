@@ -143,3 +143,6 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 
 - Added `workbench_connect_server.py` to import C++ API, Lua binding, enum/constant, build-target, and dependency analyzer outputs into the canonical graph while preserving source-snapshot provenance and evidence confidence.
 - This establishes the first reusable server-side chain: binding → C++ function, C++ source → build target, and dependency/packet edges can now coexist with capture, feature, and capability nodes in one graph.
+
+- Added `capture_graph_connect.py` to promote capture event identifiers into canonical server-event nodes only when the indexed `npc_event_refs` table independently confirms the literal CSID in the same zone; matched Lua event scripts are linked as artifacts. Capture action names can also create conservative inferred mob-skill candidate edges.
+- This establishes the first semantic bridge from runtime capture observations into server event/script/action data while preserving `UNKNOWN`/`INFERRED` states where semantics are not proven.
