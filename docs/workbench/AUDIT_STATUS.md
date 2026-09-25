@@ -477,3 +477,10 @@ Ancient Vows now exercises this gate against the pinned DSP target. READY_FOR_AP
 Technical patch readiness and human approval are now separate states. A patch plan that passes drift checks can reach READY_FOR_APPROVAL, but deterministic apply remains ineligible until a matching WORKBENCH_PATCH_APPROVAL_REQUEST record is explicitly APPROVED. Approval records are bound to the exact patch-plan SHA-256.
 
 Ancient Vows now packages a PENDING approval request for its mission-gap patch plan and verifies execution eligibility remains AWAITING_APPROVAL.
+
+
+## 2026-09-25 — Approved deterministic patch apply
+
+The Workbench now has a deterministic patch apply/rollback service behind both technical readiness and explicit human approval. It revalidates the reviewed patch plan against the current target, refuses PENDING/unmatched approvals, backs up every target file, writes an apply journal with before/after hashes, and supports rollback.
+
+Regression coverage uses temporary files only. Ancient Vows remains AWAITING_APPROVAL and is not applied to the pinned DSP target.
