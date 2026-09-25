@@ -72,7 +72,7 @@ Client/server field bindings distinguish SERVER authoritative, CLIENT authoritat
 | Wiki tooling | Audited | Reference adapter |
 | Database | Audited | Research/index cache |
 | GUI | Partially audited | API/presentation |
-| LLM | Partially audited | Research assistant |
+| LLM | Existing Open WebUI/Ollama + read-only DB assistant audited; evidence-aware research/orchestration architecture defined | P1 research service |
 | C++ analysis | Implemented; conservative regex/API/dependency indexing with executed regression coverage | P0 |
 | Enum analysis | Implemented; enum/constant indexing, scoped resolution, and confidence boundaries covered by CI | P0/P1 |
 | Client EXE/DLL | Deferred pending actual binaries | P2 |
@@ -174,7 +174,7 @@ Lua call -> binding -> C++ function -> declaration/implementation -> dependencie
 4. Actual client pol.exe / FFXiMain.dll bytes are not presently available to this audit pass; exact offsets and binary patches remain unverified.
 5. Canonical schema migration from current SQLite tables into the generalized graph is not implemented yet.
 6. GUI service extraction remains partial.
-7. The LLM/research layer needs formal evidence/provenance integration.
+7. The LLM/research layer needs implementation of the new ResearchSession/provider/tool-registry architecture; current Open WebUI/Ollama + read-only SQLite integration remains a narrow draft assistant.
 
 ## Audit discipline
 Every future audit pass should update:
@@ -202,3 +202,20 @@ Recommended progression:
 3. Source-to-real DSP repository/schema snapshot validation.
 4. Local/live DSP runtime validation.
 5. Client DAT/EXE/DLL validation when the actual client files are available.
+
+
+## LLM/research architecture
+
+The current local-model integration is intentionally conservative and should remain so: model output is draft-only and database access is read-only. The rework expands usefulness by giving the model typed, provenance-rich Workbench tools rather than arbitrary authority.
+
+The target architecture is documented in `docs/workbench/LLM_RESEARCH_ARCHITECTURE.md`. Key decisions:
+- provider abstraction separates Open WebUI/Ollama from research logic;
+- ResearchSession records preserve model/provider, snapshots, tool calls, evidence IDs, outputs, and verification state;
+- typed graph/server/entity/C++/packet/capture/client/migration/validation/reference/source tools are preferred over raw SQL;
+- bounded source crawling is allowed only within configured snapshot-scoped roots;
+- LLM conclusions enter a FindingProposal/ResearchFinding staging layer rather than canonical truth;
+- change generation is proposal-only (diffs, MigrationActions, manifests, validation plans), with deterministic services applying approved changes;
+- permission profiles separate read-only research, proposal generation, and deterministic validation orchestration;
+- model-independent regression fixtures must verify preservation of UNKNOWN/INFERRED/CONTRADICTED states and provenance discipline.
+
+This is intended to make the LLM useful for deep cross-fork research, dependency discovery, root-cause analysis, migration planning, and research-gap detection without allowing the model to bypass the Workbench evidence model.
