@@ -186,6 +186,25 @@ def insert_record(con: sqlite3.Connection, record: Any, record_type: str | None 
                      d["status"], d["started_at"], d["finished_at"], _json(d["metadata"])))
     else:
         raise TypeError(f"Unsupported Workbench record: {cls}")
+def resolve_relationships(con: sqlite3.Connection) -> int:
+    """Resolve deterministic lexical node aliases after all records are imported."""
+    changed = 0
+    rows = con.execute("SELECT relationship_id, target_node FROM entity_relationships").fetchall()
+    for rid, target in rows:
+        if target.startswith("cpp-symbol:"):
+            symbol = target[len("cpp-symbol:"):]
+            hit = con.execute(
+                "SELECT function_id FROM functions WHERE qualified_name=? ORDER BY definition DESC, line LIMIT 1",
+                (symbol,),
+            ).fetchone()
+            if hit:
+                con.execute(
+                    "UPDATE entity_relationships SET target_node=?, confidence=?, metadata_json=? WHERE relationship_id=?",
+                    (hit[0], "VERIFIED", _json({"resolved_from": target, "resolution": "exact qualified C++ symbol"}), rid),
+                )
+                changed += 1
+    return changed
+
 
 def import_json(path: Path, db: Path):
     payload=json.loads(path.read_text(encoding="utf-8"))
@@ -217,6 +236,7 @@ def import_json(path: Path, db: Path):
         insert_record(con,payload["validation"],"ValidationResult")
     if "analysis" in payload:
         insert_record(con,payload["analysis"],"AnalysisResult")
+    resolve_relationships(con)
     con.commit()
     con.close()
 
