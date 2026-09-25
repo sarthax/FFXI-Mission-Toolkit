@@ -634,3 +634,17 @@ Authority is separated:
 Verification fails closed on missing supporting evidence, missing canonical parent records, unsupported proposal shapes/actions/statuses, or contradicting evidence. VERIFIED Findings and ValidationResults additionally require at least one non-REFERENCE evidence source, so wiki/reference evidence alone cannot become canonical verified truth.
 
 Successful promotion writes only the supported canonical record type and records verification metadata plus the promoted record id back on the staged proposal. The research runner itself still has no direct canonical mutation authority.
+
+
+## 2026-09-25 — Generic client EXE/DLL research pipeline
+
+A feature-agnostic, read-only client binary research pipeline is now implemented.
+
+Implemented surfaces:
+- dependency-free PE32/PE32+ indexing with cryptographic hashes, PE metadata, sections, RVA/file-offset mapping, imports, exports, bounded ASCII/UTF-16LE strings, and entry-point/image metadata;
+- canonical graph ingestion as CLIENT_BINARY Artifact + CLIENT_SOURCE Evidence/Findings, with stable evidence identities and bounded string-corpus provenance;
+- read-only typed research tools: client.binary-info, client.sections, client.imports, client.exports, client.string-search, client.address-evidence, and client.binary-diff;
+- deterministic cross-index comparison by metadata, section layout, imports, exports, and encoding+text string presence;
+- local-only .workbench/client-binaries/ index/cache convention, with proprietary EXE/DLL inputs remaining outside source control.
+
+The pipeline intentionally does not contain Wardrobe-specific detectors and does not patch, hook, or write client binaries. Feature-specific research can consume this generic evidence layer without dictating core architecture.
