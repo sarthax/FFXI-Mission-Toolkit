@@ -290,3 +290,24 @@ The first executed Ancient Vows run verified:
 A generic `FeatureSurface` comparison layer now models semantic artifact roles and entity coverage separately from physical paths. This allows path/layout drift to be reported without treating a different repository layout as missing implementation.
 
 Limbus remains a candidate for legacy-preservation/audit testing rather than the primary modern-source completeness E2E because current LSB preserves old Limbus primarily under documentation after retail client-data changes.
+
+
+## 2026-09-25 — Ancient Vows public E2E reaches canonical Feature Checker
+
+The flagship public-repository E2E now runs the pinned LSB/DSP Ancient Vows feature through:
+1. server adapters and real SQL/YAML/Lua source inspection;
+2. logical battlefield registry comparison;
+3. generic FeatureSurface comparison;
+4. canonical graph persistence with snapshot-scoped entity references;
+5. canonical ValidationRun/ValidationResult persistence;
+6. Feature Checker.
+
+Executed CI verifies:
+- `implementation = IMPLEMENTATIONS_VERIFIED`;
+- `validation = VALIDATIONS_VERIFIED`;
+- `requirements = NO_REQUIREMENTS_DECLARED` (no capability requirements have yet been declared for this feature);
+- exact nine-Mammet entity coverage across the two pinned snapshots;
+- snapshot-scoped entity references prevent raw numeric IDs from being silently treated as cross-fork semantic identity;
+- representation drift is preserved separately from validation success.
+
+The next gap is behavioral/capability equivalence across different artifact layouts. A source-only artifact role (for example a dedicated mission script) must not automatically imply a missing target behavior when the target implements that behavior inside another artifact.
