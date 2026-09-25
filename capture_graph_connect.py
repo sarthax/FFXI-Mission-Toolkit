@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse, json, sqlite3
 from pathlib import Path
 from workbench.core import graph as workbench_graph
+from workbench.core.services.packet_identity import packet_node_id
 
 def table_exists(con,name):
     return con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",(name,)).fetchone() is not None
@@ -16,7 +17,7 @@ def table_exists(con,name):
 def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: Path | None = None) -> dict:
     src=sqlite3.connect(db)
     dst=workbench_graph.init_db(graph_db)
-    counts={"capture_events":0,"event_nodes":0,"event_refs":0,"edges":0,"action_nodes":0,"lua_functions":0,"lua_calls":0,"binding_candidates":0}
+    counts={"capture_events":0,"packet_observations":0,"event_nodes":0,"event_refs":0,"edges":0,"action_nodes":0,"lua_functions":0,"lua_calls":0,"binding_candidates":0}
     where="" if capture_id is None else " WHERE capture_id=?"
     args=() if capture_id is None else (capture_id,)
     if not table_exists(src,"capture_events"):
@@ -27,6 +28,17 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
         cid=f"capture:{cap}"
         dst.execute("INSERT OR IGNORE INTO entities(entity_id,entity_type,display_name,metadata_json) VALUES(?,?,?,?)",
                     (cid,"CAPTURE",f"capture {cap}",json.dumps({"capture_id":cap})))
+        pnode=packet_node_id(opcode)
+        if pnode is not None:
+            dst.execute("INSERT OR IGNORE INTO entities(entity_id,entity_type,display_name,metadata_json) VALUES(?,?,?,?)",
+                        (pnode,"PACKET",pnode.removeprefix("packet:"),json.dumps({"opcode":opcode,"opcode_name":opcode_name},sort_keys=True)))
+            pev=f"evidence:capture-packet-event:{cap}:{zone}:{seq}"
+            dst.execute("INSERT OR REPLACE INTO evidence VALUES(?,?,?,?,?,?)",
+                        (pev,"CAPTURE","capture_events",f"capture:{cap}:{zone}:{seq}",None,"Observed packet opcode in runtime capture event."))
+            dst.execute("INSERT OR REPLACE INTO entity_relationships VALUES(?,?,?,?,?,?,?,?,?)",
+                        (f"capture-packet-event:{cap}:{zone}:{seq}",cid,pnode,"OBSERVES",pev,"VERIFIED","DISCOVERED",
+                         json.dumps({"direction":direction,"opcode_name":opcode_name},sort_keys=True),None))
+            counts["packet_observations"]+=1; counts["edges"]+=1
         if message_id is None: continue
         # A capture message becomes an event node only after it has a server-side event reference.
         refs=src.execute(
