@@ -85,3 +85,10 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 - [ ] Salvage plugin.
 - [ ] Abyssea plugin.
 - [ ] Einherjar plugin.
+
+### Latest continuation — graph relationship resolution
+- Added deterministic post-import resolution of `cpp-symbol:<qualified_name>` packet/engine edges to canonical `functions.function_id` records.
+- Resolved handler-symbol edges are upgraded to `VERIFIED` only when an exact qualified C++ function symbol exists; unresolved relationships remain untouched.
+- Binding records already create canonical `BINDS` relationships to resolved C++ functions.
+- Added conservative `build_condition_index.py` for preprocessor conditions and build-generation markers; it intentionally does not evaluate compiler environments or claim exact generated-artifact mappings.
+- Packet opcode self-test CLI syntax was corrected and retained as a deterministic dispatch regression check.
