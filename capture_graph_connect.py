@@ -97,12 +97,21 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
                     class_hint=call.get("class_hint")
                     if method and class_hint:
                         matches=dst.execute("SELECT binding_id,lua_name,cpp_symbol,function_id FROM bindings WHERE lower(lua_name)=lower(?) AND lower(class_name)=lower(?) ORDER BY binding_id",(method,class_hint)).fetchall()
+                        hint_source=call.get("class_hint_source")
+                        resolution={
+                            "FUNCTION_PARAMETER_NAME":"PARAMETER_CLASS_HINT",
+                            "LOCAL_ALIAS":"LOCAL_ALIAS_CLASS_HINT",
+                            "CONFIGURED_RETURN_TYPE":"RETURN_TYPE_CLASS_HINT",
+                            "API_RETURN_TYPE":"API_RETURN_TYPE_CLASS_HINT",
+                        }.get(hint_source,"CLASS_HINT")
                     else:
                         matches=dst.execute("SELECT binding_id,lua_name,cpp_symbol,function_id FROM bindings WHERE lower(lua_name)=lower(?) ORDER BY binding_id",(method,)).fetchall() if method else []
+                        resolution="NAME_ONLY_CANDIDATE"
                     for bid,lname,cpp_symbol,function_id in matches:
                         be=f"evidence:lua-call:{source_ref}:{path}:{call.get('line')}:{method}:{bid}"
-                        dst.execute("INSERT OR REPLACE INTO evidence VALUES(?,?,?,?,?,?)",(be,"SERVER_SOURCE",payload.get("source",source_ref),path,payload.get("source_snapshot_id"),"Lua method name matched an indexed binding; object/class semantics remain unresolved."))
-                        dst.execute("INSERT OR REPLACE INTO entity_relationships VALUES(?,?,?,?,?,?,?,?,?)",(f"lua-call:{fnode}:{bid}",fnode,bid,"CALLS",be,"INFERRED","DISCOVERED",json.dumps({"object":obj,"method":method,"line":call.get("line"),"cpp_symbol":cpp_symbol,"function_id":function_id,"class_hint":class_hint,"class_hint_source":call.get("class_hint_source"),"resolution":"PARAMETER_CLASS_HINT" if class_hint else "NAME_ONLY_CANDIDATE"},sort_keys=True),payload.get("source_snapshot_id")))
+                        note=(f"Lua method matched binding using inferred class hint from {call.get('class_hint_source')}." if class_hint else "Lua method name matched indexed binding; class/object semantics remain unresolved.")
+                        dst.execute("INSERT OR REPLACE INTO evidence VALUES(?,?,?,?,?,?)",(be,"SERVER_SOURCE",payload.get("source",source_ref),path,payload.get("source_snapshot_id"),note))
+                        dst.execute("INSERT OR REPLACE INTO entity_relationships VALUES(?,?,?,?,?,?,?,?,?)",(f"lua-call:{fnode}:{bid}",fnode,bid,"CALLS",be,"INFERRED","DISCOVERED",json.dumps({"object":obj,"method":method,"line":call.get("line"),"cpp_symbol":cpp_symbol,"function_id":function_id,"class_hint":class_hint,"class_hint_source":call.get("class_hint_source"),"class_hint_trace":call.get("class_hint_trace",[]),"class_hint_evidence":call.get("class_hint_evidence",{}),"resolution":resolution},sort_keys=True),payload.get("source_snapshot_id")))
                         counts["lua_calls"]+=1; counts["binding_candidates"]+=1; counts["edges"]+=1
     # Capture actions can be traced to server mob skills when names match exactly. Keep this as a
     # candidate relationship; names alone do not prove the runtime action used that skill.
