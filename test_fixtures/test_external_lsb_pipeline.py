@@ -36,7 +36,7 @@ def main():
 
     excavation=extract_instance_feature_slice(adapter,6300)
     assert excavation.instance is not None,excavation
-    assert excavation.instance.fields.get("name")=="Excavation Duty",excavation.instance
+    assert excavation.instance.fields.get("name")=="excavation_duty",excavation.instance
     assert excavation.counts()["instance_entities"]>0,excavation.counts()
     assert excavation.counts()["mob_spawns"]>0,excavation.counts()
 
