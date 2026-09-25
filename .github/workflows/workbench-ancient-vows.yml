@@ -10,6 +10,8 @@ on:
       - "workbench/migrations/**"
       - "feature_checker.py"
       - "test_fixtures/test_ancient_vows_crossfork.py"
+      - "backport_binding_audit.py"
+      - "backport_binding_index.py"
       - ".github/workflows/workbench-ancient-vows.yml"
   workflow_dispatch:
 
@@ -52,6 +54,7 @@ jobs:
             sql/bcnm_battlefield.sql
             scripts/zones/Monarch_Linn/bcnms/ancient_vows.lua
             scripts/zones/Monarch_Linn/mobs/Mammet-19_Epsilon.lua
+            src/map/lua/*.cpp
           sparse-checkout-cone-mode: false
 
       - uses: actions/setup-python@v5
