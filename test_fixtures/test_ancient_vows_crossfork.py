@@ -366,6 +366,7 @@ def main():
                 },
                 "binding_confirmed":len(binding_probe["confirmed"]),
                 "binding_missing":len(binding_probe["missing"]),
+                "missing_binding_names":[name for name,_reason,_files in binding_probe["missing"]],
                 "sanity_syntax_errors":len(sanity_probe["syntax_errors"]),
                 "sanity_undeclared_globals":len(sanity_probe["undeclared_globals"]),
             },
