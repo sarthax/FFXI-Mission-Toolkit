@@ -9,6 +9,7 @@ from workbench.adapters.servers import DSPAdapter, LSBAdapter
 from workbench.adapters.servers.logical import compare_records
 from workbench.adapters.servers.sql_extract import extract_logical_records
 from workbench.adapters.servers.entity_symbols import yaml_mob_template_spawns
+from workbench.migrations.feature_surface import FeatureSurface, SurfaceArtifact, compare_feature_surfaces
 
 FEATURE_NAME="ancient_vows"
 BATTLEFIELD_ID=960
@@ -79,6 +80,35 @@ def main():
     source_mob=surfaces["lsb_mammet"].read_text(encoding="utf-8",errors="ignore")
     target_mob=surfaces["dsp_mammet"].read_text(encoding="utf-8",errors="ignore")
 
+    source_surface=FeatureSurface(
+        feature_id="feature:cop:ancient_vows",
+        family="LSB",
+        artifacts=(
+            SurfaceArtifact("registry_sql","sql/bcnm_info.sql","SQL"),
+            SurfaceArtifact("mission_script",str(surfaces["lsb_mission"].relative_to(lsb_root)),"LUA"),
+            SurfaceArtifact("battlefield_script",str(surfaces["lsb_battlefield"].relative_to(lsb_root)),"LUA"),
+            SurfaceArtifact("mob_script",str(surfaces["lsb_mammet"].relative_to(lsb_root)),"LUA"),
+            SurfaceArtifact("level_cap_policy",str(surfaces["lsb_level_cap_policy"].relative_to(lsb_root)),"LUA"),
+            SurfaceArtifact("entity_registry","data/zones/monarch_linn/mobs.yaml","YAML"),
+        ),
+        entity_ids=tuple(sorted(EXPECTED_MAMMETS)),
+    )
+    target_surface=FeatureSurface(
+        feature_id="feature:cop:ancient_vows",
+        family="DSP",
+        artifacts=(
+            SurfaceArtifact("registry_sql","sql/bcnm_info.sql","SQL"),
+            SurfaceArtifact("battlefield_script",str(surfaces["dsp_battlefield"].relative_to(dsp_root)),"LUA"),
+            SurfaceArtifact("mob_script",str(surfaces["dsp_mammet"].relative_to(dsp_root)),"LUA"),
+            SurfaceArtifact("battlefield_membership","sql/bcnm_battlefield.sql","SQL"),
+        ),
+        entity_ids=tuple(sorted(target_mammets)),
+    )
+    surface_comparison=compare_feature_surfaces(source_surface,target_surface)
+    assert surface_comparison.status=="REPRESENTATION_DRIFT",surface_comparison
+    assert not surface_comparison.source_only_entity_ids,surface_comparison
+    assert not surface_comparison.target_only_entity_ids,surface_comparison
+
     assert "BattlefieldMission:new" in source_battlefield
     assert "content.groups" in source_battlefield
     assert "onBattlefieldLeave" in target_battlefield
@@ -103,6 +133,14 @@ def main():
         "implementation_surfaces":{
             name:str(path.relative_to(lsb_root if name.startswith("lsb_") else dsp_root))
             for name,path in surfaces.items()
+        },
+        "feature_surface":{
+            "status":surface_comparison.status,
+            "shared_roles":list(surface_comparison.shared_roles),
+            "source_only_roles":list(surface_comparison.source_only_roles),
+            "target_only_roles":list(surface_comparison.target_only_roles),
+            "path_drift":list(surface_comparison.role_path_drift),
+            "shared_entity_count":len(surface_comparison.shared_entity_ids),
         },
         "e2e_status":"PUBLIC_CROSS_FORK_FEATURE_SURFACE_VERIFIED",
     }
