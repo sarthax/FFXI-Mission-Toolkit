@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Regression checks for migration package manifest generation."""
 from workbench.core.schema import Artifact, DependencyEdge, MigrationAction
-from workbench.migrations.package_manifest import build_package_manifest, converter_scope
+from workbench.migrations.package_manifest import build_package_manifest, converter_scope, attach_generated_outputs
+from workbench.migrations.generated_output import GeneratedOutput
+from workbench.migrations.package_validation import build_validation_package
 from workbench.migrations.package_plan import build_package_plan
 
 
