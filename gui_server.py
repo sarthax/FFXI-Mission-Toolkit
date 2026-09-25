@@ -56,6 +56,7 @@ import backport_binding_index
 import backport_binding_audit
 import backport_lua_sanity_check
 import backport_package
+from workbench.migrations.legacy_package_service import run_legacy_package_workflow
 import build_dsp_index
 import build_topaz_index
 import llm_client
@@ -1648,6 +1649,29 @@ async def backport_package_submit(request: Request):
     if dsp_root is None:
         ctx["error"] = "No DSP checkout configured -- set it on the Settings page first."
         return templates.TemplateResponse(request, "backport_package.html", ctx)
+
+    result=run_legacy_package_workflow(
+        package_dir,
+        dsp_root,
+        target=target,
+        zone_table=zone_table,
+        id_shape=id_shape,
+        id_file_hint=id_file_hint,
+        verify_only=verify_only,
+    )
+    if result.get("status")=="ERROR":
+        ctx["error"]=result.get("error")
+        return templates.TemplateResponse(request, "backport_package.html", ctx)
+
+    ctx["report"]={
+        key:result[key]
+        for key in (
+            "lua_result","sql_result","binding_result","sanity_result",
+            "collision_results","duplication_results","overall_clean",
+            "report_path","report_md","schema_map",
+        )
+    }
+    return templates.TemplateResponse(request, "backport_package.html", ctx)
     flavor = backport_lua_convert.detect_target_flavor(dsp_root)
     if flavor is None:
         ctx["error"] = f"{dsp_root} does not fingerprint as either known DSP flavor -- check the path on Settings."
