@@ -21,7 +21,7 @@ def index_packet_db(path:Path):
     text=path.read_text(encoding="utf-8",errors="replace")
     rows=[]
     for m in re.finditer(r'<packet[^>]*?(?:opcode|id)=["\']([^"\']+)["\'][^>]*>',text,re.I):
-        rows.append({"opcode":m.group(1),"location":f"{path}:{text.count(chr(10),0,m.start())+1}"})
+        raw=m.group(1)\n        try: canonical=f"0x{int(raw,0):03x}"\n        except ValueError: canonical=raw.lower()\n        rows.append({"opcode":canonical,"raw_opcode":raw,"location":f"{path}:{text.count(chr(10),0,m.start())+1}"})
     if not rows:
         for m in re.finditer(r'GP_(?:CLI|SERV)_COMMAND_[A-Z0-9_]+',text):
             rows.append({"symbol":m.group(),"location":f"{path}:{text.count(chr(10),0,m.start())+1}"})
