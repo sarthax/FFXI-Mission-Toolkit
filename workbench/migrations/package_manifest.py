@@ -44,7 +44,7 @@ def build_package_manifest(
     steps=[]
     for order,action in enumerate(plan.ordered_actions, start=1):
         artifact=artifact_map.get(action.artifact_id) if action.artifact_id else None
-        backend=_backend_for(artifact)
+        backend="manual" if action.action=="REVIEW_PROPOSALS" else _backend_for(artifact)
         converter_backend_id=None
         conversion_status="NOT_APPLICABLE"
         if backend in {"lua","sql"}:
