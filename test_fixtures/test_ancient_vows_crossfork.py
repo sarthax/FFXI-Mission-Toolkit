@@ -24,7 +24,7 @@ from workbench.core import graph
 from workbench.core.schema import Artifact, CapabilityRequirement, DependencyEdge, Feature, MigrationAction
 from workbench.core.services.feature_surface_graph import persist_feature_surface
 from workbench.core.services.feature_surface_validation import build_feature_surface_validation
-from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy, analyze_dsp_battlefield_callbacks, plan_dsp_battlefield_callback_adaptation, generated_outputs_for_dsp_battlefield, extract_lsb_battlefield_policy, extract_lsb_mission_level_cap, extract_lsb_battlefield_mob_groups, validate_dsp_battlefield_proposals, plan_dsp_battlefield_representation
+from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy, analyze_dsp_battlefield_callbacks, plan_dsp_battlefield_callback_adaptation, generated_outputs_for_dsp_battlefield, extract_lsb_battlefield_policy, extract_lsb_mission_level_cap, extract_lsb_battlefield_mob_groups, validate_dsp_battlefield_proposals, plan_dsp_battlefield_representation, battlefield_representation_finding, apply_plugin_reshape_findings
 from feature_checker import resolve_feature, check_feature
 import tempfile
 import backport_binding_audit as bba
@@ -208,6 +208,10 @@ def main():
     assert representation_plan.status=="READY",representation_plan
     assert representation_plan.callback_status=="NOT_REQUIRED",representation_plan
     assert not representation_plan.manual_surfaces,representation_plan
+    reshape_finding=battlefield_representation_finding(
+        "feature:cop:ancient_vows",
+        representation_plan,
+    )
 
     generated_dsp_outputs=generated_outputs_for_dsp_battlefield(
         membership_proposal,
@@ -266,6 +270,17 @@ def main():
 
     semantic_actions=plan_feature_surface(source_surface,surface_comparison,"migration:cop:ancient-vows:semantic")
     assert semantic_actions and all(action.action=="NOT_REQUIRED" for action in semantic_actions),semantic_actions
+    refined_actions=apply_plugin_reshape_findings(semantic_actions,(reshape_finding,))
+    assert any(
+        action.metadata.get("source_role")=="battlefield_script"
+        and action.metadata.get("plugin_reshape_applied") is True
+        for action in refined_actions
+    ),refined_actions
+    assert any(
+        action.metadata.get("source_role")=="mission_script"
+        and action.metadata.get("plugin_reshape_applied") is not True
+        for action in refined_actions
+    ),refined_actions
     migration_plugin_context=PluginContext(
         feature_id="feature:cop:ancient_vows",
         source_family="LSB",
@@ -494,6 +509,7 @@ def main():
             "lua_preflight_status":"MANUAL_REQUIRED",
             "sql_conversion_status":"UNSUPPORTED",
             "battlefield_representation_status":"READY",
+            "plugin_reshape_refinement":"VERIFIED",
             "package_assembly_status":"MANUAL_REQUIRED",
             "semantic_action_count":len(semantic_actions),
             "semantic_migration_required":any(action.action!="NOT_REQUIRED" for action in semantic_actions),
