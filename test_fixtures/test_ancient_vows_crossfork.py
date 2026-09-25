@@ -194,7 +194,14 @@ def main():
         feature_id="feature:cop:ancient_vows",
         source_snapshot_id="lsb:3747feee0e38",
         target_snapshot_id="dsp:ee1f489efbde",
+        source_family="LSB",
+        target_family="DSP",
     )
+    assert all(
+        step["conversion_status"]=="UNSUPPORTED"
+        for step in package_manifest["execution"]["steps"]
+        if step["backend"] in {"lua","sql"}
+    ),package_manifest
     validation_package=build_validation_package(package_manifest)
     with tempfile.TemporaryDirectory() as package_td:
         package_root=Path(package_td)/"ancient-vows-package"
