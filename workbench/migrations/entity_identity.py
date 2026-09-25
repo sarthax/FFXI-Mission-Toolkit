@@ -30,9 +30,9 @@ def compare_symbol_maps(
 ) -> dict[str,Any]:
     shared_symbols=sorted(set(source) & set(target))
     renumbered=[
-        EntityIdentityDrift(symbol,sid:=source[symbol],target[symbol])
+        EntityIdentityDrift(symbol,source[symbol],target[symbol])
         for symbol in shared_symbols
-        if (sid:=source[symbol]) != target[symbol]
+        if source[symbol] != target[symbol]
     ]
     stable=[
         {"symbol":symbol,"entity_id":source[symbol]}
