@@ -36,6 +36,7 @@ class TableShape:
     aliases: tuple[str, ...] = ()
     required_columns: tuple[str, ...] = ()
     optional_columns: tuple[str, ...] = ()
+    parse_columns: tuple[str, ...] = ()
     field_mappings: tuple[FieldMapping, ...] = ()
     identity_fields: tuple[str, ...] = ()
     notes: tuple[str, ...] = ()
