@@ -400,3 +400,10 @@ Conditional migration backends can now preflight each artifact independently aga
 ## 2026-09-25 — Ancient Vows artifact preflight
 
 The flagship Ancient Vows LSB→DSP E2E now runs the conditional Lua backend preflight against the real pinned mission and battlefield scripts. Both artifacts correctly remain MANUAL_REQUIRED because they contain modern framework/namespace structures that have not yet received verified legacy-DSP rewrites. No file is promoted merely because the route itself is recognized.
+
+
+## 2026-09-25 — Battlefield representation planning
+
+The reusable battlefield plugin now produces a single representation plan that combines legacy DSP SQL policy, battlefield membership, and callback-surface handling. Safe additive/update SQL reshapes are distinguished from callback semantics; callback bodies are never invented. When the target callback surface is already aligned, callbacks are marked NOT_REQUIRED rather than generated.
+
+Ancient Vows exercises this planner and resolves READY with no manual battlefield representation surfaces because its pinned DSP target already has equivalent policy, membership, and callback coverage.
