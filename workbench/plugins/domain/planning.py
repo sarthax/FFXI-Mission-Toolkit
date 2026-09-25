@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import replace
 from typing import Iterable
 
 from workbench.core.schema import MigrationAction
@@ -45,3 +46,41 @@ def plugin_findings_to_actions(
             },
         ))
     return tuple(actions)
+
+
+def apply_plugin_reshape_findings(
+    actions: Iterable[MigrationAction],
+    findings: Iterable[PluginFinding],
+) -> tuple[MigrationAction, ...]:
+    """Apply only explicitly safe role-scoped plugin reshape findings.
+
+    The generic planner reads role metadata but does not know what a battlefield,
+    mission, Assault, or other domain object means.
+    """
+    safe_roles=set()
+    for finding in findings:
+        if finding.finding_type!="MIGRATION_RESHAPE":
+            continue
+        if finding.metadata.get("safe_auto") is not True:
+            continue
+        if finding.metadata.get("proposed_action")!="NOT_REQUIRED":
+            continue
+        safe_roles.update(str(role) for role in finding.metadata.get("resolved_roles",[]))
+
+    refined=[]
+    for action in actions:
+        role=str(action.metadata.get("source_role") or "")
+        if role and role in safe_roles:
+            refined.append(replace(
+                action,
+                action="NOT_REQUIRED",
+                status="COMPATIBLE",
+                reason="Domain plugin verified an equivalent target representation for this source role.",
+                metadata={
+                    **dict(action.metadata),
+                    "plugin_reshape_applied":True,
+                },
+            ))
+        else:
+            refined.append(action)
+    return tuple(refined)
