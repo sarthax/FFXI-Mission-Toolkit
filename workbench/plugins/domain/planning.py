@@ -84,3 +84,39 @@ def apply_plugin_reshape_findings(
         else:
             refined.append(action)
     return tuple(refined)
+
+
+def apply_plugin_proposal_findings(
+    actions: Iterable[MigrationAction],
+    findings: Iterable[PluginFinding],
+) -> tuple[MigrationAction, ...]:
+    """Replace source-role migration payloads with explicit reviewable proposal actions."""
+    proposal_roles={}
+    for finding in findings:
+        if finding.finding_type!="MIGRATION_PROPOSAL":
+            continue
+        if finding.metadata.get("proposed_action")!="REVIEW_PROPOSALS":
+            continue
+        for role in finding.metadata.get("proposal_backed_roles",[]):
+            proposal_roles[str(role)]=finding
+
+    refined=[]
+    for action in actions:
+        role=str(action.metadata.get("source_role") or "")
+        finding=proposal_roles.get(role)
+        if finding is None:
+            refined.append(action)
+            continue
+        refined.append(replace(
+            action,
+            action="REVIEW_PROPOSALS",
+            status="MANUAL_REQUIRED",
+            reason=finding.message,
+            metadata={
+                **dict(action.metadata),
+                "plugin_proposal_applied":True,
+                "proposal_count":finding.metadata.get("proposal_count",0),
+                "missing_requirement_ids":list(finding.metadata.get("missing_requirement_ids",[])),
+            },
+        ))
+    return tuple(refined)
