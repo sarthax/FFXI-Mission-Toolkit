@@ -22,6 +22,7 @@ from workbench.migrations.backend_probe import probe_lsb_to_dsp_lua
 from workbench.migrations.backend_probe_plan import plan_lsb_dsp_lua_probe
 from workbench.migrations.patch_operations import PatchOperation, preview_patch_operations
 from workbench.migrations.patch_plan import build_patch_plan_output
+from workbench.migrations.patch_approval import assess_patch_plan_for_approval
 from workbench.core import graph
 from workbench.core.schema import Artifact, CapabilityRequirement, DependencyEdge, Feature, MigrationAction
 from workbench.core.services.feature_surface_graph import persist_feature_surface
@@ -352,6 +353,11 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
     )
     assert mission_patch_plan.status=="READY",mission_patch_plan
     assert mission_patch_plan.output.metadata.get("proposal_only") is True,mission_patch_plan
+    mission_patch_approval=assess_patch_plan_for_approval(
+        mission_patch_plan.output.content,
+        dsp_root,
+    )
+    assert mission_patch_approval.status=="READY_FOR_APPROVAL",mission_patch_approval
     source_policy=extract_lsb_battlefield_policy(source_battlefield)
     era_level_cap=extract_lsb_mission_level_cap(source_level_cap,"ANCIENT_VOWS")
     assert source_policy.resolved_fields["time_limit"]==1800,source_policy
@@ -693,6 +699,7 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
                 "riverne":riverne_patch_preview.status,
             },
             "mission_patch_plan_status":mission_patch_plan.status,
+            "mission_patch_approval_status":mission_patch_approval.status,
             "mission_package_action":"REVIEW_PROPOSALS",
             "package_assembly_status":"MANUAL_REQUIRED",
             "semantic_action_count":len(semantic_actions),
