@@ -231,6 +231,15 @@ def resolve_relationships(con: sqlite3.Connection) -> int:
     changed = 0
     rows = con.execute("SELECT relationship_id, target_node FROM entity_relationships").fetchall()
     for rid, target in rows:
+        if target and not target.startswith(("cpp-symbol:","enum:","constant:")):
+            enum_hits = con.execute("SELECT enum_id FROM enum_definitions WHERE symbol=? ORDER BY line",(target,)).fetchall()
+            enum_ids = {row[0] for row in enum_hits}
+            if len(enum_ids) == 1:
+                enum_id = next(iter(enum_ids))
+                con.execute("UPDATE entity_relationships SET target_node=?, metadata_json=? WHERE relationship_id=?",
+                            (enum_id, _json({"resolved_from": target, "resolution": "exact enum/constant symbol"}), rid))
+                changed += 1
+                continue
         if target.startswith("cpp-symbol:"):
             symbol = target[len("cpp-symbol:"):]
             hits = con.execute(
