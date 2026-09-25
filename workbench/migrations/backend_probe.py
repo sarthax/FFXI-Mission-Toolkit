@@ -63,8 +63,11 @@ def probe_lsb_to_dsp_lua(text: str) -> LuaRouteProbe:
     result=legacy_lua.convert(text,target="old_dsp_reference")
     leftovers=tuple(result.unflagged_leftovers())
     flagged=tuple(result.flagged)
+    method_surface=classify_lsb_lua_methods(text)
     if flagged or leftovers:
         status="GAPS_FOUND"
+    elif method_surface.framework_methods:
+        status="FRAMEWORK_ADAPTATION_REQUIRED"
     else:
         status="CANDIDATE_CLEAN"
     return LuaRouteProbe(
@@ -75,5 +78,5 @@ def probe_lsb_to_dsp_lua(text: str) -> LuaRouteProbe:
         flagged=flagged,
         leftovers=leftovers,
         status=status,
-        method_surface=classify_lsb_lua_methods(text),
+        method_surface=method_surface,
     )
