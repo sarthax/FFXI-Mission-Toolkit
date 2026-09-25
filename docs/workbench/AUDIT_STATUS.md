@@ -570,3 +570,18 @@ The legacy single-validator CLI remains compatible, while `validation_pipeline.p
 The `/backport/package` GUI route now delegates conversion, binding/sanity checks, SQL collision/duplication checks, and report generation to `workbench.migrations.legacy_package_service`. The route retains its existing form/template contract while business orchestration moves behind a reusable Workbench service.
 
 A service-level regression covers successful workflow execution plus invalid-package and verify-only error boundaries. This is one bounded extraction step; the GUI remains intentionally incremental rather than being rewritten wholesale.
+
+
+## 2026-09-25 — Phase 8 research foundation
+
+The evidence-aware research layer now has an implemented foundation rather than architecture-only documentation:
+
+- persistent ResearchSession storage with pinned source/target snapshots, budgets, replay metadata, tool transcripts, proposal staging, and verification state;
+- explicit READ_ONLY_RESEARCH / PROPOSE_CHANGES / VALIDATION_ORCHESTRATOR permission profiles;
+- provider-neutral LLM contracts plus an Open WebUI compatibility adapter backed by the existing llm_client implementation;
+- a typed, permission-aware research tool registry that logs tool calls and evidence IDs into ResearchSession history;
+- a bounded read-only source crawler with configured roots, include/exclude globs, extension allowlists, file/byte budgets, and no write surface;
+- native canonical graph.search / graph.trace research tools with bounded traversal and preserved evidence/confidence/status;
+- a bounded provider/tool research runner that enforces tool/provider-call budgets and persists only a DRAFT/INCOMPLETE report state.
+
+No model-generated conclusion is promoted directly to canonical truth, and no research path receives direct source/package/database mutation authority.
