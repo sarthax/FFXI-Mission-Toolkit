@@ -31,7 +31,8 @@ CREATE TABLE IF NOT EXISTS entity_identifiers (
 CREATE TABLE IF NOT EXISTS entity_relationships (
   relationship_id TEXT PRIMARY KEY, source_node TEXT NOT NULL, target_node TEXT NOT NULL,
   relationship TEXT NOT NULL, evidence_id TEXT, confidence TEXT NOT NULL DEFAULT 'UNKNOWN',
-  status TEXT NOT NULL DEFAULT 'DISCOVERED', metadata_json TEXT NOT NULL DEFAULT '{}'
+  status TEXT NOT NULL DEFAULT 'DISCOVERED', metadata_json TEXT NOT NULL DEFAULT '{}',
+  source_snapshot_id TEXT
 );
 CREATE TABLE IF NOT EXISTS evidence (
   evidence_id TEXT PRIMARY KEY, evidence_type TEXT NOT NULL, source TEXT NOT NULL,
@@ -93,7 +94,12 @@ CREATE TABLE IF NOT EXISTS analysis_results (
   analysis_id TEXT PRIMARY KEY, analysis_type TEXT NOT NULL, source TEXT NOT NULL,
   target TEXT, feature_id TEXT, status TEXT NOT NULL DEFAULT 'UNKNOWN',
   created_at TEXT, tool_version TEXT, findings_json TEXT NOT NULL DEFAULT '[]',
-  notes_json TEXT NOT NULL DEFAULT '[]'
+  notes_json TEXT NOT NULL DEFAULT '[]', source_snapshot_id TEXT
+);
+CREATE TABLE IF NOT EXISTS capabilities (
+  capability_id TEXT PRIMARY KEY, name TEXT NOT NULL, capability_type TEXT NOT NULL,
+  subject_id TEXT, source_snapshot_id TEXT, status TEXT NOT NULL DEFAULT 'UNKNOWN',
+  value_json TEXT, evidence_id TEXT, notes_json TEXT NOT NULL DEFAULT '[]'
 );
 CREATE TABLE IF NOT EXISTS migrations (
   migration_id TEXT PRIMARY KEY, feature_id TEXT, source_snapshot_id TEXT,
@@ -105,6 +111,7 @@ CREATE TABLE IF NOT EXISTS migration_actions (
   metadata_json TEXT NOT NULL DEFAULT '{}'
 );
 CREATE INDEX IF NOT EXISTS idx_build_targets_artifact ON build_targets(artifact_id);
+CREATE INDEX IF NOT EXISTS idx_capabilities_subject ON capabilities(subject_id);
 CREATE INDEX IF NOT EXISTS idx_artifacts_feature ON artifacts(feature_id);
 CREATE INDEX IF NOT EXISTS idx_functions_symbol ON functions(qualified_name);
 CREATE INDEX IF NOT EXISTS idx_bindings_cpp_symbol ON bindings(cpp_symbol);
@@ -140,10 +147,10 @@ def insert_record(con: sqlite3.Connection, record: Any, record_type: str | None 
                      d["function_id"],d["source_snapshot_id"],d["path"],d["line"],d["evidence_id"],
                      d["status"],_json(d["notes"])))
         if d.get("function_id"):
-            con.execute("INSERT OR REPLACE INTO entity_relationships VALUES (?,?,?,?,?,?,?,?)",
+            con.execute("INSERT OR REPLACE INTO entity_relationships VALUES (?,?,?,?,?,?,?,?,?)",
                         (f"binds:{d['binding_id']}:{d['function_id']}",d["binding_id"],d["function_id"],
                          "BINDS",d.get("evidence_id"),"VERIFIED" if d.get("status")=="RESOLVED" else "UNKNOWN",
-                         "DISCOVERED",_json({"binding_system":d["binding_system"]})))
+                         "DISCOVERED",_json({"binding_system":d["binding_system"]}),d.get("source_snapshot_id")))
     elif cls == "EnumDefinition":
         con.execute("INSERT OR REPLACE INTO enum_definitions VALUES (?,?,?,?,?,?,?,?,?,?)",
                     (d["enum_id"],d["enum_name"],d["source_snapshot_id"],d["path"],d["line"],
@@ -172,9 +179,14 @@ def insert_record(con: sqlite3.Connection, record: Any, record_type: str | None 
         con.execute("INSERT OR REPLACE INTO evidence VALUES (?,?,?,?,?,?)",
                     (d["evidence_id"], d["evidence_type"], d["source"], d["location"], d["snapshot"], d["notes"]))
     elif cls == "DependencyEdge":
-        con.execute("INSERT OR REPLACE INTO entity_relationships VALUES (?,?,?,?,?,?,?,?)",
+        con.execute("INSERT OR REPLACE INTO entity_relationships VALUES (?,?,?,?,?,?,?,?,?)",
                     (d["edge_id"], d["source_node"], d["target_node"], d["relationship"],
-                     d["evidence_id"], d["confidence"], d["status"], _json(d["notes"])))
+                     d["evidence_id"], d["confidence"], d["status"], _json(d["notes"]),
+                     d.get("source_snapshot_id")))
+    elif cls == "Capability":
+        con.execute("INSERT OR REPLACE INTO capabilities VALUES (?,?,?,?,?,?,?,?,?)",
+                    (d["capability_id"], d["name"], d["capability_type"], d["subject_id"],
+                     d["source_snapshot_id"], d["status"], _json(d["value"]), d["evidence_id"], _json(d["notes"])))
     elif cls == "Finding":
         con.execute("INSERT OR REPLACE INTO findings VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                     (d["finding_id"], d["analysis_id"], d["subject_id"], d["field"], _json(d["value"]),
@@ -187,9 +199,10 @@ def insert_record(con: sqlite3.Connection, record: Any, record_type: str | None 
                      d["change_type"], d["scope"], int(d["requires_build"]), d["build_target"],
                      d["evidence_id"], _json(d["notes"])))
     elif cls == "AnalysisResult":
-        con.execute("INSERT OR REPLACE INTO analysis_results VALUES (?,?,?,?,?,?,?,?,?,?)",
+        con.execute("INSERT OR REPLACE INTO analysis_results VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                     (d["analysis_id"], d["analysis_type"], d["source"], d["target"], d["feature_id"],
-                     d["status"], d["created_at"], d["tool_version"], _json(d["findings"]), _json(d["notes"])))
+                     d["status"], d["created_at"], d["tool_version"], _json(d["findings"]), _json(d["notes"]),
+                     d.get("source_snapshot_id")))
     elif cls == "ValidationRun":
         con.execute("INSERT OR REPLACE INTO validation_runs VALUES (?,?,?,?,?,?,?,?,?)",
                     (d["run_id"], d["name"], d["source_snapshot_id"], d["target_snapshot_id"], d["feature_id"],
@@ -220,7 +233,7 @@ def import_json(path: Path, db: Path):
     payload=json.loads(path.read_text(encoding="utf-8"))
     con=init_db(db)
     for key, record_type in (
-        ("features","Feature"),("artifacts","Artifact"),("build_targets","BuildTarget"),("functions","Function"),("bindings","Binding"),("enums_constants","EnumDefinition"),("build_targets","BuildTarget"),("findings","Finding"),
+        ("features","Feature"),("artifacts","Artifact"),("build_targets","BuildTarget"),("functions","Function"),("bindings","Binding"),("enums_constants","EnumDefinition"),("findings","Finding"),("capabilities","Capability"),
         ("implementations","Implementation"),("edges","DependencyEdge"),
         ("migration_actions","MigrationAction"),("validation_runs","ValidationRun"),
         ("validation_results","ValidationResult"),
@@ -265,18 +278,19 @@ def self_test() -> None:
         insert_record(con, ValidationRun("vr", "test", "src", "dst", "f", "VERIFIED"))
         insert_record(con, ValidationResult("v", "syntax", "a", "VERIFIED"))
         insert_record(con, Implementation("i", "f", "src", "dst", "a", "LUA", "MIGRATED"))
-        insert_record(con, AnalysisResult("ar", "TEST", "src"))
+        insert_record(con, AnalysisResult("ar", "TEST", "src", notes=["test"]))
         fn = Function("fn", "Foo::bar", "bar", class_name="Foo", definition=True)
         insert_record(con, fn)
         insert_record(con, Binding("b", "bar", "SOL2", "Foo::bar", "Foo", "fn", status="RESOLVED"))
         insert_record(con, EnumDefinition("e", "State", None, "state.h", 1, "CXX_ENUM", "1", "READY"))
-        insert_record(con, DependencyEdge("de", "packet:1", "cpp-symbol:Foo::bar", "HANDLED_BY", confidence="VERIFIED"))
+        insert_record(con, DependencyEdge("de", "packet:1", "cpp-symbol:Foo::bar", "HANDLED_BY", confidence="VERIFIED", source_snapshot_id="src"))
+        insert_record(con, __import__("workbench_schema").Capability("cap", "wardrobe_slots", "CLIENT", subject_id="client:test", status="UNKNOWN"))
         resolve_relationships(con)
         con.commit()
         expected = {
             "features": 1, "artifacts": 1, "migration_actions": 1,
             "validation_results": 1, "validation_runs": 1, "implementations": 1, "analysis_results": 1,
-            "functions": 1, "bindings": 1, "enum_definitions": 1, "entity_relationships": 2,
+            "functions": 1, "bindings": 1, "enum_definitions": 1, "entity_relationships": 2, "capabilities": 1,
         }
         actual = {k: con.execute(f"SELECT COUNT(*) FROM {k}").fetchone()[0] for k in expected}
         assert actual == expected, (actual, expected)
