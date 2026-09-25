@@ -21,7 +21,7 @@ from workbench.core import graph
 from workbench.core.schema import Artifact, CapabilityRequirement, DependencyEdge, Feature, MigrationAction
 from workbench.core.services.feature_surface_graph import persist_feature_surface
 from workbench.core.services.feature_surface_validation import build_feature_surface_validation
-from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy
+from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy, analyze_dsp_battlefield_callbacks
 from feature_checker import resolve_feature, check_feature
 import tempfile
 import backport_binding_audit as bba
@@ -162,6 +162,10 @@ def main():
         sanity_probe=blsc.check_package(probe_root)
     assert not binding_probe["missing"],binding_probe
     target_battlefield=surfaces["dsp_battlefield"].read_text(encoding="utf-8",errors="ignore")
+    callback_profile=plugin_registry.get("framework.battlefield").spec.metadata["legacy_dsp_callback_surface"]
+    callback_surface=analyze_dsp_battlefield_callbacks(target_battlefield,callback_profile)
+    assert callback_surface.status=="COVERAGE_ALIGNED",callback_surface
+    assert not callback_surface.missing_callbacks,callback_surface
     source_mob=surfaces["lsb_mammet"].read_text(encoding="utf-8",errors="ignore")
     target_mob=surfaces["dsp_mammet"].read_text(encoding="utf-8",errors="ignore")
     source_level_cap=surfaces["lsb_level_cap_policy"].read_text(encoding="utf-8",errors="ignore")
@@ -384,6 +388,8 @@ def main():
             "generated_insert_count":len(membership_proposal.insert_sql),
             "dsp_policy_reshape_status":policy_proposal.status,
             "generated_policy_update":policy_proposal.update_sql is not None,
+            "dsp_callback_surface_status":callback_surface.status,
+            "missing_callback_count":len(callback_surface.missing_callbacks),
             "source_template_spawn_count":len(source_mammets),
             "target_battlefield_member_count":len(target_mammets),
             "shared_expected_ids":sorted(target_mammets & source_mammets),
