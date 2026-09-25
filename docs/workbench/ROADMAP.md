@@ -93,6 +93,8 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - [x] Add machine-readable analysis outputs.
 - [x] Implement generic SQLite-backed canonical graph store.
 - [ ] Connect existing entity_profile, map confidence, capture, packet, and backport reports.
+- [x] Add generic bidirectional Feature Trace over canonical graph relationships.
+- [ ] Add Feature Checker requirements/status evaluation on top of Feature Trace.
 - [x] Add build-condition/generated-source analyzer.
 
 ### Phase 2 — Server adapters and migration engine (P0)
@@ -152,15 +154,23 @@ Domain plugins may introduce system-specific dependency rules without contaminat
 - validation package
 - rollback/journal support
 
+## Feature Trace architecture
+Feature Trace is the central navigation layer between indexed sources. It is deliberately separate from the Feature Checker: a trace answers “what is connected to this subject?” while the checker answers “which declared requirements/capabilities have evidence?” without treating graph connectivity as proof of implementation.
+
+A trace may start from any canonical node ID, or from an unambiguous partial name/identifier search. Traversal supports outgoing, incoming, or bidirectional relationships and a bounded depth. Each edge retains relationship type, status, confidence, evidence ID, source snapshot, and metadata. This allows a client/DAT/packet/C++/Lua/SQL subject to be a launch point as soon as its adapter has populated the canonical graph.
+
+Wiki/reference indexing is intentionally a **launch/navigation layer**, not a source of truth. A future ReferenceAdapter should resolve a wiki result to a canonical entity/feature ID and then invoke Feature Trace. Reference facts remain reference evidence and are never silently promoted to server/client truth.
+
 ## Immediate audit queue
-1. Resolve real packet handlers from actual server dispatch sources when a server source root is indexed.
-2. Connect bindings -> C++ symbols -> enums/constants -> packets -> build targets.
-3. Extend Backport Package Analyzer to import canonical graph records.
-4. Connect entity_profile/map-confidence/capture/packet outputs to the graph.
-5. Add full ValidationRun orchestration and independent regression dimensions.
-6. Continue GUI/service extraction without rewriting the GUI wholesale.
-7. Audit LLM/research tooling and make it evidence-aware.
-8. Resume client EXE/DLL analysis when the actual binaries are available.
+1. Add Feature Checker requirement evaluation over capabilities and trace evidence.
+2. Resolve real packet handlers from actual server dispatch sources when a server source root is indexed.
+3. Connect bindings -> C++ symbols -> enums/constants -> packets -> build targets.
+4. Extend Backport Package Analyzer to import canonical graph records.
+5. Connect entity_profile/map-confidence/capture/packet outputs to the graph.
+6. Add full ValidationRun orchestration and independent regression dimensions.
+7. Continue GUI/service extraction without rewriting the GUI wholesale.
+8. Audit LLM/research tooling and make it evidence-aware.
+9. Resume client EXE/DLL analysis when the actual binaries are available.
 
 ## Definition of done
 The workbench is structurally ready when a feature can be traced from source/version through implementation dependencies, migration actions, client/server requirements, and validation evidence, with every conclusion carrying provenance and an explicit status.
