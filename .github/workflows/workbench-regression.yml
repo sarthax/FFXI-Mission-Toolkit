@@ -97,3 +97,4 @@ jobs:
           python test_fixtures/test_packet_dispatch_resolution.py
           python test_fixtures/test_implementation_dependency_chain.py
           python test_fixtures/test_feature_package_graph_import.py
+          python test_fixtures/test_entity_profile_graph_bridge.py
