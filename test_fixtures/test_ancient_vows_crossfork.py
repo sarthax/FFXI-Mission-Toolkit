@@ -21,7 +21,7 @@ from workbench.core import graph
 from workbench.core.schema import Artifact, CapabilityRequirement, DependencyEdge, Feature, MigrationAction
 from workbench.core.services.feature_surface_graph import persist_feature_surface
 from workbench.core.services.feature_surface_validation import build_feature_surface_validation
-from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy, analyze_dsp_battlefield_callbacks, generated_outputs_for_dsp_battlefield, extract_lsb_battlefield_policy, extract_lsb_mission_level_cap, extract_lsb_battlefield_mob_groups
+from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy, analyze_dsp_battlefield_callbacks, generated_outputs_for_dsp_battlefield, extract_lsb_battlefield_policy, extract_lsb_mission_level_cap, extract_lsb_battlefield_mob_groups, validate_dsp_battlefield_proposals
 from feature_checker import resolve_feature, check_feature
 import tempfile
 import backport_binding_audit as bba
@@ -195,6 +195,12 @@ def main():
         policy_proposal,
     )
     assert not generated_dsp_outputs,generated_dsp_outputs
+    generated_sql_validations=validate_dsp_battlefield_proposals(
+        membership_proposal,
+        policy_proposal,
+    )
+    assert generated_sql_validations,generated_sql_validations
+    assert all(result.status=="NOT_REQUIRED" for result in generated_sql_validations),generated_sql_validations
 
     source_surface=FeatureSurface(
         feature_id="feature:cop:ancient_vows",
@@ -409,6 +415,7 @@ def main():
             "source_policy_fields":dict(sorted(desired_policy.items())),
             "generated_policy_update":policy_proposal.update_sql is not None,
             "generated_target_sql_count":len(generated_dsp_outputs),
+            "generated_sql_validation_statuses":[result.status for result in generated_sql_validations],
             "dsp_callback_surface_status":callback_surface.status,
             "missing_callback_count":len(callback_surface.missing_callbacks),
             "source_template_spawn_count":len(source_mammets),
