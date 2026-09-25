@@ -43,6 +43,7 @@ class AnalysisResult:
     tool_version: str | None = None
     findings: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
+    source_snapshot_id: str | None = None
 
 @dataclass
 class FunctionSignature:
