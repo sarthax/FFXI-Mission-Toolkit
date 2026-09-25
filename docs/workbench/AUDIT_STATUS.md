@@ -311,3 +311,25 @@ Executed CI verifies:
 - representation drift is preserved separately from validation success.
 
 The next gap is behavioral/capability equivalence across different artifact layouts. A source-only artifact role (for example a dedicated mission script) must not automatically imply a missing target behavior when the target implements that behavior inside another artifact.
+
+
+## 2026-09-25 — Domain plugin framework foundation
+
+Phase 6 has been expanded from a list of named systems into a two-layer content model:
+
+1. reusable content archetypes/frameworks such as simple turn-ins, multi-zone progression, battlefield instances, multi-stage missions, minigames, and repeatable system containers;
+2. named system packages such as Assault that compose those reusable frameworks and add only system-specific rules.
+
+The first plugin API now lives under `workbench/plugins/domain/` with:
+- `ContentArchetype`;
+- `DomainPluginSpec`;
+- `PluginContext`;
+- `DomainPlugin`;
+- `DomainPluginRegistry`;
+- declarative built-ins for reusable battlefield, quest/mission, multi-zone progression, minigame, and Assault package metadata.
+
+The battlefield framework explicitly covers BCNM/KSNM/ISNM/ENM/mission-battlefield families as reusable shapes rather than separate core concepts. Assault composes the battlefield and quest/mission frameworks rather than duplicating them.
+
+Ancient Vows now exercises this layer in real pinned LSB→DSP CI: it activates `framework.battlefield` and `framework.quest_mission`, while `system.assault` remains inactive. The plugin registry/composition fixture and Ancient Vows cross-fork E2E are green.
+
+See `docs/workbench/DOMAIN_PLUGIN_ARCHITECTURE.md`.
