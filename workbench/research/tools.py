@@ -150,3 +150,19 @@ def register_legacy_db_tools(registry: ResearchToolRegistry) -> None:
             handler=handler,
             access=ACCESS_READ,
         ))
+
+
+def register_source_tools(registry: ResearchToolRegistry, crawler) -> None:
+    """Register bounded source-search/read tools backed by a configured crawler."""
+    registry.register(ResearchTool(
+        name="source.search",
+        description="Search configured source roots within bounded file/byte/type limits.",
+        handler=crawler.search,
+        access=ACCESS_READ,
+    ))
+    registry.register(ResearchTool(
+        name="source.read",
+        description="Read one file from configured source roots within crawler policy limits.",
+        handler=crawler.read,
+        access=ACCESS_READ,
+    ))
