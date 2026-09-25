@@ -154,6 +154,21 @@ Domain plugins may introduce system-specific dependency rules without contaminat
 - validation package
 - rollback/journal support
 
+### Phase 8 — Evidence-aware LLM Research & Agent Layer (P1)
+- [ ] Provider abstraction for Open WebUI, Ollama Direct, and future explicitly configured providers.
+- [ ] ResearchSession persistence with pinned source/target snapshots, tool transcripts, evidence IDs, findings, and replay metadata.
+- [ ] Typed Workbench tool registry covering graph, feature, server adapters, entities, C++, bindings, enums, packets, captures, build targets, client capabilities, migration, validation, references, and source inspection.
+- [ ] Bounded source crawler over configured repositories/snapshots with path/type/size/depth budgets and no arbitrary filesystem access.
+- [ ] Evidence-first retrieval that returns canonical node IDs, snapshot IDs, evidence IDs, source locations, confidence/status, and authority domain with every tool result.
+- [ ] FindingProposal staging so model conclusions remain PROPOSED until deterministic verification or explicit human review.
+- [ ] ChangeProposal support for migration actions, patch/diff drafts, validation plans, analyzer recommendations, and package manifests; deterministic services remain the only write/apply path.
+- [ ] Permission profiles: READ_ONLY_RESEARCH, PROPOSE_CHANGES, VALIDATION_ORCHESTRATOR.
+- [ ] Cross-repository research over configured DSP/Topaz/LSB/custom-fork roots and pinned public source snapshots.
+- [ ] Research gap detection for UNKNOWN/MISSING/CONTRADICTED graph endpoints and recommendations for the next analyzer/capture/validator.
+- [ ] GUI evidence trail showing tool calls, cited evidence, contradictions, proposal state, and verification state.
+- [ ] Model-independent regression fixtures for evidence citation, UNKNOWN/INFERRED preservation, contradiction handling, source authority, and no-direct-write guarantees.
+- [ ] Keep `llm_client.py`, `llm_db_tools.py`, and existing GUI routes as compatibility entry points while moving orchestration into `workbench/research/`.
+
 ### Phase 8 — Evidence-aware LLM research and analysis workspace (P1)
 Current state is a useful draft assistant: Open WebUI/Ollama chat plus read-only SQLite tools and logging. The rework should promote this into a bounded research/orchestration layer over the Workbench rather than a free-form chatbot.
 
