@@ -184,7 +184,12 @@ DSP = SchemaProfile(
         "battlefield_members": TableShape(
             "battlefield_members","bcnm_battlefield.sql","bcnm_battlefield",
             parse_columns=("bcnmId","battlefieldNumber","monsterId","conditions"),
-            field_mappings=battlefield_member_fields,
+            field_mappings=(
+                FieldMapping("battlefield_id",("bcnmId","bcnmid"),True),
+                FieldMapping("battlefield_number",("battlefieldNumber","battlefieldnumber"),True),
+                FieldMapping("entity_id",("monsterId","monsterid"),True),
+                FieldMapping("conditions",("conditions",)),
+            ),
             identity_fields=("battlefield_id","battlefield_number","entity_id"),
             notes=("Legacy DSP battlefield membership is SQL-driven; modern LSB expresses groups primarily in Lua/YAML.",),
         ),
