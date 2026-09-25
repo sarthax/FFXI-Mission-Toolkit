@@ -72,7 +72,7 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 - [ ] General ClientCapability service.
 - [ ] DAT asset resolver consolidation.
 - [ ] Dialog drift service.
-- [ ] Actual EXE/DLL analysis when binaries are available.
+- [x] Generic EXE/DLL static analysis validated against supplied real FFXI binaries; deeper bounded byte/xref/function-candidate analysis implemented.
 
 ### P0/P1 — Runtime
 - [x] Capture indexing audited.
@@ -662,3 +662,24 @@ The generic client binary pipeline was exercised against real FFXI client files 
 Static indexing successfully extracted PE metadata, section tables, imports, exports, and bounded string corpora from all four files. FFXiMain additionally demonstrated why the analyzer must surface layout limitations rather than assume a conventional raw .text section. That behavior is now represented as bounded layout-warning evidence and covered by regression.
 
 The supplied FTABLE/VTABLE pair was also sanity-checked as a separate DAT-index evidence layer: VTABLE contains one-byte virtual-volume entries and FTABLE contains a corresponding 16-bit entry for every VTABLE record. The EXE/DLL analyzer intentionally does not absorb this DAT mapping layer.
+
+
+## 2026-09-25 — Generic deeper client binary analysis
+
+The client-binary research layer now extends beyond PE metadata/string/import/export indexing without introducing feature-specific assumptions.
+
+Implemented:
+- bounded hexadecimal byte-pattern search with one-byte wildcards, section/executable filters, result limits, and small context windows;
+- conservative xref candidate recovery for relative CALL/JMP/Jcc encodings plus little-endian VA/RVA value matches;
+- conservative function-entry candidate recovery from the PE entry point, exports, and executable direct-call targets;
+- new read-only research tools: `client.byte-search`, `client.xrefs`, and `client.function-candidates`;
+- standalone `client_binary_analyze.py` CLI for local proprietary binaries;
+- dependency-free regression coverage in `test_fixtures/test_client_binary_deep.py`, now included in Workbench regression CI.
+
+Confidence boundary:
+- exact byte-pattern locations are VERIFIED observations;
+- opcode-relative xrefs are INFERRED candidates because instruction boundaries are not independently decoded;
+- raw VA/RVA matches are INFERRED because constants may be data;
+- PE entry point/export RVAs are verified seeds, while direct-call function candidates remain INFERRED and no function-body recovery is claimed.
+
+The original FFXI DLL uploads are not stored in source control and are not available to every execution runtime. The deeper tools therefore return `BINARY_UNAVAILABLE` when an index exists but its recorded source binary cannot be opened. This preserves provenance instead of treating absence from the current runtime as absence from the client.
