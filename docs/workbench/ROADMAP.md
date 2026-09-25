@@ -174,3 +174,17 @@ Wiki/reference indexing is intentionally a **launch/navigation layer**, not a so
 
 ## Definition of done
 The workbench is structurally ready when a feature can be traced from source/version through implementation dependencies, migration actions, client/server requirements, and validation evidence, with every conclusion carrying provenance and an explicit status.
+
+
+## Capture-rooted reverse validation
+
+The canonical graph must support both directions:
+
+- feature/entity → client/server/runtime evidence
+- capture observation → entity/event/packet → server/client implementation
+
+Capture backtracing is another traversal root using the same evidence, capability, implementation, and dependency relationships. Numeric capture identifiers remain semantically neutral until their CSID/event meaning is verified.
+
+## Reference-source expansion
+
+Add FFXIclopedia as an independent reference adapter alongside BG Wiki. Prefer reproducible MediaWiki XML snapshots when available. Preserve source/revision/content hashes and expose reference conflicts rather than choosing a source globally.
