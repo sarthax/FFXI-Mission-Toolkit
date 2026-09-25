@@ -3,7 +3,7 @@ from workbench.plugins.domain.battlefield_dsp import (
     propose_dsp_battlefield_membership,
     propose_dsp_battlefield_policy,
 )
-from workbench.migrations.generated_sql_validation import validate_dsp_battlefield_proposals
+from workbench.plugins.domain.battlefield_validation import validate_dsp_battlefield_proposals
 
 
 def main():
