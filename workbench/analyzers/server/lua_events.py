@@ -22,6 +22,34 @@ def param_type_hints(fn):
     params=[p.strip() for p in fn.group(2).split(",") if p.strip()]
     return {p:KNOWN_PARAM_TYPES[p.lower()] for p in params if p.lower() in KNOWN_PARAM_TYPES}
 
+def _wrapper_return_class(value, known_classes):
+    if not value:
+        return None
+    cleaned=re.sub(r'\b(const|volatile|class|struct)\b',' ',str(value))
+    cleaned=cleaned.replace('*',' ').replace('&',' ')
+    cleaned=re.sub(r'\s+',' ',cleaned).strip()
+    token=cleaned.split()[-1] if cleaned else ""
+    return token if token in known_classes else None
+
+def return_type_hints_from_api(payload):
+    """Build evidence-backed Lua receiver/method -> returned wrapper-class hints.
+
+    A hint is accepted only when the binding resolves to a function record whose
+    return type names another wrapper class present in the same indexed binding set.
+    """
+    functions={row.get("function_id"):row for row in payload.get("functions",[]) if row.get("function_id")}
+    known_classes={row.get("class_name") for row in payload.get("bindings",[]) if row.get("class_name")}
+    hints={}
+    for binding in payload.get("bindings",[]):
+        function=functions.get(binding.get("function_id"))
+        if not function:
+            continue
+        returned=_wrapper_return_class((function.get("signature") or {}).get("return_type"),known_classes)
+        receiver=binding.get("class_name"); method=binding.get("lua_name")
+        if receiver and method and returned:
+            hints[(receiver,method)]=returned
+    return hints
+
 def typed_calls(text, start, end, fn, return_type_hints=None):
     """Collect method calls with conservative local type propagation.
 
@@ -88,11 +116,21 @@ def index(root: Path, return_type_hints=None):
     return rows
 
 def main():
-    ap=argparse.ArgumentParser(); ap.add_argument("root",type=Path); ap.add_argument("--json",type=Path)
-    a=ap.parse_args(); sid=snapshot_id(a.root); rows=index(a.root)
+    ap=argparse.ArgumentParser()
+    ap.add_argument("root",type=Path)
+    ap.add_argument("--api-json",type=Path,help="Optional cpp_api_index JSON used for evidence-backed returned-object wrapper hints.")
+    ap.add_argument("--json",type=Path)
+    a=ap.parse_args()
+    sid=snapshot_id(a.root)
+    return_hints={}
+    if a.api_json:
+        payload=json.loads(a.api_json.read_text(encoding="utf-8"))
+        return_hints=return_type_hints_from_api(payload)
+    rows=index(a.root,return_hints)
     out={"schema":1,"source":str(a.root),"source_snapshot_id":sid,
          "analysis":{"analysis_id":"lua-event-index","analysis_type":"LUA_EVENT_SURFACE","source":str(a.root),
-                     "status":"ANALYZED","source_snapshot_id":sid},
+                     "status":"ANALYZED","source_snapshot_id":sid,
+                     "return_type_hint_count":len(return_hints)},
          "events":rows}
     data=json.dumps(out,indent=2,sort_keys=True)
     if a.json: a.json.parent.mkdir(parents=True,exist_ok=True); a.json.write_text(data+"\n",encoding="utf-8")
