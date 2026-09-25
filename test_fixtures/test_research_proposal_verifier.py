@@ -19,6 +19,9 @@ def main():
         graph.insert_record(con,Evidence(
             "evidence:contradict","CAPTURE","fixture","capture:1","cap","contradiction"
         ))
+        graph.insert_record(con,Evidence(
+            "evidence:reference","REFERENCE","fixture","wiki:Ancient Vows","ref","reference"
+        ))
         graph.insert_record(con,Feature(
             "feature:test","Test Feature","MISSION","test","src","dst"
         ))
@@ -118,6 +121,20 @@ def main():
         missing=verifier.verify(missing_id,promote=True)
         assert missing["status"]=="FAILED",missing
         assert missing["promoted_record_id"] is None,missing
+
+        ref_only_id=store.add_proposal(
+            session.research_session_id,
+            proposal_id="proposal:reference-only",
+            proposal_type="FindingProposal",
+            subject_id="feature:test",
+            payload={"field":"status","value":"present","confidence":"VERIFIED"},
+            supporting_evidence_ids=["evidence:reference"],
+        )
+        ref_only=verifier.verify(ref_only_id,promote=True)
+        assert ref_only["status"]=="FAILED",ref_only
+        assert ref_only["promoted_record_id"] is None,ref_only
+        authority=[c for c in ref_only["checks"] if c["check"]=="finding_evidence_authority"][0]
+        assert authority["status"]=="FAILED",authority
 
     print("research proposal verification self-test: PASS")
 
