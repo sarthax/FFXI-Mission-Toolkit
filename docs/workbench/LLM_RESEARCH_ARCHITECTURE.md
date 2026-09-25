@@ -230,3 +230,11 @@ Provider/model quality can then be evaluated separately from Workbench safety/ev
 7. Add bounded source crawling.
 8. Add proposal-generation hooks to the migration and validation engines.
 9. Remove duplicated prompt/tool orchestration from GUI routes once the service layer is stable.
+
+
+### Implemented proposal gate
+
+The typed research layer now includes:
+- proposal.create / proposal.status / proposal.verify / proposal.promote
+
+These enforce separate propose vs validation authority. Promotion is deterministic and fail-closed. Missing/contradicting evidence blocks promotion, and REFERENCE-only evidence cannot produce VERIFIED Finding or ValidationResult truth.
