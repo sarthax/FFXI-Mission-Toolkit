@@ -75,7 +75,7 @@ Client/server field bindings distinguish SERVER authoritative, CLIENT authoritat
 | LLM | Existing Open WebUI/Ollama + read-only DB assistant audited; evidence-aware research/orchestration architecture defined | P1 research service |
 | C++ analysis | Implemented; conservative regex/API/dependency indexing with executed regression coverage | P0 |
 | Enum analysis | Implemented; enum/constant indexing, scoped resolution, and confidence boundaries covered by CI | P0/P1 |
-| Client EXE/DLL | Deferred pending actual binaries | P2 |
+| Client EXE/DLL | Implemented static PE indexing plus bounded byte/xref/function-candidate analysis; full disassembly/CFG recovery remains future optional evidence | P1/P2 |
 | Feature graph | Implemented; canonical SQLite graph, Feature Trace, Feature Checker, semantic mirrors, and candidate traversal | P0 |
 | Provenance | Implemented for core server/C++/build/packet analysis; broader adapter consolidation still pending | P0 |
 | Package analyzer | Canonical graph import plus dependency-aware package/review pipeline implemented; broader converter coverage remains | P0 |
@@ -172,7 +172,7 @@ Lua call -> binding -> C++ function -> declaration/implementation -> dependencie
 2. The general Feature Migration Engine is partially implemented: logical comparison/planning, dependency-aware package generation, package assembly, generated outputs, provenance journals, validation metadata, cohesion checks, apply-readiness gating, reversible file apply journaling, a conditional LSB→DSP Lua backend, and artifact-level conditional preflight now exist. Package contents are derived from refined MigrationActions so domain-resolved roles are excluded before conversion, and proposal-backed roles may become REVIEW_PROPOSALS actions that bypass source conversion/staging while preserving manual review. Review-only WORKBENCH_PATCH_PLAN artifacts can carry exact patch operations plus source/preview hashes for future drift-aware approval. A separate approval gate must verify target source hashes, anchor replay, and preview hashes before a plan can reach READY_FOR_APPROVAL; this state still has no write authority. A matching WORKBENCH_PATCH_APPROVAL_REQUEST must be explicitly APPROVED before deterministic apply can become eligible. Packaged approval requests must also hash-link to a packaged patch plan or package cohesion fails. An approved deterministic patch apply service now performs a final readiness recheck, creates backups and before/after hash journals, and supports rollback; it is not invoked by the Ancient Vows flagship. A unified patch lifecycle service reports the authoritative package state across cohesion, drift, approval, apply, and rollback. A unified package review summary combines that lifecycle with manifest identity, validation, cohesion, apply readiness, and artifact/action counts for UI/CLI consumers. The read-only `workbench.cli.package_review` entry point exposes the consolidated review as JSON without adding approval or write authority. The read-only `workbench.cli.patch_status` entry point exposes that state as JSON without adding approval or write authority. Remaining work is verified framework reshape coverage, broader source-to-target conversion, and safe database-level application/rollback.
 3. Multi-validator ValidationRun orchestration is implemented with independent validation dimensions, canonical ValidationRun/ValidationResult persistence, and suite CLI support. Future work is richer validator registries and runtime/client validator coverage.
 4. ClientCapability, DAT asset resolver consolidation, dialog drift, and client/server synchronization services remain incomplete.
-5. Actual client pol.exe / FFXiMain.dll bytes are not presently available to this audit pass; exact offsets and binary patches remain unverified.
+5. Real FFXI DLLs have validated the generic static binary pipeline, including nonstandard POL1/virtual-.text layouts. Proprietary bytes are not retained in source control or guaranteed present in every runtime; exact patch offsets and binary mutations remain outside the current verified scope.
 6. Repository/service migration remains staged; many mature root scripts still need package service extraction and compatibility shims.
 7. GUI service extraction remains partial.
 8. The LLM/research layer needs implementation of the new ResearchSession/provider/tool-registry architecture; current Open WebUI/Ollama + read-only SQLite integration remains a narrow draft assistant.
@@ -203,7 +203,7 @@ Recommended progression:
 2. Source-to-synthetic-target migration test in CI.
 3. Source-to-real DSP repository/schema snapshot validation.
 4. Local/live DSP runtime validation.
-5. Client DAT/EXE/DLL validation when the actual client files are available.
+5. Continue client DAT/EXE/DLL validation across additional client snapshots; add optional full disassembly/CFG evidence only with explicit decoder/tool provenance.
 
 
 ## LLM/research architecture
