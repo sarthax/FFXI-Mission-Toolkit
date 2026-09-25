@@ -24,6 +24,7 @@ from workbench.migrations.patch_operations import PatchOperation, preview_patch_
 from workbench.migrations.patch_plan import build_patch_plan_output
 from workbench.migrations.patch_approval import assess_patch_plan_for_approval
 from workbench.migrations.patch_approval_request import build_patch_approval_request, assess_patch_execution_eligibility
+from workbench.migrations.patch_lifecycle import assess_patch_lifecycle
 from workbench.core import graph
 from workbench.core.schema import Artifact, CapabilityRequirement, DependencyEdge, Feature, MigrationAction
 from workbench.core.services.feature_surface_graph import persist_feature_surface
@@ -558,6 +559,8 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
         assert cohesion.status=="COHERENT",cohesion
         apply_readiness=assess_apply_readiness(package_root)
         assert apply_readiness.status=="MANUAL_REQUIRED",apply_readiness
+        mission_patch_lifecycle=assess_patch_lifecycle(package_root,dsp_root)
+        assert mission_patch_lifecycle.status=="AWAITING_APPROVAL",mission_patch_lifecycle
     assert package_plan.status=="MANUAL_REQUIRED",package_plan
     assert len(package_manifest["execution"]["steps"])==1,package_manifest
     assert package_manifest["execution"]["steps"][0]["artifact_id"]=="artifact:ancient-vows:mission",package_manifest
@@ -714,6 +717,7 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
             "mission_patch_approval_status":mission_patch_approval.status,
             "mission_patch_human_approval_status":"PENDING",
             "mission_patch_execution_eligibility":mission_patch_execution_eligibility.status,
+            "mission_patch_lifecycle":mission_patch_lifecycle.status,
             "mission_package_action":"REVIEW_PROPOSALS",
             "package_assembly_status":"MANUAL_REQUIRED",
             "semantic_action_count":len(semantic_actions),
