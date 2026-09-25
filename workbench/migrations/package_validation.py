@@ -23,6 +23,11 @@ def build_validation_package(manifest: dict) -> dict:
         for item in manifest.get("generated_artifacts",[])
         if str(item.get("artifact_type","")).upper()=="SQL" and item.get("path")
     }))
+    proposal_only=tuple(sorted({
+        item["path"]
+        for item in manifest.get("generated_artifacts",[])
+        if item.get("proposal_only") is True and item.get("path")
+    }))
     all_sql=tuple(sorted(set(sql) | set(generated_sql)))
 
     checks=[]
@@ -44,6 +49,14 @@ def build_validation_package(manifest: dict) -> dict:
             ValidationCheck("sql-collision","SQL_ID_COLLISION",True,all_sql),
             ValidationCheck("sql-duplication","SQL_CONTENT_DUPLICATION",True,all_sql),
         ])
+    if proposal_only:
+        checks.append(ValidationCheck(
+            "generated-proposal-review",
+            "GENERATED_PROPOSAL_REVIEW",
+            True,
+            proposal_only,
+            {"proposal_count":len(proposal_only)},
+        ))
     if generated_sql:
         checks.append(ValidationCheck(
             "generated-target-sql",
@@ -72,7 +85,7 @@ def build_validation_package(manifest: dict) -> dict:
     migration_status=manifest.get("migration",{}).get("status")
     if migration_status=="BLOCKED":
         status="BLOCKED"
-    elif unsupported or conditional:
+    elif unsupported or conditional or proposal_only:
         status="MANUAL_REQUIRED"
     else:
         status="READY"
