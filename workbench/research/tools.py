@@ -367,3 +367,13 @@ def register_proposal_tools(registry: ResearchToolRegistry, service) -> None:
         handler=service.promote,
         access=ACCESS_VALIDATE,
     ))
+
+
+def register_client_binary_tools(registry: ResearchToolRegistry, reader) -> None:
+    """Register read-only static client EXE/DLL research tools."""
+    registry.register(ResearchTool("client.binary-info","Inspect indexed PE/COFF metadata and hash/build identity for client EXE/DLL snapshots.",reader.binary_info,ACCESS_READ))
+    registry.register(ResearchTool("client.sections","Inspect PE section layout for an indexed client binary.",reader.sections,ACCESS_READ))
+    registry.register(ResearchTool("client.imports","Search PE import-table entries in an indexed client binary.",reader.imports,ACCESS_READ))
+    registry.register(ResearchTool("client.exports","Search PE export-table entries in an indexed client binary.",reader.exports,ACCESS_READ))
+    registry.register(ResearchTool("client.string-search","Search bounded ASCII/UTF-16 strings extracted from indexed client binaries.",reader.string_search,ACCESS_READ))
+    registry.register(ResearchTool("client.address-evidence","Map an RVA/file offset to PE section/VA context and nearby extracted strings.",reader.address_evidence,ACCESS_READ))
