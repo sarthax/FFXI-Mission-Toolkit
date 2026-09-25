@@ -4,8 +4,8 @@ from pathlib import Path
 
 from workbench.core import graph
 from workbench.core.schema import (
-    Binding, DependencyEdge, Entity, Evidence, Feature, Finding, Function,
-    ValidationResult, ValidationRun,
+    Binding, BuildTarget, DependencyEdge, Entity, EnumDefinition, Evidence,
+    Feature, Finding, Function, ValidationResult, ValidationRun,
 )
 from workbench.research.domain_tools import WorkbenchDomainReader
 
@@ -19,6 +19,12 @@ def main():
         ))
         graph.insert_record(con,Evidence(
             "evidence:feature","SERVER_SOURCE","fixture","mission.lua:1","src","feature"
+        ))
+        graph.insert_record(con,Evidence(
+            "evidence:function","SERVER_SOURCE","fixture","packet.cpp:20","src","function"
+        ))
+        graph.insert_record(con,Evidence(
+            "evidence:binding","SERVER_SOURCE","fixture","lua.cpp:10","src","binding"
         ))
         graph.insert_record(con,Function(
             "fn:packet","SmallPacket0x02A","SmallPacket0x02A",
@@ -42,9 +48,25 @@ def main():
             "finding:test","analysis:test","entity:test","name","Test NPC",
             "VERIFIED","VERIFIED","evidence:feature","src"
         ))
+        graph.insert_record(con,EnumDefinition(
+            "enum:state:ready","PacketState","src","packet.h",5,
+            "CXX_ENUM","1","READY","evidence:function"
+        ))
+        graph.insert_record(con,BuildTarget(
+            "build-target:map","map","CMAKE","src/map/CMakeLists.txt",
+            "src",None,"DISCOVERED"
+        ))
         graph.insert_record(con,DependencyEdge(
             "edge:packet","packet:0x02A","fn:packet","HANDLED_BY",
             "evidence:feature","VERIFIED","DISCOVERED",{}, "src"
+        ))
+        graph.insert_record(con,DependencyEdge(
+            "edge:enum","fn:packet","enum:state:ready","USES_ENUM",
+            "evidence:function","INFERRED","DISCOVERED",{}, "src"
+        ))
+        graph.insert_record(con,DependencyEdge(
+            "edge:build","fn:packet","build-target:map","BUILDS_INTO",
+            "evidence:function","VERIFIED","DISCOVERED",{}, "src"
         ))
         graph.insert_record(con,ValidationRun(
             "run:test","test run","src","dst","feature:test","VERIFIED"
@@ -77,6 +99,19 @@ def main():
         assert validation["runs"][0]["run_id"]=="run:test",validation
         assert validation["results"][0]["status"]=="VERIFIED",validation
         assert validation["evidence_ids"]==["evidence:feature"],validation
+
+        symbol=reader.server_symbol_lookup("SmallPacket0x02A")
+        assert symbol["matches"][0]["function_id"]=="fn:packet",symbol
+        assert any(edge["relationship"]=="USES_ENUM" for edge in symbol["matches"][0]["relationships"]),symbol
+        assert "evidence:function" in symbol["evidence_ids"],symbol
+
+        enum=reader.server_enum_lookup("READY",enum_name="PacketState")
+        assert enum["matches"][0]["enum_id"]=="enum:state:ready",enum
+        assert enum["matches"][0]["usage"][0]["source_node"]=="fn:packet",enum
+
+        build=reader.server_build_target_lookup("map")
+        assert build["matches"][0]["target_id"]=="build-target:map",build
+        assert any(edge["relationship"]=="BUILDS_INTO" for edge in build["matches"][0]["relationships"]),build
 
     print("typed domain research tools self-test: PASS")
 
