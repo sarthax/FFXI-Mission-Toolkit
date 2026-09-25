@@ -69,6 +69,31 @@ def main():
             "edge:build","fn:packet","build-target:map","BUILDS_INTO",
             "evidence:function","VERIFIED","DISCOVERED",{}, "src"
         ))
+        con.execute(
+            "INSERT INTO capabilities(capability_id,name,capability_type,subject_id,source_snapshot_id,status,value_json,evidence_id,notes_json) "
+            "VALUES(?,?,?,?,?,?,?,?,?)",
+            ("cap:test","battlefield_support","SERVER","feature:test","src","VERIFIED","true","evidence:feature","[]"),
+        )
+        con.execute(
+            "INSERT INTO capability_observations(observation_id,capability_id,source_snapshot_id,status,value_json,evidence_id,notes_json) "
+            "VALUES(?,?,?,?,?,?,?)",
+            ("obs:test","cap:test","dst","VERIFIED","true","evidence:feature","[]"),
+        )
+        con.execute(
+            "INSERT INTO capability_requirements(requirement_id,feature_id,capability_id,required,status,evidence_id,notes_json) "
+            "VALUES(?,?,?,?,?,?,?)",
+            ("req:test","feature:test","cap:test",1,"VERIFIED","evidence:feature","[]"),
+        )
+        con.execute(
+            "INSERT INTO migrations(migration_id,feature_id,source_snapshot_id,target_snapshot_id,status,metadata_json) "
+            "VALUES(?,?,?,?,?,?)",
+            ("migration:test","feature:test","src","dst","MANUAL_REQUIRED",'{"reason":"fixture"}'),
+        )
+        con.execute(
+            "INSERT INTO migration_actions(action_id,migration_id,action,artifact_id,status,reason,metadata_json) "
+            "VALUES(?,?,?,?,?,?,?)",
+            ("action:test","migration:test","MANUAL_REVIEW",NULL,"MANUAL_REQUIRED","fixture",'{}'),
+        )
         graph.insert_record(con,ValidationRun(
             "run:test","test run","src","dst","feature:test","VERIFIED"
         ))
@@ -113,6 +138,16 @@ def main():
         build=reader.server_build_target_lookup("map")
         assert build["matches"][0]["target_id"]=="build-target:map",build
         assert any(edge["relationship"]=="BUILDS_INTO" for edge in build["matches"][0]["relationships"]),build
+
+        capability=reader.capability_inspect("battlefield_support",feature_id="feature:test")
+        assert capability["matches"][0]["capability_id"]=="cap:test",capability
+        assert capability["matches"][0]["observations"][0]["status"]=="VERIFIED",capability
+        assert capability["matches"][0]["requirements"][0]["required"] is True,capability
+        assert "evidence:feature" in capability["evidence_ids"],capability
+
+        migration=reader.migration_inspect("migration:test")
+        assert migration["matches"][0]["migration_id"]=="migration:test",migration
+        assert migration["matches"][0]["actions"][0]["action"]=="MANUAL_REVIEW",migration
 
     print("typed domain research tools self-test: PASS")
 
