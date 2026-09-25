@@ -35,6 +35,7 @@ jobs:
           python test_fixtures/test_packet_identity.py
           python test_fixtures/test_graph_cpp_symbol_resolution.py
           python test_fixtures/test_graph_enum_resolution.py
+          python test_fixtures/test_cpp_enum_dependency_confidence.py
           python test_fixtures/test_feature_trace_enum_nodes.py
           python test_fixtures/test_feature_candidates.py
           python test_fixtures/test_feature_dimension_policy.py
