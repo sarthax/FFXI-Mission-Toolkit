@@ -603,3 +603,15 @@ The research layer now exposes typed read-only Workbench tools beyond generic gr
 - migration.inspect
 
 These tools read canonical Workbench records, return evidence IDs/confidence/status where available, and run through the permission-aware ResearchToolRegistry so calls are recorded in ResearchSession transcripts. They do not expose arbitrary write operations or bypass canonical evidence semantics.
+
+
+## 2026-09-25 — Capture, reference, and client/DAT research tools
+
+The evidence-aware research layer now includes three additional read-only typed tool families:
+
+- capture.search / capture.backtrace — indexed runtime capture discovery and capture→server/client evidence backtracing;
+- reference.search / reference.compare — bundled BG Wiki/reference corpus lookup explicitly labeled REFERENCE/INFERRED rather than implementation truth;
+- client.capability — canonical client capability/observation lookup;
+- dat.lookup / dat.describe — read-only client item DAT record and DAT layout/capacity inspection through the existing client DAT decoder.
+
+The capture backtrace path also received a latent packet-node identity fix so packet observations use the canonical packet identity helper. None of these tools expose DAT patch/injection, capture mutation, reference writes, or client file writes.
