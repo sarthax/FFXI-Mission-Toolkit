@@ -146,6 +146,30 @@ def check_feature(con: sqlite3.Connection, feature: dict) -> dict:
             "source": row[6], "target": row[7], "notes": _json_value(row[8]) or [],
         })
 
+    implementation_statuses = [r["status"] for r in implementations]
+    if not implementations:
+        implementation_status = "NO_IMPLEMENTATION_RECORDS"
+    elif any(s in ("CONTRADICTED","FAILED") for s in implementation_statuses):
+        implementation_status = "CONTRADICTED"
+    elif all(s == "VERIFIED" for s in implementation_statuses):
+        implementation_status = "IMPLEMENTATIONS_VERIFIED"
+    elif any(s in ("VERIFIED","IMPLEMENTED") for s in implementation_statuses):
+        implementation_status = "IMPLEMENTATIONS_PRESENT_UNVERIFIED"
+    else:
+        implementation_status = "IMPLEMENTATION_STATUS_UNKNOWN"
+
+    validation_statuses = [r["status"] for r in validations]
+    if not validations:
+        validation_status = "NO_VALIDATION_RECORDS"
+    elif any(s in ("CONTRADICTED","FAILED") for s in validation_statuses):
+        validation_status = "VALIDATION_FAILED"
+    elif all(s == "VERIFIED" for s in validation_statuses):
+        validation_status = "VALIDATIONS_VERIFIED"
+    elif any(s == "VERIFIED" for s in validation_statuses):
+        validation_status = "PARTIALLY_VALIDATED"
+    else:
+        validation_status = "VALIDATION_STATUS_UNKNOWN"
+
     required = [c for c in checks if c["required"]]
     if not required:
         aggregate = "NO_REQUIREMENTS_DECLARED"
@@ -165,7 +189,7 @@ def check_feature(con: sqlite3.Connection, feature: dict) -> dict:
         "check_id": f"feature-check:{fid}",
         "created_at": datetime.now(timezone.utc).isoformat(),
         "feature": feature,
-        "status": aggregate,
+        "status": aggregate,\n        "dimensions": {\n            "requirements": aggregate,\n            "implementation": implementation_status,\n            "validation": validation_status,\n        },
         "requirements": checks,
         "semantic_relationships": semantic_relationships,
         "implementation_records": implementations,
@@ -173,7 +197,7 @@ def check_feature(con: sqlite3.Connection, feature: dict) -> dict:
         "notes": [
             "Capability checks are evaluated independently.",
             "Implementation records and validation results are supporting evidence, not substitutes for missing capability evidence.",
-            "No single numeric score is produced.",
+            "No single numeric score is produced.",\n            "Requirements, implementation, and validation remain separate status dimensions.",
         ],
     }
 
