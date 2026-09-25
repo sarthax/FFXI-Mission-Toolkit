@@ -247,8 +247,9 @@ def insert_record(con: sqlite3.Connection, record: Any, record_type: str | None 
 def resolve_relationships(con: sqlite3.Connection) -> int:
     """Resolve deterministic lexical node aliases after all records are imported."""
     changed = 0
-    rows = con.execute("SELECT relationship_id, target_node FROM entity_relationships").fetchall()
-    for rid, target in rows:
+    rows = con.execute("SELECT relationship_id, target_node, relationship, metadata_json FROM entity_relationships").fetchall()
+    for rid, target, relationship, metadata_json in rows:
+        metadata = json.loads(metadata_json or "{}")
         if relationship == "USES_ENUM" and target and not target.startswith(("cpp-symbol:","enum:","constant:")):
             enum_hits = con.execute("SELECT enum_id FROM enum_definitions WHERE symbol=? ORDER BY line",(target,)).fetchall()
             enum_ids = {row[0] for row in enum_hits}
@@ -278,7 +279,7 @@ def resolve_relationships(con: sqlite3.Connection) -> int:
                 function_id, qualified_name = next(iter(unique.items()))
                 con.execute(
                     "UPDATE entity_relationships SET target_node=?, confidence=?, metadata_json=? WHERE relationship_id=?",
-                    (function_id, "VERIFIED", _json({"resolved_from": target, "resolution": resolution,
+                    (function_id, "VERIFIED", _json({**metadata, "resolved_from": target, "resolution": resolution,
                                                      "qualified_name": qualified_name}), rid),
                 )
                 changed += 1
