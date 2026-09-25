@@ -11,7 +11,7 @@ from workbench.adapters.servers.sql_extract import extract_logical_records
 from workbench.adapters.servers.entity_symbols import yaml_mob_template_spawns
 from workbench.migrations.feature_surface import FeatureSurface, SurfaceArtifact, SurfaceCapability, compare_feature_surfaces
 from workbench.core import graph
-from workbench.core.schema import Feature
+from workbench.core.schema import CapabilityRequirement, Feature
 from workbench.core.services.feature_surface_graph import persist_feature_surface
 from workbench.core.services.feature_surface_validation import build_feature_surface_validation
 from feature_checker import resolve_feature, check_feature
@@ -148,6 +148,15 @@ def main():
         )
         src_counts=persist_feature_surface(con,source_surface,feature,"lsb:3747feee0e38")
         dst_counts=persist_feature_surface(con,target_surface,feature,"dsp:ee1f489efbde")
+        for capability in source_surface.capabilities:
+            graph.insert_record(con,CapabilityRequirement(
+                requirement_id=f"requirement:cop:ancient_vows:{capability.name}",
+                feature_id=feature.feature_id,
+                capability_id=f"capability:{feature.feature_id}:{capability.name}",
+                required=True,
+                status="DISCOVERED",
+                notes=["Flagship E2E behavioral requirement; evaluated against the target snapshot observation."],
+            ))
         implementation_count=con.execute(
             "SELECT COUNT(*) FROM implementations WHERE feature_id=?",
             (feature.feature_id,),
@@ -178,7 +187,10 @@ def main():
         checker=check_feature(con,resolved_feature)
         assert checker["dimensions"]["implementation"]=="IMPLEMENTATIONS_VERIFIED",checker
         assert checker["dimensions"]["validation"]=="VALIDATIONS_VERIFIED",checker
-        assert checker["dimensions"]["requirements"]=="NO_REQUIREMENTS_DECLARED",checker
+        assert checker["dimensions"]["requirements"]=="REQUIRED_CAPABILITIES_VERIFIED",checker
+        assert len(checker["requirements"])==6,checker
+        assert all(req["observation_selection"]=="TARGET_SNAPSHOT" for req in checker["requirements"]),checker
+        assert all(req["observed_status"]=="VERIFIED" for req in checker["requirements"]),checker
         checker_dimensions=checker["dimensions"]
         con.close()
 
