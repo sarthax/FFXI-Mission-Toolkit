@@ -16,6 +16,7 @@ from workbench.migrations.package_manifest import build_package_manifest
 from workbench.migrations.package_validation import build_validation_package
 from workbench.migrations.package_materialize import materialize_package, write_materialization_journal
 from workbench.migrations.backend_probe import probe_lsb_to_dsp_lua
+from workbench.migrations.backend_probe_plan import plan_lsb_dsp_lua_probe
 from workbench.core import graph
 from workbench.core.schema import Artifact, CapabilityRequirement, DependencyEdge, Feature, MigrationAction
 from workbench.core.services.feature_surface_graph import persist_feature_surface
@@ -125,6 +126,17 @@ def main():
         if probe.method_surface is not None
         for method in probe.method_surface.binding_candidate_methods
     }
+    probe_actions={
+        name:plan_lsb_dsp_lua_probe(
+            probe,
+            "migration:cop:ancient-vows:probe",
+            artifact_id=f"artifact:ancient-vows:{name}",
+            source_path=str(surfaces["lsb_mission" if name=="mission" else "lsb_battlefield"].relative_to(lsb_root)),
+        )
+        for name,probe in lsb_lua_probes.items()
+    }
+    assert all(action.metadata["adaptation_type"]=="STRUCTURAL_FRAMEWORK_ADAPTATION" for action in probe_actions.values()),probe_actions
+
     with tempfile.TemporaryDirectory() as probe_td:
         probe_root=Path(probe_td)
         for name,probe in lsb_lua_probes.items():
@@ -389,6 +401,14 @@ def main():
                 "missing_binding_names":[name for name,_reason,_files in binding_probe["missing"]],
                 "sanity_syntax_errors":len(sanity_probe["syntax_errors"]),
                 "sanity_undeclared_globals":len(sanity_probe["undeclared_globals"]),
+                "probe_actions":{
+                    name:{
+                        "action":action.action,
+                        "status":action.status,
+                        "adaptation_type":action.metadata["adaptation_type"],
+                    }
+                    for name,action in probe_actions.items()
+                },
             },
         },
         "domain_plugins":{
