@@ -67,6 +67,11 @@ CREATE TABLE IF NOT EXISTS enum_definitions (
   format TEXT NOT NULL, value TEXT NOT NULL, symbol TEXT NOT NULL, evidence_id TEXT,
   notes_json TEXT NOT NULL DEFAULT '[]'
 );
+CREATE TABLE IF NOT EXISTS build_targets (
+  target_id TEXT PRIMARY KEY, name TEXT NOT NULL, build_system TEXT NOT NULL, path TEXT,
+  source_snapshot_id TEXT, artifact_id TEXT, status TEXT NOT NULL DEFAULT 'DISCOVERED',
+  notes_json TEXT NOT NULL DEFAULT '[]'
+);
 CREATE TABLE IF NOT EXISTS implementations (
   implementation_id TEXT PRIMARY KEY, feature_id TEXT, source_snapshot_id TEXT,
   target_snapshot_id TEXT, artifact_id TEXT NOT NULL, artifact_type TEXT NOT NULL,
@@ -99,6 +104,7 @@ CREATE TABLE IF NOT EXISTS migration_actions (
   artifact_id TEXT, status TEXT NOT NULL DEFAULT 'DISCOVERED', reason TEXT,
   metadata_json TEXT NOT NULL DEFAULT '{}'
 );
+CREATE INDEX IF NOT EXISTS idx_build_targets_artifact ON build_targets(artifact_id);
 CREATE INDEX IF NOT EXISTS idx_artifacts_feature ON artifacts(feature_id);
 CREATE INDEX IF NOT EXISTS idx_functions_symbol ON functions(qualified_name);
 CREATE INDEX IF NOT EXISTS idx_bindings_cpp_symbol ON bindings(cpp_symbol);
@@ -142,6 +148,10 @@ def insert_record(con: sqlite3.Connection, record: Any, record_type: str | None 
         con.execute("INSERT OR REPLACE INTO enum_definitions VALUES (?,?,?,?,?,?,?,?,?,?)",
                     (d["enum_id"],d["enum_name"],d["source_snapshot_id"],d["path"],d["line"],
                      d["format"],d["value"],d["symbol"],d["evidence_id"],_json(d["notes"])))
+    elif cls == "BuildTarget":
+        con.execute("INSERT OR REPLACE INTO build_targets VALUES (?,?,?,?,?,?,?,?)",
+                    (d["target_id"], d["name"], d["build_system"], d["path"], d["source_snapshot_id"],
+                     d["artifact_id"], d["status"], _json(d["notes"])))
     elif cls == "Artifact":
         con.execute("INSERT OR REPLACE INTO artifacts VALUES (?,?,?,?,?,?,?)",
                     (d["artifact_id"], d["artifact_type"], d["path"], d["source_snapshot_id"],
@@ -210,7 +220,7 @@ def import_json(path: Path, db: Path):
     payload=json.loads(path.read_text(encoding="utf-8"))
     con=init_db(db)
     for key, record_type in (
-        ("features","Feature"),("artifacts","Artifact"),("functions","Function"),("bindings","Binding"),("enums_constants","EnumDefinition"),("findings","Finding"),
+        ("features","Feature"),("artifacts","Artifact"),("build_targets","BuildTarget"),("functions","Function"),("bindings","Binding"),("enums_constants","EnumDefinition"),("findings","Finding"),
         ("implementations","Implementation"),("edges","DependencyEdge"),
         ("migration_actions","MigrationAction"),("validation_runs","ValidationRun"),
         ("validation_results","ValidationResult"),
