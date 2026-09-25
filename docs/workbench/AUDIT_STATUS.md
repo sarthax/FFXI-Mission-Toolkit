@@ -62,7 +62,8 @@ Foundation preserved; engine-change workspace audited; C++ API/dependency/build 
 - [x] Packet decoder audited.
 - [ ] Packet -> handler -> feature relationships.
 - [x] ValidationResult core record defined.
-- [ ] ValidationRun/ValidationResult standardization.
+- [x] ValidationResult core record defined.
+- [x] Initial validation pipeline adapter.
 - [ ] Automated regression fixtures.
 
 ### P1 — Architecture cleanup
