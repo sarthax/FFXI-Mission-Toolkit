@@ -170,3 +170,11 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 - These mappings are explicitly hints, not semantic proof. Unknown/local object names remain untyped.
 - Updated both the server graph connector and capture graph connector to use a class hint to narrow same-name binding candidates when available; unresolved calls continue as name-only inferred candidates.
 - This materially reduces false candidate fan-out for overloaded Lua API names such as `getID` while preserving conservative evidence status.
+
+
+## 2026-09-25 — Lua graph bridge regression fixture
+
+- Repaired the capture graph connector's class-aware candidate block so the source contains executable Python newlines rather than escaped newline text.
+- Added `test_fixtures/test_server_lua_graph_bridge.py`, a synthetic end-to-end regression fixture for C++ API/binding import plus verified event → Lua handler and inferred class-hinted Lua → binding traversal.
+- The fixture also asserts that an unmatched CSID does not create an event implementation edge and that the binding → C++ `BINDS` relationship remains present.
+- This creates a durable guard for the current conservative confidence boundary: event identity may be VERIFIED by independent `npc_event_refs`; callback parameter typing remains INFERRED.
