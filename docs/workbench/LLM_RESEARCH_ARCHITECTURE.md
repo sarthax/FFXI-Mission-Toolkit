@@ -94,6 +94,20 @@ Recommended tools:
 - source.search
 - source.read
 
+Implemented typed tools (current slice):
+- graph.search / graph.trace
+- feature.inspect / feature.check
+- entity.lookup
+- binding.lookup
+- packet.lookup / packet.handlers
+- validation.inspect / validation.status
+- server.symbol / cpp.symbol
+- server.enum / enum.lookup
+- server.build-target / build.target
+- capability.inspect
+- migration.inspect
+- source.search / source.read
+
 Every result should include provenance fields where available:
 - canonical node ID
 - source snapshot
