@@ -358,11 +358,11 @@ def main():
         ap.error(f"--verify-only requires an existing {lua_dst}")
 
     print("Running binding audit...")
-    binding_result = bba.audit_package(lua_dst, dsp_root, flavor) if lua_dst.is_dir() else \
+    binding_result = bba.audit_package(lua_dst, dsp_root, flavor, lua_scope) if lua_dst.is_dir() else \
         {"confirmed": [], "missing": []}
 
     print("Running Lua sanity check...")
-    sanity_result = blsc.check_package(lua_dst) if lua_dst.is_dir() else \
+    sanity_result = blsc.check_package(lua_dst, lua_scope) if lua_dst.is_dir() else \
         {"syntax_errors": [], "undeclared_globals": []}
 
     schema_map = bsc.load_schema_map()
