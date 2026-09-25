@@ -233,14 +233,26 @@ def resolve_relationships(con: sqlite3.Connection) -> int:
     for rid, target in rows:
         if target.startswith("cpp-symbol:"):
             symbol = target[len("cpp-symbol:"):]
-            hit = con.execute(
-                "SELECT function_id FROM functions WHERE qualified_name=? ORDER BY definition DESC, line LIMIT 1",
+            hits = con.execute(
+                "SELECT function_id,qualified_name FROM functions WHERE qualified_name=? ORDER BY definition DESC, line",
                 (symbol,),
-            ).fetchone()
-            if hit:
+            ).fetchall()
+            resolution = "exact qualified C++ symbol"
+            if not hits and "::" not in symbol:
+                # Unqualified handler names are common in switch dispatch. Resolve only when the
+                # extracted API contains exactly one function with that short name.
+                hits = con.execute(
+                    "SELECT function_id,qualified_name FROM functions WHERE name=? ORDER BY definition DESC, line",
+                    (symbol,),
+                ).fetchall()
+                resolution = "unique unqualified C++ symbol"
+            unique = {row[0]: row[1] for row in hits}
+            if len(unique) == 1:
+                function_id, qualified_name = next(iter(unique.items()))
                 con.execute(
                     "UPDATE entity_relationships SET target_node=?, confidence=?, metadata_json=? WHERE relationship_id=?",
-                    (hit[0], "VERIFIED", _json({"resolved_from": target, "resolution": "exact qualified C++ symbol"}), rid),
+                    (function_id, "VERIFIED", _json({"resolved_from": target, "resolution": resolution,
+                                                     "qualified_name": qualified_name}), rid),
                 )
                 changed += 1
     return changed
