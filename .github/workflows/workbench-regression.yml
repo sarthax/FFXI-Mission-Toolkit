@@ -38,3 +38,4 @@ jobs:
           python test_fixtures/test_feature_dimension_policy.py
           python test_fixtures/test_semantic_graph_mirror.py
           python test_fixtures/test_capture_packet_graph.py
+          python test_fixtures/test_capture_event_packet_graph.py
