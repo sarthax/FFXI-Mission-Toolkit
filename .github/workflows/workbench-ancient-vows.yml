@@ -6,6 +6,8 @@ on:
       - workbench-rework/audit-foundation
     paths:
       - "workbench/adapters/servers/**"
+      - "workbench/core/**"
+      - "workbench/migrations/**"
       - "test_fixtures/test_ancient_vows_crossfork.py"
       - ".github/workflows/workbench-ancient-vows.yml"
   workflow_dispatch:
