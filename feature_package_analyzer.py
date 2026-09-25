@@ -67,7 +67,19 @@ def analyze(package: Path):
         else:
             target=d.get("target"); relationship=d.get("relationship","REQUIRES"); evidence=d.get("evidence","MANIFEST")
         if target:
-            deps.append({"edge_id":f"manifest:{feature_id}:{i}","source_node":feature_id,"target_node":target,"relationship":relationship,"confidence":"VERIFIED","status":"DISCOVERED","discovered_by":"feature_package_analyzer","source_location":"FEATURE_MANIFEST.yaml","notes":evidence})
+            deps.append({
+                "edge_id":f"manifest:{feature_id}:{i}",
+                "source_node":feature_id,
+                "target_node":target,
+                "relationship":relationship,
+                "evidence_id":None,
+                "confidence":"VERIFIED",
+                "status":"DISCOVERED",
+                "discovered_by":"feature_package_analyzer",
+                "source_location":"FEATURE_MANIFEST.yaml",
+                "notes":[str(evidence)],
+                "source_snapshot_id":feature.get("source_snapshot_id"),
+            })
     actions=[]
     mig_state=report["status"]
     if arts and mig_state=="VERIFIED":
@@ -77,7 +89,15 @@ def analyze(package: Path):
     else:
         action_state="UNKNOWN"
     for i,a in enumerate(arts):
-        actions.append({"action_id":f"action:{feature_id}:{i}","migration_id":f"migration:{feature_id}","action":"CONVERT" if a["artifact_type"] in {"LUA","SQL"} else "MANUAL_REVIEW","artifact_id":a["artifact_id"],"status":action_state,"reason":"TARGET_ALREADY_HAS" if mig_state=="VERIFIED" else "UNRESOLVED"})
+        actions.append({
+            "action_id":f"action:{feature_id}:{i}",
+            "migration_id":f"migration:{feature_id}",
+            "action":"CONVERT" if a["artifact_type"] in {"LUA","SQL"} else "MANUAL_REVIEW",
+            "artifact_id":a["artifact_id"],
+            "status":action_state,
+            "reason":"TARGET_ALREADY_HAS" if mig_state=="VERIFIED" else "UNRESOLVED",
+            "metadata":{},
+        })
     return {
         "schema":2,
         "feature":{
