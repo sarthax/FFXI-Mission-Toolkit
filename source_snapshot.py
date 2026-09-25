@@ -23,6 +23,19 @@ def snapshot(root:Path):
             "fingerprint":h.hexdigest(),"file_count":count,"byte_count":total,
             "recorded_at":datetime.now(timezone.utc).isoformat()}
 
+def snapshot_id(root: Path) -> str:
+    """Return only the deterministic snapshot identifier for a source root."""
+    return snapshot(root)["snapshot_id"]
+
+def attach_snapshot(payload: dict, source_root: Path) -> dict:
+    """Attach one source snapshot identifier consistently to an analysis payload."""
+    sid = snapshot_id(source_root)
+    analysis = payload.get("analysis")
+    if isinstance(analysis, dict):
+        analysis["source_snapshot_id"] = sid
+    payload["source_snapshot_id"] = sid
+    return payload
+
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument("root",type=Path); ap.add_argument("--json",type=Path); a=ap.parse_args()
     out=snapshot(a.root)
