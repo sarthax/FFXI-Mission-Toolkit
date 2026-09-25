@@ -159,6 +159,34 @@ class PEImage:
                 return section.name
         return None
 
+    def layout_warnings(self) -> list[dict[str,Any]]:
+        warnings=[]
+        for section in self.sections:
+            executable=bool(section.characteristics & 0x20000000)
+            if executable and section.virtual_size and section.raw_size==0:
+                warnings.append({
+                    "code":"EXECUTABLE_SECTION_WITHOUT_RAW_BYTES",
+                    "section":section.name,
+                    "virtual_address":section.virtual_address,
+                    "virtual_size":section.virtual_size,
+                    "raw_offset":section.raw_offset,
+                    "raw_size":section.raw_size,
+                    "severity":"INFERRED_LIMITATION",
+                    "note":"Static RVA-to-file mapping/disassembly for this section may be incomplete because the PE section has virtual executable content but no raw bytes.",
+                })
+            if executable and section.name.upper().startswith("POL"):
+                warnings.append({
+                    "code":"NONSTANDARD_EXECUTABLE_SECTION",
+                    "section":section.name,
+                    "virtual_address":section.virtual_address,
+                    "virtual_size":section.virtual_size,
+                    "raw_offset":section.raw_offset,
+                    "raw_size":section.raw_size,
+                    "severity":"OBSERVED",
+                    "note":"Executable code/data is stored in a nonstandard section name; treat normal .text-only assumptions as unsafe.",
+                })
+        return warnings
+
     def imports(self, *, max_entries: int = 50000) -> list[dict[str,Any]]:
         directory=self.directory(1)
         if not directory["rva"]:
@@ -316,6 +344,7 @@ def index_binary(
             "file_alignment":image.file_alignment,
         },
         "sections":[asdict(section) for section in image.sections],
+        "layout_warnings":image.layout_warnings(),
         "imports":imports,
         "exports":exports,
         "strings":strings,
