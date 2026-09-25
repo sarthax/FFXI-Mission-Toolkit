@@ -389,6 +389,136 @@ class WorkbenchDomainReader:
         finally:
             con.close()
 
+    def capability_inspect(
+        self,
+        capability: str,
+        *,
+        feature_id: str | None = None,
+        limit: int = 50,
+    ) -> dict[str,Any]:
+        con=self._connect()
+        try:
+            rows=con.execute(
+                "SELECT capability_id,name,capability_type,subject_id,source_snapshot_id,status,"
+                "value_json,evidence_id,notes_json FROM capabilities "
+                "WHERE capability_id=? OR name LIKE ? ORDER BY capability_id LIMIT ?",
+                (capability,f"%{capability}%",limit),
+            ).fetchall()
+            matches=[]
+            evidence_ids=set()
+            for row in rows:
+                item=dict(row)
+                item["value"]=_json(item.pop("value_json"))
+                item["notes"]=_json(item.pop("notes_json")) or []
+                if item.get("evidence_id"):
+                    evidence_ids.add(item["evidence_id"])
+                observations=[]
+                for obs in con.execute(
+                    "SELECT observation_id,source_snapshot_id,status,value_json,evidence_id,notes_json "
+                    "FROM capability_observations WHERE capability_id=? "
+                    "ORDER BY source_snapshot_id,observation_id",
+                    (item["capability_id"],),
+                ).fetchall():
+                    record=dict(obs)
+                    record["value"]=_json(record.pop("value_json"))
+                    record["notes"]=_json(record.pop("notes_json")) or []
+                    if record.get("evidence_id"):
+                        evidence_ids.add(record["evidence_id"])
+                    observations.append(record)
+                requirements=[]
+                req_sql=(
+                    "SELECT requirement_id,feature_id,required,status,evidence_id,notes_json "
+                    "FROM capability_requirements WHERE capability_id=?"
+                )
+                req_params=[item["capability_id"]]
+                if feature_id:
+                    req_sql+=" AND feature_id=?"
+                    req_params.append(feature_id)
+                req_sql+=" ORDER BY feature_id,requirement_id"
+                for req in con.execute(req_sql,tuple(req_params)).fetchall():
+                    record=dict(req)
+                    record["required"]=bool(record["required"])
+                    record["notes"]=_json(record.pop("notes_json")) or []
+                    if record.get("evidence_id"):
+                        evidence_ids.add(record["evidence_id"])
+                    requirements.append(record)
+                item["observations"]=observations
+                item["requirements"]=requirements
+                matches.append(item)
+            return {
+                "status":"OK",
+                "query":capability,
+                "feature_id":feature_id,
+                "matches":matches,
+                "evidence_ids":sorted(evidence_ids),
+                "truncated":len(matches)>=limit,
+            }
+        finally:
+            con.close()
+
+    def migration_inspect(
+        self,
+        migration: str,
+        *,
+        feature_id: str | None = None,
+        limit: int = 100,
+    ) -> dict[str,Any]:
+        con=self._connect()
+        try:
+            if feature_id:
+                rows=con.execute(
+                    "SELECT migration_id,feature_id,source_snapshot_id,target_snapshot_id,status,metadata_json "
+                    "FROM migrations WHERE feature_id=? ORDER BY migration_id LIMIT ?",
+                    (feature_id,limit),
+                ).fetchall()
+            else:
+                rows=con.execute(
+                    "SELECT migration_id,feature_id,source_snapshot_id,target_snapshot_id,status,metadata_json "
+                    "FROM migrations WHERE migration_id=? OR migration_id LIKE ? OR COALESCE(feature_id,'') LIKE ? "
+                    "ORDER BY migration_id LIMIT ?",
+                    (migration,f"%{migration}%",f"%{migration}%",limit),
+                ).fetchall()
+            matches=[]
+            evidence_ids=set()
+            for row in rows:
+                item=dict(row)
+                item["metadata"]=_json(item.pop("metadata_json")) or {}
+                actions=[]
+                for action in con.execute(
+                    "SELECT action_id,action,artifact_id,status,reason,metadata_json "
+                    "FROM migration_actions WHERE migration_id=? ORDER BY action_id",
+                    (item["migration_id"],),
+                ).fetchall():
+                    record=dict(action)
+                    record["metadata"]=_json(record.pop("metadata_json")) or {}
+                    actions.append(record)
+                relationships=[]
+                if item.get("feature_id"):
+                    for edge in con.execute(
+                        "SELECT relationship_id,source_node,target_node,relationship,evidence_id,confidence,status,"
+                        "metadata_json,source_snapshot_id FROM entity_relationships "
+                        "WHERE source_node=? OR target_node=? ORDER BY relationship_id",
+                        (item["feature_id"],item["feature_id"]),
+                    ).fetchall():
+                        record=dict(edge)
+                        record["metadata"]=_json(record.pop("metadata_json")) or {}
+                        if record.get("evidence_id"):
+                            evidence_ids.add(record["evidence_id"])
+                        relationships.append(record)
+                item["actions"]=actions
+                item["feature_relationships"]=relationships
+                matches.append(item)
+            return {
+                "status":"OK",
+                "query":migration,
+                "feature_id":feature_id,
+                "matches":matches,
+                "evidence_ids":sorted(evidence_ids),
+                "truncated":len(matches)>=limit,
+            }
+        finally:
+            con.close()
+
     def validation_inspect(
         self,
         *,
