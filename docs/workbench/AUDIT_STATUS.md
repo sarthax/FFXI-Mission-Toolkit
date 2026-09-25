@@ -529,3 +529,10 @@ No method-name guessing or confidence upgrade is performed.
 Lua event analysis can now derive returned-object wrapper hints directly from the indexed C++ API surface. A hint is accepted only when a Lua binding resolves to a C++ function whose indexed return type names another wrapper class present in the same binding surface. Local aliases and returned objects therefore carry provenance-rich class hints without method-name guessing.
 
 The server graph bridge preserves these hints as INFERRED CALLS evidence; no class hint upgrades an implementation edge to VERIFIED.
+
+
+## 2026-09-25 — DSP packet dispatch resolution
+
+Packet indexing now recognizes the pinned legacy DSP runtime dispatch table pattern `PacketParser[opcode] = &SmallPacket...` and emits VERIFIED HANDLED_BY edges directly to the real C++ handler symbol. Generic opcode references remain INFERRED and are not promoted to runtime handlers.
+
+A focused regression fixture now covers this dispatch path.
