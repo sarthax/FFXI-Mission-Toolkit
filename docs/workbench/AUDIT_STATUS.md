@@ -442,3 +442,10 @@ Ancient Vows now emits two review artifacts for its verified missing DSP lifecyc
 The first mission proposal package exposed a verifier mismatch: generated-output journals record `relative_path`, while package cohesion previously checked only `package_path`/`path`. The cohesion verifier now accepts the generated journal's canonical relative-path field, and regression coverage includes generated proposal artifacts.
 
 This closes a real package-integrity blind spot discovered by the Ancient Vows flagship.
+
+
+## 2026-09-25 — Deterministic mission patch previews
+
+The Workbench now has review-only source patch operations with exact anchors and in-memory preview validation. Patch operations require an exact expected occurrence count and never write target files.
+
+Ancient Vows uses this layer to prove that both missing mission lifecycle proposals are structurally placeable in the pinned DSP target: a Justinius event-128 branch and the Riverne Site #A01 mission-status/event-100 progression. These remain proposal/review artifacts and are not auto-applied.
