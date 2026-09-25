@@ -44,6 +44,9 @@ DEFAULT_PACKAGES_ROOT = settings.get_backport_root() / "mission-packages"
 DEFAULT_DSP_ROOT = settings.get_dsp_root()
 
 METHOD_CALL_RE = re.compile(r":([A-Za-z_][A-Za-z0-9_]*)\s*\(")
+METHOD_DEFINITION_RE = re.compile(
+    r"function\s+[A-Za-z_][A-Za-z0-9_.]*:[A-Za-z_][A-Za-z0-9_]*\s*\("
+)
 
 # Bindings confirmed by other means (e.g. Lua-side globals like math.random, string.format) that
 # would otherwise false-positive as "not found in C++ source" -- not an exhaustive stdlib list,
@@ -74,6 +77,8 @@ def collect_method_calls(pkg_lua_dsp: Path, include_paths: set[str] | None = Non
         if include_paths is not None and rel not in include_paths:
             continue
         text = _strip_comments(f.read_text(encoding="utf-8", errors="replace"))
+        # Method-style function definitions are not runtime binding calls.
+        text = METHOD_DEFINITION_RE.sub("", text)
         for name in set(METHOD_CALL_RE.findall(text)):
             if name in KNOWN_NON_ENTITY_METHODS or (ignore_methods is not None and name in ignore_methods):
                 continue
