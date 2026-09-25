@@ -206,6 +206,7 @@ Design requirements:
 - [x] explicit human patch approval state — READY_FOR_APPROVAL remains non-executable until a matching approval record is explicitly APPROVED.
 - [x] patch-plan approval linkage integrity — packaged approval requests must hash-link to a packaged patch plan or package cohesion fails.
 - [x] approved deterministic patch apply — approved patch plans can be applied with backups, before/after hashes, apply journaling, and rollback; regression coverage is temporary-file only.
+- [x] unified patch lifecycle status — package/UI consumers can read one authoritative lifecycle state across cohesion, drift, approval, apply, and rollback.
 - [x] validation package — planned Lua/SQL plus generated target SQL artifacts generate independent validation requirements.
 - [x] package assembly + provenance — source and generated artifacts are staged with SHA-256 journals and review metadata.
 - [x] package cohesion verification — assembled manifest, validation metadata, journals, staged files, generated outputs, and recorded hashes are checked for internal consistency before apply; the flagship Ancient Vows E2E now exercises this gate.
