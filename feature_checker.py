@@ -105,6 +105,21 @@ def check_feature(con: sqlite3.Connection, feature: dict) -> dict:
             "capability": cap_record,
         })
 
+    # Report only explicit semantic edges here; generic reachability remains navigation evidence.
+    semantic_relationships = []
+    semantic_types = ("REQUIRES","IMPLEMENTS","IMPLEMENTED_BY","USES_CLIENT_CAPABILITY","VALIDATED_BY")
+    for row in con.execute(
+        "SELECT relationship_id,source_node,target_node,relationship,evidence_id,confidence,status,metadata_json FROM entity_relationships WHERE source_node=? ORDER BY relationship_id",
+        (fid,),
+    ):
+        if row[3] not in semantic_types:
+            continue
+        semantic_relationships.append({
+            "relationship_id":row[0],"source_node":row[1],"target_node":row[2],
+            "relationship":row[3],"evidence_id":row[4],"confidence":row[5],
+            "status":row[6],"metadata":_json_value(row[7]) or {},
+        })
+
     implementations = []
     for row in con.execute(
         "SELECT implementation_id, artifact_id, artifact_type, status, language, path, symbol, change_type, "
@@ -151,7 +166,7 @@ def check_feature(con: sqlite3.Connection, feature: dict) -> dict:
         "created_at": datetime.now(timezone.utc).isoformat(),
         "feature": feature,
         "status": aggregate,
-        "requirements": checks,
+        "requirements": checks,\n        "semantic_relationships": semantic_relationships,
         "implementation_records": implementations,
         "validation_results": validations,
         "notes": [
