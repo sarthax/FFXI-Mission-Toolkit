@@ -39,7 +39,7 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 - [x] Initial Feature/Package graph analyzer integrated with existing package reports.
 - [ ] General Feature Migration Engine.
 - [x] Generic bidirectional Feature Trace engine over canonical graph.
-- [ ] Feature Checker requirement/status evaluation over capabilities and trace evidence.
+- [x] Initial Feature Checker requirement/status evaluation over capability evidence.
 - [ ] Dependency-aware package analyzer.
 - [ ] Generalized validation pipeline.
 
@@ -116,3 +116,11 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 - Explicitly documents that graph connectivity is evidence navigation, not proof that a feature is implemented or absent.
 - Capability requirements now also create canonical `REQUIRES` edges, allowing feature -> capability tracing.
 - Wiki/reference material is designated as a future launch/navigation adapter: it can identify the canonical subject, but reference data is not promoted to server/client truth.
+
+
+### Latest continuation — Feature Checker
+- Added `feature_checker.py` on top of the canonical capability model.
+- Checks each declared capability requirement independently and distinguishes MISSING, UNKNOWN, PRESENT_UNVERIFIED, VERIFIED, and CONTRADICTED evidence.
+- Reports implementation records and validation results separately rather than treating them as proof of capability.
+- Produces a descriptive aggregate state without a numeric score.
+- This establishes the backend contract for the eventual GUI workflow: select a feature/entity, trace its relationships, then inspect requirement-level evidence.
