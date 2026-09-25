@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from workbench.client.binary_index import binary_header_evidence_id, binary_record_evidence_id, binary_string_corpus_evidence_id
+from workbench.client.binary_deep import byte_search as deep_byte_search, function_candidates as deep_function_candidates, xrefs as deep_xrefs
 from workbench.client.binary_diff import diff_binary_indexes
 
 
@@ -152,6 +153,106 @@ class ClientBinaryResearchReader:
             binary_string_corpus_evidence_id(resolved[right][1]),
         })
         result["authority"]="CLIENT_BINARY"
+        return result
+
+    def _binary_source(self, binary: str):
+        for index_path,payload in self._indexes():
+            info=payload.get("binary") or {}
+            keys={str(info.get("label") or ""),str(info.get("filename") or ""),str(info.get("sha256") or ""),str(index_path)}
+            if binary not in keys and not any(binary.lower() in key.lower() for key in keys if key):
+                continue
+            raw=str(info.get("path") or "")
+            candidates=[]
+            if raw:
+                source=Path(raw)
+                candidates.append(source)
+                if not source.is_absolute():
+                    candidates.append(index_path.parent/source)
+            for source in candidates:
+                if source.exists() and source.is_file():
+                    return index_path,payload,source
+            return index_path,payload,None
+        return None,None,None
+
+    def byte_search(
+        self,
+        binary: str,
+        pattern: str,
+        *,
+        section: str | None = None,
+        executable_only: bool = False,
+        limit: int = 500,
+        context_bytes: int = 8,
+    ) -> dict[str,Any]:
+        _index,payload,source=self._binary_source(binary)
+        if payload is None:
+            return {"status":"NOT_FOUND","binary":binary}
+        info=payload.get("binary") or {}
+        if source is None:
+            return {
+                "status":"BINARY_UNAVAILABLE","binary":info,
+                "error":"The indexed source binary is not accessible at its recorded path in this runtime.",
+                "authority":"CLIENT_BINARY",
+                "evidence_ids":[binary_header_evidence_id(payload)],
+            }
+        result=deep_byte_search(source,pattern,section=section,executable_only=executable_only,
+            max_matches=limit,context_bytes=context_bytes)
+        result.update({
+            "binary":info,
+            "authority":"CLIENT_BINARY",
+            "evidence_ids":[binary_header_evidence_id(payload)],
+        })
+        return result
+
+    def xrefs(
+        self,
+        binary: str,
+        *,
+        rva: int | None = None,
+        va: int | None = None,
+        offset: int | None = None,
+        executable_only: bool = True,
+        include_pointers: bool = True,
+        limit: int = 2000,
+    ) -> dict[str,Any]:
+        _index,payload,source=self._binary_source(binary)
+        if payload is None:
+            return {"status":"NOT_FOUND","binary":binary}
+        info=payload.get("binary") or {}
+        if source is None:
+            return {
+                "status":"BINARY_UNAVAILABLE","binary":info,
+                "error":"The indexed source binary is not accessible at its recorded path in this runtime.",
+                "authority":"CLIENT_BINARY",
+                "evidence_ids":[binary_header_evidence_id(payload)],
+            }
+        result=deep_xrefs(source,rva=rva,va=va,offset=offset,executable_only=executable_only,
+            include_pointers=include_pointers,max_results=limit)
+        result.update({
+            "binary":info,
+            "authority":"CLIENT_BINARY",
+            "evidence_ids":[binary_header_evidence_id(payload)],
+        })
+        return result
+
+    def function_candidates(self, binary: str, *, limit: int = 5000) -> dict[str,Any]:
+        _index,payload,source=self._binary_source(binary)
+        if payload is None:
+            return {"status":"NOT_FOUND","binary":binary}
+        info=payload.get("binary") or {}
+        if source is None:
+            return {
+                "status":"BINARY_UNAVAILABLE","binary":info,
+                "error":"The indexed source binary is not accessible at its recorded path in this runtime.",
+                "authority":"CLIENT_BINARY",
+                "evidence_ids":[binary_header_evidence_id(payload)],
+            }
+        result=deep_function_candidates(source,max_candidates=limit)
+        result.update({
+            "binary":info,
+            "authority":"CLIENT_BINARY",
+            "evidence_ids":[binary_header_evidence_id(payload)],
+        })
         return result
 
     def address_evidence(
