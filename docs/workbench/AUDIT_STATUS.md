@@ -683,3 +683,23 @@ Confidence boundary:
 - PE entry point/export RVAs are verified seeds, while direct-call function candidates remain INFERRED and no function-body recovery is claimed.
 
 The original FFXI DLL uploads are not stored in source control and are not available to every execution runtime. The deeper tools therefore return `BINARY_UNAVAILABLE` when an index exists but its recorded source binary cannot be opened. This preserves provenance instead of treating absence from the current runtime as absence from the client.\n\nValidation: Workbench Regression run #1074 is green on commit `d2d55bdcb3d0553e72e62b98c5bbd2460430a040`, including `test_client_binary_index.py`, `test_client_binary_research.py`, and the new `test_client_binary_deep.py` fixture.
+
+
+## 2026-09-25 — Capture → Lua → binding/C++ resolution hardening
+
+The class-aware Lua event path is now flow-sensitive and provenance-carrying rather than a callback-parameter-only heuristic.
+
+Implemented:
+- repaired the relocated `workbench.analyzers.server.lua_events` module, removing a duplicated stale implementation and malformed regex declaration;
+- callback parameter wrapper hints remain conservative seeds only;
+- local aliases propagate an existing wrapper hint transitively;
+- API-return assignments can derive a receiver type from indexed C++ binding/function return signatures;
+- conflicting return-wrapper candidates for the same receiver/method are rejected instead of selecting one;
+- unknown assignments invalidate any previously inferred local type so stale hints do not leak forward;
+- emitted Lua call records now carry a class-hint trace plus the binding/function/snapshot evidence that supported an API-return hint;
+- both server and capture graph connectors preserve the same PARAMETER / LOCAL_ALIAS / API_RETURN_TYPE resolution labels and metadata;
+- CALLS relationships remain INFERRED. No parameter-name, alias, or return-type hint upgrades runtime object identity or implementation status to VERIFIED.
+
+Regression coverage:
+- `test_lua_event_typing.py` covers alias propagation, API-return propagation, ambiguity rejection, provenance, and reassignment invalidation;
+- `test_server_lua_graph_bridge.py` is now part of the main regression workflow so capture/server Lua graph integration cannot silently drift again.
