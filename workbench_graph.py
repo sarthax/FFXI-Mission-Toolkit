@@ -133,6 +133,11 @@ def insert_record(con: sqlite3.Connection, record: Any, record_type: str | None 
                     (d["binding_id"],d["lua_name"],d["binding_system"],d["cpp_symbol"],d["class_name"],
                      d["function_id"],d["source_snapshot_id"],d["path"],d["line"],d["evidence_id"],
                      d["status"],_json(d["notes"])))
+        if d.get("function_id"):
+            con.execute("INSERT OR REPLACE INTO entity_relationships VALUES (?,?,?,?,?,?,?,?)",
+                        (f"binds:{d['binding_id']}:{d['function_id']}",d["binding_id"],d["function_id"],
+                         "BINDS",d.get("evidence_id"),"VERIFIED" if d.get("status")=="RESOLVED" else "UNKNOWN",
+                         "DISCOVERED",_json({"binding_system":d["binding_system"]})))
     elif cls == "EnumDefinition":
         con.execute("INSERT OR REPLACE INTO enum_definitions VALUES (?,?,?,?,?,?,?,?,?,?)",
                     (d["enum_id"],d["enum_name"],d["source_snapshot_id"],d["path"],d["line"],
