@@ -8,7 +8,7 @@ retain their original confidence.
 from __future__ import annotations
 import argparse, json, sqlite3
 from pathlib import Path
-import workbench_graph
+from workbench.core import graph as workbench_graph
 
 def edge(con, row):
     con.execute("INSERT OR REPLACE INTO entity_relationships VALUES (?,?,?,?,?,?,?,?,?)", (
@@ -31,7 +31,7 @@ def import_payload(path, db):
     imported={"functions":0,"bindings":0,"enums":0,"targets":0,"edges":0}
     for row in payload.get("functions",[]):
         workbench_graph.insert_record(con,row,"Function"); imported["functions"]+=1
-        eid=row.get("evidence_id") or f"snapshot:{sid}" if sid else None
+        eid=row.get("evidence_id") or (f"snapshot:{sid}" if sid else None)
         if eid:
             evidence(con,eid,"SERVER_SOURCE",source,row.get("path"),sid)
     for row in payload.get("bindings",[]):
