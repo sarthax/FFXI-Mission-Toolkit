@@ -1489,11 +1489,43 @@ def _patch_record(rec: bytearray, entry: dict, item_type: int, fmt: Optional[str
         _write_strings(strings, text_off, rec)
 
 
-def build_record(entry: dict, item_type: int, fmt: str = FORMAT_LEGACY) -> bytes:
+def build_record(entry: dict, item_type: int, fmt: str = FORMAT_LEGACY, item_id: Optional[int] = None) -> bytes:
+    """Build a brand-new record from scratch. `item_id` MUST be passed for a record that will
+    actually be written into a DAT (inject_client_item always does) -- without it the record's
+    'id' field is left as 0, which the client can (and, per the 2026-09-24 "created item shows as
+    not existing in-game" incident, does) treat as an invalid/nonexistent record even though the
+    server-side item_basic row is fine and the record sits at the structurally-correct slot.
+
+    A previous version of this function wrote item_type into a raw 2-byte offset 0x00 instead --
+    that is the record's 4-byte 'id' field, not a general item-type discriminator (id: (0x00,'<I')
+    per FIELDS above), so every freshly-created item got its own id field clobbered with the
+    numeric item_type (0/1/3/4/5/6) instead of its real id. The id is now set explicitly via the
+    real field table instead of a hand-rolled offset.
+
+    Deliberately NOT writing item_type into the record's 'type' field ((0x08,'<H') /
+    (0x0A,'<H')): _parse_record/ItemRecord only ever read that offset back as `kind` for weapons
+    (item_dat_tools.ItemRecord.kind, which create_item maps to item_weapon.dmgType -- the weapon's
+    damage-type subvalue, which genuinely varies per weapon), never as the item's general
+    type/category -- that category comes entirely from which DAT file + ITEM_DATS row the record
+    lives in, not from a byte inside the record. Writing item_type there would stomp a real weapon's
+    dmgType with a useless constant (4, the same for every weapon) and has no read path for any
+    other layout, so it is left to _patch_record's existing `_set('kind', 'type')` (weapons only,
+    from entry['kind'] if the caller supplies it)."""
     stride = STRIDE_BY_FORMAT[fmt]
     rec = bytearray(stride)
-    struct.pack_into('<H', rec, 0x00, item_type)
     rec[stride - 1] = TERMINATOR
+    layout = layout_for_type(item_type)
+    if item_id is not None:
+        write_field(rec, layout, fmt, 'id', int(item_id))
+    # _patch_record only writes the display-text block when the caller's entry contains at
+    # least one of singular/plural/description (see its own docstring: on an EXISTING record
+    # that guard correctly preserves the current text when a caller edits e.g. just `level` and
+    # never meant to touch the name). A brand-new record has no existing text to preserve --
+    # skipping the write here would leave it permanently blank, so the item has no client-visible
+    # name/description at all (part of the 2026-09-24 "created item unusable in-game" incident).
+    # Force it in for a fresh record whenever the caller gave us a name to work with.
+    if 'name' in entry and not ({'singular', 'plural', 'description'} & entry.keys()):
+        entry = {**entry, 'singular': entry['name']}
     _patch_record(rec, entry, item_type, fmt)
     return bytes(rec)
 
@@ -1654,8 +1686,60 @@ def patch_client_item(item_id: int, fields: dict) -> dict:
             'target': target}
 
 
+def delete_client_item(item_id: int) -> dict:
+    """Directly blank one item's client-DAT record in place -- zeroes just that record's bytes
+    (matching an untouched slot's own byte pattern) so free_slots() recognizes it as free again
+    immediately. This is deliberately NOT a "restore the DAT backup" operation: a whole-file
+    restore would also undo any OTHER edit made to that DAT since the backup was taken (other
+    items patched/created in the same file), which is exactly the gap item_edit.delete_item's
+    old DAT-untouched behavior left open. A snapshot of the file is still taken first, same as
+    every other DAT write, so this one record's deletion is itself always restorable."""
+    found = category_for_item(item_id)
+    if found is None:
+        raise ValueError(f'no client DAT covers item id {item_id}')
+    cat_name, base_id, item_type, en_rom, jp_rom = found
+    target = dat_target()
+    src_path = dat_write_source(en_rom)
+    dest_path = dat_write_dest(en_rom)
+    idx = item_id - base_id
+    dat = ItemDat.load(src_path)
+    if idx >= dat.count:
+        raise ValueError(f'item id {item_id} has no record in {cat_name} ({src_path})')
+    backup_dat_snapshot(dest_path, en_rom)
+    blank = bytearray(STRIDE_BY_FORMAT[dat.format])
+    blank[-1] = TERMINATOR
+    dat.set_record(idx, bytes(blank))
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+    dest_path.write_bytes(dat.encrypted())
+    return {'ok': True, 'category': cat_name, 'dat': str(dest_path), 'dat_ui': en_rom,
+            'record_index': idx, 'format': dat.format, 'target': target}
+
+
+def _server_item_ids_in_range(lo: int, hi: int) -> set:
+    """Real item_basic.itemid values in [lo, hi) -- a cross-check against the DAT-side
+    "is this slot empty" heuristic, which only looks at the record's name string. Item id 0
+    is FFXI's universal "no item" sentinel and item id 1 (Chocobo Bedding, base_id 0's very
+    first record) are both real examples of a slot free_slots() misread as empty because its
+    name-string decode came back blank/'.' for that record -- without this check, create_item()
+    would silently overwrite a real, already-in-use item's client DAT record. Best-effort: if
+    the DB can't be reached, callers fall back to the DAT-only heuristic rather than hard-failing
+    item creation entirely."""
+    try:
+        import zone_plot
+        db = zone_plot._db(); cu = db.cursor()
+        try:
+            cu.execute("select itemid from item_basic where itemid>=%s and itemid<%s", (lo, hi))
+            return {row[0] for row in cu.fetchall()}
+        finally:
+            db.close()
+    except Exception:
+        return set()
+
+
 def free_slots(cat_name: str, count: int) -> list:
-    """First `count` empty (placeholder-name) record indices in a DAT category."""
+    """First `count` empty (placeholder-name) record indices in a DAT category. Never returns
+    item id 0 (reserved "no item" sentinel) or an id the server DB already has a real
+    item_basic row for, even if that record's DAT name string happens to look empty."""
     row = next((r for r in ITEM_DATS if r[0] == cat_name), None)
     if row is None:
         raise ValueError(f'unknown item DAT category {cat_name!r}')
@@ -1664,8 +1748,12 @@ def free_slots(cat_name: str, count: int) -> list:
     if not en_path.exists():
         raise ValueError(f'DAT not found for category {cat_name!r}: {en_path}')
     dat = ItemDat.load(en_path)
+    used_ids = _server_item_ids_in_range(base_id, base_id + dat.count)
     out = []
     for idx in range(dat.count):
+        item_id = base_id + idx
+        if item_id == 0 or item_id in used_ids:
+            continue
         rec = dat.record(idx)
         text_off = _resolve_text_offset(rec, item_type, dat.format)
         strings = _read_strings(rec, text_off) if text_off is not None else []
@@ -1756,13 +1844,13 @@ def inject_client_item(cat_name: str, entry: dict) -> dict:
     if not slots:
         raise ValueError(f'no free slots left in {cat_name} ({src_path})')
     idx = slots[0]
+    item_id = base_id + idx
     backup_dat_snapshot(dest_path, en_rom)
     dat = ItemDat.load(src_path)
-    new_rec = build_record(entry, item_type, dat.format)
+    new_rec = build_record(entry, item_type, dat.format, item_id=item_id)
     dat.set_record(idx, new_rec)
     dest_path.parent.mkdir(parents=True, exist_ok=True)
     dest_path.write_bytes(dat.encrypted())
-    item_id = base_id + idx
     return {'ok': True, 'item_id': item_id, 'category': cat_name, 'record_index': idx,
             'dat': str(dest_path), 'dat_ui': en_rom, 'format': dat.format, 'target': target}
 
