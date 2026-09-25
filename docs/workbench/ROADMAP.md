@@ -98,17 +98,21 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - [x] Add build-condition/generated-source analyzer.
 
 ### Phase 2 — Server adapters and migration engine (P0)
-- TopazAdapter
-- DSPAdapter
-- LSBAdapter
-- TopazNextAdapter
-- CustomForkAdapter
-- logical schema mapping
-- Lua migration backend
-- SQL migration backend
-- binding compatibility engine
-- live target validation
-- ID/content collision analysis
+- [x] TopazAdapter
+- [x] DSPAdapter
+- [x] LSBAdapter
+- [ ] TopazNextAdapter
+- [ ] CustomForkAdapter
+- [ ] Logical schema mapping — core equipment, instances, NPCs, mobs, spawns, drops, battlefield registry/membership, and SQL extraction are implemented; broader schema coverage remains.
+- [ ] Generic FeatureSurface comparison — artifact roles, entity coverage, and behavioral capabilities are implemented; migration-rule coverage remains.
+- [ ] Snapshot-specific capability observations and target-aware Feature Checker evaluation — implemented for canonical graph/flagship E2E; broader capability producers remain.
+- [ ] Lua migration backend
+- [ ] SQL migration backend
+- [ ] Binding compatibility engine
+- [ ] Live target validation
+- [ ] ID/content collision analysis
+
+Current public flagship E2E: pinned LSB → legacy DSP Chains of Promathia 2-5 (Ancient Vows) reaches adapters, logical comparison, FeatureSurface capability alignment, canonical graph persistence, target-snapshot capability requirements, ValidationRun/ValidationResult, and Feature Checker.
 
 ### Phase 3 — C++/engine analyzer (P0)
 - [x] header declarations
