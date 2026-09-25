@@ -648,3 +648,17 @@ Implemented surfaces:
 - local-only .workbench/client-binaries/ index/cache convention, with proprietary EXE/DLL inputs remaining outside source control.
 
 The pipeline intentionally does not contain Wardrobe-specific detectors and does not patch, hook, or write client binaries. Feature-specific research can consume this generic evidence layer without dictating core architecture.
+
+
+## 2026-09-25 — Real FFXI client binary validation
+
+The generic client binary pipeline was exercised against real FFXI client files supplied outside source control:
+
+- FFXiMain.dll — PE32/i386, multi-section client module with a nonstandard executable POL1 section and a virtual executable .text section with zero raw bytes;
+- FFXiResource.dll — conventional PE32/i386 resource/support module;
+- FFXiVersions.dll — conventional PE32/i386 version/COM support module;
+- FFXi.dll — smaller PE32/i386 entry/support module with a nonstandard POL1 executable section.
+
+Static indexing successfully extracted PE metadata, section tables, imports, exports, and bounded string corpora from all four files. FFXiMain additionally demonstrated why the analyzer must surface layout limitations rather than assume a conventional raw .text section. That behavior is now represented as bounded layout-warning evidence and covered by regression.
+
+The supplied FTABLE/VTABLE pair was also sanity-checked as a separate DAT-index evidence layer: VTABLE contains one-byte virtual-volume entries and FTABLE contains a corresponding 16-bit entry for every VTABLE record. The EXE/DLL analyzer intentionally does not absorb this DAT mapping layer.
