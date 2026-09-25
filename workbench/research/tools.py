@@ -284,3 +284,52 @@ def register_domain_tools(registry: ResearchToolRegistry, reader) -> None:
         handler=reader.packet_lookup,
         access=ACCESS_READ,
     ))
+
+
+def register_extended_tools(
+    registry: ResearchToolRegistry,
+    *,
+    capture_reader=None,
+    reference_reader=None,
+    client_reader=None,
+) -> None:
+    """Register read-only capture/reference/client-DAT research tool families."""
+    if capture_reader is not None:
+        registry.register(ResearchTool(
+            name="capture.search",
+            description="Search indexed runtime capture bundles by label/capturer/zone/mission.",
+            handler=capture_reader.search,
+            access=ACCESS_READ,
+        ))
+        registry.register(ResearchTool(
+            name="capture.backtrace",
+            description="Backtrace one indexed runtime capture into canonical server/client implementation evidence.",
+            handler=capture_reader.backtrace,
+            access=ACCESS_READ,
+        ))
+    if reference_reader is not None:
+        registry.register(ResearchTool(
+            name="reference.search",
+            description="Search the bundled reference/wiki corpus. Results remain REFERENCE/INFERRED evidence.",
+            handler=reference_reader.search,
+            access=ACCESS_READ,
+        ))
+        registry.register(ResearchTool(
+            name="reference.compare",
+            description="Compare presence/revision metadata for explicit reference/wiki page titles.",
+            handler=reference_reader.compare,
+            access=ACCESS_READ,
+        ))
+    if client_reader is not None:
+        registry.register(ResearchTool(
+            name="client.capability",
+            description="Inspect canonical client capability evidence and observations.",
+            handler=client_reader.capability,
+            access=ACCESS_READ,
+        ))
+        registry.register(ResearchTool(
+            name="dat.lookup",
+            description="Read one client item DAT record through the existing read-only DAT decoder.",
+            handler=client_reader.dat_lookup,
+            access=ACCESS_READ,
+        ))
