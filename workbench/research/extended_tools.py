@@ -219,6 +219,61 @@ class ClientResearchReader:
         finally:
             con.close()
 
+    def dat_describe(
+        self,
+        *,
+        item_id: int | None = None,
+        category: str | None = None,
+    ) -> dict[str,Any]:
+        if item_id is None and not category:
+            return {"status":"ERROR","error":"item_id or category is required"}
+        row=None
+        if item_id is not None:
+            try:
+                found=item_dat_tools.category_for_item(int(item_id))
+            except Exception as exc:
+                return {"status":"ERROR","error":f"{type(exc).__name__}: {exc}"}
+            if found is None:
+                return {"status":"NOT_FOUND","item_id":int(item_id)}
+            row=found
+        else:
+            row=next((entry for entry in item_dat_tools.ITEM_DATS if entry[0]==category),None)
+            if row is None:
+                return {"status":"NOT_FOUND","category":category}
+        cat_name,base_id,item_type,en_rom,jp_rom=row
+        path=item_dat_tools.dat_path(en_rom)
+        if not path.exists():
+            return {
+                "status":"NOT_FOUND",
+                "category":cat_name,
+                "rom_path":en_rom,
+                "source_path":str(path),
+                "authority":"CLIENT_DAT",
+            }
+        try:
+            stride=item_dat_tools.detect_stride_path(path)
+            count=item_dat_tools.record_count(path)
+        except Exception as exc:
+            return {"status":"ERROR","error":f"{type(exc).__name__}: {exc}"}
+        return {
+            "status":"OK",
+            "authority":"CLIENT_DAT",
+            "category":cat_name,
+            "base_item_id":base_id,
+            "item_type":item_type,
+            "layout":item_dat_tools.layout_for_type(item_type),
+            "en_rom":en_rom,
+            "jp_rom":jp_rom,
+            "source_path":str(path),
+            "stride":stride,
+            "format":item_dat_tools.format_for_stride(stride),
+            "layout_description":item_dat_tools.describe(stride),
+            "record_count":count,
+            "item_id_min":base_id,
+            "item_id_max":base_id+count-1,
+            "notes":["Layout/capacity evidence only; empty slots and server item availability are separate questions."],
+        }
+
     def dat_lookup(self, item_id: int) -> dict[str,Any]:
         try:
             record=item_dat_tools.read_client_item(int(item_id))
