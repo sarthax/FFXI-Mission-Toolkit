@@ -234,3 +234,12 @@ A dedicated GitHub Actions workflow now executes the self-contained Workbench re
 ## 2026-09-25 — Evidence confidence tightening
 
 Function-scoped enum/constant references remain INFERRED even when enum identity is exact, because lexical function ownership is not semantic proof. Qualified enum identities such as `State::READY` are now recognized against the extracted enum index. Function-to-build-target mapping now uses VERIFIED confidence only for exact source-path matches; a basename fallback is accepted only when unique and remains INFERRED, while ambiguous duplicate basenames produce no function-level build edge. The expanded Workbench regression suite is green on commit `78e8bb26847115b6bc450124eadcf14d8f09109e` for both push and PR #2 runs.
+
+
+## 2026-09-25 — Evidence-aware LLM research roadmap
+
+The existing LLM integration was audited as a narrow but useful draft assistant: Open WebUI/Ollama provider access, read-only SQLite tools, logging, and explicit unverified-draft labeling. A dedicated architecture is now documented in `docs/workbench/LLM_RESEARCH_ARCHITECTURE.md` and Phase 8 of the roadmap. The target is a provider-neutral ResearchSession/orchestration layer with typed Workbench tools, bounded snapshot-scoped source crawling, evidence/provenance trails, contradiction detection, proposal-only migration/patch generation, and model-independent evaluation fixtures. Arbitrary filesystem/SQL mutation remains outside the LLM authority boundary.
+
+## 2026-09-25 — First public source-to-target migration smoke
+
+The Workbench now performs a real public repository migration smoke using pinned snapshots: LandSandBoat/server `3747feee0e38ab5c0283c4fe8deea7f0a9022351` as source and archived DarkstarProject/darkstar `ee1f489efbdee2d95a4f1a6c842790da9f54306e` as target. Generic instance slicing for Excavation Duty (instance 6300) resolves the LSB SQL dependency slice and compares it against the DSP logical schema. The executed CI job found 217 source logical records requiring IMPLEMENT because the archived DSP snapshot contains no matching instance-6300 feature slice. LSB source counts were: 1 instance, 34 instance-entity memberships, 7 NPCs, 27 mob spawns, 73 mob groups, 48 mob pools, and 27 drop rows. This is an architecture/migration-gap test, not proof that all 217 records should be copied literally; later dependency-aware conversion and target-ID/collision rules must refine these actions before package generation.
