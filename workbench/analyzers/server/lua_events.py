@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse,json,re
 from pathlib import Path
 from workbench.core.provenance import snapshot_id
-EVENT_RE=re.compile(r'(?P<expr>startEvent|csid\\s*==|event\\s*==)\\s*\\(?\\s*(?P<id>\\d+)')
+EVENT_RE=re.compile(r'(?P<expr>startEvent|csid\s*==|event\s*==)\s*\(?\s*(?P<id>\d+)')
 FUNC_RE=re.compile(r'(?m)^\s*function\s+([\w.:]+)\s*\(')
 CALL_RE=re.compile(r'(?<![\w])([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(')
 def index(root: Path):
