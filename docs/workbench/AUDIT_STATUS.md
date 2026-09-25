@@ -345,3 +345,10 @@ Phase 7 now has a non-destructive package-plan foundation. Existing generic Migr
 The Workbench now has a non-destructive package pipeline from ordered MigrationActions through machine-readable package manifests, plan-scoped Lua/SQL conversion, plan-scoped validation, safe staging, SHA-256 materialization provenance, validation-package metadata, and reversible file apply journaling. Legacy full-folder package conversion remains supported. Live SQL/database apply and rollback are intentionally not automated yet.
 
 Ancient Vows now exercises the package-plan and validation-package layers in the pinned LSB→DSP flagship E2E.
+
+
+## 2026-09-25 — Explicit migration backend routing
+
+Migration package steps now bind to an exact converter backend when one exists. The existing Topaz→legacy-DSP Lua and SQL converters are registered behind a generic backend registry. Unsupported routes, including current LSB→DSP artifact conversion, are marked explicitly and rejected by the legacy package converter instead of silently reusing the wrong transformation logic.
+
+Validation-package readiness now propagates converter support: semantic compatibility and staging can still succeed while conversion readiness remains MANUAL_REQUIRED. Domain plugins can also contribute conservative migration guidance; the reusable battlefield plugin reports NOT_REQUIRED only when capability and entity coverage are aligned.
