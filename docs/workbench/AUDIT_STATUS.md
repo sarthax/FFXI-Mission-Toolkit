@@ -338,3 +338,10 @@ See `docs/workbench/DOMAIN_PLUGIN_ARCHITECTURE.md`.
 ## 2026-09-25 — Dependency-aware migration package planning
 
 Phase 7 now has a non-destructive package-plan foundation. Existing generic MigrationAction records can be ordered from explicit canonical dependency edges, NOT_REQUIRED actions are excluded from execution planning, manual/unknown actions keep the plan in review state, and dependency cycles block the plan instead of guessing an order. The regression fixture is included in Workbench Regression CI and passed on run 272.
+
+
+## 2026-09-25 — Phase 7 package pipeline foundation
+
+The Workbench now has a non-destructive package pipeline from ordered MigrationActions through machine-readable package manifests, plan-scoped Lua/SQL conversion, plan-scoped validation, safe staging, SHA-256 materialization provenance, validation-package metadata, and reversible file apply journaling. Legacy full-folder package conversion remains supported. Live SQL/database apply and rollback are intentionally not automated yet.
+
+Ancient Vows now exercises the package-plan and validation-package layers in the pinned LSB→DSP flagship E2E.
