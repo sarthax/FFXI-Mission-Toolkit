@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from workbench.client.binary_index import binary_header_evidence_id, binary_record_evidence_id, binary_string_corpus_evidence_id
+
 
 class ClientBinaryResearchReader:
     def __init__(self, indexes: list[Path] | tuple[Path,...]):
@@ -36,6 +38,7 @@ class ClientBinaryResearchReader:
                 "export_count":len(payload.get("exports",[])),
                 "string_count":len(payload.get("strings",[])),
                 "authority":"CLIENT_BINARY",
+                "evidence_id":binary_header_evidence_id(payload),
             })
         return {"status":"OK","query":query,"matches":matches}
 
@@ -70,11 +73,12 @@ class ClientBinaryResearchReader:
                 hay=json.dumps(row,sort_keys=True).lower()
                 if needle and needle not in hay:
                     continue
-                rows.append(row)
+                rows.append({**row,"evidence_id":binary_record_evidence_id(field,row)})
                 if len(rows)>=limit:
                     break
             return {
                 "status":"OK","binary":info,"query":query,field:rows,
+                "evidence_ids":[row["evidence_id"] for row in rows],
                 "truncated":len(rows)>=limit,"authority":"CLIENT_BINARY",
             }
         return {"status":"NOT_FOUND","binary":binary}
@@ -111,10 +115,17 @@ class ClientBinaryResearchReader:
                     **row,
                     "authority":"CLIENT_BINARY",
                     "confidence":"VERIFIED",
+                    "evidence_id":binary_string_corpus_evidence_id(payload),
                 })
                 if len(matches)>=limit:
-                    return {"status":"OK","query":query,"matches":matches,"truncated":True}
-        return {"status":"OK","query":query,"matches":matches,"truncated":False}
+                    return {
+                        "status":"OK","query":query,"matches":matches,"truncated":True,
+                        "evidence_ids":sorted({row["evidence_id"] for row in matches}),
+                    }
+        return {
+            "status":"OK","query":query,"matches":matches,"truncated":False,
+            "evidence_ids":sorted({row["evidence_id"] for row in matches}),
+        }
 
     def address_evidence(
         self,
@@ -160,6 +171,14 @@ class ClientBinaryResearchReader:
                 "section":section,
                 "nearby_strings":nearby,
                 "authority":"CLIENT_BINARY",
+                "evidence_ids":sorted({
+                    binary_header_evidence_id(payload),
+                    binary_string_corpus_evidence_id(payload),
+                    *(
+                        [binary_record_evidence_id("sections",section)]
+                        if section is not None else []
+                    ),
+                }),
                 "notes":["Address evidence is static mapping/context only; it does not infer function semantics."],
             }
         return {"status":"NOT_FOUND","binary":binary}
