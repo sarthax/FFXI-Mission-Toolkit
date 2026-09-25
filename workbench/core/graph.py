@@ -262,13 +262,27 @@ def resolve_relationships(con: sqlite3.Connection) -> int:
     for rid, target, relationship, metadata_json in rows:
         metadata = json.loads(metadata_json or "{}")
         if relationship == "USES_ENUM" and target and not target.startswith(("cpp-symbol:","enum:","constant:")):
-            enum_hits = con.execute("SELECT enum_id FROM enum_definitions WHERE symbol=? ORDER BY line",(target,)).fetchall()
-            enum_ids = {row[0] for row in enum_hits}
-            if len(enum_ids) == 1:
-                enum_id = next(iter(enum_ids))
-                con.execute("UPDATE entity_relationships SET target_node=?, metadata_json=? WHERE relationship_id=?",
-                            (enum_id, _json({**metadata, "resolved_from": target, "resolution": "exact enum/constant symbol"}), rid))
-                changed += 1
+            if "::" in target:
+                enum_name,symbol=target.rsplit("::",1)
+                enum_hits=con.execute(
+                    "SELECT enum_id FROM enum_definitions WHERE enum_name=? AND symbol=? ORDER BY line",
+                    (enum_name,symbol),
+                ).fetchall()
+                resolution="exact namespaced enum symbol"
+            else:
+                enum_hits=con.execute(
+                    "SELECT enum_id FROM enum_definitions WHERE symbol=? ORDER BY line",
+                    (target,),
+                ).fetchall()
+                resolution="exact enum/constant symbol"
+            enum_ids={row[0] for row in enum_hits}
+            if len(enum_ids)==1:
+                enum_id=next(iter(enum_ids))
+                con.execute(
+                    "UPDATE entity_relationships SET target_node=?, metadata_json=? WHERE relationship_id=?",
+                    (enum_id,_json({**metadata,"resolved_from":target,"resolution":resolution}),rid),
+                )
+                changed+=1
                 continue
         if target.startswith("cpp-symbol:"):
             symbol = target[len("cpp-symbol:"):]
@@ -352,6 +366,7 @@ def self_test() -> None:
         insert_record(con, Binding("b", "bar", "SOL2", "Foo::bar", "Foo", "fn", status="RESOLVED"))
         insert_record(con, EnumDefinition("e", "State", None, "state.h", 1, "CXX_ENUM", "1", "READY"))
         insert_record(con, DependencyEdge("de", "packet:1", "cpp-symbol:Foo::bar", "HANDLED_BY", confidence="VERIFIED", source_snapshot_id="src"))
+        insert_record(con, DependencyEdge("enum-use", "fn", "State::READY", "USES_ENUM", confidence="INFERRED", source_snapshot_id="src"))
         insert_record(con, Capability("cap", "wardrobe_slots", "CLIENT", subject_id="client:test", status="UNKNOWN"))
         insert_record(con, CapabilityRequirement("req", "f", "cap", required=True, status="UNKNOWN"))
         resolve_relationships(con)
@@ -359,7 +374,7 @@ def self_test() -> None:
         expected = {
             "features": 1, "artifacts": 1, "migration_actions": 1,
             "validation_results": 1, "validation_runs": 1, "implementations": 1, "analysis_results": 1,
-            "functions": 1, "bindings": 1, "enum_definitions": 1, "entity_relationships": 3, "capabilities": 1, "capability_requirements": 1,
+            "functions": 1, "bindings": 1, "enum_definitions": 1, "entity_relationships": 4, "capabilities": 1, "capability_requirements": 1,
         }
         actual = {k: con.execute(f"SELECT COUNT(*) FROM {k}").fetchone()[0] for k in expected}
         assert actual == expected, (actual, expected)
@@ -367,6 +382,9 @@ def self_test() -> None:
         assert target == ("fn", "VERIFIED"), target
         binding = con.execute("SELECT relationship, target_node, confidence FROM entity_relationships WHERE relationship_id='binds:b:fn'").fetchone()
         assert binding == ("BINDS", "fn", "VERIFIED"), binding
+        enum_use = con.execute("SELECT target_node, confidence, metadata_json FROM entity_relationships WHERE relationship_id='enum-use'").fetchone()
+        assert enum_use[0:2] == ("e", "INFERRED"), enum_use
+        assert json.loads(enum_use[2])["resolution"] == "exact namespaced enum symbol", enum_use
         requirement = con.execute("SELECT source_node, target_node, relationship, confidence FROM entity_relationships WHERE relationship_id='requires:req'").fetchone()
         assert requirement == ("f", "cap", "REQUIRES", "VERIFIED"), requirement
         con.close()
