@@ -217,7 +217,8 @@ def main():
         "action:ancient-vows:battlefield",
         "action:ancient-vows:mission",
     ],package_manifest
-    assert validation_package["status"]=="READY",validation_package
+    assert validation_package["status"]=="MANUAL_REQUIRED",validation_package
+    assert any(check["validation_type"]=="CONVERTER_BACKEND_SUPPORT" for check in validation_package["checks"]),validation_package
     assert not surface_comparison.source_only_entity_ids,surface_comparison
     assert not surface_comparison.target_only_entity_ids,surface_comparison
     assert surface_comparison.capability_coverage_status=="CAPABILITIES_ALIGNED",surface_comparison
