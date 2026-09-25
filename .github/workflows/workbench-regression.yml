@@ -49,6 +49,7 @@ jobs:
           python test_fixtures/test_domain_plugin_registry.py
           python test_fixtures/test_logical_migration_planner.py
           python test_fixtures/test_migration_backend_registry.py
+          python test_fixtures/test_migration_backend_probe.py
           python test_fixtures/test_dependency_package_plan.py
           python test_fixtures/test_package_manifest.py
           python test_fixtures/test_package_materialize.py
