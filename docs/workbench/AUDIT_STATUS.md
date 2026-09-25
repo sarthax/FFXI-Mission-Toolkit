@@ -140,3 +140,6 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 - Capture numeric event identifiers are deliberately retained as `MESSAGE_OR_EVENT_ID` until packet/server-event evidence proves a CSID/startEvent/csid interpretation.
 - Added `ffxiclopedia_adapter.py` for reproducible offline MediaWiki XML ingestion. FFXIclopedia is a separate reference source from BG Wiki; future conflicts are findings, not silent source selection.
 - Added `docs/workbench/CAPTURE_BACKTRACE_AND_REFERENCE_WIKIS.md` documenting the reverse capture chain and dual-wiki evidence model.
+
+- Added `workbench_connect_server.py` to import C++ API, Lua binding, enum/constant, build-target, and dependency analyzer outputs into the canonical graph while preserving source-snapshot provenance and evidence confidence.
+- This establishes the first reusable server-side chain: binding → C++ function, C++ source → build target, and dependency/packet edges can now coexist with capture, feature, and capability nodes in one graph.
