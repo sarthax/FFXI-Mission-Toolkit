@@ -395,3 +395,8 @@ Package manifests preserve this as `CONDITIONAL`, validation adds a converter-pr
 ## 2026-09-25 — Artifact-level converter preflight
 
 Conditional migration backends can now preflight each artifact independently against real source text. Passing files are promoted from CONDITIONAL to SUPPORTED in a derived manifest, while framework-heavy, namespace-unsafe, missing, or otherwise unresolved files remain conditional/manual-review. This does not mutate the original manifest or authorize target application by itself.
+
+
+## 2026-09-25 — Ancient Vows artifact preflight
+
+The flagship Ancient Vows LSB→DSP E2E now runs the conditional Lua backend preflight against the real pinned mission and battlefield scripts. Both artifacts correctly remain MANUAL_REQUIRED because they contain modern framework/namespace structures that have not yet received verified legacy-DSP rewrites. No file is promoted merely because the route itself is recognized.
