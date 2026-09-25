@@ -19,7 +19,7 @@ def index(root: Path):
                 else: break
             start=containing.start() if containing else max(0,m.start()-1000)
             end=funcs[idx+1].start() if containing and idx+1<len(funcs) else min(len(text),m.end()+2000)
-            calls=[{"object":cm.group(1),"method":cm.group(2),"line":text.count("\n",0,cm.start())+1} for cm in CALL_RE.finditer(text,start,end)]
+            hints=param_type_hints(containing)\n            calls=[{"object":cm.group(1),"method":cm.group(2),"line":text.count("\\n",0,cm.start())+1,"class_hint":hints.get(cm.group(1)),"class_hint_source":"FUNCTION_PARAMETER_NAME" if hints.get(cm.group(1)) else None} for cm in CALL_RE.finditer(text,start,end)]
             rows.append({"zone":f.parent.parent.name,"script":f.stem,"path":f.relative_to(root).as_posix(),"event_id":int(m.group("id")),"event_expression":m.group("expr"),"line":line,"function":containing.group(1) if containing else None,"function_line":text.count("\n",0,containing.start())+1 if containing else None,"calls":calls})
     return rows
 def main():
