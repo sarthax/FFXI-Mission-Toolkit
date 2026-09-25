@@ -38,6 +38,7 @@ class ClientBinaryResearchReader:
                 "import_count":len(payload.get("imports",[])),
                 "export_count":len(payload.get("exports",[])),
                 "string_count":len(payload.get("strings",[])),
+                "layout_warnings":payload.get("layout_warnings",[]),
                 "authority":"CLIENT_BINARY",
                 "evidence_id":binary_header_evidence_id(payload),
             })
