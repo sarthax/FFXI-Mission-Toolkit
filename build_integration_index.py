@@ -105,18 +105,20 @@ def index(root):
             # Function-level build edges let packet/Lua traces continue from a resolved C++ symbol
             # to its build target. The target association is verified lexically; build conditions
             # are still not evaluated.
-            candidates=[rel]
-            candidates.extend(path for path in all_paths if Path(path).name==Path(rel).name)
-            for path in sorted(set(candidates)):
-                if path not in all_paths: continue
+            if rel in all_paths:
+                resolved_paths=[(rel,"VERIFIED","Exact source path appears in the CMake target source list.")]
+            else:
+                basename_hits=[path for path in all_paths if Path(path).name==Path(rel).name]
+                resolved_paths=[(basename_hits[0],"INFERRED","Unique basename fallback matched the CMake source token; path identity remains inferred.")] if len(basename_hits)==1 else []
+            for path,confidence,path_note in resolved_paths:
                 for fn in api_funcs:
                     if fn.path==path and fn.definition:
                         edges.append(DependencyEdge(
                             edge_id=f"function-builds-into:{fn.function_id}:{target_id}",
                             source_node=fn.function_id,target_node=target_id,relationship="BUILDS_INTO",
-                            confidence="VERIFIED",status="DISCOVERED",discovered_by="build_integration_index",
+                            confidence=confidence,status="DISCOVERED",discovered_by="build_integration_index",
                             source_location=target_id,
-                            notes=["Function definition is in a source file explicitly associated with this CMake target; conditional build evaluation not performed."]
+                            notes=[path_note,"CMake target configuration/generator conditions were not evaluated."]
                         ))
     return builders,findings,targets,edges
 
