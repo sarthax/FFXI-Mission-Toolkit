@@ -72,14 +72,60 @@ class BattlefieldFamilyPlugin(MetadataPlugin):
                 message="Battlefield behavior and entity coverage are aligned; representation drift alone does not require migration.",
                 metadata={"proposed_action":"NOT_REQUIRED","safe_auto":True},
             ),)
-        return (PluginFinding(
+        findings=[PluginFinding(
             plugin_id=self.spec.plugin_id,
             subject_id=context.feature_id,
             finding_type="MIGRATION_RULE",
             status="MANUAL_REQUIRED",
             message="Battlefield semantic coverage is not fully aligned; keep migration decisions under manual review until a verified rule resolves the gap.",
             metadata={"proposed_action":"MANUAL_REVIEW","safe_auto":False},
-        ),)
+        )]
+        if (context.source_family or "").upper()=="LSB" and (context.target_family or "").upper()=="DSP":
+            findings.extend((
+                PluginFinding(
+                    plugin_id=self.spec.plugin_id,
+                    subject_id=context.feature_id,
+                    finding_type="MIGRATION_RESHAPE",
+                    status="MANUAL_REQUIRED",
+                    message="Map modern battlefield policy fields into the legacy DSP registry representation.",
+                    metadata={
+                        "proposed_action":"RESHAPE",
+                        "source_roles":["battlefield_script","level_cap_policy"],
+                        "target_roles":["registry_sql"],
+                        "reshape":"BATTLEFIELD_POLICY_TO_REGISTRY_SQL",
+                        "safe_auto":False,
+                    },
+                ),
+                PluginFinding(
+                    plugin_id=self.spec.plugin_id,
+                    subject_id=context.feature_id,
+                    finding_type="MIGRATION_RESHAPE",
+                    status="MANUAL_REQUIRED",
+                    message="Map modern group/entity registry membership into legacy DSP battlefield membership rows.",
+                    metadata={
+                        "proposed_action":"RESHAPE",
+                        "source_roles":["battlefield_script","entity_registry"],
+                        "target_roles":["battlefield_membership"],
+                        "reshape":"BATTLEFIELD_GROUPS_TO_MEMBERSHIP_SQL",
+                        "safe_auto":False,
+                    },
+                ),
+                PluginFinding(
+                    plugin_id=self.spec.plugin_id,
+                    subject_id=context.feature_id,
+                    finding_type="MIGRATION_RESHAPE",
+                    status="MANUAL_REQUIRED",
+                    message="Translate modern mission/battlefield framework orchestration into legacy DSP callback Lua.",
+                    metadata={
+                        "proposed_action":"RESHAPE",
+                        "source_roles":["mission_script","battlefield_script"],
+                        "target_roles":["battlefield_script"],
+                        "reshape":"FRAMEWORK_ORCHESTRATION_TO_DSP_CALLBACKS",
+                        "safe_auto":False,
+                    },
+                ),
+            ))
+        return tuple(findings)
 
     spec=DomainPluginSpec(
         plugin_id="framework.battlefield",
