@@ -333,3 +333,9 @@ def register_extended_tools(
             handler=client_reader.dat_lookup,
             access=ACCESS_READ,
         ))
+        registry.register(ResearchTool(
+            name="dat.describe",
+            description="Inspect client item DAT layout, record stride, category, and capacity without modifying files.",
+            handler=client_reader.dat_describe,
+            access=ACCESS_READ,
+        ))
