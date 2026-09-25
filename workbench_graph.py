@@ -169,6 +169,11 @@ def import_json(path: Path, db: Path):
                      m.get("status","DISCOVERED"),_json(m.get("metadata",{}))))
     for row in payload.get("actions",[]):
         insert_record(con,row,"MigrationAction")
+    if isinstance(payload.get("validation_run"),dict):
+        insert_record(con,payload["validation_run"],"ValidationRun")
+    elif isinstance(payload.get("validation_run"),list):
+        for row in payload["validation_run"]:
+            insert_record(con,row,"ValidationRun")
     if isinstance(payload.get("validation"),dict):
         insert_record(con,payload["validation"],"ValidationResult")
     if "analysis" in payload:
