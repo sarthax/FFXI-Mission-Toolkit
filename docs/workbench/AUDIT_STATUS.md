@@ -154,3 +154,11 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 - This establishes the first semantic bridge from runtime capture observations into server event/script/action data while preserving `UNKNOWN`/`INFERRED` states where semantics are not proven.
 
 - Added `lua_event_index.py`: conservative server Lua event/API surface extraction with source snapshot provenance, designed to let capture-derived CSIDs resolve into actual Lua handler context and subsequent binding/C++ analysis without assuming semantics from numeric IDs alone.
+
+
+## 2026-09-25 — server graph Lua bridge
+
+- Extended `workbench_connect_server.py` with an optional Lua event-surface input and consolidated source DB verification path.
+- A Lua event is connected to a canonical server-event node only when `npc_event_refs` independently confirms the same literal event ID in the same zone and NPC script.
+- Verified event → Lua function edges retain server-source snapshot provenance; Lua colon-call → binding edges remain `INFERRED` name-only candidates until object/class semantics are proven.
+- The bridge therefore produces a traversable capture/event → Lua function → binding → C++ path without converting ambiguous Lua method names into false-positive class resolutions.
