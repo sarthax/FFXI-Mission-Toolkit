@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse,json,re
 from pathlib import Path
 from workbench.core.provenance import snapshot_id
+from workbench.core.services.packet_identity import canonical_opcode, parse_opcode, packet_node_id
 
 # Only explicit dispatch/registration patterns become HANDLED_BY. Generic opcode references remain REFERENCES.
 SWITCH_CASE_RE=re.compile(r'\bcase\s+(0x[0-9A-Fa-f]+|\d+)\s*:',re.I)
@@ -22,8 +23,9 @@ def index_packet_db(path:Path):
     rows=[]
     for m in re.finditer(r'<packet[^>]*?(?:opcode|id)=["\']([^"\']+)["\'][^>]*>',text,re.I):
         raw=m.group(1)
-        try: canonical=f"0x{int(raw,0):03x}"
-        except ValueError: canonical=raw.lower()
+        canonical=canonical_opcode(raw)
+        if canonical is None:
+            continue
         rows.append({"opcode":canonical,"raw_opcode":raw,"location":f"{path}:{text.count(chr(10),0,m.start())+1}"})
     if not rows:
         for m in re.finditer(r'GP_(?:CLI|SERV)_COMMAND_[A-Z0-9_]+',text):
@@ -35,10 +37,10 @@ def index_server(root:Path,opcodes):
     known={str(op.get("opcode","")) for op in opcodes if op.get("opcode")}
     normalized={}
     for token in known:
-        try: normalized[token.lower()]=int(token,0)
-        except ValueError:
-            try: normalized[token.lower()]=int(token,16)
-            except ValueError: pass
+        value=parse_opcode(token)
+        canonical=canonical_opcode(token)
+        if value is not None and canonical is not None:
+            normalized[canonical]=value
     for p in root.rglob("*"):
         if not p.is_file() or p.suffix.lower() not in {".cpp",".h",".hpp",".cc",".cxx"}: continue
         t=p.read_text(encoding="utf-8",errors="replace")
@@ -50,7 +52,7 @@ def index_server(root:Path,opcodes):
                 if value is not None:
                     for tok,val in normalized.items():
                         if val==value:
-                            edges.append({"source_node":f"packet:{tok}","target_node":f"cpp-symbol:{direct.group(2)}",
+                            edges.append({"source_node":packet_node_id(tok),"target_node":f"cpp-symbol:{direct.group(2)}",
                                           "relationship":"HANDLED_BY","confidence":"VERIFIED","status":"DISCOVERED",
                                           "source_location":f"{p}:{n}","notes":["Explicit switch/case directly invokes handler symbol on the same statement."]})
             m=SWITCH_CASE_RE.search(line)
@@ -59,7 +61,7 @@ def index_server(root:Path,opcodes):
                 except ValueError: continue
                 for tok,val in normalized.items():
                     if val==value:
-                        edges.append({"source_node":f"packet:{tok}","target_node":f"cpp:{p.relative_to(root).as_posix()}:{n}",
+                        edges.append({"source_node":packet_node_id(tok),"target_node":f"cpp:{p.relative_to(root).as_posix()}:{n}",
                                       "relationship":"HANDLED_BY","confidence":"VERIFIED","status":"DISCOVERED",
                                       "source_location":f"{p}:{n}","notes":["Explicit switch/case opcode dispatch; downstream handler resolution is not inferred."]})
             m=DISPATCH_RE.search(line)
@@ -68,13 +70,13 @@ def index_server(root:Path,opcodes):
                 except ValueError: continue
                 for tok,val in normalized.items():
                     if val==value:
-                        edges.append({"source_node":f"packet:{tok}","target_node":f"cpp-symbol:{m.group(2)}",
+                        edges.append({"source_node":packet_node_id(tok),"target_node":f"cpp-symbol:{m.group(2)}",
                                       "relationship":"HANDLED_BY","confidence":"VERIFIED","status":"DISCOVERED",
                                       "source_location":f"{p}:{n}","notes":["Explicit packet-handler registration pattern matched."]})
             for tok,val in normalized.items():
                 if re.search(rf'(?<![A-Za-z0-9_])(?:0x)?{re.escape(tok)}(?![A-Za-z0-9_])',line,re.I):
-                    if not any(e["source_node"]==f"packet:{tok}" and e["source_location"]==f"{p}:{n}" and e["relationship"]=="HANDLED_BY" for e in edges):
-                        edges.append({"source_node":f"packet:{tok}","target_node":f"cpp:{p.relative_to(root).as_posix()}:{n}",
+                    if not any(e["source_node"]==packet_node_id(tok) and e["source_location"]==f"{p}:{n}" and e["relationship"]=="HANDLED_BY" for e in edges):
+                        edges.append({"source_node":packet_node_id(tok),"target_node":f"cpp:{p.relative_to(root).as_posix()}:{n}",
                                       "relationship":"REFERENCES","confidence":"INFERRED","status":"DISCOVERED",
                                       "source_location":f"{p}:{n}","notes":["Opcode token occurrence only; not proof this code is the runtime handler."]})
     return edges
