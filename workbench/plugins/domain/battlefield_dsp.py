@@ -257,3 +257,45 @@ def generated_outputs_for_dsp_battlefield(
             },
         ))
     return tuple(outputs)
+
+
+@dataclass(frozen=True)
+class DspBattlefieldCallbackAdaptationPlan:
+    status: str
+    required_callbacks: tuple[str, ...]
+    present_callbacks: tuple[str, ...]
+    missing_callbacks: tuple[str, ...]
+    source_framework_methods: tuple[str, ...]
+    safe_to_generate: bool
+    notes: tuple[str, ...] = ()
+
+
+def plan_dsp_battlefield_callback_adaptation(
+    target_surface: DspBattlefieldCallbackSurface,
+    *,
+    source_framework_methods: Sequence[str] = (),
+) -> DspBattlefieldCallbackAdaptationPlan:
+    """Plan legacy callback structure without inventing callback bodies.
+
+    Callback stubs are not generated because LSB framework orchestration can distribute
+    mission, reward, entry and completion semantics across multiple source artifacts.
+    """
+    missing=target_surface.missing_callbacks
+    if not missing:
+        status="COVERAGE_ALIGNED"
+        notes=("Legacy DSP callback surface already exists; no callback skeleton migration is required.",)
+    else:
+        status="MANUAL_REQUIRED"
+        notes=(
+            "Legacy DSP callback functions are missing.",
+            "Translate source framework behavior into callback bodies using feature evidence; do not generate empty semantic stubs.",
+        )
+    return DspBattlefieldCallbackAdaptationPlan(
+        status=status,
+        required_callbacks=target_surface.expected_callbacks,
+        present_callbacks=target_surface.present_callbacks,
+        missing_callbacks=missing,
+        source_framework_methods=tuple(sorted(set(source_framework_methods))),
+        safe_to_generate=False,
+        notes=notes,
+    )
