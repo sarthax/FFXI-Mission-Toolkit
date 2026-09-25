@@ -93,6 +93,7 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - [x] Add machine-readable analysis outputs.
 - [x] Implement generic SQLite-backed canonical graph store.
 - [ ] Connect existing entity_profile, map confidence, capture, packet, and backport reports.
+- [x] Add build-condition/generated-source analyzer.
 
 ### Phase 2 — Server adapters and migration engine (P0)
 - TopazAdapter
@@ -116,7 +117,7 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - [x] C++ dependency graph (conservative)
 - [x] packet dispatch pattern extraction (deterministic switch/registration evidence; full handler resolution remains source-dependent)
 - [x] build-system inclusion (conservative)
-- [x] compile conditions/generated sources (conservative)
+- [x] compile conditions/generated-source syntax analyzer (conservative; no environment evaluation)
 - [x] engine migration classification
 
 ### Phase 4 — Client capability and synchronization (P0/P1)
