@@ -67,6 +67,23 @@ def resolve_feature(con: sqlite3.Connection, value: str) -> dict | None:
 
 
 
+def aggregate_capability_observations(records: list[dict]) -> str:
+    if not records:
+        return "UNKNOWN"
+    statuses=[CAPABILITY_STATUSES.get(record["status"],"UNKNOWN") for record in records]
+    if any(status=="CONTRADICTED" for status in statuses):
+        return "CONTRADICTED"
+    if any(status=="MISSING" for status in statuses):
+        return "MISSING"
+    if any(status=="UNKNOWN" for status in statuses):
+        return "UNKNOWN"
+    if any(status=="PRESENT_UNVERIFIED" for status in statuses):
+        return "PRESENT_UNVERIFIED"
+    if all(status=="VERIFIED" for status in statuses):
+        return "VERIFIED"
+    return "UNKNOWN"
+
+
 def implementation_dimension(records: list[dict]) -> str:
     statuses = [record["status"] for record in records]
     if not records:
@@ -109,17 +126,41 @@ def check_feature(con: sqlite3.Connection, feature: dict) -> dict:
             (cap_id,),
         ).fetchone()
 
+        observations = []
+        if cap is not None:
+            for obs in con.execute(
+                "SELECT observation_id,capability_id,source_snapshot_id,status,value_json,evidence_id,notes_json "
+                "FROM capability_observations WHERE capability_id=? ORDER BY source_snapshot_id,observation_id",
+                (cap_id,),
+            ):
+                observations.append({
+                    "observation_id":obs[0],"capability_id":obs[1],"source_snapshot_id":obs[2],
+                    "status":obs[3],"value":_json_value(obs[4]),"evidence_id":obs[5],
+                    "notes":_json_value(obs[6]) or [],
+                })
+
+        target_snapshot=feature.get("target_snapshot_id")
+        selected_observations=[
+            obs for obs in observations
+            if target_snapshot is not None and obs["source_snapshot_id"]==target_snapshot
+        ]
+
         if cap is None:
             observed = "MISSING"
             cap_record = None
         else:
-            observed = CAPABILITY_STATUSES.get(cap[5], "UNKNOWN")
             cap_record = {
                 "capability_id": cap[0], "name": cap[1], "capability_type": cap[2],
                 "subject_id": cap[3], "source_snapshot_id": cap[4], "status": cap[5],
                 "value": _json_value(cap[6]), "evidence_id": cap[7],
                 "notes": _json_value(cap[8]) or [],
             }
+            if selected_observations:
+                observed=aggregate_capability_observations(selected_observations)
+            elif observations and target_snapshot is not None:
+                observed="UNKNOWN"
+            else:
+                observed = CAPABILITY_STATUSES.get(cap[5], "UNKNOWN")
 
         checks.append({
             "requirement_id": req_id,
@@ -130,6 +171,9 @@ def check_feature(con: sqlite3.Connection, feature: dict) -> dict:
             "requirement_notes": _json_value(req_notes) or [],
             "observed_status": observed,
             "capability": cap_record,
+            "observations": observations,
+            "selected_observations": selected_observations,
+            "observation_selection": "TARGET_SNAPSHOT" if selected_observations else ("NO_TARGET_OBSERVATION" if observations and target_snapshot is not None else "LEGACY_CAPABILITY_STATUS"),
         })
 
     # Report only explicit semantic edges here; generic reachability remains navigation evidence.
