@@ -3,8 +3,8 @@
 from __future__ import annotations
 import argparse,json,re
 from pathlib import Path
-from source_snapshot import snapshot_id
-EVENT_RE=re.compile(r'(?:(?:startEvent|csid\s*==|event\s*==)\s*\(?\s*)(\d+)')
+from workbench.core.provenance import snapshot_id
+EVENT_RE=re.compile(r'(?P<expr>startEvent|csid\\s*==|event\\s*==)\\s*\\(?\\s*(?P<id>\\d+)')
 FUNC_RE=re.compile(r'(?m)^\s*function\s+([\w.:]+)\s*\(')
 CALL_RE=re.compile(r'(?<![\w])([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(')
 def index(root: Path):
@@ -20,7 +20,7 @@ def index(root: Path):
             start=containing.start() if containing else max(0,m.start()-1000)
             end=funcs[idx+1].start() if containing and idx+1<len(funcs) else min(len(text),m.end()+2000)
             calls=[{"object":cm.group(1),"method":cm.group(2),"line":text.count("\n",0,cm.start())+1} for cm in CALL_RE.finditer(text,start,end)]
-            rows.append({"zone":f.parent.parent.name,"script":f.stem,"path":f.relative_to(root).as_posix(),"event_id":int(m.group(1)),"line":line,"function":containing.group(1) if containing else None,"function_line":text.count("\n",0,containing.start())+1 if containing else None,"calls":calls})
+            rows.append({"zone":f.parent.parent.name,"script":f.stem,"path":f.relative_to(root).as_posix(),"event_id":int(m.group("id")),"event_expression":m.group("expr"),"line":line,"function":containing.group(1) if containing else None,"function_line":text.count("\n",0,containing.start())+1 if containing else None,"calls":calls})
     return rows
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument("root",type=Path); ap.add_argument("--json",type=Path)
