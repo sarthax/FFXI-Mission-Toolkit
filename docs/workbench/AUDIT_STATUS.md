@@ -373,3 +373,8 @@ This closes the review-package integrity gap between package assembly and later 
 ## 2026-09-25 — Ancient Vows package cohesion gate
 
 The flagship Ancient Vows LSB→DSP E2E now verifies the fully assembled migration workspace with the package cohesion service. The test requires manifest, validation metadata, source/generated journals, staged files, and recorded SHA-256 hashes to agree before the package is considered reviewable.
+
+
+## 2026-09-25 — Apply-readiness gate
+
+Assembled migration packages now have an explicit apply-readiness assessment. A package is READY only when package cohesion passes and validation status is READY. MANUAL_REQUIRED validation remains review-only, while cohesion failures, blocked validation, missing validation metadata, or unknown validation states block application. This gate does not apply SQL to a live database.
