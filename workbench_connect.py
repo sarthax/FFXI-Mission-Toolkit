@@ -16,6 +16,8 @@ import sqlite3
 from pathlib import Path
 
 import workbench_graph
+from workbench_schema import Feature
+import re
 
 
 def _add_entity(con, entity_id, entity_type, display_name, metadata=None):
@@ -94,11 +96,14 @@ def connect(db: Path, graph_db: Path, limit: int | None = None) -> dict:
                 add_edge(f"observed:{cap_id}:{npcid}", cid, eid, "OBSERVES", cev, "VERIFIED",
                          "DISCOVERED", {"entity_id": npcid})
 
+    _add_entity(dst, "domain:assault", "DOMAIN", "Assault", {"source": "ffxi_zone_database"})
+
     # Assault mission index -> canonical feature/entity. Kept generic enough that other domain
     # adapters can later add Salvage/Nyzul/etc without changing the core graph.
     try:
         for mid, name in src.execute("SELECT mission_id,name FROM assault_missions ORDER BY mission_id"):
             fid = f"feature:assault-mission:{mid}"
+            workbench_graph.insert_record(dst, Feature(fid, name, "MISSION", "Assault", status="DISCOVERED", metadata={"mission_id": mid}))
             add_entity(fid, "FEATURE", name, {"domain": "Assault", "mission_id": mid})
             add_identifier(fid, "mission_id", mid)
             ev = f"evidence:server-db:assault-mission:{mid}"
@@ -117,12 +122,13 @@ def connect(db: Path, graph_db: Path, limit: int | None = None) -> dict:
             add_identifier(wid, "wiki_norm_title", norm)
             ev = f"evidence:wiki:{norm}"
             add_evidence(ev, "REFERENCE", "BGWiki", url, "Reference/navigation only")
-            npc = src.execute(
-                "SELECT npcid FROM npc_names WHERE lower(replace(replace(replace(name,' ',''),'-',''),'_',''))=? LIMIT 1",
-                (norm,),
-            ).fetchone()
-            if npc:
-                add_edge(f"wiki-about:{norm}:npc:{npc[0]}", wid, f"npc:{npc[0]}", "REFERENCES", ev,
+            npc = None
+            for npcid, npc_name in src.execute("SELECT npcid,name FROM npc_names"):
+                if re.sub(r"[^a-z0-9]", "", (npc_name or "").lower()) == norm:
+                    npc = npcid
+                    break
+            if npc is not None:
+                add_edge(f"wiki-about:{norm}:npc:{npc}", wid, f"npc:{npc}", "REFERENCES", ev,
                          "VERIFIED", "DISCOVERED", {"role": "navigation", "reference_only": True})
     except sqlite3.OperationalError:
         pass
