@@ -4,7 +4,7 @@ from pathlib import Path
 
 from workbench.core import graph
 from workbench.core.schema import (
-    Binding, BuildTarget, DependencyEdge, Entity, EnumDefinition, Evidence,
+    Binding, BuildTarget, DependencyEdge, EnumDefinition, Evidence,
     Feature, Finding, Function, ValidationResult, ValidationRun,
 )
 from workbench.research.domain_tools import WorkbenchDomainReader
@@ -36,9 +36,10 @@ def main():
             "CLuaBaseEntity","fn:packet","src","lua.cpp",10,
             "evidence:binding","RESOLVED"
         ))
-        graph.insert_record(con,Entity(
-            "entity:test","NPC","Test NPC",{"zone_id":31}
-        ))
+        con.execute(
+            "INSERT INTO entities(entity_id,entity_type,display_name,metadata_json) VALUES(?,?,?,?)",
+            ("entity:test","NPC","Test NPC",'{"zone_id":31}'),
+        )
         con.execute(
             "INSERT INTO entity_identifiers(entity_id,identifier_type,identifier_value,source_snapshot_id) "
             "VALUES(?,?,?,?)",
