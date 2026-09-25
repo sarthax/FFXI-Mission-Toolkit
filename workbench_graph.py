@@ -82,9 +82,9 @@ def init_db(path: Path) -> sqlite3.Connection:
 def _json(value: Any) -> str:
     return json.dumps(value, sort_keys=True, default=str)
 
-def insert_record(con: sqlite3.Connection, record: Any):
-    d=asdict(record) if is_dataclass(record) else dict(record)
-    cls=type(record).__name__
+def insert_record(con: sqlite3.Connection, record: Any, record_type: str | None = None):
+    d=asdict(record) if is_dataclass(record) else (dict(record) if isinstance(record, dict) else vars(record))
+    cls=record_type or type(record).__name__
     if cls=="Evidence":
         con.execute("INSERT OR REPLACE INTO evidence VALUES (?,?,?,?,?,?)",
                     (d["evidence_id"],d["evidence_type"],d["source"],d["location"],d["snapshot"],d["notes"]))
@@ -98,7 +98,7 @@ def insert_record(con: sqlite3.Connection, record: Any):
         con.execute("INSERT OR REPLACE INTO implementations VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     (d["implementation_id"],d["feature_id"],d["source_snapshot_id"],d["target_snapshot_id"],d["artifact_id"],d["artifact_type"],d["status"],d["language"],d["path"],d["symbol"],d["change_type"],d["scope"],int(d["requires_build"]),d["build_target"],d["evidence_id"],_json(d["notes"])))
     elif cls=="AnalysisResult":
-        con.execute("INSERT OR REPLACE INTO analysis_results VALUES (?,?,?,?,?,?,?,?,?)",
+        con.execute("INSERT OR REPLACE INTO analysis_results VALUES (?,?,?,?,?,?,?,?,?,?)",
                     (d["analysis_id"],d["analysis_type"],d["source"],d["target"],d["feature_id"],d["status"],d["created_at"],d["tool_version"],_json(d["findings"]),_json(d["notes"])))
     else:
         raise TypeError(f"Unsupported Workbench record: {cls}")
@@ -106,34 +106,11 @@ def insert_record(con: sqlite3.Connection, record: Any):
 def import_json(path: Path, db: Path):
     payload=json.loads(path.read_text(encoding="utf-8"))
     con=init_db(db)
-    for key, cls_name in (("findings","Finding"),("implementations","Implementation"),("edges","DependencyEdge")):
+    for key, record_type in (("findings","Finding"),("implementations","Implementation"),("edges","DependencyEdge")):
         for row in payload.get(key,[]):
-            # Keep this importer deliberately loose: graph storage accepts record-shaped dictionaries
-            # from analyzers without coupling every analyzer to one import framework.
-            class R:
-                pass
-            r=R(); r.__class__.__name__=cls_name
-            # Dataclass dispatch needs a real class name; use the explicit lightweight adapter below.
-            from types import SimpleNamespace
-            r=SimpleNamespace(**row)
-            r.__class__ = type(cls_name, (), {})
-            for k,v in row.items(): setattr(r,k,v)
-            insert_record(con,r)
+            insert_record(con,row,record_type)
     if "analysis" in payload:
-        from types import SimpleNamespace
-        row=payload["analysis"]; r=SimpleNamespace(**row); r.__class__=type("AnalysisResult",(),{})
-        insert_record(con,r)
-    con.commit(); con.close()
+        insert_record(con,payload["analysis"],"AnalysisResult")
+    con.commit()
+    con.close()
 
-def main():
-    ap=argparse.ArgumentParser()
-    ap.add_argument("db",type=Path)
-    ap.add_argument("--init",action="store_true")
-    ap.add_argument("--import-json",type=Path)
-    args=ap.parse_args()
-    con=init_db(args.db)
-    con.commit(); con.close()
-    if args.import_json: import_json(args.import_json,args.db)
-    print(args.db)
-
-if __name__=="__main__": raise SystemExit(main())
