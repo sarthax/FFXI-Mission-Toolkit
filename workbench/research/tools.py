@@ -182,3 +182,37 @@ def register_graph_tools(registry: ResearchToolRegistry, reader) -> None:
         handler=reader.trace,
         access=ACCESS_READ,
     ))
+
+
+def register_domain_tools(registry: ResearchToolRegistry, reader) -> None:
+    """Register typed read-only Workbench domain tools."""
+    registry.register(ResearchTool(
+        name="feature.inspect",
+        description="Inspect a canonical feature across requirements, implementations, semantic relationships, and validation dimensions.",
+        handler=reader.feature_inspect,
+        access=ACCESS_READ,
+    ))
+    registry.register(ResearchTool(
+        name="entity.lookup",
+        description="Resolve canonical entities by identifier, entity id, or display name and return identifiers/findings/evidence.",
+        handler=reader.entity_lookup,
+        access=ACCESS_READ,
+    ))
+    registry.register(ResearchTool(
+        name="binding.lookup",
+        description="Resolve Lua binding names to canonical binding/C++ function records with evidence and wrapper-class context.",
+        handler=reader.binding_lookup,
+        access=ACCESS_READ,
+    ))
+    registry.register(ResearchTool(
+        name="packet.lookup",
+        description="Inspect canonical packet relationships and resolved handler functions for an opcode.",
+        handler=reader.packet_lookup,
+        access=ACCESS_READ,
+    ))
+    registry.register(ResearchTool(
+        name="validation.inspect",
+        description="Inspect canonical ValidationRun and ValidationResult records by feature, run, or subject.",
+        handler=reader.validation_inspect,
+        access=ACCESS_READ,
+    ))
