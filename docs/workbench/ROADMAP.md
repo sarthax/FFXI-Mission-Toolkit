@@ -189,7 +189,7 @@ Design requirements:
 
 ### Phase 7 — Automated migration packages (P1+)
 - feature manifests
-- dependency-aware package generation
+- [x] dependency-aware package-plan foundation — explicit canonical dependency edges now produce a deterministic, cycle-detecting MigrationAction order without applying changes.
 - migration action plans
 - target-specific conversion
 - validation package
