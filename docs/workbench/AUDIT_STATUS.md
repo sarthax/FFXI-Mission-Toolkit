@@ -38,6 +38,8 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 - [x] SQL live validation audited.
 - [x] Initial Feature/Package graph analyzer integrated with existing package reports.
 - [ ] General Feature Migration Engine.
+- [x] Generic bidirectional Feature Trace engine over canonical graph.
+- [ ] Feature Checker requirement/status evaluation over capabilities and trace evidence.
 - [ ] Dependency-aware package analyzer.
 - [ ] Generalized validation pipeline.
 
@@ -60,6 +62,7 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 - [x] Item DAT architecture audited.
 - [x] Client/server authority concept defined.
 - [x] General Capability record and canonical graph storage.
+- [x] CapabilityRequirement persistence and canonical `REQUIRES` graph relationships.
 - [ ] General ClientCapability service.
 - [ ] DAT asset resolver consolidation.
 - [ ] Dialog drift service.
@@ -103,3 +106,13 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 - Added generic `Capability` core record and persisted capabilities in the canonical SQLite graph.
 - Canonical graph self-test now exercises capability persistence and dependency-edge snapshot storage.
 - Client capability remains an evidence-driven service; no EXE/DLL capability is asserted until the actual binaries are available.
+
+
+### Latest continuation — Feature Trace foundation
+- Added `feature_trace.py`, a domain-agnostic canonical graph traversal tool.
+- Supports starting from a canonical node ID or an unambiguous partial name/identifier search.
+- Supports outgoing, incoming, or bidirectional traversal with bounded depth and relationship filtering.
+- Trace output preserves edge relationship, status, confidence, evidence ID, source snapshot, metadata, visited nodes, and traversal paths.
+- Explicitly documents that graph connectivity is evidence navigation, not proof that a feature is implemented or absent.
+- Capability requirements now also create canonical `REQUIRES` edges, allowing feature -> capability tracing.
+- Wiki/reference material is designated as a future launch/navigation adapter: it can identify the canonical subject, but reference data is not promoted to server/client truth.
