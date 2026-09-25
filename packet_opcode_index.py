@@ -14,6 +14,7 @@ from workbench.core.services.packet_identity import canonical_opcode, parse_opco
 SWITCH_CASE_RE=re.compile(r'\bcase\s+(0x[0-9A-Fa-f]+|\d+)\s*:',re.I)
 CASE_HANDLER_RE=re.compile(r'\bcase\s+(0x[0-9A-Fa-f]+|\d+)\s*:\s*(?:return\s+)?([A-Za-z_][A-Za-z0-9_:]*)\s*\(',re.I)
 DISPATCH_RE=re.compile(r'\b(?:register|add|set)[A-Za-z_]*(?:Handler|PacketHandler|CommandHandler)\s*\(\s*(0x[0-9A-Fa-f]+|\d+)\s*,\s*&?([A-Za-z_][A-Za-z0-9_:]*)',re.I)
+PACKET_PARSER_ASSIGN_RE=re.compile(r'\bPacketParser\s*\[\s*(0x[0-9A-Fa-f]+|\d+)\s*\]\s*=\s*&?([A-Za-z_][A-Za-z0-9_:]*)',re.I)
 
 OP_RE=re.compile(r'\b(?:0x)?([0-9A-Fa-f]{2,4})\b')
 HANDLER_RE=re.compile(r'\b(?:opcode|packet|command|type)\s*\(?\s*([0-9A-Fa-fx]+)',re.I)
@@ -45,6 +46,16 @@ def index_server(root:Path,opcodes):
         if not p.is_file() or p.suffix.lower() not in {".cpp",".h",".hpp",".cc",".cxx"}: continue
         t=p.read_text(encoding="utf-8",errors="replace")
         for n,line in enumerate(t.splitlines(),1):
+            parser_assign=PACKET_PARSER_ASSIGN_RE.search(line)
+            if parser_assign:
+                try: value=int(parser_assign.group(1),0)
+                except ValueError: value=None
+                if value is not None:
+                    for tok,val in normalized.items():
+                        if val==value:
+                            edges.append({"source_node":packet_node_id(tok),"target_node":f"cpp-symbol:{parser_assign.group(2)}",
+                                          "relationship":"HANDLED_BY","confidence":"VERIFIED","status":"DISCOVERED",
+                                          "source_location":f"{p}:{n}","notes":["Explicit DSP PacketParser opcode-to-handler assignment matched."]})
             direct=CASE_HANDLER_RE.search(line)
             if direct:
                 try: value=int(direct.group(1),0)
@@ -92,10 +103,17 @@ def self_test():
         packet_db=root/"packets.xml"
         server=root/"server.cpp"
         packet_db.write_text('<packet opcode="0x02A" />', encoding="utf-8")
-        server.write_text('switch (opcode) {\n  case 0x02A: handle_dialog(); break;\n}\n', encoding="utf-8")
+        server.write_text(
+            'switch (opcode) {\n'
+            '  case 0x02A: handle_dialog(); break;\n'
+            '}\n'
+            'PacketParser[0x02A] = &SmallPacket0x02A;\n',
+            encoding="utf-8",
+        )
         ops=index_packet_db(packet_db)
         edges=index_server(root,[ops[0]])
         assert any(e["relationship"]=="HANDLED_BY" and e["target_node"]=="cpp-symbol:handle_dialog" and e["confidence"]=="VERIFIED" for e in edges)
+        assert any(e["relationship"]=="HANDLED_BY" and e["target_node"]=="cpp-symbol:SmallPacket0x02A" and e["confidence"]=="VERIFIED" for e in edges)
         assert any(e["relationship"]=="REFERENCES" for e in edges) is False
 
 
