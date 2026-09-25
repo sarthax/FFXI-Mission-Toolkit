@@ -293,3 +293,41 @@ def function_candidates(
             "PE entry points and export RVAs are verified seeds; direct-call targets remain inferred until decoded/disassembled.",
         ],
     }
+
+
+def import_thunk_refs(path: Path, *, max_results: int = DEFAULT_MAX_XREFS) -> dict[str, Any]:
+    """Find FF /2 and FF /4 absolute-memory operands that name a PE import thunk.
+
+    This is a byte scan, not instruction decoding. Only the 32-bit absolute
+    addressing form (mod=00, r/m=101) is recognized for PE32 images.
+    """
+    if max_results <= 0:
+        raise BinaryAnalysisError("max_results must be positive")
+    image = PEImage(Path(path))
+    if image.pointer_size != 4:
+        return {"status": "UNSUPPORTED", "references": [], "truncated": False,
+                "notes": ["Absolute FF 15/FF 25 thunk scanning currently supports PE32 only."]}
+    imports = {row["iat_rva"]: row for row in image.imports()}
+    references = []
+    truncated = False
+    for sec, start, end in _iter_sections(image, executable_only=True):
+        for off in range(start, end - 5):
+            if image.data[off] != 0xFF or image.data[off + 1] not in (0x15, 0x25):
+                continue
+            operand_va = struct.unpack_from("<I", image.data, off + 2)[0]
+            thunk_rva = operand_va - image.image_base
+            imported = imports.get(thunk_rva)
+            if imported is None:
+                continue
+            if len(references) >= max_results:
+                truncated = True
+                break
+            references.append({**_address_record(image, off),
+                               "kind": "CALL_IMPORT_THUNK_CANDIDATE" if image.data[off + 1] == 0x15 else "JMP_IMPORT_THUNK_CANDIDATE",
+                               "operand_va": operand_va, "thunk_rva": thunk_rva,
+                               "import": imported, "bytes": image.data[off:off + 6].hex(" "),
+                               "confidence": "INFERRED"})
+        if truncated:
+            break
+    return {"status": "OK", "references": references, "truncated": truncated,
+            "notes": ["Operands exactly name PE import thunks; opcode alignment and runtime call behavior are unverified."]}

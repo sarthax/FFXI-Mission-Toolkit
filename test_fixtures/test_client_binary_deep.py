@@ -3,7 +3,7 @@ import struct
 import tempfile
 from pathlib import Path
 
-from workbench.client.binary_deep import byte_search, function_candidates, parse_hex_pattern, xrefs
+from workbench.client.binary_deep import byte_search, function_candidates, import_thunk_refs, parse_hex_pattern, xrefs
 
 
 def build_fixture(path: Path) -> None:
@@ -39,6 +39,14 @@ def build_fixture(path: Path) -> None:
     data[0x215:0x219]=bytes.fromhex("83 C4 04 C3")
     data[0x250:0x254]=bytes.fromhex("55 8B EC C3")
     struct.pack_into("<I",data,0x420,0x400000+target_rva)
+    # An import descriptor, thunk, and FF 15 absolute-memory operand.
+    struct.pack_into("<IIIII",data,0x440,0x20A0,0,0,0x20C0,0x20B0)
+    struct.pack_into("<I",data,0x4A0,0x20D0)
+    struct.pack_into("<I",data,0x4B0,0x20D0)
+    data[0x4C0:0x4C9]=b"KERNEL32\0"
+    data[0x4D0:0x4D8]=b"\0\0Beep\0\0"
+    struct.pack_into("<II",data,opt+96+8,0x2040,40)
+    data[0x220:0x226]=bytes.fromhex("FF 15 B0 20 40 00")
     path.write_bytes(data)
 
 
@@ -56,6 +64,11 @@ def main():
         kinds={row["kind"] for row in refs["xrefs"]}
         assert "CALL_REL32" in kinds,refs
         assert "ABSOLUTE_VA32" in kinds,refs
+
+        imp=import_thunk_refs(binary)
+        assert len(imp["references"])==1,imp
+        assert imp["references"][0]["import"]["name"]=="Beep",imp
+        assert imp["references"][0]["confidence"]=="INFERRED",imp
 
         funcs=function_candidates(binary)
         by_rva={row["rva"]:row for row in funcs["candidates"]}

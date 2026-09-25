@@ -46,6 +46,7 @@ Typed tools:
 - `client.byte-search`
 - `client.xrefs`
 - `client.function-candidates`
+- `client.import-refs`
 
 The first seven operate from precomputed indexes. The deeper byte/xref/function-candidate tools require the original indexed binary to still be accessible at its recorded path. If it is not accessible, the tool returns `BINARY_UNAVAILABLE` rather than inventing evidence.
 
@@ -121,3 +122,13 @@ The supplied FTABLE/VTABLE pair remains a separate DAT/index evidence layer and 
 This pipeline is deliberately read-only. It does not patch binaries, inject hooks, write bytes, or promote feature-specific conclusions automatically.
 
 The dependency-free deeper layer stops at bounded pattern observations, conservative xref candidates, and candidate entry points. Full instruction decoding, control-flow graph recovery, decompilation, and symbol/function semantic recovery should be implemented later as optional evidence producers with explicit tool/version provenance rather than silently changing the meaning of the core evidence.
+
+## Real DLL deeper pass (2026-09-25)
+
+The supplied `FFXiMain.dll` (SHA-256 `514653a260c51eaec25d88510e51a86fb2a4abd9867f53d5f45a9ccf840f060f`, 2,870,352 bytes) was analyzed without copying its bytes into source control. It is PE32/i386 at image base `0x10000000`. Its entry point RVA `0xB93610` maps to file offset `0x28DC10` in executable `POL1` (`0x9B4000`, raw offset `0xAE600`, raw size `0x1DF800`). The executable `.text` RVA `0x1000` has virtual size `0x31CECE` and zero raw bytes. All four exports (`DllCanUnloadNow`, `DllGetClassObject`, `DllRegisterServer`, `DllUnregisterServer`) point into that unmapped virtual `.text`, so this file alone does not supply their code bodies.
+
+The byte scanner finds 1,678 distinct candidate entry RVAs, including the mapped PE entry point; direct-call-derived candidates remain INFERRED. An xref scan to the entry point found zero candidates. In `POL1`, broad `FF 15` and `FF 25` searches yield 351 and 77 byte matches respectively; many operands are outside mapped image addresses, underscoring the false-positive risk of byte scanning through packed content.
+
+The new `import-refs` command and `client.import-refs` tool check only PE32 `FF 15`/`FF 25` absolute operands that match an actual import address table slot (`iat_rva`, distinct from the import lookup thunk). On this file they return **22 candidates** (20 calls, 2 jumps), including byte patterns pointing to `CreateThread`, `FindFirstFileA`, and `GetKeyboardLayout`. These are exact operand/IAT address matches, but opcode alignment and execution are unverified; each result remains INFERRED. Example: `python client_binary_analyze.py FFXiMain.dll import-refs`.
+
+Next validation needs either an optional decoder with versioned provenance and reachable instruction boundaries, or runtime/unpacked memory evidence for the virtual `.text`. No semantic feature or recovered function claim follows from this packed on-disk image alone.

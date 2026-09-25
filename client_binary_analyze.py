@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from workbench.client.binary_deep import byte_search, function_candidates, xrefs
+from workbench.client.binary_deep import byte_search, function_candidates, import_thunk_refs, xrefs
 
 
 def _int(value: str) -> int:
@@ -37,6 +37,9 @@ def main():
     f=sub.add_parser("functions")
     f.add_argument("--max-candidates",type=int,default=5000)
 
+    imp=sub.add_parser("import-refs")
+    imp.add_argument("--max-results",type=int,default=2000)
+
     args=ap.parse_args()
     if args.command=="pattern":
         result=byte_search(args.binary,args.pattern,section=args.section,
@@ -46,6 +49,8 @@ def main():
         result=xrefs(args.binary,rva=args.rva,va=args.va,offset=args.offset,
             executable_only=not args.all_sections,include_pointers=not args.no_pointers,
             max_results=args.max_results)
+    elif args.command=="import-refs":
+        result=import_thunk_refs(args.binary,max_results=args.max_results)
     else:
         result=function_candidates(args.binary,max_candidates=args.max_candidates)
     print(json.dumps(result,indent=2,sort_keys=True))

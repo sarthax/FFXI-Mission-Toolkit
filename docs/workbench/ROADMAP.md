@@ -330,3 +330,7 @@ Lua event indexing now carries conservative callback-parameter class hints, and 
 - [x] local alias type propagation for callback-scoped Lua analysis.
 - [x] explicit returned-object hint support without method-name guessing.
 - [x] derive returned-object hints from indexed C++ API signatures and preserve evidence provenance.
+
+## 2026-09-25 — Real packed-DLL deeper pass
+
+Completed a real `FFXiMain.dll` deeper pass and PE32 import-thunk candidate lookup. Future decoder/CFG work should prove reachable instruction boundaries and explicitly version its decoder; virtual `.text` requires an unpacked or runtime snapshot.
