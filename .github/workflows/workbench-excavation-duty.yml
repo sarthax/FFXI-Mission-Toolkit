@@ -34,6 +34,7 @@ jobs:
             sql/instance_list.sql
             sql/instance_entities.sql
             scripts/assaults/Lebros_Cavern/excavation_duty.lua
+            data/zones/lebros_cavern/npcs.yaml
           sparse-checkout-cone-mode: false
 
       - name: Checkout pinned Darkstar target
@@ -46,6 +47,7 @@ jobs:
             sql/instance_list.sql
             sql/instance_entities.sql
             scripts/zones/Lebros_Cavern/instances/excavation_duty.lua
+            scripts/zones/Lebros_Cavern/IDs.lua
           sparse-checkout-cone-mode: false
 
       - uses: actions/setup-python@v5
