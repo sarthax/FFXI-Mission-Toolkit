@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse, json, re
 from dataclasses import asdict
 from pathlib import Path
+from source_snapshot import snapshot_id
 from workbench_schema import AnalysisResult, Finding, BuildTarget, DependencyEdge
 
 CPP_EXTENSIONS={".cpp",".cc",".cxx",".c",".h",".hpp",".hh",".hxx"}
@@ -103,14 +104,22 @@ def main():
     ap.add_argument("root",type=Path)
     ap.add_argument("--json",type=Path)
     args=ap.parse_args()
+    sid=snapshot_id(args.root)
     builders,findings,targets,edges=index(args.root)
+    for target in targets:
+        target.source_snapshot_id=sid
+    for finding in findings:
+        finding.source_snapshot_id=sid
+    for edge in edges:
+        edge.evidence_id=f"snapshot:{sid}"
     result=AnalysisResult(
         analysis_id="build-integration-index",
         analysis_type="BUILD_INTEGRATION",
         source=str(args.root),
         status="ANALYZED",
+        notes=[f"Source snapshot: {sid}.", f"Scanned {len(builders)} recognized build files.", "No build was executed."],
         findings=[f.finding_id for f in findings],
-        notes=[f"Scanned {len(builders)} recognized build files.","No build was executed."],
+        
     )
     payload={"schema":2,"analysis":asdict(result),"build_files":[p.relative_to(args.root).as_posix() for p in builders],"build_targets":[asdict(t) for t in targets],"edges":[asdict(e) for e in edges],"findings":[asdict(f) for f in findings]}
     if args.json:
