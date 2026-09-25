@@ -112,6 +112,7 @@ def main():
         finding.source_snapshot_id=sid
     for edge in edges:
         edge.evidence_id=f"snapshot:{sid}"
+        edge.source_snapshot_id=sid
     result=AnalysisResult(
         analysis_id="build-integration-index",
         analysis_type="BUILD_INTEGRATION",
