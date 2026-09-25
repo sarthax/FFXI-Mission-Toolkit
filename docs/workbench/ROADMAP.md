@@ -292,7 +292,7 @@ Use different fixtures for different architectural questions rather than treatin
 ## Immediate audit queue
 1. Validate and extend class-aware capture → Lua event → binding/C++ resolution, adding evidence-backed local/returned-object typing without guessing.
 2. [x] Resolve legacy DSP PacketParser opcode assignments to real handler symbols when a server source root is indexed; additional fork-specific dispatch patterns can extend the same evidence path.
-3. Connect bindings -> C++ symbols -> enums/constants -> packets -> build targets.
+3. [x] Connect bindings -> C++ symbols -> enums/constants -> packets -> build targets in the canonical graph, with confidence preserved per edge.
 4. Extend Backport Package Analyzer to import canonical graph records.
 5. Connect entity_profile/map-confidence/capture/packet outputs to the graph.
 6. Add full ValidationRun orchestration and independent regression dimensions.
