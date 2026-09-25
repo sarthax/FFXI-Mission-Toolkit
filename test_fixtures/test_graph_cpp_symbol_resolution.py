@@ -24,9 +24,11 @@ def main():
         r1=con.execute("SELECT target_node,metadata_json FROM entity_relationships WHERE relationship_id='r1'").fetchone()
         r2=con.execute("SELECT target_node FROM entity_relationships WHERE relationship_id='r2'").fetchone()
         r3=con.execute("SELECT target_node,metadata_json FROM entity_relationships WHERE relationship_id='r3'").fetchone()
-        assert r1[0]=="function:handle_dialog" and json.loads(r1[1])["resolution"]=="unique unqualified C++ symbol"\n        assert json.loads(r1[1])["origin"]=="fixture"
+        assert r1[0]=="function:handle_dialog" and json.loads(r1[1])["resolution"]=="unique unqualified C++ symbol"
+        assert json.loads(r1[1])["origin"]=="fixture"
         assert r2[0]=="cpp-symbol:shared", r2
-        assert r3[0]=="function:A::shared" and json.loads(r3[1])["resolution"]=="exact qualified C++ symbol"\n        assert json.loads(r3[1])["origin"]=="fixture"
+        assert r3[0]=="function:A::shared" and json.loads(r3[1])["resolution"]=="exact qualified C++ symbol"
+        assert json.loads(r3[1])["origin"]=="fixture"
         con.close()
     print("graph C++ symbol resolver self-test: PASS")
 if __name__=="__main__": main()
