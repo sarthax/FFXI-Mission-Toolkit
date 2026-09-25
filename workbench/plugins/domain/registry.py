@@ -1,7 +1,7 @@
 """Registration and composition for domain plugins."""
 from __future__ import annotations
 
-from .base import ContentArchetype, DomainPlugin
+from .base import ContentArchetype, DomainPlugin, PluginContext, PluginFinding
 
 
 class DomainPluginRegistry:
@@ -46,3 +46,12 @@ class DomainPluginRegistry:
             plugin for plugin in self.plugins()
             if archetype_id in plugin.spec.archetypes
         )
+
+    def active_plugins(self, context: PluginContext) -> tuple[DomainPlugin, ...]:
+        return tuple(plugin for plugin in self.plugins() if plugin.identify(context))
+
+    def migration_findings(self, context: PluginContext) -> tuple[PluginFinding, ...]:
+        findings=[]
+        for plugin in self.active_plugins(context):
+            findings.extend(plugin.generate_migration_rules(context))
+        return tuple(findings)
