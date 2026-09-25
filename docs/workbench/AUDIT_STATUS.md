@@ -510,3 +510,8 @@ The unified patch lifecycle service is now exposed through `python -m workbench.
 Assembled migration packages now expose one review summary combining manifest identity, execution/exclusion counts, generated-artifact count, validation status, package cohesion, apply readiness, and patch lifecycle.
 
 Ancient Vows now reports AWAITING_APPROVAL through this consolidated package review summary, with one remaining review action and four generated review artifacts.
+
+
+## 2026-09-25 — Read-only package review CLI
+
+The consolidated package review summary is now exposed through `python -m workbench.cli.package_review <package_root> <target_root>`. The command reports migration identity, action/artifact counts, validation, cohesion, apply readiness, and patch lifecycle as JSON without granting approval or write authority.
