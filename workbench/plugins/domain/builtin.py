@@ -4,7 +4,7 @@ These are contracts/capabilities, not claims that the analyzers are complete.
 """
 from __future__ import annotations
 
-from .base import ContentArchetype, DomainPlugin, DomainPluginSpec, PluginContext
+from .base import ContentArchetype, DomainPlugin, DomainPluginSpec, PluginContext, PluginFinding
 from .registry import DomainPluginRegistry
 
 
@@ -58,6 +58,29 @@ class MetadataPlugin(DomainPlugin):
 
 
 class BattlefieldFamilyPlugin(MetadataPlugin):
+    def generate_migration_rules(self, context: PluginContext) -> tuple[PluginFinding, ...]:
+        if not self.identify(context):
+            return ()
+        capability_status=context.metadata.get("capability_coverage_status")
+        entity_aligned=context.metadata.get("entity_coverage_aligned")
+        if capability_status=="CAPABILITIES_ALIGNED" and entity_aligned is True:
+            return (PluginFinding(
+                plugin_id=self.spec.plugin_id,
+                subject_id=context.feature_id,
+                finding_type="MIGRATION_RULE",
+                status="COMPATIBLE",
+                message="Battlefield behavior and entity coverage are aligned; representation drift alone does not require migration.",
+                metadata={"proposed_action":"NOT_REQUIRED","safe_auto":True},
+            ),)
+        return (PluginFinding(
+            plugin_id=self.spec.plugin_id,
+            subject_id=context.feature_id,
+            finding_type="MIGRATION_RULE",
+            status="MANUAL_REQUIRED",
+            message="Battlefield semantic coverage is not fully aligned; keep migration decisions under manual review until a verified rule resolves the gap.",
+            metadata={"proposed_action":"MANUAL_REVIEW","safe_auto":False},
+        ),)
+
     spec=DomainPluginSpec(
         plugin_id="framework.battlefield",
         name="Reusable Battlefield Family",
