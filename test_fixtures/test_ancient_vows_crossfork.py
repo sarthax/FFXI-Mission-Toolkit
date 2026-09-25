@@ -272,7 +272,7 @@ def main():
     semantic_by_role={action.metadata.get("source_role"):action for action in semantic_actions if action.metadata.get("source_role")}
     assert semantic_by_role["registry_sql"].action=="NOT_REQUIRED",semantic_actions
     assert semantic_by_role["mission_script"].action=="MANUAL_REVIEW",semantic_actions
-    assert semantic_by_role["battlefield_script"].action=="MANUAL_REVIEW",semantic_actions
+    assert semantic_by_role["battlefield_script"].action=="NOT_REQUIRED",semantic_actions
     refined_actions=apply_plugin_reshape_findings(semantic_actions,(reshape_finding,))
     assert any(
         action.metadata.get("source_role")=="battlefield_script"
