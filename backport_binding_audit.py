@@ -92,21 +92,19 @@ def _lua_binding_files(dsp_root: Path) -> list[Path]:
 
 
 def _load_cached_index(dsp_root: Path, flavor: str) -> dict[str, list[dict]] | None:
-    """Returns the cached index if it exists AND was built from this same dsp_root (checked via
-    one real file's path recorded in the index -- a cache built from a different checkout at the
-    same flavor would silently give wrong answers otherwise, e.g. a differently-patched fork).
-    None if unusable for any reason -- callers fall back to a live grep, never guess."""
+    """Use a cached index only when cache provenance matches the current binding source tree.
+
+    Legacy caches without fingerprint metadata are intentionally ignored; callers fall back to
+    a live source scan instead of accepting stale-but-plausible path matches.
+    """
     if flavor != "old_dsp_reference":
-        return None  # only old-dsp-reference has a cache built by default; landsandboat is reference-only
+        return None
+    if not bbi.cache_matches_root(bbi.DSP_INDEX_META_PATH,dsp_root):
+        return None
     try:
-        index = bbi.load_index(bbi.DSP_INDEX_PATH)
+        return bbi.load_index(bbi.DSP_INDEX_PATH)
     except FileNotFoundError:
         return None
-    # Sanity check: every recorded file path should actually exist under dsp_root.
-    for entries in list(index.values())[:3]:
-        if entries and not (dsp_root / entries[0]["file"]).exists():
-            return None
-    return index
 
 
 def check_binding(name: str, dsp_root: Path, flavor: str, cached_index: dict | None = None) -> tuple[bool, str]:
