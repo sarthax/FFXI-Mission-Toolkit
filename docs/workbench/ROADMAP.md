@@ -329,4 +329,4 @@ Lua event indexing now carries conservative callback-parameter class hints, and 
 ### 2026-09-25 Lua typing continuation
 - [x] local alias type propagation for callback-scoped Lua analysis.
 - [x] explicit returned-object hint support without method-name guessing.
-- [ ] derive returned-object hints from indexed C++ API signatures and preserve evidence provenance.
+- [x] derive returned-object hints from indexed C++ API signatures and preserve evidence provenance.
