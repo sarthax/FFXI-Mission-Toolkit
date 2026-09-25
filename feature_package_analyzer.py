@@ -52,7 +52,15 @@ def analyze(package: Path):
     for p in files(package):
         if p.name=="BACKPORT_REPORT.md": continue
         rel=p.relative_to(package).as_posix()
-        arts.append({"artifact_id":f"artifact:{feature_id}:{rel}","artifact_type":artifact_type(p),"path":rel,"feature_id":feature_id})
+        arts.append({
+            "artifact_id":f"artifact:{feature_id}:{rel}",
+            "artifact_type":artifact_type(p),
+            "path":rel,
+            "source_snapshot_id":feature.get("source_snapshot_id"),
+            "target_snapshot_id":feature.get("target_snapshot_id"),
+            "feature_id":feature_id,
+            "metadata":{},
+        })
     deps=[]
     for i,d in enumerate(manifest.get("dependencies",[]) if isinstance(manifest,dict) else []):
         if isinstance(d,str): target=d; relationship="REQUIRES"; evidence="MANIFEST"
@@ -72,11 +80,27 @@ def analyze(package: Path):
         actions.append({"action_id":f"action:{feature_id}:{i}","migration_id":f"migration:{feature_id}","action":"CONVERT" if a["artifact_type"] in {"LUA","SQL"} else "MANUAL_REVIEW","artifact_id":a["artifact_id"],"status":action_state,"reason":"TARGET_ALREADY_HAS" if mig_state=="VERIFIED" else "UNRESOLVED"})
     return {
         "schema":2,
-        "feature":{"feature_id":feature_id,"name":name,"feature_type":feature.get("type"),"domain_id":feature.get("domain"),"status":mig_state},
+        "feature":{
+            "feature_id":feature_id,
+            "name":name,
+            "feature_type":feature.get("type"),
+            "domain_id":feature.get("domain"),
+            "source_snapshot_id":feature.get("source_snapshot_id"),
+            "target_snapshot_id":feature.get("target_snapshot_id"),
+            "status":mig_state,
+            "metadata":{},
+        },
         "artifacts":arts,
         "dependencies":deps,
         "edges":deps,
-        "migration":{"migration_id":f"migration:{feature_id}","feature_id":feature_id,"status":mig_state},
+        "migration":{
+            "migration_id":f"migration:{feature_id}",
+            "feature_id":feature_id,
+            "source_snapshot_id":feature.get("source_snapshot_id"),
+            "target_snapshot_id":feature.get("target_snapshot_id"),
+            "status":mig_state,
+            "metadata":{},
+        },
         "actions":actions,
         "migration_actions":actions,
         "report":report,
