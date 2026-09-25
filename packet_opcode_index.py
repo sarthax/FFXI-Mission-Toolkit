@@ -11,6 +11,7 @@ from workbench.core.provenance import snapshot_id
 
 # Only explicit dispatch/registration patterns become HANDLED_BY. Generic opcode references remain REFERENCES.
 SWITCH_CASE_RE=re.compile(r'\bcase\s+(0x[0-9A-Fa-f]+|\d+)\s*:',re.I)
+CASE_HANDLER_RE=re.compile(r'\bcase\s+(0x[0-9A-Fa-f]+|\d+)\s*:\s*(?:return\s+)?([A-Za-z_][A-Za-z0-9_:]*)\s*\(',re.I)
 DISPATCH_RE=re.compile(r'\b(?:register|add|set)[A-Za-z_]*(?:Handler|PacketHandler|CommandHandler)\s*\(\s*(0x[0-9A-Fa-f]+|\d+)\s*,\s*&?([A-Za-z_][A-Za-z0-9_:]*)',re.I)
 
 OP_RE=re.compile(r'\b(?:0x)?([0-9A-Fa-f]{2,4})\b')
