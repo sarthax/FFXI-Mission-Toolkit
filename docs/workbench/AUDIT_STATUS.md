@@ -333,3 +333,8 @@ The battlefield framework explicitly covers BCNM/KSNM/ISNM/ENM/mission-battlefie
 Ancient Vows now exercises this layer in real pinned LSB→DSP CI: it activates `framework.battlefield` and `framework.quest_mission`, while `system.assault` remains inactive. The plugin registry/composition fixture and Ancient Vows cross-fork E2E are green.
 
 See `docs/workbench/DOMAIN_PLUGIN_ARCHITECTURE.md`.
+
+
+## 2026-09-25 — Dependency-aware migration package planning
+
+Phase 7 now has a non-destructive package-plan foundation. Existing generic MigrationAction records can be ordered from explicit canonical dependency edges, NOT_REQUIRED actions are excluded from execution planning, manual/unknown actions keep the plan in review state, and dependency cycles block the plan instead of guessing an order. The regression fixture is included in Workbench Regression CI and passed on run 272.
