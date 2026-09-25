@@ -1,0 +1,51 @@
+name: Workbench External Source Smoke
+
+on:
+  push:
+    branches:
+      - workbench-rework/audit-foundation
+    paths:
+      - "workbench/adapters/servers/**"
+      - "cpp_api_index.py"
+      - "cpp_dependency_index.py"
+      - "build_integration_index.py"
+      - "workbench_connect_server.py"
+      - "test_fixtures/test_external_lsb_pipeline.py"
+      - ".github/workflows/workbench-external-source-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lsb-source-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Mission Toolkit
+        uses: actions/checkout@v4
+        with:
+          path: toolkit
+
+      - name: Checkout pinned LandSandBoat source
+        uses: actions/checkout@v4
+        with:
+          repository: LandSandBoat/server
+          ref: 3747feee0e38ab5c0283c4fe8deea7f0a9022351
+          path: external/lsb
+          sparse-checkout: |
+            src
+            cmake
+            CMakeLists.txt
+            sql
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run external LSB analysis to canonical graph smoke test
+        working-directory: toolkit
+        env:
+          PYTHONPATH: .
+        run: python test_fixtures/test_external_lsb_pipeline.py ../external/lsb
