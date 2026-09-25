@@ -3,7 +3,7 @@
 Last updated: 2026-09-25
 
 ## Current milestone
-Foundation preserved; engine-change workspace audited; C++ API surface, conservative dependency, and build-integration evidence passes are now available; migration classification and canonical graph integration are next.
+Foundation preserved; engine-change workspace audited; C++ API/dependency/build evidence passes are available; a generic canonical SQLite graph store is now implemented; migration classification is next.
 
 ## New work completed
 - [x] Directly inspected the bundled dsp-engine-changes/_example_change scaffold.
@@ -23,7 +23,7 @@ Foundation preserved; engine-change workspace audited; C++ API surface, conserva
 - [x] Server adapter architecture defined.
 - [x] Evidence/Finding model defined.
 - [x] Feature/Implementation/Dependency model defined.
-- [ ] Canonical graph implementation.
+- [x] Canonical graph implementation (generic SQLite schema + record importer).
 - [x] Standard machine-readable findings/results.
 - [ ] Provenance service consolidation.
 
