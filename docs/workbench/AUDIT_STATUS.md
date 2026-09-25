@@ -484,3 +484,10 @@ Ancient Vows now packages a PENDING approval request for its mission-gap patch p
 The Workbench now has a deterministic patch apply/rollback service behind both technical readiness and explicit human approval. It revalidates the reviewed patch plan against the current target, refuses PENDING/unmatched approvals, backs up every target file, writes an apply journal with before/after hashes, and supports rollback.
 
 Regression coverage uses temporary files only. Ancient Vows remains AWAITING_APPROVAL and is not applied to the pinned DSP target.
+
+
+## 2026-09-25 — Patch-plan approval linkage integrity
+
+Package cohesion now verifies that every packaged WORKBENCH_PATCH_APPROVAL_REQUEST is cryptographically linked to an actual packaged WORKBENCH_PATCH_PLAN by SHA-256. A swapped, stale, missing, or malformed approval request/patch plan pair now fails the top-level package cohesion gate.
+
+Ancient Vows exercises this linkage because its package contains both the mission-gap patch plan and its PENDING approval request.
