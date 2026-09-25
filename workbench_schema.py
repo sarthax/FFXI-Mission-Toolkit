@@ -121,6 +121,19 @@ class DependencyEdge:
     discovered_by: str | None = None
     source_location: str | None = None
     notes: str | None = None
+    source_snapshot_id: str | None = None
+
+@dataclass
+class Capability:
+    capability_id: str
+    name: str
+    capability_type: str
+    subject_id: str | None = None
+    source_snapshot_id: str | None = None
+    status: str = "UNKNOWN"
+    value: Any = None
+    evidence_id: str | None = None
+    notes: list[str] = field(default_factory=list)
 
 @dataclass
 class Implementation:
