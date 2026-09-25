@@ -224,3 +224,8 @@ Feature Checker now reports explicit semantic graph relationships separately fro
 ## 2026-09-25 — Feature Checker dimension policies
 
 Requirements, implementation, and validation remain independent evidence dimensions. Implementation and validation aggregation are now isolated policy functions with a focused regression fixture. The top-level Feature Checker status remains the capability-requirement verdict for compatibility; no combined numeric completion score is produced. Fixtures are committed but are not considered executed unless run by a runtime or CI workflow.
+
+
+## 2026-09-25 — Workbench core regression CI
+
+A dedicated GitHub Actions workflow now executes the self-contained Workbench regression fixtures on both branch pushes and pull requests. The suite is green on commit `2decb508243ea4d2b58c5424b683f17ec04b73a1` for both the push and PR #2 runs. This provides executed validation for packet identity, graph symbol/enum resolution, Feature Trace enum nodes, feature-candidate traversal, Feature Checker dimensions, semantic graph mirroring, and capture packet graph paths. Client binaries, live game runtime, and server/database integration remain outside this CI scope.
