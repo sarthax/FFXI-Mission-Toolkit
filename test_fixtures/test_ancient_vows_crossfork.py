@@ -10,8 +10,11 @@ from workbench.adapters.servers.logical import compare_records
 from workbench.adapters.servers.sql_extract import extract_logical_records
 from workbench.adapters.servers.entity_symbols import yaml_mob_template_spawns
 from workbench.migrations.feature_surface import FeatureSurface, SurfaceArtifact, SurfaceCapability, compare_feature_surfaces
+from workbench.migrations.package_plan import build_package_plan
+from workbench.migrations.package_manifest import build_package_manifest
+from workbench.migrations.package_validation import build_validation_package
 from workbench.core import graph
-from workbench.core.schema import CapabilityRequirement, Feature
+from workbench.core.schema import Artifact, CapabilityRequirement, DependencyEdge, Feature, MigrationAction
 from workbench.core.services.feature_surface_graph import persist_feature_surface
 from workbench.core.services.feature_surface_validation import build_feature_surface_validation
 from workbench.plugins.domain import PluginContext, default_registry
@@ -148,6 +151,37 @@ def main():
     )
     surface_comparison=compare_feature_surfaces(source_surface,target_surface)
     assert surface_comparison.status=="REPRESENTATION_DRIFT",surface_comparison
+
+    package_artifacts=[
+        Artifact("artifact:ancient-vows:registry","SQL",path="sql/bcnm_info.sql",feature_id="feature:cop:ancient_vows"),
+        Artifact("artifact:ancient-vows:battlefield","LUA",path=str(surfaces["lsb_battlefield"].relative_to(lsb_root)),feature_id="feature:cop:ancient_vows"),
+        Artifact("artifact:ancient-vows:mission","LUA",path=str(surfaces["lsb_mission"].relative_to(lsb_root)),feature_id="feature:cop:ancient_vows"),
+    ]
+    package_actions=[
+        MigrationAction("action:ancient-vows:registry","migration:cop:ancient-vows","CONVERT","artifact:ancient-vows:registry","AUTO_MIGRATABLE"),
+        MigrationAction("action:ancient-vows:battlefield","migration:cop:ancient-vows","CONVERT","artifact:ancient-vows:battlefield","AUTO_MIGRATABLE"),
+        MigrationAction("action:ancient-vows:mission","migration:cop:ancient-vows","CONVERT","artifact:ancient-vows:mission","AUTO_MIGRATABLE"),
+    ]
+    package_dependencies=[
+        DependencyEdge("edge:ancient-vows:battlefield-registry","artifact:ancient-vows:battlefield","artifact:ancient-vows:registry","REQUIRES",confidence="VERIFIED"),
+        DependencyEdge("edge:ancient-vows:mission-battlefield","artifact:ancient-vows:mission","artifact:ancient-vows:battlefield","REQUIRES",confidence="VERIFIED"),
+    ]
+    package_plan=build_package_plan(package_actions,package_dependencies)
+    package_manifest=build_package_manifest(
+        package_plan,
+        package_artifacts,
+        feature_id="feature:cop:ancient_vows",
+        source_snapshot_id="lsb:3747feee0e38",
+        target_snapshot_id="dsp:ee1f489efbde",
+    )
+    validation_package=build_validation_package(package_manifest)
+    assert package_plan.status=="READY",package_plan
+    assert [step["action_id"] for step in package_manifest["execution"]["steps"]]==[
+        "action:ancient-vows:registry",
+        "action:ancient-vows:battlefield",
+        "action:ancient-vows:mission",
+    ],package_manifest
+    assert validation_package["status"]=="READY",validation_package
     assert not surface_comparison.source_only_entity_ids,surface_comparison
     assert not surface_comparison.target_only_entity_ids,surface_comparison
     assert surface_comparison.capability_coverage_status=="CAPABILITIES_ALIGNED",surface_comparison
@@ -262,6 +296,11 @@ def main():
             "snapshot_scoped_entity_refs":True,
             "entity_coverage_validation":validation_status,
             "feature_checker_dimensions":checker_dimensions,
+        },
+        "migration_package":{
+            "plan_status":package_plan.status,
+            "step_count":len(package_manifest["execution"]["steps"]),
+            "validation_check_count":len(validation_package["checks"]),
         },
         "domain_plugins":{
             "active":active_plugins,
