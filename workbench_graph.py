@@ -51,6 +51,22 @@ CREATE TABLE IF NOT EXISTS artifacts (
   artifact_id TEXT PRIMARY KEY, artifact_type TEXT NOT NULL, path TEXT, source_snapshot_id TEXT,
   target_snapshot_id TEXT, feature_id TEXT, metadata_json TEXT NOT NULL DEFAULT '{}'
 );
+CREATE TABLE IF NOT EXISTS functions (
+  function_id TEXT PRIMARY KEY, qualified_name TEXT NOT NULL, name TEXT NOT NULL,
+  namespace TEXT, class_name TEXT, source_snapshot_id TEXT, path TEXT, line INTEGER,
+  kind TEXT, declaration INTEGER NOT NULL DEFAULT 0, definition INTEGER NOT NULL DEFAULT 0,
+  signature_json TEXT NOT NULL DEFAULT '{}', evidence_id TEXT, notes_json TEXT NOT NULL DEFAULT '[]'
+);
+CREATE TABLE IF NOT EXISTS bindings (
+  binding_id TEXT PRIMARY KEY, lua_name TEXT NOT NULL, binding_system TEXT NOT NULL,
+  cpp_symbol TEXT, class_name TEXT, function_id TEXT, source_snapshot_id TEXT, path TEXT, line INTEGER,
+  evidence_id TEXT, status TEXT NOT NULL DEFAULT 'UNKNOWN', notes_json TEXT NOT NULL DEFAULT '[]'
+);
+CREATE TABLE IF NOT EXISTS enum_definitions (
+  enum_id TEXT PRIMARY KEY, enum_name TEXT NOT NULL, source_snapshot_id TEXT, path TEXT, line INTEGER,
+  format TEXT NOT NULL, value TEXT NOT NULL, symbol TEXT NOT NULL, evidence_id TEXT,
+  notes_json TEXT NOT NULL DEFAULT '[]'
+);
 CREATE TABLE IF NOT EXISTS implementations (
   implementation_id TEXT PRIMARY KEY, feature_id TEXT, source_snapshot_id TEXT,
   target_snapshot_id TEXT, artifact_id TEXT NOT NULL, artifact_type TEXT NOT NULL,
@@ -84,6 +100,9 @@ CREATE TABLE IF NOT EXISTS migration_actions (
   metadata_json TEXT NOT NULL DEFAULT '{}'
 );
 CREATE INDEX IF NOT EXISTS idx_artifacts_feature ON artifacts(feature_id);
+CREATE INDEX IF NOT EXISTS idx_functions_symbol ON functions(qualified_name);
+CREATE INDEX IF NOT EXISTS idx_bindings_cpp_symbol ON bindings(cpp_symbol);
+CREATE INDEX IF NOT EXISTS idx_enums_symbol ON enum_definitions(symbol);
 CREATE INDEX IF NOT EXISTS idx_validation_results_run ON validation_results(run_id);
 CREATE INDEX IF NOT EXISTS idx_validation_results_subject ON validation_results(subject_id);
 CREATE INDEX IF NOT EXISTS idx_relationship_source ON entity_relationships(source_node);
@@ -103,7 +122,22 @@ def _json(value: Any) -> str:
 def insert_record(con: sqlite3.Connection, record: Any, record_type: str | None = None):
     d = asdict(record) if is_dataclass(record) else (dict(record) if isinstance(record, dict) else vars(record))
     cls = record_type or type(record).__name__
-    if cls == "Artifact":
+    if cls == "Function":
+        sig=d["signature"]
+        con.execute("INSERT OR REPLACE INTO functions VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (d["function_id"],d["qualified_name"],d["name"],d["namespace"],d["class_name"],
+                     d["source_snapshot_id"],d["path"],d["line"],d["kind"],int(d["declaration"]),
+                     int(d["definition"]),_json(sig),d["evidence_id"],_json(d["notes"])))
+    elif cls == "Binding":
+        con.execute("INSERT OR REPLACE INTO bindings VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (d["binding_id"],d["lua_name"],d["binding_system"],d["cpp_symbol"],d["class_name"],
+                     d["function_id"],d["source_snapshot_id"],d["path"],d["line"],d["evidence_id"],
+                     d["status"],_json(d["notes"])))
+    elif cls == "EnumDefinition":
+        con.execute("INSERT OR REPLACE INTO enum_definitions VALUES (?,?,?,?,?,?,?,?,?,?)",
+                    (d["enum_id"],d["enum_name"],d["source_snapshot_id"],d["path"],d["line"],
+                     d["format"],d["value"],d["symbol"],d["evidence_id"],_json(d["notes"])))
+    elif cls == "Artifact":
         con.execute("INSERT OR REPLACE INTO artifacts VALUES (?,?,?,?,?,?,?)",
                     (d["artifact_id"], d["artifact_type"], d["path"], d["source_snapshot_id"],
                      d["target_snapshot_id"], d["feature_id"], _json(d["metadata"])))
@@ -152,7 +186,7 @@ def import_json(path: Path, db: Path):
     payload=json.loads(path.read_text(encoding="utf-8"))
     con=init_db(db)
     for key, record_type in (
-        ("features","Feature"),("artifacts","Artifact"),("findings","Finding"),
+        ("features","Feature"),("artifacts","Artifact"),("functions","Function"),("bindings","Binding"),("enums_constants","EnumDefinition"),("findings","Finding"),
         ("implementations","Implementation"),("edges","DependencyEdge"),
         ("migration_actions","MigrationAction"),("validation_runs","ValidationRun"),
         ("validation_results","ValidationResult"),
