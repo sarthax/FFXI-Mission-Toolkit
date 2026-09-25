@@ -196,7 +196,7 @@ Design requirements:
 - [x] package assembly + provenance — source and generated artifacts are staged with SHA-256 journals and review metadata.
 - [x] package cohesion verification — assembled manifest, validation metadata, journals, staged files, generated outputs, and recorded hashes are checked for internal consistency before apply; the flagship Ancient Vows E2E now exercises this gate.
 - [x] reversible file apply journal foundation — explicit file application can be rolled back; live SQL/database apply and rollback remain future work.
-- [x] apply-readiness gate — cohesion and validation readiness are checked before a package is eligible for explicit file application.
+- [x] apply-readiness gate — cohesion and validation readiness are checked before a package is eligible for explicit file application; Ancient Vows currently remains MANUAL_REQUIRED because LSB→DSP conversion is not yet a supported backend.
 - [x] rollback/journal foundation — staged source/generated artifacts are hashed/journaled and explicit file apply operations can be rolled back; live SQL/database rollback remains future work.
 - [x] generated target-artifact foundation — safe domain reshape proposals can emit target-ready staged artifacts with provenance without applying them.
 
