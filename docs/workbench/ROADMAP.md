@@ -155,57 +155,56 @@ Domain plugins may introduce system-specific dependency rules without contaminat
 - rollback/journal support
 
 ### Phase 8 — Evidence-aware LLM Research & Agent Layer (P1)
-- [ ] Provider abstraction for Open WebUI, Ollama Direct, and future explicitly configured providers.
-- [ ] ResearchSession persistence with pinned source/target snapshots, tool transcripts, evidence IDs, findings, and replay metadata.
+Current state is a useful draft assistant: Open WebUI/Ollama chat plus read-only SQLite tools and logging. The rework should promote this into a bounded, reproducible research/orchestration layer over the Workbench rather than a free-form chatbot.
+
+Core architecture:
+- [ ] Provider abstraction for Open WebUI, Ollama Direct, and future explicitly configured providers; the toolkit must not depend on one provider's response schema.
+- [ ] ResearchSession persistence with prompt/question, provider/model, pinned source/target snapshots, selected feature/entity roots, tool policy, tool transcripts, evidence IDs, findings/proposals, outputs, verification state, timestamps, usage, budgets, and replay metadata.
 - [ ] Typed Workbench tool registry covering graph, feature, server adapters, entities, C++, bindings, enums, packets, captures, build targets, client capabilities, migration, validation, references, and source inspection.
-- [ ] Bounded source crawler over configured repositories/snapshots with path/type/size/depth budgets and no arbitrary filesystem access.
-- [ ] Evidence-first retrieval that returns canonical node IDs, snapshot IDs, evidence IDs, source locations, confidence/status, and authority domain with every tool result.
-- [ ] FindingProposal staging so model conclusions remain PROPOSED until deterministic verification or explicit human review.
-- [ ] ChangeProposal support for migration actions, patch/diff drafts, validation plans, analyzer recommendations, and package manifests; deterministic services remain the only write/apply path.
-- [ ] Permission profiles: READ_ONLY_RESEARCH, PROPOSE_CHANGES, VALIDATION_ORCHESTRATOR.
-- [ ] Cross-repository research over configured DSP/Topaz/LSB/custom-fork roots and pinned public source snapshots.
+- [ ] Bounded source crawler over configured repositories/snapshots with include/exclude rules, path/type/size/depth limits, secret/key exclusions, and no arbitrary filesystem access.
+- [ ] Cross-repository research over configured DSP/Topaz/LSB/Topaz-Next/custom-fork roots and pinned public source snapshots.
+- [ ] Semantic search/indexing over source snapshots and canonical graph metadata, while retaining exact grep/SQL/graph/source tools for deterministic verification.
+- [ ] Evidence-first retrieval that returns canonical node IDs, source snapshot IDs, Evidence IDs, source file/path/line locations when available, confidence/status, and authority/source domain with every substantive result.
+- [ ] Long-context feature artifact bundles combining relevant Lua, SQL logical records, C++ functions/bindings, enums, packets, build targets, client capabilities, captures, and references.
+- [ ] Research-plan execution that decomposes a question into bounded tool calls, gathers evidence, synthesizes a report, identifies contradictions/gaps, and proposes the next deterministic analyzer/capture/validator actions.
 - [ ] Research gap detection for UNKNOWN/MISSING/CONTRADICTED graph endpoints and recommendations for the next analyzer/capture/validator.
-- [ ] GUI evidence trail showing tool calls, cited evidence, contradictions, proposal state, and verification state.
-- [ ] Model-independent regression fixtures for evidence citation, UNKNOWN/INFERRED preservation, contradiction handling, source authority, and no-direct-write guarantees.
-- [ ] Keep `llm_client.py`, `llm_db_tools.py`, and existing GUI routes as compatibility entry points while moving orchestration into `workbench/research/`.
+- [ ] Contradiction detection across server forks, client evidence, captures, runtime evidence, and reference sources.
+- [ ] Reproducible research notebooks/reports that can be reopened and replayed against the same pinned snapshots.
 
-### Phase 8 — Evidence-aware LLM research and analysis workspace (P1)
-Current state is a useful draft assistant: Open WebUI/Ollama chat plus read-only SQLite tools and logging. The rework should promote this into a bounded research/orchestration layer over the Workbench rather than a free-form chatbot.
+Proposal and action boundaries:
+- [ ] FindingProposal/ResearchFinding staging so model conclusions remain PROPOSED/DRAFT until deterministic verification or explicit human review.
+- [ ] ChangeProposal support for MigrationAction proposals, patch/diff drafts, analyzer recommendations, validation plans, and package manifests.
+- [ ] Patch/package proposal generation may emit diffs or migration plans for review, but deterministic migration services remain the only source-tree/database/DAT/package write/apply path.
+- [ ] Permission profiles: READ_ONLY_RESEARCH, PROPOSE_CHANGES, VALIDATION_ORCHESTRATOR.
+- [ ] Validation orchestration tools may invoke approved deterministic validators and attach ValidationResult records, but not arbitrary code/SQL mutation.
 
-Goals:
-- [ ] Introduce an LLMProvider interface so Open WebUI/Ollama is one provider rather than the architecture.
-- [ ] Add an LLM Research Session model with prompt, model/provider, source snapshots, tool calls, evidence references, outputs, and verification state.
-- [ ] Replace raw-table-only research with typed tools over Feature Trace, Feature Checker, server adapters, entity lookup, packet/capture indexes, client capability, wiki/reference adapters, migration plans, and validation results.
-- [ ] Allow bounded repository/source crawling over configured server/client/reference roots with explicit scope, depth, file-type, and size limits.
-- [ ] Add cross-source comparison tools so an LLM can ask for LSB vs Topaz vs DSP implementations of the same logical feature/entity.
-- [ ] Add evidence retrieval that returns canonical node IDs, Evidence IDs, source snapshots, file paths/lines, confidence, and authority with every research result.
-- [ ] Add research-plan execution: decompose a question into tool calls, gather evidence, synthesize a report, identify contradictions/gaps, and propose next deterministic analyzer/tool actions.
-- [ ] Add a FindingProposal/ResearchFinding staging layer. LLM conclusions remain DRAFT/PROPOSED until deterministic evidence or a human/validator promotes them.
-- [ ] Permit write actions only through explicit generated proposals/patch plans; never grant an LLM arbitrary filesystem/SQL mutation.
-- [ ] Add patch/package proposal generation that emits diffs or MigrationAction proposals for human review and later deterministic application.
-- [ ] Add long-context artifact bundles for a feature: relevant Lua, SQL logical records, C++ functions/bindings, packets, build targets, client capabilities, captures, and references.
-- [ ] Add semantic search/indexing over source snapshots and canonical graph metadata while retaining exact grep/SQL/graph tools for verification.
-- [ ] Add contradiction detection across server forks, client evidence, captures, and reference sites.
-- [ ] Add research notebooks/reports that can be reopened and reproduced against the same pinned snapshots.
-- [ ] Add permission profiles such as READ_ONLY_RESEARCH, PROPOSE_CHANGES, and VALIDATION_ORCHESTRATOR.
-- [ ] Add budget/timeout/tool-call limits and complete audit logging for every autonomous research run.
-- [ ] Add LLM regression/evaluation fixtures using canned tool responses so provider/model changes cannot silently weaken evidence discipline.
-
-Recommended LLM tool surface:
+Recommended typed tool surface:
 - graph.trace / graph.search
 - feature.check / feature.candidates
-- server.logical_record / server.compare / server.schema
+- server.schema / server.logical_record / server.compare
 - entity.lookup / entity.relationships
+- cpp.symbol / binding.lookup / enum.lookup / build.target
 - packet.lookup / packet.handlers / capture.backtrace
-- cpp.symbol / binding.lookup / build.target
 - client.capability / dat.lookup
 - migration.plan / migration.explain
-- validation.status / validation.run-plan
+- validation.status / validation.plan
 - reference.search / reference.compare
 - source.search / source.read (bounded, snapshot-scoped)
 - report.create_research_draft
 
-The LLM layer must never convert graph reachability into proof, must preserve UNKNOWN/INFERRED states, and must carry canonical evidence/provenance into every substantive claim.
+GUI, auditability, and evaluation:
+- [ ] GUI evidence trail showing tool calls, cited evidence, contradictions, proposal state, verification state, budgets, and replay metadata.
+- [ ] Budget/timeout/tool-call limits and complete audit logging for every autonomous research run.
+- [ ] Model-independent regression/evaluation fixtures using canned tool results to verify evidence citation, UNKNOWN/INFERRED preservation, contradiction handling, source authority, correct typed-tool selection, and no-direct-write guarantees.
+- [ ] Provider/model quality evaluation remains separate from Workbench evidence/safety evaluation.
+- [ ] Keep `llm_client.py`, `llm_db_tools.py`, `llm_log.py`, and existing GUI routes as compatibility entry points while moving provider/tool/research orchestration into `workbench/research/`.
+
+Evidence rules:
+- Graph reachability is never proof by itself.
+- UNKNOWN and INFERRED states must be preserved rather than rounded up to certainty.
+- Reference/wiki evidence is not silently promoted to server/client truth.
+- LLM-generated conclusions never become canonical Findings without deterministic verification or explicit review.
+- Every substantive LLM research claim should be traceable back to canonical evidence/provenance.
 
 ## Feature Trace architecture
 Feature Trace is the central navigation layer between indexed sources. It is deliberately separate from the Feature Checker: a trace answers “what is connected to this subject?” while the checker answers “which declared requirements/capabilities have evidence?” without treating graph connectivity as proof of implementation.
