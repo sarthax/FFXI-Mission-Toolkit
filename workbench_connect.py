@@ -139,7 +139,13 @@ def connect(db: Path, graph_db: Path, limit: int | None = None) -> dict:
         for cap_id, opcode, direction in src.execute(
             "SELECT DISTINCT capture_id,opcode,direction FROM capture_raw_packets ORDER BY capture_id,opcode,direction"
         ):
-            pid = f"packet:{opcode}"
+            raw = str(opcode)
+            try:
+                value = int(raw, 0)
+                canonical = f"0x{value:03x}"
+            except (TypeError, ValueError):
+                canonical = raw.lower()
+            pid = f"packet:{canonical}"
             add_entity(pid, "PACKET", str(opcode), {"opcode": opcode})
             add_identifier(pid, "opcode", opcode)
             cev = f"evidence:capture-packet:{cap_id}:{opcode}:{direction}"
