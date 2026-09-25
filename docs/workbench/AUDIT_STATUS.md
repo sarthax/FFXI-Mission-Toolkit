@@ -1,3 +1,9 @@
+## Repository structure
+- Began staged repository restructuring with `workbench/` package namespaces.
+- Canonical schema, graph, and provenance implementations now live under `workbench/core/`; root modules are compatibility shims.
+- Lua event surface analyzer now lives under `workbench/analyzers/server/lua_events.py`; the historical root entry point is a compatibility shim.
+- No repository-wide move was attempted; subsystem migrations remain independently reviewable.
+
 # Workbench Audit Status
 
 Last updated: 2026-09-25
