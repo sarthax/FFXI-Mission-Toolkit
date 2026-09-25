@@ -187,3 +187,11 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 - Added server-source snapshot/evidence IDs and stable edge IDs to packet relationships.
 - Extended `workbench_connect_server.py` to materialize packet opcode nodes before importing packet relationships, allowing canonical graph resolution to connect exact `cpp-symbol:` handler targets to indexed C++ functions.
 - The packet self-test now requires the direct handler-symbol relationship and rejects a weaker generic REFERENCES edge for that same dispatch line.
+
+
+## 2026-09-25 — deterministic packet-handler symbol completion
+
+- Extended canonical graph alias resolution for packet dispatch handlers that are emitted as unqualified `cpp-symbol:<name>` nodes.
+- Exact qualified C++ symbols remain preferred. An unqualified symbol is promoted to a canonical function only when the C++ API index contains exactly one matching function name; ambiguous short names deliberately remain unresolved.
+- Added `test_fixtures/test_graph_cpp_symbol_resolution.py` covering unique unqualified resolution, exact qualified resolution, and preservation of ambiguous candidates.
+- This closes a practical gap between direct switch/case packet dispatch extraction and the canonical C++ function graph without guessing namespaces/classes.
