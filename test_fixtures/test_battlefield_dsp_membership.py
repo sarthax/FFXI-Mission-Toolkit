@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-from workbench.plugins.domain.battlefield_dsp import propose_dsp_battlefield_membership
+from workbench.plugins.domain.battlefield_dsp import (
+    propose_dsp_battlefield_membership,
+    propose_dsp_battlefield_policy,
+)
 
 
 def main():
@@ -29,7 +32,40 @@ def main():
     assert not conflict.insert_sql,conflict
     assert conflict.missing_rows and conflict.extra_rows,conflict
 
-    print("DSP battlefield membership proposal self-test: PASS")
+    target_policy={
+        "battlefield_id":960,
+        "time_limit":1800,
+        "level_cap":40,
+        "party_size":6,
+        "loot_drop_id":0,
+        "rules":5,
+        "is_mission":1,
+    }
+    same_policy=propose_dsp_battlefield_policy(
+        960,
+        {"time_limit":1800,"level_cap":40,"party_size":6,"is_mission":True},
+        target_policy,
+    )
+    assert same_policy.status=="EQUIVALENT",same_policy
+    assert same_policy.update_sql is None,same_policy
+
+    update_policy=propose_dsp_battlefield_policy(
+        960,
+        {"level_cap":50,"party_size":6},
+        target_policy,
+    )
+    assert update_policy.status=="UPDATE_PROPOSAL",update_policy
+    assert "`levelCap`=50" in update_policy.update_sql,update_policy
+
+    missing_policy=propose_dsp_battlefield_policy(
+        960,
+        {"level_cap":40},
+        None,
+    )
+    assert missing_policy.status=="MISSING_TARGET",missing_policy
+    assert not missing_policy.safe_to_generate,missing_policy
+
+    print("DSP battlefield membership/policy proposal self-test: PASS")
 
 
 if __name__=="__main__":
