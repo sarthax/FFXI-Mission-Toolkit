@@ -428,3 +428,10 @@ For Ancient Vows, the registry and battlefield representation no longer enter th
 The flagship now decomposes the modern LSB mission script into explicit lifecycle requirements and traces each requirement into distributed legacy DSP target scripts. Ancient Vows currently resolves two target behaviors as represented (Misareaux status 0→1 and Monarch Linn mission completion) and two as missing in the pinned DSP snapshot (Justinius event 128 and Riverne Site #A01 status 1→2/event 100).
 
 This confirms the remaining mission artifact is a real partial-implementation gap rather than a path/layout false positive.
+
+
+## 2026-09-25 — Mission gap proposal artifacts
+
+Mission representation gaps can now emit proposal-only generated artifacts without being treated as target-ready code. Proposal outputs are attached to the package manifest, materialized with provenance, included in cohesion checks, and force a GENERATED_PROPOSAL_REVIEW validation state.
+
+Ancient Vows now emits two review artifacts for its verified missing DSP lifecycle surfaces: the Justinius event-128 branch and the Riverne Site #A01 status 1→2/event-100 progression. These proposals are not auto-applied and do not make the package apply-ready.
