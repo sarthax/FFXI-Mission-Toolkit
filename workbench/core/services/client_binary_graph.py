@@ -98,6 +98,22 @@ def ingest_client_binary_index(
             ))
             evidence_ids.append(eid); finding_ids.append(fid)
 
+        for warning in payload.get("layout_warnings",[]):
+            token=_safe_id("layout_warning"+json.dumps(warning,sort_keys=True))
+            eid=f"evidence:client-binary-layout:{token}"
+            fid=f"finding:client-binary-layout:{token}"
+            graph.insert_record(con,Evidence(
+                eid,"CLIENT_SOURCE",binary.get("filename") or "client-binary",
+                location=f"section:{warning.get('section')}",snapshot=snapshot,
+                notes=str(warning.get("note") or "Client binary layout warning."),
+            ))
+            graph.insert_record(con,Finding(
+                fid,analysis_id,artifact_id,"layout_warning",warning,
+                "DISCOVERED","INFERRED",eid,snapshot,
+                notes=["Layout warning limits interpretation; it is not a feature/capability conclusion."],
+            ))
+            evidence_ids.append(eid); finding_ids.append(fid)
+
         for category in ("imports","exports"):
             for row in payload.get(category,[]):
                 token=_safe_id(category+json.dumps(row,sort_keys=True))
