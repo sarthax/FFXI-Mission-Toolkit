@@ -407,3 +407,10 @@ The flagship Ancient Vows LSB→DSP E2E now runs the conditional Lua backend pre
 The reusable battlefield plugin now produces a single representation plan that combines legacy DSP SQL policy, battlefield membership, and callback-surface handling. Safe additive/update SQL reshapes are distinguished from callback semantics; callback bodies are never invented. When the target callback surface is already aligned, callbacks are marked NOT_REQUIRED rather than generated.
 
 Ancient Vows exercises this planner and resolves READY with no manual battlefield representation surfaces because its pinned DSP target already has equivalent policy, membership, and callback coverage.
+
+
+## 2026-09-25 — Plugin reshape action refinement
+
+Domain plugins can now feed safe, role-scoped MIGRATION_RESHAPE findings back into the generic migration planner. The core only understands generic source-role metadata and explicit safe_auto/proposed_action flags; it does not contain battlefield semantics.
+
+The battlefield representation planner uses this path to mark verified source roles such as battlefield_script, level_cap_policy, and entity_registry as NOT_REQUIRED when legacy DSP already provides an equivalent representation. Ancient Vows verifies this refinement while leaving mission_script outside the battlefield plugin's authority.
