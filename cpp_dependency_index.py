@@ -18,7 +18,9 @@ def source_files(root):
 def index(root):
     edges=[]
     funcs, enum_defs, _bindings = index_api(root)
-    enum_symbols={e.symbol for e in enum_defs}\n    enum_symbols.update(f"{e.enum_name}::{e.symbol}" for e in enum_defs if e.enum_name)\n    functions_by_path={}
+    enum_symbols={e.symbol for e in enum_defs}
+    enum_symbols.update(f"{e.enum_name}::{e.symbol}" for e in enum_defs if e.enum_name)
+    functions_by_path={}
     for fn in funcs:
         if fn.definition:
             functions_by_path.setdefault(fn.path,[]).append(fn)
