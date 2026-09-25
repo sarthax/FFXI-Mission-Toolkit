@@ -90,6 +90,10 @@ def index(root):
             notes=notes,
         ))
     edges=[]
+    try:
+        api_funcs, _api_enums, _api_bindings = index_api(root)
+    except Exception:
+        api_funcs=[]
     for target_id, paths in target_sources.items():
         for rel in paths:
             edges.append(DependencyEdge(
@@ -105,11 +109,7 @@ def index(root):
             candidates.extend(path for path in all_paths if Path(path).name==Path(rel).name)
             for path in sorted(set(candidates)):
                 if path not in all_paths: continue
-                try:
-                    funcs, _enums, _bindings = index_api(root)
-                except Exception:
-                    funcs=[]
-                for fn in funcs:
+                for fn in api_funcs:
                     if fn.path==path and fn.definition:
                         edges.append(DependencyEdge(
                             edge_id=f"function-builds-into:{fn.function_id}:{target_id}",
