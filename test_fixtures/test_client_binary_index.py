@@ -80,6 +80,18 @@ def main():
         assert image.rva_to_offset(0x1020)==0x220
         assert image.offset_to_rva(0x220)==0x1020
 
+        # Synthetic packed-layout warning coverage.
+        image.sections[0]=type(image.sections[0])(
+            name=".text",
+            virtual_address=image.sections[0].virtual_address,
+            virtual_size=image.sections[0].virtual_size,
+            raw_offset=image.sections[0].raw_offset,
+            raw_size=0,
+            characteristics=image.sections[0].characteristics,
+        )
+        warnings=image.layout_warnings()
+        assert any(w["code"]=="EXECUTABLE_SECTION_WITHOUT_RAW_BYTES" for w in warnings),warnings
+
         imports=image.imports()
         assert any(row["dll"]=="KERNEL32.dll" and row["name"]=="CreateFileA" for row in imports),imports
         exports=image.exports()
