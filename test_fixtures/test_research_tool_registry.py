@@ -2,12 +2,13 @@
 import tempfile
 from pathlib import Path
 
-from workbench.research import ResearchSessionStore
+from workbench.research import BoundedSourceCrawler, CrawlPolicy, ResearchSessionStore
 from workbench.research.tools import (
     ACCESS_PROPOSE,
     ACCESS_READ,
     ResearchTool,
     ResearchToolRegistry,
+    register_source_tools,
 )
 
 
@@ -21,7 +22,13 @@ def main():
             model="fixture",
         )
 
+        source_root=Path(td)/"source"
+        source_root.mkdir()
+        (source_root/"example.lua").write_text("player:getID()\n",encoding="utf-8")
+        crawler=BoundedSourceCrawler(CrawlPolicy(roots=(source_root,)))
+
         registry=ResearchToolRegistry()
+        register_source_tools(registry,crawler)
         registry.register(ResearchTool(
             "graph.trace",
             "Trace canonical graph evidence.",
@@ -57,14 +64,27 @@ def main():
         )
         assert denied["status"]=="DENIED",denied
 
+        source_result=registry.call(
+            "source.search",
+            {"query":"getID"},
+            permission_profile="READ_ONLY_RESEARCH",
+            session_store=store,
+            research_session_id=session.research_session_id,
+        )
+        assert source_result["status"]=="OK",source_result
+        assert source_result["matches"][0]["path"]=="example.lua",source_result
+
         loaded=store.get(session.research_session_id)
-        assert len(loaded["tool_calls"])==2,loaded
+        assert len(loaded["tool_calls"])==3,loaded
         assert loaded["tool_calls"][0]["evidence_ids"]==["evidence:trace:1"],loaded
         assert loaded["tool_calls"][1]["status"]=="DENIED",loaded
+        assert loaded["tool_calls"][2]["tool_name"]=="source.search",loaded
 
         specs={row["name"]:row for row in registry.specs()}
         assert specs["graph.trace"]["access"]=="READ",specs
         assert specs["migration.propose"]["access"]=="PROPOSE",specs
+        assert specs["source.search"]["access"]=="READ",specs
+        assert specs["source.read"]["access"]=="READ",specs
 
     print("typed research tool registry self-test: PASS")
 
