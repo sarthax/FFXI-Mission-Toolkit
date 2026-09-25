@@ -18,6 +18,12 @@ def build_validation_package(manifest: dict) -> dict:
     steps=manifest.get("execution",{}).get("steps",[])
     lua=tuple(sorted({s["path"] for s in steps if s.get("backend")=="lua" and s.get("path")}))
     sql=tuple(sorted({s["path"] for s in steps if s.get("backend")=="sql" and s.get("path")}))
+    generated_sql=tuple(sorted({
+        item["path"]
+        for item in manifest.get("generated_artifacts",[])
+        if str(item.get("artifact_type","")).upper()=="SQL" and item.get("path")
+    }))
+    all_sql=tuple(sorted(set(sql) | set(generated_sql)))
 
     checks=[]
     unsupported=tuple(
@@ -29,11 +35,19 @@ def build_validation_package(manifest: dict) -> dict:
             ValidationCheck("lua-sanity","LUA_SANITY",True,lua),
             ValidationCheck("binding-audit","BINDING_AUDIT",True,lua),
         ])
-    if sql:
+    if all_sql:
         checks.extend([
-            ValidationCheck("sql-collision","SQL_ID_COLLISION",True,sql),
-            ValidationCheck("sql-duplication","SQL_CONTENT_DUPLICATION",True,sql),
+            ValidationCheck("sql-collision","SQL_ID_COLLISION",True,all_sql),
+            ValidationCheck("sql-duplication","SQL_CONTENT_DUPLICATION",True,all_sql),
         ])
+    if generated_sql:
+        checks.append(ValidationCheck(
+            "generated-target-sql",
+            "GENERATED_TARGET_SQL",
+            True,
+            generated_sql,
+            {"generated_count":len(generated_sql),"conversion_required":False},
+        ))
     if unsupported:
         checks.append(ValidationCheck(
             "converter-backend",
