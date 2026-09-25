@@ -3,7 +3,15 @@
 Last updated: 2026-09-25
 
 ## Current milestone
-Foundation preserved; universal architecture defined; engine-change/C++ analysis is the next implementation pass.
+Foundation preserved; engine-change workspace audited; first machine-readable engine-change index added; C++ symbol/build analysis is next.
+
+## New work completed
+- [x] Directly inspected the bundled dsp-engine-changes/_example_change scaffold.
+- [x] Confirmed the engine-change convention is README + real scoped diff + verification evidence.
+- [x] Added engine_change_index.py for evidence-first indexing.
+- [x] Added docs/workbench/ENGINE_CHANGE_AUDIT.md.
+- [x] Verified the existing project evidence for a real Lua/C++ API-shape mismatch in GetNPCByID.
+- [x] Verified the existing mob_groups logical-vs-physical identity warning and content-duplication safeguard.
 
 ## Priority queue
 ### P0 — Core
@@ -27,6 +35,8 @@ Foundation preserved; universal architecture defined; engine-change/C++ analysis
 
 ### P0 — Engine
 - [x] Generic EngineChange architecture defined.
+- [x] Engine-change workspace audited.
+- [x] Evidence-first engine-change indexer added.
 - [ ] C++ header/declaration index.
 - [ ] C++ definition/symbol index.
 - [ ] Enum/constant index.
