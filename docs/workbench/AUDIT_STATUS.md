@@ -503,3 +503,10 @@ Ancient Vows now reports AWAITING_APPROVAL directly from its assembled package a
 ## 2026-09-25 — Read-only patch lifecycle CLI
 
 The unified patch lifecycle service is now exposed through `python -m workbench.cli.patch_status <package_root> <target_root>`. The command is read-only, reports the authoritative lifecycle as JSON, and can optionally consume an apply journal. It does not approve or apply patches.
+
+
+## 2026-09-25 — Unified package review summary
+
+Assembled migration packages now expose one review summary combining manifest identity, execution/exclusion counts, generated-artifact count, validation status, package cohesion, apply readiness, and patch lifecycle.
+
+Ancient Vows now reports AWAITING_APPROVAL through this consolidated package review summary, with one remaining review action and four generated review artifacts.
