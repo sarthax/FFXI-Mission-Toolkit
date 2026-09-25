@@ -3,7 +3,7 @@
 Last updated: 2026-09-25
 
 ## Current milestone
-Foundation preserved; engine-change workspace audited; first machine-readable engine-change index added; C++ symbol/build analysis is next.
+Foundation preserved; engine-change workspace audited; C++ API surface index added; binding-to-C++ resolution and enum/constant indexing are now available as conservative evidence passes; build-system analysis is next.
 
 ## New work completed
 - [x] Directly inspected the bundled dsp-engine-changes/_example_change scaffold.
@@ -12,6 +12,9 @@ Foundation preserved; engine-change workspace audited; first machine-readable en
 - [x] Added docs/workbench/ENGINE_CHANGE_AUDIT.md.
 - [x] Verified the existing project evidence for a real Lua/C++ API-shape mismatch in GetNPCByID.
 - [x] Verified the existing mob_groups logical-vs-physical identity warning and content-duplication safeguard.
+- [x] Added generic Function/FunctionSignature/Binding/EnumDefinition records.
+- [x] Added conservative external-root C++ API indexing.
+- [x] Added standardized AnalysisResult/Finding records.
 
 ## Priority queue
 ### P0 — Core
@@ -21,7 +24,7 @@ Foundation preserved; engine-change workspace audited; first machine-readable en
 - [x] Evidence/Finding model defined.
 - [x] Feature/Implementation/Dependency model defined.
 - [ ] Canonical graph implementation.
-- [ ] Standard machine-readable findings/results.
+- [x] Standard machine-readable findings/results.
 - [ ] Provenance service consolidation.
 
 ### P0 — Migration
@@ -37,10 +40,10 @@ Foundation preserved; engine-change workspace audited; first machine-readable en
 - [x] Generic EngineChange architecture defined.
 - [x] Engine-change workspace audited.
 - [x] Evidence-first engine-change indexer added.
-- [ ] C++ header/declaration index.
-- [ ] C++ definition/symbol index.
-- [ ] Enum/constant index.
-- [ ] Lua binding -> C++ resolution.
+- [x] C++ header/declaration index.
+- [x] C++ definition/symbol index.
+- [x] Enum/constant index.
+- [x] Lua binding -> C++ resolution (conservative exact matching).
 - [ ] C++ dependency graph.
 - [ ] Build-system integration analyzer.
 - [ ] Engine migration classifier.
@@ -72,21 +75,3 @@ Foundation preserved; engine-change workspace audited; first machine-readable en
 - [ ] Salvage plugin.
 - [ ] Abyssea plugin.
 - [ ] Einherjar plugin.
-
-## Branch/PR policy
-- main remains the stable baseline.
-- Rework is developed on dedicated branches.
-- Changes should be reviewed as pull requests before merging.
-- Large architectural changes should be split into auditable commits.
-- Do not rewrite or delete existing working tools merely to fit the new architecture.
-
-## Evidence levels
-- CLIENT_VERIFIED: directly verified against supplied client binaries/assets.
-- PUBLIC_VERIFIED: verified against public source/repository/documentation.
-- SERVER_VERIFIED: verified against server source/database.
-- PACKET_VERIFIED: verified against packet definitions/captures.
-- INFERRED: reasoned from evidence but not directly verified.
-- UNKNOWN: insufficient evidence.
-
-## Important current client limitation
-The client version under investigation is 30191204_1, with testing indicating /wardrobe1-8 recognizes only wardrobes 1–4. Exact EXE/DLL patch points remain deferred until the actual binaries are available to the analysis environment.
