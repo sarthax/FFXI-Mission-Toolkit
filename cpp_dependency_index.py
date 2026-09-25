@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse,json,re
 from dataclasses import asdict
 from pathlib import Path
+from source_snapshot import snapshot_id
 from workbench_schema import AnalysisResult, DependencyEdge
 from cpp_api_index import index as index_api
 
@@ -44,6 +45,7 @@ def index(root):
 
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument("root",type=Path); ap.add_argument("--json",type=Path); args=ap.parse_args()
+    sid=snapshot_id(args.root)
     edges=index(args.root)
     # Resolve exact symbols through the API index. This upgrades identity only; it does not
     # claim that every namespace-qualified token is semantically an enum.
@@ -61,7 +63,7 @@ def main():
             discovered_by="cpp_dependency_index", source_location=str(args.root),
             notes=[f"API index resolution failed: {exc}"]
         ))
-    result=AnalysisResult(analysis_id="cpp-dependency-index",analysis_type="CPP_DEPENDENCY_GRAPH",source=str(args.root),status="ANALYZED",notes=["Conservative lexical dependency extraction; semantic graph resolution is not claimed."])
+    result=AnalysisResult(analysis_id="cpp-dependency-index",analysis_type="CPP_DEPENDENCY_GRAPH",source=str(args.root),status="ANALYZED",notes=[f"Source snapshot: {sid}.","Conservative lexical dependency extraction; semantic graph resolution is not claimed."])
     payload={"schema":1,"analysis":asdict(result),"edges":[asdict(e) for e in edges]}
     if args.json: args.json.parent.mkdir(parents=True,exist_ok=True); args.json.write_text(json.dumps(payload,indent=2)+"\n",encoding="utf-8")
     else: print(json.dumps(payload,indent=2))
