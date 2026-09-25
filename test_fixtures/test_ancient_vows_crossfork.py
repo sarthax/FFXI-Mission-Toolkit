@@ -13,6 +13,7 @@ from workbench.migrations.feature_surface import FeatureSurface, SurfaceArtifact
 from workbench.migrations.package_plan import build_package_plan
 from workbench.migrations.package_manifest import build_package_manifest
 from workbench.migrations.package_validation import build_validation_package
+from workbench.migrations.package_materialize import materialize_package, write_materialization_journal
 from workbench.core import graph
 from workbench.core.schema import Artifact, CapabilityRequirement, DependencyEdge, Feature, MigrationAction
 from workbench.core.services.feature_surface_graph import persist_feature_surface
@@ -175,6 +176,14 @@ def main():
         target_snapshot_id="dsp:ee1f489efbde",
     )
     validation_package=build_validation_package(package_manifest)
+    with tempfile.TemporaryDirectory() as package_td:
+        package_root=Path(package_td)/"ancient-vows-package"
+        materialized=materialize_package(package_manifest,lsb_root,package_root)
+        assert materialized.status=="MATERIALIZED",materialized
+        assert len(materialized.copied)==3,materialized
+        assert len(materialized.artifacts)==3,materialized
+        journal_path=write_materialization_journal(package_root,package_manifest,materialized)
+        assert journal_path.exists(),journal_path
     assert package_plan.status=="READY",package_plan
     assert [step["action_id"] for step in package_manifest["execution"]["steps"]]==[
         "action:ancient-vows:registry",
@@ -301,6 +310,7 @@ def main():
             "plan_status":package_plan.status,
             "step_count":len(package_manifest["execution"]["steps"]),
             "validation_check_count":len(validation_package["checks"]),
+            "materialized_artifact_count":3,
         },
         "domain_plugins":{
             "active":active_plugins,
