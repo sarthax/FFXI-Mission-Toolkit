@@ -77,6 +77,7 @@ jobs:
           python test_fixtures/test_patch_package_integrity.py
           python test_fixtures/test_patch_apply.py
           python test_fixtures/test_patch_lifecycle.py
+          python test_fixtures/test_patch_status_cli.py
           python test_fixtures/test_validation_apply_journal.py
           python test_fixtures/test_backport_package_plan_scope.py
           python test_fixtures/test_semantic_instance_matching.py
