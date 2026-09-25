@@ -219,3 +219,8 @@ Runtime observations should reach features only through recorded canonical relat
 ## 2026-09-25 — explicit feature semantics
 
 Feature Checker now reports explicit semantic graph relationships separately from capability requirement records. Only REQUIRES, IMPLEMENTS, IMPLEMENTED_BY, USES_CLIENT_CAPABILITY, and VALIDATED_BY edges sourced from the feature are surfaced in this semantic section. Generic REFERENCES or graph reachability remain navigation evidence and do not change the aggregate capability verdict.
+
+
+## 2026-09-25 — Feature Checker dimension policies
+
+Requirements, implementation, and validation remain independent evidence dimensions. Implementation and validation aggregation are now isolated policy functions with a focused regression fixture. The top-level Feature Checker status remains the capability-requirement verdict for compatibility; no combined numeric completion score is produced. Fixtures are committed but are not considered executed unless run by a runtime or CI workflow.
