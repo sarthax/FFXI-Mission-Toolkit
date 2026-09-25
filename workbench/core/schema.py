@@ -218,8 +218,8 @@ class ValidationResult:
     validation_type: str
     subject_id: str
     status: str = "UNKNOWN"
-    run_id: str | None = None
     evidence_id: str | None = None
     source: str | None = None
     target: str | None = None
     notes: list[str] = field(default_factory=list)
+    run_id: str | None = None
