@@ -24,7 +24,7 @@ from workbench.core import graph
 from workbench.core.schema import Artifact, CapabilityRequirement, DependencyEdge, Feature, MigrationAction
 from workbench.core.services.feature_surface_graph import persist_feature_surface
 from workbench.core.services.feature_surface_validation import build_feature_surface_validation
-from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy, analyze_dsp_battlefield_callbacks, plan_dsp_battlefield_callback_adaptation, generated_outputs_for_dsp_battlefield, extract_lsb_battlefield_policy, extract_lsb_mission_level_cap, extract_lsb_battlefield_mob_groups, validate_dsp_battlefield_proposals, plan_dsp_battlefield_representation, battlefield_representation_finding, apply_plugin_reshape_findings
+from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy, analyze_dsp_battlefield_callbacks, plan_dsp_battlefield_callback_adaptation, generated_outputs_for_dsp_battlefield, extract_lsb_battlefield_policy, extract_lsb_mission_level_cap, extract_lsb_battlefield_mob_groups, validate_dsp_battlefield_proposals, plan_dsp_battlefield_representation, battlefield_representation_finding, apply_plugin_reshape_findings, MissionRequirement, MissionRepresentation, plan_mission_representation
 from feature_checker import resolve_feature, check_feature
 import tempfile
 import backport_binding_audit as bba
@@ -111,6 +111,9 @@ def main():
         "lsb_level_cap_policy":lsb_root/"modules"/"era"/"lua"/"battlefields"/"mission_level_caps.lua",
         "dsp_battlefield":dsp_root/"scripts"/"zones"/"Monarch_Linn"/"bcnms"/"ancient_vows.lua",
         "dsp_mammet":dsp_root/"scripts"/"zones"/"Monarch_Linn"/"mobs"/"Mammet-19_Epsilon.lua",
+        "dsp_justinius":dsp_root/"scripts"/"zones"/"Tavnazian_Safehold"/"npcs"/"Justinius.lua",
+        "dsp_misareaux_gate":dsp_root/"scripts"/"zones"/"Misareaux_Coast"/"npcs"/"_0p2.lua",
+        "dsp_riverne_zone":dsp_root/"scripts"/"zones"/"Riverne-Site_A01"/"Zone.lua",
     }
     missing=[name for name,path in surfaces.items() if not path.exists()]
     assert not missing,missing
@@ -184,6 +187,76 @@ def main():
     source_mob=surfaces["lsb_mammet"].read_text(encoding="utf-8",errors="ignore")
     target_mob=surfaces["dsp_mammet"].read_text(encoding="utf-8",errors="ignore")
     source_level_cap=surfaces["lsb_level_cap_policy"].read_text(encoding="utf-8",errors="ignore")
+    target_justinius=surfaces["dsp_justinius"].read_text(encoding="utf-8",errors="ignore")
+    target_misareaux_gate=surfaces["dsp_misareaux_gate"].read_text(encoding="utf-8",errors="ignore")
+    target_riverne_zone=surfaces["dsp_riverne_zone"].read_text(encoding="utf-8",errors="ignore")
+
+    mission_requirements=(
+        MissionRequirement(
+            "justinius_128",
+            "Ancient Vows exposes Justinius event 128 in Tavnazian Safehold.",
+            (str(surfaces["lsb_mission"].relative_to(lsb_root)),),
+        ),
+        MissionRequirement(
+            "misareaux_0_to_1",
+            "Dilapidated Gate event 6 advances Promathia mission status 0 to 1.",
+            (str(surfaces["lsb_mission"].relative_to(lsb_root)),),
+        ),
+        MissionRequirement(
+            "riverne_1_to_2",
+            "Entering Riverne Site #A01 at mission status 1 runs event 100 and advances status to 2.",
+            (str(surfaces["lsb_mission"].relative_to(lsb_root)),),
+        ),
+        MissionRequirement(
+            "monarch_completion",
+            "Winning Ancient Vows at mission status 2 completes the mission and advances to The Call of the Wyrmking.",
+            (str(surfaces["lsb_mission"].relative_to(lsb_root)),),
+        ),
+    )
+    mission_representations=[]
+    if (
+        "ANCIENT_VOWS" in target_justinius
+        and "startEvent(128)" in target_justinius
+    ):
+        mission_representations.append(MissionRepresentation(
+            "justinius_128","VERIFIED",
+            (str(surfaces["dsp_justinius"].relative_to(dsp_root)),),
+        ))
+    if (
+        "ANCIENT_VOWS" in target_misareaux_gate
+        and "startEvent(6)" in target_misareaux_gate
+        and 'setCharVar("PromathiaStatus",1)' in target_misareaux_gate
+    ):
+        mission_representations.append(MissionRepresentation(
+            "misareaux_0_to_1","VERIFIED",
+            (str(surfaces["dsp_misareaux_gate"].relative_to(dsp_root)),),
+        ))
+    if (
+        "ANCIENT_VOWS" in target_riverne_zone
+        and "100" in target_riverne_zone
+        and 'setCharVar("PromathiaStatus",2)' in target_riverne_zone
+    ):
+        mission_representations.append(MissionRepresentation(
+            "riverne_1_to_2","VERIFIED",
+            (str(surfaces["dsp_riverne_zone"].relative_to(dsp_root)),),
+        ))
+    if (
+        "completeMission(COP, dsp.mission.id.cop.ANCIENT_VOWS)" in target_battlefield
+        and "THE_CALL_OF_THE_WYRMKING" in target_battlefield
+    ):
+        mission_representations.append(MissionRepresentation(
+            "monarch_completion","VERIFIED",
+            (str(surfaces["dsp_battlefield"].relative_to(dsp_root)),),
+        ))
+    mission_representation_plan=plan_mission_representation(
+        mission_requirements,
+        mission_representations,
+    )
+    assert mission_representation_plan.status=="MANUAL_REQUIRED",mission_representation_plan
+    assert set(mission_representation_plan.missing_requirement_ids)=={
+        "justinius_128",
+        "riverne_1_to_2",
+    },mission_representation_plan
     source_policy=extract_lsb_battlefield_policy(source_battlefield)
     era_level_cap=extract_lsb_mission_level_cap(source_level_cap,"ANCIENT_VOWS")
     assert source_policy.resolved_fields["time_limit"]==1800,source_policy
@@ -515,6 +588,8 @@ def main():
             "sql_conversion_status":"NOT_QUEUED",
             "battlefield_representation_status":"READY",
             "plugin_reshape_refinement":"VERIFIED",
+            "mission_representation_status":mission_representation_plan.status,
+            "mission_missing_requirements":list(mission_representation_plan.missing_requirement_ids),
             "package_assembly_status":"MANUAL_REQUIRED",
             "semantic_action_count":len(semantic_actions),
             "semantic_migration_required":any(action.action!="NOT_REQUIRED" for action in semantic_actions),
