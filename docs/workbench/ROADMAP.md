@@ -86,11 +86,11 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - Record current audit findings and unresolved items.
 
 ### Phase 1 — Canonical evidence and feature graph (P0)
-- Formalize Source/Snapshot.
-- Formalize Entity/Relationship.
-- Formalize Evidence/Finding.
-- Formalize Feature/Implementation/Dependency.
-- Add machine-readable analysis outputs.
+- [x] Formalize Source/Snapshot.
+- [x] Formalize Entity/Relationship.
+- [x] Formalize Evidence/Finding.
+- [x] Formalize Feature/Implementation/Dependency.
+- [x] Add machine-readable analysis outputs.
 - Implement a generic SQLite-backed canonical graph store.
 - Connect existing entity_profile, map confidence, capture, packet, and backport reports.
 
@@ -108,16 +108,16 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - ID/content collision analysis
 
 ### Phase 3 — C++/engine analyzer (P0)
-- header declarations
-- definitions
-- classes/functions/methods
-- enums/constants/macros
-- Lua bindings
-- C++ dependency graph
-- packet handlers
-- build-system inclusion
-- compile conditions/generated sources
-- engine migration classification
+- [x] header declarations
+- [x] definitions
+- [x] classes/functions/methods
+- [x] enums/constants/macros
+- [x] Lua bindings
+- [x] C++ dependency graph (conservative)
+- [ ] packet handlers
+- [x] build-system inclusion (conservative)
+- [ ] compile conditions/generated sources
+- [x] engine migration classification
 
 ### Phase 4 — Client capability and synchronization (P0/P1)
 - DAT adapters
@@ -152,12 +152,12 @@ Domain plugins may introduce system-specific dependency rules without contaminat
 - rollback/journal support
 
 ## Immediate audit queue
-1. Audit existing engine-change artifacts and classify generic vs system-specific information.
-2. Implement/standardize the C++ API surface model.
-3. Connect bindings -> C++ symbols -> enums/constants -> packets -> build targets.
-4. Audit build-system integration.
-5. Formalize generic Implementation and EngineChange records.
-6. Extend existing Backport Package Analyzer to consume the graph.
+1. Connect bindings -> C++ symbols -> enums/constants -> packets -> build targets.
+2. Add packet handler/opcode relationship extraction.
+3. Model compile conditions and generated sources.
+4. Extend existing Backport Package Analyzer to import canonical graph records.
+5. Connect entity_profile/map-confidence/capture/packet outputs to the graph.
+6. Continue GUI/service extraction without rewriting the GUI wholesale.
 7. Continue GUI/service extraction without rewriting the GUI wholesale.
 8. Audit LLM/research tooling and make it evidence-aware.
 9. Resume client EXE/DLL analysis when the actual binaries are available.
