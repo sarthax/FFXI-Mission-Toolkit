@@ -9,7 +9,7 @@ from workbench.adapters.servers import DSPAdapter, LSBAdapter
 from workbench.adapters.servers.logical import compare_records
 from workbench.adapters.servers.sql_extract import extract_logical_records
 from workbench.adapters.servers.entity_symbols import yaml_mob_template_spawns
-from workbench.migrations.feature_surface import FeatureSurface, SurfaceArtifact, compare_feature_surfaces
+from workbench.migrations.feature_surface import FeatureSurface, SurfaceArtifact, SurfaceCapability, compare_feature_surfaces
 from workbench.core import graph
 from workbench.core.schema import Feature
 from workbench.core.services.feature_surface_graph import persist_feature_surface
@@ -81,10 +81,12 @@ def main():
     missing=[name for name,path in surfaces.items() if not path.exists()]
     assert not missing,missing
 
+    source_mission=surfaces["lsb_mission"].read_text(encoding="utf-8",errors="ignore")
     source_battlefield=surfaces["lsb_battlefield"].read_text(encoding="utf-8",errors="ignore")
     target_battlefield=surfaces["dsp_battlefield"].read_text(encoding="utf-8",errors="ignore")
     source_mob=surfaces["lsb_mammet"].read_text(encoding="utf-8",errors="ignore")
     target_mob=surfaces["dsp_mammet"].read_text(encoding="utf-8",errors="ignore")
+    source_level_cap=surfaces["lsb_level_cap_policy"].read_text(encoding="utf-8",errors="ignore")
 
     source_surface=FeatureSurface(
         feature_id="feature:cop:ancient_vows",
@@ -98,6 +100,14 @@ def main():
             SurfaceArtifact("entity_registry","data/zones/monarch_linn/mobs.yaml","YAML"),
         ),
         entity_ids=tuple(sorted(EXPECTED_MAMMETS)),
+        capabilities=(
+            SurfaceCapability("mission_completion",evidence=(str(surfaces["lsb_mission"].relative_to(lsb_root)),)),
+            SurfaceCapability("battlefield_entity_membership",evidence=(str(surfaces["lsb_battlefield"].relative_to(lsb_root)),"data/zones/monarch_linn/mobs.yaml")),
+            SurfaceCapability("era_level_cap_40",evidence=(str(surfaces["lsb_level_cap_policy"].relative_to(lsb_root)),)),
+            SurfaceCapability("xp_reward_1000",evidence=(str(surfaces["lsb_battlefield"].relative_to(lsb_root)),)),
+            SurfaceCapability("title_tavnazian_traveler",evidence=(str(surfaces["lsb_battlefield"].relative_to(lsb_root)),)),
+            SurfaceCapability("mammet_form_change",evidence=(str(surfaces["lsb_mammet"].relative_to(lsb_root)),)),
+        ),
     )
     target_surface=FeatureSurface(
         feature_id="feature:cop:ancient_vows",
@@ -109,11 +119,21 @@ def main():
             SurfaceArtifact("battlefield_membership","sql/bcnm_battlefield.sql","SQL"),
         ),
         entity_ids=tuple(sorted(target_mammets)),
+        capabilities=(
+            SurfaceCapability("mission_completion",evidence=(str(surfaces["dsp_battlefield"].relative_to(dsp_root)),)),
+            SurfaceCapability("battlefield_entity_membership",evidence=("sql/bcnm_battlefield.sql",)),
+            SurfaceCapability("era_level_cap_40",evidence=("sql/bcnm_info.sql",)),
+            SurfaceCapability("xp_reward_1000",evidence=(str(surfaces["dsp_battlefield"].relative_to(dsp_root)),)),
+            SurfaceCapability("title_tavnazian_traveler",evidence=(str(surfaces["dsp_battlefield"].relative_to(dsp_root)),)),
+            SurfaceCapability("mammet_form_change",evidence=(str(surfaces["dsp_mammet"].relative_to(dsp_root)),)),
+        ),
     )
     surface_comparison=compare_feature_surfaces(source_surface,target_surface)
     assert surface_comparison.status=="REPRESENTATION_DRIFT",surface_comparison
     assert not surface_comparison.source_only_entity_ids,surface_comparison
     assert not surface_comparison.target_only_entity_ids,surface_comparison
+    assert surface_comparison.capability_coverage_status=="CAPABILITIES_ALIGNED",surface_comparison
+    assert len(surface_comparison.shared_capabilities)==6,surface_comparison
 
     with tempfile.TemporaryDirectory() as td:
         con=graph.init_db(Path(td)/"ancient_vows.db")
@@ -164,10 +184,19 @@ def main():
 
     assert "BattlefieldMission:new" in source_battlefield
     assert "content.groups" in source_battlefield
+    assert "mission:complete(player)" in source_mission
+    assert "ANCIENT_VOWS,                         40" in source_level_cap
+    assert "grantXP = 1000" in source_battlefield
+    assert "TAVNAZIAN_TRAVELER" in source_battlefield
     assert "onBattlefieldLeave" in target_battlefield
     assert "completeMission" in target_battlefield
+    assert "addExp(1000)" in target_battlefield
+    assert "TAVNAZIAN_TRAVELER" in target_battlefield
+    assert target_registry.fields["level_cap"]==40,target_registry
     assert "setMagicCastingEnabled" in source_mob
+    assert "setAnimationSub" in source_mob
     assert "SetMagicCastingEnabled" in target_mob
+    assert "changeForm(mob)" in target_mob
 
     report={
         "feature":"Chains of Promathia 2-5: Ancient Vows",
@@ -194,6 +223,8 @@ def main():
             "target_only_roles":list(surface_comparison.target_only_roles),
             "path_drift":list(surface_comparison.role_path_drift),
             "shared_entity_count":len(surface_comparison.shared_entity_ids),
+            "capability_coverage_status":surface_comparison.capability_coverage_status,
+            "shared_capabilities":list(surface_comparison.shared_capabilities),
         },
         "canonical_graph":{
             "implementation_count":implementation_count,
