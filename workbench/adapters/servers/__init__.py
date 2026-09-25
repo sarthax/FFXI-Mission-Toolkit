@@ -1,10 +1,10 @@
 """FFXI server-source adapter contracts and built-in profiles."""
 from .base import AdapterProbe, FieldMapping, LogicalRecord, SchemaProfile, ServerAdapter, TableShape
-from .profile_adapters import DSPAdapter, LSBAdapter, TopazAdapter, adapter_for
-from .profiles import DSP, LSB, TOPAZ
+from .profile_adapters import CustomForkAdapter, DSPAdapter, LSBAdapter, TopazAdapter, TopazNextAdapter, adapter_for
+from .profiles import DSP, LSB, TOPAZ, TOPAZ_NEXT
 
 __all__ = [
     "AdapterProbe", "FieldMapping", "LogicalRecord", "SchemaProfile", "ServerAdapter", "TableShape",
-    "DSPAdapter", "LSBAdapter", "TopazAdapter", "adapter_for",
-    "DSP", "LSB", "TOPAZ",
+    "CustomForkAdapter", "DSPAdapter", "LSBAdapter", "TopazAdapter", "TopazNextAdapter", "adapter_for",
+    "DSP", "LSB", "TOPAZ", "TOPAZ_NEXT",
 ]
