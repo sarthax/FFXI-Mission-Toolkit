@@ -13,7 +13,7 @@ def main():
         z.execute("CREATE TABLE npc_event_refs(source TEXT, zone_name TEXT, npc_script TEXT, csid INTEGER)")
         z.execute("INSERT INTO npc_event_refs VALUES(?,?,?,?)",("topaz","Test_Zone","Test_NPC",42))
         z.commit(); z.close()
-        api={"analysis":{"analysis_id":"synthetic-api","analysis_type":"CPP_API","source":"synthetic","status":"ANALYZED","source_snapshot_id":"api-snap"},
+        api={"analysis":{"analysis_id":"synthetic-api","analysis_type":"CPP_API","source":"synthetic","target":None,"feature_id":None,"status":"ANALYZED","created_at":None,"tool_version":None,"findings":[],"notes":[],"source_snapshot_id":"api-snap"},
              "functions":[
                 {"function_id":"function:CLuaBaseEntity::getID","qualified_name":"CLuaBaseEntity::getID","name":"getID","namespace":None,"class_name":"CLuaBaseEntity","source_snapshot_id":"api-snap","path":"src/lua.cpp","line":10,"kind":"METHOD","declaration":False,"definition":True,"signature":{"return_type":None,"parameters":[]},"evidence_id":"ev:function","notes":[]},
                 {"function_id":"function:CLuaBaseEntity::getName","qualified_name":"CLuaBaseEntity::getName","name":"getName","namespace":None,"class_name":"CLuaBaseEntity","source_snapshot_id":"api-snap","path":"src/lua.cpp","line":11,"kind":"METHOD","declaration":False,"definition":True,"signature":{"return_type":None,"parameters":[]},"evidence_id":"ev:function2","notes":[]}
