@@ -21,7 +21,7 @@ from workbench.core import graph
 from workbench.core.schema import Artifact, CapabilityRequirement, DependencyEdge, Feature, MigrationAction
 from workbench.core.services.feature_surface_graph import persist_feature_surface
 from workbench.core.services.feature_surface_validation import build_feature_surface_validation
-from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy, analyze_dsp_battlefield_callbacks, generated_outputs_for_dsp_battlefield, extract_lsb_battlefield_policy, extract_lsb_mission_level_cap, extract_lsb_battlefield_mob_groups, validate_dsp_battlefield_proposals
+from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy, analyze_dsp_battlefield_callbacks, plan_dsp_battlefield_callback_adaptation, generated_outputs_for_dsp_battlefield, extract_lsb_battlefield_policy, extract_lsb_mission_level_cap, extract_lsb_battlefield_mob_groups, validate_dsp_battlefield_proposals
 from feature_checker import resolve_feature, check_feature
 import tempfile
 import backport_binding_audit as bba
@@ -171,6 +171,13 @@ def main():
     callback_surface=analyze_dsp_battlefield_callbacks(target_battlefield,callback_profile)
     assert callback_surface.status=="COVERAGE_ALIGNED",callback_surface
     assert not callback_surface.missing_callbacks,callback_surface
+    callback_plan=plan_dsp_battlefield_callback_adaptation(
+        callback_surface,
+        source_framework_methods=framework_methods,
+    )
+    assert callback_plan.status=="COVERAGE_ALIGNED",callback_plan
+    assert not callback_plan.missing_callbacks,callback_plan
+    assert not callback_plan.safe_to_generate,callback_plan
     source_mob=surfaces["lsb_mammet"].read_text(encoding="utf-8",errors="ignore")
     target_mob=surfaces["dsp_mammet"].read_text(encoding="utf-8",errors="ignore")
     source_level_cap=surfaces["lsb_level_cap_policy"].read_text(encoding="utf-8",errors="ignore")
@@ -417,6 +424,7 @@ def main():
             "generated_target_sql_count":len(generated_dsp_outputs),
             "generated_sql_validation_statuses":[result.status for result in generated_sql_validations],
             "dsp_callback_surface_status":callback_surface.status,
+            "dsp_callback_adaptation_status":callback_plan.status,
             "missing_callback_count":len(callback_surface.missing_callbacks),
             "source_template_spawn_count":len(source_mammets),
             "target_battlefield_member_count":len(target_mammets),
