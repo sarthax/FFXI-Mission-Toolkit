@@ -7,8 +7,44 @@ backend can be designed from evidence.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 
 import backport_lua_convert as legacy_lua
+
+
+LSB_FRAMEWORK_METHODS=frozenset({
+    "complete",
+    "entryRequirement",
+    "event",
+    "getVar",
+    "new",
+    "progressEvent",
+    "register",
+    "replaceDefault",
+    "setVar",
+})
+
+_METHOD_RE=re.compile(r":([A-Za-z_][A-Za-z0-9_]*)\s*\(")
+_METHOD_DEFINITION_RE=re.compile(r"function\s+[A-Za-z_][A-Za-z0-9_.]*:([A-Za-z_][A-Za-z0-9_]*)\s*\(")
+
+
+@dataclass(frozen=True)
+class LuaMethodSurface:
+    framework_methods: tuple[str, ...]
+    binding_candidate_methods: tuple[str, ...]
+    method_definitions: tuple[str, ...]
+
+
+def classify_lsb_lua_methods(text: str) -> LuaMethodSurface:
+    definitions=set(_METHOD_DEFINITION_RE.findall(text))
+    methods=set(_METHOD_RE.findall(text))-definitions
+    framework=methods & set(LSB_FRAMEWORK_METHODS)
+    bindings=methods-framework
+    return LuaMethodSurface(
+        framework_methods=tuple(sorted(framework)),
+        binding_candidate_methods=tuple(sorted(bindings)),
+        method_definitions=tuple(sorted(definitions)),
+    )
 
 
 @dataclass(frozen=True)
@@ -20,6 +56,7 @@ class LuaRouteProbe:
     flagged: tuple[dict, ...]
     leftovers: tuple[dict, ...]
     status: str
+    method_surface: LuaMethodSurface | None = None
 
 
 def probe_lsb_to_dsp_lua(text: str) -> LuaRouteProbe:
@@ -38,4 +75,5 @@ def probe_lsb_to_dsp_lua(text: str) -> LuaRouteProbe:
         flagged=flagged,
         leftovers=leftovers,
         status=status,
+        method_surface=classify_lsb_lua_methods(text),
     )
