@@ -21,7 +21,7 @@ from workbench.core import graph
 from workbench.core.schema import Artifact, CapabilityRequirement, DependencyEdge, Feature, MigrationAction
 from workbench.core.services.feature_surface_graph import persist_feature_surface
 from workbench.core.services.feature_surface_validation import build_feature_surface_validation
-from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy, analyze_dsp_battlefield_callbacks, extract_lsb_battlefield_policy, extract_lsb_mission_level_cap
+from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy, analyze_dsp_battlefield_callbacks, extract_lsb_battlefield_policy, extract_lsb_mission_level_cap, extract_lsb_battlefield_mob_groups
 from feature_checker import resolve_feature, check_feature
 import tempfile
 import backport_binding_audit as bba
@@ -94,14 +94,6 @@ def main():
         if r.fields["battlefield_id"]==BATTLEFIELD_ID
     }
     assert target_mammets==EXPECTED_MAMMETS,target_mammets
-    membership_proposal=propose_dsp_battlefield_membership(
-        BATTLEFIELD_ID,
-        EXPECTED_MAMMET_GROUPS,
-        target_members,
-    )
-    assert membership_proposal.status=="EQUIVALENT",membership_proposal
-    assert not membership_proposal.insert_sql,membership_proposal
-
     source_mammets=set(yaml_mob_template_spawns(
         lsb_root/"data"/"zones"/"monarch_linn"/"mobs.yaml",
         MAMMET_TEMPLATE,
@@ -122,6 +114,19 @@ def main():
 
     source_mission=surfaces["lsb_mission"].read_text(encoding="utf-8",errors="ignore")
     source_battlefield=surfaces["lsb_battlefield"].read_text(encoding="utf-8",errors="ignore")
+    source_group_surface=extract_lsb_battlefield_mob_groups(
+        source_battlefield,
+        {"monarchLinnID.mob.MAMMET_19_EPSILON":min(source_mammets)},
+    )
+    assert not source_group_surface.unresolved_expressions,source_group_surface
+    assert source_group_surface.groups==EXPECTED_MAMMET_GROUPS,source_group_surface
+    membership_proposal=propose_dsp_battlefield_membership(
+        BATTLEFIELD_ID,
+        source_group_surface.groups,
+        target_members,
+    )
+    assert membership_proposal.status=="EQUIVALENT",membership_proposal
+    assert not membership_proposal.insert_sql,membership_proposal
     lsb_lua_probes={
         "mission":probe_lsb_to_dsp_lua(source_mission),
         "battlefield":probe_lsb_to_dsp_lua(source_battlefield),
@@ -385,6 +390,7 @@ def main():
         "mammet_membership":{
             "expected_count":len(EXPECTED_MAMMETS),
             "dsp_membership_reshape_status":membership_proposal.status,
+            "source_group_count":len(source_group_surface.groups),
             "generated_insert_count":len(membership_proposal.insert_sql),
             "dsp_policy_reshape_status":policy_proposal.status,
             "source_policy_fields":dict(sorted(desired_policy.items())),
