@@ -11,6 +11,7 @@ import re
 from typing import Any, Iterable, Mapping, Sequence
 
 from workbench.migrations.generated_output import GeneratedOutput
+from .base import PluginFinding
 
 
 @dataclass(frozen=True, order=True)
@@ -358,4 +359,44 @@ def plan_dsp_battlefield_representation(
         safe_generated_surfaces=tuple(sorted(generated)),
         manual_surfaces=tuple(sorted(set(manual))),
         notes=tuple(notes),
+    )
+
+
+def battlefield_representation_finding(
+    feature_id: str,
+    plan: DspBattlefieldRepresentationPlan,
+) -> PluginFinding:
+    """Expose a safe domain reshape result to the generic migration planner."""
+    if plan.status=="READY":
+        return PluginFinding(
+            plugin_id="framework.battlefield",
+            subject_id=feature_id,
+            finding_type="MIGRATION_RESHAPE",
+            status="COMPATIBLE",
+            message="Legacy DSP already represents the battlefield framework surfaces covered by the verified representation plan.",
+            metadata={
+                "proposed_action":"NOT_REQUIRED",
+                "safe_auto":True,
+                "resolved_roles":[
+                    "battlefield_script",
+                    "level_cap_policy",
+                    "entity_registry",
+                ],
+                "representation_status":plan.status,
+                "callback_status":plan.callback_status,
+            },
+        )
+    return PluginFinding(
+        plugin_id="framework.battlefield",
+        subject_id=feature_id,
+        finding_type="MIGRATION_RESHAPE",
+        status="MANUAL_REQUIRED",
+        message="Battlefield representation still contains unresolved target surfaces.",
+        metadata={
+            "proposed_action":"MANUAL_REVIEW",
+            "safe_auto":False,
+            "resolved_roles":[],
+            "manual_surfaces":list(plan.manual_surfaces),
+            "representation_status":plan.status,
+        },
     )
