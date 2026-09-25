@@ -194,7 +194,7 @@ Design requirements:
 - [x] target-specific conversion bridge — existing Lua/SQL package conversion can be scoped by a Workbench plan while preserving legacy full-folder behavior.
 - [x] validation package — planned Lua/SQL plus generated target SQL artifacts generate independent validation requirements.
 - [x] package assembly + provenance — source and generated artifacts are staged with SHA-256 journals and review metadata.
-- [x] package cohesion verification — assembled manifest, validation metadata, journals, staged files, generated outputs, and recorded hashes are checked for internal consistency before apply.
+- [x] package cohesion verification — assembled manifest, validation metadata, journals, staged files, generated outputs, and recorded hashes are checked for internal consistency before apply; the flagship Ancient Vows E2E now exercises this gate.
 - [x] reversible file apply journal foundation — explicit file application can be rolled back; live SQL/database apply and rollback remain future work.
 - [x] rollback/journal foundation — staged source/generated artifacts are hashed/journaled and explicit file apply operations can be rolled back; live SQL/database rollback remains future work.
 - [x] generated target-artifact foundation — safe domain reshape proposals can emit target-ready staged artifacts with provenance without applying them.
