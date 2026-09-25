@@ -85,13 +85,23 @@ def import_payload(path, db, lua_json=None, zone_db=None):
                             class_hint=call.get("class_hint")
                             if class_hint:
                                 matches=con.execute("SELECT binding_id,lua_name,cpp_symbol,function_id,class_name FROM bindings WHERE lower(lua_name)=lower(?) AND lower(class_name)=lower(?) ORDER BY binding_id",(method,class_hint)).fetchall()
-                                resolution="PARAMETER_CLASS_HINT"; confidence="INFERRED"
+                                hint_source=call.get("class_hint_source")
+                                resolution={
+                                    "FUNCTION_PARAMETER_NAME":"PARAMETER_CLASS_HINT",
+                                    "LOCAL_ALIAS":"LOCAL_ALIAS_CLASS_HINT",
+                                    "CONFIGURED_RETURN_TYPE":"RETURN_TYPE_CLASS_HINT",
+                                }.get(hint_source,"CLASS_HINT")
+                                confidence="INFERRED"
                             else:
                                 matches=con.execute("SELECT binding_id,lua_name,cpp_symbol,function_id,class_name FROM bindings WHERE lower(lua_name)=lower(?) ORDER BY binding_id",(method,)).fetchall()
                                 resolution="NAME_ONLY_CANDIDATE"; confidence="INFERRED"
                             for bid,lname,cpp_symbol,function_id,class_name in matches:
                                 be=f"evidence:lua-call:{source_ref}:{path}:{call.get('line')}:{method}:{bid}"
-                                note="Lua method matched binding using conventional callback parameter class hint." if class_hint else "Lua method name matched indexed binding; class/object semantics remain unresolved."
+                                note=(
+                                    f"Lua method matched binding using inferred class hint from {call.get('class_hint_source')}."
+                                    if class_hint else
+                                    "Lua method name matched indexed binding; class/object semantics remain unresolved."
+                                )
                                 con.execute("INSERT OR REPLACE INTO evidence VALUES(?,?,?,?,?,?)",(be,"SERVER_SOURCE",lua_source,path,lua_sid,note))
                                 con.execute("INSERT OR REPLACE INTO entity_relationships VALUES(?,?,?,?,?,?,?,?,?)",(f"lua-call:{fnode}:{bid}",fnode,bid,"CALLS",be,confidence,"DISCOVERED",json.dumps({"object":call.get("object"),"method":method,"line":call.get("line"),"cpp_symbol":cpp_symbol,"function_id":function_id,"class_name":class_name,"class_hint":class_hint,"class_hint_source":call.get("class_hint_source"),"resolution":resolution},sort_keys=True),lua_sid))
                                 imported["lua_calls"]+=1
