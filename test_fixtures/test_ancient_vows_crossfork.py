@@ -10,6 +10,10 @@ from workbench.adapters.servers.logical import compare_records
 from workbench.adapters.servers.sql_extract import extract_logical_records
 from workbench.adapters.servers.entity_symbols import yaml_mob_template_spawns
 from workbench.migrations.feature_surface import FeatureSurface, SurfaceArtifact, compare_feature_surfaces
+from workbench.core import graph
+from workbench.core.schema import Feature
+from workbench.core.services.feature_surface_graph import persist_feature_surface
+import tempfile
 
 FEATURE_NAME="ancient_vows"
 BATTLEFIELD_ID=960
@@ -109,6 +113,31 @@ def main():
     assert not surface_comparison.source_only_entity_ids,surface_comparison
     assert not surface_comparison.target_only_entity_ids,surface_comparison
 
+    with tempfile.TemporaryDirectory() as td:
+        con=graph.init_db(Path(td)/"ancient_vows.db")
+        feature=Feature(
+            feature_id="feature:cop:ancient_vows",
+            name="Chains of Promathia 2-5: Ancient Vows",
+            feature_type="MISSION_BATTLEFIELD",
+            domain_id="domain:cop",
+            source_snapshot_id="lsb:3747feee0e38",
+            target_snapshot_id="dsp:ee1f489efbde",
+            status="ANALYZED",
+        )
+        src_counts=persist_feature_surface(con,source_surface,feature,"lsb:3747feee0e38")
+        dst_counts=persist_feature_surface(con,target_surface,feature,"dsp:ee1f489efbde")
+        implementation_count=con.execute(
+            "SELECT COUNT(*) FROM implementations WHERE feature_id=?",
+            (feature.feature_id,),
+        ).fetchone()[0]
+        uses_id_count=con.execute(
+            "SELECT COUNT(*) FROM entity_relationships WHERE source_node=? AND relationship='USES_ID'",
+            (feature.feature_id,),
+        ).fetchone()[0]
+        assert implementation_count==len(source_surface.artifacts)+len(target_surface.artifacts),(implementation_count,src_counts,dst_counts)
+        assert uses_id_count==18,uses_id_count
+        con.close()
+
     assert "BattlefieldMission:new" in source_battlefield
     assert "content.groups" in source_battlefield
     assert "onBattlefieldLeave" in target_battlefield
@@ -141,6 +170,11 @@ def main():
             "target_only_roles":list(surface_comparison.target_only_roles),
             "path_drift":list(surface_comparison.role_path_drift),
             "shared_entity_count":len(surface_comparison.shared_entity_ids),
+        },
+        "canonical_graph":{
+            "implementation_count":implementation_count,
+            "uses_id_edge_count":uses_id_count,
+            "snapshot_scoped_entity_refs":true,
         },
         "e2e_status":"PUBLIC_CROSS_FORK_FEATURE_SURFACE_VERIFIED",
     }
