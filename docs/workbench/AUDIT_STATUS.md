@@ -209,3 +209,8 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 - Added a synthetic regression fixture proving that decimal capture opcode `42` joins canonical `packet:0x02a` and continues through a VERIFIED packet-handler relationship to the canonical C++ function.
 - `capture_backtrace.py` now canonicalizes observed opcodes before graph lookup and includes a bounded outbound `implementation_path` so a capture report can expose packet → handler → dependency/build relationships while preserving each edge’s status, confidence, and evidence ID.
 - Capture observation remains runtime evidence only; handler and downstream implementation claims still require independent graph evidence.
+
+
+## 2026-09-25 — feature candidate traversal design
+
+Runtime observations should reach features only through recorded canonical relationships. Candidate paths must retain relationship IDs, evidence IDs, confidence, status, and graph distance. Reachability is navigation evidence and must not be promoted to feature ownership or requirement semantics without an explicit relationship proving that meaning.
