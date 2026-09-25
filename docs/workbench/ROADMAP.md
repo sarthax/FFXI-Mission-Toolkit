@@ -106,8 +106,8 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - [ ] Logical schema mapping — core equipment, instances, NPCs, mobs, spawns, drops, battlefield registry/membership, and SQL extraction are implemented; broader schema coverage remains.
 - [ ] Generic FeatureSurface comparison — artifact roles, entity coverage, and behavioral capabilities are implemented; migration-rule coverage remains.
 - [ ] Snapshot-specific capability observations and target-aware Feature Checker evaluation — implemented for canonical graph/flagship E2E; broader capability producers remain.
-- [ ] Lua migration backend
-- [ ] SQL migration backend
+- [ ] Lua migration backend — generic backend registry is implemented; legacy Topaz→DSP Lua conversion is registered explicitly. LSB→DSP and other routes remain unsupported until dedicated converters exist.
+- [ ] SQL migration backend — generic backend registry is implemented; legacy Topaz→DSP SQL conversion is registered explicitly. Broader source/target routes remain unsupported.
 - [ ] Binding compatibility engine
 - [ ] Live target validation
 - [ ] ID/content collision analysis
@@ -161,7 +161,7 @@ Plugin contract:
 - [ ] `discover_surfaces()` — emit semantic FeatureSurface roles across Lua/SQL/YAML/C++/client/runtime evidence.
 - [ ] `discover_dependencies()` — declare domain-specific dependency rules on top of generic graph edges.
 - [ ] `compare()` — compare equivalent behaviors even when one fork centralizes a framework and another distributes logic across zones/files.
-- [ ] `generate_migration_rules()` — produce domain-aware MigrationAction proposals without embedding those rules in the universal core.
+- [ ] `generate_migration_rules()` — contribution path is implemented and the battlefield framework now emits conservative migration guidance; broader plugin-specific rules remain.
 - [ ] `validate()` — attach archetype/system-specific validation checks to ValidationRun.
 - [ ] `report()` — expose a user-facing navigation model: stages, zones, NPCs, mobs, battlefields, rewards, variables, and unresolved gaps.
 - [ ] Plugin registry/version/capability metadata so custom/community plugins can be added without editing core dispatch logic.
