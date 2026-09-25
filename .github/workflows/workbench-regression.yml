@@ -68,6 +68,7 @@ jobs:
           python test_fixtures/test_battlefield_representation_plan.py
           python test_fixtures/test_plugin_reshape_refinement.py
           python test_fixtures/test_mission_representation.py
+          python test_fixtures/test_mission_proposals.py
           python test_fixtures/test_validation_apply_journal.py
           python test_fixtures/test_backport_package_plan_scope.py
           python test_fixtures/test_semantic_instance_matching.py
