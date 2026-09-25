@@ -297,11 +297,16 @@ def main():
         source_family="LSB",
         target_family="DSP",
     )
-    assert all(
-        step["conversion_status"]=="UNSUPPORTED"
-        for step in package_manifest["execution"]["steps"]
-        if step["backend"] in {"lua","sql"}
-    ),package_manifest
+    lua_steps=[
+        step for step in package_manifest["execution"]["steps"]
+        if step["backend"]=="lua"
+    ]
+    sql_steps=[
+        step for step in package_manifest["execution"]["steps"]
+        if step["backend"]=="sql"
+    ]
+    assert lua_steps and all(step["conversion_status"]=="CONDITIONAL" for step in lua_steps),package_manifest
+    assert sql_steps and all(step["conversion_status"]=="UNSUPPORTED" for step in sql_steps),package_manifest
     validation_package=build_validation_package(package_manifest)
     with tempfile.TemporaryDirectory() as package_td:
         package_root=Path(package_td)/"ancient-vows-package"
@@ -331,6 +336,7 @@ def main():
     ],package_manifest
     assert validation_package["status"]=="MANUAL_REQUIRED",validation_package
     assert any(check["validation_type"]=="CONVERTER_BACKEND_SUPPORT" for check in validation_package["checks"]),validation_package
+    assert any(check["validation_type"]=="CONVERTER_PREFLIGHT_REQUIRED" for check in validation_package["checks"]),validation_package
     assert not surface_comparison.source_only_entity_ids,surface_comparison
     assert not surface_comparison.target_only_entity_ids,surface_comparison
     assert surface_comparison.capability_coverage_status=="CAPABILITIES_ALIGNED",surface_comparison
@@ -464,6 +470,8 @@ def main():
             "materialized_artifact_count":3,
             "package_cohesion":"COHERENT",
             "apply_readiness":"MANUAL_REQUIRED",
+            "lua_conversion_status":"CONDITIONAL",
+            "sql_conversion_status":"UNSUPPORTED",
             "package_assembly_status":"MANUAL_REQUIRED",
             "semantic_action_count":len(semantic_actions),
             "semantic_migration_required":any(action.action!="NOT_REQUIRED" for action in semantic_actions),
