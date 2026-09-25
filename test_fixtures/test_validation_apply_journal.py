@@ -17,6 +17,17 @@ def main():
     validation=build_validation_package(manifest)
     kinds={c["validation_type"] for c in validation["checks"]}
     assert {"LUA_SANITY","BINDING_AUDIT","SQL_ID_COLLISION","SQL_CONTENT_DUPLICATION"} <= kinds,validation
+    assert validation["status"]=="READY",validation
+
+    unsupported={
+        "migration":{"migration_id":"migration:test","status":"READY"},
+        "execution":{"steps":[
+            {"backend":"lua","path":"lua/scripts/a.lua","conversion_status":"UNSUPPORTED"},
+        ]},
+    }
+    blocked_validation=build_validation_package(unsupported)
+    assert blocked_validation["status"]=="MANUAL_REQUIRED",blocked_validation
+    assert any(c["validation_type"]=="CONVERTER_BACKEND_SUPPORT" for c in blocked_validation["checks"]),blocked_validation
 
     with tempfile.TemporaryDirectory() as td:
         root=Path(td)
