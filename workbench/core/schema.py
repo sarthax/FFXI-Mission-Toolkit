@@ -137,6 +137,16 @@ class Capability:
     notes: list[str] = field(default_factory=list)
 
 @dataclass
+class CapabilityObservation:
+    observation_id: str
+    capability_id: str
+    source_snapshot_id: str
+    status: str = "UNKNOWN"
+    value: Any = None
+    evidence_id: str | None = None
+    notes: list[str] = field(default_factory=list)
+
+@dataclass
 class CapabilityRequirement:
     requirement_id: str
     feature_id: str
