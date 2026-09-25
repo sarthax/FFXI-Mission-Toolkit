@@ -283,7 +283,7 @@ def import_json(path: Path, db: Path):
 
 def self_test() -> None:
     from tempfile import NamedTemporaryFile
-    from workbench_schema import (
+    from workbench.core.schema import (
         Artifact, Feature, MigrationAction, ValidationResult, ValidationRun,
         Implementation, AnalysisResult, Function, Binding, EnumDefinition, DependencyEdge, Capability, CapabilityRequirement,
     )
