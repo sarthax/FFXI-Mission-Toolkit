@@ -515,3 +515,10 @@ Ancient Vows now reports AWAITING_APPROVAL through this consolidated package rev
 ## 2026-09-25 — Read-only package review CLI
 
 The consolidated package review summary is now exposed through `python -m workbench.cli.package_review <package_root> <target_root>`. The command reports migration identity, action/artifact counts, validation, cohesion, apply readiness, and patch lifecycle as JSON without granting approval or write authority.
+
+
+## 2026-09-25 — Lua local type propagation
+
+Lua event analysis now preserves conservative wrapper-class hints beyond callback parameters. Direct local aliases inherit the callback parameter class, and returned-object classes can be supplied through an explicit return-type hint table. The server graph bridge preserves the hint source (parameter, alias, or configured return type) while CALLS edges remain INFERRED.
+
+No method-name guessing or confidence upgrade is performed.
