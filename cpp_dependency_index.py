@@ -17,55 +17,66 @@ def source_files(root):
 
 def index(root):
     edges=[]
+    funcs, enum_defs, _bindings = index_api(root)
+    enum_symbols={e.symbol for e in enum_defs}
+    functions_by_path={}
+    for fn in funcs:
+        if fn.definition:
+            functions_by_path.setdefault(fn.path,[]).append(fn)
+    for rows in functions_by_path.values():
+        rows.sort(key=lambda fn: fn.line or 0)
+
     for p in source_files(root):
         text=p.read_text(encoding="utf-8",errors="replace")
         src=p.relative_to(root).as_posix()
-        for inc in INCLUDE_RE.findall(text):
+        lines=text.splitlines()
+        spans=[]
+        defs=functions_by_path.get(src,[])
+        for i,fn in enumerate(defs):
+            start_line=fn.line or 1
+            end_line=(defs[i+1].line-1) if i+1<len(defs) and defs[i+1].line else len(lines)
+            spans.append((start_line,end_line,fn.function_id))
+        def owner(line_no):
+            hits=[fid for lo,hi,fid in spans if lo <= line_no <= hi]
+            return hits[-1] if hits else src
+
+        for m in INCLUDE_RE.finditer(text):
+            inc=m.group(1); line=text.count("\n",0,m.start())+1
             edges.append(DependencyEdge(
-                edge_id=f"include:{src}:{inc}",source_node=src,target_node=inc,relationship="IMPORTS",
+                edge_id=f"include:{src}:{line}:{inc}",source_node=src,target_node=inc,relationship="IMPORTS",
                 confidence="VERIFIED",status="DISCOVERED",discovered_by="cpp_dependency_index",
-                source_location=src,notes=["Direct #include directive."]
+                source_location=f"{src}:{line}",notes=["Direct #include directive."]
             ))
-        for ns,sym in ENUM_USE_RE.findall(text):
+        for m in ENUM_USE_RE.finditer(text):
+            ns,sym=m.groups()
             if ns.lower() in {"std","boost","fmt","sol","lua"}: continue
+            line=text.count("\n",0,m.start())+1
+            target=f"{ns}::{sym}"
+            confidence="VERIFIED" if target in enum_symbols else "INFERRED"
+            notes=["Namespace-qualified symbol use; semantic type is not proven by regex."]
+            if confidence=="VERIFIED":
+                notes.append("Exact symbol exists in extracted enum/constant index.")
             edges.append(DependencyEdge(
-                edge_id=f"symbol-use:{src}:{ns}::{sym}",source_node=src,target_node=f"{ns}::{sym}",
-                relationship="USES_ENUM",confidence="INFERRED",status="DISCOVERED",
-                discovered_by="cpp_dependency_index",source_location=src,
-                notes=["Namespace-qualified symbol use; semantic type is not proven by regex."]
+                edge_id=f"symbol-use:{src}:{line}:{target}",source_node=owner(line),target_node=target,
+                relationship="USES_ENUM",confidence=confidence,status="DISCOVERED",
+                discovered_by="cpp_dependency_index",source_location=f"{src}:{line}",notes=notes
             ))
-        if PACKET_RE.search(text):
-            edges.append(DependencyEdge(
-                edge_id=f"packet-ref:{src}",source_node=src,target_node="PACKET_REFERENCE",
-                relationship="USES_PACKET",confidence="INFERRED",status="DISCOVERED",
-                discovered_by="cpp_dependency_index",source_location=src,
-                notes=["Packet-related token detected; exact opcode/handler mapping requires semantic or packet index evidence."]
-            ))
+        for n,line_text in enumerate(lines,1):
+            if PACKET_RE.search(line_text):
+                edges.append(DependencyEdge(
+                    edge_id=f"packet-ref:{src}:{n}",source_node=owner(n),target_node="PACKET_REFERENCE",
+                    relationship="USES_PACKET",confidence="INFERRED",status="DISCOVERED",
+                    discovered_by="cpp_dependency_index",source_location=f"{src}:{n}",
+                    notes=["Packet-related token detected; exact opcode/handler mapping requires packet index evidence."]
+                ))
     return edges
 
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument("root",type=Path); ap.add_argument("--json",type=Path); args=ap.parse_args()
     sid=snapshot_id(args.root)
     edges=index(args.root)
-    sid=snapshot_id(args.root)
     for edge in edges:
         edge.source_snapshot_id=sid
-    # Resolve exact symbols through the API index. This upgrades identity only; it does not
-    # claim that every namespace-qualified token is semantically an enum.
-    try:
-        _funcs, enum_defs, _bindings = index_api(args.root)
-        enum_symbols={e.symbol for e in enum_defs}
-        for edge in edges:
-            if edge.relationship == "USES_ENUM" and edge.target_node in enum_symbols:
-                edge.confidence="VERIFIED"
-                edge.notes.append("Exact symbol exists in extracted enum/constant index; semantic enum classification remains unproven.")
-    except Exception as exc:
-        edges.append(DependencyEdge(
-            edge_id="api-resolution-error", source_node=str(args.root), target_node="cpp-api-index",
-            relationship="REFERENCES", confidence="UNKNOWN", status="UNKNOWN",
-            discovered_by="cpp_dependency_index", source_location=str(args.root), source_snapshot_id=sid,
-            notes=[f"API index resolution failed: {exc}"]
-        ))
     result=AnalysisResult(analysis_id="cpp-dependency-index",analysis_type="CPP_DEPENDENCY_GRAPH",source=str(args.root),status="ANALYZED",source_snapshot_id=sid,notes=["Conservative lexical dependency extraction; semantic graph resolution is not claimed."])
     payload={"schema":1,"analysis":asdict(result),"edges":[asdict(e) for e in edges]}
     if args.json: args.json.parent.mkdir(parents=True,exist_ok=True); args.json.write_text(json.dumps(payload,indent=2)+"\n",encoding="utf-8")
