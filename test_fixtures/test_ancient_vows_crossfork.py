@@ -21,7 +21,7 @@ from workbench.core import graph
 from workbench.core.schema import Artifact, CapabilityRequirement, DependencyEdge, Feature, MigrationAction
 from workbench.core.services.feature_surface_graph import persist_feature_surface
 from workbench.core.services.feature_surface_validation import build_feature_surface_validation
-from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership
+from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy
 from feature_checker import resolve_feature, check_feature
 import tempfile
 import backport_binding_audit as bba
@@ -165,6 +165,22 @@ def main():
     source_mob=surfaces["lsb_mammet"].read_text(encoding="utf-8",errors="ignore")
     target_mob=surfaces["dsp_mammet"].read_text(encoding="utf-8",errors="ignore")
     source_level_cap=surfaces["lsb_level_cap_policy"].read_text(encoding="utf-8",errors="ignore")
+    assert "timeLimit     = utils.minutes(30)" in source_battlefield
+    assert "maxPlayers    = 6" in source_battlefield
+    assert "isMission     = true" in source_battlefield
+    assert "ANCIENT_VOWS,                         40" in source_level_cap
+    policy_proposal=propose_dsp_battlefield_policy(
+        BATTLEFIELD_ID,
+        {
+            "time_limit":1800,
+            "level_cap":40,
+            "party_size":6,
+            "is_mission":True,
+        },
+        target_registry,
+    )
+    assert policy_proposal.status=="EQUIVALENT",policy_proposal
+    assert policy_proposal.update_sql is None,policy_proposal
 
     source_surface=FeatureSurface(
         feature_id="feature:cop:ancient_vows",
@@ -364,8 +380,10 @@ def main():
         "registry_representation_drift":sorted(registry_fields),
         "mammet_membership":{
             "expected_count":len(EXPECTED_MAMMETS),
-            "dsp_reshape_status":membership_proposal.status,
+            "dsp_membership_reshape_status":membership_proposal.status,
             "generated_insert_count":len(membership_proposal.insert_sql),
+            "dsp_policy_reshape_status":policy_proposal.status,
+            "generated_policy_update":policy_proposal.update_sql is not None,
             "source_template_spawn_count":len(source_mammets),
             "target_battlefield_member_count":len(target_mammets),
             "shared_expected_ids":sorted(target_mammets & source_mammets),
