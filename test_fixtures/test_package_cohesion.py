@@ -4,6 +4,7 @@ import tempfile
 
 from workbench.core.schema import Artifact, MigrationAction
 from workbench.migrations.package_assembly import assemble_migration_package
+from workbench.migrations.generated_output import GeneratedOutput
 from workbench.migrations.package_cohesion import verify_package_cohesion
 from workbench.migrations.package_manifest import build_package_manifest
 from workbench.migrations.package_plan import build_package_plan
@@ -20,7 +21,15 @@ def main():
         artifact=Artifact("artifact:test","LUA",path="lua/test.lua")
         action=MigrationAction("action:test","migration:test","COPY","artifact:test","AUTO_MIGRATABLE")
         manifest=build_package_manifest(build_package_plan([action]),[artifact])
-        assemble_migration_package(manifest,source,package)
+        generated=GeneratedOutput(
+            "generated:test",
+            "proposals/test.patch",
+            "LUA_PATCH_PROPOSAL",
+            "-- proposal\n",
+            "fixture",
+            {"proposal_only":True},
+        )
+        assemble_migration_package(manifest,source,package,generated_outputs=[generated])
 
         result=verify_package_cohesion(package)
         assert result.status=="COHERENT",result
