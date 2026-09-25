@@ -18,6 +18,7 @@ from workbench.migrations.package_assembly import assemble_migration_package
 from workbench.migrations.package_cohesion import verify_package_cohesion
 from workbench.migrations.package_apply_gate import assess_apply_readiness
 from workbench.migrations.package_preflight import preflight_manifest_artifacts
+from workbench.migrations.package_review import build_package_review_summary
 from workbench.migrations.backend_probe import probe_lsb_to_dsp_lua
 from workbench.migrations.backend_probe_plan import plan_lsb_dsp_lua_probe
 from workbench.migrations.patch_operations import PatchOperation, preview_patch_operations
@@ -561,6 +562,10 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
         assert apply_readiness.status=="MANUAL_REQUIRED",apply_readiness
         mission_patch_lifecycle=assess_patch_lifecycle(package_root,dsp_root)
         assert mission_patch_lifecycle.status=="AWAITING_APPROVAL",mission_patch_lifecycle
+        package_review=build_package_review_summary(package_root,dsp_root)
+        assert package_review.status=="AWAITING_APPROVAL",package_review
+        assert package_review.execution_step_count==1,package_review
+        assert package_review.generated_artifact_count==4,package_review
     assert package_plan.status=="MANUAL_REQUIRED",package_plan
     assert len(package_manifest["execution"]["steps"])==1,package_manifest
     assert package_manifest["execution"]["steps"][0]["artifact_id"]=="artifact:ancient-vows:mission",package_manifest
@@ -718,6 +723,7 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
             "mission_patch_human_approval_status":"PENDING",
             "mission_patch_execution_eligibility":mission_patch_execution_eligibility.status,
             "mission_patch_lifecycle":mission_patch_lifecycle.status,
+            "package_review_status":package_review.status,
             "mission_package_action":"REVIEW_PROPOSALS",
             "package_assembly_status":"MANUAL_REQUIRED",
             "semantic_action_count":len(semantic_actions),
