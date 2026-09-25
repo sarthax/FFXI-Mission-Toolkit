@@ -204,6 +204,7 @@ Design requirements:
 - [x] machine-readable patch plans — review-only exact-anchor operations carry source/preview hashes for later drift-aware approval and application.
 - [x] drift-aware patch approval gate — target source hashes, anchors, and preview hashes must still match before a patch plan can reach READY_FOR_APPROVAL.
 - [x] explicit human patch approval state — READY_FOR_APPROVAL remains non-executable until a matching approval record is explicitly APPROVED.
+- [x] approved deterministic patch apply — approved patch plans can be applied with backups, before/after hashes, apply journaling, and rollback; regression coverage is temporary-file only.
 - [x] validation package — planned Lua/SQL plus generated target SQL artifacts generate independent validation requirements.
 - [x] package assembly + provenance — source and generated artifacts are staged with SHA-256 journals and review metadata.
 - [x] package cohesion verification — assembled manifest, validation metadata, journals, staged files, generated outputs, and recorded hashes are checked for internal consistency before apply; the flagship Ancient Vows E2E now exercises this gate.
