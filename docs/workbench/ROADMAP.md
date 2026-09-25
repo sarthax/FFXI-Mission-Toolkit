@@ -198,6 +198,7 @@ Design requirements:
 - [x] plugin reshape action refinement — safe role-scoped domain findings can suppress generic migration actions without leaking domain semantics into the core.
 - [x] refined actions drive package contents — resolved roles are excluded before converter/preflight/package staging; Ancient Vows now queues only its unresolved mission script.
 - [x] mission representation planning — modern mission-script behavior can be decomposed into lifecycle requirements and checked against distributed legacy target scripts; Ancient Vows currently has two verified and two missing lifecycle requirements.
+- [x] mission gap proposal artifacts — verified missing lifecycle requirements can emit proposal-only patch artifacts that remain review-only and are included in package provenance/validation.
 - [x] validation package — planned Lua/SQL plus generated target SQL artifacts generate independent validation requirements.
 - [x] package assembly + provenance — source and generated artifacts are staged with SHA-256 journals and review metadata.
 - [x] package cohesion verification — assembled manifest, validation metadata, journals, staged files, generated outputs, and recorded hashes are checked for internal consistency before apply; the flagship Ancient Vows E2E now exercises this gate.
