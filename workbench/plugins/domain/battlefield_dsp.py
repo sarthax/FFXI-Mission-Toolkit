@@ -10,6 +10,8 @@ from dataclasses import dataclass
 import re
 from typing import Any, Iterable, Mapping, Sequence
 
+from workbench.migrations.generated_output import GeneratedOutput
+
 
 @dataclass(frozen=True, order=True)
 class DspBattlefieldMember:
@@ -221,3 +223,37 @@ def analyze_dsp_battlefield_callbacks(
         missing_callbacks=missing,
         status="COVERAGE_ALIGNED" if not missing else "CALLBACK_GAPS",
     )
+
+
+def generated_outputs_for_dsp_battlefield(
+    membership: DspBattlefieldMembershipProposal | None = None,
+    policy: DspBattlefieldPolicyProposal | None = None,
+) -> tuple[GeneratedOutput, ...]:
+    outputs=[]
+    if membership is not None and membership.safe_to_generate and membership.insert_sql:
+        outputs.append(GeneratedOutput(
+            output_id=f"generated:dsp:battlefield-membership:{membership.battlefield_id}",
+            relative_path=f"sql-dsp/workbench_bcnm_battlefield_{membership.battlefield_id}.sql",
+            artifact_type="SQL",
+            content="\n".join(membership.insert_sql)+"\n",
+            generator="framework.battlefield:dsp_membership",
+            metadata={
+                "battlefield_id":membership.battlefield_id,
+                "proposal_status":membership.status,
+                "table":"bcnm_battlefield",
+            },
+        ))
+    if policy is not None and policy.safe_to_generate and policy.update_sql:
+        outputs.append(GeneratedOutput(
+            output_id=f"generated:dsp:battlefield-policy:{policy.battlefield_id}",
+            relative_path=f"sql-dsp/workbench_bcnm_info_{policy.battlefield_id}.sql",
+            artifact_type="SQL",
+            content=policy.update_sql+"\n",
+            generator="framework.battlefield:dsp_policy",
+            metadata={
+                "battlefield_id":policy.battlefield_id,
+                "proposal_status":policy.status,
+                "table":"bcnm_info",
+            },
+        ))
+    return tuple(outputs)
