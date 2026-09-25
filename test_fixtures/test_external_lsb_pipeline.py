@@ -7,6 +7,7 @@ from pathlib import Path
 import sys
 
 from workbench.adapters.servers import LSBAdapter
+from workbench.adapters.servers.sql_extract import extract_logical_records
 from cpp_api_index import index as index_api
 from cpp_dependency_index import index as index_dependencies
 from build_integration_index import index as index_build
@@ -23,6 +24,14 @@ def main():
     functions,enums,bindings=index_api(root)
     dependencies=index_dependencies(root)
     _builders,_findings,targets,build_edges=index_build(root)
+
+    adapter=LSBAdapter(root)
+    logical_counts={}
+    for logical_name in ("npc","mob_pools","mob_groups","mob_spawns","mob_drops","instance_entities","instances"):
+        logical_counts[logical_name]=len(extract_logical_records(adapter,logical_name))
+    assert logical_counts["npc"]>0,logical_counts
+    assert logical_counts["mob_spawns"]>0,logical_counts
+    assert logical_counts["instances"]>0,logical_counts
 
     assert functions,"no C++ functions indexed from external LSB source"
     assert enums,"no enums/constants indexed from external LSB source"
@@ -51,7 +60,7 @@ def main():
         assert counts["enums"]>0,counts
         assert counts["targets"]>0,counts
         assert counts["edges"]>0,counts
-        print(json.dumps({"probe":asdict(probe),"imported":result["imported"],"graph_counts":counts},indent=2))
+        print(json.dumps({"probe":asdict(probe),"logical_counts":logical_counts,"imported":result["imported"],"graph_counts":counts},indent=2))
 
 
 if __name__=="__main__":
