@@ -25,7 +25,7 @@ from workbench.core import graph
 from workbench.core.schema import Artifact, CapabilityRequirement, DependencyEdge, Feature, MigrationAction
 from workbench.core.services.feature_surface_graph import persist_feature_surface
 from workbench.core.services.feature_surface_validation import build_feature_surface_validation
-from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy, analyze_dsp_battlefield_callbacks, plan_dsp_battlefield_callback_adaptation, generated_outputs_for_dsp_battlefield, extract_lsb_battlefield_policy, extract_lsb_mission_level_cap, extract_lsb_battlefield_mob_groups, validate_dsp_battlefield_proposals, plan_dsp_battlefield_representation, battlefield_representation_finding, apply_plugin_reshape_findings, MissionRequirement, MissionRepresentation, plan_mission_representation, MissionPatchProposal, generated_mission_patch_proposals
+from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy, analyze_dsp_battlefield_callbacks, plan_dsp_battlefield_callback_adaptation, generated_outputs_for_dsp_battlefield, extract_lsb_battlefield_policy, extract_lsb_mission_level_cap, extract_lsb_battlefield_mob_groups, validate_dsp_battlefield_proposals, plan_dsp_battlefield_representation, battlefield_representation_finding, apply_plugin_reshape_findings, MissionRequirement, MissionRepresentation, plan_mission_representation, MissionPatchProposal, generated_mission_patch_proposals, mission_proposal_finding, apply_plugin_proposal_findings
 from feature_checker import resolve_feature, check_feature
 import tempfile
 import backport_binding_audit as bba
@@ -288,6 +288,11 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
     )
     assert len(mission_patch_outputs)==2,mission_patch_outputs
     assert all(output.metadata.get("proposal_only") is True for output in mission_patch_outputs),mission_patch_outputs
+    mission_action_finding=mission_proposal_finding(
+        "feature:cop:ancient_vows",
+        mission_representation_plan,
+        len(mission_patch_outputs),
+    )
 
     justinius_patch_preview=preview_patch_operations(
         target_justinius,
@@ -421,6 +426,7 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
     assert semantic_by_role["mission_script"].action=="MANUAL_REVIEW",semantic_actions
     assert semantic_by_role["battlefield_script"].action=="NOT_REQUIRED",semantic_actions
     refined_actions=apply_plugin_reshape_findings(semantic_actions,(reshape_finding,))
+    refined_actions=apply_plugin_proposal_findings(refined_actions,(mission_action_finding,))
     assert any(
         action.metadata.get("source_role")=="battlefield_script"
         and action.metadata.get("plugin_reshape_applied") is True
@@ -428,7 +434,8 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
     ),refined_actions
     assert any(
         action.metadata.get("source_role")=="mission_script"
-        and action.metadata.get("plugin_reshape_applied") is not True
+        and action.action=="REVIEW_PROPOSALS"
+        and action.metadata.get("plugin_proposal_applied") is True
         for action in refined_actions
     ),refined_actions
     migration_plugin_context=PluginContext(
@@ -484,20 +491,17 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
         step for step in package_manifest["execution"]["steps"]
         if step["backend"]=="sql"
     ]
-    assert len(lua_steps)==1,lua_steps
-    assert lua_steps[0]["artifact_id"]=="artifact:ancient-vows:mission",lua_steps
-    assert lua_steps[0]["conversion_status"]=="CONDITIONAL",package_manifest
+    assert not lua_steps,package_manifest
     assert not sql_steps,package_manifest
+    manual_steps=[
+        step for step in package_manifest["execution"]["steps"]
+        if step["backend"]=="manual"
+    ]
+    assert len(manual_steps)==1,manual_steps
+    assert manual_steps[0]["action"]=="REVIEW_PROPOSALS",manual_steps
+    assert manual_steps[0]["artifact_id"]=="artifact:ancient-vows:mission",manual_steps
     preflighted_manifest,preflight_results=preflight_manifest_artifacts(package_manifest,lsb_root)
-    assert preflight_results,preflight_results
-    lua_preflight=[result for result in preflight_results if result.path.endswith(".lua")]
-    assert len(lua_preflight)==1,lua_preflight
-    assert lua_preflight[0].status=="MANUAL_REQUIRED",lua_preflight
-    assert all(
-        step["conversion_status"]=="CONDITIONAL"
-        for step in preflighted_manifest["execution"]["steps"]
-        if step["backend"]=="lua"
-    ),preflighted_manifest
+    assert not preflight_results,preflight_results
     validation_package=build_validation_package(preflighted_manifest)
     with tempfile.TemporaryDirectory() as package_td:
         package_root=Path(package_td)/"ancient-vows-package"
@@ -508,8 +512,8 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
             generated_outputs=package_generated_outputs,
         )
         assert assembled.status=="MANUAL_REQUIRED",assembled
-        assert len(assembled.source_result.copied)==1,assembled
-        assert len(assembled.source_result.artifacts)==1,assembled
+        assert len(assembled.source_result.copied)==0,assembled
+        assert len(assembled.source_result.artifacts)==0,assembled
         assert len(assembled.generated_result.records)==2,assembled
         assert assembled.manifest_path.exists(),assembled
         assert assembled.validation_path.exists(),assembled
@@ -524,7 +528,7 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
     assert package_manifest["execution"]["steps"][0]["artifact_id"]=="artifact:ancient-vows:mission",package_manifest
     assert validation_package["status"]=="MANUAL_REQUIRED",validation_package
     assert not any(check["validation_type"]=="CONVERTER_BACKEND_SUPPORT" for check in validation_package["checks"]),validation_package
-    assert any(check["validation_type"]=="CONVERTER_PREFLIGHT_REQUIRED" for check in validation_package["checks"]),validation_package
+    assert not any(check["validation_type"]=="CONVERTER_PREFLIGHT_REQUIRED" for check in validation_package["checks"]),validation_package
     assert any(check["validation_type"]=="GENERATED_PROPOSAL_REVIEW" for check in validation_package["checks"]),validation_package
     assert not surface_comparison.source_only_entity_ids,surface_comparison
     assert not surface_comparison.target_only_entity_ids,surface_comparison
@@ -657,10 +661,10 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
             "plan_status":package_plan.status,
             "step_count":len(package_manifest["execution"]["steps"]),
             "validation_check_count":len(validation_package["checks"]),
-            "materialized_artifact_count":1,
+            "materialized_artifact_count":0,
             "package_cohesion":"COHERENT",
             "apply_readiness":"MANUAL_REQUIRED",
-            "lua_conversion_status":"CONDITIONAL",
+            "lua_conversion_status":"NOT_QUEUED",
             "lua_preflight_status":"MANUAL_REQUIRED",
             "sql_conversion_status":"NOT_QUEUED",
             "battlefield_representation_status":"READY",
@@ -671,6 +675,7 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
                 "justinius":justinius_patch_preview.status,
                 "riverne":riverne_patch_preview.status,
             },
+            "mission_package_action":"REVIEW_PROPOSALS",
             "package_assembly_status":"MANUAL_REQUIRED",
             "semantic_action_count":len(semantic_actions),
             "semantic_migration_required":any(action.action!="NOT_REQUIRED" for action in semantic_actions),
