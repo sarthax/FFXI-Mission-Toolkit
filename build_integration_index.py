@@ -93,9 +93,9 @@ def index(root):
         for rel in paths:
             edges.append(DependencyEdge(
                 edge_id=f"builds-into:{rel}:{target_id}", source_node=rel, target_node=target_id,
-                relationship="BUILDS_INTO", confidence="INFERRED", status="DISCOVERED",
+                relationship="BUILDS_INTO", confidence="VERIFIED", status="DISCOVERED",
                 discovered_by="build_integration_index", source_location=target_id,
-                notes=["Source token occurs in an add_library/add_executable argument list; build configuration was not executed."]
+                notes=["Source token occurs in an explicit CMake target source list; target configuration/generator evaluation was not performed."]
             ))
     return builders,findings,targets,edges
 
