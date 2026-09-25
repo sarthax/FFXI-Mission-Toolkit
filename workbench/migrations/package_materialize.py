@@ -7,7 +7,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import hashlib
+import json
 import shutil
+
+
+@dataclass(frozen=True)
+class MaterializedArtifact:
+    source_path: str
+    package_path: str
+    sha256: str
 
 
 @dataclass(frozen=True)
@@ -16,6 +25,7 @@ class MaterializeResult:
     missing: tuple[str, ...]
     skipped: tuple[str, ...]
     status: str
+    artifacts: tuple[MaterializedArtifact, ...] = ()
 
 
 def _safe_source(root: Path, relative: str) -> Path:
@@ -53,6 +63,7 @@ def materialize_package(
     copied=[]
     missing=[]
     skipped=[]
+    staged=[]
     for step in manifest.get("execution",{}).get("steps",[]):
         backend=step.get("backend")
         path=step.get("path")
@@ -76,7 +87,13 @@ def materialize_package(
             continue
         dst.parent.mkdir(parents=True,exist_ok=True)
         shutil.copy2(src,dst)
-        copied.append(dst.relative_to(package_root).as_posix())
+        package_path=dst.relative_to(package_root).as_posix()
+        copied.append(package_path)
+        staged.append(MaterializedArtifact(
+            source_path=str(path).replace("\\","/"),
+            package_path=package_path,
+            sha256=hashlib.sha256(dst.read_bytes()).hexdigest(),
+        ))
 
     if missing:
         status="INCOMPLETE"
@@ -89,4 +106,33 @@ def materialize_package(
         missing=tuple(missing),
         skipped=tuple(skipped),
         status=status,
+        artifacts=tuple(staged),
     )
+
+
+def write_materialization_journal(
+    package_root: Path,
+    manifest: dict,
+    result: MaterializeResult,
+    filename: str = "WORKBENCH_MATERIALIZATION.json",
+) -> Path:
+    package_root.mkdir(parents=True,exist_ok=True)
+    payload={
+        "schema":1,
+        "kind":"WORKBENCH_MATERIALIZATION_JOURNAL",
+        "migration":dict(manifest.get("migration",{})),
+        "status":result.status,
+        "artifacts":[
+            {
+                "source_path":artifact.source_path,
+                "package_path":artifact.package_path,
+                "sha256":artifact.sha256,
+            }
+            for artifact in result.artifacts
+        ],
+        "missing":list(result.missing),
+        "skipped":list(result.skipped),
+    }
+    path=package_root/filename
+    path.write_text(json.dumps(payload,indent=2,sort_keys=True)+"\n",encoding="utf-8")
+    return path
