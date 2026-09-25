@@ -23,15 +23,6 @@ def main():
         con.execute("INSERT INTO captures VALUES(1,'cap.zip','tester','Ilrusi capture','Assault','Ilrusi Atoll','Golden Salvage','PacketLogger','30191204_1',1,0,'now')")
         con.execute("INSERT INTO capture_raw_packets VALUES(1,1,'incoming','0x02A','00')")
         con.commit(); con.close()
-        captures=CaptureResearchReader(capture_db)
-        found=captures.search("Ilrusi")
-        assert found["matches"][0]["capture_id"]==1,found
-        assert found["authority"]=="CAPTURE_RUNTIME_OBSERVATION",found
-        traced=captures.backtrace(1)
-        assert traced["status"]=="OK",traced
-        packet_checks=[c for c in traced["checks"] if c.get("kind")=="PACKET"]
-        assert packet_checks and packet_checks[0]["canonical_packet_node"]=="packet:0x02A",traced
-
         dump=root/"wiki.jsonl.gz"
         with gzip.open(dump,"wt",encoding="utf-8") as f:
             f.write(json.dumps({"title":"Ancient Vows","pageid":1,"revid":2,"timestamp":"2026-01-01","url":"https://example.invalid","categories":["Missions"],"wikitext":"Mammet battlefield"})+"\n")
@@ -52,6 +43,15 @@ def main():
             ("edge:packet","packet:0x02A","function:packet","HANDLED_BY","evidence:client","VERIFIED","DISCOVERED","{}","src"),
         )
         con.commit(); con.close()
+        captures=CaptureResearchReader(capture_db,graph_db)
+        found=captures.search("Ilrusi")
+        assert found["matches"][0]["capture_id"]==1,found
+        assert found["authority"]=="CAPTURE_RUNTIME_OBSERVATION",found
+        traced=captures.backtrace(1)
+        assert traced["status"]=="OK",traced
+        packet_checks=[c for c in traced["checks"] if c.get("kind")=="PACKET"]
+        assert packet_checks and packet_checks[0]["canonical_packet_node"]=="packet:0x02A",traced
+
         client=ClientResearchReader(graph_db)
         cap=client.capability("wardrobe")
         assert cap["matches"][0]["value"]==4,cap
