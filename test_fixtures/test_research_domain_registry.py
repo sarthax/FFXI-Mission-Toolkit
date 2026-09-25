@@ -59,6 +59,9 @@ def main():
             "feature.inspect","entity.lookup","binding.lookup",
             "packet.lookup","validation.inspect",
             "server.symbol","server.enum","server.build-target",
+            "capability.inspect","migration.inspect",
+            "feature.check","cpp.symbol","enum.lookup",
+            "build.target","validation.status","packet.handlers",
         ):
             assert specs[name]["access"]=="READ",specs
 
