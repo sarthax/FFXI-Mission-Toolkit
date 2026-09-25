@@ -414,3 +414,10 @@ Ancient Vows exercises this planner and resolves READY with no manual battlefiel
 Domain plugins can now feed safe, role-scoped MIGRATION_RESHAPE findings back into the generic migration planner. The core only understands generic source-role metadata and explicit safe_auto/proposed_action flags; it does not contain battlefield semantics.
 
 The battlefield representation planner uses this path to mark verified source roles such as battlefield_script, level_cap_policy, and entity_registry as NOT_REQUIRED when legacy DSP already provides an equivalent representation. Ancient Vows verifies this refinement while leaving mission_script outside the battlefield plugin's authority.
+
+
+## 2026-09-25 — Refined actions drive package contents
+
+Package generation now consumes refined migration actions instead of maintaining a separate hardcoded conversion list. The generic feature planner keeps source-only roles under review until an explicit representation rule resolves them, and safe plugin reshape findings can remove those resolved roles before package planning.
+
+For Ancient Vows, the registry and battlefield representation no longer enter the converter queue. Only the unresolved mission script remains as an executable migration step, reducing the staged source package from three artifacts to one while preserving MANUAL_REQUIRED status.
