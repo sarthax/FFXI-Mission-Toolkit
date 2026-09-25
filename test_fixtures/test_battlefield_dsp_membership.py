@@ -3,6 +3,7 @@ from workbench.plugins.domain.battlefield_dsp import (
     propose_dsp_battlefield_membership,
     propose_dsp_battlefield_policy,
     analyze_dsp_battlefield_callbacks,
+    generated_outputs_for_dsp_battlefield,
 )
 
 
@@ -82,6 +83,14 @@ def main():
     gap=analyze_dsp_battlefield_callbacks("function onBattlefieldTick() end",callbacks)
     assert gap.status=="CALLBACK_GAPS",gap
     assert "onEventFinish" in gap.missing_callbacks,gap
+
+    generated=generated_outputs_for_dsp_battlefield(additive,update_policy)
+    assert len(generated)==2,generated
+    assert any("bcnm_battlefield" in output.relative_path for output in generated),generated
+    assert any("bcnm_info" in output.relative_path for output in generated),generated
+
+    no_change=generated_outputs_for_dsp_battlefield(same,same_policy)
+    assert not no_change,no_change
 
     print("DSP battlefield reshape self-test: PASS")
 
