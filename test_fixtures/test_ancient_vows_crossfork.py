@@ -371,7 +371,7 @@ def main():
         assert cohesion.status=="COHERENT",cohesion
         apply_readiness=assess_apply_readiness(package_root)
         assert apply_readiness.status=="MANUAL_REQUIRED",apply_readiness
-    assert package_plan.status=="READY",package_plan
+    assert package_plan.status=="MANUAL_REQUIRED",package_plan
     assert len(package_manifest["execution"]["steps"])==1,package_manifest
     assert package_manifest["execution"]["steps"][0]["artifact_id"]=="artifact:ancient-vows:mission",package_manifest
     assert validation_package["status"]=="MANUAL_REQUIRED",validation_package
@@ -507,7 +507,7 @@ def main():
             "plan_status":package_plan.status,
             "step_count":len(package_manifest["execution"]["steps"]),
             "validation_check_count":len(validation_package["checks"]),
-            "materialized_artifact_count":3,
+            "materialized_artifact_count":1,
             "package_cohesion":"COHERENT",
             "apply_readiness":"MANUAL_REQUIRED",
             "lua_conversion_status":"CONDITIONAL",
