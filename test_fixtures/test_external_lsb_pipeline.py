@@ -8,6 +8,7 @@ import sys
 
 from workbench.adapters.servers import LSBAdapter
 from workbench.adapters.servers.sql_extract import extract_logical_records
+from workbench.migrations.instance_feature_slice import extract_instance_feature_slice
 from cpp_api_index import index as index_api
 from cpp_dependency_index import index as index_dependencies
 from build_integration_index import index as index_build
@@ -32,6 +33,12 @@ def main():
     assert logical_counts["npc"]>0,logical_counts
     assert logical_counts["mob_spawns"]>0,logical_counts
     assert logical_counts["instances"]>0,logical_counts
+
+    excavation=extract_instance_feature_slice(adapter,6300)
+    assert excavation.instance is not None,excavation
+    assert excavation.instance.fields.get("name")=="Excavation Duty",excavation.instance
+    assert excavation.counts()["instance_entities"]>0,excavation.counts()
+    assert excavation.counts()["mob_spawns"]>0,excavation.counts()
 
     assert functions,"no C++ functions indexed from external LSB source"
     assert enums,"no enums/constants indexed from external LSB source"
@@ -60,7 +67,7 @@ def main():
         assert counts["enums"]>0,counts
         assert counts["targets"]>0,counts
         assert counts["edges"]>0,counts
-        print(json.dumps({"probe":asdict(probe),"logical_counts":logical_counts,"imported":result["imported"],"graph_counts":counts},indent=2))
+        print(json.dumps({"probe":asdict(probe),"logical_counts":logical_counts,"excavation_duty":excavation.counts(),"imported":result["imported"],"graph_counts":counts},indent=2))
 
 
 if __name__=="__main__":
