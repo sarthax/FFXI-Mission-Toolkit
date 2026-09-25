@@ -13,7 +13,10 @@ Settings page takes effect on gui_server.py's next restart, not the next request
 one-time-resolution model as TOOLS_ROOT itself, not a bug.
 """
 import sqlite3
-import winreg
+try:
+    import winreg
+except ImportError:  # Non-Windows CI/research environments cannot access the Windows registry.
+    winreg = None
 from pathlib import Path
 
 TOOLS_ROOT = Path(__file__).parent
@@ -139,6 +142,9 @@ def get_ffxi_install() -> str | None:
         con.close()
     if value and Path(value).exists():
         return value
+
+    if winreg is None:
+        return None
 
     for sub in (r"SOFTWARE\PlayOnlineUS\InstallFolder", r"SOFTWARE\PlayOnline\InstallFolder",
                 r"SOFTWARE\PlayOnlineEU\InstallFolder"):
