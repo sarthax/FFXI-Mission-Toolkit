@@ -203,3 +203,9 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 - Canonical graph resolution now maps a dependency target to an enum/constant record only when exactly one indexed symbol matches. Ambiguous symbols remain unresolved.
 - Build integration now emits function → build-target `BUILDS_INTO` edges when a function definition resides in a source file explicitly associated with a CMake target. This preserves the existing caveat that CMake condition/generator evaluation has not been executed.
 - Together with direct packet handler resolution, the graph can now represent `packet → handler function → enum/constant` and `packet → handler function → build target` without promoting ambiguous lexical matches.
+
+## 2026-09-25 — capture packet implementation backtrace
+
+- Added a synthetic regression fixture proving that decimal capture opcode `42` joins canonical `packet:0x02a` and continues through a VERIFIED packet-handler relationship to the canonical C++ function.
+- `capture_backtrace.py` now canonicalizes observed opcodes before graph lookup and includes a bounded outbound `implementation_path` so a capture report can expose packet → handler → dependency/build relationships while preserving each edge’s status, confidence, and evidence ID.
+- Capture observation remains runtime evidence only; handler and downstream implementation claims still require independent graph evidence.
