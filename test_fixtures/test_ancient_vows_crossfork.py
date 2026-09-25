@@ -11,7 +11,7 @@ from workbench.adapters.servers.sql_extract import extract_logical_records
 from workbench.adapters.servers.entity_symbols import yaml_mob_template_spawns
 from workbench.migrations.feature_surface import FeatureSurface, SurfaceArtifact, SurfaceCapability, compare_feature_surfaces
 from workbench.migrations.package_plan import build_package_plan
-from workbench.migrations.feature_surface_plan import plan_feature_surface
+from workbench.migrations.feature_surface_plan import plan_feature_surface, bind_surface_actions_to_artifacts
 from workbench.migrations.package_manifest import build_package_manifest
 from workbench.migrations.package_validation import build_validation_package
 from workbench.migrations.package_assembly import assemble_migration_package
@@ -269,7 +269,10 @@ def main():
     assert surface_comparison.status=="REPRESENTATION_DRIFT",surface_comparison
 
     semantic_actions=plan_feature_surface(source_surface,surface_comparison,"migration:cop:ancient-vows:semantic")
-    assert semantic_actions and all(action.action=="NOT_REQUIRED" for action in semantic_actions),semantic_actions
+    semantic_by_role={action.metadata.get("source_role"):action for action in semantic_actions if action.metadata.get("source_role")}
+    assert semantic_by_role["registry_sql"].action=="NOT_REQUIRED",semantic_actions
+    assert semantic_by_role["mission_script"].action=="MANUAL_REVIEW",semantic_actions
+    assert semantic_by_role["battlefield_script"].action=="MANUAL_REVIEW",semantic_actions
     refined_actions=apply_plugin_reshape_findings(semantic_actions,(reshape_finding,))
     assert any(
         action.metadata.get("source_role")=="battlefield_script"
@@ -303,11 +306,14 @@ def main():
         Artifact("artifact:ancient-vows:battlefield","LUA",path=str(surfaces["lsb_battlefield"].relative_to(lsb_root)),feature_id="feature:cop:ancient_vows"),
         Artifact("artifact:ancient-vows:mission","LUA",path=str(surfaces["lsb_mission"].relative_to(lsb_root)),feature_id="feature:cop:ancient_vows"),
     ]
-    package_actions=[
-        MigrationAction("action:ancient-vows:registry","migration:cop:ancient-vows","CONVERT","artifact:ancient-vows:registry","AUTO_MIGRATABLE"),
-        MigrationAction("action:ancient-vows:battlefield","migration:cop:ancient-vows","CONVERT","artifact:ancient-vows:battlefield","AUTO_MIGRATABLE"),
-        MigrationAction("action:ancient-vows:mission","migration:cop:ancient-vows","CONVERT","artifact:ancient-vows:mission","AUTO_MIGRATABLE"),
-    ]
+    package_actions=bind_surface_actions_to_artifacts(
+        refined_actions,
+        {
+            "registry_sql":"artifact:ancient-vows:registry",
+            "battlefield_script":"artifact:ancient-vows:battlefield",
+            "mission_script":"artifact:ancient-vows:mission",
+        },
+    )
     package_dependencies=[
         DependencyEdge("edge:ancient-vows:battlefield-registry","artifact:ancient-vows:battlefield","artifact:ancient-vows:registry","REQUIRES",confidence="VERIFIED"),
         DependencyEdge("edge:ancient-vows:mission-battlefield","artifact:ancient-vows:mission","artifact:ancient-vows:battlefield","REQUIRES",confidence="VERIFIED"),
@@ -330,13 +336,15 @@ def main():
         step for step in package_manifest["execution"]["steps"]
         if step["backend"]=="sql"
     ]
-    assert lua_steps and all(step["conversion_status"]=="CONDITIONAL" for step in lua_steps),package_manifest
-    assert sql_steps and all(step["conversion_status"]=="UNSUPPORTED" for step in sql_steps),package_manifest
+    assert len(lua_steps)==1,lua_steps
+    assert lua_steps[0]["artifact_id"]=="artifact:ancient-vows:mission",lua_steps
+    assert lua_steps[0]["conversion_status"]=="CONDITIONAL",package_manifest
+    assert not sql_steps,package_manifest
     preflighted_manifest,preflight_results=preflight_manifest_artifacts(package_manifest,lsb_root)
     assert preflight_results,preflight_results
     lua_preflight=[result for result in preflight_results if result.path.endswith(".lua")]
-    assert len(lua_preflight)==2,lua_preflight
-    assert all(result.status=="MANUAL_REQUIRED" for result in lua_preflight),lua_preflight
+    assert len(lua_preflight)==1,lua_preflight
+    assert lua_preflight[0].status=="MANUAL_REQUIRED",lua_preflight
     assert all(
         step["conversion_status"]=="CONDITIONAL"
         for step in preflighted_manifest["execution"]["steps"]
@@ -352,8 +360,8 @@ def main():
             generated_outputs=generated_dsp_outputs,
         )
         assert assembled.status=="MANUAL_REQUIRED",assembled
-        assert len(assembled.source_result.copied)==3,assembled
-        assert len(assembled.source_result.artifacts)==3,assembled
+        assert len(assembled.source_result.copied)==1,assembled
+        assert len(assembled.source_result.artifacts)==1,assembled
         assert not assembled.generated_result.records,assembled
         assert assembled.manifest_path.exists(),assembled
         assert assembled.validation_path.exists(),assembled
@@ -364,13 +372,10 @@ def main():
         apply_readiness=assess_apply_readiness(package_root)
         assert apply_readiness.status=="MANUAL_REQUIRED",apply_readiness
     assert package_plan.status=="READY",package_plan
-    assert [step["action_id"] for step in package_manifest["execution"]["steps"]]==[
-        "action:ancient-vows:registry",
-        "action:ancient-vows:battlefield",
-        "action:ancient-vows:mission",
-    ],package_manifest
+    assert len(package_manifest["execution"]["steps"])==1,package_manifest
+    assert package_manifest["execution"]["steps"][0]["artifact_id"]=="artifact:ancient-vows:mission",package_manifest
     assert validation_package["status"]=="MANUAL_REQUIRED",validation_package
-    assert any(check["validation_type"]=="CONVERTER_BACKEND_SUPPORT" for check in validation_package["checks"]),validation_package
+    assert not any(check["validation_type"]=="CONVERTER_BACKEND_SUPPORT" for check in validation_package["checks"]),validation_package
     assert any(check["validation_type"]=="CONVERTER_PREFLIGHT_REQUIRED" for check in validation_package["checks"]),validation_package
     assert not surface_comparison.source_only_entity_ids,surface_comparison
     assert not surface_comparison.target_only_entity_ids,surface_comparison
@@ -507,7 +512,7 @@ def main():
             "apply_readiness":"MANUAL_REQUIRED",
             "lua_conversion_status":"CONDITIONAL",
             "lua_preflight_status":"MANUAL_REQUIRED",
-            "sql_conversion_status":"UNSUPPORTED",
+            "sql_conversion_status":"NOT_QUEUED",
             "battlefield_representation_status":"READY",
             "plugin_reshape_refinement":"VERIFIED",
             "package_assembly_status":"MANUAL_REQUIRED",
