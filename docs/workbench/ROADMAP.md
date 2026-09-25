@@ -167,7 +167,7 @@ Plugin contract:
 - [ ] Plugin registry/version/capability metadata so custom/community plugins can be added without editing core dispatch logic.
 
 Reusable framework plugins:
-- [ ] Battlefield family plugin for BCNM/KSNM/ISNM/ENM/mission battlefields and compatible variants.
+- [x] Battlefield family plugin foundation for BCNM/KSNM/ISNM/ENM/mission battlefields — LSB policy/group extraction, DSP policy/membership reshape proposals, legacy callback-surface analysis, and conservative migration guidance are implemented; broader battlefield families still need additional fixtures.
 - [ ] Generic quest/mission state-machine plugin.
 - [ ] Generic multi-zone progression/hunt plugin.
 - [ ] Generic minigame/puzzle plugin.
@@ -192,8 +192,9 @@ Design requirements:
 - [x] dependency-aware package-plan foundation — explicit canonical dependency edges now produce a deterministic, cycle-detecting MigrationAction order without applying changes.
 - [x] migration action plans — ordered generic actions are emitted into a machine-readable package manifest.
 - [x] target-specific conversion bridge — existing Lua/SQL package conversion can be scoped by a Workbench plan while preserving legacy full-folder behavior.
-- [x] validation package — planned Lua/SQL artifacts generate independent validation requirements.
-- [x] rollback/journal foundation — staged files are hashed/journaled and explicit file apply operations can be rolled back; live SQL/database rollback remains future work.
+- [x] validation package — planned Lua/SQL plus generated target SQL artifacts generate independent validation requirements.
+- [x] rollback/journal foundation — staged source/generated artifacts are hashed/journaled and explicit file apply operations can be rolled back; live SQL/database rollback remains future work.
+- [x] generated target-artifact foundation — safe domain reshape proposals can emit target-ready staged artifacts with provenance without applying them.
 
 ### Phase 8 — Evidence-aware LLM Research & Agent Layer (P1)
 Current state is a useful draft assistant: Open WebUI/Ollama chat plus read-only SQLite tools and logging. The rework should promote this into a bounded, reproducible research/orchestration layer over the Workbench rather than a free-form chatbot.
