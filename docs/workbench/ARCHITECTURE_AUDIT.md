@@ -78,7 +78,7 @@ Client/server field bindings distinguish SERVER authoritative, CLIENT authoritat
 | Client EXE/DLL | Deferred pending actual binaries | P2 |
 | Feature graph | Implemented; canonical SQLite graph, Feature Trace, Feature Checker, semantic mirrors, and candidate traversal | P0 |
 | Provenance | Implemented for core server/C++/build/packet analysis; broader adapter consolidation still pending | P0 |
-| Package analyzer | Initial integration present; dependency-aware migration/package generation still pending | P0 |
+| Package analyzer | Canonical graph import plus dependency-aware package/review pipeline implemented; broader converter coverage remains | P0 |
 | System plugins | Not implemented | P1+ |
 
 ## Key findings
@@ -178,7 +178,7 @@ Lua call -> binding -> C++ function -> declaration/implementation -> dependencie
 8. The LLM/research layer needs implementation of the new ResearchSession/provider/tool-registry architecture; current Open WebUI/Ollama + read-only SQLite integration remains a narrow draft assistant.
 9. Domain plugins now have a generalized extension interface. The reusable battlefield framework has active migration/reshape and battlefield representation planning, and mission representation planning can decompose modular source mission behavior into target lifecycle requirements across distributed legacy scripts. Safe role-scoped plugin reshape findings can refine generic MigrationActions without moving domain semantics into the core. Verified mission gaps may emit proposal-only artifacts and exact-anchor patch previews that remain non-target-ready and force review. SQL-backed policy/membership may be generated only when safe, while callback/body mission semantics remain evidence/manual-review driven. Assault-specific analyzers and other system plugins remain future work.
 
-## Audit discipline
+## Legacy evidence integration\nLegacy entity_profile and namespace-map confidence evidence now have canonical graph bridges. Capture and packet observations were already connected. Source-specific confidence semantics are preserved rather than flattened into verified implementation truth.\n\n## Audit discipline
 Every future audit pass should update:
 - audited modules
 - findings
