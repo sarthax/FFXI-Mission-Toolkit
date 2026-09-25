@@ -10,9 +10,8 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
-import build_sql_index as sqlidx
-
 from .base import LogicalRecord, ServerAdapter
+from .sql_parser import iter_insert_rows, unquote
 
 _SET_RE=re.compile(r"^SET\s+@(\w+)\s*=\s*([^;]+);",re.I)
 
@@ -64,7 +63,7 @@ def _coerce(raw: Any, variables: dict[str,int]) -> Any:
         resolved=_eval_int_expr(value,variables)
         if resolved is not None:
             return resolved
-    unquoted=sqlidx.unquote(value)
+    unquoted=unquote(value)
     if unquoted is None:
         return None
     if not isinstance(unquoted,str):
@@ -89,10 +88,9 @@ def extract_physical_rows(adapter: ServerAdapter, logical_name: str) -> list[dic
     path=adapter.source_path(logical_name)
     if path is None or not path.exists():
         return []
-    clean=sqlidx.cleaned_path(path)
-    variables=_variables(clean)
+    variables=_variables(path)
     rows=[]
-    for raw in sqlidx.parse_table_file(clean,shape.physical_table,list(shape.parse_columns)):
+    for raw in iter_insert_rows(path,shape.physical_table,shape.parse_columns):
         rows.append({key:_coerce(value,variables) for key,value in raw.items()})
     return rows
 
