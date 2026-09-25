@@ -149,6 +149,16 @@ TOPAZ = SchemaProfile(
     notes=("item_equipment.sql is the equipment source; mob_groups includes a name column.",),
 )
 
+TOPAZ_NEXT = SchemaProfile(
+    profile_id="topaz-next",
+    family="TOPAZ_NEXT",
+    tables=dict(TOPAZ.tables),
+    notes=(
+        "Topaz-Next is retained as a distinct source lineage even where the currently audited physical SQL shapes match Topaz.",
+        "Fork-specific drift must be registered explicitly rather than silently inheriting Topaz identity.",
+    ),
+)
+
 DSP = SchemaProfile(
     profile_id="dsp",
     family="DSP",
