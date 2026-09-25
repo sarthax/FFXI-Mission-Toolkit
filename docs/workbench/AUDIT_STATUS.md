@@ -543,3 +543,16 @@ A focused regression fixture now covers this dispatch path.
 The graph resolver now resolves exact namespaced enum dependencies such as `State::READY` to canonical enum nodes while preserving the original edge confidence. Combined with existing binding→function and function→build-target edges plus verified packet-handler resolution, the Workbench can represent packet→handler, binding→function, function→enum/constant, and function→build-target relationships in one canonical graph.
 
 A dedicated integration regression covers this chain.
+
+
+## 2026-09-25 — Package analyzer canonical graph import
+
+The legacy Feature/Backport Package Analyzer now emits canonical graph-compatible Feature, Artifact, DependencyEdge, Migration, and MigrationAction records while preserving its compatibility fields. It can optionally import those records directly into the Workbench graph through `--graph-db`.
+
+Regression coverage verifies the analyzed package becomes queryable through canonical graph tables.
+
+## 2026-09-25 — Legacy evidence graph bridges
+
+The remaining legacy evidence paths now feed canonical graph records. `entity_profile` field provenance can import as Evidence + Finding records with explicit contradiction findings when sources disagree, reusing an existing NPC identifier when possible. Namespace-map confidence checks can import identifier-presence Evidence + Findings while preserving that name presence is only INFERRED semantic confidence.
+
+Capture/packet graph integration already existed, so this closes the immediate entity_profile/map-confidence/capture/packet ingestion queue item.
