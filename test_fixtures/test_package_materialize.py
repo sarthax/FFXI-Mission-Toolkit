@@ -3,7 +3,7 @@
 from pathlib import Path
 import tempfile
 
-from workbench.migrations.package_materialize import materialize_package
+from workbench.migrations.package_materialize import materialize_package, write_materialization_journal
 
 
 def main():
@@ -28,6 +28,12 @@ def main():
         assert result.status=="MATERIALIZED",result
         assert (package/"lua"/"scripts"/"test.lua").exists(),result
         assert (package/"sql"/"test.sql").exists(),result
+        assert len(result.artifacts)==2,result
+        assert all(len(a.sha256)==64 for a in result.artifacts),result
+        journal=write_materialization_journal(package,manifest,result)
+        assert journal.exists(),journal
+        journal_text=journal.read_text(encoding="utf-8")
+        assert "WORKBENCH_MATERIALIZATION_JOURNAL" in journal_text,journal_text
 
         second=materialize_package(manifest,source,package)
         assert second.status=="PARTIAL",second
