@@ -64,6 +64,19 @@ def load_workbench_plan(path: Path) -> dict:
         raise ValueError("Unsupported Workbench migration package plan")
     if plan.get("migration",{}).get("status")=="BLOCKED":
         raise ValueError("Workbench migration package plan is BLOCKED")
+    unsupported=[
+        step for step in plan.get("execution",{}).get("steps",[])
+        if step.get("backend") in {"lua","sql"} and step.get("conversion_status")=="UNSUPPORTED"
+    ]
+    if unsupported:
+        routes=sorted({
+            f"{step.get('artifact_type')}:{step.get('path')}"
+            for step in unsupported
+        })
+        raise ValueError(
+            "Workbench plan contains artifacts with no supported converter backend: "
+            + ", ".join(routes)
+        )
     return plan
 
 
