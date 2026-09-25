@@ -19,9 +19,9 @@ def candidates(con,start,depth=6):
             other=dst if src==node else src
             step={"relationship_id":rid,"source":src,"target":dst,"relationship":rel,"evidence_id":evidence,"confidence":confidence,"status":status}
             next_path=path+[step]
-            feature=con.execute("SELECT feature_id,name,feature_type,domain,status FROM features WHERE feature_id=?",(other,)).fetchone()
+            feature=con.execute("SELECT feature_id,name,feature_type,domain_id,status FROM features WHERE feature_id=?",(other,)).fetchone()
             if feature:
-                found.append({"feature_id":feature[0],"name":feature[1],"feature_type":feature[2],"domain":feature[3],"feature_status":feature[4],"distance":level+1,"path":next_path})
+                found.append({"feature_id":feature[0],"name":feature[1],"feature_type":feature[2],"domain_id":feature[3],"feature_status":feature[4],"distance":level+1,"path":next_path})
             if other not in seen:
                 seen.add(other)
                 queue.append((other,level+1,next_path))
