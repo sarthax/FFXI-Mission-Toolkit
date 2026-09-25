@@ -178,3 +178,12 @@ Foundation preserved; canonical graph storage now has schema-checked core record
 - Added `test_fixtures/test_server_lua_graph_bridge.py`, a synthetic end-to-end regression fixture for C++ API/binding import plus verified event → Lua handler and inferred class-hinted Lua → binding traversal.
 - The fixture also asserts that an unmatched CSID does not create an event implementation edge and that the binding → C++ `BINDS` relationship remains present.
 - This creates a durable guard for the current conservative confidence boundary: event identity may be VERIFIED by independent `npc_event_refs`; callback parameter typing remains INFERRED.
+
+
+## 2026-09-25 — direct packet handler graph resolution
+
+- Rechecked PR #2 after GitHub restrictions were removed. The branch is 153 commits ahead and 0 behind `main`; GitHub still reports the draft PR mergeable flag false, so this is not branch divergence from `main`.
+- Extended `packet_opcode_index.py` to recognize an explicit `case OPCODE: handler(...)` dispatch form and emit a VERIFIED `packet -> cpp-symbol` `HANDLED_BY` edge. Plain switch/case dispatch without a directly invoked symbol remains a verified dispatch-location edge only.
+- Added server-source snapshot/evidence IDs and stable edge IDs to packet relationships.
+- Extended `workbench_connect_server.py` to materialize packet opcode nodes before importing packet relationships, allowing canonical graph resolution to connect exact `cpp-symbol:` handler targets to indexed C++ functions.
+- The packet self-test now requires the direct handler-symbol relationship and rejects a weaker generic REFERENCES edge for that same dispatch line.
