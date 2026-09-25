@@ -290,7 +290,7 @@ Use different fixtures for different architectural questions rather than treatin
 - **Local/live validation:** reserve the user's running server/client for generated-package application, startup/runtime behavior, packet/capture checks, and client capability validation after public-repository CI has proven the deterministic pipeline.
 
 ## Immediate audit queue
-1. Validate and extend class-aware capture → Lua event → binding/C++ resolution, adding evidence-backed local/returned-object typing without guessing.
+1. [x] Validate and extend class-aware capture → Lua event → binding/C++ resolution, adding evidence-backed local/returned-object typing without guessing. Flow-sensitive alias/API-return propagation, ambiguity rejection, reassignment invalidation, and provenance-preserving graph metadata are implemented.
 2. [x] Resolve legacy DSP PacketParser opcode assignments to real handler symbols when a server source root is indexed; additional fork-specific dispatch patterns can extend the same evidence path.
 3. [x] Connect bindings -> C++ symbols -> enums/constants -> packets -> build targets in the canonical graph, with confidence preserved per edge.
 4. [x] Extend Backport Package Analyzer to emit/import canonical Feature, Artifact, DependencyEdge, Migration, and MigrationAction graph records.
@@ -330,3 +330,6 @@ Lua event indexing now carries conservative callback-parameter class hints, and 
 - [x] local alias type propagation for callback-scoped Lua analysis.
 - [x] explicit returned-object hint support without method-name guessing.
 - [x] derive returned-object hints from indexed C++ API signatures and preserve evidence provenance.
+- [x] reject conflicting API return-class hints instead of selecting one.
+- [x] invalidate stale receiver hints after unknown local reassignment.
+- [x] preserve parameter/alias/API-return trace and evidence metadata through capture/server graph CALLS edges while keeping them INFERRED.
