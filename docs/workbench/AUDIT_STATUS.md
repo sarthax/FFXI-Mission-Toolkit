@@ -421,3 +421,10 @@ The battlefield representation planner uses this path to mark verified source ro
 Package generation now consumes refined migration actions instead of maintaining a separate hardcoded conversion list. The generic feature planner keeps source-only roles under review until an explicit representation rule resolves them, and safe plugin reshape findings can remove those resolved roles before package planning.
 
 For Ancient Vows, the registry and battlefield representation no longer enter the converter queue. Only the unresolved mission script remains as an executable migration step, reducing the staged source package from three artifacts to one while preserving MANUAL_REQUIRED status.
+
+
+## 2026-09-25 — Ancient Vows mission representation trace
+
+The flagship now decomposes the modern LSB mission script into explicit lifecycle requirements and traces each requirement into distributed legacy DSP target scripts. Ancient Vows currently resolves two target behaviors as represented (Misareaux status 0→1 and Monarch Linn mission completion) and two as missing in the pinned DSP snapshot (Justinius event 128 and Riverne Site #A01 status 1→2/event 100).
+
+This confirms the remaining mission artifact is a real partial-implementation gap rather than a path/layout false positive.
