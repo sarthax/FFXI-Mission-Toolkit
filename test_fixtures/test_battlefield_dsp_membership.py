@@ -2,6 +2,7 @@
 from workbench.plugins.domain.battlefield_dsp import (
     propose_dsp_battlefield_membership,
     propose_dsp_battlefield_policy,
+    analyze_dsp_battlefield_callbacks,
 )
 
 
@@ -65,7 +66,24 @@ def main():
     assert missing_policy.status=="MISSING_TARGET",missing_policy
     assert not missing_policy.safe_to_generate,missing_policy
 
-    print("DSP battlefield membership/policy proposal self-test: PASS")
+    callbacks=(
+        "onBattlefieldTick",
+        "onBattlefieldRegister",
+        "onBattlefieldEnter",
+        "onBattlefieldLeave",
+        "onEventUpdate",
+        "onEventFinish",
+    )
+    complete_text="\n".join(f"function {name}() end" for name in callbacks)
+    complete=analyze_dsp_battlefield_callbacks(complete_text,callbacks)
+    assert complete.status=="COVERAGE_ALIGNED",complete
+    assert not complete.missing_callbacks,complete
+
+    gap=analyze_dsp_battlefield_callbacks("function onBattlefieldTick() end",callbacks)
+    assert gap.status=="CALLBACK_GAPS",gap
+    assert "onEventFinish" in gap.missing_callbacks,gap
+
+    print("DSP battlefield reshape self-test: PASS")
 
 
 if __name__=="__main__":
