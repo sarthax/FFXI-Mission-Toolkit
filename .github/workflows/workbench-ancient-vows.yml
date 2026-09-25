@@ -8,6 +8,7 @@ on:
       - "workbench/adapters/servers/**"
       - "workbench/core/**"
       - "workbench/migrations/**"
+      - "feature_checker.py"
       - "test_fixtures/test_ancient_vows_crossfork.py"
       - ".github/workflows/workbench-ancient-vows.yml"
   workflow_dispatch:
