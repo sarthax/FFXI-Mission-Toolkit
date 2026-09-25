@@ -48,6 +48,7 @@ jobs:
           python test_fixtures/test_domain_plugin_registry.py
           python test_fixtures/test_logical_migration_planner.py
           python test_fixtures/test_dependency_package_plan.py
+          python test_fixtures/test_package_manifest.py
           python test_fixtures/test_semantic_instance_matching.py
           python test_fixtures/test_entity_symbol_identity.py
           python test_fixtures/test_roadmap_phase8.py
