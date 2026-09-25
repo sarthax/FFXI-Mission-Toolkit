@@ -23,6 +23,7 @@ from workbench.migrations.backend_probe_plan import plan_lsb_dsp_lua_probe
 from workbench.migrations.patch_operations import PatchOperation, preview_patch_operations
 from workbench.migrations.patch_plan import build_patch_plan_output
 from workbench.migrations.patch_approval import assess_patch_plan_for_approval
+from workbench.migrations.patch_approval_request import build_patch_approval_request, assess_patch_execution_eligibility
 from workbench.core import graph
 from workbench.core.schema import Artifact, CapabilityRequirement, DependencyEdge, Feature, MigrationAction
 from workbench.core.services.feature_surface_graph import persist_feature_surface
@@ -358,6 +359,17 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
         dsp_root,
     )
     assert mission_patch_approval.status=="READY_FOR_APPROVAL",mission_patch_approval
+    mission_patch_approval_request=build_patch_approval_request(
+        mission_patch_plan.output.content,
+        mission_patch_approval,
+        request_id="ancient-vows-mission-gaps",
+    )
+    mission_patch_execution_eligibility=assess_patch_execution_eligibility(
+        mission_patch_plan.output.content,
+        mission_patch_approval,
+        mission_patch_approval_request.content,
+    )
+    assert mission_patch_execution_eligibility.status=="AWAITING_APPROVAL",mission_patch_execution_eligibility
     source_policy=extract_lsb_battlefield_policy(source_battlefield)
     era_level_cap=extract_lsb_mission_level_cap(source_level_cap,"ANCIENT_VOWS")
     assert source_policy.resolved_fields["time_limit"]==1800,source_policy
@@ -392,7 +404,7 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
         policy_proposal,
     )
     assert not generated_dsp_outputs,generated_dsp_outputs
-    package_generated_outputs=generated_dsp_outputs+mission_patch_outputs+(mission_patch_plan.output,)
+    package_generated_outputs=generated_dsp_outputs+mission_patch_outputs+(mission_patch_plan.output,mission_patch_approval_request)
     generated_sql_validations=validate_dsp_battlefield_proposals(
         membership_proposal,
         policy_proposal,
@@ -537,7 +549,7 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
         assert assembled.status=="MANUAL_REQUIRED",assembled
         assert len(assembled.source_result.copied)==0,assembled
         assert len(assembled.source_result.artifacts)==0,assembled
-        assert len(assembled.generated_result.records)==3,assembled
+        assert len(assembled.generated_result.records)==4,assembled
         assert assembled.manifest_path.exists(),assembled
         assert assembled.validation_path.exists(),assembled
         assert assembled.source_journal_path.exists(),assembled
@@ -700,6 +712,8 @@ elseif (player:getCurrentMission(COP) == dsp.mission.id.cop.ANCIENT_VOWS) then
             },
             "mission_patch_plan_status":mission_patch_plan.status,
             "mission_patch_approval_status":mission_patch_approval.status,
+            "mission_patch_human_approval_status":"PENDING",
+            "mission_patch_execution_eligibility":mission_patch_execution_eligibility.status,
             "mission_package_action":"REVIEW_PROPOSALS",
             "package_assembly_status":"MANUAL_REQUIRED",
             "semantic_action_count":len(semantic_actions),
