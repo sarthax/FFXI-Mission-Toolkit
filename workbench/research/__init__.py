@@ -31,3 +31,5 @@ from .extended_tools import CaptureResearchReader, ReferenceResearchReader, Clie
 
 from .proposal_verifier import ProposalVerifier
 from .proposal_tools import ProposalResearchService
+
+from .client_binary_tools import ClientBinaryResearchReader
