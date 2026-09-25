@@ -91,6 +91,7 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - Formalize Evidence/Finding.
 - Formalize Feature/Implementation/Dependency.
 - Add machine-readable analysis outputs.
+- Implement a generic SQLite-backed canonical graph store.
 - Connect existing entity_profile, map confidence, capture, packet, and backport reports.
 
 ### Phase 2 — Server adapters and migration engine (P0)
