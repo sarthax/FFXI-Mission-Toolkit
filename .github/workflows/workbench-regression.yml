@@ -28,6 +28,8 @@ jobs:
         with:
           python-version: "3.11"
       - name: Run Workbench core regression fixtures
+        env:
+          PYTHONPATH: .
         run: |
           set -euo pipefail
           python test_fixtures/test_packet_identity.py
