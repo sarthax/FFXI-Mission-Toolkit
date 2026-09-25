@@ -169,7 +169,7 @@ Lua call -> binding -> C++ function -> declaration/implementation -> dependencie
 
 ## Unresolved items
 1. General server adapters need broader logical field coverage and Topaz-Next/custom-fork handling beyond the current Topaz/DSP/LSB profiles.
-2. The general Feature Migration Engine is partially implemented: logical comparison/planning, dependency-aware package generation, package assembly, generated outputs, provenance journals, validation metadata, cohesion checks, apply-readiness gating, reversible file apply journaling, and a conditional LSB→DSP Lua backend now exist. Remaining work is verified `xi.*`/framework reshape coverage, broader source-to-target conversion, and safe database-level application/rollback.
+2. The general Feature Migration Engine is partially implemented: logical comparison/planning, dependency-aware package generation, package assembly, generated outputs, provenance journals, validation metadata, cohesion checks, apply-readiness gating, reversible file apply journaling, a conditional LSB→DSP Lua backend, and artifact-level conditional preflight now exist. Remaining work is verified `xi.*`/framework reshape coverage, broader source-to-target conversion, and safe database-level application/rollback.
 3. Multi-validator ValidationRun orchestration remains incomplete even though core regression and external-source CI are operational.
 4. ClientCapability, DAT asset resolver consolidation, dialog drift, and client/server synchronization services remain incomplete.
 5. Actual client pol.exe / FFXiMain.dll bytes are not presently available to this audit pass; exact offsets and binary patches remain unverified.
