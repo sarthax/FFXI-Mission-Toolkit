@@ -339,3 +339,31 @@ def register_extended_tools(
             handler=client_reader.dat_describe,
             access=ACCESS_READ,
         ))
+
+
+def register_proposal_tools(registry: ResearchToolRegistry, service) -> None:
+    """Register proposal staging/status/verification tools with separated authority."""
+    registry.register(ResearchTool(
+        name="proposal.create",
+        description="Stage a Finding/MigrationAction/ValidationResult proposal in a PROPOSE_CHANGES research session.",
+        handler=service.create,
+        access=ACCESS_PROPOSE,
+    ))
+    registry.register(ResearchTool(
+        name="proposal.status",
+        description="Read the current verification/promotion state of a staged research proposal.",
+        handler=service.status,
+        access=ACCESS_READ,
+    ))
+    registry.register(ResearchTool(
+        name="proposal.verify",
+        description="Run deterministic evidence/type checks on a staged proposal without canonical promotion.",
+        handler=service.verify,
+        access=ACCESS_VALIDATE,
+    ))
+    registry.register(ResearchTool(
+        name="proposal.promote",
+        description="Promote only a deterministically verified proposal into canonical Workbench records.",
+        handler=service.promote,
+        access=ACCESS_VALIDATE,
+    ))
