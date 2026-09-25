@@ -148,7 +148,8 @@ def attach_generated_outputs(
             "artifact_type":output.artifact_type,
             "generator":output.generator,
             "metadata":dict(output.metadata),
-            "target_formatted":True,
+            "target_formatted":not bool(output.metadata.get("proposal_only")),
+            "proposal_only":bool(output.metadata.get("proposal_only")),
             "conversion_status":"NOT_REQUIRED",
         })
         known.add(output.output_id)
