@@ -14,7 +14,7 @@ from workbench.migrations.package_plan import build_package_plan
 from workbench.migrations.feature_surface_plan import plan_feature_surface
 from workbench.migrations.package_manifest import build_package_manifest
 from workbench.migrations.package_validation import build_validation_package
-from workbench.migrations.package_materialize import materialize_package, write_materialization_journal
+from workbench.migrations.package_assembly import assemble_migration_package
 from workbench.migrations.backend_probe import probe_lsb_to_dsp_lua
 from workbench.migrations.backend_probe_plan import plan_lsb_dsp_lua_probe
 from workbench.core import graph
@@ -290,12 +290,20 @@ def main():
     validation_package=build_validation_package(package_manifest)
     with tempfile.TemporaryDirectory() as package_td:
         package_root=Path(package_td)/"ancient-vows-package"
-        materialized=materialize_package(package_manifest,lsb_root,package_root)
-        assert materialized.status=="MATERIALIZED",materialized
-        assert len(materialized.copied)==3,materialized
-        assert len(materialized.artifacts)==3,materialized
-        journal_path=write_materialization_journal(package_root,package_manifest,materialized)
-        assert journal_path.exists(),journal_path
+        assembled=assemble_migration_package(
+            package_manifest,
+            lsb_root,
+            package_root,
+            generated_outputs=generated_dsp_outputs,
+        )
+        assert assembled.status=="MANUAL_REQUIRED",assembled
+        assert len(assembled.source_result.copied)==3,assembled
+        assert len(assembled.source_result.artifacts)==3,assembled
+        assert not assembled.generated_result.records,assembled
+        assert assembled.manifest_path.exists(),assembled
+        assert assembled.validation_path.exists(),assembled
+        assert assembled.source_journal_path.exists(),assembled
+        assert assembled.generated_journal_path.exists(),assembled
     assert package_plan.status=="READY",package_plan
     assert [step["action_id"] for step in package_manifest["execution"]["steps"]]==[
         "action:ancient-vows:registry",
@@ -433,6 +441,7 @@ def main():
             "step_count":len(package_manifest["execution"]["steps"]),
             "validation_check_count":len(validation_package["checks"]),
             "materialized_artifact_count":3,
+            "package_assembly_status":"MANUAL_REQUIRED",
             "semantic_action_count":len(semantic_actions),
             "semantic_migration_required":any(action.action!="NOT_REQUIRED" for action in semantic_actions),
             "plugin_migration_findings":len(migration_findings),
