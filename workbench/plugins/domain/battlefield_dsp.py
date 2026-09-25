@@ -299,3 +299,63 @@ def plan_dsp_battlefield_callback_adaptation(
         safe_to_generate=False,
         notes=notes,
     )
+
+
+@dataclass(frozen=True)
+class DspBattlefieldRepresentationPlan:
+    status: str
+    sql_policy_status: str
+    sql_membership_status: str
+    callback_status: str
+    safe_generated_surfaces: tuple[str, ...]
+    manual_surfaces: tuple[str, ...]
+    notes: tuple[str, ...] = ()
+
+
+def plan_dsp_battlefield_representation(
+    membership: DspBattlefieldMembershipProposal,
+    policy: DspBattlefieldPolicyProposal,
+    callbacks: DspBattlefieldCallbackAdaptationPlan,
+) -> DspBattlefieldRepresentationPlan:
+    """Classify how an LSB battlefield should be represented on legacy DSP.
+
+    SQL-backed policy/membership may be generated only when their proposal objects
+    explicitly mark generation safe. Callback-body semantics are never invented:
+    existing aligned callbacks require no rewrite, while missing callback behavior
+    remains manual.
+    """
+    generated=[]
+    manual=[]
+    notes=[]
+
+    if membership.safe_to_generate and membership.status in {"ADDITIVE","EQUIVALENT"}:
+        if membership.insert_sql:
+            generated.append("bcnm_battlefield")
+    else:
+        manual.append("bcnm_battlefield")
+        notes.append("Battlefield membership drift is not safely additive.")
+
+    if policy.safe_to_generate and policy.status in {"UPDATE_PROPOSAL","EQUIVALENT"}:
+        if policy.update_sql:
+            generated.append("bcnm_info")
+    else:
+        manual.append("bcnm_info")
+        notes.append("Battlefield policy cannot be generated safely.")
+
+    if callbacks.status=="COVERAGE_ALIGNED":
+        callback_status="NOT_REQUIRED"
+    else:
+        callback_status="MANUAL_REQUIRED"
+        manual.append("battlefield_callbacks")
+        notes.extend(callbacks.notes)
+
+    status="READY" if not manual else "MANUAL_REQUIRED"
+    return DspBattlefieldRepresentationPlan(
+        status=status,
+        sql_policy_status=policy.status,
+        sql_membership_status=membership.status,
+        callback_status=callback_status,
+        safe_generated_surfaces=tuple(sorted(generated)),
+        manual_surfaces=tuple(sorted(set(manual))),
+        notes=tuple(notes),
+    )
