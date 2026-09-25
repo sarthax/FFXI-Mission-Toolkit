@@ -132,3 +132,46 @@ class Implementation:
 
 def record_dict(record: Any) -> dict[str, Any]:
     return asdict(record)
+
+
+@dataclass
+class Artifact:
+    artifact_id: str
+    artifact_type: str
+    path: str | None = None
+    source_snapshot_id: str | None = None
+    target_snapshot_id: str | None = None
+    feature_id: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+@dataclass
+class Feature:
+    feature_id: str
+    name: str
+    feature_type: str | None = None
+    domain_id: str | None = None
+    source_snapshot_id: str | None = None
+    target_snapshot_id: str | None = None
+    status: str = "DISCOVERED"
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+@dataclass
+class MigrationAction:
+    action_id: str
+    migration_id: str
+    action: str
+    artifact_id: str | None = None
+    status: str = "DISCOVERED"
+    reason: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+@dataclass
+class ValidationResult:
+    validation_id: str
+    validation_type: str
+    subject_id: str
+    status: str = "UNKNOWN"
+    evidence_id: str | None = None
+    source: str | None = None
+    target: str | None = None
+    notes: list[str] = field(default_factory=list)
