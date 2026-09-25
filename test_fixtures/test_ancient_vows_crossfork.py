@@ -156,6 +156,22 @@ def main():
 
     semantic_actions=plan_feature_surface(source_surface,surface_comparison,"migration:cop:ancient-vows:semantic")
     assert semantic_actions and all(action.action=="NOT_REQUIRED" for action in semantic_actions),semantic_actions
+    migration_plugin_context=PluginContext(
+        feature_id="feature:cop:ancient_vows",
+        source_family="LSB",
+        target_family="DSP",
+        source_snapshot_id="lsb:3747feee0e38",
+        target_snapshot_id="dsp:ee1f489efbde",
+        metadata={
+            "systems":["MISSION_BATTLEFIELD","MISSION"],
+            "capability_coverage_status":surface_comparison.capability_coverage_status,
+            "entity_coverage_aligned":not surface_comparison.source_only_entity_ids and not surface_comparison.target_only_entity_ids,
+        },
+    )
+    migration_findings=plugin_registry.migration_findings(migration_plugin_context)
+    battlefield_migration_findings=[f for f in migration_findings if f.plugin_id=="framework.battlefield"]
+    assert battlefield_migration_findings,battlefield_migration_findings
+    assert battlefield_migration_findings[0].metadata["proposed_action"]=="NOT_REQUIRED",battlefield_migration_findings
 
     package_artifacts=[
         Artifact("artifact:ancient-vows:registry","SQL",path="sql/bcnm_info.sql",feature_id="feature:cop:ancient_vows"),
@@ -317,6 +333,7 @@ def main():
             "materialized_artifact_count":3,
             "semantic_action_count":len(semantic_actions),
             "semantic_migration_required":any(action.action!="NOT_REQUIRED" for action in semantic_actions),
+            "plugin_migration_findings":len(migration_findings),
         },
         "domain_plugins":{
             "active":active_plugins,
