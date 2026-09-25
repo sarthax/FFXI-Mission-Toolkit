@@ -190,10 +190,10 @@ Design requirements:
 ### Phase 7 — Automated migration packages (P1+)
 - feature manifests
 - [x] dependency-aware package-plan foundation — explicit canonical dependency edges now produce a deterministic, cycle-detecting MigrationAction order without applying changes.
-- migration action plans
-- target-specific conversion
-- validation package
-- rollback/journal support
+- [x] migration action plans — ordered generic actions are emitted into a machine-readable package manifest.
+- [x] target-specific conversion bridge — existing Lua/SQL package conversion can be scoped by a Workbench plan while preserving legacy full-folder behavior.
+- [x] validation package — planned Lua/SQL artifacts generate independent validation requirements.
+- [x] rollback/journal foundation — staged files are hashed/journaled and explicit file apply operations can be rolled back; live SQL/database rollback remains future work.
 
 ### Phase 8 — Evidence-aware LLM Research & Agent Layer (P1)
 Current state is a useful draft assistant: Open WebUI/Ollama chat plus read-only SQLite tools and logging. The rework should promote this into a bounded, reproducible research/orchestration layer over the Workbench rather than a free-form chatbot.
