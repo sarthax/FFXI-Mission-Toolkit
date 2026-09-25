@@ -456,3 +456,10 @@ Ancient Vows uses this layer to prove that both missing mission lifecycle propos
 The migration planner can now replace a monolithic source artifact action with an explicit REVIEW_PROPOSALS action when a domain plugin has decomposed the remaining behavior into reviewable target proposals. REVIEW_PROPOSALS stays MANUAL_REQUIRED, does not resolve to a converter backend, and does not stage the original source file.
 
 Ancient Vows now uses this path for its mission_script role. Its package contains the two generated mission patch proposals and no longer queues or materializes the original LSB mission Lua.
+
+
+## 2026-09-25 — Machine-readable patch plans
+
+Review-only patch operations can now be packaged as a machine-readable WORKBENCH_PATCH_PLAN artifact. Each target entry records the exact operations, source SHA-256, preview SHA-256, and preview validation status so later approval/apply tooling can detect target drift before modifying files.
+
+Ancient Vows now packages a patch plan covering its Justinius and Riverne mission gaps alongside the human-readable proposal artifacts. The plan is proposal-only and does not authorize application.
