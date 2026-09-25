@@ -161,6 +161,9 @@ A trace may start from any canonical node ID, or from an unambiguous partial nam
 
 Wiki/reference indexing is intentionally a **launch/navigation layer**, not a source of truth. A future ReferenceAdapter should resolve a wiki result to a canonical entity/feature ID and then invoke Feature Trace. Reference facts remain reference evidence and are never silently promoted to server/client truth.
 
+## Repository structure rework
+A staged package-layout migration is now part of the rework. Package namespaces have been introduced without moving mature root scripts yet. The mass move is intentionally deferred until shared service boundaries stabilize; root compatibility wrappers will preserve existing workflows during each subsystem migration. See `docs/workbench/REPOSITORY_STRUCTURE.md`.
+
 ## Immediate audit queue
 1. Complete capture → Lua event → binding/C++ semantic resolution using the new Lua event surface index.
 2. Resolve real packet handlers from actual server dispatch sources when a server source root is indexed.
