@@ -268,7 +268,7 @@ def self_test() -> None:
     from tempfile import NamedTemporaryFile
     from workbench_schema import (
         Artifact, Feature, MigrationAction, ValidationResult, ValidationRun,
-        Implementation, AnalysisResult, Function, Binding, EnumDefinition, DependencyEdge,
+        Implementation, AnalysisResult, Function, Binding, EnumDefinition, DependencyEdge, Capability,
     )
     with NamedTemporaryFile(suffix=".db") as tmp:
         con = init_db(Path(tmp.name))
@@ -284,7 +284,7 @@ def self_test() -> None:
         insert_record(con, Binding("b", "bar", "SOL2", "Foo::bar", "Foo", "fn", status="RESOLVED"))
         insert_record(con, EnumDefinition("e", "State", None, "state.h", 1, "CXX_ENUM", "1", "READY"))
         insert_record(con, DependencyEdge("de", "packet:1", "cpp-symbol:Foo::bar", "HANDLED_BY", confidence="VERIFIED", source_snapshot_id="src"))
-        insert_record(con, __import__("workbench_schema").Capability("cap", "wardrobe_slots", "CLIENT", subject_id="client:test", status="UNKNOWN"))
+        insert_record(con, Capability("cap", "wardrobe_slots", "CLIENT", subject_id="client:test", status="UNKNOWN"))
         resolve_relationships(con)
         con.commit()
         expected = {
