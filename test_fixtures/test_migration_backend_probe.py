@@ -11,7 +11,7 @@ def main():
         "function content:entryRequirement(player) return true end\n"
     )
     assert probe.route=="LSB->DSP:LUA",probe
-    assert probe.status in {"GAPS_FOUND","CANDIDATE_CLEAN"},probe
+    assert probe.status=="FRAMEWORK_ADAPTATION_REQUIRED",probe
     assert isinstance(probe.converted_text,str),probe
     assert probe.method_surface is not None,probe
     assert "new" in probe.method_surface.framework_methods,probe
