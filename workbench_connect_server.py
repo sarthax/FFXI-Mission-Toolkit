@@ -36,7 +36,7 @@ def import_payload(path, db, lua_json=None, zone_db=None):
             evidence(con,eid,"SERVER_SOURCE",source,row.get("path"),sid)
     for row in payload.get("bindings",[]):
         workbench_graph.insert_record(con,row,"Binding"); imported["bindings"]+=1
-        eid=row.get("evidence_id") or f"snapshot:{sid}" if sid else None
+        eid=row.get("evidence_id") or (f"snapshot:{sid}" if sid else None)
         if eid: evidence(con,eid,"SERVER_SOURCE",source,row.get("path"),sid)
     for row in payload.get("enums_constants",[]):
         workbench_graph.insert_record(con,row,"EnumDefinition"); imported["enums"]+=1
