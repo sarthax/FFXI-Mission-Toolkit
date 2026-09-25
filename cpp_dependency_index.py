@@ -52,10 +52,10 @@ def index(root):
             if ns.lower() in {"std","boost","fmt","sol","lua"}: continue
             line=text.count("\n",0,m.start())+1
             target=f"{ns}::{sym}"
-            confidence="VERIFIED" if target in enum_symbols else "INFERRED"
-            notes=["Namespace-qualified symbol use; semantic type is not proven by regex."]
-            if confidence=="VERIFIED":
-                notes.append("Exact symbol exists in extracted enum/constant index.")
+            confidence="INFERRED"
+            notes=["Namespace-qualified symbol use; function ownership and semantic type are inferred from lexical position."]
+            if target in enum_symbols:
+                notes.append("Exact symbol identity exists in the extracted enum/constant index; this does not verify function ownership.")
             edges.append(DependencyEdge(
                 edge_id=f"symbol-use:{src}:{line}:{target}",source_node=owner(line),target_node=target,
                 relationship="USES_ENUM",confidence=confidence,status="DISCOVERED",
