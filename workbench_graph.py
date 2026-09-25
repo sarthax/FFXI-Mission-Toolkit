@@ -149,19 +149,33 @@ def insert_record(con: sqlite3.Connection, record: Any, record_type: str | None 
         raise TypeError(f"Unsupported Workbench record: {cls}")
 
 def import_json(path: Path, db: Path):
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    con = init_db(db)
+    payload=json.loads(path.read_text(encoding="utf-8"))
+    con=init_db(db)
     for key, record_type in (
-        ("features", "Feature"), ("artifacts", "Artifact"), ("findings", "Finding"),
-        ("implementations", "Implementation"), ("edges", "DependencyEdge"),
-        ("migration_actions", "MigrationAction"), ("validation_runs", "ValidationRun"), ("validation_results", "ValidationResult"),
+        ("features","Feature"),("artifacts","Artifact"),("findings","Finding"),
+        ("implementations","Implementation"),("edges","DependencyEdge"),
+        ("migration_actions","MigrationAction"),("validation_runs","ValidationRun"),
+        ("validation_results","ValidationResult"),
     ):
         for row in payload.get(key, []):
-            insert_record(con, row, record_type)
+            insert_record(con,row,record_type)
+    if isinstance(payload.get("feature"),dict):
+        insert_record(con,payload["feature"],"Feature")
+    if isinstance(payload.get("migration"),dict):
+        m=payload["migration"]
+        fid=m.get("feature_id") or payload.get("feature",{}).get("feature_id")
+        con.execute("INSERT OR REPLACE INTO migrations VALUES (?,?,?,?,?,?)",
+                    (m["migration_id"],fid,m.get("source_snapshot_id"),m.get("target_snapshot_id"),
+                     m.get("status","DISCOVERED"),_json(m.get("metadata",{}))))
+    for row in payload.get("actions",[]):
+        insert_record(con,row,"MigrationAction")
+    if isinstance(payload.get("validation"),dict):
+        insert_record(con,payload["validation"],"ValidationResult")
     if "analysis" in payload:
-        insert_record(con, payload["analysis"], "AnalysisResult")
+        insert_record(con,payload["analysis"],"AnalysisResult")
     con.commit()
     con.close()
+
 
 def self_test() -> None:
     from tempfile import NamedTemporaryFile
