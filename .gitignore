@@ -26,3 +26,6 @@ FFXI-DATS/
 FFXI-Resources-dist/
 vendor/xi-tinkerer/target/
 gui/static/zone_visual/
+
+# Local-only client binary indexes/caches; never commit proprietary EXE/DLL research inputs
+.workbench/client-binaries/
