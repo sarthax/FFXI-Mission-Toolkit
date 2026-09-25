@@ -134,7 +134,7 @@ Current public flagship E2E: pinned LSB → legacy DSP Chains of Promathia 2-5 (
 - client capability model
 - dialog drift
 - packet/client/server relationships
-- EXE/DLL analysis when binaries are available
+- [x] generic EXE/DLL static research foundation — PE metadata/hash/section/import/export/string indexing, canonical evidence ingestion, typed research tools, and cross-binary index diffing are implemented; deeper disassembly/xref/function-recovery analyzers remain future work.
 
 ### Phase 5 — Runtime validation (P0/P1)
 - capture index
@@ -298,7 +298,7 @@ Use different fixtures for different architectural questions rather than treatin
 6. [x] Add ValidationRun suite orchestration with independent dimensions, canonical ValidationResult persistence, and CLI/graph support.
 7. Continue GUI/service extraction without rewriting the GUI wholesale. [in progress: `/backport/package` orchestration extracted behind `workbench.migrations.legacy_package_service` with regression coverage.]
 8. Build the evidence-aware LLM research/orchestration layer described in Phase 8; begin with typed Workbench tools and reproducible ResearchSession records rather than expanding free-form SQL access.
-9. Resume client EXE/DLL analysis when the actual binaries are available.
+9. Validate the generic client EXE/DLL pipeline against real FFXI binaries when available; use actual client files as evidence fixtures without introducing feature-specific logic into the core.
 
 ## Definition of done
 The workbench is structurally ready when a feature can be traced from source/version through implementation dependencies, migration actions, client/server requirements, and validation evidence, with every conclusion carrying provenance and an explicit status.
