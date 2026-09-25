@@ -47,9 +47,9 @@ def import_payload(path, db, lua_json=None, zone_db=None):
     for row in payload.get("opcodes",[]):
         opcode=row.get("opcode")
         if not opcode: continue
-        try: canonical=f"0x{int(str(opcode),0):03X}"
-        except ValueError: canonical=str(opcode)
-        node=f"packet:{str(opcode).lower()}"
+        canonical=canonical_opcode(opcode)
+        node=packet_node_id(opcode)
+        if node is None: continue
         con.execute("INSERT OR REPLACE INTO entities(entity_id,entity_type,display_name,metadata_json) VALUES(?,?,?,?)",
                     (node,"PACKET",canonical,json.dumps({"opcode":opcode,"location":row.get("location")},sort_keys=True)))
         con.execute("INSERT OR IGNORE INTO entity_identifiers(entity_id,identifier_type,identifier_value,source_snapshot_id) VALUES(?,?,?,?)",
