@@ -368,3 +368,8 @@ Safe reshape proposals can now emit target-ready generated SQL artifacts, attach
 The migration package pipeline now includes a cohesion verifier for assembled workspaces. It verifies that the package manifest, validation package, source materialization journal, generated-output journal, staged files, and recorded SHA-256 hashes agree. Missing or tampered package artifacts are reported as package failures before any target application step.
 
 This closes the review-package integrity gap between package assembly and later apply/rollback workflows.
+
+
+## 2026-09-25 — Ancient Vows package cohesion gate
+
+The flagship Ancient Vows LSB→DSP E2E now verifies the fully assembled migration workspace with the package cohesion service. The test requires manifest, validation metadata, source/generated journals, staged files, and recorded SHA-256 hashes to agree before the package is considered reviewable.
