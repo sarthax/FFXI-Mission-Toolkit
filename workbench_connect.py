@@ -96,6 +96,8 @@ def connect(db: Path, graph_db: Path, limit: int | None = None) -> dict:
                              "Observed runtime entity occurrence")
                 add_edge(f"observed:{cap_id}:{npcid}", cid, eid, "OBSERVES", cev, "VERIFIED",
                          "DISCOVERED", {"entity_id": npcid})
+    except sqlite3.OperationalError:
+        pass
 
     _add_entity(dst, "domain:assault", "DOMAIN", "Assault", {"source": "ffxi_zone_database"})
 
