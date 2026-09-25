@@ -9,8 +9,8 @@ import argparse,json,re
 from pathlib import Path
 
 # Only explicit dispatch/registration patterns become HANDLED_BY. Generic opcode references remain REFERENCES.
-SWITCH_CASE_RE=re.compile(r'\\bcase\\s+(0x[0-9A-Fa-f]+|\\d+)\\s*:',re.I)
-DISPATCH_RE=re.compile(r'\\b(?:register|add|set)[A-Za-z_]*(?:Handler|PacketHandler|CommandHandler)\\s*\\(\\s*(0x[0-9A-Fa-f]+|\\d+)\\s*,\\s*&?([A-Za-z_][A-Za-z0-9_:]*)',re.I)
+SWITCH_CASE_RE=re.compile(r'\bcase\s+(0x[0-9A-Fa-f]+|\d+)\s*:',re.I)
+DISPATCH_RE=re.compile(r'\b(?:register|add|set)[A-Za-z_]*(?:Handler|PacketHandler|CommandHandler)\s*\(\s*(0x[0-9A-Fa-f]+|\d+)\s*,\s*&?([A-Za-z_][A-Za-z0-9_:]*)',re.I)
 
 OP_RE=re.compile(r'\b(?:0x)?([0-9A-Fa-f]{2,4})\b')
 HANDLER_RE=re.compile(r'\b(?:opcode|packet|command|type)\s*\(?\s*([0-9A-Fa-fx]+)',re.I)
@@ -72,7 +72,7 @@ def self_test():
         packet_db=root/"packets.xml"
         server=root/"server.cpp"
         packet_db.write_text('<packet opcode="0x02A" />', encoding="utf-8")
-        server.write_text('switch (opcode) {\\n  case 0x02A: handle_dialog(); break;\\n}\\n', encoding="utf-8")
+        server.write_text('switch (opcode) {\n  case 0x02A: handle_dialog(); break;\n}\n', encoding="utf-8")
         ops=index_packet_db(packet_db)
         edges=index_server(root,[ops[0]])
         assert any(e["relationship"]=="HANDLED_BY" and e["confidence"]=="VERIFIED" for e in edges)
