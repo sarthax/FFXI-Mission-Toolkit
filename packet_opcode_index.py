@@ -81,7 +81,10 @@ def self_test():
 
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument("--self-test",action="store_true"); ap.add_argument("packet_db",type=Path,nargs="?"); ap.add_argument("--server-root",type=Path); ap.add_argument("--json",type=Path); a=ap.parse_args()
-    if a.self_test:\n        self_test(); print("packet_opcode_index self-test: PASS"); return\n    if not a.packet_db: ap.error("packet_db is required unless --self-test")\n    ops=index_packet_db(a.packet_db)
+    if a.self_test:
+        self_test()
+        print("packet_opcode_index self-test: PASS")
+        return\n    if not a.packet_db: ap.error("packet_db is required unless --self-test")\n    ops=index_packet_db(a.packet_db)
     edges=index_server(a.server_root,ops) if a.server_root else []
     out={"schema":2,"analysis":{"analysis_id":"packet-opcode-index","analysis_type":"PACKET_OPCODE_SURFACE","source":str(a.packet_db),"status":"ANALYZED"},
          "opcodes":ops,"edges":edges}
