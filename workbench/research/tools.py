@@ -166,3 +166,19 @@ def register_source_tools(registry: ResearchToolRegistry, crawler) -> None:
         handler=crawler.read,
         access=ACCESS_READ,
     ))
+
+
+def register_graph_tools(registry: ResearchToolRegistry, reader) -> None:
+    """Register bounded canonical graph discovery/trace tools."""
+    registry.register(ResearchTool(
+        name="graph.search",
+        description="Search canonical Workbench graph records by id or display label.",
+        handler=reader.search,
+        access=ACCESS_READ,
+    ))
+    registry.register(ResearchTool(
+        name="graph.trace",
+        description="Traverse canonical Workbench relationships with evidence/confidence/status.",
+        handler=reader.trace,
+        access=ACCESS_READ,
+    ))
