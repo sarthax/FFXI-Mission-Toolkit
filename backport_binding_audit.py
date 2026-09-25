@@ -66,7 +66,7 @@ def _strip_comments(text: str) -> str:
     return text
 
 
-def collect_method_calls(pkg_lua_dsp: Path, include_paths: set[str] | None = None) -> dict[str, list[Path]]:
+def collect_method_calls(pkg_lua_dsp: Path, include_paths: set[str] | None = None, ignore_methods: set[str] | None = None) -> dict[str, list[Path]]:
     """method name -> list of files that call it (colon-call syntax only)."""
     calls: dict[str, list[Path]] = {}
     for f in pkg_lua_dsp.rglob("*.lua"):
@@ -75,7 +75,7 @@ def collect_method_calls(pkg_lua_dsp: Path, include_paths: set[str] | None = Non
             continue
         text = _strip_comments(f.read_text(encoding="utf-8", errors="replace"))
         for name in set(METHOD_CALL_RE.findall(text)):
-            if name in KNOWN_NON_ENTITY_METHODS:
+            if name in KNOWN_NON_ENTITY_METHODS or (ignore_methods is not None and name in ignore_methods):
                 continue
             calls.setdefault(name, []).append(f)
     return calls
@@ -135,9 +135,9 @@ def check_binding(name: str, dsp_root: Path, flavor: str, cached_index: dict | N
     return False, f"no matching registration for '{name}' found in any src/map/lua/*.cpp file"
 
 
-def audit_package(pkg_lua_dsp: Path, dsp_root: Path, flavor: str, include_paths: set[str] | None = None) -> dict:
+def audit_package(pkg_lua_dsp: Path, dsp_root: Path, flavor: str, include_paths: set[str] | None = None, ignore_methods: set[str] | None = None) -> dict:
     cached_index = _load_cached_index(dsp_root, flavor)
-    calls = collect_method_calls(pkg_lua_dsp, include_paths)
+    calls = collect_method_calls(pkg_lua_dsp, include_paths, ignore_methods)
     confirmed, missing = [], []
     for name, files in sorted(calls.items()):
         found, evidence = check_binding(name, dsp_root, flavor, cached_index=cached_index)
