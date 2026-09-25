@@ -234,3 +234,53 @@ def register_domain_tools(registry: ResearchToolRegistry, reader) -> None:
         handler=reader.server_build_target_lookup,
         access=ACCESS_READ,
     ))
+    registry.register(ResearchTool(
+        name="capability.inspect",
+        description="Inspect canonical capability definitions, observations, and feature requirements.",
+        handler=reader.capability_inspect,
+        access=ACCESS_READ,
+    ))
+    registry.register(ResearchTool(
+        name="migration.inspect",
+        description="Inspect canonical migration records, actions, and related feature evidence.",
+        handler=reader.migration_inspect,
+        access=ACCESS_READ,
+    ))
+
+    # Architecture-aligned aliases retained alongside the more explicit names.
+    registry.register(ResearchTool(
+        name="feature.check",
+        description="Alias for feature.inspect.",
+        handler=reader.feature_inspect,
+        access=ACCESS_READ,
+    ))
+    registry.register(ResearchTool(
+        name="cpp.symbol",
+        description="Alias for server.symbol.",
+        handler=reader.server_symbol_lookup,
+        access=ACCESS_READ,
+    ))
+    registry.register(ResearchTool(
+        name="enum.lookup",
+        description="Alias for server.enum.",
+        handler=reader.server_enum_lookup,
+        access=ACCESS_READ,
+    ))
+    registry.register(ResearchTool(
+        name="build.target",
+        description="Alias for server.build-target.",
+        handler=reader.server_build_target_lookup,
+        access=ACCESS_READ,
+    ))
+    registry.register(ResearchTool(
+        name="validation.status",
+        description="Alias for validation.inspect.",
+        handler=reader.validation_inspect,
+        access=ACCESS_READ,
+    ))
+    registry.register(ResearchTool(
+        name="packet.handlers",
+        description="Alias for packet.lookup focused on handler relationships.",
+        handler=reader.packet_lookup,
+        access=ACCESS_READ,
+    ))
