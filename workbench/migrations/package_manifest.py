@@ -11,6 +11,7 @@ from typing import Iterable
 
 from workbench.core.schema import Artifact
 from workbench.migrations.package_plan import PackagePlan
+from workbench.migrations.backend_registry import default_backend_registry
 
 
 def _backend_for(artifact: Artifact | None) -> str:
@@ -31,12 +32,27 @@ def build_package_manifest(
     feature_id: str | None = None,
     source_snapshot_id: str | None = None,
     target_snapshot_id: str | None = None,
+    source_family: str | None = None,
+    target_family: str | None = None,
+    backend_registry=None,
 ) -> dict:
     artifact_map={a.artifact_id:a for a in artifacts}
+    if backend_registry is None and source_family and target_family:
+        backend_registry=default_backend_registry()
 
     steps=[]
     for order,action in enumerate(plan.ordered_actions, start=1):
         artifact=artifact_map.get(action.artifact_id) if action.artifact_id else None
+        backend=_backend_for(artifact)
+        converter_backend_id=None
+        conversion_status="NOT_APPLICABLE"
+        if backend in {"lua","sql"}:
+            if backend_registry is not None and source_family and target_family:
+                resolved=backend_registry.resolve(source_family,target_family,artifact.artifact_type)
+                converter_backend_id=resolved.backend_id if resolved else None
+                conversion_status="SUPPORTED" if resolved else "UNSUPPORTED"
+            else:
+                conversion_status="UNSPECIFIED"
         steps.append({
             "order":order,
             "action_id":action.action_id,
@@ -45,7 +61,9 @@ def build_package_manifest(
             "artifact_id":action.artifact_id,
             "path":artifact.path if artifact else None,
             "artifact_type":artifact.artifact_type if artifact else None,
-            "backend":_backend_for(artifact),
+            "backend":backend,
+            "converter_backend_id":converter_backend_id,
+            "conversion_status":conversion_status,
             "reason":action.reason,
             "metadata":dict(action.metadata),
         })
@@ -58,6 +76,8 @@ def build_package_manifest(
             "feature_id":feature_id,
             "source_snapshot_id":source_snapshot_id,
             "target_snapshot_id":target_snapshot_id,
+            "source_family":source_family,
+            "target_family":target_family,
             "status":plan.status,
         },
         "execution":{
