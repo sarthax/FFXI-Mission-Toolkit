@@ -143,12 +143,49 @@ Current public flagship E2E: pinned LSB → legacy DSP Chains of Promathia 2-5 (
 - test fixtures
 - validation runs/results
 
-### Phase 6 — Domain plugins (P1+)
-- Assault analyzer
-- Nyzul analyzer
-- Salvage analyzer
-- future Abyssea/Einherjar/etc.
-Domain plugins may introduce system-specific dependency rules without contaminating the universal core.
+### Phase 6 — Domain plugins & reusable content frameworks (P1+)
+Domain plugins should model both **content archetypes** and **named game systems**. The core graph/migration engine stays domain-neutral; this layer explains how different kinds of FFXI content are assembled, discovered, compared, migrated, and validated.
+
+Reusable content archetypes/frameworks:
+- [ ] Simple NPC/turn-in content — one or a few NPCs, dialog/events, key item/item/reward checks, minimal zone scope.
+- [ ] Multi-zone hunt/progression content — multiple zones, NPC gates, monster kills, variables/key items, staged progression.
+- [ ] Battlefield-instance content — reusable framework for BCNM/KSNM/ISNM/ENM/mission battlefields and similar arena content: registry, entry/exit, party/level/time policy, battlefield groups, mob scripts, rewards, mission/quest hooks.
+- [ ] Multi-stage mission/quest content — state machine across multiple zones/NPCs/events with optional battlefield stages.
+- [ ] Minigame/puzzle content — temporary state, timers, interactables, scoring/win-loss conditions, event-driven scripts.
+- [ ] Repeatable/system-container content — currency/points/rank/entry resources/rewards plus many child features.
+- [ ] Legacy-distributed implementation profile — recognizes DSP-style systems whose implementation is spread across zone scripts, SQL, globals, C++, and IDs rather than one central module.
+- [ ] Modular-framework implementation profile — recognizes LSB-style reusable globals/classes/modules and maps them back to semantic roles without treating structural centralization as feature completeness.
+
+Plugin contract:
+- [ ] `identify()` / `classify_archetypes()` — determine which content archetype(s) fit a feature using evidence, not path names alone.
+- [ ] `discover_surfaces()` — emit semantic FeatureSurface roles across Lua/SQL/YAML/C++/client/runtime evidence.
+- [ ] `discover_dependencies()` — declare domain-specific dependency rules on top of generic graph edges.
+- [ ] `compare()` — compare equivalent behaviors even when one fork centralizes a framework and another distributes logic across zones/files.
+- [ ] `generate_migration_rules()` — produce domain-aware MigrationAction proposals without embedding those rules in the universal core.
+- [ ] `validate()` — attach archetype/system-specific validation checks to ValidationRun.
+- [ ] `report()` — expose a user-facing navigation model: stages, zones, NPCs, mobs, battlefields, rewards, variables, and unresolved gaps.
+- [ ] Plugin registry/version/capability metadata so custom/community plugins can be added without editing core dispatch logic.
+
+Reusable framework plugins:
+- [ ] Battlefield family plugin for BCNM/KSNM/ISNM/ENM/mission battlefields and compatible variants.
+- [ ] Generic quest/mission state-machine plugin.
+- [ ] Generic multi-zone progression/hunt plugin.
+- [ ] Generic minigame/puzzle plugin.
+
+System-specific packages compose reusable frameworks rather than reimplementing them:
+- [ ] Assault package — its own bounded 50+ mission family, ranks/AP/tags/appraisal/lockboxes/assault instance conventions.
+- [ ] Nyzul package — floor progression, objectives, lamps, tokens, boss floors, randomized objective framework.
+- [ ] Salvage package — cells, path/room progression, restrictions, NM/boss structures, rewards.
+- [ ] Abyssea package — Atma/Cruor/visitant/time extensions/triggers and zone-system rules.
+- [ ] Einherjar package — chambers, reservations, waves, ampoules/rewards.
+- [ ] Limbus legacy-preservation package when an appropriate implementation/client snapshot is selected.
+
+Design requirements:
+- A feature may compose multiple archetypes (for example a multi-stage mission containing a battlefield and a minigame).
+- Named systems never become universal schema concepts.
+- A centralized LSB framework and a distributed DSP implementation may be semantically equivalent; path/layout differences alone are representation drift.
+- Plugins may add semantic roles and validators, but canonical Evidence/Finding/Feature/Relationship/Migration/Validation records remain the persistence boundary.
+- Public-repo fixtures should include at least one reusable battlefield case (Ancient Vows) and one distributed-vs-modular comparison before system-specific packages are considered stable.
 
 ### Phase 7 — Automated migration packages (P1+)
 - feature manifests
