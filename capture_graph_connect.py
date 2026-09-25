@@ -8,15 +8,15 @@ capture evidence remains OBSERVES evidence, while server source references becom
 from __future__ import annotations
 import argparse, json, sqlite3
 from pathlib import Path
-import workbench_graph
+from workbench.core import graph as workbench_graph
 
 def table_exists(con,name):
     return con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",(name,)).fetchone() is not None
 
-def connect(db: Path, graph_db: Path, capture_id: int | None = None) -> dict:
+def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: Path | None = None) -> dict:
     src=sqlite3.connect(db)
     dst=workbench_graph.init_db(graph_db)
-    counts={"capture_events":0,"event_nodes":0,"event_refs":0,"edges":0,"action_nodes":0}
+    counts={"capture_events":0,"event_nodes":0,"event_refs":0,"edges":0,"action_nodes":0,"lua_functions":0,"lua_calls":0,"binding_candidates":0}
     where="" if capture_id is None else " WHERE capture_id=?"
     args=() if capture_id is None else (capture_id,)
     if not table_exists(src,"capture_events"):
@@ -63,6 +63,31 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None) -> dict:
                         (rid2,enode,aid,"IMPLEMENTED_BY",ev,"VERIFIED","DISCOVERED",
                          json.dumps({"source":source,"path":script}),None))
             counts["edges"]+=1
+    # Optional Lua event-surface bridge. Event identity is proven by npc_event_refs;
+    # Lua method matches remain candidate relationships until object/class semantics are resolved.
+    if lua_json is not None and lua_json.exists():
+        payload=json.loads(lua_json.read_text(encoding="utf-8"))
+        for row in payload.get("events",[]):
+            event_id=row.get("event_id"); zone_name=row.get("zone"); script=row.get("script")
+            refs=src.execute("SELECT source,zone_name,npc_script,csid FROM npc_event_refs WHERE csid=? AND lower(zone_name)=lower(?) AND lower(npc_script)=lower(?) ORDER BY source",(event_id,zone_name,script)).fetchall() if table_exists(src,"npc_event_refs") else []
+            for source_ref,zref,nref,csid in refs:
+                enode=f"event:{source_ref}:{zref}:{nref}:{csid}"; path=row.get("path"); fn=row.get("function"); fl=row.get("function_line")
+                if not fn: continue
+                fnode=f"lua:function:{source_ref}:{path}:{fl}:{fn}"
+                dst.execute("INSERT OR REPLACE INTO entities VALUES(?,?,?,?)",(fnode,"LUA_FUNCTION",fn,json.dumps({"source":source_ref,"path":path,"line":fl,"function":fn},sort_keys=True)))
+                dst.execute("INSERT OR IGNORE INTO entity_identifiers(entity_id,identifier_type,identifier_value) VALUES(?,?,?)",(fnode,"lua_function",f"{path}:{fl}:{fn}"))
+                ev=f"evidence:lua-event:{source_ref}:{path}:{event_id}:{fl}"
+                dst.execute("INSERT OR REPLACE INTO evidence VALUES(?,?,?,?,?,?)",(ev,"SERVER_SOURCE",payload.get("source",source_ref),path,payload.get("source_snapshot_id"),"Lua event surface index locates the handler function."))
+                dst.execute("INSERT OR REPLACE INTO entity_relationships VALUES(?,?,?,?,?,?,?,?,?)",(f"event-function:{enode}:{fnode}",enode,fnode,"IMPLEMENTED_BY",ev,"VERIFIED","DISCOVERED",json.dumps({"event_expression":row.get("event_expression"),"event_id":event_id}),payload.get("source_snapshot_id")))
+                counts["lua_functions"]+=1; counts["edges"]+=1
+                for call in row.get("calls",[]):
+                    method=call.get("method"); obj=call.get("object")
+                    matches=dst.execute("SELECT binding_id,lua_name,cpp_symbol,function_id FROM bindings WHERE lower(lua_name)=lower(?) ORDER BY binding_id",(method,)).fetchall() if method else []
+                    for bid,lname,cpp_symbol,function_id in matches:
+                        be=f"evidence:lua-call:{source_ref}:{path}:{call.get('line')}:{method}:{bid}"
+                        dst.execute("INSERT OR REPLACE INTO evidence VALUES(?,?,?,?,?,?)",(be,"SERVER_SOURCE",payload.get("source",source_ref),path,payload.get("source_snapshot_id"),"Lua method name matched an indexed binding; object/class semantics remain unresolved."))
+                        dst.execute("INSERT OR REPLACE INTO entity_relationships VALUES(?,?,?,?,?,?,?,?,?)",(f"lua-call:{fnode}:{bid}",fnode,bid,"CALLS",be,"INFERRED","DISCOVERED",json.dumps({"object":obj,"method":method,"line":call.get("line"),"cpp_symbol":cpp_symbol,"function_id":function_id},sort_keys=True),payload.get("source_snapshot_id")))
+                        counts["lua_calls"]+=1; counts["binding_candidates"]+=1; counts["edges"]+=1
     # Capture actions can be traced to server mob skills when names match exactly. Keep this as a
     # candidate relationship; names alone do not prove the runtime action used that skill.
     if table_exists(src,"capture_actions") and table_exists(src,"topaz_mob_skills"):
@@ -92,9 +117,10 @@ def main():
     ap.add_argument("--db",type=Path,default=Path("ffxi_zone_database.db"))
     ap.add_argument("--graph-db",type=Path,default=Path("workbench.db"))
     ap.add_argument("--capture-id",type=int)
+    ap.add_argument("--lua-json",type=Path,help="Lua event-surface JSON produced by lua_event_index.py")
     ap.add_argument("--json",type=Path)
     a=ap.parse_args()
-    out=json.dumps(connect(a.db,a.graph_db,a.capture_id),indent=2,sort_keys=True)
+    out=json.dumps(connect(a.db,a.graph_db,a.capture_id,a.lua_json),indent=2,sort_keys=True)
     if a.json: a.json.parent.mkdir(parents=True,exist_ok=True); a.json.write_text(out+"\n",encoding="utf-8")
     else: print(out)
 if __name__=="__main__": main()
