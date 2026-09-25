@@ -28,3 +28,6 @@ from .runner import ResearchRunner
 from .domain_tools import WorkbenchDomainReader
 
 from .extended_tools import CaptureResearchReader, ReferenceResearchReader, ClientResearchReader
+
+from .proposal_verifier import ProposalVerifier
+from .proposal_tools import ProposalResearchService
