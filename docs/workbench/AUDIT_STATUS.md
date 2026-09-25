@@ -435,3 +435,10 @@ This confirms the remaining mission artifact is a real partial-implementation ga
 Mission representation gaps can now emit proposal-only generated artifacts without being treated as target-ready code. Proposal outputs are attached to the package manifest, materialized with provenance, included in cohesion checks, and force a GENERATED_PROPOSAL_REVIEW validation state.
 
 Ancient Vows now emits two review artifacts for its verified missing DSP lifecycle surfaces: the Justinius event-128 branch and the Riverne Site #A01 status 1→2/event-100 progression. These proposals are not auto-applied and do not make the package apply-ready.
+
+
+## 2026-09-25 — Generated-output cohesion path correction
+
+The first mission proposal package exposed a verifier mismatch: generated-output journals record `relative_path`, while package cohesion previously checked only `package_path`/`path`. The cohesion verifier now accepts the generated journal's canonical relative-path field, and regression coverage includes generated proposal artifacts.
+
+This closes a real package-integrity blind spot discovered by the Ancient Vows flagship.
