@@ -112,8 +112,10 @@ def main():
         reader=ClientBinaryResearchReader([index_path])
         info=reader.binary_info("fixture")
         assert info["matches"][0]["client_build"]=="fixture-build",info
+        assert info["matches"][0]["evidence_id"] in ingested["evidence_ids"],info
         strings=reader.string_search("WARDROBE")
         assert strings["matches"][0]["rva"]==0x1020,strings
+        assert strings["evidence_ids"],strings
         imp=reader.imports("fixture",query="CreateFile")
         assert imp["imports"][0]["dll"]=="KERNEL32.dll",imp
         exp=reader.exports("fixture",query="TestExport")
