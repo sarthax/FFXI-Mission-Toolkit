@@ -154,7 +154,7 @@ def import_json(path: Path, db: Path):
     for key, record_type in (
         ("features", "Feature"), ("artifacts", "Artifact"), ("findings", "Finding"),
         ("implementations", "Implementation"), ("edges", "DependencyEdge"),
-        ("migration_actions", "MigrationAction"), ("validation_results", "ValidationResult"),
+        ("migration_actions", "MigrationAction"), ("validation_runs", "ValidationRun"), ("validation_results", "ValidationResult"),
     ):
         for row in payload.get(key, []):
             insert_record(con, row, record_type)
@@ -165,19 +165,20 @@ def import_json(path: Path, db: Path):
 
 def self_test() -> None:
     from tempfile import NamedTemporaryFile
-    from workbench_schema import Artifact, Feature, MigrationAction, ValidationResult, Implementation, AnalysisResult
+    from workbench_schema import Artifact, Feature, MigrationAction, ValidationResult, ValidationRun, Implementation, AnalysisResult
     with NamedTemporaryFile(suffix=".db") as tmp:
         con = init_db(Path(tmp.name))
         insert_record(con, Feature("f", "Feature", "system", "domain", "src", "dst"))
         insert_record(con, Artifact("a", "LUA", "x.lua", "src", "dst", "f"))
         insert_record(con, MigrationAction("ma", "m", "CONVERT", "a"))
+        insert_record(con, ValidationRun("vr", "test", "src", "dst", "f", "VERIFIED"))
         insert_record(con, ValidationResult("v", "syntax", "a", "VERIFIED"))
         insert_record(con, Implementation("i", "f", "src", "dst", "a", "LUA", "MIGRATED"))
         insert_record(con, AnalysisResult("ar", "TEST", "src"))
         con.commit()
         expected = {
             "features": 1, "artifacts": 1, "migration_actions": 1,
-            "validation_results": 1, "implementations": 1, "analysis_results": 1,
+            "validation_results": 1, "validation_runs": 1, "implementations": 1, "analysis_results": 1,
         }
         actual = {k: con.execute(f"SELECT COUNT(*) FROM {k}").fetchone()[0] for k in expected}
         assert actual == expected, (actual, expected)
