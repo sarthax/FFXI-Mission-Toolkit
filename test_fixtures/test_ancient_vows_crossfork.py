@@ -189,7 +189,7 @@ def main():
         "canonical_graph":{
             "implementation_count":implementation_count,
             "uses_id_edge_count":uses_id_count,
-            "snapshot_scoped_entity_refs":true,
+            "snapshot_scoped_entity_refs":True,
             "entity_coverage_validation":validation_status,
         },
         "e2e_status":"PUBLIC_CROSS_FORK_FEATURE_SURFACE_VERIFIED",
