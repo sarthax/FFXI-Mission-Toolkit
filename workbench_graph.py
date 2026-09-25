@@ -101,6 +101,11 @@ CREATE TABLE IF NOT EXISTS capabilities (
   subject_id TEXT, source_snapshot_id TEXT, status TEXT NOT NULL DEFAULT 'UNKNOWN',
   value_json TEXT, evidence_id TEXT, notes_json TEXT NOT NULL DEFAULT '[]'
 );
+CREATE TABLE IF NOT EXISTS capability_requirements (
+  requirement_id TEXT PRIMARY KEY, feature_id TEXT NOT NULL, capability_id TEXT NOT NULL,
+  required INTEGER NOT NULL DEFAULT 1, status TEXT NOT NULL DEFAULT 'UNKNOWN',
+  evidence_id TEXT, notes_json TEXT NOT NULL DEFAULT '[]'
+);
 CREATE TABLE IF NOT EXISTS migrations (
   migration_id TEXT PRIMARY KEY, feature_id TEXT, source_snapshot_id TEXT,
   target_snapshot_id TEXT, status TEXT NOT NULL DEFAULT 'DISCOVERED', metadata_json TEXT NOT NULL DEFAULT '{}'
@@ -112,6 +117,8 @@ CREATE TABLE IF NOT EXISTS migration_actions (
 );
 CREATE INDEX IF NOT EXISTS idx_build_targets_artifact ON build_targets(artifact_id);
 CREATE INDEX IF NOT EXISTS idx_capabilities_subject ON capabilities(subject_id);
+CREATE INDEX IF NOT EXISTS idx_capability_requirements_feature ON capability_requirements(feature_id);
+CREATE INDEX IF NOT EXISTS idx_capability_requirements_capability ON capability_requirements(capability_id);
 CREATE INDEX IF NOT EXISTS idx_artifacts_feature ON artifacts(feature_id);
 CREATE INDEX IF NOT EXISTS idx_functions_symbol ON functions(qualified_name);
 CREATE INDEX IF NOT EXISTS idx_bindings_cpp_symbol ON bindings(cpp_symbol);
@@ -187,6 +194,10 @@ def insert_record(con: sqlite3.Connection, record: Any, record_type: str | None 
         con.execute("INSERT OR REPLACE INTO capabilities VALUES (?,?,?,?,?,?,?,?,?)",
                     (d["capability_id"], d["name"], d["capability_type"], d["subject_id"],
                      d["source_snapshot_id"], d["status"], _json(d["value"]), d["evidence_id"], _json(d["notes"])))
+    elif cls == "CapabilityRequirement":
+        con.execute("INSERT OR REPLACE INTO capability_requirements VALUES (?,?,?,?,?,?,?)",
+                    (d["requirement_id"], d["feature_id"], d["capability_id"], int(d["required"]),
+                     d["status"], d["evidence_id"], _json(d["notes"])))
     elif cls == "Finding":
         con.execute("INSERT OR REPLACE INTO findings VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                     (d["finding_id"], d["analysis_id"], d["subject_id"], d["field"], _json(d["value"]),
@@ -233,7 +244,7 @@ def import_json(path: Path, db: Path):
     payload=json.loads(path.read_text(encoding="utf-8"))
     con=init_db(db)
     for key, record_type in (
-        ("features","Feature"),("artifacts","Artifact"),("build_targets","BuildTarget"),("functions","Function"),("bindings","Binding"),("enums_constants","EnumDefinition"),("findings","Finding"),("capabilities","Capability"),
+        ("features","Feature"),("artifacts","Artifact"),("build_targets","BuildTarget"),("functions","Function"),("bindings","Binding"),("enums_constants","EnumDefinition"),("findings","Finding"),("capabilities","Capability"),("capability_requirements","CapabilityRequirement"),
         ("implementations","Implementation"),("edges","DependencyEdge"),
         ("migration_actions","MigrationAction"),("validation_runs","ValidationRun"),
         ("validation_results","ValidationResult"),
