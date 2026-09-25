@@ -216,6 +216,15 @@ Wiki/reference indexing is intentionally a **launch/navigation layer**, not a so
 ## Repository structure rework
 A staged package-layout migration is now part of the rework. Package namespaces have been introduced without moving mature root scripts yet. The mass move is intentionally deferred until shared service boundaries stabilize; root compatibility wrappers will preserve existing workflows during each subsystem migration. See `docs/workbench/REPOSITORY_STRUCTURE.md`.
 
+## End-to-end integration test strategy
+Use different fixtures for different architectural questions rather than treating one content family as the universal proof case.
+
+- **Flagship completeness E2E:** choose a feature substantially implemented in both public source and target snapshots. Prefer a main-story mission/battlefield or similarly mature system with Lua, SQL/entities, bindings/C++, packets/build dependencies, and validation surfaces.
+- **Assault drift E2E:** retain Excavation Duty and later Assault missions as schema/ID/path/incomplete-content stress tests. Public LSB Assault coverage is not assumed complete and must not be used as proof that the full backport pipeline handles a complete feature.
+- **Legacy-system audit:** Limbus is useful for testing legacy DSP discovery and preservation, but current LSB keeps legacy Limbus primarily as documentation because modern client data changed. Treat it as a preservation/audit case unless a compatible implementation snapshot is selected.
+- **Reverse-pipeline E2E:** when the user's local Topaz/DSP Assault backport repositories are available, use them to test target/newer-feature → source/audit/reconciliation paths, including functionality absent from public LSB.
+- **Local/live validation:** reserve the user's running server/client for generated-package application, startup/runtime behavior, packet/capture checks, and client capability validation after public-repository CI has proven the deterministic pipeline.
+
 ## Immediate audit queue
 1. Validate and extend class-aware capture → Lua event → binding/C++ resolution, adding evidence-backed local/returned-object typing without guessing.
 2. Resolve real packet handlers from actual server dispatch sources when a server source root is indexed.
