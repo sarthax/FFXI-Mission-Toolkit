@@ -218,6 +218,7 @@ class ValidationResult:
     validation_type: str
     subject_id: str
     status: str = "UNKNOWN"
+    run_id: str | None = None
     evidence_id: str | None = None
     source: str | None = None
     target: str | None = None
