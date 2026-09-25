@@ -13,6 +13,7 @@ import re
 from dataclasses import asdict
 from pathlib import Path
 
+from source_snapshot import snapshot_id
 from workbench_schema import (
     AnalysisResult, Binding, DependencyEdge, EnumDefinition, Finding, Function, FunctionSignature
 )
@@ -166,7 +167,10 @@ def main():
     ap.add_argument("root", type=Path, help="External C++ server source root (DSP/Topaz/LSB/custom fork).")
     ap.add_argument("--json", type=Path)
     args = ap.parse_args()
+    sid = snapshot_id(args.root)
     funcs, enums, bindings = index(args.root)
+    for record in (*funcs, *enums, *bindings):
+        record.source_snapshot_id = sid
     findings = []
     for b in bindings:
         if b.status == "UNRESOLVED":
@@ -185,8 +189,9 @@ def main():
         analysis_type="CPP_API_SURFACE",
         source=str(args.root),
         status="ANALYZED",
+        notes=[f"Source snapshot: {sid}.", "Conservative regex extraction; results require parser/semantic verification for ambiguous C++."],
         findings=[x.finding_id for x in findings],
-        notes=["Conservative regex extraction; results require parser/semantic verification for ambiguous C++."],
+        
     )
     payload = {
         "schema": 1,
