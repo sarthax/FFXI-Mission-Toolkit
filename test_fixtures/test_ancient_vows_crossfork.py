@@ -11,6 +11,7 @@ from workbench.adapters.servers.sql_extract import extract_logical_records
 from workbench.adapters.servers.entity_symbols import yaml_mob_template_spawns
 from workbench.migrations.feature_surface import FeatureSurface, SurfaceArtifact, SurfaceCapability, compare_feature_surfaces
 from workbench.migrations.package_plan import build_package_plan
+from workbench.migrations.feature_surface_plan import plan_feature_surface
 from workbench.migrations.package_manifest import build_package_manifest
 from workbench.migrations.package_validation import build_validation_package
 from workbench.migrations.package_materialize import materialize_package, write_materialization_journal
@@ -152,6 +153,9 @@ def main():
     )
     surface_comparison=compare_feature_surfaces(source_surface,target_surface)
     assert surface_comparison.status=="REPRESENTATION_DRIFT",surface_comparison
+
+    semantic_actions=plan_feature_surface(source_surface,surface_comparison,"migration:cop:ancient-vows:semantic")
+    assert semantic_actions and all(action.action=="NOT_REQUIRED" for action in semantic_actions),semantic_actions
 
     package_artifacts=[
         Artifact("artifact:ancient-vows:registry","SQL",path="sql/bcnm_info.sql",feature_id="feature:cop:ancient_vows"),
@@ -311,6 +315,8 @@ def main():
             "step_count":len(package_manifest["execution"]["steps"]),
             "validation_check_count":len(validation_package["checks"]),
             "materialized_artifact_count":3,
+            "semantic_action_count":len(semantic_actions),
+            "semantic_migration_required":any(action.action!="NOT_REQUIRED" for action in semantic_actions),
         },
         "domain_plugins":{
             "active":active_plugins,
