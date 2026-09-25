@@ -20,6 +20,7 @@ def main():
         assert len(result["candidates"])==1,result
         hit=result["candidates"][0]
         assert hit["feature_id"]=="feature:test:1"
+        assert hit["domain_id"]=="Test"
         assert hit["distance"]==2
         assert [step["relationship"] for step in hit["path"]]==["HANDLED_BY","IMPLEMENTED_BY"]
         assert [step["evidence_id"] for step in hit["path"]]==["server-handler","server-feature"]
