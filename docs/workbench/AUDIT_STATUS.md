@@ -826,3 +826,22 @@ The profile model deliberately preserves server-lineage differences instead of n
 Regression coverage verifies cross-lineage equivalence for stable item shapes and explicit logical differences for lineage-specific spell/trait fields. Workbench Regression #1171 is green.
 
 `item_basic` remains intentionally unmapped in this pass. Its source SQL is very large and will receive a separate audited schema extraction rather than an inferred mapping.
+
+
+## 2026-09-25 — item_basic logical schema mapping
+
+The core `item_basic` table is now represented in the server adapter logical schema.
+
+Shared logical fields include:
+- item ID and sub-ID;
+- internal name and sort name;
+- stack size;
+- item flags;
+- auction-house category;
+- base sell value.
+
+Legacy Darkstar/Topaz-era profiles retain `NoSale` as logical `no_sale`. Current LSB retains the shared fields but replaces that legacy representation with explicit `item_type` and adds `name_jp`; LSB's wider physical flags integer remains the same logical flags field.
+
+The adapter does not collapse these differences. Cross-lineage comparison therefore surfaces the missing/added fields explicitly instead of incorrectly declaring the rows identical.
+
+This completes logical coverage for the core item family used by current toolkit workflows: `item_basic`, `item_equipment`, `item_weapon`, and `item_usable`. The remaining Logical schema roadmap work is broader system-table coverage rather than the basic item model.
