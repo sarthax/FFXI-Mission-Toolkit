@@ -299,6 +299,7 @@ def ingest_event_structure_records(
                 "unknown_opcode_count": fp.unknown_opcode_count,
                 "message_ids": list(fp.message_ids),
                 "message_text_fingerprints": list(fp.message_text_fingerprints),
+                "entity_roles": list(fp.entity_roles),
                 "parser": fp.parser,
                 "entity_id_context": resource.entity_id,
                 "block_index": resource.block_index,
