@@ -100,12 +100,16 @@ def main():
     assert next(section for section in domains["sections"] if section["label"] == "↳ Assault")["href"] == "/domains/assault"
     assert next(section for section in domains["sections"] if section["label"] == "↳ Nyzul Isle")["href"] == "/nyzul"
     assert {section["label"] for section in domains["sections"] if section.get("planned")} >= {
-        "Abyssea", "Battlefields", "↳ AMAN-Trove", "↳ Ambuscade", "↳ ANNM",
+        "Abyssea", "↳ Altepa", "↳ Attohwa", "↳ Grauberg", "↳ Konschtat",
+        "↳ La Theine", "↳ Misareaux", "↳ Tahrongi", "↳ Uleguerand", "↳ Vunkerl", "↳ Bastion",
+        "Battlefields", "↳ AMAN-Trove", "↳ Ambuscade", "↳ ANNM",
         "↳ BCNM", "↳ ENM", "↳ HKCNM", "↳ ISNM", "↳ KCNM", "↳ KSNM",
         "↳ Login", "↳ Master Trials", "↳ SCNM", "↳ SKCNM", "↳ Walk of Echoes",
-        "Battle Systems", "Conflict / Battle", "Combat",
+        "Battle Systems", "Conflict / Battle", "↳ Ballista", "↳ Besieged", "↳ Brenner",
+        "↳ Campaign", "↳ Colonization", "↳ Expeditionary Force", "↳ Garrison", "Combat",
         "Dynamis", "Escha", "Hobbies", "HELM", "Events", "Missions", "Quests",
-        "RoE", "Trust", "Other",
+        "Records of Eminence", "↳ General", "↳ Unity", "↳ Tutorial", "↳ Quests", "↳ Vanabout",
+        "Trust", "↳ Misc", "↳ Combat", "↳ Quest", "Other",
     }
 
     nyzul = context_for("/nyzul")
