@@ -33,9 +33,11 @@ This proof case is specifically:
 
 It is not "every object named Medusa."
 
-The Al Zahbi and Bhaflau Thickets Besieged variants are related semantic variants and should be visible to research, but they are **out of package scope unless explicitly selected**.
+The Al Zahbi and Bhaflau Thickets Medusa variants are **conditionally coupled system dependencies**, not merely same-name variants. Medusa participates in Besieged lifecycle/state: her presence in one zone can affect her availability in another, and death/respawn behavior is system-wide rather than a purely local Arrapago concern.
 
-This distinction is essential. Name matching is evidence for research, not sufficient evidence for migration membership.
+The package must therefore surface the Al Zahbi/Bhaflau variants and the shared Besieged subsystem during scope review. Their concrete inclusion remains a reviewer decision based on the target implementation, but they must not disappear simply because the initial root was Arrapago Reef.
+
+Name matching alone is still insufficient; the important edge is the shared system/lifecycle dependency.
 
 ## Manual source truth
 
@@ -167,7 +169,7 @@ Medusa's death/engage behavior also depends on:
 
 These are small dependencies, but excluding them silently causes incomplete behavior.
 
-### Related Besieged variants
+### Cross-zone Besieged coupling
 
 Separate Medusa implementations exist in:
 
@@ -176,13 +178,16 @@ Separate Medusa implementations exist in:
 
 Those scripts delegate lifecycle behavior to `xi.besieged`.
 
-They share Medusa species/skill infrastructure but represent a different encounter/system.
+This is not merely a naming relationship. Medusa's availability and lifecycle are part of the Besieged system, so an Arrapago migration must surface the shared system and the other zone variants for review.
+
+At the audited LSB revision, `scripts/globals/besieged.lua` exposes `onMobInitialize`, `onMobSpawn`, `onMobDeath`, and `onMobDespawn`, but those mob lifecycle hooks are currently empty. That is itself important evidence: source-code traversal cannot infer the complete expected behavior from this snapshot.
 
 For the Arrapago proof:
 
-- research should reveal them as related variants;
-- dependency closure should **not** include them by same-name matching;
-- a user may explicitly expand scope to Besieged if desired.
+- dependency discovery must identify the shared Besieged system dependency;
+- Al Zahbi/Bhaflau Medusa variants must appear as QUESTIONABLE/conditional system dependencies rather than automatic exclusions;
+- the reviewer must be able to include the necessary system implementation even when the source snapshot is incomplete;
+- a missing or stubbed implementation must remain visible as an analyzer/implementation gap rather than being mistaken for NOT_REQUIRED.
 
 ## Expected dependency shape
 
@@ -226,7 +231,8 @@ Arrapago entity 16998862
    │              └─ Lamiae mob skills/scripts
    └─ Lua API / bindings / engine support
 
-Related but not automatically included:
+Conditionally coupled through Besieged:
+   ├─ scripts/globals/besieged.lua
    ├─ Al Zahbi Medusa_Besieged
    └─ Bhaflau Thickets Medusa_Besieged
 ```
@@ -255,7 +261,7 @@ This is the important part of the proof.
 | Lua enum/constants | Partial | Enum graph infrastructure exists, but Medusa script references are not yet proven to resolve automatically. |
 | YAML loot → item records | **Gap** | Current item logical records exist, but the YAML loot-symbol edge is not created. |
 | Zone text/title dependencies | **Gap/Partial** | Source data exists, but Medusa-specific Lua references are not yet guaranteed to become package dependencies. |
-| Same-name alternate variants | Needs semantic rule | Must be surfaced as related research evidence without becoming package members automatically. |
+| Cross-zone Besieged variants | **Gap** | Must be modeled as conditional system dependencies; current LSB lifecycle hooks are present but empty, so direct source traversal is insufficient. |
 
 ## Result of the first proof
 
@@ -351,7 +357,7 @@ Before Medusa is considered a trustworthy dependency proof:
 
 1. Start from the Arrapago Medusa entity/script only.
 2. Automatically discover every REQUIRED class in the JSON truth set.
-3. Show Al Zahbi/Bhaflau variants as related but not included.
+3. Surface Al Zahbi/Bhaflau variants and Besieged as conditionally coupled dependencies, with explicit reviewer decisions and no silent exclusion.
 4. Resolve helper mobs without manually entering four IDs.
 5. Traverse helper spell/skill lists.
 6. Reach mob skill Lua implementations.
