@@ -2427,6 +2427,111 @@ def _workbench_graph_connection() -> sqlite3.Connection | None:
     return con
 
 
+@app.get("/validation", response_class=HTMLResponse)
+def validation_dashboard(request: Request):
+    con = _workbench_graph_connection()
+    runs = []
+    status_counts = {}
+    result_counts = {}
+    error = None
+    if con is None:
+        error = "Canonical Workbench graph is not available. Build/import workbench.db before browsing validation history."
+    else:
+        rows = con.execute(
+            "SELECT run_id, name, source_snapshot_id, target_snapshot_id, feature_id, status, "
+            "started_at, finished_at, metadata_json "
+            "FROM validation_runs ORDER BY COALESCE(finished_at, started_at, '') DESC, run_id DESC LIMIT 25"
+        ).fetchall()
+        runs = [dict(row) for row in rows]
+        for row in con.execute("SELECT status, COUNT(*) AS n FROM validation_runs GROUP BY status ORDER BY status"):
+            status_counts[row["status"] or "UNKNOWN"] = row["n"]
+        for row in con.execute("SELECT status, COUNT(*) AS n FROM validation_results GROUP BY status ORDER BY status"):
+            result_counts[row["status"] or "UNKNOWN"] = row["n"]
+        con.close()
+    return templates.TemplateResponse(request, "validation_dashboard.html", {
+        "request": request,
+        "runs": runs,
+        "status_counts": status_counts,
+        "result_counts": result_counts,
+        "error": error,
+    })
+
+
+@app.get("/validation/runs", response_class=HTMLResponse)
+def validation_runs_page(request: Request, q: str = "", status: str = ""):
+    con = _workbench_graph_connection()
+    runs = []
+    statuses = []
+    error = None
+    if con is None:
+        error = "Canonical Workbench graph is not available. Build/import workbench.db before browsing validation history."
+    else:
+        statuses = [row[0] for row in con.execute(
+            "SELECT DISTINCT status FROM validation_runs WHERE status IS NOT NULL ORDER BY status"
+        ).fetchall()]
+        clauses = []
+        params = []
+        if q.strip():
+            clauses.append("(run_id LIKE ? OR name LIKE ? OR feature_id LIKE ?)")
+            pattern = f"%{q.strip()}%"
+            params.extend([pattern, pattern, pattern])
+        if status.strip():
+            clauses.append("status=?")
+            params.append(status.strip())
+        where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+        rows = con.execute(
+            "SELECT vr.run_id, vr.name, vr.source_snapshot_id, vr.target_snapshot_id, vr.feature_id, "
+            "vr.status, vr.started_at, vr.finished_at, vr.metadata_json, "
+            "COUNT(res.validation_id) AS result_count "
+            "FROM validation_runs vr LEFT JOIN validation_results res ON res.run_id=vr.run_id"
+            + where +
+            " GROUP BY vr.run_id ORDER BY COALESCE(vr.finished_at, vr.started_at, '') DESC, vr.run_id DESC",
+            params,
+        ).fetchall()
+        runs = [dict(row) for row in rows]
+        con.close()
+    return templates.TemplateResponse(request, "validation_runs.html", {
+        "request": request,
+        "q": q,
+        "status": status,
+        "statuses": statuses,
+        "runs": runs,
+        "error": error,
+    })
+
+
+@app.get("/validation/runs/{run_id}", response_class=HTMLResponse)
+def validation_run_detail(request: Request, run_id: str):
+    con = _workbench_graph_connection()
+    run = None
+    results = []
+    error = None
+    if con is None:
+        error = "Canonical Workbench graph is not available. Build/import workbench.db before browsing validation history."
+    else:
+        row = con.execute(
+            "SELECT run_id, name, source_snapshot_id, target_snapshot_id, feature_id, status, "
+            "started_at, finished_at, metadata_json FROM validation_runs WHERE run_id=?",
+            (run_id,),
+        ).fetchone()
+        if row is not None:
+            run = dict(row)
+            results = [dict(result) for result in con.execute(
+                "SELECT validation_id, run_id, validation_type, subject_id, status, evidence_id, "
+                "source, target, notes_json FROM validation_results WHERE run_id=? "
+                "ORDER BY validation_type, validation_id",
+                (run_id,),
+            ).fetchall()]
+        con.close()
+    return templates.TemplateResponse(request, "validation_run_detail.html", {
+        "request": request,
+        "run": run,
+        "results": results,
+        "error": error,
+        "run_id": run_id,
+    })
+
+
 @app.get("/features/trace", response_class=HTMLResponse)
 def feature_trace_page(
     request: Request,
