@@ -861,3 +861,19 @@ Canonical bridges now exist for:
 The final missing piece was BACKPORT_REPORT issue persistence. `feature_package_analyzer.py` now emits canonical report Evidence, an AnalysisResult, and Finding records for parsed report issues in addition to Feature/Artifact/Migration/MigrationAction records. The generic JSON graph importer now accepts Evidence records directly.
 
 Workbench Regression #1189/#1190 is green after adding the complete canonical Finding shape. Phase 1 report-to-graph connectivity is therefore closed at the P0 architecture level.
+
+
+## 2026-09-25 — P0 adapter and snapshot-capability closure
+
+TopazNextAdapter and CustomForkAdapter now have explicit regression coverage beyond construction:
+- Topaz-Next retains a distinct lineage/profile identity while normalizing shared logical records as TOPAZ_NEXT;
+- CustomForkAdapter requires an explicit base profile, preserves base tables unless overridden, and normalized records carry the custom fork family/physical table identity;
+- neither adapter mutates the base Topaz profile.
+
+Snapshot capability production now extends beyond FeatureSurface:
+- server schema mapping coverage emits per-logical-table snapshot observations;
+- binding compatibility emits conservative target-snapshot binding observations, with indexed exact matches remaining INFERRED rather than promoted to runtime truth;
+- live-target DB validation emits aggregate target-snapshot representation observations;
+- Feature Checker already selects the target-snapshot observation when evaluating requirements.
+
+Workbench Regression #1192 validates the adapter behavior and #1205/#1206 validates the capability producers.
