@@ -2,7 +2,8 @@
 {% block title %}Create Package — Mission Toolkit{% endblock %}
 {% block content %}
 <h1>Create Package</h1>
-<p class="muted">Generate a reviewable Workbench migration package from an existing canonical migration. This creates package files only; it does not approve, apply, or modify the target server.</p>
+<p class="muted">Generate a reviewable Workbench migration package from an existing canonical migration. Dependency scope must be reviewed first. This creates package files only; it does not approve, apply, or modify the target server.</p>
+<div class="warn"><strong>Required first:</strong> review the migration's transitive dependency scope, resolve questionable items, and freeze the scope. <a class="zonelink" href="/packages/scope">Open Scope Review</a>.</div>
 
 {% if error %}<div class="warn">{{ error }}</div>{% endif %}
 
