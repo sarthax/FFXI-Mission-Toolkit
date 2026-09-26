@@ -1193,3 +1193,50 @@ The proof adds requirements for generic mission/quest state-machine extraction, 
 - Added `workbench/domains/` (definitions.json + service.py), routes `/domains` and `/domains/{key}`, nav links for every Domains entry. 14 domains defined from a scan of the offline BG Wiki dump (Abyssea, Battlefields, Conflict, Combat, Dynamis, Escha, HELM, RoE, Trust, Hobbies, Events, Missions, Quests, Other).
 - Read-only; touches no package/migration/apply/graph code. Test: `test_fixtures/test_domain_definitions.py`.
 - Limits: entity/field lists are a first-pass framework, not verified against server schemas; globs are candidate paths checked at runtime. No per-entity list/edit/compare views yet.
+
+
+## 2026-09-26 — Snapshot-aware identity resolution implementation
+
+The legacy ID Drift concept is now generalized into a snapshot-aware identity-resolution foundation.
+
+Implemented:
+
+- `workbench/core/services/identity_resolver.py`
+  - arbitrary source/target identity snapshots;
+  - namespace-neutral identity records and persisted mappings;
+  - semantic EVENT identities that do not use the raw numeric ID as identity;
+  - cross-snapshot comparison and single-ID resolution;
+  - `EXACT` vs `TARGET_EQUIVALENT` vs unresolved/ambiguous outcomes;
+  - package-facing identity closure (`READY`, `MANUAL_REQUIRED`, `BLOCKED`);
+  - caller SQLite connection settings are preserved during resolution.
+
+- `workbench/client/identity_extract.py`
+  - installed-client extraction using the existing xi-tinkerer `export-dat` contract;
+  - FTABLE/VTABLE copy + SHA-256 provenance;
+  - selected/all-zone dialog export;
+  - portable manifest with client fingerprint and per-zone failures.
+
+- `workbench/client/identity_snapshot.py`
+  - full manifest ingestion so a multi-zone client build is registered once;
+  - portable snapshots can be compared later without keeping the original install available.
+
+- `workbench/cli/client_identity_snapshot.py`
+  - CLI extraction/optional direct ingestion.
+
+- `workbench/runtime/observed_transition.py`
+  - capture transitions now retain `client_snapshot_id`.
+
+- `workbench/runtime/identity_bridge.py`
+  - typed capture EVENT/CSID values can be translated from their source client snapshot to a selected target snapshot;
+  - unresolved `MESSAGE_OR_EVENT_ID` values are explicitly withheld from translation.
+
+Regression coverage:
+
+- `test_identity_resolver.py`
+- `test_client_identity_snapshot.py`
+- `test_client_identity_extract.py`
+- `test_capture_identity_bridge.py`
+
+The synthetic cross-client proof currently models one semantic event sequence shifting from 10/11/12 in an older client to 11/12/13 in a newer client. The resolver maps semantic identity rather than applying a blind numeric offset.
+
+This closes the first structural part of **identity-resolution closure**. The next real proof requires extracting a second FFXI client build and comparing actual per-zone resources. Stronger event fingerprints beyond normalized dialog text and integration into Package Scope/Readiness remain open.
