@@ -425,7 +425,8 @@ Current proof:
 - [~] Prove dependency-discovery completeness against a complex mob and representative instance/mission before adding approval/apply UI.
   - [x] Establish Arrapago Reef Medusa as the first machine-readable manual truth set, including helpers, skill/spell chains, job-special mixin, loot/items, title/text, Lua/engine requirements, and related-but-out-of-scope Besieged variants.
   - [ ] Close the generic discovery gaps exposed by the Medusa proof and rerun the truth-set comparison.
-  - [ ] Repeat with a representative instance/mission after the Medusa dependency classes reach closure.
+  - [x] Establish Coiler automaton attachment as a second truth set covering item/internal identity mapping, dynamic Lua dispatch, shared automaton behavior, C++ puppet runtime, persistence, downstream weapon-skill consumers, conditional interactions, and reviewer-controlled acquisition paths.
+  - [ ] Repeat with a representative instance/mission after the Medusa/Coiler dependency classes reach closure.
 - [ ] Add approval/apply/rollback UI only after preserving the existing readiness, approval, drift, backup, journal, and rollback gates end to end.
 - [ ] Migrate remaining workspace pages incrementally while preserving current routes until feature parity is verified.
 
