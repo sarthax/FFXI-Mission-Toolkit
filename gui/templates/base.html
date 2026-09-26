@@ -42,7 +42,21 @@
   .context-item .context-label { color: var(--muted); text-transform: uppercase; font-size: 9px; font-weight: 700; }
   .context-item .context-value { max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .context-item.unknown .context-value { color: var(--amber); }
-  .section-nav { padding-top: 5px; padding-bottom: 5px; }
+  .section-nav { padding-top: 5px; padding-bottom: 5px; overflow: visible; }
+  .section-group { position: relative; display: inline-flex; }
+  .section-group > summary { list-style: none; cursor: pointer; }
+  .section-group > summary::-webkit-details-marker { display: none; }
+  .section-group > summary::after { content: "▾"; font-size: 9px; margin-left: 3px; color: var(--muted); }
+  .section-group[open] > summary { background: var(--accent-soft); color: var(--accent); }
+  .section-group-menu {
+    position: absolute; top: calc(100% + 4px); left: 0; z-index: 50;
+    min-width: 190px; padding: 6px; border: 1px solid var(--border); border-radius: 7px;
+    background: var(--surface); box-shadow: 0 8px 24px rgba(0,0,0,.16);
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .section-group-menu .section-link { width: 100%; white-space: nowrap; justify-content: flex-start; }
+  .section-group-menu .section-link.planned { padding-left: 8px; }
+
   header .brand, header .brand-spacer { display: inline-flex; align-items: center; width: 132px; flex-shrink: 0; }
   header .brand { font-weight: 700; color: var(--accent); gap: 6px; }
   header .brand img { height: 22px; width: 22px; }
@@ -121,7 +135,21 @@
   <nav class="navrow section-nav" aria-label="{{ shell.active_home }} subsections">
     <span class="brand-spacer">{{ shell.active_home }}</span>
     {% for section in shell.sections %}
-      {% if section.href %}
+      {% if section.children %}
+      <details class="section-group"{% if section.active %} open{% endif %}>
+        <summary class="section-link{% if section.active %} active{% endif %}{% if section.planned %} planned{% endif %}">{{ section.label }}</summary>
+        <div class="section-group-menu">
+          {% for child in section.children %}
+            {% if child.href %}
+            <a class="section-link{% if child.active %} active{% endif %}{% if child.mutation %} mutation{% endif %}{% if child.legacy %} legacy{% endif %}"
+               href="{{ child.href }}"{% if child.active %} aria-current="page"{% endif %}>{{ child.label }}</a>
+            {% else %}
+            <span class="section-link planned" title="Backend-first capability; GUI page not implemented yet">{{ child.label }}</span>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </details>
+      {% elif section.href %}
       <a class="section-link{% if section.active %} active{% endif %}{% if section.mutation %} mutation{% endif %}{% if section.legacy %} legacy{% endif %}"
          href="{{ section.href }}"{% if section.active %} aria-current="page"{% endif %}>{{ section.label }}</a>
       {% else %}
