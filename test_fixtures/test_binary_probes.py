@@ -5,6 +5,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from workbench.core import graph
 from workbench.client.binary_probes import persist_probes
+from workbench.core.schema import Feature
+from feature_checker import resolve_feature, check_feature
 
 
 def tiny_pe(payload: bytes) -> bytes:
@@ -23,7 +25,8 @@ def main():
         exe = Path(td) / "t.dll"
         exe.write_bytes(tiny_pe(b"hello /wardrobe2 world\0"))
         con = graph.init_db(Path(td) / "g.db")
-        probes = [{"name": "w2", "kind": "string", "needle": "wardrobe2"},
+        graph.insert_record(con, Feature("feature:wd", "Wardrobe", "SYSTEM", "domain:test", "src", "snap:t", "ANALYZED"))
+        probes = [{"name": "w2", "kind": "string", "needle": "wardrobe2", "feature": "feature:wd"},
                   {"name": "w8", "kind": "string", "needle": "wardrobe8"}]
         for _ in range(2):
             persist_probes(con, str(exe), "snap:t", probes)
@@ -31,6 +34,13 @@ def main():
         assert len(rows) == 2, rows
         assert rows["capability-observation:snap:t:t.dll:w2"] == "VERIFIED", rows
         assert rows["capability-observation:snap:t:t.dll:w8"] == "UNKNOWN", rows
+        res = check_feature(con, resolve_feature(con, "feature:wd"))
+        assert res["status"] == "REQUIRED_CAPABILITIES_VERIFIED", res
+        # A probe that misses must leave the feature unverified.
+        graph.insert_record(con, Feature("feature:w8", "W8", "SYSTEM", "domain:test", "src", "snap:t", "ANALYZED"))
+        persist_probes(con, str(exe), "snap:t", [{"name": "w8", "kind": "string", "needle": "wardrobe8", "feature": "feature:w8"}])
+        res = check_feature(con, resolve_feature(con, "feature:w8"))
+        assert res["status"] == "UNKNOWN_REQUIRED_CAPABILITY", res
         con.close()
     print("binary probes self-test: PASS")
 

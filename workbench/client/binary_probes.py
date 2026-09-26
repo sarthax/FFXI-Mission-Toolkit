@@ -14,7 +14,7 @@ from pathlib import Path
 from workbench.client.binary_deep import byte_search
 from workbench.client.binary_index import index_binary
 from workbench.core import graph
-from workbench.core.schema import Capability, CapabilityObservation, Evidence
+from workbench.core.schema import Capability, CapabilityObservation, CapabilityRequirement, Evidence
 
 
 def _slug(s: str) -> str:
@@ -34,7 +34,8 @@ def run_probe(path: Path, idx: dict, probe: dict) -> dict:
 
 
 def persist_probes(con, binary_path: str, snapshot_id: str, probes: list[dict]) -> list[dict]:
-    """probes: [{"name","kind":"string"|"bytes","needle", optional "feature"}]. Returns per-probe results."""
+    """probes: [{"name","kind":"string"|"bytes","needle", optional "feature" (feature_id; adds a
+    CapabilityRequirement so Feature Checker sees it) and "required" (default True)}]. Returns per-probe results."""
     path = Path(binary_path)
     idx = index_binary(path, max_strings=25000)
     sha = hashlib.sha256(path.read_bytes()).hexdigest()
@@ -58,5 +59,11 @@ def persist_probes(con, binary_path: str, snapshot_id: str, probes: list[dict]) 
             source_snapshot_id=snapshot_id, status="VERIFIED" if res["found"] else "UNKNOWN",
             value={**res, "binary": path.name, "sha256": sha, "kind": p["kind"], "needle": p["needle"]},
             evidence_id=ev_id))
+        if p.get("feature"):
+            # Tie the probe to the feature so Feature Checker reports it as a client requirement.
+            graph.insert_record(con, CapabilityRequirement(
+                requirement_id=f"requirement:{p['feature']}:{cap_id}", feature_id=p["feature"],
+                capability_id=cap_id, required=p.get("required", True), status="DISCOVERED",
+                evidence_id=ev_id, notes=["Client binary probe requirement."]))
         out.append({"name": p["name"], **res})
     return out
