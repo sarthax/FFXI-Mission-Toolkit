@@ -196,6 +196,15 @@ def main():
     )
     payload = {
         "schema": 1,
+        "binding_coverage": {
+            "status": "PARTIAL",
+            "systems": ["SOL2", "LUNAR"],
+            "patterns": ["SOL_REGISTER", "LUNAR_DECLARE_METHOD"],
+            "notes": [
+                "Coverage describes recognized registration syntax, not proof that every Lua binding was extracted.",
+                "Absence from this index must remain scoped to the indexed surface.",
+            ],
+        },
         "analysis": asdict(result),
         "functions": [asdict(x) for x in funcs],
         "enums_constants": [asdict(x) for x in enums],

@@ -51,6 +51,7 @@ jobs:
           python test_fixtures/test_battlefield_dsp_membership.py
           python test_fixtures/test_battlefield_lsb_policy.py
           python test_fixtures/test_binding_index_provenance.py
+          python test_fixtures/test_binding_compatibility.py
           python test_fixtures/test_binding_audit_method_calls.py
           python test_fixtures/test_logical_migration_planner.py
           python test_fixtures/test_migration_backend_registry.py

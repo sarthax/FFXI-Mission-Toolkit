@@ -108,7 +108,9 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - [ ] Snapshot-specific capability observations and target-aware Feature Checker evaluation — implemented for canonical graph/flagship E2E; broader capability producers remain.
 - [ ] Lua migration backend — generic backend registry is implemented; legacy Topaz→DSP Lua conversion is registered explicitly. LSB→DSP and other routes remain unsupported until dedicated converters exist.
 - [ ] SQL migration backend — generic backend registry is implemented; legacy Topaz→DSP SQL conversion is registered explicitly. Broader source/target routes remain unsupported.
-- [ ] Binding compatibility engine
+- [x] Binding compatibility engine — generic snapshot-aware comparison now distinguishes exact,
+  representation drift, renamed/class-drift candidate, implementation drift, missing indexed,
+  unresolved, and ambiguous outcomes while preserving binding/function evidence.
 - [ ] Live target validation
 - [ ] ID/content collision analysis — generic normalized-record collision engine, migration-planner safety integration, and typed research-tool exposure are implemented; broader real cross-fork fixtures remain.
 

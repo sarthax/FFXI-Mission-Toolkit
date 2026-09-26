@@ -8,6 +8,23 @@
 
 Last updated: 2026-09-25
 
+## 2026-09-25 — Binding Compatibility Engine
+
+Added a generic, source-snapshot-aware comparator for the common C++ API/binding index produced
+for Topaz, DSP, LSB, and custom server trees. It compares Lua name, wrapper class, registration
+system, resolved C++ symbol, and indexed function signature without preferring SOL2 or LUNAR.
+
+Results distinguish exact structural matches, registration representation drift,
+renamed/class-drift candidates, implementation drift, bindings missing from the indexed target
+surface, and unresolved or ambiguous resolution. Every result retains both snapshot IDs and the
+complete source/candidate binding and function evidence. Missing results explicitly mean
+`INDEXED_SURFACE_ONLY`; partial macro extraction is never promoted to proof of absence.
+
+The JSON result includes canonical `AnalysisResult` and `Finding` records and can be imported
+directly into the Workbench graph. Focused regression coverage exercises every classification,
+mixed-snapshot rejection, deterministic output, provenance retention, CLI output, and graph
+persistence. The engine contains no Assault, Wardrobe, or other feature-specific rules.
+
 ## Current milestone
 Foundation preserved; canonical graph storage now has schema-checked core records; build-condition/generated-source evidence is indexed conservatively; packet opcode indexing now recognizes explicit switch/case and handler-registration patterns, while remaining lexical-only when no deterministic dispatch evidence exists.
 
