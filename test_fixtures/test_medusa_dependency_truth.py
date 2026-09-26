@@ -48,7 +48,8 @@ def main():
 
     variants=facts["alternate_variants"]
     assert {row["zone"] for row in variants}=={"Al Zahbi","Bhaflau Thickets"},variants
-    assert all(row["relation"]=="RELATED_VARIANT_NOT_DEPENDENCY" for row in variants),variants
+    assert all(row["relation"]=="SYSTEM_COUPLED_CONDITIONAL_DEPENDENCY" for row in variants),variants
+    assert facts["besieged_system"]["current_lsb_status"]=="HOOKS_PRESENT_BUT_EMPTY",facts["besieged_system"]
 
     required={row["key"]:row["expected_status"] for row in payload["required_dependency_classes"]}
     for key in (
@@ -64,7 +65,8 @@ def main():
         "alternate_medusa_variants",
     ):
         assert key in required,key
-    assert required["alternate_medusa_variants"]=="RELATED_NOT_INCLUDED",required
+    assert required["alternate_medusa_variants"]=="QUESTIONABLE_SYSTEM_DEPENDENCY",required
+    assert required["besieged_system"]=="REQUIRED_OR_EXPLICITLY_INCOMPLETE",required
 
     gaps=payload["known_current_toolkit_gaps"]
     assert any("mob_skill_lists" in gap for gap in gaps),gaps
