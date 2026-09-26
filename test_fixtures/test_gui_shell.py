@@ -119,24 +119,34 @@ def main():
     assert next(section for section in tools_workspace["sections"] if section["label"] == "Lookup & Decode: Entity")["href"] == "/entity?shell=tools"
 
     domains = next(workspace for workspace in WORKSPACES if workspace["name"] == "Domains")
-    assert next(section for section in domains["sections"] if section["label"] == "↳ Assault")["href"] == "/domains/assault"
-    assert next(section for section in domains["sections"] if section["label"] == "↳ Nyzul Isle")["href"] == "/nyzul"
-    assert {section["label"] for section in domains["sections"] if section.get("planned")} >= {
-        "Abyssea", "↳ Altepa", "↳ Attohwa", "↳ Grauberg", "↳ Konschtat",
-        "↳ La Theine", "↳ Misareaux", "↳ Tahrongi", "↳ Uleguerand", "↳ Vunkerl", "↳ Bastion",
-        "Battlefields", "↳ AMAN-Trove", "↳ Ambuscade", "↳ ANNM",
-        "↳ BCNM", "↳ ENM", "↳ HKCNM", "↳ ISNM", "↳ KCNM", "↳ KSNM",
-        "↳ Login", "↳ Master Trials", "↳ SCNM", "↳ SKCNM", "↳ Walk of Echoes",
-        "Battle Systems", "Conflict / Battle", "↳ Ballista", "↳ Besieged", "↳ Brenner",
-        "↳ Campaign", "↳ Colonization", "↳ Expeditionary Force", "↳ Garrison", "Combat",
+    top_labels = {section["label"] for section in domains["sections"]}
+    assert top_labels >= {
+        "Abyssea", "Battlefields", "Battle Systems", "Conflict / Battle", "Combat",
         "Dynamis", "Escha", "Hobbies", "HELM", "Events", "Missions", "Quests",
-        "Records of Eminence", "↳ General", "↳ Unity", "↳ Tutorial", "↳ Quests", "↳ Vanabout",
-        "Trust", "↳ Misc", "↳ Combat", "↳ Quest", "Other",
+        "Records of Eminence", "Trust", "Other",
+    }
+    assert not any(section["label"].startswith("↳") for section in domains["sections"])
+
+    battle_systems = next(section for section in domains["sections"] if section["label"] == "Battle Systems")
+    assert next(child for child in battle_systems["children"] if child["label"] == "Assault")["href"] == "/domains/assault"
+    assert next(child for child in battle_systems["children"] if child["label"] == "Nyzul Isle")["href"] == "/nyzul"
+
+    abyssea = next(section for section in domains["sections"] if section["label"] == "Abyssea")
+    assert {child["label"] for child in abyssea["children"]} == {
+        "Altepa", "Attohwa", "Grauberg", "Konschtat", "La Theine", "Misareaux",
+        "Tahrongi", "Uleguerand", "Vunkerl", "Bastion",
+    }
+    battlefields = next(section for section in domains["sections"] if section["label"] == "Battlefields")
+    assert {child["label"] for child in battlefields["children"]} >= {
+        "AMAN-Trove", "Ambuscade", "ANNM", "BCNM", "ENM", "HKCNM", "ISNM",
+        "KCNM", "KSNM", "Login", "Master Trials", "SCNM", "SKCNM", "Walk of Echoes",
     }
 
     nyzul = context_for("/nyzul")
     assert nyzul["active_home"] == "Domains"
-    assert next(section for section in nyzul["sections"] if section["active"])["label"] == "↳ Nyzul Isle"
+    active_group = next(section for section in nyzul["sections"] if section["active"])
+    assert active_group["label"] == "Battle Systems"
+    assert next(child for child in active_group["children"] if child["active"])["label"] == "Nyzul Isle"
 
     configured = build_shell_context(
         path="/captures",
@@ -194,6 +204,12 @@ def main():
     capture_detail_template = (TEMPLATES / "capture_detail.html").read_text(encoding="utf-8")
     assert "/captures/plot?capture_id={{ detail.capture_id }}" in capture_detail_template
     assert "/captures/plot_all?capture_id={{ detail.capture_id }}" in capture_detail_template
+
+    domains_html = render("domain_assault.html", "/domains/assault")
+    assert '<details class="section-group" open>' in domains_html
+    assert '<summary class="section-link active">Battle Systems</summary>' in domains_html
+    assert 'href="/domains/assault" aria-current="page">Assault</a>' in domains_html
+    assert "↳ Assault" not in domains_html
 
     model_html = render("model_viewer.html", "/modelviewer")
     assert 'aria-label="Primary workspaces"' in model_html
