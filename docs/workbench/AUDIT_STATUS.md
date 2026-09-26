@@ -1140,3 +1140,10 @@ Economizer and Heat Seeker now extend the Coiler proof into acquisition semantic
 The important result is that acquisition cannot be one generic edge. Economizer demonstrates shop plus externally documented quest/instance and ANNM reward paths, while Heat Seeker demonstrates shop, pooled mob drops, and an externally documented Alchemy synthesis recipe that itself depends on Iatrochemistry, a Fire Crystal, and five ingredient identities. Current LSB source partially supports the synthesis prerequisites (including the Iatrochemistry key item and guild-point unlock) but does not expose a direct Heat Seeker recipe record in repository search, so the package model must preserve external/expected evidence without pretending the server implementation is complete.
 
 Required generic acquisition relations now include SOLD_BY, DROPPED_BY, CRAFTED_BY, REWARDED_BY, REQUIRES_INGREDIENT, REQUIRES_KEY_ITEM, REQUIRES_CRAFT, USES_CRYSTAL, and ALTERNATE_ACQUISITION. Acquisition paths must be independently reviewable from core item behavior, and selecting synthesis/reward paths must recursively expose their own prerequisite graph.
+
+## 2026-09-26 — Client Binary/DAT Inspector pages and binary probes
+
+- Added read-only `/datinspector` and `/binaryinspector` GUI pages (Client group) over the existing CLI/research layer; see CLIENT_BINARY_RESEARCH.md.
+- Added `workbench/client/binary_probes.py`: client binary probes persisted as capability observations plus optional feature `CapabilityRequirement`s (hit VERIFIED, miss UNKNOWN). Tests: `test_fixtures/test_binary_probes.py`.
+- Also this session: SQL parser salvage of corrupted legacy-DSP `mob_spawn_points` rows (`build_sql_index.py`), and `dat_extractor_bin.ensure_dat_extractor()` auto-building the gitignored dat-extractor for the four dashboard rebuilds.
+- Open: probe-set files + GUI runner; Client Overview / Build fingerprint page; hand-fix 3 remaining corrupt rows in external old-dsp-reference SQL.

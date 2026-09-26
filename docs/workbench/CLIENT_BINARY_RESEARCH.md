@@ -132,3 +132,15 @@ The byte scanner finds 1,678 distinct candidate entry RVAs, including the mapped
 The new `import-refs` command and `client.import-refs` tool check only PE32 `FF 15`/`FF 25` absolute operands that match an actual import address table slot (`iat_rva`, distinct from the import lookup thunk). On this file they return **22 candidates** (20 calls, 2 jumps), including byte patterns pointing to `CreateThread`, `FindFirstFileA`, and `GetKeyboardLayout`. These are exact operand/IAT address matches, but opcode alignment and execution are unverified; each result remains INFERRED. Example: `python client_binary_analyze.py FFXiMain.dll import-refs`.
 
 Next validation needs either an optional decoder with versioned provenance and reachable instruction boundaries, or runtime/unpacked memory evidence for the virtual `.text`. No semantic feature or recovered function claim follows from this packed on-disk image alone.
+
+## GUI and feature-presence probes (2026-09-26)
+
+**Binary Inspector page** — `/binaryinspector` (nav: Client > Binary Inspector), backed by `binary_inspector.py`. Read-only. Shows layout warnings, sections, imports grouped by DLL, exports, string search, byte-pattern search (wildcards, optional executable-only) and diff against a second binary. It deliberately does **not** expose xref, function-candidate or import-ref passes (heuristic, mostly false positives on packed FFXiMain). Diff and byte results currently render as raw structures.
+
+**DAT Inspector page** — `/datinspector`, backed by `dat_inspector.py`. Structure confirmation only (resolve id -> file, hash, header, which `xi_tinkerer` parsers accept it). Asset/model viewing is intentionally out of scope; XI-Tools/XI-Viewer already cover that.
+
+**Feature-presence probes** — `workbench/client/binary_probes.py`, test `test_fixtures/test_binary_probes.py`. A probe (string or byte pattern) run against a client binary is persisted like the DAT adapter's records: `Capability` (`CLIENT_BINARY_PROBE`), snapshot-scoped `CapabilityObservation` (value has match count, samples, binary name, SHA-256 = build fingerprint) and `Evidence`. A hit is `VERIFIED`; a miss stays `UNKNOWN`, never absent, because packed FFXiMain.dll cannot prove absence. A probe with a `feature` id also writes a `CapabilityRequirement`, so Feature Checker reports `REQUIRED_CAPABILITIES_VERIFIED` or `UNKNOWN_REQUIRED_CAPABILITY`. Re-running is idempotent.
+
+Real finding on the supplied FFXiMain.dll: strings `/wardrobe`, `/wardrobe2`, `/wardrobe3`, `/wardrobe4` exist; `wardrobe 8` not found (UNKNOWN, not proof of absence).
+
+Not built: GUI to define/run probe sets, saved probe-set files, Client Overview / Build page showing fingerprints.

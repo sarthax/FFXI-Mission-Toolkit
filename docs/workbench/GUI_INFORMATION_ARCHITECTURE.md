@@ -194,10 +194,10 @@ Purpose: client-side DAT, EXE/DLL and capability evidence.
 
 Subsections:
 - Client Overview / Build.
-- DAT Inspector.
+- DAT Inspector. (implemented, read-only: `/datinspector`)
 - Client ↔ Server Item Comparison.
 - Model Viewer.
-- EXE/DLL Binary Inspector.
+- EXE/DLL Binary Inspector. (implemented, read-only: `/binaryinspector`)
 - Binary Diff.
 - Strings / Imports / Exports / Sections.
 - Address/Xref Evidence.
