@@ -162,6 +162,7 @@ Current closure statuses:
 
 - `COMPLETE`
 - `COMPLETE_WITH_REVIEWED_EXCLUSIONS`
+- `COMPLETE_WITH_USER_EXCLUSIONS`
 - `MANUAL_REQUIRED`
 - `BLOCKED`
 
@@ -172,7 +173,7 @@ Package gate statuses include:
 - `MANUAL_REQUIRED`
 - `BLOCKED`
 
-Package creation requires `package_gate == READY`.
+Package creation requires the scope to be `REVIEWED`. A `READY` scope produces a normal reviewed package. A reviewed `MANUAL_REQUIRED` scope may still be assembled for inspection (for example after an explicit user `EXCLUDE`), but it cannot pass automatic apply readiness.
 
 ## Package creation behavior
 
@@ -202,6 +203,7 @@ For migration-root artifacts:
 
 - `INCLUDE` keeps the original MigrationAction.
 - `TARGET_EQUIVALENT`, `NOT_REQUIRED`, or `EXCLUDE` converts the package action to explicit `NOT_REQUIRED` with the reviewed reason.
+- explicit `EXCLUDE` preserves user agency but makes the scope/package `MANUAL_REQUIRED`; it is not treated as evidence that the target safely satisfies the dependency.
 
 For a newly discovered artifact explicitly marked `INCLUDE`:
 
