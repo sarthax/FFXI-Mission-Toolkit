@@ -24,6 +24,12 @@ def main():
         assert topaz_next.schema_profile.profile_id=="topaz-next"
         assert topaz_next.schema_profile is not TOPAZ
         assert topaz_next.resolve_table("mob_spawns")==TOPAZ.table("mob_spawns")
+        tn_record=topaz_next.normalize_row("item_basic",{
+            "itemid":1,"subid":0,"name":"demo","sortname":"demo",
+            "stackSize":1,"flags":0,"aH":99,"NoSale":0,"BaseSell":0,
+        })
+        assert tn_record.source_family=="TOPAZ_NEXT",tn_record
+        assert tn_record.identity==( ("item_id",1), ),tn_record
 
         override=TableShape(
             "item_equipment","custom_equipment.sql","custom_equipment",
@@ -43,6 +49,13 @@ def main():
         assert TOPAZ.table("item_equipment").source_file=="item_equipment.sql"
         assert custom.resolve_table("mob_spawns")==TOPAZ.table("mob_spawns")
         assert "fixture override" in custom.schema_profile.notes
+        custom_record=custom.normalize_row("item_equipment",{
+            "itemId":123,"name":"custom_item","level":50,"ilevel":0,
+            "jobs":1,"shieldSize":0,"slot":1,"rslot":0,
+        })
+        assert custom_record.source_family=="CUSTOM:my-fork",custom_record
+        assert custom_record.source_table=="custom_equipment",custom_record
+        assert custom_record.identity==( ("item_id",123), ),custom_record
     print("server adapter profile self-test: PASS")
 
 if __name__=="__main__":
