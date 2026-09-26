@@ -720,3 +720,19 @@ The analyzer distinguishes:
 Identity namespaces are scoped by logical record type and the adapter-defined identity tuple. Composite identities therefore prevent a reused numeric component from being treated as a collision when its surrounding identity scope differs.
 
 The analyzer intentionally does not use name-only equivalence and does not replace the existing canonical/entity identity model. It is an additional migration-safety analysis over normalized records. Migration-planner gating and typed research-tool exposure remain follow-on integration work.
+
+
+## 2026-09-25 — Collision-aware migration planning
+
+Generic ID/content collision findings now influence migration safety rather than remaining informational-only.
+
+Planning behavior:
+- `EXACT_IDENTITY_EQUIVALENT` becomes `NOT_REQUIRED / COMPATIBLE`;
+- `ID_CONTENT_COLLISION` becomes `MANUAL_REVIEW / BLOCKED`;
+- `CONTENT_RENUMBER_CANDIDATE` becomes `RENUMBER / MANUAL_REQUIRED`;
+- duplicate identities block deterministic migration;
+- unresolved/source-only/target-only identities remain explicit manual-review work.
+
+The generic package planner now propagates any `BLOCKED` or `FAILED` action to package status `BLOCKED` instead of collapsing it into `MANUAL_REQUIRED`. This prevents an automatic migration package from appearing merely reviewable when a target identifier is already occupied by different content.
+
+Renumber candidates are intentionally not AUTO_MIGRATABLE: identical normalized fields are evidence of a remap candidate, not proof that two records are the same gameplay entity.
