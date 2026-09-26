@@ -5,6 +5,17 @@ from .base import FieldMapping, SchemaProfile, TableShape
 
 
 def _common(equipment_file: str = "item_equipment.sql") -> dict[str, TableShape]:
+    item_basic_fields=(
+        FieldMapping("item_id",("itemid","itemId"),True),
+        FieldMapping("sub_id",("subid","subId")),
+        FieldMapping("name",("name",),True),
+        FieldMapping("sort_name",("sortname","sortName")),
+        FieldMapping("stack_size",("stackSize","stacksize")),
+        FieldMapping("flags",("flags",)),
+        FieldMapping("auction_house_category",("aH","ah")),
+        FieldMapping("no_sale",("NoSale","nosale")),
+        FieldMapping("base_sell",("BaseSell","basesell")),
+    )
     equipment_fields=(
         FieldMapping("item_id",("itemid","itemId"),True),
         FieldMapping("name",("name",),True),
@@ -165,6 +176,8 @@ def _common(equipment_file: str = "item_equipment.sql") -> dict[str, TableShape]
         FieldMapping("content_tag",("content_tag",)),
         FieldMapping("merit_id",("meritid","meritId")),
     )
+    topaz_item_basic_columns=("itemid","subid","name","sortname","stackSize","flags","aH","NoSale","BaseSell")
+    lsb_item_basic_columns=("itemid","subid","name","sortname","name_jp","type","stackSize","flags","aH","BaseSell")
     npc_columns=("npcid","name","polutils_name","pos_rot","pos_x","pos_y","pos_z","flag","speed","speedsub","animation","animationsub","namevis","status","entityFlags","look","name_prefix","content_tag","widescan")
     topaz_group_columns=("groupid","poolid","zoneid","name","respawntime","spawntype","dropid","HP","MP","minLevel","maxLevel","allegiance")
     dsp_group_columns=("groupid","poolid","zoneid","respawntime","spawntype","dropid","HP","MP","minLevel","maxLevel","allegiance")
@@ -184,7 +197,10 @@ def _common(equipment_file: str = "item_equipment.sql") -> dict[str, TableShape]
     instance_entity_columns=("instanceid","id")
     topaz_instance_columns=("instanceid","instance_name","instance_zone","entrance_zone","time_limit","start_x","start_y","start_z","start_rot","music_day","music_night","battlesolo","battlemulti")
     return {
-        "item_basic": TableShape("item_basic", "item_basic.sql", "item_basic"),
+        "item_basic": TableShape("item_basic", "item_basic.sql", "item_basic",
+            parse_columns=topaz_item_basic_columns,
+            field_mappings=item_basic_fields,
+            identity_fields=("item_id",)),
         "item_equipment": TableShape("item_equipment", equipment_file, "item_equipment", aliases=("item_armor",),
             field_mappings=equipment_fields, identity_fields=("item_id",)),
         "item_weapon": TableShape("item_weapon", "item_weapon.sql", "item_weapon",
@@ -303,6 +319,22 @@ LSB = SchemaProfile(
     family="LSB",
     tables={
         **_common(),
+        "item_basic": TableShape(
+            "item_basic","item_basic.sql","item_basic",
+            parse_columns=("itemid","subid","name","sortname","name_jp","type","stackSize","flags","aH","BaseSell"),
+            field_mappings=tuple(
+                m for m in _common()["item_basic"].field_mappings
+                if m.logical_name != "no_sale"
+            ) + (
+                FieldMapping("name_jp",("name_jp",)),
+                FieldMapping("item_type",("type",)),
+            ),
+            identity_fields=("item_id",),
+            notes=(
+                "LSB item_basic replaces legacy NoSale with explicit item type and adds Japanese name text.",
+                "LSB flags uses a wider physical integer type; logical flags semantics remain shared.",
+            ),
+        ),
         "mob_pools": TableShape(
             "mob_pools", "mob_pools.sql", "mob_pools",
             parse_columns=("poolid","name","packet_name","speciesid","modelid","mJob","sJob","cmbSkill","cmbDelay","cmbDmgMult","behavior","aggro","true_detection","links","mobType","immunity","name_prefix","flag","entityFlags","animationsub","hasSpellScript","spellList","namevis","roamflag","skill_list_id","resist_id","modelSize","modelHitboxSize"),
