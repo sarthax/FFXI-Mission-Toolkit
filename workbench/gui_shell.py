@@ -175,6 +175,7 @@ WORKSPACES = (
             {"label": "Model Viewer", "href": "/modelviewer"},
             {"label": "DAT Inspector", "href": "/datinspector"},
             {"label": "Binary Inspector", "href": "/binaryinspector"},
+            {"label": "Dialog Drift", "href": "/dialogdrift"},
         ),
     },
     {

@@ -6005,6 +6005,21 @@ def clientoverview_page(request: Request):
     return templates.TemplateResponse(request, "client_overview.html", {"request": request, "ov": ov, "error": error})
 
 
+@app.get("/dialogdrift", response_class=HTMLResponse)
+def dialogdrift_page(request: Request):
+    import dialog_drift_overview as ddo
+    rows, error, checked = [], None, None
+    try:
+        rows = ddo.overview(DB_PATH)
+        con = sqlite3.connect(f"file:{DB_PATH.as_posix()}?mode=ro", uri=True)
+        checked = con.execute("SELECT MAX(checked_at) FROM dialog_drift_report").fetchone()[0]
+        con.close()
+    except Exception as ex:
+        error = f"{type(ex).__name__}: {ex}"
+    return templates.TemplateResponse(request, "dialog_drift.html", {
+        "request": request, "rows": rows, "summary": ddo.summary(rows), "checked": checked, "error": error})
+
+
 @app.post("/binaryinspector/save-probes", response_class=HTMLResponse)
 def binaryinspector_save_probes(request: Request, run_set: str = Form(...)):
     import binary_inspector as bi

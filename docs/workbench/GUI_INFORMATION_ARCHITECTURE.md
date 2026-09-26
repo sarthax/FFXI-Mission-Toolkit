@@ -194,6 +194,7 @@ Purpose: client-side DAT, EXE/DLL and capability evidence.
 
 Subsections:
 - Client Overview / Build.
+- Dialog Drift (`/dialogdrift`): read-only cross-zone drift table with inferred per-zone offsets.
 - DAT Inspector. (implemented, read-only: `/datinspector`)
 - Client ↔ Server Item Comparison.
 - Model Viewer.
