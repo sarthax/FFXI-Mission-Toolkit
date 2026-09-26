@@ -101,6 +101,7 @@ jobs:
           python test_fixtures/test_live_target_validation.py
           python test_fixtures/test_live_target_validation_cli.py
           python test_fixtures/test_entity_symbol_identity.py
+          python test_fixtures/test_identity_resolver.py
           python test_fixtures/test_roadmap_phase8.py
           python test_fixtures/test_instance_feature_slice.py
           python test_fixtures/test_instance_slice_compare.py
