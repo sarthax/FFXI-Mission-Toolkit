@@ -2623,6 +2623,7 @@ def packages_scope_mark_reviewed(
             migration_id.strip(),
             "REVIEWED",
             notes=notes.strip() or None,
+            scope_hash=scope["scope_hash"],
         )
     finally:
         if con is not None:
