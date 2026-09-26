@@ -4495,6 +4495,17 @@ def restart_server(request: Request):
     return templates.TemplateResponse(request, "shutdown.html", {"mode": "restart"})
 
 
+# ---- Domain landing pages -------------------------------------------------------------------
+@app.get("/domains/assault", response_class=HTMLResponse)
+def assault_domain_page(request: Request):
+    """Assault domain workspace: a stable home for Assault-specific development/admin workflows.
+
+    Existing generic editors remain canonical; this page links into them rather than duplicating
+    Zone Editor or mission/capture logic while the domain package grows.
+    """
+    return templates.TemplateResponse(request, "domain_assault.html", {"request": request})
+
+
 # ---- Nyzul Isle plot tool (nyzul_plot.py) ---------------------------------------------------
 import nyzul_plot
 import zone_plot  # reused below for zone 77's live door/prop rows (npc_list "_"-named entities)
