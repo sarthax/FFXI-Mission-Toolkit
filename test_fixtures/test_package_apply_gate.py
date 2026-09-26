@@ -26,6 +26,21 @@ def main():
         ready=assess_apply_readiness(package)
         assert ready.status=="READY",ready
 
+        scope_required_package=root/"scope-required"
+        scope_manifest=build_package_manifest(build_package_plan([action]),[artifact])
+        scope_manifest["schema"]=3
+        assemble_migration_package(scope_manifest,source,scope_required_package)
+        scope_missing=assess_apply_readiness(scope_required_package)
+        assert scope_missing.status=="BLOCKED",scope_missing
+
+        reviewed_scope_package=root/"scope-reviewed"
+        reviewed_manifest=build_package_manifest(build_package_plan([action]),[artifact])
+        reviewed_manifest["schema"]=3
+        reviewed_manifest["dependency_scope"]={"package_gate":"READY"}
+        assemble_migration_package(reviewed_manifest,source,reviewed_scope_package)
+        scope_ready=assess_apply_readiness(reviewed_scope_package)
+        assert scope_ready.status=="READY",scope_ready
+
         validation_path=package/"WORKBENCH_VALIDATION_PACKAGE.json"
         validation=json.loads(validation_path.read_text(encoding="utf-8"))
         validation["status"]="MANUAL_REQUIRED"
