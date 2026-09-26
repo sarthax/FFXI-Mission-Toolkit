@@ -958,7 +958,7 @@ Artifacts:
 - `docs/workbench/GUI_ROUTE_MAP.json`
 - `test_fixtures/test_gui_information_architecture.py`
 
-The live `gui_server.py` route surface contains 142 FastAPI method/path registrations. Every registration now has exactly one canonical GUI home and a migration disposition. The map is regression-checked so future route additions/removals must be deliberately incorporated into the information architecture.
+The live `gui_server.py` route surface contains 144 FastAPI method/path registrations. Every registration now has exactly one canonical GUI home and a migration disposition. The map is regression-checked so future route additions/removals must be deliberately incorporated into the information architecture.
 
 Canonical top-level workspaces:
 - Home / Project
@@ -986,7 +986,7 @@ Current route ownership:
 - Tools: 62
 - Settings: 13
 - Validation: 5
-- Packages: 0 current routes (NEW GUI required)
+- Packages: 2
 
 The high Tools count is dominated by the supporting APIs/actions of the existing Zone Editor and Item Editor and does not imply those tools will be flattened into generic navigation. The Domains count currently consists of the Assault landing page plus the existing Nyzul page/data/action routes.
 
@@ -995,7 +995,7 @@ No existing GUI capability was removed or hidden by this milestone.
 
 ## 2026-09-25 — Shared GUI application shell
 
-Implemented the shared GUI shell and subsequent Domains workspace expansion without redesigning existing Nyzul/Zone Editor internals. The current FastAPI surface is 142 routes.
+Implemented the shared GUI shell and subsequent Domains workspace expansion without redesigning existing Nyzul/Zone Editor internals. The current FastAPI surface is 144 routes.
 
 The shared `base.html` shell now provides:
 - all eleven current top-level workspaces: Home / Project, Features, Domains, Backport & Migration, Captures, Server, Client, Validation, Packages, Tools, and Settings;
@@ -1008,9 +1008,9 @@ The shared `base.html` shell now provides:
 - Assault and Nyzul Isle grouped under Battle Systems; the existing /nyzul implementation is preserved and now owned by Domains rather than Tools;
 - preserved direct access to LLM/research, Wiki, Model Viewer, legacy Backport Package, diagnostics, lookup/decode tools, and current editor workflows.
 
-`workbench.gui_shell` owns the read-only shell model and resolves active workspace ownership from `GUI_ROUTE_MAP.json`; it does not add routes, select snapshots, or mutate settings. Validation and Packages remain visible top-level workspaces while their consolidated pages remain future work. The existing Backport Package route stays available as an explicitly labeled legacy workflow.
+`workbench.gui_shell` owns the read-only shell model and resolves active workspace ownership from `GUI_ROUTE_MAP.json`; it does not add routes, select snapshots, or mutate settings. Validation and Packages are now functional top-level workspaces. The existing Backport Package route stays available as an explicitly labeled legacy workflow.
 
-Regression coverage in `test_fixtures/test_gui_shell.py` reruns the 142-route information-architecture check, verifies dynamic route ownership including Domains/Battle Systems, verifies configured versus unknown context semantics, and renders representative Home, Captures, and mutation-editor templates through the shared shell. The Workbench regression workflow runs this shell test.
+Regression coverage in `test_fixtures/test_gui_shell.py` reruns the 144-route information-architecture check, verifies dynamic route ownership including Domains/Battle Systems, verifies configured versus unknown context semantics, and renders representative Home, Captures, and mutation-editor templates through the shared shell. The Workbench regression workflow runs this shell test.
 
 
 ## 2026-09-25 — Real packed-DLL deeper pass
@@ -1055,3 +1055,17 @@ The Validation workspace now exposes `/validation/live-target` as a safe GUI ove
 - optional persistence writes only canonical validation/capability evidence and records `credentials_persisted=False`;
 - database representation success remains explicitly separate from runtime, packet/capture, Lua, and client validation;
 - the GUI route surface is now 142 method/path registrations.
+
+
+## 2026-09-25 — Packages workspace GUI
+
+Packages is now a functional top-level workspace with a read-only first implementation:
+
+- `/packages` discovers assembled migration-package workspaces beneath the configured project/backport root by locating `WORKBENCH_PACKAGE_MANIFEST.json`;
+- package discovery shows migration/feature identity, source/target family, manifest status, and execution-step count without modifying package contents;
+- `/packages/review` calls the existing consolidated package-review service and presents overall status, validation status, cohesion, apply readiness, patch lifecycle, action counts, execution steps, and validation-package metadata;
+- package paths are resolved beneath the configured project root and rejected if they escape that root;
+- target-root input is read-only and is used only for existing patch-lifecycle drift/readiness checks;
+- no approval, apply, rollback, package mutation, or target mutation action was added in this milestone;
+- the existing `/backport/package` workflow remains available as explicitly labeled legacy compatibility until the new Packages workspace reaches creation/apply parity;
+- the GUI route surface is now 144 method/path registrations.
