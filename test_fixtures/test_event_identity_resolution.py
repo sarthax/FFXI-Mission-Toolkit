@@ -21,6 +21,8 @@ def main() -> None:
         con = sqlite3.connect(Path(td) / "workbench.db")
         register_snapshot(con, IdentitySnapshot("client:new", "CLIENT", "RETAIL", "new"))
         register_snapshot(con, IdentitySnapshot("client:old", "CLIENT", "RETAIL", "old"))
+        register_snapshot(con, IdentitySnapshot("client:structure-only", "CLIENT", "RETAIL", "structure-only"))
+        register_snapshot(con, IdentitySnapshot("client:unknown-opcode", "CLIENT", "RETAIL", "unknown-opcode"))
 
         # Same semantic event:
         # new client: event 77, message 503
@@ -104,6 +106,80 @@ def main() -> None:
 
         closure = assess_identity_closure([resolved], minimum_confidence="HIGH")
         assert closure.status == "READY", closure
+
+        # Target lacks matching dialog text evidence but has the same fully decoded structure.
+        ingest_event_structure_records(
+            con,
+            snapshot_id="client:structure-only",
+            zone_key="NORTH_GUSTABERG_S",
+            resources=[
+                EventResource(
+                    entity_id=3001,
+                    event_id=44,
+                    byte_code=bytes([0x48, 0xE7, 0x03, 0x21]),
+                    block_event_count=1,
+                    block_index=0,
+                )
+            ],
+            dialog_entries={},
+        )
+        con.commit()
+        structure_only = resolve_event_identity(
+            con,
+            source_snapshot_id="client:new",
+            target_snapshot_id="client:structure-only",
+            source_numeric_id=77,
+            zone_key="NORTH_GUSTABERG_S",
+            source_actor_key=2002,
+            minimum_confidence="HIGH",
+        )
+        assert structure_only.status == "TARGET_EQUIVALENT", structure_only
+        assert structure_only.target_numeric_id == "44", structure_only
+        assert structure_only.confidence == "HIGH", structure_only
+        assert structure_only.metadata["match_basis"] == "DECODED_STRUCTURE", structure_only
+
+        # Unknown opcodes may produce a coarse shape, but cannot satisfy HIGH-confidence closure.
+        ingest_event_structure_records(
+            con,
+            snapshot_id="client:unknown-opcode",
+            zone_key="NORTH_GUSTABERG_S",
+            resources=[
+                EventResource(
+                    entity_id=4001,
+                    event_id=55,
+                    byte_code=bytes([0xFE, 0xFE]),
+                    block_event_count=1,
+                    block_index=0,
+                )
+            ],
+            dialog_entries={},
+        )
+        ingest_event_structure_records(
+            con,
+            snapshot_id="client:new",
+            zone_key="UNKNOWN_ZONE",
+            resources=[
+                EventResource(
+                    entity_id=4002,
+                    event_id=56,
+                    byte_code=bytes([0xFE, 0xFE]),
+                    block_event_count=1,
+                    block_index=2,
+                )
+            ],
+            dialog_entries={},
+        )
+        con.commit()
+        low = resolve_event_identity(
+            con,
+            source_snapshot_id="client:new",
+            target_snapshot_id="client:unknown-opcode",
+            source_numeric_id=56,
+            zone_key="UNKNOWN_ZONE",
+            source_actor_key=4002,
+            minimum_confidence="HIGH",
+        )
+        assert low.status == "TARGET_ID_UNRESOLVED", low
 
         # Add a second target event with identical composite semantics.
         # Resolver must refuse to guess which numeric event is correct.
