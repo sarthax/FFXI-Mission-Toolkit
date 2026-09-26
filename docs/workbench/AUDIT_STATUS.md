@@ -924,3 +924,26 @@ A new integrated runtime regression proves:
 capture-index-shaped evidence -> canonical packet observation -> capture backtrace -> deterministic runtime validation -> canonical ValidationRun/ValidationResult.
 
 Workbench Regression #1236 is green with this integrated runtime fixture.
+
+
+## 2026-09-25 — P0 architecture closure
+
+The P0 workbench architecture is now closed on `workbench-rework/audit-foundation`.
+
+Closure is based on implemented behavior and regression evidence rather than unchecked roadmap intent. Phase 1, Phase 2 P0, Phase 3, the P0 subset of Phase 4, and the P0 subset of Phase 5 are complete under the documented boundaries.
+
+Final closure evidence:
+- the core regression suite remains green through the schema, adapter, binding, collision, client-DAT, live-target, capture, packet, and runtime-validation additions;
+- Workbench Ancient Vows Cross-Fork #129 completed successfully on the current branch head using pinned LandSandBoat and legacy Darkstar public snapshots;
+- the flagship test still preserves MANUAL_REQUIRED where LSB->DSP representation/converter authority is not sufficient, rather than upgrading uncertainty to success.
+
+P0 intentionally does not include:
+- generalized DAT writing/migration orchestration;
+- every SQL table in every fork;
+- dialog drift or richer client packet/DAT synchronization;
+- additional runtime probes beyond the current indexed/capture/backtrace/validation foundation;
+- domain-specific system packages;
+- GUI exposure for the new backend architecture;
+- live SQL/database apply/rollback.
+
+Those items continue in P1+ and do not reopen the P0 architectural foundation.
