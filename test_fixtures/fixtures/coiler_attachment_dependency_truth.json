@@ -1,0 +1,193 @@
+{
+  "schema": 1,
+  "kind": "WORKBENCH_DEPENDENCY_TRUTH_SET",
+  "fixture_id": "fixture:coiler-automaton-attachment",
+  "subject": {
+    "name": "Coiler",
+    "feature_type": "automaton_attachment",
+    "source_family": "LSB",
+    "source_revision": "3747feee0e38ab5c0283c4fe8deea7f0a9022351"
+  },
+  "source_paths": [
+    "scripts/enum/item.lua",
+    "sql/item_puppet.sql",
+    "scripts/actions/abilities/pets/attachments/coiler.lua",
+    "scripts/globals/automaton.lua",
+    "src/map/items/item_puppet.h",
+    "src/map/items/item_puppet.cpp",
+    "src/map/utils/puppetutils.cpp",
+    "src/map/lua/luautils.cpp",
+    "src/map/lua/lua_item_puppet.cpp",
+    "data/enums/mod.yaml",
+    "scripts/zones/Nashmau/npcs/Rararoon.lua",
+    "data/zones/alzadaal_undersea_ruins/mobs.yaml"
+  ],
+  "verified_facts": {
+    "inventory_item": {
+      "symbol": "xi.item.COILER",
+      "item_id": 2413,
+      "role": "obtainable inventory item / trade-shop-loot identity"
+    },
+    "puppet_equipment_record": {
+      "table": "item_puppet",
+      "item_id": 8583,
+      "name": "coiler",
+      "equip_slot": 3,
+      "equip_slot_semantics": "ITEM_PUPPET_ATTACHMENT",
+      "element_slots_raw": 131072,
+      "internal_attachment_index": 135,
+      "element_slot_interpretation": "Thunder element capacity cost 2 (0x20000 nibble encoding)"
+    },
+    "behavior_script": "scripts/actions/abilities/pets/attachments/coiler.lua",
+    "behavior_dispatch": {
+      "dynamic_name": "coiler",
+      "engine_entrypoints": [
+        "luautils::OnAttachmentEquip",
+        "luautils::OnAttachmentUnequip",
+        "luautils::OnManeuverGain",
+        "luautils::OnManeuverLose",
+        "luautils::OnUpdateAttachment"
+      ]
+    },
+    "automaton_modifier": {
+      "global_script": "scripts/globals/automaton.lua",
+      "modifier": "xi.mod.DOUBLE_ATTACK",
+      "values_by_maneuvers": [
+        3,
+        10,
+        20,
+        30
+      ],
+      "optic_fiber_eligible": true
+    },
+    "runtime_functions": [
+      "xi.automaton.onAttachmentEquip",
+      "xi.automaton.onAttachmentUnequip",
+      "xi.automaton.onManeuverGain",
+      "xi.automaton.onManeuverLose",
+      "xi.automaton.updateAttachmentModifier",
+      "xi.automaton.getManeuverCount",
+      "xi.automaton.getExtraHits"
+    ],
+    "weapon_skill_consumers": [
+      "scripts/actions/abilities/pets/automaton/knockout.lua",
+      "scripts/actions/abilities/pets/automaton/slapstick.lua",
+      "scripts/actions/abilities/pets/automaton/bone_crusher.lua",
+      "scripts/actions/abilities/pets/automaton/string_clipper.lua",
+      "scripts/actions/abilities/pets/automaton/chimera_ripper.lua",
+      "scripts/actions/abilities/pets/automaton/string_shredder.lua",
+      "scripts/actions/abilities/pets/automaton/shield_bash.lua"
+    ],
+    "persistence_and_equipping": {
+      "cxx": "src/map/utils/puppetutils.cpp",
+      "persistence_table": "char_pet",
+      "fields": [
+        "unlocked_attachments",
+        "equipped_attachments"
+      ],
+      "lookup_rule": "0x2100 + attachment byte",
+      "unlock_bit_rule": "item_puppet ID low byte",
+      "attachment_slots": 12
+    },
+    "acquisition_sources": [
+      {
+        "type": "shop",
+        "path": "scripts/zones/Nashmau/npcs/Rararoon.lua",
+        "price": 185250,
+        "requirement": "PUP level 80"
+      },
+      {
+        "type": "loot",
+        "path": "data/zones/alzadaal_undersea_ruins/mobs.yaml",
+        "source_mob": "Ob",
+        "chance": "uncommon"
+      }
+    ],
+    "conditional_interactions": [
+      {
+        "dependency": "Optic Fiber performance boost",
+        "relation": "CONDITIONALLY_MODIFIES",
+        "reason": "Coiler modifier row has opticFiber=true; performance boost changes modifier magnitude when compatible Optic Fiber effects are active."
+      },
+      {
+        "dependency": "Overdrive / maneuver count semantics",
+        "relation": "CONDITIONALLY_MODIFIES",
+        "reason": "getManeuverCount treats active maneuvers under Overdrive as three for attachment modifier scaling."
+      }
+    ]
+  },
+  "required_dependency_classes": [
+    {
+      "key": "inventory_item_identity",
+      "description": "Obtainable Coiler item/symbol identity.",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "puppet_internal_identity",
+      "description": "Internal item_puppet attachment identity, slot type, element-slot cost, and attachment index.",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "identity_mapping",
+      "description": "Mapping between obtainable inventory item/sub-ID semantics and internal puppet-equipment identity.",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "attachment_lua",
+      "description": "Per-attachment Lua lifecycle script.",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "automaton_global_behavior",
+      "description": "Shared automaton attachment modifier engine and Coiler modifier row.",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "modifier_enum",
+      "description": "DOUBLE_ATTACK modifier definition and compatible target semantics.",
+      "expected_status": "REQUIRED_OR_TARGET_EQUIVALENT"
+    },
+    {
+      "key": "cpp_puppet_item_model",
+      "description": "CItemPuppet equip slot/element-slot representation and item loading.",
+      "expected_status": "REQUIRED_OR_TARGET_EQUIVALENT"
+    },
+    {
+      "key": "cpp_attachment_runtime",
+      "description": "Puppet unlock/equip/update/maneuver hooks and dynamic Lua dispatch.",
+      "expected_status": "REQUIRED_OR_TARGET_EQUIVALENT"
+    },
+    {
+      "key": "persistence_schema",
+      "description": "char_pet attachment unlock/equip persistence used by puppetutils.",
+      "expected_status": "REQUIRED_OR_TARGET_EQUIVALENT"
+    },
+    {
+      "key": "weapon_skill_consumers",
+      "description": "Automaton WS scripts using getExtraHits so Coiler affects multi-hit behavior correctly.",
+      "expected_status": "REQUIRED_OR_TARGET_EQUIVALENT"
+    },
+    {
+      "key": "acquisition_paths",
+      "description": "Shop/drop paths that make Coiler obtainable; package reviewer may include/exclude acquisition separately from behavior.",
+      "expected_status": "QUESTIONABLE_USER_SCOPE"
+    },
+    {
+      "key": "conditional_interactions",
+      "description": "Optic Fiber and Overdrive/maneuver interactions that modify Coiler behavior but are not hard prerequisites.",
+      "expected_status": "CONDITIONAL"
+    }
+  ],
+  "known_current_toolkit_gaps": [
+    "No item_puppet logical table/profile exists in current server adapters.",
+    "No canonical mapping exists between obtainable inventory item identity and internal puppet attachment identity/sub-ID semantics.",
+    "Dynamic C++ Lua dispatch by attachment name is not guaranteed to produce item_puppet -> attachment Lua artifact edges.",
+    "Shared automaton.lua contains behavior for many attachments, so package scope needs symbol/section-level dependency evidence without automatically treating every attachment in the file as a Coiler dependency.",
+    "Modifier semantics such as DOUBLE_ATTACK are not currently modeled as a complete Lua -> enum -> core behavior dependency chain for package closure.",
+    "Coiler weapon-skill fan-out through xi.automaton.getExtraHits is not currently guaranteed to be discovered transitively.",
+    "Persistence dependencies on char_pet.unlocked_attachments/equipped_attachments are not currently represented as schema dependencies.",
+    "Conditional interactions such as Optic Fiber amplification need a relationship distinct from hard REQUIRES.",
+    "Acquisition paths (shop/drop) need reviewer-controlled scope separate from the attachment behavior implementation.",
+    "Current package discovery has no Automaton/Puppet domain analyzer to seed these logical relationships."
+  ]
+}
