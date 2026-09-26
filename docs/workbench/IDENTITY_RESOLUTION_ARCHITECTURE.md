@@ -516,6 +516,35 @@ The actor id is not copied to the target snapshot. Target actor identity still r
 identity mapping/evidence; if multiple target event candidates remain, resolution is
 `TARGET_ID_AMBIGUOUS`.
 
+
+
+### Portable entity-role fingerprint evidence
+
+Decoded event arguments now retain only entity references whose semantics are intrinsically portable
+across client generations:
+
+- `LOCAL_PLAYER`
+- `EVENT_ENTITY`
+- party-member references
+- alliance-member references
+- party-reference slots
+
+These roles participate in the decoded structural fingerprint.
+
+Ordinary raw entity/server IDs do **not** participate in the semantic hash. Two otherwise identical
+events that reference different literal NPC IDs therefore remain structurally equivalent until the
+separate entity identity resolver determines whether those NPC representations correspond.
+
+Conversely, changing a semantic role such as `EVENT_ENTITY` to `LOCAL_PLAYER` changes the
+event structural fingerprint.
+
+This preserves the separation:
+
+```text
+portable semantic entity role -> event fingerprint evidence
+raw actor/NPC/entity id       -> snapshot context / separate identity resolution
+```
+
 ### Package confidence policy
 
 Identity closure now accepts a minimum confidence threshold.
