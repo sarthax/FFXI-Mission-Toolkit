@@ -16,6 +16,7 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+import re
 from typing import Callable, Iterable, Any
 
 from .identity_snapshot import ClientIdentityManifest, file_sha256, write_manifest
@@ -44,6 +45,7 @@ class ExportedResource:
     zone_id: int | None = None
     zone_key: str | None = None
     dat_id: int | None = None
+    dat_path: str | None = None
 
 
 @dataclass(frozen=True)
@@ -102,6 +104,51 @@ def _run_export(
     )
 
 
+def _run_export_path(
+    xi_tinkerer: Path,
+    client_root: Path,
+    dat_path: str,
+    output_path: Path,
+    *,
+    runner: Callable[..., Any] = subprocess.run,
+) -> tuple[bool, str]:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    proc = runner(
+        [
+            str(xi_tinkerer),
+            "export-dat",
+            str(client_root),
+            "--dat-path",
+            str(dat_path),
+            str(output_path),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    return (
+        bool(getattr(proc, "returncode", 1) == 0 and output_path.exists()),
+        ((getattr(proc, "stdout", "") or "") + "\n" + (getattr(proc, "stderr", "") or "")).strip(),
+    )
+
+
+def load_zone_event_paths(path: Path) -> dict[int, list[str]]:
+    """Parse vendored zone->event DAT mappings without a YAML dependency."""
+    raw = Path(path).read_text(encoding="utf-8", errors="ignore")
+    out: dict[int, list[str]] = {}
+    current_zone: int | None = None
+    for line in raw.splitlines():
+        m_zone = re.match(r"\s*-\s*id:\s*(\d+)\s*$", line)
+        if m_zone:
+            current_zone = int(m_zone.group(1))
+            continue
+        if current_zone is None:
+            continue
+        m_event = re.match(r'\s*events:\s*"([^"]+)"\s*$', line)
+        if m_event:
+            out.setdefault(current_zone, []).append(m_event.group(1))
+    return out
+
+
 def _snapshot_fingerprint(resources: Iterable[ExportedResource], build: str | None) -> str:
     h = sha256()
     h.update(str(build or "UNKNOWN").encode("utf-8"))
@@ -124,6 +171,7 @@ def extract_client_identity_snapshot(
     region: str | None = None,
     language: str | None = None,
     runner: Callable[..., Any] = subprocess.run,
+    event_map_path: Path | None = None,
 ) -> ExtractionResult:
     """Extract a portable identity snapshot from one installed FFXI client.
 
@@ -144,6 +192,12 @@ def extract_client_identity_snapshot(
     output_dir.mkdir(parents=True, exist_ok=True)
     resources: list[ExportedResource] = []
     failures: list[dict[str, Any]] = []
+    if event_map_path is None:
+        event_map_path = (
+            Path(__file__).resolve().parents[2]
+            / "vendor" / "FFXI-Resources" / "scripts" / "events" / "dats.yaml"
+        )
+    event_paths = load_zone_event_paths(event_map_path) if Path(event_map_path).is_file() else {}
 
     # Preserve hashes (and optionally copies) of the client resource index files. These hashes
     # are important even when build labels are supplied manually.
@@ -200,6 +254,40 @@ def extract_client_identity_snapshot(
                 dat_id=dat_id,
             )
         )
+
+        for event_index, event_dat_path in enumerate(event_paths.get(zone_id, [])):
+            suffix = "" if event_index == 0 else f"_variant{event_index}"
+            event_rel = Path("events") / f"{zone_id:03d}_{zone_key}{suffix}.yml"
+            event_dest = output_dir / event_rel
+            event_ok, event_diag = _run_export_path(
+                xi_tinkerer,
+                client_root,
+                event_dat_path,
+                event_dest,
+                runner=runner,
+            )
+            if not event_ok:
+                failures.append({
+                    "kind": "EVENT_RESOURCE",
+                    "zone_id": zone_id,
+                    "zone_key": zone_key,
+                    "dat_path": event_dat_path,
+                    "error": event_diag or "xi-tinkerer event export failed",
+                })
+                if event_dest.exists():
+                    event_dest.unlink()
+                continue
+            resources.append(
+                ExportedResource(
+                    kind="EVENT_RESOURCE",
+                    relative_path=event_rel.as_posix(),
+                    sha256=file_sha256(event_dest),
+                    size=event_dest.stat().st_size,
+                    zone_id=zone_id,
+                    zone_key=zone_key,
+                    dat_path=event_dat_path,
+                )
+            )
 
     fingerprint = _snapshot_fingerprint(resources, build)
     manifest = ClientIdentityManifest(
