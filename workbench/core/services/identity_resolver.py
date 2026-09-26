@@ -400,6 +400,7 @@ def resolve_identity(
     namespace: str,
     source_numeric_id: str | int,
     zone_key: str | None = None,
+    source_actor_key: str | int | None = None,
 ) -> IdentityResolution:
     """Resolve one source representation into the selected target snapshot."""
     ensure_schema(con)
@@ -418,6 +419,9 @@ def resolve_identity(
         if zone_key is not None:
             sql += " AND zone_key=?"
             params.append(zone_key)
+        if source_actor_key is not None:
+            sql += " AND actor_key=?"
+            params.append(str(source_actor_key))
         src = list(con.execute(sql, params))
 
         base = dict(
