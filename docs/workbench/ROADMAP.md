@@ -92,7 +92,7 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - [x] Formalize Feature/Implementation/Dependency.
 - [x] Add machine-readable analysis outputs.
 - [x] Implement generic SQLite-backed canonical graph store.
-- [ ] Connect existing entity_profile, map confidence, capture, packet, and backport reports. Initial capture graph connector is now present; broader adapters remain.
+- [x] Connect existing entity_profile, map confidence, capture, packet, and backport reports — all five now bridge into canonical graph/evidence records with dedicated regressions.
 - [x] Add generic bidirectional Feature Trace over canonical graph relationships.
 - [x] Add Feature Checker requirements/status evaluation on top of Feature Trace.
 - [x] Add build-condition/generated-source analyzer.
