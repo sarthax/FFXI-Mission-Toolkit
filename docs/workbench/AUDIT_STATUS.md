@@ -1083,3 +1083,8 @@ The Packages workspace now supports canonical package generation without target 
 - successful creation links directly into Packages > Review & Readiness;
 - approval/apply/rollback remain future UI work and must preserve the existing readiness, drift, explicit-approval, backup, journal, and rollback gates;
 - the GUI route surface is now 146 method/path registrations.
+
+
+## 2026-09-25 — Grouped Domains navigation
+
+The Domains workspace navigation was converted from a flat arrow-prefixed placeholder list into explicit parent/child groups. The shared shell now renders grouped domain categories as disclosure menus: only high-level domains are visible initially, child subsections are revealed when the group is opened, and the group containing the active route opens automatically. Assault and Nyzul Isle remain children of Battle Systems. This is a presentation/navigation change only; route ownership and domain/plugin semantics are unchanged.
