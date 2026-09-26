@@ -93,6 +93,8 @@ def analyze(package: Path):
             "confidence":"VERIFIED",
             "evidence_id":report_evidence_id,
             "source_snapshot_id":feature.get("source_snapshot_id"),
+            "created_at":None,
+            "updated_at":None,
             "notes":["Imported directly from BACKPORT_REPORT.md without semantic reinterpretation."],
         })
     actions=[]
@@ -144,6 +146,8 @@ def analyze(package: Path):
             "findings":[row["finding_id"] for row in findings],
             "notes":["Canonical import of assembled package report status/issues."],
             "source_snapshot_id":feature.get("source_snapshot_id"),
+            "created_at":None,
+            "tool_version":None,
         },
         "findings":findings,
         "dependencies":deps,
