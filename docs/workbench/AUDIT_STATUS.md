@@ -811,3 +811,18 @@ FeatureSurface migration planning now emits explicit review actions for:
 These additions make migration-rule gaps first-class rather than leaving them implicit in comparison output.
 
 Logical schema mapping is intentionally still open: item_basic, item_weapon, item_usable, spells, traits, and other broader server families need audited field mappings before full coverage can be claimed.
+
+
+## 2026-09-25 — Broader item/spell/trait logical schema mappings
+
+Logical schema coverage now includes audited mappings for:
+- `item_weapon`: item identity/name, skill/subskill, item-level skill/parry/magic-accuracy adjustments, damage type, hit count, delay, damage, and unlock points;
+- `item_usable`: item identity/name, valid targets, activation/animation timing, charges, use/reuse delays, and AOE;
+- `spells`: identity/name plus job/group/element/targeting/skill/cost/timing/message/animation/enmity/range/content fields, with lineage drift retained;
+- `traits`: composite trait identity plus job/level/rank/modifier/value/content metadata.
+
+The profile model deliberately preserves server-lineage differences instead of normalizing them away. The legacy DSP spell profile omits the newer family field already recorded by the project audit, while the LSB spell profile carries newer radius/status-effect fields. The project DSP trait profile continues to preserve its audited legacy merit-id difference rather than inheriting a modern schema.
+
+Regression coverage verifies cross-lineage equivalence for stable item shapes and explicit logical differences for lineage-specific spell/trait fields. Workbench Regression #1171 is green.
+
+`item_basic` remains intentionally unmapped in this pass. Its source SQL is very large and will receive a separate audited schema extraction rather than an inferred mapping.
