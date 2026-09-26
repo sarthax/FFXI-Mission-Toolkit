@@ -52,6 +52,7 @@ def main():
     assert names == [
         "Home / Project",
         "Features",
+        "Domains",
         "Backport & Migration",
         "Captures",
         "Server",
@@ -65,6 +66,10 @@ def main():
     assert route_owner("/entity")["home"] == "Server"
     assert route_owner("/zoneplot/restore", "POST")["section"] == "Editors > Zone Editor"
     assert route_owner("/itemedit/123.json")["section"] == "Editors > Item Editor"
+    assert route_owner("/domains/assault")["home"] == "Domains"
+    assert route_owner("/domains/assault")["section"] == "Assault"
+    assert route_owner("/nyzul")["home"] == "Domains"
+    assert route_owner("/nyzul/data.json")["section"] == "Nyzul Isle"
 
     planned = build_shell_context(
         path="/", method="GET", settings={}, workspace_slug="validation",
@@ -90,6 +95,15 @@ def main():
     assert next(section for section in tools["sections"] if section["active"])["label"] == "Lookup & Decode: Entity"
     tools_workspace = next(workspace for workspace in WORKSPACES if workspace["name"] == "Tools")
     assert next(section for section in tools_workspace["sections"] if section["label"] == "Lookup & Decode: Entity")["href"] == "/entity?shell=tools"
+
+    domains = next(workspace for workspace in WORKSPACES if workspace["name"] == "Domains")
+    assert next(section for section in domains["sections"] if section["label"] == "Assault")["href"] == "/domains/assault"
+    assert next(section for section in domains["sections"] if section["label"] == "Nyzul Isle")["href"] == "/nyzul"
+    assert {section["label"] for section in domains["sections"] if section.get("planned")} >= {"Salvage", "Einherjar", "Abyssea", "Domain Packages"}
+
+    nyzul = context_for("/nyzul")
+    assert nyzul["active_home"] == "Domains"
+    assert next(section for section in nyzul["sections"] if section["active"])["label"] == "Nyzul Isle"
 
     configured = build_shell_context(
         path="/captures",
@@ -148,7 +162,7 @@ def main():
     assert "Editors: Item Editor" in editor_html
     assert "Lookup &amp; Decode: Entity" in editor_html
     assert "section-link active mutation" in editor_html
-    assert "Specialized: Nyzul" in editor_html
+    assert "Specialized: Nyzul" not in editor_html
     assert any(
         section.get("href") == "/backport/package"
         for workspace in WORKSPACES
