@@ -69,6 +69,9 @@ def main():
     assert route_owner("/features/trace")["home"] == "Features"
     assert route_owner("/features/trace")["section"] == "Feature Trace"
     assert route_owner("/features/check")["section"] == "Feature Checker"
+    assert route_owner("/validation")["home"] == "Validation"
+    assert route_owner("/validation/runs")["section"] == "Runs & Results"
+    assert route_owner("/validation/runs/example-run")["section"] == "Runs & Results"
     assert route_owner("/domains/assault")["home"] == "Domains"
     assert route_owner("/domains/assault")["section"] == "Battle Systems > Assault"
     assert route_owner("/nyzul")["home"] == "Domains"
@@ -81,6 +84,11 @@ def main():
     )
     assert planned["active_home"] == "Validation"
     assert any(workspace["href"] == "/?workspace=packages" for workspace in WORKSPACES)
+    validation_workspace = next(workspace for workspace in WORKSPACES if workspace["name"] == "Validation")
+    assert validation_workspace["href"] == "/validation"
+    assert next(section for section in validation_workspace["sections"] if section["label"] == "Dashboard")["href"] == "/validation"
+    assert next(section for section in validation_workspace["sections"] if section["label"] == "Runs & Results")["href"] == "/validation/runs"
+    assert next(section for section in validation_workspace["sections"] if section["label"] == "Live Target")["planned"] is True
 
     captures = next(workspace for workspace in WORKSPACES if workspace["name"] == "Captures")
     assert {section["label"] for section in captures["sections"]}.isdisjoint({"Path Plot", "All Paths"})
@@ -149,6 +157,9 @@ def main():
         ("itemedit.html", "/itemedit", {}),
         ("feature_trace.html", "/features/trace", {"q": "", "depth": 3, "direction": "both", "result": None, "matches": [], "error": None}),
         ("feature_checker.html", "/features/check", {"q": "", "result": None, "matches": [], "error": None}),
+        ("validation_dashboard.html", "/validation", {"runs": [], "status_counts": {}, "result_counts": {}, "total_results": 0, "error": None}),
+        ("validation_runs.html", "/validation/runs", {"q": "", "status": "", "statuses": [], "runs": [], "error": None}),
+        ("validation_run_detail.html", "/validation/runs/test", {"run": None, "results": [], "error": None, "run_id": "test"}),
     )
     for template, path, values in pages:
         html = render(template, path, **values)
@@ -172,6 +183,13 @@ def main():
     model_html = render("model_viewer.html", "/modelviewer")
     assert 'aria-label="Primary workspaces"' in model_html
     assert re.search(r'class="workspace-link active"\s+href="/modelviewer"', model_html)
+
+    validation_shell = context_for("/validation")
+    assert validation_shell["active_home"] == "Validation"
+    assert next(section for section in validation_shell["sections"] if section["active"])["label"] == "Dashboard"
+    validation_runs_shell = context_for("/validation/runs/test-run")
+    assert validation_runs_shell["active_home"] == "Validation"
+    assert next(section for section in validation_runs_shell["sections"] if section["active"])["label"] == "Runs & Results"
 
     trace_shell = context_for("/features/trace")
     assert trace_shell["active_home"] == "Features"
