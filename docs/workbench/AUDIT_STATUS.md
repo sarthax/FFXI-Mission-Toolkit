@@ -1118,3 +1118,16 @@ Verified source relationships include Medusa entity 16998862; four adjacent Lami
 The proof exposes real current discovery gaps rather than declaring false closure: modern LSB zone YAML is not normalized by the current SQL-oriented server extractor; mob skill-list/spell-list membership and mob-skill definitions are not first-class logical dependency types; helper-ID arithmetic is not resolved; YAML loot is not linked to item records; require/mixin edges are not guaranteed; and Medusa-specific Lua→binding→C++ closure is not yet proven end to end.
 
 The fixture is regression-checked so future analyzer work must preserve the full proof boundary, including the important rule that same-name Besieged variants are research relations rather than automatic package members.
+
+
+## 2026-09-26 — Coiler dependency proof baseline
+
+Coiler is now the second package dependency proof case. The machine-readable truth set is `test_fixtures/fixtures/coiler_attachment_dependency_truth.json`, documented in `COILER_PACKAGE_PROOF.md`.
+
+The proof distinguishes inventory item identity (`xi.item.COILER = 2413`) from the internal `item_puppet` record (8583 / attachment index 135), then traces the behavior through dynamic C++→Lua attachment dispatch, `coiler.lua`, shared `automaton.lua` modifier logic, `xi.mod.DOUBLE_ATTACK`, maneuver/Optic Fiber scaling, puppetutils unlock/equip/persistence behavior, `char_pet` attachment state, and downstream automaton weapon-skill consumers of `xi.automaton.getExtraHits`.
+
+It also establishes two dependency semantics the package model must distinguish from hard requirements: acquisition paths such as Rararoon/Ob should be reviewer-controlled scope, while Optic Fiber/Overdrive are conditional interactions that modify behavior without being prerequisites.
+
+Current generic discovery does not yet model `item_puppet`, inventory→internal puppet identity, dynamic attachment-name dispatch, char_pet persistence, conditional interactions, acquisition-scope relations, or the complete Coiler downstream consumer fan-out. These are now explicit analyzer requirements rather than silent omissions.
+
+The Medusa proof was also corrected in this pass: Al Zahbi/Bhaflau Medusa variants and the shared Besieged subsystem are conditionally coupled lifecycle dependencies, not automatic out-of-scope variants. At the audited LSB revision, Besieged mob lifecycle hooks exist but are empty, demonstrating that expected system behavior may need to be surfaced as an incomplete semantic dependency even when direct source traversal cannot prove it.
