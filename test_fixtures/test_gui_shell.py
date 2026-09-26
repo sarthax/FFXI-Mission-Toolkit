@@ -72,6 +72,8 @@ def main():
     assert route_owner("/validation")["home"] == "Validation"
     assert route_owner("/validation/runs")["section"] == "Runs & Results"
     assert route_owner("/validation/runs/example-run")["section"] == "Runs & Results"
+    assert route_owner("/validation/live-target")["section"] == "Live Target"
+    assert route_owner("/validation/live-target", "POST")["section"] == "Live Target"
     assert route_owner("/domains/assault")["home"] == "Domains"
     assert route_owner("/domains/assault")["section"] == "Battle Systems > Assault"
     assert route_owner("/nyzul")["home"] == "Domains"
@@ -88,7 +90,7 @@ def main():
     assert validation_workspace["href"] == "/validation"
     assert next(section for section in validation_workspace["sections"] if section["label"] == "Dashboard")["href"] == "/validation"
     assert next(section for section in validation_workspace["sections"] if section["label"] == "Runs & Results")["href"] == "/validation/runs"
-    assert next(section for section in validation_workspace["sections"] if section["label"] == "Live Target")["planned"] is True
+    assert next(section for section in validation_workspace["sections"] if section["label"] == "Live Target")["href"] == "/validation/live-target"
 
     captures = next(workspace for workspace in WORKSPACES if workspace["name"] == "Captures")
     assert {section["label"] for section in captures["sections"]}.isdisjoint({"Path Plot", "All Paths"})
@@ -160,6 +162,7 @@ def main():
         ("validation_dashboard.html", "/validation", {"runs": [], "status_counts": {}, "result_counts": {}, "total_results": 0, "error": None}),
         ("validation_runs.html", "/validation/runs", {"q": "", "status": "", "statuses": [], "runs": [], "error": None}),
         ("validation_run_detail.html", "/validation/runs/test", {"run": None, "results": [], "error": None, "run_id": "test"}),
+        ("validation_live_target.html", "/validation/live-target", {"form": {"target_family": "DSP", "target_root": "", "backend": "sqlite", "sqlite_db": "", "host": "127.0.0.1", "port": "3306", "user": "", "database": "", "password_env": "FFXI_DB_PASSWORD", "target_snapshot_id": "", "source_snapshot_id": "", "feature_id": "", "run_id": "", "persist": False, "expected_json": "{}"}, "result": None, "error": None}),
     )
     for template, path, values in pages:
         html = render(template, path, **values)
@@ -190,6 +193,9 @@ def main():
     validation_runs_shell = context_for("/validation/runs/test-run")
     assert validation_runs_shell["active_home"] == "Validation"
     assert next(section for section in validation_runs_shell["sections"] if section["active"])["label"] == "Runs & Results"
+    live_target_shell = context_for("/validation/live-target")
+    assert live_target_shell["active_home"] == "Validation"
+    assert next(section for section in live_target_shell["sections"] if section["active"])["label"] == "Live Target"
 
     trace_shell = context_for("/features/trace")
     assert trace_shell["active_home"] == "Features"
