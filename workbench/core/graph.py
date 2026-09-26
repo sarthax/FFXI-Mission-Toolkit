@@ -128,7 +128,7 @@ CREATE TABLE IF NOT EXISTS package_scope_decisions (
 );
 CREATE TABLE IF NOT EXISTS package_scope_reviews (
   migration_id TEXT PRIMARY KEY, status TEXT NOT NULL DEFAULT 'DRAFT',
-  reviewed_at TEXT, notes TEXT
+  reviewed_at TEXT, notes TEXT, scope_hash TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_build_targets_artifact ON build_targets(artifact_id);
 CREATE INDEX IF NOT EXISTS idx_capabilities_subject ON capabilities(subject_id);
