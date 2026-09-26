@@ -393,3 +393,4 @@ def register_client_binary_tools(registry: ResearchToolRegistry, reader) -> None
     registry.register(ResearchTool("client.byte-search","Search the accessible source binary for a bounded hexadecimal byte pattern with ?? wildcards.",reader.byte_search,ACCESS_READ))
     registry.register(ResearchTool("client.xrefs","Find conservative static control-flow and raw pointer/value xref candidates to one client-binary address.",reader.xrefs,ACCESS_READ))
     registry.register(ResearchTool("client.function-candidates","Recover conservative candidate function entry points from the PE entry point, exports, and direct-call targets.",reader.function_candidates,ACCESS_READ))
+    registry.register(ResearchTool("client.import-refs","Find PE32 FF 15/FF 25 import-thunk reference candidates in raw executable sections.",reader.import_refs,ACCESS_READ))

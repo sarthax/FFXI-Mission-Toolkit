@@ -215,7 +215,8 @@ class PEImage:
                     value=self._u64(pos) if self.pointer_size==8 else self._u32(pos)
                     if value==0:
                         break
-                    entry={"dll":dll,"thunk_rva":thunk_rva+index*self.pointer_size}
+                    entry={"dll":dll,"thunk_rva":thunk_rva+index*self.pointer_size,
+                           "iat_rva":first_thunk+index*self.pointer_size}
                     if value & ordinal_mask:
                         entry["ordinal"]=value & 0xFFFF
                         entry["name"]=None

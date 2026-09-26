@@ -221,3 +221,7 @@ The target architecture is documented in `docs/workbench/LLM_RESEARCH_ARCHITECTU
 - model-independent regression fixtures must verify preservation of UNKNOWN/INFERRED/CONTRADICTED states and provenance discipline.
 
 This is intended to make the LLM useful for deep cross-fork research, dependency discovery, root-cause analysis, migration planning, and research-gap detection without allowing the model to bypass the Workbench evidence model.
+
+## 2026-09-25 — Real packed-DLL deeper pass
+
+Real packed-DLL analysis confirms that import lookup thunk and IAT slot need distinct addresses; the PE index now records `iat_rva`. The 22 matched indirect import operands are candidates, not decoded calls. Virtual `.text` and exports require unpacked/runtime evidence.

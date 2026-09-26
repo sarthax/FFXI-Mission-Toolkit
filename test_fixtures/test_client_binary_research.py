@@ -87,7 +87,7 @@ def main():
         for name in (
             "client.binary-info","client.sections","client.imports","client.exports",
             "client.string-search","client.address-evidence","client.binary-diff",
-            "client.byte-search","client.xrefs","client.function-candidates",
+            "client.byte-search","client.xrefs","client.function-candidates","client.import-refs",
         ):
             assert specs[name]["access"]=="READ",specs
 

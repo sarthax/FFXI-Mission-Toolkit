@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from workbench.client.binary_index import binary_header_evidence_id, binary_record_evidence_id, binary_string_corpus_evidence_id
-from workbench.client.binary_deep import byte_search as deep_byte_search, function_candidates as deep_function_candidates, xrefs as deep_xrefs
+from workbench.client.binary_deep import byte_search as deep_byte_search, function_candidates as deep_function_candidates, import_thunk_refs as deep_import_thunk_refs, xrefs as deep_xrefs
 from workbench.client.binary_diff import diff_binary_indexes
 
 
@@ -253,6 +253,20 @@ class ClientBinaryResearchReader:
             "authority":"CLIENT_BINARY",
             "evidence_ids":[binary_header_evidence_id(payload)],
         })
+        return result
+
+    def import_refs(self, binary: str, *, limit: int = 2000) -> dict[str,Any]:
+        _index,payload,source=self._binary_source(binary)
+        if payload is None:
+            return {"status":"NOT_FOUND","binary":binary}
+        info=payload.get("binary") or {}
+        if source is None:
+            return {"status":"BINARY_UNAVAILABLE","binary":info,
+                    "error":"The indexed source binary is not accessible at its recorded path in this runtime.",
+                    "authority":"CLIENT_BINARY","evidence_ids":[binary_header_evidence_id(payload)]}
+        result=deep_import_thunk_refs(source,max_results=limit)
+        result.update({"binary":info,"authority":"CLIENT_BINARY",
+                       "evidence_ids":[binary_header_evidence_id(payload)]})
         return result
 
     def address_evidence(

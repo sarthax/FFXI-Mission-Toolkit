@@ -1007,3 +1007,8 @@ The shared `base.html` shell now provides:
 `workbench.gui_shell` owns the read-only shell model and resolves active workspace ownership from `GUI_ROUTE_MAP.json`; it does not add routes, select snapshots, or mutate settings. Validation and Packages remain visible top-level workspaces while their consolidated pages remain future work. The existing Backport Package route stays available as an explicitly labeled legacy workflow.
 
 Regression coverage in `test_fixtures/test_gui_shell.py` reruns the 134-route information-architecture check, verifies dynamic route ownership, verifies configured versus unknown context semantics, and renders representative Home, Captures, and mutation-editor templates through the shared shell. The Workbench regression workflow now runs this shell test.
+
+
+## 2026-09-25 — Real packed-DLL deeper pass
+
+Real `FFXiMain.dll` deeper pass completed: mapped POL1 entry point, unmapped virtual `.text` exports, 1,678 function-entry candidates, and 22 IAT-matched FF 15/FF 25 candidates. Added read-only `client.import-refs`; all byte-scan control-flow results remain INFERRED. See `CLIENT_BINARY_RESEARCH.md`.
