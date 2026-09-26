@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Package Review — Mission Toolkit{% endblock %}
+{% block content %}
+<h1>Review &amp; Readiness</h1>
+<p class="muted">Consolidated read-only package review. This page does not approve, apply, or modify package/target files.</p>
+
+<form method="get" action="/packages/review">
+  <div class="table-wrap"><table>
+  <tbody>
+  <tr><th>Package</th><td>
+    <select name="package">
+      <option value="">Select a package</option>
+      {% for row in packages %}
+      <option value="{{ row.relative_path }}"{% if package == row.relative_path %} selected{% endif %}>{{ row.relative_path }}{% if row.feature_id %} — {{ row.feature_id }}{% endif %}</option>
+      {% endfor %}
+    </select>
+  </td></tr>
+  <tr><th>Target root</th><td><input type="text" name="target_root" value="{{ target_root }}" placeholder="Required for patch lifecycle drift/readiness checks"></td></tr>
+  </tbody>
+  </table></div>
+  <p><button type="submit">Review package</button></p>
+</form>
+
+{% if error %}<div class="warn">{{ error }}</div>{% endif %}
+
+{% if review %}
+<div class="stats">
+  <div class="stat"><div class="n">{{ review.status }}</div><div class="l">Overall</div></div>
+  <div class="stat"><div class="n">{{ review.validation_status }}</div><div class="l">Validation</div></div>
+  <div class="stat"><div class="n">{{ review.cohesion_status }}</div><div class="l">Cohesion</div></div>
+  <div class="stat"><div class="n">{{ review.apply_readiness }}</div><div class="l">Apply readiness</div></div>
+</div>
+
+<div class="table-wrap"><table>
+<tbody>
+<tr><th>Migration</th><td><code>{{ review.migration_id or "" }}</code></td></tr>
+<tr><th>Feature</th><td><code>{{ review.feature_id or "" }}</code></td></tr>
+<tr><th>Patch lifecycle</th><td>{{ review.patch_lifecycle }}</td></tr>
+<tr><th>Execution steps</th><td>{{ review.execution_step_count }}</td></tr>
+<tr><th>Excluded actions</th><td>{{ review.excluded_action_count }}</td></tr>
+<tr><th>Generated artifacts</th><td>{{ review.generated_artifact_count }}</td></tr>
+</tbody>
+</table></div>
+
+<h2>Execution plan</h2>
+{% set steps = manifest.get("execution", {}).get("steps", []) %}
+{% if steps %}
+<div class="table-wrap"><table>
+<thead><tr><th>#</th><th>Action</th><th>Status</th><th>Artifact</th><th>Backend</th><th>Conversion</th><th>Reason</th></tr></thead>
+<tbody>
+{% for step in steps %}
+<tr>
+<td>{{ step.order }}</td>
+<td>{{ step.action }}</td>
+<td>{{ step.status }}</td>
+<td><code>{{ step.path or step.artifact_id or "" }}</code></td>
+<td>{{ step.backend or "" }}</td>
+<td>{{ step.conversion_status or "" }}</td>
+<td>{{ step.reason or "" }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table></div>
+{% else %}
+<p class="muted">No execution steps are recorded.</p>
+{% endif %}
+
+<h2>Validation package</h2>
+{% if validation %}
+<p><strong>Status:</strong> {{ validation.status or "UNKNOWN" }}</p>
+{% set requirements = validation.get("requirements", []) %}
+{% if requirements %}
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Status</th><th>Artifact / subject</th><th>Notes</th></tr></thead>
+<tbody>
+{% for row in requirements %}
+<tr>
+<td>{{ row.get("validation_type") or row.get("type") or "" }}</td>
+<td>{{ row.get("status") or "UNKNOWN" }}</td>
+<td><code>{{ row.get("artifact_id") or row.get("subject_id") or row.get("path") or "" }}</code></td>
+<td>{{ row.get("notes") or "" }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table></div>
+{% endif %}
+{% else %}
+<p class="muted">Validation package metadata is not available.</p>
+{% endif %}
+
+<p class="muted">READY or ELIGIBLE status is evidence for review/apply gating only. This page does not grant approval or execute changes.</p>
+{% endif %}
+{% endblock %}
