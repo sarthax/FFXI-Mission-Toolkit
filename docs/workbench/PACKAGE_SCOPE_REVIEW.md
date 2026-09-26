@@ -337,3 +337,38 @@ Likely next implementation work:
 8. downstream-dependency warnings when a user attempts an exclusion.
 
 The goal is not maximum automatic inclusion. The goal is maximum **explainability, reviewer agency, and evidence-backed closure**.
+
+
+## Producibility / acquisition closure
+
+Dependency closure alone is insufficient for selectable acquisition paths. If the reviewer chooses a synthesis, synergy, quest reward, drop, exchange, or similar acquisition path, the package must prove that path can function end to end.
+
+For ordinary synthesis the closure is recursive:
+
+```text
+output item
+  → synth recipe
+    → synthesis runtime
+    → craft/skill requirement
+    → required key item
+    → crystal
+    → ingredient A
+       → at least one viable acquisition path
+    → ingredient B
+       → recipe
+          → its own prerequisites...
+```
+
+This is an OR-graph across acquisition choices and an AND-graph inside a selected recipe:
+
+- an item needs at least one viable acquisition path;
+- a selected recipe requires every prerequisite on that recipe;
+- alternate acquisition paths are visible but do not all need to be included;
+- a leaf item with no verified acquisition path remains unresolved;
+- TARGET_EQUIVALENT may satisfy a prerequisite only when backed by reviewed target evidence.
+
+`workbench.migrations.crafting_closure` now implements the recursive recipe portion. It consumes logical `synth_recipes` and `synergy_recipes` records, follows ingredients recursively, requires the recipe key item when present, requires the crystal as an obtainable item, and treats Synergy as a distinct runtime/client capability.
+
+A recipe path using Synergy requires both `SYNERGY_RUNTIME` and `SYNERGY_CLIENT_CAPABILITY`; it must not be treated as ordinary synthesis on an older target/client.
+
+The remaining acquisition analyzers (shops, drops, HELM, gardening, rewards, exchanges, appraisal, etc.) must feed the same obtainability graph so crafting leaves can be proven rather than assumed.
