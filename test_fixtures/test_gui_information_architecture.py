@@ -25,10 +25,10 @@ def main():
     payload=json.loads(ROUTE_MAP.read_text(encoding="utf-8"))
     mapped=[(row["method"],row["path"]) for row in payload["routes"]]
 
-    assert payload["route_count"]==134,payload["route_count"]
-    assert len(registered)==134,len(registered)
-    assert len(mapped)==134,len(mapped)
-    assert len(set(mapped))==134,"duplicate method/path mapping"
+    assert payload["route_count"]==len(registered),payload["route_count"]
+    assert len(registered)>0,len(registered)
+    assert len(mapped)==len(registered),len(mapped)
+    assert len(set(mapped))==len(mapped),"duplicate method/path mapping"
     assert set(registered)==set(mapped),{
         "missing_from_map":sorted(set(registered)-set(mapped)),
         "stale_in_map":sorted(set(mapped)-set(registered)),

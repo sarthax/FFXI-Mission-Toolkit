@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 149,
+  "route_count": 152,
   "routes": [
     {
       "method": "GET",
@@ -1193,6 +1193,30 @@
       "home": "Client",
       "section": "Model Viewer",
       "role": "api",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/datinspector",
+      "home": "Client",
+      "section": "DAT Inspector",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/binaryinspector",
+      "home": "Client",
+      "section": "Binary Inspector",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/binaryinspector/save-probes",
+      "home": "Client",
+      "section": "Binary Inspector",
+      "role": "mutation",
       "disposition": "KEEP"
     }
   ]
