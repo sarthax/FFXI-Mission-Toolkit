@@ -1,0 +1,1079 @@
+{
+  "schema": 1,
+  "source": "gui_server.py",
+  "route_count": 134,
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/help",
+      "home": "Home / Project",
+      "section": "Help & Roadmap",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/roadmap",
+      "home": "Home / Project",
+      "section": "Help & Roadmap",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "home": "Home / Project",
+      "section": "Dashboard",
+      "role": "page",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/rebuild/{source}/confirm",
+      "home": "Settings",
+      "section": "Sources & Indexes",
+      "role": "confirm",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/rebuild/{source}",
+      "home": "Settings",
+      "section": "Sources & Indexes",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/install/{tool}",
+      "home": "Settings",
+      "section": "Sources & Indexes",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/items",
+      "home": "Server",
+      "section": "Items & Server Data",
+      "role": "page",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/items/{itemid}",
+      "home": "Server",
+      "section": "Items & Server Data",
+      "role": "detail",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/iddrift",
+      "home": "Backport & Migration",
+      "section": "ID / Content Drift",
+      "role": "page",
+      "disposition": "MERGE"
+    },
+    {
+      "method": "GET",
+      "path": "/iddrift/{slug}",
+      "home": "Backport & Migration",
+      "section": "ID / Content Drift",
+      "role": "detail",
+      "disposition": "MERGE"
+    },
+    {
+      "method": "GET",
+      "path": "/backport/lua-convert",
+      "home": "Backport & Migration",
+      "section": "Lua Conversion",
+      "role": "page",
+      "disposition": "MERGE"
+    },
+    {
+      "method": "POST",
+      "path": "/backport/lua-convert",
+      "home": "Backport & Migration",
+      "section": "Lua Conversion",
+      "role": "action",
+      "disposition": "MERGE"
+    },
+    {
+      "method": "GET",
+      "path": "/backport/bindings",
+      "home": "Backport & Migration",
+      "section": "Bindings",
+      "role": "page",
+      "disposition": "MERGE"
+    },
+    {
+      "method": "GET",
+      "path": "/backport/sql-convert",
+      "home": "Backport & Migration",
+      "section": "SQL Conversion",
+      "role": "page",
+      "disposition": "MERGE"
+    },
+    {
+      "method": "POST",
+      "path": "/backport/sql-convert",
+      "home": "Backport & Migration",
+      "section": "SQL Conversion",
+      "role": "action",
+      "disposition": "MERGE"
+    },
+    {
+      "method": "GET",
+      "path": "/backport/package",
+      "home": "Backport & Migration",
+      "section": "Legacy Package Workflow",
+      "role": "page",
+      "disposition": "LEGACY"
+    },
+    {
+      "method": "POST",
+      "path": "/backport/package",
+      "home": "Backport & Migration",
+      "section": "Legacy Package Workflow",
+      "role": "action",
+      "disposition": "LEGACY"
+    },
+    {
+      "method": "GET",
+      "path": "/llm/log/{log_id}",
+      "home": "Tools",
+      "section": "Research",
+      "role": "page",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/llm",
+      "home": "Tools",
+      "section": "Research",
+      "role": "page",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "POST",
+      "path": "/llm",
+      "home": "Tools",
+      "section": "Research",
+      "role": "action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "POST",
+      "path": "/llm/quick-action-prompt",
+      "home": "Tools",
+      "section": "Research",
+      "role": "action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "POST",
+      "path": "/llm/suggest-grep",
+      "home": "Tools",
+      "section": "Research",
+      "role": "action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "POST",
+      "path": "/llm/summarize-capture/{capture_id}",
+      "home": "Tools",
+      "section": "Research",
+      "role": "action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/entity",
+      "home": "Server",
+      "section": "Entities",
+      "role": "page",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/entity/{npcid}",
+      "home": "Server",
+      "section": "Entities",
+      "role": "detail",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/dialog",
+      "home": "Server",
+      "section": "Dialog / Text",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zone/{zone_name}/drift",
+      "home": "Backport & Migration",
+      "section": "Zone Drift",
+      "role": "detail",
+      "disposition": "MERGE"
+    },
+    {
+      "method": "GET",
+      "path": "/missions",
+      "home": "Features",
+      "section": "Missions",
+      "role": "page",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/keyitems",
+      "home": "Server",
+      "section": "Items & Key Items",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zones",
+      "home": "Server",
+      "section": "Zones",
+      "role": "page",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/gaps",
+      "home": "Server",
+      "section": "Data Quality / Gaps",
+      "role": "diagnostic",
+      "disposition": "MERGE"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/query",
+      "home": "Captures",
+      "section": "Data Query",
+      "role": "page",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/query.csv",
+      "home": "Captures",
+      "section": "Data Query",
+      "role": "api/action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/{capture_id}/export.zip",
+      "home": "Captures",
+      "section": "Export",
+      "role": "api/action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/sql",
+      "home": "Server",
+      "section": "SQL / Logical Data",
+      "role": "page",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/events",
+      "home": "Server",
+      "section": "Events / CSID",
+      "role": "page",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/events/view",
+      "home": "Server",
+      "section": "Events / CSID",
+      "role": "detail",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/packets",
+      "home": "Server",
+      "section": "Packets / Protocol",
+      "role": "page/tool",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/packets/decode",
+      "home": "Server",
+      "section": "Packets / Protocol",
+      "role": "page/tool",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/packets/bulk",
+      "home": "Server",
+      "section": "Packets / Protocol",
+      "role": "page/tool",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "POST",
+      "path": "/packets/bulk",
+      "home": "Server",
+      "section": "Packets / Protocol",
+      "role": "action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/wiki",
+      "home": "Tools",
+      "section": "Research > References",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/wiki/export",
+      "home": "Tools",
+      "section": "Research > References",
+      "role": "export",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/captures",
+      "home": "Captures",
+      "section": "Capture Library & Detail",
+      "role": "page",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/zones/{zoneid}/view3d",
+      "home": "Server",
+      "section": "Zones > 3D Viewer",
+      "role": "view",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/zones/{zoneid}/build_visual_cache",
+      "home": "Server",
+      "section": "Zones > 3D Viewer",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zones/{zoneid}/view3d_all",
+      "home": "Server",
+      "section": "Zones > 3D Viewer",
+      "role": "view",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/plot",
+      "home": "Captures",
+      "section": "Paths & Visualization",
+      "role": "page",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/plot.png",
+      "home": "Captures",
+      "section": "Paths & Visualization",
+      "role": "api/action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/plot_all",
+      "home": "Captures",
+      "section": "Paths & Visualization",
+      "role": "page",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/plot_all.png",
+      "home": "Captures",
+      "section": "Paths & Visualization",
+      "role": "api/action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/new",
+      "home": "Captures",
+      "section": "Import / Ingest",
+      "role": "page",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "POST",
+      "path": "/captures/new",
+      "home": "Captures",
+      "section": "Import / Ingest",
+      "role": "api/action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "POST",
+      "path": "/captures/{capture_id}/tags",
+      "home": "Captures",
+      "section": "Metadata / Annotation",
+      "role": "api/action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "POST",
+      "path": "/captures/{capture_id}/details",
+      "home": "Captures",
+      "section": "Metadata / Annotation",
+      "role": "api/action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/{capture_id}/delete",
+      "home": "Captures",
+      "section": "Capture Management",
+      "role": "page",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "POST",
+      "path": "/captures/{capture_id}/delete",
+      "home": "Captures",
+      "section": "Capture Management",
+      "role": "api/action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/search",
+      "home": "Captures",
+      "section": "Search & Correlation",
+      "role": "page",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/{capture_id}/add",
+      "home": "Captures",
+      "section": "Metadata / Annotation",
+      "role": "page",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "POST",
+      "path": "/captures/{capture_id}/add",
+      "home": "Captures",
+      "section": "Metadata / Annotation",
+      "role": "api/action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/{capture_id}",
+      "home": "Captures",
+      "section": "Capture Library & Detail",
+      "role": "page",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/{capture_id}/timeline",
+      "home": "Captures",
+      "section": "Timeline",
+      "role": "page",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/{capture_id}/packets",
+      "home": "Captures",
+      "section": "Packets / Raw Packets",
+      "role": "page",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/settings",
+      "home": "Settings",
+      "section": "General / Sources",
+      "role": "page/confirm",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "POST",
+      "path": "/theme/toggle",
+      "home": "Settings",
+      "section": "Application & Appearance",
+      "role": "action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "POST",
+      "path": "/settings",
+      "home": "Settings",
+      "section": "General / Sources",
+      "role": "action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "POST",
+      "path": "/backup/create",
+      "home": "Settings",
+      "section": "Backups & Recovery",
+      "role": "action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/backup/delete/{name}/confirm",
+      "home": "Settings",
+      "section": "Backups & Recovery",
+      "role": "page/confirm",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "POST",
+      "path": "/backup/delete",
+      "home": "Settings",
+      "section": "Backups & Recovery",
+      "role": "action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/backup/restore/{name}/confirm",
+      "home": "Settings",
+      "section": "Backups & Recovery",
+      "role": "page/confirm",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "POST",
+      "path": "/backup/restore",
+      "home": "Settings",
+      "section": "Backups & Recovery",
+      "role": "action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "POST",
+      "path": "/shutdown",
+      "home": "Settings",
+      "section": "Application & Appearance",
+      "role": "action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "POST",
+      "path": "/restart",
+      "home": "Settings",
+      "section": "Application & Appearance",
+      "role": "action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/nyzul",
+      "home": "Tools",
+      "section": "Specialized > Nyzul",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/nyzul/data.json",
+      "home": "Tools",
+      "section": "Specialized > Nyzul",
+      "role": "api/action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/nyzul/navmesh.bin",
+      "home": "Tools",
+      "section": "Specialized > Nyzul",
+      "role": "api/action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/nyzul/exclusions",
+      "home": "Tools",
+      "section": "Specialized > Nyzul",
+      "role": "api/action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/server.json",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/zoneplot/server.json",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/zones.json",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/{zid}/live_info.json",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/descriptors.json",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/{zid}/data.json",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/{zid}/reach.json",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/{zid}/mesh.zmesh",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/{zid}/mesh_info.json",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/zoneplot/{zid}/build_cache",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/zoneplot/edit",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/zoneplot/animate",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/zoneplot/delete",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/catalogue.json",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/{eid}/drops.json",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/zoneplot/drops/dropid",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/zoneplot/drops/save",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/zoneplot/drops/delete",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/items.json",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/zoneplot/add",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/zoneplot/sync_sql/entity",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/zoneplot/sync_sql/dropid",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/zoneplot/sync_sql/drop_row",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/backups.json",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/zoneplot/{zid}/snapshot",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/zoneplot/restore",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/{zid}/navmesh.bin",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/{zid}/navmesh_meta.bin",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/search.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/backups.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/bitmasks.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/modnames.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/pettypes.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/latentnames.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/dat-target.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/itemedit/dat-target.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/dat-backups.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/itemedit/dat-backups/restore",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/xi-pivot/manifest.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/xi-pivot/export.zip",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/clone-template.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/{itemid}.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/itemedit/update",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/itemedit/create",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/itemedit/delete",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/itemedit/restore",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/itemedit/mods/set",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/itemedit/mods/delete",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/itemedit/petmods/set",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/itemedit/petmods/delete",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/itemedit/latents/add",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/itemedit/latents/delete",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/modelviewer",
+      "home": "Client",
+      "section": "Model Viewer",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/modelviewer/resolve.json",
+      "home": "Client",
+      "section": "Model Viewer",
+      "role": "api",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/modelviewer/dat",
+      "home": "Client",
+      "section": "Model Viewer",
+      "role": "api",
+      "disposition": "KEEP"
+    }
+  ]
+}
