@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Feature Trace — Mission Toolkit{% endblock %}
+{% block content %}
+<h1>Feature Trace</h1>
+<p class="muted">Trace a canonical Workbench feature, entity, capability, function, binding, build target, artifact, or enum through recorded graph relationships. Connectivity is evidence navigation, not an implementation verdict.</p>
+
+<form class="search" method="get" action="/features/trace">
+  <input type="text" name="q" value="{{ q }}" placeholder="Canonical node ID or partial name">
+  <select name="direction">
+    <option value="both"{% if direction == "both" %} selected{% endif %}>Both directions</option>
+    <option value="out"{% if direction == "out" %} selected{% endif %}>Outgoing</option>
+    <option value="in"{% if direction == "in" %} selected{% endif %}>Incoming</option>
+  </select>
+  <select name="depth">
+    {% for n in range(0, 9) %}
+    <option value="{{ n }}"{% if depth == n %} selected{% endif %}>Depth {{ n }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit">Trace</button>
+</form>
+
+{% if error %}
+<div class="warn">{{ error }}</div>
+{% endif %}
+
+{% if matches and not result %}
+<h2>Matching nodes</h2>
+<p class="muted">{{ matches|length }} match(es). Refine the query or select a canonical node ID.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Node ID</th><th>Type</th><th>Name</th><th>Source</th></tr></thead>
+<tbody>
+{% for row in matches %}
+<tr>
+  <td><a class="zonelink mono" href="/features/trace?q={{ row.node_id|urlencode }}">{{ row.node_id }}</a></td>
+  <td>{{ row.node_type or "UNKNOWN" }}</td>
+  <td>{{ row.display_name or "" }}</td>
+  <td>{{ row.table }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endif %}
+
+{% if result %}
+<h2>Trace</h2>
+<div class="stats">
+  <div class="stat"><div class="n">{{ result.nodes|length }}</div><div class="l">Nodes</div></div>
+  <div class="stat"><div class="n">{{ result.edges|length }}</div><div class="l">Edges</div></div>
+  <div class="stat"><div class="n">{{ result.paths|length }}</div><div class="l">Paths</div></div>
+  <div class="stat"><div class="n">{{ result.max_depth }}</div><div class="l">Max depth</div></div>
+</div>
+<p><strong>Root:</strong> <code>{{ result.root }}</code> &nbsp; <strong>Direction:</strong> {{ result.direction }}</p>
+
+<h2>Relationships</h2>
+{% if result.edges %}
+<div class="table-wrap">
+<table>
+<thead><tr><th>Depth</th><th>Relationship</th><th>From</th><th>To</th><th>Status</th><th>Confidence</th><th>Evidence</th></tr></thead>
+<tbody>
+{% for edge in result.edges %}
+<tr>
+  <td>{{ edge.depth }}</td>
+  <td><span class="chip">{{ edge.relationship }}</span></td>
+  <td><a class="zonelink mono" href="/features/trace?q={{ edge.from_node|urlencode }}">{{ edge.from_node }}</a></td>
+  <td><a class="zonelink mono" href="/features/trace?q={{ edge.to_node|urlencode }}">{{ edge.to_node }}</a></td>
+  <td>{{ edge.status or "UNKNOWN" }}</td>
+  <td>{{ edge.confidence or "UNKNOWN" }}</td>
+  <td><code>{{ edge.evidence_id or "" }}</code></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<p class="muted">No recorded relationships were found within this trace depth.</p>
+{% endif %}
+
+<h2>Nodes</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Node ID</th><th>Known</th><th>Representations</th></tr></thead>
+<tbody>
+{% for node in result.nodes %}
+<tr>
+  <td><code>{{ node.node_id }}</code></td>
+  <td>{{ "Yes" if node.known else "No" }}</td>
+  <td>
+    {% for rep in node.representations %}
+      <div><span class="chip">{{ rep.table }}</span> {{ rep.display_name or rep.node_type or "" }}</div>
+    {% else %}
+      <span class="muted">No indexed representation</span>
+    {% endfor %}
+  </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+{% for note in result.notes %}
+<p class="muted">{{ note }}</p>
+{% endfor %}
+{% endif %}
+{% endblock %}
