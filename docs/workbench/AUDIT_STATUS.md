@@ -1171,3 +1171,9 @@ The Bastok chain is fully enumerated through Beneath the Mask and What Price Loy
 The San d'Oria branch adds fishing key-item acquisition, trades, spawned NM/death transitions, text references, and battle content. The Windurst quest IDs and Mission-26 completion gate exist, while source search did not find the expected quest scripts, despite external reference documentation describing a large quest chain; this is now tracked as EXPECTED_BRANCH_MISSING_OR_UNIMPLEMENTED rather than silently absent.
 
 The proof adds requirements for generic mission/quest state-machine extraction, zone-scoped CSID/event identity, event parameters/update/finish semantics, NPC/entity resolution, key-item lifecycle, OR branches, timer/day gates, default-action conflict checks, external-reference expectation edges, and separate mission viability versus completeness.
+
+## 2026-09-26 — Wardrobe feature linked to client probe set; live toolkit on audit branch
+
+- `client_probe_sets/mog_wardrobe.json` now defines `feature:mog-wardrobe-5-8` and marks `/wardrobe5-8` probes as requirements; `binary_inspector.save_probe_set()` upserts the feature and requirements. Real result: `UNKNOWN_REQUIRED_CAPABILITY`.
+- DAT/Binary Inspector routes added to `GUI_ROUTE_MAP.json` (Client) so the nav link renders; `test_gui_information_architecture.py` counts routes dynamically instead of a stale hard-coded 134.
+- `D:\Claude\mission_toolkit` now runs local branch `live-audit-foundation` tracking `origin/workbench-rework/audit-foundation` (push with `git push origin HEAD:workbench-rework/audit-foundation`). `workbench.db` was built there via `workbench_connect.py`; it is untracked and not gitignored — do not commit it.

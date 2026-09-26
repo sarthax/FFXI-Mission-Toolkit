@@ -105,7 +105,18 @@ def save_probe_set(file: str, install_dir: str, db_path) -> dict:
     s = {x["file"]: x for x in list_probe_sets()}[file]
     con = graph.init_db(Path(db_path))
     try:
-        rows = persist_probes(con, str(Path(install_dir) / s["binary"]), None, s["probes"])
+        probes = [dict(p) for p in s["probes"]]
+        fdef = s.get("feature")
+        if fdef:
+            # The set defines its own feature; probes flagged requires_feature become its requirements.
+            from workbench.core.schema import Feature
+            graph.insert_record(con, Feature(
+                fdef["feature_id"], fdef["name"], fdef.get("feature_type"), fdef.get("domain_id"),
+                status=fdef.get("status", "DISCOVERED")))
+            for p in probes:
+                if p.pop("requires_feature", False):
+                    p["feature"] = fdef["feature_id"]
+        rows = persist_probes(con, str(Path(install_dir) / s["binary"]), None, probes)
         con.commit()
     finally:
         con.close()

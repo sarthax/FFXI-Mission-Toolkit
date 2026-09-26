@@ -42,6 +42,12 @@ def main():
         res = check_feature(con, resolve_feature(con, "feature:w8"))
         assert res["status"] == "UNKNOWN_REQUIRED_CAPABILITY", res
         con.close()
+    # The shipped wardrobe set defines its feature and marks 5-8 as requirements.
+    import json, binary_inspector as bi
+    sets = {x["file"]: x for x in bi.list_probe_sets()}
+    w = sets["mog_wardrobe.json"]
+    assert w["feature"]["feature_id"] == "feature:mog-wardrobe-5-8", w["feature"]
+    assert [p["needle"] for p in w["probes"] if p.get("requires_feature")] == ["/wardrobe%d" % n for n in (5, 6, 7, 8)]
     print("binary probes self-test: PASS")
 
 
