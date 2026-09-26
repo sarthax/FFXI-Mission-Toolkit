@@ -143,7 +143,7 @@ def _resolve_field(raw: str, variables: dict[str, int]) -> int:
     return _eval_flags_expr(raw, variables)
 
 
-INSERT_RE = re.compile(r"^INSERT INTO `(\w+)` VALUES\s*\((.*)\);\s*$")
+INSERT_RE = re.compile(r"^INSERT INTO `(\w+)` VALUES\s*\((.*)\)\s*$", re.DOTALL)
 
 _CLEAN_CACHE_DIR = TOOLS_ROOT / "mission_reports" / "_sql_clean"
 _TRAILING_COMMENT_RE = re.compile(r"\);\s*--.*$")
@@ -174,22 +174,74 @@ def cleaned_path(path: Path) -> Path:
     return out_path
 
 
+def _iter_sql_statements(text: str):
+    """Yield (starting_line, statement) split on semicolons outside SQL single quotes.
+
+    Some legacy DSP dumps place many complete INSERT statements on one physical line.
+    A line-anchored greedy INSERT regex therefore merges those rows into one apparent row.
+    This scanner also supports multiline INSERTs and ignores semicolons inside quoted strings.
+    """
+    buf=[]
+    in_quote=False
+    i=0
+    line=1
+    statement_line=1
+    have_nonspace=False
+    while i < len(text):
+        ch=text[i]
+        if not have_nonspace and not ch.isspace():
+            statement_line=line
+            have_nonspace=True
+        if in_quote:
+            if ch=="\\" and i+1 < len(text) and text[i+1]=="'":
+                buf.extend((ch,text[i+1])); i+=2
+                continue
+            if ch=="'" and i+1 < len(text) and text[i+1]=="'":
+                buf.extend((ch,text[i+1])); i+=2
+                continue
+            if ch=="'":
+                in_quote=False
+            buf.append(ch)
+        else:
+            if ch=="'":
+                in_quote=True
+                buf.append(ch)
+            elif ch==";":
+                statement="".join(buf).strip()
+                if statement:
+                    yield statement_line,statement
+                buf=[]
+                have_nonspace=False
+            else:
+                buf.append(ch)
+        if ch=="\n":
+            line+=1
+        i+=1
+    statement="".join(buf).strip()
+    if statement:
+        yield statement_line,statement
+
+
 def parse_table_file(path: Path, expected_table: str, columns: list[str]):
-    """Yields one dict per row (keyed by real column names) for every INSERT into expected_table
-    in this file. Rows with a different column count than expected are skipped with a warning
-    rather than silently misaligned -- real schema drift should be visible, not guessed past."""
+    """Yield one dict per INSERT row for expected_table.
+
+    Statements are tokenized independently of physical lines because legacy DSP dumps may place
+    multiple INSERTs on one line or span one INSERT across multiple lines. Rows with a genuinely
+    different column count are still skipped with a visible schema-drift warning.
+    """
     if not path.exists():
         return
-    for lineno, line in enumerate(path.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
-        m = INSERT_RE.match(line.strip())
-        if not m or m.group(1) != expected_table:
+    text=path.read_text(encoding="utf-8",errors="ignore")
+    for lineno,statement in _iter_sql_statements(text):
+        m=INSERT_RE.match(statement)
+        if not m or m.group(1)!=expected_table:
             continue
-        values = split_sql_values(m.group(2))
-        if len(values) != len(columns):
+        values=split_sql_values(m.group(2))
+        if len(values)!=len(columns):
             print(f"  [!] {path.name}:{lineno} has {len(values)} values, expected {len(columns)} "
                   f"for {expected_table} -- skipped (schema drift?)")
             continue
-        yield dict(zip(columns, values))
+        yield dict(zip(columns,values))
 
 
 def init_db(con: sqlite3.Connection):
