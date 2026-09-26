@@ -11,7 +11,7 @@
   <div class="stat"><div class="n">{{ runs|length }}</div><div class="l">Recent runs shown</div></div>
   <div class="stat"><div class="n">{{ status_counts.get('VERIFIED', 0) }}</div><div class="l">Verified runs</div></div>
   <div class="stat"><div class="n">{{ status_counts.get('FAILED', 0) }}</div><div class="l">Failed runs</div></div>
-  <div class="stat"><div class="n">{{ result_counts|sum(attribute='1') if result_counts else 0 }}</div><div class="l">Validation results</div></div>
+  <div class="stat"><div class="n">{{ total_results }}</div><div class="l">Validation results</div></div>
 </div>
 
 <h2>Recent runs</h2>
