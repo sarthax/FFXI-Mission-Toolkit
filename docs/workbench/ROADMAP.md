@@ -111,7 +111,7 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - [x] Binding compatibility engine — generic snapshot-aware comparison now distinguishes exact,
   representation drift, renamed/class-drift candidate, implementation drift, missing indexed,
   unresolved, and ambiguous outcomes while preserving binding/function evidence.
-- [ ] Live target validation
+- [x] Live target validation — generic adapter-aware read-only DB validation, canonical ValidationRun/ValidationResult persistence, and safe CLI are implemented; specialized live MariaDB health/admin tools remain separate.
 - [ ] ID/content collision analysis — generic normalized-record collision engine, migration-planner safety integration, and typed research-tool exposure are implemented; broader real cross-fork fixtures remain.
 
 Current public flagship E2E: pinned LSB → legacy DSP Chains of Promathia 2-5 (Ancient Vows) reaches adapters, logical comparison, FeatureSurface capability alignment, canonical graph persistence, target-snapshot capability requirements, ValidationRun/ValidationResult, and Feature Checker.
