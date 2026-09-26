@@ -171,6 +171,7 @@ WORKSPACES = (
         "name": "Client",
         "href": "/modelviewer",
         "sections": (
+            {"label": "Client Overview", "href": "/clientoverview"},
             {"label": "Model Viewer", "href": "/modelviewer"},
             {"label": "DAT Inspector", "href": "/datinspector"},
             {"label": "Binary Inspector", "href": "/binaryinspector"},

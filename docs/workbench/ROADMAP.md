@@ -156,7 +156,7 @@ Current public flagship E2E: pinned LSB → legacy DSP Chains of Promathia 2-5 (
 - [ ] dialog drift (P1)
 - [ ] packet/client/server relationships (P1 beyond the existing packet/server graph foundation)
 - [x] generic EXE/DLL static research foundation — PE metadata/hash/section/import/export/string indexing, canonical evidence ingestion, typed research tools, and cross-binary index diffing are implemented; deeper disassembly/xref/function-recovery analyzers remain future work.
-- [x] Client DAT/Binary Inspector GUI pages and feature-presence probes (`binary_probes.py`) emitting capability observations/requirements — see CLIENT_BINARY_RESEARCH.md; probe-set JSON files + read-only GUI runner (PoC); GUI save-to-graph; [ ] probe-set editor, Client Overview/Build fingerprint page.
+- [x] Client DAT/Binary Inspector GUI pages and feature-presence probes (`binary_probes.py`) emitting capability observations/requirements — see CLIENT_BINARY_RESEARCH.md; probe-set JSON files + read-only GUI runner (PoC); GUI save-to-graph; [ ] probe-set editor; [x] Client Overview/Build fingerprint page.
 
 ### Phase 5 — Runtime validation (P0/P1)
 - [x] capture index (P0) — current/last-state, history, paths, actions, HP/events/raw packets are ingestible with provenance.

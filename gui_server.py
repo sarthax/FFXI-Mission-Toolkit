@@ -5993,6 +5993,18 @@ def datinspector_page(request: Request, dat_id: str = "", zoneid: str = "", ffxi
         "ffxi_path": path, "families": families})
 
 
+@app.get("/clientoverview", response_class=HTMLResponse)
+def clientoverview_page(request: Request):
+    import client_overview
+    install = settings_mod.get_ffxi_install() or "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
+    ov, error = None, None
+    try:
+        ov = client_overview.overview(install, WORKBENCH_DB)
+    except Exception as ex:
+        error = f"{type(ex).__name__}: {ex}"
+    return templates.TemplateResponse(request, "client_overview.html", {"request": request, "ov": ov, "error": error})
+
+
 @app.post("/binaryinspector/save-probes", response_class=HTMLResponse)
 def binaryinspector_save_probes(request: Request, run_set: str = Form(...)):
     import binary_inspector as bi

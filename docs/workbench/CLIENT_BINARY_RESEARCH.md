@@ -148,3 +148,7 @@ Real finding on the supplied FFXiMain.dll: strings `/wardrobe`, `/wardrobe2`, `/
 **Feature linkage** — a probe set may carry a top-level `feature` object (`feature_id`, `name`, `feature_type`, `domain_id`, `status`); probes with `"requires_feature": true` become that feature's `CapabilityRequirement`s on save. `mog_wardrobe.json` defines `feature:mog-wardrobe-5-8` (domain `Client`) requiring `/wardrobe5`..`/wardrobe8`; `/wardrobe`, `/wardrobe2`, `/wardrobe4` are unlinked baseline probes. Verified on the real graph: after Save to graph, Feature Checker reports `UNKNOWN_REQUIRED_CAPABILITY` (all four requirements UNKNOWN on the supplied client; not proof of absence). Save is idempotent. The feature is created by the save, not by `workbench_connect.py` (which only makes MISSION features).
 
 Not built: GUI to create/edit probe sets, Client Overview / Build page showing fingerprints.
+
+## Client Overview / Build page (2026-09-26)
+
+`/clientoverview` (Client > Client Overview, `client_overview.py`) fingerprints the installed client read-only: every root DLL/EXE (size, PE link time, SHA-256), FTABLE/VTABLE sizes, ROM folder list, and a **build id** = first 12 hex of `FFXiMain.dll` SHA-256. That build id is the same one used in probe snapshot ids (`snapshot:client-<build id>`), and the page lists any probe observations already saved for the build from `workbench.db` (opened read-only; never created). Captures/ID tables can cite the build id to say which client they came from.

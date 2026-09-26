@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 152,
+  "route_count": 153,
   "routes": [
     {
       "method": "GET",
@@ -1217,6 +1217,14 @@
       "home": "Client",
       "section": "Binary Inspector",
       "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/clientoverview",
+      "home": "Client",
+      "section": "Client Overview",
+      "role": "page",
       "disposition": "KEEP"
     }
   ]
