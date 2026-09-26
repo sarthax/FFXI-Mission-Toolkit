@@ -160,6 +160,44 @@ class MigrationBackendRegistry:
     def backends(self) -> tuple[MigrationBackend, ...]:
         return tuple(self._backends)
 
+    def describe_route(self, source_family: str, target_family: str, artifact_type: str) -> dict[str,Any]:
+        backend=self.resolve(source_family,target_family,artifact_type)
+        if backend is None:
+            return {
+                "source_family":source_family.upper(),
+                "target_family":target_family.upper(),
+                "artifact_type":artifact_type.upper(),
+                "support_level":"UNSUPPORTED",
+                "backend_id":None,
+            }
+        return {
+            "source_family":source_family.upper(),
+            "target_family":target_family.upper(),
+            "artifact_type":artifact_type.upper(),
+            "support_level":backend.support_level,
+            "backend_id":backend.backend_id,
+        }
+
+    def support_matrix(
+        self,
+        families: tuple[str, ...],
+        artifact_types: tuple[str, ...] = ("LUA","SQL"),
+    ) -> dict[str,Any]:
+        routes=[]
+        for source in families:
+            for target in families:
+                if source.upper()==target.upper():
+                    continue
+                for artifact_type in artifact_types:
+                    routes.append(self.describe_route(source,target,artifact_type))
+        return {
+            "schema":1,
+            "kind":"MIGRATION_BACKEND_SUPPORT_MATRIX",
+            "families":[family.upper() for family in families],
+            "artifact_types":[kind.upper() for kind in artifact_types],
+            "routes":routes,
+        }
+
 
 def default_backend_registry() -> MigrationBackendRegistry:
     registry=MigrationBackendRegistry()
