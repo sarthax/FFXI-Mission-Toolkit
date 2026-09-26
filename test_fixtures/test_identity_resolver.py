@@ -59,12 +59,14 @@ def main() -> None:
             snapshot_id="client:2019-12-04",
             zone_key="NORTH_GUSTABERG_S",
             entries=old_rows,
+            namespace="EVENT",
         )
         ingest_dialog_records(
             con,
             snapshot_id="client:2022-test",
             zone_key="NORTH_GUSTABERG_S",
             entries=new_rows,
+            namespace="EVENT",
         )
         con.commit()
 
