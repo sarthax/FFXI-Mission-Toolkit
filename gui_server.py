@@ -70,6 +70,8 @@ import packet_decode
 import settings as settings_mod
 import wiki_compile
 from workbench.gui_shell import build_shell_context
+from workbench.adapters.servers import LogicalRecord, adapter_for
+from workbench.migrations.live_target_validation import DBAPITargetReader, persist_live_validation, validate_live_records
 
 TOOLS_ROOT = Path(__file__).parent
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
@@ -2532,6 +2534,185 @@ def validation_run_detail(request: Request, run_id: str):
         "results": results,
         "error": error,
         "run_id": run_id,
+    })
+
+
+def _live_validation_record(row: dict) -> LogicalRecord:
+    logical_type = str(row["logical_type"])
+    return LogicalRecord(
+        logical_type=logical_type,
+        identity=tuple((str(k), v) for k, v in row.get("identity", [])),
+        fields=dict(row.get("fields") or {}),
+        source_family=str(row.get("source_family") or "UNKNOWN"),
+        source_table=str(row.get("source_table") or logical_type),
+        notes=tuple(str(x) for x in row.get("notes", [])),
+    )
+
+
+def _live_validation_payload(raw: str) -> tuple[str, list[LogicalRecord], dict]:
+    payload = json.loads(raw)
+    logical_type = payload.get("logical_type")
+    rows = payload.get("records")
+    if not isinstance(logical_type, str) or not logical_type:
+        raise ValueError("Expected JSON requires a non-empty logical_type.")
+    if not isinstance(rows, list):
+        raise ValueError("Expected JSON requires records[].")
+    records = [_live_validation_record(row) for row in rows]
+    if any(record.logical_type != logical_type for record in records):
+        raise ValueError("Every record.logical_type must match payload logical_type.")
+    return logical_type, records, payload
+
+
+@app.get("/validation/live-target", response_class=HTMLResponse)
+def validation_live_target_page(request: Request):
+    example = {
+        "logical_type": "item_basic",
+        "records": [{
+            "logical_type": "item_basic",
+            "identity": [["itemid", 0]],
+            "fields": {"itemid": 0},
+            "source_family": "UNKNOWN",
+            "source_table": "item_basic",
+        }],
+    }
+    return templates.TemplateResponse(request, "validation_live_target.html", {
+        "request": request,
+        "form": {
+            "target_family": "DSP",
+            "target_root": "",
+            "backend": "sqlite",
+            "sqlite_db": "",
+            "host": "127.0.0.1",
+            "port": "3306",
+            "user": "",
+            "database": "",
+            "password_env": "FFXI_DB_PASSWORD",
+            "target_snapshot_id": "",
+            "source_snapshot_id": "",
+            "feature_id": "",
+            "run_id": "",
+            "persist": False,
+            "expected_json": json.dumps(example, indent=2),
+        },
+        "result": None,
+        "error": None,
+    })
+
+
+@app.post("/validation/live-target", response_class=HTMLResponse)
+def validation_live_target_run(
+    request: Request,
+    target_family: str = Form(...),
+    target_root: str = Form(""),
+    backend: str = Form("sqlite"),
+    sqlite_db: str = Form(""),
+    host: str = Form("127.0.0.1"),
+    port: int = Form(3306),
+    user: str = Form(""),
+    database: str = Form(""),
+    password_env: str = Form("FFXI_DB_PASSWORD"),
+    target_snapshot_id: str = Form(""),
+    source_snapshot_id: str = Form(""),
+    feature_id: str = Form(""),
+    run_id: str = Form(""),
+    expected_json: str = Form(...),
+    persist: str | None = Form(None),
+):
+    form = {
+        "target_family": target_family,
+        "target_root": target_root,
+        "backend": backend,
+        "sqlite_db": sqlite_db,
+        "host": host,
+        "port": str(port),
+        "user": user,
+        "database": database,
+        "password_env": password_env,
+        "target_snapshot_id": target_snapshot_id,
+        "source_snapshot_id": source_snapshot_id,
+        "feature_id": feature_id,
+        "run_id": run_id,
+        "persist": persist is not None,
+        "expected_json": expected_json,
+    }
+    result = None
+    error = None
+    connection = None
+    try:
+        logical_type, records, input_payload = _live_validation_payload(expected_json)
+        adapter = adapter_for(target_family, Path(target_root or "."))
+        backend_name = backend.strip().lower()
+        if backend_name == "sqlite":
+            if not sqlite_db.strip():
+                raise ValueError("SQLite database path is required.")
+            db_path = Path(sqlite_db).expanduser().resolve()
+            connection = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+            paramstyle = "qmark"
+            connection_label = f"sqlite:{db_path}"
+        elif backend_name in {"mysql", "mariadb"}:
+            if not database.strip() or not user.strip():
+                raise ValueError("Database name and user are required for MySQL/MariaDB.")
+            env_name = password_env.strip() or "FFXI_DB_PASSWORD"
+            password = os.environ.get(env_name)
+            if password is None:
+                raise ValueError(f"Environment variable {env_name} is not set.")
+            try:
+                import mysql.connector
+            except ImportError as exc:
+                raise RuntimeError("mysql-connector-python is required for MySQL/MariaDB live validation.") from exc
+            connection = mysql.connector.connect(
+                host=host.strip() or "127.0.0.1",
+                port=port,
+                user=user.strip(),
+                password=password,
+                database=database.strip(),
+            )
+            paramstyle = "format"
+            connection_label = f"mysql:{adapter.family}"
+        else:
+            raise ValueError("Backend must be sqlite or mysql/mariadb.")
+
+        reader = DBAPITargetReader(connection, paramstyle=paramstyle)
+        result = validate_live_records(
+            adapter,
+            reader,
+            logical_type,
+            records,
+            target_snapshot_id=target_snapshot_id.strip() or input_payload.get("target_snapshot_id"),
+        )
+        result = {
+            **result,
+            "target_family": adapter.family,
+            "target_adapter_id": adapter.adapter_id,
+            "connection_backend": backend_name,
+            "credentials_persisted": False,
+        }
+        if persist is not None:
+            selected_run_id = run_id.strip() or f"run:live-target:{logical_type}"
+            result["canonical_validation"] = persist_live_validation(
+                result,
+                WORKBENCH_DB,
+                run_id=selected_run_id,
+                feature_id=feature_id.strip() or None,
+                source_snapshot_id=source_snapshot_id.strip() or input_payload.get("source_snapshot_id"),
+                target_snapshot_id=target_snapshot_id.strip() or input_payload.get("target_snapshot_id"),
+                source="GUI normalized payload",
+                target=connection_label,
+            )
+    except Exception as exc:
+        error = f"{type(exc).__name__}: {exc}"
+    finally:
+        if connection is not None:
+            try:
+                connection.close()
+            except Exception:
+                pass
+
+    return templates.TemplateResponse(request, "validation_live_target.html", {
+        "request": request,
+        "form": form,
+        "result": result,
+        "error": error,
     })
 
 
