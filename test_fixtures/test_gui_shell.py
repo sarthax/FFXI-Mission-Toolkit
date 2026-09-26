@@ -67,9 +67,9 @@ def main():
     assert route_owner("/zoneplot/restore", "POST")["section"] == "Editors > Zone Editor"
     assert route_owner("/itemedit/123.json")["section"] == "Editors > Item Editor"
     assert route_owner("/domains/assault")["home"] == "Domains"
-    assert route_owner("/domains/assault")["section"] == "Assault"
+    assert route_owner("/domains/assault")["section"] == "Battle Systems > Assault"
     assert route_owner("/nyzul")["home"] == "Domains"
-    assert route_owner("/nyzul/data.json")["section"] == "Nyzul Isle"
+    assert route_owner("/nyzul/data.json")["section"] == "Battle Systems > Nyzul Isle"
 
     planned = build_shell_context(
         path="/", method="GET", settings={}, workspace_slug="validation",
@@ -97,13 +97,17 @@ def main():
     assert next(section for section in tools_workspace["sections"] if section["label"] == "Lookup & Decode: Entity")["href"] == "/entity?shell=tools"
 
     domains = next(workspace for workspace in WORKSPACES if workspace["name"] == "Domains")
-    assert next(section for section in domains["sections"] if section["label"] == "Assault")["href"] == "/domains/assault"
-    assert next(section for section in domains["sections"] if section["label"] == "Nyzul Isle")["href"] == "/nyzul"
-    assert {section["label"] for section in domains["sections"] if section.get("planned")} >= {"Salvage", "Einherjar", "Abyssea", "Domain Packages"}
+    assert next(section for section in domains["sections"] if section["label"] == "↳ Assault")["href"] == "/domains/assault"
+    assert next(section for section in domains["sections"] if section["label"] == "↳ Nyzul Isle")["href"] == "/nyzul"
+    assert {section["label"] for section in domains["sections"] if section.get("planned")} >= {
+        "Abyssea", "Battlefields", "Battle Systems", "Conflict / Battle", "Combat",
+        "Dynamis", "Escha", "Hobbies", "HELM", "Events", "Missions", "Quests",
+        "RoE", "Trust", "Other",
+    }
 
     nyzul = context_for("/nyzul")
     assert nyzul["active_home"] == "Domains"
-    assert next(section for section in nyzul["sections"] if section["active"])["label"] == "Nyzul Isle"
+    assert next(section for section in nyzul["sections"] if section["active"])["label"] == "↳ Nyzul Isle"
 
     configured = build_shell_context(
         path="/captures",
