@@ -591,7 +591,7 @@
       "method": "GET",
       "path": "/domains/assault",
       "home": "Domains",
-      "section": "Assault",
+      "section": "Battle Systems > Assault",
       "role": "page",
       "disposition": "KEEP"
     },
@@ -599,7 +599,7 @@
       "method": "GET",
       "path": "/nyzul",
       "home": "Domains",
-      "section": "Nyzul Isle",
+      "section": "Battle Systems > Nyzul Isle",
       "role": "page",
       "disposition": "KEEP"
     },
@@ -607,7 +607,7 @@
       "method": "GET",
       "path": "/nyzul/data.json",
       "home": "Domains",
-      "section": "Nyzul Isle",
+      "section": "Battle Systems > Nyzul Isle",
       "role": "api/action",
       "disposition": "KEEP"
     },
@@ -615,7 +615,7 @@
       "method": "GET",
       "path": "/nyzul/navmesh.bin",
       "home": "Domains",
-      "section": "Nyzul Isle",
+      "section": "Battle Systems > Nyzul Isle",
       "role": "api/action",
       "disposition": "KEEP"
     },
@@ -623,7 +623,7 @@
       "method": "POST",
       "path": "/nyzul/exclusions",
       "home": "Domains",
-      "section": "Nyzul Isle",
+      "section": "Battle Systems > Nyzul Isle",
       "role": "api/action",
       "disposition": "KEEP"
     },
