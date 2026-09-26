@@ -947,3 +947,45 @@ P0 intentionally does not include:
 - live SQL/database apply/rollback.
 
 Those items continue in P1+ and do not reopen the P0 architectural foundation.
+
+
+## 2026-09-25 — GUI information architecture and route mapping
+
+The current GUI has been mapped into the proposed workspace architecture without changing routes, templates, navigation, or backend behavior.
+
+Artifacts:
+- `docs/workbench/GUI_INFORMATION_ARCHITECTURE.md`
+- `docs/workbench/GUI_ROUTE_MAP.json`
+- `test_fixtures/test_gui_information_architecture.py`
+
+The live `gui_server.py` route surface contains 134 FastAPI method/path registrations. Every registration now has exactly one canonical GUI home and a migration disposition. The map is regression-checked so future route additions/removals must be deliberately incorporated into the information architecture.
+
+Canonical top-level workspaces:
+- Home / Project
+- Features
+- Backport & Migration
+- Captures
+- Server
+- Client
+- Validation
+- Packages
+- Tools
+- Settings
+
+Captures remains a first-class workspace. Zone Plot and Item Editor remain under Tools > Editors because they perform mutations, while Server/Client/Captures expose contextual “open in editor” entry points. The current LLM/research interface is preserved for later REWORK rather than removal. The existing Backport Package route is retained as LEGACY compatibility until the future Packages workspace reaches functional parity.
+
+Current route ownership:
+- Home / Project: 3
+- Features: 1
+- Backport & Migration: 10
+- Captures: 20
+- Server: 18
+- Client: 3
+- Tools: 66
+- Settings: 13
+- Validation: 0 current routes (NEW GUI required)
+- Packages: 0 current routes (NEW GUI required)
+
+The high Tools count is dominated by the supporting APIs/actions of the existing Zone Editor and Item Editor and does not imply those tools will be flattened into generic navigation.
+
+No existing GUI capability was removed or hidden by this milestone.
