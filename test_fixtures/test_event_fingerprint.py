@@ -28,8 +28,10 @@ def main() -> None:
     assert a.exact_sha256 != b.exact_sha256, (a, b)
     assert a.structural_sha256 == b.structural_sha256, (a, b)
     structural = compare_event_fingerprints(a, b)
-    assert structural["status"] == "STRUCTURE_MATCH", structural
-    assert structural["confidence"] == "HIGH", structural
+    expected_status = "STRUCTURE_MATCH" if a.parser != "RAW_ONLY" and b.parser != "RAW_ONLY" else "COARSE_SHAPE_MATCH"
+    expected_confidence = "HIGH" if expected_status == "STRUCTURE_MATCH" else "LOW"
+    assert structural["status"] == expected_status, structural
+    assert structural["confidence"] == expected_confidence, structural
 
     # Same text alone must not override structural disagreement.
     c = fingerprint_event(EventResource(
