@@ -357,3 +357,32 @@ Lua event indexing now carries conservative callback-parameter class hints, and 
 - [x] audit and map item_weapon, item_usable, spells, and traits with lineage-specific drift retained.
 - [x] audit item_basic with explicit legacy Topaz/DSP versus LSB representation drift.
 - [ ] audit additional system tables as P1 schema expansion; P0 core schema coverage is complete.
+
+
+## P0 closure status
+
+P0 architecture is closed on the `workbench-rework/audit-foundation` branch.
+
+Closed P0 scope:
+- canonical evidence/feature graph and report connectors;
+- Topaz, Topaz-Next, DSP, LSB, and explicit custom-fork adapters;
+- core logical schema coverage for items, entities, instances, battlefields, spells, traits, and SQL extraction;
+- FeatureSurface comparison and target-snapshot capability evaluation;
+- explicit migration backend support matrix and conservative unsupported-route behavior;
+- binding compatibility, live-target validation, and ID/content collision handling;
+- C++/enum/binding/packet/build analysis foundation;
+- read-only client DAT normalization, core client/server field bindings, and client capability observations;
+- EXE/DLL static research foundation;
+- runtime capture ingestion/backtrace/packet evidence and canonical validation orchestration.
+
+Explicitly deferred to P1+:
+- generalized Workbench DAT write orchestration and richer client synchronization/dialog drift;
+- broader non-core server table mappings;
+- richer runtime capture/probe producers;
+- domain/plugin expansion and named-system packages;
+- broader migration automation/live SQL apply;
+- GUI exposure of the new architecture and evidence-aware research/agent UX.
+
+Current proof:
+- Workbench Regression remains green through the P0 closure sequence.
+- Workbench Ancient Vows Cross-Fork #129 passes on the current branch head against pinned public LSB and legacy DSP snapshots.
