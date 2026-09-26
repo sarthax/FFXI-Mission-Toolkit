@@ -897,3 +897,18 @@ Current matrix highlights:
 - Topaz-Next routes do not inherit Topaz converter authority automatically.
 
 Workbench Regression #1210 is green with route-matrix coverage.
+
+
+## 2026-09-25 — Cross-fork collision and minimum client P0 closure
+
+ID/content collision coverage now includes public cross-fork regression fixtures based on audited Darkstar/Topaz/LSB SQL shapes. The fixtures prove stable shared item_weapon identity/content equivalence and explicit same-ID normalized spell drift across legacy DSP and Topaz-era schemas. Synthetic fixtures continue to cover ambiguous, unresolved, and renumber-candidate cases.
+
+The minimum P0 client layer is now implemented in `workbench.client.dat_adapter`:
+- read-only normalized ClientDatRecord over the existing audited `item_dat_tools` parser;
+- explicit ClientServerFieldBinding records for core item identity/flags/stack/type/equipment/weapon/usable fields;
+- conservative field comparison that returns VERIFIED, CONTRADICTED, or UNKNOWN without inferring unbound fields;
+- snapshot-scoped client DAT record capability/evidence persistence.
+
+This P0 layer does not replace or broaden DAT write authority. Existing specialized `item_dat_tools` patch/create/delete logic remains separate; generalized Workbench DAT editing remains P1.
+
+The full core regression step is passing after the cross-fork fixture identity-shape correction, including the client DAT adapter regression.
