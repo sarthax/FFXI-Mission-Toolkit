@@ -632,6 +632,40 @@ confidence and cannot satisfy the default automatic EVENT identity-closure polic
 This distinction prevents an arbitrary byte split from being treated as equivalent to a known
 event instruction sequence.
 
+
+
+### Bulk event-drift comparison CLI
+
+After two client snapshots have been ingested:
+
+```text
+python -m workbench.cli.event_identity_compare \
+  --db workbench.db \
+  --source client:newer-build \
+  --target client:older-build \
+  --zone NORTH_GUSTABERG_S \
+  --minimum-confidence HIGH \
+  --format json \
+  --output north_gustaberg_event_drift.json
+```
+
+Use `--format csv` for a spreadsheet-friendly report.
+
+Each row retains:
+
+- source zone;
+- source actor context;
+- source event id;
+- resolved target event id when available;
+- status;
+- confidence;
+- match basis;
+- source/target identity record ids;
+- explanatory reason.
+
+Bulk comparison is actor-aware on the source side and does not collapse repeated CSIDs under
+different event actors into one row.
+
 ### Next event-identity work
 
 Before declaring identity closure complete, remaining work includes:
