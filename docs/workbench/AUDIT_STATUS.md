@@ -958,7 +958,7 @@ Artifacts:
 - `docs/workbench/GUI_ROUTE_MAP.json`
 - `test_fixtures/test_gui_information_architecture.py`
 
-The live `gui_server.py` route surface contains 140 FastAPI method/path registrations. Every registration now has exactly one canonical GUI home and a migration disposition. The map is regression-checked so future route additions/removals must be deliberately incorporated into the information architecture.
+The live `gui_server.py` route surface contains 142 FastAPI method/path registrations. Every registration now has exactly one canonical GUI home and a migration disposition. The map is regression-checked so future route additions/removals must be deliberately incorporated into the information architecture.
 
 Canonical top-level workspaces:
 - Home / Project
@@ -985,7 +985,7 @@ Current route ownership:
 - Client: 3
 - Tools: 62
 - Settings: 13
-- Validation: 3
+- Validation: 5
 - Packages: 0 current routes (NEW GUI required)
 
 The high Tools count is dominated by the supporting APIs/actions of the existing Zone Editor and Item Editor and does not imply those tools will be flattened into generic navigation. The Domains count currently consists of the Assault landing page plus the existing Nyzul page/data/action routes.
@@ -995,7 +995,7 @@ No existing GUI capability was removed or hidden by this milestone.
 
 ## 2026-09-25 — Shared GUI application shell
 
-Implemented the shared GUI shell and subsequent Domains workspace expansion without redesigning existing Nyzul/Zone Editor internals. The current FastAPI surface is 140 routes.
+Implemented the shared GUI shell and subsequent Domains workspace expansion without redesigning existing Nyzul/Zone Editor internals. The current FastAPI surface is 142 routes.
 
 The shared `base.html` shell now provides:
 - all eleven current top-level workspaces: Home / Project, Features, Domains, Backport & Migration, Captures, Server, Client, Validation, Packages, Tools, and Settings;
@@ -1010,7 +1010,7 @@ The shared `base.html` shell now provides:
 
 `workbench.gui_shell` owns the read-only shell model and resolves active workspace ownership from `GUI_ROUTE_MAP.json`; it does not add routes, select snapshots, or mutate settings. Validation and Packages remain visible top-level workspaces while their consolidated pages remain future work. The existing Backport Package route stays available as an explicitly labeled legacy workflow.
 
-Regression coverage in `test_fixtures/test_gui_shell.py` reruns the 140-route information-architecture check, verifies dynamic route ownership including Domains/Battle Systems, verifies configured versus unknown context semantics, and renders representative Home, Captures, and mutation-editor templates through the shared shell. The Workbench regression workflow runs this shell test.
+Regression coverage in `test_fixtures/test_gui_shell.py` reruns the 142-route information-architecture check, verifies dynamic route ownership including Domains/Battle Systems, verifies configured versus unknown context semantics, and renders representative Home, Captures, and mutation-editor templates through the shared shell. The Workbench regression workflow runs this shell test.
 
 
 ## 2026-09-25 — Real packed-DLL deeper pass
@@ -1039,5 +1039,19 @@ Validation is now a functional top-level workspace rather than a shell-only plac
 - `/validation/runs/{run_id}` shows run identity, source/target snapshots, feature association, timestamps, result types/statuses, evidence IDs, and notes;
 - pages reuse the existing canonical `workbench.db` and do not create an empty graph database when it is missing or uninitialized;
 - no new validators, aggregate scores, or inferred validation semantics were introduced;
-- Live Target remains visible as planned because its adapter/configuration/input workflow should be exposed deliberately rather than conflated with persisted history browsing;
+- Live Target is exposed separately from persisted history browsing so connection/input handling remains explicit;
 - the GUI route surface is now 140 method/path registrations.
+
+
+## 2026-09-25 — Live Target Validation UI
+
+The Validation workspace now exposes `/validation/live-target` as a safe GUI over the existing adapter-aware live database validator:
+
+- GET renders the normalized-record input and target connection form; POST runs validation;
+- the JSON input contract matches `workbench.cli.live_target_validation` rather than introducing a second representation;
+- SQLite connections use read-only URI mode; MySQL/MariaDB passwords are read only from the selected environment variable and are never persisted;
+- validation remains SELECT-only through `DBAPITargetReader` and existing server adapters;
+- per-record differences and VERIFIED/MISSING/CONTRADICTED/AMBIGUOUS/UNKNOWN/FAILED states are presented without inventing a score;
+- optional persistence writes only canonical validation/capability evidence and records `credentials_persisted=False`;
+- database representation success remains explicitly separate from runtime, packet/capture, Lua, and client validation;
+- the GUI route surface is now 142 method/path registrations.
