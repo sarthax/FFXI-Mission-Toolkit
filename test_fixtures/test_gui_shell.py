@@ -74,6 +74,9 @@ def main():
     assert route_owner("/validation/runs/example-run")["section"] == "Runs & Results"
     assert route_owner("/validation/live-target")["section"] == "Live Target"
     assert route_owner("/validation/live-target", "POST")["section"] == "Live Target"
+    assert route_owner("/packages")["home"] == "Packages"
+    assert route_owner("/packages")["section"] == "Package Library"
+    assert route_owner("/packages/review")["section"] == "Review & Readiness"
     assert route_owner("/domains/assault")["home"] == "Domains"
     assert route_owner("/domains/assault")["section"] == "Battle Systems > Assault"
     assert route_owner("/nyzul")["home"] == "Domains"
@@ -85,7 +88,10 @@ def main():
         path_exists=lambda _path: False,
     )
     assert planned["active_home"] == "Validation"
-    assert any(workspace["href"] == "/?workspace=packages" for workspace in WORKSPACES)
+    packages_workspace = next(workspace for workspace in WORKSPACES if workspace["name"] == "Packages")
+    assert packages_workspace["href"] == "/packages"
+    assert next(section for section in packages_workspace["sections"] if section["label"] == "Package Library")["href"] == "/packages"
+    assert next(section for section in packages_workspace["sections"] if section["label"] == "Review & Readiness")["href"] == "/packages/review"
     validation_workspace = next(workspace for workspace in WORKSPACES if workspace["name"] == "Validation")
     assert validation_workspace["href"] == "/validation"
     assert next(section for section in validation_workspace["sections"] if section["label"] == "Dashboard")["href"] == "/validation"
@@ -163,6 +169,8 @@ def main():
         ("validation_runs.html", "/validation/runs", {"q": "", "status": "", "statuses": [], "runs": [], "error": None}),
         ("validation_run_detail.html", "/validation/runs/test", {"run": None, "results": [], "error": None, "run_id": "test"}),
         ("validation_live_target.html", "/validation/live-target", {"form": {"target_family": "DSP", "target_root": "", "backend": "sqlite", "sqlite_db": "", "host": "127.0.0.1", "port": "3306", "user": "", "database": "", "password_env": "FFXI_DB_PASSWORD", "target_snapshot_id": "", "source_snapshot_id": "", "feature_id": "", "run_id": "", "persist": False, "expected_json": "{}"}, "result": None, "error": None}),
+        ("packages_library.html", "/packages", {"q": "", "project_root": "C:/workspace", "packages": []}),
+        ("packages_review.html", "/packages/review", {"packages": [], "package": "", "target_root": "", "review": None, "manifest": {}, "validation": {}, "error": None}),
     )
     for template, path, values in pages:
         html = render(template, path, **values)
@@ -196,6 +204,13 @@ def main():
     live_target_shell = context_for("/validation/live-target")
     assert live_target_shell["active_home"] == "Validation"
     assert next(section for section in live_target_shell["sections"] if section["active"])["label"] == "Live Target"
+
+    packages_shell = context_for("/packages")
+    assert packages_shell["active_home"] == "Packages"
+    assert next(section for section in packages_shell["sections"] if section["active"])["label"] == "Package Library"
+    package_review_shell = context_for("/packages/review")
+    assert package_review_shell["active_home"] == "Packages"
+    assert next(section for section in package_review_shell["sections"] if section["active"])["label"] == "Review & Readiness"
 
     trace_shell = context_for("/features/trace")
     assert trace_shell["active_home"] == "Features"
