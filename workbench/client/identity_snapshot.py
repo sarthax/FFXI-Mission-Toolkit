@@ -171,6 +171,17 @@ def ingest_client_identity_manifest(
     zones: list[dict[str, Any]] = []
     failures: list[dict[str, Any]] = []
     record_count = 0
+    dialog_entries_by_zone: dict[str, dict[int, str]] = {}
+    for item in manifest.files:
+        if str(item.get("kind") or "").upper() != "DIALOG":
+            continue
+        rel = item.get("relative_path")
+        zone_key = item.get("zone_key")
+        if not rel or not zone_key:
+            continue
+        dialog_path = root / str(rel)
+        if dialog_path.is_file():
+            dialog_entries_by_zone[str(zone_key)] = parse_dialog_export(dialog_path)
     for item in manifest.files:
         kind = str(item.get("kind") or "").upper()
         if kind not in {"DIALOG", "EVENT_RESOURCE"}:
@@ -212,6 +223,7 @@ def ingest_client_identity_manifest(
                 zone_key=str(zone_key),
                 resources=event_resources,
                 evidence_id_prefix=f"client-event:{manifest.snapshot_id}:{zone_key}",
+                dialog_entries=dialog_entries_by_zone.get(str(zone_key)),
             )
 
         record_count += len(records)
