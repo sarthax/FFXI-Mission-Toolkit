@@ -97,3 +97,68 @@ def plan_entity_identity_drifts(
             },
         ))
     return actions
+
+
+def plan_collision_findings(
+    collision_result: dict,
+    migration_id: str,
+) -> list[MigrationAction]:
+    """Convert generic ID/content collision findings into conservative migration actions.
+
+    Hard same-identity/different-content collisions are BLOCKED. Content-equivalent renumber
+    candidates remain MANUAL_REQUIRED because normalized field equality is not proof of semantic
+    entity equivalence. Exact equivalents need no action.
+    """
+    actions=[]
+    for index,finding in enumerate(collision_result.get("findings",[]), start=1):
+        classification=finding.get("classification")
+        logical_type=finding.get("logical_type")
+        source_identity=finding.get("source_identity")
+        target_identity=finding.get("target_identity")
+        digest=hashlib.sha256(json.dumps(
+            {"classification":classification,"logical_type":logical_type,
+             "source_identity":source_identity,"target_identity":target_identity},
+            sort_keys=True,default=str,
+        ).encode("utf-8")).hexdigest()[:12]
+        metadata={
+            "logical_type":logical_type,
+            "classification":classification,
+            "source_identity":source_identity,
+            "target_identity":target_identity,
+            "identifier_namespaces":finding.get("identifier_namespaces",[]),
+            "collision_confidence":finding.get("confidence"),
+            "collision_status":finding.get("status"),
+            "source_fingerprint":finding.get("source_fingerprint"),
+            "target_fingerprint":finding.get("target_fingerprint"),
+            "source_snapshot_id":collision_result.get("source_snapshot_id"),
+            "target_snapshot_id":collision_result.get("target_snapshot_id"),
+        }
+
+        if classification=="EXACT_IDENTITY_EQUIVALENT":
+            action="NOT_REQUIRED"; status="COMPATIBLE"
+            reason="Logical identity and normalized content are already compatible."
+        elif classification=="ID_CONTENT_COLLISION":
+            action="MANUAL_REVIEW"; status="BLOCKED"
+            reason="Target logical identity is occupied by different normalized content; automatic migration is unsafe."
+        elif classification=="CONTENT_RENUMBER_CANDIDATE":
+            action="RENUMBER"; status="MANUAL_REQUIRED"
+            reason="Equivalent normalized content appears under a different identity, but semantic equivalence is not verified."
+        elif classification in {"SOURCE_IDENTITY_AMBIGUOUS","TARGET_IDENTITY_AMBIGUOUS"}:
+            action="MANUAL_REVIEW"; status="BLOCKED"
+            reason="Duplicate logical identity makes deterministic migration unsafe."
+        elif classification in {"SOURCE_IDENTITY_UNRESOLVED","TARGET_IDENTITY_UNRESOLVED"}:
+            action="MANUAL_REVIEW"; status="MANUAL_REQUIRED"
+            reason="Logical identity is incomplete and requires review before migration."
+        else:
+            action="MANUAL_REVIEW"; status="MANUAL_REQUIRED"
+            reason="No deterministic collision-safe migration rule has been established."
+
+        actions.append(MigrationAction(
+            action_id=f"collision:{digest}:{index}",
+            migration_id=migration_id,
+            action=action,
+            status=status,
+            reason=reason,
+            metadata=metadata,
+        ))
+    return actions
