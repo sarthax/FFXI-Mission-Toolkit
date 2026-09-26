@@ -958,7 +958,7 @@ Artifacts:
 - `docs/workbench/GUI_ROUTE_MAP.json`
 - `test_fixtures/test_gui_information_architecture.py`
 
-The live `gui_server.py` route surface contains 135 FastAPI method/path registrations. Every registration now has exactly one canonical GUI home and a migration disposition. The map is regression-checked so future route additions/removals must be deliberately incorporated into the information architecture.
+The live `gui_server.py` route surface contains 137 FastAPI method/path registrations. Every registration now has exactly one canonical GUI home and a migration disposition. The map is regression-checked so future route additions/removals must be deliberately incorporated into the information architecture.
 
 Canonical top-level workspaces:
 - Home / Project
@@ -995,7 +995,7 @@ No existing GUI capability was removed or hidden by this milestone.
 
 ## 2026-09-25 — Shared GUI application shell
 
-Implemented the shared GUI shell and subsequent Domains workspace expansion without redesigning existing Nyzul/Zone Editor internals. The current FastAPI surface is 135 routes.
+Implemented the shared GUI shell and subsequent Domains workspace expansion without redesigning existing Nyzul/Zone Editor internals. The current FastAPI surface is 137 routes.
 
 The shared `base.html` shell now provides:
 - all eleven current top-level workspaces: Home / Project, Features, Domains, Backport & Migration, Captures, Server, Client, Validation, Packages, Tools, and Settings;
@@ -1010,9 +1010,21 @@ The shared `base.html` shell now provides:
 
 `workbench.gui_shell` owns the read-only shell model and resolves active workspace ownership from `GUI_ROUTE_MAP.json`; it does not add routes, select snapshots, or mutate settings. Validation and Packages remain visible top-level workspaces while their consolidated pages remain future work. The existing Backport Package route stays available as an explicitly labeled legacy workflow.
 
-Regression coverage in `test_fixtures/test_gui_shell.py` reruns the 135-route information-architecture check, verifies dynamic route ownership including Domains/Battle Systems, verifies configured versus unknown context semantics, and renders representative Home, Captures, and mutation-editor templates through the shared shell. The Workbench regression workflow runs this shell test.
+Regression coverage in `test_fixtures/test_gui_shell.py` reruns the 137-route information-architecture check, verifies dynamic route ownership including Domains/Battle Systems, verifies configured versus unknown context semantics, and renders representative Home, Captures, and mutation-editor templates through the shared shell. The Workbench regression workflow runs this shell test.
 
 
 ## 2026-09-25 — Real packed-DLL deeper pass
 
 Real `FFXiMain.dll` deeper pass completed: mapped POL1 entry point, unmapped virtual `.text` exports, 1,678 function-entry candidates, and 22 IAT-matched FF 15/FF 25 candidates. Added read-only `client.import-refs`; all byte-scan control-flow results remain INFERRED. See `CLIENT_BINARY_RESEARCH.md`.
+
+
+## 2026-09-25 — Feature Trace + Feature Checker GUI
+
+The Features workspace now exposes the existing canonical Workbench analysis backends directly:
+
+- `/features/trace` wraps `feature_trace.search_nodes()`, `node_info()`, and `trace()` for evidence-preserving graph navigation;
+- `/features/check` wraps `feature_checker.resolve_feature()` and `check_feature()` for requirement, implementation, and validation status inspection;
+- both pages are read-only and open the existing canonical `workbench.db` only when it already exists and contains the required graph tables; opening the GUI does not create an empty graph database;
+- Feature Checker preserves separate requirements, implementation, and validation dimensions and does not synthesize a numeric score;
+- Feature Trace preserves status, confidence, evidence IDs, and the existing warning that connectivity is navigation evidence rather than proof of implementation;
+- the GUI route surface is now 137 method/path registrations and remains covered by the route-map regression.
