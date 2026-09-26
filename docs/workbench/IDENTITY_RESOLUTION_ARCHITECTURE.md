@@ -582,6 +582,56 @@ Primary fixtures:
 - `test_fixtures/test_client_identity_extract.py`
 - `test_fixtures/test_capture_identity_bridge.py`
 
+
+
+### Ranked EVENT candidate resolution
+
+EVENT resolution no longer requires literal semantic-key equality between two snapshot records.
+
+This matters when one client snapshot contains enough dialog data to build a composite
+structure+text fingerprint while another client has only decoded event structure.
+
+Target candidates in the same zone are ranked:
+
+```text
+400  exact bytecode                 VERIFIED
+300  composite structure + text     HIGH
+200  fully decoded structure        HIGH
+100  coarse / partially decoded     LOW
+  0  no supported match
+```
+
+Only a **unique strongest candidate** is selected.
+
+If multiple target events share the strongest evidence, resolution remains
+`TARGET_ID_AMBIGUOUS`.
+
+If the strongest unique candidate is below the requested package confidence threshold, the
+resolver returns `TARGET_ID_LOW_CONFIDENCE` while preserving the proposed numeric target and
+match basis for review.
+
+The Retail-capture bridge currently requires:
+
+```text
+namespace = EVENT
+minimum confidence = HIGH
+```
+
+so unknown-opcode/coarse matches cannot automatically translate a captured CSID.
+
+A client missing matching dialog text may still resolve at HIGH confidence when both event
+resources are fully decoded and their stable structure matches.
+
+### Unknown-opcode safety
+
+An event with one or more unknown instructions is not considered a fully decoded structure.
+
+Its structural hash remains useful for comparison/research, but a match is downgraded to LOW
+confidence and cannot satisfy the default automatic EVENT identity-closure policy.
+
+This distinction prevents an arbitrary byte split from being treated as equivalent to a known
+event instruction sequence.
+
 ### Next event-identity work
 
 Before declaring identity closure complete, remaining work includes:
