@@ -504,6 +504,156 @@ def resolve_identity(
     finally:
         con.row_factory = previous_factory
 
+def _event_match_score(source_meta: dict[str, Any], target_meta: dict[str, Any]) -> tuple[int, str, str]:
+    """Return (score, basis, confidence) for EVENT record equivalence."""
+    source_exact = str(source_meta.get("exact_sha256") or "")
+    target_exact = str(target_meta.get("exact_sha256") or "")
+    if source_exact and source_exact == target_exact:
+        return 400, "EXACT_BYTECODE", "VERIFIED"
+
+    source_composite = str(source_meta.get("composite_sha256") or "")
+    target_composite = str(target_meta.get("composite_sha256") or "")
+    source_text = tuple(source_meta.get("message_text_fingerprints") or ())
+    target_text = tuple(target_meta.get("message_text_fingerprints") or ())
+    if source_composite and source_text and target_text and source_composite == target_composite:
+        return 300, "COMPOSITE_STRUCTURE_TEXT", "HIGH"
+
+    source_struct = str(source_meta.get("structural_sha256") or "")
+    target_struct = str(target_meta.get("structural_sha256") or "")
+    source_parser = str(source_meta.get("parser") or "RAW_ONLY")
+    target_parser = str(target_meta.get("parser") or "RAW_ONLY")
+    if source_struct and source_struct == target_struct:
+        decoded = (
+            source_parser != "RAW_ONLY"
+            and target_parser != "RAW_ONLY"
+            and bool(source_meta.get("opcode_sequence"))
+            and bool(target_meta.get("opcode_sequence"))
+        )
+        return (
+            (200, "DECODED_STRUCTURE", "HIGH")
+            if decoded else
+            (100, "COARSE_STRUCTURE", "LOW")
+        )
+    return 0, "NO_MATCH", "UNKNOWN"
+
+
+def resolve_event_identity(
+    con: sqlite3.Connection,
+    *,
+    source_snapshot_id: str,
+    target_snapshot_id: str,
+    source_numeric_id: str | int,
+    zone_key: str,
+    source_actor_key: str | int | None = None,
+    minimum_confidence: str = "HIGH",
+) -> IdentityResolution:
+    """Resolve EVENT identity using ranked fingerprint evidence, not only semantic-key equality.
+
+    A unique strongest candidate is required. Ties remain TARGET_ID_AMBIGUOUS.
+    """
+    ensure_schema(con)
+    previous_factory = con.row_factory
+    con.row_factory = sqlite3.Row
+    try:
+        sql = (
+            "SELECT * FROM identity_records "
+            "WHERE snapshot_id=? AND namespace='EVENT' AND numeric_id=? AND zone_key=?"
+        )
+        params: list[Any] = [source_snapshot_id, str(source_numeric_id), zone_key]
+        if source_actor_key is not None:
+            sql += " AND actor_key=?"
+            params.append(str(source_actor_key))
+        source_rows = list(con.execute(sql, params))
+
+        base = dict(
+            namespace="EVENT",
+            source_snapshot_id=source_snapshot_id,
+            target_snapshot_id=target_snapshot_id,
+            source_numeric_id=str(source_numeric_id),
+        )
+        if not source_rows:
+            return IdentityResolution(
+                status="SOURCE_ID_UNRESOLVED",
+                reason="No EVENT record matches the source snapshot/id/zone/actor context.",
+                **base,
+            )
+        if len(source_rows) > 1:
+            return IdentityResolution(
+                status="SOURCE_ID_AMBIGUOUS",
+                reason="Multiple EVENT records share the source numeric id/context.",
+                metadata={"record_ids": [r["record_id"] for r in source_rows]},
+                **base,
+            )
+
+        source = source_rows[0]
+        source_meta = json.loads(source["metadata_json"] or "{}")
+        targets = list(con.execute(
+            "SELECT * FROM identity_records "
+            "WHERE snapshot_id=? AND namespace='EVENT' AND zone_key=?",
+            (target_snapshot_id, zone_key),
+        ))
+
+        scored: list[tuple[int, str, str, sqlite3.Row]] = []
+        for target in targets:
+            target_meta = json.loads(target["metadata_json"] or "{}")
+            score, basis, confidence = _event_match_score(source_meta, target_meta)
+            if score:
+                scored.append((score, basis, confidence, target))
+
+        common = dict(
+            semantic_key=source["semantic_key"],
+            source_record_id=source["record_id"],
+            **base,
+        )
+        if not scored:
+            return IdentityResolution(
+                status="TARGET_ID_UNRESOLVED",
+                confidence="UNKNOWN",
+                reason="No target EVENT candidate matches source fingerprint evidence.",
+                **common,
+            )
+
+        best_score = max(x[0] for x in scored)
+        best = [x for x in scored if x[0] == best_score]
+        if len(best) != 1:
+            return IdentityResolution(
+                status="TARGET_ID_AMBIGUOUS",
+                confidence=best[0][2],
+                reason="Multiple target EVENT candidates share the strongest fingerprint evidence.",
+                metadata={
+                    "match_basis": best[0][1],
+                    "candidate_ids": [x[3]["numeric_id"] for x in best],
+                    "candidate_record_ids": [x[3]["record_id"] for x in best],
+                },
+                **common,
+            )
+
+        _, basis, confidence, target = best[0]
+        status = "EXACT" if source["numeric_id"] == target["numeric_id"] else "TARGET_EQUIVALENT"
+        if _confidence_rank(confidence) < _confidence_rank(minimum_confidence):
+            return IdentityResolution(
+                status="TARGET_ID_LOW_CONFIDENCE",
+                target_numeric_id=target["numeric_id"],
+                target_record_id=target["record_id"],
+                confidence=confidence,
+                reason=f"Best EVENT mapping is below minimum confidence {minimum_confidence}.",
+                metadata={"match_basis": basis},
+                **common,
+            )
+
+        return IdentityResolution(
+            status=status,
+            target_numeric_id=target["numeric_id"],
+            target_record_id=target["record_id"],
+            confidence=confidence,
+            reason=f"Unique target EVENT matched by {basis}.",
+            metadata={"match_basis": basis},
+            **common,
+        )
+    finally:
+        con.row_factory = previous_factory
+
+
 def persist_mapping(
     con: sqlite3.Connection,
     resolution: IdentityResolution,
