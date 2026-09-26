@@ -142,7 +142,7 @@ def main() -> None:
         ingest_event_structure_records(
             con,
             snapshot_id="client:unknown-opcode",
-            zone_key="NORTH_GUSTABERG_S",
+            zone_key="UNKNOWN_ZONE",
             resources=[
                 EventResource(
                     entity_id=4001,
@@ -179,7 +179,9 @@ def main() -> None:
             source_actor_key=4002,
             minimum_confidence="HIGH",
         )
-        assert low.status == "TARGET_ID_UNRESOLVED", low
+        assert low.status == "TARGET_ID_LOW_CONFIDENCE", low
+        assert low.confidence == "LOW", low
+        assert low.metadata["match_basis"] == "COARSE_STRUCTURE", low
 
         # Add a second target event with identical composite semantics.
         # Resolver must refuse to guess which numeric event is correct.
