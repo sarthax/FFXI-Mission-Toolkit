@@ -22,24 +22,24 @@ def main():
 
         live=sqlite3.connect(":memory:")
         live.execute(
-            "CREATE TABLE item_equipment("
+            "CREATE TABLE item_armor("
             "itemid INTEGER, name TEXT, level INTEGER, ilevel INTEGER, jobs INTEGER, "
             "shieldsize INTEGER, slot INTEGER, rslot INTEGER)"
         )
         live.execute(
-            "INSERT INTO item_equipment VALUES(?,?,?,?,?,?,?,?)",
+            "INSERT INTO item_armor VALUES(?,?,?,?,?,?,?,?)",
             (1,"Verified",99,None,None,None,None,None),
         )
         live.execute(
-            "INSERT INTO item_equipment VALUES(?,?,?,?,?,?,?,?)",
+            "INSERT INTO item_armor VALUES(?,?,?,?,?,?,?,?)",
             (2,"LiveDifferent",95,None,None,None,None,None),
         )
         live.commit()
 
         expected=[
             adapter.normalize_row("item_equipment",{"itemid":1,"name":"Verified","level":99}),
-            adapter.normalize_row("item_equipment",{"itemid":2,"name":"Expected","level":99}),
-            adapter.normalize_row("item_equipment",{"itemid":3,"name":"Missing","level":50}),
+            adapter.normalize_row("item_armor",{"itemid":2,"name":"Expected","level":99}),
+            adapter.normalize_row("item_armor",{"itemid":3,"name":"Missing","level":50}),
         ]
 
         reader=DBAPITargetReader(live,paramstyle="qmark")
