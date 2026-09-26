@@ -108,3 +108,31 @@ def compare_profile_coverage(profiles: Iterable[SchemaProfile]) -> dict:
         "profiles":by_family,
         "matrix":matrix,
     }
+
+
+def persist_profile_mapping_coverage(
+    profile: SchemaProfile,
+    graph_db,
+    *,
+    snapshot_id: str,
+) -> dict:
+    """Persist deterministic schema-mapping capability observations for one snapshot."""
+    from pathlib import Path
+    from workbench.core import graph
+    from workbench.core.services.capability_producers import persist_schema_coverage_capabilities
+
+    payload=profile_mapping_coverage(profile)
+    con=graph.init_db(Path(graph_db))
+    try:
+        counts=persist_schema_coverage_capabilities(con,payload,snapshot_id=snapshot_id)
+        con.commit()
+    finally:
+        con.close()
+    return {
+        "schema":1,
+        "kind":"SERVER_SCHEMA_MAPPING_CAPABILITIES",
+        "profile_id":profile.profile_id,
+        "family":profile.family,
+        "snapshot_id":snapshot_id,
+        **counts,
+    }
