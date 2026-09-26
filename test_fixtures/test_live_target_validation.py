@@ -38,8 +38,8 @@ def main():
 
         expected=[
             adapter.normalize_row("item_equipment",{"itemid":1,"name":"Verified","level":99}),
-            adapter.normalize_row("item_armor",{"itemid":2,"name":"Expected","level":99}),
-            adapter.normalize_row("item_armor",{"itemid":3,"name":"Missing","level":50}),
+            adapter.normalize_row("item_equipment",{"itemid":2,"name":"Expected","level":99}),
+            adapter.normalize_row("item_equipment",{"itemid":3,"name":"Missing","level":50}),
         ]
 
         reader=DBAPITargetReader(live,paramstyle="qmark")
