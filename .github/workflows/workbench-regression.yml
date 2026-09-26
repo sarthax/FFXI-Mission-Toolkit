@@ -64,6 +64,7 @@ jobs:
           python test_fixtures/test_dependency_package_plan.py
           python test_fixtures/test_package_scope_review.py
           python test_fixtures/test_medusa_dependency_truth.py
+          python test_fixtures/test_coiler_dependency_truth.py
           python test_fixtures/test_package_manifest.py
           python test_fixtures/test_package_materialize.py
           python test_fixtures/test_package_assembly.py
