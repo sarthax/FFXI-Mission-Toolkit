@@ -15,7 +15,7 @@ The main branch is the stable/original version. Rework happens on dedicated bran
 
 ## Architecture principles
 1. Generalize relationships, not domain assumptions.
-2. Keep Assault, Nyzul, Salvage, Abyssea, Einherjar, and other game systems as optional system-specific analyzers/plugins.
+2. Keep FFXI domain categories and named systems as optional domain analyzers/plugins. UI taxonomy must not promote domain-specific mechanics into the universal core.
 3. Do not encode system-specific gameplay concepts into the universal schema.
 4. Treat server, client, packet, capture, and reference evidence as separate evidence domains.
 5. Make confidence and authority field/question scoped rather than globally ranking sources.
@@ -52,8 +52,27 @@ A Package is a delivery/migration artifact containing files and actions.
 They must not be conflated. Existing mission-package/backport-package tooling remains the artifact layer.
 
 ## Domain plugins
-The core should not know about Assault Rank, Assault Points, lockboxes, appraisal pools, Nyzul floors, Salvage cells, Abyssea Atma, Cruor, Einherjar chambers, or similar concepts.
-Those belong in optional plugins/analyzers such as Assault, Nyzul, Salvage, Abyssea, Einherjar, and future FFXI systems.
+The core should not know about Assault Rank, Assault Points, lockboxes, appraisal pools, Nyzul floors, Abyssea Atma, Cruor, battlefield families, Trust mechanics, Records of Eminence objectives, or similar concepts.
+Those belong in optional domain plugins/analyzers and named system packages. The GUI now exposes a first-class **Domains** workspace as the organizational home for these system-specific development/admin workflows; that navigation taxonomy is presentation metadata, not universal schema.
+
+Current high-level UI domain categories are:
+- Abyssea
+- Battlefields
+- Battle Systems
+- Conflict / Battle
+- Combat
+- Dynamis
+- Escha
+- Hobbies
+- HELM
+- Events
+- Missions
+- Quests
+- Records of Eminence
+- Trust
+- Other
+
+Assault and Nyzul Isle are currently grouped under **Battle Systems**. Additional subsections are placeholders until their analyzers, pipelines, validators, or admin tools exist.
 A future plugin interface may expose identify(), analyze(), discover_dependencies(), generate_migration_rules(), validate(), and report().
 
 ## Migration states
@@ -175,7 +194,7 @@ Reusable framework plugins:
 - [ ] Generic multi-zone progression/hunt plugin.
 - [ ] Generic minigame/puzzle plugin.
 
-System-specific packages compose reusable frameworks rather than reimplementing them:
+System-specific packages compose reusable frameworks rather than reimplementing them. Package identity is independent of the GUI taxonomy; for example, Assault and Nyzul Isle are grouped under the Battle Systems domain while remaining distinct system packages:
 - [ ] Assault package — framework composition exists, but Assault-specific analyzers/migration rules for ranks/AP/tags/appraisal/lockboxes/instance conventions remain incomplete.
 - [ ] Nyzul package — floor progression, objectives, lamps, tokens, boss floors, randomized objective framework.
 - [ ] Salvage package — cells, path/room progression, restrictions, NM/boss structures, rewards.
