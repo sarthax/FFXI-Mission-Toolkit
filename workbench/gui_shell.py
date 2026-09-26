@@ -39,43 +39,62 @@ WORKSPACES = (
         "name": "Domains",
         "href": "/domains/assault",
         "sections": (
-            {"label": "Abyssea", "href": None, "planned": True},
-            {"label": "↳ Altepa", "href": None, "planned": True},
-            {"label": "↳ Attohwa", "href": None, "planned": True},
-            {"label": "↳ Grauberg", "href": None, "planned": True},
-            {"label": "↳ Konschtat", "href": None, "planned": True},
-            {"label": "↳ La Theine", "href": None, "planned": True},
-            {"label": "↳ Misareaux", "href": None, "planned": True},
-            {"label": "↳ Tahrongi", "href": None, "planned": True},
-            {"label": "↳ Uleguerand", "href": None, "planned": True},
-            {"label": "↳ Vunkerl", "href": None, "planned": True},
-            {"label": "↳ Bastion", "href": None, "planned": True},
-            {"label": "Battlefields", "href": None, "planned": True},
-            {"label": "↳ AMAN-Trove", "href": None, "planned": True},
-            {"label": "↳ Ambuscade", "href": None, "planned": True},
-            {"label": "↳ ANNM", "href": None, "planned": True},
-            {"label": "↳ BCNM", "href": None, "planned": True},
-            {"label": "↳ ENM", "href": None, "planned": True},
-            {"label": "↳ HKCNM", "href": None, "planned": True},
-            {"label": "↳ ISNM", "href": None, "planned": True},
-            {"label": "↳ KCNM", "href": None, "planned": True},
-            {"label": "↳ KSNM", "href": None, "planned": True},
-            {"label": "↳ Login", "href": None, "planned": True},
-            {"label": "↳ Master Trials", "href": None, "planned": True},
-            {"label": "↳ SCNM", "href": None, "planned": True},
-            {"label": "↳ SKCNM", "href": None, "planned": True},
-            {"label": "↳ Walk of Echoes", "href": None, "planned": True},
-            {"label": "Battle Systems", "href": None, "planned": True},
-            {"label": "↳ Assault", "href": "/domains/assault"},
-            {"label": "↳ Nyzul Isle", "href": "/nyzul"},
-            {"label": "Conflict / Battle", "href": None, "planned": True},
-            {"label": "↳ Ballista", "href": None, "planned": True},
-            {"label": "↳ Besieged", "href": None, "planned": True},
-            {"label": "↳ Brenner", "href": None, "planned": True},
-            {"label": "↳ Campaign", "href": None, "planned": True},
-            {"label": "↳ Colonization", "href": None, "planned": True},
-            {"label": "↳ Expeditionary Force", "href": None, "planned": True},
-            {"label": "↳ Garrison", "href": None, "planned": True},
+            {
+                "label": "Abyssea",
+                "planned": True,
+                "children": (
+                    {"label": "Altepa", "href": None, "planned": True},
+                    {"label": "Attohwa", "href": None, "planned": True},
+                    {"label": "Grauberg", "href": None, "planned": True},
+                    {"label": "Konschtat", "href": None, "planned": True},
+                    {"label": "La Theine", "href": None, "planned": True},
+                    {"label": "Misareaux", "href": None, "planned": True},
+                    {"label": "Tahrongi", "href": None, "planned": True},
+                    {"label": "Uleguerand", "href": None, "planned": True},
+                    {"label": "Vunkerl", "href": None, "planned": True},
+                    {"label": "Bastion", "href": None, "planned": True},
+                ),
+            },
+            {
+                "label": "Battlefields",
+                "planned": True,
+                "children": (
+                    {"label": "AMAN-Trove", "href": None, "planned": True},
+                    {"label": "Ambuscade", "href": None, "planned": True},
+                    {"label": "ANNM", "href": None, "planned": True},
+                    {"label": "BCNM", "href": None, "planned": True},
+                    {"label": "ENM", "href": None, "planned": True},
+                    {"label": "HKCNM", "href": None, "planned": True},
+                    {"label": "ISNM", "href": None, "planned": True},
+                    {"label": "KCNM", "href": None, "planned": True},
+                    {"label": "KSNM", "href": None, "planned": True},
+                    {"label": "Login", "href": None, "planned": True},
+                    {"label": "Master Trials", "href": None, "planned": True},
+                    {"label": "SCNM", "href": None, "planned": True},
+                    {"label": "SKCNM", "href": None, "planned": True},
+                    {"label": "Walk of Echoes", "href": None, "planned": True},
+                ),
+            },
+            {
+                "label": "Battle Systems",
+                "children": (
+                    {"label": "Assault", "href": "/domains/assault"},
+                    {"label": "Nyzul Isle", "href": "/nyzul"},
+                ),
+            },
+            {
+                "label": "Conflict / Battle",
+                "planned": True,
+                "children": (
+                    {"label": "Ballista", "href": None, "planned": True},
+                    {"label": "Besieged", "href": None, "planned": True},
+                    {"label": "Brenner", "href": None, "planned": True},
+                    {"label": "Campaign", "href": None, "planned": True},
+                    {"label": "Colonization", "href": None, "planned": True},
+                    {"label": "Expeditionary Force", "href": None, "planned": True},
+                    {"label": "Garrison", "href": None, "planned": True},
+                ),
+            },
             {"label": "Combat", "href": None, "planned": True},
             {"label": "Dynamis", "href": None, "planned": True},
             {"label": "Escha", "href": None, "planned": True},
@@ -84,16 +103,26 @@ WORKSPACES = (
             {"label": "Events", "href": None, "planned": True},
             {"label": "Missions", "href": None, "planned": True},
             {"label": "Quests", "href": None, "planned": True},
-            {"label": "Records of Eminence", "href": None, "planned": True},
-            {"label": "↳ General", "href": None, "planned": True},
-            {"label": "↳ Unity", "href": None, "planned": True},
-            {"label": "↳ Tutorial", "href": None, "planned": True},
-            {"label": "↳ Quests", "href": None, "planned": True},
-            {"label": "↳ Vanabout", "href": None, "planned": True},
-            {"label": "Trust", "href": None, "planned": True},
-            {"label": "↳ Misc", "href": None, "planned": True},
-            {"label": "↳ Combat", "href": None, "planned": True},
-            {"label": "↳ Quest", "href": None, "planned": True},
+            {
+                "label": "Records of Eminence",
+                "planned": True,
+                "children": (
+                    {"label": "General", "href": None, "planned": True},
+                    {"label": "Unity", "href": None, "planned": True},
+                    {"label": "Tutorial", "href": None, "planned": True},
+                    {"label": "Quests", "href": None, "planned": True},
+                    {"label": "Vanabout", "href": None, "planned": True},
+                ),
+            },
+            {
+                "label": "Trust",
+                "planned": True,
+                "children": (
+                    {"label": "Misc", "href": None, "planned": True},
+                    {"label": "Combat", "href": None, "planned": True},
+                    {"label": "Quest", "href": None, "planned": True},
+                ),
+            },
             {"label": "Other", "href": None, "planned": True},
         ),
     },
@@ -306,15 +335,32 @@ def build_shell_context(
     ):
         owner = {**owner, "home": "Tools"}
     active = next((workspace for workspace in WORKSPACES if workspace["name"] == owner["home"]), WORKSPACES[0])
-    section_rows = [dict(section) for section in active["sections"]]
-    linked = [section for section in section_rows if section.get("href") and (
-        path == section["href"].split("?", 1)[0]
-        or path.startswith(section["href"].split("?", 1)[0].rstrip("/") + "/")
-        or any(re.match(pattern, path) for pattern in section.get("active_patterns", ()))
-    )]
-    selected_href = max((section["href"] for section in linked), key=len, default=None)
+    section_rows = []
+    linked = []
+    for source_section in active["sections"]:
+        section = dict(source_section)
+        children = [dict(child) for child in source_section.get("children", ())]
+        if children:
+            section["children"] = children
+        section_rows.append(section)
+        candidates = children or [section]
+        for candidate in candidates:
+            href = candidate.get("href")
+            if href and (
+                path == href.split("?", 1)[0]
+                or path.startswith(href.split("?", 1)[0].rstrip("/") + "/")
+                or any(re.match(pattern, path) for pattern in candidate.get("active_patterns", ()))
+            ):
+                linked.append((section, candidate))
+    selected = max(linked, key=lambda pair: len(pair[1]["href"]), default=None)
     for section in section_rows:
-        section["active"] = section.get("href") == selected_href
+        section["active"] = False
+        for child in section.get("children", ()):
+            child["active"] = bool(selected and child.get("href") == selected[1].get("href"))
+            if child["active"]:
+                section["active"] = True
+        if not section.get("children"):
+            section["active"] = bool(selected and section.get("href") == selected[1].get("href"))
     return {
         "workspaces": WORKSPACES,
         "active_home": owner["home"],
