@@ -68,7 +68,7 @@ def main() -> None:
             con,
             source_snapshot_id="client:test",
             target_snapshot_id="client:test",
-            namespace="EVENT",
+            namespace="DIALOG_TEXT_ID",
             source_numeric_id=10,
             zone_key="NORTH_GUSTABERG_S",
         )
