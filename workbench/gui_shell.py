@@ -31,8 +31,8 @@ WORKSPACES = (
         "href": "/missions",
         "sections": (
             {"label": "Mission Explorer", "href": "/missions"},
-            {"label": "Feature Trace", "href": None, "planned": True},
-            {"label": "Feature Checker", "href": None, "planned": True},
+            {"label": "Feature Trace", "href": "/features/trace"},
+            {"label": "Feature Checker", "href": "/features/check"},
         ),
     },
     {
