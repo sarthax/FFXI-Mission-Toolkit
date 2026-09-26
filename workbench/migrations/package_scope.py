@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import asdict, dataclass
+import hashlib
 import json
 import sqlite3
 from typing import Any, Iterable
@@ -94,9 +95,15 @@ def ensure_scope_schema(con: sqlite3.Connection) -> None:
             migration_id TEXT PRIMARY KEY,
             status TEXT NOT NULL DEFAULT 'DRAFT',
             reviewed_at TEXT,
-            notes TEXT
+            notes TEXT,
+            scope_hash TEXT
         )
     """)
+    review_columns = {
+        row[1] for row in con.execute("PRAGMA table_info(package_scope_reviews)").fetchall()
+    }
+    if "scope_hash" not in review_columns:
+        con.execute("ALTER TABLE package_scope_reviews ADD COLUMN scope_hash TEXT")
     con.commit()
 
 
@@ -191,6 +198,7 @@ def set_scope_review_status(
     status: str,
     *,
     notes: str | None = None,
+    scope_hash: str | None = None,
 ) -> None:
     ensure_scope_schema(con)
     normalized = status.strip().upper()
@@ -198,11 +206,11 @@ def set_scope_review_status(
         raise ValueError("Scope review status must be DRAFT or REVIEWED")
     reviewed_at = "CURRENT_TIMESTAMP" if normalized == "REVIEWED" else "NULL"
     con.execute(
-        f"INSERT INTO package_scope_reviews(migration_id,status,reviewed_at,notes) "
-        f"VALUES(?,?,{reviewed_at},?) "
+        f"INSERT INTO package_scope_reviews(migration_id,status,reviewed_at,notes,scope_hash) "
+        f"VALUES(?,?,{reviewed_at},?,?) "
         f"ON CONFLICT(migration_id) DO UPDATE SET status=excluded.status, "
-        f"reviewed_at={reviewed_at}, notes=excluded.notes",
-        (migration_id, normalized, notes),
+        f"reviewed_at={reviewed_at}, notes=excluded.notes, scope_hash=excluded.scope_hash",
+        (migration_id, normalized, notes, scope_hash if normalized == "REVIEWED" else None),
     )
     con.commit()
 
@@ -210,12 +218,12 @@ def set_scope_review_status(
 def scope_review_record(con: sqlite3.Connection, migration_id: str) -> dict[str, Any]:
     ensure_scope_schema(con)
     row = con.execute(
-        "SELECT status, reviewed_at, notes FROM package_scope_reviews WHERE migration_id=?",
+        "SELECT status, reviewed_at, notes, scope_hash FROM package_scope_reviews WHERE migration_id=?",
         (migration_id,),
     ).fetchone()
     if row is None:
-        return {"status": "DRAFT", "reviewed_at": None, "notes": None}
-    return {"status": row[0], "reviewed_at": row[1], "notes": row[2]}
+        return {"status": "DRAFT", "reviewed_at": None, "notes": None, "scope_hash": None}
+    return {"status": row[0], "reviewed_at": row[1], "notes": row[2], "scope_hash": row[3]}
 
 
 def build_dependency_scope(
@@ -366,7 +374,32 @@ def build_dependency_scope(
             discovery_path=tuple(row["path"]),
         ))
 
+    scope_fingerprint_payload = [
+        {
+            "node_id": item.node_id,
+            "parent_node": item.parent_node,
+            "relationship": item.relationship,
+            "relationship_id": item.relationship_id,
+            "confidence": item.confidence,
+            "graph_status": item.graph_status,
+            "evidence_id": item.evidence_id,
+            "source_snapshot_id": item.source_snapshot_id,
+            "recommendation": item.recommendation,
+            "user_decision": item.user_decision,
+            "effective_decision": item.effective_decision,
+            "reason": item.reason,
+            "tags": list(item.tags),
+        }
+        for item in items
+    ]
+    scope_hash = hashlib.sha256(
+        json.dumps(scope_fingerprint_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
     review = scope_review_record(con, migration_id)
+    if review["status"] == "REVIEWED" and review.get("scope_hash") != scope_hash:
+        review = {**review, "status": "STALE"}
+
     closure_status = "COMPLETE"
     if truncated:
         closure_status = "BLOCKED"
@@ -395,6 +428,7 @@ def build_dependency_scope(
         "closure_status": closure_status,
         "package_gate": package_gate,
         "review": review,
+        "scope_hash": scope_hash,
         "unresolved_node_ids": unresolved,
         "items": [asdict(item) for item in items],
         "notes": [
