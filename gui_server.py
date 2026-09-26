@@ -73,6 +73,10 @@ from workbench.gui_shell import build_shell_context
 from workbench.adapters.servers import LogicalRecord, adapter_for
 from workbench.migrations.live_target_validation import DBAPITargetReader, persist_live_validation, validate_live_records
 from workbench.migrations.package_review import package_review_summary_dict
+from workbench.core.schema import Artifact, DependencyEdge, MigrationAction
+from workbench.migrations.package_plan import build_package_plan
+from workbench.migrations.package_manifest import build_package_manifest
+from workbench.migrations.package_assembly import assemble_migration_package
 
 TOOLS_ROOT = Path(__file__).parent
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
@@ -2477,6 +2481,205 @@ def _resolve_package_root(relative_path: str) -> Path:
     if not (candidate / "WORKBENCH_PACKAGE_MANIFEST.json").is_file():
         raise ValueError("Selected folder is not an assembled Workbench package.")
     return candidate
+
+
+def _package_migrations() -> list[dict]:
+    con = _workbench_graph_connection()
+    if con is None:
+        return []
+    try:
+        rows = con.execute(
+            "SELECT m.migration_id, m.feature_id, m.source_snapshot_id, m.target_snapshot_id, "
+            "m.status, m.metadata_json, COUNT(a.action_id) AS action_count "
+            "FROM migrations m LEFT JOIN migration_actions a ON a.migration_id=m.migration_id "
+            "GROUP BY m.migration_id ORDER BY m.migration_id"
+        ).fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        con.close()
+
+
+def _safe_package_destination(relative_name: str) -> Path:
+    project_root = _package_project_root()
+    name = relative_name.strip().replace("\\", "/")
+    if not name:
+        raise ValueError("Package destination is required.")
+    rel = Path(name)
+    if rel.is_absolute() or ".." in rel.parts:
+        raise ValueError("Package destination must be a relative path inside the configured project root.")
+    candidate = (project_root / rel).resolve()
+    try:
+        candidate.relative_to(project_root)
+    except ValueError as exc:
+        raise ValueError("Package destination must stay inside the configured project root.") from exc
+    return candidate
+
+
+@app.get("/packages/create", response_class=HTMLResponse)
+def packages_create_page(request: Request):
+    return templates.TemplateResponse(request, "packages_create.html", {
+        "request": request,
+        "migrations": _package_migrations(),
+        "form": {
+            "migration_id": "",
+            "source_root": "",
+            "source_family": "LSB",
+            "target_family": "DSP",
+            "package_path": "packages/",
+        },
+        "result": None,
+        "error": None,
+    })
+
+
+@app.post("/packages/create", response_class=HTMLResponse)
+def packages_create_run(
+    request: Request,
+    migration_id: str = Form(...),
+    source_root: str = Form(...),
+    source_family: str = Form(...),
+    target_family: str = Form(...),
+    package_path: str = Form(...),
+):
+    form = {
+        "migration_id": migration_id,
+        "source_root": source_root,
+        "source_family": source_family,
+        "target_family": target_family,
+        "package_path": package_path,
+    }
+    result = None
+    error = None
+    con = _workbench_graph_connection()
+    try:
+        if con is None:
+            raise ValueError("Canonical Workbench graph is not available.")
+        migration = con.execute(
+            "SELECT migration_id, feature_id, source_snapshot_id, target_snapshot_id, status, metadata_json "
+            "FROM migrations WHERE migration_id=?",
+            (migration_id.strip(),),
+        ).fetchone()
+        if migration is None:
+            raise ValueError("Selected migration was not found.")
+
+        action_rows = con.execute(
+            "SELECT action_id, migration_id, action, artifact_id, status, reason, metadata_json "
+            "FROM migration_actions WHERE migration_id=? ORDER BY action_id",
+            (migration_id.strip(),),
+        ).fetchall()
+        if not action_rows:
+            raise ValueError("Selected migration has no MigrationAction records.")
+
+        actions = []
+        artifact_ids = set()
+        for row in action_rows:
+            metadata = json.loads(row["metadata_json"] or "{}")
+            action = MigrationAction(
+                action_id=row["action_id"],
+                migration_id=row["migration_id"],
+                action=row["action"],
+                artifact_id=row["artifact_id"],
+                status=row["status"],
+                reason=row["reason"],
+                metadata=metadata if isinstance(metadata, dict) else {},
+            )
+            actions.append(action)
+            if action.artifact_id:
+                artifact_ids.add(action.artifact_id)
+
+        artifacts = []
+        for artifact_id in sorted(artifact_ids):
+            row = con.execute(
+                "SELECT artifact_id, artifact_type, path, source_snapshot_id, target_snapshot_id, "
+                "feature_id, metadata_json FROM artifacts WHERE artifact_id=?",
+                (artifact_id,),
+            ).fetchone()
+            if row is None:
+                continue
+            metadata = json.loads(row["metadata_json"] or "{}")
+            artifacts.append(Artifact(
+                artifact_id=row["artifact_id"],
+                artifact_type=row["artifact_type"],
+                path=row["path"],
+                source_snapshot_id=row["source_snapshot_id"],
+                target_snapshot_id=row["target_snapshot_id"],
+                feature_id=row["feature_id"],
+                metadata=metadata if isinstance(metadata, dict) else {},
+            ))
+
+        dependencies = []
+        if artifact_ids:
+            placeholders = ",".join("?" for _ in artifact_ids)
+            params = tuple(sorted(artifact_ids)) * 2
+            rows = con.execute(
+                "SELECT relationship_id, source_node, target_node, relationship, evidence_id, "
+                "confidence, status, metadata_json, source_snapshot_id "
+                f"FROM entity_relationships WHERE source_node IN ({placeholders}) "
+                f"AND target_node IN ({placeholders})",
+                params,
+            ).fetchall()
+            for row in rows:
+                dependencies.append(DependencyEdge(
+                    edge_id=row["relationship_id"],
+                    source_node=row["source_node"],
+                    target_node=row["target_node"],
+                    relationship=row["relationship"],
+                    evidence_id=row["evidence_id"],
+                    confidence=row["confidence"],
+                    status=row["status"],
+                    notes=row["metadata_json"],
+                    source_snapshot_id=row["source_snapshot_id"],
+                ))
+
+        source_path = Path(source_root).expanduser().resolve()
+        if not source_path.is_dir():
+            raise ValueError("Source root does not exist or is not a directory.")
+
+        package_root = _safe_package_destination(package_path)
+        if package_root.exists() and any(package_root.iterdir()):
+            raise ValueError("Package destination already exists and is not empty; creation does not overwrite existing packages.")
+
+        plan = build_package_plan(actions, dependencies)
+        manifest = build_package_manifest(
+            plan,
+            artifacts,
+            feature_id=migration["feature_id"],
+            source_snapshot_id=migration["source_snapshot_id"],
+            target_snapshot_id=migration["target_snapshot_id"],
+            source_family=source_family.strip(),
+            target_family=target_family.strip(),
+        )
+        assembly = assemble_migration_package(
+            manifest,
+            source_path,
+            package_root,
+            overwrite=False,
+        )
+        relative = package_root.relative_to(_package_project_root()).as_posix()
+        result = {
+            "status": assembly.status,
+            "package_path": relative,
+            "plan_status": plan.status,
+            "validation_status": assembly.validation_status,
+            "copied": list(assembly.source_result.copied),
+            "missing": list(assembly.source_result.missing),
+            "skipped": list(assembly.source_result.skipped),
+            "execution_step_count": len(manifest.get("execution", {}).get("steps", [])),
+            "excluded_action_count": len(manifest.get("excluded_actions", [])),
+        }
+    except Exception as exc:
+        error = f"{type(exc).__name__}: {exc}"
+    finally:
+        if con is not None:
+            con.close()
+
+    return templates.TemplateResponse(request, "packages_create.html", {
+        "request": request,
+        "migrations": _package_migrations(),
+        "form": form,
+        "result": result,
+        "error": error,
+    })
 
 
 @app.get("/packages", response_class=HTMLResponse)
