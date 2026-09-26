@@ -1,0 +1,355 @@
+{
+  "schema": 1,
+  "kind": "WORKBENCH_MISSION_TRUTH_SET",
+  "fixture_id": "fixture:wotg25-will-of-the-world",
+  "subject": {
+    "mission": "The Will of the World",
+    "mission_id": 24,
+    "displayed_number": 25,
+    "next_mission": "Fate in Haze",
+    "source_revision": "LandSandBoat/server@3747feee0e38ab5c0283c4fe8deea7f0a9022351"
+  },
+  "wiki_truth": {
+    "mission_start": {
+      "npc": "Raustigne",
+      "zone": "Southern San d'Oria (S)",
+      "action": "talk for cutscene"
+    },
+    "branch_requirement": {
+      "description": "Progression to Fate in Haze requires completion of the appropriate nation quest chain.",
+      "branches": [
+        {
+          "nation": "Bastok",
+          "quest9": "Beneath the Mask",
+          "quest10": "What Price Loyalty"
+        },
+        {
+          "nation": "San d'Oria",
+          "quest9": "Songbirds in a Snowstorm",
+          "quest10": "Blood of Heroes"
+        },
+        {
+          "nation": "Windurst",
+          "quest9": "Sins of the Mothers",
+          "quest10": "Howl from the Heavens"
+        }
+      ]
+    }
+  },
+  "verified_server_state_machine": {
+    "mission25": {
+      "script": "scripts/missions/wotg/25_The_Will_of_the_World.lua",
+      "zone": "Southern San d'Oria (S)",
+      "npc": "Raustigne",
+      "event_id": 149,
+      "event_args": [
+        "campaign_allegiance",
+        5,
+        2964,
+        0,
+        0,
+        0,
+        1,
+        4095
+      ],
+      "completion_effect": "mission complete -> Fate in Haze"
+    },
+    "mission26_gate": {
+      "script": "scripts/missions/wotg/helpers.lua",
+      "function": "xi.wotg.helpers.meetsMission26Reqs",
+      "logic": "OR",
+      "accepted_quest_completions": [
+        "WHAT_PRICE_LOYALTY",
+        "BLOOD_OF_HEROES",
+        "HOWL_FROM_THE_HEAVENS"
+      ],
+      "known_gap": "TODO one-day wait is not implemented"
+    },
+    "bastok_branch": {
+      "quest9": {
+        "name": "Beneath the Mask",
+        "script": "scripts/quests/crystalWar/WOTG_BAS_9_Beneath_the_Mask.lua",
+        "prerequisite_quest": "HONOR_UNDER_FIRE",
+        "mission_requirement": ">= FATE_IN_HAZE",
+        "reward_item": "SUPER_RERAISER",
+        "actors": [
+          {
+            "zone": "Bastok Markets (S)",
+            "entity": "Gentle_Tiger",
+            "events": [
+              345,
+              351,
+              346,
+              352,
+              347,
+              353
+            ]
+          },
+          {
+            "zone": "Beadeaux (S)",
+            "entity": "ZONE_IN",
+            "events": [
+              1
+            ]
+          },
+          {
+            "zone": "The Eldieme Necropolis (S)",
+            "entity": "Red_Axe",
+            "events": [
+              42,
+              44,
+              43,
+              45
+            ]
+          },
+          {
+            "zone": "Vunkerl Inlet (S)",
+            "entity": "Leadavox",
+            "events": [
+              2
+            ]
+          },
+          {
+            "zone": "Beaucedine Glacier (S)",
+            "entity": "Hoarfang",
+            "events": [
+              7
+            ]
+          }
+        ],
+        "items": [
+          {
+            "kind": "trade",
+            "symbol": "LUMP_OF_BEESWAX"
+          },
+          {
+            "kind": "trade",
+            "symbol": "JAR_OF_RED_TEXTILE_DYE"
+          }
+        ],
+        "key_items": [
+          {
+            "symbol": "WAX_SEAL",
+            "lifecycle": "given by Leadavox, required at Prog 4, removed by Red Axe"
+          }
+        ],
+        "vars": {
+          "Prog": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ]
+        }
+      },
+      "quest10": {
+        "name": "What Price Loyalty",
+        "script": "scripts/quests/crystalWar/WOTG_BAS_10_What_Price_Loyalty.lua",
+        "prerequisite_quest": "BENEATH_THE_MASK",
+        "mission_requirement": ">= FATE_IN_HAZE",
+        "reward_item": "FOURTH_STAFF",
+        "actors": [
+          {
+            "zone": "Bastok Markets (S)",
+            "entity": "Gentle_Tiger",
+            "events": [
+              348,
+              354,
+              349,
+              355,
+              357,
+              350,
+              356
+            ]
+          },
+          {
+            "zone": "North Gustaberg (S)",
+            "entity": "Roderich",
+            "events": [
+              10,
+              11
+            ]
+          },
+          {
+            "zone": "Xarcabard (S)",
+            "entity": "ZONE_IN",
+            "events": [
+              8,
+              10
+            ]
+          },
+          {
+            "zone": "Xarcabard (S)",
+            "entity": "Forbidding_Portal",
+            "events": [
+              9
+            ]
+          },
+          {
+            "zone": "Everbloom Hollow",
+            "entity": "INSTANCE_EVENT",
+            "events": [
+              10000
+            ]
+          }
+        ],
+        "key_items": [
+          {
+            "symbol": "SACK_OF_VICTUALS",
+            "lifecycle": "given on quest start, removed by Roderich"
+          },
+          {
+            "symbol": "COMMANDERS_ENDORSEMENT",
+            "lifecycle": "given in Xarcabard, required for portal/battle; reissued by Gentle Tiger"
+          }
+        ],
+        "vars": {
+          "Prog": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ]
+        },
+        "implementation_gap": "What Price Loyalty instance is explicitly marked not implemented; event 10000 advances progress as placeholder."
+      }
+    },
+    "sandoria_branch": {
+      "quest9_script": "scripts/quests/crystalWar/WOTG_SAN_9_Songbirds_in_a_Snowstorm.lua",
+      "quest10_script": "scripts/quests/crystalWar/WOTG_SAN_10_Blood_of_Heroes.lua",
+      "notable_dependencies": [
+        "quest day/timer gate",
+        "fishing acquisition of three key items",
+        "Goliath Worm item grant",
+        "Flint Stone trade",
+        "Orcish Bloodletter spawned NM",
+        "zone text/message references",
+        "battlefield/portal flow in quest10"
+      ]
+    },
+    "windurst_branch": {
+      "expected_quest9": "SINS_OF_THE_MOTHERS",
+      "expected_quest10": "HOWL_FROM_THE_HEAVENS",
+      "quest_enum_ids_present": [
+        53,
+        54
+      ],
+      "scripts_found": false,
+      "wiki_notable_dependencies": [
+        "three Magicite-location key items",
+        "present-day beastman stronghold access/key-item gates",
+        "multiple NPC/zone cutscenes",
+        "open-area confrontation",
+        "multi-wave spawned mobs",
+        "protective wards",
+        "Romaa Mihgo helper",
+        "quest-day wait"
+      ],
+      "status": "EXPECTED_BRANCH_MISSING_OR_UNIMPLEMENTED_IN_CURRENT_SOURCE"
+    }
+  },
+  "required_dependency_classes": [
+    {
+      "key": "mission_identity",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "branching_quest_gate",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "quest_prerequisites",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "npc_entities",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "zone_presence",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "event_csids",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "event_parameters",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "event_finish_transitions",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "quest_variables",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "mission_variables",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "key_item_lifecycle",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "trade_item_dependencies",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "dialog_text_mappings",
+      "expected_status": "REQUIRED_OR_TARGET_EQUIVALENT"
+    },
+    {
+      "key": "zone_in_conditions",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "timers_day_waits",
+      "expected_status": "REQUIRED_OR_ACCEPTED_GAP"
+    },
+    {
+      "key": "battlefield_or_instance_dependencies",
+      "expected_status": "REQUIRED_OR_ACCEPTED_GAP"
+    },
+    {
+      "key": "cross_branch_alternatives",
+      "expected_status": "OR_BRANCH"
+    },
+    {
+      "key": "expected_missing_content",
+      "expected_status": "VISIBLE_GAP"
+    }
+  ],
+  "package_scope_rules": [
+    "The mission package must model nation branches as OR alternatives, not merge all three into one mandatory path.",
+    "If the selected target experience must support all nations, all three branches are required; if a developer intentionally supports only one branch, the other branches remain explicit accepted gaps.",
+    "CSID/event IDs must be scoped with zone/entity context; numeric CSID alone is not globally unique.",
+    "A mission/quest transition is not complete unless both trigger and onEventFinish/onEventUpdate consequences are represented.",
+    "Key items need lifecycle edges: given, required, consumed/removed, reissued.",
+    "Quest vars and mission vars are part of behavior and must be migrated/validated with the scripts that use them.",
+    "DefaultActions/event fallbacks are separate from mission-specific overrides and should be checked for conflicts.",
+    "Wiki/reference steps should create EXPECTED transitions when server source is missing or incomplete.",
+    "A placeholder event that advances progress without the real battlefield must be surfaced as IMPLEMENTATION_GAP, not treated as complete.",
+    "Branch viability and overall mission completeness are separate: one functioning branch can be viable while other nation branches remain incomplete."
+  ],
+  "known_toolkit_gaps": [
+    "No generic mission/quest state-machine graph currently models progress variables, section checks, triggers, event updates, event finishes, and resulting state transitions.",
+    "No first-class zone-scoped CSID/event identity currently links mission scripts to client event resources or server event handlers.",
+    "No generic NPC/entity dependency extractor currently turns quest actor names into canonical entity/NPC records with zone context.",
+    "No key-item lifecycle graph currently distinguishes grant, require, consume, remove, and reissue semantics.",
+    "No generic branch/OR dependency model currently represents nation-specific quest alternatives for mission progression.",
+    "No external-reference expectation layer currently converts wiki walkthrough steps into expected-but-missing transitions.",
+    "No automatic conflict check currently compares mission-specific events against zone DefaultActions/fallback events.",
+    "No generic dialog/text dependency model currently closes event IDs to message/text/client resources.",
+    "No package readiness dimension currently distinguishes branch viability from full three-nation completeness.",
+    "Current source contains explicit implementation gaps such as What Price Loyalty battlefield placeholder and mission day-wait TODOs that must remain visible."
+  ]
+}
