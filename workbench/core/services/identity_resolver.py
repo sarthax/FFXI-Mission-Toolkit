@@ -262,16 +262,20 @@ def _rows(
     *,
     zone_key: str | None = None,
 ) -> list[sqlite3.Row]:
+    previous_factory = con.row_factory
     con.row_factory = sqlite3.Row
-    sql = (
-        "SELECT * FROM identity_records "
-        "WHERE snapshot_id=? AND namespace=?"
-    )
-    params: list[Any] = [snapshot_id, namespace.upper()]
-    if zone_key is not None:
-        sql += " AND zone_key=?"
-        params.append(zone_key)
-    return list(con.execute(sql, params))
+    try:
+        sql = (
+            "SELECT * FROM identity_records "
+            "WHERE snapshot_id=? AND namespace=?"
+        )
+        params: list[Any] = [snapshot_id, namespace.upper()]
+        if zone_key is not None:
+            sql += " AND zone_key=?"
+            params.append(zone_key)
+        return list(con.execute(sql, params))
+    finally:
+        con.row_factory = previous_factory
 
 
 def compare_snapshots(
@@ -345,93 +349,96 @@ def resolve_identity(
 ) -> IdentityResolution:
     """Resolve one source representation into the selected target snapshot."""
     ensure_schema(con)
+    previous_factory = con.row_factory
     con.row_factory = sqlite3.Row
-    sql = (
-        "SELECT * FROM identity_records "
-        "WHERE snapshot_id=? AND namespace=? AND numeric_id=?"
-    )
-    params: list[Any] = [
-        source_snapshot_id,
-        namespace.upper(),
-        str(source_numeric_id),
-    ]
-    if zone_key is not None:
-        sql += " AND zone_key=?"
-        params.append(zone_key)
-    src = list(con.execute(sql, params))
+    try:
+        sql = (
+            "SELECT * FROM identity_records "
+            "WHERE snapshot_id=? AND namespace=? AND numeric_id=?"
+        )
+        params: list[Any] = [
+            source_snapshot_id,
+            namespace.upper(),
+            str(source_numeric_id),
+        ]
+        if zone_key is not None:
+            sql += " AND zone_key=?"
+            params.append(zone_key)
+        src = list(con.execute(sql, params))
 
-    base = dict(
-        namespace=namespace.upper(),
-        source_snapshot_id=source_snapshot_id,
-        target_snapshot_id=target_snapshot_id,
-        source_numeric_id=str(source_numeric_id),
-    )
+        base = dict(
+            namespace=namespace.upper(),
+            source_snapshot_id=source_snapshot_id,
+            target_snapshot_id=target_snapshot_id,
+            source_numeric_id=str(source_numeric_id),
+        )
 
-    if not src:
-        return IdentityResolution(
-            status="SOURCE_ID_UNRESOLVED",
-            reason="No identity record matches the source snapshot/id/context.",
+        if not src:
+            return IdentityResolution(
+                status="SOURCE_ID_UNRESOLVED",
+                reason="No identity record matches the source snapshot/id/context.",
+                **base,
+            )
+        if len(src) > 1:
+            return IdentityResolution(
+                status="SOURCE_ID_AMBIGUOUS",
+                reason="Multiple semantic identities share the source numeric id/context.",
+                metadata={"record_ids": [r["record_id"] for r in src]},
+                **base,
+            )
+
+        source = src[0]
+        targets = list(con.execute(
+            "SELECT * FROM identity_records "
+            "WHERE snapshot_id=? AND namespace=? AND semantic_key=?",
+            (target_snapshot_id, namespace.upper(), source["semantic_key"]),
+        ))
+        if zone_key is not None:
+            targets = [r for r in targets if r["zone_key"] == zone_key]
+
+        common = dict(
+            semantic_key=source["semantic_key"],
+            source_record_id=source["record_id"],
             **base,
         )
-    if len(src) > 1:
-        return IdentityResolution(
-            status="SOURCE_ID_AMBIGUOUS",
-            reason="Multiple semantic identities share the source numeric id/context.",
-            metadata={"record_ids": [r["record_id"] for r in src]},
-            **base,
+
+        if not targets:
+            return IdentityResolution(
+                status="TARGET_ID_UNRESOLVED",
+                reason="Semantic identity exists in source snapshot but not target snapshot.",
+                confidence="UNKNOWN",
+                **common,
+            )
+        if len(targets) > 1:
+            return IdentityResolution(
+                status="TARGET_ID_AMBIGUOUS",
+                reason="Semantic identity maps to multiple target representations.",
+                confidence="UNKNOWN",
+                metadata={"record_ids": [r["record_id"] for r in targets]},
+                **common,
+            )
+
+        target = targets[0]
+        same = source["numeric_id"] == target["numeric_id"]
+        confidence = (
+            "VERIFIED"
+            if source["confidence"] == "VERIFIED" and target["confidence"] == "VERIFIED"
+            else "INFERRED"
         )
-
-    source = src[0]
-    targets = list(con.execute(
-        "SELECT * FROM identity_records "
-        "WHERE snapshot_id=? AND namespace=? AND semantic_key=?",
-        (target_snapshot_id, namespace.upper(), source["semantic_key"]),
-    ))
-    if zone_key is not None:
-        targets = [r for r in targets if r["zone_key"] == zone_key]
-
-    common = dict(
-        semantic_key=source["semantic_key"],
-        source_record_id=source["record_id"],
-        **base,
-    )
-
-    if not targets:
         return IdentityResolution(
-            status="TARGET_ID_UNRESOLVED",
-            reason="Semantic identity exists in source snapshot but not target snapshot.",
-            confidence="UNKNOWN",
+            status="EXACT" if same else "TARGET_EQUIVALENT",
+            target_numeric_id=target["numeric_id"],
+            target_record_id=target["record_id"],
+            confidence=confidence,
+            reason=(
+                "Numeric representation is stable across snapshots."
+                if same else
+                "Semantic identity matches but target snapshot uses a different numeric representation."
+            ),
             **common,
         )
-    if len(targets) > 1:
-        return IdentityResolution(
-            status="TARGET_ID_AMBIGUOUS",
-            reason="Semantic identity maps to multiple target representations.",
-            confidence="UNKNOWN",
-            metadata={"record_ids": [r["record_id"] for r in targets]},
-            **common,
-        )
-
-    target = targets[0]
-    same = source["numeric_id"] == target["numeric_id"]
-    confidence = (
-        "VERIFIED"
-        if source["confidence"] == "VERIFIED" and target["confidence"] == "VERIFIED"
-        else "INFERRED"
-    )
-    return IdentityResolution(
-        status="EXACT" if same else "TARGET_EQUIVALENT",
-        target_numeric_id=target["numeric_id"],
-        target_record_id=target["record_id"],
-        confidence=confidence,
-        reason=(
-            "Numeric representation is stable across snapshots."
-            if same else
-            "Semantic identity matches but target snapshot uses a different numeric representation."
-        ),
-        **common,
-    )
-
+    finally:
+        con.row_factory = previous_factory
 
 def persist_mapping(
     con: sqlite3.Connection,
