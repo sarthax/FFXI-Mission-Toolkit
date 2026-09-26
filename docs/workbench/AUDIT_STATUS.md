@@ -1107,3 +1107,14 @@ A first interactive dependency-closure workflow now sits between canonical migra
 - the GUI route surface is now 149 method/path registrations.
 
 This milestone establishes review/agency/guardrails, not proof of complete FFXI dependency discovery. The next audit must compare automatic discovery against manually enumerated dependencies for a complex mob and representative instance/mission. See `PACKAGE_SCOPE_REVIEW.md`.
+
+
+## 2026-09-26 — Medusa dependency proof baseline
+
+Arrapago Reef Medusa is now the first concrete package dependency-discovery proof case. A machine-readable manual truth set lives at `test_fixtures/fixtures/medusa_arrapago_dependency_truth.json` and is documented in `MEDUSA_PACKAGE_PROOF.md`.
+
+Verified source relationships include Medusa entity 16998862; four adjacent Lamia Exon helper entities 16998863–16998866; helper spell list 28 and skill list 171; Medusa skill list 725 with skills 1808/1809/1810/1812/1813/1814; dedicated skill scripts; the `job_special` mixin and EES_LAMIA/eagle-eye-shot dependency; Medusa loot symbols; title/text dependencies; and separate Al Zahbi/Bhaflau Besieged variants that are explicitly related but not default Arrapago package dependencies.
+
+The proof exposes real current discovery gaps rather than declaring false closure: modern LSB zone YAML is not normalized by the current SQL-oriented server extractor; mob skill-list/spell-list membership and mob-skill definitions are not first-class logical dependency types; helper-ID arithmetic is not resolved; YAML loot is not linked to item records; require/mixin edges are not guaranteed; and Medusa-specific Lua→binding→C++ closure is not yet proven end to end.
+
+The fixture is regression-checked so future analyzer work must preserve the full proof boundary, including the important rule that same-name Besieged variants are research relations rather than automatic package members.
