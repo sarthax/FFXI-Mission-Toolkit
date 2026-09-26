@@ -173,7 +173,7 @@ WORKSPACES = (
         "sections": (
             {"label": "Model Viewer", "href": "/modelviewer"},
             {"label": "DAT Inspector", "href": "/datinspector"},
-            {"label": "Binary Inspector", "href": None, "planned": True},
+            {"label": "Binary Inspector", "href": "/binaryinspector"},
         ),
     },
     {

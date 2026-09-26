@@ -5992,6 +5992,31 @@ def datinspector_page(request: Request, dat_id: str = "", zoneid: str = "", ffxi
         "ffxi_path": path, "families": families})
 
 
+@app.get("/binaryinspector", response_class=HTMLResponse)
+def binaryinspector_page(request: Request, path: str = "", q: str = "", imp: str = "", pattern: str = "",
+                         exec_only: str = "", diff_path: str = ""):
+    import binary_inspector as bi
+    install = settings_mod.get_ffxi_install() or "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
+    ctx = {"request": request, "install": install, "candidates": bi.list_candidates(install),
+           "path": path, "q": q, "imp": imp, "pattern": pattern, "exec_only": exec_only,
+           "diff_path": diff_path, "idx": None, "error": None, "strings": None,
+           "imports": None, "psearch": None, "diff": None}
+    try:
+        if path.strip():
+            idx = bi.get_index(path.strip())
+            ctx["idx"] = idx
+            ctx["imports"] = bi.imports_by_dll(idx, imp)
+            if q.strip():
+                ctx["strings"] = bi.search_strings(idx, q.strip())
+            if pattern.strip():
+                ctx["psearch"] = bi.pattern_search(path.strip(), pattern.strip(), bool(exec_only))
+            if diff_path.strip():
+                ctx["diff"] = bi.diff(path.strip(), diff_path.strip())
+    except Exception as ex:
+        ctx["error"] = f"{type(ex).__name__}: {ex}"
+    return templates.TemplateResponse(request, "binary_inspector.html", ctx)
+
+
 if __name__ == "__main__":
     import uvicorn
     _con = get_con()

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Binary Inspector{% endblock %}
+{% block content %}
+<h1>Binary Inspector</h1>
+<p class="muted">Read-only PE evidence for client DLL/EXE files. Header facts and exact byte matches are
+reliable; a string hit shows the text exists in the file, not that the feature is wired up.
+FFXiMain.dll is packed, so its code is largely not visible on disk.</p>
+<form class="search" method="get">
+  <input type="text" name="path" value="{{ path }}" list="cands" placeholder="Full path to a .dll/.exe" style="min-width:420px;" required>
+  <datalist id="cands">{% for c in candidates %}<option value="{{ c.path }}">{{ c.name }}</option>{% endfor %}</datalist>
+  <input type="text" name="q" value="{{ q }}" placeholder="string search, e.g. wardrobe">
+  <input type="text" name="pattern" value="{{ pattern }}" placeholder="bytes, e.g. 8B ?? 04 C3">
+  <label><input type="checkbox" name="exec_only" value="1" {% if exec_only %}checked{% endif %}> executable only</label>
+  <input type="text" name="imp" value="{{ imp }}" placeholder="filter imports">
+  <input type="text" name="diff_path" value="{{ diff_path }}" placeholder="diff against (path)">
+  <button type="submit">Inspect</button>
+</form>
+<p class="muted">In install folder:
+{% for c in candidates %}<a href="/binaryinspector?path={{ c.path|urlencode }}">{{ c.name }}</a> {% endfor %}</p>
+
+{% if error %}<p class="chip" style="color:#c33;">{{ error }}</p>{% endif %}
+{% if idx %}
+<h2>{{ path }}</h2>
+<p class="muted">Keys: {{ idx.keys()|list|join(", ") }}</p>
+{% if idx.layout_warnings %}
+<h3>Layout warnings</h3>
+<div class="table-wrap"><table><tr><th>Code</th><th>Section</th><th>Note</th></tr>
+{% for w in idx.layout_warnings %}<tr><td>{{ w.code }}</td><td>{{ w.section }}</td><td>{{ w.note }}</td></tr>{% endfor %}</table></div>
+{% endif %}
+<h3>Sections</h3>
+<div class="table-wrap"><table><tr>{% for k in idx.sections[0].keys() %}<th>{{ k }}</th>{% endfor %}</tr>
+{% for s in idx.sections %}<tr>{% for v in s.values() %}<td>{{ v }}</td>{% endfor %}</tr>{% endfor %}</table></div>
+<h3>Imports ({{ idx.imports|length }})</h3>
+{% for g in imports %}<details><summary>{{ g.dll }} ({{ g.names|length }})</summary><code>{{ g.names|join(', ') }}</code></details>{% endfor %}
+<h3>Exports ({{ idx.exports|length }})</h3>
+<code>{% for e in idx.exports %}{{ e.name or e.ordinal }}{% if not loop.last %}, {% endif %}{% endfor %}</code>
+{% if strings is not none %}
+<h3>Strings matching "{{ q }}" ({{ strings.total }} of {{ strings.corpus }} indexed)</h3>
+<div class="table-wrap"><table>{% for s in strings.rows %}<tr><td>{{ s.get('offset') }}</td><td><code>{{ s.text }}</code></td></tr>{% endfor %}</table></div>
+{% endif %}
+{% if psearch %}
+<h3>Byte pattern: {{ psearch.status }} ({{ psearch.matches|length }}{% if psearch.truncated %}+{% endif %} matches)</h3>
+<pre>{{ psearch.matches | map('string') | join('\n') }}</pre>
+{% for n in psearch.notes %}<p class="muted">{{ n }}</p>{% endfor %}
+{% endif %}
+{% if diff %}<h3>Diff</h3><pre>{{ diff | string }}</pre>{% endif %}
+{% endif %}
+{% endblock %}
