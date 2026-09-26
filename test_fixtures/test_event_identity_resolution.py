@@ -10,6 +10,7 @@ from workbench.client.event_fingerprint import EventResource
 from workbench.core.services.identity_resolver import (
     IdentitySnapshot,
     assess_identity_closure,
+    compare_event_snapshots,
     ingest_event_structure_records,
     register_snapshot,
     resolve_event_identity,
@@ -106,6 +107,22 @@ def main() -> None:
 
         closure = assess_identity_closure([resolved], minimum_confidence="HIGH")
         assert closure.status == "READY", closure
+
+        bulk = compare_event_snapshots(
+            con,
+            source_snapshot_id="client:new",
+            target_snapshot_id="client:old",
+            zone_key="NORTH_GUSTABERG_S",
+            minimum_confidence="HIGH",
+        )
+        assert bulk["total"] == 2, bulk
+        assert bulk["counts"]["TARGET_EQUIVALENT"] == 1, bulk
+        assert bulk["counts"]["TARGET_ID_UNRESOLVED"] == 1, bulk
+        mapped = [r for r in bulk["rows"] if r["status"] == "TARGET_EQUIVALENT"]
+        assert mapped[0]["source_actor_key"] == "2002", mapped
+        assert mapped[0]["source_event_id"] == "77", mapped
+        assert mapped[0]["target_event_id"] == "10", mapped
+        assert mapped[0]["confidence"] == "HIGH", mapped
 
         # Target lacks matching dialog text evidence but has the same fully decoded structure.
         ingest_event_structure_records(
