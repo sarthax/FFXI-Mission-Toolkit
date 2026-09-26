@@ -32,14 +32,25 @@ def main() -> None:
         def fake_runner(argv, capture_output, text):
             calls.append(argv)
             output = Path(argv[-1])
-            dat_id = int(argv[argv.index("--dat-id") + 1])
             output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(
-                "entries:\n"
-                f"  10: 'Dialog for dat {dat_id}'\n"
-                "  11: 'Second line'\n",
-                encoding="utf-8",
-            )
+            if "--dat-id" in argv:
+                dat_id = int(argv[argv.index("--dat-id") + 1])
+                output.write_text(
+                    "entries:\n"
+                    f"  10: 'Dialog for dat {dat_id}'\n"
+                    "  11: 'Second line'\n",
+                    encoding="utf-8",
+                )
+            else:
+                output.write_text(
+                    "blocks:\n"
+                    "- entity_id: 12345\n"
+                    "  events:\n"
+                    "  - id: 10\n"
+                    "    byte_code: '0x0421'\n"
+                    "  data: []\n",
+                    encoding="utf-8",
+                )
             return SimpleNamespace(returncode=0, stdout="ok", stderr="")
 
         result = extract_client_identity_snapshot(
@@ -55,16 +66,16 @@ def main() -> None:
             runner=fake_runner,
         )
 
-        assert len(calls) == 2, calls
+        assert len(calls) == 4, calls
         assert result.build == "30191204_1", result
-        assert len(result.resources) == 4, result.resources
+        assert len(result.resources) == 6, result.resources
         assert not result.failures, result.failures
         assert len(result.client_fingerprint) == 64, result.client_fingerprint
 
         manifest = read_manifest(Path(result.manifest_path))
         assert manifest.snapshot_id == "client:30191204_1", manifest
         assert manifest.metadata["client_fingerprint"] == result.client_fingerprint
-        assert len(manifest.files) == 4, manifest.files
+        assert len(manifest.files) == 6, manifest.files
         dialog_rows = [x for x in manifest.files if x["kind"] == "DIALOG"]
         assert {x["zone_id"] for x in dialog_rows} == {83, 87}, dialog_rows
 
@@ -75,8 +86,8 @@ def main() -> None:
             manifest_path=Path(result.manifest_path),
         )
         con.commit()
-        assert ingested["record_count"] == 4, ingested
-        assert len(ingested["zones"]) == 2, ingested
+        assert ingested["record_count"] == 6, ingested
+        assert len(ingested["zones"]) == 4, ingested
         snap = con.execute(
             "SELECT version,fingerprint FROM identity_snapshots WHERE snapshot_id=?",
             ("client:30191204_1",),
