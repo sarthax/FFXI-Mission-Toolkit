@@ -153,7 +153,7 @@ WORKSPACES = (
         "sections": (
             {"label": "Dashboard", "href": "/validation"},
             {"label": "Runs & Results", "href": "/validation/runs"},
-            {"label": "Live Target", "href": None, "planned": True},
+            {"label": "Live Target", "href": "/validation/live-target"},
         ),
     },
     {
