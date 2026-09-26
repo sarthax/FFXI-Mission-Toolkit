@@ -459,8 +459,8 @@ Current route ownership summary:
 - Client: 3 routes.
 - Tools: 66 routes.
 - Settings: 13 routes.
-- Validation: 0 current routes; backend capabilities require NEW GUI.
-- Packages: 0 current routes; backend capabilities require NEW GUI.
+- Validation: 5 current routes covering dashboard, runs/results, and Live Target validation.
+- Packages: 2 current routes covering Package Library and Review & Readiness.
 
 The high Tools count is intentional because Zone Editor and Item Editor expose many supporting API/mutation routes. These remain coherent editor applications rather than being split across navigation.
 
@@ -600,7 +600,7 @@ Recommended implementation sequence:
 5. Validation workspace.
 6. Client Inspector.
 7. Server Inspector consolidation.
-8. Packages workspace.
+8. [x] Packages workspace — Package Library and Review & Readiness are exposed read-only; legacy package creation remains until parity.
 9. Tools subsection navigation.
 10. Settings/source-health cleanup.
 11. Only after feature parity, consider legacy-route redirects or retirement.
