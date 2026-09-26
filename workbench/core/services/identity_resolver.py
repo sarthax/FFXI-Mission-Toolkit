@@ -528,6 +528,8 @@ def _event_match_score(source_meta: dict[str, Any], target_meta: dict[str, Any])
             and target_parser != "RAW_ONLY"
             and bool(source_meta.get("opcode_sequence"))
             and bool(target_meta.get("opcode_sequence"))
+            and int(source_meta.get("unknown_opcode_count") or 0) == 0
+            and int(target_meta.get("unknown_opcode_count") or 0) == 0
         )
         return (
             (200, "DECODED_STRUCTURE", "HIGH")
