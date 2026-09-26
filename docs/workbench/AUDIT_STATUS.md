@@ -1272,3 +1272,41 @@ Regression coverage now includes:
 snapshot extraction and capture bridge fixtures.
 
 The next real validation gate is comparison against a second actual FFXI client build.
+
+
+## 2026-09-26 — Event identity resolver stabilized
+
+The EVENT identity path now has a stable cross-client comparison contract.
+
+Implemented since the initial fingerprint milestone:
+
+- dependency-free AST decoding of vendored FFXI-EventsDump opcode definitions;
+- inherited opcode argument/length resolution;
+- parser implementation name removed from semantic hashes;
+- portable special entity-role evidence in structural fingerprints;
+- ordinary raw entity ids excluded from semantic hashes;
+- unknown-opcode structural matches downgraded to LOW confidence;
+- ranked EVENT resolution:
+  - exact bytecode -> VERIFIED;
+  - composite structure + Retail text -> HIGH;
+  - fully decoded structure -> HIGH;
+  - coarse/unknown structure -> LOW;
+- unique-best-candidate requirement; ties remain ambiguous;
+- capture bridge now uses ranked EVENT resolution at minimum HIGH confidence;
+- bulk source-snapshot -> target-snapshot EVENT drift comparison;
+- CLI JSON/CSV reporting via `workbench.cli.event_identity_compare`.
+
+Current identity regressions all pass in Workbench Regression before the unrelated pre-existing Coiler
+truth-fixture failure:
+
+```text
+snapshot identity resolver self-test: PASS
+client identity snapshot self-test: PASS
+event structural fingerprint self-test: PASS
+event identity resolution self-test: PASS
+installed client identity extraction self-test: PASS
+capture identity bridge self-test: PASS
+```
+
+The next external validation gate is no longer synthetic: ingest a second real FFXI client build and
+inspect actual cross-build EVENT drift/ambiguity distributions.
