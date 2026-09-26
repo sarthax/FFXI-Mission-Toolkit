@@ -456,6 +456,73 @@ class WorkbenchDomainReader:
         finally:
             con.close()
 
+    def collision_inspect(
+        self,
+        migration: str | None = None,
+        *,
+        feature_id: str | None = None,
+        classification: str | None = None,
+        limit: int = 100,
+    ) -> dict[str,Any]:
+        """Inspect canonical migration actions produced from ID/content collision analysis."""
+        con=self._connect()
+        try:
+            where=["json_extract(a.metadata_json,'$.classification') IS NOT NULL"]
+            params=[]
+            if migration:
+                where.append("(a.migration_id=? OR a.migration_id LIKE ?)")
+                params.extend([migration,f"%{migration}%"])
+            if feature_id:
+                where.append("m.feature_id=?")
+                params.append(feature_id)
+            if classification:
+                where.append("json_extract(a.metadata_json,'$.classification')=?")
+                params.append(classification)
+
+            rows=con.execute(
+                "SELECT a.action_id,a.migration_id,a.action,a.artifact_id,a.status,a.reason,a.metadata_json,"
+                "m.feature_id,m.source_snapshot_id AS migration_source_snapshot_id,"
+                "m.target_snapshot_id AS migration_target_snapshot_id,m.status AS migration_status "
+                "FROM migration_actions a JOIN migrations m ON m.migration_id=a.migration_id "
+                f"WHERE {' AND '.join(where)} ORDER BY a.migration_id,a.action_id LIMIT ?",
+                (*params,limit),
+            ).fetchall()
+
+            matches=[]
+            summary={}
+            for row in rows:
+                item=dict(row)
+                metadata=_json(item.pop("metadata_json")) or {}
+                item["metadata"]=metadata
+                cls=metadata.get("classification")
+                if cls:
+                    summary[cls]=summary.get(cls,0)+1
+                # Collision planner metadata is the authority for the originating snapshots
+                # and analyzer confidence. Migration-level snapshots are included as a
+                # canonical cross-check rather than replacing the finding metadata.
+                item["classification"]=cls
+                item["collision_confidence"]=metadata.get("collision_confidence")
+                item["collision_status"]=metadata.get("collision_status")
+                item["source_identity"]=metadata.get("source_identity")
+                item["target_identity"]=metadata.get("target_identity")
+                item["identifier_namespaces"]=metadata.get("identifier_namespaces") or []
+                item["source_snapshot_id"]=metadata.get("source_snapshot_id")
+                item["target_snapshot_id"]=metadata.get("target_snapshot_id")
+                matches.append(item)
+
+            return {
+                "status":"OK",
+                "migration":migration,
+                "feature_id":feature_id,
+                "classification":classification,
+                "summary":dict(sorted(summary.items())),
+                "matches":matches,
+                "evidence_ids":[],
+                "truncated":len(matches)>=limit,
+            }
+        finally:
+            con.close()
+
     def migration_inspect(
         self,
         migration: str,
