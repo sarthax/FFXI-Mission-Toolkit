@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pinned public-repository flagship E2E: CoP 2-5 Ancient Vows, LSB -> legacy DSP."""
+"""Pinned public-repository flagship E2E: CoP 2-5 Ancient Vows, LSB -> legacy DSP.\n\nP0 closure sentinel: comment-only edits may force a current flagship workflow run.\n"""
 from __future__ import annotations
 import json,sys
 from pathlib import Path
