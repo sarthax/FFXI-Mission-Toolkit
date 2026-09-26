@@ -110,7 +110,7 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - [ ] SQL migration backend — generic backend registry is implemented; legacy Topaz→DSP SQL conversion is registered explicitly. Broader source/target routes remain unsupported.
 - [ ] Binding compatibility engine
 - [ ] Live target validation
-- [ ] ID/content collision analysis — generic normalized-record collision engine is implemented; migration-planner/research-tool integration and broader real cross-fork fixtures remain.
+- [ ] ID/content collision analysis — generic normalized-record collision engine and migration-planner safety integration are implemented; typed research-tool exposure and broader real cross-fork fixtures remain.
 
 Current public flagship E2E: pinned LSB → legacy DSP Chains of Promathia 2-5 (Ancient Vows) reaches adapters, logical comparison, FeatureSurface capability alignment, canonical graph persistence, target-snapshot capability requirements, ValidationRun/ValidationResult, and Feature Checker.
 
@@ -341,5 +341,5 @@ Lua event indexing now carries conservative callback-parameter class hints, and 
 - [x] identify same-content/different-identity renumber candidates without treating them as proven semantic equivalence.
 - [x] preserve composite identity namespaces so reused numeric components in different logical scopes do not become false collisions.
 - [x] surface duplicate and unresolved identities explicitly.
-- [ ] feed collision findings directly into migration planning/apply readiness.
+- [x] feed collision findings into migration planning; hard same-ID/different-content conflicts now BLOCK package planning, while renumber candidates remain MANUAL_REQUIRED.
 - [ ] expose collision analysis through typed research tools and broader real cross-fork fixtures.
