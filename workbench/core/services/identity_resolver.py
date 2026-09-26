@@ -255,6 +255,55 @@ def ingest_dialog_records(
     return out
 
 
+
+def ingest_event_structure_records(
+    con: sqlite3.Connection,
+    *,
+    snapshot_id: str,
+    zone_key: str,
+    resources: Iterable[Any],
+    evidence_id_prefix: str | None = None,
+) -> list[IdentityRecord]:
+    """Ingest decoded client event-resource structures as primary EVENT identities."""
+    from workbench.client.event_fingerprint import fingerprint_event, semantic_event_structure_key
+    out: list[IdentityRecord] = []
+    for resource in resources:
+        fp = fingerprint_event(resource)
+        semantic_key = semantic_event_structure_key(zone_key, fp)
+        record = IdentityRecord(
+            record_id=f"identity:{snapshot_id}:EVENT:{zone_key}:{resource.block_index}:{resource.event_id}",
+            snapshot_id=snapshot_id,
+            namespace="EVENT",
+            semantic_key=semantic_key,
+            numeric_id=str(resource.event_id),
+            zone_key=zone_key,
+            actor_key=str(resource.entity_id),
+            content_fingerprint=fp.structural_sha256,
+            evidence_id=(
+                f"{evidence_id_prefix}:{resource.block_index}:{resource.event_id}"
+                if evidence_id_prefix else None
+            ),
+            confidence="VERIFIED" if fp.parser != "RAW_ONLY" else "INFERRED",
+            metadata={
+                "fingerprint_basis": "event_structure",
+                "exact_sha256": fp.exact_sha256,
+                "structural_sha256": fp.structural_sha256,
+                "opcode_sequence": list(fp.opcode_sequence),
+                "instruction_lengths": list(fp.instruction_lengths),
+                "bytecode_length": fp.bytecode_length,
+                "data_count": fp.data_count,
+                "block_event_count": fp.block_event_count,
+                "unknown_opcode_count": fp.unknown_opcode_count,
+                "parser": fp.parser,
+                "entity_id_context": resource.entity_id,
+                "block_index": resource.block_index,
+            },
+        )
+        upsert_record(con, record)
+        out.append(record)
+    return out
+
+
 def _rows(
     con: sqlite3.Connection,
     snapshot_id: str,
