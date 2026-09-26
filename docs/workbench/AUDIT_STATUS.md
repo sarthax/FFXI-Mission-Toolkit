@@ -768,3 +768,20 @@ The reader queries canonical `migration_actions` joined to canonical migration r
 Filtering is available by migration, feature, and collision classification. The tools are READ-only under the existing research permission profiles and do not create or mutate migration actions.
 
 Regression runs #1117 and #1118 are green with collision inspection coverage in `test_research_domain_tools.py`. Registry coverage also verifies the new tools are exposed only as READ tools.
+
+
+## 2026-09-25 — Live target validation foundation
+
+The Workbench now has a generic adapter-aware live database validation path that complements, but does not replace, the existing specialized `backport_sql_live_check.py` MariaDB tooling.
+
+Implemented:
+- `workbench.migrations.live_target_validation` compares expected adapter-normalized `LogicalRecord` records against current live target rows using target adapter physical table/column mappings;
+- the live reader is DB-API based and issues SELECT-only queries;
+- results distinguish VERIFIED, MISSING, CONTRADICTED, AMBIGUOUS, UNKNOWN, and FAILED live states;
+- successful live comparison validates database representation only and does not imply runtime behavior;
+- live results can persist as canonical `ValidationRun` and `ValidationResult` records;
+- connection credentials are never persisted in canonical validation metadata;
+- `python -m workbench.cli.live_target_validation` supports read-only SQLite validation and optional MySQL/MariaDB validation via `mysql-connector-python`;
+- MySQL/MariaDB passwords are read from an environment variable (default `FFXI_DB_PASSWORD`) rather than accepted as a normal CLI argument.
+
+The legacy `backport_sql_live_check.py` remains present and separate because it contains specialized package ID/content-duplication logic, including `mob_groups` live-conflict analysis. Existing admin/write tooling is not removed or absorbed into the generic validator.
