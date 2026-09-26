@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 146,
+  "route_count": 149,
   "routes": [
     {
       "method": "GET",
@@ -233,6 +233,30 @@
       "home": "Validation",
       "section": "Live Target",
       "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/packages/scope",
+      "home": "Packages",
+      "section": "Scope Review",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/packages/scope/decision",
+      "home": "Packages",
+      "section": "Scope Review",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/packages/scope/review",
+      "home": "Packages",
+      "section": "Scope Review",
+      "role": "mutation",
       "disposition": "KEEP"
     },
     {
