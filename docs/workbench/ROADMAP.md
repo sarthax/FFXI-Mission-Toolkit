@@ -103,8 +103,8 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - [x] LSBAdapter
 - [ ] TopazNextAdapter
 - [ ] CustomForkAdapter
-- [ ] Logical schema mapping — core equipment, instances, NPCs, mobs, spawns, drops, battlefield registry/membership, and SQL extraction are implemented; broader schema coverage remains.
-- [ ] Generic FeatureSurface comparison — artifact roles, entity coverage, and behavioral capabilities are implemented; migration-rule coverage remains.
+- [ ] Logical schema mapping — core equipment, instances, NPCs, mobs, spawns, drops, battlefield registry/membership, and SQL extraction are implemented. A cross-profile coverage matrix now reports unmapped parsed fields, missing logical types, and identity-mapping gaps; item_basic/item_weapon/item_usable/spells/traits and other broader families still require audited mappings.
+- [x] Generic FeatureSurface comparison — artifact roles, entity coverage, behavioral capabilities, path drift, capability status drift, and explicit migration actions for entity/capability/representation gaps are implemented.
 - [ ] Snapshot-specific capability observations and target-aware Feature Checker evaluation — implemented for canonical graph/flagship E2E; broader capability producers remain.
 - [ ] Lua migration backend — generic backend registry is implemented; legacy Topaz→DSP Lua conversion is registered explicitly. LSB→DSP and other routes remain unsupported until dedicated converters exist.
 - [ ] SQL migration backend — generic backend registry is implemented; legacy Topaz→DSP SQL conversion is registered explicitly. Broader source/target routes remain unsupported.
@@ -346,3 +346,11 @@ Lua event indexing now carries conservative callback-parameter class hints, and 
 - [x] feed collision findings into migration planning; hard same-ID/different-content conflicts now BLOCK package planning, while renumber candidates remain MANUAL_REQUIRED.
 - [x] expose collision analysis through typed read-only research tools (`collision.inspect`, `migration.collisions`).
 - [ ] add broader real cross-fork collision fixtures.
+
+
+### 2026-09-25 Logical schema / FeatureSurface coverage
+- [x] add cross-profile logical schema coverage audit for Topaz, Topaz-Next, DSP, and LSB.
+- [x] report unmapped parsed physical fields and identity mapping gaps per logical table.
+- [x] expose physical-table drift (for example DSP item_armor vs logical item_equipment) without collapsing lineage differences.
+- [x] expand FeatureSurface migration planning for entity coverage drift, capability status drift, and role-path drift.
+- [ ] audit and map broader item/basic/weapon/usable, spells, traits, and additional system tables before declaring schema coverage complete.
