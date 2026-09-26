@@ -14,6 +14,7 @@ from workbench.core.services.identity_resolver import (
     register_snapshot,
     resolve_identity,
     persist_mapping,
+    assess_identity_closure,
     upsert_record,
 )
 
@@ -135,6 +136,17 @@ def main() -> None:
             source_numeric_id=11,
         )
         assert unscoped.status == "SOURCE_ID_AMBIGUOUS", unscoped
+
+        closure = assess_identity_closure([scoped])
+        assert closure.status == "READY", closure
+        assert closure.target_equivalent == 1, closure
+
+        manual = assess_identity_closure([scoped, unscoped])
+        assert manual.status == "MANUAL_REQUIRED", manual
+        assert manual.ambiguous == 1, manual
+
+        blocked = assess_identity_closure([unscoped], unresolved_blocks=True)
+        assert blocked.status == "BLOCKED", blocked
 
         con.close()
 
