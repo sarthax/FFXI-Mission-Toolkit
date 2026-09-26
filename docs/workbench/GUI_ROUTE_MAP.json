@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 140,
+  "route_count": 142,
   "routes": [
     {
       "method": "GET",
@@ -218,6 +218,22 @@
       "section": "Zone Drift",
       "role": "detail",
       "disposition": "MERGE"
+    },
+    {
+      "method": "GET",
+      "path": "/validation/live-target",
+      "home": "Validation",
+      "section": "Live Target",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/validation/live-target",
+      "home": "Validation",
+      "section": "Live Target",
+      "role": "action",
+      "disposition": "KEEP"
     },
     {
       "method": "GET",
