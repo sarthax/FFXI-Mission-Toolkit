@@ -285,3 +285,89 @@ confidence
 ```
 
 That provenance is what makes an automated package auditable.
+
+
+## 2026-09-26 implementation milestone — installed client extraction + capture bridge
+
+The snapshot-aware resolver now has a complete first ingestion path from an installed FFXI client.
+
+New implementation:
+
+- `workbench/client/identity_extract.py`
+  - wraps the existing xi-tinkerer `export-dat` command;
+  - copies and hashes FTABLE/VTABLE when present;
+  - exports selected zone dialog/event tables;
+  - records per-resource SHA-256, DAT id, zone id/key, size, and extraction failures;
+  - writes one portable `identity_snapshot.json`;
+  - computes a manifest-level client fingerprint;
+  - does not guess the client build from DLL/file metadata; the build label is supplied explicitly and remains independently checkable against the content fingerprint.
+
+- `workbench/client/identity_snapshot.py::ingest_client_identity_manifest`
+  - registers a portable client snapshot exactly once;
+  - ingests all supported zone resources under that snapshot;
+  - preserves the manifest-level fingerprint instead of overwriting snapshot provenance zone-by-zone.
+
+- `workbench/runtime/observed_transition.py`
+  - now carries `client_snapshot_id` explicitly.
+
+- `workbench/runtime/identity_bridge.py`
+  - resolves a typed observed capture event from its originating client snapshot into a selected target snapshot;
+  - refuses to translate `MESSAGE_OR_EVENT_ID` as EVENT/CSID until upstream packet/correlation evidence narrows the identifier type;
+  - therefore preserves the raw capture value and uncertainty rather than manufacturing a target CSID.
+
+### CLI
+
+A client install can now be extracted with:
+
+```text
+python -m workbench.cli.client_identity_snapshot \
+  --client-root "C:\\...\\FINAL FANTASY XI" \
+  --xi-tinkerer "vendor\\xi-tinkerer\\target\\release\\xi-tinkerer-cli.exe" \
+  --snapshot-id "client:30191204_1" \
+  --build "30191204_1" \
+  --output "client_snapshots\\30191204_1" \
+  --zone 87:NORTH_GUSTABERG_S \
+  --zone 83:ROLANBERRY_FIELDS
+```
+
+Use `--all-zones` to attempt zone IDs 0-511. Unsupported/missing exports are retained as manifest failures rather than aborting the snapshot.
+
+The completed snapshot may also be ingested directly into a Workbench DB with:
+
+```text
+--ingest-db workbench.db
+```
+
+### Second-client workflow
+
+When another historical client becomes available:
+
+1. Keep the install unmodified until extraction completes.
+2. Assign an explicit snapshot/build label.
+3. Extract the same zone set, or use `--all-zones`.
+4. Retain the generated portable snapshot directory.
+5. Ingest both snapshots.
+6. Run snapshot-to-snapshot EVENT identity comparison.
+7. Treat `TARGET_EQUIVALENT` as an evidence-backed mapping, not a literal-id match.
+8. Investigate ambiguous/source-only/target-only identities individually.
+9. Use the resolved target representation when evaluating or generating server-side event code.
+
+### Current end-to-end contract
+
+```text
+installed Retail client A
+  -> portable IdentitySnapshot A
+installed Retail client B
+  -> portable IdentitySnapshot B
+
+Retail capture produced by A
+  -> ObservedTransition(client_snapshot_id=A, raw event id)
+  -> packet/correlation typing (EVENT/CSID vs unresolved)
+  -> semantic identity lookup in A
+  -> target representation lookup in B
+  -> EXACT / TARGET_EQUIVALENT / unresolved / ambiguous
+  -> identity-closure package dimension
+  -> target server implementation comparison
+```
+
+This is intentionally symmetrical: A and B can represent old/new Retail builds, server-aligned client generations, or capture/source/target combinations.
