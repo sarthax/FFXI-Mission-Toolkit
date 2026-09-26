@@ -55,6 +55,23 @@ def main():
         assert [row["npcid"] for row in npc_rows]==["17020","17021","17022","17023"],npc_rows
         assert all(");" not in row["pos_x"] for row in npc_rows),npc_rows
 
+        # Real DSP mob_spawn_points.sql failure shape: a single INSERT statement with several
+        # comma-separated VALUES tuples, not several complete statements. Before
+        # split_insert_tuples(), this glued one row's last real column to the next row's leading
+        # digits (e.g. pos_x becoming "17021);179") and crashed float() during a DSP cache rebuild.
+        r=Path(td)/"mob_spawn_points.sql"
+        spawn_cols=["mobid","mobname","polutils_name","groupid","pos_x","pos_y","pos_z","pos_rot"]
+        r.write_text(
+            "INSERT INTO `mob_spawn_points` VALUES "
+            "(1,'Foo','foo',10,100.5,0,0,17021),(2,'Bar','bar',11,179.0,0,0,90);\n",
+            encoding="utf-8",
+        )
+        spawn_rows=list(sqlidx.parse_table_file(r,"mob_spawn_points",spawn_cols))
+        assert len(spawn_rows)==2,spawn_rows
+        assert float(sqlidx.unquote(spawn_rows[0]["pos_rot"]))==17021.0,spawn_rows[0]
+        assert float(sqlidx.unquote(spawn_rows[1]["pos_x"]))==179.0,spawn_rows[1]
+        assert all(");" not in row["pos_x"] and "(" not in row["pos_x"] for row in spawn_rows),spawn_rows
+
     print("SQL statement parser self-test: PASS")
     return 0
 

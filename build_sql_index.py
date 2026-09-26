@@ -143,7 +143,59 @@ def _resolve_field(raw: str, variables: dict[str, int]) -> int:
     return _eval_flags_expr(raw, variables)
 
 
-INSERT_RE = re.compile(r"^INSERT INTO `(\w+)` VALUES\s*\((.*)\)\s*$", re.DOTALL)
+INSERT_RE = re.compile(r"^INSERT INTO `(\w+)` VALUES\s*(.*)$", re.DOTALL)
+
+
+def split_insert_tuples(values_blob: str) -> list[str]:
+    """Splits a `(...), (...), (...)` VALUES blob into each parenthesized row's raw inner text.
+
+    Some legacy DSP dumps (confirmed on mob_spawn_points.sql and others) write real multi-row
+    INSERT statements -- `INSERT INTO ... VALUES (...),(...),(...);` -- rather than one row per
+    statement. _iter_sql_statements()/INSERT_RE only isolate the *statement*; without this, the
+    ')' ending one row and the '(' opening the next both land inside split_sql_values()'s flat
+    top-level-comma split (which tracks quoting but not parens), gluing one row's real column
+    value to the next row's leading digits (e.g. a pos_x field ending up as "17021);179") and
+    crashing float()/int() conversion downstream. Tracks paren depth and quoting (both ''
+    SQL-standard and \\' escaping, matching split_sql_values()) so a comma or paren inside a
+    quoted string never breaks a row boundary."""
+    tuples = []
+    depth = 0
+    in_quote = False
+    start = None
+    i = 0
+    n = len(values_blob)
+    while i < n:
+        c = values_blob[i]
+        if in_quote:
+            if c == "\\" and i + 1 < n and values_blob[i + 1] == "'":
+                i += 2
+                continue
+            if c == "'" and i + 1 < n and values_blob[i + 1] == "'":
+                i += 2
+                continue
+            if c == "'":
+                in_quote = False
+            i += 1
+            continue
+        if c == "'":
+            in_quote = True
+            i += 1
+            continue
+        if c == "(":
+            if depth == 0:
+                start = i + 1
+            depth += 1
+            i += 1
+            continue
+        if c == ")":
+            depth -= 1
+            if depth == 0 and start is not None:
+                tuples.append(values_blob[start:i])
+                start = None
+            i += 1
+            continue
+        i += 1
+    return tuples
 
 _CLEAN_CACHE_DIR = TOOLS_ROOT / "mission_reports" / "_sql_clean"
 _TRAILING_COMMENT_RE = re.compile(r"\);\s*--.*$")
@@ -247,12 +299,13 @@ def parse_table_file(path: Path, expected_table: str, columns: list[str]):
         m=INSERT_RE.match(statement)
         if not m or m.group(1)!=expected_table:
             continue
-        values=split_sql_values(m.group(2))
-        if len(values)!=len(columns):
-            print(f"  [!] {path.name}:{lineno} has {len(values)} values, expected {len(columns)} "
-                  f"for {expected_table} -- skipped (schema drift?)")
-            continue
-        yield dict(zip(columns,values))
+        for tup_idx,tup in enumerate(split_insert_tuples(m.group(2)),1):
+            values=split_sql_values(tup)
+            if len(values)!=len(columns):
+                print(f"  [!] {path.name}:{lineno} row {tup_idx} has {len(values)} values, "
+                      f"expected {len(columns)} for {expected_table} -- skipped (schema drift?)")
+                continue
+            yield dict(zip(columns,values))
 
 
 def init_db(con: sqlite3.Connection):
