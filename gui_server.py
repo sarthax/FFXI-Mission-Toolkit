@@ -72,6 +72,7 @@ import wiki_compile
 from workbench.gui_shell import build_shell_context
 from workbench.adapters.servers import LogicalRecord, adapter_for
 from workbench.migrations.live_target_validation import DBAPITargetReader, persist_live_validation, validate_live_records
+from workbench.migrations.package_review import package_review_summary_dict
 
 TOOLS_ROOT = Path(__file__).parent
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
@@ -2427,6 +2428,120 @@ def _workbench_graph_connection() -> sqlite3.Connection | None:
         con.close()
         return None
     return con
+
+
+def _package_project_root() -> Path:
+    return settings_mod.get_backport_root().resolve()
+
+
+def _package_candidates(limit: int = 250) -> list[dict]:
+    root = _package_project_root()
+    rows = []
+    if not root.is_dir():
+        return rows
+    for manifest_path in root.rglob("WORKBENCH_PACKAGE_MANIFEST.json"):
+        package_root = manifest_path.parent
+        try:
+            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        migration = payload.get("migration") or {}
+        try:
+            relative = package_root.relative_to(root).as_posix()
+        except ValueError:
+            continue
+        rows.append({
+            "relative_path": relative or ".",
+            "package_name": package_root.name,
+            "migration_id": migration.get("migration_id"),
+            "feature_id": migration.get("feature_id"),
+            "source_family": migration.get("source_family"),
+            "target_family": migration.get("target_family"),
+            "manifest_status": migration.get("status") or "UNKNOWN",
+            "step_count": len((payload.get("execution") or {}).get("steps") or []),
+            "manifest_mtime": manifest_path.stat().st_mtime,
+        })
+        if len(rows) >= limit:
+            break
+    rows.sort(key=lambda row: (-row["manifest_mtime"], row["relative_path"]))
+    return rows
+
+
+def _resolve_package_root(relative_path: str) -> Path:
+    project_root = _package_project_root()
+    candidate = (project_root / relative_path).resolve()
+    try:
+        candidate.relative_to(project_root)
+    except ValueError as exc:
+        raise ValueError("Package path must stay inside the configured project root.") from exc
+    if not (candidate / "WORKBENCH_PACKAGE_MANIFEST.json").is_file():
+        raise ValueError("Selected folder is not an assembled Workbench package.")
+    return candidate
+
+
+@app.get("/packages", response_class=HTMLResponse)
+def packages_library(request: Request, q: str = ""):
+    project_root = _package_project_root()
+    packages = _package_candidates()
+    if q.strip():
+        term = q.strip().lower()
+        packages = [
+            row for row in packages
+            if term in str(row.get("relative_path") or "").lower()
+            or term in str(row.get("migration_id") or "").lower()
+            or term in str(row.get("feature_id") or "").lower()
+        ]
+    return templates.TemplateResponse(request, "packages_library.html", {
+        "request": request,
+        "q": q,
+        "project_root": str(project_root),
+        "packages": packages,
+    })
+
+
+@app.get("/packages/review", response_class=HTMLResponse)
+def packages_review(
+    request: Request,
+    package: str = "",
+    target_root: str = "",
+):
+    candidates = _package_candidates()
+    review = None
+    manifest = {}
+    validation = {}
+    error = None
+    selected_package = package.strip()
+    configured_target = settings_mod.get_dsp_root()
+    selected_target = target_root.strip() or (str(configured_target) if configured_target else "")
+    if selected_package:
+        try:
+            package_root = _resolve_package_root(selected_package)
+            if not selected_target:
+                raise ValueError(
+                    "Target root is required for patch-lifecycle drift/readiness checks. "
+                    "Configure a DSP server path or provide a target root."
+                )
+            target_path = Path(selected_target).expanduser().resolve()
+            if not target_path.exists():
+                raise ValueError("Target root does not exist.")
+            review = package_review_summary_dict(package_root, target_path)
+            manifest_path = package_root / "WORKBENCH_PACKAGE_MANIFEST.json"
+            validation_path = package_root / "WORKBENCH_VALIDATION_PACKAGE.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            if validation_path.is_file():
+                validation = json.loads(validation_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            error = f"{type(exc).__name__}: {exc}"
+    return templates.TemplateResponse(request, "packages_review.html", {
+        "request": request,
+        "packages": candidates,
+        "package": selected_package,
+        "target_root": selected_target,
+        "review": review,
+        "manifest": manifest,
+        "validation": validation,
+        "error": error,
+    })
 
 
 @app.get("/validation", response_class=HTMLResponse)
