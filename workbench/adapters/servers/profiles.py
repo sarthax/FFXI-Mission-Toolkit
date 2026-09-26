@@ -283,14 +283,14 @@ DSP = SchemaProfile(
         ),
         "spells": TableShape(
             "spells", "spell_list.sql", "spell_list",
-            parse_columns=dsp_spell_columns,
+            parse_columns=("spellid","name","jobs","group","element","zonemisc","validTargets","skill","mpCost","castTime","recastTime","message","magicBurstMessage","animation","animationTime","AOE","base","multiplier","CE","VE","requirements","spell_range","content_tag"),
             field_mappings=tuple(m for m in _common()["spells"].field_mappings if m.logical_name != "family"),
             identity_fields=("spell_id",),
             notes=("DSP legacy shape lacks family.",),
         ),
         "traits": TableShape(
             "traits", "traits.sql", "traits",
-            parse_columns=dsp_trait_columns,
+            parse_columns=("traitid","name","job","level","rank","modifier","value","content_tag"),
             field_mappings=tuple(m for m in _common()["traits"].field_mappings if m.logical_name != "merit_id"),
             identity_fields=("trait_id","job","level","rank","modifier"),
             notes=("DSP legacy shape lacks meritid.",),
@@ -331,15 +331,15 @@ LSB = SchemaProfile(
         ),
         "spells": TableShape(
             "spells","spell_list.sql","spell_list",
-            parse_columns=lsb_spell_columns,
-            field_mappings=spell_fields,
+            parse_columns=("spellid","name","jobs","group","family","element","zonemisc","validTargets","skill","mpCost","castTime","recastTime","message","magicBurstMessage","animation","animationTime","AOE","base","multiplier","CE","VE","requirements","spell_range","radius","content_tag","status_effect","status_effect_tier"),
+            field_mappings=_common()["spells"].field_mappings,
             identity_fields=("spell_id",),
             notes=("LSB adds radius/status-effect fields beyond the audited Topaz-era spell shape.",),
         ),
         "traits": TableShape(
             "traits","traits.sql","traits",
-            parse_columns=topaz_trait_columns,
-            field_mappings=trait_fields,
+            parse_columns=("traitid","name","job","level","rank","modifier","value","content_tag","meritid"),
+            field_mappings=_common()["traits"].field_mappings,
             identity_fields=("trait_id","job","level","rank","modifier"),
         ),
         "battlefields": TableShape(
