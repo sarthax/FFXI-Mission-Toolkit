@@ -326,6 +326,12 @@ def build_dependency_scope(
         reason = saved.get("reason")
         tags = saved.get("tags", ())
         review_required = effective == "QUESTIONABLE"
+        # A newly discovered non-artifact dependency cannot be satisfied merely by saying
+        # "INCLUDE": there is nothing materializable yet. The graph must resolve it to an
+        # artifact or the reviewer must explicitly classify it as target-equivalent/not-required/
+        # excluded with a reason.
+        if effective == "INCLUDE" and not root and info["node_kind"] != "ARTIFACT":
+            review_required = True
         if effective in {"EXCLUDE", "TARGET_EQUIVALENT", "NOT_REQUIRED"} and not reason:
             review_required = True
         if review_required:
@@ -393,5 +399,6 @@ def build_dependency_scope(
             "Graph discovery does not prove target equivalence.",
             "New transitive dependencies default to QUESTIONABLE until explicitly resolved.",
             "User decisions are review metadata and do not rewrite source evidence.",
+            "Non-artifact transitive dependencies cannot be resolved by INCLUDE alone; they must resolve to a packageable artifact or receive an explicit reviewed disposition.",
         ],
     }
