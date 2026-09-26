@@ -112,7 +112,7 @@ def _load_opcode_source_table() -> dict[int, dict[str, Any]]:
                             except Exception:
                                 pass
                 if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                    if item.name == "calculate_length":
+                    if item.name == "calculate_length" and node.name != "BaseOpcode":
                         own_variable = True
                     if item.name == "get_args":
                         own_args = []
@@ -270,7 +270,6 @@ def fingerprint_event(
         "opcode_sequence": list(opcodes),
         "instruction_lengths": list(lengths),
         "bytecode_length": len(resource.byte_code),
-        "parser": parser_name,
     }
     structural = sha256(
         json.dumps(structural_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
