@@ -79,6 +79,9 @@ def main():
     assert route_owner("/packages/review")["section"] == "Review & Readiness"
     assert route_owner("/packages/create")["section"] == "Create Package"
     assert route_owner("/packages/create", "POST")["section"] == "Create Package"
+    assert route_owner("/packages/scope")["section"] == "Scope Review"
+    assert route_owner("/packages/scope/decision", "POST")["section"] == "Scope Review"
+    assert route_owner("/packages/scope/review", "POST")["section"] == "Scope Review"
     assert route_owner("/domains/assault")["home"] == "Domains"
     assert route_owner("/domains/assault")["section"] == "Battle Systems > Assault"
     assert route_owner("/nyzul")["home"] == "Domains"
@@ -93,6 +96,7 @@ def main():
     packages_workspace = next(workspace for workspace in WORKSPACES if workspace["name"] == "Packages")
     assert packages_workspace["href"] == "/packages"
     assert next(section for section in packages_workspace["sections"] if section["label"] == "Package Library")["href"] == "/packages"
+    assert next(section for section in packages_workspace["sections"] if section["label"] == "Scope Review")["href"] == "/packages/scope"
     assert next(section for section in packages_workspace["sections"] if section["label"] == "Create Package")["href"] == "/packages/create"
     assert next(section for section in packages_workspace["sections"] if section["label"] == "Review & Readiness")["href"] == "/packages/review"
     validation_workspace = next(workspace for workspace in WORKSPACES if workspace["name"] == "Validation")
@@ -183,6 +187,7 @@ def main():
         ("validation_run_detail.html", "/validation/runs/test", {"run": None, "results": [], "error": None, "run_id": "test"}),
         ("validation_live_target.html", "/validation/live-target", {"form": {"target_family": "DSP", "target_root": "", "backend": "sqlite", "sqlite_db": "", "host": "127.0.0.1", "port": "3306", "user": "", "database": "", "password_env": "FFXI_DB_PASSWORD", "target_snapshot_id": "", "source_snapshot_id": "", "feature_id": "", "run_id": "", "persist": False, "expected_json": "{}"}, "result": None, "error": None}),
         ("packages_library.html", "/packages", {"q": "", "project_root": "C:/workspace", "packages": []}),
+        ("packages_scope.html", "/packages/scope", {"migrations": [], "migration_id": "", "q": "", "decision": "", "depth": 6, "scope": None, "error": None}),
         ("packages_review.html", "/packages/review", {"packages": [], "package": "", "target_root": "", "review": None, "manifest": {}, "validation": {}, "error": None}),
         ("packages_create.html", "/packages/create", {"migrations": [], "form": {"migration_id": "", "source_root": "", "source_family": "LSB", "target_family": "DSP", "package_path": "packages/"}, "result": None, "error": None}),
     )
@@ -228,6 +233,9 @@ def main():
     packages_shell = context_for("/packages")
     assert packages_shell["active_home"] == "Packages"
     assert next(section for section in packages_shell["sections"] if section["active"])["label"] == "Package Library"
+    package_scope_shell = context_for("/packages/scope")
+    assert package_scope_shell["active_home"] == "Packages"
+    assert next(section for section in package_scope_shell["sections"] if section["active"])["label"] == "Scope Review"
     package_review_shell = context_for("/packages/review")
     assert package_review_shell["active_home"] == "Packages"
     assert next(section for section in package_review_shell["sections"] if section["active"])["label"] == "Review & Readiness"
