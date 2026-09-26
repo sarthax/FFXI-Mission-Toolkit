@@ -24,6 +24,7 @@ from workbench.adapters.servers.base import LogicalRecord, ServerAdapter
 from workbench.adapters.servers.logical import compare_records
 from workbench.core import graph
 from workbench.core.schema import ValidationRun, ValidationResult
+from workbench.core.services.capability_producers import persist_live_target_capability
 
 _IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
@@ -344,6 +345,7 @@ def persist_live_validation(
         graph.insert_record(con,run)
         for row in results:
             graph.insert_record(con,row)
+        persist_live_target_capability(con,payload)
         con.commit()
     finally:
         con.close()
