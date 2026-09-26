@@ -100,7 +100,10 @@ def main():
     assert next(section for section in domains["sections"] if section["label"] == "↳ Assault")["href"] == "/domains/assault"
     assert next(section for section in domains["sections"] if section["label"] == "↳ Nyzul Isle")["href"] == "/nyzul"
     assert {section["label"] for section in domains["sections"] if section.get("planned")} >= {
-        "Abyssea", "Battlefields", "Battle Systems", "Conflict / Battle", "Combat",
+        "Abyssea", "Battlefields", "↳ AMAN-Trove", "↳ Ambuscade", "↳ ANNM",
+        "↳ BCNM", "↳ ENM", "↳ HKCNM", "↳ ISNM", "↳ KCNM", "↳ KSNM",
+        "↳ Login", "↳ Master Trials", "↳ SCNM", "↳ SKCNM", "↳ Walk of Echoes",
+        "Battle Systems", "Conflict / Battle", "Combat",
         "Dynamis", "Escha", "Hobbies", "HELM", "Events", "Missions", "Quests",
         "RoE", "Trust", "Other",
     }
