@@ -2682,10 +2682,11 @@ def packages_create_run(
             raise ValueError("Selected migration was not found.")
 
         scope = build_dependency_scope(con, migration_id.strip())
-        if scope["package_gate"] != "READY":
+        if scope["review"]["status"] != "REVIEWED" or scope["package_gate"] not in {"READY", "MANUAL_REQUIRED"}:
             raise ValueError(
                 "Dependency scope is not ready for package creation: "
-                f"{scope['package_gate']}. Review /packages/scope first."
+                f"{scope['package_gate']} (review={scope['review']['status']}). "
+                "Review /packages/scope first."
             )
         scope_by_node = {item["node_id"]: item for item in scope["items"]}
 
