@@ -112,7 +112,7 @@ Do not collapse the audit into a single percentage. Track dimensions independent
   representation drift, renamed/class-drift candidate, implementation drift, missing indexed,
   unresolved, and ambiguous outcomes while preserving binding/function evidence.
 - [x] Live target validation — generic adapter-aware read-only DB validation, canonical ValidationRun/ValidationResult persistence, and safe CLI are implemented; specialized live MariaDB health/admin tools remain separate.
-- [ ] ID/content collision analysis — generic normalized-record collision engine, migration-planner safety integration, and typed research-tool exposure are implemented; broader real cross-fork fixtures remain.
+- [x] ID/content collision analysis — normalized-record collision engine, migration-planner blocking/review integration, typed research-tool exposure, and public cross-fork regression fixtures are implemented.
 
 Current public flagship E2E: pinned LSB → legacy DSP Chains of Promathia 2-5 (Ancient Vows) reaches adapters, logical comparison, FeatureSurface capability alignment, canonical graph persistence, target-snapshot capability requirements, ValidationRun/ValidationResult, and Feature Checker.
 
@@ -130,12 +130,12 @@ Current public flagship E2E: pinned LSB → legacy DSP Chains of Promathia 2-5 (
 - [x] engine migration classification
 
 ### Phase 4 — Client capability and synchronization (P0/P1)
-- DAT adapters
-- item DAT editing
-- client/server field bindings
-- client capability model
-- dialog drift
-- packet/client/server relationships
+- [x] DAT adapters (P0 read-only foundation) — generic item DAT records normalize the existing audited item_dat_tools reader without replacing its low-level implementation.
+- [ ] item DAT editing (P1) — existing specialized item_dat_tools editing remains available; generalized Workbench migration/write orchestration remains future work.
+- [x] client/server field bindings (P0) — explicit core item field relationships are modeled and compared conservatively.
+- [x] client capability model (P0) — readable client DAT records emit snapshot-scoped capability observations/evidence.
+- [ ] dialog drift (P1)
+- [ ] packet/client/server relationships (P1 beyond the existing packet/server graph foundation)
 - [x] generic EXE/DLL static research foundation — PE metadata/hash/section/import/export/string indexing, canonical evidence ingestion, typed research tools, and cross-binary index diffing are implemented; deeper disassembly/xref/function-recovery analyzers remain future work.
 
 ### Phase 5 — Runtime validation (P0/P1)
@@ -345,7 +345,7 @@ Lua event indexing now carries conservative callback-parameter class hints, and 
 - [x] surface duplicate and unresolved identities explicitly.
 - [x] feed collision findings into migration planning; hard same-ID/different-content conflicts now BLOCK package planning, while renumber candidates remain MANUAL_REQUIRED.
 - [x] expose collision analysis through typed read-only research tools (`collision.inspect`, `migration.collisions`).
-- [ ] add broader real cross-fork collision fixtures.
+- [x] add broader real cross-fork collision fixtures.
 
 
 ### 2026-09-25 Logical schema / FeatureSurface coverage
