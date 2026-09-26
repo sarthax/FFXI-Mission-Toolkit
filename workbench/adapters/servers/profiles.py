@@ -99,6 +99,72 @@ def _common(equipment_file: str = "item_equipment.sql") -> dict[str, TableShape]
         FieldMapping("entity_id",("monsterId","monsterid"),True),
         FieldMapping("conditions",("conditions",)),
     )
+    weapon_fields=(
+        FieldMapping("item_id",("itemId","itemid"),True),
+        FieldMapping("name",("name",),True),
+        FieldMapping("skill",("skill",)),
+        FieldMapping("subskill",("subskill",)),
+        FieldMapping("item_level_skill",("ilvl_skill",)),
+        FieldMapping("item_level_parry",("ilvl_parry",)),
+        FieldMapping("item_level_magic_accuracy",("ilvl_macc",)),
+        FieldMapping("damage_type",("dmgType","dmgtype")),
+        FieldMapping("hit_count",("hit",)),
+        FieldMapping("delay",("delay",)),
+        FieldMapping("damage",("dmg",)),
+        FieldMapping("unlock_points",("unlock_points",)),
+    )
+    usable_fields=(
+        FieldMapping("item_id",("itemid","itemId"),True),
+        FieldMapping("name",("name",),True),
+        FieldMapping("valid_targets",("validTargets","validtargets")),
+        FieldMapping("activation",("activation",)),
+        FieldMapping("animation",("animation",)),
+        FieldMapping("animation_time",("animationTime","animationtime")),
+        FieldMapping("max_charges",("maxCharges","maxcharges")),
+        FieldMapping("use_delay",("useDelay","usedelay")),
+        FieldMapping("reuse_delay",("reuseDelay","reusedelay")),
+        FieldMapping("aoe",("aoe","AOE")),
+    )
+    spell_fields=(
+        FieldMapping("spell_id",("spellid","spellId"),True),
+        FieldMapping("name",("name",),True),
+        FieldMapping("jobs",("jobs",)),
+        FieldMapping("group",("group",)),
+        FieldMapping("family",("family",)),
+        FieldMapping("element",("element",)),
+        FieldMapping("zone_misc",("zonemisc",)),
+        FieldMapping("valid_targets",("validTargets","validtargets")),
+        FieldMapping("skill",("skill",)),
+        FieldMapping("mp_cost",("mpCost","mpcost")),
+        FieldMapping("cast_time",("castTime","casttime")),
+        FieldMapping("recast_time",("recastTime","recasttime")),
+        FieldMapping("message",("message",)),
+        FieldMapping("magic_burst_message",("magicBurstMessage","magicburstmessage")),
+        FieldMapping("animation",("animation",)),
+        FieldMapping("animation_time",("animationTime","animationtime")),
+        FieldMapping("aoe",("AOE","aoe")),
+        FieldMapping("base",("base",)),
+        FieldMapping("multiplier",("multiplier",)),
+        FieldMapping("ce",("CE","ce")),
+        FieldMapping("ve",("VE","ve")),
+        FieldMapping("requirements",("requirements",)),
+        FieldMapping("spell_range",("spell_range",)),
+        FieldMapping("radius",("radius",)),
+        FieldMapping("content_tag",("content_tag",)),
+        FieldMapping("status_effect",("status_effect",)),
+        FieldMapping("status_effect_tier",("status_effect_tier",)),
+    )
+    trait_fields=(
+        FieldMapping("trait_id",("traitid","traitId"),True),
+        FieldMapping("name",("name",),True),
+        FieldMapping("job",("job",),True),
+        FieldMapping("level",("level",),True),
+        FieldMapping("rank",("rank",),True),
+        FieldMapping("modifier",("modifier",),True),
+        FieldMapping("value",("value",)),
+        FieldMapping("content_tag",("content_tag",)),
+        FieldMapping("merit_id",("meritid","meritId")),
+    )
     npc_columns=("npcid","name","polutils_name","pos_rot","pos_x","pos_y","pos_z","flag","speed","speedsub","animation","animationsub","namevis","status","entityFlags","look","name_prefix","content_tag","widescan")
     topaz_group_columns=("groupid","poolid","zoneid","name","respawntime","spawntype","dropid","HP","MP","minLevel","maxLevel","allegiance")
     dsp_group_columns=("groupid","poolid","zoneid","respawntime","spawntype","dropid","HP","MP","minLevel","maxLevel","allegiance")
@@ -106,6 +172,13 @@ def _common(equipment_file: str = "item_equipment.sql") -> dict[str, TableShape]
     topaz_pool_columns=("poolid","name","packet_name","familyid","modelid","mJob","sJob","cmbSkill","cmbDelay","cmbDmgMult","behavior","aggro","true_detection","links","mobType","immunity","name_prefix","flag","entityFlags","animationsub","hasSpellScript","spellList","namevis","roamflag","skill_list_id")
     lsb_pool_columns=("poolid","name","packet_name","speciesid","modelid","mJob","sJob","cmbSkill","cmbDelay","cmbDmgMult","behavior","aggro","true_detection","links","mobType","immunity","name_prefix","flag","entityFlags","animationsub","hasSpellScript","spellList","namevis","roamflag","skill_list_id","resist_id","modelSize","modelHitboxSize")
     drop_columns=("dropId","dropType","groupId","groupRate","itemId","itemRate")
+    weapon_columns=("itemId","name","skill","subskill","ilvl_skill","ilvl_parry","ilvl_macc","dmgType","hit","delay","dmg","unlock_points")
+    usable_columns=("itemid","name","validTargets","activation","animation","animationTime","maxCharges","useDelay","reuseDelay","aoe")
+    topaz_spell_columns=("spellid","name","jobs","group","family","element","zonemisc","validTargets","skill","mpCost","castTime","recastTime","message","magicBurstMessage","animation","animationTime","AOE","base","multiplier","CE","VE","requirements","spell_range","content_tag")
+    dsp_spell_columns=("spellid","name","jobs","group","element","zonemisc","validTargets","skill","mpCost","castTime","recastTime","message","magicBurstMessage","animation","animationTime","AOE","base","multiplier","CE","VE","requirements","spell_range","content_tag")
+    lsb_spell_columns=("spellid","name","jobs","group","family","element","zonemisc","validTargets","skill","mpCost","castTime","recastTime","message","magicBurstMessage","animation","animationTime","AOE","base","multiplier","CE","VE","requirements","spell_range","radius","content_tag","status_effect","status_effect_tier")
+    topaz_trait_columns=("traitid","name","job","level","rank","modifier","value","content_tag","meritid")
+    dsp_trait_columns=("traitid","name","job","level","rank","modifier","value","content_tag")
     topaz_spawn_columns=("mobid","mobname","polutils_name","groupid","pos_x","pos_y","pos_z","pos_rot")
     lsb_spawn_columns=("mobid","spawnslotid","mobname","polutils_name","groupid","minLevel","maxLevel","pos_x","pos_y","pos_z","pos_rot","spawnHour","despawnHour")
     instance_entity_columns=("instanceid","id")
@@ -114,8 +187,10 @@ def _common(equipment_file: str = "item_equipment.sql") -> dict[str, TableShape]
         "item_basic": TableShape("item_basic", "item_basic.sql", "item_basic"),
         "item_equipment": TableShape("item_equipment", equipment_file, "item_equipment", aliases=("item_armor",),
             field_mappings=equipment_fields, identity_fields=("item_id",)),
-        "item_weapon": TableShape("item_weapon", "item_weapon.sql", "item_weapon"),
-        "item_usable": TableShape("item_usable", "item_usable.sql", "item_usable"),
+        "item_weapon": TableShape("item_weapon", "item_weapon.sql", "item_weapon",
+            parse_columns=weapon_columns, field_mappings=weapon_fields, identity_fields=("item_id",)),
+        "item_usable": TableShape("item_usable", "item_usable.sql", "item_usable",
+            parse_columns=usable_columns, field_mappings=usable_fields, identity_fields=("item_id",)),
         "npc": TableShape("npc", "npc_list.sql", "npc_list",
             parse_columns=npc_columns, field_mappings=npc_fields, identity_fields=("npc_id",)),
         "mob_groups": TableShape("mob_groups", "mob_groups.sql", "mob_groups",
@@ -137,8 +212,11 @@ def _common(equipment_file: str = "item_equipment.sql") -> dict[str, TableShape]
             parse_columns=("bcnmId","zoneId","name","fastestName","fastestPartySize","fastestTime"),
             field_mappings=battlefield_fields, identity_fields=("battlefield_id",),
         ),
-        "spells": TableShape("spells", "spell_list.sql", "spell_list"),
-        "traits": TableShape("traits", "traits.sql", "traits"),
+        "spells": TableShape("spells", "spell_list.sql", "spell_list",
+            parse_columns=topaz_spell_columns, field_mappings=spell_fields, identity_fields=("spell_id",)),
+        "traits": TableShape("traits", "traits.sql", "traits",
+            parse_columns=topaz_trait_columns, field_mappings=trait_fields,
+            identity_fields=("trait_id","job","level","rank","modifier")),
     }
 
 
@@ -205,10 +283,16 @@ DSP = SchemaProfile(
         ),
         "spells": TableShape(
             "spells", "spell_list.sql", "spell_list",
+            parse_columns=dsp_spell_columns,
+            field_mappings=tuple(m for m in _common()["spells"].field_mappings if m.logical_name != "family"),
+            identity_fields=("spell_id",),
             notes=("DSP legacy shape lacks family.",),
         ),
         "traits": TableShape(
             "traits", "traits.sql", "traits",
+            parse_columns=dsp_trait_columns,
+            field_mappings=tuple(m for m in _common()["traits"].field_mappings if m.logical_name != "merit_id"),
+            identity_fields=("trait_id","job","level","rank","modifier"),
             notes=("DSP legacy shape lacks meritid.",),
         ),
     },
@@ -244,6 +328,19 @@ LSB = SchemaProfile(
             parse_columns=("instanceid","instance_name","instance_zone","entrance_zone","overlay_id","time_limit","start_x","start_y","start_z","start_rot","music_day","music_night","battlesolo","battlemulti"),
             field_mappings=_common()["instances"].field_mappings,
             identity_fields=("instance_id",),
+        ),
+        "spells": TableShape(
+            "spells","spell_list.sql","spell_list",
+            parse_columns=lsb_spell_columns,
+            field_mappings=spell_fields,
+            identity_fields=("spell_id",),
+            notes=("LSB adds radius/status-effect fields beyond the audited Topaz-era spell shape.",),
+        ),
+        "traits": TableShape(
+            "traits","traits.sql","traits",
+            parse_columns=topaz_trait_columns,
+            field_mappings=trait_fields,
+            identity_fields=("trait_id","job","level","rank","modifier"),
         ),
         "battlefields": TableShape(
             "battlefields","bcnm_info.sql","bcnm_records",
