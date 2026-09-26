@@ -5,7 +5,7 @@ from dataclasses import asdict, dataclass
 import sqlite3
 from typing import Any
 
-from workbench.core.services.identity_resolver import IdentityResolution, resolve_identity
+from workbench.core.services.identity_resolver import IdentityResolution, resolve_event_identity
 from workbench.runtime.observed_transition import ObservedTransition
 
 
@@ -71,14 +71,20 @@ def resolve_transition_event(
             **base,
         )
 
-    identity = resolve_identity(
+    if namespace.upper() != "EVENT":
+        return TransitionIdentityResolution(
+            status="UNSUPPORTED_IDENTITY_NAMESPACE",
+            reason="Capture transition event bridge currently resolves EVENT identities only.",
+            **base,
+        )
+    identity = resolve_event_identity(
         con,
         source_snapshot_id=transition.client_snapshot_id,
         target_snapshot_id=target_snapshot_id,
-        namespace=namespace,
         source_numeric_id=raw_event_id,
-        zone_key=transition.zone,
+        zone_key=str(transition.zone),
         source_actor_key=transition.actor_id,
+        minimum_confidence="HIGH",
     )
     return TransitionIdentityResolution(
         status=identity.status,
