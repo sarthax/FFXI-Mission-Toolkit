@@ -3127,8 +3127,14 @@ def zone_view3d_all(request: Request, zoneid: int, capture_id: int, zone_db: str
             url=f"/zones/{resolved_zoneid}/view3d_all?capture_id={capture_id}&zone_db={quote(zone_db)}",
             status_code=303)
 
-    zone_row = con.execute("SELECT name FROM zones WHERE zoneid=?", (zoneid,)).fetchone()
+    zone_row = con.execute("SELECT name, geometry_rom_path FROM zones WHERE zoneid=?", (zoneid,)).fetchone()
     zone_name = zone_row[0] if zone_row else f"zone {zoneid}"
+    geometry_rom_path = zone_row[1] if zone_row else None
+    ffxi_path = settings_mod.get_ffxi_install()
+    # Keep the multi-path viewer on the same live client-DAT path as the single-path viewer.
+    # Previously this route omitted these template fields, so zone_view3d.html treated live
+    # parsing as unavailable and forced the legacy server-side OBJ cache builder.
+    live_parse_available = bool(ffxi_path and geometry_rom_path)
 
     entities = build_capture_index.get_capture_entity_ids_with_path(con, capture_id, zone_db) if zone_db else []
     paths = []
@@ -3145,6 +3151,9 @@ def zone_view3d_all(request: Request, zoneid: int, capture_id: int, zone_db: str
         "entity_name": None, "paths_json": json.dumps(paths), "legend": paths,
         "obj_available": obj_available, "multi": True, "zone_db": zone_db, "zones": zones,
         "truncated": len(entities) > MULTI_PLOT_LIMIT, "limit": MULTI_PLOT_LIMIT,
+        "live_parse_available": live_parse_available,
+        "ffxi_path_json": json.dumps(ffxi_path or ""),
+        "geometry_rom_path_json": json.dumps(geometry_rom_path or ""),
         "all_zones": [],
     })
 
