@@ -83,6 +83,40 @@ def main() -> None:
     assert composite["status"] == "COMPOSITE_STRUCTURE_TEXT_MATCH", composite
     assert composite["confidence"] == "HIGH", composite
 
+    # Ordinary raw entity ids are contextual only and must not change semantic identity.
+    npc_a = fingerprint_event(EventResource(
+        entity_id=1001,
+        event_id=30,
+        byte_code=bytes([0x49, 0x01, 0x00, 0x00, 0x01, 0xF4, 0x01, 0x21]),
+        block_event_count=1,
+    ))
+    npc_b = fingerprint_event(EventResource(
+        entity_id=2002,
+        event_id=31,
+        byte_code=bytes([0x49, 0x02, 0x00, 0x00, 0x01, 0xF4, 0x01, 0x21]),
+        block_event_count=1,
+    ))
+    assert npc_a.entity_roles == (), npc_a
+    assert npc_b.entity_roles == (), npc_b
+    assert npc_a.structural_sha256 == npc_b.structural_sha256, (npc_a, npc_b)
+
+    # Portable special entity semantics are fingerprint evidence.
+    event_entity = fingerprint_event(EventResource(
+        entity_id=1001,
+        event_id=32,
+        byte_code=bytes([0x49, 0xF8, 0xFF, 0xFF, 0x7F, 0xF4, 0x01, 0x21]),
+        block_event_count=1,
+    ))
+    local_player = fingerprint_event(EventResource(
+        entity_id=1001,
+        event_id=33,
+        byte_code=bytes([0x49, 0xF0, 0xFF, 0xFF, 0x7F, 0xF4, 0x01, 0x21]),
+        block_event_count=1,
+    ))
+    assert event_entity.entity_roles == ("EVENT_ENTITY",), event_entity
+    assert local_player.entity_roles == ("LOCAL_PLAYER",), local_player
+    assert event_entity.structural_sha256 != local_player.structural_sha256
+
     msg_other_text = fingerprint_event(
         EventResource(
             entity_id=2002,
