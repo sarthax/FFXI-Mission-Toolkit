@@ -317,7 +317,7 @@ def import_json(path: Path, db: Path):
     payload=json.loads(path.read_text(encoding="utf-8"))
     con=init_db(db)
     for key, record_type in (
-        ("features","Feature"),("artifacts","Artifact"),("build_targets","BuildTarget"),("functions","Function"),("bindings","Binding"),("enums_constants","EnumDefinition"),("findings","Finding"),("capabilities","Capability"),("capability_observations","CapabilityObservation"),("capability_requirements","CapabilityRequirement"),
+        ("features","Feature"),("artifacts","Artifact"),("build_targets","BuildTarget"),("functions","Function"),("bindings","Binding"),("enums_constants","EnumDefinition"),("evidence","Evidence"),("findings","Finding"),("capabilities","Capability"),("capability_observations","CapabilityObservation"),("capability_requirements","CapabilityRequirement"),
         ("implementations","Implementation"),("edges","DependencyEdge"),
         ("migration_actions","MigrationAction"),("validation_runs","ValidationRun"),
         ("validation_results","ValidationResult"),
