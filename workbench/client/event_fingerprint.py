@@ -67,13 +67,92 @@ def _load_event_parser():
         return None
 
 
+def _load_opcode_source_table() -> dict[int, dict[str, Any]]:
+    """Read fixed opcode shapes directly from vendored Python source, with no imports."""
+    root = _events_dump_root() / "parser" / "opcodes"
+    table: dict[int, dict[str, Any]] = {}
+    if not root.is_dir():
+        return table
+    arg_re = re.compile(
+        r'OpcodeArg\(\s*["\']([^"\']+)["\']\s*,\s*ArgType\.([A-Z_]+)\s*,\s*(\d+)'
+    )
+    for path in root.glob("0x*.py"):
+        raw = path.read_text(encoding="utf-8", errors="ignore")
+        m_opcode = re.search(r"^\s*opcode\s*=\s*(0x[0-9A-Fa-f]+|\d+)", raw, re.M)
+        if not m_opcode:
+            continue
+        opcode = int(m_opcode.group(1), 0)
+        args = [
+            {"name": name, "arg_type": arg_type, "size": int(size)}
+            for name, arg_type, size in arg_re.findall(raw)
+        ]
+        variable = "def calculate_length(" in raw
+        table[opcode] = {
+            "length": 1 + sum(a["size"] for a in args),
+            "args": args,
+            "variable": variable,
+        }
+    return table
+
+
+def _decode_from_opcode_sources(
+    byte_code: bytes,
+    data_values: tuple[int, ...],
+) -> tuple[tuple[int, ...], tuple[int, ...], int, tuple[int, ...], str]:
+    table = _load_opcode_source_table()
+    if not table:
+        return (), (), 0, (), "RAW_ONLY"
+
+    opcodes: list[int] = []
+    lengths: list[int] = []
+    messages: list[int] = []
+    unknown = 0
+    offset = 0
+    while offset < len(byte_code):
+        opcode = byte_code[offset]
+        spec = table.get(opcode)
+        if spec is None:
+            unknown += 1
+            opcodes.append(opcode)
+            lengths.append(1)
+            offset += 1
+            continue
+        if spec["variable"]:
+            # Without executing the opcode's custom length calculation we cannot safely
+            # find the next instruction boundary. Refuse to manufacture structure.
+            return (), (), 0, (), "RAW_ONLY"
+        length = int(spec["length"])
+        if offset + length > len(byte_code):
+            return (), (), 0, (), "RAW_ONLY"
+
+        opcodes.append(opcode)
+        lengths.append(length)
+        arg_offset = offset + 1
+        for arg in spec["args"]:
+            size = int(arg["size"])
+            raw_value = byte_code[arg_offset:arg_offset + size]
+            name = str(arg["name"]).lower()
+            arg_type = str(arg["arg_type"]).lower()
+            if ("message" in name or arg_type == "message_id") and size in {1, 2, 4}:
+                value = int.from_bytes(raw_value, "little")
+                if 0x8000 <= value <= 0x8FFF:
+                    ref_index = value & 0x7FFF
+                    if ref_index < len(data_values):
+                        value = int(data_values[ref_index])
+                messages.append(value)
+            arg_offset += size
+        offset += length
+
+    return tuple(opcodes), tuple(lengths), unknown, tuple(messages), "OPCODE_SOURCE_TABLE"
+
+
 def decode_instruction_shape(
     byte_code: bytes,
     data_values: tuple[int, ...] = (),
 ) -> tuple[tuple[int, ...], tuple[int, ...], int, tuple[int, ...], str]:
     parser_cls = _load_event_parser()
     if parser_cls is None:
-        return (), (), 0, (), "RAW_ONLY"
+        return _decode_from_opcode_sources(byte_code, data_values)
     try:
         instructions, _ = parser_cls(use_control_flow=False).parse_event_data(byte_code)
         opcodes = tuple(int(x.opcode) for x in instructions)
@@ -99,7 +178,7 @@ def decode_instruction_shape(
                 message_ids.append(int(value))
         return opcodes, lengths, unknown, tuple(message_ids), "FFXI_EVENTS_DUMP"
     except Exception:
-        return (), (), 0, (), "RAW_ONLY"
+        return _decode_from_opcode_sources(byte_code, data_values)
 
 
 def fingerprint_event(
