@@ -736,3 +736,18 @@ Planning behavior:
 The generic package planner now propagates any `BLOCKED` or `FAILED` action to package status `BLOCKED` instead of collapsing it into `MANUAL_REQUIRED`. This prevents an automatic migration package from appearing merely reviewable when a target identifier is already occupied by different content.
 
 Renumber candidates are intentionally not AUTO_MIGRATABLE: identical normalized fields are evidence of a remap candidate, not proof that two records are the same gameplay entity.
+
+
+## 2026-09-25 — Collision research tool exposure
+
+Collision-derived migration hazards are now available through the typed read-only research layer.
+
+New tools:
+- `collision.inspect`
+- `migration.collisions` (alias)
+
+The reader queries canonical `migration_actions` joined to canonical migration records, so it exposes the same classifications that affected package safety rather than rerunning an untracked side-channel analysis. Results preserve collision classification, analyzer confidence/status, source/target logical identities, identifier namespaces, and source/target snapshot IDs, with migration-level snapshot metadata retained as a cross-check.
+
+Filtering is available by migration, feature, and collision classification. The tools are READ-only under the existing research permission profiles and do not create or mutate migration actions.
+
+Regression runs #1117 and #1118 are green with collision inspection coverage in `test_research_domain_tools.py`. Registry coverage also verifies the new tools are exposed only as READ tools.
