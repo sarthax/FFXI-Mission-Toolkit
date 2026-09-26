@@ -324,6 +324,8 @@ def build_dependency_scope(
         user_decision = saved.get("decision", "AUTO")
         effective = recommendation if user_decision == "AUTO" else user_decision
         reason = saved.get("reason")
+        if reason is None and root and recommendation == "NOT_REQUIRED":
+            reason = root.get("reason")
         tags = saved.get("tags", ())
         review_required = effective == "QUESTIONABLE"
         # A newly discovered non-artifact dependency cannot be satisfied merely by saying
