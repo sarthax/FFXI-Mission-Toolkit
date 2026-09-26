@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Package Scope Review — Mission Toolkit{% endblock %}
+{% block content %}
+<h1>Dependency Closure &amp; Scope Review</h1>
+<p class="muted">Review what the Workbench discovered before a package is assembled. Discovery evidence and user decisions are kept separate. New transitive dependencies default to <strong>QUESTIONABLE</strong> until explicitly resolved.</p>
+
+<form class="search" method="get" action="/packages/scope">
+  <select name="migration_id">
+    <option value="">Select migration</option>
+    {% for row in migrations %}
+    <option value="{{ row.migration_id }}"{% if migration_id == row.migration_id %} selected{% endif %}>{{ row.migration_id }}{% if row.feature_id %} — {{ row.feature_id }}{% endif %}</option>
+    {% endfor %}
+  </select>
+  <input type="text" name="q" value="{{ q }}" placeholder="Node, path, name, or tag">
+  <select name="decision">
+    <option value="">All decisions</option>
+    {% for value in ["INCLUDE","TARGET_EQUIVALENT","NOT_REQUIRED","EXCLUDE","QUESTIONABLE"] %}
+    <option value="{{ value }}"{% if decision == value %} selected{% endif %}>{{ value }}</option>
+    {% endfor %}
+  </select>
+  <select name="depth">
+    {% for n in range(1, 13) %}
+    <option value="{{ n }}"{% if depth == n %} selected{% endif %}>Depth {{ n }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit">Load scope</button>
+</form>
+
+{% if error %}<div class="warn">{{ error }}</div>{% endif %}
+
+{% if scope %}
+<div class="stats">
+  <div class="stat"><div class="n">{{ scope.discovered_count }}</div><div class="l">Discovered</div></div>
+  <div class="stat"><div class="n">{{ scope.counts.get("INCLUDE", 0) }}</div><div class="l">Included</div></div>
+  <div class="stat"><div class="n">{{ scope.counts.get("QUESTIONABLE", 0) }}</div><div class="l">Questionable</div></div>
+  <div class="stat"><div class="n">{{ scope.package_gate }}</div><div class="l">Package gate</div></div>
+</div>
+
+<p>
+<strong>Closure:</strong> {{ scope.closure_status }}
+&nbsp; <strong>Review:</strong> {{ scope.review.status }}
+&nbsp; <strong>Roots:</strong> {{ scope.root_count }}
+{% if scope.truncated %}<span class="pill mismatch">TRUNCATED</span>{% endif %}
+</p>
+
+<div class="warn">
+<strong>How to read this:</strong> INCLUDE means the dependency remains in package scope; TARGET_EQUIVALENT means you are asserting the target already satisfies it; NOT_REQUIRED means it is semantically unnecessary; EXCLUDE is an explicit user omission. The last three require a reason. QUESTIONABLE blocks final scope review.
+</div>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Dependency</th><th>Found through</th><th>Evidence</th><th>Recommendation</th><th>Decision / tags</th></tr></thead>
+<tbody>
+{% for item in scope.items %}
+<tr>
+<td style="min-width:260px;">
+  <div style="padding-left:{{ item.depth * 14 }}px;">
+    {% if item.depth %}<span class="muted">↳</span>{% endif %}
+    <code>{{ item.node_id }}</code>
+    {% if item.display_name %}<div>{{ item.display_name }}</div>{% endif %}
+    {% if item.artifact_path %}<div class="muted"><code>{{ item.artifact_path }}</code></div>{% endif %}
+    <div class="muted">{{ item.node_kind }}{% if item.artifact_type %} / {{ item.artifact_type }}{% endif %}</div>
+  </div>
+</td>
+<td>
+  {% if item.parent_node %}
+  <div><code>{{ item.parent_node }}</code></div>
+  <div>{{ item.relationship or "UNKNOWN" }}</div>
+  {% else %}
+  <strong>Migration root</strong>
+  {% endif %}
+  <div class="muted">Depth {{ item.depth }}</div>
+  <details>
+    <summary>Discovery path</summary>
+    {% for node in item.discovery_path %}<div><code>{{ node }}</code></div>{% endfor %}
+  </details>
+</td>
+<td>
+  <div>Status: {{ item.graph_status }}</div>
+  <div>Confidence: {{ item.confidence }}</div>
+  {% if item.evidence_id %}<div><code>{{ item.evidence_id }}</code></div>{% endif %}
+</td>
+<td>
+  <strong>{{ item.recommendation }}</strong>
+  {% if item.root_action %}
+  <div class="muted">Root action: {{ item.root_action }} / {{ item.root_action_status }}</div>
+  {% endif %}
+</td>
+<td style="min-width:300px;">
+  <form method="post" action="/packages/scope/decision">
+    <input type="hidden" name="migration_id" value="{{ migration_id }}">
+    <input type="hidden" name="node_id" value="{{ item.node_id }}">
+    <select name="decision">
+      {% for value in ["AUTO","INCLUDE","QUESTIONABLE","TARGET_EQUIVALENT","NOT_REQUIRED","EXCLUDE"] %}
+      <option value="{{ value }}"{% if item.user_decision == value %} selected{% endif %}>{{ value }}</option>
+      {% endfor %}
+    </select>
+    <input type="text" name="reason" value="{{ item.reason or '' }}" placeholder="Reason (required for exclusions/equivalence)">
+    <input type="text" name="tags" value="{{ item.tags|join(', ') }}" placeholder="Tags: investigate, custom-server, ...">
+    <button type="submit">Save</button>
+  </form>
+  <div style="margin-top:5px;">
+    Effective: <strong>{{ item.effective_decision }}</strong>
+    {% if item.review_required %}<span class="pill mismatch">review required</span>{% endif %}
+  </div>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table></div>
+
+{% if scope.unresolved_node_ids %}
+<h2>Unresolved</h2>
+<p class="muted">{{ scope.unresolved_node_ids|length }} dependency item(s) still require a decision before the scope can be frozen.</p>
+{% else %}
+<h2>Freeze reviewed scope</h2>
+<form method="post" action="/packages/scope/review">
+  <input type="hidden" name="migration_id" value="{{ migration_id }}">
+  <input type="text" name="notes" placeholder="Optional review notes">
+  <button type="submit">Mark scope reviewed</button>
+</form>
+{% endif %}
+
+<h2>Guardrails</h2>
+<p class="muted">Scope decisions do not rewrite graph evidence. Marking something TARGET_EQUIVALENT, NOT_REQUIRED, or EXCLUDE records your reviewed decision and reason. Package creation remains blocked until the scope is reviewed, and the complete scope ledger is embedded into the package manifest for later audit.</p>
+{% endif %}
+{% endblock %}
