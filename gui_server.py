@@ -5976,6 +5976,22 @@ def modelviewer_dat(ffxi_path: str, rom_path: str):
         return JSONResponse({"error": str(ex)}, status_code=400)
 
 
+@app.get("/datinspector", response_class=HTMLResponse)
+def datinspector_page(request: Request, dat_id: str = "", zoneid: str = "", ffxi_path: str = ""):
+    import dat_inspector
+    path = ffxi_path or (settings_mod.get_ffxi_install() or "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI")
+    result, error = None, None
+    try:
+        if dat_id.strip():
+            result = dat_inspector.inspect(path, int(dat_id))
+    except Exception as ex:
+        error = str(ex)
+    families = [{"name": n, "base": b} for n, b in dat_inspector.FAMILIES]
+    return templates.TemplateResponse(request, "dat_inspector.html", {
+        "request": request, "result": result, "error": error, "dat_id": dat_id,
+        "ffxi_path": path, "families": families})
+
+
 if __name__ == "__main__":
     import uvicorn
     _con = get_con()
