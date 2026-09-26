@@ -30,7 +30,9 @@ The universal core is intentionally minimal and generic:
 - AnalysisResult
 
 ### System-specific extensions
-Assault, Nyzul, Salvage, Abyssea, Einherjar, and future systems are extensions/plugins. Their mechanics do not belong in the universal schema.
+FFXI domain categories and named systems are extensions/plugins. Their mechanics do not belong in the universal schema.
+
+The GUI now has a first-class **Domains** workspace for organizing system-specific development/admin workflows. Current high-level categories are Abyssea, Battlefields, Battle Systems, Conflict / Battle, Combat, Dynamis, Escha, Hobbies, HELM, Events, Missions, Quests, Records of Eminence, Trust, and Other. Assault and Nyzul Isle are grouped under Battle Systems. This taxonomy is navigational metadata only and does not alter the universal core model or imply that placeholder categories have implemented plugins.
 
 ### Evidence model
 Evidence types include SERVER_SOURCE, SERVER_DB, SERVER_CPP, CLIENT_DAT, CLIENT_EXE, CLIENT_DLL, PACKET, CAPTURE, REFERENCE, DERIVED, and INFERRED.
@@ -71,7 +73,7 @@ Client/server field bindings distinguish SERVER authoritative, CLIENT authoritat
 | Zone tooling | Audited | World subsystem |
 | Wiki tooling | Audited | Reference adapter |
 | Database | Audited | Research/index cache |
-| GUI | Partially audited | API/presentation |
+| GUI | Partially audited; shared 11-workspace shell implemented, including Domains taxonomy | API/presentation |
 | LLM | Existing Open WebUI/Ollama + read-only DB assistant audited; evidence-aware research/orchestration architecture defined | P1 research service |
 | C++ analysis | Implemented; conservative regex/API/dependency indexing with executed regression coverage | P0 |
 | Enum analysis | Implemented; enum/constant indexing, scoped resolution, and confidence boundaries covered by CI | P0/P1 |
@@ -79,7 +81,7 @@ Client/server field bindings distinguish SERVER authoritative, CLIENT authoritat
 | Feature graph | Implemented; canonical SQLite graph, Feature Trace, Feature Checker, semantic mirrors, and candidate traversal | P0 |
 | Provenance | Implemented for core server/C++/build/packet analysis; broader adapter consolidation still pending | P0 |
 | Package analyzer | Canonical graph import plus dependency-aware package/review pipeline implemented; broader converter coverage remains | P0 |
-| System plugins | Not implemented | P1+ |
+| System plugins | Foundation implemented; named-system coverage remains partial | P1+ |
 
 ## Key findings
 ### 1. SQL schemas are source-specific
