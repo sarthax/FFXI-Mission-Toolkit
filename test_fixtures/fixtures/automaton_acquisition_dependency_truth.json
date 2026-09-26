@@ -124,6 +124,64 @@
             }
           ],
           "evidence_status": "VERIFIED_SERVER"
+        },
+        {
+          "type": "SYNTHESIS_PRECURSOR",
+          "source": "sql/synth_recipes.sql",
+          "recipe_id": 61534,
+          "result_item_id": 2310,
+          "result_name": "Plasma Oil",
+          "required_key_item_id": 2037,
+          "required_key_item_name": "Iatrochemistry",
+          "alchemy_level": 39,
+          "crystal_item_id": 4101,
+          "ingredients": [
+            {
+              "item_id": 914,
+              "name": "Mercury",
+              "quantity": 1
+            },
+            {
+              "item_id": 2175,
+              "name": "Flan Meat",
+              "quantity": 2
+            }
+          ],
+          "evidence_status": "VERIFIED_SERVER"
+        },
+        {
+          "type": "SYNTHESIS_PRECURSOR",
+          "source": "sql/synth_recipes.sql",
+          "recipe_id": 63531,
+          "result_item_id": 1645,
+          "result_name": "Lightning Anima",
+          "required_key_item_id": 2032,
+          "required_key_item_name": "Anima Synthesis",
+          "alchemy_level": 75,
+          "crystal_item_id": 4100,
+          "ingredients": [
+            {
+              "item_id": 914,
+              "name": "Mercury",
+              "quantity": 1
+            },
+            {
+              "item_id": 936,
+              "name": "Rock Salt",
+              "quantity": 1
+            },
+            {
+              "item_id": 1108,
+              "name": "Sulfur",
+              "quantity": 1
+            },
+            {
+              "item_id": 1610,
+              "name": "Startling Memory",
+              "quantity": 4
+            }
+          ],
+          "evidence_status": "VERIFIED_SERVER"
         }
       ],
       "external_retail_acquisition": []
