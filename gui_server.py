@@ -46,6 +46,8 @@ import build_sql_index
 import build_zone_visual_cache
 import entity_profile
 import explore_event
+import feature_trace
+import feature_checker
 import ingest_global_tables
 import addon_tools
 import install_external_tools
@@ -71,6 +73,7 @@ from workbench.gui_shell import build_shell_context
 
 TOOLS_ROOT = Path(__file__).parent
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
+WORKBENCH_DB = TOOLS_ROOT / "workbench.db"
 TEMPLATES_DIR = TOOLS_ROOT / "gui" / "templates"
 # Real in-game 2D zone map PNGs, extracted straight from client DAT files by ResourceExtractor's
 # MapParser (see MapDats.json) -- "{zoneid}_{mapindex}.png", one file per submap/floor. Served
@@ -2404,6 +2407,94 @@ def zone_drift(request: Request, zone_name: str):
     con.close()
     return templates.TemplateResponse(request, "drift.html", {
         "zone_name": zone_name, "rows": rows, "content_tags": content_tags, "zones": zones,
+    })
+
+
+def _workbench_graph_connection() -> sqlite3.Connection | None:
+    """Open the canonical Workbench graph only when it already exists.
+
+    GUI inspection must never create an empty graph database merely because a page was opened.
+    """
+    if not WORKBENCH_DB.is_file():
+        return None
+    con = sqlite3.connect(WORKBENCH_DB)
+    con.row_factory = sqlite3.Row
+    required = {"features", "entity_relationships", "capability_requirements"}
+    tables = {row[0] for row in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    if not required.issubset(tables):
+        con.close()
+        return None
+    return con
+
+
+@app.get("/features/trace", response_class=HTMLResponse)
+def feature_trace_page(
+    request: Request,
+    q: str = "",
+    depth: int = 3,
+    direction: str = "both",
+):
+    depth = max(0, min(depth, 8))
+    if direction not in {"out", "in", "both"}:
+        direction = "both"
+    result = None
+    matches = []
+    error = None
+    con = _workbench_graph_connection()
+    if con is None:
+        error = "Canonical Workbench graph is not available. Build/import workbench.db before tracing features."
+    elif q.strip():
+        query = q.strip()
+        exact = feature_trace.node_info(con, query)
+        if exact["known"]:
+            result = feature_trace.trace(con, query, depth, direction)
+        else:
+            matches = feature_trace.search_nodes(con, query)
+            if len(matches) == 1:
+                result = feature_trace.trace(con, matches[0]["node_id"], depth, direction)
+        con.close()
+    elif con is not None:
+        con.close()
+    return templates.TemplateResponse(request, "feature_trace.html", {
+        "request": request,
+        "q": q,
+        "depth": depth,
+        "direction": direction,
+        "result": result,
+        "matches": matches,
+        "error": error,
+    })
+
+
+@app.get("/features/check", response_class=HTMLResponse)
+def feature_check_page(request: Request, q: str = ""):
+    result = None
+    matches = []
+    error = None
+    con = _workbench_graph_connection()
+    if con is None:
+        error = "Canonical Workbench graph is not available. Build/import workbench.db before checking features."
+    elif q.strip():
+        query = q.strip()
+        feature = feature_checker.resolve_feature(con, query)
+        if feature is not None:
+            result = feature_checker.check_feature(con, feature)
+        else:
+            rows = con.execute(
+                "SELECT feature_id, name, feature_type, status FROM features "
+                "WHERE feature_id LIKE ? OR name LIKE ? ORDER BY feature_id LIMIT 100",
+                (f"%{query}%", f"%{query}%"),
+            ).fetchall()
+            matches = [dict(row) for row in rows]
+        con.close()
+    elif con is not None:
+        con.close()
+    return templates.TemplateResponse(request, "feature_checker.html", {
+        "request": request,
+        "q": q,
+        "result": result,
+        "matches": matches,
+        "error": error,
     })
 
 
