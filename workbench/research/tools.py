@@ -246,6 +246,18 @@ def register_domain_tools(registry: ResearchToolRegistry, reader) -> None:
         handler=reader.migration_inspect,
         access=ACCESS_READ,
     ))
+    registry.register(ResearchTool(
+        name="collision.inspect",
+        description="Inspect canonical collision-derived migration actions by migration, feature, or collision classification.",
+        handler=reader.collision_inspect,
+        access=ACCESS_READ,
+    ))
+    registry.register(ResearchTool(
+        name="migration.collisions",
+        description="Alias for collision.inspect focused on migration ID/content hazards.",
+        handler=reader.collision_inspect,
+        access=ACCESS_READ,
+    ))
 
     # Architecture-aligned aliases retained alongside the more explicit names.
     registry.register(ResearchTool(
