@@ -48,6 +48,25 @@ def main():
     gap_actions=plan_feature_surface(source,gap_comparison,"migration:test-gap")
     assert any(a.action=="MANUAL_REVIEW" for a in gap_actions),gap_actions
     assert any(a.metadata.get("gap_type")=="SOURCE_ONLY_CAPABILITY" for a in gap_actions),gap_actions
+    assert any(a.metadata.get("gap_type")=="ENTITY_COVERAGE_DRIFT" for a in gap_actions),gap_actions
+
+    path_target=FeatureSurface(
+        feature_id="feature:test",
+        family="DSP",
+        artifacts=(
+            SurfaceArtifact("mission_script","scripts/legacy_mission.lua","LUA"),
+            SurfaceArtifact("registry_sql","sql/registry.sql","SQL"),
+        ),
+        entity_ids=(1,2),
+        capabilities=(
+            SurfaceCapability("completion",status="INFERRED"),
+            SurfaceCapability("membership"),
+        ),
+    )
+    path_comparison=compare_feature_surfaces(source,path_target)
+    path_actions=plan_feature_surface(source,path_comparison,"migration:test-path")
+    assert any(a.metadata.get("gap_type")=="ROLE_PATH_DRIFT" for a in path_actions),path_actions
+    assert any(a.metadata.get("gap_type")=="CAPABILITY_STATUS_DRIFT" for a in path_actions),path_actions
     print("feature surface migration planning self-test: PASS")
 
 
