@@ -66,6 +66,8 @@ jobs:
           python test_fixtures/test_medusa_dependency_truth.py
           python test_fixtures/test_identity_resolver.py
           python test_fixtures/test_client_identity_snapshot.py
+          python test_fixtures/test_client_identity_extract.py
+          python test_fixtures/test_capture_identity_bridge.py
           python test_fixtures/test_coiler_dependency_truth.py
           python test_fixtures/test_automaton_acquisition_truth.py
           python test_fixtures/test_crafting_closure.py
