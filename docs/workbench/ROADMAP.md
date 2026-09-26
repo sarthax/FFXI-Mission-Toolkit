@@ -103,7 +103,7 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - [x] LSBAdapter
 - [ ] TopazNextAdapter
 - [ ] CustomForkAdapter
-- [ ] Logical schema mapping — core equipment, item_weapon, item_usable, spells, traits, instances, NPCs, mobs, spawns, drops, battlefield registry/membership, and SQL extraction are implemented. A cross-profile coverage matrix reports unmapped parsed fields, missing logical types, and identity-mapping gaps; item_basic and additional system tables still require audited mappings.
+- [ ] Logical schema mapping — item_basic, equipment, item_weapon, item_usable, spells, traits, instances, NPCs, mobs, spawns, drops, battlefield registry/membership, and SQL extraction are implemented. A cross-profile coverage matrix reports unmapped parsed fields, missing logical types, and identity-mapping gaps; additional system tables still require audited mappings.
 - [x] Generic FeatureSurface comparison — artifact roles, entity coverage, behavioral capabilities, path drift, capability status drift, and explicit migration actions for entity/capability/representation gaps are implemented.
 - [ ] Snapshot-specific capability observations and target-aware Feature Checker evaluation — implemented for canonical graph/flagship E2E; broader capability producers remain.
 - [ ] Lua migration backend — generic backend registry is implemented; legacy Topaz→DSP Lua conversion is registered explicitly. LSB→DSP and other routes remain unsupported until dedicated converters exist.
@@ -354,4 +354,5 @@ Lua event indexing now carries conservative callback-parameter class hints, and 
 - [x] expose physical-table drift (for example DSP item_armor vs logical item_equipment) without collapsing lineage differences.
 - [x] expand FeatureSurface migration planning for entity coverage drift, capability status drift, and role-path drift.
 - [x] audit and map item_weapon, item_usable, spells, and traits with lineage-specific drift retained.
-- [ ] audit item_basic and additional system tables before declaring schema coverage complete.
+- [x] audit item_basic with explicit legacy Topaz/DSP versus LSB representation drift.
+- [ ] audit additional system tables before declaring schema coverage complete.
