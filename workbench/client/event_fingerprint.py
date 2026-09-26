@@ -214,10 +214,10 @@ def _decode_from_opcode_sources(
         if spec["variable"]:
             # Without executing the opcode's custom length calculation we cannot safely
             # find the next instruction boundary. Refuse to manufacture structure.
-            return (), (), 0, (), "RAW_ONLY"
+            return (), (), 0, (), (), "RAW_ONLY"
         length = int(spec["length"])
         if offset + length > len(byte_code):
-            return (), (), 0, (), "RAW_ONLY"
+            return (), (), 0, (), (), "RAW_ONLY"
 
         opcodes.append(opcode)
         lengths.append(length)
