@@ -72,6 +72,26 @@ def main():
         assert float(sqlidx.unquote(spawn_rows[1]["pos_x"]))==179.0,spawn_rows[1]
         assert all(");" not in row["pos_x"] and "(" not in row["pos_x"] for row in spawn_rows),spawn_rows
 
+        # Real live corruption found in old-dsp-reference's mob_spawn_points.sql (Byakko's row):
+        # a genuinely malformed statement (extra stray value, premature "');", missing the
+        # trailing ";") leaves its real pos_x/y/z/rot dangling with no semicolon. Before search()
+        # replaced an anchored match(), that dangling text got glued onto the *next* statement
+        # (Seiryu's, here) and silently dropped it -- invisible data loss for a row that was
+        # otherwise perfectly well-formed. The corrupted row itself must still be reported as
+        # schema drift (it genuinely has the wrong shape); the point is the *following* row must
+        # not silently vanish too.
+        s=Path(td)/"mob_spawn_points_corrupt.sql"
+        s.write_text(
+            "INSERT INTO `mob_spawn_points` VALUES (17961561,'Byakko','Byakko',14430,14471);"
+            "105.699,-40.5,-442.299,55\n"
+            "INSERT INTO `mob_spawn_points` VALUES (17961567,'Seiryu','Seiryu',14472,95.754,-40.5,-440.72,155);\n",
+            encoding="utf-8",
+        )
+        corrupt_rows=list(sqlidx.parse_table_file(s,"mob_spawn_points",spawn_cols))
+        assert len(corrupt_rows)==1,corrupt_rows
+        assert corrupt_rows[0]["mobid"]=="17961567",corrupt_rows[0]
+        assert sqlidx.unquote(corrupt_rows[0]["mobname"])=="Seiryu",corrupt_rows[0]
+
     print("SQL statement parser self-test: PASS")
     return 0
 

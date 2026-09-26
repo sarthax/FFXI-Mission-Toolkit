@@ -143,7 +143,7 @@ def _resolve_field(raw: str, variables: dict[str, int]) -> int:
     return _eval_flags_expr(raw, variables)
 
 
-INSERT_RE = re.compile(r"^INSERT INTO `(\w+)` VALUES\s*(.*)$", re.DOTALL)
+INSERT_RE = re.compile(r"INSERT INTO `(\w+)` VALUES\s*(.*)", re.DOTALL)
 
 
 def split_insert_tuples(values_blob: str) -> list[str]:
@@ -291,14 +291,31 @@ def parse_table_file(path: Path, expected_table: str, columns: list[str]):
     Statements are tokenized independently of physical lines because legacy DSP dumps may place
     multiple INSERTs on one line or span one INSERT across multiple lines. Rows with a genuinely
     different column count are still skipped with a visible schema-drift warning.
+
+    INSERT_RE is matched with search(), not an anchored match(), because a genuinely corrupted
+    statement upstream (confirmed live: a mob_spawn_points.sql row missing its opening
+    VALUES-list paren and terminating semicolon) leaves stray numeric text with no ';' before it.
+    _iter_sql_statements() then glues that dangling text onto the *next*, otherwise perfectly
+    valid, INSERT statement as one merged "statement". An anchored match() silently rejects that
+    whole merged blob (it doesn't start with "INSERT"), silently dropping the next row too --
+    invisible data loss for whatever record follows any corrupted line. search() finds the real
+    INSERT wherever it starts and recovers that row; a warning below still surfaces the garbage
+    prefix so the actual corrupted line stays visible instead of being swallowed by fixing the
+    *next* row's silent loss.
     """
     if not path.exists():
         return
     text=path.read_text(encoding="utf-8",errors="ignore")
     for lineno,statement in _iter_sql_statements(text):
-        m=INSERT_RE.match(statement)
+        m=INSERT_RE.search(statement)
         if not m or m.group(1)!=expected_table:
             continue
+        if m.start() > 0:
+            prefix = statement[:m.start()].strip()
+            print(f"  [!] {path.name}:{lineno} statement has leading text before its "
+                  f"INSERT INTO `{expected_table}` -- likely a corrupted/unterminated previous "
+                  f"statement glued onto this one; this row was recovered but the source dump "
+                  f"should be checked (leading text: {prefix[:120]!r})")
         for tup_idx,tup in enumerate(split_insert_tuples(m.group(2)),1):
             values=split_sql_values(tup)
             if len(values)!=len(columns):
