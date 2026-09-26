@@ -143,4 +143,6 @@ Next validation needs either an optional decoder with versioned provenance and r
 
 Real finding on the supplied FFXiMain.dll: strings `/wardrobe`, `/wardrobe2`, `/wardrobe3`, `/wardrobe4` exist; `wardrobe 8` not found (UNKNOWN, not proof of absence).
 
-Not built: GUI to define/run probe sets, saved probe-set files, Client Overview / Build page showing fingerprints.
+**Probe sets (proof of concept)** — saved as `client_probe_sets/*.json` (`{name, description, binary, probes:[{name, kind, needle}]}`); first set is `mog_wardrobe.json`. The Binary Inspector page lists them with a Run button (`?run_set=<file>`), served by `binary_inspector.list_probe_sets()` / `run_probe_set()`. The GUI run is read-only and does **not** persist observations; persisting still goes through `binary_probes.persist_probes()` from Python. Real result on the supplied client: `/wardrobe`, `/wardrobe2`, `/wardrobe4` VERIFIED; `/wardrobe5`, `/wardrobe8` UNKNOWN.
+
+Not built: GUI to create/edit probe sets, a persist-to-graph button, Client Overview / Build page showing fingerprints.

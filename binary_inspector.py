@@ -62,3 +62,37 @@ def pattern_search(path: str, pattern: str, executable_only: bool, limit: int = 
 
 def diff(left_path: str, right_path: str) -> dict:
     return diff_binary_indexes(get_index(left_path), get_index(right_path))
+
+
+PROBE_DIR = Path(__file__).resolve().parent / "client_probe_sets"
+
+
+def list_probe_sets() -> list[dict]:
+    import json
+    out = []
+    for p in sorted(PROBE_DIR.glob("*.json")):
+        try:
+            d = json.loads(p.read_text(encoding="utf-8"))
+            d["file"] = p.name
+            out.append(d)
+        except (OSError, ValueError):
+            continue
+    return out
+
+
+def run_probe_set(file: str, install_dir: str) -> dict:
+    """Run a saved probe set against its binary in the install dir. Read-only; nothing is persisted."""
+    from workbench.client.binary_probes import run_probe
+    sets = {s["file"]: s for s in list_probe_sets()}
+    if file not in sets:
+        raise KeyError(f"Unknown probe set: {file}")
+    s = sets[file]
+    path = Path(install_dir) / s["binary"]
+    idx = get_index(str(path))
+    rows = []
+    for p in s["probes"]:
+        r = run_probe(path, idx, p)
+        rows.append({"name": p["name"], "kind": p["kind"], "needle": p["needle"],
+                     "status": "VERIFIED" if r["found"] else "UNKNOWN", "count": r["count"],
+                     "sample": r["sample"][:3]})
+    return {"set": s["name"], "description": s.get("description", ""), "binary": str(path), "rows": rows}
