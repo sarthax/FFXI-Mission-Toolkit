@@ -42,6 +42,47 @@
 </tbody>
 </table></div>
 
+{% set dep_scope = manifest.get("dependency_scope", {}) %}
+<h2>Dependency scope</h2>
+{% if dep_scope %}
+<p>
+  <strong>Closure:</strong> {{ dep_scope.get("closure_status", "UNKNOWN") }}
+  &nbsp; <strong>Gate:</strong> {{ dep_scope.get("package_gate", "UNKNOWN") }}
+  &nbsp; <strong>Discovered:</strong> {{ dep_scope.get("discovered_count", 0) }}
+</p>
+{% set scope_counts = dep_scope.get("counts", {}) %}
+<div class="stats">
+  <div class="stat"><div class="n">{{ scope_counts.get("INCLUDE", 0) }}</div><div class="l">Included</div></div>
+  <div class="stat"><div class="n">{{ scope_counts.get("TARGET_EQUIVALENT", 0) }}</div><div class="l">Target equivalent</div></div>
+  <div class="stat"><div class="n">{{ scope_counts.get("NOT_REQUIRED", 0) + scope_counts.get("EXCLUDE", 0) }}</div><div class="l">Excluded / not required</div></div>
+  <div class="stat"><div class="n">{{ scope_counts.get("QUESTIONABLE", 0) }}</div><div class="l">Questionable</div></div>
+</div>
+<details>
+<summary>Show full dependency decision ledger</summary>
+<div class="table-wrap"><table>
+<thead><tr><th>Dependency</th><th>Found through</th><th>Decision</th><th>Why</th><th>Tags</th></tr></thead>
+<tbody>
+{% for item in dep_scope.get("items", []) %}
+<tr>
+<td>
+  <code>{{ item.get("node_id") }}</code>
+  {% if item.get("artifact_path") %}<div class="muted"><code>{{ item.get("artifact_path") }}</code></div>{% endif %}
+</td>
+<td>
+  {% if item.get("parent_node") %}<code>{{ item.get("parent_node") }}</code> → {{ item.get("relationship") }}{% else %}Migration root{% endif %}
+</td>
+<td><strong>{{ item.get("effective_decision") }}</strong></td>
+<td>{{ item.get("reason") or "System recommendation / explicit inclusion" }}</td>
+<td>{{ item.get("tags", [])|join(", ") }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table></div>
+</details>
+{% else %}
+<div class="warn">This package predates dependency-scope review or was not created through the reviewed-scope workflow. Full inclusion/exclusion provenance is unavailable.</div>
+{% endif %}
+
 <h2>Execution plan</h2>
 {% set steps = manifest.get("execution", {}).get("steps", []) %}
 {% if steps %}
