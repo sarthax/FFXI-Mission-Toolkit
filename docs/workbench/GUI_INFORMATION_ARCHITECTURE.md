@@ -626,3 +626,10 @@ The route map is intended to be checked against `gui_server.py` in CI:
 - every method/path pair must appear exactly once in the canonical route map;
 - no route may have an empty canonical home;
 - newly added GUI routes must be deliberately assigned a home rather than silently bypassing the information architecture.
+
+## Domains framework (2026-09-26)
+- `/domains` (overview) and `/domains/{key}` (detail) are driven by `workbench/domains/definitions.json`; every planned Domains nav entry now links to its domain (sub-areas anchor within the page).
+- A definition lists per domain: archetype (see DOMAIN_PLUGIN_ARCHITECTURE.md), entity kinds and the fields each must hold, the existing editor (or none), server file globs, a compare description, and the BG Wiki basis (categories/templates/headings measured from the offline dump; reference only).
+- Status is computed live: each glob is resolved against the Topaz, DSP and LSB roots. "Present" means files exist, not that the feature is complete. A wrong glob shows 0 matches, never a false claim.
+- Assault (`/domains/assault`) and Nyzul (`/nyzul`) remain their own built pages, linked from the overview.
+- Next for each domain: per-entity list views reading the SQL/Lua, then target-vs-reference compare, then editors (reuse Zone Plot / Item Editor where they already fit). Sub-area (e.g. per Abyssea zone) data is not split out yet.

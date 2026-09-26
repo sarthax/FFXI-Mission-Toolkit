@@ -1,0 +1,177 @@
+{
+  "_readme": "Domain framework definitions. 'wiki' blocks come from a scan of the offline BG Wiki dump (templates/headings actually used by pages in these categories); wiki content is REFERENCE ONLY, never a source of ids. 'server_globs' are paths relative to a server checkout root and are resolved at runtime, so a wrong path shows up as 0 matches rather than as a fake claim. 'edit' names the existing toolkit page that edits this surface today (null = no editor yet).",
+  "domains": {
+    "abyssea": {
+      "label": "Abyssea", "archetype": "system.abyssea",
+      "summary": "Zone-scale system: visitant status, time extensions, atma/abyssite, triggered NMs and per-zone loot.",
+      "wiki": {"categories": ["Abyssea", "Abyssea Atma", "Abyssea Abyssite", "Abyssea Quests", "Abyssea NPCs"],
+               "templates": ["Atma Row Instance", "Atma Acquisition Instance", "Zone NPC Row", "Key Item Header", "Adversary Row"],
+               "headings": ["Zone Information", "Notorious Monsters", "Adversaries", "NPCs", "Quests", "Empyrean Farming Flowchart"]},
+      "children": ["Altepa", "Attohwa", "Grauberg", "Konschtat", "La Theine", "Misareaux", "Tahrongi", "Uleguerand", "Vunkerl", "Bastion"],
+      "entities": [
+        {"kind": "Zone", "fields": ["zone id", "entry key item", "visitant time limit", "time extension sources", "connected zones", "map/geography"],
+         "server_globs": ["scripts/zones/Abyssea-*", "scripts/globals/abyssea.lua", "sql/zone_settings.sql"], "edit": "/zones"},
+        {"kind": "Notorious Monster", "fields": ["name", "level", "zone", "trigger items / conditions", "spawn position", "abilities", "drops", "atma dropped"],
+         "server_globs": ["scripts/zones/Abyssea-*/mobs/*.lua", "sql/mob_groups.sql", "sql/mob_spawn_points.sql"], "edit": "/zoneplot"},
+        {"kind": "Loot table", "fields": ["mob", "item", "rate", "drop type (guaranteed / grouped / steal)"],
+         "server_globs": ["sql/mob_droplist.sql"], "edit": "/zoneplot"},
+        {"kind": "Atma / Abyssite", "fields": ["name", "effect", "source NMs", "item id", "key item id"],
+         "server_globs": ["scripts/globals/abyssea.lua", "scripts/items/*atma*.lua", "scripts/items/*abyssite*.lua"], "edit": "/itemedit"},
+        {"kind": "Service NPC", "fields": ["name", "zone", "position", "wares / services", "key item costs"],
+         "server_globs": ["scripts/zones/Abyssea-*/npcs/*.lua", "sql/npc_list.sql"], "edit": "/zoneplot"},
+        {"kind": "Quest", "fields": ["name", "giver", "prerequisites", "rewards", "key items"],
+         "server_globs": ["scripts/quests/abyssea/*", "scripts/quests/abyssea/*/*"], "edit": null}
+      ],
+      "compare": "Per zone: NM list, loot tables, spawn positions and atma sources compared target vs reference; report NMs/drops present in one and missing in the other."
+    },
+    "battlefields": {
+      "label": "Battlefields", "archetype": "framework.battlefield",
+      "summary": "Reusable arena content: registry, entry conditions, mobs, rewards. One framework, many families.",
+      "wiki": {"categories": ["BCNM", "KSNM", "ENM", "ISNM", "Walk of Echoes Battlefields", "Master Trials", "Ambuscade", "Einherjar"],
+               "templates": ["BCNMv2", "BCNMv2 Enemies Row", "Battlefield Reward", "Ambuscade Monthly Battle"],
+               "headings": ["Prerequisites", "Enemies", "Strategy", "Notes", "Related Links"]},
+      "children": ["AMAN-Trove", "Ambuscade", "ANNM", "BCNM", "ENM", "HKCNM", "ISNM", "KCNM", "KSNM", "Login", "Master Trials", "SCNM", "SKCNM", "Walk of Echoes"],
+      "entities": [
+        {"kind": "Battlefield", "fields": ["name", "family", "zone", "arena id", "level cap", "party size", "time limit", "entry item / key item / quest", "mission or quest prerequisite", "max players"],
+         "server_globs": ["sql/bcnm_info.sql", "sql/bcnm_battlefield.sql", "scripts/battlefields/*/*.lua", "scripts/zones/*/bcnms/*.lua"], "edit": null},
+        {"kind": "Enemy group", "fields": ["name", "quantity", "type", "job", "level", "HP", "notes"],
+         "server_globs": ["sql/bcnm_battlefield.sql", "sql/mob_groups.sql", "sql/mob_spawn_points.sql"], "edit": null},
+        {"kind": "Reward", "fields": ["item", "drop class (guaranteed / random pool)", "rate", "gil / exp / capacity points", "treasure chest"],
+         "server_globs": ["sql/bcnm_treasure_chests.sql", "sql/mob_droplist.sql"], "edit": null},
+        {"kind": "Entry NPC / orb", "fields": ["npc", "zone", "position", "trade item", "required key item"],
+         "server_globs": ["scripts/zones/*/npcs/*Orb*.lua", "scripts/zones/*/npcs/*Armoury*.lua"], "edit": "/zoneplot"}
+      ],
+      "compare": "Per battlefield: entry conditions, enemy list and reward pool compared target vs reference; flag battlefields present in one server only."
+    },
+    "conflict": {
+      "label": "Conflict / Battle", "archetype": "system.conflict",
+      "summary": "Nation and faction warfare systems: Campaign, Besieged, Garrison, Ballista, Brenner, Colonization, Expeditionary Force.",
+      "wiki": {"categories": ["Campaign", "Campaign Ops", "Campaign NPC", "Campaign Battle NPCs", "Besieged", "Garrison", "Ballista", "Expeditionary Force", "Colonization"],
+               "templates": ["Campaign Header", "Zone NPC Row", "Item Monster 2", "Key Item Acquisition Instance"],
+               "headings": ["List of Gate Sentries", "List of Campaign NPCs", "Combat Observations", "Ribbons", "Locations", "Monster"]},
+      "children": ["Ballista", "Besieged", "Brenner", "Campaign", "Colonization", "Expeditionary Force", "Garrison"],
+      "entities": [
+        {"kind": "Operation / order", "fields": ["name", "type", "rank", "time", "level", "unit requirement", "rewards"],
+         "server_globs": ["sql/campaign_map.sql", "sql/campaign_nation.sql", "scripts/globals/campaign.lua"], "edit": null},
+        {"kind": "Zone control state", "fields": ["zone", "owner", "influence", "supply positions"],
+         "server_globs": ["sql/conquest_system.sql", "sql/campaign_map.sql", "scripts/globals/conquest.lua"], "edit": null},
+        {"kind": "NPC", "fields": ["name", "zone", "position", "role (gate sentry / vendor / ops)"],
+         "server_globs": ["scripts/zones/*/npcs/*.lua", "sql/npc_list.sql"], "edit": "/zoneplot"},
+        {"kind": "Garrison wave", "fields": ["zone", "entry item", "level", "battle name", "monster groups", "reward"],
+         "server_globs": ["scripts/globals/garrison.lua", "scripts/globals/garrison/*"], "edit": null}
+      ],
+      "compare": "Per system: which of the operations / zones / waves exist on the target vs the reference."
+    },
+    "combat": {
+      "label": "Combat (Skirmish / Sortie / Odyssey / Vagary)", "archetype": "framework.battlefield",
+      "summary": "Modern repeatable boss content built on adversary tables: Skirmish, Sortie, Odyssey, Vagary, Delve.",
+      "wiki": {"categories": ["Skirmish", "Sortie", "Sortie Rewards", "Odyssey", "Odyssey Rewards", "Vagary", "Unity Concord"],
+               "templates": ["Adversary Row", "Adversary Description", "Bestiary Abilities Row", "Gdrop", "Item NPC"],
+               "headings": ["Listings", "Ability Information", "Objective", "Rewards", "Base Defense", "Spawning", "Fighting"]},
+      "entities": [
+        {"kind": "Adversary", "fields": ["name", "class", "zone", "level", "spawn condition", "aggro", "abilities", "spells", "traits", "steal / treasure", "drops"],
+         "server_globs": ["sql/mob_pools.sql", "sql/mob_groups.sql", "sql/mob_skill_lists.sql", "sql/mob_droplist.sql"], "edit": "/zoneplot"},
+        {"kind": "Reward", "fields": ["item", "source", "rate", "currency cost"],
+         "server_globs": ["sql/mob_droplist.sql", "sql/unity_system.sql"], "edit": "/zoneplot"}
+      ],
+      "compare": "Adversary abilities and drops compared target vs reference."
+    },
+    "dynamis": {
+      "label": "Dynamis", "archetype": "system.dynamis",
+      "summary": "Timed multi-wave zones with currency, time extensions and per-zone NM/loot tables.",
+      "wiki": {"categories": ["Dynamis", "Dynamis - Divergence", "Dynamis Currency", "Dynamis Weapon"],
+               "templates": ["vdrop", "Sight", "Sound", "True Sight", "True Sound", "NPC Vendor Wares"],
+               "headings": ["Notorious Monsters", "Adversaries", "NM Locations", "Drops", "Farming Flowchart", "Strategies/Setups", "Dynamis Currency Exchange", "Maps"]},
+      "entities": [
+        {"kind": "Zone", "fields": ["zone", "entry requirements", "start time", "time extensions", "maps"],
+         "server_globs": ["scripts/zones/Dynamis-*", "scripts/globals/dynamis.lua"], "edit": "/zones"},
+        {"kind": "Mob / NM", "fields": ["name", "family", "job", "sight/sound aggro", "spawn position", "time extension granted", "drops"],
+         "server_globs": ["scripts/zones/Dynamis-*/mobs/*.lua", "sql/mob_groups.sql"], "edit": "/zoneplot"},
+        {"kind": "Currency & vendors", "fields": ["currency item", "exchange rates", "vendor wares"],
+         "server_globs": ["scripts/zones/Dynamis-*/npcs/*.lua"], "edit": null}
+      ],
+      "compare": "Per Dynamis zone: NM roster, time extensions and drops."
+    },
+    "escha": {
+      "label": "Escha", "archetype": "system.escha",
+      "summary": "Zone-scale content with geas fete, notorious monsters, HELM and reward tiers.",
+      "wiki": {"categories": ["Escha", "Escha Rewards/Arcane Glyptics Inscription"],
+               "templates": ["tooltip", "Zone NPC Row", "Zone Geography Row 2"],
+               "headings": ["Zone Information", "NPC", "Notorious Monsters", "Geas Fete", "Tier 1", "Tier 2", "Tier 3", "Adversaries", "HELM"]},
+      "entities": [
+        {"kind": "Zone", "fields": ["zone", "geography", "HELM points", "connected zones"], "server_globs": ["scripts/zones/Escha_*"], "edit": "/zones"},
+        {"kind": "Notorious Monster", "fields": ["name", "tier", "trigger", "spawn position", "drops"], "server_globs": ["scripts/zones/Escha_*/mobs/*.lua"], "edit": "/zoneplot"},
+        {"kind": "Reward tier", "fields": ["tier", "item", "cost"], "server_globs": ["scripts/zones/Escha_*/npcs/*.lua"], "edit": null}
+      ],
+      "compare": "Per zone NM/reward parity."
+    },
+    "helm": {
+      "label": "HELM", "archetype": "framework.gathering",
+      "summary": "Harvesting, excavating, logging, mining and fishing point tables per zone.",
+      "wiki": {"categories": ["HELM"], "templates": ["Zone NPC Row"], "headings": ["HELM"]},
+      "entities": [
+        {"kind": "Gather point", "fields": ["zone", "type (harvest/excavate/log/mine)", "position", "respawn", "drop pool"], "server_globs": ["scripts/globals/helm.lua", "scripts/globals/helm/*"], "edit": null},
+        {"kind": "Fishing pool", "fields": ["zone", "area", "fish", "bait affinity", "rod"], "server_globs": ["sql/fishing_fish.sql", "sql/fishing_zone.sql", "sql/fishing_rod.sql"], "edit": null}
+      ],
+      "compare": "Drop pool parity per zone / point type."
+    },
+    "roe": {
+      "label": "Records of Eminence", "archetype": "framework.progression",
+      "summary": "Numbered objective records with categories, targets, rewards and unlock chains.",
+      "wiki": {"categories": ["Records of Eminence", "Records of Eminence NPC"],
+               "templates": ["Key Item Header", "Key Item Acquisition Instance", "Key Item Use Instance"],
+               "headings": ["Walkthrough", "Rewards", "To Unlock the additional Quests", "About Deeds of Heroism"]},
+      "children": ["General", "Unity", "Tutorial", "Quests", "Vanabout"],
+      "entities": [
+        {"kind": "Record", "fields": ["record id", "category", "objective / target", "count", "reward (sparks, exp, items)", "unlock prerequisite", "repeatable"],
+         "server_globs": ["scripts/globals/roe.lua", "scripts/globals/roe/*", "scripts/enum/roe.lua"], "edit": null}
+      ],
+      "compare": "Record id list and rewards target vs reference."
+    },
+    "trust": {
+      "label": "Trust", "archetype": "framework.progression",
+      "summary": "Summonable allies: unlock item/quest, spells, AI behaviour and cost.",
+      "wiki": {"categories": ["Trust", "Trust Weapon Skills", "Trust NPC"],
+               "templates": ["item", "KI", "Key Item Header", "Quest Header"],
+               "headings": ["Walkthrough", "Related Links"]},
+      "children": ["Misc", "Combat", "Quest"],
+      "entities": [
+        {"kind": "Trust", "fields": ["name", "spell id", "cost", "unlock (item / quest / key item)", "level", "abilities & weapon skills", "AI behaviour"],
+         "server_globs": ["scripts/actions/spells/trust/*.lua", "scripts/globals/spells/trust/*.lua", "sql/spell_list.sql"], "edit": null}
+      ],
+      "compare": "Trust roster and unlock requirements target vs reference."
+    },
+    "hobbies": {
+      "label": "Hobbies", "archetype": "other", "summary": "Fishing, chocobo, gardening and other non-combat systems.",
+      "wiki": {"categories": ["Fishing"], "templates": [], "headings": []},
+      "entities": [{"kind": "Fishing", "fields": ["zone", "fish", "bait", "rod", "contest"], "server_globs": ["sql/fishing_*.sql"], "edit": null}],
+      "compare": "Table parity."
+    },
+    "events": {
+      "label": "Events", "archetype": "other", "summary": "Seasonal / timed events.",
+      "wiki": {"categories": [], "templates": [], "headings": []},
+      "entities": [{"kind": "Event", "fields": ["name", "dates", "zones", "NPCs", "rewards"], "server_globs": ["scripts/globals/events/*", "scripts/events/*"], "edit": null}],
+      "compare": "Event list parity."
+    },
+    "missions": {
+      "label": "Missions", "archetype": "framework.state_machine",
+      "summary": "Multi-stage mission state machines. Owned by Features > Mission Explorer; shown here for status.",
+      "wiki": {"categories": ["Mission"], "templates": [], "headings": ["Walkthrough"]},
+      "entities": [{"kind": "Mission", "fields": ["id", "nation / expansion", "stages", "npcs", "csids", "rewards"], "server_globs": ["scripts/missions/*/*.lua", "scripts/missions/*/*/*.lua"], "edit": "/missions"}],
+      "compare": "Use Feature Trace / Feature Checker."
+    },
+    "quests": {
+      "label": "Quests", "archetype": "framework.state_machine",
+      "summary": "Quest state machines by area.",
+      "wiki": {"categories": ["Quest"], "templates": ["Quest Header"], "headings": ["Walkthrough"]},
+      "entities": [{"kind": "Quest", "fields": ["id", "area", "giver", "prerequisites", "steps", "rewards"], "server_globs": ["scripts/quests/*/*.lua"], "edit": null}],
+      "compare": "Quest list and rewards parity."
+    },
+    "other": {
+      "label": "Other", "archetype": "other", "summary": "Systems that do not fit a domain yet.",
+      "wiki": {"categories": [], "templates": [], "headings": []},
+      "entities": [{"kind": "Uncategorised", "fields": [], "server_globs": [], "edit": null}],
+      "compare": ""
+    }
+  }
+}

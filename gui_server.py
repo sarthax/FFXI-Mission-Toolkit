@@ -32,7 +32,7 @@ from datetime import datetime
 from pathlib import Path
 
 from urllib.parse import quote
-from fastapi import FastAPI, Form, Query, Request
+from fastapi import FastAPI, Form, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
@@ -6027,6 +6027,35 @@ def researchgaps_page(request: Request):
     if _workbench_graph_connection() is not None:
         res = research_gaps.detect(WORKBENCH_DB)
     return templates.TemplateResponse(request, "research_gaps.html", {"request": request, "res": res})
+
+
+def _domain_roots():
+    import build_lsb_index
+    return {"topaz": settings_mod.get_topaz_root(), "dsp": settings_mod.get_dsp_root(), "lsb": build_lsb_index.LSB_ROOT}
+
+
+@app.get("/domains", response_class=HTMLResponse)
+def domains_index_page(request: Request):
+    from workbench.domains import service as dsvc
+    roots, defs, rows = _domain_roots(), dsvc.load(), []
+    for key, d in defs.items():
+        res = dsvc.resolve(d, roots)
+        rows.append({"key": key, "label": d["label"], "archetype": d["archetype"],
+                     "wiki_pages": sum(dsvc.wiki_counts(d["wiki"]["categories"]).values()),
+                     "status": dsvc.domain_status(d, res), "total": len(res), "editors": sum(1 for e in res if e["edit"])})
+    return templates.TemplateResponse(request, "domains_index.html", {"request": request, "rows": rows, "roots": list(roots)})
+
+
+@app.get("/domains/{key}", response_class=HTMLResponse)
+def domain_detail_page(request: Request, key: str):
+    from workbench.domains import service as dsvc
+    defs = dsvc.load()
+    if key not in defs:
+        raise HTTPException(status_code=404, detail=f"No domain '{key}'")
+    d, roots = defs[key], _domain_roots()
+    return templates.TemplateResponse(request, "domain_detail.html", {
+        "request": request, "d": d, "roots": list(roots), "ents": dsvc.resolve(d, roots),
+        "wiki": dsvc.wiki_counts(d["wiki"]["categories"]), "slug": dsvc.slug})
 
 
 @app.post("/binaryinspector/save-probes", response_class=HTMLResponse)

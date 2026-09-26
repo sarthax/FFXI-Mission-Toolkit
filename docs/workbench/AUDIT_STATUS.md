@@ -1188,3 +1188,8 @@ The proof adds requirements for generic mission/quest state-machine extraction, 
 - Added `/researchgaps` (Client) and `research_gaps.py`; graph is opened read-only and never created by the page.
 - Current live graph: 4 unresolved requirements (all `feature:mog-wardrobe-5-8` wardrobe5-8 probes, UNKNOWN), 64,638 orphan NPC entities, 36,480 DISCOVERED-only relationships, 6 empty analysis tables.
 - Test: `test_fixtures/test_research_gaps.py`. Does not cover the roadmap's research-plan execution item (line 256).
+
+## 2026-09-26 — Domains framework foundation
+- Added `workbench/domains/` (definitions.json + service.py), routes `/domains` and `/domains/{key}`, nav links for every Domains entry. 14 domains defined from a scan of the offline BG Wiki dump (Abyssea, Battlefields, Conflict, Combat, Dynamis, Escha, HELM, RoE, Trust, Hobbies, Events, Missions, Quests, Other).
+- Read-only; touches no package/migration/apply/graph code. Test: `test_fixtures/test_domain_definitions.py`.
+- Limits: entity/field lists are a first-pass framework, not verified against server schemas; globs are candidate paths checked at runtime. No per-entity list/edit/compare views yet.

@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 155,
+  "route_count": 157,
   "routes": [
     {
       "method": "GET",
@@ -1240,6 +1240,22 @@
       "path": "/researchgaps",
       "home": "Client",
       "section": "Research Gaps",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/domains",
+      "home": "Domains",
+      "section": "Domains Overview",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/domains/{key}",
+      "home": "Domains",
+      "section": "Domain Detail",
       "role": "page",
       "disposition": "KEEP"
     }
