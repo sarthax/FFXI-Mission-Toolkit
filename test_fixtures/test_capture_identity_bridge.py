@@ -6,9 +6,10 @@ import sqlite3
 import tempfile
 from pathlib import Path
 
+from workbench.client.event_fingerprint import EventResource
 from workbench.core.services.identity_resolver import (
     IdentitySnapshot,
-    ingest_dialog_records,
+    ingest_event_structure_records,
     register_snapshot,
 )
 from workbench.runtime.identity_bridge import resolve_transition_event
@@ -37,19 +38,39 @@ def main() -> None:
                 version="old",
             ),
         )
-        ingest_dialog_records(
+        ingest_event_structure_records(
             con,
             snapshot_id="client:new",
             zone_key="NORTH_GUSTABERG_S",
-            entries={11: "You hand over the supplies."},
-            namespace="EVENT",
+            resources=[
+                EventResource(
+                    entity_id=2002,
+                    event_id=11,
+                    byte_code=bytes([0x48, 0xF7, 0x01, 0x21]),
+                    data_count=0,
+                    data_values=(),
+                    block_event_count=1,
+                    block_index=0,
+                )
+            ],
+            dialog_entries={503: "You hand over the supplies."},
         )
-        ingest_dialog_records(
+        ingest_event_structure_records(
             con,
             snapshot_id="client:old",
             zone_key="NORTH_GUSTABERG_S",
-            entries={10: "You hand over the supplies."},
-            namespace="EVENT",
+            resources=[
+                EventResource(
+                    entity_id=1001,
+                    event_id=10,
+                    byte_code=bytes([0x48, 0xF4, 0x01, 0x21]),
+                    data_count=0,
+                    data_values=(),
+                    block_event_count=1,
+                    block_index=0,
+                )
+            ],
+            dialog_entries={500: "You hand over the supplies."},
         )
         con.commit()
 
@@ -58,6 +79,7 @@ def main() -> None:
             capture_id=27,
             client_snapshot_id="client:new",
             zone="NORTH_GUSTABERG_S",
+            actor_id=2002,
             event_id=11,
             event_kind="CSID",
             evidence_ids=["capture:27:event:11"],
