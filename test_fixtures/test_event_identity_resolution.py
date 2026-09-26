@@ -43,6 +43,25 @@ def main() -> None:
             ],
             dialog_entries={503: "The same Retail line."},
         )
+        # Same numeric event id under another source actor: raw CSID alone is not enough.
+        ingest_event_structure_records(
+            con,
+            snapshot_id="client:new",
+            zone_key="NORTH_GUSTABERG_S",
+            resources=[
+                EventResource(
+                    entity_id=2003,
+                    event_id=77,
+                    byte_code=bytes([0x04, 0x21]),
+                    data_count=0,
+                    data_values=(),
+                    block_event_count=1,
+                    block_index=1,
+                )
+            ],
+            dialog_entries={},
+        )
+
         ingest_event_structure_records(
             con,
             snapshot_id="client:old",
@@ -62,6 +81,16 @@ def main() -> None:
         )
         con.commit()
 
+        unscoped_source = resolve_identity(
+            con,
+            source_snapshot_id="client:new",
+            target_snapshot_id="client:old",
+            namespace="EVENT",
+            source_numeric_id=77,
+            zone_key="NORTH_GUSTABERG_S",
+        )
+        assert unscoped_source.status == "SOURCE_ID_AMBIGUOUS", unscoped_source
+
         resolved = resolve_identity(
             con,
             source_snapshot_id="client:new",
@@ -69,6 +98,7 @@ def main() -> None:
             namespace="EVENT",
             source_numeric_id=77,
             zone_key="NORTH_GUSTABERG_S",
+            source_actor_key=2002,
         )
         assert resolved.status == "TARGET_EQUIVALENT", resolved
         assert resolved.target_numeric_id == "10", resolved
@@ -105,6 +135,7 @@ def main() -> None:
             namespace="EVENT",
             source_numeric_id=77,
             zone_key="NORTH_GUSTABERG_S",
+            source_actor_key=2002,
         )
         assert ambiguous.status == "TARGET_ID_AMBIGUOUS", ambiguous
 
