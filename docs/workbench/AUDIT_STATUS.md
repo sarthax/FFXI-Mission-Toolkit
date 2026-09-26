@@ -912,3 +912,15 @@ The minimum P0 client layer is now implemented in `workbench.client.dat_adapter`
 This P0 layer does not replace or broaden DAT write authority. Existing specialized `item_dat_tools` patch/create/delete logic remains separate; generalized Workbench DAT editing remains P1.
 
 The full core regression step is passing after the cross-fork fixture identity-shape correction, including the client DAT adapter regression.
+
+
+## 2026-09-25 — Core schema boundary and runtime P0 closure
+
+P0 logical schema coverage is now explicitly bounded to the shared server surfaces required by the current Workbench architecture and flagship migrations: core item tables, spells, traits, instances, NPC/mob pools/groups/spawns/drops, battlefield registry/membership, and deterministic SQL extraction. The schema-coverage matrix remains the mechanism for identifying future unmapped fields/tables, but mapping every server table is not a P0 requirement.
+
+Runtime validation P0 is also closed. Existing capture ingestion already preserves NPC state/history, paths, actions, HP/events, event packets and raw packets. Canonical capture/packet graph connectors and reverse backtrace are present, and ValidationRun/ValidationResult orchestration is persistent and dimension-aware.
+
+A new integrated runtime regression proves:
+capture-index-shaped evidence -> canonical packet observation -> capture backtrace -> deterministic runtime validation -> canonical ValidationRun/ValidationResult.
+
+Workbench Regression #1236 is green with this integrated runtime fixture.
