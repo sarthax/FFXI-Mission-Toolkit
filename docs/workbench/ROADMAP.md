@@ -103,7 +103,7 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - [x] LSBAdapter
 - [x] TopazNextAdapter
 - [x] CustomForkAdapter
-- [ ] Logical schema mapping — item_basic, equipment, item_weapon, item_usable, spells, traits, instances, NPCs, mobs, spawns, drops, battlefield registry/membership, and SQL extraction are implemented. A cross-profile coverage matrix reports unmapped parsed fields, missing logical types, and identity-mapping gaps; additional system tables still require audited mappings.
+- [x] Logical schema mapping (P0 core) — item_basic/equipment/weapon/usable, spells, traits, instances, NPCs, mobs, spawns, drops, battlefield registry/membership, and SQL extraction are implemented with cross-profile coverage auditing. Additional system tables are P1 expansion rather than P0 blockers.
 - [x] Generic FeatureSurface comparison — artifact roles, entity coverage, behavioral capabilities, path drift, capability status drift, and explicit migration actions for entity/capability/representation gaps are implemented.
 - [x] Snapshot-specific capability observations and target-aware Feature Checker evaluation — FeatureSurface, server-schema coverage, binding compatibility, and live-target DB validators now emit snapshot observations; client-specific producers remain in the client phase.
 - [x] Lua migration backend (P0) — route registry/support matrix is explicit: Topaz→DSP is SUPPORTED, LSB→DSP is CONDITIONAL/content-gated, and all other unproven routes are UNSUPPORTED rather than guessed.
@@ -139,11 +139,12 @@ Current public flagship E2E: pinned LSB → legacy DSP Chains of Promathia 2-5 (
 - [x] generic EXE/DLL static research foundation — PE metadata/hash/section/import/export/string indexing, canonical evidence ingestion, typed research tools, and cross-binary index diffing are implemented; deeper disassembly/xref/function-recovery analyzers remain future work.
 
 ### Phase 5 — Runtime validation (P0/P1)
-- capture index
-- NPC logger/path/action evidence
-- packet evidence
-- test fixtures
-- validation runs/results
+- [x] capture index (P0) — current/last-state, history, paths, actions, HP/events/raw packets are ingestible with provenance.
+- [x] NPC logger/path/action evidence (P0) — runtime entity/path/action observations are indexed and backtraceable without promotion to server truth.
+- [x] packet evidence (P0) — capture packet observations connect to canonical packet nodes and existing server handler/dependency edges.
+- [x] test fixtures (P0) — focused capture/packet/event/backtrace fixtures plus an integrated runtime-validation fixture are in CI.
+- [x] validation runs/results (P0) — deterministic ValidationRun/ValidationResult orchestration and graph persistence are implemented.
+- [ ] richer runtime probes/capture producers (P1) — expand only as specific systems need them.
 
 ### Phase 6 — Domain plugins & reusable content frameworks (P1+)
 Domain plugins should model both **content archetypes** and **named game systems**. The core graph/migration engine stays domain-neutral; this layer explains how different kinds of FFXI content are assembled, discovered, compared, migrated, and validated.
@@ -355,4 +356,4 @@ Lua event indexing now carries conservative callback-parameter class hints, and 
 - [x] expand FeatureSurface migration planning for entity coverage drift, capability status drift, and role-path drift.
 - [x] audit and map item_weapon, item_usable, spells, and traits with lineage-specific drift retained.
 - [x] audit item_basic with explicit legacy Topaz/DSP versus LSB representation drift.
-- [ ] audit additional system tables before declaring schema coverage complete.
+- [ ] audit additional system tables as P1 schema expansion; P0 core schema coverage is complete.
