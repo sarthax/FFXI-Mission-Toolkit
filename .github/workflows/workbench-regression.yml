@@ -62,6 +62,7 @@ jobs:
           python test_fixtures/test_migration_backend_probe.py
           python test_fixtures/test_migration_backend_probe_plan.py
           python test_fixtures/test_dependency_package_plan.py
+          python test_fixtures/test_package_scope_review.py
           python test_fixtures/test_package_manifest.py
           python test_fixtures/test_package_materialize.py
           python test_fixtures/test_package_assembly.py
