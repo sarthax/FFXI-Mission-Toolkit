@@ -112,6 +112,7 @@ jobs:
           python test_fixtures/test_feature_package_graph_import.py
           python test_fixtures/test_validation_suite_cli.py
           python test_fixtures/test_validation_run_orchestration.py
+          python test_fixtures/test_runtime_validation_p0.py
           python test_fixtures/test_research_session.py
           python test_fixtures/test_research_crawler.py
           python test_fixtures/test_research_provider.py
