@@ -1137,7 +1137,7 @@ The Medusa proof was also corrected in this pass: Al Zahbi/Bhaflau Medusa varian
 
 Economizer and Heat Seeker now extend the Coiler proof into acquisition semantics. The new truth set is `test_fixtures/fixtures/automaton_acquisition_dependency_truth.json`.
 
-The important result is that acquisition cannot be one generic edge. Economizer demonstrates shop plus externally documented quest/instance and ANNM reward paths, while Heat Seeker demonstrates shop, pooled mob drops, and an externally documented Alchemy synthesis recipe that itself depends on Iatrochemistry, a Fire Crystal, and five ingredient identities. Current LSB source partially supports the synthesis prerequisites (including the Iatrochemistry key item and guild-point unlock) but does not expose a direct Heat Seeker recipe record in repository search, so the package model must preserve external/expected evidence without pretending the server implementation is complete.
+The important result is that acquisition cannot be one generic edge. Economizer demonstrates shop plus externally documented quest/instance and ANNM reward paths, while Heat Seeker demonstrates shop, pooled mob drops, and an externally documented Alchemy synthesis recipe that itself depends on Iatrochemistry, a Fire Crystal, and five ingredient identities. Current LSB source contains the Heat Seeker synthesis recipe directly in `sql/synth_recipes.sql` (recipe 62525), including Iatrochemistry, crystal, and ingredient IDs. Glass Sheet is itself recipe 62531, making recursive precursor closure mandatory.
 
 Required generic acquisition relations now include SOLD_BY, DROPPED_BY, CRAFTED_BY, REWARDED_BY, REQUIRES_INGREDIENT, REQUIRES_KEY_ITEM, REQUIRES_CRAFT, USES_CRYSTAL, and ALTERNATE_ACQUISITION. Acquisition paths must be independently reviewable from core item behavior, and selecting synthesis/reward paths must recursively expose their own prerequisite graph.
 
@@ -1147,3 +1147,14 @@ Required generic acquisition relations now include SOLD_BY, DROPPED_BY, CRAFTED_
 - Added `workbench/client/binary_probes.py`: client binary probes persisted as capability observations plus optional feature `CapabilityRequirement`s (hit VERIFIED, miss UNKNOWN). Tests: `test_fixtures/test_binary_probes.py`.
 - Also this session: SQL parser salvage of corrupted legacy-DSP `mob_spawn_points` rows (`build_sql_index.py`), and `dat_extractor_bin.ensure_dat_extractor()` auto-building the gitignored dat-extractor for the four dashboard rebuilds.
 - Open: probe-set files + GUI runner; Client Overview / Build fingerprint page; hand-fix 3 remaining corrupt rows in external old-dsp-reference SQL.
+
+
+## 2026-09-26 — Recursive crafting/producibility closure
+
+Server adapter profiles now normalize ordinary `synth_recipes` and `synergy_recipes` as distinct logical recipe types. A new `workbench.migrations.crafting_closure` service recursively evaluates a selected crafting acquisition path.
+
+The Heat Seeker proof now uses current LSB server data directly: recipe 62525 yields Heat Seeker and requires Iatrochemistry plus Hecteyes Eye, Lightning Anima, Glass Sheet, Homunculus Nerves, Plasma Oil, and a Fire Crystal. Glass Sheet is recipe 62531 and recursively requires Rock Salt, Shell Powder, Silica x6, and a Fire Crystal. The closure regression verifies that Heat Seeker remains unresolved until every Glass Sheet precursor is independently obtainable; a missing Iatrochemistry key item also blocks the recipe.
+
+Synergy is represented as a separate crafting system and requires explicit server runtime and client capability. A recipe cannot be marked viable merely because its row exists if the target/client lacks the required crafting system.
+
+This establishes recipe recursion but not complete leaf obtainability. Shop, drop, battlefield reward, appraisal, HELM, gardening, exchange, and other acquisition analyzers still need to converge on the same acquisition graph. A package must remain unresolved when any selected crafting-path leaf lacks a proven acquisition route.
