@@ -64,6 +64,8 @@ jobs:
           python test_fixtures/test_dependency_package_plan.py
           python test_fixtures/test_package_scope_review.py
           python test_fixtures/test_medusa_dependency_truth.py
+          python test_fixtures/test_identity_resolver.py
+          python test_fixtures/test_client_identity_snapshot.py
           python test_fixtures/test_coiler_dependency_truth.py
           python test_fixtures/test_automaton_acquisition_truth.py
           python test_fixtures/test_crafting_closure.py
@@ -101,8 +103,6 @@ jobs:
           python test_fixtures/test_live_target_validation.py
           python test_fixtures/test_live_target_validation_cli.py
           python test_fixtures/test_entity_symbol_identity.py
-          python test_fixtures/test_identity_resolver.py
-          python test_fixtures/test_client_identity_snapshot.py
           python test_fixtures/test_roadmap_phase8.py
           python test_fixtures/test_instance_feature_slice.py
           python test_fixtures/test_instance_slice_compare.py
