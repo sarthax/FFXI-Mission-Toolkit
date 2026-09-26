@@ -44,6 +44,7 @@ class ObservedTransition:
 
     transition_id: str
     capture_id: str
+    client_snapshot_id: str | None = None
     zone: str | None = None
     actor: str | None = None
     actor_id: str | None = None
@@ -86,6 +87,7 @@ def normalize_transition(
     *,
     transition_id: str,
     capture_id: str | int,
+    client_snapshot_id: str | None = None,
     zone: str | None = None,
     actor: str | None = None,
     actor_id: str | int | None = None,
@@ -125,6 +127,7 @@ def normalize_transition(
     return ObservedTransition(
         transition_id=str(transition_id).strip(),
         capture_id=str(capture_id).strip(),
+        client_snapshot_id=client_snapshot_id,
         zone=zone,
         actor=actor,
         actor_id=None if actor_id is None else str(actor_id),
