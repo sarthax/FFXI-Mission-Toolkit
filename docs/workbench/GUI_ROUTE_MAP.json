@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 135,
+  "route_count": 137,
   "routes": [
     {
       "method": "GET",
@@ -218,6 +218,22 @@
       "section": "Zone Drift",
       "role": "detail",
       "disposition": "MERGE"
+    },
+    {
+      "method": "GET",
+      "path": "/features/trace",
+      "home": "Features",
+      "section": "Feature Trace",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/features/check",
+      "home": "Features",
+      "section": "Feature Checker",
+      "role": "page",
+      "disposition": "KEEP"
     },
     {
       "method": "GET",
