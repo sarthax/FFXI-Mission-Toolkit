@@ -11,7 +11,7 @@ from workbench.client.identity_extract import (
     dat_id_for_zone,
     extract_client_identity_snapshot,
 )
-from workbench.client.identity_snapshot import read_manifest
+from workbench.client.identity_snapshot import read_manifest, ingest_client_identity_manifest
 
 
 def main() -> None:
@@ -67,6 +67,22 @@ def main() -> None:
         assert len(manifest.files) == 4, manifest.files
         dialog_rows = [x for x in manifest.files if x["kind"] == "DIALOG"]
         assert {x["zone_id"] for x in dialog_rows} == {83, 87}, dialog_rows
+
+        import sqlite3
+        con = sqlite3.connect(root / "workbench.db")
+        ingested = ingest_client_identity_manifest(
+            con,
+            manifest_path=Path(result.manifest_path),
+        )
+        con.commit()
+        assert ingested["record_count"] == 4, ingested
+        assert len(ingested["zones"]) == 2, ingested
+        snap = con.execute(
+            "SELECT version,fingerprint FROM identity_snapshots WHERE snapshot_id=?",
+            ("client:30191204_1",),
+        ).fetchone()
+        assert snap == ("30191204_1", result.client_fingerprint), snap
+        con.close()
 
     print("installed client identity extraction self-test: PASS")
 
