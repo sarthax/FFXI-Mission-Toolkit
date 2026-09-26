@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 142,
+  "route_count": 144,
   "routes": [
     {
       "method": "GET",
@@ -233,6 +233,22 @@
       "home": "Validation",
       "section": "Live Target",
       "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/packages",
+      "home": "Packages",
+      "section": "Package Library",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/packages/review",
+      "home": "Packages",
+      "section": "Review & Readiness",
+      "role": "page",
       "disposition": "KEEP"
     },
     {
