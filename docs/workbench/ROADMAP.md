@@ -429,7 +429,9 @@ Current proof:
   - [x] Establish Coiler automaton attachment as a second truth set covering item/internal identity mapping, dynamic Lua dispatch, shared automaton behavior, C++ puppet runtime, persistence, downstream weapon-skill consumers, conditional interactions, and reviewer-controlled acquisition paths.
   - [x] Add recursive crafting/producibility closure for synth/synergy recipe prerequisites; Heat Seeker→Glass Sheet now proves multi-level recipe recursion, key-item gating, leaf obtainability, and Synergy client/runtime gating.
   - [ ] Unify shop/drop/reward/HELM/gardening/exchange/appraisal acquisition analyzers so every crafting leaf can resolve against the same obtainability graph.
-  - [ ] Repeat with a representative instance/mission after the Medusa/Coiler dependency classes reach closure.
+  - [x] Establish WotG25 branching mission truth set covering nation OR-branches, NPC/zone/CSID state transitions, key-item lifecycle, trades, timers, dialog/default actions, expected missing content, and placeholder battlefield gaps.
+  - [ ] Build generic mission/quest state-machine and CSID/event analyzers against the WotG25 proof.
+  - [ ] Repeat with an additional instance-heavy mission after state-machine closure is implemented.
 - [ ] Add approval/apply/rollback UI only after preserving the existing readiness, approval, drift, backup, journal, and rollback gates end to end.
 - [ ] Migrate remaining workspace pages incrementally while preserving current routes until feature parity is verified.
 
