@@ -190,6 +190,7 @@ WORKSPACES = (
         "href": "/packages",
         "sections": (
             {"label": "Package Library", "href": "/packages"},
+            {"label": "Scope Review", "href": "/packages/scope"},
             {"label": "Create Package", "href": "/packages/create", "mutation": True},
             {"label": "Review & Readiness", "href": "/packages/review"},
             {"label": "Backport Package (legacy)", "href": "/backport/package", "legacy": True},
