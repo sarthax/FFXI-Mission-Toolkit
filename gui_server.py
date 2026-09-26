@@ -3096,11 +3096,19 @@ def zone_build_visual_cache(request: Request, zoneid: int, return_to: str = Form
     ffxi_path = settings_mod.get_ffxi_install()
     if not ffxi_path:
         return PlainTextResponse("Could not find FFXI install -- set ffxi_install_path in Settings.", status_code=400)
+    if not build_zone_visual_cache.visual_mesh_api_available():
+        return PlainTextResponse(
+            build_zone_visual_cache.visual_mesh_api_error(),
+            status_code=409,
+        )
     con = get_con()
     ok = build_zone_visual_cache.build_one(con, zoneid, ffxi_path)
     con.close()
     if not ok:
-        return PlainTextResponse(f"Failed to build visual mesh cache for zoneid {zoneid} -- check server log.", status_code=500)
+        return PlainTextResponse(
+            f"Failed to build visual mesh cache for zoneid {zoneid} -- check server log for the DAT parse error.",
+            status_code=500,
+        )
     return RedirectResponse(url=return_to, status_code=303)
 
 
