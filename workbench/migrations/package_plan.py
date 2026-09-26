@@ -92,7 +92,9 @@ def build_package_plan(
     ordered = tuple(by_id[action_id] for action_id in ordered_ids)
     if cycle_ids:
         status = "BLOCKED"
-    elif any(a.status in {"MANUAL_REQUIRED", "BLOCKED", "FAILED", "UNKNOWN"} for a in ordered):
+    elif any(a.status in {"BLOCKED", "FAILED"} for a in ordered):
+        status = "BLOCKED"
+    elif any(a.status in {"MANUAL_REQUIRED", "UNKNOWN"} for a in ordered):
         status = "MANUAL_REQUIRED"
     else:
         status = "READY"
