@@ -845,3 +845,19 @@ Legacy Darkstar/Topaz-era profiles retain `NoSale` as logical `no_sale`. Current
 The adapter does not collapse these differences. Cross-lineage comparison therefore surfaces the missing/added fields explicitly instead of incorrectly declaring the rows identical.
 
 This completes logical coverage for the core item family used by current toolkit workflows: `item_basic`, `item_equipment`, `item_weapon`, and `item_usable`. The remaining Logical schema roadmap work is broader system-table coverage rather than the basic item model.
+
+
+## 2026-09-25 — Phase 1 connector reconciliation
+
+The previously open Phase 1 connector item was audited against the current branch.
+
+Canonical bridges now exist for:
+- entity_profile provenance;
+- namespace/map confidence findings;
+- runtime capture observations/events/actions;
+- packet observations and handler traversal;
+- assembled backport/package reports.
+
+The final missing piece was BACKPORT_REPORT issue persistence. `feature_package_analyzer.py` now emits canonical report Evidence, an AnalysisResult, and Finding records for parsed report issues in addition to Feature/Artifact/Migration/MigrationAction records. The generic JSON graph importer now accepts Evidence records directly.
+
+Workbench Regression #1189/#1190 is green after adding the complete canonical Finding shape. Phase 1 report-to-graph connectivity is therefore closed at the P0 architecture level.
