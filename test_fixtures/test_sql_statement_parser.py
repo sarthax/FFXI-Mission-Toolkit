@@ -88,9 +88,11 @@ def main():
             encoding="utf-8",
         )
         corrupt_rows=list(sqlidx.parse_table_file(s,"mob_spawn_points",spawn_cols))
-        assert len(corrupt_rows)==1,corrupt_rows
-        assert corrupt_rows[0]["mobid"]=="17961567",corrupt_rows[0]
-        assert sqlidx.unquote(corrupt_rows[0]["mobname"])=="Seiryu",corrupt_rows[0]
+        # The corrupted row itself is now repaired too (stray 14471 dropped, groupid 14430 kept
+        # -- 14430 exists in mob_groups, 14471 does not), so both rows survive.
+        assert [r["mobid"] for r in corrupt_rows]==["17961561","17961567"],corrupt_rows
+        assert corrupt_rows[0]["groupid"]=="14430" and corrupt_rows[0]["pos_x"]=="105.699",corrupt_rows[0]
+        assert sqlidx.unquote(corrupt_rows[1]["mobname"])=="Seiryu",corrupt_rows[1]
 
     print("SQL statement parser self-test: PASS")
     return 0

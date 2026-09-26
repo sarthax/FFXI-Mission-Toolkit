@@ -306,12 +306,36 @@ def parse_table_file(path: Path, expected_table: str, columns: list[str]):
     if not path.exists():
         return
     text=path.read_text(encoding="utf-8",errors="ignore")
+    pending=None  # (lineno, values) of a short row whose remaining columns may dangle in the next statement
+    repaired=0
+
+    def _skip_warning(lineno, n):
+        print(f"  [!] {path.name}:{lineno} row 1 has {n} values, expected {len(columns)} "
+              f"for {expected_table} -- skipped (schema drift?)")
+
     for lineno,statement in _iter_sql_statements(text):
         m=INSERT_RE.search(statement)
         if not m or m.group(1)!=expected_table:
+            if pending:
+                _skip_warning(*pending[:1], len(pending[1]))
+            pending=None
             continue
-        if m.start() > 0:
-            prefix = statement[:m.start()].strip()
+        prefix = statement[:m.start()].strip()
+        if pending and prefix:
+            # Salvage the known corruption shape `(a,b,c,groupid,STRAY);x,y,z,rot`: a stray value
+            # before a misplaced `);` with the real trailing columns dangling. Only merged when the
+            # arithmetic is exact (short row + dangling values - 1 stray == column count); the stray
+            # is taken as the row's last value, matching the file's other rows.
+            tail=split_sql_values(prefix)
+            if len(pending[1])+len(tail)-1==len(columns):
+                repaired+=1
+                yield dict(zip(columns,pending[1][:-1]+tail))
+                pending=None
+                prefix=""
+        if pending:
+            _skip_warning(pending[0], len(pending[1]))
+            pending=None
+        if prefix:
             print(f"  [!] {path.name}:{lineno} statement has leading text before its "
                   f"INSERT INTO `{expected_table}` -- likely a corrupted/unterminated previous "
                   f"statement glued onto this one; this row was recovered but the source dump "
@@ -319,10 +343,18 @@ def parse_table_file(path: Path, expected_table: str, columns: list[str]):
         for tup_idx,tup in enumerate(split_insert_tuples(m.group(2)),1):
             values=split_sql_values(tup)
             if len(values)!=len(columns):
-                print(f"  [!] {path.name}:{lineno} row {tup_idx} has {len(values)} values, "
-                      f"expected {len(columns)} for {expected_table} -- skipped (schema drift?)")
+                if len(values)<len(columns):
+                    pending=(lineno,values)
+                else:
+                    print(f"  [!] {path.name}:{lineno} row {tup_idx} has {len(values)} values, "
+                          f"expected {len(columns)} for {expected_table} -- skipped (schema drift?)")
                 continue
             yield dict(zip(columns,values))
+    if pending:
+        _skip_warning(pending[0], len(pending[1]))
+    if repaired:
+        print(f"  [!] {path.name}: repaired {repaired} corrupted row(s) (stray value dropped, "
+              f"dangling columns rejoined); fix the source dump to remove this warning")
 
 
 def init_db(con: sqlite3.Connection):
