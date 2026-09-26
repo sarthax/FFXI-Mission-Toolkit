@@ -120,6 +120,16 @@ CREATE TABLE IF NOT EXISTS migration_actions (
   artifact_id TEXT, status TEXT NOT NULL DEFAULT 'DISCOVERED', reason TEXT,
   metadata_json TEXT NOT NULL DEFAULT '{}'
 );
+CREATE TABLE IF NOT EXISTS package_scope_decisions (
+  migration_id TEXT NOT NULL, node_id TEXT NOT NULL,
+  decision TEXT NOT NULL DEFAULT 'AUTO', reason TEXT,
+  tags_json TEXT NOT NULL DEFAULT '[]', updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY(migration_id, node_id)
+);
+CREATE TABLE IF NOT EXISTS package_scope_reviews (
+  migration_id TEXT PRIMARY KEY, status TEXT NOT NULL DEFAULT 'DRAFT',
+  reviewed_at TEXT, notes TEXT
+);
 CREATE INDEX IF NOT EXISTS idx_build_targets_artifact ON build_targets(artifact_id);
 CREATE INDEX IF NOT EXISTS idx_capabilities_subject ON capabilities(subject_id);
 CREATE INDEX IF NOT EXISTS idx_capability_observations_capability ON capability_observations(capability_id);
