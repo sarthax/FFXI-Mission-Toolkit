@@ -130,12 +130,21 @@ def compare_event_fingerprints(
         and source_text_fingerprint == target_text_fingerprint
     )
 
+    decoded_structure = (
+        source.parser != "RAW_ONLY"
+        and target.parser != "RAW_ONLY"
+        and bool(source.opcode_sequence)
+        and bool(target.opcode_sequence)
+    )
+
     if exact:
         status, confidence = "EXACT_BYTECODE", "VERIFIED"
-    elif structure and text:
+    elif structure and decoded_structure and text:
         status, confidence = "STRUCTURE_AND_TEXT_MATCH", "HIGH"
-    elif structure:
+    elif structure and decoded_structure:
         status, confidence = "STRUCTURE_MATCH", "HIGH"
+    elif structure:
+        status, confidence = "COARSE_SHAPE_MATCH", "LOW"
     elif text:
         # Important safety property: same text alone does not prove event equivalence.
         status, confidence = "TEXT_ONLY_MATCH", "LOW"
