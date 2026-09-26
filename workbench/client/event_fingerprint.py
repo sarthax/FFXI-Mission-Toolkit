@@ -376,6 +376,8 @@ def compare_event_fingerprints(
         and target.parser != "RAW_ONLY"
         and bool(source.opcode_sequence)
         and bool(target.opcode_sequence)
+        and source.unknown_opcode_count == 0
+        and target.unknown_opcode_count == 0
     )
 
     if exact:
