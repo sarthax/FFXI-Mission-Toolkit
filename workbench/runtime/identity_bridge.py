@@ -78,6 +78,7 @@ def resolve_transition_event(
         namespace=namespace,
         source_numeric_id=raw_event_id,
         zone_key=transition.zone,
+        source_actor_key=transition.actor_id,
     )
     return TransitionIdentityResolution(
         status=identity.status,
