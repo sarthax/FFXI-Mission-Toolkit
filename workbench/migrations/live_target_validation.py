@@ -13,11 +13,17 @@ content-duplication analysis; those remain additional validators.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
+import hashlib
+import json
+from pathlib import Path
 import re
 from typing import Any, Iterable, Protocol
 
 from workbench.adapters.servers.base import LogicalRecord, ServerAdapter
 from workbench.adapters.servers.logical import compare_records
+from workbench.core import graph
+from workbench.core.schema import ValidationRun, ValidationResult
 
 _IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
@@ -237,4 +243,111 @@ def validate_live_records(
             "Read-only validation against current live database state.",
             "A successful result validates normalized database representation only; runtime behavior remains a separate validation dimension.",
         ],
+    }
+
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _validation_id(run_id: str, logical_type: str, identity: Any) -> str:
+    raw=json.dumps(
+        {"run_id":run_id,"logical_type":logical_type,"identity":identity},
+        sort_keys=True,default=str,separators=(",",":"),
+    ).encode("utf-8")
+    return "live-target:" + hashlib.sha256(raw).hexdigest()[:20]
+
+
+def validation_records(
+    payload: dict[str,Any],
+    *,
+    run_id: str,
+    source: str | None = None,
+    target: str | None = None,
+) -> tuple[ValidationResult, ...]:
+    """Translate one live-target payload into canonical ValidationResult records."""
+    out=[]
+    for row in payload.get("results",[]):
+        raw_status=row.get("status","UNKNOWN")
+        if raw_status=="VERIFIED":
+            status="VERIFIED"
+        elif raw_status=="UNKNOWN":
+            status="UNKNOWN"
+        else:
+            status="FAILED"
+        identity=row.get("identity") or []
+        subject=(
+            f"live-target:{row.get('logical_type')}:"
+            + json.dumps(identity,sort_keys=True,default=str,separators=(',',':'))
+        )
+        notes=list(row.get("notes") or [])
+        if row.get("differences"):
+            notes.append("differences="+json.dumps(row["differences"],sort_keys=True,default=str))
+        notes.append(f"live_status={raw_status}")
+        out.append(ValidationResult(
+            validation_id=_validation_id(run_id,row.get("logical_type") or "record",identity),
+            validation_type="LIVE_TARGET_RECORD",
+            subject_id=subject,
+            status=status,
+            evidence_id=None,
+            source=source,
+            target=target,
+            notes=notes,
+            run_id=run_id,
+        ))
+    return tuple(out)
+
+
+def persist_live_validation(
+    payload: dict[str,Any],
+    graph_db: Path,
+    *,
+    run_id: str,
+    name: str = "live target validation",
+    feature_id: str | None = None,
+    source_snapshot_id: str | None = None,
+    target_snapshot_id: str | None = None,
+    source: str | None = None,
+    target: str | None = None,
+) -> dict[str,Any]:
+    """Persist live validation without persisting credentials or connection metadata."""
+    started=_now()
+    results=validation_records(payload,run_id=run_id,source=source,target=target)
+    if any(row.status=="FAILED" for row in results):
+        status="FAILED"
+    elif results and all(row.status=="VERIFIED" for row in results):
+        status="VERIFIED"
+    else:
+        status="UNKNOWN"
+    finished=_now()
+    run=ValidationRun(
+        run_id=run_id,
+        name=name,
+        source_snapshot_id=source_snapshot_id,
+        target_snapshot_id=target_snapshot_id or payload.get("target_snapshot_id"),
+        feature_id=feature_id,
+        status=status,
+        started_at=started,
+        finished_at=finished,
+        metadata={
+            "validation_type":"LIVE_TARGET_RECORD",
+            "logical_type":payload.get("logical_type"),
+            "target_table":payload.get("target_table"),
+            "live_status":payload.get("status"),
+            "result_count":len(results),
+            "credentials_persisted":False,
+        },
+    )
+    con=graph.init_db(Path(graph_db))
+    try:
+        graph.insert_record(con,run)
+        for row in results:
+            graph.insert_record(con,row)
+        con.commit()
+    finally:
+        con.close()
+    return {
+        "validation_run":asdict(run),
+        "validation_results":[asdict(row) for row in results],
     }
