@@ -116,8 +116,6 @@ def fingerprint_event(
         "opcode_sequence": list(opcodes),
         "instruction_lengths": list(lengths),
         "bytecode_length": len(resource.byte_code),
-        "data_count": int(resource.data_count),
-        "block_event_count": int(resource.block_event_count),
         "parser": parser_name,
     }
     structural = sha256(
