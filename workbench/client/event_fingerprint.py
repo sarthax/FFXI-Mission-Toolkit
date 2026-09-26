@@ -12,6 +12,7 @@ known opcode registry rather than treating arbitrary bytes as opcodes.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+import ast
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -68,27 +69,101 @@ def _load_event_parser():
 
 
 def _load_opcode_source_table() -> dict[int, dict[str, Any]]:
-    """Read fixed opcode shapes directly from vendored Python source, with no imports."""
+    """Read opcode shapes from vendored Python source via AST, including inherited args."""
     root = _events_dump_root() / "parser" / "opcodes"
-    table: dict[int, dict[str, Any]] = {}
     if not root.is_dir():
-        return table
-    arg_re = re.compile(
-        r'OpcodeArg\(\s*["\']([^"\']+)["\']\s*,\s*ArgType\.([A-Z_]+)\s*,\s*(\d+)'
-    )
-    for path in root.glob("0x*.py"):
-        raw = path.read_text(encoding="utf-8", errors="ignore")
-        m_opcode = re.search(r"^\s*opcode\s*=\s*(0x[0-9A-Fa-f]+|\d+)", raw, re.M)
-        if not m_opcode:
+        return {}
+
+    classes: dict[str, dict[str, Any]] = {}
+
+    def parse_arg_call(node: ast.AST) -> dict[str, Any] | None:
+        if not isinstance(node, ast.Call):
+            return None
+        func_name = getattr(node.func, "id", None) or getattr(node.func, "attr", None)
+        if func_name != "OpcodeArg" or len(node.args) < 3:
+            return None
+        name_node, type_node, size_node = node.args[:3]
+        if not isinstance(name_node, ast.Constant) or not isinstance(name_node.value, str):
+            return None
+        if not isinstance(size_node, ast.Constant) or not isinstance(size_node.value, int):
+            return None
+        arg_type = getattr(type_node, "attr", None) or getattr(type_node, "id", None) or "UNKNOWN"
+        return {"name": name_node.value, "arg_type": str(arg_type), "size": int(size_node.value)}
+
+    for path in root.glob("*.py"):
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8", errors="ignore"))
+        except SyntaxError:
             continue
-        opcode = int(m_opcode.group(1), 0)
-        args = [
-            {"name": name, "arg_type": arg_type, "size": int(size)}
-            for name, arg_type, size in arg_re.findall(raw)
-        ]
-        variable = "def calculate_length(" in raw
-        table[opcode] = {
-            "length": 1 + sum(a["size"] for a in args),
+        for node in tree.body:
+            if not isinstance(node, ast.ClassDef):
+                continue
+            opcode: int | None = None
+            own_args: list[dict[str, Any]] | None = None
+            own_variable = False
+            for item in node.body:
+                if isinstance(item, ast.Assign):
+                    for target in item.targets:
+                        if isinstance(target, ast.Name) and target.id == "opcode":
+                            try:
+                                value = ast.literal_eval(item.value)
+                                if isinstance(value, int):
+                                    opcode = int(value)
+                            except Exception:
+                                pass
+                if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    if item.name == "calculate_length":
+                        own_variable = True
+                    if item.name == "get_args":
+                        own_args = []
+                        for stmt in ast.walk(item):
+                            if isinstance(stmt, ast.Return) and isinstance(stmt.value, (ast.List, ast.Tuple)):
+                                parsed = [parse_arg_call(x) for x in stmt.value.elts]
+                                own_args = [x for x in parsed if x is not None]
+                                break
+            bases = [
+                getattr(base, "id", None) or getattr(base, "attr", None)
+                for base in node.bases
+            ]
+            classes[node.name] = {
+                "opcode": opcode,
+                "own_args": own_args,
+                "own_variable": own_variable,
+                "bases": [b for b in bases if b],
+            }
+
+    resolving: set[str] = set()
+    resolved: dict[str, tuple[list[dict[str, Any]], bool]] = {}
+
+    def resolve_class(name: str) -> tuple[list[dict[str, Any]], bool]:
+        if name in resolved:
+            return resolved[name]
+        if name in resolving:
+            return [], False
+        spec = classes.get(name)
+        if spec is None:
+            return [], False
+        resolving.add(name)
+        inherited_args: list[dict[str, Any]] = []
+        inherited_variable = False
+        for base in spec["bases"]:
+            if base in classes:
+                inherited_args, inherited_variable = resolve_class(base)
+                break
+        args = spec["own_args"] if spec["own_args"] is not None else inherited_args
+        variable = bool(spec["own_variable"] or inherited_variable)
+        resolving.discard(name)
+        resolved[name] = (list(args), variable)
+        return resolved[name]
+
+    table: dict[int, dict[str, Any]] = {}
+    for class_name, spec in classes.items():
+        opcode = spec["opcode"]
+        if opcode is None:
+            continue
+        args, variable = resolve_class(class_name)
+        table[int(opcode)] = {
+            "length": 1 + sum(int(a["size"]) for a in args),
             "args": args,
             "variable": variable,
         }
