@@ -149,11 +149,10 @@ WORKSPACES = (
     },
     {
         "name": "Validation",
-        "href": "/?workspace=validation",
-        "planned": True,
+        "href": "/validation",
         "sections": (
-            {"label": "Dashboard", "href": None, "planned": True},
-            {"label": "Runs & Results", "href": None, "planned": True},
+            {"label": "Dashboard", "href": "/validation"},
+            {"label": "Runs & Results", "href": "/validation/runs"},
             {"label": "Live Target", "href": None, "planned": True},
         ),
     },
