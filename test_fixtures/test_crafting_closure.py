@@ -29,6 +29,32 @@ def main():
         "result_qty":12,
         "result_name":"Heat Seeker",
     })
+    plasma=rec("synth_recipes",61534,{
+        "key_item_id":2037,
+        "alchemy":39,
+        "crystal_item_id":4101,
+        "ingredient_1":914,
+        "ingredient_2":2175,
+        "ingredient_3":2175,
+        "result_item_id":2310,
+        "result_qty":33,
+        "result_name":"Plasma Oil",
+    })
+    anima=rec("synth_recipes",63531,{
+        "key_item_id":2032,
+        "alchemy":75,
+        "crystal_item_id":4100,
+        "ingredient_1":914,
+        "ingredient_2":936,
+        "ingredient_3":1108,
+        "ingredient_4":1610,
+        "ingredient_5":1610,
+        "ingredient_6":1610,
+        "ingredient_7":1610,
+        "result_item_id":1645,
+        "result_qty":10,
+        "result_name":"Lightning Anima",
+    })
     glass=rec("synth_recipes",62531,{
         "alchemy":56,
         "crystal_item_id":4096,
@@ -51,15 +77,15 @@ def main():
         "result_item_id":9999,
         "result_name":"Synergy Test",
     })
-    records=[heat,glass,synergy]
+    records=[heat,plasma,anima,glass,synergy]
 
     # Top-level recipe exists, but the path is still unresolved because its
     # prerequisite leaves have not been proven obtainable.
     unresolved=build_crafting_closure(
         records,
         2256,
-        known_key_items={2037},
-        known_obtainable_items={4096,939,1645,2309,2310},
+        known_key_items={2032,2037},
+        known_obtainable_items={4096,4100,4101,939,2309,914,2175,1108,1610},
     )
     assert unresolved["status"]=="UNRESOLVED",unresolved
     heat_path=unresolved["root"]["paths"][0]
@@ -76,8 +102,8 @@ def main():
     viable=build_crafting_closure(
         records,
         2256,
-        known_key_items={2037},
-        known_obtainable_items={4096,939,1645,2309,2310,936,1883,1888},
+        known_key_items={2032,2037},
+        known_obtainable_items={4096,4100,4101,939,2309,914,2175,1108,1610,936,1883,1888},
     )
     assert viable["status"]=="OBTAINABLE",viable
     assert viable["root"]["satisfied_by"]=="CRAFTING",viable
@@ -86,7 +112,8 @@ def main():
     no_ki=build_crafting_closure(
         records,
         2256,
-        known_obtainable_items={4096,939,1645,2309,2310,936,1883,1888},
+        known_key_items={2032},
+        known_obtainable_items={4096,4100,4101,939,2309,914,2175,1108,1610,936,1883,1888},
     )
     assert no_ki["status"]=="UNRESOLVED",no_ki
     assert "missing required key item 2037" in no_ki["root"]["paths"][0]["reasons"],no_ki
