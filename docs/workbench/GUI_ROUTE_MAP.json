@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 137,
+  "route_count": 140,
   "routes": [
     {
       "method": "GET",
@@ -218,6 +218,30 @@
       "section": "Zone Drift",
       "role": "detail",
       "disposition": "MERGE"
+    },
+    {
+      "method": "GET",
+      "path": "/validation",
+      "home": "Validation",
+      "section": "Dashboard",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/validation/runs",
+      "home": "Validation",
+      "section": "Runs & Results",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/validation/runs/{run_id}",
+      "home": "Validation",
+      "section": "Runs & Results",
+      "role": "detail",
+      "disposition": "KEEP"
     },
     {
       "method": "GET",
