@@ -135,6 +135,8 @@ Current populated groupings include:
 
 These entries may be placeholders. A visible category or subsection does not imply that a plugin, analyzer, migration backend, validator, or write-capable admin workflow exists. Existing generic tools such as Zone Editor remain generic and may be linked from a domain rather than duplicated.
 
+In the shared shell, categories with subsections are represented as explicit parent/child navigation groups and rendered as compact disclosure menus rather than flattening every subsection into the header.
+
 ## Navigation model
 
 Plugins should eventually expose user-facing feature structure such as:
