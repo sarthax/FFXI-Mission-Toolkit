@@ -33,12 +33,14 @@ def run_probe(path: Path, idx: dict, probe: dict) -> dict:
     raise ValueError(f"unknown probe kind: {kind}")
 
 
-def persist_probes(con, binary_path: str, snapshot_id: str, probes: list[dict]) -> list[dict]:
+def persist_probes(con, binary_path: str, snapshot_id: str | None, probes: list[dict]) -> list[dict]:
     """probes: [{"name","kind":"string"|"bytes","needle", optional "feature" (feature_id; adds a
     CapabilityRequirement so Feature Checker sees it) and "required" (default True)}]. Returns per-probe results."""
     path = Path(binary_path)
     idx = index_binary(path, max_strings=25000)
     sha = hashlib.sha256(path.read_bytes()).hexdigest()
+    if not snapshot_id:
+        snapshot_id = f"snapshot:client-{sha[:12]}"  # one snapshot per exact build
     out = []
     for p in probes:
         res = run_probe(path, idx, p)

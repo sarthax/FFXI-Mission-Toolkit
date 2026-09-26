@@ -24,6 +24,9 @@ FFXiMain.dll is packed, so its code is largely not visible on disk.</p>
 {% if probe_result %}
 <h3>{{ probe_result.set }} &mdash; {{ probe_result.binary }}</h3>
 <p class="muted">{{ probe_result.description }}</p>
+<form method="post" action="/binaryinspector/save-probes"><input type="hidden" name="run_set" value="{{ run_set_file }}">
+<button type="submit">Save to graph</button> <span class="muted">Writes capability observations to workbench.db for Feature Checker.</span></form>
+{% if saved %}<p class="chip">{{ saved }}</p>{% endif %}
 <div class="table-wrap"><table><tr><th>Probe</th><th>Kind</th><th>Needle</th><th>Status</th><th>Hits</th><th>Sample</th></tr>
 {% for r in probe_result.rows %}<tr><td>{{ r.name }}</td><td>{{ r.kind }}</td><td><code>{{ r.needle }}</code></td><td>{{ r.status }}</td><td>{{ r.count }}</td><td><code>{{ r.sample|join(', ') }}</code></td></tr>{% endfor %}</table></div>
 {% endif %}

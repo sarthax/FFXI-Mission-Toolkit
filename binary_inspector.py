@@ -96,3 +96,17 @@ def run_probe_set(file: str, install_dir: str) -> dict:
                      "status": "VERIFIED" if r["found"] else "UNKNOWN", "count": r["count"],
                      "sample": r["sample"][:3]})
     return {"set": s["name"], "description": s.get("description", ""), "binary": str(path), "rows": rows}
+
+
+def save_probe_set(file: str, install_dir: str, db_path) -> dict:
+    """Persist a probe set's results into the canonical workbench graph as capability observations."""
+    from workbench.client.binary_probes import persist_probes
+    from workbench.core import graph
+    s = {x["file"]: x for x in list_probe_sets()}[file]
+    con = graph.init_db(Path(db_path))
+    try:
+        rows = persist_probes(con, str(Path(install_dir) / s["binary"]), None, s["probes"])
+        con.commit()
+    finally:
+        con.close()
+    return {"saved": len(rows), "db": str(db_path)}

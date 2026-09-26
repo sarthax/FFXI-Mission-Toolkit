@@ -31,6 +31,7 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 
+from urllib.parse import quote
 from fastapi import FastAPI, Form, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
@@ -5992,16 +5993,28 @@ def datinspector_page(request: Request, dat_id: str = "", zoneid: str = "", ffxi
         "ffxi_path": path, "families": families})
 
 
+@app.post("/binaryinspector/save-probes", response_class=HTMLResponse)
+def binaryinspector_save_probes(request: Request, run_set: str = Form(...)):
+    import binary_inspector as bi
+    install = settings_mod.get_ffxi_install() or "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
+    try:
+        r = bi.save_probe_set(run_set, install, WORKBENCH_DB)
+        note = f"Saved {r['saved']} observations to {r['db']}."
+    except Exception as ex:
+        note = f"Save failed: {type(ex).__name__}: {ex}"
+    return RedirectResponse(f"/binaryinspector?run_set={run_set}&saved={quote(note)}", status_code=303)
+
+
 @app.get("/binaryinspector", response_class=HTMLResponse)
 def binaryinspector_page(request: Request, path: str = "", q: str = "", imp: str = "", pattern: str = "",
-                         exec_only: str = "", diff_path: str = "", run_set: str = ""):
+                         exec_only: str = "", diff_path: str = "", run_set: str = "", saved: str = ""):
     import binary_inspector as bi
     install = settings_mod.get_ffxi_install() or "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
     ctx = {"request": request, "install": install, "candidates": bi.list_candidates(install),
            "path": path, "q": q, "imp": imp, "pattern": pattern, "exec_only": exec_only,
            "diff_path": diff_path, "idx": None, "error": None, "strings": None,
            "imports": None, "psearch": None, "diff": None,
-           "probe_sets": bi.list_probe_sets(), "probe_result": None}
+           "probe_sets": bi.list_probe_sets(), "probe_result": None, "saved": saved, "run_set_file": run_set}
     try:
         if run_set:
             ctx["probe_result"] = bi.run_probe_set(run_set, install)
