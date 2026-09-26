@@ -1,0 +1,146 @@
+name: Workbench Regression
+
+on:
+  push:
+    branches:
+      - workbench-rework/audit-foundation
+  pull_request:
+    paths:
+      - "workbench/**"
+      - "test_fixtures/**"
+      - "feature_*.py"
+      - "capture_*.py"
+      - "packet_*.py"
+      - "workbench_*.py"
+      - ".github/workflows/workbench-regression.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run Workbench core regression fixtures
+        env:
+          PYTHONPATH: .
+        run: |
+          set -euo pipefail
+          python test_fixtures/test_packet_identity.py
+          python test_fixtures/test_graph_cpp_symbol_resolution.py
+          python test_fixtures/test_graph_enum_resolution.py
+          python test_fixtures/test_cpp_enum_dependency_confidence.py
+          python test_fixtures/test_build_function_mapping.py
+          python test_fixtures/test_server_adapter_profiles.py
+          python test_fixtures/test_server_logical_records.py
+          python test_fixtures/test_server_schema_mapping_coverage.py
+          python test_fixtures/test_broader_logical_schema_mappings.py
+          python test_fixtures/test_item_basic_logical_schema.py
+          python test_fixtures/test_server_entity_logical_mappings.py
+          python test_fixtures/test_server_sql_logical_extraction.py
+          python test_fixtures/test_sql_statement_parser.py
+          python test_fixtures/test_battlefield_logical_profiles.py
+          python test_fixtures/test_feature_surface.py
+          python test_fixtures/test_feature_surface_plan.py
+          python test_fixtures/test_feature_surface_graph.py
+          python test_fixtures/test_feature_surface_validation.py
+          python test_fixtures/test_domain_plugin_registry.py
+          python test_fixtures/test_domain_plugin_migration_actions.py
+          python test_fixtures/test_battlefield_dsp_membership.py
+          python test_fixtures/test_battlefield_lsb_policy.py
+          python test_fixtures/test_binding_index_provenance.py
+          python test_fixtures/test_binding_compatibility.py
+          python test_fixtures/test_binding_audit_method_calls.py
+          python test_fixtures/test_logical_migration_planner.py
+          python test_fixtures/test_migration_backend_registry.py
+          python test_fixtures/test_migration_backend_probe.py
+          python test_fixtures/test_migration_backend_probe_plan.py
+          python test_fixtures/test_dependency_package_plan.py
+          python test_fixtures/test_package_scope_review.py
+          python test_fixtures/test_medusa_dependency_truth.py
+          python test_fixtures/test_identity_resolver.py
+          python test_fixtures/test_client_identity_snapshot.py
+          python test_fixtures/test_client_identity_extract.py
+          python test_fixtures/test_capture_identity_bridge.py
+          python test_fixtures/test_coiler_dependency_truth.py
+          python test_fixtures/test_automaton_acquisition_truth.py
+          python test_fixtures/test_crafting_closure.py
+          python test_fixtures/test_wotg25_branching_mission_truth.py
+          python test_fixtures/test_package_manifest.py
+          python test_fixtures/test_package_materialize.py
+          python test_fixtures/test_package_assembly.py
+          python test_fixtures/test_package_cohesion.py
+          python test_fixtures/test_package_apply_gate.py
+          python test_fixtures/test_package_preflight.py
+          python test_fixtures/test_generated_output.py
+          python test_fixtures/test_generated_sql_validation.py
+          python test_fixtures/test_battlefield_representation_plan.py
+          python test_fixtures/test_plugin_reshape_refinement.py
+          python test_fixtures/test_plugin_proposal_refinement.py
+          python test_fixtures/test_mission_representation.py
+          python test_fixtures/test_mission_proposals.py
+          python test_fixtures/test_patch_operations.py
+          python test_fixtures/test_patch_plan.py
+          python test_fixtures/test_patch_approval.py
+          python test_fixtures/test_patch_approval_request.py
+          python test_fixtures/test_patch_package_integrity.py
+          python test_fixtures/test_patch_apply.py
+          python test_fixtures/test_patch_lifecycle.py
+          python test_fixtures/test_patch_status_cli.py
+          python test_fixtures/test_package_review.py
+          python test_fixtures/test_package_review_cli.py
+          python test_fixtures/test_legacy_package_service.py
+          python test_fixtures/test_validation_apply_journal.py
+          python test_fixtures/test_backport_package_plan_scope.py
+          python test_fixtures/test_semantic_instance_matching.py
+          python test_fixtures/test_id_content_collision.py
+          python test_fixtures/test_cross_fork_collision_fixtures.py
+          python test_fixtures/test_collision_migration_planning.py
+          python test_fixtures/test_live_target_validation.py
+          python test_fixtures/test_live_target_validation_cli.py
+          python test_fixtures/test_entity_symbol_identity.py
+          python test_fixtures/test_roadmap_phase8.py
+          python test_fixtures/test_instance_feature_slice.py
+          python test_fixtures/test_instance_slice_compare.py
+          python test_fixtures/test_feature_trace_enum_nodes.py
+          python test_fixtures/test_feature_candidates.py
+          python test_fixtures/test_feature_dimension_policy.py
+          python test_fixtures/test_capability_observations.py
+          python test_fixtures/test_snapshot_capability_producers.py
+          python test_fixtures/test_semantic_graph_mirror.py
+          python test_fixtures/test_capture_packet_graph.py
+          python test_fixtures/test_capture_event_packet_graph.py
+          python test_fixtures/test_lua_event_typing.py
+          python test_fixtures/test_server_lua_graph_bridge.py
+          python test_fixtures/test_packet_dispatch_resolution.py
+          python test_fixtures/test_implementation_dependency_chain.py
+          python test_fixtures/test_feature_package_graph_import.py
+          python test_fixtures/test_validation_suite_cli.py
+          python test_fixtures/test_validation_run_orchestration.py
+          python test_fixtures/test_runtime_validation_p0.py
+          python test_fixtures/test_research_session.py
+          python test_fixtures/test_research_crawler.py
+          python test_fixtures/test_research_provider.py
+          python test_fixtures/test_research_graph_registry.py
+          python test_fixtures/test_research_runner.py
+          python test_fixtures/test_research_domain_registry.py
+          python test_fixtures/test_research_extended_registry.py
+          python test_fixtures/test_research_proposal_tools.py
+          python test_fixtures/test_research_proposal_verifier.py
+          python test_fixtures/test_research_extended_tools.py
+          python test_fixtures/test_client_binary_research.py
+          python test_fixtures/test_client_binary_index.py
+          python test_fixtures/test_client_dat_adapter.py
+          python test_fixtures/test_gui_information_architecture.py
+          python test_fixtures/test_gui_shell.py
+          python test_fixtures/test_client_binary_deep.py
+          python test_fixtures/test_research_domain_tools.py
+          python test_fixtures/test_research_graph_tools.py
+          python test_fixtures/test_map_confidence_graph_bridge.py
+          python test_fixtures/test_entity_profile_graph_bridge.py

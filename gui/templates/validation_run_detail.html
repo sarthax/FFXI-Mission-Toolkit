@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Validation Run — Mission Toolkit{% endblock %}
+{% block content %}
+<h1>Validation Run</h1>
+
+{% if error %}<div class="warn">{{ error }}</div>{% endif %}
+
+{% if run %}
+<h2>{{ run.name }}</h2>
+<p><strong>Status:</strong> {{ run.status or "UNKNOWN" }} &nbsp; <strong>Run:</strong> <code>{{ run.run_id }}</code></p>
+<p><strong>Feature:</strong> <code>{{ run.feature_id or "" }}</code></p>
+<p><strong>Source snapshot:</strong> <code>{{ run.source_snapshot_id or "" }}</code><br>
+<strong>Target snapshot:</strong> <code>{{ run.target_snapshot_id or "" }}</code></p>
+<p><strong>Started:</strong> {{ run.started_at or "" }}<br>
+<strong>Finished:</strong> {{ run.finished_at or "" }}</p>
+
+<h2>Results</h2>
+{% if results %}
+<div class="table-wrap"><table>
+<thead><tr><th>Status</th><th>Type</th><th>Subject</th><th>Source → Target</th><th>Evidence</th><th>Notes</th></tr></thead>
+<tbody>
+{% for row in results %}
+<tr>
+<td>{{ row.status or "UNKNOWN" }}</td>
+<td>{{ row.validation_type }}</td>
+<td><code>{{ row.subject_id }}</code></td>
+<td>{{ row.source or "" }}{% if row.source or row.target %} → {% endif %}{{ row.target or "" }}</td>
+<td><code>{{ row.evidence_id or "" }}</code></td>
+<td><code>{{ row.notes_json or "[]" }}</code></td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+{% else %}
+<p class="muted">No ValidationResult records are attached to this run.</p>
+{% endif %}
+{% elif not error %}
+<div class="warn">Validation run <code>{{ run_id }}</code> was not found.</div>
+{% endif %}
+
+<p><a class="zonelink" href="/validation/runs">Back to validation runs</a></p>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Validation Runs — Mission Toolkit{% endblock %}
+{% block content %}
+<h1>Validation Runs &amp; Results</h1>
+
+<form class="search" method="get" action="/validation/runs">
+  <input type="text" name="q" value="{{ q }}" placeholder="Run ID, name, or feature ID">
+  <select name="status">
+    <option value="">All statuses</option>
+    {% for item in statuses %}
+    <option value="{{ item }}"{% if status == item %} selected{% endif %}>{{ item }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit">Filter</button>
+</form>
+
+{% if error %}<div class="warn">{{ error }}</div>{% endif %}
+
+{% if runs %}
+<div class="table-wrap"><table>
+<thead><tr><th>Run</th><th>Status</th><th>Feature</th><th>Results</th><th>Source → Target</th><th>Finished</th></tr></thead>
+<tbody>
+{% for row in runs %}
+<tr>
+<td><a class="zonelink" href="/validation/runs/{{ row.run_id|urlencode }}">{{ row.name }}</a><div><code>{{ row.run_id }}</code></div></td>
+<td>{{ row.status or "UNKNOWN" }}</td>
+<td><code>{{ row.feature_id or "" }}</code></td>
+<td>{{ row.result_count }}</td>
+<td><code>{{ row.source_snapshot_id or "" }}</code>{% if row.source_snapshot_id or row.target_snapshot_id %} → {% endif %}<code>{{ row.target_snapshot_id or "" }}</code></td>
+<td>{{ row.finished_at or row.started_at or "" }}</td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+{% elif not error %}
+<p class="muted">No validation runs match the current filter.</p>
+{% endif %}
+{% endblock %}

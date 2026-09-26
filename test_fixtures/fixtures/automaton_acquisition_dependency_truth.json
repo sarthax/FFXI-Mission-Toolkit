@@ -1,0 +1,248 @@
+{
+  "schema": 1,
+  "kind": "WORKBENCH_ACQUISITION_TRUTH_SET",
+  "fixture_id": "fixture:automaton-attachment-acquisition",
+  "source_revision": "LandSandBoat/server@3747feee0e38ab5c0283c4fe8deea7f0a9022351",
+  "subjects": [
+    {
+      "name": "Economizer",
+      "behavior_identity": {
+        "internal_item_puppet_id": 8678,
+        "internal_name": "economizer"
+      },
+      "verified_server_acquisition": [
+        {
+          "type": "SHOP",
+          "source": "scripts/zones/Nashmau/npcs/Rararoon.lua",
+          "item_symbol": "xi.item.ECONOMIZER",
+          "price": 222300,
+          "requirement": "PUP level 80",
+          "evidence_status": "VERIFIED_SERVER"
+        }
+      ],
+      "external_retail_acquisition": [
+        {
+          "type": "QUEST_OR_INSTANCE_REWARD",
+          "source_name": "Targeting the Captain",
+          "evidence_status": "EXTERNAL_EVIDENCE_NOT_RESOLVED_IN_CURRENT_SERVER_SOURCE",
+          "note": "Retail references list Economizer as obtainable from Targeting the Captain; current LSB search exposes the instance name but not a direct Economizer reward edge."
+        },
+        {
+          "type": "ANNM_REWARD",
+          "source_name": "Queenbug",
+          "zone": "East Ronfaure (S)",
+          "evidence_status": "EXTERNAL_EVIDENCE_NOT_RESOLVED_IN_CURRENT_SERVER_SOURCE"
+        }
+      ]
+    },
+    {
+      "name": "Heat Seeker",
+      "behavior_identity": {
+        "internal_item_puppet_id": 8579,
+        "internal_name": "heat_seeker"
+      },
+      "verified_server_acquisition": [
+        {
+          "type": "SHOP",
+          "source": "scripts/zones/Nashmau/npcs/Yoyoroon.lua",
+          "item_symbol": "xi.item.HEAT_SEEKER",
+          "price": 19890,
+          "evidence_status": "VERIFIED_SERVER"
+        },
+        {
+          "type": "DROP_POOL",
+          "source": "data/zones/halvung/mobs.yaml",
+          "source_mob": "Troll Machinist",
+          "pool_semantics": "rare one_of pool including heat_seeker",
+          "evidence_status": "VERIFIED_SERVER"
+        },
+        {
+          "type": "DROP_POOL",
+          "source": "data/zones/mount_zhayolm/mobs.yaml",
+          "source_mob": "Hilltroll Puppetmaster",
+          "pool_semantics": "rare one_of pool including heat_seeker",
+          "evidence_status": "VERIFIED_SERVER"
+        },
+        {
+          "type": "SYNTHESIS",
+          "source": "sql/synth_recipes.sql",
+          "recipe_id": 62525,
+          "result_item_id": 2256,
+          "result_name": "Heat Seeker",
+          "required_key_item_id": 2037,
+          "required_key_item_name": "Iatrochemistry",
+          "alchemy_level": 55,
+          "crystal_item_id": 4096,
+          "ingredients": [
+            {
+              "item_id": 939,
+              "name": "Hecteyes Eye"
+            },
+            {
+              "item_id": 1645,
+              "name": "Lightning Anima"
+            },
+            {
+              "item_id": 1887,
+              "name": "Glass Sheet"
+            },
+            {
+              "item_id": 2309,
+              "name": "Homunculus Nerves"
+            },
+            {
+              "item_id": 2310,
+              "name": "Plasma Oil"
+            }
+          ],
+          "output_quantity": 12,
+          "evidence_status": "VERIFIED_SERVER"
+        },
+        {
+          "type": "SYNTHESIS_PRECURSOR",
+          "source": "sql/synth_recipes.sql",
+          "recipe_id": 62531,
+          "result_item_id": 1887,
+          "result_name": "Glass Sheet",
+          "alchemy_level": 56,
+          "crystal_item_id": 4096,
+          "ingredients": [
+            {
+              "item_id": 936,
+              "name": "Rock Salt",
+              "quantity": 1
+            },
+            {
+              "item_id": 1883,
+              "name": "Shell Powder",
+              "quantity": 1
+            },
+            {
+              "item_id": 1888,
+              "name": "Silica",
+              "quantity": 6
+            }
+          ],
+          "evidence_status": "VERIFIED_SERVER"
+        },
+        {
+          "type": "SYNTHESIS_PRECURSOR",
+          "source": "sql/synth_recipes.sql",
+          "recipe_id": 61534,
+          "result_item_id": 2310,
+          "result_name": "Plasma Oil",
+          "required_key_item_id": 2037,
+          "required_key_item_name": "Iatrochemistry",
+          "alchemy_level": 39,
+          "crystal_item_id": 4101,
+          "ingredients": [
+            {
+              "item_id": 914,
+              "name": "Mercury",
+              "quantity": 1
+            },
+            {
+              "item_id": 2175,
+              "name": "Flan Meat",
+              "quantity": 2
+            }
+          ],
+          "evidence_status": "VERIFIED_SERVER"
+        },
+        {
+          "type": "SYNTHESIS_PRECURSOR",
+          "source": "sql/synth_recipes.sql",
+          "recipe_id": 63531,
+          "result_item_id": 1645,
+          "result_name": "Lightning Anima",
+          "required_key_item_id": 2032,
+          "required_key_item_name": "Anima Synthesis",
+          "alchemy_level": 75,
+          "crystal_item_id": 4100,
+          "ingredients": [
+            {
+              "item_id": 914,
+              "name": "Mercury",
+              "quantity": 1
+            },
+            {
+              "item_id": 936,
+              "name": "Rock Salt",
+              "quantity": 1
+            },
+            {
+              "item_id": 1108,
+              "name": "Sulfur",
+              "quantity": 1
+            },
+            {
+              "item_id": 1610,
+              "name": "Startling Memory",
+              "quantity": 4
+            }
+          ],
+          "evidence_status": "VERIFIED_SERVER"
+        }
+      ],
+      "external_retail_acquisition": []
+    }
+  ],
+  "required_acquisition_relations": [
+    {
+      "relation": "SOLD_BY",
+      "semantics": "Item is sold by an NPC/shop; depends on NPC script, shop implementation, price, and eligibility conditions."
+    },
+    {
+      "relation": "DROPPED_BY",
+      "semantics": "Item is directly or pool-conditionally dropped by a mob; depends on mob/template/loot source and pool semantics."
+    },
+    {
+      "relation": "CRAFTED_BY",
+      "semantics": "Item is synthesis output; depends on recipe, craft/skill requirements, key items, crystal, ingredient identities, and crafting runtime."
+    },
+    {
+      "relation": "REWARDED_BY",
+      "semantics": "Item is granted by quest/instance/event/ANNM content; depends on the rewarding content's completion/reward logic."
+    },
+    {
+      "relation": "REQUIRES_INGREDIENT",
+      "semantics": "Synthesis recipe consumes an ingredient item."
+    },
+    {
+      "relation": "REQUIRES_KEY_ITEM",
+      "semantics": "Acquisition or recipe requires a key item/unlock."
+    },
+    {
+      "relation": "REQUIRES_CRAFT",
+      "semantics": "Recipe requires a craft/skill/rank/capability."
+    },
+    {
+      "relation": "USES_CRYSTAL",
+      "semantics": "Recipe uses a synthesis crystal."
+    },
+    {
+      "relation": "ALTERNATE_ACQUISITION",
+      "semantics": "Multiple independently valid ways to obtain the same logical item; each path can be scoped independently."
+    }
+  ],
+  "package_scope_rules": [
+    "Core item/behavior implementation and acquisition are separate review dimensions.",
+    "Selecting one acquisition path must not automatically include every alternate acquisition path.",
+    "Selecting synthesis must recursively expose recipe prerequisites and ingredient items.",
+    "Selecting a quest/instance reward must recursively expose that content's reward/completion dependencies.",
+    "A missing recipe/reward edge in server source must remain visible as EXTERNAL_EVIDENCE or IMPLEMENTATION_GAP rather than being silently treated as absent.",
+    "Drop pools must preserve one_of/pool semantics rather than flattening every pool member into an always-drop relation.",
+    "If the target already has an equivalent acquisition path, it may be classified TARGET_EQUIVALENT independently of core item behavior.",
+    "A selected synthesis path is not viable until every ingredient/crystal recursively resolves to at least one viable acquisition path or reviewed TARGET_EQUIVALENT.",
+    "Recipe closure is an OR-graph: each ingredient needs one viable acquisition path, not every possible acquisition path.",
+    "Synergy recipes require an explicit SYNERGY_RUNTIME and client-capability check distinct from ordinary synthesis."
+  ],
+  "known_toolkit_gaps": [
+    "No generic acquisition graph currently distinguishes shop, drop, synthesis, quest/instance reward, exchange, or event reward.",
+    "No generic reward-edge analyzer currently links mission/quest/instance completion to rewarded item identities.",
+    "No first-class representation currently preserves one_of loot-pool semantics as conditional acquisition evidence.",
+    "External retail evidence cannot currently be reconciled against missing/incomplete server implementations as a package-scope finding.",
+    "Acquisition paths are not currently independently selectable from core feature behavior in the package manifest.",
+    "Recursive crafting closure now exists, but shop/drop/reward/HELM/gardening/etc. leaf acquisition analyzers are not yet unified into the same obtainability graph."
+  ]
+}

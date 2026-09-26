@@ -41,6 +41,23 @@ DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
 CACHE_DIR = TOOLS_ROOT / "gui" / "static" / "zone_visual"
 
 
+def visual_mesh_api_available() -> bool:
+    """The toolkit's vendored xi-tinkerer binding includes this API, but the public upstream
+    release wheel currently does not. Keep this capability check explicit so a stale/basic wheel
+    produces an actionable diagnostic instead of an AttributeError from deep inside a request.
+    """
+    return callable(getattr(xi_tinkerer, "parse_zone_visual_obj", None))
+
+
+def visual_mesh_api_error() -> str:
+    return (
+        "The installed xi_tinkerer module does not expose parse_zone_visual_obj. "
+        "The normal 3D viewer can use the newer in-browser live DAT parser when the FFXI install "
+        "and zone geometry DAT are configured. The legacy OBJ-cache fallback requires the toolkit's "
+        "vendored extended xi-tinkerer-py binding, not the basic upstream release wheel."
+    )
+
+
 def build_one(con, zoneid: int, ffxi_path: str) -> bool:
     row = con.execute("SELECT name, geometry_rom_path FROM zones WHERE zoneid=?", (zoneid,)).fetchone()
     if not row or not row[1]:
@@ -50,6 +67,10 @@ def build_one(con, zoneid: int, ffxi_path: str) -> bool:
     dat_path = str(Path(ffxi_path) / rom_path)
     if not Path(dat_path).exists():
         print(f"  zoneid {zoneid} ({name}): dat not found at {dat_path}")
+        return False
+
+    if not visual_mesh_api_available():
+        print(f"  zoneid {zoneid} ({name}): FAILED to parse -- {visual_mesh_api_error()}")
         return False
 
     print(f"  zoneid {zoneid} ({name}): parsing visual mesh...")

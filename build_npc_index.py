@@ -31,6 +31,7 @@ import sys
 
 import build_database
 import settings
+from dat_extractor_bin import ensure_dat_extractor
 from pathlib import Path
 
 
@@ -121,6 +122,7 @@ def extract_npclist(zoneid: int, ffxi_path: str) -> list[dict] | None:
     file_id = npclist_id_for_zone(zoneid)
     out_path = TOOLS_ROOT / "mission_reports" / "_npc_index_tmp" / f"{file_id}.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
+    ensure_dat_extractor()
     result = subprocess.run(
         [str(DAT_EXTRACTOR_EXE), "--extract-id", ffxi_path, str(file_id), str(out_path)],
         capture_output=True, text=True,

@@ -1,0 +1,71 @@
+name: Workbench Ancient Vows Cross-Fork
+
+on:
+  push:
+    branches:
+      - workbench-rework/audit-foundation
+    paths:
+      - "workbench/adapters/servers/**"
+      - "workbench/core/**"
+      - "workbench/migrations/**"
+      - "feature_checker.py"
+      - "test_fixtures/test_ancient_vows_crossfork.py"
+      - "backport_binding_audit.py"
+      - "backport_binding_index.py"
+      - ".github/workflows/workbench-ancient-vows.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ancient-vows-lsb-to-dsp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Mission Toolkit
+        uses: actions/checkout@v4
+        with:
+          path: toolkit
+
+      - name: Checkout pinned LandSandBoat source
+        uses: actions/checkout@v4
+        with:
+          repository: LandSandBoat/server
+          ref: 3747feee0e38ab5c0283c4fe8deea7f0a9022351
+          path: external/lsb
+          sparse-checkout: |
+            sql/bcnm_info.sql
+            data/zones/monarch_linn/mobs.yaml
+            scripts/missions/cop/2_5_Ancient_Vows.lua
+            scripts/battlefields/Monarch_Linn/ancient_vows.lua
+            scripts/zones/Monarch_Linn/mobs/Mammet-19_Epsilon.lua
+            modules/era/lua/battlefields/mission_level_caps.lua
+          sparse-checkout-cone-mode: false
+
+      - name: Checkout pinned Darkstar target
+        uses: actions/checkout@v4
+        with:
+          repository: DarkstarProject/darkstar
+          ref: ee1f489efbdee2d95a4f1a6c842790da9f54306e
+          path: external/dsp
+          sparse-checkout: |
+            sql/bcnm_info.sql
+            sql/bcnm_battlefield.sql
+            scripts/zones/Monarch_Linn/bcnms/ancient_vows.lua
+            scripts/zones/Monarch_Linn/mobs/Mammet-19_Epsilon.lua
+            scripts/zones/Tavnazian_Safehold/npcs/Justinius.lua
+            scripts/zones/Misareaux_Coast/npcs/_0p2.lua
+            scripts/zones/Riverne-Site_A01/Zone.lua
+            src/map/lua/*.cpp
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compare Ancient Vows feature surface across forks
+        working-directory: toolkit
+        env:
+          PYTHONPATH: .
+        run: python test_fixtures/test_ancient_vows_crossfork.py ../external/lsb ../external/dsp

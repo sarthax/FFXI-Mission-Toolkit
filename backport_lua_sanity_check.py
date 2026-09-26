@@ -67,13 +67,16 @@ def check_syntax(path: Path) -> str | None:
         return f"{type(e).__name__}: {e}"
 
 
-def check_package(pkg_lua_dsp: Path) -> dict:
+def check_package(pkg_lua_dsp: Path, include_paths: set[str] | None = None) -> dict:
     """Returns {"syntax_errors": [(path, error)], "undeclared_globals": [(path, global_name)]}."""
     syntax_errors: list[tuple[Path, str]] = []
     declared: set[str] = set()
     references: list[tuple[Path, str]] = []
 
-    lua_files = list(pkg_lua_dsp.rglob("*.lua"))
+    lua_files = [
+        f for f in pkg_lua_dsp.rglob("*.lua")
+        if include_paths is None or f.relative_to(pkg_lua_dsp).as_posix() in include_paths
+    ]
     for f in lua_files:
         err = check_syntax(f)
         if err:

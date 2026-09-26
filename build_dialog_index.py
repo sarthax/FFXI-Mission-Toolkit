@@ -30,6 +30,7 @@ import sys
 from pathlib import Path
 
 import settings
+from dat_extractor_bin import ensure_dat_extractor
 
 TOOLS_ROOT = Path(__file__).parent
 TOPAZ_ROOT = settings.get_topaz_root()
@@ -120,6 +121,7 @@ def extract_dialog(zoneid: int, ffxi_path: str) -> list[dict] | None:
     dat_id = dat_id_for_zone(zoneid)
     out_path = TOOLS_ROOT / "mission_reports" / "_dialog_index_tmp" / f"{dat_id}.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
+    ensure_dat_extractor()
     result = subprocess.run(
         [str(DAT_EXTRACTOR_EXE), "--extract-id", ffxi_path, str(dat_id), str(out_path)],
         capture_output=True, text=True,

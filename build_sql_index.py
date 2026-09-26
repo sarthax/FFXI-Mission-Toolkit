@@ -143,7 +143,59 @@ def _resolve_field(raw: str, variables: dict[str, int]) -> int:
     return _eval_flags_expr(raw, variables)
 
 
-INSERT_RE = re.compile(r"^INSERT INTO `(\w+)` VALUES\s*\((.*)\);\s*$")
+INSERT_RE = re.compile(r"INSERT INTO `(\w+)` VALUES\s*(.*)", re.DOTALL)
+
+
+def split_insert_tuples(values_blob: str) -> list[str]:
+    """Splits a `(...), (...), (...)` VALUES blob into each parenthesized row's raw inner text.
+
+    Some legacy DSP dumps (confirmed on mob_spawn_points.sql and others) write real multi-row
+    INSERT statements -- `INSERT INTO ... VALUES (...),(...),(...);` -- rather than one row per
+    statement. _iter_sql_statements()/INSERT_RE only isolate the *statement*; without this, the
+    ')' ending one row and the '(' opening the next both land inside split_sql_values()'s flat
+    top-level-comma split (which tracks quoting but not parens), gluing one row's real column
+    value to the next row's leading digits (e.g. a pos_x field ending up as "17021);179") and
+    crashing float()/int() conversion downstream. Tracks paren depth and quoting (both ''
+    SQL-standard and \\' escaping, matching split_sql_values()) so a comma or paren inside a
+    quoted string never breaks a row boundary."""
+    tuples = []
+    depth = 0
+    in_quote = False
+    start = None
+    i = 0
+    n = len(values_blob)
+    while i < n:
+        c = values_blob[i]
+        if in_quote:
+            if c == "\\" and i + 1 < n and values_blob[i + 1] == "'":
+                i += 2
+                continue
+            if c == "'" and i + 1 < n and values_blob[i + 1] == "'":
+                i += 2
+                continue
+            if c == "'":
+                in_quote = False
+            i += 1
+            continue
+        if c == "'":
+            in_quote = True
+            i += 1
+            continue
+        if c == "(":
+            if depth == 0:
+                start = i + 1
+            depth += 1
+            i += 1
+            continue
+        if c == ")":
+            depth -= 1
+            if depth == 0 and start is not None:
+                tuples.append(values_blob[start:i])
+                start = None
+            i += 1
+            continue
+        i += 1
+    return tuples
 
 _CLEAN_CACHE_DIR = TOOLS_ROOT / "mission_reports" / "_sql_clean"
 _TRAILING_COMMENT_RE = re.compile(r"\);\s*--.*$")
@@ -174,22 +226,135 @@ def cleaned_path(path: Path) -> Path:
     return out_path
 
 
+def _iter_sql_statements(text: str):
+    """Yield (starting_line, statement) split on semicolons outside SQL single quotes.
+
+    Some legacy DSP dumps place many complete INSERT statements on one physical line.
+    A line-anchored greedy INSERT regex therefore merges those rows into one apparent row.
+    This scanner also supports multiline INSERTs and ignores semicolons inside quoted strings.
+    """
+    buf=[]
+    in_quote=False
+    i=0
+    line=1
+    statement_line=1
+    have_nonspace=False
+    while i < len(text):
+        ch=text[i]
+        if not have_nonspace and not ch.isspace():
+            statement_line=line
+            have_nonspace=True
+        if in_quote:
+            if ch=="\\" and i+1 < len(text) and text[i+1]=="'":
+                buf.extend((ch,text[i+1])); i+=2
+                continue
+            if ch=="'" and i+1 < len(text) and text[i+1]=="'":
+                buf.extend((ch,text[i+1])); i+=2
+                continue
+            if ch=="'":
+                in_quote=False
+            buf.append(ch)
+        else:
+            if ch=="-" and i+1 < len(text) and text[i+1]=="-":
+                # SQL line comment outside a quoted string. Skip through the newline so a
+                # standalone comment cannot become a prefix of the next INSERT statement.
+                while i < len(text) and text[i]!="\n":
+                    i+=1
+                if i < len(text) and text[i]=="\n":
+                    line+=1
+                    if buf:
+                        buf.append("\n")
+                    i+=1
+                continue
+            if ch=="'":
+                in_quote=True
+                buf.append(ch)
+            elif ch==";":
+                statement="".join(buf).strip()
+                if statement:
+                    yield statement_line,statement
+                buf=[]
+                have_nonspace=False
+            else:
+                buf.append(ch)
+        if ch=="\n":
+            line+=1
+        i+=1
+    statement="".join(buf).strip()
+    if statement:
+        yield statement_line,statement
+
+
 def parse_table_file(path: Path, expected_table: str, columns: list[str]):
-    """Yields one dict per row (keyed by real column names) for every INSERT into expected_table
-    in this file. Rows with a different column count than expected are skipped with a warning
-    rather than silently misaligned -- real schema drift should be visible, not guessed past."""
+    """Yield one dict per INSERT row for expected_table.
+
+    Statements are tokenized independently of physical lines because legacy DSP dumps may place
+    multiple INSERTs on one line or span one INSERT across multiple lines. Rows with a genuinely
+    different column count are still skipped with a visible schema-drift warning.
+
+    INSERT_RE is matched with search(), not an anchored match(), because a genuinely corrupted
+    statement upstream (confirmed live: a mob_spawn_points.sql row missing its opening
+    VALUES-list paren and terminating semicolon) leaves stray numeric text with no ';' before it.
+    _iter_sql_statements() then glues that dangling text onto the *next*, otherwise perfectly
+    valid, INSERT statement as one merged "statement". An anchored match() silently rejects that
+    whole merged blob (it doesn't start with "INSERT"), silently dropping the next row too --
+    invisible data loss for whatever record follows any corrupted line. search() finds the real
+    INSERT wherever it starts and recovers that row; a warning below still surfaces the garbage
+    prefix so the actual corrupted line stays visible instead of being swallowed by fixing the
+    *next* row's silent loss.
+    """
     if not path.exists():
         return
-    for lineno, line in enumerate(path.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
-        m = INSERT_RE.match(line.strip())
-        if not m or m.group(1) != expected_table:
+    text=path.read_text(encoding="utf-8",errors="ignore")
+    pending=None  # (lineno, values) of a short row whose remaining columns may dangle in the next statement
+    repaired=0
+
+    def _skip_warning(lineno, n):
+        print(f"  [!] {path.name}:{lineno} row 1 has {n} values, expected {len(columns)} "
+              f"for {expected_table} -- skipped (schema drift?)")
+
+    for lineno,statement in _iter_sql_statements(text):
+        m=INSERT_RE.search(statement)
+        if not m or m.group(1)!=expected_table:
+            if pending:
+                _skip_warning(*pending[:1], len(pending[1]))
+            pending=None
             continue
-        values = split_sql_values(m.group(2))
-        if len(values) != len(columns):
-            print(f"  [!] {path.name}:{lineno} has {len(values)} values, expected {len(columns)} "
-                  f"for {expected_table} -- skipped (schema drift?)")
-            continue
-        yield dict(zip(columns, values))
+        prefix = statement[:m.start()].strip()
+        if pending and prefix:
+            # Salvage the known corruption shape `(a,b,c,groupid,STRAY);x,y,z,rot`: a stray value
+            # before a misplaced `);` with the real trailing columns dangling. Only merged when the
+            # arithmetic is exact (short row + dangling values - 1 stray == column count); the stray
+            # is taken as the row's last value, matching the file's other rows.
+            tail=split_sql_values(prefix)
+            if len(pending[1])+len(tail)-1==len(columns):
+                repaired+=1
+                yield dict(zip(columns,pending[1][:-1]+tail))
+                pending=None
+                prefix=""
+        if pending:
+            _skip_warning(pending[0], len(pending[1]))
+            pending=None
+        if prefix:
+            print(f"  [!] {path.name}:{lineno} statement has leading text before its "
+                  f"INSERT INTO `{expected_table}` -- likely a corrupted/unterminated previous "
+                  f"statement glued onto this one; this row was recovered but the source dump "
+                  f"should be checked (leading text: {prefix[:120]!r})")
+        for tup_idx,tup in enumerate(split_insert_tuples(m.group(2)),1):
+            values=split_sql_values(tup)
+            if len(values)!=len(columns):
+                if len(values)<len(columns):
+                    pending=(lineno,values)
+                else:
+                    print(f"  [!] {path.name}:{lineno} row {tup_idx} has {len(values)} values, "
+                          f"expected {len(columns)} for {expected_table} -- skipped (schema drift?)")
+                continue
+            yield dict(zip(columns,values))
+    if pending:
+        _skip_warning(pending[0], len(pending[1]))
+    if repaired:
+        print(f"  [!] {path.name}: repaired {repaired} corrupted row(s) (stray value dropped, "
+              f"dangling columns rejoined); fix the source dump to remove this warning")
 
 
 def init_db(con: sqlite3.Connection):

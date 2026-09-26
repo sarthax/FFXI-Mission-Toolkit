@@ -31,7 +31,8 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import FastAPI, Form, Query, Request
+from urllib.parse import quote
+from fastapi import FastAPI, Form, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
@@ -46,6 +47,8 @@ import build_sql_index
 import build_zone_visual_cache
 import entity_profile
 import explore_event
+import feature_trace
+import feature_checker
 import ingest_global_tables
 import addon_tools
 import install_external_tools
@@ -56,6 +59,7 @@ import backport_binding_index
 import backport_binding_audit
 import backport_lua_sanity_check
 import backport_package
+from workbench.migrations.legacy_package_service import run_legacy_package_workflow
 import build_dsp_index
 import build_topaz_index
 import llm_client
@@ -66,9 +70,23 @@ import lookup_entity
 import packet_decode
 import settings as settings_mod
 import wiki_compile
+from workbench.gui_shell import build_shell_context
+from workbench.adapters.servers import LogicalRecord, adapter_for
+from workbench.migrations.live_target_validation import DBAPITargetReader, persist_live_validation, validate_live_records
+from workbench.migrations.package_review import package_review_summary_dict
+from workbench.core.schema import Artifact, DependencyEdge, MigrationAction
+from workbench.migrations.package_plan import build_package_plan
+from workbench.migrations.package_manifest import build_package_manifest
+from workbench.migrations.package_assembly import assemble_migration_package
+from workbench.migrations.package_scope import (
+    build_dependency_scope,
+    save_scope_decision,
+    set_scope_review_status,
+)
 
 TOOLS_ROOT = Path(__file__).parent
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
+WORKBENCH_DB = TOOLS_ROOT / "workbench.db"
 TEMPLATES_DIR = TOOLS_ROOT / "gui" / "templates"
 # Real in-game 2D zone map PNGs, extracted straight from client DAT files by ResourceExtractor's
 # MapParser (see MapDats.json) -- "{zoneid}_{mapindex}.png", one file per submap/floor. Served
@@ -536,6 +554,28 @@ def backport_enabled() -> bool:
 
 
 templates.env.globals["backport_enabled"] = backport_enabled
+
+
+def shell_context(request: Request) -> dict:
+    """Shared read-only navigation/context model for every template extending base.html."""
+    con = get_con()
+    try:
+        current_settings = settings_mod.get_all(con)
+    finally:
+        con.close()
+    return build_shell_context(
+        path=request.url.path,
+        method=request.method,
+        settings=current_settings,
+        default_topaz_root=settings_mod.DEFAULT_TOPAZ_ROOT,
+        default_backport_root=settings_mod.DEFAULT_BACKPORT_ROOT,
+        detected_client_path=settings_mod.get_ffxi_install(),
+        workspace_slug=request.query_params.get("workspace"),
+        shell_override=request.query_params.get("shell"),
+    )
+
+
+templates.env.globals["shell_context"] = shell_context
 
 
 @app.get("/help", response_class=HTMLResponse)
@@ -1648,6 +1688,29 @@ async def backport_package_submit(request: Request):
     if dsp_root is None:
         ctx["error"] = "No DSP checkout configured -- set it on the Settings page first."
         return templates.TemplateResponse(request, "backport_package.html", ctx)
+
+    result=run_legacy_package_workflow(
+        package_dir,
+        dsp_root,
+        target=target,
+        zone_table=zone_table,
+        id_shape=id_shape,
+        id_file_hint=id_file_hint,
+        verify_only=verify_only,
+    )
+    if result.get("status")=="ERROR":
+        ctx["error"]=result.get("error")
+        return templates.TemplateResponse(request, "backport_package.html", ctx)
+
+    ctx["report"]={
+        key:result[key]
+        for key in (
+            "lua_result","sql_result","binding_result","sanity_result",
+            "collision_results","duplication_results","overall_clean",
+            "report_path","report_md","schema_map",
+        )
+    }
+    return templates.TemplateResponse(request, "backport_package.html", ctx)
     flavor = backport_lua_convert.detect_target_flavor(dsp_root)
     if flavor is None:
         ctx["error"] = f"{dsp_root} does not fingerprint as either known DSP flavor -- check the path on Settings."
@@ -2357,6 +2420,866 @@ def zone_drift(request: Request, zone_name: str):
     con.close()
     return templates.TemplateResponse(request, "drift.html", {
         "zone_name": zone_name, "rows": rows, "content_tags": content_tags, "zones": zones,
+    })
+
+
+def _workbench_graph_connection() -> sqlite3.Connection | None:
+    """Open the canonical Workbench graph only when it already exists.
+
+    GUI inspection must never create an empty graph database merely because a page was opened.
+    """
+    if not WORKBENCH_DB.is_file():
+        return None
+    con = sqlite3.connect(WORKBENCH_DB)
+    con.row_factory = sqlite3.Row
+    required = {"features", "entity_relationships", "capability_requirements"}
+    tables = {row[0] for row in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    if not required.issubset(tables):
+        con.close()
+        return None
+    return con
+
+
+def _package_project_root() -> Path:
+    return settings_mod.get_backport_root().resolve()
+
+
+def _package_candidates(limit: int = 250) -> list[dict]:
+    root = _package_project_root()
+    rows = []
+    if not root.is_dir():
+        return rows
+    for manifest_path in root.rglob("WORKBENCH_PACKAGE_MANIFEST.json"):
+        package_root = manifest_path.parent
+        try:
+            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        migration = payload.get("migration") or {}
+        try:
+            relative = package_root.relative_to(root).as_posix()
+        except ValueError:
+            continue
+        rows.append({
+            "relative_path": relative or ".",
+            "package_name": package_root.name,
+            "migration_id": migration.get("migration_id"),
+            "feature_id": migration.get("feature_id"),
+            "source_family": migration.get("source_family"),
+            "target_family": migration.get("target_family"),
+            "manifest_status": migration.get("status") or "UNKNOWN",
+            "step_count": len((payload.get("execution") or {}).get("steps") or []),
+            "manifest_mtime": manifest_path.stat().st_mtime,
+        })
+        if len(rows) >= limit:
+            break
+    rows.sort(key=lambda row: (-row["manifest_mtime"], row["relative_path"]))
+    return rows
+
+
+def _resolve_package_root(relative_path: str) -> Path:
+    project_root = _package_project_root()
+    candidate = (project_root / relative_path).resolve()
+    try:
+        candidate.relative_to(project_root)
+    except ValueError as exc:
+        raise ValueError("Package path must stay inside the configured project root.") from exc
+    if not (candidate / "WORKBENCH_PACKAGE_MANIFEST.json").is_file():
+        raise ValueError("Selected folder is not an assembled Workbench package.")
+    return candidate
+
+
+def _package_migrations() -> list[dict]:
+    con = _workbench_graph_connection()
+    if con is None:
+        return []
+    try:
+        rows = con.execute(
+            "SELECT m.migration_id, m.feature_id, m.source_snapshot_id, m.target_snapshot_id, "
+            "m.status, m.metadata_json, COUNT(a.action_id) AS action_count "
+            "FROM migrations m LEFT JOIN migration_actions a ON a.migration_id=m.migration_id "
+            "GROUP BY m.migration_id ORDER BY m.migration_id"
+        ).fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        con.close()
+
+
+def _safe_package_destination(relative_name: str) -> Path:
+    project_root = _package_project_root()
+    name = relative_name.strip().replace("\\", "/")
+    if not name:
+        raise ValueError("Package destination is required.")
+    rel = Path(name)
+    if rel.is_absolute() or ".." in rel.parts:
+        raise ValueError("Package destination must be a relative path inside the configured project root.")
+    candidate = (project_root / rel).resolve()
+    try:
+        candidate.relative_to(project_root)
+    except ValueError as exc:
+        raise ValueError("Package destination must stay inside the configured project root.") from exc
+    return candidate
+
+
+@app.get("/packages/scope", response_class=HTMLResponse)
+def packages_scope_review(
+    request: Request,
+    migration_id: str = "",
+    q: str = "",
+    decision: str = "",
+    depth: int = 6,
+):
+    migrations = _package_migrations()
+    scope = None
+    error = None
+    con = _workbench_graph_connection()
+    try:
+        if migration_id.strip():
+            if con is None:
+                raise ValueError("Canonical Workbench graph is not available.")
+            scope = build_dependency_scope(
+                con,
+                migration_id.strip(),
+                max_depth=max(0, min(depth, 12)),
+            )
+            if q.strip() or decision.strip():
+                query = q.strip().lower()
+                wanted = decision.strip().upper()
+                filtered = []
+                for item in scope["items"]:
+                    if query and query not in (
+                        str(item.get("node_id") or "") + " "
+                        + str(item.get("display_name") or "") + " "
+                        + str(item.get("artifact_path") or "") + " "
+                        + " ".join(item.get("tags") or ())
+                    ).lower():
+                        continue
+                    if wanted and item.get("effective_decision") != wanted:
+                        continue
+                    filtered.append(item)
+                scope = {**scope, "items": filtered}
+    except Exception as exc:
+        error = f"{type(exc).__name__}: {exc}"
+    finally:
+        if con is not None:
+            con.close()
+    return templates.TemplateResponse(request, "packages_scope.html", {
+        "request": request,
+        "migrations": migrations,
+        "migration_id": migration_id,
+        "q": q,
+        "decision": decision,
+        "depth": depth,
+        "scope": scope,
+        "error": error,
+    })
+
+
+@app.post("/packages/scope/decision", response_class=HTMLResponse)
+def packages_scope_decision(
+    migration_id: str = Form(...),
+    node_id: str = Form(...),
+    decision: str = Form(...),
+    reason: str = Form(""),
+    tags: str = Form(""),
+):
+    con = _workbench_graph_connection()
+    try:
+        if con is None:
+            raise ValueError("Canonical Workbench graph is not available.")
+        save_scope_decision(
+            con,
+            migration_id.strip(),
+            node_id.strip(),
+            decision,
+            reason=reason,
+            tags=[tag.strip() for tag in tags.split(",") if tag.strip()],
+        )
+        set_scope_review_status(con, migration_id.strip(), "DRAFT")
+    finally:
+        if con is not None:
+            con.close()
+    return RedirectResponse(
+        f"/packages/scope?migration_id={quote(migration_id.strip(), safe='')}",
+        status_code=303,
+    )
+
+
+@app.post("/packages/scope/review", response_class=HTMLResponse)
+def packages_scope_mark_reviewed(
+    migration_id: str = Form(...),
+    notes: str = Form(""),
+):
+    con = _workbench_graph_connection()
+    try:
+        if con is None:
+            raise ValueError("Canonical Workbench graph is not available.")
+        scope = build_dependency_scope(con, migration_id.strip())
+        if scope["closure_status"] in {"BLOCKED", "MANUAL_REQUIRED"}:
+            raise ValueError(
+                f"Scope cannot be marked reviewed while closure status is {scope['closure_status']}."
+            )
+        set_scope_review_status(
+            con,
+            migration_id.strip(),
+            "REVIEWED",
+            notes=notes.strip() or None,
+            scope_hash=scope["scope_hash"],
+        )
+    finally:
+        if con is not None:
+            con.close()
+    return RedirectResponse(
+        f"/packages/scope?migration_id={quote(migration_id.strip(), safe='')}",
+        status_code=303,
+    )
+
+
+@app.get("/packages/create", response_class=HTMLResponse)
+def packages_create_page(request: Request):
+    return templates.TemplateResponse(request, "packages_create.html", {
+        "request": request,
+        "migrations": _package_migrations(),
+        "form": {
+            "migration_id": "",
+            "source_root": "",
+            "source_family": "LSB",
+            "target_family": "DSP",
+            "package_path": "packages/",
+        },
+        "result": None,
+        "error": None,
+    })
+
+
+@app.post("/packages/create", response_class=HTMLResponse)
+def packages_create_run(
+    request: Request,
+    migration_id: str = Form(...),
+    source_root: str = Form(...),
+    source_family: str = Form(...),
+    target_family: str = Form(...),
+    package_path: str = Form(...),
+):
+    form = {
+        "migration_id": migration_id,
+        "source_root": source_root,
+        "source_family": source_family,
+        "target_family": target_family,
+        "package_path": package_path,
+    }
+    result = None
+    error = None
+    con = _workbench_graph_connection()
+    try:
+        if con is None:
+            raise ValueError("Canonical Workbench graph is not available.")
+        migration = con.execute(
+            "SELECT migration_id, feature_id, source_snapshot_id, target_snapshot_id, status, metadata_json "
+            "FROM migrations WHERE migration_id=?",
+            (migration_id.strip(),),
+        ).fetchone()
+        if migration is None:
+            raise ValueError("Selected migration was not found.")
+
+        scope = build_dependency_scope(con, migration_id.strip())
+        if scope["review"]["status"] != "REVIEWED" or scope["package_gate"] not in {"READY", "MANUAL_REQUIRED"}:
+            raise ValueError(
+                "Dependency scope is not ready for package creation: "
+                f"{scope['package_gate']} (review={scope['review']['status']}). "
+                "Review /packages/scope first."
+            )
+        scope_by_node = {item["node_id"]: item for item in scope["items"]}
+
+        action_rows = con.execute(
+            "SELECT action_id, migration_id, action, artifact_id, status, reason, metadata_json "
+            "FROM migration_actions WHERE migration_id=? ORDER BY action_id",
+            (migration_id.strip(),),
+        ).fetchall()
+        if not action_rows:
+            raise ValueError("Selected migration has no MigrationAction records.")
+
+        actions = []
+        artifact_ids = set()
+        for row in action_rows:
+            metadata = json.loads(row["metadata_json"] or "{}")
+            action = MigrationAction(
+                action_id=row["action_id"],
+                migration_id=row["migration_id"],
+                action=row["action"],
+                artifact_id=row["artifact_id"],
+                status=row["status"],
+                reason=row["reason"],
+                metadata=metadata if isinstance(metadata, dict) else {},
+            )
+            scope_item = scope_by_node.get(action.artifact_id) if action.artifact_id else None
+            effective = scope_item.get("effective_decision") if scope_item else "INCLUDE"
+            if effective in {"EXCLUDE", "TARGET_EQUIVALENT", "NOT_REQUIRED"}:
+                action = MigrationAction(
+                    action_id=action.action_id,
+                    migration_id=action.migration_id,
+                    action="NOT_REQUIRED",
+                    artifact_id=action.artifact_id,
+                    status="COMPATIBLE",
+                    reason=(
+                        f"Scope decision {effective}: "
+                        + str(scope_item.get("reason") or "reviewed exclusion")
+                    ),
+                    metadata={**action.metadata, "scope_decision": effective},
+                )
+            actions.append(action)
+            if action.artifact_id:
+                artifact_ids.add(action.artifact_id)
+
+        existing_action_artifacts = {a.artifact_id for a in actions if a.artifact_id}
+        for item in scope["items"]:
+            if (
+                item.get("effective_decision") == "INCLUDE"
+                and item.get("node_kind") == "ARTIFACT"
+                and item.get("node_id") not in existing_action_artifacts
+            ):
+                artifact_id = item["node_id"]
+                actions.append(MigrationAction(
+                    action_id=f"scope-include:{migration_id.strip()}:{artifact_id}",
+                    migration_id=migration_id.strip(),
+                    action="MANUAL_REVIEW",
+                    artifact_id=artifact_id,
+                    status="MANUAL_REQUIRED",
+                    reason="User included transitive dependency during package scope review.",
+                    metadata={
+                        "scope_decision": "INCLUDE",
+                        "discovery_path": item.get("discovery_path") or [],
+                        "relationship": item.get("relationship"),
+                    },
+                ))
+                artifact_ids.add(artifact_id)
+                existing_action_artifacts.add(artifact_id)
+
+        artifacts = []
+        for artifact_id in sorted(artifact_ids):
+            row = con.execute(
+                "SELECT artifact_id, artifact_type, path, source_snapshot_id, target_snapshot_id, "
+                "feature_id, metadata_json FROM artifacts WHERE artifact_id=?",
+                (artifact_id,),
+            ).fetchone()
+            if row is None:
+                continue
+            metadata = json.loads(row["metadata_json"] or "{}")
+            artifacts.append(Artifact(
+                artifact_id=row["artifact_id"],
+                artifact_type=row["artifact_type"],
+                path=row["path"],
+                source_snapshot_id=row["source_snapshot_id"],
+                target_snapshot_id=row["target_snapshot_id"],
+                feature_id=row["feature_id"],
+                metadata=metadata if isinstance(metadata, dict) else {},
+            ))
+
+        dependencies = []
+        if artifact_ids:
+            placeholders = ",".join("?" for _ in artifact_ids)
+            params = tuple(sorted(artifact_ids)) * 2
+            rows = con.execute(
+                "SELECT relationship_id, source_node, target_node, relationship, evidence_id, "
+                "confidence, status, metadata_json, source_snapshot_id "
+                f"FROM entity_relationships WHERE source_node IN ({placeholders}) "
+                f"AND target_node IN ({placeholders})",
+                params,
+            ).fetchall()
+            for row in rows:
+                dependencies.append(DependencyEdge(
+                    edge_id=row["relationship_id"],
+                    source_node=row["source_node"],
+                    target_node=row["target_node"],
+                    relationship=row["relationship"],
+                    evidence_id=row["evidence_id"],
+                    confidence=row["confidence"],
+                    status=row["status"],
+                    notes=row["metadata_json"],
+                    source_snapshot_id=row["source_snapshot_id"],
+                ))
+
+        source_path = Path(source_root).expanduser().resolve()
+        if not source_path.is_dir():
+            raise ValueError("Source root does not exist or is not a directory.")
+
+        package_root = _safe_package_destination(package_path)
+        if package_root.exists() and any(package_root.iterdir()):
+            raise ValueError("Package destination already exists and is not empty; creation does not overwrite existing packages.")
+
+        plan = build_package_plan(actions, dependencies)
+        manifest = build_package_manifest(
+            plan,
+            artifacts,
+            feature_id=migration["feature_id"],
+            source_snapshot_id=migration["source_snapshot_id"],
+            target_snapshot_id=migration["target_snapshot_id"],
+            source_family=source_family.strip(),
+            target_family=target_family.strip(),
+        )
+        manifest["schema"] = 3
+        manifest["dependency_scope"] = {
+            "schema": scope["schema"],
+            "closure_status": scope["closure_status"],
+            "package_gate": scope["package_gate"],
+            "review": scope["review"],
+            "counts": scope["counts"],
+            "discovered_count": scope["discovered_count"],
+            "items": scope["items"],
+        }
+        assembly = assemble_migration_package(
+            manifest,
+            source_path,
+            package_root,
+            overwrite=False,
+        )
+        relative = package_root.relative_to(_package_project_root()).as_posix()
+        result = {
+            "status": assembly.status,
+            "package_path": relative,
+            "plan_status": plan.status,
+            "validation_status": assembly.validation_status,
+            "copied": list(assembly.source_result.copied),
+            "missing": list(assembly.source_result.missing),
+            "skipped": list(assembly.source_result.skipped),
+            "execution_step_count": len(manifest.get("execution", {}).get("steps", [])),
+            "excluded_action_count": len(manifest.get("excluded_actions", [])),
+        }
+    except Exception as exc:
+        error = f"{type(exc).__name__}: {exc}"
+    finally:
+        if con is not None:
+            con.close()
+
+    return templates.TemplateResponse(request, "packages_create.html", {
+        "request": request,
+        "migrations": _package_migrations(),
+        "form": form,
+        "result": result,
+        "error": error,
+    })
+
+
+@app.get("/packages", response_class=HTMLResponse)
+def packages_library(request: Request, q: str = ""):
+    project_root = _package_project_root()
+    packages = _package_candidates()
+    if q.strip():
+        term = q.strip().lower()
+        packages = [
+            row for row in packages
+            if term in str(row.get("relative_path") or "").lower()
+            or term in str(row.get("migration_id") or "").lower()
+            or term in str(row.get("feature_id") or "").lower()
+        ]
+    return templates.TemplateResponse(request, "packages_library.html", {
+        "request": request,
+        "q": q,
+        "project_root": str(project_root),
+        "packages": packages,
+    })
+
+
+@app.get("/packages/review", response_class=HTMLResponse)
+def packages_review(
+    request: Request,
+    package: str = "",
+    target_root: str = "",
+):
+    candidates = _package_candidates()
+    review = None
+    manifest = {}
+    validation = {}
+    error = None
+    selected_package = package.strip()
+    configured_target = settings_mod.get_dsp_root()
+    selected_target = target_root.strip() or (str(configured_target) if configured_target else "")
+    if selected_package:
+        try:
+            package_root = _resolve_package_root(selected_package)
+            if not selected_target:
+                raise ValueError(
+                    "Target root is required for patch-lifecycle drift/readiness checks. "
+                    "Configure a DSP server path or provide a target root."
+                )
+            target_path = Path(selected_target).expanduser().resolve()
+            if not target_path.exists():
+                raise ValueError("Target root does not exist.")
+            review = package_review_summary_dict(package_root, target_path)
+            manifest_path = package_root / "WORKBENCH_PACKAGE_MANIFEST.json"
+            validation_path = package_root / "WORKBENCH_VALIDATION_PACKAGE.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            if validation_path.is_file():
+                validation = json.loads(validation_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            error = f"{type(exc).__name__}: {exc}"
+    return templates.TemplateResponse(request, "packages_review.html", {
+        "request": request,
+        "packages": candidates,
+        "package": selected_package,
+        "target_root": selected_target,
+        "review": review,
+        "manifest": manifest,
+        "validation": validation,
+        "error": error,
+    })
+
+
+@app.get("/validation", response_class=HTMLResponse)
+def validation_dashboard(request: Request):
+    con = _workbench_graph_connection()
+    runs = []
+    status_counts = {}
+    result_counts = {}
+    total_results = 0
+    error = None
+    if con is None:
+        error = "Canonical Workbench graph is not available. Build/import workbench.db before browsing validation history."
+    else:
+        rows = con.execute(
+            "SELECT run_id, name, source_snapshot_id, target_snapshot_id, feature_id, status, "
+            "started_at, finished_at, metadata_json "
+            "FROM validation_runs ORDER BY COALESCE(finished_at, started_at, '') DESC, run_id DESC LIMIT 25"
+        ).fetchall()
+        runs = [dict(row) for row in rows]
+        for row in con.execute("SELECT status, COUNT(*) AS n FROM validation_runs GROUP BY status ORDER BY status"):
+            status_counts[row["status"] or "UNKNOWN"] = row["n"]
+        for row in con.execute("SELECT status, COUNT(*) AS n FROM validation_results GROUP BY status ORDER BY status"):
+            result_counts[row["status"] or "UNKNOWN"] = row["n"]
+        total_results = sum(result_counts.values())
+        con.close()
+    return templates.TemplateResponse(request, "validation_dashboard.html", {
+        "request": request,
+        "runs": runs,
+        "status_counts": status_counts,
+        "result_counts": result_counts,
+        "total_results": total_results,
+        "error": error,
+    })
+
+
+@app.get("/validation/runs", response_class=HTMLResponse)
+def validation_runs_page(request: Request, q: str = "", status: str = ""):
+    con = _workbench_graph_connection()
+    runs = []
+    statuses = []
+    error = None
+    if con is None:
+        error = "Canonical Workbench graph is not available. Build/import workbench.db before browsing validation history."
+    else:
+        statuses = [row[0] for row in con.execute(
+            "SELECT DISTINCT status FROM validation_runs WHERE status IS NOT NULL ORDER BY status"
+        ).fetchall()]
+        clauses = []
+        params = []
+        if q.strip():
+            clauses.append("(run_id LIKE ? OR name LIKE ? OR feature_id LIKE ?)")
+            pattern = f"%{q.strip()}%"
+            params.extend([pattern, pattern, pattern])
+        if status.strip():
+            clauses.append("status=?")
+            params.append(status.strip())
+        where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+        rows = con.execute(
+            "SELECT vr.run_id, vr.name, vr.source_snapshot_id, vr.target_snapshot_id, vr.feature_id, "
+            "vr.status, vr.started_at, vr.finished_at, vr.metadata_json, "
+            "COUNT(res.validation_id) AS result_count "
+            "FROM validation_runs vr LEFT JOIN validation_results res ON res.run_id=vr.run_id"
+            + where +
+            " GROUP BY vr.run_id ORDER BY COALESCE(vr.finished_at, vr.started_at, '') DESC, vr.run_id DESC",
+            params,
+        ).fetchall()
+        runs = [dict(row) for row in rows]
+        con.close()
+    return templates.TemplateResponse(request, "validation_runs.html", {
+        "request": request,
+        "q": q,
+        "status": status,
+        "statuses": statuses,
+        "runs": runs,
+        "error": error,
+    })
+
+
+@app.get("/validation/runs/{run_id}", response_class=HTMLResponse)
+def validation_run_detail(request: Request, run_id: str):
+    con = _workbench_graph_connection()
+    run = None
+    results = []
+    error = None
+    if con is None:
+        error = "Canonical Workbench graph is not available. Build/import workbench.db before browsing validation history."
+    else:
+        row = con.execute(
+            "SELECT run_id, name, source_snapshot_id, target_snapshot_id, feature_id, status, "
+            "started_at, finished_at, metadata_json FROM validation_runs WHERE run_id=?",
+            (run_id,),
+        ).fetchone()
+        if row is not None:
+            run = dict(row)
+            results = [dict(result) for result in con.execute(
+                "SELECT validation_id, run_id, validation_type, subject_id, status, evidence_id, "
+                "source, target, notes_json FROM validation_results WHERE run_id=? "
+                "ORDER BY validation_type, validation_id",
+                (run_id,),
+            ).fetchall()]
+        con.close()
+    return templates.TemplateResponse(request, "validation_run_detail.html", {
+        "request": request,
+        "run": run,
+        "results": results,
+        "error": error,
+        "run_id": run_id,
+    })
+
+
+def _live_validation_record(row: dict) -> LogicalRecord:
+    logical_type = str(row["logical_type"])
+    return LogicalRecord(
+        logical_type=logical_type,
+        identity=tuple((str(k), v) for k, v in row.get("identity", [])),
+        fields=dict(row.get("fields") or {}),
+        source_family=str(row.get("source_family") or "UNKNOWN"),
+        source_table=str(row.get("source_table") or logical_type),
+        notes=tuple(str(x) for x in row.get("notes", [])),
+    )
+
+
+def _live_validation_payload(raw: str) -> tuple[str, list[LogicalRecord], dict]:
+    payload = json.loads(raw)
+    logical_type = payload.get("logical_type")
+    rows = payload.get("records")
+    if not isinstance(logical_type, str) or not logical_type:
+        raise ValueError("Expected JSON requires a non-empty logical_type.")
+    if not isinstance(rows, list):
+        raise ValueError("Expected JSON requires records[].")
+    records = [_live_validation_record(row) for row in rows]
+    if any(record.logical_type != logical_type for record in records):
+        raise ValueError("Every record.logical_type must match payload logical_type.")
+    return logical_type, records, payload
+
+
+@app.get("/validation/live-target", response_class=HTMLResponse)
+def validation_live_target_page(request: Request):
+    example = {
+        "logical_type": "item_basic",
+        "records": [{
+            "logical_type": "item_basic",
+            "identity": [["itemid", 0]],
+            "fields": {"itemid": 0},
+            "source_family": "UNKNOWN",
+            "source_table": "item_basic",
+        }],
+    }
+    return templates.TemplateResponse(request, "validation_live_target.html", {
+        "request": request,
+        "form": {
+            "target_family": "DSP",
+            "target_root": "",
+            "backend": "sqlite",
+            "sqlite_db": "",
+            "host": "127.0.0.1",
+            "port": "3306",
+            "user": "",
+            "database": "",
+            "password_env": "FFXI_DB_PASSWORD",
+            "target_snapshot_id": "",
+            "source_snapshot_id": "",
+            "feature_id": "",
+            "run_id": "",
+            "persist": False,
+            "expected_json": json.dumps(example, indent=2),
+        },
+        "result": None,
+        "error": None,
+    })
+
+
+@app.post("/validation/live-target", response_class=HTMLResponse)
+def validation_live_target_run(
+    request: Request,
+    target_family: str = Form(...),
+    target_root: str = Form(""),
+    backend: str = Form("sqlite"),
+    sqlite_db: str = Form(""),
+    host: str = Form("127.0.0.1"),
+    port: int = Form(3306),
+    user: str = Form(""),
+    database: str = Form(""),
+    password_env: str = Form("FFXI_DB_PASSWORD"),
+    target_snapshot_id: str = Form(""),
+    source_snapshot_id: str = Form(""),
+    feature_id: str = Form(""),
+    run_id: str = Form(""),
+    expected_json: str = Form(...),
+    persist: str | None = Form(None),
+):
+    form = {
+        "target_family": target_family,
+        "target_root": target_root,
+        "backend": backend,
+        "sqlite_db": sqlite_db,
+        "host": host,
+        "port": str(port),
+        "user": user,
+        "database": database,
+        "password_env": password_env,
+        "target_snapshot_id": target_snapshot_id,
+        "source_snapshot_id": source_snapshot_id,
+        "feature_id": feature_id,
+        "run_id": run_id,
+        "persist": persist is not None,
+        "expected_json": expected_json,
+    }
+    result = None
+    error = None
+    connection = None
+    try:
+        logical_type, records, input_payload = _live_validation_payload(expected_json)
+        adapter = adapter_for(target_family, Path(target_root or "."))
+        backend_name = backend.strip().lower()
+        if backend_name == "sqlite":
+            if not sqlite_db.strip():
+                raise ValueError("SQLite database path is required.")
+            db_path = Path(sqlite_db).expanduser().resolve()
+            connection = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+            paramstyle = "qmark"
+            connection_label = f"sqlite:{db_path}"
+        elif backend_name in {"mysql", "mariadb"}:
+            if not database.strip() or not user.strip():
+                raise ValueError("Database name and user are required for MySQL/MariaDB.")
+            env_name = password_env.strip() or "FFXI_DB_PASSWORD"
+            password = os.environ.get(env_name)
+            if password is None:
+                raise ValueError(f"Environment variable {env_name} is not set.")
+            try:
+                import mysql.connector
+            except ImportError as exc:
+                raise RuntimeError("mysql-connector-python is required for MySQL/MariaDB live validation.") from exc
+            connection = mysql.connector.connect(
+                host=host.strip() or "127.0.0.1",
+                port=port,
+                user=user.strip(),
+                password=password,
+                database=database.strip(),
+            )
+            paramstyle = "format"
+            connection_label = f"mysql:{adapter.family}"
+        else:
+            raise ValueError("Backend must be sqlite or mysql/mariadb.")
+
+        reader = DBAPITargetReader(connection, paramstyle=paramstyle)
+        result = validate_live_records(
+            adapter,
+            reader,
+            logical_type,
+            records,
+            target_snapshot_id=target_snapshot_id.strip() or input_payload.get("target_snapshot_id"),
+        )
+        result = {
+            **result,
+            "target_family": adapter.family,
+            "target_adapter_id": adapter.adapter_id,
+            "connection_backend": backend_name,
+            "credentials_persisted": False,
+        }
+        if persist is not None:
+            selected_run_id = run_id.strip() or f"run:live-target:{logical_type}"
+            result["canonical_validation"] = persist_live_validation(
+                result,
+                WORKBENCH_DB,
+                run_id=selected_run_id,
+                feature_id=feature_id.strip() or None,
+                source_snapshot_id=source_snapshot_id.strip() or input_payload.get("source_snapshot_id"),
+                target_snapshot_id=target_snapshot_id.strip() or input_payload.get("target_snapshot_id"),
+                source="GUI normalized payload",
+                target=connection_label,
+            )
+    except Exception as exc:
+        error = f"{type(exc).__name__}: {exc}"
+    finally:
+        if connection is not None:
+            try:
+                connection.close()
+            except Exception:
+                pass
+
+    return templates.TemplateResponse(request, "validation_live_target.html", {
+        "request": request,
+        "form": form,
+        "result": result,
+        "error": error,
+    })
+
+
+@app.get("/features/trace", response_class=HTMLResponse)
+def feature_trace_page(
+    request: Request,
+    q: str = "",
+    depth: int = 3,
+    direction: str = "both",
+):
+    depth = max(0, min(depth, 8))
+    if direction not in {"out", "in", "both"}:
+        direction = "both"
+    result = None
+    matches = []
+    error = None
+    con = _workbench_graph_connection()
+    if con is None:
+        error = "Canonical Workbench graph is not available. Build/import workbench.db before tracing features."
+    elif q.strip():
+        query = q.strip()
+        exact = feature_trace.node_info(con, query)
+        if exact["known"]:
+            result = feature_trace.trace(con, query, depth, direction)
+        else:
+            matches = feature_trace.search_nodes(con, query)
+            if len(matches) == 1:
+                result = feature_trace.trace(con, matches[0]["node_id"], depth, direction)
+        con.close()
+    elif con is not None:
+        con.close()
+    return templates.TemplateResponse(request, "feature_trace.html", {
+        "request": request,
+        "q": q,
+        "depth": depth,
+        "direction": direction,
+        "result": result,
+        "matches": matches,
+        "error": error,
+    })
+
+
+@app.get("/features/check", response_class=HTMLResponse)
+def feature_check_page(request: Request, q: str = ""):
+    result = None
+    matches = []
+    error = None
+    con = _workbench_graph_connection()
+    if con is None:
+        error = "Canonical Workbench graph is not available. Build/import workbench.db before checking features."
+    elif q.strip():
+        query = q.strip()
+        feature = feature_checker.resolve_feature(con, query)
+        if feature is not None:
+            result = feature_checker.check_feature(con, feature)
+        else:
+            rows = con.execute(
+                "SELECT feature_id, name, feature_type, status FROM features "
+                "WHERE feature_id LIKE ? OR name LIKE ? ORDER BY feature_id LIMIT 100",
+                (f"%{query}%", f"%{query}%"),
+            ).fetchall()
+            matches = [dict(row) for row in rows]
+        con.close()
+    elif con is not None:
+        con.close()
+    return templates.TemplateResponse(request, "feature_checker.html", {
+        "request": request,
+        "q": q,
+        "result": result,
+        "matches": matches,
+        "error": error,
     })
 
 
@@ -3072,11 +3995,19 @@ def zone_build_visual_cache(request: Request, zoneid: int, return_to: str = Form
     ffxi_path = settings_mod.get_ffxi_install()
     if not ffxi_path:
         return PlainTextResponse("Could not find FFXI install -- set ffxi_install_path in Settings.", status_code=400)
+    if not build_zone_visual_cache.visual_mesh_api_available():
+        return PlainTextResponse(
+            build_zone_visual_cache.visual_mesh_api_error(),
+            status_code=409,
+        )
     con = get_con()
     ok = build_zone_visual_cache.build_one(con, zoneid, ffxi_path)
     con.close()
     if not ok:
-        return PlainTextResponse(f"Failed to build visual mesh cache for zoneid {zoneid} -- check server log.", status_code=500)
+        return PlainTextResponse(
+            f"Failed to build visual mesh cache for zoneid {zoneid} -- check server log for the DAT parse error.",
+            status_code=500,
+        )
     return RedirectResponse(url=return_to, status_code=303)
 
 
@@ -3103,8 +4034,14 @@ def zone_view3d_all(request: Request, zoneid: int, capture_id: int, zone_db: str
             url=f"/zones/{resolved_zoneid}/view3d_all?capture_id={capture_id}&zone_db={quote(zone_db)}",
             status_code=303)
 
-    zone_row = con.execute("SELECT name FROM zones WHERE zoneid=?", (zoneid,)).fetchone()
+    zone_row = con.execute("SELECT name, geometry_rom_path FROM zones WHERE zoneid=?", (zoneid,)).fetchone()
     zone_name = zone_row[0] if zone_row else f"zone {zoneid}"
+    geometry_rom_path = zone_row[1] if zone_row else None
+    ffxi_path = settings_mod.get_ffxi_install()
+    # Keep the multi-path viewer on the same live client-DAT path as the single-path viewer.
+    # Previously this route omitted these template fields, so zone_view3d.html treated live
+    # parsing as unavailable and forced the legacy server-side OBJ cache builder.
+    live_parse_available = bool(ffxi_path and geometry_rom_path)
 
     entities = build_capture_index.get_capture_entity_ids_with_path(con, capture_id, zone_db) if zone_db else []
     paths = []
@@ -3121,6 +4058,9 @@ def zone_view3d_all(request: Request, zoneid: int, capture_id: int, zone_db: str
         "entity_name": None, "paths_json": json.dumps(paths), "legend": paths,
         "obj_available": obj_available, "multi": True, "zone_db": zone_db, "zones": zones,
         "truncated": len(entities) > MULTI_PLOT_LIMIT, "limit": MULTI_PLOT_LIMIT,
+        "live_parse_available": live_parse_available,
+        "ffxi_path_json": json.dumps(ffxi_path or ""),
+        "geometry_rom_path_json": json.dumps(geometry_rom_path or ""),
         "all_zones": [],
     })
 
@@ -4431,6 +5371,17 @@ def restart_server(request: Request):
     return templates.TemplateResponse(request, "shutdown.html", {"mode": "restart"})
 
 
+# ---- Domain landing pages -------------------------------------------------------------------
+@app.get("/domains/assault", response_class=HTMLResponse)
+def assault_domain_page(request: Request):
+    """Assault domain workspace: a stable home for Assault-specific development/admin workflows.
+
+    Existing generic editors remain canonical; this page links into them rather than duplicating
+    Zone Editor or mission/capture logic while the domain package grows.
+    """
+    return templates.TemplateResponse(request, "domain_assault.html", {"request": request})
+
+
 # ---- Nyzul Isle plot tool (nyzul_plot.py) ---------------------------------------------------
 import nyzul_plot
 import zone_plot  # reused below for zone 77's live door/prop rows (npc_list "_"-named entities)
@@ -5024,6 +5975,132 @@ def modelviewer_dat(ffxi_path: str, rom_path: str):
         return Response(data, media_type="application/octet-stream")
     except Exception as ex:
         return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.get("/datinspector", response_class=HTMLResponse)
+def datinspector_page(request: Request, dat_id: str = "", zoneid: str = "", ffxi_path: str = ""):
+    import dat_inspector
+    path = ffxi_path or (settings_mod.get_ffxi_install() or "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI")
+    result, error = None, None
+    try:
+        if dat_id.strip():
+            result = dat_inspector.inspect(path, int(dat_id))
+    except Exception as ex:
+        error = str(ex)
+    families = [{"name": n, "base": b} for n, b in dat_inspector.FAMILIES]
+    return templates.TemplateResponse(request, "dat_inspector.html", {
+        "request": request, "result": result, "error": error, "dat_id": dat_id,
+        "ffxi_path": path, "families": families})
+
+
+@app.get("/clientoverview", response_class=HTMLResponse)
+def clientoverview_page(request: Request):
+    import client_overview
+    install = settings_mod.get_ffxi_install() or "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
+    ov, error = None, None
+    try:
+        ov = client_overview.overview(install, WORKBENCH_DB)
+    except Exception as ex:
+        error = f"{type(ex).__name__}: {ex}"
+    return templates.TemplateResponse(request, "client_overview.html", {"request": request, "ov": ov, "error": error})
+
+
+@app.get("/dialogdrift", response_class=HTMLResponse)
+def dialogdrift_page(request: Request):
+    import dialog_drift_overview as ddo
+    rows, error, checked = [], None, None
+    try:
+        rows = ddo.overview(DB_PATH)
+        con = sqlite3.connect(f"file:{DB_PATH.as_posix()}?mode=ro", uri=True)
+        checked = con.execute("SELECT MAX(checked_at) FROM dialog_drift_report").fetchone()[0]
+        con.close()
+    except Exception as ex:
+        error = f"{type(ex).__name__}: {ex}"
+    return templates.TemplateResponse(request, "dialog_drift.html", {
+        "request": request, "rows": rows, "summary": ddo.summary(rows), "checked": checked, "error": error})
+
+
+@app.get("/researchgaps", response_class=HTMLResponse)
+def researchgaps_page(request: Request):
+    import research_gaps
+    res = None
+    if _workbench_graph_connection() is not None:
+        res = research_gaps.detect(WORKBENCH_DB)
+    return templates.TemplateResponse(request, "research_gaps.html", {"request": request, "res": res})
+
+
+def _domain_roots():
+    import build_lsb_index
+    return {"topaz": settings_mod.get_topaz_root(), "dsp": settings_mod.get_dsp_root(), "lsb": build_lsb_index.LSB_ROOT}
+
+
+@app.get("/domains", response_class=HTMLResponse)
+def domains_index_page(request: Request):
+    from workbench.domains import service as dsvc
+    roots, defs, rows = _domain_roots(), dsvc.load(), []
+    for key, d in defs.items():
+        res = dsvc.resolve(d, roots)
+        rows.append({"key": key, "label": d["label"], "archetype": d["archetype"],
+                     "wiki_pages": sum(dsvc.wiki_counts(d["wiki"]["categories"]).values()),
+                     "status": dsvc.domain_status(d, res), "total": len(res), "editors": sum(1 for e in res if e["edit"])})
+    return templates.TemplateResponse(request, "domains_index.html", {"request": request, "rows": rows, "roots": list(roots)})
+
+
+@app.get("/domains/{key}", response_class=HTMLResponse)
+def domain_detail_page(request: Request, key: str):
+    from workbench.domains import service as dsvc
+    defs = dsvc.load()
+    if key not in defs:
+        raise HTTPException(status_code=404, detail=f"No domain '{key}'")
+    d, roots = defs[key], _domain_roots()
+    return templates.TemplateResponse(request, "domain_detail.html", {
+        "request": request, "d": d, "roots": list(roots), "ents": dsvc.resolve(d, roots),
+        "wiki": dsvc.wiki_counts(d["wiki"]["categories"]), "slug": dsvc.slug})
+
+
+@app.post("/binaryinspector/save-probes", response_class=HTMLResponse)
+def binaryinspector_save_probes(request: Request, run_set: str = Form(...)):
+    import binary_inspector as bi
+    install = settings_mod.get_ffxi_install() or "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
+    probe_con = _workbench_graph_connection()
+    if probe_con is None:
+        note = "Workbench graph (workbench.db) is not built yet; nothing saved. Build/import it first."
+        return RedirectResponse(f"/binaryinspector?run_set={run_set}&saved={quote(note)}", status_code=303)
+    probe_con.close()
+    try:
+        r = bi.save_probe_set(run_set, install, WORKBENCH_DB)
+        note = f"Saved {r['saved']} observations to {r['db']}."
+    except Exception as ex:
+        note = f"Save failed: {type(ex).__name__}: {ex}"
+    return RedirectResponse(f"/binaryinspector?run_set={run_set}&saved={quote(note)}", status_code=303)
+
+
+@app.get("/binaryinspector", response_class=HTMLResponse)
+def binaryinspector_page(request: Request, path: str = "", q: str = "", imp: str = "", pattern: str = "",
+                         exec_only: str = "", diff_path: str = "", run_set: str = "", saved: str = ""):
+    import binary_inspector as bi
+    install = settings_mod.get_ffxi_install() or "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
+    ctx = {"request": request, "install": install, "candidates": bi.list_candidates(install),
+           "path": path, "q": q, "imp": imp, "pattern": pattern, "exec_only": exec_only,
+           "diff_path": diff_path, "idx": None, "error": None, "strings": None,
+           "imports": None, "psearch": None, "diff": None,
+           "probe_sets": bi.list_probe_sets(), "probe_result": None, "saved": saved, "run_set_file": run_set}
+    try:
+        if run_set:
+            ctx["probe_result"] = bi.run_probe_set(run_set, install)
+        if path.strip():
+            idx = bi.get_index(path.strip())
+            ctx["idx"] = idx
+            ctx["imports"] = bi.imports_by_dll(idx, imp)
+            if q.strip():
+                ctx["strings"] = bi.search_strings(idx, q.strip())
+            if pattern.strip():
+                ctx["psearch"] = bi.pattern_search(path.strip(), pattern.strip(), bool(exec_only))
+            if diff_path.strip():
+                ctx["diff"] = bi.diff(path.strip(), diff_path.strip())
+    except Exception as ex:
+        ctx["error"] = f"{type(ex).__name__}: {ex}"
+    return templates.TemplateResponse(request, "binary_inspector.html", ctx)
 
 
 if __name__ == "__main__":

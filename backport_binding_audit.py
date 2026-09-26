@@ -44,6 +44,9 @@ DEFAULT_PACKAGES_ROOT = settings.get_backport_root() / "mission-packages"
 DEFAULT_DSP_ROOT = settings.get_dsp_root()
 
 METHOD_CALL_RE = re.compile(r":([A-Za-z_][A-Za-z0-9_]*)\s*\(")
+METHOD_DEFINITION_RE = re.compile(
+    r"function\s+[A-Za-z_][A-Za-z0-9_.]*:[A-Za-z_][A-Za-z0-9_]*\s*\("
+)
 
 # Bindings confirmed by other means (e.g. Lua-side globals like math.random, string.format) that
 # would otherwise false-positive as "not found in C++ source" -- not an exhaustive stdlib list,
@@ -66,13 +69,18 @@ def _strip_comments(text: str) -> str:
     return text
 
 
-def collect_method_calls(pkg_lua_dsp: Path) -> dict[str, list[Path]]:
+def collect_method_calls(pkg_lua_dsp: Path, include_paths: set[str] | None = None, ignore_methods: set[str] | None = None) -> dict[str, list[Path]]:
     """method name -> list of files that call it (colon-call syntax only)."""
     calls: dict[str, list[Path]] = {}
     for f in pkg_lua_dsp.rglob("*.lua"):
+        rel=f.relative_to(pkg_lua_dsp).as_posix()
+        if include_paths is not None and rel not in include_paths:
+            continue
         text = _strip_comments(f.read_text(encoding="utf-8", errors="replace"))
+        # Method-style function definitions are not runtime binding calls.
+        text = METHOD_DEFINITION_RE.sub("", text)
         for name in set(METHOD_CALL_RE.findall(text)):
-            if name in KNOWN_NON_ENTITY_METHODS:
+            if name in KNOWN_NON_ENTITY_METHODS or (ignore_methods is not None and name in ignore_methods):
                 continue
             calls.setdefault(name, []).append(f)
     return calls
@@ -89,21 +97,19 @@ def _lua_binding_files(dsp_root: Path) -> list[Path]:
 
 
 def _load_cached_index(dsp_root: Path, flavor: str) -> dict[str, list[dict]] | None:
-    """Returns the cached index if it exists AND was built from this same dsp_root (checked via
-    one real file's path recorded in the index -- a cache built from a different checkout at the
-    same flavor would silently give wrong answers otherwise, e.g. a differently-patched fork).
-    None if unusable for any reason -- callers fall back to a live grep, never guess."""
+    """Use a cached index only when cache provenance matches the current binding source tree.
+
+    Legacy caches without fingerprint metadata are intentionally ignored; callers fall back to
+    a live source scan instead of accepting stale-but-plausible path matches.
+    """
     if flavor != "old_dsp_reference":
-        return None  # only old-dsp-reference has a cache built by default; landsandboat is reference-only
+        return None
+    if not bbi.cache_matches_root(bbi.DSP_INDEX_META_PATH,dsp_root):
+        return None
     try:
-        index = bbi.load_index(bbi.DSP_INDEX_PATH)
+        return bbi.load_index(bbi.DSP_INDEX_PATH)
     except FileNotFoundError:
         return None
-    # Sanity check: every recorded file path should actually exist under dsp_root.
-    for entries in list(index.values())[:3]:
-        if entries and not (dsp_root / entries[0]["file"]).exists():
-            return None
-    return index
 
 
 def check_binding(name: str, dsp_root: Path, flavor: str, cached_index: dict | None = None) -> tuple[bool, str]:
@@ -134,9 +140,9 @@ def check_binding(name: str, dsp_root: Path, flavor: str, cached_index: dict | N
     return False, f"no matching registration for '{name}' found in any src/map/lua/*.cpp file"
 
 
-def audit_package(pkg_lua_dsp: Path, dsp_root: Path, flavor: str) -> dict:
+def audit_package(pkg_lua_dsp: Path, dsp_root: Path, flavor: str, include_paths: set[str] | None = None, ignore_methods: set[str] | None = None) -> dict:
     cached_index = _load_cached_index(dsp_root, flavor)
-    calls = collect_method_calls(pkg_lua_dsp)
+    calls = collect_method_calls(pkg_lua_dsp, include_paths, ignore_methods)
     confirmed, missing = [], []
     for name, files in sorted(calls.items()):
         found, evidence = check_binding(name, dsp_root, flavor, cached_index=cached_index)

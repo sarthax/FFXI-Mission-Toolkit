@@ -26,3 +26,15 @@ FFXI-DATS/
 FFXI-Resources-dist/
 vendor/xi-tinkerer/target/
 gui/static/zone_visual/
+
+# Local-only client binary indexes/caches; never commit proprietary EXE/DLL research inputs
+.workbench/client-binaries/
+
+# Local build outputs (generated graph, reports, scratch)
+workbench.db
+mission_reports_v2/
+mod_names_body.txt
+data/Xi-Pivot/
+data/item_backups/
+data/item_dat_backups/
+data/item_edit_log.sql
