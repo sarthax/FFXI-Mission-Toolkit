@@ -703,3 +703,20 @@ Implemented:
 Regression coverage:
 - `test_lua_event_typing.py` covers alias propagation, API-return propagation, ambiguity rejection, provenance, and reassignment invalidation;
 - `test_server_lua_graph_bridge.py` is now part of the main regression workflow so capture/server Lua graph integration cannot silently drift again.
+
+
+## 2026-09-25 — Generic ID/content collision analysis foundation
+
+A source-neutral collision analyzer now operates on `ServerAdapter` `LogicalRecord` output instead of raw Topaz/DSP/LSB SQL schemas.
+
+The analyzer distinguishes:
+- `EXACT_IDENTITY_EQUIVALENT` — same adapter-defined logical identity and identical normalized non-identity fields;
+- `ID_CONTENT_COLLISION` — same logical identity occupied by different normalized content;
+- `CONTENT_RENUMBER_CANDIDATE` — identical normalized semantic fields under different logical identities, retained as INFERRED rather than asserted entity equivalence;
+- duplicate source/target identities;
+- unresolved identities with missing/null components;
+- source-only and target-only records.
+
+Identity namespaces are scoped by logical record type and the adapter-defined identity tuple. Composite identities therefore prevent a reused numeric component from being treated as a collision when its surrounding identity scope differs.
+
+The analyzer intentionally does not use name-only equivalence and does not replace the existing canonical/entity identity model. It is an additional migration-safety analysis over normalized records. Migration-planner gating and typed research-tool exposure remain follow-on integration work.
