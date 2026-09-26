@@ -1,0 +1,151 @@
+{
+  "schema": 1,
+  "kind": "WORKBENCH_ACQUISITION_TRUTH_SET",
+  "fixture_id": "fixture:automaton-attachment-acquisition",
+  "source_revision": "LandSandBoat/server@3747feee0e38ab5c0283c4fe8deea7f0a9022351",
+  "subjects": [
+    {
+      "name": "Economizer",
+      "behavior_identity": {
+        "internal_item_puppet_id": 8678,
+        "internal_name": "economizer"
+      },
+      "verified_server_acquisition": [
+        {
+          "type": "SHOP",
+          "source": "scripts/zones/Nashmau/npcs/Rararoon.lua",
+          "item_symbol": "xi.item.ECONOMIZER",
+          "price": 222300,
+          "requirement": "PUP level 80",
+          "evidence_status": "VERIFIED_SERVER"
+        }
+      ],
+      "external_retail_acquisition": [
+        {
+          "type": "QUEST_OR_INSTANCE_REWARD",
+          "source_name": "Targeting the Captain",
+          "evidence_status": "EXTERNAL_EVIDENCE_NOT_RESOLVED_IN_CURRENT_SERVER_SOURCE",
+          "note": "Retail references list Economizer as obtainable from Targeting the Captain; current LSB search exposes the instance name but not a direct Economizer reward edge."
+        },
+        {
+          "type": "ANNM_REWARD",
+          "source_name": "Queenbug",
+          "zone": "East Ronfaure (S)",
+          "evidence_status": "EXTERNAL_EVIDENCE_NOT_RESOLVED_IN_CURRENT_SERVER_SOURCE"
+        }
+      ]
+    },
+    {
+      "name": "Heat Seeker",
+      "behavior_identity": {
+        "internal_item_puppet_id": 8579,
+        "internal_name": "heat_seeker"
+      },
+      "verified_server_acquisition": [
+        {
+          "type": "SHOP",
+          "source": "scripts/zones/Nashmau/npcs/Yoyoroon.lua",
+          "item_symbol": "xi.item.HEAT_SEEKER",
+          "price": 19890,
+          "evidence_status": "VERIFIED_SERVER"
+        },
+        {
+          "type": "DROP_POOL",
+          "source": "data/zones/halvung/mobs.yaml",
+          "source_mob": "Troll Machinist",
+          "pool_semantics": "rare one_of pool including heat_seeker",
+          "evidence_status": "VERIFIED_SERVER"
+        },
+        {
+          "type": "DROP_POOL",
+          "source": "data/zones/mount_zhayolm/mobs.yaml",
+          "source_mob": "Hilltroll Puppetmaster",
+          "pool_semantics": "rare one_of pool including heat_seeker",
+          "evidence_status": "VERIFIED_SERVER"
+        }
+      ],
+      "external_retail_acquisition": [
+        {
+          "type": "SYNTHESIS",
+          "craft": "Alchemy",
+          "recipe_level": 55,
+          "skill_cap": 66,
+          "crystal": "Fire Crystal",
+          "required_key_item": "Iatrochemistry",
+          "ingredients": [
+            "Glass Sheet",
+            "Hecteyes Eye",
+            "Homunculus Nerves",
+            "Lightning Anima",
+            "Plasma Oil"
+          ],
+          "output": "Heat Seeker x1",
+          "evidence_status": "EXTERNAL_EVIDENCE_PARTIALLY_SUPPORTED_BY_SERVER",
+          "server_support": [
+            "Iatrochemistry key item exists in data/enums/key_item.yaml",
+            "Iatrochemistry guild-point purchase exists in scripts/globals/hobbies/crafting/guild_points.lua"
+          ],
+          "unresolved_server_evidence": [
+            "No direct Heat Seeker recipe record found in current LSB repository search",
+            "Several recipe ingredients were not found by direct repository search"
+          ]
+        }
+      ]
+    }
+  ],
+  "required_acquisition_relations": [
+    {
+      "relation": "SOLD_BY",
+      "semantics": "Item is sold by an NPC/shop; depends on NPC script, shop implementation, price, and eligibility conditions."
+    },
+    {
+      "relation": "DROPPED_BY",
+      "semantics": "Item is directly or pool-conditionally dropped by a mob; depends on mob/template/loot source and pool semantics."
+    },
+    {
+      "relation": "CRAFTED_BY",
+      "semantics": "Item is synthesis output; depends on recipe, craft/skill requirements, key items, crystal, ingredient identities, and crafting runtime."
+    },
+    {
+      "relation": "REWARDED_BY",
+      "semantics": "Item is granted by quest/instance/event/ANNM content; depends on the rewarding content's completion/reward logic."
+    },
+    {
+      "relation": "REQUIRES_INGREDIENT",
+      "semantics": "Synthesis recipe consumes an ingredient item."
+    },
+    {
+      "relation": "REQUIRES_KEY_ITEM",
+      "semantics": "Acquisition or recipe requires a key item/unlock."
+    },
+    {
+      "relation": "REQUIRES_CRAFT",
+      "semantics": "Recipe requires a craft/skill/rank/capability."
+    },
+    {
+      "relation": "USES_CRYSTAL",
+      "semantics": "Recipe uses a synthesis crystal."
+    },
+    {
+      "relation": "ALTERNATE_ACQUISITION",
+      "semantics": "Multiple independently valid ways to obtain the same logical item; each path can be scoped independently."
+    }
+  ],
+  "package_scope_rules": [
+    "Core item/behavior implementation and acquisition are separate review dimensions.",
+    "Selecting one acquisition path must not automatically include every alternate acquisition path.",
+    "Selecting synthesis must recursively expose recipe prerequisites and ingredient items.",
+    "Selecting a quest/instance reward must recursively expose that content's reward/completion dependencies.",
+    "A missing recipe/reward edge in server source must remain visible as EXTERNAL_EVIDENCE or IMPLEMENTATION_GAP rather than being silently treated as absent.",
+    "Drop pools must preserve one_of/pool semantics rather than flattening every pool member into an always-drop relation.",
+    "If the target already has an equivalent acquisition path, it may be classified TARGET_EQUIVALENT independently of core item behavior."
+  ],
+  "known_toolkit_gaps": [
+    "No generic acquisition graph currently distinguishes shop, drop, synthesis, quest/instance reward, exchange, or event reward.",
+    "No synthesis recipe logical model currently links outputs to craft/key-item/crystal/ingredient prerequisites.",
+    "No generic reward-edge analyzer currently links mission/quest/instance completion to rewarded item identities.",
+    "No first-class representation currently preserves one_of loot-pool semantics as conditional acquisition evidence.",
+    "External retail evidence cannot currently be reconciled against missing/incomplete server implementations as a package-scope finding.",
+    "Acquisition paths are not currently independently selectable from core feature behavior in the package manifest."
+  ]
+}
