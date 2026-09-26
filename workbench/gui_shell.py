@@ -36,6 +36,18 @@ WORKSPACES = (
         ),
     },
     {
+        "name": "Domains",
+        "href": "/domains/assault",
+        "sections": (
+            {"label": "Assault", "href": "/domains/assault"},
+            {"label": "Nyzul Isle", "href": "/nyzul"},
+            {"label": "Salvage", "href": None, "planned": True},
+            {"label": "Einherjar", "href": None, "planned": True},
+            {"label": "Abyssea", "href": None, "planned": True},
+            {"label": "Domain Packages", "href": None, "planned": True},
+        ),
+    },
+    {
         "name": "Backport & Migration",
         "href": "/iddrift",
         "sections": (
@@ -117,7 +129,6 @@ WORKSPACES = (
             {"label": "Lookup & Decode: Packets", "href": "/packets?shell=tools"},
             {"label": "Diagnostics: Gaps", "href": "/gaps?shell=tools"},
             {"label": "Diagnostics: ID Drift", "href": "/iddrift?shell=tools"},
-            {"label": "Specialized: Nyzul", "href": "/nyzul"},
         ),
     },
     {
