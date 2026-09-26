@@ -140,16 +140,31 @@
         "template": "Medusa_Besieged",
         "template_id": 7166,
         "script": "scripts/zones/Al_Zahbi/mobs/Medusa.lua",
-        "relation": "RELATED_VARIANT_NOT_DEPENDENCY"
+        "relation": "SYSTEM_COUPLED_CONDITIONAL_DEPENDENCY",
+        "default_package_decision": "QUESTIONABLE",
+        "reason": "Zone variant participates in Medusa/Besieged lifecycle and must be reviewed as part of the system dependency rather than excluded solely by name/zone."
       },
       {
         "zone": "Bhaflau Thickets",
         "template": "Medusa_Besieged",
         "template_id": 7166,
         "script": "scripts/zones/Bhaflau_Thickets/mobs/Medusa.lua",
-        "relation": "RELATED_VARIANT_NOT_DEPENDENCY"
+        "relation": "SYSTEM_COUPLED_CONDITIONAL_DEPENDENCY",
+        "default_package_decision": "QUESTIONABLE",
+        "reason": "Zone variant participates in Medusa/Besieged lifecycle and must be reviewed as part of the system dependency rather than excluded solely by name/zone."
       }
-    ]
+    ],
+    "besieged_system": {
+      "global_script": "scripts/globals/besieged.lua",
+      "current_lsb_lifecycle_hooks": [
+        "xi.besieged.onMobInitialize",
+        "xi.besieged.onMobSpawn",
+        "xi.besieged.onMobDeath",
+        "xi.besieged.onMobDespawn"
+      ],
+      "current_lsb_status": "HOOKS_PRESENT_BUT_EMPTY",
+      "semantic_requirement": "Medusa's presence/lifecycle is conditionally coupled across Arrapago Reef, Bhaflau Thickets, Al Zahbi, and Besieged state; source snapshots may have incomplete implementation."
+    }
   },
   "required_dependency_classes": [
     {
@@ -199,8 +214,13 @@
     },
     {
       "key": "alternate_medusa_variants",
-      "description": "Al Zahbi/Bhaflau Besieged Medusa implementations must be identified but excluded from Arrapago scope unless explicitly selected.",
-      "expected_status": "RELATED_NOT_INCLUDED"
+      "description": "Al Zahbi/Bhaflau Medusa variants plus shared Besieged state are conditionally coupled to Arrapago Medusa lifecycle and must be reviewed as system dependencies.",
+      "expected_status": "QUESTIONABLE_SYSTEM_DEPENDENCY"
+    },
+    {
+      "key": "besieged_system",
+      "description": "Shared Besieged lifecycle/state that controls cross-zone Medusa presence, despawn/death/respawn semantics.",
+      "expected_status": "REQUIRED_OR_EXPLICITLY_INCOMPLETE"
     }
   ],
   "known_current_toolkit_gaps": [
@@ -213,6 +233,7 @@
     "Arithmetic entity references such as ID.mob.MEDUSA + 1 through + 4 are not guaranteed to resolve to helper entities.",
     "YAML loot item symbols are not currently guaranteed to resolve to canonical item records.",
     "Zone text/title enum references are not currently guaranteed to become package dependencies.",
-    "Same-name alternate-zone variants require semantic scope disambiguation and must not be pulled in by name alone."
+    "Cross-zone/system-state dependencies such as Besieged are not yet modeled as conditional semantic dependencies independent of direct code references.",
+    "Current LSB Besieged mob lifecycle hooks are present but empty, so source-code traversal alone cannot prove Medusa retail/system behavior."
   ]
 }
