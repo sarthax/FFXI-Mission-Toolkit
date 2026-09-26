@@ -92,7 +92,8 @@ def main():
         con.execute(
             "INSERT INTO migration_actions(action_id,migration_id,action,artifact_id,status,reason,metadata_json) "
             "VALUES(?,?,?,?,?,?,?)",
-            ("action:test","migration:test","MANUAL_REVIEW",None,"MANUAL_REQUIRED","fixture",'{}'),
+            ("action:test","migration:test","MANUAL_REVIEW",None,"BLOCKED","fixture",
+             '{"classification":"ID_CONTENT_COLLISION","collision_confidence":"VERIFIED","collision_status":"CONTRADICTED","logical_type":"npcs","source_identity":[["npc_id",101]],"target_identity":[["npc_id",101]],"identifier_namespaces":["npcs:npc_id"],"source_snapshot_id":"src","target_snapshot_id":"dst"}'),
         )
         graph.insert_record(con,ValidationRun(
             "run:test","test run","src","dst","feature:test","VERIFIED"
@@ -148,6 +149,18 @@ def main():
         migration=reader.migration_inspect("migration:test")
         assert migration["matches"][0]["migration_id"]=="migration:test",migration
         assert migration["matches"][0]["actions"][0]["action"]=="MANUAL_REVIEW",migration
+
+        collisions=reader.collision_inspect("migration:test")
+        assert collisions["summary"]["ID_CONTENT_COLLISION"]==1,collisions
+        row=collisions["matches"][0]
+        assert row["classification"]=="ID_CONTENT_COLLISION",row
+        assert row["collision_confidence"]=="VERIFIED",row
+        assert row["collision_status"]=="CONTRADICTED",row
+        assert row["source_snapshot_id"]=="src" and row["target_snapshot_id"]=="dst",row
+        assert row["identifier_namespaces"]==["npcs:npc_id"],row
+
+        filtered=reader.collision_inspect(feature_id="feature:test",classification="ID_CONTENT_COLLISION")
+        assert len(filtered["matches"])==1,filtered
 
     print("typed domain research tools self-test: PASS")
 
