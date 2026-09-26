@@ -77,6 +77,8 @@ def main():
     assert route_owner("/packages")["home"] == "Packages"
     assert route_owner("/packages")["section"] == "Package Library"
     assert route_owner("/packages/review")["section"] == "Review & Readiness"
+    assert route_owner("/packages/create")["section"] == "Create Package"
+    assert route_owner("/packages/create", "POST")["section"] == "Create Package"
     assert route_owner("/domains/assault")["home"] == "Domains"
     assert route_owner("/domains/assault")["section"] == "Battle Systems > Assault"
     assert route_owner("/nyzul")["home"] == "Domains"
@@ -91,6 +93,7 @@ def main():
     packages_workspace = next(workspace for workspace in WORKSPACES if workspace["name"] == "Packages")
     assert packages_workspace["href"] == "/packages"
     assert next(section for section in packages_workspace["sections"] if section["label"] == "Package Library")["href"] == "/packages"
+    assert next(section for section in packages_workspace["sections"] if section["label"] == "Create Package")["href"] == "/packages/create"
     assert next(section for section in packages_workspace["sections"] if section["label"] == "Review & Readiness")["href"] == "/packages/review"
     validation_workspace = next(workspace for workspace in WORKSPACES if workspace["name"] == "Validation")
     assert validation_workspace["href"] == "/validation"
@@ -171,6 +174,7 @@ def main():
         ("validation_live_target.html", "/validation/live-target", {"form": {"target_family": "DSP", "target_root": "", "backend": "sqlite", "sqlite_db": "", "host": "127.0.0.1", "port": "3306", "user": "", "database": "", "password_env": "FFXI_DB_PASSWORD", "target_snapshot_id": "", "source_snapshot_id": "", "feature_id": "", "run_id": "", "persist": False, "expected_json": "{}"}, "result": None, "error": None}),
         ("packages_library.html", "/packages", {"q": "", "project_root": "C:/workspace", "packages": []}),
         ("packages_review.html", "/packages/review", {"packages": [], "package": "", "target_root": "", "review": None, "manifest": {}, "validation": {}, "error": None}),
+        ("packages_create.html", "/packages/create", {"migrations": [], "form": {"migration_id": "", "source_root": "", "source_family": "LSB", "target_family": "DSP", "package_path": "packages/"}, "result": None, "error": None}),
     )
     for template, path, values in pages:
         html = render(template, path, **values)
@@ -211,6 +215,9 @@ def main():
     package_review_shell = context_for("/packages/review")
     assert package_review_shell["active_home"] == "Packages"
     assert next(section for section in package_review_shell["sections"] if section["active"])["label"] == "Review & Readiness"
+    package_create_shell = context_for("/packages/create")
+    assert package_create_shell["active_home"] == "Packages"
+    assert next(section for section in package_create_shell["sections"] if section["active"])["label"] == "Create Package"
 
     trace_shell = context_for("/features/trace")
     assert trace_shell["active_home"] == "Features"
