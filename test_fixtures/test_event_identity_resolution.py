@@ -147,7 +147,7 @@ def main() -> None:
                 EventResource(
                     entity_id=4001,
                     event_id=55,
-                    byte_code=bytes([0xFE, 0xFE]),
+                    byte_code=bytes([0xFE, 0x48, 0xF5, 0x01, 0x21]),
                     block_event_count=1,
                     block_index=0,
                 )
@@ -162,7 +162,7 @@ def main() -> None:
                 EventResource(
                     entity_id=4002,
                     event_id=56,
-                    byte_code=bytes([0xFE, 0xFE]),
+                    byte_code=bytes([0xFE, 0x48, 0xF4, 0x01, 0x21]),
                     block_event_count=1,
                     block_index=2,
                 )
