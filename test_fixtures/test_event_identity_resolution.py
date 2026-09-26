@@ -12,7 +12,7 @@ from workbench.core.services.identity_resolver import (
     assess_identity_closure,
     ingest_event_structure_records,
     register_snapshot,
-    resolve_identity,
+    resolve_event_identity,
 )
 
 
@@ -81,21 +81,19 @@ def main() -> None:
         )
         con.commit()
 
-        unscoped_source = resolve_identity(
+        unscoped_source = resolve_event_identity(
             con,
             source_snapshot_id="client:new",
             target_snapshot_id="client:old",
-            namespace="EVENT",
             source_numeric_id=77,
             zone_key="NORTH_GUSTABERG_S",
         )
         assert unscoped_source.status == "SOURCE_ID_AMBIGUOUS", unscoped_source
 
-        resolved = resolve_identity(
+        resolved = resolve_event_identity(
             con,
             source_snapshot_id="client:new",
             target_snapshot_id="client:old",
-            namespace="EVENT",
             source_numeric_id=77,
             zone_key="NORTH_GUSTABERG_S",
             source_actor_key=2002,
@@ -128,11 +126,10 @@ def main() -> None:
         )
         con.commit()
 
-        ambiguous = resolve_identity(
+        ambiguous = resolve_event_identity(
             con,
             source_snapshot_id="client:new",
             target_snapshot_id="client:old",
-            namespace="EVENT",
             source_numeric_id=77,
             zone_key="NORTH_GUSTABERG_S",
             source_actor_key=2002,
