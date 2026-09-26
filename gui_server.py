@@ -77,6 +77,11 @@ from workbench.core.schema import Artifact, DependencyEdge, MigrationAction
 from workbench.migrations.package_plan import build_package_plan
 from workbench.migrations.package_manifest import build_package_manifest
 from workbench.migrations.package_assembly import assemble_migration_package
+from workbench.migrations.package_scope import (
+    build_dependency_scope,
+    save_scope_decision,
+    set_scope_review_status,
+)
 
 TOOLS_ROOT = Path(__file__).parent
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
@@ -2515,6 +2520,119 @@ def _safe_package_destination(relative_name: str) -> Path:
     return candidate
 
 
+@app.get("/packages/scope", response_class=HTMLResponse)
+def packages_scope_review(
+    request: Request,
+    migration_id: str = "",
+    q: str = "",
+    decision: str = "",
+    depth: int = 6,
+):
+    migrations = _package_migrations()
+    scope = None
+    error = None
+    con = _workbench_graph_connection()
+    try:
+        if migration_id.strip():
+            if con is None:
+                raise ValueError("Canonical Workbench graph is not available.")
+            scope = build_dependency_scope(
+                con,
+                migration_id.strip(),
+                max_depth=max(0, min(depth, 12)),
+            )
+            if q.strip() or decision.strip():
+                query = q.strip().lower()
+                wanted = decision.strip().upper()
+                filtered = []
+                for item in scope["items"]:
+                    if query and query not in (
+                        str(item.get("node_id") or "") + " "
+                        + str(item.get("display_name") or "") + " "
+                        + str(item.get("artifact_path") or "") + " "
+                        + " ".join(item.get("tags") or ())
+                    ).lower():
+                        continue
+                    if wanted and item.get("effective_decision") != wanted:
+                        continue
+                    filtered.append(item)
+                scope = {**scope, "items": filtered}
+    except Exception as exc:
+        error = f"{type(exc).__name__}: {exc}"
+    finally:
+        if con is not None:
+            con.close()
+    return templates.TemplateResponse(request, "packages_scope.html", {
+        "request": request,
+        "migrations": migrations,
+        "migration_id": migration_id,
+        "q": q,
+        "decision": decision,
+        "depth": depth,
+        "scope": scope,
+        "error": error,
+    })
+
+
+@app.post("/packages/scope/decision", response_class=HTMLResponse)
+def packages_scope_decision(
+    migration_id: str = Form(...),
+    node_id: str = Form(...),
+    decision: str = Form(...),
+    reason: str = Form(""),
+    tags: str = Form(""),
+):
+    con = _workbench_graph_connection()
+    try:
+        if con is None:
+            raise ValueError("Canonical Workbench graph is not available.")
+        save_scope_decision(
+            con,
+            migration_id.strip(),
+            node_id.strip(),
+            decision,
+            reason=reason,
+            tags=[tag.strip() for tag in tags.split(",") if tag.strip()],
+        )
+        set_scope_review_status(con, migration_id.strip(), "DRAFT")
+    finally:
+        if con is not None:
+            con.close()
+    return RedirectResponse(
+        f"/packages/scope?migration_id={quote(migration_id.strip(), safe='')}",
+        status_code=303,
+    )
+
+
+@app.post("/packages/scope/review", response_class=HTMLResponse)
+def packages_scope_mark_reviewed(
+    migration_id: str = Form(...),
+    notes: str = Form(""),
+):
+    con = _workbench_graph_connection()
+    try:
+        if con is None:
+            raise ValueError("Canonical Workbench graph is not available.")
+        scope = build_dependency_scope(con, migration_id.strip())
+        if scope["closure_status"] in {"BLOCKED", "MANUAL_REQUIRED"}:
+            raise ValueError(
+                f"Scope cannot be marked reviewed while closure status is {scope['closure_status']}."
+            )
+        set_scope_review_status(
+            con,
+            migration_id.strip(),
+            "REVIEWED",
+            notes=notes.strip() or None,
+        )
+    finally:
+        if con is not None:
+            con.close()
+    return RedirectResponse(
+        f"/packages/scope?migration_id={quote(migration_id.strip(), safe='')}",
+        status_code=303,
+    )
+
+
 @app.get("/packages/create", response_class=HTMLResponse)
 def packages_create_page(request: Request):
     return templates.TemplateResponse(request, "packages_create.html", {
@@ -2562,6 +2680,14 @@ def packages_create_run(
         if migration is None:
             raise ValueError("Selected migration was not found.")
 
+        scope = build_dependency_scope(con, migration_id.strip())
+        if scope["package_gate"] != "READY":
+            raise ValueError(
+                "Dependency scope is not ready for package creation: "
+                f"{scope['package_gate']}. Review /packages/scope first."
+            )
+        scope_by_node = {item["node_id"]: item for item in scope["items"]}
+
         action_rows = con.execute(
             "SELECT action_id, migration_id, action, artifact_id, status, reason, metadata_json "
             "FROM migration_actions WHERE migration_id=? ORDER BY action_id",
@@ -2583,9 +2709,48 @@ def packages_create_run(
                 reason=row["reason"],
                 metadata=metadata if isinstance(metadata, dict) else {},
             )
+            scope_item = scope_by_node.get(action.artifact_id) if action.artifact_id else None
+            effective = scope_item.get("effective_decision") if scope_item else "INCLUDE"
+            if effective in {"EXCLUDE", "TARGET_EQUIVALENT", "NOT_REQUIRED"}:
+                action = MigrationAction(
+                    action_id=action.action_id,
+                    migration_id=action.migration_id,
+                    action="NOT_REQUIRED",
+                    artifact_id=action.artifact_id,
+                    status="COMPATIBLE",
+                    reason=(
+                        f"Scope decision {effective}: "
+                        + str(scope_item.get("reason") or "reviewed exclusion")
+                    ),
+                    metadata={**action.metadata, "scope_decision": effective},
+                )
             actions.append(action)
             if action.artifact_id:
                 artifact_ids.add(action.artifact_id)
+
+        existing_action_artifacts = {a.artifact_id for a in actions if a.artifact_id}
+        for item in scope["items"]:
+            if (
+                item.get("effective_decision") == "INCLUDE"
+                and item.get("node_kind") == "ARTIFACT"
+                and item.get("node_id") not in existing_action_artifacts
+            ):
+                artifact_id = item["node_id"]
+                actions.append(MigrationAction(
+                    action_id=f"scope-include:{migration_id.strip()}:{artifact_id}",
+                    migration_id=migration_id.strip(),
+                    action="MANUAL_REVIEW",
+                    artifact_id=artifact_id,
+                    status="MANUAL_REQUIRED",
+                    reason="User included transitive dependency during package scope review.",
+                    metadata={
+                        "scope_decision": "INCLUDE",
+                        "discovery_path": item.get("discovery_path") or [],
+                        "relationship": item.get("relationship"),
+                    },
+                ))
+                artifact_ids.add(artifact_id)
+                existing_action_artifacts.add(artifact_id)
 
         artifacts = []
         for artifact_id in sorted(artifact_ids):
@@ -2649,6 +2814,15 @@ def packages_create_run(
             source_family=source_family.strip(),
             target_family=target_family.strip(),
         )
+        manifest["dependency_scope"] = {
+            "schema": scope["schema"],
+            "closure_status": scope["closure_status"],
+            "package_gate": scope["package_gate"],
+            "review": scope["review"],
+            "counts": scope["counts"],
+            "discovered_count": scope["discovered_count"],
+            "items": scope["items"],
+        }
         assembly = assemble_migration_package(
             manifest,
             source_path,
