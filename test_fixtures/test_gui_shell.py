@@ -66,6 +66,9 @@ def main():
     assert route_owner("/entity")["home"] == "Server"
     assert route_owner("/zoneplot/restore", "POST")["section"] == "Editors > Zone Editor"
     assert route_owner("/itemedit/123.json")["section"] == "Editors > Item Editor"
+    assert route_owner("/features/trace")["home"] == "Features"
+    assert route_owner("/features/trace")["section"] == "Feature Trace"
+    assert route_owner("/features/check")["section"] == "Feature Checker"
     assert route_owner("/domains/assault")["home"] == "Domains"
     assert route_owner("/domains/assault")["section"] == "Battle Systems > Assault"
     assert route_owner("/nyzul")["home"] == "Domains"
@@ -144,6 +147,8 @@ def main():
             "all_tags": [], "tag": "", "rows": [],
         }),
         ("itemedit.html", "/itemedit", {}),
+        ("feature_trace.html", "/features/trace", {"q": "", "depth": 3, "direction": "both", "result": None, "matches": [], "error": None}),
+        ("feature_checker.html", "/features/check", {"q": "", "result": None, "matches": [], "error": None}),
     )
     for template, path, values in pages:
         html = render(template, path, **values)
@@ -167,6 +172,12 @@ def main():
     model_html = render("model_viewer.html", "/modelviewer")
     assert 'aria-label="Primary workspaces"' in model_html
     assert re.search(r'class="workspace-link active"\s+href="/modelviewer"', model_html)
+
+    trace_shell = context_for("/features/trace")
+    assert trace_shell["active_home"] == "Features"
+    assert next(section for section in trace_shell["sections"] if section["active"])["label"] == "Feature Trace"
+    checker_shell = context_for("/features/check")
+    assert next(section for section in checker_shell["sections"] if section["active"])["label"] == "Feature Checker"
 
     editor_html = render("itemedit.html", "/itemedit")
     assert "Editors: Zone Editor" in editor_html
