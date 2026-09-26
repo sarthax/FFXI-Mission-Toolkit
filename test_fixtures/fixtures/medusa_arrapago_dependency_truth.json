@@ -1,0 +1,218 @@
+{
+  "schema": 1,
+  "kind": "WORKBENCH_DEPENDENCY_TRUTH_SET",
+  "fixture_id": "fixture:medusa-arrapago-reef",
+  "subject": {
+    "name": "Medusa",
+    "zone": "Arrapago Reef",
+    "zone_id": 54,
+    "entity_id": 16998862,
+    "template_id": 2606,
+    "source_family": "LSB",
+    "source_revision": "3747feee0e38ab5c0283c4fe8deea7f0a9022351"
+  },
+  "source_paths": [
+    "data/zones/arrapago_reef/mobs.yaml",
+    "scripts/zones/Arrapago_Reef/mobs/Medusa.lua",
+    "scripts/zones/Arrapago_Reef/IDs.lua",
+    "sql/mob_skill_lists.sql",
+    "sql/mob_skills.sql",
+    "scripts/mixins/job_special.lua",
+    "scripts/enum/mob_skill.lua",
+    "scripts/enum/title.lua"
+  ],
+  "verified_facts": {
+    "template": {
+      "species": "medusa",
+      "type": [
+        "notorious"
+      ],
+      "skill_list_id": 725,
+      "main_job": "rng",
+      "sub_job": "rng",
+      "hp": 55000,
+      "respawn_seconds": 259200,
+      "model_id": 1865,
+      "combat_skill": "katana",
+      "damage_multiplier": 125
+    },
+    "helpers": [
+      {
+        "entity_id": 16998863,
+        "template": "Lamia_Exon"
+      },
+      {
+        "entity_id": 16998864,
+        "template": "Lamia_Exon"
+      },
+      {
+        "entity_id": 16998865,
+        "template": "Lamia_Exon"
+      },
+      {
+        "entity_id": 16998866,
+        "template": "Lamia_Exon"
+      }
+    ],
+    "helper_template": {
+      "template": "Lamia_Exon",
+      "template_id": 2331,
+      "species": "lamiae",
+      "spell_list_id": 28,
+      "skill_list_id": 171,
+      "main_job": "blm",
+      "sub_job": "cor",
+      "spawn_type": "scripted"
+    },
+    "skill_list": {
+      "id": 725,
+      "skill_ids": [
+        1808,
+        1809,
+        1810,
+        1812,
+        1813,
+        1814
+      ]
+    },
+    "skill_definitions": [
+      {
+        "id": 1808,
+        "name": "petrifaction"
+      },
+      {
+        "id": 1809,
+        "name": "shadow_thrust",
+        "script": "scripts/actions/mobskills/shadow_thrust.lua"
+      },
+      {
+        "id": 1810,
+        "name": "tail_slap"
+      },
+      {
+        "id": 1812,
+        "name": "pinning_shot",
+        "script": "scripts/actions/mobskills/pinning_shot.lua"
+      },
+      {
+        "id": 1813,
+        "name": "calcifying_deluge",
+        "script": "scripts/actions/mobskills/calcifying_deluge.lua"
+      },
+      {
+        "id": 1814,
+        "name": "gorgon_dance",
+        "script": "scripts/actions/mobskills/gorgon_dance.lua"
+      }
+    ],
+    "job_special": {
+      "mixin": "scripts/mixins/job_special.lua",
+      "enum_symbol": "xi.mobSkill.EES_LAMIA",
+      "skill_id": 1931,
+      "skill_name": "eagle_eye_shot",
+      "configured_chance_percent": 75,
+      "configured_hpp_range": [
+        5,
+        99
+      ]
+    },
+    "loot": [
+      {
+        "item_symbol": "medusas_armlet",
+        "chance": "very_common"
+      },
+      {
+        "item_symbol": "mercenarys_dastanas",
+        "chance": "common"
+      }
+    ],
+    "title": {
+      "symbol": "xi.title.GORGONSTONE_SUNDERER",
+      "id": 475
+    },
+    "text_symbols": [
+      "MEDUSA_ENGAGE",
+      "MEDUSA_DEATH"
+    ],
+    "alternate_variants": [
+      {
+        "zone": "Al Zahbi",
+        "template": "Medusa_Besieged",
+        "template_id": 7166,
+        "script": "scripts/zones/Al_Zahbi/mobs/Medusa.lua",
+        "relation": "RELATED_VARIANT_NOT_DEPENDENCY"
+      },
+      {
+        "zone": "Bhaflau Thickets",
+        "template": "Medusa_Besieged",
+        "template_id": 7166,
+        "script": "scripts/zones/Bhaflau_Thickets/mobs/Medusa.lua",
+        "relation": "RELATED_VARIANT_NOT_DEPENDENCY"
+      }
+    ]
+  },
+  "required_dependency_classes": [
+    {
+      "key": "root_entity_template",
+      "description": "Arrapago Reef entity 16998862 and Medusa template/configuration.",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "helper_entities",
+      "description": "Four adjacent Lamia Exon bodyguards dynamically referenced as MEDUSA+1 through MEDUSA+4.",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "helper_template",
+      "description": "Lamia Exon template, including its spell list 28 and skill list 171.",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "medusa_skill_list",
+      "description": "Skill list 725 and all six member mob-skill definitions.",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "mob_skill_scripts",
+      "description": "Lua implementations for skill-list members where script implementations exist.",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "job_special_mixin",
+      "description": "job_special mixin plus EES_LAMIA/eagle_eye_shot dependencies.",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "loot_items",
+      "description": "Medusa loot definitions and referenced item records.",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "title_and_text",
+      "description": "Gorgonstone Sunderer title and engage/death text symbols.",
+      "expected_status": "REQUIRED"
+    },
+    {
+      "key": "lua_engine_calls",
+      "description": "Lua API/binding/engine dependencies used by Medusa and referenced skill/mixin scripts.",
+      "expected_status": "REQUIRED_OR_TARGET_EQUIVALENT"
+    },
+    {
+      "key": "alternate_medusa_variants",
+      "description": "Al Zahbi/Bhaflau Besieged Medusa implementations must be identified but excluded from Arrapago scope unless explicitly selected.",
+      "expected_status": "RELATED_NOT_INCLUDED"
+    }
+  ],
+  "known_current_toolkit_gaps": [
+    "LSB zone mob YAML is not represented by the current SQL-only logical table extractor.",
+    "No generic logical records currently model mob_skill_lists membership.",
+    "No generic logical records currently model mob_skills definitions as package dependencies.",
+    "No generic logical records currently model mob_spell_lists membership.",
+    "No generic species/family dependency layer currently closes Medusa/Lamia species relationships.",
+    "Lua require/mixin dependencies are not guaranteed to be represented as package artifact edges.",
+    "Arithmetic entity references such as ID.mob.MEDUSA + 1 through + 4 are not guaranteed to resolve to helper entities.",
+    "YAML loot item symbols are not currently guaranteed to resolve to canonical item records.",
+    "Zone text/title enum references are not currently guaranteed to become package dependencies.",
+    "Same-name alternate-zone variants require semantic scope disambiguation and must not be pulled in by name alone."
+  ]
+}
