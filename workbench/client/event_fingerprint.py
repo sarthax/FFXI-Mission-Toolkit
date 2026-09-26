@@ -26,6 +26,7 @@ class EventResource:
     event_id: int
     byte_code: bytes
     data_count: int = 0
+    data_values: tuple[int, ...] = ()
     block_event_count: int = 0
     block_index: int = 0
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -35,12 +36,15 @@ class EventResource:
 class EventFingerprint:
     exact_sha256: str
     structural_sha256: str
+    composite_sha256: str
     opcode_sequence: tuple[int, ...]
     instruction_lengths: tuple[int, ...]
     bytecode_length: int
     data_count: int
     block_event_count: int
     unknown_opcode_count: int = 0
+    message_ids: tuple[int, ...] = ()
+    message_text_fingerprints: tuple[str, ...] = ()
     parser: str = "UNKNOWN"
     metadata: dict[str, Any] = field(default_factory=dict)
 
@@ -63,26 +67,52 @@ def _load_event_parser():
         return None
 
 
-def decode_instruction_shape(byte_code: bytes) -> tuple[tuple[int, ...], tuple[int, ...], int, str]:
+def decode_instruction_shape(
+    byte_code: bytes,
+    data_values: tuple[int, ...] = (),
+) -> tuple[tuple[int, ...], tuple[int, ...], int, tuple[int, ...], str]:
     parser_cls = _load_event_parser()
     if parser_cls is None:
-        # Conservative fallback: do not pretend arbitrary bytes are decoded instructions.
-        return (), (), 0, "RAW_ONLY"
+        return (), (), 0, (), "RAW_ONLY"
     try:
         instructions, _ = parser_cls(use_control_flow=False).parse_event_data(byte_code)
         opcodes = tuple(int(x.opcode) for x in instructions)
         lengths = tuple(len(x.raw_bytes) for x in instructions)
         unknown = sum(1 for x in instructions if getattr(x, "opcode_impl", None) is None)
-        return opcodes, lengths, unknown, "FFXI_EVENTS_DUMP"
+        message_ids: list[int] = []
+        for instruction in instructions:
+            impl = getattr(instruction, "opcode_impl", None)
+            args = getattr(instruction, "args", {}) or {}
+            arg_defs = getattr(impl, "_args", ()) if impl is not None else ()
+            for arg_def in arg_defs:
+                name = str(getattr(arg_def, "name", "")).lower()
+                arg_type = str(getattr(getattr(arg_def, "arg_type", None), "value", "")).lower()
+                if "message" not in name and arg_type != "message_id":
+                    continue
+                value = args.get(getattr(arg_def, "name", ""))
+                if not isinstance(value, int):
+                    continue
+                if 0x8000 <= value <= 0x8FFF:
+                    ref_index = value & 0x7FFF
+                    if ref_index < len(data_values):
+                        value = int(data_values[ref_index])
+                message_ids.append(int(value))
+        return opcodes, lengths, unknown, tuple(message_ids), "FFXI_EVENTS_DUMP"
     except Exception:
-        return (), (), 0, "RAW_ONLY"
+        return (), (), 0, (), "RAW_ONLY"
 
 
-def fingerprint_event(resource: EventResource) -> EventFingerprint:
+def fingerprint_event(
+    resource: EventResource,
+    *,
+    dialog_entries: dict[int, str] | None = None,
+) -> EventFingerprint:
     exact = sha256(resource.byte_code).hexdigest()
-    opcodes, lengths, unknown, parser_name = decode_instruction_shape(resource.byte_code)
+    opcodes, lengths, unknown, message_ids, parser_name = decode_instruction_shape(
+        resource.byte_code,
+        resource.data_values,
+    )
     structural_payload = {
-        # Numeric event id and raw actor/entity id are intentionally excluded.
         "opcode_sequence": list(opcodes),
         "instruction_lengths": list(lengths),
         "bytecode_length": len(resource.byte_code),
@@ -93,15 +123,36 @@ def fingerprint_event(resource: EventResource) -> EventFingerprint:
     structural = sha256(
         json.dumps(structural_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
+
+    text_fingerprints: list[str] = []
+    if dialog_entries:
+        from workbench.core.services.identity_resolver import text_fingerprint
+        for message_id in message_ids:
+            text = dialog_entries.get(int(message_id))
+            if text is not None:
+                text_fingerprints.append(text_fingerprint(text))
+
+    composite_payload = {
+        "structural_sha256": structural,
+        # Message numeric IDs are intentionally excluded; resolved text survives ID drift.
+        "message_text_fingerprints": text_fingerprints,
+    }
+    composite = sha256(
+        json.dumps(composite_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
     return EventFingerprint(
         exact_sha256=exact,
         structural_sha256=structural,
+        composite_sha256=composite,
         opcode_sequence=opcodes,
         instruction_lengths=lengths,
         bytecode_length=len(resource.byte_code),
         data_count=int(resource.data_count),
         block_event_count=int(resource.block_event_count),
         unknown_opcode_count=unknown,
+        message_ids=message_ids,
+        message_text_fingerprints=tuple(text_fingerprints),
         parser=parser_name,
         metadata={
             "entity_id_context": resource.entity_id,
@@ -111,7 +162,9 @@ def fingerprint_event(resource: EventResource) -> EventFingerprint:
 
 
 def semantic_event_structure_key(zone_key: str, fingerprint: EventFingerprint) -> str:
-    return f"EVENT|{str(zone_key).strip().upper()}|STRUCTURE|{fingerprint.structural_sha256}"
+    basis = fingerprint.composite_sha256 if fingerprint.message_text_fingerprints else fingerprint.structural_sha256
+    label = "COMPOSITE" if fingerprint.message_text_fingerprints else "STRUCTURE"
+    return f"EVENT|{str(zone_key).strip().upper()}|{label}|{basis}"
 
 
 def compare_event_fingerprints(
@@ -124,6 +177,11 @@ def compare_event_fingerprints(
     """Compare two event fingerprints while keeping signals independent."""
     exact = source.exact_sha256 == target.exact_sha256
     structure = source.structural_sha256 == target.structural_sha256
+    composite = (
+        bool(source.message_text_fingerprints)
+        and bool(target.message_text_fingerprints)
+        and source.composite_sha256 == target.composite_sha256
+    )
     text = (
         source_text_fingerprint is not None
         and target_text_fingerprint is not None
@@ -139,6 +197,8 @@ def compare_event_fingerprints(
 
     if exact:
         status, confidence = "EXACT_BYTECODE", "VERIFIED"
+    elif composite and decoded_structure:
+        status, confidence = "COMPOSITE_STRUCTURE_TEXT_MATCH", "HIGH"
     elif structure and decoded_structure and text:
         status, confidence = "STRUCTURE_AND_TEXT_MATCH", "HIGH"
     elif structure and decoded_structure:
@@ -157,6 +217,7 @@ def compare_event_fingerprints(
         "signals": {
             "exact_bytecode": exact,
             "structural": structure,
+            "composite": composite,
             "text": text,
         },
     }
@@ -173,13 +234,14 @@ def parse_event_export(path: Path) -> list[EventResource]:
 
     current_entity: int | None = None
     current_data_count = 0
+    current_data_values: list[int] = []
     current_events: list[tuple[int, bytes]] = []
     block_index = -1
     in_events = False
     in_data = False
 
     def flush() -> None:
-        nonlocal current_entity, current_data_count, current_events, block_index
+        nonlocal current_entity, current_data_count, current_data_values, current_events, block_index
         if current_entity is None:
             return
         count = len(current_events)
@@ -190,6 +252,7 @@ def parse_event_export(path: Path) -> list[EventResource]:
                     event_id=event_id,
                     byte_code=byte_code,
                     data_count=current_data_count,
+                    data_values=tuple(current_data_values),
                     block_event_count=count,
                     block_index=block_index,
                 )
@@ -203,6 +266,7 @@ def parse_event_export(path: Path) -> list[EventResource]:
             block_index += 1
             current_entity = int(m_entity.group(1))
             current_data_count = 0
+            current_data_values = []
             current_events = []
             in_events = False
             in_data = False
@@ -228,8 +292,12 @@ def parse_event_export(path: Path) -> list[EventResource]:
                 current_events[-1] = (event_id, byte_code)
                 continue
 
-        if in_data and re.match(r"-\s*(?:\d+|0x[0-9A-Fa-f]+)\s*$", stripped):
-            current_data_count += 1
+        if in_data:
+            m_data = re.match(r"-\s*(\d+|0x[0-9A-Fa-f]+)\s*$", stripped)
+            if m_data:
+                value = int(m_data.group(1), 0)
+                current_data_values.append(value)
+                current_data_count += 1
 
     flush()
     return out
