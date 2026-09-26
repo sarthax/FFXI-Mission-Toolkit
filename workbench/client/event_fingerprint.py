@@ -46,6 +46,7 @@ class EventFingerprint:
     unknown_opcode_count: int = 0
     message_ids: tuple[int, ...] = ()
     message_text_fingerprints: tuple[str, ...] = ()
+    entity_roles: tuple[str, ...] = ()
     parser: str = "UNKNOWN"
     metadata: dict[str, Any] = field(default_factory=dict)
 
@@ -170,17 +171,35 @@ def _load_opcode_source_table() -> dict[int, dict[str, Any]]:
     return table
 
 
+def _special_entity_role(value: int) -> str | None:
+    """Return only portable special-entity semantics; ordinary raw entity ids are excluded."""
+    if value in {0x7FFFFFC0, 0x7FFFFFF0, 0x7FFFFFF9}:
+        return "LOCAL_PLAYER"
+    if value == 0x7FFFFFF8:
+        return "EVENT_ENTITY"
+    if 0x7FFFFFC1 <= value <= 0x7FFFFFC5:
+        return f"PARTY_MEMBER_{value - 0x7FFFFFC0}"
+    if 0x7FFFFFC6 <= value <= 0x7FFFFFCB:
+        return f"ALLIANCE_MEMBER_{value - 0x7FFFFFC5}"
+    if 0x7FFFFFCC <= value <= 0x7FFFFFD1:
+        return f"ALLIANCE_MEMBER_{value - 0x7FFFFFCB + 6}"
+    if 0x7FFFFFF1 <= value <= 0x7FFFFFF5:
+        return f"PARTY_REF_{value - 0x7FFFFFF0}"
+    return None
+
+
 def _decode_from_opcode_sources(
     byte_code: bytes,
     data_values: tuple[int, ...],
-) -> tuple[tuple[int, ...], tuple[int, ...], int, tuple[int, ...], str]:
+) -> tuple[tuple[int, ...], tuple[int, ...], int, tuple[int, ...], tuple[str, ...], str]:
     table = _load_opcode_source_table()
     if not table:
-        return (), (), 0, (), "RAW_ONLY"
+        return (), (), 0, (), (), "RAW_ONLY"
 
     opcodes: list[int] = []
     lengths: list[int] = []
     messages: list[int] = []
+    entity_roles: list[str] = []
     unknown = 0
     offset = 0
     while offset < len(byte_code):
@@ -208,23 +227,29 @@ def _decode_from_opcode_sources(
             raw_value = byte_code[arg_offset:arg_offset + size]
             name = str(arg["name"]).lower()
             arg_type = str(arg["arg_type"]).lower()
-            if ("message" in name or arg_type == "message_id") and size in {1, 2, 4}:
+            if size in {1, 2, 4}:
                 value = int.from_bytes(raw_value, "little")
-                if 0x8000 <= value <= 0x8FFF:
-                    ref_index = value & 0x7FFF
-                    if ref_index < len(data_values):
-                        value = int(data_values[ref_index])
-                messages.append(value)
+                if ("message" in name or arg_type == "message_id"):
+                    message_value = value
+                    if 0x8000 <= message_value <= 0x8FFF:
+                        ref_index = message_value & 0x7FFF
+                        if ref_index < len(data_values):
+                            message_value = int(data_values[ref_index])
+                    messages.append(message_value)
+                if arg_type == "entity_id" or "entity" in name or "actor" in name or "target" in name:
+                    role = _special_entity_role(value)
+                    if role:
+                        entity_roles.append(role)
             arg_offset += size
         offset += length
 
-    return tuple(opcodes), tuple(lengths), unknown, tuple(messages), "OPCODE_SOURCE_TABLE"
+    return tuple(opcodes), tuple(lengths), unknown, tuple(messages), tuple(entity_roles), "OPCODE_SOURCE_TABLE"
 
 
 def decode_instruction_shape(
     byte_code: bytes,
     data_values: tuple[int, ...] = (),
-) -> tuple[tuple[int, ...], tuple[int, ...], int, tuple[int, ...], str]:
+) -> tuple[tuple[int, ...], tuple[int, ...], int, tuple[int, ...], tuple[str, ...], str]:
     parser_cls = _load_event_parser()
     if parser_cls is None:
         return _decode_from_opcode_sources(byte_code, data_values)
@@ -234,6 +259,7 @@ def decode_instruction_shape(
         lengths = tuple(len(x.raw_bytes) for x in instructions)
         unknown = sum(1 for x in instructions if getattr(x, "opcode_impl", None) is None)
         message_ids: list[int] = []
+        entity_roles: list[str] = []
         for instruction in instructions:
             impl = getattr(instruction, "opcode_impl", None)
             args = getattr(instruction, "args", {}) or {}
@@ -241,17 +267,21 @@ def decode_instruction_shape(
             for arg_def in arg_defs:
                 name = str(getattr(arg_def, "name", "")).lower()
                 arg_type = str(getattr(getattr(arg_def, "arg_type", None), "value", "")).lower()
-                if "message" not in name and arg_type != "message_id":
-                    continue
                 value = args.get(getattr(arg_def, "name", ""))
                 if not isinstance(value, int):
                     continue
-                if 0x8000 <= value <= 0x8FFF:
-                    ref_index = value & 0x7FFF
-                    if ref_index < len(data_values):
-                        value = int(data_values[ref_index])
-                message_ids.append(int(value))
-        return opcodes, lengths, unknown, tuple(message_ids), "FFXI_EVENTS_DUMP"
+                if "message" in name or arg_type == "message_id":
+                    message_value = value
+                    if 0x8000 <= message_value <= 0x8FFF:
+                        ref_index = message_value & 0x7FFF
+                        if ref_index < len(data_values):
+                            message_value = int(data_values[ref_index])
+                    message_ids.append(int(message_value))
+                if arg_type == "entity_id" or "entity" in name or "actor" in name or "target" in name:
+                    role = _special_entity_role(value)
+                    if role:
+                        entity_roles.append(role)
+        return opcodes, lengths, unknown, tuple(message_ids), tuple(entity_roles), "FFXI_EVENTS_DUMP"
     except Exception:
         return _decode_from_opcode_sources(byte_code, data_values)
 
@@ -262,7 +292,7 @@ def fingerprint_event(
     dialog_entries: dict[int, str] | None = None,
 ) -> EventFingerprint:
     exact = sha256(resource.byte_code).hexdigest()
-    opcodes, lengths, unknown, message_ids, parser_name = decode_instruction_shape(
+    opcodes, lengths, unknown, message_ids, entity_roles, parser_name = decode_instruction_shape(
         resource.byte_code,
         resource.data_values,
     )
@@ -270,6 +300,7 @@ def fingerprint_event(
         "opcode_sequence": list(opcodes),
         "instruction_lengths": list(lengths),
         "bytecode_length": len(resource.byte_code),
+        "entity_roles": list(entity_roles),
     }
     structural = sha256(
         json.dumps(structural_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -304,6 +335,7 @@ def fingerprint_event(
         unknown_opcode_count=unknown,
         message_ids=message_ids,
         message_text_fingerprints=tuple(text_fingerprints),
+        entity_roles=entity_roles,
         parser=parser_name,
         metadata={
             "entity_id_context": resource.entity_id,
