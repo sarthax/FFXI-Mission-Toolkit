@@ -877,3 +877,23 @@ Snapshot capability production now extends beyond FeatureSurface:
 - Feature Checker already selects the target-snapshot observation when evaluating requirements.
 
 Workbench Regression #1192 validates the adapter behavior and #1205/#1206 validates the capability producers.
+
+
+## 2026-09-25 — P0 migration route matrix
+
+The migration backend registry now exposes a deterministic support matrix across Topaz, Topaz-Next, DSP, and LSB for Lua/SQL artifact routes.
+
+P0 does not require converters for every fork pair. The closure rule is:
+- a proven backend may advertise SUPPORTED;
+- a route with deterministic content gating may advertise CONDITIONAL;
+- all other routes must be explicitly UNSUPPORTED;
+- absence of a backend is never treated as implicit compatibility.
+
+Current matrix highlights:
+- Topaz -> DSP Lua: SUPPORTED;
+- Topaz -> DSP SQL: SUPPORTED;
+- LSB -> DSP Lua: CONDITIONAL;
+- LSB -> DSP SQL: UNSUPPORTED;
+- Topaz-Next routes do not inherit Topaz converter authority automatically.
+
+Workbench Regression #1210 is green with route-matrix coverage.
