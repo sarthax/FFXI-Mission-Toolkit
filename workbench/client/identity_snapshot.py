@@ -14,9 +14,12 @@ import re
 import sqlite3
 from typing import Any
 
+from workbench.client.event_fingerprint import parse_event_export
+
 from workbench.core.services.identity_resolver import (
     IdentitySnapshot,
     ingest_dialog_records,
+    ingest_event_structure_records,
     register_snapshot,
 )
 
@@ -169,14 +172,15 @@ def ingest_client_identity_manifest(
     failures: list[dict[str, Any]] = []
     record_count = 0
     for item in manifest.files:
-        if str(item.get("kind") or "").upper() != "DIALOG":
+        kind = str(item.get("kind") or "").upper()
+        if kind not in {"DIALOG", "EVENT_RESOURCE"}:
             continue
         rel = item.get("relative_path")
         zone_key = item.get("zone_key")
         zone_id = item.get("zone_id")
         if not rel or not zone_key:
             failures.append({
-                "kind": "DIALOG",
+                "kind": kind,
                 "zone_id": zone_id,
                 "error": "manifest entry missing relative_path or zone_key",
             })
@@ -184,22 +188,35 @@ def ingest_client_identity_manifest(
         path = root / str(rel)
         if not path.is_file():
             failures.append({
-                "kind": "DIALOG",
+                "kind": kind,
                 "zone_id": zone_id,
                 "zone_key": zone_key,
                 "error": f"snapshot resource missing: {path}",
             })
             continue
-        entries = parse_dialog_export(path)
-        records = ingest_dialog_records(
-            con,
-            snapshot_id=manifest.snapshot_id,
-            zone_key=str(zone_key),
-            entries=entries,
-            evidence_id_prefix=f"client-dialog:{manifest.snapshot_id}:{zone_key}",
-        )
+
+        if kind == "DIALOG":
+            entries = parse_dialog_export(path)
+            records = ingest_dialog_records(
+                con,
+                snapshot_id=manifest.snapshot_id,
+                zone_key=str(zone_key),
+                entries=entries,
+                evidence_id_prefix=f"client-dialog:{manifest.snapshot_id}:{zone_key}",
+            )
+        else:
+            event_resources = parse_event_export(path)
+            records = ingest_event_structure_records(
+                con,
+                snapshot_id=manifest.snapshot_id,
+                zone_key=str(zone_key),
+                resources=event_resources,
+                evidence_id_prefix=f"client-event:{manifest.snapshot_id}:{zone_key}",
+            )
+
         record_count += len(records)
         zones.append({
+            "kind": kind,
             "zone_id": zone_id,
             "zone_key": zone_key,
             "entry_count": len(records),
