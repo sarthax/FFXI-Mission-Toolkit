@@ -5,6 +5,7 @@ from pathlib import Path
 
 from workbench.analyzers.server.binding_compatibility import compare_bindings
 from workbench.core.graph import init_db, insert_record
+from workbench.core.services.capability_producers import persist_binding_compatibility_capabilities
 
 
 def main():
@@ -26,6 +27,7 @@ def main():
                 insert_record(con, result["analysis"], "AnalysisResult")
                 for finding in result["findings"]:
                     insert_record(con, finding, "Finding")
+                persist_binding_compatibility_capabilities(con, result)
         finally:
             con.close()
     text = json.dumps(result, indent=2, sort_keys=True) + "\n"
