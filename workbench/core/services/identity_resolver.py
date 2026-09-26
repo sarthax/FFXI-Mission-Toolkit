@@ -264,12 +264,13 @@ def ingest_event_structure_records(
     zone_key: str,
     resources: Iterable[Any],
     evidence_id_prefix: str | None = None,
+    dialog_entries: dict[int, str] | None = None,
 ) -> list[IdentityRecord]:
     """Ingest decoded client event-resource structures as primary EVENT identities."""
     from workbench.client.event_fingerprint import fingerprint_event, semantic_event_structure_key
     out: list[IdentityRecord] = []
     for resource in resources:
-        fp = fingerprint_event(resource)
+        fp = fingerprint_event(resource, dialog_entries=dialog_entries)
         semantic_key = semantic_event_structure_key(zone_key, fp)
         record = IdentityRecord(
             record_id=f"identity:{snapshot_id}:EVENT:{zone_key}:{resource.block_index}:{resource.event_id}",
@@ -289,12 +290,15 @@ def ingest_event_structure_records(
                 "fingerprint_basis": "event_structure",
                 "exact_sha256": fp.exact_sha256,
                 "structural_sha256": fp.structural_sha256,
+                "composite_sha256": fp.composite_sha256,
                 "opcode_sequence": list(fp.opcode_sequence),
                 "instruction_lengths": list(fp.instruction_lengths),
                 "bytecode_length": fp.bytecode_length,
                 "data_count": fp.data_count,
                 "block_event_count": fp.block_event_count,
                 "unknown_opcode_count": fp.unknown_opcode_count,
+                "message_ids": list(fp.message_ids),
+                "message_text_fingerprints": list(fp.message_text_fingerprints),
                 "parser": fp.parser,
                 "entity_id_context": resource.entity_id,
                 "block_index": resource.block_index,
