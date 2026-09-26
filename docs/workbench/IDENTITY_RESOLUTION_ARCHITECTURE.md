@@ -371,3 +371,197 @@ Retail capture produced by A
 ```
 
 This is intentionally symmetrical: A and B can represent old/new Retail builds, server-aligned client generations, or capture/source/target combinations.
+
+
+## 2026-09-26 implementation milestone — structural/composite event fingerprinting
+
+Event identity no longer depends only on normalized dialog text.
+
+### Event resource extraction
+
+Installed-client snapshots now also export each zone's event DAT using the vendored
+`vendor/FFXI-Resources/scripts/events/dats.yaml` zone map.
+
+Each exported event resource retains:
+
+- zone id/key;
+- original event DAT path;
+- actor/entity block id;
+- event id as a snapshot-specific representation;
+- block index;
+- immediate-data table;
+- raw event bytecode;
+- resource SHA-256 and client snapshot provenance.
+
+Alternate event resources mapped to the same zone are retained as separate resources instead of
+being silently collapsed.
+
+### Fingerprint hierarchy
+
+`workbench/client/event_fingerprint.py` produces independent signals.
+
+**Exact bytecode fingerprint**
+
+```text
+SHA-256(raw event bytecode)
+```
+
+This is the strongest literal equality signal but is intentionally brittle. A changed immediate
+value makes this hash different even when the event remains semantically equivalent.
+
+**Decoded structural fingerprint**
+
+The bytecode is decoded into:
+
+```text
+opcode sequence
+instruction-length sequence
+event bytecode length
+```
+
+Raw event IDs, actor IDs, immediate argument values, block event count, and block-level data count
+are excluded from semantic structure.
+
+This permits an event to retain identity when:
+
+- the event/CSID number moves;
+- message IDs move;
+- immediate values move;
+- unrelated sibling events are added to the same actor block.
+
+The richer vendored FFXI-EventsDump parser is used when its optional dependencies are available.
+A dependency-free fallback reads the vendored opcode Python source with the standard-library AST,
+including inherited `get_args()` and `calculate_length()` definitions. Variable-length opcodes
+that cannot be safely decoded without executing their custom length logic cause a conservative
+RAW_ONLY fallback rather than invented instruction boundaries.
+
+**Message-reference evidence**
+
+Decoded opcode argument definitions are inspected for message-id arguments.
+
+Reference-table values such as `0x8000 + index` are resolved through the event block's immediate
+data table before looking up the zone dialog table.
+
+The numeric message IDs themselves are not part of semantic identity.
+
+Instead, referenced Retail text is normalized and hashed.
+
+Example:
+
+```text
+new client:
+  event 77
+  PRINT_MESSAGE 503
+  text = "The same Retail line."
+
+old client:
+  event 10
+  PRINT_MESSAGE References[0]
+  References[0] = 500
+  text = "The same Retail line."
+
+result:
+  event numeric id differs
+  message numeric id differs
+  opcode structure agrees
+  Retail text fingerprint agrees
+  => composite event identity matches
+```
+
+**Composite fingerprint**
+
+When referenced dialog text is available:
+
+```text
+structural fingerprint
++ ordered referenced Retail-text fingerprints
+= composite fingerprint
+```
+
+The composite fingerprint is preferred for EVENT semantic identity. If no resolvable message text
+exists, the structural fingerprint remains the semantic basis.
+
+### Confidence
+
+Fingerprint comparison preserves signal strength:
+
+| Result | Meaning | Confidence |
+|---|---|---|
+| `EXACT_BYTECODE` | exact raw bytecode | VERIFIED |
+| `COMPOSITE_STRUCTURE_TEXT_MATCH` | decoded structure + referenced Retail text | HIGH |
+| `STRUCTURE_AND_TEXT_MATCH` | decoded structure + separately supplied text evidence | HIGH |
+| `STRUCTURE_MATCH` | decoded instruction shape only | HIGH |
+| `COARSE_SHAPE_MATCH` | decoder unavailable; only coarse fallback shape | LOW |
+| `TEXT_ONLY_MATCH` | text matches but event structure does not | LOW |
+| `NO_MATCH` | no supported equivalence | UNKNOWN |
+
+Same dialog text alone must never prove event equivalence.
+
+### Dialog/event namespace separation
+
+Dialog table indices are now `DIALOG_TEXT_ID` by default.
+
+They are supporting evidence for event identity and are not silently treated as `EVENT` or
+`CSID` identifiers.
+
+### Actor-scoped capture resolution
+
+Event DATs are actor/entity-block scoped, and the same numeric CSID may appear under multiple actors
+in the same zone.
+
+`ObservedTransition.actor_id` is therefore used to constrain the **source** event lookup when
+available.
+
+The actor id is not copied to the target snapshot. Target actor identity still requires its own
+identity mapping/evidence; if multiple target event candidates remain, resolution is
+`TARGET_ID_AMBIGUOUS`.
+
+### Package confidence policy
+
+Identity closure now accepts a minimum confidence threshold.
+
+A mapping can be numerically resolved while still failing automatic package readiness if its
+evidence confidence is below policy.
+
+Recommended package policy for automatic event translation:
+
+```text
+minimum_confidence = HIGH
+```
+
+This allows decoded structural/composite matches while forcing RAW_ONLY, text-only, inferred, and
+ambiguous mappings into manual review.
+
+### Regression proofs
+
+The current regression set now proves:
+
+1. different event IDs with equivalent decoded structure;
+2. changed immediate values with equivalent structure;
+3. same text with different structure remains LOW-confidence only;
+4. message ID drift with stable Retail text;
+5. immediate-data reference resolution for message IDs;
+6. unrelated actor-block growth does not change event semantic identity;
+7. repeated CSID under multiple source actors is ambiguous without actor context;
+8. capture/source actor context can select the correct source event;
+9. duplicate semantic candidates in the target remain ambiguous rather than auto-selected.
+
+Primary fixtures:
+
+- `test_fixtures/test_event_fingerprint.py`
+- `test_fixtures/test_event_identity_resolution.py`
+- `test_fixtures/test_client_identity_extract.py`
+- `test_fixtures/test_capture_identity_bridge.py`
+
+### Next event-identity work
+
+Before declaring identity closure complete, remaining work includes:
+
+1. test against a real second FFXI client build;
+2. add target actor/entity semantic resolution across snapshots;
+3. decode variable-length event opcodes safely in the dependency-free path or preserve their
+   richer-parser provenance when the full parser is available;
+4. extract additional stable semantic arguments such as referenced entities/resources without
+   treating their raw numeric IDs as portable;
+5. feed HIGH-confidence EVENT mappings directly into Package Scope/Readiness;
+6. surface source/target snapshot selection and evidence breakdown in the ID Drift GUI.
