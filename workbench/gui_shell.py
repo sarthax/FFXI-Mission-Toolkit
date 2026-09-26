@@ -158,11 +158,10 @@ WORKSPACES = (
     },
     {
         "name": "Packages",
-        "href": "/?workspace=packages",
-        "planned": True,
+        "href": "/packages",
         "sections": (
-            {"label": "Package Library", "href": None, "planned": True},
-            {"label": "Review & Readiness", "href": None, "planned": True},
+            {"label": "Package Library", "href": "/packages"},
+            {"label": "Review & Readiness", "href": "/packages/review"},
             {"label": "Backport Package (legacy)", "href": "/backport/package", "legacy": True},
         ),
     },
