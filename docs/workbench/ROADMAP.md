@@ -106,8 +106,8 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - [ ] Logical schema mapping — item_basic, equipment, item_weapon, item_usable, spells, traits, instances, NPCs, mobs, spawns, drops, battlefield registry/membership, and SQL extraction are implemented. A cross-profile coverage matrix reports unmapped parsed fields, missing logical types, and identity-mapping gaps; additional system tables still require audited mappings.
 - [x] Generic FeatureSurface comparison — artifact roles, entity coverage, behavioral capabilities, path drift, capability status drift, and explicit migration actions for entity/capability/representation gaps are implemented.
 - [x] Snapshot-specific capability observations and target-aware Feature Checker evaluation — FeatureSurface, server-schema coverage, binding compatibility, and live-target DB validators now emit snapshot observations; client-specific producers remain in the client phase.
-- [ ] Lua migration backend — generic backend registry is implemented; legacy Topaz→DSP Lua conversion is registered explicitly. LSB→DSP and other routes remain unsupported until dedicated converters exist.
-- [ ] SQL migration backend — generic backend registry is implemented; legacy Topaz→DSP SQL conversion is registered explicitly. Broader source/target routes remain unsupported.
+- [x] Lua migration backend (P0) — route registry/support matrix is explicit: Topaz→DSP is SUPPORTED, LSB→DSP is CONDITIONAL/content-gated, and all other unproven routes are UNSUPPORTED rather than guessed.
+- [x] SQL migration backend (P0) — Topaz→DSP is the only registered SUPPORTED SQL route; every other source/target combination is explicitly UNSUPPORTED until a deterministic backend is added.
 - [x] Binding compatibility engine — generic snapshot-aware comparison now distinguishes exact,
   representation drift, renamed/class-drift candidate, implementation drift, missing indexed,
   unresolved, and ambiguous outcomes while preserving binding/function evidence.
