@@ -484,3 +484,65 @@ def persist_mapping(
 
 def record_dict(record: Any) -> dict[str, Any]:
     return asdict(record)
+
+
+@dataclass(frozen=True)
+class IdentityClosureAssessment:
+    status: str
+    total: int
+    resolved: int
+    exact: int
+    target_equivalent: int
+    unresolved: int
+    ambiguous: int
+    blocking: tuple[str, ...] = ()
+    notes: tuple[str, ...] = ()
+
+
+def assess_identity_closure(
+    resolutions: Iterable[IdentityResolution],
+    *,
+    unresolved_blocks: bool = False,
+) -> IdentityClosureAssessment:
+    """Aggregate identifier resolutions into a package-readiness dimension.
+
+    TARGET_EQUIVALENT is considered resolved: numeric drift is acceptable when the semantic
+    identity has been mapped to the selected target snapshot. Unknown/ambiguous mappings remain
+    visible and prevent READY. Callers may choose whether unresolved required identities should
+    hard-block package planning or remain MANUAL_REQUIRED.
+    """
+    rows = list(resolutions)
+    exact = sum(r.status == "EXACT" for r in rows)
+    equivalent = sum(r.status == "TARGET_EQUIVALENT" for r in rows)
+    ambiguous_rows = [
+        r for r in rows if r.status in {"SOURCE_ID_AMBIGUOUS", "TARGET_ID_AMBIGUOUS"}
+    ]
+    unresolved_rows = [
+        r for r in rows
+        if r.status not in {"EXACT", "TARGET_EQUIVALENT"}
+        and r not in ambiguous_rows
+    ]
+    blocking = tuple(
+        f"{r.namespace}:{r.source_snapshot_id}:{r.source_numeric_id}:{r.status}"
+        for r in [*ambiguous_rows, *unresolved_rows]
+    )
+    if not blocking:
+        status = "READY"
+    elif unresolved_blocks:
+        status = "BLOCKED"
+    else:
+        status = "MANUAL_REQUIRED"
+    return IdentityClosureAssessment(
+        status=status,
+        total=len(rows),
+        resolved=exact + equivalent,
+        exact=exact,
+        target_equivalent=equivalent,
+        unresolved=len(unresolved_rows),
+        ambiguous=len(ambiguous_rows),
+        blocking=blocking,
+        notes=(
+            "TARGET_EQUIVALENT counts as resolved only because semantic identity mapped across snapshots.",
+            "Numeric equality without semantic identity evidence is not sufficient for closure.",
+        ),
+    )
