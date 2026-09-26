@@ -2815,6 +2815,7 @@ def packages_create_run(
             source_family=source_family.strip(),
             target_family=target_family.strip(),
         )
+        manifest["schema"] = 3
         manifest["dependency_scope"] = {
             "schema": scope["schema"],
             "closure_status": scope["closure_status"],
