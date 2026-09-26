@@ -21,12 +21,28 @@
   body { margin: 0; font: 14px/1.5 -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--ink);
          display: flex; flex-direction: column; overflow: hidden; }
   header { background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
-  .navrow { padding: 8px 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .navrow { padding: 8px 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .navrow + .navrow { border-top: 1px solid var(--border); }
   .navrow .navlabel { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
                        font-weight: 700; margin-right: 2px; }
   header a { color: var(--ink); text-decoration: none; font-weight: 600; }
   header a:hover { color: var(--accent); }
+  .workspace-nav { gap: 4px; }
+  .workspace-link, .section-link { display: inline-flex; align-items: center; gap: 4px; border-radius: 5px; padding: 4px 7px; }
+  .workspace-link.active, .section-link.active { background: var(--accent-soft); color: var(--accent); }
+  .workspace-link.planned, .section-link.planned { color: var(--muted); font-weight: 500; }
+  span.workspace-link.planned, span.section-link.planned { cursor: default; }
+  .section-link.mutation { border: 1px solid var(--amber); color: var(--amber); }
+  .section-link.mutation::before { content: "Edit"; font-size: 9px; font-weight: 700; text-transform: uppercase; }
+  .section-link.legacy::after { content: "legacy"; font-size: 9px; color: var(--muted); text-transform: uppercase; }
+  .contextbar { padding-top: 6px; padding-bottom: 6px; gap: 8px; background: var(--code-bg); }
+  .context-items { display: flex; flex: 1; gap: 6px; align-items: center; flex-wrap: wrap; min-width: 0; }
+  .context-item { display: inline-flex; gap: 5px; align-items: baseline; min-width: 0; border: 1px solid var(--border);
+                  border-radius: 5px; background: var(--surface); padding: 2px 7px; font-size: 11px; }
+  .context-item .context-label { color: var(--muted); text-transform: uppercase; font-size: 9px; font-weight: 700; }
+  .context-item .context-value { max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .context-item.unknown .context-value { color: var(--amber); }
+  .section-nav { padding-top: 5px; padding-bottom: 5px; }
   header .brand, header .brand-spacer { display: inline-flex; align-items: center; width: 132px; flex-shrink: 0; }
   header .brand { font-weight: 700; color: var(--accent); gap: 6px; }
   header .brand img { height: 22px; width: 22px; }
@@ -67,24 +83,19 @@
 </style>
 </head>
 <body>
+{% set shell = shell_context(request) %}
 <header>
-  <div class="navrow">
+  <div class="navrow contextbar" aria-label="Current project and snapshot context">
     <a href="/" class="brand"><img src="/static/valhalla_logo.png" alt=""> ValhallaXI</a>
-    <span class="navlabel">Tools</span>
-    <a href="/captures">Captures</a>
-    <a href="/captures/query">Capture Query</a>
-    <a href="/entity">Entity Lookup</a>
-    <a href="/wiki">Wiki Compiler</a>
-    <a href="/packets">Packet Decoder</a>
-    <a href="/llm">LLM Assistant</a>
-    {% if backport_enabled() %}
-    <span class="navlabel">Backport</span>
-    <a href="/iddrift">ID Drift</a>
-    <a href="/backport/lua-convert">Lua Converter</a>
-    <a href="/backport/sql-convert">SQL Converter</a>
-    <a href="/backport/package">Backport Package</a>
-    {% endif %}
-    <span style="margin-left:auto; display:flex; gap:16px; align-items:center;">
+    <div class="context-items">
+      {% for item in shell.snapshot_context %}
+      <span class="context-item{% if not item.known %} unknown{% endif %}" title="{{ item.detail }}">
+        <span class="context-label">{{ item.label }}</span>
+        <span class="context-value">{{ item.value }}</span>
+      </span>
+      {% endfor %}
+    </div>
+    <span style="margin-left:auto; display:flex; gap:8px; align-items:center;">
       <form method="post" action="/theme/toggle" style="display:contents;">
         <button type="submit" class="theme-toggle" title="{{ 'Switch to light theme' if current_theme() == 'dark' else 'Switch to dark theme' }}">
           {% if current_theme() == "dark" %}
@@ -94,30 +105,30 @@
           {% endif %}
         </button>
       </form>
-      <a href="/roadmap">Roadmap</a>
-      <a href="/help">Help</a>
-      <a href="/settings">Settings</a>
     </span>
   </div>
-  <div class="navrow">
+  <nav class="navrow workspace-nav" aria-label="Primary workspaces">
     <span class="brand-spacer">Mission Toolkit</span>
-    <span class="navlabel">Research</span>
-    <a href="/dialog">Dialog Search</a>
-    <a href="/zones">Browse by Zone</a>
-    <a href="/gaps">Zero-Position / Unregistered</a>
-    <a href="/sql">SQL Index</a>
-    <a href="/events">Events / CSIDs</a>
-    <a href="/missions">Assault Missions</a>
-    <a href="/nyzul">Nyzul Plot</a>
-    <a href="/zoneplot">Zone Plot</a>
-  <a href="/zones/0/view3d">3D Viewer</a>
-    <a href="/keyitems">Key Items</a>
-    <a href="/items">Item Browser</a>
-    <a href="/itemedit">Item Editor</a>
-    {% if backport_enabled() %}
-    <a href="/backport/bindings">Binding Reference</a>
-    {% endif %}
-  </div>
+    {% for workspace in shell.workspaces %}
+      {% if workspace.href %}
+      <a class="workspace-link{% if workspace.name == shell.active_home %} active{% endif %}{% if workspace.planned %} planned{% endif %}"
+         href="{{ workspace.href }}"{% if workspace.name == shell.active_home %} aria-current="page"{% endif %}>{{ workspace.name }}</a>
+      {% else %}
+      <span class="workspace-link planned" title="Workspace shell reserved; consolidated page not implemented yet">{{ workspace.name }}</span>
+      {% endif %}
+    {% endfor %}
+  </nav>
+  <nav class="navrow section-nav" aria-label="{{ shell.active_home }} subsections">
+    <span class="brand-spacer">{{ shell.active_home }}</span>
+    {% for section in shell.sections %}
+      {% if section.href %}
+      <a class="section-link{% if section.active %} active{% endif %}{% if section.mutation %} mutation{% endif %}{% if section.legacy %} legacy{% endif %}"
+         href="{{ section.href }}"{% if section.active %} aria-current="page"{% endif %}>{{ section.label }}</a>
+      {% else %}
+      <span class="section-link planned" title="Backend-first capability; GUI page not implemented yet">{{ section.label }}</span>
+      {% endif %}
+    {% endfor %}
+  </nav>
 </header>
 <main>
 {% block content %}{% endblock %}

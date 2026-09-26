@@ -989,3 +989,21 @@ Current route ownership:
 The high Tools count is dominated by the supporting APIs/actions of the existing Zone Editor and Item Editor and does not imply those tools will be flattened into generic navigation.
 
 No existing GUI capability was removed or hidden by this milestone.
+
+
+## 2026-09-25 — Shared GUI application shell
+
+Implemented the first GUI migration milestone without redesigning individual pages or changing the 134-route FastAPI surface.
+
+The shared `base.html` shell now provides:
+- all ten approved top-level workspaces: Home / Project, Features, Backport & Migration, Captures, Server, Client, Validation, Packages, Tools, and Settings;
+- workspace-specific subsection navigation over existing routes, with planned backend-first views shown as unavailable rather than linked to invented pages;
+- first-class Captures navigation with library, import, search, query, and path views;
+- persistent project/source/target/client context derived from current settings and real path availability;
+- explicit `UNKNOWN` snapshot/build identities when a root exists but no selected canonical snapshot/build is recorded, and `Not configured` when no real configured/detected root is available;
+- visually distinct mutation links for Zone Editor and Item Editor;
+- preserved direct access to Nyzul, LLM/research, Wiki, Model Viewer, legacy Backport Package, diagnostics, lookup/decode tools, and current editor workflows.
+
+`workbench.gui_shell` owns the read-only shell model and resolves active workspace ownership from `GUI_ROUTE_MAP.json`; it does not add routes, select snapshots, or mutate settings. Validation and Packages remain visible top-level workspaces while their consolidated pages remain future work. The existing Backport Package route stays available as an explicitly labeled legacy workflow.
+
+Regression coverage in `test_fixtures/test_gui_shell.py` reruns the 134-route information-architecture check, verifies dynamic route ownership, verifies configured versus unknown context semantics, and renders representative Home, Captures, and mutation-editor templates through the shared shell. The Workbench regression workflow now runs this shell test.

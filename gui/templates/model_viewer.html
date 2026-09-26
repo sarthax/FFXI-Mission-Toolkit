@@ -1,31 +1,27 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Model Viewer</title>
+{% extends "base.html" %}
+{% block title %}Model Viewer{% endblock %}
+{% block content %}
 <style>
-  :root{--bg:#0a0d10;--panel:#12171c;--border:#26313a;--fg:#d7dee3;--muted:#8b98a1;--accent:#4fc3f7}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:#d7dee3;font:13px/1.4 system-ui,sans-serif;height:100vh;display:flex}
+  main { max-width:none; width:100%; padding:0; overflow:hidden; display:flex; }
+  #model-viewer { display:flex; flex:1; min-height:0; background:#0a0d10; color:#d7dee3; font:13px/1.4 system-ui,sans-serif; }
   #panel{width:340px;flex:none;background:#12171c;border-right:1px solid #26313a;padding:12px;overflow-y:auto}
   #viewer-container{flex:1;position:relative}
-  h1{font-size:14px;margin:0 0 10px}
-  label{display:block;margin:8px 0 3px;color:#8b98a1;font-size:11px}
-  input,select{width:100%;background:#0d1216;border:1px solid #26313a;color:#d7dee3;padding:5px 6px;border-radius:4px;font:inherit}
-  button{margin-top:10px;width:100%;background:#1b2833;border:1px solid #2f4353;color:#d7dee3;padding:7px;border-radius:4px;cursor:pointer;font:inherit}
-  button:hover{background:#233240}
-  .row{display:flex;gap:6px}
-  .row>*{flex:1}
-  .muted{color:#8b98a1}
-  .mono{font-family:ui-monospace,Consolas,monospace}
+  #model-viewer h1{font-size:14px;margin:0 0 10px}
+  #model-viewer label{display:block;margin:8px 0 3px;color:#8b98a1;font-size:11px}
+  #model-viewer input,#model-viewer select{width:100%;background:#0d1216;border:1px solid #26313a;color:#d7dee3;padding:5px 6px;border-radius:4px;font:inherit}
+  #model-viewer button{margin-top:10px;width:100%;background:#1b2833;border:1px solid #2f4353;color:#d7dee3;padding:7px;border-radius:4px;cursor:pointer;font:inherit}
+  #model-viewer button:hover{background:#233240}
+  #model-viewer .row{display:flex;gap:6px}
+  #model-viewer .row>*{flex:1}
+  #model-viewer .muted{color:#8b98a1}
+  #model-viewer .mono{font-family:ui-monospace,Consolas,monospace}
   #info{margin-top:12px;font-size:11px;white-space:pre-wrap;word-break:break-all}
   #info .err{color:#ff8a80}
   #info .warn{color:#ffcc80}
-  a{color:#4fc3f7}
+  #model-viewer a{color:#4fc3f7}
   #loading{position:absolute;top:10px;left:10px;color:#8b98a1;font-size:12px}
 </style>
-</head>
-<body>
+<div id="model-viewer">
 <div id="panel">
   <h1>Model Viewer</h1>
   <div class="muted">Renders an NPC/mob's real model DAT(s), resolved live from the DB via <span class="mono">mob_look_decode.py</span> + <span class="mono">gear_tables.py</span> + dat-extractor. Single-DAT ("flat") entities render one file; gear-composite humanoids render the race skeleton DAT plus every equipped slot's gear DAT, skinned to the shared skeleton. Find an id first on the <a href="/entity" target="_blank">Entity search</a> page.</div>
@@ -446,5 +442,5 @@ async function loadModel() {
 $('load').addEventListener('click', loadModel);
 $('eid').addEventListener('keydown', ev => { if (ev.key === 'Enter') loadModel(); });
 </script>
-</body>
-</html>
+</div>
+{% endblock %}

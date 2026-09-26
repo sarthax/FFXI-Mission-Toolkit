@@ -67,6 +67,7 @@ import lookup_entity
 import packet_decode
 import settings as settings_mod
 import wiki_compile
+from workbench.gui_shell import build_shell_context
 
 TOOLS_ROOT = Path(__file__).parent
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
@@ -537,6 +538,28 @@ def backport_enabled() -> bool:
 
 
 templates.env.globals["backport_enabled"] = backport_enabled
+
+
+def shell_context(request: Request) -> dict:
+    """Shared read-only navigation/context model for every template extending base.html."""
+    con = get_con()
+    try:
+        current_settings = settings_mod.get_all(con)
+    finally:
+        con.close()
+    return build_shell_context(
+        path=request.url.path,
+        method=request.method,
+        settings=current_settings,
+        default_topaz_root=settings_mod.DEFAULT_TOPAZ_ROOT,
+        default_backport_root=settings_mod.DEFAULT_BACKPORT_ROOT,
+        detected_client_path=settings_mod.get_ffxi_install(),
+        workspace_slug=request.query_params.get("workspace"),
+        shell_override=request.query_params.get("shell"),
+    )
+
+
+templates.env.globals["shell_context"] = shell_context
 
 
 @app.get("/help", response_class=HTMLResponse)

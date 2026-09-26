@@ -396,5 +396,5 @@ Current proof:
 - [x] Preserve Item Editor and Zone Editor as mutation-focused tools under Tools > Editors.
 - [x] Define canonical homes for backend-first capabilities that still need GUI exposure: Feature Checker/Trace, migration/collision/schema analysis, client binary research, validation runs/results, and package review/apply.
 - [x] Add machine-readable `GUI_ROUTE_MAP.json` and CI regression coverage for all 134 current FastAPI routes.
-- [ ] Implement the shared navigation shell and persistent project/source/target snapshot context.
+- [x] Implement the shared navigation shell and persistent project/source/target/client context. The shell uses the approved route map for active workspace ownership, supports workspace subsections, keeps mutation editors visually distinct, and reports UNKNOWN / Not configured when current settings cannot establish snapshot or build identity. Existing routes and page internals remain unchanged.
 - [ ] Migrate workspace pages incrementally while preserving current routes until feature parity is verified.
