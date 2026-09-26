@@ -405,13 +405,17 @@ def build_dependency_scope(
         closure_status = "BLOCKED"
     elif unresolved:
         closure_status = "MANUAL_REQUIRED"
-    elif any(item.effective_decision in {"EXCLUDE", "TARGET_EQUIVALENT", "NOT_REQUIRED"} for item in items):
+    elif any(item.effective_decision == "EXCLUDE" for item in items):
+        closure_status = "COMPLETE_WITH_USER_EXCLUSIONS"
+    elif any(item.effective_decision in {"TARGET_EQUIVALENT", "NOT_REQUIRED"} for item in items):
         closure_status = "COMPLETE_WITH_REVIEWED_EXCLUSIONS"
 
     if review["status"] != "REVIEWED":
         package_gate = "REVIEW_REQUIRED"
     elif closure_status in {"BLOCKED", "MANUAL_REQUIRED"}:
         package_gate = closure_status
+    elif closure_status == "COMPLETE_WITH_USER_EXCLUSIONS":
+        package_gate = "MANUAL_REQUIRED"
     else:
         package_gate = "READY"
 
