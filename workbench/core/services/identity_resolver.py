@@ -285,7 +285,7 @@ def ingest_event_structure_records(
                 f"{evidence_id_prefix}:{resource.block_index}:{resource.event_id}"
                 if evidence_id_prefix else None
             ),
-            confidence="VERIFIED" if fp.parser != "RAW_ONLY" else "INFERRED",
+            confidence="HIGH" if fp.parser != "RAW_ONLY" else "LOW",
             metadata={
                 "fingerprint_basis": "event_structure",
                 "exact_sha256": fp.exact_sha256,
@@ -474,11 +474,16 @@ def resolve_identity(
 
         target = targets[0]
         same = source["numeric_id"] == target["numeric_id"]
-        confidence = (
-            "VERIFIED"
-            if source["confidence"] == "VERIFIED" and target["confidence"] == "VERIFIED"
-            else "INFERRED"
-        )
+        source_conf = str(source["confidence"] or "UNKNOWN").upper()
+        target_conf = str(target["confidence"] or "UNKNOWN").upper()
+        if source_conf == "VERIFIED" and target_conf == "VERIFIED":
+            confidence = "VERIFIED"
+        elif source_conf in {"VERIFIED", "HIGH"} and target_conf in {"VERIFIED", "HIGH"}:
+            confidence = "HIGH"
+        elif "LOW" in {source_conf, target_conf}:
+            confidence = "LOW"
+        else:
+            confidence = "INFERRED"
         return IdentityResolution(
             status="EXACT" if same else "TARGET_EQUIVALENT",
             target_numeric_id=target["numeric_id"],
@@ -547,6 +552,17 @@ def record_dict(record: Any) -> dict[str, Any]:
     return asdict(record)
 
 
+def _confidence_rank(value: str | None) -> int:
+    return {
+        "UNKNOWN": 0,
+        "LOW": 1,
+        "INFERRED": 2,
+        "MEDIUM": 2,
+        "HIGH": 3,
+        "VERIFIED": 4,
+    }.get(str(value or "UNKNOWN").upper(), 0)
+
+
 @dataclass(frozen=True)
 class IdentityClosureAssessment:
     status: str
@@ -564,6 +580,7 @@ def assess_identity_closure(
     resolutions: Iterable[IdentityResolution],
     *,
     unresolved_blocks: bool = False,
+    minimum_confidence: str = "INFERRED",
 ) -> IdentityClosureAssessment:
     """Aggregate identifier resolutions into a package-readiness dimension.
 
@@ -583,9 +600,16 @@ def assess_identity_closure(
         if r.status not in {"EXACT", "TARGET_EQUIVALENT"}
         and r not in ambiguous_rows
     ]
+    weak_rows = [
+        r for r in rows
+        if r.status in {"EXACT", "TARGET_EQUIVALENT"}
+        and _confidence_rank(r.confidence) < _confidence_rank(minimum_confidence)
+    ]
+    blocking_rows = [*ambiguous_rows, *unresolved_rows, *weak_rows]
     blocking = tuple(
-        f"{r.namespace}:{r.source_snapshot_id}:{r.source_numeric_id}:{r.status}"
-        for r in [*ambiguous_rows, *unresolved_rows]
+        f"{r.namespace}:{r.source_snapshot_id}:{r.source_numeric_id}:"
+        f"{'LOW_CONFIDENCE_' + r.confidence if r in weak_rows else r.status}"
+        for r in blocking_rows
     )
     if not blocking:
         status = "READY"
@@ -599,11 +623,12 @@ def assess_identity_closure(
         resolved=exact + equivalent,
         exact=exact,
         target_equivalent=equivalent,
-        unresolved=len(unresolved_rows),
+        unresolved=len(unresolved_rows) + len(weak_rows),
         ambiguous=len(ambiguous_rows),
         blocking=blocking,
         notes=(
             "TARGET_EQUIVALENT counts as resolved only because semantic identity mapped across snapshots.",
             "Numeric equality without semantic identity evidence is not sufficient for closure.",
+            f"Minimum accepted resolution confidence: {minimum_confidence}.",
         ),
     )
