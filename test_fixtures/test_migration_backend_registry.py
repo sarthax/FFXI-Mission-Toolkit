@@ -25,6 +25,16 @@ def main():
     assert framework.status=="MANUAL_REQUIRED",framework
     xi_namespace=lsb_lua.convert("local x = xi.status.NORMAL\n")
     assert xi_namespace.status=="MANUAL_REQUIRED",xi_namespace
+
+    matrix=registry.support_matrix(("TOPAZ","TOPAZ_NEXT","DSP","LSB"))
+    routes={(r["source_family"],r["target_family"],r["artifact_type"]):r for r in matrix["routes"]}
+    assert routes[("TOPAZ","DSP","LUA")]["support_level"]=="SUPPORTED",routes
+    assert routes[("TOPAZ","DSP","SQL")]["support_level"]=="SUPPORTED",routes
+    assert routes[("LSB","DSP","LUA")]["support_level"]=="CONDITIONAL",routes
+    assert routes[("LSB","DSP","SQL")]["support_level"]=="UNSUPPORTED",routes
+    assert routes[("TOPAZ_NEXT","DSP","LUA")]["support_level"]=="UNSUPPORTED",routes
+    assert routes[("DSP","LSB","SQL")]["support_level"]=="UNSUPPORTED",routes
+    assert all(r["backend_id"] is None for r in matrix["routes"] if r["support_level"]=="UNSUPPORTED")
     print("migration backend registry self-test: PASS")
 
 
