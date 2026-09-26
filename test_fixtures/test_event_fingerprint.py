@@ -23,7 +23,7 @@ def main() -> None:
     b = fingerprint_event(EventResource(
         entity_id=2002, event_id=77,
         byte_code=bytes([0x1C, 0x02, 0x00, 0x21]),
-        data_count=2, block_event_count=3,
+        data_count=9, block_event_count=12,
     ))
     assert a.exact_sha256 != b.exact_sha256, (a, b)
     assert a.structural_sha256 == b.structural_sha256, (a, b)
