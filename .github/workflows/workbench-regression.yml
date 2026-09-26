@@ -89,6 +89,7 @@ jobs:
           python test_fixtures/test_backport_package_plan_scope.py
           python test_fixtures/test_semantic_instance_matching.py
           python test_fixtures/test_id_content_collision.py
+          python test_fixtures/test_cross_fork_collision_fixtures.py
           python test_fixtures/test_collision_migration_planning.py
           python test_fixtures/test_live_target_validation.py
           python test_fixtures/test_live_target_validation_cli.py
