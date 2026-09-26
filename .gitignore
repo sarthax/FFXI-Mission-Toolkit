@@ -34,3 +34,7 @@ gui/static/zone_visual/
 workbench.db
 mission_reports_v2/
 mod_names_body.txt
+data/Xi-Pivot/
+data/item_backups/
+data/item_dat_backups/
+data/item_edit_log.sql
