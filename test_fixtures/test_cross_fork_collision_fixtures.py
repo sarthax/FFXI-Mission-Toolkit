@@ -61,8 +61,8 @@ def main():
         assert spell_result["summary"]=={"ID_CONTENT_COLLISION":1},spell_result
         finding=spell_result["findings"][0]
         assert finding["logical_type"]=="spells",finding
-        assert finding["source_identity"]==[["spell_id",1]],finding
-        assert finding["target_identity"]==[["spell_id",1]],finding
+        assert finding["source_identity"]==( ("spell_id",1), ),finding
+        assert finding["target_identity"]==( ("spell_id",1), ),finding
         assert finding["confidence"]=="VERIFIED",finding
 
     print("real cross-fork collision fixture self-test: PASS")
