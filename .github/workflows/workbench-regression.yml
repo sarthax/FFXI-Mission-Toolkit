@@ -88,6 +88,7 @@ jobs:
           python test_fixtures/test_id_content_collision.py
           python test_fixtures/test_collision_migration_planning.py
           python test_fixtures/test_live_target_validation.py
+          python test_fixtures/test_live_target_validation_cli.py
           python test_fixtures/test_entity_symbol_identity.py
           python test_fixtures/test_roadmap_phase8.py
           python test_fixtures/test_instance_feature_slice.py
