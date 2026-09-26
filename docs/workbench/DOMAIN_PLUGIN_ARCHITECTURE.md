@@ -10,7 +10,9 @@ Different FFXI content takes materially different shapes. The Workbench must und
 The plugin layer therefore has two levels:
 
 1. **Reusable content frameworks/archetypes** — generic shapes such as battlefields, simple turn-ins, multi-zone progression, state-machine missions, minigames, and repeatable system containers.
-2. **Named system packages** — Assault, Nyzul, Salvage, Abyssea, Einherjar, etc. These compose reusable frameworks and add only the rules unique to that system.
+2. **Named system packages** — Assault, Nyzul Isle, Abyssea systems, battlefield families, and future systems. These compose reusable frameworks and add only the rules unique to that system.
+
+The GUI separately groups these packages and future tools into high-level **Domains** for navigation. Domain categories are organizational and may contain multiple system packages; they are not new universal-core concepts.
 
 ## Why this matters
 
@@ -102,6 +104,37 @@ Typical of DSP:
 
 Neither profile is globally authoritative. Feature completeness is determined from evidence-backed semantic coverage.
 
+## GUI domain taxonomy
+
+The shared GUI shell exposes a first-class **Domains** workspace. Its current high-level categories are:
+
+- Abyssea
+- Battlefields
+- Battle Systems
+- Conflict / Battle
+- Combat
+- Dynamis
+- Escha
+- Hobbies
+- HELM
+- Events
+- Missions
+- Quests
+- Records of Eminence
+- Trust
+- Other
+
+Current populated groupings include:
+
+- **Battle Systems**: Assault, Nyzul Isle
+- **Battlefields**: AMAN-Trove, Ambuscade, ANNM, BCNM, ENM, HKCNM, ISNM, KCNM, KSNM, Login, Master Trials, SCNM, SKCNM, Walk of Echoes
+- **Conflict / Battle**: Ballista, Besieged, Brenner, Campaign, Colonization, Expeditionary Force, Garrison
+- **Records of Eminence**: General, Unity, Tutorial, Quests, Vanabout
+- **Trust**: Misc, Combat, Quest
+- **Abyssea**: Altepa, Attohwa, Grauberg, Konschtat, La Theine, Misareaux, Tahrongi, Uleguerand, Vunkerl, Bastion
+
+These entries may be placeholders. A visible category or subsection does not imply that a plugin, analyzer, migration backend, validator, or write-capable admin workflow exists. Existing generic tools such as Zone Editor remain generic and may be linked from a domain rather than duplicated.
+
 ## Navigation model
 
 Plugins should eventually expose user-facing feature structure such as:
@@ -151,4 +184,4 @@ Minigame examples:
 
 The pinned Ancient Vows LSB→DSP E2E is the first reusable battlefield + quest/mission composition fixture. It is not a special Ancient Vows plugin: the test activates reusable frameworks from feature metadata and compares semantic FeatureSurface roles across the two representations.
 
-Assault remains a separate system package and a drift/reverse-pipeline fixture. The user's local Assault backports will later test functionality that can exceed public LSB coverage.
+Assault remains a separate system package and a drift/reverse-pipeline fixture even though the GUI groups it under Battle Systems alongside Nyzul Isle. The user's local Assault backports will later test functionality that can exceed public LSB coverage.
