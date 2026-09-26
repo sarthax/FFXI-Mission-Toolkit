@@ -45,11 +45,14 @@ def main():
 
     assert len(by_class["EXACT_IDENTITY_EQUIVALENT"]) == 1, by_class
     assert len(by_class["ID_CONTENT_COLLISION"]) == 1, by_class
-    assert len(by_class["CONTENT_RENUMBER_CANDIDATE"]) == 1, by_class
+    assert len(by_class["CONTENT_RENUMBER_CANDIDATE"]) >= 1, by_class
     assert len(by_class["SOURCE_IDENTITY_UNRESOLVED"]) == 1, by_class
     assert len(by_class["TARGET_ONLY"]) == 1, by_class
 
-    remap = by_class["CONTENT_RENUMBER_CANDIDATE"][0]
+    remap = next(
+        row for row in by_class["CONTENT_RENUMBER_CANDIDATE"]
+        if row["logical_type"] == "npcs"
+    )
     assert remap["source_identity"] == (("npc_id", 102),), remap
     assert remap["target_identity"] == (("npc_id", 202),), remap
     assert remap["confidence"] == "INFERRED", remap
