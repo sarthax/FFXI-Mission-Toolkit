@@ -42,12 +42,14 @@ def main() -> None:
             snapshot_id="client:new",
             zone_key="NORTH_GUSTABERG_S",
             entries={11: "You hand over the supplies."},
+            namespace="EVENT",
         )
         ingest_dialog_records(
             con,
             snapshot_id="client:old",
             zone_key="NORTH_GUSTABERG_S",
             entries={10: "You hand over the supplies."},
+            namespace="EVENT",
         )
         con.commit()
 
