@@ -126,6 +126,7 @@ jobs:
           python test_fixtures/test_client_binary_research.py
           python test_fixtures/test_client_binary_index.py
           python test_fixtures/test_client_dat_adapter.py
+          python test_fixtures/test_gui_information_architecture.py
           python test_fixtures/test_client_binary_deep.py
           python test_fixtures/test_research_domain_tools.py
           python test_fixtures/test_research_graph_tools.py
