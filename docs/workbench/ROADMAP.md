@@ -414,13 +414,15 @@ Current proof:
 - [x] Keep Captures as a first-class top-level workspace.
 - [x] Preserve Item Editor and Zone Editor as mutation-focused tools under Tools > Editors.
 - [x] Define canonical homes for backend-first capabilities that still need GUI exposure: Feature Checker/Trace, migration/collision/schema analysis, client binary research, validation runs/results, and package review/apply.
-- [x] Add machine-readable `GUI_ROUTE_MAP.json` and CI regression coverage for the current FastAPI route surface (146 routes after package creation exposure).
+- [x] Add machine-readable `GUI_ROUTE_MAP.json` and CI regression coverage for the current FastAPI route surface (149 routes after Package Scope Review exposure).
 - [x] Implement the shared navigation shell and persistent project/source/target/client context. The shell uses the approved route map for active workspace ownership, supports workspace subsections, keeps mutation editors visually distinct, and reports UNKNOWN / Not configured when current settings cannot establish snapshot or build identity. Existing routes and page internals remain unchanged.
 - [x] Expose Feature Trace and Feature Checker as read-only Features workspace pages over the canonical Workbench graph.
 - [x] Expose Validation dashboard and ValidationRun/ValidationResult browsing as read-only views over the canonical Workbench graph.
 - [x] Expose Live Target Validation as an adapter-aware SELECT-only GUI using the existing CLI/service contract, with credentials kept transient and optional canonical persistence.
 - [x] Expose Package Library and consolidated Review & Readiness as read-only Packages workspace pages over assembled migration packages.
-- [x] Expose canonical package creation from existing Migration/MigrationAction/Artifact/dependency records; creation assembles a reviewable package workspace only and does not apply to a target.
+- [x] Add Package Dependency Closure / Scope Review: bounded transitive graph discovery, per-dependency evidence/path visibility, user decisions/reasons/tags, reviewed-scope fingerprints, stale-review invalidation, and package-creation gating.
+- [x] Expose canonical package creation from existing Migration/MigrationAction/Artifact/dependency records; creation consumes reviewed scope, embeds the full dependency decision ledger, and assembles a reviewable package workspace only.
+- [ ] Prove dependency-discovery completeness against a complex mob and representative instance/mission before adding approval/apply UI.
 - [ ] Add approval/apply/rollback UI only after preserving the existing readiness, approval, drift, backup, journal, and rollback gates end to end.
 - [ ] Migrate remaining workspace pages incrementally while preserving current routes until feature parity is verified.
 
