@@ -219,8 +219,9 @@ def ingest_dialog_records(
     actor_key: str | None = None,
     owner_key: str | None = None,
     evidence_id_prefix: str | None = None,
+    namespace: str = "DIALOG_TEXT_ID",
 ) -> list[IdentityRecord]:
-    """Ingest exported client dialog/event-text rows as snapshot-specific EVENT identities.
+    """Ingest exported client dialog/event-text rows as snapshot-specific text identities.
 
     This is deliberately conservative: matching dialog content is evidence for semantic
     equivalence, not proof of mission/quest ownership or CSID semantics.
@@ -235,9 +236,9 @@ def ingest_dialog_records(
             content_fingerprint=fingerprint,
         )
         record = IdentityRecord(
-            record_id=f"identity:{snapshot_id}:EVENT:{zone_key}:{numeric_id}",
+            record_id=f"identity:{snapshot_id}:{namespace.upper()}:{zone_key}:{numeric_id}",
             snapshot_id=snapshot_id,
-            namespace="EVENT",
+            namespace=namespace.upper(),
             semantic_key=semantic_key,
             numeric_id=str(numeric_id),
             zone_key=zone_key,
