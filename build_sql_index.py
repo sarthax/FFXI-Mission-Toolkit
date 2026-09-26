@@ -203,6 +203,17 @@ def _iter_sql_statements(text: str):
                 in_quote=False
             buf.append(ch)
         else:
+            if ch=="-" and i+1 < len(text) and text[i+1]=="-":
+                # SQL line comment outside a quoted string. Skip through the newline so a
+                # standalone comment cannot become a prefix of the next INSERT statement.
+                while i < len(text) and text[i]!="\n":
+                    i+=1
+                if i < len(text) and text[i]=="\n":
+                    line+=1
+                    if buf:
+                        buf.append("\n")
+                    i+=1
+                continue
             if ch=="'":
                 in_quote=True
                 buf.append(ch)
