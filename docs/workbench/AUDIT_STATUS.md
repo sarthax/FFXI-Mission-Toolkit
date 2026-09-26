@@ -958,7 +958,7 @@ Artifacts:
 - `docs/workbench/GUI_ROUTE_MAP.json`
 - `test_fixtures/test_gui_information_architecture.py`
 
-The live `gui_server.py` route surface contains 146 FastAPI method/path registrations. Every registration now has exactly one canonical GUI home and a migration disposition. The map is regression-checked so future route additions/removals must be deliberately incorporated into the information architecture.
+The live `gui_server.py` route surface contains 149 FastAPI method/path registrations. Every registration now has exactly one canonical GUI home and a migration disposition. The map is regression-checked so future route additions/removals must be deliberately incorporated into the information architecture.
 
 Canonical top-level workspaces:
 - Home / Project
@@ -986,7 +986,7 @@ Current route ownership:
 - Tools: 62
 - Settings: 13
 - Validation: 5
-- Packages: 4
+- Packages: 7
 
 The high Tools count is dominated by the supporting APIs/actions of the existing Zone Editor and Item Editor and does not imply those tools will be flattened into generic navigation. The Domains count currently consists of the Assault landing page plus the existing Nyzul page/data/action routes.
 
@@ -995,7 +995,7 @@ No existing GUI capability was removed or hidden by this milestone.
 
 ## 2026-09-25 — Shared GUI application shell
 
-Implemented the shared GUI shell and subsequent Domains workspace expansion without redesigning existing Nyzul/Zone Editor internals. The current FastAPI surface is 146 routes.
+Implemented the shared GUI shell and subsequent Domains workspace expansion without redesigning existing Nyzul/Zone Editor internals. The current FastAPI surface is 149 routes.
 
 The shared `base.html` shell now provides:
 - all eleven current top-level workspaces: Home / Project, Features, Domains, Backport & Migration, Captures, Server, Client, Validation, Packages, Tools, and Settings;
@@ -1010,7 +1010,7 @@ The shared `base.html` shell now provides:
 
 `workbench.gui_shell` owns the read-only shell model and resolves active workspace ownership from `GUI_ROUTE_MAP.json`; it does not add routes, select snapshots, or mutate settings. Validation and Packages are now functional top-level workspaces. The existing Backport Package route stays available as an explicitly labeled legacy workflow.
 
-Regression coverage in `test_fixtures/test_gui_shell.py` reruns the 146-route information-architecture check, verifies dynamic route ownership including Domains/Battle Systems, verifies configured versus unknown context semantics, and renders representative Home, Captures, and mutation-editor templates through the shared shell. The Workbench regression workflow runs this shell test.
+Regression coverage in `test_fixtures/test_gui_shell.py` reruns the 149-route information-architecture check, verifies dynamic route ownership including Domains/Battle Systems, verifies configured versus unknown context semantics, and renders representative Home, Captures, and mutation-editor templates through the shared shell. The Workbench regression workflow runs this shell test.
 
 
 ## 2026-09-25 — Real packed-DLL deeper pass
@@ -1088,3 +1088,22 @@ The Packages workspace now supports canonical package generation without target 
 ## 2026-09-25 — Grouped Domains navigation
 
 The Domains workspace navigation was converted from a flat arrow-prefixed placeholder list into explicit parent/child groups. The shared shell now renders grouped domain categories as disclosure menus: only high-level domains are visible initially, child subsections are revealed when the group is opened, and the group containing the active route opens automatically. Assault and Nyzul Isle remain children of Battle Systems. This is a presentation/navigation change only; route ownership and domain/plugin semantics are unchanged.
+
+
+## 2026-09-25 — Package dependency closure and scope review
+
+A first interactive dependency-closure workflow now sits between canonical migration analysis and package creation:
+
+- `workbench.migrations.package_scope` walks bounded transitive canonical graph dependencies from MigrationAction artifact roots and records discovery path, relationship, evidence, confidence, snapshot, node type, and packageable artifact metadata;
+- newly discovered transitive dependencies default to QUESTIONABLE rather than being silently included/excluded or assumed target-equivalent;
+- reviewer decisions are persisted separately from graph evidence as AUTO, INCLUDE, QUESTIONABLE, TARGET_EQUIVALENT, NOT_REQUIRED, or EXCLUDE, with independent tags; target-equivalent/not-required/exclude decisions require an explicit reason;
+- non-artifact transitive dependencies cannot be resolved by INCLUDE alone because there is nothing materializable yet; they must resolve to an artifact or receive an explicit reviewed disposition;
+- reviewed scopes store a deterministic SHA-256 fingerprint and become STALE if dependency closure/evidence/decisions later change;
+- explicit user EXCLUDE remains permitted for agency but produces a MANUAL_REQUIRED package rather than automatic apply readiness;
+- `/packages/scope` exposes the review workflow, while two POST routes persist individual decisions and freeze a resolved scope;
+- package creation now requires a reviewed scope, incorporates reviewed root exclusions, adds newly included transitive artifacts conservatively as MANUAL_REVIEW actions, and embeds the complete dependency decision ledger in schema-3 package manifests;
+- schema-3 apply readiness requires dependency_scope.package_gate == READY; older schema-2 packages remain legacy-compatible and are visibly identified as lacking the new ledger;
+- regression coverage now includes closure, reason requirements, non-artifact guardrails, review freezing, stale invalidation, and schema-3 apply gating;
+- the GUI route surface is now 149 method/path registrations.
+
+This milestone establishes review/agency/guardrails, not proof of complete FFXI dependency discovery. The next audit must compare automatic discovery against manually enumerated dependencies for a complex mob and representative instance/mission. See `PACKAGE_SCOPE_REVIEW.md`.
