@@ -40,6 +40,7 @@ jobs:
           python test_fixtures/test_server_adapter_profiles.py
           python test_fixtures/test_server_logical_records.py
           python test_fixtures/test_server_schema_mapping_coverage.py
+          python test_fixtures/test_broader_logical_schema_mappings.py
           python test_fixtures/test_server_entity_logical_mappings.py
           python test_fixtures/test_server_sql_logical_extraction.py
           python test_fixtures/test_battlefield_logical_profiles.py
