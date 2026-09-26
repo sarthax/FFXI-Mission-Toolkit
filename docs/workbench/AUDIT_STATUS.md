@@ -1240,3 +1240,35 @@ Regression coverage:
 The synthetic cross-client proof currently models one semantic event sequence shifting from 10/11/12 in an older client to 11/12/13 in a newer client. The resolver maps semantic identity rather than applying a blind numeric offset.
 
 This closes the first structural part of **identity-resolution closure**. The next real proof requires extracting a second FFXI client build and comparing actual per-zone resources. Stronger event fingerprints beyond normalized dialog text and integration into Package Scope/Readiness remain open.
+
+
+## 2026-09-26 — Event fingerprinting milestone
+
+Snapshot-aware EVENT identity now uses decoded client event resources, not raw CSID/event numbers.
+
+Implemented:
+
+- event DAT extraction from the vendored FFXI-Resources zone map;
+- exact bytecode SHA-256;
+- decoded opcode/instruction-length structural fingerprints;
+- dependency-free AST opcode-shape decoder for minimal environments;
+- immediate-data reference resolution for message-id arguments;
+- composite event fingerprints using referenced Retail dialog text;
+- DIALOG_TEXT_ID separation from EVENT identity;
+- actor-scoped source event resolution using capture actor/server ID;
+- confidence-aware package identity closure.
+
+Safety behavior:
+
+- raw event/CSID number is never semantic identity;
+- same dialog text alone is LOW confidence;
+- undecoded coarse shape is LOW confidence;
+- structural/composite decoded matches are HIGH;
+- duplicate target candidates remain ambiguous;
+- target actor IDs are not assumed equivalent to source actor IDs.
+
+Regression coverage now includes:
+`test_event_fingerprint.py` and `test_event_identity_resolution.py`, in addition to the existing
+snapshot extraction and capture bridge fixtures.
+
+The next real validation gate is comparison against a second actual FFXI client build.
