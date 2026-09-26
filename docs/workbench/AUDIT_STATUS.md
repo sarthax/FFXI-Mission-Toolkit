@@ -958,11 +958,12 @@ Artifacts:
 - `docs/workbench/GUI_ROUTE_MAP.json`
 - `test_fixtures/test_gui_information_architecture.py`
 
-The live `gui_server.py` route surface contains 134 FastAPI method/path registrations. Every registration now has exactly one canonical GUI home and a migration disposition. The map is regression-checked so future route additions/removals must be deliberately incorporated into the information architecture.
+The live `gui_server.py` route surface contains 135 FastAPI method/path registrations. Every registration now has exactly one canonical GUI home and a migration disposition. The map is regression-checked so future route additions/removals must be deliberately incorporated into the information architecture.
 
 Canonical top-level workspaces:
 - Home / Project
 - Features
+- Domains
 - Backport & Migration
 - Captures
 - Server
@@ -972,41 +973,44 @@ Canonical top-level workspaces:
 - Tools
 - Settings
 
-Captures remains a first-class workspace. Zone Plot and Item Editor remain under Tools > Editors because they perform mutations, while Server/Client/Captures expose contextual “open in editor” entry points. The current LLM/research interface is preserved for later REWORK rather than removal. The existing Backport Package route is retained as LEGACY compatibility until the future Packages workspace reaches functional parity.
+Captures remains a first-class workspace. Domains is now the first-class GUI home for system-specific development/admin workflows; its taxonomy is organizational only and does not imply implemented plugins. Assault and Nyzul Isle are grouped under Domains > Battle Systems. Zone Plot and Item Editor remain under Tools > Editors because they perform generic mutations, while domain pages may link into those tools instead of duplicating them. The current LLM/research interface is preserved for later REWORK rather than removal. The existing Backport Package route is retained as LEGACY compatibility until the future Packages workspace reaches functional parity.
 
 Current route ownership:
 - Home / Project: 3
 - Features: 1
+- Domains: 5
 - Backport & Migration: 10
 - Captures: 20
 - Server: 18
 - Client: 3
-- Tools: 66
+- Tools: 62
 - Settings: 13
 - Validation: 0 current routes (NEW GUI required)
 - Packages: 0 current routes (NEW GUI required)
 
-The high Tools count is dominated by the supporting APIs/actions of the existing Zone Editor and Item Editor and does not imply those tools will be flattened into generic navigation.
+The high Tools count is dominated by the supporting APIs/actions of the existing Zone Editor and Item Editor and does not imply those tools will be flattened into generic navigation. The Domains count currently consists of the Assault landing page plus the existing Nyzul page/data/action routes.
 
 No existing GUI capability was removed or hidden by this milestone.
 
 
 ## 2026-09-25 — Shared GUI application shell
 
-Implemented the first GUI migration milestone without redesigning individual pages or changing the 134-route FastAPI surface.
+Implemented the shared GUI shell and subsequent Domains workspace expansion without redesigning existing Nyzul/Zone Editor internals. The current FastAPI surface is 135 routes.
 
 The shared `base.html` shell now provides:
-- all ten approved top-level workspaces: Home / Project, Features, Backport & Migration, Captures, Server, Client, Validation, Packages, Tools, and Settings;
+- all eleven current top-level workspaces: Home / Project, Features, Domains, Backport & Migration, Captures, Server, Client, Validation, Packages, Tools, and Settings;
 - workspace-specific subsection navigation over existing routes, with planned backend-first views shown as unavailable rather than linked to invented pages;
 - first-class Captures navigation with library, import, search, query, and path views;
 - persistent project/source/target/client context derived from current settings and real path availability;
 - explicit `UNKNOWN` snapshot/build identities when a root exists but no selected canonical snapshot/build is recorded, and `Not configured` when no real configured/detected root is available;
 - visually distinct mutation links for Zone Editor and Item Editor;
-- preserved direct access to Nyzul, LLM/research, Wiki, Model Viewer, legacy Backport Package, diagnostics, lookup/decode tools, and current editor workflows.
+- a first-class Domains workspace with placeholder high-level categories for Abyssea, Battlefields, Battle Systems, Conflict / Battle, Combat, Dynamis, Escha, Hobbies, HELM, Events, Missions, Quests, Records of Eminence, Trust, and Other;
+- Assault and Nyzul Isle grouped under Battle Systems; the existing /nyzul implementation is preserved and now owned by Domains rather than Tools;
+- preserved direct access to LLM/research, Wiki, Model Viewer, legacy Backport Package, diagnostics, lookup/decode tools, and current editor workflows.
 
 `workbench.gui_shell` owns the read-only shell model and resolves active workspace ownership from `GUI_ROUTE_MAP.json`; it does not add routes, select snapshots, or mutate settings. Validation and Packages remain visible top-level workspaces while their consolidated pages remain future work. The existing Backport Package route stays available as an explicitly labeled legacy workflow.
 
-Regression coverage in `test_fixtures/test_gui_shell.py` reruns the 134-route information-architecture check, verifies dynamic route ownership, verifies configured versus unknown context semantics, and renders representative Home, Captures, and mutation-editor templates through the shared shell. The Workbench regression workflow now runs this shell test.
+Regression coverage in `test_fixtures/test_gui_shell.py` reruns the 135-route information-architecture check, verifies dynamic route ownership including Domains/Battle Systems, verifies configured versus unknown context semantics, and renders representative Home, Captures, and mutation-editor templates through the shared shell. The Workbench regression workflow runs this shell test.
 
 
 ## 2026-09-25 — Real packed-DLL deeper pass
