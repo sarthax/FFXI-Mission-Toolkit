@@ -1183,3 +1183,8 @@ The proof adds requirements for generic mission/quest state-machine extraction, 
 - Reads `dialog_drift_report` + `dialog_text`; for each zone finds the single id shift that explains most mismatches. Result on the current data: 204 of 220 mismatched zones have one systematic offset (191 at -1, 13 at -6); 16 are scattered. This is INFERRED (loose text match), a hint for review, never auto-applied.
 - The underlying report was last built 2026-09-06; rebuild via `build_dialog_index.py` if stale. First page load takes ~17s (cached afterwards).
 - Test: `test_fixtures/test_dialog_drift_overview.py`.
+
+## 2026-09-26 — Research gap detection (read-only)
+- Added `/researchgaps` (Client) and `research_gaps.py`; graph is opened read-only and never created by the page.
+- Current live graph: 4 unresolved requirements (all `feature:mog-wardrobe-5-8` wardrobe5-8 probes, UNKNOWN), 64,638 orphan NPC entities, 36,480 DISCOVERED-only relationships, 6 empty analysis tables.
+- Test: `test_fixtures/test_research_gaps.py`. Does not cover the roadmap's research-plan execution item (line 256).

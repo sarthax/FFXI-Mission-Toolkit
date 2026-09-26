@@ -6020,6 +6020,15 @@ def dialogdrift_page(request: Request):
         "request": request, "rows": rows, "summary": ddo.summary(rows), "checked": checked, "error": error})
 
 
+@app.get("/researchgaps", response_class=HTMLResponse)
+def researchgaps_page(request: Request):
+    import research_gaps
+    res = None
+    if _workbench_graph_connection() is not None:
+        res = research_gaps.detect(WORKBENCH_DB)
+    return templates.TemplateResponse(request, "research_gaps.html", {"request": request, "res": res})
+
+
 @app.post("/binaryinspector/save-probes", response_class=HTMLResponse)
 def binaryinspector_save_probes(request: Request, run_set: str = Form(...)):
     import binary_inspector as bi

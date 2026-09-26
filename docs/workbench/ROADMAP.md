@@ -254,7 +254,7 @@ Core architecture:
 - [ ] Evidence-first retrieval that returns canonical node IDs, source snapshot IDs, Evidence IDs, source file/path/line locations when available, confidence/status, and authority/source domain with every substantive result.
 - [ ] Long-context feature artifact bundles combining relevant Lua, SQL logical records, C++ functions/bindings, enums, packets, build targets, client capabilities, captures, and references.
 - [ ] Research-plan execution that decomposes a question into bounded tool calls, gathers evidence, synthesizes a report, identifies contradictions/gaps, and proposes the next deterministic analyzer/capture/validator actions.
-- [ ] Research gap detection for UNKNOWN/MISSING/CONTRADICTED graph endpoints and recommendations for the next analyzer/capture/validator.
+- [x] Research gap detection for UNKNOWN/MISSING/CONTRADICTED graph endpoints and recommendations for the next analyzer/capture/validator — read-only `/researchgaps` (`research_gaps.py`): unresolved requirements, orphan entities, unverified relationships, empty analysis tables.
 - [ ] Contradiction detection across server forks, client evidence, captures, runtime evidence, and reference sources.
 - [ ] Reproducible research notebooks/reports that can be reopened and replayed against the same pinned snapshots.
 

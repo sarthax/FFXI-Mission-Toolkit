@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 154,
+  "route_count": 155,
   "routes": [
     {
       "method": "GET",
@@ -1232,6 +1232,14 @@
       "path": "/dialogdrift",
       "home": "Client",
       "section": "Dialog Drift",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/researchgaps",
+      "home": "Client",
+      "section": "Research Gaps",
       "role": "page",
       "disposition": "KEEP"
     }
