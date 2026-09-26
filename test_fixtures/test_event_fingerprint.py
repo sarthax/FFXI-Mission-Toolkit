@@ -51,6 +51,52 @@ def main() -> None:
     assert exact["status"] == "EXACT_BYTECODE", exact
     assert exact["confidence"] == "VERIFIED", exact
 
+    # Message ids may drift while the referenced Retail text remains semantically identical.
+    # Source uses an immediate-data reference (0x8000 -> 500); target uses direct id 503.
+    msg_source = fingerprint_event(
+        EventResource(
+            entity_id=1001,
+            event_id=20,
+            byte_code=bytes([0x48, 0x00, 0x80, 0x21]),
+            data_count=1,
+            data_values=(500,),
+            block_event_count=1,
+        ),
+        dialog_entries={500: "The same Retail line."},
+    )
+    msg_target = fingerprint_event(
+        EventResource(
+            entity_id=2002,
+            event_id=90,
+            byte_code=bytes([0x48, 0xF7, 0x01, 0x21]),
+            data_count=1,
+            data_values=(999,),
+            block_event_count=1,
+        ),
+        dialog_entries={503: "The same Retail line."},
+    )
+    assert msg_source.message_ids == (500,), msg_source
+    assert msg_target.message_ids == (503,), msg_target
+    assert msg_source.structural_sha256 == msg_target.structural_sha256, (msg_source, msg_target)
+    assert msg_source.composite_sha256 == msg_target.composite_sha256, (msg_source, msg_target)
+    composite = compare_event_fingerprints(msg_source, msg_target)
+    assert composite["status"] == "COMPOSITE_STRUCTURE_TEXT_MATCH", composite
+    assert composite["confidence"] == "HIGH", composite
+
+    msg_other_text = fingerprint_event(
+        EventResource(
+            entity_id=2002,
+            event_id=91,
+            byte_code=bytes([0x48, 0xF7, 0x01, 0x21]),
+            data_count=1,
+            data_values=(999,),
+            block_event_count=1,
+        ),
+        dialog_entries={503: "A different Retail line."},
+    )
+    assert msg_source.structural_sha256 == msg_other_text.structural_sha256
+    assert msg_source.composite_sha256 != msg_other_text.composite_sha256
+
     with tempfile.TemporaryDirectory() as td:
         path = Path(td) / "events.yml"
         path.write_text(
@@ -71,6 +117,7 @@ def main() -> None:
         assert [x.event_id for x in rows] == [10, 11], rows
         assert all(x.entity_id == 12345 for x in rows), rows
         assert all(x.data_count == 2 for x in rows), rows
+        assert all(x.data_values == (123, 456) for x in rows), rows
         assert all(x.block_event_count == 2 for x in rows), rows
 
     print("event structural fingerprint self-test: PASS")
