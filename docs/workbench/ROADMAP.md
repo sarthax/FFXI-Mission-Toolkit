@@ -386,3 +386,15 @@ Explicitly deferred to P1+:
 Current proof:
 - Workbench Regression remains green through the P0 closure sequence.
 - Workbench Ancient Vows Cross-Fork #129 passes on the current branch head against pinned public LSB and legacy DSP snapshots.
+
+
+## GUI information architecture mapping
+
+- [x] Inventory all current FastAPI GUI routes and assign each route exactly one canonical workspace.
+- [x] Preserve contextual entry points for dual-purpose tools without duplicating backend implementations.
+- [x] Keep Captures as a first-class top-level workspace.
+- [x] Preserve Item Editor and Zone Editor as mutation-focused tools under Tools > Editors.
+- [x] Define canonical homes for backend-first capabilities that still need GUI exposure: Feature Checker/Trace, migration/collision/schema analysis, client binary research, validation runs/results, and package review/apply.
+- [x] Add machine-readable `GUI_ROUTE_MAP.json` and CI regression coverage for all 134 current FastAPI routes.
+- [ ] Implement the shared navigation shell and persistent project/source/target snapshot context.
+- [ ] Migrate workspace pages incrementally while preserving current routes until feature parity is verified.
