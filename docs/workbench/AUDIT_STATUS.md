@@ -1158,3 +1158,16 @@ The Heat Seeker proof now uses current LSB server data directly: recipe 62525 yi
 Synergy is represented as a separate crafting system and requires explicit server runtime and client capability. A recipe cannot be marked viable merely because its row exists if the target/client lacks the required crafting system.
 
 This establishes recipe recursion but not complete leaf obtainability. Shop, drop, battlefield reward, appraisal, HELM, gardening, exchange, and other acquisition analyzers still need to converge on the same acquisition graph. A package must remain unresolved when any selected crafting-path leaf lacks a proven acquisition route.
+
+
+## 2026-09-26 — WotG25 branching mission proof
+
+The Will of the World / Fate in Haze nation-quest bridge is now a dedicated mission-state proof case. The machine-readable truth set is `test_fixtures/fixtures/wotg25_branching_mission_truth.json`, documented in `WOTG25_MISSION_PACKAGE_PROOF.md`.
+
+The proof demonstrates that mission closure is fundamentally a state-machine problem, not merely a file dependency problem. Mission 25 itself is small (Raustigne/event 149), but Mission 26 gates progression through `xi.wotg.helpers.meetsMission26Reqs`, which is an OR branch across Bastok `What Price Loyalty`, San d'Oria `Blood of Heroes`, and Windurst `Howl from the Heavens`.
+
+The Bastok chain is fully enumerated through Beneath the Mask and What Price Loyalty: NPC actors, zones, CSIDs/events, quest Prog states, item trades, Wax Seal/Sack of Victuals/Commander's Endorsement lifecycle, zone-in triggers, reward items, and event-finish transitions. What Price Loyalty explicitly contains a not-implemented instance placeholder (event 10000), which must remain an IMPLEMENTATION_GAP rather than count as completeness.
+
+The San d'Oria branch adds fishing key-item acquisition, trades, spawned NM/death transitions, text references, and battle content. The Windurst quest IDs and Mission-26 completion gate exist, while source search did not find the expected quest scripts, despite external reference documentation describing a large quest chain; this is now tracked as EXPECTED_BRANCH_MISSING_OR_UNIMPLEMENTED rather than silently absent.
+
+The proof adds requirements for generic mission/quest state-machine extraction, zone-scoped CSID/event identity, event parameters/update/finish semantics, NPC/entity resolution, key-item lifecycle, OR branches, timer/day gates, default-action conflict checks, external-reference expectation edges, and separate mission viability versus completeness.
