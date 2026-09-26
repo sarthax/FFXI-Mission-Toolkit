@@ -80,6 +80,21 @@ def analyze(package: Path):
                 "notes":[str(evidence)],
                 "source_snapshot_id":feature.get("source_snapshot_id"),
             })
+    report_evidence_id=f"evidence:backport-report:{feature_id}"
+    findings=[]
+    for i,issue in enumerate(report["issues"]):
+        findings.append({
+            "finding_id":f"finding:backport-report:{feature_id}:{i}",
+            "analysis_id":f"analysis:backport-report:{feature_id}",
+            "subject_id":feature_id,
+            "field":"backport_report_issue",
+            "value":issue,
+            "status":"CONTRADICTED" if report["status"]=="MANUAL_REQUIRED" else "DISCOVERED",
+            "confidence":"VERIFIED",
+            "evidence_id":report_evidence_id,
+            "source_snapshot_id":feature.get("source_snapshot_id"),
+            "notes":["Imported directly from BACKPORT_REPORT.md without semantic reinterpretation."],
+        })
     actions=[]
     mig_state=report["status"]
     if arts and mig_state=="VERIFIED":
@@ -111,6 +126,26 @@ def analyze(package: Path):
             "metadata":{},
         },
         "artifacts":arts,
+        "evidence":[{
+            "evidence_id":report_evidence_id,
+            "evidence_type":"REPORT",
+            "source":"BACKPORT_REPORT.md",
+            "location":"BACKPORT_REPORT.md",
+            "snapshot":feature.get("source_snapshot_id"),
+            "notes":"Assembled package backport report parsed by feature_package_analyzer.",
+        }] if (package/"BACKPORT_REPORT.md").exists() else [],
+        "analysis":{
+            "analysis_id":f"analysis:backport-report:{feature_id}",
+            "analysis_type":"BACKPORT_REPORT",
+            "source":"BACKPORT_REPORT.md",
+            "target":feature.get("target_snapshot_id"),
+            "feature_id":feature_id,
+            "status":report["status"],
+            "findings":[row["finding_id"] for row in findings],
+            "notes":["Canonical import of assembled package report status/issues."],
+            "source_snapshot_id":feature.get("source_snapshot_id"),
+        },
+        "findings":findings,
         "dependencies":deps,
         "edges":deps,
         "migration":{
