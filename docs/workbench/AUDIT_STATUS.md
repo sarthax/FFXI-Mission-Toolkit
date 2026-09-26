@@ -1131,3 +1131,12 @@ It also establishes two dependency semantics the package model must distinguish 
 Current generic discovery does not yet model `item_puppet`, inventory→internal puppet identity, dynamic attachment-name dispatch, char_pet persistence, conditional interactions, acquisition-scope relations, or the complete Coiler downstream consumer fan-out. These are now explicit analyzer requirements rather than silent omissions.
 
 The Medusa proof was also corrected in this pass: Al Zahbi/Bhaflau Medusa variants and the shared Besieged subsystem are conditionally coupled lifecycle dependencies, not automatic out-of-scope variants. At the audited LSB revision, Besieged mob lifecycle hooks exist but are empty, demonstrating that expected system behavior may need to be surfaced as an incomplete semantic dependency even when direct source traversal cannot prove it.
+
+
+## 2026-09-26 — Automaton acquisition graph proof
+
+Economizer and Heat Seeker now extend the Coiler proof into acquisition semantics. The new truth set is `test_fixtures/fixtures/automaton_acquisition_dependency_truth.json`.
+
+The important result is that acquisition cannot be one generic edge. Economizer demonstrates shop plus externally documented quest/instance and ANNM reward paths, while Heat Seeker demonstrates shop, pooled mob drops, and an externally documented Alchemy synthesis recipe that itself depends on Iatrochemistry, a Fire Crystal, and five ingredient identities. Current LSB source partially supports the synthesis prerequisites (including the Iatrochemistry key item and guild-point unlock) but does not expose a direct Heat Seeker recipe record in repository search, so the package model must preserve external/expected evidence without pretending the server implementation is complete.
+
+Required generic acquisition relations now include SOLD_BY, DROPPED_BY, CRAFTED_BY, REWARDED_BY, REQUIRES_INGREDIENT, REQUIRES_KEY_ITEM, REQUIRES_CRAFT, USES_CRYSTAL, and ALTERNATE_ACQUISITION. Acquisition paths must be independently reviewable from core item behavior, and selecting synthesis/reward paths must recursively expose their own prerequisite graph.
