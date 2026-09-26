@@ -5997,6 +5997,11 @@ def datinspector_page(request: Request, dat_id: str = "", zoneid: str = "", ffxi
 def binaryinspector_save_probes(request: Request, run_set: str = Form(...)):
     import binary_inspector as bi
     install = settings_mod.get_ffxi_install() or "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
+    probe_con = _workbench_graph_connection()
+    if probe_con is None:
+        note = "Workbench graph (workbench.db) is not built yet; nothing saved. Build/import it first."
+        return RedirectResponse(f"/binaryinspector?run_set={run_set}&saved={quote(note)}", status_code=303)
+    probe_con.close()
     try:
         r = bi.save_probe_set(run_set, install, WORKBENCH_DB)
         note = f"Saved {r['saved']} observations to {r['db']}."
