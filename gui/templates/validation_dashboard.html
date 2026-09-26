@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Validation — Mission Toolkit{% endblock %}
+{% block content %}
+<h1>Validation</h1>
+<p class="muted">Read-only view of canonical ValidationRun and ValidationResult history. Validation dimensions remain independent; a passing run does not imply unrelated dimensions are verified.</p>
+
+{% if error %}<div class="warn">{{ error }}</div>{% endif %}
+
+{% if not error %}
+<div class="stats">
+  <div class="stat"><div class="n">{{ runs|length }}</div><div class="l">Recent runs shown</div></div>
+  <div class="stat"><div class="n">{{ status_counts.get('VERIFIED', 0) }}</div><div class="l">Verified runs</div></div>
+  <div class="stat"><div class="n">{{ status_counts.get('FAILED', 0) }}</div><div class="l">Failed runs</div></div>
+  <div class="stat"><div class="n">{{ result_counts|sum(attribute='1') if result_counts else 0 }}</div><div class="l">Validation results</div></div>
+</div>
+
+<h2>Recent runs</h2>
+{% if runs %}
+<div class="table-wrap"><table>
+<thead><tr><th>Run</th><th>Status</th><th>Feature</th><th>Source → Target</th><th>Finished</th></tr></thead>
+<tbody>
+{% for row in runs %}
+<tr>
+<td><a class="zonelink" href="/validation/runs/{{ row.run_id|urlencode }}">{{ row.name }}</a><div><code>{{ row.run_id }}</code></div></td>
+<td>{{ row.status or "UNKNOWN" }}</td>
+<td><code>{{ row.feature_id or "" }}</code></td>
+<td><code>{{ row.source_snapshot_id or "" }}</code>{% if row.source_snapshot_id or row.target_snapshot_id %} → {% endif %}<code>{{ row.target_snapshot_id or "" }}</code></td>
+<td>{{ row.finished_at or row.started_at or "" }}</td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+{% else %}
+<p class="muted">No validation runs are recorded.</p>
+{% endif %}
+
+<p><a class="zonelink" href="/validation/runs">Browse all runs &amp; results</a></p>
+{% endif %}
+{% endblock %}
