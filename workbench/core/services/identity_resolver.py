@@ -656,6 +656,74 @@ def resolve_event_identity(
         con.row_factory = previous_factory
 
 
+def compare_event_snapshots(
+    con: sqlite3.Connection,
+    *,
+    source_snapshot_id: str,
+    target_snapshot_id: str,
+    zone_key: str | None = None,
+    minimum_confidence: str = "HIGH",
+) -> dict[str, Any]:
+    """Bulk EVENT drift comparison for arbitrary client snapshots.
+
+    Each source event record is resolved with its own zone and actor context so repeated
+    numeric event IDs under different actors do not collapse into one row.
+    """
+    ensure_schema(con)
+    previous_factory = con.row_factory
+    con.row_factory = sqlite3.Row
+    try:
+        sql = (
+            "SELECT record_id,numeric_id,zone_key,actor_key,semantic_key,confidence,metadata_json "
+            "FROM identity_records WHERE snapshot_id=? AND namespace='EVENT'"
+        )
+        params: list[Any] = [source_snapshot_id]
+        if zone_key is not None:
+            sql += " AND zone_key=?"
+            params.append(zone_key)
+        sql += " ORDER BY zone_key, actor_key, CAST(numeric_id AS INTEGER), record_id"
+        source_rows = list(con.execute(sql, params))
+    finally:
+        con.row_factory = previous_factory
+
+    rows: list[dict[str, Any]] = []
+    counts: dict[str, int] = {}
+    for source in source_rows:
+        resolution = resolve_event_identity(
+            con,
+            source_snapshot_id=source_snapshot_id,
+            target_snapshot_id=target_snapshot_id,
+            source_numeric_id=source["numeric_id"],
+            zone_key=source["zone_key"],
+            source_actor_key=source["actor_key"],
+            minimum_confidence=minimum_confidence,
+        )
+        result = {
+            "source_record_id": source["record_id"],
+            "zone_key": source["zone_key"],
+            "source_actor_key": source["actor_key"],
+            "source_event_id": source["numeric_id"],
+            "target_event_id": resolution.target_numeric_id,
+            "status": resolution.status,
+            "confidence": resolution.confidence,
+            "match_basis": resolution.metadata.get("match_basis"),
+            "target_record_id": resolution.target_record_id,
+            "reason": resolution.reason,
+        }
+        rows.append(result)
+        counts[resolution.status] = counts.get(resolution.status, 0) + 1
+
+    return {
+        "source_snapshot_id": source_snapshot_id,
+        "target_snapshot_id": target_snapshot_id,
+        "zone_key": zone_key,
+        "minimum_confidence": minimum_confidence,
+        "total": len(rows),
+        "counts": counts,
+        "rows": rows,
+    }
+
+
 def persist_mapping(
     con: sqlite3.Connection,
     resolution: IdentityResolution,
