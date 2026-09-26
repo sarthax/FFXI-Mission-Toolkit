@@ -62,35 +62,71 @@
           "source_mob": "Hilltroll Puppetmaster",
           "pool_semantics": "rare one_of pool including heat_seeker",
           "evidence_status": "VERIFIED_SERVER"
-        }
-      ],
-      "external_retail_acquisition": [
+        },
         {
           "type": "SYNTHESIS",
-          "craft": "Alchemy",
-          "recipe_level": 55,
-          "skill_cap": 66,
-          "crystal": "Fire Crystal",
-          "required_key_item": "Iatrochemistry",
+          "source": "sql/synth_recipes.sql",
+          "recipe_id": 62525,
+          "result_item_id": 2256,
+          "result_name": "Heat Seeker",
+          "required_key_item_id": 2037,
+          "required_key_item_name": "Iatrochemistry",
+          "alchemy_level": 55,
+          "crystal_item_id": 4096,
           "ingredients": [
-            "Glass Sheet",
-            "Hecteyes Eye",
-            "Homunculus Nerves",
-            "Lightning Anima",
-            "Plasma Oil"
+            {
+              "item_id": 939,
+              "name": "Hecteyes Eye"
+            },
+            {
+              "item_id": 1645,
+              "name": "Lightning Anima"
+            },
+            {
+              "item_id": 1887,
+              "name": "Glass Sheet"
+            },
+            {
+              "item_id": 2309,
+              "name": "Homunculus Nerves"
+            },
+            {
+              "item_id": 2310,
+              "name": "Plasma Oil"
+            }
           ],
-          "output": "Heat Seeker x1",
-          "evidence_status": "EXTERNAL_EVIDENCE_PARTIALLY_SUPPORTED_BY_SERVER",
-          "server_support": [
-            "Iatrochemistry key item exists in data/enums/key_item.yaml",
-            "Iatrochemistry guild-point purchase exists in scripts/globals/hobbies/crafting/guild_points.lua"
+          "output_quantity": 12,
+          "evidence_status": "VERIFIED_SERVER"
+        },
+        {
+          "type": "SYNTHESIS_PRECURSOR",
+          "source": "sql/synth_recipes.sql",
+          "recipe_id": 62531,
+          "result_item_id": 1887,
+          "result_name": "Glass Sheet",
+          "alchemy_level": 56,
+          "crystal_item_id": 4096,
+          "ingredients": [
+            {
+              "item_id": 936,
+              "name": "Rock Salt",
+              "quantity": 1
+            },
+            {
+              "item_id": 1883,
+              "name": "Shell Powder",
+              "quantity": 1
+            },
+            {
+              "item_id": 1888,
+              "name": "Silica",
+              "quantity": 6
+            }
           ],
-          "unresolved_server_evidence": [
-            "No direct Heat Seeker recipe record found in current LSB repository search",
-            "Several recipe ingredients were not found by direct repository search"
-          ]
+          "evidence_status": "VERIFIED_SERVER"
         }
-      ]
+      ],
+      "external_retail_acquisition": []
     }
   ],
   "required_acquisition_relations": [
@@ -138,14 +174,17 @@
     "Selecting a quest/instance reward must recursively expose that content's reward/completion dependencies.",
     "A missing recipe/reward edge in server source must remain visible as EXTERNAL_EVIDENCE or IMPLEMENTATION_GAP rather than being silently treated as absent.",
     "Drop pools must preserve one_of/pool semantics rather than flattening every pool member into an always-drop relation.",
-    "If the target already has an equivalent acquisition path, it may be classified TARGET_EQUIVALENT independently of core item behavior."
+    "If the target already has an equivalent acquisition path, it may be classified TARGET_EQUIVALENT independently of core item behavior.",
+    "A selected synthesis path is not viable until every ingredient/crystal recursively resolves to at least one viable acquisition path or reviewed TARGET_EQUIVALENT.",
+    "Recipe closure is an OR-graph: each ingredient needs one viable acquisition path, not every possible acquisition path.",
+    "Synergy recipes require an explicit SYNERGY_RUNTIME and client-capability check distinct from ordinary synthesis."
   ],
   "known_toolkit_gaps": [
     "No generic acquisition graph currently distinguishes shop, drop, synthesis, quest/instance reward, exchange, or event reward.",
-    "No synthesis recipe logical model currently links outputs to craft/key-item/crystal/ingredient prerequisites.",
     "No generic reward-edge analyzer currently links mission/quest/instance completion to rewarded item identities.",
     "No first-class representation currently preserves one_of loot-pool semantics as conditional acquisition evidence.",
     "External retail evidence cannot currently be reconciled against missing/incomplete server implementations as a package-scope finding.",
-    "Acquisition paths are not currently independently selectable from core feature behavior in the package manifest."
+    "Acquisition paths are not currently independently selectable from core feature behavior in the package manifest.",
+    "Recursive crafting closure now exists, but shop/drop/reward/HELM/gardening/etc. leaf acquisition analyzers are not yet unified into the same obtainability graph."
   ]
 }
