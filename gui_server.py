@@ -2433,6 +2433,7 @@ def validation_dashboard(request: Request):
     runs = []
     status_counts = {}
     result_counts = {}
+    total_results = 0
     error = None
     if con is None:
         error = "Canonical Workbench graph is not available. Build/import workbench.db before browsing validation history."
@@ -2447,12 +2448,14 @@ def validation_dashboard(request: Request):
             status_counts[row["status"] or "UNKNOWN"] = row["n"]
         for row in con.execute("SELECT status, COUNT(*) AS n FROM validation_results GROUP BY status ORDER BY status"):
             result_counts[row["status"] or "UNKNOWN"] = row["n"]
+        total_results = sum(result_counts.values())
         con.close()
     return templates.TemplateResponse(request, "validation_dashboard.html", {
         "request": request,
         "runs": runs,
         "status_counts": status_counts,
         "result_counts": result_counts,
+        "total_results": total_results,
         "error": error,
     })
 
