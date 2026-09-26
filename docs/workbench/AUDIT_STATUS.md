@@ -785,3 +785,29 @@ Implemented:
 - MySQL/MariaDB passwords are read from an environment variable (default `FFXI_DB_PASSWORD`) rather than accepted as a normal CLI argument.
 
 The legacy `backport_sql_live_check.py` remains present and separate because it contains specialized package ID/content-duplication logic, including `mob_groups` live-conflict analysis. Existing admin/write tooling is not removed or absorbed into the generic validator.
+
+
+## 2026-09-25 — Logical schema coverage audit and FeatureSurface rule expansion
+
+The server adapter layer now has an explicit cross-profile schema-coverage analyzer instead of relying on manually inferred completeness.
+
+`workbench.adapters.servers.schema_coverage` reports, per Topaz/Topaz-Next/DSP/LSB logical table:
+- physical table name;
+- adapter-defined logical identity fields;
+- mapped logical fields;
+- parsed physical fields;
+- parsed physical fields not yet mapped into the logical model;
+- identity fields lacking mappings;
+- per-table coverage status.
+
+A profile matrix makes lineage-specific representation drift visible without pretending physical schemas are interchangeable. Existing adapter mappings remain authoritative; the coverage audit does not invent mappings for unaudited tables.
+
+FeatureSurface migration planning now emits explicit review actions for:
+- source-only capabilities;
+- capability status/confidence drift;
+- source/target entity membership drift;
+- shared semantic roles whose paths/representation differ.
+
+These additions make migration-rule gaps first-class rather than leaving them implicit in comparison output.
+
+Logical schema mapping is intentionally still open: item_basic, item_weapon, item_usable, spells, traits, and other broader server families need audited field mappings before full coverage can be claimed.
