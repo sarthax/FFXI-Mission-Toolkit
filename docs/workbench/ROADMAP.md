@@ -422,7 +422,10 @@ Current proof:
 - [x] Expose Package Library and consolidated Review & Readiness as read-only Packages workspace pages over assembled migration packages.
 - [x] Add Package Dependency Closure / Scope Review: bounded transitive graph discovery, per-dependency evidence/path visibility, user decisions/reasons/tags, reviewed-scope fingerprints, stale-review invalidation, and package-creation gating.
 - [x] Expose canonical package creation from existing Migration/MigrationAction/Artifact/dependency records; creation consumes reviewed scope, embeds the full dependency decision ledger, and assembles a reviewable package workspace only.
-- [ ] Prove dependency-discovery completeness against a complex mob and representative instance/mission before adding approval/apply UI.
+- [~] Prove dependency-discovery completeness against a complex mob and representative instance/mission before adding approval/apply UI.
+  - [x] Establish Arrapago Reef Medusa as the first machine-readable manual truth set, including helpers, skill/spell chains, job-special mixin, loot/items, title/text, Lua/engine requirements, and related-but-out-of-scope Besieged variants.
+  - [ ] Close the generic discovery gaps exposed by the Medusa proof and rerun the truth-set comparison.
+  - [ ] Repeat with a representative instance/mission after the Medusa dependency classes reach closure.
 - [ ] Add approval/apply/rollback UI only after preserving the existing readiness, approval, drift, backup, journal, and rollback gates end to end.
 - [ ] Migrate remaining workspace pages incrementally while preserving current routes until feature parity is verified.
 
