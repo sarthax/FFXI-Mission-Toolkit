@@ -10,6 +10,7 @@ from workbench.client.identity_snapshot import (
     ClientIdentityManifest,
     ingest_dialog_export,
     parse_dialog_export,
+    parse_entity_export,
     read_manifest,
     write_manifest,
 )
@@ -24,6 +25,13 @@ SAMPLE = """entries:
 """
 
 
+ENTITY_SAMPLE = """- id: 1001
+  name: 'Door Alpha'
+- id: 1002
+  name: Research NPC
+"""
+
+
 def main() -> None:
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
@@ -33,6 +41,11 @@ def main() -> None:
         parsed = parse_dialog_export(export)
         assert parsed[10] == "The seal bears the crest of the Republic.", parsed
         assert parsed[11] == "You hand over the supplies.", parsed
+
+        entity_export = root / "entities.yml"
+        entity_export.write_text(ENTITY_SAMPLE, encoding="utf-8")
+        entities = parse_entity_export(entity_export)
+        assert entities == {1001: "Door Alpha", 1002: "Research NPC"}, entities
 
         manifest_path = root / "manifest.json"
         manifest = ClientIdentityManifest(
