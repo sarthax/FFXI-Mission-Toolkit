@@ -282,11 +282,33 @@ def main() -> int:
             "target_snapshot_id": "client-b",
             "zone_key": None,
             "minimum_confidence": "HIGH",
+            "entity_diagnostics": {
+                "total": 1,
+                "constraint_ready": 1,
+                "counts": {"TARGET_EQUIVALENT": 1},
+                "rows": [{
+                    "zone_key": "ILRUSI_ATOLL",
+                    "source_actor_id": "17000001",
+                    "semantic_identity": "Door Alpha",
+                    "target_actor_id": "17000099",
+                    "status": "TARGET_EQUIVALENT",
+                    "confidence": "HIGH",
+                    "target_candidates": [{"numeric_id": "17000099"}],
+                    "reason": "Semantic identity matches with target numeric drift.",
+                    "recommendation": "Actor identity is strong enough to constrain target EVENT candidates.",
+                }],
+            },
             "rows": [{
                 "zone_key": "ILRUSI_ATOLL",
                 "source_actor_key": "17000001",
                 "source_event_id": "100",
                 "target_actor_key": "17000099",
+                "actor_status": "TARGET_EQUIVALENT",
+                "actor_confidence": "HIGH",
+                "actor_semantic_identity": "Door Alpha",
+                "actor_candidate_count": 1,
+                "actor_reason": "Semantic identity matches with target numeric drift.",
+                "actor_recommendation": "Actor identity is strong enough to constrain target EVENT candidates.",
                 "target_event_id": "101",
                 "status": "TARGET_EQUIVALENT",
                 "confidence": "HIGH",
@@ -303,6 +325,11 @@ def main() -> int:
             comparison=comparison,
             comparison_summary=identity_gui.summarize_comparison({
                 "total": 1, "counts": {"TARGET_EQUIVALENT": 1},
+            }),
+            entity_summary=identity_gui.summarize_entity_diagnostics({
+                "total": 1,
+                "constraint_ready": 1,
+                "counts": {"TARGET_EQUIVALENT": 1},
             }),
             compare_error=None,
             import_form={
@@ -325,6 +352,9 @@ def main() -> int:
         assert "17000001" in html
         assert "17000099" in html
         assert "DECODED_STRUCTURE" in html
+        assert "ENTITY / Actor Identity Coverage" in html
+        assert "Constraint-ready 1" in html
+        assert "Door Alpha" in html
         assert "Export comparison CSV" in html
 
     print("Client snapshot GUI regression: PASS")
