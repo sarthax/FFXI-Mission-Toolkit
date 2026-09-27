@@ -1330,3 +1330,35 @@ Implemented:
 Regression: `test_event_actor_identity_resolution.py` proves actor-ID drift, duplicate target
 event candidates under separate actors, ambiguous entity identity, unresolved actor mapping, and
 same-actor exact mapping. The fixture is included in Workbench Regression.
+
+
+## 2026-09-26 — Multi-client identity snapshots surfaced in Client Overview
+
+The next real-client validation gate is now accessible through the GUI rather than requiring a
+manual CLI sequence.
+
+Implemented on the Client Overview surface:
+
+- retained the existing installed-client fingerprint;
+- list imported client identity snapshots from `workbench.db`;
+- display build/family/region/language/source path/extraction time and
+  EVENT/ENTITY/DIALOG record counts;
+- identify snapshots that correspond to the currently installed client;
+- import a second client directly from a client root using the existing xi-tinkerer extraction
+  and manifest-ingestion services;
+- extract all zones known to the canonical zone database;
+- reject missing required client files, missing xi-tinkerer, duplicate snapshot ids, and
+  non-empty output locations before extraction;
+- store portable extracted payloads under git-ignored `client_snapshots/`;
+- compare any two imported snapshots with the existing actor-aware bulk EVENT resolver;
+- expose EXACT, TARGET_EQUIVALENT, ambiguous, LOW_CONFIDENCE, and unresolved totals;
+- display source/target actor and event ids plus confidence, match basis, and reason;
+- export the comparison as CSV.
+
+Focused regression coverage is in `test_fixtures/test_gui_client_snapshots.py` and is included in
+the Workbench Regression workflow. The existing identity, extraction, capture bridge, and shared
+GUI shell regressions remain part of the same CI job.
+
+This closes the tooling gap that previously blocked second-client validation from the GUI. The
+remaining external gate is to import an actual second retail client build and inspect the resulting
+cross-build identity distributions.

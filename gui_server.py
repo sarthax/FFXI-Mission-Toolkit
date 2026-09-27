@@ -5993,16 +5993,193 @@ def datinspector_page(request: Request, dat_id: str = "", zoneid: str = "", ffxi
         "ffxi_path": path, "families": families})
 
 
-@app.get("/clientoverview", response_class=HTMLResponse)
-def clientoverview_page(request: Request):
+def _clientoverview_context(
+    request: Request,
+    *,
+    import_result: dict | None = None,
+    import_error: str | None = None,
+    comparison: dict | None = None,
+    compare_error: str | None = None,
+    import_form: dict | None = None,
+    compare_form: dict | None = None,
+):
     import client_overview
+    from workbench.client import identity_gui
+
     install = settings_mod.get_ffxi_install() or "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
     ov, error = None, None
     try:
         ov = client_overview.overview(install, WORKBENCH_DB)
     except Exception as ex:
         error = f"{type(ex).__name__}: {ex}"
-    return templates.TemplateResponse(request, "client_overview.html", {"request": request, "ov": ov, "error": error})
+
+    snapshots = identity_gui.list_client_snapshots(
+        WORKBENCH_DB,
+        current_snapshot_id=(ov or {}).get("snapshot_id"),
+        current_client_path=(ov or {}).get("install") or install,
+    )
+    comparison_summary = (
+        identity_gui.summarize_comparison(comparison) if comparison is not None else None
+    )
+    return {
+        "request": request,
+        "ov": ov,
+        "error": error,
+        "snapshots": snapshots,
+        "import_result": import_result,
+        "import_error": import_error,
+        "comparison": comparison,
+        "comparison_summary": comparison_summary,
+        "compare_error": compare_error,
+        "import_form": import_form or {
+            "client_root": install,
+            "snapshot_id": "",
+            "build_label": "",
+            "region": "",
+            "language": "",
+        },
+        "compare_form": compare_form or {
+            "source_snapshot": "",
+            "target_snapshot": "",
+            "zone": "",
+            "minimum_confidence": "HIGH",
+        },
+    }
+
+
+@app.get("/clientoverview", response_class=HTMLResponse)
+def clientoverview_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "client_overview.html",
+        _clientoverview_context(request),
+    )
+
+
+@app.post("/clientoverview/import", response_class=HTMLResponse)
+def clientoverview_import(
+    request: Request,
+    client_root: str = Form(...),
+    snapshot_id: str = Form(...),
+    build_label: str = Form(...),
+    region: str = Form(""),
+    language: str = Form(""),
+):
+    from workbench.client import identity_gui
+
+    form = {
+        "client_root": client_root,
+        "snapshot_id": snapshot_id,
+        "build_label": build_label,
+        "region": region,
+        "language": language,
+    }
+    try:
+        result = identity_gui.import_client_snapshot(
+            client_root=Path(client_root),
+            snapshot_id=snapshot_id,
+            build_label=build_label,
+            region=region,
+            language=language,
+            xi_tinkerer=XI_TINKERER_CLI,
+            db_path=WORKBENCH_DB,
+            zone_db=DB_PATH,
+            snapshots_root=TOOLS_ROOT / "client_snapshots",
+        )
+        ctx = _clientoverview_context(request, import_result=result)
+    except Exception as ex:
+        ctx = _clientoverview_context(
+            request,
+            import_error=f"{type(ex).__name__}: {ex}",
+            import_form=form,
+        )
+    return templates.TemplateResponse(request, "client_overview.html", ctx)
+
+
+@app.post("/clientoverview/compare", response_class=HTMLResponse)
+def clientoverview_compare(
+    request: Request,
+    source_snapshot: str = Form(...),
+    target_snapshot: str = Form(...),
+    zone: str = Form(""),
+    minimum_confidence: str = Form("HIGH"),
+):
+    from workbench.client import identity_gui
+
+    form = {
+        "source_snapshot": source_snapshot,
+        "target_snapshot": target_snapshot,
+        "zone": zone,
+        "minimum_confidence": minimum_confidence,
+    }
+    try:
+        comparison = identity_gui.compare_client_snapshots(
+            WORKBENCH_DB,
+            source_snapshot_id=source_snapshot,
+            target_snapshot_id=target_snapshot,
+            zone_key=zone,
+            minimum_confidence=minimum_confidence,
+        )
+        ctx = _clientoverview_context(
+            request,
+            comparison=comparison,
+            compare_form=form,
+        )
+    except Exception as ex:
+        ctx = _clientoverview_context(
+            request,
+            compare_error=f"{type(ex).__name__}: {ex}",
+            compare_form=form,
+        )
+    return templates.TemplateResponse(request, "client_overview.html", ctx)
+
+
+@app.get("/clientoverview/compare.csv")
+def clientoverview_compare_csv(
+    source_snapshot: str,
+    target_snapshot: str,
+    zone: str = "",
+    minimum_confidence: str = "HIGH",
+):
+    from workbench.client import identity_gui
+
+    try:
+        report = identity_gui.compare_client_snapshots(
+            WORKBENCH_DB,
+            source_snapshot_id=source_snapshot,
+            target_snapshot_id=target_snapshot,
+            zone_key=zone,
+            minimum_confidence=minimum_confidence,
+        )
+    except Exception as ex:
+        raise HTTPException(status_code=400, detail=f"{type(ex).__name__}: {ex}") from ex
+
+    fields = [
+        "zone_key",
+        "source_actor_key",
+        "source_event_id",
+        "target_actor_key",
+        "target_event_id",
+        "status",
+        "confidence",
+        "match_basis",
+        "source_record_id",
+        "target_record_id",
+        "reason",
+    ]
+    out = io.StringIO()
+    writer = csv.DictWriter(out, fieldnames=fields, extrasaction="ignore")
+    writer.writeheader()
+    writer.writerows(report["rows"])
+    filename = (
+        f"client-event-compare-{identity_gui.safe_snapshot_name(source_snapshot)}-"
+        f"to-{identity_gui.safe_snapshot_name(target_snapshot)}.csv"
+    )
+    return Response(
+        out.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @app.get("/dialogdrift", response_class=HTMLResponse)
