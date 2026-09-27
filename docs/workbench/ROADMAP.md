@@ -245,7 +245,7 @@ Design requirements:
 Current state is a useful draft assistant: Open WebUI/Ollama chat plus read-only SQLite tools and logging. The rework should promote this into a bounded, reproducible research/orchestration layer over the Workbench rather than a free-form chatbot.
 
 Core architecture:
-- [ ] Provider abstraction for Open WebUI, Ollama Direct, and future explicitly configured providers; the toolkit must not depend on one provider's response schema.
+- [x] Provider abstraction for Open WebUI and Ollama Direct with a provider-neutral contract/factory; future explicitly configured providers can extend the same interface without changing ResearchRunner.
 - [ ] ResearchSession persistence with prompt/question, provider/model, pinned source/target snapshots, selected feature/entity roots, tool policy, tool transcripts, evidence IDs, findings/proposals, outputs, verification state, timestamps, usage, budgets, and replay metadata.
 - [ ] Typed Workbench tool registry covering graph, feature, server adapters, entities, C++, bindings, enums, packets, captures, build targets, client capabilities, migration, validation, references, and source inspection.
 - [ ] Bounded source crawler over configured repositories/snapshots with include/exclude rules, path/type/size/depth limits, secret/key exclusions, and no arbitrary filesystem access.
@@ -449,3 +449,11 @@ Completed a real `FFXiMain.dll` deeper pass and PE32 import-thunk candidate look
 - [x] Add focused GUI/session regressions and route-map coverage.
 - [ ] Add an explicit provider-run/replay action only after provider selection, timeout/budget controls, and run-state UX are wired through the existing bounded ResearchRunner.
 - [ ] Add contradiction-focused filtering and canonical evidence drill-through from the session detail page.
+
+### 2026-09-26 Ollama Direct provider milestone
+- [x] Add direct Ollama `/api/tags`, `/api/show`, and non-streaming `/api/chat` provider support.
+- [x] Normalize Ollama models to the provider-neutral `id` shape used by ResearchRunner.
+- [x] Preserve capability evidence (vision/thinking/tools), model details, usage counters, and provider metadata.
+- [x] Add a provider factory for Open WebUI vs Ollama Direct selection.
+- [x] Keep provider failures explicit; no silent fallback from one provider to another.
+- [x] Add no-network regression coverage for both provider implementations and provider selection.
