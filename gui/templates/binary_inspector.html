@@ -31,6 +31,21 @@ FFXiMain.dll is packed, so its code is largely not visible on disk.</p>
 {% for r in probe_result.rows %}<tr><td>{{ r.name }}</td><td>{{ r.kind }}</td><td><code>{{ r.needle }}</code></td><td>{{ r.status }}</td><td>{{ r.count }}</td><td><code>{{ r.sample|join(', ') }}</code></td></tr>{% endfor %}</table></div>
 {% endif %}
 
+<h2>Running client version (memory scan)</h2>
+<p class="muted">Read-only scan of a running FFXI client (pol.exe) for its version string, the value <code>/ver</code> reports and the server checks. FFXiMain.dll is packed on disk, so this only works while the client is running. Not found = UNKNOWN.</p>
+<form method="get"><input type="hidden" name="scan_mem" value="1"><button type="submit">Scan running client</button></form>
+{% if mem_scan %}
+{% if not mem_scan.running %}<p class="chip">No FFXI client process (pol.exe) is running. Launch the client (login screen is enough) and scan again.</p>{% endif %}
+{% for p in mem_scan.processes %}
+<h3>{{ p.exe }} (pid {{ p.pid }})</h3>
+{% if p.error %}<p class="chip" style="color:#c33;">{{ p.error }}</p>
+{% elif p.versions %}<p>{% for v, n in p.versions.items() %}<code>{{ v }}</code> &times;{{ n }} &nbsp;{% endfor %}</p>
+<div class="table-wrap"><table><tr><th>Address</th><th>Value</th></tr>{% for h in p.hits %}<tr><td><code>{{ h.address }}</code></td><td><code>{{ h.value }}</code></td></tr>{% endfor %}</table></div>
+<p class="muted">Scanned {{ p.regions }} regions, {{ p.bytes_scanned }} bytes. If several values appear, the client version is normally the one matching <code>/ver</code>; others may be patch-history strings.</p>
+{% else %}<p class="chip">UNKNOWN: no version string found ({{ p.regions }} regions, {{ p.bytes_scanned }} bytes scanned).</p>{% endif %}
+{% endfor %}
+{% endif %}
+
 {% if error %}<p class="chip" style="color:#c33;">{{ error }}</p>{% endif %}
 {% if idx %}
 <h2>{{ path }}</h2>

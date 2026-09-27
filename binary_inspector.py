@@ -64,6 +64,12 @@ def diff(left_path: str, right_path: str) -> dict:
     return diff_binary_indexes(get_index(left_path), get_index(right_path))
 
 
+def scan_running_client_version() -> dict:
+    """Read-only memory scan of a running FFXI client for its version string (what /ver reports)."""
+    from workbench.client.memory_scan import scan_client_version
+    return scan_client_version()
+
+
 PROBE_DIR = Path(__file__).resolve().parent / "client_probe_sets"
 
 

@@ -6077,15 +6077,18 @@ def binaryinspector_save_probes(request: Request, run_set: str = Form(...)):
 
 @app.get("/binaryinspector", response_class=HTMLResponse)
 def binaryinspector_page(request: Request, path: str = "", q: str = "", imp: str = "", pattern: str = "",
-                         exec_only: str = "", diff_path: str = "", run_set: str = "", saved: str = ""):
+                         exec_only: str = "", diff_path: str = "", run_set: str = "", saved: str = "",
+                         scan_mem: str = ""):
     import binary_inspector as bi
     install = settings_mod.get_ffxi_install() or "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
     ctx = {"request": request, "install": install, "candidates": bi.list_candidates(install),
            "path": path, "q": q, "imp": imp, "pattern": pattern, "exec_only": exec_only,
            "diff_path": diff_path, "idx": None, "error": None, "strings": None,
            "imports": None, "psearch": None, "diff": None,
-           "probe_sets": bi.list_probe_sets(), "probe_result": None, "saved": saved, "run_set_file": run_set}
+           "probe_sets": bi.list_probe_sets(), "probe_result": None, "saved": saved, "run_set_file": run_set, "mem_scan": None}
     try:
+        if scan_mem:
+            ctx["mem_scan"] = bi.scan_running_client_version()
         if run_set:
             ctx["probe_result"] = bi.run_probe_set(run_set, install)
         if path.strip():
