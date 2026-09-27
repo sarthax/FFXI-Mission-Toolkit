@@ -88,7 +88,7 @@ def catalog_node(con: sqlite3.Connection, node_id: str):
 
 def relationship_section(edge):
     rel = (edge.get("relationship") or "").upper()
-    if any(x in rel for x in ("PACKET", "CAPTURE", "OBSERV", "RUNTIME", "OPCODE")):
+    if is_runtime_relationship(rel):
         return "Runtime / Captures & Packets"
     if any(x in rel for x in ("VALIDAT", "EXPECTED", "OBSERVED")):
         return "Validation"
@@ -103,6 +103,12 @@ def relationship_section(edge):
     if any(x in rel for x in ("EVIDENCE", "REFERENCE", "SOURCE", "CONTRADICT")):
         return "Evidence / References"
     return "Other / Unclassified"
+
+
+def is_runtime_relationship(relationship):
+    """Runtime observations are evidence, not semantic traversal topology."""
+    rel = (relationship or "").upper()
+    return any(x in rel for x in ("PACKET", "CAPTURE", "OBSERV", "RUNTIME", "OPCODE"))
 
 
 def present_relationships(edges):

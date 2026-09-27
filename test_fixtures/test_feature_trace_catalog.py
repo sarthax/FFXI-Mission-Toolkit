@@ -7,6 +7,7 @@ from pathlib import Path
 
 import feature_trace
 from workbench.core.services.feature_trace_catalog import present_relationships
+from pathlib import Path
 
 
 def main():
@@ -28,6 +29,18 @@ def main():
     assert any(m["node_id"]=="catalog:sql_item_basic:2413" for m in bridged)
     catalog_trace=feature_trace.trace(graph,"catalog:sql_item_basic:2413",3,"both",con)
     assert catalog_trace["nodes"][0]["known"] and not catalog_trace["edges"]
+    graph.executemany("INSERT INTO entities VALUES (?,?,?,?)",[("npc:root","NPC","Root","{}"),("runtime:one","OBSERVATION","Packet one","{}"),("entity:semantic","NPC","Semantic","{}")])
+    graph.executemany("INSERT INTO entity_relationships VALUES (?,?,?,?,?,?,?,?,?)",[
+        ("semantic","npc:root","entity:semantic","IMPLEMENTS",None,"HIGH","KNOWN","{}",None),
+        ("packet-1","npc:root","runtime:one","OBSERVES","ev:1","OBSERVED","KNOWN",'{"opcode":"0x00E","capture_id":1}',None),
+        ("packet-2","npc:root","runtime:one","OBSERVES","ev:2","OBSERVED","KNOWN",'{"opcode":"0x00E","capture_id":2}',None),
+    ])
+    semantic_trace=feature_trace.trace(graph,"npc:root",3,"both",con)
+    assert {node["node_id"] for node in semantic_trace["nodes"]}=={"npc:root","entity:semantic"}
+    assert len(semantic_trace["edges"])==1 and semantic_trace["runtime_summary"][0]["runtime_groups"][0]["observation_count"]==2, semantic_trace
+    template=(Path(__file__).resolve().parents[1]/"gui"/"templates"/"feature_trace.html").read_text(encoding="utf-8")
+    assert "do not expand the semantic trace topology" in template
+    assert "semantic node(s)" in template
     edges=[
         {"relationship":"PACKET_OBSERVED","metadata":{"opcode":"0x00E","capture_id":1},"source_snapshot_id":None},
         {"relationship":"PACKET_OBSERVED","metadata":{"opcode":"0x00E","capture_id":2},"source_snapshot_id":None},

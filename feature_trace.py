@@ -15,7 +15,7 @@ from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
 
-from workbench.core.services.feature_trace_catalog import catalog_node, search_catalog
+from workbench.core.services.feature_trace_catalog import catalog_node, is_runtime_relationship, present_relationships, search_catalog
 
 
 SCHEMA = 1
@@ -45,7 +45,10 @@ def node_info(con: sqlite3.Connection, node_id: str, catalog_con: sqlite3.Connec
         ("artifacts", "artifact_id", "artifact_type", "path", "metadata_json"),
         ("enum_definitions", "enum_id", "format", "symbol", "notes_json"),
     ]
+    available = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     for table, key, type_col, name_col, meta_col in queries:
+        if table not in available:
+            continue
         row = con.execute(
             f"SELECT {key}, {type_col}, {name_col}, {meta_col} FROM {table} WHERE {key}=?",
             (node_id,),
@@ -113,7 +116,9 @@ def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
           relationships: set[str] | None = None) -> dict:
     queue = deque([(root, 0, [root], [])])
     visited = {root}
+    seen_relationships = set()
     edges = []
+    runtime_edges = []
     paths = []
     while queue:
         node, level, node_path, edge_path = queue.popleft()
@@ -131,6 +136,9 @@ def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
         sql = "SELECT relationship_id, source_node, target_node, relationship, evidence_id, confidence, status, metadata_json, source_snapshot_id FROM entity_relationships WHERE " + " AND ".join(clauses) + " ORDER BY relationship_id"
         rows = con.execute(sql, params).fetchall()
         for rid, src, dst, rel, evidence_id, confidence, status, metadata_json, snapshot_id in rows:
+            if rid in seen_relationships:
+                continue
+            seen_relationships.add(rid)
             if relationships and rel not in relationships:
                 continue
             if direction == "out" and src != node:
@@ -154,6 +162,9 @@ def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
                 "traversed_direction": traversed,
                 "depth": level + 1,
             }
+            if is_runtime_relationship(rel):
+                runtime_edges.append(edge)
+                continue
             edges.append(edge)
             if neighbor not in visited:
                 visited.add(neighbor)
@@ -178,6 +189,7 @@ def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
         "relationship_filter": sorted(relationships) if relationships else [],
         "nodes": [node_info(con, n, catalog_con) for n in node_ids],
         "edges": edges,
+        "runtime_summary": present_relationships(runtime_edges),
         "paths": paths,
         "notes": [
             "Trace connectivity is not an implementation verdict.",

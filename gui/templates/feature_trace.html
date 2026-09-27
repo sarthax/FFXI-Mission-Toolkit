@@ -54,6 +54,21 @@
 </div>
 <p><strong>Root:</strong> <code>{{ result.root }}</code> &nbsp; <strong>Direction:</strong> {{ result.direction }}</p>
 
+{% if result.runtime_summary %}
+<h2>Runtime / Captures &amp; Packets</h2>
+<p class="muted">Runtime observations are summarized separately and do not expand the semantic trace topology.</p>
+{% for section in result.runtime_summary %}
+  {% for group in section.runtime_groups %}
+  <details class="trace-runtime-group">
+    <summary>{{ group.opcode }}{% if group.direction %} · {{ group.direction }}{% endif %} — {{ group.observation_count }} observation(s) — {{ group.capture_count }} capture(s)</summary>
+    <div class="table-wrap"><table><thead><tr><th>Relationship</th><th>From</th><th>To</th><th>Evidence</th></tr></thead><tbody>
+    {% for edge in group.edges %}<tr><td>{{ edge.relationship }}</td><td><code>{{ edge.from_node }}</code></td><td><code>{{ edge.to_node }}</code></td><td><code>{{ edge.evidence_id or "" }}</code></td></tr>{% endfor %}
+    </tbody></table></div>
+  </details>
+  {% endfor %}
+{% endfor %}
+{% endif %}
+
 <h2>Relationships</h2>
 {% if result.edges %}
 {% for section in relationship_sections %}
@@ -96,6 +111,8 @@
 {% endif %}
 
 <h2>Nodes</h2>
+<details{% if result.nodes|length <= 100 %} open{% endif %}>
+<summary>{{ result.nodes|length }} semantic node(s){% if result.nodes|length > 100 %} — expand to browse{% endif %}</summary>
 <div class="table-wrap">
 <table>
 <thead><tr><th>Node ID</th><th>Known</th><th>Representations</th></tr></thead>
@@ -116,6 +133,7 @@
 </tbody>
 </table>
 </div>
+</details>
 
 {% for note in result.notes %}
 <p class="muted">{{ note }}</p>
