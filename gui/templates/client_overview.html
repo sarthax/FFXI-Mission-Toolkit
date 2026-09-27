@@ -2,9 +2,12 @@
 {% block title %}Client Overview{% endblock %}
 {% block content %}
 <h1>Client Overview / Build</h1>
-<p class="muted">Read-only fingerprint of the installed client. Captures and ID tables can cite the build id
-to show which client they came from.</p>
-{% if error %}<p class="chip" style="color:#c33;">{{ error }}</p>{% else %}
+<p class="muted">Fingerprint the installed client, retain portable identity snapshots from other builds, and compare EVENT identities across builds.</p>
+
+<h2>Installed Client Fingerprint</h2>
+{% if error %}
+<p class="chip" style="color:#c33;">{{ error }}</p>
+{% else %}
 <div class="table-wrap"><table>
   <tr><th>Install</th><td><code>{{ ov.install }}</code></td></tr>
   <tr><th>Build id</th><td><code>{{ ov.build_id }}</code> <span class="muted">(FFXiMain.dll SHA-256, first 12)</span></td></tr>
@@ -12,14 +15,115 @@ to show which client they came from.</p>
   <tr><th>DAT index</th><td>{% for t in ov.tables %}{{ t.name }} ({{ "{:,}".format(t.size) }} B) {% endfor %}</td></tr>
   <tr><th>ROM folders</th><td>{{ ov.rom_dirs|length }}: {{ ov.rom_dirs|join(", ") }}</td></tr>
 </table></div>
-<h2>Binaries</h2>
+
+<h3>Binaries</h3>
 <div class="table-wrap"><table><tr><th>File</th><th>Size</th><th>PE</th><th>Link time</th><th>SHA-256</th><th></th></tr>
 {% for b in ov.binaries %}<tr><td>{{ b.name }}</td><td>{{ "{:,}".format(b.size) }}</td><td>{{ b.pe or "-" }}</td><td>{{ b.link_time or "-" }}</td>
 <td><code>{{ b.sha256 }}</code></td><td>{% if b.pe %}<a href="/binaryinspector?path={{ (ov.install ~ '/' ~ b.name)|urlencode }}">inspect</a>{% endif %}</td></tr>{% endfor %}</table></div>
-<h2>Saved feature probes for this build</h2>
+
+<h3>Saved feature probes for this build</h3>
 {% if not ov.observations.graph_built %}<p class="muted">Workbench graph not built yet, so no saved probe results.</p>
 {% elif not ov.observations.rows %}<p class="muted">None saved. Run a probe set on the <a href="/binaryinspector">Binary Inspector</a> and click Save to graph.</p>
 {% else %}<p>{% for s, n in ov.observations.counts.items() %}<span class="chip">{{ s }} {{ n }}</span> {% endfor %}</p>
 <div class="table-wrap"><table>{% for r in ov.observations.rows %}<tr><td>{{ r.capability }}</td><td>{{ r.status }}</td></tr>{% endfor %}</table></div>{% endif %}
+{% endif %}
+
+<h2>Imported Client Snapshots</h2>
+<p class="muted">Portable client identity snapshots already ingested into <code>workbench.db</code>. Snapshot payloads stay local under <code>client_snapshots/</code> and are git-ignored.</p>
+{% if not snapshots %}
+<p class="muted">No imported client identity snapshots yet.</p>
+{% else %}
+<div class="table-wrap"><table>
+  <tr>
+    <th>Snapshot ID</th><th>Build</th><th>Family</th><th>Region</th><th>Language</th>
+    <th>Source client</th><th>Imported</th><th>EVENT</th><th>ENTITY</th><th>DIALOG</th>
+  </tr>
+  {% for s in snapshots %}
+  <tr>
+    <td><code>{{ s.snapshot_id }}</code>{% if s.is_current %} <span class="chip">installed client</span>{% endif %}</td>
+    <td>{{ s.build or "-" }}</td>
+    <td>{{ s.family or "-" }}</td>
+    <td>{{ s.region or "-" }}</td>
+    <td>{{ s.language or "-" }}</td>
+    <td><code>{{ s.source_path or "-" }}</code></td>
+    <td>{{ s.recorded_at or "-" }}</td>
+    <td>{{ s.event_count }}</td>
+    <td>{{ s.entity_count }}</td>
+    <td>{{ s.dialog_count }}</td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+
+<h2>Import Client Snapshot</h2>
+<p class="muted">Extracts all known zones through the existing xi-tinkerer identity pipeline, writes a portable manifest under <code>client_snapshots/&lt;safe-snapshot-name&gt;</code>, then ingests identities into <code>workbench.db</code>. Existing snapshot IDs and non-empty output directories are never overwritten.</p>
+{% if import_error %}<p class="chip" style="color:#c33;">{{ import_error }}</p>{% endif %}
+{% if import_result %}
+<p class="chip">Imported <code>{{ import_result.snapshot_id }}</code>: {{ import_result.record_count }} identity records from {{ import_result.resources }} extracted resources across {{ import_result.zones_requested }} requested zones.</p>
+{% if import_result.extraction_failures or import_result.ingest_failures %}
+<p class="muted">{{ import_result.extraction_failures|length }} extraction failure(s), {{ import_result.ingest_failures|length }} ingest failure(s). Successful resources were retained.</p>
+{% endif %}
+{% endif %}
+<form method="post" action="/clientoverview/import">
+  <div class="table-wrap"><table>
+    <tr><th>FFXI client root path</th><td><input style="width:100%;" name="client_root" value="{{ import_form.client_root }}" required></td></tr>
+    <tr><th>Snapshot ID</th><td><input name="snapshot_id" value="{{ import_form.snapshot_id }}" placeholder="retail-2022-wardrobe" required></td></tr>
+    <tr><th>Build label</th><td><input name="build_label" value="{{ import_form.build_label }}" placeholder="2022-05 retail" required></td></tr>
+    <tr><th>Region</th><td><input name="region" value="{{ import_form.region }}" placeholder="optional"></td></tr>
+    <tr><th>Language</th><td><input name="language" value="{{ import_form.language }}" placeholder="optional"></td></tr>
+  </table></div>
+  <button type="submit">Import all-zone identity snapshot</button>
+</form>
+
+<h2>Compare Client Builds</h2>
+<p class="muted">Uses the existing bulk EVENT identity resolver. Actor context is carried across builds when a high-confidence ENTITY mapping is available.</p>
+{% if compare_error %}<p class="chip" style="color:#c33;">{{ compare_error }}</p>{% endif %}
+<form method="post" action="/clientoverview/compare">
+  <div class="table-wrap"><table>
+    <tr><th>Source snapshot</th><td><select name="source_snapshot" required>
+      <option value="">Select source…</option>
+      {% for s in snapshots %}<option value="{{ s.snapshot_id }}" {% if compare_form.source_snapshot == s.snapshot_id %}selected{% endif %}>{{ s.snapshot_id }}{% if s.build %} — {{ s.build }}{% endif %}</option>{% endfor %}
+    </select></td></tr>
+    <tr><th>Target snapshot</th><td><select name="target_snapshot" required>
+      <option value="">Select target…</option>
+      {% for s in snapshots %}<option value="{{ s.snapshot_id }}" {% if compare_form.target_snapshot == s.snapshot_id %}selected{% endif %}>{{ s.snapshot_id }}{% if s.build %} — {{ s.build }}{% endif %}</option>{% endfor %}
+    </select></td></tr>
+    <tr><th>Zone</th><td><input name="zone" value="{{ compare_form.zone }}" placeholder="optional semantic zone key"></td></tr>
+    <tr><th>Minimum confidence</th><td><select name="minimum_confidence">
+      {% for level in ["VERIFIED", "HIGH", "INFERRED", "LOW", "UNKNOWN"] %}
+      <option value="{{ level }}" {% if compare_form.minimum_confidence == level %}selected{% endif %}>{{ level }}</option>
+      {% endfor %}
+    </select></td></tr>
+  </table></div>
+  <button type="submit">Compare builds</button>
+</form>
+
+{% if comparison %}
+<h3>Comparison Summary</h3>
+<p>
+  <span class="chip">Total {{ comparison_summary.total }}</span>
+  <span class="chip">EXACT {{ comparison_summary.EXACT }}</span>
+  <span class="chip">TARGET_EQUIVALENT {{ comparison_summary.TARGET_EQUIVALENT }}</span>
+  <span class="chip">Ambiguous {{ comparison_summary.ambiguous }}</span>
+  <span class="chip">LOW_CONFIDENCE {{ comparison_summary.LOW_CONFIDENCE }}</span>
+  <span class="chip">Unresolved {{ comparison_summary.unresolved }}</span>
+</p>
+<p><a href="/clientoverview/compare.csv?source_snapshot={{ comparison.source_snapshot_id|urlencode }}&target_snapshot={{ comparison.target_snapshot_id|urlencode }}{% if comparison.zone_key %}&zone={{ comparison.zone_key|urlencode }}{% endif %}&minimum_confidence={{ comparison.minimum_confidence|urlencode }}">Export comparison CSV</a></p>
+<div class="table-wrap"><table>
+  <tr><th>Zone</th><th>Source actor</th><th>Source event</th><th>Target actor</th><th>Target event</th><th>Status</th><th>Confidence</th><th>Match basis</th><th>Reason</th></tr>
+  {% for r in comparison.rows %}
+  <tr>
+    <td>{{ r.zone_key or "-" }}</td>
+    <td><code>{{ r.source_actor_key or "-" }}</code></td>
+    <td><code>{{ r.source_event_id }}</code></td>
+    <td><code>{{ r.target_actor_key or "-" }}</code></td>
+    <td><code>{{ r.target_event_id or "-" }}</code></td>
+    <td>{{ r.status }}</td>
+    <td>{{ r.confidence }}</td>
+    <td>{{ r.match_basis or "-" }}</td>
+    <td>{{ r.reason }}</td>
+  </tr>
+  {% endfor %}
+</table></div>
 {% endif %}
 {% endblock %}
