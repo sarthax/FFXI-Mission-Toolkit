@@ -91,10 +91,12 @@ def _indexed_specs(con):
     for table,(provider,spec) in provider_tables().items():
         if table not in available:
             continue
+        # A known provider table is reserved even when its current schema is incomplete.
+        # Do not reinterpret a schema mismatch through the heuristic fallback.
+        claimed.add(table)
         cols=_columns(con,table)
         required={spec.id_column.lower(),spec.name_column.lower(),*(col.lower() for col in spec.identity_columns())}
         if required.issubset(cols):
-            claimed.add(table)
             yield table,cols[spec.id_column.lower()],cols[spec.name_column.lower()],provider.provider_id,provider.domain,spec.object_type,spec
     for table in sorted(available-claimed):
         if table in {x[0] for x in CANONICAL_TABLES} or table=="entity_relationships":
