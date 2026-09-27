@@ -1892,3 +1892,20 @@ Included provider roots:
 High-cardinality runtime internals such as raw packets, capture history rows, capture event rows, and research tool calls are intentionally excluded from catalog discovery. They remain drill-down evidence rather than top-level catalog objects.
 
 Catalog-only roots continue to produce a valid Evidence Dossier even when they have no canonical semantic edges. Provider/domain provenance is shown in search results and dossier identity.
+
+
+### Provider-backed Feature Trace inspection
+
+Catalog providers can now expose a bounded set of source-native scalar fields for catalog-only roots without converting those fields into canonical graph relationships.
+
+Current examples include:
+- client snapshot family/build/source/fingerprint context;
+- client identity namespace/numeric ID/zone/actor/confidence/evidence;
+- capture mission/build/content metadata;
+- research session/proposal state;
+- validation run/result status and subject context;
+- migration/package status, target/source snapshot context, and scope review state.
+
+Where a stable GUI detail route already exists, the dossier also exposes an internal "Open source view" link. Provider IDs used in path parameters are URL-encoded before rendering.
+
+This is inspection metadata only. It does not alter dependency topology, evidence authority, validation status, or migration readiness.

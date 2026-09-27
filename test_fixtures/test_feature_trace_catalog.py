@@ -32,8 +32,8 @@ def main():
     con.execute("INSERT INTO identity_snapshots VALUES ('client:2022','30120222_1')")
     con.execute("CREATE TABLE identity_records (record_id TEXT, semantic_key TEXT)")
     con.execute("INSERT INTO identity_records VALUES ('identity:event:1','EVENT:zone:actor:149')")
-    con.execute("CREATE TABLE captures (capture_id INTEGER, capture_label TEXT)")
-    con.execute("INSERT INTO captures VALUES (17,'Ancient Vows retail')")
+    con.execute("CREATE TABLE captures (capture_id INTEGER, capture_label TEXT, capturer TEXT, content_type TEXT, zones TEXT, mission_name TEXT, client_build TEXT, is_retail INTEGER, start_time INTEGER)")
+    con.execute("INSERT INTO captures VALUES (17,'Ancient Vows retail','tester','Missions','Riverne - Site #A01','Ancient Vows','30120222_1',1,12345)")
     con.execute("CREATE TABLE research_sessions (research_session_id TEXT, question TEXT)")
     con.execute("INSERT INTO research_sessions VALUES ('research:1','Why does this event differ?')")
     con.execute("CREATE TABLE research_proposals (proposal_id TEXT, subject_id TEXT)")
@@ -62,16 +62,22 @@ def main():
     for query,provider in provider_expectations.items():
         rows=feature_trace.search_nodes(con,query)
         assert rows and rows[0]["provider"]==provider,(query,rows)
+    graph=sqlite3.connect(":memory:")
+    graph.execute("CREATE TABLE entities (entity_id TEXT, entity_type TEXT, display_name TEXT, metadata_json TEXT)")
+    graph.execute("CREATE TABLE entity_relationships (relationship_id TEXT, source_node TEXT, target_node TEXT, relationship TEXT, evidence_id TEXT, confidence TEXT, status TEXT, metadata_json TEXT, source_snapshot_id TEXT)")
     client_trace=feature_trace.trace(graph,"catalog:identity_snapshots:client:2022",3,"both",con)
     client_dossier=build_dossier(client_trace)
     assert client_dossier["identity"]["provider"]=="client-identity"
     assert client_dossier["identity"]["domain"]=="client"
+    assert client_dossier["identity"]["inspect_href"]=="/clientoverview"
     assert not client_trace["edges"]
+    capture_trace=feature_trace.trace(graph,"catalog:captures:17",3,"both",con)
+    capture_dossier=build_dossier(capture_trace)
+    assert capture_dossier["identity"]["details"]["client_build"]=="30120222_1"
+    assert capture_dossier["identity"]["details"]["mission_name"]=="Ancient Vows"
+    assert capture_dossier["identity"]["inspect_href"]=="/captures/17"
     assert len(feature_trace.search_nodes(con,"2413"))==1
     assert len(feature_trace.search_nodes(con,"Coiler"))==3  # ambiguity remains visible
-    graph=sqlite3.connect(":memory:")
-    graph.execute("CREATE TABLE entities (entity_id TEXT, entity_type TEXT, display_name TEXT, metadata_json TEXT)")
-    graph.execute("CREATE TABLE entity_relationships (relationship_id TEXT, source_node TEXT, target_node TEXT, relationship TEXT, evidence_id TEXT, confidence TEXT, status TEXT, metadata_json TEXT, source_snapshot_id TEXT)")
     bridged=feature_trace.search_nodes(graph,"Coiler",con)
     assert any(m["node_id"]=="catalog:sql_item_basic:2413" for m in bridged)
     catalog_trace=feature_trace.trace(graph,"catalog:sql_item_basic:2413",3,"both",con)
@@ -92,6 +98,7 @@ def main():
     template=(Path(__file__).resolve().parents[1]/"gui"/"templates"/"feature_trace.html").read_text(encoding="utf-8")
     assert "grouped without expanding semantic topology" in template
     assert "Evidence Dossier" in template
+    assert "Source details" in template and "Open source view" in template
     assert "section.edges" in template and "{% for edge in result.edges %}" not in template
     assert "/features/trace/runtime.json" in template
     assert "runtimeEsc(e.relationship)" in template
