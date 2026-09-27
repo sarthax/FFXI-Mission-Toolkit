@@ -331,6 +331,9 @@ def analyze_script(
             "analysis_type": "LUA_STATIC_DEPENDENCY_DISCOVERY",
             "source": rel,
             "status": "ANALYZED",
+            "created_at": None,
+            "tool_version": "1",
+            "findings": [],
             "source_snapshot_id": sid,
             "notes": [
                 "Only literal require() paths and statically resolved ID.mob arithmetic are emitted as VERIFIED.",
