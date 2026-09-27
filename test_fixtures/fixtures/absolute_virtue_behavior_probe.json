@@ -1,0 +1,109 @@
+{
+  "schema": 1,
+  "kind": "SCRIPTED_NM_BEHAVIOR_PROBE",
+  "subject": "Absolute Virtue",
+  "zone": "Al'Taieu",
+  "sources": [
+    "LSB:scripts/zones/AlTaieu/mobs/Absolute_Virtue.lua",
+    "LSB:scripts/zones/AlTaieu/mobs/Jailer_of_Love.lua"
+  ],
+  "hooks": [
+    "onMobInitialize",
+    "onMobSpawn",
+    "onMobEngage",
+    "onPlayerAbilityUse",
+    "onMobFight",
+    "onSpellPrecast",
+    "onMagicHit",
+    "onMobDeath",
+    "onMobDespawn"
+  ],
+  "dependencies": [
+    {
+      "kind": "spawn_from_death",
+      "from": "Jailer of Love",
+      "to": "Absolute Virtue",
+      "condition": "25% random roll",
+      "delay_seconds": 10
+    },
+    {
+      "kind": "inherit_runtime_target",
+      "from": "Jailer of Love",
+      "to": "Absolute Virtue",
+      "state": "highest recorded enmity/claim"
+    },
+    {
+      "kind": "cross_entity_state",
+      "from": "Jailer of Love",
+      "to": "Absolute Virtue",
+      "state": [
+        "JoL_Qn_xzomit_Killed",
+        "JoL_Qn_hpemde_Killed"
+      ]
+    },
+    {
+      "kind": "hp_threshold",
+      "subject": "Absolute Virtue",
+      "threshold_hpp": 60,
+      "effect": "bracelets phase"
+    },
+    {
+      "kind": "timed_random_action",
+      "subject": "Absolute Virtue",
+      "range_seconds": [
+        45,
+        90
+      ],
+      "effect": "special ability selection"
+    },
+    {
+      "kind": "player_action_response",
+      "subject": "Absolute Virtue",
+      "input": "player job ability",
+      "effect": "lock matching AV special ability within 3-second window"
+    },
+    {
+      "kind": "magic_response",
+      "subject": "Absolute Virtue",
+      "input": "elemental magic/day element",
+      "effect": "adjust regen"
+    },
+    {
+      "kind": "spell_override",
+      "subject": "Meteor",
+      "effect": "AoE/radius/animation override"
+    },
+    {
+      "kind": "cleanup",
+      "subject": "Absolute Virtue",
+      "trigger": [
+        "death",
+        "despawn"
+      ],
+      "effect": "despawn six related entities"
+    },
+    {
+      "kind": "loot_override",
+      "subject": "Absolute Virtue",
+      "condition": "xi.av.experimental",
+      "effect": "drop ID 0"
+    }
+  ],
+  "generic_map_required": [
+    "entity_hook",
+    "cross_entity_spawn",
+    "probability_guard",
+    "delayed_effect",
+    "runtime_state_transfer",
+    "cross_entity_state",
+    "hp_threshold",
+    "random_timer",
+    "ability_response",
+    "mutable_ability_set",
+    "combat_modifier",
+    "spell_override",
+    "magic_response",
+    "related_entity_cleanup",
+    "loot_override"
+  ]
+}
