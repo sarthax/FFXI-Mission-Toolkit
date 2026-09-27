@@ -27,6 +27,26 @@ def main():
     fallback=feature_trace.search_nodes(con,"Fallback Probe")
     assert fallback[0]["provider"]=="schema-fallback"
 
+    # mob_groups is composite-keyed by zoneid + groupid; groupid alone is not globally unique.
+    con.execute("CREATE TABLE lsb_mob_groups (zoneid INTEGER, groupid INTEGER, poolid INTEGER, name TEXT)")
+    con.executemany("INSERT INTO lsb_mob_groups VALUES (?,?,?,?)",[
+        (55,38,1001,"Group Thirty Eight"),
+        (75,38,2002,"Group Thirty Eight"),
+    ])
+    group_matches=feature_trace.search_nodes(con,"Group Thirty Eight")
+    group_ids={row["node_id"] for row in group_matches if row.get("table")=="lsb_mob_groups"}
+    assert group_ids=={
+        "catalog:lsb_mob_groups:zoneid=55&groupid=38",
+        "catalog:lsb_mob_groups:zoneid=75&groupid=38",
+    },group_ids
+    assert feature_trace.node_info(con,"catalog:lsb_mob_groups:38")["known"] is False
+    group_node=feature_trace.node_info(con,"catalog:lsb_mob_groups:zoneid=75&groupid=38")
+    assert group_node["known"]
+    assert group_node["representations"][0]["metadata"]["identity"]=={"zoneid":75,"groupid":38}
+    con.execute("CREATE TABLE dsp_mob_groups (groupid INTEGER, name TEXT)")
+    con.execute("INSERT INTO dsp_mob_groups VALUES (38,'Malformed Provider Group')")
+    assert not feature_trace.search_nodes(con,"Malformed Provider Group")
+
     # Explicit non-server providers expose durable searchable records, not raw observation rows.
     con.execute("CREATE TABLE identity_snapshots (snapshot_id TEXT, version TEXT)")
     con.execute("INSERT INTO identity_snapshots VALUES ('client:2022','30120222_1')")

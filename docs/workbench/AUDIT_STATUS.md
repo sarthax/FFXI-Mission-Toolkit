@@ -1925,3 +1925,15 @@ Current links:
 These links are one-way and source-native by design. Reverse one-to-many expansion is not performed, preventing client snapshots, runs, or migrations from exploding into large catalog trees. Users can follow a link to the related catalog root and inspect it there.
 
 The catalog resolver now checks both `workbench.db` and `ffxi_zone_database.db` when a second catalog connection is supplied. This fixes a boundary bug where Workbench-native catalog results (Client/Research/Validation/Packages) could appear in search but fail to resolve when opened from the GUI.
+
+
+### Composite catalog identity safety
+
+Feature Trace catalog providers now support composite source identities. Server `mob_groups` records are keyed by `(zoneid, groupid)`, so catalog discovery no longer treats `groupid` as globally unique.
+
+Search results now emit stable composite IDs such as:
+`catalog:lsb_mob_groups:zoneid=75&groupid=38`
+
+Legacy single-key IDs such as `catalog:lsb_mob_groups:38` resolve only when that group ID is unique in the indexed table. If multiple zones contain the same group ID, resolution returns UNKNOWN rather than selecting an arbitrary row.
+
+Known provider table names are also reserved when their schema does not match the declared provider contract. A malformed or version-drifted known table is not reinterpreted through the heuristic schema fallback.
