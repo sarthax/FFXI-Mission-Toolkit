@@ -158,6 +158,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Install focused GUI test dependencies
+        run: python -m pip install --disable-pip-version-check jinja2
       - name: Run client snapshot GUI and identity regression fixtures
         env:
           PYTHONPATH: .
