@@ -62,6 +62,11 @@ def main():
     for query,provider in provider_expectations.items():
         rows=feature_trace.search_nodes(con,query)
         assert rows and rows[0]["provider"]==provider,(query,rows)
+    client_trace=feature_trace.trace(graph,"catalog:identity_snapshots:client:2022",3,"both",con)
+    client_dossier=build_dossier(client_trace)
+    assert client_dossier["identity"]["provider"]=="client-identity"
+    assert client_dossier["identity"]["domain"]=="client"
+    assert not client_trace["edges"]
     assert len(feature_trace.search_nodes(con,"2413"))==1
     assert len(feature_trace.search_nodes(con,"Coiler"))==3  # ambiguity remains visible
     graph=sqlite3.connect(":memory:")
