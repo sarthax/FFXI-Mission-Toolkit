@@ -28,13 +28,14 @@
 <p class="muted">{{ matches|length }} match(es). Refine the query or select a canonical node ID.</p>
 <div class="table-wrap">
 <table>
-<thead><tr><th>Node ID</th><th>Type</th><th>Name</th><th>Source</th></tr></thead>
+<thead><tr><th>Node ID</th><th>Type</th><th>Name</th><th>Domain</th><th>Source</th></tr></thead>
 <tbody>
 {% for row in matches %}
 <tr>
   <td><a class="zonelink mono" href="/features/trace?q={{ row.node_id|urlencode }}">{{ row.node_id }}</a></td>
   <td>{{ row.node_type or "UNKNOWN" }}</td>
   <td>{{ row.display_name or "" }}</td>
+  <td>{{ row.domain or "" }}</td>
   <td>{{ row.table }}</td>
 </tr>
 {% endfor %}
@@ -55,6 +56,20 @@
 
 <h2>Relationships</h2>
 {% if result.edges %}
+{% for section in relationship_sections %}
+<details class="trace-section"{% if section.name != "Runtime / Captures & Packets" %} open{% endif %}>
+<summary>{{ section.name }} <span class="chip">{{ section.count }}</span></summary>
+{% if section.runtime_groups %}
+  {% for group in section.runtime_groups %}
+  <details class="trace-runtime-group">
+    <summary>{{ group.opcode }}{% if group.direction %} · {{ group.direction }}{% endif %} — {{ group.observation_count }} observation(s) — {{ group.capture_count }} capture(s)</summary>
+    <div class="table-wrap">
+    <table><thead><tr><th>Relationship</th><th>From</th><th>To</th><th>Evidence</th></tr></thead><tbody>
+    {% for edge in group.edges %}<tr><td>{{ edge.relationship }}</td><td><code>{{ edge.from_node }}</code></td><td><code>{{ edge.to_node }}</code></td><td><code>{{ edge.evidence_id or "" }}</code></td></tr>{% endfor %}
+    </tbody></table></div>
+  </details>
+  {% endfor %}
+{% else %}
 <div class="table-wrap">
 <table>
 <thead><tr><th>Depth</th><th>Relationship</th><th>From</th><th>To</th><th>Status</th><th>Confidence</th><th>Evidence</th></tr></thead>
@@ -73,6 +88,9 @@
 </tbody>
 </table>
 </div>
+{% endif %}
+</details>
+{% endfor %}
 {% else %}
 <p class="muted">No recorded relationships were found within this trace depth.</p>
 {% endif %}

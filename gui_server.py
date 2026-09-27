@@ -48,6 +48,7 @@ import build_zone_visual_cache
 import entity_profile
 import explore_event
 import feature_trace
+from workbench.core.services.feature_trace_catalog import present_relationships
 import feature_checker
 from workbench.core.services.feature_trace_closure import build_feature_trace_closure
 import ingest_global_tables
@@ -3241,6 +3242,7 @@ def feature_trace_page(
         con.close()
     elif con is not None:
         con.close()
+    relationship_sections = present_relationships(result["edges"]) if result else []
     return templates.TemplateResponse(request, "feature_trace.html", {
         "request": request,
         "q": q,
@@ -3249,6 +3251,7 @@ def feature_trace_page(
         "result": result,
         "matches": matches,
         "error": error,
+        "relationship_sections": relationship_sections,
     })
 
 

@@ -15,6 +15,8 @@ from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
 
+from workbench.core.services.feature_trace_catalog import catalog_node, search_catalog
+
 
 SCHEMA = 1
 
@@ -29,6 +31,9 @@ def _json_value(raw):
 
 
 def node_info(con: sqlite3.Connection, node_id: str) -> dict:
+    indexed = catalog_node(con, node_id)
+    if indexed is not None:
+        return indexed
     sources = []
     queries = [
         ("entities", "entity_id", "entity_type", "display_name", "metadata_json"),
@@ -61,6 +66,10 @@ def node_info(con: sqlite3.Connection, node_id: str) -> dict:
 
 
 def search_nodes(con: sqlite3.Connection, term: str) -> list[dict]:
+    return search_catalog(con, term)
+
+
+def _legacy_search_nodes(con: sqlite3.Connection, term: str) -> list[dict]:
     pattern = f"%{term}%"
     matches = []
     queries = [
