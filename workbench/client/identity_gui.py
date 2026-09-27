@@ -291,3 +291,25 @@ def compare_client_snapshots(
         )
     finally:
         con.close()
+
+
+def summarize_comparison(report: dict[str, Any]) -> dict[str, int]:
+    """Normalize resolver statuses into the GUI summary buckets requested by operators."""
+    counts = dict(report.get("counts") or {})
+    ambiguous = sum(
+        int(counts.get(status, 0))
+        for status in ("SOURCE_ID_AMBIGUOUS", "TARGET_ID_AMBIGUOUS")
+    )
+    low_confidence = int(counts.get("TARGET_ID_LOW_CONFIDENCE", 0))
+    unresolved = sum(
+        int(counts.get(status, 0))
+        for status in ("SOURCE_ID_UNRESOLVED", "TARGET_ID_UNRESOLVED")
+    )
+    return {
+        "total": int(report.get("total") or 0),
+        "EXACT": int(counts.get("EXACT", 0)),
+        "TARGET_EQUIVALENT": int(counts.get("TARGET_EQUIVALENT", 0)),
+        "ambiguous": ambiguous,
+        "LOW_CONFIDENCE": low_confidence,
+        "unresolved": unresolved,
+    }
