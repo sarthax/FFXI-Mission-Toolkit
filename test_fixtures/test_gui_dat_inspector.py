@@ -88,8 +88,9 @@ def main() -> int:
         assert "name" in summary["field_names"],summary
 
         original_parsers=dat_inspector.PARSERS
-        original_good=getattr(dat_inspector.xi_tinkerer,"parse_dialog",None)
-        original_bad=getattr(dat_inspector.xi_tinkerer,"parse_events",None)
+        original_module=dat_inspector.xi_tinkerer
+        fake_module=SimpleNamespace()
+        dat_inspector.xi_tinkerer=fake_module
         dat_inspector.PARSERS=("parse_dialog","parse_events")
         dat_inspector.xi_tinkerer.parse_dialog=lambda path:{
             "strings":["One","Two","Three"],
@@ -103,10 +104,7 @@ def main() -> int:
             result=dat_inspector.inspect_path(str(root),"ROM/7/44.DAT")
         finally:
             dat_inspector.PARSERS=original_parsers
-            if original_good is not None:
-                dat_inspector.xi_tinkerer.parse_dialog=original_good
-            if original_bad is not None:
-                dat_inspector.xi_tinkerer.parse_events=original_bad
+            dat_inspector.xi_tinkerer=original_module
 
         assert result["rom_relative"]=="ROM/7/44.DAT",result
         assert result["parser_match_count"]==1,result
