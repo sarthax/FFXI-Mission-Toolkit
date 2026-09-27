@@ -94,6 +94,8 @@ def main() -> int:
             "require_dependencies":1,
             "script_entity_bindings":1,
             "entity_dependencies":4,
+            "zone_text_dependencies":0,
+            "title_dependencies":0,
             "unresolved_findings":0,
         },payload["summary"]
 
