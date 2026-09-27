@@ -75,18 +75,18 @@ def main():
     # Explicit non-server providers expose durable searchable records, not raw observation rows.
     con.execute("CREATE TABLE identity_snapshots (snapshot_id TEXT, version TEXT)")
     con.execute("INSERT INTO identity_snapshots VALUES ('client:2022','30120222_1')")
-    con.execute("CREATE TABLE identity_records (record_id TEXT, semantic_key TEXT)")
-    con.execute("INSERT INTO identity_records VALUES ('identity:event:1','EVENT:zone:actor:149')")
+    con.execute("CREATE TABLE identity_records (record_id TEXT, semantic_key TEXT, numeric_id TEXT, zone_key TEXT, actor_key TEXT, owner_key TEXT, evidence_id TEXT)")
+    con.execute("INSERT INTO identity_records VALUES ('identity:event:1','EVENT:zone:actor:149','16974347','SOUTHERN_SAN_DORIA_S','Raustigne',NULL,'evidence:client:1')")
     con.execute("CREATE TABLE captures (capture_id INTEGER, capture_label TEXT, capturer TEXT, content_type TEXT, zones TEXT, mission_name TEXT, client_build TEXT, is_retail INTEGER, start_time INTEGER)")
     con.execute("INSERT INTO captures VALUES (17,'Ancient Vows retail','tester','Missions','Riverne - Site #A01','Ancient Vows','30120222_1',1,12345)")
-    con.execute("CREATE TABLE research_sessions (research_session_id TEXT, question TEXT)")
-    con.execute("INSERT INTO research_sessions VALUES ('research:1','Why does this event differ?')")
+    con.execute("CREATE TABLE research_sessions (research_session_id TEXT, question TEXT, provider TEXT, model TEXT, feature_root TEXT, entity_root TEXT, verification_state TEXT)")
+    con.execute("INSERT INTO research_sessions VALUES ('research:1','Why does this event differ?','ollama','test-model','feature:wotg-25','npc:raustigne','DRAFT')")
     con.execute("CREATE TABLE research_proposals (proposal_id TEXT, subject_id TEXT)")
     con.execute("INSERT INTO research_proposals VALUES ('proposal:1','npc:16974347')")
     con.execute("CREATE TABLE validation_runs (run_id TEXT, name TEXT)")
     con.execute("INSERT INTO validation_runs VALUES ('run:1','Ancient Vows validation')")
-    con.execute("CREATE TABLE validation_results (validation_id TEXT, validation_type TEXT)")
-    con.execute("INSERT INTO validation_results VALUES ('validation:1','EVENT_MATCH')")
+    con.execute("CREATE TABLE validation_results (validation_id TEXT, validation_type TEXT, run_id TEXT, subject_id TEXT, status TEXT, evidence_id TEXT, source TEXT, target TEXT)")
+    con.execute("INSERT INTO validation_results VALUES ('validation:1','EVENT_MATCH','run:1','npc:424242','VERIFIED','evidence:validation:1','capture','server')")
     con.execute("CREATE TABLE migrations (migration_id TEXT, feature_id TEXT)")
     con.execute("INSERT INTO migrations VALUES ('migration:1','feature:ancient-vows')")
     con.execute("CREATE TABLE migration_actions (action_id TEXT, action TEXT)")
@@ -106,7 +106,18 @@ def main():
     }
     for query,provider in provider_expectations.items():
         rows=feature_trace.search_nodes(con,query)
-        assert rows and rows[0]["provider"]==provider,(query,rows)
+        assert any(row.get("provider")==provider for row in rows),(query,rows)
+    alias_expectations={
+        "SOUTHERN_SAN_DORIA_S":("client-identity","zone_key"),
+        "Riverne - Site #A01":("captures","zones"),
+        "feature:wotg-25":("research","feature_root"),
+        "npc:424242":("validation","subject_id"),
+    }
+    for query,(provider,field) in alias_expectations.items():
+        rows=feature_trace.search_nodes(con,query)
+        hit=next((row for row in rows if row.get("provider")==provider),None)
+        assert hit is not None,(query,rows)
+        assert field in hit.get("matched_on",[]),(query,hit)
     graph=sqlite3.connect(":memory:")
     graph.execute("CREATE TABLE entities (entity_id TEXT, entity_type TEXT, display_name TEXT, metadata_json TEXT)")
     graph.execute("CREATE TABLE entity_relationships (relationship_id TEXT, source_node TEXT, target_node TEXT, relationship TEXT, evidence_id TEXT, confidence TEXT, status TEXT, metadata_json TEXT, source_snapshot_id TEXT)")
@@ -160,6 +171,7 @@ def main():
     assert "Evidence Dossier" in template
     assert "Source details" in template and "Open source view" in template
     assert "Source-native links" in template
+    assert "Matched on" in template
     assert "section.edges" in template and "{% for edge in result.edges %}" not in template
     assert "/features/trace/runtime.json" in template
     assert "runtimeEsc(e.relationship)" in template

@@ -1951,3 +1951,18 @@ Current server-source links:
 The mob-spawn relationship uses the same FFXI entity-ID zone encoding already used elsewhere in the toolkit: `(entity_id >> 12) & 0xFFF`. Because mob-group catalog identities are composite `(zoneid, groupid)`, duplicate group IDs in different zones resolve to the correct group instead of an arbitrary row.
 
 Each server-derived link exposes a short evidence basis in the Feature Trace dossier. The FFXI-specific decode lives under `workbench/adapters/servers`, not in the generic catalog core.
+
+
+### Provider alias search and match provenance
+
+Feature Trace provider discovery now searches declared source-native aliases in addition to the provider's primary identity and display-name columns.
+
+Current examples include:
+- client identities: numeric ID, zone key, actor key, owner key, and evidence ID;
+- client snapshots: family, source location, and fingerprint;
+- captures: capturer, content type, zones, mission name, and client build;
+- research sessions/proposals: provider/model, feature/entity roots, session ID, proposal type, and state;
+- validation: feature/subject/run/evidence/source/target context and status;
+- migrations/packages: source/target snapshots, migration/artifact IDs, status, and reason.
+
+Search results expose a `matched_on` field and the GUI shows it explicitly. These aliases improve discovery only; they do not create canonical identities or graph relationships.
