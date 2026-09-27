@@ -13,6 +13,8 @@ class CatalogTable:
     id_column: str
     name_column: str
     object_type: str
+    detail_columns: tuple[str, ...] = ()
+    inspect_path: str | None = None
 
 @dataclass(frozen=True)
 class CatalogProvider:
@@ -45,24 +47,44 @@ PROVIDERS=(
     CatalogProvider("topaz","server",_prefixed("topaz")),
     CatalogProvider("dsp","server",_prefixed("dsp")),
     CatalogProvider("client-identity","client",(
-        CatalogTable("identity_snapshots","snapshot_id","version","CLIENT_SNAPSHOT"),
-        CatalogTable("identity_records","record_id","semantic_key","CLIENT_IDENTITY"),
+        CatalogTable("identity_snapshots","snapshot_id","version","CLIENT_SNAPSHOT",
+                     ("snapshot_type","family","recorded_at","source_location","fingerprint"),
+                     "/clientoverview"),
+        CatalogTable("identity_records","record_id","semantic_key","CLIENT_IDENTITY",
+                     ("snapshot_id","namespace","numeric_id","zone_key","actor_key","confidence","evidence_id"),
+                     "/clientoverview"),
     )),
     CatalogProvider("captures","runtime",(
-        CatalogTable("captures","capture_id","capture_label","CAPTURE"),
+        CatalogTable("captures","capture_id","capture_label","CAPTURE",
+                     ("capturer","content_type","zones","mission_name","client_build","is_retail","start_time"),
+                     "/captures/{id}"),
     )),
     CatalogProvider("research","research",(
-        CatalogTable("research_sessions","research_session_id","question","RESEARCH_SESSION"),
-        CatalogTable("research_proposals","proposal_id","subject_id","RESEARCH_PROPOSAL"),
+        CatalogTable("research_sessions","research_session_id","question","RESEARCH_SESSION",
+                     ("provider","model","permission_profile","feature_root","entity_root","verification_state","created_at","updated_at"),
+                     "/research/{id}"),
+        CatalogTable("research_proposals","proposal_id","subject_id","RESEARCH_PROPOSAL",
+                     ("research_session_id","proposal_type","status","verification_requirement"),
+                     None),
     )),
     CatalogProvider("validation","validation",(
-        CatalogTable("validation_runs","run_id","name","VALIDATION_RUN"),
-        CatalogTable("validation_results","validation_id","validation_type","VALIDATION_RESULT"),
+        CatalogTable("validation_runs","run_id","name","VALIDATION_RUN",
+                     ("status","feature_id","source_snapshot_id","target_snapshot_id","started_at","finished_at"),
+                     "/validation/runs/{id}"),
+        CatalogTable("validation_results","validation_id","validation_type","VALIDATION_RESULT",
+                     ("run_id","subject_id","status","evidence_id","source","target"),
+                     "/validation/runs"),
     )),
     CatalogProvider("packages","packages",(
-        CatalogTable("migrations","migration_id","feature_id","MIGRATION"),
-        CatalogTable("migration_actions","action_id","action","MIGRATION_ACTION"),
-        CatalogTable("package_scope_reviews","migration_id","status","PACKAGE_SCOPE_REVIEW"),
+        CatalogTable("migrations","migration_id","feature_id","MIGRATION",
+                     ("source_snapshot_id","target_snapshot_id","status"),
+                     "/packages"),
+        CatalogTable("migration_actions","action_id","action","MIGRATION_ACTION",
+                     ("migration_id","artifact_id","status","reason"),
+                     "/packages"),
+        CatalogTable("package_scope_reviews","migration_id","status","PACKAGE_SCOPE_REVIEW",
+                     ("reviewed_at","scope_hash"),
+                     "/packages/review"),
     )),
 )
 
