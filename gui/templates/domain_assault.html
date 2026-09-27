@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Assault Domain — Mission Toolkit{% endblock %}
+{% block content %}
+<h1>Assault Domain</h1>
+<p class="muted">Workspace for Assault-specific development, administration, validation, and future domain-package workflows.</p>
+
+<h2>Available now</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Area</th><th>Purpose</th><th>Open</th></tr></thead>
+  <tbody>
+    <tr><td>Mission data</td><td>Inspect indexed Assault missions and related mission text.</td><td><a class="zonelink" href="/missions">Mission Explorer</a></td></tr>
+    <tr><td>Assault zones</td><td>Inspect and edit zone entities, navmesh data, drops, and SQL using the canonical generic editor.</td><td><a class="zonelink" href="/zoneplot">Zone Editor</a></td></tr>
+    <tr><td>Captures</td><td>Inspect gameplay captures, paths, packets, and instance evidence.</td><td><a class="zonelink" href="/captures">Captures</a></td></tr>
+    <tr><td>Server data</td><td>Inspect zones, entities, items, key items, dialog, events, and packets.</td><td><a class="zonelink" href="/zones">Server workspace</a></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Planned domain capabilities</h2>
+<p class="muted">Backport status, promotion/rank logic, appraisal systems, instance diagnostics, and domain validation will be added here as their pipelines become available.</p>
+{% endblock %}

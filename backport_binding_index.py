@@ -27,6 +27,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -39,6 +40,8 @@ DATA_DIR = Path(__file__).resolve().parent / "data"
 
 TOPAZ_INDEX_PATH = DATA_DIR / "topaz_binding_index.json"
 DSP_INDEX_PATH = DATA_DIR / "old_dsp_reference_binding_index.json"
+TOPAZ_INDEX_META_PATH = DATA_DIR / "topaz_binding_index.meta.json"
+DSP_INDEX_META_PATH = DATA_DIR / "old_dsp_reference_binding_index.meta.json"
 
 SOL_REGISTER_RE = re.compile(r'SOL_REGISTER\(\s*"([A-Za-z_][A-Za-z0-9_]*)"\s*,\s*(\w+)::')
 LUNAR_DECLARE_RE = re.compile(r"LUNAR_DECLARE_METHOD\(\s*(\w+)\s*,\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)")
@@ -47,6 +50,38 @@ LUNAR_DECLARE_RE = re.compile(r"LUNAR_DECLARE_METHOD\(\s*(\w+)\s*,\s*([A-Za-z_][
 def _lua_binding_files(root: Path) -> list[Path]:
     d = root / "src/map/lua"
     return sorted(d.glob("*.cpp")) if d.is_dir() else []
+
+
+def binding_source_fingerprint(root: Path) -> str:
+    """Deterministic fingerprint of the Lua binding source surface used by an index."""
+    digest=hashlib.sha256()
+    for f in _lua_binding_files(root):
+        rel=f.relative_to(root).as_posix().encode("utf-8")
+        digest.update(rel+b"\0")
+        digest.update(hashlib.sha256(f.read_bytes()).digest())
+    return digest.hexdigest()
+
+
+def write_index_metadata(path: Path, root: Path, binding_count: int) -> None:
+    payload={
+        "schema":1,
+        "source_fingerprint":binding_source_fingerprint(root),
+        "binding_file_count":len(_lua_binding_files(root)),
+        "binding_name_count":binding_count,
+    }
+    path.write_text(json.dumps(payload,indent=2,sort_keys=True)+"\n",encoding="utf-8")
+
+
+def cache_matches_root(meta_path: Path, root: Path) -> bool:
+    """True only when cache provenance proves it was built from this binding source surface."""
+    if not meta_path.exists():
+        return False
+    try:
+        meta=json.loads(meta_path.read_text(encoding="utf-8"))
+    except (OSError,json.JSONDecodeError):
+        return False
+    expected=meta.get("source_fingerprint")
+    return bool(expected) and expected==binding_source_fingerprint(root)
 
 
 def build_topaz_index(root: Path = TOPAZ_ROOT) -> dict[str, list[dict]]:
@@ -88,6 +123,8 @@ def save_indexes(topaz_root: Path = TOPAZ_ROOT, dsp_root: Path | None = DSP_ROOT
     dsp_index = build_dsp_index(dsp_root)
     TOPAZ_INDEX_PATH.write_text(json.dumps(topaz_index, indent=2, sort_keys=True), encoding="utf-8")
     DSP_INDEX_PATH.write_text(json.dumps(dsp_index, indent=2, sort_keys=True), encoding="utf-8")
+    write_index_metadata(TOPAZ_INDEX_META_PATH,topaz_root,len(topaz_index))
+    write_index_metadata(DSP_INDEX_META_PATH,dsp_root,len(dsp_index))
     print(f"Topaz: {len(topaz_index)} distinct binding names -> {TOPAZ_INDEX_PATH}")
     print(f"old-dsp-reference: {len(dsp_index)} distinct binding names -> {DSP_INDEX_PATH}")
 

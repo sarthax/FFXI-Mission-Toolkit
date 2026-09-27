@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Domains{% endblock %}
+{% block content %}
+<h1>Domains</h1>
+<p class="muted">Each domain is a self-contained place to confirm implementation status and, where an editor exists, edit it.
+"Present" means the expected files/tables exist in that server checkout; it does not prove completeness. Wiki page counts come
+from the offline BG Wiki dump (reference only).</p>
+<div class="table-wrap"><table>
+<tr><th>Domain</th><th>Archetype</th><th>Wiki pages</th>{% for r in roots %}<th>{{ r|upper }} entities present</th>{% endfor %}<th>Editors</th></tr>
+<tr><td><a href="/domains/assault">Assault</a></td><td>system.assault</td><td>-</td>{% for r in roots %}<td class="muted">see page</td>{% endfor %}<td>Built: Assault workspace</td></tr>
+<tr><td><a href="/nyzul">Nyzul Isle</a></td><td>system.nyzul</td><td>-</td>{% for r in roots %}<td class="muted">see page</td>{% endfor %}<td>Built: live layout editor</td></tr>
+{% for d in rows %}<tr><td><a href="/domains/{{ d.key }}">{{ d.label }}</a></td><td>{{ d.archetype }}</td><td>{{ d.wiki_pages }}</td>
+{% for r in roots %}<td>{% set s = d.status[r] %}{% if s.configured %}{{ s.present }}/{{ s.total }}{% else %}<span class="muted">not configured</span>{% endif %}</td>{% endfor %}
+<td>{{ d.editors }}/{{ d.total }} entity kinds have an editor</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

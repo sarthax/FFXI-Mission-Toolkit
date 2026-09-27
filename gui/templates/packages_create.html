@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Create Package — Mission Toolkit{% endblock %}
+{% block content %}
+<h1>Create Package</h1>
+<p class="muted">Generate a reviewable Workbench migration package from an existing canonical migration. Dependency scope must be reviewed first. This creates package files only; it does not approve, apply, or modify the target server.</p>
+<div class="warn"><strong>Required first:</strong> review the migration's transitive dependency scope, resolve questionable items, and freeze the scope. <a class="zonelink" href="/packages/scope">Open Scope Review</a>.</div>
+
+{% if error %}<div class="warn">{{ error }}</div>{% endif %}
+
+<form method="post" action="/packages/create">
+<div class="table-wrap"><table>
+<tbody>
+<tr><th>Migration</th><td>
+<select name="migration_id" required>
+<option value="">Select migration</option>
+{% for row in migrations %}
+<option value="{{ row.migration_id }}"{% if form.migration_id == row.migration_id %} selected{% endif %}>{{ row.migration_id }}{% if row.feature_id %} — {{ row.feature_id }}{% endif %} ({{ row.action_count }} actions)</option>
+{% endfor %}
+</select>
+</td></tr>
+<tr><th>Source root</th><td><input type="text" name="source_root" value="{{ form.source_root }}" required placeholder="Checkout root containing the source artifact paths"></td></tr>
+<tr><th>Source family</th><td>
+<select name="source_family">
+{% for family in ["LSB", "Topaz", "Topaz-Next", "DSP"] %}
+<option value="{{ family }}"{% if form.source_family == family %} selected{% endif %}>{{ family }}</option>
+{% endfor %}
+</select>
+</td></tr>
+<tr><th>Target family</th><td>
+<select name="target_family">
+{% for family in ["DSP", "Topaz", "Topaz-Next", "LSB"] %}
+<option value="{{ family }}"{% if form.target_family == family %} selected{% endif %}>{{ family }}</option>
+{% endfor %}
+</select>
+</td></tr>
+<tr><th>Package destination</th><td><input type="text" name="package_path" value="{{ form.package_path }}" required placeholder="Relative path under configured project root"><div class="muted">Must stay inside the configured project/backport root. Existing non-empty package folders are not overwritten.</div></td></tr>
+</tbody>
+</table></div>
+<p><button type="submit">Generate package</button></p>
+</form>
+
+{% if not migrations %}
+<p class="muted">No canonical migrations are currently available in workbench.db.</p>
+{% endif %}
+
+{% if result %}
+<h2>Creation result</h2>
+<div class="stats">
+  <div class="stat"><div class="n">{{ result.status }}</div><div class="l">Assembly</div></div>
+  <div class="stat"><div class="n">{{ result.plan_status }}</div><div class="l">Plan</div></div>
+  <div class="stat"><div class="n">{{ result.validation_status }}</div><div class="l">Validation package</div></div>
+  <div class="stat"><div class="n">{{ result.execution_step_count }}</div><div class="l">Execution steps</div></div>
+</div>
+
+<p><strong>Package:</strong> <code>{{ result.package_path }}</code></p>
+<p><strong>Excluded actions:</strong> {{ result.excluded_action_count }}</p>
+
+<h3>Materialized source artifacts</h3>
+{% if result.copied %}
+<ul>{% for item in result.copied %}<li><code>{{ item }}</code></li>{% endfor %}</ul>
+{% else %}
+<p class="muted">No source artifacts were copied.</p>
+{% endif %}
+
+{% if result.missing %}
+<h3>Missing source artifacts</h3>
+<ul>{% for item in result.missing %}<li><code>{{ item }}</code></li>{% endfor %}</ul>
+{% endif %}
+
+{% if result.skipped %}
+<h3>Skipped artifacts</h3>
+<ul>{% for item in result.skipped %}<li><code>{{ item }}</code></li>{% endfor %}</ul>
+{% endif %}
+
+<p><a class="zonelink" href="/packages/review?package={{ result.package_path|urlencode }}">Open Review &amp; Readiness</a></p>
+{% endif %}
+
+<p class="muted">Package generation materializes planned Lua/SQL source artifacts plus Workbench manifest, validation, and provenance journals. Target application remains a separate gated workflow.</p>
+{% endblock %}

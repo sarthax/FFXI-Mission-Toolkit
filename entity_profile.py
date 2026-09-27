@@ -33,6 +33,7 @@ from pathlib import Path
 import lookup_entity
 import mob_look_decode
 import settings
+from workbench.core.services.entity_profile_graph import import_entity_profile_provenance
 
 TOOLS_ROOT = Path(__file__).parent
 TOPAZ_ROOT = settings.get_topaz_root()
@@ -559,6 +560,7 @@ def print_profile(profile: dict):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("query", help="npc/mob id, or a name substring")
+    ap.add_argument("--graph-db", type=Path, help="Optionally import field provenance into the canonical Workbench graph.")
     args = ap.parse_args()
 
     # timeout+WAL: same reasoning as gui_server.py's get_con() -- lets this CLI usage coexist
@@ -582,6 +584,9 @@ def main():
     profile = build_profile(con, npcid)
     print_profile(profile)
     con.close()
+    if args.graph_db:
+        result=import_entity_profile_provenance(DB_PATH,args.graph_db,npcid)
+        print(f"Graph import: {result['status']} ({result.get('findings',0)} findings, {result.get('conflicts',0)} conflicts)")
 
 
 if __name__ == "__main__":

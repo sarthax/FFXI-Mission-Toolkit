@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Feature Checker — Mission Toolkit{% endblock %}
+{% block content %}
+<h1>Feature Checker</h1>
+<p class="muted">Evaluate declared feature capability requirements against canonical evidence. Requirements, implementation, and validation remain separate dimensions; no numeric score is produced.</p>
+
+<form class="search" method="get" action="/features/check">
+  <input type="text" name="q" value="{{ q }}" placeholder="Feature ID or partial feature name">
+  <button type="submit">Check</button>
+</form>
+
+{% if error %}
+<div class="warn">{{ error }}</div>
+{% endif %}
+
+{% if matches and not result %}
+<h2>Matching features</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Feature ID</th><th>Name</th><th>Type</th><th>Status</th></tr></thead>
+<tbody>
+{% for row in matches %}
+<tr>
+  <td><a class="zonelink mono" href="/features/check?q={{ row.feature_id|urlencode }}">{{ row.feature_id }}</a></td>
+  <td>{{ row.name }}</td>
+  <td>{{ row.feature_type or "" }}</td>
+  <td>{{ row.status or "UNKNOWN" }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% elif q and not result and not error %}
+<div class="warn">No unique feature matched this query.</div>
+{% endif %}
+
+{% if result %}
+<h2>{{ result.feature.name }}</h2>
+<p><code>{{ result.feature.feature_id }}</code> &nbsp; <span class="chip">{{ result.feature.feature_type or "UNKNOWN" }}</span></p>
+
+<div class="stats">
+  <div class="stat"><div class="n">{{ result.status }}</div><div class="l">Requirement aggregate</div></div>
+  <div class="stat"><div class="n">{{ result.dimensions.implementation }}</div><div class="l">Implementation</div></div>
+  <div class="stat"><div class="n">{{ result.dimensions.validation }}</div><div class="l">Validation</div></div>
+  <div class="stat"><div class="n">{{ result.requirements|length }}</div><div class="l">Requirements</div></div>
+</div>
+
+<h2>Capability requirements</h2>
+{% if result.requirements %}
+<div class="table-wrap">
+<table>
+<thead><tr><th>Required</th><th>Capability</th><th>Observed status</th><th>Selection</th><th>Evidence</th></tr></thead>
+<tbody>
+{% for row in result.requirements %}
+<tr>
+  <td>{{ "Yes" if row.required else "No" }}</td>
+  <td>
+    <code>{{ row.capability_id }}</code>
+    {% if row.capability %}<div>{{ row.capability.name }}</div>{% endif %}
+  </td>
+  <td><span class="pill {{ 'match' if row.observed_status == 'VERIFIED' else 'mismatch' if row.observed_status in ('MISSING','CONTRADICTED') else 'unannotated' }}">{{ row.observed_status }}</span></td>
+  <td>{{ row.observation_selection }}</td>
+  <td><code>{{ row.requirement_evidence_id or (row.capability.evidence_id if row.capability else "") }}</code></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<p class="muted">No capability requirements are declared for this feature.</p>
+{% endif %}
+
+<h2>Implementation records</h2>
+{% if result.implementation_records %}
+<div class="table-wrap">
+<table>
+<thead><tr><th>Status</th><th>Type</th><th>Path / symbol</th><th>Evidence</th></tr></thead>
+<tbody>
+{% for row in result.implementation_records %}
+<tr>
+  <td>{{ row.status }}</td>
+  <td>{{ row.artifact_type }}</td>
+  <td><code>{{ row.path or row.symbol or row.artifact_id }}</code></td>
+  <td><code>{{ row.evidence_id or "" }}</code></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<p class="muted">No implementation records are indexed for this feature.</p>
+{% endif %}
+
+<h2>Validation results</h2>
+{% if result.validation_results %}
+<div class="table-wrap">
+<table>
+<thead><tr><th>Status</th><th>Type</th><th>Run</th><th>Source → Target</th><th>Evidence</th></tr></thead>
+<tbody>
+{% for row in result.validation_results %}
+<tr>
+  <td>{{ row.status }}</td>
+  <td>{{ row.validation_type }}</td>
+  <td><code>{{ row.run_id or "" }}</code></td>
+  <td>{{ row.source or "" }}{% if row.source or row.target %} → {% endif %}{{ row.target or "" }}</td>
+  <td><code>{{ row.evidence_id or "" }}</code></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<p class="muted">No validation results are indexed for this feature.</p>
+{% endif %}
+
+<h2>Semantic relationships</h2>
+{% if result.semantic_relationships %}
+<div class="table-wrap">
+<table>
+<thead><tr><th>Relationship</th><th>Target</th><th>Status</th><th>Confidence</th><th>Evidence</th></tr></thead>
+<tbody>
+{% for edge in result.semantic_relationships %}
+<tr>
+  <td>{{ edge.relationship }}</td>
+  <td><a class="zonelink mono" href="/features/trace?q={{ edge.target_node|urlencode }}">{{ edge.target_node }}</a></td>
+  <td>{{ edge.status }}</td>
+  <td>{{ edge.confidence }}</td>
+  <td><code>{{ edge.evidence_id or "" }}</code></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<p class="muted">No explicit semantic relationships are recorded.</p>
+{% endif %}
+
+{% for note in result.notes %}
+<p class="muted">{{ note }}</p>
+{% endfor %}
+{% endif %}
+{% endblock %}

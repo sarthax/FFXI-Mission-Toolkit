@@ -31,6 +31,7 @@ import io
 import struct
 import sys
 from pathlib import Path
+from workbench.core.services.packet_identity import parse_opcode
 
 TOOLS_ROOT = Path(__file__).parent
 PACKETLYZER_ROOT = TOOLS_ROOT / "vendor" / "Packetlyzer"
@@ -216,7 +217,9 @@ def main():
     if not args.opcode or not args.hex:
         ap.error("Provide --opcode and --hex, or --search")
 
-    opcode_int = int(args.opcode, 0)
+    opcode_int = parse_opcode(args.opcode)
+    if opcode_int is None:
+        ap.error("Opcode must be decimal, 0x-prefixed hexadecimal, or bare hexadecimal containing A-F")
     result = decode(args.direction, opcode_int, args.hex)
     print(f"{result.description} ({'has definition' if result.has_definition else 'NO DEFINITION FOUND'})")
     for f in result.fields:

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Research Gaps{% endblock %}
+{% block content %}
+<h1>Research Gaps</h1>
+<p class="muted">Read-only. What the Workbench graph cannot answer yet, and the next analyzer/probe/validator to run.
+UNKNOWN never means absent.</p>
+{% if not res %}<p class="muted">Workbench graph (workbench.db) is not built yet.</p>{% else %}
+<p>{% for k, v in res.counts.items() %}<span class="chip">{{ k }} {{ v }}</span> {% endfor %}{% if not res.gaps %}No gaps found.{% endif %}</p>
+<div class="table-wrap"><table><tr><th>Kind</th><th>Subject</th><th>Detail</th><th>Status</th><th>Next action</th></tr>
+{% for g in res.gaps %}<tr><td>{{ g.kind }}</td><td>{{ g.subject }}</td><td>{{ g.detail }}</td><td>{{ g.status }}{% if g.kind == "UNRESOLVED_REQUIREMENT" and not g.required %} (optional){% endif %}</td><td>{{ g.recommendation }}</td></tr>{% endfor %}
+</table></div>{% endif %}
+{% endblock %}

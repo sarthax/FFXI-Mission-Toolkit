@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Package Library — Mission Toolkit{% endblock %}
+{% block content %}
+<h1>Package Library</h1>
+<p class="muted">Read-only discovery of assembled Workbench migration packages beneath the configured project/backport root.</p>
+
+<p><strong>Project root:</strong> <code>{{ project_root }}</code></p>
+
+<form class="search" method="get" action="/packages">
+  <input type="text" name="q" value="{{ q }}" placeholder="Package path, migration ID, or feature ID">
+  <button type="submit">Filter</button>
+</form>
+
+{% if packages %}
+<div class="table-wrap"><table>
+<thead><tr><th>Package</th><th>Migration</th><th>Feature</th><th>Source → Target</th><th>Manifest status</th><th>Steps</th></tr></thead>
+<tbody>
+{% for row in packages %}
+<tr>
+  <td><a class="zonelink" href="/packages/review?package={{ row.relative_path|urlencode }}">{{ row.package_name }}</a><div><code>{{ row.relative_path }}</code></div></td>
+  <td><code>{{ row.migration_id or "" }}</code></td>
+  <td><code>{{ row.feature_id or "" }}</code></td>
+  <td>{{ row.source_family or "" }}{% if row.source_family or row.target_family %} → {% endif %}{{ row.target_family or "" }}</td>
+  <td>{{ row.manifest_status }}</td>
+  <td>{{ row.step_count }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table></div>
+{% else %}
+<p class="muted">No assembled Workbench packages were found under the configured project root.</p>
+{% endif %}
+
+<p class="muted">The legacy package builder remains available under Backport Package (legacy) until the new Packages workspace reaches full creation/apply parity.</p>
+{% endblock %}

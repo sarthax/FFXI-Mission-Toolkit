@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}DAT Inspector{% endblock %}
+{% block content %}
+<h1>DAT Inspector</h1>
+<p class="muted">Read-only. Resolves a client DAT id to its file, then tries each known parser and
+shows only the ones that parse it cleanly. Nothing is written to the client.</p>
+<form class="search" method="get">
+  <input type="number" name="dat_id" value="{{ dat_id }}" placeholder="DAT id, e.g. 6497" min="0" required>
+  <input type="text" name="ffxi_path" value="{{ ffxi_path }}" style="min-width:380px;" title="FFXI install path">
+  <button type="submit">Inspect</button>
+</form>
+<p class="muted">Per-zone id families (id = base + zoneid):
+{% for f in families %}<span class="chip">{{ f.name }} {{ f.base }}</span> {% endfor %}
+&mdash; e.g. Nyzul Isle (77) dialog = <a href="/datinspector?dat_id=6497">6497</a>.</p>
+
+{% if error %}<p class="chip" style="color:#c33;">{{ error }}</p>{% endif %}
+
+{% if result %}
+<h2>{{ result.rom_relative }}</h2>
+<div class="table-wrap"><table>
+  <tr><th>DAT id</th><td>{{ result.dat_id }}{% if result.family_hint %} <span class="muted">({{ result.family_hint }})</span>{% endif %}</td></tr>
+  <tr><th>Path</th><td><code>{{ result.path }}</code></td></tr>
+  <tr><th>Size</th><td>{{ "{:,}".format(result.size) }} bytes</td></tr>
+  <tr><th>SHA-256</th><td><code>{{ result.sha256 }}</code></td></tr>
+  <tr><th>Extractor says</th><td>{{ result.extractor_note }}</td></tr>
+  <tr><th>Header (48 B)</th><td><code>{{ result.header_hex }}</code><br><code>{{ result.header_ascii }}</code></td></tr>
+</table></div>
+
+<h2>Parsed as</h2>
+{% if result.matches %}
+  {% for m in result.matches %}
+  <h3>{{ m.parser }}</h3>
+  <pre style="max-height:420px;overflow:auto;">{{ m.preview | tojson(indent=2) }}</pre>
+  {% endfor %}
+{% else %}
+  <p class="muted">No known parser accepted this file. It may be a model, texture, animation or other
+  type the toolkit doesn't decode; the header above is the best identifier available.</p>
+{% endif %}
+
+<details><summary>Parsers that rejected it ({{ result.rejected|length }})</summary>
+<ul>{% for r in result.rejected %}<li><code>{{ r.parser }}</code> &mdash; {{ r.reason }}</li>{% endfor %}</ul>
+</details>
+{% endif %}
+{% endblock %}

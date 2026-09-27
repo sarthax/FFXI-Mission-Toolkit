@@ -45,6 +45,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import sqlite3
 import sys
 from pathlib import Path
@@ -54,16 +55,54 @@ import backport_lua_convert as blc
 import backport_lua_sanity_check as blsc
 import backport_sql_convert as bsc
 import settings
+from workbench.migrations.package_manifest import converter_scope
+
+
+def load_workbench_plan(path: Path) -> dict:
+    plan=json.loads(path.read_text(encoding="utf-8"))
+    if plan.get("kind")!="WORKBENCH_MIGRATION_PACKAGE_PLAN" or plan.get("schema")!=2:
+        raise ValueError("Unsupported Workbench migration package plan")
+    if plan.get("migration",{}).get("status")=="BLOCKED":
+        raise ValueError("Workbench migration package plan is BLOCKED")
+    blocked_conversion=[
+        step for step in plan.get("execution",{}).get("steps",[])
+        if step.get("backend") in {"lua","sql"}
+        and step.get("conversion_status") in {"UNSUPPORTED","CONDITIONAL"}
+    ]
+    if blocked_conversion:
+        routes=sorted({
+            f"{step.get('conversion_status')}:{step.get('artifact_type')}:{step.get('path')}"
+            for step in blocked_conversion
+        })
+        raise ValueError(
+            "Workbench plan contains converter steps that are not cleared for execution: "
+            + ", ".join(routes)
+        )
+    return plan
+
+
+def planned_backend_paths(plan: dict, backend: str) -> set[str]:
+    prefix=f"{backend}/"
+    result=set()
+    for path in converter_scope(plan,backend):
+        normalized=path.replace("\\","/")
+        if normalized.startswith(prefix):
+            normalized=normalized[len(prefix):]
+        result.add(normalized)
+    return result
 
 
 def convert_lua_tree(src_root: Path, dst_root: Path, target: str, zone_table: str | None,
-                      id_shape: str | None, id_file_hint: str | None) -> dict:
+                      id_shape: str | None, id_file_hint: str | None,
+                      include_paths: set[str] | None = None) -> dict:
     """Converts every .lua file under src_root into the mirrored path under dst_root. Returns
     {"converted": [rel_paths], "flagged": [(rel_path, count)], "total_flags": int}."""
     converted, flagged = [], []
     total_flags = 0
     for src in sorted(src_root.rglob("*.lua")):
         rel = src.relative_to(src_root)
+        if include_paths is not None and rel.as_posix() not in include_paths:
+            continue
         dst = dst_root / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
         text = src.read_text(encoding="utf-8", errors="replace")
@@ -77,7 +116,8 @@ def convert_lua_tree(src_root: Path, dst_root: Path, target: str, zone_table: st
     return {"converted": converted, "flagged": flagged, "total_flags": total_flags}
 
 
-def convert_sql_tree(src_root: Path, dst_root: Path, schema_map: dict) -> dict:
+def convert_sql_tree(src_root: Path, dst_root: Path, schema_map: dict,
+                     include_paths: set[str] | None = None) -> dict:
     """Converts every .sql file under src_root (table name = file stem) into the mirrored path
     under dst_root. Returns {"converted": [rel_paths], "warnings": [...], "ids_by_table": {table:
     [raw_ids]}, "id_to_name_by_table": {table: {id: name}}, "rows_by_table": {table: [rows]}} --
@@ -94,6 +134,9 @@ def convert_sql_tree(src_root: Path, dst_root: Path, schema_map: dict) -> dict:
     id_to_name_by_table: dict[str, dict[int, str]] = {}
     rows_by_table: dict[str, list[list[str]]] = {}
     for src in sorted(src_root.glob("*.sql")):
+        rel = src.relative_to(src_root).as_posix()
+        if include_paths is not None and rel not in include_paths:
+            continue
         table = src.stem
         dst = dst_root / src.name
         dst_root.mkdir(parents=True, exist_ok=True)
@@ -274,6 +317,8 @@ def main():
     ap.add_argument("--id-file-hint", default=None)
     ap.add_argument("--verify-only", action="store_true",
                      help="Skip conversion, just re-run the 3 checks against an existing lua-dsp/")
+    ap.add_argument("--plan", type=Path, default=None,
+                     help="Optional Workbench schema-2 migration package plan; only listed Lua/SQL artifacts are converted.")
     args = ap.parse_args()
 
     package_dir: Path = args.package_dir
@@ -296,31 +341,42 @@ def main():
     lua_src, lua_dst = package_dir / "lua", package_dir / "lua-dsp"
     sql_src, sql_dst = package_dir / "sql", package_dir / "sql-dsp"
 
+    lua_scope = None
+    sql_scope = None
+    if args.plan is not None:
+        try:
+            workbench_plan=load_workbench_plan(args.plan)
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            ap.error(f"Invalid --plan: {exc}")
+        lua_scope=planned_backend_paths(workbench_plan,"lua")
+        sql_scope=planned_backend_paths(workbench_plan,"sql")
+        print(f"Using Workbench plan scope: {len(lua_scope)} Lua, {len(sql_scope)} SQL artifact(s).")
+
     lua_result = None
     sql_result = None
     if not args.verify_only:
         if lua_src.is_dir():
             print(f"Converting Lua: {lua_src} -> {lua_dst}")
             lua_result = convert_lua_tree(lua_src, lua_dst, args.target, args.zone_table,
-                                           args.id_shape, args.id_file_hint)
+                                           args.id_shape, args.id_file_hint, lua_scope)
             print(f"  {len(lua_result['converted'])} file(s), {lua_result['total_flags']} flagged line(s)")
         else:
             print(f"No lua/ found under {package_dir} -- skipping Lua conversion.")
 
         schema_map = bsc.load_schema_map()
         print(f"Converting SQL: {sql_src} -> {sql_dst}")
-        sql_result = convert_sql_tree(sql_src, sql_dst, schema_map)
+        sql_result = convert_sql_tree(sql_src, sql_dst, schema_map, sql_scope)
         if sql_result["converted"]:
             print(f"  {len(sql_result['converted'])} file(s), {len(sql_result['warnings'])} warning(s)")
     elif not lua_dst.is_dir():
         ap.error(f"--verify-only requires an existing {lua_dst}")
 
     print("Running binding audit...")
-    binding_result = bba.audit_package(lua_dst, dsp_root, flavor) if lua_dst.is_dir() else \
+    binding_result = bba.audit_package(lua_dst, dsp_root, flavor, lua_scope) if lua_dst.is_dir() else \
         {"confirmed": [], "missing": []}
 
     print("Running Lua sanity check...")
-    sanity_result = blsc.check_package(lua_dst) if lua_dst.is_dir() else \
+    sanity_result = blsc.check_package(lua_dst, lua_scope) if lua_dst.is_dir() else \
         {"syntax_errors": [], "undeclared_globals": []}
 
     schema_map = bsc.load_schema_map()

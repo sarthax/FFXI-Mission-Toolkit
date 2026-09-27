@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Client Overview{% endblock %}
+{% block content %}
+<h1>Client Overview / Build</h1>
+<p class="muted">Read-only fingerprint of the installed client. Captures and ID tables can cite the build id
+to show which client they came from.</p>
+{% if error %}<p class="chip" style="color:#c33;">{{ error }}</p>{% else %}
+<div class="table-wrap"><table>
+  <tr><th>Install</th><td><code>{{ ov.install }}</code></td></tr>
+  <tr><th>Build id</th><td><code>{{ ov.build_id }}</code> <span class="muted">(FFXiMain.dll SHA-256, first 12)</span></td></tr>
+  <tr><th>Snapshot id</th><td><code>{{ ov.snapshot_id }}</code></td></tr>
+  <tr><th>DAT index</th><td>{% for t in ov.tables %}{{ t.name }} ({{ "{:,}".format(t.size) }} B) {% endfor %}</td></tr>
+  <tr><th>ROM folders</th><td>{{ ov.rom_dirs|length }}: {{ ov.rom_dirs|join(", ") }}</td></tr>
+</table></div>
+<h2>Binaries</h2>
+<div class="table-wrap"><table><tr><th>File</th><th>Size</th><th>PE</th><th>Link time</th><th>SHA-256</th><th></th></tr>
+{% for b in ov.binaries %}<tr><td>{{ b.name }}</td><td>{{ "{:,}".format(b.size) }}</td><td>{{ b.pe or "-" }}</td><td>{{ b.link_time or "-" }}</td>
+<td><code>{{ b.sha256 }}</code></td><td>{% if b.pe %}<a href="/binaryinspector?path={{ (ov.install ~ '/' ~ b.name)|urlencode }}">inspect</a>{% endif %}</td></tr>{% endfor %}</table></div>
+<h2>Saved feature probes for this build</h2>
+{% if not ov.observations.graph_built %}<p class="muted">Workbench graph not built yet, so no saved probe results.</p>
+{% elif not ov.observations.rows %}<p class="muted">None saved. Run a probe set on the <a href="/binaryinspector">Binary Inspector</a> and click Save to graph.</p>
+{% else %}<p>{% for s, n in ov.observations.counts.items() %}<span class="chip">{{ s }} {{ n }}</span> {% endfor %}</p>
+<div class="table-wrap"><table>{% for r in ov.observations.rows %}<tr><td>{{ r.capability }}</td><td>{{ r.status }}</td></tr>{% endfor %}</table></div>{% endif %}
+{% endif %}
+{% endblock %}

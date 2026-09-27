@@ -27,6 +27,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import xi_tinkerer
+from dat_extractor_bin import ensure_dat_extractor
 
 
 TOOLS_ROOT = Path(__file__).parent
@@ -132,8 +133,7 @@ def _resolve_rom_path(ffxi_path: str, rom_ids: list[int]) -> Path | None:
     """Tries each candidate rom-file id in turn via dat-extractor --resolve, returns the first
     that resolves to a real file on THIS client -- the right id can differ by client build/
     region, never assume the first one always works."""
-    if not DAT_EXTRACTOR_EXE.exists():
-        return None
+    ensure_dat_extractor()
     result = subprocess.run(
         [str(DAT_EXTRACTOR_EXE), "--resolve", ffxi_path, *[str(i) for i in rom_ids]],
         capture_output=True, text=True,

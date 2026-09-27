@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Dialog Drift{% endblock %}
+{% block content %}
+<h1>Dialog Drift Overview</h1>
+<p class="muted">Read-only. Compares the text commented beside each wired dialog id against the real client dialog
+DAT (from <code>dialog_drift_report</code>, last checked {{ checked or "unknown" }}). For each zone, a suggested offset
+is <b>inferred</b> when one shift explains most mismatches; it is a hint, never applied automatically.</p>
+<p>{% for k, v in summary.items() if k != "offset_histogram" %}<span class="chip">{{ k }} {{ v }}</span> {% endfor %}
+{% for k, v in summary.offset_histogram.items() %}<span class="chip">offset {{ k }}: {{ v }} zones</span> {% endfor %}</p>
+<div class="table-wrap"><table>
+<tr><th>Zone</th><th>Match</th><th>Mismatch</th><th>No real entry</th><th>Suggested offset</th><th>Evidence</th></tr>
+{% for r in rows %}<tr>
+<td><a href="/zone/{{ r.zone_name }}/drift">{{ r.zone_name }}</a></td><td>{{ r.match }}</td><td>{{ r.mismatch }}</td><td>{{ r.no_real_entry }}</td>
+<td>{% if r.offset is not none %}<b>{{ "%+d"|format(r.offset) }}</b>{% elif r.mismatch %}<span class="muted">none (scattered)</span>{% else %}-{% endif %}</td>
+<td>{% if r.usable %}{{ r.explained }}/{{ r.usable }} ({{ (r.share*100)|round|int }}%){% endif %}</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

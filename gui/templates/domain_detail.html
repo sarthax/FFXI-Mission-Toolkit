@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ d.label }}{% endblock %}
+{% block content %}
+<h1>{{ d.label }}</h1>
+<p>{{ d.summary }} <span class="chip">{{ d.archetype }}</span></p>
+{% if d.children %}<p>Sub-areas: {% for c in d.children %}<a id="{{ slug(c) }}"></a><span class="chip">{{ c }}</span> {% endfor %}
+<span class="muted">(per-area data is not split out yet)</span></p>{% endif %}
+<h2>Information this domain needs</h2>
+<div class="table-wrap"><table>
+<tr><th>Entity</th><th>Fields to hold</th><th>Editor</th>{% for r in roots %}<th>{{ r|upper }}</th>{% endfor %}</tr>
+{% for e in ents %}<tr><td><b>{{ e.kind }}</b></td><td>{{ e.fields|join(", ") }}</td>
+<td>{% if e.edit %}<a href="{{ e.edit }}">{{ e.edit }}</a>{% else %}<span class="muted">none yet</span>{% endif %}</td>
+{% for r in roots %}{% set p = e.per_root[r] %}<td>{% if not p.configured %}<span class="muted">not configured</span>{% else %}
+<b>{{ "present" if p.present else "not found" }}</b>
+{% for g in p.globs %}<div class="muted"><code>{{ g.glob }}</code>: {{ g.matches }}</div>{% endfor %}{% endif %}</td>{% endfor %}</tr>{% endfor %}
+</table></div>
+<h2>Compare against target</h2>
+<p>{{ d.compare or "Not defined yet." }}</p>
+<h2>Wiki research basis (reference only)</h2>
+<p>Categories: {% for c, n in wiki.items() %}<span class="chip">{{ c }} {{ n }}</span> {% endfor %}</p>
+<p>Templates seen: {{ d.wiki.templates|join(", ") or "-" }}<br>Headings seen: {{ d.wiki.headings|join(", ") or "-" }}</p>
+{% endblock %}

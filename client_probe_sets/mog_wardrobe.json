@@ -1,0 +1,21 @@
+{
+  "name": "Mog Wardrobe 5-8",
+  "description": "Is the newer wardrobe 5-8 feature present in this client? A miss is UNKNOWN, not absent (FFXiMain.dll is packed).",
+  "binary": "FFXiMain.dll",
+  "feature": {
+    "feature_id": "feature:mog-wardrobe-5-8",
+    "name": "Mog Wardrobe 5-8",
+    "feature_type": "CLIENT_FEATURE",
+    "domain_id": "Client",
+    "status": "DISCOVERED"
+  },
+  "probes": [
+    {"name": "/wardrobe command", "kind": "string", "needle": "/wardrobe"},
+    {"name": "/wardrobe2", "kind": "string", "needle": "/wardrobe2"},
+    {"name": "/wardrobe4", "kind": "string", "needle": "/wardrobe4"},
+    {"name": "/wardrobe5", "kind": "string", "needle": "/wardrobe5", "requires_feature": true},
+    {"name": "/wardrobe6", "kind": "string", "needle": "/wardrobe6", "requires_feature": true},
+    {"name": "/wardrobe7", "kind": "string", "needle": "/wardrobe7", "requires_feature": true},
+    {"name": "/wardrobe8", "kind": "string", "needle": "/wardrobe8", "requires_feature": true}
+  ]
+}

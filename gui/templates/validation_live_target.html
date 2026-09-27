@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Live Target Validation — Mission Toolkit{% endblock %}
+{% block content %}
+<h1>Live Target Validation</h1>
+<p class="muted">Compare normalized expected records with the current target database through the selected server adapter. This workflow is read-only: it issues SELECT queries only. Database representation validation does not prove Lua, runtime, packet, capture, or client behavior.</p>
+
+{% if error %}<div class="warn">{{ error }}</div>{% endif %}
+
+<form method="post" action="/validation/live-target">
+<h2>Target</h2>
+<div class="table-wrap"><table>
+<tbody>
+<tr><th>Server family</th><td>
+<select name="target_family">
+{% for family in ["DSP", "Topaz", "Topaz-Next", "LSB"] %}
+<option value="{{ family }}"{% if form.target_family == family %} selected{% endif %}>{{ family }}</option>
+{% endfor %}
+</select>
+</td></tr>
+<tr><th>Target source root</th><td><input type="text" name="target_root" value="{{ form.target_root }}" placeholder="Optional adapter root"></td></tr>
+<tr><th>Backend</th><td>
+<select name="backend">
+<option value="sqlite"{% if form.backend == "sqlite" %} selected{% endif %}>SQLite (read-only)</option>
+<option value="mysql"{% if form.backend in ("mysql", "mariadb") %} selected{% endif %}>MySQL / MariaDB</option>
+</select>
+</td></tr>
+<tr><th>SQLite DB</th><td><input type="text" name="sqlite_db" value="{{ form.sqlite_db }}" placeholder="Path used when backend is SQLite"></td></tr>
+<tr><th>Host</th><td><input type="text" name="host" value="{{ form.host }}"></td></tr>
+<tr><th>Port</th><td><input type="text" name="port" value="{{ form.port }}"></td></tr>
+<tr><th>User</th><td><input type="text" name="user" value="{{ form.user }}"></td></tr>
+<tr><th>Database</th><td><input type="text" name="database" value="{{ form.database }}"></td></tr>
+<tr><th>Password environment variable</th><td><input type="text" name="password_env" value="{{ form.password_env }}"><div class="muted">The password itself is not entered here or persisted.</div></td></tr>
+</tbody>
+</table></div>
+
+<h2>Expected normalized records</h2>
+<p class="muted">Uses the same JSON contract as <code>workbench.cli.live_target_validation</code>: one <code>logical_type</code> and a <code>records[]</code> array of normalized LogicalRecord data.</p>
+<textarea name="expected_json" rows="18" style="width:100%; font-family:ui-monospace,Consolas,monospace;">{{ form.expected_json }}</textarea>
+
+<h2>Canonical context (optional)</h2>
+<div class="table-wrap"><table>
+<tbody>
+<tr><th>Source snapshot ID</th><td><input type="text" name="source_snapshot_id" value="{{ form.source_snapshot_id }}"></td></tr>
+<tr><th>Target snapshot ID</th><td><input type="text" name="target_snapshot_id" value="{{ form.target_snapshot_id }}"></td></tr>
+<tr><th>Feature ID</th><td><input type="text" name="feature_id" value="{{ form.feature_id }}"></td></tr>
+<tr><th>Run ID</th><td><input type="text" name="run_id" value="{{ form.run_id }}" placeholder="Defaults to run:live-target:<logical_type>"></td></tr>
+<tr><th>Persist result</th><td><label><input type="checkbox" name="persist" value="1"{% if form.persist %} checked{% endif %}> Save ValidationRun / ValidationResult records to workbench.db</label></td></tr>
+</tbody>
+</table></div>
+
+<p><button type="submit">Run read-only validation</button></p>
+</form>
+
+{% if result %}
+<h2>Result</h2>
+<div class="stats">
+  <div class="stat"><div class="n">{{ result.status }}</div><div class="l">Overall</div></div>
+  <div class="stat"><div class="n">{{ result.logical_type }}</div><div class="l">Logical type</div></div>
+  <div class="stat"><div class="n">{{ result.results|length }}</div><div class="l">Records</div></div>
+  <div class="stat"><div class="n">{{ result.target_family }}</div><div class="l">Target family</div></div>
+</div>
+<p><strong>Adapter:</strong> <code>{{ result.target_adapter_id }}</code> &nbsp; <strong>Physical table:</strong> <code>{{ result.target_table or "" }}</code> &nbsp; <strong>Backend:</strong> {{ result.connection_backend }}</p>
+<p><strong>Credentials persisted:</strong> {{ "Yes" if result.credentials_persisted else "No" }}</p>
+
+{% if result.results %}
+<div class="table-wrap"><table>
+<thead><tr><th>Status</th><th>Identity</th><th>Rows</th><th>Differences</th><th>Notes</th></tr></thead>
+<tbody>
+{% for row in result.results %}
+<tr>
+<td>{{ row.status }}</td>
+<td><code>{{ row.identity }}</code></td>
+<td>{{ row.matched_rows }}</td>
+<td>
+{% for diff in row.differences %}
+<div><code>{{ diff.field }}</code>: {{ diff.source_value }} → {{ diff.target_value }} ({{ diff.status }})</div>
+{% else %}
+<span class="muted">None</span>
+{% endfor %}
+</td>
+<td>{% for note in row.notes %}<div>{{ note }}</div>{% endfor %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table></div>
+{% endif %}
+
+{% if result.canonical_validation %}
+<p class="muted">Canonical validation persisted as run <code>{{ result.canonical_validation.validation_run.run_id }}</code>. <a class="zonelink" href="/validation/runs/{{ result.canonical_validation.validation_run.run_id|urlencode }}">Open run</a>.</p>
+{% endif %}
+
+{% for note in result.notes %}
+<p class="muted">{{ note }}</p>
+{% endfor %}
+{% endif %}
+{% endblock %}
