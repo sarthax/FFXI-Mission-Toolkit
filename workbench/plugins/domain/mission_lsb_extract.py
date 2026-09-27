@@ -94,6 +94,9 @@ def channels_from_findings(findings: Iterable[LsbMissionFinding]) -> tuple[State
 _FUNC_START=re.compile(r"(onTrigger|onTrade|onMobDeath|onZoneIn)\s*=\s*function")
 _EVENT_FINISH_KEY=re.compile(r"\[(\d+)\]\s*=\s*function\(player,\s*csid")
 _STATUS_EQ=re.compile(r"player:getMissionStatus\([^\n]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)\s*==\s*(\d+)")
+_STATUS_NE=re.compile(r"player:getMissionStatus\([^\n]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)\s*~=\s*(\d+)")
+_XPOS_EQ=re.compile(r"player:getXPos\(\)\s*==\s*(-?[0-9.]+)")
+_POP_QM=re.compile(r"npcUtil\.popFromQM\([^\n]*?,\s*([^,\n]+),")
 _VAR_EQ=re.compile(r"mission:getVar\(player,\s*'([^']+)'\)\s*==\s*(\d+)")
 _LOCAL_EQ=re.compile(r"mission:getLocalVar\(player,\s*'([^']+)'\)\s*==\s*([A-Za-z0-9_\.]+)")
 _STATUS_ALIAS=re.compile(r"local\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*player:getMissionStatus\([^\n]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)")
@@ -137,6 +140,10 @@ def _conditions(text: str) -> tuple[StateCondition,...]:
     out=[]
     for m in _STATUS_EQ.finditer(text):
         out.append(StateCondition(f"mission_status:{m.group(1)}","EQ",int(m.group(2))))
+    for m in _STATUS_NE.finditer(text):
+        out.append(StateCondition(f"mission_status:{m.group(1)}","NE",int(m.group(2))))
+    for m in _XPOS_EQ.finditer(text):
+        out.append(StateCondition("player:x","AT_POSITION",float(m.group(1))))
     aliases={m.group(1):m.group(2) for m in _STATUS_ALIAS.finditer(text)}
     for m in _ALIAS_EQ.finditer(text):
         if m.group(1) in aliases:
@@ -176,12 +183,16 @@ def _effects(text: str) -> tuple[TransitionEffect,...]:
         out.append(TransitionEffect("REMOVE",f"key_item:{m.group(1)}"))
     for m in _SPAWN.finditer(text):
         out.append(TransitionEffect("SPAWN_ENTITY",f"entity:{m.group(1)}"))
+    for m in _POP_QM.finditer(text):
+        out.append(TransitionEffect("SPAWN_ENTITY",f"entity:{m.group(1).strip()}"))
     for m in _TITLE.finditer(text):
         out.append(TransitionEffect("GRANT_TITLE",f"title:{m.group(1)}"))
     for m in _TIMER.finditer(text):
         out.append(TransitionEffect("START_TIMER","timer",m.group(1).strip()))
     for m in _SETPOS.finditer(text):
         out.append(TransitionEffect("TELEPORT","player",m.group(1).strip()))
+    if "player:tradeComplete()" in text:
+        out.append(TransitionEffect("COMPLETE_TRADE","trade"))
     if _COMPLETE.search(text):
         out.append(TransitionEffect("COMPLETE","mission"))
     for m in _MESSAGE.finditer(text):
@@ -402,3 +413,46 @@ def extract_helper_transitions(lua: str) -> tuple[MissionTransition,...]:
             "INFERRED",metadata={"helper":hm.group(1),"source_lines":(start+1,end+1),"helper_behavior":True},
         ))
     return tuple(out)
+
+
+def extract_mission_reward_metadata(lua: str) -> dict:
+    block=re.search(r"mission\.reward\s*=\s*\{(.*?)\n\}",lua,re.S)
+    if not block:
+        return {}
+    text=block.group(1)
+    out={}
+    title=re.search(r"title\s*=\s*xi\.title\.([A-Z0-9_]+)",text)
+    nxt=re.search(r"nextMission\s*=\s*\{\s*([^,]+),\s*([^\}]+)\}",text)
+    if title: out["title"]=title.group(1)
+    if nxt: out["next_mission"]=(nxt.group(1).strip(),nxt.group(2).strip())
+    return out
+
+
+def extract_dynamic_completion_gate(lua: str) -> DependencyGate | None:
+    """Recover helper loops that require a contiguous named status range at one value."""
+    helper=re.search(r"local function isMissionComplete\(player\)(.*?)\nend",lua,re.S)
+    if not helper:
+        return None
+    body=helper.group(1)
+    loop=re.search(
+        r"for\s+\w+\s*=\s*xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\s*,\s*xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\s+do",
+        body,
+    )
+    required=re.search(r"getMissionStatus\([^\)]*\)\s*~=\s*(\d+)",body)
+    if not loop or not required:
+        return None
+    # Resolve the named range from status symbols observed elsewhere in this source.
+    symbols=[]
+    for m in re.finditer(r"xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)",lua):
+        if m.group(1) not in symbols: symbols.append(m.group(1))
+    try:
+        lo=symbols.index(loop.group(1)); hi=symbols.index(loop.group(2))
+    except ValueError:
+        return None
+    if lo>hi: lo,hi=hi,lo
+    names=symbols[lo:hi+1]
+    value=int(required.group(1))
+    return DependencyGate(
+        "helper:isMissionComplete","ALL",
+        tuple(StateCondition(f"mission_status:{name}","EQ",value) for name in names),
+    )
