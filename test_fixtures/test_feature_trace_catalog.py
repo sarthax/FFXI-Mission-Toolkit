@@ -8,7 +8,6 @@ from pathlib import Path
 import feature_trace
 from workbench.core.services.feature_trace_catalog import present_relationships, runtime_hierarchy, filter_runtime_observations
 from workbench.core.services.feature_trace_dossier import build_dossier
-from pathlib import Path
 
 
 def main():
