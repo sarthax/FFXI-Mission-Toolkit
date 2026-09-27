@@ -122,29 +122,62 @@ def is_runtime_edge(edge):
             or str(edge.get("target_node") or "").startswith("capture:"))
 
 
-def present_relationships(edges):
-    sections = {}
+def _runtime_dimensions(edge):
+    meta=edge.get("metadata") or {}
+    opcode=meta.get("opcode") or meta.get("packet_opcode") or edge.get("relationship")
+    capture=(meta.get("capture_id") or meta.get("capture") or edge.get("source_snapshot_id")
+             or next((node for node in (edge.get("source_node"),edge.get("target_node"))
+                      if str(node or "").startswith("capture:")),None))
+    return str(opcode), str(meta.get("direction") or ""), None if capture is None else str(capture)
+
+
+def runtime_hierarchy(edges):
+    """Compact runtime summary. Raw observation edges are deliberately not retained."""
+    groups={}
+    captures=set()
     for edge in edges:
-        sections.setdefault(relationship_section(edge), []).append(edge)
-    result = []
-    for name, members in sections.items():
-        if name == "Runtime / Captures & Packets":
-            groups = {}
-            for edge in members:
-                meta = edge.get("metadata") or {}
-                opcode = meta.get("opcode") or meta.get("packet_opcode") or edge.get("relationship")
-                capture = (meta.get("capture_id") or meta.get("capture") or edge.get("source_snapshot_id")
-                           or next((node for node in (edge.get("source_node"), edge.get("target_node"))
-                                    if str(node or "").startswith("capture:")), None))
-                key = (str(opcode), str(meta.get("direction") or ""))
-                group = groups.setdefault(key, {"opcode": opcode, "direction": meta.get("direction"), "observation_count": 0, "capture_ids": set(), "edges": []})
-                group["observation_count"] += 1
-                if capture is not None:
-                    group["capture_ids"].add(str(capture))
-                group["edges"].append(edge)
-            for group in groups.values():
-                group["capture_count"] = len(group.pop("capture_ids"))
-            result.append({"name": name, "count": len(members), "runtime_groups": list(groups.values()), "edges": []})
+        opcode,direction,capture=_runtime_dimensions(edge)
+        key=(opcode,direction)
+        group=groups.setdefault(key,{"opcode":opcode,"direction":direction or None,"observation_count":0,"captures":{}})
+        group["observation_count"]+=1
+        if capture is not None:
+            captures.add(capture)
+            group["captures"][capture]=group["captures"].get(capture,0)+1
+    rendered=[]
+    for group in groups.values():
+        capture_groups=[{"capture_id":cid,"observation_count":count} for cid,count in sorted(group.pop("captures").items())]
+        group["capture_count"]=len(capture_groups)
+        group["capture_groups"]=capture_groups
+        rendered.append(group)
+    rendered.sort(key=lambda g:(-g["observation_count"],str(g["opcode"]),str(g.get("direction") or "")))
+    return {"observation_count":sum(g["observation_count"] for g in rendered),"capture_count":len(captures),"group_count":len(rendered),"groups":rendered}
+
+
+def filter_runtime_observations(edges, opcode=None, capture_id=None, offset=0, limit=100):
+    """Bounded final-level drill-down for a selected runtime group/capture."""
+    rows=[]
+    for edge in edges:
+        edge_opcode,_direction,capture=_runtime_dimensions(edge)
+        if opcode is not None and edge_opcode!=str(opcode):
+            continue
+        if capture_id is not None and capture!=str(capture_id):
+            continue
+        rows.append(edge)
+    total=len(rows)
+    offset=max(0,offset)
+    limit=max(1,min(limit,250))
+    return {"total":total,"offset":offset,"limit":limit,"observations":rows[offset:offset+limit]}
+
+
+def present_relationships(edges):
+    sections={}
+    for edge in edges:
+        sections.setdefault(relationship_section(edge),[]).append(edge)
+    result=[]
+    for name,members in sections.items():
+        if name=="Runtime / Captures & Packets":
+            hierarchy=runtime_hierarchy(members)
+            result.append({"name":name,"count":len(members),"runtime_groups":hierarchy["groups"],"edges":[]})
         else:
-            result.append({"name": name, "count": len(members), "runtime_groups": [], "edges": members})
+            result.append({"name":name,"count":len(members),"runtime_groups":[],"edges":members})
     return result
