@@ -369,7 +369,7 @@ def _load_opcode_source_table() -> dict[int, dict[str, Any]]:
             return [], False, None
         spec = classes.get(name)
         if spec is None:
-            return [], False
+            return [], False, None
         resolving.add(name)
         inherited_args: list[dict[str, Any]] = []
         inherited_variable = False
