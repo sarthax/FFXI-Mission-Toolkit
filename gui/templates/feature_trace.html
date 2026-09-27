@@ -56,7 +56,7 @@
 <tr><th>Source-native links</th><td>
   <div class="muted">Exact relationships stored by the source schema; these are navigation links, not canonical semantic graph edges.</div>
   {% for link in dossier.provider_relationships %}
-  <div><span class="chip">{{ link.relationship }}</span> <a class="zonelink" href="/features/trace?q={{ link.target_node|urlencode }}">{{ link.target_name }}</a> <span class="muted">({{ link.target_type }})</span></div>
+  <div><span class="chip">{{ link.relationship }}</span> <a class="zonelink" href="/features/trace?q={{ link.target_node|urlencode }}">{{ link.target_name }}</a> <span class="muted">({{ link.target_type }}){% if link.basis %} — {{ link.basis }}{% endif %}</span></div>
   {% endfor %}
 </td></tr>
 {% endif %}
