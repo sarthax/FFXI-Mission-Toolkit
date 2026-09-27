@@ -129,7 +129,9 @@ def main() -> int:
         assert len(script_entity_edges)==1,script_entity_edges
         assert script_entity_edges[0]["relationship"]=="REFERENCES",script_entity_edges
         assert len(entity_edges)==4,entity_edges
-        assert all(e["relationship"]=="REQUIRES" for e in payload["edges"]),payload["edges"]
+        assert require_edges[0]["relationship"]=="REQUIRES",require_edges
+        assert script_entity_edges[0]["relationship"]=="REFERENCES",script_entity_edges
+        assert all(e["relationship"]=="REQUIRES" for e in entity_edges),entity_edges
         assert all(e["confidence"]=="VERIFIED" for e in payload["edges"]),payload["edges"]
 
         out=root/"analysis.json"
