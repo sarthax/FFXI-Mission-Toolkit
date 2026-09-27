@@ -2,6 +2,17 @@
 from workbench.plugins.domain.mission_lsb_extract import chain_event_transitions, correlate_lsb_handlers, materialize_channel_states
 
 SAMPLE=r"""
+[xi.zone.KAZHAM] =
+{
+    ['Jakoh_Wahcondalo'] = mission:progressEvent(114):replaceDefault(),
+    onEventFinish =
+    {
+        [114] = function(player, csid, option, npc)
+            mission:complete(player)
+        end,
+    },
+}
+
 [xi.zone.MISAREAUX_COAST] =
 {
     ['_0p2'] =
@@ -39,7 +50,10 @@ SAMPLE=r"""
 def main():
     m=correlate_lsb_handlers(SAMPLE,feature_id="mission:test")
     assert not m.validate(),m.validate()
-    trigger=next(t for t in m.transitions if t.trigger=="NPC_INTERACT")
+    decl=next(t for t in m.transitions if t.metadata.get("declarative_handler"))
+    assert decl.event.event_id==114 and decl.event.actor=="Jakoh_Wahcondalo",decl
+    assert decl.metadata["replace_default"] is True,decl
+    trigger=next(t for t in m.transitions if t.trigger=="NPC_INTERACT" and t.event.event_id==6)
     assert trigger.event and trigger.event.event_id==6,trigger
     assert trigger.event.zone=="MISAREAUX_COAST",trigger
     assert trigger.event.actor=="_0p2",trigger
@@ -59,6 +73,8 @@ def main():
     assert finish2.to_state=="state:mission_var:Status=1",finish2
 
     chained=chain_event_transitions(m)
+    simple=next(t for t in chained.transitions if t.metadata.get("logical_event_chain") and t.event.event_id==114)
+    assert any(e.effect=="COMPLETE" for e in simple.effects),simple
     edge=next(t for t in chained.transitions if t.metadata.get("logical_event_chain") and t.event.event_id==6)
     assert edge.event.zone=="MISAREAUX_COAST",edge
     assert edge.event.actor=="_0p2",edge
