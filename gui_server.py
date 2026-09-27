@@ -6331,6 +6331,43 @@ def research_sessions_create(
     )
 
 
+@app.get("/research/contradictions", response_class=HTMLResponse)
+def research_contradictions_page(
+    request: Request,
+    session_id: str = "",
+    subject_id: str = "",
+    evidence_type: str = "",
+):
+    from workbench.research.evidence_browser import list_contradictions
+
+    report=list_contradictions(
+        WORKBENCH_DB,
+        research_session_id=session_id.strip() or None,
+        subject_id=subject_id.strip() or None,
+        evidence_type=evidence_type.strip() or None,
+    )
+    return templates.TemplateResponse(request,"research_contradictions.html",{
+        "request":request,
+        "report":report,
+        "session_id":session_id,
+        "subject_id":subject_id,
+        "evidence_type":evidence_type,
+    })
+
+
+@app.get("/research/evidence", response_class=HTMLResponse)
+def research_evidence_page(request: Request, evidence_id: str):
+    from workbench.research.evidence_browser import evidence_record
+
+    evidence=evidence_record(WORKBENCH_DB,evidence_id)
+    if evidence is None:
+        raise HTTPException(status_code=404,detail=f"No canonical evidence '{evidence_id}'")
+    return templates.TemplateResponse(request,"research_evidence.html",{
+        "request":request,
+        "evidence":evidence,
+    })
+
+
 @app.get("/research/{research_session_id:path}", response_class=HTMLResponse)
 def research_session_detail_page(
     request: Request,
