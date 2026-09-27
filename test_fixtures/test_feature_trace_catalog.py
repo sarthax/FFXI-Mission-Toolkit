@@ -96,10 +96,27 @@ def main():
             con.execute(f"INSERT INTO {prefix}_mob_pools VALUES (2002,'Pool 2002 {prefix}')")
         con.execute(f"CREATE TABLE {prefix}_mob_skills (mob_skill_id INTEGER, name TEXT)")
         con.execute(f"INSERT INTO {prefix}_mob_skills VALUES (900,'Provider Skill {prefix}')")
+        con.execute(f"CREATE TABLE {prefix}_spell_list (spellid INTEGER, name TEXT)")
+        con.execute(f"INSERT INTO {prefix}_spell_list VALUES (500,'Provider Spell {prefix}')")
+        con.execute(f"CREATE TABLE {prefix}_blue_spell_list (spellid INTEGER, mob_skill_id INTEGER)")
+        con.execute(f"INSERT INTO {prefix}_blue_spell_list VALUES (500,900)")
         con.execute(f"CREATE TABLE {prefix}_pet_list (petid INTEGER, name TEXT, poolid INTEGER)")
         con.execute(f"INSERT INTO {prefix}_pet_list VALUES (77,'Provider Pet {prefix}',2002)")
         skill_rows=feature_trace.search_nodes(con,f"Provider Skill {prefix}")
         assert any(row.get("provider")==expected_provider[prefix] for row in skill_rows),(prefix,skill_rows)
+        blue_node=feature_trace.node_info(con,f"catalog:{prefix}_blue_spell_list:500")
+        assert blue_node["known"]
+        blue_rep=blue_node["representations"][0]
+        assert blue_rep["display_name"]=="Blue spell wiring 500"
+        assert blue_rep["metadata"]["details"]["mob_skill_id"]==900
+        blue_links=provider_relationships(con,f"catalog:{prefix}_blue_spell_list:500")
+        assert {link["relationship"] for link in blue_links}=={"BLUE_SPELL_SPELL","BLUE_SPELL_MOB_SKILL"},(prefix,blue_links)
+        assert {link["target_node"] for link in blue_links}=={f"catalog:{prefix}_spell_list:500",f"catalog:{prefix}_mob_skills:900"}
+        blue_search=[
+            row for row in feature_trace.search_nodes(con,"900")
+            if row.get("table")==f"{prefix}_blue_spell_list"
+        ]
+        assert blue_search and "mob_skill_id" in blue_search[0]["matched_on"],(prefix,blue_search)
         pet_links=provider_relationships(con,f"catalog:{prefix}_pet_list:77")
         assert pet_links and pet_links[0]["relationship"]=="PET_USES_POOL",(prefix,pet_links)
         assert pet_links[0]["target_node"]==f"catalog:{prefix}_mob_pools:2002"

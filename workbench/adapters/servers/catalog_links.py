@@ -74,6 +74,24 @@ def server_source_links(
                     "basis":"mob_groups.poolid",
                 })
 
+    if suffix=="blue_spell_list":
+        spellid=source_identity.get("spellid")
+        if spellid is not None:
+            row=_single_row(con,source_table,("mob_skill_id",),{"spellid":spellid})
+            if row and row[0] is not None:
+                links.append({
+                    "relationship":"BLUE_SPELL_SPELL",
+                    "target_table":f"{prefix}_spell_list",
+                    "target_identity":{"spellid":spellid},
+                    "basis":"blue_spell_list.spellid",
+                })
+                links.append({
+                    "relationship":"BLUE_SPELL_MOB_SKILL",
+                    "target_table":f"{prefix}_mob_skills",
+                    "target_identity":{"mob_skill_id":row[0]},
+                    "basis":"blue_spell_list.mob_skill_id",
+                })
+
     if suffix=="instance_entities":
         instanceid=source_identity.get("instanceid")
         entity_id=source_identity.get("id")

@@ -1987,3 +1987,14 @@ An instance-membership record is presented with a generated label such as `Insta
 - `INSTANCE_ENTITY_MOB` -> a mob spawn record only when the exact ID exists in that fork's `mob_spawn_points`.
 
 The entity type is not inferred from the numeric ID alone. These records remain catalog/source navigation evidence and are not inserted into canonical semantic topology.
+
+
+### Blue Magic wiring catalog records
+
+The server provider layer now exposes `blue_spell_list` as an explicit unnamed bridge object across core SQL, LandSandBoat, Topaz, and DSP. Its stable identity is `spellid`, with `mob_skill_id` retained as source detail/search provenance and a generated display label such as `Blue spell wiring 500`.
+
+Each wiring record exposes only exact same-fork source-native links:
+- `BLUE_SPELL_SPELL` -> the matching `spell_list.spellid`;
+- `BLUE_SPELL_MOB_SKILL` -> the matching `mob_skills.mob_skill_id`.
+
+This makes Blue Magic ID wiring directly discoverable and navigable without asserting that the linked spell or mob skill is behaviorally correct or implemented.
