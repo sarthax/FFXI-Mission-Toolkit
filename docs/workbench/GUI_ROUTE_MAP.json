@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 167,
+  "route_count": 168,
   "routes": [
     {
       "method": "GET",

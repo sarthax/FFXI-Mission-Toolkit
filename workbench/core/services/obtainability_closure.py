@@ -22,6 +22,34 @@ from typing import Any, Iterable
 SCHEMA_VERSION="obtainability-closure/v1"
 
 
+def resolve_obtainability_root(con: sqlite3.Connection, selection: str) -> str:
+    """Resolve a user-visible graph selection to one unambiguous canonical entity ID.
+
+    Closure traversal intentionally operates on canonical IDs.  This adapter keeps that
+    invariant while allowing every GUI caller to submit an exact ID, display label, or
+    registered identifier.  Ambiguous labels are rejected rather than choosing an
+    arbitrary graph node.
+    """
+    value = selection.strip()
+    if not value:
+        raise ValueError("A canonical root or unique display label is required.")
+    exact = con.execute("SELECT entity_id FROM entities WHERE entity_id=?", (value,)).fetchall()
+    if exact:
+        return exact[0][0]
+    rows = con.execute(
+        "SELECT entity_id FROM entities WHERE LOWER(display_name)=LOWER(?) "
+        "UNION SELECT entity_id FROM entity_identifiers WHERE LOWER(identifier_value)=LOWER(?) "
+        "ORDER BY entity_id",
+        (value, value),
+    ).fetchall()
+    ids = [row[0] for row in rows]
+    if len(ids) == 1:
+        return ids[0]
+    if not ids:
+        raise ValueError(f"No canonical graph node matches {selection!r}.")
+    raise ValueError(f"Selection {selection!r} is ambiguous; use a canonical node ID.")
+
+
 def _metadata(raw: str | None) -> dict[str, Any]:
     try:
         value=json.loads(raw or "{}")
