@@ -96,9 +96,12 @@ def _indexed_specs(con):
         # Do not reinterpret a schema mismatch through the heuristic fallback.
         claimed.add(table)
         cols=_columns(con,table)
-        required={spec.id_column.lower(),spec.name_column.lower(),*(col.lower() for col in spec.identity_columns())}
+        required={spec.id_column.lower(),*(col.lower() for col in spec.identity_columns())}
+        if spec.name_column:
+            required.add(spec.name_column.lower())
         if required.issubset(cols):
-            yield table,cols[spec.id_column.lower()],cols[spec.name_column.lower()],provider.provider_id,provider.domain,spec.object_type,spec
+            name_col=cols[spec.name_column.lower()] if spec.name_column else None
+            yield table,cols[spec.id_column.lower()],name_col,provider.provider_id,provider.domain,spec.object_type,spec
     for table in sorted(available-claimed):
         if table in {x[0] for x in CANONICAL_TABLES} or table=="entity_relationships":
             continue
@@ -107,6 +110,17 @@ def _indexed_specs(con):
         name=next((cols[x] for x in NAME_COLUMNS if x in cols),None)
         if key and name:
             yield table,key,name,"schema-fallback",table.split("_",1)[0],table.removeprefix("sql_").removeprefix("lsb_").removeprefix("dsp_").removeprefix("topaz_").upper(),None
+
+
+def _provider_display(spec, identity: dict, name_value):
+    if name_value not in (None,""):
+        return name_value
+    if spec is not None and spec.display_template:
+        try:
+            return spec.display_template.format(**identity)
+        except (KeyError,ValueError):
+            pass
+    return " / ".join(f"{key}={value}" for key,value in identity.items())
 
 
 def search_catalog(con: sqlite3.Connection, term: str, limit: int = 200):
@@ -135,11 +149,17 @@ def search_catalog(con: sqlite3.Connection, term: str, limit: int = 200):
         identity_columns=_identity_columns(cols,key,spec)
         alias_columns=[]
         if spec is not None:
+            excluded=set(identity_columns)
+            if name:
+                excluded.add(name)
             alias_columns=[
                 cols[column.lower()] for column in spec.search_columns
-                if column.lower() in cols and cols[column.lower()] not in {*identity_columns,name}
+                if column.lower() in cols and cols[column.lower()] not in excluded
             ]
-        search_columns=[*identity_columns,name,*alias_columns]
+        search_columns=[*identity_columns]
+        if name:
+            search_columns.append(name)
+        search_columns.extend(alias_columns)
         select_columns=search_columns
         where=" OR ".join(f"lower(COALESCE(CAST({column} AS TEXT),'')) LIKE ?" for column in search_columns)
         params=[pattern]*len(search_columns)+[limit]
@@ -148,14 +168,16 @@ def search_catalog(con: sqlite3.Connection, term: str, limit: int = 200):
             params,
         ):
             identity_values=tuple(row[:len(identity_columns)])
-            display=row[len(identity_columns)]
+            identity=dict(zip(identity_columns,identity_values))
+            name_value=row[len(identity_columns)] if name else None
+            display=_provider_display(spec,identity,name_value)
             node_id=_catalog_id(table,identity_values,identity_columns)
             matched=[
                 column for column,value in zip(search_columns,row)
                 if term.casefold() in str(value or "").casefold()
             ]
             item={"node_id":node_id,"node_type":object_type,"display_name":display,"domain":domain,"source":table,"table":table,"provider":provider_id,"catalog_only":True,
-                  "identity":dict(zip(identity_columns,identity_values)),"matched_on":matched}
+                  "identity":identity,"matched_on":matched}
             if len(identity_values)==1:
                 item["numeric_id"]=identity_values[0]
             rows.append(item)
@@ -179,11 +201,17 @@ def catalog_node(con: sqlite3.Connection, node_id: str):
             return None
         detail_columns=[]
         if spec is not None:
+            excluded=set(identity_columns)
+            if name:
+                excluded.add(name)
             detail_columns=[
                 cols[col.lower()] for col in spec.detail_columns
-                if col.lower() in cols and cols[col.lower()] not in {*identity_columns,name}
+                if col.lower() in cols and cols[col.lower()] not in excluded
             ]
-        select_columns=[*identity_columns,name,*detail_columns]
+        select_columns=[*identity_columns]
+        if name:
+            select_columns.append(name)
+        select_columns.extend(detail_columns)
         row=con.execute(
             f"SELECT {','.join(select_columns)} FROM {table} WHERE {_identity_where(identity_columns)}",
             tuple(str(v) for v in identity_values),
@@ -192,9 +220,12 @@ def catalog_node(con: sqlite3.Connection, node_id: str):
             return None
         identity_count=len(identity_columns)
         actual_identity=tuple(row[:identity_count])
-        display=row[identity_count]
-        details={column:row[identity_count+1+index] for index,column in enumerate(detail_columns)}
         identity=dict(zip(identity_columns,actual_identity))
+        name_offset=identity_count
+        name_value=row[name_offset] if name else None
+        detail_offset=identity_count+(1 if name else 0)
+        display=_provider_display(spec,identity,name_value)
+        details={column:row[detail_offset+index] for index,column in enumerate(detail_columns)}
         inspect_href=None
         if spec is not None and spec.inspect_path:
             primary_value=identity.get(cols[spec.id_column.lower()])

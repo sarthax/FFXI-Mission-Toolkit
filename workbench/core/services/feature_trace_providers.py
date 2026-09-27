@@ -11,12 +11,13 @@ from dataclasses import dataclass
 class CatalogTable:
     table: str
     id_column: str
-    name_column: str
+    name_column: str | None
     object_type: str
     detail_columns: tuple[str, ...] = ()
     inspect_path: str | None = None
     key_columns: tuple[str, ...] = ()
     search_columns: tuple[str, ...] = ()
+    display_template: str | None = None
 
     def identity_columns(self) -> tuple[str, ...]:
         return self.key_columns or (self.id_column,)
@@ -47,6 +48,9 @@ _COMMON_SERVER_TABLES=(
     CatalogTable("mob_skills","mob_skill_id","name","MOB_SKILL"),
     CatalogTable("pet_list","petid","name","PET"),
     CatalogTable("instance_list","instanceid","instance_name","INSTANCE"),
+    CatalogTable("instance_entities","id",None,"INSTANCE_ENTITY",
+                 key_columns=("instanceid","id"),
+                 display_template="Instance {instanceid} entity {id}"),
     CatalogTable("spell_list","spellid","name","SPELL"),
     CatalogTable("abilities","abilityid","name","ABILITY"),
     CatalogTable("weapon_skills","weaponskillid","name","WEAPON_SKILL"),
@@ -54,7 +58,7 @@ _COMMON_SERVER_TABLES=(
 )
 
 def _prefixed(prefix: str) -> tuple[CatalogTable,...]:
-    return tuple(CatalogTable(f"{prefix}_{t.table}",t.id_column,t.name_column,t.object_type,t.detail_columns,t.inspect_path,t.key_columns,t.search_columns) for t in _COMMON_SERVER_TABLES)
+    return tuple(CatalogTable(f"{prefix}_{t.table}",t.id_column,t.name_column,t.object_type,t.detail_columns,t.inspect_path,t.key_columns,t.search_columns,t.display_template) for t in _COMMON_SERVER_TABLES)
 
 PROVIDERS=(
     CatalogProvider("server-sql","server",_prefixed("sql")),
