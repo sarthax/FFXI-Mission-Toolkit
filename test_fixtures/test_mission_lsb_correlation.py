@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from workbench.plugins.domain.mission_lsb_extract import correlate_lsb_handlers
+from workbench.plugins.domain.mission_lsb_extract import correlate_lsb_handlers, materialize_channel_states
 
 SAMPLE=r"""
 [xi.zone.MISAREAUX_COAST] =
@@ -52,6 +52,11 @@ def main():
     assert any(c.operator=="BATTLEFIELD_WON" and c.subject=="battlefield:ANCIENT_VOWS" for c in win.gate.conditions),win
     assert any(e.effect=="COMPLETE" for e in win.effects),win
     assert any(e.effect=="TELEPORT" for e in win.effects),win
+    mm=materialize_channel_states(m)
+    trigger2=next(t for t in mm.transitions if t.trigger=="NPC_INTERACT")
+    assert trigger2.from_state=="state:mission_var:Status=0",trigger2
+    finish2=next(t for t in mm.transitions if t.event and t.event.event_id==6 and t.trigger=="EVENT_FINISH")
+    assert finish2.to_state=="state:mission_var:Status=1",finish2
     print("LSB handler correlation self-test: PASS")
     print("transitions",len(m.transitions))
     return 0
