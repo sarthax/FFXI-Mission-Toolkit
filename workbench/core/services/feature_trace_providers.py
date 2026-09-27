@@ -44,6 +44,8 @@ _COMMON_SERVER_TABLES=(
     CatalogTable("mob_spawn_points","mobid","mobname","MOB"),
     CatalogTable("mob_groups","groupid","name","MOB_GROUP",key_columns=("zoneid","groupid")),
     CatalogTable("mob_pools","poolid","name","MOB_POOL"),
+    CatalogTable("mob_skills","mob_skill_id","name","MOB_SKILL"),
+    CatalogTable("pet_list","petid","name","PET"),
     CatalogTable("instance_list","instanceid","instance_name","INSTANCE"),
     CatalogTable("spell_list","spellid","name","SPELL"),
     CatalogTable("abilities","abilityid","name","ABILITY"),
@@ -59,6 +61,11 @@ PROVIDERS=(
     CatalogProvider("landsandboat","server",_prefixed("lsb")),
     CatalogProvider("topaz","server",_prefixed("topaz")),
     CatalogProvider("dsp","server",_prefixed("dsp")),
+    CatalogProvider("server-effects","server",(
+        CatalogTable("lsb_effects","effectid","name","STATUS_EFFECT",search_columns=("display_name","norm_name")),
+        CatalogTable("topaz_effects","effectid","name","STATUS_EFFECT",search_columns=("norm_name",)),
+        CatalogTable("dsp_effects","effectid","name","STATUS_EFFECT",search_columns=("norm_name",)),
+    )),
     CatalogProvider("client-identity","client",(
         CatalogTable("identity_snapshots","snapshot_id","version","CLIENT_SNAPSHOT",
                      ("snapshot_type","family","recorded_at","source_location","fingerprint"),
