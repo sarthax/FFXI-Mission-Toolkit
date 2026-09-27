@@ -539,6 +539,14 @@ Completed/retired from the prior queue:
 - [x] Resume subsequent roadmap work from the next open phase item rather than treating schema breadth as an unbounded prerequisite.
 
 
+### 2026-09-26 Generalized item DAT migration orchestration
+- [x] Add proposal-only client DAT patch plans for existing item records.
+- [x] Fingerprint the reviewed client record and block approval if the live/pivot record drifts before apply.
+- [x] Require a matching explicit human approval record before any DAT writer is invoked.
+- [x] Journal low-level DAT target/backup metadata and support deterministic rollback of the applied file.
+- [x] Include client DAT plans/approvals in generated-output package integrity checks.
+- [ ] Extend generalized orchestration to new-item allocation/injection and coordinated server SQL/client-index changes.
+
 ## 2026-09-27 — Audit reconciliation and sample-name neutrality
 
 Architecture naming rule: concrete FFXI content used as a proof case or regression fixture must not name generic Workbench services, framework concepts, or reusable test roles. Content names remain valid inside evidence payloads where they identify the actual game subject.

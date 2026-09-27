@@ -1111,7 +1111,7 @@ This milestone establishes review/agency/guardrails, not proof of complete FFXI 
 
 ## 2026-09-26 — Medusa dependency proof baseline
 
-Arrapago Reef Medusa is now the first concrete package dependency-discovery proof case. A machine-readable manual truth set lives at `test_fixtures/fixtures/medusa_arrapago_dependency_truth.json` and is documented in `MEDUSA_PACKAGE_PROOF.md`.
+Arrapago Reef Medusa is now the first concrete package dependency-discovery proof case. A machine-readable manual truth set lives at `test_fixtures/fixtures/dependency_truth_cross_zone_entity.json` and is documented in `MEDUSA_PACKAGE_PROOF.md`.
 
 Verified source relationships include Medusa entity 16998862; four adjacent Lamia Exon helper entities 16998863–16998866; helper spell list 28 and skill list 171; Medusa skill list 725 with skills 1808/1809/1810/1812/1813/1814; dedicated skill scripts; the `job_special` mixin and EES_LAMIA/eagle-eye-shot dependency; Medusa loot symbols; title/text dependencies; and separate Al Zahbi/Bhaflau Besieged variants that are explicitly related but not default Arrapago package dependencies.
 
@@ -1122,7 +1122,7 @@ The fixture is regression-checked so future analyzer work must preserve the full
 
 ## 2026-09-26 — Coiler dependency proof baseline
 
-Coiler is now the second package dependency proof case. The machine-readable truth set is `test_fixtures/fixtures/coiler_attachment_dependency_truth.json`, documented in `COILER_PACKAGE_PROOF.md`.
+Coiler is now the second package dependency proof case. The machine-readable truth set is `test_fixtures/fixtures/dependency_truth_attachment_runtime.json`, documented in `COILER_PACKAGE_PROOF.md`.
 
 The proof distinguishes inventory item identity (`xi.item.COILER = 2413`) from the internal `item_puppet` record (8583 / attachment index 135), then traces the behavior through dynamic C++→Lua attachment dispatch, `coiler.lua`, shared `automaton.lua` modifier logic, `xi.mod.DOUBLE_ATTACK`, maneuver/Optic Fiber scaling, puppetutils unlock/equip/persistence behavior, `char_pet` attachment state, and downstream automaton weapon-skill consumers of `xi.automaton.getExtraHits`.
 
@@ -1676,6 +1676,34 @@ The P1 expansion was completed through four evidence-backed tranches:
 Schema breadth is no longer treated as an open-ended blocker. Additional generic mappings should be
 added when a concrete feature/package or validation path exposes a missing dependency surface.
 
+
+## 2026-09-26 — Generalized client DAT migration/write orchestration: PATCH_EXISTING
+
+The first generalized Workbench client-DAT write path now bridges the read-only
+`ItemDatAdapter`, migration-package review artifacts, and the mature low-level
+`item_dat_tools` writer without allowing planning code to mutate client files.
+
+Implemented:
+
+- `ClientDatOperation` for reviewed `PATCH_EXISTING` operations;
+- proposal-only `WORKBENCH_CLIENT_DAT_PLAN` generated artifacts;
+- full-record client fingerprinting plus optional expected-field checks;
+- re-read/drift validation before approval;
+- explicit `WORKBENCH_CLIENT_DAT_APPROVAL_REQUEST` tied to the reviewed plan hash;
+- approved apply that invokes the low-level writer only after technical readiness and human approval;
+- apply journals containing DAT/category/record/format/target and low-level backup metadata;
+- deterministic rollback by restoring the exact pre-write snapshot (or removing a newly created overlay target);
+- package-integrity checks linking packaged client-DAT plans to their approval requests;
+- deterministic regression coverage proving that planning does not call a writer, drift blocks
+  approval, pending approval blocks apply, approved apply invokes the writer once, and rollback
+  restores the original bytes.
+
+The low-level `patch_client_item` return payload now includes additive backup/target-existence
+metadata so higher-level orchestration can journal and reverse the edit.
+
+This milestone intentionally supports existing-record patches only. New-item client allocation,
+DAT injection, server SQL coordination, and any FTABLE/VTABLE/index mutation remain a separate
+follow-on because they require multi-artifact identity/allocation guarantees.
 
 ## 2026-09-27 — Reconciliation audit and sample-name cleanup
 

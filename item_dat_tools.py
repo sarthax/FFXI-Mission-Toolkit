@@ -1675,7 +1675,8 @@ def patch_client_item(item_id: int, fields: dict) -> dict:
     dat = ItemDat.load(src_path)
     if idx >= dat.count:
         raise ValueError(f'item id {item_id} has no record in {cat_name} ({src_path})')
-    backup_dat_snapshot(dest_path, en_rom)
+    target_existed = dest_path.exists()
+    backup_path = backup_dat_snapshot(dest_path, en_rom)
     rec = bytearray(dat.record(idx))
     _patch_record(rec, fields, item_type, dat.format)
     dat.set_record(idx, bytes(rec))
@@ -1683,7 +1684,8 @@ def patch_client_item(item_id: int, fields: dict) -> dict:
     dest_path.write_bytes(dat.encrypted())
     return {'ok': True, 'category': cat_name, 'dat': str(dest_path), 'dat_ui': en_rom,
             'record_index': idx, 'format': dat.format, 'fields': list(fields.keys()),
-            'target': target}
+            'target': target, 'target_existed': target_existed,
+            'backup_path': str(backup_path) if backup_path is not None else None}
 
 
 def delete_client_item(item_id: int) -> dict:
