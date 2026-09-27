@@ -515,3 +515,12 @@ Completed/retired from the prior queue:
 - [x] Add an LSB `data/merits.yaml` producer that emits the same logical merit record type without inventing a removed SQL table.
 - [x] Preserve legacy-only and LSB-only merit representation fields as explicit missing-field drift.
 - [ ] Continue P1 with additional generic server surfaces only where cross-lineage representation can be proven.
+
+
+### 2026-09-26 P1 logical schema — combat support tranche
+- [x] Add source-neutral mob pool modifier mappings across Topaz, Topaz-Next, DSP, and LSB.
+- [x] Add mob spell-list membership with min/max level gates.
+- [x] Add level-indexed skill-cap curves for rank buckets r0-r13.
+- [x] Add per-job skill-rank mappings for all supported jobs in the audited schemas.
+- [x] Preserve modifier namespace semantics as an enum/engine dependency rather than inferring meaning from numeric IDs alone.
+- [ ] Continue P1 only with additional generic cross-lineage surfaces that materially improve dependency tracing.
