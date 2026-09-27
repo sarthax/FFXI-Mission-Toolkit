@@ -235,18 +235,28 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
             trigger="ZONE_OUT"
         if not trigger:
             continue
-        conds=_conditions(text); effects=_effects(text)
+        conds=list(_conditions(text)); effects=list(_effects(text))
+        if "isMissionComplete(player)" in text:
+            dynamic=extract_dynamic_completion_gate(lua)
+            if dynamic:
+                conds.extend(dynamic.conditions)
         returned=_EVENT.search(text)
         if returned and not event:
             event=EventIdentity(zone or "UNKNOWN",int(returned.group(1)),actor)
         if not (conds or effects or event):
             continue
         serial+=1
-        gate=DependencyGate(f"source-gate:{serial}","ALL",conds) if conds else None
+        gate=DependencyGate(f"source-gate:{serial}","ALL",tuple(conds)) if conds else None
         transitions.append(MissionTransition(
             f"source-transition:{serial}","source:any","source:any",trigger,
-            gate=gate,event=event,effects=effects,confidence="INFERRED",
-            metadata={"zone":zone,"actor":actor,"source_lines":(start+1,end+1),"literal_correlation":True},
+            gate=gate,event=event,effects=tuple(effects),confidence="INFERRED",
+            metadata={
+                "zone":zone,"actor":actor,"source_lines":(start+1,end+1),"literal_correlation":True,
+                "priority":(int(pm.group(1)) if (pm:=re.search(r"setPriority\((\d+)\)",text)) else None),
+                "important_event":".importantEvent()" in text,
+                "replace_default":".replaceDefault()" in text,
+                "client_transport":("handled by the client" in text.lower()),
+            },
         ))
     # Declarative actor handlers are equivalent to unconditional NPC triggers.
     for line_no,line in enumerate(lines):
@@ -456,3 +466,12 @@ def extract_dynamic_completion_gate(lua: str) -> DependencyGate | None:
         "helper:isMissionComplete","ALL",
         tuple(StateCondition(f"mission_status:{name}","EQ",value) for name in names),
     )
+
+
+def client_transport_effects(lua: str) -> tuple[TransitionEffect,...]:
+    """Preserve explicit source annotations that transport is client handled."""
+    out=[]
+    for line in lua.splitlines():
+        if "handled by the client" in line.lower() and ("transport" in line.lower() or "exit" in line.lower()):
+            out.append(TransitionEffect("CLIENT_TRANSPORT","player",line.strip().lstrip("-").strip()))
+    return tuple(out)
