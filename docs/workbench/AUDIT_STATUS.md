@@ -1789,3 +1789,12 @@ Added `workbench/plugins/domain/mission_lsb_extract.py` as a conservative static
 The LSB extractor now correlates literal Mission DSL handler blocks into `MissionTransition` records. It preserves zone/actor/CSID identity, handler trigger kind, literal guards, and literal effects with source-line metadata. A second conservative pass materializes concrete channel-value state endpoints only when a single literal channel guard/write proves the edge; ambiguous multi-channel handlers remain unresolved rather than guessed.
 
 Regression: `test_fixtures/test_mission_lsb_correlation.py` covers an Ancient Vows-shaped trigger/event-finish/battlefield completion flow including CSID 6, mission Status writes, battlefield 32001 guard, completion, and teleport.
+
+
+### Cross-handler mission event chaining
+
+The LSB extractor now joins initiating NPC/zone/trade handlers to a unique same-zone `onEventFinish[CSID]` handler. The resulting logical transition preserves initiating actor identity, zone+CSID identity, combined guards/effects, and both source spans. Same numeric CSIDs in different zones cannot collide.
+
+Declarative Mission DSL actor handlers such as `['Actor'] = mission:progressEvent(114)` are now extracted as unconditional NPC triggers and participate in the same chaining pass. Dispatch modifiers such as `replaceDefault()` and `importantEvent()` are retained as metadata.
+
+Regression coverage includes a Kazham's Chieftainess-shaped declarative completion edge and Ancient Vows-shaped NPC, zone-in, state-write, battlefield, completion, and teleport flows.
