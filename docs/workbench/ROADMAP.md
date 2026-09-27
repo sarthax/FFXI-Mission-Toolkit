@@ -497,3 +497,12 @@ Completed/retired from the prior queue:
 - [x] Preserve modern LSB-only ability/weapon-skill radius and mob-skill AOE radius as explicit schema drift rather than projecting those fields onto legacy forks.
 - [x] Keep runtime Lua/C++ effect behavior outside the SQL registry record; registry presence is not proof that the behavior implementation exists.
 - [ ] Continue P1 with generic item modifier/latent and character progression tables after this tranche.
+
+
+### 2026-09-26 P1 logical schema — item modifier tranche
+- [x] Add source-neutral logical mappings for direct item modifiers.
+- [x] Add source-neutral logical mappings for pet-scoped item modifiers.
+- [x] Add source-neutral logical mappings for conditional item latents.
+- [x] Preserve physical uniqueness for item latents with the full `(item_id, modifier_id, value, latent_id, latent_parameter)` identity.
+- [x] Keep modifier and latent semantics tied to separate enum/engine evidence rather than treating numeric IDs as self-describing.
+- [ ] Continue P1 with character progression tables such as merits/job points after this tranche.
