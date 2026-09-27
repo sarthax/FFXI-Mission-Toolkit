@@ -98,6 +98,7 @@ def main():
     template=(Path(__file__).resolve().parents[1]/"gui"/"templates"/"feature_trace.html").read_text(encoding="utf-8")
     assert "grouped without expanding semantic topology" in template
     assert "Evidence Dossier" in template
+    assert "Source details" in template and "Open source view" in template
     assert "section.edges" in template and "{% for edge in result.edges %}" not in template
     assert "/features/trace/runtime.json" in template
     assert "runtimeEsc(e.relationship)" in template
