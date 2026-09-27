@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from urllib.parse import quote
 
 from workbench.core.services.feature_trace_providers import provider_tables
 
@@ -55,7 +56,7 @@ def _indexed_specs(con):
         cols=_columns(con,table)
         if spec.id_column.lower() in cols and spec.name_column.lower() in cols:
             claimed.add(table)
-            yield table,cols[spec.id_column.lower()],cols[spec.name_column.lower()],provider.provider_id,provider.domain,spec.object_type
+            yield table,cols[spec.id_column.lower()],cols[spec.name_column.lower()],provider.provider_id,provider.domain,spec.object_type,spec
     for table in sorted(available-claimed):
         if table in {x[0] for x in CANONICAL_TABLES} or table=="entity_relationships":
             continue
@@ -63,7 +64,7 @@ def _indexed_specs(con):
         key=next((cols[x] for x in ID_COLUMNS if x in cols),None)
         name=next((cols[x] for x in NAME_COLUMNS if x in cols),None)
         if key and name:
-            yield table,key,name,"schema-fallback",table.split("_",1)[0],table.removeprefix("sql_").removeprefix("lsb_").removeprefix("dsp_").removeprefix("topaz_").upper()
+            yield table,key,name,"schema-fallback",table.split("_",1)[0],table.removeprefix("sql_").removeprefix("lsb_").removeprefix("dsp_").removeprefix("topaz_").upper(),None
 
 
 def search_catalog(con: sqlite3.Connection, term: str, limit: int = 200):
@@ -75,7 +76,7 @@ def search_catalog(con: sqlite3.Connection, term: str, limit: int = 200):
             continue
         for row in con.execute(f"SELECT {key},{kind},{name} FROM {table} WHERE lower({key}) LIKE ? OR lower({name}) LIKE ? ORDER BY {key} LIMIT ?", (pattern, pattern, limit)):
             rows.append({"node_id": row[0], "node_type": row[1], "display_name": row[2], "domain": "canonical", "source": table, "table": table, "catalog_only": False})
-    for table,key,name,provider_id,domain,object_type in _indexed_specs(con):
+    for table,key,name,provider_id,domain,object_type,spec in _indexed_specs(con):
         for value, display in con.execute(f"SELECT {key},{name} FROM {table} WHERE lower(CAST({key} AS TEXT)) LIKE ? OR lower(COALESCE({name},'')) LIKE ? ORDER BY {key} LIMIT ?", (pattern, pattern, limit)):
             rows.append({"node_id":_catalog_id(table,value),"node_type":object_type,"display_name":display,"domain":domain,"source":table,"table":table,"provider":provider_id,"catalog_only":True,"numeric_id":value})
     rows.sort(key=lambda r: (str(r.get("display_name") or "").casefold(), r["node_id"]))
@@ -88,12 +89,24 @@ def catalog_node(con: sqlite3.Connection, node_id: str):
     _, table, raw = node_id.split(":", 2)
     if table not in _tables(con):
         return None
-    for candidate,key,name,provider_id,domain,object_type in _indexed_specs(con):
+    for candidate,key,name,provider_id,domain,object_type,spec in _indexed_specs(con):
         if candidate != table:
             continue
-        row = con.execute(f"SELECT {key},{name} FROM {table} WHERE CAST({key} AS TEXT)=?", (raw,)).fetchone()
+        cols=_columns(con,table)
+        detail_columns=[]
+        if spec is not None:
+            detail_columns=[cols[col.lower()] for col in spec.detail_columns if col.lower() in cols and cols[col.lower()] not in {key,name}]
+        select_columns=[key,name,*detail_columns]
+        row=con.execute(f"SELECT {','.join(select_columns)} FROM {table} WHERE CAST({key} AS TEXT)=?",(raw,)).fetchone()
         if row:
-            return {"node_id": node_id, "known": True, "representations": [{"table": table, "node_id": node_id, "node_type":object_type,"display_name":row[1],"metadata":{"catalog_only":True,"numeric_id":row[0],"source_table":table,"provider":provider_id,"domain":domain}}]}
+            details={column:row[index+2] for index,column in enumerate(detail_columns)}
+            inspect_href=None
+            if spec is not None and spec.inspect_path:
+                inspect_href=spec.inspect_path.replace("{id}",quote(str(row[0]),safe=""))
+            metadata={"catalog_only":True,"numeric_id":row[0],"source_table":table,"provider":provider_id,"domain":domain,"details":details}
+            if inspect_href:
+                metadata["inspect_href"]=inspect_href
+            return {"node_id":node_id,"known":True,"representations":[{"table":table,"node_id":node_id,"node_type":object_type,"display_name":row[1],"metadata":metadata}]}
     return None
 
 
