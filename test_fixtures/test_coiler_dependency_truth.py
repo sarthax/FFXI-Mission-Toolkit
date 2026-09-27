@@ -34,7 +34,7 @@ def main():
 
     gaps=payload["known_current_toolkit_gaps"]
     assert any("item_puppet" in x for x in gaps),gaps
-    assert any("dynamic C++ Lua dispatch" in x for x in gaps),gaps
+    assert any("dynamic c++ lua dispatch" in x.casefold() for x in gaps),gaps
     assert any("Conditional interactions" in x for x in gaps),gaps
 
     print("Coiler dependency truth-set self-test: PASS")
