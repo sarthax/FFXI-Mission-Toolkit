@@ -1675,3 +1675,29 @@ The P1 expansion was completed through four evidence-backed tranches:
 
 Schema breadth is no longer treated as an open-ended blocker. Additional generic mappings should be
 added when a concrete feature/package or validation path exposes a missing dependency surface.
+
+
+## 2026-09-27 — Reconciliation audit and sample-name cleanup
+
+A current-`main` reconciliation found several milestones newer than this audit's original queue.
+
+### Confirmed implemented
+- Variable-length EVENT decoding is implemented conservatively in `workbench/client/event_fingerprint.py`, including bounded rule extraction and fail-closed behavior for unsupported dynamic length formulas. Regression: `test_fixtures/test_event_fingerprint.py`.
+- Automatic client ENTITY identity ingestion is implemented through `workbench/client/identity_extract.py` and `workbench/client/identity_snapshot.py`, with event/identity regressions. Raw client names are evidence, not guaranteed globally unique semantic identities; duplicate-name disambiguation remains future enrichment.
+- P1 server logical-schema coverage has expanded in `workbench/adapters/servers/profiles.py`, `progression.py`, and `schema_coverage.py`, with coverage regressions for combat abilities/skills, item modifiers/latents, progression tables, mob support tables, skill caps/ranks, synthesis, and synergy.
+
+### Naming audit
+Repository path inspection found sample-derived generic artifact names only in two proof documents, two truth-set fixture filenames, and two regression filenames. No generic production Workbench module was named after either sample.
+
+The artifacts were renamed by architectural role:
+- `docs/workbench/COILER_PACKAGE_PROOF.md` -> `docs/workbench/DEPENDENCY_PROOF_CASE_ATTACHMENT.md`
+- `docs/workbench/MEDUSA_PACKAGE_PROOF.md` -> `docs/workbench/DEPENDENCY_PROOF_CASE_CROSS_ZONE_ENTITY.md`
+- `test_fixtures/fixtures/coiler_attachment_dependency_truth.json` -> `test_fixtures/fixtures/dependency_truth_attachment_runtime.json`
+- `test_fixtures/fixtures/medusa_arrapago_dependency_truth.json` -> `test_fixtures/fixtures/dependency_truth_cross_zone_entity.json`
+- `test_fixtures/test_coiler_dependency_truth.py` -> `test_fixtures/test_dependency_truth_attachment_runtime.py`
+- `test_fixtures/test_medusa_dependency_truth.py` -> `test_fixtures/test_dependency_truth_cross_zone_entity.py`
+
+Concrete Coiler/Medusa names remain inside those documents and truth sets where they identify real evidence. They must not be used as names for reusable services, analyzers, graph concepts, framework APIs, or generic regression roles.
+
+### Audit rule
+Proof-case naming must describe the behavior or dependency shape being tested. Game-content names belong only in subject/evidence data or deliberately content-specific plugins.
