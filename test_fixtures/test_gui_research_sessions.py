@@ -49,6 +49,8 @@ def main():
     assert route_owner("/research")["section"]=="Research: Sessions"
     assert route_owner("/research","POST")["section"]=="Research: Sessions"
     assert route_owner("/research/research:test")["section"]=="Research: Sessions"
+    assert route_owner("/research/run","POST")["section"]=="Research: Sessions"
+    assert route_owner("/research/replay","POST")["section"]=="Research: Sessions"
 
     with TemporaryDirectory() as td:
         db=Path(td)/"workbench.db"
@@ -122,6 +124,15 @@ def main():
             "/research/research:first",
             session=detail,
             created="1",
+            run_status="",
+            run_error="",
+            replayed_from="",
+            run_defaults={
+                "provider":"openwebui","model":"fixture-model","max_tool_calls":4,
+                "max_provider_calls":12,"timeout":120.0,"temperature":0.1,
+                "provider_base_url":"",
+            },
+            has_run=True,
         )
         assert "graph.trace" in detail_html
         assert "evidence:one" in detail_html
@@ -134,16 +145,33 @@ def main():
             "/research/research:second",
             session=proposal,
             created="",
+            run_status="",
+            run_error="",
+            replayed_from="",
+            run_defaults={
+                "provider":"openwebui","model":"fixture-model","max_tool_calls":8,
+                "max_provider_calls":12,"timeout":120.0,"temperature":0.1,
+                "provider_base_url":"",
+            },
+            has_run=False,
         )
         assert "FindingProposal" in proposal_html
         assert "evidence:two" in proposal_html
         assert "evidence:three" in proposal_html
         assert "Deterministic verification required." in proposal_html
+        assert "Run / Replay" in proposal_html
+        assert "Run session" in proposal_html
+        assert "Replay as new session" in proposal_html
+        assert "Max provider calls" in proposal_html
+        assert "Timeout / provider call" in proposal_html
 
     source=(ROOT/"gui_server.py").read_text(encoding="utf-8")
     assert '@app.get("/research"' in source
     assert '@app.post("/research"' in source
     assert '@app.get("/research/{research_session_id:path}"' in source
+    assert '@app.post("/research/run")' in source
+    assert '@app.post("/research/replay")' in source
+    assert "_research_execute_from_form" in source
     assert "ResearchSessionStore(WORKBENCH_DB)" in source
 
     print("research session GUI regression: PASS")

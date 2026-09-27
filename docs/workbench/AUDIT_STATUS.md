@@ -1464,3 +1464,33 @@ unrecognized selector expressions, invalid lengths, or incomplete bytecode remai
 Regression coverage proves representative variable-length classes including 0x1F, 0x59, 0x9D, and
 0xAB, plus an intentionally unsupported dynamic formula that must remain unresolved. The full
 Workbench core regression test step passes with this decoder enabled.
+
+## 2026-09-26 — Bounded ResearchSession Run / Replay controls
+
+The Research Sessions GUI now executes the existing bounded `ResearchRunner` without bypassing
+the typed-tool or permission-profile boundaries.
+
+The session detail page exposes explicit controls for:
+
+- provider and model;
+- maximum typed tool calls;
+- maximum provider calls;
+- timeout per provider call;
+- temperature;
+- optional provider base URL.
+
+A session may be run in place only once. Once a transcript or final report exists, the GUI requires
+**Replay** instead. Replay creates a new child ResearchSession with `replay_of` metadata, copied
+question/context/permission profile, independent budgets and provider/model controls, and a fresh
+tool transcript. The original session is never cleared or overwritten.
+
+The GUI runtime registry currently exposes the canonical read-oriented graph/domain tool families
+through the same `ResearchToolRegistry` used elsewhere. Provider selection uses the provider
+factory (Open WebUI or Ollama Direct); permission enforcement remains inside the registry.
+
+Run controls are persisted in replay metadata, usage/tool transcripts remain durable, and invalid
+budgets/timeouts/temperature fail before provider execution.
+
+Focused regressions cover first execution, immutable replay cloning, override persistence,
+already-run protection, invalid controls, GUI rendering, route ownership, and the existing
+ResearchRunner/provider/session tests.

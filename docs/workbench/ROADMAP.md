@@ -447,7 +447,7 @@ Completed a real `FFXiMain.dll` deeper pass and PE32 import-thunk candidate look
 - [x] Show staged research proposals with supporting/contradicting evidence and verification requirements.
 - [x] Allow creation of session metadata without implicitly running a provider or granting source/database write authority.
 - [x] Add focused GUI/session regressions and route-map coverage.
-- [ ] Add an explicit provider-run/replay action only after provider selection, timeout/budget controls, and run-state UX are wired through the existing bounded ResearchRunner.
+- [x] Add explicit provider-run/replay actions with provider/model, timeout, tool/provider-call budgets, temperature, run-state UX, and immutable replay cloning through the bounded ResearchRunner.
 - [ ] Add contradiction-focused filtering and canonical evidence drill-through from the session detail page.
 
 ### 2026-09-26 Ollama Direct provider milestone
@@ -463,7 +463,7 @@ Completed a real `FFXiMain.dll` deeper pass and PE32 import-thunk candidate look
 Current ordered backlog after client snapshot GUI, Research Sessions GUI, direct Ollama provider, DAT Inspector UX cleanup, and CI stabilization:
 
 1. [x] Safer variable-length EVENT opcode decoding to reduce `RAW_ONLY` fingerprints and improve cross-client EVENT identity matching.
-2. [ ] Research Session Run / Replay controls using the bounded `ResearchRunner` with explicit provider/model/budget/timeout/run-state handling.
+2. [x] Research Session Run / Replay controls using the bounded `ResearchRunner` with explicit provider/model/budget/timeout/run-state handling.
 3. [ ] Improve cross-client ENTITY equivalence coverage and diagnostics, especially ambiguous/unresolved target-actor mappings.
 4. [ ] Research contradiction filtering and canonical evidence drill-down across server/client/capture/runtime/reference evidence.
 5. [ ] Continue P1 logical schema expansion beyond the completed P0 core mappings.

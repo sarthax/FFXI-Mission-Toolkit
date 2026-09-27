@@ -6325,6 +6325,9 @@ def research_session_detail_page(
     request: Request,
     research_session_id: str,
     created: str = "",
+    run_status: str = "",
+    run_error: str = "",
+    replayed_from: str = "",
 ):
     from workbench.research.session import ResearchSessionStore
 
@@ -6332,11 +6335,132 @@ def research_session_detail_page(
     session = store.get(research_session_id)
     if session is None:
         raise HTTPException(status_code=404, detail=f"No research session '{research_session_id}'")
+    run_controls = dict((session.get("replay_metadata") or {}).get("run_controls") or {})
     return templates.TemplateResponse(request, "research_session_detail.html", {
         "request": request,
         "session": session,
         "created": created,
+        "run_status": run_status,
+        "run_error": run_error,
+        "replayed_from": replayed_from,
+        "run_defaults": {
+            "provider": session["provider"],
+            "model": session["model"],
+            "max_tool_calls": int((session.get("budgets") or {}).get("max_tool_calls", 8)),
+            "max_provider_calls": int(run_controls.get("max_provider_calls", 12)),
+            "timeout": float(run_controls.get("timeout", 120.0)),
+            "temperature": float(run_controls.get("temperature", 0.1)),
+            "provider_base_url": run_controls.get("provider_base_url") or "",
+        },
+        "has_run": bool(session.get("tool_calls") or session.get("final_report")),
     })
+
+
+def _research_execute_from_form(
+    research_session_id: str,
+    *,
+    provider: str,
+    model: str,
+    max_tool_calls: int,
+    max_provider_calls: int,
+    timeout: float,
+    temperature: float,
+    provider_base_url: str,
+    replay: bool,
+):
+    from workbench.research.runtime import execute_session
+
+    base_url = provider_base_url.strip() or None
+    if base_url is None and provider.strip().lower().replace("_", "-") in {"openwebui", "open-webui"}:
+        con = get_con()
+        try:
+            values = settings_mod.get_all(con)
+        finally:
+            con.close()
+        base_url = values.get("llm_base_url") or None
+
+    return execute_session(
+        WORKBENCH_DB,
+        research_session_id,
+        provider_id=provider,
+        model=model,
+        max_tool_calls=max_tool_calls,
+        max_provider_calls=max_provider_calls,
+        timeout=timeout,
+        temperature=temperature,
+        provider_base_url=base_url,
+        replay=replay,
+    )
+
+
+@app.post("/research/run")
+def research_session_run(
+    research_session_id: str = Form(...),
+    provider: str = Form(...),
+    model: str = Form(...),
+    max_tool_calls: int = Form(8),
+    max_provider_calls: int = Form(12),
+    timeout: float = Form(120.0),
+    temperature: float = Form(0.1),
+    provider_base_url: str = Form(""),
+):
+    try:
+        result = _research_execute_from_form(
+            research_session_id,
+            provider=provider,
+            model=model,
+            max_tool_calls=max_tool_calls,
+            max_provider_calls=max_provider_calls,
+            timeout=timeout,
+            temperature=temperature,
+            provider_base_url=provider_base_url,
+            replay=False,
+        )
+        note = f"{result['verification_state']}: {result['provider_calls']} provider call(s), {result['tool_calls']} tool call(s)"
+        return RedirectResponse(
+            f"/research/{quote(result['research_session_id'])}?run_status={quote(note)}",
+            status_code=303,
+        )
+    except Exception as ex:
+        return RedirectResponse(
+            f"/research/{quote(research_session_id)}?run_error={quote(f'{type(ex).__name__}: {ex}')}",
+            status_code=303,
+        )
+
+
+@app.post("/research/replay")
+def research_session_replay(
+    research_session_id: str = Form(...),
+    provider: str = Form(...),
+    model: str = Form(...),
+    max_tool_calls: int = Form(8),
+    max_provider_calls: int = Form(12),
+    timeout: float = Form(120.0),
+    temperature: float = Form(0.1),
+    provider_base_url: str = Form(""),
+):
+    try:
+        result = _research_execute_from_form(
+            research_session_id,
+            provider=provider,
+            model=model,
+            max_tool_calls=max_tool_calls,
+            max_provider_calls=max_provider_calls,
+            timeout=timeout,
+            temperature=temperature,
+            provider_base_url=provider_base_url,
+            replay=True,
+        )
+        note = f"{result['verification_state']}: {result['provider_calls']} provider call(s), {result['tool_calls']} tool call(s)"
+        return RedirectResponse(
+            f"/research/{quote(result['research_session_id'])}?run_status={quote(note)}&replayed_from={quote(research_session_id)}",
+            status_code=303,
+        )
+    except Exception as ex:
+        return RedirectResponse(
+            f"/research/{quote(research_session_id)}?run_error={quote(f'{type(ex).__name__}: {ex}')}",
+            status_code=303,
+        )
 
 
 @app.get("/researchgaps", response_class=HTMLResponse)
