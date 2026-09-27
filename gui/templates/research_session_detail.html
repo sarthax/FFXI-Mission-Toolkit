@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Research Session{% endblock %}
+{% block content %}
+<p><a href="/research">← Research Sessions</a></p>
+<h1>Research Session</h1>
+{% if created %}<p class="chip">Session created. No provider has been run by this page.</p>{% endif %}
+
+<div class="table-wrap"><table>
+  <tr><th>ID</th><td><code>{{ session.research_session_id }}</code></td></tr>
+  <tr><th>Question</th><td>{{ session.question }}</td></tr>
+  <tr><th>Provider / Model</th><td>{{ session.provider }} / {{ session.model }}</td></tr>
+  <tr><th>Permission profile</th><td>{{ session.permission_profile }}</td></tr>
+  <tr><th>Verification state</th><td><span class="chip">{{ session.verification_state }}</span></td></tr>
+  <tr><th>Source snapshot</th><td><code>{{ session.source_snapshot_id or "-" }}</code></td></tr>
+  <tr><th>Target snapshot</th><td><code>{{ session.target_snapshot_id or "-" }}</code></td></tr>
+  <tr><th>Feature root</th><td><code>{{ session.feature_root or "-" }}</code></td></tr>
+  <tr><th>Entity root</th><td><code>{{ session.entity_root or "-" }}</code></td></tr>
+  <tr><th>Created</th><td>{{ session.created_at }}</td></tr>
+  <tr><th>Updated</th><td>{{ session.updated_at }}</td></tr>
+</table></div>
+
+<h2>Budgets & Usage</h2>
+<div class="table-wrap"><table>
+  <tr><th>Budgets</th><td><pre>{{ session.budgets|tojson(indent=2) }}</pre></td></tr>
+  <tr><th>Usage</th><td><pre>{{ session.usage|tojson(indent=2) }}</pre></td></tr>
+  <tr><th>Replay metadata</th><td><pre>{{ session.replay_metadata|tojson(indent=2) }}</pre></td></tr>
+</table></div>
+
+<h2>Typed Tool Transcript</h2>
+{% if not session.tool_calls %}
+<p class="muted">No typed tool calls recorded.</p>
+{% else %}
+{% for call in session.tool_calls %}
+<details {% if loop.first %}open{% endif %}>
+  <summary>#{{ call.sequence_no }} — <code>{{ call.tool_name }}</code> — {{ call.status }} — {{ call.created_at }}</summary>
+  <p><strong>Evidence IDs:</strong>
+  {% if call.evidence_ids %}{% for evidence in call.evidence_ids %}<code>{{ evidence }}</code>{% if not loop.last %}, {% endif %}{% endfor %}
+  {% else %}<span class="muted">none recorded</span>{% endif %}</p>
+  <h4>Arguments</h4><pre>{{ call.args|tojson(indent=2) }}</pre>
+  <h4>Result</h4><pre>{{ call.result|tojson(indent=2) }}</pre>
+</details>
+{% endfor %}
+{% endif %}
+
+<h2>Research Proposals</h2>
+{% if not session.proposals %}
+<p class="muted">No proposals recorded.</p>
+{% else %}
+<div class="table-wrap"><table>
+  <tr><th>Type</th><th>Subject</th><th>Status</th><th>Supporting evidence</th><th>Contradicting evidence</th><th>Verification requirement</th></tr>
+  {% for p in session.proposals %}
+  <tr>
+    <td>{{ p.proposal_type }}<br><code>{{ p.proposal_id }}</code></td>
+    <td><code>{{ p.subject_id or "-" }}</code></td>
+    <td>{{ p.status }}</td>
+    <td>{% for e in p.supporting_evidence_ids %}<code>{{ e }}</code>{% if not loop.last %}<br>{% endif %}{% endfor %}</td>
+    <td>{% for e in p.contradicting_evidence_ids %}<code>{{ e }}</code>{% if not loop.last %}<br>{% endif %}{% endfor %}</td>
+    <td>{{ p.verification_requirement or "-" }}</td>
+  </tr>
+  <tr><th>Payload</th><td colspan="5"><pre>{{ p.payload|tojson(indent=2) }}</pre></td></tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+
+<h2>Final Report</h2>
+{% if session.final_report %}<pre style="white-space:pre-wrap;">{{ session.final_report }}</pre>
+{% else %}<p class="muted">No final report recorded.</p>{% endif %}
+{% endblock %}

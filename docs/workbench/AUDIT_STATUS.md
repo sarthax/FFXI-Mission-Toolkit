@@ -1362,3 +1362,29 @@ GUI shell regressions remain part of the same CI job.
 This closes the tooling gap that previously blocked second-client validation from the GUI. The
 remaining external gate is to import an actual second retail client build and inspect the resulting
 cross-build identity distributions.
+
+
+## 2026-09-26 — ResearchSession audit trail exposed in GUI
+
+The Phase 8 research backend already persisted replay-oriented ResearchSession records, typed tool
+calls, evidence ids, proposals, budgets, usage, and final reports. That state is now visible through
+an audit-first GUI surface at `/research`.
+
+Implemented:
+
+- session history ordered by latest activity;
+- compact tool-call/proposal counts;
+- session creation for question/provider/model, permission profile, source/target snapshot context,
+  feature/entity roots, and max-tool-call budget;
+- no automatic provider execution from the creation form;
+- detail view for budgets, usage, replay metadata, verification state, final report, typed tool
+  transcript, arguments/results, and collected evidence ids;
+- proposal visibility including supporting and contradicting evidence and verification requirements;
+- shared-shell ownership under Tools > Research: Sessions;
+- machine-readable GUI route-map coverage;
+- focused `test_gui_research_sessions.py` plus the existing ResearchSession, GUI route-map, and
+  shared-shell regressions in a dedicated CI job.
+
+This improves auditability without expanding mutation authority. Provider execution/replay remains
+behind the existing bounded ResearchRunner and typed permission-aware tool registry until a
+separate explicit run-control UX is added.

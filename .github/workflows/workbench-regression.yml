@@ -172,3 +172,24 @@ jobs:
           python test_fixtures/test_capture_identity_bridge.py
           python test_fixtures/test_client_identity_snapshot.py
           python test_fixtures/test_client_identity_extract.py
+
+
+  research-session-gui-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install focused research GUI test dependencies
+        run: python -m pip install --disable-pip-version-check jinja2
+      - name: Run research session GUI regressions
+        env:
+          PYTHONPATH: .
+        run: |
+          set -euo pipefail
+          python test_fixtures/test_research_session.py
+          python test_fixtures/test_gui_research_sessions.py
+          python test_fixtures/test_gui_information_architecture.py
+          python test_fixtures/test_gui_shell.py

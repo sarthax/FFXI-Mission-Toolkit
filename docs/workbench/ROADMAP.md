@@ -439,3 +439,13 @@ Current proof:
 ## 2026-09-25 — Real packed-DLL deeper pass
 
 Completed a real `FFXiMain.dll` deeper pass and PE32 import-thunk candidate lookup. Future decoder/CFG work should prove reachable instruction boundaries and explicitly version its decoder; virtual `.text` requires an unpacked or runtime snapshot.
+
+
+### 2026-09-26 Research Sessions GUI milestone
+- [x] Expose persistent ResearchSession history in the shared GUI under Tools > Research: Sessions.
+- [x] Show pinned source/target context, provider/model, permission profile, budgets, usage, replay metadata, verification state, final report, typed tool transcript, and evidence IDs.
+- [x] Show staged research proposals with supporting/contradicting evidence and verification requirements.
+- [x] Allow creation of session metadata without implicitly running a provider or granting source/database write authority.
+- [x] Add focused GUI/session regressions and route-map coverage.
+- [ ] Add an explicit provider-run/replay action only after provider selection, timeout/budget controls, and run-state UX are wired through the existing bounded ResearchRunner.
+- [ ] Add contradiction-focused filtering and canonical evidence drill-through from the session detail page.

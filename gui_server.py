@@ -6197,6 +6197,92 @@ def dialogdrift_page(request: Request):
         "request": request, "rows": rows, "summary": ddo.summary(rows), "checked": checked, "error": error})
 
 
+@app.get("/research", response_class=HTMLResponse)
+def research_sessions_page(request: Request, created: str = ""):
+    from workbench.research.session import ResearchSessionStore
+
+    store = ResearchSessionStore(WORKBENCH_DB)
+    sessions = store.list(limit=200)
+    return templates.TemplateResponse(request, "research_sessions.html", {
+        "request": request,
+        "sessions": sessions,
+        "created": created,
+        "permission_profiles": (
+            "READ_ONLY_RESEARCH",
+            "PROPOSE_CHANGES",
+            "VALIDATION_ORCHESTRATOR",
+        ),
+    })
+
+
+@app.post("/research", response_class=HTMLResponse)
+def research_sessions_create(
+    request: Request,
+    question: str = Form(...),
+    provider: str = Form(...),
+    model: str = Form(...),
+    permission_profile: str = Form("READ_ONLY_RESEARCH"),
+    source_snapshot_id: str = Form(""),
+    target_snapshot_id: str = Form(""),
+    feature_root: str = Form(""),
+    entity_root: str = Form(""),
+    max_tool_calls: int = Form(8),
+):
+    from workbench.research.session import ResearchSessionStore
+
+    question = question.strip()
+    provider = provider.strip()
+    model = model.strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="Research question is required.")
+    if not provider:
+        raise HTTPException(status_code=400, detail="Provider is required.")
+    if not model:
+        raise HTTPException(status_code=400, detail="Model is required.")
+    if max_tool_calls < 0 or max_tool_calls > 100:
+        raise HTTPException(status_code=400, detail="Max tool calls must be between 0 and 100.")
+
+    store = ResearchSessionStore(WORKBENCH_DB)
+    try:
+        session = store.create(
+            question=question,
+            provider=provider,
+            model=model,
+            permission_profile=permission_profile,
+            source_snapshot_id=source_snapshot_id.strip() or None,
+            target_snapshot_id=target_snapshot_id.strip() or None,
+            feature_root=feature_root.strip() or None,
+            entity_root=entity_root.strip() or None,
+            budgets={"max_tool_calls": int(max_tool_calls)},
+            replay_metadata={"created_from": "gui:/research"},
+        )
+    except ValueError as ex:
+        raise HTTPException(status_code=400, detail=str(ex)) from ex
+    return RedirectResponse(
+        f"/research/{quote(session.research_session_id)}?created=1",
+        status_code=303,
+    )
+
+
+@app.get("/research/{research_session_id:path}", response_class=HTMLResponse)
+def research_session_detail_page(
+    request: Request,
+    research_session_id: str,
+    created: str = "",
+):
+    from workbench.research.session import ResearchSessionStore
+
+    store = ResearchSessionStore(WORKBENCH_DB)
+    session = store.get(research_session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail=f"No research session '{research_session_id}'")
+    return templates.TemplateResponse(request, "research_session_detail.html", {
+        "request": request,
+        "session": session,
+        "created": created,
+    })
+
+
 @app.get("/researchgaps", response_class=HTMLResponse)
 def researchgaps_page(request: Request):
     import research_gaps
