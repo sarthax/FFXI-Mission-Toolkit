@@ -257,3 +257,62 @@ def materialize_channel_states(machine: MissionStateMachine) -> MissionStateMach
         machine.machine_id,machine.feature_id,tuple(states.values()),tuple(transitions),
         machine.entry_state_ids,machine.channels,machine.completion_gate,machine.metadata,
     )
+
+
+def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine:
+    """Collapse trigger-return + matching event-finish into one logical edge.
+
+    Matching is deliberately zone+CSID scoped. The initiating actor is preserved,
+    while both source spans remain in metadata. Unmatched handlers remain intact.
+    """
+    finishes={}
+    for t in machine.transitions:
+        if t.trigger=="EVENT_FINISH" and t.event:
+            finishes.setdefault((t.event.zone,t.event.event_id),[]).append(t)
+
+    consumed=set()
+    chained=[]
+    for t in machine.transitions:
+        if t.trigger not in {"NPC_INTERACT","ZONE_IN","TRADE"} or not t.event:
+            continue
+        candidates=finishes.get((t.event.zone,t.event.event_id),[])
+        if len(candidates)!=1:
+            continue
+        f=candidates[0]
+        consumed.add(f.transition_id)
+        effects=tuple(t.effects)+tuple(f.effects)
+        # Trigger guards establish the precondition. Finish-handler guards also
+        # matter (options/battlefield/etc.) and are conjoined when present.
+        conds=[]
+        if t.gate: conds.extend(t.gate.conditions)
+        if f.gate: conds.extend(f.gate.conditions)
+        gate=DependencyGate(
+            f"chain-gate:{t.transition_id}:{f.transition_id}","ALL",tuple(conds)
+        ) if conds else None
+        chained.append(MissionTransition(
+            f"chain:{t.transition_id}:{f.transition_id}",
+            t.from_state,f.to_state,t.trigger,gate,
+            EventIdentity(t.event.zone,t.event.event_id,t.event.actor),
+            effects,
+            "VERIFIED" if t.confidence=="VERIFIED" and f.confidence=="VERIFIED" else "INFERRED",
+            tuple(dict.fromkeys(t.evidence_ids+f.evidence_ids)),
+            "PRESENT" if t.implementation_status=="PRESENT" and f.implementation_status=="PRESENT" else "PARTIAL",
+            {
+                "logical_event_chain":True,
+                "trigger_source_lines":t.metadata.get("source_lines"),
+                "finish_source_lines":f.metadata.get("source_lines"),
+                "trigger_transition_id":t.transition_id,
+                "finish_transition_id":f.transition_id,
+                "zone":t.event.zone,
+                "actor":t.event.actor,
+            },
+        ))
+        consumed.add(t.transition_id)
+
+    remaining=[t for t in machine.transitions if t.transition_id not in consumed]
+    out=MissionStateMachine(
+        machine.machine_id,machine.feature_id,machine.states,
+        tuple(remaining+chained),machine.entry_state_ids,machine.channels,
+        machine.completion_gate,{**machine.metadata,"event_chains":len(chained)},
+    )
+    return materialize_channel_states(out)
