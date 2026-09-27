@@ -8,6 +8,7 @@ from workbench.reference import seed_runtime_reference_graphs
 from workbench.core import graph
 from workbench.core.services.obtainability_closure import build_obtainability_closure, resolve_obtainability_root
 from workbench.core.services.feature_trace_closure import build_feature_trace_closure
+from workbench.core.services.dependency_map_presentation import direct_dependencies, path_from_root, visible_nodes
 
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -28,15 +29,18 @@ def main():
     assert organ["evidence_id"].startswith("evidence:demo:")
 
     template=(ROOT/"gui"/"templates"/"feature_trace.html").read_text(encoding="utf-8")
-    for label in ("Progression","Acquisition","Spawn","Access","Expand visible","Collapse to root","Toggle selected branch"):
+    for label in ("Progression","Acquisition","Spawn","Access","Expand all","Expand selected branch","Collapse selected branch","Collapse to root","Toggle selected branch"):
         assert label in template,label
     assert "/features/trace/closure.json" in template
     assert "REQUIREMENT_GATE" in template
     assert "Canonical root" in template
     assert "closure-scene" in template  # pan/zoom scene, not a static grid
     assert "marker-end:url(#closure-arrow)" in template
-    assert "event.preventDefault()" in template
-    assert "selectNode(el.dataset.node)" in template
+    assert "e.preventDefault()" in template
+    assert "select(el.dataset.node)" in template
+    assert "presentation?.initial_expanded" in template
+    assert "data-branch" in template  # explicit per-node expand/collapse affordance
+    assert "path-edge" in template and "cross-edge" in template
     assert "entity:av" not in template  # no fixture-specific renderer behavior
     gui_source=(ROOT/"gui_server.py").read_text(encoding="utf-8")
     assert "build_feature_trace_closure(con, root)" in gui_source
@@ -73,6 +77,21 @@ def main():
         assert any(edge["relationship"]=="SPAWNED_BY" for edge in payload["edges"])
         assert any(edge["relationship"]=="REQUIRES_MISSION" for edge in payload["edges"])
         assert not any(entry["node_id"]=="entity:av" for entry in payload["unresolved"])
+        # Progressive disclosure is presentation-only: root expansion shows JoL but not
+        # the whole closure; expanding JoL fans out its three sibling Virtues.
+        initial=set(payload["presentation"]["initial_visible_nodes"])
+        assert {"entity:av","entity:jol"} <= initial
+        assert "item:fifth" not in initial
+        assert "entity:jol" in direct_dependencies(payload,"entity:av")
+        expanded={payload["root"],"entity:jol"}
+        branched=visible_nodes(payload,expanded)
+        assert {"item:fourth","item:fifth","item:sixth"} <= branched
+        assert "mob:hope" not in branched
+        collapsed=visible_nodes(payload,{payload["root"]})
+        assert "entity:jol" in collapsed and "item:fifth" not in collapsed
+        path_nodes,path_edges=path_from_root(payload,"mob:hope")
+        assert {"entity:av","entity:jol","item:fifth","mob:hope"} <= path_nodes
+        assert path_edges
     print("feature dependency map self-test: PASS")
 
 

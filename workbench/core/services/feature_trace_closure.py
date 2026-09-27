@@ -9,6 +9,7 @@ from workbench.core.services.obtainability_closure import (
     resolve_obtainability_root,
 )
 from workbench.reference import seed_runtime_reference_graphs
+from workbench.core.services.dependency_map_presentation import initial_presentation
 
 
 def build_feature_trace_closure(con: sqlite3.Connection, selection: str = "") -> dict:
@@ -27,6 +28,7 @@ def build_feature_trace_closure(con: sqlite3.Connection, selection: str = "") ->
         build_obtainability_closure(con, canonical_root, relationships=relationships)
     )
     projection["resolved_root"] = canonical_root
+    projection["presentation"] = initial_presentation(projection)
     if bundle:
         projection["reference_name"] = bundle["name"]
         projection["source"] = "Reference graph bundle; not a claim about live server state."
