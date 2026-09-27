@@ -744,3 +744,25 @@ existing actor-resolution confidence gate.
 
 Snapshot payloads, DAT exports, DLLs, EXEs, and generated client resources remain local data and
 must not be committed.
+
+
+## Portable client ENTITY evidence and diagnostics
+
+Portable client snapshots now include the per-zone ENTITY name resource in addition to DIALOG and
+EVENT resources. ENTITY rows are ingested into the snapshot-aware identity namespace using the
+zone-scoped client entity name as semantic evidence.
+
+This producer is intentionally conservative:
+
+- client numeric actor ids remain snapshot-local representations;
+- entity-name equality is scoped to the same zone;
+- a unique name match across source and target snapshots can provide HIGH-confidence actor
+  equivalence;
+- duplicate names produce `TARGET_ID_AMBIGUOUS` and do not constrain EVENT matching;
+- missing source/target ENTITY resources remain explicit unresolved states rather than falling back
+  to numeric-id equality.
+
+`diagnose_entity_identity` reports source evidence, semantic identity, target candidates,
+confidence/evidence basis, resolution reason, whether the actor constraint is safe to apply, and a
+recommended next action. Bulk client EVENT comparison carries these diagnostics row-by-row and
+also returns a separate ENTITY coverage report.
