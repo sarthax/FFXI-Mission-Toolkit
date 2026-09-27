@@ -1652,3 +1652,26 @@ skill availability/caps.
 For `mob_pool_modifiers`, `modifier_id` meaning depends on the `is_mob_modifier` namespace and
 the corresponding engine enums. SQL presence alone is therefore not treated as semantic proof.
 Regression coverage validates cross-fork normalization and profile coverage.
+
+
+## 2026-09-26 — Revised priority queue complete
+
+The five-item revised next-work priority is complete.
+
+Completed sequence:
+
+1. safer variable-length EVENT opcode decoding;
+2. bounded ResearchSession Run / Replay controls;
+3. cross-client ENTITY equivalence coverage and diagnostics;
+4. Research contradiction filtering and canonical Evidence drill-down;
+5. P1 logical schema expansion beyond the P0 core.
+
+The P1 expansion was completed through four evidence-backed tranches:
+
+- combat registries;
+- item modifiers and latents;
+- progression, including LSB merit YAML representation;
+- combat-support tables.
+
+Schema breadth is no longer treated as an open-ended blocker. Additional generic mappings should be
+added when a concrete feature/package or validation path exposes a missing dependency surface.
