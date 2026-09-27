@@ -488,3 +488,12 @@ Completed/retired from the prior queue:
 - [x] Make ResearchSession supporting/contradicting/tool-call evidence IDs clickable.
 - [x] Add Tools > Research: Contradictions navigation and route-map ownership.
 - [x] Preserve source disagreement without selecting a winner or promoting one record to truth.
+
+
+### 2026-09-26 P1 logical schema — combat registry tranche
+- [x] Add source-neutral logical mappings for job abilities across Topaz, Topaz-Next, DSP, and LSB.
+- [x] Add source-neutral logical mappings for weapon skills across all four server profiles.
+- [x] Add source-neutral logical mappings for mob skills and mob skill-list membership.
+- [x] Preserve modern LSB-only ability/weapon-skill radius and mob-skill AOE radius as explicit schema drift rather than projecting those fields onto legacy forks.
+- [x] Keep runtime Lua/C++ effect behavior outside the SQL registry record; registry presence is not proof that the behavior implementation exists.
+- [ ] Continue P1 with generic item modifier/latent and character progression tables after this tranche.
