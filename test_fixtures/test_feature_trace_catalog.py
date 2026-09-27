@@ -6,7 +6,7 @@ import sqlite3
 from pathlib import Path
 
 import feature_trace
-from workbench.core.services.feature_trace_catalog import present_relationships, runtime_hierarchy, filter_runtime_observations
+from workbench.core.services.feature_trace_catalog import present_relationships, runtime_hierarchy, filter_runtime_observations, provider_relationships
 from workbench.core.services.feature_trace_dossier import build_dossier
 
 
@@ -46,6 +46,31 @@ def main():
     con.execute("CREATE TABLE dsp_mob_groups (groupid INTEGER, name TEXT)")
     con.execute("INSERT INTO dsp_mob_groups VALUES (38,'Malformed Provider Group')")
     assert not feature_trace.search_nodes(con,"Malformed Provider Group")
+
+    con.execute("CREATE TABLE lsb_mob_pools (poolid INTEGER, name TEXT)")
+    con.executemany("INSERT INTO lsb_mob_pools VALUES (?,?)",[(1001,"Pool 1001"),(2002,"Pool 2002")])
+    zone75_mobid=(1<<24)|(75<<12)|123
+    con.execute("CREATE TABLE lsb_mob_spawn_points (mobid INTEGER, mobname TEXT, groupid INTEGER)")
+    con.execute("INSERT INTO lsb_mob_spawn_points VALUES (?,?,?)",(zone75_mobid,"Zone Seventy Five Mob",38))
+    spawn_links=provider_relationships(con,f"catalog:lsb_mob_spawn_points:{zone75_mobid}")
+    assert len(spawn_links)==1,spawn_links
+    assert spawn_links[0]["relationship"]=="SPAWN_USES_GROUP"
+    assert spawn_links[0]["target_node"]=="catalog:lsb_mob_groups:zoneid=75&groupid=38"
+    assert spawn_links[0]["adapter"]=="server"
+
+    group_links=provider_relationships(con,"catalog:lsb_mob_groups:zoneid=75&groupid=38")
+    assert len(group_links)==1,group_links
+    assert group_links[0]["relationship"]=="GROUP_USES_POOL"
+    assert group_links[0]["target_node"]=="catalog:lsb_mob_pools:2002"
+
+    con.execute("CREATE TABLE lsb_item_basic (itemid INTEGER, name TEXT)")
+    con.execute("CREATE TABLE lsb_item_equipment (itemid INTEGER, name TEXT)")
+    con.execute("INSERT INTO lsb_item_basic VALUES (2413,'Coiler')")
+    con.execute("INSERT INTO lsb_item_equipment VALUES (2413,'Coiler')")
+    item_links=provider_relationships(con,"catalog:lsb_item_equipment:2413")
+    assert len(item_links)==1,item_links
+    assert item_links[0]["relationship"]=="ITEM_DETAIL_FOR"
+    assert item_links[0]["target_node"]=="catalog:lsb_item_basic:2413"
 
     # Explicit non-server providers expose durable searchable records, not raw observation rows.
     con.execute("CREATE TABLE identity_snapshots (snapshot_id TEXT, version TEXT)")
