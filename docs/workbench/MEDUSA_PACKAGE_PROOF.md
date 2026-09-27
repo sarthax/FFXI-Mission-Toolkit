@@ -248,14 +248,14 @@ This is the important part of the proof.
 | User include/exclude/question/tag workflow | Covered | Scope decisions and reasons are persisted separately from evidence. |
 | Stale-scope detection | Covered | Reviewed scope fingerprint invalidates when graph closure changes. |
 | Legacy SQL mob spawn/group/pool/drop chain | Partial | Existing adapters and instance slice cover a subset of this chain. |
-| Modern LSB zone mob YAML | **Gap** | Current logical extraction is SQL-oriented and does not normalize zone YAML mob templates/entities as equivalent logical records. |
+| Modern LSB zone mob YAML | Covered for dependency closure | Zone YAML entity/template rows now become graph Entity nodes with transitive dependency edges. Cross-lineage equivalence remains separate. |
 | Medusa helper ID arithmetic | Covered | Conservative Lua dependency discovery resolves `GetFirstID(...)` anchors through zone YAML and expands numeric `ID.mob` ranges into concrete Entity dependencies. |
-| Helper-template traversal | **Gap** | There is no generic entity→template→species/skill/spell dependency closure yet. |
+| Helper-template traversal | Covered | Entity→template→species/skill-list/spell-list closure is now emitted generically from zone YAML. |
 | Mob skill-list membership | Covered | `mob_skill_lists` is now a first-class cross-fork logical schema surface. |
 | Mob skill definitions | Covered | `mob_skills` is now a first-class cross-fork logical schema surface. |
 | Mob spell-list membership | Covered | `mob_spell_lists` is now a first-class cross-fork logical schema surface with level gates. |
-| Species/family dependencies | **Gap** | LSB species and legacy family concepts are intentionally distinct, but closure does not yet model either deeply enough. |
-| Mob-skill Lua script linkage | **Gap/Partial** | Scripts are indexable artifacts, but list/member→script linkage is not guaranteed. |
+| Species/family dependencies | Partial | LSB template→species dependencies are now first-class graph edges; generic cross-lineage species↔legacy-family equivalence remains unproven. |
+| Mob-skill Lua script linkage | Covered for conventional implementations | Skill-list members close into normalized mob-skill definitions and then into `scripts/actions/mobskills/<name>.lua` artifacts when present; missing implementations remain explicit findings. |
 | Lua `require()` / mixin dependency | Covered | Literal `require()` paths now produce VERIFIED packageable `REQUIRES` artifact edges with evidence. |
 | Lua API → binding → C++ | Partial | Workbench has Lua/binding/C++ graph infrastructure, but Medusa-specific closure is not yet proven end to end. |
 | Lua enum/constants | Partial | Enum graph infrastructure exists, but Medusa script references are not yet proven to resolve automatically. |
@@ -275,20 +275,18 @@ That is a successful proof result, because it identifies concrete missing generi
 
 ### P0 — server logical dependency model
 
-Add source-neutral logical concepts for:
+Current progress:
 
-- mob template/entity membership;
-- species/family reference;
-- mob skill list;
-- mob skill;
-- mob spell list;
-- spell-list member;
-- loot entry;
-- item reference.
+- [x] modern LSB zone entity/template membership;
+- [x] LSB template→species reference;
+- [x] mob skill list and member closure;
+- [x] mob skill definitions;
+- [x] mob spell list and member closure;
+- [x] spell definitions;
+- [ ] YAML loot entry→item identity closure;
+- [ ] generic cross-lineage species/family equivalence.
 
-Adapters should map Topaz/DSP/LSB physical representation to those concepts rather than assuming identical tables.
-
-Modern LSB zone YAML needs its own adapter/extractor path.
+The implementation now combines modern LSB zone YAML with existing profile-backed SQL normalization instead of assuming identical physical storage.
 
 ### P0 — Lua dependency extraction
 
