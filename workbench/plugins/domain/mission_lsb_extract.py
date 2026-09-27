@@ -347,3 +347,30 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
         machine.completion_gate,{**machine.metadata,"event_chains":len(chained)},
     )
     return materialize_channel_states(out)
+
+
+def extract_section_completion_gate(lua: str) -> DependencyGate | None:
+    """Recover a literal multi-channel completion check from a mission section."""
+    pairs=[]
+    pattern=re.compile(
+        r"player:getMissionStatus\([^\n]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)\s*==\s*(\d+)"
+    )
+    for m in pattern.finditer(lua):
+        pair=(m.group(1),int(m.group(2)))
+        if pair not in pairs:
+            pairs.append(pair)
+    # Conservative: a convergence gate requires distinct named status channels
+    # sharing the same terminal literal and an actual mission completion call.
+    if "mission:complete(player)" not in lua:
+        return None
+    by_value={}
+    for channel,value in pairs:
+        by_value.setdefault(value,[]).append(channel)
+    candidates=[(v,chs) for v,chs in by_value.items() if len(set(chs))>=2]
+    if not candidates:
+        return None
+    value,channels=max(candidates,key=lambda x:len(set(x[1])))
+    return DependencyGate(
+        "section:completion-convergence","ALL",
+        tuple(StateCondition(f"mission_status:{ch}","EQ",value) for ch in sorted(set(channels))),
+    )
