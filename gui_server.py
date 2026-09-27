@@ -5978,19 +5978,75 @@ def modelviewer_dat(ffxi_path: str, rom_path: str):
 
 
 @app.get("/datinspector", response_class=HTMLResponse)
-def datinspector_page(request: Request, dat_id: str = "", zoneid: str = "", ffxi_path: str = ""):
+def datinspector_page(
+    request: Request,
+    dat_id: str = "",
+    zoneid: str = "",
+    family: str = "",
+    dat_path: str = "",
+    ffxi_path: str = "",
+):
     import dat_inspector
+
     path = ffxi_path or (settings_mod.get_ffxi_install() or "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI")
     result, error = None, None
+    selected_mode = ""
+    resolved_dat_id = None
     try:
-        if dat_id.strip():
-            result = dat_inspector.inspect(path, int(dat_id))
+        if dat_path.strip():
+            selected_mode = "path"
+            result = dat_inspector.inspect_path(path, dat_path.strip())
+        elif zoneid.strip() or family.strip():
+            selected_mode = "zone"
+            if not zoneid.strip() or not family.strip():
+                raise ValueError("Select both a zone and a DAT family.")
+            resolved_dat_id = dat_inspector.dat_id_for_zone_family(int(zoneid), family)
+            result = dat_inspector.inspect(path, resolved_dat_id)
+        elif dat_id.strip():
+            selected_mode = "id"
+            resolved_dat_id = int(dat_id)
+            result = dat_inspector.inspect(path, resolved_dat_id)
     except Exception as ex:
-        error = str(ex)
-    families = [{"name": n, "base": b} for n, b in dat_inspector.FAMILIES]
+        error = f"{type(ex).__name__}: {ex}"
+
+    families = [
+        {
+            "name": name,
+            "label": dat_inspector.FAMILY_LABELS.get(name, name),
+            "base": base,
+        }
+        for name, base in dat_inspector.FAMILIES
+    ]
+    zones = []
+    try:
+        if DB_PATH.is_file():
+            con = sqlite3.connect(DB_PATH)
+            try:
+                zones = [
+                    {"zoneid": int(row[0]), "name": row[1] or f"Zone {row[0]}"}
+                    for row in con.execute(
+                        "SELECT zoneid,name FROM zones WHERE zoneid BETWEEN 0 AND 255 ORDER BY zoneid"
+                    ).fetchall()
+                ]
+            finally:
+                con.close()
+    except sqlite3.Error:
+        zones = []
+
     return templates.TemplateResponse(request, "dat_inspector.html", {
-        "request": request, "result": result, "error": error, "dat_id": dat_id,
-        "ffxi_path": path, "families": families})
+        "request": request,
+        "result": result,
+        "error": error,
+        "dat_id": dat_id,
+        "zoneid": zoneid,
+        "family": family,
+        "dat_path": dat_path,
+        "resolved_dat_id": resolved_dat_id,
+        "selected_mode": selected_mode,
+        "ffxi_path": path,
+        "families": families,
+        "zones": zones,
+    })
 
 
 def _clientoverview_context(

@@ -2,43 +2,207 @@
 {% block title %}DAT Inspector{% endblock %}
 {% block content %}
 <h1>DAT Inspector</h1>
-<p class="muted">Read-only. Resolves a client DAT id to its file, then tries each known parser and
-shows only the ones that parse it cleanly. Nothing is written to the client.</p>
-<form class="search" method="get">
-  <input type="number" name="dat_id" value="{{ dat_id }}" placeholder="DAT id, e.g. 6497" min="0" required>
-  <input type="text" name="ffxi_path" value="{{ ffxi_path }}" style="min-width:380px;" title="FFXI install path">
-  <button type="submit">Inspect</button>
-</form>
-<p class="muted">Per-zone id families (id = base + zoneid):
-{% for f in families %}<span class="chip">{{ f.name }} {{ f.base }}</span> {% endfor %}
-&mdash; e.g. Nyzul Isle (77) dialog = <a href="/datinspector?dat_id=6497">6497</a>.</p>
+<p class="muted">
+  Read-only client resource inspector. Pick a DAT by numeric ID, derive one from a zone and common
+  resource family, or enter a ROM-relative path such as <code>ROM/7/44.DAT</code>.
+  The inspector never modifies client files.
+</p>
 
-{% if error %}<p class="chip" style="color:#c33;">{{ error }}</p>{% endif %}
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:18px 0;">
+  <form method="get" style="border:1px solid var(--border,#ccc);border-radius:8px;padding:14px;">
+    <h2 style="margin-top:0;">DAT ID</h2>
+    <p class="muted">Use this when another tool, server record, or capture already gave you a DAT ID.</p>
+    <input type="number" name="dat_id" value="{{ dat_id if selected_mode != 'zone' else '' }}"
+           placeholder="e.g. 6497" min="0" style="width:100%;box-sizing:border-box;" required>
+    <input type="hidden" name="ffxi_path" value="{{ ffxi_path }}">
+    <p><button type="submit">Inspect DAT ID</button></p>
+  </form>
 
-{% if result %}
-<h2>{{ result.rom_relative }}</h2>
-<div class="table-wrap"><table>
-  <tr><th>DAT id</th><td>{{ result.dat_id }}{% if result.family_hint %} <span class="muted">({{ result.family_hint }})</span>{% endif %}</td></tr>
-  <tr><th>Path</th><td><code>{{ result.path }}</code></td></tr>
-  <tr><th>Size</th><td>{{ "{:,}".format(result.size) }} bytes</td></tr>
-  <tr><th>SHA-256</th><td><code>{{ result.sha256 }}</code></td></tr>
-  <tr><th>Extractor says</th><td>{{ result.extractor_note }}</td></tr>
-  <tr><th>Header (48 B)</th><td><code>{{ result.header_hex }}</code><br><code>{{ result.header_ascii }}</code></td></tr>
-</table></div>
+  <form method="get" style="border:1px solid var(--border,#ccc);border-radius:8px;padding:14px;">
+    <h2 style="margin-top:0;">Zone resource</h2>
+    <p class="muted">Pick a zone and one of the common per-zone DAT families. The numeric DAT ID is calculated for you.</p>
+    <label>Zone<br>
+      {% if zones %}
+      <select name="zoneid" style="width:100%;" required>
+        <option value="">Select zone…</option>
+        {% for z in zones %}
+        <option value="{{ z.zoneid }}" {% if zoneid|string == z.zoneid|string %}selected{% endif %}>
+          {{ z.zoneid }} — {{ z.name }}
+        </option>
+        {% endfor %}
+      </select>
+      {% else %}
+      <input type="number" name="zoneid" value="{{ zoneid }}" min="0" max="255"
+             placeholder="Zone ID" style="width:100%;box-sizing:border-box;" required>
+      {% endif %}
+    </label>
+    <br>
+    <label>Resource family<br>
+      <select name="family" style="width:100%;" required>
+        <option value="">Select family…</option>
+        {% for f in families %}
+        <option value="{{ f.name }}" {% if family == f.name %}selected{% endif %}>
+          {{ f.label }} (base {{ f.base }})
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+    <input type="hidden" name="ffxi_path" value="{{ ffxi_path }}">
+    <p><button type="submit">Inspect zone DAT</button></p>
+  </form>
 
-<h2>Parsed as</h2>
-{% if result.matches %}
-  {% for m in result.matches %}
-  <h3>{{ m.parser }}</h3>
-  <pre style="max-height:420px;overflow:auto;">{{ m.preview | tojson(indent=2) }}</pre>
-  {% endfor %}
-{% else %}
-  <p class="muted">No known parser accepted this file. It may be a model, texture, animation or other
-  type the toolkit doesn't decode; the header above is the best identifier available.</p>
+  <form method="get" style="border:1px solid var(--border,#ccc);border-radius:8px;padding:14px;">
+    <h2 style="margin-top:0;">Client DAT path</h2>
+    <p class="muted">Use a path inside the configured FFXI client. Relative paths are resolved from the client root.</p>
+    <input type="text" name="dat_path" value="{{ dat_path }}"
+           placeholder="ROM/7/44.DAT" style="width:100%;box-sizing:border-box;" required>
+    <input type="hidden" name="ffxi_path" value="{{ ffxi_path }}">
+    <p><button type="submit">Inspect DAT path</button></p>
+  </form>
+</div>
+
+<details style="margin-bottom:18px;">
+  <summary>Client root and DAT-family details</summary>
+  <div class="table-wrap"><table>
+    <tr><th>FFXI client root</th><td><code>{{ ffxi_path }}</code></td></tr>
+    {% for f in families %}
+    <tr><th>{{ f.label }}</th><td><code>DAT ID = {{ f.base }} + zone ID</code></td></tr>
+    {% endfor %}
+  </table></div>
+  <p class="muted">
+    The zone-family shortcuts are conveniences, not type proof. Actual content identification still
+    comes from parsers that successfully decode the selected file.
+  </p>
+</details>
+
+{% if error %}
+<div style="border:1px solid #c33;border-radius:8px;padding:12px;margin:14px 0;">
+  <strong>Could not inspect that DAT.</strong><br>
+  <span>{{ error }}</span>
+</div>
 {% endif %}
 
-<details><summary>Parsers that rejected it ({{ result.rejected|length }})</summary>
-<ul>{% for r in result.rejected %}<li><code>{{ r.parser }}</code> &mdash; {{ r.reason }}</li>{% endfor %}</ul>
+{% if result %}
+<hr>
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+  <div>
+    <h2 style="margin-bottom:4px;">{{ result.rom_relative or result.filename }}</h2>
+    <p class="muted" style="margin-top:0;">
+      {% if result.dat_id is not none %}DAT ID <code>{{ result.dat_id }}</code>{% endif %}
+      {% if result.family_hint %} · {{ result.family_hint }}{% endif %}
+    </p>
+  </div>
+
+  {% if result.dat_id is not none %}
+  <div>
+    {% if result.dat_id > 0 %}
+    <a class="chip" href="/datinspector?dat_id={{ result.dat_id - 1 }}&ffxi_path={{ ffxi_path|urlencode }}">← {{ result.dat_id - 1 }}</a>
+    {% endif %}
+    <a class="chip" href="/datinspector?dat_id={{ result.dat_id + 1 }}&ffxi_path={{ ffxi_path|urlencode }}">{{ result.dat_id + 1 }} →</a>
+  </div>
+  {% endif %}
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:14px 0;">
+  <div style="border:1px solid var(--border,#ccc);border-radius:8px;padding:12px;">
+    <div class="muted">File size</div>
+    <strong>{{ "{:,}".format(result.size) }} bytes</strong><br>
+    <span class="muted">{{ result.size_kib }} KiB</span>
+  </div>
+  <div style="border:1px solid var(--border,#ccc);border-radius:8px;padding:12px;">
+    <div class="muted">Recognized formats</div>
+    <strong>{{ result.parser_match_count }}</strong><br>
+    <span class="muted">{{ result.parser_reject_count }} parsers rejected</span>
+  </div>
+  <div style="border:1px solid var(--border,#ccc);border-radius:8px;padding:12px;">
+    <div class="muted">Resolved file</div>
+    <strong>{{ result.filename }}</strong><br>
+    <span class="muted">{{ result.rom_relative }}</span>
+  </div>
+</div>
+
+<h3>Identification</h3>
+<div class="table-wrap"><table>
+  {% if result.dat_id is not none %}
+  <tr><th>DAT ID</th><td><code>{{ result.dat_id }}</code></td></tr>
+  {% endif %}
+  <tr><th>Client path</th><td><code>{{ result.path }}</code></td></tr>
+  <tr><th>ROM-relative path</th><td><code>{{ result.rom_relative }}</code></td></tr>
+  {% if result.family_hint %}<tr><th>Family hint</th><td>{{ result.family_hint }}</td></tr>{% endif %}
+  {% if result.extractor_note %}<tr><th>Resolver detail</th><td>{{ result.extractor_note }}</td></tr>{% endif %}
+  <tr><th>SHA-256</th><td><code style="word-break:break-all;">{{ result.sha256 }}</code></td></tr>
+</table></div>
+
+<h3>Recognized content</h3>
+{% if result.matches %}
+<p class="muted">
+  More than one parser may legitimately accept a DAT. Successful parser results are evidence of a
+  compatible structure; they are shown separately rather than forcing a single guessed type.
+</p>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;">
+  {% for m in result.matches %}
+  <section style="border:1px solid var(--border,#ccc);border-radius:8px;padding:14px;">
+    <h3 style="margin-top:0;">{{ m.label }}</h3>
+    <p><code>{{ m.parser }}</code></p>
+
+    {% if m.summary.kind == "list" %}
+      <p><strong>{{ m.summary.count }}</strong> decoded entries.</p>
+    {% elif m.summary.kind == "mapping" %}
+      <p><strong>{{ m.summary.top_level_fields }}</strong> top-level fields.</p>
+      {% if m.summary.field_names %}
+      <p class="muted">Fields: {{ m.summary.field_names|join(", ") }}</p>
+      {% endif %}
+      {% if m.summary.collection_counts %}
+      <div class="table-wrap"><table>
+        <tr><th>Collection</th><th>Entries</th></tr>
+        {% for name, count in m.summary.collection_counts.items() %}
+        <tr><td>{{ name }}</td><td>{{ count }}</td></tr>
+        {% endfor %}
+      </table></div>
+      {% endif %}
+    {% else %}
+      <p>{{ m.summary.value or m.summary.kind }}</p>
+    {% endif %}
+
+    <details>
+      <summary>Show decoded preview</summary>
+      <pre style="max-height:420px;overflow:auto;white-space:pre-wrap;">{{ m.preview | tojson(indent=2) }}</pre>
+    </details>
+  </section>
+  {% endfor %}
+</div>
+{% else %}
+<div style="border:1px solid var(--border,#ccc);border-radius:8px;padding:14px;">
+  <strong>No supported structured parser accepted this DAT.</strong>
+  <p class="muted">
+    This commonly means the file is a model, texture, animation, zone mesh, sound, or another
+    client format not handled by the current xi-tinkerer parser set. The file identity and header
+    below are still useful for research.
+  </p>
+</div>
+{% endif %}
+
+<h3>Binary header</h3>
+<p class="muted">First 64 bytes. This is useful when comparing unknown or unsupported DAT formats.</p>
+<div style="overflow:auto;border:1px solid var(--border,#ccc);border-radius:8px;padding:12px;">
+  <div><strong>Hex</strong></div>
+  <code style="white-space:pre-wrap;word-break:break-all;">{{ result.header_hex }}</code>
+  <div style="margin-top:10px;"><strong>ASCII</strong></div>
+  <code>{{ result.header_ascii }}</code>
+</div>
+
+<details style="margin-top:16px;">
+  <summary>Rejected parsers ({{ result.rejected|length }})</summary>
+  {% if result.rejected %}
+  <div class="table-wrap"><table>
+    <tr><th>Parser</th><th>Reason</th></tr>
+    {% for r in result.rejected %}
+    <tr><td>{{ r.label }}<br><code>{{ r.parser }}</code></td><td>{{ r.reason }}</td></tr>
+    {% endfor %}
+  </table></div>
+  {% else %}
+  <p class="muted">None.</p>
+  {% endif %}
 </details>
 {% endif %}
 {% endblock %}
