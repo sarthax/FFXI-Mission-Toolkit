@@ -1441,3 +1441,26 @@ separate compatible interpretations rather than forcing one guessed file type.
 Focused regression coverage is in `test_fixtures/test_gui_dat_inspector.py` and includes
 zone/family ID derivation, client-root path safety, parser summaries, result rendering, navigation,
 and selection-mode wiring.
+
+## 2026-09-26 — Safer variable-length EVENT opcode fallback decoding
+
+The dependency-free EVENT fingerprint fallback no longer drops immediately to `RAW_ONLY` for every
+vendored opcode class that defines `calculate_length`.
+
+The opcode-source AST loader now extracts only a narrow, auditable subset of source-defined
+length rules:
+
+- direct byte selectors such as `data[offset + 1]`;
+- literal equality/set/range comparisons;
+- literal bit-mask tests;
+- literal selector-to-length dictionaries with literal defaults;
+- literal return lengths only.
+
+The fallback evaluates those normalized rules without executing arbitrary vendored parser code.
+Computed instruction lengths are still checked against remaining bytecode. Unsupported formulas,
+unrecognized selector expressions, invalid lengths, or incomplete bytecode remain fail-closed as
+`RAW_ONLY`.
+
+Regression coverage proves representative variable-length classes including 0x1F, 0x59, 0x9D, and
+0xAB, plus an intentionally unsupported dynamic formula that must remain unresolved. The full
+Workbench core regression test step passes with this decoder enabled.
