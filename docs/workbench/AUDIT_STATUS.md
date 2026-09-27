@@ -1729,3 +1729,16 @@ Concrete Coiler/Medusa names remain inside those documents and truth sets where 
 
 ### Audit rule
 Proof-case naming must describe the behavior or dependency shape being tested. Game-content names belong only in subject/evidence data or deliberately content-specific plugins.
+
+
+## 2026-09-27 — Generic mission/quest state-machine foundation
+
+Added `workbench/plugins/domain/mission_state_machine.py` as a content-neutral behavioral model rather than encoding a specific mission in framework code. It provides explicit states, guarded transitions, ALL/ANY dependency gates, zone+actor+CSID event identity, generic transition effects, lifecycle analysis, expected implementation-gap visibility, and branch-readiness analysis.
+
+`workbench/plugins/domain/mission_representation.py` now projects state-machine transitions and lifecycle subjects into representation requirements, preserving the existing proposal/review workflow instead of replacing it.
+
+Focused regressions:
+- `test_fixtures/test_mission_state_machine.py`
+- `test_fixtures/test_mission_representation.py`
+
+Next work is source extraction and canonical graph/evidence emission. The existing branching mission truth set remains a stress-validation subject; its content names do not define framework APIs.
