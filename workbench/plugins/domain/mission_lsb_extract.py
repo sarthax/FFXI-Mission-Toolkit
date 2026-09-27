@@ -227,3 +227,33 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
         ("source:any",),channels=channels_from_findings(findings),
         metadata={"extractor":"lsb_static_literal","transition_count":len(transitions)},
     )
+
+
+def materialize_channel_states(machine: MissionStateMachine) -> MissionStateMachine:
+    """Replace source:any endpoints when one channel guard/write proves an edge."""
+    states={s.state_id:s for s in machine.states}
+    transitions=[]
+    for t in machine.transitions:
+        before=None; after=None
+        if t.gate:
+            eq=[c for c in t.gate.conditions if c.operator=="EQ" and c.subject.startswith(("mission_var:","mission_status:","local_var:"))]
+            if len(eq)==1:
+                before=(eq[0].subject,eq[0].value)
+        writes=[e for e in t.effects if e.effect in {"SET_VAR","SET_CHANNEL"} and e.subject.startswith(("mission_var:","mission_status:","local_var:"))]
+        if len(writes)==1:
+            after=(writes[0].subject,writes[0].value)
+        from_state=t.from_state; to_state=t.to_state
+        if before:
+            from_state=f"state:{before[0]}={before[1]}"
+            states.setdefault(from_state,MissionState(from_state,f"{before[0]} = {before[1]}"))
+        if after:
+            to_state=f"state:{after[0]}={after[1]}"
+            states.setdefault(to_state,MissionState(to_state,f"{after[0]} = {after[1]}"))
+        transitions.append(MissionTransition(
+            t.transition_id,from_state,to_state,t.trigger,t.gate,t.event,t.effects,t.confidence,
+            t.evidence_ids,t.implementation_status,{**t.metadata,"state_edge_basis":"single_literal_channel" if before or after else "unresolved"},
+        ))
+    return MissionStateMachine(
+        machine.machine_id,machine.feature_id,tuple(states.values()),tuple(transitions),
+        machine.entry_state_ids,machine.channels,machine.completion_gate,machine.metadata,
+    )
