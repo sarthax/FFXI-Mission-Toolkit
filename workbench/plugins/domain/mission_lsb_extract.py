@@ -104,6 +104,8 @@ _LACKS_KI=re.compile(r"not\s+player:hasKeyItem\(xi\.keyItem\.([A-Z0-9_]+)\)")
 _DISTANCE=re.compile(r"player:checkDistance\(npc\)\s*([<>]=?)\s*([0-9.]+)")
 _TRADE=re.compile(r"npcUtil\.tradeMatches\(trade,\s*(.+)\)")
 _SETPOS=re.compile(r"player:setPos\(([^\)]+)\)")
+_MESSAGE=re.compile(r"(?:player:messageSpecial|player:messageText|mission:messageSpecial|mission:messageName)\(([^\n]+)\)")
+_HELPER_ASSIGN=re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*function\(player\)",re.M)
 
 
 def _balanced_function_blocks(lua: str):
@@ -182,6 +184,8 @@ def _effects(text: str) -> tuple[TransitionEffect,...]:
         out.append(TransitionEffect("TELEPORT","player",m.group(1).strip()))
     if _COMPLETE.search(text):
         out.append(TransitionEffect("COMPLETE","mission"))
+    for m in _MESSAGE.finditer(text):
+        out.append(TransitionEffect("MESSAGE","message",m.group(1).strip()))
     if "mission:noAction()" in text:
         out.append(TransitionEffect("NO_ACTION","interaction"))
     return tuple(out)
@@ -374,3 +378,27 @@ def extract_section_completion_gate(lua: str) -> DependencyGate | None:
         "section:completion-convergence","ALL",
         tuple(StateCondition(f"mission_status:{ch}","EQ",value) for ch in sorted(set(channels))),
     )
+
+
+def extract_helper_transitions(lua: str) -> tuple[MissionTransition,...]:
+    """Extract player helper functions that carry mission behavior (e.g. timers)."""
+    lines=lua.splitlines()
+    out=[]
+    serial=0
+    for start,end,text in _balanced_function_blocks(lua):
+        first=lines[start]
+        hm=_HELPER_ASSIGN.search(first)
+        if not hm:
+            continue
+        effects=_effects(text)
+        conds=_conditions(text)
+        if not effects and not conds:
+            continue
+        serial+=1
+        trigger="TIMER" if _TIMER.search(text) or "GetSystemTime()" in text else "PLACEHOLDER"
+        gate=DependencyGate(f"helper-gate:{serial}","ALL",conds) if conds else None
+        out.append(MissionTransition(
+            f"helper:{hm.group(1)}:{serial}","source:any","source:any",trigger,gate,None,effects,
+            "INFERRED",metadata={"helper":hm.group(1),"source_lines":(start+1,end+1),"helper_behavior":True},
+        ))
+    return tuple(out)
