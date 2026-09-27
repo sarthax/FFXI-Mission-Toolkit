@@ -225,7 +225,6 @@
   ],
   "known_current_toolkit_gaps": [
     "Species dependencies are now surfaced for LSB zone templates, but cross-lineage species/family equivalence is not yet proven generically.",
-    "Zone text/title enum references are not currently guaranteed to become package dependencies.",
     "Cross-zone/system-state dependencies such as Besieged are not yet modeled as conditional semantic dependencies independent of direct code references.",
     "Current LSB Besieged mob lifecycle hooks are present but empty, so source-code traversal alone cannot prove Medusa retail/system behavior."
   ],
@@ -239,6 +238,8 @@
     "Template species, mob skill-list, and mob spell-list dependencies now become transitive graph edges.",
     "Mob skill-list members and mob spell-list members now close into normalized skill/spell definition nodes.",
     "Mob skill definitions now link to conventional scripts/actions/mobskills/<name>.lua artifacts when those implementations exist; missing scripts remain explicit findings.",
-    "Zone YAML loot item symbols now resolve uniquely through normalized LSB item_basic names into canonical ITEM dependency nodes."
+    "Zone YAML loot item symbols now resolve uniquely through normalized LSB item_basic names into canonical ITEM dependency nodes.",
+    "Zone-local ID.text symbols referenced by Lua now resolve through the zone IDs.lua text table into canonical ZONE_TEXT dependency nodes.",
+    "xi.title symbols referenced by Lua now resolve through scripts/enum/title.lua into canonical TITLE dependency nodes."
   ]
 }

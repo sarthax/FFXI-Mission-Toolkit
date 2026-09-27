@@ -35,6 +35,11 @@ MOB_OFFSET_RE = re.compile(
 MOB_RANGE_RE = re.compile(
     r"""for\s+[A-Za-z_][A-Za-z0-9_]*\s*=\s*ID\.mob\.(?P<symbol>[A-Za-z_][A-Za-z0-9_]*)\s*\+\s*(?P<start>\d+)\s*,\s*ID\.mob\.(?P=symbol)\s*\+\s*(?P<end>\d+)\s*do"""
 )
+TEXT_REF_RE = re.compile(r"""ID\.text\.(?P<symbol>[A-Za-z_][A-Za-z0-9_]*)""")
+TITLE_REF_RE = re.compile(r"""xi\.title\.(?P<symbol>[A-Za-z_][A-Za-z0-9_]*)""")
+NUMERIC_SYMBOL_RE = re.compile(
+    r"""(?m)^\s*(?P<symbol>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?P<value>0x[0-9A-Fa-f]+|\d+)\s*,?"""
+)
 
 
 def _slug(value: str) -> str:
@@ -132,6 +137,24 @@ def parse_first_id_symbols(ids_lua: Path, zone_data: dict[str, Any]) -> tuple[di
     return symbols, unresolved
 
 
+def parse_numeric_symbols(path: Path, *, table_name: str | None = None) -> dict[str,int]:
+    """Parse flat Lua SYMBOL = integer assignments, optionally scoped to one table block."""
+    text=Path(path).read_text(encoding="utf-8",errors="replace")
+    scan=text
+    if table_name:
+        block=re.search(
+            rf"(?s)\b{re.escape(table_name)}\s*=\s*\{{(?P<body>.*?)\n\s*\}},",
+            text,
+        )
+        if block is None:
+            return {}
+        scan=block.group("body")
+    result={}
+    for match in NUMERIC_SYMBOL_RE.finditer(scan):
+        result[match.group("symbol")]=int(match.group("value"),0)
+    return result
+
+
 def _record(value):
     return record_dict(value)
 
@@ -144,6 +167,7 @@ def analyze_script(
     zone_id: int | None = None,
     ids_lua: Path | None = None,
     mobs_yaml: Path | None = None,
+    titles_lua: Path | None = None,
 ) -> dict[str, Any]:
     root = Path(root)
     script = Path(script)
@@ -204,6 +228,116 @@ def analyze_script(
             discovered_by="lua_dependency_discovery",
             source_location=f"{rel}:{line}",
             notes="Literal Lua require() path.",
+            source_snapshot_id=sid,
+        ))
+
+    # Zone dialog/text symbols referenced by this script.
+    text_symbols=parse_numeric_symbols(Path(ids_lua),table_name="text") if ids_lua and Path(ids_lua).is_file() else {}
+    for match in TEXT_REF_RE.finditer(text):
+        symbol=match.group("symbol")
+        line=_line(text,match.start())
+        value=text_symbols.get(symbol)
+        if value is None:
+            eid=_evidence_id(sid,rel,line,"zone-text-unresolved",symbol)
+            evidence[eid]=Evidence(
+                eid,"SERVER",rel,f"{rel}:{line}",sid,
+                f"Could not resolve ID.text.{symbol} from the supplied zone IDs.lua text table.",
+            )
+            findings.append(Finding(
+                finding_id=f"finding:lua-text:{_slug(eid)}",
+                analysis_id="lua-dependency-discovery",
+                subject_id=source_artifact_id,
+                field=f"ID.text.{symbol}",
+                value=None,
+                status="UNKNOWN",
+                confidence="UNKNOWN",
+                evidence_id=eid,
+                source_snapshot_id=sid,
+                notes=["Zone text symbol remains unresolved."],
+            ))
+            continue
+        node=f"zone-text:{_slug(sid)}:{'unknown' if zone_id is None else zone_id}:{value}"
+        entities[node]=Entity(
+            node,"ZONE_TEXT",symbol,
+            metadata={
+                "symbol":symbol,
+                "text_id":value,
+                "zone_id":zone_id,
+                "definition_path":str(ids_lua),
+                "source_snapshot_id":sid,
+            },
+        )
+        eid=_evidence_id(sid,rel,line,"zone-text",f"{symbol}={value}")
+        evidence[eid]=Evidence(
+            eid,"SERVER",rel,f"{rel}:{line}",sid,
+            f"Resolved ID.text.{symbol} to zone text id {value} from {ids_lua}.",
+        )
+        edges.append(DependencyEdge(
+            edge_id=f"lua-zone-text:{_slug(sid + rel + str(line) + symbol + str(value))}",
+            source_node=source_artifact_id,
+            target_node=node,
+            relationship="REQUIRES",
+            evidence_id=eid,
+            confidence="VERIFIED",
+            status="DISCOVERED",
+            discovered_by="lua_dependency_discovery",
+            source_location=f"{rel}:{line}",
+            notes="ZONE_TEXT_REFERENCE",
+            source_snapshot_id=sid,
+        ))
+
+    # Global title symbols referenced by this script.
+    title_path=Path(titles_lua) if titles_lua else root/"scripts/enum/title.lua"
+    title_symbols=parse_numeric_symbols(title_path) if title_path.is_file() else {}
+    for match in TITLE_REF_RE.finditer(text):
+        symbol=match.group("symbol")
+        line=_line(text,match.start())
+        value=title_symbols.get(symbol)
+        if value is None:
+            eid=_evidence_id(sid,rel,line,"title-unresolved",symbol)
+            evidence[eid]=Evidence(
+                eid,"SERVER",rel,f"{rel}:{line}",sid,
+                f"Could not resolve xi.title.{symbol} from {title_path}.",
+            )
+            findings.append(Finding(
+                finding_id=f"finding:lua-title:{_slug(eid)}",
+                analysis_id="lua-dependency-discovery",
+                subject_id=source_artifact_id,
+                field=f"xi.title.{symbol}",
+                value=None,
+                status="UNKNOWN",
+                confidence="UNKNOWN",
+                evidence_id=eid,
+                source_snapshot_id=sid,
+                notes=["Title symbol remains unresolved."],
+            ))
+            continue
+        node=f"title:{_slug(sid)}:{value}"
+        entities[node]=Entity(
+            node,"TITLE",symbol,
+            metadata={
+                "symbol":symbol,
+                "title_id":value,
+                "definition_path":title_path.as_posix(),
+                "source_snapshot_id":sid,
+            },
+        )
+        eid=_evidence_id(sid,rel,line,"title",f"{symbol}={value}")
+        evidence[eid]=Evidence(
+            eid,"SERVER",rel,f"{rel}:{line}",sid,
+            f"Resolved xi.title.{symbol} to title id {value} from {title_path}.",
+        )
+        edges.append(DependencyEdge(
+            edge_id=f"lua-title:{_slug(sid + rel + str(line) + symbol + str(value))}",
+            source_node=source_artifact_id,
+            target_node=node,
+            relationship="REQUIRES",
+            evidence_id=eid,
+            confidence="VERIFIED",
+            status="DISCOVERED",
+            discovered_by="lua_dependency_discovery",
+            source_location=f"{rel}:{line}",
+            notes="TITLE_REFERENCE",
             source_snapshot_id=sid,
         ))
 
@@ -402,7 +536,7 @@ def analyze_script(
             "findings": [],
             "source_snapshot_id": sid,
             "notes": [
-                "Only literal require() paths and statically resolved ID.mob arithmetic are emitted as VERIFIED.",
+                "Only literal require() paths, resolved ID.text/title symbols, and statically resolved ID.mob arithmetic are emitted as VERIFIED.",
                 "Unknown or missing identity evidence is emitted as an explicit UNKNOWN finding.",
             ],
         },
@@ -415,6 +549,8 @@ def analyze_script(
             "require_dependencies": sum(1 for edge in edges if edge.edge_id.startswith("lua-require:")),
             "script_entity_bindings": sum(1 for edge in edges if edge.edge_id.startswith("lua-script-entity:")),
             "entity_dependencies": sum(1 for edge in edges if edge.edge_id.startswith("lua-entity:")),
+            "zone_text_dependencies": sum(1 for edge in edges if edge.edge_id.startswith("lua-zone-text:")),
+            "title_dependencies": sum(1 for edge in edges if edge.edge_id.startswith("lua-title:")),
             "unresolved_findings": len(findings),
         },
     }
@@ -427,10 +563,12 @@ def main() -> int:
     ap.add_argument("--zone-id",type=int)
     ap.add_argument("--ids-lua",type=Path)
     ap.add_argument("--mobs-yaml",type=Path)
+    ap.add_argument("--titles-lua",type=Path)
     ap.add_argument("--json",type=Path)
     args=ap.parse_args()
     payload=analyze_script(
-        args.root,args.script,zone_id=args.zone_id,ids_lua=args.ids_lua,mobs_yaml=args.mobs_yaml
+        args.root,args.script,zone_id=args.zone_id,ids_lua=args.ids_lua,mobs_yaml=args.mobs_yaml,
+        titles_lua=args.titles_lua
     )
     data=json.dumps(payload,indent=2,sort_keys=True)
     if args.json:

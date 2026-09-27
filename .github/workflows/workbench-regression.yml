@@ -69,6 +69,7 @@ jobs:
           python test_fixtures/test_package_scope_review.py
           python test_fixtures/test_medusa_dependency_truth.py
           python test_fixtures/test_lua_dependency_discovery.py
+          python test_fixtures/test_lua_text_title_dependencies.py
           python test_fixtures/test_zone_yaml_dependency_closure.py
           python test_fixtures/test_identity_resolver.py
           python test_fixtures/test_client_identity_snapshot.py
