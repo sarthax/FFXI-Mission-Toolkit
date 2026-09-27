@@ -1813,3 +1813,24 @@ The first pass exposed six parser gaps: local mission-status aliases, zone-out h
 - message calls become MESSAGE effects.
 
 Regression: `test_fixtures/test_mission_lsb_road_forks_stress.py`.
+
+
+### Three Paths real-source worst-case stress pass
+
+Pinned current LSB `scripts/missions/cop/5_3_Three_Paths.lua` and exercised the generic mission extractor across its three parallel subpaths.
+
+The stress pass exposed and then promoted into generic extraction support:
+- helper-defined three-path completion convergence (`LOUVERANCE/TENZEN/ULMIA == 14`);
+- dynamic mission-status range iteration used by `isMissionComplete()`;
+- not-equal mission-status guards;
+- exact player-position guards;
+- `npcUtil.popFromQM` spawned encounters;
+- completed-trade effects;
+- mission-level reward title/next-mission metadata;
+- helper-call completion gates attached to completion handlers;
+- client-handled transport annotations;
+- event priority / important-event / replace-default dispatch provenance.
+
+The current Three Paths probe has no remaining mechanic marked as an unsupported gap. This does not imply arbitrary Lua is fully parsed: dynamic expressions/helpers outside recognized conservative patterns remain evidence requiring later parser expansion.
+
+Regression: `test_fixtures/test_mission_lsb_three_paths_stress.py`.
