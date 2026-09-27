@@ -72,6 +72,29 @@ def main():
     assert item_links[0]["relationship"]=="ITEM_DETAIL_FOR"
     assert item_links[0]["target_node"]=="catalog:lsb_item_basic:2413"
 
+    # Additional durable named server objects participate through explicit providers.
+    for prefix in ("sql","lsb","topaz","dsp"):
+        con.execute(f"CREATE TABLE {prefix}_mob_skills (mob_skill_id INTEGER, name TEXT)")
+        con.execute(f"INSERT INTO {prefix}_mob_skills VALUES (900,'Provider Skill {prefix}')")
+        con.execute(f"CREATE TABLE {prefix}_pet_list (petid INTEGER, name TEXT, poolid INTEGER)")
+        con.execute(f"INSERT INTO {prefix}_pet_list VALUES (77,'Provider Pet {prefix}',2002)")
+        assert any(
+            row.get("provider") in {"server-sql","landsandboat","topaz","dsp"}
+            for row in feature_trace.search_nodes(con,f"Provider Skill {prefix}")
+        )
+        pet_links=provider_relationships(con,f"catalog:{prefix}_pet_list:77")
+        assert pet_links and pet_links[0]["relationship"]=="PET_USES_POOL",(prefix,pet_links)
+        assert pet_links[0]["target_node"]==f"catalog:{prefix}_mob_pools:2002"
+
+    con.execute("CREATE TABLE lsb_effects (effectid INTEGER, name TEXT, norm_name TEXT, display_name TEXT)")
+    con.execute("INSERT INTO lsb_effects VALUES (12,'provider_effect','provider effect','Provider Effect Display')")
+    con.execute("CREATE TABLE topaz_effects (effectid INTEGER, name TEXT, norm_name TEXT)")
+    con.execute("INSERT INTO topaz_effects VALUES (12,'provider_effect_topaz','provider effect topaz')")
+    con.execute("CREATE TABLE dsp_effects (effectid INTEGER, name TEXT, norm_name TEXT)")
+    con.execute("INSERT INTO dsp_effects VALUES (12,'provider_effect_dsp','provider effect dsp')")
+    effect_rows=feature_trace.search_nodes(con,"Provider Effect Display")
+    assert any(row.get("table")=="lsb_effects" and "display_name" in row.get("matched_on",[]) for row in effect_rows),effect_rows
+
     # Explicit non-server providers expose durable searchable records, not raw observation rows.
     con.execute("CREATE TABLE identity_snapshots (snapshot_id TEXT, version TEXT)")
     con.execute("INSERT INTO identity_snapshots VALUES ('client:2022','30120222_1')")
