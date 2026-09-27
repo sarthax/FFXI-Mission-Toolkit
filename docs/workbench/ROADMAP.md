@@ -432,7 +432,7 @@ Current proof:
     - [x] Normalize modern LSB zone YAML templates/entities into entity→template→species/skill/spell closure.
     - [x] Link skill-list members to normalized mob-skill definitions and conventional Lua implementations, preserving missing scripts as explicit findings.
     - [x] Link zone-YAML loot symbols uniquely through normalized item identities to canonical ITEM dependency nodes.
-    - [ ] Promote zone text/title references and cross-zone Besieged coupling into package dependency edges.
+    - [~] Promote zone text/title references and cross-zone Besieged coupling into package dependency edges.\n      - [x] Resolve zone `ID.text.*` and global `xi.title.*` symbols into dependency nodes.\n      - [ ] Add cross-zone Besieged coupling as an explicit conditional/system dependency.
   - [x] Establish Coiler automaton attachment as a second truth set covering item/internal identity mapping, dynamic Lua dispatch, shared automaton behavior, C++ puppet runtime, persistence, downstream weapon-skill consumers, conditional interactions, and reviewer-controlled acquisition paths.
   - [x] Add recursive crafting/producibility closure for synth/synergy recipe prerequisites; Heat Seeker→Glass Sheet now proves multi-level recipe recursion, key-item gating, leaf obtainability, and Synergy client/runtime gating.
   - [ ] Unify shop/drop/reward/HELM/gardening/exchange/appraisal acquisition analyzers so every crafting leaf can resolve against the same obtainability graph.
