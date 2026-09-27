@@ -1494,3 +1494,26 @@ budgets/timeouts/temperature fail before provider execution.
 Focused regressions cover first execution, immutable replay cloning, override persistence,
 already-run protection, invalid controls, GUI rendering, route ownership, and the existing
 ResearchRunner/provider/session tests.
+
+
+## 2026-09-26 — Client ENTITY equivalence coverage and diagnostics
+
+The portable client identity pipeline now extracts and ingests per-zone ENTITY name resources.
+This closes the gap where actor-aware EVENT resolution could consume externally established ENTITY
+mappings but normal client snapshot imports did not themselves contribute ENTITY evidence.
+
+Added:
+
+- dialog/entity DAT-family extraction for both zone-id ranges;
+- portable `ENTITY` manifest resources and ENTITY-name parser;
+- zone-scoped ENTITY identity ingestion with client-resource provenance;
+- bulk ENTITY source-to-target comparison and detailed single-actor diagnostics;
+- explicit ambiguity handling for duplicate target names;
+- actor diagnostic metadata on every EVENT comparison row;
+- Client Overview actor-identity coverage table with constraint-ready, equivalent, ambiguous, and
+  unresolved counts;
+- actor diagnostics in CSV export;
+- corrected dialog-record counting for the actual `DIALOG_TEXT_ID` namespace.
+
+The resolver still fails closed: duplicate or weak ENTITY evidence never becomes an actor
+constraint simply because numeric ids happen to line up.
