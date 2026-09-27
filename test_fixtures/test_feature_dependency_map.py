@@ -45,6 +45,8 @@ def main():
     assert "e.source_node===id" in template  # normalized closure direction drives expansion
     assert "shown.has(e.source_node)" in template  # normalized fields also drive SVG edge rendering
     assert "pos[e.source_node]" in template
+    assert "graph.edges.filter(e=>e.target_node===id)" in template  # selection follows dependent links as well as prerequisites
+    assert "prerequisites=walk" in template and "dependents=walk" in template
     assert "manualPositions" in template  # user adjustments are presentation state
     assert "nodeDragging" in template
     assert "getBBox()" in template  # drag begins from the rendered node position
