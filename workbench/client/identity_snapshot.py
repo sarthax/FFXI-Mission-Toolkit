@@ -19,6 +19,7 @@ from workbench.client.event_fingerprint import parse_event_export
 from workbench.core.services.identity_resolver import (
     IdentitySnapshot,
     ingest_dialog_records,
+    ingest_entity_identity_records,
     ingest_event_structure_records,
     register_snapshot,
 )
@@ -72,6 +73,31 @@ def parse_dialog_export(path: Path) -> dict[int, str]:
         i += 1
     return entries
 
+
+
+def parse_entity_export(path: Path) -> dict[int, str]:
+    """Parse xi-tinkerer entity-name YAML-like export without requiring PyYAML."""
+    lines=Path(path).read_text(encoding="utf-8").splitlines()
+    out: dict[int,str]={}
+    current_id: int | None=None
+    for line in lines:
+        m_id=re.match(r"^\s*-\s*id:\s*(\d+)\s*$",line)
+        if m_id:
+            current_id=int(m_id.group(1))
+            continue
+        if current_id is None:
+            continue
+        m_name=re.match(r"^\s*name:\s*(.*?)\s*$",line)
+        if not m_name:
+            continue
+        value=m_name.group(1).strip()
+        if len(value)>=2 and value[0]==value[-1] and value[0] in {"'",'"'}:
+            value=value[1:-1]
+        value=value.replace("''","'").strip()
+        if value:
+            out[current_id]=value
+        current_id=None
+    return out
 
 def write_manifest(path: Path, manifest: ClientIdentityManifest) -> None:
     Path(path).write_text(
@@ -184,7 +210,7 @@ def ingest_client_identity_manifest(
             dialog_entries_by_zone[str(zone_key)] = parse_dialog_export(dialog_path)
     for item in manifest.files:
         kind = str(item.get("kind") or "").upper()
-        if kind not in {"DIALOG", "EVENT_RESOURCE"}:
+        if kind not in {"DIALOG", "ENTITY", "EVENT_RESOURCE"}:
             continue
         rel = item.get("relative_path")
         zone_key = item.get("zone_key")
@@ -214,6 +240,20 @@ def ingest_client_identity_manifest(
                 zone_key=str(zone_key),
                 entries=entries,
                 evidence_id_prefix=f"client-dialog:{manifest.snapshot_id}:{zone_key}",
+            )
+        elif kind == "ENTITY":
+            entities=parse_entity_export(path)
+            records=ingest_entity_identity_records(
+                con,
+                snapshot_id=manifest.snapshot_id,
+                zone_key=str(zone_key),
+                entities=entities,
+                evidence_id_prefix=f"client-entity:{manifest.snapshot_id}:{zone_key}",
+                confidence="HIGH",
+                metadata={
+                    "identity_basis":"client_entity_name_table",
+                    "source_resource":str(rel),
+                },
             )
         else:
             event_resources = parse_event_export(path)
