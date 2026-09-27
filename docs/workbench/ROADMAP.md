@@ -625,3 +625,13 @@ Roadmap authority rule: `docs/workbench/ROADMAP.md` is the detailed rework backl
 - [ ] Emit canonical graph dependency edges and evidence records from extracted machines.
 - [ ] Add DefaultActions/fallback conflict analysis and client dialog/event-resource closure.
 - [ ] Run the branching-mission truth set as the first large stress validation after the generic extractor exists.
+
+
+### 2026-09-27 Scripted-NM behavior-map discovery
+
+- [x] Stress a non-mission scripted NM with Absolute Virtue + Jailer of Love spawn closure.
+- [x] Confirm mission state machines are not the universal behavioral representation.
+- [x] Identify generic combat-map requirements: hooks, probabilistic/delayed spawn, runtime state transfer, cross-entity state, HP thresholds, random timers, ability responses/sets, combat modifiers, spell/magic responses, cleanup, loot overrides.
+- [ ] Implement the generic scripted-entity/combat behavior representation and source extractor.
+- [ ] Emit scripted-NM behavior/dependency evidence into the canonical graph.
+- [ ] Stress the representation with a second mechanically different NM before declaring combat-map coverage stable.
