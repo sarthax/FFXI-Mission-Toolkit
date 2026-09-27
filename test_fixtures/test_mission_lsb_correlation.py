@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from workbench.plugins.domain.mission_lsb_extract import correlate_lsb_handlers, materialize_channel_states
+from workbench.plugins.domain.mission_lsb_extract import chain_event_transitions, correlate_lsb_handlers, materialize_channel_states
 
 SAMPLE=r"""
 [xi.zone.MISAREAUX_COAST] =
@@ -57,6 +57,16 @@ def main():
     assert trigger2.from_state=="state:mission_var:Status=0",trigger2
     finish2=next(t for t in mm.transitions if t.event and t.event.event_id==6 and t.trigger=="EVENT_FINISH")
     assert finish2.to_state=="state:mission_var:Status=1",finish2
+
+    chained=chain_event_transitions(m)
+    edge=next(t for t in chained.transitions if t.metadata.get("logical_event_chain") and t.event.event_id==6)
+    assert edge.event.zone=="MISAREAUX_COAST",edge
+    assert edge.event.actor=="_0p2",edge
+    assert edge.from_state=="state:mission_var:Status=0",edge
+    assert edge.to_state=="state:mission_var:Status=1",edge
+    assert edge.metadata["trigger_source_lines"] and edge.metadata["finish_source_lines"],edge
+    # 32001 has no initiating trigger in this source and must remain independent.
+    assert any(t.event and t.event.event_id==32001 for t in chained.transitions),chained
     print("LSB handler correlation self-test: PASS")
     print("transitions",len(m.transitions))
     return 0
