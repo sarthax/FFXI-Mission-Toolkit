@@ -1751,3 +1751,27 @@ The existing branching mission truth set now ingests through `workbench/plugins/
 The ingestion intentionally marks truth-set CSIDs as `unassigned_progress_edge` rather than guessing which exact progress transition they cause. Exact CSID → state-edge assignment is now a concrete requirement for the Lua source extractor.
 
 Regression: `test_fixtures/test_mission_truth_ingestion.py`.
+
+
+### Multi-mission mechanic stress probe
+
+Additional LSB mission shapes were compared against the generic model:
+
+- **Kazham's Chieftainess** — simple linear NPC/event completion plus next mission and key-item reward.
+- **Ancient Vows** — mission variable progression, zone-in event, battlefield-win guard, completion, and post-win teleport.
+- **The Road Forks** — parallel mission-status channels, timed/expiring key-item lifecycle, recursive timer, spawned-NM/death gates, distance/position/nation conditions, local variables, and no-action/message outcomes.
+- **Three Paths** — multiple parallel subpaths converging on completion, trade/consume gates, spawned encounters, multiple battlefields, titles, and client-handled transport.
+
+New model/extractor gaps exposed by this probe:
+- parallel named mission-status channels and ALL-path convergence;
+- temporal guards/effects and timer expiry;
+- spawned-entity and mob-death transitions;
+- spatial/distance guards;
+- explicit battlefield-result identity as a first-class guard;
+- teleport/client-transport/title/message/no-action effects;
+- replaceDefault/priority/default-action conflict semantics;
+- stronger distinction among persistent mission vars, local vars, and mission-status channels.
+
+Coverage fixture/regression:
+- `test_fixtures/fixtures/mission_mechanic_coverage_probe.json`
+- `test_fixtures/test_mission_mechanic_coverage.py`
