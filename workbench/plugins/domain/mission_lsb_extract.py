@@ -96,6 +96,9 @@ _EVENT_FINISH_KEY=re.compile(r"\[(\d+)\]\s*=\s*function\(player,\s*csid")
 _STATUS_EQ=re.compile(r"player:getMissionStatus\([^\n]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)\s*==\s*(\d+)")
 _VAR_EQ=re.compile(r"mission:getVar\(player,\s*'([^']+)'\)\s*==\s*(\d+)")
 _LOCAL_EQ=re.compile(r"mission:getLocalVar\(player,\s*'([^']+)'\)\s*==\s*([A-Za-z0-9_\.]+)")
+_STATUS_ALIAS=re.compile(r"local\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*player:getMissionStatus\([^\n]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)")
+_ALIAS_EQ=re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*)\s*==\s*(\d+)")
+_SPAWNED=re.compile(r"(not\s+)?GetMobByID\(([^\)]+)\):isSpawned\(\)")
 _HAS_KI=re.compile(r"player:hasKeyItem\(xi\.keyItem\.([A-Z0-9_]+)\)")
 _LACKS_KI=re.compile(r"not\s+player:hasKeyItem\(xi\.keyItem\.([A-Z0-9_]+)\)")
 _DISTANCE=re.compile(r"player:checkDistance\(npc\)\s*([<>]=?)\s*([0-9.]+)")
@@ -132,6 +135,10 @@ def _conditions(text: str) -> tuple[StateCondition,...]:
     out=[]
     for m in _STATUS_EQ.finditer(text):
         out.append(StateCondition(f"mission_status:{m.group(1)}","EQ",int(m.group(2))))
+    aliases={m.group(1):m.group(2) for m in _STATUS_ALIAS.finditer(text)}
+    for m in _ALIAS_EQ.finditer(text):
+        if m.group(1) in aliases:
+            out.append(StateCondition(f"mission_status:{aliases[m.group(1)]}","EQ",int(m.group(2))))
     for m in _VAR_EQ.finditer(text):
         out.append(StateCondition(f"mission_var:{m.group(1)}","EQ",int(m.group(2))))
     for m in _LOCAL_EQ.finditer(text):
@@ -148,6 +155,8 @@ def _conditions(text: str) -> tuple[StateCondition,...]:
         out.append(StateCondition("player_to_actor","WITHIN_DISTANCE",float(m.group(2))))
     for m in _TRADE.finditer(text):
         out.append(StateCondition("trade","TRADE_MATCHES",m.group(1).strip()))
+    for m in _SPAWNED.finditer(text):
+        out.append(StateCondition(f"entity:{m.group(2).strip()}","ENTITY_NOT_SPAWNED" if m.group(1) else "ENTITY_SPAWNED",True))
     return tuple(out)
 
 
@@ -207,6 +216,8 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
             trigger="MOB_DEATH"
         elif "onZoneIn" in first:
             trigger="ZONE_IN"
+        elif "onZoneOut" in first:
+            trigger="ZONE_OUT"
         if not trigger:
             continue
         conds=_conditions(text); effects=_effects(text)
