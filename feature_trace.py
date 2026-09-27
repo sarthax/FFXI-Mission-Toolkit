@@ -15,7 +15,7 @@ from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
 
-from workbench.core.services.feature_trace_catalog import catalog_node, is_runtime_edge, present_relationships, search_catalog
+from workbench.core.services.feature_trace_catalog import catalog_node, is_runtime_edge, runtime_hierarchy, filter_runtime_observations, search_catalog
 
 
 SCHEMA = 1
@@ -113,7 +113,7 @@ def _legacy_search_nodes(con: sqlite3.Connection, term: str) -> list[dict]:
 
 def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
           catalog_con: sqlite3.Connection | None = None,
-          relationships: set[str] | None = None) -> dict:
+          relationships: set[str] | None = None, include_runtime_edges: bool = False) -> dict:
     queue = deque([(root, 0, [root], [])])
     visited = {root}
     seen_relationships = set()
@@ -179,9 +179,8 @@ def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
                 })
 
     node_ids = sorted(visited)
-    runtime_summary = present_relationships(runtime_edges)
-    runtime_groups = [group for section in runtime_summary for group in section["runtime_groups"]]
-    return {
+    hierarchy = runtime_hierarchy(runtime_edges)
+    result = {
         "schema": SCHEMA,
         "trace_id": f"trace:{root}:{depth}:{direction}",
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -191,15 +190,26 @@ def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
         "relationship_filter": sorted(relationships) if relationships else [],
         "nodes": [node_info(con, n, catalog_con) for n in node_ids],
         "edges": edges,
-        "runtime_summary": runtime_summary,
-        "runtime_observation_count": sum(group["observation_count"] for group in runtime_groups),
-        "runtime_group_count": len(runtime_groups),
+        "runtime_hierarchy": hierarchy,
+        "runtime_observation_count": hierarchy["observation_count"],
+        "runtime_group_count": hierarchy["group_count"],
+        "runtime_capture_count": hierarchy["capture_count"],
         "paths": paths,
         "notes": [
             "Trace connectivity is not an implementation verdict.",
             "Unrecorded relationships remain UNKNOWN rather than being inferred as absent.",
         ],
     }
+    if include_runtime_edges:
+        result["_runtime_edges"] = runtime_edges
+    return result
+
+
+def runtime_observation_page(con: sqlite3.Connection, root: str, depth: int, direction: str,
+                             catalog_con: sqlite3.Connection | None = None, opcode: str | None = None,
+                             capture_id: str | None = None, offset: int = 0, limit: int = 100) -> dict:
+    traced=trace(con,root,depth,direction,catalog_con,include_runtime_edges=True)
+    return filter_runtime_observations(traced.pop("_runtime_edges",[]),opcode,capture_id,offset,limit)
 
 
 def main():
@@ -232,7 +242,7 @@ def main():
             return 2
         root = matches[0]["node_id"]
 
-    result = trace(con, root, args.depth, args.direction, set(args.relationship) or None)
+    result = trace(con, root, args.depth, args.direction, relationships=set(args.relationship) or None)
     con.close()
     output = json.dumps(result, indent=2, sort_keys=True)
     if args.json:

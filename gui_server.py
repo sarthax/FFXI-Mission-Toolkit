@@ -49,6 +49,7 @@ import entity_profile
 import explore_event
 import feature_trace
 from workbench.core.services.feature_trace_catalog import present_relationships
+from workbench.core.services.feature_trace_dossier import build_dossier
 import feature_checker
 from workbench.core.services.feature_trace_closure import build_feature_trace_closure
 import ingest_global_tables
@@ -3245,6 +3246,7 @@ def feature_trace_page(
         con.close()
     catalog_con.close()
     relationship_sections = present_relationships(result["edges"]) if result else []
+    dossier = build_dossier(result) if result else None
     return templates.TemplateResponse(request, "feature_trace.html", {
         "request": request,
         "q": q,
@@ -3254,7 +3256,34 @@ def feature_trace_page(
         "matches": matches,
         "error": error,
         "relationship_sections": relationship_sections,
+        "dossier": dossier,
     })
+
+
+@app.get("/features/trace/runtime.json")
+def feature_trace_runtime_detail(
+    root: str,
+    depth: int = 3,
+    direction: str = "both",
+    opcode: str | None = None,
+    capture_id: str | None = None,
+    offset: int = 0,
+    limit: int = 100,
+):
+    """Bounded final-level runtime observation drill-down for Feature Trace."""
+    depth=max(0,min(depth,8))
+    direction=direction if direction in {"out","in","both"} else "both"
+    con=_workbench_graph_connection()
+    catalog_con=get_con()
+    if con is None:
+        catalog_con.close()
+        return JSONResponse({"error":"Canonical Workbench graph is not available."},status_code=404)
+    try:
+        page=feature_trace.runtime_observation_page(con,root,depth,direction,catalog_con,opcode,capture_id,offset,limit)
+        return JSONResponse(page)
+    finally:
+        con.close()
+        catalog_con.close()
 
 
 @app.get("/features/trace/closure.json")
