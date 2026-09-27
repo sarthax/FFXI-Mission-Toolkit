@@ -613,3 +613,14 @@ The Workbench roadmap and the older Toolkit product roadmap were reconciled. The
 - [ ] Discord history/link catalog integration.
 
 Roadmap authority rule: `docs/workbench/ROADMAP.md` is the detailed rework backlog; `docs/guides/ROADMAP.md` and the in-app `/roadmap` summarize both the Workbench and older Toolkit product backlog. Historical phase text may remain for provenance, but a newer reconciled status section supersedes stale labels.
+
+
+### 2026-09-27 Generic mission/quest state-machine foundation
+- [x] Add content-neutral state, guarded transition, zone-scoped event identity, transition-effect, and AND/OR dependency-gate models.
+- [x] Distinguish branch viability from full machine completeness and keep expected implementation gaps visible.
+- [x] Model lifecycle effects generically (grant/require/consume/remove/reissue) without adding mission-specific columns to the core graph.
+- [x] Bridge behavioral transitions/lifecycles into the existing mission representation planner.
+- [ ] Add source-family extractors that populate the model from Lua mission/quest scripts.
+- [ ] Emit canonical graph dependency edges and evidence records from extracted machines.
+- [ ] Add DefaultActions/fallback conflict analysis and client dialog/event-resource closure.
+- [ ] Run the branching-mission truth set as the first large stress validation after the generic extractor exists.
