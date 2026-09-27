@@ -24,6 +24,7 @@ class LsbMissionFinding:
 _ZONE=re.compile(r"\[xi\.zone\.([A-Z0-9_]+)\]\s*=")
 _ACTOR=re.compile(r"\['([^']+)'\]\s*=")
 _EVENT=re.compile(r"mission:(?:progressEvent|event|progressCutscene)\((\d+)")
+_DECL_EVENT=re.compile(r"\['([^']+)'\]\s*=\s*mission:(progressEvent|event|progressCutscene)\((\d+)\)(.*)")
 _STATUS_SET=re.compile(r"player:setMissionStatus\([^\n]*?,\s*(\d+)\s*,\s*xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)")
 _VAR_SET=re.compile(r"mission:setVar\(player,\s*'([^']+)',\s*([^\)]+)\)")
 _LOCAL_SET=re.compile(r"mission:setLocalVar\(player,\s*'([^']+)',\s*([^\)]+)\)")
@@ -221,6 +222,25 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
             gate=gate,event=event,effects=effects,confidence="INFERRED",
             metadata={"zone":zone,"actor":actor,"source_lines":(start+1,end+1),"literal_correlation":True},
         ))
+    # Declarative actor handlers are equivalent to unconditional NPC triggers.
+    for line_no,line in enumerate(lines):
+        dm=_DECL_EVENT.search(line)
+        if not dm:
+            continue
+        zone,_=context(line_no)
+        actor=dm.group(1); event_id=int(dm.group(3)); suffix=dm.group(4) or ""
+        serial+=1
+        transitions.append(MissionTransition(
+            f"source-transition:{serial}","source:any","source:any","NPC_INTERACT",
+            event=EventIdentity(zone or "UNKNOWN",event_id,actor),confidence="VERIFIED",
+            metadata={
+                "zone":zone,"actor":actor,"source_lines":(line_no+1,line_no+1),
+                "literal_correlation":True,"declarative_handler":True,
+                "replace_default":".replaceDefault()" in suffix,
+                "important_event":".importantEvent()" in suffix,
+            },
+        ))
+
     findings=extract_lsb_mission_findings(lua)
     return MissionStateMachine(
         f"machine:{feature_id}",feature_id,tuple(states.values()),tuple(transitions),
