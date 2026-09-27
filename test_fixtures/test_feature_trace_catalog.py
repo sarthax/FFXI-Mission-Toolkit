@@ -43,6 +43,9 @@ def main():
     group_node=feature_trace.node_info(con,"catalog:lsb_mob_groups:zoneid=75&groupid=38")
     assert group_node["known"]
     assert group_node["representations"][0]["metadata"]["identity"]=={"zoneid":75,"groupid":38}
+    con.execute("CREATE TABLE dsp_mob_groups (groupid INTEGER, name TEXT)")
+    con.execute("INSERT INTO dsp_mob_groups VALUES (38,'Malformed Provider Group')")
+    assert not feature_trace.search_nodes(con,"Malformed Provider Group")
 
     # Explicit non-server providers expose durable searchable records, not raw observation rows.
     con.execute("CREATE TABLE identity_snapshots (snapshot_id TEXT, version TEXT)")
