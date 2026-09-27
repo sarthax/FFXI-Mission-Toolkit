@@ -20,7 +20,7 @@ def build_dossier(result: dict) -> dict:
     if runtime.get("observation_count",0):
         facets.append({"name":"Runtime / Captures & Packets","count":runtime["observation_count"],"capture_count":runtime.get("capture_count",0),"group_count":runtime.get("group_count",0)})
     return {
-        "identity":{"node_id":root,"known":bool(root_node.get("known")),"display_name":primary.get("display_name") or root,"node_type":primary.get("node_type") or "UNKNOWN","source_count":len(reps),"representations":reps},
+        "identity":{"node_id":root,"known":bool(root_node.get("known")),"display_name":primary.get("display_name") or root,"node_type":primary.get("node_type") or "UNKNOWN","source_count":len(reps),"provider":(primary.get("metadata") or {}).get("provider"),"domain":(primary.get("metadata") or {}).get("domain"),"representations":reps},
         "facets":facets,
         "semantic_relationship_count":len(result.get("edges",())),
         "semantic_node_count":len(result.get("nodes",())),

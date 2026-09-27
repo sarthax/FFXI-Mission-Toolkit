@@ -1876,3 +1876,19 @@ This is a presentation/navigation milestone. It does not claim that every indexe
 Feature Trace catalog discovery now has an explicit provider registry for the established server SQL/index families (core SQL, LandSandBoat, Topaz, and DSP). Providers declare table identity columns, display-name columns, object type, and provenance without creating canonical graph relationships.
 
 The prior schema-based table discovery remains as a compatibility fallback for custom/older indexes and is labeled `schema-fallback` in catalog provenance. This is intentionally incremental: client, capture, research, validation, and package providers can move behind the same registry later without a flag-day rewrite.
+
+
+### Feature Trace evidence-domain providers
+
+The catalog-provider registry now covers durable searchable records from Client, Captures, Research, Validation, and Packages in addition to the server SQL families.
+
+Included provider roots:
+- Client: identity snapshots and identity records.
+- Captures: capture bundles only.
+- Research: research sessions and proposals.
+- Validation: validation runs and validation results.
+- Packages: migrations, migration actions, and package scope reviews.
+
+High-cardinality runtime internals such as raw packets, capture history rows, capture event rows, and research tool calls are intentionally excluded from catalog discovery. They remain drill-down evidence rather than top-level catalog objects.
+
+Catalog-only roots continue to produce a valid Evidence Dossier even when they have no canonical semantic edges. Provider/domain provenance is shown in search results and dossier identity.
