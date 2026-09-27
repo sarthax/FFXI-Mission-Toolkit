@@ -132,8 +132,12 @@ def main():
     assert capture_dossier["identity"]["details"]["client_build"]=="30120222_1"
     assert capture_dossier["identity"]["details"]["mission_name"]=="Ancient Vows"
     assert capture_dossier["identity"]["inspect_href"]=="/captures/17"
-    assert len(feature_trace.search_nodes(con,"2413"))==1
-    assert len(feature_trace.search_nodes(con,"Coiler"))==3  # ambiguity remains visible
+    rows_2413=feature_trace.search_nodes(con,"2413")
+    ids_2413={row["node_id"] for row in rows_2413}
+    assert {"catalog:sql_item_basic:2413","catalog:lsb_item_basic:2413","catalog:lsb_item_equipment:2413"}.issubset(ids_2413)
+    coiler_rows=feature_trace.search_nodes(con,"Coiler")
+    coiler_ids={row["node_id"] for row in coiler_rows}
+    assert {"entity:fixture","catalog:sql_item_basic:2413","catalog:sql_item_basic:8583"}.issubset(coiler_ids)  # ambiguity remains visible
     bridged=feature_trace.search_nodes(graph,"Coiler",con)
     assert any(m["node_id"]=="catalog:sql_item_basic:2413" for m in bridged)
     catalog_trace=feature_trace.trace(graph,"catalog:sql_item_basic:2413",3,"both",con)
