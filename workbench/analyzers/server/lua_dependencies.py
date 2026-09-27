@@ -330,6 +330,8 @@ def analyze_script(
             "analysis_id": "lua-dependency-discovery",
             "analysis_type": "LUA_STATIC_DEPENDENCY_DISCOVERY",
             "source": rel,
+            "target": None,
+            "feature_id": None,
             "status": "ANALYZED",
             "created_at": None,
             "tool_version": "1",
