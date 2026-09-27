@@ -224,8 +224,7 @@
     }
   ],
   "known_current_toolkit_gaps": [
-    "LSB zone mob YAML is not represented by the current SQL-only logical table extractor.",
-    "No generic species/family dependency layer currently closes Medusa/Lamia species relationships.",
+    "Species dependencies are now surfaced for LSB zone templates, but cross-lineage species/family equivalence is not yet proven generically.",
     "YAML loot item symbols are not currently guaranteed to resolve to canonical item records.",
     "Zone text/title enum references are not currently guaranteed to become package dependencies.",
     "Cross-zone/system-state dependencies such as Besieged are not yet modeled as conditional semantic dependencies independent of direct code references.",
@@ -236,6 +235,10 @@
     "mob_skills definitions are now first-class logical records.",
     "mob_spell_lists membership is now a first-class logical schema surface.",
     "Literal Lua require()/mixin dependencies are emitted as packageable REQUIRES artifact edges.",
-    "Statically resolvable ID.mob anchor arithmetic/ranges now resolve through IDs.lua GetFirstID plus zone mobs.yaml entity data."
+    "Statically resolvable ID.mob anchor arithmetic/ranges now resolve through IDs.lua GetFirstID plus zone mobs.yaml entity data.",
+    "Modern LSB zone mobs.yaml entities/templates now normalize into graph Entity nodes with entity->template dependencies.",
+    "Template species, mob skill-list, and mob spell-list dependencies now become transitive graph edges.",
+    "Mob skill-list members and mob spell-list members now close into normalized skill/spell definition nodes.",
+    "Mob skill definitions now link to conventional scripts/actions/mobskills/<name>.lua artifacts when those implementations exist; missing scripts remain explicit findings."
   ]
 }
