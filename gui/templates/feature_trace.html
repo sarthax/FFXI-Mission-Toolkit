@@ -48,7 +48,10 @@
 {% if result %}
 <h2>Evidence Dossier</h2>
 <div class="table-wrap"><table>
-<tr><th>Identity</th><td><strong>{{ dossier.identity.display_name }}</strong><br><code>{{ dossier.identity.node_id }}</code> · {{ dossier.identity.node_type }}{% if dossier.identity.provider %} · provider {{ dossier.identity.provider }}{% endif %}{% if dossier.identity.domain %} · {{ dossier.identity.domain }}{% endif %} · {{ dossier.identity.source_count }} indexed representation(s)</td></tr>
+<tr><th>Identity</th><td><strong>{{ dossier.identity.display_name }}</strong><br><code>{{ dossier.identity.node_id }}</code> · {{ dossier.identity.node_type }}{% if dossier.identity.provider %} · provider {{ dossier.identity.provider }}{% endif %}{% if dossier.identity.domain %} · {{ dossier.identity.domain }}{% endif %} · {{ dossier.identity.source_count }} indexed representation(s){% if dossier.identity.inspect_href %}<br><a class="zonelink" href="{{ dossier.identity.inspect_href }}">Open source view</a>{% endif %}</td></tr>
+{% if dossier.identity.details %}
+<tr><th>Source details</th><td>{% for key,value in dossier.identity.details.items() %}{% if value is not none and value != "" %}<div><span class="chip">{{ key }}</span> {{ value }}</div>{% endif %}{% endfor %}</td></tr>
+{% endif %}
 {% for facet in dossier.facets %}
 <tr><th>{{ facet.name }}</th><td><strong>{{ facet.count }}</strong>{% if facet.capture_count is defined %} observation(s) across {{ facet.capture_count }} capture(s), {{ facet.group_count }} group(s){% else %} relationship(s){% endif %}</td></tr>
 {% endfor %}
