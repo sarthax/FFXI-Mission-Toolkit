@@ -560,3 +560,48 @@ Files changed by the naming cleanup:
 - `docs/workbench/AUDIT_STATUS.md`
 
 This naming rule applies to future proof cases as well: sample content demonstrates architecture; it does not define architecture.
+
+
+## 2026-09-27 — Unified remaining-feature inventory
+
+The Workbench roadmap and the older Toolkit product roadmap were reconciled. The following open capabilities were either absent from the recent scoped queue or were obscured by stale historical status.
+
+### Core architecture / evidence
+- [ ] Generic conditional and cross-zone/system-state dependency relationships, including the currently open Besieged-style coupling proof.
+- [ ] Unified acquisition/obtainability graph across shops, drops, rewards, HELM, gardening, exchange, appraisal, synthesis, and synergy.
+- [ ] Broader packet ↔ client DAT/EXE/DLL ↔ server relationship coverage.
+- [ ] Richer runtime probe/capture producers and repeatable live validation recipes.
+- [ ] Optional decoder-backed binary instruction/CFG/xref/function recovery with explicit decoder/version provenance.
+
+### Reusable content frameworks
+- [ ] Generic mission/quest state-machine and CSID/event analyzer.
+- [ ] Generic multi-zone progression/hunt framework.
+- [ ] Generic minigame/puzzle framework.
+- [ ] Generic repeatable/system-container framework.
+- [ ] Additional instance-heavy proof after mission state-machine closure.
+
+### Named system packages
+- [ ] Assault.
+- [ ] Nyzul Isle.
+- [ ] Salvage.
+- [ ] Abyssea.
+- [ ] Einherjar.
+- [ ] Limbus preservation package when a compatible implementation/client snapshot is selected.
+
+### Migration / application
+- [ ] Safe database-level apply and rollback; current deterministic rollback coverage is file-oriented.
+- [ ] Approval/apply/rollback GUI after dependency-completeness gates are satisfied.
+- [ ] Broader verified source→target conversion backends without guessing unsupported routes.
+- [ ] Finish generalized client DAT write orchestration; active PR work remains incomplete until merged.
+
+### Toolkit product features outside the recent Workbench queue
+- [ ] Video/capture timestamp alignment and optional transcription.
+- [ ] Authenticated remote/hosted access.
+- [ ] Watched-folder or live Windower/Ashita auto-ingestion.
+- [ ] Capture-data requests and fulfillment tracking.
+- [ ] Capture annotations / invalid-data flags.
+- [ ] Tag/category completeness checklists.
+- [ ] Capture→server drafting/export through canonical evidence and migration review.
+- [ ] Discord history/link catalog integration.
+
+Roadmap authority rule: `docs/workbench/ROADMAP.md` is the detailed rework backlog; `docs/guides/ROADMAP.md` and the in-app `/roadmap` summarize both the Workbench and older Toolkit product backlog. Historical phase text may remain for provenance, but a newer reconciled status section supersedes stale labels.
