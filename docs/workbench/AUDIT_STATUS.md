@@ -1388,3 +1388,23 @@ Implemented:
 This improves auditability without expanding mutation authority. Provider execution/replay remains
 behind the existing bounded ResearchRunner and typed permission-aware tool registry until a
 separate explicit run-control UX is added.
+
+## 2026-09-26 — Ollama Direct research provider
+
+The evidence-aware research layer now has two provider implementations behind the same
+`LLMProvider` contract:
+
+- Open WebUI via the existing compatibility client;
+- Ollama Direct via the local HTTP API.
+
+The direct adapter supports model discovery, capability inspection, non-streaming chat, normalized
+usage counters, and provider metadata. A provider factory now resolves configured provider ids
+without coupling ResearchRunner to concrete provider classes.
+
+The adapter does not silently fall back between providers. Connectivity, HTTP, and response-shape
+failures remain explicit so research sessions cannot mistake an unavailable provider for an empty
+or successful answer.
+
+Regression coverage in `test_research_provider.py` is no-network and verifies Open WebUI
+compatibility, Ollama Direct model/capability/chat normalization, provider selection, and explicit
+unsupported-provider behavior.
