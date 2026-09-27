@@ -29,7 +29,7 @@ def main():
     assert organ["evidence_id"].startswith("evidence:demo:")
 
     template=(ROOT/"gui"/"templates"/"feature_trace.html").read_text(encoding="utf-8")
-    for label in ("Progression","Acquisition","Spawn","Access","Expand all","Expand selected branch","Collapse selected branch","Collapse to root","Toggle selected branch"):
+    for label in ("Progression","Acquisition","Spawn","Access","Expand all","Expand selected branch","Collapse selected branch","Collapse to root","Toggle selected branch","Reset node positions"):
         assert label in template,label
     assert "/features/trace/closure.json" in template
     assert "REQUIREMENT_GATE" in template
@@ -45,6 +45,9 @@ def main():
     assert "e.source_node===id" in template  # normalized closure direction drives expansion
     assert "shown.has(e.source_node)" in template  # normalized fields also drive SVG edge rendering
     assert "pos[e.source_node]" in template
+    assert "manualPositions" in template  # user adjustments are presentation state
+    assert "nodeDragging" in template
+    assert "getBBox()" in template  # drag begins from the rendered node position
     assert "entity:av" not in template  # no fixture-specific renderer behavior
     gui_source=(ROOT/"gui_server.py").read_text(encoding="utf-8")
     assert "build_feature_trace_closure(con, root)" in gui_source
