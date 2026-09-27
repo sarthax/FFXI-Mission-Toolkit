@@ -75,6 +75,11 @@ PROVIDERS=(
     CatalogProvider("dsp","server",_prefixed("dsp")+(
         CatalogTable("dsp_effects","effectid","name","STATUS_EFFECT",search_columns=("norm_name",)),
     )),
+    CatalogProvider("server-event-refs","server",(
+        CatalogTable("npc_event_refs","csid",None,"SERVER_EVENT_REF",
+                     key_columns=("source","zone_name","npc_script","csid"),
+                     display_template="{source} {zone_name}/{npc_script} event {csid}"),
+    )),
     CatalogProvider("client-identity","client",(
         CatalogTable("identity_snapshots","snapshot_id","version","CLIENT_SNAPSHOT",
                      ("snapshot_type","family","recorded_at","source_location","fingerprint"),
