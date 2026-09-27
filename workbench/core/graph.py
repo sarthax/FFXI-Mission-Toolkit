@@ -159,7 +159,12 @@ def _json(value: Any) -> str:
 def insert_record(con: sqlite3.Connection, record: Any, record_type: str | None = None):
     d = asdict(record) if is_dataclass(record) else (dict(record) if isinstance(record, dict) else vars(record))
     cls = record_type or type(record).__name__
-    if cls == "Function":
+    if cls == "Entity":
+        con.execute(
+            "INSERT OR REPLACE INTO entities(entity_id,entity_type,display_name,metadata_json) VALUES(?,?,?,?)",
+            (d["entity_id"],d["entity_type"],d.get("display_name"),_json(d.get("metadata",{}))),
+        )
+    elif cls == "Function":
         sig=d["signature"]
         con.execute("INSERT OR REPLACE INTO functions VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     (d["function_id"],d["qualified_name"],d["name"],d["namespace"],d["class_name"],
@@ -327,7 +332,7 @@ def import_json(path: Path, db: Path):
     payload=json.loads(path.read_text(encoding="utf-8"))
     con=init_db(db)
     for key, record_type in (
-        ("features","Feature"),("artifacts","Artifact"),("build_targets","BuildTarget"),("functions","Function"),("bindings","Binding"),("enums_constants","EnumDefinition"),("evidence","Evidence"),("findings","Finding"),("capabilities","Capability"),("capability_observations","CapabilityObservation"),("capability_requirements","CapabilityRequirement"),
+        ("features","Feature"),("entities","Entity"),("artifacts","Artifact"),("build_targets","BuildTarget"),("functions","Function"),("bindings","Binding"),("enums_constants","EnumDefinition"),("evidence","Evidence"),("findings","Finding"),("capabilities","Capability"),("capability_observations","CapabilityObservation"),("capability_requirements","CapabilityRequirement"),
         ("implementations","Implementation"),("edges","DependencyEdge"),
         ("migration_actions","MigrationAction"),("validation_runs","ValidationRun"),
         ("validation_results","ValidationResult"),
