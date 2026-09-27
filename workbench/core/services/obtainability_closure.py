@@ -45,6 +45,20 @@ def resolve_obtainability_root(con: sqlite3.Connection, selection: str) -> str:
     ids = [row[0] for row in rows]
     if len(ids) == 1:
         return ids[0]
+    # A display label can legitimately identify both a raw entity observation and a
+    # canonical dependency root.  Prefer the sole candidate that owns graph edges:
+    # this is generic graph topology, not a name/type-specific exception.
+    marks = ",".join("?" for _ in ids)
+    connected = [
+        row[0]
+        for row in con.execute(
+            f"SELECT source_node FROM entity_relationships WHERE source_node IN ({marks}) "
+            "GROUP BY source_node HAVING COUNT(*) > 0 ORDER BY source_node",
+            tuple(ids),
+        ).fetchall()
+    ]
+    if len(connected) == 1:
+        return connected[0]
     if not ids:
         raise ValueError(f"No canonical graph node matches {selection!r}.")
     raise ValueError(f"Selection {selection!r} is ambiguous; use a canonical node ID.")

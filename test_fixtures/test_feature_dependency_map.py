@@ -51,6 +51,10 @@ def main():
     with TemporaryDirectory() as tmp:
         con=graph.init_db(Path(tmp)/"runtime.db")
         bundles=seed_runtime_reference_graphs(con)
+        # A raw observed entity may share a human label with the dependency root.
+        # The generic resolver must choose the only candidate with prerequisites.
+        con.execute("INSERT INTO entities VALUES (?,?,?,?)",("npc:fixture-av","NPC","Absolute Virtue","{}"))
+        con.commit()
         root=resolve_obtainability_root(con,"Absolute Virtue")
         assert root=="entity:av"
         closure=build_obtainability_closure(con,root,relationships=bundles[0]["relationships"])
