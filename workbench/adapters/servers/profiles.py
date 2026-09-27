@@ -254,6 +254,21 @@ def _common(equipment_file: str = "item_equipment.sql") -> dict[str, TableShape]
         FieldMapping("skill_list_id",("skill_list_id",),True),
         FieldMapping("mob_skill_id",("mob_skill_id",),True),
     )
+    job_point_fields=(
+        FieldMapping("job_point_id",("job_pointid","jobPointId"),True),
+        FieldMapping("name",("name",),True),
+        FieldMapping("upgrade",("upgrade",)),
+        FieldMapping("job_id",("jobs","job"),True),
+    )
+    merit_fields=(
+        FieldMapping("merit_id",("meritid","meritId"),True),
+        FieldMapping("name",("name",),True),
+        FieldMapping("upgrade",("upgrade",)),
+        FieldMapping("value",("value",)),
+        FieldMapping("jobs_mask",("jobs",)),
+        FieldMapping("upgrade_id",("upgradeid","upgradeId")),
+        FieldMapping("legacy_category_id",("catagoryid","categoryid","categoryId")),
+    )
     synth_fields=(
         FieldMapping("recipe_id",("ID","id"),True),
         FieldMapping("desynth",("Desynth","desynth")),
@@ -335,6 +350,8 @@ def _common(equipment_file: str = "item_equipment.sql") -> dict[str, TableShape]
     item_modifier_columns=("itemId","modId","value")
     item_pet_modifier_columns=("itemId","modId","value","petType")
     item_latent_columns=("itemId","modId","value","latentId","latentParam")
+    job_point_columns=("job_pointid","name","upgrade","jobs")
+    merit_columns=("meritid","name","upgrade","value","jobs","upgradeid","catagoryid")
     ability_columns=("abilityId","name","job","level","validTarget","recastTime","recastId","message1","message2","animation","animationTime","castTime","actionType","range","isAOE","CE","VE","meritModID","addType","content_tag")
     weapon_skill_columns=("weaponskillid","name","jobs","type","skilllevel","element","animation","animationTime","range","aoe","primary_sc","secondary_sc","tertiary_sc","main_only","unlock_id")
     mob_skill_columns=("mob_skill_id","mob_anim_id","mob_skill_name","mob_skill_aoe","mob_skill_distance","mob_anim_time","mob_prepare_time","mob_valid_targets","mob_skill_flag","mob_skill_param","knockback","primary_sc","secondary_sc","tertiary_sc")
@@ -400,6 +417,20 @@ def _common(equipment_file: str = "item_equipment.sql") -> dict[str, TableShape]
             "battlefields","bcnm_info.sql","bcnm_records",
             parse_columns=("bcnmId","zoneId","name","fastestName","fastestPartySize","fastestTime"),
             field_mappings=battlefield_fields, identity_fields=("battlefield_id",),
+        ),
+        "job_points": TableShape(
+            "job_points","job_points.sql","job_points",
+            parse_columns=job_point_columns,
+            field_mappings=job_point_fields,
+            identity_fields=("job_id","name"),
+            notes=("Semantic identity uses job/name because numeric job_pointid drifts between legacy and modern lineages.",),
+        ),
+        "merits": TableShape(
+            "merits","merits.sql","merits",
+            parse_columns=merit_columns,
+            field_mappings=merit_fields,
+            identity_fields=("merit_id",),
+            notes=("Legacy SQL merit registry. Modern LSB stores merit definitions in data/merits.yaml and requires the YAML progression producer.",),
         ),
         "abilities": TableShape(
             "abilities","abilities.sql","abilities",
@@ -534,7 +565,7 @@ LSB = SchemaProfile(
     profile_id="landsandboat",
     family="LSB",
     tables={
-        **_common(),
+        **{name: shape for name, shape in _common().items() if name != "merits"},
         "item_basic": TableShape(
             "item_basic","item_basic.sql","item_basic",
             parse_columns=("itemid","subid","name","sortname","name_jp","type","stackSize","flags","aH","BaseSell"),
