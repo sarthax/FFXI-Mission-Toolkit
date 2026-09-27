@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 165,
+  "route_count": 167,
   "routes": [
     {
       "method": "GET",
@@ -1273,6 +1273,22 @@
       "home": "Tools",
       "section": "Research: Sessions",
       "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/research/contradictions",
+      "home": "Tools",
+      "section": "Research: Contradictions",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/research/evidence",
+      "home": "Tools",
+      "section": "Research: Contradictions",
+      "role": "page",
       "disposition": "KEEP"
     },
     {

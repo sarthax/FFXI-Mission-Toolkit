@@ -1517,3 +1517,25 @@ Added:
 
 The resolver still fails closed: duplicate or weak ENTITY evidence never becomes an actor
 constraint simply because numeric ids happen to line up.
+
+
+## 2026-09-26 — Research contradiction filtering and evidence drill-down
+
+The Research workspace now exposes a read-only contradiction browser and canonical Evidence detail
+surface.
+
+Implemented:
+
+- explicit CONTRADICTED Finding discovery;
+- same-subject/same-field Finding value-conflict detection;
+- cross-snapshot capability-observation disagreement detection;
+- ResearchSession proposal contradiction discovery;
+- filtering by ResearchSession, canonical subject, and Evidence type;
+- clickable Evidence IDs from typed tool transcripts and supporting/contradicting proposal evidence;
+- Evidence detail backlinks into canonical findings, relationships, validations, capabilities,
+  implementations, ResearchSession tool calls, and proposals;
+- dedicated Tools > Research: Contradictions navigation;
+- deterministic regression coverage in both focused research CI and the full core regression job.
+
+The feature intentionally surfaces disagreements without adjudicating them. Deterministic
+verification/promotion remains a separate authority path.

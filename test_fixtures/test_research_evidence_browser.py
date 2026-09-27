@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""Regression coverage for research contradiction filtering and evidence drill-down."""
+from __future__ import annotations
+
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from types import SimpleNamespace
+
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+
+from workbench.core import graph
+from workbench.core.schema import Evidence, Finding
+from workbench.gui_shell import build_shell_context, route_owner
+from workbench.research.evidence_browser import evidence_record, list_contradictions
+from workbench.research.session import ResearchSessionStore
+
+
+ROOT=Path(__file__).resolve().parents[1]
+TEMPLATES=ROOT/"gui"/"templates"
+
+
+def request(path: str):
+    return SimpleNamespace(url=SimpleNamespace(path=path),method="GET")
+
+
+def shell(path: str):
+    return build_shell_context(
+        path=path,method="GET",settings={},
+        default_topaz_root="C:/missing-topaz",
+        default_backport_root="C:/missing-workspace",
+        path_exists=lambda _path: False,
+    )
+
+
+def render(name: str,path: str,**values) -> str:
+    env=Environment(loader=FileSystemLoader(str(TEMPLATES)),autoescape=select_autoescape(("html",)))
+    env.globals.update(
+        current_theme=lambda:"light",
+        backport_enabled=lambda:False,
+        shell_context=lambda _request:shell(path),
+    )
+    return env.get_template(name).render(request=request(path),**values)
+
+
+def main() -> int:
+    assert route_owner("/research/contradictions")["section"]=="Research: Contradictions"
+    assert route_owner("/research/evidence")["section"]=="Research: Contradictions"
+
+    with TemporaryDirectory() as td:
+        db=Path(td)/"workbench.db"
+        con=graph.init_db(db)
+        graph.insert_record(con,Evidence("evidence:server","SERVER","LSB","scripts/a.lua","lsb:test","server evidence"))
+        graph.insert_record(con,Evidence("evidence:client","CLIENT","FFXI DAT","ROM/1/2.DAT","client:test","client evidence"))
+        graph.insert_record(con,Evidence("evidence:capture","CAPTURE","packet capture","capture:7","runtime:test","capture evidence"))
+        graph.insert_record(con,Finding(
+            "finding:a","analysis:a","feature:test","implementation_state","IMPLEMENTED",
+            "VERIFIED","HIGH","evidence:server","lsb:test"
+        ))
+        graph.insert_record(con,Finding(
+            "finding:b","analysis:b","feature:test","implementation_state","MISSING",
+            "VERIFIED","HIGH","evidence:client","client:test"
+        ))
+        graph.insert_record(con,Finding(
+            "finding:explicit","analysis:c","feature:other","notes","conflict",
+            "CONTRADICTED","HIGH","evidence:capture","runtime:test"
+        ))
+        con.execute(
+            "INSERT INTO capability_observations VALUES (?,?,?,?,?,?,?)",
+            ("obs:src","capability:test","lsb:test","VERIFIED",'{"value":true}',"evidence:server","[]"),
+        )
+        con.execute(
+            "INSERT INTO capability_observations VALUES (?,?,?,?,?,?,?)",
+            ("obs:dst","capability:test","client:test","MISSING",'{"value":false}',"evidence:client","[]"),
+        )
+        con.commit()
+        con.close()
+
+        store=ResearchSessionStore(db)
+        session=store.create(
+            research_session_id="research:evidence",
+            question="Why do the sources disagree?",
+            provider="fixture",
+            model="fixture",
+            permission_profile="PROPOSE_CHANGES",
+        )
+        store.append_tool_call(
+            session.research_session_id,
+            tool_name="graph.search",
+            args={"query":"feature:test"},
+            result={"status":"OK"},
+            evidence_ids=["evidence:server","evidence:client"],
+        )
+        store.add_proposal(
+            session.research_session_id,
+            proposal_type="FindingProposal",
+            subject_id="feature:test",
+            payload={"subject_id":"feature:test","field":"implementation_state","value":"IMPLEMENTED"},
+            supporting_evidence_ids=["evidence:server"],
+            contradicting_evidence_ids=["evidence:client"],
+            verification_requirement="Resolve server/client disagreement.",
+        )
+
+        report=list_contradictions(db)
+        kinds={item["kind"] for item in report["items"]}
+        assert "FINDING_VALUE_CONFLICT" in kinds,report
+        assert "EXPLICIT_FINDING_CONTRADICTION" in kinds,report
+        assert "CAPABILITY_OBSERVATION_CONFLICT" in kinds,report
+        assert "RESEARCH_PROPOSAL_CONTRADICTION" in kinds,report
+
+        session_report=list_contradictions(db,research_session_id="research:evidence")
+        assert any(item["kind"]=="RESEARCH_PROPOSAL_CONTRADICTION" for item in session_report["items"]),session_report
+
+        client_only=list_contradictions(db,evidence_type="CLIENT")
+        assert client_only["items"],client_only
+        assert all("CLIENT" in item["evidence_types"] for item in client_only["items"]),client_only
+
+        detail=evidence_record(db,"evidence:client")
+        assert detail is not None
+        assert detail["evidence_type"]=="CLIENT",detail
+        kinds={ref["kind"] for ref in detail["references"]}
+        assert "findings" in kinds,detail
+        assert "capability_observations" in kinds,detail
+        assert "research_tool_call" in kinds,detail
+        assert "research_proposal" in kinds,detail
+        proposal_ref=next(ref for ref in detail["references"] if ref["kind"]=="research_proposal")
+        assert "CONTRADICTING" in proposal_ref["evidence_roles"],proposal_ref
+
+        contradictions_html=render(
+            "research_contradictions.html","/research/contradictions",
+            report=report,session_id="",subject_id="",evidence_type="",
+        )
+        assert "Research Contradictions" in contradictions_html
+        assert "FINDING_VALUE_CONFLICT" in contradictions_html
+        assert "evidence%3Aclient" in contradictions_html
+
+        evidence_html=render(
+            "research_evidence.html","/research/evidence",
+            evidence=detail,
+        )
+        assert "Evidence Detail" in evidence_html
+        assert "FFXI DAT" in evidence_html
+        assert "CONTRADICTING" in evidence_html
+        assert "graph.search" in evidence_html
+
+        session_data=store.get("research:evidence")
+        session_html=render(
+            "research_session_detail.html","/research/research:evidence",
+            session=session_data,
+            created="",run_status="",run_error="",replayed_from="",
+            run_defaults={
+                "provider":"fixture","model":"fixture","max_tool_calls":8,
+                "max_provider_calls":12,"timeout":120.0,"temperature":0.1,
+                "provider_base_url":"",
+            },
+            has_run=True,
+        )
+        assert "/research/contradictions?session_id=research%3Aevidence" in session_html
+        assert "/research/evidence?evidence_id=evidence%3Aclient" in session_html
+
+    source=(ROOT/"gui_server.py").read_text(encoding="utf-8")
+    assert '@app.get("/research/contradictions"' in source
+    assert '@app.get("/research/evidence"' in source
+
+    print("research evidence drill-down regression: PASS")
+    return 0
+
+
+if __name__=="__main__":
+    raise SystemExit(main())

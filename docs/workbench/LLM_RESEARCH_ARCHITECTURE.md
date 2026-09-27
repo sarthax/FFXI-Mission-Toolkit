@@ -238,3 +238,25 @@ The typed research layer now includes:
 - proposal.create / proposal.status / proposal.verify / proposal.promote
 
 These enforce separate propose vs validation authority. Promotion is deterministic and fail-closed. Missing/contradicting evidence blocks promotion, and REFERENCE-only evidence cannot produce VERIFIED Finding or ValidationResult truth.
+
+
+## Contradiction browser and canonical Evidence drill-down
+
+ResearchSession evidence trails now resolve back into the canonical `evidence` table rather than
+remaining opaque ids in transcripts. The read-only browser exposes explicit and structural
+disagreement while preserving source authority boundaries.
+
+Contradiction discovery includes:
+
+- canonical Findings explicitly marked `CONTRADICTED`;
+- multiple Findings for the same subject/field carrying distinct values from distinct
+  evidence/snapshot contexts;
+- capability observations whose status/value differs across snapshots;
+- staged ResearchSession proposals that contain contradicting evidence.
+
+Filters may scope the view to a ResearchSession, canonical subject, or Evidence type. Evidence
+detail resolves backlinks from canonical findings/relationships/validations/capabilities and from
+ResearchSession typed tool calls/proposals.
+
+The browser is diagnostic only. It does not decide which source is correct, alter confidence,
+promote proposals, or mutate canonical records.

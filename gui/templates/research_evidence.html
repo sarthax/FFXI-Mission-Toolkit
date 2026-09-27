@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Evidence Detail{% endblock %}
+{% block content %}
+<p><a href="/research/contradictions">← Research Contradictions</a></p>
+<h1>Evidence Detail</h1>
+
+<div class="table-wrap"><table>
+  <tr><th>Evidence ID</th><td><code>{{ evidence.evidence_id }}</code></td></tr>
+  <tr><th>Type</th><td>{{ evidence.evidence_type }}</td></tr>
+  <tr><th>Source</th><td>{{ evidence.source }}</td></tr>
+  <tr><th>Location</th><td><code>{{ evidence.location or "-" }}</code></td></tr>
+  <tr><th>Snapshot</th><td><code>{{ evidence.snapshot or "-" }}</code></td></tr>
+  <tr><th>Notes</th><td>{{ evidence.notes or "-" }}</td></tr>
+  <tr><th>References</th><td>{{ evidence.reference_count }}</td></tr>
+</table></div>
+
+<h2>Known References</h2>
+{% if not evidence.references %}
+<p class="muted">No canonical or ResearchSession records currently reference this evidence ID.</p>
+{% else %}
+<div class="table-wrap"><table>
+  <tr><th>Kind</th><th>Record</th><th>Subject / Session</th><th>Status</th><th>Role / Tool</th></tr>
+  {% for r in evidence.references %}
+  <tr>
+    <td>{{ r.kind }}</td>
+    <td><code>{{ r.record_id }}</code></td>
+    <td>
+      {% if r.research_session_id %}<a href="/research/{{ r.research_session_id|urlencode }}"><code>{{ r.subject_id }}</code></a>
+      {% else %}<code>{{ r.subject_id or "-" }}</code>{% endif %}
+    </td>
+    <td>{{ r.status or "-" }}</td>
+    <td>
+      {% if r.evidence_roles %}{{ r.evidence_roles|join(", ") }}
+      {% elif r.tool_name %}<code>{{ r.tool_name }}</code>
+      {% else %}-{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+{% endblock %}
