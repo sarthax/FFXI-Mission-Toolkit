@@ -126,7 +126,14 @@ def _summary(result) -> dict:
     return {"kind": type(result).__name__, "value": str(result)[:160]}
 
 
-def _inspect_path(path: Path, *, dat_id: int | None = None, extractor_note: str = "", family_hint: str | None = None) -> dict:
+def _inspect_path(
+    path: Path,
+    *,
+    client_root: Path | None = None,
+    dat_id: int | None = None,
+    extractor_note: str = "",
+    family_hint: str | None = None,
+) -> dict:
     data = path.read_bytes()
     matches, rejected = [], []
     for name in PARSERS:
@@ -144,10 +151,17 @@ def _inspect_path(path: Path, *, dat_id: int | None = None, extractor_note: str 
                 "label": PARSER_LABELS.get(name, name),
                 "reason": str(ex)[:220],
             })
+    if client_root is not None:
+        try:
+            relative = path.resolve().relative_to(Path(client_root).resolve()).as_posix()
+        except (OSError, ValueError):
+            relative = path.name
+    else:
+        relative = path.name
     return {
         "dat_id": dat_id,
         "path": str(path),
-        "rom_relative": str(path).split("FINAL FANTASY XI")[-1].lstrip("\\/"),
+        "rom_relative": relative,
         "filename": path.name,
         "size": len(data),
         "size_kib": round(len(data) / 1024.0, 1),
@@ -166,12 +180,13 @@ def _inspect_path(path: Path, *, dat_id: int | None = None, extractor_note: str 
 def inspect_path(ffxi_path: str, dat_path: str) -> dict:
     """Inspect a user-selected DAT path inside the configured client root."""
     path = _path_under_client(ffxi_path, dat_path)
-    return _inspect_path(path)
+    return _inspect_path(path, client_root=Path(ffxi_path))
 
 def inspect(ffxi_path: str, dat_id: int) -> dict:
     found = resolve(ffxi_path, dat_id)
     return _inspect_path(
         Path(found["path"]),
+        client_root=Path(ffxi_path),
         dat_id=dat_id,
         extractor_note=found["extractor_note"],
         family_hint=id_hint(dat_id),
