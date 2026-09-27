@@ -118,23 +118,23 @@ def _json_value(raw: str | None, fallback):
 
 def _node_info(con: sqlite3.Connection, node_id: str) -> dict[str, Any]:
     probes = (
-        ("artifacts", "artifact_id", "artifact_type", "path"),
-        ("features", "feature_id", "feature_type", "name"),
-        ("entities", "entity_id", "entity_type", "display_name"),
-        ("capabilities", "capability_id", "capability_type", "name"),
-        ("functions", "function_id", "kind", "qualified_name"),
-        ("bindings", "binding_id", "binding_system", "lua_name"),
-        ("enum_definitions", "enum_id", "format", "symbol"),
-        ("build_targets", "target_id", "build_system", "name"),
+        ("artifacts", "ARTIFACT", "artifact_id", "artifact_type", "path"),
+        ("features", "FEATURE", "feature_id", "feature_type", "name"),
+        ("entities", "ENTITY", "entity_id", "entity_type", "display_name"),
+        ("capabilities", "CAPABILITY", "capability_id", "capability_type", "name"),
+        ("functions", "FUNCTION", "function_id", "kind", "qualified_name"),
+        ("bindings", "BINDING", "binding_id", "binding_system", "lua_name"),
+        ("enum_definitions", "ENUM_DEFINITION", "enum_id", "format", "symbol"),
+        ("build_targets", "BUILD_TARGET", "target_id", "build_system", "name"),
     )
-    for table, key, type_col, label_col in probes:
+    for table, node_kind, key, type_col, label_col in probes:
         row = con.execute(
             f"SELECT {type_col}, {label_col} FROM {table} WHERE {key}=?",
             (node_id,),
         ).fetchone()
         if row is not None:
             return {
-                "node_kind": table[:-1].upper() if table.endswith("s") else table.upper(),
+                "node_kind": node_kind,
                 "display_name": row[1],
                 "artifact_type": row[0] if table == "artifacts" else None,
                 "artifact_path": row[1] if table == "artifacts" else None,

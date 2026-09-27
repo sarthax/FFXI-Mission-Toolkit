@@ -180,6 +180,14 @@ def record_dict(record: Any) -> dict[str, Any]:
 
 
 @dataclass
+class Entity:
+    entity_id: str
+    entity_type: str
+    display_name: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
 class Artifact:
     artifact_id: str
     artifact_type: str

@@ -425,7 +425,14 @@ Current proof:
 - [x] Expose canonical package creation from existing Migration/MigrationAction/Artifact/dependency records; creation consumes reviewed scope, embeds the full dependency decision ledger, and assembles a reviewable package workspace only.
 - [~] Prove dependency-discovery completeness against a complex mob and representative instance/mission before adding approval/apply UI.
   - [x] Establish Arrapago Reef Medusa as the first machine-readable manual truth set, including helpers, skill/spell chains, job-special mixin, loot/items, title/text, Lua/engine requirements, and related-but-out-of-scope Besieged variants.
-  - [ ] Close the generic discovery gaps exposed by the Medusa proof and rerun the truth-set comparison.
+  - [~] Close the generic discovery gaps exposed by the Medusa proof and rerun the truth-set comparison.
+    - [x] Promote mob skills, mob skill-list membership, and mob spell-list membership to generic logical schema surfaces.
+    - [x] Discover literal Lua `require()`/mixin artifact dependencies with evidence.
+    - [x] Resolve safe `ID.mob.SYMBOL + N` entity arithmetic/ranges through `IDs.lua` + zone `mobs.yaml`, including Medusa's four Lamia Exon helpers.
+    - [ ] Normalize modern LSB zone YAML templates/entities deeply enough for entity→template→species/skill/spell closure.
+    - [ ] Link skill-list members to mob-skill Lua implementations generically.
+    - [ ] Link zone-YAML loot symbols to canonical item records.
+    - [ ] Promote zone text/title references and cross-zone Besieged coupling into package dependency edges.
   - [x] Establish Coiler automaton attachment as a second truth set covering item/internal identity mapping, dynamic Lua dispatch, shared automaton behavior, C++ puppet runtime, persistence, downstream weapon-skill consumers, conditional interactions, and reviewer-controlled acquisition paths.
   - [x] Add recursive crafting/producibility closure for synth/synergy recipe prerequisites; Heat Seeker→Glass Sheet now proves multi-level recipe recursion, key-item gating, leaf obtainability, and Synergy client/runtime gating.
   - [ ] Unify shop/drop/reward/HELM/gardening/exchange/appraisal acquisition analyzers so every crafting leaf can resolve against the same obtainability graph.

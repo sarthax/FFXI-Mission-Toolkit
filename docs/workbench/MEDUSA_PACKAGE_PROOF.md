@@ -249,14 +249,14 @@ This is the important part of the proof.
 | Stale-scope detection | Covered | Reviewed scope fingerprint invalidates when graph closure changes. |
 | Legacy SQL mob spawn/group/pool/drop chain | Partial | Existing adapters and instance slice cover a subset of this chain. |
 | Modern LSB zone mob YAML | **Gap** | Current logical extraction is SQL-oriented and does not normalize zone YAML mob templates/entities as equivalent logical records. |
-| Medusa helper ID arithmetic | **Gap** | `MEDUSA + 1 .. +4` requires Lua constant/range reasoning or a specialized static reference resolver. |
+| Medusa helper ID arithmetic | Covered | Conservative Lua dependency discovery resolves `GetFirstID(...)` anchors through zone YAML and expands numeric `ID.mob` ranges into concrete Entity dependencies. |
 | Helper-template traversal | **Gap** | There is no generic entity→template→species/skill/spell dependency closure yet. |
-| Mob skill-list membership | **Gap** | `mob_skill_lists` is not currently a first-class logical dependency type in the server adapter profile. |
-| Mob skill definitions | **Gap** | `mob_skills` is not currently a first-class logical dependency type for package closure. |
-| Mob spell-list membership | **Gap** | `mob_spell_lists` is not currently a first-class logical dependency type. |
+| Mob skill-list membership | Covered | `mob_skill_lists` is now a first-class cross-fork logical schema surface. |
+| Mob skill definitions | Covered | `mob_skills` is now a first-class cross-fork logical schema surface. |
+| Mob spell-list membership | Covered | `mob_spell_lists` is now a first-class cross-fork logical schema surface with level gates. |
 | Species/family dependencies | **Gap** | LSB species and legacy family concepts are intentionally distinct, but closure does not yet model either deeply enough. |
 | Mob-skill Lua script linkage | **Gap/Partial** | Scripts are indexable artifacts, but list/member→script linkage is not guaranteed. |
-| Lua `require()` / mixin dependency | **Gap** | Current package analyzer deliberately does not infer require chains. |
+| Lua `require()` / mixin dependency | Covered | Literal `require()` paths now produce VERIFIED packageable `REQUIRES` artifact edges with evidence. |
 | Lua API → binding → C++ | Partial | Workbench has Lua/binding/C++ graph infrastructure, but Medusa-specific closure is not yet proven end to end. |
 | Lua enum/constants | Partial | Enum graph infrastructure exists, but Medusa script references are not yet proven to resolve automatically. |
 | YAML loot → item records | **Gap** | Current item logical records exist, but the YAML loot-symbol edge is not created. |
@@ -292,21 +292,19 @@ Modern LSB zone YAML needs its own adapter/extractor path.
 
 ### P0 — Lua dependency extraction
 
-Add explicit graph edges for:
+Current progress:
 
-- `require()` / mixins;
-- zone ID symbol references;
-- entity ID anchors/ranges where statically resolvable;
-- enum/constants;
-- referenced global functions/modules.
+- [x] literal `require()` / mixin artifact edges;
+- [x] `GetFirstID(...)` zone-ID anchors plus statically resolvable `ID.mob.SYMBOL + N` ranges;
+- [ ] general zone text/ID symbol references;
+- [ ] enum/constants beyond existing generic enum graph infrastructure;
+- [ ] referenced global functions/modules where not already represented by Lua/binding analysis.
 
 For an expression such as:
 
 `ID.mob.MEDUSA + 1 .. ID.mob.MEDUSA + 4`
 
-the analyzer should resolve the base ID from the zone IDs source and emit the four concrete entity dependencies with evidence showing the arithmetic expression.
-
-If resolution is not safe, emit an explicit unresolved/analyzer-gap node rather than omitting the dependency.
+the analyzer now resolves the `GetFirstID('Medusa')` anchor against zone `mobs.yaml`, emits four concrete Entity dependencies, and records the source expression/evidence. If either identity source is missing or ambiguous, it emits explicit UNKNOWN findings rather than silently omitting the dependency.
 
 ### P0 — mob skill/spell closure
 

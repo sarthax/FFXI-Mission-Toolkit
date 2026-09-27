@@ -69,10 +69,14 @@ def main():
     assert required["besieged_system"]=="REQUIRED_OR_EXPLICITLY_INCOMPLETE",required
 
     gaps=payload["known_current_toolkit_gaps"]
-    assert any("mob_skill_lists" in gap for gap in gaps),gaps
-    assert any("mob_spell_lists" in gap for gap in gaps),gaps
-    assert any("MEDUSA + 1" in gap for gap in gaps),gaps
+    closed=payload["closed_toolkit_gaps"]
     assert any("YAML loot" in gap for gap in gaps),gaps
+    assert any("species/family" in gap for gap in gaps),gaps
+    assert any("Besieged" in gap for gap in gaps),gaps
+    assert any("mob_skill_lists" in gap for gap in closed),closed
+    assert any("mob_spell_lists" in gap for gap in closed),closed
+    assert any("require()/mixin" in gap for gap in closed),closed
+    assert any("ID.mob" in gap for gap in closed),closed
 
     print("Medusa dependency truth-set self-test: PASS")
     return 0
