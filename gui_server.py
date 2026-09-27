@@ -3228,20 +3228,22 @@ def feature_trace_page(
     matches = []
     error = None
     con = _workbench_graph_connection()
+    catalog_con = get_con()
     if con is None:
         error = "Canonical Workbench graph is not available. Build/import workbench.db before tracing features."
     elif q.strip():
         query = q.strip()
-        exact = feature_trace.node_info(con, query)
+        exact = feature_trace.node_info(con, query, catalog_con)
         if exact["known"]:
-            result = feature_trace.trace(con, query, depth, direction)
+            result = feature_trace.trace(con, query, depth, direction, catalog_con)
         else:
-            matches = feature_trace.search_nodes(con, query)
+            matches = feature_trace.search_nodes(con, query, catalog_con)
             if len(matches) == 1:
-                result = feature_trace.trace(con, matches[0]["node_id"], depth, direction)
+                result = feature_trace.trace(con, matches[0]["node_id"], depth, direction, catalog_con)
         con.close()
     elif con is not None:
         con.close()
+    catalog_con.close()
     relationship_sections = present_relationships(result["edges"]) if result else []
     return templates.TemplateResponse(request, "feature_trace.html", {
         "request": request,

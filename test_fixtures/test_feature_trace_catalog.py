@@ -20,6 +20,13 @@ def main():
     assert feature_trace.node_info(con,"catalog:sql_item_basic:2413")["representations"][0]["metadata"]["numeric_id"]==2413
     assert len(feature_trace.search_nodes(con,"2413"))==1
     assert len(feature_trace.search_nodes(con,"Coiler"))==3  # ambiguity remains visible
+    graph=sqlite3.connect(":memory:")
+    graph.execute("CREATE TABLE entities (entity_id TEXT, entity_type TEXT, display_name TEXT, metadata_json TEXT)")
+    graph.execute("CREATE TABLE entity_relationships (relationship_id TEXT, source_node TEXT, target_node TEXT, relationship TEXT, evidence_id TEXT, confidence TEXT, status TEXT, metadata_json TEXT, source_snapshot_id TEXT)")
+    bridged=feature_trace.search_nodes(graph,"Coiler",con)
+    assert any(m["node_id"]=="catalog:sql_item_basic:2413" for m in bridged)
+    catalog_trace=feature_trace.trace(graph,"catalog:sql_item_basic:2413",3,"both",con)
+    assert catalog_trace["nodes"][0]["known"] and not catalog_trace["edges"]
     edges=[
         {"relationship":"PACKET_OBSERVED","metadata":{"opcode":"0x00E","capture_id":1},"source_snapshot_id":None},
         {"relationship":"PACKET_OBSERVED","metadata":{"opcode":"0x00E","capture_id":2},"source_snapshot_id":None},

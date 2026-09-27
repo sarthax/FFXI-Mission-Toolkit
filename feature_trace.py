@@ -30,8 +30,8 @@ def _json_value(raw):
         return raw
 
 
-def node_info(con: sqlite3.Connection, node_id: str) -> dict:
-    indexed = catalog_node(con, node_id)
+def node_info(con: sqlite3.Connection, node_id: str, catalog_con: sqlite3.Connection | None = None) -> dict:
+    indexed = catalog_node(catalog_con or con, node_id)
     if indexed is not None:
         return indexed
     sources = []
@@ -65,8 +65,17 @@ def node_info(con: sqlite3.Connection, node_id: str) -> dict:
     return {"node_id": node_id, "known": False, "representations": []}
 
 
-def search_nodes(con: sqlite3.Connection, term: str) -> list[dict]:
-    return search_catalog(con, term)
+def search_nodes(con: sqlite3.Connection, term: str, catalog_con: sqlite3.Connection | None = None) -> list[dict]:
+    """Search graph knowledge and the operational index without merging their facts."""
+    sources = [con] if catalog_con is None or catalog_con is con else [con, catalog_con]
+    rows, seen = [], set()
+    for source in sources:
+        for row in search_catalog(source, term):
+            key = (row["node_id"], row.get("source"))
+            if key not in seen:
+                seen.add(key)
+                rows.append(row)
+    return sorted(rows, key=lambda row: (str(row.get("display_name") or "").casefold(), row["node_id"]))
 
 
 def _legacy_search_nodes(con: sqlite3.Connection, term: str) -> list[dict]:
@@ -100,6 +109,7 @@ def _legacy_search_nodes(con: sqlite3.Connection, term: str) -> list[dict]:
 
 
 def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
+          catalog_con: sqlite3.Connection | None = None,
           relationships: set[str] | None = None) -> dict:
     queue = deque([(root, 0, [root], [])])
     visited = {root}
@@ -166,7 +176,7 @@ def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
         "direction": direction,
         "max_depth": depth,
         "relationship_filter": sorted(relationships) if relationships else [],
-        "nodes": [node_info(con, n) for n in node_ids],
+        "nodes": [node_info(con, n, catalog_con) for n in node_ids],
         "edges": edges,
         "paths": paths,
         "notes": [
