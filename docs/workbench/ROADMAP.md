@@ -621,6 +621,7 @@ Roadmap authority rule: `docs/workbench/ROADMAP.md` is the detailed rework backl
 - [x] Model lifecycle effects generically (grant/require/consume/remove/reissue) without adding mission-specific columns to the core graph.
 - [x] Bridge behavioral transitions/lifecycles into the existing mission representation planner.
 - [ ] Add source-family extractors that populate the model from Lua mission/quest scripts.
+  - Required by stress probes: named mission-status channels, persistent/local vars, temporal guards, spawned-entity/death transitions, spatial guards, battlefield-result guards, trade semantics, default-action replacement/priority, and client-handled effects.
 - [ ] Emit canonical graph dependency edges and evidence records from extracted machines.
 - [ ] Add DefaultActions/fallback conflict analysis and client dialog/event-resource closure.
 - [ ] Run the branching-mission truth set as the first large stress validation after the generic extractor exists.
