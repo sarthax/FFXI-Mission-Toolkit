@@ -15,6 +15,10 @@ class CatalogTable:
     object_type: str
     detail_columns: tuple[str, ...] = ()
     inspect_path: str | None = None
+    key_columns: tuple[str, ...] = ()
+
+    def identity_columns(self) -> tuple[str, ...]:
+        return self.key_columns or (self.id_column,)
 
 @dataclass(frozen=True)
 class CatalogProvider:
@@ -37,7 +41,7 @@ _COMMON_SERVER_TABLES=(
     CatalogTable("item_usable","itemid","name","ITEM_USABLE"),
     CatalogTable("npc_list","npcid","name","NPC"),
     CatalogTable("mob_spawn_points","mobid","mobname","MOB"),
-    CatalogTable("mob_groups","groupid","name","MOB_GROUP"),
+    CatalogTable("mob_groups","groupid","name","MOB_GROUP",key_columns=("zoneid","groupid")),
     CatalogTable("mob_pools","poolid","name","MOB_POOL"),
     CatalogTable("instance_list","instanceid","instance_name","INSTANCE"),
     CatalogTable("spell_list","spellid","name","SPELL"),
@@ -47,7 +51,7 @@ _COMMON_SERVER_TABLES=(
 )
 
 def _prefixed(prefix: str) -> tuple[CatalogTable,...]:
-    return tuple(CatalogTable(f"{prefix}_{t.table}",t.id_column,t.name_column,t.object_type) for t in _COMMON_SERVER_TABLES)
+    return tuple(CatalogTable(f"{prefix}_{t.table}",t.id_column,t.name_column,t.object_type,t.detail_columns,t.inspect_path,t.key_columns) for t in _COMMON_SERVER_TABLES)
 
 PROVIDERS=(
     CatalogProvider("server-sql","server",_prefixed("sql")),
