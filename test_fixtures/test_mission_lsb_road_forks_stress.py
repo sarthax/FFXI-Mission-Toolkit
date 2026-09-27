@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
-from workbench.plugins.domain.mission_lsb_extract import correlate_lsb_handlers, chain_event_transitions, extract_section_completion_gate
+from workbench.plugins.domain.mission_lsb_extract import correlate_lsb_handlers, chain_event_transitions, extract_helper_transitions, extract_section_completion_gate
 
 ROOT=Path(__file__).resolve().parents[1]
 SOURCE=(ROOT/"test_fixtures"/"fixtures"/"lsb_the_road_forks.lua").read_text(encoding="utf-8")
@@ -37,15 +37,17 @@ def main():
     assert completion and completion.logic=="ALL",completion
     assert {c.subject for c in completion.conditions}=={"mission_status:SANDORIA","mission_status:WINDURST"},completion
 
-    # Remaining parser gaps intentionally asserted so later fixes must update this test.
-    source_gap={
-        "timer_helper_outside_sections":"jewelTimer = function" in SOURCE,
-        "message_return":"mission:messageSpecial" in SOURCE or "mission:messageName" in SOURCE,
-    }
-    assert all(source_gap.values()),source_gap
+    helpers=extract_helper_transitions(SOURCE)
+    jewel=next(t for t in helpers if t.metadata.get("helper")=="jewelTimer")
+    assert jewel.trigger=="TIMER",jewel
+    assert any(e.effect=="START_TIMER" for e in jewel.effects),jewel
+    assert any(e.effect=="REMOVE" and e.subject=="key_item:MIMEO_JEWEL" for e in jewel.effects),jewel
+    assert any(e.effect=="MESSAGE" for e in jewel.effects),jewel
+    assert any(e.effect=="MESSAGE" for tr in raw.transitions for e in tr.effects),raw.transitions
+    source_gap={}
     print("Road Forks real-source stress: PASS")
     print("raw_transitions",len(raw.transitions),"logical_chains",len(logical),"channels",len(raw.channels))
-    print("known_gaps",",".join(k for k,v in source_gap.items() if v))
+    print("known_gaps",",".join(k for k,v in source_gap.items() if v) or "none_in_current_probe")
     return 0
 
 if __name__=="__main__":
