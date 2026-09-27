@@ -1966,3 +1966,12 @@ Current examples include:
 - migrations/packages: source/target snapshots, migration/artifact IDs, status, and reason.
 
 Search results expose a `matched_on` field and the GUI shows it explicitly. These aliases improve discovery only; they do not create canonical identities or graph relationships.
+
+
+### Expanded server catalog coverage
+
+Explicit server catalog providers now include durable named records for mob skills and pets across the core SQL, LandSandBoat, Topaz, and DSP indexes. Status effects are also explicit provider objects where the corresponding fork index exists, while preserving fork provenance.
+
+Pets expose a deterministic source-native `PET_USES_POOL` link through `pet_list.poolid`. Mob skills and status effects are discovery/inspection objects only in this milestone; no behavioral dependency is inferred from their presence.
+
+Unnamed bridge tables such as `blue_spell_list`, `mob_droplist`, and `instance_entities` remain excluded from top-level catalog discovery until they have an explicit stable identity/presentation contract.
