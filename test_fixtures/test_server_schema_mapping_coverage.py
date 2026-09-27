@@ -24,6 +24,13 @@ def main():
     assert "instance_zone" in instances["TOPAZ"]["mapped_logical_fields"],instances
     assert "instance_zone" in instances["DSP"]["mapped_logical_fields"],instances
 
+    for logical_type in ("mob_pool_modifiers","mob_spell_lists","skill_caps","skill_ranks"):
+        families=rows[logical_type]["families"]
+        assert all(
+            families[family]["status"] != "MISSING_LOGICAL_TYPE"
+            for family in ("TOPAZ","TOPAZ_NEXT","DSP","LSB")
+        ),families
+
     job_points=rows["job_points"]["families"]
     assert all(
         job_points[family]["status"] != "MISSING_LOGICAL_TYPE"
