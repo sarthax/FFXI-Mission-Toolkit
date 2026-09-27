@@ -1,111 +1,83 @@
 {% extends "base.html" %}
-{% block title %}Help{% endblock %}
+{% block title %}Help — Mission Toolkit{% endblock %}
 {% block content %}
-<h1>Help &amp; Overview</h1>
-<p class="muted">A local, read-only browser over indexed FFXI client/server reference data plus
-  real captured gameplay sessions. Everything here reads from an already-built local database --
-  nothing here modifies a live server.</p>
+<h1>Mission Toolkit Help</h1>
+<p class="muted">Mission Toolkit is an evidence-driven FFXI development workbench for tracing features across server code and data, client assets, captures, research evidence, validation, and migration packages. Use this page as a map of the current GUI.</p>
 
-<h2>Tools</h2>
-<p class="muted">The things you work in day to day.</p>
+<div class="warn"><strong>Evidence is not a verdict.</strong> A match, missing edge, capture observation, or catalog entry tells you what the Workbench currently knows. It does not by itself prove that a feature is implemented, broken, or absent.</div>
+
+<h2>Start here</h2>
 <div class="table-wrap"><table>
-  <tr><th>page</th><th>what it's for</th></tr>
-  <tr>
-    <td><a class="inline" href="/captures">Captures</a></td>
-    <td>Upload, browse, and cross-reference real captured gameplay sessions. Each capture gets a
-      timeline (events, battle actions, key items, dialogue, raw packets), position plots (2D
-      top-down and 3D), and a search across every ingested capture at once. Supports .zip and .7z
-      bundles, or dropping individual log files onto an existing capture.</td>
-  </tr>
-  <tr>
-    <td><a class="inline" href="/entity">Entity Lookup</a></td>
-    <td>One canonical profile per NPC/mob id -- real position, model, drops, observed abilities,
-      dialogue/events, level range, attack timing, and every capture it's appeared in, all cross-
-      referenced from whichever real sources have data for it. Search by id, or by name in any
-      style the client actually stored it in ("Lamia No.13", "Qiqirn_Treasure_Hunter", etc -- all
-      normalize to the same match).</td>
-  </tr>
-  <tr>
-    <td><a class="inline" href="/wiki">Wiki Compiler</a></td>
-    <td>Pulls real item/NPC/mob references out of a wiki page and resolves them against the
-      indexed data -- a reference aid, not a replacement for verifying against the real SQL/Lua.</td>
-  </tr>
-  <tr>
-    <td><a class="inline" href="/packets">Packet Decoder</a></td>
-    <td>Decodes a raw captured packet into named, typed fields -- pick an opcode to see its full
-      field reference, then decode real hex to populate real values into the same table. Also
-      supports bulk-decoding a whole raw log file at once.</td>
-  </tr>
-</table></div>
+<thead><tr><th>Goal</th><th>Start with</th><th>What to do next</th></tr></thead>
+<tbody>
+<tr><td>Trace everything known about an NPC, item, mission, capability, or other object</td><td><a class="zonelink" href="/features/trace">Feature Trace</a></td><td>Search by name or ID, then follow dependency, implementation, client, runtime, validation, and evidence relationships.</td></tr>
+<tr><td>Check whether a feature has the evidence it needs</td><td><a class="zonelink" href="/features/check">Feature Checker</a></td><td>Review coverage across server, client, packets, captures, and other available evidence domains.</td></tr>
+<tr><td>Investigate recorded gameplay</td><td><a class="zonelink" href="/captures">Captures</a></td><td>Open a capture, timeline, packets, events, entities, and position data; use Search/Query for cross-capture work.</td></tr>
+<tr><td>Inspect server data directly</td><td><a class="zonelink" href="/entity">Entities</a> / <a class="zonelink" href="/sql">SQL</a></td><td>Resolve IDs and names, then follow links into dialog, events, zones, items, packets, or Feature Trace.</td></tr>
+<tr><td>Compare or backport server content</td><td><a class="zonelink" href="/iddrift">ID Drift</a></td><td>Use Bindings, Lua Converter, SQL Converter, and Packages as the task requires.</td></tr>
+<tr><td>Inspect the installed FFXI client</td><td><a class="zonelink" href="/clientoverview">Client Overview</a></td><td>Continue into Model Viewer, DAT Inspector, Binary Inspector, Dialog Drift, or Research Gaps.</td></tr>
+<tr><td>Validate expected behavior against evidence</td><td><a class="zonelink" href="/validation">Validation</a></td><td>Review runs/results or use Live Target when appropriate.</td></tr>
+<tr><td>Research an unresolved question</td><td><a class="zonelink" href="/research">Research Sessions</a></td><td>Keep source evidence and contradictions visible; use Wiki/LLM research as supporting evidence, not authority over primary sources.</td></tr>
+</tbody></table></div>
 
-<h2 style="margin-top:24px;">Research</h2>
-<p class="muted">Reference lookups for answering a specific question.</p>
+<h2>Workspaces</h2>
+<p class="muted">The top navigation is organized by job rather than by individual database table.</p>
 <div class="table-wrap"><table>
-  <tr><th>page</th><th>what it's for</th></tr>
-  <tr><td><a class="inline" href="/dialog">Dialog Search</a></td>
-    <td>Search or browse indexed dialogue text by keyword, id, or zone. Also has a zone drift
-      report (comparing indexed dialogue against a zone's own live client data).</td></tr>
-  <tr><td><a class="inline" href="/zones">Browse by Zone</a></td>
-    <td>List every entity/mob in a zone, a content-category tag, or both combined.</td></tr>
-  <tr><td><a class="inline" href="/gaps">Zero-Position / Unregistered</a></td>
-    <td>Finds entities with an unset position, or entities missing from a content type's
-      registration table -- worth a look, not automatically a bug.</td></tr>
-  <tr><td><a class="inline" href="/sql">SQL Index</a></td>
-    <td>Direct search over the indexed SQL tables (npc_list, mob_spawn_points, mob_groups, etc.)
-      by id or name. Any row whose id is a real npcid (npc_list, mob_spawn_points,
-      instance_entities) links straight through to its full Entity Lookup profile.</td></tr>
-  <tr><td><a class="inline" href="/events">Events / CSIDs</a></td>
-    <td>Per-zone list of every real cutscene/event id an entity can trigger. Generates itself
-      automatically the first time you pick a zone you haven't looked at before.</td></tr>
-  <tr><td><a class="inline" href="/missions">Assault Missions</a></td>
-    <td>Reference list of missions with their real zone/rank/prerequisites.</td></tr>
-  <tr><td><a class="inline" href="/keyitems">Key Items</a></td>
-    <td>Search key items by name, with a readiness check against the scripting enum and any real
-      capture evidence of that item being granted/removed.</td></tr>
-  <tr><td><a class="inline" href="/items">Item Browser</a></td>
-    <td>Our own item_basic/equipment/weapon/usable data next to the external retail reference and
-      LandSandBoat, by normalized name -- shows id matches, id drift, and items either side is
-      missing.</td></tr>
-  <tr><td><a class="inline" href="/iddrift">ID Drift</a></td>
-    <td>The real fix for "wrong id" backport bugs: cross-checks LandSandBoat (what this content
-      was ported from) against your Topaz server's own code/SQL across items, npcs, mob groups,
-      mob skills, spells, abilities, weapon skills, traits, Blue Magic wiring, pets, status
-      effects, and event/csid literals scraped straight out of both sides' npc scripts. Browse by
-      category; zone-scoped categories have their own zone picker and a block-shift detector for
-      "this whole zone's ids are off by a constant amount" bugs.</td></tr>
-</table></div>
+<thead><tr><th>Workspace</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><strong>Home / Project</strong></td><td>Project status, roadmap, Help, and the Data &amp; Tools controls used to build or refresh local indexes.</td></tr>
+<tr><td><strong>Features</strong></td><td>Mission Explorer, Feature Trace, and Feature Checker. Start here when the question is about a feature rather than a particular file or table.</td></tr>
+<tr><td><strong>Domains</strong></td><td>Domain-specific views for missions, quests, battle systems, Abyssea, battlefields, conflict systems, and other FFXI content. Domain plugins add specialized interpretation without changing the generic core.</td></tr>
+<tr><td><strong>Backport &amp; Migration</strong></td><td>ID drift, binding comparison, Lua/SQL conversion, and legacy backport tooling.</td></tr>
+<tr><td><strong>Captures</strong></td><td>Import and investigate runtime gameplay evidence. Library, Search, and Query are the main entry points.</td></tr>
+<tr><td><strong>Server</strong></td><td>Zones, entities, items, key items, SQL, dialog, events/CSIDs, packets, data gaps, and the 3D zone viewer.</td></tr>
+<tr><td><strong>Client</strong></td><td>Client builds and assets: overview/snapshots, models, DATs, binaries, dialog drift, and research gaps.</td></tr>
+<tr><td><strong>Validation</strong></td><td>Validation dashboard, runs/results, and live-target checks. Validation records evidence; it should not erase disagreements between sources.</td></tr>
+<tr><td><strong>Packages</strong></td><td>Migration-package library, dependency scope, creation, review, and readiness.</td></tr>
+<tr><td><strong>Tools</strong></td><td>Research sessions/contradictions, Wiki/LLM support, editors, lookups, decoders, and diagnostics.</td></tr>
+<tr><td><strong>Settings</strong></td><td>Local source paths, configuration, index/source access, backups, and recovery.</td></tr>
+</tbody></table></div>
 
-<h2 style="margin-top:24px;">Tips</h2>
+<h2>How the evidence fits together</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Concept</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>Catalog / indexed object</td><td>A source says the object exists. Catalog discovery does not invent a dependency relationship.</td></tr>
+<tr><td>Canonical relationship</td><td>A recorded evidence-backed relationship such as REQUIRES, REFERENCES, BINDS, USES_ID, or VALIDATED_BY.</td></tr>
+<tr><td>Runtime observation</td><td>A capture observed an entity, packet, event, state transition, or other runtime fact. Repeated observations are evidence, not thousands of new semantic dependencies.</td></tr>
+<tr><td>Dependency closure</td><td>A recursive view of supported prerequisites or access/obtainability relationships, including AND/OR gates where represented.</td></tr>
+<tr><td>Validation</td><td>Expected-versus-observed evidence and results. A disagreement remains visible rather than being silently resolved.</td></tr>
+<tr><td>Package</td><td>A proposed migration unit. A feature and a package are related concepts, but they are not the same thing.</td></tr>
+</tbody></table></div>
+
+<h2>Common workflows</h2>
+<details open><summary><strong>Trace a feature or entity</strong></summary>
+<p>Open <a class="zonelink" href="/features/trace">Feature Trace</a> and search by a known name, numeric ID, or canonical ID. Select the correct match when a name is ambiguous. Use the semantic relationships and dependency map for meaning; drill into captures or packet tooling only when runtime evidence is relevant.</p>
+</details>
+<details><summary><strong>Investigate an ID mismatch during a backport</strong></summary>
+<p>Start with <a class="zonelink" href="/iddrift">ID Drift</a>, then verify the object in <a class="zonelink" href="/sql">SQL</a> or <a class="zonelink" href="/entity">Entity Lookup</a>. Follow source-specific evidence instead of assuming DSP, Topaz, Topaz-Next, and LSB share a schema or ID layout.</p>
+</details>
+<details><summary><strong>Compare expected behavior with a capture</strong></summary>
+<p>Open the relevant <a class="zonelink" href="/captures">capture</a> and use its timeline/packet/entity evidence, then review <a class="zonelink" href="/validation">Validation</a> or Feature Trace. Capture evidence tells you what happened in that session; it does not automatically describe every valid game state.</p>
+</details>
+<details><summary><strong>Inspect client-side support</strong></summary>
+<p>Start at <a class="zonelink" href="/clientoverview">Client Overview</a>. Use DAT and model tools for assets/data and Binary Inspector for EXE/DLL evidence. Keep the client build/snapshot in view when comparing results across versions.</p>
+</details>
+<details><summary><strong>Prepare a migration package</strong></summary>
+<p>Use <a class="zonelink" href="/packages">Packages</a> after tracing the feature and its dependency scope. Review scope and readiness before applying changes. Legacy Backport Package tooling remains available but is labeled as legacy in the navigation.</p>
+</details>
+
+<h2>Data &amp; indexes</h2>
+<p>The <a class="zonelink" href="/">Home / Project</a> page's <strong>Data &amp; Tools</strong> section shows which local sources are populated and provides the supported rebuild/install controls. Rebuild an index after its underlying server/client source changes. A zero or missing index can mean “not configured/not built,” not “the game data does not exist.”</p>
+<p>Source paths and environment configuration live in <a class="zonelink" href="/settings">Settings</a>. The context bar at the top of the GUI reports the project/source/target/client context the Workbench can actually establish; <strong>UNKNOWN</strong> is intentionally different from guessing a snapshot or build identity.</p>
+
+<h2>Useful navigation rules</h2>
 <ul>
-  <li><strong>Pagination</strong>: every list that can exceed one page shows a real total count
-    and a page-jump control (type a page number, click Go) -- a page never silently truncates
-    results without telling you.</li>
-  <li><strong>Search filters combine</strong>: where a page has more than one filter (e.g. Browse
-    by Zone's zone + tag), each works alone or together -- you don't need to pick one first.</li>
-  <li><strong>Cross-linking</strong>: ids, zones, and opcodes link to their own dedicated page
-    wherever they appear (SQL Index &rarr; Entity Lookup, Wiki Compiler &rarr; Entity Lookup, ID
-    Drift &rarr; Item Browser, a capture's NPC &rarr; its full entity profile &rarr; every other
-    capture it appeared in), so you can follow a thread without re-searching.</li>
+<li><strong>Follow links instead of re-searching.</strong> IDs and objects cross-link into their dedicated views where a safe route exists.</li>
+<li><strong>Use Feature Trace for breadth; specialized pages for depth.</strong> For example, Feature Trace can summarize runtime evidence, while Captures/Packets are better for individual observations.</li>
+<li><strong>Keep provenance visible.</strong> Server forks, client builds, captures, reference sources, and research evidence can disagree.</li>
+<li><strong>Editors and mutation actions are marked.</strong> Read-only investigation should remain distinguishable from actions that create or modify migration/editor state.</li>
 </ul>
 
-<h2 style="margin-top:24px;">Keeping data current</h2>
-<p class="muted">The <a class="inline" href="/">homepage</a>'s "Data &amp; Tools" table is where
-  everything gets built or refreshed -- no command prompt needed. Each row is one real data
-  source (Dialog text, your LSB server's own SQL, LandSandBoat cross-reference, your Topaz
-  server's own SQL, BG Wiki, per-zone events, etc):</p>
-<ul>
-  <li><strong>Rebuild</strong> re-indexes that source from whatever's already on disk (your
-    Topaz checkout, the bundled LandSandBoat/ checkout, etc) -- click it after you edit your
-    server's scripts, or whenever you want the freshest cross-reference.</li>
-  <li><strong>Install</strong> appears instead when a source needs something that isn't
-    downloaded yet (LandSandBoat, FFXI-DATS, xi-tinkerer-cli) -- one click fetches it from its
-    real source, no manual download.</li>
-  <li>BG Wiki's Rebuild does an <em>incremental</em> sync (only pages that changed since last
-    time, seconds to minutes) -- a full from-scratch crawl is a deliberate command-line-only
-    step (<code class="chip">scrape_bg_wiki.py --full</code>) since it takes hours.</li>
-</ul>
-
-<h2 style="margin-top:24px;">Settings</h2>
-<p class="muted">Local configuration -- FFXI install path and similar environment settings. See
-  <a class="inline" href="/settings">Settings</a>.</p>
+<p class="muted" style="margin-top:24px;">For implementation status and planned work, see the <a class="zonelink" href="/roadmap">Roadmap</a>.</p>
 {% endblock %}
