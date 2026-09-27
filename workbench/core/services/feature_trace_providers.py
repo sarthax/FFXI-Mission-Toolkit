@@ -16,6 +16,7 @@ class CatalogTable:
     detail_columns: tuple[str, ...] = ()
     inspect_path: str | None = None
     key_columns: tuple[str, ...] = ()
+    search_columns: tuple[str, ...] = ()
 
     def identity_columns(self) -> tuple[str, ...]:
         return self.key_columns or (self.id_column,)
@@ -51,7 +52,7 @@ _COMMON_SERVER_TABLES=(
 )
 
 def _prefixed(prefix: str) -> tuple[CatalogTable,...]:
-    return tuple(CatalogTable(f"{prefix}_{t.table}",t.id_column,t.name_column,t.object_type,t.detail_columns,t.inspect_path,t.key_columns) for t in _COMMON_SERVER_TABLES)
+    return tuple(CatalogTable(f"{prefix}_{t.table}",t.id_column,t.name_column,t.object_type,t.detail_columns,t.inspect_path,t.key_columns,t.search_columns) for t in _COMMON_SERVER_TABLES)
 
 PROVIDERS=(
     CatalogProvider("server-sql","server",_prefixed("sql")),
@@ -61,39 +62,39 @@ PROVIDERS=(
     CatalogProvider("client-identity","client",(
         CatalogTable("identity_snapshots","snapshot_id","version","CLIENT_SNAPSHOT",
                      ("snapshot_type","family","recorded_at","source_location","fingerprint"),
-                     "/clientoverview"),
+                     "/clientoverview",search_columns=("family","source_location","fingerprint")),
         CatalogTable("identity_records","record_id","semantic_key","CLIENT_IDENTITY",
                      ("snapshot_id","namespace","numeric_id","zone_key","actor_key","confidence","evidence_id"),
-                     "/clientoverview"),
+                     "/clientoverview",search_columns=("numeric_id","zone_key","actor_key","owner_key","evidence_id")),
     )),
     CatalogProvider("captures","runtime",(
         CatalogTable("captures","capture_id","capture_label","CAPTURE",
                      ("capturer","content_type","zones","mission_name","client_build","is_retail","start_time"),
-                     "/captures/{id}"),
+                     "/captures/{id}",search_columns=("capturer","content_type","zones","mission_name","client_build")),
     )),
     CatalogProvider("research","research",(
         CatalogTable("research_sessions","research_session_id","question","RESEARCH_SESSION",
                      ("provider","model","permission_profile","feature_root","entity_root","verification_state","created_at","updated_at"),
-                     "/research/{id}"),
+                     "/research/{id}",search_columns=("provider","model","feature_root","entity_root","verification_state")),
         CatalogTable("research_proposals","proposal_id","subject_id","RESEARCH_PROPOSAL",
                      ("research_session_id","proposal_type","status","verification_requirement"),
-                     None),
+                     None,search_columns=("research_session_id","proposal_type","status")),
     )),
     CatalogProvider("validation","validation",(
         CatalogTable("validation_runs","run_id","name","VALIDATION_RUN",
                      ("status","feature_id","source_snapshot_id","target_snapshot_id","started_at","finished_at"),
-                     "/validation/runs/{id}"),
+                     "/validation/runs/{id}",search_columns=("status","feature_id","source_snapshot_id","target_snapshot_id")),
         CatalogTable("validation_results","validation_id","validation_type","VALIDATION_RESULT",
                      ("run_id","subject_id","status","evidence_id","source","target"),
-                     "/validation/runs"),
+                     "/validation/runs",search_columns=("run_id","subject_id","status","evidence_id","source","target")),
     )),
     CatalogProvider("packages","packages",(
         CatalogTable("migrations","migration_id","feature_id","MIGRATION",
                      ("source_snapshot_id","target_snapshot_id","status"),
-                     "/packages"),
+                     "/packages",search_columns=("source_snapshot_id","target_snapshot_id","status")),
         CatalogTable("migration_actions","action_id","action","MIGRATION_ACTION",
                      ("migration_id","artifact_id","status","reason"),
-                     "/packages"),
+                     "/packages",search_columns=("migration_id","artifact_id","status","reason")),
         CatalogTable("package_scope_reviews","migration_id","status","PACKAGE_SCOPE_REVIEW",
                      ("reviewed_at","scope_hash"),
                      "/packages/review"),
