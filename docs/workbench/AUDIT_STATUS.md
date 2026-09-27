@@ -1624,3 +1624,31 @@ The adapter now has:
 
 Missing representation-specific fields remain `MISSING_FIELD_VALUE`; they are not inferred.
 Regression coverage proves both legacy equivalence and the modern representation split.
+
+
+## 2026-09-26 — P1 logical schema expansion: combat support
+
+Four additional generic server surfaces are now represented across Topaz, Topaz-Next, DSP, and
+pinned LSB:
+
+- `mob_pool_mods` → logical `mob_pool_modifiers`;
+- `mob_spell_lists`;
+- `skill_caps`;
+- `skill_ranks`.
+
+The audited physical schemas and primary keys match across the three lineages.
+
+Logical identities are:
+
+- mob pool modifier: `(pool_id, modifier_id)`;
+- mob spell-list membership: `(spell_list_id, spell_id)`;
+- skill-cap curve row: `level`;
+- per-job skill-rank row: `skill_id`.
+
+`skill_caps` retains all rank buckets `r0` through `r13`, while `skill_ranks` retains rank
+assignments for WAR through RUN. These two surfaces can now be traced together when evaluating
+skill availability/caps.
+
+For `mob_pool_modifiers`, `modifier_id` meaning depends on the `is_mob_modifier` namespace and
+the corresponding engine enums. SQL presence alone is therefore not treated as semantic proof.
+Regression coverage validates cross-fork normalization and profile coverage.
