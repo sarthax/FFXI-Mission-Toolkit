@@ -1539,3 +1539,32 @@ Implemented:
 
 The feature intentionally surfaces disagreements without adjudicating them. Deterministic
 verification/promotion remains a separate authority path.
+
+
+## 2026-09-26 — P1 logical schema expansion: abilities and combat skills
+
+The generic server-adapter schema now covers four additional cross-fork SQL surfaces:
+
+- `abilities`;
+- `weapon_skills`;
+- `mob_skills`;
+- `mob_skill_lists`.
+
+The mappings were grounded against the archived Topaz release schema and the pinned DSP/LSB
+snapshots already used by Workbench migration tests. Shared legacy fields normalize to the same
+logical records while modern LSB-only radius fields remain explicit drift:
+
+- `abilities.radius`;
+- `weapon_skills.radius`;
+- `mob_skills.mob_skill_aoe_radius` → logical `aoe_radius`.
+
+Mob skill-list membership uses the composite logical identity
+`(skill_list_id, mob_skill_id)`.
+
+These records deliberately model registry/configuration metadata only. The existence of an ability
+or skill row does not prove its Lua/C++ runtime implementation, packet behavior, animation support,
+or client capability. Those remain separate dependency/evidence surfaces.
+
+Regression coverage extends the existing broader logical-schema and cross-profile coverage tests.
+P1 remains open for additional generic surfaces such as item modifiers/latents and progression
+tables.

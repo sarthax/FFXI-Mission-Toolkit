@@ -65,6 +65,83 @@ def main():
         assert ls.fields["radius"]==10
         assert ls.fields["status_effect"]==33
 
+        ta=topaz.normalize_row("abilities",{
+            "abilityId":5,"name":"provoke","job":1,"level":5,"validTarget":4,
+            "recastTime":30,"recastId":5,"message1":100,"message2":101,
+            "animation":10,"animationTime":1000,"castTime":0,"actionType":6,
+            "range":15.0,"isAOE":0,"CE":1800,"VE":1800,"meritModID":0,
+            "addType":0,"content_tag":None,
+        })
+        da=dsp.normalize_row("abilities",{
+            "abilityId":5,"name":"provoke","job":1,"level":5,"validTarget":4,
+            "recastTime":30,"recastId":5,"message1":100,"message2":101,
+            "animation":10,"animationTime":1000,"castTime":0,"actionType":6,
+            "range":15.0,"isAOE":0,"CE":1800,"VE":1800,"meritModID":0,
+            "addType":0,"content_tag":None,
+        })
+        assert compare_records(ta,da).status=="EQUIVALENT"
+        la=lsb.normalize_row("abilities",{
+            "abilityId":5,"name":"provoke","job":1,"level":5,"validTarget":4,
+            "recastTime":30,"recastId":5,"message1":100,"message2":101,
+            "animation":10,"animationTime":1000,"castTime":0,"actionType":6,
+            "range":15.0,"isAOE":0,"radius":10,"CE":1800,"VE":1800,"meritModID":0,
+            "addType":0,"content_tag":None,
+        })
+        adiff=compare_records(ta,la)
+        assert any(d.field=="radius" and d.status=="MISSING_FIELD_VALUE" for d in adiff.differences),adiff
+
+        tws=topaz.normalize_row("weapon_skills",{
+            "weaponskillid":1,"name":"fast_blade","jobs":"fixture","type":3,
+            "skilllevel":10,"element":0,"animation":1,"animationTime":2000,
+            "range":5,"aoe":0,"primary_sc":1,"secondary_sc":0,"tertiary_sc":0,
+            "main_only":0,"unlock_id":0,
+        })
+        dws=dsp.normalize_row("weapon_skills",{
+            "weaponskillid":1,"name":"fast_blade","jobs":"fixture","type":3,
+            "skilllevel":10,"element":0,"animation":1,"animationTime":2000,
+            "range":5,"aoe":0,"primary_sc":1,"secondary_sc":0,"tertiary_sc":0,
+            "main_only":0,"unlock_id":0,
+        })
+        assert compare_records(tws,dws).status=="EQUIVALENT"
+        lws=lsb.normalize_row("weapon_skills",{
+            "weaponskillid":1,"name":"fast_blade","jobs":"fixture","type":3,
+            "skilllevel":10,"element":0,"animation":1,"animationTime":2000,
+            "range":5,"aoe":0,"radius":3,"primary_sc":1,"secondary_sc":0,
+            "tertiary_sc":0,"main_only":0,"unlock_id":0,
+        })
+        wdiff=compare_records(tws,lws)
+        assert any(d.field=="radius" and d.status=="MISSING_FIELD_VALUE" for d in wdiff.differences),wdiff
+
+        tms=topaz.normalize_row("mob_skills",{
+            "mob_skill_id":100,"mob_anim_id":55,"mob_skill_name":"test_roar",
+            "mob_skill_aoe":1,"mob_skill_distance":8.0,"mob_anim_time":2000,
+            "mob_prepare_time":1000,"mob_valid_targets":4,"mob_skill_flag":0,
+            "mob_skill_param":0,"knockback":0,"primary_sc":0,"secondary_sc":0,
+            "tertiary_sc":0,
+        })
+        dms=dsp.normalize_row("mob_skills",{
+            "mob_skill_id":100,"mob_anim_id":55,"mob_skill_name":"test_roar",
+            "mob_skill_aoe":1,"mob_skill_distance":8.0,"mob_anim_time":2000,
+            "mob_prepare_time":1000,"mob_valid_targets":4,"mob_skill_flag":0,
+            "mob_skill_param":0,"knockback":0,"primary_sc":0,"secondary_sc":0,
+            "tertiary_sc":0,
+        })
+        assert compare_records(tms,dms).status=="EQUIVALENT"
+        lms=lsb.normalize_row("mob_skills",{
+            "mob_skill_id":100,"mob_anim_id":55,"mob_skill_name":"test_roar",
+            "mob_skill_aoe":1,"mob_skill_aoe_radius":10.0,"mob_skill_distance":8.0,
+            "mob_anim_time":2000,"mob_prepare_time":1000,"mob_valid_targets":4,
+            "mob_skill_flag":0,"mob_skill_param":0,"knockback":0,"primary_sc":0,
+            "secondary_sc":0,"tertiary_sc":0,
+        })
+        mdiff=compare_records(tms,lms)
+        assert any(d.field=="aoe_radius" and d.status=="MISSING_FIELD_VALUE" for d in mdiff.differences),mdiff
+
+        membership=topaz.normalize_row("mob_skill_lists",{
+            "skill_list_name":"test_list","skill_list_id":42,"mob_skill_id":100,
+        })
+        assert membership.identity==(("skill_list_id",42),("mob_skill_id",100)),membership
+
         tt=topaz.normalize_row("traits",{
             "traitid":1,"name":"accuracy bonus","job":11,"level":10,"rank":1,
             "modifier":25,"value":10,"content_tag":None,"meritid":0,

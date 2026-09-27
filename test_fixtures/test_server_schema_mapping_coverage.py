@@ -24,6 +24,27 @@ def main():
     assert "instance_zone" in instances["TOPAZ"]["mapped_logical_fields"],instances
     assert "instance_zone" in instances["DSP"]["mapped_logical_fields"],instances
 
+    for logical_type in ("abilities","weapon_skills","mob_skills","mob_skill_lists"):
+        families=rows[logical_type]["families"]
+        assert all(family in families for family in ("TOPAZ","TOPAZ_NEXT","DSP","LSB")),families
+        assert all(
+            families[family]["status"] != "MISSING_LOGICAL_TYPE"
+            for family in ("TOPAZ","TOPAZ_NEXT","DSP","LSB")
+        ),families
+
+    abilities=rows["abilities"]["families"]
+    assert "radius" not in abilities["TOPAZ"]["mapped_logical_fields"],abilities
+    assert "radius" not in abilities["DSP"]["mapped_logical_fields"],abilities
+    assert "radius" in abilities["LSB"]["mapped_logical_fields"],abilities
+
+    weapon_skills=rows["weapon_skills"]["families"]
+    assert "radius" in weapon_skills["LSB"]["mapped_logical_fields"],weapon_skills
+    assert "radius" not in weapon_skills["DSP"]["mapped_logical_fields"],weapon_skills
+
+    mob_skills=rows["mob_skills"]["families"]
+    assert "aoe_radius" in mob_skills["LSB"]["mapped_logical_fields"],mob_skills
+    assert "aoe_radius" not in mob_skills["TOPAZ"]["mapped_logical_fields"],mob_skills
+
     # Coverage must expose fields present in parse shapes but not yet promoted to
     # the logical schema. This keeps broader schema work measurable.
     assert any(

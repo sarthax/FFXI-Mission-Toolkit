@@ -176,6 +176,66 @@ def _common(equipment_file: str = "item_equipment.sql") -> dict[str, TableShape]
         FieldMapping("content_tag",("content_tag",)),
         FieldMapping("merit_id",("meritid","meritId")),
     )
+    ability_fields=(
+        FieldMapping("ability_id",("abilityId","abilityid"),True),
+        FieldMapping("name",("name",),True),
+        FieldMapping("job",("job",)),
+        FieldMapping("level",("level",)),
+        FieldMapping("valid_targets",("validTarget","validtarget")),
+        FieldMapping("recast_time",("recastTime","recasttime")),
+        FieldMapping("recast_id",("recastId","recastid")),
+        FieldMapping("message_1",("message1",)),
+        FieldMapping("message_2",("message2",)),
+        FieldMapping("animation",("animation",)),
+        FieldMapping("animation_time",("animationTime","animationtime")),
+        FieldMapping("cast_time",("castTime","casttime")),
+        FieldMapping("action_type",("actionType","actiontype")),
+        FieldMapping("ability_range",("range",)),
+        FieldMapping("aoe",("isAOE","isaoe")),
+        FieldMapping("ce",("CE","ce")),
+        FieldMapping("ve",("VE","ve")),
+        FieldMapping("merit_mod_id",("meritModID","meritmodid")),
+        FieldMapping("add_type",("addType","addtype")),
+        FieldMapping("content_tag",("content_tag",)),
+    )
+    weapon_skill_fields=(
+        FieldMapping("weapon_skill_id",("weaponskillid","weaponSkillId"),True),
+        FieldMapping("name",("name",),True),
+        FieldMapping("jobs",("jobs",)),
+        FieldMapping("skill_type",("type",)),
+        FieldMapping("skill_level",("skilllevel","skillLevel")),
+        FieldMapping("element",("element",)),
+        FieldMapping("animation",("animation",)),
+        FieldMapping("animation_time",("animationTime","animationtime")),
+        FieldMapping("skill_range",("range",)),
+        FieldMapping("aoe",("aoe","AOE")),
+        FieldMapping("primary_sc",("primary_sc",)),
+        FieldMapping("secondary_sc",("secondary_sc",)),
+        FieldMapping("tertiary_sc",("tertiary_sc",)),
+        FieldMapping("main_only",("main_only",)),
+        FieldMapping("unlock_id",("unlock_id",)),
+    )
+    mob_skill_fields=(
+        FieldMapping("mob_skill_id",("mob_skill_id",),True),
+        FieldMapping("animation_id",("mob_anim_id",)),
+        FieldMapping("name",("mob_skill_name",),True),
+        FieldMapping("aoe",("mob_skill_aoe",)),
+        FieldMapping("distance",("mob_skill_distance",)),
+        FieldMapping("animation_time",("mob_anim_time",)),
+        FieldMapping("prepare_time",("mob_prepare_time",)),
+        FieldMapping("valid_targets",("mob_valid_targets",)),
+        FieldMapping("flags",("mob_skill_flag",)),
+        FieldMapping("parameter",("mob_skill_param",)),
+        FieldMapping("knockback",("knockback",)),
+        FieldMapping("primary_sc",("primary_sc",)),
+        FieldMapping("secondary_sc",("secondary_sc",)),
+        FieldMapping("tertiary_sc",("tertiary_sc",)),
+    )
+    mob_skill_list_fields=(
+        FieldMapping("skill_list_name",("skill_list_name",)),
+        FieldMapping("skill_list_id",("skill_list_id",),True),
+        FieldMapping("mob_skill_id",("mob_skill_id",),True),
+    )
     synth_fields=(
         FieldMapping("recipe_id",("ID","id"),True),
         FieldMapping("desynth",("Desynth","desynth")),
@@ -254,6 +314,10 @@ def _common(equipment_file: str = "item_equipment.sql") -> dict[str, TableShape]
     drop_columns=("dropId","dropType","groupId","groupRate","itemId","itemRate")
     weapon_columns=("itemId","name","skill","subskill","ilvl_skill","ilvl_parry","ilvl_macc","dmgType","hit","delay","dmg","unlock_points")
     usable_columns=("itemid","name","validTargets","activation","animation","animationTime","maxCharges","useDelay","reuseDelay","aoe")
+    ability_columns=("abilityId","name","job","level","validTarget","recastTime","recastId","message1","message2","animation","animationTime","castTime","actionType","range","isAOE","CE","VE","meritModID","addType","content_tag")
+    weapon_skill_columns=("weaponskillid","name","jobs","type","skilllevel","element","animation","animationTime","range","aoe","primary_sc","secondary_sc","tertiary_sc","main_only","unlock_id")
+    mob_skill_columns=("mob_skill_id","mob_anim_id","mob_skill_name","mob_skill_aoe","mob_skill_distance","mob_anim_time","mob_prepare_time","mob_valid_targets","mob_skill_flag","mob_skill_param","knockback","primary_sc","secondary_sc","tertiary_sc")
+    mob_skill_list_columns=("skill_list_name","skill_list_id","mob_skill_id")
     topaz_spell_columns=("spellid","name","jobs","group","family","element","zonemisc","validTargets","skill","mpCost","castTime","recastTime","message","magicBurstMessage","animation","animationTime","AOE","base","multiplier","CE","VE","requirements","spell_range","content_tag")
     dsp_spell_columns=("spellid","name","jobs","group","element","zonemisc","validTargets","skill","mpCost","castTime","recastTime","message","magicBurstMessage","animation","animationTime","AOE","base","multiplier","CE","VE","requirements","spell_range","content_tag")
     lsb_spell_columns=("spellid","name","jobs","group","family","element","zonemisc","validTargets","skill","mpCost","castTime","recastTime","message","magicBurstMessage","animation","animationTime","AOE","base","multiplier","CE","VE","requirements","spell_range","radius","content_tag","status_effect","status_effect_tier")
@@ -294,6 +358,30 @@ def _common(equipment_file: str = "item_equipment.sql") -> dict[str, TableShape]
             "battlefields","bcnm_info.sql","bcnm_records",
             parse_columns=("bcnmId","zoneId","name","fastestName","fastestPartySize","fastestTime"),
             field_mappings=battlefield_fields, identity_fields=("battlefield_id",),
+        ),
+        "abilities": TableShape(
+            "abilities","abilities.sql","abilities",
+            parse_columns=ability_columns, field_mappings=ability_fields,
+            identity_fields=("ability_id",),
+            notes=("Job ability metadata; runtime effect logic remains in Lua/C++ and is a separate dependency.",),
+        ),
+        "weapon_skills": TableShape(
+            "weapon_skills","weapon_skills.sql","weapon_skills",
+            parse_columns=weapon_skill_columns, field_mappings=weapon_skill_fields,
+            identity_fields=("weapon_skill_id",),
+            notes=("Weapon-skill registry metadata; damage/effect implementation remains outside this SQL record.",),
+        ),
+        "mob_skills": TableShape(
+            "mob_skills","mob_skills.sql","mob_skills",
+            parse_columns=mob_skill_columns, field_mappings=mob_skill_fields,
+            identity_fields=("mob_skill_id",),
+            notes=("Mob-skill registry metadata; scripted skill behavior is a separate artifact dependency.",),
+        ),
+        "mob_skill_lists": TableShape(
+            "mob_skill_lists","mob_skill_lists.sql","mob_skill_lists",
+            parse_columns=mob_skill_list_columns, field_mappings=mob_skill_list_fields,
+            identity_fields=("skill_list_id","mob_skill_id"),
+            notes=("Membership edge between a mob skill-list identity and one mob-skill identity.",),
         ),
         "spells": TableShape("spells", "spell_list.sql", "spell_list",
             parse_columns=topaz_spell_columns, field_mappings=spell_fields, identity_fields=("spell_id",)),
@@ -446,6 +534,27 @@ LSB = SchemaProfile(
             parse_columns=("instanceid","instance_name","instance_zone","entrance_zone","overlay_id","time_limit","start_x","start_y","start_z","start_rot","music_day","music_night","battlesolo","battlemulti"),
             field_mappings=_common()["instances"].field_mappings,
             identity_fields=("instance_id",),
+        ),
+        "abilities": TableShape(
+            "abilities","abilities.sql","abilities",
+            parse_columns=("abilityId","name","job","level","validTarget","recastTime","recastId","message1","message2","animation","animationTime","castTime","actionType","range","isAOE","radius","CE","VE","meritModID","addType","content_tag"),
+            field_mappings=_common()["abilities"].field_mappings + (FieldMapping("radius",("radius",)),),
+            identity_fields=("ability_id",),
+            notes=("LSB adds explicit ability AOE radius beyond the audited Topaz/DSP shape.",),
+        ),
+        "weapon_skills": TableShape(
+            "weapon_skills","weapon_skills.sql","weapon_skills",
+            parse_columns=("weaponskillid","name","jobs","type","skilllevel","element","animation","animationTime","range","aoe","radius","primary_sc","secondary_sc","tertiary_sc","main_only","unlock_id"),
+            field_mappings=_common()["weapon_skills"].field_mappings + (FieldMapping("radius",("radius",)),),
+            identity_fields=("weapon_skill_id",),
+            notes=("LSB adds explicit weapon-skill AOE radius beyond the audited Topaz/DSP shape.",),
+        ),
+        "mob_skills": TableShape(
+            "mob_skills","mob_skills.sql","mob_skills",
+            parse_columns=("mob_skill_id","mob_anim_id","mob_skill_name","mob_skill_aoe","mob_skill_aoe_radius","mob_skill_distance","mob_anim_time","mob_prepare_time","mob_valid_targets","mob_skill_flag","mob_skill_param","knockback","primary_sc","secondary_sc","tertiary_sc"),
+            field_mappings=_common()["mob_skills"].field_mappings + (FieldMapping("aoe_radius",("mob_skill_aoe_radius",)),),
+            identity_fields=("mob_skill_id",),
+            notes=("LSB adds explicit mob-skill AOE radius and widens the physical flag field; logical flag semantics remain shared.",),
         ),
         "spells": TableShape(
             "spells","spell_list.sql","spell_list",
