@@ -106,7 +106,7 @@ def main() -> int:
             row["metadata"]["numeric_id"]
             for row in payload["entities"]
         )
-        assert entities==[16998863,16998864,16998865,16998866],entities
+        assert entities==[16998862,16998863,16998864,16998865,16998866],entities
         for row in payload["entities"]:
             assert row["display_name"]=="Lamia_Exon",row
             assert row["metadata"]["template_id"]==2331,row
