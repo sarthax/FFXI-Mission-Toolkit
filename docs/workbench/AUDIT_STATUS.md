@@ -1782,3 +1782,10 @@ Coverage fixture/regression:
 The generic model now represents the stress-probe mechanics directly: persistent/local state channels, ALL-path convergence, timer/spatial/entity/battlefield/trade conditions, and spawn/transport/title/message/timer/no-action effects. Dispatch semantics such as `replaceDefault()` remain extractor/evidence metadata rather than behavioral effects.
 
 Added `workbench/plugins/domain/mission_lsb_extract.py` as a conservative static LSB Lua extractor foundation. It recognizes literal zone/actor/events, mission-status writes, persistent/local variable writes, key-item lifecycle calls, battlefield-win checks, spawned entities, titles, timers, and mission completion. Exact guard → trigger/CSID → effect transition correlation remains the next extractor step.
+
+
+### LSB handler correlation and source-proven state edges
+
+The LSB extractor now correlates literal Mission DSL handler blocks into `MissionTransition` records. It preserves zone/actor/CSID identity, handler trigger kind, literal guards, and literal effects with source-line metadata. A second conservative pass materializes concrete channel-value state endpoints only when a single literal channel guard/write proves the edge; ambiguous multi-channel handlers remain unresolved rather than guessed.
+
+Regression: `test_fixtures/test_mission_lsb_correlation.py` covers an Ancient Vows-shaped trigger/event-finish/battlefield completion flow including CSID 6, mission Status writes, battlefield 32001 guard, completion, and teleport.
