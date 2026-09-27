@@ -45,30 +45,51 @@
 {% endif %}
 
 {% if result %}
-<h2>Trace</h2>
+<h2>Evidence Dossier</h2>
+<div class="table-wrap"><table>
+<tr><th>Identity</th><td><strong>{{ dossier.identity.display_name }}</strong><br><code>{{ dossier.identity.node_id }}</code> · {{ dossier.identity.node_type }} · {{ dossier.identity.source_count }} indexed representation(s)</td></tr>
+{% for facet in dossier.facets %}
+<tr><th>{{ facet.name }}</th><td><strong>{{ facet.count }}</strong>{% if facet.capture_count is defined %} observation(s) across {{ facet.capture_count }} capture(s), {{ facet.group_count }} group(s){% else %} relationship(s){% endif %}</td></tr>
+{% endfor %}
+</table></div>
+<p class="muted">The dossier summarizes recorded knowledge; a zero or absent facet is UNKNOWN, not proof that the underlying implementation is absent.</p>
+
+<h2>Semantic Trace</h2>
 <div class="stats">
-  <div class="stat"><div class="n">{{ result.nodes|length }}</div><div class="l">Nodes</div></div>
-  <div class="stat"><div class="n">{{ result.edges|length }}</div><div class="l">Edges</div></div>
+  <div class="stat"><div class="n">{{ dossier.semantic_node_count }}</div><div class="l">Semantic nodes</div></div>
+  <div class="stat"><div class="n">{{ dossier.semantic_relationship_count }}</div><div class="l">Semantic edges</div></div>
   <div class="stat"><div class="n">{{ result.paths|length }}</div><div class="l">Paths</div></div>
   <div class="stat"><div class="n">{{ result.max_depth }}</div><div class="l">Max depth</div></div>
-  <div class="stat"><div class="n">{{ result.runtime_observation_count }}</div><div class="l">Runtime observations</div></div>
-  <div class="stat"><div class="n">{{ result.runtime_group_count }}</div><div class="l">Runtime groups</div></div>
 </div>
 <p><strong>Root:</strong> <code>{{ result.root }}</code> &nbsp; <strong>Direction:</strong> {{ result.direction }}</p>
 
-{% if result.runtime_summary %}
+{% if result.runtime_hierarchy.observation_count %}
 <h2>Runtime / Captures &amp; Packets</h2>
-<p class="muted">Runtime observations are summarized separately and do not expand the semantic trace topology.</p>
-{% for section in result.runtime_summary %}
-  {% for group in section.runtime_groups %}
-  <details class="trace-runtime-group">
-    <summary>{{ group.opcode }}{% if group.direction %} · {{ group.direction }}{% endif %} — {{ group.observation_count }} observation(s) — {{ group.capture_count }} capture(s)</summary>
-    <div class="table-wrap"><table><thead><tr><th>Relationship</th><th>From</th><th>To</th><th>Evidence</th></tr></thead><tbody>
-    {% for edge in group.edges %}<tr><td>{{ edge.relationship }}</td><td><code>{{ edge.from_node }}</code></td><td><code>{{ edge.to_node }}</code></td><td><code>{{ edge.evidence_id or "" }}</code></td></tr>{% endfor %}
-    </tbody></table></div>
-  </details>
-  {% endfor %}
+<p class="muted">{{ result.runtime_hierarchy.observation_count }} observations across {{ result.runtime_hierarchy.capture_count }} capture(s), grouped without expanding semantic topology. Raw observations load only when requested.</p>
+{% for group in result.runtime_hierarchy.groups %}
+<details class="trace-runtime-group">
+  <summary>{{ group.opcode }}{% if group.direction %} · {{ group.direction }}{% endif %} — {{ group.observation_count }} observation(s) — {{ group.capture_count }} capture(s)</summary>
+  {% for capture in group.capture_groups %}
+  <div style="margin:.5rem 0 .5rem 1rem;">
+    <button type="button" class="runtime-load" data-opcode="{{ group.opcode }}" data-capture="{{ capture.capture_id }}">{{ capture.capture_id }} — {{ capture.observation_count }} observation(s)</button>
+    <div class="runtime-detail"></div>
+  </div>
+  {% else %}<p class="muted">No capture identity is recorded for this group.</p>{% endfor %}
+</details>
 {% endfor %}
+<script>
+document.querySelectorAll('.runtime-load').forEach(button=>button.addEventListener('click',async()=>{
+ const target=button.nextElementSibling;
+ if(target.dataset.loaded){target.innerHTML='';delete target.dataset.loaded;return;}
+ target.textContent='Loading bounded observation page…';
+ const p=new URLSearchParams({root:{{ result.root|tojson }},depth:{{ result.max_depth }},direction:{{ result.direction|tojson }},opcode:button.dataset.opcode,capture_id:button.dataset.capture,limit:'100'});
+ const response=await fetch('/features/trace/runtime.json?'+p),data=await response.json();
+ if(!response.ok){target.textContent=data.error||'Could not load observations.';return;}
+ const rows=data.observations.map(e=>'<tr><td>'+String(e.relationship||'')+'</td><td><code>'+String(e.from_node||'')+'</code></td><td><code>'+String(e.to_node||'')+'</code></td><td><code>'+String(e.evidence_id||'')+'</code></td></tr>').join('');
+ target.innerHTML='<p class="muted">Showing '+data.offset+'–'+Math.min(data.offset+data.observations.length,data.total)+' of '+data.total+'. Maximum 250 per request.</p><div class="table-wrap"><table><thead><tr><th>Relationship</th><th>From</th><th>To</th><th>Evidence</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+ target.dataset.loaded='1';
+}));
+</script>
 {% endif %}
 
 <h2>Relationships</h2>
@@ -91,7 +112,7 @@
 <table>
 <thead><tr><th>Depth</th><th>Relationship</th><th>From</th><th>To</th><th>Status</th><th>Confidence</th><th>Evidence</th></tr></thead>
 <tbody>
-{% for edge in result.edges %}
+{% for edge in section.edges %}
 <tr>
   <td>{{ edge.depth }}</td>
   <td><span class="chip">{{ edge.relationship }}</span></td>
