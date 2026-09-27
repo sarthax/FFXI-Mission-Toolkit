@@ -429,8 +429,8 @@ Current proof:
     - [x] Promote mob skills, mob skill-list membership, and mob spell-list membership to generic logical schema surfaces.
     - [x] Discover literal Lua `require()`/mixin artifact dependencies with evidence.
     - [x] Resolve safe `ID.mob.SYMBOL + N` entity arithmetic/ranges through `IDs.lua` + zone `mobs.yaml`, including Medusa's four Lamia Exon helpers.
-    - [ ] Normalize modern LSB zone YAML templates/entities deeply enough for entity→template→species/skill/spell closure.
-    - [ ] Link skill-list members to mob-skill Lua implementations generically.
+    - [x] Normalize modern LSB zone YAML templates/entities into entity→template→species/skill/spell closure.
+    - [x] Link skill-list members to normalized mob-skill definitions and conventional Lua implementations, preserving missing scripts as explicit findings.
     - [ ] Link zone-YAML loot symbols to canonical item records.
     - [ ] Promote zone text/title references and cross-zone Besieged coupling into package dependency edges.
   - [x] Establish Coiler automaton attachment as a second truth set covering item/internal identity mapping, dynamic Lua dispatch, shared automaton behavior, C++ puppet runtime, persistence, downstream weapon-skill consumers, conditional interactions, and reviewer-controlled acquisition paths.
