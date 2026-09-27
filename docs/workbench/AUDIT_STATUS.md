@@ -1937,3 +1937,17 @@ Search results now emit stable composite IDs such as:
 Legacy single-key IDs such as `catalog:lsb_mob_groups:38` resolve only when that group ID is unique in the indexed table. If multiple zones contain the same group ID, resolution returns UNKNOWN rather than selecting an arbitrary row.
 
 Known provider table names are also reserved when their schema does not match the declared provider contract. A malformed or version-drifted known table is not reinterpreted through the heuristic schema fallback.
+
+
+### Deterministic server-source catalog links
+
+Feature Trace now asks a server adapter for a narrow set of exact source-native relationships encoded by the indexed SQL schemas. These remain dossier navigation links and are not inserted into canonical semantic topology.
+
+Current server-source links:
+- item equipment/weapon/usable record -> item_basic with the same item ID;
+- mob group -> mob pool through mob_groups.poolid;
+- mob spawn point -> zone-scoped mob group through mob_spawn_points.groupid plus the zone decoded from the entity ID.
+
+The mob-spawn relationship uses the same FFXI entity-ID zone encoding already used elsewhere in the toolkit: `(entity_id >> 12) & 0xFFF`. Because mob-group catalog identities are composite `(zoneid, groupid)`, duplicate group IDs in different zones resolve to the correct group instead of an arbitrary row.
+
+Each server-derived link exposes a short evidence basis in the Feature Trace dossier. The FFXI-specific decode lives under `workbench/adapters/servers`, not in the generic catalog core.
