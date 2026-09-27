@@ -74,6 +74,18 @@ def server_source_links(
                     "basis":"mob_groups.poolid",
                 })
 
+    if suffix=="pet_list":
+        petid=source_identity.get("petid")
+        if petid is not None:
+            row=_single_row(con,source_table,("poolid",),{"petid":petid})
+            if row and row[0] is not None:
+                links.append({
+                    "relationship":"PET_USES_POOL",
+                    "target_table":f"{prefix}_mob_pools",
+                    "target_identity":{"poolid":row[0]},
+                    "basis":"pet_list.poolid",
+                })
+
     if suffix=="mob_spawn_points":
         mobid=source_identity.get("mobid")
         if mobid is not None:
