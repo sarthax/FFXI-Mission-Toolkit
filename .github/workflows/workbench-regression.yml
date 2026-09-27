@@ -194,3 +194,23 @@ jobs:
           python test_fixtures/test_gui_research_sessions.py
           python test_fixtures/test_gui_information_architecture.py
           python test_fixtures/test_gui_shell.py
+
+
+  dat-inspector-ux-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install focused DAT Inspector test dependencies
+        run: python -m pip install --disable-pip-version-check jinja2
+      - name: Run DAT Inspector UX regressions
+        env:
+          PYTHONPATH: .
+        run: |
+          set -euo pipefail
+          python test_fixtures/test_gui_dat_inspector.py
+          python test_fixtures/test_gui_information_architecture.py
+          python test_fixtures/test_gui_shell.py
