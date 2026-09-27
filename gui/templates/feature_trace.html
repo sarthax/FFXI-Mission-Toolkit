@@ -103,4 +103,51 @@
 <p class="muted">{{ note }}</p>
 {% endfor %}
 {% endif %}
+
+<section class="dependency-map" aria-labelledby="dependency-map-heading">
+<h2 id="dependency-map-heading">Feature Dependency Map</h2>
+<p class="muted">Interactive obtainability and access closure. With no canonical root, this shows the Absolute Virtue reference fixture; entering a canonical node ID loads the same generic projection from the Workbench graph.</p>
+<div class="search dependency-map-controls">
+  <input id="closure-root" value="{{ q }}" placeholder="Canonical root (blank = Absolute Virtue demo)">
+  <button type="button" id="closure-load">Load map</button>
+  <button type="button" id="closure-expand">Expand visible</button>
+  <button type="button" id="closure-collapse">Collapse to root</button>
+</div>
+<div class="dependency-map-filters" role="group" aria-label="Dependency edge filters">
+  <label><input type="checkbox" data-filter="Progression" checked> Progression</label>
+  <label><input type="checkbox" data-filter="Acquisition" checked> Acquisition</label>
+  <label><input type="checkbox" data-filter="Spawn" checked> Spawn</label>
+  <label><input type="checkbox" data-filter="Access" checked> Access</label>
+</div>
+<p id="closure-status" class="muted">Loading map…</p>
+<svg id="closure-map" viewBox="0 0 1100 620" role="img" aria-label="Interactive dependency map"></svg>
+<pre id="closure-detail" class="dependency-map-detail">Select a node or edge to inspect its type, gates, quantities, probabilities, consumption, cycles, and source evidence.</pre>
+</section>
+<style>
+.dependency-map { margin-top:2rem; } .dependency-map-controls { display:flex; gap:.5rem; flex-wrap:wrap; }
+.dependency-map-controls input { min-width:24rem; flex:1; } .dependency-map-filters { display:flex; gap:1rem; flex-wrap:wrap; margin:.7rem 0; }
+#closure-map { width:100%; min-height:620px; border:1px solid #334155; background:#0f172a; border-radius:6px; }
+.closure-edge { stroke:#94a3b8; stroke-width:1.5; } .closure-edge.access { stroke:#60a5fa; } .closure-edge.spawn { stroke:#a78bfa; } .closure-edge.acquisition { stroke:#34d399; }
+.closure-node rect { fill:#1e293b; stroke:#94a3b8; } .closure-node.gate polygon { fill:#78350f; stroke:#fbbf24; } .closure-node.unresolved rect { stroke:#f87171; stroke-dasharray:5 3; }
+.closure-node text { fill:#e2e8f0; font-size:12px; pointer-events:none; } .closure-node { cursor:pointer; } .closure-edge-label { fill:#cbd5e1; font-size:10px; pointer-events:none; }
+.dependency-map-detail { white-space:pre-wrap; max-height:22rem; overflow:auto; background:#111827; color:#e5e7eb; padding:1rem; }
+</style>
+<script>
+(() => {
+ const svg=document.getElementById('closure-map'), detail=document.getElementById('closure-detail'), status=document.getElementById('closure-status');
+ const rootInput=document.getElementById('closure-root'), visible=new Set(), filters=new Set(['Progression','Acquisition','Spawn','Access']); let graph=null;
+ const category=e => /ACCESS|MISSION|ZONE/.test(e.relationship) ? 'Access' : /SPAWN/.test(e.relationship) ? 'Spawn' : /OBTAIN|DROP|TRADE/.test(e.relationship) ? 'Acquisition' : 'Progression';
+ const esc=s => String(s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+ const edgeLabel=e => { const m=e.metadata||{}, a=[]; if(m.quantity) a.push('x'+m.quantity); if(m.probability != null) a.push(Math.round(m.probability*100)+'%'); if(m.consumed) a.push('consumed'); return [e.relationship,...a].join(' · '); };
+ function draw(){ if(!graph)return; const allowed=graph.edges.filter(e=>filters.has(category(e))); const nodes=graph.nodes.filter(n=>visible.has(n.node_id)); const ids=new Set(nodes.map(n=>n.node_id)); const edges=allowed.filter(e=>ids.has(e.from_node)&&ids.has(e.to_node));
+  const cols=Math.max(1,Math.ceil(Math.sqrt(nodes.length))), pos={}; nodes.forEach((n,i)=>pos[n.node_id]={x:80+(i%cols)*Math.max(190,900/cols),y:70+Math.floor(i/cols)*125});
+  let out=''; edges.forEach(e=>{const a=pos[e.from_node],b=pos[e.to_node]; if(!a||!b)return; const cls=category(e).toLowerCase(); out+=`<line class="closure-edge ${cls}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" data-edge="${esc(e.edge_id)}"/><text class="closure-edge-label" x="${(a.x+b.x)/2}" y="${(a.y+b.y)/2-5}">${esc(edgeLabel(e))}</text>`});
+  nodes.forEach(n=>{const p=pos[n.node_id], kind=n.node_type==='REQUIREMENT_GATE'?'gate':n.node_type==='UNRESOLVED'?'unresolved':''; const label=esc(n.display_name||n.node_id).slice(0,27); if(kind==='gate') out+=`<g class="closure-node gate" data-node="${esc(n.node_id)}"><polygon points="${p.x},${p.y-25} ${p.x+42},${p.y} ${p.x},${p.y+25} ${p.x-42},${p.y}"/><text x="${p.x-34}" y="${p.y+4}">${label}</text></g>`; else out+=`<g class="closure-node ${kind}" data-node="${esc(n.node_id)}"><rect x="${p.x-70}" y="${p.y-24}" width="140" height="48" rx="5"/><text x="${p.x-64}" y="${p.y-2}">${label}</text><text x="${p.x-64}" y="${p.y+14}">${esc(n.node_type||'UNKNOWN')}</text></g>`; }); svg.innerHTML=out;
+  svg.querySelectorAll('[data-node]').forEach(el=>el.onclick=()=>{const id=el.dataset.node, next=graph.edges.filter(e=>e.from_node===id||e.to_node===id).map(e=>e.from_node===id?e.to_node:e.from_node); const expanded=next.some(x=>!visible.has(x)); next.forEach(x=>expanded?visible.add(x):visible.delete(x)); const n=graph.nodes.find(x=>x.node_id===id); detail.textContent=JSON.stringify({node:n, cycles:(graph.cycles||[]).filter(c=>JSON.stringify(c).includes(id)), unresolved:(graph.unresolved||[]).filter(u=>JSON.stringify(u).includes(id))},null,2); draw();});
+  svg.querySelectorAll('[data-edge]').forEach(el=>el.onclick=()=>{const e=graph.edges.find(x=>x.edge_id===el.dataset.edge); const evidence=(graph.evidence||[]).filter(x=>x.evidence_id===e.evidence_id); detail.textContent=JSON.stringify({edge:e,evidence},null,2);});
+ }
+ async function load(){ status.textContent='Loading map…'; const root=rootInput.value.trim(), url='/features/trace/closure.json'+(root?'?root='+encodeURIComponent(root):''); const r=await fetch(url), data=await r.json(); if(!r.ok||data.error){status.textContent=data.error||'Could not load map.';return;} graph=data; visible.clear(); visible.add(graph.root); graph.edges.filter(e=>e.from_node===graph.root||e.to_node===graph.root).forEach(e=>visible.add(e.from_node===graph.root?e.to_node:e.from_node)); status.textContent=`${graph.demo_name||'Canonical closure'}: ${graph.nodes.length} nodes, ${graph.edges.length} edges, ${(graph.cycles||[]).length} cycle(s), ${(graph.unresolved||[]).length} unresolved.`; draw(); }
+ document.getElementById('closure-load').onclick=load; document.getElementById('closure-expand').onclick=()=>{graph.nodes.forEach(n=>visible.add(n.node_id));draw();}; document.getElementById('closure-collapse').onclick=()=>{visible.clear();visible.add(graph.root);draw();}; document.querySelectorAll('[data-filter]').forEach(x=>x.onchange=()=>{x.checked?filters.add(x.dataset.filter):filters.delete(x.dataset.filter);draw();}); load();
+})();
+</script>
 {% endblock %}

@@ -49,6 +49,8 @@ import entity_profile
 import explore_event
 import feature_trace
 import feature_checker
+from workbench.core.services.obtainability_closure import build_obtainability_closure, closure_projection
+from workbench.reference.absolute_virtue_demo import build_projection as absolute_virtue_projection
 import ingest_global_tables
 import addon_tools
 import install_external_tools
@@ -3249,6 +3251,27 @@ def feature_trace_page(
         "matches": matches,
         "error": error,
     })
+
+
+@app.get("/features/trace/closure.json")
+def feature_trace_closure(root: str = ""):
+    """Return a generic obtainability/access closure projection for Feature Trace.
+
+    With no canonical root selected, the UI uses the bundled Absolute Virtue reference
+    fixture so the map remains demonstrable on a fresh workbench.  The closure service
+    itself only reads canonical graph relationships; it has no Sea/CoP-specific rules.
+    """
+    if not root.strip():
+        return JSONResponse(absolute_virtue_projection())
+    con = _workbench_graph_connection()
+    if con is None:
+        return JSONResponse({"error": "Canonical Workbench graph is not available."}, status_code=404)
+    try:
+        return JSONResponse(closure_projection(build_obtainability_closure(con, root.strip())))
+    except Exception as exc:
+        return JSONResponse({"error": f"{type(exc).__name__}: {exc}"}, status_code=400)
+    finally:
+        con.close()
 
 
 @app.get("/features/check", response_class=HTMLResponse)
