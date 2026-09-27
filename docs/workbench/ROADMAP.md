@@ -537,3 +537,12 @@ Completed/retired from the prior queue:
 - [x] P1 logical schema expansion is no longer a blocking queue item after four evidence-backed tranches.
 - [x] Future schema additions remain allowed when a concrete feature/package exposes a missing generic dependency surface.
 - [x] Resume subsequent roadmap work from the next open phase item rather than treating schema breadth as an unbounded prerequisite.
+
+
+### 2026-09-26 Generalized item DAT migration orchestration
+- [x] Add proposal-only client DAT patch plans for existing item records.
+- [x] Fingerprint the reviewed client record and block approval if the live/pivot record drifts before apply.
+- [x] Require a matching explicit human approval record before any DAT writer is invoked.
+- [x] Journal low-level DAT target/backup metadata and support deterministic rollback of the applied file.
+- [x] Include client DAT plans/approvals in generated-output package integrity checks.
+- [ ] Extend generalized orchestration to new-item allocation/injection and coordinated server SQL/client-index changes.

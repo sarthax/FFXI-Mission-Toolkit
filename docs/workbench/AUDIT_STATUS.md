@@ -1675,3 +1675,32 @@ The P1 expansion was completed through four evidence-backed tranches:
 
 Schema breadth is no longer treated as an open-ended blocker. Additional generic mappings should be
 added when a concrete feature/package or validation path exposes a missing dependency surface.
+
+
+## 2026-09-26 — Generalized client DAT migration/write orchestration: PATCH_EXISTING
+
+The first generalized Workbench client-DAT write path now bridges the read-only
+`ItemDatAdapter`, migration-package review artifacts, and the mature low-level
+`item_dat_tools` writer without allowing planning code to mutate client files.
+
+Implemented:
+
+- `ClientDatOperation` for reviewed `PATCH_EXISTING` operations;
+- proposal-only `WORKBENCH_CLIENT_DAT_PLAN` generated artifacts;
+- full-record client fingerprinting plus optional expected-field checks;
+- re-read/drift validation before approval;
+- explicit `WORKBENCH_CLIENT_DAT_APPROVAL_REQUEST` tied to the reviewed plan hash;
+- approved apply that invokes the low-level writer only after technical readiness and human approval;
+- apply journals containing DAT/category/record/format/target and low-level backup metadata;
+- deterministic rollback by restoring the exact pre-write snapshot (or removing a newly created overlay target);
+- package-integrity checks linking packaged client-DAT plans to their approval requests;
+- deterministic regression coverage proving that planning does not call a writer, drift blocks
+  approval, pending approval blocks apply, approved apply invokes the writer once, and rollback
+  restores the original bytes.
+
+The low-level `patch_client_item` return payload now includes additive backup/target-existence
+metadata so higher-level orchestration can journal and reverse the edit.
+
+This milestone intentionally supports existing-record patches only. New-item client allocation,
+DAT injection, server SQL coordination, and any FTABLE/VTABLE/index mutation remain a separate
+follow-on because they require multi-artifact identity/allocation guarantees.

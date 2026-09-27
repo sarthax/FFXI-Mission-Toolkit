@@ -26,6 +26,8 @@ def verify_patch_package_integrity(package_root: Path) -> PatchPackageIntegrityR
     outputs=journal.get("outputs",[])
     patch_plans=[]
     approvals=[]
+    client_dat_plans=[]
+    client_dat_approvals=[]
     for record in outputs:
         artifact_type=str(record.get("artifact_type") or "").upper()
         relative=record.get("relative_path")
@@ -36,8 +38,12 @@ def verify_patch_package_integrity(package_root: Path) -> PatchPackageIntegrityR
             patch_plans.append(path)
         elif artifact_type=="PATCH_APPROVAL_REQUEST":
             approvals.append(path)
+        elif artifact_type=="CLIENT_DAT_PLAN":
+            client_dat_plans.append(path)
+        elif artifact_type=="CLIENT_DAT_APPROVAL_REQUEST":
+            client_dat_approvals.append(path)
 
-    if not patch_plans and not approvals:
+    if not patch_plans and not approvals and not client_dat_plans and not client_dat_approvals:
         return PatchPackageIntegrityResult("NOT_APPLICABLE",())
 
     issues=[]
@@ -72,6 +78,40 @@ def verify_patch_package_integrity(package_root: Path) -> PatchPackageIntegrityR
         if requested_hash not in plan_hashes:
             issues.append(
                 f"Approval request is not linked to a packaged patch plan: "
+                f"{path.relative_to(package_root).as_posix()}"
+            )
+
+    client_plan_hashes={}
+    for path in client_dat_plans:
+        if not path.is_file():
+            issues.append(f"Missing packaged client DAT plan: {path.relative_to(package_root).as_posix()}")
+            continue
+        try:
+            payload=json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            issues.append(f"Invalid client DAT plan JSON: {path.relative_to(package_root).as_posix()}")
+            continue
+        if payload.get("kind")!="WORKBENCH_CLIENT_DAT_PLAN":
+            issues.append(f"Unexpected client DAT plan kind: {path.relative_to(package_root).as_posix()}")
+            continue
+        client_plan_hashes[_sha256(path)]=path
+
+    for path in client_dat_approvals:
+        if not path.is_file():
+            issues.append(f"Missing packaged client DAT approval request: {path.relative_to(package_root).as_posix()}")
+            continue
+        try:
+            payload=json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            issues.append(f"Invalid client DAT approval JSON: {path.relative_to(package_root).as_posix()}")
+            continue
+        if payload.get("kind")!="WORKBENCH_CLIENT_DAT_APPROVAL_REQUEST":
+            issues.append(f"Unexpected client DAT approval kind: {path.relative_to(package_root).as_posix()}")
+            continue
+        requested_hash=payload.get("client_dat_plan_sha256")
+        if requested_hash not in client_plan_hashes:
+            issues.append(
+                f"Client DAT approval request is not linked to a packaged client DAT plan: "
                 f"{path.relative_to(package_root).as_posix()}"
             )
 
