@@ -58,12 +58,13 @@ def _prefixed(prefix: str) -> tuple[CatalogTable,...]:
 
 PROVIDERS=(
     CatalogProvider("server-sql","server",_prefixed("sql")),
-    CatalogProvider("landsandboat","server",_prefixed("lsb")),
-    CatalogProvider("topaz","server",_prefixed("topaz")),
-    CatalogProvider("dsp","server",_prefixed("dsp")),
-    CatalogProvider("server-effects","server",(
+    CatalogProvider("landsandboat","server",_prefixed("lsb")+(
         CatalogTable("lsb_effects","effectid","name","STATUS_EFFECT",search_columns=("display_name","norm_name")),
+    )),
+    CatalogProvider("topaz","server",_prefixed("topaz")+(
         CatalogTable("topaz_effects","effectid","name","STATUS_EFFECT",search_columns=("norm_name",)),
+    )),
+    CatalogProvider("dsp","server",_prefixed("dsp")+(
         CatalogTable("dsp_effects","effectid","name","STATUS_EFFECT",search_columns=("norm_name",)),
     )),
     CatalogProvider("client-identity","client",(
