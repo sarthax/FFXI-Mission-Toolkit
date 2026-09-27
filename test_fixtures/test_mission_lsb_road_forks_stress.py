@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
-from workbench.plugins.domain.mission_lsb_extract import correlate_lsb_handlers, chain_event_transitions
+from workbench.plugins.domain.mission_lsb_extract import correlate_lsb_handlers, chain_event_transitions, extract_section_completion_gate
 
 ROOT=Path(__file__).resolve().parents[1]
 SOURCE=(ROOT/"test_fixtures"/"fixtures"/"lsb_the_road_forks.lua").read_text(encoding="utf-8")
@@ -28,15 +28,19 @@ def main():
 
     kinds={t.trigger for t in chained.transitions}
     assert "MOB_DEATH" in kinds,kinds
+    assert "ZONE_OUT" in kinds,kinds
+    alias_guard=next(t for t in raw.transitions if t.metadata.get("actor")=="Chasalvige" and t.trigger=="NPC_INTERACT")
+    assert any(c.subject=="mission_status:SANDORIA" for c in alias_guard.gate.conditions),alias_guard
+    spawned=next(t for t in raw.transitions if t.metadata.get("actor")=="Guilloud" and t.trigger=="NPC_INTERACT")
+    assert any(c.operator=="ENTITY_NOT_SPAWNED" for c in spawned.gate.conditions),spawned
+    completion=extract_section_completion_gate(SOURCE)
+    assert completion and completion.logic=="ALL",completion
+    assert {c.subject for c in completion.conditions}=={"mission_status:SANDORIA","mission_status:WINDURST"},completion
 
-    # Known parser gaps intentionally asserted so later fixes must update this test.
+    # Remaining parser gaps intentionally asserted so later fixes must update this test.
     source_gap={
-        "zone_out_handler":"onZoneOut = function" in SOURCE and "ZONE_OUT" not in kinds,
-        "local_alias_conditions":"local missionStatus =" in SOURCE,
         "timer_helper_outside_sections":"jewelTimer = function" in SOURCE,
-        "entity_spawn_state_guard":":isSpawned()" in SOURCE,
         "message_return":"mission:messageSpecial" in SOURCE or "mission:messageName" in SOURCE,
-        "completion_section_check":"SANDORIA) == 14" in SOURCE and "WINDURST) == 14" in SOURCE,
     }
     assert all(source_gap.values()),source_gap
     print("Road Forks real-source stress: PASS")
