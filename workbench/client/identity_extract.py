@@ -22,11 +22,18 @@ from typing import Callable, Iterable, Any
 from .identity_snapshot import ClientIdentityManifest, file_sha256, write_manifest
 
 
-def dat_id_for_zone(zone_id: int) -> int:
-    if 0 <= int(zone_id) <= 255:
-        return 6420 + int(zone_id)
-    if 256 <= int(zone_id) <= 511:
-        return 85590 + (int(zone_id) - 256)
+def dat_id_for_zone(zone_id: int, category: str = "dialog") -> int:
+    """Return the client DAT id for a common per-zone resource family."""
+    category=str(category or "dialog").strip().lower()
+    offsets_0_255={"zone_data":100,"events":5820,"dialog":6420,"entities":6720}
+    offsets_256_511={"zone_data":83891,"events":84991,"dialog":85590,"entities":86491}
+    if category not in offsets_0_255:
+        raise ValueError(f"Unsupported zone DAT category: {category}")
+    zone_id=int(zone_id)
+    if 0 <= zone_id <= 255:
+        return offsets_0_255[category] + zone_id
+    if 256 <= zone_id <= 511:
+        return offsets_256_511[category] + (zone_id - 256)
     raise ValueError(f"Unsupported FFXI zone id: {zone_id}")
 
 
@@ -221,14 +228,15 @@ def extract_client_identity_snapshot(
 
     for request in zones:
         zone_id = int(request.zone_id)
-        dat_id = dat_id_for_zone(zone_id)
         zone_key = request.zone_key or f"ZONE_{zone_id}"
+
+        dialog_dat_id = dat_id_for_zone(zone_id, "dialog")
         rel = Path("dialog") / f"{zone_id:03d}_{zone_key}.yml"
         dest = output_dir / rel
         ok, diagnostic = _run_export(
             xi_tinkerer,
             client_root,
-            dat_id,
+            dialog_dat_id,
             dest,
             runner=runner,
         )
@@ -237,23 +245,56 @@ def extract_client_identity_snapshot(
                 "kind": "DIALOG",
                 "zone_id": zone_id,
                 "zone_key": zone_key,
-                "dat_id": dat_id,
+                "dat_id": dialog_dat_id,
                 "error": diagnostic or "xi-tinkerer export failed",
             })
             if dest.exists():
                 dest.unlink()
-            continue
-        resources.append(
-            ExportedResource(
-                kind="DIALOG",
-                relative_path=rel.as_posix(),
-                sha256=file_sha256(dest),
-                size=dest.stat().st_size,
-                zone_id=zone_id,
-                zone_key=zone_key,
-                dat_id=dat_id,
+        else:
+            resources.append(
+                ExportedResource(
+                    kind="DIALOG",
+                    relative_path=rel.as_posix(),
+                    sha256=file_sha256(dest),
+                    size=dest.stat().st_size,
+                    zone_id=zone_id,
+                    zone_key=zone_key,
+                    dat_id=dialog_dat_id,
+                )
             )
+
+        entity_dat_id = dat_id_for_zone(zone_id, "entities")
+        entity_rel = Path("entities") / f"{zone_id:03d}_{zone_key}.yml"
+        entity_dest = output_dir / entity_rel
+        entity_ok, entity_diag = _run_export(
+            xi_tinkerer,
+            client_root,
+            entity_dat_id,
+            entity_dest,
+            runner=runner,
         )
+        if not entity_ok:
+            failures.append({
+                "kind": "ENTITY",
+                "zone_id": zone_id,
+                "zone_key": zone_key,
+                "dat_id": entity_dat_id,
+                "error": entity_diag or "xi-tinkerer entity export failed",
+            })
+            if entity_dest.exists():
+                entity_dest.unlink()
+        else:
+            resources.append(
+                ExportedResource(
+                    kind="ENTITY",
+                    relative_path=entity_rel.as_posix(),
+                    sha256=file_sha256(entity_dest),
+                    size=entity_dest.stat().st_size,
+                    zone_id=zone_id,
+                    zone_key=zone_key,
+                    dat_id=entity_dat_id,
+                )
+            )
 
         for event_index, event_dat_path in enumerate(event_paths.get(zone_id, [])):
             suffix = "" if event_index == 0 else f"_variant{event_index}"
