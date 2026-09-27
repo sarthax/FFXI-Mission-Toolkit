@@ -43,6 +43,8 @@ def main():
     assert "path-edge" in template and "cross-edge" in template
     assert "normalizeProjection" in template
     assert "e.source_node===id" in template  # normalized closure direction drives expansion
+    assert "shown.has(e.source_node)" in template  # normalized fields also drive SVG edge rendering
+    assert "pos[e.source_node]" in template
     assert "entity:av" not in template  # no fixture-specific renderer behavior
     gui_source=(ROOT/"gui_server.py").read_text(encoding="utf-8")
     assert "build_feature_trace_closure(con, root)" in gui_source
