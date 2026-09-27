@@ -44,6 +44,26 @@ PROVIDERS=(
     CatalogProvider("landsandboat","server",_prefixed("lsb")),
     CatalogProvider("topaz","server",_prefixed("topaz")),
     CatalogProvider("dsp","server",_prefixed("dsp")),
+    CatalogProvider("client-identity","client",(
+        CatalogTable("identity_snapshots","snapshot_id","version","CLIENT_SNAPSHOT"),
+        CatalogTable("identity_records","record_id","semantic_key","CLIENT_IDENTITY"),
+    )),
+    CatalogProvider("captures","runtime",(
+        CatalogTable("captures","capture_id","capture_label","CAPTURE"),
+    )),
+    CatalogProvider("research","research",(
+        CatalogTable("research_sessions","research_session_id","question","RESEARCH_SESSION"),
+        CatalogTable("research_proposals","proposal_id","subject_id","RESEARCH_PROPOSAL"),
+    )),
+    CatalogProvider("validation","validation",(
+        CatalogTable("validation_runs","run_id","name","VALIDATION_RUN"),
+        CatalogTable("validation_results","validation_id","validation_type","VALIDATION_RESULT"),
+    )),
+    CatalogProvider("packages","packages",(
+        CatalogTable("migrations","migration_id","feature_id","MIGRATION"),
+        CatalogTable("migration_actions","action_id","action","MIGRATION_ACTION"),
+        CatalogTable("package_scope_reviews","migration_id","status","PACKAGE_SCOPE_REVIEW"),
+    )),
 )
 
 def provider_tables():
