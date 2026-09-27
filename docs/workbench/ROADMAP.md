@@ -457,3 +457,18 @@ Completed a real `FFXiMain.dll` deeper pass and PE32 import-thunk candidate look
 - [x] Add a provider factory for Open WebUI vs Ollama Direct selection.
 - [x] Keep provider failures explicit; no silent fallback from one provider to another.
 - [x] Add no-network regression coverage for both provider implementations and provider selection.
+
+
+### 2026-09-26 — Revised next-work priority
+Current ordered backlog after client snapshot GUI, Research Sessions GUI, direct Ollama provider, DAT Inspector UX cleanup, and CI stabilization:
+
+1. [ ] Safer variable-length EVENT opcode decoding to reduce `RAW_ONLY` fingerprints and improve cross-client EVENT identity matching.
+2. [ ] Research Session Run / Replay controls using the bounded `ResearchRunner` with explicit provider/model/budget/timeout/run-state handling.
+3. [ ] Improve cross-client ENTITY equivalence coverage and diagnostics, especially ambiguous/unresolved target-actor mappings.
+4. [ ] Research contradiction filtering and canonical evidence drill-down across server/client/capture/runtime/reference evidence.
+5. [ ] Continue P1 logical schema expansion beyond the completed P0 core mappings.
+
+Completed/retired from the prior queue:
+- [x] Automatic client ENTITY ingestion/actor-aware EVENT comparison foundation exists; remaining work is equivalence quality/diagnostics rather than basic ingestion.
+- [x] Coiler/core-regression cleanup is complete; the full Workbench Regression suite is green.
+
