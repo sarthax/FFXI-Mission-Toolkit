@@ -92,6 +92,7 @@ def main() -> int:
 
         assert payload["summary"]=={
             "require_dependencies":1,
+            "script_entity_bindings":1,
             "entity_dependencies":4,
             "unresolved_findings":0,
         },payload["summary"]
@@ -114,8 +115,11 @@ def main() -> int:
             assert row["metadata"]["skill_list_id"]==171,row
 
         require_edges=[e for e in payload["edges"] if e["edge_id"].startswith("lua-require:")]
+        script_entity_edges=[e for e in payload["edges"] if e["edge_id"].startswith("lua-script-entity:")]
         entity_edges=[e for e in payload["edges"] if e["edge_id"].startswith("lua-entity:")]
         assert len(require_edges)==1,require_edges
+        assert len(script_entity_edges)==1,script_entity_edges
+        assert script_entity_edges[0]["relationship"]=="REFERENCES",script_entity_edges
         assert len(entity_edges)==4,entity_edges
         assert all(e["relationship"]=="REQUIRES" for e in payload["edges"]),payload["edges"]
         assert all(e["confidence"]=="VERIFIED" for e in payload["edges"]),payload["edges"]
@@ -173,6 +177,7 @@ def main() -> int:
             source_snapshot_id="lsb:test",
             zone_id=54,
         )
+        assert unresolved["summary"]["script_entity_bindings"]==0,unresolved
         assert unresolved["summary"]["entity_dependencies"]==0,unresolved
         assert unresolved["summary"]["unresolved_findings"]>=4,unresolved
 
