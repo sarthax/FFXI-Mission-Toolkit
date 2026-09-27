@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Research Contradictions{% endblock %}
+{% block content %}
+<h1>Research Contradictions</h1>
+<p class="muted">Read-only view of explicit contradictions and conflicting canonical observations. Filters never promote one source over another.</p>
+
+<form method="get" action="/research/contradictions">
+  <div class="table-wrap"><table>
+    <tr><th>Research session</th><td><input name="session_id" value="{{ session_id }}" placeholder="optional research:..."></td></tr>
+    <tr><th>Subject</th><td><input name="subject_id" value="{{ subject_id }}" placeholder="optional canonical subject id"></td></tr>
+    <tr><th>Evidence type</th><td><select name="evidence_type">
+      <option value="">All evidence types</option>
+      {% for t in report.available_evidence_types %}
+      <option value="{{ t }}" {% if evidence_type == t %}selected{% endif %}>{{ t }}</option>
+      {% endfor %}
+    </select></td></tr>
+  </table></div>
+  <button type="submit">Apply filters</button>
+  <a href="/research/contradictions">Clear</a>
+</form>
+
+<p>
+  <span class="chip">Contradictions {{ report.total }}</span>
+  {% for kind,count in report.type_counts.items() %}<span class="chip">{{ kind }} {{ count }}</span>{% endfor %}
+</p>
+
+{% if not report.items %}
+<p class="muted">No contradictions matched these filters.</p>
+{% else %}
+{% for item in report.items %}
+<section style="border:1px solid var(--border,#ccc);border-radius:8px;padding:14px;margin:12px 0;">
+  <h3 style="margin-top:0;">{{ item.kind }}</h3>
+  <p><strong>Subject:</strong> <code>{{ item.subject_id }}</code>{% if item.field %} · <strong>Field:</strong> <code>{{ item.field }}</code>{% endif %}</p>
+  <p>{{ item.summary }}</p>
+  {% if item.research_session_id %}<p><a href="/research/{{ item.research_session_id|urlencode }}">Open research session</a></p>{% endif %}
+  {% if item.evidence %}
+  <p><strong>Evidence:</strong>
+    {% for e in item.evidence %}
+      <a href="/research/evidence?evidence_id={{ e.evidence_id|urlencode }}"><code>{{ e.evidence_id }}</code></a>
+      <span class="muted">({{ e.evidence_type }} · {{ e.source }})</span>{% if not loop.last %}<br>{% endif %}
+    {% endfor %}
+  </p>
+  {% endif %}
+  <details>
+    <summary>Show conflicting records ({{ item.records|length }})</summary>
+    <pre style="max-height:420px;overflow:auto;">{{ item.records|tojson(indent=2) }}</pre>
+  </details>
+</section>
+{% endfor %}
+{% endif %}
+{% endblock %}
