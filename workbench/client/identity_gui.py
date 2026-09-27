@@ -64,7 +64,7 @@ def list_client_snapshots(
             SELECT s.*,
                    SUM(CASE WHEN r.namespace='EVENT' THEN 1 ELSE 0 END) AS event_count,
                    SUM(CASE WHEN r.namespace='ENTITY' THEN 1 ELSE 0 END) AS entity_count,
-                   SUM(CASE WHEN r.namespace='DIALOG' THEN 1 ELSE 0 END) AS dialog_count
+                   SUM(CASE WHEN r.namespace IN ('DIALOG','DIALOG_TEXT_ID') THEN 1 ELSE 0 END) AS dialog_count
               FROM identity_snapshots s
               LEFT JOIN identity_records r ON r.snapshot_id=s.snapshot_id
              WHERE UPPER(s.snapshot_type)='CLIENT'
