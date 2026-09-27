@@ -12,6 +12,36 @@ def main():
         root=Path(td); (root/"sql").mkdir()
         topaz=TopazAdapter(root); dsp=DSPAdapter(root); lsb=LSBAdapter(root)
 
+        tim=topaz.normalize_row("item_modifiers",{"itemId":10250,"modId":1,"value":1})
+        dim=dsp.normalize_row("item_modifiers",{"itemId":10250,"modId":1,"value":1})
+        lim=lsb.normalize_row("item_modifiers",{"itemId":10250,"modId":1,"value":1})
+        assert compare_records(tim,dim).status=="EQUIVALENT"
+        assert compare_records(tim,lim).status=="EQUIVALENT"
+        assert tim.identity==(("item_id",10250),("modifier_id",1)),tim
+
+        tpm=topaz.normalize_row("item_pet_modifiers",{"itemId":10296,"modId":25,"value":3,"petType":3})
+        dpm=dsp.normalize_row("item_pet_modifiers",{"itemId":10296,"modId":25,"value":3,"petType":3})
+        lpm=lsb.normalize_row("item_pet_modifiers",{"itemId":10296,"modId":25,"value":3,"petType":3})
+        assert compare_records(tpm,dpm).status=="EQUIVALENT"
+        assert compare_records(tpm,lpm).status=="EQUIVALENT"
+        assert tpm.identity==(("item_id",10296),("modifier_id",25),("pet_type",3)),tpm
+
+        til=topaz.normalize_row("item_latents",{
+            "itemId":10293,"modId":25,"value":50,"latentId":50,"latentParam":31,
+        })
+        dil=dsp.normalize_row("item_latents",{
+            "itemId":10293,"modId":25,"value":50,"latentId":50,"latentParam":31,
+        })
+        lil=lsb.normalize_row("item_latents",{
+            "itemId":10293,"modId":25,"value":50,"latentId":50,"latentParam":31,
+        })
+        assert compare_records(til,dil).status=="EQUIVALENT"
+        assert compare_records(til,lil).status=="EQUIVALENT"
+        assert til.identity==(
+            ("item_id",10293),("modifier_id",25),("value",50),
+            ("latent_id",50),("latent_parameter",31),
+        ),til
+
         tw=topaz.normalize_row("item_weapon",{
             "itemId":16555,"name":"test_sword","skill":3,"subskill":0,
             "ilvl_skill":0,"ilvl_parry":0,"ilvl_macc":0,"dmgType":2,
