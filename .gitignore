@@ -29,6 +29,7 @@ gui/static/zone_visual/
 
 # Local-only client binary indexes/caches; never commit proprietary EXE/DLL research inputs
 .workbench/client-binaries/
+client_snapshots/
 
 # Local build outputs (generated graph, reports, scratch)
 workbench.db
