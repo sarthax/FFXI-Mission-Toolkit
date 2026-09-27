@@ -1,0 +1,123 @@
+{
+  "schema": 1,
+  "kind": "MISSION_MECHANIC_COVERAGE_PROBE",
+  "samples": [
+    {
+      "id": "linear_reward",
+      "name": "Kazham's Chieftainess",
+      "source": "LSB:scripts/missions/rotz/03_Kazhams_Chieftainess.lua",
+      "mechanics": [
+        "mission_identity",
+        "npc_trigger",
+        "zone_scoped_event",
+        "event_finish",
+        "mission_complete",
+        "next_mission",
+        "key_item_grant"
+      ]
+    },
+    {
+      "id": "battlefield_zonein",
+      "name": "Ancient Vows",
+      "source": "LSB:scripts/missions/cop/2_5_Ancient_Vows.lua",
+      "mechanics": [
+        "mission_identity",
+        "npc_trigger",
+        "zone_scoped_event",
+        "event_finish",
+        "persistent_var",
+        "zone_in",
+        "battlefield_result_guard",
+        "mission_complete",
+        "next_mission",
+        "teleport_effect",
+        "replace_default"
+      ]
+    },
+    {
+      "id": "parallel_timed_paths",
+      "name": "The Road Forks",
+      "source": "LSB:scripts/missions/cop/3_3_The_Road_Forks.lua",
+      "mechanics": [
+        "mission_identity",
+        "parallel_status_channels",
+        "all_paths_completion",
+        "npc_trigger",
+        "zone_scoped_event",
+        "event_finish",
+        "zone_in",
+        "persistent_var",
+        "local_var",
+        "key_item_grant",
+        "key_item_remove",
+        "timed_expiry",
+        "recursive_timer",
+        "message_effect",
+        "spawn_mob",
+        "mob_death",
+        "distance_guard",
+        "position_guard",
+        "nation_guard",
+        "no_action",
+        "next_mission"
+      ]
+    },
+    {
+      "id": "multi_battlefield_paths",
+      "name": "Three Paths",
+      "source": "LSB:scripts/missions/cop/5_3_Three_Paths.lua",
+      "mechanics": [
+        "mission_identity",
+        "parallel_status_channels",
+        "all_paths_completion",
+        "npc_trigger",
+        "zone_scoped_event",
+        "event_finish",
+        "zone_in",
+        "persistent_var",
+        "local_var",
+        "key_item_grant",
+        "key_item_remove",
+        "trade_gate",
+        "trade_consume",
+        "spawn_mob",
+        "mob_death",
+        "battlefield_result_guard",
+        "title_grant",
+        "client_transport",
+        "next_mission"
+      ]
+    }
+  ],
+  "current_model_support": {
+    "mission_identity": "FULL",
+    "npc_trigger": "PARTIAL",
+    "zone_scoped_event": "FULL",
+    "event_finish": "FULL",
+    "mission_complete": "FULL",
+    "next_mission": "PARTIAL",
+    "key_item_grant": "FULL",
+    "key_item_remove": "FULL",
+    "persistent_var": "PARTIAL",
+    "zone_in": "PARTIAL",
+    "battlefield_result_guard": "PARTIAL",
+    "teleport_effect": "MISSING",
+    "replace_default": "MISSING",
+    "parallel_status_channels": "MISSING",
+    "all_paths_completion": "MISSING",
+    "local_var": "PARTIAL",
+    "timed_expiry": "MISSING",
+    "recursive_timer": "MISSING",
+    "message_effect": "MISSING",
+    "spawn_mob": "MISSING",
+    "mob_death": "MISSING",
+    "distance_guard": "MISSING",
+    "position_guard": "MISSING",
+    "nation_guard": "PARTIAL",
+    "no_action": "MISSING",
+    "trade_gate": "PARTIAL",
+    "trade_consume": "FULL",
+    "title_grant": "MISSING",
+    "client_transport": "MISSING"
+  }
+}
