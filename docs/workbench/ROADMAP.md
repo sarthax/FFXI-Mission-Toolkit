@@ -537,3 +537,26 @@ Completed/retired from the prior queue:
 - [x] P1 logical schema expansion is no longer a blocking queue item after four evidence-backed tranches.
 - [x] Future schema additions remain allowed when a concrete feature/package exposes a missing generic dependency surface.
 - [x] Resume subsequent roadmap work from the next open phase item rather than treating schema breadth as an unbounded prerequisite.
+
+
+## 2026-09-27 — Audit reconciliation and sample-name neutrality
+
+Architecture naming rule: concrete FFXI content used as a proof case or regression fixture must not name generic Workbench services, framework concepts, or reusable test roles. Content names remain valid inside evidence payloads where they identify the actual game subject.
+
+Reconciled work discovered on current `main`:
+- [x] Variable-length EVENT decoding: `workbench/client/event_fingerprint.py` now performs conservative variable-length rule extraction and fail-closed decoding; focused coverage lives in `test_fixtures/test_event_fingerprint.py`.
+- [x] Automatic client ENTITY identity ingestion: `workbench/client/identity_extract.py`, `workbench/client/identity_snapshot.py`, and identity/event regressions automatically ingest per-zone client ENTITY evidence. Duplicate-name enrichment remains a refinement, not a blocker.
+- [x] Broader P1 logical schema expansion: `workbench/adapters/servers/profiles.py`, `progression.py`, `schema_coverage.py`, and their regressions cover combat abilities/skills, item modifiers/latents, job points/merits, mob support tables, skill caps/ranks, synthesis, and synergy in addition to the P0 core.
+- [x] Proof-case naming cleanup: generic artifact/test names now describe the dependency pattern rather than the sampled FFXI subject. The attachment/shared-runtime and cross-zone/system-coupling truth sets retain their concrete subjects only inside evidence content.
+
+Files changed by the naming cleanup:
+- `docs/workbench/DEPENDENCY_PROOF_CASE_ATTACHMENT.md` (renamed from `COILER_PACKAGE_PROOF.md`)
+- `docs/workbench/DEPENDENCY_PROOF_CASE_CROSS_ZONE_ENTITY.md` (renamed from `MEDUSA_PACKAGE_PROOF.md`)
+- `test_fixtures/fixtures/dependency_truth_attachment_runtime.json`
+- `test_fixtures/fixtures/dependency_truth_cross_zone_entity.json`
+- `test_fixtures/test_dependency_truth_attachment_runtime.py`
+- `test_fixtures/test_dependency_truth_cross_zone_entity.py`
+- `docs/workbench/ROADMAP.md`
+- `docs/workbench/AUDIT_STATUS.md`
+
+This naming rule applies to future proof cases as well: sample content demonstrates architecture; it does not define architecture.
