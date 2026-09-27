@@ -161,7 +161,7 @@ def main() -> int:
                 if item["node_id"] in {edge["target_node"] for edge in entity_edges}
             ]
             assert len(helper_items)==4,helper_items
-            assert all(item["node_kind"]=="ENTITIE" or item["node_kind"]=="ENTITy" for item in helper_items) is False
+            assert all(item["node_kind"]=="ENTITY" for item in helper_items),helper_items
             assert all(item["display_name"]=="Lamia_Exon" for item in helper_items),helper_items
         finally:
             con.close()
