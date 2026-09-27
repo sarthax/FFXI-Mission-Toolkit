@@ -242,7 +242,7 @@ def main():
             return 2
         root = matches[0]["node_id"]
 
-    result = trace(con, root, args.depth, args.direction, set(args.relationship) or None)
+    result = trace(con, root, args.depth, args.direction, relationships=set(args.relationship) or None)
     con.close()
     output = json.dumps(result, indent=2, sort_keys=True)
     if args.json:
