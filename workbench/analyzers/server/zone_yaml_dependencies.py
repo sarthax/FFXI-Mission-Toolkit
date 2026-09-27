@@ -90,6 +90,25 @@ def analyze_zone(
     skills=extract_logical_records(adapter,"mob_skills")
     spell_members=extract_logical_records(adapter,"mob_spell_lists")
     spells=extract_logical_records(adapter,"spells")
+    item_basic=extract_logical_records(adapter,"item_basic")
+    item_weapon=extract_logical_records(adapter,"item_weapon")
+    item_usable=extract_logical_records(adapter,"item_usable")
+
+    items_by_name: dict[str,list[Any]]={}
+    for record in item_basic:
+        name=record.fields.get("name")
+        if name:
+            items_by_name.setdefault(str(name),[]).append(record)
+    weapons_by_id={
+        int(record.fields["item_id"]):record
+        for record in item_weapon
+        if record.fields.get("item_id") is not None
+    }
+    usables_by_id={
+        int(record.fields["item_id"]):record
+        for record in item_usable
+        if record.fields.get("item_id") is not None
+    }
 
     skills_by_id={int(r.fields["mob_skill_id"]):r for r in skills if r.fields.get("mob_skill_id") is not None}
     skill_members_by_list: dict[int,list[Any]]={}
@@ -172,6 +191,76 @@ def analyze_zone(
         if not isinstance(template_row,dict):
             add_finding(template_node,"template",template_name,"Referenced template is absent from zone YAML.",eid)
             continue
+
+        loot=template_row.get("loot")
+        drops=(loot.get("drops") if isinstance(loot,dict) else None) or []
+        if isinstance(drops,list):
+            for drop in drops:
+                if not isinstance(drop,dict):
+                    continue
+                item_symbol=drop.get("item")
+                if not item_symbol:
+                    continue
+                symbol=str(item_symbol)
+                candidates=list(items_by_name.get(symbol) or ())
+                subject=f"{template_name}:loot:{symbol}"
+                if len(candidates)!=1:
+                    leid=add_evidence(
+                        subject,
+                        "loot-item-unresolved",
+                        (
+                            f"Template {template_name} loot symbol {symbol} resolved to "
+                            f"{len(candidates)} item_basic rows; unique identity is required."
+                        ),
+                    )
+                    add_finding(
+                        template_node,
+                        "loot_item",
+                        {
+                            "item_symbol":symbol,
+                            "chance":drop.get("chance"),
+                            "candidate_count":len(candidates),
+                        },
+                        "Loot item symbol could not be resolved uniquely to normalized item_basic.",
+                        leid,
+                    )
+                    continue
+
+                item_record=candidates[0]
+                item_id=int(item_record.fields["item_id"])
+                item_node=_node("item",sid,item_id)
+                weapon=weapons_by_id.get(item_id)
+                usable=usables_by_id.get(item_id)
+                metadata={
+                    "item_id":item_id,
+                    "name":symbol,
+                    "loot_chance":drop.get("chance"),
+                    "source_snapshot_id":sid,
+                    "item_basic":dict(item_record.fields),
+                }
+                if weapon is not None:
+                    metadata["item_weapon"]=dict(weapon.fields)
+                if usable is not None:
+                    metadata["item_usable"]=dict(usable.fields)
+                entities[item_node]=Entity(
+                    item_node,
+                    "ITEM",
+                    symbol,
+                    metadata=metadata,
+                )
+                leid=add_evidence(
+                    subject,
+                    "loot-item",
+                    f"Template {template_name} loot symbol {symbol} uniquely resolves to item {item_id}.",
+                )
+                _edge(
+                    edges,
+                    sid=sid,
+                    source=template_node,
+                    target=item_node,
+                    evidence_id=leid,
+                    role="TEMPLATE_REQUIRES_LOOT_ITEM",
+                )
 
         species=template_row.get("species")
         if species:
@@ -280,7 +369,9 @@ def analyze_zone(
             "notes":[
                 "Zone entity/template dependencies come from mobs.yaml.",
                 "Skill/spell membership and definitions reuse profile-backed normalized SQL extraction.",
-                "Missing members/definitions/scripts remain explicit UNKNOWN findings.",
+                "Zone YAML loot symbols resolve through normalized item_basic names; unique matches become ITEM dependencies.",
+                "Matching weapon/usable representations are attached when those normalized rows exist.",
+                "Missing/ambiguous items, members, definitions, and scripts remain explicit UNKNOWN findings.",
             ],
             "source_snapshot_id":sid,
         },
@@ -292,6 +383,7 @@ def analyze_zone(
         "summary":{
             "root_entities":len(selected),
             "entity_nodes":len(entities),
+            "item_nodes":sum(1 for node in entities.values() if node.entity_type=="ITEM"),
             "artifacts":len(artifacts),
             "edges":len(edges),
             "unresolved_findings":len(findings),

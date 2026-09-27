@@ -431,7 +431,7 @@ Current proof:
     - [x] Resolve safe `ID.mob.SYMBOL + N` entity arithmetic/ranges through `IDs.lua` + zone `mobs.yaml`, including Medusa's four Lamia Exon helpers.
     - [x] Normalize modern LSB zone YAML templates/entities into entity→template→species/skill/spell closure.
     - [x] Link skill-list members to normalized mob-skill definitions and conventional Lua implementations, preserving missing scripts as explicit findings.
-    - [ ] Link zone-YAML loot symbols to canonical item records.
+    - [x] Link zone-YAML loot symbols uniquely through normalized item identities to canonical ITEM dependency nodes.
     - [ ] Promote zone text/title references and cross-zone Besieged coupling into package dependency edges.
   - [x] Establish Coiler automaton attachment as a second truth set covering item/internal identity mapping, dynamic Lua dispatch, shared automaton behavior, C++ puppet runtime, persistence, downstream weapon-skill consumers, conditional interactions, and reviewer-controlled acquisition paths.
   - [x] Add recursive crafting/producibility closure for synth/synergy recipe prerequisites; Heat Seeker→Glass Sheet now proves multi-level recipe recursion, key-item gating, leaf obtainability, and Synergy client/runtime gating.

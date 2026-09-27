@@ -70,7 +70,7 @@ def main():
 
     gaps=payload["known_current_toolkit_gaps"]
     closed=payload["closed_toolkit_gaps"]
-    assert any("YAML loot" in gap for gap in gaps),gaps
+    assert any("loot item symbols" in gap for gap in closed),closed
     assert any("species/family" in gap for gap in gaps),gaps
     assert any("Besieged" in gap for gap in gaps),gaps
     assert any("mobs.yaml entities/templates" in gap for gap in closed),closed

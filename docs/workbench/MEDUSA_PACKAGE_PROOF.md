@@ -259,7 +259,7 @@ This is the important part of the proof.
 | Lua `require()` / mixin dependency | Covered | Literal `require()` paths now produce VERIFIED packageable `REQUIRES` artifact edges with evidence. |
 | Lua API → binding → C++ | Partial | Workbench has Lua/binding/C++ graph infrastructure, but Medusa-specific closure is not yet proven end to end. |
 | Lua enum/constants | Partial | Enum graph infrastructure exists, but Medusa script references are not yet proven to resolve automatically. |
-| YAML loot → item records | **Gap** | Current item logical records exist, but the YAML loot-symbol edge is not created. |
+| YAML loot → item records | Covered | Zone-YAML loot symbols now resolve uniquely through normalized `item_basic.name` into canonical ITEM dependency nodes; ambiguous/missing symbols remain explicit findings. |
 | Zone text/title dependencies | **Gap/Partial** | Source data exists, but Medusa-specific Lua references are not yet guaranteed to become package dependencies. |
 | Cross-zone Besieged variants | **Gap** | Must be modeled as conditional system dependencies; current LSB lifecycle hooks are present but empty, so direct source traversal is insufficient. |
 
@@ -283,7 +283,7 @@ Current progress:
 - [x] mob skill definitions;
 - [x] mob spell list and member closure;
 - [x] spell definitions;
-- [ ] YAML loot entry→item identity closure;
+- [x] YAML loot entry→item identity closure;
 - [ ] generic cross-lineage species/family equivalence.
 
 The implementation now combines modern LSB zone YAML with existing profile-backed SQL normalization instead of assuming identical physical storage.
@@ -325,17 +325,16 @@ Then continue Lua/binding/C++ traversal from those implementations.
 
 ### P0 — loot/item closure
 
-Model:
+Implemented:
 
 ```text
 mob template
-→ loot entry
-→ item identity
-→ item_basic
-→ equipment/weapon/usable/etc representations as applicable
+→ YAML loot symbol
+→ unique normalized item_basic identity
+→ canonical ITEM graph node
 ```
 
-An item already present and equivalent in the target can then become a reviewed `TARGET_EQUIVALENT`, with evidence, instead of disappearing.
+Matching normalized weapon/usable representations are attached to the ITEM node when available. Missing or duplicate item symbols remain explicit UNKNOWN findings. Target equivalence remains a reviewed migration decision rather than being assumed from source presence.
 
 ### P1 — related-variant semantics
 
