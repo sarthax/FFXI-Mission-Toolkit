@@ -123,16 +123,26 @@ def search_catalog(con: sqlite3.Connection, term: str, limit: int = 200):
             f"SELECT {key},{kind},{name} FROM {table} WHERE lower(CAST({key} AS TEXT)) LIKE ? OR lower(COALESCE({name},'')) LIKE ? ORDER BY {key} LIMIT ?",
             (pattern,pattern,limit),
         ):
-            rows.append({"node_id":row[0],"node_type":row[1],"display_name":row[2],"domain":"canonical","source":table,"table":table,"catalog_only":False})
+            matched=[]
+            term_fold=term.casefold()
+            if term_fold in str(row[0] or "").casefold():
+                matched.append(key)
+            if term_fold in str(row[2] or "").casefold():
+                matched.append(name)
+            rows.append({"node_id":row[0],"node_type":row[1],"display_name":row[2],"domain":"canonical","source":table,"table":table,"catalog_only":False,"matched_on":matched})
     for table,key,name,provider_id,domain,object_type,spec in _indexed_specs(con):
         cols=_columns(con,table)
         identity_columns=_identity_columns(cols,key,spec)
-        select_columns=[*identity_columns,name]
-        where=" OR ".join(
-            [f"lower(CAST({column} AS TEXT)) LIKE ?" for column in identity_columns]
-            + [f"lower(COALESCE({name},'')) LIKE ?"]
-        )
-        params=[pattern]*(len(identity_columns)+1)+[limit]
+        alias_columns=[]
+        if spec is not None:
+            alias_columns=[
+                cols[column.lower()] for column in spec.search_columns
+                if column.lower() in cols and cols[column.lower()] not in {*identity_columns,name}
+            ]
+        search_columns=[*identity_columns,name,*alias_columns]
+        select_columns=search_columns
+        where=" OR ".join(f"lower(COALESCE(CAST({column} AS TEXT),'')) LIKE ?" for column in search_columns)
+        params=[pattern]*len(search_columns)+[limit]
         for row in con.execute(
             f"SELECT {','.join(select_columns)} FROM {table} WHERE {where} ORDER BY {','.join(identity_columns)} LIMIT ?",
             params,
@@ -140,8 +150,12 @@ def search_catalog(con: sqlite3.Connection, term: str, limit: int = 200):
             identity_values=tuple(row[:len(identity_columns)])
             display=row[len(identity_columns)]
             node_id=_catalog_id(table,identity_values,identity_columns)
+            matched=[
+                column for column,value in zip(search_columns,row)
+                if term.casefold() in str(value or "").casefold()
+            ]
             item={"node_id":node_id,"node_type":object_type,"display_name":display,"domain":domain,"source":table,"table":table,"provider":provider_id,"catalog_only":True,
-                  "identity":dict(zip(identity_columns,identity_values))}
+                  "identity":dict(zip(identity_columns,identity_values)),"matched_on":matched}
             if len(identity_values)==1:
                 item["numeric_id"]=identity_values[0]
             rows.append(item)
