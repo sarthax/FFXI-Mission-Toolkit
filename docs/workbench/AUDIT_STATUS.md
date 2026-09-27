@@ -1858,3 +1858,14 @@ The key architectural finding is that the canonical graph can remain shared, whi
 
 Probe: `test_fixtures/fixtures/absolute_virtue_behavior_probe.json`
 Regression: `test_fixtures/test_absolute_virtue_behavior_probe.py`
+
+
+## 2026-09-27 — Feature Trace Evidence Dossier and runtime drill-down
+
+Feature Trace now treats semantic topology and high-cardinality runtime observations as separate presentation domains. A presentation-only Evidence Dossier summarizes root identity, semantic facet counts, and runtime/capture counts without manufacturing relationships or treating missing facets as proof of absence.
+
+Runtime evidence is summarized as opcode/semantic group → capture. Raw observations are omitted from the initial trace payload and are available only through the bounded `/features/trace/runtime.json` drill-down (maximum 250 observations per request). Runtime edges continue to stay out of semantic traversal topology, while semantic `OBSERVED_*` relationships without runtime/capture evidence remain available to validation/semantic views.
+
+Relationship sections now render their own classified edge members rather than repeating the complete semantic edge list under every heading. Catalog-only objects remain valid dossier roots even when no canonical dependency edges exist.
+
+This is a presentation/navigation milestone. It does not claim that every indexed source has an explicit catalog provider yet, nor that the populated local databases were validated in this GitHub-only execution environment.
