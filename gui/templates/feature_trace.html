@@ -71,13 +71,14 @@
   <summary>{{ group.opcode }}{% if group.direction %} · {{ group.direction }}{% endif %} — {{ group.observation_count }} observation(s) — {{ group.capture_count }} capture(s)</summary>
   {% for capture in group.capture_groups %}
   <div style="margin:.5rem 0 .5rem 1rem;">
-    <button type="button" class="runtime-load" data-opcode="{{ group.opcode }}" data-capture="{{ capture.capture_id }}">{{ capture.capture_id }} — {{ capture.observation_count }} observation(s)</button>
+    <button type="button" class="runtime-load" data-opcode="{{ group.opcode|e }}" data-capture="{{ capture.capture_id|e }}">{{ capture.capture_id }} — {{ capture.observation_count }} observation(s)</button>
     <div class="runtime-detail"></div>
   </div>
   {% else %}<p class="muted">No capture identity is recorded for this group.</p>{% endfor %}
 </details>
 {% endfor %}
 <script>
+const runtimeEsc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 document.querySelectorAll('.runtime-load').forEach(button=>button.addEventListener('click',async()=>{
  const target=button.nextElementSibling;
  if(target.dataset.loaded){target.innerHTML='';delete target.dataset.loaded;return;}
@@ -85,7 +86,7 @@ document.querySelectorAll('.runtime-load').forEach(button=>button.addEventListen
  const p=new URLSearchParams({root:{{ result.root|tojson }},depth:{{ result.max_depth }},direction:{{ result.direction|tojson }},opcode:button.dataset.opcode,capture_id:button.dataset.capture,limit:'100'});
  const response=await fetch('/features/trace/runtime.json?'+p),data=await response.json();
  if(!response.ok){target.textContent=data.error||'Could not load observations.';return;}
- const rows=data.observations.map(e=>'<tr><td>'+String(e.relationship||'')+'</td><td><code>'+String(e.from_node||'')+'</code></td><td><code>'+String(e.to_node||'')+'</code></td><td><code>'+String(e.evidence_id||'')+'</code></td></tr>').join('');
+ const rows=data.observations.map(e=>'<tr><td>'+runtimeEsc(e.relationship)+'</td><td><code>'+runtimeEsc(e.from_node)+'</code></td><td><code>'+runtimeEsc(e.to_node)+'</code></td><td><code>'+runtimeEsc(e.evidence_id)+'</code></td></tr>').join('');
  target.innerHTML='<p class="muted">Showing '+data.offset+'–'+Math.min(data.offset+data.observations.length,data.total)+' of '+data.total+'. Maximum 250 per request.</p><div class="table-wrap"><table><thead><tr><th>Relationship</th><th>From</th><th>To</th><th>Evidence</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
  target.dataset.loaded='1';
 }));
