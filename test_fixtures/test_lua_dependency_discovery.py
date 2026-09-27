@@ -141,7 +141,7 @@ def main() -> int:
 
         con=sqlite3.connect(db)
         try:
-            assert con.execute("SELECT COUNT(*) FROM entities").fetchone()[0]==4
+            assert con.execute("SELECT COUNT(*) FROM entities").fetchone()[0]==5
             assert con.execute(
                 "SELECT COUNT(*) FROM entity_relationships WHERE relationship='REQUIRES'"
             ).fetchone()[0]==5
