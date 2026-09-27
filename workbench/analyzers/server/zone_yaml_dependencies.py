@@ -383,6 +383,7 @@ def analyze_zone(
         "summary":{
             "root_entities":len(selected),
             "entity_nodes":len(entities),
+            "item_nodes":sum(1 for node in entities.values() if node.entity_type=="ITEM"),
             "artifacts":len(artifacts),
             "edges":len(edges),
             "unresolved_findings":len(findings),
