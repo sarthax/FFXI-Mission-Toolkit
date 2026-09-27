@@ -269,6 +269,32 @@ def _common(equipment_file: str = "item_equipment.sql") -> dict[str, TableShape]
         FieldMapping("upgrade_id",("upgradeid","upgradeId")),
         FieldMapping("legacy_category_id",("catagoryid","categoryid","categoryId")),
     )
+    mob_pool_modifier_fields=(
+        FieldMapping("pool_id",("poolid","poolId"),True),
+        FieldMapping("modifier_id",("modid","modId"),True),
+        FieldMapping("value",("value",)),
+        FieldMapping("is_mob_modifier",("is_mob_mod","isMobMod")),
+    )
+    mob_spell_list_fields=(
+        FieldMapping("spell_list_name",("spell_list_name",)),
+        FieldMapping("spell_list_id",("spell_list_id",),True),
+        FieldMapping("spell_id",("spell_id",),True),
+        FieldMapping("min_level",("min_level",)),
+        FieldMapping("max_level",("max_level",)),
+    )
+    skill_cap_fields=(
+        FieldMapping("level",("level",),True),
+    ) + tuple(
+        FieldMapping(f"rank_{rank}",(f"r{rank}",))
+        for rank in range(14)
+    )
+    skill_rank_fields=(
+        FieldMapping("skill_id",("skillid","skillId"),True),
+        FieldMapping("name",("name",),True),
+    ) + tuple(
+        FieldMapping(f"{job}_rank",(job,))
+        for job in ("war","mnk","whm","blm","rdm","thf","pld","drk","bst","brd","rng","sam","nin","drg","smn","blu","cor","pup","dnc","sch","geo","run")
+    )
     synth_fields=(
         FieldMapping("recipe_id",("ID","id"),True),
         FieldMapping("desynth",("Desynth","desynth")),
@@ -352,6 +378,10 @@ def _common(equipment_file: str = "item_equipment.sql") -> dict[str, TableShape]
     item_latent_columns=("itemId","modId","value","latentId","latentParam")
     job_point_columns=("job_pointid","name","upgrade","jobs")
     merit_columns=("meritid","name","upgrade","value","jobs","upgradeid","catagoryid")
+    mob_pool_modifier_columns=("poolid","modid","value","is_mob_mod")
+    mob_spell_list_columns=("spell_list_name","spell_list_id","spell_id","min_level","max_level")
+    skill_cap_columns=("level",)+tuple(f"r{rank}" for rank in range(14))
+    skill_rank_columns=("skillid","name","war","mnk","whm","blm","rdm","thf","pld","drk","bst","brd","rng","sam","nin","drg","smn","blu","cor","pup","dnc","sch","geo","run")
     ability_columns=("abilityId","name","job","level","validTarget","recastTime","recastId","message1","message2","animation","animationTime","castTime","actionType","range","isAOE","CE","VE","meritModID","addType","content_tag")
     weapon_skill_columns=("weaponskillid","name","jobs","type","skilllevel","element","animation","animationTime","range","aoe","primary_sc","secondary_sc","tertiary_sc","main_only","unlock_id")
     mob_skill_columns=("mob_skill_id","mob_anim_id","mob_skill_name","mob_skill_aoe","mob_skill_distance","mob_anim_time","mob_prepare_time","mob_valid_targets","mob_skill_flag","mob_skill_param","knockback","primary_sc","secondary_sc","tertiary_sc")
@@ -399,6 +429,34 @@ def _common(equipment_file: str = "item_equipment.sql") -> dict[str, TableShape]
         ),
         "npc": TableShape("npc", "npc_list.sql", "npc_list",
             parse_columns=npc_columns, field_mappings=npc_fields, identity_fields=("npc_id",)),
+        "mob_pool_modifiers": TableShape(
+            "mob_pool_modifiers","mob_pool_mods.sql","mob_pool_mods",
+            parse_columns=mob_pool_modifier_columns,
+            field_mappings=mob_pool_modifier_fields,
+            identity_fields=("pool_id","modifier_id"),
+            notes=("Pool-level modifier assignment; modifier_id namespace depends on is_mob_modifier and requires enum/engine evidence.",),
+        ),
+        "mob_spell_lists": TableShape(
+            "mob_spell_lists","mob_spell_lists.sql","mob_spell_lists",
+            parse_columns=mob_spell_list_columns,
+            field_mappings=mob_spell_list_fields,
+            identity_fields=("spell_list_id","spell_id"),
+            notes=("Mob spell-list membership with level gating; spell semantics resolve through the shared spells logical surface.",),
+        ),
+        "skill_caps": TableShape(
+            "skill_caps","skill_caps.sql","skill_caps",
+            parse_columns=skill_cap_columns,
+            field_mappings=skill_cap_fields,
+            identity_fields=("level",),
+            notes=("Level-indexed skill-cap curve by rank bucket r0-r13.",),
+        ),
+        "skill_ranks": TableShape(
+            "skill_ranks","skill_ranks.sql","skill_ranks",
+            parse_columns=skill_rank_columns,
+            field_mappings=skill_rank_fields,
+            identity_fields=("skill_id",),
+            notes=("Per-job rank assignment for each combat/magic skill; rank-to-cap values resolve through skill_caps.",),
+        ),
         "mob_groups": TableShape("mob_groups", "mob_groups.sql", "mob_groups",
             parse_columns=topaz_group_columns, field_mappings=mob_group_fields, identity_fields=("zone_id","group_id")),
         "mob_pools": TableShape("mob_pools", "mob_pools.sql", "mob_pools",
