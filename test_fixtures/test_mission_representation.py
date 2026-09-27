@@ -3,7 +3,9 @@ from workbench.plugins.domain.mission_representation import (
     MissionRequirement,
     MissionRepresentation,
     plan_mission_representation,
+    requirements_from_state_machine,
 )
+from workbench.plugins.domain.mission_state_machine import MissionState, MissionStateMachine, MissionTransition
 
 
 def main():
@@ -20,6 +22,15 @@ def main():
     assert plan.status=="MANUAL_REQUIRED",plan
     assert plan.missing_requirement_ids==("riverne",),plan
     assert set(plan.represented_requirement_ids)=={"gate","complete"},plan
+    machine=MissionStateMachine(
+        "m","f",
+        (MissionState("s","Start"),MissionState("d","Done",terminal=True)),
+        (MissionTransition("advance","s","d","EVENT_FINISH",evidence_ids=("ev:1",)),),
+        ("s",),
+    )
+    derived=requirements_from_state_machine(machine)
+    assert derived[0].requirement_id=="transition:advance",derived
+    assert derived[0].evidence==("ev:1",),derived
     print("mission representation planning self-test: PASS")
 
 

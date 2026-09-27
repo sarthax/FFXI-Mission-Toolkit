@@ -1729,3 +1729,132 @@ Concrete Coiler/Medusa names remain inside those documents and truth sets where 
 
 ### Audit rule
 Proof-case naming must describe the behavior or dependency shape being tested. Game-content names belong only in subject/evidence data or deliberately content-specific plugins.
+
+
+## 2026-09-27 — Generic mission/quest state-machine foundation
+
+Added `workbench/plugins/domain/mission_state_machine.py` as a content-neutral behavioral model rather than encoding a specific mission in framework code. It provides explicit states, guarded transitions, ALL/ANY dependency gates, zone+actor+CSID event identity, generic transition effects, lifecycle analysis, expected implementation-gap visibility, and branch-readiness analysis.
+
+`workbench/plugins/domain/mission_representation.py` now projects state-machine transitions and lifecycle subjects into representation requirements, preserving the existing proposal/review workflow instead of replacing it.
+
+Focused regressions:
+- `test_fixtures/test_mission_state_machine.py`
+- `test_fixtures/test_mission_representation.py`
+
+Next work is source extraction and canonical graph/evidence emission. The existing branching mission truth set remains a stress-validation subject; its content names do not define framework APIs.
+
+
+### Branching mission ingestion proof
+
+The existing branching mission truth set now ingests through `workbench/plugins/domain/mission_ingest.py` into the generic state-machine contract. The proof verifies nation alternatives as an `ANY` gate, zone+actor+CSID identities, Prog state ranges, key-item lifecycle semantics, and visible implementation/missing-branch gaps.
+
+The ingestion intentionally marks truth-set CSIDs as `unassigned_progress_edge` rather than guessing which exact progress transition they cause. Exact CSID → state-edge assignment is now a concrete requirement for the Lua source extractor.
+
+Regression: `test_fixtures/test_mission_truth_ingestion.py`.
+
+
+### Multi-mission mechanic stress probe
+
+Additional LSB mission shapes were compared against the generic model:
+
+- **Kazham's Chieftainess** — simple linear NPC/event completion plus next mission and key-item reward.
+- **Ancient Vows** — mission variable progression, zone-in event, battlefield-win guard, completion, and post-win teleport.
+- **The Road Forks** — parallel mission-status channels, timed/expiring key-item lifecycle, recursive timer, spawned-NM/death gates, distance/position/nation conditions, local variables, and no-action/message outcomes.
+- **Three Paths** — multiple parallel subpaths converging on completion, trade/consume gates, spawned encounters, multiple battlefields, titles, and client-handled transport.
+
+New model/extractor gaps exposed by this probe:
+- parallel named mission-status channels and ALL-path convergence;
+- temporal guards/effects and timer expiry;
+- spawned-entity and mob-death transitions;
+- spatial/distance guards;
+- explicit battlefield-result identity as a first-class guard;
+- teleport/client-transport/title/message/no-action effects;
+- replaceDefault/priority/default-action conflict semantics;
+- stronger distinction among persistent mission vars, local vars, and mission-status channels.
+
+Coverage fixture/regression:
+- `test_fixtures/fixtures/mission_mechanic_coverage_probe.json`
+- `test_fixtures/test_mission_mechanic_coverage.py`
+
+
+### Mission mechanic vocabulary + LSB extractor foundation
+
+The generic model now represents the stress-probe mechanics directly: persistent/local state channels, ALL-path convergence, timer/spatial/entity/battlefield/trade conditions, and spawn/transport/title/message/timer/no-action effects. Dispatch semantics such as `replaceDefault()` remain extractor/evidence metadata rather than behavioral effects.
+
+Added `workbench/plugins/domain/mission_lsb_extract.py` as a conservative static LSB Lua extractor foundation. It recognizes literal zone/actor/events, mission-status writes, persistent/local variable writes, key-item lifecycle calls, battlefield-win checks, spawned entities, titles, timers, and mission completion. Exact guard → trigger/CSID → effect transition correlation remains the next extractor step.
+
+
+### LSB handler correlation and source-proven state edges
+
+The LSB extractor now correlates literal Mission DSL handler blocks into `MissionTransition` records. It preserves zone/actor/CSID identity, handler trigger kind, literal guards, and literal effects with source-line metadata. A second conservative pass materializes concrete channel-value state endpoints only when a single literal channel guard/write proves the edge; ambiguous multi-channel handlers remain unresolved rather than guessed.
+
+Regression: `test_fixtures/test_mission_lsb_correlation.py` covers an Ancient Vows-shaped trigger/event-finish/battlefield completion flow including CSID 6, mission Status writes, battlefield 32001 guard, completion, and teleport.
+
+
+### Cross-handler mission event chaining
+
+The LSB extractor now joins initiating NPC/zone/trade handlers to a unique same-zone `onEventFinish[CSID]` handler. The resulting logical transition preserves initiating actor identity, zone+CSID identity, combined guards/effects, and both source spans. Same numeric CSIDs in different zones cannot collide.
+
+Declarative Mission DSL actor handlers such as `['Actor'] = mission:progressEvent(114)` are now extracted as unconditional NPC triggers and participate in the same chaining pass. Dispatch modifiers such as `replaceDefault()` and `importantEvent()` are retained as metadata.
+
+Regression coverage includes a Kazham's Chieftainess-shaped declarative completion edge and Ancient Vows-shaped NPC, zone-in, state-write, battlefield, completion, and teleport flows.
+
+
+### The Road Forks real-source stress pass
+
+Pinned the current LSB `scripts/missions/cop/3_3_The_Road_Forks.lua` as a regression fixture and ran the generic extractor against its full mission shape.
+
+The first pass exposed six parser gaps: local mission-status aliases, zone-out handlers, helper/timer behavior outside mission sections, entity spawned-state guards, message-return outcomes, and the final two-path convergence check. All six are now represented/extracted in the current stress probe:
+- local aliases propagate to named mission-status channel guards;
+- `onZoneOut` is a first-class transition trigger;
+- `:isSpawned()` / negated spawn checks become entity conditions;
+- San d'Oria + Windurst terminal status is recovered as an ALL completion gate;
+- player helper functions such as `jewelTimer` emit timer/helper behavior;
+- message calls become MESSAGE effects.
+
+Regression: `test_fixtures/test_mission_lsb_road_forks_stress.py`.
+
+
+### Three Paths real-source worst-case stress pass
+
+Pinned current LSB `scripts/missions/cop/5_3_Three_Paths.lua` and exercised the generic mission extractor across its three parallel subpaths.
+
+The stress pass exposed and then promoted into generic extraction support:
+- helper-defined three-path completion convergence (`LOUVERANCE/TENZEN/ULMIA == 14`);
+- dynamic mission-status range iteration used by `isMissionComplete()`;
+- not-equal mission-status guards;
+- exact player-position guards;
+- `npcUtil.popFromQM` spawned encounters;
+- completed-trade effects;
+- mission-level reward title/next-mission metadata;
+- helper-call completion gates attached to completion handlers;
+- client-handled transport annotations;
+- event priority / important-event / replace-default dispatch provenance.
+
+The current Three Paths probe has no remaining mechanic marked as an unsupported gap. This does not imply arbitrary Lua is fully parsed: dynamic expressions/helpers outside recognized conservative patterns remain evidence requiring later parser expansion.
+
+Regression: `test_fixtures/test_mission_lsb_three_paths_stress.py`.
+
+
+### Scripted-NM content-map stress — Absolute Virtue
+
+Absolute Virtue was used as the first non-mission behavior-map stress case, with both its own LSB script and Jailer of Love's spawning script treated as one evidence closure.
+
+This content does not naturally reduce to mission CSID/state progression. It adds a generic combat-behavior map over the same canonical evidence graph:
+- entity lifecycle/combat hooks;
+- cross-entity death -> probabilistic delayed spawn;
+- runtime enmity/claim transfer;
+- cross-entity local-state dependencies;
+- HP-threshold phase transitions;
+- randomized recurring action windows;
+- player-action response and mutable ability-lock sets;
+- dynamic combat modifiers;
+- spell behavior overrides;
+- magic-hit/day-element responses;
+- related-entity death/despawn cleanup;
+- runtime loot-table override.
+
+The key architectural finding is that the canonical graph can remain shared, while scripted NMs require a combat-behavior extractor/plugin rather than being forced through the mission state-machine representation.
+
+Probe: `test_fixtures/fixtures/absolute_virtue_behavior_probe.json`
+Regression: `test_fixtures/test_absolute_virtue_behavior_probe.py`

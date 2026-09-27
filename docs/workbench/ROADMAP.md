@@ -613,3 +613,25 @@ The Workbench roadmap and the older Toolkit product roadmap were reconciled. The
 - [ ] Discord history/link catalog integration.
 
 Roadmap authority rule: `docs/workbench/ROADMAP.md` is the detailed rework backlog; `docs/guides/ROADMAP.md` and the in-app `/roadmap` summarize both the Workbench and older Toolkit product backlog. Historical phase text may remain for provenance, but a newer reconciled status section supersedes stale labels.
+
+
+### 2026-09-27 Generic mission/quest state-machine foundation
+- [x] Add content-neutral state, guarded transition, zone-scoped event identity, transition-effect, and AND/OR dependency-gate models.
+- [x] Distinguish branch viability from full machine completeness and keep expected implementation gaps visible.
+- [x] Model lifecycle effects generically (grant/require/consume/remove/reissue) without adding mission-specific columns to the core graph.
+- [x] Bridge behavioral transitions/lifecycles into the existing mission representation planner.
+- [~] Add source-family extractors that populate the model from Lua mission/quest scripts. Conservative LSB literal extraction and handler-level guard/CSID/effect correlation are implemented; broader nested/dynamic helper resolution and cross-handler event-to-state chaining remain.
+  - Required by stress probes: named mission-status channels, persistent/local vars, temporal guards, spawned-entity/death transitions, spatial guards, battlefield-result guards, trade semantics, default-action replacement/priority, and client-handled effects.
+- [ ] Emit canonical graph dependency edges and evidence records from extracted machines.
+- [ ] Add DefaultActions/fallback conflict analysis and client dialog/event-resource closure.
+- [ ] Run the branching-mission truth set as the first large stress validation after the generic extractor exists.
+
+
+### 2026-09-27 Scripted-NM behavior-map discovery
+
+- [x] Stress a non-mission scripted NM with Absolute Virtue + Jailer of Love spawn closure.
+- [x] Confirm mission state machines are not the universal behavioral representation.
+- [x] Identify generic combat-map requirements: hooks, probabilistic/delayed spawn, runtime state transfer, cross-entity state, HP thresholds, random timers, ability responses/sets, combat modifiers, spell/magic responses, cleanup, loot overrides.
+- [ ] Implement the generic scripted-entity/combat behavior representation and source extractor.
+- [ ] Emit scripted-NM behavior/dependency evidence into the canonical graph.
+- [ ] Stress the representation with a second mechanically different NM before declaring combat-map coverage stable.
