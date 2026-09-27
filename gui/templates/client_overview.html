@@ -109,14 +109,47 @@
   <span class="chip">Unresolved {{ comparison_summary.unresolved }}</span>
 </p>
 <p><a href="/clientoverview/compare.csv?source_snapshot={{ comparison.source_snapshot_id|urlencode }}&target_snapshot={{ comparison.target_snapshot_id|urlencode }}{% if comparison.zone_key %}&zone={{ comparison.zone_key|urlencode }}{% endif %}&minimum_confidence={{ comparison.minimum_confidence|urlencode }}">Export comparison CSV</a></p>
+
+<h3>ENTITY / Actor Identity Coverage</h3>
+<p class="muted">These mappings determine whether EVENT comparison can safely constrain a source actor to one target actor.</p>
+<p>
+  <span class="chip">Actors {{ entity_summary.total }}</span>
+  <span class="chip">Constraint-ready {{ entity_summary.constraint_ready }}</span>
+  <span class="chip">EXACT {{ entity_summary.exact }}</span>
+  <span class="chip">TARGET_EQUIVALENT {{ entity_summary.target_equivalent }}</span>
+  <span class="chip">Ambiguous {{ entity_summary.ambiguous }}</span>
+  <span class="chip">Unresolved {{ entity_summary.unresolved }}</span>
+</p>
+{% if comparison.entity_diagnostics and comparison.entity_diagnostics.rows %}
 <div class="table-wrap"><table>
-  <tr><th>Zone</th><th>Source actor</th><th>Source event</th><th>Target actor</th><th>Target event</th><th>Status</th><th>Confidence</th><th>Match basis</th><th>Reason</th></tr>
+  <tr><th>Zone</th><th>Source actor</th><th>Semantic identity</th><th>Target actor</th><th>Status</th><th>Confidence</th><th>Candidates</th><th>Diagnostic</th></tr>
+  {% for e in comparison.entity_diagnostics.rows %}
+  <tr>
+    <td>{{ e.zone_key or "-" }}</td>
+    <td><code>{{ e.source_actor_id }}</code></td>
+    <td>{{ e.semantic_identity or "-" }}</td>
+    <td><code>{{ e.target_actor_id or "-" }}</code></td>
+    <td>{{ e.status }}</td>
+    <td>{{ e.confidence }}</td>
+    <td>{{ e.target_candidates|length }}</td>
+    <td>{{ e.reason }}{% if e.recommendation %}<br><span class="muted">{{ e.recommendation }}</span>{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% else %}
+<p class="muted">No ENTITY identity records were available for the selected source snapshot/zone.</p>
+{% endif %}
+
+<h3>EVENT Identity Results</h3>
+<div class="table-wrap"><table>
+  <tr><th>Zone</th><th>Source actor</th><th>Source event</th><th>Target actor</th><th>Actor mapping</th><th>Target event</th><th>Status</th><th>Confidence</th><th>Match basis</th><th>Reason</th></tr>
   {% for r in comparison.rows %}
   <tr>
     <td>{{ r.zone_key or "-" }}</td>
     <td><code>{{ r.source_actor_key or "-" }}</code></td>
     <td><code>{{ r.source_event_id }}</code></td>
     <td><code>{{ r.target_actor_key or "-" }}</code></td>
+    <td>{{ r.actor_status or "-" }}{% if r.actor_semantic_identity %}<br><span class="muted">{{ r.actor_semantic_identity }}</span>{% endif %}{% if r.actor_reason %}<br><span class="muted">{{ r.actor_reason }}</span>{% endif %}</td>
     <td><code>{{ r.target_event_id or "-" }}</code></td>
     <td>{{ r.status }}</td>
     <td>{{ r.confidence }}</td>

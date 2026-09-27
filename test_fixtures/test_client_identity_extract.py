@@ -18,6 +18,8 @@ def main() -> None:
     assert dat_id_for_zone(0) == 6420
     assert dat_id_for_zone(255) == 6675
     assert dat_id_for_zone(256) == 85590
+    assert dat_id_for_zone(87, "entities") == 6807
+    assert dat_id_for_zone(256, "entities") == 86491
 
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
@@ -35,12 +37,21 @@ def main() -> None:
             output.parent.mkdir(parents=True, exist_ok=True)
             if "--dat-id" in argv:
                 dat_id = int(argv[argv.index("--dat-id") + 1])
-                output.write_text(
-                    "entries:\n"
-                    f"  10: 'Dialog for dat {dat_id}'\n"
-                    "  11: 'Second line'\n",
-                    encoding="utf-8",
-                )
+                if 6720 <= dat_id <= 6975 or dat_id >= 86491:
+                    output.write_text(
+                        "- id: 12345\n"
+                        "  name: 'Door Alpha'\n"
+                        "- id: 12346\n"
+                        "  name: 'Research NPC'\n",
+                        encoding="utf-8",
+                    )
+                else:
+                    output.write_text(
+                        "entries:\n"
+                        f"  10: 'Dialog for dat {dat_id}'\n"
+                        "  11: 'Second line'\n",
+                        encoding="utf-8",
+                    )
             else:
                 output.write_text(
                     "blocks:\n"
@@ -66,18 +77,20 @@ def main() -> None:
             runner=fake_runner,
         )
 
-        assert len(calls) == 4, calls
+        assert len(calls) == 6, calls
         assert result.build == "30191204_1", result
-        assert len(result.resources) == 6, result.resources
+        assert len(result.resources) == 8, result.resources
         assert not result.failures, result.failures
         assert len(result.client_fingerprint) == 64, result.client_fingerprint
 
         manifest = read_manifest(Path(result.manifest_path))
         assert manifest.snapshot_id == "client:30191204_1", manifest
         assert manifest.metadata["client_fingerprint"] == result.client_fingerprint
-        assert len(manifest.files) == 6, manifest.files
+        assert len(manifest.files) == 8, manifest.files
         dialog_rows = [x for x in manifest.files if x["kind"] == "DIALOG"]
         assert {x["zone_id"] for x in dialog_rows} == {83, 87}, dialog_rows
+        entity_rows = [x for x in manifest.files if x["kind"] == "ENTITY"]
+        assert {x["zone_id"] for x in entity_rows} == {83, 87}, entity_rows
 
         import sqlite3
         con = sqlite3.connect(root / "workbench.db")
@@ -86,8 +99,13 @@ def main() -> None:
             manifest_path=Path(result.manifest_path),
         )
         con.commit()
-        assert ingested["record_count"] == 6, ingested
-        assert len(ingested["zones"]) == 4, ingested
+        assert ingested["record_count"] == 10, ingested
+        assert len(ingested["zones"]) == 6, ingested
+        entity_count = con.execute(
+            "SELECT COUNT(*) FROM identity_records WHERE snapshot_id=? AND namespace='ENTITY'",
+            ("client:30191204_1",),
+        ).fetchone()[0]
+        assert entity_count == 4, entity_count
         snap = con.execute(
             "SELECT version,fingerprint FROM identity_snapshots WHERE snapshot_id=?",
             ("client:30191204_1",),

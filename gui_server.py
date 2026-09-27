@@ -6077,6 +6077,10 @@ def _clientoverview_context(
     comparison_summary = (
         identity_gui.summarize_comparison(comparison) if comparison is not None else None
     )
+    entity_summary = (
+        identity_gui.summarize_entity_diagnostics(comparison.get("entity_diagnostics"))
+        if comparison is not None else None
+    )
     return {
         "request": request,
         "ov": ov,
@@ -6086,6 +6090,7 @@ def _clientoverview_context(
         "import_error": import_error,
         "comparison": comparison,
         "comparison_summary": comparison_summary,
+        "entity_summary": entity_summary,
         "compare_error": compare_error,
         "import_form": import_form or {
             "client_root": install,
@@ -6215,6 +6220,12 @@ def clientoverview_compare_csv(
         "source_actor_key",
         "source_event_id",
         "target_actor_key",
+        "actor_status",
+        "actor_confidence",
+        "actor_semantic_identity",
+        "actor_candidate_count",
+        "actor_reason",
+        "actor_recommendation",
         "target_event_id",
         "status",
         "confidence",

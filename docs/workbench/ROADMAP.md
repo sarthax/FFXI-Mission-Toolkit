@@ -464,7 +464,7 @@ Current ordered backlog after client snapshot GUI, Research Sessions GUI, direct
 
 1. [x] Safer variable-length EVENT opcode decoding to reduce `RAW_ONLY` fingerprints and improve cross-client EVENT identity matching.
 2. [x] Research Session Run / Replay controls using the bounded `ResearchRunner` with explicit provider/model/budget/timeout/run-state handling.
-3. [ ] Improve cross-client ENTITY equivalence coverage and diagnostics, especially ambiguous/unresolved target-actor mappings.
+3. [x] Improve cross-client ENTITY equivalence coverage and diagnostics, including portable client ENTITY-name ingestion, ambiguous/unresolved target-actor diagnostics, and actor-constraint visibility in EVENT comparison.
 4. [ ] Research contradiction filtering and canonical evidence drill-down across server/client/capture/runtime/reference evidence.
 5. [ ] Continue P1 logical schema expansion beyond the completed P0 core mappings.
 
@@ -472,3 +472,11 @@ Completed/retired from the prior queue:
 - [x] Automatic client ENTITY ingestion/actor-aware EVENT comparison foundation exists; remaining work is equivalence quality/diagnostics rather than basic ingestion.
 - [x] Coiler/core-regression cleanup is complete; the full Workbench Regression suite is green.
 
+### 2026-09-26 Client ENTITY equivalence milestone
+- [x] Export per-zone client ENTITY resources into portable client snapshots.
+- [x] Ingest ENTITY name-table rows as zone-scoped snapshot identities.
+- [x] Preserve duplicate entity names as ambiguous rather than selecting an arbitrary target actor.
+- [x] Add source/target ENTITY diagnostic payloads with evidence basis, confidence, target candidates, reason, and next-action guidance.
+- [x] Feed ENTITY diagnostics into EVENT comparison and expose whether actor constraints were actually applied.
+- [x] Show actor identity coverage and diagnostics in Client Overview and comparison CSV.
+- [x] Correct Client Overview dialog counts to include the stored `DIALOG_TEXT_ID` namespace.

@@ -17,7 +17,11 @@ from workbench.client.identity_extract import (
     extract_client_identity_snapshot,
 )
 from workbench.client.identity_snapshot import ingest_client_identity_manifest
-from workbench.core.services.identity_resolver import compare_event_snapshots, ensure_schema
+from workbench.core.services.identity_resolver import (
+    compare_entity_snapshots,
+    compare_event_snapshots,
+    ensure_schema,
+)
 
 
 class ClientSnapshotImportError(ValueError):
@@ -60,7 +64,7 @@ def list_client_snapshots(
             SELECT s.*,
                    SUM(CASE WHEN r.namespace='EVENT' THEN 1 ELSE 0 END) AS event_count,
                    SUM(CASE WHEN r.namespace='ENTITY' THEN 1 ELSE 0 END) AS entity_count,
-                   SUM(CASE WHEN r.namespace='DIALOG' THEN 1 ELSE 0 END) AS dialog_count
+                   SUM(CASE WHEN r.namespace IN ('DIALOG','DIALOG_TEXT_ID') THEN 1 ELSE 0 END) AS dialog_count
               FROM identity_snapshots s
               LEFT JOIN identity_records r ON r.snapshot_id=s.snapshot_id
              WHERE UPPER(s.snapshot_type)='CLIENT'
@@ -282,13 +286,21 @@ def compare_client_snapshots(
         raise ValueError("Source and target snapshots must be different.")
     con = sqlite3.connect(Path(db_path))
     try:
-        return compare_event_snapshots(
+        normalized_zone=(zone_key.strip() or None) if zone_key else None
+        report=compare_event_snapshots(
             con,
             source_snapshot_id=source_snapshot_id,
             target_snapshot_id=target_snapshot_id,
-            zone_key=(zone_key.strip() or None) if zone_key else None,
+            zone_key=normalized_zone,
             minimum_confidence=str(minimum_confidence or "HIGH").upper(),
         )
+        report["entity_diagnostics"]=compare_entity_snapshots(
+            con,
+            source_snapshot_id=source_snapshot_id,
+            target_snapshot_id=target_snapshot_id,
+            zone_key=normalized_zone,
+        )
+        return report
     finally:
         con.close()
 
@@ -312,4 +324,17 @@ def summarize_comparison(report: dict[str, Any]) -> dict[str, int]:
         "ambiguous": ambiguous,
         "LOW_CONFIDENCE": low_confidence,
         "unresolved": unresolved,
+    }
+
+
+def summarize_entity_diagnostics(report: dict[str, Any] | None) -> dict[str, int]:
+    report=dict(report or {})
+    counts=dict(report.get("counts") or {})
+    return {
+        "total":int(report.get("total") or 0),
+        "constraint_ready":int(report.get("constraint_ready") or 0),
+        "exact":int(counts.get("EXACT",0)),
+        "target_equivalent":int(counts.get("TARGET_EQUIVALENT",0)),
+        "ambiguous":int(counts.get("SOURCE_ID_AMBIGUOUS",0))+int(counts.get("TARGET_ID_AMBIGUOUS",0)),
+        "unresolved":int(counts.get("SOURCE_ID_UNRESOLVED",0))+int(counts.get("TARGET_ID_UNRESOLVED",0)),
     }
