@@ -48,6 +48,7 @@ def main():
     assert "Evidence Dossier" in template
     assert "section.edges" in template and "{% for edge in result.edges %}" not in template
     assert "/features/trace/runtime.json" in template
+    assert "runtimeEsc(e.relationship)" in template
     edges=[
         {"relationship":"PACKET_OBSERVED","metadata":{"opcode":"0x00E","capture_id":1},"source_snapshot_id":None},
         {"relationship":"PACKET_OBSERVED","metadata":{"opcode":"0x00E","capture_id":2},"source_snapshot_id":None},
@@ -62,6 +63,8 @@ def main():
     assert hierarchy["observation_count"]==3 and hierarchy["capture_count"]==2
     page=filter_runtime_observations(edges[:3],"0x00E","1",0,10)
     assert page["total"]==1 and len(page["observations"])==1
+    bounded=filter_runtime_observations(edges[:3],limit=9999)
+    assert bounded["limit"]==250
     assert any(s["name"]=="Other / Unclassified" for s in sections)
     # Both production databases may differ in schema; discovery must tolerate that.
     with sqlite3.connect(Path(__file__).resolve().parents[1]/"workbench.db") as graph_db, sqlite3.connect(Path(__file__).resolve().parents[1]/"ffxi_zone_database.db") as index_db:
