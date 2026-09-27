@@ -1775,3 +1775,10 @@ New model/extractor gaps exposed by this probe:
 Coverage fixture/regression:
 - `test_fixtures/fixtures/mission_mechanic_coverage_probe.json`
 - `test_fixtures/test_mission_mechanic_coverage.py`
+
+
+### Mission mechanic vocabulary + LSB extractor foundation
+
+The generic model now represents the stress-probe mechanics directly: persistent/local state channels, ALL-path convergence, timer/spatial/entity/battlefield/trade conditions, and spawn/transport/title/message/timer/no-action effects. Dispatch semantics such as `replaceDefault()` remain extractor/evidence metadata rather than behavioral effects.
+
+Added `workbench/plugins/domain/mission_lsb_extract.py` as a conservative static LSB Lua extractor foundation. It recognizes literal zone/actor/events, mission-status writes, persistent/local variable writes, key-item lifecycle calls, battlefield-win checks, spawned entities, titles, timers, and mission completion. Exact guard → trigger/CSID → effect transition correlation remains the next extractor step.
