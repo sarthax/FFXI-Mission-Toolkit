@@ -55,6 +55,9 @@ def main():
     # Both production databases may differ in schema; discovery must tolerate that.
     with sqlite3.connect(Path(__file__).resolve().parents[1]/"workbench.db") as graph_db, sqlite3.connect(Path(__file__).resolve().parents[1]/"ffxi_zone_database.db") as index_db:
         feature_trace.search_nodes(graph_db,"coiler",index_db)
+        real=feature_trace.trace(graph_db,"npc:16974347",3,"both",index_db)
+        assert real["runtime_observation_count"] > 0
+        assert any(group["capture_count"] > 0 for section in real["runtime_summary"] for group in section["runtime_groups"])
     print("feature trace catalog self-test: PASS")
 
 

@@ -15,7 +15,7 @@ from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
 
-from workbench.core.services.feature_trace_catalog import catalog_node, is_runtime_relationship, present_relationships, search_catalog
+from workbench.core.services.feature_trace_catalog import catalog_node, is_runtime_edge, present_relationships, search_catalog
 
 
 SCHEMA = 1
@@ -162,7 +162,7 @@ def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
                 "traversed_direction": traversed,
                 "depth": level + 1,
             }
-            if is_runtime_relationship(rel):
+            if is_runtime_edge(edge):
                 runtime_edges.append(edge)
                 continue
             edges.append(edge)
@@ -179,6 +179,8 @@ def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
                 })
 
     node_ids = sorted(visited)
+    runtime_summary = present_relationships(runtime_edges)
+    runtime_groups = [group for section in runtime_summary for group in section["runtime_groups"]]
     return {
         "schema": SCHEMA,
         "trace_id": f"trace:{root}:{depth}:{direction}",
@@ -189,7 +191,9 @@ def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
         "relationship_filter": sorted(relationships) if relationships else [],
         "nodes": [node_info(con, n, catalog_con) for n in node_ids],
         "edges": edges,
-        "runtime_summary": present_relationships(runtime_edges),
+        "runtime_summary": runtime_summary,
+        "runtime_observation_count": sum(group["observation_count"] for group in runtime_groups),
+        "runtime_group_count": len(runtime_groups),
         "paths": paths,
         "notes": [
             "Trace connectivity is not an implementation verdict.",

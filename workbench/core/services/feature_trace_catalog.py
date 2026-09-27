@@ -88,7 +88,7 @@ def catalog_node(con: sqlite3.Connection, node_id: str):
 
 def relationship_section(edge):
     rel = (edge.get("relationship") or "").upper()
-    if is_runtime_relationship(rel):
+    if is_runtime_edge(edge):
         return "Runtime / Captures & Packets"
     if any(x in rel for x in ("VALIDAT", "EXPECTED", "OBSERVED")):
         return "Validation"
@@ -108,7 +108,18 @@ def relationship_section(edge):
 def is_runtime_relationship(relationship):
     """Runtime observations are evidence, not semantic traversal topology."""
     rel = (relationship or "").upper()
-    return any(x in rel for x in ("PACKET", "CAPTURE", "OBSERV", "RUNTIME", "OPCODE"))
+    return any(x in rel for x in ("PACKET", "CAPTURE", "RUNTIME", "OPCODE"))
+
+
+def is_runtime_edge(edge):
+    if is_runtime_relationship(edge.get("relationship")):
+        return True
+    if "OBSERV" not in (edge.get("relationship") or "").upper():
+        return False
+    metadata = edge.get("metadata") or {}
+    return (any(key in metadata for key in ("capture_id", "capture", "opcode", "packet_opcode", "entity_id"))
+            or str(edge.get("source_node") or "").startswith("capture:")
+            or str(edge.get("target_node") or "").startswith("capture:"))
 
 
 def present_relationships(edges):
@@ -122,7 +133,9 @@ def present_relationships(edges):
             for edge in members:
                 meta = edge.get("metadata") or {}
                 opcode = meta.get("opcode") or meta.get("packet_opcode") or edge.get("relationship")
-                capture = meta.get("capture_id") or meta.get("capture") or edge.get("source_snapshot_id")
+                capture = (meta.get("capture_id") or meta.get("capture") or edge.get("source_snapshot_id")
+                           or next((node for node in (edge.get("source_node"), edge.get("target_node"))
+                                    if str(node or "").startswith("capture:")), None))
                 key = (str(opcode), str(meta.get("direction") or ""))
                 group = groups.setdefault(key, {"opcode": opcode, "direction": meta.get("direction"), "observation_count": 0, "capture_ids": set(), "edges": []})
                 group["observation_count"] += 1
