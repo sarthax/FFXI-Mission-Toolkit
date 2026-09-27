@@ -1975,3 +1975,15 @@ Explicit server catalog providers now include durable named records for mob skil
 Pets expose a deterministic source-native `PET_USES_POOL` link through `pet_list.poolid`. Mob skills and status effects are discovery/inspection objects only in this milestone; no behavioral dependency is inferred from their presence.
 
 Unnamed bridge tables such as `blue_spell_list`, `mob_droplist`, and `instance_entities` remain excluded from top-level catalog discovery until they have an explicit stable identity/presentation contract.
+
+
+### Instance membership catalog records
+
+Feature Trace providers now support unnamed source tables through explicit generated-label contracts. The first use is server `instance_entities`, whose durable identity is the composite `(instanceid, id)`.
+
+An instance-membership record is presented with a generated label such as `Instance 100 entity 17000001` and exposes only deterministic source-native links:
+- `INSTANCE_MEMBER_OF` -> the matching `instance_list` record;
+- `INSTANCE_ENTITY_NPC` -> an NPC record only when the exact ID exists in that fork's `npc_list`;
+- `INSTANCE_ENTITY_MOB` -> a mob spawn record only when the exact ID exists in that fork's `mob_spawn_points`.
+
+The entity type is not inferred from the numeric ID alone. These records remain catalog/source navigation evidence and are not inserted into canonical semantic topology.
