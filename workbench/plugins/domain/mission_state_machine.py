@@ -10,7 +10,21 @@ from typing import Any, Iterable, Mapping
 
 
 VALID_GATE_LOGIC={"ALL","ANY"}
-VALID_EFFECTS={"SET_STATE","SET_VAR","GRANT","REQUIRE","CONSUME","REMOVE","REISSUE","COMPLETE","START","ENTER","EXIT"}
+VALID_EFFECTS={
+    "SET_STATE","SET_VAR","SET_CHANNEL","GRANT","REQUIRE","CONSUME","REMOVE","REISSUE",
+    "COMPLETE","START","ENTER","EXIT","TELEPORT","CLIENT_TRANSPORT","GRANT_TITLE",
+    "MESSAGE","SPAWN_ENTITY","DESPAWN_ENTITY","START_TIMER","CANCEL_TIMER","NO_ACTION",
+}
+VALID_TRIGGER_KINDS={
+    "NPC_INTERACT","EVENT_FINISH","EVENT_UPDATE","ZONE_IN","TRADE","MOB_DEATH",
+    "BATTLEFIELD_RESULT","TIMER","DEPENDENCY_GATE","PROGRESS_CHANGE","LIFECYCLE_EVIDENCE",
+    "OBSERVED_EVENT","EXPECTED_BRANCH","PLACEHOLDER",
+}
+VALID_CONDITION_OPERATORS={
+    "EQ","NE","LT","LE","GT","GE","HAS","LACKS","COMPLETE","IN","WITHIN_DISTANCE",
+    "AT_POSITION","BATTLEFIELD_WON","TIMER_ACTIVE","TIMER_EXPIRED","ENTITY_SPAWNED",
+    "ENTITY_NOT_SPAWNED","TRADE_MATCHES",
+}
 VALID_CONFIDENCE={"UNKNOWN","EXPECTED","INFERRED","VERIFIED"}
 
 
@@ -31,6 +45,18 @@ class StateCondition:
     subject: str
     operator: str
     value: Any = None
+    evidence_ids: tuple[str,...] = ()
+
+    def __post_init__(self) -> None:
+        if self.operator not in VALID_CONDITION_OPERATORS:
+            raise ValueError(f"Unsupported condition operator: {self.operator}")
+
+
+@dataclass(frozen=True)
+class StateChannel:
+    channel_id: str
+    scope: str = "PERSISTENT"
+    values: tuple[Any,...] = ()
     evidence_ids: tuple[str,...] = ()
 
 
@@ -85,6 +111,8 @@ class MissionTransition:
     def __post_init__(self) -> None:
         if self.confidence not in VALID_CONFIDENCE:
             raise ValueError(f"Unsupported confidence: {self.confidence}")
+        if self.trigger not in VALID_TRIGGER_KINDS:
+            raise ValueError(f"Unsupported trigger: {self.trigger}")
 
 
 @dataclass(frozen=True)
@@ -94,6 +122,8 @@ class MissionStateMachine:
     states: tuple[MissionState,...]
     transitions: tuple[MissionTransition,...]
     entry_state_ids: tuple[str,...] = ()
+    channels: tuple[StateChannel,...] = ()
+    completion_gate: DependencyGate | None = None
     metadata: Mapping[str,Any] = field(default_factory=dict)
 
     def validate(self) -> tuple[str,...]:
@@ -102,6 +132,9 @@ class MissionStateMachine:
         if len(state_ids)!=len(set(state_ids)):
             errors.append("duplicate state_id")
         known=set(state_ids)
+        channel_ids=[x.channel_id for x in self.channels]
+        if len(channel_ids)!=len(set(channel_ids)):
+            errors.append("duplicate channel_id")
         transition_ids=[t.transition_id for t in self.transitions]
         if len(transition_ids)!=len(set(transition_ids)):
             errors.append("duplicate transition_id")
@@ -180,3 +213,8 @@ def analyze_state_machine(machine: MissionStateMachine) -> MissionMachineAnalysi
 
 def conditions_for_alternatives(subjects: Iterable[str], *, gate_id: str) -> DependencyGate:
     return DependencyGate(gate_id,"ANY",tuple(StateCondition(s,"COMPLETE",True) for s in subjects))
+
+
+def conditions_for_convergence(subjects: Iterable[str], *, gate_id: str) -> DependencyGate:
+    return DependencyGate(gate_id,"ALL",tuple(StateCondition(s,"COMPLETE",True) for s in subjects))
+
