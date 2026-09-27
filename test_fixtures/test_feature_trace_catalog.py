@@ -132,6 +132,25 @@ def main():
     assert any(row.get("provider")=="topaz" for row in feature_trace.search_nodes(con,"provider effect topaz"))
     assert any(row.get("provider")=="dsp" for row in feature_trace.search_nodes(con,"provider effect dsp"))
 
+    # Server event references are composite by source+zone+script+CSID; CSID alone can collide.
+    con.execute("CREATE TABLE npc_event_refs (source TEXT, zone_name TEXT, npc_script TEXT, csid INTEGER)")
+    con.executemany("INSERT INTO npc_event_refs VALUES (?,?,?,?)",[
+        ("lsb","Southern_San_dOria_S","Raustigne",149),
+        ("topaz","Southern_San_dOria_S","Raustigne",149),
+    ])
+    event_rows=[
+        row for row in feature_trace.search_nodes(con,"Raustigne")
+        if row.get("table")=="npc_event_refs"
+    ]
+    assert len(event_rows)==2,event_rows
+    assert {row["provider"] for row in event_rows}=={"server-event-refs"}
+    assert {row["identity"]["source"] for row in event_rows}=={"lsb","topaz"}
+    lsb_event_id="catalog:npc_event_refs:source=lsb&zone_name=Southern_San_dOria_S&npc_script=Raustigne&csid=149"
+    event_node=feature_trace.node_info(con,lsb_event_id)
+    assert event_node["known"]
+    assert event_node["representations"][0]["display_name"]=="lsb Southern_San_dOria_S/Raustigne event 149"
+    assert feature_trace.node_info(con,"catalog:npc_event_refs:149")["known"] is False
+
     # Explicit non-server providers expose durable searchable records, not raw observation rows.
     con.execute("CREATE TABLE identity_snapshots (snapshot_id TEXT, version TEXT)")
     con.execute("INSERT INTO identity_snapshots VALUES ('client:2022','30120222_1')")
