@@ -26,6 +26,42 @@ def main():
     con.execute("INSERT INTO custom_objects VALUES (77,'Fallback Probe')")
     fallback=feature_trace.search_nodes(con,"Fallback Probe")
     assert fallback[0]["provider"]=="schema-fallback"
+
+    # Explicit non-server providers expose durable searchable records, not raw observation rows.
+    con.execute("CREATE TABLE identity_snapshots (snapshot_id TEXT, version TEXT)")
+    con.execute("INSERT INTO identity_snapshots VALUES ('client:2022','30120222_1')")
+    con.execute("CREATE TABLE identity_records (record_id TEXT, semantic_key TEXT)")
+    con.execute("INSERT INTO identity_records VALUES ('identity:event:1','EVENT:zone:actor:149')")
+    con.execute("CREATE TABLE captures (capture_id INTEGER, capture_label TEXT)")
+    con.execute("INSERT INTO captures VALUES (17,'Ancient Vows retail')")
+    con.execute("CREATE TABLE research_sessions (research_session_id TEXT, question TEXT)")
+    con.execute("INSERT INTO research_sessions VALUES ('research:1','Why does this event differ?')")
+    con.execute("CREATE TABLE research_proposals (proposal_id TEXT, subject_id TEXT)")
+    con.execute("INSERT INTO research_proposals VALUES ('proposal:1','npc:16974347')")
+    con.execute("CREATE TABLE validation_runs (run_id TEXT, name TEXT)")
+    con.execute("INSERT INTO validation_runs VALUES ('run:1','Ancient Vows validation')")
+    con.execute("CREATE TABLE validation_results (validation_id TEXT, validation_type TEXT)")
+    con.execute("INSERT INTO validation_results VALUES ('validation:1','EVENT_MATCH')")
+    con.execute("CREATE TABLE migrations (migration_id TEXT, feature_id TEXT)")
+    con.execute("INSERT INTO migrations VALUES ('migration:1','feature:ancient-vows')")
+    con.execute("CREATE TABLE migration_actions (action_id TEXT, action TEXT)")
+    con.execute("INSERT INTO migration_actions VALUES ('action:1','COPY_FILE')")
+    con.execute("CREATE TABLE package_scope_reviews (migration_id TEXT, status TEXT)")
+    con.execute("INSERT INTO package_scope_reviews VALUES ('migration:1','APPROVED')")
+    provider_expectations={
+        "30120222_1":"client-identity",
+        "EVENT:zone:actor:149":"client-identity",
+        "Ancient Vows retail":"captures",
+        "Why does this event differ?":"research",
+        "proposal:1":"research",
+        "Ancient Vows validation":"validation",
+        "EVENT_MATCH":"validation",
+        "feature:ancient-vows":"packages",
+        "COPY_FILE":"packages",
+    }
+    for query,provider in provider_expectations.items():
+        rows=feature_trace.search_nodes(con,query)
+        assert rows and rows[0]["provider"]==provider,(query,rows)
     assert len(feature_trace.search_nodes(con,"2413"))==1
     assert len(feature_trace.search_nodes(con,"Coiler"))==3  # ambiguity remains visible
     graph=sqlite3.connect(":memory:")
