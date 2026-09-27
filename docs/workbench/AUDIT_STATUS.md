@@ -1798,3 +1798,18 @@ The LSB extractor now joins initiating NPC/zone/trade handlers to a unique same-
 Declarative Mission DSL actor handlers such as `['Actor'] = mission:progressEvent(114)` are now extracted as unconditional NPC triggers and participate in the same chaining pass. Dispatch modifiers such as `replaceDefault()` and `importantEvent()` are retained as metadata.
 
 Regression coverage includes a Kazham's Chieftainess-shaped declarative completion edge and Ancient Vows-shaped NPC, zone-in, state-write, battlefield, completion, and teleport flows.
+
+
+### The Road Forks real-source stress pass
+
+Pinned the current LSB `scripts/missions/cop/3_3_The_Road_Forks.lua` as a regression fixture and ran the generic extractor against its full mission shape.
+
+The first pass exposed six parser gaps: local mission-status aliases, zone-out handlers, helper/timer behavior outside mission sections, entity spawned-state guards, message-return outcomes, and the final two-path convergence check. All six are now represented/extracted in the current stress probe:
+- local aliases propagate to named mission-status channel guards;
+- `onZoneOut` is a first-class transition trigger;
+- `:isSpawned()` / negated spawn checks become entity conditions;
+- San d'Oria + Windurst terminal status is recovered as an ALL completion gate;
+- player helper functions such as `jewelTimer` emit timer/helper behavior;
+- message calls become MESSAGE effects.
+
+Regression: `test_fixtures/test_mission_lsb_road_forks_stress.py`.
