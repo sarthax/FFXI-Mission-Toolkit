@@ -59,7 +59,8 @@ def search_catalog(con: sqlite3.Connection, term: str, limit: int = 200):
     pattern = f"%{term.casefold()}%"
     rows = []
     for table, key, kind, name, meta in CANONICAL_TABLES:
-        if table not in _tables(con):
+        columns = _columns(con, table) if table in _tables(con) else {}
+        if not {key.lower(), kind.lower(), name.lower()}.issubset(columns):
             continue
         for row in con.execute(f"SELECT {key},{kind},{name} FROM {table} WHERE lower({key}) LIKE ? OR lower({name}) LIKE ? ORDER BY {key} LIMIT ?", (pattern, pattern, limit)):
             rows.append({"node_id": row[0], "node_type": row[1], "display_name": row[2], "domain": "canonical", "source": table, "table": table, "catalog_only": False})

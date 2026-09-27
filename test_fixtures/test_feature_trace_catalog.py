@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+from pathlib import Path
 
 import feature_trace
 from workbench.core.services.feature_trace_catalog import present_relationships
@@ -38,6 +39,9 @@ def main():
     opcode=next(g for g in runtime["runtime_groups"] if g["opcode"]=="0x00E")
     assert opcode["observation_count"]==2 and opcode["capture_count"]==2 and len(opcode["edges"])==2
     assert any(s["name"]=="Other / Unclassified" for s in sections)
+    # Both production databases may differ in schema; discovery must tolerate that.
+    with sqlite3.connect(Path(__file__).resolve().parents[1]/"workbench.db") as graph_db, sqlite3.connect(Path(__file__).resolve().parents[1]/"ffxi_zone_database.db") as index_db:
+        feature_trace.search_nodes(graph_db,"coiler",index_db)
     print("feature trace catalog self-test: PASS")
 
 
