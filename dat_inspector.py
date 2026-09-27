@@ -12,7 +12,10 @@ import hashlib
 import subprocess
 from pathlib import Path
 
-import xi_tinkerer
+try:
+    import xi_tinkerer
+except ModuleNotFoundError:
+    xi_tinkerer = None
 from dat_extractor_bin import ensure_dat_extractor
 
 PARSERS = (
@@ -134,6 +137,10 @@ def _inspect_path(
     extractor_note: str = "",
     family_hint: str | None = None,
 ) -> dict:
+    if xi_tinkerer is None:
+        raise RuntimeError(
+            "xi-tinkerer Python bindings are not available. Install/build xi-tinkerer before decoding DAT contents."
+        )
     data = path.read_bytes()
     matches, rejected = [], []
     for name in PARSERS:
