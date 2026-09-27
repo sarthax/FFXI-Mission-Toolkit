@@ -1834,3 +1834,27 @@ The stress pass exposed and then promoted into generic extraction support:
 The current Three Paths probe has no remaining mechanic marked as an unsupported gap. This does not imply arbitrary Lua is fully parsed: dynamic expressions/helpers outside recognized conservative patterns remain evidence requiring later parser expansion.
 
 Regression: `test_fixtures/test_mission_lsb_three_paths_stress.py`.
+
+
+### Scripted-NM content-map stress — Absolute Virtue
+
+Absolute Virtue was used as the first non-mission behavior-map stress case, with both its own LSB script and Jailer of Love's spawning script treated as one evidence closure.
+
+This content does not naturally reduce to mission CSID/state progression. It adds a generic combat-behavior map over the same canonical evidence graph:
+- entity lifecycle/combat hooks;
+- cross-entity death -> probabilistic delayed spawn;
+- runtime enmity/claim transfer;
+- cross-entity local-state dependencies;
+- HP-threshold phase transitions;
+- randomized recurring action windows;
+- player-action response and mutable ability-lock sets;
+- dynamic combat modifiers;
+- spell behavior overrides;
+- magic-hit/day-element responses;
+- related-entity death/despawn cleanup;
+- runtime loot-table override.
+
+The key architectural finding is that the canonical graph can remain shared, while scripted NMs require a combat-behavior extractor/plugin rather than being forced through the mission state-machine representation.
+
+Probe: `test_fixtures/fixtures/absolute_virtue_behavior_probe.json`
+Regression: `test_fixtures/test_absolute_virtue_behavior_probe.py`
