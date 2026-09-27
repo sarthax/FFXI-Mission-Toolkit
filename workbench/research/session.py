@@ -271,6 +271,38 @@ class ResearchSessionStore:
         finally:
             con.close()
 
+    def list(self, *, limit: int = 100) -> list[dict[str, Any]]:
+        """Return newest research sessions with compact audit counts for GUI/CLI browsing."""
+        if limit <= 0:
+            return []
+        con=self._connect()
+        try:
+            rows=con.execute(
+                """
+                SELECT s.*,
+                       COUNT(DISTINCT tc.id) AS tool_call_count,
+                       COUNT(DISTINCT p.proposal_id) AS proposal_count
+                  FROM research_sessions s
+                  LEFT JOIN research_tool_calls tc
+                    ON tc.research_session_id=s.research_session_id
+                  LEFT JOIN research_proposals p
+                    ON p.research_session_id=s.research_session_id
+                 GROUP BY s.research_session_id
+                 ORDER BY s.updated_at DESC, s.created_at DESC
+                 LIMIT ?
+                """,
+                (int(limit),),
+            ).fetchall()
+            result=[]
+            for row in rows:
+                item=dict(row)
+                for key in ("usage_json","budgets_json","replay_metadata_json"):
+                    item[key.removesuffix("_json")]=json.loads(item.pop(key) or "{}")
+                result.append(item)
+            return result
+        finally:
+            con.close()
+
     def get(self, research_session_id: str) -> dict[str, Any] | None:
         con=self._connect()
         try:
