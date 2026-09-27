@@ -41,6 +41,12 @@ MOBS_YAML = """templates:
     id: 2606
     species: medusa
     skill_list_id: 725
+    loot:
+      drops:
+        - chance: very_common
+          item: medusas_armlet
+        - chance: common
+          item: mercenarys_dastanas
   Lamia_Exon:
     id: 2331
     species: lamiae
@@ -135,6 +141,11 @@ def main() -> int:
             encoding="utf-8",
         )
         (sql/"spell_list.sql").write_text(spell_row(5,"stone"),encoding="utf-8")
+        (sql/"item_basic.sql").write_text(
+            "INSERT INTO `item_basic` VALUES (15000,0,'medusas_armlet','medusas_armlet','',4,1,0,0,1000);\n"
+            "INSERT INTO `item_basic` VALUES (15001,0,'mercenarys_dastanas','mercenarys_dastanas','',4,1,0,0,1000);\n",
+            encoding="utf-8",
+        )
 
         for name in ("shadow_thrust","pinning_shot","calcifying_deluge","gorgon_dance","helper_strike"):
             path=root/f"scripts/actions/mobskills/{name}.lua"
@@ -163,6 +174,13 @@ def main() -> int:
         assert set(mob_skills)=={1500,1808,1809,1810,1812,1813,1814},mob_skills
         spells={row["metadata"]["spell_id"]:row for row in by_type["SPELL"]}
         assert set(spells)=={5},spells
+        items={row["display_name"]:row for row in by_type["ITEM"]}
+        assert set(items)=={"medusas_armlet","mercenarys_dastanas"},items
+        assert items["medusas_armlet"]["metadata"]["item_id"]==15000,items
+        assert items["medusas_armlet"]["metadata"]["loot_chance"]=="very_common",items
+        assert items["mercenarys_dastanas"]["metadata"]["item_id"]==15001,items
+        assert items["mercenarys_dastanas"]["metadata"]["loot_chance"]=="common",items
+        assert items["medusas_armlet"]["metadata"]["item_basic"]["name"]=="medusas_armlet",items
 
         artifact_paths={row["path"] for row in zone_payload["artifacts"]}
         for required in (
@@ -223,6 +241,8 @@ def main() -> int:
             assert "Mob skill list 171" in labels,labels
             assert "Mob spell list 28" in labels,labels
             assert "stone" in labels,labels
+            assert "medusas_armlet" in labels,labels
+            assert "mercenarys_dastanas" in labels,labels
         finally:
             con.close()
 
