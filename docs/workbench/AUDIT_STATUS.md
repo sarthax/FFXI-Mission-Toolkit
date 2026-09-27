@@ -1998,3 +1998,12 @@ Each wiring record exposes only exact same-fork source-native links:
 - `BLUE_SPELL_MOB_SKILL` -> the matching `mob_skills.mob_skill_id`.
 
 This makes Blue Magic ID wiring directly discoverable and navigable without asserting that the linked spell or mob skill is behaviorally correct or implemented.
+
+
+### Server event/CSID reference catalog
+
+The shared `npc_event_refs` index is now an explicit Feature Trace provider. Each row uses its real composite identity `(source, zone_name, npc_script, csid)` and a generated label that preserves fork, zone, actor script, and CSID.
+
+This deliberately does not treat CSID as globally unique. If the same CSID appears for multiple sources/scripts/zones, all records remain independently discoverable and a legacy CSID-only catalog ID is rejected as ambiguous rather than selecting one row.
+
+These are source-script event references, not proof that the client event exists or that the corresponding mission transition is correct.
