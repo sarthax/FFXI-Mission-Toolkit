@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Research Sessions{% endblock %}
+{% block content %}
+<h1>Research Sessions</h1>
+<p><a href="/research/contradictions">Browse contradictions and evidence conflicts</a></p>
+<p class="muted">Persistent, replay-oriented evidence research. Sessions pin provider/model/context and retain typed tool calls, evidence IDs, proposals, budgets, usage, and verification state.</p>
+
+<h2>Create Research Session</h2>
+<p class="muted">Creating a session records the research intent and safety profile only. It does not run a model, apply changes, execute SQL mutations, or modify source repositories.</p>
+<form method="post" action="/research">
+  <div class="table-wrap"><table>
+    <tr><th>Question</th><td><textarea name="question" rows="4" style="width:100%;" required></textarea></td></tr>
+    <tr><th>Provider</th><td><input name="provider" placeholder="open-webui / ollama / configured provider" required></td></tr>
+    <tr><th>Model</th><td><input name="model" placeholder="configured model id" required></td></tr>
+    <tr><th>Permission profile</th><td><select name="permission_profile">
+      {% for profile in permission_profiles %}<option value="{{ profile }}">{{ profile }}</option>{% endfor %}
+    </select></td></tr>
+    <tr><th>Source snapshot</th><td><input name="source_snapshot_id" placeholder="optional"></td></tr>
+    <tr><th>Target snapshot</th><td><input name="target_snapshot_id" placeholder="optional"></td></tr>
+    <tr><th>Feature root</th><td><input name="feature_root" placeholder="optional canonical feature id"></td></tr>
+    <tr><th>Entity root</th><td><input name="entity_root" placeholder="optional canonical entity id"></td></tr>
+    <tr><th>Max tool calls</th><td><input type="number" name="max_tool_calls" min="0" max="100" value="8"></td></tr>
+  </table></div>
+  <button type="submit">Create research session</button>
+</form>
+
+<h2>Session History</h2>
+{% if created %}<p class="chip">Research session created.</p>{% endif %}
+{% if not sessions %}
+<p class="muted">No research sessions have been recorded yet.</p>
+{% else %}
+<div class="table-wrap"><table>
+  <tr><th>Updated</th><th>Question</th><th>Provider / Model</th><th>Profile</th><th>Verification</th><th>Tool calls</th><th>Proposals</th></tr>
+  {% for s in sessions %}
+  <tr>
+    <td>{{ s.updated_at }}</td>
+    <td><a href="/research/{{ s.research_session_id|urlencode }}">{{ s.question }}</a><br><code>{{ s.research_session_id }}</code></td>
+    <td>{{ s.provider }} / {{ s.model }}</td>
+    <td>{{ s.permission_profile }}</td>
+    <td><span class="chip">{{ s.verification_state }}</span></td>
+    <td>{{ s.tool_call_count }}</td>
+    <td>{{ s.proposal_count }}</td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+{% endblock %}

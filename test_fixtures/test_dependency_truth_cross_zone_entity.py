@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the Medusa dependency-proof truth set remains structurally complete."""
+"""Validate the cross-zone entity dependency-proof truth set remains structurally complete."""
 from __future__ import annotations
 
 import json
@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURE = ROOT / "test_fixtures" / "fixtures" / "medusa_arrapago_dependency_truth.json"
+FIXTURE = ROOT / "test_fixtures" / "fixtures" / "dependency_truth_cross_zone_entity.json"
 
 
 def main():
@@ -69,12 +69,21 @@ def main():
     assert required["besieged_system"]=="REQUIRED_OR_EXPLICITLY_INCOMPLETE",required
 
     gaps=payload["known_current_toolkit_gaps"]
-    assert any("mob_skill_lists" in gap for gap in gaps),gaps
-    assert any("mob_spell_lists" in gap for gap in gaps),gaps
-    assert any("MEDUSA + 1" in gap for gap in gaps),gaps
-    assert any("YAML loot" in gap for gap in gaps),gaps
+    closed=payload["closed_toolkit_gaps"]
+    assert any("loot item symbols" in gap for gap in closed),closed
+    assert any("ID.text symbols" in gap for gap in closed),closed
+    assert any("xi.title symbols" in gap for gap in closed),closed
+    assert any("species/family" in gap for gap in gaps),gaps
+    assert any("Besieged" in gap for gap in gaps),gaps
+    assert any("mobs.yaml entities/templates" in gap for gap in closed),closed
+    assert any("skill/spell definition" in gap for gap in closed),closed
+    assert any("mob skill-list" in gap.lower() for gap in closed),closed
+    assert any("mob_skill_lists" in gap for gap in closed),closed
+    assert any("mob_spell_lists" in gap for gap in closed),closed
+    assert any("require()/mixin" in gap for gap in closed),closed
+    assert any("ID.mob" in gap for gap in closed),closed
 
-    print("Medusa dependency truth-set self-test: PASS")
+    print("cross-zone entity dependency truth-set self-test: PASS")
     return 0
 
 

@@ -1,8 +1,8 @@
-# Medusa Package Dependency Proof
+# Dependency Proof Case — Cross-Zone Entity / System Coupling
 
 ## Goal
 
-Use the Arrapago Reef Medusa notorious monster as the first real proof case for the Packages dependency-closure workflow.
+Use a cross-zone notorious-monster case as a dependency-closure proof for the Packages workflow. **Arrapago Reef Medusa** is the concrete evidence subject, not an architectural identifier.
 
 Medusa is intentionally useful because a correct backport is more than one mob row or one Lua file. Her implementation spans:
 
@@ -19,7 +19,7 @@ Medusa is intentionally useful because a correct backport is more than one mob r
 
 The machine-readable baseline is:
 
-`test_fixtures/fixtures/medusa_arrapago_dependency_truth.json`
+`test_fixtures/fixtures/dependency_truth_cross_zone_entity.json`
 
 The source baseline is LandSandBoat revision:
 
@@ -248,18 +248,18 @@ This is the important part of the proof.
 | User include/exclude/question/tag workflow | Covered | Scope decisions and reasons are persisted separately from evidence. |
 | Stale-scope detection | Covered | Reviewed scope fingerprint invalidates when graph closure changes. |
 | Legacy SQL mob spawn/group/pool/drop chain | Partial | Existing adapters and instance slice cover a subset of this chain. |
-| Modern LSB zone mob YAML | **Gap** | Current logical extraction is SQL-oriented and does not normalize zone YAML mob templates/entities as equivalent logical records. |
-| Medusa helper ID arithmetic | **Gap** | `MEDUSA + 1 .. +4` requires Lua constant/range reasoning or a specialized static reference resolver. |
-| Helper-template traversal | **Gap** | There is no generic entity→template→species/skill/spell dependency closure yet. |
-| Mob skill-list membership | **Gap** | `mob_skill_lists` is not currently a first-class logical dependency type in the server adapter profile. |
-| Mob skill definitions | **Gap** | `mob_skills` is not currently a first-class logical dependency type for package closure. |
-| Mob spell-list membership | **Gap** | `mob_spell_lists` is not currently a first-class logical dependency type. |
-| Species/family dependencies | **Gap** | LSB species and legacy family concepts are intentionally distinct, but closure does not yet model either deeply enough. |
-| Mob-skill Lua script linkage | **Gap/Partial** | Scripts are indexable artifacts, but list/member→script linkage is not guaranteed. |
-| Lua `require()` / mixin dependency | **Gap** | Current package analyzer deliberately does not infer require chains. |
+| Modern LSB zone mob YAML | Covered for dependency closure | Zone YAML entity/template rows now become graph Entity nodes with transitive dependency edges. Cross-lineage equivalence remains separate. |
+| Medusa helper ID arithmetic | Covered | Conservative Lua dependency discovery resolves `GetFirstID(...)` anchors through zone YAML and expands numeric `ID.mob` ranges into concrete Entity dependencies. |
+| Helper-template traversal | Covered | Entity→template→species/skill-list/spell-list closure is now emitted generically from zone YAML. |
+| Mob skill-list membership | Covered | `mob_skill_lists` is now a first-class cross-fork logical schema surface. |
+| Mob skill definitions | Covered | `mob_skills` is now a first-class cross-fork logical schema surface. |
+| Mob spell-list membership | Covered | `mob_spell_lists` is now a first-class cross-fork logical schema surface with level gates. |
+| Species/family dependencies | Partial | LSB template→species dependencies are now first-class graph edges; generic cross-lineage species↔legacy-family equivalence remains unproven. |
+| Mob-skill Lua script linkage | Covered for conventional implementations | Skill-list members close into normalized mob-skill definitions and then into `scripts/actions/mobskills/<name>.lua` artifacts when present; missing implementations remain explicit findings. |
+| Lua `require()` / mixin dependency | Covered | Literal `require()` paths now produce VERIFIED packageable `REQUIRES` artifact edges with evidence. |
 | Lua API → binding → C++ | Partial | Workbench has Lua/binding/C++ graph infrastructure, but Medusa-specific closure is not yet proven end to end. |
 | Lua enum/constants | Partial | Enum graph infrastructure exists, but Medusa script references are not yet proven to resolve automatically. |
-| YAML loot → item records | **Gap** | Current item logical records exist, but the YAML loot-symbol edge is not created. |
+| YAML loot → item records | Covered | Zone-YAML loot symbols now resolve uniquely through normalized `item_basic.name` into canonical ITEM dependency nodes; ambiguous/missing symbols remain explicit findings. |
 | Zone text/title dependencies | **Gap/Partial** | Source data exists, but Medusa-specific Lua references are not yet guaranteed to become package dependencies. |
 | Cross-zone Besieged variants | **Gap** | Must be modeled as conditional system dependencies; current LSB lifecycle hooks are present but empty, so direct source traversal is insufficient. |
 
@@ -275,38 +275,34 @@ That is a successful proof result, because it identifies concrete missing generi
 
 ### P0 — server logical dependency model
 
-Add source-neutral logical concepts for:
+Current progress:
 
-- mob template/entity membership;
-- species/family reference;
-- mob skill list;
-- mob skill;
-- mob spell list;
-- spell-list member;
-- loot entry;
-- item reference.
+- [x] modern LSB zone entity/template membership;
+- [x] LSB template→species reference;
+- [x] mob skill list and member closure;
+- [x] mob skill definitions;
+- [x] mob spell list and member closure;
+- [x] spell definitions;
+- [x] YAML loot entry→item identity closure;
+- [ ] generic cross-lineage species/family equivalence.
 
-Adapters should map Topaz/DSP/LSB physical representation to those concepts rather than assuming identical tables.
-
-Modern LSB zone YAML needs its own adapter/extractor path.
+The implementation now combines modern LSB zone YAML with existing profile-backed SQL normalization instead of assuming identical physical storage.
 
 ### P0 — Lua dependency extraction
 
-Add explicit graph edges for:
+Current progress:
 
-- `require()` / mixins;
-- zone ID symbol references;
-- entity ID anchors/ranges where statically resolvable;
-- enum/constants;
-- referenced global functions/modules.
+- [x] literal `require()` / mixin artifact edges;
+- [x] `GetFirstID(...)` zone-ID anchors plus statically resolvable `ID.mob.SYMBOL + N` ranges;
+- [ ] general zone text/ID symbol references;
+- [ ] enum/constants beyond existing generic enum graph infrastructure;
+- [ ] referenced global functions/modules where not already represented by Lua/binding analysis.
 
 For an expression such as:
 
 `ID.mob.MEDUSA + 1 .. ID.mob.MEDUSA + 4`
 
-the analyzer should resolve the base ID from the zone IDs source and emit the four concrete entity dependencies with evidence showing the arithmetic expression.
-
-If resolution is not safe, emit an explicit unresolved/analyzer-gap node rather than omitting the dependency.
+the analyzer now resolves the `GetFirstID('Medusa')` anchor against zone `mobs.yaml`, emits four concrete Entity dependencies, and records the source expression/evidence. If either identity source is missing or ambiguous, it emits explicit UNKNOWN findings rather than silently omitting the dependency.
 
 ### P0 — mob skill/spell closure
 
@@ -329,17 +325,16 @@ Then continue Lua/binding/C++ traversal from those implementations.
 
 ### P0 — loot/item closure
 
-Model:
+Implemented:
 
 ```text
 mob template
-→ loot entry
-→ item identity
-→ item_basic
-→ equipment/weapon/usable/etc representations as applicable
+→ YAML loot symbol
+→ unique normalized item_basic identity
+→ canonical ITEM graph node
 ```
 
-An item already present and equivalent in the target can then become a reviewed `TARGET_EQUIVALENT`, with evidence, instead of disappearing.
+Matching normalized weapon/usable representations are attached to the ITEM node when available. Missing or duplicate item symbols remain explicit UNKNOWN findings. Target equivalence remains a reviewed migration decision rather than being assumed from source presence.
 
 ### P1 — related-variant semantics
 

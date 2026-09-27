@@ -7,6 +7,10 @@ from pathlib import Path
 
 from workbench.client.event_fingerprint import (
     EventResource,
+    _decode_from_opcode_sources,
+    _evaluate_length_rule,
+    _length_rules_from_function,
+    _load_opcode_source_table,
     compare_event_fingerprints,
     fingerprint_event,
     parse_event_export,
@@ -14,6 +18,39 @@ from workbench.client.event_fingerprint import (
 
 
 def main() -> None:
+    # Dependency-free fallback now statically extracts literal calculate_length rules
+    # from the vendored opcode source rather than abandoning all structure.
+    table = _load_opcode_source_table()
+    assert table[0x1F]["variable"] is True, table[0x1F]
+    assert table[0x1F]["length_rule"] is not None, table[0x1F]
+    assert _evaluate_length_rule(table[0x1F]["length_rule"], bytes([0x1F, 0]), 0) == 8
+    assert _evaluate_length_rule(table[0x1F]["length_rule"], bytes([0x1F, 1]), 0) == 2
+    assert _evaluate_length_rule(table[0x59]["length_rule"], bytes([0x59, 5]), 0) == 7
+    assert _evaluate_length_rule(table[0x9D]["length_rule"], bytes([0x9D, 0x08]), 0) == 23
+    assert _evaluate_length_rule(table[0xAB]["length_rule"], bytes([0xAB, 0x1B]), 0) == 6
+
+    variable_bytes = bytes([0x1F, 1, 0x21])
+    opcodes, lengths, unknown, messages, roles, parser_name = _decode_from_opcode_sources(
+        variable_bytes,
+        (),
+    )
+    assert parser_name == "OPCODE_SOURCE_TABLE", (opcodes, lengths, parser_name)
+    assert opcodes == (0x1F, 0x21), opcodes
+    assert lengths == (2, 1), lengths
+    assert unknown == 0, unknown
+    assert messages == (), messages
+    assert roles == (), roles
+
+    # Unsupported dynamic formulas remain fail-closed rather than being evaluated.
+    import ast
+    unsupported_tree = ast.parse(
+        "def calculate_length(self, data, offset):\n"
+        "    mode = data[offset + 1]\n"
+        "    return mode + 2\n"
+    )
+    unsupported = unsupported_tree.body[0]
+    assert _length_rules_from_function(unsupported) is None, ast.dump(unsupported)
+
     # Same opcode/instruction shape, different immediate WAIT argument.
     a = fingerprint_event(EventResource(
         entity_id=1001, event_id=10,

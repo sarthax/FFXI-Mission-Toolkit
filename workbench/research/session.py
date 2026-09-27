@@ -158,6 +158,67 @@ class ResearchSessionStore:
             con.close()
         return session
 
+    def update_execution_config(
+        self,
+        research_session_id: str,
+        *,
+        provider: str,
+        model: str,
+        budgets: dict[str, Any],
+        replay_metadata: dict[str, Any],
+    ) -> None:
+        con=self._connect()
+        try:
+            row=con.execute(
+                "SELECT 1 FROM research_sessions WHERE research_session_id=?",
+                (research_session_id,),
+            ).fetchone()
+            if row is None:
+                raise KeyError(research_session_id)
+            con.execute(
+                "UPDATE research_sessions SET provider=?,model=?,budgets_json=?,replay_metadata_json=?,updated_at=? "
+                "WHERE research_session_id=?",
+                (
+                    str(provider).strip(),
+                    str(model).strip(),
+                    json.dumps(dict(budgets or {}),sort_keys=True),
+                    json.dumps(dict(replay_metadata or {}),sort_keys=True),
+                    _now(),
+                    research_session_id,
+                ),
+            )
+            con.commit()
+        finally:
+            con.close()
+
+    def clone_for_replay(
+        self,
+        research_session_id: str,
+        *,
+        provider: str | None = None,
+        model: str | None = None,
+        budgets: dict[str, Any] | None = None,
+        replay_metadata: dict[str, Any] | None = None,
+    ) -> ResearchSession:
+        source=self.get(research_session_id)
+        if source is None:
+            raise KeyError(research_session_id)
+        metadata=dict(source.get("replay_metadata") or {})
+        metadata.update(dict(replay_metadata or {}))
+        metadata.setdefault("replay_of",research_session_id)
+        return self.create(
+            question=source["question"],
+            provider=(provider or source["provider"]),
+            model=(model or source["model"]),
+            permission_profile=source["permission_profile"],
+            source_snapshot_id=source.get("source_snapshot_id"),
+            target_snapshot_id=source.get("target_snapshot_id"),
+            feature_root=source.get("feature_root"),
+            entity_root=source.get("entity_root"),
+            budgets=dict(budgets if budgets is not None else source.get("budgets") or {}),
+            replay_metadata=metadata,
+        )
+
     def append_tool_call(
         self,
         research_session_id: str,
@@ -268,6 +329,38 @@ class ResearchSessionStore:
             if cur.rowcount != 1:
                 raise KeyError(research_session_id)
             con.commit()
+        finally:
+            con.close()
+
+    def list(self, *, limit: int = 100) -> list[dict[str, Any]]:
+        """Return newest research sessions with compact audit counts for GUI/CLI browsing."""
+        if limit <= 0:
+            return []
+        con=self._connect()
+        try:
+            rows=con.execute(
+                """
+                SELECT s.*,
+                       COUNT(DISTINCT tc.id) AS tool_call_count,
+                       COUNT(DISTINCT p.proposal_id) AS proposal_count
+                  FROM research_sessions s
+                  LEFT JOIN research_tool_calls tc
+                    ON tc.research_session_id=s.research_session_id
+                  LEFT JOIN research_proposals p
+                    ON p.research_session_id=s.research_session_id
+                 GROUP BY s.research_session_id
+                 ORDER BY s.updated_at DESC, s.created_at DESC
+                 LIMIT ?
+                """,
+                (int(limit),),
+            ).fetchall()
+            result=[]
+            for row in rows:
+                item=dict(row)
+                for key in ("usage_json","budgets_json","replay_metadata_json"):
+                    item[key.removesuffix("_json")]=json.loads(item.pop(key) or "{}")
+                result.append(item)
+            return result
         finally:
             con.close()
 

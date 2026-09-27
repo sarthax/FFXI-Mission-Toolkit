@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Research Session{% endblock %}
+{% block content %}
+<p><a href="/research">← Research Sessions</a> · <a href="/research/contradictions?session_id={{ session.research_session_id|urlencode }}">Contradictions for this session</a></p>
+<h1>Research Session</h1>
+{% if created %}<p class="chip">Session created. No provider has been run by this page.</p>{% endif %}
+
+<div class="table-wrap"><table>
+  <tr><th>ID</th><td><code>{{ session.research_session_id }}</code></td></tr>
+  <tr><th>Question</th><td>{{ session.question }}</td></tr>
+  <tr><th>Provider / Model</th><td>{{ session.provider }} / {{ session.model }}</td></tr>
+  <tr><th>Permission profile</th><td>{{ session.permission_profile }}</td></tr>
+  <tr><th>Verification state</th><td><span class="chip">{{ session.verification_state }}</span></td></tr>
+  <tr><th>Source snapshot</th><td><code>{{ session.source_snapshot_id or "-" }}</code></td></tr>
+  <tr><th>Target snapshot</th><td><code>{{ session.target_snapshot_id or "-" }}</code></td></tr>
+  <tr><th>Feature root</th><td><code>{{ session.feature_root or "-" }}</code></td></tr>
+  <tr><th>Entity root</th><td><code>{{ session.entity_root or "-" }}</code></td></tr>
+  <tr><th>Created</th><td>{{ session.created_at }}</td></tr>
+  <tr><th>Updated</th><td>{{ session.updated_at }}</td></tr>
+</table></div>
+
+<h2>Run / Replay</h2>
+<p class="muted">
+  Runs are bounded by the typed Workbench tool registry and this session's permission profile.
+  A session can be run in place once. Replay always creates a new child session so the original
+  transcript, evidence trail, and report remain unchanged.
+</p>
+{% if run_status %}<p class="chip">{{ run_status }}</p>{% endif %}
+{% if run_error %}<p class="chip" style="color:#c33;">{{ run_error }}</p>{% endif %}
+{% if replayed_from %}<p class="muted">Replay created from <code>{{ replayed_from }}</code>.</p>{% endif %}
+
+<form method="post" action="/research/run">
+  <input type="hidden" name="research_session_id" value="{{ session.research_session_id }}">
+  <div class="table-wrap"><table>
+    <tr><th>Provider</th><td>
+      <select name="provider">
+        {% for p in ["openwebui", "ollama"] %}
+        <option value="{{ p }}" {% if run_defaults.provider|lower|replace("_","-") in [p, "open-webui"] and (p != "openwebui" or run_defaults.provider|lower|replace("_","-") in ["openwebui","open-webui"]) %}selected{% endif %}>{{ p }}</option>
+        {% endfor %}
+      </select>
+    </td></tr>
+    <tr><th>Model</th><td><input name="model" value="{{ run_defaults.model }}" required></td></tr>
+    <tr><th>Max tool calls</th><td><input type="number" name="max_tool_calls" min="0" max="100" value="{{ run_defaults.max_tool_calls }}"></td></tr>
+    <tr><th>Max provider calls</th><td><input type="number" name="max_provider_calls" min="1" max="100" value="{{ run_defaults.max_provider_calls }}"></td></tr>
+    <tr><th>Timeout / provider call</th><td><input type="number" name="timeout" min="1" max="900" step="1" value="{{ run_defaults.timeout }}"> seconds</td></tr>
+    <tr><th>Temperature</th><td><input type="number" name="temperature" min="0" max="2" step="0.1" value="{{ run_defaults.temperature }}"></td></tr>
+    <tr><th>Provider base URL</th><td><input name="provider_base_url" value="{{ run_defaults.provider_base_url }}" placeholder="optional; Open WebUI uses configured URL, Ollama defaults to localhost:11434" style="width:100%;"></td></tr>
+  </table></div>
+  {% if has_run %}
+    <p class="muted">This session already has execution output. Run-in-place is disabled; use Replay.</p>
+    <button type="submit" disabled>Run session</button>
+  {% else %}
+    <button type="submit">Run session</button>
+  {% endif %}
+  <button type="submit" formaction="/research/replay">Replay as new session</button>
+</form>
+
+<h2>Budgets & Usage</h2>
+<div class="table-wrap"><table>
+  <tr><th>Budgets</th><td><pre>{{ session.budgets|tojson(indent=2) }}</pre></td></tr>
+  <tr><th>Usage</th><td><pre>{{ session.usage|tojson(indent=2) }}</pre></td></tr>
+  <tr><th>Replay metadata</th><td><pre>{{ session.replay_metadata|tojson(indent=2) }}</pre></td></tr>
+</table></div>
+
+<h2>Typed Tool Transcript</h2>
+{% if not session.tool_calls %}
+<p class="muted">No typed tool calls recorded.</p>
+{% else %}
+{% for call in session.tool_calls %}
+<details {% if loop.first %}open{% endif %}>
+  <summary>#{{ call.sequence_no }} — <code>{{ call.tool_name }}</code> — {{ call.status }} — {{ call.created_at }}</summary>
+  <p><strong>Evidence IDs:</strong>
+  {% if call.evidence_ids %}{% for evidence in call.evidence_ids %}<a href="/research/evidence?evidence_id={{ evidence|urlencode }}"><code>{{ evidence }}</code></a>{% if not loop.last %}, {% endif %}{% endfor %}
+  {% else %}<span class="muted">none recorded</span>{% endif %}</p>
+  <h4>Arguments</h4><pre>{{ call.args|tojson(indent=2) }}</pre>
+  <h4>Result</h4><pre>{{ call.result|tojson(indent=2) }}</pre>
+</details>
+{% endfor %}
+{% endif %}
+
+<h2>Research Proposals</h2>
+{% if not session.proposals %}
+<p class="muted">No proposals recorded.</p>
+{% else %}
+<div class="table-wrap"><table>
+  <tr><th>Type</th><th>Subject</th><th>Status</th><th>Supporting evidence</th><th>Contradicting evidence</th><th>Verification requirement</th></tr>
+  {% for p in session.proposals %}
+  <tr>
+    <td>{{ p.proposal_type }}<br><code>{{ p.proposal_id }}</code></td>
+    <td><code>{{ p.subject_id or "-" }}</code></td>
+    <td>{{ p.status }}</td>
+    <td>{% for e in p.supporting_evidence_ids %}<a href="/research/evidence?evidence_id={{ e|urlencode }}"><code>{{ e }}</code></a>{% if not loop.last %}<br>{% endif %}{% endfor %}</td>
+    <td>{% for e in p.contradicting_evidence_ids %}<a href="/research/evidence?evidence_id={{ e|urlencode }}"><code>{{ e }}</code></a>{% if not loop.last %}<br>{% endif %}{% endfor %}</td>
+    <td>{{ p.verification_requirement or "-" }}</td>
+  </tr>
+  <tr><th>Payload</th><td colspan="5"><pre>{{ p.payload|tojson(indent=2) }}</pre></td></tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+
+<h2>Final Report</h2>
+{% if session.final_report %}<pre style="white-space:pre-wrap;">{{ session.final_report }}</pre>
+{% else %}<p class="muted">No final report recorded.</p>{% endif %}
+{% endblock %}

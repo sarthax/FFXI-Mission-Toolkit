@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Validate the Coiler dependency-proof truth set."""
+"""Validate the attachment/runtime dependency-proof truth set."""
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
-FIXTURE=ROOT/"test_fixtures"/"fixtures"/"coiler_attachment_dependency_truth.json"
+FIXTURE=ROOT/"test_fixtures"/"fixtures"/"dependency_truth_attachment_runtime.json"
 
 def main():
     payload=json.loads(FIXTURE.read_text(encoding="utf-8"))
@@ -34,10 +34,10 @@ def main():
 
     gaps=payload["known_current_toolkit_gaps"]
     assert any("item_puppet" in x for x in gaps),gaps
-    assert any("dynamic C++ Lua dispatch" in x for x in gaps),gaps
+    assert any("dynamic c++ lua dispatch" in x.casefold() for x in gaps),gaps
     assert any("Conditional interactions" in x for x in gaps),gaps
 
-    print("Coiler dependency truth-set self-test: PASS")
+    print("attachment/runtime dependency truth-set self-test: PASS")
     return 0
 
 if __name__=="__main__":

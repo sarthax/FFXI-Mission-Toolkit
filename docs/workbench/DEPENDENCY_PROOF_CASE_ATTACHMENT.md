@@ -1,8 +1,8 @@
-# Coiler Package Dependency Proof
+# Dependency Proof Case — Attachment / Shared Runtime
 
 ## Goal
 
-Use the Puppetmaster attachment **Coiler** as a second dependency-closure proof case.
+Use a Puppetmaster attachment as an attachment/shared-runtime dependency-closure proof case. **Coiler** is the concrete evidence subject, not an architectural identifier.
 
 Unlike Medusa, Coiler is not primarily a zone/mob problem. It crosses:
 
@@ -21,7 +21,7 @@ Unlike Medusa, Coiler is not primarily a zone/mob problem. It crosses:
 
 The machine-readable baseline is:
 
-`test_fixtures/fixtures/coiler_attachment_dependency_truth.json`
+`test_fixtures/fixtures/dependency_truth_attachment_runtime.json`
 
 Source baseline:
 

@@ -1111,7 +1111,7 @@ This milestone establishes review/agency/guardrails, not proof of complete FFXI 
 
 ## 2026-09-26 — Medusa dependency proof baseline
 
-Arrapago Reef Medusa is now the first concrete package dependency-discovery proof case. A machine-readable manual truth set lives at `test_fixtures/fixtures/medusa_arrapago_dependency_truth.json` and is documented in `MEDUSA_PACKAGE_PROOF.md`.
+Arrapago Reef Medusa is now the first concrete package dependency-discovery proof case. A machine-readable manual truth set lives at `test_fixtures/fixtures/dependency_truth_cross_zone_entity.json` and is documented in `MEDUSA_PACKAGE_PROOF.md`.
 
 Verified source relationships include Medusa entity 16998862; four adjacent Lamia Exon helper entities 16998863–16998866; helper spell list 28 and skill list 171; Medusa skill list 725 with skills 1808/1809/1810/1812/1813/1814; dedicated skill scripts; the `job_special` mixin and EES_LAMIA/eagle-eye-shot dependency; Medusa loot symbols; title/text dependencies; and separate Al Zahbi/Bhaflau Besieged variants that are explicitly related but not default Arrapago package dependencies.
 
@@ -1122,7 +1122,7 @@ The fixture is regression-checked so future analyzer work must preserve the full
 
 ## 2026-09-26 — Coiler dependency proof baseline
 
-Coiler is now the second package dependency proof case. The machine-readable truth set is `test_fixtures/fixtures/coiler_attachment_dependency_truth.json`, documented in `COILER_PACKAGE_PROOF.md`.
+Coiler is now the second package dependency proof case. The machine-readable truth set is `test_fixtures/fixtures/dependency_truth_attachment_runtime.json`, documented in `COILER_PACKAGE_PROOF.md`.
 
 The proof distinguishes inventory item identity (`xi.item.COILER = 2413`) from the internal `item_puppet` record (8583 / attachment index 135), then traces the behavior through dynamic C++→Lua attachment dispatch, `coiler.lua`, shared `automaton.lua` modifier logic, `xi.mod.DOUBLE_ATTACK`, maneuver/Optic Fiber scaling, puppetutils unlock/equip/persistence behavior, `char_pet` attachment state, and downstream automaton weapon-skill consumers of `xi.automaton.getExtraHits`.
 
@@ -1330,3 +1330,531 @@ Implemented:
 Regression: `test_event_actor_identity_resolution.py` proves actor-ID drift, duplicate target
 event candidates under separate actors, ambiguous entity identity, unresolved actor mapping, and
 same-actor exact mapping. The fixture is included in Workbench Regression.
+
+
+## 2026-09-26 — Multi-client identity snapshots surfaced in Client Overview
+
+The next real-client validation gate is now accessible through the GUI rather than requiring a
+manual CLI sequence.
+
+Implemented on the Client Overview surface:
+
+- retained the existing installed-client fingerprint;
+- list imported client identity snapshots from `workbench.db`;
+- display build/family/region/language/source path/extraction time and
+  EVENT/ENTITY/DIALOG record counts;
+- identify snapshots that correspond to the currently installed client;
+- import a second client directly from a client root using the existing xi-tinkerer extraction
+  and manifest-ingestion services;
+- extract all zones known to the canonical zone database;
+- reject missing required client files, missing xi-tinkerer, duplicate snapshot ids, and
+  non-empty output locations before extraction;
+- store portable extracted payloads under git-ignored `client_snapshots/`;
+- compare any two imported snapshots with the existing actor-aware bulk EVENT resolver;
+- expose EXACT, TARGET_EQUIVALENT, ambiguous, LOW_CONFIDENCE, and unresolved totals;
+- display source/target actor and event ids plus confidence, match basis, and reason;
+- export the comparison as CSV.
+
+Focused regression coverage is in `test_fixtures/test_gui_client_snapshots.py` and is included in
+the Workbench Regression workflow. The existing identity, extraction, capture bridge, and shared
+GUI shell regressions remain part of the same CI job.
+
+This closes the tooling gap that previously blocked second-client validation from the GUI. The
+remaining external gate is to import an actual second retail client build and inspect the resulting
+cross-build identity distributions.
+
+
+## 2026-09-26 — ResearchSession audit trail exposed in GUI
+
+The Phase 8 research backend already persisted replay-oriented ResearchSession records, typed tool
+calls, evidence ids, proposals, budgets, usage, and final reports. That state is now visible through
+an audit-first GUI surface at `/research`.
+
+Implemented:
+
+- session history ordered by latest activity;
+- compact tool-call/proposal counts;
+- session creation for question/provider/model, permission profile, source/target snapshot context,
+  feature/entity roots, and max-tool-call budget;
+- no automatic provider execution from the creation form;
+- detail view for budgets, usage, replay metadata, verification state, final report, typed tool
+  transcript, arguments/results, and collected evidence ids;
+- proposal visibility including supporting and contradicting evidence and verification requirements;
+- shared-shell ownership under Tools > Research: Sessions;
+- machine-readable GUI route-map coverage;
+- focused `test_gui_research_sessions.py` plus the existing ResearchSession, GUI route-map, and
+  shared-shell regressions in a dedicated CI job.
+
+This improves auditability without expanding mutation authority. Provider execution/replay remains
+behind the existing bounded ResearchRunner and typed permission-aware tool registry until a
+separate explicit run-control UX is added.
+
+## 2026-09-26 — Ollama Direct research provider
+
+The evidence-aware research layer now has two provider implementations behind the same
+`LLMProvider` contract:
+
+- Open WebUI via the existing compatibility client;
+- Ollama Direct via the local HTTP API.
+
+The direct adapter supports model discovery, capability inspection, non-streaming chat, normalized
+usage counters, and provider metadata. A provider factory now resolves configured provider ids
+without coupling ResearchRunner to concrete provider classes.
+
+The adapter does not silently fall back between providers. Connectivity, HTTP, and response-shape
+failures remain explicit so research sessions cannot mistake an unavailable provider for an empty
+or successful answer.
+
+Regression coverage in `test_research_provider.py` is no-network and verifies Open WebUI
+compatibility, Ollama Direct model/capability/chat normalization, provider selection, and explicit
+unsupported-provider behavior.
+
+## 2026-09-26 — DAT Inspector UX cleanup
+
+The Client > DAT Inspector has been upgraded from a raw numeric-ID/raw-JSON utility into a
+user-facing client-resource inspection workflow.
+
+Selection now supports three entry paths:
+
+- direct numeric DAT ID;
+- zone + common DAT family, with the DAT ID derived automatically;
+- direct client-relative DAT path such as `ROM/7/44.DAT`.
+
+The zone selector is populated from the toolkit's canonical zone database when available. Direct
+paths are restricted to files inside the configured FFXI client root and must resolve to a
+`.DAT` file.
+
+Results now present:
+
+- file identity, DAT ID/family hint, ROM-relative path, size, and SHA-256;
+- previous/next DAT navigation for ID-based inspection;
+- successful vs rejected parser counts;
+- human-readable parser labels and compact decoded summaries;
+- collection counts/field names when a parser returns structured data;
+- expandable decoded previews instead of unconditional raw JSON dumps;
+- a 64-byte hex/ASCII header view for unsupported or unknown DAT formats;
+- rejected parser diagnostics in a collapsed table.
+
+The underlying parser strategy remains conservative: multiple successful parsers are shown as
+separate compatible interpretations rather than forcing one guessed file type.
+
+Focused regression coverage is in `test_fixtures/test_gui_dat_inspector.py` and includes
+zone/family ID derivation, client-root path safety, parser summaries, result rendering, navigation,
+and selection-mode wiring.
+
+## 2026-09-26 — Safer variable-length EVENT opcode fallback decoding
+
+The dependency-free EVENT fingerprint fallback no longer drops immediately to `RAW_ONLY` for every
+vendored opcode class that defines `calculate_length`.
+
+The opcode-source AST loader now extracts only a narrow, auditable subset of source-defined
+length rules:
+
+- direct byte selectors such as `data[offset + 1]`;
+- literal equality/set/range comparisons;
+- literal bit-mask tests;
+- literal selector-to-length dictionaries with literal defaults;
+- literal return lengths only.
+
+The fallback evaluates those normalized rules without executing arbitrary vendored parser code.
+Computed instruction lengths are still checked against remaining bytecode. Unsupported formulas,
+unrecognized selector expressions, invalid lengths, or incomplete bytecode remain fail-closed as
+`RAW_ONLY`.
+
+Regression coverage proves representative variable-length classes including 0x1F, 0x59, 0x9D, and
+0xAB, plus an intentionally unsupported dynamic formula that must remain unresolved. The full
+Workbench core regression test step passes with this decoder enabled.
+
+## 2026-09-26 — Bounded ResearchSession Run / Replay controls
+
+The Research Sessions GUI now executes the existing bounded `ResearchRunner` without bypassing
+the typed-tool or permission-profile boundaries.
+
+The session detail page exposes explicit controls for:
+
+- provider and model;
+- maximum typed tool calls;
+- maximum provider calls;
+- timeout per provider call;
+- temperature;
+- optional provider base URL.
+
+A session may be run in place only once. Once a transcript or final report exists, the GUI requires
+**Replay** instead. Replay creates a new child ResearchSession with `replay_of` metadata, copied
+question/context/permission profile, independent budgets and provider/model controls, and a fresh
+tool transcript. The original session is never cleared or overwritten.
+
+The GUI runtime registry currently exposes the canonical read-oriented graph/domain tool families
+through the same `ResearchToolRegistry` used elsewhere. Provider selection uses the provider
+factory (Open WebUI or Ollama Direct); permission enforcement remains inside the registry.
+
+Run controls are persisted in replay metadata, usage/tool transcripts remain durable, and invalid
+budgets/timeouts/temperature fail before provider execution.
+
+Focused regressions cover first execution, immutable replay cloning, override persistence,
+already-run protection, invalid controls, GUI rendering, route ownership, and the existing
+ResearchRunner/provider/session tests.
+
+
+## 2026-09-26 — Client ENTITY equivalence coverage and diagnostics
+
+The portable client identity pipeline now extracts and ingests per-zone ENTITY name resources.
+This closes the gap where actor-aware EVENT resolution could consume externally established ENTITY
+mappings but normal client snapshot imports did not themselves contribute ENTITY evidence.
+
+Added:
+
+- dialog/entity DAT-family extraction for both zone-id ranges;
+- portable `ENTITY` manifest resources and ENTITY-name parser;
+- zone-scoped ENTITY identity ingestion with client-resource provenance;
+- bulk ENTITY source-to-target comparison and detailed single-actor diagnostics;
+- explicit ambiguity handling for duplicate target names;
+- actor diagnostic metadata on every EVENT comparison row;
+- Client Overview actor-identity coverage table with constraint-ready, equivalent, ambiguous, and
+  unresolved counts;
+- actor diagnostics in CSV export;
+- corrected dialog-record counting for the actual `DIALOG_TEXT_ID` namespace.
+
+The resolver still fails closed: duplicate or weak ENTITY evidence never becomes an actor
+constraint simply because numeric ids happen to line up.
+
+
+## 2026-09-26 — Research contradiction filtering and evidence drill-down
+
+The Research workspace now exposes a read-only contradiction browser and canonical Evidence detail
+surface.
+
+Implemented:
+
+- explicit CONTRADICTED Finding discovery;
+- same-subject/same-field Finding value-conflict detection;
+- cross-snapshot capability-observation disagreement detection;
+- ResearchSession proposal contradiction discovery;
+- filtering by ResearchSession, canonical subject, and Evidence type;
+- clickable Evidence IDs from typed tool transcripts and supporting/contradicting proposal evidence;
+- Evidence detail backlinks into canonical findings, relationships, validations, capabilities,
+  implementations, ResearchSession tool calls, and proposals;
+- dedicated Tools > Research: Contradictions navigation;
+- deterministic regression coverage in both focused research CI and the full core regression job.
+
+The feature intentionally surfaces disagreements without adjudicating them. Deterministic
+verification/promotion remains a separate authority path.
+
+
+## 2026-09-26 — P1 logical schema expansion: abilities and combat skills
+
+The generic server-adapter schema now covers four additional cross-fork SQL surfaces:
+
+- `abilities`;
+- `weapon_skills`;
+- `mob_skills`;
+- `mob_skill_lists`.
+
+The mappings were grounded against the archived Topaz release schema and the pinned DSP/LSB
+snapshots already used by Workbench migration tests. Shared legacy fields normalize to the same
+logical records while modern LSB-only radius fields remain explicit drift:
+
+- `abilities.radius`;
+- `weapon_skills.radius`;
+- `mob_skills.mob_skill_aoe_radius` → logical `aoe_radius`.
+
+Mob skill-list membership uses the composite logical identity
+`(skill_list_id, mob_skill_id)`.
+
+These records deliberately model registry/configuration metadata only. The existence of an ability
+or skill row does not prove its Lua/C++ runtime implementation, packet behavior, animation support,
+or client capability. Those remain separate dependency/evidence surfaces.
+
+Regression coverage extends the existing broader logical-schema and cross-profile coverage tests.
+P1 remains open for additional generic surfaces such as item modifiers/latents and progression
+tables.
+
+
+## 2026-09-26 — P1 logical schema expansion: item modifiers and latents
+
+The server-adapter schema now covers three additional generic equipment-effect surfaces across
+Topaz, Topaz-Next, DSP, and pinned LSB:
+
+- `item_mods` → logical `item_modifiers`;
+- `item_mods_pet` → logical `item_pet_modifiers`;
+- `item_latents` → logical `item_latents`.
+
+The audited physical shapes are compatible across the three server lineages. Logical identities
+preserve physical uniqueness:
+
+- item modifier: `(item_id, modifier_id)`;
+- pet item modifier: `(item_id, modifier_id, pet_type)`;
+- latent item modifier:
+  `(item_id, modifier_id, value, latent_id, latent_parameter)`.
+
+This intentionally models only the SQL assignment records. Modifier IDs, pet-type values, latent
+condition IDs, and runtime behavior still require enum/engine evidence before migration can be
+considered semantically verified.
+
+Regression coverage extends both the broader cross-fork logical normalization suite and the schema
+coverage matrix.
+
+
+## 2026-09-26 — P1 logical schema expansion: progression
+
+The server-adapter layer now covers job-point and merit definition drift without assuming that all
+forks store progression data in the same format.
+
+### Job points
+
+`job_points.sql` exists in Topaz, DSP, and pinned LSB with the same physical columns, but numeric
+`job_pointid` values drift between legacy and modern data. The logical identity is therefore
+`(job_id, name)`, while `job_point_id` remains a comparable representation field. This allows
+the Workbench to report a renumbering rather than treating the same semantic job-point entry as an
+unrelated record.
+
+### Merits
+
+Topaz and DSP store merit definitions in `merits.sql`. Modern LSB explicitly dropped that SQL
+registry and moved the definitions to `data/merits.yaml`.
+
+The adapter now has:
+
+- a legacy SQL `merits` logical mapping for Topaz/Topaz-Next/DSP;
+- an LSB YAML producer that emits the same logical `merits` record type keyed by `merit_id`;
+- shared comparable fields for `merit_id`, `name`, and `value`;
+- explicit legacy-only fields such as upgrade count, jobs mask, upgrade id, and legacy category id;
+- explicit LSB-only fields such as upgrade-cost key, category key/id, category max upgrades, and
+  resolved job-name lists.
+
+Missing representation-specific fields remain `MISSING_FIELD_VALUE`; they are not inferred.
+Regression coverage proves both legacy equivalence and the modern representation split.
+
+
+## 2026-09-26 — P1 logical schema expansion: combat support
+
+Four additional generic server surfaces are now represented across Topaz, Topaz-Next, DSP, and
+pinned LSB:
+
+- `mob_pool_mods` → logical `mob_pool_modifiers`;
+- `mob_spell_lists`;
+- `skill_caps`;
+- `skill_ranks`.
+
+The audited physical schemas and primary keys match across the three lineages.
+
+Logical identities are:
+
+- mob pool modifier: `(pool_id, modifier_id)`;
+- mob spell-list membership: `(spell_list_id, spell_id)`;
+- skill-cap curve row: `level`;
+- per-job skill-rank row: `skill_id`.
+
+`skill_caps` retains all rank buckets `r0` through `r13`, while `skill_ranks` retains rank
+assignments for WAR through RUN. These two surfaces can now be traced together when evaluating
+skill availability/caps.
+
+For `mob_pool_modifiers`, `modifier_id` meaning depends on the `is_mob_modifier` namespace and
+the corresponding engine enums. SQL presence alone is therefore not treated as semantic proof.
+Regression coverage validates cross-fork normalization and profile coverage.
+
+
+## 2026-09-26 — Revised priority queue complete
+
+The five-item revised next-work priority is complete.
+
+Completed sequence:
+
+1. safer variable-length EVENT opcode decoding;
+2. bounded ResearchSession Run / Replay controls;
+3. cross-client ENTITY equivalence coverage and diagnostics;
+4. Research contradiction filtering and canonical Evidence drill-down;
+5. P1 logical schema expansion beyond the P0 core.
+
+The P1 expansion was completed through four evidence-backed tranches:
+
+- combat registries;
+- item modifiers and latents;
+- progression, including LSB merit YAML representation;
+- combat-support tables.
+
+Schema breadth is no longer treated as an open-ended blocker. Additional generic mappings should be
+added when a concrete feature/package or validation path exposes a missing dependency surface.
+
+
+## 2026-09-26 — Generalized client DAT migration/write orchestration: PATCH_EXISTING
+
+The first generalized Workbench client-DAT write path now bridges the read-only
+`ItemDatAdapter`, migration-package review artifacts, and the mature low-level
+`item_dat_tools` writer without allowing planning code to mutate client files.
+
+Implemented:
+
+- `ClientDatOperation` for reviewed `PATCH_EXISTING` operations;
+- proposal-only `WORKBENCH_CLIENT_DAT_PLAN` generated artifacts;
+- full-record client fingerprinting plus optional expected-field checks;
+- re-read/drift validation before approval;
+- explicit `WORKBENCH_CLIENT_DAT_APPROVAL_REQUEST` tied to the reviewed plan hash;
+- approved apply that invokes the low-level writer only after technical readiness and human approval;
+- apply journals containing DAT/category/record/format/target and low-level backup metadata;
+- deterministic rollback by restoring the exact pre-write snapshot (or removing a newly created overlay target);
+- package-integrity checks linking packaged client-DAT plans to their approval requests;
+- deterministic regression coverage proving that planning does not call a writer, drift blocks
+  approval, pending approval blocks apply, approved apply invokes the writer once, and rollback
+  restores the original bytes.
+
+The low-level `patch_client_item` return payload now includes additive backup/target-existence
+metadata so higher-level orchestration can journal and reverse the edit.
+
+This milestone intentionally supports existing-record patches only. New-item client allocation,
+DAT injection, server SQL coordination, and any FTABLE/VTABLE/index mutation remain a separate
+follow-on because they require multi-artifact identity/allocation guarantees.
+
+## 2026-09-27 — Reconciliation audit and sample-name cleanup
+
+A current-`main` reconciliation found several milestones newer than this audit's original queue.
+
+### Confirmed implemented
+- Variable-length EVENT decoding is implemented conservatively in `workbench/client/event_fingerprint.py`, including bounded rule extraction and fail-closed behavior for unsupported dynamic length formulas. Regression: `test_fixtures/test_event_fingerprint.py`.
+- Automatic client ENTITY identity ingestion is implemented through `workbench/client/identity_extract.py` and `workbench/client/identity_snapshot.py`, with event/identity regressions. Raw client names are evidence, not guaranteed globally unique semantic identities; duplicate-name disambiguation remains future enrichment.
+- P1 server logical-schema coverage has expanded in `workbench/adapters/servers/profiles.py`, `progression.py`, and `schema_coverage.py`, with coverage regressions for combat abilities/skills, item modifiers/latents, progression tables, mob support tables, skill caps/ranks, synthesis, and synergy.
+
+### Naming audit
+Repository path inspection found sample-derived generic artifact names only in two proof documents, two truth-set fixture filenames, and two regression filenames. No generic production Workbench module was named after either sample.
+
+The artifacts were renamed by architectural role:
+- `docs/workbench/COILER_PACKAGE_PROOF.md` -> `docs/workbench/DEPENDENCY_PROOF_CASE_ATTACHMENT.md`
+- `docs/workbench/MEDUSA_PACKAGE_PROOF.md` -> `docs/workbench/DEPENDENCY_PROOF_CASE_CROSS_ZONE_ENTITY.md`
+- `test_fixtures/fixtures/coiler_attachment_dependency_truth.json` -> `test_fixtures/fixtures/dependency_truth_attachment_runtime.json`
+- `test_fixtures/fixtures/medusa_arrapago_dependency_truth.json` -> `test_fixtures/fixtures/dependency_truth_cross_zone_entity.json`
+- `test_fixtures/test_coiler_dependency_truth.py` -> `test_fixtures/test_dependency_truth_attachment_runtime.py`
+- `test_fixtures/test_medusa_dependency_truth.py` -> `test_fixtures/test_dependency_truth_cross_zone_entity.py`
+
+Concrete Coiler/Medusa names remain inside those documents and truth sets where they identify real evidence. They must not be used as names for reusable services, analyzers, graph concepts, framework APIs, or generic regression roles.
+
+### Audit rule
+Proof-case naming must describe the behavior or dependency shape being tested. Game-content names belong only in subject/evidence data or deliberately content-specific plugins.
+
+
+## 2026-09-27 — Generic mission/quest state-machine foundation
+
+Added `workbench/plugins/domain/mission_state_machine.py` as a content-neutral behavioral model rather than encoding a specific mission in framework code. It provides explicit states, guarded transitions, ALL/ANY dependency gates, zone+actor+CSID event identity, generic transition effects, lifecycle analysis, expected implementation-gap visibility, and branch-readiness analysis.
+
+`workbench/plugins/domain/mission_representation.py` now projects state-machine transitions and lifecycle subjects into representation requirements, preserving the existing proposal/review workflow instead of replacing it.
+
+Focused regressions:
+- `test_fixtures/test_mission_state_machine.py`
+- `test_fixtures/test_mission_representation.py`
+
+Next work is source extraction and canonical graph/evidence emission. The existing branching mission truth set remains a stress-validation subject; its content names do not define framework APIs.
+
+
+### Branching mission ingestion proof
+
+The existing branching mission truth set now ingests through `workbench/plugins/domain/mission_ingest.py` into the generic state-machine contract. The proof verifies nation alternatives as an `ANY` gate, zone+actor+CSID identities, Prog state ranges, key-item lifecycle semantics, and visible implementation/missing-branch gaps.
+
+The ingestion intentionally marks truth-set CSIDs as `unassigned_progress_edge` rather than guessing which exact progress transition they cause. Exact CSID → state-edge assignment is now a concrete requirement for the Lua source extractor.
+
+Regression: `test_fixtures/test_mission_truth_ingestion.py`.
+
+
+### Multi-mission mechanic stress probe
+
+Additional LSB mission shapes were compared against the generic model:
+
+- **Kazham's Chieftainess** — simple linear NPC/event completion plus next mission and key-item reward.
+- **Ancient Vows** — mission variable progression, zone-in event, battlefield-win guard, completion, and post-win teleport.
+- **The Road Forks** — parallel mission-status channels, timed/expiring key-item lifecycle, recursive timer, spawned-NM/death gates, distance/position/nation conditions, local variables, and no-action/message outcomes.
+- **Three Paths** — multiple parallel subpaths converging on completion, trade/consume gates, spawned encounters, multiple battlefields, titles, and client-handled transport.
+
+New model/extractor gaps exposed by this probe:
+- parallel named mission-status channels and ALL-path convergence;
+- temporal guards/effects and timer expiry;
+- spawned-entity and mob-death transitions;
+- spatial/distance guards;
+- explicit battlefield-result identity as a first-class guard;
+- teleport/client-transport/title/message/no-action effects;
+- replaceDefault/priority/default-action conflict semantics;
+- stronger distinction among persistent mission vars, local vars, and mission-status channels.
+
+Coverage fixture/regression:
+- `test_fixtures/fixtures/mission_mechanic_coverage_probe.json`
+- `test_fixtures/test_mission_mechanic_coverage.py`
+
+
+### Mission mechanic vocabulary + LSB extractor foundation
+
+The generic model now represents the stress-probe mechanics directly: persistent/local state channels, ALL-path convergence, timer/spatial/entity/battlefield/trade conditions, and spawn/transport/title/message/timer/no-action effects. Dispatch semantics such as `replaceDefault()` remain extractor/evidence metadata rather than behavioral effects.
+
+Added `workbench/plugins/domain/mission_lsb_extract.py` as a conservative static LSB Lua extractor foundation. It recognizes literal zone/actor/events, mission-status writes, persistent/local variable writes, key-item lifecycle calls, battlefield-win checks, spawned entities, titles, timers, and mission completion. Exact guard → trigger/CSID → effect transition correlation remains the next extractor step.
+
+
+### LSB handler correlation and source-proven state edges
+
+The LSB extractor now correlates literal Mission DSL handler blocks into `MissionTransition` records. It preserves zone/actor/CSID identity, handler trigger kind, literal guards, and literal effects with source-line metadata. A second conservative pass materializes concrete channel-value state endpoints only when a single literal channel guard/write proves the edge; ambiguous multi-channel handlers remain unresolved rather than guessed.
+
+Regression: `test_fixtures/test_mission_lsb_correlation.py` covers an Ancient Vows-shaped trigger/event-finish/battlefield completion flow including CSID 6, mission Status writes, battlefield 32001 guard, completion, and teleport.
+
+
+### Cross-handler mission event chaining
+
+The LSB extractor now joins initiating NPC/zone/trade handlers to a unique same-zone `onEventFinish[CSID]` handler. The resulting logical transition preserves initiating actor identity, zone+CSID identity, combined guards/effects, and both source spans. Same numeric CSIDs in different zones cannot collide.
+
+Declarative Mission DSL actor handlers such as `['Actor'] = mission:progressEvent(114)` are now extracted as unconditional NPC triggers and participate in the same chaining pass. Dispatch modifiers such as `replaceDefault()` and `importantEvent()` are retained as metadata.
+
+Regression coverage includes a Kazham's Chieftainess-shaped declarative completion edge and Ancient Vows-shaped NPC, zone-in, state-write, battlefield, completion, and teleport flows.
+
+
+### The Road Forks real-source stress pass
+
+Pinned the current LSB `scripts/missions/cop/3_3_The_Road_Forks.lua` as a regression fixture and ran the generic extractor against its full mission shape.
+
+The first pass exposed six parser gaps: local mission-status aliases, zone-out handlers, helper/timer behavior outside mission sections, entity spawned-state guards, message-return outcomes, and the final two-path convergence check. All six are now represented/extracted in the current stress probe:
+- local aliases propagate to named mission-status channel guards;
+- `onZoneOut` is a first-class transition trigger;
+- `:isSpawned()` / negated spawn checks become entity conditions;
+- San d'Oria + Windurst terminal status is recovered as an ALL completion gate;
+- player helper functions such as `jewelTimer` emit timer/helper behavior;
+- message calls become MESSAGE effects.
+
+Regression: `test_fixtures/test_mission_lsb_road_forks_stress.py`.
+
+
+### Three Paths real-source worst-case stress pass
+
+Pinned current LSB `scripts/missions/cop/5_3_Three_Paths.lua` and exercised the generic mission extractor across its three parallel subpaths.
+
+The stress pass exposed and then promoted into generic extraction support:
+- helper-defined three-path completion convergence (`LOUVERANCE/TENZEN/ULMIA == 14`);
+- dynamic mission-status range iteration used by `isMissionComplete()`;
+- not-equal mission-status guards;
+- exact player-position guards;
+- `npcUtil.popFromQM` spawned encounters;
+- completed-trade effects;
+- mission-level reward title/next-mission metadata;
+- helper-call completion gates attached to completion handlers;
+- client-handled transport annotations;
+- event priority / important-event / replace-default dispatch provenance.
+
+The current Three Paths probe has no remaining mechanic marked as an unsupported gap. This does not imply arbitrary Lua is fully parsed: dynamic expressions/helpers outside recognized conservative patterns remain evidence requiring later parser expansion.
+
+Regression: `test_fixtures/test_mission_lsb_three_paths_stress.py`.
+
+
+### Scripted-NM content-map stress — Absolute Virtue
+
+Absolute Virtue was used as the first non-mission behavior-map stress case, with both its own LSB script and Jailer of Love's spawning script treated as one evidence closure.
+
+This content does not naturally reduce to mission CSID/state progression. It adds a generic combat-behavior map over the same canonical evidence graph:
+- entity lifecycle/combat hooks;
+- cross-entity death -> probabilistic delayed spawn;
+- runtime enmity/claim transfer;
+- cross-entity local-state dependencies;
+- HP-threshold phase transitions;
+- randomized recurring action windows;
+- player-action response and mutable ability-lock sets;
+- dynamic combat modifiers;
+- spell behavior overrides;
+- magic-hit/day-element responses;
+- related-entity death/despawn cleanup;
+- runtime loot-table override.
+
+The key architectural finding is that the canonical graph can remain shared, while scripted NMs require a combat-behavior extractor/plugin rather than being forced through the mission state-machine representation.
+
+Probe: `test_fixtures/fixtures/absolute_virtue_behavior_probe.json`
+Regression: `test_fixtures/test_absolute_virtue_behavior_probe.py`

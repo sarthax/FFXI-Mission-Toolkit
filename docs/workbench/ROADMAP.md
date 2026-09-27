@@ -245,7 +245,7 @@ Design requirements:
 Current state is a useful draft assistant: Open WebUI/Ollama chat plus read-only SQLite tools and logging. The rework should promote this into a bounded, reproducible research/orchestration layer over the Workbench rather than a free-form chatbot.
 
 Core architecture:
-- [ ] Provider abstraction for Open WebUI, Ollama Direct, and future explicitly configured providers; the toolkit must not depend on one provider's response schema.
+- [x] Provider abstraction for Open WebUI and Ollama Direct with a provider-neutral contract/factory; future explicitly configured providers can extend the same interface without changing ResearchRunner.
 - [ ] ResearchSession persistence with prompt/question, provider/model, pinned source/target snapshots, selected feature/entity roots, tool policy, tool transcripts, evidence IDs, findings/proposals, outputs, verification state, timestamps, usage, budgets, and replay metadata.
 - [ ] Typed Workbench tool registry covering graph, feature, server adapters, entities, C++, bindings, enums, packets, captures, build targets, client capabilities, migration, validation, references, and source inspection.
 - [ ] Bounded source crawler over configured repositories/snapshots with include/exclude rules, path/type/size/depth limits, secret/key exclusions, and no arbitrary filesystem access.
@@ -425,7 +425,14 @@ Current proof:
 - [x] Expose canonical package creation from existing Migration/MigrationAction/Artifact/dependency records; creation consumes reviewed scope, embeds the full dependency decision ledger, and assembles a reviewable package workspace only.
 - [~] Prove dependency-discovery completeness against a complex mob and representative instance/mission before adding approval/apply UI.
   - [x] Establish Arrapago Reef Medusa as the first machine-readable manual truth set, including helpers, skill/spell chains, job-special mixin, loot/items, title/text, Lua/engine requirements, and related-but-out-of-scope Besieged variants.
-  - [ ] Close the generic discovery gaps exposed by the Medusa proof and rerun the truth-set comparison.
+  - [~] Close the generic discovery gaps exposed by the Medusa proof and rerun the truth-set comparison.
+    - [x] Promote mob skills, mob skill-list membership, and mob spell-list membership to generic logical schema surfaces.
+    - [x] Discover literal Lua `require()`/mixin artifact dependencies with evidence.
+    - [x] Resolve safe `ID.mob.SYMBOL + N` entity arithmetic/ranges through `IDs.lua` + zone `mobs.yaml`, including Medusa's four Lamia Exon helpers.
+    - [x] Normalize modern LSB zone YAML templates/entities into entity→template→species/skill/spell closure.
+    - [x] Link skill-list members to normalized mob-skill definitions and conventional Lua implementations, preserving missing scripts as explicit findings.
+    - [x] Link zone-YAML loot symbols uniquely through normalized item identities to canonical ITEM dependency nodes.
+    - [~] Promote zone text/title references and cross-zone Besieged coupling into package dependency edges.\n      - [x] Resolve zone `ID.text.*` and global `xi.title.*` symbols into dependency nodes.\n      - [ ] Add cross-zone Besieged coupling as an explicit conditional/system dependency.
   - [x] Establish Coiler automaton attachment as a second truth set covering item/internal identity mapping, dynamic Lua dispatch, shared automaton behavior, C++ puppet runtime, persistence, downstream weapon-skill consumers, conditional interactions, and reviewer-controlled acquisition paths.
   - [x] Add recursive crafting/producibility closure for synth/synergy recipe prerequisites; Heat Seeker→Glass Sheet now proves multi-level recipe recursion, key-item gating, leaf obtainability, and Synergy client/runtime gating.
   - [ ] Unify shop/drop/reward/HELM/gardening/exchange/appraisal acquisition analyzers so every crafting leaf can resolve against the same obtainability graph.
@@ -439,3 +446,192 @@ Current proof:
 ## 2026-09-25 — Real packed-DLL deeper pass
 
 Completed a real `FFXiMain.dll` deeper pass and PE32 import-thunk candidate lookup. Future decoder/CFG work should prove reachable instruction boundaries and explicitly version its decoder; virtual `.text` requires an unpacked or runtime snapshot.
+
+
+### 2026-09-26 Research Sessions GUI milestone
+- [x] Expose persistent ResearchSession history in the shared GUI under Tools > Research: Sessions.
+- [x] Show pinned source/target context, provider/model, permission profile, budgets, usage, replay metadata, verification state, final report, typed tool transcript, and evidence IDs.
+- [x] Show staged research proposals with supporting/contradicting evidence and verification requirements.
+- [x] Allow creation of session metadata without implicitly running a provider or granting source/database write authority.
+- [x] Add focused GUI/session regressions and route-map coverage.
+- [x] Add explicit provider-run/replay actions with provider/model, timeout, tool/provider-call budgets, temperature, run-state UX, and immutable replay cloning through the bounded ResearchRunner.
+- [ ] Add contradiction-focused filtering and canonical evidence drill-through from the session detail page.
+
+### 2026-09-26 Ollama Direct provider milestone
+- [x] Add direct Ollama `/api/tags`, `/api/show`, and non-streaming `/api/chat` provider support.
+- [x] Normalize Ollama models to the provider-neutral `id` shape used by ResearchRunner.
+- [x] Preserve capability evidence (vision/thinking/tools), model details, usage counters, and provider metadata.
+- [x] Add a provider factory for Open WebUI vs Ollama Direct selection.
+- [x] Keep provider failures explicit; no silent fallback from one provider to another.
+- [x] Add no-network regression coverage for both provider implementations and provider selection.
+
+
+### 2026-09-26 — Revised next-work priority
+Current ordered backlog after client snapshot GUI, Research Sessions GUI, direct Ollama provider, DAT Inspector UX cleanup, and CI stabilization:
+
+1. [x] Safer variable-length EVENT opcode decoding to reduce `RAW_ONLY` fingerprints and improve cross-client EVENT identity matching.
+2. [x] Research Session Run / Replay controls using the bounded `ResearchRunner` with explicit provider/model/budget/timeout/run-state handling.
+3. [x] Improve cross-client ENTITY equivalence coverage and diagnostics, including portable client ENTITY-name ingestion, ambiguous/unresolved target-actor diagnostics, and actor-constraint visibility in EVENT comparison.
+4. [x] Research contradiction filtering and canonical evidence drill-down across server/client/capture/runtime/reference evidence.
+5. [x] Continue P1 logical schema expansion beyond the completed P0 core mappings — completed through combat registries, item modifiers/latents, progression, and combat-support tables; further schema additions are opportunistic rather than a blocker.
+
+Completed/retired from the prior queue:
+- [x] Automatic client ENTITY ingestion/actor-aware EVENT comparison foundation exists; remaining work is equivalence quality/diagnostics rather than basic ingestion.
+- [x] Coiler/core-regression cleanup is complete; the full Workbench Regression suite is green.
+
+### 2026-09-26 Client ENTITY equivalence milestone
+- [x] Export per-zone client ENTITY resources into portable client snapshots.
+- [x] Ingest ENTITY name-table rows as zone-scoped snapshot identities.
+- [x] Preserve duplicate entity names as ambiguous rather than selecting an arbitrary target actor.
+- [x] Add source/target ENTITY diagnostic payloads with evidence basis, confidence, target candidates, reason, and next-action guidance.
+- [x] Feed ENTITY diagnostics into EVENT comparison and expose whether actor constraints were actually applied.
+- [x] Show actor identity coverage and diagnostics in Client Overview and comparison CSV.
+- [x] Correct Client Overview dialog counts to include the stored `DIALOG_TEXT_ID` namespace.
+
+### 2026-09-26 Research contradiction / evidence drill-down milestone
+- [x] Add read-only contradiction discovery over explicit CONTRADICTED findings, conflicting finding values, cross-snapshot capability observations, and ResearchSession proposal contradictions.
+- [x] Filter contradictions by ResearchSession, canonical subject, and Evidence type.
+- [x] Add canonical Evidence detail with backlinks to findings, relationships, validations, capabilities, implementations, typed research tool calls, and proposals.
+- [x] Make ResearchSession supporting/contradicting/tool-call evidence IDs clickable.
+- [x] Add Tools > Research: Contradictions navigation and route-map ownership.
+- [x] Preserve source disagreement without selecting a winner or promoting one record to truth.
+
+
+### 2026-09-26 P1 logical schema — combat registry tranche
+- [x] Add source-neutral logical mappings for job abilities across Topaz, Topaz-Next, DSP, and LSB.
+- [x] Add source-neutral logical mappings for weapon skills across all four server profiles.
+- [x] Add source-neutral logical mappings for mob skills and mob skill-list membership.
+- [x] Preserve modern LSB-only ability/weapon-skill radius and mob-skill AOE radius as explicit schema drift rather than projecting those fields onto legacy forks.
+- [x] Keep runtime Lua/C++ effect behavior outside the SQL registry record; registry presence is not proof that the behavior implementation exists.
+- [x] Continue P1 with generic item modifier/latent and character progression tables after this tranche.
+
+
+### 2026-09-26 P1 logical schema — item modifier tranche
+- [x] Add source-neutral logical mappings for direct item modifiers.
+- [x] Add source-neutral logical mappings for pet-scoped item modifiers.
+- [x] Add source-neutral logical mappings for conditional item latents.
+- [x] Preserve physical uniqueness for item latents with the full `(item_id, modifier_id, value, latent_id, latent_parameter)` identity.
+- [x] Keep modifier and latent semantics tied to separate enum/engine evidence rather than treating numeric IDs as self-describing.
+- [x] Continue P1 with character progression tables such as merits/job points after this tranche.
+
+
+### 2026-09-26 P1 logical schema — progression tranche
+- [x] Add source-neutral job-point registry mappings across Topaz, Topaz-Next, DSP, and LSB.
+- [x] Use semantic job-point identity `(job_id, name)` so numeric `job_pointid` drift is visible instead of becoming identity failure.
+- [x] Add legacy SQL merit mappings for Topaz, Topaz-Next, and DSP.
+- [x] Add an LSB `data/merits.yaml` producer that emits the same logical merit record type without inventing a removed SQL table.
+- [x] Preserve legacy-only and LSB-only merit representation fields as explicit missing-field drift.
+- [x] Continue P1 with additional generic server surfaces only where cross-lineage representation can be proven.
+
+
+### 2026-09-26 P1 logical schema — combat support tranche
+- [x] Add source-neutral mob pool modifier mappings across Topaz, Topaz-Next, DSP, and LSB.
+- [x] Add mob spell-list membership with min/max level gates.
+- [x] Add level-indexed skill-cap curves for rank buckets r0-r13.
+- [x] Add per-job skill-rank mappings for all supported jobs in the audited schemas.
+- [x] Preserve modifier namespace semantics as an enum/engine dependency rather than inferring meaning from numeric IDs alone.
+- [x] Current prioritized P1 expansion is complete; future generic cross-lineage surfaces may be added opportunistically when they materially improve dependency tracing.
+
+### 2026-09-26 Revised priority queue completion
+- [x] All five items in the 2026-09-26 revised next-work priority are complete.
+- [x] P1 logical schema expansion is no longer a blocking queue item after four evidence-backed tranches.
+- [x] Future schema additions remain allowed when a concrete feature/package exposes a missing generic dependency surface.
+- [x] Resume subsequent roadmap work from the next open phase item rather than treating schema breadth as an unbounded prerequisite.
+
+
+### 2026-09-26 Generalized item DAT migration orchestration
+- [x] Add proposal-only client DAT patch plans for existing item records.
+- [x] Fingerprint the reviewed client record and block approval if the live/pivot record drifts before apply.
+- [x] Require a matching explicit human approval record before any DAT writer is invoked.
+- [x] Journal low-level DAT target/backup metadata and support deterministic rollback of the applied file.
+- [x] Include client DAT plans/approvals in generated-output package integrity checks.
+- [ ] Extend generalized orchestration to new-item allocation/injection and coordinated server SQL/client-index changes.
+
+## 2026-09-27 — Audit reconciliation and sample-name neutrality
+
+Architecture naming rule: concrete FFXI content used as a proof case or regression fixture must not name generic Workbench services, framework concepts, or reusable test roles. Content names remain valid inside evidence payloads where they identify the actual game subject.
+
+Reconciled work discovered on current `main`:
+- [x] Variable-length EVENT decoding: `workbench/client/event_fingerprint.py` now performs conservative variable-length rule extraction and fail-closed decoding; focused coverage lives in `test_fixtures/test_event_fingerprint.py`.
+- [x] Automatic client ENTITY identity ingestion: `workbench/client/identity_extract.py`, `workbench/client/identity_snapshot.py`, and identity/event regressions automatically ingest per-zone client ENTITY evidence. Duplicate-name enrichment remains a refinement, not a blocker.
+- [x] Broader P1 logical schema expansion: `workbench/adapters/servers/profiles.py`, `progression.py`, `schema_coverage.py`, and their regressions cover combat abilities/skills, item modifiers/latents, job points/merits, mob support tables, skill caps/ranks, synthesis, and synergy in addition to the P0 core.
+- [x] Proof-case naming cleanup: generic artifact/test names now describe the dependency pattern rather than the sampled FFXI subject. The attachment/shared-runtime and cross-zone/system-coupling truth sets retain their concrete subjects only inside evidence content.
+
+Files changed by the naming cleanup:
+- `docs/workbench/DEPENDENCY_PROOF_CASE_ATTACHMENT.md` (renamed from `COILER_PACKAGE_PROOF.md`)
+- `docs/workbench/DEPENDENCY_PROOF_CASE_CROSS_ZONE_ENTITY.md` (renamed from `MEDUSA_PACKAGE_PROOF.md`)
+- `test_fixtures/fixtures/dependency_truth_attachment_runtime.json`
+- `test_fixtures/fixtures/dependency_truth_cross_zone_entity.json`
+- `test_fixtures/test_dependency_truth_attachment_runtime.py`
+- `test_fixtures/test_dependency_truth_cross_zone_entity.py`
+- `docs/workbench/ROADMAP.md`
+- `docs/workbench/AUDIT_STATUS.md`
+
+This naming rule applies to future proof cases as well: sample content demonstrates architecture; it does not define architecture.
+
+
+## 2026-09-27 — Unified remaining-feature inventory
+
+The Workbench roadmap and the older Toolkit product roadmap were reconciled. The following open capabilities were either absent from the recent scoped queue or were obscured by stale historical status.
+
+### Core architecture / evidence
+- [ ] Generic conditional and cross-zone/system-state dependency relationships, including the currently open Besieged-style coupling proof.
+- [ ] Unified acquisition/obtainability graph across shops, drops, rewards, HELM, gardening, exchange, appraisal, synthesis, and synergy.
+- [ ] Broader packet ↔ client DAT/EXE/DLL ↔ server relationship coverage.
+- [ ] Richer runtime probe/capture producers and repeatable live validation recipes.
+- [ ] Optional decoder-backed binary instruction/CFG/xref/function recovery with explicit decoder/version provenance.
+
+### Reusable content frameworks
+- [ ] Generic mission/quest state-machine and CSID/event analyzer.
+- [ ] Generic multi-zone progression/hunt framework.
+- [ ] Generic minigame/puzzle framework.
+- [ ] Generic repeatable/system-container framework.
+- [ ] Additional instance-heavy proof after mission state-machine closure.
+
+### Named system packages
+- [ ] Assault.
+- [ ] Nyzul Isle.
+- [ ] Salvage.
+- [ ] Abyssea.
+- [ ] Einherjar.
+- [ ] Limbus preservation package when a compatible implementation/client snapshot is selected.
+
+### Migration / application
+- [ ] Safe database-level apply and rollback; current deterministic rollback coverage is file-oriented.
+- [ ] Approval/apply/rollback GUI after dependency-completeness gates are satisfied.
+- [ ] Broader verified source→target conversion backends without guessing unsupported routes.
+- [ ] Finish generalized client DAT write orchestration; active PR work remains incomplete until merged.
+
+### Toolkit product features outside the recent Workbench queue
+- [ ] Video/capture timestamp alignment and optional transcription.
+- [ ] Authenticated remote/hosted access.
+- [ ] Watched-folder or live Windower/Ashita auto-ingestion.
+- [ ] Capture-data requests and fulfillment tracking.
+- [ ] Capture annotations / invalid-data flags.
+- [ ] Tag/category completeness checklists.
+- [ ] Capture→server drafting/export through canonical evidence and migration review.
+- [ ] Discord history/link catalog integration.
+
+Roadmap authority rule: `docs/workbench/ROADMAP.md` is the detailed rework backlog; `docs/guides/ROADMAP.md` and the in-app `/roadmap` summarize both the Workbench and older Toolkit product backlog. Historical phase text may remain for provenance, but a newer reconciled status section supersedes stale labels.
+
+
+### 2026-09-27 Generic mission/quest state-machine foundation
+- [x] Add content-neutral state, guarded transition, zone-scoped event identity, transition-effect, and AND/OR dependency-gate models.
+- [x] Distinguish branch viability from full machine completeness and keep expected implementation gaps visible.
+- [x] Model lifecycle effects generically (grant/require/consume/remove/reissue) without adding mission-specific columns to the core graph.
+- [x] Bridge behavioral transitions/lifecycles into the existing mission representation planner.
+- [~] Add source-family extractors that populate the model from Lua mission/quest scripts. Conservative LSB literal extraction and handler-level guard/CSID/effect correlation are implemented; broader nested/dynamic helper resolution and cross-handler event-to-state chaining remain.
+  - Required by stress probes: named mission-status channels, persistent/local vars, temporal guards, spawned-entity/death transitions, spatial guards, battlefield-result guards, trade semantics, default-action replacement/priority, and client-handled effects.
+- [ ] Emit canonical graph dependency edges and evidence records from extracted machines.
+- [ ] Add DefaultActions/fallback conflict analysis and client dialog/event-resource closure.
+- [ ] Run the branching-mission truth set as the first large stress validation after the generic extractor exists.
+
+
+### 2026-09-27 Scripted-NM behavior-map discovery
+
+- [x] Stress a non-mission scripted NM with Absolute Virtue + Jailer of Love spawn closure.
+- [x] Confirm mission state machines are not the universal behavioral representation.
+- [x] Identify generic combat-map requirements: hooks, probabilistic/delayed spawn, runtime state transfer, cross-entity state, HP thresholds, random timers, ability responses/sets, combat modifiers, spell/magic responses, cleanup, loot overrides.
+- [ ] Implement the generic scripted-entity/combat behavior representation and source extractor.
+- [ ] Emit scripted-NM behavior/dependency evidence into the canonical graph.
+- [ ] Stress the representation with a second mechanically different NM before declaring combat-map coverage stable.

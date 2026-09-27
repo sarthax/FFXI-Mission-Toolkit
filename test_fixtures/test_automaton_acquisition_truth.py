@@ -19,10 +19,11 @@ def main():
 
     heat=subjects["Heat Seeker"]
     assert sum(1 for x in heat["verified_server_acquisition"] if x["type"]=="DROP_POOL")>=2,heat
-    synth=next(x for x in heat["external_retail_acquisition"] if x["type"]=="SYNTHESIS")
-    assert synth["craft"]=="Alchemy",synth
-    assert synth["required_key_item"]=="Iatrochemistry",synth
+    synth=next(x for x in heat["verified_server_acquisition"] if x["type"]=="SYNTHESIS")
+    assert synth["alchemy_level"]==55,synth
+    assert synth["required_key_item_name"]=="Iatrochemistry",synth
     assert len(synth["ingredients"])==5,synth
+    assert synth["evidence_status"]=="VERIFIED_SERVER",synth
 
     relations={x["relation"] for x in p["required_acquisition_relations"]}
     for rel in ("SOLD_BY","DROPPED_BY","CRAFTED_BY","REWARDED_BY","REQUIRES_INGREDIENT","ALTERNATE_ACQUISITION"):

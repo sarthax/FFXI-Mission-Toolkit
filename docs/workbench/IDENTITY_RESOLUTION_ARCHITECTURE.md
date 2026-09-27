@@ -708,3 +708,61 @@ the snapshot-local actor id and an already-established semantic entity symbol; r
 are never sufficient. The deterministic actor regression covers drifted actor ids, repeated target
 CSIDs under different actors, ambiguous source entity evidence, unresolved mappings, and stable
 same-actor mappings.
+
+
+## Client Overview multi-snapshot GUI
+
+The Client workspace now exposes the snapshot model directly on `/clientoverview` instead of
+requiring CLI-only extraction/comparison steps.
+
+The page keeps the installed-client fingerprint and adds:
+
+- an **Imported Client Snapshots** table backed by `workbench.db`;
+- snapshot metadata: id, build label, family, region, language, source client path, and extraction
+  timestamp;
+- per-snapshot `EVENT`, `ENTITY`, and `DIALOG` identity-record counts;
+- current-installed-client indication when either the canonical installed snapshot id or the
+  recorded source client path matches;
+- an **Import Client Snapshot** form that reuses
+  `workbench.client.identity_extract.extract_client_identity_snapshot` and
+  `workbench.client.identity_snapshot.ingest_client_identity_manifest`;
+- an all-zone request list derived from the toolkit's canonical `zones` table;
+- validation for the client root, `FFXiMain.dll`, `FTABLE.DAT`, `VTABLE.DAT`,
+  xi-tinkerer availability, duplicate snapshot ids, and pre-existing non-empty snapshot output;
+- local portable payload storage under
+  `client_snapshots/<safe-snapshot-name>`, which is explicitly git-ignored;
+- a **Compare Client Builds** form backed by `compare_event_snapshots`, with optional zone and
+  minimum-confidence filtering (default `HIGH`);
+- normalized summary buckets for `EXACT`, `TARGET_EQUIVALENT`, ambiguous,
+  `LOW_CONFIDENCE`, and unresolved results;
+- row-level source/target actor ids, source/target event ids, confidence, match basis, and reason;
+- CSV export using the same bulk comparison result.
+
+The bulk EVENT comparison result now also exposes `target_actor_key` when actor identity resolved
+strongly enough to constrain the target search. This is reporting-only; it does not weaken the
+existing actor-resolution confidence gate.
+
+Snapshot payloads, DAT exports, DLLs, EXEs, and generated client resources remain local data and
+must not be committed.
+
+
+## Portable client ENTITY evidence and diagnostics
+
+Portable client snapshots now include the per-zone ENTITY name resource in addition to DIALOG and
+EVENT resources. ENTITY rows are ingested into the snapshot-aware identity namespace using the
+zone-scoped client entity name as semantic evidence.
+
+This producer is intentionally conservative:
+
+- client numeric actor ids remain snapshot-local representations;
+- entity-name equality is scoped to the same zone;
+- a unique name match across source and target snapshots can provide HIGH-confidence actor
+  equivalence;
+- duplicate names produce `TARGET_ID_AMBIGUOUS` and do not constrain EVENT matching;
+- missing source/target ENTITY resources remain explicit unresolved states rather than falling back
+  to numeric-id equality.
+
+`diagnose_entity_identity` reports source evidence, semantic identity, target candidates,
+confidence/evidence basis, resolution reason, whether the actor constraint is safe to apply, and a
+recommended next action. Bulk client EVENT comparison carries these diagnostics row-by-row and
+also returns a separate ENTITY coverage report.

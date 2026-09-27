@@ -50,6 +50,7 @@ def main() -> int:
         "zone_key",
         "source_actor_key",
         "source_event_id",
+        "target_actor_key",
         "target_event_id",
         "status",
         "confidence",

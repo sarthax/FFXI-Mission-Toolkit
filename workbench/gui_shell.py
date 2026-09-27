@@ -199,6 +199,8 @@ WORKSPACES = (
         "name": "Tools",
         "href": "/llm",
         "sections": (
+            {"label": "Research: Sessions", "href": "/research"},
+            {"label": "Research: Contradictions", "href": "/research/contradictions"},
             {"label": "Research: LLM", "href": "/llm"},
             {"label": "Research: Wiki", "href": "/wiki"},
             {"label": "Editors: Zone Editor", "href": "/zoneplot", "mutation": True},

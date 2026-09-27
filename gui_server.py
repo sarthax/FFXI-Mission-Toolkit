@@ -6001,31 +6001,275 @@ def modelviewer_dat(ffxi_path: str, rom_path: str):
 
 
 @app.get("/datinspector", response_class=HTMLResponse)
-def datinspector_page(request: Request, dat_id: str = "", zoneid: str = "", ffxi_path: str = ""):
+def datinspector_page(
+    request: Request,
+    dat_id: str = "",
+    zoneid: str = "",
+    family: str = "",
+    dat_path: str = "",
+    ffxi_path: str = "",
+):
     import dat_inspector
+
     path = ffxi_path or (settings_mod.get_ffxi_install() or "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI")
     result, error = None, None
+    selected_mode = ""
+    resolved_dat_id = None
     try:
-        if dat_id.strip():
-            result = dat_inspector.inspect(path, int(dat_id))
+        if dat_path.strip():
+            selected_mode = "path"
+            result = dat_inspector.inspect_path(path, dat_path.strip())
+        elif zoneid.strip() or family.strip():
+            selected_mode = "zone"
+            if not zoneid.strip() or not family.strip():
+                raise ValueError("Select both a zone and a DAT family.")
+            resolved_dat_id = dat_inspector.dat_id_for_zone_family(int(zoneid), family)
+            result = dat_inspector.inspect(path, resolved_dat_id)
+        elif dat_id.strip():
+            selected_mode = "id"
+            resolved_dat_id = int(dat_id)
+            result = dat_inspector.inspect(path, resolved_dat_id)
     except Exception as ex:
-        error = str(ex)
-    families = [{"name": n, "base": b} for n, b in dat_inspector.FAMILIES]
+        error = f"{type(ex).__name__}: {ex}"
+
+    families = [
+        {
+            "name": name,
+            "label": dat_inspector.FAMILY_LABELS.get(name, name),
+            "base": base,
+        }
+        for name, base in dat_inspector.FAMILIES
+    ]
+    zones = []
+    try:
+        if DB_PATH.is_file():
+            con = sqlite3.connect(DB_PATH)
+            try:
+                zones = [
+                    {"zoneid": int(row[0]), "name": row[1] or f"Zone {row[0]}"}
+                    for row in con.execute(
+                        "SELECT zoneid,name FROM zones WHERE zoneid BETWEEN 0 AND 255 ORDER BY zoneid"
+                    ).fetchall()
+                ]
+            finally:
+                con.close()
+    except sqlite3.Error:
+        zones = []
+
     return templates.TemplateResponse(request, "dat_inspector.html", {
-        "request": request, "result": result, "error": error, "dat_id": dat_id,
-        "ffxi_path": path, "families": families})
+        "request": request,
+        "result": result,
+        "error": error,
+        "dat_id": dat_id,
+        "zoneid": zoneid,
+        "family": family,
+        "dat_path": dat_path,
+        "resolved_dat_id": resolved_dat_id,
+        "selected_mode": selected_mode,
+        "ffxi_path": path,
+        "families": families,
+        "zones": zones,
+    })
 
 
-@app.get("/clientoverview", response_class=HTMLResponse)
-def clientoverview_page(request: Request):
+def _clientoverview_context(
+    request: Request,
+    *,
+    import_result: dict | None = None,
+    import_error: str | None = None,
+    comparison: dict | None = None,
+    compare_error: str | None = None,
+    import_form: dict | None = None,
+    compare_form: dict | None = None,
+):
     import client_overview
+    from workbench.client import identity_gui
+
     install = settings_mod.get_ffxi_install() or "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
     ov, error = None, None
     try:
         ov = client_overview.overview(install, WORKBENCH_DB)
     except Exception as ex:
         error = f"{type(ex).__name__}: {ex}"
-    return templates.TemplateResponse(request, "client_overview.html", {"request": request, "ov": ov, "error": error})
+
+    snapshots = identity_gui.list_client_snapshots(
+        WORKBENCH_DB,
+        current_snapshot_id=(ov or {}).get("snapshot_id"),
+        current_client_path=(ov or {}).get("install") or install,
+    )
+    comparison_summary = (
+        identity_gui.summarize_comparison(comparison) if comparison is not None else None
+    )
+    entity_summary = (
+        identity_gui.summarize_entity_diagnostics(comparison.get("entity_diagnostics"))
+        if comparison is not None else None
+    )
+    return {
+        "request": request,
+        "ov": ov,
+        "error": error,
+        "snapshots": snapshots,
+        "import_result": import_result,
+        "import_error": import_error,
+        "comparison": comparison,
+        "comparison_summary": comparison_summary,
+        "entity_summary": entity_summary,
+        "compare_error": compare_error,
+        "import_form": import_form or {
+            "client_root": install,
+            "snapshot_id": "",
+            "build_label": "",
+            "region": "",
+            "language": "",
+        },
+        "compare_form": compare_form or {
+            "source_snapshot": "",
+            "target_snapshot": "",
+            "zone": "",
+            "minimum_confidence": "HIGH",
+        },
+    }
+
+
+@app.get("/clientoverview", response_class=HTMLResponse)
+def clientoverview_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "client_overview.html",
+        _clientoverview_context(request),
+    )
+
+
+@app.post("/clientoverview/import", response_class=HTMLResponse)
+def clientoverview_import(
+    request: Request,
+    client_root: str = Form(...),
+    snapshot_id: str = Form(...),
+    build_label: str = Form(...),
+    region: str = Form(""),
+    language: str = Form(""),
+):
+    from workbench.client import identity_gui
+
+    form = {
+        "client_root": client_root,
+        "snapshot_id": snapshot_id,
+        "build_label": build_label,
+        "region": region,
+        "language": language,
+    }
+    try:
+        result = identity_gui.import_client_snapshot(
+            client_root=Path(client_root),
+            snapshot_id=snapshot_id,
+            build_label=build_label,
+            region=region,
+            language=language,
+            xi_tinkerer=XI_TINKERER_CLI,
+            db_path=WORKBENCH_DB,
+            zone_db=DB_PATH,
+            snapshots_root=TOOLS_ROOT / "client_snapshots",
+        )
+        ctx = _clientoverview_context(request, import_result=result)
+    except Exception as ex:
+        ctx = _clientoverview_context(
+            request,
+            import_error=f"{type(ex).__name__}: {ex}",
+            import_form=form,
+        )
+    return templates.TemplateResponse(request, "client_overview.html", ctx)
+
+
+@app.post("/clientoverview/compare", response_class=HTMLResponse)
+def clientoverview_compare(
+    request: Request,
+    source_snapshot: str = Form(...),
+    target_snapshot: str = Form(...),
+    zone: str = Form(""),
+    minimum_confidence: str = Form("HIGH"),
+):
+    from workbench.client import identity_gui
+
+    form = {
+        "source_snapshot": source_snapshot,
+        "target_snapshot": target_snapshot,
+        "zone": zone,
+        "minimum_confidence": minimum_confidence,
+    }
+    try:
+        comparison = identity_gui.compare_client_snapshots(
+            WORKBENCH_DB,
+            source_snapshot_id=source_snapshot,
+            target_snapshot_id=target_snapshot,
+            zone_key=zone,
+            minimum_confidence=minimum_confidence,
+        )
+        ctx = _clientoverview_context(
+            request,
+            comparison=comparison,
+            compare_form=form,
+        )
+    except Exception as ex:
+        ctx = _clientoverview_context(
+            request,
+            compare_error=f"{type(ex).__name__}: {ex}",
+            compare_form=form,
+        )
+    return templates.TemplateResponse(request, "client_overview.html", ctx)
+
+
+@app.get("/clientoverview/compare.csv")
+def clientoverview_compare_csv(
+    source_snapshot: str,
+    target_snapshot: str,
+    zone: str = "",
+    minimum_confidence: str = "HIGH",
+):
+    from workbench.client import identity_gui
+
+    try:
+        report = identity_gui.compare_client_snapshots(
+            WORKBENCH_DB,
+            source_snapshot_id=source_snapshot,
+            target_snapshot_id=target_snapshot,
+            zone_key=zone,
+            minimum_confidence=minimum_confidence,
+        )
+    except Exception as ex:
+        raise HTTPException(status_code=400, detail=f"{type(ex).__name__}: {ex}") from ex
+
+    fields = [
+        "zone_key",
+        "source_actor_key",
+        "source_event_id",
+        "target_actor_key",
+        "actor_status",
+        "actor_confidence",
+        "actor_semantic_identity",
+        "actor_candidate_count",
+        "actor_reason",
+        "actor_recommendation",
+        "target_event_id",
+        "status",
+        "confidence",
+        "match_basis",
+        "source_record_id",
+        "target_record_id",
+        "reason",
+    ]
+    out = io.StringIO()
+    writer = csv.DictWriter(out, fieldnames=fields, extrasaction="ignore")
+    writer.writeheader()
+    writer.writerows(report["rows"])
+    filename = (
+        f"client-event-compare-{identity_gui.safe_snapshot_name(source_snapshot)}-"
+        f"to-{identity_gui.safe_snapshot_name(target_snapshot)}.csv"
+    )
+    return Response(
+        out.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @app.get("/dialogdrift", response_class=HTMLResponse)
@@ -6041,6 +6285,253 @@ def dialogdrift_page(request: Request):
         error = f"{type(ex).__name__}: {ex}"
     return templates.TemplateResponse(request, "dialog_drift.html", {
         "request": request, "rows": rows, "summary": ddo.summary(rows), "checked": checked, "error": error})
+
+
+@app.get("/research", response_class=HTMLResponse)
+def research_sessions_page(request: Request, created: str = ""):
+    from workbench.research.session import ResearchSessionStore
+
+    store = ResearchSessionStore(WORKBENCH_DB)
+    sessions = store.list(limit=200)
+    return templates.TemplateResponse(request, "research_sessions.html", {
+        "request": request,
+        "sessions": sessions,
+        "created": created,
+        "permission_profiles": (
+            "READ_ONLY_RESEARCH",
+            "PROPOSE_CHANGES",
+            "VALIDATION_ORCHESTRATOR",
+        ),
+    })
+
+
+@app.post("/research", response_class=HTMLResponse)
+def research_sessions_create(
+    request: Request,
+    question: str = Form(...),
+    provider: str = Form(...),
+    model: str = Form(...),
+    permission_profile: str = Form("READ_ONLY_RESEARCH"),
+    source_snapshot_id: str = Form(""),
+    target_snapshot_id: str = Form(""),
+    feature_root: str = Form(""),
+    entity_root: str = Form(""),
+    max_tool_calls: int = Form(8),
+):
+    from workbench.research.session import ResearchSessionStore
+
+    question = question.strip()
+    provider = provider.strip()
+    model = model.strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="Research question is required.")
+    if not provider:
+        raise HTTPException(status_code=400, detail="Provider is required.")
+    if not model:
+        raise HTTPException(status_code=400, detail="Model is required.")
+    if max_tool_calls < 0 or max_tool_calls > 100:
+        raise HTTPException(status_code=400, detail="Max tool calls must be between 0 and 100.")
+
+    store = ResearchSessionStore(WORKBENCH_DB)
+    try:
+        session = store.create(
+            question=question,
+            provider=provider,
+            model=model,
+            permission_profile=permission_profile,
+            source_snapshot_id=source_snapshot_id.strip() or None,
+            target_snapshot_id=target_snapshot_id.strip() or None,
+            feature_root=feature_root.strip() or None,
+            entity_root=entity_root.strip() or None,
+            budgets={"max_tool_calls": int(max_tool_calls)},
+            replay_metadata={"created_from": "gui:/research"},
+        )
+    except ValueError as ex:
+        raise HTTPException(status_code=400, detail=str(ex)) from ex
+    return RedirectResponse(
+        f"/research/{quote(session.research_session_id)}?created=1",
+        status_code=303,
+    )
+
+
+@app.get("/research/contradictions", response_class=HTMLResponse)
+def research_contradictions_page(
+    request: Request,
+    session_id: str = "",
+    subject_id: str = "",
+    evidence_type: str = "",
+):
+    from workbench.research.evidence_browser import list_contradictions
+
+    report=list_contradictions(
+        WORKBENCH_DB,
+        research_session_id=session_id.strip() or None,
+        subject_id=subject_id.strip() or None,
+        evidence_type=evidence_type.strip() or None,
+    )
+    return templates.TemplateResponse(request,"research_contradictions.html",{
+        "request":request,
+        "report":report,
+        "session_id":session_id,
+        "subject_id":subject_id,
+        "evidence_type":evidence_type,
+    })
+
+
+@app.get("/research/evidence", response_class=HTMLResponse)
+def research_evidence_page(request: Request, evidence_id: str):
+    from workbench.research.evidence_browser import evidence_record
+
+    evidence=evidence_record(WORKBENCH_DB,evidence_id)
+    if evidence is None:
+        raise HTTPException(status_code=404,detail=f"No canonical evidence '{evidence_id}'")
+    return templates.TemplateResponse(request,"research_evidence.html",{
+        "request":request,
+        "evidence":evidence,
+    })
+
+
+@app.get("/research/{research_session_id:path}", response_class=HTMLResponse)
+def research_session_detail_page(
+    request: Request,
+    research_session_id: str,
+    created: str = "",
+    run_status: str = "",
+    run_error: str = "",
+    replayed_from: str = "",
+):
+    from workbench.research.session import ResearchSessionStore
+
+    store = ResearchSessionStore(WORKBENCH_DB)
+    session = store.get(research_session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail=f"No research session '{research_session_id}'")
+    run_controls = dict((session.get("replay_metadata") or {}).get("run_controls") or {})
+    return templates.TemplateResponse(request, "research_session_detail.html", {
+        "request": request,
+        "session": session,
+        "created": created,
+        "run_status": run_status,
+        "run_error": run_error,
+        "replayed_from": replayed_from,
+        "run_defaults": {
+            "provider": session["provider"],
+            "model": session["model"],
+            "max_tool_calls": int((session.get("budgets") or {}).get("max_tool_calls", 8)),
+            "max_provider_calls": int(run_controls.get("max_provider_calls", 12)),
+            "timeout": float(run_controls.get("timeout", 120.0)),
+            "temperature": float(run_controls.get("temperature", 0.1)),
+            "provider_base_url": run_controls.get("provider_base_url") or "",
+        },
+        "has_run": bool(session.get("tool_calls") or session.get("final_report")),
+    })
+
+
+def _research_execute_from_form(
+    research_session_id: str,
+    *,
+    provider: str,
+    model: str,
+    max_tool_calls: int,
+    max_provider_calls: int,
+    timeout: float,
+    temperature: float,
+    provider_base_url: str,
+    replay: bool,
+):
+    from workbench.research.runtime import execute_session
+
+    base_url = provider_base_url.strip() or None
+    if base_url is None and provider.strip().lower().replace("_", "-") in {"openwebui", "open-webui"}:
+        con = get_con()
+        try:
+            values = settings_mod.get_all(con)
+        finally:
+            con.close()
+        base_url = values.get("llm_base_url") or None
+
+    return execute_session(
+        WORKBENCH_DB,
+        research_session_id,
+        provider_id=provider,
+        model=model,
+        max_tool_calls=max_tool_calls,
+        max_provider_calls=max_provider_calls,
+        timeout=timeout,
+        temperature=temperature,
+        provider_base_url=base_url,
+        replay=replay,
+    )
+
+
+@app.post("/research/run")
+def research_session_run(
+    research_session_id: str = Form(...),
+    provider: str = Form(...),
+    model: str = Form(...),
+    max_tool_calls: int = Form(8),
+    max_provider_calls: int = Form(12),
+    timeout: float = Form(120.0),
+    temperature: float = Form(0.1),
+    provider_base_url: str = Form(""),
+):
+    try:
+        result = _research_execute_from_form(
+            research_session_id,
+            provider=provider,
+            model=model,
+            max_tool_calls=max_tool_calls,
+            max_provider_calls=max_provider_calls,
+            timeout=timeout,
+            temperature=temperature,
+            provider_base_url=provider_base_url,
+            replay=False,
+        )
+        note = f"{result['verification_state']}: {result['provider_calls']} provider call(s), {result['tool_calls']} tool call(s)"
+        return RedirectResponse(
+            f"/research/{quote(result['research_session_id'])}?run_status={quote(note)}",
+            status_code=303,
+        )
+    except Exception as ex:
+        return RedirectResponse(
+            f"/research/{quote(research_session_id)}?run_error={quote(f'{type(ex).__name__}: {ex}')}",
+            status_code=303,
+        )
+
+
+@app.post("/research/replay")
+def research_session_replay(
+    research_session_id: str = Form(...),
+    provider: str = Form(...),
+    model: str = Form(...),
+    max_tool_calls: int = Form(8),
+    max_provider_calls: int = Form(12),
+    timeout: float = Form(120.0),
+    temperature: float = Form(0.1),
+    provider_base_url: str = Form(""),
+):
+    try:
+        result = _research_execute_from_form(
+            research_session_id,
+            provider=provider,
+            model=model,
+            max_tool_calls=max_tool_calls,
+            max_provider_calls=max_provider_calls,
+            timeout=timeout,
+            temperature=temperature,
+            provider_base_url=provider_base_url,
+            replay=True,
+        )
+        note = f"{result['verification_state']}: {result['provider_calls']} provider call(s), {result['tool_calls']} tool call(s)"
+        return RedirectResponse(
+            f"/research/{quote(result['research_session_id'])}?run_status={quote(note)}&replayed_from={quote(research_session_id)}",
+            status_code=303,
+        )
+    except Exception as ex:
+        return RedirectResponse(
+            f"/research/{quote(research_session_id)}?run_error={quote(f'{type(ex).__name__}: {ex}')}",
+            status_code=303,
+        )
 
 
 @app.get("/researchgaps", response_class=HTMLResponse)
