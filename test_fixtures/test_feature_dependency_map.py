@@ -28,11 +28,16 @@ def main():
     assert organ["evidence_id"].startswith("evidence:demo:")
 
     template=(ROOT/"gui"/"templates"/"feature_trace.html").read_text(encoding="utf-8")
-    for label in ("Progression","Acquisition","Spawn","Access","Expand visible","Collapse to root"):
+    for label in ("Progression","Acquisition","Spawn","Access","Expand visible","Collapse to root","Toggle selected branch"):
         assert label in template,label
     assert "/features/trace/closure.json" in template
     assert "REQUIREMENT_GATE" in template
     assert "Canonical root" in template
+    assert "closure-scene" in template  # pan/zoom scene, not a static grid
+    assert "marker-end:url(#closure-arrow)" in template
+    assert "event.preventDefault()" in template
+    assert "selectNode(el.dataset.node)" in template
+    assert "entity:av" not in template  # no fixture-specific renderer behavior
     gui_source=(ROOT/"gui_server.py").read_text(encoding="utf-8")
     assert "build_feature_trace_closure(con, root)" in gui_source
 
@@ -48,6 +53,10 @@ def main():
         assert not any(entry["node_id"]==root for entry in closure["unresolved"])
         assert {"entity:jol","item:fourth","item:fifth","item:sixth","mob:justice","mob:hope","mob:prudence","zone:sea","mission:cop"} <= {node["node_id"] for node in closure["nodes"]}
         assert {"SPAWNED_BY","REQUIRES_ITEMS","OBTAINED_FROM","REQUIRES_ACCESS","REQUIRES_MISSION"} <= {edge["relationship"] for edge in closure["edges"]}
+        assert any(edge["source_node"]=="entity:av" and edge["target_node"]=="entity:jol" and edge["relationship"]=="SPAWNED_BY" for edge in closure["edges"])
+        assert any(edge["source_node"]=="entity:jol" and edge["target_node"]=="item:fifth" and edge["relationship"]=="REQUIRES_ITEMS" for edge in closure["edges"])
+        assert not any(edge["source_node"]=="entity:jol" and edge["target_node"]=="entity:av" for edge in closure["edges"])
+        assert closure["cycles"]  # the explicitly declared reference cycle still survives traversal
         con.close()
 
     # Exercise the service used directly by the Feature Trace endpoint with the human
