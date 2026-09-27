@@ -462,7 +462,7 @@ Completed a real `FFXiMain.dll` deeper pass and PE32 import-thunk candidate look
 ### 2026-09-26 — Revised next-work priority
 Current ordered backlog after client snapshot GUI, Research Sessions GUI, direct Ollama provider, DAT Inspector UX cleanup, and CI stabilization:
 
-1. [ ] Safer variable-length EVENT opcode decoding to reduce `RAW_ONLY` fingerprints and improve cross-client EVENT identity matching.
+1. [x] Safer variable-length EVENT opcode decoding to reduce `RAW_ONLY` fingerprints and improve cross-client EVENT identity matching.
 2. [ ] Research Session Run / Replay controls using the bounded `ResearchRunner` with explicit provider/model/budget/timeout/run-state handling.
 3. [ ] Improve cross-client ENTITY equivalence coverage and diagnostics, especially ambiguous/unresolved target-actor mappings.
 4. [ ] Research contradiction filtering and canonical evidence drill-down across server/client/capture/runtime/reference evidence.
