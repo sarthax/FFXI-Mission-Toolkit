@@ -1593,3 +1593,34 @@ considered semantically verified.
 
 Regression coverage extends both the broader cross-fork logical normalization suite and the schema
 coverage matrix.
+
+
+## 2026-09-26 — P1 logical schema expansion: progression
+
+The server-adapter layer now covers job-point and merit definition drift without assuming that all
+forks store progression data in the same format.
+
+### Job points
+
+`job_points.sql` exists in Topaz, DSP, and pinned LSB with the same physical columns, but numeric
+`job_pointid` values drift between legacy and modern data. The logical identity is therefore
+`(job_id, name)`, while `job_point_id` remains a comparable representation field. This allows
+the Workbench to report a renumbering rather than treating the same semantic job-point entry as an
+unrelated record.
+
+### Merits
+
+Topaz and DSP store merit definitions in `merits.sql`. Modern LSB explicitly dropped that SQL
+registry and moved the definitions to `data/merits.yaml`.
+
+The adapter now has:
+
+- a legacy SQL `merits` logical mapping for Topaz/Topaz-Next/DSP;
+- an LSB YAML producer that emits the same logical `merits` record type keyed by `merit_id`;
+- shared comparable fields for `merit_id`, `name`, and `value`;
+- explicit legacy-only fields such as upgrade count, jobs mask, upgrade id, and legacy category id;
+- explicit LSB-only fields such as upgrade-cost key, category key/id, category max upgrades, and
+  resolved job-name lists.
+
+Missing representation-specific fields remain `MISSING_FIELD_VALUE`; they are not inferred.
+Regression coverage proves both legacy equivalence and the modern representation split.

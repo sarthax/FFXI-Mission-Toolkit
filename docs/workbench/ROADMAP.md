@@ -506,3 +506,12 @@ Completed/retired from the prior queue:
 - [x] Preserve physical uniqueness for item latents with the full `(item_id, modifier_id, value, latent_id, latent_parameter)` identity.
 - [x] Keep modifier and latent semantics tied to separate enum/engine evidence rather than treating numeric IDs as self-describing.
 - [ ] Continue P1 with character progression tables such as merits/job points after this tranche.
+
+
+### 2026-09-26 P1 logical schema — progression tranche
+- [x] Add source-neutral job-point registry mappings across Topaz, Topaz-Next, DSP, and LSB.
+- [x] Use semantic job-point identity `(job_id, name)` so numeric `job_pointid` drift is visible instead of becoming identity failure.
+- [x] Add legacy SQL merit mappings for Topaz, Topaz-Next, and DSP.
+- [x] Add an LSB `data/merits.yaml` producer that emits the same logical merit record type without inventing a removed SQL table.
+- [x] Preserve legacy-only and LSB-only merit representation fields as explicit missing-field drift.
+- [ ] Continue P1 with additional generic server surfaces only where cross-lineage representation can be proven.
