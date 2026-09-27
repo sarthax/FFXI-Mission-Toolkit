@@ -325,6 +325,14 @@
     },
     {
       "method": "GET",
+      "path": "/features/trace/runtime.json",
+      "home": "Features",
+      "section": "Feature Trace",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
       "path": "/features/trace/closure.json",
       "home": "Features",
       "section": "Feature Trace",
