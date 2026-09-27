@@ -58,6 +58,22 @@ def main():
     assert spawn_links[0]["target_node"]=="catalog:lsb_mob_groups:zoneid=75&groupid=38"
     assert spawn_links[0]["adapter"]=="server"
 
+    con.execute("CREATE TABLE lsb_instance_list (instanceid INTEGER, instance_name TEXT)")
+    con.execute("INSERT INTO lsb_instance_list VALUES (100,'Fixture Instance')")
+    con.execute("CREATE TABLE lsb_instance_entities (instanceid INTEGER, id INTEGER)")
+    con.execute("INSERT INTO lsb_instance_entities VALUES (?,?)",(100,zone75_mobid))
+    instance_id=f"catalog:lsb_instance_entities:instanceid=100&id={zone75_mobid}"
+    instance_node=feature_trace.node_info(con,instance_id)
+    assert instance_node["known"]
+    assert instance_node["representations"][0]["display_name"]==f"Instance 100 entity {zone75_mobid}"
+    instance_search=feature_trace.search_nodes(con,str(zone75_mobid))
+    bridge=next(row for row in instance_search if row.get("table")=="lsb_instance_entities")
+    assert bridge["node_id"]==instance_id and "id" in bridge["matched_on"]
+    instance_links=provider_relationships(con,instance_id)
+    assert {link["relationship"] for link in instance_links}=={"INSTANCE_MEMBER_OF","INSTANCE_ENTITY_MOB"},instance_links
+    assert any(link["target_node"]=="catalog:lsb_instance_list:100" for link in instance_links)
+    assert any(link["target_node"]==f"catalog:lsb_mob_spawn_points:{zone75_mobid}" for link in instance_links)
+
     group_links=provider_relationships(con,"catalog:lsb_mob_groups:zoneid=75&groupid=38")
     assert len(group_links)==1,group_links
     assert group_links[0]["relationship"]=="GROUP_USES_POOL"
