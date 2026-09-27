@@ -22,7 +22,15 @@ def main():
     ]
     missing=[item for item in required if item not in phase]
     assert not missing,f"Phase 8 missing required roadmap concepts: {missing}"
-    print("roadmap Phase 8 consolidation self-test: PASS")
+    guide=Path("docs/guides/ROADMAP.md").read_text(encoding="utf-8")
+    gui=Path("gui/templates/roadmap.html").read_text(encoding="utf-8")
+    assert "Current authoritative status — 2026-09-27" in guide
+    assert "Remaining core Workbench capabilities" in guide
+    assert "Older Toolkit features still not implemented by the rework" in guide
+    assert "Current reconciled status" in gui
+    assert "Product features outside the recent Workbench scope" in gui
+    assert "Unified remaining-feature inventory" in text
+    print("roadmap reconciliation self-test: PASS")
 
 if __name__=="__main__":
     main()
