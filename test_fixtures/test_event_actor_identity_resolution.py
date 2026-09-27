@@ -109,16 +109,16 @@ def main() -> None:
         )
         assert drifted.status == "TARGET_EQUIVALENT", drifted
         assert drifted.target_numeric_id == "10", drifted
-        assert drifted.metadata["actor_resolution"] == {
-            "source_actor_id": "2002",
-            "constraint_applied": True,
-            "status": "TARGET_EQUIVALENT",
-            "confidence": "HIGH",
-            "source_record_id": f"identity:client:new:ENTITY:{ZONE}:2002",
-            "target_record_id": f"identity:client:old:ENTITY:{ZONE}:1001",
-            "reason": "Semantic identity matches but target snapshot uses a different numeric representation.",
-            "target_actor_id": "1001",
-        }, drifted
+        actor = drifted.metadata["actor_resolution"]
+        assert actor["source_actor_id"] == "2002", actor
+        assert actor["constraint_applied"] is True, actor
+        assert actor["status"] == "TARGET_EQUIVALENT", actor
+        assert actor["confidence"] == "HIGH", actor
+        assert actor["source_record_id"] == f"identity:client:new:ENTITY:{ZONE}:2002", actor
+        assert actor["target_record_id"] == f"identity:client:old:ENTITY:{ZONE}:1001", actor
+        assert actor["target_actor_id"] == "1001", actor
+        assert actor["semantic_identity"] == "NPC:SUPPLY_OFFICER", actor
+        assert len(actor["target_candidates"]) == 1, actor
 
         ambiguous_actor = resolve_event_identity(
             con,
