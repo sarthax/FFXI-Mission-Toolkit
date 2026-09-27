@@ -107,7 +107,15 @@ def main() -> int:
             for row in payload["entities"]
         )
         assert entities==[16998862,16998863,16998864,16998865,16998866],entities
+        root_entity=next(row for row in payload["entities"] if row["metadata"]["numeric_id"]==16998862)
+        assert root_entity["display_name"]=="Medusa",root_entity
+        assert root_entity["metadata"]["template_id"]==2606,root_entity
+        assert root_entity["metadata"]["species"]=="medusa",root_entity
+        assert root_entity["metadata"]["skill_list_id"]==725,root_entity
+
         for row in payload["entities"]:
+            if row["metadata"]["numeric_id"]==16998862:
+                continue
             assert row["display_name"]=="Lamia_Exon",row
             assert row["metadata"]["template_id"]==2331,row
             assert row["metadata"]["species"]=="lamiae",row
