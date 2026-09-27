@@ -1742,3 +1742,12 @@ Focused regressions:
 - `test_fixtures/test_mission_representation.py`
 
 Next work is source extraction and canonical graph/evidence emission. The existing branching mission truth set remains a stress-validation subject; its content names do not define framework APIs.
+
+
+### Branching mission ingestion proof
+
+The existing branching mission truth set now ingests through `workbench/plugins/domain/mission_ingest.py` into the generic state-machine contract. The proof verifies nation alternatives as an `ANY` gate, zone+actor+CSID identities, Prog state ranges, key-item lifecycle semantics, and visible implementation/missing-branch gaps.
+
+The ingestion intentionally marks truth-set CSIDs as `unassigned_progress_edge` rather than guessing which exact progress transition they cause. Exact CSID → state-edge assignment is now a concrete requirement for the Lua source extractor.
+
+Regression: `test_fixtures/test_mission_truth_ingestion.py`.
