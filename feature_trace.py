@@ -15,7 +15,7 @@ from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
 
-from workbench.core.services.feature_trace_catalog import catalog_node, is_runtime_edge, runtime_hierarchy, filter_runtime_observations, search_catalog
+from workbench.core.services.feature_trace_catalog import catalog_node, is_runtime_edge, runtime_hierarchy, filter_runtime_observations, provider_relationships, search_catalog
 
 
 SCHEMA = 1
@@ -182,6 +182,12 @@ def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
 
     node_ids = sorted(visited)
     hierarchy = runtime_hierarchy(runtime_edges)
+    provider_links = provider_relationships(con, root)
+    if catalog_con is not None and catalog_con is not con:
+        provider_links.extend(
+            link for link in provider_relationships(catalog_con, root)
+            if link not in provider_links
+        )
     result = {
         "schema": SCHEMA,
         "trace_id": f"trace:{root}:{depth}:{direction}",
@@ -196,6 +202,7 @@ def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
         "runtime_observation_count": hierarchy["observation_count"],
         "runtime_group_count": hierarchy["group_count"],
         "runtime_capture_count": hierarchy["capture_count"],
+        "provider_relationships": provider_links,
         "paths": paths,
         "notes": [
             "Trace connectivity is not an implementation verdict.",
