@@ -1869,3 +1869,10 @@ Runtime evidence is summarized as opcode/semantic group → capture. Raw observa
 Relationship sections now render their own classified edge members rather than repeating the complete semantic edge list under every heading. Catalog-only objects remain valid dossier roots even when no canonical dependency edges exist.
 
 This is a presentation/navigation milestone. It does not claim that every indexed source has an explicit catalog provider yet, nor that the populated local databases were validated in this GitHub-only execution environment.
+
+
+### Feature Trace catalog provider boundary
+
+Feature Trace catalog discovery now has an explicit provider registry for the established server SQL/index families (core SQL, LandSandBoat, Topaz, and DSP). Providers declare table identity columns, display-name columns, object type, and provenance without creating canonical graph relationships.
+
+The prior schema-based table discovery remains as a compatibility fallback for custom/older indexes and is labeled `schema-fallback` in catalog provenance. This is intentionally incremental: client, capture, research, validation, and package providers can move behind the same registry later without a flag-day rewrite.
