@@ -172,6 +172,20 @@ def semantic_event_key(
     return "|".join(parts)
 
 
+def semantic_entity_key(*, zone_key: str | None, semantic_identity: str) -> str:
+    """Build an entity identity key from independently established semantics.
+
+    ``semantic_identity`` comes from entity-profile or ID-drift evidence, never from a
+    numeric actor id. Zone remains part of the key because a client actor representation is
+    meaningful only in its zone context unless a future producer supplies global evidence.
+    """
+    return "|".join((
+        "ENTITY",
+        str(zone_key or "*").strip().upper(),
+        str(semantic_identity).strip().upper(),
+    ))
+
+
 def register_snapshot(con: sqlite3.Connection, snapshot: IdentitySnapshot) -> None:
     ensure_schema(con)
     con.execute(
@@ -254,6 +268,70 @@ def ingest_dialog_records(
         upsert_record(con, record)
         out.append(record)
     return out
+
+
+def ingest_entity_identity_records(
+    con: sqlite3.Connection,
+    *,
+    snapshot_id: str,
+    zone_key: str | None,
+    entities: dict[str | int, str],
+    evidence_id_prefix: str | None = None,
+    confidence: str = "HIGH",
+    metadata: dict[str, Any] | None = None,
+) -> list[IdentityRecord]:
+    """Ingest actor/entity representations with an independently proven semantic identity.
+
+    This reuses the namespace-neutral snapshot resolver rather than treating event-DAT block
+    ids as portable. Callers supply a canonical NPC/entity symbol from existing entity-profile
+    or ID-drift evidence; numeric ids remain representations local to ``snapshot_id``.
+    """
+    out: list[IdentityRecord] = []
+    for numeric_id, semantic_identity in sorted(entities.items(), key=lambda item: str(item[0])):
+        numeric = str(numeric_id)
+        semantic = str(semantic_identity).strip()
+        if not semantic:
+            raise ValueError("entity semantic identity must be non-empty")
+        record = IdentityRecord(
+            record_id=f"identity:{snapshot_id}:ENTITY:{zone_key or '*'}:{numeric}",
+            snapshot_id=snapshot_id,
+            namespace="ENTITY",
+            semantic_key=semantic_entity_key(
+                zone_key=zone_key,
+                semantic_identity=semantic,
+            ),
+            numeric_id=numeric,
+            zone_key=zone_key,
+            evidence_id=(f"{evidence_id_prefix}:{numeric}" if evidence_id_prefix else None),
+            confidence=confidence.upper(),
+            metadata={
+                "semantic_identity": semantic,
+                "identity_basis": "external_entity_profile_or_id_drift",
+                **(metadata or {}),
+            },
+        )
+        upsert_record(con, record)
+        out.append(record)
+    return out
+
+
+def resolve_entity_identity(
+    con: sqlite3.Connection,
+    *,
+    source_snapshot_id: str,
+    target_snapshot_id: str,
+    source_actor_id: str | int,
+    zone_key: str | None,
+) -> IdentityResolution:
+    """Resolve one snapshot-local event actor into its target actor representation."""
+    return resolve_identity(
+        con,
+        source_snapshot_id=source_snapshot_id,
+        target_snapshot_id=target_snapshot_id,
+        namespace="ENTITY",
+        source_numeric_id=source_actor_id,
+        zone_key=zone_key,
+    )
 
 
 
@@ -589,11 +667,49 @@ def resolve_event_identity(
 
         source = source_rows[0]
         source_meta = json.loads(source["metadata_json"] or "{}")
-        targets = list(con.execute(
+        actor_metadata: dict[str, Any] = {
+            "source_actor_id": source["actor_key"],
+            "constraint_applied": False,
+        }
+        target_actor_key: str | None = None
+        if source_actor_key is None:
+            actor_metadata["status"] = "ACTOR_NOT_PROVIDED"
+            actor_metadata["reason"] = "No captured source actor was available to resolve."
+        else:
+            actor_resolution = resolve_entity_identity(
+                con,
+                source_snapshot_id=source_snapshot_id,
+                target_snapshot_id=target_snapshot_id,
+                source_actor_id=source["actor_key"],
+                zone_key=zone_key,
+            )
+            actor_metadata.update({
+                "status": actor_resolution.status,
+                "confidence": actor_resolution.confidence,
+                "source_record_id": actor_resolution.source_record_id,
+                "target_record_id": actor_resolution.target_record_id,
+                "reason": actor_resolution.reason,
+            })
+            if (
+                actor_resolution.status in {"EXACT", "TARGET_EQUIVALENT"}
+                and _confidence_rank(actor_resolution.confidence) >= _confidence_rank("HIGH")
+                and actor_resolution.target_numeric_id is not None
+            ):
+                target_actor_key = actor_resolution.target_numeric_id
+                actor_metadata.update({
+                    "target_actor_id": target_actor_key,
+                    "constraint_applied": True,
+                })
+
+        target_sql = (
             "SELECT * FROM identity_records "
-            "WHERE snapshot_id=? AND namespace='EVENT' AND zone_key=?",
-            (target_snapshot_id, zone_key),
-        ))
+            "WHERE snapshot_id=? AND namespace='EVENT' AND zone_key=?"
+        )
+        target_params: list[Any] = [target_snapshot_id, zone_key]
+        if target_actor_key is not None:
+            target_sql += " AND actor_key=?"
+            target_params.append(target_actor_key)
+        targets = list(con.execute(target_sql, target_params))
 
         scored: list[tuple[int, str, str, sqlite3.Row]] = []
         for target in targets:
@@ -612,6 +728,7 @@ def resolve_event_identity(
                 status="TARGET_ID_UNRESOLVED",
                 confidence="UNKNOWN",
                 reason="No target EVENT candidate matches source fingerprint evidence.",
+                metadata={"actor_resolution": actor_metadata},
                 **common,
             )
 
@@ -626,6 +743,7 @@ def resolve_event_identity(
                     "match_basis": best[0][1],
                     "candidate_ids": [x[3]["numeric_id"] for x in best],
                     "candidate_record_ids": [x[3]["record_id"] for x in best],
+                    "actor_resolution": actor_metadata,
                 },
                 **common,
             )
@@ -639,7 +757,7 @@ def resolve_event_identity(
                 target_record_id=target["record_id"],
                 confidence=confidence,
                 reason=f"Best EVENT mapping is below minimum confidence {minimum_confidence}.",
-                metadata={"match_basis": basis},
+                metadata={"match_basis": basis, "actor_resolution": actor_metadata},
                 **common,
             )
 
@@ -649,7 +767,7 @@ def resolve_event_identity(
             target_record_id=target["record_id"],
             confidence=confidence,
             reason=f"Unique target EVENT matched by {basis}.",
-            metadata={"match_basis": basis},
+            metadata={"match_basis": basis, "actor_resolution": actor_metadata},
             **common,
         )
     finally:

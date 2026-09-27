@@ -671,10 +671,40 @@ different event actors into one row.
 Before declaring identity closure complete, remaining work includes:
 
 1. test against a real second FFXI client build;
-2. add target actor/entity semantic resolution across snapshots;
+2. ingest real entity/profile/ID-drift evidence for the source and target client snapshots;
 3. decode variable-length event opcodes safely in the dependency-free path or preserve their
    richer-parser provenance when the full parser is available;
 4. extract additional stable semantic arguments such as referenced entities/resources without
    treating their raw numeric IDs as portable;
 5. feed HIGH-confidence EVENT mappings directly into Package Scope/Readiness;
 6. surface source/target snapshot selection and evidence breakdown in the ID Drift GUI.
+
+### Target actor/entity identity resolution
+
+Target event actors are now resolved through the same snapshot-aware identity model as other
+namespaces. The generic `ENTITY` namespace stores an actor's snapshot-local numeric
+representation alongside a semantic entity identity supplied by existing entity-profile or
+ID-drift evidence. It does not derive semantic identity from the event-DAT block id.
+
+The resolver chain is:
+
+```text
+capture actor id
+  -> source EVENT block
+  -> source ENTITY semantic identity
+  -> target ENTITY actor id
+  -> target EVENT candidates restricted to that actor
+  -> ranked event fingerprint resolution
+```
+
+Only `EXACT` or `TARGET_EQUIVALENT` ENTITY mappings at `HIGH` or `VERIFIED` confidence apply the
+target actor constraint. Missing, ambiguous, or low-confidence entity mappings leave the ranked
+event resolver unconstrained and record the actor-resolution outcome in the event result metadata.
+This preserves valid event evidence without copying a raw source actor/server id into the target
+or guessing between duplicate target actors.
+
+`ingest_entity_identity_records` is the explicit bridge for profile/ID-drift evidence. It accepts
+the snapshot-local actor id and an already-established semantic entity symbol; raw actor ids alone
+are never sufficient. The deterministic actor regression covers drifted actor ids, repeated target
+CSIDs under different actors, ambiguous source entity evidence, unresolved mappings, and stable
+same-actor mappings.

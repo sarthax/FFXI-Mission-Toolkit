@@ -1310,3 +1310,23 @@ capture identity bridge self-test: PASS
 
 The next external validation gate is no longer synthetic: ingest a second real FFXI client build and
 inspect actual cross-build EVENT drift/ambiguity distributions.
+
+
+## 2026-09-26 — Target actor/entity identity resolution
+
+EVENT resolution now treats target actor identity as independent evidence rather than assuming
+source and target actor/server IDs are portable.
+
+Implemented:
+
+- generic snapshot-aware `ENTITY` records and source-to-target entity resolution in
+  `workbench/core/services/identity_resolver.py`;
+- explicit ingestion of numeric actor representations only when a semantic entity symbol is
+  already established by entity-profile or ID-drift evidence;
+- HIGH/VERIFIED actor mappings constrain target EVENT candidates to the mapped target actor;
+- unresolved, ambiguous, and low-confidence actor mappings retain their outcome in EVENT result
+  metadata and safely use the existing fingerprint ranking without a target-actor guess.
+
+Regression: `test_event_actor_identity_resolution.py` proves actor-ID drift, duplicate target
+event candidates under separate actors, ambiguous entity identity, unresolved actor mapping, and
+same-actor exact mapping. The fixture is included in Workbench Regression.
