@@ -22,6 +22,14 @@ class CatalogProvider:
     domain: str
     tables: tuple[CatalogTable, ...]
 
+@dataclass(frozen=True)
+class CatalogLink:
+    source_table: str
+    source_column: str
+    target_table: str
+    target_column: str
+    relationship: str
+
 _COMMON_SERVER_TABLES=(
     CatalogTable("item_basic","itemid","name","ITEM"),
     CatalogTable("item_equipment","itemid","name","ITEM_EQUIPMENT"),
@@ -90,3 +98,12 @@ PROVIDERS=(
 
 def provider_tables():
     return {table.table:(provider,table) for provider in PROVIDERS for table in provider.tables}
+
+
+PROVIDER_LINKS=(
+    CatalogLink("identity_records","snapshot_id","identity_snapshots","snapshot_id","IN_CLIENT_SNAPSHOT"),
+    CatalogLink("research_proposals","research_session_id","research_sessions","research_session_id","FROM_RESEARCH_SESSION"),
+    CatalogLink("validation_results","run_id","validation_runs","run_id","FROM_VALIDATION_RUN"),
+    CatalogLink("migration_actions","migration_id","migrations","migration_id","IN_MIGRATION"),
+    CatalogLink("package_scope_reviews","migration_id","migrations","migration_id","REVIEWS_MIGRATION"),
+)

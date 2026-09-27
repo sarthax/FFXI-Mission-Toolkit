@@ -1909,3 +1909,19 @@ Current examples include:
 Where a stable GUI detail route already exists, the dossier also exposes an internal "Open source view" link. Provider IDs used in path parameters are URL-encoded before rendering.
 
 This is inspection metadata only. It does not alter dependency topology, evidence authority, validation status, or migration readiness.
+
+
+### Source-native provider links
+
+Feature Trace now exposes a small set of exact source-schema links for catalog-only records without promoting those links into canonical graph topology.
+
+Current links:
+- client identity record -> client snapshot;
+- research proposal -> research session;
+- validation result -> validation run;
+- migration action -> migration;
+- package scope review -> migration.
+
+These links are one-way and source-native by design. Reverse one-to-many expansion is not performed, preventing client snapshots, runs, or migrations from exploding into large catalog trees. Users can follow a link to the related catalog root and inspect it there.
+
+The catalog resolver now checks both `workbench.db` and `ffxi_zone_database.db` when a second catalog connection is supplied. This fixes a boundary bug where Workbench-native catalog results (Client/Research/Validation/Packages) could appear in search but fail to resolve when opened from the GUI.

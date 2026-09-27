@@ -10,7 +10,7 @@ import json
 import sqlite3
 from urllib.parse import quote
 
-from workbench.core.services.feature_trace_providers import provider_tables
+from workbench.core.services.feature_trace_providers import PROVIDER_LINKS, provider_tables
 
 
 CANONICAL_TABLES = (
@@ -109,6 +109,61 @@ def catalog_node(con: sqlite3.Connection, node_id: str):
             return {"node_id":node_id,"known":True,"representations":[{"table":table,"node_id":node_id,"node_type":object_type,"display_name":row[1],"metadata":metadata}]}
     return None
 
+
+
+def provider_relationships(con: sqlite3.Connection, node_id: str) -> list[dict]:
+    """Return exact source-native links for a catalog node without adding graph edges."""
+    if not node_id.startswith("catalog:"):
+        return []
+    _,table,raw=node_id.split(":",2)
+    specs={candidate:(key,name,provider_id,domain,object_type,spec)
+           for candidate,key,name,provider_id,domain,object_type,spec in _indexed_specs(con)}
+    if table not in specs:
+        return []
+    key,_name,_provider_id,_domain,_object_type,_spec=specs[table]
+    columns=_columns(con,table)
+    links=[]
+    for link in PROVIDER_LINKS:
+        if link.source_table!=table:
+            continue
+        if link.source_column.lower() not in columns:
+            continue
+        target_specs=specs.get(link.target_table)
+        if target_specs is None:
+            continue
+        target_columns=_columns(con,link.target_table)
+        if link.target_column.lower() not in target_columns:
+            continue
+        source_column=columns[link.source_column.lower()]
+        target_key=target_specs[0]
+        target_column=target_columns[link.target_column.lower()]
+        value_row=con.execute(
+            f"SELECT {source_column} FROM {table} WHERE CAST({key} AS TEXT)=?",
+            (raw,),
+        ).fetchone()
+        if not value_row or value_row[0] is None:
+            continue
+        target_matches=con.execute(
+            f"SELECT {target_key} FROM {link.target_table} WHERE CAST({target_column} AS TEXT)=? LIMIT 2",
+            (str(value_row[0]),),
+        ).fetchall()
+        if len(target_matches)!=1:
+            continue
+        target_raw=str(target_matches[0][0])
+        target_node=_catalog_id(link.target_table,target_raw)
+        target=catalog_node(con,target_node)
+        if target is None:
+            continue
+        rep=(target.get("representations") or [{}])[0]
+        links.append({
+            "relationship":link.relationship,
+            "source_node":node_id,
+            "target_node":target_node,
+            "target_name":rep.get("display_name") or target_raw,
+            "target_type":rep.get("node_type") or "UNKNOWN",
+            "provider_native":True,
+        })
+    return links
 
 def relationship_section(edge):
     rel = (edge.get("relationship") or "").upper()
