@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 from workbench.plugins.domain.mission_lsb_extract import (
-    chain_event_transitions, correlate_lsb_handlers, extract_dynamic_completion_gate, extract_mission_reward_metadata, extract_section_completion_gate,
+    chain_event_transitions, client_transport_effects, correlate_lsb_handlers, extract_dynamic_completion_gate, extract_mission_reward_metadata, extract_section_completion_gate,
 )
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -36,15 +36,19 @@ def main():
     assert any(e.effect=="COMPLETE_TRADE" for t in raw.transitions for e in t.effects),raw.transitions
     reward=extract_mission_reward_metadata(SOURCE)
     assert reward["title"]=="TREADER_OF_AN_ICY_PAST",reward
-    gaps={
-        "client_transport_annotation":"handled by the client" in SOURCE,
-        "priority":"setPriority" in SOURCE,
-        "helper_call_gate":"isMissionComplete(player)" in SOURCE,
-    }
-    assert all(gaps.values()),gaps
+    transports=client_transport_effects(SOURCE)
+    assert transports and transports[0].effect=="CLIENT_TRANSPORT",transports
+    assert any(t.metadata.get("priority")==995 for t in raw.transitions),raw.transitions
+    complete_handlers=[t for t in raw.transitions if any(e.effect=="COMPLETE" for e in t.effects)]
+    assert complete_handlers,raw.transitions
+    assert any(
+        t.gate and {"mission_status:LOUVERANCE","mission_status:TENZEN","mission_status:ULMIA"} <= {c.subject for c in t.gate.conditions}
+        for t in complete_handlers
+    ),complete_handlers
+    gaps={}
     print("Three Paths real-source stress: PASS")
     print("raw_transitions",len(raw.transitions),"chained_transitions",len(chained.transitions),"channels",len(raw.channels))
-    print("exposed_gaps",",".join(gaps))
+    print("exposed_gaps",",".join(gaps) or "none_in_current_probe")
     return 0
 
 if __name__=="__main__":
