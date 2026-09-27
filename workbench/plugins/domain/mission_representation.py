@@ -4,6 +4,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable
 
+from .mission_state_machine import MissionStateMachine, analyze_state_machine
+
 
 @dataclass(frozen=True)
 class MissionRequirement:
@@ -53,3 +55,29 @@ def plan_mission_representation(
         missing_requirement_ids=tuple(sorted(missing)),
         represented_requirement_ids=tuple(sorted(represented)),
     )
+
+
+def requirements_from_state_machine(machine: MissionStateMachine) -> tuple[MissionRequirement, ...]:
+    """Project a behavioral state machine into representation requirements.
+
+    This keeps migration planning representation-oriented while letting source
+    analyzers describe branching behavior and lifecycle semantics explicitly.
+    """
+    analysis=analyze_state_machine(machine)
+    requirements=[]
+    for transition in machine.transitions:
+        evidence=tuple(transition.evidence_ids)
+        description=f"{transition.from_state} -> {transition.to_state} via {transition.trigger}"
+        if transition.event:
+            description+=f" [{transition.event.key}]"
+        requirements.append(MissionRequirement(
+            requirement_id=f"transition:{transition.transition_id}",
+            description=description,
+            evidence=evidence,
+        ))
+    for subject,effects in analysis.lifecycle_subjects.items():
+        requirements.append(MissionRequirement(
+            requirement_id=f"lifecycle:{subject}",
+            description=f"Lifecycle for {subject}: {', '.join(effects)}",
+        ))
+    return tuple(requirements)
