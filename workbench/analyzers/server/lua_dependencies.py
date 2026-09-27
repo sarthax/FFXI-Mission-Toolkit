@@ -246,6 +246,70 @@ def analyze_script(
             refs.setdefault(key, {"line": _line(text, match.start()), "basis": "ID_MOB_RANGE"})
 
     zone_entities = (zone_data or {}).get("entities") or {}
+
+    # Bind a zone mob script to its owning concrete entity only when the script stem maps to
+    # exactly one entity/template in the supplied zone data. Generic scripts shared by multiple
+    # entities intentionally remain unresolved.
+    if zone_data is not None:
+        script_stem=script.stem
+        owning=[
+            (entity_id,row)
+            for entity_id,row in zone_entities.items()
+            if str(row.get("template") or "")==script_stem
+            or str(row.get("script") or "")==script_stem
+        ]
+        unique_owners={entity_id:row for entity_id,row in owning}
+        if len(unique_owners)==1:
+            entity_id,row=next(iter(unique_owners.items()))
+            target_node=_entity_node_id(sid,zone_id,entity_id)
+            entities[target_node]=Entity(
+                target_node,
+                "SERVER_ENTITY",
+                str(row.get("template") or entity_id),
+                metadata={
+                    **dict(row),
+                    "zone_id":zone_id,
+                    "numeric_id":entity_id,
+                    "source_snapshot_id":sid,
+                },
+            )
+            eid=_evidence_id(sid,rel,1,"script-entity",str(entity_id))
+            evidence[eid]=Evidence(
+                eid,"SERVER",rel,rel,sid,
+                f"Zone mob script {rel} uniquely maps to entity {entity_id} via template/script name {script_stem}.",
+            )
+            edges.append(DependencyEdge(
+                edge_id=f"lua-script-entity:{_slug(sid + rel + str(entity_id))}",
+                source_node=source_artifact_id,
+                target_node=target_node,
+                relationship="REFERENCES",
+                evidence_id=eid,
+                confidence="VERIFIED",
+                status="DISCOVERED",
+                discovered_by="lua_dependency_discovery",
+                source_location=rel,
+                notes="UNIQUE_ZONE_SCRIPT_ENTITY_BINDING",
+                source_snapshot_id=sid,
+            ))
+        elif len(unique_owners)>1:
+            eid=_evidence_id(sid,rel,1,"script-entity-ambiguous",script_stem)
+            evidence[eid]=Evidence(
+                eid,"SERVER",rel,rel,sid,
+                f"Zone mob script {rel} matches multiple concrete entities; no owning entity was selected.",
+            )
+            findings.append(Finding(
+                finding_id=f"finding:lua-script-entity:{_slug(eid)}",
+                analysis_id="lua-dependency-discovery",
+                subject_id=source_artifact_id,
+                field="script_entity_binding",
+                value={"script_stem":script_stem,"candidate_entity_ids":sorted(unique_owners)},
+                status="UNKNOWN",
+                confidence="UNKNOWN",
+                evidence_id=eid,
+                source_snapshot_id=sid,
+                notes=["Multiple zone entities share this script/template name; binding remains unresolved."],
+            ))
+
     for (symbol, offset), ref in sorted(refs.items()):
         line = int(ref["line"])
         base = symbols.get(symbol)
@@ -349,6 +413,7 @@ def analyze_script(
         "edges": [_record(x) for x in edges],
         "summary": {
             "require_dependencies": sum(1 for edge in edges if edge.edge_id.startswith("lua-require:")),
+            "script_entity_bindings": sum(1 for edge in edges if edge.edge_id.startswith("lua-script-entity:")),
             "entity_dependencies": sum(1 for edge in edges if edge.edge_id.startswith("lua-entity:")),
             "unresolved_findings": len(findings),
         },
