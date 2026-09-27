@@ -816,11 +816,13 @@ def compare_event_snapshots(
             source_actor_key=source["actor_key"],
             minimum_confidence=minimum_confidence,
         )
+        actor_resolution = resolution.metadata.get("actor_resolution") or {}
         result = {
             "source_record_id": source["record_id"],
             "zone_key": source["zone_key"],
             "source_actor_key": source["actor_key"],
             "source_event_id": source["numeric_id"],
+            "target_actor_key": actor_resolution.get("target_actor_id"),
             "target_event_id": resolution.target_numeric_id,
             "status": resolution.status,
             "confidence": resolution.confidence,
