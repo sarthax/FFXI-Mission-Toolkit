@@ -1568,3 +1568,28 @@ or client capability. Those remain separate dependency/evidence surfaces.
 Regression coverage extends the existing broader logical-schema and cross-profile coverage tests.
 P1 remains open for additional generic surfaces such as item modifiers/latents and progression
 tables.
+
+
+## 2026-09-26 — P1 logical schema expansion: item modifiers and latents
+
+The server-adapter schema now covers three additional generic equipment-effect surfaces across
+Topaz, Topaz-Next, DSP, and pinned LSB:
+
+- `item_mods` → logical `item_modifiers`;
+- `item_mods_pet` → logical `item_pet_modifiers`;
+- `item_latents` → logical `item_latents`.
+
+The audited physical shapes are compatible across the three server lineages. Logical identities
+preserve physical uniqueness:
+
+- item modifier: `(item_id, modifier_id)`;
+- pet item modifier: `(item_id, modifier_id, pet_type)`;
+- latent item modifier:
+  `(item_id, modifier_id, value, latent_id, latent_parameter)`.
+
+This intentionally models only the SQL assignment records. Modifier IDs, pet-type values, latent
+condition IDs, and runtime behavior still require enum/engine evidence before migration can be
+considered semantically verified.
+
+Regression coverage extends both the broader cross-fork logical normalization suite and the schema
+coverage matrix.
