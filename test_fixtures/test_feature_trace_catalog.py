@@ -65,6 +65,17 @@ def main():
     graph=sqlite3.connect(":memory:")
     graph.execute("CREATE TABLE entities (entity_id TEXT, entity_type TEXT, display_name TEXT, metadata_json TEXT)")
     graph.execute("CREATE TABLE entity_relationships (relationship_id TEXT, source_node TEXT, target_node TEXT, relationship TEXT, evidence_id TEXT, confidence TEXT, status TEXT, metadata_json TEXT, source_snapshot_id TEXT)")
+    graph.execute("CREATE TABLE validation_runs (run_id TEXT, name TEXT)")
+    graph.execute("INSERT INTO validation_runs VALUES ('run:graph','Graph-side validation')")
+    graph.execute("CREATE TABLE validation_results (validation_id TEXT, validation_type TEXT, run_id TEXT)")
+    graph.execute("INSERT INTO validation_results VALUES ('validation:graph','EVENT_MATCH','run:graph')")
+    graph_trace=feature_trace.trace(graph,"catalog:validation_results:validation:graph",3,"both",con)
+    graph_dossier=build_dossier(graph_trace)
+    assert graph_dossier["identity"]["provider"]=="validation"
+    assert graph_dossier["provider_relationship_count"]==1
+    assert graph_dossier["provider_relationships"][0]["relationship"]=="FROM_VALIDATION_RUN"
+    assert graph_dossier["provider_relationships"][0]["target_node"]=="catalog:validation_runs:run:graph"
+    assert not graph_trace["edges"]
     client_trace=feature_trace.trace(graph,"catalog:identity_snapshots:client:2022",3,"both",con)
     client_dossier=build_dossier(client_trace)
     assert client_dossier["identity"]["provider"]=="client-identity"
@@ -99,6 +110,7 @@ def main():
     assert "grouped without expanding semantic topology" in template
     assert "Evidence Dossier" in template
     assert "Source details" in template and "Open source view" in template
+    assert "Source-native links" in template
     assert "section.edges" in template and "{% for edge in result.edges %}" not in template
     assert "/features/trace/runtime.json" in template
     assert "runtimeEsc(e.relationship)" in template
