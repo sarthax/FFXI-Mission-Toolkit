@@ -466,7 +466,7 @@ Current ordered backlog after client snapshot GUI, Research Sessions GUI, direct
 2. [x] Research Session Run / Replay controls using the bounded `ResearchRunner` with explicit provider/model/budget/timeout/run-state handling.
 3. [x] Improve cross-client ENTITY equivalence coverage and diagnostics, including portable client ENTITY-name ingestion, ambiguous/unresolved target-actor diagnostics, and actor-constraint visibility in EVENT comparison.
 4. [x] Research contradiction filtering and canonical evidence drill-down across server/client/capture/runtime/reference evidence.
-5. [ ] Continue P1 logical schema expansion beyond the completed P0 core mappings.
+5. [x] Continue P1 logical schema expansion beyond the completed P0 core mappings — completed through combat registries, item modifiers/latents, progression, and combat-support tables; further schema additions are opportunistic rather than a blocker.
 
 Completed/retired from the prior queue:
 - [x] Automatic client ENTITY ingestion/actor-aware EVENT comparison foundation exists; remaining work is equivalence quality/diagnostics rather than basic ingestion.
@@ -496,7 +496,7 @@ Completed/retired from the prior queue:
 - [x] Add source-neutral logical mappings for mob skills and mob skill-list membership.
 - [x] Preserve modern LSB-only ability/weapon-skill radius and mob-skill AOE radius as explicit schema drift rather than projecting those fields onto legacy forks.
 - [x] Keep runtime Lua/C++ effect behavior outside the SQL registry record; registry presence is not proof that the behavior implementation exists.
-- [ ] Continue P1 with generic item modifier/latent and character progression tables after this tranche.
+- [x] Continue P1 with generic item modifier/latent and character progression tables after this tranche.
 
 
 ### 2026-09-26 P1 logical schema — item modifier tranche
@@ -505,7 +505,7 @@ Completed/retired from the prior queue:
 - [x] Add source-neutral logical mappings for conditional item latents.
 - [x] Preserve physical uniqueness for item latents with the full `(item_id, modifier_id, value, latent_id, latent_parameter)` identity.
 - [x] Keep modifier and latent semantics tied to separate enum/engine evidence rather than treating numeric IDs as self-describing.
-- [ ] Continue P1 with character progression tables such as merits/job points after this tranche.
+- [x] Continue P1 with character progression tables such as merits/job points after this tranche.
 
 
 ### 2026-09-26 P1 logical schema — progression tranche
@@ -514,7 +514,7 @@ Completed/retired from the prior queue:
 - [x] Add legacy SQL merit mappings for Topaz, Topaz-Next, and DSP.
 - [x] Add an LSB `data/merits.yaml` producer that emits the same logical merit record type without inventing a removed SQL table.
 - [x] Preserve legacy-only and LSB-only merit representation fields as explicit missing-field drift.
-- [ ] Continue P1 with additional generic server surfaces only where cross-lineage representation can be proven.
+- [x] Continue P1 with additional generic server surfaces only where cross-lineage representation can be proven.
 
 
 ### 2026-09-26 P1 logical schema — combat support tranche
@@ -523,4 +523,10 @@ Completed/retired from the prior queue:
 - [x] Add level-indexed skill-cap curves for rank buckets r0-r13.
 - [x] Add per-job skill-rank mappings for all supported jobs in the audited schemas.
 - [x] Preserve modifier namespace semantics as an enum/engine dependency rather than inferring meaning from numeric IDs alone.
-- [ ] Continue P1 only with additional generic cross-lineage surfaces that materially improve dependency tracing.
+- [x] Current prioritized P1 expansion is complete; future generic cross-lineage surfaces may be added opportunistically when they materially improve dependency tracing.
+
+### 2026-09-26 Revised priority queue completion
+- [x] All five items in the 2026-09-26 revised next-work priority are complete.
+- [x] P1 logical schema expansion is no longer a blocking queue item after four evidence-backed tranches.
+- [x] Future schema additions remain allowed when a concrete feature/package exposes a missing generic dependency surface.
+- [x] Resume subsequent roadmap work from the next open phase item rather than treating schema breadth as an unbounded prerequisite.
