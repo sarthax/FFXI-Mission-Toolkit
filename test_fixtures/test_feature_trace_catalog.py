@@ -19,7 +19,13 @@ def main():
     matches=feature_trace.search_nodes(con,"cOiL")
     assert len(matches)==3 and {m["node_id"] for m in matches if m["catalog_only"]}=={"catalog:sql_item_basic:2413","catalog:sql_item_basic:8583"}
     assert feature_trace.node_info(con,"catalog:sql_item_basic:2413")["known"]
-    assert feature_trace.node_info(con,"catalog:sql_item_basic:2413")["representations"][0]["metadata"]["numeric_id"]==2413
+    rep=feature_trace.node_info(con,"catalog:sql_item_basic:2413")["representations"][0]
+    assert rep["metadata"]["numeric_id"]==2413 and rep["metadata"]["provider"]=="server-sql"
+    assert next(m for m in matches if m["node_id"]=="catalog:sql_item_basic:2413")["provider"]=="server-sql"
+    con.execute("CREATE TABLE custom_objects (id INTEGER, name TEXT)")
+    con.execute("INSERT INTO custom_objects VALUES (77,'Fallback Probe')")
+    fallback=feature_trace.search_nodes(con,"Fallback Probe")
+    assert fallback[0]["provider"]=="schema-fallback"
     assert len(feature_trace.search_nodes(con,"2413"))==1
     assert len(feature_trace.search_nodes(con,"Coiler"))==3  # ambiguity remains visible
     graph=sqlite3.connect(":memory:")

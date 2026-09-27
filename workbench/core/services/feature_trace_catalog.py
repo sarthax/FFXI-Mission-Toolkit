@@ -9,6 +9,8 @@ from __future__ import annotations
 import json
 import sqlite3
 
+from workbench.core.services.feature_trace_providers import provider_tables
+
 
 CANONICAL_TABLES = (
     ("entities", "entity_id", "entity_type", "display_name", "metadata_json"),
@@ -44,15 +46,24 @@ def _catalog_id(table, value):
 
 
 def _indexed_specs(con):
-    """Yield real index tables with a stable ID/name pair; schema is the contract."""
-    for table in _tables(con):
-        if table in {x[0] for x in CANONICAL_TABLES} or table == "entity_relationships":
+    """Yield explicit provider tables first, then compatibility-discovered tables."""
+    available=set(_tables(con))
+    claimed=set()
+    for table,(provider,spec) in provider_tables().items():
+        if table not in available:
             continue
-        cols = _columns(con, table)
-        key = next((cols[x] for x in ID_COLUMNS if x in cols), None)
-        name = next((cols[x] for x in NAME_COLUMNS if x in cols), None)
+        cols=_columns(con,table)
+        if spec.id_column.lower() in cols and spec.name_column.lower() in cols:
+            claimed.add(table)
+            yield table,cols[spec.id_column.lower()],cols[spec.name_column.lower()],provider.provider_id,provider.domain,spec.object_type
+    for table in sorted(available-claimed):
+        if table in {x[0] for x in CANONICAL_TABLES} or table=="entity_relationships":
+            continue
+        cols=_columns(con,table)
+        key=next((cols[x] for x in ID_COLUMNS if x in cols),None)
+        name=next((cols[x] for x in NAME_COLUMNS if x in cols),None)
         if key and name:
-            yield table, key, name
+            yield table,key,name,"schema-fallback",table.split("_",1)[0],table.removeprefix("sql_").removeprefix("lsb_").removeprefix("dsp_").removeprefix("topaz_").upper()
 
 
 def search_catalog(con: sqlite3.Connection, term: str, limit: int = 200):
@@ -64,9 +75,9 @@ def search_catalog(con: sqlite3.Connection, term: str, limit: int = 200):
             continue
         for row in con.execute(f"SELECT {key},{kind},{name} FROM {table} WHERE lower({key}) LIKE ? OR lower({name}) LIKE ? ORDER BY {key} LIMIT ?", (pattern, pattern, limit)):
             rows.append({"node_id": row[0], "node_type": row[1], "display_name": row[2], "domain": "canonical", "source": table, "table": table, "catalog_only": False})
-    for table, key, name in _indexed_specs(con):
+    for table,key,name,provider_id,domain,object_type in _indexed_specs(con):
         for value, display in con.execute(f"SELECT {key},{name} FROM {table} WHERE lower(CAST({key} AS TEXT)) LIKE ? OR lower(COALESCE({name},'')) LIKE ? ORDER BY {key} LIMIT ?", (pattern, pattern, limit)):
-            rows.append({"node_id": _catalog_id(table, value), "node_type": table.removeprefix("sql_").removeprefix("lsb_").removeprefix("dsp_").removeprefix("topaz_").upper(), "display_name": display, "domain": table.split("_", 1)[0], "source": table, "table": table, "catalog_only": True, "numeric_id": value})
+            rows.append({"node_id":_catalog_id(table,value),"node_type":object_type,"display_name":display,"domain":domain,"source":table,"table":table,"provider":provider_id,"catalog_only":True,"numeric_id":value})
     rows.sort(key=lambda r: (str(r.get("display_name") or "").casefold(), r["node_id"]))
     return rows[:limit]
 
@@ -77,12 +88,12 @@ def catalog_node(con: sqlite3.Connection, node_id: str):
     _, table, raw = node_id.split(":", 2)
     if table not in _tables(con):
         return None
-    for candidate, key, name in _indexed_specs(con):
+    for candidate,key,name,provider_id,domain,object_type in _indexed_specs(con):
         if candidate != table:
             continue
         row = con.execute(f"SELECT {key},{name} FROM {table} WHERE CAST({key} AS TEXT)=?", (raw,)).fetchone()
         if row:
-            return {"node_id": node_id, "known": True, "representations": [{"table": table, "node_id": node_id, "node_type": table.upper(), "display_name": row[1], "metadata": {"catalog_only": True, "numeric_id": row[0], "source_table": table}}]}
+            return {"node_id": node_id, "known": True, "representations": [{"table": table, "node_id": node_id, "node_type":object_type,"display_name":row[1],"metadata":{"catalog_only":True,"numeric_id":row[0],"source_table":table,"provider":provider_id,"domain":domain}}]}
     return None
 
 
