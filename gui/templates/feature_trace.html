@@ -52,6 +52,14 @@
 {% if dossier.identity.details %}
 <tr><th>Source details</th><td>{% for key,value in dossier.identity.details.items() %}{% if value is not none and value != "" %}<div><span class="chip">{{ key }}</span> {{ value }}</div>{% endif %}{% endfor %}</td></tr>
 {% endif %}
+{% if dossier.provider_relationships %}
+<tr><th>Source-native links</th><td>
+  <div class="muted">Exact relationships stored by the source schema; these are navigation links, not canonical semantic graph edges.</div>
+  {% for link in dossier.provider_relationships %}
+  <div><span class="chip">{{ link.relationship }}</span> <a class="zonelink" href="/features/trace?q={{ link.target_node|urlencode }}">{{ link.target_name }}</a> <span class="muted">({{ link.target_type }})</span></div>
+  {% endfor %}
+</td></tr>
+{% endif %}
 {% for facet in dossier.facets %}
 <tr><th>{{ facet.name }}</th><td><strong>{{ facet.count }}</strong>{% if facet.capture_count is defined %} observation(s) across {{ facet.capture_count }} capture(s), {{ facet.group_count }} group(s){% else %} relationship(s){% endif %}</td></tr>
 {% endfor %}
