@@ -31,7 +31,9 @@ def _json_value(raw):
 
 
 def node_info(con: sqlite3.Connection, node_id: str, catalog_con: sqlite3.Connection | None = None) -> dict:
-    indexed = catalog_node(catalog_con or con, node_id)
+    indexed = catalog_node(con, node_id)
+    if indexed is None and catalog_con is not None and catalog_con is not con:
+        indexed = catalog_node(catalog_con, node_id)
     if indexed is not None:
         return indexed
     sources = []
