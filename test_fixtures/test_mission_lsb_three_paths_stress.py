@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 from workbench.plugins.domain.mission_lsb_extract import (
-    chain_event_transitions, correlate_lsb_handlers, extract_section_completion_gate,
+    chain_event_transitions, correlate_lsb_handlers, extract_dynamic_completion_gate, extract_mission_reward_metadata, extract_section_completion_gate,
 )
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -26,18 +26,20 @@ def main():
     assert expected <= events,expected-events
     assert "TRADE" in {t.trigger for t in chained.transitions}
     assert "MOB_DEATH" in {t.trigger for t in chained.transitions}
-    completion=extract_section_completion_gate(SOURCE)
-    # Existing two-channel heuristic is not sufficient for helper-loop convergence.
+    completion=extract_dynamic_completion_gate(SOURCE)
+    assert completion and completion.logic=="ALL",completion
+    assert {c.subject for c in completion.conditions}=={"mission_status:LOUVERANCE","mission_status:TENZEN","mission_status:ULMIA"},completion
+    assert all(c.value==14 for c in completion.conditions),completion
+    assert any(c.operator=="NE" for t in raw.transitions if t.gate for c in t.gate.conditions),raw.transitions
+    assert any(c.operator=="AT_POSITION" for t in raw.transitions if t.gate for c in t.gate.conditions),raw.transitions
+    assert any(e.effect=="SPAWN_ENTITY" and "DISASTER_IDOL" in e.subject for t in raw.transitions for e in t.effects),raw.transitions
+    assert any(e.effect=="COMPLETE_TRADE" for t in raw.transitions for e in t.effects),raw.transitions
+    reward=extract_mission_reward_metadata(SOURCE)
+    assert reward["title"]=="TREADER_OF_AN_ICY_PAST",reward
     gaps={
-        "helper_completion_function":"local function isMissionComplete" in SOURCE,
-        "dynamic_status_channel_loop":"for pathArg = xi.mission.status.COP.LOUVERANCE" in SOURCE,
-        "not_equal_guard":"~=" in SOURCE,
-        "position_guard":"player:getXPos() == 220" in SOURCE,
-        "pop_from_qm":"npcUtil.popFromQM" in SOURCE,
-        "trade_complete":"player:tradeComplete()" in SOURCE,
-        "client_transport":"handled by the client" in SOURCE,
-        "reward_title":"mission.reward" in SOURCE and "title" in SOURCE,
+        "client_transport_annotation":"handled by the client" in SOURCE,
         "priority":"setPriority" in SOURCE,
+        "helper_call_gate":"isMissionComplete(player)" in SOURCE,
     }
     assert all(gaps.values()),gaps
     print("Three Paths real-source stress: PASS")
