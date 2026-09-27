@@ -1408,3 +1408,36 @@ or successful answer.
 Regression coverage in `test_research_provider.py` is no-network and verifies Open WebUI
 compatibility, Ollama Direct model/capability/chat normalization, provider selection, and explicit
 unsupported-provider behavior.
+
+## 2026-09-26 — DAT Inspector UX cleanup
+
+The Client > DAT Inspector has been upgraded from a raw numeric-ID/raw-JSON utility into a
+user-facing client-resource inspection workflow.
+
+Selection now supports three entry paths:
+
+- direct numeric DAT ID;
+- zone + common DAT family, with the DAT ID derived automatically;
+- direct client-relative DAT path such as `ROM/7/44.DAT`.
+
+The zone selector is populated from the toolkit's canonical zone database when available. Direct
+paths are restricted to files inside the configured FFXI client root and must resolve to a
+`.DAT` file.
+
+Results now present:
+
+- file identity, DAT ID/family hint, ROM-relative path, size, and SHA-256;
+- previous/next DAT navigation for ID-based inspection;
+- successful vs rejected parser counts;
+- human-readable parser labels and compact decoded summaries;
+- collection counts/field names when a parser returns structured data;
+- expandable decoded previews instead of unconditional raw JSON dumps;
+- a 64-byte hex/ASCII header view for unsupported or unknown DAT formats;
+- rejected parser diagnostics in a collapsed table.
+
+The underlying parser strategy remains conservative: multiple successful parsers are shown as
+separate compatible interpretations rather than forcing one guessed file type.
+
+Focused regression coverage is in `test_fixtures/test_gui_dat_inspector.py` and includes
+zone/family ID derivation, client-root path safety, parser summaries, result rendering, navigation,
+and selection-mode wiring.
