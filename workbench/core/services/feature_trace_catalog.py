@@ -10,6 +10,7 @@ import json
 import sqlite3
 from urllib.parse import quote, unquote
 
+from workbench.adapters.servers.catalog_links import server_source_links
 from workbench.core.services.feature_trace_providers import PROVIDER_LINKS, provider_tables
 
 
@@ -249,6 +250,48 @@ def provider_relationships(con: sqlite3.Connection, node_id: str) -> list[dict]:
             "target_type":rep.get("node_type") or "UNKNOWN",
             "provider_native":True,
         })
+
+    source_identity=dict(zip(identity_columns,identity_values))
+    for native in server_source_links(con,table,source_identity):
+        target_table=native.get("target_table")
+        target_specs=specs.get(target_table)
+        if target_specs is None:
+            continue
+        target_key,_target_name,_target_provider,_target_domain,_target_type,target_spec=target_specs
+        target_columns=_columns(con,target_table)
+        target_identity_columns=_identity_columns(target_columns,target_key,target_spec)
+        requested={str(k).casefold():v for k,v in dict(native.get("target_identity") or {}).items()}
+        if not all(column.casefold() in requested for column in target_identity_columns):
+            continue
+        requested_values=tuple(requested[column.casefold()] for column in target_identity_columns)
+        target_rows=con.execute(
+            f"SELECT {','.join(target_identity_columns)} FROM {target_table} WHERE {_identity_where(target_identity_columns)} LIMIT 2",
+            tuple(str(value) for value in requested_values),
+        ).fetchall()
+        if len(target_rows)!=1:
+            continue
+        target_values=tuple(target_rows[0])
+        target_node=_catalog_id(target_table,target_values,target_identity_columns)
+        target=catalog_node(con,target_node)
+        if target is None:
+            continue
+        rep=(target.get("representations") or [{}])[0]
+        candidate={
+            "relationship":native.get("relationship") or "SOURCE_LINK",
+            "source_node":node_id,
+            "target_node":target_node,
+            "target_name":rep.get("display_name") or target_node,
+            "target_type":rep.get("node_type") or "UNKNOWN",
+            "provider_native":True,
+            "basis":native.get("basis"),
+            "adapter":"server",
+        }
+        if not any(
+            existing.get("relationship")==candidate["relationship"]
+            and existing.get("target_node")==candidate["target_node"]
+            for existing in links
+        ):
+            links.append(candidate)
     return links
 
 
