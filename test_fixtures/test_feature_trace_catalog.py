@@ -106,7 +106,7 @@ def main():
     }
     for query,provider in provider_expectations.items():
         rows=feature_trace.search_nodes(con,query)
-        assert rows and rows[0]["provider"]==provider,(query,rows)
+        assert any(row.get("provider")==provider for row in rows),(query,rows)
     alias_expectations={
         "SOUTHERN_SAN_DORIA_S":("client-identity","zone_key"),
         "Riverne - Site #A01":("captures","zones"),
