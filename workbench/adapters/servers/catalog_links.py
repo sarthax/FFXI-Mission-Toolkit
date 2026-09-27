@@ -74,6 +74,36 @@ def server_source_links(
                     "basis":"mob_groups.poolid",
                 })
 
+    if suffix=="instance_entities":
+        instanceid=source_identity.get("instanceid")
+        entity_id=source_identity.get("id")
+        if instanceid is not None:
+            links.append({
+                "relationship":"INSTANCE_MEMBER_OF",
+                "target_table":f"{prefix}_instance_list",
+                "target_identity":{"instanceid":instanceid},
+                "basis":"instance_entities.instanceid",
+            })
+        if entity_id is not None:
+            npc_table=f"{prefix}_npc_list"
+            npc_row=_single_row(con,npc_table,("npcid",),{"npcid":entity_id})
+            if npc_row:
+                links.append({
+                    "relationship":"INSTANCE_ENTITY_NPC",
+                    "target_table":npc_table,
+                    "target_identity":{"npcid":entity_id},
+                    "basis":"instance_entities.id matches npc_list.npcid",
+                })
+            mob_table=f"{prefix}_mob_spawn_points"
+            mob_row=_single_row(con,mob_table,("mobid",),{"mobid":entity_id})
+            if mob_row:
+                links.append({
+                    "relationship":"INSTANCE_ENTITY_MOB",
+                    "target_table":mob_table,
+                    "target_identity":{"mobid":entity_id},
+                    "basis":"instance_entities.id matches mob_spawn_points.mobid",
+                })
+
     if suffix=="pet_list":
         petid=source_identity.get("petid")
         if petid is not None:
