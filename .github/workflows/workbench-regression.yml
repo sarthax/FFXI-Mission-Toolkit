@@ -1,9 +1,6 @@
 name: Workbench Regression
 
 on:
-  push:
-    branches:
-      - workbench-rework/audit-foundation
   pull_request:
     paths:
       - "workbench/**"
@@ -17,6 +14,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: workbench-regression-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   core-regression:
