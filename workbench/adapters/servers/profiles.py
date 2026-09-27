@@ -136,6 +136,24 @@ def _common(equipment_file: str = "item_equipment.sql") -> dict[str, TableShape]
         FieldMapping("reuse_delay",("reuseDelay","reusedelay")),
         FieldMapping("aoe",("aoe","AOE")),
     )
+    item_modifier_fields=(
+        FieldMapping("item_id",("itemId","itemid"),True),
+        FieldMapping("modifier_id",("modId","modid"),True),
+        FieldMapping("value",("value",)),
+    )
+    item_pet_modifier_fields=(
+        FieldMapping("item_id",("itemId","itemid"),True),
+        FieldMapping("modifier_id",("modId","modid"),True),
+        FieldMapping("value",("value",)),
+        FieldMapping("pet_type",("petType","pettype"),True),
+    )
+    item_latent_fields=(
+        FieldMapping("item_id",("itemId","itemid"),True),
+        FieldMapping("modifier_id",("modId","modid"),True),
+        FieldMapping("value",("value",),True),
+        FieldMapping("latent_id",("latentId","latentid"),True),
+        FieldMapping("latent_parameter",("latentParam","latentparam"),True),
+    )
     spell_fields=(
         FieldMapping("spell_id",("spellid","spellId"),True),
         FieldMapping("name",("name",),True),
@@ -314,6 +332,9 @@ def _common(equipment_file: str = "item_equipment.sql") -> dict[str, TableShape]
     drop_columns=("dropId","dropType","groupId","groupRate","itemId","itemRate")
     weapon_columns=("itemId","name","skill","subskill","ilvl_skill","ilvl_parry","ilvl_macc","dmgType","hit","delay","dmg","unlock_points")
     usable_columns=("itemid","name","validTargets","activation","animation","animationTime","maxCharges","useDelay","reuseDelay","aoe")
+    item_modifier_columns=("itemId","modId","value")
+    item_pet_modifier_columns=("itemId","modId","value","petType")
+    item_latent_columns=("itemId","modId","value","latentId","latentParam")
     ability_columns=("abilityId","name","job","level","validTarget","recastTime","recastId","message1","message2","animation","animationTime","castTime","actionType","range","isAOE","CE","VE","meritModID","addType","content_tag")
     weapon_skill_columns=("weaponskillid","name","jobs","type","skilllevel","element","animation","animationTime","range","aoe","primary_sc","secondary_sc","tertiary_sc","main_only","unlock_id")
     mob_skill_columns=("mob_skill_id","mob_anim_id","mob_skill_name","mob_skill_aoe","mob_skill_distance","mob_anim_time","mob_prepare_time","mob_valid_targets","mob_skill_flag","mob_skill_param","knockback","primary_sc","secondary_sc","tertiary_sc")
@@ -338,6 +359,27 @@ def _common(equipment_file: str = "item_equipment.sql") -> dict[str, TableShape]
             parse_columns=weapon_columns, field_mappings=weapon_fields, identity_fields=("item_id",)),
         "item_usable": TableShape("item_usable", "item_usable.sql", "item_usable",
             parse_columns=usable_columns, field_mappings=usable_fields, identity_fields=("item_id",)),
+        "item_modifiers": TableShape(
+            "item_modifiers","item_mods.sql","item_mods",
+            parse_columns=item_modifier_columns,
+            field_mappings=item_modifier_fields,
+            identity_fields=("item_id","modifier_id"),
+            notes=("Direct item modifier assignment; modifier semantics are defined by server enums/engine code and remain a separate dependency.",),
+        ),
+        "item_pet_modifiers": TableShape(
+            "item_pet_modifiers","item_mods_pet.sql","item_mods_pet",
+            parse_columns=item_pet_modifier_columns,
+            field_mappings=item_pet_modifier_fields,
+            identity_fields=("item_id","modifier_id","pet_type"),
+            notes=("Pet-scoped item modifier assignment; pet_type semantics remain server-enum/engine evidence.",),
+        ),
+        "item_latents": TableShape(
+            "item_latents","item_latents.sql","item_latents",
+            parse_columns=item_latent_columns,
+            field_mappings=item_latent_fields,
+            identity_fields=("item_id","modifier_id","value","latent_id","latent_parameter"),
+            notes=("Conditional item modifier assignment. Physical primary-key fields are retained to avoid collapsing distinct latent conditions.",),
+        ),
         "npc": TableShape("npc", "npc_list.sql", "npc_list",
             parse_columns=npc_columns, field_mappings=npc_fields, identity_fields=("npc_id",)),
         "mob_groups": TableShape("mob_groups", "mob_groups.sql", "mob_groups",
