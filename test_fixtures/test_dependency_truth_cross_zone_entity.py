@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the Medusa dependency-proof truth set remains structurally complete."""
+"""Validate the cross-zone entity dependency-proof truth set remains structurally complete."""
 from __future__ import annotations
 
 import json
@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURE = ROOT / "test_fixtures" / "fixtures" / "medusa_arrapago_dependency_truth.json"
+FIXTURE = ROOT / "test_fixtures" / "fixtures" / "dependency_truth_cross_zone_entity.json"
 
 
 def main():
@@ -83,7 +83,7 @@ def main():
     assert any("require()/mixin" in gap for gap in closed),closed
     assert any("ID.mob" in gap for gap in closed),closed
 
-    print("Medusa dependency truth-set self-test: PASS")
+    print("cross-zone entity dependency truth-set self-test: PASS")
     return 0
 
 

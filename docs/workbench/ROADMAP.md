@@ -546,3 +546,70 @@ Completed/retired from the prior queue:
 - [x] Journal low-level DAT target/backup metadata and support deterministic rollback of the applied file.
 - [x] Include client DAT plans/approvals in generated-output package integrity checks.
 - [ ] Extend generalized orchestration to new-item allocation/injection and coordinated server SQL/client-index changes.
+
+## 2026-09-27 — Audit reconciliation and sample-name neutrality
+
+Architecture naming rule: concrete FFXI content used as a proof case or regression fixture must not name generic Workbench services, framework concepts, or reusable test roles. Content names remain valid inside evidence payloads where they identify the actual game subject.
+
+Reconciled work discovered on current `main`:
+- [x] Variable-length EVENT decoding: `workbench/client/event_fingerprint.py` now performs conservative variable-length rule extraction and fail-closed decoding; focused coverage lives in `test_fixtures/test_event_fingerprint.py`.
+- [x] Automatic client ENTITY identity ingestion: `workbench/client/identity_extract.py`, `workbench/client/identity_snapshot.py`, and identity/event regressions automatically ingest per-zone client ENTITY evidence. Duplicate-name enrichment remains a refinement, not a blocker.
+- [x] Broader P1 logical schema expansion: `workbench/adapters/servers/profiles.py`, `progression.py`, `schema_coverage.py`, and their regressions cover combat abilities/skills, item modifiers/latents, job points/merits, mob support tables, skill caps/ranks, synthesis, and synergy in addition to the P0 core.
+- [x] Proof-case naming cleanup: generic artifact/test names now describe the dependency pattern rather than the sampled FFXI subject. The attachment/shared-runtime and cross-zone/system-coupling truth sets retain their concrete subjects only inside evidence content.
+
+Files changed by the naming cleanup:
+- `docs/workbench/DEPENDENCY_PROOF_CASE_ATTACHMENT.md` (renamed from `COILER_PACKAGE_PROOF.md`)
+- `docs/workbench/DEPENDENCY_PROOF_CASE_CROSS_ZONE_ENTITY.md` (renamed from `MEDUSA_PACKAGE_PROOF.md`)
+- `test_fixtures/fixtures/dependency_truth_attachment_runtime.json`
+- `test_fixtures/fixtures/dependency_truth_cross_zone_entity.json`
+- `test_fixtures/test_dependency_truth_attachment_runtime.py`
+- `test_fixtures/test_dependency_truth_cross_zone_entity.py`
+- `docs/workbench/ROADMAP.md`
+- `docs/workbench/AUDIT_STATUS.md`
+
+This naming rule applies to future proof cases as well: sample content demonstrates architecture; it does not define architecture.
+
+
+## 2026-09-27 — Unified remaining-feature inventory
+
+The Workbench roadmap and the older Toolkit product roadmap were reconciled. The following open capabilities were either absent from the recent scoped queue or were obscured by stale historical status.
+
+### Core architecture / evidence
+- [ ] Generic conditional and cross-zone/system-state dependency relationships, including the currently open Besieged-style coupling proof.
+- [ ] Unified acquisition/obtainability graph across shops, drops, rewards, HELM, gardening, exchange, appraisal, synthesis, and synergy.
+- [ ] Broader packet ↔ client DAT/EXE/DLL ↔ server relationship coverage.
+- [ ] Richer runtime probe/capture producers and repeatable live validation recipes.
+- [ ] Optional decoder-backed binary instruction/CFG/xref/function recovery with explicit decoder/version provenance.
+
+### Reusable content frameworks
+- [ ] Generic mission/quest state-machine and CSID/event analyzer.
+- [ ] Generic multi-zone progression/hunt framework.
+- [ ] Generic minigame/puzzle framework.
+- [ ] Generic repeatable/system-container framework.
+- [ ] Additional instance-heavy proof after mission state-machine closure.
+
+### Named system packages
+- [ ] Assault.
+- [ ] Nyzul Isle.
+- [ ] Salvage.
+- [ ] Abyssea.
+- [ ] Einherjar.
+- [ ] Limbus preservation package when a compatible implementation/client snapshot is selected.
+
+### Migration / application
+- [ ] Safe database-level apply and rollback; current deterministic rollback coverage is file-oriented.
+- [ ] Approval/apply/rollback GUI after dependency-completeness gates are satisfied.
+- [ ] Broader verified source→target conversion backends without guessing unsupported routes.
+- [ ] Finish generalized client DAT write orchestration; active PR work remains incomplete until merged.
+
+### Toolkit product features outside the recent Workbench queue
+- [ ] Video/capture timestamp alignment and optional transcription.
+- [ ] Authenticated remote/hosted access.
+- [ ] Watched-folder or live Windower/Ashita auto-ingestion.
+- [ ] Capture-data requests and fulfillment tracking.
+- [ ] Capture annotations / invalid-data flags.
+- [ ] Tag/category completeness checklists.
+- [ ] Capture→server drafting/export through canonical evidence and migration review.
+- [ ] Discord history/link catalog integration.
+
+Roadmap authority rule: `docs/workbench/ROADMAP.md` is the detailed rework backlog; `docs/guides/ROADMAP.md` and the in-app `/roadmap` summarize both the Workbench and older Toolkit product backlog. Historical phase text may remain for provenance, but a newer reconciled status section supersedes stale labels.

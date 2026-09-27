@@ -4,6 +4,57 @@ No prior phased plan document existed for this project (checked `mission_toolkit
 `*plan*`/`*PHASE*` file and found none) — this is the first one, written 2026-09-06 to capture
 what's done and lay out what's next per the user's request to track future feature phases.
 
+## Current authoritative status — 2026-09-27
+
+This section supersedes older status labels below when they conflict. The historical phase notes are retained because they explain why features were built, but the current backlog is now reconciled against the Workbench implementation, regression fixtures, and active pull requests.
+
+### Built / integrated
+
+- Canonical evidence graph, Feature Trace, Feature Checker, capability requirements, validation runs/results, provenance, and evidence drill-down.
+- Server adapters for LSB, Topaz, Topaz-Next, DSP, and custom-fork profiles; logical schema coverage includes the P0 item/entity/instance/battlefield/spell/trait core plus P1 combat registries, item modifiers/latents, merits/job points, mob support, skill caps/ranks, synthesis, and synergy.
+- Dependency-aware migration/package planning, collision analysis, package scope review, proposal artifacts, patch-plan drift checks, explicit approval state, deterministic file apply journals, rollback, and package review/readiness.
+- C++/binding/enum/packet/build analysis with conservative evidence confidence.
+- Client DAT read foundation, Client Overview/build snapshots, portable ENTITY identity ingestion, actor-aware cross-client EVENT comparison, structural EVENT fingerprinting, and conservative variable-length EVENT opcode decoding.
+- Generic EXE/DLL indexing and bounded deeper binary research; exact full disassembly/CFG recovery is not claimed.
+- Runtime capture indexing/backtrace, packet evidence, identity bridge, observed-transition evidence, and validation orchestration.
+- Evidence-aware research foundation: persistent ResearchSessions, provider abstraction, bounded ResearchRunner, typed tools, source crawler, proposals, provider run/replay controls, contradiction browser, and canonical evidence drill-through.
+- Domain-plugin foundation and battlefield/mission representation planning.
+- Generic Lua dependency discovery and LSB zone-YAML dependency closure for entities/templates, skills/spells, loot/items, zone text, titles, and safe ID.mob arithmetic.
+- Crafting/producibility dependency closure for synthesis/synergy prerequisites.
+- GUI shared workspace shell plus Features, Packages, Validation, Client, Research, Domains, and existing capture/editor tools.
+
+### Active work
+
+- Generalized client DAT write/migration orchestration is active separately and must preserve the existing specialized item editor/write path until parity is proven.
+- Dependency-proof closure is still being expanded beyond direct source references, especially cross-zone/system-state relationships.
+- Remaining GUI/service extraction is incremental; existing routes stay compatible until replacements reach parity.
+
+### Remaining core Workbench capabilities
+
+1. **Client synchronization:** complete packet ↔ client DAT/EXE/DLL ↔ server relationships, richer client capability probes, and multi-client validation beyond structural EVENT matching.
+2. **Runtime validation:** richer capture/probe producers and repeatable live validation recipes for migrated features.
+3. **Binary semantics:** optional decoder-backed instruction/CFG/xref/function recovery for unpacked or runtime client images, with decoder/version provenance.
+4. **Dependency closure:** generic conditional/system-state dependencies; unified acquisition/obtainability across shops, drops, rewards, HELM, gardening, exchange, appraisal, and crafting.
+5. **Content frameworks:** generic mission/quest state machine + CSID/event analyzer, multi-zone progression/hunt framework, minigame/puzzle framework, and repeatable/system-container framework.
+6. **Named system packages:** Assault, Nyzul Isle, Salvage, Abyssea, Einherjar, and appropriate Limbus preservation coverage.
+7. **Migration execution:** safe database-level apply/rollback remains separate from the existing reversible file apply path; unsupported source/target conversions must remain explicit.
+8. **Workbench UX:** approval/apply/rollback GUI after dependency completeness gates, plus remaining workspace/service extraction.
+
+### Older Toolkit features still not implemented by the rework
+
+These remain valid product ideas but are outside the recent decoder/identity/schema/dependency scope:
+
+- video ↔ capture timestamp alignment and optional transcription;
+- authenticated remote/hosted access;
+- watched-folder or live Windower/Ashita auto-ingestion;
+- capture-data requests, annotations, semantic invalid-data flags, and completeness checklists;
+- capture → server-data drafting/export integrated with the modern migration/evidence pipeline;
+- Discord history/link catalog integration.
+
+### Roadmap discipline
+
+A concrete FFXI sample may prove a capability, but it must not define generic architecture. Roadmap items are marked complete only when the reusable capability exists with evidence/regression coverage; content-specific proof remains named only inside its evidence data. Active PR work is not marked complete until merged.
+
 ## Completed
 
 - **2026-09-21: Zone Plot (`zone_plot.py`/`zone_edit.py`/`gui/templates/zone_plot.html`) — server-

@@ -1,8 +1,8 @@
-# Medusa Package Dependency Proof
+# Dependency Proof Case — Cross-Zone Entity / System Coupling
 
 ## Goal
 
-Use the Arrapago Reef Medusa notorious monster as the first real proof case for the Packages dependency-closure workflow.
+Use a cross-zone notorious-monster case as a dependency-closure proof for the Packages workflow. **Arrapago Reef Medusa** is the concrete evidence subject, not an architectural identifier.
 
 Medusa is intentionally useful because a correct backport is more than one mob row or one Lua file. Her implementation spans:
 
@@ -19,7 +19,7 @@ Medusa is intentionally useful because a correct backport is more than one mob r
 
 The machine-readable baseline is:
 
-`test_fixtures/fixtures/medusa_arrapago_dependency_truth.json`
+`test_fixtures/fixtures/dependency_truth_cross_zone_entity.json`
 
 The source baseline is LandSandBoat revision:
 
