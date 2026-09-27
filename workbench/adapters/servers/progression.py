@@ -9,13 +9,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 from .base import LogicalRecord
 
 
 def load_lsb_merits(path: Path) -> list[LogicalRecord]:
     """Load modern LSB merit YAML as source-neutral logical merit records."""
+    import yaml
+
     path=Path(path)
     raw=yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     merits_root=raw.get("merits") or {}
