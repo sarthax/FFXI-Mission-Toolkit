@@ -95,6 +95,57 @@ def main():
         assert ls.fields["radius"]==10
         assert ls.fields["status_effect"]==33
 
+        tpmod=topaz.normalize_row("mob_pool_modifiers",{
+            "poolid":70,"modid":48,"value":434,"is_mob_mod":1,
+        })
+        dpmod=dsp.normalize_row("mob_pool_modifiers",{
+            "poolid":70,"modid":48,"value":434,"is_mob_mod":1,
+        })
+        lpmod=lsb.normalize_row("mob_pool_modifiers",{
+            "poolid":70,"modid":48,"value":434,"is_mob_mod":1,
+        })
+        assert compare_records(tpmod,dpmod).status=="EQUIVALENT"
+        assert compare_records(tpmod,lpmod).status=="EQUIVALENT"
+        assert tpmod.identity==(("pool_id",70),("modifier_id",48)),tpmod
+
+        tmsl=topaz.normalize_row("mob_spell_lists",{
+            "spell_list_name":"Beastmen_WHM","spell_list_id":1,"spell_id":1,
+            "min_level":1,"max_level":10,
+        })
+        dmsl=dsp.normalize_row("mob_spell_lists",{
+            "spell_list_name":"Beastmen_WHM","spell_list_id":1,"spell_id":1,
+            "min_level":1,"max_level":10,
+        })
+        lmsl=lsb.normalize_row("mob_spell_lists",{
+            "spell_list_name":"Beastmen_WHM","spell_list_id":1,"spell_id":1,
+            "min_level":1,"max_level":10,
+        })
+        assert compare_records(tmsl,dmsl).status=="EQUIVALENT"
+        assert compare_records(tmsl,lmsl).status=="EQUIVALENT"
+
+        cap_row={"level":1,**{f"r{i}":v for i,v in enumerate((0,6,6,5,5,5,5,5,5,4,4,4,3,4))}}
+        tcap=topaz.normalize_row("skill_caps",cap_row)
+        dcap=dsp.normalize_row("skill_caps",cap_row)
+        lcap=lsb.normalize_row("skill_caps",cap_row)
+        assert compare_records(tcap,dcap).status=="EQUIVALENT"
+        assert compare_records(tcap,lcap).status=="EQUIVALENT"
+        assert tcap.identity==(("level",1),),tcap
+        assert tcap.fields["rank_13"]==4,tcap
+
+        rank_row={
+            "skillid":1,"name":"hand2hand","war":9,"mnk":1,"whm":0,"blm":0,
+            "rdm":0,"thf":10,"pld":0,"drk":0,"bst":0,"brd":0,"rng":0,
+            "sam":0,"nin":10,"drg":0,"smn":0,"blu":0,"cor":0,"pup":1,
+            "dnc":9,"sch":0,"geo":0,"run":0,
+        }
+        trank=topaz.normalize_row("skill_ranks",rank_row)
+        drank=dsp.normalize_row("skill_ranks",rank_row)
+        lrank=lsb.normalize_row("skill_ranks",rank_row)
+        assert compare_records(trank,drank).status=="EQUIVALENT"
+        assert compare_records(trank,lrank).status=="EQUIVALENT"
+        assert trank.identity==(("skill_id",1),),trank
+        assert trank.fields["thf_rank"]==10,trank
+
         ta=topaz.normalize_row("abilities",{
             "abilityId":5,"name":"provoke","job":1,"level":5,"validTarget":4,
             "recastTime":30,"recastId":5,"message1":100,"message2":101,
