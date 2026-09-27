@@ -136,13 +136,20 @@ def provider_relationships(con: sqlite3.Connection, node_id: str) -> list[dict]:
             continue
         source_column=columns[link.source_column.lower()]
         target_key=target_specs[0]
+        target_column=target_columns[link.target_column.lower()]
         value_row=con.execute(
             f"SELECT {source_column} FROM {table} WHERE CAST({key} AS TEXT)=?",
             (raw,),
         ).fetchone()
         if not value_row or value_row[0] is None:
             continue
-        target_raw=str(value_row[0])
+        target_matches=con.execute(
+            f"SELECT {target_key} FROM {link.target_table} WHERE CAST({target_column} AS TEXT)=? LIMIT 2",
+            (str(value_row[0]),),
+        ).fetchall()
+        if len(target_matches)!=1:
+            continue
+        target_raw=str(target_matches[0][0])
         target_node=_catalog_id(link.target_table,target_raw)
         target=catalog_node(con,target_node)
         if target is None:
