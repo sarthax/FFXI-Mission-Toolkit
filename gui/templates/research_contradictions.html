@@ -24,10 +24,10 @@
   {% for kind,count in report.type_counts.items() %}<span class="chip">{{ kind }} {{ count }}</span>{% endfor %}
 </p>
 
-{% if not report.items %}
+{% if not report['items'] %}
 <p class="muted">No contradictions matched these filters.</p>
 {% else %}
-{% for item in report.items %}
+{% for item in report['items'] %}
 <section style="border:1px solid var(--border,#ccc);border-radius:8px;padding:14px;margin:12px 0;">
   <h3 style="margin-top:0;">{{ item.kind }}</h3>
   <p><strong>Subject:</strong> <code>{{ item.subject_id }}</code>{% if item.field %} · <strong>Field:</strong> <code>{{ item.field }}</code>{% endif %}</p>
