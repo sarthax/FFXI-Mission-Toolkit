@@ -92,6 +92,7 @@ def main() -> int:
 
         assert payload["summary"]=={
             "require_dependencies":1,
+            "script_entity_bindings":1,
             "entity_dependencies":4,
             "unresolved_findings":0,
         },payload["summary"]
@@ -105,8 +106,16 @@ def main() -> int:
             row["metadata"]["numeric_id"]
             for row in payload["entities"]
         )
-        assert entities==[16998863,16998864,16998865,16998866],entities
+        assert entities==[16998862,16998863,16998864,16998865,16998866],entities
+        root_entity=next(row for row in payload["entities"] if row["metadata"]["numeric_id"]==16998862)
+        assert root_entity["display_name"]=="Medusa",root_entity
+        assert root_entity["metadata"]["template_id"]==2606,root_entity
+        assert root_entity["metadata"]["species"]=="medusa",root_entity
+        assert root_entity["metadata"]["skill_list_id"]==725,root_entity
+
         for row in payload["entities"]:
+            if row["metadata"]["numeric_id"]==16998862:
+                continue
             assert row["display_name"]=="Lamia_Exon",row
             assert row["metadata"]["template_id"]==2331,row
             assert row["metadata"]["species"]=="lamiae",row
@@ -114,10 +123,15 @@ def main() -> int:
             assert row["metadata"]["skill_list_id"]==171,row
 
         require_edges=[e for e in payload["edges"] if e["edge_id"].startswith("lua-require:")]
+        script_entity_edges=[e for e in payload["edges"] if e["edge_id"].startswith("lua-script-entity:")]
         entity_edges=[e for e in payload["edges"] if e["edge_id"].startswith("lua-entity:")]
         assert len(require_edges)==1,require_edges
+        assert len(script_entity_edges)==1,script_entity_edges
+        assert script_entity_edges[0]["relationship"]=="REFERENCES",script_entity_edges
         assert len(entity_edges)==4,entity_edges
-        assert all(e["relationship"]=="REQUIRES" for e in payload["edges"]),payload["edges"]
+        assert require_edges[0]["relationship"]=="REQUIRES",require_edges
+        assert script_entity_edges[0]["relationship"]=="REFERENCES",script_entity_edges
+        assert all(e["relationship"]=="REQUIRES" for e in entity_edges),entity_edges
         assert all(e["confidence"]=="VERIFIED" for e in payload["edges"]),payload["edges"]
 
         out=root/"analysis.json"
@@ -127,7 +141,7 @@ def main() -> int:
 
         con=sqlite3.connect(db)
         try:
-            assert con.execute("SELECT COUNT(*) FROM entities").fetchone()[0]==4
+            assert con.execute("SELECT COUNT(*) FROM entities").fetchone()[0]==5
             assert con.execute(
                 "SELECT COUNT(*) FROM entity_relationships WHERE relationship='REQUIRES'"
             ).fetchone()[0]==5
@@ -173,6 +187,7 @@ def main() -> int:
             source_snapshot_id="lsb:test",
             zone_id=54,
         )
+        assert unresolved["summary"]["script_entity_bindings"]==0,unresolved
         assert unresolved["summary"]["entity_dependencies"]==0,unresolved
         assert unresolved["summary"]["unresolved_findings"]>=4,unresolved
 

@@ -73,6 +73,9 @@ def main():
     assert any("YAML loot" in gap for gap in gaps),gaps
     assert any("species/family" in gap for gap in gaps),gaps
     assert any("Besieged" in gap for gap in gaps),gaps
+    assert any("mobs.yaml entities/templates" in gap for gap in closed),closed
+    assert any("skill/spell definition" in gap for gap in closed),closed
+    assert any("mob skill-list" in gap.lower() for gap in closed),closed
     assert any("mob_skill_lists" in gap for gap in closed),closed
     assert any("mob_spell_lists" in gap for gap in closed),closed
     assert any("require()/mixin" in gap for gap in closed),closed
