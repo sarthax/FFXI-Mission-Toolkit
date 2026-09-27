@@ -315,6 +315,164 @@ def ingest_entity_identity_records(
     return out
 
 
+def _entity_row_diagnostic(row: sqlite3.Row) -> dict[str, Any]:
+    metadata=json.loads(row["metadata_json"] or "{}")
+    return {
+        "record_id":row["record_id"],
+        "numeric_id":row["numeric_id"],
+        "semantic_key":row["semantic_key"],
+        "semantic_identity":metadata.get("semantic_identity"),
+        "zone_key":row["zone_key"],
+        "confidence":row["confidence"],
+        "evidence_id":row["evidence_id"],
+        "identity_basis":metadata.get("identity_basis"),
+        "source_resource":metadata.get("source_resource"),
+    }
+
+
+def diagnose_entity_identity(
+    con: sqlite3.Connection,
+    *,
+    source_snapshot_id: str,
+    target_snapshot_id: str,
+    source_actor_id: str | int,
+    zone_key: str | None,
+) -> dict[str, Any]:
+    """Explain ENTITY resolution with source evidence and all semantic target candidates."""
+    ensure_schema(con)
+    previous_factory=con.row_factory
+    con.row_factory=sqlite3.Row
+    try:
+        sql=(
+            "SELECT * FROM identity_records "
+            "WHERE snapshot_id=? AND namespace='ENTITY' AND numeric_id=?"
+        )
+        params: list[Any]=[source_snapshot_id,str(source_actor_id)]
+        if zone_key is not None:
+            sql += " AND zone_key=?"
+            params.append(zone_key)
+        source_rows=list(con.execute(sql,params))
+        base={
+            "source_snapshot_id":source_snapshot_id,
+            "target_snapshot_id":target_snapshot_id,
+            "source_actor_id":str(source_actor_id),
+            "zone_key":zone_key,
+            "source_candidates":[_entity_row_diagnostic(row) for row in source_rows],
+            "target_candidates":[],
+            "constraint_applied":False,
+        }
+        if not source_rows:
+            return {
+                **base,
+                "status":"SOURCE_ID_UNRESOLVED",
+                "confidence":"UNKNOWN",
+                "reason":"No ENTITY identity record exists for this source actor/context.",
+                "recommendation":"Import the source client's ENTITY name resource or add independently verified entity-profile evidence.",
+            }
+        if len(source_rows)>1:
+            return {
+                **base,
+                "status":"SOURCE_ID_AMBIGUOUS",
+                "confidence":"UNKNOWN",
+                "reason":"Multiple source ENTITY semantic identities share this numeric actor/context.",
+                "recommendation":"Review duplicate source ENTITY records before using actor-constrained EVENT matching.",
+            }
+
+        source=source_rows[0]
+        targets=list(con.execute(
+            "SELECT * FROM identity_records "
+            "WHERE snapshot_id=? AND namespace='ENTITY' AND semantic_key=?",
+            (target_snapshot_id,source["semantic_key"]),
+        ))
+        if zone_key is not None:
+            targets=[row for row in targets if row["zone_key"]==zone_key]
+        target_rows=[_entity_row_diagnostic(row) for row in targets]
+        resolution=resolve_entity_identity(
+            con,
+            source_snapshot_id=source_snapshot_id,
+            target_snapshot_id=target_snapshot_id,
+            source_actor_id=source_actor_id,
+            zone_key=zone_key,
+        )
+        payload={
+            **base,
+            "status":resolution.status,
+            "confidence":resolution.confidence,
+            "reason":resolution.reason,
+            "semantic_key":source["semantic_key"],
+            "semantic_identity":json.loads(source["metadata_json"] or "{}").get("semantic_identity"),
+            "source_record_id":resolution.source_record_id,
+            "target_record_id":resolution.target_record_id,
+            "target_actor_id":resolution.target_numeric_id,
+            "target_candidates":target_rows,
+            "constraint_applied":bool(
+                resolution.status in {"EXACT","TARGET_EQUIVALENT"}
+                and _confidence_rank(resolution.confidence) >= _confidence_rank("HIGH")
+                and resolution.target_numeric_id is not None
+            ),
+        }
+        if resolution.status=="TARGET_ID_UNRESOLVED":
+            payload["recommendation"]="Import the target client's ENTITY name resource or verify an equivalent target entity through another evidence source."
+        elif resolution.status=="TARGET_ID_AMBIGUOUS":
+            payload["recommendation"]="Multiple target actors share the same semantic identity; use stronger entity evidence before constraining EVENT matching."
+        elif not payload["constraint_applied"]:
+            payload["recommendation"]="ENTITY evidence exists but is below the confidence required for actor-constrained EVENT matching."
+        else:
+            payload["recommendation"]="Actor identity is strong enough to constrain target EVENT candidates."
+        return payload
+    finally:
+        con.row_factory=previous_factory
+
+
+def compare_entity_snapshots(
+    con: sqlite3.Connection,
+    *,
+    source_snapshot_id: str,
+    target_snapshot_id: str,
+    zone_key: str | None = None,
+) -> dict[str, Any]:
+    """Bulk ENTITY equivalence diagnostics for source actors in one client snapshot."""
+    ensure_schema(con)
+    previous_factory=con.row_factory
+    con.row_factory=sqlite3.Row
+    try:
+        sql=(
+            "SELECT DISTINCT numeric_id,zone_key FROM identity_records "
+            "WHERE snapshot_id=? AND namespace='ENTITY'"
+        )
+        params: list[Any]=[source_snapshot_id]
+        if zone_key is not None:
+            sql += " AND zone_key=?"
+            params.append(zone_key)
+        source=list(con.execute(sql+" ORDER BY zone_key,numeric_id",params))
+    finally:
+        con.row_factory=previous_factory
+
+    rows=[
+        diagnose_entity_identity(
+            con,
+            source_snapshot_id=source_snapshot_id,
+            target_snapshot_id=target_snapshot_id,
+            source_actor_id=row["numeric_id"],
+            zone_key=row["zone_key"],
+        )
+        for row in source
+    ]
+    counts: dict[str,int]={}
+    for row in rows:
+        counts[row["status"]]=counts.get(row["status"],0)+1
+    constrained=sum(1 for row in rows if row.get("constraint_applied"))
+    return {
+        "source_snapshot_id":source_snapshot_id,
+        "target_snapshot_id":target_snapshot_id,
+        "zone_key":zone_key,
+        "total":len(rows),
+        "constraint_ready":constrained,
+        "counts":counts,
+        "rows":rows,
+    }
+
+
 def resolve_entity_identity(
     con: sqlite3.Connection,
     *,
@@ -676,30 +834,16 @@ def resolve_event_identity(
             actor_metadata["status"] = "ACTOR_NOT_PROVIDED"
             actor_metadata["reason"] = "No captured source actor was available to resolve."
         else:
-            actor_resolution = resolve_entity_identity(
+            actor_diagnostic=diagnose_entity_identity(
                 con,
                 source_snapshot_id=source_snapshot_id,
                 target_snapshot_id=target_snapshot_id,
                 source_actor_id=source["actor_key"],
                 zone_key=zone_key,
             )
-            actor_metadata.update({
-                "status": actor_resolution.status,
-                "confidence": actor_resolution.confidence,
-                "source_record_id": actor_resolution.source_record_id,
-                "target_record_id": actor_resolution.target_record_id,
-                "reason": actor_resolution.reason,
-            })
-            if (
-                actor_resolution.status in {"EXACT", "TARGET_EQUIVALENT"}
-                and _confidence_rank(actor_resolution.confidence) >= _confidence_rank("HIGH")
-                and actor_resolution.target_numeric_id is not None
-            ):
-                target_actor_key = actor_resolution.target_numeric_id
-                actor_metadata.update({
-                    "target_actor_id": target_actor_key,
-                    "constraint_applied": True,
-                })
+            actor_metadata.update(actor_diagnostic)
+            if actor_diagnostic.get("constraint_applied") and actor_diagnostic.get("target_actor_id") is not None:
+                target_actor_key=str(actor_diagnostic["target_actor_id"])
 
         target_sql = (
             "SELECT * FROM identity_records "
