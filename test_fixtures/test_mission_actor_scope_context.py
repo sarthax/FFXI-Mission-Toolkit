@@ -37,7 +37,9 @@ SOURCE=r"""
     },
 
     onZoneIn = function(player, prevZone)
-        return 40
+        if mission:getVar(player, 'Status') == 0 then
+            return 40
+        end
     end,
 }
 """
