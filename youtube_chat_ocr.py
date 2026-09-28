@@ -275,7 +275,8 @@ def frame_video_timestamp(frame: str, fps: float | int | None) -> float | None:
 
 def observation_provenance(run_id: str, section: str, frame: str) -> dict:
     meta = section_meta(run_id, section)
-    status = run_status(run_id)
+    source_url_path = run_dir(run_id) / "source_url.txt"
+    source_url = source_url_path.read_text(encoding="utf-8").strip() if source_url_path.exists() else None
     return {
         "source_kind": "VIDEO_OCR",
         "ocr_run_id": run_id,
@@ -287,7 +288,7 @@ def observation_provenance(run_id: str, section: str, frame: str) -> dict:
         "fps": meta.get("fps"),
         "crop": meta.get("crop"),
         "capture_profile": meta.get("capture_profile") or DEFAULT_CAPTURE_PROFILE,
-        "source_url": status.get("url"),
+        "source_url": source_url,
     }
 
 
