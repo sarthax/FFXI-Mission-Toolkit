@@ -229,12 +229,14 @@ def project_mission_graph(
             entities.setdefault(subject,Entity(subject,_subject_type(subject),subject,{
                 "source_family":source_family,
             }))
-            condition_evidence=condition.evidence_ids[0] if condition.evidence_ids else edge_evidence
+            condition_notes=f"{condition.operator} {condition.value!r}"
+            if condition.evidence_ids:
+                condition_notes+=f"; original_evidence_ids={list(condition.evidence_ids)!r}"
             edges.append(_edge(
                 f"mission-requires:{_token(machine.feature_id,transition.transition_id,index,subject,condition.operator,condition.value)}",
-                transition_node,subject,"REQUIRES",condition_evidence,confidence,status,
+                transition_node,subject,"REQUIRES",edge_evidence,confidence,status,
                 source_path,source_snapshot_id,
-                notes=f"{condition.operator} {condition.value!r}",
+                notes=condition_notes,
             ))
 
         for index,effect in enumerate(transition.effects):
@@ -242,12 +244,14 @@ def project_mission_graph(
             entities.setdefault(subject,Entity(subject,_subject_type(subject),subject,{
                 "source_family":source_family,
             }))
-            effect_evidence=effect.evidence_ids[0] if effect.evidence_ids else edge_evidence
+            effect_notes=f"{effect.effect} {effect.value!r}"
+            if effect.evidence_ids:
+                effect_notes+=f"; original_evidence_ids={list(effect.evidence_ids)!r}"
             edges.append(_edge(
                 f"mission-affects:{_token(machine.feature_id,transition.transition_id,index,effect.effect,subject,effect.value)}",
-                transition_node,subject,"AFFECTS",effect_evidence,confidence,status,
+                transition_node,subject,"AFFECTS",edge_evidence,confidence,status,
                 source_path,source_snapshot_id,
-                notes=f"{effect.effect} {effect.value!r}",
+                notes=effect_notes,
             ))
 
     return MissionGraphProjection(
