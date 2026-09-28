@@ -93,6 +93,7 @@ def main():
     assert catalog.source_for("quest:FIRE_IN_THE_HOLE") is not None,catalog.subjects()
     assert catalog.source_for("quest:STORM_ON_THE_HORIZON") is not None,catalog.subjects()
     assert catalog.source_for("quest:BURDEN_OF_SUSPICION") is not None,catalog.subjects()
+    assert catalog.source_for("quest:LIGHT_IN_THE_DARKNESS") is not None,catalog.subjects()
 
     closure=build_feature_requirement_closure(
         chained,
@@ -110,19 +111,21 @@ def main():
         "quest:crystal_war:fire_in_the_hole",
         "quest:crystal_war:storm_on_the_horizon",
         "quest:crystal_war:burden_of_suspicion",
+        "quest:crystal_war:light_in_the_darkness",
     },closure
     assert catalog.cached_subjects()==(
         "quest:BENEATH_THE_MASK",
         "quest:BURDEN_OF_SUSPICION",
         "quest:FIRE_IN_THE_HOLE",
         "quest:HONOR_UNDER_FIRE",
+        "quest:LIGHT_IN_THE_DARKNESS",
         "quest:QUELLING_THE_STORM",
         "quest:STORM_ON_THE_HORIZON",
         "quest:WHAT_PRICE_LOYALTY",
     ),catalog.cached_subjects()
     assert "quest:BLOOD_OF_HEROES" in closure.skipped_alternatives,closure
     assert "quest:HOWL_FROM_THE_HEAVENS" in closure.skipped_alternatives,closure
-    assert closure.unresolved_subjects==("quest:LIGHT_IN_THE_DARKNESS",),closure
+    assert closure.unresolved_subjects==("mission:BACK_TO_THE_BEGINNING","quest:FIRES_OF_DISCONTENT"),closure
 
     q10=catalog.cached_machine("quest:WHAT_PRICE_LOYALTY")
     q9=catalog.cached_machine("quest:BENEATH_THE_MASK")
@@ -131,7 +134,8 @@ def main():
     q6=catalog.cached_machine("quest:FIRE_IN_THE_HOLE")
     q5=catalog.cached_machine("quest:STORM_ON_THE_HORIZON")
     q4=catalog.cached_machine("quest:BURDEN_OF_SUSPICION")
-    assert all(machine is not None for machine in (q10,q9,q8,q7,q6,q5,q4)),(q10,q9,q8,q7,q6,q5,q4)
+    q3=catalog.cached_machine("quest:LIGHT_IN_THE_DARKNESS")
+    assert all(machine is not None for machine in (q10,q9,q8,q7,q6,q5,q4,q3)),(q10,q9,q8,q7,q6,q5,q4,q3)
 
     assert q9.metadata.get("catalog_discovered") is True,q9.metadata
     assert q10.metadata.get("catalog_discovered") is True,q10.metadata
@@ -140,6 +144,7 @@ def main():
     assert q6.metadata.get("catalog_discovered") is True,q6.metadata
     assert q5.metadata.get("catalog_discovered") is True,q5.metadata
     assert q4.metadata.get("catalog_discovered") is True,q4.metadata
+    assert q3.metadata.get("catalog_discovered") is True,q3.metadata
     assert q9.metadata.get("quest_symbol")=="BENEATH_THE_MASK",q9.metadata
     assert q10.metadata.get("quest_symbol")=="WHAT_PRICE_LOYALTY",q10.metadata
     assert q8.metadata.get("quest_symbol")=="HONOR_UNDER_FIRE",q8.metadata
@@ -147,12 +152,14 @@ def main():
     assert q6.metadata.get("quest_symbol")=="FIRE_IN_THE_HOLE",q6.metadata
     assert q5.metadata.get("quest_symbol")=="STORM_ON_THE_HORIZON",q5.metadata
     assert q4.metadata.get("quest_symbol")=="BURDEN_OF_SUSPICION",q4.metadata
+    assert q3.metadata.get("quest_symbol")=="LIGHT_IN_THE_DARKNESS",q3.metadata
     assert q9.metadata.get("reward_item")=="SUPER_RERAISER",q9.metadata
     assert q10.metadata.get("reward_item")=="FOURTH_STAFF",q10.metadata
     assert q8.metadata.get("reward_item")=="ELIXIR_TANK",q8.metadata
     assert q7.metadata.get("reward_item")=="GOBLIN_BELT",q7.metadata
     assert q6.metadata.get("reward_item")=="REPUBLICAN_SILVER_MEDAL",q6.metadata
     assert q5.metadata.get("reward_item")=="ICARUS_WING",q5.metadata
+    assert q3.metadata.get("reward_item")=="ADAMAN_INGOT",q3.metadata
 
     q9_channels={channel.channel_id:channel for channel in q9.channels}
     q10_channels={channel.channel_id:channel for channel in q10.channels}
@@ -244,25 +251,40 @@ def main():
     assert any(
         dependency.source_feature_id=="quest:crystal_war:burden_of_suspicion"
         and dependency.subject=="quest:LIGHT_IN_THE_DARKNESS"
+        and dependency.status=="RESOLVED"
+        and dependency.resolved_feature_id=="quest:crystal_war:light_in_the_darkness"
+        for dependency in closure.dependencies
+    ),closure.dependencies
+    assert any(
+        dependency.source_feature_id=="quest:crystal_war:light_in_the_darkness"
+        and dependency.subject=="quest:FIRES_OF_DISCONTENT"
+        and dependency.status=="UNRESOLVED"
+        for dependency in closure.dependencies
+    ),closure.dependencies
+    assert any(
+        dependency.source_feature_id=="quest:crystal_war:light_in_the_darkness"
+        and dependency.subject=="mission:BACK_TO_THE_BEGINNING"
         and dependency.status=="UNRESOLVED"
         for dependency in closure.dependencies
     ),closure.dependencies
     assert closure_summary=={
         "root_feature_id":"mission:wotg:the_will_of_the_world",
-        "feature_count":8,
-        "dependency_count":15,
-        "resolved_dependency_count":7,
-        "unresolved_dependency_count":1,
+        "feature_count":9,
+        "dependency_count":17,
+        "resolved_dependency_count":8,
+        "unresolved_dependency_count":2,
         "skipped_alternative_count":2,
         "cycle_count":0,
     },closure_summary
 
+    q3_metrics=quest_extraction_metrics(q3)
     q4_metrics=quest_extraction_metrics(q4)
     q5_metrics=quest_extraction_metrics(q5)
     q6_metrics=quest_extraction_metrics(q6)
     q7_metrics=quest_extraction_metrics(q7)
     q9_metrics=quest_extraction_metrics(q9)
     q10_metrics=quest_extraction_metrics(q10)
+    assert q3_metrics["unmodeled_source_handler_count"]==0,q3_metrics
     assert q4_metrics["unmodeled_source_handler_count"]==0,q4_metrics
     assert q5_metrics["unmodeled_source_handler_count"]==0,q5_metrics
     assert q6_metrics["unmodeled_source_handler_count"]==0,q6_metrics
@@ -286,6 +308,39 @@ def main():
         effect.effect=="START" and effect.subject=="quest"
         for effect in fire_relay.effects
     ),fire_relay
+
+    light_trade=next(
+        transition for transition in q3.transitions
+        if transition.trigger=="TRADE"
+        and transition.event
+        and transition.event.zone=="BASTOK_MARKETS_S"
+        and transition.event.actor=="Blatherix"
+        and transition.event.event_id==23
+        and transition.gate is not None
+        and transition.gate.logic=="ANY"
+    )
+    trade_values={condition.value for condition in light_trade.gate.conditions}
+    assert (("CHUNK_OF_GOBLIN_CHOCOLATE",30),) in trade_values,trade_values
+    assert (("gil",5000),) in trade_values,trade_values
+
+    light_complete=next(
+        transition for transition in q3.transitions
+        if transition.event
+        and transition.event.zone=="BASTOK_MARKETS_S"
+        and transition.event.actor=="Gentle_Tiger"
+        and transition.event.event_id==27
+    )
+    assert any(
+        effect.effect=="SET_VAR"
+        and effect.subject=="quest:BURDEN_OF_SUSPICION:var:Timer"
+        for effect in light_complete.effects
+    ),light_complete
+    assert any(
+        effect.effect=="SET_STATE"
+        and effect.subject=="quest:BURDEN_OF_SUSPICION:must_zone"
+        and effect.value is True
+        for effect in light_complete.effects
+    ),light_complete
 
     burden_start=next(
         transition for transition in q4.transitions
@@ -403,7 +458,8 @@ def main():
     print("q6_transitions",len(q6.transitions),"q6_relays",q6_metrics["event_relay_count"])
     print("q5_transitions",len(q5.transitions),"q5_unmodeled",q5_metrics["unmodeled_source_handler_count"])
     print("q4_transitions",len(q4.transitions),"q4_unmodeled",q4_metrics["unmodeled_source_handler_count"])
-    print("next_gap","continue source-catalog closure through Light in the Darkness")
+    print("q3_transitions",len(q3.transitions),"q3_unmodeled",q3_metrics["unmodeled_source_handler_count"])
+    print("next_gap","resolve Light in the Darkness mission and quest prerequisites")
     return 0
 
 
