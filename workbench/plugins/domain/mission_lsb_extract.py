@@ -517,6 +517,7 @@ def materialize_channel_states(machine: MissionStateMachine) -> MissionStateMach
         transitions.append(MissionTransition(
             t.transition_id,from_state,to_state,t.trigger,t.gate,t.event,t.effects,t.confidence,
             t.evidence_ids,t.implementation_status,{**t.metadata,"state_edge_basis":"single_literal_channel" if before or after else "unresolved"},
+            post_effect_gate=t.post_effect_gate,
         ))
     return MissionStateMachine(
         machine.machine_id,machine.feature_id,tuple(states.values()),tuple(transitions),
@@ -555,6 +556,16 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
             gate=DependencyGate(
                 f"chain-gate:{t.transition_id}:{f.transition_id}","ALL",tuple(conds)
             ) if conds else None
+            post_conds=[]
+            for candidate_gate in (t.post_effect_gate,f.post_effect_gate):
+                if not candidate_gate:
+                    continue
+                for condition in candidate_gate.conditions:
+                    if condition not in post_conds:
+                        post_conds.append(condition)
+            post_effect_gate=DependencyGate(
+                f"chain-post-effect-gate:{t.transition_id}:{f.transition_id}","ALL",tuple(post_conds)
+            ) if post_conds else None
             if "UNKNOWN" in {t.confidence,f.confidence}:
                 confidence="UNKNOWN"
             elif t.confidence=="VERIFIED" and f.confidence=="VERIFIED":
@@ -583,7 +594,12 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
                         t.metadata.get("branch_guard_complete",True)
                         and f.metadata.get("branch_guard_complete",True)
                     ),
+                    "post_effect_gate_basis":tuple(dict.fromkeys(
+                        tuple(t.metadata.get("post_effect_gate_basis",()))
+                        + tuple(f.metadata.get("post_effect_gate_basis",()))
+                    )),
                 },
+                post_effect_gate=post_effect_gate,
             ))
 
     remaining=[t for t in machine.transitions if t.transition_id not in consumed]
