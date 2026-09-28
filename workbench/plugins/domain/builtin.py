@@ -9,6 +9,7 @@ from typing import Any, Mapping
 from .base import ContentArchetype, DomainPlugin, DomainPluginSpec, PluginContext, PluginFinding
 from .registry import DomainPluginRegistry
 from .multizone_progression import MultiZoneProgression, analyze_progression
+from .minigame import MinigameModel, analyze_minigame
 
 
 ARCHETYPES=(
@@ -276,12 +277,130 @@ class MultiZoneProgressionPlugin(MetadataPlugin):
 
 
 class MinigamePlugin(MetadataPlugin):
+    def identify(self, context: PluginContext) -> bool:
+        return isinstance(context.metadata.get("minigame_model"),MinigameModel) or super().identify(context)
+
+    def discover_dependencies(self, context: PluginContext) -> tuple[PluginFinding,...]:
+        model=context.metadata.get("minigame_model")
+        if not isinstance(model,MinigameModel):
+            return ()
+        analysis=analyze_minigame(model)
+        evidence_ids=tuple(dict.fromkeys(
+            [
+                evidence_id
+                for timer in model.timers
+                for evidence_id in timer.evidence_ids
+            ]
+            + [
+                evidence_id
+                for interaction in model.interactions
+                for evidence_id in interaction.evidence_ids
+            ]
+            + [
+                evidence_id
+                for outcome in model.outcomes
+                for evidence_id in outcome.evidence_ids
+            ]
+            + [
+                evidence_id
+                for reset in model.resets
+                for evidence_id in reset.evidence_ids
+            ]
+        ))
+        findings=[PluginFinding(
+            plugin_id=self.spec.plugin_id,
+            subject_id=context.feature_id,
+            finding_type="MINIGAME_STRUCTURE",
+            status=analysis.status,
+            message=(
+                f"Minigame structure: {len(model.interactions)} interactions, "
+                f"{len(model.timers)} timers, {len(model.outcomes)} outcomes, "
+                f"{len(analysis.structural_gaps)} structural gaps."
+            ),
+            evidence_ids=evidence_ids,
+            metadata={
+                "minigame_id":model.minigame_id,
+                "validation_errors":list(analysis.validation_errors),
+                "structural_gaps":list(analysis.structural_gaps),
+                "interaction_trigger_counts":dict(analysis.interaction_trigger_counts),
+                "result_counts":dict(analysis.result_counts),
+                "mutable_state_subjects":list(analysis.mutable_state_subjects),
+                "missing_reset_subjects":list(analysis.missing_reset_subjects),
+                "missing_reset_timers":list(analysis.missing_reset_timers),
+                "score_rule_count":analysis.score_rule_count,
+                "score_reset_present":analysis.score_reset_present,
+                "has_win":analysis.has_win,
+                "has_loss":analysis.has_loss,
+            },
+        )]
+        for lifecycle in analysis.timer_lifecycles:
+            if lifecycle.structurally_closed:
+                continue
+            findings.append(PluginFinding(
+                plugin_id=self.spec.plugin_id,
+                subject_id=lifecycle.timer_id,
+                finding_type="TIMER_LIFECYCLE_GAP",
+                status="MANUAL_REQUIRED",
+                message=f"Timer {lifecycle.timer_id} does not have a complete structural lifecycle.",
+                metadata={
+                    "timer_id":lifecycle.timer_id,
+                    "started":lifecycle.started,
+                    "cancellable":lifecycle.cancellable,
+                    "expiry_outcomes":list(lifecycle.expiry_outcomes),
+                },
+            ))
+        if analysis.missing_reset_subjects or analysis.missing_reset_timers or (
+            analysis.score_rule_count and not analysis.score_reset_present
+        ):
+            findings.append(PluginFinding(
+                plugin_id=self.spec.plugin_id,
+                subject_id=context.feature_id,
+                finding_type="RESET_COVERAGE_GAP",
+                status="MANUAL_REQUIRED",
+                message="Repeatable minigame reset coverage is incomplete.",
+                metadata={
+                    "missing_reset_subjects":list(analysis.missing_reset_subjects),
+                    "missing_reset_timers":list(analysis.missing_reset_timers),
+                    "score_reset_present":analysis.score_reset_present,
+                },
+            ))
+        return tuple(findings)
+
+    def report(self, context: PluginContext) -> Mapping[str,Any]:
+        base=dict(super().report(context))
+        model=context.metadata.get("minigame_model")
+        if not isinstance(model,MinigameModel):
+            return base
+        analysis=analyze_minigame(model)
+        base["minigame"]={
+            "minigame_id":model.minigame_id,
+            "status":analysis.status,
+            "interaction_trigger_counts":dict(analysis.interaction_trigger_counts),
+            "result_counts":dict(analysis.result_counts),
+            "timer_lifecycles":[{
+                "timer_id":row.timer_id,
+                "started":row.started,
+                "cancellable":row.cancellable,
+                "expiry_outcomes":list(row.expiry_outcomes),
+                "structurally_closed":row.structurally_closed,
+            } for row in analysis.timer_lifecycles],
+            "mutable_state_subjects":list(analysis.mutable_state_subjects),
+            "missing_reset_subjects":list(analysis.missing_reset_subjects),
+            "missing_reset_timers":list(analysis.missing_reset_timers),
+            "score_rule_count":analysis.score_rule_count,
+            "score_reset_present":analysis.score_reset_present,
+            "has_win":analysis.has_win,
+            "has_loss":analysis.has_loss,
+            "structural_gaps":list(analysis.structural_gaps),
+        }
+        return base
+
     spec=DomainPluginSpec(
         plugin_id="framework.minigame",
         name="Minigame / Puzzle",
-        version="0.1",
+        version="0.2",
         archetypes=("minigame",),
-        capabilities=("timers","interactions","scoring","win_loss","reset"),
+        capabilities=("timers","interactions","scoring","win_loss","reset","temporary_state"),
     )
 
 
