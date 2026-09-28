@@ -17,7 +17,7 @@ def table_exists(con,name):
 def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: Path | None = None) -> dict:
     src=sqlite3.connect(db)
     dst=workbench_graph.init_db(graph_db)
-    counts={"capture_events":0,"packet_observations":0,"video_ocr_observations":0,"event_nodes":0,"event_refs":0,"edges":0,"action_nodes":0,"lua_functions":0,"lua_calls":0,"binding_candidates":0}
+    counts={"capture_events":0,"packet_observations":0,"video_ocr_observations":0,"key_evidence":0,"event_nodes":0,"event_refs":0,"edges":0,"action_nodes":0,"lua_functions":0,"lua_calls":0,"binding_candidates":0}
     where="" if capture_id is None else " WHERE capture_id=?"
     args=() if capture_id is None else (capture_id,)
     if table_exists(src,"capture_events"):
@@ -141,6 +141,58 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
     if not table_exists(src,"capture_events") and not table_exists(src,"capture_video_observations"):
         dst.close(); src.close()
         return {"schema":1,"status":"NO_RUNTIME_OBSERVATION_TABLES","counts":counts}
+
+    # User-curated screenshots/key events are persisted as distinct evidence entities.  Their
+    # existence/provenance is verified; the gameplay interpretation remains in metadata/notes and
+    # is not promoted into packet/event truth by this bridge.
+    if table_exists(src,"capture_key_evidence"):
+        kq="""SELECT capture_id,evidence_id,evidence_type,label,video_ts,capture_ts,clock_kind,
+                    anchor_id,source_ref,file_ref,mime_type,confidence,notes,metadata_json
+             FROM capture_key_evidence"""
+        kargs=()
+        if capture_id is not None:
+            kq+=" WHERE capture_id=?"
+            kargs=(capture_id,)
+        kq+=" ORDER BY capture_id,created_at,evidence_id"
+        for cap,evidence_id,evidence_type,label,video_ts,capture_ts,clock_kind,anchor_id,source_ref,file_ref,mime_type,declared_confidence,notes,metadata_json in src.execute(kq,kargs):
+            cid=f"capture:{cap}"
+            enode=f"key-evidence:{cap}:{evidence_id}"
+            metadata={
+                "capture_id":cap,
+                "evidence_id":evidence_id,
+                "evidence_type":evidence_type,
+                "video_timestamp_seconds":video_ts,
+                "capture_timestamp_seconds":capture_ts,
+                "clock_kind":clock_kind,
+                "alignment_anchor_id":anchor_id,
+                "source_ref":source_ref,
+                "file_ref":file_ref,
+                "mime_type":mime_type,
+                "declared_confidence":declared_confidence,
+                "metadata":json.loads(metadata_json) if metadata_json else {},
+            }
+            dst.execute(
+                "INSERT OR IGNORE INTO entities(entity_id,entity_type,display_name,metadata_json) VALUES(?,?,?,?)",
+                (cid,"CAPTURE",f"capture {cap}",json.dumps({"capture_id":cap})),
+            )
+            dst.execute(
+                "INSERT OR REPLACE INTO entities(entity_id,entity_type,display_name,metadata_json) VALUES(?,?,?,?)",
+                (enode,"KEY_EVIDENCE",label,json.dumps(metadata,sort_keys=True)),
+            )
+            evid=f"evidence:key-evidence:{cap}:{evidence_id}"
+            dst.execute(
+                "INSERT OR REPLACE INTO evidence VALUES(?,?,?,?,?,?)",
+                (evid,"KEY_EVIDENCE","capture_key_evidence",
+                 f"capture:{cap}:key-evidence:{evidence_id}",None,
+                 notes or "User-curated screenshot/key-event evidence."),
+            )
+            dst.execute(
+                "INSERT OR REPLACE INTO entity_relationships VALUES(?,?,?,?,?,?,?,?,?)",
+                (f"capture-key-evidence:{cap}:{evidence_id}",cid,enode,"HAS_EVIDENCE",
+                 evid,"VERIFIED","DISCOVERED",json.dumps(metadata,sort_keys=True),None),
+            )
+            counts["key_evidence"]+=1
+            counts["edges"]+=1
 
     # Optional Lua event-surface bridge. Event identity is proven by npc_event_refs;
     # Lua method matches remain candidate relationships until object/class semantics are resolved.

@@ -176,7 +176,7 @@ Purpose: treat gameplay video and screenshots as time-addressable runtime eviden
 - [x] Connect OCR packet observations to canonical packet nodes with conservative `INFERRED` confidence/provenance so Feature Trace can correlate video evidence with server/client packet knowledge.
 - [x] Harden OCR run/section filesystem access against traversal or malformed route parameters.
 - [x] Add video/capture alignment anchors so a real logger/capture session can be synchronized to a video using explicit clock-scoped anchors, shared packet landmark candidates, offset/drift fitting, and residual diagnostics.
-- [ ] Add screenshot/key-event evidence anchors that can point to an exact video timestamp or aligned capture timestamp.
+- [x] Add screenshot/key-event evidence records that can attach to exact video/capture timestamps or an existing alignment anchor, derive the opposite timeline coordinate from fitted alignment without overwriting observed values, persist validated screenshot files, and bridge curated evidence into the canonical capture graph.
 - [ ] Add cross-frame OCR consensus and packet-symbol-assisted correction while retaining raw OCR values and correction provenance.
 - [ ] Add saved screen-layout/preprocessing profiles for chat, EView/packet overlays, NPCLogger, and other recurring capture layouts.
 

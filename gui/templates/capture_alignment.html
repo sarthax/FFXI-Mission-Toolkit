@@ -4,6 +4,7 @@
 <p><a class="inline" href="/captures/{{ cap.capture_id }}">&larr; capture #{{ cap.capture_id }}</a></p>
 <h1>Capture / Video Alignment</h1>
 <p class="muted">Align gameplay video time with one real capture clock using explicit landmarks. Different logger clocks remain separate until anchored; repeated packet opcodes are shown as candidates, not auto-matched.</p>
+{% if error %}<div class="warn">{{ error }}</div>{% endif %}
 
 {% if cap.video_url %}
 <p><b>Video:</b> <a class="inline" href="{{ cap.video_url }}" target="_blank" rel="noopener">{{ cap.video_url }}</a>{% if cap.ocr_run_id %} &middot; <a class="inline" href="/ocr/{{ cap.ocr_run_id }}">OCR run</a>{% endif %}</p>
@@ -75,6 +76,74 @@
 </tr>
 {% endfor %}
 </table></div>
+{% endif %}
+
+<h2>Key evidence</h2>
+<p class="muted">Attach a screenshot or record a named key event against video time, capture time, or an existing alignment anchor. If only one side of the timeline is supplied and a fitted model exists, the other side is shown as an aligned estimate rather than stored as observed truth.</p>
+
+<form method="post" action="/captures/{{ cap.capture_id }}/alignment/evidence" enctype="multipart/form-data"
+      style="display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:10px;max-width:900px;">
+  <label>Type
+    <select name="evidence_type">
+      {% for kind in key_evidence_types %}<option value="{{ kind }}" {% if kind == "KEY_EVENT" %}selected{% endif %}>{{ kind }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Label<input type="text" name="label" required placeholder="CS starts / NM spawns / objective complete"></label>
+  <label>Video time (seconds)<input type="number" name="video_ts" step="0.001" min="0" placeholder="optional"></label>
+  <label>Capture time (seconds)<input type="number" name="capture_ts" step="0.001" placeholder="optional"></label>
+  <label>Capture clock
+    <select name="clock_kind">
+      <option value="">-- none / infer from anchor --</option>
+      {% for kind in clock_kinds %}<option value="{{ kind }}">{{ kind }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Link existing anchor
+    <select name="anchor_id">
+      <option value="">-- none --</option>
+      {% for a in summary.anchors %}
+      <option value="{{ a.anchor_id }}">{{ a.label or a.anchor_id }} · {{ "%.3f"|format(a.video_ts) }}s video / {{ "%.3f"|format(a.capture_ts) }}s {{ a.clock_kind }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Source reference<input type="text" name="source_ref" placeholder="packet/event/frame id, optional"></label>
+  <label>Screenshot<input type="file" name="screenshot" accept="image/png,image/jpeg,image/webp,image/bmp"></label>
+  <label style="grid-column:1/-1;">Notes<textarea name="notes" rows="2" placeholder="Why this frame/event matters"></textarea></label>
+  <div><button type="submit">Add key evidence</button></div>
+</form>
+
+{% if summary.key_evidence %}
+<div class="table-wrap" style="margin-top:12px;"><table>
+<tr><th>type</th><th>label</th><th>video time</th><th>capture time</th><th>clock</th><th>source</th><th>evidence</th><th></th></tr>
+{% for e in summary.key_evidence %}
+<tr>
+  <td>{{ e.evidence_type }}</td>
+  <td>{{ e.label }}{% if e.notes %}<div class="muted">{{ e.notes }}</div>{% endif %}</td>
+  <td class="mono">
+    {% if e.video_ts is not none %}
+      {% if cap.video_url %}<a class="inline" href="{{ cap.video_url }}{% if '?' in cap.video_url %}&{% else %}?{% endif %}t={{ e.video_ts|int }}s" target="_blank" rel="noopener">{{ "%.3f"|format(e.video_ts) }}s</a>{% else %}{{ "%.3f"|format(e.video_ts) }}s{% endif %}
+    {% elif e.video_ts_aligned is defined and e.video_ts_aligned is not none %}
+      <span title="derived from fitted alignment model">~{{ "%.3f"|format(e.video_ts_aligned) }}s</span>
+    {% else %}<span class="muted">—</span>{% endif %}
+  </td>
+  <td class="mono">
+    {% if e.capture_ts is not none %}{{ "%.3f"|format(e.capture_ts) }}s
+    {% elif e.capture_ts_aligned is defined and e.capture_ts_aligned is not none %}
+      <span title="derived from fitted alignment model">~{{ "%.3f"|format(e.capture_ts_aligned) }}s</span>
+    {% else %}<span class="muted">—</span>{% endif %}
+  </td>
+  <td class="mono">{{ e.clock_kind or "" }}</td>
+  <td class="mono">{{ e.source_ref or "" }}{% if e.anchor_id %}<div class="muted">anchor {{ e.anchor_id }}</div>{% endif %}</td>
+  <td>
+    {% if e.file_ref %}
+      <a class="inline" href="/captures/{{ cap.capture_id }}/alignment/evidence/{{ e.evidence_id }}/image" target="_blank">view screenshot</a>
+    {% else %}<span class="muted">record only</span>{% endif %}
+  </td>
+  <td><form method="post" action="/captures/{{ cap.capture_id }}/alignment/evidence/{{ e.evidence_id }}/delete" onsubmit="return confirm('Delete this key evidence record{% if e.file_ref %} and its screenshot{% endif %}?');"><button type="submit">delete</button></form></td>
+</tr>
+{% endfor %}
+</table></div>
+{% else %}
+<p class="muted">No key evidence recorded yet.</p>
 {% endif %}
 
 <h2>Shared packet landmarks</h2>
