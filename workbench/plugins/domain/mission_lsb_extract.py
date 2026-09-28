@@ -785,8 +785,8 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                     "section_eligibility_status":section_eligibility_status,
                     "section_eligibility_unresolved_reasons":tuple(section_unresolved_reasons),
                     "priority":(int(pm.group(1)) if (pm:=re.search(r"setPriority\((\d+)\)",text)) else None),
-                    "important_event":".importantEvent()" in text,
-                    "replace_default":".replaceDefault()" in text,
+                    "important_event":any(token in text for token in (":importantEvent()",".importantEvent()")),
+                    "replace_default":any(token in text for token in (":replaceDefault()",".replaceDefault()")),
                     "client_transport":bool(transport_effects),
                     "branch_alternative":len(paths)>1,
                     "branch_index":path_index,
@@ -838,8 +838,8 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                     "section_check_present":section_check_present,
                     "section_eligibility_status":section_eligibility_status,
                     "section_eligibility_unresolved_reasons":tuple(section_unresolved_reasons),
-                "replace_default":".replaceDefault()" in suffix,
-                "important_event":".importantEvent()" in suffix,
+                "replace_default":any(token in suffix for token in (":replaceDefault()",".replaceDefault()")),
+                "important_event":any(token in suffix for token in (":importantEvent()",".importantEvent()")),
             },
         ))
 
