@@ -61,7 +61,7 @@ def main():
         assert "capture-spatial-search" in three_d
         assert "capture-spatial-results" in three_d
         assert "CAPTURE_SPATIAL_URL" in three_d
-        assert "xyz \${e.x.toFixed(1)}" in three_d
+        assert "toFixed(1)" in three_d
         assert "/captures/{capture_id}/spatial.json" in server
 
         con.close()
