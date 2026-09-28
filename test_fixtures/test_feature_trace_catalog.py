@@ -28,10 +28,10 @@ def main():
     assert fallback[0]["provider"]=="schema-fallback"
 
     # mob_groups is composite-keyed by zoneid + groupid; groupid alone is not globally unique.
-    con.execute("CREATE TABLE lsb_mob_groups (zoneid INTEGER, groupid INTEGER, poolid INTEGER, name TEXT)")
-    con.executemany("INSERT INTO lsb_mob_groups VALUES (?,?,?,?)",[
-        (55,38,1001,"Group Thirty Eight"),
-        (75,38,2002,"Group Thirty Eight"),
+    con.execute("CREATE TABLE lsb_mob_groups (zoneid INTEGER, groupid INTEGER, poolid INTEGER, name TEXT, dropid INTEGER, respawntime INTEGER, minLevel INTEGER, maxLevel INTEGER)")
+    con.executemany("INSERT INTO lsb_mob_groups VALUES (?,?,?,?,?,?,?,?)",[
+        (55,38,1001,"Group Thirty Eight",501,300,70,72),
+        (75,38,2002,"Group Thirty Eight",777,600,75,78),
     ])
     group_matches=feature_trace.search_nodes(con,"Group Thirty Eight")
     group_ids={row["node_id"] for row in group_matches if row.get("table")=="lsb_mob_groups"}
@@ -42,13 +42,19 @@ def main():
     assert feature_trace.node_info(con,"catalog:lsb_mob_groups:38")["known"] is False
     group_node=feature_trace.node_info(con,"catalog:lsb_mob_groups:zoneid=75&groupid=38")
     assert group_node["known"]
-    assert group_node["representations"][0]["metadata"]["identity"]=={"zoneid":75,"groupid":38}
+    group_meta=group_node["representations"][0]["metadata"]
+    assert group_meta["identity"]=={"zoneid":75,"groupid":38}
+    assert group_meta["details"]["dropid"]==777
+    drop_search=[row for row in feature_trace.search_nodes(con,"777") if row.get("table")=="lsb_mob_groups"]
+    assert drop_search and "dropid" in drop_search[0]["matched_on"],drop_search
     con.execute("CREATE TABLE dsp_mob_groups (groupid INTEGER, name TEXT)")
     con.execute("INSERT INTO dsp_mob_groups VALUES (38,'Malformed Provider Group')")
     assert not feature_trace.search_nodes(con,"Malformed Provider Group")
 
-    con.execute("CREATE TABLE lsb_mob_pools (poolid INTEGER, name TEXT)")
-    con.executemany("INSERT INTO lsb_mob_pools VALUES (?,?)",[(1001,"Pool 1001"),(2002,"Pool 2002")])
+    con.execute("CREATE TABLE lsb_mob_pools (poolid INTEGER, name TEXT, familyid INTEGER, modelid TEXT)")
+    con.executemany("INSERT INTO lsb_mob_pools VALUES (?,?,?,?)",[(1001,"Pool 1001",10,"0x0001"),(2002,"Pool 2002",20,"0x0002")])
+    pool_node=feature_trace.node_info(con,"catalog:lsb_mob_pools:2002")
+    assert pool_node["representations"][0]["metadata"]["details"]=={"familyid":20,"modelid":"0x0002"}
     zone75_mobid=(1<<24)|(75<<12)|123
     con.execute("CREATE TABLE lsb_mob_spawn_points (mobid INTEGER, mobname TEXT, groupid INTEGER)")
     con.execute("INSERT INTO lsb_mob_spawn_points VALUES (?,?,?)",(zone75_mobid,"Zone Seventy Five Mob",38))
