@@ -27,6 +27,7 @@ SAMPLE=r"""
         [6] = function(player, csid, option, npc)
             if player:hasKeyItem(xi.keyItem.TEST_A) then
                 player:delKeyItem(xi.keyItem.TEST_A)
+                -- This event transports you to the exit and is handled by the client.
                 mission:setVar(player, 'Status', 2)
             else
                 npcUtil.giveKeyItem(player, xi.keyItem.TEST_B)
@@ -85,9 +86,13 @@ def main():
     assert ("REMOVE","key_item:TEST_A",None) in guarded_effects,guarded_effects
     assert ("SET_VAR","mission_var:Status","2") in guarded_effects,guarded_effects
     assert ("GRANT","key_item:TEST_B",None) not in guarded_effects,guarded_effects
+    assert any(e.effect=="CLIENT_TRANSPORT" for e in guarded.effects),guarded.effects
+    assert guarded.metadata.get("client_transport") is True,guarded.metadata
     assert ("GRANT","key_item:TEST_B",None) in fallback_effects,fallback_effects
     assert ("SET_VAR","mission_var:Status","3") in fallback_effects,fallback_effects
     assert ("REMOVE","key_item:TEST_A",None) not in fallback_effects,fallback_effects
+    assert not any(e.effect=="CLIENT_TRANSPORT" for e in fallback.effects),fallback.effects
+    assert fallback.metadata.get("client_transport") is False,fallback.metadata
 
     chained=chain_event_transitions(machine)
     event6_chains=[
@@ -109,6 +114,10 @@ def main():
         and not any(e.effect=="REMOVE" and e.subject=="key_item:TEST_A" for e in t.effects)
         for t in event6_chains
     ),event6_chains
+    assert sum(
+        any(e.effect=="CLIENT_TRANSPORT" for e in t.effects)
+        for t in event6_chains
+    )==1,event6_chains
 
     assert machine.metadata["branch_alternatives"]>=5,machine.metadata
     assert machine.metadata["incomplete_branch_guards"]>=3,machine.metadata
