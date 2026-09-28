@@ -57,14 +57,16 @@ def make_packetdb(path: Path):
 def main():
     with TemporaryDirectory() as tmp:
         root = Path(tmp)
-        (root / "PacketViewer" / "incoming").mkdir(parents=True)
-        (root / "PacketViewer" / "incoming" / "0x00E.log").write_text(
+        source_root = root / "source"
+        source_root.mkdir()
+        (source_root / "PacketViewer" / "incoming").mkdir(parents=True)
+        (source_root / "PacketViewer" / "incoming" / "0x00E.log").write_text(
             PACKETVIEWER, encoding="utf-8"
         )
-        (root / "packeteer.txt").write_text(PACKETEER, encoding="utf-8")
-        make_packetdb(root / "packetdb.sqlite")
-        (root / "npclogger" / "tables").mkdir(parents=True)
-        (root / "npclogger" / "tables" / "Test Zone.lua").write_text(
+        (source_root / "packeteer.txt").write_text(PACKETEER, encoding="utf-8")
+        make_packetdb(source_root / "packetdb.sqlite")
+        (source_root / "npclogger" / "tables").mkdir(parents=True)
+        (source_root / "npclogger" / "tables" / "Test Zone.lua").write_text(
             NPCLOGGER, encoding="utf-8"
         )
 
@@ -73,7 +75,7 @@ def main():
         bci.init_db(con)
         cid = bci.create_manual_capture(con, "packet adapter fixture", "Research", None)
 
-        src = bci.Source(root)
+        src = bci.Source(source_root)
         results = []
         try:
             bci.ingest_from_source(con, cid, src, file_results=results)
@@ -147,7 +149,7 @@ def main():
         assert corr["matched"] >= 6, corr
 
         # Re-ingesting the same source set must preserve one observation per source, not inflate.
-        src = bci.Source(root)
+        src = bci.Source(source_root)
         try:
             bci.ingest_from_source(con, cid, src, file_results=[])
         finally:
