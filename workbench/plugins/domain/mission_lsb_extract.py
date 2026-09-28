@@ -863,30 +863,115 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
     return materialize_channel_states(out)
 
 
+def _literal_mission_section_bodies(lua: str) -> tuple[str,...]:
+    """Return top-level literal table entries from mission.sections.
+
+    This intentionally recognizes only the ordinary literal table form used by LSB
+    mission scripts. Dynamic section construction is left unresolved rather than
+    flattening unrelated source into one synthetic scope.
+    """
+    lines=lua.splitlines()
+    structural=_structural_lua_lines(lua)
+    assignment=None
+    for i,line in enumerate(structural):
+        if re.search(r"\bmission\.sections\s*=",line):
+            assignment=i
+            break
+    if assignment is None:
+        return ()
+
+    outer_start=None
+    for i in range(assignment,len(lines)):
+        if "{" in _structure_code(lines[i]):
+            outer_start=i
+            break
+        if i>assignment and _code(lines[i]).strip():
+            return ()
+    if outer_start is None:
+        return ()
+
+    depth=0
+    outer_open=False
+    section_start=None
+    sections=[]
+    for i in range(outer_start,len(lines)):
+        code=_structure_code(lines[i])
+        opens=code.count("{")
+        closes=code.count("}")
+        before=depth
+        if not outer_open:
+            if not opens:
+                continue
+            outer_open=True
+        elif before==1 and section_start is None and opens:
+            section_start=i
+
+        depth+=opens-closes
+        if section_start is not None and depth==1:
+            sections.append("\n".join(lines[section_start:i+1]))
+            section_start=None
+        if outer_open and depth<=0:
+            break
+
+    if depth!=0 or section_start is not None:
+        return ()
+    return tuple(sections)
+
+
+def _section_check_block(section: str) -> str | None:
+    """Return the literal top-level check function for one section."""
+    lines=section.splitlines()
+    for start,_end,text in _balanced_function_blocks(section):
+        if re.search(r"^\s*check\s*=\s*function\b",lines[start]):
+            return text
+    return None
+
+
 def extract_section_completion_gate(lua: str) -> DependencyGate | None:
-    """Recover a literal multi-channel completion check from a mission section."""
-    pairs=[]
+    """Recover an unambiguous literal completion gate from one completing section.
+
+    Status checks are read only from the completing section's check handler. Unrelated
+    mission sections are never combined. Multiple completing sections must prove the
+    same convergence gate; disagreement fails closed as unresolved.
+    """
     pattern=re.compile(
         r"player:getMissionStatus\([^\n]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)\s*==\s*(\d+)"
     )
-    for m in pattern.finditer(lua):
-        pair=(m.group(1),int(m.group(2)))
-        if pair not in pairs:
-            pairs.append(pair)
-    # Conservative: a convergence gate requires distinct named status channels
-    # sharing the same terminal literal and an actual mission completion call.
-    if "mission:complete(player)" not in lua:
-        return None
-    by_value={}
-    for channel,value in pairs:
-        by_value.setdefault(value,[]).append(channel)
-    candidates=[(v,chs) for v,chs in by_value.items() if len(set(chs))>=2]
+    candidates=[]
+    for section in _literal_mission_section_bodies(lua):
+        executable="\n".join(_structural_lua_lines(section))
+        if not _COMPLETE.search(executable):
+            continue
+        check=_section_check_block(section)
+        if check is None:
+            return None
+
+        pairs=[]
+        for match in pattern.finditer(check):
+            pair=(match.group(1),int(match.group(2)))
+            if pair not in pairs:
+                pairs.append(pair)
+        by_value={}
+        for channel,value in pairs:
+            by_value.setdefault(value,[]).append(channel)
+        section_candidates=[
+            (value,tuple(sorted(set(channels))))
+            for value,channels in by_value.items()
+            if len(set(channels))>=2
+        ]
+        if len(section_candidates)!=1:
+            return None
+        candidates.append(section_candidates[0])
+
     if not candidates:
         return None
-    value,channels=max(candidates,key=lambda x:len(set(x[1])))
+    if any(candidate!=candidates[0] for candidate in candidates[1:]):
+        return None
+
+    value,channels=candidates[0]
     return DependencyGate(
         "section:completion-convergence","ALL",
-        tuple(StateCondition(f"mission_status:{ch}","EQ",value) for ch in sorted(set(channels))),
+        tuple(StateCondition(f"mission_status:{channel}","EQ",value) for channel in channels),
     )
 
 
