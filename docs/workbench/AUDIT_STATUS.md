@@ -2134,3 +2134,23 @@ Comment text is stripped before helper semantics/calls are evaluated, preventing
 Regression: `test_fixtures/test_mission_generic_completion_helpers.py` uses a renamed `allPathsReady(player)` helper and verifies structural discovery, exclusion of an unrelated helper, helper-call linkage, and post-effect ordering.
 
 This remains intentionally conservative. Helpers with dynamic range endpoints, nonliteral terminal values, non-player signatures, or structurally different completion logic remain unresolved rather than guessed.
+
+## 2026-09-27 — Mission actor context scoped by Lua table structure
+
+Mission handler actor context no longer uses the lexical "most recently seen actor" heuristic.
+
+The extractor now derives literal Lua table spans for zone entries and actor entries:
+- a zone handler receives a zone only while its source line is inside that zone's `{ ... }` table;
+- an actor is attached only while the handler is structurally inside that actor's table;
+- one-line declarative actor events remain handled explicitly and do not create synthetic actor scopes;
+- zone-level handlers after one or more NPC blocks remain actorless rather than inheriting the last NPC name.
+
+This closes a real identity-leakage class where zone-level `onEventFinish` handlers could be mislabeled as belonging to the last actor table encountered lexically.
+
+Event chaining now also uses actor scope when available. Finish candidates are indexed by `(zone, CSID, actor)`; a trigger first uses exact actor-scoped finish handlers and falls back to an actorless zone-level finish only when no exact actor-scoped handler exists. Two actors reusing the same CSID therefore no longer cross-chain each other's effects.
+
+Regressions:
+- `test_fixtures/test_mission_actor_scope_context.py` covers two actor triggers followed by zone-level finish handlers, declarative actor events, zone-level zone-in context, and two actors deliberately reusing the same CSID with separate actor-local finish handlers.
+- `test_fixtures/test_mission_lsb_correlation.py` now explicitly asserts that the Misareaux zone-level event-finish handler does not inherit the preceding `_0p2` actor.
+
+The table-scope parser remains conservative and literal. Dynamically constructed mission tables or nonliteral table assignments remain unresolved rather than receiving inferred actor context.
