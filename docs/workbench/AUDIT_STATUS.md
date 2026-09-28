@@ -2019,3 +2019,10 @@ Feature Trace now exposes the three key-item catalogs that are actually persiste
 DSP has no corresponding persisted key-item table in the current DSP index and is intentionally left UNKNOWN rather than synthesized from another source.
 
 Because `keyitems_ours` and `keyitems_external` do not have database primary-key constraints, the generic catalog resolver now verifies that single-column provider identities are unique before resolving them. Duplicate logical IDs fail closed as UNKNOWN instead of selecting the first row.
+
+
+### Mob group/pool provider inspection context
+
+Feature Trace mob-group providers now expose source-native inspection context when present: `poolid`, `dropid`, respawn time, and min/max level. Mob-pool providers expose `familyid` and `modelid`.
+
+`poolid`, `dropid`, `familyid`, and `modelid` are searchable aliases with `matched_on` provenance. This improves investigation of server records without creating synthetic drop-row objects or asserting gameplay semantics from the numeric values alone.
