@@ -56,6 +56,7 @@ jobs:
           python test_fixtures/test_feature_surface_validation.py
           python test_fixtures/test_domain_plugin_registry.py
           python test_fixtures/test_multizone_progression_framework.py
+          python test_fixtures/test_minigame_framework.py
           python test_fixtures/test_domain_plugin_migration_actions.py
           python test_fixtures/test_battlefield_dsp_membership.py
           python test_fixtures/test_battlefield_lsb_policy.py
