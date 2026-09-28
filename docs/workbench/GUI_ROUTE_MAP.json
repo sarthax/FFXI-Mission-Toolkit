@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 196,
+  "route_count": 197,
   "routes": [
     {
       "method": "GET",
@@ -626,6 +626,14 @@
       "section": "Capture Management",
       "role": "mutation",
       "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/{capture_id}/source-locator",
+      "home": "Captures",
+      "section": "Evidence / Provenance",
+      "role": "detail",
+      "disposition": "KEEP"
     },
     {
       "method": "GET",

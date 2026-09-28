@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Capture Source Evidence — Mission Toolkit{% endblock %}
+{% block content %}
+<h1>Capture Source Evidence</h1>
+<p><a class="zonelink" href="/captures/{{ cap.capture_id }}">← Capture #{{ cap.capture_id }}</a></p>
+
+<div class="table-wrap"><table>
+<tr><th>Capture</th><td>#{{ cap.capture_id }} · {{ cap.capture_label }}</td></tr>
+<tr><th>Normalized row</th><td><code>{{ locator.normalized_table or locator.target_table }}</code><br><code>{{ locator.normalized_row_key or locator.row_key }}</code></td></tr>
+<tr><th>Source file</th><td><code>{{ locator.filename }}</code></td></tr>
+<tr><th>Source SHA-256</th><td><code>{{ locator.source_sha256 or "—" }}</code></td></tr>
+<tr><th>Locator basis</th><td>{{ locator.locator_basis }}</td></tr>
+<tr><th>Physical range</th><td>
+  {% if locator.start_line is not none %}line {{ locator.start_line }}{% if locator.end_line is not none and locator.end_line != locator.start_line %}–{{ locator.end_line }}{% endif %}{% else %}no line range{% endif %}
+  {% if locator.start_offset is not none %}<br>bytes {{ locator.start_offset }}–{{ locator.end_offset }}{% endif %}
+</td></tr>
+{% if locator.details %}
+<tr><th>Source identity</th><td>
+{% for key,value in locator.details.items() %}
+<div><span class="chip">{{ key }}</span> {{ value }}</div>
+{% endfor %}
+</td></tr>
+{% endif %}
+</table></div>
+
+{% if source_state == "verified" %}
+<div class="ok"><strong>Verified against original source bytes.</strong> The current source SHA-256 matches the hash recorded at ingestion.</div>
+{% elif source_state == "hash_mismatch" %}
+<div class="warn"><strong>Source changed since ingestion.</strong> The locator is retained, but current bytes are not presented as the original evidence.</div>
+{% else %}
+<div class="warn"><strong>Original source is unavailable for direct display.</strong> The recorded locator metadata remains intact.</div>
+{% endif %}
+{% if source_error %}<p class="muted">{{ source_error }}</p>{% endif %}
+
+{% if source_excerpt is not none %}
+<h2>Exact source excerpt</h2>
+<pre style="white-space:pre-wrap;overflow:auto;max-height:65vh;">{{ source_excerpt }}</pre>
+{% endif %}
+
+{% if source_row %}
+<h2>Exact SQLite source row</h2>
+<div class="table-wrap"><table>
+<thead><tr>{% for col in source_columns %}<th>{{ col }}</th>{% endfor %}</tr></thead>
+<tbody><tr>{% for col in source_columns %}<td><code>{{ source_row[col] }}</code></td>{% endfor %}</tr></tbody>
+</table></div>
+{% endif %}
+
+<p class="muted">This view proves source location and byte/database identity only. It does not elevate an observed runtime value into server truth.</p>
+{% endblock %}

@@ -10,12 +10,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sqlite3
 from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
 
 from workbench.core.services.feature_trace_catalog import catalog_node, is_runtime_edge, runtime_hierarchy, filter_runtime_observations, provider_relationships, search_catalog
+from workbench.core.services import capture_integrity
 
 
 SCHEMA = 1
@@ -214,11 +216,105 @@ def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
     return result
 
 
+def _capture_id_from_runtime_edge(edge: dict):
+    meta = edge.get("metadata") or {}
+    value = meta.get("capture_id") or meta.get("capture")
+    if value is not None:
+        text = str(value)
+        return int(text.removeprefix("capture:")) if text.removeprefix("capture:").isdigit() else None
+    for node in (edge.get("source_node"), edge.get("target_node")):
+        text = str(node or "")
+        if text.startswith("capture:") and text[8:].isdigit():
+            return int(text[8:])
+    return None
+
+
+def _runtime_row_identity(con: sqlite3.Connection, edge: dict):
+    """Resolve a runtime graph edge back to its normalized capture table/primary key."""
+    meta = edge.get("metadata") or {}
+    table = meta.get("capture_table")
+    row_key = meta.get("capture_row_key")
+    capture_id = _capture_id_from_runtime_edge(edge)
+    if table and row_key is not None and capture_id is not None:
+        return capture_id, str(table), row_key
+
+    evidence_id = edge.get("evidence_id")
+    if not evidence_id:
+        return None
+    exists = con.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='evidence'"
+    ).fetchone()
+    if not exists:
+        return None
+    row = con.execute(
+        "SELECT source,location FROM evidence WHERE evidence_id=?",
+        (evidence_id,),
+    ).fetchone()
+    if not row:
+        return None
+    source, location = row
+    source = str(source or "")
+    location = str(location or "")
+
+    if source == "capture_events":
+        m = re.match(r"^capture:(\d+):(.+):(\d+)$", location)
+        if m:
+            return int(m.group(1)), "capture_events", {
+                "zone_db": m.group(2), "seq": int(m.group(3)),
+            }
+    if source == "capture_actions":
+        m = re.match(r"^capture:(\d+):action:(.+)$", location)
+        if m:
+            return int(m.group(1)), "capture_actions", {"action_key": m.group(2)}
+    if source == "capture_raw_packets":
+        m = re.match(r"^capture:(\d+):packet:(\d+)$", location)
+        if m:
+            return int(m.group(1)), "capture_raw_packets", {"seq": int(m.group(2))}
+    if source == "capture_eventview":
+        m = re.match(r"^capture:(\d+):eventview:(.+):(\d+)$", location)
+        if m:
+            return int(m.group(1)), "capture_eventview", {
+                "zone_db": m.group(2), "seq": int(m.group(3)),
+            }
+    return None
+
+
+def enrich_runtime_capture_provenance(
+    graph_con: sqlite3.Connection,
+    capture_con: sqlite3.Connection | None,
+    observations: list[dict],
+) -> list[dict]:
+    if capture_con is None:
+        return observations
+    out = []
+    for edge in observations:
+        item = dict(edge)
+        identity = _runtime_row_identity(graph_con, item)
+        locators = []
+        if identity is not None:
+            capture_id, target_table, row_key = identity
+            locators = capture_integrity.find_row_locators(
+                capture_con, capture_id, target_table, row_key
+            )
+            canonical_key = capture_integrity.canonical_row_key(row_key)
+            for locator in locators:
+                locator["capture_id"] = capture_id
+                locator["normalized_table"] = target_table
+                locator["normalized_row_key"] = canonical_key
+        item["capture_provenance"] = locators
+        out.append(item)
+    return out
+
+
 def runtime_observation_page(con: sqlite3.Connection, root: str, depth: int, direction: str,
                              catalog_con: sqlite3.Connection | None = None, opcode: str | None = None,
                              capture_id: str | None = None, offset: int = 0, limit: int = 100) -> dict:
     traced=trace(con,root,depth,direction,catalog_con,include_runtime_edges=True)
-    return filter_runtime_observations(traced.pop("_runtime_edges",[]),opcode,capture_id,offset,limit)
+    page=filter_runtime_observations(traced.pop("_runtime_edges",[]),opcode,capture_id,offset,limit)
+    page["observations"]=enrich_runtime_capture_provenance(
+        con, catalog_con, page["observations"]
+    )
+    return page
 
 
 def main():

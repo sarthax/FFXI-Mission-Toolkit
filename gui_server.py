@@ -3311,6 +3311,14 @@ def feature_trace_runtime_detail(
         return JSONResponse({"error":"Canonical Workbench graph is not available."},status_code=404)
     try:
         page=feature_trace.runtime_observation_page(con,root,depth,direction,catalog_con,opcode,capture_id,offset,limit)
+        for observation in page.get("observations", []):
+            for locator in observation.get("capture_provenance", []):
+                locator["href"] = (
+                    f"/captures/{locator['capture_id']}/source-locator"
+                    f"?filename={quote(str(locator['filename']), safe='')}"
+                    f"&target_table={quote(str(locator['normalized_table']), safe='')}"
+                    f"&row_key={quote(str(locator['normalized_row_key']), safe='')}"
+                )
         return JSONResponse(page)
     finally:
         con.close()
@@ -5532,6 +5540,115 @@ async def captures_rebuild_source(request: Request, capture_id: int):
         )
     finally:
         con.close()
+
+
+@app.get("/captures/{capture_id}/source-locator", response_class=HTMLResponse)
+def captures_source_locator(
+    request: Request,
+    capture_id: int,
+    filename: str,
+    target_table: str,
+    row_key: str,
+):
+    """Inspect the exact physical source row/block behind one normalized capture row."""
+    con = get_con()
+    cap = con.execute("SELECT * FROM captures WHERE capture_id=?", (capture_id,)).fetchone()
+    if not cap:
+        con.close()
+        return HTMLResponse("Capture not found", status_code=404)
+
+    locators = capture_integrity.find_row_locators(con, capture_id, target_table, row_key)
+    locator = next((item for item in locators if item["filename"] == filename), None)
+    if locator is None:
+        con.close()
+        return HTMLResponse("Capture source locator not found", status_code=404)
+
+    source_state = "unavailable"
+    source_error = None
+    source_excerpt = None
+    source_row = None
+    source_columns = []
+    path, _subroot, origin_error = build_capture_index._capture_source_origin(con, capture_id)
+    if origin_error:
+        source_error = origin_error
+    else:
+        src = None
+        try:
+            src = build_capture_index.Source(path)
+            if filename not in set(src.list_files()):
+                source_error = "Source file is no longer present in the original folder/archive."
+            else:
+                data = src.read_bytes(filename)
+                current_hash = capture_integrity.sha256_bytes(data)
+                if locator.get("source_sha256") and current_hash != locator["source_sha256"]:
+                    source_state = "hash_mismatch"
+                    source_error = (
+                        "Current source bytes do not match the SHA-256 recorded when this evidence "
+                        "was ingested; current bytes are not displayed as original evidence."
+                    )
+                elif locator["locator_basis"] == "sqlite-row":
+                    details = locator.get("details") or {}
+                    source_table = str(details.get("source_table") or "")
+                    source_rowid = details.get("source_rowid")
+                    if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", source_table) or source_rowid is None:
+                        source_error = "SQLite locator is missing a safe source table or rowid."
+                    else:
+                        sub, tmp_path = src.open_sqlite(filename)
+                        try:
+                            sub.row_factory = sqlite3.Row
+                            row = sub.execute(
+                                f'SELECT rowid AS __source_rowid__, * FROM "{source_table}" WHERE rowid=?',
+                                (int(source_rowid),),
+                            ).fetchone()
+                            if row is None:
+                                source_error = "The recorded SQLite rowid is not present in the source database."
+                            else:
+                                source_state = "verified"
+                                source_columns = list(row.keys())
+                                source_row = {key: row[key] for key in source_columns}
+                                for key, value in list(source_row.items()):
+                                    if isinstance(value, (bytes, bytearray)):
+                                        source_row[key] = bytes(value).hex()
+                        finally:
+                            build_capture_index.close_sqlite(sub, tmp_path)
+                else:
+                    start = locator.get("start_offset")
+                    end = locator.get("end_offset")
+                    if start is not None and end is not None:
+                        if end < start:
+                            source_error = "Recorded byte range is invalid."
+                        else:
+                            raw = data[int(start):int(end)]
+                            if len(raw) > 262144:
+                                raw = raw[:262144]
+                                source_error = "Source excerpt exceeded 256 KiB and was truncated for display."
+                            source_excerpt = raw.decode("utf-8", "replace")
+                            source_state = "verified"
+                    elif locator.get("start_line") is not None:
+                        decoded = data.decode("utf-8", "replace").splitlines()
+                        first = max(1, int(locator["start_line"]))
+                        last = max(first, int(locator.get("end_line") or first))
+                        source_excerpt = "\n".join(decoded[first - 1:last])
+                        source_state = "verified"
+                    else:
+                        source_error = "This locator has no displayable physical source span."
+        except Exception as ex:
+            source_error = f"{type(ex).__name__}: {ex}"
+        finally:
+            if src is not None:
+                src.close()
+
+    cap_dict = dict(cap)
+    con.close()
+    return templates.TemplateResponse(request, "capture_source_locator.html", {
+        "cap": cap_dict,
+        "locator": locator,
+        "source_state": source_state,
+        "source_error": source_error,
+        "source_excerpt": source_excerpt,
+        "source_row": source_row,
+        "source_columns": source_columns,
+    })
 
 
 @app.get("/captures/{capture_id}", response_class=HTMLResponse)
