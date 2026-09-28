@@ -3929,6 +3929,29 @@ def wiki_export(title: str = ""):
     return PlainTextResponse(wiki_compile.to_markdown(report), media_type="text/markdown")
 
 
+def _sync_ocr_run_to_linked_captures(run_id: str) -> int:
+    """Refresh derived VIDEO_OCR rows for every capture linked to this OCR run."""
+    con = get_con()
+    build_capture_index.init_db(con)
+    capture_ids = [
+        row[0]
+        for row in con.execute(
+            "SELECT capture_id FROM captures WHERE ocr_run_id=? ORDER BY capture_id",
+            (run_id,),
+        ).fetchall()
+    ]
+    if not capture_ids:
+        con.close()
+        return 0
+    observations = youtube_chat_ocr.capture_observations(run_id)
+    for capture_id in capture_ids:
+        build_capture_index.replace_video_ocr_observations(
+            con, capture_id, run_id, observations
+        )
+    con.close()
+    return len(capture_ids)
+
+
 def ocr_prereqs() -> list[dict]:
     from shutil import which
     prereqs = [
@@ -4121,6 +4144,7 @@ def ocr_run_match(run_id: str, section: str, zone: str = Form(""), min_score: fl
     error = ""
     try:
         youtube_chat_ocr.cmd_match(argparse.Namespace(run_id=run_id, section=section, zone=zone or None, min_score=min_score))
+        _sync_ocr_run_to_linked_captures(run_id)
     except SystemExit as e:
         error = str(e)
     return RedirectResponse(f"/ocr/{run_id}" + (f"?error={quote(error)}" if error else ""), status_code=303)
@@ -4135,6 +4159,7 @@ def ocr_run_correct(run_id: str, section: str, frame: str = Form(...), text: str
         youtube_chat_ocr.cmd_correct(argparse.Namespace(
             run_id=run_id, section=section, frame=frame, text=text, clear=not text.strip(),
         ))
+        _sync_ocr_run_to_linked_captures(run_id)
     except SystemExit as e:
         error = str(e)
     return RedirectResponse(f"/ocr/{run_id}" + (f"?error={quote(error)}" if error else ""), status_code=303)
