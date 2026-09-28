@@ -344,14 +344,16 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
     transitions=[]
     states={"source:any":MissionState("source:any","Source state")}
     serial=0
+    branch_alternatives=0
+    incomplete_branch_guards=0
     for start,end,text in _balanced_function_blocks(lua):
         first=lines[start]
-        trigger=None; event=None
+        trigger=None; handler_event=None
         ef=_EVENT_FINISH_KEY.search(first)
         zone,actor=context(start)
         if ef:
             trigger="EVENT_FINISH"
-            event=EventIdentity(zone or "UNKNOWN",int(ef.group(1)),actor)
+            handler_event=EventIdentity(zone or "UNKNOWN",int(ef.group(1)),actor)
         elif "onTrigger" in first:
             trigger="NPC_INTERACT"
         elif "onTrade" in first:
@@ -364,29 +366,56 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
             trigger="ZONE_OUT"
         if not trigger:
             continue
-        conds=list(_conditions(text)); effects=list(_effects(text))
-        if "isMissionComplete(player)" in text:
-            dynamic=extract_dynamic_completion_gate(lua)
-            if dynamic:
-                conds.extend(dynamic.conditions)
-        returned=_EVENT.search(text)
-        if returned and not event:
-            event=EventIdentity(zone or "UNKNOWN",int(returned.group(1)),actor)
-        if not (conds or effects or event):
-            continue
-        serial+=1
-        gate=DependencyGate(f"source-gate:{serial}","ALL",tuple(conds)) if conds else None
-        transitions.append(MissionTransition(
-            f"source-transition:{serial}","source:any","source:any",trigger,
-            gate=gate,event=event,effects=tuple(effects),confidence="INFERRED",
-            metadata={
-                "zone":zone,"actor":actor,"source_lines":(start+1,end+1),"literal_correlation":True,
-                "priority":(int(pm.group(1)) if (pm:=re.search(r"setPriority\((\d+)\)",text)) else None),
-                "important_event":".importantEvent()" in text,
-                "replace_default":".replaceDefault()" in text,
-                "client_transport":("handled by the client" in text.lower()),
-            },
-        ))
+
+        paths=_handler_paths(text,start_line=start)
+        if len(paths)>1:
+            branch_alternatives+=len(paths)
+        for path_index,path in enumerate(paths,1):
+            aliases="\n".join(
+                line for line in path.body.splitlines()
+                if _STATUS_ALIAS.search(line)
+            )
+            guard_context="\n".join(x for x in (aliases,*path.guard_texts) if x)
+            conds=list(_conditions(guard_context))
+            if any("isMissionComplete(player)" in guard for guard in path.guard_texts):
+                dynamic=extract_dynamic_completion_gate(lua)
+                if dynamic:
+                    conds.extend(dynamic.conditions)
+
+            effects=list(_effects(path.body))
+            event=handler_event
+            returned=_EVENT.search(path.body)
+            if returned and event is None:
+                event=EventIdentity(zone or "UNKNOWN",int(returned.group(1)),actor)
+            if not (conds or effects or event):
+                continue
+
+            unresolved_nested_branch=bool(re.search(r"^\s*(?:if|elseif|else)\b",path.body,re.M))
+            guard_complete=path.guard_complete and not unresolved_nested_branch
+            if not guard_complete:
+                incomplete_branch_guards+=1
+
+            serial+=1
+            gate=DependencyGate(f"source-gate:{serial}","ALL",tuple(conds)) if conds else None
+            transitions.append(MissionTransition(
+                f"source-transition:{serial}","source:any","source:any",trigger,
+                gate=gate,event=event,effects=tuple(effects),
+                confidence="INFERRED" if guard_complete else "UNKNOWN",
+                metadata={
+                    "zone":zone,"actor":actor,"source_lines":(start+1,end+1),"literal_correlation":True,
+                    "priority":(int(pm.group(1)) if (pm:=re.search(r"setPriority\((\d+)\)",text)) else None),
+                    "important_event":".importantEvent()" in text,
+                    "replace_default":".replaceDefault()" in text,
+                    "client_transport":("handled by the client" in text.lower()),
+                    "branch_alternative":len(paths)>1,
+                    "branch_index":path_index,
+                    "branch_path":path.branch_path,
+                    "branch_guard_texts":path.guard_texts,
+                    "branch_source_lines":path.branch_source_lines,
+                    "branch_guard_complete":guard_complete,
+                    "unexpanded_nested_branch":unresolved_nested_branch,
+                },
+            ))
     # Declarative actor handlers are equivalent to unconditional NPC triggers.
     for line_no,line in enumerate(lines):
         dm=_DECL_EVENT.search(line)
@@ -410,7 +439,11 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
     return MissionStateMachine(
         f"machine:{feature_id}",feature_id,tuple(states.values()),tuple(transitions),
         ("source:any",),channels=channels_from_findings(findings),
-        metadata={"extractor":"lsb_static_literal","transition_count":len(transitions)},
+        metadata={
+            "extractor":"lsb_static_literal","transition_count":len(transitions),
+            "branch_alternatives":branch_alternatives,
+            "incomplete_branch_guards":incomplete_branch_guards,
+        },
     )
 
 
