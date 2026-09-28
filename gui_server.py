@@ -52,7 +52,7 @@ import explore_event
 import feature_trace
 from workbench.core.services.feature_trace_catalog import present_relationships
 from workbench.core.services.feature_trace_dossier import build_dossier
-from workbench.core.services import timeline_alignment
+from workbench.core.services import timeline_alignment, packet_correlation
 from workbench.core.services import capture_integrity, capture_spatial
 import feature_checker
 from workbench.core.services.feature_trace_closure import build_feature_trace_closure
@@ -5331,6 +5331,13 @@ def captures_alignment(request: Request, capture_id: int, video_ts: float | None
     video_candidates = timeline_alignment.video_timeline_candidates(con, capture_id)
     capture_candidates = timeline_alignment.capture_timeline_candidates(con, capture_id)
     landmarks = timeline_alignment.shared_packet_landmarks(con, capture_id)
+    packet_correlation.init_db(con)
+    correlations = packet_correlation.list_correlations(con, capture_id)
+    correlation_summary = {
+        "matched": sum(1 for row in correlations if row["status"] == packet_correlation.STATUS_MATCHED),
+        "ambiguous": sum(1 for row in correlations if row["status"] == packet_correlation.STATUS_AMBIGUOUS),
+        "total": len(correlations),
+    }
     con.close()
     return templates.TemplateResponse(request, "capture_alignment.html", {
         "cap": dict(cap),
@@ -5338,6 +5345,8 @@ def captures_alignment(request: Request, capture_id: int, video_ts: float | None
         "video_candidates": video_candidates,
         "capture_candidates": capture_candidates,
         "landmarks": landmarks,
+        "correlations": correlations,
+        "correlation_summary": correlation_summary,
         "clock_kinds": sorted(timeline_alignment.CLOCK_KINDS),
         "prefill_video_ts": video_ts,
         "prefill_capture_ts": capture_ts,
@@ -5345,6 +5354,16 @@ def captures_alignment(request: Request, capture_id: int, video_ts: float | None
         "error": error,
         "key_evidence_types": sorted(timeline_alignment.KEY_EVIDENCE_TYPES),
     })
+
+
+@app.post("/captures/{capture_id}/alignment/correlate")
+def captures_alignment_correlate(capture_id: int):
+    con = get_con()
+    try:
+        packet_correlation.correlate_capture(con, capture_id)
+    finally:
+        con.close()
+    return RedirectResponse(url=f"/captures/{capture_id}/alignment", status_code=303)
 
 
 @app.post("/captures/{capture_id}/alignment/anchors")
@@ -5371,6 +5390,7 @@ async def captures_alignment_add_anchor(request: Request, capture_id: int):
             capture_ref=capture_ref,
             notes=notes,
         )
+        packet_correlation.correlate_capture(con, capture_id)
         con.close()
     except (TypeError, ValueError) as exc:
         return RedirectResponse(
@@ -5384,6 +5404,7 @@ async def captures_alignment_add_anchor(request: Request, capture_id: int):
 def captures_alignment_delete_anchor(capture_id: int, anchor_id: str):
     con = get_con()
     timeline_alignment.delete_anchor(con, capture_id, anchor_id)
+    packet_correlation.correlate_capture(con, capture_id)
     con.close()
     return RedirectResponse(url=f"/captures/{capture_id}/alignment", status_code=303)
 
