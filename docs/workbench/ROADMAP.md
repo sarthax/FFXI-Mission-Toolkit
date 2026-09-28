@@ -266,7 +266,7 @@ Purpose: use BG Wiki and FFXIclopedia as reproducible, revision-stamped referenc
 - [x] Add human mapping review with CONFIRMED / REJECTED decisions that never alter the underlying wiki claim.
 - [x] Bridge wiki claims into the canonical graph as REFERENCE evidence and MENTIONS / MAY_MENTION relationships; confirmed identity mappings may verify identity only while the claim authority stays reference-only.
 - [x] Expose claims, mappings, and reviews through Feature Trace catalog navigation and the Wiki Compiler GUI.
-- [ ] Add dual-source BG Wiki ↔ FFXIclopedia claim alignment and explicit `REFERENCE_CONFLICT` findings for disagreements.
+- [x] Add dual-source BG Wiki ↔ FFXIclopedia claim alignment with agreement/divergence/one-sided states and explicit `REFERENCE_CONFLICT` findings for deterministic numeric/negation disagreements, without selecting a winning source.
 - [ ] Add semantic claim typing for progression requirements, rewards, coordinates, event/CSID hints, drops/acquisition, and behavioral mechanics without free-form truth promotion.
 - [ ] Add deterministic corroboration summaries against server/client/runtime evidence so a claim can show SUPPORTED / CONTRADICTED / UNVERIFIED by evidence domain.
 - [ ] Add mission/quest dependency extraction from typed wiki claims as reference guidance only, keeping executable/source-derived dependency gates separate.
