@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sqlite3
 from collections import deque
 from datetime import datetime, timezone
@@ -256,21 +257,21 @@ def _runtime_row_identity(con: sqlite3.Connection, edge: dict):
     location = str(location or "")
 
     if source == "capture_events":
-        m = __import__("re").match(r"^capture:(\d+):(.+):(\d+)$", location)
+        m = re.match(r"^capture:(\d+):(.+):(\d+)$", location)
         if m:
             return int(m.group(1)), "capture_events", {
                 "zone_db": m.group(2), "seq": int(m.group(3)),
             }
     if source == "capture_actions":
-        m = __import__("re").match(r"^capture:(\d+):action:(.+)$", location)
+        m = re.match(r"^capture:(\d+):action:(.+)$", location)
         if m:
             return int(m.group(1)), "capture_actions", {"action_key": m.group(2)}
     if source == "capture_raw_packets":
-        m = __import__("re").match(r"^capture:(\d+):packet:(\d+)$", location)
+        m = re.match(r"^capture:(\d+):packet:(\d+)$", location)
         if m:
             return int(m.group(1)), "capture_raw_packets", {"seq": int(m.group(2))}
     if source == "capture_eventview":
-        m = __import__("re").match(r"^capture:(\d+):eventview:(.+):(\d+)$", location)
+        m = re.match(r"^capture:(\d+):eventview:(.+):(\d+)$", location)
         if m:
             return int(m.group(1)), "capture_eventview", {
                 "zone_db": m.group(2), "seq": int(m.group(3)),
