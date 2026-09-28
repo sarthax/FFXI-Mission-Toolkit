@@ -5,6 +5,7 @@ without executing Lua. Unsupported/dynamic expressions remain visible as finding
 """
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 import re
 from typing import Iterable
@@ -649,6 +650,55 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
             "incomplete_branch_guards":incomplete_branch_guards,
         },
     )
+
+
+
+def mission_extraction_metrics(machine: MissionStateMachine) -> dict:
+    """Summarize extractor coverage/complexity without changing interpretation."""
+    trigger_counts=Counter(t.trigger for t in machine.transitions)
+    guard_counts=Counter(
+        condition.operator
+        for transition in machine.transitions
+        for gate in (transition.gate,transition.post_effect_gate)
+        if gate
+        for condition in gate.conditions
+    )
+    effect_counts=Counter(
+        effect.effect
+        for transition in machine.transitions
+        for effect in transition.effects
+    )
+    event_transitions=[t for t in machine.transitions if t.event]
+    branch_rows=[t for t in machine.transitions if t.metadata.get("branch_alternative")]
+    incomplete_rows=[
+        t for t in machine.transitions
+        if t.metadata.get("branch_guard_complete") is False
+        or t.metadata.get("unexpanded_nested_branch")
+    ]
+    helper_calls=Counter(
+        helper
+        for transition in machine.transitions
+        for helper in transition.metadata.get("helper_calls",())
+    )
+    return {
+        "transition_count":len(machine.transitions),
+        "transitions_by_trigger":dict(sorted(trigger_counts.items())),
+        "event_transition_count":len(event_transitions),
+        "branch_transition_count":len(branch_rows),
+        "incomplete_branch_transition_count":len(incomplete_rows),
+        "channel_count":len(machine.channels),
+        "guard_operator_counts":dict(sorted(guard_counts.items())),
+        "effect_kind_counts":dict(sorted(effect_counts.items())),
+        "helper_call_counts":dict(sorted(helper_calls.items())),
+        "source_handler_count":int(machine.metadata.get("source_handler_count",0)),
+        "modeled_source_handler_count":int(machine.metadata.get("modeled_source_handler_count",0)),
+        "unmodeled_source_handler_count":int(machine.metadata.get("unmodeled_source_handler_count",0)),
+        "unmodeled_source_handler_lines":tuple(machine.metadata.get("unmodeled_source_handler_lines",())),
+        "event_chains":int(machine.metadata.get("event_chains",0)),
+        "event_chain_branch_fanout":int(machine.metadata.get("event_chain_branch_fanout",0)),
+        "event_chain_ambiguous_groups":int(machine.metadata.get("event_chain_ambiguous_groups",0)),
+        "event_chain_unmatched_triggers":int(machine.metadata.get("event_chain_unmatched_triggers",0)),
+    }
 
 
 def materialize_channel_states(machine: MissionStateMachine) -> MissionStateMachine:
