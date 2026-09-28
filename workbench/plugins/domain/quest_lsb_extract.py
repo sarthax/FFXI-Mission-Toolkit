@@ -328,6 +328,7 @@ def _section_contexts(
 def _handler_conditions(
     text: str,
     *,
+    quest_var_aliases: dict[str,str] | None=None,
     key_item_aliases: dict[str,str] | None=None,
 ) -> tuple[StateCondition,...]:
     out=[]
@@ -343,7 +344,10 @@ def _handler_conditions(
             _OP[match.group(2)],
             match.group(3).strip(),
         ))
-    aliases={match.group(1):match.group(2) for match in _GET_VAR_ALIAS.finditer(text)}
+    aliases={
+        **(quest_var_aliases or {}),
+        **{match.group(1):match.group(2) for match in _GET_VAR_ALIAS.finditer(text)},
+    }
     for match in _ALIAS_COMPARE.finditer(text):
         channel=aliases.get(match.group(1))
         if channel:
@@ -532,6 +536,10 @@ def correlate_lsb_quest_handlers(
 
         source_handler_count+=1
         transition_count_before=len(transitions)
+        quest_var_aliases={
+            match.group(1):match.group(2)
+            for match in _GET_VAR_ALIAS.finditer(text)
+        }
         key_item_aliases={
             match.group(1):match.group(2)
             for match in _KEY_ITEM_ALIAS.finditer(text)
@@ -544,6 +552,7 @@ def correlate_lsb_quest_handlers(
                 guard_text+="\n"+path.body
             conditions=_handler_conditions(
                 guard_text,
+                quest_var_aliases=quest_var_aliases,
                 key_item_aliases=key_item_aliases,
             )
             effect_text=path.body+"\n"+guard_text
