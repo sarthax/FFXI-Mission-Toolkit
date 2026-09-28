@@ -116,11 +116,11 @@ def main():
         "mission:wotg:cait_sith",
     },closure
     assert catalog.cached_subjects()==(
+        "mission:CAIT_SITH",
         "quest:BENEATH_THE_MASK",
         "quest:BURDEN_OF_SUSPICION",
         "quest:FIRE_IN_THE_HOLE",
         "quest:HONOR_UNDER_FIRE",
-        "mission:CAIT_SITH",
         "quest:LIGHT_IN_THE_DARKNESS",
         "quest:QUELLING_THE_STORM",
         "quest:STORM_ON_THE_HORIZON",
