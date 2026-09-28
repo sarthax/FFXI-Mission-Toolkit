@@ -136,6 +136,135 @@ def _balanced_function_blocks(lua: str):
                 break
 
 
+
+@dataclass(frozen=True)
+class _HandlerPath:
+    body: str
+    guard_texts: tuple[str,...] = ()
+    branch_path: tuple[str,...] = ()
+    branch_source_lines: tuple[tuple[int,int],...] = ()
+    guard_complete: bool = True
+
+
+_IF_HEADER=re.compile(r"^\s*if\s+(.+?)\s+then\s*$")
+_ELSEIF_HEADER=re.compile(r"^\s*elseif\s+(.+?)\s+then\s*$")
+_ELSE_HEADER=re.compile(r"^\s*else\s*$")
+
+
+def _code(line: str) -> str:
+    return line.split("--",1)[0].rstrip()
+
+
+def _open_count(code: str) -> int:
+    # elseif is not a fresh if block. Repeat is closed by until.
+    return (
+        len(re.findall(r"\bfunction\b",code))
+        + len(re.findall(r"(?<!else)\bif\b",code))
+        + len(re.findall(r"\bfor\b[^\n]*\bdo\b",code))
+        + len(re.findall(r"\bwhile\b[^\n]*\bdo\b",code))
+        + len(re.findall(r"\brepeat\b",code))
+    )
+
+
+def _close_count(code: str) -> int:
+    return len(re.findall(r"\bend\b",code))+len(re.findall(r"\buntil\b",code))
+
+
+def _split_first_if(lines: list[tuple[int,str]]):
+    """Split the first top-level multiline if/elseif/else block in a handler path.
+
+    Returned branches retain their absolute source-line indexes. Inline one-line ifs and
+    malformed/unbalanced blocks are deliberately left unsplit rather than guessed.
+    """
+    depth=0
+    for i,(line_no,line) in enumerate(lines):
+        code=_code(line)
+        if depth==0:
+            match=_IF_HEADER.match(code)
+            if match:
+                start=i
+                branch_kind="if"
+                branch_guard=match.group(1)
+                branch_header_line=line_no
+                body_start=i+1
+                inner_depth=1
+                branches=[]
+                for j in range(i+1,len(lines)):
+                    child_no,child_line=lines[j]
+                    child_code=_code(child_line)
+                    if inner_depth==1:
+                        elseif=_ELSEIF_HEADER.match(child_code)
+                        if elseif:
+                            body=lines[body_start:j]
+                            end_line=body[-1][0] if body else branch_header_line
+                            branches.append((branch_kind,branch_guard,branch_header_line,end_line,body))
+                            branch_kind="elseif"
+                            branch_guard=elseif.group(1)
+                            branch_header_line=child_no
+                            body_start=j+1
+                            continue
+                        if _ELSE_HEADER.match(child_code):
+                            body=lines[body_start:j]
+                            end_line=body[-1][0] if body else branch_header_line
+                            branches.append((branch_kind,branch_guard,branch_header_line,end_line,body))
+                            branch_kind="else"
+                            branch_guard=None
+                            branch_header_line=child_no
+                            body_start=j+1
+                            continue
+                        if re.match(r"^\s*end\b",child_code):
+                            body=lines[body_start:j]
+                            end_line=body[-1][0] if body else branch_header_line
+                            branches.append((branch_kind,branch_guard,branch_header_line,end_line,body))
+                            return lines[:start],branches,lines[j+1:]
+                    inner_depth+=_open_count(child_code)-_close_count(child_code)
+                return None
+        depth+=_open_count(code)-_close_count(code)
+    return None
+
+
+def _handler_paths(text: str, *, start_line: int) -> tuple[_HandlerPath,...]:
+    """Enumerate conservative mutually-exclusive handler paths.
+
+    The outer function declaration/end are stripped. Each multiline top-level if tree is
+    recursively expanded. Common pre/post statements remain on every path. elseif/else paths
+    are marked guard-incomplete because prior-branch falsehood is not synthesized.
+    """
+    raw=text.splitlines()
+    if len(raw)>=2:
+        raw=raw[1:-1]
+        first_line=start_line+1
+    else:
+        first_line=start_line
+    source=[(first_line+i,line) for i,line in enumerate(raw)]
+
+    def expand(
+        lines: list[tuple[int,str]],
+        guards: tuple[str,...]=(),
+        labels: tuple[str,...]=(),
+        spans: tuple[tuple[int,int],...]=(),
+        complete: bool=True,
+    ) -> list[_HandlerPath]:
+        split=_split_first_if(lines)
+        if split is None:
+            return [_HandlerPath(
+                "\n".join(line for _,line in lines),
+                guards,labels,spans,complete,
+            )]
+        prefix,branches,suffix=split
+        out=[]
+        for kind,guard,header_line,end_line,body in branches:
+            next_guards=guards+((guard,) if guard else ())
+            next_labels=labels+(kind,)
+            next_spans=spans+((header_line+1,end_line+1),)
+            next_complete=complete and kind=="if"
+            out.extend(expand(prefix+body+suffix,next_guards,next_labels,next_spans,next_complete))
+        return out
+
+    paths=expand(source)
+    return tuple(paths or (_HandlerPath("\n".join(line for _,line in source)),))
+
+
 def _conditions(text: str) -> tuple[StateCondition,...]:
     out=[]
     for m in _STATUS_EQ.finditer(text):
@@ -215,14 +344,16 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
     transitions=[]
     states={"source:any":MissionState("source:any","Source state")}
     serial=0
+    branch_alternatives=0
+    incomplete_branch_guards=0
     for start,end,text in _balanced_function_blocks(lua):
         first=lines[start]
-        trigger=None; event=None
+        trigger=None; handler_event=None
         ef=_EVENT_FINISH_KEY.search(first)
         zone,actor=context(start)
         if ef:
             trigger="EVENT_FINISH"
-            event=EventIdentity(zone or "UNKNOWN",int(ef.group(1)),actor)
+            handler_event=EventIdentity(zone or "UNKNOWN",int(ef.group(1)),actor)
         elif "onTrigger" in first:
             trigger="NPC_INTERACT"
         elif "onTrade" in first:
@@ -235,29 +366,65 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
             trigger="ZONE_OUT"
         if not trigger:
             continue
-        conds=list(_conditions(text)); effects=list(_effects(text))
-        if "isMissionComplete(player)" in text:
-            dynamic=extract_dynamic_completion_gate(lua)
-            if dynamic:
-                conds.extend(dynamic.conditions)
-        returned=_EVENT.search(text)
-        if returned and not event:
-            event=EventIdentity(zone or "UNKNOWN",int(returned.group(1)),actor)
-        if not (conds or effects or event):
-            continue
-        serial+=1
-        gate=DependencyGate(f"source-gate:{serial}","ALL",tuple(conds)) if conds else None
-        transitions.append(MissionTransition(
-            f"source-transition:{serial}","source:any","source:any",trigger,
-            gate=gate,event=event,effects=tuple(effects),confidence="INFERRED",
-            metadata={
-                "zone":zone,"actor":actor,"source_lines":(start+1,end+1),"literal_correlation":True,
-                "priority":(int(pm.group(1)) if (pm:=re.search(r"setPriority\((\d+)\)",text)) else None),
-                "important_event":".importantEvent()" in text,
-                "replace_default":".replaceDefault()" in text,
-                "client_transport":("handled by the client" in text.lower()),
-            },
-        ))
+
+        paths=_handler_paths(text,start_line=start)
+        if len(paths)>1:
+            branch_alternatives+=len(paths)
+        for path_index,path in enumerate(paths,1):
+            unresolved_nested_branch=bool(re.search(r"^\s*(?:if|elseif|else)\b",path.body,re.M))
+            aliases="\n".join(
+                line for line in path.body.splitlines()
+                if _STATUS_ALIAS.search(line)
+            )
+            guard_parts=[x for x in (aliases,*path.guard_texts) if x]
+            # Unsupported/multiline/nested branches retain the previous literal condition
+            # extraction, but are explicitly marked incomplete rather than treated as a
+            # fully correlated path.
+            if unresolved_nested_branch:
+                guard_parts.append(path.body)
+            guard_context="\n".join(guard_parts)
+            conds=list(_conditions(guard_context))
+            if (
+                any("isMissionComplete(player)" in guard for guard in path.guard_texts)
+                or (unresolved_nested_branch and "isMissionComplete(player)" in path.body)
+            ):
+                dynamic=extract_dynamic_completion_gate(lua)
+                if dynamic:
+                    conds.extend(dynamic.conditions)
+
+            effects=list(_effects(path.body))
+            event=handler_event
+            returned=_EVENT.search(path.body)
+            if returned and event is None:
+                event=EventIdentity(zone or "UNKNOWN",int(returned.group(1)),actor)
+            if not (conds or effects or event):
+                continue
+
+            guard_complete=path.guard_complete and not unresolved_nested_branch
+            if not guard_complete:
+                incomplete_branch_guards+=1
+
+            serial+=1
+            gate=DependencyGate(f"source-gate:{serial}","ALL",tuple(conds)) if conds else None
+            transitions.append(MissionTransition(
+                f"source-transition:{serial}","source:any","source:any",trigger,
+                gate=gate,event=event,effects=tuple(effects),
+                confidence="INFERRED" if guard_complete else "UNKNOWN",
+                metadata={
+                    "zone":zone,"actor":actor,"source_lines":(start+1,end+1),"literal_correlation":True,
+                    "priority":(int(pm.group(1)) if (pm:=re.search(r"setPriority\((\d+)\)",text)) else None),
+                    "important_event":".importantEvent()" in text,
+                    "replace_default":".replaceDefault()" in text,
+                    "client_transport":("handled by the client" in text.lower()),
+                    "branch_alternative":len(paths)>1,
+                    "branch_index":path_index,
+                    "branch_path":path.branch_path,
+                    "branch_guard_texts":path.guard_texts,
+                    "branch_source_lines":path.branch_source_lines,
+                    "branch_guard_complete":guard_complete,
+                    "unexpanded_nested_branch":unresolved_nested_branch,
+                },
+            ))
     # Declarative actor handlers are equivalent to unconditional NPC triggers.
     for line_no,line in enumerate(lines):
         dm=_DECL_EVENT.search(line)
@@ -281,7 +448,11 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
     return MissionStateMachine(
         f"machine:{feature_id}",feature_id,tuple(states.values()),tuple(transitions),
         ("source:any",),channels=channels_from_findings(findings),
-        metadata={"extractor":"lsb_static_literal","transition_count":len(transitions)},
+        metadata={
+            "extractor":"lsb_static_literal","transition_count":len(transitions),
+            "branch_alternatives":branch_alternatives,
+            "incomplete_branch_guards":incomplete_branch_guards,
+        },
     )
 
 
@@ -332,44 +503,56 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
         if t.trigger not in {"NPC_INTERACT","ZONE_IN","TRADE"} or not t.event:
             continue
         candidates=finishes.get((t.event.zone,t.event.event_id),[])
-        if len(candidates)!=1:
+        if not candidates:
             continue
-        f=candidates[0]
-        consumed.add(f.transition_id)
-        effects=tuple(t.effects)+tuple(f.effects)
-        # Trigger guards establish the precondition. Finish-handler guards also
-        # matter (options/battlefield/etc.) and are conjoined when present.
-        conds=[]
-        if t.gate: conds.extend(t.gate.conditions)
-        if f.gate: conds.extend(f.gate.conditions)
-        gate=DependencyGate(
-            f"chain-gate:{t.transition_id}:{f.transition_id}","ALL",tuple(conds)
-        ) if conds else None
-        chained.append(MissionTransition(
-            f"chain:{t.transition_id}:{f.transition_id}",
-            t.from_state,f.to_state,t.trigger,gate,
-            EventIdentity(t.event.zone,t.event.event_id,t.event.actor),
-            effects,
-            "VERIFIED" if t.confidence=="VERIFIED" and f.confidence=="VERIFIED" else "INFERRED",
-            tuple(dict.fromkeys(t.evidence_ids+f.evidence_ids)),
-            "PRESENT" if t.implementation_status=="PRESENT" and f.implementation_status=="PRESENT" else "PARTIAL",
-            {
-                "logical_event_chain":True,
-                "trigger_source_lines":t.metadata.get("source_lines"),
-                "finish_source_lines":f.metadata.get("source_lines"),
-                "trigger_transition_id":t.transition_id,
-                "finish_transition_id":f.transition_id,
-                "zone":t.event.zone,
-                "actor":t.event.actor,
-            },
-        ))
         consumed.add(t.transition_id)
+        for f in candidates:
+            consumed.add(f.transition_id)
+            effects=tuple(t.effects)+tuple(f.effects)
+            # Trigger guards establish the precondition. Each branch-specific finish
+            # outcome contributes only its own guards/effects.
+            conds=[]
+            if t.gate: conds.extend(t.gate.conditions)
+            if f.gate: conds.extend(f.gate.conditions)
+            gate=DependencyGate(
+                f"chain-gate:{t.transition_id}:{f.transition_id}","ALL",tuple(conds)
+            ) if conds else None
+            if "UNKNOWN" in {t.confidence,f.confidence}:
+                confidence="UNKNOWN"
+            elif t.confidence=="VERIFIED" and f.confidence=="VERIFIED":
+                confidence="VERIFIED"
+            else:
+                confidence="INFERRED"
+            chained.append(MissionTransition(
+                f"chain:{t.transition_id}:{f.transition_id}",
+                t.from_state,f.to_state,t.trigger,gate,
+                EventIdentity(t.event.zone,t.event.event_id,t.event.actor),
+                effects,
+                confidence,
+                tuple(dict.fromkeys(t.evidence_ids+f.evidence_ids)),
+                "PRESENT" if t.implementation_status=="PRESENT" and f.implementation_status=="PRESENT" else "PARTIAL",
+                {
+                    "logical_event_chain":True,
+                    "trigger_source_lines":t.metadata.get("source_lines"),
+                    "finish_source_lines":f.metadata.get("source_lines"),
+                    "trigger_transition_id":t.transition_id,
+                    "finish_transition_id":f.transition_id,
+                    "zone":t.event.zone,
+                    "actor":t.event.actor,
+                    "trigger_branch_path":t.metadata.get("branch_path",()),
+                    "finish_branch_path":f.metadata.get("branch_path",()),
+                    "branch_guard_complete":bool(
+                        t.metadata.get("branch_guard_complete",True)
+                        and f.metadata.get("branch_guard_complete",True)
+                    ),
+                },
+            ))
 
     remaining=[t for t in machine.transitions if t.transition_id not in consumed]
     out=MissionStateMachine(
         machine.machine_id,machine.feature_id,machine.states,
         tuple(remaining+chained),machine.entry_state_ids,machine.channels,
-        machine.completion_gate,{**machine.metadata,"event_chains":len(chained)},
+        machine.completion_gate,{**machine.metadata,"event_chains":len(chained),"event_chain_branch_fanout":sum(max(0,len(v)-1) for v in finishes.values())},
     )
     return materialize_channel_states(out)
 

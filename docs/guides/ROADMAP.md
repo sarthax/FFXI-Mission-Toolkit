@@ -21,6 +21,7 @@ This section supersedes older status labels below when they conflict. The histor
 - Domain-plugin foundation and battlefield/mission representation planning.
 - Mission/quest static source extraction can now emit evidence-backed canonical graph records (states, transitions, server event identities, actors, requirements/effects, and source implementation evidence) through a preview-first ingest path.
 - Mission event/CSID reconciliation can now attach exact source-script and client EVENT support to emitted server-event identities when zone+actor+CSID evidence is unambiguous; unresolved/ambiguous actor identity remains visible rather than guessed.
+- Mission Lua handler extraction now separates top-level if/elseif/else alternatives and branch-specific event-finish outcomes; incomplete nested/multiline control flow is explicitly downgraded rather than silently flattened.
 - Generic Lua dependency discovery and LSB zone-YAML dependency closure for entities/templates, skills/spells, loot/items, zone text, titles, and safe ID.mob arithmetic.
 - Crafting/producibility dependency closure for synthesis/synergy prerequisites.
 - GUI shared workspace shell plus Features, Packages, Validation, Client, Research, Domains, and existing capture/editor tools.
