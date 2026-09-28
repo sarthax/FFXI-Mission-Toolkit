@@ -15,13 +15,17 @@ from workbench.plugins.domain.mission_lsb_extract import (
     correlate_lsb_handlers,
     mission_extraction_metrics,
 )
-from workbench.plugins.domain.quest_lsb_extract import quest_extraction_metrics
+from workbench.plugins.domain.quest_lsb_extract import (
+    correlate_lsb_quest_handlers,
+    quest_extraction_metrics,
+)
 from workbench.plugins.domain.mission_source_catalog import LsbFeatureSourceCatalog
 
 ROOT=Path(__file__).resolve().parents[1]
 FIX=ROOT/"test_fixtures"/"fixtures"
 TRUTH=FIX/"wotg25_branching_mission_truth.json"
 MISSION=FIX/"lsb_wotg25_the_will_of_the_world.lua"
+Q0=FIX/"lsb_wotg_bastok0_the_fighting_fourth.lua"
 Q9=FIX/"lsb_wotg_bastok9_beneath_the_mask.lua"
 Q10=FIX/"lsb_wotg_bastok10_what_price_loyalty.lua"
 
@@ -49,6 +53,7 @@ def _quest_events(lua: str) -> set[int]:
 def main():
     truth=json.loads(TRUTH.read_text(encoding="utf-8"))
     mission_lua=MISSION.read_text(encoding="utf-8")
+    q0_lua=Q0.read_text(encoding="utf-8")
     q9_lua=Q9.read_text(encoding="utf-8")
     q10_lua=Q10.read_text(encoding="utf-8")
 
@@ -510,12 +515,26 @@ def main():
         for effect in storm_start.effects
     ),storm_start
 
-    fighting_completed_events=[
+    q0_raw=correlate_lsb_quest_handlers(
+        q0_lua,
+        feature_id="quest:crystal_war:the_fighting_fourth:raw_probe",
+    )
+    fighting_raw_replace=[
+        transition for transition in q0_raw.transitions
+        if transition.metadata.get("replace_default") is True
+    ]
+    fighting_chained_replace=[
         transition for transition in q0.transitions
         if transition.metadata.get("replace_default") is True
-        and transition.metadata.get("section_eligibility_status")=="MODELED"
     ]
-    assert len(fighting_completed_events)>=4,fighting_completed_events
+    assert len(fighting_raw_replace)>=4,(
+        "raw replaceDefault handlers missing",
+        [(transition.event.key if transition.event else None,transition.metadata) for transition in q0_raw.transitions],
+    )
+    assert len(fighting_chained_replace)>=4,(
+        "replaceDefault handlers lost after chaining",
+        [(transition.event.key if transition.event else None,transition.metadata) for transition in q0.transitions],
+    )
 
     better_entry=next(
         transition for transition in q1.transitions
