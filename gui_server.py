@@ -3566,6 +3566,7 @@ CAPTURE_QUERY_TABLES = {
     "capture_caplog_chat": {"id_col": None, "name_col": "text"},
     "capture_tags": {"id_col": None, "name_col": "tag"},
     "capture_source_files": {"id_col": None, "name_col": "filename"},
+    "capture_source_artifacts": {"id_col": None, "name_col": "filename"},
 }
 CAPTURE_QUERY_PAGE_SIZE = 200
 
