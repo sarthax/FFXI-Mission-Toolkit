@@ -53,7 +53,7 @@ import feature_trace
 from workbench.core.services.feature_trace_catalog import present_relationships
 from workbench.core.services.feature_trace_dossier import build_dossier
 from workbench.core.services import timeline_alignment
-from workbench.core.services import capture_integrity
+from workbench.core.services import capture_integrity, capture_spatial
 import feature_checker
 from workbench.core.services.feature_trace_closure import build_feature_trace_closure
 import ingest_global_tables
@@ -4382,54 +4382,13 @@ def captures_page(request: Request, content_type: str = "", tag: str = "", q: st
     })
 
 
-def capture_spatial_entities(con, capture_id: int, zone_db: str, q: str = "") -> list[dict]:
-    """Canonical capture-side spatial payload shared by the 2D and 3D viewers.
-
-    Unlike the old path-only plot list, this includes every capture_npc_entries row with a real
-    observed position, whether or not PathLog/history produced a path for that entity.
-    """
-    q_norm = (q or "").strip().lower()
-    path_ids = {
-        int(r[0]) for r in con.execute(
-            "SELECT DISTINCT entity_id FROM capture_npc_path WHERE capture_id=? AND zone_db=?",
-            (capture_id, zone_db),
-        ).fetchall()
-    }
-    rows = con.execute(
-        """SELECT entity_id,name,model_id,x,y,z,hpp,door_id,act_index,sub_kind
-           FROM capture_npc_entries
-           WHERE capture_id=? AND zone_db=? AND x IS NOT NULL AND y IS NOT NULL AND z IS NOT NULL
-           ORDER BY COALESCE(name,''),entity_id""",
-        (capture_id, zone_db),
-    ).fetchall()
-    out = []
-    for row in rows:
-        entity_id = int(row[0])
-        name = row[1] or ""
-        if q_norm and q_norm not in name.lower() and q_norm not in str(entity_id):
-            continue
-        out.append({
-            "id": entity_id,
-            "n": name or "?",
-            "model": row[2],
-            "x": row[3], "y": row[4], "z": row[5],
-            "hpp": row[6],
-            "door_id": row[7],
-            "act_index": row[8],
-            "sub_kind": row[9],
-            "has_path": entity_id in path_ids,
-            "k": "c",
-        })
-    return out
-
-
 @app.get("/captures/{capture_id}/spatial.json")
 def capture_spatial_json(capture_id: int, zone_db: str = "", q: str = ""):
     con = get_con()
     cap = con.execute("SELECT zones FROM captures WHERE capture_id=?", (capture_id,)).fetchone()
     zones = json.loads(cap["zones"]) if cap and cap["zones"] else []
     zone_db = zone_db or (zones[0] if zones else "")
-    entities = capture_spatial_entities(con, capture_id, zone_db, q) if zone_db else []
+    entities = capture_spatial.capture_spatial.capture_spatial_entities(con, capture_id, zone_db, q) if zone_db else []
     zoneid = zoneid_for_zone_db(con, zone_db) if zone_db else None
     con.close()
     return JSONResponse({
@@ -4589,7 +4548,7 @@ def zone_view3d_all(request: Request, zoneid: int, capture_id: int, zone_db: str
     live_parse_available = bool(ffxi_path and geometry_rom_path)
 
     entities = build_capture_index.get_capture_entity_ids_with_path(con, capture_id, zone_db) if zone_db else []
-    spatial_entities = capture_spatial_entities(con, capture_id, zone_db) if zone_db else []
+    spatial_entities = capture_spatial.capture_spatial_entities(con, capture_id, zone_db) if zone_db else []
     spatial_by_id = {e["id"]: e for e in spatial_entities}
     paths = []
     for i, (eid, name) in enumerate(entities[:MULTI_PLOT_LIMIT]):
@@ -4825,7 +4784,7 @@ def captures_plot_all(
     zone_db = zone_db or (zones[0] if zones else "")
 
     entities = build_capture_index.get_capture_entity_ids_with_path(con, capture_id, zone_db) if zone_db else []
-    spatial_entities = capture_spatial_entities(con, capture_id, zone_db, q) if zone_db else []
+    spatial_entities = capture_spatial.capture_spatial_entities(con, capture_id, zone_db, q) if zone_db else []
     zoneid = zoneid_for_zone_db(con, zone_db) if zone_db else None
     variants = topdown_variants(zoneid)
     topdown_available = variants["collision"] or variants["detailed"]
@@ -4864,7 +4823,7 @@ def captures_plot_all_png(
     detail=1 uses the denser visual-mesh cache instead of the default collision-mesh one."""
     con = get_con()
     entities = build_capture_index.get_capture_entity_ids_with_path(con, capture_id, zone_db)
-    spatial_entities = capture_spatial_entities(con, capture_id, zone_db, q)
+    spatial_entities = capture_spatial.capture_spatial_entities(con, capture_id, zone_db, q)
     zoneid = zoneid_for_zone_db(con, zone_db)
     all_paths = []
     for eid, name in entities[:MULTI_PLOT_LIMIT]:
