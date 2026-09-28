@@ -20,6 +20,7 @@ This section supersedes older status labels below when they conflict. The histor
 - Evidence-aware research foundation: persistent ResearchSessions, provider abstraction, bounded ResearchRunner, typed tools, source crawler, proposals, provider run/replay controls, contradiction browser, and canonical evidence drill-through.
 - Domain-plugin foundation and battlefield/mission representation planning.
 - Mission/quest static source extraction can now emit evidence-backed canonical graph records (states, transitions, server event identities, actors, requirements/effects, and source implementation evidence) through a preview-first ingest path.
+- Mission event/CSID reconciliation can now attach exact source-script and client EVENT support to emitted server-event identities when zone+actor+CSID evidence is unambiguous; unresolved/ambiguous actor identity remains visible rather than guessed.
 - Generic Lua dependency discovery and LSB zone-YAML dependency closure for entities/templates, skills/spells, loot/items, zone text, titles, and safe ID.mob arithmetic.
 - Crafting/producibility dependency closure for synthesis/synergy prerequisites.
 - GUI shared workspace shell plus Features, Packages, Validation, Client, Research, Domains, and existing capture/editor tools.

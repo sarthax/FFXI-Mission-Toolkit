@@ -2051,3 +2051,24 @@ Mission-local channels such as `mission_var:Status` are feature-scoped so unrela
 Regression: `test_fixtures/test_mission_graph_emission.py` covers extraction, source-line evidence, event/actor identity, condition/effect links, persistence through the canonical graph schema, Feature Trace traversal, reusable event identity, and mission-local state isolation.
 
 This milestone does not claim runtime correctness, full Lua parsing, or exact branch semantics for dynamic expressions the conservative extractor does not understand.
+
+
+## 2026-09-27 — Exact mission event/CSID reconciliation
+
+Emitted mission server-event identities can now be reconciled against existing source/client evidence through `workbench/plugins/domain/mission_event_reconcile.py`.
+
+The reconciler is intentionally exact and conservative:
+- source-script support requires an exact `npc_event_refs` match on source family + zone + actor script + CSID;
+- client support requires an independently established ENTITY semantic identity matching the source actor in the same zone;
+- only then is an exact EVENT row accepted for the same client snapshot + zone + actor representation + CSID;
+- duplicate actor identities or duplicate EVENT rows remain `AMBIGUOUS`;
+- missing actor identity or missing EVENT rows remain unresolved;
+- no actor aliasing, numeric-actor inference, CSID translation, or fingerprint equivalence is invented by this service.
+
+Exact results may be persisted as ordinary graph navigation edges:
+- `SUPPORTED_BY_SOURCE_REF` -> the source event-ref catalog row;
+- `SUPPORTED_BY_CLIENT_EVENT` -> the client EVENT identity record.
+
+`mission_event_reconcile.py` previews by default and requires explicit `--write` before persisting exact support edges.
+
+Regression: `test_fixtures/test_mission_event_reconciliation.py` covers exact source/client reconciliation, evidence-backed persistence, and fail-closed actor ambiguity.
