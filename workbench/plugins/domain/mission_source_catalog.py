@@ -98,6 +98,14 @@ class LsbFeatureSourceCatalog:
             "catalog_subject":source.subject,
             "catalog_source_path":source.path,
             "catalog_discovered":True,
+            "quest_symbol":(
+                source.symbol if source.kind=="quest"
+                else machine.metadata.get("quest_symbol")
+            ),
+            "mission_symbol":(
+                source.symbol if source.kind=="mission"
+                else machine.metadata.get("mission_symbol")
+            ),
         }
         machine=MissionStateMachine(
             machine.machine_id,machine.feature_id,machine.states,machine.transitions,

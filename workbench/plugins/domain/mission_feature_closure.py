@@ -168,6 +168,37 @@ def build_feature_requirement_closure(
                 ),
             )
 
+        for index_row,row in enumerate(
+            machine.metadata.get("documented_feature_requirements",()),
+            1,
+        ):
+            subject=str(row.get("subject") or "")
+            if not subject:
+                continue
+            target=index.get(subject)
+            if target is None and resolver is not None:
+                target=resolver(subject)
+                if target is not None:
+                    index.update(feature_symbol_index((target,)))
+            dependencies.append(FeatureDependency(
+                machine.feature_id,
+                subject,
+                str(row.get("relation") or "DOCUMENTED"),
+                row.get("note"),
+                "ALL",
+                f"documented-prerequisite:{machine.feature_id}:{index_row}",
+                target.feature_id if target else None,
+                "DOCUMENTED_UNENFORCED" if target else "DOCUMENTED_UNRESOLVED",
+                True,
+            ))
+            if target is None:
+                unresolved.add(subject)
+                continue
+            if target.feature_id in visited:
+                continue
+            visited.add(target.feature_id)
+            queue.append(target)
+
     return FeatureClosure(
         root.feature_id,
         tuple(sorted(visited)),
