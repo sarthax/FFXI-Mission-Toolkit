@@ -140,6 +140,7 @@ jobs:
           python test_fixtures/test_capture_row_locators.py
           python test_fixtures/test_capture_packet_row_locators.py
           python test_fixtures/test_caplog_row_locators.py
+          python test_fixtures/test_capture_more_row_locators.py
           python test_fixtures/test_capture_spatial_viewer.py
           python test_fixtures/test_capture_content_fingerprint.py
           python test_fixtures/test_capture_event_packet_graph.py
