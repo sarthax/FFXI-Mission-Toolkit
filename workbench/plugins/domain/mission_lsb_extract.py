@@ -652,9 +652,11 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
         ))
 
     findings=extract_lsb_mission_findings(lua)
+    completion_gate=extract_section_completion_gate(lua)
     return MissionStateMachine(
         f"machine:{feature_id}",feature_id,tuple(states.values()),tuple(transitions),
         ("source:any",),channels=channels_from_findings(findings),
+        completion_gate=completion_gate,
         metadata={
             "extractor":"lsb_static_literal","transition_count":len(transitions),
             "branch_alternatives":branch_alternatives,
@@ -702,6 +704,7 @@ def mission_extraction_metrics(machine: MissionStateMachine) -> dict:
         "branch_transition_count":len(branch_rows),
         "incomplete_branch_transition_count":len(incomplete_rows),
         "channel_count":len(machine.channels),
+        "completion_gate_condition_count":len(machine.completion_gate.conditions) if machine.completion_gate else 0,
         "guard_operator_counts":dict(sorted(guard_counts.items())),
         "effect_kind_counts":dict(sorted(effect_counts.items())),
         "helper_call_counts":dict(sorted(helper_calls.items())),
