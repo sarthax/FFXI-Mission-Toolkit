@@ -64,6 +64,22 @@ def init_db(con: sqlite3.Connection) -> None:
         );
         CREATE INDEX IF NOT EXISTS idx_capture_lineage_target
             ON capture_ingest_lineage(capture_id,target_table);
+        CREATE TABLE IF NOT EXISTS capture_row_locators (
+            capture_id INTEGER NOT NULL,
+            filename TEXT NOT NULL,
+            target_table TEXT NOT NULL,
+            row_key TEXT NOT NULL,
+            source_sha256 TEXT,
+            locator_basis TEXT NOT NULL,
+            start_line INTEGER,
+            end_line INTEGER,
+            start_offset INTEGER,
+            end_offset INTEGER,
+            details_json TEXT NOT NULL DEFAULT '{}',
+            PRIMARY KEY(capture_id,filename,target_table,row_key)
+        );
+        CREATE INDEX IF NOT EXISTS idx_capture_row_locator_target
+            ON capture_row_locators(capture_id,target_table);
         CREATE TABLE IF NOT EXISTS capture_source_artifacts (
             capture_id INTEGER NOT NULL,
             source_id TEXT NOT NULL,
@@ -244,6 +260,46 @@ def record_source_file(
     }
 
 
+def record_row_locator(
+    con: sqlite3.Connection,
+    capture_id: int,
+    filename: str,
+    target_table: str,
+    row_key: str,
+    locator_basis: str,
+    *,
+    source_sha256: str | None = None,
+    start_line: int | None = None,
+    end_line: int | None = None,
+    start_offset: int | None = None,
+    end_offset: int | None = None,
+    details: dict | None = None,
+) -> None:
+    """Attach one normalized capture row to the exact source span that produced it.
+
+    Parsers must only call this when their physical source format exposes deterministic row,
+    line, block, or byte boundaries. Missing precision stays NULL instead of being inferred.
+    """
+    init_db(con)
+    if source_sha256 is None:
+        row = con.execute(
+            "SELECT sha256 FROM capture_source_manifest WHERE capture_id=? AND filename=?",
+            (capture_id, filename),
+        ).fetchone()
+        source_sha256 = row[0] if row else None
+    con.execute(
+        """INSERT OR REPLACE INTO capture_row_locators
+           (capture_id,filename,target_table,row_key,source_sha256,locator_basis,
+            start_line,end_line,start_offset,end_offset,details_json)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+        (
+            capture_id, filename, target_table, str(row_key), source_sha256, locator_basis,
+            start_line, end_line, start_offset, end_offset,
+            json.dumps(details or {}, sort_keys=True),
+        ),
+    )
+
+
 def schema_capture_tables(con: sqlite3.Connection) -> list[str]:
     tables=[]
     for (name,) in con.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").fetchall():
@@ -305,6 +361,7 @@ def capture_health(con: sqlite3.Connection, capture_id: int) -> dict:
     auxiliary=sum(1 for r in manifest if r["ingest_status"]=="AUXILIARY")
     hashed=sum(1 for r in manifest if r.get("sha256"))
     parser_lineage=_table_count(con,"capture_ingest_lineage",capture_id)
+    exact_row_locators=_table_count(con,"capture_row_locators",capture_id)
 
     raw_packets=_table_count(con,"capture_raw_packets",capture_id)
     eventview=_table_count(con,"capture_eventview",capture_id)
@@ -345,7 +402,8 @@ def capture_health(con: sqlite3.Connection, capture_id: int) -> dict:
     dimensions["lineage"]={
         "status":"COMPLETE" if total and parser_lineage>=recognized else ("PARTIAL" if parser_lineage else "UNKNOWN"),
         "lineage_records":parser_lineage,
-        "precision":"file_to_record_family",
+        "exact_row_locators":exact_row_locators,
+        "precision":"exact_rows_available" if exact_row_locators else "file_to_record_family",
     }
     dimensions["client_context"]={
         "status":"COMPLETE" if cap["client_build"] else "UNKNOWN",

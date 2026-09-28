@@ -2512,3 +2512,16 @@ Follow-up to the Capture Integrity hardening merged concurrently on main:
 - dynamic capture-owned table discovery automatically makes both new provenance tables deletion-safe.
 
 This is exact-content duplicate detection, not partial session-overlap inference. Packet/event/time fingerprints for partially overlapping sessions remain a separate roadmap item.
+
+
+## 2026-09-28 — Exact capture row locator foundation
+
+The capture provenance layer now supports an explicit `capture_row_locators` ledger for normalized rows whose source formats expose deterministic physical boundaries.
+
+- EventView text ingestion records a stable normalized-row key, source SHA-256, exact physical line range, and UTF-8 byte span for each `capture_eventview` row.
+- Locator details preserve packet opcode/class/command context without replacing the normalized packet row itself.
+- Capture health reports exact-row locator availability separately from the existing file-to-record-family lineage.
+- Capture deletion discovers and removes locator rows with the rest of the capture-owned schema.
+- No precision is fabricated for legacy/SQLite parsers that do not yet expose a trustworthy row/block boundary.
+
+This is the first parser-specific implementation of the broader exact-row provenance roadmap item; other capture formats remain incremental follow-up work.

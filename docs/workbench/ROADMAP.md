@@ -182,7 +182,7 @@ Purpose: make capture evidence reproducible, deletion-safe, content-addressed, a
 - [x] Add a path-independent whole-capture content fingerprint over the current non-auxiliary source set so renamed/moved/re-zipped copies can be recognized as exact capture duplicates.
 - [x] Preserve changed same-name source files in an append-safe content-addressed source-artifact history while keeping the per-filename manifest as the current/latest view.
 - [x] Hash failed archive uploads too, preserving failed ingestion provenance without treating the archive wrapper as successfully parsed capture evidence.
-- [ ] Refine legacy parsers incrementally to emit exact per-normalized-row source locators/offsets where the original format supports them; do not infer line/block precision for existing parsers that never exposed it.
+- [ ] Refine legacy parsers incrementally to emit exact per-normalized-row source locators/offsets where the original format supports them; do not infer line/block precision for existing parsers that never exposed it. **EventView text blocks now emit exact source hash + normalized-row key + line range + UTF-8 byte range; remaining parsers are intentionally still pending.**
 - [ ] Add session-overlap/fingerprint detection beyond exact source-file hashes for partial/overlapping captures.
 - [ ] Add clock discontinuity diagnostics and parser-specific rebuild/reingestion orchestration while preserving capture identity and annotations.
 
