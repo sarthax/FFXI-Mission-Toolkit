@@ -649,6 +649,39 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
     lines,zone_spans,actor_spans,context=_scoped_contexts(lua)
     section_rows,section_context=_section_contexts(lua)
 
+    local_function_effects={}
+    mapped_event_helpers={}
+    for helper_start,_helper_end,helper_text in _balanced_function_blocks(lua):
+        helper_match=_LOCAL_FUNCTION_HELPER.search(lines[helper_start])
+        if not helper_match:
+            continue
+        helper_name=helper_match.group(1)
+        params=tuple(
+            part.strip() for part in helper_match.group(2).split(",") if part.strip()
+        )
+        if params and params[0]=="player":
+            local_function_effects[helper_name]=_effects(helper_text)
+        mapped=_HELPER_EVENT_MAP_RETURN.search(helper_text)
+        if mapped and params:
+            mapped_event_helpers[helper_name]=(params[0],mapped.group(1),mapped.group(2))
+
+    literal_event_maps={}
+    for _helper,(_param,map_name,_index_name) in mapped_event_helpers.items():
+        block=re.search(
+            rf"local\s+{re.escape(map_name)}\s*=\s*\{{(.*?)\n\}}",
+            lua,
+            re.S,
+        )
+        if not block:
+            continue
+        literal_event_maps[map_name]={
+            zone:int(event_id)
+            for zone,event_id in re.findall(
+                r"\[xi\.zone\.([A-Z0-9_]+)\]\s*=\s*\{\s*(\d+)",
+                block.group(1),
+            )
+        }
+
     transitions=[]
     states={"source:any":MissionState("source:any","Source state")}
     completion_helpers=extract_dynamic_completion_gates(lua)
