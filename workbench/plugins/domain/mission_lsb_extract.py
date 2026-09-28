@@ -1089,6 +1089,15 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
                         tuple(t.metadata.get("post_effect_gate_basis",()))
                         + tuple(f.metadata.get("post_effect_gate_basis",()))
                     )),
+                    "helper_calls":tuple(dict.fromkeys(
+                        tuple(t.metadata.get("helper_calls",()))
+                        + tuple(f.metadata.get("helper_calls",()))
+                    )),
+                    "inlined_helper_effects":tuple(
+                        t.metadata.get("inlined_helper_effects",())
+                    )+tuple(
+                        f.metadata.get("inlined_helper_effects",())
+                    ),
                 },
                 post_effect_gate=post_effect_gate,
             ))
