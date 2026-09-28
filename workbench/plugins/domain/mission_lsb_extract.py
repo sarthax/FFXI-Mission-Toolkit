@@ -567,6 +567,8 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                             conds.append(condition)
 
             effects=list(_effects(path.body))
+            transport_effects=client_transport_effects(path.body)
+            effects.extend(effect for effect in transport_effects if effect not in effects)
             event=handler_event
             returned=_EVENT.search(path.body)
             if returned and event is None:
@@ -593,7 +595,7 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                     "priority":(int(pm.group(1)) if (pm:=re.search(r"setPriority\((\d+)\)",text)) else None),
                     "important_event":".importantEvent()" in text,
                     "replace_default":".replaceDefault()" in text,
-                    "client_transport":("handled by the client" in text.lower()),
+                    "client_transport":bool(transport_effects),
                     "branch_alternative":len(paths)>1,
                     "branch_index":path_index,
                     "branch_path":path.branch_path,
@@ -909,6 +911,7 @@ def client_transport_effects(lua: str) -> tuple[TransitionEffect,...]:
     """Preserve explicit source annotations that transport is client handled."""
     out=[]
     for line in lua.splitlines():
-        if "handled by the client" in line.lower() and ("transport" in line.lower() or "exit" in line.lower()):
+        lowered=line.lower()
+        if "handled by the client" in lowered and ("transport" in lowered or "exit" in lowered):
             out.append(TransitionEffect("CLIENT_TRANSPORT","player",line.strip().lstrip("-").strip()))
     return tuple(out)
