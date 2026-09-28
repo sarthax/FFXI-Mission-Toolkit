@@ -151,6 +151,23 @@ def main():
     assert event_node["representations"][0]["display_name"]=="lsb Southern_San_dOria_S/Raustigne event 149"
     assert feature_trace.node_info(con,"catalog:npc_event_refs:149")["known"] is False
 
+    # Key-item providers preserve LSB-primary, Topaz, and retail/reference provenance.
+    con.execute("CREATE TABLE keyitems_ours (id INTEGER, const_name TEXT, norm_name TEXT)")
+    con.execute("INSERT INTO keyitems_ours VALUES (794,'FIXTURE_KEY_ITEM','fixturekeyitem')")
+    con.execute("CREATE TABLE topaz_keyitems (id INTEGER, const_name TEXT, norm_name TEXT)")
+    con.execute("INSERT INTO topaz_keyitems VALUES (814,'FIXTURE_TOPAZ_KEY_ITEM','fixturetopazkeyitem')")
+    con.execute("CREATE TABLE keyitems_external (id INTEGER, name TEXT, norm_name TEXT)")
+    con.execute("INSERT INTO keyitems_external VALUES (900,'Fixture Retail Key Item','fixtureretailkeyitem')")
+    lsb_ki=feature_trace.search_nodes(con,"FIXTURE_KEY_ITEM")
+    assert any(row.get("provider")=="landsandboat" and row.get("node_id")=="catalog:keyitems_ours:794" for row in lsb_ki),lsb_ki
+    topaz_ki=feature_trace.search_nodes(con,"FIXTURE_TOPAZ_KEY_ITEM")
+    assert any(row.get("provider")=="topaz" and row.get("node_id")=="catalog:topaz_keyitems:814" for row in topaz_ki),topaz_ki
+    retail_ki=feature_trace.search_nodes(con,"Fixture Retail Key Item")
+    assert any(row.get("provider")=="retail-reference" and row.get("domain")=="reference" for row in retail_ki),retail_ki
+    assert feature_trace.node_info(con,"catalog:keyitems_ours:794")["known"]
+    con.execute("INSERT INTO keyitems_ours VALUES (794,'DUPLICATE_FIXTURE_KEY_ITEM','duplicatefixturekeyitem')")
+    assert feature_trace.node_info(con,"catalog:keyitems_ours:794")["known"] is False
+
     # Explicit non-server providers expose durable searchable records, not raw observation rows.
     con.execute("CREATE TABLE identity_snapshots (snapshot_id TEXT, version TEXT)")
     con.execute("INSERT INTO identity_snapshots VALUES ('client:2022','30120222_1')")
