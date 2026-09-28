@@ -25,6 +25,7 @@ This section supersedes older status labels below when they conflict. The histor
 - Mission transitions now preserve post-effect convergence ordering, so source-proven state writes that enable a completion helper are modeled before the convergence check rather than incorrectly as preconditions.
 - Mission completion-helper extraction is now structural rather than tied to the literal helper name `isMissionComplete`; handler guards link to discovered helpers by call identity and retain conservative post-effect ordering.
 - Mission zone/actor context is now derived from literal Lua table scope rather than lexical last-seen actor state; event chaining respects actor-scoped same-CSID handlers and only falls back to zone-level actorless finishes.
+- Mission Lua function-block extraction now ignores nested callbacks and function/end text inside basic comments/strings, preventing overlapping duplicate helper/handler blocks from entering source correlation.
 - Generic Lua dependency discovery and LSB zone-YAML dependency closure for entities/templates, skills/spells, loot/items, zone text, titles, and safe ID.mob arithmetic.
 - Crafting/producibility dependency closure for synthesis/synergy prerequisites.
 - GUI shared workspace shell plus Features, Packages, Validation, Client, Research, Domains, and existing capture/editor tools.
