@@ -1018,9 +1018,22 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
             conds=[]
             if t.gate: conds.extend(t.gate.conditions)
             if f.gate: conds.extend(f.gate.conditions)
-            gate=DependencyGate(
-                f"chain-gate:{t.transition_id}:{f.transition_id}","ALL",tuple(conds)
-            ) if conds else None
+            mixed_gate_logic=bool(
+                t.gate and f.gate and t.gate.logic!=f.gate.logic
+            )
+            if mixed_gate_logic:
+                gate=None
+            else:
+                gate_logic=(
+                    t.gate.logic if t.gate
+                    else f.gate.logic if f.gate
+                    else "ALL"
+                )
+                gate=DependencyGate(
+                    f"chain-gate:{t.transition_id}:{f.transition_id}",
+                    gate_logic,
+                    tuple(conds),
+                ) if conds else None
             post_conds=[]
             for candidate_gate in (t.post_effect_gate,f.post_effect_gate):
                 if not candidate_gate:
@@ -1031,7 +1044,7 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
             post_effect_gate=DependencyGate(
                 f"chain-post-effect-gate:{t.transition_id}:{f.transition_id}","ALL",tuple(post_conds)
             ) if post_conds else None
-            if "UNKNOWN" in {t.confidence,f.confidence}:
+            if mixed_gate_logic or "UNKNOWN" in {t.confidence,f.confidence}:
                 confidence="UNKNOWN"
             elif t.confidence=="VERIFIED" and f.confidence=="VERIFIED":
                 confidence="VERIFIED"
@@ -1068,6 +1081,7 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
                         t.metadata.get("branch_guard_complete",True)
                         and f.metadata.get("branch_guard_complete",True)
                     ),
+                    "mixed_gate_logic_unresolved":mixed_gate_logic,
                     "post_effect_gate_basis":tuple(dict.fromkeys(
                         tuple(t.metadata.get("post_effect_gate_basis",()))
                         + tuple(f.metadata.get("post_effect_gate_basis",()))
