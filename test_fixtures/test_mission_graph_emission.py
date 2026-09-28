@@ -62,6 +62,19 @@ def main():
     source_evidence=[e for e in projection.evidence if e.evidence_type=="SOURCE_CODE"]
     assert source_evidence and ":L" in source_evidence[0].location
 
+    second=extract_and_project_lsb_mission(
+        LUA,
+        feature_id="mission:test:other-feature",
+        source_path="scripts/missions/cop/other.lua",
+        source_snapshot_id="snapshot:lsb:test",
+    )
+    first_event=next(e.entity_id for e in projection.entities if e.entity_type=="MISSION_EVENT")
+    second_event=next(e.entity_id for e in second.entities if e.entity_type=="MISSION_EVENT")
+    assert first_event==second_event  # same source+zone+actor+CSID identity is reusable
+    first_status={e.entity_id for e in projection.entities if e.entity_type=="MISSION_STATE_CHANNEL"}
+    second_status={e.entity_id for e in second.entities if e.entity_type=="MISSION_STATE_CHANNEL"}
+    assert first_status and second_status and first_status.isdisjoint(second_status)
+
     with NamedTemporaryFile(suffix=".db") as tmp:
         con=graph_store.init_db(Path(tmp.name))
         persist_mission_graph(con,projection)
