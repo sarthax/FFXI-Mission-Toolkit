@@ -1883,11 +1883,29 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
     file in it still gets ingested), and "not a recognized capture-log format" for a file that
     matched none of the patterns below at all. This is what lets the GUI's Add Files page show a
     real per-file pass/fail breakdown instead of one opaque bundle-wide row."""
+    manifest = source_manifest(src, subroot)
+    con.execute(
+        "UPDATE captures SET source_manifest_sha256=?, source_file_count=? WHERE capture_id=?",
+        (manifest["sha256"], manifest["file_count"], capture_id),
+    )
+    results = file_results if file_results is not None else []
+
     def sfind(pattern):
         hits = src.find(pattern)
         return hits if subroot is None else [h for h in hits if h.startswith(subroot + "/")]
 
     matched_names: set[str] = set()
+
+    def append_result(relname, rows, error, parser_id=None, format_detected=None):
+        results.append(_source_result(
+            src,
+            relname,
+            rows=rows,
+            error=error,
+            parser_id=parser_id,
+            format_detected=format_detected,
+            manifest_sha256=manifest["sha256"],
+        ))
 
     def run1(relname, fn, *args):
         """For an ingester returning a single row count."""
@@ -1895,11 +1913,9 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         try:
             rows = fn(*args)
         except Exception as ex:
-            if file_results is not None:
-                file_results.append({"filename": relname, "rows": 0, "error": str(ex)})
+            append_result(relname, 0, str(ex), fn.__name__, fn.__name__.removeprefix("ingest_"))
             return 0
-        if file_results is not None:
-            file_results.append({"filename": relname, "rows": rows, "error": None})
+        append_result(relname, rows, None, fn.__name__, fn.__name__.removeprefix("ingest_"))
         return rows
 
     def run2(relname, fn, *args):
@@ -1908,11 +1924,9 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         try:
             a, b = fn(*args)
         except Exception as ex:
-            if file_results is not None:
-                file_results.append({"filename": relname, "rows": 0, "error": str(ex)})
+            append_result(relname, 0, str(ex), fn.__name__, fn.__name__.removeprefix("ingest_"))
             return 0, 0
-        if file_results is not None:
-            file_results.append({"filename": relname, "rows": a + b, "error": None})
+        append_result(relname, a + b, None, fn.__name__, fn.__name__.removeprefix("ingest_"))
         return a, b
 
     def run3(relname, fn, *args):
@@ -1921,11 +1935,9 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         try:
             a, b, c = fn(*args)
         except Exception as ex:
-            if file_results is not None:
-                file_results.append({"filename": relname, "rows": 0, "error": str(ex)})
+            append_result(relname, 0, str(ex), fn.__name__, fn.__name__.removeprefix("ingest_"))
             return 0, 0, 0
-        if file_results is not None:
-            file_results.append({"filename": relname, "rows": a + b + c, "error": None})
+        append_result(relname, a + b + c, None, fn.__name__, fn.__name__.removeprefix("ingest_"))
         return a, b, c
 
     def run4(relname, fn, *args):
@@ -1934,11 +1946,9 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         try:
             a, b, c, d = fn(*args)
         except Exception as ex:
-            if file_results is not None:
-                file_results.append({"filename": relname, "rows": 0, "error": str(ex)})
+            append_result(relname, 0, str(ex), fn.__name__, fn.__name__.removeprefix("ingest_"))
             return 0, 0, 0, 0
-        if file_results is not None:
-            file_results.append({"filename": relname, "rows": a + b + c + d, "error": None})
+        append_result(relname, a + b + c + d, None, fn.__name__, fn.__name__.removeprefix("ingest_"))
         return a, b, c, d
 
     counts = {"npc_entries": 0, "npc_hist": 0, "actions": 0, "path": 0, "hp": 0, "events": 0,
@@ -2030,16 +2040,13 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
             pl_rows = ingest_packetlogger(con, capture_id, src, pl_files)
         except Exception as ex:
             pl_rows = 0
-            if file_results is not None:
-                for relname in pl_files:
-                    file_results.append({"filename": relname, "rows": 0, "error": str(ex)})
+            for relname in pl_files:
+                append_result(relname, 0, str(ex), "ingest_packetlogger", "packetlogger")
         else:
-            if file_results is not None:
-                # One combined call across every raw-packet-log file -- rows aren't attributable
-                # to any single file, so report the real total once (against the first file) and
-                # the rest as "ok" with no per-file row count, rather than fabricating a split.
-                for i, relname in enumerate(pl_files):
-                    file_results.append({"filename": relname, "rows": pl_rows if i == 0 else None, "error": None})
+            # One combined call across every raw-packet-log file -- rows aren't attributable
+            # to any single file, so report the real total once and leave the rest unspecified.
+            for i, relname in enumerate(pl_files):
+                append_result(relname, pl_rows if i == 0 else None, None, "ingest_packetlogger", "packetlogger")
         counts["raw_packets"] += pl_rows
     if not npc_db_files:
         # No NPCLogger.db in this bundle -- fall back to the older Npclogger/tables/<Zone>.lua
@@ -2105,11 +2112,9 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         + sfind(r'[Pp]acket(?:[Ll]ogger|[Vv]iewer)/(?:full|incoming|outgoing)\.log$')
     ):
         matched_names.add(relname)
-        if file_results is not None:
-            file_results.append({"filename": relname, "rows": 0, "error": None})
+        append_result(relname, 0, None, "recognized_redundant", "recognized_redundant")
 
-    if file_results is not None:
-        # Real files present in the bundle that no pattern above ever looked at -- a capture-log
+    # Real files present in the bundle that no pattern above ever looked at -- a capture-log
         # format this toolkit doesn't recognize, or a genuinely unrelated file that got swept up
         # in the upload. Known-benign non-data files (manifest.txt, OS-generated cruft) are
         # reported "ok, not data" rather than "failed", since neither is a real import problem.
@@ -2120,7 +2125,7 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
                 continue
             basename = relname.rsplit("/", 1)[-1].lower()
             if basename in BENIGN_BASENAMES:
-                file_results.append({"filename": relname, "rows": 0, "error": None})
+                append_result(relname, 0, None, "benign_metadata", "metadata")
             else:
                 # 2026-09-08: a path that matches no known pattern above is ambiguous between two
                 # very different real causes -- "a genuinely new capture-tool format/layout this
@@ -2147,7 +2152,9 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
                     error += (f" (content looks like a real {guess} file -- may need a parser "
                                f"added, or an existing one's path pattern updated to match this "
                                f"layout)")
-                file_results.append({"filename": relname, "rows": 0, "error": error})
+                append_result(relname, 0, error, "unrecognized", guess or "unrecognized")
+    record_source_file_results(con, capture_id, results)
+    con.commit()
     return counts
 
 
