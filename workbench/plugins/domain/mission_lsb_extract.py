@@ -144,6 +144,7 @@ class _HandlerPath:
     branch_path: tuple[str,...] = ()
     branch_source_lines: tuple[tuple[int,int],...] = ()
     guard_complete: bool = True
+    guard_prefix_texts: tuple[str,...] = ()
 
 
 _IF_HEADER=re.compile(r"^\s*if\s+(.+?)\s+then\s*$")
@@ -244,21 +245,26 @@ def _handler_paths(text: str, *, start_line: int) -> tuple[_HandlerPath,...]:
         labels: tuple[str,...]=(),
         spans: tuple[tuple[int,int],...]=(),
         complete: bool=True,
+        guard_prefixes: tuple[str,...]=(),
     ) -> list[_HandlerPath]:
         split=_split_first_if(lines)
         if split is None:
             return [_HandlerPath(
                 "\n".join(line for _,line in lines),
-                guards,labels,spans,complete,
+                guards,labels,spans,complete,guard_prefixes,
             )]
         prefix,branches,suffix=split
         out=[]
+        prefix_text="\n".join(line for _,line in prefix)
         for kind,guard,header_line,end_line,body in branches:
             next_guards=guards+((guard,) if guard else ())
             next_labels=labels+(kind,)
             next_spans=spans+((header_line+1,end_line+1),)
             next_complete=complete and kind=="if"
-            out.extend(expand(prefix+body+suffix,next_guards,next_labels,next_spans,next_complete))
+            next_prefixes=guard_prefixes+((prefix_text,) if guard else ())
+            out.extend(expand(
+                prefix+body+suffix,next_guards,next_labels,next_spans,next_complete,next_prefixes
+            ))
         return out
 
     paths=expand(source)
