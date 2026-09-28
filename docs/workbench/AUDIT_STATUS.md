@@ -2170,3 +2170,13 @@ Once an outer function block is balanced, every nested `function` start inside t
 Regression: `test_fixtures/test_mission_function_block_parser.py` combines fake function syntax in comments/strings, a nested timer callback, one real helper, and one real mission handler. It requires exactly two outer blocks and one helper transition.
 
 The parser still uses conservative lexical balancing rather than a full Lua AST. Extended Lua long-bracket delimiters such as `[=[ ... ]=]` remain outside this parser and should fail conservatively if they affect executable block structure.
+
+## 2026-09-27 — Direct key-item grant extraction fix
+
+The LSB mission extractor now distinguishes and correctly recognizes both key-item grant call shapes:
+- `npcUtil.giveKeyItem(player, xi.keyItem.X)`;
+- `player:addKeyItem(xi.keyItem.X)`.
+
+The previous combined regex incorrectly required a `player` argument after both calls, so direct method-style `player:addKeyItem(...)` grants were silently omitted from findings and transition effects.
+
+`test_fixtures/test_mission_lsb_extract.py` now requires both grant forms to appear as `key_item_grant` findings and `GRANT` transition effects.
