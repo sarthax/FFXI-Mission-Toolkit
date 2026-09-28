@@ -2464,3 +2464,20 @@ The Wiki Compiler now has an evidence ledger instead of only a readiness/link re
 - the Wiki Compiler UI exposes source selection, evidence-map rebuild, claim provenance, candidate mappings, and confirm/reject review controls.
 
 This is a mapping/evidence foundation, not a semantic truth extractor. Dual-wiki conflict detection, typed mechanics/progression claims, and corroboration against server/client/runtime evidence remain follow-on work.
+
+## 2026-09-28 — Dual-wiki claim alignment and conflict detection
+
+BG Wiki and FFXIclopedia claim ledgers can now be compared as peer reference sources.
+
+- page alignment is keyed by normalized title and preserves BG-only, FFXIclopedia-only, and dual-source states;
+- entity-reference claims align deterministically on normalized subject identity;
+- section statements are compared only within matching sections and are paired conservatively by text similarity;
+- high-similarity statement pairs are marked AGREEMENT; moderate similarity remains DIVERGENT rather than being forced into conflict;
+- REFERENCE_CONFLICT is emitted only for deterministic contradiction signals currently supported: differing numeric values in otherwise structurally similar statements, or opposite negation polarity in otherwise structurally similar statements;
+- unpaired claims remain BG_ONLY or FFXICLOPEDIA_ONLY so source coverage gaps are visible;
+- canonical graph import creates REFERENCE_WIKI_ALIGNMENT analysis results and reference-only findings: agreements are SUPPORTED/INFERRED, conflicts are CONTRADICTED/INFERRED, and divergent/one-sided claims remain UNKNOWN;
+- no source is ranked or selected as correct, and every comparison preserves both excerpts/revisions plus `authority=REFERENCE_ONLY`;
+- the Wiki Compiler exposes a side-by-side comparison view with conflict kind, similarity, excerpts, and revision provenance;
+- Feature Trace catalogs page/claim alignment records for later research navigation.
+
+This remains a reference-comparison layer. Server/client/runtime corroboration is the next evidence step and is intentionally not inferred from wiki agreement alone.
