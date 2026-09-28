@@ -6,6 +6,10 @@ import re
 from pathlib import Path
 
 from workbench.plugins.domain.mission_ingest import ingest_branching_truth
+from workbench.plugins.domain.mission_feature_closure import (
+    build_feature_requirement_closure,
+    dependency_summary,
+)
 from workbench.plugins.domain.mission_lsb_extract import (
     chain_event_transitions,
     correlate_lsb_handlers,
@@ -191,6 +195,54 @@ def main():
     assert q10_metrics["unmodeled_source_handler_count"]==0,q10_metrics
     assert q10_metrics["implementation_gap_transition_count"]==1,q10_metrics
 
+    closure=build_feature_requirement_closure(
+        chained,
+        machines=(q9,q10),
+        entry_gates=(branch_gate.gate,),
+        selected_any_subjects=("quest:WHAT_PRICE_LOYALTY",),
+    )
+    closure_summary=dependency_summary(closure)
+    assert set(closure.feature_ids)=={
+        "mission:wotg:the_will_of_the_world",
+        "quest:crystal_war:beneath_the_mask",
+        "quest:crystal_war:what_price_loyalty",
+    },closure
+    assert "quest:BLOOD_OF_HEROES" in closure.skipped_alternatives,closure
+    assert "quest:HOWL_FROM_THE_HEAVENS" in closure.skipped_alternatives,closure
+    assert closure.unresolved_subjects==("quest:HONOR_UNDER_FIRE",),closure
+    assert any(
+        dependency.source_feature_id=="mission:wotg:the_will_of_the_world"
+        and dependency.subject=="quest:WHAT_PRICE_LOYALTY"
+        and dependency.logic=="ANY"
+        and dependency.resolved_feature_id=="quest:crystal_war:what_price_loyalty"
+        and dependency.selected
+        for dependency in closure.dependencies
+    ),closure.dependencies
+    assert any(
+        dependency.source_feature_id=="quest:crystal_war:what_price_loyalty"
+        and dependency.subject=="quest:BENEATH_THE_MASK"
+        and dependency.logic=="ALL"
+        and dependency.resolved_feature_id=="quest:crystal_war:beneath_the_mask"
+        for dependency in closure.dependencies
+    ),closure.dependencies
+    assert any(
+        dependency.source_feature_id=="quest:crystal_war:beneath_the_mask"
+        and dependency.subject=="mission:WOTG:current"
+        and dependency.status=="CONTEXT"
+        and dependency.operator=="GE"
+        and dependency.value=="FATE_IN_HAZE"
+        for dependency in closure.dependencies
+    ),closure.dependencies
+    assert closure_summary=={
+        "root_feature_id":"mission:wotg:the_will_of_the_world",
+        "feature_count":3,
+        "dependency_count":7,
+        "resolved_dependency_count":2,
+        "unresolved_dependency_count":1,
+        "skipped_alternative_count":2,
+        "cycle_count":0,
+    },closure_summary
+
     # Source-alignment checks keep the structural extraction tied to current LSB Lua.
     assert "Quest:new" in q9_lua and "BENEATH_THE_MASK" in q9_lua,q9_lua[:200]
     assert "Quest:new" in q10_lua and "WHAT_PRICE_LOYALTY" in q10_lua,q10_lua[:200]
@@ -223,7 +275,8 @@ def main():
     print("root_transitions",len(chained.transitions),"root_event_chains",root_metrics["event_chains"])
     print("q9_transitions",len(q9.transitions),"q10_transitions",len(q10.transitions))
     print("q10_visible_gaps",q10_metrics["implementation_gap_transition_count"])
-    print("next_gap","cross-feature mission-to-quest prerequisite closure")
+    print("closure_features",closure_summary["feature_count"],"unresolved",closure.unresolved_subjects)
+    print("next_gap","source-catalog discovery for unresolved prerequisite features")
     return 0
 
 
