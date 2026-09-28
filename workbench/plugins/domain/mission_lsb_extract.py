@@ -97,6 +97,10 @@ def channels_from_findings(findings: Iterable[LsbMissionFinding]) -> tuple[State
 
 _FUNC_START=re.compile(r"(onTrigger|onTrade|onMobDeath|onZoneIn)\s*=\s*function")
 _EVENT_FINISH_KEY=re.compile(r"\[(\d+)\]\s*=\s*function\(player,\s*csid")
+_EVENT_FINISH_REF=re.compile(r"\[(\d+)\]\s*=\s*([A-Za-z_][A-Za-z0-9_]*)\s*,?\s*$")
+_DECL_HELPER_CALL=re.compile(
+    r"\['([^']+)'\]\s*=\s*([A-Za-z_][A-Za-z0-9_]*)\(([^\)]*)\)\s*,?"
+)
 _STATUS_EQ=re.compile(r"player:getMissionStatus\([^\n]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)\s*==\s*(\d+)")
 _STATUS_NE=re.compile(r"player:getMissionStatus\([^\n]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)\s*~=\s*(\d+)")
 _STATUS_COMPARE=re.compile(
@@ -123,6 +127,13 @@ _SETPOS=re.compile(r"player:setPos\(([^\)]+)\)")
 _MESSAGE=re.compile(r"(?:player:messageSpecial|player:messageText|mission:messageSpecial|mission:messageName)\(([^\n]+)\)")
 _HELPER_ASSIGN=re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*function\(player\)",re.M)
 _LOCAL_PLAYER_HELPER=re.compile(r"^\s*local\s+function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*player\s*\)")
+_LOCAL_FUNCTION_HELPER=re.compile(
+    r"^\s*local\s+function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(([^\)]*)\)"
+)
+_HELPER_EVENT_MAP_RETURN=re.compile(
+    r"return\s+mission:(?:progressEvent|event|progressCutscene)\(\s*"
+    r"unpack\(\s*([A-Za-z_][A-Za-z0-9_]*)\[([A-Za-z_][A-Za-z0-9_]*)\]\s*\)\s*\)"
+)
 
 
 def _structural_lua_lines(lua: str) -> list[str]:
