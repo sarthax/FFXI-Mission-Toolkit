@@ -10,6 +10,7 @@ import math
 import sqlite3
 from datetime import datetime
 from workbench.core.services import timeline_alignment as ta
+from workbench.core.services.packet_identity import canonical_opcode
 
 RAW = "RAW_PACKET"
 EVENTVIEW = "EVENTVIEW_DECODE"
@@ -56,16 +57,7 @@ def _table_exists(con, name: str) -> bool:
 
 
 def _opcode(value) -> str | None:
-    if value is None:
-        return None
-    raw=str(value).strip().lower()
-    if not raw:
-        return None
-    try:
-        n=int(raw,16) if raw.startswith("0x") else int(raw,16)
-    except ValueError:
-        return raw
-    return f"0x{n:03x}"
+    return canonical_opcode(value)
 
 
 def _direction(value) -> str:
