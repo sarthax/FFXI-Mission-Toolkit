@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 """Regression for the reusable multi-zone progression / hunt framework."""
+from pathlib import Path
+from tempfile import NamedTemporaryFile
+
+import feature_trace
+from workbench.core import graph as graph_store
+from workbench.core.schema import Entity, Feature
 from workbench.plugins.domain import PluginContext, default_registry
 from workbench.plugins.domain.multizone_progression import (
     MultiZoneProgression,
@@ -7,6 +13,8 @@ from workbench.plugins.domain.multizone_progression import (
     ProgressionObjective,
     ProgressionStage,
     analyze_progression,
+    persist_progression_graph,
+    project_progression_graph,
 )
 from workbench.plugins.domain.mission_state_machine import StateCondition, TransitionEffect
 
@@ -82,6 +90,57 @@ def main():
         edge.source_stage_id=="east" and edge.target_stage_id=="turnin"
         for edge in analysis.cross_zone_dependencies
     ),analysis.cross_zone_dependencies
+
+    projection=project_progression_graph(
+        model,feature_name="Progression Fixture",source_snapshot_id="snapshot:test"
+    )
+    assert projection.feature.feature_type=="MULTIZONE_PROGRESSION",projection.feature
+    rels={edge.relationship for edge in projection.edges}
+    assert {"HAS_STAGE","HAS_OBJECTIVE","LOCATED_IN","REQUIRES","AFFECTS"} <= rels,rels
+    scoped_subject=next(
+        entity for entity in projection.entities
+        if entity.entity_id=="progression-subject:feature:test:multizone:mission_var:Progress"
+    )
+    assert scoped_subject.metadata["scope"]=="feature",scoped_subject
+    assert any(
+        edge.relationship=="REQUIRES"
+        and edge.source_node=="progression-stage:feature:test:multizone:turnin"
+        and edge.target_node=="progression-stage:feature:test:multizone:east"
+        for edge in projection.edges
+    ),projection.edges
+
+    with NamedTemporaryFile(suffix=".db") as tmp:
+        con=graph_store.init_db(Path(tmp.name))
+        graph_store.insert_record(con,Feature(
+            model.feature_id,"Existing Mission Feature","MISSION","mission",
+            status="DISCOVERED",metadata={"preserve":True},
+        ))
+        graph_store.insert_record(con,Entity(
+            "zone:ZONE_A","ZONE","Existing Zone A",{"preserve":True},
+        ))
+        con.commit()
+        persist_progression_graph(con,projection)
+        existing_feature=con.execute(
+            "SELECT name,feature_type,metadata_json FROM features WHERE feature_id=?",
+            (model.feature_id,),
+        ).fetchone()
+        assert existing_feature[0]=="Existing Mission Feature",existing_feature
+        assert existing_feature[1]=="MISSION",existing_feature
+        existing_zone=con.execute(
+            "SELECT display_name,metadata_json FROM entities WHERE entity_id='zone:ZONE_A'"
+        ).fetchone()
+        assert existing_zone[0]=="Existing Zone A",existing_zone
+        trace=feature_trace.trace(con,model.feature_id,3,"out")
+        traced_types={
+            rep["node_type"]
+            for node in trace["nodes"]
+            for rep in node.get("representations",())
+            if rep.get("node_type")
+        }
+        assert "PROGRESSION_STAGE" in traced_types,traced_types
+        assert "PROGRESSION_OBJECTIVE" in traced_types,traced_types
+        assert any(edge["relationship"]=="REQUIRES" for edge in trace["edges"]),trace["edges"]
+        con.close()
 
     registry=default_registry()
     plugin=registry.get("framework.multizone_progression")
