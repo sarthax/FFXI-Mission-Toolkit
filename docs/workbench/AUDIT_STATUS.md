@@ -2538,3 +2538,17 @@ PacketLogger/PacketViewer ingestion now preserves exact source-block provenance 
 - re-ingestion replaces the raw-packet locator set idempotently so stale row keys cannot survive a new chronological merge.
 
 This extends exact row provenance from EventView decoded packets to raw binary packet-log evidence.
+
+
+## 2026-09-28 — Capture 2D/3D spatial viewer parity
+
+The capture plotter is no longer a path-only static visualization.
+
+- a shared capture spatial payload now exposes every capture-observed entity with a real XYZ position, including fixed NPCs/props with no PathLog history;
+- 2D capture plotting can filter by name/entity ID and optionally renders name, ID, and XYZ labels directly on the coordinate-aligned zone mesh;
+- the 2D entity table now exposes model, XYZ, HP%, and path availability instead of a path-only legend;
+- 3D capture mode consumes capture-observed markers rather than silently relying on live server spawn metadata for the capture overlay;
+- 3D hover/proximity labels include capture entity ID and XYZ, with model/HP/path context where available;
+- 3D capture search filters markers and provides click-to-focus results while preserving the normal zone viewer's mesh, time-of-day, fly mode, wall opacity, and navmesh behavior.
+
+The normal zone viewer remains the source of zone geometry/navmesh behavior; the capture layer now supplies capture-specific entity observations on top of it.

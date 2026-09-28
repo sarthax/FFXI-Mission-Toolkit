@@ -10,7 +10,7 @@
   assignment out to the pre-baked mesh cache this falls back to (flat-shaded), because the FFXI
   install path or this zone's geometry DAT isn't configured/known. {% endif %}
   Drag to orbit, scroll to zoom.
-  {% if multi %}Showing every entity with path data from capture
+  {% if multi %}Showing capture-observed entities and available paths from capture
   <a class="inline" href="/captures/{{ capture_id }}">#{{ capture_id }}</a> in {{ zone_db }}.
   {% elif entity_name %}Showing {{ entity_name }}'s real path from capture
   <a class="inline" href="/captures/{{ capture_id }}">#{{ capture_id }}</a>.{% endif %}</p>
@@ -70,19 +70,33 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
   <label class="muted" style="display:flex; align-items:center; gap:4px;"><input type="checkbox" id="shownav-toggle" disabled> Show navmesh</label>
   {% if not multi %}<a class="inline" href="/zoneplot?zone={{ zoneid }}" style="margin-left:auto;">Edit this zone &rarr;</a>{% endif %}
 </div>
+{% if capture_id and zone_db %}
+<div id="capture-spatial-controls" style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;margin:8px 0 10px;">
+  <label class="muted">Capture search
+    <input id="capture-spatial-search" type="text" placeholder="name / entity id" style="width:220px;margin-left:6px;">
+  </label>
+  <label class="muted" style="display:flex;align-items:center;gap:4px;">
+    <input id="capture-label-toggle" type="checkbox" checked> proximity labels
+  </label>
+  <span id="capture-spatial-summary" class="chip mono"></span>
+  <div id="capture-spatial-results" class="mono" style="width:100%;max-height:150px;overflow:auto;border:1px solid var(--border);border-radius:6px;padding:4px;font-size:11px;"></div>
+</div>
+{% endif %}
 <div id="viewer-container" style="width:100%; height:640px; border:1px solid var(--border); border-radius:8px; background:#0a0d10; position:relative;">
   <div id="viewer-loading" class="muted" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">Loading mesh&hellip;</div>
   <div id="fly-hint" class="muted mono" style="display:none; position:absolute; bottom:10px; left:10px; background:rgba(10,13,16,0.85); border:1px solid var(--border); border-radius:4px; padding:6px 10px; font-size:12px;">Click to lock mouse &middot; WASD move &middot; Space/Shift up/down &middot; scroll = speed &middot; Esc to release</div>
 </div>
 
 {% if multi and legend %}
-<h2 style="margin-top:16px;">Legend</h2>
+<h2 style="margin-top:16px;">Path legend</h2>
 <div class="table-wrap"><table>
-  <tr><th></th><th>name</th></tr>
+  <tr><th></th><th>id</th><th>name</th><th>last observed position</th></tr>
   {% for p in legend %}
   <tr>
     <td><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:{{ p.color }};"></span></td>
+    <td class="mono">{% if p.id %}<a href="/entity/{{ p.id }}">{{ p.id }}</a>{% else %}—{% endif %}</td>
     <td>{{ p.name }}</td>
+    <td class="mono">{% if p.x is not none %}({{ '%.1f'|format(p.x) }}, {{ '%.1f'|format(p.y) }}, {{ '%.1f'|format(p.z) }}){% else %}—{% endif %}</td>
   </tr>
   {% endfor %}
 </table></div>
@@ -108,6 +122,7 @@ const GEOMETRY_ROM_PATH = {{ geometry_rom_path_json | safe }};
 
 const paths = {{ paths_json | safe }};
 const ZONEID = {{ zoneid }};
+const CAPTURE_SPATIAL_URL = {{ capture_spatial_url_json | default('""') | safe }};
 
 const container = document.getElementById('viewer-container');
 const loadingEl = document.getElementById('viewer-loading');
@@ -115,10 +130,11 @@ const loadingEl = document.getElementById('viewer-loading');
 // ---- Spawn markers (Phase 1) -- reuses zone_plot.py's existing /zoneplot/{zid}/data.json
 // live-DB query (same data the 2D top-down plotter uses), ported here as instanced spheres
 // color-coded like Vanalytics' SpawnMarkers.tsx (monster=red, npc=blue, door/prop=green).
-const SPAWN_COLORS = { m: 0xff4444, n: 0x4488ff, d: 0x44cc88 };
+const SPAWN_COLORS = { m: 0xff4444, n: 0x4488ff, d: 0x44cc88, c: 0xe0c840 };
 const spawnTooltip = document.createElement('div');
 spawnTooltip.style.cssText = 'position:absolute; pointer-events:none; display:none; background:rgba(10,13,16,0.92); color:#e8e8e8; border:1px solid var(--border); border-radius:4px; padding:4px 8px; font-size:12px; font-family:monospace; z-index:10; white-space:nowrap;';
 container.appendChild(spawnTooltip);
+let spawnEntitiesAll = [];
 let spawnEntities = [];
 let spawnMesh = null;
 let navMesh = null;
@@ -139,25 +155,30 @@ for (let i = 0; i < FLY_LABEL_MAX; i++) {
 const flyLabelProj = new THREE.Vector3();
 const wallMaterials = [];
 
-fetch(`/zoneplot/${ZONEID}/data.json`).then(r => r.json()).then(d => {
-  spawnEntities = (d.entities || []).filter(e => !e.zero);
+const entityDataUrl = CAPTURE_SPATIAL_URL || `/zoneplot/${ZONEID}/data.json`;
+fetch(entityDataUrl).then(r => r.json()).then(d => {
+  spawnEntitiesAll = (d.entities || []).filter(e => !e.zero);
+  spawnEntities = spawnEntitiesAll.slice();
   buildSpawnMarkers();
-  if (d.has_nav) {
-    const shownavToggle = document.getElementById('shownav-toggle');
-    shownavToggle.disabled = false;
-    fetch(`/zoneplot/${ZONEID}/navmesh.bin`).then(r => r.arrayBuffer()).then(buf => {
-      const arr = new Float32Array(buf);
-      if (!arr.length) return;
-      // Same (x, -y, -z) model-space mapping as spawn markers/paths/mesh above.
-      for (let i = 0; i < arr.length; i += 3) { arr[i + 1] = -arr[i + 1]; arr[i + 2] = -arr[i + 2]; }
-      const g = new THREE.BufferGeometry();
-      g.setAttribute('position', new THREE.BufferAttribute(arr, 3));
-      navMesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0x2a9d8f, wireframe: true, transparent: true, opacity: 0.3, depthTest: false }));
-      navMesh.visible = shownavToggle.checked;
-      navMesh.renderOrder = 5;
-      scene.add(navMesh);
-    }).catch(() => {});
-  }
+  refreshCaptureSpatialResults();
+}).catch(() => {});
+
+// Navmesh remains zone data, regardless of whether markers came from the live server or a capture.
+fetch(`/zoneplot/${ZONEID}/data.json`).then(r => r.json()).then(d => {
+  if (!d.has_nav) return;
+  const shownavToggle = document.getElementById('shownav-toggle');
+  shownavToggle.disabled = false;
+  fetch(`/zoneplot/${ZONEID}/navmesh.bin`).then(r => r.arrayBuffer()).then(buf => {
+    const arr = new Float32Array(buf);
+    if (!arr.length) return;
+    for (let i = 0; i < arr.length; i += 3) { arr[i + 1] = -arr[i + 1]; arr[i + 2] = -arr[i + 2]; }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+    navMesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0x2a9d8f, wireframe: true, transparent: true, opacity: 0.3, depthTest: false }));
+    navMesh.visible = shownavToggle.checked;
+    navMesh.renderOrder = 5;
+    scene.add(navMesh);
+  }).catch(() => {});
 }).catch(() => {});
 
 const scene = new THREE.Scene();
@@ -420,6 +441,42 @@ const fill = new THREE.DirectionalLight(0x6688aa, 0.4);
 fill.position.set(-300, 200, -200);
 scene.add(fill);
 
+function captureEntityMatches(e, q) {
+  if (!q) return true;
+  const t = q.trim().toLowerCase();
+  return String(e.id ?? '').includes(t) || String(e.n ?? '').toLowerCase().includes(t);
+}
+
+function focusCaptureEntity(e) {
+  if (!e || !Number.isFinite(e.x)) return;
+  flyTo(new THREE.Vector3(e.x, -e.y, -e.z));
+}
+
+function refreshCaptureSpatialResults() {
+  const search = document.getElementById('capture-spatial-search');
+  const results = document.getElementById('capture-spatial-results');
+  const summary = document.getElementById('capture-spatial-summary');
+  if (!CAPTURE_SPATIAL_URL || !search || !results || !summary) return;
+  const q = search.value || '';
+  spawnEntities = spawnEntitiesAll.filter(e => captureEntityMatches(e, q));
+  buildSpawnMarkers();
+  summary.textContent = `${spawnEntities.length}/${spawnEntitiesAll.length} entities`;
+  results.innerHTML = '';
+  for (const e of spawnEntities.slice(0, 250)) {
+    const row = document.createElement('div');
+    row.style.cssText = 'cursor:pointer;padding:2px 4px;border-radius:3px;white-space:nowrap;';
+    row.textContent = `${e.id}  ${e.n || '?'}  (${Number(e.x).toFixed(1)}, ${Number(e.y).toFixed(1)}, ${Number(e.z).toFixed(1)})${e.has_path ? '  [path]' : ''}`;
+    row.title = 'Click to focus in 3D';
+    row.addEventListener('mouseenter', () => row.style.background = 'var(--accent-soft)');
+    row.addEventListener('mouseleave', () => row.style.background = '');
+    row.addEventListener('click', () => focusCaptureEntity(e));
+    results.appendChild(row);
+  }
+}
+
+const captureSpatialSearch = document.getElementById('capture-spatial-search');
+if (captureSpatialSearch) captureSpatialSearch.addEventListener('input', refreshCaptureSpatialResults);
+
 function buildSpawnMarkers() {
   if (spawnMesh) { scene.remove(spawnMesh); spawnMesh.geometry.dispose(); spawnMesh.material.dispose(); spawnMesh = null; }
   if (spawnEntities.length === 0) return;
@@ -493,8 +550,12 @@ function updateSpawnHover() {
     const id = hits[0].instanceId;
     hoveredSpawnId = id;
     const e = spawnEntities[id];
-    const kindLabel = e.k === 'm' ? 'monster' : e.k === 'n' ? 'npc' : 'door/prop';
-    spawnTooltip.innerHTML = `<b>${e.n || '?'}</b> (${kindLabel})${e.lv ? ' Lv' + e.lv : ''}<br>id ${e.id}`;
+    const kindLabel = e.k === 'm' ? 'monster' : e.k === 'n' ? 'npc' : e.k === 'd' ? 'door/prop' : 'capture';
+    const pos = Number.isFinite(e.x) ? `<br>xyz ${e.x.toFixed(1)}, ${e.y.toFixed(1)}, ${e.z.toFixed(1)}` : '';
+    const extra = e.k === 'c'
+      ? `${e.model != null ? '<br>model ' + e.model : ''}${e.hpp != null ? ' · hp ' + e.hpp + '%' : ''}${e.has_path ? '<br>path available' : '<br>snapshot/fixed position'}`
+      : '';
+    spawnTooltip.innerHTML = `<b>${e.n || '?'}</b> (${kindLabel})${e.lv ? ' Lv' + e.lv : ''}<br>id ${e.id}${pos}${extra}`;
     spawnTooltip.style.left = (lastClientXY.x + 12) + 'px';
     spawnTooltip.style.top = (lastClientXY.y + 12) + 'px';
     spawnTooltip.style.display = 'block';
@@ -505,7 +566,11 @@ function updateSpawnHover() {
 }
 
 function updateFlyLabels() {
-  if (spawnEntities.length === 0) { for (const el of flyLabelPool) el.style.display = 'none'; return; }
+  const labelToggle = document.getElementById('capture-label-toggle');
+  if ((labelToggle && !labelToggle.checked) || spawnEntities.length === 0) {
+    for (const el of flyLabelPool) el.style.display = 'none';
+    return;
+  }
   const camPos = camera.position;
   const nearby = [];
   for (const e of spawnEntities) {
@@ -523,9 +588,10 @@ function updateFlyLabels() {
     const px = (flyLabelProj.x * 0.5 + 0.5) * rect.width;
     const py = (-flyLabelProj.y * 0.5 + 0.5) * rect.height;
     if (px < 0 || px > rect.width || py < 0 || py > rect.height) continue;
-    const kindLabel = e.k === 'm' ? 'monster' : e.k === 'n' ? 'npc' : 'door/prop';
+    const kindLabel = e.k === 'm' ? 'monster' : e.k === 'n' ? 'npc' : e.k === 'd' ? 'door/prop' : 'capture';
     const el = flyLabelPool[shown];
-    el.innerHTML = `<b>${e.n || '?'}</b> (${kindLabel})${e.lv ? ' Lv' + e.lv : ''}`;
+    const pos = Number.isFinite(e.x) ? ` · ${e.x.toFixed(1)},${e.y.toFixed(1)},${e.z.toFixed(1)}` : '';
+    el.innerHTML = `<b>${e.n || '?'}</b> [${e.id}] (${kindLabel})${pos}`;
     el.style.left = px + 'px';
     el.style.top = py + 'px';
     el.style.display = 'block';

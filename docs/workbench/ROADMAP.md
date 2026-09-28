@@ -185,6 +185,7 @@ Purpose: make capture evidence reproducible, deletion-safe, content-addressed, a
 - [ ] Refine legacy parsers incrementally to emit exact per-normalized-row source locators/offsets where the original format supports them; do not infer line/block precision for existing parsers that never exposed it. **EventView text blocks and PacketLogger/PacketViewer raw packet blocks now emit exact source hash + normalized-row key + line range + UTF-8 byte range when the decoded source round-trips exactly; remaining parsers are intentionally still pending.**
 - [ ] Add session-overlap/fingerprint detection beyond exact source-file hashes for partial/overlapping captures.
 - [ ] Add clock discontinuity diagnostics and parser-specific rebuild/reingestion orchestration while preserving capture identity and annotations.
+- [x] Modernize capture 2D/3D spatial viewers to share capture-observed entity metadata: all positioned entities (not path-only), name/ID/XYZ display, name/ID search, fixed/snapshot-only visibility, path presence, and capture-aware 3D marker hover/focus/proximity labels while retaining normal zone mesh/navmesh behavior.
 
 ### Video OCR evidence alignment and packet reconstruction (P1)
 

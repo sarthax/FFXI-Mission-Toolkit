@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 194,
+  "route_count": 195,
   "routes": [
     {
       "method": "GET",
@@ -506,6 +506,14 @@
       "section": "Zones > 3D Viewer",
       "role": "view",
       "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/{capture_id}/spatial.json",
+      "home": "Captures",
+      "section": "Paths & Visualization",
+      "role": "data",
+      "disposition": "REWORK"
     },
     {
       "method": "GET",

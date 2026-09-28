@@ -139,6 +139,7 @@ jobs:
           python test_fixtures/test_capture_integrity_hardening.py
           python test_fixtures/test_capture_row_locators.py
           python test_fixtures/test_capture_packet_row_locators.py
+          python test_fixtures/test_capture_spatial_viewer.py
           python test_fixtures/test_capture_content_fingerprint.py
           python test_fixtures/test_capture_event_packet_graph.py
           python test_fixtures/test_lua_event_typing.py

@@ -18,6 +18,12 @@
     {% endfor %}
   </select>
   {% endif %}
+  <span class="muted">search:</span>
+  <input type="text" name="q" value="{{ q }}" placeholder="name / entity id" style="width:180px;">
+  <input type="hidden" name="labels" value="0">
+  <label class="muted" style="display:flex;align-items:center;gap:4px;">
+    <input type="checkbox" name="labels" value="1" {% if labels %}checked{% endif %}> labels / IDs / XYZ
+  </label>
   <span class="muted">padding:</span>
   <input type="number" name="pad_yalms" value="{{ pad_yalms }}" min="10" max="2000" step="10" style="width:80px;">
   <span class="muted">yalms</span>
@@ -26,9 +32,9 @@
   {% if variants.collision and variants.detailed %}
   <span class="muted" style="margin-left:auto;">mesh:</span>
   <a class="chip" style="{% if not detail %}background:var(--accent-soft);color:var(--accent);{% endif %}"
-     href="/captures/plot_all?capture_id={{ capture_id }}&zone_db={{ zone_db }}&pad_yalms={{ pad_yalms }}&detail=0">collision (clean)</a>
+     href="/captures/plot_all?capture_id={{ capture_id }}&zone_db={{ zone_db | urlencode }}&pad_yalms={{ pad_yalms }}&detail=0&q={{ q | urlencode }}&labels={{ 1 if labels else 0 }}">collision (clean)</a>
   <a class="chip" style="{% if detail %}background:var(--accent-soft);color:var(--accent);{% endif %}"
-     href="/captures/plot_all?capture_id={{ capture_id }}&zone_db={{ zone_db }}&pad_yalms={{ pad_yalms }}&detail=1">visual (detailed)</a>
+     href="/captures/plot_all?capture_id={{ capture_id }}&zone_db={{ zone_db | urlencode }}&pad_yalms={{ pad_yalms }}&detail=1&q={{ q | urlencode }}&labels={{ 1 if labels else 0 }}">visual (detailed)</a>
   {% endif %}
 </form>
 
@@ -38,19 +44,24 @@
 
 {% if topdown_available and entities %}
 <div id="plot-viewport" style="overflow:hidden; border:1px solid var(--border); border-radius:8px; max-width:640px; cursor:grab; background:var(--code-bg);">
-  <img id="plot-img" src="/captures/plot_all.png?capture_id={{ capture_id }}&zone_db={{ zone_db }}&pad_yalms={{ pad_yalms }}&detail={{ detail }}"
+  <img id="plot-img" src="/captures/plot_all.png?capture_id={{ capture_id }}&zone_db={{ zone_db | urlencode }}&pad_yalms={{ pad_yalms }}&detail={{ detail }}&q={{ q | urlencode }}&labels={{ 1 if labels else 0 }}"
        style="display:block; width:100%; transform-origin:0 0; user-select:none;" draggable="false">
 </div>
-<p class="muted">Scroll to zoom, drag to pan, double-click to reset. Each entity gets its own color (dot = start of its path), drawn on the same real coordinate-aligned mesh silhouette as the single-entity plot. "Collision" is the clean walkable-space outline; "visual" shows real wall/prop/terrain detail but some zones (caverns with lava, in particular) carry decorative overlay geometry that renders as solid blocks from directly above -- pick whichever reads better for this zone.</p>
+<p class="muted">Scroll to zoom, drag to pan, double-click to reset. Path-capable entities retain their colored traces; every capture-observed entity with a real XYZ position is also marked in gold, including fixed NPCs/props that never produced PathLog history. Labels show name, entity ID, and observed XYZ when enabled. Search filters the map and entity table together. "Collision" is the clean walkable-space outline; "visual" shows wall/prop/terrain detail.</p>
+<p class="muted"><b>{{ spatial_count }}</b> positioned capture entit{{ 'y' if spatial_count == 1 else 'ies' }} shown{% if q %} matching <code>{{ q }}</code>{% endif %}.</p>
 
-<h2>Legend</h2>
+<h2>Capture entities</h2>
 <div class="table-wrap"><table>
-  <tr><th></th><th>id</th><th>name</th></tr>
+  <tr><th></th><th>id</th><th>name</th><th>model</th><th>position (x, y, z)</th><th>hp%</th><th>path</th></tr>
   {% for l in legend %}
   <tr>
     <td><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:{{ l.color }};"></span></td>
-    <td class="mono"><a href="/captures/plot?capture_id={{ capture_id }}&entity_id={{ l.entity_id }}">{{ l.entity_id }}</a></td>
+    <td class="mono"><a href="/entity/{{ l.entity_id }}">{{ l.entity_id }}</a></td>
     <td>{{ l.name }}</td>
+    <td class="mono">{{ l.model if l.model is not none else "—" }}</td>
+    <td class="mono">({{ '%.1f'|format(l.x) }}, {{ '%.1f'|format(l.y) }}, {{ '%.1f'|format(l.z) }})</td>
+    <td>{{ l.hpp if l.hpp is not none else "—" }}</td>
+    <td>{% if l.has_path %}<a class="inline" href="/captures/plot?capture_id={{ capture_id }}&entity_id={{ l.entity_id }}">view path</a>{% else %}<span class="muted">fixed / snapshot only</span>{% endif %}</td>
   </tr>
   {% endfor %}
 </table></div>
