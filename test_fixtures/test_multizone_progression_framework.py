@@ -84,6 +84,7 @@ def main():
     assert not analysis.unreachable_stage_ids,analysis
     assert analysis.zone_ids==("ZONE_A","ZONE_B","ZONE_C","ZONE_D","ZONE_E"),analysis
     assert analysis.branch_stage_ids==("scout",),analysis
+    assert analysis.fanout_stage_ids==("briefing",),analysis
     assert analysis.convergence_stage_ids==("turnin",),analysis
     assert analysis.terminal_stage_ids==("scout","turnin"),analysis
     assert analysis.objective_trigger_counts["MOB_DEATH"]==2,analysis
@@ -169,6 +170,7 @@ def main():
     assert any(f.finding_type=="CROSS_ZONE_DEPENDENCY" for f in findings),findings
     report=plugin.report(context)
     assert report["progression"]["status"]=="STRUCTURALLY_READY",report
+    assert report["progression"]["fanout_stage_ids"]==["briefing"],report
     assert report["progression"]["cross_zone_dependency_count"]>=4,report
 
     cyclic=MultiZoneProgression(
