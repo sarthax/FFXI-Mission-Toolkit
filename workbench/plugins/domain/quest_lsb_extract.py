@@ -671,8 +671,8 @@ def correlate_lsb_quest_handlers(
                 "section_eligibility_status":section_status,
                 "section_eligibility_unresolved_reasons":tuple(section_unresolved_reasons),
                 "section_check_present":section_check_present,
-                "replace_default":".replaceDefault()" in (match.group(4) or ""),
-                "important_event":".importantEvent()" in (match.group(4) or ""),
+                "replace_default":any(token in (match.group(4) or "") for token in (":replaceDefault()",".replaceDefault()")),
+                "important_event":any(token in (match.group(4) or "") for token in (":importantEvent()",".importantEvent()")),
             },
         ))
 
