@@ -38,6 +38,11 @@ def main():
     assert reward["title"]=="TREADER_OF_AN_ICY_PAST",reward
     transports=client_transport_effects(SOURCE)
     assert transports and transports[0].effect=="CLIENT_TRANSPORT",transports
+    transport_event=next(t for t in raw.transitions if t.event and t.event.zone=="MINE_SHAFT_2716" and t.event.event_id==3 and t.trigger=="EVENT_FINISH")
+    assert any(e.effect=="CLIENT_TRANSPORT" for e in transport_event.effects),transport_event
+    assert transport_event.metadata.get("client_transport") is True,transport_event.metadata
+    no_transport=next(t for t in raw.transitions if t.event and t.event.zone=="MINE_SHAFT_2716" and t.event.event_id==32001 and t.trigger=="EVENT_FINISH")
+    assert not any(e.effect=="CLIENT_TRANSPORT" for e in no_transport.effects),no_transport
     assert any(t.metadata.get("priority")==995 for t in raw.transitions),raw.transitions
     complete_handlers=[t for t in raw.transitions if any(e.effect=="COMPLETE" for e in t.effects)]
     assert len(complete_handlers)>=3,complete_handlers
