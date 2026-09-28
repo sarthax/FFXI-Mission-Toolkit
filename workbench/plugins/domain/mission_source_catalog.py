@@ -5,7 +5,11 @@ from dataclasses import dataclass
 from pathlib import Path
 import re
 
-from .mission_lsb_extract import chain_event_transitions, correlate_lsb_handlers
+from .mission_lsb_extract import (
+    _balanced_function_blocks,
+    chain_event_transitions,
+    correlate_lsb_handlers,
+)
 from .mission_state_machine import MissionStateMachine
 from .quest_lsb_extract import (
     chain_quest_event_transitions,
@@ -80,6 +84,41 @@ class LsbFeatureSourceCatalog:
     def source_for(self, subject: str) -> LsbFeatureSource | None:
         return self._sources.get(subject)
 
+    def _feature_helper_gates_for_source(self, lua: str) -> tuple[dict,...]:
+        """Resolve known cross-file helper predicates used by literal section checks."""
+        lines=lua.splitlines()
+        rows=[]
+        seen=set()
+        for start,_end,text in _balanced_function_blocks(lua):
+            if not re.search(r"^\s*check\s*=\s*function\b",lines[start]):
+                continue
+            for helper,gate in self._helper_feature_gates.items():
+                if not re.search(
+                    rf"(?<![A-Za-z0-9_.]){re.escape(helper)}\(\s*player\s*\)",
+                    text,
+                ):
+                    continue
+                key=(gate.gate_id,gate.logic,tuple(
+                    (condition.subject,condition.operator,repr(condition.value))
+                    for condition in gate.conditions
+                ))
+                if key in seen:
+                    continue
+                seen.add(key)
+                rows.append({
+                    "gate_id":gate.gate_id,
+                    "logic":gate.logic,
+                    "conditions":tuple(
+                        {
+                            "subject":condition.subject,
+                            "operator":condition.operator,
+                            "value":condition.value,
+                        }
+                        for condition in gate.conditions
+                    ),
+                })
+        return tuple(rows)
+
     def resolve_machine(self, subject: str) -> MissionStateMachine | None:
         """Locate and structurally ingest one cataloged feature symbol."""
         if subject in self._machines:
@@ -106,6 +145,7 @@ class LsbFeatureSourceCatalog:
         metadata={
             **machine.metadata,
             "catalog_subject":source.subject,
+            "catalog_feature_requirement_gates":self._feature_helper_gates_for_source(lua),
             "catalog_source_path":source.path,
             "catalog_discovered":True,
             "quest_symbol":(
