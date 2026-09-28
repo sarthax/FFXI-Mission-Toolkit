@@ -1374,6 +1374,7 @@ def ingest_eventview(con, capture_id, src: Source, relname: str) -> int:
     handful of generic ones)."""
     zone_db = Path(relname).stem.replace("_", " ")
     text = src.read_text(relname)
+    source_sha256 = capture_integrity.sha256_bytes(src.read_bytes(relname))
     headers = [(m.start(), m.end(), m.group(1), m.group(2), m.group(3), m.group(4), m.group(5))
                for m in EVENTVIEW_HEADER_RE.finditer(text)]
     n = 0
@@ -1416,6 +1417,21 @@ def ingest_eventview(con, capture_id, src: Source, relname: str) -> int:
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
             (capture_id, zone_db, n, ts, direction, opcode, packet_class, gp_command,
              entity_id, mes_num, msg_number, json.dumps(fields)))
+        block_end = hend + j + 1
+        capture_integrity.record_row_locator(
+            con,
+            capture_id,
+            relname,
+            "capture_eventview",
+            json.dumps({"zone_db": zone_db, "seq": n}, sort_keys=True),
+            "block",
+            source_sha256=source_sha256,
+            start_line=text.count("\n", 0, hstart) + 1,
+            end_line=text.count("\n", 0, block_end) + 1,
+            start_offset=len(text[:hstart].encode("utf-8")),
+            end_offset=len(text[:block_end].encode("utf-8")),
+            details={"opcode": opcode, "packet_class": packet_class, "gp_command": gp_command},
+        )
         n += 1
     return n
 
