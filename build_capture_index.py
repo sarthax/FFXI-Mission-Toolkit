@@ -601,7 +601,7 @@ def _ingest_structured_sqlite(con, capture_id: int, src: Source, relname: str, f
 def _ingest_structured_csv(con, capture_id: int, src: Source, relname: str, family: str) -> int:
     source_bytes = src.read_bytes(relname)
     text = source_bytes.decode("utf-8-sig", "replace")
-    byte_offsets_exact = text.encode("utf-8") == source_bytes or text.encode("utf-8-sig") == source_bytes
+    byte_offsets_exact = text.encode("utf-8") == source_bytes
     source_sha256 = capture_integrity.sha256_bytes(source_bytes)
     raw_lines = text.splitlines(keepends=True)
     reader = csv.DictReader(io.StringIO(text))
@@ -2898,7 +2898,7 @@ REBUILDABLE_CAPTURE_FORMATS = {
     "eventview", "idview_simple", "kitrack", "hptrack", "actionview_simple", "caplog", "packetlogger",
     "npclogger_db", "actionview_db", "levelrange_db",
     "npclogger_lua", "pathlog_csv", "pc_pathlog_csv", "widescan", "attackdelay",
-}
+} | AUX_STRUCTURED_FORMATS
 
 
 def _capture_source_origin(con, capture_id: int) -> tuple[Path | None, str | None, str | None]:
@@ -3159,6 +3159,8 @@ def rebuild_capture_source(con, capture_id: int, filename: str) -> dict:
                 result = ingest_widescan(con, capture_id, src, filename)
             elif fmt == "attackdelay":
                 result = ingest_attackdelay(con, capture_id, src, filename)
+            elif fmt in AUX_STRUCTURED_FORMATS:
+                result = ingest_aux_structured(con, capture_id, src, filename, fmt)
             else:
                 raise ValueError(f"unsupported rebuild parser: {fmt}")
             rows = sum(result) if isinstance(result, tuple) else int(result)
@@ -3197,7 +3199,7 @@ def rebuild_capture_source(con, capture_id: int, filename: str) -> dict:
 CAPTURE_CHILD_TABLES = [
     "capture_npc_entries", "capture_npc_history", "capture_npc_path", "capture_actions",
     "capture_hp_events", "capture_events", "capture_ki_events", "capture_eventview",
-    "capture_level_range", "capture_attack_delay", "capture_pc_path", "capture_source_files",
+    "capture_level_range", "capture_attack_delay", "capture_pc_path", "capture_structured_records", "capture_source_files",
     "capture_source_manifest", "capture_source_artifacts", "capture_content_manifest",
     "capture_ingest_lineage",
     "capture_raw_packets", "capture_video_observations", "capture_tags", "capture_caplog_chat",
