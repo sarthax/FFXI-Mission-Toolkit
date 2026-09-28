@@ -179,6 +179,14 @@ def init_db(con: sqlite3.Connection):
             source_kind TEXT, bundle_manifest_sha256 TEXT,
             PRIMARY KEY (capture_id, filename)
         );
+        CREATE TABLE IF NOT EXISTS capture_source_artifacts (
+            capture_id INTEGER, source_id TEXT, filename TEXT, format_detected TEXT,
+            ingested_at TEXT, row_count INTEGER, error TEXT, sha256 TEXT, byte_size INTEGER,
+            parser_id TEXT, parser_version TEXT, source_kind TEXT, bundle_manifest_sha256 TEXT,
+            PRIMARY KEY (capture_id, source_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_capture_source_artifact_sha
+            ON capture_source_artifacts(sha256);
         CREATE TABLE IF NOT EXISTS capture_raw_packets (
             capture_id INTEGER, seq INTEGER, ts TEXT, direction TEXT, opcode TEXT, raw_hex TEXT,
             PRIMARY KEY (capture_id, seq)
@@ -556,7 +564,7 @@ def source_manifest(src: "Source", subroot: str | None = None) -> dict:
 
 def recompute_capture_source_manifest(con: sqlite3.Connection, capture_id: int) -> dict:
     rows = con.execute(
-        """SELECT sha256,byte_size,filename FROM capture_source_files
+        """SELECT sha256,byte_size,filename FROM capture_source_artifacts
            WHERE capture_id=? AND sha256 IS NOT NULL
              AND source_kind IN ('bundle_member','single_file')
            ORDER BY sha256,byte_size,filename""",
@@ -621,16 +629,36 @@ def _source_result(
 
 def record_source_file_results(con: sqlite3.Connection, capture_id: int, results: list[dict]) -> None:
     for row in results:
+        parser_version = row.get("parser_version") or CAPTURE_PARSER_VERSION
+        values = (
+            capture_id, row["filename"], row.get("format"), row.get("rows"), row.get("error"),
+            row.get("sha256"), row.get("byte_size"), row.get("parser_id"),
+            parser_version, row.get("source_kind"), row.get("bundle_manifest_sha256"),
+        )
+        # Backward-compatible latest-by-filename view used by existing GUI/query surfaces.
         con.execute(
             """INSERT OR REPLACE INTO capture_source_files
                (capture_id,filename,format_detected,ingested_at,row_count,error,sha256,byte_size,
                 parser_id,parser_version,source_kind,bundle_manifest_sha256)
                VALUES (?,?,?,datetime('now'),?,?,?,?,?,?,?,?)""",
+            values,
+        )
+        # Content-addressed provenance ledger. Same name+content+parser is idempotent; changed
+        # bytes under the same filename produce a new source_id instead of erasing history.
+        source_key = "|".join([
+            row["filename"], row.get("sha256") or "", row.get("parser_id") or "",
+            parser_version, row.get("source_kind") or "", row.get("bundle_manifest_sha256") or "",
+        ])
+        source_id = "source:" + hashlib.sha256(source_key.encode("utf-8")).hexdigest()[:24]
+        con.execute(
+            """INSERT OR REPLACE INTO capture_source_artifacts
+               (capture_id,source_id,filename,format_detected,ingested_at,row_count,error,sha256,
+                byte_size,parser_id,parser_version,source_kind,bundle_manifest_sha256)
+               VALUES (?,?,?, ?,datetime('now'),?,?,?,?,?,?,?,?)""",
             (
-                capture_id, row["filename"], row.get("format"), row.get("rows"), row.get("error"),
-                row.get("sha256"), row.get("byte_size"), row.get("parser_id"),
-                row.get("parser_version") or CAPTURE_PARSER_VERSION,
-                row.get("source_kind"), row.get("bundle_manifest_sha256"),
+                capture_id, source_id, row["filename"], row.get("format"), row.get("rows"),
+                row.get("error"), row.get("sha256"), row.get("byte_size"), row.get("parser_id"),
+                parser_version, row.get("source_kind"), row.get("bundle_manifest_sha256"),
             ),
         )
 
@@ -2241,6 +2269,7 @@ CAPTURE_CHILD_TABLES = [
     "capture_npc_entries", "capture_npc_history", "capture_npc_path", "capture_actions",
     "capture_hp_events", "capture_events", "capture_ki_events", "capture_eventview",
     "capture_level_range", "capture_attack_delay", "capture_pc_path", "capture_source_files",
+    "capture_source_artifacts",
     "capture_raw_packets", "capture_video_observations", "capture_tags", "capture_caplog_chat",
     # Optional timeline/evidence services create these tables lazily, but capture deletion owns
     # their rows whenever they exist.
