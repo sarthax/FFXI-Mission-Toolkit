@@ -58,6 +58,8 @@ def main():
             )
             assert provenance["source_kind"] == "VIDEO_OCR", provenance
             assert provenance["video_timestamp_seconds"] == 2.0, provenance
+            assert provenance["timestamp_resolution_seconds"] == 0.5, provenance
+            assert provenance["timestamp_uncertainty_seconds"] == 0.25, provenance
             assert provenance["frame_index"] == 5, provenance
             assert provenance["crop"] == "10,20,300,120", provenance
 
