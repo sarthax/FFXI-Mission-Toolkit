@@ -68,12 +68,17 @@ PROVIDERS=(
     CatalogProvider("server-sql","server",_prefixed("sql")),
     CatalogProvider("landsandboat","server",_prefixed("lsb")+(
         CatalogTable("lsb_effects","effectid","name","STATUS_EFFECT",search_columns=("display_name","norm_name")),
+        CatalogTable("keyitems_ours","id","const_name","KEY_ITEM",search_columns=("norm_name",)),
     )),
     CatalogProvider("topaz","server",_prefixed("topaz")+(
         CatalogTable("topaz_effects","effectid","name","STATUS_EFFECT",search_columns=("norm_name",)),
+        CatalogTable("topaz_keyitems","id","const_name","KEY_ITEM",search_columns=("norm_name",)),
     )),
     CatalogProvider("dsp","server",_prefixed("dsp")+(
         CatalogTable("dsp_effects","effectid","name","STATUS_EFFECT",search_columns=("norm_name",)),
+    )),
+    CatalogProvider("retail-reference","reference",(
+        CatalogTable("keyitems_external","id","name","KEY_ITEM_REFERENCE",search_columns=("norm_name",)),
     )),
     CatalogProvider("server-event-refs","server",(
         CatalogTable("npc_event_refs","csid",None,"SERVER_EVENT_REF",
