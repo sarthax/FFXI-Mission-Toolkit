@@ -94,6 +94,7 @@ def main():
     assert catalog.source_for("quest:STORM_ON_THE_HORIZON") is not None,catalog.subjects()
     assert catalog.source_for("quest:BURDEN_OF_SUSPICION") is not None,catalog.subjects()
     assert catalog.source_for("quest:LIGHT_IN_THE_DARKNESS") is not None,catalog.subjects()
+    assert catalog.source_for("mission:CAIT_SITH") is not None,catalog.subjects()
 
     closure=build_feature_requirement_closure(
         chained,
@@ -112,12 +113,14 @@ def main():
         "quest:crystal_war:storm_on_the_horizon",
         "quest:crystal_war:burden_of_suspicion",
         "quest:crystal_war:light_in_the_darkness",
+        "mission:wotg:cait_sith",
     },closure
     assert catalog.cached_subjects()==(
         "quest:BENEATH_THE_MASK",
         "quest:BURDEN_OF_SUSPICION",
         "quest:FIRE_IN_THE_HOLE",
         "quest:HONOR_UNDER_FIRE",
+        "mission:CAIT_SITH",
         "quest:LIGHT_IN_THE_DARKNESS",
         "quest:QUELLING_THE_STORM",
         "quest:STORM_ON_THE_HORIZON",
@@ -135,7 +138,8 @@ def main():
     q5=catalog.cached_machine("quest:STORM_ON_THE_HORIZON")
     q4=catalog.cached_machine("quest:BURDEN_OF_SUSPICION")
     q3=catalog.cached_machine("quest:LIGHT_IN_THE_DARKNESS")
-    assert all(machine is not None for machine in (q10,q9,q8,q7,q6,q5,q4,q3)),(q10,q9,q8,q7,q6,q5,q4,q3)
+    cait=catalog.cached_machine("mission:CAIT_SITH")
+    assert all(machine is not None for machine in (q10,q9,q8,q7,q6,q5,q4,q3,cait)),(q10,q9,q8,q7,q6,q5,q4,q3,cait)
 
     assert q9.metadata.get("catalog_discovered") is True,q9.metadata
     assert q10.metadata.get("catalog_discovered") is True,q10.metadata
@@ -145,6 +149,7 @@ def main():
     assert q5.metadata.get("catalog_discovered") is True,q5.metadata
     assert q4.metadata.get("catalog_discovered") is True,q4.metadata
     assert q3.metadata.get("catalog_discovered") is True,q3.metadata
+    assert cait.metadata.get("catalog_discovered") is True,cait.metadata
     assert q9.metadata.get("quest_symbol")=="BENEATH_THE_MASK",q9.metadata
     assert q10.metadata.get("quest_symbol")=="WHAT_PRICE_LOYALTY",q10.metadata
     assert q8.metadata.get("quest_symbol")=="HONOR_UNDER_FIRE",q8.metadata
@@ -153,6 +158,7 @@ def main():
     assert q5.metadata.get("quest_symbol")=="STORM_ON_THE_HORIZON",q5.metadata
     assert q4.metadata.get("quest_symbol")=="BURDEN_OF_SUSPICION",q4.metadata
     assert q3.metadata.get("quest_symbol")=="LIGHT_IN_THE_DARKNESS",q3.metadata
+    assert cait.metadata.get("mission_symbol")=="CAIT_SITH",cait.metadata
     assert q9.metadata.get("reward_item")=="SUPER_RERAISER",q9.metadata
     assert q10.metadata.get("reward_item")=="FOURTH_STAFF",q10.metadata
     assert q8.metadata.get("reward_item")=="ELIXIR_TANK",q8.metadata
@@ -267,10 +273,21 @@ def main():
         and dependency.status=="UNRESOLVED"
         for dependency in closure.dependencies
     ),closure.dependencies
+    assert any(
+        dependency.source_feature_id=="quest:crystal_war:light_in_the_darkness"
+        and dependency.subject=="mission:CAIT_SITH"
+        and dependency.operator=="AFTER"
+        and dependency.status=="DOCUMENTED_UNENFORCED"
+        and dependency.resolved_feature_id=="mission:wotg:cait_sith"
+        for dependency in closure.dependencies
+    ),closure.dependencies
+    documented=q3.metadata.get("documented_feature_requirements",())
+    assert documented and documented[0]["subject"]=="mission:CAIT_SITH",documented
+    assert documented[0]["enforcement"]=="NOT_IMPLEMENTED",documented
     assert closure_summary=={
         "root_feature_id":"mission:wotg:the_will_of_the_world",
-        "feature_count":9,
-        "dependency_count":17,
+        "feature_count":10,
+        "dependency_count":18,
         "resolved_dependency_count":8,
         "unresolved_dependency_count":2,
         "skipped_alternative_count":2,
@@ -459,7 +476,8 @@ def main():
     print("q5_transitions",len(q5.transitions),"q5_unmodeled",q5_metrics["unmodeled_source_handler_count"])
     print("q4_transitions",len(q4.transitions),"q4_unmodeled",q4_metrics["unmodeled_source_handler_count"])
     print("q3_transitions",len(q3.transitions),"q3_unmodeled",q3_metrics["unmodeled_source_handler_count"])
-    print("next_gap","resolve Light in the Darkness mission and quest prerequisites")
+    print("documented_cait_sith",documented)
+    print("next_gap","resolve Fires of Discontent and Back to the Beginning while preserving Cait Sith as unenforced documented gating")
     return 0
 
 
