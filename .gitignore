@@ -31,6 +31,9 @@ gui/static/zone_visual/
 .workbench/client-binaries/
 client_snapshots/
 
+# Raw extracted capture packages (packetviewer/npclogger/caplog dumps) -- local evidence, not curated code.
+hh_capture_extract/
+
 # Local build outputs (generated graph, reports, scratch)
 workbench.db
 mission_reports_v2/
@@ -39,3 +42,8 @@ data/Xi-Pivot/
 data/item_backups/
 data/item_dat_backups/
 data/item_edit_log.sql
+
+# Vendored third-party binaries fetched by install_external_tools.py -- regenerable, never committed.
+vendor/ffmpeg/
+vendor/tesseract/
+vendor/*.exe
