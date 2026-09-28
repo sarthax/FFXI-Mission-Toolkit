@@ -23,6 +23,7 @@ This section supersedes older status labels below when they conflict. The histor
 - Mission event/CSID reconciliation can now attach exact source-script and client EVENT support to emitted server-event identities when zone+actor+CSID evidence is unambiguous; unresolved/ambiguous actor identity remains visible rather than guessed.
 - Mission source extraction now publishes stress/coverage diagnostics (handler coverage, branch/guard/effect classes, event-chain fan-out/ambiguity, helper calls, and unmodeled handler spans) into feature metadata and preview output.
 - Reusable multi-zone progression/hunt framework now models staged objectives, AND/OR prerequisites, zone coverage, fan-out/branch/convergence, cycles, cross-zone dependencies, and non-destructive canonical graph projection.
+- Reusable minigame/puzzle framework now models temporary state, timers, interactions, scoring, terminal outcomes, reset lifecycle, structural gaps, and non-destructive graph projection.
 - Mission Lua handler extraction now separates top-level if/elseif/else alternatives and branch-specific event-finish outcomes; incomplete nested/multiline control flow is explicitly downgraded rather than silently flattened.
 - Mission transitions now preserve post-effect convergence ordering, so source-proven state writes that enable a completion helper are modeled before the convergence check rather than incorrectly as preconditions.
 - Mission completion-helper extraction is now structural rather than tied to the literal helper name `isMissionComplete`; handler guards link to discovered helpers by call identity and retain conservative post-effect ordering.
@@ -44,7 +45,7 @@ This section supersedes older status labels below when they conflict. The histor
 2. **Runtime validation:** richer capture/probe producers and repeatable live validation recipes for migrated features.
 3. **Binary semantics:** optional decoder-backed instruction/CFG/xref/function recovery for unpacked or runtime client images, with decoder/version provenance.
 4. **Dependency closure:** generic conditional/system-state dependencies; unified acquisition/obtainability across shops, drops, rewards, HELM, gardening, exchange, appraisal, and crafting.
-5. **Content frameworks:** continue mission/quest analyzer depth, then implement the minigame/puzzle framework and repeatable/system-container framework; multi-zone progression/hunt now has a reusable structural analyzer and graph projection.
+5. **Content frameworks:** continue mission/quest analyzer depth and implement the repeatable/system-container framework; multi-zone progression/hunt and minigame/puzzle now have reusable structural analyzers and graph projection.
 6. **Named system packages:** Assault, Nyzul Isle, Salvage, Abyssea, Einherjar, and appropriate Limbus preservation coverage.
 7. **Migration execution:** safe database-level apply/rollback remains separate from the existing reversible file apply path; unsupported source/target conversions must remain explicit.
 8. **Workbench UX:** approval/apply/rollback GUI after dependency completeness gates, plus remaining workspace/service extraction.
