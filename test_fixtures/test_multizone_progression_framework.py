@@ -16,14 +16,16 @@ from workbench.plugins.domain.multizone_progression import (
     persist_progression_graph,
     project_progression_graph,
 )
-from workbench.plugins.domain.mission_state_machine import StateCondition, TransitionEffect
+from workbench.plugins.domain.mission_state_machine import EventIdentity, StateCondition, TransitionEffect
 
 
 def _ready_model():
     objectives=(
         ProgressionObjective(
             "briefing","Receive the briefing","NPC_INTERACT",("ZONE_A",),
-            subject="npc:briefing",effects=(TransitionEffect("SET_VAR","mission_var:Progress",1),),
+            subject="npc:briefing",
+            effects=(TransitionEffect("SET_VAR","mission_var:Progress",1),),
+            event=EventIdentity("ZONE_A",100,"Briefing_NPC"),
         ),
         ProgressionObjective(
             "east_hunt","Defeat eastern targets","MOB_DEATH",("ZONE_B",),
@@ -48,7 +50,7 @@ def _ready_model():
         ProgressionStage("briefing","Briefing",("briefing",)),
         ProgressionStage(
             "east","Eastern hunt",("east_hunt",),
-            ProgressionGate("east-prereq","ALL",("briefing",)),
+            ProgressionGate("east-prereq","all",("briefing",)),
         ),
         ProgressionStage(
             "west","Western hunt",("west_hunt",),
@@ -56,7 +58,7 @@ def _ready_model():
         ),
         ProgressionStage(
             "scout","Optional scout",("scout",),
-            ProgressionGate("scout-prereq","ANY",("east","west")),
+            ProgressionGate("scout-prereq","any",("east","west")),
             optional=True,
         ),
         ProgressionStage(
@@ -76,6 +78,8 @@ def main():
     assert not model.validate(),model.validate()
     analysis=analyze_progression(model)
     assert analysis.status=="STRUCTURALLY_READY",analysis
+    assert model.stages[1].prerequisite_gate.logic=="ALL",model.stages[1].prerequisite_gate
+    assert model.stages[3].prerequisite_gate.logic=="ANY",model.stages[3].prerequisite_gate
     assert analysis.reachable_stage_ids==("briefing","east","scout","turnin","west"),analysis
     assert not analysis.unreachable_stage_ids,analysis
     assert analysis.zone_ids==("ZONE_A","ZONE_B","ZONE_C","ZONE_D","ZONE_E"),analysis
@@ -96,7 +100,17 @@ def main():
     )
     assert projection.feature.feature_type=="MULTIZONE_PROGRESSION",projection.feature
     rels={edge.relationship for edge in projection.edges}
-    assert {"HAS_STAGE","HAS_OBJECTIVE","LOCATED_IN","REQUIRES","AFFECTS"} <= rels,rels
+    assert {"HAS_STAGE","HAS_OBJECTIVE","LOCATED_IN","REQUIRES","AFFECTS","REFERENCES","USES_EVENT"} <= rels,rels
+    assert any(
+        entity.entity_type=="PROGRESSION_EVENT"
+        and entity.metadata["event_id"]==100
+        for entity in projection.entities
+    ),projection.entities
+    assert any(
+        edge.relationship=="REFERENCES"
+        and edge.target_node=="mob:east_target"
+        for edge in projection.edges
+    ),projection.edges
     scoped_subject=next(
         entity for entity in projection.entities
         if entity.entity_id=="progression-subject:feature:test:multizone:mission_var:Progress"
