@@ -83,8 +83,7 @@ def main():
         assert missing[0] == "UNRESOLVED", missing
 
         wiki_evidence.review_mapping(con, npc_mapping["mapping_id"], "CONFIRMED", "Verified intended NPC identity.")
-        page_view = wiki_evidence.page_evidence(con, wiki_evidence.SOURCE_BG, "Evidence Quest")
-        # page_evidence calls find_reference_page, so use direct row check for the review state in this fixture.
+        # Read the persisted review directly; the synthetic page resolver was intentionally restored.
         review = con.execute(
             "SELECT review_status,notes FROM reference_wiki_mapping_reviews WHERE mapping_id=?",
             (npc_mapping["mapping_id"],),
