@@ -5072,9 +5072,11 @@ def captures_add_form(request: Request, capture_id: int, saved: str = ""):
         "SELECT filename, format_detected, row_count, error, ingested_at, sha256, byte_size, parser_id, parser_version, source_kind, bundle_manifest_sha256 FROM capture_source_files "
         "WHERE capture_id=? ORDER BY ingested_at DESC", (capture_id,)
     ).fetchall()
+    duplicates = build_capture_index.find_capture_manifest_duplicates(con, capture_id)
     con.close()
     return templates.TemplateResponse(request, "capture_add.html", {
         "cap": cap, "files": files, "saved": bool(saved), "last_results": None,
+        "manifest_duplicates": duplicates,
     })
 
 
@@ -5234,9 +5236,11 @@ async def captures_add_submit(request: Request, capture_id: int):
         "WHERE capture_id=? ORDER BY ingested_at DESC", (capture_id,)
     ).fetchall()
     cap = con.execute("SELECT * FROM captures WHERE capture_id=?", (capture_id,)).fetchone()
+    duplicates = build_capture_index.find_capture_manifest_duplicates(con, capture_id)
     con.close()
     return templates.TemplateResponse(request, "capture_add.html", {
         "cap": cap, "files": files, "saved": False, "last_results": results,
+        "manifest_duplicates": duplicates,
     })
 
 
