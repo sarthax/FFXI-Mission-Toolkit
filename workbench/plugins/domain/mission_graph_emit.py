@@ -186,6 +186,16 @@ def project_mission_graph(
                 "confidence":confidence,"implementation_status":status,
                 "source_lines":source_lines,"metadata":dict(transition.metadata),
                 "original_evidence_ids":list(transition.evidence_ids),
+                "post_effect_gate":(
+                    {
+                        "logic":transition.post_effect_gate.logic,
+                        "conditions":[
+                            {"subject":condition.subject,"operator":condition.operator,"value":condition.value}
+                            for condition in transition.post_effect_gate.conditions
+                        ],
+                    }
+                    if transition.post_effect_gate else None
+                ),
             },
         )
         edges.append(_edge(
@@ -243,6 +253,26 @@ def project_mission_graph(
                 condition_notes+=f"; original_evidence_ids={list(condition.evidence_ids)!r}"
             edges.append(_edge(
                 f"mission-requires:{_token(machine.feature_id,transition.transition_id,index,subject,condition.operator,condition.value)}",
+                transition_node,subject,"REQUIRES",edge_evidence,confidence,status,
+                source_path,source_snapshot_id,
+                notes=condition_notes,
+            ))
+
+        post_conditions=transition.post_effect_gate.conditions if transition.post_effect_gate else ()
+        for index,condition in enumerate(post_conditions):
+            raw_subject=condition.subject
+            subject=_subject_node(machine.feature_id,raw_subject)
+            scoped=subject!=raw_subject
+            entities.setdefault(subject,Entity(subject,_subject_type(raw_subject),raw_subject,{
+                "scope":"feature" if scoped else "shared",
+                **({"feature_id":machine.feature_id} if scoped else {}),
+                "raw_subject":raw_subject,
+            }))
+            condition_notes=f"post-effect {condition.operator} {condition.value!r}"
+            if condition.evidence_ids:
+                condition_notes+=f"; original_evidence_ids={list(condition.evidence_ids)!r}"
+            edges.append(_edge(
+                f"mission-post-requires:{_token(machine.feature_id,transition.transition_id,index,subject,condition.operator,condition.value)}",
                 transition_node,subject,"REQUIRES",edge_evidence,confidence,status,
                 source_path,source_snapshot_id,
                 notes=condition_notes,
