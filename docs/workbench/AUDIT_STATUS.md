@@ -2710,3 +2710,10 @@ Historical compatibility verified from Captain repository history:
 - early CheckParam CSV without syncId
 
 Absence of any auxiliary family is not a capture-quality failure; these sources remain optional and are ingested only when the capture/tooling actually produced them.
+
+
+## 2026-09-28 — Packet source adapter convergence
+
+Capture ingestion now treats MalRD PacketDB SQLite and Ashita Packeteer text as first-class raw-packet sources alongside PacketLogger/PacketViewer. Canonical raw packet rows preserve optional zone id, packet size, sync id, injected/blocked state, source format, and source-native identity without collapsing independent evidence.
+
+Legacy NPCLogger Lua `raw_packet` bytes are promoted into the same canonical packet store with exact line provenance. Cross-source packet correlation now records exact-byte equivalence across independent raw sources while retaining each observation separately. Safe rebuild logic preserves mixed-source captures instead of assuming PacketLogger owns the whole raw-packet table.
