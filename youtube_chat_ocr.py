@@ -1116,6 +1116,7 @@ def cmd_match(args):
                 for seg_idx, parsed in enumerate(segments):
                     display = parsed["text"]
                     frame_id = row["frame"] if len(segments) == 1 else f"{row['frame']}#{seg_idx}"
+                    assistance = packet_symbol_assistance(parsed)
                     record = {
                         "frame": frame_id,
                         "raw_text": row["raw_text"].replace("\n", " ").strip(),
@@ -1129,6 +1130,7 @@ def cmd_match(args):
                         "provenance": row.get("provenance") or observation_provenance(args.run_id, args.section, row["frame"]),
                         "display_text": display,
                         **parsed,
+                        **assistance,
                     }
                     if frame_id in prior_corrections:
                         record["corrected_text"] = prior_corrections[frame_id]
@@ -1170,6 +1172,29 @@ def cmd_match(args):
             if last_clean is None or SequenceMatcher(None, transcript_line, last_clean).ratio() < 0.9:
                 transcript.write(transcript_line + "\n")
                 last_clean = transcript_line
+    if profile == CAPTURE_PROFILE_PACKETLOGGER and matched_path.exists():
+        records = [json.loads(line) for line in matched_path.open(encoding="utf-8")]
+        records = apply_cross_frame_consensus(records)
+        with matched_path.open("w", encoding="utf-8") as out:
+            for record in records:
+                out.write(json.dumps(record) + "\n")
+        last_clean = None
+        with transcript_path.open("w", encoding="utf-8") as transcript:
+            for record in records:
+                effective = record.get("effective_packet") or {}
+                direction = effective.get("direction") or record.get("direction") or ""
+                opcode = effective.get("opcode") or record.get("opcode") or ""
+                command = effective.get("gp_command") or record.get("gp_command") or ""
+                fields = effective.get("fields") or record.get("fields") or {}
+                field_text = ", ".join(f"{k}: {v}" for k, v in fields.items())
+                generated = " ".join(part for part in [direction, f"[{opcode}]" if opcode else "", command] if part)
+                if field_text:
+                    generated = f"{generated} / {field_text}" if generated else field_text
+                transcript_line = record.get("corrected_text") or generated or record.get("display_text") or record.get("raw_text", "")
+                if transcript_line and (last_clean is None or SequenceMatcher(None, transcript_line, last_clean).ratio() < 0.9):
+                    transcript.write(transcript_line + "\n")
+                    last_clean = transcript_line
+
     print(f"  matched output -> {matched_path}")
     print(f"  deduped transcript -> {transcript_path}")
 
@@ -1233,18 +1258,27 @@ def capture_observations(run_id: str) -> list[dict]:
                 observation_id = hashlib.sha1(
                     f"{run_id}|{section}|{frame}|{row.get('opcode') or ''}|{row.get('display_text') or row.get('raw_text') or ''}".encode()
                 ).hexdigest()[:20]
+                effective = row.get("effective_packet") or {}
+                effective_opcode = effective.get("opcode") or row.get("opcode")
+                provenance = dict(provenance)
+                if row.get("raw_parsed") is not None:
+                    provenance["raw_parsed"] = row.get("raw_parsed")
+                if row.get("corrections"):
+                    provenance["symbol_corrections"] = row.get("corrections")
+                if row.get("consensus"):
+                    provenance["cross_frame_consensus"] = row.get("consensus")
                 out.append({
                     "observation_id": f"video-ocr:{observation_id}",
                     "section": section,
                     "frame": frame,
                     "video_timestamp_seconds": row.get("video_timestamp_seconds", provenance.get("video_timestamp_seconds")),
                     "source_url": provenance.get("source_url") or status.get("url"),
-                    "observation_type": "PACKET" if row.get("opcode") else "OCR_TEXT",
-                    "direction": row.get("direction"),
-                    "opcode": row.get("opcode"),
-                    "gp_command": row.get("gp_command"),
-                    "packet_class": row.get("packet_class"),
-                    "fields": row.get("fields"),
+                    "observation_type": "PACKET" if effective_opcode else "OCR_TEXT",
+                    "direction": effective.get("direction") or row.get("direction"),
+                    "opcode": effective_opcode,
+                    "gp_command": effective.get("gp_command") or row.get("gp_command"),
+                    "packet_class": effective.get("packet_class") or row.get("packet_class"),
+                    "fields": effective.get("fields") or row.get("fields"),
                     "raw_text": row.get("raw_text"),
                     "corrected_text": row.get("corrected_text"),
                     "confidence": row.get("confidence"),
