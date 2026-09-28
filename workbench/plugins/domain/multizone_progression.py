@@ -296,3 +296,202 @@ def analyze_progression(model: MultiZoneProgression) -> ProgressionAnalysis:
         {key:tuple(value) for key,value in sorted(stage_zones.items())},
         completion_ok,
     )
+
+
+@dataclass(frozen=True)
+class ProgressionGraphProjection:
+    feature: Feature
+    entities: tuple[Entity, ...]
+    edges: tuple[DependencyEdge, ...]
+
+
+def _graph_token(*parts: object) -> str:
+    raw="|".join("" if part is None else str(part) for part in parts)
+    return sha1(raw.encode("utf-8")).hexdigest()[:16]
+
+
+def _stage_node(model: MultiZoneProgression, stage_id: str) -> str:
+    return f"progression-stage:{model.feature_id}:{stage_id}"
+
+
+def _objective_node(model: MultiZoneProgression, objective_id: str) -> str:
+    return f"progression-objective:{model.feature_id}:{objective_id}"
+
+
+def project_progression_graph(
+    model: MultiZoneProgression,
+    *,
+    feature_name: str | None=None,
+    source_snapshot_id: str | None=None,
+) -> ProgressionGraphProjection:
+    """Project a progression model into generic graph nodes and relationships.
+
+    The returned feature is a fallback record only. The persistence helper will not
+    overwrite an existing feature with the same id.
+    """
+    errors=model.validate()
+    if errors:
+        raise ValueError("; ".join(errors))
+
+    analysis=analyze_progression(model)
+    feature=Feature(
+        model.feature_id,
+        feature_name or str(model.metadata.get("name") or model.feature_id),
+        "MULTIZONE_PROGRESSION",
+        "multizone_progression",
+        source_snapshot_id,
+        status="DISCOVERED",
+        metadata={
+            "progression_id":model.progression_id,
+            "structural_status":analysis.status,
+            "zone_ids":list(analysis.zone_ids),
+            "stage_count":len(model.stages),
+            "objective_count":len(model.objectives),
+        },
+    )
+
+    entities={}
+    edges=[]
+    objectives={obj.objective_id:obj for obj in model.objectives}
+
+    for stage in model.stages:
+        stage_node=_stage_node(model,stage.stage_id)
+        entities[stage_node]=Entity(
+            stage_node,"PROGRESSION_STAGE",stage.label,{
+                "progression_id":model.progression_id,
+                "feature_id":model.feature_id,
+                "stage_id":stage.stage_id,
+                "completion_logic":stage.completion_logic,
+                "optional":stage.optional,
+                "zones":list(analysis.stage_zone_coverage.get(stage.stage_id,())),
+                "metadata":dict(stage.metadata),
+            },
+        )
+        edges.append(DependencyEdge(
+            f"progression-has-stage:{_graph_token(model.feature_id,stage.stage_id)}",
+            model.feature_id,stage_node,"HAS_STAGE",
+            confidence="INFERRED",status="DISCOVERED",
+            discovered_by="multizone_progression",
+            source_snapshot_id=source_snapshot_id,
+        ))
+
+        if stage.prerequisite_gate:
+            for prerequisite in stage.prerequisite_gate.member_ids:
+                edges.append(DependencyEdge(
+                    f"progression-stage-requires:{_graph_token(model.feature_id,stage.stage_id,prerequisite,stage.prerequisite_gate.gate_id)}",
+                    stage_node,_stage_node(model,prerequisite),"REQUIRES",
+                    confidence="INFERRED",status="DISCOVERED",
+                    discovered_by="multizone_progression",
+                    notes=(
+                        f"gate={stage.prerequisite_gate.gate_id}; "
+                        f"logic={stage.prerequisite_gate.logic}"
+                    ),
+                    source_snapshot_id=source_snapshot_id,
+                ))
+
+        for objective_id in stage.objective_ids:
+            objective=objectives[objective_id]
+            objective_node=_objective_node(model,objective_id)
+            entities[objective_node]=Entity(
+                objective_node,"PROGRESSION_OBJECTIVE",objective.label,{
+                    "progression_id":model.progression_id,
+                    "feature_id":model.feature_id,
+                    "objective_id":objective.objective_id,
+                    "trigger":objective.trigger,
+                    "subject":objective.subject,
+                    "required_count":objective.required_count,
+                    "optional":objective.optional,
+                    "zones":list(objective.zones),
+                    "conditions":[
+                        {"subject":condition.subject,"operator":condition.operator,"value":condition.value}
+                        for condition in objective.conditions
+                    ],
+                    "effects":[
+                        {"effect":effect.effect,"subject":effect.subject,"value":effect.value}
+                        for effect in objective.effects
+                    ],
+                    "evidence_ids":list(objective.evidence_ids),
+                    "metadata":dict(objective.metadata),
+                },
+            )
+            edges.append(DependencyEdge(
+                f"progression-has-objective:{_graph_token(model.feature_id,stage.stage_id,objective_id)}",
+                stage_node,objective_node,"HAS_OBJECTIVE",
+                confidence="INFERRED",status="DISCOVERED",
+                discovered_by="multizone_progression",
+                source_snapshot_id=source_snapshot_id,
+            ))
+
+            for zone in objective.zones:
+                zone_node=f"zone:{zone}"
+                entities.setdefault(zone_node,Entity(
+                    zone_node,"ZONE",zone,{"zone_key":zone},
+                ))
+                edges.append(DependencyEdge(
+                    f"progression-objective-zone:{_graph_token(model.feature_id,objective_id,zone)}",
+                    objective_node,zone_node,"LOCATED_IN",
+                    confidence="INFERRED",status="DISCOVERED",
+                    discovered_by="multizone_progression",
+                    source_snapshot_id=source_snapshot_id,
+                ))
+
+            for index,condition in enumerate(objective.conditions):
+                subject=condition.subject
+                entities.setdefault(subject,Entity(
+                    subject,"PROGRESSION_SUBJECT",subject,{"scope":"shared"},
+                ))
+                edges.append(DependencyEdge(
+                    f"progression-objective-requires:{_graph_token(model.feature_id,objective_id,index,subject,condition.operator,condition.value)}",
+                    objective_node,subject,"REQUIRES",
+                    confidence="INFERRED",status="DISCOVERED",
+                    discovered_by="multizone_progression",
+                    notes=f"{condition.operator} {condition.value!r}",
+                    source_snapshot_id=source_snapshot_id,
+                ))
+
+            for index,effect in enumerate(objective.effects):
+                subject=effect.subject
+                entities.setdefault(subject,Entity(
+                    subject,"PROGRESSION_SUBJECT",subject,{"scope":"shared"},
+                ))
+                edges.append(DependencyEdge(
+                    f"progression-objective-affects:{_graph_token(model.feature_id,objective_id,index,subject,effect.effect,effect.value)}",
+                    objective_node,subject,"AFFECTS",
+                    confidence="INFERRED",status="DISCOVERED",
+                    discovered_by="multizone_progression",
+                    notes=f"{effect.effect} {effect.value!r}",
+                    source_snapshot_id=source_snapshot_id,
+                ))
+
+    if model.completion_gate:
+        for stage_id in model.completion_gate.member_ids:
+            edges.append(DependencyEdge(
+                f"progression-completion-requires:{_graph_token(model.feature_id,stage_id,model.completion_gate.gate_id)}",
+                model.feature_id,_stage_node(model,stage_id),"REQUIRES",
+                confidence="INFERRED",status="DISCOVERED",
+                discovered_by="multizone_progression",
+                notes=f"completion gate={model.completion_gate.gate_id}; logic={model.completion_gate.logic}",
+                source_snapshot_id=source_snapshot_id,
+            ))
+
+    return ProgressionGraphProjection(feature,tuple(entities.values()),tuple(edges))
+
+
+def persist_progression_graph(
+    con: sqlite3.Connection,
+    projection: ProgressionGraphProjection,
+    *,
+    commit: bool=True,
+) -> None:
+    existing=con.execute(
+        "SELECT 1 FROM features WHERE feature_id=?",
+        (projection.feature.feature_id,),
+    ).fetchone()
+    if existing is None:
+        graph_store.insert_record(con,projection.feature)
+    for entity in projection.entities:
+        graph_store.insert_record(con,entity)
+    for edge in projection.edges:
+        graph_store.insert_record(con,edge)
+    if commit:
+        con.commit()
