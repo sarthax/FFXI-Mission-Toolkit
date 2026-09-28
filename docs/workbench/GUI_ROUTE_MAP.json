@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 195,
+  "route_count": 196,
   "routes": [
     {
       "method": "GET",
@@ -617,6 +617,14 @@
       "home": "Captures",
       "section": "Metadata / Annotation",
       "role": "api/action",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "POST",
+      "path": "/captures/{capture_id}/rebuild-source",
+      "home": "Captures",
+      "section": "Capture Management",
+      "role": "mutation",
       "disposition": "REWORK"
     },
     {
