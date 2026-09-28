@@ -2248,3 +2248,18 @@ Regressions:
 - `test_mission_graph_emission.py` verifies `CALLS_HELPER` survives canonical graph projection.
 
 This remains conservative static linkage. Dynamic function references, aliases, higher-order callbacks, and nonliteral helper invocation are not resolved.
+
+
+## 2026-09-27 — Exact COMPLETE_TRADE extraction
+
+Mission `COMPLETE_TRADE` effects are now recognized only from executable Lua, not raw source substrings.
+
+The extractor now evaluates `player:tradeComplete()`, `mission:complete(player)`, and `mission:noAction()` against comment/string-stripped executable text. This prevents comments or quoted examples from manufacturing gameplay effects.
+
+Branch/path scoping remains intact:
+- only the branch containing the executable trade-complete call receives `COMPLETE_TRADE`;
+- event chaining preserves it on the corresponding logical outcome only.
+
+Regressions:
+- `test_mission_complete_trade.py` proves comments and strings containing `player:tradeComplete()` do not create the effect while the real sibling branch does;
+- `test_mission_lsb_three_paths_stress.py` requires Mine Shaft 2716 event 3 to carry exactly one `COMPLETE_TRADE`, and the chained TRADE→event-3 transition to preserve exactly one copy.

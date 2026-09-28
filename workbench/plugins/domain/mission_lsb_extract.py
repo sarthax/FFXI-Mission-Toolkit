@@ -374,6 +374,7 @@ def _conditions(text: str) -> tuple[StateCondition,...]:
 
 def _effects(text: str) -> tuple[TransitionEffect,...]:
     out=[]
+    executable_text="\n".join(_structural_lua_lines(text))
     for m in _STATUS_SET.finditer(text):
         out.append(TransitionEffect("SET_CHANNEL",f"mission_status:{m.group(2)}",int(m.group(1))))
     for m in _VAR_SET.finditer(text):
@@ -394,13 +395,13 @@ def _effects(text: str) -> tuple[TransitionEffect,...]:
         out.append(TransitionEffect("START_TIMER","timer",m.group(1).strip()))
     for m in _SETPOS.finditer(text):
         out.append(TransitionEffect("TELEPORT","player",m.group(1).strip()))
-    if "player:tradeComplete()" in text:
+    if "player:tradeComplete()" in executable_text:
         out.append(TransitionEffect("COMPLETE_TRADE","trade"))
-    if _COMPLETE.search(text):
+    if _COMPLETE.search(executable_text):
         out.append(TransitionEffect("COMPLETE","mission"))
     for m in _MESSAGE.finditer(text):
         out.append(TransitionEffect("MESSAGE","message",m.group(1).strip()))
-    if "mission:noAction()" in text:
+    if "mission:noAction()" in executable_text:
         out.append(TransitionEffect("NO_ACTION","interaction"))
     return tuple(out)
 
