@@ -22,7 +22,7 @@
 
 <div class="table-wrap" style="padding:14px; margin-bottom:18px; max-width:640px;">
   <h3 style="margin-top:0;">Create a capture from this run</h3>
-  <p class="muted" style="font-size:0.85em;">Seeds a new capture entry with this video's link and upload date attached (label defaults to the video title). This run has no NPCLogger/PacketLogger/CapLog files of its own to ingest -- you'll land on the file-add step in case you have real logger files from the same session to attach separately.</p>
+  <p class="muted" style="font-size:0.85em;">Creates a capture linked to this video and imports its timestamped OCR observations as <code>VIDEO_OCR</code> evidence. Parsed on-screen packet opcodes remain distinct from raw/binary packet captures. You can then attach real logger files from the same session to align both evidence sources.</p>
   <form method="post" action="/ocr/{{ status.run_id }}/create_capture" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
     <label class="muted">Mission (optional) <input type="text" name="mission_name" style="margin-left:4px;"></label>
     <label class="muted">Content type
@@ -241,7 +241,8 @@
   <div class="table-wrap" style="padding:0; max-height:500px; overflow:auto;">
     <table class="data-table" style="width:100%;" data-section="{{ s.section }}">
       <thead><tr>
-        {% if s.capture_profile == "timestamped" %}<th>Time</th>{% endif %}
+        <th>Video</th>
+        {% if s.capture_profile == "timestamped" %}<th>Chat time</th>{% endif %}
         {% if s.capture_profile == "packetlogger" %}
         <th>Dir</th><th>Opcode</th><th>Packet</th><th>Fields</th><th title="hex-looking tokens found outside the parsed header/fields, e.g. in unmatched OCR noise">Hex hints</th>
         {% else %}
@@ -255,6 +256,15 @@
         {% for r in rows %}
         {% set conf = r.confidence %}
         <tr data-conf="{{ conf if conf is not none else '' }}"{% if conf is not none and conf < 40 %} style="opacity:0.55;"{% endif %}>
+          <td class="mono">
+            {% if r.video_timestamp_seconds is not none %}
+              {% set vt = r.video_timestamp_seconds %}
+              {% if status.url %}<a class="inline" href="{{ status.url }}{% if '?' in status.url %}&{% else %}?{% endif %}t={{ vt|int }}s" target="_blank" rel="noopener">{{ "%.2f"|format(vt) }}s</a>{% else %}{{ "%.2f"|format(vt) }}s{% endif %}
+              <div class="muted" style="font-size:10px;">{{ r.frame }}</div>
+            {% else %}
+              <span class="muted">{{ r.frame }}</span>
+            {% endif %}
+          </td>
           {% if s.capture_profile == "timestamped" %}<td>{{ r.timestamp or "" }}</td>{% endif %}
           {% if s.capture_profile == "packetlogger" %}
           <td>{{ r.direction or "" }}</td>
