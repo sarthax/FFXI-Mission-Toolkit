@@ -350,6 +350,7 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
 
     transitions=[]
     states={"source:any":MissionState("source:any","Source state")}
+    completion_helpers=extract_dynamic_completion_gates(lua)
     serial=0
     branch_alternatives=0
     incomplete_branch_guards=0
@@ -393,16 +394,24 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
             conds=list(_conditions(guard_context))
             post_effect_conditions=[]
             post_effect_basis=[]
-            dynamic=extract_dynamic_completion_gate(lua) if (
-                any("isMissionComplete(player)" in guard for guard in path.guard_texts)
-                or (unresolved_nested_branch and "isMissionComplete(player)" in path.body)
-            ) else None
-            if dynamic:
+            invoked_helpers=[]
+            for helper_name,dynamic in completion_helpers.items():
+                call_pattern=re.compile(
+                    rf"\b{re.escape(helper_name)}\s*\(\s*player\s*\)"
+                )
+                guard_indexes=[
+                    index for index,guard in enumerate(path.guard_texts)
+                    if call_pattern.search(guard)
+                ]
+                in_unresolved_body=bool(
+                    unresolved_nested_branch and call_pattern.search(path.body)
+                )
+                if not guard_indexes and not in_unresolved_body:
+                    continue
+                invoked_helpers.append(helper_name)
                 handled_dynamic=False
                 if not unresolved_nested_branch:
-                    for guard_index,guard in enumerate(path.guard_texts):
-                        if "isMissionComplete(player)" not in guard:
-                            continue
+                    for guard_index in guard_indexes:
                         prefix=(
                             path.guard_prefix_texts[guard_index]
                             if guard_index < len(path.guard_prefix_texts)
@@ -461,6 +470,7 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                     "branch_guard_complete":guard_complete,
                     "unexpanded_nested_branch":unresolved_nested_branch,
                     "post_effect_gate_basis":tuple(post_effect_basis),
+                    "completion_helpers":tuple(invoked_helpers),
                 },
                 post_effect_gate=post_effect_gate,
             ))
