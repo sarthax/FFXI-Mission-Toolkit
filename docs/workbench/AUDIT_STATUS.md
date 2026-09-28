@@ -2481,3 +2481,19 @@ BG Wiki and FFXIclopedia claim ledgers can now be compared as peer reference sou
 - Feature Trace catalogs page/claim alignment records for later research navigation.
 
 This remains a reference-comparison layer. Server/client/runtime corroboration is the next evidence step and is intentionally not inferred from wiki agreement alone.
+
+## 2026-09-28 — Capture integrity and content-addressed provenance
+
+Capture deletion and file-level source provenance were hardened as one integrity milestone.
+
+- the explicit capture ownership list now includes VIDEO_OCR observations, timeline alignment anchors, key evidence, and content-addressed source artifacts;
+- deletion skips optional/lazy tables only when they do not exist, and a schema-audit regression discovers every current `capture_*` table carrying `capture_id` and fails if it is not explicitly owned;
+- the GUI delete path also removes the capture's per-capture key-evidence screenshot directory;
+- each source file records SHA-256, byte size, detected format, parser identifier, parser version, source kind, bundle manifest identity, row count, and ingestion error/status;
+- source manifests are content-addressed and path-independent, so moving/renaming/re-zipping an otherwise identical source set does not change its fingerprint;
+- capture-level manifests are recomputed over the full accumulated primary-source corpus rather than being overwritten by the most recent upload;
+- `capture_source_artifacts` preserves changed same-name source files as separate content-addressed provenance records, while `capture_source_files` remains the latest-by-filename compatibility view;
+- the Add Files GUI displays the aggregate manifest, abbreviated source hashes/sizes, parser provenance, and same-manifest capture candidates;
+- the generic capture query surface exposes the full source-artifact ledger.
+
+This pass establishes file-level lineage. Exact normalized-row → source line/block/byte-offset attribution and deterministic source-artifact rebuild remain future work.
