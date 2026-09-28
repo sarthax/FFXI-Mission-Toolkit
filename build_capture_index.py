@@ -822,7 +822,10 @@ def sniff_sqlite_format(data: bytes) -> str | None:
         return "actionview_db"
     if {"Level_min", "Level_max", "UniqueNo"} <= cols:
         return "levelrange_db"
-    if {"NpcUniqueNo", "NpcName", "NpcZone", "ItemNo", "ItemName", "Count", "Max", "Hidden", "Price"} <= cols:
+    if {"NpcUniqueNo", "NpcName", "NpcZone", "ItemNo", "ItemName", "Count", "Max", "Price"} <= cols:
+        return "guildstock_db"
+    # Earliest persisted GuildStock generation predated NPC identity and Hidden columns.
+    if {"ItemNo", "ItemName", "Count", "Max", "Price"} <= cols:
         return "guildstock_db"
     if {"NpcUniqueNo", "NpcName", "NpcZone", "GuildInfo", "ItemNo", "ItemName", "ItemPrice", "ShopIndex", "Skill"} <= cols:
         return "shopstock_buy_db"
@@ -879,7 +882,8 @@ def sniff_csv_format(text: str) -> str | None:
     cols = {str(x).strip() for x in first}
     if {"MobName","UniqueNo","DefeatedAt","SpawnedAt","XSpawn","YSpawn","ZSpawn"} <= cols:
         return "spawntrack_csv"
-    if {"recvTime","syncId","acc","atk","offacc","offatk","rangeacc","rangeatk","eva","def"} <= cols:
+    if {"recvTime","acc","atk","offacc","offatk","rangeacc","rangeatk","eva","def"} <= cols:
+        # syncId was added after the first persisted CheckParam format.
         return "checkparam_csv"
     if {"Timestamp","Result","Grade","ItemNo","CrystalNo","MaterialNo_1","Effect_Type"} <= cols:
         return "crafttrack_csv"
