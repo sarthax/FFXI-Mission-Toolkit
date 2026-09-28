@@ -2525,3 +2525,16 @@ The capture provenance layer now supports an explicit `capture_row_locators` led
 - No precision is fabricated for legacy/SQLite parsers that do not yet expose a trustworthy row/block boundary.
 
 This is the first parser-specific implementation of the broader exact-row provenance roadmap item; other capture formats remain incremental follow-up work.
+
+
+## 2026-09-28 — Raw packet exact source locators
+
+PacketLogger/PacketViewer ingestion now preserves exact source-block provenance through the cross-file chronological merge.
+
+- each normalized `capture_raw_packets` row records the originating packet-log filename and source SHA-256;
+- locator keys bind to the final merged `seq`, not the parser's pre-merge file order;
+- exact physical line spans are retained for every parsed packet block;
+- UTF-8 byte offsets are retained only when the decoded source round-trips byte-for-byte, otherwise byte precision is left NULL rather than fabricated;
+- re-ingestion replaces the raw-packet locator set idempotently so stale row keys cannot survive a new chronological merge.
+
+This extends exact row provenance from EventView decoded packets to raw binary packet-log evidence.
