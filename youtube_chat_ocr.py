@@ -753,6 +753,7 @@ def observation_provenance(run_id: str, section: str, frame: str) -> dict:
         "fps": fps,
         "crop": meta.get("crop"),
         "capture_profile": meta.get("capture_profile") or DEFAULT_CAPTURE_PROFILE,
+        "preprocess_profile": meta.get("preprocess_profile") or DEFAULT_PREPROCESS_PROFILE,
         "source_url": source_url,
     }
 
@@ -784,7 +785,8 @@ def _migrate_legacy_run(run_id: str):
         crop = crop_file.read_text(encoding="utf-8").strip()
     (dest / "meta.json").write_text(
         json.dumps({"label": DEFAULT_SECTION_LABEL, "crop": crop, "fps": None,
-                    "capture_profile": DEFAULT_CAPTURE_PROFILE}), encoding="utf-8"
+                    "capture_profile": DEFAULT_CAPTURE_PROFILE,
+                    "preprocess_profile": DEFAULT_PREPROCESS_PROFILE}), encoding="utf-8"
     )
 
 
@@ -823,6 +825,7 @@ def section_status(run_id: str, section: str) -> dict:
         "crop": meta.get("crop"),
         "fps": meta.get("fps"),
         "capture_profile": meta.get("capture_profile") or DEFAULT_CAPTURE_PROFILE,
+        "preprocess_profile": meta.get("preprocess_profile") or DEFAULT_PREPROCESS_PROFILE,
         "frame_count": len(frames),
         "unique_count": len(unique),
         "ocr_line_count": ocr_lines,
@@ -1108,6 +1111,9 @@ def cmd_frames(args):
     profile = getattr(args, "profile", None) or DEFAULT_CAPTURE_PROFILE
     if profile not in CAPTURE_PROFILES:
         sys.exit(f"[youtube_chat_ocr] unknown --profile '{profile}' -- choices: {', '.join(CAPTURE_PROFILES)}")
+    preprocess = getattr(args, "preprocess", None) or DEFAULT_PREPROCESS_PROFILE
+    if preprocess not in PREPROCESS_PROFILES:
+        sys.exit(f"[youtube_chat_ocr] unknown --preprocess '{preprocess}' -- choices: {', '.join(PREPROCESS_PROFILES)}")
     slug = section_slug(label)
     sdir = section_dir(args.run_id, slug)
     sdir.mkdir(parents=True, exist_ok=True)
@@ -1115,7 +1121,13 @@ def cmd_frames(args):
     frames_dir = sdir / "frames"
     frames_dir.mkdir(exist_ok=True)
     (sdir / "meta.json").write_text(
-        json.dumps({"label": label, "crop": args.crop, "fps": args.fps, "capture_profile": profile}),
+        json.dumps({
+            "label": label,
+            "crop": args.crop,
+            "fps": args.fps,
+            "capture_profile": profile,
+            "preprocess_profile": preprocess,
+        }),
         encoding="utf-8",
     )
     vf = f"crop={w}:{h}:{x}:{y},fps={args.fps}"
@@ -1208,16 +1220,42 @@ def _write_ocr_progress(run_id: str, section: str, done: int, total: int, finish
     )
 
 
+def preprocess_ocr_image(img, profile_id: str):
+    """Apply one named OCR preprocessing preset without modifying the source frame."""
+    from PIL import ImageFilter, ImageOps
+
+    profile = PREPROCESS_PROFILES.get(profile_id) or PREPROCESS_PROFILES[DEFAULT_PREPROCESS_PROFILE]
+    out = img.convert("L")
+    if profile.get("autocontrast"):
+        out = ImageOps.autocontrast(out)
+    if profile.get("invert"):
+        out = ImageOps.invert(out)
+    threshold = profile.get("threshold")
+    if threshold is not None:
+        threshold = int(threshold)
+        out = out.point(lambda p: 255 if p >= threshold else 0)
+    if profile.get("sharpen"):
+        out = out.filter(ImageFilter.SHARPEN)
+    scale = max(1, int(profile.get("scale") or 1))
+    if scale != 1:
+        out = out.resize((out.width * scale, out.height * scale))
+    return out, profile
+
+
 def cmd_ocr(args):
     try:
         import pytesseract
-        from PIL import Image, ImageOps
+        from PIL import Image
     except ImportError:
         sys.exit("[youtube_chat_ocr] needs `pip install pytesseract pillow` (pillow is already "
                   "in requirements.txt; pytesseract is not, see module docstring)")
     pytesseract.pytesseract.tesseract_cmd = check_tool("tesseract")
 
     sdir = section_dir(args.run_id, args.section)
+    meta = section_meta(args.run_id, args.section)
+    preprocess_id = meta.get("preprocess_profile") or DEFAULT_PREPROCESS_PROFILE
+    if preprocess_id not in PREPROCESS_PROFILES:
+        sys.exit(f"[youtube_chat_ocr] section has unknown preprocess profile '{preprocess_id}'")
     src_dir = sdir / "frames_unique"
     frames = sorted(src_dir.glob("*.png"))
     if not frames:
@@ -1230,12 +1268,15 @@ def cmd_ocr(args):
     try:
         with out_path.open("w", encoding="utf-8") as out:
             for i, f in enumerate(frames):
-                img = Image.open(f).convert("L")
-                img = ImageOps.autocontrast(img)
-                img = img.resize((img.width * 3, img.height * 3))  # upscale helps tesseract a lot on small game fonts
+                img = Image.open(f)
+                img, preprocess = preprocess_ocr_image(img, preprocess_id)
                 # image_to_data (not image_to_string) so we get a per-word confidence alongside the
                 # text in one tesseract pass -- avoids OCRing every frame twice just for confidence.
-                data = pytesseract.image_to_data(img, config="--psm 6", output_type=pytesseract.Output.DICT)
+                data = pytesseract.image_to_data(
+                    img,
+                    config=f"--psm {int(preprocess.get('psm') or 6)}",
+                    output_type=pytesseract.Output.DICT,
+                )
                 lines: dict[tuple, list[str]] = {}
                 confs = []
                 for j, word in enumerate(data["text"]):
