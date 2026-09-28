@@ -23,6 +23,7 @@ This section supersedes older status labels below when they conflict. The histor
 - Mission event/CSID reconciliation can now attach exact source-script and client EVENT support to emitted server-event identities when zone+actor+CSID evidence is unambiguous; unresolved/ambiguous actor identity remains visible rather than guessed.
 - Mission Lua handler extraction now separates top-level if/elseif/else alternatives and branch-specific event-finish outcomes; incomplete nested/multiline control flow is explicitly downgraded rather than silently flattened.
 - Mission transitions now preserve post-effect convergence ordering, so source-proven state writes that enable a completion helper are modeled before the convergence check rather than incorrectly as preconditions.
+- Mission completion-helper extraction is now structural rather than tied to the literal helper name `isMissionComplete`; handler guards link to discovered helpers by call identity and retain conservative post-effect ordering.
 - Generic Lua dependency discovery and LSB zone-YAML dependency closure for entities/templates, skills/spells, loot/items, zone text, titles, and safe ID.mob arithmetic.
 - Crafting/producibility dependency closure for synthesis/synergy prerequisites.
 - GUI shared workspace shell plus Features, Packages, Validation, Client, Research, Domains, and existing capture/editor tools.

@@ -109,6 +109,7 @@ _TRADE=re.compile(r"npcUtil\.tradeMatches\(trade,\s*(.+)\)")
 _SETPOS=re.compile(r"player:setPos\(([^\)]+)\)")
 _MESSAGE=re.compile(r"(?:player:messageSpecial|player:messageText|mission:messageSpecial|mission:messageName)\(([^\n]+)\)")
 _HELPER_ASSIGN=re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*function\(player\)",re.M)
+_LOCAL_PLAYER_HELPER=re.compile(r"^\s*local\s+function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*player\s*\)")
 
 
 def _balanced_function_blocks(lua: str):
@@ -349,6 +350,7 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
 
     transitions=[]
     states={"source:any":MissionState("source:any","Source state")}
+    completion_helpers=extract_dynamic_completion_gates(lua)
     serial=0
     branch_alternatives=0
     incomplete_branch_guards=0
@@ -392,16 +394,25 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
             conds=list(_conditions(guard_context))
             post_effect_conditions=[]
             post_effect_basis=[]
-            dynamic=extract_dynamic_completion_gate(lua) if (
-                any("isMissionComplete(player)" in guard for guard in path.guard_texts)
-                or (unresolved_nested_branch and "isMissionComplete(player)" in path.body)
-            ) else None
-            if dynamic:
+            invoked_helpers=[]
+            for helper_name,dynamic in completion_helpers.items():
+                call_pattern=re.compile(
+                    rf"\b{re.escape(helper_name)}\s*\(\s*player\s*\)"
+                )
+                guard_indexes=[
+                    index for index,guard in enumerate(path.guard_texts)
+                    if call_pattern.search(guard)
+                ]
+                unresolved_code="\n".join(_code(line) for line in path.body.splitlines())
+                in_unresolved_body=bool(
+                    unresolved_nested_branch and call_pattern.search(unresolved_code)
+                )
+                if not guard_indexes and not in_unresolved_body:
+                    continue
+                invoked_helpers.append(helper_name)
                 handled_dynamic=False
                 if not unresolved_nested_branch:
-                    for guard_index,guard in enumerate(path.guard_texts):
-                        if "isMissionComplete(player)" not in guard:
-                            continue
+                    for guard_index in guard_indexes:
                         prefix=(
                             path.guard_prefix_texts[guard_index]
                             if guard_index < len(path.guard_prefix_texts)
@@ -460,6 +471,7 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                     "branch_guard_complete":guard_complete,
                     "unexpanded_nested_branch":unresolved_nested_branch,
                     "post_effect_gate_basis":tuple(post_effect_basis),
+                    "completion_helpers":tuple(invoked_helpers),
                 },
                 post_effect_gate=post_effect_gate,
             ))
@@ -675,34 +687,73 @@ def extract_mission_reward_metadata(lua: str) -> dict:
     return out
 
 
+def extract_dynamic_completion_gates(lua: str) -> dict[str,DependencyGate]:
+    """Recover structurally proven mission-completion helper loops.
+
+    Helper names are intentionally irrelevant. A candidate must be a local player helper
+    that iterates one mission-status enum range, returns false when one member differs from
+    a literal terminal value, and has a true return path.
+    """
+    lines=lua.splitlines()
+    out={}
+    for start,_end,text in _balanced_function_blocks(lua):
+        match=_LOCAL_PLAYER_HELPER.match(lines[start])
+        if not match:
+            continue
+        helper_name=match.group(1)
+        code_text="\n".join(_code(line) for line in text.splitlines())
+        if "return false" not in code_text or "return true" not in code_text:
+            continue
+        loop=re.search(
+            r"for\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"
+            r"xi\.mission\.status\.([A-Z0-9_]+)\.([A-Z0-9_]+)\s*,\s*"
+            r"xi\.mission\.status\.([A-Z0-9_]+)\.([A-Z0-9_]+)\s+do",
+            code_text,
+        )
+        if not loop or loop.group(2)!=loop.group(4):
+            continue
+        iterator,family,first,_family2,last=loop.groups()
+        required=re.search(
+            rf"getMissionStatus\([^\)]*?,\s*{re.escape(iterator)}\s*\)\s*~=\s*(\d+)",
+            code_text,
+        )
+        if not required:
+            continue
+
+        symbols=[]
+        family_pattern=re.compile(
+            rf"xi\.mission\.status\.{re.escape(family)}\.([A-Z0-9_]+)"
+        )
+        source_code="\n".join(_code(line) for line in lua.splitlines())
+        for symbol_match in family_pattern.finditer(source_code):
+            symbol=symbol_match.group(1)
+            if symbol not in symbols:
+                symbols.append(symbol)
+        try:
+            lo=symbols.index(first); hi=symbols.index(last)
+        except ValueError:
+            continue
+        if lo>hi:
+            lo,hi=hi,lo
+        names=symbols[lo:hi+1]
+        if not names:
+            continue
+        value=int(required.group(1))
+        out[helper_name]=DependencyGate(
+            f"helper:{helper_name}","ALL",
+            tuple(StateCondition(f"mission_status:{name}","EQ",value) for name in names),
+        )
+    return out
+
+
 def extract_dynamic_completion_gate(lua: str) -> DependencyGate | None:
-    """Recover helper loops that require a contiguous named status range at one value."""
-    helper=re.search(r"local function isMissionComplete\(player\)(.*?)\nend",lua,re.S)
-    if not helper:
-        return None
-    body=helper.group(1)
-    loop=re.search(
-        r"for\s+\w+\s*=\s*xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\s*,\s*xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\s+do",
-        body,
-    )
-    required=re.search(r"getMissionStatus\([^\)]*\)\s*~=\s*(\d+)",body)
-    if not loop or not required:
-        return None
-    # Resolve the named range from status symbols observed elsewhere in this source.
-    symbols=[]
-    for m in re.finditer(r"xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)",lua):
-        if m.group(1) not in symbols: symbols.append(m.group(1))
-    try:
-        lo=symbols.index(loop.group(1)); hi=symbols.index(loop.group(2))
-    except ValueError:
-        return None
-    if lo>hi: lo,hi=hi,lo
-    names=symbols[lo:hi+1]
-    value=int(required.group(1))
-    return DependencyGate(
-        "helper:isMissionComplete","ALL",
-        tuple(StateCondition(f"mission_status:{name}","EQ",value) for name in names),
-    )
+    """Backward-compatible single-gate view of structurally discovered helpers."""
+    gates=extract_dynamic_completion_gates(lua)
+    if "isMissionComplete" in gates:
+        return gates["isMissionComplete"]
+    if len(gates)==1:
+        return next(iter(gates.values()))
+    return None
 
 
 def client_transport_effects(lua: str) -> tuple[TransitionEffect,...]:

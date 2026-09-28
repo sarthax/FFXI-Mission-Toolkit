@@ -2113,3 +2113,24 @@ Regressions:
 - `test_fixtures/test_mission_representation.py` verifies migration/representation requirements retain the ordering.
 
 This does not implement arbitrary intra-handler control-flow execution. Post-effect classification requires a recognized guard and a source-proven write overlap.
+
+
+## 2026-09-27 — Generic mission completion-helper discovery
+
+Mission convergence extraction no longer depends on a helper being literally named `isMissionComplete`.
+
+`extract_dynamic_completion_gates()` now discovers local player helpers structurally. A helper qualifies only when it:
+- is declared as `local function <name>(player)`;
+- iterates a contiguous range of one `xi.mission.status.<family>` enum;
+- checks the loop variable through `getMissionStatus(..., iterator) ~= <literal terminal value>`;
+- contains a false return for an incomplete member and a true return path.
+
+The status-family endpoints and observed intermediate symbols are then projected into an ALL dependency gate. Handler correlation links a guard to the specific discovered helper by its actual call name. Existing post-effect ordering remains generic: if source code before that guard writes one of the helper's required channels, the convergence gate remains post-effect.
+
+The legacy `extract_dynamic_completion_gate()` function remains as a backward-compatible single-gate view: it prefers `isMissionComplete` when present, otherwise returns the sole structurally discovered helper only when unambiguous.
+
+Comment text is stripped before helper semantics/calls are evaluated, preventing commented examples from manufacturing convergence behavior.
+
+Regression: `test_fixtures/test_mission_generic_completion_helpers.py` uses a renamed `allPathsReady(player)` helper and verifies structural discovery, exclusion of an unrelated helper, helper-call linkage, and post-effect ordering.
+
+This remains intentionally conservative. Helpers with dynamic range endpoints, nonliteral terminal values, non-player signatures, or structurally different completion logic remain unresolved rather than guessed.
