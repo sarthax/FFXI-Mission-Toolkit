@@ -33,7 +33,21 @@ def main():
     assert any(c.operator=="NE" for t in raw.transitions if t.gate for c in t.gate.conditions),raw.transitions
     assert any(c.operator=="AT_POSITION" for t in raw.transitions if t.gate for c in t.gate.conditions),raw.transitions
     assert any(e.effect=="SPAWN_ENTITY" and "DISASTER_IDOL" in e.subject for t in raw.transitions for e in t.effects),raw.transitions
-    assert any(e.effect=="COMPLETE_TRADE" for t in raw.transitions for e in t.effects),raw.transitions
+    trade_finish=[
+        t for t in raw.transitions
+        if t.event and t.event.zone=="MINE_SHAFT_2716" and t.event.event_id==3
+        and t.trigger=="EVENT_FINISH"
+    ]
+    assert len(trade_finish)==1,trade_finish
+    assert [e.effect for e in trade_finish[0].effects].count("COMPLETE_TRADE")==1,trade_finish[0]
+    trade_chain=[
+        t for t in chained.transitions
+        if t.metadata.get("logical_event_chain")
+        and t.event and t.event.zone=="MINE_SHAFT_2716" and t.event.event_id==3
+        and t.trigger=="TRADE"
+    ]
+    assert len(trade_chain)==1,trade_chain
+    assert [e.effect for e in trade_chain[0].effects].count("COMPLETE_TRADE")==1,trade_chain[0]
     reward=extract_mission_reward_metadata(SOURCE)
     assert reward["title"]=="TREADER_OF_AN_ICY_PAST",reward
     transports=client_transport_effects(SOURCE)
