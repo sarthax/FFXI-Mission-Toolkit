@@ -277,15 +277,23 @@ def observation_provenance(run_id: str, section: str, frame: str) -> dict:
     meta = section_meta(run_id, section)
     source_url_path = run_dir(run_id) / "source_url.txt"
     source_url = source_url_path.read_text(encoding="utf-8").strip() if source_url_path.exists() else None
+    fps = meta.get("fps")
+    try:
+        rate = float(fps) if fps is not None else 0.0
+    except (TypeError, ValueError):
+        rate = 0.0
+    resolution = (1.0 / rate) if rate > 0 else None
     return {
         "source_kind": "VIDEO_OCR",
         "ocr_run_id": run_id,
         "section": section,
         "frame": frame,
         "frame_index": frame_index(frame),
-        "video_timestamp_seconds": frame_video_timestamp(frame, meta.get("fps")),
+        "video_timestamp_seconds": frame_video_timestamp(frame, fps),
         "timestamp_basis": "sample_index_over_section_fps",
-        "fps": meta.get("fps"),
+        "timestamp_resolution_seconds": round(resolution, 6) if resolution is not None else None,
+        "timestamp_uncertainty_seconds": round(resolution / 2.0, 6) if resolution is not None else None,
+        "fps": fps,
         "crop": meta.get("crop"),
         "capture_profile": meta.get("capture_profile") or DEFAULT_CAPTURE_PROFILE,
         "source_url": source_url,
