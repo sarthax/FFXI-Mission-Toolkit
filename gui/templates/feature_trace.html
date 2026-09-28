@@ -99,8 +99,19 @@ document.querySelectorAll('.runtime-load').forEach(button=>button.addEventListen
  const p=new URLSearchParams({root:{{ result.root|tojson }},depth:{{ result.max_depth }},direction:{{ result.direction|tojson }},opcode:button.dataset.opcode,capture_id:button.dataset.capture,limit:'100'});
  const response=await fetch('/features/trace/runtime.json?'+p),data=await response.json();
  if(!response.ok){target.textContent=data.error||'Could not load observations.';return;}
- const rows=data.observations.map(e=>'<tr><td>'+runtimeEsc(e.relationship)+'</td><td><code>'+runtimeEsc(e.from_node)+'</code></td><td><code>'+runtimeEsc(e.to_node)+'</code></td><td><code>'+runtimeEsc(e.evidence_id)+'</code></td></tr>').join('');
- target.innerHTML='<p class="muted">Showing '+data.offset+'–'+Math.min(data.offset+data.observations.length,data.total)+' of '+data.total+'. Maximum 250 per request.</p><div class="table-wrap"><table><thead><tr><th>Relationship</th><th>From</th><th>To</th><th>Evidence</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+ const rows=data.observations.map(e=>{
+   const provenance=(e.capture_provenance||[]);
+   const source=provenance.length
+     ? provenance.map(p=>{
+         let where=p.locator_basis||'source';
+         if(p.locator_basis==='sqlite-row'&&p.details?.source_table) where=p.details.source_table+' rowid '+runtimeEsc(p.details.source_rowid);
+         else if(p.start_line!=null) where='line '+p.start_line+(p.end_line!=null&&p.end_line!==p.start_line?'–'+p.end_line:'');
+         return '<a class="zonelink" href="'+runtimeEsc(p.href||'#')+'">'+runtimeEsc(p.filename)+'</a><br><span class="muted">'+runtimeEsc(where)+'</span>';
+       }).join('<br>')
+     : '<span class="muted">No exact source locator</span>';
+   return '<tr><td>'+runtimeEsc(e.relationship)+'</td><td><code>'+runtimeEsc(e.from_node)+'</code></td><td><code>'+runtimeEsc(e.to_node)+'</code></td><td><code>'+runtimeEsc(e.evidence_id)+'</code></td><td>'+source+'</td></tr>';
+ }).join('');
+ target.innerHTML='<p class="muted">Showing '+data.offset+'–'+Math.min(data.offset+data.observations.length,data.total)+' of '+data.total+'. Maximum 250 per request.</p><div class="table-wrap"><table><thead><tr><th>Relationship</th><th>From</th><th>To</th><th>Evidence</th><th>Exact capture source</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
  target.dataset.loaded='1';
 }));
 </script>
