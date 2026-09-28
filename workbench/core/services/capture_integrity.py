@@ -23,6 +23,8 @@ FORMAT_TARGETS = {
     "pc_pathlog_csv": (("capture_pc_path","csv-row"),),
     "widescan": (("capture_npc_entries","line"),("capture_level_range","line")),
     "packetlogger": (("capture_raw_packets","block"),),
+    "packetdb": (("capture_raw_packets","sqlite-row"),),
+    "packeteer": (("capture_raw_packets","block"),),
     "caplog": (("capture_events","line"),("capture_hp_events","line"),("capture_eventview","line"),("capture_caplog_chat","line")),
     "NPCLogger table/database Lua": (("capture_npc_entries","line"),("capture_npc_path","line")),
     "EventView/IDView packet log": (("capture_events","block"),("capture_eventview","block")),
