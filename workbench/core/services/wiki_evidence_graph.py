@@ -8,6 +8,7 @@ from pathlib import Path
 
 from workbench.core import graph as workbench_graph
 import wiki_evidence
+import wiki_claim_compare
 
 _TARGET_IDENTIFIERS = {
     "npc_names": ("npcid", "NPC"),
@@ -212,6 +213,133 @@ def import_wiki_evidence(
 
         dst.commit()
         return {"status": "OK", "counts": counts}
+    finally:
+        src.close()
+        dst.close()
+
+
+def import_wiki_alignment(
+    source_db: Path,
+    graph_db: Path,
+    *,
+    title: str,
+) -> dict:
+    src = sqlite3.connect(source_db)
+    wiki_claim_compare.init_db(src)
+    report = wiki_claim_compare.alignment_report(src, title)
+    if report.get("status") != "OK":
+        src.close()
+        return {"status": report.get("status"), "title": title, "findings": 0}
+
+    dst = workbench_graph.init_db(graph_db)
+    try:
+        alignment_id = report["page"]["alignment_id"]
+        analysis_id = f"analysis:{alignment_id}"
+        # Reconcile this alignment's prior findings.
+        old = dst.execute(
+            "SELECT finding_id FROM findings WHERE analysis_id=?", (analysis_id,)
+        ).fetchall()
+        for row in old:
+            dst.execute("DELETE FROM findings WHERE finding_id=?", (row[0],))
+        finding_ids = []
+
+        for pair in report["pairs"]:
+            status = pair["status"]
+            if status == "REFERENCE_CONFLICT":
+                finding_status = "CONTRADICTED"
+                confidence = "INFERRED"
+            elif status == "AGREEMENT":
+                finding_status = "SUPPORTED"
+                confidence = "INFERRED"
+            else:
+                finding_status = "UNKNOWN"
+                confidence = "UNKNOWN"
+
+            pair_node = f"reference-alignment:{pair['pair_id']}"
+            metadata = {
+                "alignment_id": alignment_id,
+                "alignment_type": pair["alignment_type"],
+                "reference_status": status,
+                "conflict_kind": pair["conflict_kind"],
+                "similarity": pair["similarity"],
+                "bg_claim_id": pair["bg_claim_id"],
+                "ffxiclopedia_claim_id": pair["ffxiclopedia_claim_id"],
+                "bg_excerpt": pair["bg_excerpt"],
+                "ffxiclopedia_excerpt": pair["fx_excerpt"],
+                "details": pair["details"],
+                "authority": "REFERENCE_ONLY",
+            }
+            dst.execute(
+                """INSERT OR REPLACE INTO entities(entity_id,entity_type,display_name,metadata_json)
+                   VALUES(?,?,?,?)""",
+                (
+                    pair_node,
+                    "REFERENCE_ALIGNMENT",
+                    f"{pair['alignment_type']} {status}",
+                    json.dumps(metadata, sort_keys=True),
+                ),
+            )
+
+            evid = f"evidence:{pair['pair_id']}"
+            note = "Dual-wiki reference comparison; neither source is authoritative."
+            dst.execute(
+                "INSERT OR REPLACE INTO evidence VALUES(?,?,?,?,?,?)",
+                (
+                    evid,
+                    "REFERENCE",
+                    "BGWiki+FFXIclopedia",
+                    f"wiki-alignment:{title}:{pair['pair_id']}",
+                    None,
+                    note,
+                ),
+            )
+            finding_id = f"finding:{pair['pair_id']}"
+            dst.execute(
+                """INSERT OR REPLACE INTO findings
+                   (finding_id,analysis_id,subject_id,field,value_json,status,confidence,
+                    evidence_id,source_snapshot_id,created_at,updated_at,notes_json)
+                   VALUES(?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,?)""",
+                (
+                    finding_id,
+                    analysis_id,
+                    pair_node,
+                    "reference_claim_alignment",
+                    json.dumps(metadata, sort_keys=True),
+                    finding_status,
+                    confidence,
+                    evid,
+                    None,
+                    json.dumps([note]),
+                ),
+            )
+            finding_ids.append(finding_id)
+
+        dst.execute(
+            """INSERT OR REPLACE INTO analysis_results
+               (analysis_id,analysis_type,source,target,feature_id,status,created_at,tool_version,
+                findings_json,notes_json,source_snapshot_id)
+               VALUES(?,?,?,?,?,?,CURRENT_TIMESTAMP,?,?,?,?)""",
+            (
+                analysis_id,
+                "REFERENCE_WIKI_ALIGNMENT",
+                "BGWiki",
+                "FFXIclopedia",
+                None,
+                "ANALYZED",
+                "1",
+                json.dumps(finding_ids),
+                json.dumps(["Reference-only dual-source comparison; no winner selected."]),
+                None,
+            ),
+        )
+        dst.commit()
+        return {
+            "status": "OK",
+            "alignment_id": alignment_id,
+            "findings": len(finding_ids),
+            "conflicts": sum(1 for p in report["pairs"] if p["status"] == "REFERENCE_CONFLICT"),
+            "agreements": sum(1 for p in report["pairs"] if p["status"] == "AGREEMENT"),
+        }
     finally:
         src.close()
         dst.close()

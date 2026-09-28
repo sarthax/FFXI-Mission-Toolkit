@@ -78,6 +78,7 @@ import packet_decode
 import settings as settings_mod
 import wiki_compile
 import wiki_evidence
+import wiki_claim_compare
 from workbench.core.services import wiki_evidence_graph
 from workbench.gui_shell import build_shell_context
 from workbench.adapters.servers import LogicalRecord, adapter_for
@@ -3928,12 +3929,15 @@ async def packets_bulk_submit(request: Request):
 def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.SOURCE_BG, error: str = ""):
     report = None
     evidence = None
+    comparison = None
     con = get_con()
     wiki_evidence.init_db(con)
+    wiki_claim_compare.init_db(con)
     if title:
         if source == wiki_evidence.SOURCE_BG:
             report = wiki_compile.compile_report(con, title)
         evidence = wiki_evidence.page_evidence(con, source, title)
+        comparison = wiki_claim_compare.alignment_report(con, title)
     available_sources = [
         {"id": wiki_evidence.SOURCE_BG, "label": "BG Wiki", "available": True},
         {
@@ -3952,6 +3956,7 @@ def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.S
         "report": report,
         "evidence": evidence,
         "available_sources": available_sources,
+        "comparison": comparison,
         "error": error,
     })
 
@@ -3976,6 +3981,32 @@ async def wiki_build_evidence_map(request: Request):
     finally:
         con.close()
     suffix = f"?title={quote(title)}&source={quote(source)}"
+    if error:
+        suffix += f"&error={quote(error)}"
+    return RedirectResponse("/wiki" + suffix, status_code=303)
+
+
+@app.post("/wiki/compare", response_class=HTMLResponse)
+async def wiki_compare_sources(request: Request):
+    form = await request.form()
+    title = (form.get("title") or "").strip()
+    error = ""
+    con = get_con()
+    try:
+        for src in (wiki_evidence.SOURCE_BG, wiki_evidence.SOURCE_FFXICLOPEDIA):
+            existing = wiki_evidence.page_evidence(con, src, title)
+            if existing.get("status") != "OK" or not existing.get("claims"):
+                wiki_evidence.ingest_page(con, src, title)
+        result = wiki_claim_compare.align_page(con, title)
+        if result.get("status") != "OK":
+            error = "No aligned wiki evidence is available for this title."
+        else:
+            wiki_evidence_graph.import_wiki_alignment(DB_PATH, WORKBENCH_DB, title=title)
+    except (ValueError, SystemExit) as exc:
+        error = str(exc)
+    finally:
+        con.close()
+    suffix = f"?title={quote(title)}&source={quote(wiki_evidence.SOURCE_BG)}"
     if error:
         suffix += f"&error={quote(error)}"
     return RedirectResponse("/wiki" + suffix, status_code=303)

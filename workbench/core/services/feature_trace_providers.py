@@ -96,6 +96,12 @@ PROVIDERS=(
                      "/wiki",search_columns=("claim_id","target_table","target_key","mapping_status")),
         CatalogTable("reference_wiki_mapping_reviews","mapping_id","review_status","REFERENCE_MAPPING_REVIEW",
                      ("notes","reviewed_at"),"/wiki",search_columns=("review_status","notes")),
+        CatalogTable("reference_wiki_page_alignments","alignment_id","norm_title","REFERENCE_PAGE_ALIGNMENT",
+                     ("bg_page_id","ffxiclopedia_page_id","status","updated_at"),"/wiki",
+                     search_columns=("status","bg_page_id","ffxiclopedia_page_id")),
+        CatalogTable("reference_wiki_claim_alignments","pair_id","status","REFERENCE_CLAIM_ALIGNMENT",
+                     ("alignment_id","bg_claim_id","ffxiclopedia_claim_id","alignment_type","similarity","conflict_kind"),
+                     "/wiki",search_columns=("alignment_id","alignment_type","conflict_kind","status")),
     )),
     CatalogProvider("server-event-refs","server",(
         CatalogTable("npc_event_refs","csid",None,"SERVER_EVENT_REF",
