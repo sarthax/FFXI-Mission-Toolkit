@@ -7,7 +7,7 @@ alternative for a bounded branch analysis, and keeps unresolved feature symbols 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Callable, Iterable
 
 from .mission_state_machine import DependencyGate, MissionStateMachine, StateCondition
 
@@ -87,13 +87,15 @@ def build_feature_requirement_closure(
     machines: Iterable[MissionStateMachine]=(),
     entry_gates: Iterable[DependencyGate]=(),
     selected_any_subjects: Iterable[str]=(),
+    resolver: Callable[[str], MissionStateMachine | None] | None=None,
 ) -> FeatureClosure:
     """Recursively follow explicit quest/mission feature requirements.
 
     entry_gates represents requirements discovered outside the root source artifact
     (for example a next-mission helper gate). ANY alternatives remain explicit. When
     selected_any_subjects is supplied, non-selected ANY alternatives are recorded but
-    are not recursively expanded.
+    are not recursively expanded. resolver may load a missing feature on demand from a
+    source catalog; only selected/resolved dependencies are requested from it.
     """
     all_machines=(root,*tuple(machines))
     index=feature_symbol_index(all_machines)
@@ -122,6 +124,10 @@ def build_feature_requirement_closure(
                 ))
                 continue
             target=index.get(condition.subject)
+            if target is None and follow and resolver is not None:
+                target=resolver(condition.subject)
+                if target is not None:
+                    index.update(feature_symbol_index((target,)))
             status="RESOLVED" if target else "UNRESOLVED"
             dependencies.append(FeatureDependency(
                 source,
