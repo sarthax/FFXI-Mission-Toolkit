@@ -27,6 +27,49 @@ PACKET_34 = """[2026-09-28 10:00:02] Packet 0x034
 """
 
 
+def make_npclogger(path: Path):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    con = sqlite3.connect(path)
+    con.execute("""CREATE TABLE entries (
+        UniqueNo INTEGER, Name TEXT, model_id INTEGER, x REAL, y REAL, z REAL, dir INTEGER, Hpp INTEGER,
+        legacy_flags INTEGER, legacy_status INTEGER, legacy_animation INTEGER, Speed INTEGER,
+        created_at INTEGER, updated_at INTEGER, legacy_look TEXT, DoorId INTEGER, ActIndex INTEGER,
+        Flags0 INTEGER, Flags1 INTEGER, Flags2 INTEGER, Flags3 INTEGER, legacy_flag INTEGER, SubKind INTEGER
+    )""")
+    con.execute("""INSERT INTO entries VALUES
+        (17000011,'SQLite NPC',4321,10.0,20.0,30.0,64,88,1,2,3,40,10,20,'0000E110',777,8,11,12,13,14,15,16)""")
+    con.execute("CREATE TABLE history (id INTEGER, entry_id TEXT, time INTEGER, delta TEXT)")
+    con.execute("INSERT INTO history VALUES (?,?,?,?)", (3, "17000011-test", 456789, '{"x":11.0,"z":31.0}'))
+    con.commit()
+    con.close()
+
+
+def make_actionview(path: Path):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    con = sqlite3.connect(path)
+    con.execute("""CREATE TABLE entries (
+        id INTEGER, actor INTEGER, actor_name TEXT, ActionType TEXT, animation INTEGER,
+        category INTEGER, message INTEGER, name TEXT, updated_at INTEGER
+    )""")
+    con.execute(
+        "INSERT INTO entries VALUES (?,?,?,?,?,?,?,?,?)",
+        (66, 17000012, "SQLite Mob", "ability", 222, 7, 185, "Head Butt", 1234),
+    )
+    con.commit()
+    con.close()
+
+
+def make_levelrange(path: Path):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    con = sqlite3.connect(path)
+    con.execute("""CREATE TABLE entries (
+        UniqueNo INTEGER, sName TEXT, Level_min INTEGER, Level_max INTEGER, ActIndex INTEGER
+    )""")
+    con.execute("INSERT INTO entries VALUES (?,?,?,?,?)", (17000013, "SQLite Level Mob", 74, 76, 9))
+    con.commit()
+    con.close()
+
+
 def main():
     with TemporaryDirectory() as tmp:
         root = Path(tmp)
@@ -39,6 +82,9 @@ def main():
         ev_path.write_text(EVENTVIEW, encoding="utf-8")
         p32.write_text(PACKET_32, encoding="utf-8")
         p34.write_text(PACKET_34, encoding="utf-8")
+        make_npclogger(source / "NPCLogger" / "Test Zone.db")
+        make_actionview(source / "ActionView" / "Tester" / "Actions.db")
+        make_levelrange(source / "LevelRangeTrack" / "Test Zone.db")
 
         con = sqlite3.connect(root / "capture.db")
         con.row_factory = sqlite3.Row
@@ -74,8 +120,11 @@ def main():
         }
         ev_rel = "EventView/Tester/Test Zone.log"
         p32_rel = "PacketLogger/incoming/0x032.log"
-        assert inventory[ev_rel]["rebuildable"], inventory[ev_rel]
-        assert inventory[p32_rel]["rebuildable"], inventory[p32_rel]
+        npc_rel = "NPCLogger/Test Zone.db"
+        act_rel = "ActionView/Tester/Actions.db"
+        lvl_rel = "LevelRangeTrack/Test Zone.db"
+        for rel in (ev_rel, p32_rel, npc_rel, act_rel, lvl_rel):
+            assert inventory[rel]["rebuildable"], inventory[rel]
 
         # Corrupt normalized outputs without touching source bytes; rebuild must restore them.
         con.execute(
@@ -84,6 +133,18 @@ def main():
         )
         con.execute(
             "UPDATE capture_raw_packets SET raw_hex='CORRUPT' WHERE capture_id=? AND seq=0",
+            (cid,),
+        )
+        con.execute(
+            "UPDATE capture_npc_entries SET name='CORRUPT' WHERE capture_id=? AND entity_id=17000011",
+            (cid,),
+        )
+        con.execute(
+            "UPDATE capture_actions SET name='CORRUPT' WHERE capture_id=? AND action_key='17000012-66'",
+            (cid,),
+        )
+        con.execute(
+            "UPDATE capture_level_range SET level_min=-1 WHERE capture_id=? AND entity_id=17000013",
             (cid,),
         )
         con.commit()
@@ -108,6 +169,31 @@ def main():
         ).fetchall()
         assert len(packets) == 2, packets
         assert all(row["raw_hex"] != "CORRUPT" for row in packets), packets
+
+
+        npc_result = build_capture_index.rebuild_capture_source(con, cid, npc_rel)
+        assert npc_result["rows"] == 2, npc_result
+        npc = con.execute(
+            "SELECT name FROM capture_npc_entries WHERE capture_id=? AND entity_id=17000011",
+            (cid,),
+        ).fetchone()
+        assert npc["name"] == "SQLite NPC", npc
+
+        act_result = build_capture_index.rebuild_capture_source(con, cid, act_rel)
+        assert act_result["rows"] == 1, act_result
+        action = con.execute(
+            "SELECT name FROM capture_actions WHERE capture_id=? AND action_key='17000012-66'",
+            (cid,),
+        ).fetchone()
+        assert action["name"] == "Head Butt", action
+
+        lvl_result = build_capture_index.rebuild_capture_source(con, cid, lvl_rel)
+        assert lvl_result["rows"] == 1, lvl_result
+        level = con.execute(
+            "SELECT level_min,level_max FROM capture_level_range WHERE capture_id=? AND entity_id=17000013",
+            (cid,),
+        ).fetchone()
+        assert tuple(level) == (74, 76), level
 
         # Capture-level identity and user curation survive rebuild.
         cap = con.execute(
