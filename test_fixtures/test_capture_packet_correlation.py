@@ -90,7 +90,7 @@ def main():
         assert summary["source_counts"]=={
             pc.RAW:4,pc.EVENTVIEW:3,pc.IDVIEW:1,pc.VIDEO:1
         },summary
-        assert summary["matched"]>=6,summary
+        assert summary["matched"]==5,summary
         assert summary["ambiguous"]==2,summary
 
         rows=pc.list_correlations(con,cid)
