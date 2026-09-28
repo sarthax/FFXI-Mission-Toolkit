@@ -203,6 +203,117 @@ end
 """
     assert extract_section_completion_gate(unscoped) is None
 
+    aliased_multiline = """
+mission.sections =
+{
+    {
+        check = function(player, currentMission, missionStatus, vars)
+            local leftStatus = player:getMissionStatus(
+                mission.areaId,
+                xi.mission.status.COP.LEFT
+            )
+            local rightStatus = player:getMissionStatus(
+                mission.areaId,
+                xi.mission.status.COP.RIGHT
+            )
+
+            return currentMission == mission.missionId and
+                leftStatus >= 7 and
+                rightStatus == 9
+        end,
+
+        [xi.zone.METALWORKS] =
+        {
+            ['Cid'] = mission:progressEvent(77),
+        },
+    },
+}
+"""
+    alias_machine = correlate_lsb_handlers(
+        aliased_multiline,
+        feature_id="mission:test:aliased_multiline",
+    )
+    alias_transition = next(
+        transition for transition in alias_machine.transitions
+        if transition.metadata.get("actor") == "Cid"
+    )
+    assert {
+        (condition["subject"], condition["operator"], condition["value"])
+        for condition in alias_transition.metadata.get("section_eligibility_conditions", ())
+    } == {
+        ("mission_status:LEFT", "GE", 7),
+        ("mission_status:RIGHT", "EQ", 9),
+    }, alias_transition.metadata
+
+    multiline_completion = """
+mission.sections =
+{
+    {
+        check = function(player, currentMission, missionStatus, vars)
+            local leftStatus = player:getMissionStatus(
+                mission.areaId,
+                xi.mission.status.COP.LEFT
+            )
+
+            return currentMission == mission.missionId and
+                leftStatus == 14 and
+                player:getMissionStatus(
+                    mission.areaId,
+                    xi.mission.status.COP.RIGHT
+                ) == 14
+        end,
+
+        [xi.zone.METALWORKS] =
+        {
+            onEventFinish =
+            {
+                [88] = function(player, csid, option, npc)
+                    mission:complete(player)
+                end,
+            },
+        },
+    },
+}
+"""
+    multiline_gate = extract_section_completion_gate(multiline_completion)
+    assert multiline_gate is not None, multiline_gate
+    assert _subjects(multiline_gate) == {
+        "mission_status:LEFT",
+        "mission_status:RIGHT",
+    }, multiline_gate
+    assert {condition.value for condition in multiline_gate.conditions} == {14}, multiline_gate
+
+    disjunctive = """
+mission.sections =
+{
+    {
+        check = function(player, currentMission, missionStatus, vars)
+            local leftStatus = player:getMissionStatus(
+                mission.areaId,
+                xi.mission.status.COP.LEFT
+            )
+
+            return leftStatus == 14 or
+                player:getMissionStatus(mission.areaId, xi.mission.status.COP.RIGHT) == 14
+        end,
+
+        [xi.zone.METALWORKS] =
+        {
+            ['Cid'] = mission:progressEvent(99),
+        },
+    },
+}
+"""
+    disjunctive_machine = correlate_lsb_handlers(
+        disjunctive,
+        feature_id="mission:test:disjunctive",
+    )
+    disjunctive_transition = next(
+        transition for transition in disjunctive_machine.transitions
+        if transition.metadata.get("actor") == "Cid"
+    )
+    assert not disjunctive_transition.metadata.get("section_eligibility_conditions"), disjunctive_transition.metadata
+
     print("Mission section completion scope regression: PASS")
     return 0
 
