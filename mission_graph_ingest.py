@@ -40,6 +40,15 @@ def main() -> None:
     print(f"edges: {len(projection.edges)}")
     print(f"evidence: {len(projection.evidence)}")
     print(f"implementation: {projection.implementation.status}")
+    metrics=projection.feature.metadata.get("extraction_metrics") or {}
+    if metrics:
+        print(
+            "extraction: "
+            f"handlers {metrics.get('modeled_source_handler_count',0)}/{metrics.get('source_handler_count',0)} modeled; "
+            f"{metrics.get('branch_transition_count',0)} branch transitions; "
+            f"{metrics.get('event_chains',0)} event chains; "
+            f"{metrics.get('unmodeled_source_handler_count',0)} unmodeled handlers"
+        )
     if not args.write:
         print("preview only; pass --write to persist")
         return
