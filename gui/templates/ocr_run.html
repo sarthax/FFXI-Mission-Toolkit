@@ -36,6 +36,53 @@
   </form>
 </div>
 
+<h2>Reusable screen layouts</h2>
+<p class="muted">A layout saves real crop coordinates plus capture/preprocessing profiles for every section in a known FFXI UI/addon setup. Built-in entries are role templates only; save a run after measuring its real regions to create a reusable coordinate layout.</p>
+
+<div style="display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:14px;align-items:start;margin-bottom:22px;">
+  <div class="table-wrap" style="padding:14px;">
+    <h3 style="margin-top:0;">Apply saved layout</h3>
+    <form method="post" action="/ocr/{{ status.run_id }}/layout/apply" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <select name="profile_id" required>
+        {% for pid, lp in layout_profiles.items() %}
+        <option value="{{ pid }}">{{ lp.name }}{% if lp.builtin %} (template){% endif %}</option>
+        {% endfor %}
+      </select>
+      <button type="submit">Apply layout</button>
+    </form>
+    <div style="margin-top:10px;">
+      {% for pid, lp in layout_profiles.items() %}
+      <div style="margin-bottom:8px;">
+        <b>{{ lp.name }}</b> <span class="muted mono">{{ pid }}</span>
+        {% if lp.description %}<div class="muted">{{ lp.description }}</div>{% endif %}
+        <div class="muted">
+          {% for r in lp.regions %}
+            {{ r.label }}{% if r.crop %} [{{ r.crop }}]{% else %} [coordinates not saved]{% endif %}
+            · {{ r.capture_profile }} · {{ r.preprocess_profile }}{% if not loop.last %}<br>{% endif %}
+          {% endfor %}
+        </div>
+        {% if not lp.builtin %}
+        <form method="post" action="/ocr/layout/{{ pid }}/delete" style="display:inline;" onsubmit="return confirm('Delete saved OCR layout {{ lp.name }}?');">
+          <input type="hidden" name="run_id" value="{{ status.run_id }}">
+          <button type="submit">delete</button>
+        </form>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="table-wrap" style="padding:14px;">
+    <h3 style="margin-top:0;">Save this run's section layout</h3>
+    <form method="post" action="/ocr/{{ status.run_id }}/layout/save" style="display:flex;flex-direction:column;gap:8px;">
+      <label>Profile id <input type="text" name="profile_id" placeholder="my_1080p_ashita_layout" required></label>
+      <label>Name <input type="text" name="name" placeholder="1080p Ashita research layout" required></label>
+      <label>Description <input type="text" name="description" placeholder="Chat + EView + NPCLogger at my normal UI scale"></label>
+      <button type="submit" {% if not status.sections %}disabled{% endif %}>Save current sections as layout</button>
+    </form>
+  </div>
+</div>
+
 <h2>1. Pick a crop, extract it as a section</h2>
 <p class="muted">Drag a rectangle over whatever you want to OCR in the preview frame below -- the
   chat log, an on-screen NPCLogger/packet-capture overlay, anything else. Give it a section name
@@ -68,6 +115,12 @@
     <option value="timestamped">timestamped chat</option>
     <option value="packetlogger">packetlogger / overlay</option>
   </select>
+  <label class="muted">preprocess</label>
+  <select name="preprocess">
+    {% for pp in preprocess_profiles %}
+    <option value="{{ pp.id }}" {% if pp.id == "standard" %}selected{% endif %}>{{ pp.label }}</option>
+    {% endfor %}
+  </select>
   <label class="muted">fps</label>
   <input type="number" step="0.5" min="0.5" name="fps" value="2" style="width:70px;">
   <button type="submit" id="extractBtn" disabled>Extract cropped frames</button>
@@ -76,8 +129,10 @@
   for chat with timestamps off, <b>timestamped</b> tries to split a leading clock time and channel
   prefix (Say/Party/Linkshell/Tell/...) off the text, <b>packetlogger</b> is for on-screen
   NPCLogger/packet-capture overlays (fast-moving, no chat channels -- see note below). Pick the one
-  that matches what this section will actually show; it only affects display/parsing, never the
-  underlying OCR.</p>
+  that matches what this section will actually show. Capture profile controls parsing; preprocessing controls the image transformation Tesseract receives. Raw cropped frames are never modified.</p>
+<p class="muted"><b>Preprocessing presets:</b>
+  {% for pp in preprocess_profiles %}<code>{{ pp.id }}</code> — {{ pp.description }}{% if not loop.last %}; {% endif %}{% endfor %}
+</p>
 
 <script>
 (function() {
@@ -185,7 +240,7 @@
 
 {% for s in status.sections %}
 <div class="table-wrap" style="padding:16px; margin-top:26px;">
-  <h2 style="margin-top:0;">Section: {{ s.label }}{% if s.crop %} <span class="muted" style="font-weight:normal;">(crop {{ s.crop }}{% if s.fps %}, {{ s.fps }} fps{% endif %}, profile: {{ s.capture_profile }})</span>{% endif %}</h2>
+  <h2 style="margin-top:0;">Section: {{ s.label }}{% if s.crop %} <span class="muted" style="font-weight:normal;">(crop {{ s.crop }}{% if s.fps %}, {{ s.fps }} fps{% endif %}, capture: {{ s.capture_profile }}, preprocess: {{ s.preprocess_profile }})</span>{% endif %}</h2>
 
   <h3>Dedupe cropped frames</h3>
   <form method="post" action="/ocr/{{ status.run_id }}/{{ s.section }}/dedupe" style="display:flex; gap:10px; align-items:center;">
