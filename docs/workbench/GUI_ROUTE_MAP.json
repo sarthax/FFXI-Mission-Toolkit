@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 191,
+  "route_count": 193,
   "routes": [
     {
       "method": "GET",
@@ -1528,6 +1528,22 @@
       "path": "/ocr/layout/{profile_id}/delete",
       "home": "Captures",
       "section": "YouTube OCR",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/wiki/map",
+      "home": "Tools",
+      "section": "Wiki Compiler",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/wiki/mapping/{mapping_id}/review",
+      "home": "Tools",
+      "section": "Wiki Compiler",
       "role": "mutation",
       "disposition": "KEEP"
     }
