@@ -219,6 +219,9 @@ def load_layout_profiles() -> dict:
             item = dict(value)
             item["builtin"] = False
             profiles[key] = item
+    for item in profiles.values():
+        regions = item.get("regions") or []
+        item["applicable"] = bool(regions) and all(region.get("crop") for region in regions)
     return profiles
 
 
