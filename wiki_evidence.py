@@ -16,11 +16,11 @@ import hashlib
 import json
 import re
 import sqlite3
+import urllib.parse
 from pathlib import Path
 
 import mwparserfromhell
 
-import wiki_compile
 import wiki_lookup
 
 TOOLS_ROOT = Path(__file__).parent
@@ -32,6 +32,14 @@ SOURCE_FFXICLOPEDIA = "FFXIclopedia"
 REFERENCE_ONLY = "REFERENCE_ONLY"
 
 _NON_ENTITY_PREFIXES = ("image:", "file:", "category:", "media:", "template:", "user:", "special:")
+WANTED_SECTIONS = {"Walkthrough", "Strategy", "Notes", "Plot Details", "Boss Fight", "Eligibility"}
+
+
+def title_from_query(raw: str) -> str:
+    raw = (raw or "").strip()
+    if raw.startswith(("http://", "https://")):
+        raw = urllib.parse.urlparse(raw).path.rsplit("/", 1)[-1]
+    return urllib.parse.unquote(raw).replace("_", " ").strip()
 
 
 def _norm(value: str) -> str:
@@ -184,7 +192,7 @@ def extract_claims(page: dict, source_id: str = SOURCE_BG) -> list[dict]:
                 "authority": REFERENCE_ONLY,
             })
 
-        if section_title in wiki_compile.WANTED_SECTIONS:
+        if section_title in WANTED_SECTIONS:
             for raw_line in section_text.splitlines():
                 stripped = raw_line.strip()
                 if not stripped.startswith(("*", "#")):
@@ -378,14 +386,30 @@ def review_mapping(
 
 
 def find_bg_page(title_query: str) -> dict | None:
-    return wiki_compile.find_page(title_query)
+    if not BG_DUMP_PATH.exists():
+        return None
+    query = title_from_query(title_query).lower()
+    exact = None
+    substring = None
+    with gzip.open(BG_DUMP_PATH, "rt", encoding="utf-8") as src:
+        for line in src:
+            page = json.loads(line)
+            if any(str(c).lower() == "catseyexi" for c in page.get("categories", [])):
+                continue
+            title = str(page.get("title") or "")
+            if title.lower() == query:
+                exact = page
+                break
+            if substring is None and query in title.lower():
+                substring = page
+    return exact or substring
 
 
 def find_reference_page(con: sqlite3.Connection, source_id: str, title_query: str) -> dict | None:
     init_db(con)
     if source_id == SOURCE_BG:
         return find_bg_page(title_query)
-    norm = _norm(wiki_compile.title_from_query(title_query))
+    norm = _norm(title_from_query(title_query))
     row = con.execute(
         """SELECT source_id,page_id,title,revision_id,revision_timestamp,page_text,page_hash
            FROM reference_wiki_pages WHERE source_id=? AND norm_title=? LIMIT 1""",
