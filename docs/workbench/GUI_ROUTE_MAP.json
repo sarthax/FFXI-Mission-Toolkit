@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 185,
+  "route_count": 188,
   "routes": [
     {
       "method": "GET",
@@ -1481,6 +1481,30 @@
       "home": "Captures",
       "section": "Timeline Alignment",
       "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/captures/{capture_id}/alignment/evidence",
+      "home": "Captures",
+      "section": "Timeline Alignment",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/captures/{capture_id}/alignment/evidence/{evidence_id}/delete",
+      "home": "Captures",
+      "section": "Timeline Alignment",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/{capture_id}/alignment/evidence/{evidence_id}/image",
+      "home": "Captures",
+      "section": "Timeline Alignment",
+      "role": "data",
       "disposition": "KEEP"
     }
   ]
