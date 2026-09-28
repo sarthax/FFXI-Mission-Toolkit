@@ -90,6 +90,7 @@ def main():
     assert catalog.source_for("quest:BENEATH_THE_MASK") is not None,catalog.subjects()
     assert catalog.source_for("quest:HONOR_UNDER_FIRE") is not None,catalog.subjects()
     assert catalog.source_for("quest:QUELLING_THE_STORM") is not None,catalog.subjects()
+    assert catalog.source_for("quest:FIRE_IN_THE_HOLE") is not None,catalog.subjects()
 
     closure=build_feature_requirement_closure(
         chained,
@@ -104,35 +105,41 @@ def main():
         "quest:crystal_war:beneath_the_mask",
         "quest:crystal_war:honor_under_fire",
         "quest:crystal_war:quelling_the_storm",
+        "quest:crystal_war:fire_in_the_hole",
     },closure
     assert catalog.cached_subjects()==(
         "quest:BENEATH_THE_MASK",
+        "quest:FIRE_IN_THE_HOLE",
         "quest:HONOR_UNDER_FIRE",
         "quest:QUELLING_THE_STORM",
         "quest:WHAT_PRICE_LOYALTY",
     ),catalog.cached_subjects()
     assert "quest:BLOOD_OF_HEROES" in closure.skipped_alternatives,closure
     assert "quest:HOWL_FROM_THE_HEAVENS" in closure.skipped_alternatives,closure
-    assert closure.unresolved_subjects==("quest:FIRE_IN_THE_HOLE",),closure
+    assert closure.unresolved_subjects==("quest:STORM_ON_THE_HORIZON",),closure
 
     q10=catalog.cached_machine("quest:WHAT_PRICE_LOYALTY")
     q9=catalog.cached_machine("quest:BENEATH_THE_MASK")
     q8=catalog.cached_machine("quest:HONOR_UNDER_FIRE")
     q7=catalog.cached_machine("quest:QUELLING_THE_STORM")
-    assert q10 is not None and q9 is not None and q8 is not None and q7 is not None,(q10,q9,q8,q7)
+    q6=catalog.cached_machine("quest:FIRE_IN_THE_HOLE")
+    assert all(machine is not None for machine in (q10,q9,q8,q7,q6)),(q10,q9,q8,q7,q6)
 
     assert q9.metadata.get("catalog_discovered") is True,q9.metadata
     assert q10.metadata.get("catalog_discovered") is True,q10.metadata
     assert q8.metadata.get("catalog_discovered") is True,q8.metadata
     assert q7.metadata.get("catalog_discovered") is True,q7.metadata
+    assert q6.metadata.get("catalog_discovered") is True,q6.metadata
     assert q9.metadata.get("quest_symbol")=="BENEATH_THE_MASK",q9.metadata
     assert q10.metadata.get("quest_symbol")=="WHAT_PRICE_LOYALTY",q10.metadata
     assert q8.metadata.get("quest_symbol")=="HONOR_UNDER_FIRE",q8.metadata
     assert q7.metadata.get("quest_symbol")=="QUELLING_THE_STORM",q7.metadata
+    assert q6.metadata.get("quest_symbol")=="FIRE_IN_THE_HOLE",q6.metadata
     assert q9.metadata.get("reward_item")=="SUPER_RERAISER",q9.metadata
     assert q10.metadata.get("reward_item")=="FOURTH_STAFF",q10.metadata
     assert q8.metadata.get("reward_item")=="ELIXIR_TANK",q8.metadata
     assert q7.metadata.get("reward_item")=="GOBLIN_BELT",q7.metadata
+    assert q6.metadata.get("reward_item")=="REPUBLICAN_SILVER_MEDAL",q6.metadata
 
     q9_channels={channel.channel_id:channel for channel in q9.channels}
     q10_channels={channel.channel_id:channel for channel in q10.channels}
@@ -203,25 +210,78 @@ def main():
     assert any(
         dependency.source_feature_id=="quest:crystal_war:quelling_the_storm"
         and dependency.subject=="quest:FIRE_IN_THE_HOLE"
+        and dependency.status=="RESOLVED"
+        and dependency.resolved_feature_id=="quest:crystal_war:fire_in_the_hole"
+        for dependency in closure.dependencies
+    ),closure.dependencies
+    assert any(
+        dependency.source_feature_id=="quest:crystal_war:fire_in_the_hole"
+        and dependency.subject=="quest:STORM_ON_THE_HORIZON"
         and dependency.status=="UNRESOLVED"
         for dependency in closure.dependencies
     ),closure.dependencies
     assert closure_summary=={
         "root_feature_id":"mission:wotg:the_will_of_the_world",
-        "feature_count":5,
-        "dependency_count":11,
-        "resolved_dependency_count":4,
+        "feature_count":6,
+        "dependency_count":13,
+        "resolved_dependency_count":5,
         "unresolved_dependency_count":1,
         "skipped_alternative_count":2,
         "cycle_count":0,
     },closure_summary
 
+    q6_metrics=quest_extraction_metrics(q6)
     q7_metrics=quest_extraction_metrics(q7)
     q9_metrics=quest_extraction_metrics(q9)
     q10_metrics=quest_extraction_metrics(q10)
+    assert q6_metrics["unmodeled_source_handler_count"]==0,q6_metrics
+    assert q6_metrics["event_relay_count"]==1,q6_metrics
     assert q7_metrics["unmodeled_source_handler_count"]==0,q7_metrics
     assert q9_metrics["unmodeled_source_handler_count"]==0,q9_metrics
     assert q10_metrics["unmodeled_source_handler_count"]==0,q10_metrics
+
+    fire_relay=next(
+        transition for transition in q6.transitions
+        if transition.metadata.get("logical_event_chain")
+        and transition.event
+        and transition.event.zone=="BASTOK_MARKETS_S"
+        and transition.event.event_id==60
+    )
+    assert any(
+        effect.effect=="START" and effect.subject=="event" and effect.value==77
+        for effect in fire_relay.effects
+    ),fire_relay
+    assert any(
+        effect.effect=="START" and effect.subject=="quest"
+        for effect in fire_relay.effects
+    ),fire_relay
+
+    solitary_paths=[
+        transition for transition in q6.transitions
+        if transition.event
+        and transition.event.actor=="Solitary_Ant"
+        and transition.trigger=="NPC_INTERACT"
+    ]
+    assert any(
+        transition.gate
+        and any(
+            condition.subject=="quest_var:Prog"
+            and condition.operator=="GE"
+            and condition.value==0
+            for condition in transition.gate.conditions
+        )
+        for transition in solitary_paths
+    ),solitary_paths
+    assert any(
+        transition.gate
+        and any(
+            condition.subject=="quest_var:Prog"
+            and condition.operator=="GE"
+            and condition.value==2
+            for condition in transition.gate.conditions
+        )
+        for transition in solitary_paths
+    ),solitary_paths
 
     # Source-alignment checks keep the structural extraction tied to current LSB Lua.
     assert "Quest:new" in q9_lua and "BENEATH_THE_MASK" in q9_lua,q9_lua[:200]
@@ -258,7 +318,8 @@ def main():
     print("closure_features",closure_summary["feature_count"],"unresolved",closure.unresolved_subjects)
     print("catalog_loaded",catalog.cached_subjects())
     print("q7_transitions",len(q7.transitions),"q7_unmodeled",q7_metrics["unmodeled_source_handler_count"])
-    print("next_gap","continue source-catalog closure through Fire in the Hole")
+    print("q6_transitions",len(q6.transitions),"q6_relays",q6_metrics["event_relay_count"])
+    print("next_gap","continue source-catalog closure through Storm on the Horizon")
     return 0
 
 
