@@ -481,6 +481,11 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
     transitions=[]
     states={"source:any":MissionState("source:any","Source state")}
     completion_helpers=extract_dynamic_completion_gates(lua)
+    helper_names=set()
+    for helper_start,_helper_end,helper_text in _balanced_function_blocks(lua):
+        helper_match=_HELPER_ASSIGN.search(lines[helper_start])
+        if helper_match:
+            helper_names.add(helper_match.group(1))
     serial=0
     branch_alternatives=0
     incomplete_branch_guards=0
@@ -567,6 +572,11 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                             conds.append(condition)
 
             effects=list(_effects(path.body))
+            executable_body="\n".join(_code(line) for line in path.body.splitlines())
+            helper_calls=tuple(sorted(
+                helper_name for helper_name in helper_names
+                if re.search(rf"\b{re.escape(helper_name)}\s*\(\s*player\s*\)",executable_body)
+            ))
             transport_effects=client_transport_effects(path.body)
             effects.extend(effect for effect in transport_effects if effect not in effects)
             event=handler_event
@@ -605,6 +615,7 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                     "unexpanded_nested_branch":unresolved_nested_branch,
                     "post_effect_gate_basis":tuple(post_effect_basis),
                     "completion_helpers":tuple(invoked_helpers),
+                    "helper_calls":helper_calls,
                 },
                 post_effect_gate=post_effect_gate,
             ))
