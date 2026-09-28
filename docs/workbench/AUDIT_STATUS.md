@@ -18,6 +18,8 @@ The first implementation pass is scoped to:
 
 The next alignment layer will use these time-addressable observations as anchors between gameplay video, real capture/logger sessions, and screenshots of key events. Alignment must preserve uncertainty and must never infer that OCR text is equivalent to packet bytes.
 
+Implemented in PR #76: timestamp/frame provenance now survives OCR parsing, linked captures ingest `capture_video_observations`, canonical packet edges use `VIDEO_OCR` + `INFERRED` rather than raw-packet authority, timestamp sampling uncertainty is recorded, and run/section identifiers are containment-checked before filesystem access.
+
 
 Last updated: 2026-09-25
 
