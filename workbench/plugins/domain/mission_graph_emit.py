@@ -40,12 +40,19 @@ def _transition_node(feature_id: str, transition_id: str) -> str:
     return f"mission-transition:{feature_id}:{transition_id}"
 
 
-def _event_node(feature_id: str, zone: str, actor: str | None, event_id: int) -> str:
-    return f"mission-event:{feature_id}:{zone}:{actor or '*'}:{event_id}"
+def _event_node(source_family: str, zone: str, actor: str | None, event_id: int) -> str:
+    return f"server-event:{source_family.casefold()}:{zone}:{actor or '*'}:{event_id}"
 
 
 def _actor_node(source_family: str, zone: str, actor: str) -> str:
     return f"server-actor:{source_family.casefold()}:{zone}:{actor}"
+
+
+def _subject_node(feature_id: str, subject: str) -> str:
+    prefix=subject.split(":",1)[0].casefold()
+    if prefix in {"mission_status","mission_var","local_var","timer","trade"} or subject in {"player:x","player_to_actor","interaction","message","player"}:
+        return f"mission-subject:{feature_id}:{subject}"
+    return subject
 
 
 def _subject_type(subject: str) -> str:
@@ -203,7 +210,7 @@ def project_mission_graph(
 
         if transition.event:
             event=transition.event
-            event_node=_event_node(machine.feature_id,event.zone,event.actor,event.event_id)
+            event_node=_event_node(source_family,event.zone,event.actor,event.event_id)
             entities[event_node]=Entity(event_node,"MISSION_EVENT",event.key,{
                 "feature_id":machine.feature_id,"zone":event.zone,"actor":event.actor,"event_id":event.event_id,
             })
@@ -225,9 +232,10 @@ def project_mission_graph(
 
         conditions=transition.gate.conditions if transition.gate else ()
         for index,condition in enumerate(conditions):
-            subject=condition.subject
-            entities.setdefault(subject,Entity(subject,_subject_type(subject),subject,{
-                "source_family":source_family,
+            raw_subject=condition.subject
+            subject=_subject_node(machine.feature_id,raw_subject)
+            entities.setdefault(subject,Entity(subject,_subject_type(raw_subject),raw_subject,{
+                "source_family":source_family,"feature_id":machine.feature_id,"raw_subject":raw_subject,
             }))
             condition_notes=f"{condition.operator} {condition.value!r}"
             if condition.evidence_ids:
@@ -240,9 +248,10 @@ def project_mission_graph(
             ))
 
         for index,effect in enumerate(transition.effects):
-            subject=effect.subject
-            entities.setdefault(subject,Entity(subject,_subject_type(subject),subject,{
-                "source_family":source_family,
+            raw_subject=effect.subject
+            subject=_subject_node(machine.feature_id,raw_subject)
+            entities.setdefault(subject,Entity(subject,_subject_type(raw_subject),raw_subject,{
+                "source_family":source_family,"feature_id":machine.feature_id,"raw_subject":raw_subject,
             }))
             effect_notes=f"{effect.effect} {effect.value!r}"
             if effect.evidence_ids:
