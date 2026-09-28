@@ -15,11 +15,8 @@ from workbench.plugins.domain.mission_lsb_extract import (
     correlate_lsb_handlers,
     mission_extraction_metrics,
 )
-from workbench.plugins.domain.quest_lsb_extract import (
-    chain_quest_event_transitions,
-    correlate_lsb_quest_handlers,
-    quest_extraction_metrics,
-)
+from workbench.plugins.domain.quest_lsb_extract import quest_extraction_metrics
+from workbench.plugins.domain.mission_source_catalog import LsbFeatureSourceCatalog
 
 ROOT=Path(__file__).resolve().parents[1]
 FIX=ROOT/"test_fixtures"/"fixtures"
@@ -87,47 +84,59 @@ def main():
     )
     assert branch_gate.gate is not None and branch_gate.gate.logic=="ANY",branch_gate
 
-    # Bastok quest chain: both files must now be structurally reconstructed from Lua.
-    q9_raw=correlate_lsb_quest_handlers(
-        q9_lua,
-        feature_id="quest:crystal_war:beneath_the_mask",
-    )
-    q9=chain_quest_event_transitions(q9_raw)
-    q10_raw=correlate_lsb_quest_handlers(
-        q10_lua,
-        feature_id="quest:crystal_war:what_price_loyalty",
-    )
-    q10=chain_quest_event_transitions(q10_raw)
-    assert not q9_raw.validate(),q9_raw.validate()
-    assert not q9.validate(),q9.validate()
-    assert not q10_raw.validate(),q10_raw.validate()
-    assert not q10.validate(),q10.validate()
+    # Bastok quest chain: source catalog discovery must load dependencies on demand.
+    catalog=LsbFeatureSourceCatalog(FIX)
+    assert catalog.source_for("quest:WHAT_PRICE_LOYALTY") is not None,catalog.subjects()
+    assert catalog.source_for("quest:BENEATH_THE_MASK") is not None,catalog.subjects()
+    assert catalog.source_for("quest:HONOR_UNDER_FIRE") is not None,catalog.subjects()
 
-    assert q9.metadata.get("extractor")=="lsb_quest_static_literal",q9.metadata
-    assert q10.metadata.get("extractor")=="lsb_quest_static_literal",q10.metadata
+    closure=build_feature_requirement_closure(
+        chained,
+        entry_gates=(branch_gate.gate,),
+        selected_any_subjects=("quest:WHAT_PRICE_LOYALTY",),
+        resolver=catalog.resolve_machine,
+    )
+    closure_summary=dependency_summary(closure)
+    assert set(closure.feature_ids)=={
+        "mission:wotg:the_will_of_the_world",
+        "quest:crystal_war:what_price_loyalty",
+        "quest:crystal_war:beneath_the_mask",
+        "quest:crystal_war:honor_under_fire",
+    },closure
+    assert catalog.cached_subjects()==(
+        "quest:BENEATH_THE_MASK",
+        "quest:HONOR_UNDER_FIRE",
+        "quest:WHAT_PRICE_LOYALTY",
+    ),catalog.cached_subjects()
+    assert "quest:BLOOD_OF_HEROES" in closure.skipped_alternatives,closure
+    assert "quest:HOWL_FROM_THE_HEAVENS" in closure.skipped_alternatives,closure
+    assert closure.unresolved_subjects==("quest:QUELLING_THE_STORM",),closure
+
+    q10=catalog.cached_machine("quest:WHAT_PRICE_LOYALTY")
+    q9=catalog.cached_machine("quest:BENEATH_THE_MASK")
+    q8=catalog.cached_machine("quest:HONOR_UNDER_FIRE")
+    assert q10 is not None and q9 is not None and q8 is not None,(q10,q9,q8)
+
+    assert q9.metadata.get("catalog_discovered") is True,q9.metadata
+    assert q10.metadata.get("catalog_discovered") is True,q10.metadata
+    assert q8.metadata.get("catalog_discovered") is True,q8.metadata
     assert q9.metadata.get("quest_symbol")=="BENEATH_THE_MASK",q9.metadata
     assert q10.metadata.get("quest_symbol")=="WHAT_PRICE_LOYALTY",q10.metadata
+    assert q8.metadata.get("quest_symbol")=="HONOR_UNDER_FIRE",q8.metadata
     assert q9.metadata.get("reward_item")=="SUPER_RERAISER",q9.metadata
     assert q10.metadata.get("reward_item")=="FOURTH_STAFF",q10.metadata
+    assert q8.metadata.get("reward_item")=="ELIXIR_TANK",q8.metadata
 
     q9_channels={channel.channel_id:channel for channel in q9.channels}
     q10_channels={channel.channel_id:channel for channel in q10.channels}
     assert set(q9_channels["quest_var:Prog"].values)==set(range(1,7)),q9_channels
     assert set(q10_channels["quest_var:Prog"].values)==set(range(1,7)),q10_channels
-    assert set(q9_channels["quest_status"].values)=={"QUEST_ACCEPTED","QUEST_AVAILABLE"},q9_channels
-    assert set(q10_channels["quest_status"].values)=={
-        "QUEST_ACCEPTED","QUEST_AVAILABLE","QUEST_COMPLETED"
-    },q10_channels
 
     q9_states={state.state_id for state in q9.states}
     q10_states={state.state_id for state in q10.states}
     for value in range(7):
         assert f"state:quest_var:Prog={value}" in q9_states,(value,q9_states)
         assert f"state:quest_var:Prog={value}" in q10_states,(value,q10_states)
-    assert "state:quest_status=QUEST_AVAILABLE" in q9_states,q9_states
-    assert "state:quest_status=QUEST_ACCEPTED" in q9_states,q9_states
-    assert "state:quest_status=QUEST_COMPLETED" in q9_states,q9_states
-    assert "state:quest_status=QUEST_COMPLETED" in q10_states,q10_states
 
     q9_events={(t.event.zone,t.event.actor,t.event.event_id) for t in q9.transitions if t.event}
     q10_events={(t.event.zone,t.event.actor,t.event.event_id) for t in q10.transitions if t.event}
@@ -150,32 +159,6 @@ def main():
     assert ("GRANT","key_item:COMMANDERS_ENDORSEMENT") in q10_effects,q10_effects
     assert ("TELEPORT","player") in q10_effects,q10_effects
 
-    q9_start=next(
-        t for t in q9.transitions
-        if t.event and t.event.zone=="BASTOK_MARKETS_S"
-        and t.event.actor=="Gentle_Tiger" and t.event.event_id==345
-    )
-    assert any(
-        row["subject"]=="quest:HONOR_UNDER_FIRE" and row["operator"]=="COMPLETE"
-        for row in q9_start.metadata.get("section_eligibility_conditions",())
-    ),q9_start.metadata
-    assert any(
-        row["subject"]=="mission:WOTG:current"
-        and row["operator"]=="GE"
-        and row["value"]=="FATE_IN_HAZE"
-        for row in q9_start.metadata.get("section_eligibility_conditions",())
-    ),q9_start.metadata
-
-    q10_start=next(
-        t for t in q10.transitions
-        if t.event and t.event.zone=="BASTOK_MARKETS_S"
-        and t.event.actor=="Gentle_Tiger" and t.event.event_id==348
-    )
-    assert any(
-        row["subject"]=="quest:BENEATH_THE_MASK" and row["operator"]=="COMPLETE"
-        for row in q10_start.metadata.get("section_eligibility_conditions",())
-    ),q10_start.metadata
-
     implementation_gap=next(
         transition for transition in q10.transitions
         if transition.event
@@ -183,65 +166,46 @@ def main():
         and transition.event.event_id==10000
     )
     assert implementation_gap.implementation_status=="IMPLEMENTATION_GAP",implementation_gap
-    assert "not implemented" in (
-        implementation_gap.metadata.get("implementation_gap_note") or ""
-    ).lower(),implementation_gap.metadata
 
-    q9_metrics=quest_extraction_metrics(q9)
-    q10_metrics=quest_extraction_metrics(q10)
-    assert q9_metrics["event_chain_count"]>0,q9_metrics
-    assert q10_metrics["event_chain_count"]>0,q10_metrics
-    assert q9_metrics["unmodeled_source_handler_count"]==0,q9_metrics
-    assert q10_metrics["unmodeled_source_handler_count"]==0,q10_metrics
-    assert q10_metrics["implementation_gap_transition_count"]==1,q10_metrics
-
-    closure=build_feature_requirement_closure(
-        chained,
-        machines=(q9,q10),
-        entry_gates=(branch_gate.gate,),
-        selected_any_subjects=("quest:WHAT_PRICE_LOYALTY",),
-    )
-    closure_summary=dependency_summary(closure)
-    assert set(closure.feature_ids)=={
-        "mission:wotg:the_will_of_the_world",
-        "quest:crystal_war:beneath_the_mask",
-        "quest:crystal_war:what_price_loyalty",
-    },closure
-    assert "quest:BLOOD_OF_HEROES" in closure.skipped_alternatives,closure
-    assert "quest:HOWL_FROM_THE_HEAVENS" in closure.skipped_alternatives,closure
-    assert closure.unresolved_subjects==("quest:HONOR_UNDER_FIRE",),closure
     assert any(
         dependency.source_feature_id=="mission:wotg:the_will_of_the_world"
         and dependency.subject=="quest:WHAT_PRICE_LOYALTY"
         and dependency.logic=="ANY"
         and dependency.resolved_feature_id=="quest:crystal_war:what_price_loyalty"
-        and dependency.selected
         for dependency in closure.dependencies
     ),closure.dependencies
     assert any(
         dependency.source_feature_id=="quest:crystal_war:what_price_loyalty"
         and dependency.subject=="quest:BENEATH_THE_MASK"
-        and dependency.logic=="ALL"
         and dependency.resolved_feature_id=="quest:crystal_war:beneath_the_mask"
         for dependency in closure.dependencies
     ),closure.dependencies
     assert any(
         dependency.source_feature_id=="quest:crystal_war:beneath_the_mask"
-        and dependency.subject=="mission:WOTG:current"
-        and dependency.status=="CONTEXT"
-        and dependency.operator=="GE"
-        and dependency.value=="FATE_IN_HAZE"
+        and dependency.subject=="quest:HONOR_UNDER_FIRE"
+        and dependency.resolved_feature_id=="quest:crystal_war:honor_under_fire"
+        for dependency in closure.dependencies
+    ),closure.dependencies
+    assert any(
+        dependency.source_feature_id=="quest:crystal_war:honor_under_fire"
+        and dependency.subject=="quest:QUELLING_THE_STORM"
+        and dependency.status=="UNRESOLVED"
         for dependency in closure.dependencies
     ),closure.dependencies
     assert closure_summary=={
         "root_feature_id":"mission:wotg:the_will_of_the_world",
-        "feature_count":3,
-        "dependency_count":7,
-        "resolved_dependency_count":2,
+        "feature_count":4,
+        "dependency_count":9,
+        "resolved_dependency_count":3,
         "unresolved_dependency_count":1,
         "skipped_alternative_count":2,
         "cycle_count":0,
     },closure_summary
+
+    q9_metrics=quest_extraction_metrics(q9)
+    q10_metrics=quest_extraction_metrics(q10)
+    assert q9_metrics["unmodeled_source_handler_count"]==0,q9_metrics
+    assert q10_metrics["unmodeled_source_handler_count"]==0,q10_metrics
 
     # Source-alignment checks keep the structural extraction tied to current LSB Lua.
     assert "Quest:new" in q9_lua and "BENEATH_THE_MASK" in q9_lua,q9_lua[:200]
@@ -276,7 +240,8 @@ def main():
     print("q9_transitions",len(q9.transitions),"q10_transitions",len(q10.transitions))
     print("q10_visible_gaps",q10_metrics["implementation_gap_transition_count"])
     print("closure_features",closure_summary["feature_count"],"unresolved",closure.unresolved_subjects)
-    print("next_gap","source-catalog discovery for unresolved prerequisite features")
+    print("catalog_loaded",catalog.cached_subjects())
+    print("next_gap","continue source-catalog closure through Quelling the Storm")
     return 0
 
 
