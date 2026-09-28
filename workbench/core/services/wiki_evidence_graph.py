@@ -7,6 +7,7 @@ import sqlite3
 from pathlib import Path
 
 from workbench.core import graph as workbench_graph
+import wiki_evidence
 
 _TARGET_IDENTIFIERS = {
     "npc_names": ("npcid", "NPC"),
@@ -68,6 +69,7 @@ def import_wiki_evidence(
     page_id: str | None = None,
 ) -> dict:
     src = sqlite3.connect(source_db)
+    wiki_evidence.init_db(src)
     src.row_factory = sqlite3.Row
     dst = workbench_graph.init_db(graph_db)
     counts = {"claims": 0, "mapped_edges": 0, "ambiguous_edges": 0, "unmapped_claims": 0}
