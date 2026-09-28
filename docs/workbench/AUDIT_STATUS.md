@@ -2196,3 +2196,17 @@ The subject is `player_to_actor_distance`, making outside-distance guards (`>`/`
 Regressions:
 - `test_fixtures/test_mission_distance_comparators.py` covers all four comparator forms;
 - `test_fixtures/test_mission_lsb_road_forks_stress.py` now requires the real Loose Sand guard to extract as `LT 0.5`.
+
+## 2026-09-27 — Conservative mission state materialization
+
+`materialize_channel_states()` no longer connects a guard on one state channel directly to a write on a different channel as though they were one progression axis.
+
+Materialization rules are now explicit:
+- one guard + one write on the same channel -> materialize both endpoints (`same_literal_channel`);
+- one guard only -> materialize only the source endpoint (`guard_only_literal_channel`);
+- one write only -> materialize only the target endpoint (`write_only_literal_channel`);
+- one guard and one write on different channels -> leave both endpoints as `source:any` and mark `cross_channel_ambiguous`.
+
+The transition metadata records the guard and write subjects so cross-channel behavior remains inspectable without manufacturing a false state edge.
+
+Regression: `test_fixtures/test_mission_state_materialization.py` covers all four cases and verifies that cross-channel synthetic states are not created.

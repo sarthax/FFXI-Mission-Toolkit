@@ -651,15 +651,31 @@ def materialize_channel_states(machine: MissionStateMachine) -> MissionStateMach
         if len(writes)==1:
             after=(writes[0].subject,writes[0].value)
         from_state=t.from_state; to_state=t.to_state
-        if before:
-            from_state=f"state:{before[0]}={before[1]}"
-            states.setdefault(from_state,MissionState(from_state,f"{before[0]} = {before[1]}"))
-        if after:
-            to_state=f"state:{after[0]}={after[1]}"
-            states.setdefault(to_state,MissionState(to_state,f"{after[0]} = {after[1]}"))
+        if before and after and before[0]!=after[0]:
+            state_edge_basis="cross_channel_ambiguous"
+        else:
+            if before:
+                from_state=f"state:{before[0]}={before[1]}"
+                states.setdefault(from_state,MissionState(from_state,f"{before[0]} = {before[1]}"))
+            if after:
+                to_state=f"state:{after[0]}={after[1]}"
+                states.setdefault(to_state,MissionState(to_state,f"{after[0]} = {after[1]}"))
+            if before and after:
+                state_edge_basis="same_literal_channel"
+            elif before:
+                state_edge_basis="guard_only_literal_channel"
+            elif after:
+                state_edge_basis="write_only_literal_channel"
+            else:
+                state_edge_basis="unresolved"
         transitions.append(MissionTransition(
             t.transition_id,from_state,to_state,t.trigger,t.gate,t.event,t.effects,t.confidence,
-            t.evidence_ids,t.implementation_status,{**t.metadata,"state_edge_basis":"single_literal_channel" if before or after else "unresolved"},
+            t.evidence_ids,t.implementation_status,{
+                **t.metadata,
+                "state_edge_basis":state_edge_basis,
+                "state_guard_subject":before[0] if before else None,
+                "state_write_subject":after[0] if after else None,
+            },
             post_effect_gate=t.post_effect_gate,
         ))
     return MissionStateMachine(
