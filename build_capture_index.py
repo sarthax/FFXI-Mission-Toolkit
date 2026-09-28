@@ -1449,21 +1449,14 @@ PACKETLOGGER_HEXROW_RE = re.compile(
 )
 
 
-def parse_packetlogger_log(text: str, opcode: str) -> list[tuple[str, str]]:
-    """One opcode's raw hex dump, one block per observed packet: '[timestamp]' header (older
-    PacketViewer captures) or '[timestamp] Packet 0xNNN' (newer PacketLogger captures -- the
-    'Packet 0xNNN' suffix, when present, is ignored rather than parsed, since the file's OWN name
-    is always the real opcode for either format and trusting one source is simpler than
-    reconciling two that should never disagree within a single file anyway), then a 16-column hex
-    grid (real row-labeled offsets, '--' padding on a short last row). Every opcode gets its own
-    file, so this is the most complete real capture format available -- covers battle/item/shop/
-    quest packets none of the other formats (idview/EventView/KITrack) ever touch, at the cost of
-    needing packet_decode.py to make sense of the raw bytes (done lazily at view time, not here,
-    since decoding tens of thousands of packets per capture up front would be slow for rows a
-    user may never look at). Returns (ts, compact_hex) tuples in FILE order (this single opcode's
-    own chronological order) -- the caller merges across all opcode files by real ts to get one
-    true per-capture chronological sequence, something no other capture format here actually has
-    (capture_events/eventview only have a per-format seq, not a shared clock)."""
+def parse_packetlogger_records(text: str, opcode: str) -> list[dict]:
+    """Parse packet blocks while preserving exact physical source spans.
+
+    Offsets are UTF-8 byte offsets only when the decoded text round-trips exactly; callers may
+    leave byte offsets NULL for malformed/non-UTF-8 input while still retaining exact line/block
+    provenance. The legacy parse_packetlogger_log() API remains as a tuple-only compatibility
+    wrapper below.
+    """
     out = []
     headers = [(m.start(), m.end(), m.group(1)) for m in PACKETLOGGER_HEADER_RE.finditer(text)]
     for i, (hstart, hend, ts) in enumerate(headers):
@@ -1475,8 +1468,20 @@ def parse_packetlogger_log(text: str, opcode: str) -> list[tuple[str, str]]:
                 if tok != "--":
                     hex_bytes.append(tok)
         if hex_bytes:
-            out.append((ts, "".join(hex_bytes)))
+            out.append({
+                "ts": ts,
+                "raw_hex": "".join(hex_bytes),
+                "start_char": hstart,
+                "end_char": block_end,
+                "start_line": text.count("\n", 0, hstart) + 1,
+                "end_line": text.count("\n", 0, block_end) + 1,
+            })
     return out
+
+
+def parse_packetlogger_log(text: str, opcode: str) -> list[tuple[str, str]]:
+    """Compatibility wrapper returning only timestamp + compact hex."""
+    return [(row["ts"], row["raw_hex"]) for row in parse_packetlogger_records(text, opcode)]
 
 
 def ingest_packetlogger(con, capture_id, src: Source, relnames: list[str]) -> int:
@@ -1495,17 +1500,50 @@ def ingest_packetlogger(con, capture_id, src: Source, relnames: list[str]) -> in
         direction = "incoming" if "/incoming/" in relname.lower() else (
             "outgoing" if "/outgoing/" in relname.lower() else "unknown")
         opcode = Path(relname).stem.upper()
-        text = src.read_text(relname)
-        for ts, hexstr in parse_packetlogger_log(text, opcode):
-            all_packets.append((ts, direction, opcode, hexstr))
+        source_bytes = src.read_bytes(relname)
+        text = source_bytes.decode("utf-8", "replace")
+        byte_offsets_exact = text.encode("utf-8") == source_bytes
+        source_sha256 = capture_integrity.sha256_bytes(source_bytes)
+        for record in parse_packetlogger_records(text, opcode):
+            start_offset = (
+                len(text[:record["start_char"]].encode("utf-8")) if byte_offsets_exact else None
+            )
+            end_offset = (
+                len(text[:record["end_char"]].encode("utf-8")) if byte_offsets_exact else None
+            )
+            all_packets.append((
+                record["ts"], direction, opcode, record["raw_hex"], relname, source_sha256,
+                record["start_line"], record["end_line"], start_offset, end_offset,
+            ))
 
     all_packets.sort(key=lambda p: p[0])
 
     con.execute("DELETE FROM capture_raw_packets WHERE capture_id=?", (capture_id,))
-    for seq, (ts, direction, opcode, hexstr) in enumerate(all_packets):
+    con.execute(
+        "DELETE FROM capture_row_locators WHERE capture_id=? AND target_table='capture_raw_packets'",
+        (capture_id,),
+    )
+    for seq, (
+        ts, direction, opcode, hexstr, relname, source_sha256,
+        start_line, end_line, start_offset, end_offset,
+    ) in enumerate(all_packets):
         con.execute("""INSERT OR REPLACE INTO capture_raw_packets
             (capture_id, seq, ts, direction, opcode, raw_hex) VALUES (?,?,?,?,?,?)""",
             (capture_id, seq, ts, direction, opcode, hexstr))
+        capture_integrity.record_row_locator(
+            con,
+            capture_id,
+            relname,
+            "capture_raw_packets",
+            json.dumps({"seq": seq}, sort_keys=True),
+            "block",
+            source_sha256=source_sha256,
+            start_line=start_line,
+            end_line=end_line,
+            start_offset=start_offset,
+            end_offset=end_offset,
+            details={"opcode": opcode, "direction": direction, "timestamp": ts},
+        )
     return len(all_packets)
 
 
