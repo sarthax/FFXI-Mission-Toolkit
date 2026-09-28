@@ -171,10 +171,10 @@ Current public flagship E2E: pinned LSB → legacy DSP Chains of Promathia 2-5 (
 
 Purpose: treat gameplay video and screenshots as time-addressable runtime evidence that can be aligned with real capture sessions, packet observations, NPC/dialog events, and later screenshot/key-event evidence without promoting OCR guesses to authoritative packet truth.
 
-- [ ] Timestamp every OCR observation with video-relative time, frame identity, section/crop provenance, sampling rate, source URL, and confidence.
-- [ ] Ingest parsed on-screen packet observations into the capture/evidence model as explicit `VIDEO_OCR` observations, separate from binary/raw packet captures.
-- [ ] Connect OCR packet observations to canonical packet nodes with conservative confidence/provenance so Feature Trace can correlate video evidence with server/client packet knowledge.
-- [ ] Harden OCR run/section filesystem access against traversal or malformed route parameters.
+- [x] Timestamp every OCR observation with video-relative time, frame identity, section/crop provenance, sampling rate, source URL, confidence, and sampling-resolution uncertainty.
+- [x] Ingest parsed on-screen packet observations into the capture/evidence model as explicit `VIDEO_OCR` observations, separate from binary/raw packet captures.
+- [x] Connect OCR packet observations to canonical packet nodes with conservative `INFERRED` confidence/provenance so Feature Trace can correlate video evidence with server/client packet knowledge.
+- [x] Harden OCR run/section filesystem access against traversal or malformed route parameters.
 - [ ] Add video/capture alignment anchors so a real logger/capture session can be synchronized to a video using shared packet/event/dialog landmarks.
 - [ ] Add screenshot/key-event evidence anchors that can point to an exact video timestamp or aligned capture timestamp.
 - [ ] Add cross-frame OCR consensus and packet-symbol-assisted correction while retaining raw OCR values and correction provenance.
