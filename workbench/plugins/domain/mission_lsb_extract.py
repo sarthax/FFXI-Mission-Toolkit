@@ -403,8 +403,9 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                     index for index,guard in enumerate(path.guard_texts)
                     if call_pattern.search(guard)
                 ]
+                unresolved_code="\n".join(_code(line) for line in path.body.splitlines())
                 in_unresolved_body=bool(
-                    unresolved_nested_branch and call_pattern.search(path.body)
+                    unresolved_nested_branch and call_pattern.search(unresolved_code)
                 )
                 if not guard_indexes and not in_unresolved_body:
                     continue
@@ -700,20 +701,21 @@ def extract_dynamic_completion_gates(lua: str) -> dict[str,DependencyGate]:
         if not match:
             continue
         helper_name=match.group(1)
-        if "return false" not in text or "return true" not in text:
+        code_text="\n".join(_code(line) for line in text.splitlines())
+        if "return false" not in code_text or "return true" not in code_text:
             continue
         loop=re.search(
             r"for\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"
             r"xi\.mission\.status\.([A-Z0-9_]+)\.([A-Z0-9_]+)\s*,\s*"
             r"xi\.mission\.status\.([A-Z0-9_]+)\.([A-Z0-9_]+)\s+do",
-            text,
+            code_text,
         )
         if not loop or loop.group(2)!=loop.group(4):
             continue
         iterator,family,first,_family2,last=loop.groups()
         required=re.search(
             rf"getMissionStatus\([^\)]*?,\s*{re.escape(iterator)}\s*\)\s*~=\s*(\d+)",
-            text,
+            code_text,
         )
         if not required:
             continue
@@ -722,7 +724,8 @@ def extract_dynamic_completion_gates(lua: str) -> dict[str,DependencyGate]:
         family_pattern=re.compile(
             rf"xi\.mission\.status\.{re.escape(family)}\.([A-Z0-9_]+)"
         )
-        for symbol_match in family_pattern.finditer(lua):
+        source_code="\n".join(_code(line) for line in lua.splitlines())
+        for symbol_match in family_pattern.finditer(source_code):
             symbol=symbol_match.group(1)
             if symbol not in symbols:
                 symbols.append(symbol)
