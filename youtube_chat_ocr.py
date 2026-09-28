@@ -1634,6 +1634,8 @@ def main():
                          "hold several independently-cropped sections")
     p.add_argument("--profile", choices=CAPTURE_PROFILES, default=DEFAULT_CAPTURE_PROFILE,
                     help="how 'match' should parse this section's lines")
+    p.add_argument("--preprocess", choices=sorted(PREPROCESS_PROFILES), default=DEFAULT_PREPROCESS_PROFILE,
+                    help="named image preprocessing preset used by OCR")
     p.set_defaults(func=cmd_frames)
 
     p = sub.add_parser("dedupe", help="drop near-identical consecutive frames")
@@ -1677,6 +1679,7 @@ def main():
     p.add_argument("--fps", type=float, default=2.0)
     p.add_argument("--section", default=DEFAULT_SECTION_LABEL, help="label for this cropped region")
     p.add_argument("--profile", choices=CAPTURE_PROFILES, default=DEFAULT_CAPTURE_PROFILE)
+    p.add_argument("--preprocess", choices=sorted(PREPROCESS_PROFILES), default=DEFAULT_PREPROCESS_PROFILE)
     p.add_argument("--threshold", type=int, default=6)
     p.add_argument("--zone", help="Zone name in the zones table to scope matching")
     p.add_argument("--min-score", type=float, default=0.55)
