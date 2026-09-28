@@ -11,6 +11,7 @@ diagnostics so callers can judge whether clocks actually stay aligned.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 import math
 import sqlite3
 import uuid
@@ -87,6 +88,28 @@ def init_db(con: sqlite3.Connection) -> None:
         );
         CREATE INDEX IF NOT EXISTS idx_capture_alignment_clock
             ON capture_alignment_anchors(capture_id, clock_kind, video_ts);
+        CREATE TABLE IF NOT EXISTS capture_key_evidence (
+            capture_id INTEGER NOT NULL,
+            evidence_id TEXT NOT NULL,
+            evidence_type TEXT NOT NULL,
+            label TEXT NOT NULL,
+            video_ts REAL,
+            capture_ts REAL,
+            clock_kind TEXT,
+            anchor_id TEXT,
+            source_ref TEXT,
+            file_ref TEXT,
+            mime_type TEXT,
+            confidence TEXT NOT NULL DEFAULT 'USER_CONFIRMED',
+            notes TEXT,
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (capture_id, evidence_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_capture_key_evidence_time
+            ON capture_key_evidence(capture_id, video_ts, capture_ts);
+        CREATE INDEX IF NOT EXISTS idx_capture_key_evidence_anchor
+            ON capture_key_evidence(capture_id, anchor_id);
     """)
     con.commit()
 
@@ -200,6 +223,118 @@ def fit_alignment(
         video_min=min(xs),
         video_max=max(xs),
     )
+
+
+KEY_EVIDENCE_TYPES = {"SCREENSHOT", "KEY_EVENT", "NOTE", "FRAME"}
+
+
+def add_key_evidence(
+    con: sqlite3.Connection,
+    capture_id: int,
+    *,
+    evidence_type: str,
+    label: str,
+    video_ts: float | None = None,
+    capture_ts: float | None = None,
+    clock_kind: str | None = None,
+    anchor_id: str | None = None,
+    source_ref: str | None = None,
+    file_ref: str | None = None,
+    mime_type: str | None = None,
+    confidence: str = "USER_CONFIRMED",
+    notes: str | None = None,
+    metadata: dict | None = None,
+    evidence_id: str | None = None,
+) -> str:
+    init_db(con)
+    evidence_type = (evidence_type or "").upper()
+    if evidence_type not in KEY_EVIDENCE_TYPES:
+        raise ValueError(f"unsupported evidence_type {evidence_type!r}")
+    if not label or not label.strip():
+        raise ValueError("key evidence label is required")
+    if video_ts is not None:
+        video_ts = float(video_ts)
+        if not math.isfinite(video_ts) or video_ts < 0:
+            raise ValueError("video_ts must be a finite value >= 0")
+    if capture_ts is not None:
+        capture_ts = float(capture_ts)
+        if not math.isfinite(capture_ts):
+            raise ValueError("capture_ts must be finite")
+        if not clock_kind:
+            raise ValueError("clock_kind is required when capture_ts is present")
+    if clock_kind and clock_kind not in CLOCK_KINDS:
+        raise ValueError(f"unsupported clock_kind {clock_kind!r}")
+    if anchor_id:
+        row = con.execute(
+            "SELECT clock_kind,video_ts,capture_ts FROM capture_alignment_anchors WHERE capture_id=? AND anchor_id=?",
+            (int(capture_id), anchor_id),
+        ).fetchone()
+        if not row:
+            raise ValueError(f"alignment anchor {anchor_id!r} not found")
+        if clock_kind and clock_kind != row[0]:
+            raise ValueError("key evidence clock_kind disagrees with linked anchor")
+        clock_kind = clock_kind or row[0]
+        if video_ts is None:
+            video_ts = float(row[1])
+        if capture_ts is None:
+            capture_ts = float(row[2])
+    eid = evidence_id or f"keyev-{uuid.uuid4().hex[:16]}"
+    con.execute(
+        """INSERT OR REPLACE INTO capture_key_evidence
+           (capture_id,evidence_id,evidence_type,label,video_ts,capture_ts,clock_kind,
+            anchor_id,source_ref,file_ref,mime_type,confidence,notes,metadata_json)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (
+            int(capture_id), eid, evidence_type, label.strip(), video_ts, capture_ts,
+            clock_kind, anchor_id, source_ref, file_ref, mime_type,
+            confidence or "USER_CONFIRMED", notes, json.dumps(metadata or {}, sort_keys=True),
+        ),
+    )
+    con.commit()
+    return eid
+
+
+def delete_key_evidence(con: sqlite3.Connection, capture_id: int, evidence_id: str) -> bool:
+    init_db(con)
+    cur = con.execute(
+        "DELETE FROM capture_key_evidence WHERE capture_id=? AND evidence_id=?",
+        (int(capture_id), evidence_id),
+    )
+    con.commit()
+    return cur.rowcount > 0
+
+
+def list_key_evidence(con: sqlite3.Connection, capture_id: int) -> list[dict]:
+    init_db(con)
+    con.row_factory = sqlite3.Row
+    rows = con.execute(
+        """SELECT * FROM capture_key_evidence
+           WHERE capture_id=?
+           ORDER BY COALESCE(video_ts, 1e99), COALESCE(capture_ts, 1e99), created_at, evidence_id""",
+        (int(capture_id),),
+    ).fetchall()
+    out=[]
+    for row in rows:
+        item=dict(row)
+        try:
+            item["metadata"]=json.loads(item.pop("metadata_json") or "{}")
+        except json.JSONDecodeError:
+            item["metadata"]={}
+        out.append(item)
+    return out
+
+
+def resolve_key_evidence_times(con: sqlite3.Connection, capture_id: int, item: dict) -> dict:
+    """Fill the opposite timeline coordinate from an existing alignment model when possible."""
+    out=dict(item)
+    clock=out.get("clock_kind")
+    model=fit_alignment(con, capture_id, clock) if clock else None
+    if model:
+        if out.get("video_ts") is not None and out.get("capture_ts") is None:
+            out["capture_ts_aligned"]=model.video_to_capture(out["video_ts"])
+        elif out.get("capture_ts") is not None and out.get("video_ts") is None:
+            out["video_ts_aligned"]=model.capture_to_video(out["capture_ts"])
+    return out
 
 
 def _parse_capture_timestamp(value) -> float | None:
@@ -332,8 +467,13 @@ def alignment_summary(con: sqlite3.Connection, capture_id: int) -> dict:
         model = fit_alignment(con, capture_id, kind)
         if model is not None:
             models[kind] = model.as_dict()
+    key_evidence = [
+        resolve_key_evidence_times(con, capture_id, item)
+        for item in list_key_evidence(con, capture_id)
+    ]
     return {
         "capture_id": int(capture_id),
         "anchors": anchors,
         "models": models,
+        "key_evidence": key_evidence,
     }
