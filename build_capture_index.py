@@ -2321,6 +2321,282 @@ def _capture_source_format(src: "Source", relname: str) -> str | None:
     return _sniff_known_format(src, relname)
 
 
+
+REBUILDABLE_CAPTURE_FORMATS = {
+    "eventview", "idview_simple", "kitrack", "hptrack", "actionview_simple", "caplog", "packetlogger",
+}
+
+
+def _capture_source_origin(con, capture_id: int) -> tuple[Path | None, str | None, str | None]:
+    row = con.execute("SELECT source_path FROM captures WHERE capture_id=?", (capture_id,)).fetchone()
+    if not row:
+        return None, None, "capture not found"
+    source_path = row[0] or ""
+    if source_path.startswith("manual://"):
+        return None, None, "original source bytes were not persisted for this manual/upload capture"
+    base, subroot = source_path, None
+    if "::" in source_path:
+        base, subroot = source_path.rsplit("::", 1)
+    path = Path(base)
+    if not path.exists():
+        return path, subroot, f"original source path is no longer accessible: {path}"
+    return path, subroot, None
+
+
+def capture_rebuild_inventory(con, capture_id: int) -> list[dict]:
+    """Return per-source rebuildability without mutating the capture."""
+    manifest = con.execute(
+        """SELECT filename,sha256,format_detected,row_count,ingest_status
+           FROM capture_source_manifest WHERE capture_id=? ORDER BY filename""",
+        (capture_id,),
+    ).fetchall()
+    path, subroot, origin_error = _capture_source_origin(con, capture_id)
+    src = None
+    names = set()
+    try:
+        if path is not None and origin_error is None:
+            src = Source(path)
+            names = set(src.list_files())
+        out = []
+        for filename, digest, fmt, row_count, status in manifest:
+            rebuildable = True
+            reason = None
+            if fmt not in REBUILDABLE_CAPTURE_FORMATS:
+                rebuildable = False
+                reason = f"parser family {fmt or 'unknown'} does not yet support safe exact-row rebuild"
+            elif origin_error:
+                rebuildable = False
+                reason = origin_error
+            elif filename not in names:
+                rebuildable = False
+                reason = "source file is no longer present in the original folder/archive"
+            else:
+                data = src.read_bytes(filename)
+                actual = capture_integrity.sha256_bytes(data)
+                if actual != digest:
+                    rebuildable = False
+                    reason = "source bytes changed since ingestion; current manifest hash does not match"
+                elif fmt != "packetlogger":
+                    locator_count = con.execute(
+                        """SELECT COUNT(*) FROM capture_row_locators
+                           WHERE capture_id=? AND filename=?""",
+                        (capture_id, filename),
+                    ).fetchone()[0]
+                    if not locator_count:
+                        rebuildable = False
+                        reason = "no exact row locators exist for the previously normalized rows"
+                    else:
+                        shared = con.execute(
+                            """SELECT 1
+                               FROM capture_row_locators a
+                               JOIN capture_row_locators b
+                                 ON b.capture_id=a.capture_id
+                                AND b.target_table=a.target_table
+                                AND b.row_key=a.row_key
+                                AND b.filename<>a.filename
+                               WHERE a.capture_id=? AND a.filename=?
+                               LIMIT 1""",
+                            (capture_id, filename),
+                        ).fetchone()
+                        if shared:
+                            rebuildable = False
+                            reason = "normalized row keys overlap another source file; source ownership is ambiguous"
+            out.append({
+                "filename": filename,
+                "sha256": digest,
+                "format": fmt,
+                "row_count": row_count,
+                "ingest_status": status,
+                "rebuildable": rebuildable,
+                "reason": reason,
+            })
+        return out
+    finally:
+        if src is not None:
+            src.close()
+
+
+def _delete_exact_source_rows(con, capture_id: int, filename: str) -> int:
+    """Delete only rows whose real primary keys are proven by this source's exact locators."""
+    locators = con.execute(
+        """SELECT target_table,row_key
+           FROM capture_row_locators
+           WHERE capture_id=? AND filename=?
+           ORDER BY target_table,row_key""",
+        (capture_id, filename),
+    ).fetchall()
+    if not locators:
+        raise ValueError("no exact row locators exist for this source")
+
+    shared = con.execute(
+        """SELECT 1
+           FROM capture_row_locators a
+           JOIN capture_row_locators b
+             ON b.capture_id=a.capture_id
+            AND b.target_table=a.target_table
+            AND b.row_key=a.row_key
+            AND b.filename<>a.filename
+           WHERE a.capture_id=? AND a.filename=?
+           LIMIT 1""",
+        (capture_id, filename),
+    ).fetchone()
+    if shared:
+        raise ValueError("cannot safely rebuild: normalized row ownership overlaps another source file")
+
+    deleted = 0
+    for target_table, row_key_raw in locators:
+        if not re.match(r"^capture_[a-z0-9_]+$", target_table):
+            raise ValueError(f"unsafe target table in locator: {target_table}")
+        cols = con.execute(f'PRAGMA table_info("{target_table}")').fetchall()
+        if not cols:
+            raise ValueError(f"locator target table no longer exists: {target_table}")
+        pk_cols = [r[1] for r in sorted((r for r in cols if int(r[5] or 0) > 0), key=lambda r: int(r[5]))]
+        if "capture_id" not in pk_cols:
+            raise ValueError(f"locator target table has no capture_id primary key: {target_table}")
+        try:
+            row_key = json.loads(row_key_raw)
+        except Exception as ex:
+            raise ValueError(f"invalid locator row key for {target_table}: {row_key_raw}") from ex
+        needed = [name for name in pk_cols if name != "capture_id"]
+        if not isinstance(row_key, dict) or any(name not in row_key for name in needed):
+            raise ValueError(f"locator row key does not cover the real primary key for {target_table}")
+        where = ["capture_id=?"] + [f'"{name}"=?' for name in needed]
+        params = [capture_id] + [row_key[name] for name in needed]
+        cur = con.execute(f'DELETE FROM "{target_table}" WHERE ' + " AND ".join(where), params)
+        deleted += cur.rowcount
+    con.execute(
+        "DELETE FROM capture_row_locators WHERE capture_id=? AND filename=?",
+        (capture_id, filename),
+    )
+    return deleted
+
+
+def rebuild_capture_source(con, capture_id: int, filename: str) -> dict:
+    """Safely rerun one exact-locator parser without replacing capture metadata or annotations.
+
+    Rebuild is refused unless the original bytes are accessible and still hash-identical to the
+    current source manifest. Non-packet formats delete only rows proven by exact primary-key
+    locators. PacketLogger/Viewer is rebuilt as one family because its final sequence is a merge
+    across every opcode file.
+    """
+    manifest = con.execute(
+        """SELECT sha256,format_detected FROM capture_source_manifest
+           WHERE capture_id=? AND filename=?""",
+        (capture_id, filename),
+    ).fetchone()
+    if not manifest:
+        raise ValueError("source file is not present in the capture source manifest")
+    expected_hash, fmt = manifest
+    if fmt not in REBUILDABLE_CAPTURE_FORMATS:
+        raise ValueError(f"safe rebuild is not implemented for parser family {fmt or 'unknown'}")
+
+    path, subroot, origin_error = _capture_source_origin(con, capture_id)
+    if origin_error:
+        raise ValueError(origin_error)
+    src = Source(path)
+    try:
+        names = set(src.list_files())
+        if filename not in names:
+            raise ValueError("source file is no longer present in the original folder/archive")
+
+        if fmt == "packetlogger":
+            packet_rows = con.execute(
+                """SELECT filename,sha256 FROM capture_source_manifest
+                   WHERE capture_id=? AND format_detected='packetlogger'
+                   ORDER BY filename""",
+                (capture_id,),
+            ).fetchall()
+            packet_files = [r[0] for r in packet_rows]
+            if not packet_files:
+                raise ValueError("no PacketLogger/PacketViewer source family remains in the manifest")
+            for packet_filename, packet_hash in packet_rows:
+                if packet_filename not in names:
+                    raise ValueError(f"packet source is missing: {packet_filename}")
+                if capture_integrity.sha256_bytes(src.read_bytes(packet_filename)) != packet_hash:
+                    raise ValueError(f"packet source bytes changed since ingestion: {packet_filename}")
+            foreign = con.execute(
+                """SELECT 1 FROM capture_row_locators
+                   WHERE capture_id=? AND target_table='capture_raw_packets'
+                     AND filename NOT IN (%s) LIMIT 1""" % ",".join("?" for _ in packet_files),
+                [capture_id] + packet_files,
+            ).fetchone()
+            if foreign:
+                raise ValueError("capture_raw_packets also contains evidence from another source family")
+            con.execute("SAVEPOINT capture_rebuild")
+            try:
+                rows = ingest_packetlogger(con, capture_id, src, packet_files)
+                con.execute("RELEASE SAVEPOINT capture_rebuild")
+            except Exception:
+                con.execute("ROLLBACK TO SAVEPOINT capture_rebuild")
+                con.execute("RELEASE SAVEPOINT capture_rebuild")
+                raise
+            for i, packet_filename in enumerate(packet_files):
+                data = src.read_bytes(packet_filename)
+                capture_integrity.record_source_file(
+                    con, capture_id, packet_filename, data,
+                    format_detected="packetlogger", parser_name="packetlogger",
+                    row_count=rows if i == 0 else None, error=None,
+                )
+                con.execute(
+                    """INSERT OR REPLACE INTO capture_source_files
+                       (capture_id,filename,format_detected,ingested_at,row_count,error)
+                       VALUES (?,?,?,datetime('now'),?,NULL)""",
+                    (capture_id, packet_filename, "packetlogger", rows if i == 0 else None),
+                )
+            con.commit()
+            return {
+                "capture_id": capture_id, "filename": filename, "format": fmt,
+                "scope": "packetlogger_family", "source_files": packet_files, "rows": rows,
+            }
+
+        data = src.read_bytes(filename)
+        if capture_integrity.sha256_bytes(data) != expected_hash:
+            raise ValueError("source bytes changed since ingestion; refusing rebuild")
+
+        con.execute("SAVEPOINT capture_rebuild")
+        try:
+            deleted = _delete_exact_source_rows(con, capture_id, filename)
+            if fmt == "eventview":
+                result = ingest_eventview(con, capture_id, src, filename)
+            elif fmt == "idview_simple":
+                result = ingest_idview_simple(con, capture_id, src, filename)
+            elif fmt == "kitrack":
+                result = ingest_kitrack(con, capture_id, src, filename)
+            elif fmt == "hptrack":
+                result = ingest_hptrack(con, capture_id, src, filename)
+            elif fmt == "actionview_simple":
+                result = ingest_actionview_simple(con, capture_id, src, filename)
+            elif fmt == "caplog":
+                result = ingest_caplog(con, capture_id, src, filename)
+            else:
+                raise ValueError(f"unsupported rebuild parser: {fmt}")
+            rows = sum(result) if isinstance(result, tuple) else int(result)
+            con.execute("RELEASE SAVEPOINT capture_rebuild")
+        except Exception:
+            con.execute("ROLLBACK TO SAVEPOINT capture_rebuild")
+            con.execute("RELEASE SAVEPOINT capture_rebuild")
+            raise
+
+        capture_integrity.record_source_file(
+            con, capture_id, filename, data,
+            format_detected=fmt, parser_name=fmt, row_count=rows, error=None,
+        )
+        con.execute(
+            """INSERT OR REPLACE INTO capture_source_files
+               (capture_id,filename,format_detected,ingested_at,row_count,error)
+               VALUES (?,?,?,datetime('now'),?,NULL)""",
+            (capture_id, filename, fmt, rows),
+        )
+        recompute_zones(con, capture_id)
+        con.commit()
+        return {
+            "capture_id": capture_id, "filename": filename, "format": fmt,
+            "scope": "single_source", "deleted_rows": deleted, "rows": rows,
+        }
+    finally:
+        src.close()
+
+
 # Every real table keyed by capture_id -- kept as one list so delete_capture() can never miss one
 # as new tables get added (a table added to init_db() but forgotten here would leave orphaned rows
 # behind on every future delete, silently). Deliberately NOT derived by introspecting sqlite_master
