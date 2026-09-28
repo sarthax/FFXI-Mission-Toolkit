@@ -531,7 +531,10 @@ def record_row_locator(
     Parsers must only call this when their physical source format exposes deterministic row,
     line, block, or byte boundaries. Missing precision stays NULL instead of being inferred.
     """
-    init_db(con)
+    if not con.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='capture_row_locators'"
+    ).fetchone():
+        init_db(con)
     if source_sha256 is None:
         row = con.execute(
             "SELECT sha256 FROM capture_source_manifest WHERE capture_id=? AND filename=?",

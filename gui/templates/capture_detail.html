@@ -10,6 +10,8 @@
   &nbsp;&middot;&nbsp; <a class="inline" href="/captures/{{ detail.capture_id }}/delete" style="color:var(--red);">delete capture</a>
   &nbsp;&middot;&nbsp; <button type="button" class="chip" id="summarize-capture-btn" style="cursor:pointer;">summarize with LLM &rarr;</button></p>
 <div id="summarize-capture-result"></div>
+{% if rebuild_status %}<div class="ok" style="margin:10px 0;">{{ rebuild_status }}</div>{% endif %}
+{% if rebuild_error %}<div class="warn" style="margin:10px 0;"><b>Rebuild refused:</b> {{ rebuild_error }}</div>{% endif %}
 
 <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:6px;">
   <h1 style="margin:0;">{{ detail.capture_label }} <span class="chip mono">#{{ detail.capture_id }}</span></h1>
@@ -124,7 +126,7 @@
 <details style="margin-top:10px;">
   <summary class="muted" style="cursor:pointer;">source manifest / parser provenance ({{ detail.health.source_manifest|length }} files)</summary>
   <div class="table-wrap" style="margin-top:8px;"><table>
-    <tr><th>file</th><th>SHA-256</th><th>bytes</th><th>format / parser</th><th>rows</th><th>status</th></tr>
+    <tr><th>file</th><th>SHA-256</th><th>bytes</th><th>format / parser</th><th>rows</th><th>status</th><th>rebuild</th></tr>
     {% for sf in detail.health.source_manifest %}
     <tr>
       <td class="mono">{{ sf.filename }}</td>
@@ -133,6 +135,19 @@
       <td>{{ sf.format_detected or "unknown" }}<div class="muted">{{ sf.parser_name or "" }} · {{ sf.parser_version or "" }}</div></td>
       <td>{{ sf.row_count if sf.row_count is not none else "—" }}</td>
       <td>{{ sf.ingest_status }}{% if sf.error %}<div class="muted">{{ sf.error }}</div>{% endif %}</td>
+      <td>
+        {% if sf.rebuild and sf.rebuild.rebuildable %}
+        <form method="post" action="/captures/{{ detail.capture_id }}/rebuild-source" style="display:inline;">
+          <input type="hidden" name="filename" value="{{ sf.filename }}">
+          <button type="submit" class="chip" title="Re-run this source's parser against the original hash-identical bytes. Capture identity, tags, annotations, alignment anchors, and curated evidence are preserved.">Rebuild parser</button>
+        </form>
+        {% elif sf.rebuild %}
+        <span class="muted" title="{{ sf.rebuild.reason }}">unavailable</span>
+        <div class="muted" style="font-size:10px;max-width:260px;">{{ sf.rebuild.reason }}</div>
+        {% else %}
+        <span class="muted">unavailable</span>
+        {% endif %}
+      </td>
     </tr>
     {% endfor %}
   </table></div>

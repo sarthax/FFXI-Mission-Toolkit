@@ -5506,8 +5506,39 @@ def captures_alignment_evidence_image(capture_id: int, evidence_id: str):
     return FileResponse(target, media_type=row[1] or "application/octet-stream")
 
 
+@app.post("/captures/{capture_id}/rebuild-source")
+async def captures_rebuild_source(request: Request, capture_id: int):
+    form = await request.form()
+    filename = str(form.get("filename") or "").strip()
+    if not filename:
+        return RedirectResponse(
+            url=f"/captures/{capture_id}?rebuild_error={quote('source filename is required')}",
+            status_code=303,
+        )
+    con = get_con()
+    try:
+        result = build_capture_index.rebuild_capture_source(con, capture_id, filename)
+        scope = result.get("scope") or "single_source"
+        rows = result.get("rows", 0)
+        message = f"Rebuilt {filename} ({scope}, {rows} normalized rows)"
+        return RedirectResponse(
+            url=f"/captures/{capture_id}?rebuild_status={quote(message)}",
+            status_code=303,
+        )
+    except Exception as ex:
+        return RedirectResponse(
+            url=f"/captures/{capture_id}?rebuild_error={quote(str(ex))}",
+            status_code=303,
+        )
+    finally:
+        con.close()
+
+
 @app.get("/captures/{capture_id}", response_class=HTMLResponse)
-def captures_detail(request: Request, capture_id: int, content_type: str = "", q: str = ""):
+def captures_detail(
+    request: Request, capture_id: int, content_type: str = "", q: str = "",
+    rebuild_status: str = "", rebuild_error: str = "",
+):
     """Dedicated detail page, with prev/next cycling through the SAME filtered list the user
     came from (content_type/q carried through as query params) -- directly answers "let me
     cycle through them" instead of bouncing back to the list every time. Registered LAST among
@@ -5552,6 +5583,12 @@ def captures_detail(request: Request, capture_id: int, content_type: str = "", q
         (capture_id,)).fetchall()
     detail["health"] = capture_integrity.capture_health(con, capture_id)
     detail["exact_capture_duplicates"] = capture_integrity.find_exact_capture_duplicates(con, capture_id)
+    rebuild_inventory = {
+        item["filename"]: item
+        for item in build_capture_index.capture_rebuild_inventory(con, capture_id)
+    }
+    for source_row in detail["health"].get("source_manifest", []):
+        source_row["rebuild"] = rebuild_inventory.get(source_row["filename"])
 
     filtered_sql = "SELECT capture_id FROM captures WHERE 1=1"
     params = []
@@ -5579,6 +5616,7 @@ def captures_detail(request: Request, capture_id: int, content_type: str = "", q
         "detail": detail, "content_type": content_type, "q": q,
         "prev_id": prev_id, "next_id": next_id, "position": position,
         "all_tags": build_capture_index.CAPTURE_TAGS,
+        "rebuild_status": rebuild_status, "rebuild_error": rebuild_error,
     })
 
 

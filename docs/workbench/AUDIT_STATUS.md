@@ -2595,3 +2595,19 @@ Capture integrity now detects two classes of cross-source problems that exact fi
 - Diagnostics are visible directly on Capture Detail and remain non-destructive: no timestamps, alignments, or capture identities are rewritten automatically.
 
 Parser-specific rebuild/reingestion orchestration remains the next unfinished capture-integrity item.
+
+
+## 2026-09-28 — Safe parser-specific capture rebuild
+
+The remaining capture-integrity rebuild milestone now has a bounded, exact-ownership implementation.
+
+- Rebuild is available only for parser families with exact row locators: EventView, IDView/simple, KITrack, HPTrack, ActionView/simple, CapLog, and PacketLogger/PacketViewer.
+- The original source folder/archive must still be accessible and each source's current bytes must match the stored SHA-256 before any normalized data is changed.
+- Manual/upload captures whose original bytes were not persisted are explicitly reported as unavailable rather than reconstructed from hashes.
+- Single-source rebuild deletes only normalized rows whose true primary keys are covered by that source file's exact row locators. Ambiguous shared row ownership causes a refusal.
+- PacketLogger/PacketViewer rebuilds the whole packet-file family because the final capture_raw_packets sequence is a chronological merge across opcode files; every family member is hash-validated first.
+- Parser work is wrapped in a SQLite savepoint so parser failure restores the prior normalized rows.
+- Capture identity and user-maintained state are preserved: capture_id, mission/capturer/video metadata, tags, alignment anchors, curated key evidence, and whole-capture content fingerprint remain intact.
+- Capture Detail now exposes per-source rebuild controls or the exact reason a source is not safely rebuildable.
+
+This completes the current Capture integrity and provenance hardening subsection; additional exact-locator coverage for SQLite-backed and lower-value legacy formats can continue incrementally without blocking the integrity foundation.
