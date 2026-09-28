@@ -26,6 +26,13 @@ own SQL/Lua before relying on it.</p>
   <span class="muted">Extracts revision-stamped claims and conservative mapping candidates; reference-only evidence is never promoted to server truth.</span>
 </form>
 {% endif %}
+{% if title %}
+<form method="post" action="/wiki/compare" style="margin-top:8px;">
+  <input type="hidden" name="title" value="{{ title }}">
+  <button type="submit">Compare BG Wiki ↔ FFXIclopedia</button>
+  <span class="muted">Aligns claim ledgers and flags deterministic numeric/negation conflicts without selecting a winner.</span>
+</form>
+{% endif %}
 
 {% if evidence and evidence.status == "OK" %}
 <div class="table-wrap" style="padding:14px;margin-top:18px;">
@@ -87,6 +94,45 @@ own SQL/Lua before relying on it.</p>
 </div>
 {% elif evidence and evidence.status == "NOT_FOUND" and source != "BGWiki" %}
 <div class="warn">No imported {{ source }} page matched this title.</div>
+{% endif %}
+
+{% if comparison and comparison.status == "OK" %}
+<div class="table-wrap" style="padding:14px;margin-top:18px;">
+  <h2 style="margin-top:0;">Dual-wiki claim comparison</h2>
+  <p class="muted">BG Wiki and FFXIclopedia are compared as peer reference sources. <b>REFERENCE_CONFLICT</b> means a deterministic contradiction signal was found; it does not identify which source is correct.</p>
+  <table>
+    <tr><th>status</th><th>type / section</th><th>BG Wiki</th><th>FFXIclopedia</th><th>details</th></tr>
+    {% for p in comparison.pairs %}
+    <tr>
+      <td>
+        {% if p.status == "REFERENCE_CONFLICT" %}<span class="pill mismatch">conflict</span>
+        {% elif p.status == "AGREEMENT" %}<span class="pill exists">agreement</span>
+        {% elif p.status == "DIVERGENT" %}<span class="pill gap">divergent</span>
+        {% elif p.status == "BG_ONLY" %}<span class="pill">BG only</span>
+        {% else %}<span class="pill">FFXIclopedia only</span>{% endif %}
+      </td>
+      <td>{{ p.alignment_type }}
+        <div class="muted">{{ p.bg_section or p.fx_section or "" }}</div>
+        {% if p.conflict_kind %}<div class="muted mono">{{ p.conflict_kind }}</div>{% endif %}
+      </td>
+      <td style="max-width:420px;">
+        {% if p.bg_excerpt %}{{ p.bg_excerpt }}{% else %}<span class="muted">—</span>{% endif %}
+        {% if p.bg_revision %}<div class="muted">rev {{ p.bg_revision }}{% if p.bg_revision_timestamp %} · {{ p.bg_revision_timestamp }}{% endif %}</div>{% endif %}
+      </td>
+      <td style="max-width:420px;">
+        {% if p.fx_excerpt %}{{ p.fx_excerpt }}{% else %}<span class="muted">—</span>{% endif %}
+        {% if p.fx_revision %}<div class="muted">rev {{ p.fx_revision }}{% if p.fx_revision_timestamp %} · {{ p.fx_revision_timestamp }}{% endif %}</div>{% endif %}
+      </td>
+      <td class="muted">
+        {% if p.similarity is not none %}similarity {{ "%.2f"|format(p.similarity) }}{% endif %}
+        {% if p.details %}<div class="mono" style="font-size:11px;">{{ p.details }}</div>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% elif comparison and comparison.status == "NOT_BUILT" and title %}
+<p class="muted" style="margin-top:14px;">No dual-wiki comparison has been built for this title yet.</p>
 {% endif %}
 
 {% if report %}
