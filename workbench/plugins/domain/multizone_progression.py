@@ -35,6 +35,7 @@ class ProgressionGate:
         logic=str(self.logic).upper()
         if logic not in VALID_GATE_LOGIC:
             raise ValueError(f"Unsupported progression gate logic: {self.logic}")
+        object.__setattr__(self,"logic",logic)
         if not self.member_ids:
             raise ValueError("ProgressionGate requires at least one member")
 
@@ -73,8 +74,10 @@ class ProgressionStage:
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if self.completion_logic not in VALID_GATE_LOGIC:
+        completion_logic=str(self.completion_logic).upper()
+        if completion_logic not in VALID_GATE_LOGIC:
             raise ValueError(f"Unsupported stage completion logic: {self.completion_logic}")
+        object.__setattr__(self,"completion_logic",completion_logic)
         if not self.objective_ids:
             raise ValueError("ProgressionStage requires at least one objective")
 
@@ -514,7 +517,12 @@ def persist_progression_graph(
     if existing is None:
         graph_store.insert_record(con,projection.feature)
     for entity in projection.entities:
-        graph_store.insert_record(con,entity)
+        exists=con.execute(
+            "SELECT 1 FROM entities WHERE entity_id=?",
+            (entity.entity_id,),
+        ).fetchone()
+        if exists is None:
+            graph_store.insert_record(con,entity)
     for edge in projection.edges:
         graph_store.insert_record(con,edge)
     if commit:
