@@ -107,6 +107,7 @@ class MissionTransition:
     evidence_ids: tuple[str,...] = ()
     implementation_status: str = "PRESENT"
     metadata: Mapping[str,Any] = field(default_factory=dict)
+    post_effect_gate: DependencyGate | None = None
 
     def __post_init__(self) -> None:
         if self.confidence not in VALID_CONFIDENCE:

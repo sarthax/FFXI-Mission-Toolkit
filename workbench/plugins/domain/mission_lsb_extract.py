@@ -144,6 +144,7 @@ class _HandlerPath:
     branch_path: tuple[str,...] = ()
     branch_source_lines: tuple[tuple[int,int],...] = ()
     guard_complete: bool = True
+    guard_prefix_texts: tuple[str,...] = ()
 
 
 _IF_HEADER=re.compile(r"^\s*if\s+(.+?)\s+then\s*$")
@@ -244,21 +245,26 @@ def _handler_paths(text: str, *, start_line: int) -> tuple[_HandlerPath,...]:
         labels: tuple[str,...]=(),
         spans: tuple[tuple[int,int],...]=(),
         complete: bool=True,
+        guard_prefixes: tuple[str,...]=(),
     ) -> list[_HandlerPath]:
         split=_split_first_if(lines)
         if split is None:
             return [_HandlerPath(
                 "\n".join(line for _,line in lines),
-                guards,labels,spans,complete,
+                guards,labels,spans,complete,guard_prefixes,
             )]
         prefix,branches,suffix=split
         out=[]
+        prefix_text="\n".join(line for _,line in prefix)
         for kind,guard,header_line,end_line,body in branches:
             next_guards=guards+((guard,) if guard else ())
             next_labels=labels+(kind,)
             next_spans=spans+((header_line+1,end_line+1),)
             next_complete=complete and kind=="if"
-            out.extend(expand(prefix+body+suffix,next_guards,next_labels,next_spans,next_complete))
+            next_prefixes=guard_prefixes+((prefix_text,) if guard else ())
+            out.extend(expand(
+                prefix+body+suffix,next_guards,next_labels,next_spans,next_complete,next_prefixes
+            ))
         return out
 
     paths=expand(source)
@@ -384,13 +390,40 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                 guard_parts.append(path.body)
             guard_context="\n".join(guard_parts)
             conds=list(_conditions(guard_context))
-            if (
+            post_effect_conditions=[]
+            post_effect_basis=[]
+            dynamic=extract_dynamic_completion_gate(lua) if (
                 any("isMissionComplete(player)" in guard for guard in path.guard_texts)
                 or (unresolved_nested_branch and "isMissionComplete(player)" in path.body)
-            ):
-                dynamic=extract_dynamic_completion_gate(lua)
-                if dynamic:
-                    conds.extend(dynamic.conditions)
+            ) else None
+            if dynamic:
+                handled_dynamic=False
+                if not unresolved_nested_branch:
+                    for guard_index,guard in enumerate(path.guard_texts):
+                        if "isMissionComplete(player)" not in guard:
+                            continue
+                        prefix=(
+                            path.guard_prefix_texts[guard_index]
+                            if guard_index < len(path.guard_prefix_texts)
+                            else ""
+                        )
+                        writes={
+                            effect.subject
+                            for effect in _effects(prefix)
+                            if effect.effect in {"SET_VAR","SET_CHANNEL"}
+                        }
+                        gate_subjects={condition.subject for condition in dynamic.conditions}
+                        overlap=tuple(sorted(writes & gate_subjects))
+                        if overlap:
+                            for condition in dynamic.conditions:
+                                if condition not in post_effect_conditions:
+                                    post_effect_conditions.append(condition)
+                            post_effect_basis.extend(x for x in overlap if x not in post_effect_basis)
+                            handled_dynamic=True
+                if not handled_dynamic:
+                    for condition in dynamic.conditions:
+                        if condition not in conds:
+                            conds.append(condition)
 
             effects=list(_effects(path.body))
             event=handler_event
@@ -406,6 +439,9 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
 
             serial+=1
             gate=DependencyGate(f"source-gate:{serial}","ALL",tuple(conds)) if conds else None
+            post_effect_gate=DependencyGate(
+                f"source-post-effect-gate:{serial}","ALL",tuple(post_effect_conditions)
+            ) if post_effect_conditions else None
             transitions.append(MissionTransition(
                 f"source-transition:{serial}","source:any","source:any",trigger,
                 gate=gate,event=event,effects=tuple(effects),
@@ -423,7 +459,9 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                     "branch_source_lines":path.branch_source_lines,
                     "branch_guard_complete":guard_complete,
                     "unexpanded_nested_branch":unresolved_nested_branch,
+                    "post_effect_gate_basis":tuple(post_effect_basis),
                 },
+                post_effect_gate=post_effect_gate,
             ))
     # Declarative actor handlers are equivalent to unconditional NPC triggers.
     for line_no,line in enumerate(lines):
@@ -479,6 +517,7 @@ def materialize_channel_states(machine: MissionStateMachine) -> MissionStateMach
         transitions.append(MissionTransition(
             t.transition_id,from_state,to_state,t.trigger,t.gate,t.event,t.effects,t.confidence,
             t.evidence_ids,t.implementation_status,{**t.metadata,"state_edge_basis":"single_literal_channel" if before or after else "unresolved"},
+            post_effect_gate=t.post_effect_gate,
         ))
     return MissionStateMachine(
         machine.machine_id,machine.feature_id,tuple(states.values()),tuple(transitions),
@@ -517,6 +556,16 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
             gate=DependencyGate(
                 f"chain-gate:{t.transition_id}:{f.transition_id}","ALL",tuple(conds)
             ) if conds else None
+            post_conds=[]
+            for candidate_gate in (t.post_effect_gate,f.post_effect_gate):
+                if not candidate_gate:
+                    continue
+                for condition in candidate_gate.conditions:
+                    if condition not in post_conds:
+                        post_conds.append(condition)
+            post_effect_gate=DependencyGate(
+                f"chain-post-effect-gate:{t.transition_id}:{f.transition_id}","ALL",tuple(post_conds)
+            ) if post_conds else None
             if "UNKNOWN" in {t.confidence,f.confidence}:
                 confidence="UNKNOWN"
             elif t.confidence=="VERIFIED" and f.confidence=="VERIFIED":
@@ -545,7 +594,12 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
                         t.metadata.get("branch_guard_complete",True)
                         and f.metadata.get("branch_guard_complete",True)
                     ),
+                    "post_effect_gate_basis":tuple(dict.fromkeys(
+                        tuple(t.metadata.get("post_effect_gate_basis",()))
+                        + tuple(f.metadata.get("post_effect_gate_basis",()))
+                    )),
                 },
+                post_effect_gate=post_effect_gate,
             ))
 
     remaining=[t for t in machine.transitions if t.transition_id not in consumed]

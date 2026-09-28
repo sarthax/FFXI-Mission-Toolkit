@@ -10,6 +10,15 @@ from workbench.core import graph as graph_store
 from workbench.plugins.domain.mission_graph_emit import (
     extract_and_project_lsb_mission,
     persist_mission_graph,
+    project_mission_graph,
+)
+from workbench.plugins.domain.mission_state_machine import (
+    DependencyGate,
+    MissionState,
+    MissionStateMachine,
+    MissionTransition,
+    StateCondition,
+    TransitionEffect,
 )
 
 
@@ -79,6 +88,51 @@ def main():
     first_status={e.entity_id for e in projection.entities if e.entity_type=="MISSION_STATE_CHANNEL"}
     second_status={e.entity_id for e in second.entities if e.entity_type=="MISSION_STATE_CHANNEL"}
     assert first_status and second_status and first_status.isdisjoint(second_status)
+
+    ordered_machine=MissionStateMachine(
+        "machine:post-effect",
+        "mission:test:post-effect",
+        (MissionState("source:any","Source state"),),
+        (
+            MissionTransition(
+                "finish","source:any","source:any","EVENT_FINISH",
+                effects=(
+                    TransitionEffect("SET_CHANNEL","mission_status:A",14),
+                    TransitionEffect("COMPLETE","mission"),
+                ),
+                confidence="INFERRED",
+                post_effect_gate=DependencyGate(
+                    "all-paths","ALL",
+                    (
+                        StateCondition("mission_status:A","EQ",14),
+                        StateCondition("mission_status:B","EQ",14),
+                    ),
+                ),
+            ),
+        ),
+        ("source:any",),
+    )
+    ordered_projection=project_mission_graph(
+        ordered_machine,
+        source_path="scripts/missions/test_post_effect.lua",
+        source_snapshot_id="snapshot:lsb:test",
+    )
+    ordered_transition=next(
+        e for e in ordered_projection.entities if e.entity_type=="MISSION_TRANSITION"
+    )
+    assert ordered_transition.metadata["post_effect_gate"]["logic"]=="ALL"
+    assert {c["subject"] for c in ordered_transition.metadata["post_effect_gate"]["conditions"]}=={
+        "mission_status:A","mission_status:B"
+    }
+    post_edges=[
+        e for e in ordered_projection.edges
+        if e.source_node==ordered_transition.entity_id and e.relationship=="REQUIRES"
+        and (e.notes or "").startswith("post-effect ")
+    ]
+    assert {e.target_node for e in post_edges}=={
+        "mission-subject:mission:test:post-effect:mission_status:A",
+        "mission-subject:mission:test:post-effect:mission_status:B",
+    },post_edges
 
     with NamedTemporaryFile(suffix=".db") as tmp:
         con=graph_store.init_db(Path(tmp.name))

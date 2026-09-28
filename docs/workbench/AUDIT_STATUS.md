@@ -2089,3 +2089,27 @@ Key behavior:
 Regression: `test_fixtures/test_mission_lsb_branching.py` covers different CSIDs returned by `if/elseif/else`, branch-specific key-item/status effects, and multi-outcome event chaining. Existing multiline battlefield guards remain conservatively represented rather than discarded.
 
 This is still a conservative static extractor. It does not claim arbitrary Lua control-flow recovery, loop-sensitive path semantics, or synthesized negation of prior `elseif/else` branches.
+
+
+## 2026-09-27 — Post-effect mission convergence ordering
+
+Mission transitions now support an optional first-class `post_effect_gate` in addition to their ordinary precondition `gate`. The field is appended to the generic transition contract so existing positional constructors remain compatible.
+
+The LSB extractor uses this only when source ordering is proven conservatively:
+- branch extraction records the common source text that executes before each literal guard;
+- when a recognized completion helper guard depends on state channels and the pre-guard prefix writes one of those same channels, the helper's convergence conditions are classified as a post-effect gate;
+- if ordering cannot be proven (unsupported nested/multiline control flow), the conditions remain conservative precondition evidence and the path remains incomplete/UNKNOWN rather than being reordered speculatively.
+
+This corrects the Three Paths terminal pattern:
+1. write the current path status to `14`;
+2. evaluate `isMissionComplete(player)` across Louverance/Tenzen/Ulmia;
+3. complete the mission only if all three are now `14`.
+
+The post-effect gate survives state materialization and event chaining. Canonical mission graph emission stores the ordered gate on the transition entity and emits generic `REQUIRES` evidence edges annotated as `post-effect`. Mission representation requirements also retain the post-effect convergence description.
+
+Regressions:
+- `test_fixtures/test_mission_lsb_three_paths_stress.py` requires all three terminal handlers (CSIDs 853/854/855) to carry three-path convergence as a post-effect gate, not a precondition, and verifies chained transitions preserve it.
+- `test_fixtures/test_mission_graph_emission.py` verifies ordered convergence survives canonical graph projection.
+- `test_fixtures/test_mission_representation.py` verifies migration/representation requirements retain the ordering.
+
+This does not implement arbitrary intra-handler control-flow execution. Post-effect classification requires a recognized guard and a source-proven write overlap.
