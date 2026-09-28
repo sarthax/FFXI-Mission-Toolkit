@@ -244,7 +244,7 @@
         <th>Video</th>
         {% if s.capture_profile == "timestamped" %}<th>Chat time</th>{% endif %}
         {% if s.capture_profile == "packetlogger" %}
-        <th>Dir</th><th>Opcode</th><th>Packet</th><th>Fields</th><th title="hex-looking tokens found outside the parsed header/fields, e.g. in unmatched OCR noise">Hex hints</th>
+        <th>Dir</th><th>Opcode</th><th>Packet</th><th>Fields</th><th>Assist</th><th>Consensus</th><th title="hex-looking tokens found outside the parsed header/fields, e.g. in unmatched OCR noise">Hex hints</th>
         {% else %}
         <th>Channel</th><th>Speaker</th><th>Text</th>
         {% endif %}
@@ -267,10 +267,27 @@
           </td>
           {% if s.capture_profile == "timestamped" %}<td>{{ r.timestamp or "" }}</td>{% endif %}
           {% if s.capture_profile == "packetlogger" %}
-          <td>{{ r.direction or "" }}</td>
-          <td>{{ r.opcode or "" }}</td>
-          <td>{{ r.gp_command or "" }}{% if r.packet_class %} <span class="muted">({{ r.packet_class }})</span>{% endif %}</td>
-          <td>{% for k, v in (r.fields or {}).items() %}<span class="muted">{{ k }}</span>={{ v }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
+          {% set ep = r.effective_packet or {} %}
+          <td>{{ ep.direction or r.direction or "" }}</td>
+          <td>{{ ep.opcode or r.opcode or "" }}{% if ep.opcode and r.opcode and ep.opcode != r.opcode %}<div class="muted" title="raw OCR parsed opcode">raw {{ r.opcode }}</div>{% endif %}</td>
+          <td>{{ ep.gp_command or r.gp_command or "" }}{% if r.packet_class %} <span class="muted">({{ r.packet_class }})</span>{% endif %}
+            {% if ep.gp_command and r.gp_command and ep.gp_command != r.gp_command %}<div class="muted" title="raw OCR parsed packet symbol">raw {{ r.gp_command }}</div>{% endif %}
+          </td>
+          <td>{% for k, v in ((ep.fields or r.fields) or {}).items() %}<span class="muted">{{ k }}</span>={{ v }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
+          <td>
+            {% if r.corrections %}
+              {% for c in r.corrections %}
+                <div class="muted" title="{{ c.source or '' }}">{{ c.kind }}: {{ c.raw }} → {{ c.candidate }}{% if c.score is not none %} ({{ "%.2f"|format(c.score) }}){% endif %}</div>
+              {% endfor %}
+            {% else %}<span class="muted">—</span>{% endif %}
+          </td>
+          <td>
+            {% if r.consensus %}
+              {% if r.consensus.applied %}<span title="{{ (r.consensus.source_frames or [])|join(', ') }}">{{ r.consensus.support }} frames</span>
+              {% else %}<span class="muted">single frame</span>{% endif %}
+              {% if r.consensus.unresolved_fields %}<div class="muted">ties: {{ r.consensus.unresolved_fields.keys()|join(", ") }}</div>{% endif %}
+            {% else %}<span class="muted">—</span>{% endif %}
+          </td>
           <td class="muted">{{ (r.hex_hints or [])|join(", ") }}</td>
           {% else %}
           <td>{{ r.channel or "" }}</td><td>{{ r.speaker or "" }}</td>
@@ -292,7 +309,7 @@
       </tbody>
     </table>
   </div>
-  <p class="muted">Full output: <code>mission_reports_v2/_ocr_runs/{{ status.run_id }}/sections/{{ s.section }}/ocr_matched.jsonl</code> and <code>transcript.txt</code></p>
+  <p class="muted">Full output: <code>mission_reports_v2/_ocr_runs/{{ status.run_id }}/sections/{{ s.section }}/ocr_matched.jsonl</code> and <code>transcript.txt</code>. Packet rows preserve <code>raw_parsed</code>; symbol assistance and cross-frame consensus are separate provenance layers used to produce the displayed/effective packet view.</p>
   {% endif %}
 
   {% set section_mb = (s.raw_frame_bytes + s.unique_frame_bytes) / (1024*1024) %}
