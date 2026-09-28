@@ -970,6 +970,12 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
                     "actor":t.event.actor,
                     "trigger_branch_path":t.metadata.get("branch_path",()),
                     "finish_branch_path":f.metadata.get("branch_path",()),
+                    "section_index":t.metadata.get("section_index"),
+                    "section_source_lines":t.metadata.get("section_source_lines"),
+                    "section_eligibility_conditions":tuple(
+                        t.metadata.get("section_eligibility_conditions",())
+                    ),
+                    "section_eligibility_basis":t.metadata.get("section_eligibility_basis"),
                     "branch_guard_complete":bool(
                         t.metadata.get("branch_guard_complete",True)
                         and f.metadata.get("branch_guard_complete",True)
