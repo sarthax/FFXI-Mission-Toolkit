@@ -149,7 +149,7 @@ PREPROCESS_PROFILES = {
     },
 }
 DEFAULT_PREPROCESS_PROFILE = PREPROCESS_PROFILE_STANDARD
-LAYOUT_PROFILE_PATH = TOOLS_ROOT / "data" / "ocr_layout_profiles.json"
+LAYOUT_PROFILE_PATH = TOOLS_ROOT / "mission_reports_v2" / "_ocr_layout_profiles.json"
 _BUILTIN_LAYOUT_PROFILES = {
     "chat_only": {
         "name": "Chat only",
