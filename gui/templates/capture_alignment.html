@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Capture / Video Alignment{% endblock %}
+{% block content %}
+<p><a class="inline" href="/captures/{{ cap.capture_id }}">&larr; capture #{{ cap.capture_id }}</a></p>
+<h1>Capture / Video Alignment</h1>
+<p class="muted">Align gameplay video time with one real capture clock using explicit landmarks. Different logger clocks remain separate until anchored; repeated packet opcodes are shown as candidates, not auto-matched.</p>
+
+{% if cap.video_url %}
+<p><b>Video:</b> <a class="inline" href="{{ cap.video_url }}" target="_blank" rel="noopener">{{ cap.video_url }}</a>{% if cap.ocr_run_id %} &middot; <a class="inline" href="/ocr/{{ cap.ocr_run_id }}">OCR run</a>{% endif %}</p>
+{% else %}
+<div class="warn">This capture has no linked video URL yet. You can still create anchors, but video jump links will not be available.</div>
+{% endif %}
+
+<h2>Alignment models</h2>
+{% if summary.models %}
+<div class="table-wrap"><table>
+<tr><th>clock</th><th>anchors</th><th>offset</th><th>slope</th><th>drift</th><th>RMS error</th><th>max error</th></tr>
+{% for kind, model in summary.models.items() %}
+<tr>
+  <td class="mono">{{ kind }}</td>
+  <td>{{ model.anchor_count }}</td>
+  <td class="mono">{{ "%.6f"|format(model.intercept) }}s</td>
+  <td class="mono">{{ "%.9f"|format(model.slope) }}</td>
+  <td class="mono">{{ "%.1f"|format(model.drift_ppm) }} ppm</td>
+  <td class="mono">{{ "%.4f"|format(model.rms_error_seconds) }}s</td>
+  <td class="mono">{{ "%.4f"|format(model.max_error_seconds) }}s</td>
+</tr>
+{% endfor %}
+</table></div>
+<p class="muted">One anchor gives offset-only alignment (slope 1.0). Two or more anchors fit drift as <code>capture_time = intercept + slope × video_time</code>.</p>
+{% else %}
+<p class="muted">No anchors yet.</p>
+{% endif %}
+
+<h2>Add alignment anchor</h2>
+<form method="post" action="/captures/{{ cap.capture_id }}/alignment/anchors" style="display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:10px;max-width:900px;">
+  <label>Video time (seconds)<input type="number" name="video_ts" step="0.001" min="0" required value="{{ prefill_video_ts if prefill_video_ts is not none else '' }}"></label>
+  <label>Capture time (seconds)<input type="number" name="capture_ts" step="0.001" required value="{{ prefill_capture_ts if prefill_capture_ts is not none else '' }}"></label>
+  <label>Capture clock
+    <select name="clock_kind" required>
+      {% for kind in clock_kinds %}<option value="{{ kind }}" {% if kind == prefill_clock_kind %}selected{% endif %}>{{ kind }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Source type
+    <select name="source_type">
+      <option value="MANUAL">manual</option>
+      <option value="PACKET">packet landmark</option>
+      <option value="EVENT">event/dialog landmark</option>
+      <option value="SCREENSHOT">screenshot/key event</option>
+    </select>
+  </label>
+  <label>Video reference<input type="text" name="video_ref" placeholder="video OCR observation/frame"></label>
+  <label>Capture reference<input type="text" name="capture_ref" placeholder="raw-packet:123, eventview:Zone:45, ..."></label>
+  <label style="grid-column:1/-1;">Label<input type="text" name="label" placeholder="NPC interaction / CS start / packet 0x036"></label>
+  <label style="grid-column:1/-1;">Notes<textarea name="notes" rows="2"></textarea></label>
+  <div><button type="submit">Add anchor</button></div>
+</form>
+
+{% if summary.anchors %}
+<h2>Anchors</h2>
+<div class="table-wrap"><table>
+<tr><th>video</th><th>capture</th><th>clock</th><th>source</th><th>label</th><th>refs</th><th></th></tr>
+{% for a in summary.anchors %}
+<tr>
+  <td class="mono">
+    {% if cap.video_url %}<a class="inline" href="{{ cap.video_url }}{% if '?' in cap.video_url %}&{% else %}?{% endif %}t={{ a.video_ts|int }}s" target="_blank" rel="noopener">{{ "%.3f"|format(a.video_ts) }}s</a>
+    {% else %}{{ "%.3f"|format(a.video_ts) }}s{% endif %}
+  </td>
+  <td class="mono">{{ "%.3f"|format(a.capture_ts) }}s</td>
+  <td class="mono">{{ a.clock_kind }}</td>
+  <td>{{ a.source_type }}</td>
+  <td>{{ a.label or "" }}</td>
+  <td class="mono">{{ a.video_ref or "" }}{% if a.video_ref and a.capture_ref %}<br>{% endif %}{{ a.capture_ref or "" }}</td>
+  <td><form method="post" action="/captures/{{ cap.capture_id }}/alignment/anchors/{{ a.anchor_id }}/delete" onsubmit="return confirm('Delete this alignment anchor?');"><button type="submit">delete</button></form></td>
+</tr>
+{% endfor %}
+</table></div>
+{% endif %}
+
+<h2>Shared packet landmarks</h2>
+{% if landmarks %}
+<div class="table-wrap"><table>
+<tr><th>opcode</th><th>video occurrences</th><th>capture occurrences</th><th>candidate quality</th></tr>
+{% for lm in landmarks %}
+<tr>
+  <td class="mono">{{ lm.opcode }}</td>
+  <td>{{ lm.video_count }}</td>
+  <td>{{ lm.capture_count }}</td>
+  <td>{% if lm.unique_pair %}
+    <b>unique one-to-one candidate</b>
+    {% set vr = lm.video[0] %}{% set cr = lm.capture[0] %}
+    &middot; <a class="inline" href="/captures/{{ cap.capture_id }}/alignment?video_ts={{ vr.video_ts }}&capture_ts={{ cr.capture_ts }}&clock_kind={{ cr.clock_kind }}">use as anchor</a>
+    {% else %}<span class="muted">ambiguous; inspect timestamps</span>{% endif %}</td>
+</tr>
+{% endfor %}
+</table></div>
+{% else %}
+<p class="muted">No packet opcodes currently appear in both VIDEO_OCR and timestamped capture sources.</p>
+{% endif %}
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;">
+<div>
+<h2>Video OCR candidates</h2>
+<div class="table-wrap" style="max-height:600px;overflow:auto;"><table>
+<tr><th>time</th><th>opcode</th><th>packet</th><th>frame</th></tr>
+{% for r in video_candidates %}
+<tr>
+<td class="mono">{% if r.video_ts is not none %}{{ "%.3f"|format(r.video_ts) }}s{% endif %}</td>
+<td class="mono">{{ r.opcode or "" }}</td>
+<td>{{ r.gp_command or "" }}</td>
+<td class="mono">{{ r.frame or "" }}</td>
+</tr>
+{% endfor %}
+</table></div>
+</div>
+
+<div>
+<h2>Real capture candidates</h2>
+<div class="table-wrap" style="max-height:600px;overflow:auto;"><table>
+<tr><th>capture time</th><th>clock</th><th>opcode</th><th>source</th></tr>
+{% for r in capture_candidates %}
+<tr>
+<td class="mono">{{ "%.3f"|format(r.capture_ts) }}s</td>
+<td class="mono">{{ r.clock_kind }}</td>
+<td class="mono">{{ r.opcode or "" }}</td>
+<td class="mono">{{ r.source_ref }}</td>
+</tr>
+{% endfor %}
+</table></div>
+</div>
+</div>
+{% endblock %}
