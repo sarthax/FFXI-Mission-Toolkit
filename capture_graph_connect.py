@@ -17,9 +17,30 @@ def table_exists(con,name):
 def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: Path | None = None) -> dict:
     src=sqlite3.connect(db)
     dst=workbench_graph.init_db(graph_db)
-    counts={"capture_events":0,"packet_observations":0,"video_ocr_observations":0,"key_evidence":0,"event_nodes":0,"event_refs":0,"edges":0,"action_nodes":0,"lua_functions":0,"lua_calls":0,"binding_candidates":0}
+    counts={"capture_events":0,"raw_packet_observations":0,"eventview_observations":0,"packet_observations":0,"video_ocr_observations":0,"key_evidence":0,"event_nodes":0,"event_refs":0,"edges":0,"action_nodes":0,"lua_functions":0,"lua_calls":0,"binding_candidates":0}
     where="" if capture_id is None else " WHERE capture_id=?"
     args=() if capture_id is None else (capture_id,)
+
+    # Reconcile row-level runtime evidence owned by this bridge. INSERT OR REPLACE alone cannot
+    # remove graph rows when a rebuilt capture now contains fewer observations.
+    owned_relationship_prefixes=("raw-packet-observation:","eventview-packet-observation:")
+    owned_evidence_prefixes=("evidence:raw-packet:","evidence:eventview-packet:")
+    if capture_id is None:
+        for prefix in owned_relationship_prefixes:
+            dst.execute("DELETE FROM entity_relationships WHERE relationship_id LIKE ?",(prefix+"%",))
+        for prefix in owned_evidence_prefixes:
+            dst.execute("DELETE FROM evidence WHERE evidence_id LIKE ?",(prefix+"%",))
+    else:
+        for prefix in owned_relationship_prefixes:
+            dst.execute(
+                "DELETE FROM entity_relationships WHERE relationship_id LIKE ?",
+                (f"{prefix}{int(capture_id)}:%",),
+            )
+        for prefix in owned_evidence_prefixes:
+            dst.execute(
+                "DELETE FROM evidence WHERE evidence_id LIKE ?",
+                (f"{prefix}{int(capture_id)}:%",),
+            )
     if table_exists(src,"capture_events"):
         q=f"SELECT capture_id,zone_db,seq,direction,opcode,opcode_name,entity_id,entity_name,event_hex,option,message_id,params_raw FROM capture_events{where} ORDER BY capture_id,zone_db,seq"
         capture_event_rows=src.execute(q,args)
@@ -92,6 +113,124 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
                         (rid2,enode,aid,"IMPLEMENTED_BY",ev,"VERIFIED","DISCOVERED",
                          json.dumps({"source":source,"path":script}),None))
             counts["edges"]+=1
+    # Raw PacketLogger/PacketViewer observations: one graph edge per normalized packet row.
+    # This is intentionally finer-grained than workbench_connect.py's historical distinct
+    # opcode/direction summary. The raw bytes remain in capture_raw_packets; the graph edge carries
+    # only identity/navigation metadata and a normalized-row key for exact provenance drill-down.
+    if table_exists(src,"capture_raw_packets"):
+        rq="""SELECT capture_id,seq,ts,direction,opcode,raw_hex
+              FROM capture_raw_packets"""
+        rargs=()
+        if capture_id is not None:
+            rq+=" WHERE capture_id=?"
+            rargs=(capture_id,)
+        rq+=" ORDER BY capture_id,seq"
+        for cap,seq,ts,direction,opcode,raw_hex in src.execute(rq,rargs):
+            pnode=packet_node_id(opcode)
+            if pnode is None:
+                continue
+            cid=f"capture:{cap}"
+            dst.execute(
+                "INSERT OR IGNORE INTO entities(entity_id,entity_type,display_name,metadata_json) VALUES(?,?,?,?)",
+                (cid,"CAPTURE",f"capture {cap}",json.dumps({"capture_id":cap})),
+            )
+            dst.execute(
+                "INSERT OR IGNORE INTO entities(entity_id,entity_type,display_name,metadata_json) VALUES(?,?,?,?)",
+                (pnode,"PACKET",pnode.removeprefix("packet:"),
+                 json.dumps({"opcode":opcode},sort_keys=True)),
+            )
+            evidence_id=f"evidence:raw-packet:{cap}:{seq}"
+            dst.execute(
+                "INSERT OR REPLACE INTO evidence VALUES(?,?,?,?,?,?)",
+                (evidence_id,"PACKET_CAPTURE","capture_raw_packets",
+                 f"capture:{cap}:packet:{seq}",None,
+                 "Exact raw PacketLogger/PacketViewer observation; packet bytes remain in the capture store."),
+            )
+            metadata={
+                "source_kind":"RAW_PACKET",
+                "capture_id":cap,
+                "capture_table":"capture_raw_packets",
+                "capture_row_key":{"seq":seq},
+                "seq":seq,
+                "timestamp":ts,
+                "direction":direction,
+                "opcode":opcode,
+                "byte_length":len(raw_hex or "")//2,
+                "has_raw_bytes":bool(raw_hex),
+            }
+            dst.execute(
+                "INSERT OR REPLACE INTO entity_relationships VALUES(?,?,?,?,?,?,?,?,?)",
+                (f"raw-packet-observation:{cap}:{seq}",cid,pnode,"OBSERVES_PACKET",
+                 evidence_id,"VERIFIED","DISCOVERED",json.dumps(metadata,sort_keys=True),None),
+            )
+            counts["raw_packet_observations"]+=1
+            counts["packet_observations"]+=1
+            counts["edges"]+=1
+
+    # EventView observations are decoded packet evidence, not raw-byte evidence. Preserve packet
+    # class / GP command / decoded fields as metadata and keep a distinct relationship/evidence
+    # identity even when the same packet opcode also exists in PacketLogger.
+    if table_exists(src,"capture_eventview"):
+        eq="""SELECT capture_id,zone_db,seq,ts,direction,opcode,packet_class,gp_command,
+                    entity_id,mes_num,message_number,fields_json
+              FROM capture_eventview"""
+        eargs=()
+        if capture_id is not None:
+            eq+=" WHERE capture_id=?"
+            eargs=(capture_id,)
+        eq+=" ORDER BY capture_id,zone_db,seq"
+        for cap,zone,seq,ts,direction,opcode,packet_class,gp_command,entity_id,mes_num,message_number,fields_json in src.execute(eq,eargs):
+            pnode=packet_node_id(opcode)
+            if pnode is None:
+                continue
+            cid=f"capture:{cap}"
+            dst.execute(
+                "INSERT OR IGNORE INTO entities(entity_id,entity_type,display_name,metadata_json) VALUES(?,?,?,?)",
+                (cid,"CAPTURE",f"capture {cap}",json.dumps({"capture_id":cap})),
+            )
+            dst.execute(
+                "INSERT OR IGNORE INTO entities(entity_id,entity_type,display_name,metadata_json) VALUES(?,?,?,?)",
+                (pnode,"PACKET",pnode.removeprefix("packet:"),
+                 json.dumps({"opcode":opcode,"gp_command":gp_command,"packet_class":packet_class},sort_keys=True)),
+            )
+            evidence_id=f"evidence:eventview-packet:{cap}:{zone}:{seq}"
+            dst.execute(
+                "INSERT OR REPLACE INTO evidence VALUES(?,?,?,?,?,?)",
+                (evidence_id,"CAPTURE_DECODE","capture_eventview",
+                 f"capture:{cap}:eventview:{zone}:{seq}",None,
+                 "Decoded EventView packet observation; this does not claim possession of raw packet bytes."),
+            )
+            try:
+                decoded_fields=json.loads(fields_json) if fields_json else {}
+            except json.JSONDecodeError:
+                decoded_fields={}
+            metadata={
+                "source_kind":"EVENTVIEW_DECODE",
+                "capture_id":cap,
+                "capture_table":"capture_eventview",
+                "capture_row_key":{"zone_db":zone,"seq":seq},
+                "zone_db":zone,
+                "seq":seq,
+                "timestamp":ts,
+                "direction":direction,
+                "opcode":opcode,
+                "packet_class":packet_class,
+                "gp_command":gp_command,
+                "entity_id":entity_id,
+                "mes_num":mes_num,
+                "message_number":message_number,
+                "fields":decoded_fields,
+            }
+            dst.execute(
+                "INSERT OR REPLACE INTO entity_relationships VALUES(?,?,?,?,?,?,?,?,?)",
+                (f"eventview-packet-observation:{cap}:{zone}:{seq}",cid,pnode,
+                 "OBSERVES_EVENTVIEW_PACKET",evidence_id,"VERIFIED","DISCOVERED",
+                 json.dumps(metadata,sort_keys=True),None),
+            )
+            counts["eventview_observations"]+=1
+            counts["packet_observations"]+=1
+            counts["edges"]+=1
+
     # Video OCR packet observations are deliberately separate from capture_raw_packets:
     # the video proves only that an opcode/field rendering was visible on screen, not packet bytes.
     if table_exists(src,"capture_video_observations"):
@@ -153,7 +292,9 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
             counts["packet_observations"]+=1
             counts["edges"]+=1
 
-    if not table_exists(src,"capture_events") and not table_exists(src,"capture_video_observations"):
+    if not any(table_exists(src,name) for name in (
+        "capture_events","capture_raw_packets","capture_eventview","capture_video_observations"
+    )):
         dst.close(); src.close()
         return {"schema":1,"status":"NO_RUNTIME_OBSERVATION_TABLES","counts":counts}
 

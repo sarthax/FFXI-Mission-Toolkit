@@ -73,7 +73,10 @@ def main():
 
         graph.init_db(graph_db).close()
         connected=connect_capture_graph(capture_db,graph_db)
-        assert connected["counts"]["packet_observations"]==1,connected
+        assert connected["counts"]["capture_events"]==1,connected
+        assert connected["counts"]["raw_packet_observations"]==1,connected
+        assert connected["counts"]["eventview_observations"]==0,connected
+        assert connected["counts"]["packet_observations"]==2,connected
 
         trace=backtrace(capture_db,1,graph_db)
         assert any(check["kind"]=="ENTITY" for check in trace["checks"]),trace

@@ -165,6 +165,7 @@ Current public flagship E2E: pinned LSB → legacy DSP Chains of Promathia 2-5 (
 - [x] test fixtures (P0) — focused capture/packet/event/backtrace fixtures plus an integrated runtime-validation fixture are in CI.
 - [x] validation runs/results (P0) — deterministic ValidationRun/ValidationResult orchestration and graph persistence are implemented.
 - [x] Exact runtime source drill-down — Feature Trace runtime observations resolve normalized capture rows through capture_row_locators and can open the precise original text/CSV span or SQLite row when source bytes remain hash-identical; older graph evidence-location strings remain supported as a compatibility fallback.
+- [x] Row-level PacketLogger/EventView runtime graph linkage — raw PacketLogger/PacketViewer rows and EventView decoded blocks now create distinct per-observation runtime edges to the same canonical packet node, with exact normalized row identity and source provenance; general and capture-specific graph bridges are idempotent and stale bridge-owned observations are reconciled on rerun.
 - [ ] richer runtime probes/capture producers (P1) — expand only as specific systems need them.
 
 

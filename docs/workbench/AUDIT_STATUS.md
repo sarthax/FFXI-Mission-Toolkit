@@ -2651,3 +2651,16 @@ The completed capture locator foundation is now exposed directly through runtime
 - A dedicated read-only source-evidence route verifies the current source SHA-256 before showing bytes. Text/CSV evidence displays only the recorded byte/line span; SQLite evidence queries only the recorded source table/rowid.
 - If the original source is unavailable or its bytes changed, the stored locator remains visible but current bytes are not presented as the original evidence.
 - This is presentation/navigation only; it does not promote runtime observations into server truth.
+
+
+## 2026-09-28 — Row-level PacketLogger / EventView runtime graph linkage
+
+The capture graph bridge now preserves packet evidence at observation granularity instead of only opcode summaries.
+
+- Each `capture_raw_packets` row creates a distinct `OBSERVES_PACKET` edge from the capture to the canonical `packet:0xNNN` node.
+- Raw packet evidence records capture id, normalized row key, timestamp, direction, opcode, byte length, and whether raw bytes are present; the bytes themselves remain in the capture store.
+- Each `capture_eventview` row creates a distinct `OBSERVES_EVENTVIEW_PACKET` edge to the same canonical packet node while retaining packet class, GP command, entity/message fields, and decoded EventView fields.
+- RAW_PACKET and EVENTVIEW_DECODE are deliberately distinct from the existing IDVIEW_EVENT bridge and from VIDEO_OCR; convergence happens only at the canonical packet node.
+- `workbench_connect.py` now emits the same stable row-level raw-packet IDs when the modern `seq` schema is present, making the general and capture-specific connectors idempotent. Its legacy opcode/direction summary is retained only for schemas without row identity.
+- The capture-specific connector reconciles its owned raw/EventView relationships and evidence before regenerating them, preventing stale graph observations after capture rebuilds shrink or replace normalized data.
+- Feature Trace source drill-down resolves these new edges directly through their explicit normalized capture row keys to exact PacketLogger/EventView source blocks.
