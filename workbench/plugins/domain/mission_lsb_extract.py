@@ -371,13 +371,23 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
         if len(paths)>1:
             branch_alternatives+=len(paths)
         for path_index,path in enumerate(paths,1):
+            unresolved_nested_branch=bool(re.search(r"^\s*(?:if|elseif|else)\b",path.body,re.M))
             aliases="\n".join(
                 line for line in path.body.splitlines()
                 if _STATUS_ALIAS.search(line)
             )
-            guard_context="\n".join(x for x in (aliases,*path.guard_texts) if x)
+            guard_parts=[x for x in (aliases,*path.guard_texts) if x]
+            # Unsupported/multiline/nested branches retain the previous literal condition
+            # extraction, but are explicitly marked incomplete rather than treated as a
+            # fully correlated path.
+            if unresolved_nested_branch:
+                guard_parts.append(path.body)
+            guard_context="\n".join(guard_parts)
             conds=list(_conditions(guard_context))
-            if any("isMissionComplete(player)" in guard for guard in path.guard_texts):
+            if (
+                any("isMissionComplete(player)" in guard for guard in path.guard_texts)
+                or (unresolved_nested_branch and "isMissionComplete(player)" in path.body)
+            ):
                 dynamic=extract_dynamic_completion_gate(lua)
                 if dynamic:
                     conds.extend(dynamic.conditions)
@@ -390,7 +400,6 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
             if not (conds or effects or event):
                 continue
 
-            unresolved_nested_branch=bool(re.search(r"^\s*(?:if|elseif|else)\b",path.body,re.M))
             guard_complete=path.guard_complete and not unresolved_nested_branch
             if not guard_complete:
                 incomplete_branch_guards+=1
