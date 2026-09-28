@@ -2297,3 +2297,48 @@ Regressions:
 - `test_mission_graph_emission.py` verifies extraction metrics survive canonical feature projection.
 
 These metrics are diagnostics, not quality scores or implementation verdicts.
+
+
+## 2026-09-27 — Reusable multi-zone progression / hunt framework
+
+`framework.multizone_progression` now has a concrete reusable analyzer instead of metadata-only activation.
+
+The framework lives outside `workbench.core` and models generic:
+- stages and objectives;
+- zone coverage;
+- NPC/kill/zone/event trigger kinds;
+- objective counts;
+- state conditions/effects;
+- AND/OR stage prerequisite gates;
+- optional objectives/stages;
+- entry stages and completion gates;
+- evidence provenance.
+
+Structural analysis reports:
+- reachable/unreachable stages;
+- dependency cycles;
+- distinct zone coverage;
+- cross-zone prerequisite edges;
+- prerequisite fan-out;
+- ANY-gated alternative entry;
+- ALL-gated convergence;
+- terminal stages;
+- objective trigger mix;
+- required/optional objective counts;
+- structural completion-gate reachability.
+
+`MultiZoneProgressionPlugin` consumes a `progression_model` through `PluginContext`, emits evidence-backed `PROGRESSION_STRUCTURE` and `CROSS_ZONE_DEPENDENCY` findings, and exposes the topology through its report surface.
+
+`project_progression_graph()` emits ordinary canonical graph navigation records without adding progression-specific fields to the universal schema:
+- feature -> `PROGRESSION_STAGE` via `HAS_STAGE`;
+- stage -> `PROGRESSION_OBJECTIVE` via `HAS_OBJECTIVE`;
+- stage prerequisites via `REQUIRES`;
+- objectives -> zones via `LOCATED_IN`;
+- objective subjects/events via `REFERENCES` / `USES_EVENT`;
+- objective conditions/effects via `REQUIRES` / `AFFECTS`.
+
+Graph persistence is deliberately non-destructive: an existing Feature or canonical Entity is not replaced by a generic progression fallback record. Mission/progression-local state subjects are feature-scoped.
+
+Regression: `test_fixtures/test_multizone_progression_framework.py` covers normalization, validation, fan-out/branch/convergence topology, cross-zone dependencies, cycles, empty/invalid models, evidence propagation, plugin findings/reporting, non-destructive graph persistence, and Feature Trace traversal.
+
+`STRUCTURALLY_READY` means only that the declared dependency model is structurally reachable. It is not a runtime-completion or implementation verdict.
