@@ -715,28 +715,32 @@ def find_capturer_root(src: Source) -> str | None:
 # ---------------------------------------------------------------- ingestion -------------------
 def ingest_npc_db(con, capture_id, src: Source, relname: str):
     zone_db = Path(relname).stem  # "Ilrusi Atoll.db" -> "Ilrusi Atoll"
+    source_bytes = src.read_bytes(relname)
+    source_sha256 = capture_integrity.sha256_bytes(source_bytes)
+    con.execute(
+        """DELETE FROM capture_row_locators
+           WHERE capture_id=? AND filename=?
+             AND target_table IN ('capture_npc_entries','capture_npc_history')""",
+        (capture_id, relname),
+    )
     sub, tmp_path = src.open_sqlite(relname)
     try:
         tables = {r[0] for r in sub.execute("select name from sqlite_master where type='table'")}
         if "entries" not in tables:
             return 0, 0
         n_entries = n_hist = 0
-        for row in sub.execute("""SELECT UniqueNo, Name, model_id, x, y, z, dir, Hpp,
+        for row in sub.execute("""SELECT rowid, UniqueNo, Name, model_id, x, y, z, dir, Hpp,
                                           legacy_flags, legacy_status, legacy_animation, Speed,
                                           created_at, updated_at, legacy_look, DoorId, ActIndex,
                                           Flags0, Flags1, Flags2, Flags3, legacy_flag, SubKind
                                    FROM entries"""):
-            (uid, name, model_id, x, y, z, d, hpp, lflags, lstatus, lanim, speed, cat, uat,
-             look, door_id, act_index, flags0, flags1, flags2, flags3, legacy_flag,
+            (source_rowid, uid, name, model_id, x, y, z, d, hpp, lflags, lstatus, lanim, speed,
+             cat, uat, look, door_id, act_index, flags0, flags1, flags2, flags3, legacy_flag,
              sub_kind) = row
             try:
                 uid = int(uid)
             except (TypeError, ValueError):
                 continue
-            # legacy_look comes back as a str (NPCLogger stores it hex-encoded, per the real
-            # samples checked -- e.g. "0001020210A5...") for some captures and already as raw
-            # bytes (a real BLOB column) for others -- normalize to bytes so the decoder below
-            # never has to care which.
             look_blob = None
             if look:
                 if isinstance(look, (bytes, bytearray)):
@@ -755,40 +759,67 @@ def ingest_npc_db(con, capture_id, src: Source, relname: str):
                 (capture_id, zone_db, uid, name, model_id, x, y, z, d, hpp,
                  lflags, lstatus, lanim, speed, cat, uat, look_blob, door_id, act_index,
                  flags0, flags1, flags2, flags3, legacy_flag, sub_kind))
+            capture_integrity.record_row_locator(
+                con, capture_id, relname, "capture_npc_entries",
+                json.dumps({"zone_db": zone_db, "entity_id": uid}, sort_keys=True),
+                "sqlite-row",
+                source_sha256=source_sha256,
+                details={
+                    "source": "npclogger_db", "source_table": "entries",
+                    "source_rowid": source_rowid, "UniqueNo": uid,
+                },
+            )
             n_entries += 1
             record_entity_facts(con, uid, name, model_id, x, y, z, hpp, zone_db)
         if "history" in tables:
-            for row in sub.execute("SELECT id, entry_id, time, delta FROM history"):
-                seq, entry_id, ts, delta = row
+            for row in sub.execute("SELECT rowid, id, entry_id, time, delta FROM history"):
+                source_rowid, source_id, entry_id, ts, delta = row
                 try:
                     eid = int(str(entry_id).split("-")[0])
                 except (TypeError, ValueError):
                     continue
                 con.execute("""INSERT OR REPLACE INTO capture_npc_history
                     (capture_id, zone_db, entity_id, seq, ts, delta_json)
-                    VALUES (?,?,?,?,?,?)""", (capture_id, zone_db, eid, seq, ts, delta))
+                    VALUES (?,?,?,?,?,?)""", (capture_id, zone_db, eid, source_id, ts, delta))
+                capture_integrity.record_row_locator(
+                    con, capture_id, relname, "capture_npc_history",
+                    json.dumps(
+                        {"zone_db": zone_db, "entity_id": eid, "seq": source_id},
+                        sort_keys=True,
+                    ),
+                    "sqlite-row",
+                    source_sha256=source_sha256,
+                    details={
+                        "source": "npclogger_db", "source_table": "history",
+                        "source_rowid": source_rowid, "source_id": source_id,
+                        "entry_id": entry_id,
+                    },
+                )
                 n_hist += 1
         return n_entries, n_hist
     finally:
         close_sqlite(sub, tmp_path)
 
-
 def ingest_level_range_db(con, capture_id, src: Source, relname: str) -> int:
-    """LevelRangeTrack/<Zone>.db -- real observed mob level ranges (Level_min/Level_max), same
-    NPCLogger-style SQLite entries/history shape but often empty (a real, valid state -- this
-    addon only appears to write rows when some level-check feature actually triggers, not every
-    capture has data here even in the newer format). Useful as an independent cross-check against
-    sql_mob_groups.minLevel/maxLevel -- a real observed level range from a live client, not just
-    what Topaz's own SQL says it should be."""
+    """LevelRangeTrack SQLite rows with exact source-table/rowid provenance."""
     zone_db = Path(relname).stem
+    source_bytes = src.read_bytes(relname)
+    source_sha256 = capture_integrity.sha256_bytes(source_bytes)
+    con.execute(
+        """DELETE FROM capture_row_locators
+           WHERE capture_id=? AND filename=? AND target_table='capture_level_range'""",
+        (capture_id, relname),
+    )
     sub, tmp_path = src.open_sqlite(relname)
     try:
         tables = {r[0] for r in sub.execute("select name from sqlite_master where type='table'")}
         if "entries" not in tables:
             return 0
         n = 0
-        for row in sub.execute("SELECT UniqueNo, sName, Level_min, Level_max, ActIndex FROM entries"):
-            uid, name, lmin, lmax, act_index = row
+        for row in sub.execute(
+            "SELECT rowid, UniqueNo, sName, Level_min, Level_max, ActIndex FROM entries"
+        ):
+            source_rowid, uid, name, lmin, lmax, act_index = row
             try:
                 uid = int(uid)
             except (TypeError, ValueError):
@@ -797,11 +828,20 @@ def ingest_level_range_db(con, capture_id, src: Source, relname: str) -> int:
                 (capture_id, zone_db, entity_id, name, level_min, level_max, act_index)
                 VALUES (?,?,?,?,?,?,?)""",
                 (capture_id, zone_db, uid, name, lmin, lmax, act_index))
+            capture_integrity.record_row_locator(
+                con, capture_id, relname, "capture_level_range",
+                json.dumps({"zone_db": zone_db, "entity_id": uid}, sort_keys=True),
+                "sqlite-row",
+                source_sha256=source_sha256,
+                details={
+                    "source": "levelrange_db", "source_table": "entries",
+                    "source_rowid": source_rowid, "UniqueNo": uid,
+                },
+            )
             n += 1
         return n
     finally:
         close_sqlite(sub, tmp_path)
-
 
 WIDESCAN_LINE_RE = re.compile(
     r"\[(\d+)\]\s*=\s*\{\['id'\]=(\d+),\s*\['name'\]=\"([^\"]*)\",\s*\['index'\]=(-?\d+),\s*\['level'\]=(-?\d+)\}"
@@ -948,25 +988,41 @@ def ingest_actionview_simple(con, capture_id, src: Source, relname: str) -> int:
 
 
 def ingest_actions_db(con, capture_id, src: Source, relname: str):
+    source_bytes = src.read_bytes(relname)
+    source_sha256 = capture_integrity.sha256_bytes(source_bytes)
+    con.execute(
+        """DELETE FROM capture_row_locators
+           WHERE capture_id=? AND filename=? AND target_table='capture_actions'""",
+        (capture_id, relname),
+    )
     sub, tmp_path = src.open_sqlite(relname)
     try:
         tables = {r[0] for r in sub.execute("select name from sqlite_master where type='table'")}
         if "entries" not in tables:
             return 0
         n = 0
-        for row in sub.execute("""SELECT id, actor, actor_name, ActionType, animation, category,
-                                          message, name, updated_at FROM entries"""):
-            aid, actor, actor_name, atype, anim, cat, msg, name, ts = row
+        for row in sub.execute("""SELECT rowid, id, actor, actor_name, ActionType, animation,
+                                          category, message, name, updated_at FROM entries"""):
+            source_rowid, aid, actor, actor_name, atype, anim, cat, msg, name, ts = row
             key = f"{actor}-{aid}"
             con.execute("""INSERT OR REPLACE INTO capture_actions
                 (capture_id, action_key, actor, actor_name, action_type, animation, category,
                  message, name, ts) VALUES (?,?,?,?,?,?,?,?,?,?)""",
                 (capture_id, key, actor, actor_name, atype, anim, cat, msg, name, ts))
+            capture_integrity.record_row_locator(
+                con, capture_id, relname, "capture_actions",
+                json.dumps({"action_key": key}, sort_keys=True),
+                "sqlite-row",
+                source_sha256=source_sha256,
+                details={
+                    "source": "actionview_db", "source_table": "entries",
+                    "source_rowid": source_rowid, "source_id": aid, "actor": actor,
+                },
+            )
             n += 1
         return n
     finally:
         close_sqlite(sub, tmp_path)
-
 
 def ingest_pathlog(con, capture_id, src: Source, relname: str):
     m = PATHLOG_NPC_RE.search(relname)
