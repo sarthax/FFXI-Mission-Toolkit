@@ -29,6 +29,7 @@ import shutil
 import tempfile
 import threading
 import zipfile
+import uuid
 from datetime import datetime
 from pathlib import Path
 
@@ -121,6 +122,15 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 OCR_RUNS_DIR = TOOLS_ROOT / "mission_reports_v2" / "_ocr_runs"
 OCR_RUNS_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/ocr_runs", StaticFiles(directory=str(OCR_RUNS_DIR)), name="ocr_runs")
+KEY_EVIDENCE_ROOT = TOOLS_ROOT / "mission_reports_v2" / "_key_evidence"
+KEY_EVIDENCE_ROOT.mkdir(parents=True, exist_ok=True)
+KEY_EVIDENCE_MAX_BYTES = 20 * 1024 * 1024
+KEY_EVIDENCE_IMAGE_TYPES = {
+    "image/png": ".png",
+    "image/jpeg": ".jpg",
+    "image/webp": ".webp",
+    "image/bmp": ".bmp",
+}
 
 
 def get_con() -> sqlite3.Connection:
@@ -5069,7 +5079,7 @@ async def captures_add_submit(request: Request, capture_id: int):
 
 @app.get("/captures/{capture_id}/alignment", response_class=HTMLResponse)
 def captures_alignment(request: Request, capture_id: int, video_ts: float | None = None,
-                       capture_ts: float | None = None, clock_kind: str = ""):
+                       capture_ts: float | None = None, clock_kind: str = "", error: str = ""):
     con = get_con()
     build_capture_index.init_db(con)
     timeline_alignment.init_db(con)
@@ -5092,6 +5102,8 @@ def captures_alignment(request: Request, capture_id: int, video_ts: float | None
         "prefill_video_ts": video_ts,
         "prefill_capture_ts": capture_ts,
         "prefill_clock_kind": clock_kind,
+        "error": error,
+        "key_evidence_types": sorted(timeline_alignment.KEY_EVIDENCE_TYPES),
     })
 
 
@@ -5134,6 +5146,132 @@ def captures_alignment_delete_anchor(capture_id: int, anchor_id: str):
     timeline_alignment.delete_anchor(con, capture_id, anchor_id)
     con.close()
     return RedirectResponse(url=f"/captures/{capture_id}/alignment", status_code=303)
+
+
+def _key_evidence_file_path(capture_id: int, evidence_id: str, suffix: str) -> Path:
+    capture_root = (KEY_EVIDENCE_ROOT / str(int(capture_id))).resolve()
+    capture_root.mkdir(parents=True, exist_ok=True)
+    target = (capture_root / f"{evidence_id}{suffix}").resolve()
+    try:
+        target.relative_to(capture_root)
+    except ValueError:
+        raise ValueError("key evidence path escapes capture evidence root")
+    return target
+
+
+@app.post("/captures/{capture_id}/alignment/evidence")
+async def captures_alignment_add_evidence(request: Request, capture_id: int):
+    form = await request.form()
+    stored_path = None
+    try:
+        evidence_type = str(form.get("evidence_type") or "KEY_EVENT").upper()
+        label = (form.get("label") or "").strip()
+        video_raw = (form.get("video_ts") or "").strip()
+        capture_raw = (form.get("capture_ts") or "").strip()
+        clock_kind = (form.get("clock_kind") or "").strip() or None
+        anchor_id = (form.get("anchor_id") or "").strip() or None
+        source_ref = (form.get("source_ref") or "").strip() or None
+        notes = (form.get("notes") or "").strip() or None
+        video_ts = float(video_raw) if video_raw else None
+        capture_ts = float(capture_raw) if capture_raw else None
+        upload = form.get("screenshot")
+        evidence_id = f"keyev-{uuid.uuid4().hex[:16]}"
+        file_ref = mime_type = None
+
+        if upload is not None and getattr(upload, "filename", None):
+            data = await upload.read()
+            if not data:
+                raise ValueError("uploaded screenshot is empty")
+            if len(data) > KEY_EVIDENCE_MAX_BYTES:
+                raise ValueError("screenshot exceeds 20 MB limit")
+            mime_type = (getattr(upload, "content_type", None) or "").lower()
+            suffix = KEY_EVIDENCE_IMAGE_TYPES.get(mime_type)
+            if suffix is None:
+                raise ValueError("screenshot must be PNG, JPEG, WebP, or BMP")
+            try:
+                with Image.open(io.BytesIO(data)) as img:
+                    img.verify()
+            except Exception as exc:
+                raise ValueError(f"uploaded screenshot is not a valid image: {exc}") from exc
+            stored_path = _key_evidence_file_path(capture_id, evidence_id, suffix)
+            stored_path.write_bytes(data)
+            file_ref = stored_path.relative_to(TOOLS_ROOT).as_posix()
+            evidence_type = "SCREENSHOT"
+
+        con = get_con()
+        cap = con.execute("SELECT 1 FROM captures WHERE capture_id=?", (capture_id,)).fetchone()
+        if not cap:
+            con.close()
+            raise ValueError("capture not found")
+        timeline_alignment.add_key_evidence(
+            con,
+            capture_id,
+            evidence_type=evidence_type,
+            label=label,
+            video_ts=video_ts,
+            capture_ts=capture_ts,
+            clock_kind=clock_kind,
+            anchor_id=anchor_id,
+            source_ref=source_ref,
+            file_ref=file_ref,
+            mime_type=mime_type,
+            notes=notes,
+            evidence_id=evidence_id,
+        )
+        con.close()
+    except (TypeError, ValueError) as exc:
+        if stored_path is not None:
+            stored_path.unlink(missing_ok=True)
+        return RedirectResponse(
+            url=f"/captures/{capture_id}/alignment?error={quote(str(exc))}",
+            status_code=303,
+        )
+    return RedirectResponse(url=f"/captures/{capture_id}/alignment", status_code=303)
+
+
+@app.post("/captures/{capture_id}/alignment/evidence/{evidence_id}/delete")
+def captures_alignment_delete_evidence(capture_id: int, evidence_id: str):
+    con = get_con()
+    timeline_alignment.init_db(con)
+    row = con.execute(
+        "SELECT file_ref FROM capture_key_evidence WHERE capture_id=? AND evidence_id=?",
+        (capture_id, evidence_id),
+    ).fetchone()
+    deleted = timeline_alignment.delete_key_evidence(con, capture_id, evidence_id)
+    con.close()
+    if deleted and row and row[0]:
+        candidate = (TOOLS_ROOT / row[0]).resolve()
+        root = (KEY_EVIDENCE_ROOT / str(int(capture_id))).resolve()
+        try:
+            candidate.relative_to(root)
+        except ValueError:
+            pass
+        else:
+            candidate.unlink(missing_ok=True)
+    return RedirectResponse(url=f"/captures/{capture_id}/alignment", status_code=303)
+
+
+@app.get("/captures/{capture_id}/alignment/evidence/{evidence_id}/image")
+def captures_alignment_evidence_image(capture_id: int, evidence_id: str):
+    con = get_con()
+    timeline_alignment.init_db(con)
+    row = con.execute(
+        """SELECT file_ref,mime_type FROM capture_key_evidence
+           WHERE capture_id=? AND evidence_id=? AND file_ref IS NOT NULL""",
+        (capture_id, evidence_id),
+    ).fetchone()
+    con.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="Screenshot evidence not found")
+    target = (TOOLS_ROOT / row[0]).resolve()
+    root = (KEY_EVIDENCE_ROOT / str(int(capture_id))).resolve()
+    try:
+        target.relative_to(root)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid evidence path")
+    if not target.is_file():
+        raise HTTPException(status_code=404, detail="Screenshot file missing")
+    return FileResponse(target, media_type=row[1] or "application/octet-stream")
 
 
 @app.get("/captures/{capture_id}", response_class=HTMLResponse)
