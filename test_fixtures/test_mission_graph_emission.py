@@ -52,12 +52,13 @@ def main():
     assert event_entities[0].metadata["zone"]=="MISAREAUX_COAST"
     assert event_entities[0].metadata["actor"]=="_0p2"
     assert event_entities[0].metadata["event_id"]==6
+    assert event_entities[0].entity_id=="server-event:lsb:MISAREAUX_COAST:_0p2:6"
     actor_entities=[e for e in projection.entities if e.entity_type=="SERVER_ACTOR"]
     assert len(actor_entities)==1 and actor_entities[0].display_name=="_0p2"
     relationships={e.relationship for e in projection.edges}
     assert {"HAS_STATE","HAS_TRANSITION","FROM_STATE","TO_STATE","TRIGGERED_BY_EVENT","EVENT_ACTOR","REQUIRES","AFFECTS"}.issubset(relationships),relationships
     assert any(e.target_node=="key_item:MISTMELT" and e.relationship=="AFFECTS" for e in projection.edges)
-    assert any(e.target_node=="mission_var:Status" and e.relationship=="REQUIRES" for e in projection.edges)
+    assert any(e.target_node=="mission-subject:mission:test:ancient-vows-shape:mission_var:Status" and e.relationship=="REQUIRES" for e in projection.edges)
     source_evidence=[e for e in projection.evidence if e.evidence_type=="SOURCE_CODE"]
     assert source_evidence and ":L" in source_evidence[0].location
 
