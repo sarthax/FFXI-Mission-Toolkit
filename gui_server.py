@@ -4382,6 +4382,64 @@ def captures_page(request: Request, content_type: str = "", tag: str = "", q: st
     })
 
 
+def capture_spatial_entities(con, capture_id: int, zone_db: str, q: str = "") -> list[dict]:
+    """Canonical capture-side spatial payload shared by the 2D and 3D viewers.
+
+    Unlike the old path-only plot list, this includes every capture_npc_entries row with a real
+    observed position, whether or not PathLog/history produced a path for that entity.
+    """
+    q_norm = (q or "").strip().lower()
+    path_ids = {
+        int(r[0]) for r in con.execute(
+            "SELECT DISTINCT entity_id FROM capture_npc_path WHERE capture_id=? AND zone_db=?",
+            (capture_id, zone_db),
+        ).fetchall()
+    }
+    rows = con.execute(
+        """SELECT entity_id,name,model_id,x,y,z,hpp,door_id,act_index,sub_kind
+           FROM capture_npc_entries
+           WHERE capture_id=? AND zone_db=? AND x IS NOT NULL AND y IS NOT NULL AND z IS NOT NULL
+           ORDER BY COALESCE(name,''),entity_id""",
+        (capture_id, zone_db),
+    ).fetchall()
+    out = []
+    for row in rows:
+        entity_id = int(row[0])
+        name = row[1] or ""
+        if q_norm and q_norm not in name.lower() and q_norm not in str(entity_id):
+            continue
+        out.append({
+            "id": entity_id,
+            "n": name or "?",
+            "model": row[2],
+            "x": row[3], "y": row[4], "z": row[5],
+            "hpp": row[6],
+            "door_id": row[7],
+            "act_index": row[8],
+            "sub_kind": row[9],
+            "has_path": entity_id in path_ids,
+            "k": "c",
+        })
+    return out
+
+
+@app.get("/captures/{capture_id}/spatial.json")
+def capture_spatial_json(capture_id: int, zone_db: str = "", q: str = ""):
+    con = get_con()
+    cap = con.execute("SELECT zones FROM captures WHERE capture_id=?", (capture_id,)).fetchone()
+    zones = json.loads(cap["zones"]) if cap and cap["zones"] else []
+    zone_db = zone_db or (zones[0] if zones else "")
+    entities = capture_spatial_entities(con, capture_id, zone_db, q) if zone_db else []
+    zoneid = zoneid_for_zone_db(con, zone_db) if zone_db else None
+    con.close()
+    return JSONResponse({
+        "capture_id": capture_id,
+        "zone_db": zone_db,
+        "zoneid": zoneid,
+        "entities": entities,
+    })
+
+
 def zoneid_for_zone_db(con, zone_db: str) -> int | None:
     """capture_npc_entries.zone_db is the NPCLogger.db filename stem, spaced ("Ilrusi Atoll");
     zones.name is Topaz's own SCREAMING_SNAKE form ("ILRUSI_ATOLL"). Normalize both to compare."""
@@ -4445,6 +4503,10 @@ def zone_view3d(request: Request, zoneid: int, capture_id: int = 0, entity_id: i
         "ffxi_path_json": json.dumps(ffxi_path or ""),
         "geometry_rom_path_json": json.dumps(geometry_rom_path or ""),
         "all_zones": [{"zoneid": z[0], "name": z[1]} for z in all_zones],
+        "capture_spatial_url": (
+            f"/captures/{capture_id}/spatial.json?zone_db={zone_db}"
+            if capture_id and zone_db else ""
+        ),
     })
 
 
@@ -4527,12 +4589,21 @@ def zone_view3d_all(request: Request, zoneid: int, capture_id: int, zone_db: str
     live_parse_available = bool(ffxi_path and geometry_rom_path)
 
     entities = build_capture_index.get_capture_entity_ids_with_path(con, capture_id, zone_db) if zone_db else []
+    spatial_entities = capture_spatial_entities(con, capture_id, zone_db) if zone_db else []
+    spatial_by_id = {e["id"]: e for e in spatial_entities}
     paths = []
     for i, (eid, name) in enumerate(entities[:MULTI_PLOT_LIMIT]):
         pts = get_entity_path_with_y(con, capture_id, eid)
         if pts:
             r, g, b = distinct_color(i, len(entities))
-            paths.append({"name": name or str(eid), "color": f"rgb({r},{g},{b})", "points": pts})
+            meta = spatial_by_id.get(int(eid), {})
+            paths.append({
+                "id": int(eid),
+                "name": name or str(eid),
+                "color": f"rgb({r},{g},{b})",
+                "points": pts,
+                "x": meta.get("x"), "y": meta.get("y"), "z": meta.get("z"),
+            })
     con.close()
 
     obj_available = (ZONE_VISUAL_DIR / f"{zoneid}.obj").exists()
@@ -4545,6 +4616,7 @@ def zone_view3d_all(request: Request, zoneid: int, capture_id: int, zone_db: str
         "ffxi_path_json": json.dumps(ffxi_path or ""),
         "geometry_rom_path_json": json.dumps(geometry_rom_path or ""),
         "all_zones": [],
+        "capture_spatial_url": f"/captures/{capture_id}/spatial.json?zone_db={zone_db}",
     })
 
 
@@ -4741,21 +4813,33 @@ MULTI_PLOT_LIMIT = 40
 
 
 @app.get("/captures/plot_all", response_class=HTMLResponse)
-def captures_plot_all(request: Request, capture_id: int, zone_db: str = "", pad_yalms: float = 200, detail: int = 0):
+def captures_plot_all(
+    request: Request, capture_id: int, zone_db: str = "", pad_yalms: float = 200,
+    detail: int = 0, q: str = "", labels: int = 1,
+):
     con = get_con()
     cap = con.execute("SELECT * FROM captures WHERE capture_id=?", (capture_id,)).fetchone()
     zones = json.loads(cap["zones"]) if cap and cap["zones"] else []
     zone_db = zone_db or (zones[0] if zones else "")
 
     entities = build_capture_index.get_capture_entity_ids_with_path(con, capture_id, zone_db) if zone_db else []
+    spatial_entities = capture_spatial_entities(con, capture_id, zone_db, q) if zone_db else []
     zoneid = zoneid_for_zone_db(con, zone_db) if zone_db else None
     variants = topdown_variants(zoneid)
     topdown_available = variants["collision"] or variants["detailed"]
     con.close()
 
+    color_by_id = {
+        int(eid): "rgb(%d,%d,%d)" % distinct_color(i, max(len(entities), 1))
+        for i, (eid, _name) in enumerate(entities[:MULTI_PLOT_LIMIT])
+    }
     legend = [
-        {"entity_id": eid, "name": name or "?", "color": "rgb(%d,%d,%d)" % distinct_color(i, len(entities))}
-        for i, (eid, name) in enumerate(entities[:MULTI_PLOT_LIMIT])
+        {
+            "entity_id": e["id"], "name": e["n"], "color": color_by_id.get(e["id"], "#e0c840"),
+            "x": e["x"], "y": e["y"], "z": e["z"], "model": e["model"],
+            "hpp": e["hpp"], "has_path": e["has_path"],
+        }
+        for e in spatial_entities
     ]
 
     return templates.TemplateResponse(request, "path_plot_all.html", {
@@ -4763,27 +4847,34 @@ def captures_plot_all(request: Request, capture_id: int, zone_db: str = "", pad_
         "entities": entities, "legend": legend, "topdown_available": topdown_available,
         "pad_yalms": pad_yalms, "truncated": len(entities) > MULTI_PLOT_LIMIT,
         "limit": MULTI_PLOT_LIMIT, "detail": detail, "variants": variants,
+        "q": q, "labels": bool(labels), "spatial_count": len(spatial_entities),
     })
 
 
 @app.get("/captures/plot_all.png")
-def captures_plot_all_png(capture_id: int, zone_db: str, pad_yalms: float = 200, detail: int = 0):
+def captures_plot_all_png(
+    capture_id: int, zone_db: str, pad_yalms: float = 200, detail: int = 0,
+    q: str = "", labels: int = 1,
+):
     """Every entity in one capture+zone with real path data, plotted together on the zone's real
     top-down mesh silhouette -- same coordinate-aligned approach as the single-entity plot, each
     entity given its own deterministic color (distinct_color) plus a small legend on the HTML page.
     detail=1 uses the denser visual-mesh cache instead of the default collision-mesh one."""
     con = get_con()
     entities = build_capture_index.get_capture_entity_ids_with_path(con, capture_id, zone_db)
+    spatial_entities = capture_spatial_entities(con, capture_id, zone_db, q)
     zoneid = zoneid_for_zone_db(con, zone_db)
     all_paths = []
     for eid, name in entities[:MULTI_PLOT_LIMIT]:
+        if q and not any(e["id"] == int(eid) for e in spatial_entities):
+            continue
         pts = build_capture_index.get_entity_path(con, capture_id, eid)
         if pts:
             all_paths.append((eid, pts))
     con.close()
 
     paths = topdown_paths(zoneid, bool(detail))
-    if not paths or not all_paths:
+    if not paths or (not all_paths and not spatial_entities):
         return Response(status_code=404)
     img_path, transform_path = paths
 
@@ -4817,6 +4908,21 @@ def captures_plot_all_png(capture_id: int, zone_db: str, pad_yalms: float = 200,
             draw.line(px_points, fill=color + (255,), width=line_w)
         sx, sy = px_points[0]
         draw.ellipse([sx - marker_r, sy - marker_r, sx + marker_r, sy + marker_r], fill=color + (255,))
+
+    # Capture-observed entities that never produced a path are still real spatial evidence.
+    # Draw them as gold markers and optionally label every visible entity with name/id/position.
+    spatial_px = []
+    for e in spatial_entities:
+        px, py = to_px(e["x"], e["z"])
+        spatial_px.append((px, py, e))
+        all_px_points.append((px, py))
+        rr = max(3, marker_r)
+        draw.ellipse([px - rr, py - rr, px + rr, py + rr], fill=(224, 200, 64, 255))
+    if labels:
+        for px, py, e in spatial_px:
+            label = f'{e["n"]} [{e["id"]}] ({e["x"]:.1f},{e["y"]:.1f},{e["z"]:.1f})'
+            draw.text((px + marker_r + 2, py - marker_r - 2), label, fill=(255, 255, 255, 255),
+                      stroke_width=2, stroke_fill=(0, 0, 0, 220))
 
     pad_px = pad_yalms / units_per_px
     crop_x0 = max(0, min(min(p[0] for p in all_px_points) - pad_px, size - 1))
