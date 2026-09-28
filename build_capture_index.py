@@ -2558,7 +2558,7 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
 
     counts = {"npc_entries": 0, "npc_hist": 0, "actions": 0, "path": 0, "hp": 0, "events": 0,
               "ki": 0, "eventview": 0, "level_range": 0, "attack_delay": 0, "raw_packets": 0,
-              "pc_path": 0, "widescan": 0, "caplog_chat": 0}
+              "pc_path": 0, "widescan": 0, "caplog_chat": 0, "structured": 0}
     npc_db_files = sfind(r'NPCLogger/[^/]+\.db$')
     for relname in npc_db_files:
         e, h = run2(relname, ingest_npc_db, con, capture_id, src, relname)
@@ -2723,6 +2723,27 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         if result_sink is not None:
             result_sink.append({"filename": relname, "rows": 0, "error": None})
 
+    # Content-first compatibility pass for auxiliary/past-and-present logger families. Core
+    # mission/runtime parsers above retain priority; only otherwise-unmatched files are considered.
+    all_source_names = sorted(src.list_files() if subroot is None
+                              else [n for n in src.list_files() if n.startswith(subroot + "/")])
+    for relname in all_source_names:
+        if relname in matched_names:
+            continue
+        fmt = _capture_source_format(src, relname)
+        if fmt not in AUX_STRUCTURED_FORMATS:
+            continue
+        matched_names.add(relname)
+        try:
+            rows = ingest_aux_structured(con, capture_id, src, relname, fmt)
+            counts.setdefault("structured", 0)
+            counts["structured"] += rows
+            if result_sink is not None:
+                result_sink.append({"filename": relname, "rows": rows, "error": None})
+        except Exception as ex:
+            if result_sink is not None:
+                result_sink.append({"filename": relname, "rows": 0, "error": str(ex)})
+
     if result_sink is not None:
         # Real files present in the bundle that no pattern above ever looked at -- a capture-log
         # format this toolkit doesn't recognize, or a genuinely unrelated file that got swept up
@@ -2852,6 +2873,23 @@ def _capture_source_format(src: "Source", relname: str) -> str | None:
         return "eventview"
     if "npclogger/" in lower and lower.endswith(".lua"):
         return "npclogger_lua"
+    # Auxiliary logger generations are content-addressed rather than path-bound. This lets old
+    # bundles, renamed files, and current Captain output share one detection contract.
+    try:
+        if lower.endswith((".db", ".sqlite", ".sqlite3")):
+            detected = sniff_sqlite_format(src.read_bytes(relname))
+            if detected:
+                return detected
+        elif lower.endswith(".csv"):
+            detected = sniff_csv_format(src.read_text(relname))
+            if detected:
+                return detected
+        elif lower.endswith((".log", ".txt", ".lua")):
+            detected = sniff_text_format(src.read_text(relname))
+            if detected:
+                return detected
+    except Exception:
+        pass
     return _sniff_known_format(src, relname)
 
 
