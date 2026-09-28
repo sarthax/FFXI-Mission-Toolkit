@@ -338,15 +338,78 @@ def _effects(text: str) -> tuple[TransitionEffect,...]:
     return tuple(out)
 
 
+def _structure_code(line: str) -> str:
+    """Strip comments/quoted strings before counting Lua table braces."""
+    code=_code(line)
+    return re.sub(r"'(?:\\.|[^'])*'|\"(?:\\.|[^\"])*\"", "", code)
+
+
+def _table_assignment_spans(
+    lines: list[str],
+    pattern: re.Pattern,
+    *,
+    enclosing: tuple[tuple[int,int,str],...] | None=None,
+) -> tuple[tuple[int,int,str],...]:
+    """Return assignment-line through matching-table-close spans for literal table entries."""
+    spans=[]
+    for i,line in enumerate(lines):
+        code=_code(line)
+        match=pattern.search(code)
+        if not match:
+            continue
+        if enclosing is not None and not any(start<=i<=end for start,end,_ in enclosing):
+            continue
+        rest=code[match.end():].strip()
+        open_line=None
+        if rest.startswith("{"):
+            open_line=i
+        elif not rest:
+            j=i+1
+            while j<len(lines) and not _code(lines[j]).strip():
+                j+=1
+            if j<len(lines) and _code(lines[j]).lstrip().startswith("{"):
+                open_line=j
+        if open_line is None:
+            continue
+
+        depth=0
+        started=False
+        for j in range(open_line,len(lines)):
+            structural=_structure_code(lines[j])
+            opens=structural.count("{")
+            closes=structural.count("}")
+            if opens:
+                started=True
+            depth+=opens-closes
+            if started and depth<=0:
+                spans.append((i,j,match.group(1)))
+                break
+    return tuple(spans)
+
+
+def _scoped_contexts(lua: str):
+    lines=lua.splitlines()
+    zone_spans=_table_assignment_spans(lines,_ZONE)
+    actor_spans=_table_assignment_spans(lines,_ACTOR,enclosing=zone_spans)
+
+    def context(line_no: int):
+        zones=[span for span in zone_spans if span[0]<=line_no<=span[1]]
+        zone_span=max(zones,key=lambda span:span[0]) if zones else None
+        zone=zone_span[2] if zone_span else None
+        actors=[
+            span for span in actor_spans
+            if span[0]<=line_no<=span[1]
+            and (zone_span is None or zone_span[0]<=span[0]<=span[1]<=zone_span[1])
+        ]
+        actor=max(actors,key=lambda span:span[0])[2] if actors else None
+        return zone,actor
+
+    return lines,zone_spans,actor_spans,context
+
+
 def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> MissionStateMachine:
     """Correlate literal Mission DSL handler blocks into conservative transitions."""
-    lines=lua.splitlines()
-    zones=[(i,m.group(1)) for i,line in enumerate(lines) if (m:=_ZONE.search(line))]
-    actors=[(i,m.group(1)) for i,line in enumerate(lines) if (m:=_ACTOR.search(line))]
-    def context(line_no):
-        zone=next((z for i,z in reversed(zones) if i<=line_no),None)
-        actor=next((a for i,a in reversed(actors) if i<=line_no and not any(zi>i and zi<=line_no for zi,_ in zones)),None)
-        return zone,actor
+    lines,zone_spans,actor_spans,context=_scoped_contexts(lua)
 
     transitions=[]
     states={"source:any":MissionState("source:any","Source state")}
@@ -459,6 +522,7 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                 confidence="INFERRED" if guard_complete else "UNKNOWN",
                 metadata={
                     "zone":zone,"actor":actor,"source_lines":(start+1,end+1),"literal_correlation":True,
+                    "context_basis":"table_scope",
                     "priority":(int(pm.group(1)) if (pm:=re.search(r"setPriority\((\d+)\)",text)) else None),
                     "important_event":".importantEvent()" in text,
                     "replace_default":".replaceDefault()" in text,
@@ -546,14 +610,16 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
     finishes={}
     for t in machine.transitions:
         if t.trigger=="EVENT_FINISH" and t.event:
-            finishes.setdefault((t.event.zone,t.event.event_id),[]).append(t)
+            finishes.setdefault((t.event.zone,t.event.event_id,t.event.actor),[]).append(t)
 
     consumed=set()
     chained=[]
     for t in machine.transitions:
         if t.trigger not in {"NPC_INTERACT","ZONE_IN","TRADE"} or not t.event:
             continue
-        candidates=finishes.get((t.event.zone,t.event.event_id),[])
+        exact=finishes.get((t.event.zone,t.event.event_id,t.event.actor),[])
+        generic=finishes.get((t.event.zone,t.event.event_id,None),[])
+        candidates=exact if exact else generic
         if not candidates:
             continue
         consumed.add(t.transition_id)
@@ -618,7 +684,7 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
     out=MissionStateMachine(
         machine.machine_id,machine.feature_id,machine.states,
         tuple(remaining+chained),machine.entry_state_ids,machine.channels,
-        machine.completion_gate,{**machine.metadata,"event_chains":len(chained),"event_chain_branch_fanout":sum(max(0,len(v)-1) for v in finishes.values())},
+        machine.completion_gate,{**machine.metadata,"event_chains":len(chained),"event_chain_branch_fanout":sum(max(0,len(v)-1) for v in finishes.values()),"event_chain_actor_scope":True},
     )
     return materialize_channel_states(out)
 

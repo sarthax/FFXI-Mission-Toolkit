@@ -60,6 +60,7 @@ def main():
     assert trigger.gate.conditions[0].subject=="mission_var:Status",trigger
 
     finish=next(t for t in m.transitions if t.event and t.event.event_id==6 and t.trigger=="EVENT_FINISH")
+    assert finish.event.actor is None,finish
     assert any(e.subject=="mission_var:Status" for e in finish.effects),finish
 
     win=next(t for t in m.transitions if t.event and t.event.event_id==32001)
