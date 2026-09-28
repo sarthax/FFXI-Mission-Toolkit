@@ -98,7 +98,29 @@ _SET_POS=re.compile(r"player:setPos\(([^\)]+)\)")
 _BEGIN=re.compile(r"quest:begin\(player\)")
 _COMPLETE=re.compile(r"quest:complete\(player\)")
 _START_EVENT=re.compile(r"player:startEvent\((\d+)")
+_TODO_AFTER_MISSION=re.compile(
+    r"--\s*TODO:\s*(.*?)\bafter\s+(?:WOTG\s+)?Mission:\s*([A-Za-z0-9 '\-]+)",
+    re.I,
+)
 _OP={"==":"EQ","~=":"NE","<":"LT","<=":"LE",">":"GT",">=":"GE"}
+
+
+def _symbolize_feature_name(name: str) -> str:
+    return re.sub(r"[^A-Za-z0-9]+","_",name.strip()).strip("_").upper()
+
+
+def _documented_feature_requirements(lua: str) -> tuple[dict,...]:
+    """Recover explicit source comments that document known-but-unenforced prerequisites."""
+    out=[]
+    for match in _TODO_AFTER_MISSION.finditer(lua):
+        out.append({
+            "subject":f"mission:{_symbolize_feature_name(match.group(2))}",
+            "relation":"AFTER",
+            "enforcement":"NOT_IMPLEMENTED",
+            "source_kind":"SOURCE_TODO_COMMENT",
+            "note":match.group(1).strip(),
+        })
+    return tuple(out)
 
 
 def _literal_quest_section_spans(lua: str) -> tuple[tuple[int,int,str],...]:
@@ -581,6 +603,7 @@ def correlate_lsb_quest_handlers(
             "modeled_source_handler_count":modeled_source_handler_count,
             "unmodeled_source_handler_count":len(unmodeled_source_handler_lines),
             "unmodeled_source_handler_lines":tuple(unmodeled_source_handler_lines),
+            "documented_feature_requirements":_documented_feature_requirements(lua),
         },
     )
 
