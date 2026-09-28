@@ -4503,7 +4503,7 @@ def zone_view3d(request: Request, zoneid: int, capture_id: int = 0, entity_id: i
         "ffxi_path_json": json.dumps(ffxi_path or ""),
         "geometry_rom_path_json": json.dumps(geometry_rom_path or ""),
         "all_zones": [{"zoneid": z[0], "name": z[1]} for z in all_zones],
-        "capture_spatial_url": (
+        "capture_spatial_url_json": json.dumps(
             f"/captures/{capture_id}/spatial.json?zone_db={zone_db}"
             if capture_id and zone_db else ""
         ),
@@ -4616,7 +4616,9 @@ def zone_view3d_all(request: Request, zoneid: int, capture_id: int, zone_db: str
         "ffxi_path_json": json.dumps(ffxi_path or ""),
         "geometry_rom_path_json": json.dumps(geometry_rom_path or ""),
         "all_zones": [],
-        "capture_spatial_url": f"/captures/{capture_id}/spatial.json?zone_db={zone_db}",
+        "capture_spatial_url_json": json.dumps(
+            f"/captures/{capture_id}/spatial.json?zone_db={zone_db}"
+        ),
     })
 
 
