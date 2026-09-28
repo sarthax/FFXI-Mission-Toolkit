@@ -23,6 +23,10 @@ from workbench.plugins.domain.mission_state_machine import (
 
 
 LUA=r'''
+helper = function(player)
+    player:messageSpecial(100)
+end
+
 return Mission:new(xi.mission.log_id.COP, xi.mission.id.cop.ANCIENT_VOWS, {
     [xi.zone.MISAREAUX_COAST] = {
         ['_0p2'] = {
@@ -36,6 +40,7 @@ return Mission:new(xi.mission.log_id.COP, xi.mission.id.cop.ANCIENT_VOWS, {
                 [6] = function(player, csid, option, npc)
                     mission:setVar(player, 'Status', 1)
                     npcUtil.giveKeyItem(player, xi.keyItem.MISTMELT)
+                    helper(player)
                 end,
             },
         },
@@ -66,7 +71,7 @@ def main():
     actor_entities=[e for e in projection.entities if e.entity_type=="SERVER_ACTOR"]
     assert len(actor_entities)==1 and actor_entities[0].display_name=="_0p2"
     relationships={e.relationship for e in projection.edges}
-    assert {"HAS_STATE","HAS_TRANSITION","FROM_STATE","TO_STATE","TRIGGERED_BY_EVENT","EVENT_ACTOR","REQUIRES","AFFECTS"}.issubset(relationships),relationships
+    assert {"HAS_STATE","HAS_TRANSITION","FROM_STATE","TO_STATE","TRIGGERED_BY_EVENT","EVENT_ACTOR","REQUIRES","AFFECTS","CALLS_HELPER"}.issubset(relationships),relationships
     assert any(e.target_node=="key_item:MISTMELT" and e.relationship=="AFFECTS" for e in projection.edges)
     shared_ki=next(e for e in projection.entities if e.entity_id=="key_item:MISTMELT")
     assert shared_ki.metadata["scope"]=="shared" and "feature_id" not in shared_ki.metadata
@@ -75,6 +80,9 @@ def main():
     assert any(e.target_node==scoped_status.entity_id and e.relationship=="REQUIRES" for e in projection.edges)
     source_evidence=[e for e in projection.evidence if e.evidence_type=="SOURCE_CODE"]
     assert source_evidence and ":L" in source_evidence[0].location
+    helper_entity=next(e for e in projection.entities if e.entity_type=="MISSION_HELPER")
+    assert helper_entity.entity_id=="mission-helper:mission:test:ancient-vows-shape:helper",helper_entity
+    assert any(e.relationship=="CALLS_HELPER" and e.target_node==helper_entity.entity_id for e in projection.edges)
 
     second=extract_and_project_lsb_mission(
         LUA,

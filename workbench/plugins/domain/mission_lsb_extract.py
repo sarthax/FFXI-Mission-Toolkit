@@ -481,6 +481,11 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
     transitions=[]
     states={"source:any":MissionState("source:any","Source state")}
     completion_helpers=extract_dynamic_completion_gates(lua)
+    helper_names=set()
+    for helper_start,_helper_end,helper_text in _balanced_function_blocks(lua):
+        helper_match=_HELPER_ASSIGN.search(lines[helper_start])
+        if helper_match:
+            helper_names.add(helper_match.group(1))
     serial=0
     branch_alternatives=0
     incomplete_branch_guards=0
@@ -567,6 +572,11 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                             conds.append(condition)
 
             effects=list(_effects(path.body))
+            executable_body="\n".join(_code(line) for line in path.body.splitlines())
+            helper_calls=tuple(sorted(
+                helper_name for helper_name in helper_names
+                if re.search(rf"\b{re.escape(helper_name)}\s*\(\s*player\s*\)",executable_body)
+            ))
             transport_effects=client_transport_effects(path.body)
             effects.extend(effect for effect in transport_effects if effect not in effects)
             event=handler_event
@@ -605,6 +615,7 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                     "unexpanded_nested_branch":unresolved_nested_branch,
                     "post_effect_gate_basis":tuple(post_effect_basis),
                     "completion_helpers":tuple(invoked_helpers),
+                    "helper_calls":helper_calls,
                 },
                 post_effect_gate=post_effect_gate,
             ))
@@ -802,7 +813,7 @@ def extract_section_completion_gate(lua: str) -> DependencyGate | None:
 
 
 def extract_helper_transitions(lua: str) -> tuple[MissionTransition,...]:
-    """Extract player helper functions that carry mission behavior (e.g. timers)."""
+    """Extract helper behavior as conservative branch-specific transitions."""
     lines=lua.splitlines()
     out=[]
     serial=0
@@ -811,17 +822,38 @@ def extract_helper_transitions(lua: str) -> tuple[MissionTransition,...]:
         hm=_HELPER_ASSIGN.search(first)
         if not hm:
             continue
-        effects=_effects(text)
-        conds=_conditions(text)
-        if not effects and not conds:
-            continue
-        serial+=1
-        trigger="TIMER" if _TIMER.search(text) or "GetSystemTime()" in text else "PLACEHOLDER"
-        gate=DependencyGate(f"helper-gate:{serial}","ALL",conds) if conds else None
-        out.append(MissionTransition(
-            f"helper:{hm.group(1)}:{serial}","source:any","source:any",trigger,gate,None,effects,
-            "INFERRED",metadata={"helper":hm.group(1),"source_lines":(start+1,end+1),"helper_behavior":True},
-        ))
+        helper_name=hm.group(1)
+        paths=_handler_paths(text,start_line=start)
+        for path_index,path in enumerate(paths,1):
+            unresolved_nested_branch=bool(re.search(r"^\s*(?:if|elseif|else)\b",path.body,re.M))
+            guard_parts=list(path.guard_texts)
+            if unresolved_nested_branch:
+                guard_parts.append(path.body)
+            conds=_conditions("\n".join(guard_parts))
+            effects=_effects(path.body)
+            if not effects and not conds:
+                continue
+            serial+=1
+            trigger="TIMER" if _TIMER.search(path.body) or "GetSystemTime()" in path.body else "PLACEHOLDER"
+            gate=DependencyGate(f"helper-gate:{serial}","ALL",conds) if conds else None
+            guard_complete=path.guard_complete and not unresolved_nested_branch
+            executable_body="\n".join(_code(line) for line in path.body.splitlines())
+            recursive=bool(re.search(rf"\b{re.escape(helper_name)}\s*\(\s*player\s*\)",executable_body))
+            out.append(MissionTransition(
+                f"helper:{helper_name}:{serial}","source:any","source:any",trigger,gate,None,effects,
+                "INFERRED" if guard_complete else "UNKNOWN",
+                metadata={
+                    "helper":helper_name,
+                    "source_lines":(start+1,end+1),
+                    "helper_behavior":True,
+                    "branch_alternative":len(paths)>1,
+                    "branch_index":path_index,
+                    "branch_path":path.branch_path,
+                    "branch_guard_complete":guard_complete,
+                    "unexpanded_nested_branch":unresolved_nested_branch,
+                    "recursive_helper_call":recursive,
+                },
+            ))
     return tuple(out)
 
 
