@@ -113,26 +113,36 @@ _LOCAL_PLAYER_HELPER=re.compile(r"^\s*local\s+function\s+([A-Za-z_][A-Za-z0-9_]*
 
 
 def _balanced_function_blocks(lua: str):
-    """Yield (start_line, end_line, text) for simple Lua function blocks.
+    """Yield outermost executable Lua function blocks.
 
-    Token counting is intentionally conservative; comments/strings are not treated
-    as executable syntax. This is sufficient for Mission DSL handlers and fails
-    closed when a block cannot be balanced.
+    Nested callbacks belong to their enclosing handler/helper and are not yielded as
+    independent mission functions. Comment/string text containing Lua keywords is ignored.
+    Unbalanced candidates fail closed.
     """
     lines=lua.splitlines()
+
+    def structural(line: str) -> str:
+        code=line.split("--",1)[0]
+        return re.sub(r"'(?:\\.|[^'])*'|\"(?:\\.|[^\"])*\"", "", code)
+
+    claimed_until=-1
     for i,line in enumerate(lines):
-        if "function" not in line:
+        if i<=claimed_until:
+            continue
+        first=structural(line)
+        if not re.search(r"\bfunction\b",first):
             continue
         depth=0
         started=False
         for j in range(i,len(lines)):
-            code=lines[j].split("--",1)[0]
+            code=structural(lines[j])
             opens=len(re.findall(r"\b(function|if|for|while|repeat)\b",code))
             closes=len(re.findall(r"\bend\b",code))+len(re.findall(r"\buntil\b",code))
             if opens:
                 started=True
             depth+=opens-closes
             if started and depth<=0:
+                claimed_until=j
                 yield i,j,"\n".join(lines[i:j+1])
                 break
 
