@@ -167,6 +167,22 @@ Current public flagship E2E: pinned LSB → legacy DSP Chains of Promathia 2-5 (
 - [ ] richer runtime probes/capture producers (P1) — expand only as specific systems need them.
 
 
+
+### Capture integrity and provenance hardening (P1)
+
+Purpose: make capture evidence reproducible, deletion-safe, content-addressed, and auditable before additional runtime-research automation depends on it.
+
+- [x] Make capture deletion orphan-safe by reconciling the explicit child-table registry with live-schema discovery of every table containing `capture_id`; include VIDEO_OCR, timeline anchors, key evidence, source manifests/lineage, and future capture-owned tables automatically.
+- [x] Remove persisted per-capture screenshot/key-evidence files when the capture itself is deleted.
+- [x] Add a content-addressed source manifest for every ingested source file with SHA-256, byte size, detected format, parser identity/version, row count, ingest status/error, and ingestion time.
+- [x] Apply source hashing to both individual-file ingestion and folder/archive bundle ingestion, so renamed/moved copies can be recognized by content rather than only `source_path`.
+- [x] Add explicit ingestion lineage from source file/hash → parser/version → normalized table family with locator basis (`line`, `block`, `sqlite-row`, `csv-row`, etc.) and row-count provenance.
+- [x] Add a dimensioned capture-health report covering source integrity, parser coverage, lineage, client context, packet evidence, entity evidence, timeline alignment, and duplicate-source detection; do not collapse these dimensions into one numeric score.
+- [x] Expose capture integrity dimensions plus the source manifest/parser provenance on the capture detail GUI.
+- [ ] Refine legacy parsers incrementally to emit exact per-normalized-row source locators/offsets where the original format supports them; do not infer line/block precision for existing parsers that never exposed it.
+- [ ] Add session-overlap/fingerprint detection beyond exact source-file hashes for partial/overlapping captures.
+- [ ] Add clock discontinuity diagnostics and parser-specific rebuild/reingestion orchestration while preserving capture identity and annotations.
+
 ### Video OCR evidence alignment and packet reconstruction (P1)
 
 Purpose: treat gameplay video and screenshots as time-addressable runtime evidence that can be aligned with real capture sessions, packet observations, NPC/dialog events, and later screenshot/key-event evidence without promoting OCR guesses to authoritative packet truth.
