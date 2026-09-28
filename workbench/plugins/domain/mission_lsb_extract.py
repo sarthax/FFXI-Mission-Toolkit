@@ -491,6 +491,9 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
     serial=0
     branch_alternatives=0
     incomplete_branch_guards=0
+    source_handler_count=0
+    modeled_source_handler_count=0
+    unmodeled_source_handler_lines=[]
     for start,end,text in _balanced_function_blocks(lua):
         first=lines[start]
         trigger=None; handler_event=None
@@ -512,6 +515,8 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
         if not trigger:
             continue
 
+        source_handler_count+=1
+        transition_count_before=len(transitions)
         paths=_handler_paths(text,start_line=start)
         if len(paths)>1:
             branch_alternatives+=len(paths)
@@ -621,6 +626,10 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                 },
                 post_effect_gate=post_effect_gate,
             ))
+        if len(transitions)>transition_count_before:
+            modeled_source_handler_count+=1
+        else:
+            unmodeled_source_handler_lines.append((start+1,end+1))
     # Declarative actor handlers are equivalent to unconditional NPC triggers.
     for line_no,line in enumerate(lines):
         dm=_DECL_EVENT.search(line)
@@ -628,6 +637,8 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
             continue
         zone,_=context(line_no)
         actor=dm.group(1); event_id=int(dm.group(3)); suffix=dm.group(4) or ""
+        source_handler_count+=1
+        modeled_source_handler_count+=1
         serial+=1
         transitions.append(MissionTransition(
             f"source-transition:{serial}","source:any","source:any","NPC_INTERACT",
@@ -648,6 +659,10 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
             "extractor":"lsb_static_literal","transition_count":len(transitions),
             "branch_alternatives":branch_alternatives,
             "incomplete_branch_guards":incomplete_branch_guards,
+            "source_handler_count":source_handler_count,
+            "modeled_source_handler_count":modeled_source_handler_count,
+            "unmodeled_source_handler_count":len(unmodeled_source_handler_lines),
+            "unmodeled_source_handler_lines":tuple(unmodeled_source_handler_lines),
         },
     )
 
