@@ -4,7 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 PARSER_VERSION = "capture-integrity-v1"
 
@@ -178,6 +178,257 @@ def content_identity(con: sqlite3.Connection, capture_id: int) -> dict | None:
     return {
         "capture_id": row[0], "sha256": row[1], "file_count": row[2],
         "total_bytes": row[3], "updated_at": row[4],
+    }
+
+
+def _table_exists(con: sqlite3.Connection, table: str) -> bool:
+    return bool(con.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)
+    ).fetchone())
+
+
+def _bounded_rows(con: sqlite3.Connection, sql: str, args: tuple, limit: int = 5000):
+    return con.execute(sql + " LIMIT ?", args + (limit,)).fetchall()
+
+
+def _capture_overlap_tokens(con: sqlite3.Connection, capture_id: int) -> dict[str, set[str]]:
+    """Build conservative normalized evidence tokens for partial-session overlap checks.
+
+    Timestamps are deliberately excluded so the same underlying session can still correlate when
+    two tools started at different wall-clock offsets. Tokens are capped per family to bound GUI
+    health checks on very large captures.
+    """
+    families: dict[str, set[str]] = {}
+
+    def add(name: str, rows) -> None:
+        tokens = set()
+        for row in rows:
+            payload = json.dumps(list(row), sort_keys=False, separators=(",", ":"), default=str)
+            tokens.add(hashlib.sha256(payload.encode("utf-8")).hexdigest())
+        if tokens:
+            families[name] = tokens
+
+    if _table_exists(con, "capture_events"):
+        add("events", _bounded_rows(
+            con,
+            """SELECT zone_db,direction,opcode,opcode_name,entity_id,event_hex,option,message_id,params_raw
+               FROM capture_events WHERE capture_id=? ORDER BY zone_db,seq""",
+            (capture_id,),
+        ))
+    if _table_exists(con, "capture_eventview"):
+        add("eventview", _bounded_rows(
+            con,
+            """SELECT zone_db,direction,opcode,packet_class,gp_command,entity_id,mes_num,message_number,fields_json
+               FROM capture_eventview WHERE capture_id=? ORDER BY zone_db,seq""",
+            (capture_id,),
+        ))
+    if _table_exists(con, "capture_ki_events"):
+        add("key_items", _bounded_rows(
+            con,
+            """SELECT event_type,keyitem_id,keyitem_name,zone_name,x,y,z
+               FROM capture_ki_events WHERE capture_id=? ORDER BY seq""",
+            (capture_id,),
+        ))
+    if _table_exists(con, "capture_actions"):
+        add("actions", _bounded_rows(
+            con,
+            """SELECT actor,actor_name,action_type,animation,category,message,name
+               FROM capture_actions WHERE capture_id=? ORDER BY action_key""",
+            (capture_id,),
+        ))
+    if _table_exists(con, "capture_raw_packets"):
+        # Raw packet bytes are powerful overlap evidence but can contain common heartbeat/status
+        # packets. Keep only non-trivial payloads and still require strong containment below.
+        rows = _bounded_rows(
+            con,
+            """SELECT direction,opcode,raw_hex
+               FROM capture_raw_packets
+               WHERE capture_id=? AND LENGTH(COALESCE(raw_hex,''))>=24
+               ORDER BY seq""",
+            (capture_id,),
+        )
+        add("raw_packets", rows)
+    return families
+
+
+def find_partial_capture_overlaps(con: sqlite3.Connection, capture_id: int) -> list[dict]:
+    """Find strong partial/overlapping-session candidates without declaring identity.
+
+    A candidate must either share evidence from at least two normalized families, or have a large
+    and highly-contained raw-packet overlap by itself. This intentionally favors false negatives
+    over false positives because repeated FFXI packets/events can occur across unrelated sessions.
+    """
+    target = _capture_overlap_tokens(con, capture_id)
+    if not target:
+        return []
+    target_ids = set().union(*target.values()) if target else set()
+    if not target_ids:
+        return []
+
+    capture_rows = con.execute(
+        "SELECT capture_id,capture_label,source_path FROM captures WHERE capture_id<>? ORDER BY capture_id",
+        (capture_id,),
+    ).fetchall()
+    out = []
+    for other_id, label, source_path in capture_rows:
+        other = _capture_overlap_tokens(con, int(other_id))
+        if not other:
+            continue
+        shared_by_family = {}
+        for family in sorted(set(target) & set(other)):
+            shared = len(target[family] & other[family])
+            if shared:
+                shared_by_family[family] = shared
+        if not shared_by_family:
+            continue
+
+        target_total = sum(len(v) for v in target.values())
+        other_total = sum(len(v) for v in other.values())
+        shared_total = sum(shared_by_family.values())
+        family_count = len(shared_by_family)
+        target_containment = shared_total / max(target_total, 1)
+        other_containment = shared_total / max(other_total, 1)
+
+        raw_shared = shared_by_family.get("raw_packets", 0)
+        multi_family_strong = (
+            family_count >= 2 and shared_total >= 4 and
+            max(target_containment, other_containment) >= 0.20
+        )
+        raw_only_strong = (
+            family_count == 1 and raw_shared >= 20 and
+            min(target_containment, other_containment) >= 0.50
+        )
+        if not (multi_family_strong or raw_only_strong):
+            continue
+
+        out.append({
+            "capture_id": int(other_id),
+            "capture_label": label,
+            "source_path": source_path,
+            "shared_by_family": shared_by_family,
+            "shared_total": shared_total,
+            "target_observations": target_total,
+            "other_observations": other_total,
+            "target_containment": round(target_containment, 4),
+            "other_containment": round(other_containment, 4),
+            "basis": "normalized_runtime_evidence",
+        })
+    out.sort(key=lambda r: (-r["shared_total"], -max(r["target_containment"], r["other_containment"]), r["capture_id"]))
+    return out
+
+
+def _parse_locator_timestamp(value: str | None):
+    if not value:
+        return None
+    value = str(value).strip()
+    for fmt, kind in (
+        ("%Y-%m-%d %H:%M:%S", "datetime"),
+        ("%Y-%m-%dT%H:%M:%S", "datetime"),
+        ("%H:%M:%S", "time"),
+    ):
+        try:
+            return datetime.strptime(value, fmt), kind
+        except ValueError:
+            pass
+    return None
+
+
+def clock_discontinuities(con: sqlite3.Connection, capture_id: int) -> dict:
+    """Inspect timestamp-bearing exact locators in original physical source order.
+
+    Midnight rollover for time-only clocks is treated as normal. Backward jumps larger than one
+    second, and timestamp-format changes inside the same source file, are reported for review but
+    never auto-corrected.
+    """
+    if not _table_exists(con, "capture_row_locators"):
+        return {"status": "UNKNOWN", "streams": 0, "timestamped_rows": 0, "discontinuities": []}
+
+    rows = con.execute(
+        """SELECT filename,start_line,start_offset,details_json
+           FROM capture_row_locators
+           WHERE capture_id=?
+           ORDER BY filename,COALESCE(start_line,2147483647),COALESCE(start_offset,9223372036854775807)""",
+        (capture_id,),
+    ).fetchall()
+
+    by_file: dict[str, list[dict]] = {}
+    for filename, start_line, start_offset, details_json in rows:
+        try:
+            details = json.loads(details_json or "{}")
+        except json.JSONDecodeError:
+            details = {}
+        ts_raw = details.get("timestamp")
+        parsed = _parse_locator_timestamp(ts_raw)
+        if not parsed:
+            continue
+        dt, kind = parsed
+        by_file.setdefault(filename, []).append({
+            "raw": ts_raw, "dt": dt, "kind": kind,
+            "line": start_line, "offset": start_offset,
+        })
+
+    discontinuities = []
+    timestamped_rows = 0
+    for filename, stream in by_file.items():
+        timestamped_rows += len(stream)
+        prev = None
+        day_offset = 0
+        prev_kind = None
+        for item in stream:
+            dt = item["dt"]
+            kind = item["kind"]
+            if prev_kind is not None and kind != prev_kind:
+                discontinuities.append({
+                    "filename": filename,
+                    "type": "clock_format_change",
+                    "previous_kind": prev_kind,
+                    "current_kind": kind,
+                    "line": item["line"],
+                    "timestamp": item["raw"],
+                })
+                prev = None
+                day_offset = 0
+            if kind == "time":
+                current_seconds = dt.hour * 3600 + dt.minute * 60 + dt.second
+                current = current_seconds + day_offset
+                if prev is not None and current < prev:
+                    # A late-night -> early-morning transition is a legitimate midnight rollover.
+                    prev_day_seconds = prev % 86400
+                    if prev_day_seconds >= 20 * 3600 and current_seconds <= 4 * 3600:
+                        day_offset += 86400
+                        current = current_seconds + day_offset
+                    elif prev - current > 1:
+                        discontinuities.append({
+                            "filename": filename,
+                            "type": "backward_clock_jump",
+                            "line": item["line"],
+                            "previous_seconds": prev,
+                            "current_seconds": current,
+                            "delta_seconds": round(current - prev, 3),
+                            "timestamp": item["raw"],
+                        })
+                prev = current
+            else:
+                current = dt.replace(tzinfo=None)
+                if isinstance(prev, datetime) and current < prev - timedelta(seconds=1):
+                    discontinuities.append({
+                        "filename": filename,
+                        "type": "backward_clock_jump",
+                        "line": item["line"],
+                        "previous_timestamp": prev.isoformat(sep=" "),
+                        "current_timestamp": current.isoformat(sep=" "),
+                        "delta_seconds": (current - prev).total_seconds(),
+                        "timestamp": item["raw"],
+                    })
+                prev = current
+            prev_kind = kind
+
+    return {
+        "status": "ISSUES" if discontinuities else ("COMPLETE" if timestamped_rows else "UNKNOWN"),
+        "streams": len(by_file),
+        "timestamped_rows": timestamped_rows,
+        "discontinuities": discontinuities,
+        "basis": "timestamp-bearing exact row locators in physical source order",
     }
 
 
@@ -380,6 +631,8 @@ def capture_health(con: sqlite3.Connection, capture_id: int) -> dict:
 
     capture_identity=content_identity(con,capture_id)
     exact_duplicates=find_exact_capture_duplicates(con,capture_id)
+    partial_overlaps=find_partial_capture_overlaps(con,capture_id)
+    clock_diag=clock_discontinuities(con,capture_id)
 
     duplicate_hashes=[]
     for row in con.execute(
@@ -433,6 +686,12 @@ def capture_health(con: sqlite3.Connection, capture_id: int) -> dict:
         "exact_duplicates":exact_duplicates,
         "basis":"path-independent current non-auxiliary source set",
     }
+    dimensions["session_overlap"]={
+        "status":"PARTIAL" if partial_overlaps else ("COMPLETE" if capture_identity else "UNKNOWN"),
+        "candidates":partial_overlaps,
+        "basis":"conservative normalized-runtime-evidence containment; candidates require review",
+    }
+    dimensions["clock_continuity"]=clock_diag
 
     issue_count=sum(1 for d in dimensions.values() if d["status"]=="ISSUES")
     partial_count=sum(1 for d in dimensions.values() if d["status"]=="PARTIAL")

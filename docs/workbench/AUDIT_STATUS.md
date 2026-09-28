@@ -2580,3 +2580,18 @@ Exact source attribution now covers four more legacy text capture families.
 - UTF-8 byte precision is recorded only when the decoded text round-trips exactly.
 
 The next provenance boundary is no longer text parsing in these families; it is trustworthy row attribution for SQLite-backed sources and the remaining lower-value legacy parsers.
+
+
+## 2026-09-28 — Partial-session overlap and clock continuity diagnostics
+
+Capture integrity now detects two classes of cross-source problems that exact file hashing cannot cover.
+
+- Partial/overlapping-session detection fingerprints normalized runtime observations across events, EventView packets, key-item events, actions, and non-trivial raw packets.
+- Candidate overlap is deliberately conservative: it requires either shared evidence across multiple families or a large, highly-contained raw-packet overlap. It is surfaced as a review candidate, never auto-classified as an exact duplicate.
+- Overlap fingerprints exclude timestamps so captures of the same underlying session can correlate even when logger clocks or capture starts differ.
+- Clock continuity uses timestamp-bearing exact row locators in physical source-file order rather than normalized-table order, avoiding false continuity after parser sorting/merging.
+- Time-only streams treat late-night to early-morning transitions as legitimate midnight rollover.
+- Backward wall-clock jumps greater than one second and in-file timestamp-format changes are surfaced with source filename/line provenance.
+- Diagnostics are visible directly on Capture Detail and remain non-destructive: no timestamps, alignments, or capture identities are rewritten automatically.
+
+Parser-specific rebuild/reingestion orchestration remains the next unfinished capture-integrity item.
