@@ -4463,7 +4463,7 @@ def zone_view3d(request: Request, zoneid: int, capture_id: int = 0, entity_id: i
         "geometry_rom_path_json": json.dumps(geometry_rom_path or ""),
         "all_zones": [{"zoneid": z[0], "name": z[1]} for z in all_zones],
         "capture_spatial_url_json": json.dumps(
-            f"/captures/{capture_id}/spatial.json?zone_db={zone_db}"
+            f"/captures/{capture_id}/spatial.json?zone_db={quote(zone_db)}"
             if capture_id and zone_db else ""
         ),
     })
