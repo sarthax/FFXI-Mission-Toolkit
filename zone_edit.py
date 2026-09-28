@@ -35,6 +35,7 @@ TABLES = {  # table -> primary key columns
     "npc_list": ["npcid"],
     "mob_groups": ["groupid", "zoneid"],
     "mob_droplist": ["dropid", "dropType", "groupId", "itemId"],
+    "instance_entities": ["instanceid", "id"],
 }
 KIND_TABLE = {"m": "mob_spawn_points", "n": "npc_list", "d": "npc_list"}
 
@@ -228,11 +229,16 @@ def delete_entity(kind, eid, comment=""):
     op = _capture(cu, table, [eid])
     if op["row"] is None:
         db.close(); raise ValueError(f"{table}.{key}={eid} not found")
-    cu.execute("select count(*) from instance_entities where id=%s", (eid,))
-    in_inst = cu.fetchone()[0]
-    bid = _save_backup(f"delete {table} {eid} ({op['row'].get('mobname') or op['row'].get('name')})", _zone_of(eid), [op])
+    cu.execute("select instanceid from instance_entities where id=%s", (eid,))
+    inst_rows = [r[0] for r in cu.fetchall()]
+    in_inst = len(inst_rows)
+    ops = [op] + [{"table": "instance_entities", "key": [iid, eid], "row": {"instanceid": iid, "id": eid}} for iid in inst_rows]
+    bid = _save_backup(f"delete {table} {eid} ({op['row'].get('mobname') or op['row'].get('name')})", _zone_of(eid), ops)
     cu.execute(f"delete from {table} where {key}=%s", (eid,))
     sqls = [f"DELETE FROM {table} WHERE {key}={eid};"]
+    if inst_rows:
+        cu.execute("delete from instance_entities where id=%s", (eid,))
+        sqls.append(f"DELETE FROM instance_entities WHERE id={eid}; -- was linked to instance(s) {', '.join(map(str, inst_rows))}")
     # NOTE: we deliberately do NOT auto-delete a now-zero-spawn mob_groups row here. A group having zero
     # mob_spawn_points rows is a normal, common state (e.g. Nyzul Isle groups referenced dynamically by the
     # instance generator, not via static spawn rows) -- auto-cleaning it destroyed a real live group once.
@@ -248,7 +254,7 @@ def delete_entity(kind, eid, comment=""):
     db.commit(); db.close()
     _journal(comment, [f"-- backup {bid}"] + sqls)
     return {"sql": "\n".join(sqls), "backup": bid,
-            "warning": (f"still listed in instance_entities ({in_inst} instance rows)" if in_inst else "") + group_note}
+            "warning": (f"also unlinked from instance_entities ({in_inst} instance row(s): {', '.join(map(str, inst_rows))})" if in_inst else "") + group_note}
 
 
 def catalogue(kind, q, limit=60):
@@ -277,10 +283,17 @@ def catalogue(kind, q, limit=60):
     return out
 
 
-def add_entity(kind, zid, src, x, y, z, rot, name="", comment=""):
+def add_entity(kind, zid, src, x, y, z, rot, name="", comment="", instance=0):
     """Add a mob spawn (src = {groupid, zone}) or npc (src = {npcid}) at (x,y,z) in zone `zid`.
-    A mob group from another zone is cloned into this zone as a new mob_groups row."""
+    A mob group from another zone is cloned into this zone as a new mob_groups row.
+    If `instance` (an instance_list id) is given, the new row is also linked into
+    instance_entities so it actually appears/loads in that fixed instance -- otherwise it
+    only lands in the zone's general (non-instanced) pool and a fixed-placement instance like
+    Heroines' Holdfast (80) will never see it. This is the one piece the plain Zone Editor was
+    missing for assault/fixed-instance editing; everything else (view/filter/move/delete by
+    instance) already worked via zone_data()/reach()/update_position()."""
     zid = int(zid)
+    instance = int(instance or 0)
     x, y, z, rot = round(float(x), 3), round(float(y), 3), round(float(z), 3), int(rot) & 0xFF
     if x == y == z == 0:
         raise ValueError("(0,0,0) is excluded from instance loading; use a real position")
@@ -319,12 +332,17 @@ def add_entity(kind, zid, src, x, y, z, rot, name="", comment=""):
         table = "npc_list"
     cols = list(row)
     ops.append({"table": table, "key": [nid], "row": None})
+    if instance:
+        ops.append({"table": "instance_entities", "key": [instance, nid], "row": None})
     bid = _save_backup(f"add {table} {nid} ({row.get('mobname') or row.get('name')})", zid, ops)
     cu.execute(f"insert into {table} ({','.join(cols)}) values ({','.join(['%s'] * len(cols))})", tuple(_dec(row[c]) for c in cols))
-    db.commit(); db.close()
     lines.append(f"INSERT INTO {table} ({','.join(cols)}) VALUES ({','.join(lit(row[c]) for c in cols)});")
+    if instance:
+        cu.execute("insert into instance_entities (instanceid, id) values (%s, %s)", (instance, nid))
+        lines.append(f"INSERT INTO instance_entities (instanceid, id) VALUES ({instance}, {nid});")
+    db.commit(); db.close()
     _journal(comment, [f"-- backup {bid}"] + lines)
-    return {"id": nid, "backup": bid, "sql": "\n".join(lines)}
+    return {"id": nid, "backup": bid, "sql": "\n".join(lines), "instance": instance or None}
 
 
 # ---- drops ------------------------------------------------------------------------------------
