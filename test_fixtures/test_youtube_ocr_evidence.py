@@ -138,7 +138,7 @@ def main():
             assert metadata["source_kind"] == "VIDEO_OCR", metadata
             assert metadata["video_timestamp_seconds"] == 2.0, metadata
             evidence = graph.execute(
-                "SELECT source_type,source_ref,note FROM evidence WHERE evidence_id=?",
+                "SELECT evidence_type,source,notes FROM evidence WHERE evidence_id=?",
                 (rel[3],),
             ).fetchone()
             assert evidence[0] == "VIDEO_OCR", evidence
