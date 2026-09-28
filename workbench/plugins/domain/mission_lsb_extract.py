@@ -887,6 +887,100 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
             },
         ))
 
+    # Declarative actor handlers may call a local helper that maps a literal zone
+    # argument to an event tuple (for example mawEvent(xi.zone.BATALLIA_DOWNS)).
+    for line_no,line in enumerate(lines):
+        dm=_DECL_HELPER_CALL.search(line)
+        if not dm or dm.group(2) not in mapped_event_helpers:
+            continue
+        helper=dm.group(2)
+        _param,map_name,_index_name=mapped_event_helpers[helper]
+        arg=re.search(r"xi\.zone\.([A-Z0-9_]+)",dm.group(3))
+        if not arg:
+            continue
+        event_id=literal_event_maps.get(map_name,{}).get(arg.group(1))
+        if event_id is None:
+            continue
+        zone,_=context(line_no)
+        section_index,section_source_lines,section_conditions,section_eligibility_status,section_unresolved_reasons,section_check_present=section_context(line_no)
+        source_handler_count+=1
+        modeled_source_handler_count+=1
+        serial+=1
+        transitions.append(MissionTransition(
+            f"source-transition:{serial}","source:any","source:any","NPC_INTERACT",
+            event=EventIdentity(zone or arg.group(1),event_id,dm.group(1)),
+            confidence="INFERRED",
+            metadata={
+                "zone":zone or arg.group(1),
+                "actor":dm.group(1),
+                "source_lines":(line_no+1,line_no+1),
+                "literal_correlation":True,
+                "declarative_handler":True,
+                "helper_calls":(helper,),
+                "helper_event_map":map_name,
+                "section_index":section_index,
+                "section_source_lines":section_source_lines,
+                "section_eligibility_conditions":tuple(
+                    {
+                        "subject":condition.subject,
+                        "operator":condition.operator,
+                        "value":condition.value,
+                    }
+                    for condition in section_conditions
+                ),
+                "section_check_present":section_check_present,
+                "section_eligibility_status":section_eligibility_status,
+                "section_eligibility_unresolved_reasons":tuple(section_unresolved_reasons),
+            },
+        ))
+
+    # Event-finish tables may reference a local function instead of declaring the
+    # callback inline. Resolve only literal local functions whose effects are known.
+    event_finish_spans=_table_assignment_spans(
+        lines,
+        re.compile(r"(onEventFinish)\s*="),
+    )
+    for line_no,line in enumerate(lines):
+        match=_EVENT_FINISH_REF.search(_code(line))
+        if not match or not any(start<=line_no<=end for start,end,_ in event_finish_spans):
+            continue
+        helper=match.group(2)
+        if helper not in local_function_effects:
+            continue
+        zone,_=context(line_no)
+        section_index,section_source_lines,section_conditions,section_eligibility_status,section_unresolved_reasons,section_check_present=section_context(line_no)
+        source_handler_count+=1
+        modeled_source_handler_count+=1
+        serial+=1
+        transitions.append(MissionTransition(
+            f"source-transition:{serial}","source:any","source:any","EVENT_FINISH",
+            event=EventIdentity(zone or "UNKNOWN",int(match.group(1)),None),
+            effects=tuple(local_function_effects[helper]),
+            confidence="INFERRED",
+            metadata={
+                "zone":zone,
+                "actor":None,
+                "source_lines":(line_no+1,line_no+1),
+                "literal_correlation":True,
+                "declarative_handler":True,
+                "function_reference_handler":True,
+                "helper_calls":(helper,),
+                "section_index":section_index,
+                "section_source_lines":section_source_lines,
+                "section_eligibility_conditions":tuple(
+                    {
+                        "subject":condition.subject,
+                        "operator":condition.operator,
+                        "value":condition.value,
+                    }
+                    for condition in section_conditions
+                ),
+                "section_check_present":section_check_present,
+                "section_eligibility_status":section_eligibility_status,
+                "section_eligibility_unresolved_reasons":tuple(section_unresolved_reasons),
+            },
+        ))
+
     findings=extract_lsb_mission_findings(lua)
     completion_gate=extract_section_completion_gate(lua)
     return MissionStateMachine(
