@@ -4903,8 +4903,7 @@ def captures_delete_confirm(request: Request, capture_id: int):
     if not cap:
         con.close()
         return HTMLResponse("Capture not found", status_code=404)
-    row_counts = {t: con.execute(f"SELECT COUNT(*) FROM {t} WHERE capture_id=?", (capture_id,)).fetchone()[0]
-                  for t in build_capture_index.CAPTURE_CHILD_TABLES}
+    row_counts = build_capture_index.capture_child_row_counts(con, capture_id)
     con.close()
     return templates.TemplateResponse(request, "capture_delete_confirm.html", {
         "cap": cap, "row_counts": row_counts, "total_rows": sum(row_counts.values()),
@@ -4920,6 +4919,7 @@ def captures_delete_submit(capture_id: int):
         return HTMLResponse("Capture not found", status_code=404)
     build_capture_index.delete_capture(con, capture_id)
     con.close()
+    shutil.rmtree(KEY_EVIDENCE_ROOT / str(int(capture_id)), ignore_errors=True)
     return RedirectResponse(url="/captures", status_code=303)
 
 
@@ -5136,17 +5136,24 @@ async def captures_add_submit(request: Request, capture_id: int):
                 total_rows = sum(counts.values())
                 n_failed = sum(1 for r in file_results if r["error"])
                 summary_error = f"{n_failed} of {len(file_results)} file(s) failed -- see below" if n_failed else None
-                con.execute("""INSERT OR REPLACE INTO capture_source_files
-                    (capture_id, filename, format_detected, ingested_at, row_count, error)
-                    VALUES (?,?,?,datetime('now'),?,?)""",
-                    (capture_id, label, "folder_bundle", total_rows, summary_error))
+                manifest_row = con.execute(
+                    "SELECT source_manifest_sha256,source_file_count FROM captures WHERE capture_id=?",
+                    (capture_id,),
+                ).fetchone()
+                build_capture_index.record_source_file_results(con, capture_id, [{
+                    "filename": label,
+                    "format": "folder_bundle",
+                    "rows": total_rows,
+                    "error": summary_error,
+                    "sha256": manifest_row[0] if manifest_row else None,
+                    "byte_size": sum((r.get("byte_size") or 0) for r in file_results),
+                    "parser_id": "bundle_dispatch",
+                    "parser_version": build_capture_index.CAPTURE_PARSER_VERSION,
+                    "source_kind": "folder_bundle",
+                    "bundle_manifest_sha256": manifest_row[0] if manifest_row else None,
+                }])
                 results.append({"filename": label, "format": "folder_bundle", "rows": total_rows, "error": summary_error})
-                for r in file_results:
-                    con.execute("""INSERT OR REPLACE INTO capture_source_files
-                        (capture_id, filename, format_detected, ingested_at, row_count, error)
-                        VALUES (?,?,?,datetime('now'),?,?)""",
-                        (capture_id, r["filename"], None, r["rows"], r["error"]))
-                    results.append({"filename": r["filename"], "format": None, "rows": r["rows"], "error": r["error"]})
+                results.extend(file_results)
                 con.commit()
             finally:
                 src.close()
@@ -5185,18 +5192,25 @@ async def captures_add_submit(request: Request, capture_id: int):
                 total_rows = sum(counts.values())
                 n_failed = sum(1 for r in file_results if r["error"])
                 summary_error = f"{n_failed} of {len(file_results)} file(s) failed -- see below" if n_failed else None
-                con.execute("""INSERT OR REPLACE INTO capture_source_files
-                    (capture_id, filename, format_detected, ingested_at, row_count, error)
-                    VALUES (?,?,?,datetime('now'),?,?)""",
-                    (capture_id, uf.filename, "zip_bundle", total_rows, summary_error))
+                archive_sha, archive_size = build_capture_index._content_fingerprint(data)
+                manifest_row = con.execute(
+                    "SELECT source_manifest_sha256 FROM captures WHERE capture_id=?", (capture_id,)
+                ).fetchone()
+                build_capture_index.record_source_file_results(con, capture_id, [{
+                    "filename": uf.filename,
+                    "format": "zip_bundle",
+                    "rows": total_rows,
+                    "error": summary_error,
+                    "sha256": archive_sha,
+                    "byte_size": archive_size,
+                    "parser_id": "bundle_dispatch",
+                    "parser_version": build_capture_index.CAPTURE_PARSER_VERSION,
+                    "source_kind": "archive_bundle",
+                    "bundle_manifest_sha256": manifest_row[0] if manifest_row else None,
+                }])
                 results.append({"filename": uf.filename, "format": "zip_bundle",
                                  "rows": total_rows, "error": summary_error})
-                for r in file_results:
-                    con.execute("""INSERT OR REPLACE INTO capture_source_files
-                        (capture_id, filename, format_detected, ingested_at, row_count, error)
-                        VALUES (?,?,?,datetime('now'),?,?)""",
-                        (capture_id, r["filename"], None, r["rows"], r["error"]))
-                    results.append({"filename": r["filename"], "format": None, "rows": r["rows"], "error": r["error"]})
+                results.extend(file_results)
                 con.commit()
             except build_capture_index.UnsupportedArchiveError as ex:
                 con.execute("""INSERT OR REPLACE INTO capture_source_files
