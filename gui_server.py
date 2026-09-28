@@ -3996,12 +3996,11 @@ def ocr_delete(request: Request, run_id: str):
 
 @app.post("/ocr/{run_id}/create_capture", response_class=HTMLResponse)
 async def ocr_create_capture(request: Request, run_id: str):
-    """Seeds a new capture entry from an OCR run: video_url + ocr_run_id link back to this run's
-    transcript/frames, start_time from the YouTube upload date when known. An OCR run never has
-    real logger files (NPCLogger/PacketLogger/CapLog/etc.) of its own -- it's a video + a scraped
-    transcript, nothing the normal ingest_* parsers understand -- so this hands off only what
-    actually exists (label/mission/video link/date) and lands on /captures/{id}/add in case the
-    user separately has real logger files from the same session to attach."""
+    """Create a capture linked to an OCR run and ingest its time-addressable VIDEO_OCR evidence.
+
+    Parsed on-screen packet observations remain distinct from raw/binary packet captures; the user
+    can still attach real logger files from the same session afterward for cross-source alignment.
+    """
     form = await request.form()
     mission_name = (form.get("mission_name") or "").strip() or None
     content_type = form.get("content_type") or "instances"
@@ -4016,9 +4015,16 @@ async def ocr_create_capture(request: Request, run_id: str):
         except ValueError:
             start_time = None
     con = get_con()
+    build_capture_index.init_db(con)
     capture_id = build_capture_index.create_manual_capture(
         con, label, content_type, mission_name,
         video_url=status.get("url"), ocr_run_id=run_id, start_time=start_time)
+    build_capture_index.replace_video_ocr_observations(
+        con,
+        capture_id,
+        run_id,
+        youtube_chat_ocr.capture_observations(run_id),
+    )
     con.close()
     return RedirectResponse(url=f"/captures/{capture_id}/add", status_code=303)
 
