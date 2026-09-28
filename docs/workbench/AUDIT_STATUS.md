@@ -2566,3 +2566,17 @@ CapLog ingestion now emits exact physical-source locators for every normalized r
 - re-ingestion clears only CapLog-owned locator rows for that source file before rebuilding them, preventing stale locators without disturbing provenance from sibling source files.
 
 This closes exact row attribution for the highest-value mixed capture source while leaving unsupported precision unclaimed for parser families that still need dedicated work.
+
+
+## 2026-09-28 — KITrack / IDView / HPTrack / ActionView exact provenance
+
+Exact source attribution now covers four more legacy text capture families.
+
+- KITrack key-item acquisition/loss rows retain their exact header-delimited source block, source hash, normalized key, event type, key-item ID/name, and physical line/byte span.
+- IDView/simple supports both real corpus formats: single-line packet records and blank-line-delimited multi-line records. Both now emit exact locators while preserving their existing normalization behavior.
+- HPTrack standalone observations retain exact physical source lines for both known real renderings ("Defeated ..." and "[HP Track] Killed ...").
+- ActionView/simple rows retain exact source lines keyed to the same stable action_key used by capture_actions; skipped non-record lines do not distort physical line numbers.
+- Re-ingesting any of these source files replaces only that file/table locator set, keeping provenance idempotent without deleting sibling-source evidence.
+- UTF-8 byte precision is recorded only when the decoded text round-trips exactly.
+
+The next provenance boundary is no longer text parsing in these families; it is trustworthy row attribution for SQLite-backed sources and the remaining lower-value legacy parsers.
