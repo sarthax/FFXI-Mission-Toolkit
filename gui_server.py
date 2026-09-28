@@ -53,6 +53,7 @@ import feature_trace
 from workbench.core.services.feature_trace_catalog import present_relationships
 from workbench.core.services.feature_trace_dossier import build_dossier
 from workbench.core.services import timeline_alignment
+from workbench.core.services import capture_integrity
 import feature_checker
 from workbench.core.services.feature_trace_closure import build_feature_trace_closure
 import ingest_global_tables
@@ -4903,8 +4904,11 @@ def captures_delete_confirm(request: Request, capture_id: int):
     if not cap:
         con.close()
         return HTMLResponse("Capture not found", status_code=404)
-    row_counts = {t: con.execute(f"SELECT COUNT(*) FROM {t} WHERE capture_id=?", (capture_id,)).fetchone()[0]
-                  for t in build_capture_index.CAPTURE_CHILD_TABLES}
+    row_counts = {}
+    for t in capture_integrity.schema_capture_tables(con):
+        row_counts[t] = con.execute(
+            f'SELECT COUNT(*) FROM "{t}" WHERE capture_id=?', (capture_id,)
+        ).fetchone()[0]
     con.close()
     return templates.TemplateResponse(request, "capture_delete_confirm.html", {
         "cap": cap, "row_counts": row_counts, "total_rows": sum(row_counts.values()),
@@ -4920,6 +4924,9 @@ def captures_delete_submit(capture_id: int):
         return HTMLResponse("Capture not found", status_code=404)
     build_capture_index.delete_capture(con, capture_id)
     con.close()
+    evidence_dir = KEY_EVIDENCE_ROOT / str(int(capture_id))
+    if evidence_dir.exists():
+        shutil.rmtree(evidence_dir, ignore_errors=True)
     return RedirectResponse(url="/captures", status_code=303)
 
 
@@ -5466,6 +5473,7 @@ def captures_detail(request: Request, capture_id: int, content_type: str = "", q
     detail["hp_events"] = con.execute(
         "SELECT mob_name, hp_low, hp_high FROM capture_hp_events WHERE capture_id=? ORDER BY seq",
         (capture_id,)).fetchall()
+    detail["health"] = capture_integrity.capture_health(con, capture_id)
 
     filtered_sql = "SELECT capture_id FROM captures WHERE 1=1"
     params = []
