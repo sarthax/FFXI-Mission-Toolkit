@@ -2026,3 +2026,28 @@ Because `keyitems_ours` and `keyitems_external` do not have database primary-key
 Feature Trace mob-group providers now expose source-native inspection context when present: `poolid`, `dropid`, respawn time, and min/max level. Mob-pool providers expose `familyid` and `modelid`.
 
 `poolid`, `dropid`, `familyid`, and `modelid` are searchable aliases with `matched_on` provenance. This improves investigation of server records without creating synthetic drop-row objects or asserting gameplay semantics from the numeric values alone.
+
+
+## 2026-09-27 — Mission source extraction to canonical graph evidence
+
+The generic mission/quest extractor can now project its state-machine output into ordinary Workbench graph records through `workbench/plugins/domain/mission_graph_emit.py`.
+
+The projection emits:
+- a canonical mission `Feature`;
+- the Lua source `Artifact` plus a `DISCOVERED` implementation record;
+- mission-state and transition entities;
+- reusable server event identities keyed by source family + zone + actor + CSID;
+- source-family/zone actor identities where the actor is known;
+- feature-scoped mission-local state subjects;
+- source-visible key-item/title/battlefield/entity symbols;
+- evidence-backed `HAS_STATE`, `HAS_TRANSITION`, `FROM_STATE`, `TO_STATE`, `TRIGGERED_BY_EVENT`, `EVENT_ACTOR`, `REQUIRES`, and `AFFECTS` relationships.
+
+Extractor confidence and implementation status are preserved. Static source evidence never upgrades inferred transitions to VERIFIED, and implementation presence is recorded as DISCOVERED rather than runtime-correct.
+
+Mission-local channels such as `mission_var:Status` are feature-scoped so unrelated missions cannot collapse onto the same graph node. Server event identities are intentionally reusable across features when source family, zone, actor, and CSID match exactly.
+
+`mission_graph_ingest.py` provides a bounded ingest surface. It previews by default and requires explicit `--write` before persisting to a Workbench DB.
+
+Regression: `test_fixtures/test_mission_graph_emission.py` covers extraction, source-line evidence, event/actor identity, condition/effect links, persistence through the canonical graph schema, Feature Trace traversal, reusable event identity, and mission-local state isolation.
+
+This milestone does not claim runtime correctness, full Lua parsing, or exact branch semantics for dynamic expressions the conservative extractor does not understand.
