@@ -64,6 +64,10 @@ _ALIAS_COMPARE=re.compile(
 _COMPLETED_QUEST=re.compile(
     r"player:hasCompletedQuest\([^\)]*?xi\.quest\.id\.[A-Za-z0-9_]+\.([A-Z0-9_]+)\)"
 )
+_COMPLETED_MISSION=re.compile(
+    r"player:hasCompletedMission\(xi\.mission\.log_id\.([A-Z0-9_]+),\s*"
+    r"xi\.mission\.id\.[A-Za-z0-9_]+\.([A-Z0-9_]+)\)"
+)
 _CURRENT_MISSION=re.compile(
     r"player:getCurrentMission\(xi\.mission\.log_id\.([A-Z0-9_]+)\)"
     r"\s*(==|~=|<=|>=|<|>)\s*xi\.mission\.id\.[A-Za-z0-9_]+\.([A-Z0-9_]+)"
@@ -73,6 +77,17 @@ _LACKS_KI=re.compile(r"not\s+player:hasKeyItem\(xi\.keyItem\.([A-Z0-9_]+)\)")
 _PREV_ZONE=re.compile(r"\bprevZone\s*(==|~=)\s*xi\.zone\.([A-Z0-9_]+)")
 _TRADE_EXACT=re.compile(r"npcUtil\.tradeHasExactly\(trade,\s*\{([^}]*)\}\)")
 _TRADE_ITEM=re.compile(r"xi\.item\.([A-Z0-9_]+)")
+_TRADE_CALL=re.compile(r"npcUtil\.tradeHasExactly\(trade,\s*(\{.*?\})\s*\)",re.S)
+_TRADE_ITEM_QTY=re.compile(r"xi\.item\.([A-Z0-9_]+)\s*,\s*(\d+)")
+_TRADE_GIL=re.compile(r"['\"]gil['\"]\s*,\s*(\d+)")
+_XQUEST_SET_VAR=re.compile(
+    r"xi\.quest\.setVar\(player,\s*xi\.questLog\.[A-Z0-9_]+,\s*"
+    r"xi\.quest\.id\.[A-Za-z0-9_]+\.([A-Z0-9_]+),\s*'([^']+)',\s*([^\)]+\)(?:\s*[+-]\s*\d+)?)"
+)
+_XQUEST_SET_MUST_ZONE=re.compile(
+    r"xi\.quest\.setMustZone\(player,\s*xi\.questLog\.[A-Z0-9_]+,\s*"
+    r"xi\.quest\.id\.[A-Za-z0-9_]+\.([A-Z0-9_]+)\)"
+)
 _SET_VAR=re.compile(r"quest:setVar\(player,\s*'([^']+)',\s*([^\)]+)\)")
 _GIVE_KI=re.compile(
     r"(?:npcUtil\.giveKeyItem\(\s*player\s*,\s*|player:addKeyItem\(\s*)"
@@ -175,6 +190,8 @@ def _section_analysis(section: str) -> dict:
         ))
     for match in _COMPLETED_QUEST.finditer(executable):
         out.append(StateCondition(f"quest:{match.group(1)}","COMPLETE",True))
+    for match in _COMPLETED_MISSION.finditer(executable):
+        out.append(StateCondition(f"mission:{match.group(2)}","COMPLETE",True))
     for match in _CURRENT_MISSION.finditer(executable):
         out.append(StateCondition(
             f"mission:{match.group(1)}:current",
@@ -258,10 +275,28 @@ def _handler_conditions(text: str) -> tuple[StateCondition,...]:
             out.append(StateCondition(f"key_item:{symbol}","HAS",True))
     for match in _PREV_ZONE.finditer(text):
         out.append(StateCondition("previous_zone",_OP[match.group(1)],match.group(2)))
-    for match in _TRADE_EXACT.finditer(text):
-        items=tuple(_TRADE_ITEM.findall(match.group(1)))
-        if items:
-            out.append(StateCondition("trade","TRADE_MATCHES",items))
+    trade_calls=list(_TRADE_CALL.finditer(text))
+    if trade_calls:
+        for match in trade_calls:
+            body=match.group(1)
+            quantities=tuple(
+                (symbol,int(quantity))
+                for symbol,quantity in _TRADE_ITEM_QTY.findall(body)
+            )
+            gil=_TRADE_GIL.search(body)
+            if quantities:
+                out.append(StateCondition("trade","TRADE_MATCHES",quantities))
+            elif gil:
+                out.append(StateCondition("trade","TRADE_MATCHES",(("gil",int(gil.group(1))),)))
+            else:
+                items=tuple(_TRADE_ITEM.findall(body))
+                if items:
+                    out.append(StateCondition("trade","TRADE_MATCHES",items))
+    else:
+        for match in _TRADE_EXACT.finditer(text):
+            items=tuple(_TRADE_ITEM.findall(match.group(1)))
+            if items:
+                out.append(StateCondition("trade","TRADE_MATCHES",items))
     dedup=[]
     for condition in out:
         if condition not in dedup:
@@ -275,6 +310,20 @@ def _quest_effects(text: str) -> tuple[TransitionEffect,...]:
         raw=match.group(2).strip()
         value=int(raw) if raw.isdigit() else raw
         out.append(TransitionEffect("SET_VAR",f"quest_var:{match.group(1)}",value))
+    for match in _XQUEST_SET_VAR.finditer(text):
+        raw=match.group(3).strip()
+        value=int(raw) if raw.isdigit() else raw
+        out.append(TransitionEffect(
+            "SET_VAR",
+            f"quest:{match.group(1)}:var:{match.group(2)}",
+            value,
+        ))
+    for match in _XQUEST_SET_MUST_ZONE.finditer(text):
+        out.append(TransitionEffect(
+            "SET_STATE",
+            f"quest:{match.group(1)}:must_zone",
+            True,
+        ))
     for symbol in _GIVE_KI.findall(text):
         out.append(TransitionEffect("GRANT",f"key_item:{symbol}"))
     for symbol in _DEL_KI.findall(text):
@@ -399,10 +448,22 @@ def correlate_lsb_quest_handlers(
                 continue
 
             serial+=1
-            guard_complete=path.guard_complete and not unresolved_nested
+            guard_has_or=bool(re.search(r"\bor\b",guard_text))
+            trade_only_disjunction=bool(
+                guard_has_or
+                and conditions
+                and all(condition.subject=="trade" for condition in conditions)
+            )
+            guard_complete=(
+                path.guard_complete
+                and not unresolved_nested
+                and (not guard_has_or or trade_only_disjunction)
+            )
             gate=DependencyGate(
-                f"quest-source-gate:{serial}","ALL",conditions
-            ) if conditions else None
+                f"quest-source-gate:{serial}",
+                "ANY" if trade_only_disjunction else "ALL",
+                conditions if (not guard_has_or or trade_only_disjunction) else (),
+            ) if conditions and (not guard_has_or or trade_only_disjunction) else None
             gap_note=_implementation_gap_note(lines,start)
             transitions.append(MissionTransition(
                 f"quest-source-transition:{serial}",
@@ -440,6 +501,8 @@ def correlate_lsb_quest_handlers(
                     "branch_source_lines":path.branch_source_lines,
                     "branch_guard_complete":guard_complete,
                     "unexpanded_nested_branch":unresolved_nested,
+                    "guard_disjunction":guard_has_or,
+                    "trade_disjunction_modeled":trade_only_disjunction,
                     "implementation_gap_note":gap_note,
                     "started_event_id":(
                         int(started.group(1))
