@@ -5217,12 +5217,22 @@ async def captures_add_submit(request: Request, capture_id: int):
                 results.extend(file_results)
                 con.commit()
             except build_capture_index.UnsupportedArchiveError as ex:
-                con.execute("""INSERT OR REPLACE INTO capture_source_files
-                    (capture_id, filename, format_detected, ingested_at, row_count, error)
-                    VALUES (?,?,NULL,datetime('now'),0,?)""",
-                    (capture_id, uf.filename, str(ex)))
+                archive_sha, archive_size = build_capture_index._content_fingerprint(data)
+                failed = {
+                    "filename": uf.filename,
+                    "format": None,
+                    "rows": 0,
+                    "error": str(ex),
+                    "sha256": archive_sha,
+                    "byte_size": archive_size,
+                    "parser_id": "archive_open",
+                    "parser_version": build_capture_index.CAPTURE_PARSER_VERSION,
+                    "source_kind": "failed_archive",
+                    "bundle_manifest_sha256": None,
+                }
+                build_capture_index.record_source_file_results(con, capture_id, [failed])
                 con.commit()
-                results.append({"filename": uf.filename, "format": None, "rows": 0, "error": str(ex)})
+                results.append(failed)
             finally:
                 if src is not None:
                     src.close()
