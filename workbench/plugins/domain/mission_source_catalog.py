@@ -7,7 +7,11 @@ import re
 
 from .mission_lsb_extract import chain_event_transitions, correlate_lsb_handlers
 from .mission_state_machine import MissionStateMachine
-from .quest_lsb_extract import chain_quest_event_transitions, correlate_lsb_quest_handlers
+from .quest_lsb_extract import (
+    chain_quest_event_transitions,
+    correlate_lsb_quest_handlers,
+    extract_feature_requirement_helpers,
+)
 
 
 _QUEST_ID=re.compile(
@@ -35,6 +39,7 @@ class LsbFeatureSourceCatalog:
         self.root=Path(root)
         self._sources: dict[str,LsbFeatureSource]={}
         self._machines: dict[str,MissionStateMachine]={}
+        self._helper_feature_gates={}
         self._scan()
 
     @staticmethod
@@ -49,6 +54,7 @@ class LsbFeatureSourceCatalog:
                 text=path.read_text(encoding="utf-8")
             except (OSError,UnicodeError):
                 continue
+            self._helper_feature_gates.update(extract_feature_requirement_helpers(text))
             quest=_QUEST_ID.search(text)
             mission=_MISSION_ID.search(text)
             if quest:
@@ -87,7 +93,11 @@ class LsbFeatureSourceCatalog:
             return None
         if source.kind=="quest":
             machine=chain_quest_event_transitions(
-                correlate_lsb_quest_handlers(lua,feature_id=source.feature_id)
+                correlate_lsb_quest_handlers(
+                    lua,
+                    feature_id=source.feature_id,
+                    helper_feature_gates=self._helper_feature_gates,
+                )
             )
         else:
             machine=chain_event_transitions(
