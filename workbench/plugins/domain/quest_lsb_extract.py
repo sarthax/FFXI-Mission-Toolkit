@@ -284,7 +284,7 @@ def _quest_effects(text: str) -> tuple[TransitionEffect,...]:
     if _COMPLETE.search(text):
         out.append(TransitionEffect("COMPLETE","quest"))
     if _SET_MUST_ZONE.search(text):
-        out.append(TransitionEffect("SET","quest_must_zone",True))
+        out.append(TransitionEffect("SET_STATE","quest_must_zone",True))
     for match in _START_EVENT.finditer(text):
         out.append(TransitionEffect("START","event",int(match.group(1))))
     if "player:confirmTrade()" in text:
