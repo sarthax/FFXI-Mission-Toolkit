@@ -58,6 +58,22 @@
 
 {% if detail.health and detail.health.status == "OK" %}
 <h2>Capture integrity <span class="chip">{{ detail.health.overall }}</span></h2>
+{% if detail.health.content_identity and detail.health.content_identity.sha256 %}
+<p class="muted"><b>Capture content fingerprint:</b>
+  <code title="{{ detail.health.content_identity.sha256 }}">{{ detail.health.content_identity.sha256 }}</code>
+  &middot; {{ detail.health.content_identity.file_count }} current source file(s)
+  &middot; {{ detail.health.content_identity.total_bytes }} bytes
+  &middot; path-independent
+</p>
+{% endif %}
+{% if detail.exact_capture_duplicates %}
+<div class="warn">
+  Exact current source-set duplicate{{ "s" if detail.exact_capture_duplicates|length != 1 else "" }}:
+  {% for d in detail.exact_capture_duplicates %}
+    <a class="inline" href="/captures/{{ d.capture_id }}">#{{ d.capture_id }} {{ d.capture_label }}</a>{% if not loop.last %}, {% endif %}
+  {% endfor %}
+</div>
+{% endif %}
 <div class="table-wrap"><table>
   <tr><th>dimension</th><th>status</th><th>details</th></tr>
   {% for name, dim in detail.health.dimensions.items() %}
@@ -91,6 +107,10 @@
     {% endfor %}
   </table></div>
 </details>
+<p class="muted" style="margin-top:8px;">
+  Current manifest: <a class="inline" href="/captures/query?table=capture_source_manifest&capture_id={{ detail.capture_id }}">inspect rows</a>
+  &middot; source history: <a class="inline" href="/captures/query?table=capture_source_artifacts&capture_id={{ detail.capture_id }}">inspect content-addressed versions ({{ detail.health.source_artifact_count }})</a>
+</p>
 {% endif %}
 {% endif %}
 
