@@ -2342,3 +2342,45 @@ Graph persistence is deliberately non-destructive: an existing Feature or canoni
 Regression: `test_fixtures/test_multizone_progression_framework.py` covers normalization, validation, fan-out/branch/convergence topology, cross-zone dependencies, cycles, empty/invalid models, evidence propagation, plugin findings/reporting, non-destructive graph persistence, and Feature Trace traversal.
 
 `STRUCTURALLY_READY` means only that the declared dependency model is structurally reachable. It is not a runtime-completion or implementation verdict.
+
+## 2026-09-27 — Reusable minigame / puzzle framework
+
+`framework.minigame` now has a concrete structural analyzer and canonical graph projection.
+
+The framework models generic:
+- interactions and trigger kinds;
+- temporary state conditions/effects;
+- named timers and optional durations;
+- timer start/cancel/expiry-outcome wiring;
+- scoring deltas;
+- WIN/LOSS/TIMEOUT/DRAW/ABORT outcomes;
+- repeatable reset paths;
+- reset state/timer/score coverage;
+- evidence provenance.
+
+Structural analysis distinguishes validation errors from lifecycle gaps. It reports:
+- interaction trigger counts and outcome/result counts;
+- timer lifecycle closure (started, cancellable, expiry outcomes);
+- mutable temporary-state subjects;
+- reset state/timer coverage;
+- scoring-rule count and score-reset coverage;
+- explicit win/loss presence;
+- structural gaps such as unopened timer lifecycle, missing reset coverage, missing score reset, or missing terminal result classes.
+
+For repeatable minigames, reset coverage is conservative: every reset path must clear the declared temporary state, cancel active timers, and reset score when scoring exists. Permanent reward effects are not treated as temporary state that must be reset.
+
+`MinigamePlugin` consumes a `minigame_model` through `PluginContext`, emits a `MINIGAME_STRUCTURE` finding plus targeted `TIMER_LIFECYCLE_GAP` / `RESET_COVERAGE_GAP` findings, and exposes structural lifecycle details through its report surface.
+
+`project_minigame_graph()` emits ordinary canonical navigation records without adding minigame fields to the universal schema:
+- feature -> timers/interactions/outcomes/resets;
+- interaction -> timer via `STARTS_TIMER` / `CANCELS_TIMER`;
+- timer -> timeout/outcome via `EXPIRES_TO`;
+- interaction/outcome conditions/effects through `REQUIRES` / `AFFECTS`;
+- reset coverage through `RESETS`;
+- interaction subjects through `REFERENCES`.
+
+Persistence is non-destructive for existing canonical Feature/Entity rows, and temporary state/score identities are feature-scoped.
+
+Regression: `test_fixtures/test_minigame_framework.py` covers a structurally complete repeatable timed-scoring puzzle, timer/reset gaps, invalid references, one-shot behavior, evidence-backed graph projection, non-destructive persistence, Feature Trace traversal, and plugin findings/reporting.
+
+`STRUCTURALLY_READY` is a declared lifecycle/topology result only; it does not prove runtime timing, scoring, rewards, or client interaction behavior.
