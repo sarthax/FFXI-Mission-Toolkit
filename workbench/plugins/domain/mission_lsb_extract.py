@@ -100,7 +100,7 @@ _EVENT_FINISH_KEY=re.compile(r"\[(\d+)\]\s*=\s*function\(player,\s*csid")
 _STATUS_EQ=re.compile(r"player:getMissionStatus\([^\n]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)\s*==\s*(\d+)")
 _STATUS_NE=re.compile(r"player:getMissionStatus\([^\n]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)\s*~=\s*(\d+)")
 _STATUS_COMPARE=re.compile(
-    r"player:getMissionStatus\([^\)]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)"
+    r"player:getMissionStatus\([^\)]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\s*\)"
     r"\s*(==|~=|<=|>=|<|>)\s*(\d+)"
 )
 _STATUS_ALIAS_COMPARE=re.compile(
@@ -543,7 +543,7 @@ def _section_check_status_conditions(section: str) -> tuple[StateCondition,...]:
         match.group(1):match.group(2)
         for match in re.finditer(
             r"\blocal\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"
-            r"player:getMissionStatus\([^\)]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)",
+            r"player:getMissionStatus\([^\)]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\s*\)",
             executable,
         )
     }
