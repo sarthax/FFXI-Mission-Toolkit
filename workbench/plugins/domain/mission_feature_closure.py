@@ -108,6 +108,19 @@ def build_feature_requirement_closure(
     def add_gate(source: str, gate: DependencyGate) -> None:
         for condition in gate.conditions:
             follow=_selected(condition,gate,selected)
+            if condition.subject.startswith("mission:") and condition.subject.endswith(":current"):
+                dependencies.append(FeatureDependency(
+                    source,
+                    condition.subject,
+                    condition.operator,
+                    condition.value,
+                    gate.logic,
+                    gate.gate_id,
+                    None,
+                    "CONTEXT",
+                    follow,
+                ))
+                continue
             target=index.get(condition.subject)
             status="RESOLVED" if target else "UNRESOLVED"
             dependencies.append(FeatureDependency(
