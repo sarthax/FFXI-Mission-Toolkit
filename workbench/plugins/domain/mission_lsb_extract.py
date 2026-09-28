@@ -28,7 +28,10 @@ _DECL_EVENT=re.compile(r"\['([^']+)'\]\s*=\s*mission:(progressEvent|event|progre
 _STATUS_SET=re.compile(r"player:setMissionStatus\([^\n]*?,\s*(\d+)\s*,\s*xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)")
 _VAR_SET=re.compile(r"mission:setVar\(player,\s*'([^']+)',\s*([^\)]+)\)")
 _LOCAL_SET=re.compile(r"mission:setLocalVar\(player,\s*'([^']+)',\s*([^\)]+)\)")
-_KI_GIVE=re.compile(r"(?:npcUtil\.giveKeyItem|player:addKeyItem)\(player?,?\s*xi\.keyItem\.([A-Z0-9_]+)")
+_KI_GIVE=re.compile(
+    r"(?:npcUtil\.giveKeyItem\(\s*player\s*,\s*|player:addKeyItem\(\s*)"
+    r"xi\.keyItem\.([A-Z0-9_]+)"
+)
 _KI_DEL=re.compile(r"player:delKeyItem\(xi\.keyItem\.([A-Z0-9_]+)\)")
 _BATTLEFIELD=re.compile(r"battlefieldWin'\)\s*==\s*xi\.battlefield\.id\.([A-Z0-9_]+)")
 _SPAWN=re.compile(r"SpawnMob\([^\n]*?([A-Z0-9_]+)\)")
