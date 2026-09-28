@@ -136,22 +136,82 @@ def connect(db: Path, graph_db: Path, limit: int | None = None) -> dict:
     except sqlite3.OperationalError:
         pass
 
-    # Preserve existing packet/capture evidence as navigable nodes without pretending that a
-    # packet occurrence identifies its server implementation.
+    # Preserve packet/capture evidence without collapsing modern row-level PacketLogger data
+    # into one opcode/direction summary. When seq exists, emit the same stable row-level IDs used
+    # by capture_graph_connect.py so either bridge can run first or be rerun without duplicating
+    # runtime observations. Retain the historical aggregate fallback only for older/minimal
+    # schemas that genuinely do not expose a row identity.
     try:
-        for cap_id, opcode, direction in src.execute(
-            "SELECT DISTINCT capture_id,opcode,direction FROM capture_raw_packets ORDER BY capture_id,opcode,direction"
-        ):
-            canonical = canonical_opcode(opcode)
-            pid = packet_node_id(opcode)
-            if pid is None:
-                continue
-            add_entity(pid, "PACKET", str(opcode), {"opcode": opcode})
-            add_identifier(pid, "opcode", opcode)
-            cev = f"evidence:capture-packet:{cap_id}:{opcode}:{direction}"
-            add_evidence(cev, "PACKET_CAPTURE", "capture_raw_packets", f"capture:{cap_id}", "Observed packet")
-            add_edge(f"capture-packet:{cap_id}:{opcode}:{direction}", f"capture:{cap_id}", pid,
-                     "OBSERVES", cev, "VERIFIED", "DISCOVERED", {"direction": direction})
+        packet_cols = {row[1] for row in src.execute("PRAGMA table_info(capture_raw_packets)")}
+        if "seq" in packet_cols:
+            select_cols = ["capture_id", "seq", "direction", "opcode"]
+            for optional in ("ts", "raw_hex"):
+                if optional in packet_cols:
+                    select_cols.append(optional)
+            rows = src.execute(
+                f"SELECT {','.join(select_cols)} FROM capture_raw_packets ORDER BY capture_id,seq"
+            )
+            for row in rows:
+                values = dict(zip(select_cols, row))
+                cap_id = values["capture_id"]
+                seq = values["seq"]
+                direction = values.get("direction")
+                opcode = values.get("opcode")
+                pid = packet_node_id(opcode)
+                if pid is None:
+                    continue
+                add_entity(pid, "PACKET", str(opcode), {"opcode": opcode})
+                add_identifier(pid, "opcode", opcode)
+                cev = f"evidence:raw-packet:{cap_id}:{seq}"
+                add_evidence(
+                    cev, "PACKET_CAPTURE", "capture_raw_packets",
+                    f"capture:{cap_id}:packet:{seq}",
+                    "Exact runtime packet observation; raw bytes remain in the capture store.",
+                )
+                raw_hex = values.get("raw_hex")
+                metadata = {
+                    "source_kind": "RAW_PACKET",
+                    "capture_id": cap_id,
+                    "capture_table": "capture_raw_packets",
+                    "capture_row_key": {"seq": seq},
+                    "seq": seq,
+                    "timestamp": values.get("ts"),
+                    "direction": direction,
+                    "opcode": opcode,
+                    "byte_length": len(raw_hex or "") // 2,
+                    "has_raw_bytes": bool(raw_hex),
+                }
+                add_edge(
+                    f"raw-packet-observation:{cap_id}:{seq}",
+                    f"capture:{cap_id}", pid, "OBSERVES_PACKET", cev, "VERIFIED",
+                    "DISCOVERED", metadata,
+                )
+        else:
+            for cap_id, opcode, direction in src.execute(
+                "SELECT DISTINCT capture_id,opcode,direction FROM capture_raw_packets "
+                "ORDER BY capture_id,opcode,direction"
+            ):
+                pid = packet_node_id(opcode)
+                if pid is None:
+                    continue
+                add_entity(pid, "PACKET", str(opcode), {"opcode": opcode})
+                add_identifier(pid, "opcode", opcode)
+                cev = f"evidence:capture-packet:{cap_id}:{opcode}:{direction}"
+                add_evidence(
+                    cev, "PACKET_CAPTURE", "capture_raw_packets", f"capture:{cap_id}",
+                    "Legacy opcode/direction summary; no source row identity is available.",
+                )
+                add_edge(
+                    f"capture-packet:{cap_id}:{opcode}:{direction}", f"capture:{cap_id}", pid,
+                    "OBSERVES", cev, "VERIFIED", "DISCOVERED",
+                    {
+                        "source_kind": "RAW_PACKET_SUMMARY",
+                        "aggregate": True,
+                        "capture_id": cap_id,
+                        "direction": direction,
+                        "opcode": opcode,
+                    },
+                )
     except sqlite3.OperationalError:
         pass
 
