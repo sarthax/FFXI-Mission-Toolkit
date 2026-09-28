@@ -10,6 +10,7 @@ import argparse, json, sqlite3
 from pathlib import Path
 from workbench.core import graph as workbench_graph
 from workbench.core.services.packet_identity import packet_node_id
+from workbench.core.services import packet_correlation
 
 def table_exists(con,name):
     return con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",(name,)).fetchone() is not None
@@ -17,9 +18,26 @@ def table_exists(con,name):
 def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: Path | None = None) -> dict:
     src=sqlite3.connect(db)
     dst=workbench_graph.init_db(graph_db)
-    counts={"capture_events":0,"raw_packet_observations":0,"eventview_observations":0,"packet_observations":0,"video_ocr_observations":0,"key_evidence":0,"event_nodes":0,"event_refs":0,"edges":0,"action_nodes":0,"lua_functions":0,"lua_calls":0,"binding_candidates":0}
+    counts={"capture_events":0,"raw_packet_observations":0,"eventview_observations":0,"packet_observations":0,"video_ocr_observations":0,"packet_correlations":0,"packet_correlations_ambiguous":0,"key_evidence":0,"event_nodes":0,"event_refs":0,"edges":0,"action_nodes":0,"lua_functions":0,"lua_calls":0,"binding_candidates":0}
     where="" if capture_id is None else " WHERE capture_id=?"
     args=() if capture_id is None else (capture_id,)
+
+    # Refresh cross-source packet correlations before graph emission so re-ingestion/rebuild and
+    # newly-added video alignment anchors cannot leave correlation state stale.
+    packet_capture_ids=set()
+    for table in ("capture_raw_packets","capture_eventview","capture_events","capture_video_observations"):
+        if not table_exists(src,table):
+            continue
+        sql=f"SELECT DISTINCT capture_id FROM {table}"
+        params=()
+        if capture_id is not None:
+            sql+=" WHERE capture_id=?"
+            params=(capture_id,)
+        packet_capture_ids.update(int(row[0]) for row in src.execute(sql,params))
+    for cid_value in sorted(packet_capture_ids):
+        summary=packet_correlation.correlate_capture(src,cid_value)
+        counts["packet_correlations"]+=summary["matched"]
+        counts["packet_correlations_ambiguous"]+=summary["ambiguous"]
 
     # Reconcile row-level runtime evidence owned by this bridge. INSERT OR REPLACE alone cannot
     # remove graph rows when a rebuilt capture now contains fewer observations.
