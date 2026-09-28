@@ -98,6 +98,7 @@ def main():
     assert catalog.source_for("quest:BETTER_PART_OF_VALOR") is not None,catalog.subjects()
     assert catalog.source_for("quest:THE_FIGHTING_FOURTH") is not None,catalog.subjects()
     assert catalog.source_for("mission:CAIT_SITH") is not None,catalog.subjects()
+    assert catalog.source_for("mission:BACK_TO_THE_BEGINNING") is not None,catalog.subjects()
 
     closure=build_feature_requirement_closure(
         chained,
@@ -105,6 +106,7 @@ def main():
         selected_any_subjects=(
             "quest:WHAT_PRICE_LOYALTY",
             "quest:THE_FIGHTING_FOURTH",
+            "quest:FIRES_OF_DISCONTENT",
         ),
         resolver=catalog.resolve_machine,
     )
@@ -122,9 +124,11 @@ def main():
         "quest:crystal_war:fires_of_discontent",
         "quest:crystal_war:better_part_of_valor",
         "quest:crystal_war:the_fighting_fourth",
+        "mission:wotg:back_to_the_beginning",
         "mission:wotg:cait_sith",
     },closure
     assert catalog.cached_subjects()==(
+        "mission:BACK_TO_THE_BEGINNING",
         "mission:CAIT_SITH",
         "quest:BENEATH_THE_MASK",
         "quest:BETTER_PART_OF_VALOR",
@@ -140,7 +144,7 @@ def main():
     ),catalog.cached_subjects()
     assert "quest:BLOOD_OF_HEROES" in closure.skipped_alternatives,closure
     assert "quest:HOWL_FROM_THE_HEAVENS" in closure.skipped_alternatives,closure
-    assert closure.unresolved_subjects==("mission:BACK_TO_THE_BEGINNING",),closure
+    assert closure.unresolved_subjects==(),closure
 
     q10=catalog.cached_machine("quest:WHAT_PRICE_LOYALTY")
     q9=catalog.cached_machine("quest:BENEATH_THE_MASK")
@@ -153,8 +157,9 @@ def main():
     q2=catalog.cached_machine("quest:FIRES_OF_DISCONTENT")
     q1=catalog.cached_machine("quest:BETTER_PART_OF_VALOR")
     q0=catalog.cached_machine("quest:THE_FIGHTING_FOURTH")
+    back=catalog.cached_machine("mission:BACK_TO_THE_BEGINNING")
     cait=catalog.cached_machine("mission:CAIT_SITH")
-    assert all(machine is not None for machine in (q10,q9,q8,q7,q6,q5,q4,q3,q2,q1,q0,cait)),(q10,q9,q8,q7,q6,q5,q4,q3,q2,q1,q0,cait)
+    assert all(machine is not None for machine in (q10,q9,q8,q7,q6,q5,q4,q3,q2,q1,q0,back,cait)),(q10,q9,q8,q7,q6,q5,q4,q3,q2,q1,q0,back,cait)
 
     assert q9.metadata.get("catalog_discovered") is True,q9.metadata
     assert q10.metadata.get("catalog_discovered") is True,q10.metadata
@@ -167,6 +172,7 @@ def main():
     assert q2.metadata.get("catalog_discovered") is True,q2.metadata
     assert q1.metadata.get("catalog_discovered") is True,q1.metadata
     assert q0.metadata.get("catalog_discovered") is True,q0.metadata
+    assert back.metadata.get("catalog_discovered") is True,back.metadata
     assert cait.metadata.get("catalog_discovered") is True,cait.metadata
     assert q9.metadata.get("quest_symbol")=="BENEATH_THE_MASK",q9.metadata
     assert q10.metadata.get("quest_symbol")=="WHAT_PRICE_LOYALTY",q10.metadata
@@ -179,6 +185,7 @@ def main():
     assert q2.metadata.get("quest_symbol")=="FIRES_OF_DISCONTENT",q2.metadata
     assert q1.metadata.get("quest_symbol")=="BETTER_PART_OF_VALOR",q1.metadata
     assert q0.metadata.get("quest_symbol")=="THE_FIGHTING_FOURTH",q0.metadata
+    assert back.metadata.get("mission_symbol")=="BACK_TO_THE_BEGINNING",back.metadata
     assert cait.metadata.get("mission_symbol")=="CAIT_SITH",cait.metadata
     assert q9.metadata.get("reward_item")=="SUPER_RERAISER",q9.metadata
     assert q10.metadata.get("reward_item")=="FOURTH_STAFF",q10.metadata
@@ -327,7 +334,8 @@ def main():
     assert any(
         dependency.source_feature_id=="quest:crystal_war:light_in_the_darkness"
         and dependency.subject=="mission:BACK_TO_THE_BEGINNING"
-        and dependency.status=="UNRESOLVED"
+        and dependency.status=="RESOLVED"
+        and dependency.resolved_feature_id=="mission:wotg:back_to_the_beginning"
         for dependency in closure.dependencies
     ),closure.dependencies
     assert any(
@@ -338,16 +346,45 @@ def main():
         and dependency.resolved_feature_id=="mission:wotg:cait_sith"
         for dependency in closure.dependencies
     ),closure.dependencies
+    back_dependencies=[
+        dependency
+        for dependency in closure.dependencies
+        if dependency.source_feature_id=="mission:wotg:back_to_the_beginning"
+        and dependency.group_id=="helper-feature-prerequisite:xi.wotg.helpers.meetsMission3Reqs"
+    ]
+    assert {dependency.subject for dependency in back_dependencies}=={
+        "quest:CLAWS_OF_THE_GRIFFON",
+        "quest:THE_TIGRESS_STRIKES",
+        "quest:FIRES_OF_DISCONTENT",
+    },back_dependencies
+    back_bastok=next(
+        dependency for dependency in back_dependencies
+        if dependency.subject=="quest:FIRES_OF_DISCONTENT"
+    )
+    assert back_bastok.logic=="ANY",back_bastok
+    assert back_bastok.status=="RESOLVED",back_bastok
+    assert back_bastok.selected is True,back_bastok
+    assert back_bastok.resolved_feature_id=="quest:crystal_war:fires_of_discontent",back_bastok
+    assert all(
+        dependency.selected is False
+        for dependency in back_dependencies
+        if dependency.subject!="quest:FIRES_OF_DISCONTENT"
+    ),back_dependencies
+
+    back_helper_gates=back.metadata.get("catalog_feature_requirement_gates",())
+    assert len(back_helper_gates)==1,back_helper_gates
+    assert back_helper_gates[0]["logic"]=="ANY",back_helper_gates
+
     documented=q3.metadata.get("documented_feature_requirements",())
     assert documented and documented[0]["subject"]=="mission:CAIT_SITH",documented
     assert documented[0]["enforcement"]=="NOT_IMPLEMENTED",documented
     assert closure_summary=={
         "root_feature_id":"mission:wotg:the_will_of_the_world",
-        "feature_count":13,
-        "dependency_count":22,
-        "resolved_dependency_count":11,
-        "unresolved_dependency_count":1,
-        "skipped_alternative_count":4,
+        "feature_count":14,
+        "dependency_count":25,
+        "resolved_dependency_count":13,
+        "unresolved_dependency_count":0,
+        "skipped_alternative_count":6,
         "cycle_count":0,
     },closure_summary
 
@@ -610,7 +647,7 @@ def main():
     print("q1_transitions",len(q1.transitions),"q1_unmodeled",q1_metrics["unmodeled_source_handler_count"])
     print("q0_transitions",len(q0.transitions),"q0_unmodeled",q0_metrics["unmodeled_source_handler_count"])
     print("documented_cait_sith",documented)
-    print("next_gap","resolve Back to the Beginning; Fighting Fourth local helper effects remain the next semantic extraction stress point")
+    print("next_gap","dependency closure is complete for the selected Bastok path; stress local/helper handler indirection next")
     return 0
 
 
