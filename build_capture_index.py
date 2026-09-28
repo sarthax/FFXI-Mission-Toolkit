@@ -179,6 +179,26 @@ def init_db(con: sqlite3.Connection):
             capture_id INTEGER, seq INTEGER, ts TEXT, direction TEXT, opcode TEXT, raw_hex TEXT,
             PRIMARY KEY (capture_id, seq)
         );
+        CREATE TABLE IF NOT EXISTS capture_video_observations (
+            capture_id INTEGER,
+            observation_id TEXT,
+            ocr_run_id TEXT,
+            section TEXT,
+            frame TEXT,
+            video_ts REAL,
+            source_url TEXT,
+            observation_type TEXT,
+            direction TEXT,
+            opcode TEXT,
+            gp_command TEXT,
+            packet_class TEXT,
+            fields_json TEXT,
+            raw_text TEXT,
+            corrected_text TEXT,
+            ocr_confidence REAL,
+            provenance_json TEXT,
+            PRIMARY KEY (capture_id, observation_id)
+        );
         CREATE TABLE IF NOT EXISTS capture_tags (
             capture_id INTEGER, tag TEXT,
             PRIMARY KEY (capture_id, tag)
@@ -187,6 +207,9 @@ def init_db(con: sqlite3.Connection):
         CREATE INDEX IF NOT EXISTS idx_capture_raw_packets_opcode ON capture_raw_packets(capture_id, opcode);
         CREATE INDEX IF NOT EXISTS idx_capture_raw_packets_direction ON capture_raw_packets(capture_id, direction);
         CREATE INDEX IF NOT EXISTS idx_capture_raw_packets_opcode_global ON capture_raw_packets(opcode);
+        CREATE INDEX IF NOT EXISTS idx_capture_video_obs_opcode ON capture_video_observations(capture_id, opcode);
+        CREATE INDEX IF NOT EXISTS idx_capture_video_obs_time ON capture_video_observations(capture_id, video_ts);
+        CREATE INDEX IF NOT EXISTS idx_capture_video_obs_run ON capture_video_observations(ocr_run_id, section);
     """)
     # CREATE TABLE IF NOT EXISTS doesn't retrofit columns onto an already-existing table (same
     # trap hit earlier with sql_mob_pools/modelid) -- migrate captures explicitly so re-running
@@ -560,6 +583,54 @@ def ingest_single_file(con, capture_id: int, filename: str, data: bytes) -> dict
     recompute_zones(con, capture_id)
     con.commit()
     return {"filename": filename, "format": fmt, "rows": rows, "error": error}
+
+
+def replace_video_ocr_observations(
+    con: sqlite3.Connection,
+    capture_id: int,
+    ocr_run_id: str,
+    observations,
+) -> int:
+    """Replace one OCR run's derived observations for a capture.
+
+    These rows are intentionally separate from capture_raw_packets: VIDEO_OCR can identify
+    an on-screen opcode/field rendering, but it does not possess the underlying packet bytes.
+    """
+    con.execute(
+        "DELETE FROM capture_video_observations WHERE capture_id=? AND ocr_run_id=?",
+        (capture_id, ocr_run_id),
+    )
+    count = 0
+    for row in observations:
+        con.execute(
+            """INSERT INTO capture_video_observations
+            (capture_id,observation_id,ocr_run_id,section,frame,video_ts,source_url,
+             observation_type,direction,opcode,gp_command,packet_class,fields_json,
+             raw_text,corrected_text,ocr_confidence,provenance_json)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (
+                capture_id,
+                row["observation_id"],
+                ocr_run_id,
+                row.get("section"),
+                row.get("frame"),
+                row.get("video_timestamp_seconds"),
+                row.get("source_url"),
+                row.get("observation_type") or "OCR_TEXT",
+                row.get("direction"),
+                row.get("opcode"),
+                row.get("gp_command"),
+                row.get("packet_class"),
+                json.dumps(row.get("fields"), sort_keys=True) if row.get("fields") else None,
+                row.get("raw_text"),
+                row.get("corrected_text"),
+                row.get("confidence"),
+                json.dumps(row.get("provenance") or {}, sort_keys=True),
+            ),
+        )
+        count += 1
+    con.commit()
+    return count
 
 
 def create_manual_capture(con, label: str, content_type: str, mission_name: str | None,
