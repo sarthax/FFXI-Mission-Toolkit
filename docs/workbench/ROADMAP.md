@@ -255,6 +255,23 @@ Design requirements:
 - [x] rollback/journal foundation — staged source/generated artifacts are hashed/journaled and explicit file apply operations can be rolled back; live SQL/database rollback remains future work.
 - [x] generated target-artifact foundation — safe domain reshape proposals can emit target-ready staged artifacts with provenance without applying them.
 
+
+### Reference wiki evidence mapping (P1)
+
+Purpose: use BG Wiki and FFXIclopedia as reproducible, revision-stamped reference evidence without allowing community documentation to become implementation truth.
+
+- [x] Preserve claim-level wiki evidence with source/page/revision/section/excerpt provenance and explicit `REFERENCE_ONLY` authority.
+- [x] Extract explicit entity-reference claims from MediaWiki links and retain useful Walkthrough/Strategy/Notes/etc. list statements even when they cannot yet be semantically mapped.
+- [x] Resolve wiki entity references conservatively against indexed zones, NPCs/mobs, key items, and items; preserve MAPPED / AMBIGUOUS / UNRESOLVED / UNMAPPED states.
+- [x] Add human mapping review with CONFIRMED / REJECTED decisions that never alter the underlying wiki claim.
+- [x] Bridge wiki claims into the canonical graph as REFERENCE evidence and MENTIONS / MAY_MENTION relationships; confirmed identity mappings may verify identity only while the claim authority stays reference-only.
+- [x] Expose claims, mappings, and reviews through Feature Trace catalog navigation and the Wiki Compiler GUI.
+- [ ] Add dual-source BG Wiki ↔ FFXIclopedia claim alignment and explicit `REFERENCE_CONFLICT` findings for disagreements.
+- [ ] Add semantic claim typing for progression requirements, rewards, coordinates, event/CSID hints, drops/acquisition, and behavioral mechanics without free-form truth promotion.
+- [ ] Add deterministic corroboration summaries against server/client/runtime evidence so a claim can show SUPPORTED / CONTRADICTED / UNVERIFIED by evidence domain.
+- [ ] Add mission/quest dependency extraction from typed wiki claims as reference guidance only, keeping executable/source-derived dependency gates separate.
+- [ ] Add bulk/rebuild tooling for selected wiki categories/features so evidence maps can be refreshed reproducibly from pinned wiki snapshots.
+
 ### Phase 8 — Evidence-aware LLM Research & Agent Layer (P1)
 Current state is a useful draft assistant: Open WebUI/Ollama chat plus read-only SQLite tools and logging. The rework should promote this into a bounded, reproducible research/orchestration layer over the Workbench rather than a free-form chatbot.
 

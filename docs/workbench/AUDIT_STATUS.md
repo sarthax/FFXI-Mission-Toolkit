@@ -2448,3 +2448,19 @@ The video OCR pipeline now separates reusable screen geometry from image preproc
 - coordinate-complete saved layouts can be applied to another OCR run to recreate all configured regions; built-in coordinate templates remain visible guidance but are not offered as apply targets;
 - saved layouts live under local `mission_reports_v2` workbench state rather than tracked source data;
 - CLI `frames` and `run` paths expose the same preprocessing choices as the GUI.
+
+## 2026-09-28 — Claim-level wiki evidence mapping
+
+The Wiki Compiler now has an evidence ledger instead of only a readiness/link resolver.
+
+- `reference_wiki_claims` preserves source ID, page/revision identity, section, exact reference excerpt, claim type, content hash, and `REFERENCE_ONLY` authority;
+- explicit MediaWiki links become `ENTITY_REFERENCE` claims while list instructions from useful gameplay sections become unmapped `SECTION_STATEMENT` claims for later corroboration;
+- `reference_wiki_mappings` records conservative exact/normalized identity candidates with MAPPED, AMBIGUOUS, UNRESOLVED, or UNMAPPED status rather than dropping failures;
+- `reference_wiki_mapping_reviews` lets a human CONFIRM or REJECT an identity proposal without mutating the source claim;
+- BG Wiki and FFXIclopedia remain distinct source IDs and revision domains;
+- the canonical graph receives REFERENCE_CLAIM entities, REFERENCE evidence records, and MENTIONS/MAY_MENTION edges. A confirmed mapping can verify identity linkage, but metadata retains `authority=REFERENCE_ONLY`;
+- rejected mappings are reconciliation-safe: a subsequent graph import removes any previously emitted edge;
+- Feature Trace now catalogs claims, mappings, and reviews;
+- the Wiki Compiler UI exposes source selection, evidence-map rebuild, claim provenance, candidate mappings, and confirm/reject review controls.
+
+This is a mapping/evidence foundation, not a semantic truth extractor. Dual-wiki conflict detection, typed mechanics/progression claims, and corroboration against server/client/runtime evidence remain follow-on work.

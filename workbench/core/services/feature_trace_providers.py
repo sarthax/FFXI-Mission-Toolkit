@@ -85,6 +85,18 @@ PROVIDERS=(
     CatalogProvider("retail-reference","reference",(
         CatalogTable("keyitems_external","id","name","KEY_ITEM_REFERENCE",search_columns=("norm_name",)),
     )),
+    CatalogProvider("reference-wiki","reference",(
+        CatalogTable("reference_wiki_claims","claim_id","subject_text","REFERENCE_CLAIM",
+                     ("source_id","page_id","page_title","revision_id","revision_timestamp","section_title",
+                      "claim_type","excerpt","source_locator","authority"),
+                     "/wiki",search_columns=("page_title","excerpt","section_title","source_id")),
+        CatalogTable("reference_wiki_mappings","mapping_id","target_label","REFERENCE_MAPPING",
+                     ("claim_id","target_domain","target_table","target_key","mapping_method",
+                      "mapping_status","confidence"),
+                     "/wiki",search_columns=("claim_id","target_table","target_key","mapping_status")),
+        CatalogTable("reference_wiki_mapping_reviews","mapping_id","review_status","REFERENCE_MAPPING_REVIEW",
+                     ("notes","reviewed_at"),"/wiki",search_columns=("review_status","notes")),
+    )),
     CatalogProvider("server-event-refs","server",(
         CatalogTable("npc_event_refs","csid",None,"SERVER_EVENT_REF",
                      key_columns=("source","zone_name","npc_script","csid"),
@@ -142,4 +154,6 @@ PROVIDER_LINKS=(
     CatalogLink("validation_results","run_id","validation_runs","run_id","FROM_VALIDATION_RUN"),
     CatalogLink("migration_actions","migration_id","migrations","migration_id","IN_MIGRATION"),
     CatalogLink("package_scope_reviews","migration_id","migrations","migration_id","REVIEWS_MIGRATION"),
+    CatalogLink("reference_wiki_mappings","claim_id","reference_wiki_claims","claim_id","MAPS_REFERENCE_CLAIM"),
+    CatalogLink("reference_wiki_mapping_reviews","mapping_id","reference_wiki_mappings","mapping_id","REVIEWS_REFERENCE_MAPPING"),
 )

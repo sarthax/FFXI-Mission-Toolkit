@@ -8,10 +8,86 @@ parser -- not free-text NLP or an LLM), resolved against the indexed
 zones/NPCs/mobs/key items/items. Reference only -- verify anything load-bearing against Topaz's
 own SQL/Lua before relying on it.</p>
 
-<form class="search" method="get">
+{% if error %}<div class="warn">{{ error }}</div>{% endif %}
+<form class="search" method="get" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+  <select name="source">
+    {% for src in available_sources %}
+    <option value="{{ src.id }}" {% if src.id == source %}selected{% endif %} {% if not src.available %}disabled{% endif %}>{{ src.label }}{% if not src.available %} (not imported){% endif %}</option>
+    {% endfor %}
+  </select>
   <input type="text" name="title" value="{{ title }}" placeholder="wiki page title or URL, e.g. Leujaoam Cleansing">
-  <button type="submit">Compile</button>
+  <button type="submit">Open</button>
 </form>
+{% if title %}
+<form method="post" action="/wiki/map" style="margin-top:8px;">
+  <input type="hidden" name="title" value="{{ title }}">
+  <input type="hidden" name="source" value="{{ source }}">
+  <button type="submit">Build / refresh evidence map</button>
+  <span class="muted">Extracts revision-stamped claims and conservative mapping candidates; reference-only evidence is never promoted to server truth.</span>
+</form>
+{% endif %}
+
+{% if evidence and evidence.status == "OK" %}
+<div class="table-wrap" style="padding:14px;margin-top:18px;">
+  <h2 style="margin-top:0;">Evidence mapping ledger — {{ source }}</h2>
+  <p class="muted">Each row preserves the wiki claim separately from its proposed toolkit identity. Confirming a mapping verifies only the identity link; the wiki claim remains <code>REFERENCE_ONLY</code>.</p>
+  {% if evidence.claims %}
+  <table>
+    <tr><th>section</th><th>claim</th><th>excerpt</th><th>mapping</th><th>review</th></tr>
+    {% for c in evidence.claims %}
+    <tr>
+      <td>{{ c.section_title or "page" }}<div class="muted mono">{{ c.claim_type }}</div></td>
+      <td>{% if c.subject_text %}<b>{{ c.subject_text }}</b>{% else %}<span class="muted">statement</span>{% endif %}
+        <div class="muted mono">{{ c.claim_id }}</div>
+        {% if c.revision_id %}<div class="muted">rev {{ c.revision_id }}{% if c.revision_timestamp %} · {{ c.revision_timestamp }}{% endif %}</div>{% endif %}
+      </td>
+      <td style="max-width:460px;">{{ c.excerpt }}</td>
+      <td>
+        {% for m in c.mappings %}
+          <div style="margin-bottom:8px;">
+            {% if m.mapping_status == "MAPPED" %}<span class="pill exists">mapped</span>
+            {% elif m.mapping_status == "AMBIGUOUS" %}<span class="pill gap">ambiguous</span>
+            {% elif m.mapping_status == "UNRESOLVED" %}<span class="pill mismatch">unresolved</span>
+            {% else %}<span class="pill">{{ m.mapping_status|lower }}</span>{% endif %}
+            {% if m.target_table %}
+              <span class="mono">{{ m.target_table }}:{{ m.target_key }}</span>
+              {% if m.target_label %} — {{ m.target_label }}{% endif %}
+              <div class="muted">{{ m.mapping_method }} · {{ m.confidence }}</div>
+            {% else %}
+              <div class="muted">{{ m.mapping_method }}</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </td>
+      <td>
+        {% for m in c.mappings %}
+          {% if m.target_table %}
+          <form method="post" action="/wiki/mapping/{{ m.mapping_id }}/review" style="margin-bottom:8px;">
+            <input type="hidden" name="title" value="{{ title }}">
+            <input type="hidden" name="source" value="{{ source }}">
+            <select name="review_status">
+              <option value="UNREVIEWED" {% if m.review_status == "UNREVIEWED" %}selected{% endif %}>unreviewed</option>
+              <option value="CONFIRMED" {% if m.review_status == "CONFIRMED" %}selected{% endif %}>confirm identity</option>
+              <option value="REJECTED" {% if m.review_status == "REJECTED" %}selected{% endif %}>reject mapping</option>
+            </select>
+            <input type="text" name="notes" value="{{ m.review_notes or '' }}" placeholder="review note" style="width:180px;">
+            <button type="submit">save</button>
+          </form>
+          {% else %}
+          <span class="muted">no identity candidate</span>
+          {% endif %}
+        {% endfor %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">No claim ledger has been built for this page yet. Use <b>Build / refresh evidence map</b>.</p>
+  {% endif %}
+</div>
+{% elif evidence and evidence.status == "NOT_FOUND" and source != "BGWiki" %}
+<div class="warn">No imported {{ source }} page matched this title.</div>
+{% endif %}
 
 {% if report %}
 {% if report.error %}

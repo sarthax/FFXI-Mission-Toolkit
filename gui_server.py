@@ -77,6 +77,8 @@ import lookup_entity
 import packet_decode
 import settings as settings_mod
 import wiki_compile
+import wiki_evidence
+from workbench.core.services import wiki_evidence_graph
 from workbench.gui_shell import build_shell_context
 from workbench.adapters.servers import LogicalRecord, adapter_for
 from workbench.migrations.live_target_validation import DBAPITargetReader, persist_live_validation, validate_live_records
@@ -3923,13 +3925,86 @@ async def packets_bulk_submit(request: Request):
 
 
 @app.get("/wiki", response_class=HTMLResponse)
-def wiki_browse(request: Request, title: str = ""):
+def wiki_browse(request: Request, title: str = "", source: str = wiki_evidence.SOURCE_BG, error: str = ""):
     report = None
+    evidence = None
+    con = get_con()
+    wiki_evidence.init_db(con)
     if title:
-        con = get_con()
-        report = wiki_compile.compile_report(con, title)
+        if source == wiki_evidence.SOURCE_BG:
+            report = wiki_compile.compile_report(con, title)
+        evidence = wiki_evidence.page_evidence(con, source, title)
+    available_sources = [
+        {"id": wiki_evidence.SOURCE_BG, "label": "BG Wiki", "available": True},
+        {
+            "id": wiki_evidence.SOURCE_FFXICLOPEDIA,
+            "label": "FFXIclopedia",
+            "available": con.execute(
+                "SELECT 1 FROM reference_wiki_pages WHERE source_id=? LIMIT 1",
+                (wiki_evidence.SOURCE_FFXICLOPEDIA,),
+            ).fetchone() is not None,
+        },
+    ]
+    con.close()
+    return templates.TemplateResponse(request, "wiki.html", {
+        "title": title,
+        "source": source,
+        "report": report,
+        "evidence": evidence,
+        "available_sources": available_sources,
+        "error": error,
+    })
+
+
+@app.post("/wiki/map", response_class=HTMLResponse)
+async def wiki_build_evidence_map(request: Request):
+    form = await request.form()
+    title = (form.get("title") or "").strip()
+    source = (form.get("source") or wiki_evidence.SOURCE_BG).strip()
+    error = ""
+    con = get_con()
+    try:
+        result = wiki_evidence.ingest_page(con, source, title)
+        if result.get("status") != "OK":
+            error = f"{source}: page not found for {title!r}"
+        else:
+            wiki_evidence_graph.import_wiki_evidence(
+                DB_PATH, WORKBENCH_DB, source_id=source, page_id=result["page_id"]
+            )
+    except (ValueError, SystemExit) as exc:
+        error = str(exc)
+    finally:
         con.close()
-    return templates.TemplateResponse(request, "wiki.html", {"title": title, "report": report})
+    suffix = f"?title={quote(title)}&source={quote(source)}"
+    if error:
+        suffix += f"&error={quote(error)}"
+    return RedirectResponse("/wiki" + suffix, status_code=303)
+
+
+@app.post("/wiki/mapping/{mapping_id}/review", response_class=HTMLResponse)
+async def wiki_review_mapping(request: Request, mapping_id: str):
+    form = await request.form()
+    title = (form.get("title") or "").strip()
+    source = (form.get("source") or wiki_evidence.SOURCE_BG).strip()
+    review_status = (form.get("review_status") or "").strip()
+    notes = (form.get("notes") or "").strip() or None
+    error = ""
+    con = get_con()
+    try:
+        wiki_evidence.review_mapping(con, mapping_id, review_status, notes)
+        evidence = wiki_evidence.page_evidence(con, source, title)
+        if evidence.get("status") == "OK":
+            wiki_evidence_graph.import_wiki_evidence(
+                DB_PATH, WORKBENCH_DB, source_id=source, page_id=evidence["page_id"]
+            )
+    except ValueError as exc:
+        error = str(exc)
+    finally:
+        con.close()
+    suffix = f"?title={quote(title)}&source={quote(source)}"
+    if error:
+        suffix += f"&error={quote(error)}"
+    return RedirectResponse("/wiki" + suffix, status_code=303)
 
 
 @app.get("/wiki/export", response_class=PlainTextResponse)
