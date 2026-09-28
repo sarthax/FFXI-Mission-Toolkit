@@ -367,38 +367,51 @@ def _packet_consensus_key(record: dict) -> tuple:
 
 
 def apply_cross_frame_consensus(records: list[dict], max_gap_seconds: float = 1.5) -> list[dict]:
-    """Attach conservative consensus metadata to adjacent packet observations.
+    """Attach conservative consensus metadata across nearby observations of the same packet.
 
-    Observations join a cluster only when their effective structural identity matches and their
-    video timestamps are close.  Numeric/string FIELD VALUES vote independently by exact text;
+    EView commonly shows a STACK of historical packets in each frame, so observations of packet A
+    may be interleaved with B/C records from the same frame.  Clustering is therefore per
+    structural identity, not simple list adjacency. Field VALUES vote independently by exact text;
     ties remain unresolved instead of being guessed.
     """
-    clusters: list[list[dict]] = []
-    current: list[dict] = []
-    last_ts = None
-    last_key = None
-
+    by_key: dict[tuple, list[dict]] = {}
     for record in records:
         key = _packet_consensus_key(record)
-        ts = record.get("video_timestamp_seconds")
-        close = (
-            current
-            and key == last_key
-            and ts is not None and last_ts is not None
-            and 0 <= float(ts) - float(last_ts) <= max_gap_seconds
+        if any(key):
+            by_key.setdefault(key, []).append(record)
+
+    clusters: list[list[dict]] = []
+    clustered_ids = set()
+    for key_records in by_key.values():
+        ordered = sorted(
+            key_records,
+            key=lambda r: (
+                float(r.get("video_timestamp_seconds")) if r.get("video_timestamp_seconds") is not None else float("inf"),
+                str(r.get("frame") or ""),
+            ),
         )
-        if not close:
-            if current:
-                clusters.append(current)
-            current = [record]
-        else:
-            current.append(record)
-        last_key = key
-        last_ts = ts
-    if current:
-        clusters.append(current)
+        current: list[dict] = []
+        last_ts = None
+        for record in ordered:
+            ts = record.get("video_timestamp_seconds")
+            close = (
+                current
+                and ts is not None and last_ts is not None
+                and 0 <= float(ts) - float(last_ts) <= max_gap_seconds
+            )
+            if not close:
+                if current:
+                    clusters.append(current)
+                current = [record]
+            else:
+                current.append(record)
+            last_ts = ts
+        if current:
+            clusters.append(current)
 
     for cluster in clusters:
+        for record in cluster:
+            clustered_ids.add(id(record))
         if len(cluster) < 2:
             cluster[0]["consensus"] = {
                 "support": 1,
@@ -434,6 +447,14 @@ def apply_cross_frame_consensus(records: list[dict], max_gap_seconds: float = 1.
                 "applied": True,
                 "field_votes": field_votes,
                 "unresolved_fields": unresolved or None,
+            }
+
+    for record in records:
+        if id(record) not in clustered_ids:
+            record["consensus"] = {
+                "support": 1,
+                "source_frames": [record.get("frame")],
+                "applied": False,
             }
     return records
 
