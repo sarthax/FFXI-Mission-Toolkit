@@ -113,6 +113,9 @@ def _selected(
         return True
     if not selected_any_subjects:
         return True
+    gate_subjects={candidate.subject for candidate in gate.conditions}
+    if not (gate_subjects & selected_any_subjects):
+        return True
     return condition.subject in selected_any_subjects
 
 
