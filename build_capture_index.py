@@ -2100,9 +2100,15 @@ def parse_packetlogger_records(text: str, opcode: str) -> list[dict]:
                 if tok != "--":
                     hex_bytes.append(tok)
         if hex_bytes:
+            header_end = text.find("\n", hstart)
+            if header_end < 0 or header_end > block_end:
+                header_end = block_end
+            header_line = text[hstart:header_end]
             out.append({
                 "ts": ts,
                 "raw_hex": "".join(hex_bytes),
+                "is_injected": "Injected" in header_line,
+                "is_blocked": "Blocked" in header_line,
                 "start_char": hstart,
                 "end_char": block_end,
                 "start_line": text.count("\n", 0, hstart) + 1,
@@ -2143,25 +2149,47 @@ def ingest_packetlogger(con, capture_id, src: Source, relnames: list[str]) -> in
             end_offset = (
                 len(text[:record["end_char"]].encode("utf-8")) if byte_offsets_exact else None
             )
+            source_format = "packetviewer" if "/packetviewer/" in relname.lower() else "packetlogger"
+            header = raw_packet_ingest.decode_packet_header(record["raw_hex"])
             all_packets.append((
                 record["ts"], direction, opcode, record["raw_hex"], relname, source_sha256,
                 record["start_line"], record["end_line"], start_offset, end_offset,
+                source_format, f"{relname}:{record['start_line']}",
+                header["packet_size"], header["sync_id"],
+                record["is_injected"], record["is_blocked"],
             ))
 
-    all_packets.sort(key=lambda p: p[0])
+    all_packets.sort(key=lambda p: (p[0], p[4], p[6]))
 
-    con.execute("DELETE FROM capture_raw_packets WHERE capture_id=?", (capture_id,))
+    # Replace only this raw-log family. Other canonical raw sources (PacketDB, Packeteer,
+    # NPCLogger-preserved bytes) remain independent evidence rows in the same capture.
     con.execute(
-        "DELETE FROM capture_row_locators WHERE capture_id=? AND target_table='capture_raw_packets'",
+        """DELETE FROM capture_raw_packets
+           WHERE capture_id=? AND source_format IN ('packetlogger','packetviewer')""",
         (capture_id,),
     )
-    for seq, (
+    con.execute(
+        """DELETE FROM capture_row_locators
+           WHERE capture_id=? AND target_table='capture_raw_packets'
+             AND filename IN (%s)""" % ",".join("?" for _ in relnames),
+        [capture_id] + list(relnames),
+    )
+    next_seq = con.execute(
+        "SELECT COALESCE(MAX(seq),-1)+1 FROM capture_raw_packets WHERE capture_id=?",
+        (capture_id,),
+    ).fetchone()[0]
+    for offset, (
         ts, direction, opcode, hexstr, relname, source_sha256,
         start_line, end_line, start_offset, end_offset,
+        source_format, source_native_id, packet_size, sync_id, is_injected, is_blocked,
     ) in enumerate(all_packets):
+        seq = int(next_seq) + offset
         con.execute("""INSERT OR REPLACE INTO capture_raw_packets
-            (capture_id, seq, ts, direction, opcode, raw_hex) VALUES (?,?,?,?,?,?)""",
-            (capture_id, seq, ts, direction, opcode, hexstr))
+            (capture_id,seq,ts,direction,opcode,raw_hex,zone_id,packet_size,sync_id,
+             is_injected,is_blocked,source_format,source_native_id)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (capture_id,seq,ts,direction,opcode,hexstr,None,packet_size,sync_id,
+             int(is_injected),int(is_blocked),source_format,source_native_id))
         capture_integrity.record_row_locator(
             con,
             capture_id,
@@ -2174,7 +2202,12 @@ def ingest_packetlogger(con, capture_id, src: Source, relnames: list[str]) -> in
             end_line=end_line,
             start_offset=start_offset,
             end_offset=end_offset,
-            details={"opcode": opcode, "direction": direction, "timestamp": ts},
+            details={
+                "opcode": opcode, "direction": direction, "timestamp": ts,
+                "source_format": source_format, "source_native_id": source_native_id,
+                "packet_size": packet_size, "sync_id": sync_id,
+                "is_injected": bool(is_injected), "is_blocked": bool(is_blocked),
+            },
         )
     return len(all_packets)
 
