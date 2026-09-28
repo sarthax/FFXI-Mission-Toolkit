@@ -2664,3 +2664,17 @@ The capture graph bridge now preserves packet evidence at observation granularit
 - `workbench_connect.py` now emits the same stable row-level raw-packet IDs when the modern `seq` schema is present, making the general and capture-specific connectors idempotent. Its legacy opcode/direction summary is retained only for schemas without row identity.
 - The capture-specific connector reconciles its owned raw/EventView relationships and evidence before regenerating them, preventing stale graph observations after capture rebuilds shrink or replace normalized data.
 - Feature Trace source drill-down resolves these new edges directly through their explicit normalized capture row keys to exact PacketLogger/EventView source blocks.
+
+
+## 2026-09-28 — Cross-source packet correlation
+
+Independent runtime evidence streams can now be correlated without being merged or promoted into a single synthetic observation.
+
+- New `capture_packet_correlations` stores deterministic pairwise links between RAW_PACKET, EVENTVIEW_DECODE, IDVIEW_EVENT, and VIDEO_OCR observations.
+- Raw PacketLogger ↔ EventView candidates require canonical opcode/direction agreement and bounded absolute timestamp proximity. One-to-one candidates are `MATCHED`; repeated same-window candidates remain `AMBIGUOUS`.
+- IDView ↔ EventView does not invent a time axis. It requires opcode/direction plus at least one shared decoded identity field (entity id or message id), and only a unique bidirectional candidate is marked `MATCHED`.
+- Video OCR correlations are generated only when an explicit fitted alignment model exists for the target logger clock. Video time is projected into that clock, then bounded opcode/direction candidates are evaluated.
+- Correlations record basis, candidate counts, delta, score, and the fitted alignment model where applicable. They never replace the original source rows.
+- Rebuilding correlations deletes and deterministically regenerates only that capture's correlation rows, preventing stale links after capture data changes.
+- Runtime graph generation refreshes correlation state automatically before emitting packet observations.
+- Capture / Video Alignment now exposes matched and ambiguous correlations and provides an explicit rebuild action.

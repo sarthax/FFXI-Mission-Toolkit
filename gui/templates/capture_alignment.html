@@ -12,6 +12,33 @@
 <div class="warn">This capture has no linked video URL yet. You can still create anchors, but video jump links will not be available.</div>
 {% endif %}
 
+
+<h2>Cross-source packet correlation</h2>
+<p class="muted">Correlations link independent observations without merging them. Unique candidates are marked MATCHED; repeated candidates remain AMBIGUOUS. Raw PacketLogger bytes, EventView decodes, IDView events, and video OCR keep their own provenance.</p>
+<form method="post" action="/captures/{{ cap.capture_id }}/alignment/correlate" style="margin-bottom:10px;">
+  <button type="submit">Rebuild packet correlations</button>
+  <span class="muted">{{ correlation_summary.total }} link(s): {{ correlation_summary.matched }} matched, {{ correlation_summary.ambiguous }} ambiguous</span>
+</form>
+{% if correlations %}
+<div class="table-wrap" style="max-height:520px;overflow:auto;"><table>
+<tr><th>status</th><th>source</th><th>target</th><th>opcode</th><th>direction</th><th>Δ time</th><th>basis</th><th>score</th></tr>
+{% for row in correlations %}
+<tr>
+  <td>{% if row.status == "MATCHED" %}<b>{{ row.status }}</b>{% else %}<span class="warn">{{ row.status }}</span>{% endif %}</td>
+  <td><span class="chip">{{ row.source_kind }}</span><br><code>{{ row.source_ref }}</code></td>
+  <td><span class="chip">{{ row.target_kind }}</span><br><code>{{ row.target_ref }}</code></td>
+  <td class="mono">{{ row.opcode or "" }}</td>
+  <td>{{ row.direction or "" }}</td>
+  <td class="mono">{% if row.time_delta_seconds is not none %}{{ "%.3f"|format(row.time_delta_seconds) }}s{% else %}—{% endif %}</td>
+  <td>{{ row.basis }}{% if row.details.shared_fields %}<div class="muted">shared: {{ row.details.shared_fields|join(", ") }}</div>{% endif %}</td>
+  <td class="mono">{% if row.score is not none %}{{ "%.3f"|format(row.score) }}{% else %}—{% endif %}</td>
+</tr>
+{% endfor %}
+</table></div>
+{% else %}
+<p class="muted">No correlations have been built yet, or no conservative cross-source candidates were found.</p>
+{% endif %}
+
 <h2>Alignment models</h2>
 {% if summary.models %}
 <div class="table-wrap"><table>
