@@ -822,6 +822,16 @@ def sniff_sqlite_format(data: bytes) -> str | None:
         return "actionview_db"
     if {"Level_min", "Level_max", "UniqueNo"} <= cols:
         return "levelrange_db"
+    if {"NpcUniqueNo", "NpcName", "NpcZone", "ItemNo", "ItemName", "Count", "Max", "Hidden", "Price"} <= cols:
+        return "guildstock_db"
+    if {"NpcUniqueNo", "NpcName", "NpcZone", "GuildInfo", "ItemNo", "ItemName", "ItemPrice", "ShopIndex", "Skill"} <= cols:
+        return "shopstock_buy_db"
+    if {"NpcUniqueNo", "NpcName", "NpcZone", "ItemNo", "ItemName", "Price"} <= cols:
+        return "shopstock_sell_db"
+    if {"ZoneNo", "ZoneName", "PreviousWeatherNumber", "WeatherNumber", "StartTime", "WeatherOffsetTime"} <= cols:
+        return "weathertrack_db"
+    if {"uniqueId", "name", "x", "y", "z"} <= cols:
+        return "poitrack_db"
     return None
 
 
@@ -854,6 +864,29 @@ def sniff_text_format(text: str) -> str | None:
         return "pathlog_csv"
     if re.search(r"^\s*\[\d+\]\s*=\s*\{.*'id'.*=", head) or re.search(r"^\s*\[\d+\]\s*=\s*\{\['id'\]", head):
         return "npclogger_lua"
+    if re.search(r"^\[[^\]]+\]\s+.+\n\{", head, re.MULTILINE):
+        return "missiontrack"
+    if PRICELOG_SIMPLE_RE.search(head):
+        return "pricelog_simple"
+    if "local resale_database" in head and re.search(r"\bprice\s*=", head):
+        return "pricelog_lua"
+    return None
+
+
+
+def sniff_csv_format(text: str) -> str | None:
+    first = next(csv.reader(io.StringIO(text.lstrip("\ufeff"))), [])
+    cols = {str(x).strip() for x in first}
+    if {"MobName","UniqueNo","DefeatedAt","SpawnedAt","XSpawn","YSpawn","ZSpawn"} <= cols:
+        return "spawntrack_csv"
+    if {"recvTime","syncId","acc","atk","offacc","offatk","rangeacc","rangeatk","eva","def"} <= cols:
+        return "checkparam_csv"
+    if {"Timestamp","Result","Grade","ItemNo","CrystalNo","MaterialNo_1","Effect_Type"} <= cols:
+        return "crafttrack_csv"
+    if {"Timestamp","Balance","Alliance","CurSandy","CurBastok","CurWindy","NextTally","CP","CurBeastmen"} <= cols:
+        return "conquesttrack_csv"
+    if {"leg","x","y","z","dir","delta"} <= {x.lower() for x in cols}:
+        return "pathlog_csv"
     return None
 
 
@@ -878,20 +911,20 @@ def ingest_single_file(con, capture_id: int, filename: str, data: bytes) -> dict
                 rows = ingest_actions_db(con, capture_id, src, "Actions.db")
             elif fmt == "levelrange_db":
                 rows = ingest_level_range_db(con, capture_id, src, zone_db + ".db")
+            elif fmt in AUX_STRUCTURED_FORMATS:
+                rows = ingest_aux_structured(con, capture_id, src, filename, fmt)
             else:
-                error = "Unrecognized .db schema (not NPCLogger/ActionView/LevelRangeTrack entries shape)"
+                error = "Unrecognized .db schema"
         elif suffix == ".csv":
-            text = data.decode("utf-8", "replace")
-            if re.match(r'^\s*leg,x,y,z,dir,delta\s*$', text[:200], re.MULTILINE):
-                fmt = "pathlog_csv"
-                # A real PathLog CSV's own filename is just the entity id (e.g. "17002517.csv")
-                # -- the zone and NPC label live in its PARENT folders, which a single dropped
-                # file has no way to carry. Rather than guess a zone, this format is honestly
-                # only supported via a zip/folder upload (which preserves that path), not a bare
-                # single-file drop.
+            text = data.decode("utf-8-sig", "replace")
+            fmt = sniff_csv_format(text)
+            src = SingleFileSource(filename, data)
+            if fmt == "pathlog_csv":
                 error = "PathLog CSVs need their real folder path (zone/NPC label) for zone context -- upload as part of a zip instead of a bare file"
+            elif fmt in AUX_STRUCTURED_FORMATS:
+                rows = ingest_aux_structured(con, capture_id, src, filename, fmt)
             else:
-                error = "CSV doesn't match PathLog's leg,x,y,z,dir,delta header"
+                error = "Unrecognized CSV schema"
         else:
             text = data.decode("utf-8", "replace")
             fmt = sniff_text_format(text)
@@ -912,6 +945,8 @@ def ingest_single_file(con, capture_id: int, filename: str, data: bytes) -> dict
             elif fmt == "npclogger_lua":
                 e, p = ingest_npclogger_lua(con, capture_id, src, zone_db + ".lua")
                 rows = e + p
+            elif fmt in AUX_STRUCTURED_FORMATS:
+                rows = ingest_aux_structured(con, capture_id, src, filename, fmt)
             elif fmt == "actionview_simple":
                 # Same redundancy risk as the zip-ingest path (see ingest_from_source) -- if an
                 # ActionView.db has already been added to this capture, its rows already cover
