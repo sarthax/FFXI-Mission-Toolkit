@@ -114,6 +114,10 @@ def main():
         and not any(e.effect=="REMOVE" and e.subject=="key_item:TEST_A" for e in t.effects)
         for t in event6_chains
     ),event6_chains
+    assert sum(
+        any(e.effect=="CLIENT_TRANSPORT" for e in t.effects)
+        for t in event6_chains
+    )==1,event6_chains
 
     assert machine.metadata["branch_alternatives"]>=5,machine.metadata
     assert machine.metadata["incomplete_branch_guards"]>=3,machine.metadata
