@@ -13,6 +13,7 @@ Run:
     py -3 gui_server.py
     then open http://localhost:8420
 """
+import argparse
 import base64
 import colorsys
 import csv
@@ -56,6 +57,7 @@ import ingest_global_tables
 import addon_tools
 import install_external_tools
 import build_lsb_index
+import youtube_chat_ocr
 import backport_lua_convert
 import backport_sql_convert
 import backport_binding_index
@@ -115,6 +117,9 @@ if MAPS_DIR.exists():
 STATIC_DIR = TOOLS_ROOT / "gui" / "static"
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+OCR_RUNS_DIR = TOOLS_ROOT / "mission_reports_v2" / "_ocr_runs"
+OCR_RUNS_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/ocr_runs", StaticFiles(directory=str(OCR_RUNS_DIR)), name="ocr_runs")
 
 
 def get_con() -> sqlite3.Connection:
@@ -697,7 +702,7 @@ ADDON_PREFIX = "addon-"
 
 
 @app.post("/install/{tool}")
-def install_tool(tool: str):
+def install_tool(tool: str, back: str = "/"):
     """Auto-downloads one of the optional external tools/data straight from its real GitHub
     source (install_external_tools.py) instead of the user needing to find, download, and place
     it by hand. Same synchronous-request pattern as /rebuild/{source} above -- FFXI-DATS is a
@@ -706,7 +711,12 @@ def install_tool(tool: str):
     A tool name starting with "addon-" (e.g. "addon-bg-wiki-dump") is routed to addon_tools.py's
     own install_addon() instead -- a LOCAL package (see addons/*.zip) rather than a network fetch,
     same real (ok, message) return shape so this one route can drive both without the template/
-    button needing to know which kind a given row is."""
+    button needing to know which kind a given row is.
+
+    `back` lets a caller other than the home page (e.g. /ocr's Prerequisites section) point the
+    redirect back at itself instead of always landing on "/" -- must be a same-app relative path,
+    query-string forwarded via its own param names (installed/ok/detail) so home.html's
+    rebuilt/rebuilt_ok/rebuilt_detail handling isn't disturbed."""
     from urllib.parse import quote
     if tool.startswith(ADDON_PREFIX):
         ok, message = addon_tools.install_addon(tool[len(ADDON_PREFIX):])
@@ -714,6 +724,12 @@ def install_tool(tool: str):
         ok, message = install_external_tools.INSTALLERS[tool]()
     else:
         return RedirectResponse(url="/?rebuilt=&ok=0&detail=Unknown+tool", status_code=303)
+    if not back.startswith("/") or back.startswith("//"):
+        back = "/"
+    if back == "/ocr":
+        return RedirectResponse(
+            url=f"/ocr?installed={tool}&ok={1 if ok else 0}&detail={quote(message)}", status_code=303
+        )
     return RedirectResponse(url=f"/?rebuilt={tool}&ok={1 if ok else 0}&detail={quote(message)}", status_code=303)
 
 
@@ -3913,6 +3929,225 @@ def wiki_export(title: str = ""):
     return PlainTextResponse(wiki_compile.to_markdown(report), media_type="text/markdown")
 
 
+def ocr_prereqs() -> list[dict]:
+    from shutil import which
+    prereqs = [
+        {
+            "tool": "yt-dlp", "label": "yt-dlp (downloads the video)",
+            "installed": which("yt-dlp") is not None,
+            "manual_label": "pip install yt-dlp", "manual_url": "https://github.com/yt-dlp/yt-dlp",
+        },
+        {
+            "tool": "ffmpeg", "label": "ffmpeg (crops frames)",
+            "installed": youtube_chat_ocr.tool_available("ffmpeg"),
+            "manual_label": "gyan.dev Windows builds", "manual_url": "https://www.gyan.dev/ffmpeg/builds/",
+        },
+        {
+            "tool": "tesseract", "label": "tesseract (OCR engine)",
+            "installed": youtube_chat_ocr.tool_available("tesseract"),
+            "manual_label": "UB-Mannheim Windows installer", "manual_url": "https://github.com/UB-Mannheim/tesseract/wiki",
+        },
+    ]
+    for p in prereqs:
+        if not p["installed"]:
+            pending = install_external_tools.pending_installer(p["tool"])
+            p["pending_path"] = str(pending) if pending else None
+        else:
+            p["pending_path"] = None
+    return prereqs
+
+
+@app.get("/ocr", response_class=HTMLResponse)
+def ocr_index(request: Request, installed: str = "", ok: int = 1, detail: str = ""):
+    con = get_con()
+    zones = [r[0] for r in con.execute("SELECT name FROM zones ORDER BY name").fetchall()]
+    con.close()
+    return templates.TemplateResponse(request, "ocr.html", {
+        "runs": youtube_chat_ocr.list_runs(),
+        "zones": zones,
+        "prereqs": ocr_prereqs(),
+        "installed": installed, "installed_ok": bool(ok), "installed_detail": detail,
+        "vendor_root": str(TOOLS_ROOT / "vendor"),
+    })
+
+
+@app.post("/ocr/start", response_class=HTMLResponse)
+def ocr_start(request: Request, url: str = Form(...), cookies_from_browser: str = Form("")):
+    try:
+        run_id = youtube_chat_ocr.cmd_download(argparse.Namespace(
+            url=url, force=False, cookies_from_browser=cookies_from_browser.strip() or None))
+    except SystemExit as e:
+        con = get_con()
+        zones = [r[0] for r in con.execute("SELECT name FROM zones ORDER BY name").fetchall()]
+        con.close()
+        return templates.TemplateResponse(request, "ocr.html", {
+            "runs": youtube_chat_ocr.list_runs(), "zones": zones, "error": str(e),
+            "prereqs": ocr_prereqs(),
+            "vendor_root": str(TOOLS_ROOT / "vendor"),
+        })
+    return RedirectResponse(f"/ocr/{run_id}", status_code=303)
+
+
+@app.post("/ocr/{run_id}/delete", response_class=HTMLResponse)
+def ocr_delete(request: Request, run_id: str):
+    youtube_chat_ocr.delete_run(run_id)
+    return RedirectResponse("/ocr", status_code=303)
+
+
+@app.post("/ocr/{run_id}/create_capture", response_class=HTMLResponse)
+async def ocr_create_capture(request: Request, run_id: str):
+    """Seeds a new capture entry from an OCR run: video_url + ocr_run_id link back to this run's
+    transcript/frames, start_time from the YouTube upload date when known. An OCR run never has
+    real logger files (NPCLogger/PacketLogger/CapLog/etc.) of its own -- it's a video + a scraped
+    transcript, nothing the normal ingest_* parsers understand -- so this hands off only what
+    actually exists (label/mission/video link/date) and lands on /captures/{id}/add in case the
+    user separately has real logger files from the same session to attach."""
+    form = await request.form()
+    mission_name = (form.get("mission_name") or "").strip() or None
+    content_type = form.get("content_type") or "instances"
+    status = youtube_chat_ocr.run_status(run_id)
+    meta = status.get("meta") or {}
+    label = meta.get("title") or status.get("url") or run_id
+    start_time = None
+    upload_date = meta.get("upload_date")
+    if upload_date:
+        try:
+            start_time = datetime.strptime(upload_date, "%Y%m%d").timestamp()
+        except ValueError:
+            start_time = None
+    con = get_con()
+    capture_id = build_capture_index.create_manual_capture(
+        con, label, content_type, mission_name,
+        video_url=status.get("url"), ocr_run_id=run_id, start_time=start_time)
+    con.close()
+    return RedirectResponse(url=f"/captures/{capture_id}/add", status_code=303)
+
+
+@app.get("/ocr/{run_id}", response_class=HTMLResponse)
+def ocr_run_detail(request: Request, run_id: str, t: float = 5.0, error: str = ""):
+    status = youtube_chat_ocr.run_status(run_id)
+    if status["has_source"] and not status["has_preview"]:
+        try:
+            youtube_chat_ocr.extract_preview_frame(run_id, t)
+            status = youtube_chat_ocr.run_status(run_id)
+        except SystemExit as e:
+            error = error or str(e)
+    preview_size = youtube_chat_ocr.preview_frame_size(run_id) if status["has_preview"] else None
+    con = get_con()
+    zones = [r[0] for r in con.execute("SELECT name FROM zones ORDER BY name").fetchall()]
+    con.close()
+    return templates.TemplateResponse(request, "ocr_run.html", {
+        "status": status,
+        "zones": zones,
+        "preview_size": preview_size,
+        "preview_t": t,
+        "transcripts": {
+            s["section"]: youtube_chat_ocr.read_transcript(run_id, s["section"])
+            for s in status["sections"] if s["has_transcript"]
+        },
+        "matched_rows": {
+            s["section"]: youtube_chat_ocr.read_matched_rows(run_id, s["section"])
+            for s in status["sections"] if s["has_transcript"]
+        },
+        "capture_profiles": youtube_chat_ocr.CAPTURE_PROFILES,
+        "error": error,
+        "ocr_seconds_per_frame": youtube_chat_ocr.ocr_seconds_per_frame(),
+    })
+
+
+@app.post("/ocr/{run_id}/preview", response_class=HTMLResponse)
+def ocr_run_preview(run_id: str, t: float = Form(...)):
+    (youtube_chat_ocr.run_dir(run_id) / "preview.png").unlink(missing_ok=True)
+    return RedirectResponse(f"/ocr/{run_id}?t={t}", status_code=303)
+
+
+@app.post("/ocr/{run_id}/frames", response_class=HTMLResponse)
+def ocr_run_frames(run_id: str, x: int = Form(...), y: int = Form(...), w: int = Form(...),
+                    h: int = Form(...), fps: float = Form(2.0),
+                    section: str = Form(youtube_chat_ocr.DEFAULT_SECTION_LABEL),
+                    profile: str = Form(youtube_chat_ocr.DEFAULT_CAPTURE_PROFILE)):
+    # `section` is a free-text label ("chat", "npclogger", ...) -- a run can hold several
+    # independently-cropped regions, each with its own frames/dedupe/ocr/match pipeline below.
+    # `profile` picks how 'match' parses this section's lines (plain/timestamped/packetlogger).
+    error = ""
+    try:
+        youtube_chat_ocr.cmd_frames(argparse.Namespace(
+            run_id=run_id, crop=f"{x},{y},{w},{h}", fps=fps,
+            section=section or youtube_chat_ocr.DEFAULT_SECTION_LABEL,
+            profile=profile or youtube_chat_ocr.DEFAULT_CAPTURE_PROFILE,
+        ))
+    except SystemExit as e:
+        error = str(e)
+    return RedirectResponse(f"/ocr/{run_id}" + (f"?error={quote(error)}" if error else ""), status_code=303)
+
+
+@app.post("/ocr/{run_id}/{section}/dedupe", response_class=HTMLResponse)
+def ocr_run_dedupe(run_id: str, section: str, threshold: int = Form(6)):
+    error = ""
+    try:
+        youtube_chat_ocr.cmd_dedupe(argparse.Namespace(run_id=run_id, section=section, threshold=threshold))
+    except SystemExit as e:
+        error = str(e)
+    return RedirectResponse(f"/ocr/{run_id}" + (f"?error={quote(error)}" if error else ""), status_code=303)
+
+
+@app.post("/ocr/{run_id}/{section}/ocr", response_class=HTMLResponse)
+def ocr_run_ocr(run_id: str, section: str):
+    # Tesseract over 1000+ frames can run many minutes -- run it off the request thread so the
+    # page comes back immediately and can poll /ocr/{run_id}/{section}/progress instead of the
+    # browser tab just hanging on the POST with no feedback.
+    def _run():
+        try:
+            youtube_chat_ocr.cmd_ocr(argparse.Namespace(run_id=run_id, section=section))
+        except SystemExit as e:
+            youtube_chat_ocr._write_ocr_progress(run_id, section, 0, 0, finished=True, error=str(e))
+    threading.Thread(target=_run, daemon=True).start()
+    return RedirectResponse(f"/ocr/{run_id}?ocr_started={quote(section)}", status_code=303)
+
+
+@app.get("/ocr/{run_id}/{section}/progress")
+def ocr_run_progress(run_id: str, section: str):
+    return youtube_chat_ocr.read_ocr_progress(run_id, section)
+
+
+@app.post("/ocr/{run_id}/{section}/match", response_class=HTMLResponse)
+def ocr_run_match(run_id: str, section: str, zone: str = Form(""), min_score: float = Form(0.55)):
+    error = ""
+    try:
+        youtube_chat_ocr.cmd_match(argparse.Namespace(run_id=run_id, section=section, zone=zone or None, min_score=min_score))
+    except SystemExit as e:
+        error = str(e)
+    return RedirectResponse(f"/ocr/{run_id}" + (f"?error={quote(error)}" if error else ""), status_code=303)
+
+
+@app.post("/ocr/{run_id}/{section}/correct", response_class=HTMLResponse)
+def ocr_run_correct(run_id: str, section: str, frame: str = Form(...), text: str = Form("")):
+    # empty text means "revert to the OCR result" (cmd_correct's --clear), not "set it to blank" --
+    # a blank correction would be indistinguishable from an unset one in the table anyway.
+    error = ""
+    try:
+        youtube_chat_ocr.cmd_correct(argparse.Namespace(
+            run_id=run_id, section=section, frame=frame, text=text, clear=not text.strip(),
+        ))
+    except SystemExit as e:
+        error = str(e)
+    return RedirectResponse(f"/ocr/{run_id}" + (f"?error={quote(error)}" if error else ""), status_code=303)
+
+
+@app.post("/ocr/{run_id}/{section}/cleanup", response_class=HTMLResponse)
+def ocr_run_cleanup(run_id: str, section: str, frames: str | None = Form(None), unique: str | None = Form(None)):
+    # Unchecked HTML checkboxes are simply omitted from the POST body (not sent as "false"), so
+    # presence-of-key is what signals intent here, not a bool default.
+    error = ""
+    try:
+        youtube_chat_ocr.cmd_cleanup(argparse.Namespace(
+            run_id=run_id, section=section, frames=frames is not None, unique=unique is not None,
+        ))
+    except SystemExit as e:
+        error = str(e)
+    return RedirectResponse(f"/ocr/{run_id}" + (f"?error={quote(error)}" if error else ""), status_code=303)
+
+
 @app.get("/captures", response_class=HTMLResponse)
 def captures_page(request: Request, content_type: str = "", tag: str = "", q: str = ""):
     """List-only page -- detail lives at its own URL (/captures/{id}) specifically so clicking a
@@ -5692,7 +5927,7 @@ async def zoneplot_add(request: Request):
     import zone_edit
     b = await request.json()
     try:
-        return JSONResponse(zone_edit.add_entity(b["k"], b["zone"], b["src"], b["x"], b["y"], b["z"], b.get("r", 0), b.get("name", ""), b.get("comment", "")))
+        return JSONResponse(zone_edit.add_entity(b["k"], b["zone"], b["src"], b["x"], b["y"], b["z"], b.get("r", 0), b.get("name", ""), b.get("comment", ""), b.get("instance", 0)))
     except Exception as ex:
         return JSONResponse({"error": str(ex)}, status_code=400)
 
