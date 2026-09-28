@@ -29,7 +29,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install core regression test dependencies
-        run: python -m pip install --disable-pip-version-check jinja2 pyyaml
+        run: python -m pip install --disable-pip-version-check jinja2 pyyaml pillow
       - name: Run Workbench core regression fixtures
         env:
           PYTHONPATH: .
@@ -133,6 +133,7 @@ jobs:
           python test_fixtures/test_capture_video_alignment.py
           python test_fixtures/test_key_evidence_layer.py
           python test_fixtures/test_ocr_consensus_symbol_correction.py
+          python test_fixtures/test_ocr_layout_profiles.py
           python test_fixtures/test_capture_event_packet_graph.py
           python test_fixtures/test_lua_event_typing.py
           python test_fixtures/test_server_lua_graph_bridge.py

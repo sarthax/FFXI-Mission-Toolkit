@@ -4090,6 +4090,8 @@ def ocr_run_detail(request: Request, run_id: str, t: float = 5.0, error: str = "
             for s in status["sections"] if s["has_transcript"]
         },
         "capture_profiles": youtube_chat_ocr.CAPTURE_PROFILES,
+        "preprocess_profiles": youtube_chat_ocr.list_preprocess_profiles(),
+        "layout_profiles": youtube_chat_ocr.load_layout_profiles(),
         "error": error,
         "ocr_seconds_per_frame": youtube_chat_ocr.ocr_seconds_per_frame(),
     })
@@ -4105,7 +4107,8 @@ def ocr_run_preview(run_id: str, t: float = Form(...)):
 def ocr_run_frames(run_id: str, x: int = Form(...), y: int = Form(...), w: int = Form(...),
                     h: int = Form(...), fps: float = Form(2.0),
                     section: str = Form(youtube_chat_ocr.DEFAULT_SECTION_LABEL),
-                    profile: str = Form(youtube_chat_ocr.DEFAULT_CAPTURE_PROFILE)):
+                    profile: str = Form(youtube_chat_ocr.DEFAULT_CAPTURE_PROFILE),
+                    preprocess: str = Form(youtube_chat_ocr.DEFAULT_PREPROCESS_PROFILE)):
     # `section` is a free-text label ("chat", "npclogger", ...) -- a run can hold several
     # independently-cropped regions, each with its own frames/dedupe/ocr/match pipeline below.
     # `profile` picks how 'match' parses this section's lines (plain/timestamped/packetlogger).
@@ -4115,10 +4118,49 @@ def ocr_run_frames(run_id: str, x: int = Form(...), y: int = Form(...), w: int =
             run_id=run_id, crop=f"{x},{y},{w},{h}", fps=fps,
             section=section or youtube_chat_ocr.DEFAULT_SECTION_LABEL,
             profile=profile or youtube_chat_ocr.DEFAULT_CAPTURE_PROFILE,
+            preprocess=preprocess or youtube_chat_ocr.DEFAULT_PREPROCESS_PROFILE,
         ))
     except SystemExit as e:
         error = str(e)
     return RedirectResponse(f"/ocr/{run_id}" + (f"?error={quote(error)}" if error else ""), status_code=303)
+
+
+@app.post("/ocr/{run_id}/layout/save", response_class=HTMLResponse)
+async def ocr_save_layout(run_id: str, request: Request):
+    form = await request.form()
+    profile_id = (form.get("profile_id") or "").strip()
+    name = (form.get("name") or "").strip()
+    description = (form.get("description") or "").strip()
+    error = ""
+    try:
+        youtube_chat_ocr.save_run_layout(run_id, profile_id, name, description)
+    except ValueError as exc:
+        error = str(exc)
+    return RedirectResponse(
+        f"/ocr/{run_id}" + (f"?error={quote(error)}" if error else ""),
+        status_code=303,
+    )
+
+
+@app.post("/ocr/{run_id}/layout/apply", response_class=HTMLResponse)
+async def ocr_apply_layout(run_id: str, request: Request):
+    form = await request.form()
+    profile_id = (form.get("profile_id") or "").strip()
+    error = ""
+    try:
+        youtube_chat_ocr.apply_layout_profile(run_id, profile_id)
+    except (ValueError, SystemExit) as exc:
+        error = str(exc)
+    return RedirectResponse(
+        f"/ocr/{run_id}" + (f"?error={quote(error)}" if error else ""),
+        status_code=303,
+    )
+
+
+@app.post("/ocr/layout/{profile_id}/delete", response_class=HTMLResponse)
+def ocr_delete_layout(profile_id: str, run_id: str = Form("")):
+    youtube_chat_ocr.delete_layout_profile(profile_id)
+    return RedirectResponse(f"/ocr/{run_id}" if run_id else "/ocr", status_code=303)
 
 
 @app.post("/ocr/{run_id}/{section}/dedupe", response_class=HTMLResponse)

@@ -2434,3 +2434,17 @@ The packet-overlay OCR path now separates raw parsing from conservative structur
 - tied field-value votes remain explicitly unresolved rather than guessed;
 - capture ingestion uses the effective packet view but embeds raw parsing, symbol corrections, scores/source definitions, consensus votes, and source frames in VIDEO_OCR provenance;
 - the OCR GUI displays raw-vs-effective structural values, correction details, consensus support, and unresolved ties.
+
+## 2026-09-28 — Reusable OCR screen layouts and preprocessing profiles
+
+The video OCR pipeline now separates reusable screen geometry from image preprocessing and parsing semantics.
+
+- sections persist a capture profile and an independent preprocessing profile;
+- named preprocessing presets cover standard grayscale OCR, FFXI chat, high-contrast EView/packet overlays, and compact addon/NPCLogger text;
+- preprocessing is non-destructive: source/cropped frames remain unchanged while Tesseract receives the configured grayscale/autocontrast/invert/threshold/sharpen/upscale/PSM transformation;
+- OCR provenance records the preprocessing profile used for every observation;
+- built-in chat/EView/NPCLogger/research-combo layouts define reusable region roles but intentionally omit invented crop coordinates;
+- a configured run can be saved as a local reusable multi-region layout containing real crop coordinates, fps, capture profile, and preprocessing profile per region;
+- coordinate-complete saved layouts can be applied to another OCR run to recreate all configured regions; built-in coordinate templates remain visible guidance but are not offered as apply targets;
+- saved layouts live under local `mission_reports_v2` workbench state rather than tracked source data;
+- CLI `frames` and `run` paths expose the same preprocessing choices as the GUI.
