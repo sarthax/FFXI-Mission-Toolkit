@@ -2072,3 +2072,20 @@ Exact results may be persisted as ordinary graph navigation edges:
 `mission_event_reconcile.py` previews by default and requires explicit `--write` before persisting exact support edges.
 
 Regression: `test_fixtures/test_mission_event_reconciliation.py` covers exact source/client reconciliation, evidence-backed persistence, and fail-closed actor ambiguity.
+
+
+## 2026-09-27 — Branch-aware mission handler extraction
+
+The conservative LSB mission extractor now expands multiline top-level `if / elseif / else` handler trees into separate transition alternatives instead of flattening mutually exclusive guards and effects into one transition.
+
+Key behavior:
+- each literal branch path gets its own transition, event return, guard set, effects, source-span metadata, and branch path;
+- effects from sibling branches are never merged into the same transition;
+- `elseif` and `else` paths are explicitly marked `branch_guard_complete=false` because prior-branch falsehood is not synthesized; their confidence is therefore UNKNOWN rather than overstated;
+- unsupported multiline/nested branch forms retain the previous literal condition/effect evidence but are marked `unexpanded_nested_branch=true` and UNKNOWN instead of being presented as fully correlated;
+- event chaining now fans one initiating CSID into multiple branch-specific `onEventFinish[CSID]` outcomes rather than refusing to chain when more than one finish alternative exists;
+- chained outcomes preserve trigger/finish branch paths and propagate UNKNOWN confidence when either side has incomplete branch semantics.
+
+Regression: `test_fixtures/test_mission_lsb_branching.py` covers different CSIDs returned by `if/elseif/else`, branch-specific key-item/status effects, and multi-outcome event chaining. Existing multiline battlefield guards remain conservatively represented rather than discarded.
+
+This is still a conservative static extractor. It does not claim arbitrary Lua control-flow recovery, loop-sensitive path semantics, or synthesized negation of prior `elseif/else` branches.
