@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 169,
+  "route_count": 182,
   "routes": [
     {
       "method": "GET",
@@ -1353,6 +1353,110 @@
       "home": "Domains",
       "section": "Domain Detail",
       "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/ocr",
+      "home": "Captures",
+      "section": "YouTube OCR",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/ocr/start",
+      "home": "Captures",
+      "section": "YouTube OCR",
+      "role": "api/action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/ocr/{run_id}/delete",
+      "home": "Captures",
+      "section": "YouTube OCR",
+      "role": "api/action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/ocr/{run_id}/create_capture",
+      "home": "Captures",
+      "section": "YouTube OCR",
+      "role": "api/action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/ocr/{run_id}",
+      "home": "Captures",
+      "section": "YouTube OCR",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/ocr/{run_id}/preview",
+      "home": "Captures",
+      "section": "YouTube OCR",
+      "role": "api/action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/ocr/{run_id}/frames",
+      "home": "Captures",
+      "section": "YouTube OCR",
+      "role": "api/action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/ocr/{run_id}/{section}/dedupe",
+      "home": "Captures",
+      "section": "YouTube OCR",
+      "role": "api/action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/ocr/{run_id}/{section}/ocr",
+      "home": "Captures",
+      "section": "YouTube OCR",
+      "role": "api/action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/ocr/{run_id}/{section}/progress",
+      "home": "Captures",
+      "section": "YouTube OCR",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/ocr/{run_id}/{section}/match",
+      "home": "Captures",
+      "section": "YouTube OCR",
+      "role": "api/action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/ocr/{run_id}/{section}/correct",
+      "home": "Captures",
+      "section": "YouTube OCR",
+      "role": "api/action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/ocr/{run_id}/{section}/cleanup",
+      "home": "Captures",
+      "section": "YouTube OCR",
+      "role": "api/action",
       "disposition": "KEEP"
     }
   ]

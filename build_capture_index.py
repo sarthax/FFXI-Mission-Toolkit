@@ -193,7 +193,7 @@ def init_db(con: sqlite3.Connection):
     # against the DB from before content_type/zones/mission_name existed doesn't silently no-op.
     existing_cols = {r[1] for r in con.execute("PRAGMA table_info(captures)")}
     for col, decl in [("content_type", "TEXT"), ("zones", "TEXT"), ("mission_name", "TEXT"),
-                       ("video_url", "TEXT")]:
+                       ("video_url", "TEXT"), ("ocr_run_id", "TEXT")]:
         if col not in existing_cols:
             con.execute(f"ALTER TABLE captures ADD COLUMN {col} {decl}")
     con.execute("CREATE INDEX IF NOT EXISTS idx_captures_content_type ON captures(content_type)")
@@ -562,18 +562,24 @@ def ingest_single_file(con, capture_id: int, filename: str, data: bytes) -> dict
     return {"filename": filename, "format": fmt, "rows": rows, "error": error}
 
 
-def create_manual_capture(con, label: str, content_type: str, mission_name: str | None) -> int:
+def create_manual_capture(con, label: str, content_type: str, mission_name: str | None,
+                           video_url: str | None = None, ocr_run_id: str | None = None,
+                           start_time: float | None = None) -> int:
     """Starts a capture with no source file at all -- source_path is a synthetic manual:// marker
     (unique per creation timestamp) so it never collides with a real zip/folder path, and files
     get added to it one at a time afterward via ingest_single_file() or a real zip via
     ingest_from_source(). This is the "build a capture from scratch" entry point the GUI's
-    /captures/new page uses."""
+    /captures/new page uses, and also what /ocr/{run_id}/create_capture uses to seed a capture
+    from an OCR run's video_url/upload-date/run_id -- an OCR run has no logger files of its own,
+    so this is the only real data it can hand off; ocr_run_id is how the capture links back to its
+    transcript/frames under mission_reports_v2/_ocr_runs/<run_id>/."""
     source_path = f"manual://{label}#{int(time.time() * 1000)}"
     cur = con.execute("""INSERT INTO captures
         (source_path, capturer, capture_label, content_type, mission_name, addons,
-         client_build, is_retail, start_time, zones)
-        VALUES (?,?,?,?,?,?,?,?,?,?)""",
-        (source_path, None, label, content_type, mission_name or None, "[]", None, None, None, "[]"))
+         client_build, is_retail, start_time, zones, video_url, ocr_run_id)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (source_path, None, label, content_type, mission_name or None, "[]", None, None,
+         start_time, "[]", video_url or None, ocr_run_id or None))
     con.commit()
     return cur.lastrowid
 

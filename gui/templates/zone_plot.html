@@ -110,6 +110,8 @@
     <label>Y <input type="number" step="0.1" id="aY"></label>
     <label>Z <input type="number" step="0.1" id="aZ"></label>
     <label>Rot (0-255) <input type="number" step="1" min="0" max="255" id="aR" value="0"></label>
+    <label>Link to instance <select id="ainst"><option value="0">None (general zone pool)</option></select></label>
+    <div class="muted" style="font-size:11px">A fixed-placement instance (e.g. an assault like Heroines' Holdfast) only spawns rows also linked into instance_entities &mdash; picking one here writes that link row too. Leave "None" to add to the zone's general pool instead (visible in every instance and in unrestricted zone entry).</div>
     <div class="muted" style="font-size:11px">Click anywhere in the viewport (or drag a result above onto it) to set X/Y/Z from that point &mdash; the cyan marker shows where it'll be added. No marker means the click found no mesh/navmesh there; set X/Y/Z by hand instead.</div>
     <label style="align-items:flex-start">Comment <textarea id="acomment" rows="2" style="width:170px" placeholder="why"></textarea></label>
     <div style="margin-top:4px"><button id="aadd">Add to zone</button></div>
@@ -387,7 +389,9 @@ try {
 } catch(e){ console.warn('server.json', e); }
 await loadZoneList();
 $('zone').value = 77;
-function fillInst(){ const zid=+$('zone').value; $('inst').innerHTML='<option value="0">All rows</option>'+ZL.instances.filter(i=>i.zone===zid).map(i=>`<option value="${i.id}">${i.id} ${i.instance_name||i.name}</option>`).join(''); }
+function fillInst(){ const zid=+$('zone').value; const opts=ZL.instances.filter(i=>i.zone===zid).map(i=>`<option value="${i.id}">${i.id} ${i.instance_name||i.name}</option>`).join('');
+  $('inst').innerHTML='<option value="0">All rows</option>'+opts;
+  $('ainst').innerHTML='<option value="0">None (general zone pool)</option>'+opts; }
 $('srv').onchange=async()=>{
   const server=$('srv').value;
   const r=await fetch('/zoneplot/server.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({server})});
@@ -553,7 +557,8 @@ renderer.domElement.addEventListener('mousemove',ev=>{ const i=pick(ev); if(i!==
 let down=null; renderer.domElement.addEventListener('pointerdown',ev=>down=[ev.clientX,ev.clientY]);
 renderer.domElement.addEventListener('pointerup',async ev=>{ if(!down||Math.hypot(ev.clientX-down[0],ev.clientY-down[1])>4) return; const i=pick(ev); if(i<0) return;
   if (ev.shiftKey){ const e=Z.entities[i]; anchor={x:e.x,y:e.y,z:e.z}; await computeReach(); rebuild(); } else select(i,false); });
-$('zone').onchange=()=>{ $('buildCacheBtn').hidden=true; fillInst(); loadZone(); }; $('inst').onchange=loadZone;
+$('zone').onchange=()=>{ $('buildCacheBtn').hidden=true; fillInst(); loadZone(); };
+$('inst').onchange=()=>{ if($('ainst').querySelector(`option[value="${$('inst').value}"]`)) $('ainst').value=$('inst').value; loadZone(); };
 $('lod').onchange=()=>{ if($('lod').value!=='obj') $('buildCacheBtn').hidden=true; Z&&loadZMesh(Z.zid); };
 ['showm','shown','showd','mode','dsz'].forEach(id=>$(id).addEventListener('input',()=>Z&&rebuild()));
 $('q').addEventListener('input',()=>Z&&rebuild());
@@ -856,10 +861,10 @@ $('aq').addEventListener('input',()=>{ clearTimeout(aTimer); aTimer=setTimeout(a
 $('aadd').onclick=async()=>{ if(!aSel||!Z){ $('amsg').textContent='Pick a source first.'; return; }
   if($('aX').value===''||$('aY').value===''||$('aZ').value===''){ $('amsg').textContent='No position set -- click the viewport, drag a result onto it, or type X/Y/Z.'; return; }
   const kind=$('ak').value, src = kind==='m' ? {groupid:aSel.groupid, zone:aSel.zone} : {npcid:aSel.npcid};
-  const body={k:kind, zone:Z.zid, src, x:+$('aX').value||0, y:+$('aY').value||0, z:+$('aZ').value||0, r:+$('aR').value||0, name:$('aname').value, comment:$('acomment').value};
+  const body={k:kind, zone:Z.zid, src, x:+$('aX').value||0, y:+$('aY').value||0, z:+$('aZ').value||0, r:+$('aR').value||0, name:$('aname').value, comment:$('acomment').value, instance:+$('ainst').value||0};
   const r=await fetch('/zoneplot/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const j=await r.json();
   if(j.error){ $('amsg').textContent='ERROR: '+j.error; return; }
-  $('amsg').textContent=`Added as id ${j.id} (backup ${j.backup}).\n`+j.sql;
+  $('amsg').textContent=`Added as id ${j.id} (backup ${j.backup})${j.instance?` -- linked to instance ${j.instance}`:''}.\n`+j.sql;
   lastTouched={k:kind,id:j.id};
   addMarker.visible=false;
   await loadZone();
