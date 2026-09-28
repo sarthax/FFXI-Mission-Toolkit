@@ -87,6 +87,30 @@ def import_wiki_evidence(
             args.append(str(page_id))
         clause = (" WHERE " + " AND ".join(where)) if where else ""
 
+        mapping_ids_query = """
+            SELECT m.mapping_id
+            FROM reference_wiki_mappings m
+            JOIN reference_wiki_claims c ON c.claim_id=m.claim_id
+        """
+        cleanup_where = []
+        cleanup_args = []
+        if source_id:
+            cleanup_where.append("c.source_id=?")
+            cleanup_args.append(source_id)
+        if page_id:
+            cleanup_where.append("c.page_id=?")
+            cleanup_args.append(str(page_id))
+        if cleanup_where:
+            mapping_ids_query += " WHERE " + " AND ".join(cleanup_where)
+        current_mapping_ids = [
+            row[0] for row in src.execute(mapping_ids_query, tuple(cleanup_args)).fetchall()
+        ]
+        for mapping_id in current_mapping_ids:
+            dst.execute(
+                "DELETE FROM entity_relationships WHERE relationship_id=?",
+                (f"wiki-reference:{mapping_id}",),
+            )
+
         query = f"""
             SELECT c.claim_id,c.source_id,c.page_id,c.page_title,c.page_url,c.revision_id,
                    c.revision_timestamp,c.section_title,c.claim_type,c.subject_text,c.excerpt,
