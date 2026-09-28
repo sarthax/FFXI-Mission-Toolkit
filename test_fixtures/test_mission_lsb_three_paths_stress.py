@@ -40,11 +40,35 @@ def main():
     assert transports and transports[0].effect=="CLIENT_TRANSPORT",transports
     assert any(t.metadata.get("priority")==995 for t in raw.transitions),raw.transitions
     complete_handlers=[t for t in raw.transitions if any(e.effect=="COMPLETE" for e in t.effects)]
-    assert complete_handlers,raw.transitions
-    assert any(
-        t.gate and {"mission_status:LOUVERANCE","mission_status:TENZEN","mission_status:ULMIA"} <= {c.subject for c in t.gate.conditions}
-        for t in complete_handlers
-    ),complete_handlers
+    assert len(complete_handlers)>=3,complete_handlers
+    convergence_subjects={"mission_status:LOUVERANCE","mission_status:TENZEN","mission_status:ULMIA"}
+    terminal_events={853,854,855}
+    terminal_complete=[
+        t for t in complete_handlers
+        if t.event and t.event.event_id in terminal_events
+    ]
+    assert {t.event.event_id for t in terminal_complete}==terminal_events,terminal_complete
+    for transition in terminal_complete:
+        assert transition.post_effect_gate is not None,transition
+        assert {c.subject for c in transition.post_effect_gate.conditions}==convergence_subjects,transition
+        assert all(c.value==14 for c in transition.post_effect_gate.conditions),transition
+        pre_subjects={c.subject for c in transition.gate.conditions} if transition.gate else set()
+        assert not convergence_subjects <= pre_subjects,transition
+        written={
+            e.subject for e in transition.effects
+            if e.effect=="SET_CHANNEL" and e.value==14
+        }
+        assert written & convergence_subjects,transition
+        assert transition.metadata.get("post_effect_gate_basis"),transition.metadata
+
+    chained_terminal=[
+        t for t in chained.transitions
+        if t.metadata.get("logical_event_chain")
+        and t.event and t.event.event_id in terminal_events
+        and any(e.effect=="COMPLETE" for e in t.effects)
+    ]
+    assert {t.event.event_id for t in chained_terminal}==terminal_events,chained_terminal
+    assert all(t.post_effect_gate is not None for t in chained_terminal),chained_terminal
     gaps={}
     print("Three Paths real-source stress: PASS")
     print("raw_transitions",len(raw.transitions),"chained_transitions",len(chained.transitions),"channels",len(raw.channels))
