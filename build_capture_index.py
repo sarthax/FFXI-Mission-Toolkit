@@ -2095,7 +2095,45 @@ def _capture_source_format(src: "Source", relname: str) -> str | None:
     basename = lower.rsplit("/", 1)[-1]
     if basename in {"manifest.txt", "thumbs.db", "desktop.ini", ".ds_store"}:
         return "manifest" if basename == "manifest.txt" else "benign"
-    if re.search(r'npc(logger)?/[^/]+\.db    """Best-effort content-only guess at which KNOWN real format an unmatched file's content
+    if re.search(r'npclogger/[^/]+\.db$', lower):
+        try:
+            return sniff_sqlite_format(src.read_bytes(relname))
+        except Exception:
+            return "npclogger_db"
+    if lower.endswith("actions.db"):
+        return "actionview_db"
+    if "levelrangetrack/" in lower and lower.endswith(".db"):
+        return "levelrange_db"
+    if re.search(r'packet(?:logger|viewer)/(incoming|outgoing)/0x[0-9a-f]{3}\.log$', lower):
+        return "packetlogger"
+    if "caplog/" in lower and lower.endswith((".txt", ".log")):
+        return "caplog"
+    if "kitrack/" in lower:
+        return "kitrack"
+    if "hptrack/" in lower:
+        return "hptrack"
+    if "attackdelay/" in lower:
+        return "attackdelay"
+    if "pathlog/" in lower and lower.endswith(".csv"):
+        return "pc_pathlog_csv" if "/pc_" in lower else "pathlog_csv"
+    if "widescan/" in lower:
+        return "widescan"
+    if "actionview/simple/" in lower:
+        return "actionview_simple"
+    if "eventview/" in lower and "/simple/" in lower:
+        return "idview_simple"
+    if re.search(r'eventview/(?!.*(?:simple|raw)/)[^/]+/[^/]+\.log$', lower):
+        return "eventview"
+    if "npclogger/" in lower and lower.endswith(".lua"):
+        return "npclogger_lua"
+    try:
+        return _sniff_known_format(src, relname)
+    except Exception:
+        return None
+
+
+def _sniff_known_format(src: "Source", relname: str) -> str | None:
+    """Best-effort content-only guess at which KNOWN real format an unmatched file's content
     resembles -- deliberately conservative (checks a handful of already-proven, distinctive real
     line shapes reused directly from each format's own real parser/regex above, not a broad
     heuristic classifier) and deliberately NEVER used to actually ingest data, only to make an
