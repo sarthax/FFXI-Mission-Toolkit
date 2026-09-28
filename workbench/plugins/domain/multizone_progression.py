@@ -38,6 +38,8 @@ class ProgressionGate:
         object.__setattr__(self,"logic",logic)
         if not self.member_ids:
             raise ValueError("ProgressionGate requires at least one member")
+        if len(self.member_ids)!=len(set(self.member_ids)):
+            raise ValueError("ProgressionGate member_ids must be unique")
 
 
 @dataclass(frozen=True)
@@ -56,8 +58,10 @@ class ProgressionObjective:
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if self.trigger not in VALID_TRIGGER_KINDS:
+        trigger=str(self.trigger).upper()
+        if trigger not in VALID_TRIGGER_KINDS:
             raise ValueError(f"Unsupported objective trigger: {self.trigger}")
+        object.__setattr__(self,"trigger",trigger)
         if self.required_count < 1:
             raise ValueError("ProgressionObjective.required_count must be >= 1")
 
@@ -80,6 +84,8 @@ class ProgressionStage:
         object.__setattr__(self,"completion_logic",completion_logic)
         if not self.objective_ids:
             raise ValueError("ProgressionStage requires at least one objective")
+        if len(self.objective_ids)!=len(set(self.objective_ids)):
+            raise ValueError("ProgressionStage objective_ids must be unique")
 
 
 @dataclass(frozen=True)
@@ -99,10 +105,16 @@ class MultiZoneProgression:
         objective_set=set(objective_ids)
         stage_set=set(stage_ids)
 
+        if not objective_ids:
+            errors.append("progression requires at least one objective")
+        if not stage_ids:
+            errors.append("progression requires at least one stage")
         if len(objective_ids)!=len(objective_set):
             errors.append("duplicate objective_id")
         if len(stage_ids)!=len(stage_set):
             errors.append("duplicate stage_id")
+        if len(self.entry_stage_ids)!=len(set(self.entry_stage_ids)):
+            errors.append("duplicate entry_stage_id")
 
         memberships=Counter()
         for stage in self.stages:
