@@ -185,11 +185,11 @@ def _mutable_subjects(model: MinigameModel) -> set[str]:
     subjects=set(model.state_subjects)
     for interaction in model.interactions:
         for effect in interaction.effects:
-            if effect.effect in {"SET_VAR","SET_CHANNEL","SET_STATE","GRANT","REMOVE","CONSUME","REISSUE"}:
+            if effect.effect in {"SET_VAR","SET_CHANNEL","SET_STATE"}:
                 subjects.add(effect.subject)
     for outcome in model.outcomes:
         for effect in outcome.effects:
-            if effect.effect in {"SET_VAR","SET_CHANNEL","SET_STATE","GRANT","REMOVE","CONSUME","REISSUE"}:
+            if effect.effect in {"SET_VAR","SET_CHANNEL","SET_STATE"}:
                 subjects.add(effect.subject)
     return subjects
 
@@ -198,15 +198,22 @@ def analyze_minigame(model: MinigameModel) -> MinigameAnalysis:
     errors=model.validate()
     starts=Counter(timer_id for row in model.interactions for timer_id in row.starts_timers)
     cancels=Counter(timer_id for row in model.interactions for timer_id in row.cancels_timers)
-    reset_cancels={timer_id for row in model.resets for timer_id in row.cancels_timers}
-    reset_subjects={subject for row in model.resets for subject in row.clears_subjects}
+    any_reset_cancels={timer_id for row in model.resets for timer_id in row.cancels_timers}
+    reset_cancels=(
+        set.intersection(*(set(row.cancels_timers) for row in model.resets))
+        if model.resets else set()
+    )
+    reset_subjects=(
+        set.intersection(*(set(row.clears_subjects) for row in model.resets))
+        if model.resets else set()
+    )
     mutable=_mutable_subjects(model)
 
     timer_rows=[]
     gaps=[]
     for timer in model.timers:
         started=starts[timer.timer_id]>0
-        cancellable=cancels[timer.timer_id]>0 or timer.timer_id in reset_cancels
+        cancellable=cancels[timer.timer_id]>0 or timer.timer_id in any_reset_cancels
         expiry=tuple(timer.expiry_outcome_ids)
         closed=started and (cancellable or bool(expiry))
         timer_rows.append(TimerLifecycle(timer.timer_id,started,cancellable,expiry,closed))
@@ -216,7 +223,7 @@ def analyze_minigame(model: MinigameModel) -> MinigameAnalysis:
             gaps.append(f"timer_lifecycle_open:{timer.timer_id}")
 
     score_rule_count=sum(1 for row in model.interactions if row.score_delta!=0)
-    score_reset_present=any(row.reset_score for row in model.resets)
+    score_reset_present=bool(model.resets) and all(row.reset_score for row in model.resets)
     missing_subjects=tuple(sorted(mutable-reset_subjects)) if model.repeatable else ()
     missing_timers=tuple(sorted(set(starts)-reset_cancels)) if model.repeatable else ()
 
