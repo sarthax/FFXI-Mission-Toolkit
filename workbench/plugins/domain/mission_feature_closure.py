@@ -75,8 +75,15 @@ def _metadata_feature_requirement_gates(
     """Recover de-duplicated feature prerequisite gates preserved by source adapters."""
     out=[]
     seen=set()
-    for transition in machine.transitions:
-        for row in transition.metadata.get("section_feature_requirement_gates",()):
+    row_sets=[
+        machine.metadata.get("catalog_feature_requirement_gates",()),
+        *(
+            transition.metadata.get("section_feature_requirement_gates",())
+            for transition in machine.transitions
+        ),
+    ]
+    for rows in row_sets:
+        for row in rows:
             conditions=tuple(
                 StateCondition(
                     str(condition.get("subject") or ""),
