@@ -112,6 +112,59 @@ _HELPER_ASSIGN=re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*function\(player\
 _LOCAL_PLAYER_HELPER=re.compile(r"^\s*local\s+function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*player\s*\)")
 
 
+def _structural_lua_lines(lua: str) -> list[str]:
+    """Remove Lua comments/string bodies while preserving executable punctuation/keywords."""
+    out=[]
+    in_block_comment=False
+    in_long_string=False
+    for line in lua.splitlines():
+        visible=[]
+        i=0
+        while i<len(line):
+            if in_block_comment:
+                end=line.find("]]",i)
+                if end<0:
+                    i=len(line)
+                    continue
+                in_block_comment=False
+                i=end+2
+                continue
+            if in_long_string:
+                end=line.find("]]",i)
+                if end<0:
+                    i=len(line)
+                    continue
+                in_long_string=False
+                i=end+2
+                continue
+            if line.startswith("--[[",i):
+                in_block_comment=True
+                i+=4
+                continue
+            if line.startswith("--",i):
+                break
+            if line.startswith("[[",i):
+                in_long_string=True
+                i+=2
+                continue
+            if line[i] in {"'","\""}:
+                quote=line[i]
+                i+=1
+                while i<len(line):
+                    if line[i]=="\\":
+                        i+=2
+                        continue
+                    if line[i]==quote:
+                        i+=1
+                        break
+                    i+=1
+                continue
+            visible.append(line[i])
+            i+=1
+        out.append("".join(visible))
+    return out
+
+
 def _balanced_function_blocks(lua: str):
     """Yield outermost executable Lua function blocks.
 
@@ -120,22 +173,18 @@ def _balanced_function_blocks(lua: str):
     Unbalanced candidates fail closed.
     """
     lines=lua.splitlines()
-
-    def structural(line: str) -> str:
-        code=line.split("--",1)[0]
-        return re.sub(r"'(?:\\.|[^'])*'|\"(?:\\.|[^\"])*\"", "", code)
-
+    structural_lines=_structural_lua_lines(lua)
     claimed_until=-1
     for i,line in enumerate(lines):
         if i<=claimed_until:
             continue
-        first=structural(line)
+        first=structural_lines[i]
         if not re.search(r"\bfunction\b",first):
             continue
         depth=0
         started=False
         for j in range(i,len(lines)):
-            code=structural(lines[j])
+            code=structural_lines[j]
             opens=len(re.findall(r"\b(function|if|for|while|repeat)\b",code))
             closes=len(re.findall(r"\bend\b",code))+len(re.findall(r"\buntil\b",code))
             if opens:
