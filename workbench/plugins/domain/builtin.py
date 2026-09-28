@@ -4,6 +4,8 @@ These are contracts/capabilities, not claims that the analyzers are complete.
 """
 from __future__ import annotations
 
+from typing import Any, Mapping
+
 from .base import ContentArchetype, DomainPlugin, DomainPluginSpec, PluginContext, PluginFinding
 from .registry import DomainPluginRegistry
 from .multizone_progression import MultiZoneProgression, analyze_progression
