@@ -35,6 +35,7 @@ _QUEST_ID=re.compile(
 )
 _QUEST_REWARD_ITEM=re.compile(r"\bitem\s*=\s*xi\.item\.([A-Z0-9_]+)")
 _QUEST_EVENT=re.compile(r"quest:(?:progressEvent|event|progressCutscene)\((\d+)")
+_ZONE_IN_RETURN_EVENT=re.compile(r"\breturn\s+(\d+)\b")
 _QUEST_DECL_EVENT=re.compile(
     r"\['([^']+)'\]\s*=\s*quest:(progressEvent|event|progressCutscene)\((\d+)\)(.*)"
 )
@@ -341,6 +342,14 @@ def correlate_lsb_quest_handlers(
             returned=_QUEST_EVENT.search(path.body)
             if returned and event is None:
                 event=EventIdentity(zone or "UNKNOWN",int(returned.group(1)),actor)
+            elif trigger=="ZONE_IN" and event is None:
+                returned_zone_event=_ZONE_IN_RETURN_EVENT.search(path.body)
+                if returned_zone_event:
+                    event=EventIdentity(
+                        zone or "UNKNOWN",
+                        int(returned_zone_event.group(1)),
+                        actor,
+                    )
             if not (conditions or effects or event):
                 continue
 
