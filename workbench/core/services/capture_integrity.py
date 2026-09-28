@@ -30,6 +30,18 @@ FORMAT_TARGETS = {
     "KITrack": (("capture_ki_events","block"),),
     "PacketLogger/PacketViewer raw hex dump": (("capture_raw_packets","block"),),
     "CapLog": (("capture_events","line"),("capture_hp_events","line"),("capture_eventview","line"),("capture_caplog_chat","line")),
+    "missiontrack": (("capture_structured_records","block"),),
+    "shopstock_buy_db": (("capture_structured_records","sqlite-row"),),
+    "shopstock_sell_db": (("capture_structured_records","sqlite-row"),),
+    "guildstock_db": (("capture_structured_records","sqlite-row"),),
+    "weathertrack_db": (("capture_structured_records","sqlite-row"),),
+    "poitrack_db": (("capture_structured_records","sqlite-row"),),
+    "spawntrack_csv": (("capture_structured_records","csv-row"),),
+    "checkparam_csv": (("capture_structured_records","csv-row"),),
+    "crafttrack_csv": (("capture_structured_records","csv-row"),),
+    "conquesttrack_csv": (("capture_structured_records","csv-row"),),
+    "pricelog_simple": (("capture_structured_records","block"),),
+    "pricelog_lua": (("capture_structured_records","block"),),
 }
 
 
