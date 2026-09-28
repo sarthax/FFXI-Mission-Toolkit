@@ -2210,3 +2210,20 @@ Materialization rules are now explicit:
 The transition metadata records the guard and write subjects so cross-channel behavior remains inspectable without manufacturing a false state edge.
 
 Regression: `test_fixtures/test_mission_state_materialization.py` covers all four cases and verifies that cross-channel synthetic states are not created.
+
+
+## 2026-09-27 — Client transport attached to exact mission transition
+
+Explicit source annotations that an event transport/exit is handled by the client are now attached as first-class `CLIENT_TRANSPORT` effects on the exact extracted handler path that contains the annotation.
+
+This replaces the previous file/handler-level metadata-only treatment:
+- branch-aware extraction evaluates transport annotations against each `_HandlerPath`;
+- sibling branches do not inherit a client-transport effect from another branch;
+- event chaining preserves the effect only on the corresponding logical outcome;
+- the existing standalone `client_transport_effects()` helper remains available for file-level inspection.
+
+Regressions:
+- `test_mission_lsb_three_paths_stress.py` requires Mine Shaft 2716 event 3 to carry the transport effect while event 32001 does not;
+- `test_mission_lsb_branching.py` proves one annotated branch receives `CLIENT_TRANSPORT`, its sibling does not, and only one chained event-6 outcome retains the effect.
+
+The annotation remains source evidence, not proof of the client destination or runtime transport correctness.
