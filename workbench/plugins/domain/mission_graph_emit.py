@@ -203,6 +203,21 @@ def project_mission_graph(
             machine.feature_id,transition_node,"HAS_TRANSITION",edge_evidence,confidence,status,
             source_path,source_snapshot_id,
         ))
+        for helper_name in transition.metadata.get("helper_calls",()):
+            helper_node=f"mission-helper:{machine.feature_id}:{helper_name}"
+            entities.setdefault(helper_node,Entity(
+                helper_node,"MISSION_HELPER",helper_name,{
+                    "feature_id":machine.feature_id,
+                    "helper":helper_name,
+                    "source_family":source_family,
+                },
+            ))
+            edges.append(_edge(
+                f"mission-calls-helper:{_token(machine.feature_id,transition.transition_id,helper_name)}",
+                transition_node,helper_node,"CALLS_HELPER",edge_evidence,confidence,status,
+                source_path,source_snapshot_id,
+                notes="Exact helper(player) call in this extracted handler path.",
+            ))
         from_node=_state_node(machine.feature_id,transition.from_state)
         to_node=_state_node(machine.feature_id,transition.to_state)
         edges.append(_edge(
