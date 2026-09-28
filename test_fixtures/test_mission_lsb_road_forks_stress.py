@@ -33,6 +33,9 @@ def main():
     assert any(c.subject=="mission_status:SANDORIA" for c in alias_guard.gate.conditions),alias_guard
     spawned=next(t for t in raw.transitions if t.metadata.get("actor")=="Guilloud" and t.trigger=="NPC_INTERACT")
     assert any(c.operator=="ENTITY_NOT_SPAWNED" for c in spawned.gate.conditions),spawned
+    loose_sand=next(t for t in raw.transitions if t.metadata.get("actor")=="Loose_Sand" and t.trigger=="NPC_INTERACT")
+    distance=next(c for c in loose_sand.gate.conditions if c.subject=="player_to_actor_distance")
+    assert (distance.operator,distance.value)==("LT",0.5),distance
     completion=extract_section_completion_gate(SOURCE)
     assert completion and completion.logic=="ALL",completion
     assert {c.subject for c in completion.conditions}=={"mission_status:SANDORIA","mission_status:WINDURST"},completion

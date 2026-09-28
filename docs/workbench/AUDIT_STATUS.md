@@ -2180,3 +2180,19 @@ The LSB mission extractor now distinguishes and correctly recognizes both key-it
 The previous combined regex incorrectly required a `player` argument after both calls, so direct method-style `player:addKeyItem(...)` grants were silently omitted from findings and transition effects.
 
 `test_fixtures/test_mission_lsb_extract.py` now requires both grant forms to appear as `key_item_grant` findings and `GRANT` transition effects.
+
+## 2026-09-27 — Exact mission distance comparator semantics
+
+Mission distance guards now preserve the literal comparator from `player:checkDistance(npc)` instead of collapsing every comparison into `WITHIN_DISTANCE`.
+
+Mappings now use the generic state-condition operators already supported by the model:
+- `<` -> `LT`;
+- `<=` -> `LE`;
+- `>` -> `GT`;
+- `>=` -> `GE`.
+
+The subject is `player_to_actor_distance`, making outside-distance guards (`>`/`>=`) representable without reversing their meaning and preserving strict versus inclusive boundaries.
+
+Regressions:
+- `test_fixtures/test_mission_distance_comparators.py` covers all four comparator forms;
+- `test_fixtures/test_mission_lsb_road_forks_stress.py` now requires the real Loose Sand guard to extract as `LT 0.5`.

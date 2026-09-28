@@ -108,6 +108,7 @@ _SPAWNED=re.compile(r"(not\s+)?GetMobByID\(([^\)]+)\):isSpawned\(\)")
 _HAS_KI=re.compile(r"player:hasKeyItem\(xi\.keyItem\.([A-Z0-9_]+)\)")
 _LACKS_KI=re.compile(r"not\s+player:hasKeyItem\(xi\.keyItem\.([A-Z0-9_]+)\)")
 _DISTANCE=re.compile(r"player:checkDistance\(npc\)\s*([<>]=?)\s*([0-9.]+)")
+_DISTANCE_OPERATOR={"<":"LT","<=":"LE",">":"GT",">=":"GE"}
 _TRADE=re.compile(r"npcUtil\.tradeMatches\(trade,\s*(.+)\)")
 _SETPOS=re.compile(r"player:setPos\(([^\)]+)\)")
 _MESSAGE=re.compile(r"(?:player:messageSpecial|player:messageText|mission:messageSpecial|mission:messageName)\(([^\n]+)\)")
@@ -359,7 +360,11 @@ def _conditions(text: str) -> tuple[StateCondition,...]:
     for m in _BATTLEFIELD.finditer(text):
         out.append(StateCondition(f"battlefield:{m.group(1)}","BATTLEFIELD_WON",True))
     for m in _DISTANCE.finditer(text):
-        out.append(StateCondition("player_to_actor","WITHIN_DISTANCE",float(m.group(2))))
+        out.append(StateCondition(
+            "player_to_actor_distance",
+            _DISTANCE_OPERATOR[m.group(1)],
+            float(m.group(2)),
+        ))
     for m in _TRADE.finditer(text):
         out.append(StateCondition("trade","TRADE_MATCHES",m.group(1).strip()))
     for m in _SPAWNED.finditer(text):
