@@ -89,7 +89,10 @@ def record_source_file(
 ) -> dict:
     init_db(con)
     digest = sha256_bytes(data)
-    status = "FAILED" if error else ("RECOGNIZED" if format_detected else "UNRECOGNIZED")
+    if format_detected in {"manifest", "benign"}:
+        status = "AUXILIARY"
+    else:
+        status = "FAILED" if error else ("RECOGNIZED" if format_detected else "UNRECOGNIZED")
     parser_name = parser_name or format_detected
     con.execute(
         """INSERT OR REPLACE INTO capture_source_manifest
@@ -178,6 +181,7 @@ def capture_health(con: sqlite3.Connection, capture_id: int) -> dict:
     recognized=sum(1 for r in manifest if r["ingest_status"]=="RECOGNIZED")
     failed=sum(1 for r in manifest if r["ingest_status"]=="FAILED")
     unrecognized=sum(1 for r in manifest if r["ingest_status"]=="UNRECOGNIZED")
+    auxiliary=sum(1 for r in manifest if r["ingest_status"]=="AUXILIARY")
     hashed=sum(1 for r in manifest if r.get("sha256"))
     parser_lineage=_table_count(con,"capture_ingest_lineage",capture_id)
 
@@ -212,7 +216,7 @@ def capture_health(con: sqlite3.Connection, capture_id: int) -> dict:
     }
     dimensions["parser_coverage"]={
         "status":"ISSUES" if failed or unrecognized else ("COMPLETE" if total and recognized==total else ("PARTIAL" if total else "UNKNOWN")),
-        "recognized":recognized,"failed":failed,"unrecognized":unrecognized,
+        "recognized":recognized,"failed":failed,"unrecognized":unrecognized,"auxiliary":auxiliary,
     }
     dimensions["lineage"]={
         "status":"COMPLETE" if total and parser_lineage>=recognized else ("PARTIAL" if parser_lineage else "UNKNOWN"),
