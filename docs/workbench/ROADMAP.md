@@ -167,6 +167,23 @@ Current public flagship E2E: pinned LSB → legacy DSP Chains of Promathia 2-5 (
 - [ ] richer runtime probes/capture producers (P1) — expand only as specific systems need them.
 
 
+
+### Capture integrity and source provenance (P1)
+
+Purpose: make runtime capture evidence deletion-safe, content-addressed, and reproducibly attributable to the exact files/parsers that produced it.
+
+- [x] Audit capture-owned tables and make deletion orphan-safe for VIDEO_OCR observations, timeline alignment anchors, key evidence, and the content-addressed source ledger; optional/lazy tables are cleaned when present without becoming hard dependencies.
+- [x] Delete per-capture screenshot/key-evidence files with the parent capture instead of leaving filesystem orphans.
+- [x] Add SHA-256 and byte-size provenance for every ingested source file, including recognized, redundant, benign, failed, and unrecognized bundle members.
+- [x] Record parser identifier + parser-version provenance and detected format for each source ingestion result.
+- [x] Add a path-independent bundle/capture content manifest so renamed, moved, or re-zipped source sets retain the same content identity.
+- [x] Preserve changed same-name files in a content-addressed `capture_source_artifacts` ledger instead of overwriting history; retain `capture_source_files` as the backward-compatible latest-by-filename view.
+- [x] Surface same-content capture candidates and source hash/parser provenance in the capture GUI/query surfaces.
+- [x] Add a schema-ownership regression that fails if a future `capture_*` table with `capture_id` is omitted from the explicit delete ownership list.
+- [ ] Add row/block/line source locators so each normalized observation can point to the exact source record/offset that generated it.
+- [ ] Add deterministic re-ingestion/rebuild from retained source artifacts while preserving capture identity, annotations, alignment anchors, and user evidence.
+- [ ] Add dimensioned capture-health diagnostics for parser failures, missing expected producers, clock gaps/resets, truncated inputs, and coverage gaps.
+
 ### Video OCR evidence alignment and packet reconstruction (P1)
 
 Purpose: treat gameplay video and screenshots as time-addressable runtime evidence that can be aligned with real capture sessions, packet observations, NPC/dialog events, and later screenshot/key-event evidence without promoting OCR guesses to authoritative packet truth.
