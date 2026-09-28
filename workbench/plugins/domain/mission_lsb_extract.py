@@ -112,27 +112,86 @@ _HELPER_ASSIGN=re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*function\(player\
 _LOCAL_PLAYER_HELPER=re.compile(r"^\s*local\s+function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*player\s*\)")
 
 
-def _balanced_function_blocks(lua: str):
-    """Yield (start_line, end_line, text) for simple Lua function blocks.
+def _structural_lua_lines(lua: str) -> list[str]:
+    """Remove Lua comments/string bodies while preserving executable punctuation/keywords."""
+    out=[]
+    in_block_comment=False
+    in_long_string=False
+    for line in lua.splitlines():
+        visible=[]
+        i=0
+        while i<len(line):
+            if in_block_comment:
+                end=line.find("]]",i)
+                if end<0:
+                    i=len(line)
+                    continue
+                in_block_comment=False
+                i=end+2
+                continue
+            if in_long_string:
+                end=line.find("]]",i)
+                if end<0:
+                    i=len(line)
+                    continue
+                in_long_string=False
+                i=end+2
+                continue
+            if line.startswith("--[[",i):
+                in_block_comment=True
+                i+=4
+                continue
+            if line.startswith("--",i):
+                break
+            if line.startswith("[[",i):
+                in_long_string=True
+                i+=2
+                continue
+            if line[i] in {"'","\""}:
+                quote=line[i]
+                i+=1
+                while i<len(line):
+                    if line[i]=="\\":
+                        i+=2
+                        continue
+                    if line[i]==quote:
+                        i+=1
+                        break
+                    i+=1
+                continue
+            visible.append(line[i])
+            i+=1
+        out.append("".join(visible))
+    return out
 
-    Token counting is intentionally conservative; comments/strings are not treated
-    as executable syntax. This is sufficient for Mission DSL handlers and fails
-    closed when a block cannot be balanced.
+
+def _balanced_function_blocks(lua: str):
+    """Yield outermost executable Lua function blocks.
+
+    Nested callbacks belong to their enclosing handler/helper and are not yielded as
+    independent mission functions. Comment/string text containing Lua keywords is ignored.
+    Unbalanced candidates fail closed.
     """
     lines=lua.splitlines()
+    structural_lines=_structural_lua_lines(lua)
+    claimed_until=-1
     for i,line in enumerate(lines):
-        if "function" not in line:
+        if i<=claimed_until:
+            continue
+        first=structural_lines[i]
+        if not re.search(r"\bfunction\b",first):
             continue
         depth=0
         started=False
         for j in range(i,len(lines)):
-            code=lines[j].split("--",1)[0]
+            code=structural_lines[j]
             opens=len(re.findall(r"\b(function|if|for|while|repeat)\b",code))
             closes=len(re.findall(r"\bend\b",code))+len(re.findall(r"\buntil\b",code))
             if opens:
                 started=True
             depth+=opens-closes
             if started and depth<=0:
+                claimed_until=j
                 yield i,j,"\n".join(lines[i:j+1])
                 break
 

@@ -2154,3 +2154,19 @@ Regressions:
 - `test_fixtures/test_mission_lsb_correlation.py` now explicitly asserts that the Misareaux zone-level event-finish handler does not inherit the preceding `_0p2` actor.
 
 The table-scope parser remains conservative and literal. Dynamically constructed mission tables or nonliteral table assignments remain unresolved rather than receiving inferred actor context.
+
+## 2026-09-27 — Conservative Lua function-block parser hardening
+
+`_balanced_function_blocks()` now yields only outermost executable Lua function blocks instead of starting a second block for nested callbacks.
+
+The parser precomputes comment/string-stripped structural lines and ignores:
+- single-line comments;
+- quoted single/double-string contents;
+- basic multiline block comments (`--[[ ... ]]`);
+- basic Lua long strings (`[[ ... ]]`).
+
+Once an outer function block is balanced, every nested `function` start inside that span is suppressed as an independent block. This prevents nested timer/callback functions from being reprocessed as separate mission helpers/handlers while keeping their source inside the enclosing function for conservative behavior extraction.
+
+Regression: `test_fixtures/test_mission_function_block_parser.py` combines fake function syntax in comments/strings, a nested timer callback, one real helper, and one real mission handler. It requires exactly two outer blocks and one helper transition.
+
+The parser still uses conservative lexical balancing rather than a full Lua AST. Extended Lua long-bracket delimiters such as `[=[ ... ]=]` remain outside this parser and should fail conservatively if they affect executable block structure.
