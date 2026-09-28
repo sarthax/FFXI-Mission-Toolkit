@@ -112,7 +112,7 @@ def init_db(con: sqlite3.Connection):
         CREATE TABLE IF NOT EXISTS capture_npc_path (
             capture_id INTEGER, zone_db TEXT, entity_id INTEGER, leg INTEGER, step INTEGER,
             x REAL, y REAL, z REAL, dir INTEGER, delta INTEGER,
-            PRIMARY KEY (capture_id, zone_db, entity_id, step)
+            PRIMARY KEY (capture_id, zone_db, entity_id, leg, step)
         );
         CREATE INDEX IF NOT EXISTS idx_cnp_entity ON capture_npc_path(entity_id);
         CREATE TABLE IF NOT EXISTS capture_actions (
@@ -251,6 +251,37 @@ def init_db(con: sqlite3.Connection):
     ]:
         if col not in existing_cne_cols:
             con.execute(f"ALTER TABLE capture_npc_entries ADD COLUMN {col} {decl}")
+    # capture_npc_path historically declared leg but accidentally omitted it from the
+    # primary key. The legacy Lua ingester deliberately uses leg=1 for tables/ and leg=2 for
+    # database/, so the old PK still let those sources overwrite one another step-for-step.
+    # Migrate existing DBs in place so both independently observed path legs can coexist.
+    path_pk = [
+        row[1] for row in sorted(
+            (row for row in con.execute("PRAGMA table_info(capture_npc_path)") if int(row[5] or 0) > 0),
+            key=lambda row: int(row[5]),
+        )
+    ]
+    if path_pk == ["capture_id", "zone_db", "entity_id", "step"]:
+        con.execute("SAVEPOINT capture_npc_path_pk_migration")
+        try:
+            con.execute("ALTER TABLE capture_npc_path RENAME TO capture_npc_path_legacy_pk")
+            con.execute("""CREATE TABLE capture_npc_path (
+                capture_id INTEGER, zone_db TEXT, entity_id INTEGER, leg INTEGER, step INTEGER,
+                x REAL, y REAL, z REAL, dir INTEGER, delta INTEGER,
+                PRIMARY KEY (capture_id, zone_db, entity_id, leg, step)
+            )""")
+            con.execute("""INSERT OR IGNORE INTO capture_npc_path
+                (capture_id,zone_db,entity_id,leg,step,x,y,z,dir,delta)
+                SELECT capture_id,zone_db,entity_id,COALESCE(leg,1),step,x,y,z,dir,delta
+                FROM capture_npc_path_legacy_pk""")
+            con.execute("DROP TABLE capture_npc_path_legacy_pk")
+            con.execute("CREATE INDEX IF NOT EXISTS idx_cnp_entity ON capture_npc_path(entity_id)")
+            con.execute("RELEASE SAVEPOINT capture_npc_path_pk_migration")
+        except Exception:
+            con.execute("ROLLBACK TO SAVEPOINT capture_npc_path_pk_migration")
+            con.execute("RELEASE SAVEPOINT capture_npc_path_pk_migration")
+            raise
+
     entity_profile.init_db(con)
     capture_integrity.init_db(con)
     con.commit()
@@ -849,37 +880,60 @@ WIDESCAN_LINE_RE = re.compile(
 
 
 def ingest_widescan(con, capture_id, src: Source, relname: str) -> int:
-    """npclogger/widescan/<Zone>.log -- real, confirmed 2026-09-04 -- a Lua-table-literal dump of
-    every entity AutoWidescan observed (id/name/index/level), completely unhandled before this.
-    Substantial real content in many captures (e.g. real mob ids/names/levels like
-    17006593='Excaliace' level 75) -- present but silently unparsed, same shape of gap as
-    idview/simple's second format and PathLog's PC_*.csv. Writes to TWO existing tables rather
-    than inventing a new one: capture_npc_entries (id+name only, so entity resolution/links work
-    the same as any other observed entity) via INSERT OR IGNORE (never overwrites a richer
-    NPCLogger-sourced row -- widescan only ADDS entities NPCLogger never directly observed), and
-    capture_level_range (level_min=level_max=the single real widescan level, matching that
-    table's existing min/max shape from LevelRangeTrack) via INSERT OR REPLACE, since widescan is
-    often the ONLY real level source for these specific ids."""
+    """Ingest widescan rows with exact physical-line provenance."""
     zone_db = Path(relname).stem
-    text = src.read_text(relname)
+    source_bytes = src.read_bytes(relname)
+    text = source_bytes.decode("utf-8", "replace")
+    byte_offsets_exact = text.encode("utf-8") == source_bytes
+    source_sha256 = capture_integrity.sha256_bytes(source_bytes)
+    raw_lines = text.splitlines(keepends=True)
+    con.execute(
+        """DELETE FROM capture_row_locators
+           WHERE capture_id=? AND filename=?
+             AND target_table IN ('capture_npc_entries','capture_level_range')""",
+        (capture_id, relname),
+    )
     n = 0
-    for m in WIDESCAN_LINE_RE.finditer(text):
-        key_id, uid, name, index, level = m.groups()
-        uid = int(uid)
-        index = int(index)
-        level = int(level)
-        con.execute("""INSERT OR IGNORE INTO capture_npc_entries
-            (capture_id, zone_db, entity_id, name) VALUES (?,?,?,?)""",
-            (capture_id, zone_db, uid, name))
-        con.execute("""INSERT OR REPLACE INTO capture_level_range
-            (capture_id, zone_db, entity_id, name, level_min, level_max, act_index)
-            VALUES (?,?,?,?,?,?,?)""",
-            (capture_id, zone_db, uid, name, level, level, index))
-        n += 1
-        if name:
-            entity_profile.record_field(con, "npc", uid, "capture_name", "capture", name)
+    char_pos = 0
+    for line_no, raw_line in enumerate(raw_lines, start=1):
+        line = raw_line.rstrip("\r\n")
+        line_start = char_pos
+        char_pos += len(raw_line)
+        for m in WIDESCAN_LINE_RE.finditer(line):
+            key_id, uid, name, index, level = m.groups()
+            uid = int(uid)
+            index = int(index)
+            level = int(level)
+            cur = con.execute("""INSERT OR IGNORE INTO capture_npc_entries
+                (capture_id, zone_db, entity_id, name) VALUES (?,?,?,?)""",
+                (capture_id, zone_db, uid, name))
+            if cur.rowcount:
+                capture_integrity.record_row_locator(
+                    con, capture_id, relname, "capture_npc_entries",
+                    json.dumps({"zone_db": zone_db, "entity_id": uid}, sort_keys=True),
+                    "line", source_sha256=source_sha256,
+                    start_line=line_no, end_line=line_no,
+                    start_offset=len(text[:line_start].encode("utf-8")) if byte_offsets_exact else None,
+                    end_offset=len(text[:char_pos].encode("utf-8")) if byte_offsets_exact else None,
+                    details={"source": "widescan", "source_key": int(key_id), "index": index, "level": level},
+                )
+            con.execute("""INSERT OR REPLACE INTO capture_level_range
+                (capture_id, zone_db, entity_id, name, level_min, level_max, act_index)
+                VALUES (?,?,?,?,?,?,?)""",
+                (capture_id, zone_db, uid, name, level, level, index))
+            capture_integrity.record_row_locator(
+                con, capture_id, relname, "capture_level_range",
+                json.dumps({"zone_db": zone_db, "entity_id": uid}, sort_keys=True),
+                "line", source_sha256=source_sha256,
+                start_line=line_no, end_line=line_no,
+                start_offset=len(text[:line_start].encode("utf-8")) if byte_offsets_exact else None,
+                end_offset=len(text[:char_pos].encode("utf-8")) if byte_offsets_exact else None,
+                details={"source": "widescan", "source_key": int(key_id), "index": index, "level": level},
+            )
+            n += 1
+            if name:
+                entity_profile.record_field(con, "npc", uid, "capture_name", "capture", name)
     return n
-
 
 ATTACKDELAY_HEADER_RE = re.compile(r'^(.+?) \((\d+) hits\) - Delay: (\d+)-(\d+)\s*$', re.MULTILINE)
 ATTACKDELAY_AVG_RE = re.compile(r'Avg:\s*(\d+)\s*\|\s*Med:\s*(\d+)\s*\|\s*StdDev:\s*(\d+)')
@@ -889,15 +943,19 @@ ATTACKDELAY_SLOTS_RE = re.compile(r'Slots/rnd:\s*(.+)$', re.MULTILINE)
 
 
 def ingest_attackdelay(con, capture_id, src: Source, relname: str) -> int:
-    """AttackDelay/<Zone>.log -- real observed attack-timing statistics, aggregated per mob NAME
-    across the whole zone (not per entity_id -- this addon doesn't track individual instances,
-    just accumulates hit intervals by name). "Reverse calculation" is the addon's own estimate of
-    the mob's real configured delay from the observed hit-interval distribution -- a genuine,
-    independent cross-check against sql_mob_pools.cmbDelay, not derived from Topaz's SQL at all."""
+    """Ingest aggregated attack-delay blocks with exact source-block provenance."""
     zone_db = Path(relname).stem.replace("_", " ")
-    text = src.read_text(relname)
+    source_bytes = src.read_bytes(relname)
+    text = source_bytes.decode("utf-8", "replace")
+    byte_offsets_exact = text.encode("utf-8") == source_bytes
+    source_sha256 = capture_integrity.sha256_bytes(source_bytes)
     headers = [(m.start(), m.group(1).strip(), int(m.group(2)), int(m.group(3)), int(m.group(4)))
                for m in ATTACKDELAY_HEADER_RE.finditer(text)]
+    con.execute(
+        """DELETE FROM capture_row_locators
+           WHERE capture_id=? AND filename=? AND target_table='capture_attack_delay'""",
+        (capture_id, relname),
+    )
     n = 0
     for i, (pos, name, hits, dmin, dmax) in enumerate(headers):
         end = headers[i + 1][0] if i + 1 < len(headers) else len(text)
@@ -916,9 +974,18 @@ def ingest_attackdelay(con, capture_id, src: Source, relname: str) -> int:
              int(avg_m.group(3)) if avg_m else None,
              int(rev_m.group(1)) if rev_m else None, int(rev_m.group(2)) if rev_m else None,
              mh_m.group(1) if mh_m else None, slots_m.group(1) if slots_m else None))
+        capture_integrity.record_row_locator(
+            con, capture_id, relname, "capture_attack_delay",
+            json.dumps({"zone_db": zone_db, "mob_name": name}, sort_keys=True),
+            "block", source_sha256=source_sha256,
+            start_line=text.count("\n", 0, pos) + 1,
+            end_line=text.count("\n", 0, end) + (0 if end > 0 and text[end - 1:end] == "\n" else 1),
+            start_offset=len(text[:pos].encode("utf-8")) if byte_offsets_exact else None,
+            end_offset=len(text[:end].encode("utf-8")) if byte_offsets_exact else None,
+            details={"source": "attackdelay", "mob_name": name, "hit_count": hits},
+        )
         n += 1
     return n
-
 
 def record_entity_facts(con, uid, name, model_id, x, y, z, hpp, zone_db):
     if name:
@@ -1029,64 +1096,104 @@ def ingest_pathlog(con, capture_id, src: Source, relname: str):
     if not m:
         return 0
     zone_db, npc_label, entity_id = m.group(1), m.group(2), int(m.group(3))
-    text = src.read_text(relname)
-    lines = text.splitlines()
-    if not lines:
+    zone_db = zone_db.replace("_", " ")
+    source_bytes = src.read_bytes(relname)
+    text = source_bytes.decode("utf-8", "replace")
+    byte_offsets_exact = text.encode("utf-8") == source_bytes
+    source_sha256 = capture_integrity.sha256_bytes(source_bytes)
+    raw_lines = text.splitlines(keepends=True)
+    if not raw_lines:
         return 0
+    con.execute(
+        """DELETE FROM capture_row_locators
+           WHERE capture_id=? AND filename=? AND target_table='capture_npc_path'""",
+        (capture_id, relname),
+    )
     n = 0
-    for step, line in enumerate(lines[1:]):  # skip header
+    char_pos = len(raw_lines[0])
+    for step, raw_line in enumerate(raw_lines[1:]):
+        line = raw_line.rstrip("\r\n")
+        start_char = char_pos
+        char_pos += len(raw_line)
         parts = line.split(",")
         if len(parts) < 6:
             continue
         try:
             leg, x, y, z, d, delta = parts[:6]
+            leg_i = int(leg)
             con.execute("""INSERT OR REPLACE INTO capture_npc_path
                 (capture_id, zone_db, entity_id, leg, step, x, y, z, dir, delta)
                 VALUES (?,?,?,?,?,?,?,?,?,?)""",
-                (capture_id, zone_db.replace("_", " "), entity_id, int(leg), step,
+                (capture_id, zone_db, entity_id, leg_i, step,
                  float(x), float(y), float(z), int(d), int(delta)))
+            capture_integrity.record_row_locator(
+                con, capture_id, relname, "capture_npc_path",
+                json.dumps(
+                    {"zone_db": zone_db, "entity_id": entity_id, "leg": leg_i, "step": step},
+                    sort_keys=True,
+                ),
+                "csv-row", source_sha256=source_sha256,
+                start_line=step + 2, end_line=step + 2,
+                start_offset=len(text[:start_char].encode("utf-8")) if byte_offsets_exact else None,
+                end_offset=len(text[:char_pos].encode("utf-8")) if byte_offsets_exact else None,
+                details={"source": "pathlog_csv", "npc_label": npc_label},
+            )
             n += 1
         except ValueError:
             continue
     return n
-
 
 PATHLOG_PC_RE = re.compile(r'PathLog/[^/]+/PC_([^/]+)\.csv$', re.I)
 
 
 def ingest_pc_pathlog(con, capture_id, src: Source, relname: str) -> int:
-    """PathLog/<capturer>/PC_<Zone>.csv -- real, confirmed 2026-09-04 -- the CAPTURING
-    CHARACTER's own position trace per zone, same real (leg,x,y,z,dir,delta) shape as the
-    per-NPC PathLog CSVs, just a different real filename convention (PC_<Zone> instead of
-    <npc_label>/<numeric id>) that PATHLOG_NPC_RE's numeric-id-only pattern silently skipped.
-    Kept in its own table (capture_pc_path) rather than folded into capture_npc_path -- there is
-    no real numeric entity id here (the filename only carries the zone), and inventing one to
-    reuse that table's schema would risk colliding with (or being mistaken for) a real NPC id."""
+    """Ingest the capturer's PathLog CSV with exact CSV-row provenance."""
     m = PATHLOG_PC_RE.search(relname)
     if not m:
         return 0
     zone_db = m.group(1).replace("_", " ")
-    text = src.read_text(relname)
-    lines = text.splitlines()
-    if not lines:
+    source_bytes = src.read_bytes(relname)
+    text = source_bytes.decode("utf-8", "replace")
+    byte_offsets_exact = text.encode("utf-8") == source_bytes
+    source_sha256 = capture_integrity.sha256_bytes(source_bytes)
+    raw_lines = text.splitlines(keepends=True)
+    if not raw_lines:
         return 0
+    con.execute(
+        """DELETE FROM capture_row_locators
+           WHERE capture_id=? AND filename=? AND target_table='capture_pc_path'""",
+        (capture_id, relname),
+    )
     n = 0
-    for step, line in enumerate(lines[1:]):  # skip header
+    char_pos = len(raw_lines[0])
+    for step, raw_line in enumerate(raw_lines[1:]):
+        line = raw_line.rstrip("\r\n")
+        start_char = char_pos
+        char_pos += len(raw_line)
         parts = line.split(",")
         if len(parts) < 6:
             continue
         try:
             leg, x, y, z, d, delta = parts[:6]
+            leg_i = int(leg)
             con.execute("""INSERT OR REPLACE INTO capture_pc_path
                 (capture_id, zone_db, leg, step, x, y, z, dir, delta)
                 VALUES (?,?,?,?,?,?,?,?,?)""",
-                (capture_id, zone_db, int(leg), step,
+                (capture_id, zone_db, leg_i, step,
                  float(x), float(y), float(z), int(d), int(delta)))
+            capture_integrity.record_row_locator(
+                con, capture_id, relname, "capture_pc_path",
+                json.dumps({"zone_db": zone_db, "step": step}, sort_keys=True),
+                "csv-row", source_sha256=source_sha256,
+                start_line=step + 2, end_line=step + 2,
+                start_offset=len(text[:start_char].encode("utf-8")) if byte_offsets_exact else None,
+                end_offset=len(text[:char_pos].encode("utf-8")) if byte_offsets_exact else None,
+                details={"source": "pc_pathlog_csv", "leg": leg_i},
+            )
             n += 1
         except ValueError:
             continue
     return n
-
 
 HP_LINE_RE = re.compile(r'^Defeated (.+?):\s*(\d+)~(\d+)\s*HP\s*$')
 # 2026-09-08: real bug -- this was the ONLY pattern ingest_hptrack ever tried, but a real, common
@@ -1834,26 +1941,26 @@ def _ingest_idview_simple_v2(
     return n
 
 def ingest_npclogger_lua(con, capture_id, src: Source, relname: str, leg: int = 1) -> tuple[int, int]:
-    """Older capture tool format (idview/Wiggo-era) -- Npclogger/tables/<Zone>.lua, an append-log
-    of raw entity-update packet snapshots (one line per observed update, same id repeated as it
-    moves), NOT the newer NPCLogger.db SQLite format. No timestamps and no dedicated leg/history
-    tables here, so every line becomes one capture_npc_path point in file order (a real, if
-    coarser, position trace) and capture_npc_entries gets the LAST-seen values per id (INSERT OR
-    REPLACE naturally keeps the latest since the file is append-ordered). No model_id or hpp
-    field exists in this format -- left NULL rather than guessed.
-
-    leg: capture_npc_path's real primary key is (capture_id, zone_db, entity_id, leg, step), and
-    `step` restarts at 0 for every file processed here -- a real, confirmed second real source,
-    'npclogger/database/<Zone>.lua' (a fuller entity census, distinct content from 'tables', not
-    a duplicate -- confirmed 2026-09-05 on a real Bhaflau Remnants capture: 'database' had the
-    Armoury Crate's real position, 'tables' didn't), would silently collide step-for-step with
-    'tables' under the same leg and corrupt both traces via INSERT OR REPLACE. Callers processing
-    more than one such file for the same zone_db MUST pass a distinct leg per file."""
+    """Ingest legacy NPCLogger Lua snapshots with exact source-line provenance."""
     zone_db = Path(relname).stem
-    text = src.read_text(relname)
+    source_bytes = src.read_bytes(relname)
+    text = source_bytes.decode("utf-8", "replace")
+    byte_offsets_exact = text.encode("utf-8") == source_bytes
+    source_sha256 = capture_integrity.sha256_bytes(source_bytes)
+    raw_lines = text.splitlines(keepends=True)
+    con.execute(
+        """DELETE FROM capture_row_locators
+           WHERE capture_id=? AND filename=?
+             AND target_table IN ('capture_npc_entries','capture_npc_path')""",
+        (capture_id, relname),
+    )
     n_entries = n_path = 0
     seen_ids = set()
-    for step, line in enumerate(text.splitlines()):
+    char_pos = 0
+    for step, raw_line in enumerate(raw_lines):
+        line = raw_line.rstrip("\r\n")
+        start_char = char_pos
+        char_pos += len(raw_line)
         m = NPCLOGGER_LUA_LINE_RE.match(line)
         if not m:
             continue
@@ -1871,6 +1978,18 @@ def ingest_npclogger_lua(con, capture_id, src: Source, relname: str, leg: int = 
             (capture_id, zone_db, entity_id, leg, step, x, y, z, dir, delta)
             VALUES (?,?,?,?,?,?,?,?,?,?)""",
             (capture_id, zone_db, entity_id, leg, step, x, y, z, dir_, 0))
+        capture_integrity.record_row_locator(
+            con, capture_id, relname, "capture_npc_path",
+            json.dumps(
+                {"zone_db": zone_db, "entity_id": entity_id, "leg": leg, "step": step},
+                sort_keys=True,
+            ),
+            "line", source_sha256=source_sha256,
+            start_line=step + 1, end_line=step + 1,
+            start_offset=len(text[:start_char].encode("utf-8")) if byte_offsets_exact else None,
+            end_offset=len(text[:char_pos].encode("utf-8")) if byte_offsets_exact else None,
+            details={"source": "npclogger_lua", "leg": leg},
+        )
         n_path += 1
 
         con.execute("""INSERT OR REPLACE INTO capture_npc_entries
@@ -1880,13 +1999,21 @@ def ingest_npclogger_lua(con, capture_id, src: Source, relname: str, leg: int = 
             (capture_id, zone_db, entity_id, fields.get("name"), None, x, y, z, dir_, None,
              int(fields.get("flags", 0)), int(fields.get("status", 0)),
              int(fields.get("animation", 0)), int(fields.get("speed", 0)), None, None))
+        capture_integrity.record_row_locator(
+            con, capture_id, relname, "capture_npc_entries",
+            json.dumps({"zone_db": zone_db, "entity_id": entity_id}, sort_keys=True),
+            "line", source_sha256=source_sha256,
+            start_line=step + 1, end_line=step + 1,
+            start_offset=len(text[:start_char].encode("utf-8")) if byte_offsets_exact else None,
+            end_offset=len(text[:char_pos].encode("utf-8")) if byte_offsets_exact else None,
+            details={"source": "npclogger_lua", "leg": leg, "last_seen_snapshot": True},
+        )
         if entity_id not in seen_ids:
             seen_ids.add(entity_id)
             n_entries += 1
             record_entity_facts(con, entity_id, fields.get("name"), None, x, y, z, None, zone_db)
 
     return n_entries, n_path
-
 
 CONTENT_TYPES = ("instances", "overworld", "unclassified")
 LABEL_MISSION_RE = re.compile(r'^.+?\s-\s(.+?)\s*\(')  # "<Zone> - <Mission> (Thris Nov2025)"
@@ -2381,6 +2508,7 @@ def _capture_source_format(src: "Source", relname: str) -> str | None:
 REBUILDABLE_CAPTURE_FORMATS = {
     "eventview", "idview_simple", "kitrack", "hptrack", "actionview_simple", "caplog", "packetlogger",
     "npclogger_db", "actionview_db", "levelrange_db",
+    "npclogger_lua", "pathlog_csv", "pc_pathlog_csv", "widescan", "attackdelay",
 }
 
 
@@ -2631,6 +2759,17 @@ def rebuild_capture_source(con, capture_id: int, filename: str) -> dict:
                 result = ingest_actions_db(con, capture_id, src, filename)
             elif fmt == "levelrange_db":
                 result = ingest_level_range_db(con, capture_id, src, filename)
+            elif fmt == "npclogger_lua":
+                leg = 2 if "/database/" in filename.lower() else 1
+                result = ingest_npclogger_lua(con, capture_id, src, filename, leg)
+            elif fmt == "pathlog_csv":
+                result = ingest_pathlog(con, capture_id, src, filename)
+            elif fmt == "pc_pathlog_csv":
+                result = ingest_pc_pathlog(con, capture_id, src, filename)
+            elif fmt == "widescan":
+                result = ingest_widescan(con, capture_id, src, filename)
+            elif fmt == "attackdelay":
+                result = ingest_attackdelay(con, capture_id, src, filename)
             else:
                 raise ValueError(f"unsupported rebuild parser: {fmt}")
             rows = sum(result) if isinstance(result, tuple) else int(result)
