@@ -2421,3 +2421,16 @@ Timeline alignment now has a persisted key-evidence layer rather than treating s
 - uploaded screenshots are limited to validated PNG/JPEG/WebP/BMP image content, stored under a per-capture evidence root outside static mounts, and served only through a DB-backed evidence route;
 - key evidence retains source references, notes, confidence, MIME type, alignment-anchor linkage, and metadata;
 - canonical capture graph ingestion emits a KEY_EVIDENCE entity and HAS_EVIDENCE relationship while keeping the interpretation distinct from packet/event truth.
+
+## 2026-09-28 — Cross-frame OCR consensus and packet-symbol assistance
+
+The packet-overlay OCR path now separates raw parsing from conservative structural normalization.
+
+- raw OCR and the parser's original direction/opcode/packet symbol/field keys remain preserved under `raw_parsed`;
+- packet-name correction reuses the existing Packetlyzer-backed packet definition index and requires a minimum similarity plus separation from the runner-up;
+- a known opcode may corroborate/canonicalize the packet symbol, while a high-confidence packet-symbol match can recover the canonical opcode;
+- field-key correction is scoped to the selected packet definition and never fuzzy-corrects field values;
+- repeated observations of the same structural packet within a bounded video-time window vote on exact field values, including interleaved EView history stacks;
+- tied field-value votes remain explicitly unresolved rather than guessed;
+- capture ingestion uses the effective packet view but embeds raw parsing, symbol corrections, scores/source definitions, consensus votes, and source frames in VIDEO_OCR provenance;
+- the OCR GUI displays raw-vs-effective structural values, correction details, consensus support, and unresolved ties.
