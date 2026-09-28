@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 188,
+  "route_count": 191,
   "routes": [
     {
       "method": "GET",
@@ -1505,6 +1505,30 @@
       "home": "Captures",
       "section": "Timeline Alignment",
       "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/ocr/{run_id}/layout/save",
+      "home": "Captures",
+      "section": "YouTube OCR",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/ocr/{run_id}/layout/apply",
+      "home": "Captures",
+      "section": "YouTube OCR",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/ocr/layout/{profile_id}/delete",
+      "home": "Captures",
+      "section": "YouTube OCR",
+      "role": "mutation",
       "disposition": "KEEP"
     }
   ]
