@@ -6,7 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import build_capture_index
-import gui_server
+from workbench.core.services import capture_spatial
 
 
 def main():
@@ -36,18 +36,18 @@ def main():
         )
         con.commit()
 
-        spatial = gui_server.capture_spatial_entities(con, cid, "Test Zone")
+        spatial = capture_spatial.capture_spatial_entities(con, cid, "Test Zone")
         assert [e["id"] for e in spatial] == [17000002, 17000001], spatial
         by_id = {e["id"]: e for e in spatial}
         assert by_id[17000001]["has_path"] is True, by_id[17000001]
         assert by_id[17000002]["has_path"] is False, by_id[17000002]
         assert by_id[17000002]["x"] == -5.0 and by_id[17000002]["z"] == 7.0
 
-        by_name = gui_server.capture_spatial_entities(con, cid, "Test Zone", "rune")
+        by_name = capture_spatial.capture_spatial_entities(con, cid, "Test Zone", "rune")
         assert [e["id"] for e in by_name] == [17000002], by_name
-        by_id_search = gui_server.capture_spatial_entities(con, cid, "Test Zone", "00001")
+        by_id_search = capture_spatial.capture_spatial_entities(con, cid, "Test Zone", "00001")
         assert [e["id"] for e in by_id_search] == [17000001], by_id_search
-        assert not gui_server.capture_spatial_entities(con, cid, "Missing Zone")
+        assert not capture_spatial.capture_spatial_entities(con, cid, "Missing Zone")
 
         root = Path(__file__).resolve().parents[1]
         two_d = (root / "gui" / "templates" / "path_plot_all.html").read_text(encoding="utf-8")
