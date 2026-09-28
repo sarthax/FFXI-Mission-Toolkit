@@ -176,6 +176,23 @@ class MultiZoneProgressionPlugin(MetadataPlugin):
         if not isinstance(model,MultiZoneProgression):
             return ()
         analysis=analyze_progression(model)
+        evidence_ids=tuple(dict.fromkeys(
+            [
+                evidence_id
+                for objective in model.objectives
+                for evidence_id in objective.evidence_ids
+            ]
+            + [
+                evidence_id
+                for stage in model.stages
+                for evidence_id in (
+                    *stage.evidence_ids,
+                    *(stage.prerequisite_gate.evidence_ids if stage.prerequisite_gate else ()),
+                )
+            ]
+            + list(model.completion_gate.evidence_ids if model.completion_gate else ())
+        ))
+        stages={stage.stage_id:stage for stage in model.stages}
         findings=[]
         findings.append(PluginFinding(
             plugin_id=self.spec.plugin_id,
@@ -186,6 +203,7 @@ class MultiZoneProgressionPlugin(MetadataPlugin):
                 f"Multi-zone progression structure: {len(analysis.reachable_stage_ids)}/"
                 f"{len(model.stages)} stages structurally reachable across {len(analysis.zone_ids)} zones."
             ),
+            evidence_ids=evidence_ids,
             metadata={
                 "progression_id":model.progression_id,
                 "reachable_stage_ids":list(analysis.reachable_stage_ids),
@@ -200,12 +218,20 @@ class MultiZoneProgressionPlugin(MetadataPlugin):
             },
         ))
         for edge in analysis.cross_zone_dependencies:
+            target_stage=stages[edge.target_stage_id]
+            target_evidence=tuple(dict.fromkeys(
+                (*target_stage.evidence_ids,*(
+                    target_stage.prerequisite_gate.evidence_ids
+                    if target_stage.prerequisite_gate else ()
+                ))
+            ))
             findings.append(PluginFinding(
                 plugin_id=self.spec.plugin_id,
                 subject_id=edge.target_stage_id,
                 finding_type="CROSS_ZONE_DEPENDENCY",
                 status="DISCOVERED",
                 message=f"{edge.target_stage_id} depends on {edge.source_stage_id} across zone context.",
+                evidence_ids=target_evidence,
                 metadata={
                     "source_stage_id":edge.source_stage_id,
                     "target_stage_id":edge.target_stage_id,
