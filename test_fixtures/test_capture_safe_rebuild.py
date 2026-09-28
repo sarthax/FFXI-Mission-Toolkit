@@ -51,7 +51,7 @@ def main():
             ("Keep Mission", "Keep Capturer", "https://example.invalid/video", cid),
         )
         con.commit()
-        build_capture_index.set_capture_tags(con, cid, ["packet"])
+        build_capture_index.set_capture_tags(con, cid, ["Research"])
         timeline_alignment.init_db(con)
         anchor_id = timeline_alignment.add_anchor(
             con, cid, video_ts=10.0, capture_ts=100.0,
@@ -117,7 +117,7 @@ def main():
         assert tuple(cap) == (
             cid, "Keep Mission", "Keep Capturer", "https://example.invalid/video"
         ), cap
-        assert build_capture_index.get_capture_tags(con, cid) == ["packet"]
+        assert build_capture_index.get_capture_tags(con, cid) == ["Research"]
         assert con.execute(
             "SELECT COUNT(*) FROM capture_alignment_anchors WHERE capture_id=? AND anchor_id=?",
             (cid, anchor_id),
