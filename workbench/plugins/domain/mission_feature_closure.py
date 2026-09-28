@@ -69,6 +69,41 @@ def _feature_requirements(machine: MissionStateMachine) -> tuple[StateCondition,
     return tuple(out)
 
 
+def _metadata_feature_requirement_gates(
+    machine: MissionStateMachine,
+) -> tuple[DependencyGate,...]:
+    """Recover de-duplicated feature prerequisite gates preserved by source adapters."""
+    out=[]
+    seen=set()
+    for transition in machine.transitions:
+        for row in transition.metadata.get("section_feature_requirement_gates",()):
+            conditions=tuple(
+                StateCondition(
+                    str(condition.get("subject") or ""),
+                    str(condition.get("operator") or ""),
+                    condition.get("value"),
+                )
+                for condition in row.get("conditions",())
+                if condition.get("subject") and condition.get("operator")
+            )
+            if not conditions:
+                continue
+            key=(
+                str(row.get("gate_id") or ""),
+                str(row.get("logic") or "ALL"),
+                tuple((c.subject,c.operator,repr(c.value)) for c in conditions),
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(DependencyGate(
+                str(row.get("gate_id") or f"feature-helper:{machine.feature_id}:{len(out)+1}"),
+                str(row.get("logic") or "ALL"),
+                conditions,
+            ))
+    return tuple(out)
+
+
 def _selected(
     condition: StateCondition,
     gate: DependencyGate,
@@ -167,6 +202,8 @@ def build_feature_requirement_closure(
                     requirements,
                 ),
             )
+        for helper_gate in _metadata_feature_requirement_gates(machine):
+            add_gate(machine.feature_id,helper_gate)
 
         for index_row,row in enumerate(
             machine.metadata.get("documented_feature_requirements",()),
