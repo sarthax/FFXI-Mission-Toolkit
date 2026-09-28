@@ -49,6 +49,12 @@ _VAR_COMPARE=re.compile(
 _GET_VAR_COMPARE=re.compile(
     r"quest:getVar\(player,\s*'([^']+)'\)\s*(==|~=|<=|>=|<|>)\s*(\d+)"
 )
+_GET_VAR_EXPR_COMPARE=re.compile(
+    r"quest:getVar\(player,\s*'([^']+)'\)\s*(==|~=|<=|>=|<|>)\s*([A-Za-z_][A-Za-z0-9_]*\([^\)]*\)(?:\s*[+-]\s*\d+)?)"
+)
+_MUST_ZONE=re.compile(r"quest:getMustZone\(player\)")
+_NOT_MUST_ZONE=re.compile(r"not\s+quest:getMustZone\(player\)")
+_SET_MUST_ZONE=re.compile(r"quest:setMustZone\(player\)")
 _GET_VAR_ALIAS=re.compile(
     r"local\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*quest:getVar\(player,\s*'([^']+)'\)"
 )
@@ -225,6 +231,12 @@ def _handler_conditions(text: str) -> tuple[StateCondition,...]:
             _OP[match.group(2)],
             int(match.group(3)),
         ))
+    for match in _GET_VAR_EXPR_COMPARE.finditer(text):
+        out.append(StateCondition(
+            f"quest_var:{match.group(1)}",
+            _OP[match.group(2)],
+            match.group(3).strip(),
+        ))
     aliases={match.group(1):match.group(2) for match in _GET_VAR_ALIAS.finditer(text)}
     for match in _ALIAS_COMPARE.finditer(text):
         channel=aliases.get(match.group(1))
@@ -234,6 +246,10 @@ def _handler_conditions(text: str) -> tuple[StateCondition,...]:
                 _OP[match.group(2)],
                 int(match.group(3)),
             ))
+    if _NOT_MUST_ZONE.search(text):
+        out.append(StateCondition("quest_must_zone","EQ",False))
+    elif _MUST_ZONE.search(text):
+        out.append(StateCondition("quest_must_zone","EQ",True))
     lacked=set(_LACKS_KI.findall(text))
     for symbol in lacked:
         out.append(StateCondition(f"key_item:{symbol}","LACKS",True))
@@ -267,6 +283,8 @@ def _quest_effects(text: str) -> tuple[TransitionEffect,...]:
         out.append(TransitionEffect("START","quest"))
     if _COMPLETE.search(text):
         out.append(TransitionEffect("COMPLETE","quest"))
+    if _SET_MUST_ZONE.search(text):
+        out.append(TransitionEffect("SET","quest_must_zone",True))
     for match in _START_EVENT.finditer(text):
         out.append(TransitionEffect("START","event",int(match.group(1))))
     if "player:confirmTrade()" in text:
