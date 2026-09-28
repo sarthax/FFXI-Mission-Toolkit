@@ -297,7 +297,7 @@ def main():
         and transition.trigger=="NPC_INTERACT"
     )
     assert any(
-        effect.effect=="SET"
+        effect.effect=="SET_STATE"
         and effect.subject=="quest_must_zone"
         and effect.value is True
         for effect in storm_start.effects
