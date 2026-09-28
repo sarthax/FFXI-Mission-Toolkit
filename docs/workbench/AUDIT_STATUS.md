@@ -2007,3 +2007,15 @@ The shared `npc_event_refs` index is now an explicit Feature Trace provider. Eac
 This deliberately does not treat CSID as globally unique. If the same CSID appears for multiple sources/scripts/zones, all records remain independently discoverable and a legacy CSID-only catalog ID is rejected as ambiguous rather than selecting one row.
 
 These are source-script event references, not proof that the client event exists or that the corresponding mission transition is correct.
+
+
+### Key-item catalog providers
+
+Feature Trace now exposes the three key-item catalogs that are actually persisted by the current indexers:
+- `keyitems_ours` as the LandSandBoat-primary server key-item catalog;
+- `topaz_keyitems` as the Topaz server key-item catalog;
+- `keyitems_external` as retail/reference evidence.
+
+DSP has no corresponding persisted key-item table in the current DSP index and is intentionally left UNKNOWN rather than synthesized from another source.
+
+Because `keyitems_ours` and `keyitems_external` do not have database primary-key constraints, the generic catalog resolver now verifies that single-column provider identities are unique before resolving them. Duplicate logical IDs fail closed as UNKNOWN instead of selecting the first row.
