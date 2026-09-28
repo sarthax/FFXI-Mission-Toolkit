@@ -97,6 +97,10 @@ def channels_from_findings(findings: Iterable[LsbMissionFinding]) -> tuple[State
 
 _FUNC_START=re.compile(r"(onTrigger|onTrade|onMobDeath|onZoneIn)\s*=\s*function")
 _EVENT_FINISH_KEY=re.compile(r"\[(\d+)\]\s*=\s*function\(player,\s*csid")
+_EVENT_FINISH_REF=re.compile(r"\[(\d+)\]\s*=\s*([A-Za-z_][A-Za-z0-9_]*)\s*,?\s*$")
+_DECL_HELPER_CALL=re.compile(
+    r"\['([^']+)'\]\s*=\s*([A-Za-z_][A-Za-z0-9_]*)\(([^\)]*)\)\s*,?"
+)
 _STATUS_EQ=re.compile(r"player:getMissionStatus\([^\n]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)\s*==\s*(\d+)")
 _STATUS_NE=re.compile(r"player:getMissionStatus\([^\n]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)\s*~=\s*(\d+)")
 _STATUS_COMPARE=re.compile(
@@ -123,6 +127,13 @@ _SETPOS=re.compile(r"player:setPos\(([^\)]+)\)")
 _MESSAGE=re.compile(r"(?:player:messageSpecial|player:messageText|mission:messageSpecial|mission:messageName)\(([^\n]+)\)")
 _HELPER_ASSIGN=re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*function\(player\)",re.M)
 _LOCAL_PLAYER_HELPER=re.compile(r"^\s*local\s+function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*player\s*\)")
+_LOCAL_FUNCTION_HELPER=re.compile(
+    r"^\s*local\s+function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(([^\)]*)\)"
+)
+_HELPER_EVENT_MAP_RETURN=re.compile(
+    r"return\s+mission:(?:progressEvent|event|progressCutscene)\(\s*"
+    r"unpack\(\s*([A-Za-z_][A-Za-z0-9_]*)\[([A-Za-z_][A-Za-z0-9_]*)\]\s*\)\s*\)"
+)
 
 
 def _structural_lua_lines(lua: str) -> list[str]:
@@ -638,6 +649,39 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
     lines,zone_spans,actor_spans,context=_scoped_contexts(lua)
     section_rows,section_context=_section_contexts(lua)
 
+    local_function_effects={}
+    mapped_event_helpers={}
+    for helper_start,_helper_end,helper_text in _balanced_function_blocks(lua):
+        helper_match=_LOCAL_FUNCTION_HELPER.search(lines[helper_start])
+        if not helper_match:
+            continue
+        helper_name=helper_match.group(1)
+        params=tuple(
+            part.strip() for part in helper_match.group(2).split(",") if part.strip()
+        )
+        if params and params[0]=="player":
+            local_function_effects[helper_name]=_effects(helper_text)
+        mapped=_HELPER_EVENT_MAP_RETURN.search(helper_text)
+        if mapped and params:
+            mapped_event_helpers[helper_name]=(params[0],mapped.group(1),mapped.group(2))
+
+    literal_event_maps={}
+    for _helper,(_param,map_name,_index_name) in mapped_event_helpers.items():
+        block=re.search(
+            rf"local\s+{re.escape(map_name)}\s*=\s*\{{(.*?)\n\}}",
+            lua,
+            re.S,
+        )
+        if not block:
+            continue
+        literal_event_maps[map_name]={
+            zone:int(event_id)
+            for zone,event_id in re.findall(
+                r"\[xi\.zone\.([A-Z0-9_]+)\]\s*=\s*\{\s*(\d+)",
+                block.group(1),
+            )
+        }
+
     transitions=[]
     states={"source:any":MissionState("source:any","Source state")}
     completion_helpers=extract_dynamic_completion_gates(lua)
@@ -785,8 +829,8 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                     "section_eligibility_status":section_eligibility_status,
                     "section_eligibility_unresolved_reasons":tuple(section_unresolved_reasons),
                     "priority":(int(pm.group(1)) if (pm:=re.search(r"setPriority\((\d+)\)",text)) else None),
-                    "important_event":".importantEvent()" in text,
-                    "replace_default":".replaceDefault()" in text,
+                    "important_event":any(token in text for token in (":importantEvent()",".importantEvent()")),
+                    "replace_default":any(token in text for token in (":replaceDefault()",".replaceDefault()")),
                     "client_transport":bool(transport_effects),
                     "branch_alternative":len(paths)>1,
                     "branch_index":path_index,
@@ -838,8 +882,102 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                     "section_check_present":section_check_present,
                     "section_eligibility_status":section_eligibility_status,
                     "section_eligibility_unresolved_reasons":tuple(section_unresolved_reasons),
-                "replace_default":".replaceDefault()" in suffix,
-                "important_event":".importantEvent()" in suffix,
+                "replace_default":any(token in suffix for token in (":replaceDefault()",".replaceDefault()")),
+                "important_event":any(token in suffix for token in (":importantEvent()",".importantEvent()")),
+            },
+        ))
+
+    # Declarative actor handlers may call a local helper that maps a literal zone
+    # argument to an event tuple (for example mawEvent(xi.zone.BATALLIA_DOWNS)).
+    for line_no,line in enumerate(lines):
+        dm=_DECL_HELPER_CALL.search(line)
+        if not dm or dm.group(2) not in mapped_event_helpers:
+            continue
+        helper=dm.group(2)
+        _param,map_name,_index_name=mapped_event_helpers[helper]
+        arg=re.search(r"xi\.zone\.([A-Z0-9_]+)",dm.group(3))
+        if not arg:
+            continue
+        event_id=literal_event_maps.get(map_name,{}).get(arg.group(1))
+        if event_id is None:
+            continue
+        zone,_=context(line_no)
+        section_index,section_source_lines,section_conditions,section_eligibility_status,section_unresolved_reasons,section_check_present=section_context(line_no)
+        source_handler_count+=1
+        modeled_source_handler_count+=1
+        serial+=1
+        transitions.append(MissionTransition(
+            f"source-transition:{serial}","source:any","source:any","NPC_INTERACT",
+            event=EventIdentity(zone or arg.group(1),event_id,dm.group(1)),
+            confidence="INFERRED",
+            metadata={
+                "zone":zone or arg.group(1),
+                "actor":dm.group(1),
+                "source_lines":(line_no+1,line_no+1),
+                "literal_correlation":True,
+                "declarative_handler":True,
+                "helper_calls":(helper,),
+                "helper_event_map":map_name,
+                "section_index":section_index,
+                "section_source_lines":section_source_lines,
+                "section_eligibility_conditions":tuple(
+                    {
+                        "subject":condition.subject,
+                        "operator":condition.operator,
+                        "value":condition.value,
+                    }
+                    for condition in section_conditions
+                ),
+                "section_check_present":section_check_present,
+                "section_eligibility_status":section_eligibility_status,
+                "section_eligibility_unresolved_reasons":tuple(section_unresolved_reasons),
+            },
+        ))
+
+    # Event-finish tables may reference a local function instead of declaring the
+    # callback inline. Resolve only literal local functions whose effects are known.
+    event_finish_spans=_table_assignment_spans(
+        lines,
+        re.compile(r"(onEventFinish)\s*="),
+    )
+    for line_no,line in enumerate(lines):
+        match=_EVENT_FINISH_REF.search(_code(line))
+        if not match or not any(start<=line_no<=end for start,end,_ in event_finish_spans):
+            continue
+        helper=match.group(2)
+        if helper not in local_function_effects:
+            continue
+        zone,_=context(line_no)
+        section_index,section_source_lines,section_conditions,section_eligibility_status,section_unresolved_reasons,section_check_present=section_context(line_no)
+        source_handler_count+=1
+        modeled_source_handler_count+=1
+        serial+=1
+        transitions.append(MissionTransition(
+            f"source-transition:{serial}","source:any","source:any","EVENT_FINISH",
+            event=EventIdentity(zone or "UNKNOWN",int(match.group(1)),None),
+            effects=tuple(local_function_effects[helper]),
+            confidence="INFERRED",
+            metadata={
+                "zone":zone,
+                "actor":None,
+                "source_lines":(line_no+1,line_no+1),
+                "literal_correlation":True,
+                "declarative_handler":True,
+                "function_reference_handler":True,
+                "helper_calls":(helper,),
+                "section_index":section_index,
+                "section_source_lines":section_source_lines,
+                "section_eligibility_conditions":tuple(
+                    {
+                        "subject":condition.subject,
+                        "operator":condition.operator,
+                        "value":condition.value,
+                    }
+                    for condition in section_conditions
+                ),
+                "section_check_present":section_check_present,
+                "section_eligibility_status":section_eligibility_status,
+                "section_eligibility_unresolved_reasons":tuple(section_unresolved_reasons),
             },
         ))
 
@@ -1073,6 +1211,9 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
                     "section_eligibility_conditions":tuple(
                         t.metadata.get("section_eligibility_conditions",())
                     ),
+                    "section_feature_requirement_gates":tuple(
+                        t.metadata.get("section_feature_requirement_gates",())
+                    ),
                     "section_eligibility_basis":t.metadata.get("section_eligibility_basis"),
                     "section_check_present":t.metadata.get("section_check_present"),
                     "section_eligibility_status":t.metadata.get("section_eligibility_status"),
@@ -1086,6 +1227,15 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
                         tuple(t.metadata.get("post_effect_gate_basis",()))
                         + tuple(f.metadata.get("post_effect_gate_basis",()))
                     )),
+                    "helper_calls":tuple(dict.fromkeys(
+                        tuple(t.metadata.get("helper_calls",()))
+                        + tuple(f.metadata.get("helper_calls",()))
+                    )),
+                    "inlined_helper_effects":tuple(
+                        t.metadata.get("inlined_helper_effects",())
+                    )+tuple(
+                        f.metadata.get("inlined_helper_effects",())
+                    ),
                 },
                 post_effect_gate=post_effect_gate,
             ))

@@ -69,6 +69,48 @@ def _feature_requirements(machine: MissionStateMachine) -> tuple[StateCondition,
     return tuple(out)
 
 
+def _metadata_feature_requirement_gates(
+    machine: MissionStateMachine,
+) -> tuple[DependencyGate,...]:
+    """Recover de-duplicated feature prerequisite gates preserved by source adapters."""
+    out=[]
+    seen=set()
+    row_sets=[
+        machine.metadata.get("catalog_feature_requirement_gates",()),
+        *(
+            transition.metadata.get("section_feature_requirement_gates",())
+            for transition in machine.transitions
+        ),
+    ]
+    for rows in row_sets:
+        for row in rows:
+            conditions=tuple(
+                StateCondition(
+                    str(condition.get("subject") or ""),
+                    str(condition.get("operator") or ""),
+                    condition.get("value"),
+                )
+                for condition in row.get("conditions",())
+                if condition.get("subject") and condition.get("operator")
+            )
+            if not conditions:
+                continue
+            key=(
+                str(row.get("gate_id") or ""),
+                str(row.get("logic") or "ALL"),
+                tuple((c.subject,c.operator,repr(c.value)) for c in conditions),
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(DependencyGate(
+                str(row.get("gate_id") or f"feature-helper:{machine.feature_id}:{len(out)+1}"),
+                str(row.get("logic") or "ALL"),
+                conditions,
+            ))
+    return tuple(out)
+
+
 def _selected(
     condition: StateCondition,
     gate: DependencyGate,
@@ -78,7 +120,43 @@ def _selected(
         return True
     if not selected_any_subjects:
         return True
+    gate_subjects={candidate.subject for candidate in gate.conditions}
+    if not (gate_subjects & selected_any_subjects):
+        return True
     return condition.subject in selected_any_subjects
+
+
+def _actual_dependency_cycles(
+    dependencies: Iterable[FeatureDependency],
+) -> tuple[tuple[str,str],...]:
+    """Return only graph back-edges; repeated convergence is not a cycle."""
+    adjacency={}
+    for dependency in dependencies:
+        if not dependency.selected or not dependency.resolved_feature_id:
+            continue
+        adjacency.setdefault(dependency.source_feature_id,set()).add(
+            dependency.resolved_feature_id
+        )
+
+    visited=set()
+    active=set()
+    cycles=set()
+
+    def visit(node: str) -> None:
+        if node in visited:
+            return
+        visited.add(node)
+        active.add(node)
+        for target in adjacency.get(node,()):
+            if target in active:
+                cycles.add((node,target))
+            elif target not in visited:
+                visit(target)
+        active.remove(node)
+
+    for node in tuple(adjacency):
+        visit(node)
+    return tuple(sorted(cycles))
 
 
 def build_feature_requirement_closure(
@@ -103,7 +181,6 @@ def build_feature_requirement_closure(
     dependencies=[]
     unresolved=set()
     skipped=set()
-    cycles=[]
     visited={root.feature_id}
     queue=[]
 
@@ -147,7 +224,6 @@ def build_feature_requirement_closure(
                 unresolved.add(condition.subject)
                 continue
             if target.feature_id in visited:
-                cycles.append((source,target.feature_id))
                 continue
             visited.add(target.feature_id)
             queue.append(target)
@@ -167,6 +243,8 @@ def build_feature_requirement_closure(
                     requirements,
                 ),
             )
+        for helper_gate in _metadata_feature_requirement_gates(machine):
+            add_gate(machine.feature_id,helper_gate)
 
         for index_row,row in enumerate(
             machine.metadata.get("documented_feature_requirements",()),
@@ -205,7 +283,7 @@ def build_feature_requirement_closure(
         tuple(dependencies),
         tuple(sorted(unresolved)),
         tuple(sorted(skipped)),
-        tuple(sorted(set(cycles))),
+        _actual_dependency_cycles(dependencies),
     )
 
 

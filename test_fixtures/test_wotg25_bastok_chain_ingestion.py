@@ -15,13 +15,17 @@ from workbench.plugins.domain.mission_lsb_extract import (
     correlate_lsb_handlers,
     mission_extraction_metrics,
 )
-from workbench.plugins.domain.quest_lsb_extract import quest_extraction_metrics
+from workbench.plugins.domain.quest_lsb_extract import (
+    correlate_lsb_quest_handlers,
+    quest_extraction_metrics,
+)
 from workbench.plugins.domain.mission_source_catalog import LsbFeatureSourceCatalog
 
 ROOT=Path(__file__).resolve().parents[1]
 FIX=ROOT/"test_fixtures"/"fixtures"
 TRUTH=FIX/"wotg25_branching_mission_truth.json"
 MISSION=FIX/"lsb_wotg25_the_will_of_the_world.lua"
+Q0=FIX/"lsb_wotg_bastok0_the_fighting_fourth.lua"
 Q9=FIX/"lsb_wotg_bastok9_beneath_the_mask.lua"
 Q10=FIX/"lsb_wotg_bastok10_what_price_loyalty.lua"
 
@@ -49,6 +53,7 @@ def _quest_events(lua: str) -> set[int]:
 def main():
     truth=json.loads(TRUTH.read_text(encoding="utf-8"))
     mission_lua=MISSION.read_text(encoding="utf-8")
+    q0_lua=Q0.read_text(encoding="utf-8")
     q9_lua=Q9.read_text(encoding="utf-8")
     q10_lua=Q10.read_text(encoding="utf-8")
 
@@ -94,12 +99,20 @@ def main():
     assert catalog.source_for("quest:STORM_ON_THE_HORIZON") is not None,catalog.subjects()
     assert catalog.source_for("quest:BURDEN_OF_SUSPICION") is not None,catalog.subjects()
     assert catalog.source_for("quest:LIGHT_IN_THE_DARKNESS") is not None,catalog.subjects()
+    assert catalog.source_for("quest:FIRES_OF_DISCONTENT") is not None,catalog.subjects()
+    assert catalog.source_for("quest:BETTER_PART_OF_VALOR") is not None,catalog.subjects()
+    assert catalog.source_for("quest:THE_FIGHTING_FOURTH") is not None,catalog.subjects()
     assert catalog.source_for("mission:CAIT_SITH") is not None,catalog.subjects()
+    assert catalog.source_for("mission:BACK_TO_THE_BEGINNING") is not None,catalog.subjects()
 
     closure=build_feature_requirement_closure(
         chained,
         entry_gates=(branch_gate.gate,),
-        selected_any_subjects=("quest:WHAT_PRICE_LOYALTY",),
+        selected_any_subjects=(
+            "quest:WHAT_PRICE_LOYALTY",
+            "quest:THE_FIGHTING_FOURTH",
+            "quest:FIRES_OF_DISCONTENT",
+        ),
         resolver=catalog.resolve_machine,
     )
     closure_summary=dependency_summary(closure)
@@ -113,22 +126,30 @@ def main():
         "quest:crystal_war:storm_on_the_horizon",
         "quest:crystal_war:burden_of_suspicion",
         "quest:crystal_war:light_in_the_darkness",
+        "quest:crystal_war:fires_of_discontent",
+        "quest:crystal_war:better_part_of_valor",
+        "quest:crystal_war:the_fighting_fourth",
+        "mission:wotg:back_to_the_beginning",
         "mission:wotg:cait_sith",
     },closure
     assert catalog.cached_subjects()==(
+        "mission:BACK_TO_THE_BEGINNING",
         "mission:CAIT_SITH",
         "quest:BENEATH_THE_MASK",
+        "quest:BETTER_PART_OF_VALOR",
         "quest:BURDEN_OF_SUSPICION",
+        "quest:FIRES_OF_DISCONTENT",
         "quest:FIRE_IN_THE_HOLE",
         "quest:HONOR_UNDER_FIRE",
         "quest:LIGHT_IN_THE_DARKNESS",
         "quest:QUELLING_THE_STORM",
         "quest:STORM_ON_THE_HORIZON",
+        "quest:THE_FIGHTING_FOURTH",
         "quest:WHAT_PRICE_LOYALTY",
     ),catalog.cached_subjects()
     assert "quest:BLOOD_OF_HEROES" in closure.skipped_alternatives,closure
     assert "quest:HOWL_FROM_THE_HEAVENS" in closure.skipped_alternatives,closure
-    assert closure.unresolved_subjects==("mission:BACK_TO_THE_BEGINNING","quest:FIRES_OF_DISCONTENT"),closure
+    assert closure.unresolved_subjects==(),closure
 
     q10=catalog.cached_machine("quest:WHAT_PRICE_LOYALTY")
     q9=catalog.cached_machine("quest:BENEATH_THE_MASK")
@@ -138,8 +159,12 @@ def main():
     q5=catalog.cached_machine("quest:STORM_ON_THE_HORIZON")
     q4=catalog.cached_machine("quest:BURDEN_OF_SUSPICION")
     q3=catalog.cached_machine("quest:LIGHT_IN_THE_DARKNESS")
+    q2=catalog.cached_machine("quest:FIRES_OF_DISCONTENT")
+    q1=catalog.cached_machine("quest:BETTER_PART_OF_VALOR")
+    q0=catalog.cached_machine("quest:THE_FIGHTING_FOURTH")
+    back=catalog.cached_machine("mission:BACK_TO_THE_BEGINNING")
     cait=catalog.cached_machine("mission:CAIT_SITH")
-    assert all(machine is not None for machine in (q10,q9,q8,q7,q6,q5,q4,q3,cait)),(q10,q9,q8,q7,q6,q5,q4,q3,cait)
+    assert all(machine is not None for machine in (q10,q9,q8,q7,q6,q5,q4,q3,q2,q1,q0,back,cait)),(q10,q9,q8,q7,q6,q5,q4,q3,q2,q1,q0,back,cait)
 
     assert q9.metadata.get("catalog_discovered") is True,q9.metadata
     assert q10.metadata.get("catalog_discovered") is True,q10.metadata
@@ -149,6 +174,10 @@ def main():
     assert q5.metadata.get("catalog_discovered") is True,q5.metadata
     assert q4.metadata.get("catalog_discovered") is True,q4.metadata
     assert q3.metadata.get("catalog_discovered") is True,q3.metadata
+    assert q2.metadata.get("catalog_discovered") is True,q2.metadata
+    assert q1.metadata.get("catalog_discovered") is True,q1.metadata
+    assert q0.metadata.get("catalog_discovered") is True,q0.metadata
+    assert back.metadata.get("catalog_discovered") is True,back.metadata
     assert cait.metadata.get("catalog_discovered") is True,cait.metadata
     assert q9.metadata.get("quest_symbol")=="BENEATH_THE_MASK",q9.metadata
     assert q10.metadata.get("quest_symbol")=="WHAT_PRICE_LOYALTY",q10.metadata
@@ -158,6 +187,10 @@ def main():
     assert q5.metadata.get("quest_symbol")=="STORM_ON_THE_HORIZON",q5.metadata
     assert q4.metadata.get("quest_symbol")=="BURDEN_OF_SUSPICION",q4.metadata
     assert q3.metadata.get("quest_symbol")=="LIGHT_IN_THE_DARKNESS",q3.metadata
+    assert q2.metadata.get("quest_symbol")=="FIRES_OF_DISCONTENT",q2.metadata
+    assert q1.metadata.get("quest_symbol")=="BETTER_PART_OF_VALOR",q1.metadata
+    assert q0.metadata.get("quest_symbol")=="THE_FIGHTING_FOURTH",q0.metadata
+    assert back.metadata.get("mission_symbol")=="BACK_TO_THE_BEGINNING",back.metadata
     assert cait.metadata.get("mission_symbol")=="CAIT_SITH",cait.metadata
     assert q9.metadata.get("reward_item")=="SUPER_RERAISER",q9.metadata
     assert q10.metadata.get("reward_item")=="FOURTH_STAFF",q10.metadata
@@ -264,13 +297,50 @@ def main():
     assert any(
         dependency.source_feature_id=="quest:crystal_war:light_in_the_darkness"
         and dependency.subject=="quest:FIRES_OF_DISCONTENT"
-        and dependency.status=="UNRESOLVED"
+        and dependency.status=="RESOLVED"
+        and dependency.resolved_feature_id=="quest:crystal_war:fires_of_discontent"
         for dependency in closure.dependencies
     ),closure.dependencies
     assert any(
+        dependency.source_feature_id=="quest:crystal_war:fires_of_discontent"
+        and dependency.subject=="quest:BETTER_PART_OF_VALOR"
+        and dependency.status=="RESOLVED"
+        and dependency.resolved_feature_id=="quest:crystal_war:better_part_of_valor"
+        for dependency in closure.dependencies
+    ),closure.dependencies
+    first_quest_dependencies=[
+        dependency
+        for dependency in closure.dependencies
+        if dependency.source_feature_id=="quest:crystal_war:better_part_of_valor"
+        and dependency.group_id=="helper-feature-prerequisite:xi.wotg.helpers.hasCompletedFirstQuest"
+    ]
+    assert {dependency.subject for dependency in first_quest_dependencies}=={
+        "quest:STEAMED_RAMS",
+        "quest:SNAKE_ON_THE_PLAINS",
+        "quest:THE_FIGHTING_FOURTH",
+    },first_quest_dependencies
+    fighting_dependency=next(
+        dependency for dependency in first_quest_dependencies
+        if dependency.subject=="quest:THE_FIGHTING_FOURTH"
+    )
+    assert fighting_dependency.logic=="ANY",fighting_dependency
+    assert fighting_dependency.status=="RESOLVED",fighting_dependency
+    assert fighting_dependency.selected is True,fighting_dependency
+    assert fighting_dependency.resolved_feature_id=="quest:crystal_war:the_fighting_fourth",fighting_dependency
+    sibling_dependencies=[
+        dependency for dependency in first_quest_dependencies
+        if dependency.subject in {"quest:STEAMED_RAMS","quest:SNAKE_ON_THE_PLAINS"}
+    ]
+    assert all(
+        dependency.status=="UNRESOLVED"
+        and dependency.selected is False
+        for dependency in sibling_dependencies
+    ),sibling_dependencies
+    assert any(
         dependency.source_feature_id=="quest:crystal_war:light_in_the_darkness"
         and dependency.subject=="mission:BACK_TO_THE_BEGINNING"
-        and dependency.status=="UNRESOLVED"
+        and dependency.status=="RESOLVED"
+        and dependency.resolved_feature_id=="mission:wotg:back_to_the_beginning"
         for dependency in closure.dependencies
     ),closure.dependencies
     assert any(
@@ -281,19 +351,52 @@ def main():
         and dependency.resolved_feature_id=="mission:wotg:cait_sith"
         for dependency in closure.dependencies
     ),closure.dependencies
+    back_dependencies=[
+        dependency
+        for dependency in closure.dependencies
+        if dependency.source_feature_id=="mission:wotg:back_to_the_beginning"
+        and dependency.group_id=="helper-feature-prerequisite:xi.wotg.helpers.meetsMission3Reqs"
+    ]
+    assert {dependency.subject for dependency in back_dependencies}=={
+        "quest:CLAWS_OF_THE_GRIFFON",
+        "quest:THE_TIGRESS_STRIKES",
+        "quest:FIRES_OF_DISCONTENT",
+    },back_dependencies
+    back_bastok=next(
+        dependency for dependency in back_dependencies
+        if dependency.subject=="quest:FIRES_OF_DISCONTENT"
+    )
+    assert back_bastok.logic=="ANY",back_bastok
+    assert back_bastok.status=="RESOLVED",back_bastok
+    assert back_bastok.selected is True,back_bastok
+    assert back_bastok.resolved_feature_id=="quest:crystal_war:fires_of_discontent",back_bastok
+    assert all(
+        dependency.selected is False
+        for dependency in back_dependencies
+        if dependency.subject!="quest:FIRES_OF_DISCONTENT"
+    ),back_dependencies
+
+    back_helper_gates=back.metadata.get("catalog_feature_requirement_gates",())
+    assert len(back_helper_gates)==1,back_helper_gates
+    assert back_helper_gates[0]["logic"]=="ANY",back_helper_gates
+
     documented=q3.metadata.get("documented_feature_requirements",())
     assert documented and documented[0]["subject"]=="mission:CAIT_SITH",documented
     assert documented[0]["enforcement"]=="NOT_IMPLEMENTED",documented
     assert closure_summary=={
         "root_feature_id":"mission:wotg:the_will_of_the_world",
-        "feature_count":10,
-        "dependency_count":18,
-        "resolved_dependency_count":8,
-        "unresolved_dependency_count":2,
-        "skipped_alternative_count":2,
+        "feature_count":14,
+        "dependency_count":25,
+        "resolved_dependency_count":13,
+        "unresolved_dependency_count":0,
+        "skipped_alternative_count":6,
         "cycle_count":0,
     },closure_summary
 
+    back_metrics=mission_extraction_metrics(back)
+    q0_metrics=quest_extraction_metrics(q0)
+    q1_metrics=quest_extraction_metrics(q1)
+    q2_metrics=quest_extraction_metrics(q2)
     q3_metrics=quest_extraction_metrics(q3)
     q4_metrics=quest_extraction_metrics(q4)
     q5_metrics=quest_extraction_metrics(q5)
@@ -301,6 +404,10 @@ def main():
     q7_metrics=quest_extraction_metrics(q7)
     q9_metrics=quest_extraction_metrics(q9)
     q10_metrics=quest_extraction_metrics(q10)
+    assert back_metrics["event_chains"]==6,back_metrics
+    assert q0_metrics["unmodeled_source_handler_count"]==0,q0_metrics
+    assert q1_metrics["unmodeled_source_handler_count"]==0,q1_metrics
+    assert q2_metrics["unmodeled_source_handler_count"]==0,q2_metrics
     assert q3_metrics["unmodeled_source_handler_count"]==0,q3_metrics
     assert q4_metrics["unmodeled_source_handler_count"]==0,q4_metrics
     assert q5_metrics["unmodeled_source_handler_count"]==0,q5_metrics
@@ -410,6 +517,138 @@ def main():
         for effect in storm_start.effects
     ),storm_start
 
+    back_maw=next(
+        transition for transition in back.transitions
+        if transition.metadata.get("logical_event_chain")
+        and transition.event
+        and transition.event.zone=="BATALLIA_DOWNS"
+        and transition.event.actor=="Cavernous_Maw"
+        and transition.event.event_id==501
+    )
+    assert any(
+        effect.effect=="COMPLETE" and effect.subject=="mission"
+        for effect in back_maw.effects
+    ),back_maw
+    assert {"mawEvent","completeMission"} <= set(
+        back_maw.metadata.get("helper_calls",())
+    ),back_maw.metadata
+
+    q0_raw=correlate_lsb_quest_handlers(
+        q0_lua,
+        feature_id="quest:crystal_war:the_fighting_fourth:raw_probe",
+    )
+    fighting_raw_replace=[
+        transition for transition in q0_raw.transitions
+        if transition.metadata.get("replace_default") is True
+    ]
+    fighting_chained_replace=[
+        transition for transition in q0.transitions
+        if transition.metadata.get("replace_default") is True
+    ]
+    assert len(fighting_raw_replace)>=4,(
+        "raw replaceDefault handlers missing",
+        [(transition.event.key if transition.event else None,transition.metadata) for transition in q0_raw.transitions],
+    )
+    assert len(fighting_chained_replace)>=4,(
+        "replaceDefault handlers lost after chaining",
+        [(transition.event.key if transition.event else None,transition.metadata) for transition in q0.transitions],
+    )
+
+    fighting_letter_gate=next(
+        transition for transition in q0.transitions
+        if transition.event
+        and transition.event.zone=="THE_ELDIEME_NECROPOLIS_S"
+        and transition.event.actor=="Turbulent_Storm"
+        and transition.event.event_id==8
+        and transition.gate is not None
+    )
+    assert fighting_letter_gate.gate.logic=="ANY",fighting_letter_gate
+    assert {
+        (condition.subject,condition.operator)
+        for condition in fighting_letter_gate.gate.conditions
+    }=={
+        ("key_item:BLUE_RECOMMENDATION_LETTER","HAS"),
+        ("key_item:BATTLE_RATIONS","HAS"),
+    },fighting_letter_gate.gate.conditions
+
+    fighting_quit=next(
+        transition for transition in q0.transitions
+        if transition.event
+        and transition.event.zone=="BASTOK_MARKETS_S"
+        and transition.event.actor=="Adelbrecht"
+        and transition.event.event_id==140
+        and any(
+            effect.subject=="key_item:BLUE_RECOMMENDATION_LETTER"
+            for effect in transition.effects
+        )
+    )
+    fighting_quit_effects={(effect.effect,effect.subject) for effect in fighting_quit.effects}
+    assert ("REMOVE","key_item:BATTLE_RATIONS") in fighting_quit_effects,fighting_quit_effects
+    assert ("GRANT","key_item:BLUE_RECOMMENDATION_LETTER") in fighting_quit_effects,fighting_quit_effects
+    assert {"removeRations","returnLetter","quitQuest"} <= set(
+        fighting_quit.metadata.get("helper_calls",())
+    ),fighting_quit.metadata
+
+    better_entry=next(
+        transition for transition in q1.transitions
+        if transition.trigger=="ZONE_IN"
+        and transition.event
+        and transition.event.zone=="NORTH_GUSTABERG_S"
+        and transition.event.event_id==1
+    )
+    helper_gates=better_entry.metadata.get("section_feature_requirement_gates",())
+    assert len(helper_gates)==1,helper_gates
+    assert helper_gates[0]["logic"]=="ANY",helper_gates
+    assert {
+        condition["subject"]
+        for condition in helper_gates[0]["conditions"]
+    }=={
+        "quest:STEAMED_RAMS",
+        "quest:SNAKE_ON_THE_PLAINS",
+        "quest:THE_FIGHTING_FOURTH",
+    },helper_gates
+
+    better_solitary=next(
+        transition for transition in q1.transitions
+        if transition.event
+        and transition.event.zone=="NORTH_GUSTABERG_S"
+        and transition.event.actor=="Solitary_Ant"
+        and transition.event.event_id==2
+    )
+    assert better_solitary.metadata.get("replace_default") is True,better_solitary.metadata
+
+    fires_lt_paths=[
+        transition for transition in q2.transitions
+        if transition.event
+        and transition.event.zone=="BASTOK_MARKETS_S"
+        and transition.event.actor=="Engelhart"
+        and transition.event.event_id==121
+    ]
+    assert any(
+        transition.gate
+        and any(
+            condition.subject=="quest_var:Prog"
+            and condition.operator=="LT"
+            and condition.value==2
+            for condition in transition.gate.conditions
+        )
+        for transition in fires_lt_paths
+    ),fires_lt_paths
+
+    fires_completed=next(
+        transition for transition in q2.transitions
+        if transition.event
+        and transition.event.zone=="BASTOK_MARKETS_S"
+        and transition.event.actor=="Engelhart"
+        and transition.event.event_id==165
+    )
+    assert fires_completed.metadata.get("replace_default") is True,fires_completed.metadata
+    assert fires_completed.metadata.get("section_eligibility_status")=="MODELED",fires_completed.metadata
+    assert {
+        (row["subject"],row["operator"],row["value"])
+        for row in fires_completed.metadata.get("section_eligibility_conditions",())
+    } >= {("quest_status","EQ","QUEST_COMPLETED")},fires_completed.metadata
+
     solitary_paths=[
         transition for transition in q6.transitions
         if transition.event
@@ -476,8 +715,12 @@ def main():
     print("q5_transitions",len(q5.transitions),"q5_unmodeled",q5_metrics["unmodeled_source_handler_count"])
     print("q4_transitions",len(q4.transitions),"q4_unmodeled",q4_metrics["unmodeled_source_handler_count"])
     print("q3_transitions",len(q3.transitions),"q3_unmodeled",q3_metrics["unmodeled_source_handler_count"])
+    print("q2_transitions",len(q2.transitions),"q2_unmodeled",q2_metrics["unmodeled_source_handler_count"])
+    print("q1_transitions",len(q1.transitions),"q1_unmodeled",q1_metrics["unmodeled_source_handler_count"])
+    print("q0_transitions",len(q0.transitions),"q0_unmodeled",q0_metrics["unmodeled_source_handler_count"])
+    print("back_transitions",len(back.transitions),"back_event_chains",back_metrics["event_chains"])
     print("documented_cait_sith",documented)
-    print("next_gap","resolve Fires of Discontent and Back to the Beginning while preserving Cait Sith as unenforced documented gating")
+    print("next_gap","dependency closure is complete for the selected Bastok path; stress local/helper handler indirection next")
     return 0
 
 

@@ -58,6 +58,9 @@ _SET_MUST_ZONE=re.compile(r"quest:setMustZone\(player\)")
 _GET_VAR_ALIAS=re.compile(
     r"local\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*quest:getVar\(player,\s*'([^']+)'\)"
 )
+_KEY_ITEM_ALIAS=re.compile(
+    r"local\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*player:hasKeyItem\(xi\.keyItem\.([A-Z0-9_]+)\)"
+)
 _ALIAS_COMPARE=re.compile(
     r"\b([A-Za-z_][A-Za-z0-9_]*)\s*(==|~=|<=|>=|<|>)\s*(\d+)"
 )
@@ -102,6 +105,12 @@ _TODO_AFTER_MISSION=re.compile(
     r"--\s*TODO:\s*(.*?)\bafter\s+(?:WOTG\s+)?Mission:\s*([A-Za-z0-9 '\-]+)",
     re.I,
 )
+_HELPER_DEF_START=re.compile(
+    r"^\s*([A-Za-z_][A-Za-z0-9_.]*)\s*=\s*function\(player\)"
+)
+_LOCAL_HELPER_DEF_START=re.compile(
+    r"^\s*local\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*function\(player\)"
+)
 _OP={"==":"EQ","~=":"NE","<":"LT","<=":"LE",">":"GT",">=":"GE"}
 
 
@@ -121,6 +130,44 @@ def _documented_feature_requirements(lua: str) -> tuple[dict,...]:
             "note":match.group(1).strip(),
         })
     return tuple(out)
+
+
+def extract_feature_requirement_helpers(lua: str) -> dict[str,DependencyGate]:
+    """Extract pure helper predicates that represent quest/mission prerequisites."""
+    lines=lua.splitlines()
+    out={}
+    for start,_end,text in _balanced_function_blocks(lua):
+        match=_HELPER_DEF_START.search(lines[start])
+        if not match:
+            continue
+        executable=" ".join(
+            line.strip() for line in _structural_lua_lines(text) if line.strip()
+        )
+        quest_conditions=[
+            StateCondition(f"quest:{symbol}","COMPLETE",True)
+            for symbol in _COMPLETED_QUEST.findall(executable)
+        ]
+        mission_conditions=[
+            StateCondition(f"mission:{symbol}","COMPLETE",True)
+            for _log,symbol in _COMPLETED_MISSION.findall(executable)
+        ]
+        conditions=[]
+        for condition in (*quest_conditions,*mission_conditions):
+            if condition not in conditions:
+                conditions.append(condition)
+        if not conditions:
+            continue
+        has_or=bool(re.search(r"\bor\b",executable))
+        has_and=bool(re.search(r"\band\b",executable))
+        if has_or and has_and:
+            continue
+        helper=match.group(1)
+        out[helper]=DependencyGate(
+            f"helper-feature-prerequisite:{helper}",
+            "ANY" if has_or else "ALL",
+            tuple(conditions),
+        )
+    return out
 
 
 def _literal_quest_section_spans(lua: str) -> tuple[tuple[int,int,str],...]:
@@ -181,13 +228,17 @@ def _section_check_block(section: str) -> str | None:
     return None
 
 
-def _section_analysis(section: str) -> dict:
+def _section_analysis(
+    section: str,
+    helper_feature_gates: dict[str,DependencyGate] | None=None,
+) -> dict:
     check=_section_check_block(section)
     if check is None:
         return {
             "check_present":False,
             "status":"NO_CHECK",
             "conditions":(),
+            "feature_requirement_gates":(),
             "unresolved_reasons":(),
         }
     executable=" ".join(
@@ -198,6 +249,7 @@ def _section_analysis(section: str) -> dict:
             "check_present":True,
             "status":"UNRESOLVED",
             "conditions":(),
+            "feature_requirement_gates":(),
             "unresolved_reasons":("disjunction",),
         }
 
@@ -232,28 +284,39 @@ def _section_analysis(section: str) -> dict:
     for condition in out:
         if condition not in dedup:
             dedup.append(condition)
+
+    helper_gates=[]
+    for helper,gate in (helper_feature_gates or {}).items():
+        if re.search(rf"(?<![A-Za-z0-9_.]){re.escape(helper)}\(\s*player\s*\)",executable):
+            helper_gates.append(gate)
+
     return {
         "check_present":True,
-        "status":"MODELED" if dedup else "NO_STATUS_REQUIREMENTS",
+        "status":"MODELED" if (dedup or helper_gates) else "NO_STATUS_REQUIREMENTS",
         "conditions":tuple(dedup),
+        "feature_requirement_gates":tuple(helper_gates),
         "unresolved_reasons":(),
     }
 
 
-def _section_contexts(lua: str):
+def _section_contexts(
+    lua: str,
+    helper_feature_gates: dict[str,DependencyGate] | None=None,
+):
     rows=[]
     for index,(start,end,text) in enumerate(_literal_quest_section_spans(lua),1):
-        rows.append((start,end,index,_section_analysis(text)))
+        rows.append((start,end,index,_section_analysis(text,helper_feature_gates)))
 
     def context(line_no: int):
         matches=[row for row in rows if row[0]<=line_no<=row[1]]
         if not matches:
-            return None,None,(),None,(),False
+            return None,None,(),(),None,(),False
         start,end,index,analysis=max(matches,key=lambda row:row[0])
         return (
             index,
             (start+1,end+1),
             analysis["conditions"],
+            analysis["feature_requirement_gates"],
             analysis["status"],
             analysis["unresolved_reasons"],
             analysis["check_present"],
@@ -262,7 +325,12 @@ def _section_contexts(lua: str):
     return tuple(rows),context
 
 
-def _handler_conditions(text: str) -> tuple[StateCondition,...]:
+def _handler_conditions(
+    text: str,
+    *,
+    quest_var_aliases: dict[str,str] | None=None,
+    key_item_aliases: dict[str,str] | None=None,
+) -> tuple[StateCondition,...]:
     out=[]
     for match in _GET_VAR_COMPARE.finditer(text):
         out.append(StateCondition(
@@ -276,7 +344,10 @@ def _handler_conditions(text: str) -> tuple[StateCondition,...]:
             _OP[match.group(2)],
             match.group(3).strip(),
         ))
-    aliases={match.group(1):match.group(2) for match in _GET_VAR_ALIAS.finditer(text)}
+    aliases={
+        **(quest_var_aliases or {}),
+        **{match.group(1):match.group(2) for match in _GET_VAR_ALIAS.finditer(text)},
+    }
     for match in _ALIAS_COMPARE.finditer(text):
         channel=aliases.get(match.group(1))
         if channel:
@@ -297,6 +368,11 @@ def _handler_conditions(text: str) -> tuple[StateCondition,...]:
             out.append(StateCondition(f"key_item:{symbol}","HAS",True))
     for match in _PREV_ZONE.finditer(text):
         out.append(StateCondition("previous_zone",_OP[match.group(1)],match.group(2)))
+    for alias,symbol in (key_item_aliases or {}).items():
+        if re.search(rf"\bnot\s+{re.escape(alias)}\b",text):
+            out.append(StateCondition(f"key_item:{symbol}","LACKS",True))
+        elif re.search(rf"\b{re.escape(alias)}\b",text):
+            out.append(StateCondition(f"key_item:{symbol}","HAS",True))
     trade_calls=list(_TRADE_CALL.finditer(text))
     if trade_calls:
         for match in trade_calls:
@@ -369,6 +445,18 @@ def _quest_effects(text: str) -> tuple[TransitionEffect,...]:
     return tuple(dedup)
 
 
+def _quest_local_helpers(lua: str) -> dict[str,tuple[TransitionEffect,...]]:
+    """Extract local player helper effects for safe one-level call-site inlining."""
+    lines=lua.splitlines()
+    out={}
+    for start,_end,text in _balanced_function_blocks(lua):
+        match=_LOCAL_HELPER_DEF_START.search(lines[start])
+        if not match:
+            continue
+        out[match.group(1)]=_quest_effects(text)
+    return out
+
+
 def _channels(lua: str) -> tuple[StateChannel,...]:
     values={}
     for match in _SET_VAR.finditer(lua):
@@ -398,12 +486,14 @@ def correlate_lsb_quest_handlers(
     lua: str,
     *,
     feature_id: str="quest:unknown",
+    helper_feature_gates: dict[str,DependencyGate] | None=None,
 ) -> MissionStateMachine:
     """Correlate literal LSB Quest DSL handlers into the generic state-machine model."""
     identity=_QUEST_ID.search(lua)
     reward=_QUEST_REWARD_ITEM.search(lua)
     lines,_zone_spans,_actor_spans,context=_scoped_contexts(lua)
-    _section_rows,section_context=_section_contexts(lua)
+    _section_rows,section_context=_section_contexts(lua,helper_feature_gates)
+    local_helpers=_quest_local_helpers(lua)
 
     transitions=[]
     states={"source:any":MissionState("source:any","Source state")}
@@ -420,6 +510,7 @@ def correlate_lsb_quest_handlers(
             section_index,
             section_source_lines,
             section_conditions,
+            section_feature_requirement_gates,
             section_status,
             section_unresolved_reasons,
             section_check_present,
@@ -445,15 +536,40 @@ def correlate_lsb_quest_handlers(
 
         source_handler_count+=1
         transition_count_before=len(transitions)
+        quest_var_aliases={
+            match.group(1):match.group(2)
+            for match in _GET_VAR_ALIAS.finditer(text)
+        }
+        key_item_aliases={
+            match.group(1):match.group(2)
+            for match in _KEY_ITEM_ALIAS.finditer(text)
+        }
         paths=_handler_paths(text,start_line=start)
         for path_index,path in enumerate(paths,1):
             unresolved_nested=bool(re.search(r"^\s*(?:if|elseif|else)\b",path.body,re.M))
             guard_text="\n".join(path.guard_texts)
             if unresolved_nested:
                 guard_text+="\n"+path.body
-            conditions=_handler_conditions(guard_text)
+            conditions=_handler_conditions(
+                guard_text,
+                quest_var_aliases=quest_var_aliases,
+                key_item_aliases=key_item_aliases,
+            )
             effect_text=path.body+"\n"+guard_text
-            effects=_quest_effects(effect_text)
+            effects=list(_quest_effects(effect_text))
+            executable_body="\n".join(_code(line) for line in path.body.splitlines())
+            helper_calls=tuple(sorted(
+                helper
+                for helper in local_helpers
+                if re.search(rf"\b{re.escape(helper)}\s*\(\s*player\s*\)",executable_body)
+            ))
+            inlined_helper_effects=[]
+            for helper in helper_calls:
+                for effect in local_helpers[helper]:
+                    if effect not in effects:
+                        effects.append(effect)
+                        inlined_helper_effects.append(effect)
+            effects=tuple(effects)
             event=handler_event
             returned=_QUEST_EVENT.search(path.body)
             if returned and event is None:
@@ -471,21 +587,30 @@ def correlate_lsb_quest_handlers(
 
             serial+=1
             guard_has_or=bool(re.search(r"\bor\b",guard_text))
-            trade_only_disjunction=bool(
+            simple_resource_disjunction=bool(
                 guard_has_or
+                and not re.search(r"\band\b",guard_text)
                 and conditions
+                and all(
+                    condition.subject=="trade"
+                    or condition.subject.startswith("key_item:")
+                    for condition in conditions
+                )
+            )
+            trade_only_disjunction=bool(
+                simple_resource_disjunction
                 and all(condition.subject=="trade" for condition in conditions)
             )
             guard_complete=(
                 path.guard_complete
                 and not unresolved_nested
-                and (not guard_has_or or trade_only_disjunction)
+                and (not guard_has_or or simple_resource_disjunction)
             )
             gate=DependencyGate(
                 f"quest-source-gate:{serial}",
-                "ANY" if trade_only_disjunction else "ALL",
-                conditions if (not guard_has_or or trade_only_disjunction) else (),
-            ) if conditions and (not guard_has_or or trade_only_disjunction) else None
+                "ANY" if simple_resource_disjunction else "ALL",
+                conditions if (not guard_has_or or simple_resource_disjunction) else (),
+            ) if conditions and (not guard_has_or or simple_resource_disjunction) else None
             gap_note=_implementation_gap_note(lines,start)
             transitions.append(MissionTransition(
                 f"quest-source-transition:{serial}",
@@ -513,6 +638,21 @@ def correlate_lsb_quest_handlers(
                         }
                         for condition in section_conditions
                     ),
+                    "section_feature_requirement_gates":tuple(
+                        {
+                            "gate_id":gate.gate_id,
+                            "logic":gate.logic,
+                            "conditions":tuple(
+                                {
+                                    "subject":condition.subject,
+                                    "operator":condition.operator,
+                                    "value":condition.value,
+                                }
+                                for condition in gate.conditions
+                            ),
+                        }
+                        for gate in section_feature_requirement_gates
+                    ),
                     "section_eligibility_status":section_status,
                     "section_eligibility_unresolved_reasons":tuple(section_unresolved_reasons),
                     "section_check_present":section_check_present,
@@ -525,6 +665,16 @@ def correlate_lsb_quest_handlers(
                     "unexpanded_nested_branch":unresolved_nested,
                     "guard_disjunction":guard_has_or,
                     "trade_disjunction_modeled":trade_only_disjunction,
+                    "resource_disjunction_modeled":simple_resource_disjunction,
+                    "helper_calls":helper_calls,
+                    "inlined_helper_effects":tuple(
+                        {
+                            "effect":effect.effect,
+                            "subject":effect.subject,
+                            "value":effect.value,
+                        }
+                        for effect in inlined_helper_effects
+                    ),
                     "implementation_gap_note":gap_note,
                     "started_event_id":(
                         int(started.group(1))
@@ -548,6 +698,7 @@ def correlate_lsb_quest_handlers(
             section_index,
             section_source_lines,
             section_conditions,
+            section_feature_requirement_gates,
             section_status,
             section_unresolved_reasons,
             section_check_present,
@@ -578,11 +729,26 @@ def correlate_lsb_quest_handlers(
                     }
                     for condition in section_conditions
                 ),
+                "section_feature_requirement_gates":tuple(
+                    {
+                        "gate_id":gate.gate_id,
+                        "logic":gate.logic,
+                        "conditions":tuple(
+                            {
+                                "subject":condition.subject,
+                                "operator":condition.operator,
+                                "value":condition.value,
+                            }
+                            for condition in gate.conditions
+                        ),
+                    }
+                    for gate in section_feature_requirement_gates
+                ),
                 "section_eligibility_status":section_status,
                 "section_eligibility_unresolved_reasons":tuple(section_unresolved_reasons),
                 "section_check_present":section_check_present,
-                "replace_default":".replaceDefault()" in (match.group(4) or ""),
-                "important_event":".importantEvent()" in (match.group(4) or ""),
+                "replace_default":any(token in (match.group(4) or "") for token in (":replaceDefault()",".replaceDefault()")),
+                "important_event":any(token in (match.group(4) or "") for token in (":importantEvent()",".importantEvent()")),
             },
         ))
 
