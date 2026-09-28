@@ -4,8 +4,11 @@ These are contracts/capabilities, not claims that the analyzers are complete.
 """
 from __future__ import annotations
 
+from typing import Any, Mapping
+
 from .base import ContentArchetype, DomainPlugin, DomainPluginSpec, PluginContext, PluginFinding
 from .registry import DomainPluginRegistry
+from .multizone_progression import MultiZoneProgression, analyze_progression
 
 
 ARCHETYPES=(
@@ -165,12 +168,110 @@ class QuestMissionPlugin(MetadataPlugin):
 
 
 class MultiZoneProgressionPlugin(MetadataPlugin):
+    def identify(self, context: PluginContext) -> bool:
+        return isinstance(context.metadata.get("progression_model"),MultiZoneProgression) or super().identify(context)
+
+    def discover_dependencies(self, context: PluginContext) -> tuple[PluginFinding,...]:
+        model=context.metadata.get("progression_model")
+        if not isinstance(model,MultiZoneProgression):
+            return ()
+        analysis=analyze_progression(model)
+        evidence_ids=tuple(dict.fromkeys(
+            [
+                evidence_id
+                for objective in model.objectives
+                for evidence_id in objective.evidence_ids
+            ]
+            + [
+                evidence_id
+                for stage in model.stages
+                for evidence_id in (
+                    *stage.evidence_ids,
+                    *(stage.prerequisite_gate.evidence_ids if stage.prerequisite_gate else ()),
+                )
+            ]
+            + list(model.completion_gate.evidence_ids if model.completion_gate else ())
+        ))
+        stages={stage.stage_id:stage for stage in model.stages}
+        findings=[]
+        findings.append(PluginFinding(
+            plugin_id=self.spec.plugin_id,
+            subject_id=context.feature_id,
+            finding_type="PROGRESSION_STRUCTURE",
+            status=analysis.status,
+            message=(
+                f"Multi-zone progression structure: {len(analysis.reachable_stage_ids)}/"
+                f"{len(model.stages)} stages structurally reachable across {len(analysis.zone_ids)} zones."
+            ),
+            evidence_ids=evidence_ids,
+            metadata={
+                "progression_id":model.progression_id,
+                "reachable_stage_ids":list(analysis.reachable_stage_ids),
+                "unreachable_stage_ids":list(analysis.unreachable_stage_ids),
+                "cycle_stage_ids":list(analysis.cycle_stage_ids),
+                "zone_ids":list(analysis.zone_ids),
+                "branch_stage_ids":list(analysis.branch_stage_ids),
+                "fanout_stage_ids":list(analysis.fanout_stage_ids),
+                "convergence_stage_ids":list(analysis.convergence_stage_ids),
+                "completion_gate_satisfied_structurally":analysis.completion_gate_satisfied_structurally,
+                "validation_errors":list(analysis.validation_errors),
+            },
+        ))
+        for edge in analysis.cross_zone_dependencies:
+            target_stage=stages[edge.target_stage_id]
+            target_evidence=tuple(dict.fromkeys(
+                (*target_stage.evidence_ids,*(
+                    target_stage.prerequisite_gate.evidence_ids
+                    if target_stage.prerequisite_gate else ()
+                ))
+            ))
+            findings.append(PluginFinding(
+                plugin_id=self.spec.plugin_id,
+                subject_id=edge.target_stage_id,
+                finding_type="CROSS_ZONE_DEPENDENCY",
+                status="DISCOVERED",
+                message=f"{edge.target_stage_id} depends on {edge.source_stage_id} across zone context.",
+                evidence_ids=target_evidence,
+                metadata={
+                    "source_stage_id":edge.source_stage_id,
+                    "target_stage_id":edge.target_stage_id,
+                    "source_zones":list(edge.source_zones),
+                    "target_zones":list(edge.target_zones),
+                },
+            ))
+        return tuple(findings)
+
+    def report(self, context: PluginContext) -> Mapping[str,Any]:
+        base=dict(super().report(context))
+        model=context.metadata.get("progression_model")
+        if not isinstance(model,MultiZoneProgression):
+            return base
+        analysis=analyze_progression(model)
+        base["progression"]={
+            "progression_id":model.progression_id,
+            "status":analysis.status,
+            "zones":list(analysis.zone_ids),
+            "reachable_stage_ids":list(analysis.reachable_stage_ids),
+            "unreachable_stage_ids":list(analysis.unreachable_stage_ids),
+            "cycle_stage_ids":list(analysis.cycle_stage_ids),
+            "branch_stage_ids":list(analysis.branch_stage_ids),
+            "fanout_stage_ids":list(analysis.fanout_stage_ids),
+            "convergence_stage_ids":list(analysis.convergence_stage_ids),
+            "terminal_stage_ids":list(analysis.terminal_stage_ids),
+            "objective_trigger_counts":dict(analysis.objective_trigger_counts),
+            "required_objective_count":analysis.required_objective_count,
+            "optional_objective_count":analysis.optional_objective_count,
+            "cross_zone_dependency_count":len(analysis.cross_zone_dependencies),
+            "completion_gate_satisfied_structurally":analysis.completion_gate_satisfied_structurally,
+        }
+        return base
+
     spec=DomainPluginSpec(
         plugin_id="framework.multizone_progression",
         name="Multi-zone Progression / Hunt",
-        version="0.1",
+        version="0.2",
         archetypes=("multizone_progression",),
-        capabilities=("zone_coverage","npc_gates","kill_conditions","state_machine"),
+        capabilities=("zone_coverage","npc_gates","kill_conditions","state_machine","branching","convergence"),
     )
 
 

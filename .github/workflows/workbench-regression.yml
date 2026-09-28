@@ -55,6 +55,7 @@ jobs:
           python test_fixtures/test_feature_surface_graph.py
           python test_fixtures/test_feature_surface_validation.py
           python test_fixtures/test_domain_plugin_registry.py
+          python test_fixtures/test_multizone_progression_framework.py
           python test_fixtures/test_domain_plugin_migration_actions.py
           python test_fixtures/test_battlefield_dsp_membership.py
           python test_fixtures/test_battlefield_lsb_policy.py
@@ -67,7 +68,7 @@ jobs:
           python test_fixtures/test_migration_backend_probe_plan.py
           python test_fixtures/test_dependency_package_plan.py
           python test_fixtures/test_package_scope_review.py
-          python test_fixtures/test_medusa_dependency_truth.py
+          python test_fixtures/test_dependency_truth_cross_zone_entity.py
           python test_fixtures/test_lua_dependency_discovery.py
           python test_fixtures/test_lua_text_title_dependencies.py
           python test_fixtures/test_zone_yaml_dependency_closure.py
@@ -78,7 +79,7 @@ jobs:
           python test_fixtures/test_event_actor_identity_resolution.py
           python test_fixtures/test_client_identity_extract.py
           python test_fixtures/test_capture_identity_bridge.py
-          python test_fixtures/test_coiler_dependency_truth.py
+          python test_fixtures/test_dependency_truth_attachment_runtime.py
           python test_fixtures/test_automaton_acquisition_truth.py
           python test_fixtures/test_crafting_closure.py
           python test_fixtures/test_wotg25_branching_mission_truth.py
