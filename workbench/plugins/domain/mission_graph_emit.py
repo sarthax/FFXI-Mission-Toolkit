@@ -212,7 +212,7 @@ def project_mission_graph(
             event=transition.event
             event_node=_event_node(source_family,event.zone,event.actor,event.event_id)
             entities[event_node]=Entity(event_node,"MISSION_EVENT",event.key,{
-                "feature_id":machine.feature_id,"zone":event.zone,"actor":event.actor,"event_id":event.event_id,
+                "source_family":source_family,"zone":event.zone,"actor":event.actor,"event_id":event.event_id,
             })
             edges.append(_edge(
                 f"mission-triggered-by:{_token(machine.feature_id,transition.transition_id,event.key)}",
@@ -234,8 +234,11 @@ def project_mission_graph(
         for index,condition in enumerate(conditions):
             raw_subject=condition.subject
             subject=_subject_node(machine.feature_id,raw_subject)
+            scoped=subject!=raw_subject
             entities.setdefault(subject,Entity(subject,_subject_type(raw_subject),raw_subject,{
-                "source_family":source_family,"feature_id":machine.feature_id,"raw_subject":raw_subject,
+                "scope":"feature" if scoped else "shared",
+                **({"feature_id":machine.feature_id} if scoped else {}),
+                "raw_subject":raw_subject,
             }))
             condition_notes=f"{condition.operator} {condition.value!r}"
             if condition.evidence_ids:
@@ -250,8 +253,11 @@ def project_mission_graph(
         for index,effect in enumerate(transition.effects):
             raw_subject=effect.subject
             subject=_subject_node(machine.feature_id,raw_subject)
+            scoped=subject!=raw_subject
             entities.setdefault(subject,Entity(subject,_subject_type(raw_subject),raw_subject,{
-                "source_family":source_family,"feature_id":machine.feature_id,"raw_subject":raw_subject,
+                "scope":"feature" if scoped else "shared",
+                **({"feature_id":machine.feature_id} if scoped else {}),
+                "raw_subject":raw_subject,
             }))
             effect_notes=f"{effect.effect} {effect.value!r}"
             if effect.evidence_ids:
