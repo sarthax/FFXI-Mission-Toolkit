@@ -10,6 +10,7 @@ python-multipart
 pillow
 pyyaml
 mwparserfromhell
+pytesseract
 # luaparser>=4.0 (xi-events-py's own real pin, see xi-events-py/pyproject.toml) pulls in
 # antlr4-python3-runtime==4.13.2 exactly -- confirmed 2026-09-08 this conflicts permanently with
 # at least one other real package (omegaconf, which needs antlr4-python3-runtime==4.9.*) on a
