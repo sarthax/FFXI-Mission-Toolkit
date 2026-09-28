@@ -99,6 +99,11 @@ _FUNC_START=re.compile(r"(onTrigger|onTrade|onMobDeath|onZoneIn)\s*=\s*function"
 _EVENT_FINISH_KEY=re.compile(r"\[(\d+)\]\s*=\s*function\(player,\s*csid")
 _STATUS_EQ=re.compile(r"player:getMissionStatus\([^\n]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)\s*==\s*(\d+)")
 _STATUS_NE=re.compile(r"player:getMissionStatus\([^\n]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)\s*~=\s*(\d+)")
+_STATUS_COMPARE=re.compile(
+    r"player:getMissionStatus\([^\n]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)"
+    r"\s*(==|~=|<=|>=|<|>)\s*(\d+)"
+)
+_STATUS_COMPARE_OPERATOR={"==":"EQ","~=":"NE","<":"LT","<=":"LE",">":"GT",">=":"GE"}
 _XPOS_EQ=re.compile(r"player:getXPos\(\)\s*==\s*(-?[0-9.]+)")
 _POP_QM=re.compile(r"npcUtil\.popFromQM\([^\n]*?,\s*([^,\n]+),")
 _VAR_EQ=re.compile(r"mission:getVar\(player,\s*'([^']+)'\)\s*==\s*(\d+)")
@@ -456,6 +461,96 @@ def _table_assignment_spans(
     return tuple(spans)
 
 
+def _literal_mission_section_spans(lua: str) -> tuple[tuple[int,int,str],...]:
+    """Return zero-based line spans and text for literal top-level mission.sections entries."""
+    lines=lua.splitlines()
+    structural=_structural_lua_lines(lua)
+    assignment=None
+    for i,line in enumerate(structural):
+        if re.search(r"\bmission\.sections\s*=",line):
+            assignment=i
+            break
+    if assignment is None:
+        return ()
+
+    outer_start=None
+    for i in range(assignment,len(lines)):
+        if "{" in _structure_code(lines[i]):
+            outer_start=i
+            break
+        if i>assignment and _code(lines[i]).strip():
+            return ()
+    if outer_start is None:
+        return ()
+
+    depth=0
+    outer_open=False
+    section_start=None
+    sections=[]
+    for i in range(outer_start,len(lines)):
+        code=_structure_code(lines[i])
+        opens=code.count("{")
+        closes=code.count("}")
+        before=depth
+        if not outer_open:
+            if not opens:
+                continue
+            outer_open=True
+        elif before==1 and section_start is None and opens:
+            section_start=i
+
+        depth+=opens-closes
+        if section_start is not None and depth==1:
+            sections.append((section_start,i,"\n".join(lines[section_start:i+1])))
+            section_start=None
+        if outer_open and depth<=0:
+            break
+
+    if depth!=0 or section_start is not None:
+        return ()
+    return tuple(sections)
+
+
+def _section_check_status_conditions(section: str) -> tuple[StateCondition,...]:
+    """Extract literal mission-status conjuncts from one section check.
+
+    OR expressions are deliberately unresolved because a flat list would manufacture
+    conjunction semantics. Other unmodeled check terms remain outside this fragment.
+    """
+    check=_section_check_block(section)
+    if check is None:
+        return ()
+    executable="\n".join(_structural_lua_lines(check))
+    if re.search(r"\bor\b",executable):
+        return ()
+    out=[]
+    for match in _STATUS_COMPARE.finditer(check):
+        condition=StateCondition(
+            f"mission_status:{match.group(1)}",
+            _STATUS_COMPARE_OPERATOR[match.group(2)],
+            int(match.group(3)),
+        )
+        if condition not in out:
+            out.append(condition)
+    return tuple(out)
+
+
+def _section_contexts(lua: str):
+    spans=_literal_mission_section_spans(lua)
+    rows=[]
+    for index,(start,end,text) in enumerate(spans,1):
+        rows.append((start,end,index,_section_check_status_conditions(text)))
+
+    def context(line_no: int):
+        matches=[row for row in rows if row[0]<=line_no<=row[1]]
+        if not matches:
+            return None,None,()
+        start,end,index,conditions=max(matches,key=lambda row:row[0])
+        return index,(start+1,end+1),conditions
+
+    return tuple(rows),context
+
+
 def _scoped_contexts(lua: str):
     lines=lua.splitlines()
     zone_spans=_table_assignment_spans(lines,_ZONE)
@@ -479,6 +574,7 @@ def _scoped_contexts(lua: str):
 def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> MissionStateMachine:
     """Correlate literal Mission DSL handler blocks into conservative transitions."""
     lines,zone_spans,actor_spans,context=_scoped_contexts(lua)
+    section_rows,section_context=_section_contexts(lua)
 
     transitions=[]
     states={"source:any":MissionState("source:any","Source state")}
@@ -499,6 +595,7 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
         trigger=None; handler_event=None
         ef=_EVENT_FINISH_KEY.search(first)
         zone,actor=context(start)
+        section_index,section_source_lines,section_conditions=section_context(start)
         if ef:
             trigger="EVENT_FINISH"
             handler_event=EventIdentity(zone or "UNKNOWN",int(ef.group(1)),actor)
@@ -609,6 +706,19 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                 metadata={
                     "zone":zone,"actor":actor,"source_lines":(start+1,end+1),"literal_correlation":True,
                     "context_basis":"table_scope",
+                    "section_index":section_index,
+                    "section_source_lines":section_source_lines,
+                    "section_eligibility_conditions":tuple(
+                        {
+                            "subject":condition.subject,
+                            "operator":condition.operator,
+                            "value":condition.value,
+                        }
+                        for condition in section_conditions
+                    ),
+                    "section_eligibility_basis":(
+                        "literal_section_check_status_conjuncts" if section_conditions else None
+                    ),
                     "priority":(int(pm.group(1)) if (pm:=re.search(r"setPriority\((\d+)\)",text)) else None),
                     "important_event":".importantEvent()" in text,
                     "replace_default":".replaceDefault()" in text,
@@ -636,6 +746,7 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
         if not dm:
             continue
         zone,_=context(line_no)
+        section_index,section_source_lines,section_conditions=section_context(line_no)
         actor=dm.group(1); event_id=int(dm.group(3)); suffix=dm.group(4) or ""
         source_handler_count+=1
         modeled_source_handler_count+=1
@@ -646,6 +757,19 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
             metadata={
                 "zone":zone,"actor":actor,"source_lines":(line_no+1,line_no+1),
                 "literal_correlation":True,"declarative_handler":True,
+                "section_index":section_index,
+                "section_source_lines":section_source_lines,
+                "section_eligibility_conditions":tuple(
+                    {
+                        "subject":condition.subject,
+                        "operator":condition.operator,
+                        "value":condition.value,
+                    }
+                    for condition in section_conditions
+                ),
+                "section_eligibility_basis":(
+                    "literal_section_check_status_conjuncts" if section_conditions else None
+                ),
                 "replace_default":".replaceDefault()" in suffix,
                 "important_event":".importantEvent()" in suffix,
             },
@@ -705,6 +829,14 @@ def mission_extraction_metrics(machine: MissionStateMachine) -> dict:
         "incomplete_branch_transition_count":len(incomplete_rows),
         "channel_count":len(machine.channels),
         "completion_gate_condition_count":len(machine.completion_gate.conditions) if machine.completion_gate else 0,
+        "section_scoped_transition_count":sum(
+            1 for transition in machine.transitions
+            if transition.metadata.get("section_index") is not None
+        ),
+        "section_eligibility_transition_count":sum(
+            1 for transition in machine.transitions
+            if transition.metadata.get("section_eligibility_conditions")
+        ),
         "guard_operator_counts":dict(sorted(guard_counts.items())),
         "effect_kind_counts":dict(sorted(effect_counts.items())),
         "helper_call_counts":dict(sorted(helper_calls.items())),
@@ -867,58 +999,8 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
 
 
 def _literal_mission_section_bodies(lua: str) -> tuple[str,...]:
-    """Return top-level literal table entries from mission.sections.
-
-    This intentionally recognizes only the ordinary literal table form used by LSB
-    mission scripts. Dynamic section construction is left unresolved rather than
-    flattening unrelated source into one synthetic scope.
-    """
-    lines=lua.splitlines()
-    structural=_structural_lua_lines(lua)
-    assignment=None
-    for i,line in enumerate(structural):
-        if re.search(r"\bmission\.sections\s*=",line):
-            assignment=i
-            break
-    if assignment is None:
-        return ()
-
-    outer_start=None
-    for i in range(assignment,len(lines)):
-        if "{" in _structure_code(lines[i]):
-            outer_start=i
-            break
-        if i>assignment and _code(lines[i]).strip():
-            return ()
-    if outer_start is None:
-        return ()
-
-    depth=0
-    outer_open=False
-    section_start=None
-    sections=[]
-    for i in range(outer_start,len(lines)):
-        code=_structure_code(lines[i])
-        opens=code.count("{")
-        closes=code.count("}")
-        before=depth
-        if not outer_open:
-            if not opens:
-                continue
-            outer_open=True
-        elif before==1 and section_start is None and opens:
-            section_start=i
-
-        depth+=opens-closes
-        if section_start is not None and depth==1:
-            sections.append("\n".join(lines[section_start:i+1]))
-            section_start=None
-        if outer_open and depth<=0:
-            break
-
-    if depth!=0 or section_start is not None:
-        return ()
-    return tuple(sections)
+    """Return literal top-level mission.sections entry bodies."""
+    return tuple(text for _start,_end,text in _literal_mission_section_spans(lua))
 
 
 def _section_check_block(section: str) -> str | None:
