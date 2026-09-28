@@ -147,6 +147,7 @@ jobs:
           python test_fixtures/test_capture_legacy_row_provenance.py
           python test_fixtures/test_capture_feature_trace_source_drilldown.py
           python test_fixtures/test_capture_raw_eventview_graph.py
+          python test_fixtures/test_capture_packet_correlation.py
           python test_fixtures/test_capture_spatial_viewer.py
           python test_fixtures/test_capture_content_fingerprint.py
           python test_fixtures/test_capture_event_packet_graph.py
