@@ -2164,7 +2164,8 @@ CAPTURE_CHILD_TABLES = [
     "capture_npc_entries", "capture_npc_history", "capture_npc_path", "capture_actions",
     "capture_hp_events", "capture_events", "capture_ki_events", "capture_eventview",
     "capture_level_range", "capture_attack_delay", "capture_pc_path", "capture_source_files",
-    "capture_source_manifest", "capture_ingest_lineage",
+    "capture_source_manifest", "capture_source_artifacts", "capture_content_manifest",
+    "capture_ingest_lineage",
     "capture_raw_packets", "capture_video_observations", "capture_tags", "capture_caplog_chat",
     "capture_alignment_anchors", "capture_key_evidence",
 ]
