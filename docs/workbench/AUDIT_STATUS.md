@@ -2638,3 +2638,16 @@ Exact row provenance now covers the remaining recognized legacy normalized captu
 - Safe rebuild now recognizes NPCLogger Lua, NPC/PC PathLog, Widescan, and AttackDelay. Where two sources truly overlap the same normalized current-state row, rebuild remains conservatively unavailable rather than guessing ownership.
 
 With this milestone, every currently registered normalized capture parser has an exact provenance strategy appropriate to its physical source format.
+
+
+## 2026-09-28 — Feature Trace exact capture-source drill-down
+
+The completed capture locator foundation is now exposed directly through runtime evidence navigation.
+
+- Feature Trace bounded runtime observations resolve their normalized capture table/primary key to `capture_row_locators`.
+- Newly built runtime graph edges persist `capture_id`, normalized `capture_table`, and `capture_row_key` explicitly for capture events/actions.
+- Existing graphs remain compatible: capture-event/action evidence locations are parsed as a conservative fallback, so source drill-down does not require an immediate graph rebuild.
+- Runtime drill-down rows now display the exact source filename and physical line/block or SQLite row identity.
+- A dedicated read-only source-evidence route verifies the current source SHA-256 before showing bytes. Text/CSV evidence displays only the recorded byte/line span; SQLite evidence queries only the recorded source table/rowid.
+- If the original source is unavailable or its bytes changed, the stored locator remains visible but current bytes are not presented as the original evidence.
+- This is presentation/navigation only; it does not promote runtime observations into server truth.
