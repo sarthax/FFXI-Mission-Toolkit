@@ -47,6 +47,7 @@ Usage:
     py -3 build_capture_index.py show <capture_id>
 """
 import argparse
+import csv
 import io
 import json
 import re
@@ -180,6 +181,28 @@ def init_db(con: sqlite3.Connection):
             capture_id INTEGER, seq INTEGER, ts TEXT, direction TEXT, opcode TEXT, raw_hex TEXT,
             PRIMARY KEY (capture_id, seq)
         );
+        CREATE TABLE IF NOT EXISTS capture_structured_records (
+            capture_id INTEGER NOT NULL,
+            source_file TEXT NOT NULL,
+            family TEXT NOT NULL,
+            record_key TEXT NOT NULL,
+            record_type TEXT,
+            ts TEXT,
+            zone TEXT,
+            entity_id INTEGER,
+            entity_name TEXT,
+            item_id INTEGER,
+            item_name TEXT,
+            price INTEGER,
+            payload_json TEXT NOT NULL,
+            PRIMARY KEY (capture_id, source_file, family, record_key)
+        );
+        CREATE INDEX IF NOT EXISTS idx_capture_structured_family
+            ON capture_structured_records(capture_id, family);
+        CREATE INDEX IF NOT EXISTS idx_capture_structured_entity
+            ON capture_structured_records(entity_id);
+        CREATE INDEX IF NOT EXISTS idx_capture_structured_item
+            ON capture_structured_records(item_id);
         CREATE TABLE IF NOT EXISTS capture_video_observations (
             capture_id INTEGER,
             observation_id TEXT,
@@ -478,6 +501,299 @@ class SingleFileSource:
         pass
 
 
+
+AUX_STRUCTURED_FORMATS = {
+    "missiontrack", "shopstock_buy_db", "shopstock_sell_db", "guildstock_db",
+    "weathertrack_db", "poitrack_db", "spawntrack_csv", "checkparam_csv",
+    "crafttrack_csv", "conquesttrack_csv", "pricelog_simple", "pricelog_lua",
+}
+
+
+def _safe_int(value):
+    try:
+        if value is None or value == "":
+            return None
+        return int(float(value))
+    except (TypeError, ValueError):
+        return None
+
+
+def _structured_insert(
+    con, capture_id: int, source_file: str, family: str, record_key: str, payload: dict,
+    *, record_type=None, ts=None, zone=None, entity_id=None, entity_name=None,
+    item_id=None, item_name=None, price=None,
+):
+    con.execute(
+        """INSERT OR REPLACE INTO capture_structured_records
+           (capture_id,source_file,family,record_key,record_type,ts,zone,entity_id,entity_name,
+            item_id,item_name,price,payload_json)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (
+            capture_id, source_file, family, str(record_key), record_type,
+            None if ts is None else str(ts), zone, _safe_int(entity_id), entity_name,
+            _safe_int(item_id), item_name, _safe_int(price),
+            json.dumps(payload, sort_keys=True, ensure_ascii=False, default=str),
+        ),
+    )
+
+
+def _ingest_structured_sqlite(con, capture_id: int, src: Source, relname: str, family: str) -> int:
+    source_bytes = src.read_bytes(relname)
+    source_sha256 = capture_integrity.sha256_bytes(source_bytes)
+    con.execute(
+        "DELETE FROM capture_row_locators WHERE capture_id=? AND filename=? "
+        "AND target_table='capture_structured_records'",
+        (capture_id, relname),
+    )
+    sub, tmp_path = src.open_sqlite(relname)
+    try:
+        sub.row_factory = sqlite3.Row
+        tables = {r[0] for r in sub.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        if "entries" not in tables:
+            return 0
+        rows = sub.execute("SELECT rowid AS __rowid__, * FROM entries ORDER BY rowid").fetchall()
+        n = 0
+        for row in rows:
+            payload = dict(row)
+            source_rowid = payload.pop("__rowid__", None)
+            source_id = payload.get("id")
+            record_key = str(source_id if source_id is not None else source_rowid)
+            subtype = None
+            if family == "shopstock_buy_db":
+                subtype = "NPC_BUY"
+            elif family == "shopstock_sell_db":
+                subtype = "NPC_SELL"
+            elif family == "guildstock_db":
+                lower = relname.lower()
+                subtype = "GUILD_BUY" if "buylist" in lower else ("GUILD_SELL" if "selllist" in lower else "GUILD_STOCK")
+            _structured_insert(
+                con, capture_id, relname, family, record_key, payload,
+                record_type=subtype,
+                ts=payload.get("created_at") or payload.get("StartTime"),
+                zone=payload.get("NpcZone") or payload.get("ZoneName"),
+                entity_id=payload.get("NpcUniqueNo") or payload.get("uniqueId"),
+                entity_name=payload.get("NpcName") or payload.get("name"),
+                item_id=payload.get("ItemNo"),
+                item_name=payload.get("ItemName"),
+                price=payload.get("ItemPrice") if payload.get("ItemPrice") is not None else payload.get("Price"),
+            )
+            capture_integrity.record_row_locator(
+                con, capture_id, relname, "capture_structured_records",
+                json.dumps({"source_file": relname, "family": family, "record_key": record_key}, sort_keys=True),
+                "sqlite-row", source_sha256=source_sha256,
+                details={
+                    "source_table": "entries",
+                    "source_rowid": source_rowid,
+                    "source_id": source_id,
+                    "family": family,
+                },
+            )
+            n += 1
+        return n
+    finally:
+        sub.close()
+        try:
+            Path(tmp_path).unlink()
+        except OSError:
+            pass
+
+
+def _ingest_structured_csv(con, capture_id: int, src: Source, relname: str, family: str) -> int:
+    source_bytes = src.read_bytes(relname)
+    text = source_bytes.decode("utf-8-sig", "replace")
+    byte_offsets_exact = text.encode("utf-8") == source_bytes
+    source_sha256 = capture_integrity.sha256_bytes(source_bytes)
+    raw_lines = text.splitlines(keepends=True)
+    reader = csv.DictReader(io.StringIO(text))
+    con.execute(
+        "DELETE FROM capture_row_locators WHERE capture_id=? AND filename=? "
+        "AND target_table='capture_structured_records'",
+        (capture_id, relname),
+    )
+    n = 0
+    char_offsets = []
+    pos = 0
+    for raw in raw_lines:
+        char_offsets.append(pos)
+        pos += len(raw)
+    for row_number, row in enumerate(reader, start=2):
+        payload = {str(k): v for k, v in row.items() if k is not None}
+        record_key = str(row_number - 1)
+        zone = payload.get("Zone") or payload.get("ZoneName")
+        entity_id = payload.get("UniqueNo") or payload.get("NpcUniqueNo")
+        entity_name = payload.get("MobName") or payload.get("NpcName")
+        item_id = payload.get("ItemNo")
+        item_name = payload.get("ItemNo_Name") or payload.get("ItemName")
+        ts = payload.get("Timestamp") or payload.get("recvTime") or payload.get("SpawnedAt")
+        record_type = family.replace("_csv", "").upper()
+        _structured_insert(
+            con, capture_id, relname, family, record_key, payload,
+            record_type=record_type, ts=ts, zone=zone, entity_id=entity_id,
+            entity_name=entity_name, item_id=item_id, item_name=item_name,
+            price=payload.get("Price") or payload.get("ItemPrice"),
+        )
+        start_char = char_offsets[row_number - 1] if row_number - 1 < len(char_offsets) else None
+        end_char = (char_offsets[row_number] if row_number < len(char_offsets) else len(text))
+        capture_integrity.record_row_locator(
+            con, capture_id, relname, "capture_structured_records",
+            json.dumps({"source_file": relname, "family": family, "record_key": record_key}, sort_keys=True),
+            "csv-row", source_sha256=source_sha256,
+            start_line=row_number, end_line=row_number,
+            start_offset=(len(text[:start_char].encode("utf-8")) if byte_offsets_exact and start_char is not None else None),
+            end_offset=(len(text[:end_char].encode("utf-8")) if byte_offsets_exact else None),
+            details={"family": family, "csv_row": row_number},
+        )
+        n += 1
+    return n
+
+
+MISSIONTRACK_HEADER_RE = re.compile(r"^\[([^\]]+)\]\s+(.+)$", re.MULTILINE)
+MISSIONTRACK_PAIR_RE = re.compile(
+    r"\{\s*[\"']([^\"']+)[\"']\s*,\s*(?:[\"']([^\"']*)[\"']|(-?\d+(?:\.\d+)?)|true|false)\s*\}"
+)
+PRICELOG_SIMPLE_RE = re.compile(
+    r"Incoming:\s*0x03D\s*\(Price Response\),\s*Item:\s*(\d+)\s*\((.*?)\)\s*"
+    r"Price:\s*(\d+)\s*Character:\s*(.*?)\s*Zone:\s*(.*?)\s*NPC:\s*(.*?)(?:\r?\n|$)",
+    re.IGNORECASE,
+)
+PRICELOG_LUA_RE = re.compile(
+    r"\[(\d+)\]\s*=\s*\{[^}]*?\bname\s*=\s*[\"']([^\"']*)[\"'][^}]*?"
+    r"\bprice\s*=\s*(\d+)[^}]*?\bchar\s*=\s*[\"']([^\"']*)[\"'][^}]*?"
+    r"\bzone\s*=\s*[\"']([^\"']*)[\"'][^}]*?\bnpc\s*=\s*[\"']([^\"']*)[\"'][^}]*?\}",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def ingest_missiontrack(con, capture_id: int, src: Source, relname: str) -> int:
+    source_bytes = src.read_bytes(relname)
+    text = source_bytes.decode("utf-8", "replace")
+    exact = text.encode("utf-8") == source_bytes
+    sha = capture_integrity.sha256_bytes(source_bytes)
+    headers = list(MISSIONTRACK_HEADER_RE.finditer(text))
+    con.execute(
+        "DELETE FROM capture_row_locators WHERE capture_id=? AND filename=? "
+        "AND target_table='capture_structured_records'",
+        (capture_id, relname),
+    )
+    n = 0
+    for i, m in enumerate(headers):
+        end = headers[i + 1].start() if i + 1 < len(headers) else len(text)
+        block = text[m.start():end].rstrip()
+        pairs = {}
+        for pm in MISSIONTRACK_PAIR_RE.finditer(block):
+            key = pm.group(1)
+            value = pm.group(2) if pm.group(2) is not None else pm.group(3)
+            pairs[key] = value
+        payload = {"title": m.group(2).strip(), "fields": pairs, "raw": block}
+        record_key = str(i + 1)
+        _structured_insert(
+            con, capture_id, relname, "missiontrack", record_key, payload,
+            record_type=m.group(2).strip(), ts=m.group(1).strip(),
+            zone=pairs.get("Zone"), entity_id=None,
+        )
+        capture_integrity.record_row_locator(
+            con, capture_id, relname, "capture_structured_records",
+            json.dumps({"source_file": relname, "family": "missiontrack", "record_key": record_key}, sort_keys=True),
+            "block", source_sha256=sha,
+            start_line=text.count("\n", 0, m.start()) + 1,
+            end_line=text.count("\n", 0, end) + (0 if end and text[end - 1:end] == "\n" else 1),
+            start_offset=len(text[:m.start()].encode("utf-8")) if exact else None,
+            end_offset=len(text[:end].encode("utf-8")) if exact else None,
+            details={"family": "missiontrack", "timestamp": m.group(1).strip(), "title": m.group(2).strip()},
+        )
+        n += 1
+    return n
+
+
+def ingest_pricelog_simple(con, capture_id: int, src: Source, relname: str) -> int:
+    source_bytes = src.read_bytes(relname)
+    text = source_bytes.decode("utf-8", "replace")
+    exact = text.encode("utf-8") == source_bytes
+    sha = capture_integrity.sha256_bytes(source_bytes)
+    con.execute(
+        "DELETE FROM capture_row_locators WHERE capture_id=? AND filename=? "
+        "AND target_table='capture_structured_records'",
+        (capture_id, relname),
+    )
+    n = 0
+    for m in PRICELOG_SIMPLE_RE.finditer(text):
+        n += 1
+        item_id, item_name, price, character, zone, npc = m.groups()
+        payload = {
+            "opcode": "0x03D", "item_id": int(item_id), "item_name": item_name,
+            "price": int(price), "character": character.strip(), "zone": zone.strip(),
+            "npc": npc.strip(),
+        }
+        key = str(n)
+        _structured_insert(
+            con, capture_id, relname, "pricelog_simple", key, payload,
+            record_type="NPC_RESALE", zone=zone.strip(), entity_name=npc.strip(),
+            item_id=item_id, item_name=item_name, price=price,
+        )
+        capture_integrity.record_row_locator(
+            con, capture_id, relname, "capture_structured_records",
+            json.dumps({"source_file": relname, "family": "pricelog_simple", "record_key": key}, sort_keys=True),
+            "block", source_sha256=sha,
+            start_line=text.count("\n", 0, m.start()) + 1,
+            end_line=text.count("\n", 0, m.end()) + 1,
+            start_offset=len(text[:m.start()].encode("utf-8")) if exact else None,
+            end_offset=len(text[:m.end()].encode("utf-8")) if exact else None,
+            details={"family": "pricelog_simple", "opcode": "0x03D"},
+        )
+    return n
+
+
+def ingest_pricelog_lua(con, capture_id: int, src: Source, relname: str) -> int:
+    source_bytes = src.read_bytes(relname)
+    text = source_bytes.decode("utf-8", "replace")
+    exact = text.encode("utf-8") == source_bytes
+    sha = capture_integrity.sha256_bytes(source_bytes)
+    con.execute(
+        "DELETE FROM capture_row_locators WHERE capture_id=? AND filename=? "
+        "AND target_table='capture_structured_records'",
+        (capture_id, relname),
+    )
+    n = 0
+    for m in PRICELOG_LUA_RE.finditer(text):
+        item_id, item_name, price, character, zone, npc = m.groups()
+        payload = {
+            "item_id": int(item_id), "item_name": item_name, "price": int(price),
+            "character": character, "zone": zone, "npc": npc,
+        }
+        key = str(item_id)
+        _structured_insert(
+            con, capture_id, relname, "pricelog_lua", key, payload,
+            record_type="NPC_RESALE_DB", zone=zone, entity_name=npc,
+            item_id=item_id, item_name=item_name, price=price,
+        )
+        capture_integrity.record_row_locator(
+            con, capture_id, relname, "capture_structured_records",
+            json.dumps({"source_file": relname, "family": "pricelog_lua", "record_key": key}, sort_keys=True),
+            "block", source_sha256=sha,
+            start_line=text.count("\n", 0, m.start()) + 1,
+            end_line=text.count("\n", 0, m.end()) + 1,
+            start_offset=len(text[:m.start()].encode("utf-8")) if exact else None,
+            end_offset=len(text[:m.end()].encode("utf-8")) if exact else None,
+            details={"family": "pricelog_lua", "item_id": int(item_id)},
+        )
+        n += 1
+    return n
+
+
+def ingest_aux_structured(con, capture_id: int, src: Source, relname: str, fmt: str) -> int:
+    if fmt in {"shopstock_buy_db", "shopstock_sell_db", "guildstock_db", "weathertrack_db", "poitrack_db"}:
+        return _ingest_structured_sqlite(con, capture_id, src, relname, fmt)
+    if fmt in {"spawntrack_csv", "checkparam_csv", "crafttrack_csv", "conquesttrack_csv"}:
+        return _ingest_structured_csv(con, capture_id, src, relname, fmt)
+    if fmt == "missiontrack":
+        return ingest_missiontrack(con, capture_id, src, relname)
+    if fmt == "pricelog_simple":
+        return ingest_pricelog_simple(con, capture_id, src, relname)
+    if fmt == "pricelog_lua":
+        return ingest_pricelog_lua(con, capture_id, src, relname)
+    raise ValueError(f"unsupported auxiliary capture format: {fmt}")
+
+
 def sniff_sqlite_format(data: bytes) -> str | None:
     """Which capture table this SQLite blob is, by real column names -- the entries table shape
     is the only reliable signal once a bare .db file has no wrapping NPCLogger/ActionView/
@@ -506,6 +822,19 @@ def sniff_sqlite_format(data: bytes) -> str | None:
         return "actionview_db"
     if {"Level_min", "Level_max", "UniqueNo"} <= cols:
         return "levelrange_db"
+    if {"NpcUniqueNo", "NpcName", "NpcZone", "ItemNo", "ItemName", "Count", "Max", "Price"} <= cols:
+        return "guildstock_db"
+    # Earliest persisted GuildStock generation predated NPC identity and Hidden columns.
+    if {"ItemNo", "ItemName", "Count", "Max", "Price"} <= cols:
+        return "guildstock_db"
+    if {"NpcUniqueNo", "NpcName", "NpcZone", "GuildInfo", "ItemNo", "ItemName", "ItemPrice", "ShopIndex", "Skill"} <= cols:
+        return "shopstock_buy_db"
+    if {"NpcUniqueNo", "NpcName", "NpcZone", "ItemNo", "ItemName", "Price"} <= cols:
+        return "shopstock_sell_db"
+    if {"ZoneNo", "ZoneName", "PreviousWeatherNumber", "WeatherNumber", "StartTime", "WeatherOffsetTime"} <= cols:
+        return "weathertrack_db"
+    if {"uniqueId", "name", "x", "y", "z"} <= cols:
+        return "poitrack_db"
     return None
 
 
@@ -538,6 +867,30 @@ def sniff_text_format(text: str) -> str | None:
         return "pathlog_csv"
     if re.search(r"^\s*\[\d+\]\s*=\s*\{.*'id'.*=", head) or re.search(r"^\s*\[\d+\]\s*=\s*\{\['id'\]", head):
         return "npclogger_lua"
+    if re.search(r"^\[[^\]]+\]\s+.+\n\{", head, re.MULTILINE):
+        return "missiontrack"
+    if PRICELOG_SIMPLE_RE.search(head):
+        return "pricelog_simple"
+    if "local resale_database" in head and re.search(r"\bprice\s*=", head):
+        return "pricelog_lua"
+    return None
+
+
+
+def sniff_csv_format(text: str) -> str | None:
+    first = next(csv.reader(io.StringIO(text.lstrip("\ufeff"))), [])
+    cols = {str(x).strip() for x in first}
+    if {"MobName","UniqueNo","DefeatedAt","SpawnedAt","XSpawn","YSpawn","ZSpawn"} <= cols:
+        return "spawntrack_csv"
+    if {"recvTime","acc","atk","offacc","offatk","rangeacc","rangeatk","eva","def"} <= cols:
+        # syncId was added after the first persisted CheckParam format.
+        return "checkparam_csv"
+    if {"Timestamp","Result","Grade","ItemNo","CrystalNo","MaterialNo_1","Effect_Type"} <= cols:
+        return "crafttrack_csv"
+    if {"Timestamp","Balance","Alliance","CurSandy","CurBastok","CurWindy","NextTally","CP","CurBeastmen"} <= cols:
+        return "conquesttrack_csv"
+    if {"leg","x","y","z","dir","delta"} <= {x.lower() for x in cols}:
+        return "pathlog_csv"
     return None
 
 
@@ -562,20 +915,20 @@ def ingest_single_file(con, capture_id: int, filename: str, data: bytes) -> dict
                 rows = ingest_actions_db(con, capture_id, src, "Actions.db")
             elif fmt == "levelrange_db":
                 rows = ingest_level_range_db(con, capture_id, src, zone_db + ".db")
+            elif fmt in AUX_STRUCTURED_FORMATS:
+                rows = ingest_aux_structured(con, capture_id, src, filename, fmt)
             else:
-                error = "Unrecognized .db schema (not NPCLogger/ActionView/LevelRangeTrack entries shape)"
+                error = "Unrecognized .db schema"
         elif suffix == ".csv":
-            text = data.decode("utf-8", "replace")
-            if re.match(r'^\s*leg,x,y,z,dir,delta\s*$', text[:200], re.MULTILINE):
-                fmt = "pathlog_csv"
-                # A real PathLog CSV's own filename is just the entity id (e.g. "17002517.csv")
-                # -- the zone and NPC label live in its PARENT folders, which a single dropped
-                # file has no way to carry. Rather than guess a zone, this format is honestly
-                # only supported via a zip/folder upload (which preserves that path), not a bare
-                # single-file drop.
+            text = data.decode("utf-8-sig", "replace")
+            fmt = sniff_csv_format(text)
+            src = SingleFileSource(filename, data)
+            if fmt == "pathlog_csv":
                 error = "PathLog CSVs need their real folder path (zone/NPC label) for zone context -- upload as part of a zip instead of a bare file"
+            elif fmt in AUX_STRUCTURED_FORMATS:
+                rows = ingest_aux_structured(con, capture_id, src, filename, fmt)
             else:
-                error = "CSV doesn't match PathLog's leg,x,y,z,dir,delta header"
+                error = "Unrecognized CSV schema"
         else:
             text = data.decode("utf-8", "replace")
             fmt = sniff_text_format(text)
@@ -596,6 +949,8 @@ def ingest_single_file(con, capture_id: int, filename: str, data: bytes) -> dict
             elif fmt == "npclogger_lua":
                 e, p = ingest_npclogger_lua(con, capture_id, src, zone_db + ".lua")
                 rows = e + p
+            elif fmt in AUX_STRUCTURED_FORMATS:
+                rows = ingest_aux_structured(con, capture_id, src, filename, fmt)
             elif fmt == "actionview_simple":
                 # Same redundancy risk as the zip-ingest path (see ingest_from_source) -- if an
                 # ActionView.db has already been added to this capture, its rows already cover
@@ -2207,7 +2562,7 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
 
     counts = {"npc_entries": 0, "npc_hist": 0, "actions": 0, "path": 0, "hp": 0, "events": 0,
               "ki": 0, "eventview": 0, "level_range": 0, "attack_delay": 0, "raw_packets": 0,
-              "pc_path": 0, "widescan": 0, "caplog_chat": 0}
+              "pc_path": 0, "widescan": 0, "caplog_chat": 0, "structured": 0}
     npc_db_files = sfind(r'NPCLogger/[^/]+\.db$')
     for relname in npc_db_files:
         e, h = run2(relname, ingest_npc_db, con, capture_id, src, relname)
@@ -2372,6 +2727,27 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         if result_sink is not None:
             result_sink.append({"filename": relname, "rows": 0, "error": None})
 
+    # Content-first compatibility pass for auxiliary/past-and-present logger families. Core
+    # mission/runtime parsers above retain priority; only otherwise-unmatched files are considered.
+    all_source_names = sorted(src.list_files() if subroot is None
+                              else [n for n in src.list_files() if n.startswith(subroot + "/")])
+    for relname in all_source_names:
+        if relname in matched_names:
+            continue
+        fmt = _capture_source_format(src, relname)
+        if fmt not in AUX_STRUCTURED_FORMATS:
+            continue
+        matched_names.add(relname)
+        try:
+            rows = ingest_aux_structured(con, capture_id, src, relname, fmt)
+            counts.setdefault("structured", 0)
+            counts["structured"] += rows
+            if result_sink is not None:
+                result_sink.append({"filename": relname, "rows": rows, "error": None})
+        except Exception as ex:
+            if result_sink is not None:
+                result_sink.append({"filename": relname, "rows": 0, "error": str(ex)})
+
     if result_sink is not None:
         # Real files present in the bundle that no pattern above ever looked at -- a capture-log
         # format this toolkit doesn't recognize, or a genuinely unrelated file that got swept up
@@ -2501,6 +2877,23 @@ def _capture_source_format(src: "Source", relname: str) -> str | None:
         return "eventview"
     if "npclogger/" in lower and lower.endswith(".lua"):
         return "npclogger_lua"
+    # Auxiliary logger generations are content-addressed rather than path-bound. This lets old
+    # bundles, renamed files, and current Captain output share one detection contract.
+    try:
+        if lower.endswith((".db", ".sqlite", ".sqlite3")):
+            detected = sniff_sqlite_format(src.read_bytes(relname))
+            if detected:
+                return detected
+        elif lower.endswith(".csv"):
+            detected = sniff_csv_format(src.read_text(relname))
+            if detected:
+                return detected
+        elif lower.endswith((".log", ".txt", ".lua")):
+            detected = sniff_text_format(src.read_text(relname))
+            if detected:
+                return detected
+    except Exception:
+        pass
     return _sniff_known_format(src, relname)
 
 
@@ -2509,7 +2902,7 @@ REBUILDABLE_CAPTURE_FORMATS = {
     "eventview", "idview_simple", "kitrack", "hptrack", "actionview_simple", "caplog", "packetlogger",
     "npclogger_db", "actionview_db", "levelrange_db",
     "npclogger_lua", "pathlog_csv", "pc_pathlog_csv", "widescan", "attackdelay",
-}
+} | AUX_STRUCTURED_FORMATS
 
 
 def _capture_source_origin(con, capture_id: int) -> tuple[Path | None, str | None, str | None]:
@@ -2770,6 +3163,8 @@ def rebuild_capture_source(con, capture_id: int, filename: str) -> dict:
                 result = ingest_widescan(con, capture_id, src, filename)
             elif fmt == "attackdelay":
                 result = ingest_attackdelay(con, capture_id, src, filename)
+            elif fmt in AUX_STRUCTURED_FORMATS:
+                result = ingest_aux_structured(con, capture_id, src, filename, fmt)
             else:
                 raise ValueError(f"unsupported rebuild parser: {fmt}")
             rows = sum(result) if isinstance(result, tuple) else int(result)
@@ -2808,7 +3203,7 @@ def rebuild_capture_source(con, capture_id: int, filename: str) -> dict:
 CAPTURE_CHILD_TABLES = [
     "capture_npc_entries", "capture_npc_history", "capture_npc_path", "capture_actions",
     "capture_hp_events", "capture_events", "capture_ki_events", "capture_eventview",
-    "capture_level_range", "capture_attack_delay", "capture_pc_path", "capture_source_files",
+    "capture_level_range", "capture_attack_delay", "capture_pc_path", "capture_structured_records", "capture_source_files",
     "capture_source_manifest", "capture_source_artifacts", "capture_content_manifest",
     "capture_ingest_lineage",
     "capture_raw_packets", "capture_video_observations", "capture_tags", "capture_caplog_chat",

@@ -5714,6 +5714,16 @@ def captures_detail(
     detail["n_raw_packets"] = con.execute(
         "SELECT COUNT(*) FROM capture_raw_packets WHERE capture_id=?", (capture_id,)
     ).fetchone()[0]
+    detail["n_structured_records"] = con.execute(
+        "SELECT COUNT(*) FROM capture_structured_records WHERE capture_id=?", (capture_id,)
+    ).fetchone()[0]
+    detail["structured_records"] = con.execute(
+        """SELECT family,record_type,ts,zone,entity_id,entity_name,item_id,item_name,price,
+                  source_file,record_key,payload_json
+           FROM capture_structured_records WHERE capture_id=?
+           ORDER BY family,source_file,record_key LIMIT 200""",
+        (capture_id,),
+    ).fetchall()
     detail["pc_path_zones"] = build_capture_index.get_pc_path_zones(con, capture_id)
     detail["tags"] = build_capture_index.get_capture_tags(con, capture_id)
     detail["hp_events"] = con.execute(

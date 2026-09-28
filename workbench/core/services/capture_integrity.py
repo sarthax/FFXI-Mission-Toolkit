@@ -30,6 +30,18 @@ FORMAT_TARGETS = {
     "KITrack": (("capture_ki_events","block"),),
     "PacketLogger/PacketViewer raw hex dump": (("capture_raw_packets","block"),),
     "CapLog": (("capture_events","line"),("capture_hp_events","line"),("capture_eventview","line"),("capture_caplog_chat","line")),
+    "missiontrack": (("capture_structured_records","block"),),
+    "shopstock_buy_db": (("capture_structured_records","sqlite-row"),),
+    "shopstock_sell_db": (("capture_structured_records","sqlite-row"),),
+    "guildstock_db": (("capture_structured_records","sqlite-row"),),
+    "weathertrack_db": (("capture_structured_records","sqlite-row"),),
+    "poitrack_db": (("capture_structured_records","sqlite-row"),),
+    "spawntrack_csv": (("capture_structured_records","csv-row"),),
+    "checkparam_csv": (("capture_structured_records","csv-row"),),
+    "crafttrack_csv": (("capture_structured_records","csv-row"),),
+    "conquesttrack_csv": (("capture_structured_records","csv-row"),),
+    "pricelog_simple": (("capture_structured_records","block"),),
+    "pricelog_lua": (("capture_structured_records","block"),),
 }
 
 
@@ -679,6 +691,7 @@ def capture_health(con: sqlite3.Connection, capture_id: int) -> dict:
     npc_hist=_table_count(con,"capture_npc_history",capture_id)
     key_evidence=_table_count(con,"capture_key_evidence",capture_id)
     anchors=_table_count(con,"capture_alignment_anchors",capture_id)
+    structured_records=_table_count(con,"capture_structured_records",capture_id)
 
     directions=[]
     if raw_packets:
@@ -727,6 +740,18 @@ def capture_health(con: sqlite3.Connection, capture_id: int) -> dict:
     dimensions["entity_evidence"]={
         "status":"COMPLETE" if npc_entries and npc_hist else ("PARTIAL" if npc_entries else "UNKNOWN"),
         "npc_entries":npc_entries,"history_rows":npc_hist,
+    }
+    structured_families=[]
+    if structured_records:
+        structured_families=[r[0] for r in con.execute(
+            "SELECT DISTINCT family FROM capture_structured_records WHERE capture_id=? ORDER BY family",
+            (capture_id,),
+        ).fetchall()]
+    dimensions["structured_logger_evidence"]={
+        "status":"COMPLETE" if structured_records else "UNKNOWN",
+        "records":structured_records,
+        "families":structured_families,
+        "basis":"optional capture/logger families; absence is not a capture-quality failure",
     }
     dimensions["timeline_alignment"]={
         "status":"COMPLETE" if anchors>=2 else ("PARTIAL" if anchors==1 else "UNKNOWN"),

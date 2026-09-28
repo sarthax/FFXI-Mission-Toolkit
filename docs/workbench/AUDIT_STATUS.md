@@ -2678,3 +2678,35 @@ Independent runtime evidence streams can now be correlated without being merged 
 - Rebuilding correlations deletes and deterministically regenerates only that capture's correlation rows, preventing stale links after capture data changes.
 - Runtime graph generation refreshes correlation state automatically before emitting packet observations.
 - Capture / Video Alignment now exposes matched and ambiguous correlations and provides an explicit rebuild action.
+
+
+## 2026-09-28 — Broad optional logger ingestion
+
+Capture ingestion now accepts auxiliary logger data when present instead of requiring a fixed Assault/Nyzul addon set.
+
+New structured evidence families:
+- MissionTrack
+- Captain ShopStock buy/sell SQLite
+- Captain GuildStock SQLite
+- SpawnTrack CSV
+- WeatherTrack SQLite
+- CraftTrack CSV
+- CheckParam CSV
+- POITrack SQLite
+- ConquestTrack CSV
+- historical Wiggo PriceLog/findPrice simple logs and Lua price databases
+
+Implementation contract:
+- full source row/block payload is retained in capture_structured_records
+- stable common fields are promoted when proven by the source: timestamp, zone, entity/NPC id/name, item id/name, price
+- unknown/source-specific fields remain in payload_json rather than being discarded
+- exact sqlite-row / csv-row / text-block locators are recorded
+- source SHA-256 / parser lineage / safe rebuild use the same capture-integrity machinery as existing formats
+- auxiliary detection is content-first and runs only after the established core capture parsers, avoiding path-layout coupling and parser collisions
+- capture detail exposes structured logger rows and capture health lists present families
+
+Historical compatibility verified from Captain repository history:
+- early GuildStock databases without NPC identity or Hidden columns
+- early CheckParam CSV without syncId
+
+Absence of any auxiliary family is not a capture-quality failure; these sources remain optional and are ingested only when the capture/tooling actually produced them.
