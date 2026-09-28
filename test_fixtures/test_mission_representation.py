@@ -5,7 +5,13 @@ from workbench.plugins.domain.mission_representation import (
     plan_mission_representation,
     requirements_from_state_machine,
 )
-from workbench.plugins.domain.mission_state_machine import MissionState, MissionStateMachine, MissionTransition
+from workbench.plugins.domain.mission_state_machine import (
+    DependencyGate,
+    MissionState,
+    MissionStateMachine,
+    MissionTransition,
+    StateCondition,
+)
 
 
 def main():
@@ -25,12 +31,24 @@ def main():
     machine=MissionStateMachine(
         "m","f",
         (MissionState("s","Start"),MissionState("d","Done",terminal=True)),
-        (MissionTransition("advance","s","d","EVENT_FINISH",evidence_ids=("ev:1",)),),
+        (
+            MissionTransition(
+                "advance","s","d","EVENT_FINISH",evidence_ids=("ev:1",),
+                post_effect_gate=DependencyGate(
+                    "converge","ALL",
+                    (
+                        StateCondition("mission_status:A","EQ",14),
+                        StateCondition("mission_status:B","EQ",14),
+                    ),
+                ),
+            ),
+        ),
         ("s",),
     )
     derived=requirements_from_state_machine(machine)
     assert derived[0].requirement_id=="transition:advance",derived
     assert derived[0].evidence==("ev:1",),derived
+    assert "post-effect ALL" in derived[0].description,derived[0]
     print("mission representation planning self-test: PASS")
 
 
