@@ -2399,3 +2399,14 @@ Persistence is non-destructive for existing canonical Feature/Entity rows, and t
 Regression: `test_fixtures/test_minigame_framework.py` covers a structurally complete repeatable timed-scoring puzzle, timer/reset gaps, invalid references, one-shot behavior, evidence-backed graph projection, non-destructive persistence, Feature Trace traversal, and plugin findings/reporting.
 
 `STRUCTURALLY_READY` is a declared lifecycle/topology result only; it does not prove runtime timing, scoring, rewards, or client interaction behavior.
+
+## 2026-09-28 — Capture/video timeline alignment
+
+Implemented a source-neutral alignment layer for linking gameplay-video time to real capture clocks without pretending the repository's independent logger tables share one universal timeline.
+
+- explicit anchors carry video time, capture time, capture clock kind, source type, references, confidence, and notes;
+- one anchor creates offset-only alignment; two or more anchors fit drift with RMS/max residual diagnostics;
+- raw PacketLogger and EventView timestamp streams expose independent capture-relative candidate clocks;
+- VIDEO_OCR and real capture opcodes are compared to surface shared packet landmarks, with unique one-to-one pairs flagged as strong candidates but never auto-accepted;
+- the capture GUI has a dedicated alignment workspace, one-click prefill for unique packet pairs, video jump links, and support for manual/packet/event/screenshot anchor labels;
+- screenshot/key-event attachment persistence remains a follow-on milestone, but the anchor model already reserves SCREENSHOT as a source type.
