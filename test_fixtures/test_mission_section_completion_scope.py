@@ -74,7 +74,15 @@ def main():
     assert {
         row["subject"] for row in feature_gate["conditions"]
     } == {"mission_status:SANDORIA", "mission_status:WINDURST"}, feature_gate
-    arnau_node = f"mission-transition:{chained.feature_id}:{arnau.transition_id}"
+    arnau_chain = next(
+        transition for transition in chained.transitions
+        if transition.metadata.get("trigger_transition_id") == arnau.transition_id
+    )
+    assert tuple(arnau_chain.metadata.get("section_eligibility_conditions", ())) == (
+        {"subject":"mission_status:SANDORIA","operator":"LE","value":14},
+    ), arnau_chain.metadata
+
+    arnau_node = f"mission-transition:{chained.feature_id}:{arnau_chain.transition_id}"
     arnau_section_edges = [
         edge for edge in projection.edges
         if edge.source_node == arnau_node
