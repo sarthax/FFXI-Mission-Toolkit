@@ -1193,36 +1193,43 @@ CAPLOG_SEQ_BASE = 10_000_000
 
 
 def ingest_caplog(con, capture_id, src: Source, relname: str) -> tuple[int, int, int, int]:
-    """caplog/<Capturer>_<date>.txt -- see the real-format notes on the regexes above. Four real,
-    distinct kinds of value get extracted, each into its existing home table so downstream pages
-    see this data alongside the same kind of data from other formats:
-      1. [ID View] event/CS/dialogue lines -> capture_events (same table ingest_idview_simple uses).
-      2. [HP Track] kill lines -> capture_hp_events (same table ingest_hptrack uses).
-      3. [EView] packet header + field-line blocks (a real third CapLog variant, "Thris" capturer)
-         -> capture_eventview (same table ingest_eventview uses).
-      4. Real untagged in-game chat/system text -> capture_caplog_chat (new table -- genuinely
-         unique data: item drops, mission announcements, combat log, Records of Eminence progress,
-         not carried by any other format in this project's capture pipeline).
+    """Ingest CapLog while preserving exact physical source spans for every emitted row."""
+    source_bytes = src.read_bytes(relname)
+    text = source_bytes.decode("utf-8", "replace")
+    byte_offsets_exact = text.encode("utf-8") == source_bytes
+    source_sha256 = capture_integrity.sha256_bytes(source_bytes)
+    raw_lines = text.splitlines(keepends=True)
+    lines = [raw.rstrip("\r\n") for raw in raw_lines]
+    line_starts = []
+    char_pos = 0
+    for raw in raw_lines:
+        line_starts.append(char_pos)
+        char_pos += len(raw)
 
-    [NPCL]'s own "New: <id> (<name>)"/"...saved to database"/"...Widescan..." lines are
-    deliberately NOT persisted as structured rows -- they carry strictly less real information (no
-    position/model_id/etc) than this same session's real NPCLogger tables/database .lua files
-    already ingest, so storing them again here would just be a weaker duplicate, not new data.
+    def locator_span(start_idx: int, end_idx: int) -> dict:
+        start_char = line_starts[start_idx]
+        end_char = line_starts[end_idx] + len(raw_lines[end_idx])
+        return {
+            "start_line": start_idx + 1,
+            "end_line": end_idx + 1,
+            "start_offset": len(text[:start_char].encode("utf-8")) if byte_offsets_exact else None,
+            "end_offset": len(text[:end_char].encode("utf-8")) if byte_offsets_exact else None,
+        }
 
-    zone_db (needed for capture_events'/capture_eventview's real primary keys) comes from tracking
-    the most recent "=== Area: <Zone> ===" marker CapLog itself writes on every real zone
-    transition. Any [ID View]/[EView] line seen BEFORE the first Area marker (capture-tool startup,
-    before the player has even zoned in) has no real zone to attribute to and is skipped rather
-    than guessed, per this project's standing never-fabricate-ids rule -- HP Track kills carry no
-    zone_db column at all (matching ingest_hptrack's own table shape) so they're recorded
-    regardless."""
-    lines = text.splitlines() if (text := src.read_text(relname)) else []
+    con.execute(
+        """DELETE FROM capture_row_locators
+           WHERE capture_id=? AND filename=? AND target_table IN
+           ('capture_events','capture_eventview','capture_hp_events','capture_caplog_chat')""",
+        (capture_id, relname),
+    )
+
     events_n = hp_n = eview_n = chat_n = 0
     zone_db = None
     event_local = hp_local = eview_local = 0
 
     i, n_lines = 0, len(lines)
     while i < n_lines:
+        source_line_idx = i
         line = lines[i].strip()
         i += 1
         if not line:
@@ -1245,20 +1252,12 @@ def ingest_caplog(con, capture_id, src: Source, relname: str) -> tuple[int, int,
             tag, body = tag_m.groups()
             if tag == "EView" and zone_db is not None:
                 ev_m = CAPLOG_EVIEW_HEADER_RE.match(body)
-                # The real field-value line is the NEXT physical line (confirmed live: always
-                # present, no blank line between header and body in every real sample seen) --
-                # peeking ahead rather than requiring it match any particular shape itself, since
-                # its own content (comma-separated Key: value pairs) has no line-level marker of
-                # its own to detect independently.
                 if ev_m and i < n_lines:
+                    field_line_idx = i
                     direction, opcode, packet_class, gp_command = ev_m.groups()
                     field_line = lines[i].strip()
                     i += 1
                     fields = _parse_caplog_eview_fields(field_line)
-                    # Real field values here look like "16998996 (Runic Seal)" -- a leading
-                    # integer id, optionally followed by a parenthesized real name -- not a bare
-                    # int the way EventView's own brace-delimited body stores UniqueNo, so this
-                    # reuses IDVIEW_ENTITY_RE's real id+name extraction shape instead of int().
                     entity_id = entity_name = None
                     for k in EVENTVIEW_ENTITY_KEYS:
                         if k in fields:
@@ -1266,17 +1265,28 @@ def ingest_caplog(con, capture_id, src: Source, relname: str) -> tuple[int, int,
                             if em and int(em.group(1)):
                                 entity_id, entity_name = int(em.group(1)), em.group(2) or None
                                 break
+                    seq = CAPLOG_SEQ_BASE + eview_local
                     con.execute("""INSERT OR REPLACE INTO capture_eventview
                         (capture_id, zone_db, seq, ts, direction, opcode, packet_class, gp_command,
                          entity_id, mes_num, message_number, fields_json)
                         VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
-                        (capture_id, zone_db, CAPLOG_SEQ_BASE + eview_local, ts, direction, opcode,
+                        (capture_id, zone_db, seq, ts, direction, opcode,
                          packet_class, gp_command, entity_id, None, None, json.dumps(fields)))
+                    capture_integrity.record_row_locator(
+                        con, capture_id, relname, "capture_eventview",
+                        json.dumps({"zone_db": zone_db, "seq": seq}, sort_keys=True), "block",
+                        source_sha256=source_sha256,
+                        details={"source": "caplog", "tag": tag, "timestamp": ts,
+                                 "opcode": opcode, "packet_class": packet_class,
+                                 "gp_command": gp_command},
+                        **locator_span(source_line_idx, field_line_idx),
+                    )
                     eview_local += 1
                     eview_n += 1
                     if entity_id and entity_name:
-                        entity_profile.record_field(con, "npc", entity_id, "capture_name",
-                                                      "capture", entity_name)
+                        entity_profile.record_field(
+                            con, "npc", entity_id, "capture_name", "capture", entity_name
+                        )
             elif tag == "ID View" and zone_db is not None:
                 ev_m = CAPLOG_IDVIEW_HEADER_RE.match(body)
                 if ev_m:
@@ -1294,42 +1304,65 @@ def ingest_caplog(con, capture_id, src: Source, relname: str) -> tuple[int, int,
                     message_id = int(message_m.group(1)) if message_m else None
                     params_m = CAPLOG_PARAMS_RE.search(ev_rest)
                     params_raw = params_m.group(1).strip() if params_m else None
-
+                    seq = CAPLOG_SEQ_BASE + event_local
                     con.execute("""INSERT OR REPLACE INTO capture_events
                         (capture_id, zone_db, seq, direction, opcode, opcode_name, entity_id,
                          entity_name, event_hex, option, message_id, params_raw)
                         VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
-                        (capture_id, zone_db, CAPLOG_SEQ_BASE + event_local, direction, opcode,
+                        (capture_id, zone_db, seq, direction, opcode,
                          opcode_name, entity_id, entity_name, event_hex, option, message_id,
                          params_raw))
+                    capture_integrity.record_row_locator(
+                        con, capture_id, relname, "capture_events",
+                        json.dumps({"zone_db": zone_db, "seq": seq}, sort_keys=True), "line",
+                        source_sha256=source_sha256,
+                        details={"source": "caplog", "tag": tag, "timestamp": ts,
+                                 "opcode": opcode, "opcode_name": opcode_name},
+                        **locator_span(source_line_idx, source_line_idx),
+                    )
                     event_local += 1
                     events_n += 1
                     if entity_id and entity_name:
-                        entity_profile.record_field(con, "npc", entity_id, "capture_name",
-                                                      "capture", entity_name)
+                        entity_profile.record_field(
+                            con, "npc", entity_id, "capture_name", "capture", entity_name
+                        )
             elif tag == "HP Track":
                 hp_m = CAPLOG_HP_KILL_RE.match(body)
                 if hp_m:
                     mob_name, hp_low, hp_high = hp_m.groups()
+                    seq = CAPLOG_SEQ_BASE + hp_local
                     con.execute("""INSERT OR REPLACE INTO capture_hp_events
                         (capture_id, seq, mob_name, hp_low, hp_high) VALUES (?,?,?,?,?)""",
-                        (capture_id, CAPLOG_SEQ_BASE + hp_local, mob_name, int(hp_low), int(hp_high)))
+                        (capture_id, seq, mob_name, int(hp_low), int(hp_high)))
+                    capture_integrity.record_row_locator(
+                        con, capture_id, relname, "capture_hp_events",
+                        json.dumps({"seq": seq}, sort_keys=True), "line",
+                        source_sha256=source_sha256,
+                        details={"source": "caplog", "tag": tag, "timestamp": ts,
+                                 "mob_name": mob_name},
+                        **locator_span(source_line_idx, source_line_idx),
+                    )
                     hp_local += 1
                     hp_n += 1
-            # NPCL/Capture/PV/AView: deliberately not persisted, see docstring.
             continue
 
         if CAPLOG_BOOKKEEPING_RE.match(rest):
             continue
 
-        # Everything else is real, untagged in-game chat/system text.
+        seq = chat_n
         con.execute("""INSERT OR REPLACE INTO capture_caplog_chat
             (capture_id, seq, ts, zone_db, text) VALUES (?,?,?,?,?)""",
-            (capture_id, chat_n, ts, zone_db, rest))
+            (capture_id, seq, ts, zone_db, rest))
+        capture_integrity.record_row_locator(
+            con, capture_id, relname, "capture_caplog_chat",
+            json.dumps({"seq": seq}, sort_keys=True), "line",
+            source_sha256=source_sha256,
+            details={"source": "caplog", "timestamp": ts, "zone_db": zone_db},
+            **locator_span(source_line_idx, source_line_idx),
+        )
         chat_n += 1
 
     return events_n, hp_n, eview_n, chat_n
-
 
 EVENTVIEW_HEADER_RE = re.compile(
     r'^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]\s+(<<|>>)\s+\[(0x[0-9A-Fa-f]{3})\]\s+(\w+)\*?\s+\((\w+)\)\s*$',

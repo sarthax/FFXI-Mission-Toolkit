@@ -2552,3 +2552,17 @@ The capture plotter is no longer a path-only static visualization.
 - 3D capture search filters markers and provides click-to-focus results while preserving the normal zone viewer's mesh, time-of-day, fly mode, wall opacity, and navmesh behavior.
 
 The normal zone viewer remains the source of zone geometry/navmesh behavior; the capture layer now supplies capture-specific entity observations on top of it.
+
+
+## 2026-09-28 — CapLog exact row provenance
+
+CapLog ingestion now emits exact physical-source locators for every normalized row it produces.
+
+- ID View rows in `capture_events` retain exact source line, source hash, normalized row key, timestamp, opcode, and opcode-name context;
+- HP Track rows in `capture_hp_events` retain their exact CapLog line and mob context;
+- embedded EView rows in `capture_eventview` retain the full two-line header + field block as one locator span;
+- untagged in-game chat/system rows in `capture_caplog_chat` retain their exact source line and active zone/timestamp context;
+- byte offsets are recorded only when UTF-8 decode/encode round-trips exactly;
+- re-ingestion clears only CapLog-owned locator rows for that source file before rebuilding them, preventing stale locators without disturbing provenance from sibling source files.
+
+This closes exact row attribution for the highest-value mixed capture source while leaving unsupported precision unclaimed for parser families that still need dedicated work.
