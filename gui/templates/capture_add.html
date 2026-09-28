@@ -5,6 +5,18 @@
 <h1>Add files <span class="chip mono">#{{ cap.capture_id }}</span></h1>
 <p>{{ cap.capture_label }} <span class="chip">{{ cap.content_type }}</span>
   {% if cap.mission_name %}&mdash; {{ cap.mission_name }}{% endif %}</p>
+{% if cap.source_manifest_sha256 %}
+<p class="muted"><b>Capture content manifest:</b> <code>{{ cap.source_manifest_sha256 }}</code>
+  &middot; {{ cap.source_file_count or 0 }} primary source file(s)</p>
+{% endif %}
+{% if manifest_duplicates %}
+<div class="warn">
+  Same content manifest already exists in:
+  {% for d in manifest_duplicates %}
+    <a class="inline" href="/captures/{{ d.capture_id }}">capture #{{ d.capture_id }} — {{ d.capture_label }}</a>{% if not loop.last %}, {% endif %}
+  {% endfor %}
+</div>
+{% endif %}
 
 <p class="muted">Drop any real capture log/db here -- NPCLogger/ActionView/LevelRangeTrack <code class="chip">.db</code>,
   KITrack/EventView/idview-simple/ActionView-simple/AttackDelay/HPTrack/Npclogger-tables <code class="chip">.log/.lua</code>,
@@ -77,11 +89,13 @@
 <h2 style="margin-top:24px;">All files added so far</h2>
 {% if files %}
 <div class="table-wrap"><table>
-  <tr><th>file</th><th>format</th><th>rows</th><th>status</th><th>when</th></tr>
+  <tr><th>file</th><th>format</th><th>hash / size</th><th>parser</th><th>rows</th><th>status</th><th>when</th></tr>
   {% for f in files %}
   <tr>
     <td class="mono">{{ f.filename }}</td>
     <td>{% if f.format_detected %}<span class="chip">{{ f.format_detected }}</span>{% else %}<span class="muted">unrecognized</span>{% endif %}</td>
+    <td class="mono">{% if f.sha256 %}{{ f.sha256[:12] }}…<div class="muted">{{ f.byte_size or 0 }} bytes</div>{% else %}<span class="muted">—</span>{% endif %}</td>
+    <td class="mono">{{ f.parser_id or "—" }}{% if f.parser_version %}<div class="muted">{{ f.parser_version }}</div>{% endif %}</td>
     <td>{{ f.row_count if f.row_count is not none else "--" }}</td>
     <td>{% if f.error %}<span class="pill mismatch">{{ f.error }}</span>{% else %}<span class="pill match">ok</span>{% endif %}</td>
     <td class="muted">{{ f.ingested_at }}</td>
