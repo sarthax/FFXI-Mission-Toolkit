@@ -20,6 +20,27 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
     counts={"capture_events":0,"raw_packet_observations":0,"eventview_observations":0,"packet_observations":0,"video_ocr_observations":0,"key_evidence":0,"event_nodes":0,"event_refs":0,"edges":0,"action_nodes":0,"lua_functions":0,"lua_calls":0,"binding_candidates":0}
     where="" if capture_id is None else " WHERE capture_id=?"
     args=() if capture_id is None else (capture_id,)
+
+    # Reconcile row-level runtime evidence owned by this bridge. INSERT OR REPLACE alone cannot
+    # remove graph rows when a rebuilt capture now contains fewer observations.
+    owned_relationship_prefixes=("raw-packet-observation:","eventview-packet-observation:")
+    owned_evidence_prefixes=("evidence:raw-packet:","evidence:eventview-packet:")
+    if capture_id is None:
+        for prefix in owned_relationship_prefixes:
+            dst.execute("DELETE FROM entity_relationships WHERE relationship_id LIKE ?",(prefix+"%",))
+        for prefix in owned_evidence_prefixes:
+            dst.execute("DELETE FROM evidence WHERE evidence_id LIKE ?",(prefix+"%",))
+    else:
+        for prefix in owned_relationship_prefixes:
+            dst.execute(
+                "DELETE FROM entity_relationships WHERE relationship_id LIKE ?",
+                (f"{prefix}{int(capture_id)}:%",),
+            )
+        for prefix in owned_evidence_prefixes:
+            dst.execute(
+                "DELETE FROM evidence WHERE evidence_id LIKE ?",
+                (f"{prefix}{int(capture_id)}:%",),
+            )
     if table_exists(src,"capture_events"):
         q=f"SELECT capture_id,zone_db,seq,direction,opcode,opcode_name,entity_id,entity_name,event_hex,option,message_id,params_raw FROM capture_events{where} ORDER BY capture_id,zone_db,seq"
         capture_event_rows=src.execute(q,args)
