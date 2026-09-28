@@ -8,6 +8,7 @@ import tempfile
 from pathlib import Path
 
 import feature_trace
+import workbench_connect
 from capture_graph_connect import connect
 from workbench.core import graph
 from workbench.core.services import capture_integrity
@@ -142,6 +143,41 @@ def main():
         assert filenames.count("EventView/Tester/Test Zone.log")==1,filenames
 
         cap.close()
+        con.close()
+
+        # General connector and capture-specific connector must be idempotent with one another.
+        workbench_connect.connect(srcdb,graphdb)
+        connect(srcdb,graphdb)
+        con=sqlite3.connect(graphdb)
+        exact_count=con.execute(
+            """SELECT COUNT(*) FROM entity_relationships
+               WHERE source_node='capture:8'
+                 AND relationship IN ('OBSERVES_PACKET','OBSERVES_EVENTVIEW_PACKET')"""
+        ).fetchone()[0]
+        assert exact_count==3,exact_count
+
+        # Reconciliation removes stale bridge-owned rows after the normalized capture shrinks.
+        src=sqlite3.connect(srcdb)
+        src.execute("DELETE FROM capture_raw_packets WHERE capture_id=8 AND seq=1")
+        src.execute("DELETE FROM capture_eventview WHERE capture_id=8")
+        src.commit()
+        src.close()
+        result2=connect(srcdb,graphdb,capture_id=8)
+        assert result2["counts"]["raw_packet_observations"]==1,result2
+        assert result2["counts"]["eventview_observations"]==0,result2
+        stale=con.execute(
+            """SELECT relationship_id FROM entity_relationships
+               WHERE relationship_id IN (
+                 'raw-packet-observation:8:1',
+                 'eventview-packet-observation:8:Test Zone:0'
+               )"""
+        ).fetchall()
+        assert stale==[],stale
+        remaining=con.execute(
+            """SELECT relationship_id FROM entity_relationships
+               WHERE relationship_id='raw-packet-observation:8:0'"""
+        ).fetchone()
+        assert remaining is not None
         con.close()
 
     print("raw packet + EventView runtime graph regression: PASS")
