@@ -776,6 +776,8 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
 
     consumed=set()
     chained=[]
+    ambiguous_groups=0
+    unmatched_triggers=0
     for t in machine.transitions:
         if t.trigger not in {"NPC_INTERACT","ZONE_IN","TRADE"} or not t.event:
             continue
@@ -783,7 +785,10 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
         generic=finishes.get((t.event.zone,t.event.event_id,None),[])
         candidates=exact if exact else generic
         if not candidates:
+            unmatched_triggers+=1
             continue
+        if len(candidates)>1 and not all(candidate.metadata.get("branch_alternative") for candidate in candidates):
+            ambiguous_groups+=1
         consumed.add(t.transition_id)
         for f in candidates:
             consumed.add(f.transition_id)
@@ -846,7 +851,14 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
     out=MissionStateMachine(
         machine.machine_id,machine.feature_id,machine.states,
         tuple(remaining+chained),machine.entry_state_ids,machine.channels,
-        machine.completion_gate,{**machine.metadata,"event_chains":len(chained),"event_chain_branch_fanout":sum(max(0,len(v)-1) for v in finishes.values()),"event_chain_actor_scope":True},
+        machine.completion_gate,{
+            **machine.metadata,
+            "event_chains":len(chained),
+            "event_chain_branch_fanout":sum(max(0,len(v)-1) for v in finishes.values()),
+            "event_chain_actor_scope":True,
+            "event_chain_ambiguous_groups":ambiguous_groups,
+            "event_chain_unmatched_triggers":unmatched_triggers,
+        },
     )
     return materialize_channel_states(out)
 
