@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
-from workbench.plugins.domain.mission_lsb_extract import correlate_lsb_handlers, chain_event_transitions, extract_helper_transitions, extract_section_completion_gate
+from workbench.plugins.domain.mission_lsb_extract import correlate_lsb_handlers, chain_event_transitions, extract_helper_transitions, extract_section_completion_gate, mission_extraction_metrics
 
 ROOT=Path(__file__).resolve().parents[1]
 SOURCE=(ROOT/"test_fixtures"/"fixtures"/"lsb_the_road_forks.lua").read_text(encoding="utf-8")
@@ -52,6 +52,18 @@ def main():
     assert any(t.metadata.get("recursive_helper_call") for t in jewel_rows),jewel_rows
     assert all(t.metadata.get("branch_guard_complete") in {True,False} for t in jewel_rows),jewel_rows
     assert any(e.effect=="MESSAGE" for tr in raw.transitions for e in tr.effects),raw.transitions
+    raw_metrics=mission_extraction_metrics(raw)
+    chained_metrics=mission_extraction_metrics(chained)
+    assert raw_metrics["transition_count"]==len(raw.transitions),raw_metrics
+    assert raw_metrics["source_handler_count"]>=raw_metrics["modeled_source_handler_count"],raw_metrics
+    assert raw_metrics["source_handler_count"]-raw_metrics["modeled_source_handler_count"]==raw_metrics["unmodeled_source_handler_count"],raw_metrics
+    assert raw_metrics["channel_count"]==len(raw.channels),raw_metrics
+    assert raw_metrics["transitions_by_trigger"].get("NPC_INTERACT",0)>0,raw_metrics
+    assert raw_metrics["guard_operator_counts"].get("LT",0)>0,raw_metrics
+    assert raw_metrics["effect_kind_counts"].get("GRANT",0)>0,raw_metrics
+    assert raw_metrics["helper_call_counts"].get("jewelTimer",0)==1,raw_metrics
+    assert chained_metrics["event_chains"]==len(logical),chained_metrics
+    assert chained_metrics["event_chain_ambiguous_groups"]>=0,chained_metrics
     source_gap={}
     print("Road Forks real-source stress: PASS")
     print("raw_transitions",len(raw.transitions),"logical_chains",len(logical),"channels",len(raw.channels))

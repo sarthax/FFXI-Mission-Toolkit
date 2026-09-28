@@ -2263,3 +2263,37 @@ Branch/path scoping remains intact:
 Regressions:
 - `test_mission_complete_trade.py` proves comments and strings containing `player:tradeComplete()` do not create the effect while the real sibling branch does;
 - `test_mission_lsb_three_paths_stress.py` requires Mine Shaft 2716 event 3 to carry exactly one `COMPLETE_TRADE`, and the chained TRADE→event-3 transition to preserve exactly one copy.
+
+
+## 2026-09-27 — Mission extractor stress metrics
+
+The mission/quest extractor now exposes first-class diagnostic metrics so large source scripts can be stress-tested quantitatively instead of relying only on hand-picked assertions.
+
+`mission_extraction_metrics()` reports:
+- total transition count and transitions by trigger kind;
+- event-transition count;
+- branch-transition count and incomplete-branch count;
+- state-channel count;
+- guard operator counts;
+- effect-kind counts;
+- helper invocation counts;
+- recognized source-handler count;
+- modeled source-handler count;
+- unmodeled source-handler count plus exact source spans;
+- event-chain count;
+- event-chain branch fan-out;
+- ambiguous event-chain candidate groups;
+- initiating event triggers with no matching finish handler.
+
+`correlate_lsb_handlers()` now records source-handler coverage directly. A recognized handler that produces no modeled condition/effect/event is not silently lost: its source span is retained as an unmodeled-handler diagnostic.
+
+`chain_event_transitions()` now records ambiguous candidate groups separately from intended branch fan-out and counts unmatched initiating event triggers.
+
+Canonical mission feature metadata carries the extraction metrics, and `mission_graph_ingest.py` prints a concise preview summary before any optional write.
+
+Regressions:
+- Road Forks and Three Paths stress fixtures assert real-source metric invariants and key guard/effect/helper counts;
+- `test_mission_extractor_metrics.py` proves an unsupported handler is counted as unmodeled and duplicate same-CSID finish handlers are flagged as an ambiguous chain group;
+- `test_mission_graph_emission.py` verifies extraction metrics survive canonical feature projection.
+
+These metrics are diagnostics, not quality scores or implementation verdicts.

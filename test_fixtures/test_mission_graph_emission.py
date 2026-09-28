@@ -60,6 +60,9 @@ def main():
     assert projection.feature.feature_id=="mission:test:ancient-vows-shape"
     assert projection.artifact.path=="scripts/missions/cop/2_5_Ancient_Vows.lua"
     assert projection.implementation.status=="DISCOVERED"
+    metrics=projection.feature.metadata["extraction_metrics"]
+    assert metrics["source_handler_count"]>=metrics["modeled_source_handler_count"],metrics
+    assert metrics["event_chains"]>=1,metrics
     assert projection.evidence
     event_entities=[e for e in projection.entities if e.entity_type=="MISSION_EVENT"]
     assert len(event_entities)==1,event_entities

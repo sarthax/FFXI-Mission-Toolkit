@@ -21,6 +21,7 @@ This section supersedes older status labels below when they conflict. The histor
 - Domain-plugin foundation and battlefield/mission representation planning.
 - Mission/quest static source extraction can now emit evidence-backed canonical graph records (states, transitions, server event identities, actors, requirements/effects, and source implementation evidence) through a preview-first ingest path.
 - Mission event/CSID reconciliation can now attach exact source-script and client EVENT support to emitted server-event identities when zone+actor+CSID evidence is unambiguous; unresolved/ambiguous actor identity remains visible rather than guessed.
+- Mission source extraction now publishes stress/coverage diagnostics (handler coverage, branch/guard/effect classes, event-chain fan-out/ambiguity, helper calls, and unmodeled handler spans) into feature metadata and preview output.
 - Mission Lua handler extraction now separates top-level if/elseif/else alternatives and branch-specific event-finish outcomes; incomplete nested/multiline control flow is explicitly downgraded rather than silently flattened.
 - Mission transitions now preserve post-effect convergence ordering, so source-proven state writes that enable a completion helper are modeled before the convergence check rather than incorrectly as preconditions.
 - Mission completion-helper extraction is now structural rather than tied to the literal helper name `isMissionComplete`; handler guards link to discovered helpers by call identity and retain conservative post-effect ordering.

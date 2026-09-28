@@ -11,7 +11,7 @@ from hashlib import sha1
 from workbench.core import graph as graph_store
 from workbench.core.schema import Artifact, DependencyEdge, Entity, Evidence, Feature, Implementation
 
-from .mission_lsb_extract import chain_event_transitions, correlate_lsb_handlers
+from .mission_lsb_extract import chain_event_transitions, correlate_lsb_handlers, mission_extraction_metrics
 from .mission_state_machine import MissionStateMachine
 
 
@@ -134,7 +134,8 @@ def project_mission_graph(
         source_snapshot_id,
         status="DISCOVERED",
         metadata={"machine_id":machine.machine_id,"extractor":machine.metadata.get("extractor"),
-                  "transition_count":len(machine.transitions),"source_family":source_family},
+                  "transition_count":len(machine.transitions),"source_family":source_family,
+                  "extraction_metrics":mission_extraction_metrics(machine)},
     )
     artifact_id=f"artifact:mission-source:{_token(machine.feature_id,source_path,source_snapshot_id)}"
     artifact=Artifact(

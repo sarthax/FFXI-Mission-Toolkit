@@ -5,6 +5,7 @@ without executing Lua. Unsupported/dynamic expressions remain visible as finding
 """
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 import re
 from typing import Iterable
@@ -490,6 +491,9 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
     serial=0
     branch_alternatives=0
     incomplete_branch_guards=0
+    source_handler_count=0
+    modeled_source_handler_count=0
+    unmodeled_source_handler_lines=[]
     for start,end,text in _balanced_function_blocks(lua):
         first=lines[start]
         trigger=None; handler_event=None
@@ -511,6 +515,8 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
         if not trigger:
             continue
 
+        source_handler_count+=1
+        transition_count_before=len(transitions)
         paths=_handler_paths(text,start_line=start)
         if len(paths)>1:
             branch_alternatives+=len(paths)
@@ -620,6 +626,10 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                 },
                 post_effect_gate=post_effect_gate,
             ))
+        if len(transitions)>transition_count_before:
+            modeled_source_handler_count+=1
+        else:
+            unmodeled_source_handler_lines.append((start+1,end+1))
     # Declarative actor handlers are equivalent to unconditional NPC triggers.
     for line_no,line in enumerate(lines):
         dm=_DECL_EVENT.search(line)
@@ -627,6 +637,8 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
             continue
         zone,_=context(line_no)
         actor=dm.group(1); event_id=int(dm.group(3)); suffix=dm.group(4) or ""
+        source_handler_count+=1
+        modeled_source_handler_count+=1
         serial+=1
         transitions.append(MissionTransition(
             f"source-transition:{serial}","source:any","source:any","NPC_INTERACT",
@@ -647,8 +659,61 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
             "extractor":"lsb_static_literal","transition_count":len(transitions),
             "branch_alternatives":branch_alternatives,
             "incomplete_branch_guards":incomplete_branch_guards,
+            "source_handler_count":source_handler_count,
+            "modeled_source_handler_count":modeled_source_handler_count,
+            "unmodeled_source_handler_count":len(unmodeled_source_handler_lines),
+            "unmodeled_source_handler_lines":tuple(unmodeled_source_handler_lines),
         },
     )
+
+
+
+def mission_extraction_metrics(machine: MissionStateMachine) -> dict:
+    """Summarize extractor coverage/complexity without changing interpretation."""
+    trigger_counts=Counter(t.trigger for t in machine.transitions)
+    guard_counts=Counter(
+        condition.operator
+        for transition in machine.transitions
+        for gate in (transition.gate,transition.post_effect_gate)
+        if gate
+        for condition in gate.conditions
+    )
+    effect_counts=Counter(
+        effect.effect
+        for transition in machine.transitions
+        for effect in transition.effects
+    )
+    event_transitions=[t for t in machine.transitions if t.event]
+    branch_rows=[t for t in machine.transitions if t.metadata.get("branch_alternative")]
+    incomplete_rows=[
+        t for t in machine.transitions
+        if t.metadata.get("branch_guard_complete") is False
+        or t.metadata.get("unexpanded_nested_branch")
+    ]
+    helper_calls=Counter(
+        helper
+        for transition in machine.transitions
+        for helper in transition.metadata.get("helper_calls",())
+    )
+    return {
+        "transition_count":len(machine.transitions),
+        "transitions_by_trigger":dict(sorted(trigger_counts.items())),
+        "event_transition_count":len(event_transitions),
+        "branch_transition_count":len(branch_rows),
+        "incomplete_branch_transition_count":len(incomplete_rows),
+        "channel_count":len(machine.channels),
+        "guard_operator_counts":dict(sorted(guard_counts.items())),
+        "effect_kind_counts":dict(sorted(effect_counts.items())),
+        "helper_call_counts":dict(sorted(helper_calls.items())),
+        "source_handler_count":int(machine.metadata.get("source_handler_count",0)),
+        "modeled_source_handler_count":int(machine.metadata.get("modeled_source_handler_count",0)),
+        "unmodeled_source_handler_count":int(machine.metadata.get("unmodeled_source_handler_count",0)),
+        "unmodeled_source_handler_lines":tuple(machine.metadata.get("unmodeled_source_handler_lines",())),
+        "event_chains":int(machine.metadata.get("event_chains",0)),
+        "event_chain_branch_fanout":int(machine.metadata.get("event_chain_branch_fanout",0)),
+        "event_chain_ambiguous_groups":int(machine.metadata.get("event_chain_ambiguous_groups",0)),
+        "event_chain_unmatched_triggers":int(machine.metadata.get("event_chain_unmatched_triggers",0)),
+    }
 
 
 def materialize_channel_states(machine: MissionStateMachine) -> MissionStateMachine:
@@ -711,6 +776,8 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
 
     consumed=set()
     chained=[]
+    ambiguous_groups=0
+    unmatched_triggers=0
     for t in machine.transitions:
         if t.trigger not in {"NPC_INTERACT","ZONE_IN","TRADE"} or not t.event:
             continue
@@ -718,7 +785,10 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
         generic=finishes.get((t.event.zone,t.event.event_id,None),[])
         candidates=exact if exact else generic
         if not candidates:
+            unmatched_triggers+=1
             continue
+        if len(candidates)>1 and not all(candidate.metadata.get("branch_alternative") for candidate in candidates):
+            ambiguous_groups+=1
         consumed.add(t.transition_id)
         for f in candidates:
             consumed.add(f.transition_id)
@@ -781,7 +851,14 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
     out=MissionStateMachine(
         machine.machine_id,machine.feature_id,machine.states,
         tuple(remaining+chained),machine.entry_state_ids,machine.channels,
-        machine.completion_gate,{**machine.metadata,"event_chains":len(chained),"event_chain_branch_fanout":sum(max(0,len(v)-1) for v in finishes.values()),"event_chain_actor_scope":True},
+        machine.completion_gate,{
+            **machine.metadata,
+            "event_chains":len(chained),
+            "event_chain_branch_fanout":sum(max(0,len(v)-1) for v in finishes.values()),
+            "event_chain_actor_scope":True,
+            "event_chain_ambiguous_groups":ambiguous_groups,
+            "event_chain_unmatched_triggers":unmatched_triggers,
+        },
     )
     return materialize_channel_states(out)
 

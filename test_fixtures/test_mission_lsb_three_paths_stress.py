@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 from workbench.plugins.domain.mission_lsb_extract import (
-    chain_event_transitions, client_transport_effects, correlate_lsb_handlers, extract_dynamic_completion_gate, extract_mission_reward_metadata, extract_section_completion_gate,
+    chain_event_transitions, client_transport_effects, correlate_lsb_handlers, extract_dynamic_completion_gate, extract_mission_reward_metadata, extract_section_completion_gate, mission_extraction_metrics,
 )
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -88,6 +88,16 @@ def main():
     ]
     assert {t.event.event_id for t in chained_terminal}==terminal_events,chained_terminal
     assert all(t.post_effect_gate is not None for t in chained_terminal),chained_terminal
+    raw_metrics=mission_extraction_metrics(raw)
+    chained_metrics=mission_extraction_metrics(chained)
+    assert raw_metrics["transition_count"]==len(raw.transitions),raw_metrics
+    assert raw_metrics["source_handler_count"]>=raw_metrics["modeled_source_handler_count"],raw_metrics
+    assert raw_metrics["source_handler_count"]-raw_metrics["modeled_source_handler_count"]==raw_metrics["unmodeled_source_handler_count"],raw_metrics
+    assert raw_metrics["branch_transition_count"]>0,raw_metrics
+    assert raw_metrics["guard_operator_counts"].get("NE",0)>0,raw_metrics
+    assert raw_metrics["effect_kind_counts"].get("COMPLETE_TRADE",0)==1,raw_metrics
+    assert raw_metrics["effect_kind_counts"].get("CLIENT_TRANSPORT",0)==1,raw_metrics
+    assert chained_metrics["event_chains"]>0,chained_metrics
     gaps={}
     print("Three Paths real-source stress: PASS")
     print("raw_transitions",len(raw.transitions),"chained_transitions",len(chained.transitions),"channels",len(raw.channels))
