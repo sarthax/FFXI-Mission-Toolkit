@@ -102,6 +102,9 @@ _TODO_AFTER_MISSION=re.compile(
     r"--\s*TODO:\s*(.*?)\bafter\s+(?:WOTG\s+)?Mission:\s*([A-Za-z0-9 '\-]+)",
     re.I,
 )
+_HELPER_DEF_START=re.compile(
+    r"^\s*([A-Za-z_][A-Za-z0-9_.]*)\s*=\s*function\(player\)"
+)
 _OP={"==":"EQ","~=":"NE","<":"LT","<=":"LE",">":"GT",">=":"GE"}
 
 
@@ -121,6 +124,44 @@ def _documented_feature_requirements(lua: str) -> tuple[dict,...]:
             "note":match.group(1).strip(),
         })
     return tuple(out)
+
+
+def extract_feature_requirement_helpers(lua: str) -> dict[str,DependencyGate]:
+    """Extract pure helper predicates that represent quest/mission prerequisites."""
+    lines=lua.splitlines()
+    out={}
+    for start,_end,text in _balanced_function_blocks(lua):
+        match=_HELPER_DEF_START.search(lines[start])
+        if not match:
+            continue
+        executable=" ".join(
+            line.strip() for line in _structural_lua_lines(text) if line.strip()
+        )
+        quest_conditions=[
+            StateCondition(f"quest:{symbol}","COMPLETE",True)
+            for symbol in _COMPLETED_QUEST.findall(executable)
+        ]
+        mission_conditions=[
+            StateCondition(f"mission:{symbol}","COMPLETE",True)
+            for _log,symbol in _COMPLETED_MISSION.findall(executable)
+        ]
+        conditions=[]
+        for condition in (*quest_conditions,*mission_conditions):
+            if condition not in conditions:
+                conditions.append(condition)
+        if not conditions:
+            continue
+        has_or=bool(re.search(r"\bor\b",executable))
+        has_and=bool(re.search(r"\band\b",executable))
+        if has_or and has_and:
+            continue
+        helper=match.group(1)
+        out[helper]=DependencyGate(
+            f"helper-feature-prerequisite:{helper}",
+            "ANY" if has_or else "ALL",
+            tuple(conditions),
+        )
+    return out
 
 
 def _literal_quest_section_spans(lua: str) -> tuple[tuple[int,int,str],...]:
@@ -181,13 +222,17 @@ def _section_check_block(section: str) -> str | None:
     return None
 
 
-def _section_analysis(section: str) -> dict:
+def _section_analysis(
+    section: str,
+    helper_feature_gates: dict[str,DependencyGate] | None=None,
+) -> dict:
     check=_section_check_block(section)
     if check is None:
         return {
             "check_present":False,
             "status":"NO_CHECK",
             "conditions":(),
+            "feature_requirement_gates":(),
             "unresolved_reasons":(),
         }
     executable=" ".join(
@@ -198,6 +243,7 @@ def _section_analysis(section: str) -> dict:
             "check_present":True,
             "status":"UNRESOLVED",
             "conditions":(),
+            "feature_requirement_gates":(),
             "unresolved_reasons":("disjunction",),
         }
 
@@ -232,28 +278,39 @@ def _section_analysis(section: str) -> dict:
     for condition in out:
         if condition not in dedup:
             dedup.append(condition)
+
+    helper_gates=[]
+    for helper,gate in (helper_feature_gates or {}).items():
+        if re.search(rf"(?<![A-Za-z0-9_.]){re.escape(helper)}\(\s*player\s*\)",executable):
+            helper_gates.append(gate)
+
     return {
         "check_present":True,
-        "status":"MODELED" if dedup else "NO_STATUS_REQUIREMENTS",
+        "status":"MODELED" if (dedup or helper_gates) else "NO_STATUS_REQUIREMENTS",
         "conditions":tuple(dedup),
+        "feature_requirement_gates":tuple(helper_gates),
         "unresolved_reasons":(),
     }
 
 
-def _section_contexts(lua: str):
+def _section_contexts(
+    lua: str,
+    helper_feature_gates: dict[str,DependencyGate] | None=None,
+):
     rows=[]
     for index,(start,end,text) in enumerate(_literal_quest_section_spans(lua),1):
-        rows.append((start,end,index,_section_analysis(text)))
+        rows.append((start,end,index,_section_analysis(text,helper_feature_gates)))
 
     def context(line_no: int):
         matches=[row for row in rows if row[0]<=line_no<=row[1]]
         if not matches:
-            return None,None,(),None,(),False
+            return None,None,(),(),None,(),False
         start,end,index,analysis=max(matches,key=lambda row:row[0])
         return (
             index,
             (start+1,end+1),
             analysis["conditions"],
+            analysis["feature_requirement_gates"],
             analysis["status"],
             analysis["unresolved_reasons"],
             analysis["check_present"],
@@ -398,12 +455,13 @@ def correlate_lsb_quest_handlers(
     lua: str,
     *,
     feature_id: str="quest:unknown",
+    helper_feature_gates: dict[str,DependencyGate] | None=None,
 ) -> MissionStateMachine:
     """Correlate literal LSB Quest DSL handlers into the generic state-machine model."""
     identity=_QUEST_ID.search(lua)
     reward=_QUEST_REWARD_ITEM.search(lua)
     lines,_zone_spans,_actor_spans,context=_scoped_contexts(lua)
-    _section_rows,section_context=_section_contexts(lua)
+    _section_rows,section_context=_section_contexts(lua,helper_feature_gates)
 
     transitions=[]
     states={"source:any":MissionState("source:any","Source state")}
@@ -420,6 +478,7 @@ def correlate_lsb_quest_handlers(
             section_index,
             section_source_lines,
             section_conditions,
+            section_feature_requirement_gates,
             section_status,
             section_unresolved_reasons,
             section_check_present,
@@ -513,6 +572,21 @@ def correlate_lsb_quest_handlers(
                         }
                         for condition in section_conditions
                     ),
+                    "section_feature_requirement_gates":tuple(
+                        {
+                            "gate_id":gate.gate_id,
+                            "logic":gate.logic,
+                            "conditions":tuple(
+                                {
+                                    "subject":condition.subject,
+                                    "operator":condition.operator,
+                                    "value":condition.value,
+                                }
+                                for condition in gate.conditions
+                            ),
+                        }
+                        for gate in section_feature_requirement_gates
+                    ),
                     "section_eligibility_status":section_status,
                     "section_eligibility_unresolved_reasons":tuple(section_unresolved_reasons),
                     "section_check_present":section_check_present,
@@ -548,6 +622,7 @@ def correlate_lsb_quest_handlers(
             section_index,
             section_source_lines,
             section_conditions,
+            section_feature_requirement_gates,
             section_status,
             section_unresolved_reasons,
             section_check_present,
@@ -577,6 +652,21 @@ def correlate_lsb_quest_handlers(
                         "value":condition.value,
                     }
                     for condition in section_conditions
+                ),
+                "section_feature_requirement_gates":tuple(
+                    {
+                        "gate_id":gate.gate_id,
+                        "logic":gate.logic,
+                        "conditions":tuple(
+                            {
+                                "subject":condition.subject,
+                                "operator":condition.operator,
+                                "value":condition.value,
+                            }
+                            for condition in gate.conditions
+                        ),
+                    }
+                    for gate in section_feature_requirement_gates
                 ),
                 "section_eligibility_status":section_status,
                 "section_eligibility_unresolved_reasons":tuple(section_unresolved_reasons),
