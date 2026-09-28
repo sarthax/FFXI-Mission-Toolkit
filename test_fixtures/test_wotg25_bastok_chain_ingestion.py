@@ -393,6 +393,7 @@ def main():
         "cycle_count":0,
     },closure_summary
 
+    back_metrics=mission_extraction_metrics(back)
     q0_metrics=quest_extraction_metrics(q0)
     q1_metrics=quest_extraction_metrics(q1)
     q2_metrics=quest_extraction_metrics(q2)
@@ -403,6 +404,7 @@ def main():
     q7_metrics=quest_extraction_metrics(q7)
     q9_metrics=quest_extraction_metrics(q9)
     q10_metrics=quest_extraction_metrics(q10)
+    assert back_metrics["event_chains"]==6,back_metrics
     assert q0_metrics["unmodeled_source_handler_count"]==0,q0_metrics
     assert q1_metrics["unmodeled_source_handler_count"]==0,q1_metrics
     assert q2_metrics["unmodeled_source_handler_count"]==0,q2_metrics
@@ -514,6 +516,22 @@ def main():
         and effect.value is True
         for effect in storm_start.effects
     ),storm_start
+
+    back_maw=next(
+        transition for transition in back.transitions
+        if transition.metadata.get("logical_event_chain")
+        and transition.event
+        and transition.event.zone=="BATALLIA_DOWNS"
+        and transition.event.actor=="Cavernous_Maw"
+        and transition.event.event_id==501
+    )
+    assert any(
+        effect.effect=="COMPLETE" and effect.subject=="mission"
+        for effect in back_maw.effects
+    ),back_maw
+    assert {"mawEvent","completeMission"} <= set(
+        back_maw.metadata.get("helper_calls",())
+    ),back_maw.metadata
 
     q0_raw=correlate_lsb_quest_handlers(
         q0_lua,
@@ -700,6 +718,7 @@ def main():
     print("q2_transitions",len(q2.transitions),"q2_unmodeled",q2_metrics["unmodeled_source_handler_count"])
     print("q1_transitions",len(q1.transitions),"q1_unmodeled",q1_metrics["unmodeled_source_handler_count"])
     print("q0_transitions",len(q0.transitions),"q0_unmodeled",q0_metrics["unmodeled_source_handler_count"])
+    print("back_transitions",len(back.transitions),"back_event_chains",back_metrics["event_chains"])
     print("documented_cait_sith",documented)
     print("next_gap","dependency closure is complete for the selected Bastok path; stress local/helper handler indirection next")
     return 0
