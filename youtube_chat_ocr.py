@@ -102,6 +102,220 @@ CAPTURE_PROFILE_PACKETLOGGER = "packetlogger"
 CAPTURE_PROFILES = [CAPTURE_PROFILE_PLAIN, CAPTURE_PROFILE_TIMESTAMPED, CAPTURE_PROFILE_PACKETLOGGER]
 DEFAULT_CAPTURE_PROFILE = CAPTURE_PROFILE_PLAIN
 
+PREPROCESS_PROFILE_STANDARD = "standard"
+PREPROCESS_PROFILE_CHAT = "chat"
+PREPROCESS_PROFILE_PACKET = "packet_overlay"
+PREPROCESS_PROFILE_SMALL = "small_overlay"
+PREPROCESS_PROFILES = {
+    PREPROCESS_PROFILE_STANDARD: {
+        "label": "Standard grayscale",
+        "description": "Grayscale, autocontrast, 3x upscale, Tesseract PSM 6.",
+        "scale": 3,
+        "autocontrast": True,
+        "threshold": None,
+        "invert": False,
+        "sharpen": False,
+        "psm": 6,
+    },
+    PREPROCESS_PROFILE_CHAT: {
+        "label": "FFXI chat",
+        "description": "Grayscale, autocontrast, mild sharpen, 3x upscale, PSM 6.",
+        "scale": 3,
+        "autocontrast": True,
+        "threshold": None,
+        "invert": False,
+        "sharpen": True,
+        "psm": 6,
+    },
+    PREPROCESS_PROFILE_PACKET: {
+        "label": "EView / packet overlay",
+        "description": "High-contrast thresholded overlay text, 4x upscale, PSM 6.",
+        "scale": 4,
+        "autocontrast": True,
+        "threshold": 150,
+        "invert": False,
+        "sharpen": True,
+        "psm": 6,
+    },
+    PREPROCESS_PROFILE_SMALL: {
+        "label": "Small overlay text",
+        "description": "Aggressive upscale/sharpen for compact addon overlays, PSM 6.",
+        "scale": 5,
+        "autocontrast": True,
+        "threshold": None,
+        "invert": False,
+        "sharpen": True,
+        "psm": 6,
+    },
+}
+DEFAULT_PREPROCESS_PROFILE = PREPROCESS_PROFILE_STANDARD
+LAYOUT_PROFILE_PATH = TOOLS_ROOT / "data" / "ocr_layout_profiles.json"
+_BUILTIN_LAYOUT_PROFILES = {
+    "chat_only": {
+        "name": "Chat only",
+        "description": "One FFXI chat-log region. Coordinates must be filled from a saved real setup.",
+        "regions": [{
+            "label": "chat",
+            "crop": None,
+            "fps": 2.0,
+            "capture_profile": CAPTURE_PROFILE_PLAIN,
+            "preprocess_profile": PREPROCESS_PROFILE_CHAT,
+        }],
+        "builtin": True,
+    },
+    "eview_packet": {
+        "name": "EView packet overlay",
+        "description": "One EView/packet overlay region. Coordinates must be filled from a saved real setup.",
+        "regions": [{
+            "label": "eview",
+            "crop": None,
+            "fps": 2.0,
+            "capture_profile": CAPTURE_PROFILE_PACKETLOGGER,
+            "preprocess_profile": PREPROCESS_PROFILE_PACKET,
+        }],
+        "builtin": True,
+    },
+    "npclogger_overlay": {
+        "name": "NPCLogger overlay",
+        "description": "One compact NPCLogger/addon overlay region; plain OCR with small-text preprocessing.",
+        "regions": [{
+            "label": "npclogger",
+            "crop": None,
+            "fps": 2.0,
+            "capture_profile": CAPTURE_PROFILE_PLAIN,
+            "preprocess_profile": PREPROCESS_PROFILE_SMALL,
+        }],
+        "builtin": True,
+    },
+    "research_combo": {
+        "name": "Research combo",
+        "description": "Chat + EView + NPCLogger region roles. Save a real coordinate layout before reuse.",
+        "regions": [
+            {"label": "chat", "crop": None, "fps": 2.0, "capture_profile": CAPTURE_PROFILE_PLAIN, "preprocess_profile": PREPROCESS_PROFILE_CHAT},
+            {"label": "eview", "crop": None, "fps": 2.0, "capture_profile": CAPTURE_PROFILE_PACKETLOGGER, "preprocess_profile": PREPROCESS_PROFILE_PACKET},
+            {"label": "npclogger", "crop": None, "fps": 2.0, "capture_profile": CAPTURE_PROFILE_PLAIN, "preprocess_profile": PREPROCESS_PROFILE_SMALL},
+        ],
+        "builtin": True,
+    },
+}
+
+def list_preprocess_profiles() -> list[dict]:
+    return [
+        {"id": key, **value}
+        for key, value in PREPROCESS_PROFILES.items()
+    ]
+
+
+def load_layout_profiles() -> dict:
+    profiles = {key: dict(value) for key, value in _BUILTIN_LAYOUT_PROFILES.items()}
+    if LAYOUT_PROFILE_PATH.exists():
+        try:
+            saved = json.loads(LAYOUT_PROFILE_PATH.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            saved = {}
+        for key, value in (saved or {}).items():
+            if not isinstance(value, dict):
+                continue
+            item = dict(value)
+            item["builtin"] = False
+            profiles[key] = item
+    return profiles
+
+
+def save_layout_profile(profile_id: str, name: str, regions: list[dict], description: str = "") -> dict:
+    profile_id = section_slug(profile_id)
+    if profile_id in _BUILTIN_LAYOUT_PROFILES:
+        raise ValueError("cannot overwrite a built-in layout profile")
+    clean_regions = []
+    for region in regions:
+        crop = region.get("crop")
+        if not crop:
+            raise ValueError("saved layout regions require real crop coordinates")
+        preprocess = region.get("preprocess_profile") or DEFAULT_PREPROCESS_PROFILE
+        if preprocess not in PREPROCESS_PROFILES:
+            raise ValueError(f"unknown preprocess profile: {preprocess}")
+        capture = region.get("capture_profile") or DEFAULT_CAPTURE_PROFILE
+        if capture not in CAPTURE_PROFILES:
+            raise ValueError(f"unknown capture profile: {capture}")
+        clean_regions.append({
+            "label": region.get("label") or "section",
+            "crop": crop,
+            "fps": float(region.get("fps") or 2.0),
+            "capture_profile": capture,
+            "preprocess_profile": preprocess,
+        })
+    LAYOUT_PROFILE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    saved = {}
+    if LAYOUT_PROFILE_PATH.exists():
+        try:
+            saved = json.loads(LAYOUT_PROFILE_PATH.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            saved = {}
+    saved[profile_id] = {
+        "name": name.strip() or profile_id,
+        "description": description.strip(),
+        "regions": clean_regions,
+    }
+    LAYOUT_PROFILE_PATH.write_text(json.dumps(saved, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return {"id": profile_id, **saved[profile_id], "builtin": False}
+
+
+def delete_layout_profile(profile_id: str) -> bool:
+    if profile_id in _BUILTIN_LAYOUT_PROFILES or not LAYOUT_PROFILE_PATH.exists():
+        return False
+    try:
+        saved = json.loads(LAYOUT_PROFILE_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    if profile_id not in saved:
+        return False
+    del saved[profile_id]
+    LAYOUT_PROFILE_PATH.write_text(json.dumps(saved, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return True
+
+
+def save_run_layout(run_id: str, profile_id: str, name: str, description: str = "") -> dict:
+    regions = []
+    for section in list_sections(run_id):
+        meta = section_meta(run_id, section)
+        if not meta.get("crop"):
+            continue
+        regions.append({
+            "label": meta.get("label") or section,
+            "crop": meta.get("crop"),
+            "fps": meta.get("fps") or 2.0,
+            "capture_profile": meta.get("capture_profile") or DEFAULT_CAPTURE_PROFILE,
+            "preprocess_profile": meta.get("preprocess_profile") or DEFAULT_PREPROCESS_PROFILE,
+        })
+    if not regions:
+        raise ValueError("run has no configured OCR sections to save")
+    return save_layout_profile(profile_id, name, regions, description)
+
+
+def apply_layout_profile(run_id: str, profile_id: str) -> list[str]:
+    profiles = load_layout_profiles()
+    profile = profiles.get(profile_id)
+    if not profile:
+        raise ValueError(f"unknown layout profile: {profile_id}")
+    created = []
+    for region in profile.get("regions") or []:
+        crop = region.get("crop")
+        if not crop:
+            raise ValueError(
+                f"layout profile {profile_id!r} is a template without coordinates; configure sections and save a real layout first"
+            )
+        cmd_frames(argparse.Namespace(
+            run_id=run_id,
+            crop=crop,
+            fps=float(region.get("fps") or 2.0),
+            section=region.get("label") or "section",
+            profile=region.get("capture_profile") or DEFAULT_CAPTURE_PROFILE,
+            preprocess=region.get("preprocess_profile") or DEFAULT_PREPROCESS_PROFILE,
+        ))
+        created.append(section_slug(region.get("label") or "section"))
+    return created
+
+
 # Known FFXI chat channel prefixes as they render in the default client log (case-sensitive on
 # purpose -- OCR noise on lowercase/garbled text should fall through to "unknown" rather than
 # guess).
