@@ -14,16 +14,21 @@ from dataclasses import dataclass
 import math
 import sqlite3
 import uuid
+from datetime import datetime
 
 
 CLOCK_VIDEO_RELATIVE = "VIDEO_RELATIVE_SECONDS"
 CLOCK_CAPTURE_RELATIVE = "CAPTURE_RELATIVE_SECONDS"
 CLOCK_EPOCH_SECONDS = "EPOCH_SECONDS"
 CLOCK_LOGGER_SECONDS = "LOGGER_SECONDS"
+CLOCK_RAW_PACKET_RELATIVE = "RAW_PACKET_RELATIVE_SECONDS"
+CLOCK_EVENTVIEW_RELATIVE = "EVENTVIEW_RELATIVE_SECONDS"
 CLOCK_KINDS = {
     CLOCK_CAPTURE_RELATIVE,
     CLOCK_EPOCH_SECONDS,
     CLOCK_LOGGER_SECONDS,
+    CLOCK_RAW_PACKET_RELATIVE,
+    CLOCK_EVENTVIEW_RELATIVE,
 }
 
 
@@ -195,6 +200,128 @@ def fit_alignment(
         video_min=min(xs),
         video_max=max(xs),
     )
+
+
+def _parse_capture_timestamp(value) -> float | None:
+    if value is None:
+        return None
+    raw = str(value).strip()
+    if not raw:
+        return None
+    try:
+        return float(raw)
+    except ValueError:
+        pass
+    normalized = raw.replace("T", " ").rstrip("Z")
+    for fmt in (
+        "%Y-%m-%d %H:%M:%S.%f",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y/%m/%d %H:%M:%S.%f",
+        "%Y/%m/%d %H:%M:%S",
+    ):
+        try:
+            return datetime.strptime(normalized, fmt).timestamp()
+        except ValueError:
+            continue
+    return None
+
+
+def capture_timeline_candidates(con: sqlite3.Connection, capture_id: int, limit: int = 500) -> list[dict]:
+    """Expose real timestamped capture observations as anchor candidates.
+
+    Each source table keeps its own relative-zero clock.  We deliberately do not interleave or
+    normalize independent logger clocks until a user/correlation anchor proves they are related.
+    """
+    candidates: list[dict] = []
+
+    def append_rows(table: str, clock_kind: str, source_type: str, rows):
+        parsed = []
+        for row in rows:
+            ts = _parse_capture_timestamp(row["ts"])
+            if ts is None:
+                continue
+            parsed.append((ts, row))
+        if not parsed:
+            return
+        origin = min(ts for ts, _ in parsed)
+        for ts, row in parsed:
+            item = dict(row)
+            item.update({
+                "clock_kind": clock_kind,
+                "source_type": source_type,
+                "capture_ts": round(ts - origin, 6),
+                "absolute_ts": ts,
+            })
+            candidates.append(item)
+
+    con.row_factory = sqlite3.Row
+    if con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='capture_raw_packets'").fetchone():
+        rows = con.execute(
+            """SELECT seq,ts,direction,opcode,NULL AS gp_command,
+                      'raw-packet:' || seq AS source_ref
+               FROM capture_raw_packets WHERE capture_id=?
+               ORDER BY ts,seq LIMIT ?""",
+            (int(capture_id), int(limit)),
+        ).fetchall()
+        append_rows("capture_raw_packets", CLOCK_RAW_PACKET_RELATIVE, "RAW_PACKET", rows)
+
+    if con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='capture_eventview'").fetchone():
+        rows = con.execute(
+            """SELECT seq,ts,direction,opcode,gp_command,
+                      'eventview:' || zone_db || ':' || seq AS source_ref
+               FROM capture_eventview WHERE capture_id=? AND ts IS NOT NULL
+               ORDER BY ts,seq LIMIT ?""",
+            (int(capture_id), int(limit)),
+        ).fetchall()
+        append_rows("capture_eventview", CLOCK_EVENTVIEW_RELATIVE, "EVENTVIEW", rows)
+
+    return sorted(candidates, key=lambda r: (r["clock_kind"], r["capture_ts"], r["source_ref"]))
+
+
+def video_timeline_candidates(con: sqlite3.Connection, capture_id: int, limit: int = 500) -> list[dict]:
+    con.row_factory = sqlite3.Row
+    exists = con.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='capture_video_observations'"
+    ).fetchone()
+    if not exists:
+        return []
+    rows = con.execute(
+        """SELECT observation_id,section,frame,video_ts,direction,opcode,gp_command,
+                  source_url,ocr_confidence
+           FROM capture_video_observations
+           WHERE capture_id=? AND video_ts IS NOT NULL
+           ORDER BY video_ts,observation_id LIMIT ?""",
+        (int(capture_id), int(limit)),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def shared_packet_landmarks(con: sqlite3.Connection, capture_id: int) -> list[dict]:
+    """Summarize opcodes visible in both video OCR and real capture sources.
+
+    This is candidate generation only.  Repeated opcodes are intentionally not auto-paired.
+    """
+    video = video_timeline_candidates(con, capture_id, limit=5000)
+    real = capture_timeline_candidates(con, capture_id, limit=5000)
+    by_video = {}
+    by_real = {}
+    for row in video:
+        if row.get("opcode"):
+            by_video.setdefault(str(row["opcode"]).lower(), []).append(row)
+    for row in real:
+        if row.get("opcode"):
+            by_real.setdefault(str(row["opcode"]).lower(), []).append(row)
+    out = []
+    for opcode in sorted(set(by_video) & set(by_real)):
+        out.append({
+            "opcode": opcode,
+            "video_count": len(by_video[opcode]),
+            "capture_count": len(by_real[opcode]),
+            "unique_pair": len(by_video[opcode]) == 1 and len(by_real[opcode]) == 1,
+            "video": by_video[opcode],
+            "capture": by_real[opcode],
+        })
+    return out
 
 
 def alignment_summary(con: sqlite3.Connection, capture_id: int) -> dict:
