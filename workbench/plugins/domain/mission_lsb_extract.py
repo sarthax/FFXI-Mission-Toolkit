@@ -1073,6 +1073,9 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
                     "section_eligibility_conditions":tuple(
                         t.metadata.get("section_eligibility_conditions",())
                     ),
+                    "section_feature_requirement_gates":tuple(
+                        t.metadata.get("section_feature_requirement_gates",())
+                    ),
                     "section_eligibility_basis":t.metadata.get("section_eligibility_basis"),
                     "section_check_present":t.metadata.get("section_check_present"),
                     "section_eligibility_status":t.metadata.get("section_eligibility_status"),
