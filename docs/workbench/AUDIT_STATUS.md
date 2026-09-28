@@ -2227,3 +2227,24 @@ Regressions:
 - `test_mission_lsb_branching.py` proves one annotated branch receives `CLIENT_TRANSPORT`, its sibling does not, and only one chained event-6 outcome retains the effect.
 
 The annotation remains source evidence, not proof of the client destination or runtime transport correctness.
+
+
+## 2026-09-27 — Mission helper branch semantics and invocation linkage
+
+Mission helper extraction and handler linkage are now explicit and branch-aware.
+
+Changes:
+- handler correlation records exact `helper(player)` calls per extracted handler path in `metadata.helper_calls`;
+- sibling branches do not inherit helper calls they do not contain;
+- `extract_helper_transitions()` now uses the same conservative branch-path expansion as mission handlers instead of flattening mutually exclusive helper effects into one transition;
+- helper branch confidence falls to UNKNOWN when branch guards remain incomplete/unexpanded;
+- recursive helper calls are marked explicitly in helper transition metadata;
+- canonical mission graph emission creates feature-local `MISSION_HELPER` nodes and `CALLS_HELPER` edges from the exact invoking transition.
+
+Helper effects are deliberately not inlined into the caller. This preserves asynchronous/recursive semantics such as Road Forks `jewelTimer(player)`, where timer/message/key-item behavior occurs inside the helper and may repeat later rather than happening immediately at the invocation site.
+
+Regressions:
+- `test_mission_lsb_road_forks_stress.py` requires only the exact Loose Sand branch that grants the Mimeo Jewel to call `jewelTimer`, and verifies branch-specific helper behavior including recursive timer scheduling;
+- `test_mission_graph_emission.py` verifies `CALLS_HELPER` survives canonical graph projection.
+
+This remains conservative static linkage. Dynamic function references, aliases, higher-order callbacks, and nonliteral helper invocation are not resolved.
