@@ -75,6 +75,24 @@ def main():
         assert source_row[3] == build_capture_index.CAPTURE_PARSER_VERSION, source_row
         assert source_row[4] == "single_file", source_row
 
+        # Same filename with changed bytes updates the latest view but preserves both artifacts.
+        changed = b"changed bytes under the same filename\n"
+        build_capture_index.ingest_single_file(con, cid, "first-name.unknown", changed)
+        latest = con.execute(
+            "SELECT sha256 FROM capture_source_files WHERE capture_id=? AND filename=?",
+            (cid, "first-name.unknown"),
+        ).fetchone()[0]
+        assert latest != r1["sha256"]
+        artifact_rows = con.execute(
+            """SELECT sha256 FROM capture_source_artifacts
+               WHERE capture_id=? AND filename=? ORDER BY sha256""",
+            (cid, "first-name.unknown"),
+        ).fetchall()
+        assert len(artifact_rows) == 2, artifact_rows
+        assert {r[0] for r in artifact_rows} == {
+            r1["sha256"], build_capture_index._content_fingerprint(changed)[0]
+        }
+
         # Bundle manifest is independent of relative filenames.
         dir1 = root / "bundle1"
         dir2 = root / "bundle2"
