@@ -137,6 +137,7 @@ jobs:
           python test_fixtures/test_wiki_evidence_mapping.py
           python test_fixtures/test_dual_wiki_claim_alignment.py
           python test_fixtures/test_capture_integrity_hardening.py
+          python test_fixtures/test_capture_content_fingerprint.py
           python test_fixtures/test_capture_event_packet_graph.py
           python test_fixtures/test_lua_event_typing.py
           python test_fixtures/test_server_lua_graph_bridge.py
