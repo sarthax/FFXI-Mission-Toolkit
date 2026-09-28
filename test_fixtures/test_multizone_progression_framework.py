@@ -22,10 +22,11 @@ from workbench.plugins.domain.mission_state_machine import EventIdentity, StateC
 def _ready_model():
     objectives=(
         ProgressionObjective(
-            "briefing","Receive the briefing","NPC_INTERACT",("ZONE_A",),
+            "briefing","Receive the briefing","npc_interact",("ZONE_A",),
             subject="npc:briefing",
             effects=(TransitionEffect("SET_VAR","mission_var:Progress",1),),
             event=EventIdentity("ZONE_A",100,"Briefing_NPC"),
+            evidence_ids=("evidence:briefing",),
         ),
         ProgressionObjective(
             "east_hunt","Defeat eastern targets","MOB_DEATH",("ZONE_B",),
@@ -50,7 +51,7 @@ def _ready_model():
         ProgressionStage("briefing","Briefing",("briefing",)),
         ProgressionStage(
             "east","Eastern hunt",("east_hunt",),
-            ProgressionGate("east-prereq","all",("briefing",)),
+            ProgressionGate("east-prereq","all",("briefing",),("evidence:east-prereq",)),
         ),
         ProgressionStage(
             "west","Western hunt",("west_hunt",),
@@ -64,6 +65,8 @@ def _ready_model():
         ProgressionStage(
             "turnin","Converged turn-in",("turn_in",),
             ProgressionGate("turnin-prereq","ALL",("east","west")),
+            completion_logic="all",
+            evidence_ids=("evidence:turnin",),
         ),
     )
     return MultiZoneProgression(
@@ -78,8 +81,10 @@ def main():
     assert not model.validate(),model.validate()
     analysis=analyze_progression(model)
     assert analysis.status=="STRUCTURALLY_READY",analysis
+    assert model.objectives[0].trigger=="NPC_INTERACT",model.objectives[0]
     assert model.stages[1].prerequisite_gate.logic=="ALL",model.stages[1].prerequisite_gate
     assert model.stages[3].prerequisite_gate.logic=="ANY",model.stages[3].prerequisite_gate
+    assert model.stages[4].completion_logic=="ALL",model.stages[4]
     assert analysis.reachable_stage_ids==("briefing","east","scout","turnin","west"),analysis
     assert not analysis.unreachable_stage_ids,analysis
     assert analysis.zone_ids==("ZONE_A","ZONE_B","ZONE_C","ZONE_D","ZONE_E"),analysis
@@ -121,6 +126,12 @@ def main():
         edge.relationship=="REQUIRES"
         and edge.source_node=="progression-stage:feature:test:multizone:turnin"
         and edge.target_node=="progression-stage:feature:test:multizone:east"
+        for edge in projection.edges
+    ),projection.edges
+    assert any(
+        edge.relationship=="HAS_OBJECTIVE"
+        and edge.target_node=="progression-objective:feature:test:multizone:briefing"
+        and edge.evidence_id=="evidence:briefing"
         for edge in projection.edges
     ),projection.edges
 
@@ -167,7 +178,14 @@ def main():
     findings=plugin.discover_dependencies(context)
     summary=next(f for f in findings if f.finding_type=="PROGRESSION_STRUCTURE")
     assert summary.status=="STRUCTURALLY_READY",summary
-    assert any(f.finding_type=="CROSS_ZONE_DEPENDENCY" for f in findings),findings
+    assert "evidence:briefing" in summary.evidence_ids,summary
+    assert "evidence:east-prereq" in summary.evidence_ids,summary
+    east_dependency=next(
+        f for f in findings
+        if f.finding_type=="CROSS_ZONE_DEPENDENCY"
+        and f.metadata.get("target_stage_id")=="east"
+    )
+    assert "evidence:east-prereq" in east_dependency.evidence_ids,east_dependency
     report=plugin.report(context)
     assert report["progression"]["status"]=="STRUCTURALLY_READY",report
     assert report["progression"]["fanout_stage_ids"]==["briefing"],report
@@ -196,6 +214,14 @@ def main():
     invalid_analysis=analyze_progression(invalid)
     assert invalid_analysis.status=="INVALID",invalid_analysis
     assert any("unknown objective missing" in error for error in invalid_analysis.validation_errors),invalid_analysis
+
+    empty=MultiZoneProgression(
+        "progression:test:empty","feature:test:empty",(),(),
+    )
+    empty_analysis=analyze_progression(empty)
+    assert empty_analysis.status=="INVALID",empty_analysis
+    assert "progression requires at least one objective" in empty_analysis.validation_errors,empty_analysis
+    assert "progression requires at least one stage" in empty_analysis.validation_errors,empty_analysis
 
     print("multi-zone progression framework self-test: PASS")
 
