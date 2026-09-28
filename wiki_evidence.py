@@ -90,6 +90,12 @@ def init_db(con: sqlite3.Connection) -> None:
           ON reference_wiki_mappings(claim_id);
         CREATE INDEX IF NOT EXISTS idx_reference_mapping_target
           ON reference_wiki_mappings(target_table,target_key);
+        CREATE TABLE IF NOT EXISTS reference_wiki_mapping_reviews(
+          mapping_id TEXT PRIMARY KEY,
+          review_status TEXT NOT NULL,
+          notes TEXT,
+          reviewed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
     """)
     con.execute(
         """INSERT OR IGNORE INTO reference_wiki_sources
@@ -345,6 +351,32 @@ def _store_mapping(con: sqlite3.Connection, mapping: dict) -> None:
     )
 
 
+def review_mapping(
+    con: sqlite3.Connection,
+    mapping_id: str,
+    review_status: str,
+    notes: str | None = None,
+) -> None:
+    init_db(con)
+    review_status = (review_status or "").upper()
+    if review_status not in {"CONFIRMED", "REJECTED", "UNREVIEWED"}:
+        raise ValueError("review_status must be CONFIRMED, REJECTED, or UNREVIEWED")
+    exists = con.execute(
+        "SELECT 1 FROM reference_wiki_mappings WHERE mapping_id=?", (mapping_id,)
+    ).fetchone()
+    if not exists:
+        raise ValueError(f"wiki mapping {mapping_id!r} not found")
+    if review_status == "UNREVIEWED":
+        con.execute("DELETE FROM reference_wiki_mapping_reviews WHERE mapping_id=?", (mapping_id,))
+    else:
+        con.execute(
+            """INSERT OR REPLACE INTO reference_wiki_mapping_reviews(mapping_id,review_status,notes,reviewed_at)
+               VALUES(?,?,?,CURRENT_TIMESTAMP)""",
+            (mapping_id, review_status, notes),
+        )
+    con.commit()
+
+
 def find_bg_page(title_query: str) -> dict | None:
     return wiki_compile.find_page(title_query)
 
@@ -417,8 +449,11 @@ def page_evidence(con: sqlite3.Connection, source_id: str, title_query: str) -> 
     ]
     mappings_by_claim = {}
     for row in con.execute(
-        """SELECT m.* FROM reference_wiki_mappings m
+        """SELECT m.*,COALESCE(r.review_status,'UNREVIEWED') AS review_status,
+                  r.notes AS review_notes,r.reviewed_at
+           FROM reference_wiki_mappings m
            JOIN reference_wiki_claims c ON c.claim_id=m.claim_id
+           LEFT JOIN reference_wiki_mapping_reviews r ON r.mapping_id=m.mapping_id
            WHERE c.source_id=? AND c.page_id=?
            ORDER BY m.claim_id,m.mapping_status,m.target_table,m.target_key""",
         (source_id, page_id),
