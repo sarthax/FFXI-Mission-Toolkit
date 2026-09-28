@@ -77,7 +77,7 @@ Current built-in plugins/frameworks:
 - `framework.battlefield` — concrete battlefield representation/migration analysis;
 - `framework.quest_mission` — mission/quest framework activation plus state-machine tooling in the mission domain package;
 - `framework.multizone_progression` — concrete staged cross-zone progression/hunt structural analyzer and graph projection;
-- `framework.minigame` — declarative contract pending a dedicated analyzer;
+- `framework.minigame` — concrete timer/interaction/scoring/outcome/reset lifecycle analyzer and graph projection;
 - `system.assault` — declarative system package composing reusable frameworks.
 
 `system.assault` composes the battlefield and quest/mission frameworks and then adds Assault-specific semantic roles such as AP, tags, ranks, appraisal, lockboxes, and objective conventions.
@@ -95,6 +95,14 @@ Its analyzer distinguishes:
 - cycles and unreachable stages.
 
 The model can project into canonical Feature Trace navigation using ordinary entities and relationships, but does not add multi-zone fields to `workbench.core`. Existing canonical Feature/Entity rows are preserved when the progression projection is persisted.
+
+### Minigame / puzzle analysis
+
+The minigame framework now models temporary gameplay state independently from any named FFXI activity. It covers interactions, timers, scoring, terminal outcomes, and reset policy.
+
+The analyzer treats timer lifecycle and repeatable reset coverage as explicit structural concerns. A timer must be started and have either cancellation or an expiry outcome; repeatable reset paths must consistently restore declared temporary state/timers/score. One-shot activities may explicitly opt out of repeatable reset requirements.
+
+The model projects into ordinary Feature Trace nodes and relationships while preserving existing canonical Feature/Entity records. Structural readiness remains separate from runtime validation of actual timing, interaction, scoring, reward, or reset behavior.
 
 ## Representation profiles
 
