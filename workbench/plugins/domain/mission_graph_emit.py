@@ -304,6 +304,27 @@ def project_mission_graph(
                 notes=condition_notes,
             ))
 
+        section_conditions=transition.metadata.get("section_eligibility_conditions",())
+        for index,condition in enumerate(section_conditions):
+            raw_subject=condition.get("subject")
+            operator=condition.get("operator")
+            value=condition.get("value")
+            if not raw_subject or not operator:
+                continue
+            subject=_subject_node(machine.feature_id,raw_subject)
+            scoped=subject!=raw_subject
+            entities.setdefault(subject,Entity(subject,_subject_type(raw_subject),raw_subject,{
+                "scope":"feature" if scoped else "shared",
+                **({"feature_id":machine.feature_id} if scoped else {}),
+                "raw_subject":raw_subject,
+            }))
+            edges.append(_edge(
+                f"mission-section-requires:{_token(machine.feature_id,transition.transition_id,index,subject,operator,value)}",
+                transition_node,subject,"REQUIRES",edge_evidence,"INFERRED","DISCOVERED",
+                source_path,source_snapshot_id,
+                notes=f"section eligibility: {operator} {value!r}",
+            ))
+
         post_conditions=transition.post_effect_gate.conditions if transition.post_effect_gate else ()
         for index,condition in enumerate(post_conditions):
             raw_subject=condition.subject

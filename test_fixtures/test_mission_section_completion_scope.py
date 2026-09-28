@@ -27,6 +27,35 @@ def main():
 
     machine = correlate_lsb_handlers(road_forks, feature_id="mission:cop:the_road_forks")
     assert machine.completion_gate is not None, machine
+
+    arnau = next(
+        transition for transition in machine.transitions
+        if transition.metadata.get("actor") == "Arnau"
+        and transition.trigger == "NPC_INTERACT"
+    )
+    assert arnau.gate is not None, arnau
+    assert {
+        (condition.subject, condition.operator, condition.value)
+        for condition in arnau.gate.conditions
+    } == {("mission_status:SANDORIA", "EQ", 1)}, arnau.gate
+    assert tuple(arnau.metadata.get("section_eligibility_conditions", ())) == (
+        {"subject":"mission_status:SANDORIA","operator":"LE","value":14},
+    ), arnau.metadata
+    assert arnau.metadata.get("section_index") == 1, arnau.metadata
+
+    completion_cid = next(
+        transition for transition in machine.transitions
+        if transition.metadata.get("actor") == "Cid"
+        and transition.event
+        and transition.event.event_id == 847
+    )
+    assert {
+        (condition["subject"], condition["operator"], condition["value"])
+        for condition in completion_cid.metadata.get("section_eligibility_conditions", ())
+    } == {
+        ("mission_status:SANDORIA", "EQ", 14),
+        ("mission_status:WINDURST", "EQ", 14),
+    }, completion_cid.metadata
     assert _subjects(machine.completion_gate) == {"mission_status:SANDORIA", "mission_status:WINDURST"}, machine.completion_gate
     assert {condition.value for condition in machine.completion_gate.conditions} == {14}, machine.completion_gate
     assert machine.metadata.get("extractor") == "lsb_static_literal", machine.metadata
@@ -45,6 +74,35 @@ def main():
     assert {
         row["subject"] for row in feature_gate["conditions"]
     } == {"mission_status:SANDORIA", "mission_status:WINDURST"}, feature_gate
+    arnau_chain = next(
+        transition for transition in chained.transitions
+        if transition.metadata.get("trigger_transition_id") == arnau.transition_id
+    )
+    assert tuple(arnau_chain.metadata.get("section_eligibility_conditions", ())) == (
+        {"subject":"mission_status:SANDORIA","operator":"LE","value":14},
+    ), arnau_chain.metadata
+
+    arnau_node = f"mission-transition:{chained.feature_id}:{arnau_chain.transition_id}"
+    arnau_section_edges = [
+        edge for edge in projection.edges
+        if edge.source_node == arnau_node
+        and edge.relationship == "REQUIRES"
+        and edge.notes
+        and edge.notes.startswith("section eligibility:")
+    ]
+    assert len(arnau_section_edges) == 1, arnau_section_edges
+    assert arnau_section_edges[0].target_node.endswith("mission_status:SANDORIA"), arnau_section_edges
+    assert arnau_section_edges[0].notes == "section eligibility: LE 14", arnau_section_edges
+    assert arnau_section_edges[0].confidence == "INFERRED", arnau_section_edges
+
+    arnau_handler_edges = [
+        edge for edge in projection.edges
+        if edge.source_node == arnau_node
+        and edge.relationship == "REQUIRES"
+        and edge.notes == "EQ 1"
+    ]
+    assert len(arnau_handler_edges) == 1, arnau_handler_edges
+
     completion_edges = [
         edge for edge in projection.edges
         if edge.source_node == chained.feature_id
