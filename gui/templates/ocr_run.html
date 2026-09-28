@@ -1,0 +1,434 @@
+{% extends "base.html" %}
+{% block title %}OCR run {{ status.run_id }}{% endblock %}
+{% block content %}
+<h1>OCR run: {{ status.run_id }}</h1>
+<p class="muted"><a href="/ocr">&larr; all runs</a>{% if status.url %} &middot; source: {{ status.url }}{% endif %}
+  &middot;
+  <form method="post" action="/ocr/{{ status.run_id }}/delete" style="display:inline;"
+        onsubmit="return confirm('Permanently delete this entire run ({{ status.run_id }}) and all of its files (source video, frames, OCR/match output)? This cannot be undone.');">
+    <button type="submit" style="color:#c33;">Delete this run</button>
+  </form>
+</p>
+
+{% if error %}<div class="warn">{{ error }}</div>{% endif %}
+
+{% if status.meta %}
+<p class="muted">
+  {% if status.meta.title %}<strong>{{ status.meta.title }}</strong>{% endif %}
+  {% if status.meta.uploader %} &middot; {{ status.meta.uploader }}{% endif %}
+  {% if status.meta.upload_date %} &middot; uploaded {{ status.meta.upload_date[:4] }}-{{ status.meta.upload_date[4:6] }}-{{ status.meta.upload_date[6:8] }}{% endif %}
+</p>
+{% endif %}
+
+<div class="table-wrap" style="padding:14px; margin-bottom:18px; max-width:640px;">
+  <h3 style="margin-top:0;">Create a capture from this run</h3>
+  <p class="muted" style="font-size:0.85em;">Seeds a new capture entry with this video's link and upload date attached (label defaults to the video title). This run has no NPCLogger/PacketLogger/CapLog files of its own to ingest -- you'll land on the file-add step in case you have real logger files from the same session to attach separately.</p>
+  <form method="post" action="/ocr/{{ status.run_id }}/create_capture" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+    <label class="muted">Mission (optional) <input type="text" name="mission_name" style="margin-left:4px;"></label>
+    <label class="muted">Content type
+      <select name="content_type" style="margin-left:4px;">
+        <option value="instances">instances</option>
+        <option value="overworld">overworld</option>
+        <option value="unclassified">unclassified</option>
+      </select>
+    </label>
+    <button type="submit">Create capture</button>
+  </form>
+</div>
+
+<h2>1. Pick a crop, extract it as a section</h2>
+<p class="muted">Drag a rectangle over whatever you want to OCR in the preview frame below -- the
+  chat log, an on-screen NPCLogger/packet-capture overlay, anything else. Give it a section name
+  and extract it; you can repeat this as many times as you like with different crops/names to pull
+  several independent regions out of the same video. Re-using an existing name re-extracts that
+  section in place.</p>
+
+<form method="post" action="/ocr/{{ status.run_id }}/preview" style="margin-bottom:10px; display:flex; gap:8px; align-items:center;">
+  <label class="muted">Preview at (seconds)</label>
+  <input type="number" step="1" min="0" name="t" value="{{ preview_t }}" style="width:100px;">
+  <button type="submit">Reload preview</button>
+</form>
+
+{% if preview_size %}
+<div class="table-wrap" style="padding:14px; display:inline-block;">
+  <canvas id="cropCanvas" style="cursor:crosshair; max-width:100%; display:block;"></canvas>
+</div>
+
+<form method="post" action="/ocr/{{ status.run_id }}/frames" id="cropForm" style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+  <input type="hidden" name="x" id="cropX">
+  <input type="hidden" name="y" id="cropY">
+  <input type="hidden" name="w" id="cropW">
+  <input type="hidden" name="h" id="cropH">
+  <span class="muted">Selection: <span id="cropReadout">none yet</span></span>
+  <label class="muted">section name</label>
+  <input type="text" name="section" value="chat" placeholder="chat, npclogger, ..." style="width:140px;" required>
+  <label class="muted">capture profile</label>
+  <select name="profile">
+    <option value="plain">plain (no timestamps)</option>
+    <option value="timestamped">timestamped chat</option>
+    <option value="packetlogger">packetlogger / overlay</option>
+  </select>
+  <label class="muted">fps</label>
+  <input type="number" step="0.5" min="0.5" name="fps" value="2" style="width:70px;">
+  <button type="submit" id="extractBtn" disabled>Extract cropped frames</button>
+</form>
+<p class="muted">Capture profile controls how the "match" step parses each OCR'd line -- <b>plain</b>
+  for chat with timestamps off, <b>timestamped</b> tries to split a leading clock time and channel
+  prefix (Say/Party/Linkshell/Tell/...) off the text, <b>packetlogger</b> is for on-screen
+  NPCLogger/packet-capture overlays (fast-moving, no chat channels -- see note below). Pick the one
+  that matches what this section will actually show; it only affects display/parsing, never the
+  underlying OCR.</p>
+
+<script>
+(function() {
+  const img = new Image();
+  img.src = "/ocr_runs/{{ status.run_id }}/preview.png?v={{ preview_t }}";
+  const canvas = document.getElementById("cropCanvas");
+  const ctx = canvas.getContext("2d");
+  const naturalW = {{ preview_size[0] }};
+  const naturalH = {{ preview_size[1] }};
+  let scale = 1;
+  let rect = null;
+  let dragging = false, startX = 0, startY = 0;
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    if (rect) {
+      ctx.strokeStyle = "#e03030";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+      ctx.fillStyle = "rgba(224,48,48,0.15)";
+      ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+    }
+  }
+
+  img.onload = function() {
+    const maxW = Math.min(naturalW, 1000);
+    scale = maxW / naturalW;
+    canvas.width = naturalW * scale;
+    canvas.height = naturalH * scale;
+    draw();
+  };
+
+  function pos(e) {
+    // canvas.width/height are the real pixel resolution; getBoundingClientRect() is the
+    // on-screen CSS size, which can be smaller (max-width:100% shrinks it in a narrow
+    // container/window). Without correcting for that ratio, the cursor hits the visible bottom
+    // edge of the canvas before the mapped coordinate reaches the image's true bottom row,
+    // making the last bit of the frame permanently uncroppable.
+    const r = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / r.width;
+    const scaleY = canvas.height / r.height;
+    const x = (e.clientX - r.left) * scaleX;
+    const y = (e.clientY - r.top) * scaleY;
+    return {
+      x: Math.max(0, Math.min(canvas.width, x)),
+      y: Math.max(0, Math.min(canvas.height, y)),
+    };
+  }
+
+  canvas.addEventListener("mousedown", (e) => {
+    const p = pos(e);
+    dragging = true; startX = p.x; startY = p.y;
+    rect = { x: p.x, y: p.y, w: 0, h: 0 };
+  });
+  // Listens on window (not just the canvas) so a fast drag that briefly slips past the canvas's
+  // edge -- easy to do when aiming for the very last row/column -- keeps updating instead of
+  // freezing the rectangle short of the edge.
+  window.addEventListener("mousemove", (e) => {
+    if (!dragging) return;
+    const p = pos(e);
+    rect.x = Math.min(startX, p.x); rect.y = Math.min(startY, p.y);
+    rect.w = Math.abs(p.x - startX); rect.h = Math.abs(p.y - startY);
+    draw();
+  });
+  window.addEventListener("mouseup", () => {
+    if (!dragging) return;
+    dragging = false;
+    if (!rect || rect.w < 4 || rect.h < 4) { rect = null; return; }
+    const x = Math.round(rect.x / scale), y = Math.round(rect.y / scale);
+    const w = Math.round(rect.w / scale), h = Math.round(rect.h / scale);
+    document.getElementById("cropX").value = x;
+    document.getElementById("cropY").value = y;
+    document.getElementById("cropW").value = w;
+    document.getElementById("cropH").value = h;
+    document.getElementById("cropReadout").textContent = x + "," + y + "," + w + "," + h;
+    document.getElementById("extractBtn").disabled = false;
+  });
+})();
+</script>
+{% else %}
+<p class="muted">No preview frame yet -- reload above once <code>source.mp4</code> has finished downloading.</p>
+{% endif %}
+
+{% if not status.sections %}
+<p class="muted" style="margin-top:26px;">No sections extracted yet -- pick a crop above and extract one to continue.</p>
+{% endif %}
+
+<div class="warn" style="margin-top:18px;">
+  <b>Packetlogger / overlay sections:</b> these text overlays can scroll a lot faster than chat, so
+  2-5 fps is likely too slow and will drop lines entirely -- a dropped line can't be recovered by
+  OCR or dedupe after the fact. Try a short (10-20s) capture at a high fps first (10-15+) and check
+  the extracted frames/OCR output before committing to a full-length run, since higher fps directly
+  multiplies frame count, disk usage, and OCR time. The "packetlogger" profile parses the real
+  EView overlay/log shape (<code>&lt;&lt; [0x036] GP_SERV_COMMAND_TALKNUM</code> header line
+  followed by <code>Key: value</code> field lines) into a direction, opcode, packet name, and a
+  field key/value table -- modeled on this toolkit's own proven CapLog EView parser. It only
+  extracts what's literally on screen: it does NOT look up what an opcode/field means. Confirmed
+  against a real packetlogger capture (2026-09-27): the overlay panel shows packet <i>history</i>,
+  so one frame often has two or more stacked headers -- each is now split into its own row instead
+  of getting merged into one. Most frames in a real clip still have no overlay content at all
+  (idle background) and will show up as low-confidence noise rows below; use the Conf column to
+  spot the real signal, and Correction to hand-fix anything OCR still gets wrong.
+</div>
+
+{% for s in status.sections %}
+<div class="table-wrap" style="padding:16px; margin-top:26px;">
+  <h2 style="margin-top:0;">Section: {{ s.label }}{% if s.crop %} <span class="muted" style="font-weight:normal;">(crop {{ s.crop }}{% if s.fps %}, {{ s.fps }} fps{% endif %}, profile: {{ s.capture_profile }})</span>{% endif %}</h2>
+
+  <h3>Dedupe cropped frames</h3>
+  <form method="post" action="/ocr/{{ status.run_id }}/{{ s.section }}/dedupe" style="display:flex; gap:10px; align-items:center;">
+    <span class="muted">{{ s.frame_count }} cropped frame(s) on disk</span>
+    <label class="muted">hamming threshold</label>
+    <input type="number" name="threshold" value="6" min="0" max="1024" style="width:80px;">
+    <button type="submit" {% if s.frame_count == 0 %}disabled{% endif %}>Run dedupe</button>
+  </form>
+
+  <h3 style="margin-top:18px;">OCR</h3>
+  <form method="post" action="/ocr/{{ status.run_id }}/{{ s.section }}/ocr" style="display:flex; gap:10px; align-items:center;">
+    <span class="muted">{{ s.unique_count }} deduped frame(s)</span>
+    <button type="submit" class="ocrBtn" data-section="{{ s.section }}" {% if s.unique_count == 0 %}disabled{% endif %}>Run OCR (tesseract)</button>
+    {% if ocr_seconds_per_frame and s.unique_count > 0 %}
+    <span class="muted ocrEstimate" data-section="{{ s.section }}" data-unique="{{ s.unique_count }}"></span>
+    {% endif %}
+  </form>
+  <div class="muted ocrProgress" data-section="{{ s.section }}" style="margin-top:8px;"></div>
+
+  {% if s.capture_profile == "packetlogger" %}
+  <h3 style="margin-top:18px;">Parse packet lines</h3>
+  <p class="muted">Packet field text is never fuzzy-matched against chat dialog -- it isn't dialog,
+    and "correcting" a field value against the nearest-sounding dialog line would corrupt real
+    data. This just splits each frame's OCR text into header (opcode/packet name) and field
+    key/value pairs.</p>
+  <form method="post" action="/ocr/{{ status.run_id }}/{{ s.section }}/match" style="display:flex; gap:10px; align-items:center;">
+    <span class="muted">{{ s.ocr_line_count }} OCR line(s)</span>
+    <button type="submit" {% if s.ocr_line_count == 0 %}disabled{% endif %}>Run parse</button>
+  </form>
+  {% else %}
+  <h3 style="margin-top:18px;">Match against dialog text</h3>
+  <form method="post" action="/ocr/{{ status.run_id }}/{{ s.section }}/match" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+    <span class="muted">{{ s.ocr_line_count }} OCR line(s)</span>
+    <label class="muted">zone (optional, scopes the fuzzy match)</label>
+    <select name="zone">
+      <option value="">-- any zone --</option>
+      {% for z in zones %}<option value="{{ z }}">{{ z }}</option>{% endfor %}
+    </select>
+    <label class="muted">min score</label>
+    <input type="number" name="min_score" value="0.55" step="0.05" min="0" max="1" style="width:80px;">
+    <button type="submit" {% if s.ocr_line_count == 0 %}disabled{% endif %}>Run match</button>
+  </form>
+  {% endif %}
+
+  {% set rows = matched_rows.get(s.section) %}
+  {% if rows %}
+  <h3 style="margin-top:18px;">Transcript (<span class="transcriptCount" data-section="{{ s.section }}">{{ rows|length }}</span> line(s) shown, profile: {{ s.capture_profile }})</h3>
+  <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px;">
+    <label class="muted"><input type="checkbox" class="confFilterToggle" data-section="{{ s.section }}" checked> hide low-confidence rows below</label>
+    <input type="number" class="confFilterMin" data-section="{{ s.section }}" value="40" min="0" max="100" style="width:60px;">
+    <span class="muted">(rows with no confidence score, e.g. hand-corrected, are always shown)</span>
+  </div>
+  <div class="table-wrap" style="padding:0; max-height:500px; overflow:auto;">
+    <table class="data-table" style="width:100%;" data-section="{{ s.section }}">
+      <thead><tr>
+        {% if s.capture_profile == "timestamped" %}<th>Time</th>{% endif %}
+        {% if s.capture_profile == "packetlogger" %}
+        <th>Dir</th><th>Opcode</th><th>Packet</th><th>Fields</th><th title="hex-looking tokens found outside the parsed header/fields, e.g. in unmatched OCR noise">Hex hints</th>
+        {% else %}
+        <th>Channel</th><th>Speaker</th><th>Text</th>
+        {% endif %}
+        <th title="fuzzy-match score against indexed dialog text, blank = kept as raw OCR">Match</th>
+        <th title="average tesseract word confidence (0-100) for this frame; low values usually mean noise, not real overlay/chat text">Conf</th>
+        <th style="min-width:220px;">Correction</th>
+      </tr></thead>
+      <tbody>
+        {% for r in rows %}
+        {% set conf = r.confidence %}
+        <tr data-conf="{{ conf if conf is not none else '' }}"{% if conf is not none and conf < 40 %} style="opacity:0.55;"{% endif %}>
+          {% if s.capture_profile == "timestamped" %}<td>{{ r.timestamp or "" }}</td>{% endif %}
+          {% if s.capture_profile == "packetlogger" %}
+          <td>{{ r.direction or "" }}</td>
+          <td>{{ r.opcode or "" }}</td>
+          <td>{{ r.gp_command or "" }}{% if r.packet_class %} <span class="muted">({{ r.packet_class }})</span>{% endif %}</td>
+          <td>{% for k, v in (r.fields or {}).items() %}<span class="muted">{{ k }}</span>={{ v }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
+          <td class="muted">{{ (r.hex_hints or [])|join(", ") }}</td>
+          {% else %}
+          <td>{{ r.channel or "" }}</td><td>{{ r.speaker or "" }}</td>
+          <td>{{ r.corrected_text or r.text or r.matched_text or r.raw_text }}{% if r.corrected_text %} <span class="muted" title="hand-corrected, overrides OCR/match">(corrected)</span>{% endif %}</td>
+          {% endif %}
+          <td class="muted">{{ "%.2f"|format(r.match_score) if r.matched_text else "" }}</td>
+          <td{% if conf is not none and conf < 40 %} style="color:var(--red, #a33); font-weight:bold;"{% endif %}>{{ "%.0f"|format(conf) if conf is not none else "" }}</td>
+          <td>
+            <form method="post" action="/ocr/{{ status.run_id }}/{{ s.section }}/correct" style="display:flex; gap:4px;">
+              <input type="hidden" name="frame" value="{{ r.frame }}">
+              <input type="text" name="text" value="{{ r.corrected_text or '' }}"
+                     placeholder="{{ (r.display_text or r.text or r.matched_text or r.raw_text or '')|truncate(40) }}"
+                     style="flex:1; min-width:140px; font-size:12px;">
+              <button type="submit" style="font-size:12px; padding:2px 8px;">Save</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="muted">Full output: <code>mission_reports_v2/_ocr_runs/{{ status.run_id }}/sections/{{ s.section }}/ocr_matched.jsonl</code> and <code>transcript.txt</code></p>
+  {% endif %}
+
+  {% set section_mb = (s.raw_frame_bytes + s.unique_frame_bytes) / (1024*1024) %}
+  {% if section_mb > 0.1 %}
+  <h3 style="margin-top:18px;">Clean up frame PNGs</h3>
+  <p class="muted">Frame images aren't deleted automatically -- OCR text and the transcript are
+    kept forever, but the source PNGs stick around in case you want to re-run OCR on this section
+    with a different crop, threshold, or tesseract config. Delete them once you're done with this
+    section specifically.</p>
+  <form method="post" action="/ocr/{{ status.run_id }}/{{ s.section }}/cleanup" style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;"
+        onsubmit="return confirm('Delete the selected frame PNGs for section \'{{ s.label }}\'? OCR text/transcript are kept.');">
+    <label class="muted"><input type="checkbox" name="frames" value="1" checked> raw frames ({{ s.frame_count }}, {{ "%.1f"|format(s.raw_frame_bytes / (1024*1024)) }} MB)</label>
+    <label class="muted"><input type="checkbox" name="unique" value="1" checked> deduped frames ({{ s.unique_count }}, {{ "%.1f"|format(s.unique_frame_bytes / (1024*1024)) }} MB)</label>
+    <button type="submit">Delete selected ({{ "%.1f"|format(section_mb) }} MB total)</button>
+  </form>
+  {% endif %}
+</div>
+{% endfor %}
+
+<script>
+(function() {
+  const runId = "{{ status.run_id }}";
+  const params = new URLSearchParams(window.location.search);
+  const startedSection = params.get("ocr_started");
+  const secPerFrame = {{ (ocr_seconds_per_frame or 0)|tojson }};
+
+  function fmtDuration(sec) {
+    sec = Math.max(0, Math.round(sec));
+    const m = Math.floor(sec / 60), s = sec % 60;
+    return m > 0 ? `~${m}m ${s}s` : `~${s}s`;
+  }
+
+  document.querySelectorAll(".ocrEstimate").forEach((el) => {
+    if (secPerFrame <= 0) return;
+    const unique = parseInt(el.dataset.unique, 10) || 0;
+    el.textContent = `est. ${fmtDuration(unique * secPerFrame)} (${secPerFrame.toFixed(2)}s/frame, from past runs on this PC)`;
+  });
+
+  // The dashboard shell (base.html) makes <main> the actual scrolling element, not
+  // window/body/documentElement -- window.scrollY is always 0 here. Every scroll save/restore
+  // in this file must read/write main's scrollTop, not window.scrollTo.
+  function scrollEl() { return document.querySelector("main") || document.scrollingElement || document.documentElement; }
+
+  // Every <form method="post"> on this page (Save, dedupe, OCR, parse/match, cleanup, ...) is a
+  // plain browser submit, which triggers a full page navigation and resets scroll to the top --
+  // same root cause as the OCR-complete reload-loop bug below, just not limited to that one path.
+  // Record scroll position right before any submit leaves the page; the restore block further
+  // down (already needed for that reload-loop fix) picks it back up on the next page load.
+  document.addEventListener("submit", () => {
+    try { sessionStorage.setItem("ocrScrollY:" + runId, String(scrollEl().scrollTop)); } catch (e) {}
+  }, true);
+
+  function poll(section) {
+    const progEl = document.querySelector(`.ocrProgress[data-section="${section}"]`);
+    const btn = document.querySelector(`.ocrBtn[data-section="${section}"]`);
+    fetch(`/ocr/${runId}/${section}/progress`).then((r) => r.json()).then((p) => {
+      if (p.total > 0 && !p.finished) {
+        if (btn) btn.disabled = true;
+        const pct = Math.round((100 * p.done) / p.total);
+        let msg = `OCR running: ${p.done} / ${p.total} frames (${pct}%)`;
+        if (p.started_at && p.done > 0) {
+          const elapsed = (Date.now() / 1000) - p.started_at;
+          const rate = elapsed / p.done;
+          const remaining = rate * (p.total - p.done);
+          msg += ` -- elapsed ${fmtDuration(elapsed)}, ~${fmtDuration(remaining)} remaining`;
+        }
+        if (progEl) progEl.textContent = msg;
+        setTimeout(() => poll(section), 30000);
+      } else if (p.error) {
+        if (progEl) progEl.textContent = `OCR failed: ${p.error}`;
+        if (btn) btn.disabled = false;
+      } else if (p.total > 0) {
+        if (progEl) progEl.textContent = `OCR complete (${p.done}/${p.total}) -- reloading...`;
+        // window.location.reload() keeps the current URL, including "?ocr_started=<section>" --
+        // on the reloaded page that param is still present, p.finished is now true, and this same
+        // branch fires again (p.total > 0, not the "still running" branch), triggering another
+        // reload every ~1s forever and repeatedly yanking scroll position back to the top. Drop
+        // the query string so the reloaded page has nothing left to (re-)poll, and remember the
+        // scroll position across that one real reload since a full navigation always resets it.
+        try { sessionStorage.setItem("ocrScrollY:" + runId, String(scrollEl().scrollTop)); } catch (e) {}
+        setTimeout(() => { window.location.href = window.location.pathname; }, 1000);
+      }
+    }).catch(() => {});
+  }
+
+  if (startedSection) {
+    const progEl = document.querySelector(`.ocrProgress[data-section="${startedSection}"]`);
+    if (progEl) progEl.textContent = "OCR starting...";
+    setTimeout(() => poll(startedSection), 2000);
+  }
+
+  function applyConfFilter(section) {
+    const table = document.querySelector(`table.data-table[data-section="${section}"]`);
+    const toggle = document.querySelector(`.confFilterToggle[data-section="${section}"]`);
+    const minInput = document.querySelector(`.confFilterMin[data-section="${section}"]`);
+    const countEl = document.querySelector(`.transcriptCount[data-section="${section}"]`);
+    if (!table || !toggle || !minInput) return;
+    const enabled = toggle.checked;
+    const min = parseFloat(minInput.value);
+    let shown = 0;
+    table.querySelectorAll("tbody tr").forEach((tr) => {
+      const raw = tr.dataset.conf;
+      const conf = raw === "" ? null : parseFloat(raw);
+      const hide = enabled && conf !== null && !Number.isNaN(min) && conf < min;
+      tr.style.display = hide ? "none" : "";
+      if (!hide) shown++;
+    });
+    if (countEl) countEl.textContent = shown;
+  }
+
+  document.querySelectorAll(".confFilterToggle, .confFilterMin").forEach((el) => {
+    el.addEventListener("input", () => applyConfFilter(el.dataset.section));
+    el.addEventListener("change", () => applyConfFilter(el.dataset.section));
+  });
+  document.querySelectorAll(".confFilterToggle").forEach((el) => applyConfFilter(el.dataset.section));
+
+  try {
+    const savedY = sessionStorage.getItem("ocrScrollY:" + runId);
+    if (savedY !== null) {
+      sessionStorage.removeItem("ocrScrollY:" + runId);
+      const target = parseInt(savedY, 10) || 0;
+      // Restoring immediately here can land back at 0: the preview <img> and the confidence
+      // filter (which hides rows and shrinks document height) haven't settled yet at this point
+      // in the script, so the page may not even be tall enough for `target` yet. Retry across a
+      // few animation frames until the scroll actually sticks (or we give up after ~1s).
+      let attempts = 0;
+      function restoreScroll() {
+        const el = scrollEl();
+        el.scrollTop = target;
+        attempts++;
+        if (Math.abs(el.scrollTop - target) > 2 && attempts < 30) {
+          requestAnimationFrame(restoreScroll);
+        }
+      }
+      requestAnimationFrame(restoreScroll);
+    }
+  } catch (e) {}
+  // Page load/refresh while a run from an earlier click is still going, for any section -- pick
+  // the polling back up instead of leaving the button looking idle.
+  document.querySelectorAll(".ocrProgress").forEach((el) => {
+    const section = el.dataset.section;
+    if (section === startedSection) return;
+    fetch(`/ocr/${runId}/${section}/progress`).then((r) => r.json()).then((p) => {
+      if (p.total > 0 && !p.finished) poll(section);
+    }).catch(() => {});
+  });
+})();
+</script>
+{% endblock %}
