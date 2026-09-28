@@ -7,6 +7,7 @@ from workbench.plugins.domain.mission_lsb_extract import (
     chain_event_transitions,
     correlate_lsb_handlers,
     extract_section_completion_gate,
+    mission_extraction_metrics,
 )
 
 
@@ -42,6 +43,8 @@ def main():
         {"subject":"mission_status:SANDORIA","operator":"LE","value":14},
     ), arnau.metadata
     assert arnau.metadata.get("section_index") == 1, arnau.metadata
+    assert arnau.metadata.get("section_eligibility_status") == "MODELED", arnau.metadata
+    assert arnau.metadata.get("section_eligibility_unresolved_reasons") == (), arnau.metadata
 
     completion_cid = next(
         transition for transition in machine.transitions
@@ -313,6 +316,75 @@ mission.sections =
         if transition.metadata.get("actor") == "Cid"
     )
     assert not disjunctive_transition.metadata.get("section_eligibility_conditions"), disjunctive_transition.metadata
+
+    assert disjunctive_transition.metadata.get("section_eligibility_status") == "UNRESOLVED", disjunctive_transition.metadata
+    assert disjunctive_transition.metadata.get("section_eligibility_unresolved_reasons") == ("disjunction",), disjunctive_transition.metadata
+
+    partial = """
+mission.sections =
+{
+    {
+        check = function(player, currentMission, missionStatus, vars)
+            return currentMission == mission.missionId and
+                player:getMissionStatus(mission.areaId, xi.mission.status.COP.LEFT) == 7 and
+                mission:getVar(player, 'Option') == 1
+        end,
+
+        [xi.zone.METALWORKS] =
+        {
+            ['Cid'] = mission:progressEvent(100),
+        },
+    },
+}
+"""
+    partial_machine = correlate_lsb_handlers(partial, feature_id="mission:test:partial_section")
+    partial_transition = next(
+        transition for transition in partial_machine.transitions
+        if transition.metadata.get("actor") == "Cid"
+    )
+    assert {
+        (condition["subject"], condition["operator"], condition["value"])
+        for condition in partial_transition.metadata.get("section_eligibility_conditions", ())
+    } == {("mission_status:LEFT", "EQ", 7)}, partial_transition.metadata
+    assert partial_transition.metadata.get("section_eligibility_status") == "PARTIAL", partial_transition.metadata
+    assert partial_transition.metadata.get("section_eligibility_unresolved_reasons") == (
+        "mission_var_predicate",
+    ), partial_transition.metadata
+
+    scoped_only = """
+mission.sections =
+{
+    {
+        check = function(player, currentMission, missionStatus, vars)
+            return currentMission == mission.missionId
+        end,
+
+        [xi.zone.METALWORKS] =
+        {
+            ['Cid'] = mission:progressEvent(101),
+        },
+    },
+}
+"""
+    scoped_only_machine = correlate_lsb_handlers(
+        scoped_only,
+        feature_id="mission:test:scoped_only",
+    )
+    scoped_only_transition = next(
+        transition for transition in scoped_only_machine.transitions
+        if transition.metadata.get("actor") == "Cid"
+    )
+    assert not scoped_only_transition.metadata.get("section_eligibility_conditions"), scoped_only_transition.metadata
+    assert scoped_only_transition.metadata.get("section_eligibility_status") == "NO_STATUS_REQUIREMENTS", scoped_only_transition.metadata
+    assert scoped_only_transition.metadata.get("section_eligibility_unresolved_reasons") == (), scoped_only_transition.metadata
+
+    partial_metrics = mission_extraction_metrics(partial_machine)
+    assert partial_metrics["section_eligibility_partial_transition_count"] == 1, partial_metrics
+    assert partial_metrics["section_eligibility_unresolved_transition_count"] == 0, partial_metrics
+    assert partial_metrics["section_eligibility_status_counts"] == {"PARTIAL":1}, partial_metrics
+    assert partial_metrics["section_eligibility_unresolved_reason_counts"] == {
+        "mission_var_predicate":1,
+    }, partial_metrics
 
     print("Mission section completion scope regression: PASS")
     return 0
