@@ -572,7 +572,7 @@ def _section_check_analysis(section: str) -> dict:
 
     helper_calls={
         match.group(1)
-        for match in re.finditer(r"\b([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*player\b",executable)
+        for match in re.finditer(r"(?<![:.])\b([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*player\b",executable)
         if match.group(1)!="function"
     }
     if helper_calls:
