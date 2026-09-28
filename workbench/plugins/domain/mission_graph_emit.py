@@ -135,7 +135,17 @@ def project_mission_graph(
         status="DISCOVERED",
         metadata={"machine_id":machine.machine_id,"extractor":machine.metadata.get("extractor"),
                   "transition_count":len(machine.transitions),"source_family":source_family,
-                  "extraction_metrics":mission_extraction_metrics(machine)},
+                  "extraction_metrics":mission_extraction_metrics(machine),
+                  "completion_gate":(
+                      {
+                          "logic":machine.completion_gate.logic,
+                          "conditions":[
+                              {"subject":condition.subject,"operator":condition.operator,"value":condition.value}
+                              for condition in machine.completion_gate.conditions
+                          ],
+                      }
+                      if machine.completion_gate else None
+                  )},
     )
     artifact_id=f"artifact:mission-source:{_token(machine.feature_id,source_path,source_snapshot_id)}"
     artifact=Artifact(
@@ -158,6 +168,26 @@ def project_mission_graph(
     entities={}
     edges=[]
     evidence={file_evidence.evidence_id:file_evidence}
+
+    if machine.completion_gate:
+        for index,condition in enumerate(machine.completion_gate.conditions):
+            raw_subject=condition.subject
+            subject=_subject_node(machine.feature_id,raw_subject)
+            scoped=subject!=raw_subject
+            entities.setdefault(subject,Entity(subject,_subject_type(raw_subject),raw_subject,{
+                "scope":"feature" if scoped else "shared",
+                **({"feature_id":machine.feature_id} if scoped else {}),
+                "raw_subject":raw_subject,
+            }))
+            notes=f"mission completion gate: {condition.operator} {condition.value!r}"
+            if condition.evidence_ids:
+                notes+=f"; original_evidence_ids={list(condition.evidence_ids)!r}"
+            edges.append(_edge(
+                f"mission-completion-requires:{_token(machine.feature_id,index,subject,condition.operator,condition.value)}",
+                machine.feature_id,subject,"REQUIRES",file_evidence.evidence_id,"INFERRED","DISCOVERED",
+                source_path,source_snapshot_id,
+                notes=notes,
+            ))
 
     for state in machine.states:
         node=_state_node(machine.feature_id,state.state_id)
