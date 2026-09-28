@@ -6,6 +6,19 @@
 
 # Workbench Audit Status
 
+## 2026-09-28 — Video OCR evidence alignment workstream
+
+The YouTube OCR pipeline is being promoted from a transcript-oriented research aid into a provenance-aware runtime evidence producer.
+
+The first implementation pass is scoped to:
+- video-relative timestamps and frame provenance on every OCR observation;
+- conservative ingestion of parsed on-screen packet observations as `VIDEO_OCR` evidence, explicitly distinct from raw/binary packet captures;
+- canonical packet-node linkage suitable for Feature Trace and later server/client correlation;
+- path containment/identifier hardening for OCR run and section access.
+
+The next alignment layer will use these time-addressable observations as anchors between gameplay video, real capture/logger sessions, and screenshots of key events. Alignment must preserve uncertainty and must never infer that OCR text is equivalent to packet bytes.
+
+
 Last updated: 2026-09-25
 
 ## 2026-09-25 — Binding Compatibility Engine
