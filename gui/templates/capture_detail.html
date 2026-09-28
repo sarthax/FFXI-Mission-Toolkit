@@ -74,6 +74,36 @@
   {% endfor %}
 </div>
 {% endif %}
+{% set overlap_dim = detail.health.dimensions.get("session_overlap") %}
+{% if overlap_dim and overlap_dim.candidates %}
+<div class="warn" style="margin-bottom:10px;">
+  <b>Possible overlapping capture session{{ "s" if overlap_dim.candidates|length != 1 else "" }}</b>
+  <div class="muted">Based on shared normalized runtime evidence; this is a review signal, not an automatic duplicate classification.</div>
+  {% for candidate in overlap_dim.candidates %}
+  <div style="margin-top:4px;">
+    <a class="inline" href="/captures/{{ candidate.capture_id }}">#{{ candidate.capture_id }} {{ candidate.capture_label }}</a>
+    &middot; shared {{ candidate.shared_total }} observation{{ "s" if candidate.shared_total != 1 else "" }}
+    &middot; {{ candidate.shared_by_family }}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% set clock_dim = detail.health.dimensions.get("clock_continuity") %}
+{% if clock_dim and clock_dim.discontinuities %}
+<div class="warn" style="margin-bottom:10px;">
+  <b>Clock continuity issues</b>
+  <div class="muted">Observed in original physical source order. No automatic time correction has been applied.</div>
+  {% for issue in clock_dim.discontinuities %}
+  <div class="mono" style="margin-top:4px;">
+    {{ issue.filename }}{% if issue.line %}:{{ issue.line }}{% endif %} &middot; {{ issue.type }}
+    {% if issue.delta_seconds is defined %}&middot; {{ issue.delta_seconds }}s{% endif %}
+    {% if issue.timestamp %}&middot; {{ issue.timestamp }}{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
 <div class="table-wrap"><table>
   <tr><th>dimension</th><th>status</th><th>details</th></tr>
   {% for name, dim in detail.health.dimensions.items() %}
