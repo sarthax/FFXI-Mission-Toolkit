@@ -905,10 +905,22 @@ ACTIONVIEW_SIMPLE_LINE_RE = re.compile(
 
 
 def ingest_actionview_simple(con, capture_id, src: Source, relname: str) -> int:
-    text = src.read_text(relname)
+    source_bytes = src.read_bytes(relname)
+    text = source_bytes.decode("utf-8", "replace")
+    byte_offsets_exact = text.encode("utf-8") == source_bytes
+    source_sha256 = capture_integrity.sha256_bytes(source_bytes)
+    raw_lines = text.splitlines(keepends=True)
+    con.execute(
+        "DELETE FROM capture_row_locators WHERE capture_id=? AND filename=? AND target_table='capture_actions'",
+        (capture_id, relname),
+    )
     n = 0
-    for i, line in enumerate(text.splitlines()):
+    char_pos = 0
+    for i, raw_line in enumerate(raw_lines):
+        line = raw_line.rstrip("\r\n")
         m = ACTIONVIEW_SIMPLE_LINE_RE.match(line.strip())
+        start_char = char_pos
+        char_pos += len(raw_line)
         if not m:
             continue
         actor, actor_name, ability_name, cat, aid, anim, msg = m.groups()
@@ -919,6 +931,16 @@ def ingest_actionview_simple(con, capture_id, src: Source, relname: str) -> int:
              message, name, ts) VALUES (?,?,?,?,?,?,?,?,?,?)""",
             (capture_id, key, actor, actor_name or None, None, int(anim), int(cat),
              int(msg), ability_name, None))
+        capture_integrity.record_row_locator(
+            con, capture_id, relname, "capture_actions",
+            json.dumps({"action_key": key}, sort_keys=True), "line",
+            source_sha256=source_sha256,
+            start_line=i + 1, end_line=i + 1,
+            start_offset=len(text[:start_char].encode("utf-8")) if byte_offsets_exact else None,
+            end_offset=len(text[:char_pos].encode("utf-8")) if byte_offsets_exact else None,
+            details={"source": "actionview_simple", "actor": actor, "ability_name": ability_name,
+                     "category": int(cat), "ability_id": int(aid)},
+        )
         n += 1
         if actor_name:
             entity_profile.record_field(con, "npc", actor, "capture_name", "capture", actor_name)
@@ -1024,17 +1046,25 @@ HP_LINE_RE = re.compile(r'^Defeated (.+?):\s*(\d+)~(\d+)\s*HP\s*$')
 
 
 def ingest_hptrack(con, capture_id, src: Source, relname: str):
-    text = src.read_text(relname)
+    source_bytes = src.read_bytes(relname)
+    text = source_bytes.decode("utf-8", "replace")
+    byte_offsets_exact = text.encode("utf-8") == source_bytes
+    source_sha256 = capture_integrity.sha256_bytes(source_bytes)
+    raw_lines = text.splitlines(keepends=True)
+    con.execute(
+        "DELETE FROM capture_row_locators WHERE capture_id=? AND filename=? AND target_table='capture_hp_events'",
+        (capture_id, relname),
+    )
     n = 0
-    for line in text.splitlines():
-        line = line.strip()
+    char_pos = 0
+    for i, raw_line in enumerate(raw_lines):
+        line = raw_line.rstrip("\r\n").strip()
+        start_char = char_pos
+        char_pos += len(raw_line)
         m = HP_LINE_RE.match(line)
         if m:
             mob_name, hp_low, hp_high = m.group(1), m.group(2), m.group(3)
         else:
-            # The standalone file writes this tool's own "[HP Track] " tag inline (confirmed real,
-            # unlike CapLog's embedded lines where the tag has already been split off by the time
-            # CAPLOG_HP_KILL_RE sees it) -- strip it before matching the same real regex.
             untagged = line[len("[HP Track] "):] if line.startswith("[HP Track] ") else line
             m2 = CAPLOG_HP_KILL_RE.match(untagged)
             if not m2:
@@ -1044,6 +1074,15 @@ def ingest_hptrack(con, capture_id, src: Source, relname: str):
         con.execute("""INSERT OR REPLACE INTO capture_hp_events
             (capture_id, seq, mob_name, hp_low, hp_high) VALUES (?,?,?,?,?)""",
             (capture_id, n, mob_name, int(hp_low), int(hp_high)))
+        capture_integrity.record_row_locator(
+            con, capture_id, relname, "capture_hp_events",
+            json.dumps({"seq": n}, sort_keys=True), "line",
+            source_sha256=source_sha256,
+            start_line=i + 1, end_line=i + 1,
+            start_offset=len(text[:start_char].encode("utf-8")) if byte_offsets_exact else None,
+            end_offset=len(text[:char_pos].encode("utf-8")) if byte_offsets_exact else None,
+            details={"source": "hptrack", "mob_name": mob_name},
+        )
     return n
 
 
@@ -1060,14 +1099,16 @@ KI_PAIR_RE = re.compile(r'\{\s*"(\w+)"\s*,\s*"?([^"\n]*?)"?\s*\}', re.DOTALL)
 
 
 def ingest_kitrack(con, capture_id, src: Source, relname: str) -> int:
-    """KITrack/<capturer>.log -- real key-item acquisition/loss events (a custom brace-delimited
-    text format, not JSON or a Lua table literal), one event per "[timestamp] Lost KI"/"Obtained
-    KI" header followed by a {"Key", Value} block. Directly useful for this project's standing
-    key-item id drift problem (LSB/retail ids drift for the large majority of key items, per
-    id_bridge.py's own findings) -- this is a real observed (id, name, position, zone) triple for
-    a key item actually picked up/lost in a real session, not a guess from wiki text."""
-    text = src.read_text(relname)
+    """KITrack key-item events with exact header-delimited source block provenance."""
+    source_bytes = src.read_bytes(relname)
+    text = source_bytes.decode("utf-8", "replace")
+    byte_offsets_exact = text.encode("utf-8") == source_bytes
+    source_sha256 = capture_integrity.sha256_bytes(source_bytes)
     headers = [(m.start(), m.group(1), m.group(2)) for m in KI_HEADER_RE.finditer(text)]
+    con.execute(
+        "DELETE FROM capture_row_locators WHERE capture_id=? AND filename=? AND target_table='capture_ki_events'",
+        (capture_id, relname),
+    )
     n = 0
     for i, (pos, ts, event_type) in enumerate(headers):
         end = headers[i + 1][0] if i + 1 < len(headers) else len(text)
@@ -1092,9 +1133,19 @@ def ingest_kitrack(con, capture_id, src: Source, relname: str) -> int:
             VALUES (?,?,?,?,?,?,?,?,?,?)""",
             (capture_id, n, ts, event_type, keyitem_id, fields.get("Name"),
              to_float("X"), to_float("Y"), to_float("Z"), fields.get("Zone")))
+        capture_integrity.record_row_locator(
+            con, capture_id, relname, "capture_ki_events",
+            json.dumps({"seq": n}, sort_keys=True), "block",
+            source_sha256=source_sha256,
+            start_line=text.count("\n", 0, pos) + 1,
+            end_line=text.count("\n", 0, end) + (0 if end == len(text) and text.endswith("\n") else 1),
+            start_offset=len(text[:pos].encode("utf-8")) if byte_offsets_exact else None,
+            end_offset=len(text[:end].encode("utf-8")) if byte_offsets_exact else None,
+            details={"source": "kitrack", "timestamp": ts, "event_type": event_type,
+                     "keyitem_id": keyitem_id, "keyitem_name": fields.get("Name")},
+        )
         n += 1
     return n
-
 
 # 2026-09-08: real caplog/<Capturer>_<date>.txt format -- confirmed directly against the real
 # addon source (reference_addons/wiggo-addons-1/capture/{caplog,npclogger,eventview,hptrack}.lua),
@@ -1606,27 +1657,32 @@ IDVIEW2_PARAMS_RE = re.compile(r'^Params:\s*(.*)$', re.MULTILINE)
 
 
 def ingest_idview_simple(con, capture_id, src: Source, relname: str) -> int:
-    """idview/simple/<Zone>.log -- real, structured per-packet dialogue/CS-event data (Incoming/
-    Outgoing, opcode, opcode name, NPC/Actor id+name, Event hex, Option, Message, or raw Params
-    depending on packet type) from the older idview capture tool. No timestamps, but every entry
-    is a real observed CS-event/dialogue packet -- exactly the "does this NPC really fire this
-    CSID" and "what message id does this NPC really send" evidence this project has historically
-    had to read out of raw hex dumps by hand. idview/raw carries the same facts plus a redundant
-    hex dump; simple is parsed here since it already has everything structured.
-
-    Two real rendering formats exist across the corpus (confirmed 2026-09-04, see IDVIEW2_* note
-    above) -- detected from the file's own first non-blank line rather than assumed, so either
-    real shape parses correctly instead of one silently returning zero rows."""
+    """Ingest either real IDView simple format with exact source line/block provenance."""
     zone_db = Path(relname).stem
-    text = src.read_text(relname)
+    source_bytes = src.read_bytes(relname)
+    text = source_bytes.decode("utf-8", "replace")
+    byte_offsets_exact = text.encode("utf-8") == source_bytes
+    source_sha256 = capture_integrity.sha256_bytes(source_bytes)
+    con.execute(
+        "DELETE FROM capture_row_locators WHERE capture_id=? AND filename=? AND target_table='capture_events'",
+        (capture_id, relname),
+    )
 
     first_line = next((l.strip() for l in text.splitlines() if l.strip()), "")
     if IDVIEW2_HEADER_RE.match(first_line):
-        return _ingest_idview_simple_v2(con, capture_id, zone_db, text)
+        return _ingest_idview_simple_v2(
+            con, capture_id, zone_db, text,
+            relname=relname, source_sha256=source_sha256,
+            byte_offsets_exact=byte_offsets_exact,
+        )
 
+    raw_lines = text.splitlines(keepends=True)
     n = 0
-    for line in text.splitlines():
-        line = line.strip()
+    char_pos = 0
+    for i, raw_line in enumerate(raw_lines):
+        line = raw_line.rstrip("\r\n").strip()
+        start_char = char_pos
+        char_pos += len(raw_line)
         if not line:
             continue
         m = IDVIEW_LINE_RE.match(line)
@@ -1638,7 +1694,6 @@ def ingest_idview_simple(con, capture_id, src: Source, relname: str) -> int:
         em = IDVIEW_ENTITY_RE.search(rest)
         if em:
             entity_id, entity_name = int(em.group(1)), em.group(2) or None
-
         event_m = IDVIEW_EVENT_RE.search(rest)
         event_hex = event_m.group(1) if event_m else None
         option_m = IDVIEW_OPTION_RE.search(rest)
@@ -1654,17 +1709,29 @@ def ingest_idview_simple(con, capture_id, src: Source, relname: str) -> int:
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
             (capture_id, zone_db, n, direction, opcode, opcode_name, entity_id, entity_name,
              event_hex, option, message_id, params_raw))
+        capture_integrity.record_row_locator(
+            con, capture_id, relname, "capture_events",
+            json.dumps({"zone_db": zone_db, "seq": n}, sort_keys=True), "line",
+            source_sha256=source_sha256,
+            start_line=i + 1, end_line=i + 1,
+            start_offset=len(text[:start_char].encode("utf-8")) if byte_offsets_exact else None,
+            end_offset=len(text[:char_pos].encode("utf-8")) if byte_offsets_exact else None,
+            details={"source": "idview_simple_v1", "opcode": opcode, "opcode_name": opcode_name},
+        )
         n += 1
-
         if entity_id and entity_name:
             entity_profile.record_field(con, "npc", entity_id, "capture_name", "capture", entity_name)
     return n
 
 
-def _ingest_idview_simple_v2(con, capture_id, zone_db, text: str) -> int:
+def _ingest_idview_simple_v2(
+    con, capture_id, zone_db, text: str, *,
+    relname: str, source_sha256: str, byte_offsets_exact: bool,
+) -> int:
     n = 0
-    for block in re.split(r'\n\s*\n', text):
-        block = block.strip()
+    for match in re.finditer(r'(?ms)(^\s*(?:INCOMING|OUTGOING)\s*[<>].*?)(?=\n\s*\n|\Z)', text):
+        raw_block = match.group(1)
+        block = raw_block.strip()
         if not block:
             continue
         lines = block.splitlines()
@@ -1678,7 +1745,6 @@ def _ingest_idview_simple_v2(con, capture_id, zone_db, text: str) -> int:
         em = IDVIEW_ENTITY_RE.search(header_rest)
         if em:
             entity_id, entity_name = int(em.group(1)), em.group(2) or None
-
         body = "\n".join(lines[1:])
         event_m = IDVIEW2_EVENT_RE.search(body)
         event_hex = f"0x{int(event_m.group(1)):04X}" if event_m else None
@@ -1695,12 +1761,21 @@ def _ingest_idview_simple_v2(con, capture_id, zone_db, text: str) -> int:
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
             (capture_id, zone_db, n, direction, opcode, opcode_name, entity_id, entity_name,
              event_hex, option, message_id, params_raw))
+        start, end = match.start(1), match.end(1)
+        capture_integrity.record_row_locator(
+            con, capture_id, relname, "capture_events",
+            json.dumps({"zone_db": zone_db, "seq": n}, sort_keys=True), "block",
+            source_sha256=source_sha256,
+            start_line=text.count("\n", 0, start) + 1,
+            end_line=text.count("\n", 0, end) + 1,
+            start_offset=len(text[:start].encode("utf-8")) if byte_offsets_exact else None,
+            end_offset=len(text[:end].encode("utf-8")) if byte_offsets_exact else None,
+            details={"source": "idview_simple_v2", "opcode": opcode, "opcode_name": opcode_name},
+        )
         n += 1
-
         if entity_id and entity_name:
             entity_profile.record_field(con, "npc", entity_id, "capture_name", "capture", entity_name)
     return n
-
 
 def ingest_npclogger_lua(con, capture_id, src: Source, relname: str, leg: int = 1) -> tuple[int, int]:
     """Older capture tool format (idview/Wiggo-era) -- Npclogger/tables/<Zone>.lua, an append-log
