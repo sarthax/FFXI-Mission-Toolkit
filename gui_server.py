@@ -5069,7 +5069,7 @@ def captures_add_form(request: Request, capture_id: int, saved: str = ""):
         con.close()
         return HTMLResponse("Capture not found", status_code=404)
     files = con.execute(
-        "SELECT filename, format_detected, row_count, error, ingested_at FROM capture_source_files "
+        "SELECT filename, format_detected, row_count, error, ingested_at, sha256, byte_size, parser_id, parser_version, source_kind, bundle_manifest_sha256 FROM capture_source_files "
         "WHERE capture_id=? ORDER BY ingested_at DESC", (capture_id,)
     ).fetchall()
     con.close()
@@ -5136,21 +5136,21 @@ async def captures_add_submit(request: Request, capture_id: int):
                 total_rows = sum(counts.values())
                 n_failed = sum(1 for r in file_results if r["error"])
                 summary_error = f"{n_failed} of {len(file_results)} file(s) failed -- see below" if n_failed else None
-                manifest_row = con.execute(
-                    "SELECT source_manifest_sha256,source_file_count FROM captures WHERE capture_id=?",
-                    (capture_id,),
-                ).fetchone()
+                bundle_manifest = next(
+                    (r.get("bundle_manifest_sha256") for r in file_results if r.get("bundle_manifest_sha256")),
+                    None,
+                )
                 build_capture_index.record_source_file_results(con, capture_id, [{
                     "filename": label,
                     "format": "folder_bundle",
                     "rows": total_rows,
                     "error": summary_error,
-                    "sha256": manifest_row[0] if manifest_row else None,
+                    "sha256": bundle_manifest,
                     "byte_size": sum((r.get("byte_size") or 0) for r in file_results),
                     "parser_id": "bundle_dispatch",
                     "parser_version": build_capture_index.CAPTURE_PARSER_VERSION,
                     "source_kind": "folder_bundle",
-                    "bundle_manifest_sha256": manifest_row[0] if manifest_row else None,
+                    "bundle_manifest_sha256": bundle_manifest,
                 }])
                 results.append({"filename": label, "format": "folder_bundle", "rows": total_rows, "error": summary_error})
                 results.extend(file_results)
@@ -5193,9 +5193,10 @@ async def captures_add_submit(request: Request, capture_id: int):
                 n_failed = sum(1 for r in file_results if r["error"])
                 summary_error = f"{n_failed} of {len(file_results)} file(s) failed -- see below" if n_failed else None
                 archive_sha, archive_size = build_capture_index._content_fingerprint(data)
-                manifest_row = con.execute(
-                    "SELECT source_manifest_sha256 FROM captures WHERE capture_id=?", (capture_id,)
-                ).fetchone()
+                bundle_manifest = next(
+                    (r.get("bundle_manifest_sha256") for r in file_results if r.get("bundle_manifest_sha256")),
+                    None,
+                )
                 build_capture_index.record_source_file_results(con, capture_id, [{
                     "filename": uf.filename,
                     "format": "zip_bundle",
@@ -5206,7 +5207,7 @@ async def captures_add_submit(request: Request, capture_id: int):
                     "parser_id": "bundle_dispatch",
                     "parser_version": build_capture_index.CAPTURE_PARSER_VERSION,
                     "source_kind": "archive_bundle",
-                    "bundle_manifest_sha256": manifest_row[0] if manifest_row else None,
+                    "bundle_manifest_sha256": bundle_manifest,
                 }])
                 results.append({"filename": uf.filename, "format": "zip_bundle",
                                  "rows": total_rows, "error": summary_error})
