@@ -72,15 +72,29 @@ Plugins may add semantic interpretation and validation policy, but canonical per
 
 ## Built-in foundation
 
-Current declarative plugins:
+Current built-in plugins/frameworks:
 
-- `framework.battlefield`
-- `framework.quest_mission`
-- `framework.multizone_progression`
-- `framework.minigame`
-- `system.assault`
+- `framework.battlefield` — concrete battlefield representation/migration analysis;
+- `framework.quest_mission` — mission/quest framework activation plus state-machine tooling in the mission domain package;
+- `framework.multizone_progression` — concrete staged cross-zone progression/hunt structural analyzer and graph projection;
+- `framework.minigame` — declarative contract pending a dedicated analyzer;
+- `system.assault` — declarative system package composing reusable frameworks.
 
 `system.assault` composes the battlefield and quest/mission frameworks and then adds Assault-specific semantic roles such as AP, tags, ranks, appraisal, lockboxes, and objective conventions.
+
+
+### Multi-zone progression / hunt analysis
+
+The multi-zone framework now has a concrete structural model above the universal graph. It represents stages, objectives, counts, zones, trigger kinds, state conditions/effects, optional paths, AND/OR prerequisite gates, entry stages, and completion gates.
+
+Its analyzer distinguishes:
+- prerequisite fan-out from one stage into several downstream stages;
+- ANY-gated alternatives;
+- ALL-gated convergence;
+- cross-zone dependencies;
+- cycles and unreachable stages.
+
+The model can project into canonical Feature Trace navigation using ordinary entities and relationships, but does not add multi-zone fields to `workbench.core`. Existing canonical Feature/Entity rows are preserved when the progression projection is persisted.
 
 ## Representation profiles
 
