@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 197,
+  "route_count": 198,
   "routes": [
     {
       "method": "GET",
@@ -1489,6 +1489,14 @@
       "home": "Captures",
       "section": "Timeline Alignment",
       "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/captures/{capture_id}/alignment/correlate",
+      "home": "Captures",
+      "section": "Evidence / Provenance",
+      "role": "action",
       "disposition": "KEEP"
     },
     {
