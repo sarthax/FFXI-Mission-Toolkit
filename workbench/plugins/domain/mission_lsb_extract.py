@@ -390,13 +390,40 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                 guard_parts.append(path.body)
             guard_context="\n".join(guard_parts)
             conds=list(_conditions(guard_context))
-            if (
+            post_effect_conditions=[]
+            post_effect_basis=[]
+            dynamic=extract_dynamic_completion_gate(lua) if (
                 any("isMissionComplete(player)" in guard for guard in path.guard_texts)
                 or (unresolved_nested_branch and "isMissionComplete(player)" in path.body)
-            ):
-                dynamic=extract_dynamic_completion_gate(lua)
-                if dynamic:
-                    conds.extend(dynamic.conditions)
+            ) else None
+            if dynamic:
+                handled_dynamic=False
+                if not unresolved_nested_branch:
+                    for guard_index,guard in enumerate(path.guard_texts):
+                        if "isMissionComplete(player)" not in guard:
+                            continue
+                        prefix=(
+                            path.guard_prefix_texts[guard_index]
+                            if guard_index < len(path.guard_prefix_texts)
+                            else ""
+                        )
+                        writes={
+                            effect.subject
+                            for effect in _effects(prefix)
+                            if effect.effect in {"SET_VAR","SET_CHANNEL"}
+                        }
+                        gate_subjects={condition.subject for condition in dynamic.conditions}
+                        overlap=tuple(sorted(writes & gate_subjects))
+                        if overlap:
+                            for condition in dynamic.conditions:
+                                if condition not in post_effect_conditions:
+                                    post_effect_conditions.append(condition)
+                            post_effect_basis.extend(x for x in overlap if x not in post_effect_basis)
+                            handled_dynamic=True
+                if not handled_dynamic:
+                    for condition in dynamic.conditions:
+                        if condition not in conds:
+                            conds.append(condition)
 
             effects=list(_effects(path.body))
             event=handler_event
@@ -412,6 +439,9 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
 
             serial+=1
             gate=DependencyGate(f"source-gate:{serial}","ALL",tuple(conds)) if conds else None
+            post_effect_gate=DependencyGate(
+                f"source-post-effect-gate:{serial}","ALL",tuple(post_effect_conditions)
+            ) if post_effect_conditions else None
             transitions.append(MissionTransition(
                 f"source-transition:{serial}","source:any","source:any",trigger,
                 gate=gate,event=event,effects=tuple(effects),
@@ -429,7 +459,9 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                     "branch_source_lines":path.branch_source_lines,
                     "branch_guard_complete":guard_complete,
                     "unexpanded_nested_branch":unresolved_nested_branch,
+                    "post_effect_gate_basis":tuple(post_effect_basis),
                 },
+                post_effect_gate=post_effect_gate,
             ))
     # Declarative actor handlers are equivalent to unconditional NPC triggers.
     for line_no,line in enumerate(lines):
