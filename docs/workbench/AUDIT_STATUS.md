@@ -2481,3 +2481,19 @@ BG Wiki and FFXIclopedia claim ledgers can now be compared as peer reference sou
 - Feature Trace catalogs page/claim alignment records for later research navigation.
 
 This remains a reference-comparison layer. Server/client/runtime corroboration is the next evidence step and is intentionally not inferred from wiki agreement alone.
+
+## 2026-09-28 — Capture integrity and provenance hardening
+
+The capture system now has a dedicated integrity layer rather than relying on source paths and ad-hoc parser results.
+
+- deletion safety is live-schema-aware: the explicit child-table registry is retained for auditability, but deletion also discovers every current table with a `capture_id` column so newly added capture-owned tables cannot silently orphan rows;
+- the known VIDEO_OCR, alignment-anchor, key-evidence, source-manifest, and lineage tables are explicitly registered, and per-capture key-evidence files are removed from disk on capture deletion;
+- `capture_source_manifest` records SHA-256, byte size, detected format, parser name/version, row count, status/error, and ingestion timestamp for source files;
+- both individual-file and folder/archive ingestion paths content-address their real source bytes;
+- `capture_ingest_lineage` preserves source-file → parser/version → normalized table-family lineage plus the source locator basis supported by the parser;
+- lineage precision is deliberately honest: existing parsers are currently guaranteed at file/table-family level with locator basis, while exact per-normalized-row line/block offsets remain a follow-on where formats/parsers can support them deterministically;
+- the capture health service reports independent dimensions for source integrity, parser coverage, lineage, client context, packet evidence, entity evidence, timeline alignment, and duplicate source hashes;
+- duplicate bytes across differently named captures are surfaced as an integrity issue rather than automatically merging sessions;
+- the capture detail GUI exposes the health dimensions and expandable source manifest/parser provenance.
+
+This hardening improves evidentiary provenance without changing captured observations or promoting parser output to stronger authority.
