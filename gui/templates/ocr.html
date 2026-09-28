@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}YouTube Chat OCR{% endblock %}
+{% block content %}
+<h1>YouTube chat OCR</h1>
+<p class="muted">Pulls a YouTube playthrough, crops its chat-log box, OCRs the scrolled text, and
+  fuzzy-matches the result against this toolkit's own indexed dialog text
+  (<code>youtube_chat_ocr.py</code>). Nothing here is trusted as ground truth on its own -- treat
+  matched lines as OCR-assisted, not authoritative, the same way the rest of this toolkit treats
+  capture evidence.</p>
+
+{% if error %}<div class="warn">{{ error }}</div>{% endif %}
+{% if installed %}
+<div class="warn" style="{{ '' if installed_ok else 'border-left-color:var(--red);' }}">{{ installed }}: {{ installed_detail }}</div>
+{% endif %}
+
+<h2>Prerequisites</h2>
+<p class="muted">This pipeline needs three external tools that aren't part of the toolkit's own
+  Python dependencies. Each can be one-click installed here (downloaded from its real upstream
+  source and vendored under <code>mission_toolkit/vendor/</code> -- no system PATH or Program
+  Files changes) or installed manually via the linked page.</p>
+<table class="data-table" style="max-width:720px;">
+  <thead><tr><th>Tool</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+    {% for p in prereqs %}
+    <tr>
+      <td>{{ p.label }}</td>
+      <td>{% if p.installed %}<span style="color:#2a2;">installed</span>{% else %}<span style="color:#a33;">not found</span>{% endif %}</td>
+      <td>
+        {% if not p.installed %}
+        <form method="post" action="/install/{{ p.tool }}?back=/ocr" style="display:inline;">
+          <button type="submit">Install {{ p.tool }}</button>
+        </form>
+        <a href="{{ p.manual_url }}" target="_blank" rel="noopener" class="muted">or get it manually ({{ p.manual_label }})</a>
+        {% if p.pending_path %}
+        <div class="warn" style="margin-top:8px;">
+          Already downloaded, but its installer needs an admin prompt only you can click through:<br>
+          <code>{{ p.pending_path }}</code><br>
+          Double-click it, approve UAC, and when it asks for a folder enter exactly:
+          <code>{{ vendor_root }}\{{ p.tool }}</code> -- then reload this page.
+        </div>
+        {% endif %}
+        {% else %}
+        <a href="{{ p.manual_url }}" target="_blank" rel="noopener" class="muted">source</a>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<form method="post" action="/ocr/start">
+  <div class="table-wrap" style="padding:14px; display:flex; flex-direction:column; gap:14px; max-width:640px;">
+    <div>
+      <label class="muted">YouTube URL</label><br>
+      <input type="url" name="url" placeholder="https://www.youtube.com/watch?v=..." style="width:100%; margin-top:6px;" required>
+    </div>
+    <div>
+      <label class="muted">Cookies from browser (only needed for unlisted/private videos that fail to download anonymously)</label><br>
+      <select name="cookies_from_browser" style="width:100%; margin-top:6px;">
+        <option value="">(none -- anonymous download)</option>
+        <option value="chrome">chrome</option>
+        <option value="edge">edge</option>
+        <option value="firefox">firefox</option>
+        <option value="brave">brave</option>
+      </select>
+      <div class="muted" style="margin-top:4px; font-size:0.85em;">Reuses that browser's logged-in YouTube session cookies (close the browser first on Windows, or yt-dlp may fail to read its cookie store while it's running).</div>
+    </div>
+  </div>
+  <div style="margin-top:18px;"><button type="submit">Download &amp; start run</button></div>
+</form>
+
+<h2 style="margin-top:28px;">Runs</h2>
+{% if not runs %}
+<p class="muted">No runs yet.</p>
+{% else %}
+<table class="data-table">
+  <thead><tr><th>Run</th><th>Sections</th><th>Frames</th><th>Unique</th><th>OCR lines</th><th>Matched</th><th>Transcript</th><th></th></tr></thead>
+  <tbody>
+    {% for r in runs %}
+    <tr>
+      <td><a href="/ocr/{{ r.run_id }}">{{ r.run_id }}</a></td>
+      <td>{{ r.sections|map(attribute="label")|join(", ") or "-" }}</td>
+      <td>{{ r.total_frame_count }}</td>
+      <td>{{ r.total_unique_count }}</td>
+      <td>{{ r.total_ocr_line_count }}</td>
+      <td>{{ r.total_matched_line_count }}</td>
+      <td>{{ "yes" if r.any_transcript else "-" }}</td>
+      <td>
+        <form method="post" action="/ocr/{{ r.run_id }}/delete"
+              onsubmit="return confirm('Permanently delete run {{ r.run_id }} and all of its files (source video, frames, OCR/match output)? This cannot be undone.');">
+          <button type="submit" style="color:#c33;">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}
