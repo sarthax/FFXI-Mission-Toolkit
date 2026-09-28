@@ -610,14 +610,16 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
     finishes={}
     for t in machine.transitions:
         if t.trigger=="EVENT_FINISH" and t.event:
-            finishes.setdefault((t.event.zone,t.event.event_id),[]).append(t)
+            finishes.setdefault((t.event.zone,t.event.event_id,t.event.actor),[]).append(t)
 
     consumed=set()
     chained=[]
     for t in machine.transitions:
         if t.trigger not in {"NPC_INTERACT","ZONE_IN","TRADE"} or not t.event:
             continue
-        candidates=finishes.get((t.event.zone,t.event.event_id),[])
+        exact=finishes.get((t.event.zone,t.event.event_id,t.event.actor),[])
+        generic=finishes.get((t.event.zone,t.event.event_id,None),[])
+        candidates=exact if exact else generic
         if not candidates:
             continue
         consumed.add(t.transition_id)
@@ -682,7 +684,7 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
     out=MissionStateMachine(
         machine.machine_id,machine.feature_id,machine.states,
         tuple(remaining+chained),machine.entry_state_ids,machine.channels,
-        machine.completion_gate,{**machine.metadata,"event_chains":len(chained),"event_chain_branch_fanout":sum(max(0,len(v)-1) for v in finishes.values())},
+        machine.completion_gate,{**machine.metadata,"event_chains":len(chained),"event_chain_branch_fanout":sum(max(0,len(v)-1) for v in finishes.values()),"event_chain_actor_scope":True},
     )
     return materialize_channel_states(out)
 
