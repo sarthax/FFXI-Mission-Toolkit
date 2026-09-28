@@ -89,6 +89,7 @@ def main():
     assert catalog.source_for("quest:WHAT_PRICE_LOYALTY") is not None,catalog.subjects()
     assert catalog.source_for("quest:BENEATH_THE_MASK") is not None,catalog.subjects()
     assert catalog.source_for("quest:HONOR_UNDER_FIRE") is not None,catalog.subjects()
+    assert catalog.source_for("quest:QUELLING_THE_STORM") is not None,catalog.subjects()
 
     closure=build_feature_requirement_closure(
         chained,
@@ -102,30 +103,36 @@ def main():
         "quest:crystal_war:what_price_loyalty",
         "quest:crystal_war:beneath_the_mask",
         "quest:crystal_war:honor_under_fire",
+        "quest:crystal_war:quelling_the_storm",
     },closure
     assert catalog.cached_subjects()==(
         "quest:BENEATH_THE_MASK",
         "quest:HONOR_UNDER_FIRE",
+        "quest:QUELLING_THE_STORM",
         "quest:WHAT_PRICE_LOYALTY",
     ),catalog.cached_subjects()
     assert "quest:BLOOD_OF_HEROES" in closure.skipped_alternatives,closure
     assert "quest:HOWL_FROM_THE_HEAVENS" in closure.skipped_alternatives,closure
-    assert closure.unresolved_subjects==("quest:QUELLING_THE_STORM",),closure
+    assert closure.unresolved_subjects==("quest:FIRE_IN_THE_HOLE",),closure
 
     q10=catalog.cached_machine("quest:WHAT_PRICE_LOYALTY")
     q9=catalog.cached_machine("quest:BENEATH_THE_MASK")
     q8=catalog.cached_machine("quest:HONOR_UNDER_FIRE")
-    assert q10 is not None and q9 is not None and q8 is not None,(q10,q9,q8)
+    q7=catalog.cached_machine("quest:QUELLING_THE_STORM")
+    assert q10 is not None and q9 is not None and q8 is not None and q7 is not None,(q10,q9,q8,q7)
 
     assert q9.metadata.get("catalog_discovered") is True,q9.metadata
     assert q10.metadata.get("catalog_discovered") is True,q10.metadata
     assert q8.metadata.get("catalog_discovered") is True,q8.metadata
+    assert q7.metadata.get("catalog_discovered") is True,q7.metadata
     assert q9.metadata.get("quest_symbol")=="BENEATH_THE_MASK",q9.metadata
     assert q10.metadata.get("quest_symbol")=="WHAT_PRICE_LOYALTY",q10.metadata
     assert q8.metadata.get("quest_symbol")=="HONOR_UNDER_FIRE",q8.metadata
+    assert q7.metadata.get("quest_symbol")=="QUELLING_THE_STORM",q7.metadata
     assert q9.metadata.get("reward_item")=="SUPER_RERAISER",q9.metadata
     assert q10.metadata.get("reward_item")=="FOURTH_STAFF",q10.metadata
     assert q8.metadata.get("reward_item")=="ELIXIR_TANK",q8.metadata
+    assert q7.metadata.get("reward_item")=="GOBLIN_BELT",q7.metadata
 
     q9_channels={channel.channel_id:channel for channel in q9.channels}
     q10_channels={channel.channel_id:channel for channel in q10.channels}
@@ -189,21 +196,30 @@ def main():
     assert any(
         dependency.source_feature_id=="quest:crystal_war:honor_under_fire"
         and dependency.subject=="quest:QUELLING_THE_STORM"
+        and dependency.status=="RESOLVED"
+        and dependency.resolved_feature_id=="quest:crystal_war:quelling_the_storm"
+        for dependency in closure.dependencies
+    ),closure.dependencies
+    assert any(
+        dependency.source_feature_id=="quest:crystal_war:quelling_the_storm"
+        and dependency.subject=="quest:FIRE_IN_THE_HOLE"
         and dependency.status=="UNRESOLVED"
         for dependency in closure.dependencies
     ),closure.dependencies
     assert closure_summary=={
         "root_feature_id":"mission:wotg:the_will_of_the_world",
-        "feature_count":4,
-        "dependency_count":9,
-        "resolved_dependency_count":3,
+        "feature_count":5,
+        "dependency_count":11,
+        "resolved_dependency_count":4,
         "unresolved_dependency_count":1,
         "skipped_alternative_count":2,
         "cycle_count":0,
     },closure_summary
 
+    q7_metrics=quest_extraction_metrics(q7)
     q9_metrics=quest_extraction_metrics(q9)
     q10_metrics=quest_extraction_metrics(q10)
+    assert q7_metrics["unmodeled_source_handler_count"]==0,q7_metrics
     assert q9_metrics["unmodeled_source_handler_count"]==0,q9_metrics
     assert q10_metrics["unmodeled_source_handler_count"]==0,q10_metrics
 
@@ -241,7 +257,8 @@ def main():
     print("q10_visible_gaps",q10_metrics["implementation_gap_transition_count"])
     print("closure_features",closure_summary["feature_count"],"unresolved",closure.unresolved_subjects)
     print("catalog_loaded",catalog.cached_subjects())
-    print("next_gap","continue source-catalog closure through Quelling the Storm")
+    print("q7_transitions",len(q7.transitions),"q7_unmodeled",q7_metrics["unmodeled_source_handler_count"])
+    print("next_gap","continue source-catalog closure through Fire in the Hole")
     return 0
 
 
