@@ -100,8 +100,11 @@ _EVENT_FINISH_KEY=re.compile(r"\[(\d+)\]\s*=\s*function\(player,\s*csid")
 _STATUS_EQ=re.compile(r"player:getMissionStatus\([^\n]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)\s*==\s*(\d+)")
 _STATUS_NE=re.compile(r"player:getMissionStatus\([^\n]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)\s*~=\s*(\d+)")
 _STATUS_COMPARE=re.compile(
-    r"player:getMissionStatus\([^\n]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)"
+    r"player:getMissionStatus\([^\)]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\s*\)"
     r"\s*(==|~=|<=|>=|<|>)\s*(\d+)"
+)
+_STATUS_ALIAS_COMPARE=re.compile(
+    r"\b([A-Za-z_][A-Za-z0-9_]*)\s*(==|~=|<=|>=|<|>)\s*(\d+)"
 )
 _STATUS_COMPARE_OPERATOR={"==":"EQ","~=":"NE","<":"LT","<=":"LE",">":"GT",">=":"GE"}
 _XPOS_EQ=re.compile(r"player:getXPos\(\)\s*==\s*(-?[0-9.]+)")
@@ -514,19 +517,43 @@ def _literal_mission_section_spans(lua: str) -> tuple[tuple[int,int,str],...]:
 def _section_check_status_conditions(section: str) -> tuple[StateCondition,...]:
     """Extract literal mission-status conjuncts from one section check.
 
-    OR expressions are deliberately unresolved because a flat list would manufacture
-    conjunction semantics. Other unmodeled check terms remain outside this fragment.
+    Direct calls and local aliases are normalized across line breaks. OR expressions are
+    deliberately unresolved because a flat list would manufacture conjunction semantics.
+    Other unmodeled check terms remain outside this fragment.
     """
     check=_section_check_block(section)
     if check is None:
         return ()
-    executable="\n".join(_structural_lua_lines(check))
+    structural=_structural_lua_lines(check)
+    executable=" ".join(line.strip() for line in structural if line.strip())
     if re.search(r"\bor\b",executable):
         return ()
+
     out=[]
-    for match in _STATUS_COMPARE.finditer(check):
+    for match in _STATUS_COMPARE.finditer(executable):
         condition=StateCondition(
             f"mission_status:{match.group(1)}",
+            _STATUS_COMPARE_OPERATOR[match.group(2)],
+            int(match.group(3)),
+        )
+        if condition not in out:
+            out.append(condition)
+
+    aliases={
+        match.group(1):match.group(2)
+        for match in re.finditer(
+            r"\blocal\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"
+            r"player:getMissionStatus\([^\)]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\s*\)",
+            executable,
+        )
+    }
+    for match in _STATUS_ALIAS_COMPARE.finditer(executable):
+        alias=match.group(1)
+        channel=aliases.get(alias)
+        if channel is None:
+            continue
+        condition=StateCondition(
+            f"mission_status:{channel}",
             _STATUS_COMPARE_OPERATOR[match.group(2)],
             int(match.group(3)),
         )
@@ -1025,23 +1052,20 @@ def extract_section_completion_gate(lua: str) -> DependencyGate | None:
     mission sections are never combined. Multiple completing sections must prove the
     same convergence gate; disagreement fails closed as unresolved.
     """
-    pattern=re.compile(
-        r"player:getMissionStatus\([^\n]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)\s*==\s*(\d+)"
-    )
     candidates=[]
     for section in _literal_mission_section_bodies(lua):
         executable="\n".join(_structural_lua_lines(section))
         if not _COMPLETE.search(executable):
             continue
-        check=_section_check_block(section)
-        if check is None:
-            return None
 
-        pairs=[]
-        for match in pattern.finditer(check):
-            pair=(match.group(1),int(match.group(2)))
-            if pair not in pairs:
-                pairs.append(pair)
+        conditions=_section_check_status_conditions(section)
+        pairs=[
+            (condition.subject.split(":",1)[1],int(condition.value))
+            for condition in conditions
+            if condition.operator=="EQ"
+            and condition.subject.startswith("mission_status:")
+            and isinstance(condition.value,int)
+        ]
         by_value={}
         for channel,value in pairs:
             by_value.setdefault(value,[]).append(channel)
