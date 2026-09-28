@@ -325,7 +325,7 @@ def _objective_node(model: MultiZoneProgression, objective_id: str) -> str:
 
 def _progression_subject_node(feature_id: str, subject: str) -> tuple[str,bool]:
     prefix=subject.split(":",1)[0].casefold()
-    if prefix in {"mission_var","mission_status","local_var","timer","trade","progression_var"}:
+    if prefix in {"mission_var","mission_status","local_var","timer","trade","progression_var"} or subject in {"mission","player","interaction","message"}:
         return f"progression-subject:{feature_id}:{subject}",True
     return subject,False
 
@@ -435,6 +435,48 @@ def project_progression_graph(
                 discovered_by="multizone_progression",
                 source_snapshot_id=source_snapshot_id,
             ))
+
+            if objective.subject:
+                subject,scoped=_progression_subject_node(model.feature_id,objective.subject)
+                entities.setdefault(subject,Entity(
+                    subject,"PROGRESSION_SUBJECT",objective.subject,{
+                        "scope":"feature" if scoped else "shared",
+                        **({"feature_id":model.feature_id} if scoped else {}),
+                        "raw_subject":objective.subject,
+                    },
+                ))
+                edges.append(DependencyEdge(
+                    f"progression-objective-subject:{_graph_token(model.feature_id,objective_id,subject)}",
+                    objective_node,subject,"REFERENCES",
+                    evidence_id=(objective.evidence_ids[0] if objective.evidence_ids else None),
+                    confidence="INFERRED",status="DISCOVERED",
+                    discovered_by="multizone_progression",
+                    notes=f"required_count={objective.required_count}",
+                    source_snapshot_id=source_snapshot_id,
+                ))
+
+            if objective.event:
+                event=objective.event
+                event_node=(
+                    f"progression-event:{model.feature_id}:{event.zone}:"
+                    f"{event.actor or '*'}:{event.event_id}"
+                )
+                entities.setdefault(event_node,Entity(
+                    event_node,"PROGRESSION_EVENT",event.key,{
+                        "feature_id":model.feature_id,
+                        "zone":event.zone,
+                        "actor":event.actor,
+                        "event_id":event.event_id,
+                    },
+                ))
+                edges.append(DependencyEdge(
+                    f"progression-objective-event:{_graph_token(model.feature_id,objective_id,event.key)}",
+                    objective_node,event_node,"USES_EVENT",
+                    evidence_id=(objective.evidence_ids[0] if objective.evidence_ids else None),
+                    confidence="INFERRED",status="DISCOVERED",
+                    discovered_by="multizone_progression",
+                    source_snapshot_id=source_snapshot_id,
+                ))
 
             for zone in objective.zones:
                 zone_node=f"zone:{zone}"
