@@ -2410,3 +2410,14 @@ Implemented a source-neutral alignment layer for linking gameplay-video time to 
 - VIDEO_OCR and real capture opcodes are compared to surface shared packet landmarks, with unique one-to-one pairs flagged as strong candidates but never auto-accepted;
 - the capture GUI has a dedicated alignment workspace, one-click prefill for unique packet pairs, video jump links, and support for manual/packet/event/screenshot anchor labels;
 - screenshot/key-event attachment persistence remains a follow-on milestone, but the anchor model already reserves SCREENSHOT as a source type.
+
+## 2026-09-28 — Screenshot and key-event evidence layer
+
+Timeline alignment now has a persisted key-evidence layer rather than treating screenshots as comments on anchors.
+
+- evidence types include SCREENSHOT, KEY_EVENT, FRAME, and NOTE;
+- records can carry an observed video timestamp, capture timestamp + clock basis, an existing alignment anchor, or any compatible combination;
+- when only one timeline coordinate is observed, the GUI may display the opposite coordinate as an alignment-derived estimate without writing that estimate back as observed truth;
+- uploaded screenshots are limited to validated PNG/JPEG/WebP/BMP image content, stored under a per-capture evidence root outside static mounts, and served only through a DB-backed evidence route;
+- key evidence retains source references, notes, confidence, MIME type, alignment-anchor linkage, and metadata;
+- canonical capture graph ingestion emits a KEY_EVIDENCE entity and HAS_EVIDENCE relationship while keeping the interpretation distinct from packet/event truth.
