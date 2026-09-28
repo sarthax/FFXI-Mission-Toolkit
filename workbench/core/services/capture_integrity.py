@@ -64,6 +64,34 @@ def init_db(con: sqlite3.Connection) -> None:
         );
         CREATE INDEX IF NOT EXISTS idx_capture_lineage_target
             ON capture_ingest_lineage(capture_id,target_table);
+        CREATE TABLE IF NOT EXISTS capture_source_artifacts (
+            capture_id INTEGER NOT NULL,
+            source_id TEXT NOT NULL,
+            filename TEXT NOT NULL,
+            sha256 TEXT NOT NULL,
+            byte_size INTEGER NOT NULL,
+            format_detected TEXT,
+            parser_name TEXT,
+            parser_version TEXT,
+            row_count INTEGER,
+            ingest_status TEXT NOT NULL,
+            error TEXT,
+            observed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY(capture_id,source_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_capture_source_artifact_hash
+            ON capture_source_artifacts(sha256);
+        CREATE INDEX IF NOT EXISTS idx_capture_source_artifact_name
+            ON capture_source_artifacts(capture_id,filename);
+        CREATE TABLE IF NOT EXISTS capture_content_manifest (
+            capture_id INTEGER PRIMARY KEY,
+            sha256 TEXT,
+            file_count INTEGER NOT NULL DEFAULT 0,
+            total_bytes INTEGER NOT NULL DEFAULT 0,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_capture_content_manifest_hash
+            ON capture_content_manifest(sha256);
     """)
     con.commit()
 
@@ -74,6 +102,88 @@ def sha256_bytes(data: bytes) -> str:
 
 def parser_targets(format_detected: str | None):
     return FORMAT_TARGETS.get(format_detected or "", ())
+
+
+def _source_artifact_id(
+    filename: str,
+    digest: str,
+    parser_name: str | None,
+    parser_version: str,
+    ingest_status: str,
+) -> str:
+    payload = "|".join([
+        filename, digest, parser_name or "", parser_version, ingest_status,
+    ])
+    return "capture-source:" + hashlib.sha256(payload.encode("utf-8")).hexdigest()[:24]
+
+
+def recompute_content_manifest(con: sqlite3.Connection, capture_id: int) -> dict:
+    """Compute path-independent identity from the CURRENT per-filename source manifest.
+
+    Filenames are intentionally excluded from the fingerprint so moved/renamed/re-zipped copies
+    of the same evidence set resolve to the same capture content identity. Auxiliary metadata
+    (manifest.txt/OS cruft) is excluded; recognized, unrecognized, and failed primary inputs remain
+    part of the identity so unexplained extra evidence cannot silently collapse into a duplicate.
+    """
+    init_db(con)
+    rows = con.execute(
+        """SELECT sha256,byte_size
+           FROM capture_source_manifest
+           WHERE capture_id=? AND ingest_status<>'AUXILIARY'
+           ORDER BY sha256,byte_size""",
+        (capture_id,),
+    ).fetchall()
+    payload = "\n".join(f"{digest}\0{int(size)}" for digest, size in rows).encode("utf-8")
+    digest = hashlib.sha256(payload).hexdigest() if rows else None
+    total_bytes = sum(int(size) for _, size in rows)
+    con.execute(
+        """INSERT OR REPLACE INTO capture_content_manifest
+           (capture_id,sha256,file_count,total_bytes,updated_at)
+           VALUES (?,?,?,?,CURRENT_TIMESTAMP)""",
+        (capture_id,digest,len(rows),total_bytes),
+    )
+    return {
+        "capture_id": capture_id,
+        "sha256": digest,
+        "file_count": len(rows),
+        "total_bytes": total_bytes,
+    }
+
+
+def content_identity(con: sqlite3.Connection, capture_id: int) -> dict | None:
+    init_db(con)
+    row = con.execute(
+        """SELECT capture_id,sha256,file_count,total_bytes,updated_at
+           FROM capture_content_manifest WHERE capture_id=?""",
+        (capture_id,),
+    ).fetchone()
+    if not row:
+        return None
+    return {
+        "capture_id": row[0], "sha256": row[1], "file_count": row[2],
+        "total_bytes": row[3], "updated_at": row[4],
+    }
+
+
+def find_exact_capture_duplicates(con: sqlite3.Connection, capture_id: int) -> list[dict]:
+    identity = content_identity(con, capture_id)
+    if not identity or not identity.get("sha256"):
+        return []
+    old_factory = con.row_factory
+    con.row_factory = sqlite3.Row
+    try:
+        rows = con.execute(
+            """SELECT m.capture_id,m.sha256,m.file_count,m.total_bytes,
+                      c.capture_label,c.source_path
+               FROM capture_content_manifest m
+               JOIN captures c ON c.capture_id=m.capture_id
+               WHERE m.sha256=? AND m.capture_id<>?
+               ORDER BY m.capture_id""",
+            (identity["sha256"], capture_id),
+        ).fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        con.row_factory = old_factory
 
 
 def record_source_file(
@@ -102,6 +212,16 @@ def record_source_file(
         (capture_id,filename,digest,len(data),format_detected,parser_name,PARSER_VERSION,
          row_count,status,error),
     )
+    source_id = _source_artifact_id(filename,digest,parser_name,PARSER_VERSION,status)
+    con.execute(
+        """INSERT OR REPLACE INTO capture_source_artifacts
+           (capture_id,source_id,filename,sha256,byte_size,format_detected,parser_name,
+            parser_version,row_count,ingest_status,error,observed_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)""",
+        (capture_id,source_id,filename,digest,len(data),format_detected,parser_name,
+         PARSER_VERSION,row_count,status,error),
+    )
+    recompute_content_manifest(con,capture_id)
     con.execute(
         "DELETE FROM capture_ingest_lineage WHERE capture_id=? AND filename=?",
         (capture_id,filename),
@@ -119,7 +239,8 @@ def record_source_file(
     return {
         "filename":filename,"sha256":digest,"byte_size":len(data),"format_detected":format_detected,
         "parser_name":parser_name,"parser_version":PARSER_VERSION,"row_count":row_count,
-        "ingest_status":status,"error":error,
+        "ingest_status":status,"error":error,"source_id":source_id,
+        "content_manifest":content_identity(con,capture_id),
     }
 
 
@@ -200,6 +321,9 @@ def capture_health(con: sqlite3.Connection, capture_id: int) -> dict:
             (capture_id,),
         ).fetchall() if r[0]]
 
+    capture_identity=content_identity(con,capture_id)
+    exact_duplicates=find_exact_capture_duplicates(con,capture_id)
+
     duplicate_hashes=[]
     for row in con.execute(
         """SELECT sha256,COUNT(DISTINCT capture_id) AS captures
@@ -243,6 +367,14 @@ def capture_health(con: sqlite3.Connection, capture_id: int) -> dict:
         "status":"ISSUES" if duplicate_hashes else "COMPLETE",
         "duplicate_hashes":duplicate_hashes,
     }
+    dimensions["capture_identity"]={
+        "status":"ISSUES" if exact_duplicates else ("COMPLETE" if capture_identity and capture_identity.get("sha256") else "UNKNOWN"),
+        "sha256":capture_identity.get("sha256") if capture_identity else None,
+        "file_count":capture_identity.get("file_count") if capture_identity else 0,
+        "total_bytes":capture_identity.get("total_bytes") if capture_identity else 0,
+        "exact_duplicates":exact_duplicates,
+        "basis":"path-independent current non-auxiliary source set",
+    }
 
     issue_count=sum(1 for d in dimensions.values() if d["status"]=="ISSUES")
     partial_count=sum(1 for d in dimensions.values() if d["status"]=="PARTIAL")
@@ -253,5 +385,7 @@ def capture_health(con: sqlite3.Connection, capture_id: int) -> dict:
     return {
         "status":"OK","capture_id":capture_id,"overall":overall,
         "dimensions":dimensions,"source_manifest":manifest,
+        "content_identity":capture_identity,
+        "source_artifact_count":_table_count(con,"capture_source_artifacts",capture_id),
         "generated_at":datetime.now(timezone.utc).isoformat(),
     }

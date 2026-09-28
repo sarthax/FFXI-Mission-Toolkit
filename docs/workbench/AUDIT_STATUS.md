@@ -2497,3 +2497,18 @@ The capture system now has a dedicated integrity layer rather than relying on so
 - the capture detail GUI exposes the health dimensions and expandable source manifest/parser provenance.
 
 This hardening improves evidentiary provenance without changing captured observations or promoting parser output to stronger authority.
+
+## 2026-09-28 — Exact capture content identity and source-version history
+
+Follow-up to the Capture Integrity hardening merged concurrently on main:
+
+- `capture_content_manifest` stores a path-independent SHA-256 over the current non-auxiliary source set, preserving multiplicity while excluding filenames and packaging-only metadata;
+- exact duplicate captures can therefore be identified even when their files were renamed, moved, or re-zipped;
+- `capture_source_artifacts` preserves content/parser versions append-safely, so changed bytes uploaded later under the same filename no longer erase the earlier provenance record;
+- the existing `capture_source_manifest` remains the current/latest-by-filename compatibility view used by health and parser coverage;
+- Capture Health now distinguishes exact whole-capture duplicate identity from individual shared-source-file overlap;
+- capture detail exposes the full fingerprint and links exact duplicate capture candidates plus the source-history query;
+- failed archive uploads are hashed and recorded with `archive_open` parser provenance even though ingestion failed;
+- dynamic capture-owned table discovery automatically makes both new provenance tables deletion-safe.
+
+This is exact-content duplicate detection, not partial session-overlap inference. Packet/event/time fingerprints for partially overlapping sessions remain a separate roadmap item.

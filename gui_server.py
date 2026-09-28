@@ -3567,6 +3567,9 @@ CAPTURE_QUERY_TABLES = {
     "capture_caplog_chat": {"id_col": None, "name_col": "text"},
     "capture_tags": {"id_col": None, "name_col": "tag"},
     "capture_source_files": {"id_col": None, "name_col": "filename"},
+    "capture_source_manifest": {"id_col": None, "name_col": "filename"},
+    "capture_source_artifacts": {"id_col": None, "name_col": "filename"},
+    "capture_content_manifest": {"id_col": None, "name_col": "sha256"},
 }
 CAPTURE_QUERY_PAGE_SIZE = 200
 
@@ -5210,8 +5213,15 @@ async def captures_add_submit(request: Request, capture_id: int):
                     (capture_id, filename, format_detected, ingested_at, row_count, error)
                     VALUES (?,?,NULL,datetime('now'),0,?)""",
                     (capture_id, uf.filename, str(ex)))
+                provenance = capture_integrity.record_source_file(
+                    con, capture_id, uf.filename, data,
+                    format_detected=None, parser_name="archive_open", row_count=0, error=str(ex),
+                )
                 con.commit()
-                results.append({"filename": uf.filename, "format": None, "rows": 0, "error": str(ex)})
+                results.append({
+                    "filename": uf.filename, "format": None, "rows": 0, "error": str(ex),
+                    "sha256": provenance["sha256"], "byte_size": provenance["byte_size"],
+                })
             finally:
                 if src is not None:
                     src.close()
@@ -5474,6 +5484,7 @@ def captures_detail(request: Request, capture_id: int, content_type: str = "", q
         "SELECT mob_name, hp_low, hp_high FROM capture_hp_events WHERE capture_id=? ORDER BY seq",
         (capture_id,)).fetchall()
     detail["health"] = capture_integrity.capture_health(con, capture_id)
+    detail["exact_capture_duplicates"] = capture_integrity.find_exact_capture_duplicates(con, capture_id)
 
     filtered_sql = "SELECT capture_id FROM captures WHERE 1=1"
     params = []

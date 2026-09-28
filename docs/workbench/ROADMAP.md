@@ -179,6 +179,9 @@ Purpose: make capture evidence reproducible, deletion-safe, content-addressed, a
 - [x] Add explicit ingestion lineage from source file/hash → parser/version → normalized table family with locator basis (`line`, `block`, `sqlite-row`, `csv-row`, etc.) and row-count provenance.
 - [x] Add a dimensioned capture-health report covering source integrity, parser coverage, lineage, client context, packet evidence, entity evidence, timeline alignment, and duplicate-source detection; do not collapse these dimensions into one numeric score.
 - [x] Expose capture integrity dimensions plus the source manifest/parser provenance on the capture detail GUI.
+- [x] Add a path-independent whole-capture content fingerprint over the current non-auxiliary source set so renamed/moved/re-zipped copies can be recognized as exact capture duplicates.
+- [x] Preserve changed same-name source files in an append-safe content-addressed source-artifact history while keeping the per-filename manifest as the current/latest view.
+- [x] Hash failed archive uploads too, preserving failed ingestion provenance without treating the archive wrapper as successfully parsed capture evidence.
 - [ ] Refine legacy parsers incrementally to emit exact per-normalized-row source locators/offsets where the original format supports them; do not infer line/block precision for existing parsers that never exposed it.
 - [ ] Add session-overlap/fingerprint detection beyond exact source-file hashes for partial/overlapping captures.
 - [ ] Add clock discontinuity diagnostics and parser-specific rebuild/reingestion orchestration while preserving capture identity and annotations.
