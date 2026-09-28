@@ -45,6 +45,40 @@ SOURCE=r"""
 """
 
 
+ACTOR_LOCAL=r"""
+[xi.zone.TEST_ZONE] =
+{
+    ['First_NPC'] =
+    {
+        onTrigger = function(player, npc)
+            return mission:progressEvent(50)
+        end,
+
+        onEventFinish =
+        {
+            [50] = function(player, csid, option, npc)
+                mission:setVar(player, 'First', 1)
+            end,
+        },
+    },
+
+    ['Second_NPC'] =
+    {
+        onTrigger = function(player, npc)
+            return mission:progressEvent(50)
+        end,
+
+        onEventFinish =
+        {
+            [50] = function(player, csid, option, npc)
+                mission:setVar(player, 'Second', 1)
+            end,
+        },
+    },
+}
+"""
+
+
 def main():
     machine=correlate_lsb_handlers(SOURCE,feature_id="mission:test:actor-scope")
     assert not machine.validate(),machine.validate()
@@ -82,6 +116,26 @@ def main():
     )
     assert c10.event.actor=="First_NPC",c10
     assert c20.event.actor=="Second_NPC",c20
+
+    scoped=correlate_lsb_handlers(ACTOR_LOCAL,feature_id="mission:test:actor-local")
+    raw_finishes=[
+        t for t in scoped.transitions
+        if t.trigger=="EVENT_FINISH" and t.event and t.event.event_id==50
+    ]
+    assert {t.event.actor for t in raw_finishes}=={"First_NPC","Second_NPC"},raw_finishes
+    scoped_chained=chain_event_transitions(scoped)
+    chains=[
+        t for t in scoped_chained.transitions
+        if t.metadata.get("logical_event_chain") and t.event and t.event.event_id==50
+    ]
+    assert len(chains)==2,chains
+    by_actor={t.event.actor:t for t in chains}
+    assert set(by_actor)=={"First_NPC","Second_NPC"},chains
+    first_effects={e.subject for e in by_actor["First_NPC"].effects}
+    second_effects={e.subject for e in by_actor["Second_NPC"].effects}
+    assert "mission_var:First" in first_effects and "mission_var:Second" not in first_effects,first_effects
+    assert "mission_var:Second" in second_effects and "mission_var:First" not in second_effects,second_effects
+    assert scoped_chained.metadata["event_chain_actor_scope"] is True,scoped_chained.metadata
 
     print("mission actor scope context self-test: PASS")
 
