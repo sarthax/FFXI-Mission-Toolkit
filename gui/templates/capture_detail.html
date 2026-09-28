@@ -36,6 +36,7 @@
   <tr><td>video</td><td>
     {% if detail.video_url %}<a class="inline" href="{{ detail.video_url }}" target="_blank" rel="noopener">{{ detail.video_url }}</a>
     {% else %}<span class="muted">none linked</span>{% endif %}
+    {% if detail.ocr_run_id %} &middot; <a class="inline" href="/ocr/{{ detail.ocr_run_id }}">OCR transcript</a>{% endif %}
   </td></tr>
   <tr><td>client build</td><td class="mono">{{ detail.client_build }}</td></tr>
   <tr><td>source</td><td class="mono">{{ detail.source_path }}</td></tr>
