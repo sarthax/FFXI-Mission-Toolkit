@@ -90,9 +90,11 @@ def import_wiki_evidence(
                    c.revision_timestamp,c.section_title,c.claim_type,c.subject_text,c.excerpt,
                    c.source_locator,c.authority,c.content_hash,
                    m.mapping_id,m.target_domain,m.target_table,m.target_key,m.target_label,
-                   m.mapping_method,m.mapping_status,m.confidence,m.details_json
+                   m.mapping_method,m.mapping_status,m.confidence,m.details_json,
+                   COALESCE(r.review_status,'UNREVIEWED') AS review_status,r.notes AS review_notes
             FROM reference_wiki_claims c
             LEFT JOIN reference_wiki_mappings m ON m.claim_id=c.claim_id
+            LEFT JOIN reference_wiki_mapping_reviews r ON r.mapping_id=m.mapping_id
             {clause}
             ORDER BY c.claim_id,m.mapping_id
         """
@@ -136,6 +138,9 @@ def import_wiki_evidence(
                 )
 
             status = row["mapping_status"]
+            review_status = row["review_status"] or "UNREVIEWED"
+            if review_status == "REJECTED":
+                continue
             if status is None or status in {"UNMAPPED", "UNRESOLVED"}:
                 counts["unmapped_claims"] += 1
                 continue
@@ -144,7 +149,11 @@ def import_wiki_evidence(
             target = _target_node(dst, row["target_table"], row["target_key"], row["target_label"])
             evidence_id = f"evidence:{claim_id}"
             relationship = "MENTIONS" if status == "MAPPED" else "MAY_MENTION"
-            confidence = "INFERRED" if status == "MAPPED" else "UNKNOWN"
+            if review_status == "CONFIRMED":
+                relationship = "MENTIONS"
+                confidence = "VERIFIED"
+            else:
+                confidence = "INFERRED" if status == "MAPPED" else "UNKNOWN"
             dst.execute(
                 """INSERT OR REPLACE INTO entity_relationships
                    VALUES(?,?,?,?,?,?,?,?,?)""",
@@ -160,6 +169,8 @@ def import_wiki_evidence(
                         "mapping_method": row["mapping_method"],
                         "mapping_status": status,
                         "mapping_confidence": row["confidence"],
+                        "review_status": review_status,
+                        "review_notes": row["review_notes"],
                         "target_table": row["target_table"],
                         "target_key": row["target_key"],
                         "details": json.loads(row["details_json"] or "{}"),
