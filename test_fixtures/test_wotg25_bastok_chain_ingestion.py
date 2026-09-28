@@ -129,8 +129,11 @@ def main():
     q10_events={(t.event.zone,t.event.actor,t.event.event_id) for t in q10.transitions if t.event}
     assert ("VUNKERL_INLET_S","Leadavox",2) in q9_events,q9_events
     assert ("BEAUCEDINE_GLACIER_S","Hoarfang",7) in q9_events,q9_events
+    assert ("BEADEAUX_S",None,1) in q9_events,q9_events
     assert ("NORTH_GUSTABERG_S","Roderich",10) in q10_events,q10_events
     assert ("XARCABARD_S","Forbidding_Portal",9) in q10_events,q10_events
+    assert ("XARCABARD_S",None,8) in q10_events,q10_events
+    assert ("XARCABARD_S",None,10) in q10_events,q10_events
     assert ("EVERBLOOM_HOLLOW",None,10000) in q10_events,q10_events
 
     q9_effects={(effect.effect,effect.subject) for t in q9.transitions for effect in t.effects}
