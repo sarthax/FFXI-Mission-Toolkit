@@ -58,6 +58,9 @@ _SET_MUST_ZONE=re.compile(r"quest:setMustZone\(player\)")
 _GET_VAR_ALIAS=re.compile(
     r"local\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*quest:getVar\(player,\s*'([^']+)'\)"
 )
+_KEY_ITEM_ALIAS=re.compile(
+    r"local\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*player:hasKeyItem\(xi\.keyItem\.([A-Z0-9_]+)\)"
+)
 _ALIAS_COMPARE=re.compile(
     r"\b([A-Za-z_][A-Za-z0-9_]*)\s*(==|~=|<=|>=|<|>)\s*(\d+)"
 )
@@ -104,6 +107,9 @@ _TODO_AFTER_MISSION=re.compile(
 )
 _HELPER_DEF_START=re.compile(
     r"^\s*([A-Za-z_][A-Za-z0-9_.]*)\s*=\s*function\(player\)"
+)
+_LOCAL_HELPER_DEF_START=re.compile(
+    r"^\s*local\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*function\(player\)"
 )
 _OP={"==":"EQ","~=":"NE","<":"LT","<=":"LE",">":"GT",">=":"GE"}
 
@@ -319,7 +325,11 @@ def _section_contexts(
     return tuple(rows),context
 
 
-def _handler_conditions(text: str) -> tuple[StateCondition,...]:
+def _handler_conditions(
+    text: str,
+    *,
+    key_item_aliases: dict[str,str] | None=None,
+) -> tuple[StateCondition,...]:
     out=[]
     for match in _GET_VAR_COMPARE.finditer(text):
         out.append(StateCondition(
@@ -354,6 +364,11 @@ def _handler_conditions(text: str) -> tuple[StateCondition,...]:
             out.append(StateCondition(f"key_item:{symbol}","HAS",True))
     for match in _PREV_ZONE.finditer(text):
         out.append(StateCondition("previous_zone",_OP[match.group(1)],match.group(2)))
+    for alias,symbol in (key_item_aliases or {}).items():
+        if re.search(rf"\bnot\s+{re.escape(alias)}\b",text):
+            out.append(StateCondition(f"key_item:{symbol}","LACKS",True))
+        elif re.search(rf"\b{re.escape(alias)}\b",text):
+            out.append(StateCondition(f"key_item:{symbol}","HAS",True))
     trade_calls=list(_TRADE_CALL.finditer(text))
     if trade_calls:
         for match in trade_calls:
@@ -426,6 +441,18 @@ def _quest_effects(text: str) -> tuple[TransitionEffect,...]:
     return tuple(dedup)
 
 
+def _quest_local_helpers(lua: str) -> dict[str,tuple[TransitionEffect,...]]:
+    """Extract local player helper effects for safe one-level call-site inlining."""
+    lines=lua.splitlines()
+    out={}
+    for start,_end,text in _balanced_function_blocks(lua):
+        match=_LOCAL_HELPER_DEF_START.search(lines[start])
+        if not match:
+            continue
+        out[match.group(1)]=_quest_effects(text)
+    return out
+
+
 def _channels(lua: str) -> tuple[StateChannel,...]:
     values={}
     for match in _SET_VAR.finditer(lua):
@@ -462,6 +489,7 @@ def correlate_lsb_quest_handlers(
     reward=_QUEST_REWARD_ITEM.search(lua)
     lines,_zone_spans,_actor_spans,context=_scoped_contexts(lua)
     _section_rows,section_context=_section_contexts(lua,helper_feature_gates)
+    local_helpers=_quest_local_helpers(lua)
 
     transitions=[]
     states={"source:any":MissionState("source:any","Source state")}
@@ -504,15 +532,35 @@ def correlate_lsb_quest_handlers(
 
         source_handler_count+=1
         transition_count_before=len(transitions)
+        key_item_aliases={
+            match.group(1):match.group(2)
+            for match in _KEY_ITEM_ALIAS.finditer(text)
+        }
         paths=_handler_paths(text,start_line=start)
         for path_index,path in enumerate(paths,1):
             unresolved_nested=bool(re.search(r"^\s*(?:if|elseif|else)\b",path.body,re.M))
             guard_text="\n".join(path.guard_texts)
             if unresolved_nested:
                 guard_text+="\n"+path.body
-            conditions=_handler_conditions(guard_text)
+            conditions=_handler_conditions(
+                guard_text,
+                key_item_aliases=key_item_aliases,
+            )
             effect_text=path.body+"\n"+guard_text
-            effects=_quest_effects(effect_text)
+            effects=list(_quest_effects(effect_text))
+            executable_body="\n".join(_code(line) for line in path.body.splitlines())
+            helper_calls=tuple(sorted(
+                helper
+                for helper in local_helpers
+                if re.search(rf"\b{re.escape(helper)}\s*\(\s*player\s*\)",executable_body)
+            ))
+            inlined_helper_effects=[]
+            for helper in helper_calls:
+                for effect in local_helpers[helper]:
+                    if effect not in effects:
+                        effects.append(effect)
+                        inlined_helper_effects.append(effect)
+            effects=tuple(effects)
             event=handler_event
             returned=_QUEST_EVENT.search(path.body)
             if returned and event is None:
@@ -530,21 +578,30 @@ def correlate_lsb_quest_handlers(
 
             serial+=1
             guard_has_or=bool(re.search(r"\bor\b",guard_text))
-            trade_only_disjunction=bool(
+            simple_resource_disjunction=bool(
                 guard_has_or
+                and not re.search(r"\band\b",guard_text)
                 and conditions
+                and all(
+                    condition.subject=="trade"
+                    or condition.subject.startswith("key_item:")
+                    for condition in conditions
+                )
+            )
+            trade_only_disjunction=bool(
+                simple_resource_disjunction
                 and all(condition.subject=="trade" for condition in conditions)
             )
             guard_complete=(
                 path.guard_complete
                 and not unresolved_nested
-                and (not guard_has_or or trade_only_disjunction)
+                and (not guard_has_or or simple_resource_disjunction)
             )
             gate=DependencyGate(
                 f"quest-source-gate:{serial}",
-                "ANY" if trade_only_disjunction else "ALL",
-                conditions if (not guard_has_or or trade_only_disjunction) else (),
-            ) if conditions and (not guard_has_or or trade_only_disjunction) else None
+                "ANY" if simple_resource_disjunction else "ALL",
+                conditions if (not guard_has_or or simple_resource_disjunction) else (),
+            ) if conditions and (not guard_has_or or simple_resource_disjunction) else None
             gap_note=_implementation_gap_note(lines,start)
             transitions.append(MissionTransition(
                 f"quest-source-transition:{serial}",
@@ -599,6 +656,16 @@ def correlate_lsb_quest_handlers(
                     "unexpanded_nested_branch":unresolved_nested,
                     "guard_disjunction":guard_has_or,
                     "trade_disjunction_modeled":trade_only_disjunction,
+                    "resource_disjunction_modeled":simple_resource_disjunction,
+                    "helper_calls":helper_calls,
+                    "inlined_helper_effects":tuple(
+                        {
+                            "effect":effect.effect,
+                            "subject":effect.subject,
+                            "value":effect.value,
+                        }
+                        for effect in inlined_helper_effects
+                    ),
                     "implementation_gap_note":gap_note,
                     "started_event_id":(
                         int(started.group(1))
