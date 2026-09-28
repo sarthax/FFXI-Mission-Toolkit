@@ -49,6 +49,7 @@
   <tr><td>events</td><td>{{ detail.n_events }} <a class="inline" href="/captures/{{ detail.capture_id }}/timeline">browse &rarr;</a></td></tr>
   <tr><td>key items obtained</td><td>{{ detail.n_ki_events }}</td></tr>
   <tr><td>raw packets</td><td>{{ detail.n_raw_packets }} <a class="inline" href="/captures/{{ detail.capture_id }}/packets">browse &rarr;</a></td></tr>
+  <tr><td>structured logger records</td><td>{{ detail.n_structured_records }}</td></tr>
   <tr><td>capturer's own path (PC trace)</td><td>
     {% if detail.pc_path_zones %}
       {% for zdb in detail.pc_path_zones %}
@@ -207,6 +208,26 @@
   {% for mob, lo, hi in detail.hp_events %}
   <tr><td>{{ mob }}</td><td class="mono">{{ lo }}&ndash;{{ hi }}</td></tr>
   {% endfor %}
+</table></div>
+{% endif %}
+
+{% if detail.structured_records %}
+<h2>Structured logger records {% if detail.n_structured_records > 200 %}<span class="muted">(first 200 of {{ detail.n_structured_records }})</span>{% endif %}</h2>
+<p class="muted">MissionTrack, vendor/guild stock, spawn/weather/crafting/checkparam/world-state and historical PriceLog/findPrice records are preserved here with their original payload and source provenance.</p>
+<div class="table-wrap"><table>
+<tr><th>family</th><th>type</th><th>time</th><th>zone</th><th>entity</th><th>item</th><th>price</th><th>source</th></tr>
+{% for family, record_type, ts, zone, entity_id, entity_name, item_id, item_name, price, source_file, record_key, payload_json in detail.structured_records %}
+<tr>
+  <td><span class="chip">{{ family }}</span></td>
+  <td>{{ record_type or "" }}</td>
+  <td class="mono">{{ ts or "" }}</td>
+  <td>{{ zone or "" }}</td>
+  <td>{% if entity_id is not none %}<span class="mono">{{ entity_id }}</span>{% endif %}{% if entity_name %} {{ entity_name }}{% endif %}</td>
+  <td>{% if item_id is not none %}<span class="mono">{{ item_id }}</span>{% endif %}{% if item_name %} {{ item_name }}{% endif %}</td>
+  <td class="mono">{{ price if price is not none else "" }}</td>
+  <td class="mono">{{ source_file }}#{{ record_key }}<details><summary class="muted">payload</summary><pre style="white-space:pre-wrap;max-width:720px;">{{ payload_json }}</pre></details></td>
+</tr>
+{% endfor %}
 </table></div>
 {% endif %}
 
