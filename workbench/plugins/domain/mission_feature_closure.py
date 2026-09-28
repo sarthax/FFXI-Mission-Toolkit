@@ -126,6 +126,39 @@ def _selected(
     return condition.subject in selected_any_subjects
 
 
+def _actual_dependency_cycles(
+    dependencies: Iterable[FeatureDependency],
+) -> tuple[tuple[str,str],...]:
+    """Return only graph back-edges; repeated convergence is not a cycle."""
+    adjacency={}
+    for dependency in dependencies:
+        if not dependency.selected or not dependency.resolved_feature_id:
+            continue
+        adjacency.setdefault(dependency.source_feature_id,set()).add(
+            dependency.resolved_feature_id
+        )
+
+    visited=set()
+    active=set()
+    cycles=set()
+
+    def visit(node: str) -> None:
+        if node in visited:
+            return
+        visited.add(node)
+        active.add(node)
+        for target in adjacency.get(node,()):
+            if target in active:
+                cycles.add((node,target))
+            elif target not in visited:
+                visit(target)
+        active.remove(node)
+
+    for node in tuple(adjacency):
+        visit(node)
+    return tuple(sorted(cycles))
+
+
 def build_feature_requirement_closure(
     root: MissionStateMachine,
     *,
@@ -148,7 +181,6 @@ def build_feature_requirement_closure(
     dependencies=[]
     unresolved=set()
     skipped=set()
-    cycles=[]
     visited={root.feature_id}
     queue=[]
 
@@ -192,7 +224,6 @@ def build_feature_requirement_closure(
                 unresolved.add(condition.subject)
                 continue
             if target.feature_id in visited:
-                cycles.append((source,target.feature_id))
                 continue
             visited.add(target.feature_id)
             queue.append(target)
@@ -252,7 +283,7 @@ def build_feature_requirement_closure(
         tuple(dependencies),
         tuple(sorted(unresolved)),
         tuple(sorted(skipped)),
-        tuple(sorted(set(cycles))),
+        _actual_dependency_cycles(dependencies),
     )
 
 
