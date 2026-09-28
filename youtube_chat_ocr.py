@@ -216,6 +216,249 @@ def parse_packetlogger_block(raw_text: str) -> list[dict]:
     return results
 
 
+def _packet_direction_key(direction: str | None) -> str | None:
+    if direction == "<<":
+        return "s2c"
+    if direction == ">>":
+        return "c2s"
+    return None
+
+
+def _best_unique_symbol(raw: str | None, candidates: list[str], min_score: float = 0.78, min_margin: float = 0.08):
+    """Return a conservative fuzzy symbol correction candidate.
+
+    The raw token is never modified here.  A candidate is accepted only when the best score is
+    high enough and clearly separated from the runner-up.
+    """
+    if not raw:
+        return None
+    norm = raw.strip()
+    if not norm:
+        return None
+    scored = sorted(
+        ((SequenceMatcher(None, norm.lower(), cand.lower()).ratio(), cand) for cand in set(candidates) if cand),
+        reverse=True,
+    )
+    if not scored:
+        return None
+    best_score, best = scored[0]
+    second_score = scored[1][0] if len(scored) > 1 else 0.0
+    if best_score < min_score or (best_score - second_score) < min_margin:
+        return None
+    return {
+        "raw": raw,
+        "candidate": best,
+        "score": round(best_score, 4),
+        "runner_up_score": round(second_score, 4),
+        "margin": round(best_score - second_score, 4),
+    }
+
+
+def packet_symbol_assistance(parsed: dict) -> dict:
+    """Suggest structural packet corrections from the toolkit's packet definition index.
+
+    Raw OCR/parser output remains under raw_parsed.  Corrections are suggestions with provenance,
+    never silent replacement.  Packet name and field keys may be corrected; field VALUES are
+    deliberately never fuzzy-corrected.
+    """
+    raw_parsed = {
+        "direction": parsed.get("direction"),
+        "opcode": parsed.get("opcode"),
+        "gp_command": parsed.get("gp_command"),
+        "packet_class": parsed.get("packet_class"),
+        "fields": dict(parsed.get("fields") or {}),
+    }
+    result = {"raw_parsed": raw_parsed, "corrections": [], "effective_packet": dict(raw_parsed)}
+    direction_key = _packet_direction_key(parsed.get("direction"))
+    if direction_key is None:
+        return result
+
+    try:
+        import packet_decode
+        opcode_defs = [row for row in packet_decode.list_opcodes("") if row["direction"] == direction_key]
+    except Exception as exc:
+        result["symbol_index_error"] = str(exc)
+        return result
+
+    raw_opcode = parsed.get("opcode")
+    raw_name = parsed.get("gp_command")
+    candidate_def = None
+
+    if raw_opcode:
+        try:
+            opcode_int = int(str(raw_opcode), 16) if str(raw_opcode).lower().startswith("0x") else int(str(raw_opcode), 0)
+        except (TypeError, ValueError):
+            opcode_int = None
+        if opcode_int is not None:
+            candidate_def = next((row for row in opcode_defs if row["opcode"] == opcode_int), None)
+
+    if candidate_def is None and raw_name:
+        symbol = _best_unique_symbol(raw_name, [row["description"] for row in opcode_defs], min_score=0.76, min_margin=0.07)
+        if symbol:
+            candidate_def = next(row for row in opcode_defs if row["description"] == symbol["candidate"])
+            result["corrections"].append({
+                "kind": "packet_symbol",
+                **symbol,
+                "source": "packet_decode.list_opcodes",
+            })
+
+    if candidate_def is not None:
+        canonical_opcode = candidate_def["opcode_hex"].lower()
+        canonical_name = candidate_def["description"]
+        if raw_opcode and str(raw_opcode).lower() != canonical_opcode:
+            result["corrections"].append({
+                "kind": "opcode_from_packet_definition",
+                "raw": raw_opcode,
+                "candidate": canonical_opcode,
+                "score": 1.0 if raw_name == canonical_name else None,
+                "source": canonical_name,
+            })
+        if raw_name and raw_name != canonical_name:
+            existing = next((c for c in result["corrections"] if c["kind"] == "packet_symbol"), None)
+            if existing is None:
+                name_score = SequenceMatcher(None, raw_name.lower(), canonical_name.lower()).ratio()
+                if name_score >= 0.76:
+                    result["corrections"].append({
+                        "kind": "packet_symbol",
+                        "raw": raw_name,
+                        "candidate": canonical_name,
+                        "score": round(name_score, 4),
+                        "source": "opcode_definition",
+                    })
+        result["effective_packet"]["opcode"] = canonical_opcode
+        result["effective_packet"]["gp_command"] = canonical_name
+
+        try:
+            schema = packet_decode.get_field_schema(direction_key, candidate_def["opcode"]) or []
+        except Exception:
+            schema = []
+        known_fields = [row["name"] for row in schema if row.get("name")]
+        corrected_fields = {}
+        field_key_corrections = []
+        for key, value in (parsed.get("fields") or {}).items():
+            if key in known_fields:
+                corrected_fields[key] = value
+                continue
+            suggestion = _best_unique_symbol(key, known_fields, min_score=0.72, min_margin=0.08)
+            if suggestion:
+                corrected_fields[suggestion["candidate"]] = value
+                field_key_corrections.append({
+                    "kind": "field_symbol",
+                    **suggestion,
+                    "source": canonical_name,
+                })
+            else:
+                corrected_fields[key] = value
+        if field_key_corrections:
+            result["corrections"].extend(field_key_corrections)
+            result["effective_packet"]["fields"] = corrected_fields
+
+    result["symbol_assisted"] = bool(result["corrections"])
+    return result
+
+
+def _packet_consensus_key(record: dict) -> tuple:
+    effective = record.get("effective_packet") or {}
+    return (
+        effective.get("direction") or record.get("direction"),
+        effective.get("opcode") or record.get("opcode"),
+        effective.get("gp_command") or record.get("gp_command"),
+    )
+
+
+def apply_cross_frame_consensus(records: list[dict], max_gap_seconds: float = 1.5) -> list[dict]:
+    """Attach conservative consensus metadata across nearby observations of the same packet.
+
+    EView commonly shows a STACK of historical packets in each frame, so observations of packet A
+    may be interleaved with B/C records from the same frame.  Clustering is therefore per
+    structural identity, not simple list adjacency. Field VALUES vote independently by exact text;
+    ties remain unresolved instead of being guessed.
+    """
+    by_key: dict[tuple, list[dict]] = {}
+    for record in records:
+        key = _packet_consensus_key(record)
+        if any(key):
+            by_key.setdefault(key, []).append(record)
+
+    clusters: list[list[dict]] = []
+    clustered_ids = set()
+    for key_records in by_key.values():
+        ordered = sorted(
+            key_records,
+            key=lambda r: (
+                float(r.get("video_timestamp_seconds")) if r.get("video_timestamp_seconds") is not None else float("inf"),
+                str(r.get("frame") or ""),
+            ),
+        )
+        current: list[dict] = []
+        last_ts = None
+        for record in ordered:
+            ts = record.get("video_timestamp_seconds")
+            close = (
+                current
+                and ts is not None and last_ts is not None
+                and 0 <= float(ts) - float(last_ts) <= max_gap_seconds
+            )
+            if not close:
+                if current:
+                    clusters.append(current)
+                current = [record]
+            else:
+                current.append(record)
+            last_ts = ts
+        if current:
+            clusters.append(current)
+
+    for cluster in clusters:
+        for record in cluster:
+            clustered_ids.add(id(record))
+        if len(cluster) < 2:
+            cluster[0]["consensus"] = {
+                "support": 1,
+                "source_frames": [cluster[0].get("frame")],
+                "applied": False,
+            }
+            continue
+        field_votes: dict[str, dict[str, int]] = {}
+        for record in cluster:
+            effective = record.get("effective_packet") or {}
+            for key, value in (effective.get("fields") or record.get("fields") or {}).items():
+                field_votes.setdefault(key, {}).setdefault(str(value), 0)
+                field_votes[key][str(value)] += 1
+
+        consensus_fields = {}
+        unresolved = {}
+        for key, votes in field_votes.items():
+            ranked = sorted(votes.items(), key=lambda kv: (-kv[1], kv[0]))
+            if len(ranked) == 1 or ranked[0][1] > ranked[1][1]:
+                consensus_fields[key] = ranked[0][0]
+            else:
+                unresolved[key] = dict(ranked)
+
+        source_frames = [r.get("frame") for r in cluster]
+        for record in cluster:
+            effective = dict(record.get("effective_packet") or {})
+            if consensus_fields:
+                effective["fields"] = dict(consensus_fields)
+            record["effective_packet"] = effective
+            record["consensus"] = {
+                "support": len(cluster),
+                "source_frames": source_frames,
+                "applied": True,
+                "field_votes": field_votes,
+                "unresolved_fields": unresolved or None,
+            }
+
+    for record in records:
+        if id(record) not in clustered_ids:
+            record["consensus"] = {
+                "support": 1,
+                "source_frames": [record.get("frame")],
+                "applied": False,
+            }
+    return records
+
+
 def parse_capture_line(profile: str, text: str) -> dict:
     """Turn one OCR'd (post dialog-match) line into structured fields per the section's capture
     profile. Never fabricates a value it can't actually find in the text -- fields it can't
@@ -894,6 +1137,7 @@ def cmd_match(args):
                 for seg_idx, parsed in enumerate(segments):
                     display = parsed["text"]
                     frame_id = row["frame"] if len(segments) == 1 else f"{row['frame']}#{seg_idx}"
+                    assistance = packet_symbol_assistance(parsed)
                     record = {
                         "frame": frame_id,
                         "raw_text": row["raw_text"].replace("\n", " ").strip(),
@@ -907,6 +1151,7 @@ def cmd_match(args):
                         "provenance": row.get("provenance") or observation_provenance(args.run_id, args.section, row["frame"]),
                         "display_text": display,
                         **parsed,
+                        **assistance,
                     }
                     if frame_id in prior_corrections:
                         record["corrected_text"] = prior_corrections[frame_id]
@@ -948,6 +1193,29 @@ def cmd_match(args):
             if last_clean is None or SequenceMatcher(None, transcript_line, last_clean).ratio() < 0.9:
                 transcript.write(transcript_line + "\n")
                 last_clean = transcript_line
+    if profile == CAPTURE_PROFILE_PACKETLOGGER and matched_path.exists():
+        records = [json.loads(line) for line in matched_path.open(encoding="utf-8")]
+        records = apply_cross_frame_consensus(records)
+        with matched_path.open("w", encoding="utf-8") as out:
+            for record in records:
+                out.write(json.dumps(record) + "\n")
+        last_clean = None
+        with transcript_path.open("w", encoding="utf-8") as transcript:
+            for record in records:
+                effective = record.get("effective_packet") or {}
+                direction = effective.get("direction") or record.get("direction") or ""
+                opcode = effective.get("opcode") or record.get("opcode") or ""
+                command = effective.get("gp_command") or record.get("gp_command") or ""
+                fields = effective.get("fields") or record.get("fields") or {}
+                field_text = ", ".join(f"{k}: {v}" for k, v in fields.items())
+                generated = " ".join(part for part in [direction, f"[{opcode}]" if opcode else "", command] if part)
+                if field_text:
+                    generated = f"{generated} / {field_text}" if generated else field_text
+                transcript_line = record.get("corrected_text") or generated or record.get("display_text") or record.get("raw_text", "")
+                if transcript_line and (last_clean is None or SequenceMatcher(None, transcript_line, last_clean).ratio() < 0.9):
+                    transcript.write(transcript_line + "\n")
+                    last_clean = transcript_line
+
     print(f"  matched output -> {matched_path}")
     print(f"  deduped transcript -> {transcript_path}")
 
@@ -1011,18 +1279,27 @@ def capture_observations(run_id: str) -> list[dict]:
                 observation_id = hashlib.sha1(
                     f"{run_id}|{section}|{frame}|{row.get('opcode') or ''}|{row.get('display_text') or row.get('raw_text') or ''}".encode()
                 ).hexdigest()[:20]
+                effective = row.get("effective_packet") or {}
+                effective_opcode = effective.get("opcode") or row.get("opcode")
+                provenance = dict(provenance)
+                if row.get("raw_parsed") is not None:
+                    provenance["raw_parsed"] = row.get("raw_parsed")
+                if row.get("corrections"):
+                    provenance["symbol_corrections"] = row.get("corrections")
+                if row.get("consensus"):
+                    provenance["cross_frame_consensus"] = row.get("consensus")
                 out.append({
                     "observation_id": f"video-ocr:{observation_id}",
                     "section": section,
                     "frame": frame,
                     "video_timestamp_seconds": row.get("video_timestamp_seconds", provenance.get("video_timestamp_seconds")),
                     "source_url": provenance.get("source_url") or status.get("url"),
-                    "observation_type": "PACKET" if row.get("opcode") else "OCR_TEXT",
-                    "direction": row.get("direction"),
-                    "opcode": row.get("opcode"),
-                    "gp_command": row.get("gp_command"),
-                    "packet_class": row.get("packet_class"),
-                    "fields": row.get("fields"),
+                    "observation_type": "PACKET" if effective_opcode else "OCR_TEXT",
+                    "direction": effective.get("direction") or row.get("direction"),
+                    "opcode": effective_opcode,
+                    "gp_command": effective.get("gp_command") or row.get("gp_command"),
+                    "packet_class": effective.get("packet_class") or row.get("packet_class"),
+                    "fields": effective.get("fields") or row.get("fields"),
                     "raw_text": row.get("raw_text"),
                     "corrected_text": row.get("corrected_text"),
                     "confidence": row.get("confidence"),
