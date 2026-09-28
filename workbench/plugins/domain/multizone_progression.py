@@ -6,7 +6,7 @@ reached, not that gameplay/runtime completion has been proven.
 """
 from __future__ import annotations
 
-from collections import Counter
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from hashlib import sha1
 import sqlite3
