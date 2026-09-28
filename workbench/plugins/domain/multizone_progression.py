@@ -151,6 +151,7 @@ class ProgressionAnalysis:
     zone_ids: tuple[str, ...]
     cross_zone_dependencies: tuple[CrossZoneDependency, ...]
     branch_stage_ids: tuple[str, ...]
+    fanout_stage_ids: tuple[str, ...]
     convergence_stage_ids: tuple[str, ...]
     terminal_stage_ids: tuple[str, ...]
     objective_trigger_counts: Mapping[str, int]
@@ -240,6 +241,7 @@ def analyze_progression(model: MultiZoneProgression) -> ProgressionAnalysis:
                 changed=True
 
     referenced=set()
+    downstream=defaultdict(set)
     cross_zone=[]
     branch=[]
     convergence=[]
@@ -247,6 +249,8 @@ def analyze_progression(model: MultiZoneProgression) -> ProgressionAnalysis:
         gate=stage.prerequisite_gate
         if gate:
             referenced.update(gate.member_ids)
+            for source_id in gate.member_ids:
+                downstream[source_id].add(stage.stage_id)
             if gate.logic=="ANY" and len(gate.member_ids)>1:
                 branch.append(stage.stage_id)
             if gate.logic=="ALL" and len(gate.member_ids)>1:
@@ -262,6 +266,7 @@ def analyze_progression(model: MultiZoneProgression) -> ProgressionAnalysis:
                     ))
 
     terminals=tuple(sorted(all_stage_ids-referenced))
+    fanout=tuple(sorted(stage_id for stage_id,targets in downstream.items() if len(targets)>1))
     objective_trigger_counts=Counter(obj.trigger for obj in model.objectives)
     required=sum(not obj.optional for obj in model.objectives)
     optional=len(model.objectives)-required
@@ -293,6 +298,7 @@ def analyze_progression(model: MultiZoneProgression) -> ProgressionAnalysis:
         all_zones,
         tuple(sorted(cross_zone,key=lambda row:(row.source_stage_id,row.target_stage_id))),
         tuple(sorted(branch)),
+        fanout,
         tuple(sorted(convergence)),
         terminals,
         dict(sorted(objective_trigger_counts.items())),
