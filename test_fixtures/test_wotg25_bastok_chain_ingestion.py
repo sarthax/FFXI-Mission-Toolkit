@@ -91,7 +91,7 @@ def main():
     assert {int(state.rsplit(":",1)[-1]) for state in bastok_q10_states}==set(range(7)),bastok_q10_states
     implementation_gap=next(
         transition for transition in normalized.transitions
-        if transition.transition_id=="bastok_branch:quest10:implementation-gap"
+        if transition.transition_id=="branch:bastok_branch:quest10:implementation-gap"
     )
     assert implementation_gap.implementation_status=="IMPLEMENTATION_GAP",implementation_gap
 
