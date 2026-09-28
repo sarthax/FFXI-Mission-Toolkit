@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 193,
+  "route_count": 194,
   "routes": [
     {
       "method": "GET",
@@ -1542,6 +1542,14 @@
     {
       "method": "POST",
       "path": "/wiki/mapping/{mapping_id}/review",
+      "home": "Tools",
+      "section": "Wiki Compiler",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/wiki/compare",
       "home": "Tools",
       "section": "Wiki Compiler",
       "role": "mutation",
