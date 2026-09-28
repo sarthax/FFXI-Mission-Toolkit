@@ -86,7 +86,11 @@
   <td class="mono">{{ lm.opcode }}</td>
   <td>{{ lm.video_count }}</td>
   <td>{{ lm.capture_count }}</td>
-  <td>{% if lm.unique_pair %}<b>unique one-to-one candidate</b>{% else %}<span class="muted">ambiguous; inspect timestamps</span>{% endif %}</td>
+  <td>{% if lm.unique_pair %}
+    <b>unique one-to-one candidate</b>
+    {% set vr = lm.video[0] %}{% set cr = lm.capture[0] %}
+    &middot; <a class="inline" href="/captures/{{ cap.capture_id }}/alignment?video_ts={{ vr.video_ts }}&capture_ts={{ cr.capture_ts }}&clock_kind={{ cr.clock_kind }}">use as anchor</a>
+    {% else %}<span class="muted">ambiguous; inspect timestamps</span>{% endif %}</td>
 </tr>
 {% endfor %}
 </table></div>
