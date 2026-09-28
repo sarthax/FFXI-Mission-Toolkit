@@ -29,6 +29,7 @@ class ProgressionGate:
     gate_id: str
     logic: str
     member_ids: tuple[str, ...]
+    evidence_ids: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         logic=str(self.logic).upper()
@@ -68,6 +69,7 @@ class ProgressionStage:
     prerequisite_gate: ProgressionGate | None = None
     completion_logic: str = "ALL"
     optional: bool = False
+    evidence_ids: tuple[str, ...] = ()
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -318,6 +320,13 @@ def _objective_node(model: MultiZoneProgression, objective_id: str) -> str:
     return f"progression-objective:{model.feature_id}:{objective_id}"
 
 
+def _progression_subject_node(feature_id: str, subject: str) -> tuple[str,bool]:
+    prefix=subject.split(":",1)[0].casefold()
+    if prefix in {"mission_var","mission_status","local_var","timer","trade","progression_var"}:
+        return f"progression-subject:{feature_id}:{subject}",True
+    return subject,False
+
+
 def project_progression_graph(
     model: MultiZoneProgression,
     *,
@@ -380,6 +389,7 @@ def project_progression_graph(
                 edges.append(DependencyEdge(
                     f"progression-stage-requires:{_graph_token(model.feature_id,stage.stage_id,prerequisite,stage.prerequisite_gate.gate_id)}",
                     stage_node,_stage_node(model,prerequisite),"REQUIRES",
+                    evidence_id=(stage.prerequisite_gate.evidence_ids[0] if stage.prerequisite_gate.evidence_ids else (stage.evidence_ids[0] if stage.evidence_ids else None)),
                     confidence="INFERRED",status="DISCOVERED",
                     discovered_by="multizone_progression",
                     notes=(
@@ -417,6 +427,7 @@ def project_progression_graph(
             edges.append(DependencyEdge(
                 f"progression-has-objective:{_graph_token(model.feature_id,stage.stage_id,objective_id)}",
                 stage_node,objective_node,"HAS_OBJECTIVE",
+                evidence_id=(objective.evidence_ids[0] if objective.evidence_ids else (stage.evidence_ids[0] if stage.evidence_ids else None)),
                 confidence="INFERRED",status="DISCOVERED",
                 discovered_by="multizone_progression",
                 source_snapshot_id=source_snapshot_id,
@@ -436,13 +447,19 @@ def project_progression_graph(
                 ))
 
             for index,condition in enumerate(objective.conditions):
-                subject=condition.subject
+                raw_subject=condition.subject
+                subject,scoped=_progression_subject_node(model.feature_id,raw_subject)
                 entities.setdefault(subject,Entity(
-                    subject,"PROGRESSION_SUBJECT",subject,{"scope":"shared"},
+                    subject,"PROGRESSION_SUBJECT",raw_subject,{
+                        "scope":"feature" if scoped else "shared",
+                        **({"feature_id":model.feature_id} if scoped else {}),
+                        "raw_subject":raw_subject,
+                    },
                 ))
                 edges.append(DependencyEdge(
                     f"progression-objective-requires:{_graph_token(model.feature_id,objective_id,index,subject,condition.operator,condition.value)}",
                     objective_node,subject,"REQUIRES",
+                    evidence_id=(condition.evidence_ids[0] if condition.evidence_ids else (objective.evidence_ids[0] if objective.evidence_ids else None)),
                     confidence="INFERRED",status="DISCOVERED",
                     discovered_by="multizone_progression",
                     notes=f"{condition.operator} {condition.value!r}",
@@ -450,13 +467,19 @@ def project_progression_graph(
                 ))
 
             for index,effect in enumerate(objective.effects):
-                subject=effect.subject
+                raw_subject=effect.subject
+                subject,scoped=_progression_subject_node(model.feature_id,raw_subject)
                 entities.setdefault(subject,Entity(
-                    subject,"PROGRESSION_SUBJECT",subject,{"scope":"shared"},
+                    subject,"PROGRESSION_SUBJECT",raw_subject,{
+                        "scope":"feature" if scoped else "shared",
+                        **({"feature_id":model.feature_id} if scoped else {}),
+                        "raw_subject":raw_subject,
+                    },
                 ))
                 edges.append(DependencyEdge(
                     f"progression-objective-affects:{_graph_token(model.feature_id,objective_id,index,subject,effect.effect,effect.value)}",
                     objective_node,subject,"AFFECTS",
+                    evidence_id=(effect.evidence_ids[0] if effect.evidence_ids else (objective.evidence_ids[0] if objective.evidence_ids else None)),
                     confidence="INFERRED",status="DISCOVERED",
                     discovered_by="multizone_progression",
                     notes=f"{effect.effect} {effect.value!r}",
@@ -468,6 +491,7 @@ def project_progression_graph(
             edges.append(DependencyEdge(
                 f"progression-completion-requires:{_graph_token(model.feature_id,stage_id,model.completion_gate.gate_id)}",
                 model.feature_id,_stage_node(model,stage_id),"REQUIRES",
+                evidence_id=(model.completion_gate.evidence_ids[0] if model.completion_gate.evidence_ids else None),
                 confidence="INFERRED",status="DISCOVERED",
                 discovered_by="multizone_progression",
                 notes=f"completion gate={model.completion_gate.gate_id}; logic={model.completion_gate.logic}",
