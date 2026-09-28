@@ -47,6 +47,7 @@ Usage:
     py -3 build_capture_index.py show <capture_id>
 """
 import argparse
+import hashlib
 import io
 import json
 import re
@@ -62,6 +63,7 @@ import entity_profile
 
 TOOLS_ROOT = Path(__file__).parent
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
+CAPTURE_PARSER_VERSION = "capture-index-2026-09-28.1"
 
 # 2026-09-04: real content-category taxonomy (user-specified, matches BG Wiki's own category
 # naming conventions -- e.g. "Events - Holiday", "Events - Temporary" are real wiki category
@@ -173,6 +175,8 @@ def init_db(con: sqlite3.Connection):
         CREATE TABLE IF NOT EXISTS capture_source_files (
             capture_id INTEGER, filename TEXT, format_detected TEXT, ingested_at TEXT,
             row_count INTEGER, error TEXT,
+            sha256 TEXT, byte_size INTEGER, parser_id TEXT, parser_version TEXT,
+            source_kind TEXT, bundle_manifest_sha256 TEXT,
             PRIMARY KEY (capture_id, filename)
         );
         CREATE TABLE IF NOT EXISTS capture_raw_packets (
@@ -220,6 +224,23 @@ def init_db(con: sqlite3.Connection):
         if col not in existing_cols:
             con.execute(f"ALTER TABLE captures ADD COLUMN {col} {decl}")
     con.execute("CREATE INDEX IF NOT EXISTS idx_captures_content_type ON captures(content_type)")
+    existing_capture_cols = {r[1] for r in con.execute("PRAGMA table_info(captures)")}
+    for col, decl in [
+        ("source_manifest_sha256", "TEXT"),
+        ("source_file_count", "INTEGER"),
+    ]:
+        if col not in existing_capture_cols:
+            con.execute(f"ALTER TABLE captures ADD COLUMN {col} {decl}")
+    existing_source_cols = {r[1] for r in con.execute("PRAGMA table_info(capture_source_files)")}
+    for col, decl in [
+        ("sha256", "TEXT"), ("byte_size", "INTEGER"), ("parser_id", "TEXT"),
+        ("parser_version", "TEXT"), ("source_kind", "TEXT"),
+        ("bundle_manifest_sha256", "TEXT"),
+    ]:
+        if col not in existing_source_cols:
+            con.execute(f"ALTER TABLE capture_source_files ADD COLUMN {col} {decl}")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_capture_source_sha256 ON capture_source_files(sha256)")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_capture_manifest_sha256 ON captures(source_manifest_sha256)")
     # legacy_look -- the real 20-byte look_t blob (see mmo.h) NPCLogger.db's `entries` table
     # carries per entity. model_id (above) is genuinely 0 for almost every real entity in this
     # addon's own output (confirmed against real capture bytes, not an ingestion bug) -- this is
@@ -508,6 +529,70 @@ def sniff_text_format(text: str) -> str | None:
     return None
 
 
+def _content_fingerprint(data: bytes) -> tuple[str, int]:
+    return hashlib.sha256(data).hexdigest(), len(data)
+
+
+def source_manifest(src: "Source", subroot: str | None = None) -> dict:
+    entries = []
+    for relname in sorted(src.list_files()):
+        if subroot is not None and not relname.startswith(subroot + "/"):
+            continue
+        data = src.read_bytes(relname)
+        digest, size = _content_fingerprint(data)
+        entries.append({"filename": relname, "sha256": digest, "byte_size": size})
+    manifest_payload = "\n".join(
+        f"{e['filename']}\0{e['byte_size']}\0{e['sha256']}" for e in entries
+    ).encode("utf-8")
+    return {
+        "sha256": hashlib.sha256(manifest_payload).hexdigest(),
+        "file_count": len(entries),
+        "entries": entries,
+    }
+
+
+def _source_result(
+    src: "Source",
+    relname: str,
+    *,
+    rows: int | None,
+    error: str | None,
+    parser_id: str | None,
+    format_detected: str | None,
+    manifest_sha256: str | None = None,
+) -> dict:
+    data = src.read_bytes(relname)
+    digest, size = _content_fingerprint(data)
+    return {
+        "filename": relname,
+        "format": format_detected,
+        "rows": rows,
+        "error": error,
+        "sha256": digest,
+        "byte_size": size,
+        "parser_id": parser_id,
+        "parser_version": CAPTURE_PARSER_VERSION,
+        "source_kind": "bundle_member",
+        "bundle_manifest_sha256": manifest_sha256,
+    }
+
+
+def record_source_file_results(con: sqlite3.Connection, capture_id: int, results: list[dict]) -> None:
+    for row in results:
+        con.execute(
+            """INSERT OR REPLACE INTO capture_source_files
+               (capture_id,filename,format_detected,ingested_at,row_count,error,sha256,byte_size,
+                parser_id,parser_version,source_kind,bundle_manifest_sha256)
+               VALUES (?,?,?,datetime('now'),?,?,?,?,?,?,?,?)""",
+            (
+                capture_id, row["filename"], row.get("format"), row.get("rows"), row.get("error"),
+                row.get("sha256"), row.get("byte_size"), row.get("parser_id"),
+                row.get("parser_version") or CAPTURE_PARSER_VERSION,
+                row.get("source_kind"), row.get("bundle_manifest_sha256"),
+            ),
+        )
+
+
 def ingest_single_file(con, capture_id: int, filename: str, data: bytes) -> dict:
     """Content-sniffs and ingests one arbitrarily-dropped file (no folder context) into an
     existing capture, records the attempt in capture_source_files regardless of outcome so the
@@ -576,10 +661,19 @@ def ingest_single_file(con, capture_id: int, filename: str, data: bytes) -> dict
     except Exception as ex:
         error = str(ex)
 
-    con.execute("""INSERT OR REPLACE INTO capture_source_files
-        (capture_id, filename, format_detected, ingested_at, row_count, error)
-        VALUES (?,?,?,datetime('now'),?,?)""",
-        (capture_id, filename, fmt, rows, error))
+    digest, byte_size = _content_fingerprint(data)
+    record_source_file_results(con, capture_id, [{
+        "filename": filename,
+        "format": fmt,
+        "rows": rows,
+        "error": error,
+        "sha256": digest,
+        "byte_size": byte_size,
+        "parser_id": f"single:{fmt}" if fmt else "single:unrecognized",
+        "parser_version": CAPTURE_PARSER_VERSION,
+        "source_kind": "single_file",
+        "bundle_manifest_sha256": None,
+    }])
     recompute_zones(con, capture_id)
     con.commit()
     return {"filename": filename, "format": fmt, "rows": rows, "error": error}
@@ -2095,8 +2189,27 @@ CAPTURE_CHILD_TABLES = [
     "capture_npc_entries", "capture_npc_history", "capture_npc_path", "capture_actions",
     "capture_hp_events", "capture_events", "capture_ki_events", "capture_eventview",
     "capture_level_range", "capture_attack_delay", "capture_pc_path", "capture_source_files",
-    "capture_raw_packets", "capture_tags", "capture_caplog_chat",
+    "capture_raw_packets", "capture_video_observations", "capture_tags", "capture_caplog_chat",
+    # Optional timeline/evidence services create these tables lazily, but capture deletion owns
+    # their rows whenever they exist.
+    "capture_alignment_anchors", "capture_key_evidence",
 ]
+
+
+def _table_exists(con: sqlite3.Connection, table: str) -> bool:
+    return con.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)
+    ).fetchone() is not None
+
+
+def capture_child_row_counts(con: sqlite3.Connection, capture_id: int) -> dict:
+    counts = {}
+    for table in CAPTURE_CHILD_TABLES:
+        counts[table] = (
+            con.execute(f"SELECT COUNT(*) FROM {table} WHERE capture_id=?", (capture_id,)).fetchone()[0]
+            if _table_exists(con, table) else 0
+        )
+    return counts
 
 
 def delete_capture(con, capture_id: int) -> dict:
@@ -2106,6 +2219,9 @@ def delete_capture(con, capture_id: int) -> dict:
     the caller wants to show."""
     counts = {}
     for t in CAPTURE_CHILD_TABLES:
+        if not _table_exists(con, t):
+            counts[t] = 0
+            continue
         cur = con.execute(f"DELETE FROM {t} WHERE capture_id=?", (capture_id,))
         counts[t] = cur.rowcount
     cur = con.execute("DELETE FROM captures WHERE capture_id=?", (capture_id,))
