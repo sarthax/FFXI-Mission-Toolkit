@@ -59,6 +59,7 @@ import zipfile
 from pathlib import Path
 
 import entity_profile
+from workbench.core.services import capture_integrity
 
 TOOLS_ROOT = Path(__file__).parent
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
@@ -251,6 +252,7 @@ def init_db(con: sqlite3.Connection):
         if col not in existing_cne_cols:
             con.execute(f"ALTER TABLE capture_npc_entries ADD COLUMN {col} {decl}")
     entity_profile.init_db(con)
+    capture_integrity.init_db(con)
     con.commit()
 
 
@@ -580,6 +582,10 @@ def ingest_single_file(con, capture_id: int, filename: str, data: bytes) -> dict
         (capture_id, filename, format_detected, ingested_at, row_count, error)
         VALUES (?,?,?,datetime('now'),?,?)""",
         (capture_id, filename, fmt, rows, error))
+    capture_integrity.record_source_file(
+        con, capture_id, filename, data,
+        format_detected=fmt, parser_name=fmt, row_count=rows, error=error,
+    )
     recompute_zones(con, capture_id)
     con.commit()
     return {"filename": filename, "format": fmt, "rows": rows, "error": error}
@@ -1789,6 +1795,8 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
     file in it still gets ingested), and "not a recognized capture-log format" for a file that
     matched none of the patterns below at all. This is what lets the GUI's Add Files page show a
     real per-file pass/fail breakdown instead of one opaque bundle-wide row."""
+    result_sink = file_results if file_results is not None else []
+
     def sfind(pattern):
         hits = src.find(pattern)
         return hits if subroot is None else [h for h in hits if h.startswith(subroot + "/")]
@@ -1801,11 +1809,11 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         try:
             rows = fn(*args)
         except Exception as ex:
-            if file_results is not None:
-                file_results.append({"filename": relname, "rows": 0, "error": str(ex)})
+            if result_sink is not None:
+                result_sink.append({"filename": relname, "rows": 0, "error": str(ex)})
             return 0
-        if file_results is not None:
-            file_results.append({"filename": relname, "rows": rows, "error": None})
+        if result_sink is not None:
+            result_sink.append({"filename": relname, "rows": rows, "error": None})
         return rows
 
     def run2(relname, fn, *args):
@@ -1814,11 +1822,11 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         try:
             a, b = fn(*args)
         except Exception as ex:
-            if file_results is not None:
-                file_results.append({"filename": relname, "rows": 0, "error": str(ex)})
+            if result_sink is not None:
+                result_sink.append({"filename": relname, "rows": 0, "error": str(ex)})
             return 0, 0
-        if file_results is not None:
-            file_results.append({"filename": relname, "rows": a + b, "error": None})
+        if result_sink is not None:
+            result_sink.append({"filename": relname, "rows": a + b, "error": None})
         return a, b
 
     def run3(relname, fn, *args):
@@ -1827,11 +1835,11 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         try:
             a, b, c = fn(*args)
         except Exception as ex:
-            if file_results is not None:
-                file_results.append({"filename": relname, "rows": 0, "error": str(ex)})
+            if result_sink is not None:
+                result_sink.append({"filename": relname, "rows": 0, "error": str(ex)})
             return 0, 0, 0
-        if file_results is not None:
-            file_results.append({"filename": relname, "rows": a + b + c, "error": None})
+        if result_sink is not None:
+            result_sink.append({"filename": relname, "rows": a + b + c, "error": None})
         return a, b, c
 
     def run4(relname, fn, *args):
@@ -1840,11 +1848,11 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         try:
             a, b, c, d = fn(*args)
         except Exception as ex:
-            if file_results is not None:
-                file_results.append({"filename": relname, "rows": 0, "error": str(ex)})
+            if result_sink is not None:
+                result_sink.append({"filename": relname, "rows": 0, "error": str(ex)})
             return 0, 0, 0, 0
-        if file_results is not None:
-            file_results.append({"filename": relname, "rows": a + b + c + d, "error": None})
+        if result_sink is not None:
+            result_sink.append({"filename": relname, "rows": a + b + c + d, "error": None})
         return a, b, c, d
 
     counts = {"npc_entries": 0, "npc_hist": 0, "actions": 0, "path": 0, "hp": 0, "events": 0,
@@ -1936,16 +1944,16 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
             pl_rows = ingest_packetlogger(con, capture_id, src, pl_files)
         except Exception as ex:
             pl_rows = 0
-            if file_results is not None:
+            if result_sink is not None:
                 for relname in pl_files:
-                    file_results.append({"filename": relname, "rows": 0, "error": str(ex)})
+                    result_sink.append({"filename": relname, "rows": 0, "error": str(ex)})
         else:
-            if file_results is not None:
+            if result_sink is not None:
                 # One combined call across every raw-packet-log file -- rows aren't attributable
                 # to any single file, so report the real total once (against the first file) and
                 # the rest as "ok" with no per-file row count, rather than fabricating a split.
                 for i, relname in enumerate(pl_files):
-                    file_results.append({"filename": relname, "rows": pl_rows if i == 0 else None, "error": None})
+                    result_sink.append({"filename": relname, "rows": pl_rows if i == 0 else None, "error": None})
         counts["raw_packets"] += pl_rows
     if not npc_db_files:
         # No NPCLogger.db in this bundle -- fall back to the older Npclogger/tables/<Zone>.lua
@@ -2011,10 +2019,10 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         + sfind(r'[Pp]acket(?:[Ll]ogger|[Vv]iewer)/(?:full|incoming|outgoing)\.log$')
     ):
         matched_names.add(relname)
-        if file_results is not None:
-            file_results.append({"filename": relname, "rows": 0, "error": None})
+        if result_sink is not None:
+            result_sink.append({"filename": relname, "rows": 0, "error": None})
 
-    if file_results is not None:
+    if result_sink is not None:
         # Real files present in the bundle that no pattern above ever looked at -- a capture-log
         # format this toolkit doesn't recognize, or a genuinely unrelated file that got swept up
         # in the upload. Known-benign non-data files (manifest.txt, OS-generated cruft) are
@@ -2026,7 +2034,7 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
                 continue
             basename = relname.rsplit("/", 1)[-1].lower()
             if basename in BENIGN_BASENAMES:
-                file_results.append({"filename": relname, "rows": 0, "error": None})
+                result_sink.append({"filename": relname, "rows": 0, "error": None})
             else:
                 # 2026-09-08: a path that matches no known pattern above is ambiguous between two
                 # very different real causes -- "a genuinely new capture-tool format/layout this
@@ -2053,7 +2061,28 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
                     error += (f" (content looks like a real {guess} file -- may need a parser "
                                f"added, or an existing one's path pattern updated to match this "
                                f"layout)")
-                file_results.append({"filename": relname, "rows": 0, "error": error})
+                result_sink.append({"filename": relname, "rows": 0, "error": error})
+    # Content-address every real source file and persist parser/table-family lineage.
+    result_by_name = {row["filename"]: row for row in result_sink}
+    source_names = sorted(src.list_files() if subroot is None
+                          else [n for n in src.list_files() if n.startswith(subroot + "/")])
+    for relname in source_names:
+        row = result_by_name.get(relname, {})
+        try:
+            data = src.read_bytes(relname)
+        except Exception as ex:
+            capture_integrity.record_source_file(
+                con, capture_id, relname, b"",
+                format_detected=None, parser_name=None,
+                row_count=row.get("rows"), error=row.get("error") or str(ex),
+            )
+            continue
+        fmt = _capture_source_format(src, relname)
+        capture_integrity.record_source_file(
+            con, capture_id, relname, data,
+            format_detected=fmt, parser_name=fmt,
+            row_count=row.get("rows"), error=row.get("error"),
+        )
     return counts
 
 
@@ -2085,6 +2114,46 @@ def _sniff_known_format(src: "Source", relname: str) -> str | None:
     return None
 
 
+def _capture_source_format(src: "Source", relname: str) -> str | None:
+    """Best-effort deterministic format identity for source-manifest provenance."""
+    lower = relname.lower()
+    basename = lower.rsplit("/", 1)[-1]
+    if basename in {"manifest.txt", "thumbs.db", "desktop.ini", ".ds_store"}:
+        return "manifest" if basename == "manifest.txt" else "benign"
+    if re.search(r'npclogger/[^/]+\.db$', lower):
+        try:
+            return sniff_sqlite_format(src.read_bytes(relname))
+        except Exception:
+            return "npclogger_db"
+    if lower.endswith("actions.db"):
+        return "actionview_db"
+    if "levelrangetrack/" in lower and lower.endswith(".db"):
+        return "levelrange_db"
+    if re.search(r'packet(?:logger|viewer)/(incoming|outgoing)/0x[0-9a-f]{3}\.log$', lower):
+        return "packetlogger"
+    if "caplog/" in lower and lower.endswith((".txt", ".log")):
+        return "caplog"
+    if "kitrack/" in lower:
+        return "kitrack"
+    if "hptrack/" in lower:
+        return "hptrack"
+    if "attackdelay/" in lower:
+        return "attackdelay"
+    if "pathlog/" in lower and lower.endswith(".csv"):
+        return "pc_pathlog_csv" if "/pc_" in lower else "pathlog_csv"
+    if "widescan/" in lower:
+        return "widescan"
+    if "actionview/simple/" in lower:
+        return "actionview_simple"
+    if "eventview/" in lower and "/simple/" in lower:
+        return "idview_simple"
+    if re.search(r'eventview/(?!.*(?:simple|raw)/)[^/]+/[^/]+\.log$', lower):
+        return "eventview"
+    if "npclogger/" in lower and lower.endswith(".lua"):
+        return "npclogger_lua"
+    return _sniff_known_format(src, relname)
+
+
 # Every real table keyed by capture_id -- kept as one list so delete_capture() can never miss one
 # as new tables get added (a table added to init_db() but forgotten here would leave orphaned rows
 # behind on every future delete, silently). Deliberately NOT derived by introspecting sqlite_master
@@ -2095,7 +2164,9 @@ CAPTURE_CHILD_TABLES = [
     "capture_npc_entries", "capture_npc_history", "capture_npc_path", "capture_actions",
     "capture_hp_events", "capture_events", "capture_ki_events", "capture_eventview",
     "capture_level_range", "capture_attack_delay", "capture_pc_path", "capture_source_files",
-    "capture_raw_packets", "capture_tags", "capture_caplog_chat",
+    "capture_source_manifest", "capture_ingest_lineage",
+    "capture_raw_packets", "capture_video_observations", "capture_tags", "capture_caplog_chat",
+    "capture_alignment_anchors", "capture_key_evidence",
 ]
 
 
@@ -2104,14 +2175,7 @@ def delete_capture(con, capture_id: int) -> dict:
     there is no soft-delete/undo, so the GUI route gates this behind an explicit confirm page
     rather than a single click. Returns {table: rows_deleted} for whatever confirmation message
     the caller wants to show."""
-    counts = {}
-    for t in CAPTURE_CHILD_TABLES:
-        cur = con.execute(f"DELETE FROM {t} WHERE capture_id=?", (capture_id,))
-        counts[t] = cur.rowcount
-    cur = con.execute("DELETE FROM captures WHERE capture_id=?", (capture_id,))
-    counts["captures"] = cur.rowcount
-    con.commit()
-    return counts
+    return capture_integrity.delete_capture_rows(con, capture_id, CAPTURE_CHILD_TABLES)
 
 
 def recompute_zones(con, capture_id: int):
