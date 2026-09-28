@@ -2115,44 +2115,44 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         append_result(relname, 0, None, "recognized_redundant", "recognized_redundant")
 
     # Real files present in the bundle that no pattern above ever looked at -- a capture-log
-        # format this toolkit doesn't recognize, or a genuinely unrelated file that got swept up
-        # in the upload. Known-benign non-data files (manifest.txt, OS-generated cruft) are
-        # reported "ok, not data" rather than "failed", since neither is a real import problem.
-        BENIGN_BASENAMES = {"manifest.txt", "thumbs.db", "desktop.ini", ".ds_store"}
-        for relname in sorted(src.list_files() if subroot is None
-                               else [n for n in src.list_files() if n.startswith(subroot + "/")]):
-            if relname in matched_names:
-                continue
-            basename = relname.rsplit("/", 1)[-1].lower()
-            if basename in BENIGN_BASENAMES:
-                append_result(relname, 0, None, "benign_metadata", "metadata")
-            else:
-                # 2026-09-08: a path that matches no known pattern above is ambiguous between two
-                # very different real causes -- "a genuinely new capture-tool format/layout this
-                # toolkit has never seen" vs "a real, already-supported format whose CONTENT this
-                # toolkit would recognize, just sitting at a folder depth/name none of the path
-                # patterns above anticipated" (exactly what happened to npclogger/logs/ before this
-                # same session's fix -- real npclogger content, wrong-shaped path). Sniffing the
-                # file's own content against each known parser's real signature (deliberately not
-                # attempting to actually ingest it this way -- the file's path is often the ONLY
-                # source for context a parser needs, like which zone a per-zone log belongs to, and
-                # guessing that from content alone risks fabricating an attribution per this
-                # project's standing never-fabricate-ids rule) turns a bare "not recognized" into
-                # an actionable "this looks like a real <format>, the path pattern needs updating"
-                # -- much faster to diagnose than re-deriving it from scratch next time, the same
-                # gap this whole test/fixture effort is about closing.
-                guess = _sniff_known_format(src, relname)
-                error = "not a recognized capture-log format"
-                if guess:
-                    # Deliberately doesn't claim an existing path pattern just needs updating --
-                    # true for a format like NPCLogger that IS ingested elsewhere under a
-                    # different path shape, but false for a format like CapLog that has no
-                    # ingestion support at all yet (confirmed real gap, not a path mismatch).
-                    # Both cases get the same actionable next step either way.
-                    error += (f" (content looks like a real {guess} file -- may need a parser "
-                               f"added, or an existing one's path pattern updated to match this "
-                               f"layout)")
-                append_result(relname, 0, error, "unrecognized", guess or "unrecognized")
+    # format this toolkit doesn't recognize, or a genuinely unrelated file that got swept up
+    # in the upload. Known-benign non-data files (manifest.txt, OS-generated cruft) are
+    # reported "ok, not data" rather than "failed", since neither is a real import problem.
+    BENIGN_BASENAMES = {"manifest.txt", "thumbs.db", "desktop.ini", ".ds_store"}
+    for relname in sorted(src.list_files() if subroot is None
+                           else [n for n in src.list_files() if n.startswith(subroot + "/")]):
+        if relname in matched_names:
+            continue
+        basename = relname.rsplit("/", 1)[-1].lower()
+        if basename in BENIGN_BASENAMES:
+            append_result(relname, 0, None, "benign_metadata", "metadata")
+        else:
+            # 2026-09-08: a path that matches no known pattern above is ambiguous between two
+            # very different real causes -- "a genuinely new capture-tool format/layout this
+            # toolkit has never seen" vs "a real, already-supported format whose CONTENT this
+            # toolkit would recognize, just sitting at a folder depth/name none of the path
+            # patterns above anticipated" (exactly what happened to npclogger/logs/ before this
+            # same session's fix -- real npclogger content, wrong-shaped path). Sniffing the
+            # file's own content against each known parser's real signature (deliberately not
+            # attempting to actually ingest it this way -- the file's path is often the ONLY
+            # source for context a parser needs, like which zone a per-zone log belongs to, and
+            # guessing that from content alone risks fabricating an attribution per this
+            # project's standing never-fabricate-ids rule) turns a bare "not recognized" into
+            # an actionable "this looks like a real <format>, the path pattern needs updating"
+            # -- much faster to diagnose than re-deriving it from scratch next time, the same
+            # gap this whole test/fixture effort is about closing.
+            guess = _sniff_known_format(src, relname)
+            error = "not a recognized capture-log format"
+            if guess:
+                # Deliberately doesn't claim an existing path pattern just needs updating --
+                # true for a format like NPCLogger that IS ingested elsewhere under a
+                # different path shape, but false for a format like CapLog that has no
+                # ingestion support at all yet (confirmed real gap, not a path mismatch).
+                # Both cases get the same actionable next step either way.
+                error += (f" (content looks like a real {guess} file -- may need a parser "
+                           f"added, or an existing one's path pattern updated to match this "
+                           f"layout)")
+            append_result(relname, 0, error, "unrecognized", guess or "unrecognized")
     record_source_file_results(con, capture_id, results)
     con.commit()
     return counts
