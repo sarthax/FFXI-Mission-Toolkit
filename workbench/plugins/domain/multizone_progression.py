@@ -6,9 +6,14 @@ reached, not that gameplay/runtime completion has been proven.
 """
 from __future__ import annotations
 
-from collections import Counter, defaultdict
+from collections import Counter
 from dataclasses import dataclass, field
+from hashlib import sha1
+import sqlite3
 from typing import Any, Mapping
+
+from workbench.core import graph as graph_store
+from workbench.core.schema import DependencyEdge, Entity, Feature
 
 from .mission_state_machine import (
     EventIdentity,
