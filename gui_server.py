@@ -3929,6 +3929,29 @@ def wiki_export(title: str = ""):
     return PlainTextResponse(wiki_compile.to_markdown(report), media_type="text/markdown")
 
 
+def _sync_ocr_run_to_linked_captures(run_id: str) -> int:
+    """Refresh derived VIDEO_OCR rows for every capture linked to this OCR run."""
+    con = get_con()
+    build_capture_index.init_db(con)
+    capture_ids = [
+        row[0]
+        for row in con.execute(
+            "SELECT capture_id FROM captures WHERE ocr_run_id=? ORDER BY capture_id",
+            (run_id,),
+        ).fetchall()
+    ]
+    if not capture_ids:
+        con.close()
+        return 0
+    observations = youtube_chat_ocr.capture_observations(run_id)
+    for capture_id in capture_ids:
+        build_capture_index.replace_video_ocr_observations(
+            con, capture_id, run_id, observations
+        )
+    con.close()
+    return len(capture_ids)
+
+
 def ocr_prereqs() -> list[dict]:
     from shutil import which
     prereqs = [
@@ -3996,12 +4019,11 @@ def ocr_delete(request: Request, run_id: str):
 
 @app.post("/ocr/{run_id}/create_capture", response_class=HTMLResponse)
 async def ocr_create_capture(request: Request, run_id: str):
-    """Seeds a new capture entry from an OCR run: video_url + ocr_run_id link back to this run's
-    transcript/frames, start_time from the YouTube upload date when known. An OCR run never has
-    real logger files (NPCLogger/PacketLogger/CapLog/etc.) of its own -- it's a video + a scraped
-    transcript, nothing the normal ingest_* parsers understand -- so this hands off only what
-    actually exists (label/mission/video link/date) and lands on /captures/{id}/add in case the
-    user separately has real logger files from the same session to attach."""
+    """Create a capture linked to an OCR run and ingest its time-addressable VIDEO_OCR evidence.
+
+    Parsed on-screen packet observations remain distinct from raw/binary packet captures; the user
+    can still attach real logger files from the same session afterward for cross-source alignment.
+    """
     form = await request.form()
     mission_name = (form.get("mission_name") or "").strip() or None
     content_type = form.get("content_type") or "instances"
@@ -4016,9 +4038,16 @@ async def ocr_create_capture(request: Request, run_id: str):
         except ValueError:
             start_time = None
     con = get_con()
+    build_capture_index.init_db(con)
     capture_id = build_capture_index.create_manual_capture(
         con, label, content_type, mission_name,
         video_url=status.get("url"), ocr_run_id=run_id, start_time=start_time)
+    build_capture_index.replace_video_ocr_observations(
+        con,
+        capture_id,
+        run_id,
+        youtube_chat_ocr.capture_observations(run_id),
+    )
     con.close()
     return RedirectResponse(url=f"/captures/{capture_id}/add", status_code=303)
 
@@ -4115,6 +4144,7 @@ def ocr_run_match(run_id: str, section: str, zone: str = Form(""), min_score: fl
     error = ""
     try:
         youtube_chat_ocr.cmd_match(argparse.Namespace(run_id=run_id, section=section, zone=zone or None, min_score=min_score))
+        _sync_ocr_run_to_linked_captures(run_id)
     except SystemExit as e:
         error = str(e)
     return RedirectResponse(f"/ocr/{run_id}" + (f"?error={quote(error)}" if error else ""), status_code=303)
@@ -4129,6 +4159,7 @@ def ocr_run_correct(run_id: str, section: str, frame: str = Form(...), text: str
         youtube_chat_ocr.cmd_correct(argparse.Namespace(
             run_id=run_id, section=section, frame=frame, text=text, clear=not text.strip(),
         ))
+        _sync_ocr_run_to_linked_captures(run_id)
     except SystemExit as e:
         error = str(e)
     return RedirectResponse(f"/ocr/{run_id}" + (f"?error={quote(error)}" if error else ""), status_code=303)

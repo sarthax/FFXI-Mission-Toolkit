@@ -62,10 +62,29 @@ OCR_TIMING_PATH = RUNS_ROOT / "_ocr_timing.json"
 VENDOR_FFMPEG_BIN = TOOLS_ROOT / "vendor" / "ffmpeg" / "bin"
 VENDOR_TESSERACT_DIR = TOOLS_ROOT / "vendor" / "tesseract"
 _VENDOR_BIN_DIRS = {"ffmpeg": VENDOR_FFMPEG_BIN, "ffprobe": VENDOR_FFMPEG_BIN, "tesseract": VENDOR_TESSERACT_DIR}
+_SAFE_RUN_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+_SAFE_SECTION_RE = re.compile(r"^[a-z0-9_]{1,96}$")
+_FRAME_RE = re.compile(r"^f_(\d+)\.png(?:#\d+)?$")
+
+
+def _contained_child(root: Path, value: str, pattern: re.Pattern, kind: str) -> Path:
+    if not pattern.fullmatch(value or ""):
+        sys.exit(f"[youtube_chat_ocr] invalid {kind}: {value!r}")
+    root_resolved = root.resolve()
+    candidate = (root_resolved / value).resolve()
+    try:
+        candidate.relative_to(root_resolved)
+    except ValueError:
+        sys.exit(f"[youtube_chat_ocr] {kind} escapes OCR root: {value!r}")
+    return candidate
+
+
+def _run_path(run_id: str) -> Path:
+    return _contained_child(RUNS_ROOT, run_id, _SAFE_RUN_ID_RE, "run_id")
 
 
 def run_dir(run_id: str) -> Path:
-    d = RUNS_ROOT / run_id
+    d = _run_path(run_id)
     if not d.exists():
         sys.exit(f"[youtube_chat_ocr] no run '{run_id}' under {RUNS_ROOT} -- run 'download' first")
     return d
@@ -233,7 +252,52 @@ def section_slug(label: str) -> str:
 
 
 def section_dir(run_id: str, section: str) -> Path:
-    return run_dir(run_id) / "sections" / section
+    run = run_dir(run_id)
+    sections_root = (run / "sections").resolve()
+    return _contained_child(sections_root, section, _SAFE_SECTION_RE, "section")
+
+
+def frame_index(frame: str) -> int | None:
+    match = _FRAME_RE.match(frame or "")
+    return int(match.group(1)) if match else None
+
+
+def frame_video_timestamp(frame: str, fps: float | int | None) -> float | None:
+    index = frame_index(frame)
+    try:
+        rate = float(fps) if fps is not None else 0.0
+    except (TypeError, ValueError):
+        rate = 0.0
+    if index is None or rate <= 0:
+        return None
+    return round((index - 1) / rate, 6)
+
+
+def observation_provenance(run_id: str, section: str, frame: str) -> dict:
+    meta = section_meta(run_id, section)
+    source_url_path = run_dir(run_id) / "source_url.txt"
+    source_url = source_url_path.read_text(encoding="utf-8").strip() if source_url_path.exists() else None
+    fps = meta.get("fps")
+    try:
+        rate = float(fps) if fps is not None else 0.0
+    except (TypeError, ValueError):
+        rate = 0.0
+    resolution = (1.0 / rate) if rate > 0 else None
+    return {
+        "source_kind": "VIDEO_OCR",
+        "ocr_run_id": run_id,
+        "section": section,
+        "frame": frame,
+        "frame_index": frame_index(frame),
+        "video_timestamp_seconds": frame_video_timestamp(frame, fps),
+        "timestamp_basis": "sample_index_over_section_fps",
+        "timestamp_resolution_seconds": round(resolution, 6) if resolution is not None else None,
+        "timestamp_uncertainty_seconds": round(resolution / 2.0, 6) if resolution is not None else None,
+        "fps": fps,
+        "crop": meta.get("crop"),
+        "capture_profile": meta.get("capture_profile") or DEFAULT_CAPTURE_PROFILE,
+        "source_url": source_url,
+    }
 
 
 def _migrate_legacy_run(run_id: str):
@@ -241,7 +305,7 @@ def _migrate_legacy_run(run_id: str):
     ocr_raw.jsonl/etc directly under the run dir, one crop per run. Move them into
     sections/<DEFAULT_SECTION_LABEL>/ the first time this run is touched by section-aware code, so
     old runs keep working without a manual migration step."""
-    d = RUNS_ROOT / run_id
+    d = _run_path(run_id)
     if not d.exists():
         return
     legacy_markers = ["frames", "frames_unique", "ocr_raw.jsonl", "crop.txt"]
@@ -395,14 +459,12 @@ def list_runs() -> list[dict]:
 def delete_run(run_id: str) -> None:
     """Purges an entire run folder (source video, frames, OCR/match output, everything) from
     disk. Irreversible -- there is no trash/undo, the run_id simply won't exist afterward."""
-    d = RUNS_ROOT / run_id
-    if not d.exists():
-        sys.exit(f"[youtube_chat_ocr] no run '{run_id}' under {RUNS_ROOT}")
+    d = run_dir(run_id)
     shutil.rmtree(d)
 
 
 def run_status(run_id: str) -> dict:
-    d = RUNS_ROOT / run_id
+    d = run_dir(run_id)
     url_file = d / "source_url.txt"
     sections = [section_status(run_id, s) for s in list_sections(run_id)]
     return {
@@ -476,7 +538,7 @@ def read_matched_rows(run_id: str, section: str, limit: int = 500) -> list[dict]
 def cmd_download(args):
     yt_dlp = check_tool("yt-dlp")
     rid = run_id_from_url(args.url)
-    d = RUNS_ROOT / rid
+    d = _run_path(rid)
     d.mkdir(parents=True, exist_ok=True)
     out = d / "source.mp4"
     if out.exists() and not args.force:
@@ -733,7 +795,14 @@ def cmd_ocr(args):
                         confs.append(conf)
                 text = "\n".join(" ".join(words) for words in lines.values()).strip()
                 if text:
-                    record = {"frame": f.name, "raw_text": text}
+                    provenance = observation_provenance(args.run_id, args.section, f.name)
+                    record = {
+                        "frame": f.name,
+                        "frame_index": provenance["frame_index"],
+                        "video_timestamp_seconds": provenance["video_timestamp_seconds"],
+                        "raw_text": text,
+                        "provenance": provenance,
+                    }
                     if confs:
                         record["confidence"] = round(sum(confs) / len(confs), 1)
                     out.write(json.dumps(record) + "\n")
@@ -833,6 +902,9 @@ def cmd_match(args):
                         "dialog_zoneid": None,
                         "dialog_idx": None,
                         "confidence": row.get("confidence"),
+                        "frame_index": row.get("frame_index"),
+                        "video_timestamp_seconds": row.get("video_timestamp_seconds"),
+                        "provenance": row.get("provenance") or observation_provenance(args.run_id, args.section, row["frame"]),
                         "display_text": display,
                         **parsed,
                     }
@@ -860,6 +932,9 @@ def cmd_match(args):
                     "dialog_zoneid": match[0] if match else None,
                     "dialog_idx": match[1] if match else None,
                     "confidence": row.get("confidence"),
+                    "frame_index": row.get("frame_index"),
+                    "video_timestamp_seconds": row.get("video_timestamp_seconds"),
+                    "provenance": row.get("provenance") or observation_provenance(args.run_id, args.section, row["frame"]),
                     "display_text": display,
                     **parsed,
                 }
@@ -917,6 +992,43 @@ def cmd_correct(args):
         print(f"  cleared correction on {args.frame}")
     else:
         print(f"  {args.frame} -> corrected_text={args.text!r}")
+
+
+def capture_observations(run_id: str) -> list[dict]:
+    """Materialize matched OCR rows as capture-ready observations with explicit provenance."""
+    status = run_status(run_id)
+    out = []
+    for section_row in status.get("sections", []):
+        section = section_row["section"]
+        path = section_dir(run_id, section) / "ocr_matched.jsonl"
+        if not path.exists():
+            continue
+        with path.open(encoding="utf-8") as src:
+            for ordinal, line in enumerate(src, 1):
+                row = json.loads(line)
+                provenance = row.get("provenance") or observation_provenance(run_id, section, row.get("frame", ""))
+                frame = row.get("frame") or f"observation_{ordinal}"
+                observation_id = hashlib.sha1(
+                    f"{run_id}|{section}|{frame}|{row.get('opcode') or ''}|{row.get('display_text') or row.get('raw_text') or ''}".encode()
+                ).hexdigest()[:20]
+                out.append({
+                    "observation_id": f"video-ocr:{observation_id}",
+                    "section": section,
+                    "frame": frame,
+                    "video_timestamp_seconds": row.get("video_timestamp_seconds", provenance.get("video_timestamp_seconds")),
+                    "source_url": provenance.get("source_url") or status.get("url"),
+                    "observation_type": "PACKET" if row.get("opcode") else "OCR_TEXT",
+                    "direction": row.get("direction"),
+                    "opcode": row.get("opcode"),
+                    "gp_command": row.get("gp_command"),
+                    "packet_class": row.get("packet_class"),
+                    "fields": row.get("fields"),
+                    "raw_text": row.get("raw_text"),
+                    "corrected_text": row.get("corrected_text"),
+                    "confidence": row.get("confidence"),
+                    "provenance": provenance,
+                })
+    return out
 
 
 # ---------------------------------------------------------------------------------------------

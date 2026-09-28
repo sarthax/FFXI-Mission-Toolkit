@@ -17,13 +17,15 @@ def table_exists(con,name):
 def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: Path | None = None) -> dict:
     src=sqlite3.connect(db)
     dst=workbench_graph.init_db(graph_db)
-    counts={"capture_events":0,"packet_observations":0,"event_nodes":0,"event_refs":0,"edges":0,"action_nodes":0,"lua_functions":0,"lua_calls":0,"binding_candidates":0}
+    counts={"capture_events":0,"packet_observations":0,"video_ocr_observations":0,"event_nodes":0,"event_refs":0,"edges":0,"action_nodes":0,"lua_functions":0,"lua_calls":0,"binding_candidates":0}
     where="" if capture_id is None else " WHERE capture_id=?"
     args=() if capture_id is None else (capture_id,)
-    if not table_exists(src,"capture_events"):
-        return {"schema":1,"status":"NO_CAPTURE_EVENTS_TABLE","counts":counts}
-    q=f"SELECT capture_id,zone_db,seq,direction,opcode,opcode_name,entity_id,entity_name,event_hex,option,message_id,params_raw FROM capture_events{where} ORDER BY capture_id,zone_db,seq"
-    for cap,zone,seq,direction,opcode,opcode_name,entity_id,entity_name,event_hex,option,message_id,params in src.execute(q,args):
+    if table_exists(src,"capture_events"):
+        q=f"SELECT capture_id,zone_db,seq,direction,opcode,opcode_name,entity_id,entity_name,event_hex,option,message_id,params_raw FROM capture_events{where} ORDER BY capture_id,zone_db,seq"
+        capture_event_rows=src.execute(q,args)
+    else:
+        capture_event_rows=()
+    for cap,zone,seq,direction,opcode,opcode_name,entity_id,entity_name,event_hex,option,message_id,params in capture_event_rows:
         counts["capture_events"]+=1
         cid=f"capture:{cap}"
         dst.execute("INSERT OR IGNORE INTO entities(entity_id,entity_type,display_name,metadata_json) VALUES(?,?,?,?)",
@@ -75,6 +77,71 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
                         (rid2,enode,aid,"IMPLEMENTED_BY",ev,"VERIFIED","DISCOVERED",
                          json.dumps({"source":source,"path":script}),None))
             counts["edges"]+=1
+    # Video OCR packet observations are deliberately separate from capture_raw_packets:
+    # the video proves only that an opcode/field rendering was visible on screen, not packet bytes.
+    if table_exists(src,"capture_video_observations"):
+        vq="""SELECT capture_id,observation_id,ocr_run_id,section,frame,video_ts,source_url,
+                    observation_type,direction,opcode,gp_command,packet_class,fields_json,
+                    raw_text,corrected_text,ocr_confidence,provenance_json
+             FROM capture_video_observations"""
+        vargs=()
+        if capture_id is not None:
+            vq+=" WHERE capture_id=?"
+            vargs=(capture_id,)
+        vq+=" ORDER BY capture_id,video_ts,observation_id"
+        for cap,obs_id,run_id,section,frame,video_ts,source_url,obs_type,direction,opcode,gp_command,packet_class,fields_json,raw_text,corrected_text,ocr_confidence,provenance_json in src.execute(vq,vargs):
+            counts["video_ocr_observations"]+=1
+            if not opcode:
+                continue
+            cid=f"capture:{cap}"
+            dst.execute(
+                "INSERT OR IGNORE INTO entities(entity_id,entity_type,display_name,metadata_json) VALUES(?,?,?,?)",
+                (cid,"CAPTURE",f"capture {cap}",json.dumps({"capture_id":cap})),
+            )
+            pnode=packet_node_id(opcode)
+            if pnode is None:
+                continue
+            dst.execute(
+                "INSERT OR IGNORE INTO entities(entity_id,entity_type,display_name,metadata_json) VALUES(?,?,?,?)",
+                (pnode,"PACKET",pnode.removeprefix("packet:"),
+                 json.dumps({"opcode":opcode,"gp_command":gp_command},sort_keys=True)),
+            )
+            evidence_id=f"evidence:video-ocr:{cap}:{obs_id}"
+            provenance=json.loads(provenance_json) if provenance_json else {}
+            metadata={
+                "source_kind":"VIDEO_OCR",
+                "ocr_run_id":run_id,
+                "section":section,
+                "frame":frame,
+                "video_timestamp_seconds":video_ts,
+                "source_url":source_url,
+                "direction":direction,
+                "opcode":opcode,
+                "gp_command":gp_command,
+                "packet_class":packet_class,
+                "fields":json.loads(fields_json) if fields_json else None,
+                "ocr_confidence":ocr_confidence,
+                "corrected":bool(corrected_text),
+                "provenance":provenance,
+            }
+            dst.execute(
+                "INSERT OR REPLACE INTO evidence VALUES(?,?,?,?,?,?)",
+                (evidence_id,"VIDEO_OCR","capture_video_observations",
+                 f"capture:{cap}:video-ocr:{obs_id}",None,
+                 "Opcode observed in on-screen video OCR; no packet bytes are claimed."),
+            )
+            dst.execute(
+                "INSERT OR REPLACE INTO entity_relationships VALUES(?,?,?,?,?,?,?,?,?)",
+                (f"video-ocr-packet:{cap}:{obs_id}",cid,pnode,"OBSERVES",evidence_id,
+                 "INFERRED","DISCOVERED",json.dumps(metadata,sort_keys=True),None),
+            )
+            counts["packet_observations"]+=1
+            counts["edges"]+=1
+
+    if not table_exists(src,"capture_events") and not table_exists(src,"capture_video_observations"):
+        dst.close(); src.close()
+        return {"schema":1,"status":"NO_RUNTIME_OBSERVATION_TABLES","counts":counts}
+
     # Optional Lua event-surface bridge. Event identity is proven by npc_event_refs;
     # Lua method matches remain candidate relationships until object/class semantics are resolved.
     if lua_json is not None and lua_json.exists():

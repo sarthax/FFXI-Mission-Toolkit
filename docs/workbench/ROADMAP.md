@@ -166,6 +166,20 @@ Current public flagship E2E: pinned LSB → legacy DSP Chains of Promathia 2-5 (
 - [x] validation runs/results (P0) — deterministic ValidationRun/ValidationResult orchestration and graph persistence are implemented.
 - [ ] richer runtime probes/capture producers (P1) — expand only as specific systems need them.
 
+
+### Video OCR evidence alignment and packet reconstruction (P1)
+
+Purpose: treat gameplay video and screenshots as time-addressable runtime evidence that can be aligned with real capture sessions, packet observations, NPC/dialog events, and later screenshot/key-event evidence without promoting OCR guesses to authoritative packet truth.
+
+- [x] Timestamp every OCR observation with video-relative time, frame identity, section/crop provenance, sampling rate, source URL, confidence, and sampling-resolution uncertainty.
+- [x] Ingest parsed on-screen packet observations into the capture/evidence model as explicit `VIDEO_OCR` observations, separate from binary/raw packet captures.
+- [x] Connect OCR packet observations to canonical packet nodes with conservative `INFERRED` confidence/provenance so Feature Trace can correlate video evidence with server/client packet knowledge.
+- [x] Harden OCR run/section filesystem access against traversal or malformed route parameters.
+- [ ] Add video/capture alignment anchors so a real logger/capture session can be synchronized to a video using shared packet/event/dialog landmarks.
+- [ ] Add screenshot/key-event evidence anchors that can point to an exact video timestamp or aligned capture timestamp.
+- [ ] Add cross-frame OCR consensus and packet-symbol-assisted correction while retaining raw OCR values and correction provenance.
+- [ ] Add saved screen-layout/preprocessing profiles for chat, EView/packet overlays, NPCLogger, and other recurring capture layouts.
+
 ### Phase 6 — Domain plugins & reusable content frameworks (P1+)
 Domain plugins should model both **content archetypes** and **named game systems**. The core graph/migration engine stays domain-neutral; this layer explains how different kinds of FFXI content are assembled, discovered, compared, migrated, and validated.
 
