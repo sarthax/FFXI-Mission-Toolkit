@@ -33,7 +33,9 @@ def main():
     assert any(c.subject=="mission_status:SANDORIA" for c in alias_guard.gate.conditions),alias_guard
     spawned=next(t for t in raw.transitions if t.metadata.get("actor")=="Guilloud" and t.trigger=="NPC_INTERACT")
     assert any(c.operator=="ENTITY_NOT_SPAWNED" for c in spawned.gate.conditions),spawned
-    loose_sand=next(t for t in raw.transitions if t.metadata.get("actor")=="Loose_Sand" and t.trigger=="NPC_INTERACT")
+    loose_sand_rows=[t for t in raw.transitions if t.metadata.get("actor")=="Loose_Sand" and t.trigger=="NPC_INTERACT"]
+    loose_sand=next(t for t in loose_sand_rows if t.metadata.get("helper_calls")==("jewelTimer",))
+    assert sum(t.metadata.get("helper_calls")==("jewelTimer",) for t in loose_sand_rows)==1,loose_sand_rows
     distance=next(c for c in loose_sand.gate.conditions if c.subject=="player_to_actor_distance")
     assert (distance.operator,distance.value)==("LT",0.5),distance
     completion=extract_section_completion_gate(SOURCE)
@@ -41,11 +43,14 @@ def main():
     assert {c.subject for c in completion.conditions}=={"mission_status:SANDORIA","mission_status:WINDURST"},completion
 
     helpers=extract_helper_transitions(SOURCE)
-    jewel=next(t for t in helpers if t.metadata.get("helper")=="jewelTimer")
-    assert jewel.trigger=="TIMER",jewel
-    assert any(e.effect=="START_TIMER" for e in jewel.effects),jewel
-    assert any(e.effect=="REMOVE" and e.subject=="key_item:MIMEO_JEWEL" for e in jewel.effects),jewel
-    assert any(e.effect=="MESSAGE" for e in jewel.effects),jewel
+    jewel_rows=[t for t in helpers if t.metadata.get("helper")=="jewelTimer"]
+    assert len(jewel_rows)>=2,jewel_rows
+    assert any(t.trigger=="TIMER" for t in jewel_rows),jewel_rows
+    assert any(any(e.effect=="START_TIMER" for e in t.effects) for t in jewel_rows),jewel_rows
+    assert any(any(e.effect=="REMOVE" and e.subject=="key_item:MIMEO_JEWEL" for e in t.effects) for t in jewel_rows),jewel_rows
+    assert any(any(e.effect=="MESSAGE" for e in t.effects) for t in jewel_rows),jewel_rows
+    assert any(t.metadata.get("recursive_helper_call") for t in jewel_rows),jewel_rows
+    assert all(t.metadata.get("branch_guard_complete") in {True,False} for t in jewel_rows),jewel_rows
     assert any(e.effect=="MESSAGE" for tr in raw.transitions for e in tr.effects),raw.transitions
     source_gap={}
     print("Road Forks real-source stress: PASS")
