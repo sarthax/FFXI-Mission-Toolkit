@@ -136,6 +136,135 @@ def _balanced_function_blocks(lua: str):
                 break
 
 
+
+@dataclass(frozen=True)
+class _HandlerPath:
+    body: str
+    guard_texts: tuple[str,...] = ()
+    branch_path: tuple[str,...] = ()
+    branch_source_lines: tuple[tuple[int,int],...] = ()
+    guard_complete: bool = True
+
+
+_IF_HEADER=re.compile(r"^\s*if\s+(.+?)\s+then\s*$")
+_ELSEIF_HEADER=re.compile(r"^\s*elseif\s+(.+?)\s+then\s*$")
+_ELSE_HEADER=re.compile(r"^\s*else\s*$")
+
+
+def _code(line: str) -> str:
+    return line.split("--",1)[0].rstrip()
+
+
+def _open_count(code: str) -> int:
+    # elseif is not a fresh if block. Repeat is closed by until.
+    return (
+        len(re.findall(r"\bfunction\b",code))
+        + len(re.findall(r"(?<!else)\bif\b",code))
+        + len(re.findall(r"\bfor\b[^\n]*\bdo\b",code))
+        + len(re.findall(r"\bwhile\b[^\n]*\bdo\b",code))
+        + len(re.findall(r"\brepeat\b",code))
+    )
+
+
+def _close_count(code: str) -> int:
+    return len(re.findall(r"\bend\b",code))+len(re.findall(r"\buntil\b",code))
+
+
+def _split_first_if(lines: list[tuple[int,str]]):
+    """Split the first top-level multiline if/elseif/else block in a handler path.
+
+    Returned branches retain their absolute source-line indexes. Inline one-line ifs and
+    malformed/unbalanced blocks are deliberately left unsplit rather than guessed.
+    """
+    depth=0
+    for i,(line_no,line) in enumerate(lines):
+        code=_code(line)
+        if depth==0:
+            match=_IF_HEADER.match(code)
+            if match:
+                start=i
+                branch_kind="if"
+                branch_guard=match.group(1)
+                branch_header_line=line_no
+                body_start=i+1
+                inner_depth=1
+                branches=[]
+                for j in range(i+1,len(lines)):
+                    child_no,child_line=lines[j]
+                    child_code=_code(child_line)
+                    if inner_depth==1:
+                        elseif=_ELSEIF_HEADER.match(child_code)
+                        if elseif:
+                            body=lines[body_start:j]
+                            end_line=body[-1][0] if body else branch_header_line
+                            branches.append((branch_kind,branch_guard,branch_header_line,end_line,body))
+                            branch_kind="elseif"
+                            branch_guard=elseif.group(1)
+                            branch_header_line=child_no
+                            body_start=j+1
+                            continue
+                        if _ELSE_HEADER.match(child_code):
+                            body=lines[body_start:j]
+                            end_line=body[-1][0] if body else branch_header_line
+                            branches.append((branch_kind,branch_guard,branch_header_line,end_line,body))
+                            branch_kind="else"
+                            branch_guard=None
+                            branch_header_line=child_no
+                            body_start=j+1
+                            continue
+                        if re.match(r"^\s*end\b",child_code):
+                            body=lines[body_start:j]
+                            end_line=body[-1][0] if body else branch_header_line
+                            branches.append((branch_kind,branch_guard,branch_header_line,end_line,body))
+                            return lines[:start],branches,lines[j+1:]
+                    inner_depth+=_open_count(child_code)-_close_count(child_code)
+                return None
+        depth+=_open_count(code)-_close_count(code)
+    return None
+
+
+def _handler_paths(text: str, *, start_line: int) -> tuple[_HandlerPath,...]:
+    """Enumerate conservative mutually-exclusive handler paths.
+
+    The outer function declaration/end are stripped. Each multiline top-level if tree is
+    recursively expanded. Common pre/post statements remain on every path. elseif/else paths
+    are marked guard-incomplete because prior-branch falsehood is not synthesized.
+    """
+    raw=text.splitlines()
+    if len(raw)>=2:
+        raw=raw[1:-1]
+        first_line=start_line+1
+    else:
+        first_line=start_line
+    source=[(first_line+i,line) for i,line in enumerate(raw)]
+
+    def expand(
+        lines: list[tuple[int,str]],
+        guards: tuple[str,...]=(),
+        labels: tuple[str,...]=(),
+        spans: tuple[tuple[int,int],...]=(),
+        complete: bool=True,
+    ) -> list[_HandlerPath]:
+        split=_split_first_if(lines)
+        if split is None:
+            return [_HandlerPath(
+                "\n".join(line for _,line in lines),
+                guards,labels,spans,complete,
+            )]
+        prefix,branches,suffix=split
+        out=[]
+        for kind,guard,header_line,end_line,body in branches:
+            next_guards=guards+((guard,) if guard else ())
+            next_labels=labels+(kind,)
+            next_spans=spans+((header_line+1,end_line+1),)
+            next_complete=complete and kind=="if"
+            out.extend(expand(prefix+body+suffix,next_guards,next_labels,next_spans,next_complete))
+        return out
+
+    paths=expand(source)
+    return tuple(paths or (_HandlerPath("\n".join(line for _,line in source)),))
+
+
 def _conditions(text: str) -> tuple[StateCondition,...]:
     out=[]
     for m in _STATUS_EQ.finditer(text):
