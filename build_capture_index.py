@@ -541,14 +541,56 @@ def source_manifest(src: "Source", subroot: str | None = None) -> dict:
         data = src.read_bytes(relname)
         digest, size = _content_fingerprint(data)
         entries.append({"filename": relname, "sha256": digest, "byte_size": size})
+    # Path-independent content identity: renaming/moving/re-zipping the same source set keeps
+    # the same manifest hash. Multiplicity is preserved because every file contributes one row.
     manifest_payload = "\n".join(
-        f"{e['filename']}\0{e['byte_size']}\0{e['sha256']}" for e in entries
+        f"{row['byte_size']}\0{row['sha256']}"
+        for row in sorted(entries, key=lambda row: (row["sha256"], row["byte_size"], row["filename"]))
     ).encode("utf-8")
     return {
         "sha256": hashlib.sha256(manifest_payload).hexdigest(),
         "file_count": len(entries),
         "entries": entries,
     }
+
+
+def recompute_capture_source_manifest(con: sqlite3.Connection, capture_id: int) -> dict:
+    rows = con.execute(
+        """SELECT sha256,byte_size,filename FROM capture_source_files
+           WHERE capture_id=? AND sha256 IS NOT NULL
+             AND source_kind IN ('bundle_member','single_file')
+           ORDER BY sha256,byte_size,filename""",
+        (capture_id,),
+    ).fetchall()
+    payload = "\n".join(f"{size or 0}\0{digest}" for digest, size, _ in rows).encode("utf-8")
+    digest = hashlib.sha256(payload).hexdigest() if rows else None
+    con.execute(
+        "UPDATE captures SET source_manifest_sha256=?,source_file_count=? WHERE capture_id=?",
+        (digest, len(rows), capture_id),
+    )
+    return {"sha256": digest, "file_count": len(rows)}
+
+
+def find_capture_manifest_duplicates(con: sqlite3.Connection, capture_id: int) -> list[dict]:
+    row = con.execute(
+        "SELECT source_manifest_sha256 FROM captures WHERE capture_id=?", (capture_id,)
+    ).fetchone()
+    if not row or not row[0]:
+        return []
+    old_factory = con.row_factory
+    con.row_factory = sqlite3.Row
+    try:
+        return [
+            dict(r) for r in con.execute(
+                """SELECT capture_id,capture_label,source_path,source_manifest_sha256,source_file_count
+                   FROM captures
+                   WHERE source_manifest_sha256=? AND capture_id<>?
+                   ORDER BY capture_id""",
+                (row[0], capture_id),
+            ).fetchall()
+        ]
+    finally:
+        con.row_factory = old_factory
 
 
 def _source_result(
@@ -675,8 +717,14 @@ def ingest_single_file(con, capture_id: int, filename: str, data: bytes) -> dict
         "bundle_manifest_sha256": None,
     }])
     recompute_zones(con, capture_id)
+    recompute_capture_source_manifest(con, capture_id)
     con.commit()
-    return {"filename": filename, "format": fmt, "rows": rows, "error": error}
+    return {
+        "filename": filename, "format": fmt, "rows": rows, "error": error,
+        "sha256": digest, "byte_size": byte_size,
+        "parser_id": f"single:{fmt}" if fmt else "single:unrecognized",
+        "parser_version": CAPTURE_PARSER_VERSION,
+    }
 
 
 def replace_video_ocr_observations(
@@ -1884,10 +1932,6 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
     matched none of the patterns below at all. This is what lets the GUI's Add Files page show a
     real per-file pass/fail breakdown instead of one opaque bundle-wide row."""
     manifest = source_manifest(src, subroot)
-    con.execute(
-        "UPDATE captures SET source_manifest_sha256=?, source_file_count=? WHERE capture_id=?",
-        (manifest["sha256"], manifest["file_count"], capture_id),
-    )
     results = file_results if file_results is not None else []
 
     def sfind(pattern):
@@ -2154,6 +2198,7 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
                            f"layout)")
             append_result(relname, 0, error, "unrecognized", guess or "unrecognized")
     record_source_file_results(con, capture_id, results)
+    recompute_capture_source_manifest(con, capture_id)
     con.commit()
     return counts
 
