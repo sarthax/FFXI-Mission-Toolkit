@@ -51,6 +51,7 @@ import explore_event
 import feature_trace
 from workbench.core.services.feature_trace_catalog import present_relationships
 from workbench.core.services.feature_trace_dossier import build_dossier
+from workbench.core.services import timeline_alignment
 import feature_checker
 from workbench.core.services.feature_trace_closure import build_feature_trace_closure
 import ingest_global_tables
@@ -5064,6 +5065,75 @@ async def captures_add_submit(request: Request, capture_id: int):
     return templates.TemplateResponse(request, "capture_add.html", {
         "cap": cap, "files": files, "saved": False, "last_results": results,
     })
+
+
+@app.get("/captures/{capture_id}/alignment", response_class=HTMLResponse)
+def captures_alignment(request: Request, capture_id: int, video_ts: float | None = None,
+                       capture_ts: float | None = None, clock_kind: str = ""):
+    con = get_con()
+    build_capture_index.init_db(con)
+    timeline_alignment.init_db(con)
+    cap = con.execute("SELECT * FROM captures WHERE capture_id=?", (capture_id,)).fetchone()
+    if not cap:
+        con.close()
+        return HTMLResponse("Capture not found", status_code=404)
+    summary = timeline_alignment.alignment_summary(con, capture_id)
+    video_candidates = timeline_alignment.video_timeline_candidates(con, capture_id)
+    capture_candidates = timeline_alignment.capture_timeline_candidates(con, capture_id)
+    landmarks = timeline_alignment.shared_packet_landmarks(con, capture_id)
+    con.close()
+    return templates.TemplateResponse(request, "capture_alignment.html", {
+        "cap": dict(cap),
+        "summary": summary,
+        "video_candidates": video_candidates,
+        "capture_candidates": capture_candidates,
+        "landmarks": landmarks,
+        "clock_kinds": sorted(timeline_alignment.CLOCK_KINDS),
+        "prefill_video_ts": video_ts,
+        "prefill_capture_ts": capture_ts,
+        "prefill_clock_kind": clock_kind,
+    })
+
+
+@app.post("/captures/{capture_id}/alignment/anchors")
+async def captures_alignment_add_anchor(request: Request, capture_id: int):
+    form = await request.form()
+    try:
+        video_ts = float(form.get("video_ts"))
+        capture_ts = float(form.get("capture_ts"))
+        clock_kind = str(form.get("clock_kind") or "")
+        source_type = str(form.get("source_type") or "MANUAL")
+        label = (form.get("label") or "").strip() or None
+        video_ref = (form.get("video_ref") or "").strip() or None
+        capture_ref = (form.get("capture_ref") or "").strip() or None
+        notes = (form.get("notes") or "").strip() or None
+        con = get_con()
+        timeline_alignment.add_anchor(
+            con, capture_id,
+            video_ts=video_ts,
+            capture_ts=capture_ts,
+            clock_kind=clock_kind,
+            source_type=source_type,
+            label=label,
+            video_ref=video_ref,
+            capture_ref=capture_ref,
+            notes=notes,
+        )
+        con.close()
+    except (TypeError, ValueError) as exc:
+        return RedirectResponse(
+            url=f"/captures/{capture_id}/alignment?error={quote(str(exc))}",
+            status_code=303,
+        )
+    return RedirectResponse(url=f"/captures/{capture_id}/alignment", status_code=303)
+
+
+@app.post("/captures/{capture_id}/alignment/anchors/{anchor_id}/delete")
+def captures_alignment_delete_anchor(capture_id: int, anchor_id: str):
+    con = get_con()
+    timeline_alignment.delete_anchor(con, capture_id, anchor_id)
+    con.close()
+    return RedirectResponse(url=f"/captures/{capture_id}/alignment", status_code=303)
 
 
 @app.get("/captures/{capture_id}", response_class=HTMLResponse)
