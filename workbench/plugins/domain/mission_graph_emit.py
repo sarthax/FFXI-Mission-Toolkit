@@ -168,7 +168,7 @@ def project_mission_graph(
         })
         edges.append(_edge(
             f"mission-has-state:{_token(machine.feature_id,state.state_id)}",
-            machine.feature_id,node,"HAS_STATE",file_evidence.evidence_id,"VERIFIED","DISCOVERED",
+            machine.feature_id,node,"HAS_STATE",file_evidence.evidence_id,"INFERRED","DISCOVERED",
             source_path,source_snapshot_id,
         ))
 
