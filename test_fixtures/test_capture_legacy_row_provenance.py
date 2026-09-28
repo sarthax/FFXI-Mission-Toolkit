@@ -119,29 +119,7 @@ def main():
 
         con = sqlite3.connect(root / "capture.db")
         build_capture_index.init_db(con)
-        cid = build_capture_index.create_manual_capture(con, "legacy provenance", "Research", None)
-        src = build_capture_index.Source(source)
-        try:
-            assert build_capture_index.ingest_npclogger_lua(
-                con, cid, src, "npclogger/Tester/tables/Test Zone.lua", 1
-            ) == (1, 2)
-            assert build_capture_index.ingest_npclogger_lua(
-                con, cid, src, "npclogger/Tester/database/Test Zone.lua", 2
-            ) == (1, 1)
-            assert build_capture_index.ingest_pathlog(
-                con, cid, src, "PathLog/Tester/Test_Zone/Path_NPC/17000041.csv"
-            ) == 2
-            assert build_capture_index.ingest_pc_pathlog(
-                con, cid, src, "PathLog/Tester/PC_Test_Zone.csv"
-            ) == 2
-            assert build_capture_index.ingest_widescan(
-                con, cid, src, "npclogger/widescan/Test Zone.log"
-            ) == 2
-            assert build_capture_index.ingest_attackdelay(
-                con, cid, src, "AttackDelay/Test_Zone.log"
-            ) == 2
-        finally:
-            src.close()
+        cid = build_capture_index.ingest(con, str(source), content_type="overworld")
 
         # The corrected PK must retain both legacy Lua source legs for the same entity/step.
         legs = con.execute(
@@ -206,6 +184,44 @@ def main():
         ]:
             digest = hashlib.sha256(payloads[rel]).hexdigest()
             assert all(row[1] == digest for row in locators(con, cid, rel, table))
+
+        inventory = {
+            row["filename"]: row
+            for row in build_capture_index.capture_rebuild_inventory(con, cid)
+        }
+        assert inventory[npc_rel]["rebuildable"], inventory[npc_rel]
+        assert inventory[pc_rel]["rebuildable"], inventory[pc_rel]
+        assert inventory[wide_rel]["rebuildable"], inventory[wide_rel]
+        assert inventory[attack_rel]["rebuildable"], inventory[attack_rel]
+        # Both Lua files write the same current-state capture_npc_entries row, so rebuilding one
+        # in isolation is intentionally refused even though their path-leg rows are independent.
+        assert not inventory[table_rel]["rebuildable"], inventory[table_rel]
+        assert "ownership" in inventory[table_rel]["reason"] or "overlap" in inventory[table_rel]["reason"]
+
+        # Safe rebuild restores corrupted parser-owned rows from unchanged source bytes.
+        con.execute(
+            """UPDATE capture_attack_delay SET delay_avg=-1
+               WHERE capture_id=? AND zone_db='Test Zone' AND mob_name='Wide Mob'""",
+            (cid,),
+        )
+        con.execute(
+            """UPDATE capture_pc_path SET x=-999
+               WHERE capture_id=? AND zone_db='Test Zone' AND step=0""",
+            (cid,),
+        )
+        con.commit()
+        assert build_capture_index.rebuild_capture_source(con, cid, attack_rel)["rows"] == 2
+        assert build_capture_index.rebuild_capture_source(con, cid, pc_rel)["rows"] == 2
+        assert con.execute(
+            """SELECT delay_avg FROM capture_attack_delay
+               WHERE capture_id=? AND zone_db='Test Zone' AND mob_name='Wide Mob'""",
+            (cid,),
+        ).fetchone()[0] == 250
+        assert con.execute(
+            """SELECT x FROM capture_pc_path
+               WHERE capture_id=? AND zone_db='Test Zone' AND step=0""",
+            (cid,),
+        ).fetchone()[0] == 21.0
 
         con.close()
 
