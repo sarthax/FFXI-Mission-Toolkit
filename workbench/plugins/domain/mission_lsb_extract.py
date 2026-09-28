@@ -514,20 +514,21 @@ def _literal_mission_section_spans(lua: str) -> tuple[tuple[int,int,str],...]:
     return tuple(sections)
 
 
-def _section_check_status_conditions(section: str) -> tuple[StateCondition,...]:
-    """Extract literal mission-status conjuncts from one section check.
-
-    Direct calls and local aliases are normalized across line breaks. OR expressions are
-    deliberately unresolved because a flat list would manufacture conjunction semantics.
-    Other unmodeled check terms remain outside this fragment.
-    """
+def _section_check_analysis(section: str) -> dict:
+    """Classify the mission-status eligibility fragment of one literal section check."""
     check=_section_check_block(section)
     if check is None:
-        return ()
+        return {"check_present":False,"status":"NO_CHECK","conditions":(),"unresolved_reasons":()}
+
     structural=_structural_lua_lines(check)
     executable=" ".join(line.strip() for line in structural if line.strip())
     if re.search(r"\bor\b",executable):
-        return ()
+        return {
+            "check_present":True,
+            "status":"UNRESOLVED",
+            "conditions":(),
+            "unresolved_reasons":("disjunction",),
+        }
 
     out=[]
     for match in _STATUS_COMPARE.finditer(executable):
@@ -559,24 +560,58 @@ def _section_check_status_conditions(section: str) -> tuple[StateCondition,...]:
         )
         if condition not in out:
             out.append(condition)
-    return tuple(out)
+
+    reasons=[]
+    for reason,pattern in (
+        ("mission_var_predicate",r"\bmission:getVar\s*\("),
+        ("local_var_predicate",r"\bmission:getLocalVar\s*\("),
+        ("key_item_predicate",r"\bplayer:hasKeyItem\s*\("),
+    ):
+        if re.search(pattern,executable):
+            reasons.append(reason)
+
+    helper_calls={
+        match.group(1)
+        for match in re.finditer(r"(?<![:.])\b([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*player\b",executable)
+        if match.group(1)!="function"
+    }
+    if helper_calls:
+        reasons.append("helper_predicate")
+
+    conditions=tuple(out)
+    status=("PARTIAL" if conditions else "UNRESOLVED") if reasons else (
+        "MODELED" if conditions else "NO_STATUS_REQUIREMENTS"
+    )
+    return {
+        "check_present":True,
+        "status":status,
+        "conditions":conditions,
+        "unresolved_reasons":tuple(reasons),
+    }
+
+
+def _section_check_status_conditions(section: str) -> tuple[StateCondition,...]:
+    """Backward-compatible view of modeled mission-status section conditions."""
+    return _section_check_analysis(section)["conditions"]
 
 
 def _section_contexts(lua: str):
     spans=_literal_mission_section_spans(lua)
     rows=[]
     for index,(start,end,text) in enumerate(spans,1):
-        rows.append((start,end,index,_section_check_status_conditions(text)))
+        rows.append((start,end,index,_section_check_analysis(text)))
 
     def context(line_no: int):
         matches=[row for row in rows if row[0]<=line_no<=row[1]]
         if not matches:
-            return None,None,()
-        start,end,index,conditions=max(matches,key=lambda row:row[0])
-        return index,(start+1,end+1),conditions
+            return None,None,(),None,(),False
+        start,end,index,analysis=max(matches,key=lambda row:row[0])
+        return (
+            index,(start+1,end+1),analysis["conditions"],analysis["status"],
+            analysis["unresolved_reasons"],analysis["check_present"],
+        )
 
     return tuple(rows),context
-
 
 def _scoped_contexts(lua: str):
     lines=lua.splitlines()
@@ -622,7 +657,7 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
         trigger=None; handler_event=None
         ef=_EVENT_FINISH_KEY.search(first)
         zone,actor=context(start)
-        section_index,section_source_lines,section_conditions=section_context(start)
+        section_index,section_source_lines,section_conditions,section_eligibility_status,section_unresolved_reasons,section_check_present=section_context(start)
         if ef:
             trigger="EVENT_FINISH"
             handler_event=EventIdentity(zone or "UNKNOWN",int(ef.group(1)),actor)
@@ -746,6 +781,9 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                     "section_eligibility_basis":(
                         "literal_section_check_status_conjuncts" if section_conditions else None
                     ),
+                    "section_check_present":section_check_present,
+                    "section_eligibility_status":section_eligibility_status,
+                    "section_eligibility_unresolved_reasons":tuple(section_unresolved_reasons),
                     "priority":(int(pm.group(1)) if (pm:=re.search(r"setPriority\((\d+)\)",text)) else None),
                     "important_event":".importantEvent()" in text,
                     "replace_default":".replaceDefault()" in text,
@@ -773,7 +811,7 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
         if not dm:
             continue
         zone,_=context(line_no)
-        section_index,section_source_lines,section_conditions=section_context(line_no)
+        section_index,section_source_lines,section_conditions,section_eligibility_status,section_unresolved_reasons,section_check_present=section_context(line_no)
         actor=dm.group(1); event_id=int(dm.group(3)); suffix=dm.group(4) or ""
         source_handler_count+=1
         modeled_source_handler_count+=1
@@ -797,6 +835,9 @@ def correlate_lsb_handlers(lua: str, *, feature_id: str="mission:unknown") -> Mi
                 "section_eligibility_basis":(
                     "literal_section_check_status_conjuncts" if section_conditions else None
                 ),
+                    "section_check_present":section_check_present,
+                    "section_eligibility_status":section_eligibility_status,
+                    "section_eligibility_unresolved_reasons":tuple(section_unresolved_reasons),
                 "replace_default":".replaceDefault()" in suffix,
                 "important_event":".importantEvent()" in suffix,
             },
@@ -864,6 +905,23 @@ def mission_extraction_metrics(machine: MissionStateMachine) -> dict:
             1 for transition in machine.transitions
             if transition.metadata.get("section_eligibility_conditions")
         ),
+        "section_eligibility_partial_transition_count":sum(
+            1 for transition in machine.transitions
+            if transition.metadata.get("section_eligibility_status")=="PARTIAL"
+        ),
+        "section_eligibility_unresolved_transition_count":sum(
+            1 for transition in machine.transitions
+            if transition.metadata.get("section_eligibility_status")=="UNRESOLVED"
+        ),
+        "section_eligibility_status_counts":dict(sorted(Counter(
+            transition.metadata.get("section_eligibility_status")
+            for transition in machine.transitions
+            if transition.metadata.get("section_eligibility_status")
+        ).items())),
+        "section_eligibility_unresolved_reason_counts":dict(sorted(Counter(
+            reason for transition in machine.transitions
+            for reason in transition.metadata.get("section_eligibility_unresolved_reasons",())
+        ).items())),
         "guard_operator_counts":dict(sorted(guard_counts.items())),
         "effect_kind_counts":dict(sorted(effect_counts.items())),
         "helper_call_counts":dict(sorted(helper_calls.items())),
@@ -1003,6 +1061,9 @@ def chain_event_transitions(machine: MissionStateMachine) -> MissionStateMachine
                         t.metadata.get("section_eligibility_conditions",())
                     ),
                     "section_eligibility_basis":t.metadata.get("section_eligibility_basis"),
+                    "section_check_present":t.metadata.get("section_check_present"),
+                    "section_eligibility_status":t.metadata.get("section_eligibility_status"),
+                    "section_eligibility_unresolved_reasons":tuple(t.metadata.get("section_eligibility_unresolved_reasons",())),
                     "branch_guard_complete":bool(
                         t.metadata.get("branch_guard_complete",True)
                         and f.metadata.get("branch_guard_complete",True)
