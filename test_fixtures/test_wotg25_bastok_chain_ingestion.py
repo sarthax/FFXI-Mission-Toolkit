@@ -536,6 +536,41 @@ def main():
         [(transition.event.key if transition.event else None,transition.metadata) for transition in q0.transitions],
     )
 
+    fighting_letter_gate=next(
+        transition for transition in q0.transitions
+        if transition.event
+        and transition.event.zone=="THE_ELDIEME_NECROPOLIS_S"
+        and transition.event.actor=="Turbulent_Storm"
+        and transition.event.event_id==8
+        and transition.gate is not None
+    )
+    assert fighting_letter_gate.gate.logic=="ANY",fighting_letter_gate
+    assert {
+        (condition.subject,condition.operator)
+        for condition in fighting_letter_gate.gate.conditions
+    }=={
+        ("key_item:BLUE_RECOMMENDATION_LETTER","HAS"),
+        ("key_item:BATTLE_RATIONS","HAS"),
+    },fighting_letter_gate.gate.conditions
+
+    fighting_quit=next(
+        transition for transition in q0.transitions
+        if transition.event
+        and transition.event.zone=="BASTOK_MARKETS_S"
+        and transition.event.actor=="Adelbrecht"
+        and transition.event.event_id==140
+        and any(
+            effect.subject=="key_item:BLUE_RECOMMENDATION_LETTER"
+            for effect in transition.effects
+        )
+    )
+    fighting_quit_effects={(effect.effect,effect.subject) for effect in fighting_quit.effects}
+    assert ("REMOVE","key_item:BATTLE_RATIONS") in fighting_quit_effects,fighting_quit_effects
+    assert ("GRANT","key_item:BLUE_RECOMMENDATION_LETTER") in fighting_quit_effects,fighting_quit_effects
+    assert {"removeRations","returnLetter","quitQuest"} <= set(
+        fighting_quit.metadata.get("helper_calls",())
+    ),fighting_quit.metadata
+
     better_entry=next(
         transition for transition in q1.transitions
         if transition.trigger=="ZONE_IN"
