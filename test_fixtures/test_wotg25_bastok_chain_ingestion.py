@@ -92,6 +92,7 @@ def main():
     assert catalog.source_for("quest:QUELLING_THE_STORM") is not None,catalog.subjects()
     assert catalog.source_for("quest:FIRE_IN_THE_HOLE") is not None,catalog.subjects()
     assert catalog.source_for("quest:STORM_ON_THE_HORIZON") is not None,catalog.subjects()
+    assert catalog.source_for("quest:BURDEN_OF_SUSPICION") is not None,catalog.subjects()
 
     closure=build_feature_requirement_closure(
         chained,
@@ -108,9 +109,11 @@ def main():
         "quest:crystal_war:quelling_the_storm",
         "quest:crystal_war:fire_in_the_hole",
         "quest:crystal_war:storm_on_the_horizon",
+        "quest:crystal_war:burden_of_suspicion",
     },closure
     assert catalog.cached_subjects()==(
         "quest:BENEATH_THE_MASK",
+        "quest:BURDEN_OF_SUSPICION",
         "quest:FIRE_IN_THE_HOLE",
         "quest:HONOR_UNDER_FIRE",
         "quest:QUELLING_THE_STORM",
@@ -119,7 +122,7 @@ def main():
     ),catalog.cached_subjects()
     assert "quest:BLOOD_OF_HEROES" in closure.skipped_alternatives,closure
     assert "quest:HOWL_FROM_THE_HEAVENS" in closure.skipped_alternatives,closure
-    assert closure.unresolved_subjects==("quest:BURDEN_OF_SUSPICION",),closure
+    assert closure.unresolved_subjects==("quest:LIGHT_IN_THE_DARKNESS",),closure
 
     q10=catalog.cached_machine("quest:WHAT_PRICE_LOYALTY")
     q9=catalog.cached_machine("quest:BENEATH_THE_MASK")
@@ -127,7 +130,8 @@ def main():
     q7=catalog.cached_machine("quest:QUELLING_THE_STORM")
     q6=catalog.cached_machine("quest:FIRE_IN_THE_HOLE")
     q5=catalog.cached_machine("quest:STORM_ON_THE_HORIZON")
-    assert all(machine is not None for machine in (q10,q9,q8,q7,q6,q5)),(q10,q9,q8,q7,q6,q5)
+    q4=catalog.cached_machine("quest:BURDEN_OF_SUSPICION")
+    assert all(machine is not None for machine in (q10,q9,q8,q7,q6,q5,q4)),(q10,q9,q8,q7,q6,q5,q4)
 
     assert q9.metadata.get("catalog_discovered") is True,q9.metadata
     assert q10.metadata.get("catalog_discovered") is True,q10.metadata
@@ -135,12 +139,14 @@ def main():
     assert q7.metadata.get("catalog_discovered") is True,q7.metadata
     assert q6.metadata.get("catalog_discovered") is True,q6.metadata
     assert q5.metadata.get("catalog_discovered") is True,q5.metadata
+    assert q4.metadata.get("catalog_discovered") is True,q4.metadata
     assert q9.metadata.get("quest_symbol")=="BENEATH_THE_MASK",q9.metadata
     assert q10.metadata.get("quest_symbol")=="WHAT_PRICE_LOYALTY",q10.metadata
     assert q8.metadata.get("quest_symbol")=="HONOR_UNDER_FIRE",q8.metadata
     assert q7.metadata.get("quest_symbol")=="QUELLING_THE_STORM",q7.metadata
     assert q6.metadata.get("quest_symbol")=="FIRE_IN_THE_HOLE",q6.metadata
     assert q5.metadata.get("quest_symbol")=="STORM_ON_THE_HORIZON",q5.metadata
+    assert q4.metadata.get("quest_symbol")=="BURDEN_OF_SUSPICION",q4.metadata
     assert q9.metadata.get("reward_item")=="SUPER_RERAISER",q9.metadata
     assert q10.metadata.get("reward_item")=="FOURTH_STAFF",q10.metadata
     assert q8.metadata.get("reward_item")=="ELIXIR_TANK",q8.metadata
@@ -231,24 +237,33 @@ def main():
     assert any(
         dependency.source_feature_id=="quest:crystal_war:storm_on_the_horizon"
         and dependency.subject=="quest:BURDEN_OF_SUSPICION"
+        and dependency.status=="RESOLVED"
+        and dependency.resolved_feature_id=="quest:crystal_war:burden_of_suspicion"
+        for dependency in closure.dependencies
+    ),closure.dependencies
+    assert any(
+        dependency.source_feature_id=="quest:crystal_war:burden_of_suspicion"
+        and dependency.subject=="quest:LIGHT_IN_THE_DARKNESS"
         and dependency.status=="UNRESOLVED"
         for dependency in closure.dependencies
     ),closure.dependencies
     assert closure_summary=={
         "root_feature_id":"mission:wotg:the_will_of_the_world",
-        "feature_count":7,
-        "dependency_count":14,
-        "resolved_dependency_count":6,
+        "feature_count":8,
+        "dependency_count":15,
+        "resolved_dependency_count":7,
         "unresolved_dependency_count":1,
         "skipped_alternative_count":2,
         "cycle_count":0,
     },closure_summary
 
+    q4_metrics=quest_extraction_metrics(q4)
     q5_metrics=quest_extraction_metrics(q5)
     q6_metrics=quest_extraction_metrics(q6)
     q7_metrics=quest_extraction_metrics(q7)
     q9_metrics=quest_extraction_metrics(q9)
     q10_metrics=quest_extraction_metrics(q10)
+    assert q4_metrics["unmodeled_source_handler_count"]==0,q4_metrics
     assert q5_metrics["unmodeled_source_handler_count"]==0,q5_metrics
     assert q6_metrics["unmodeled_source_handler_count"]==0,q6_metrics
     assert q6_metrics["event_relay_count"]==1,q6_metrics
@@ -271,6 +286,26 @@ def main():
         effect.effect=="START" and effect.subject=="quest"
         for effect in fire_relay.effects
     ),fire_relay
+
+    burden_start=next(
+        transition for transition in q4.transitions
+        if transition.event
+        and transition.event.zone=="BASTOK_MARKETS_S"
+        and transition.event.actor=="Gentle_Tiger"
+        and transition.event.event_id==30
+    )
+    assert burden_start.gate is not None,burden_start
+    burden_conditions={
+        (condition.subject,condition.operator,condition.value)
+        for condition in burden_start.gate.conditions
+    }
+    assert ("quest_must_zone","EQ",False) in burden_conditions,burden_conditions
+    assert ("quest_var:Timer","LE","VanadielUniqueDay()") in burden_conditions,burden_conditions
+    assert any(
+        effect.effect=="REMOVE"
+        and effect.subject=="key_item:WARNING_LETTER"
+        for effect in burden_start.effects
+    ),burden_start
 
     storm_zone_in=next(
         transition for transition in q5.transitions
@@ -367,7 +402,8 @@ def main():
     print("q7_transitions",len(q7.transitions),"q7_unmodeled",q7_metrics["unmodeled_source_handler_count"])
     print("q6_transitions",len(q6.transitions),"q6_relays",q6_metrics["event_relay_count"])
     print("q5_transitions",len(q5.transitions),"q5_unmodeled",q5_metrics["unmodeled_source_handler_count"])
-    print("next_gap","continue source-catalog closure through Burden of Suspicion")
+    print("q4_transitions",len(q4.transitions),"q4_unmodeled",q4_metrics["unmodeled_source_handler_count"])
+    print("next_gap","continue source-catalog closure through Light in the Darkness")
     return 0
 
 
