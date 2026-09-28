@@ -2380,6 +2380,7 @@ def _capture_source_format(src: "Source", relname: str) -> str | None:
 
 REBUILDABLE_CAPTURE_FORMATS = {
     "eventview", "idview_simple", "kitrack", "hptrack", "actionview_simple", "caplog", "packetlogger",
+    "npclogger_db", "actionview_db", "levelrange_db",
 }
 
 
@@ -2624,6 +2625,12 @@ def rebuild_capture_source(con, capture_id: int, filename: str) -> dict:
                 result = ingest_actionview_simple(con, capture_id, src, filename)
             elif fmt == "caplog":
                 result = ingest_caplog(con, capture_id, src, filename)
+            elif fmt == "npclogger_db":
+                result = ingest_npc_db(con, capture_id, src, filename)
+            elif fmt == "actionview_db":
+                result = ingest_actions_db(con, capture_id, src, filename)
+            elif fmt == "levelrange_db":
+                result = ingest_level_range_db(con, capture_id, src, filename)
             else:
                 raise ValueError(f"unsupported rebuild parser: {fmt}")
             rows = sum(result) if isinstance(result, tuple) else int(result)
