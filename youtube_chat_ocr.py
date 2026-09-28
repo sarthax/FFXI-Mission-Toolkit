@@ -216,6 +216,228 @@ def parse_packetlogger_block(raw_text: str) -> list[dict]:
     return results
 
 
+def _packet_direction_key(direction: str | None) -> str | None:
+    if direction == "<<":
+        return "s2c"
+    if direction == ">>":
+        return "c2s"
+    return None
+
+
+def _best_unique_symbol(raw: str | None, candidates: list[str], min_score: float = 0.78, min_margin: float = 0.08):
+    """Return a conservative fuzzy symbol correction candidate.
+
+    The raw token is never modified here.  A candidate is accepted only when the best score is
+    high enough and clearly separated from the runner-up.
+    """
+    if not raw:
+        return None
+    norm = raw.strip()
+    if not norm:
+        return None
+    scored = sorted(
+        ((SequenceMatcher(None, norm.lower(), cand.lower()).ratio(), cand) for cand in set(candidates) if cand),
+        reverse=True,
+    )
+    if not scored:
+        return None
+    best_score, best = scored[0]
+    second_score = scored[1][0] if len(scored) > 1 else 0.0
+    if best_score < min_score or (best_score - second_score) < min_margin:
+        return None
+    return {
+        "raw": raw,
+        "candidate": best,
+        "score": round(best_score, 4),
+        "runner_up_score": round(second_score, 4),
+        "margin": round(best_score - second_score, 4),
+    }
+
+
+def packet_symbol_assistance(parsed: dict) -> dict:
+    """Suggest structural packet corrections from the toolkit's packet definition index.
+
+    Raw OCR/parser output remains under raw_parsed.  Corrections are suggestions with provenance,
+    never silent replacement.  Packet name and field keys may be corrected; field VALUES are
+    deliberately never fuzzy-corrected.
+    """
+    raw_parsed = {
+        "direction": parsed.get("direction"),
+        "opcode": parsed.get("opcode"),
+        "gp_command": parsed.get("gp_command"),
+        "packet_class": parsed.get("packet_class"),
+        "fields": dict(parsed.get("fields") or {}),
+    }
+    result = {"raw_parsed": raw_parsed, "corrections": [], "effective_packet": dict(raw_parsed)}
+    direction_key = _packet_direction_key(parsed.get("direction"))
+    if direction_key is None:
+        return result
+
+    try:
+        import packet_decode
+        opcode_defs = [row for row in packet_decode.list_opcodes("") if row["direction"] == direction_key]
+    except Exception as exc:
+        result["symbol_index_error"] = str(exc)
+        return result
+
+    raw_opcode = parsed.get("opcode")
+    raw_name = parsed.get("gp_command")
+    candidate_def = None
+
+    if raw_opcode:
+        try:
+            opcode_int = int(str(raw_opcode), 16) if str(raw_opcode).lower().startswith("0x") else int(str(raw_opcode), 0)
+        except (TypeError, ValueError):
+            opcode_int = None
+        if opcode_int is not None:
+            candidate_def = next((row for row in opcode_defs if row["opcode"] == opcode_int), None)
+
+    if candidate_def is None and raw_name:
+        symbol = _best_unique_symbol(raw_name, [row["description"] for row in opcode_defs], min_score=0.76, min_margin=0.07)
+        if symbol:
+            candidate_def = next(row for row in opcode_defs if row["description"] == symbol["candidate"])
+            result["corrections"].append({
+                "kind": "packet_symbol",
+                **symbol,
+                "source": "packet_decode.list_opcodes",
+            })
+
+    if candidate_def is not None:
+        canonical_opcode = candidate_def["opcode_hex"].lower()
+        canonical_name = candidate_def["description"]
+        if raw_opcode and str(raw_opcode).lower() != canonical_opcode:
+            result["corrections"].append({
+                "kind": "opcode_from_packet_definition",
+                "raw": raw_opcode,
+                "candidate": canonical_opcode,
+                "score": 1.0 if raw_name == canonical_name else None,
+                "source": canonical_name,
+            })
+        if raw_name and raw_name != canonical_name:
+            existing = next((c for c in result["corrections"] if c["kind"] == "packet_symbol"), None)
+            if existing is None:
+                name_score = SequenceMatcher(None, raw_name.lower(), canonical_name.lower()).ratio()
+                if name_score >= 0.76:
+                    result["corrections"].append({
+                        "kind": "packet_symbol",
+                        "raw": raw_name,
+                        "candidate": canonical_name,
+                        "score": round(name_score, 4),
+                        "source": "opcode_definition",
+                    })
+        result["effective_packet"]["opcode"] = canonical_opcode
+        result["effective_packet"]["gp_command"] = canonical_name
+
+        try:
+            schema = packet_decode.get_field_schema(direction_key, candidate_def["opcode"]) or []
+        except Exception:
+            schema = []
+        known_fields = [row["name"] for row in schema if row.get("name")]
+        corrected_fields = {}
+        field_key_corrections = []
+        for key, value in (parsed.get("fields") or {}).items():
+            if key in known_fields:
+                corrected_fields[key] = value
+                continue
+            suggestion = _best_unique_symbol(key, known_fields, min_score=0.72, min_margin=0.08)
+            if suggestion:
+                corrected_fields[suggestion["candidate"]] = value
+                field_key_corrections.append({
+                    "kind": "field_symbol",
+                    **suggestion,
+                    "source": canonical_name,
+                })
+            else:
+                corrected_fields[key] = value
+        if field_key_corrections:
+            result["corrections"].extend(field_key_corrections)
+            result["effective_packet"]["fields"] = corrected_fields
+
+    result["symbol_assisted"] = bool(result["corrections"])
+    return result
+
+
+def _packet_consensus_key(record: dict) -> tuple:
+    effective = record.get("effective_packet") or {}
+    return (
+        effective.get("direction") or record.get("direction"),
+        effective.get("opcode") or record.get("opcode"),
+        effective.get("gp_command") or record.get("gp_command"),
+    )
+
+
+def apply_cross_frame_consensus(records: list[dict], max_gap_seconds: float = 1.5) -> list[dict]:
+    """Attach conservative consensus metadata to adjacent packet observations.
+
+    Observations join a cluster only when their effective structural identity matches and their
+    video timestamps are close.  Numeric/string FIELD VALUES vote independently by exact text;
+    ties remain unresolved instead of being guessed.
+    """
+    clusters: list[list[dict]] = []
+    current: list[dict] = []
+    last_ts = None
+    last_key = None
+
+    for record in records:
+        key = _packet_consensus_key(record)
+        ts = record.get("video_timestamp_seconds")
+        close = (
+            current
+            and key == last_key
+            and ts is not None and last_ts is not None
+            and 0 <= float(ts) - float(last_ts) <= max_gap_seconds
+        )
+        if not close:
+            if current:
+                clusters.append(current)
+            current = [record]
+        else:
+            current.append(record)
+        last_key = key
+        last_ts = ts
+    if current:
+        clusters.append(current)
+
+    for cluster in clusters:
+        if len(cluster) < 2:
+            cluster[0]["consensus"] = {
+                "support": 1,
+                "source_frames": [cluster[0].get("frame")],
+                "applied": False,
+            }
+            continue
+        field_votes: dict[str, dict[str, int]] = {}
+        for record in cluster:
+            effective = record.get("effective_packet") or {}
+            for key, value in (effective.get("fields") or record.get("fields") or {}).items():
+                field_votes.setdefault(key, {}).setdefault(str(value), 0)
+                field_votes[key][str(value)] += 1
+
+        consensus_fields = {}
+        unresolved = {}
+        for key, votes in field_votes.items():
+            ranked = sorted(votes.items(), key=lambda kv: (-kv[1], kv[0]))
+            if len(ranked) == 1 or ranked[0][1] > ranked[1][1]:
+                consensus_fields[key] = ranked[0][0]
+            else:
+                unresolved[key] = dict(ranked)
+
+        source_frames = [r.get("frame") for r in cluster]
+        for record in cluster:
+            effective = dict(record.get("effective_packet") or {})
+            if consensus_fields:
+                effective["fields"] = dict(consensus_fields)
+            record["effective_packet"] = effective
+            record["consensus"] = {
+                "support": len(cluster),
+                "source_frames": source_frames,
+                "applied": True,
+                "field_votes": field_votes,
+                "unresolved_fields": unresolved or None,
+            }
+    return records
+
+
 def parse_capture_line(profile: str, text: str) -> dict:
     """Turn one OCR'd (post dialog-match) line into structured fields per the section's capture
     profile. Never fabricates a value it can't actually find in the text -- fields it can't
