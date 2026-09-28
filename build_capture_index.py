@@ -2149,7 +2149,12 @@ def ingest_packetlogger(con, capture_id, src: Source, relnames: list[str]) -> in
             end_offset = (
                 len(text[:record["end_char"]].encode("utf-8")) if byte_offsets_exact else None
             )
-            source_format = "packetviewer" if "/packetviewer/" in relname.lower() else "packetlogger"
+            lower_relname = relname.lower()
+            source_format = (
+                "packetviewer"
+                if lower_relname.startswith("packetviewer/") or "/packetviewer/" in lower_relname
+                else "packetlogger"
+            )
             header = raw_packet_ingest.decode_packet_header(record["raw_hex"])
             all_packets.append((
                 record["ts"], direction, opcode, record["raw_hex"], relname, source_sha256,
@@ -2162,7 +2167,25 @@ def ingest_packetlogger(con, capture_id, src: Source, relnames: list[str]) -> in
     all_packets.sort(key=lambda p: (p[0], p[4], p[6]))
 
     # Replace only this raw-log family. Other canonical raw sources (PacketDB, Packeteer,
-    # NPCLogger-preserved bytes) remain independent evidence rows in the same capture.
+    # NPCLogger-preserved bytes) remain independent evidence rows in the same capture. Delete
+    # locator-owned legacy rows too: databases created before source_format existed have NULL
+    # there, but their exact seq locators still prove ownership by these PacketViewer files.
+    old_locator_rows = con.execute(
+        """SELECT row_key FROM capture_row_locators
+           WHERE capture_id=? AND target_table='capture_raw_packets'
+             AND filename IN (%s)""" % ",".join("?" for _ in relnames),
+        [capture_id] + list(relnames),
+    ).fetchall()
+    for (row_key_raw,) in old_locator_rows:
+        try:
+            old_seq = json.loads(row_key_raw).get("seq")
+        except Exception:
+            old_seq = None
+        if old_seq is not None:
+            con.execute(
+                "DELETE FROM capture_raw_packets WHERE capture_id=? AND seq=?",
+                (capture_id, int(old_seq)),
+            )
     con.execute(
         """DELETE FROM capture_raw_packets
            WHERE capture_id=? AND source_format IN ('packetlogger','packetviewer')""",
@@ -3187,14 +3210,6 @@ def rebuild_capture_source(con, capture_id: int, filename: str) -> dict:
                     raise ValueError(f"packet source is missing: {packet_filename}")
                 if capture_integrity.sha256_bytes(src.read_bytes(packet_filename)) != packet_hash:
                     raise ValueError(f"packet source bytes changed since ingestion: {packet_filename}")
-            foreign = con.execute(
-                """SELECT 1 FROM capture_row_locators
-                   WHERE capture_id=? AND target_table='capture_raw_packets'
-                     AND filename NOT IN (%s) LIMIT 1""" % ",".join("?" for _ in packet_files),
-                [capture_id] + packet_files,
-            ).fetchone()
-            if foreign:
-                raise ValueError("capture_raw_packets also contains evidence from another source family")
             con.execute("SAVEPOINT capture_rebuild")
             try:
                 rows = ingest_packetlogger(con, capture_id, src, packet_files)
