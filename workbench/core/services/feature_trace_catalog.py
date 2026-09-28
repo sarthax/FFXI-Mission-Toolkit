@@ -62,7 +62,12 @@ def _catalog_id(table, values, identity_columns=None):
 
 def _resolve_identity_values(con, table, raw, identity_columns, primary_key):
     if len(identity_columns)==1:
-        return (unquote(raw),)
+        value=unquote(raw)
+        rows=con.execute(
+            f"SELECT {identity_columns[0]} FROM {table} WHERE CAST({identity_columns[0]} AS TEXT)=? LIMIT 2",
+            (value,),
+        ).fetchall()
+        return tuple(rows[0]) if len(rows)==1 else None
     if "=" in raw:
         parsed={}
         for part in raw.split("&"):
