@@ -46,6 +46,15 @@ _STATUS_COMPARE=re.compile(
 _VAR_COMPARE=re.compile(
     r"\bvars\.([A-Za-z_][A-Za-z0-9_]*)\s*(==|~=|<=|>=|<|>)\s*(\d+)"
 )
+_GET_VAR_COMPARE=re.compile(
+    r"quest:getVar\(player,\s*'([^']+)'\)\s*(==|~=|<=|>=|<|>)\s*(\d+)"
+)
+_GET_VAR_ALIAS=re.compile(
+    r"local\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*quest:getVar\(player,\s*'([^']+)'\)"
+)
+_ALIAS_COMPARE=re.compile(
+    r"\b([A-Za-z_][A-Za-z0-9_]*)\s*(==|~=|<=|>=|<|>)\s*(\d+)"
+)
 _COMPLETED_QUEST=re.compile(
     r"player:hasCompletedQuest\([^\)]*?xi\.quest\.id\.[A-Za-z0-9_]+\.([A-Z0-9_]+)\)"
 )
@@ -67,6 +76,7 @@ _DEL_KI=re.compile(r"player:delKeyItem\(xi\.keyItem\.([A-Z0-9_]+)\)")
 _SET_POS=re.compile(r"player:setPos\(([^\)]+)\)")
 _BEGIN=re.compile(r"quest:begin\(player\)")
 _COMPLETE=re.compile(r"quest:complete\(player\)")
+_START_EVENT=re.compile(r"player:startEvent\((\d+)")
 _OP={"==":"EQ","~=":"NE","<":"LT","<=":"LE",">":"GT",">=":"GE"}
 
 
@@ -209,6 +219,21 @@ def _section_contexts(lua: str):
 
 def _handler_conditions(text: str) -> tuple[StateCondition,...]:
     out=[]
+    for match in _GET_VAR_COMPARE.finditer(text):
+        out.append(StateCondition(
+            f"quest_var:{match.group(1)}",
+            _OP[match.group(2)],
+            int(match.group(3)),
+        ))
+    aliases={match.group(1):match.group(2) for match in _GET_VAR_ALIAS.finditer(text)}
+    for match in _ALIAS_COMPARE.finditer(text):
+        channel=aliases.get(match.group(1))
+        if channel:
+            out.append(StateCondition(
+                f"quest_var:{channel}",
+                _OP[match.group(2)],
+                int(match.group(3)),
+            ))
     lacked=set(_LACKS_KI.findall(text))
     for symbol in lacked:
         out.append(StateCondition(f"key_item:{symbol}","LACKS",True))
@@ -242,6 +267,8 @@ def _quest_effects(text: str) -> tuple[TransitionEffect,...]:
         out.append(TransitionEffect("START","quest"))
     if _COMPLETE.search(text):
         out.append(TransitionEffect("COMPLETE","quest"))
+    for match in _START_EVENT.finditer(text):
+        out.append(TransitionEffect("START","event",int(match.group(1))))
     if "player:confirmTrade()" in text:
         out.append(TransitionEffect("COMPLETE_TRADE","trade"))
     for match in _SET_POS.finditer(text):
@@ -396,6 +423,11 @@ def correlate_lsb_quest_handlers(
                     "branch_guard_complete":guard_complete,
                     "unexpanded_nested_branch":unresolved_nested,
                     "implementation_gap_note":gap_note,
+                    "started_event_id":(
+                        int(started.group(1))
+                        if (started:=_START_EVENT.search(path.body))
+                        else None
+                    ),
                 },
             ))
         if len(transitions)>transition_count_before:
@@ -552,9 +584,95 @@ def materialize_quest_progress_states(machine: MissionStateMachine) -> MissionSt
     )
 
 
+def _chain_started_events(machine: MissionStateMachine) -> MissionStateMachine:
+    """Collapse literal EVENT_FINISH -> player:startEvent -> EVENT_FINISH relays."""
+    finishes={}
+    for transition in machine.transitions:
+        if transition.trigger=="EVENT_FINISH" and transition.event:
+            finishes.setdefault((transition.event.zone,transition.event.event_id),[]).append(transition)
+
+    consumed=set()
+    relays=[]
+    serial=0
+    for transition in machine.transitions:
+        started_event_id=transition.metadata.get("started_event_id")
+        if (
+            transition.trigger!="EVENT_FINISH"
+            or not transition.event
+            or started_event_id is None
+        ):
+            continue
+        candidates=[
+            candidate for candidate in finishes.get(
+                (transition.event.zone,int(started_event_id)),()
+            )
+            if candidate.transition_id!=transition.transition_id
+        ]
+        if len(candidates)!=1:
+            continue
+        finish=candidates[0]
+        serial+=1
+        consumed.update((transition.transition_id,finish.transition_id))
+        conditions=[]
+        for gate in (transition.gate,finish.gate):
+            if gate:
+                conditions.extend(gate.conditions)
+        gate=DependencyGate(
+            f"quest-event-relay-gate:{serial}","ALL",tuple(conditions)
+        ) if conditions else None
+        relays.append(MissionTransition(
+            f"quest-event-relay:{transition.transition_id}:{finish.transition_id}",
+            transition.from_state,
+            finish.to_state,
+            "EVENT_FINISH",
+            gate=gate,
+            event=transition.event,
+            effects=tuple(transition.effects)+tuple(finish.effects),
+            confidence=(
+                "UNKNOWN"
+                if "UNKNOWN" in {transition.confidence,finish.confidence}
+                else "INFERRED"
+            ),
+            implementation_status=(
+                "PRESENT"
+                if transition.implementation_status=="PRESENT"
+                and finish.implementation_status=="PRESENT"
+                else "PARTIAL"
+            ),
+            metadata={
+                **transition.metadata,
+                "logical_event_relay":True,
+                "relay_started_event_id":int(started_event_id),
+                "relay_finish_source_lines":finish.metadata.get("source_lines"),
+                "relay_finish_transition_id":finish.transition_id,
+            },
+        ))
+
+    if not relays:
+        return machine
+    remaining=[
+        transition for transition in machine.transitions
+        if transition.transition_id not in consumed
+    ]
+    return MissionStateMachine(
+        machine.machine_id,
+        machine.feature_id,
+        machine.states,
+        tuple(remaining+relays),
+        machine.entry_state_ids,
+        machine.channels,
+        machine.completion_gate,
+        {
+            **machine.metadata,
+            "event_relay_count":len(relays),
+        },
+    )
+
+
 def chain_quest_event_transitions(machine: MissionStateMachine) -> MissionStateMachine:
-    """Apply generic zone/actor/CSID event chaining, then materialize quest progression."""
-    return materialize_quest_progress_states(chain_event_transitions(machine))
+    """Chain quest event relays, then generic trigger/finish pairs and progression."""
+    relayed=_chain_started_events(machine)
+    return materialize_quest_progress_states(chain_event_transitions(relayed))
 
 
 def quest_extraction_metrics(machine: MissionStateMachine) -> dict:
@@ -563,6 +681,7 @@ def quest_extraction_metrics(machine: MissionStateMachine) -> dict:
         "transition_count":len(machine.transitions),
         "event_transition_count":sum(1 for t in machine.transitions if t.event),
         "event_chain_count":int(machine.metadata.get("event_chains",0)),
+        "event_relay_count":int(machine.metadata.get("event_relay_count",0)),
         "section_status_counts":dict(sorted(Counter(
             t.metadata.get("section_eligibility_status")
             for t in machine.transitions
