@@ -2623,3 +2623,18 @@ Exact capture provenance now extends to the three primary SQLite-backed runtime 
 - Each locator records the exact source-file SHA-256, source SQLite table, SQLite rowid, source key fields, and normalized Workbench primary key. Line/byte offsets remain NULL because they are not meaningful for SQLite pages.
 - Re-ingestion replaces each file/table locator family idempotently.
 - These parser families are now admitted to the safe source-rebuild framework, so hash-identical accessible source databases can be re-parsed while preserving capture metadata, tags, alignment anchors, curated evidence, and capture identity.
+
+
+## 2026-09-28 — Legacy text/CSV provenance completion and path-leg schema correction
+
+Exact row provenance now covers the remaining recognized legacy normalized capture sources.
+
+- NPCLogger Lua `tables/` and `database/` snapshots emit exact physical-line locators for both `capture_npc_path` samples and the last-seen `capture_npc_entries` state.
+- NPC PathLog and PC PathLog CSV rows emit exact CSV-row line/byte locators.
+- Widescan emits exact line provenance for rows it actually inserts into `capture_npc_entries` and for its `capture_level_range` observations; `INSERT OR IGNORE` rows that did not produce normalized state are not falsely claimed.
+- AttackDelay emits exact header-delimited source blocks for each aggregated mob-delay record.
+- Lineage locator-basis declarations were reconciled with real parser precision (including KITrack/AttackDelay block semantics and Widescan level-range output).
+- A schema bug was corrected: `capture_npc_path` declared `leg` but omitted it from the primary key even though legacy Lua ingestion uses separate legs for `tables/` and `database/`. Existing DBs migrate in place to `(capture_id, zone_db, entity_id, leg, step)`, preserving existing rows; future independent legs no longer overwrite one another.
+- Safe rebuild now recognizes NPCLogger Lua, NPC/PC PathLog, Widescan, and AttackDelay. Where two sources truly overlap the same normalized current-state row, rebuild remains conservatively unavailable rather than guessing ownership.
+
+With this milestone, every currently registered normalized capture parser has an exact provenance strategy appropriate to its physical source format.
