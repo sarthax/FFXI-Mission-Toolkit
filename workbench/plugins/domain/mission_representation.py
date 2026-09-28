@@ -70,6 +70,9 @@ def requirements_from_state_machine(machine: MissionStateMachine) -> tuple[Missi
         description=f"{transition.from_state} -> {transition.to_state} via {transition.trigger}"
         if transition.event:
             description+=f" [{transition.event.key}]"
+        if transition.post_effect_gate:
+            subjects=", ".join(condition.subject for condition in transition.post_effect_gate.conditions)
+            description+=f" [post-effect {transition.post_effect_gate.logic}: {subjects}]"
         requirements.append(MissionRequirement(
             requirement_id=f"transition:{transition.transition_id}",
             description=description,
