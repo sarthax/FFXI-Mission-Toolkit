@@ -2611,3 +2611,15 @@ The remaining capture-integrity rebuild milestone now has a bounded, exact-owner
 - Capture Detail now exposes per-source rebuild controls or the exact reason a source is not safely rebuildable.
 
 This completes the current Capture integrity and provenance hardening subsection; additional exact-locator coverage for SQLite-backed and lower-value legacy formats can continue incrementally without blocking the integrity foundation.
+
+
+## 2026-09-28 — SQLite-backed capture row provenance
+
+Exact capture provenance now extends to the three primary SQLite-backed runtime sources.
+
+- NPCLogger.db `entries` rows map exactly to `capture_npc_entries`; `history` rows map exactly to `capture_npc_history`.
+- ActionView.db `entries` rows map exactly to `capture_actions`.
+- LevelRangeTrack.db `entries` rows map exactly to `capture_level_range`.
+- Each locator records the exact source-file SHA-256, source SQLite table, SQLite rowid, source key fields, and normalized Workbench primary key. Line/byte offsets remain NULL because they are not meaningful for SQLite pages.
+- Re-ingestion replaces each file/table locator family idempotently.
+- These parser families are now admitted to the safe source-rebuild framework, so hash-identical accessible source databases can be re-parsed while preserving capture metadata, tags, alignment anchors, curated evidence, and capture identity.
