@@ -39,7 +39,14 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
                         (pev,"CAPTURE","capture_events",f"capture:{cap}:{zone}:{seq}",None,"Observed packet opcode in runtime capture event."))
             dst.execute("INSERT OR REPLACE INTO entity_relationships VALUES(?,?,?,?,?,?,?,?,?)",
                         (f"capture-packet-event:{cap}:{zone}:{seq}",cid,pnode,"OBSERVES",pev,"VERIFIED","DISCOVERED",
-                         json.dumps({"direction":direction,"opcode_name":opcode_name},sort_keys=True),None))
+                         json.dumps({
+                             "capture_id":cap,
+                             "capture_table":"capture_events",
+                             "capture_row_key":{"zone_db":zone,"seq":seq},
+                             "direction":direction,
+                             "opcode":opcode,
+                             "opcode_name":opcode_name,
+                         },sort_keys=True),None))
             counts["packet_observations"]+=1; counts["edges"]+=1
         if message_id is None: continue
         # A capture message becomes an event node only after it has a server-side event reference.
@@ -63,7 +70,15 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
             rid=f"capture-event:{cap}:{zone}:{seq}:{source}:{npc_script}:{csid}"
             dst.execute("INSERT OR REPLACE INTO entity_relationships VALUES(?,?,?,?,?,?,?,?,?)",
                         (rid,cid,enode,"OBSERVES",ev,"VERIFIED","DISCOVERED",
-                         json.dumps({"opcode":opcode,"opcode_name":opcode_name,"direction":direction,"message_id":message_id}),
+                         json.dumps({
+                             "capture_id":cap,
+                             "capture_table":"capture_events",
+                             "capture_row_key":{"zone_db":zone,"seq":seq},
+                             "opcode":opcode,
+                             "opcode_name":opcode_name,
+                             "direction":direction,
+                             "message_id":message_id,
+                         },sort_keys=True),
                          None))
             counts["event_nodes"]+=1; counts["edges"]+=1
             # Event source itself is a navigable artifact path, without asserting that the script
@@ -250,7 +265,14 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
                              "Runtime action name exactly matched server mob-skill name; relationship remains candidate."))
                 dst.execute("INSERT OR REPLACE INTO entity_relationships VALUES(?,?,?,?,?,?,?,?,?)",
                             (f"capture-action-skill:{cap}:{key}:{skill_id}",f"capture:{cap}",snode,"REFERENCES",
-                             ev,"INFERRED","DISCOVERED",json.dumps({"action_key":key,"actor":actor,"animation":animation}),None))
+                             ev,"INFERRED","DISCOVERED",json.dumps({
+                                 "capture_id":cap,
+                                 "capture_table":"capture_actions",
+                                 "capture_row_key":{"action_key":key},
+                                 "action_key":key,
+                                 "actor":actor,
+                                 "animation":animation,
+                             },sort_keys=True),None))
                 counts["action_nodes"]+=1; counts["edges"]+=1
     workbench_graph.resolve_relationships(dst)
     dst.commit(); dst.close(); src.close()
