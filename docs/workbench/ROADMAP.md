@@ -750,3 +750,4 @@ Roadmap authority rule: `docs/workbench/ROADMAP.md` is the detailed rework backl
 - [x] Run one-level conservative semantic analysis for uniquely resolved shared `xi.<module>.<function>` bodies in Behavior Inspector (direct API calls, named state, literal context conditions, and entity references). Ambiguous/unresolved helpers are never expanded, and recursive shared-helper expansion remains disabled.
 
 - [x] Present uniquely resolved shared-helper one-level analysis as separate upstream inputs (state/context), downstream effects (state/entity), and raw direct calls in Behavior Inspector; ambiguous/unresolved helpers remain unexpanded.
+- [x] Model literal-offset runtime-relative entity identities such as `local mobId = mob:getID(); GetMobByID(mobId + 1)` as `RUNTIME_RELATIVE_ID` evidence with receiver/alias/source provenance, without fabricating static `ID.mob.*` symbols; dynamic offsets remain unresolved.
