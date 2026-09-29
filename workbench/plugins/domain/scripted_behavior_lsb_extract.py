@@ -117,6 +117,10 @@ _ENTITY_ALIAS_ASSIGN=re.compile(
     r"\blocal\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"
     r"ID\.(npc|mob)\.([A-Z0-9_]+)(?:\s*([+-])\s*(\d+))?"
 )
+_RUNTIME_ENTITY_ID_ALIAS_ASSIGN=re.compile(
+    r"\blocal\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"
+    r"([A-Za-z_][A-Za-z0-9_]*):getID\(\s*\)"
+)
 _ENTITY_ALIAS_CALL=re.compile(
     r"\b(GetNPCByID|GetMobByID|SpawnMob|DespawnMob)\(\s*"
     r"([A-Za-z_][A-Za-z0-9_]*)(?:\s*([+-])\s*(\d+))?\s*\)"
@@ -1004,6 +1008,28 @@ def _literal_entity_aliases(text: str) -> dict[str,dict]:
     return aliases
 
 
+def _runtime_entity_id_aliases(text: str, *, start_line: int) -> dict[str,dict]:
+    """Track direct local aliases of runtime entity IDs without inventing symbol identity."""
+    aliases={}
+    for offset_idx,raw_line in enumerate(text.splitlines()):
+        code=_strip_line_comment_preserve_strings(raw_line)
+        match=_RUNTIME_ENTITY_ID_ALIAS_ASSIGN.search(code)
+        if not match:
+            continue
+        alias,receiver=match.groups()
+        aliases[alias]={
+            "receiver":receiver,
+            "source_line":start_line+offset_idx,
+            "source_line_text":raw_line.strip(),
+        }
+    return aliases
+
+
+def _runtime_entity_target(receiver: str, offset: int) -> str:
+    base=f"entity-runtime-id:{receiver}"
+    return f"{base}:offset:{offset:+d}" if offset else base
+
+
 def _symbolic_range_loop_entity_effects(
     text: str,
     *,
@@ -1199,6 +1225,7 @@ def _direct_entity_reference_rule(
     """Resolve only direct ID.npc/ID.mob symbols with optional literal integer offsets."""
     effects=[]
     aliases=_literal_entity_aliases(text)
+    runtime_aliases=_runtime_entity_id_aliases(text,start_line=start_line)
     effects.extend(_symbolic_range_loop_entity_effects(
         text,start_line=start_line
     ))
@@ -1236,38 +1263,58 @@ def _direct_entity_reference_rule(
             ))
         for match in _ENTITY_ALIAS_CALL.finditer(code):
             call,alias,sign,offset=match.groups()
-            if alias not in aliases:
-                continue
-            base=aliases[alias]
             call_offset=0
             if sign and offset:
                 call_offset=int(offset) * (1 if sign=="+" else -1)
-            total=base["offset"]+call_offset
-            target=_entity_symbol_target(
-                base["kind"],
-                base["symbol"],
-                "+" if total>=0 and total!=0 else "-" if total<0 else None,
-                str(abs(total)) if total!=0 else None,
-            )
             effect_name={
                 "GetNPCByID":"REFERENCES_ENTITY",
                 "GetMobByID":"REFERENCES_ENTITY",
                 "SpawnMob":"SPAWN_ENTITY",
                 "DespawnMob":"DESPAWN_ENTITY",
             }[call]
+            if alias in aliases:
+                base=aliases[alias]
+                total=base["offset"]+call_offset
+                target=_entity_symbol_target(
+                    base["kind"],
+                    base["symbol"],
+                    "+" if total>=0 and total!=0 else "-" if total<0 else None,
+                    str(abs(total)) if total!=0 else None,
+                )
+                effects.append(BehaviorEffect(
+                    effect_name,
+                    target,
+                    f"{alias}{'' if call_offset==0 else f'{call_offset:+d}'}",
+                    {
+                        "call":call,
+                        "entity_kind":base["kind"],
+                        "symbol":base["symbol"],
+                        "offset":total,
+                        "resolution":"LITERAL_ALIAS",
+                        "alias":alias,
+                        "alias_base_offset":base["offset"],
+                        "call_offset":call_offset,
+                        "alias_source_line_text":base["source_line_text"],
+                        "source_line":line_no,
+                        "source_line_text":raw_line.strip(),
+                    },
+                ))
+                continue
+            if alias not in runtime_aliases:
+                continue
+            base=runtime_aliases[alias]
+            target=_runtime_entity_target(base["receiver"],call_offset)
             effects.append(BehaviorEffect(
                 effect_name,
                 target,
                 f"{alias}{'' if call_offset==0 else f'{call_offset:+d}'}",
                 {
                     "call":call,
-                    "entity_kind":base["kind"],
-                    "symbol":base["symbol"],
-                    "offset":total,
-                    "resolution":"LITERAL_ALIAS",
+                    "offset":call_offset,
+                    "resolution":"RUNTIME_RELATIVE_ID",
                     "alias":alias,
-                    "alias_base_offset":base["offset"],
-                    "call_offset":call_offset,
+                    "runtime_receiver":base["receiver"],
+                    "alias_source_line":base["source_line"],
                     "alias_source_line_text":base["source_line_text"],
                     "source_line":line_no,
                     "source_line_text":raw_line.strip(),
