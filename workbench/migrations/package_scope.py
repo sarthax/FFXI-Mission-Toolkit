@@ -159,7 +159,10 @@ def _node_info(con: sqlite3.Connection, node_id: str) -> dict[str, Any]:
                 else:
                     condition_summary=rationale
             return {
-                "node_kind": row[0] if table == "entities" else node_kind,
+                "node_kind": (
+                    row[0] if table == "entities" and row[0] == "CONDITIONAL_DEPENDENCY"
+                    else node_kind
+                ),
                 "display_name": row[1],
                 "artifact_type": row[0] if table == "artifacts" else None,
                 "artifact_path": row[1] if table == "artifacts" else None,
