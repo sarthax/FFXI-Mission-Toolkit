@@ -1146,5 +1146,6 @@ def inspect_lsb_behavior(root: Path, relative: str) -> dict:
             "Literal option/result outcomes are split from their parent CSID bundle. Only equality against a literal is promoted; dynamic predicates and fallback arms are masked from parent attribution and remain generic evidence.",
             "CSID guard hooks retain their handler role: onEventFinish and onEventUpdate are tracked separately while sharing the same event identity model.",
             "Literal canonical-state guards nested inside a literal event outcome are modeled as an additional condition layer. Unsupported nested predicates are masked from the parent outcome bundle rather than treated as unconditional.",
+            "Literal key-item possession and simple literal trade guards nested inside a literal event outcome are modeled as source-local resource conditions. Dynamic/compound resource predicates and effects below deeper unsupported conditions are not promoted.",
         ],
     }
