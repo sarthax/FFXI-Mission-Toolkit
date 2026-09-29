@@ -1826,6 +1826,45 @@ def ingest_hptrack(con, capture_id, src: Source, relname: str):
 NPCLOGGER_LUA_LINE_RE = re.compile(r'^\s*\[(\d+)\]\s*=\s*\{(.*)\},?\s*$')
 NPCLOGGER_LUA_FIELD_RE = re.compile(r"\['(\w+)'\]\s*=\s*(?:\"([^\"]*)\"|(-?[\d.]+))")
 
+def _npclogger_lua_look_blob(value) -> bytes | None:
+    """Convert a genuinely-present legacy Lua look hex string to the same BLOB shape as .db."""
+    if value in (None, ""):
+        return None
+    if isinstance(value, (bytes, bytearray)):
+        return bytes(value)
+    try:
+        return bytes.fromhex(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _npclogger_lua_optional_int(fields: dict, *keys: str) -> int | None:
+    """Return a captured integer only when one of the named source fields is actually present."""
+    for key in keys:
+        if key not in fields:
+            continue
+        try:
+            return int(fields[key])
+        except (TypeError, ValueError):
+            return None
+    return None
+
+
+def _npclogger_lua_optional_fields(fields: dict) -> tuple:
+    """Optional legacy-Lua entity values. Missing source fields deliberately remain NULL."""
+    return (
+        _npclogger_lua_look_blob(fields.get("look")),
+        _npclogger_lua_optional_int(fields, "door_id", "doorid"),
+        _npclogger_lua_optional_int(fields, "act_index", "actindex"),
+        _npclogger_lua_optional_int(fields, "flags0"),
+        _npclogger_lua_optional_int(fields, "flags1"),
+        _npclogger_lua_optional_int(fields, "flags2"),
+        _npclogger_lua_optional_int(fields, "flags3"),
+        _npclogger_lua_optional_int(fields, "legacy_flag"),
+        _npclogger_lua_optional_int(fields, "sub_kind", "subkind"),
+    )
+
+
 
 IDVIEW_LINE_RE = re.compile(
     r'^(Incoming|Outgoing) Packet: (0x[0-9A-Fa-f]{3}) \(([^)]+)\),\s*(.*)$'
