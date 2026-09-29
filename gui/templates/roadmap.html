@@ -379,10 +379,16 @@
 
 <div class="phase">
   <div class="phase-head"><span class="phase-num">C</span><h3>Capture ingestion</h3></div>
-  <div class="phase-meta"><span class="meta-chip built">Built</span><span class="meta-chip">225+ captures, 7 log formats</span></div>
-  <p>Folder upload (real relative-path reconstruction server-side), real per-file pass/fail
-    reporting replacing one opaque bundle result, and a backfilled eventview capturer-nesting fix
-    round out this session's work on top of the existing seven-format ingestion pipeline.</p>
+  <div class="phase-meta"><span class="meta-chip built">Built / actively expanded</span><span class="meta-chip">multi-generation logger + packet + network evidence</span></div>
+  <p>The capture pipeline now content-sniffs and preserves the major known Windower/CaptureSuite/
+    Captain/Ashita logger families, including PacketLogger/PacketViewer, PacketDB, Packeteer,
+    NPCLogger, ActionView, EventView/IDView, CapLog, path/HP/KI/level/attack trackers, vendor/world
+    structured loggers, StatTrack, and historical PriceLog variants. PacketDB chat and CapLog chat
+    converge into canonical chat observations; whole-session EventView records with unknown zone
+    are preserved instead of dropped; raw packet sources retain independent provenance while
+    correlating exact equivalents; and PCAP/PCAPNG now provide a lossless network-evidence layer
+    for future lobby/world/search decoding. The live support/gap matrix is available under
+    <strong>Captures → Help / Supported Formats</strong>.</p>
 </div>
 
 <div class="phase">
