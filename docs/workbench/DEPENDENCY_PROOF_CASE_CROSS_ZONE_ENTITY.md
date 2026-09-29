@@ -261,8 +261,15 @@ This is the important part of the proof.
 | Lua enum/constants | Partial | Enum graph infrastructure exists, but Medusa script references are not yet proven to resolve automatically. |
 | YAML loot → item records | Covered | Zone-YAML loot symbols now resolve uniquely through normalized `item_basic.name` into canonical ITEM dependency nodes; ambiguous/missing symbols remain explicit findings. |
 | Zone text/title dependencies | **Gap/Partial** | Source data exists, but Medusa-specific Lua references are not yet guaranteed to become package dependencies. |
-| Cross-zone Besieged variants | **Gap** | Must be modeled as conditional system dependencies; current LSB lifecycle hooks are present but empty, so direct source traversal is insufficient. |
+| Cross-zone Besieged variants | **Covered for conservative source discovery** | Generic conditional dependency nodes are traversable/reviewable in Package Scope, and the LSB source detector surfaces same-subject alternate-zone scripts only when they explicitly delegate multiple mob lifecycle hooks to the same shared `xi.<system>` module. Empty system hooks still remain an implementation-evidence gap rather than proof of retail behavior. |
 
+## 2026-09-29 closure update
+
+The previously-open conditional-coupling representation gap is now closed at the generic graph/package layer. `HAS_CONDITIONAL_DEPENDENCY` and `CONDITIONALLY_REQUIRES` preserve a review gate rather than converting inferred system coupling into unconditional package truth.
+
+A conservative LSB source detector now adds implementation-derived evidence: alternate-zone mob scripts sharing the same subject filename are considered only when they explicitly delegate at least two supported mob lifecycle hooks to the same existing `xi.<system>` global module. The filename match narrows candidates; the lifecycle delegation is the actual coupling evidence. The resulting shared-system and variant dependencies remain QUESTIONABLE in Package Scope until explicitly reviewed.
+
+This does **not** claim that empty/stubbed Besieged hooks prove full retail lifecycle semantics, and it does not yet generalize to every non-lifecycle or non-LSB cross-system pattern.
 ## Result of the first proof
 
 The Package Scope workflow itself is behaving as intended: if these edges existed in the graph, it could expose them, require decisions, preserve reasons, and block stale/unresolved scope.
