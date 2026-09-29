@@ -16,6 +16,7 @@
   </div>
   {% endif %}
 </div>
+<p><a class="chip" href="/behavior?q={{ profile.name|urlencode }}">Inspect Lua behavior</a></p>
 <p>Zone: <strong>{{ profile.zone_name }}</strong> ({{ profile.zoneid }})
   <span class="muted">-- id-decoded zone_bits={{ d.zone_bits }}, local_bits={{ d.local_bits }}</span>
   {% if profile.zoneid is not none and d.zone_bits != profile.zoneid %}
