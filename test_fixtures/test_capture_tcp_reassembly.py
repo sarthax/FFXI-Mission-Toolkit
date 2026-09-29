@@ -62,8 +62,8 @@ def main():
     #   seq 5000: pong
     frames = [
         (1_700_000_000, 100_000, ipv4_tcp_frame(b"ABCD", sport=40000, dport=54001, seq=1000)),
-        (1_700_000_000, 200_000, ipv4_tcp_frame(b"EFGH", sport=40000, dport=54001, seq=1004)),
-        (1_700_000_000, 300_000, ipv4_tcp_frame(b"EFGH", sport=40000, dport=54001, seq=1004)),
+        (1_700_000_000, 200_000, ipv4_tcp_frame(b"EFGHIJ", sport=40000, dport=54001, seq=1004)),
+        (1_700_000_000, 300_000, ipv4_tcp_frame(b"EFGHIJ", sport=40000, dport=54001, seq=1004)),
         (1_700_000_000, 400_000, ipv4_tcp_frame(b"GHXY", sport=40000, dport=54001, seq=1006)),
         (1_700_000_000, 500_000, ipv4_tcp_frame(b"MN", sport=40000, dport=54001, seq=1012)),
         (1_700_000_000, 600_000, ipv4_tcp_frame(
@@ -76,6 +76,7 @@ def main():
     result = build_capture_index.ingest_single_file(con, cid, "tcp-session.pcap", pcap)
     assert result["format"] == "pcap", result
     assert result["error"] is None, result
+    assert result["rows"] == 10, result  # 6 frames + 1 flow + 3 reconstructed ranges
 
     flows = con.execute(
         """SELECT flow_id,endpoint_a_ip,endpoint_a_port,endpoint_b_ip,endpoint_b_port,
