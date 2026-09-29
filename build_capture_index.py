@@ -588,7 +588,8 @@ class SingleFileSource:
 AUX_STRUCTURED_FORMATS = {
     "missiontrack", "shopstock_buy_db", "shopstock_sell_db", "guildstock_db",
     "weathertrack_db", "poitrack_db", "spawntrack_csv", "checkparam_csv",
-    "crafttrack_csv", "conquesttrack_csv", "pricelog_simple", "pricelog_lua",
+    "crafttrack_csv", "conquesttrack_csv", "stattrack_csv", "puppet_stattrack_csv",
+    "pricelog_simple", "pricelog_lua",
 }
 
 
@@ -707,7 +708,7 @@ def _ingest_structured_csv(con, capture_id: int, src: Source, relname: str, fami
         entity_name = payload.get("MobName") or payload.get("NpcName")
         item_id = payload.get("ItemNo")
         item_name = payload.get("ItemNo_Name") or payload.get("ItemName")
-        ts = payload.get("Timestamp") or payload.get("recvTime") or payload.get("SpawnedAt")
+        ts = payload.get("Timestamp") or payload.get("timestamp") or payload.get("recvTime") or payload.get("SpawnedAt")
         record_type = family.replace("_csv", "").upper()
         _structured_insert(
             con, capture_id, relname, family, record_key, payload,
@@ -1073,7 +1074,14 @@ def sniff_csv_format(text: str) -> str | None:
         return "crafttrack_csv"
     if {"Timestamp","Balance","Alliance","CurSandy","CurBastok","CurWindy","NextTally","CP","CurBeastmen"} <= cols:
         return "conquesttrack_csv"
-    if {"leg","x","y","z","dir","delta"} <= {x.lower() for x in cols}:
+    lower_cols = {x.lower() for x in cols}
+    if {"timestamp","hpmax","mpmax","mjob_no","mjob_lv","sjob_no","sjob_lv",
+        "str","dex","vit","agi","int","mnd","chr"} <= lower_cols:
+        return "stattrack_csv"
+    if {"timestamp","maxhp","maxmp","maxmelee","maxranged","maxmagic",
+        "str","dex","vit","agi","int","mnd","chr"} <= lower_cols:
+        return "puppet_stattrack_csv"
+    if {"leg","x","y","z","dir","delta"} <= lower_cols:
         return "pathlog_csv"
     return None
 
