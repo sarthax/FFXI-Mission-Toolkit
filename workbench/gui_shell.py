@@ -142,6 +142,7 @@ WORKSPACES = (
             {"label": "Search", "href": "/captures/search"},
             {"label": "Query", "href": "/captures/query"},
             {"label": "YouTube OCR", "href": "/ocr"},
+            {"label": "Help / Supported Formats", "href": "/captures/help"},
         ),
     },
     {

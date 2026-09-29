@@ -606,6 +606,12 @@ def help_page(request: Request):
     return templates.TemplateResponse(request, "help.html", {})
 
 
+@app.get("/captures/help", response_class=HTMLResponse)
+def capture_help_page(request: Request):
+    """Static capture ingestion support matrix and known-gap reference."""
+    return templates.TemplateResponse(request, "capture_help.html", {})
+
+
 @app.get("/roadmap", response_class=HTMLResponse)
 def roadmap_page(request: Request):
     """Static status/roadmap page -- mirrors the 'Mission Toolkit GUI' status-report artifact
