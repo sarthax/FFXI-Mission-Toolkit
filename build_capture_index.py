@@ -3914,14 +3914,45 @@ def cmd_show(con, capture_id: int):
         print(f"  ... and {n - 15} more")
 
 
+def _backfill_npclogger_lua_fields(con, capture_id: int, src: Source, relname: str) -> int:
+    """Backfill optional per-entity fields from one original legacy Lua snapshot file only."""
+    zone_db = Path(relname).stem
+    updated_entities = set()
+    for raw_line in src.read_text(relname).splitlines():
+        match = NPCLOGGER_LUA_LINE_RE.match(raw_line)
+        if not match:
+            continue
+        entity_id = int(match.group(1))
+        fields = {}
+        for fm in NPCLOGGER_LUA_FIELD_RE.finditer(match.group(2)):
+            key, str_val, num_val = fm.group(1), fm.group(2), fm.group(3)
+            fields[key.lower()] = str_val if str_val is not None else float(num_val)
+        optional = _npclogger_lua_optional_fields(fields)
+        if not any(value is not None for value in optional):
+            continue
+        cur = con.execute(
+            """UPDATE capture_npc_entries SET
+                 legacy_look=COALESCE(?, legacy_look),
+                 door_id=COALESCE(?, door_id), act_index=COALESCE(?, act_index),
+                 flags0=COALESCE(?, flags0), flags1=COALESCE(?, flags1),
+                 flags2=COALESCE(?, flags2), flags3=COALESCE(?, flags3),
+                 legacy_flag=COALESCE(?, legacy_flag), sub_kind=COALESCE(?, sub_kind)
+               WHERE capture_id=? AND zone_db=? AND entity_id=?""",
+            (*optional, capture_id, zone_db, entity_id),
+        )
+        if cur.rowcount:
+            updated_entities.add((zone_db, entity_id))
+    return len(updated_entities)
+
+
 def backfill_npc_fields(con):
     """Populates capture_npc_entries.legacy_look plus the door_id/act_index/flags0-3/legacy_flag/
     sub_kind columns for every already-ingested capture whose real source zip/folder is still on
     disk, without a full re-ingest -- same pattern used for KITrack/EventView/LevelRangeTrack/
-    AttackDelay when those were added after captures already existed. Skips captures with no
-    NPCLogger.db (the older idview/Wiggo-era format never had any of these fields -- not a gap to
-    backfill, a real absence) and captures whose source file has since moved/been deleted
-    (reported, not treated as an error worth stopping the run over)."""
+    AttackDelay when those were added after captures already existed. Supports both the newer
+    NPCLogger.db source and the older tables/database Lua-table snapshots; only fields genuinely
+    present in the original source are applied. Captures whose source moved/deleted are reported
+    and skipped rather than guessed."""
     rows = con.execute("SELECT capture_id, source_path FROM captures").fetchall()
     n_captures = n_updated_total = 0
     for capture_id, source_path in rows:
@@ -3939,8 +3970,335 @@ def backfill_npc_fields(con):
             def sfind(pattern, _subroot=(subroot if sep else None)):
                 hits = src.find(pattern)
                 return hits if _subroot is None else [h for h in hits if h.startswith(_subroot + "/")]
-            npc_db_files = sfind(r'NPCLogger/[^/]+\.db$')
+            npc_db_files = sfind(r'NPCLogger/[^/]+\.db            for relname in npc_db_files:
+                zone_db = Path(relname).stem
+                sub, tmp_path = src.open_sqlite(relname)
+                try:
+                    cols = {r[1] for r in sub.execute("PRAGMA table_info(entries)")}
+                    if "UniqueNo" not in cols:
+                        continue
+                    select_cols = ["UniqueNo"]
+                    for c in ("legacy_look", "DoorId", "ActIndex", "Flags0", "Flags1", "Flags2",
+                              "Flags3", "legacy_flag", "SubKind"):
+                        select_cols.append(c if c in cols else "NULL")
+                    sql = f"SELECT {', '.join(select_cols)} FROM entries"
+                    for (uid, look, door_id, act_index, flags0, flags1, flags2, flags3,
+                         legacy_flag, sub_kind) in sub.execute(sql):
+                        try:
+                            uid = int(uid)
+                        except (TypeError, ValueError):
+                            continue
+                        look_blob = look if isinstance(look, (bytes, bytearray)) else None
+                        if look_blob is None and look:
+                            try:
+                                look_blob = bytes.fromhex(str(look))
+                            except ValueError:
+                                look_blob = None
+                        if look_blob is not None:
+                            look_blob = bytes(look_blob)
+                        cur = con.execute(
+                            """UPDATE capture_npc_entries SET
+                                 legacy_look=COALESCE(?, legacy_look),
+                                 door_id=COALESCE(?, door_id), act_index=COALESCE(?, act_index),
+                                 flags0=COALESCE(?, flags0), flags1=COALESCE(?, flags1),
+                                 flags2=COALESCE(?, flags2), flags3=COALESCE(?, flags3),
+                                 legacy_flag=COALESCE(?, legacy_flag), sub_kind=COALESCE(?, sub_kind)
+                               WHERE capture_id=? AND zone_db=? AND entity_id=?""",
+                            (look_blob, door_id, act_index, flags0, flags1, flags2, flags3,
+                             legacy_flag, sub_kind, capture_id, zone_db, uid))
+                        n_updated += cur.rowcount
+                finally:
+                    close_sqlite(sub, tmp_path)
+            if n_updated:
+                print(f"  capture #{capture_id}: {n_updated} entities backfilled")
+            n_captures += 1
+            n_updated_total += n_updated
+        finally:
+            src.close()
+    con.commit()
+    print(f"Done -- {n_updated_total} entities backfilled across {n_captures} capture(s) with original NPCLogger DB/Lua sources.")
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    p1 = sub.add_parser("ingest", help="ingest one capture folder or .zip")
+    p1.add_argument("path")
+    p1.add_argument("--content-type", default="instances", choices=CONTENT_TYPES,
+                     help="what kind of content this capture is from (default: assault -- "
+                          "everything ingested so far). Pass 'unclassified' for anything else "
+                          "until this tool learns a more specific type.")
+
+    p2 = sub.add_parser("ingest-all", help="ingest every matching file under a directory")
+    p2.add_argument("path")
+    p2.add_argument("--pattern", default="*.zip")
+    p2.add_argument("--content-type", default="instances", choices=CONTENT_TYPES)
+
+    p5 = sub.add_parser("ingest-batch", help="ingest each top-level subfolder of a bundle as its own capture")
+    p5.add_argument("path")
+    p5.add_argument("--content-type", default="instances", choices=CONTENT_TYPES)
+    p5.add_argument("--mission-name", default=None, help="explicit mission_name for every session ingested")
+
+    p3 = sub.add_parser("list", help="list ingested captures")
+    p3.add_argument("--content-type", default=None, choices=CONTENT_TYPES,
+                     help="filter to one content type (default: show all)")
+
+    p4 = sub.add_parser("show", help="show one capture's ingested contents")
+    p4.add_argument("capture_id", type=int)
+
+    sub.add_parser("backfill-look", help="backfill legacy_look + door_id/act_index/flags0-3/"
+                                          "legacy_flag/sub_kind from original NPCLogger DB or "
+                                          "legacy tables/database Lua sources, without a full "
+                                          "re-ingest")
+
+    args = ap.parse_args()
+    con = sqlite3.connect(str(DB_PATH))
+    init_db(con)
+
+    if args.cmd == "ingest":
+        ingest(con, args.path, content_type=args.content_type)
+    elif args.cmd == "ingest-all":
+        ingest_all(con, args.path, args.pattern, content_type=args.content_type)
+    elif args.cmd == "ingest-batch":
+        ingest_batch(con, args.path, content_type=args.content_type, mission_name_override=args.mission_name)
+    elif args.cmd == "list":
+        cmd_list(con, content_type=args.content_type)
+    elif args.cmd == "show":
+        cmd_show(con, args.capture_id)
+    elif args.cmd == "backfill-look":
+        backfill_npc_fields(con)
+
+    con.close()
+
+
+if __name__ == "__main__":
+    main()
+)
             if not npc_db_files:
+                lua_files = (
+                    sfind(r'[Nn]pclogger/(?:[^/]+/)?tables/[^/]+\.lua            for relname in npc_db_files:
+                zone_db = Path(relname).stem
+                sub, tmp_path = src.open_sqlite(relname)
+                try:
+                    cols = {r[1] for r in sub.execute("PRAGMA table_info(entries)")}
+                    if "UniqueNo" not in cols:
+                        continue
+                    select_cols = ["UniqueNo"]
+                    for c in ("legacy_look", "DoorId", "ActIndex", "Flags0", "Flags1", "Flags2",
+                              "Flags3", "legacy_flag", "SubKind"):
+                        select_cols.append(c if c in cols else "NULL")
+                    sql = f"SELECT {', '.join(select_cols)} FROM entries"
+                    for (uid, look, door_id, act_index, flags0, flags1, flags2, flags3,
+                         legacy_flag, sub_kind) in sub.execute(sql):
+                        try:
+                            uid = int(uid)
+                        except (TypeError, ValueError):
+                            continue
+                        look_blob = look if isinstance(look, (bytes, bytearray)) else None
+                        if look_blob is None and look:
+                            try:
+                                look_blob = bytes.fromhex(str(look))
+                            except ValueError:
+                                look_blob = None
+                        if look_blob is not None:
+                            look_blob = bytes(look_blob)
+                        cur = con.execute(
+                            """UPDATE capture_npc_entries SET
+                                 legacy_look=COALESCE(?, legacy_look),
+                                 door_id=COALESCE(?, door_id), act_index=COALESCE(?, act_index),
+                                 flags0=COALESCE(?, flags0), flags1=COALESCE(?, flags1),
+                                 flags2=COALESCE(?, flags2), flags3=COALESCE(?, flags3),
+                                 legacy_flag=COALESCE(?, legacy_flag), sub_kind=COALESCE(?, sub_kind)
+                               WHERE capture_id=? AND zone_db=? AND entity_id=?""",
+                            (look_blob, door_id, act_index, flags0, flags1, flags2, flags3,
+                             legacy_flag, sub_kind, capture_id, zone_db, uid))
+                        n_updated += cur.rowcount
+                finally:
+                    close_sqlite(sub, tmp_path)
+            if n_updated:
+                print(f"  capture #{capture_id}: {n_updated} entities backfilled")
+            n_captures += 1
+            n_updated_total += n_updated
+        finally:
+            src.close()
+    con.commit()
+    print(f"Done -- {n_updated_total} entities backfilled across {n_captures} capture(s) with a real NPCLogger.db.")
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    p1 = sub.add_parser("ingest", help="ingest one capture folder or .zip")
+    p1.add_argument("path")
+    p1.add_argument("--content-type", default="instances", choices=CONTENT_TYPES,
+                     help="what kind of content this capture is from (default: assault -- "
+                          "everything ingested so far). Pass 'unclassified' for anything else "
+                          "until this tool learns a more specific type.")
+
+    p2 = sub.add_parser("ingest-all", help="ingest every matching file under a directory")
+    p2.add_argument("path")
+    p2.add_argument("--pattern", default="*.zip")
+    p2.add_argument("--content-type", default="instances", choices=CONTENT_TYPES)
+
+    p5 = sub.add_parser("ingest-batch", help="ingest each top-level subfolder of a bundle as its own capture")
+    p5.add_argument("path")
+    p5.add_argument("--content-type", default="instances", choices=CONTENT_TYPES)
+    p5.add_argument("--mission-name", default=None, help="explicit mission_name for every session ingested")
+
+    p3 = sub.add_parser("list", help="list ingested captures")
+    p3.add_argument("--content-type", default=None, choices=CONTENT_TYPES,
+                     help="filter to one content type (default: show all)")
+
+    p4 = sub.add_parser("show", help="show one capture's ingested contents")
+    p4.add_argument("capture_id", type=int)
+
+    sub.add_parser("backfill-look", help="backfill legacy_look + door_id/act_index/flags0-3/"
+                                          "legacy_flag/sub_kind for already-ingested captures "
+                                          "whose source zip/folder is still on disk, without a "
+                                          "full re-ingest")
+
+    args = ap.parse_args()
+    con = sqlite3.connect(str(DB_PATH))
+    init_db(con)
+
+    if args.cmd == "ingest":
+        ingest(con, args.path, content_type=args.content_type)
+    elif args.cmd == "ingest-all":
+        ingest_all(con, args.path, args.pattern, content_type=args.content_type)
+    elif args.cmd == "ingest-batch":
+        ingest_batch(con, args.path, content_type=args.content_type, mission_name_override=args.mission_name)
+    elif args.cmd == "list":
+        cmd_list(con, content_type=args.content_type)
+    elif args.cmd == "show":
+        cmd_show(con, args.capture_id)
+    elif args.cmd == "backfill-look":
+        backfill_npc_fields(con)
+
+    con.close()
+
+
+if __name__ == "__main__":
+    main()
+)
+                    + sfind(r'[Nn]pclogger/(?:[^/]+/)?database/[^/]+\.lua            for relname in npc_db_files:
+                zone_db = Path(relname).stem
+                sub, tmp_path = src.open_sqlite(relname)
+                try:
+                    cols = {r[1] for r in sub.execute("PRAGMA table_info(entries)")}
+                    if "UniqueNo" not in cols:
+                        continue
+                    select_cols = ["UniqueNo"]
+                    for c in ("legacy_look", "DoorId", "ActIndex", "Flags0", "Flags1", "Flags2",
+                              "Flags3", "legacy_flag", "SubKind"):
+                        select_cols.append(c if c in cols else "NULL")
+                    sql = f"SELECT {', '.join(select_cols)} FROM entries"
+                    for (uid, look, door_id, act_index, flags0, flags1, flags2, flags3,
+                         legacy_flag, sub_kind) in sub.execute(sql):
+                        try:
+                            uid = int(uid)
+                        except (TypeError, ValueError):
+                            continue
+                        look_blob = look if isinstance(look, (bytes, bytearray)) else None
+                        if look_blob is None and look:
+                            try:
+                                look_blob = bytes.fromhex(str(look))
+                            except ValueError:
+                                look_blob = None
+                        if look_blob is not None:
+                            look_blob = bytes(look_blob)
+                        cur = con.execute(
+                            """UPDATE capture_npc_entries SET
+                                 legacy_look=COALESCE(?, legacy_look),
+                                 door_id=COALESCE(?, door_id), act_index=COALESCE(?, act_index),
+                                 flags0=COALESCE(?, flags0), flags1=COALESCE(?, flags1),
+                                 flags2=COALESCE(?, flags2), flags3=COALESCE(?, flags3),
+                                 legacy_flag=COALESCE(?, legacy_flag), sub_kind=COALESCE(?, sub_kind)
+                               WHERE capture_id=? AND zone_db=? AND entity_id=?""",
+                            (look_blob, door_id, act_index, flags0, flags1, flags2, flags3,
+                             legacy_flag, sub_kind, capture_id, zone_db, uid))
+                        n_updated += cur.rowcount
+                finally:
+                    close_sqlite(sub, tmp_path)
+            if n_updated:
+                print(f"  capture #{capture_id}: {n_updated} entities backfilled")
+            n_captures += 1
+            n_updated_total += n_updated
+        finally:
+            src.close()
+    con.commit()
+    print(f"Done -- {n_updated_total} entities backfilled across {n_captures} capture(s) with a real NPCLogger.db.")
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    p1 = sub.add_parser("ingest", help="ingest one capture folder or .zip")
+    p1.add_argument("path")
+    p1.add_argument("--content-type", default="instances", choices=CONTENT_TYPES,
+                     help="what kind of content this capture is from (default: assault -- "
+                          "everything ingested so far). Pass 'unclassified' for anything else "
+                          "until this tool learns a more specific type.")
+
+    p2 = sub.add_parser("ingest-all", help="ingest every matching file under a directory")
+    p2.add_argument("path")
+    p2.add_argument("--pattern", default="*.zip")
+    p2.add_argument("--content-type", default="instances", choices=CONTENT_TYPES)
+
+    p5 = sub.add_parser("ingest-batch", help="ingest each top-level subfolder of a bundle as its own capture")
+    p5.add_argument("path")
+    p5.add_argument("--content-type", default="instances", choices=CONTENT_TYPES)
+    p5.add_argument("--mission-name", default=None, help="explicit mission_name for every session ingested")
+
+    p3 = sub.add_parser("list", help="list ingested captures")
+    p3.add_argument("--content-type", default=None, choices=CONTENT_TYPES,
+                     help="filter to one content type (default: show all)")
+
+    p4 = sub.add_parser("show", help="show one capture's ingested contents")
+    p4.add_argument("capture_id", type=int)
+
+    sub.add_parser("backfill-look", help="backfill legacy_look + door_id/act_index/flags0-3/"
+                                          "legacy_flag/sub_kind for already-ingested captures "
+                                          "whose source zip/folder is still on disk, without a "
+                                          "full re-ingest")
+
+    args = ap.parse_args()
+    con = sqlite3.connect(str(DB_PATH))
+    init_db(con)
+
+    if args.cmd == "ingest":
+        ingest(con, args.path, content_type=args.content_type)
+    elif args.cmd == "ingest-all":
+        ingest_all(con, args.path, args.pattern, content_type=args.content_type)
+    elif args.cmd == "ingest-batch":
+        ingest_batch(con, args.path, content_type=args.content_type, mission_name_override=args.mission_name)
+    elif args.cmd == "list":
+        cmd_list(con, content_type=args.content_type)
+    elif args.cmd == "show":
+        cmd_show(con, args.capture_id)
+    elif args.cmd == "backfill-look":
+        backfill_npc_fields(con)
+
+    con.close()
+
+
+if __name__ == "__main__":
+    main()
+)
+                )
+                if not lua_files:
+                    continue
+                n_updated = 0
+                for relname in lua_files:
+                    n_updated += _backfill_npclogger_lua_fields(
+                        con, capture_id, src, relname
+                    )
+                if n_updated:
+                    print(f"  capture #{capture_id}: {n_updated} legacy-Lua entities backfilled")
+                n_captures += 1
+                n_updated_total += n_updated
                 continue
             n_updated = 0
             for relname in npc_db_files:
