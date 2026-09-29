@@ -67,6 +67,9 @@ def main():
     assert "CAPTUREBAR_CONTEXT" in template
     assert "PCAP/PCAPNG limits" in template
     assert "Network planes" in template
+    assert "TCP reconstruction" in template
+    assert "unknown_tcp" in template
+    assert "Missing bytes are never synthesized" in template
     assert "LOBBY_WORLD_STREAM_RESEARCH.md" in template
     assert "search/cache" in template
     assert "storage/account subflows" in template

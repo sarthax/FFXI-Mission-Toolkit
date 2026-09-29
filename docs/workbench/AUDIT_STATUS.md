@@ -2814,3 +2814,24 @@ Capture implications:
 - Future decoding must start with generic TCP reassembly and validated structural classification rather than hard-coded port guesses.
 
 The implementation sequence, open questions, and recommended network-flow/message evidence model are documented in `docs/workbench/LOBBY_WORLD_STREAM_RESEARCH.md`.
+
+
+## 2026-09-28 — Generic PCAP TCP flow reconstruction
+
+PCAP/PCAPNG ingestion now includes a protocol-neutral TCP reconstruction layer suitable for future lobby and search/cache decoders.
+
+- TCP frame decoding now preserves sequence number, acknowledgement number, and individual control flags in the existing `pcap_network` frame evidence.
+- New `capture_network_flows` rows identify bidirectional TCP connections using canonical endpoint ordering. Endpoint labels A/B are deterministic only; they do not claim client/server roles.
+- New `capture_network_ranges` rows preserve each contiguous observed byte range independently for A→B and B→A.
+- Sequence gaps remain explicit and split reconstructed ranges. Missing bytes are never synthesized or zero-filled.
+- Exact duplicate retransmissions are recorded.
+- Overlapping segments are recorded. If overlapping bytes conflict, the first observed byte is retained deterministically and each conflicting position/new byte/frame is preserved in anomaly metadata.
+- SYN sequence-space consumption is accounted for when a SYN segment also carries payload.
+- Each flow retains its contributing frame inventory. Each reconstructed range records the exact frame numbers contributing bytes plus a conservative source-file byte span and row locator.
+- Reingesting the same source replaces source-owned flow/range rows rather than duplicating them.
+- Source manifest row counts and ingestion lineage include flow/range observations.
+- Protocol family remains `unknown_tcp`. No port-based lobby/search classification is performed in this milestone.
+
+Known bounded limitation: 32-bit TCP sequence wrap across extremely large captured directional streams is not normalized into an extended sequence space yet. That should be addressed if a real FFXI capture demonstrates a flow large enough to cross the wrap boundary.
+
+This completes the generic transport prerequisite for validated lobby/search-cache protocol classification.
