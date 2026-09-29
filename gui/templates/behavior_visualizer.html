@@ -248,20 +248,20 @@
  data.edges.forEach(e=>{(outgoing.get(e.source)||outgoing.set(e.source,[]).get(e.source)).push(e);(incoming.get(e.target)||incoming.set(e.target,[]).get(e.target)).push(e);});
  let selected=null;
  function depthFor(n){
-   if(n.kind==='condition') return 0;
+   if(n.kind==='condition' || n.kind==='helper_input') return 0;
    if(n.kind==='state'){
      const reads=(outgoing.get(n.id)||[]).some(e=>e.kind==='STATE_READ');
-     return reads?0:5;
+     return reads?0:6;
    }
    if(n.kind==='subject') return 0;
    if(n.kind==='hook') return 1;
    if(n.kind==='callback') return 2;
    if(n.kind==='rule') return n.meta?.callback_type?3:2;
    if(n.kind==='effect') return n.meta?.callback_type?4:3;
-   if(n.kind==='helper_input') return 4;
-   if(n.kind==='shared_helper') return 5;
-   if(n.kind==='helper_effect' || n.kind==='helper_call' || n.kind==='target') return 6;
-   return 5;
+   if(n.kind==='shared_helper') return 4;
+   if(n.kind==='helper_effect' || n.kind==='helper_call') return 5;
+   if(n.kind==='target') return 6;
+   return 6;
  }
  function layout(visible){
    const levels={0:[],1:[],2:[],3:[],4:[],5:[],6:[]};
