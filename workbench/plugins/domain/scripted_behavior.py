@@ -84,6 +84,10 @@ def _hook_node(map_id: str, hook: str) -> str:
     return f"behavior-hook:{_token(map_id,hook)}"
 
 
+def _obtainable_node(effect: str, value: object) -> str:
+    return f"obtainable:{effect.lower()}:{_token(effect,value)}"
+
+
 def behavior_map_from_probe(
     payload: Mapping[str, Any],
     *,
@@ -362,6 +366,42 @@ def project_scripted_behavior(
                 or effect.target.startswith("entity-symbol:")
             ):
                 named_subjects.add(effect.target)
+
+        for effect_index,effect in enumerate(rule.effects):
+            if effect.effect not in {"GRANT_KEY_ITEM","GRANT_ITEM"}:
+                continue
+            if effect.value in (None,""):
+                continue
+            object_node=_obtainable_node(effect.effect,effect.value)
+            object_type="KEY_ITEM_REWARD" if effect.effect=="GRANT_KEY_ITEM" else "ITEM_REWARD"
+            entities.setdefault(object_node,Entity(
+                object_node,
+                "OBTAINABLE_OBJECT",
+                str(effect.value),
+                {
+                    "obtainable_kind":object_type,
+                    "source_effect":effect.effect,
+                    "source_value":effect.value,
+                    "identity_status":"SOURCE_LITERAL",
+                },
+            ))
+            edges.append(DependencyEdge(
+                f"behavior-reward:{_token(rule_node,object_node,effect_index)}",
+                object_node,rule_node,"REWARDED_BY",
+                rule_evidence_id,rule.confidence,"DISCOVERED",
+                discovered_by="scripted_behavior_projection",
+                source_location=rule_location,
+                notes={
+                    "obtainable_kind":object_type,
+                    "source_effect":effect.effect,
+                    "identity_status":"SOURCE_LITERAL",
+                    "requirement_group":{
+                        "id":f"reward-source:{object_node}",
+                        "operator":"OR",
+                    },
+                },
+                source_snapshot_id=source_snapshot_id,
+            ))
 
         for named in sorted(named_subjects):
             subject_node=_subject_node(behavior.map_id,named)
