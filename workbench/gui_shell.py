@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import json
 import re
-from functools import lru_cache
 from pathlib import Path
 from typing import Callable, Mapping
 
@@ -230,7 +229,6 @@ def _route_pattern(path: str) -> re.Pattern[str]:
     return re.compile("^" + re.sub(r"\\\{[^}]+\\\}", r"[^/]+", escaped) + "$")
 
 
-@lru_cache(maxsize=1)
 def route_owners() -> tuple[dict, ...]:
     payload = json.loads(ROUTE_MAP.read_text(encoding="utf-8"))
     rows = []
