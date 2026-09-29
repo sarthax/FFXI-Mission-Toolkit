@@ -81,6 +81,12 @@ _NAMED_STATE_SET=re.compile(
 )
 _SERVER_STATE_GET=re.compile(r"\bGetServerVariable\(\s*['\"]([^'\"]+)['\"]\s*\)")
 _SERVER_STATE_SET=re.compile(r"\bSetServerVariable\(\s*['\"]([^'\"]+)['\"]\s*,\s*(.+)\)\s*$")
+_INSTANCE_LIFECYCLE_GET=re.compile(
+    r"\b(instance):(getStage|getProgress)\(\s*\)"
+)
+_INSTANCE_LIFECYCLE_SET=re.compile(
+    r"\b(instance):(setStage|setProgress)\(\s*(.+)\)\s*$"
+)
 _STATE_ALIAS_ASSIGN=re.compile(
     r"\blocal\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"
     r"([A-Za-z_][A-Za-z0-9_]*):(getLocalVar|getCharVar)\(\s*['\"]([^'\"]+)['\"]\s*\)"
@@ -721,6 +727,32 @@ def _named_state_accesses(text: str, *, start_line: int) -> tuple[dict,...]:
                 rows.append({
                     "access":"WRITE","scope":scope,"receiver":None,"method":"SetServerVariable",
                     "name":name,"state_id":_state_id(scope,name),
+                    "value":value.strip(),"line":line_no,"source_line":raw_line.strip(),
+                })
+        for match in _INSTANCE_LIFECYCLE_GET.finditer(code):
+            receiver,method=match.groups()
+            name="stage" if method=="getStage" else "progress"
+            scope="INSTANCE_LIFECYCLE"
+            key=("READ",scope,receiver,name,line_no)
+            if key in seen:
+                continue
+            seen.add(key)
+            rows.append({
+                "access":"READ","scope":scope,"receiver":receiver,"method":method,
+                "name":name,"state_id":_state_id(scope,name,receiver),
+                "value":None,"line":line_no,"source_line":raw_line.strip(),
+            })
+        match=_INSTANCE_LIFECYCLE_SET.search(code)
+        if match:
+            receiver,method,value=match.groups()
+            name="stage" if method=="setStage" else "progress"
+            scope="INSTANCE_LIFECYCLE"
+            key=("WRITE",scope,receiver,name,line_no,value.strip())
+            if key not in seen:
+                seen.add(key)
+                rows.append({
+                    "access":"WRITE","scope":scope,"receiver":receiver,"method":method,
+                    "name":name,"state_id":_state_id(scope,name,receiver),
                     "value":value.strip(),"line":line_no,"source_line":raw_line.strip(),
                 })
     rows.sort(key=lambda row:(row["line"],row["state_id"],row["access"]))
