@@ -126,6 +126,34 @@ def main():
             assert provenance["capture_profile"] == ocr.CAPTURE_PROFILE_PACKETLOGGER, provenance
             assert provenance["video_timestamp_seconds"] == 1.0, provenance
 
+            # Capturebar context survives materialization into VIDEO_OCR evidence.
+            capturebar_dir = run / "sections" / "capturebar"
+            capturebar_dir.mkdir()
+            (capturebar_dir / "meta.json").write_text(json.dumps({
+                "label": "capturebar",
+                "crop": "20,0,1200,40",
+                "fps": 2.0,
+                "capture_profile": ocr.CAPTURE_PROFILE_CAPTUREBAR,
+                "preprocess_profile": ocr.PREPROCESS_PROFILE_SMALL,
+            }), encoding="utf-8")
+            capturebar_row = {
+                "frame": "f_000003.png",
+                "raw_text": sample,
+                "display_text": sample,
+                "confidence": 0.93,
+                **parsed,
+            }
+            (capturebar_dir / "ocr_matched.jsonl").write_text(
+                json.dumps(capturebar_row) + "\n", encoding="utf-8"
+            )
+            observations = ocr.capture_observations(run_id)
+            context = next(row for row in observations if row["section"] == "capturebar")
+            assert context["observation_type"] == "CAPTUREBAR_CONTEXT", context
+            assert context["video_timestamp_seconds"] == 1.0, context
+            assert context["fields"]["zone_id"] == 72, context
+            assert context["fields"]["coordinate_display_order"] == "x,z,y", context
+            assert context["provenance"]["capture_profile"] == ocr.CAPTURE_PROFILE_CAPTUREBAR, context
+
             assert ocr.delete_layout_profile("my_1080p_layout") is True
             assert "my_1080p_layout" not in ocr.load_layout_profiles()
             assert ocr.delete_layout_profile("chat_only") is False
