@@ -213,6 +213,41 @@ def init_db(con: sqlite3.Connection):
             payload_json TEXT NOT NULL,
             PRIMARY KEY (capture_id, source_file, family, record_key)
         );
+        CREATE TABLE IF NOT EXISTS capture_network_flows (
+            capture_id INTEGER NOT NULL,
+            source_file TEXT NOT NULL,
+            flow_id TEXT NOT NULL,
+            transport TEXT NOT NULL,
+            endpoint_a_ip TEXT,
+            endpoint_a_port INTEGER,
+            endpoint_b_ip TEXT,
+            endpoint_b_port INTEGER,
+            first_ts TEXT,
+            last_ts TEXT,
+            frame_count INTEGER NOT NULL,
+            payload_frame_count INTEGER NOT NULL,
+            metadata_json TEXT NOT NULL,
+            PRIMARY KEY (capture_id, source_file, flow_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_capture_network_flows_transport
+            ON capture_network_flows(capture_id,transport);
+        CREATE TABLE IF NOT EXISTS capture_network_ranges (
+            capture_id INTEGER NOT NULL,
+            source_file TEXT NOT NULL,
+            flow_id TEXT NOT NULL,
+            direction TEXT NOT NULL,
+            range_index INTEGER NOT NULL,
+            seq_start INTEGER NOT NULL,
+            seq_end INTEGER NOT NULL,
+            first_ts TEXT,
+            last_ts TEXT,
+            payload_hex TEXT NOT NULL,
+            frame_numbers_json TEXT NOT NULL,
+            anomalies_json TEXT NOT NULL,
+            PRIMARY KEY (capture_id, source_file, flow_id, direction, range_index)
+        );
+        CREATE INDEX IF NOT EXISTS idx_capture_network_ranges_flow
+            ON capture_network_ranges(capture_id,source_file,flow_id,direction);
         CREATE INDEX IF NOT EXISTS idx_capture_structured_family
             ON capture_structured_records(capture_id, family);
         CREATE INDEX IF NOT EXISTS idx_capture_structured_entity
@@ -3590,6 +3625,7 @@ def rebuild_capture_source(con, capture_id: int, filename: str) -> dict:
 # have no data-quality reason to auto-discover, and an explicit list is easier to audit against
 # init_db() by eye than trusting a DB introspection query to get it right.
 CAPTURE_CHILD_TABLES = [
+    "capture_network_flows", "capture_network_ranges",
     "capture_npc_entries", "capture_npc_history", "capture_npc_path", "capture_actions",
     "capture_hp_events", "capture_events", "capture_ki_events", "capture_eventview",
     "capture_level_range", "capture_attack_delay", "capture_pc_path", "capture_structured_records", "capture_source_files",
