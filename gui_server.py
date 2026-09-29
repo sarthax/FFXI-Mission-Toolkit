@@ -2148,7 +2148,7 @@ def _capture_summary_prompt(con: sqlite3.Connection, capture_id: int) -> str | N
         "SELECT DISTINCT opcode_name, entity_name FROM capture_events WHERE capture_id=? "
         "AND entity_name IS NOT NULL ORDER BY seq LIMIT 25", (capture_id,)).fetchall()
     chat = con.execute(
-        "SELECT text FROM capture_caplog_chat WHERE capture_id=? AND text IS NOT NULL "
+        "SELECT text FROM capture_chat_observations WHERE capture_id=? AND text IS NOT NULL "
         "ORDER BY seq LIMIT 15", (capture_id,)).fetchall()
     ki_events = con.execute(
         "SELECT keyitem_name FROM capture_ki_events WHERE capture_id=? AND keyitem_name IS NOT NULL "
@@ -3579,6 +3579,7 @@ CAPTURE_QUERY_TABLES = {
     "capture_pc_path": {"id_col": None, "name_col": None},
     "capture_raw_packets": {"id_col": None, "name_col": "opcode"},
     "capture_caplog_chat": {"id_col": None, "name_col": "text"},
+    "capture_chat_observations": {"id_col": None, "name_col": "text"},
     "capture_tags": {"id_col": None, "name_col": "tag"},
     "capture_source_files": {"id_col": None, "name_col": "filename"},
     "capture_source_manifest": {"id_col": None, "name_col": "filename"},
