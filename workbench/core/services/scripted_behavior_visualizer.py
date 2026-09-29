@@ -712,9 +712,13 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
             row=event_rows.setdefault(event_id,{
                 "event_id":event_id,
                 "start_hooks":[],
+                "guard_hooks":[],
                 "finish_guard_hooks":[],
+                "update_guard_hooks":[],
                 "start_evidence":[],
+                "guard_evidence":[],
                 "finish_guard_evidence":[],
+                "update_guard_evidence":[],
             })
             if hook and hook not in row["start_hooks"]:
                 row["start_hooks"].append(hook)
