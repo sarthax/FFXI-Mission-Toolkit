@@ -1023,5 +1023,7 @@ def inspect_lsb_behavior(root: Path, relative: str) -> dict:
             "Cross-hook event links mean the same literal CSID is started in one hook and guarded in another; this correlates event identity only and does not prove that a particular start reaches a particular finish.",
             "Event-branch state effects are source-local when a state write occurs inside a literal CSID branch; linking that state to readers in other hooks remains unordered cross-hook evidence.",
             "Literal CSID branch effect bundles keep key items, world/entity actions, rewards, and event updates attached to the branch that contains them; unsupported or dynamic effects remain generic/raw evidence rather than being reassigned.",
+            "Literal option/result outcomes are split from their parent CSID bundle. Only equality against a literal is promoted; dynamic predicates and fallback arms are masked from parent attribution and remain generic evidence.",
+            "CSID guard hooks retain their handler role: onEventFinish and onEventUpdate are tracked separately while sharing the same event identity model.",
         ],
     }
