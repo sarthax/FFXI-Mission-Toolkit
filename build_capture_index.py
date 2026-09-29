@@ -62,6 +62,7 @@ from pathlib import Path
 import entity_profile
 from workbench.core.services import capture_integrity
 from workbench.core.services import raw_packet_ingest
+from workbench.core.services import capture_chat
 
 TOOLS_ROOT = Path(__file__).parent
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
@@ -139,6 +140,16 @@ def init_db(con: sqlite3.Connection):
             capture_id INTEGER, seq INTEGER, ts TEXT, zone_db TEXT, text TEXT,
             PRIMARY KEY (capture_id, seq)
         );
+        CREATE TABLE IF NOT EXISTS capture_chat_observations (
+            capture_id INTEGER, seq INTEGER, ts TEXT, direction TEXT,
+            zone_id INTEGER, zone_db TEXT, text TEXT,
+            source_format TEXT, source_native_id TEXT,
+            PRIMARY KEY (capture_id, seq)
+        );
+        CREATE INDEX IF NOT EXISTS idx_capture_chat_source
+            ON capture_chat_observations(capture_id,source_format,source_native_id);
+        CREATE INDEX IF NOT EXISTS idx_capture_chat_zone
+            ON capture_chat_observations(capture_id,zone_id,zone_db);
         CREATE INDEX IF NOT EXISTS idx_capture_events_message ON capture_events(message_id);
         CREATE TABLE IF NOT EXISTS capture_ki_events (
             capture_id INTEGER, seq INTEGER, ts TEXT, event_type TEXT,
@@ -1818,7 +1829,8 @@ def ingest_caplog(con, capture_id, src: Source, relname: str) -> tuple[int, int,
     con.execute(
         """DELETE FROM capture_row_locators
            WHERE capture_id=? AND filename=? AND target_table IN
-           ('capture_events','capture_eventview','capture_hp_events','capture_caplog_chat')""",
+           ('capture_events','capture_eventview','capture_hp_events','capture_caplog_chat',
+            'capture_chat_observations')""",
         (capture_id, relname),
     )
 
@@ -1952,12 +1964,22 @@ def ingest_caplog(con, capture_id, src: Source, relname: str) -> tuple[int, int,
         con.execute("""INSERT OR REPLACE INTO capture_caplog_chat
             (capture_id, seq, ts, zone_db, text) VALUES (?,?,?,?,?)""",
             (capture_id, seq, ts, zone_db, rest))
+        span = locator_span(source_line_idx, source_line_idx)
+        capture_chat.insert_chat_observation(
+            con, capture_id,
+            ts=ts, direction=None, zone_id=None, zone_db=zone_db, text=rest,
+            source_format="caplog",
+            source_native_id=f"{relname}:line:{source_line_idx + 1}",
+            filename=relname, source_sha256=source_sha256, locator_basis="line",
+            details={"source": "caplog"},
+            **span,
+        )
         capture_integrity.record_row_locator(
             con, capture_id, relname, "capture_caplog_chat",
             json.dumps({"seq": seq}, sort_keys=True), "line",
             source_sha256=source_sha256,
             details={"source": "caplog", "timestamp": ts, "zone_db": zone_db},
-            **locator_span(source_line_idx, source_line_idx),
+            **span,
         )
         chat_n += 1
 
@@ -3321,6 +3343,7 @@ CAPTURE_CHILD_TABLES = [
     "capture_source_manifest", "capture_source_artifacts", "capture_content_manifest",
     "capture_ingest_lineage",
     "capture_raw_packets", "capture_video_observations", "capture_tags", "capture_caplog_chat",
+    "capture_chat_observations",
     "capture_alignment_anchors", "capture_key_evidence",
 ]
 
