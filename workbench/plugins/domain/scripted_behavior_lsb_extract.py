@@ -1335,9 +1335,9 @@ def _event_outcome_branches(text: str, *, start_line: int) -> tuple[dict,...]:
             if re.match(r"^(?:elseif\b|else\b|end\b)",stripped):
                 previous_selector=active.get("selector")
                 finish(i-1)
-                last_selector=previous_selector
+                last_selector=None if stripped.startswith("end") else previous_selector
 
-        if stripped.startswith("else") and previous_selector:
+        if re.match(r"^else\b",stripped) and previous_selector:
             active={
                 "selector":previous_selector,
                 "literal":None,
