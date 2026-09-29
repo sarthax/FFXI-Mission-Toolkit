@@ -112,7 +112,7 @@ def main():
 
     branch_rules=[
         rule for rule in rules
-        if rule.kind=="event_branch_state"
+        if rule.kind=="event_branch_effects"
     ]
     branch_by_event={rule.metadata["event_id"]:rule for rule in branch_rules}
     assert set(branch_by_event)=={101,102,999},branch_by_event
@@ -127,6 +127,19 @@ def main():
         and effect.target=="state:PLAYER_CHAR:player:MissionStage"
     }=={"2"},branch_by_event[102]
     assert all(rule.metadata["branch_form"]=="CSID_LITERAL_BRANCH" for rule in branch_rules),branch_rules
+
+    effects_101={(effect.effect,effect.target,effect.value) for effect in branch_by_event[101].effects}
+    effects_102={(effect.effect,effect.target,effect.value) for effect in branch_by_event[102].effects}
+    effects_999={(effect.effect,effect.target,effect.value) for effect in branch_by_event[999].effects}
+    assert ("GRANT_KEY_ITEM","player","TEST_SEAL") in effects_101,effects_101
+    assert not any(effect[0]=="REMOVE_KEY_ITEM" for effect in effects_101),effects_101
+    assert ("REMOVE_KEY_ITEM","player","TEST_SEAL") in effects_102,effects_102
+    assert ("OPEN_DOOR","world_entity","30") in effects_102,effects_102
+    assert any(
+        effect[0]=="REFERENCES_ENTITY" and effect[1]=="entity-symbol:npc:TEST_DOOR"
+        for effect in effects_102
+    ),effects_102
+    assert not any(effect[0] in {"GRANT_KEY_ITEM","REMOVE_KEY_ITEM","OPEN_DOOR","REFERENCES_ENTITY"} for effect in effects_999),effects_999
 
     graph=_graph_for_behavior(behavior)
     event_nodes={
@@ -150,6 +163,16 @@ def main():
         assert {"start_hook":"onTrigger","finish_guard_hook":"onEventFinish"} in link["cross_hook_pairs"],link
     assert graph["summary"]["events"]>=2,graph["summary"]
     assert graph["summary"]["cross_hook_event_links"]==2,graph["summary"]
+
+    branch_effects={(row["event_id"],row["effect"],row["target"],row["value"]):row for row in graph["event_branch_effects"]}
+    assert (101,"GRANT_KEY_ITEM","player","TEST_SEAL") in branch_effects,branch_effects
+    assert (102,"REMOVE_KEY_ITEM","player","TEST_SEAL") in branch_effects,branch_effects
+    assert (102,"OPEN_DOOR","world_entity","30") in branch_effects,branch_effects
+    assert any(
+        event_id==102 and effect=="REFERENCES_ENTITY" and target=="entity-symbol:npc:TEST_DOOR"
+        for event_id,effect,target,_value in branch_effects
+    ),branch_effects
+    assert graph["summary"]["event_branch_effects"]>=7,graph["summary"]
 
     event_state={(row["event_id"],row["state_id"],row["value"]):row for row in graph["event_state_effects"]}
     assert (101,"state:PLAYER_CHAR:player:MissionStage","1") in event_state,event_state
