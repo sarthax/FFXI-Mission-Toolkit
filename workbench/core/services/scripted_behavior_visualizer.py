@@ -484,19 +484,23 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
                     expanded_shared_helpers.add(qualified)
                     for impact_index,impact in enumerate(analysis.get("impact",{}).get("upstream",[])):
                         iid=f"shared-helper-input:{qualified}:{impact_index}"
+                        impact_meta=dict(impact)
+                        impact_meta["impact_kind"]=impact_meta.pop("kind",None)
                         node(
                             iid,"helper_input",
                             f"{impact.get('kind')} · {impact.get('label')}",
-                            **dict(impact),
+                            **impact_meta,
                             helper=qualified,
                         )
                         edges.append({"source":iid,"target":hid,"kind":"HELPER_UPSTREAM_INPUT"})
                     for impact_index,impact in enumerate(analysis.get("impact",{}).get("downstream",[])):
                         oid=f"shared-helper-effect:{qualified}:{impact_index}"
+                        impact_meta=dict(impact)
+                        impact_meta["impact_kind"]=impact_meta.pop("kind",None)
                         node(
                             oid,"helper_effect",
                             f"{impact.get('kind')} · {impact.get('label')}",
-                            **dict(impact),
+                            **impact_meta,
                             helper=qualified,
                         )
                         edges.append({"source":hid,"target":oid,"kind":"HELPER_DOWNSTREAM_EFFECT"})
