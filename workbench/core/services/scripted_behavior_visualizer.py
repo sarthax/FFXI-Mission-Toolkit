@@ -131,7 +131,14 @@ def _graph_for_behavior(behavior) -> dict:
         for index,condition in enumerate(rule.conditions):
             cid=f"{rid}:condition:{index}"
             label=f"{condition.subject} {condition.operator}"
-            node(cid,"condition",label,value=condition.value,metadata=dict(condition.metadata))
+            node(
+                cid,"condition",label,
+                value=condition.value,
+                metadata=dict(condition.metadata),
+                source_path=rule.metadata.get("source_path"),
+                source_lines=rule.metadata.get("source_lines"),
+                hook=rule.metadata.get("hook"),
+            )
             edges.append({"source":cid,"target":rid,"kind":"GUARDS"})
 
         for index,effect in enumerate(rule.effects):
@@ -147,6 +154,11 @@ def _graph_for_behavior(behavior) -> dict:
                 value=effect.value,
                 category=category,
                 metadata=dict(effect.metadata),
+                source_path=rule.metadata.get("source_path"),
+                source_lines=rule.metadata.get("source_lines"),
+                hook=rule.metadata.get("hook"),
+                helper=rule.metadata.get("helper"),
+                call_chain=rule.metadata.get("call_chain"),
             )
             edges.append({"source":rid,"target":eid,"kind":"EMITS"})
             target=effect.target
