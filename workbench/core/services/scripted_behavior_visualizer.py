@@ -172,7 +172,7 @@ def _graph_for_behavior(behavior) -> dict:
                 hook=rule.metadata.get("hook"),
             )
             edges.append({"source":cid,"target":rid,"kind":"GUARDS"})
-            if condition.operator=="READS_STATE" and isinstance(condition.subject,str) and condition.subject.startswith("state:"):
+            if condition.operator in {"READS_STATE","STATE_EQUALS"} and isinstance(condition.subject,str) and condition.subject.startswith("state:"):
                 smeta=dict(condition.metadata)
                 sid=f"state-node:{condition.subject}"
                 node(
@@ -182,7 +182,11 @@ def _graph_for_behavior(behavior) -> dict:
                     receiver=smeta.get("receiver"),
                     name=smeta.get("name"),
                 )
-                edges.append({"source":sid,"target":cid,"kind":"STATE_READ"})
+                edges.append({
+                    "source":sid,
+                    "target":cid,
+                    "kind":"STATE_GUARD" if condition.operator=="STATE_EQUALS" else "STATE_READ",
+                })
 
         for index,effect in enumerate(rule.effects):
             eid=f"{rid}:effect:{index}"
@@ -263,6 +267,35 @@ def _graph_for_behavior(behavior) -> dict:
                 "value":effect.value,
             })
 
+    transition_rows=[]
+    for rule in behavior.rules:
+        if rule.kind!="state_transition":
+            continue
+        guards=[
+            condition for condition in rule.conditions
+            if condition.operator=="STATE_EQUALS" and isinstance(condition.subject,str)
+        ]
+        writes=[
+            effect for effect in rule.effects
+            if effect.effect=="WRITE_STATE" and isinstance(effect.target,str)
+        ]
+        for condition in guards:
+            for effect in writes:
+                if condition.subject!=effect.target:
+                    continue
+                transition_rows.append({
+                    "state_id":condition.subject,
+                    "scope":condition.metadata.get("scope"),
+                    "name":condition.metadata.get("name") or rule.metadata.get("state_name") or condition.subject,
+                    "from":condition.value,
+                    "to":effect.value,
+                    "hook":rule.metadata.get("hook"),
+                    "source_path":rule.metadata.get("source_path"),
+                    "source_lines":rule.metadata.get("source_lines"),
+                    "selector_alias":rule.metadata.get("selector_alias"),
+                    "confidence":rule.confidence,
+                })
+
     categories=Counter(
         n["meta"].get("category")
         for n in nodes.values()
@@ -273,6 +306,7 @@ def _graph_for_behavior(behavior) -> dict:
         "nodes":list(nodes.values()),
         "edges":edges,
         "states":sorted(state_rows.values(),key=lambda row:(row["scope"] or "",row["name"])),
+        "transitions":transition_rows,
         "summary":{
             "hooks":len(behavior.hooks),
             "rules":len(behavior.rules),
@@ -281,6 +315,7 @@ def _graph_for_behavior(behavior) -> dict:
             "targets":sum(1 for n in nodes.values() if n["kind"]=="target"),
             "states":len(state_rows),
             "callbacks":len(callback_nodes),
+            "transitions":len(transition_rows),
             "effect_categories":dict(sorted(categories.items())),
             "unmodeled_hooks":list(behavior.metadata.get("unmodeled_hooks") or ()),
             "reachable_helpers":list(behavior.metadata.get("reachable_helpers") or ()),
