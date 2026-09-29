@@ -1093,8 +1093,8 @@ def ingest_single_file(con, capture_id: int, filename: str, data: bytes) -> dict
             fmt = pcap_ingest.sniff_pcap_format(data)
             src = SingleFileSource(filename, data)
             if fmt:
-                frames, chunks, flows, ranges = pcap_ingest.ingest_pcap(con, capture_id, src, filename)
-                rows = frames + chunks + flows + ranges
+                frames, chunks, flows, ranges, messages = pcap_ingest.ingest_pcap(con, capture_id, src, filename)
+                rows = frames + chunks + flows + ranges + messages
             else:
                 error = "Unrecognized packet-capture container"
         elif suffix in (".db", ".sqlite", ".sqlite3"):
@@ -3144,10 +3144,10 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
                 rows = raw_packet_ingest.ingest_packeteer(con, capture_id, src, relname)
                 counts["raw_packets"] += rows
             else:
-                frames, chunks, flows, ranges = pcap_ingest.ingest_pcap(con, capture_id, src, relname)
-                counts["structured"] += frames + flows + ranges
+                frames, chunks, flows, ranges, messages = pcap_ingest.ingest_pcap(con, capture_id, src, relname)
+                counts["structured"] += frames + flows + ranges + messages
                 counts["raw_packets"] += chunks
-                rows = frames + chunks + flows + ranges
+                rows = frames + chunks + flows + ranges + messages
             if result_sink is not None:
                 result_sink.append({"filename": relname, "rows": rows, "error": None})
         except Exception as ex:
