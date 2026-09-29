@@ -2754,7 +2754,7 @@ def ingest_npclogger_lua(con, capture_id, src: Source, relname: str, leg: int = 
         fields = {}
         for fm in NPCLOGGER_LUA_FIELD_RE.finditer(m.group(2)):
             key, str_val, num_val = fm.group(1), fm.group(2), fm.group(3)
-            fields[key] = str_val if str_val is not None else float(num_val)
+            fields[key.lower()] = str_val if str_val is not None else float(num_val)
         if "x" not in fields or "z" not in fields:
             continue
 
@@ -2787,13 +2787,34 @@ def ingest_npclogger_lua(con, capture_id, src: Source, relname: str, leg: int = 
             )
         n_path += 1
 
-        con.execute("""INSERT OR REPLACE INTO capture_npc_entries
+        (look_blob, door_id, act_index, flags0, flags1, flags2, flags3,
+         legacy_flag, sub_kind) = _npclogger_lua_optional_fields(fields)
+        con.execute("""INSERT INTO capture_npc_entries
             (capture_id, zone_db, entity_id, name, model_id, x, y, z, dir, hpp,
-             legacy_flags, legacy_status, legacy_animation, speed, created_at, updated_at)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+             legacy_flags, legacy_status, legacy_animation, speed, created_at, updated_at,
+             legacy_look, door_id, act_index, flags0, flags1, flags2, flags3, legacy_flag,
+             sub_kind)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            ON CONFLICT(capture_id, zone_db, entity_id) DO UPDATE SET
+                name=excluded.name, model_id=excluded.model_id,
+                x=excluded.x, y=excluded.y, z=excluded.z, dir=excluded.dir, hpp=excluded.hpp,
+                legacy_flags=excluded.legacy_flags, legacy_status=excluded.legacy_status,
+                legacy_animation=excluded.legacy_animation, speed=excluded.speed,
+                created_at=excluded.created_at, updated_at=excluded.updated_at,
+                legacy_look=COALESCE(excluded.legacy_look, capture_npc_entries.legacy_look),
+                door_id=COALESCE(excluded.door_id, capture_npc_entries.door_id),
+                act_index=COALESCE(excluded.act_index, capture_npc_entries.act_index),
+                flags0=COALESCE(excluded.flags0, capture_npc_entries.flags0),
+                flags1=COALESCE(excluded.flags1, capture_npc_entries.flags1),
+                flags2=COALESCE(excluded.flags2, capture_npc_entries.flags2),
+                flags3=COALESCE(excluded.flags3, capture_npc_entries.flags3),
+                legacy_flag=COALESCE(excluded.legacy_flag, capture_npc_entries.legacy_flag),
+                sub_kind=COALESCE(excluded.sub_kind, capture_npc_entries.sub_kind)""",
             (capture_id, zone_db, entity_id, fields.get("name"), None, x, y, z, dir_, None,
              int(fields.get("flags", 0)), int(fields.get("status", 0)),
-             int(fields.get("animation", 0)), int(fields.get("speed", 0)), None, None))
+             int(fields.get("animation", 0)), int(fields.get("speed", 0)), None, None,
+             look_blob, door_id, act_index, flags0, flags1, flags2, flags3, legacy_flag,
+             sub_kind))
         capture_integrity.record_row_locator(
             con, capture_id, relname, "capture_npc_entries",
             json.dumps({"zone_db": zone_db, "entity_id": entity_id}, sort_keys=True),
