@@ -51,10 +51,9 @@ def _md5_valid(packet: bytes) -> bool:
     return hashlib.md5(work).digest() == expected
 
 
-def _ipv4_from_little_u32(raw4: bytes) -> str:
-    """Lobby structs store a uint32 address; recover network-order dotted notation."""
-    value = struct.unpack("<I", raw4)[0]
-    return str(ipaddress.IPv4Address(value))
+def _ipv4_from_network_u32_bytes(raw4: bytes) -> str:
+    """Lobby structs carry an in_addr-compatible uint32 whose memory bytes are network order."""
+    return str(ipaddress.IPv4Address(raw4))
 
 
 def _fixed_size_valid(command: int, packet_size: int) -> bool:
@@ -150,9 +149,9 @@ def decode_packet(packet: bytes) -> dict:
             "ffxi_id_world": struct.unpack_from("<I", packet, 32)[0],
             "character_name": _cstr(packet[36:52]),
             "server_id": struct.unpack_from("<I", packet, 52)[0],
-            "server_ip": _ipv4_from_little_u32(packet[56:60]),
+            "server_ip": _ipv4_from_network_u32_bytes(packet[56:60]),
             "server_port": struct.unpack_from("<I", packet, 60)[0],
-            "cache_ip": _ipv4_from_little_u32(packet[64:68]),
+            "cache_ip": _ipv4_from_network_u32_bytes(packet[64:68]),
             "cache_port": struct.unpack_from("<I", packet, 68)[0],
         })
     elif command == 0x0014:
