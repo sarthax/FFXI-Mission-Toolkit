@@ -641,8 +641,15 @@ def _entity_reference_rule(
             ))
     if not effects:
         return None
+    context=[trigger,f"line:{start_line}"]
+    if meta.get("helper"):
+        context.append(f"helper:{meta['helper']}")
+    if meta.get("callback_type"):
+        context.append(
+            f"callback:{meta.get('callback_call_line')}:{meta.get('callback_type')}"
+        )
     return BehaviorRule(
-        f"{trigger}:entity-references:{start_line}",
+        ":".join(str(part) for part in context)+":entity-references",
         "entity_reference",
         subject,
         trigger=trigger,
