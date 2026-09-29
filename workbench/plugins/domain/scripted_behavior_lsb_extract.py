@@ -90,6 +90,24 @@ _SERVER_ALIAS_ASSIGN=re.compile(
 )
 _SWITCH_SELECTOR=re.compile(r"\bswitch\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)\s*:\s*caseof")
 _SWITCH_CASE=re.compile(r"^\s*\[([^\]]+)\]\s*=\s*function\s*\(")
+_TIME_ALIAS_ASSIGN=re.compile(
+    r"\blocal\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(VanadielHour|VanadielDay|VanadielDayOfTheWeek)\(\)"
+)
+_TIME_RANGE=re.compile(
+    r"\b([A-Za-z_][A-Za-z0-9_]*)\s*>=\s*(-?\d+)\s+and\s+\1\s*<=\s*(-?\d+)"
+)
+_WEATHER_ELEMENT_COMPARE=re.compile(
+    r"xi\.data\.element\.getWeatherElement\(([^\)]+)\)\s*(==|~=)\s*xi\.element\.([A-Z0-9_]+)"
+)
+_POSITION_COMPARE=re.compile(
+    r"\b([A-Za-z_][A-Za-z0-9_]*):get([XYZ])Pos\(\)\s*(<=|>=|<|>|==|~=)\s*(-?\d+(?:\.\d+)?)"
+)
+_DISTANCE_COMPARE=re.compile(
+    r"\b([A-Za-z_][A-Za-z0-9_]*):(?:checkDistance|getDistance)\(([^\)]*)\)\s*(<=|>=|<|>|==|~=)\s*(\d+(?:\.\d+)?)"
+)
+_GROUP_ACCESS=re.compile(
+    r"\b([A-Za-z_][A-Za-z0-9_]*):(getParty|getAlliance)\(\)"
+)
 
 
 @dataclass(frozen=True)
@@ -442,6 +460,16 @@ def _callback_rules(
         )
         if state_rule is not None:
             rules.append(state_rule)
+        context_rule=_context_condition_rule(
+            rule_id=f"{callback_id}:context",
+            subject=subject,
+            trigger=callback.trigger,
+            text=callback.body,
+            start_line=callback.start_line,
+            meta=meta,
+        )
+        if context_rule is not None:
+            rules.append(context_rule)
         transition_rules=_switch_state_transition_rules(
             text=callback.body,
             start_line=callback.start_line,
@@ -815,6 +843,106 @@ def _switch_state_transition_rules(
     return tuple(rules)
 
 
+def _context_condition_rule(
+    *,
+    rule_id: str,
+    subject: str,
+    trigger: str,
+    text: str,
+    start_line: int,
+    meta: dict,
+) -> BehaviorRule | None:
+    """Promote only literal environmental/actor-context predicates we can prove statically."""
+    aliases={}
+    rows=[]
+    for offset,raw_line in enumerate(text.splitlines()):
+        code=_strip_line_comment_preserve_strings(raw_line)
+        line_no=start_line+offset
+        alias=_TIME_ALIAS_ASSIGN.search(code)
+        if alias:
+            aliases[alias.group(1)]=(alias.group(2),line_no,raw_line.strip())
+
+        for match in _WEATHER_ELEMENT_COMPARE.finditer(code):
+            source,operator,element=match.groups()
+            rows.append(BehaviorCondition(
+                "environment:weather",
+                "WEATHER_ELEMENT_EQUALS" if operator=="==" else "WEATHER_ELEMENT_NOT_EQUALS",
+                element,
+                {
+                    "weather_source":source.strip(),
+                    "source_line":line_no,
+                    "source_line_text":raw_line.strip(),
+                },
+            ))
+
+        for match in _POSITION_COMPARE.finditer(code):
+            receiver,axis,operator,value=match.groups()
+            rows.append(BehaviorCondition(
+                f"actor:{receiver}",
+                "POSITION_COMPARE",
+                {
+                    "axis":axis,
+                    "operator":operator,
+                    "value":float(value) if "." in value else int(value),
+                },
+                {"source_line":line_no,"source_line_text":raw_line.strip()},
+            ))
+
+        for match in _DISTANCE_COMPARE.finditer(code):
+            receiver,target,operator,value=match.groups()
+            rows.append(BehaviorCondition(
+                f"actor:{receiver}",
+                "DISTANCE_COMPARE",
+                {
+                    "target":target.strip(),
+                    "operator":operator,
+                    "value":float(value) if "." in value else int(value),
+                },
+                {"source_line":line_no,"source_line_text":raw_line.strip()},
+            ))
+
+        for match in _GROUP_ACCESS.finditer(code):
+            receiver,method=match.groups()
+            group="ALLIANCE" if method=="getAlliance" else "PARTY"
+            rows.append(BehaviorCondition(
+                f"actor:{receiver}",
+                f"ACCESSES_{group}",
+                True,
+                {"source_line":line_no,"source_line_text":raw_line.strip()},
+            ))
+
+        range_match=_TIME_RANGE.search(code)
+        if range_match and range_match.group(1) in aliases:
+            alias_name,start,end=range_match.groups()
+            api,alias_line,alias_source=aliases[alias_name]
+            rows.append(BehaviorCondition(
+                "environment:vanadiel_time",
+                f"{api.upper()}_RANGE",
+                {"min":int(start),"max":int(end)},
+                {
+                    "alias":alias_name,
+                    "alias_source_line":alias_line,
+                    "alias_source_line_text":alias_source,
+                    "source_line":line_no,
+                    "source_line_text":raw_line.strip(),
+                },
+            ))
+
+    if not rows:
+        return None
+    return BehaviorRule(
+        rule_id,
+        "context_conditions",
+        subject,
+        trigger=trigger,
+        conditions=tuple(rows),
+        effects=(),
+        confidence="VERIFIED",
+        implementation_status="PRESENT",
+        metadata={**meta,"context_condition_count":len(rows)},
+    )
+
+
 def _state_flow_rule(
     *,
     rule_id: str,
@@ -947,6 +1075,17 @@ def extract_lsb_scripted_behavior(
         )
         if state_rule is not None:
             rules.append(state_rule)
+            modeled_hooks.add(hook)
+        context_rule=_context_condition_rule(
+            rule_id=f"{hook}:context",
+            subject=subject,
+            trigger=hook.upper(),
+            text=text,
+            start_line=block.start_line,
+            meta=meta,
+        )
+        if context_rule is not None:
+            rules.append(context_rule)
             modeled_hooks.add(hook)
         transition_rules=_switch_state_transition_rules(
             text=text,
@@ -1308,6 +1447,16 @@ def extract_lsb_scripted_behavior(
             )
             if helper_state_rule is not None:
                 rules.append(helper_state_rule)
+            helper_context_rule=_context_condition_rule(
+                rule_id=f"{hook}:helper-context:{helper.name}",
+                subject=subject,
+                trigger=hook.upper(),
+                text=helper.body,
+                start_line=helper.start_line,
+                meta=helper_meta,
+            )
+            if helper_context_rule is not None:
+                rules.append(helper_context_rule)
             helper_transition_rules=_switch_state_transition_rules(
                 text=helper.body,
                 start_line=helper.start_line,
