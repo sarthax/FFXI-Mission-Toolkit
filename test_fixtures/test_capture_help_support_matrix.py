@@ -41,18 +41,20 @@ def main():
         "CheckParam",
         "CraftTrack",
         "ConquestTrack",
+        "Captain StatTrack",
+        "Generic PCAP / PCAPNG",
+        "Capturebar video / screenshots",
         "PriceLog",
     ]
     for name in required_supported:
         assert name in template, name
 
     required_gaps = [
-        "PacketDB CHATLOG",
-        "Whole-session multi-zone EventView",
-        "Capturebar",
-        "PCAP / PCAPNG",
-        "Lobby / world-server packet streams",
+        "Lobby / world / search application decoding",
         "PacketDB ZONES / PACKET_DEFINITION",
+        "Captain PacketBridge live stream",
+        "Runtime-only Captain/Windower helpers",
+        "PacketViewer-derived NDJSON / analysis interchange",
         "Unknown historical/community loggers",
     ]
     for name in required_gaps:
@@ -62,6 +64,10 @@ def main():
     assert "Raw packet convergence" in template
     assert "source_format" in template
     assert "opcode + direction + exact raw bytes" in template
+    assert "<code>CHATLOG</code>" in template
+    assert "__UNKNOWN_ZONE__" in template
+    assert "Supported as network evidence" in template
+    assert "Historical/runtime tools audited but not separate file formats" in template
 
     print("Capture help support matrix regression: PASS")
     return 0
