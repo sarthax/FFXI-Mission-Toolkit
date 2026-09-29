@@ -108,6 +108,10 @@ _DISTANCE_COMPARE=re.compile(
 _GROUP_ACCESS=re.compile(
     r"\b([A-Za-z_][A-Za-z0-9_]*):(getParty|getAlliance)\(\)"
 )
+_DIRECT_ENTITY_EXPR=re.compile(
+    r"\b(GetNPCByID|GetMobByID|SpawnMob|DespawnMob)\(\s*"
+    r"(ID\.(npc|mob)\.([A-Z0-9_]+)(?:\s*([+-])\s*(\d+))?)"
+)
 
 
 @dataclass(frozen=True)
@@ -470,6 +474,16 @@ def _callback_rules(
         )
         if context_rule is not None:
             rules.append(context_rule)
+        entity_ref_rule=_direct_entity_reference_rule(
+            rule_id=f"{callback_id}:entity-refs",
+            subject=subject,
+            trigger=callback.trigger,
+            text=callback.body,
+            start_line=callback.start_line,
+            meta=meta,
+        )
+        if entity_ref_rule is not None:
+            rules.append(entity_ref_rule)
         transition_rules=_switch_state_transition_rules(
             text=callback.body,
             start_line=callback.start_line,
@@ -943,6 +957,67 @@ def _context_condition_rule(
     )
 
 
+def _entity_symbol_target(kind: str, symbol: str, sign: str | None, offset: str | None) -> str:
+    base=f"entity-symbol:{kind}:{symbol}"
+    if sign and offset:
+        value=int(offset) * (1 if sign=="+" else -1)
+        return f"{base}:offset:{value:+d}"
+    return base
+
+
+def _direct_entity_reference_rule(
+    *,
+    rule_id: str,
+    subject: str,
+    trigger: str,
+    text: str,
+    start_line: int,
+    meta: dict,
+) -> BehaviorRule | None:
+    """Resolve only direct ID.npc/ID.mob symbols with optional literal integer offsets."""
+    effects=[]
+    for offset_idx,raw_line in enumerate(text.splitlines()):
+        code=_strip_line_comment_preserve_strings(raw_line)
+        line_no=start_line+offset_idx
+        for match in _DIRECT_ENTITY_EXPR.finditer(code):
+            call,expression,kind,symbol,sign,offset=match.groups()
+            target=_entity_symbol_target(kind,symbol,sign,offset)
+            effect_name={
+                "GetNPCByID":"REFERENCES_ENTITY",
+                "GetMobByID":"REFERENCES_ENTITY",
+                "SpawnMob":"SPAWN_ENTITY",
+                "DespawnMob":"DESPAWN_ENTITY",
+            }[call]
+            effects.append(BehaviorEffect(
+                effect_name,
+                target,
+                expression.replace(" ",""),
+                {
+                    "call":call,
+                    "entity_kind":kind,
+                    "symbol":symbol,
+                    "offset":(
+                        int(offset) * (1 if sign=="+" else -1)
+                        if sign and offset else 0
+                    ),
+                    "source_line":line_no,
+                    "source_line_text":raw_line.strip(),
+                },
+            ))
+    if not effects:
+        return None
+    return BehaviorRule(
+        rule_id,
+        "entity_references",
+        subject,
+        trigger=trigger,
+        effects=tuple(effects),
+        confidence="VERIFIED",
+        implementation_status="PRESENT",
+        metadata={**meta,"entity_reference_count":len(effects)},
+    )
+
+
 def _state_flow_rule(
     *,
     rule_id: str,
@@ -1086,6 +1161,17 @@ def extract_lsb_scripted_behavior(
         )
         if context_rule is not None:
             rules.append(context_rule)
+            modeled_hooks.add(hook)
+        entity_ref_rule=_direct_entity_reference_rule(
+            rule_id=f"{hook}:entity-refs",
+            subject=subject,
+            trigger=hook.upper(),
+            text=text,
+            start_line=block.start_line,
+            meta=meta,
+        )
+        if entity_ref_rule is not None:
+            rules.append(entity_ref_rule)
             modeled_hooks.add(hook)
         transition_rules=_switch_state_transition_rules(
             text=text,
@@ -1457,6 +1543,16 @@ def extract_lsb_scripted_behavior(
             )
             if helper_context_rule is not None:
                 rules.append(helper_context_rule)
+            helper_entity_ref_rule=_direct_entity_reference_rule(
+                rule_id=f"{hook}:helper-entity-refs:{helper.name}",
+                subject=subject,
+                trigger=hook.upper(),
+                text=helper.body,
+                start_line=helper.start_line,
+                meta=helper_meta,
+            )
+            if helper_entity_ref_rule is not None:
+                rules.append(helper_entity_ref_rule)
             helper_transition_rules=_switch_state_transition_rules(
                 text=helper.body,
                 start_line=helper.start_line,
