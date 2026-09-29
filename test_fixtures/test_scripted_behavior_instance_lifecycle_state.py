@@ -14,6 +14,11 @@ entity.onInstanceCreated = function(instance)
 
     if stage == 0 then
         instance:setStage(1)
+        instance:setProgress(9)
+    end
+
+    if stage == dynamicStage then
+        instance:setStage(2)
     end
 
     if progress < 3 then
@@ -69,6 +74,25 @@ def main():
     assert any(row[2].get("method")=="setProgress" for row in progress_writes),progress_writes
 
     assert any(row[2].get("name")=="wave" for row in generic),generic
+
+    transitions=[
+        rule for rule in behavior.rules
+        if rule.kind=="state_transition"
+        and rule.metadata.get("transition_form")=="INSTANCE_LIFECYCLE_LITERAL_IF"
+    ]
+    assert len(transitions)==1,transitions
+    transition=transitions[0]
+    assert transition.metadata["state_id"]=="state:INSTANCE_LIFECYCLE:instance:stage",transition
+    assert transition.metadata["selector_alias"]=="stage",transition.metadata
+    assert transition.metadata["if_literal"]=="0",transition.metadata
+    assert transition.conditions[0].subject=="state:INSTANCE_LIFECYCLE:instance:stage",transition.conditions
+    assert transition.conditions[0].value=="0",transition.conditions
+    assert transition.effects[0].target=="state:INSTANCE_LIFECYCLE:instance:stage",transition.effects
+    assert transition.effects[0].value=="1",transition.effects
+
+    # Cross-lifecycle writes, computed equality predicates, and non-equality guards stay generic.
+    assert not any(rule.metadata.get("if_literal")=="dynamicStage" for rule in transitions),transitions
+    assert not any(rule.metadata.get("state_name")=="progress" for rule in transitions),transitions
 
     print("instance lifecycle stage/progress regression: PASS")
 
