@@ -121,7 +121,7 @@ First active foundation milestone:
 - [x] Mission/quest source state machines already project canonical graph evidence.
 - [x] Generic conditional/cross-zone/system-state dependency representation and Package Scope
       traversal are implemented; conditional nodes remain QUESTIONABLE until explicitly reviewed.
-- [ ] Discover conditional system coupling automatically from source-family implementation evidence.
+- [~] Discover conditional system coupling automatically from source-family implementation evidence. LSB mob-script discovery now recognizes alternate-zone variants that explicitly delegate multiple lifecycle hooks to the same shared `xi.<system>` module; broader system-state patterns remain.
 - [ ] Implement generic scripted-entity/combat behavior representation and graph projection.
 - [ ] Unify acquisition/obtainability across all supported acquisition families.
 
@@ -527,7 +527,7 @@ Current proof:
     - [x] Normalize modern LSB zone YAML templates/entities into entity→template→species/skill/spell closure.
     - [x] Link skill-list members to normalized mob-skill definitions and conventional Lua implementations, preserving missing scripts as explicit findings.
     - [x] Link zone-YAML loot symbols uniquely through normalized item identities to canonical ITEM dependency nodes.
-    - [~] Promote zone text/title references and cross-zone Besieged coupling into package dependency edges.\n      - [x] Resolve zone `ID.text.*` and global `xi.title.*` symbols into dependency nodes.\n      - [ ] Add cross-zone Besieged coupling as an explicit conditional/system dependency.
+    - [~] Promote zone text/title references and cross-zone Besieged coupling into package dependency edges.\n      - [x] Resolve zone `ID.text.*` and global `xi.title.*` symbols into dependency nodes.\n      - [x] Add cross-zone Besieged coupling as an explicit conditional/system dependency; conservative LSB shared-lifecycle source discovery can now surface the Besieged module and alternate-zone variants without treating name matching alone as proof.
   - [x] Establish Coiler automaton attachment as a second truth set covering item/internal identity mapping, dynamic Lua dispatch, shared automaton behavior, C++ puppet runtime, persistence, downstream weapon-skill consumers, conditional interactions, and reviewer-controlled acquisition paths.
   - [x] Add recursive crafting/producibility closure for synth/synergy recipe prerequisites; Heat Seeker→Glass Sheet now proves multi-level recipe recursion, key-item gating, leaf obtainability, and Synergy client/runtime gating.
   - [ ] Unify shop/drop/reward/HELM/gardening/exchange/appraisal acquisition analyzers so every crafting leaf can resolve against the same obtainability graph.
@@ -670,7 +670,7 @@ This naming rule applies to future proof cases as well: sample content demonstra
 The Workbench roadmap and the older Toolkit product roadmap were reconciled. The following open capabilities were either absent from the recent scoped queue or were obscured by stale historical status.
 
 ### Core architecture / evidence
-- [ ] Generic conditional and cross-zone/system-state dependency relationships, including the currently open Besieged-style coupling proof.
+- [x] Generic conditional and cross-zone/system-state dependency relationship contract and Package Scope review semantics; Besieged-style coupling is now represented explicitly and remains reviewer-controlled.
 - [ ] Unified acquisition/obtainability graph across shops, drops, rewards, HELM, gardening, exchange, appraisal, synthesis, and synergy.
 - [ ] Broader packet ↔ client DAT/EXE/DLL ↔ server relationship coverage.
 - [ ] Richer runtime probe/capture producers and repeatable live validation recipes.
