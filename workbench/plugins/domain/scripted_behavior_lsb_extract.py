@@ -21,6 +21,13 @@ from .scripted_behavior import (
 _HOOK_HEADER=re.compile(
     r"^\s*entity\.(on[A-Za-z0-9_]+)\s*=\s*function\s*\(([^)]*)\)"
 )
+_LOCAL_HELPER_HEADER=re.compile(
+    r"^\s*local\s+(?:function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(([^)]*)\)|"
+    r"([A-Za-z_][A-Za-z0-9_]*)\s*=\s*function\s*\(([^)]*)\))"
+)
+_ENTITY_HELPER_HEADER=re.compile(
+    r"^\s*entity\.([A-Za-z_][A-Za-z0-9_]*)\s*=\s*function\s*\(([^)]*)\)"
+)
 _HPP=re.compile(r"\b(?:mob|mobArg|target):getHPP\(\)\s*(<=|>=|<|>)\s*(\d+)")
 _RANDOM_RANGE=re.compile(r"math\.randomInt\(\s*(\d+)\s*,\s*(\d+)\s*\)")
 _RANDOM_PERCENT=re.compile(
@@ -65,6 +72,16 @@ class HookBlock:
     start_line: int
     end_line: int
     body: str
+
+
+@dataclass(frozen=True)
+class HelperBlock:
+    name: str
+    args: tuple[str,...]
+    start_line: int
+    end_line: int
+    body: str
+    owner: str = "local"
 
 
 def _structural_lua_lines(lua: str) -> list[str]:
@@ -168,6 +185,66 @@ def extract_hook_blocks(lua: str) -> tuple[HookBlock,...]:
     return tuple(out)
 
 
+def extract_helper_blocks(lua: str) -> tuple[HelperBlock,...]:
+    """Return balanced local/entity helper functions, excluding entity.on* hooks."""
+    raw=lua.splitlines()
+    structural=_structural_lua_lines(lua)
+    out=[]
+    claimed=set()
+    for i,code in enumerate(structural):
+        local_match=_LOCAL_HELPER_HEADER.match(code)
+        entity_match=_ENTITY_HELPER_HEADER.match(code)
+        name=None
+        args_text=""
+        owner="local"
+        if local_match:
+            name=local_match.group(1) or local_match.group(3)
+            args_text=local_match.group(2) or local_match.group(4) or ""
+        elif entity_match and not entity_match.group(1).startswith("on"):
+            name=entity_match.group(1)
+            args_text=entity_match.group(2) or ""
+            owner="entity"
+        if not name or i in claimed:
+            continue
+        depth=0
+        started=False
+        for j in range(i,len(raw)):
+            row=structural[j]
+            opens=_open_count(row)
+            closes=_close_count(row)
+            if opens:
+                started=True
+            depth+=opens-closes
+            if started and depth<=0:
+                claimed.update(range(i,j+1))
+                args=tuple(part.strip() for part in args_text.split(",") if part.strip())
+                out.append(HelperBlock(name,args,i+1,j+1,"\n".join(raw[i:j+1]),owner))
+                break
+    return tuple(out)
+
+
+def _reachable_helpers(hook: HookBlock, helpers: tuple[HelperBlock,...], *, max_depth: int=6):
+    """Follow statically named local/entity helper calls from one hook, cycle-safe."""
+    by_name={helper.name:helper for helper in helpers}
+    reached=[]
+    seen=set()
+    queue=[(hook.body,0,())]
+    while queue:
+        text,depth,chain=queue.pop(0)
+        if depth>=max_depth:
+            continue
+        for name,helper in by_name.items():
+            if name in seen:
+                continue
+            if not re.search(rf"(?<![A-Za-z0-9_])(?:entity\.)?{re.escape(name)}\s*\(",text):
+                continue
+            seen.add(name)
+            next_chain=chain+(name,)
+            reached.append((helper,next_chain))
+            queue.append((helper.body,depth+1,next_chain))
+    return tuple(reached)
+
+
 def _symbol(name: str) -> str:
     return f"entity-symbol:{name}"
 
@@ -206,8 +283,10 @@ def extract_lsb_scripted_behavior(
     actors; domain-specific mission/quest interpretation remains a separate layer.
     """
     blocks=extract_hook_blocks(lua)
+    helpers=extract_helper_blocks(lua)
     rules=[]
     modeled_hooks=set()
+    reached_helpers=set()
 
     for block in blocks:
         text=block.body
@@ -524,6 +603,77 @@ def extract_lsb_scripted_behavior(
             ))
             modeled_hooks.add(hook)
 
+        for helper,call_chain in _reachable_helpers(block,helpers):
+            reached_helpers.add(helper.name)
+            helper_meta={
+                "source_path":source_path,
+                "source_lines":(helper.start_line,helper.end_line),
+                "hook":hook,
+                "helper":helper.name,
+                "helper_owner":helper.owner,
+                "call_chain":call_chain,
+            }
+            rules.append(BehaviorRule(
+                f"{hook}:helper:{helper.name}",
+                "helper_call",
+                subject,
+                trigger=hook.upper(),
+                effects=(BehaviorEffect(
+                    "CALL_LOCAL_HELPER",
+                    f"helper:{helper.name}",
+                    helper.name,
+                    {"call_chain":call_chain},
+                ),),
+                confidence="VERIFIED",implementation_status="PRESENT",
+                metadata=helper_meta,
+            ))
+            modeled_hooks.add(hook)
+
+            helper_effects=[]
+            for duration in _OPEN_DOOR.findall(helper.body):
+                helper_effects.append(BehaviorEffect("OPEN_DOOR","world_entity",duration.strip() or None))
+            for value in _SET_ANIMATION.findall(helper.body):
+                helper_effects.append(BehaviorEffect("SET_ANIMATION","world_entity",value.strip()))
+            for value in _SET_STATUS.findall(helper.body):
+                helper_effects.append(BehaviorEffect("SET_STATUS","world_entity",value.strip()))
+            for value in _SET_UNTARGETABLE.findall(helper.body):
+                helper_effects.append(BehaviorEffect("SET_UNTARGETABLE","world_entity",value.strip()))
+            if _SET_POS.search(helper.body):
+                helper_effects.append(BehaviorEffect("SET_POSITION","world_entity"))
+            for method in dict.fromkeys(_PATH_CALL.findall(helper.body)):
+                helper_effects.append(BehaviorEffect("PATH_ACTOR",subject,method))
+            for module,function in dict.fromkeys(_SYSTEM_HELPER.findall(helper.body)):
+                helper_effects.append(BehaviorEffect(
+                    "CALL_SYSTEM_HELPER",
+                    f"system:xi.{module}",
+                    function,
+                    {"module":module,"function":function},
+                ))
+            for modifier in dict.fromkeys(_MOD_CALL.findall(helper.body)):
+                helper_effects.append(BehaviorEffect("MODIFY_COMBAT_STAT",subject,modifier))
+            if _DESPAWN.search(helper.body):
+                helper_effects.append(BehaviorEffect("DESPAWN_ENTITY","world_entity"))
+            helper_spawns=tuple(dict.fromkeys(_SPAWN_SYMBOL.findall(helper.body)))
+            helper_effects.extend(
+                BehaviorEffect("SPAWN_ENTITY",_symbol(symbol))
+                for symbol in helper_spawns
+            )
+            helper_keyitems=tuple(dict.fromkeys(_KEYITEM_GIVE.findall(helper.body)))
+            helper_effects.extend(
+                BehaviorEffect("GRANT_KEY_ITEM","player",symbol)
+                for symbol in helper_keyitems
+            )
+            if helper_effects:
+                rules.append(BehaviorRule(
+                    f"{hook}:helper-effects:{helper.name}",
+                    "helper_effects",
+                    subject,
+                    trigger=hook.upper(),
+                    effects=tuple(helper_effects),
+                    confidence="VERIFIED",implementation_status="PRESENT",
+                    metadata=helper_meta,
+                ))
+
     hooks=tuple(block.hook for block in blocks)
     return ScriptedBehaviorMap(
         map_id=f"behavior-map:{feature_id}",
@@ -536,6 +686,9 @@ def extract_lsb_scripted_behavior(
             "extractor":"lsb_scripted_behavior_v1",
             "source_path":source_path,
             "source_hook_count":len(blocks),
+            "source_helper_count":len(helpers),
+            "reachable_helper_count":len(reached_helpers),
+            "reachable_helpers":sorted(reached_helpers),
             "modeled_hook_count":len(modeled_hooks),
             "unmodeled_hooks":sorted(set(hooks)-modeled_hooks),
         },
