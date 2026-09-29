@@ -2879,7 +2879,7 @@ Findings and hardening:
 
 - PacketViewer/PacketLogger provenance now indexes line and UTF-8 byte offsets in linear passes instead of rescanning source prefixes per packet.
 - Packeteer had the same UTF-8 prefix-offset pattern and now uses the same linear offset strategy.
-- PacketDB/Packeteer bulk insertion now allocates source-native sequence ownership once per import instead of performing per-packet source identity/MAX(seq) lookups. Canonical raw-packet source/opcode indexes were added.
+- PacketDB/Packeteer bulk insertion now allocates source-native sequence ownership once per import instead of performing per-packet source identity/MAX(seq) lookups, leveraging the canonical raw-packet indexes already maintained by schema migration.
 - Redundant flat PacketViewer/PacketLogger full/incoming/outgoing logs are recognized by path during provenance finalization so they are not decompressed a second time merely for format sniffing.
 - Cross-source packet correlation no longer compares same-source exact-packet repeats pairwise. Raw/EventView and video/runtime matching now use opcode/time-window indexes, while IDView/EventView matching uses opcode/entity/message indexes.
 - Migration package action ordering now uses Kahn topological sorting with reverse adjacency rather than repeatedly rescanning all remaining actions.
