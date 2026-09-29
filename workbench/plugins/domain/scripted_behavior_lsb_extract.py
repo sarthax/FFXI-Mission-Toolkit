@@ -2380,8 +2380,6 @@ def extract_lsb_scripted_behavior(
                     trigger=hook.upper(),
                     meta=meta,
                 )
-                if not outcome_writes and not outcome_effects:
-                    continue
                 outcome_conditions=(
                     BehaviorCondition(
                         "event:csid","EVENT_ID_EQUALS",branch["csid"],
@@ -2403,51 +2401,52 @@ def extract_lsb_scripted_behavior(
                         },
                     ),
                 )
-                rules.append(BehaviorRule(
-                    f"{hook}:event-outcome:{branch['csid']}:{outcome_index}",
-                    "event_outcome_effects",
-                    subject,
-                    trigger=hook.upper(),
-                    conditions=outcome_conditions,
-                    effects=tuple(
-                        BehaviorEffect(
-                            "WRITE_STATE",row["state_id"],row["value"],
-                            {
-                                "scope":row["scope"],
-                                "receiver":row["receiver"],
-                                "name":row["name"],
-                                "source_line":row["line"],
-                                "source_line_text":row["source_line"],
-                                "event_id":branch["csid"],
-                                "outcome_selector":outcome["selector"],
-                                "outcome_literal":outcome["literal"],
-                            },
-                        )
-                        for row in outcome_writes
-                    ) + tuple(
-                        BehaviorEffect(
-                            effect.effect,effect.target,effect.value,
-                            {
-                                **dict(effect.metadata),
-                                "event_id":branch["csid"],
-                                "outcome_selector":outcome["selector"],
-                                "outcome_literal":outcome["literal"],
-                            },
-                        )
-                        for effect in outcome_effects
-                    ),
-                    confidence="VERIFIED",
-                    implementation_status="PRESENT",
-                    metadata={
-                        **meta,
-                        "event_id":branch["csid"],
-                        "outcome_selector":outcome["selector"],
-                        "outcome_literal":outcome["literal"],
-                        "source_lines":(outcome["start_line"],outcome["end_line"]),
-                        "branch_form":"EVENT_OUTCOME_LITERAL_BRANCH",
-                    },
-                ))
-                modeled_hooks.add(hook)
+                if outcome_writes or outcome_effects:
+                    rules.append(BehaviorRule(
+                        f"{hook}:event-outcome:{branch['csid']}:{outcome_index}",
+                        "event_outcome_effects",
+                        subject,
+                        trigger=hook.upper(),
+                        conditions=outcome_conditions,
+                        effects=tuple(
+                            BehaviorEffect(
+                                "WRITE_STATE",row["state_id"],row["value"],
+                                {
+                                    "scope":row["scope"],
+                                    "receiver":row["receiver"],
+                                    "name":row["name"],
+                                    "source_line":row["line"],
+                                    "source_line_text":row["source_line"],
+                                    "event_id":branch["csid"],
+                                    "outcome_selector":outcome["selector"],
+                                    "outcome_literal":outcome["literal"],
+                                },
+                            )
+                            for row in outcome_writes
+                        ) + tuple(
+                            BehaviorEffect(
+                                effect.effect,effect.target,effect.value,
+                                {
+                                    **dict(effect.metadata),
+                                    "event_id":branch["csid"],
+                                    "outcome_selector":outcome["selector"],
+                                    "outcome_literal":outcome["literal"],
+                                },
+                            )
+                            for effect in outcome_effects
+                        ),
+                        confidence="VERIFIED",
+                        implementation_status="PRESENT",
+                        metadata={
+                            **meta,
+                            "event_id":branch["csid"],
+                            "outcome_selector":outcome["selector"],
+                            "outcome_literal":outcome["literal"],
+                            "source_lines":(outcome["start_line"],outcome["end_line"]),
+                            "branch_form":"EVENT_OUTCOME_LITERAL_BRANCH",
+                        },
+                    ))
+                    modeled_hooks.add(hook)
  
                 for guard_index,guard in enumerate(state_guard_branches,1):
                     guard_writes=[
