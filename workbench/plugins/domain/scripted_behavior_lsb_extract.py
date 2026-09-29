@@ -73,6 +73,14 @@ _DOTTED_API_CALL=re.compile(
     r"\b((?:[A-Za-z_][A-Za-z0-9_]*\.)+[A-Za-z_][A-Za-z0-9_]*)\s*\("
 )
 _GLOBAL_API_CALL=re.compile(r"(?<![\w\.:])([A-Z][A-Za-z0-9_]*)\s*\(")
+_NAMED_STATE_GET=re.compile(
+    r"\b([A-Za-z_][A-Za-z0-9_]*):(getLocalVar|getCharVar)\(\s*['\"]([^'\"]+)['\"]\s*\)"
+)
+_NAMED_STATE_SET=re.compile(
+    r"\b([A-Za-z_][A-Za-z0-9_]*):(setLocalVar|setCharVar)\(\s*['\"]([^'\"]+)['\"]\s*,\s*(.+)\)\s*$"
+)
+_SERVER_STATE_GET=re.compile(r"\bGetServerVariable\(\s*['\"]([^'\"]+)['\"]\s*\)")
+_SERVER_STATE_SET=re.compile(r"\bSetServerVariable\(\s*['\"]([^'\"]+)['\"]\s*,\s*(.+)\)\s*$")
 
 
 @dataclass(frozen=True)
@@ -336,6 +344,126 @@ def _api_calls(text: str, *, start_line: int) -> tuple[dict,...]:
     return tuple(calls)
 
 
+def _state_scope(receiver: str | None, method: str) -> str:
+    if method in {"getCharVar","setCharVar"}:
+        return "PLAYER_CHAR"
+    if receiver=="instance":
+        return "INSTANCE_LOCAL"
+    if receiver=="player":
+        return "PLAYER_LOCAL"
+    if receiver in {"zone","zoneObject"}:
+        return "ZONE_LOCAL"
+    if receiver:
+        return "ENTITY_LOCAL"
+    return "SERVER_GLOBAL"
+
+
+def _state_id(scope: str, name: str, receiver: str | None=None) -> str:
+    owner=(receiver or "server").replace(" ","_")
+    return f"state:{scope}:{owner}:{name}"
+
+
+def _named_state_accesses(text: str, *, start_line: int) -> tuple[dict,...]:
+    """Extract named runtime/persistent state accesses line-by-line without evaluating values."""
+    rows=[]
+    seen=set()
+    for offset,raw_line in enumerate(text.splitlines()):
+        code=_structural_lua_lines(raw_line)[0] if raw_line else ""
+        line_no=start_line+offset
+        for match in _NAMED_STATE_GET.finditer(code):
+            receiver,method,name=match.groups()
+            scope=_state_scope(receiver,method)
+            key=("READ",scope,receiver,name,line_no)
+            if key in seen:
+                continue
+            seen.add(key)
+            rows.append({
+                "access":"READ","scope":scope,"receiver":receiver,"method":method,
+                "name":name,"state_id":_state_id(scope,name,receiver),
+                "value":None,"line":line_no,"source_line":raw_line.strip(),
+            })
+        match=_NAMED_STATE_SET.search(raw_line)
+        if match:
+            receiver,method,name,value=match.groups()
+            scope=_state_scope(receiver,method)
+            key=("WRITE",scope,receiver,name,line_no,value.strip())
+            if key not in seen:
+                seen.add(key)
+                rows.append({
+                    "access":"WRITE","scope":scope,"receiver":receiver,"method":method,
+                    "name":name,"state_id":_state_id(scope,name,receiver),
+                    "value":value.strip(),"line":line_no,"source_line":raw_line.strip(),
+                })
+        for match in _SERVER_STATE_GET.finditer(code):
+            name=match.group(1)
+            scope="SERVER_GLOBAL"
+            key=("READ",scope,None,name,line_no)
+            if key in seen:
+                continue
+            seen.add(key)
+            rows.append({
+                "access":"READ","scope":scope,"receiver":None,"method":"GetServerVariable",
+                "name":name,"state_id":_state_id(scope,name),
+                "value":None,"line":line_no,"source_line":raw_line.strip(),
+            })
+        match=_SERVER_STATE_SET.search(raw_line)
+        if match:
+            name,value=match.groups()
+            scope="SERVER_GLOBAL"
+            key=("WRITE",scope,None,name,line_no,value.strip())
+            if key not in seen:
+                seen.add(key)
+                rows.append({
+                    "access":"WRITE","scope":scope,"receiver":None,"method":"SetServerVariable",
+                    "name":name,"state_id":_state_id(scope,name),
+                    "value":value.strip(),"line":line_no,"source_line":raw_line.strip(),
+                })
+    rows.sort(key=lambda row:(row["line"],row["state_id"],row["access"]))
+    return tuple(rows)
+
+
+def _state_flow_rule(
+    *,
+    rule_id: str,
+    subject: str,
+    trigger: str,
+    accesses: tuple[dict,...],
+    meta: dict,
+) -> BehaviorRule | None:
+    if not accesses:
+        return None
+    conditions=[]
+    effects=[]
+    for row in accesses:
+        common={
+            "scope":row["scope"],
+            "name":row["name"],
+            "receiver":row["receiver"],
+            "method":row["method"],
+            "source_line":row["line"],
+            "source_line_text":row["source_line"],
+        }
+        if row["access"]=="READ":
+            conditions.append(BehaviorCondition(
+                row["state_id"],"READS_STATE",None,common
+            ))
+        else:
+            effects.append(BehaviorEffect(
+                "WRITE_STATE",row["state_id"],row["value"],common
+            ))
+    return BehaviorRule(
+        rule_id,
+        "state_flow",
+        subject,
+        trigger=trigger,
+        conditions=tuple(conditions),
+        effects=tuple(effects),
+        confidence="VERIFIED",
+        implementation_status="PRESENT",
+        metadata={**meta,"state_access_count":len(accesses)},
+    )
+
+
 def _api_call_rule(
     *,
     rule_id: str,
@@ -416,6 +544,16 @@ def extract_lsb_scripted_behavior(
         )
         if api_rule is not None:
             rules.append(api_rule)
+            modeled_hooks.add(hook)
+        state_rule=_state_flow_rule(
+            rule_id=f"{hook}:state-flow",
+            subject=subject,
+            trigger=hook.upper(),
+            accesses=_named_state_accesses(text,start_line=block.start_line),
+            meta=meta,
+        )
+        if state_rule is not None:
+            rules.append(state_rule)
             modeled_hooks.add(hook)
 
         # Hook classes are useful behavior facts even when the internal dynamic logic is not yet
@@ -747,6 +885,15 @@ def extract_lsb_scripted_behavior(
             )
             if helper_api_rule is not None:
                 rules.append(helper_api_rule)
+            helper_state_rule=_state_flow_rule(
+                rule_id=f"{hook}:helper-state:{helper.name}",
+                subject=subject,
+                trigger=hook.upper(),
+                accesses=_named_state_accesses(helper.body,start_line=helper.start_line),
+                meta=helper_meta,
+            )
+            if helper_state_rule is not None:
+                rules.append(helper_state_rule)
             rules.append(BehaviorRule(
                 f"{hook}:helper:{helper.name}",
                 "helper_call",
