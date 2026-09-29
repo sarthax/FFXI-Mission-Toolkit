@@ -93,6 +93,7 @@ jobs:
           python test_fixtures/test_scripted_behavior_visualizer.py
           python test_fixtures/test_scripted_behavior_state_flow.py
           python test_fixtures/test_scripted_behavior_instance_lifecycle_state.py
+          python test_fixtures/test_scripted_behavior_server_global_transition.py
           python test_fixtures/test_scripted_behavior_callbacks.py
           python test_fixtures/test_king_vinegarroon_behavior_stress.py
           python test_fixtures/test_scripted_behavior_context_conditions.py

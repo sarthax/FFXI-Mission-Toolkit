@@ -752,3 +752,4 @@ Roadmap authority rule: `docs/workbench/ROADMAP.md` is the detailed rework backl
 
 - [x] Present uniquely resolved shared-helper one-level analysis as separate upstream inputs (state/context), downstream effects (state/entity), and raw direct calls in Behavior Inspector; ambiguous/unresolved helpers remain unexpanded.
 - [x] Model literal-offset runtime-relative entity identities such as `local mobId = mob:getID(); GetMobByID(mobId + 1)` as `RUNTIME_RELATIVE_ID` evidence with receiver/alias/source provenance, without fabricating static `ID.mob.*` symbols; dynamic offsets remain unresolved.
+- [x] Promote bounded server-global lifecycle transitions for direct `GetServerVariable` aliases guarded by literal equality and written back through `SetServerVariable` to the same canonical global state identity; computed predicates and cross-global writes remain ordinary evidence.
