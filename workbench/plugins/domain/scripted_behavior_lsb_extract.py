@@ -164,7 +164,7 @@ def _close_count(code: str) -> int:
 
 
 def extract_hook_blocks(lua: str) -> tuple[HookBlock,...]:
-    """Return balanced top-level entity.on* hook functions with exact source line ranges."""
+    """Return balanced top-level scripted hook functions with exact source line ranges."""
     raw=lua.splitlines()
     structural=_structural_lua_lines(lua)
     out=[]
@@ -294,7 +294,7 @@ def _api_calls(text: str, *, start_line: int) -> tuple[dict,...]:
                 "receiver":receiver,
                 "function":method,
                 "qualified_name":f"{receiver}:{method}",
-                "arguments_source":raw_line[match.end():].strip(),
+                "source_line":raw_line.strip(),
                 "line":line_no,
             })
         for match in _DOTTED_API_CALL.finditer(code):
@@ -359,7 +359,7 @@ def _api_call_rule(
                 {
                     "style":call["style"],
                     "qualified_name":call["qualified_name"],
-                    "arguments_source":call["arguments_source"],
+                    "source_line_text":call["source_line"],
                     "source_line":call["line"],
                 },
             )
