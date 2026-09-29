@@ -287,3 +287,28 @@ A transition is promoted only when:
 This produces a verified `STATE_EQUALS(from) -> WRITE_STATE(to)` transition with source span, selector alias, hook and confidence. Writes to other state variables inside the same case are deliberately not treated as transitions of the selector state.
 
 The Behavior Inspector displays these in a dedicated State Transitions table and links the state node to the transition guard in the causal graph. Dynamic dispatch, computed case keys, indirect state aliases and arbitrary control-flow inference remain open enrichment work.
+
+
+## Entity impact resolution — 2026-09-29
+
+Behavior Inspector now distinguishes three entity-reference evidence levels:
+
+1. **Verified static downstream reference** — executable Lua contains a direct `ID.mob.SYMBOL` or `ID.npc.SYMBOL` passed to `GetMobByID`, `GetNPCByID`, `SpawnMob`, or `DespawnMob`. The symbol, operation, exact ID expression, hook/helper/callback context, source line and provenance are retained.
+2. **Preserved dynamic expression** — static base symbols with arithmetic such as `ID.mob.FOO + 1` are retained as `entity-expression` targets. The Workbench does not guess which concrete entity the arithmetic resolves to until a separate identity/index resolver proves it.
+3. **Inferred upstream candidate** — for a named mob/NPC source, the inspector derives a filename-normalized candidate symbol and performs a bounded same-zone search for exact executable references to that symbol. The source reference is real, but the filename→ID-symbol mapping is explicitly labelled `INFERRED_IDENTITY` until independently resolved.
+
+Comment-only and quoted-string pseudo references are ignored in both directions.
+
+This enables useful source-audit relationships such as:
+
+```text
+Temple Guardian onMobDeath
+  -> ID.npc.TEMPLE_GUARDIAN_DOOR
+     -> openDoor(300)
+
+Granite Door onTrigger
+  -> ID.mob.TEMPLE_GUARDIAN
+     -> engage(player)
+```
+
+The next identity improvement is to replace filename-normalized reverse inference with authoritative IDs.lua / SQL / canonical entity-index resolution whenever those sources can prove the mapping.
