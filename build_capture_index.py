@@ -2775,6 +2775,7 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         counts["hp"] += hp_n
         counts["eventview"] += eview_n
         counts["caplog_chat"] += chat_n
+        counts["chat"] += chat_n
     # 2026-09-08: real bug -- this pattern (EventView/<capturer>/<Zone>.log) and the idview/simple
     # pattern above (eventview/(?:<capturer>/)?simple/<Zone>.log) both have exactly 2 path segments
     # after "eventview/", so this one was ALSO matching eventview/simple/<Zone>.log and
