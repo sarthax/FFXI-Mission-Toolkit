@@ -99,6 +99,7 @@ jobs:
           python test_fixtures/test_scripted_behavior_entity_symbols.py
           python test_fixtures/test_scripted_behavior_entity_aliases.py
           python test_fixtures/test_scripted_behavior_runtime_entity_refs.py
+          python test_fixtures/test_scripted_behavior_noncombat_mission_stress.py
           python test_fixtures/test_scripted_behavior_entity_loops.py
           python test_fixtures/test_scripted_behavior_symbolic_ranges.py
           python test_fixtures/test_scripted_behavior_shared_helpers.py
