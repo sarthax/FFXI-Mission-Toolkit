@@ -22,6 +22,7 @@
 <tr><td><strong>EventView</strong></td><td>Per-zone decoded packet observations plus whole-session <code>simple.log</code>/<code>raw.log</code> preservation. Session-wide decoded records use the explicit <code>__UNKNOWN__</code> zone sentinel rather than a guessed zone; raw session packets retain bytes with unknown zone/time when the source does not provide them.</td><td>Supported</td></tr>
 <tr><td><strong>IDView</strong></td><td>Event/CSID/entity/message observations across known legacy and block-text generations.</td><td>Supported</td></tr>
 <tr><td><strong>CapLog</strong></td><td>EventView/IDView-style records, HP observations, and CapLog chat/system text.</td><td>Supported</td></tr>
+<tr><td><strong>Windower Logger</strong></td><td>Daily <code>&lt;player&gt;_YYYY.MM.DD.log</code> chat files. Optional time prefixes are combined with the filename date; untimestamped lines remain time-unknown rather than receiving a guessed time.</td><td>Supported</td></tr>
 <tr><td><strong>HPTrack</strong></td><td>Observed mob HP ranges.</td><td>Supported</td></tr>
 <tr><td><strong>KITrack</strong></td><td>Key-item obtain/loss observations with position/zone context when recorded.</td><td>Supported</td></tr>
 <tr><td><strong>LevelRangeTrack</strong></td><td>Observed entity level ranges.</td><td>Supported</td></tr>
@@ -44,7 +45,7 @@
 <p>Raw packet-producing tools feed the common <code>capture_raw_packets</code> evidence store while retaining their own <code>source_format</code>, native source identity, row/block provenance, and optional packet metadata. Equivalent packets may be correlated by <code>opcode + direction + exact raw bytes</code>; the original observations are not deleted or merged.</p>
 
 <h2>Canonical chat convergence</h2>
-<p>PacketDB <code>CHATLOG</code> and CapLog chat/system lines now also feed <code>capture_chat_observations</code>. The canonical row keeps timestamp, direction when the source provides it, zone ID/name context, text, source format, source-native identity, and exact row/line provenance. The older <code>capture_caplog_chat</code> table remains for compatibility.</p>
+<p>PacketDB <code>CHATLOG</code>, CapLog chat/system lines, and Windower Logger daily chat files feed <code>capture_chat_observations</code>. The canonical row keeps timestamp, direction when the source provides it, zone ID/name context, text, source format, source-native identity, and exact row/line provenance. The older <code>capture_caplog_chat</code> table remains for compatibility.</p>
 
 <h2>Visual / OCR evidence</h2>
 <p><strong>Capturebar</strong> has no persisted log file, so support is video/screenshot based rather than file ingestion. YouTube OCR includes a built-in <code>capturebar_overlay</code> layout template and <code>capturebar</code> parsing profile for the default Wiggo32 HUD format: zone number/name, target/player name, X/Z/Y coordinates, rotation, main/sub job and levels, moon percentage, and moon phase. Parsed frames materialize as <code>CAPTUREBAR_CONTEXT</code> video evidence with the original frame/timestamp/crop provenance. Custom Capturebar display strings may require a saved layout and/or future parser extension.</p>
@@ -59,10 +60,14 @@
 <tr><td>Per-zone EventView raw siblings</td><td>Often redundant with the decoded/simple sibling already normalized.</td></tr>
 </tbody></table></div>
 
+<h2>Historical tool archaeology</h2>
+<p>The current archaeology pass audited stock Windower Logger/QuestLog/Pricer, classic and modern PacketViewer families, current Captain PacketLogger/PacketBridge/EventView v2, and Ashita entity utilities. The important distinction is whether a tool actually leaves reusable evidence on disk. QuestLog, old Pricer, and ScanZone do not; Captain PacketLogger is already format-compatible with the PacketViewer/VieweD raw-log family; PacketBridge is a live UDP forwarding opportunity rather than a file format. The detailed inventory and evidence notes are maintained in <code>docs/workbench/CAPTURE_TOOL_ARCHAEOLOGY.md</code>.</p>
+
 <h2>Known gaps / future adapters</h2>
 <div class="table-wrap"><table>
 <thead><tr><th>Gap</th><th>Current behavior</th><th>Recommended direction</th></tr></thead>
 <tbody>
+<tr><td><strong>Captain EventView v2 standalone logs</strong></td><td>Current Captain source writes a newer per-zone decoded-event text shape than the legacy EventView parser grammar.</td><td>Obtain/fixture-test a real emitted file, then add a generation-specific adapter without guessing opcode/class fields that are not present.</td></tr>
 <tr><td><strong>Lobby / world-server packet streams</strong></td><td>Current addon capture support is primarily zone/game-server oriented.</td><td>Research and model lobby/search/AH/account/storage stream capture separately when needed.</td></tr>
 <tr><td><strong>PacketDB ZONES / PACKET_DEFINITION</strong></td><td>Not imported as runtime facts because they are reference metadata, not observations.</td><td>Optionally preserve as source-supplied historical reference metadata.</td></tr>
 <tr><td><strong>Unknown historical/community loggers</strong></td><td>Unrecognized source files remain visible in ingestion results rather than being silently ignored.</td><td>Add adapters when real samples/schemas are found; prefer content signatures over folder-name assumptions.</td></tr>
@@ -76,7 +81,7 @@
 
 <h2>Current priority gaps</h2>
 <ol>
-<li>Continue searching historical Windower/Ashita/community logger ecosystems for additional real formats.</li>
+<li>Fixture-test and normalize Captain EventView v2 standalone logs.</li>
 <li>Lobby/world-server stream research for search, auction, storage/account, and related non-zone traffic.</li>
 <li>Optional preservation of PacketDB <code>ZONES</code>/<code>PACKET_DEFINITION</code> as historical reference metadata.</li>
 </ol>
