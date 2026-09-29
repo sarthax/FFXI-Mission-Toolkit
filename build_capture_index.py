@@ -970,12 +970,22 @@ def ingest_single_file(con, capture_id: int, filename: str, data: bytes) -> dict
                 error = "Unrecognized CSV schema"
         else:
             text = data.decode("utf-8", "replace")
-            fmt = sniff_text_format(text)
+            basename = Path(filename).name.lower()
+            if basename == "simple.log" and IDVIEW2_HEADER_RE.search(text):
+                fmt = "eventview_session_simple"
+            elif basename == "raw.log" and IDVIEW2_HEADER_RE.search(text) and PACKETLOGGER_HEXROW_RE.search(text):
+                fmt = "eventview_session_raw"
+            else:
+                fmt = sniff_text_format(text)
             src = SingleFileSource(filename, data)
             if fmt == "packeteer":
                 rows = raw_packet_ingest.ingest_packeteer(con, capture_id, src, filename)
             elif fmt == "idview_simple":
                 rows = ingest_idview_simple(con, capture_id, src, zone_db + ".log")
+            elif fmt == "eventview_session_simple":
+                rows = ingest_eventview_session_simple(con, capture_id, src, filename)
+            elif fmt == "eventview_session_raw":
+                rows = ingest_eventview_session_raw(con, capture_id, src, filename)
             elif fmt == "kitrack":
                 rows = ingest_kitrack(con, capture_id, src, zone_db + ".log")
             elif fmt == "eventview":
