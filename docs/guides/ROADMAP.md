@@ -1,5 +1,85 @@
 # Mission Toolkit — Roadmap
 
+## Current direction roadmap — 2026-09-29
+
+This is the authoritative forward-looking roadmap. Older phase/status sections remain below as
+historical implementation provenance, but this section supersedes them when status conflicts.
+
+### 1. Stable foundations
+
+The Workbench skeleton is established and should now be extended rather than repeatedly redesigned:
+
+- canonical evidence/feature graph, Feature Trace/Checker, validation and provenance;
+- DSP/Topaz/Topaz-Next/LSB/custom server adapters and broad logical schema normalization;
+- C++/binding/enum/packet/build analysis;
+- dependency-aware migration/package planning, scope review, proposals, approval, file apply and rollback;
+- client DAT read/capability foundation, ENTITY identity and EVENT comparison;
+- evidence-aware research sessions/tools/contradiction drill-down;
+- broad capture ingestion, exact source provenance, OCR/video alignment, PCAP/TCP reconstruction and validated lobby decoding.
+
+### 2. Active foundation — behavioral dependency closure
+
+This is the current highest-priority architecture track. Packages are only trustworthy when the
+Workbench can discover behavioral dependencies that are not simple file references.
+
+Current sequence:
+
+- [x] Mission/quest behavioral state-machine model and source extraction foundation.
+- [x] Mission/quest source behavior can project into canonical graph evidence.
+- [x] Add generic conditional/cross-zone/system-state dependency representation and Package Scope traversal, preserving explicit review rather than converting conditional coupling into ordinary REQUIRED truth.
+- [ ] Add source-family detectors that discover conditional system coupling from implementation evidence rather than only curated proof/truth inputs.
+- [ ] Implement generic scripted-entity/combat behavior representation and extraction.
+- [ ] Emit scripted combat behavior/dependencies into the canonical graph.
+- [ ] Unify acquisition/obtainability across shops, drops, rewards, HELM, gardening, exchange, appraisal, synthesis, and synergy.
+- [ ] Complete mission/quest dynamic helper, DefaultActions/fallback, client dialog/event-resource, trade/timer/spawn/death/battlefield closure.
+- [ ] Run another instance-heavy mission proof after the mission/state-machine closure is sufficiently complete.
+
+### 3. Client/server synchronization
+
+- [ ] Broaden packet ↔ client DAT/EXE/DLL ↔ server relationships.
+- [ ] Expand client capability probes and multi-client validation beyond structural EVENT matching.
+- [ ] Add optional decoder-backed instruction/CFG/xref/function recovery with decoder/version provenance.
+- [ ] Complete new-item DAT allocation/injection and coordinated server SQL/client index changes.
+
+### 4. Protocol/capture research
+
+- [x] PCAP/PCAPNG evidence preservation.
+- [x] Generic TCP flow reconstruction.
+- [x] Validated lobby TCP framing/classification/decoder.
+- [ ] Search/cache TCP decoder after a real protocol-generation fixture is available.
+- [ ] Cross-plane lobby → search → world endpoint/session correlation.
+- [ ] Validate Captain EventViewV2/HPTrackV2/NPCLoggerV2/PathLogV2 against real samples.
+- [ ] Separate persistent/global telemetry from session-scoped capture identity where appropriate.
+
+### 5. Delivery systems
+
+Use the generic Workbench rather than adding system-specific concepts to the core:
+
+- [ ] Assault.
+- [ ] Nyzul Isle.
+- [ ] Salvage.
+- [ ] Abyssea.
+- [ ] Einherjar.
+- [ ] Limbus preservation when a suitable implementation/client snapshot is selected.
+
+### 6. Migration completion
+
+- [ ] Safe database-level apply and rollback.
+- [ ] Approval/apply/rollback GUI after dependency-completeness gates are preserved end to end.
+- [ ] Broader verified source→target conversion backends without guessing unsupported routes.
+- [ ] Complete generalized new-item client DAT write orchestration.
+
+### 7. Product/workflow backlog
+
+- [ ] Watched-folder or live Windower/Ashita ingestion.
+- [ ] Capture-data request/fulfillment workflow.
+- [ ] Capture annotations and invalid-data flags.
+- [ ] Tag/category completeness checklists.
+- [ ] Capture → server drafting/export through canonical evidence and package review.
+- [ ] Authenticated remote/hosted access.
+- [ ] Discord/reference-history catalog integration.
+
+
 No prior phased plan document existed for this project (checked `mission_toolkit/` for any
 `*plan*`/`*PHASE*` file and found none) — this is the first one, written 2026-09-06 to capture
 what's done and lay out what's next per the user's request to track future feature phases.
