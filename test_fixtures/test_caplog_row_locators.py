@@ -47,7 +47,7 @@ def main():
                ORDER BY start_line""",
             (cid, relname),
         ).fetchall()
-        assert len(rows) == 4, rows
+        assert len(rows) == 5, rows
         digest = hashlib.sha256(payload).hexdigest()
         assert all(r[2] == digest for r in rows), rows
 
@@ -56,6 +56,7 @@ def main():
         assert by_table["capture_hp_events"][4:6] == (3, 3), by_table["capture_hp_events"]
         assert by_table["capture_eventview"][4:6] == (4, 5), by_table["capture_eventview"]
         assert by_table["capture_caplog_chat"][4:6] == (6, 6), by_table["capture_caplog_chat"]
+        assert by_table["capture_chat_observations"][4:6] == (6, 6), by_table["capture_chat_observations"]
 
         for row in rows:
             target, row_key, _digest, basis, start_line, end_line, start_offset, end_offset, details = row
@@ -72,7 +73,7 @@ def main():
                 assert source_slice.startswith("[12:00:01] [ID View]")
             elif target == "capture_hp_events":
                 assert source_slice.startswith("[12:00:02] [HP Track]")
-            elif target == "capture_caplog_chat":
+            elif target in {"capture_caplog_chat", "capture_chat_observations"}:
                 assert source_slice.startswith("[12:00:04] Obtained temporary item.")
             assert json.loads(details)["source"] == "caplog"
 
@@ -90,6 +91,15 @@ def main():
         ).fetchone()
         assert eview == (17000001, "0x034", "CEventPacket", "GP_SERV_COMMAND_EVENT"), eview
 
+        canonical_chat = con.execute(
+            """SELECT ts,direction,zone_id,zone_db,text,source_format
+               FROM capture_chat_observations WHERE capture_id=?""",
+            (cid,),
+        ).fetchone()
+        assert canonical_chat == (
+            "12:00:04", None, None, "Test Zone", "Obtained temporary item.", "caplog"
+        ), canonical_chat
+
         src = build_capture_index.Source(root)
         try:
             build_capture_index.ingest_caplog(con, cid, src, relname)
@@ -98,7 +108,7 @@ def main():
         assert con.execute(
             "SELECT COUNT(*) FROM capture_row_locators WHERE capture_id=? AND filename=?",
             (cid, relname),
-        ).fetchone()[0] == 4
+        ).fetchone()[0] == 5
 
         con.close()
 
