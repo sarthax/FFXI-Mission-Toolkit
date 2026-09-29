@@ -146,6 +146,31 @@ def main():
             edge["kind"]=="CALLS_SHARED_HELPER"
             for edge in graph["edges"]
         ),graph["edges"]
+        assert graph["summary"]["shared_helper_impact_nodes"]>=4,graph["summary"]
+        assert any(node["kind"]=="helper_input" for node in graph["nodes"]),graph["nodes"]
+        assert any(node["kind"]=="helper_effect" for node in graph["nodes"]),graph["nodes"]
+        assert any(node["kind"]=="helper_call" for node in graph["nodes"]),graph["nodes"]
+        assert any(edge["kind"]=="HELPER_UPSTREAM_INPUT" for edge in graph["edges"]),graph["edges"]
+        assert any(edge["kind"]=="HELPER_DOWNSTREAM_EFFECT" for edge in graph["edges"]),graph["edges"]
+        assert any(edge["kind"]=="HELPER_DIRECT_CALL" for edge in graph["edges"]),graph["edges"]
+
+        impact_nodes=[
+            node for node in graph["nodes"]
+            if node["kind"] in {"helper_input","helper_effect","helper_call"}
+        ]
+        assert impact_nodes,graph["nodes"]
+        assert all(
+            node["meta"].get("helper")=="xi.salvage.onDoorOpen"
+            for node in impact_nodes
+        ),impact_nodes
+        assert not any(
+            node["meta"].get("helper")=="xi.instance.sharedCallback"
+            for node in impact_nodes
+        ),impact_nodes
+        assert not any(
+            node["meta"].get("helper")=="xi.unknown.missingThing"
+            for node in impact_nodes
+        ),impact_nodes
 
     print("shared helper definition resolution regression: PASS")
 
