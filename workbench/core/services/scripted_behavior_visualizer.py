@@ -486,6 +486,7 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
                         iid=f"shared-helper-input:{qualified}:{impact_index}"
                         impact_meta=dict(impact)
                         impact_meta["impact_kind"]=impact_meta.pop("kind",None)
+                        impact_meta["impact_label"]=impact_meta.pop("label",None)
                         node(
                             iid,"helper_input",
                             f"{impact.get('kind')} · {impact.get('label')}",
@@ -497,6 +498,7 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
                         oid=f"shared-helper-effect:{qualified}:{impact_index}"
                         impact_meta=dict(impact)
                         impact_meta["impact_kind"]=impact_meta.pop("kind",None)
+                        impact_meta["impact_label"]=impact_meta.pop("label",None)
                         node(
                             oid,"helper_effect",
                             f"{impact.get('kind')} · {impact.get('label')}",
