@@ -50,6 +50,20 @@ def make_packetdb(path: Path):
            VALUES (?,?,?,?,?,?,?,?)""",
         (1, "2026-09-28 12:00:00", 0, 75, 0x00E, 16, 0x1234, RAW_BYTES),
     )
+    con.execute(
+        """CREATE TABLE CHATLOG (
+            CHAT_ID INTEGER PRIMARY KEY,
+            RECEIVED_DT DATETIME NOT NULL,
+            DIRECTION INTEGER NOT NULL,
+            ZONE_ID INTEGER,
+            CHAT_TEXT TEXT NOT NULL
+        )"""
+    )
+    con.execute(
+        """INSERT INTO CHATLOG (CHAT_ID,RECEIVED_DT,DIRECTION,ZONE_ID,CHAT_TEXT)
+           VALUES (?,?,?,?,?)""",
+        (7, "2026-09-28 12:00:01", 0, 75, "PacketDB chat sample"),
+    )
     con.commit()
     con.close()
 
@@ -103,6 +117,17 @@ def main():
         assert packetdb[0] == "incoming", packetdb
         assert packetdb[3] == 75, packetdb
 
+        chat_rows = con.execute(
+            """SELECT ts,direction,zone_id,zone_db,text,source_format,source_native_id
+               FROM capture_chat_observations WHERE capture_id=? ORDER BY seq""",
+            (cid,),
+        ).fetchall()
+        packetdb_chat = next(row for row in chat_rows if row[5] == "packetdb_chatlog")
+        assert packetdb_chat[:5] == (
+            "2026-09-28 12:00:01", "incoming", 75, None, "PacketDB chat sample"
+        ), packetdb_chat
+        assert packetdb_chat[6].endswith(":chat:7"), packetdb_chat
+
         packeteer = next(row for row in rows if row[6] == "packeteer")
         assert packeteer[0] == "incoming", packeteer
         assert packeteer[1].lower() == "0x00e", packeteer
@@ -129,6 +154,16 @@ def main():
         assert len(packetdb_locators) == 1, packetdb_locators
         assert packetdb_locators[0][0] == "sqlite-row", packetdb_locators
         assert json.loads(packetdb_locators[0][1])["packetdb_packet_id"] == 1
+
+        packetdb_chat_locators = con.execute(
+            """SELECT locator_basis,details_json FROM capture_row_locators
+               WHERE capture_id=? AND filename='packetdb.sqlite'
+                 AND target_table='capture_chat_observations'""",
+            (cid,),
+        ).fetchall()
+        assert len(packetdb_chat_locators) == 1, packetdb_chat_locators
+        assert packetdb_chat_locators[0][0] == "sqlite-row"
+        assert json.loads(packetdb_chat_locators[0][1])["packetdb_chat_id"] == 7
 
         npcl_targets = {
             row[0] for row in con.execute(
@@ -157,6 +192,9 @@ def main():
         assert con.execute(
             "SELECT COUNT(*) FROM capture_raw_packets WHERE capture_id=?", (cid,)
         ).fetchone()[0] == 4
+        assert con.execute(
+            "SELECT COUNT(*) FROM capture_chat_observations WHERE capture_id=?", (cid,)
+        ).fetchone()[0] >= 1
 
         # Old databases receive the new nullable metadata columns without losing rows.
         old = sqlite3.connect(":memory:")
