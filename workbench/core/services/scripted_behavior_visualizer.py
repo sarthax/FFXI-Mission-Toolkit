@@ -1084,5 +1084,6 @@ def inspect_lsb_behavior(root: Path, relative: str) -> dict:
             "Literal CSID branch effect bundles keep key items, world/entity actions, rewards, and event updates attached to the branch that contains them; unsupported or dynamic effects remain generic/raw evidence rather than being reassigned.",
             "Literal option/result outcomes are split from their parent CSID bundle. Only equality against a literal is promoted; dynamic predicates and fallback arms are masked from parent attribution and remain generic evidence.",
             "CSID guard hooks retain their handler role: onEventFinish and onEventUpdate are tracked separately while sharing the same event identity model.",
+            "Literal canonical-state guards nested inside a literal event outcome are modeled as an additional condition layer. Unsupported nested predicates are masked from the parent outcome bundle rather than treated as unconditional.",
         ],
     }
