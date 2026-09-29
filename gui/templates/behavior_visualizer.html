@@ -40,6 +40,7 @@
   <div class="stat"><div class="n">{{ result.graph.summary.targets }}</div><div class="l">Targets / systems</div></div>
   <div class="stat"><div class="n">{{ result.graph.summary.states }}</div><div class="l">Named states</div></div>
   <div class="stat"><div class="n">{{ result.graph.summary.callbacks }}</div><div class="l">Callbacks</div></div>
+  <div class="stat"><div class="n">{{ result.graph.summary.transitions }}</div><div class="l">State transitions</div></div>
 </div>
 
 {% if result.graph.summary.hook_owners %}
@@ -76,6 +77,25 @@
     <p class="muted">Inspect exact source provenance, trigger/state/effect metadata, API identity, or affected target.</p>
   </div>
 </section>
+
+{% if result.graph.transitions %}
+<h2>State Transitions</h2>
+<p class="muted">Verified literal transitions inferred only when a switch selector is a direct alias of named Lua state and the case writes back to that same state.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>State</th><th>From</th><th>To</th><th>Hook</th><th>Source</th><th>Confidence</th></tr></thead>
+<tbody>
+{% for row in result.graph.transitions %}
+<tr>
+  <td><code>{{ row.name }}</code><br><span class="muted mono">{{ row.state_id }}</span></td>
+  <td><code>{{ row.from }}</code></td>
+  <td><code>{{ row.to }}</code></td>
+  <td><span class="chip">{{ row.hook or "source" }}</span></td>
+  <td><code>{{ row.source_path or result.source.path }}</code>{% if row.source_lines %}<br><span class="muted">lines {{ row.source_lines[0] }}–{{ row.source_lines[1] }}</span>{% endif %}</td>
+  <td>{{ row.confidence }}</td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+{% endif %}
 
 {% if result.graph.states %}
 <h2>Named State Flow</h2>
