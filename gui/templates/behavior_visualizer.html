@@ -41,6 +41,7 @@
   <div class="stat"><div class="n">{{ result.graph.summary.states }}</div><div class="l">Named states</div></div>
   <div class="stat"><div class="n">{{ result.graph.summary.callbacks }}</div><div class="l">Callbacks</div></div>
   <div class="stat"><div class="n">{{ result.graph.summary.transitions }}</div><div class="l">State transitions</div></div>
+  <div class="stat"><div class="n">{{ result.graph.summary.shared_helpers }}</div><div class="l">Shared helpers</div></div>
 </div>
 
 {% if result.graph.summary.hook_owners %}
@@ -66,6 +67,7 @@
     <span><i class="legend-dot rule"></i> rule/helper</span>
     <span><i class="legend-dot effect"></i> downstream effect/API</span>
     <span><i class="legend-dot state"></i> named state variable</span>
+    <span><i class="legend-dot shared-helper"></i> resolved shared helper</span>
     <span><i class="legend-dot target"></i> affected actor/system</span>
   </div>
   <p id="behavior-status" class="muted"></p>
@@ -125,6 +127,28 @@
 </tbody></table></div>
 {% endif %}
 
+{% if result.shared_helpers %}
+<h2>Shared Helper Definitions</h2>
+<p class="muted">Exact <code>xi.&lt;module&gt;.&lt;function&gt;</code> definitions found under the LSB globals tree. Multiple candidates remain ambiguous rather than being guessed.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Helper</th><th>Status</th><th>Definition candidates</th></tr></thead>
+<tbody>
+{% for helper in result.shared_helpers %}
+<tr>
+  <td><code>{{ helper.qualified_name }}</code></td>
+  <td><span class="chip">{{ helper.status }}</span></td>
+  <td>
+    {% for candidate in helper.candidates %}
+      <div><code>{{ candidate.path }}</code> <span class="muted">line {{ candidate.line }}</span></div>
+    {% else %}
+      <span class="muted">No exact definition candidate found in module-scoped globals.</span>
+    {% endfor %}
+  </td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+{% endif %}
+
 <h2>Same-zone controllers / context</h2>
 <p class="muted">These files are scanned because they can influence actors in the same zone. They are <strong>context, not proven dependencies</strong>, unless another evidence path establishes a direct relationship.</p>
 {% if result.contexts %}
@@ -153,7 +177,7 @@
 
 <script id="behavior-data" type="application/json">{{ result.graph|tojson }}</script>
 <style>
-.behavior-inspector{margin-top:1.5rem}.behavior-controls,.behavior-legend{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;margin:.6rem 0}.behavior-controls input{min-width:20rem}.behavior-legend span{font-size:.85rem;color:var(--muted)}.legend-dot{display:inline-block;width:.75rem;height:.75rem;border-radius:50%;margin-right:.25rem;vertical-align:-.05rem;border:1px solid var(--border)}.legend-dot.condition{background:#7c3aed}.legend-dot.hook{background:#2563eb}.legend-dot.callback{background:#be185d}.legend-dot.rule{background:#475569}.legend-dot.effect{background:#059669}.legend-dot.state{background:#0891b2}.legend-dot.target{background:#d97706}.behavior-canvas-wrap{overflow:auto;border:1px solid var(--border);border-radius:6px;background:var(--panel,#0f172a)}#behavior-graph{width:100%;min-width:900px;min-height:620px}.behavior-edge{stroke:#64748b;stroke-width:1.4;fill:none;marker-end:url(#behavior-arrow)}.behavior-edge.dim{opacity:.12}.behavior-node{cursor:pointer}.behavior-node rect{rx:8;ry:8;stroke:#cbd5e1;stroke-width:1.3}.behavior-node text{fill:#f8fafc;font-size:11px;pointer-events:none}.behavior-node .secondary{fill:#cbd5e1;font-size:9px}.behavior-node.condition rect{fill:#5b21b6}.behavior-node.hook rect{fill:#1d4ed8}.behavior-node.callback rect{fill:#9d174d}.behavior-node.rule rect{fill:#334155}.behavior-node.effect rect{fill:#047857}.behavior-node.state rect{fill:#0e7490}.behavior-node.target rect{fill:#b45309}.behavior-node.subject rect{fill:#0f766e}.behavior-node.selected rect{stroke:#fff;stroke-width:3}.behavior-node.dim{opacity:.2}.behavior-detail{margin-top:.8rem;padding:1rem;border:1px solid var(--border);border-radius:6px;background:var(--card,#111827);white-space:normal}.behavior-detail code{white-space:pre-wrap;word-break:break-word}.behavior-detail dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:.3rem .8rem}.behavior-detail dt{color:var(--muted)}.behavior-detail dd{margin:0;min-width:0;word-break:break-word}
+.behavior-inspector{margin-top:1.5rem}.behavior-controls,.behavior-legend{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;margin:.6rem 0}.behavior-controls input{min-width:20rem}.behavior-legend span{font-size:.85rem;color:var(--muted)}.legend-dot{display:inline-block;width:.75rem;height:.75rem;border-radius:50%;margin-right:.25rem;vertical-align:-.05rem;border:1px solid var(--border)}.legend-dot.condition{background:#7c3aed}.legend-dot.hook{background:#2563eb}.legend-dot.callback{background:#be185d}.legend-dot.rule{background:#475569}.legend-dot.effect{background:#059669}.legend-dot.state{background:#0891b2}.legend-dot.shared-helper{background:#7c2d12}.legend-dot.target{background:#d97706}.behavior-canvas-wrap{overflow:auto;border:1px solid var(--border);border-radius:6px;background:var(--panel,#0f172a)}#behavior-graph{width:100%;min-width:900px;min-height:620px}.behavior-edge{stroke:#64748b;stroke-width:1.4;fill:none;marker-end:url(#behavior-arrow)}.behavior-edge.dim{opacity:.12}.behavior-node{cursor:pointer}.behavior-node rect{rx:8;ry:8;stroke:#cbd5e1;stroke-width:1.3}.behavior-node text{fill:#f8fafc;font-size:11px;pointer-events:none}.behavior-node .secondary{fill:#cbd5e1;font-size:9px}.behavior-node.condition rect{fill:#5b21b6}.behavior-node.hook rect{fill:#1d4ed8}.behavior-node.callback rect{fill:#9d174d}.behavior-node.rule rect{fill:#334155}.behavior-node.effect rect{fill:#047857}.behavior-node.state rect{fill:#0e7490}.behavior-node.shared_helper rect{fill:#7c2d12}.behavior-node.target rect{fill:#b45309}.behavior-node.subject rect{fill:#0f766e}.behavior-node.selected rect{stroke:#fff;stroke-width:3}.behavior-node.dim{opacity:.2}.behavior-detail{margin-top:.8rem;padding:1rem;border:1px solid var(--border);border-radius:6px;background:var(--card,#111827);white-space:normal}.behavior-detail code{white-space:pre-wrap;word-break:break-word}.behavior-detail dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:.3rem .8rem}.behavior-detail dt{color:var(--muted)}.behavior-detail dd{margin:0;min-width:0;word-break:break-word}
 </style>
 <script>
 (() => {
