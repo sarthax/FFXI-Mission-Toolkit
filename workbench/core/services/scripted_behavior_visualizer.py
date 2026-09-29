@@ -681,17 +681,30 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
             row=event_rows.setdefault(event_id,{
                 "event_id":event_id,
                 "start_hooks":[],
+                "guard_hooks":[],
                 "finish_guard_hooks":[],
+                "update_guard_hooks":[],
                 "start_evidence":[],
+                "guard_evidence":[],
                 "finish_guard_evidence":[],
+                "update_guard_evidence":[],
             })
-            if hook and hook not in row["finish_guard_hooks"]:
-                row["finish_guard_hooks"].append(hook)
-            row["finish_guard_evidence"].append({
+            evidence={
                 "hook":hook,
                 "line":condition.metadata.get("source_line"),
                 "source":condition.metadata.get("source_line_text"),
-            })
+            }
+            if hook and hook not in row["guard_hooks"]:
+                row["guard_hooks"].append(hook)
+            row["guard_evidence"].append(evidence)
+            if hook=="onEventFinish":
+                if hook not in row["finish_guard_hooks"]:
+                    row["finish_guard_hooks"].append(hook)
+                row["finish_guard_evidence"].append(evidence)
+            elif hook=="onEventUpdate":
+                if hook not in row["update_guard_hooks"]:
+                    row["update_guard_hooks"].append(hook)
+                row["update_guard_evidence"].append(evidence)
         for effect in rule.effects:
             if effect.effect!="START_EVENT":
                 continue
@@ -714,10 +727,20 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
     event_links=[]
     for event_id,row in event_rows.items():
         pairs=[
-            {"start_hook":starter,"finish_guard_hook":finisher}
+            {
+                "start_hook":starter,
+                "guard_hook":guard,
+                "handler_role":(
+                    "FINISH" if guard=="onEventFinish"
+                    else "UPDATE" if guard=="onEventUpdate"
+                    else "OTHER"
+                ),
+                **({"finish_guard_hook":guard} if guard=="onEventFinish" else {}),
+                **({"update_guard_hook":guard} if guard=="onEventUpdate" else {}),
+            }
             for starter in sorted(row["start_hooks"])
-            for finisher in sorted(row["finish_guard_hooks"])
-            if starter!=finisher
+            for guard in sorted(row["guard_hooks"])
+            if starter!=guard
         ]
         if not pairs:
             continue
@@ -726,7 +749,7 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
             "relationship":"SHARED_EVENT_ID_ACROSS_HOOKS",
             "cross_hook_pairs":pairs,
             "ordering":"UNPROVEN",
-            "evidence_basis":"same literal CSID is started in one hook and guarded in another",
+            "evidence_basis":"same literal CSID is started in one hook and guarded in another event handler",
         })
 
     event_branch_effects=[]
