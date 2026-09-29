@@ -72,6 +72,86 @@ def _existing_seq(
     return int(row[0]) if row else None
 
 
+def _next_chat_seq(con: sqlite3.Connection, capture_id: int) -> int:
+    row = con.execute(
+        "SELECT COALESCE(MAX(seq), -1) + 1 FROM capture_chat_observations WHERE capture_id=?",
+        (capture_id,),
+    ).fetchone()
+    return int(row[0] or 0)
+
+
+def _existing_chat_seq(
+    con: sqlite3.Connection,
+    capture_id: int,
+    source_format: str,
+    source_native_id: str | None,
+) -> int | None:
+    if not source_native_id:
+        return None
+    row = con.execute(
+        """SELECT seq FROM capture_chat_observations
+           WHERE capture_id=? AND source_format=? AND source_native_id=?""",
+        (capture_id, source_format, source_native_id),
+    ).fetchone()
+    return int(row[0]) if row else None
+
+
+def insert_chat_observation(
+    con: sqlite3.Connection,
+    capture_id: int,
+    *,
+    ts: str | None,
+    direction: str | None,
+    zone_id: int | None,
+    zone_db: str | None,
+    channel: str | None,
+    text: str,
+    source_format: str,
+    source_native_id: str | None,
+    filename: str,
+    source_sha256: str,
+    locator_basis: str,
+    start_line: int | None = None,
+    end_line: int | None = None,
+    start_offset: int | None = None,
+    end_offset: int | None = None,
+    details: dict | None = None,
+    seq: int | None = None,
+) -> int:
+    existing = _existing_chat_seq(con, capture_id, source_format, source_native_id)
+    if seq is None:
+        seq = existing if existing is not None else _next_chat_seq(con, capture_id)
+    con.execute(
+        """INSERT OR REPLACE INTO capture_chat_observations
+           (capture_id,seq,ts,direction,zone_id,zone_db,channel,text,source_format,source_native_id)
+           VALUES (?,?,?,?,?,?,?,?,?,?)""",
+        (
+            capture_id, seq, ts, direction, zone_id, zone_db, channel, text,
+            source_format, source_native_id,
+        ),
+    )
+    locator_details = {
+        "source_format": source_format,
+        "source_native_id": source_native_id,
+        "timestamp": ts,
+        "direction": direction,
+        "zone_id": zone_id,
+        "zone_db": zone_db,
+        "channel": channel,
+    }
+    if details:
+        locator_details.update(details)
+    capture_integrity.record_row_locator(
+        con, capture_id, filename, "capture_chat_observations",
+        json.dumps({"seq": seq}, sort_keys=True), locator_basis,
+        source_sha256=source_sha256,
+        start_line=start_line, end_line=end_line,
+        start_offset=start_offset, end_offset=end_offset,
+        details=locator_details,
+    )
+    return seq
+
+
 def insert_raw_packet(
     con: sqlite3.Connection,
     capture_id: int,
@@ -151,29 +231,41 @@ def insert_raw_packet(
     return seq
 
 
-def ingest_packetdb(con: sqlite3.Connection, capture_id: int, src, relname: str) -> int:
-    """Ingest MalRD PacketDB PACKETS rows without discarding its native packet metadata."""
+def ingest_packetdb(con: sqlite3.Connection, capture_id: int, src, relname: str) -> tuple[int, int]:
+    """Ingest MalRD PacketDB PACKETS and CHATLOG rows with native metadata/provenance."""
     source_bytes = src.read_bytes(relname)
     source_sha256 = capture_integrity.sha256_bytes(source_bytes)
     tmp = tempfile.NamedTemporaryFile(suffix=".sqlite", delete=False)
     tmp.write(source_bytes)
     tmp.close()
-    rows = []
+    packet_rows = []
+    chat_rows = []
     try:
         db = sqlite3.connect(tmp.name)
         try:
-            cols = {r[1].upper() for r in db.execute("PRAGMA table_info(PACKETS)")}
+            tables = {str(r[0]).upper() for r in db.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            )}
+            packet_cols = {r[1].upper() for r in db.execute("PRAGMA table_info(PACKETS)")}
             required = {
                 "PACKET_ID", "RECEIVED_DT", "DIRECTION", "ZONE_ID",
                 "PACKET_TYPE", "PACKET_SIZE", "PACKET_SYNC", "PACKET_DATA",
             }
-            if not required <= cols:
+            if not required <= packet_cols:
                 raise ValueError("PacketDB PACKETS schema is missing required columns")
-            rows = db.execute(
+            packet_rows = db.execute(
                 """SELECT PACKET_ID,RECEIVED_DT,DIRECTION,ZONE_ID,PACKET_TYPE,
                           PACKET_SIZE,PACKET_SYNC,PACKET_DATA
                    FROM PACKETS ORDER BY RECEIVED_DT,PACKET_ID"""
             ).fetchall()
+            if "CHATLOG" in tables:
+                chat_cols = {r[1].upper() for r in db.execute("PRAGMA table_info(CHATLOG)")}
+                chat_required = {"CHAT_ID","RECEIVED_DT","DIRECTION","ZONE_ID","CHAT_TEXT"}
+                if chat_required <= chat_cols:
+                    chat_rows = db.execute(
+                        """SELECT CHAT_ID,RECEIVED_DT,DIRECTION,ZONE_ID,CHAT_TEXT
+                           FROM CHATLOG ORDER BY RECEIVED_DT,CHAT_ID"""
+                    ).fetchall()
         finally:
             db.close()
     finally:
@@ -184,15 +276,16 @@ def ingest_packetdb(con: sqlite3.Connection, capture_id: int, src, relname: str)
 
     con.execute(
         """DELETE FROM capture_row_locators
-           WHERE capture_id=? AND filename=? AND target_table='capture_raw_packets'""",
+           WHERE capture_id=? AND filename=? AND target_table IN
+                 ('capture_raw_packets','capture_chat_observations')""",
         (capture_id, relname),
     )
-    count = 0
-    for packet_id, ts, direction, zone_id, packet_type, packet_size, sync_id, packet_data in rows:
+    packet_count = 0
+    for packet_id, ts, direction, zone_id, packet_type, packet_size, sync_id, packet_data in packet_rows:
         direction_name = "incoming" if int(direction) == 0 else (
             "outgoing" if int(direction) == 1 else "unknown"
         )
-        native_id = f"{relname}:{packet_id}"
+        native_id = f"{relname}:packet:{packet_id}"
         insert_raw_packet(
             con, capture_id,
             ts=str(ts) if ts is not None else None,
@@ -207,10 +300,32 @@ def ingest_packetdb(con: sqlite3.Connection, capture_id: int, src, relname: str)
             filename=relname,
             source_sha256=source_sha256,
             locator_basis="sqlite-row",
-            details={"packetdb_packet_id": packet_id},
+            details={"packetdb_packet_id": packet_id, "source_table": "PACKETS"},
         )
-        count += 1
-    return count
+        packet_count += 1
+
+    chat_count = 0
+    for chat_id, ts, direction, zone_id, chat_text in chat_rows:
+        direction_name = "incoming" if int(direction) == 0 else (
+            "outgoing" if int(direction) == 1 else "unknown"
+        )
+        insert_chat_observation(
+            con, capture_id,
+            ts=str(ts) if ts is not None else None,
+            direction=direction_name,
+            zone_id=int(zone_id) if zone_id is not None else None,
+            zone_db=None,
+            channel=None,
+            text=str(chat_text),
+            source_format="packetdb",
+            source_native_id=f"{relname}:chat:{chat_id}",
+            filename=relname,
+            source_sha256=source_sha256,
+            locator_basis="sqlite-row",
+            details={"packetdb_chat_id": chat_id, "source_table": "CHATLOG"},
+        )
+        chat_count += 1
+    return packet_count, chat_count
 
 
 def _packeteer_blocks(text: str):
