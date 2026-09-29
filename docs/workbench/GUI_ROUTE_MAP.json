@@ -317,6 +317,22 @@
     },
     {
       "method": "GET",
+      "path": "/behavior",
+      "home": "Features",
+      "section": "Behavior Inspector",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/behavior/graph.json",
+      "home": "Features",
+      "section": "Behavior Inspector",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
       "path": "/features/trace",
       "home": "Features",
       "section": "Feature Trace",
