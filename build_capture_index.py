@@ -1860,7 +1860,7 @@ def _npclogger_lua_optional_fields(fields: dict) -> tuple:
         _npclogger_lua_optional_int(fields, "flags1"),
         _npclogger_lua_optional_int(fields, "flags2"),
         _npclogger_lua_optional_int(fields, "flags3"),
-        _npclogger_lua_optional_int(fields, "legacy_flag", "flag"),
+        _npclogger_lua_optional_int(fields, "legacy_flag"),
         _npclogger_lua_optional_int(fields, "sub_kind", "subkind"),
     )
 
@@ -4000,9 +4000,9 @@ def backfill_npc_fields(con):
                     if "UniqueNo" not in cols:
                         continue
                     select_cols = ["UniqueNo"]
-                    for col in ("legacy_look", "DoorId", "ActIndex", "Flags0", "Flags1", "Flags2",
-                                "Flags3", "legacy_flag", "SubKind"):
-                        select_cols.append(col if col in cols else "NULL")
+                    for c in ("legacy_look", "DoorId", "ActIndex", "Flags0", "Flags1", "Flags2",
+                              "Flags3", "legacy_flag", "SubKind"):
+                        select_cols.append(c if c in cols else "NULL")
                     sql = f"SELECT {', '.join(select_cols)} FROM entries"
                     for (uid, look, door_id, act_index, flags0, flags1, flags2, flags3,
                          legacy_flag, sub_kind) in sub.execute(sql):
