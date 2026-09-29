@@ -99,7 +99,13 @@ DEFAULT_SECTION_LABEL = "chat"
 CAPTURE_PROFILE_PLAIN = "plain"
 CAPTURE_PROFILE_TIMESTAMPED = "timestamped"
 CAPTURE_PROFILE_PACKETLOGGER = "packetlogger"
-CAPTURE_PROFILES = [CAPTURE_PROFILE_PLAIN, CAPTURE_PROFILE_TIMESTAMPED, CAPTURE_PROFILE_PACKETLOGGER]
+CAPTURE_PROFILE_CAPTUREBAR = "capturebar"
+CAPTURE_PROFILES = [
+    CAPTURE_PROFILE_PLAIN,
+    CAPTURE_PROFILE_TIMESTAMPED,
+    CAPTURE_PROFILE_PACKETLOGGER,
+    CAPTURE_PROFILE_CAPTUREBAR,
+]
 DEFAULT_CAPTURE_PROFILE = CAPTURE_PROFILE_PLAIN
 
 PREPROCESS_PROFILE_STANDARD = "standard"
@@ -187,6 +193,21 @@ _BUILTIN_LAYOUT_PROFILES = {
         }],
         "builtin": True,
     },
+    "capturebar_overlay": {
+        "name": "Capturebar overlay",
+        "description": (
+            "Wiggo32 Capturebar default HUD format: zone, target/player, X/Z/Y coordinates, "
+            "rotation, jobs/levels, and moon percent/phase. Configure the real crop before use."
+        ),
+        "regions": [{
+            "label": "capturebar",
+            "crop": None,
+            "fps": 2.0,
+            "capture_profile": CAPTURE_PROFILE_CAPTUREBAR,
+            "preprocess_profile": PREPROCESS_PROFILE_SMALL,
+        }],
+        "builtin": True,
+    },
     "research_combo": {
         "name": "Research combo",
         "description": "Chat + EView + NPCLogger region roles. Save a real coordinate layout before reuse.",
@@ -194,6 +215,7 @@ _BUILTIN_LAYOUT_PROFILES = {
             {"label": "chat", "crop": None, "fps": 2.0, "capture_profile": CAPTURE_PROFILE_PLAIN, "preprocess_profile": PREPROCESS_PROFILE_CHAT},
             {"label": "eview", "crop": None, "fps": 2.0, "capture_profile": CAPTURE_PROFILE_PACKETLOGGER, "preprocess_profile": PREPROCESS_PROFILE_PACKET},
             {"label": "npclogger", "crop": None, "fps": 2.0, "capture_profile": CAPTURE_PROFILE_PLAIN, "preprocess_profile": PREPROCESS_PROFILE_SMALL},
+            {"label": "capturebar", "crop": None, "fps": 2.0, "capture_profile": CAPTURE_PROFILE_CAPTUREBAR, "preprocess_profile": PREPROCESS_PROFILE_SMALL},
         ],
         "builtin": True,
     },
@@ -676,12 +698,68 @@ def apply_cross_frame_consensus(records: list[dict], max_gap_seconds: float = 1.
     return records
 
 
+_CAPTUREBAR_RE = re.compile(
+    r'^\s*\[(?P<zone_id>\d+)\](?P<zone_name>.+?)\s+-\s+'
+    r'(?P<target_name>.+?)\s+'
+    r'\((?P<x>-?\d+(?:\.\d+)?),(?P<z>-?\d+(?:\.\d+)?),(?P<y>-?\d+(?:\.\d+)?)\)\s+'
+    r'R\((?P<rotation>-?\d+)\)\s+'
+    r'\((?P<main_job>[A-Za-z?]+)(?P<main_level>\d+)?/'
+    r'(?P<sub_job>[A-Za-z?]+)(?P<sub_level>\d+)?\)\s+'
+    r'Moon:\s*(?P<moon_pct>\d{1,3})%\s+(?P<moon_phase>.+?)\s*$'
+)
+
+
+def parse_capturebar_line(text: str) -> dict:
+    """Parse Wiggo32 Capturebar's default rendered HUD without guessing missing values.
+
+    Capturebar renders coordinates in X,Z,Y order. The returned field names preserve their
+    semantic axes rather than their visual position.
+    """
+    match = _CAPTUREBAR_RE.match(text or "")
+    if not match:
+        return {
+            "timestamp": None,
+            "channel": "capturebar",
+            "speaker": None,
+            "text": text,
+            "fields": None,
+            "capturebar_parsed": False,
+        }
+    g = match.groupdict()
+    fields = {
+        "zone_id": int(g["zone_id"]),
+        "zone_name": g["zone_name"].strip(),
+        "target_name": g["target_name"].strip(),
+        "x": float(g["x"]),
+        "y": float(g["y"]),
+        "z": float(g["z"]),
+        "coordinate_display_order": "x,z,y",
+        "rotation": int(g["rotation"]),
+        "main_job": g["main_job"],
+        "main_job_level": int(g["main_level"]) if g.get("main_level") else None,
+        "sub_job": g["sub_job"],
+        "sub_job_level": int(g["sub_level"]) if g.get("sub_level") else None,
+        "moon_percent": int(g["moon_pct"]),
+        "moon_phase": g["moon_phase"].strip(),
+    }
+    return {
+        "timestamp": None,
+        "channel": "capturebar",
+        "speaker": None,
+        "text": text,
+        "fields": fields,
+        "capturebar_parsed": True,
+    }
+
+
 def parse_capture_line(profile: str, text: str) -> dict:
     """Turn one OCR'd (post dialog-match) line into structured fields per the section's capture
     profile. Never fabricates a value it can't actually find in the text -- fields it can't
     confidently parse come back None/empty rather than guessed. NOTE: packetlogger is handled
     separately by parse_packetlogger_block() since it needs the pre-flattened multi-line text;
     cmd_match() branches on profile before calling either."""
+    if profile == CAPTURE_PROFILE_CAPTUREBAR:
+        return parse_capturebar_line(text)
     if profile == CAPTURE_PROFILE_TIMESTAMPED:
         m = _TIMESTAMP_RE.match(text)
         timestamp, rest = (m.group(1), m.group(2)) if m else (None, text)
@@ -1423,9 +1501,15 @@ def cmd_match(args):
                 raw = row["raw_text"].replace("\n", " ").strip()
                 if not raw:
                     continue
-                match, score = best_match(con, raw, zoneid)
-                clean = match[2] if (match and score >= args.min_score) else None
-                display = clean or raw
+                if profile == CAPTURE_PROFILE_CAPTUREBAR:
+                    # Capturebar is structured HUD context, not game dialog. Never fuzzy-match it
+                    # against dialog_text_fts, which could silently replace real coordinates or IDs.
+                    match, score, clean = None, 0.0, None
+                    display = raw
+                else:
+                    match, score = best_match(con, raw, zoneid)
+                    clean = match[2] if (match and score >= args.min_score) else None
+                    display = clean or raw
                 parsed = parse_capture_line(profile, display)
                 record = {
                     "frame": row["frame"],
@@ -1552,7 +1636,11 @@ def capture_observations(run_id: str) -> list[dict]:
                     "frame": frame,
                     "video_timestamp_seconds": row.get("video_timestamp_seconds", provenance.get("video_timestamp_seconds")),
                     "source_url": provenance.get("source_url") or status.get("url"),
-                    "observation_type": "PACKET" if effective_opcode else "OCR_TEXT",
+                    "observation_type": (
+                        "PACKET" if effective_opcode
+                        else "CAPTUREBAR_CONTEXT" if row.get("capturebar_parsed")
+                        else "OCR_TEXT"
+                    ),
                     "direction": effective.get("direction") or row.get("direction"),
                     "opcode": effective_opcode,
                     "gp_command": effective.get("gp_command") or row.get("gp_command"),
