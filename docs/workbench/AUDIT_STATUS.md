@@ -2746,3 +2746,18 @@ Whole-session EventView logs are no longer recognized-but-discarded.
 - Bare uploads named `simple.log` or `raw.log` are treated as session-scoped evidence instead of fabricating zones named "simple" or "raw".
 
 Later correlation may resolve candidate zone/time context from independent entity, packet, or timeline evidence, but ingestion itself does not invent those dimensions.
+
+
+## 2026-09-28 — Capturebar OCR context profile
+
+Capturebar is now supported as a visual evidence source even though the addon itself does not write a persistent capture file.
+
+- Added the `capturebar` OCR capture profile and built-in `capturebar_overlay` layout template using the small-overlay preprocessing preset.
+- Parsing follows Wiggo32 Capturebar's default rendered format and extracts zone id/name, target/player name, X/Z/Y coordinates, rotation, main/sub jobs and levels, moon percentage, and moon phase.
+- The parser explicitly records Capturebar's visual coordinate order as `x,z,y`; normalized fields remain semantically named `x`, `y`, and `z`.
+- Capturebar sections bypass dialog-text fuzzy matching so coordinates, IDs, jobs, or world-state text cannot be silently replaced by a nearby dialog string.
+- Successfully parsed frames materialize as `CAPTUREBAR_CONTEXT` video observations. Raw OCR text, frame id, video-relative timestamp, crop, preprocessing profile, and source URL remain in provenance.
+- Unparseable or customized Capturebar display strings remain visible as raw OCR evidence rather than receiving guessed fields.
+- The OCR GUI exposes Capturebar as a selectable capture profile and the reusable layout list exposes the built-in Capturebar role template.
+
+This closes Capturebar as a known capture-support gap; it remains an OCR/video source, not a file-ingestion format.
