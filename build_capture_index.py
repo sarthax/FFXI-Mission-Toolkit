@@ -3328,8 +3328,1325 @@ def _capture_source_format(src: "Source", relname: str) -> str | None:
         return "actionview_db"
     if "levelrangetrack/" in lower and lower.endswith(".db"):
         return "levelrange_db"
-    if re.search(r'packet(?:logger|viewer)/(incoming|outgoing)/0x[0-9a-f]{3}\.log$', lower):
+    if re.search(r'packet(?:logger|viewer)/(incoming|outgoing)/0x[0-9a-f]{3}\.log    if "caplog/" in lower and lower.endswith((".txt", ".log")):
+        return "caplog"
+    if WINDOWER_LOGGER_FILENAME_RE.search(lower):
+        return "windower_logger"
+    if "kitrack/" in lower:
+        return "kitrack"
+    if "hptrack/" in lower:
+        return "hptrack"
+    if "attackdelay/" in lower:
+        return "attackdelay"
+    if "pathlog/" in lower and lower.endswith(".csv"):
+        return "pc_pathlog_csv" if "/pc_" in lower else "pathlog_csv"
+    if "widescan/" in lower:
+        return "widescan"
+    if "actionview/simple/" in lower:
+        return "actionview_simple"
+    if re.search(r'eventview/(?:[^/]+/)?simple\.log$', lower):
+        return "eventview_session_simple"
+    if re.search(r'eventview/(?:[^/]+/)?raw\.log$', lower):
+        return "eventview_session_raw"
+    if "eventview/" in lower and "/simple/" in lower:
+        return "idview_simple"
+    if re.search(r'eventview/(?!.*(?:simple|raw)/)[^/]+/[^/]+\.log$', lower):
+        return "eventview"
+    if "npclogger/" in lower and lower.endswith(".lua"):
+        return "npclogger_lua"
+    # Auxiliary logger generations are content-addressed rather than path-bound. This lets old
+    # bundles, renamed files, and current Captain output share one detection contract.
+    try:
+        if lower.endswith((".db", ".sqlite", ".sqlite3")):
+            detected = sniff_sqlite_format(src.read_bytes(relname))
+            if detected:
+                return detected
+        elif lower.endswith(".csv"):
+            detected = sniff_csv_format(src.read_text(relname))
+            if detected:
+                return detected
+        elif lower.endswith((".log", ".txt", ".lua")):
+            detected = sniff_text_format(src.read_text(relname))
+            if detected:
+                return detected
+    except Exception:
+        pass
+    return _sniff_known_format(src, relname)
+
+
+
+REBUILDABLE_CAPTURE_FORMATS = {
+    "eventview", "idview_simple", "eventview_session_simple", "eventview_session_raw",
+    "kitrack", "hptrack", "actionview_simple", "caplog", "windower_logger", "packetlogger",
+    "packetdb", "packeteer", "pcap", "pcapng",
+    "npclogger_db", "actionview_db", "levelrange_db",
+    "npclogger_lua", "pathlog_csv", "pc_pathlog_csv", "widescan", "attackdelay",
+} | AUX_STRUCTURED_FORMATS
+
+
+def _capture_source_origin(con, capture_id: int) -> tuple[Path | None, str | None, str | None]:
+    row = con.execute("SELECT source_path FROM captures WHERE capture_id=?", (capture_id,)).fetchone()
+    if not row:
+        return None, None, "capture not found"
+    source_path = row[0] or ""
+    if source_path.startswith("manual://"):
+        return None, None, "original source bytes were not persisted for this manual/upload capture"
+    base, subroot = source_path, None
+    if "::" in source_path:
+        base, subroot = source_path.rsplit("::", 1)
+    path = Path(base)
+    if not path.exists():
+        return path, subroot, f"original source path is no longer accessible: {path}"
+    return path, subroot, None
+
+
+def capture_rebuild_inventory(con, capture_id: int) -> list[dict]:
+    """Return per-source rebuildability without mutating the capture."""
+    manifest = con.execute(
+        """SELECT filename,sha256,format_detected,row_count,ingest_status
+           FROM capture_source_manifest WHERE capture_id=? ORDER BY filename""",
+        (capture_id,),
+    ).fetchall()
+    path, subroot, origin_error = _capture_source_origin(con, capture_id)
+    src = None
+    names = set()
+    try:
+        if path is not None and origin_error is None:
+            src = Source(path)
+            names = set(src.list_files())
+        out = []
+        for filename, digest, fmt, row_count, status in manifest:
+            rebuildable = True
+            reason = None
+            if fmt not in REBUILDABLE_CAPTURE_FORMATS:
+                rebuildable = False
+                reason = f"parser family {fmt or 'unknown'} does not yet support safe exact-row rebuild"
+            elif origin_error:
+                rebuildable = False
+                reason = origin_error
+            elif filename not in names:
+                rebuildable = False
+                reason = "source file is no longer present in the original folder/archive"
+            else:
+                data = src.read_bytes(filename)
+                actual = capture_integrity.sha256_bytes(data)
+                if actual != digest:
+                    rebuildable = False
+                    reason = "source bytes changed since ingestion; current manifest hash does not match"
+                elif fmt != "packetlogger":
+                    locator_count = con.execute(
+                        """SELECT COUNT(*) FROM capture_row_locators
+                           WHERE capture_id=? AND filename=?""",
+                        (capture_id, filename),
+                    ).fetchone()[0]
+                    if not locator_count:
+                        rebuildable = False
+                        reason = "no exact row locators exist for the previously normalized rows"
+                    else:
+                        shared = con.execute(
+                            """SELECT 1
+                               FROM capture_row_locators a
+                               JOIN capture_row_locators b
+                                 ON b.capture_id=a.capture_id
+                                AND b.target_table=a.target_table
+                                AND b.row_key=a.row_key
+                                AND b.filename<>a.filename
+                               WHERE a.capture_id=? AND a.filename=?
+                               LIMIT 1""",
+                            (capture_id, filename),
+                        ).fetchone()
+                        if shared:
+                            rebuildable = False
+                            reason = "normalized row keys overlap another source file; source ownership is ambiguous"
+            out.append({
+                "filename": filename,
+                "sha256": digest,
+                "format": fmt,
+                "row_count": row_count,
+                "ingest_status": status,
+                "rebuildable": rebuildable,
+                "reason": reason,
+            })
+        return out
+    finally:
+        if src is not None:
+            src.close()
+
+
+def _delete_exact_source_rows(con, capture_id: int, filename: str) -> int:
+    """Delete only rows whose real primary keys are proven by this source's exact locators."""
+    locators = con.execute(
+        """SELECT target_table,row_key
+           FROM capture_row_locators
+           WHERE capture_id=? AND filename=?
+           ORDER BY target_table,row_key""",
+        (capture_id, filename),
+    ).fetchall()
+    if not locators:
+        raise ValueError("no exact row locators exist for this source")
+
+    shared = con.execute(
+        """SELECT 1
+           FROM capture_row_locators a
+           JOIN capture_row_locators b
+             ON b.capture_id=a.capture_id
+            AND b.target_table=a.target_table
+            AND b.row_key=a.row_key
+            AND b.filename<>a.filename
+           WHERE a.capture_id=? AND a.filename=?
+           LIMIT 1""",
+        (capture_id, filename),
+    ).fetchone()
+    if shared:
+        raise ValueError("cannot safely rebuild: normalized row ownership overlaps another source file")
+
+    deleted = 0
+    for target_table, row_key_raw in locators:
+        if not re.match(r"^capture_[a-z0-9_]+$", target_table):
+            raise ValueError(f"unsafe target table in locator: {target_table}")
+        cols = con.execute(f'PRAGMA table_info("{target_table}")').fetchall()
+        if not cols:
+            raise ValueError(f"locator target table no longer exists: {target_table}")
+        pk_cols = [r[1] for r in sorted((r for r in cols if int(r[5] or 0) > 0), key=lambda r: int(r[5]))]
+        if "capture_id" not in pk_cols:
+            raise ValueError(f"locator target table has no capture_id primary key: {target_table}")
+        try:
+            row_key = json.loads(row_key_raw)
+        except Exception as ex:
+            raise ValueError(f"invalid locator row key for {target_table}: {row_key_raw}") from ex
+        needed = [name for name in pk_cols if name != "capture_id"]
+        if not isinstance(row_key, dict) or any(name not in row_key for name in needed):
+            raise ValueError(f"locator row key does not cover the real primary key for {target_table}")
+        where = ["capture_id=?"] + [f'"{name}"=?' for name in needed]
+        params = [capture_id] + [row_key[name] for name in needed]
+        cur = con.execute(f'DELETE FROM "{target_table}" WHERE ' + " AND ".join(where), params)
+        deleted += cur.rowcount
+    con.execute(
+        "DELETE FROM capture_row_locators WHERE capture_id=? AND filename=?",
+        (capture_id, filename),
+    )
+    return deleted
+
+
+def rebuild_capture_source(con, capture_id: int, filename: str) -> dict:
+    """Safely rerun one exact-locator parser without replacing capture metadata or annotations.
+
+    Rebuild is refused unless the original bytes are accessible and still hash-identical to the
+    current source manifest. Non-packet formats delete only rows proven by exact primary-key
+    locators. PacketLogger/Viewer is rebuilt as one family because its final sequence is a merge
+    across every opcode file.
+    """
+    manifest = con.execute(
+        """SELECT sha256,format_detected FROM capture_source_manifest
+           WHERE capture_id=? AND filename=?""",
+        (capture_id, filename),
+    ).fetchone()
+    if not manifest:
+        raise ValueError("source file is not present in the capture source manifest")
+    expected_hash, fmt = manifest
+    if fmt not in REBUILDABLE_CAPTURE_FORMATS:
+        raise ValueError(f"safe rebuild is not implemented for parser family {fmt or 'unknown'}")
+
+    path, subroot, origin_error = _capture_source_origin(con, capture_id)
+    if origin_error:
+        raise ValueError(origin_error)
+    src = Source(path)
+    try:
+        names = set(src.list_files())
+        if filename not in names:
+            raise ValueError("source file is no longer present in the original folder/archive")
+
+        if fmt == "packetlogger":
+            packet_rows = con.execute(
+                """SELECT filename,sha256 FROM capture_source_manifest
+                   WHERE capture_id=? AND format_detected='packetlogger'
+                   ORDER BY filename""",
+                (capture_id,),
+            ).fetchall()
+            packet_files = [r[0] for r in packet_rows]
+            if not packet_files:
+                raise ValueError("no PacketLogger/PacketViewer source family remains in the manifest")
+            for packet_filename, packet_hash in packet_rows:
+                if packet_filename not in names:
+                    raise ValueError(f"packet source is missing: {packet_filename}")
+                if capture_integrity.sha256_bytes(src.read_bytes(packet_filename)) != packet_hash:
+                    raise ValueError(f"packet source bytes changed since ingestion: {packet_filename}")
+            con.execute("SAVEPOINT capture_rebuild")
+            try:
+                rows = ingest_packetlogger(con, capture_id, src, packet_files)
+                con.execute("RELEASE SAVEPOINT capture_rebuild")
+            except Exception:
+                con.execute("ROLLBACK TO SAVEPOINT capture_rebuild")
+                con.execute("RELEASE SAVEPOINT capture_rebuild")
+                raise
+            for i, packet_filename in enumerate(packet_files):
+                data = src.read_bytes(packet_filename)
+                capture_integrity.record_source_file(
+                    con, capture_id, packet_filename, data,
+                    format_detected="packetlogger", parser_name="packetlogger",
+                    row_count=rows if i == 0 else None, error=None,
+                )
+                con.execute(
+                    """INSERT OR REPLACE INTO capture_source_files
+                       (capture_id,filename,format_detected,ingested_at,row_count,error)
+                       VALUES (?,?,?,datetime('now'),?,NULL)""",
+                    (capture_id, packet_filename, "packetlogger", rows if i == 0 else None),
+                )
+            con.commit()
+            return {
+                "capture_id": capture_id, "filename": filename, "format": fmt,
+                "scope": "packetlogger_family", "source_files": packet_files, "rows": rows,
+            }
+
+        data = src.read_bytes(filename)
+        if capture_integrity.sha256_bytes(data) != expected_hash:
+            raise ValueError("source bytes changed since ingestion; refusing rebuild")
+
+        con.execute("SAVEPOINT capture_rebuild")
+        try:
+            deleted = _delete_exact_source_rows(con, capture_id, filename)
+            if fmt == "packetdb":
+                result = raw_packet_ingest.ingest_packetdb(con, capture_id, src, filename)
+            elif fmt == "packeteer":
+                result = raw_packet_ingest.ingest_packeteer(con, capture_id, src, filename)
+            elif fmt in {"pcap", "pcapng"}:
+                result = pcap_ingest.ingest_pcap(con, capture_id, src, filename)
+            elif fmt == "eventview":
+                result = ingest_eventview(con, capture_id, src, filename)
+            elif fmt == "idview_simple":
+                result = ingest_idview_simple(con, capture_id, src, filename)
+            elif fmt == "eventview_session_simple":
+                result = ingest_eventview_session_simple(con, capture_id, src, filename)
+            elif fmt == "eventview_session_raw":
+                result = ingest_eventview_session_raw(con, capture_id, src, filename)
+            elif fmt == "kitrack":
+                result = ingest_kitrack(con, capture_id, src, filename)
+            elif fmt == "hptrack":
+                result = ingest_hptrack(con, capture_id, src, filename)
+            elif fmt == "actionview_simple":
+                result = ingest_actionview_simple(con, capture_id, src, filename)
+            elif fmt == "caplog":
+                result = ingest_caplog(con, capture_id, src, filename)
+            elif fmt == "windower_logger":
+                result = ingest_windower_logger(con, capture_id, src, filename)
+            elif fmt == "npclogger_db":
+                result = ingest_npc_db(con, capture_id, src, filename)
+            elif fmt == "actionview_db":
+                result = ingest_actions_db(con, capture_id, src, filename)
+            elif fmt == "levelrange_db":
+                result = ingest_level_range_db(con, capture_id, src, filename)
+            elif fmt == "npclogger_lua":
+                leg = 2 if "/database/" in filename.lower() else 1
+                result = ingest_npclogger_lua(con, capture_id, src, filename, leg)
+            elif fmt == "pathlog_csv":
+                result = ingest_pathlog(con, capture_id, src, filename)
+            elif fmt == "pc_pathlog_csv":
+                result = ingest_pc_pathlog(con, capture_id, src, filename)
+            elif fmt == "widescan":
+                result = ingest_widescan(con, capture_id, src, filename)
+            elif fmt == "attackdelay":
+                result = ingest_attackdelay(con, capture_id, src, filename)
+            elif fmt in AUX_STRUCTURED_FORMATS:
+                result = ingest_aux_structured(con, capture_id, src, filename, fmt)
+            else:
+                raise ValueError(f"unsupported rebuild parser: {fmt}")
+            rows = sum(result) if isinstance(result, tuple) else int(result)
+            con.execute("RELEASE SAVEPOINT capture_rebuild")
+        except Exception:
+            con.execute("ROLLBACK TO SAVEPOINT capture_rebuild")
+            con.execute("RELEASE SAVEPOINT capture_rebuild")
+            raise
+
+        capture_integrity.record_source_file(
+            con, capture_id, filename, data,
+            format_detected=fmt, parser_name=fmt, row_count=rows, error=None,
+        )
+        con.execute(
+            """INSERT OR REPLACE INTO capture_source_files
+               (capture_id,filename,format_detected,ingested_at,row_count,error)
+               VALUES (?,?,?,datetime('now'),?,NULL)""",
+            (capture_id, filename, fmt, rows),
+        )
+        recompute_zones(con, capture_id)
+        con.commit()
+        return {
+            "capture_id": capture_id, "filename": filename, "format": fmt,
+            "scope": "single_source", "deleted_rows": deleted, "rows": rows,
+        }
+    finally:
+        src.close()
+
+
+# Every real table keyed by capture_id -- kept as one list so delete_capture() can never miss one
+# as new tables get added (a table added to init_db() but forgotten here would leave orphaned rows
+# behind on every future delete, silently). Deliberately NOT derived by introspecting sqlite_master
+# for tables with a capture_id column: several real tables (capture_source_files, capture_tags)
+# have no data-quality reason to auto-discover, and an explicit list is easier to audit against
+# init_db() by eye than trusting a DB introspection query to get it right.
+CAPTURE_CHILD_TABLES = [
+    "capture_network_flows", "capture_network_ranges", "capture_network_messages",
+    "capture_npc_entries", "capture_npc_history", "capture_npc_path", "capture_actions",
+    "capture_hp_events", "capture_events", "capture_ki_events", "capture_eventview",
+    "capture_level_range", "capture_attack_delay", "capture_pc_path", "capture_structured_records", "capture_source_files",
+    "capture_source_manifest", "capture_source_artifacts", "capture_content_manifest",
+    "capture_ingest_lineage",
+    "capture_raw_packets", "capture_video_observations", "capture_tags", "capture_caplog_chat",
+    "capture_chat_observations",
+    "capture_alignment_anchors", "capture_key_evidence",
+]
+
+
+def delete_capture(con, capture_id: int) -> dict:
+    """Permanently removes one capture and every real row it owns across every child table --
+    there is no soft-delete/undo, so the GUI route gates this behind an explicit confirm page
+    rather than a single click. Returns {table: rows_deleted} for whatever confirmation message
+    the caller wants to show."""
+    return capture_integrity.delete_capture_rows(con, capture_id, CAPTURE_CHILD_TABLES)
+
+
+def recompute_zones(con, capture_id: int):
+    zones = [r[0] for r in con.execute(
+        "SELECT DISTINCT zone_db FROM capture_npc_entries WHERE capture_id=? ORDER BY 1",
+        (capture_id,))]
+    con.execute("UPDATE captures SET zones=? WHERE capture_id=?", (json.dumps(zones), capture_id))
+    con.commit()
+
+
+def ingest_batch(con, path_str: str, content_type: str = "instances",
+                  mission_name_override: str | None = None) -> list[int]:
+    """One capture per top-level subfolder in a bundle (see ingest()'s subroot docstring) --
+    real example: Blitzkrieg.zip's 14 separately-named attempts."""
+    subroots = list_top_level_dirs(path_str)
+    print(f"{Path(path_str).name}: {len(subroots)} subfolder(s) -- ingesting each as its own capture")
+    ids = []
+    for sub in subroots:
+        try:
+            ids.append(ingest(con, path_str, content_type=content_type, subroot=sub,
+                               mission_name_override=mission_name_override))
+        except Exception as ex:
+            print(f"  FAILED {sub}: {ex}")
+    return ids
+
+
+def ingest_all(con, dir_str: str, pattern: str, content_type: str = "instances"):
+    d = Path(dir_str)
+    zips = sorted(d.rglob(pattern))
+    if not zips:
+        print(f"no files matching {pattern!r} under {d}")
+        return
+    print(f"found {len(zips)} capture file(s) under {d}")
+    for z in zips:
+        try:
+            ingest(con, str(z), content_type=content_type)
+        except Exception as ex:
+            print(f"  FAILED {z.name}: {ex}")
+
+
+def cmd_list(con, content_type: str | None = None):
+    q = """SELECT c.capture_id, c.capture_label, c.content_type, c.zones, c.mission_name,
+                  (SELECT COUNT(*) FROM capture_npc_entries WHERE capture_id=c.capture_id) AS n_npc,
+                  (SELECT COUNT(*) FROM capture_npc_history WHERE capture_id=c.capture_id) AS n_hist
+           FROM captures c"""
+    params = ()
+    if content_type:
+        q += " WHERE c.content_type=?"
+        params = (content_type,)
+    q += " ORDER BY c.content_type, c.capture_id"
+    rows = con.execute(q, params).fetchall()
+    if not rows:
+        print("(no captures ingested yet)")
+        return
+    for r in rows:
+        zones = ",".join(json.loads(r[3])) if r[3] else "?"
+        print(f"[{r[0]:>3}] {r[1]:<50} type={(r[2] or '?'):<14} zones={zones:<28} "
+              f"mission={r[4] or '(unresolved)':<28} npc={r[5]:<4} history={r[6]}")
+
+
+def get_entity_path(con, capture_id: int, entity_id: int) -> list[tuple]:
+    """Real (x, z, t) points for one entity in one capture, for plotting -- capture_npc_path
+    (PathLog's purpose-built leg/x/y/z/dir trace) when present, since it's cleaner than
+    reconstructing motion from state deltas; falls back to capture_npc_history's raw x/y/z deltas
+    (present on the *other* zone's NPCLogger.db in a capture, or when PathLog didn't cover this
+    entity) otherwise. x/z are the ground-plane axes FFXI actually plots on a 2D map; y is height.
+    """
+    rows = con.execute(
+        """SELECT x, z, step FROM capture_npc_path
+           WHERE capture_id=? AND entity_id=? ORDER BY step""",
+        (capture_id, entity_id)).fetchall()
+    if rows:
+        return [(x, z, i) for x, z, i in rows]
+
+    rows = con.execute(
+        """SELECT delta_json, ts FROM capture_npc_history
+           WHERE capture_id=? AND entity_id=? ORDER BY seq""",
+        (capture_id, entity_id)).fetchall()
+    points = []
+    for delta_json, ts in rows:
+        try:
+            d = json.loads(delta_json)
+        except (TypeError, ValueError):
+            continue
+        if "x" in d and "z" in d:
+            points.append((d["x"], d["z"], ts))
+    return points
+
+
+def get_pc_path(con, capture_id: int, zone_db: str) -> list[tuple]:
+    """Real (x, z, t) points for the CAPTURING CHARACTER's own trace in one zone of one capture
+    (capture_pc_path, from PathLog/.../PC_<Zone>.csv -- see ingest_pc_pathlog). Same (x,z,step)
+    shape as get_entity_path so it can reuse the same plotting routes/templates, just keyed by
+    zone_db instead of entity_id since there's no real NPC/entity id for the capturer here."""
+    rows = con.execute(
+        """SELECT x, z, step FROM capture_pc_path
+           WHERE capture_id=? AND zone_db=? ORDER BY step""",
+        (capture_id, zone_db)).fetchall()
+    return [(x, z, i) for x, z, i in rows]
+
+
+def get_pc_path_zones(con, capture_id: int) -> list[str]:
+    """Distinct zone_db values this capture has a real PC path for."""
+    rows = con.execute(
+        "SELECT DISTINCT zone_db FROM capture_pc_path WHERE capture_id=? ORDER BY zone_db",
+        (capture_id,)).fetchall()
+    return [r[0] for r in rows]
+
+
+def get_capture_entity_ids_with_path(con, capture_id: int, zone_db: str | None = None) -> list[tuple[int, str | None]]:
+    """Every (entity_id, name) in this capture that has real path data (capture_npc_path or
+    capture_npc_history with x/z), for a multi-entity plot -- an entity with only a single
+    NPCLogger snapshot row and no path/history still gets included (a lone point is a real,
+    if minimal, position sample), a pure name-only/no-position row does not."""
+    q = """SELECT DISTINCT e.entity_id, e.name FROM capture_npc_entries e
+           WHERE e.capture_id=? AND (
+               EXISTS (SELECT 1 FROM capture_npc_path p WHERE p.capture_id=e.capture_id AND p.entity_id=e.entity_id)
+               OR EXISTS (SELECT 1 FROM capture_npc_history h WHERE h.capture_id=e.capture_id AND h.entity_id=e.entity_id)
+               OR (e.x IS NOT NULL AND e.z IS NOT NULL)
+           )"""
+    params = [capture_id]
+    if zone_db:
+        q += " AND e.zone_db=?"
+        params.append(zone_db)
+    q += " ORDER BY e.entity_id"
+    return con.execute(q, params).fetchall()
+
+
+def cmd_show(con, capture_id: int):
+    row = con.execute("SELECT * FROM captures WHERE capture_id=?", (capture_id,)).fetchone()
+    if not row:
+        print("no such capture_id")
+        return
+    cols = [d[0] for d in con.execute("SELECT * FROM captures WHERE capture_id=?", (capture_id,)).description]
+    for c, v in zip(cols, row):
+        print(f"  {c}: {v}")
+    print("\nNPC entries (top 15 by name):")
+    for r in con.execute("""SELECT entity_id, name, model_id, x, y, z, hpp, zone_db
+                             FROM capture_npc_entries WHERE capture_id=? ORDER BY name LIMIT 15""",
+                          (capture_id,)):
+        eid, name, model_id, x, y, z, hpp, zone_db = r
+        pos = f"({x:.1f},{y:.1f},{z:.1f})" if x is not None else "(?)"
+        print(f"  {eid:>10}  {(name or '?'):<20} model={model_id if model_id is not None else '?':<6} "
+              f"pos={pos} hp%={hpp if hpp is not None else '?':<4} zone_db={zone_db}")
+    n = con.execute("SELECT COUNT(*) FROM capture_npc_entries WHERE capture_id=?", (capture_id,)).fetchone()[0]
+    if n > 15:
+        print(f"  ... and {n - 15} more")
+
+
+def backfill_npc_fields(con):
+    """Populates capture_npc_entries.legacy_look plus the door_id/act_index/flags0-3/legacy_flag/
+    sub_kind columns for every already-ingested capture whose real source zip/folder is still on
+    disk, without a full re-ingest -- same pattern used for KITrack/EventView/LevelRangeTrack/
+    AttackDelay when those were added after captures already existed. Skips captures with no
+    NPCLogger.db (the older idview/Wiggo-era format never had any of these fields -- not a gap to
+    backfill, a real absence) and captures whose source file has since moved/been deleted
+    (reported, not treated as an error worth stopping the run over)."""
+    rows = con.execute("SELECT capture_id, source_path FROM captures").fetchall()
+    n_captures = n_updated_total = 0
+    for capture_id, source_path in rows:
+        if not source_path or source_path.startswith("manual://"):
+            continue
+        # Multi-session bundles (ingest_batch) store "<real path>::<subroot>" -- see the same
+        # convention at the source_path = f"{path}::{subroot}" line elsewhere in this file.
+        real_path, sep, subroot = source_path.partition("::")
+        p = Path(real_path)
+        if not p.exists():
+            print(f"  capture #{capture_id}: source not found on disk ({real_path}) -- skipped")
+            continue
+        src = Source(p)
+        try:
+            def sfind(pattern, _subroot=(subroot if sep else None)):
+                hits = src.find(pattern)
+                return hits if _subroot is None else [h for h in hits if h.startswith(_subroot + "/")]
+            npc_db_files = sfind(r'NPCLogger/[^/]+\.db$')
+            if not npc_db_files:
+                continue
+            n_updated = 0
+            for relname in npc_db_files:
+                zone_db = Path(relname).stem
+                sub, tmp_path = src.open_sqlite(relname)
+                try:
+                    cols = {r[1] for r in sub.execute("PRAGMA table_info(entries)")}
+                    if "UniqueNo" not in cols:
+                        continue
+                    select_cols = ["UniqueNo"]
+                    for c in ("legacy_look", "DoorId", "ActIndex", "Flags0", "Flags1", "Flags2",
+                              "Flags3", "legacy_flag", "SubKind"):
+                        select_cols.append(c if c in cols else "NULL")
+                    sql = f"SELECT {', '.join(select_cols)} FROM entries"
+                    for (uid, look, door_id, act_index, flags0, flags1, flags2, flags3,
+                         legacy_flag, sub_kind) in sub.execute(sql):
+                        try:
+                            uid = int(uid)
+                        except (TypeError, ValueError):
+                            continue
+                        look_blob = look if isinstance(look, (bytes, bytearray)) else None
+                        if look_blob is None and look:
+                            try:
+                                look_blob = bytes.fromhex(str(look))
+                            except ValueError:
+                                look_blob = None
+                        if look_blob is not None:
+                            look_blob = bytes(look_blob)
+                        cur = con.execute(
+                            """UPDATE capture_npc_entries SET
+                                 legacy_look=COALESCE(?, legacy_look),
+                                 door_id=COALESCE(?, door_id), act_index=COALESCE(?, act_index),
+                                 flags0=COALESCE(?, flags0), flags1=COALESCE(?, flags1),
+                                 flags2=COALESCE(?, flags2), flags3=COALESCE(?, flags3),
+                                 legacy_flag=COALESCE(?, legacy_flag), sub_kind=COALESCE(?, sub_kind)
+                               WHERE capture_id=? AND zone_db=? AND entity_id=?""",
+                            (look_blob, door_id, act_index, flags0, flags1, flags2, flags3,
+                             legacy_flag, sub_kind, capture_id, zone_db, uid))
+                        n_updated += cur.rowcount
+                finally:
+                    close_sqlite(sub, tmp_path)
+            if n_updated:
+                print(f"  capture #{capture_id}: {n_updated} entities backfilled")
+            n_captures += 1
+            n_updated_total += n_updated
+        finally:
+            src.close()
+    con.commit()
+    print(f"Done -- {n_updated_total} entities backfilled across {n_captures} capture(s) with a real NPCLogger.db.")
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    p1 = sub.add_parser("ingest", help="ingest one capture folder or .zip")
+    p1.add_argument("path")
+    p1.add_argument("--content-type", default="instances", choices=CONTENT_TYPES,
+                     help="what kind of content this capture is from (default: assault -- "
+                          "everything ingested so far). Pass 'unclassified' for anything else "
+                          "until this tool learns a more specific type.")
+
+    p2 = sub.add_parser("ingest-all", help="ingest every matching file under a directory")
+    p2.add_argument("path")
+    p2.add_argument("--pattern", default="*.zip")
+    p2.add_argument("--content-type", default="instances", choices=CONTENT_TYPES)
+
+    p5 = sub.add_parser("ingest-batch", help="ingest each top-level subfolder of a bundle as its own capture")
+    p5.add_argument("path")
+    p5.add_argument("--content-type", default="instances", choices=CONTENT_TYPES)
+    p5.add_argument("--mission-name", default=None, help="explicit mission_name for every session ingested")
+
+    p3 = sub.add_parser("list", help="list ingested captures")
+    p3.add_argument("--content-type", default=None, choices=CONTENT_TYPES,
+                     help="filter to one content type (default: show all)")
+
+    p4 = sub.add_parser("show", help="show one capture's ingested contents")
+    p4.add_argument("capture_id", type=int)
+
+    sub.add_parser("backfill-look", help="backfill legacy_look + door_id/act_index/flags0-3/"
+                                          "legacy_flag/sub_kind for already-ingested captures "
+                                          "whose source zip/folder is still on disk, without a "
+                                          "full re-ingest")
+
+    args = ap.parse_args()
+    con = sqlite3.connect(str(DB_PATH))
+    init_db(con)
+
+    if args.cmd == "ingest":
+        ingest(con, args.path, content_type=args.content_type)
+    elif args.cmd == "ingest-all":
+        ingest_all(con, args.path, args.pattern, content_type=args.content_type)
+    elif args.cmd == "ingest-batch":
+        ingest_batch(con, args.path, content_type=args.content_type, mission_name_override=args.mission_name)
+    elif args.cmd == "list":
+        cmd_list(con, content_type=args.content_type)
+    elif args.cmd == "show":
+        cmd_show(con, args.capture_id)
+    elif args.cmd == "backfill-look":
+        backfill_npc_fields(con)
+
+    con.close()
+
+
+if __name__ == "__main__":
+    main()
+, lower):
         return "packetlogger"
+    if re.search(r'packet(?:logger|viewer)/(?:full|incoming|outgoing)\.log    if "caplog/" in lower and lower.endswith((".txt", ".log")):
+        return "caplog"
+    if WINDOWER_LOGGER_FILENAME_RE.search(lower):
+        return "windower_logger"
+    if "kitrack/" in lower:
+        return "kitrack"
+    if "hptrack/" in lower:
+        return "hptrack"
+    if "attackdelay/" in lower:
+        return "attackdelay"
+    if "pathlog/" in lower and lower.endswith(".csv"):
+        return "pc_pathlog_csv" if "/pc_" in lower else "pathlog_csv"
+    if "widescan/" in lower:
+        return "widescan"
+    if "actionview/simple/" in lower:
+        return "actionview_simple"
+    if re.search(r'eventview/(?:[^/]+/)?simple\.log$', lower):
+        return "eventview_session_simple"
+    if re.search(r'eventview/(?:[^/]+/)?raw\.log$', lower):
+        return "eventview_session_raw"
+    if "eventview/" in lower and "/simple/" in lower:
+        return "idview_simple"
+    if re.search(r'eventview/(?!.*(?:simple|raw)/)[^/]+/[^/]+\.log$', lower):
+        return "eventview"
+    if "npclogger/" in lower and lower.endswith(".lua"):
+        return "npclogger_lua"
+    # Auxiliary logger generations are content-addressed rather than path-bound. This lets old
+    # bundles, renamed files, and current Captain output share one detection contract.
+    try:
+        if lower.endswith((".db", ".sqlite", ".sqlite3")):
+            detected = sniff_sqlite_format(src.read_bytes(relname))
+            if detected:
+                return detected
+        elif lower.endswith(".csv"):
+            detected = sniff_csv_format(src.read_text(relname))
+            if detected:
+                return detected
+        elif lower.endswith((".log", ".txt", ".lua")):
+            detected = sniff_text_format(src.read_text(relname))
+            if detected:
+                return detected
+    except Exception:
+        pass
+    return _sniff_known_format(src, relname)
+
+
+
+REBUILDABLE_CAPTURE_FORMATS = {
+    "eventview", "idview_simple", "eventview_session_simple", "eventview_session_raw",
+    "kitrack", "hptrack", "actionview_simple", "caplog", "windower_logger", "packetlogger",
+    "packetdb", "packeteer", "pcap", "pcapng",
+    "npclogger_db", "actionview_db", "levelrange_db",
+    "npclogger_lua", "pathlog_csv", "pc_pathlog_csv", "widescan", "attackdelay",
+} | AUX_STRUCTURED_FORMATS
+
+
+def _capture_source_origin(con, capture_id: int) -> tuple[Path | None, str | None, str | None]:
+    row = con.execute("SELECT source_path FROM captures WHERE capture_id=?", (capture_id,)).fetchone()
+    if not row:
+        return None, None, "capture not found"
+    source_path = row[0] or ""
+    if source_path.startswith("manual://"):
+        return None, None, "original source bytes were not persisted for this manual/upload capture"
+    base, subroot = source_path, None
+    if "::" in source_path:
+        base, subroot = source_path.rsplit("::", 1)
+    path = Path(base)
+    if not path.exists():
+        return path, subroot, f"original source path is no longer accessible: {path}"
+    return path, subroot, None
+
+
+def capture_rebuild_inventory(con, capture_id: int) -> list[dict]:
+    """Return per-source rebuildability without mutating the capture."""
+    manifest = con.execute(
+        """SELECT filename,sha256,format_detected,row_count,ingest_status
+           FROM capture_source_manifest WHERE capture_id=? ORDER BY filename""",
+        (capture_id,),
+    ).fetchall()
+    path, subroot, origin_error = _capture_source_origin(con, capture_id)
+    src = None
+    names = set()
+    try:
+        if path is not None and origin_error is None:
+            src = Source(path)
+            names = set(src.list_files())
+        out = []
+        for filename, digest, fmt, row_count, status in manifest:
+            rebuildable = True
+            reason = None
+            if fmt not in REBUILDABLE_CAPTURE_FORMATS:
+                rebuildable = False
+                reason = f"parser family {fmt or 'unknown'} does not yet support safe exact-row rebuild"
+            elif origin_error:
+                rebuildable = False
+                reason = origin_error
+            elif filename not in names:
+                rebuildable = False
+                reason = "source file is no longer present in the original folder/archive"
+            else:
+                data = src.read_bytes(filename)
+                actual = capture_integrity.sha256_bytes(data)
+                if actual != digest:
+                    rebuildable = False
+                    reason = "source bytes changed since ingestion; current manifest hash does not match"
+                elif fmt != "packetlogger":
+                    locator_count = con.execute(
+                        """SELECT COUNT(*) FROM capture_row_locators
+                           WHERE capture_id=? AND filename=?""",
+                        (capture_id, filename),
+                    ).fetchone()[0]
+                    if not locator_count:
+                        rebuildable = False
+                        reason = "no exact row locators exist for the previously normalized rows"
+                    else:
+                        shared = con.execute(
+                            """SELECT 1
+                               FROM capture_row_locators a
+                               JOIN capture_row_locators b
+                                 ON b.capture_id=a.capture_id
+                                AND b.target_table=a.target_table
+                                AND b.row_key=a.row_key
+                                AND b.filename<>a.filename
+                               WHERE a.capture_id=? AND a.filename=?
+                               LIMIT 1""",
+                            (capture_id, filename),
+                        ).fetchone()
+                        if shared:
+                            rebuildable = False
+                            reason = "normalized row keys overlap another source file; source ownership is ambiguous"
+            out.append({
+                "filename": filename,
+                "sha256": digest,
+                "format": fmt,
+                "row_count": row_count,
+                "ingest_status": status,
+                "rebuildable": rebuildable,
+                "reason": reason,
+            })
+        return out
+    finally:
+        if src is not None:
+            src.close()
+
+
+def _delete_exact_source_rows(con, capture_id: int, filename: str) -> int:
+    """Delete only rows whose real primary keys are proven by this source's exact locators."""
+    locators = con.execute(
+        """SELECT target_table,row_key
+           FROM capture_row_locators
+           WHERE capture_id=? AND filename=?
+           ORDER BY target_table,row_key""",
+        (capture_id, filename),
+    ).fetchall()
+    if not locators:
+        raise ValueError("no exact row locators exist for this source")
+
+    shared = con.execute(
+        """SELECT 1
+           FROM capture_row_locators a
+           JOIN capture_row_locators b
+             ON b.capture_id=a.capture_id
+            AND b.target_table=a.target_table
+            AND b.row_key=a.row_key
+            AND b.filename<>a.filename
+           WHERE a.capture_id=? AND a.filename=?
+           LIMIT 1""",
+        (capture_id, filename),
+    ).fetchone()
+    if shared:
+        raise ValueError("cannot safely rebuild: normalized row ownership overlaps another source file")
+
+    deleted = 0
+    for target_table, row_key_raw in locators:
+        if not re.match(r"^capture_[a-z0-9_]+$", target_table):
+            raise ValueError(f"unsafe target table in locator: {target_table}")
+        cols = con.execute(f'PRAGMA table_info("{target_table}")').fetchall()
+        if not cols:
+            raise ValueError(f"locator target table no longer exists: {target_table}")
+        pk_cols = [r[1] for r in sorted((r for r in cols if int(r[5] or 0) > 0), key=lambda r: int(r[5]))]
+        if "capture_id" not in pk_cols:
+            raise ValueError(f"locator target table has no capture_id primary key: {target_table}")
+        try:
+            row_key = json.loads(row_key_raw)
+        except Exception as ex:
+            raise ValueError(f"invalid locator row key for {target_table}: {row_key_raw}") from ex
+        needed = [name for name in pk_cols if name != "capture_id"]
+        if not isinstance(row_key, dict) or any(name not in row_key for name in needed):
+            raise ValueError(f"locator row key does not cover the real primary key for {target_table}")
+        where = ["capture_id=?"] + [f'"{name}"=?' for name in needed]
+        params = [capture_id] + [row_key[name] for name in needed]
+        cur = con.execute(f'DELETE FROM "{target_table}" WHERE ' + " AND ".join(where), params)
+        deleted += cur.rowcount
+    con.execute(
+        "DELETE FROM capture_row_locators WHERE capture_id=? AND filename=?",
+        (capture_id, filename),
+    )
+    return deleted
+
+
+def rebuild_capture_source(con, capture_id: int, filename: str) -> dict:
+    """Safely rerun one exact-locator parser without replacing capture metadata or annotations.
+
+    Rebuild is refused unless the original bytes are accessible and still hash-identical to the
+    current source manifest. Non-packet formats delete only rows proven by exact primary-key
+    locators. PacketLogger/Viewer is rebuilt as one family because its final sequence is a merge
+    across every opcode file.
+    """
+    manifest = con.execute(
+        """SELECT sha256,format_detected FROM capture_source_manifest
+           WHERE capture_id=? AND filename=?""",
+        (capture_id, filename),
+    ).fetchone()
+    if not manifest:
+        raise ValueError("source file is not present in the capture source manifest")
+    expected_hash, fmt = manifest
+    if fmt not in REBUILDABLE_CAPTURE_FORMATS:
+        raise ValueError(f"safe rebuild is not implemented for parser family {fmt or 'unknown'}")
+
+    path, subroot, origin_error = _capture_source_origin(con, capture_id)
+    if origin_error:
+        raise ValueError(origin_error)
+    src = Source(path)
+    try:
+        names = set(src.list_files())
+        if filename not in names:
+            raise ValueError("source file is no longer present in the original folder/archive")
+
+        if fmt == "packetlogger":
+            packet_rows = con.execute(
+                """SELECT filename,sha256 FROM capture_source_manifest
+                   WHERE capture_id=? AND format_detected='packetlogger'
+                   ORDER BY filename""",
+                (capture_id,),
+            ).fetchall()
+            packet_files = [r[0] for r in packet_rows]
+            if not packet_files:
+                raise ValueError("no PacketLogger/PacketViewer source family remains in the manifest")
+            for packet_filename, packet_hash in packet_rows:
+                if packet_filename not in names:
+                    raise ValueError(f"packet source is missing: {packet_filename}")
+                if capture_integrity.sha256_bytes(src.read_bytes(packet_filename)) != packet_hash:
+                    raise ValueError(f"packet source bytes changed since ingestion: {packet_filename}")
+            con.execute("SAVEPOINT capture_rebuild")
+            try:
+                rows = ingest_packetlogger(con, capture_id, src, packet_files)
+                con.execute("RELEASE SAVEPOINT capture_rebuild")
+            except Exception:
+                con.execute("ROLLBACK TO SAVEPOINT capture_rebuild")
+                con.execute("RELEASE SAVEPOINT capture_rebuild")
+                raise
+            for i, packet_filename in enumerate(packet_files):
+                data = src.read_bytes(packet_filename)
+                capture_integrity.record_source_file(
+                    con, capture_id, packet_filename, data,
+                    format_detected="packetlogger", parser_name="packetlogger",
+                    row_count=rows if i == 0 else None, error=None,
+                )
+                con.execute(
+                    """INSERT OR REPLACE INTO capture_source_files
+                       (capture_id,filename,format_detected,ingested_at,row_count,error)
+                       VALUES (?,?,?,datetime('now'),?,NULL)""",
+                    (capture_id, packet_filename, "packetlogger", rows if i == 0 else None),
+                )
+            con.commit()
+            return {
+                "capture_id": capture_id, "filename": filename, "format": fmt,
+                "scope": "packetlogger_family", "source_files": packet_files, "rows": rows,
+            }
+
+        data = src.read_bytes(filename)
+        if capture_integrity.sha256_bytes(data) != expected_hash:
+            raise ValueError("source bytes changed since ingestion; refusing rebuild")
+
+        con.execute("SAVEPOINT capture_rebuild")
+        try:
+            deleted = _delete_exact_source_rows(con, capture_id, filename)
+            if fmt == "packetdb":
+                result = raw_packet_ingest.ingest_packetdb(con, capture_id, src, filename)
+            elif fmt == "packeteer":
+                result = raw_packet_ingest.ingest_packeteer(con, capture_id, src, filename)
+            elif fmt in {"pcap", "pcapng"}:
+                result = pcap_ingest.ingest_pcap(con, capture_id, src, filename)
+            elif fmt == "eventview":
+                result = ingest_eventview(con, capture_id, src, filename)
+            elif fmt == "idview_simple":
+                result = ingest_idview_simple(con, capture_id, src, filename)
+            elif fmt == "eventview_session_simple":
+                result = ingest_eventview_session_simple(con, capture_id, src, filename)
+            elif fmt == "eventview_session_raw":
+                result = ingest_eventview_session_raw(con, capture_id, src, filename)
+            elif fmt == "kitrack":
+                result = ingest_kitrack(con, capture_id, src, filename)
+            elif fmt == "hptrack":
+                result = ingest_hptrack(con, capture_id, src, filename)
+            elif fmt == "actionview_simple":
+                result = ingest_actionview_simple(con, capture_id, src, filename)
+            elif fmt == "caplog":
+                result = ingest_caplog(con, capture_id, src, filename)
+            elif fmt == "windower_logger":
+                result = ingest_windower_logger(con, capture_id, src, filename)
+            elif fmt == "npclogger_db":
+                result = ingest_npc_db(con, capture_id, src, filename)
+            elif fmt == "actionview_db":
+                result = ingest_actions_db(con, capture_id, src, filename)
+            elif fmt == "levelrange_db":
+                result = ingest_level_range_db(con, capture_id, src, filename)
+            elif fmt == "npclogger_lua":
+                leg = 2 if "/database/" in filename.lower() else 1
+                result = ingest_npclogger_lua(con, capture_id, src, filename, leg)
+            elif fmt == "pathlog_csv":
+                result = ingest_pathlog(con, capture_id, src, filename)
+            elif fmt == "pc_pathlog_csv":
+                result = ingest_pc_pathlog(con, capture_id, src, filename)
+            elif fmt == "widescan":
+                result = ingest_widescan(con, capture_id, src, filename)
+            elif fmt == "attackdelay":
+                result = ingest_attackdelay(con, capture_id, src, filename)
+            elif fmt in AUX_STRUCTURED_FORMATS:
+                result = ingest_aux_structured(con, capture_id, src, filename, fmt)
+            else:
+                raise ValueError(f"unsupported rebuild parser: {fmt}")
+            rows = sum(result) if isinstance(result, tuple) else int(result)
+            con.execute("RELEASE SAVEPOINT capture_rebuild")
+        except Exception:
+            con.execute("ROLLBACK TO SAVEPOINT capture_rebuild")
+            con.execute("RELEASE SAVEPOINT capture_rebuild")
+            raise
+
+        capture_integrity.record_source_file(
+            con, capture_id, filename, data,
+            format_detected=fmt, parser_name=fmt, row_count=rows, error=None,
+        )
+        con.execute(
+            """INSERT OR REPLACE INTO capture_source_files
+               (capture_id,filename,format_detected,ingested_at,row_count,error)
+               VALUES (?,?,?,datetime('now'),?,NULL)""",
+            (capture_id, filename, fmt, rows),
+        )
+        recompute_zones(con, capture_id)
+        con.commit()
+        return {
+            "capture_id": capture_id, "filename": filename, "format": fmt,
+            "scope": "single_source", "deleted_rows": deleted, "rows": rows,
+        }
+    finally:
+        src.close()
+
+
+# Every real table keyed by capture_id -- kept as one list so delete_capture() can never miss one
+# as new tables get added (a table added to init_db() but forgotten here would leave orphaned rows
+# behind on every future delete, silently). Deliberately NOT derived by introspecting sqlite_master
+# for tables with a capture_id column: several real tables (capture_source_files, capture_tags)
+# have no data-quality reason to auto-discover, and an explicit list is easier to audit against
+# init_db() by eye than trusting a DB introspection query to get it right.
+CAPTURE_CHILD_TABLES = [
+    "capture_network_flows", "capture_network_ranges", "capture_network_messages",
+    "capture_npc_entries", "capture_npc_history", "capture_npc_path", "capture_actions",
+    "capture_hp_events", "capture_events", "capture_ki_events", "capture_eventview",
+    "capture_level_range", "capture_attack_delay", "capture_pc_path", "capture_structured_records", "capture_source_files",
+    "capture_source_manifest", "capture_source_artifacts", "capture_content_manifest",
+    "capture_ingest_lineage",
+    "capture_raw_packets", "capture_video_observations", "capture_tags", "capture_caplog_chat",
+    "capture_chat_observations",
+    "capture_alignment_anchors", "capture_key_evidence",
+]
+
+
+def delete_capture(con, capture_id: int) -> dict:
+    """Permanently removes one capture and every real row it owns across every child table --
+    there is no soft-delete/undo, so the GUI route gates this behind an explicit confirm page
+    rather than a single click. Returns {table: rows_deleted} for whatever confirmation message
+    the caller wants to show."""
+    return capture_integrity.delete_capture_rows(con, capture_id, CAPTURE_CHILD_TABLES)
+
+
+def recompute_zones(con, capture_id: int):
+    zones = [r[0] for r in con.execute(
+        "SELECT DISTINCT zone_db FROM capture_npc_entries WHERE capture_id=? ORDER BY 1",
+        (capture_id,))]
+    con.execute("UPDATE captures SET zones=? WHERE capture_id=?", (json.dumps(zones), capture_id))
+    con.commit()
+
+
+def ingest_batch(con, path_str: str, content_type: str = "instances",
+                  mission_name_override: str | None = None) -> list[int]:
+    """One capture per top-level subfolder in a bundle (see ingest()'s subroot docstring) --
+    real example: Blitzkrieg.zip's 14 separately-named attempts."""
+    subroots = list_top_level_dirs(path_str)
+    print(f"{Path(path_str).name}: {len(subroots)} subfolder(s) -- ingesting each as its own capture")
+    ids = []
+    for sub in subroots:
+        try:
+            ids.append(ingest(con, path_str, content_type=content_type, subroot=sub,
+                               mission_name_override=mission_name_override))
+        except Exception as ex:
+            print(f"  FAILED {sub}: {ex}")
+    return ids
+
+
+def ingest_all(con, dir_str: str, pattern: str, content_type: str = "instances"):
+    d = Path(dir_str)
+    zips = sorted(d.rglob(pattern))
+    if not zips:
+        print(f"no files matching {pattern!r} under {d}")
+        return
+    print(f"found {len(zips)} capture file(s) under {d}")
+    for z in zips:
+        try:
+            ingest(con, str(z), content_type=content_type)
+        except Exception as ex:
+            print(f"  FAILED {z.name}: {ex}")
+
+
+def cmd_list(con, content_type: str | None = None):
+    q = """SELECT c.capture_id, c.capture_label, c.content_type, c.zones, c.mission_name,
+                  (SELECT COUNT(*) FROM capture_npc_entries WHERE capture_id=c.capture_id) AS n_npc,
+                  (SELECT COUNT(*) FROM capture_npc_history WHERE capture_id=c.capture_id) AS n_hist
+           FROM captures c"""
+    params = ()
+    if content_type:
+        q += " WHERE c.content_type=?"
+        params = (content_type,)
+    q += " ORDER BY c.content_type, c.capture_id"
+    rows = con.execute(q, params).fetchall()
+    if not rows:
+        print("(no captures ingested yet)")
+        return
+    for r in rows:
+        zones = ",".join(json.loads(r[3])) if r[3] else "?"
+        print(f"[{r[0]:>3}] {r[1]:<50} type={(r[2] or '?'):<14} zones={zones:<28} "
+              f"mission={r[4] or '(unresolved)':<28} npc={r[5]:<4} history={r[6]}")
+
+
+def get_entity_path(con, capture_id: int, entity_id: int) -> list[tuple]:
+    """Real (x, z, t) points for one entity in one capture, for plotting -- capture_npc_path
+    (PathLog's purpose-built leg/x/y/z/dir trace) when present, since it's cleaner than
+    reconstructing motion from state deltas; falls back to capture_npc_history's raw x/y/z deltas
+    (present on the *other* zone's NPCLogger.db in a capture, or when PathLog didn't cover this
+    entity) otherwise. x/z are the ground-plane axes FFXI actually plots on a 2D map; y is height.
+    """
+    rows = con.execute(
+        """SELECT x, z, step FROM capture_npc_path
+           WHERE capture_id=? AND entity_id=? ORDER BY step""",
+        (capture_id, entity_id)).fetchall()
+    if rows:
+        return [(x, z, i) for x, z, i in rows]
+
+    rows = con.execute(
+        """SELECT delta_json, ts FROM capture_npc_history
+           WHERE capture_id=? AND entity_id=? ORDER BY seq""",
+        (capture_id, entity_id)).fetchall()
+    points = []
+    for delta_json, ts in rows:
+        try:
+            d = json.loads(delta_json)
+        except (TypeError, ValueError):
+            continue
+        if "x" in d and "z" in d:
+            points.append((d["x"], d["z"], ts))
+    return points
+
+
+def get_pc_path(con, capture_id: int, zone_db: str) -> list[tuple]:
+    """Real (x, z, t) points for the CAPTURING CHARACTER's own trace in one zone of one capture
+    (capture_pc_path, from PathLog/.../PC_<Zone>.csv -- see ingest_pc_pathlog). Same (x,z,step)
+    shape as get_entity_path so it can reuse the same plotting routes/templates, just keyed by
+    zone_db instead of entity_id since there's no real NPC/entity id for the capturer here."""
+    rows = con.execute(
+        """SELECT x, z, step FROM capture_pc_path
+           WHERE capture_id=? AND zone_db=? ORDER BY step""",
+        (capture_id, zone_db)).fetchall()
+    return [(x, z, i) for x, z, i in rows]
+
+
+def get_pc_path_zones(con, capture_id: int) -> list[str]:
+    """Distinct zone_db values this capture has a real PC path for."""
+    rows = con.execute(
+        "SELECT DISTINCT zone_db FROM capture_pc_path WHERE capture_id=? ORDER BY zone_db",
+        (capture_id,)).fetchall()
+    return [r[0] for r in rows]
+
+
+def get_capture_entity_ids_with_path(con, capture_id: int, zone_db: str | None = None) -> list[tuple[int, str | None]]:
+    """Every (entity_id, name) in this capture that has real path data (capture_npc_path or
+    capture_npc_history with x/z), for a multi-entity plot -- an entity with only a single
+    NPCLogger snapshot row and no path/history still gets included (a lone point is a real,
+    if minimal, position sample), a pure name-only/no-position row does not."""
+    q = """SELECT DISTINCT e.entity_id, e.name FROM capture_npc_entries e
+           WHERE e.capture_id=? AND (
+               EXISTS (SELECT 1 FROM capture_npc_path p WHERE p.capture_id=e.capture_id AND p.entity_id=e.entity_id)
+               OR EXISTS (SELECT 1 FROM capture_npc_history h WHERE h.capture_id=e.capture_id AND h.entity_id=e.entity_id)
+               OR (e.x IS NOT NULL AND e.z IS NOT NULL)
+           )"""
+    params = [capture_id]
+    if zone_db:
+        q += " AND e.zone_db=?"
+        params.append(zone_db)
+    q += " ORDER BY e.entity_id"
+    return con.execute(q, params).fetchall()
+
+
+def cmd_show(con, capture_id: int):
+    row = con.execute("SELECT * FROM captures WHERE capture_id=?", (capture_id,)).fetchone()
+    if not row:
+        print("no such capture_id")
+        return
+    cols = [d[0] for d in con.execute("SELECT * FROM captures WHERE capture_id=?", (capture_id,)).description]
+    for c, v in zip(cols, row):
+        print(f"  {c}: {v}")
+    print("\nNPC entries (top 15 by name):")
+    for r in con.execute("""SELECT entity_id, name, model_id, x, y, z, hpp, zone_db
+                             FROM capture_npc_entries WHERE capture_id=? ORDER BY name LIMIT 15""",
+                          (capture_id,)):
+        eid, name, model_id, x, y, z, hpp, zone_db = r
+        pos = f"({x:.1f},{y:.1f},{z:.1f})" if x is not None else "(?)"
+        print(f"  {eid:>10}  {(name or '?'):<20} model={model_id if model_id is not None else '?':<6} "
+              f"pos={pos} hp%={hpp if hpp is not None else '?':<4} zone_db={zone_db}")
+    n = con.execute("SELECT COUNT(*) FROM capture_npc_entries WHERE capture_id=?", (capture_id,)).fetchone()[0]
+    if n > 15:
+        print(f"  ... and {n - 15} more")
+
+
+def backfill_npc_fields(con):
+    """Populates capture_npc_entries.legacy_look plus the door_id/act_index/flags0-3/legacy_flag/
+    sub_kind columns for every already-ingested capture whose real source zip/folder is still on
+    disk, without a full re-ingest -- same pattern used for KITrack/EventView/LevelRangeTrack/
+    AttackDelay when those were added after captures already existed. Skips captures with no
+    NPCLogger.db (the older idview/Wiggo-era format never had any of these fields -- not a gap to
+    backfill, a real absence) and captures whose source file has since moved/been deleted
+    (reported, not treated as an error worth stopping the run over)."""
+    rows = con.execute("SELECT capture_id, source_path FROM captures").fetchall()
+    n_captures = n_updated_total = 0
+    for capture_id, source_path in rows:
+        if not source_path or source_path.startswith("manual://"):
+            continue
+        # Multi-session bundles (ingest_batch) store "<real path>::<subroot>" -- see the same
+        # convention at the source_path = f"{path}::{subroot}" line elsewhere in this file.
+        real_path, sep, subroot = source_path.partition("::")
+        p = Path(real_path)
+        if not p.exists():
+            print(f"  capture #{capture_id}: source not found on disk ({real_path}) -- skipped")
+            continue
+        src = Source(p)
+        try:
+            def sfind(pattern, _subroot=(subroot if sep else None)):
+                hits = src.find(pattern)
+                return hits if _subroot is None else [h for h in hits if h.startswith(_subroot + "/")]
+            npc_db_files = sfind(r'NPCLogger/[^/]+\.db$')
+            if not npc_db_files:
+                continue
+            n_updated = 0
+            for relname in npc_db_files:
+                zone_db = Path(relname).stem
+                sub, tmp_path = src.open_sqlite(relname)
+                try:
+                    cols = {r[1] for r in sub.execute("PRAGMA table_info(entries)")}
+                    if "UniqueNo" not in cols:
+                        continue
+                    select_cols = ["UniqueNo"]
+                    for c in ("legacy_look", "DoorId", "ActIndex", "Flags0", "Flags1", "Flags2",
+                              "Flags3", "legacy_flag", "SubKind"):
+                        select_cols.append(c if c in cols else "NULL")
+                    sql = f"SELECT {', '.join(select_cols)} FROM entries"
+                    for (uid, look, door_id, act_index, flags0, flags1, flags2, flags3,
+                         legacy_flag, sub_kind) in sub.execute(sql):
+                        try:
+                            uid = int(uid)
+                        except (TypeError, ValueError):
+                            continue
+                        look_blob = look if isinstance(look, (bytes, bytearray)) else None
+                        if look_blob is None and look:
+                            try:
+                                look_blob = bytes.fromhex(str(look))
+                            except ValueError:
+                                look_blob = None
+                        if look_blob is not None:
+                            look_blob = bytes(look_blob)
+                        cur = con.execute(
+                            """UPDATE capture_npc_entries SET
+                                 legacy_look=COALESCE(?, legacy_look),
+                                 door_id=COALESCE(?, door_id), act_index=COALESCE(?, act_index),
+                                 flags0=COALESCE(?, flags0), flags1=COALESCE(?, flags1),
+                                 flags2=COALESCE(?, flags2), flags3=COALESCE(?, flags3),
+                                 legacy_flag=COALESCE(?, legacy_flag), sub_kind=COALESCE(?, sub_kind)
+                               WHERE capture_id=? AND zone_db=? AND entity_id=?""",
+                            (look_blob, door_id, act_index, flags0, flags1, flags2, flags3,
+                             legacy_flag, sub_kind, capture_id, zone_db, uid))
+                        n_updated += cur.rowcount
+                finally:
+                    close_sqlite(sub, tmp_path)
+            if n_updated:
+                print(f"  capture #{capture_id}: {n_updated} entities backfilled")
+            n_captures += 1
+            n_updated_total += n_updated
+        finally:
+            src.close()
+    con.commit()
+    print(f"Done -- {n_updated_total} entities backfilled across {n_captures} capture(s) with a real NPCLogger.db.")
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    p1 = sub.add_parser("ingest", help="ingest one capture folder or .zip")
+    p1.add_argument("path")
+    p1.add_argument("--content-type", default="instances", choices=CONTENT_TYPES,
+                     help="what kind of content this capture is from (default: assault -- "
+                          "everything ingested so far). Pass 'unclassified' for anything else "
+                          "until this tool learns a more specific type.")
+
+    p2 = sub.add_parser("ingest-all", help="ingest every matching file under a directory")
+    p2.add_argument("path")
+    p2.add_argument("--pattern", default="*.zip")
+    p2.add_argument("--content-type", default="instances", choices=CONTENT_TYPES)
+
+    p5 = sub.add_parser("ingest-batch", help="ingest each top-level subfolder of a bundle as its own capture")
+    p5.add_argument("path")
+    p5.add_argument("--content-type", default="instances", choices=CONTENT_TYPES)
+    p5.add_argument("--mission-name", default=None, help="explicit mission_name for every session ingested")
+
+    p3 = sub.add_parser("list", help="list ingested captures")
+    p3.add_argument("--content-type", default=None, choices=CONTENT_TYPES,
+                     help="filter to one content type (default: show all)")
+
+    p4 = sub.add_parser("show", help="show one capture's ingested contents")
+    p4.add_argument("capture_id", type=int)
+
+    sub.add_parser("backfill-look", help="backfill legacy_look + door_id/act_index/flags0-3/"
+                                          "legacy_flag/sub_kind for already-ingested captures "
+                                          "whose source zip/folder is still on disk, without a "
+                                          "full re-ingest")
+
+    args = ap.parse_args()
+    con = sqlite3.connect(str(DB_PATH))
+    init_db(con)
+
+    if args.cmd == "ingest":
+        ingest(con, args.path, content_type=args.content_type)
+    elif args.cmd == "ingest-all":
+        ingest_all(con, args.path, args.pattern, content_type=args.content_type)
+    elif args.cmd == "ingest-batch":
+        ingest_batch(con, args.path, content_type=args.content_type, mission_name_override=args.mission_name)
+    elif args.cmd == "list":
+        cmd_list(con, content_type=args.content_type)
+    elif args.cmd == "show":
+        cmd_show(con, args.capture_id)
+    elif args.cmd == "backfill-look":
+        backfill_npc_fields(con)
+
+    con.close()
+
+
+if __name__ == "__main__":
+    main()
+, lower):
+        # Whole-session flat views duplicate the per-opcode packet files. Recognize by path here
+        # so provenance finalization does not decompress/read tens of megabytes again merely to
+        # rediscover that already-known redundancy.
+        return "packetlogger_redundant"
     if "caplog/" in lower and lower.endswith((".txt", ".log")):
         return "caplog"
     if WINDOWER_LOGGER_FILENAME_RE.search(lower):
