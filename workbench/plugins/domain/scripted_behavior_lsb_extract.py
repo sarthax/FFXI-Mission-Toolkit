@@ -2198,51 +2198,50 @@ def extract_lsb_scripted_behavior(
                 trigger=hook.upper(),
                 meta=meta,
             )
-            if not branch_writes and not branch_effects:
-                continue
-            rules.append(BehaviorRule(
-                f"{hook}:event-branch:{branch['csid']}",
-                "event_branch_effects",
-                subject,
-                trigger=hook.upper(),
-                conditions=(BehaviorCondition(
-                    "event:csid","EVENT_ID_EQUALS",branch["csid"],
-                    {
-                        "event_id":branch["csid"],
-                        "source_line":branch["start_line"],
-                        "source_line_text":branch["source_line"],
-                    },
-                ),),
-                effects=tuple(
-                    BehaviorEffect(
-                        "WRITE_STATE",row["state_id"],row["value"],
+            if branch_writes or branch_effects:
+                rules.append(BehaviorRule(
+                    f"{hook}:event-branch:{branch['csid']}",
+                    "event_branch_effects",
+                    subject,
+                    trigger=hook.upper(),
+                    conditions=(BehaviorCondition(
+                        "event:csid","EVENT_ID_EQUALS",branch["csid"],
                         {
-                            "scope":row["scope"],
-                            "receiver":row["receiver"],
-                            "name":row["name"],
-                            "source_line":row["line"],
-                            "source_line_text":row["source_line"],
                             "event_id":branch["csid"],
+                            "source_line":branch["start_line"],
+                            "source_line_text":branch["source_line"],
                         },
-                    )
-                    for row in branch_writes
-                ) + tuple(
-                    BehaviorEffect(
-                        effect.effect,effect.target,effect.value,
-                        {**dict(effect.metadata),"event_id":branch["csid"]},
-                    )
-                    for effect in branch_effects
-                ),
-                confidence="VERIFIED",
-                implementation_status="PRESENT",
-                metadata={
-                    **meta,
-                    "event_id":branch["csid"],
-                    "source_lines":(branch["start_line"],branch["end_line"]),
-                    "branch_form":"CSID_LITERAL_BRANCH",
-                },
-            ))
-            modeled_hooks.add(hook)
+                    ),),
+                    effects=tuple(
+                        BehaviorEffect(
+                            "WRITE_STATE",row["state_id"],row["value"],
+                            {
+                                "scope":row["scope"],
+                                "receiver":row["receiver"],
+                                "name":row["name"],
+                                "source_line":row["line"],
+                                "source_line_text":row["source_line"],
+                                "event_id":branch["csid"],
+                            },
+                        )
+                        for row in branch_writes
+                    ) + tuple(
+                        BehaviorEffect(
+                            effect.effect,effect.target,effect.value,
+                            {**dict(effect.metadata),"event_id":branch["csid"]},
+                        )
+                        for effect in branch_effects
+                    ),
+                    confidence="VERIFIED",
+                    implementation_status="PRESENT",
+                    metadata={
+                        **meta,
+                        "event_id":branch["csid"],
+                        "source_lines":(branch["start_line"],branch["end_line"]),
+                        "branch_form":"CSID_LITERAL_BRANCH",
+                    },
+                ))
+                modeled_hooks.add(hook)
 
             for outcome_index,outcome in enumerate(literal_outcome_branches,1):
                 outcome_writes=[
