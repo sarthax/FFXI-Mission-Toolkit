@@ -1410,6 +1410,55 @@ def _without_state_guard_branches(text: str, branches: tuple[dict,...]) -> str:
     return "\n".join(raw)
 
 
+def _nested_conditional_spans(text: str) -> tuple[dict,...]:
+    """Return nested if/elseif/else branch spans inside an already-selected outcome branch."""
+    raw=text.splitlines()
+    structural=_structural_lua_lines(text)
+    rows=[]
+    depth=0
+    active=None
+
+    def finish(end_index: int):
+        nonlocal active
+        if active is None:
+            return
+        rows.append({
+            "start_index":active["start_index"],
+            "end_index":max(active["start_index"],end_index),
+        })
+        active=None
+
+    for i,code in enumerate(structural):
+        stripped=code.strip()
+        current_depth=depth
+        if i>0 and active is not None and current_depth==active["branch_depth"]:
+            if re.match(r"^(?:elseif\b|else\b|end\b)",stripped):
+                finish(i-1)
+        if i>0 and current_depth>=1 and re.match(r"^(?:if|elseif)\b",stripped):
+            active={
+                "start_index":i,
+                "branch_depth":current_depth + (1 if stripped.startswith("if ") else 0),
+            }
+        elif i>0 and current_depth>=1 and re.match(r"^else\b",stripped):
+            active={
+                "start_index":i,
+                "branch_depth":current_depth,
+            }
+        depth+=_open_count(code)-_close_count(code)
+    if active is not None:
+        finish(len(raw)-1)
+    return tuple(rows)
+
+
+def _without_nested_conditionals(text: str, spans: tuple[dict,...]) -> str:
+    raw=text.splitlines()
+    for span in spans:
+        for index in range(span["start_index"],span["end_index"]+1):
+            if 0 <= index < len(raw):
+                raw[index]=""
+    return "\n".join(raw)
+
+
 def _event_outcome_branches(text: str, *, start_line: int) -> tuple[dict,...]:
     """Return bounded nested option/result branches, marking only literal equality as modeled."""
     raw=text.splitlines()
@@ -2362,9 +2411,10 @@ def extract_lsb_scripted_behavior(
                     outcome["body"],
                     start_line=outcome["start_line"],
                 )
-                outcome_parent_body=_without_state_guard_branches(
+                nested_conditionals=_nested_conditional_spans(outcome["body"])
+                outcome_parent_body=_without_nested_conditionals(
                     outcome["body"],
-                    state_guard_branches,
+                    nested_conditionals,
                 )
                 outcome_writes=[
                     row for row in _named_state_accesses(
