@@ -262,3 +262,28 @@ Timer, queue, and named listener closures are now represented as first-class beh
 - nested named state reads/writes.
 
 The Behavior Inspector renders a callback node between the parent hook and the callback's rules/effects so delayed/event-driven behavior is visually distinct from synchronous hook behavior. This is still source-static: callback execution timing/order at runtime remains a validation concern.
+
+
+## Literal phase-machine enrichment — 2026-09-29
+
+The extractor now recognizes a conservative table/switch state-machine pattern used by bosses such as Ultima:
+
+```lua
+local phase = mob:getLocalVar('phase')
+switch (phase): caseof
+{
+    [1] = function()
+        mob:setLocalVar('phase', 2)
+    end,
+}
+```
+
+A transition is promoted only when:
+
+- the switch selector is a local alias directly assigned from a named state read;
+- the case key is statically visible;
+- the case writes back to that exact same canonical state identity.
+
+This produces a verified `STATE_EQUALS(from) -> WRITE_STATE(to)` transition with source span, selector alias, hook and confidence. Writes to other state variables inside the same case are deliberately not treated as transitions of the selector state.
+
+The Behavior Inspector displays these in a dedicated State Transitions table and links the state node to the transition guard in the causal graph. Dynamic dispatch, computed case keys, indirect state aliases and arbitrary control-flow inference remain open enrichment work.

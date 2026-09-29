@@ -81,6 +81,15 @@ _NAMED_STATE_SET=re.compile(
 )
 _SERVER_STATE_GET=re.compile(r"\bGetServerVariable\(\s*['\"]([^'\"]+)['\"]\s*\)")
 _SERVER_STATE_SET=re.compile(r"\bSetServerVariable\(\s*['\"]([^'\"]+)['\"]\s*,\s*(.+)\)\s*$")
+_STATE_ALIAS_ASSIGN=re.compile(
+    r"\blocal\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"
+    r"([A-Za-z_][A-Za-z0-9_]*):(getLocalVar|getCharVar)\(\s*['\"]([^'\"]+)['\"]\s*\)"
+)
+_SERVER_ALIAS_ASSIGN=re.compile(
+    r"\blocal\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*GetServerVariable\(\s*['\"]([^'\"]+)['\"]\s*\)"
+)
+_SWITCH_SELECTOR=re.compile(r"\bswitch\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)\s*:\s*caseof")
+_SWITCH_CASE=re.compile(r"^\s*\[([^\]]+)\]\s*=\s*function\s*\(")
 
 
 @dataclass(frozen=True)
@@ -433,6 +442,15 @@ def _callback_rules(
         )
         if state_rule is not None:
             rules.append(state_rule)
+        transition_rules=_switch_state_transition_rules(
+            text=callback.body,
+            start_line=callback.start_line,
+            subject=subject,
+            trigger=callback.trigger,
+            meta=meta,
+        )
+        if transition_rules:
+            rules.extend(transition_rules)
     return tuple(rules)
 
 
@@ -644,6 +662,159 @@ def _named_state_accesses(text: str, *, start_line: int) -> tuple[dict,...]:
     return tuple(rows)
 
 
+def _state_aliases(text: str, *, start_line: int) -> dict[str,dict]:
+    aliases={}
+    for offset,raw_line in enumerate(text.splitlines()):
+        code=_strip_line_comment_preserve_strings(raw_line)
+        line_no=start_line+offset
+        for match in _STATE_ALIAS_ASSIGN.finditer(code):
+            alias,receiver,method,name=match.groups()
+            scope=_state_scope(receiver,method)
+            aliases[alias]={
+                "alias":alias,
+                "scope":scope,
+                "receiver":receiver,
+                "method":method,
+                "name":name,
+                "state_id":_state_id(scope,name,receiver),
+                "source_line":line_no,
+                "source_line_text":raw_line.strip(),
+            }
+        for match in _SERVER_ALIAS_ASSIGN.finditer(code):
+            alias,name=match.groups()
+            scope="SERVER_GLOBAL"
+            aliases[alias]={
+                "alias":alias,
+                "scope":scope,
+                "receiver":None,
+                "method":"GetServerVariable",
+                "name":name,
+                "state_id":_state_id(scope,name),
+                "source_line":line_no,
+                "source_line_text":raw_line.strip(),
+            }
+    return aliases
+
+
+def _switch_state_transition_rules(
+    *,
+    text: str,
+    start_line: int,
+    subject: str,
+    trigger: str,
+    meta: dict,
+) -> tuple[BehaviorRule,...]:
+    """Recognize literal switch/case transitions for a directly aliased named state.
+
+    Only writes back to the selector's exact canonical state identity are promoted to transitions.
+    """
+    raw=text.splitlines()
+    structural=_structural_lua_lines(text)
+    aliases=_state_aliases(text,start_line=start_line)
+    rules=[]
+    transition_index=0
+    context_parts=[trigger]
+    if meta.get("helper"):
+        context_parts.append(f"helper:{meta['helper']}")
+    if meta.get("callback_type"):
+        context_parts.append(
+            f"callback:{meta.get('callback_call_line')}:{meta.get('callback_type')}"
+        )
+    rule_prefix=":".join(str(part) for part in context_parts)
+
+    for i,code in enumerate(structural):
+        selector_match=_SWITCH_SELECTOR.search(code)
+        if not selector_match:
+            continue
+        alias=selector_match.group(1)
+        state=aliases.get(alias)
+        if state is None:
+            continue
+
+        brace_depth=code.count("{")-code.count("}")
+        opened=brace_depth>0
+        j=i+1
+        while j<len(raw):
+            row=structural[j]
+            if not opened:
+                brace_depth+=row.count("{")-row.count("}")
+                if row.count("{"):
+                    opened=True
+                j+=1
+                continue
+            if brace_depth<=0:
+                break
+
+            case_match=_SWITCH_CASE.match(row)
+            if case_match:
+                case_value=case_match.group(1).strip()
+                depth=0
+                started=False
+                case_end=None
+                for k in range(j,len(raw)):
+                    krow=structural[k]
+                    opens=_open_count(krow)
+                    closes=_close_count(krow)
+                    if opens:
+                        started=True
+                    depth+=opens-closes
+                    if started and depth<=0:
+                        case_end=k
+                        break
+                if case_end is not None:
+                    body="\n".join(raw[j:case_end+1])
+                    accesses=_named_state_accesses(body,start_line=start_line+j)
+                    writes=[
+                        row for row in accesses
+                        if row["access"]=="WRITE" and row["state_id"]==state["state_id"]
+                    ]
+                    for write in writes:
+                        transition_index+=1
+                        common={
+                            "scope":state["scope"],
+                            "name":state["name"],
+                            "receiver":state["receiver"],
+                            "selector_alias":alias,
+                            "switch_case":case_value,
+                            "source_line":write["line"],
+                            "source_line_text":write["source_line"],
+                        }
+                        rules.append(BehaviorRule(
+                            f"{rule_prefix}:state-transition:{transition_index}",
+                            "state_transition",
+                            subject,
+                            trigger=trigger,
+                            conditions=(BehaviorCondition(
+                                state["state_id"],"STATE_EQUALS",case_value,
+                                {
+                                    **common,
+                                    "selector_source_line":state["source_line"],
+                                    "selector_source_line_text":state["source_line_text"],
+                                },
+                            ),),
+                            effects=(BehaviorEffect(
+                                "WRITE_STATE",state["state_id"],write["value"],common
+                            ),),
+                            confidence="VERIFIED",
+                            implementation_status="PRESENT",
+                            metadata={
+                                **meta,
+                                "source_lines":(start_line+j,start_line+case_end),
+                                "state_id":state["state_id"],
+                                "state_scope":state["scope"],
+                                "state_name":state["name"],
+                                "selector_alias":alias,
+                                "switch_case":case_value,
+                            },
+                        ))
+                    j=case_end
+
+            brace_depth+=row.count("{")-row.count("}")
+            j+=1
+
+    return tuple(rules)
+
+
 def _state_flow_rule(
     *,
     rule_id: str,
@@ -776,6 +947,16 @@ def extract_lsb_scripted_behavior(
         )
         if state_rule is not None:
             rules.append(state_rule)
+            modeled_hooks.add(hook)
+        transition_rules=_switch_state_transition_rules(
+            text=text,
+            start_line=block.start_line,
+            subject=subject,
+            trigger=hook.upper(),
+            meta=meta,
+        )
+        if transition_rules:
+            rules.extend(transition_rules)
             modeled_hooks.add(hook)
 
         callback_rules=_callback_rules(
@@ -1127,6 +1308,15 @@ def extract_lsb_scripted_behavior(
             )
             if helper_state_rule is not None:
                 rules.append(helper_state_rule)
+            helper_transition_rules=_switch_state_transition_rules(
+                text=helper.body,
+                start_line=helper.start_line,
+                subject=subject,
+                trigger=hook.upper(),
+                meta=helper_meta,
+            )
+            if helper_transition_rules:
+                rules.extend(helper_transition_rules)
             helper_callback_rules=_callback_rules(
                 text=helper.body,
                 start_line=helper.start_line,
@@ -1216,6 +1406,7 @@ def extract_lsb_scripted_behavior(
             "reachable_helper_count":len(reached_helpers),
             "reachable_helpers":sorted(reached_helpers),
             "callback_count":sum(1 for rule in rules if rule.kind=="callback"),
+            "state_transition_count":sum(1 for rule in rules if rule.kind=="state_transition"),
             "modeled_hook_count":len(modeled_hooks),
             "unmodeled_hooks":sorted(set(hooks)-modeled_hooks),
         },
