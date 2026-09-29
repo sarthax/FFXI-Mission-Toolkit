@@ -28,7 +28,7 @@ Current sequence:
 - [x] Mission/quest source behavior can project into canonical graph evidence.
 - [x] Add generic conditional/cross-zone/system-state dependency representation and Package Scope traversal, preserving explicit review rather than converting conditional coupling into ordinary REQUIRED truth.
 - [~] Add source-family detectors that discover conditional system coupling from implementation evidence rather than only curated proof/truth inputs. Conservative LSB shared-lifecycle discovery now surfaces alternate-zone mob scripts only when they explicitly delegate multiple supported `onMob*` hooks to the same `xi.<system>` module; broader non-LSB and non-lifecycle coupling remains.
-- [ ] Implement generic scripted-entity/combat behavior representation and extraction.
+- [~] Implement generic scripted-entity/combat behavior representation and extraction. The generic behavior model and canonical graph projection now cover hooks, thresholds, timers, cross-entity spawn/state transfer, action/magic responses, cleanup, spell/loot overrides, and explicit actor dependencies; Lua source extraction remains.
 - [ ] Emit scripted combat behavior/dependencies into the canonical graph.
 - [ ] Unify acquisition/obtainability across shops, drops, rewards, HELM, gardening, exchange, appraisal, synthesis, and synergy.
 - [ ] Complete mission/quest dynamic helper, DefaultActions/fallback, client dialog/event-resource, trade/timer/spawn/death/battlefield closure.
