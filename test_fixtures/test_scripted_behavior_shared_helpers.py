@@ -154,6 +154,24 @@ def main():
         assert any(edge["kind"]=="HELPER_DOWNSTREAM_EFFECT" for edge in graph["edges"]),graph["edges"]
         assert any(edge["kind"]=="HELPER_DIRECT_CALL" for edge in graph["edges"]),graph["edges"]
 
+        impact_nodes=[
+            node for node in graph["nodes"]
+            if node["kind"] in {"helper_input","helper_effect","helper_call"}
+        ]
+        assert impact_nodes,graph["nodes"]
+        assert all(
+            node["meta"].get("helper")=="xi.salvage.onDoorOpen"
+            for node in impact_nodes
+        ),impact_nodes
+        assert not any(
+            node["meta"].get("helper")=="xi.instance.sharedCallback"
+            for node in impact_nodes
+        ),impact_nodes
+        assert not any(
+            node["meta"].get("helper")=="xi.unknown.missingThing"
+            for node in impact_nodes
+        ),impact_nodes
+
     print("shared helper definition resolution regression: PASS")
 
 
