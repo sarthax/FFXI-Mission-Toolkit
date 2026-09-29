@@ -123,6 +123,11 @@ def main():
         (source / "eventview" / "simple.log").write_text(WHOLE_SESSION_SIMPLE, encoding="utf-8")
         (source / "network.pcap").write_bytes(classic_pcap(frame))
         (source / "network.pcapng").write_bytes(pcapng(frame))
+        (source / "stattrack.csv").write_text(
+            "timestamp,hpmax,mpmax,mjob_no,mjob_lv,sjob_no,sjob_lv,STR,DEX,VIT,AGI,INT,MND,CHR\n"
+            "2026-09-28 12:00:02,2000,500,1,99,19,49,120,110,115,100,90,95,88\n",
+            encoding="utf-8",
+        )
 
         con = sqlite3.connect(root / "capture.db")
         bci.init_db(con)
@@ -176,6 +181,13 @@ def main():
 
         assert counts["chat"] == 1, counts
         assert counts["network"] == 2, counts
+        stat = con.execute(
+            """SELECT family,ts,payload_json FROM capture_structured_records
+               WHERE capture_id=? AND family='stattrack_csv'""", (cid,)
+        ).fetchone()
+        assert stat and stat[0] == "stattrack_csv", stat
+        assert stat[1] == "2026-09-28 12:00:02", stat
+        assert json.loads(stat[2])["hpmax"] == "2000", stat
 
         # Safe re-ingest reuses source-native IDs and does not inflate observations.
         src = bci.Source(source)
