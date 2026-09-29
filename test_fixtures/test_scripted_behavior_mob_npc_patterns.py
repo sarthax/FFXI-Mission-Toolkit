@@ -2,6 +2,7 @@
 """Mixed LSB mob/NPC/object behavior regression based on representative source patterns."""
 from __future__ import annotations
 
+from workbench.plugins.domain.scripted_behavior import project_scripted_behavior
 from workbench.plugins.domain.scripted_behavior_lsb_extract import (
     extract_helper_blocks,
     extract_lsb_scripted_behavior,
@@ -145,6 +146,20 @@ def main():
         ("salvage","sealDoors"),
         ("salvage","unsealDoors"),
     } <= calls,calls
+    projection=project_scripted_behavior(
+        salvage,
+        source_snapshot_id="lsb:test",
+        evidence_source="LSB",
+        evidence_location="scripts/zones/Bhaflau_Remnants/npcs/_23c.lua",
+    )
+    system_node=next(
+        entity.entity_id for entity in projection.entities
+        if entity.display_name=="system:xi.salvage"
+    )
+    assert any(
+        edge.target_node==system_node and edge.relationship=="REQUIRES"
+        for edge in projection.edges
+    ),projection.edges
 
     print("mixed scripted mob/NPC/object behavior regression: PASS")
 
