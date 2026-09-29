@@ -246,6 +246,28 @@ def init_db(con: sqlite3.Connection):
             anomalies_json TEXT NOT NULL,
             PRIMARY KEY (capture_id, source_file, flow_id, direction, range_index)
         );
+        CREATE TABLE IF NOT EXISTS capture_network_messages (
+            capture_id INTEGER NOT NULL,
+            source_file TEXT NOT NULL,
+            flow_id TEXT NOT NULL,
+            protocol_family TEXT NOT NULL,
+            direction TEXT NOT NULL,
+            range_index INTEGER NOT NULL,
+            message_index INTEGER NOT NULL,
+            seq_start INTEGER NOT NULL,
+            seq_end INTEGER NOT NULL,
+            command INTEGER,
+            command_name TEXT,
+            validation_status TEXT NOT NULL,
+            raw_hex TEXT NOT NULL,
+            fields_json TEXT NOT NULL,
+            provenance_json TEXT NOT NULL,
+            PRIMARY KEY (
+                capture_id, source_file, flow_id, direction, range_index, message_index
+            )
+        );
+        CREATE INDEX IF NOT EXISTS idx_capture_network_messages_protocol
+            ON capture_network_messages(capture_id,protocol_family,command);
         CREATE INDEX IF NOT EXISTS idx_capture_network_ranges_flow
             ON capture_network_ranges(capture_id,source_file,flow_id,direction);
         CREATE INDEX IF NOT EXISTS idx_capture_structured_family
@@ -3625,7 +3647,7 @@ def rebuild_capture_source(con, capture_id: int, filename: str) -> dict:
 # have no data-quality reason to auto-discover, and an explicit list is easier to audit against
 # init_db() by eye than trusting a DB introspection query to get it right.
 CAPTURE_CHILD_TABLES = [
-    "capture_network_flows", "capture_network_ranges",
+    "capture_network_flows", "capture_network_ranges", "capture_network_messages",
     "capture_npc_entries", "capture_npc_history", "capture_npc_path", "capture_actions",
     "capture_hp_events", "capture_events", "capture_ki_events", "capture_eventview",
     "capture_level_range", "capture_attack_delay", "capture_pc_path", "capture_structured_records", "capture_source_files",
