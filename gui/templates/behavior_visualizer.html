@@ -41,6 +41,8 @@
   <div class="stat"><div class="n">{{ result.graph.summary.states }}</div><div class="l">Named states</div></div>
   <div class="stat"><div class="n">{{ result.graph.summary.callbacks }}</div><div class="l">Callbacks</div></div>
   <div class="stat"><div class="n">{{ result.graph.summary.transitions }}</div><div class="l">State transitions</div></div>
+  <div class="stat"><div class="n">{{ result.graph.summary.entity_references }}</div><div class="l">Entity refs</div></div>
+  <div class="stat"><div class="n">{{ result.upstream_candidates|length }}</div><div class="l">Upstream candidates</div></div>
 </div>
 
 {% if result.graph.summary.hook_owners %}
@@ -120,6 +122,43 @@
       {% if write.source %}<div class="muted mono">{{ write.source }}</div>{% endif %}
     {% else %}<span class="muted">No write observed in selected source</span>{% endfor %}
   </td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+{% endif %}
+
+{% if result.graph.entity_references %}
+<h2>Downstream Entity References</h2>
+<p class="muted">These are statically visible <code>ID.mob</code>/<code>ID.npc</code> references in the selected Lua. They are verified source references; dynamic ID arithmetic is preserved as an expression instead of resolved to a guessed entity.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Target</th><th>Operation</th><th>Hook</th><th>ID expression</th><th>Source</th><th>Confidence</th></tr></thead>
+<tbody>
+{% for row in result.graph.entity_references %}
+<tr>
+  <td><code>{{ row.target }}</code></td>
+  <td><span class="chip">{{ row.operation }}</span></td>
+  <td>{{ row.hook or "—" }}</td>
+  <td><code>{{ row.id_expression }}</code></td>
+  <td><code>{{ row.source_path or result.source.path }}</code>{% if row.source_line %}<br><span class="muted">line {{ row.source_line }}</span>{% endif %}{% if row.source_line_text %}<br><span class="muted mono">{{ row.source_line_text }}</span>{% endif %}</td>
+  <td>{{ row.confidence }}</td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+{% endif %}
+
+{% if result.upstream_candidates %}
+<h2>Who References This Actor?</h2>
+<div class="warn"><strong>Identity caution:</strong> these are exact same-zone source references to a filename-normalized <code>ID.mob/ID.npc</code> candidate. The reference text is real; the mapping from this script filename to that canonical ID symbol is still <strong>INFERRED_IDENTITY</strong> until independently resolved.</div>
+<div class="table-wrap"><table>
+<thead><tr><th>Source</th><th>Reference</th><th>Line</th><th>Source text</th><th>Basis</th></tr></thead>
+<tbody>
+{% for row in result.upstream_candidates %}
+<tr>
+  <td><a class="zonelink mono" href="/behavior?source={{ row.path|urlencode }}">{{ row.path }}</a></td>
+  <td><code>{{ row.reference }}</code></td>
+  <td>{{ row.line }}</td>
+  <td class="mono">{{ row.source_line }}</td>
+  <td><span class="chip">{{ row.confidence }}</span><br><span class="muted">{{ row.basis }}</span></td>
 </tr>
 {% endfor %}
 </tbody></table></div>
