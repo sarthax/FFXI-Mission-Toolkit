@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from workbench.plugins.domain.scripted_behavior_lsb_extract import extract_lsb_scripted_behavior
+from workbench.core.services.scripted_behavior_visualizer import _graph_for_behavior
 
 
 SCRIPT=r'''
@@ -95,6 +96,17 @@ def main():
     write_ids={effect.target for effect in fight.effects}
     assert "state:ENTITY_LOCAL:mob:phase" in read_ids & write_ids,(read_ids,write_ids)
     assert "state:ENTITY_LOCAL:mob:nextAction" in read_ids & write_ids,(read_ids,write_ids)
+
+    graph=_graph_for_behavior(behavior)
+    links={row["state_id"]:row for row in graph["state_links"]}
+    phase_link=links["state:ENTITY_LOCAL:mob:phase"]
+    assert phase_link["relationship"]=="SHARED_STATE_ACROSS_HOOKS",phase_link
+    assert phase_link["ordering"]=="UNPROVEN",phase_link
+    assert phase_link["writer_hooks"]==["onMobFight","onMobSpawn"],phase_link
+    assert phase_link["reader_hooks"]==["onMobFight"],phase_link
+    assert {"writer_hook":"onMobSpawn","reader_hook":"onMobFight"} in phase_link["cross_hook_pairs"],phase_link
+    assert "state:PLAYER_CHAR:player:QuestStep" not in links,links
+    assert graph["summary"]["cross_hook_state_links"]>=1,graph["summary"]
 
     print("structured scripted state-flow regression: PASS")
 
