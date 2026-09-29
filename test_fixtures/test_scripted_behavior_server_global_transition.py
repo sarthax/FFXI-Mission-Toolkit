@@ -22,6 +22,14 @@ entity.onTrigger = function(player, npc)
     if phase == 2 then
         SetServerVariable('OtherGlobal', 9)
     end
+
+    if GetServerVariable('GlobalMissionPhase') == 4 then
+        SetServerVariable('GlobalMissionPhase', 5)
+    end
+
+    if GetServerVariable('GlobalMissionPhase') == 6 then
+        SetServerVariable('OtherGlobal', 10)
+    end
 end
 
 return entity
@@ -42,9 +50,14 @@ def main():
         if rule.kind=="state_transition"
         and rule.metadata.get("transition_form")=="SERVER_GLOBAL_LITERAL_IF"
     ]
-    assert len(transitions)==1,transitions
+    assert len(transitions)==2,transitions
 
-    rule=transitions[0]
+    aliased=[r for r in transitions if r.metadata.get("selector_alias")=="phase"]
+    direct=[r for r in transitions if r.metadata.get("selector_alias") is None]
+    assert len(aliased)==1,transitions
+    assert len(direct)==1,transitions
+
+    rule=aliased[0]
     assert rule.metadata["state_id"]=="state:SERVER_GLOBAL:server:GlobalMissionPhase",rule
     assert rule.metadata["state_scope"]=="SERVER_GLOBAL",rule.metadata
     assert rule.metadata["selector_alias"]=="phase",rule.metadata
@@ -61,6 +74,11 @@ def main():
     assert effect.effect=="WRITE_STATE",effect
     assert effect.target=="state:SERVER_GLOBAL:server:GlobalMissionPhase",effect
     assert effect.value=="2",effect
+
+    direct_rule=direct[0]
+    assert direct_rule.metadata["selector_expression"]=="GetServerVariable('GlobalMissionPhase')",direct_rule.metadata
+    assert direct_rule.metadata["if_literal"]=="4",direct_rule.metadata
+    assert direct_rule.effects[0].value=="5",direct_rule.effects
 
     # Computed predicates and writes to a different global must not become lifecycle transitions.
     assert not any(r.metadata.get("if_literal")=="dynamicValue" for r in transitions),transitions
