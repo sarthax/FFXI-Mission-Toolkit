@@ -146,6 +146,13 @@ def main():
             edge["kind"]=="CALLS_SHARED_HELPER"
             for edge in graph["edges"]
         ),graph["edges"]
+        assert graph["summary"]["shared_helper_impact_nodes"]>=4,graph["summary"]
+        assert any(node["kind"]=="helper_input" for node in graph["nodes"]),graph["nodes"]
+        assert any(node["kind"]=="helper_effect" for node in graph["nodes"]),graph["nodes"]
+        assert any(node["kind"]=="helper_call" for node in graph["nodes"]),graph["nodes"]
+        assert any(edge["kind"]=="HELPER_UPSTREAM_INPUT" for edge in graph["edges"]),graph["edges"]
+        assert any(edge["kind"]=="HELPER_DOWNSTREAM_EFFECT" for edge in graph["edges"]),graph["edges"]
+        assert any(edge["kind"]=="HELPER_DIRECT_CALL" for edge in graph["edges"]),graph["edges"]
 
     print("shared helper definition resolution regression: PASS")
 
