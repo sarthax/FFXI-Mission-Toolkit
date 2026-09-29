@@ -1189,6 +1189,53 @@ def _context_condition_rule(
     )
 
 
+def _literal_csid_branches(text: str, *, start_line: int) -> tuple[dict,...]:
+    """Return bounded top-level literal CSID branches with branch-local state accesses."""
+    raw=text.splitlines()
+    structural=_structural_lua_lines(text)
+    rows=[]
+    depth=0
+    active=None
+
+    def finish(end_index: int):
+        nonlocal active
+        if active is None:
+            return
+        body_start=active["start_index"]
+        body_end=max(body_start,end_index)
+        body="\n".join(raw[body_start:body_end+1])
+        rows.append({
+            "csid":active["csid"],
+            "start_line":start_line+body_start,
+            "end_line":start_line+body_end,
+            "source_line":active["source_line"],
+            "state_accesses":_named_state_accesses(body,start_line=start_line+body_start),
+        })
+        active=None
+
+    for i,raw_line in enumerate(raw):
+        code=_strip_line_comment_preserve_strings(raw_line)
+        stripped=code.strip()
+        if active is not None and depth==active["branch_depth"]:
+            if re.match(r"^(?:elseif\b|else\b|end\b)",stripped):
+                finish(i-1)
+
+        branch_match=re.match(r"^\s*(?:if|elseif)\s+csid\s*==\s*(\d+)\s+then\b",code)
+        if branch_match:
+            active={
+                "csid":int(branch_match.group(1)),
+                "start_index":i,
+                "source_line":raw_line.strip(),
+                "branch_depth":depth + (1 if stripped.startswith("if ") else 0),
+            }
+
+        depth+=_open_count(structural[i])-_close_count(structural[i])
+
+    if active is not None:
+        finish(len(raw)-1)
+    return tuple(rows)
+
+
 def _literal_csid_guards(text: str, *, start_line: int) -> tuple[dict,...]:
     rows=[]
     for offset,raw_line in enumerate(text.splitlines()):
@@ -1950,6 +1997,7 @@ def extract_lsb_scripted_behavior(
 
         event_ids=tuple(dict.fromkeys(int(x) for x in _START_EVENT.findall(text)))
         csid_guards=_literal_csid_guards(text,start_line=block.start_line)
+        csid_branches=_literal_csid_branches(text,start_line=block.start_line)
         if event_ids or _UPDATE_EVENT.search(text) or csid_guards:
             effects=[
                 BehaviorEffect("START_EVENT","player",event_id)
@@ -1976,6 +2024,51 @@ def extract_lsb_scripted_behavior(
                 conditions=conditions,
                 effects=tuple(effects),
                 confidence="VERIFIED",implementation_status="PRESENT",metadata=meta,
+            ))
+            modeled_hooks.add(hook)
+
+        for branch in csid_branches:
+            branch_writes=[
+                row for row in branch["state_accesses"]
+                if row["access"]=="WRITE"
+            ]
+            if not branch_writes:
+                continue
+            rules.append(BehaviorRule(
+                f"{hook}:event-branch-state:{branch['csid']}",
+                "event_branch_state",
+                subject,
+                trigger=hook.upper(),
+                conditions=(BehaviorCondition(
+                    "event:csid","EVENT_ID_EQUALS",branch["csid"],
+                    {
+                        "event_id":branch["csid"],
+                        "source_line":branch["start_line"],
+                        "source_line_text":branch["source_line"],
+                    },
+                ),),
+                effects=tuple(
+                    BehaviorEffect(
+                        "WRITE_STATE",row["state_id"],row["value"],
+                        {
+                            "scope":row["scope"],
+                            "receiver":row["receiver"],
+                            "name":row["name"],
+                            "source_line":row["line"],
+                            "source_line_text":row["source_line"],
+                            "event_id":branch["csid"],
+                        },
+                    )
+                    for row in branch_writes
+                ),
+                confidence="VERIFIED",
+                implementation_status="PRESENT",
+                metadata={
+                    **meta,
+                    "event_id":branch["csid"],
+                    "source_lines":(branch["start_line"],branch["end_line"]),
+                    "branch_form":"CSID_LITERAL_BRANCH",
+                },
             ))
             modeled_hooks.add(hook)
 
