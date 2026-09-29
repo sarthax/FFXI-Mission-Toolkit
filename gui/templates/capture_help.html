@@ -13,15 +13,15 @@
 <tbody>
 <tr><td><strong>Windower PacketLogger</strong></td><td>Raw incoming/outgoing packet bytes, timestamps, opcode, packet size, sync ID, injected/blocked flags, source identity.</td><td>Supported</td></tr>
 <tr><td><strong>z16 / legacy PacketViewer</strong></td><td>Per-opcode raw packet logs with exact source-block provenance.</td><td>Supported</td></tr>
-<tr><td><strong>MalRD PacketDB</strong></td><td>SQLite <code>PACKETS</code>: timestamp, direction, zone ID, opcode, packet size, sync ID, raw bytes, PacketDB row identity.</td><td>Supported</td></tr>
+<tr><td><strong>MalRD PacketDB</strong></td><td>SQLite <code>PACKETS</code> plus <code>CHATLOG</code>: packet bytes/metadata and canonical chat observations with timestamp, direction, zone ID, text, and PacketDB native row identity.</td><td>Supported</td></tr>
 <tr><td><strong>Ashita Packeteer</strong></td><td>Text packet dumps: direction, raw bytes, opcode, packet size, sync ID, timestamp when present.</td><td>Supported</td></tr>
 <tr><td><strong>NPCLogger SQLite</strong></td><td>Entity state/history, positions, look data, flags, DoorId, ActIndex, subtype and related runtime fields.</td><td>Supported</td></tr>
 <tr><td><strong>Legacy NPCLogger Lua</strong></td><td>Entity snapshots, NPC path observations, and preserved <code>raw_packet</code> bytes promoted into canonical packet evidence.</td><td>Supported</td></tr>
 <tr><td><strong>NPCLogger Widescan</strong></td><td>Entity/widescan observations and level-range evidence.</td><td>Supported</td></tr>
 <tr><td><strong>ActionView SQLite / simple text</strong></td><td>Actor actions, abilities, weaponskills/spells, animation/category/message IDs. Text is fallback when SQLite is absent.</td><td>Supported</td></tr>
-<tr><td><strong>EventView</strong></td><td>Decoded packet observations, GP commands, packet class, entity/message fields.</td><td>Supported</td></tr>
+<tr><td><strong>EventView</strong></td><td>Decoded packet observations, GP commands, packet class, entity/message fields. Whole-session multi-zone <code>simple.log</code> records are preserved under <code>__UNKNOWN_ZONE__</code> when the source does not prove a zone.</td><td>Supported</td></tr>
 <tr><td><strong>IDView</strong></td><td>Event/CSID/entity/message observations across known legacy and block-text generations.</td><td>Supported</td></tr>
-<tr><td><strong>CapLog</strong></td><td>EventView/IDView-style records, HP observations, and CapLog chat/system text.</td><td>Supported</td></tr>
+<tr><td><strong>CapLog</strong></td><td>EventView/IDView-style records, HP observations, and chat/system text. Chat is retained in the legacy CapLog table and the generic canonical chat store.</td><td>Supported</td></tr>
 <tr><td><strong>HPTrack</strong></td><td>Observed mob HP ranges.</td><td>Supported</td></tr>
 <tr><td><strong>KITrack</strong></td><td>Key-item obtain/loss observations with position/zone context when recorded.</td><td>Supported</td></tr>
 <tr><td><strong>LevelRangeTrack</strong></td><td>Observed entity level ranges.</td><td>Supported</td></tr>
@@ -36,6 +36,9 @@
 <tr><td><strong>CheckParam</strong></td><td>Character combat/stat parameter snapshots.</td><td>Supported</td></tr>
 <tr><td><strong>CraftTrack</strong></td><td>Craft result/material/crystal observations.</td><td>Supported</td></tr>
 <tr><td><strong>ConquestTrack</strong></td><td>Conquest and related world-state observations.</td><td>Supported</td></tr>
+<tr><td><strong>Captain StatTrack</strong></td><td>Player and puppet stat CSV generations: HP/MP, jobs/levels, base attributes, and puppet melee/ranged/magic caps where recorded.</td><td>Supported</td></tr>
+<tr><td><strong>Generic PCAP / PCAPNG</strong></td><td>Lossless network frames with timestamps, link type, IP endpoints, TCP/UDP ports, transport payload bytes, frame bytes, and service hints. Wire payload is <em>not</em> mislabeled as an already-decoded FFXI application packet.</td><td>Supported as network evidence</td></tr>
+<tr><td><strong>Capturebar video / screenshots</strong></td><td>Built-in OCR profile for the default Capturebar header; extracts zone ID/name, displayed name, XYZ, rotation, main/sub jobs and levels, and moon percentage/phase when OCR succeeds.</td><td>Supported through OCR</td></tr>
 <tr><td><strong>Wiggo PriceLog / findPrice</strong></td><td>Historical NPC resale/vendor-price observations.</td><td>Supported</td></tr>
 </tbody></table></div>
 
@@ -56,13 +59,24 @@
 <div class="table-wrap"><table>
 <thead><tr><th>Gap</th><th>Current behavior</th><th>Recommended direction</th></tr></thead>
 <tbody>
-<tr><td><strong>PacketDB CHATLOG</strong></td><td>PacketDB <code>PACKETS</code> is supported, but its <code>CHATLOG</code> table is not yet normalized.</td><td>Add a generic chat/message observation model shared by PacketDB, CapLog, and future loggers.</td></tr>
-<tr><td><strong>Whole-session multi-zone EventView raw/simple logs</strong></td><td>Known files may contain unique observations but lack trustworthy per-record zone attribution, so they are deliberately not normalized into a guessed zone.</td><td>Preserve as zone-unknown evidence and resolve zone later from packet/entity/timeline evidence.</td></tr>
-<tr><td><strong>Capturebar</strong></td><td>No persisted capture format; it is an on-screen HUD.</td><td>Add/use an OCR layout profile so video/screenshots can recover zone, target, coordinates, jobs, moon/world context.</td></tr>
-<tr><td><strong>Generic PCAP / PCAPNG</strong></td><td>No direct network-capture adapter.</td><td>Add a bounded FFXI stream/session decoder for Wireshark/Npcap-style captures.</td></tr>
-<tr><td><strong>Lobby / world-server packet streams</strong></td><td>Current addon capture support is primarily zone/game-server oriented.</td><td>Research and model lobby/search/AH/account/storage stream capture separately when needed.</td></tr>
-<tr><td><strong>PacketDB ZONES / PACKET_DEFINITION</strong></td><td>Not imported as runtime facts because they are reference metadata, not observations.</td><td>Optionally preserve as source-supplied historical reference metadata.</td></tr>
-<tr><td><strong>Unknown historical/community loggers</strong></td><td>Unrecognized source files remain visible in ingestion results rather than being silently ignored.</td><td>Add adapters when real samples/schemas are found; prefer content signatures over folder-name assumptions.</td></tr>
+<tr><td><strong>Lobby / world / search application decoding</strong></td><td>PCAP/PCAPNG now preserves the underlying TCP/UDP frames and endpoint/port evidence, but the toolkit does not yet decode lobby/world/search protocols into the zone-packet model.</td><td>Build connection-role-aware decoders. Keep lobby/world/search observations in their own protocol namespaces rather than forcing them into zone packet semantics.</td></tr>
+<tr><td><strong>PacketDB ZONES / PACKET_DEFINITION</strong></td><td>Not imported as runtime facts because they are source reference metadata rather than observations.</td><td>Optionally preserve these as historical source-supplied protocol/reference evidence.</td></tr>
+<tr><td><strong>Captain PacketBridge live stream</strong></td><td>PacketBridge streams raw packets to localhost UDP with a direction prefix but creates no capture file itself.</td><td>Add a live-source adapter only if real-time intake is needed; recorded PCAP of the bridge can already be preserved by the network adapter.</td></tr>
+<tr><td><strong>Runtime-only Captain/Windower helpers</strong></td><td>ImmunityTrack, PlayerInfo, TargetInfo, ZoneDump, and similar tools do not create an independent persisted log in the versions audited.</td><td>Use packet/canonical evidence or OCR/video where appropriate; only add a file parser if a real persisted format is found.</td></tr>
+<tr><td><strong>PacketViewer-derived NDJSON / analysis interchange</strong></td><td>Tools such as kparser2 can convert PacketViewer data to NDJSON, but this is a derived interchange format rather than a newly observed primary logger format.</td><td>Add an NDJSON adapter if archived captures exist only in that representation; preserve lineage back to the converter/source when known.</td></tr>
+<tr><td><strong>Unknown historical/community loggers</strong></td><td>Unrecognized source files remain visible in ingestion results rather than being silently ignored.</td><td>Continue format archaeology and add adapters only from verified source/samples/schemas.</td></tr>
+</tbody></table></div>
+
+<h2>Historical/runtime tools audited but not separate file formats</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Tool</th><th>Finding</th><th>Toolkit handling</th></tr></thead>
+<tbody>
+<tr><td><strong>Captain ImmunityTrack</strong></td><td>Derives immunity/resist summaries from battle packets and prints messages; no independent persistent file in the audited source.</td><td>Use captured battle packets/messages; no dedicated ingester required yet.</td></tr>
+<tr><td><strong>Captain PacketBridge</strong></td><td>Streams every packet to a local UDP endpoint, prefixing incoming/outgoing direction.</td><td>Potential future live adapter; PCAP/PCAPNG can preserve a recorded bridge/network stream.</td></tr>
+<tr><td><strong>Captain PlayerInfo / TargetInfo</strong></td><td>On-screen HUD/context tools, not file loggers.</td><td>Video/OCR evidence path is appropriate.</td></tr>
+<tr><td><strong>Captain ZoneDump</strong></td><td>Actively requests entity data; it does not define its own result file.</td><td>Resulting entity/packet evidence is captured by the normal logger families.</td></tr>
+<tr><td><strong>Captain OBS integration</strong></td><td>Controls OBS recording and can split recordings by zone.</td><td>Video is handled by the OCR/video evidence pipeline.</td></tr>
+<tr><td><strong>VersCheck</strong></td><td>Version-update helper only.</td><td>Not capture evidence.</td></tr>
 </tbody></table></div>
 
 <h2>How unsupported files are handled</h2>
@@ -70,11 +84,11 @@
 
 <h2>Current priority gaps</h2>
 <ol>
-<li>PacketDB <code>CHATLOG</code> into a generic chat/message evidence store.</li>
-<li>Preserve unique whole-session, zone-unknown EventView observations instead of dropping them.</li>
-<li>Capturebar OCR profile for video/screenshot evidence.</li>
-<li>PCAP/PCAPNG adapter.</li>
-<li>Continue searching historical Windower/Ashita/community logger ecosystems for additional real formats.</li>
+<li>Decode preserved PCAP/PCAPNG traffic by connection role: zone/map vs lobby/login vs world/search, without mixing protocol namespaces.</li>
+<li>Decide whether PacketDB <code>ZONES</code> and <code>PACKET_DEFINITION</code> should be retained as historical reference evidence.</li>
+<li>Evaluate a live PacketBridge adapter if live streaming adds value beyond file/network capture.</li>
+<li>Continue searching historical Windower/Ashita/Captain/community repositories and old capture archives for formats not represented here.</li>
+<li>Add derived interchange importers such as PacketViewer-derived NDJSON only when real archived evidence requires them.</li>
 </ol>
 
 <p class="muted">This page documents current parser behavior, not every logger ever written. When a new sample appears, verify its real schema/output before declaring compatibility.</p>
