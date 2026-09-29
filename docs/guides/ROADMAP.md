@@ -33,6 +33,7 @@ Current sequence:
 - [x] Add structured named-state extraction and visualization for entity/player/instance/server variables, preserving exact read/write source lines and unevaluated write expressions so phase/progression/runtime state can be audited without executing Lua.
 - [x] Extract anonymous timer/queue/listener callbacks as first-class behavior branches, preserving delay/event trigger identity, callback source spans, and nested state/API observations so delayed/event-driven behavior is visually distinct from synchronous hook logic.
 - [x] Extract verified literal state transitions from direct named-state aliases used in `switch(...): caseof` phase machines, and render `from → to` transitions with hook/source provenance in Behavior Inspector.
+- [x] Resolve statically named downstream `ID.mob`/`ID.npc` references into explicit behavior targets, preserve offset/dynamic ID expressions without guessing, and surface bounded same-zone reverse-reference candidates with clearly labelled inferred identity.
 - [ ] Emit scripted combat behavior/dependencies into the canonical graph.
 - [ ] Unify acquisition/obtainability across shops, drops, rewards, HELM, gardening, exchange, appraisal, synthesis, and synergy.
 - [ ] Complete mission/quest dynamic helper, DefaultActions/fallback, client dialog/event-resource, trade/timer/spawn/death/battlefield closure.
