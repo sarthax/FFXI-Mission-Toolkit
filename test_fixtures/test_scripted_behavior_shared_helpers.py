@@ -99,6 +99,24 @@ def main():
             row["target"]=="entity-symbol:npc:TEST_DOOR"
             for row in analysis["entity_effects"]
         ),analysis
+        assert analysis["summary"]["upstream_impacts"]>=1,analysis
+        assert analysis["summary"]["downstream_impacts"]>=2,analysis
+        assert any(
+            row["kind"]=="POSITION_COMPARE" or row["kind"]=="CONTEXT"
+            for row in analysis["impact"]["upstream"]
+        ),analysis
+        assert any(
+            row["kind"]=="STATE_WRITE"
+            for row in analysis["impact"]["downstream"]
+        ),analysis
+        assert any(
+            row["kind"]=="REFERENCES_ENTITY"
+            for row in analysis["impact"]["downstream"]
+        ),analysis
+        assert any(
+            row["qualified_name"]=="GetNPCByID"
+            for row in analysis["impact"]["calls"]
+        ),analysis
 
         instance_row=helpers["xi.instance.sharedCallback"]
         assert instance_row["status"]=="AMBIGUOUS",instance_row
