@@ -25,6 +25,14 @@ entity.onInstanceCreated = function(instance)
         instance:setProgress(progress + 1)
     end
 
+    if instance:getStage() == 1 then
+        instance:setStage(2)
+    end
+
+    if instance:getProgress() == 4 then
+        instance:setStage(3)
+    end
+
     instance:setLocalVar("wave", 2)
 end
 
@@ -80,8 +88,12 @@ def main():
         if rule.kind=="state_transition"
         and rule.metadata.get("transition_form")=="INSTANCE_LIFECYCLE_LITERAL_IF"
     ]
-    assert len(transitions)==1,transitions
-    transition=transitions[0]
+    assert len(transitions)==2,transitions
+    aliased=[r for r in transitions if r.metadata.get("selector_alias")=="stage"]
+    direct=[r for r in transitions if r.metadata.get("selector_alias") is None]
+    assert len(aliased)==1,transitions
+    assert len(direct)==1,transitions
+    transition=aliased[0]
     assert transition.metadata["state_id"]=="state:INSTANCE_LIFECYCLE:instance:stage",transition
     assert transition.metadata["selector_alias"]=="stage",transition.metadata
     assert transition.metadata["if_literal"]=="0",transition.metadata
@@ -89,6 +101,11 @@ def main():
     assert transition.conditions[0].value=="0",transition.conditions
     assert transition.effects[0].target=="state:INSTANCE_LIFECYCLE:instance:stage",transition.effects
     assert transition.effects[0].value=="1",transition.effects
+
+    direct_transition=direct[0]
+    assert direct_transition.metadata["selector_expression"]=="instance:getStage()",direct_transition.metadata
+    assert direct_transition.metadata["if_literal"]=="1",direct_transition.metadata
+    assert direct_transition.effects[0].value=="2",direct_transition.effects
 
     # Cross-lifecycle writes, computed equality predicates, and non-equality guards stay generic.
     assert not any(rule.metadata.get("if_literal")=="dynamicStage" for rule in transitions),transitions
