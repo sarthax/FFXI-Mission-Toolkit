@@ -118,6 +118,11 @@ _INSTANCE_DIRECT_IF_LITERAL_EQUALS=re.compile(
     r"^\s*if\s+(instance):(getStage|getProgress)\(\s*\)\s*==\s*"
     r"(-?\d+|true|false|['\"][^'\"]+['\"])\s+then\b"
 )
+_NAMED_STATE_DIRECT_IF_LITERAL_EQUALS=re.compile(
+    r"^\s*(?:if|elseif)\s+([A-Za-z_][A-Za-z0-9_]*):(getLocalVar|getCharVar)\(\s*"
+    r"['\"]([^'\"]+)['\"]\s*\)\s*==\s*"
+    r"(-?\d+|true|false|['\"][^'\"]+['\"])\s+then\b"
+)
 _TIME_ALIAS_ASSIGN=re.compile(
     r"\blocal\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(VanadielHour|VanadielDay|VanadielDayOfTheWeek)\(\)"
 )
@@ -1297,6 +1302,114 @@ def _event_branch_nonstate_effects(
     return tuple(effects)
 
 
+def _literal_state_guard_branches(text: str, *, start_line: int) -> tuple[dict,...]:
+    """Return bounded literal canonical-state guard branches inside an event outcome."""
+    raw=text.splitlines()
+    structural=_structural_lua_lines(text)
+    aliases=_state_aliases(text,start_line=start_line)
+    rows=[]
+    depth=0
+    active=None
+
+    def finish(end_index: int):
+        nonlocal active
+        if active is None:
+            return
+        body_start=active["start_index"]
+        body_end=max(body_start,end_index)
+        body="\n".join(raw[body_start:body_end+1])
+        rows.append({
+            **active,
+            "start_line":start_line+body_start,
+            "end_line":start_line+body_end,
+            "body":body,
+            "state_accesses":_named_state_accesses(body,start_line=start_line+body_start),
+        })
+        active=None
+
+    for i,raw_line in enumerate(raw):
+        code=_strip_line_comment_preserve_strings(raw_line)
+        stripped=code.strip()
+        if active is not None and depth==active["branch_depth"]:
+            if re.match(r"^(?:elseif\b|else\b|end\b)",stripped):
+                finish(i-1)
+
+        state=None
+        literal=None
+        selector_expression=None
+        alias_match=re.match(
+            r"^\s*(?:if|elseif)\s+([A-Za-z_][A-Za-z0-9_]*)\s*==\s*"
+            r"(-?\d+|true|false|['\"][^'\"]+['\"])\s+then\b",
+            code,
+        )
+        if alias_match:
+            alias,literal=alias_match.groups()
+            state=aliases.get(alias)
+            selector_expression=alias
+        if state is None:
+            direct=_NAMED_STATE_DIRECT_IF_LITERAL_EQUALS.match(code)
+            if direct:
+                receiver,method,name,literal=direct.groups()
+                scope=_state_scope(receiver,method)
+                state={
+                    "scope":scope,
+                    "receiver":receiver,
+                    "method":method,
+                    "name":name,
+                    "state_id":_state_id(scope,name,receiver),
+                }
+                selector_expression=f"{receiver}:{method}({name!r})"
+        if state is None:
+            server=_SERVER_DIRECT_IF_LITERAL_EQUALS.match(code)
+            if server:
+                name,literal=server.groups()
+                state={
+                    "scope":"SERVER_GLOBAL",
+                    "receiver":None,
+                    "method":"GetServerVariable",
+                    "name":name,
+                    "state_id":_state_id("SERVER_GLOBAL",name),
+                }
+                selector_expression=f"GetServerVariable({name!r})"
+        if state is None:
+            instance_match=_INSTANCE_DIRECT_IF_LITERAL_EQUALS.match(code)
+            if instance_match:
+                receiver,method,literal=instance_match.groups()
+                name="stage" if method=="getStage" else "progress"
+                state={
+                    "scope":"INSTANCE_LIFECYCLE",
+                    "receiver":receiver,
+                    "method":method,
+                    "name":name,
+                    "state_id":_state_id("INSTANCE_LIFECYCLE",name,receiver),
+                }
+                selector_expression=f"{receiver}:{method}()"
+        if state is not None and literal is not None:
+            active={
+                "state":state,
+                "literal":literal,
+                "selector_expression":selector_expression,
+                "start_index":i,
+                "source_line":raw_line.strip(),
+                "branch_depth":depth + (1 if stripped.startswith("if ") else 0),
+            }
+
+        depth+=_open_count(structural[i])-_close_count(structural[i])
+
+    if active is not None:
+        finish(len(raw)-1)
+    return tuple(rows)
+
+
+def _without_state_guard_branches(text: str, branches: tuple[dict,...]) -> str:
+    raw=text.splitlines()
+    for branch in branches:
+        for index in range(branch["start_index"],branch["end_index"]+1):
+            if 0 <= index < len(raw):
+                raw[index]=""
+    return "\n".join(raw)
+
+
 def _event_outcome_branches(text: str, *, start_line: int) -> tuple[dict,...]:
     """Return bounded nested option/result branches, marking only literal equality as modeled."""
     raw=text.splitlines()
@@ -2245,12 +2358,23 @@ def extract_lsb_scripted_behavior(
                 modeled_hooks.add(hook)
 
             for outcome_index,outcome in enumerate(literal_outcome_branches,1):
+                state_guard_branches=_literal_state_guard_branches(
+                    outcome["body"],
+                    start_line=outcome["start_line"],
+                )
+                outcome_parent_body=_without_state_guard_branches(
+                    outcome["body"],
+                    state_guard_branches,
+                )
                 outcome_writes=[
-                    row for row in outcome["state_accesses"]
+                    row for row in _named_state_accesses(
+                        outcome_parent_body,
+                        start_line=outcome["start_line"],
+                    )
                     if row["access"]=="WRITE"
                 ]
                 outcome_effects=_event_branch_nonstate_effects(
-                    outcome["body"],
+                    outcome_parent_body,
                     start_line=outcome["start_line"],
                     subject=subject,
                     trigger=hook.upper(),
@@ -2324,6 +2448,100 @@ def extract_lsb_scripted_behavior(
                     },
                 ))
                 modeled_hooks.add(hook)
+ 
+                for guard_index,guard in enumerate(state_guard_branches,1):
+                    guard_writes=[
+                        row for row in guard["state_accesses"]
+                        if row["access"]=="WRITE"
+                    ]
+                    guard_effects=_event_branch_nonstate_effects(
+                        guard["body"],
+                        start_line=guard["start_line"],
+                        subject=subject,
+                        trigger=hook.upper(),
+                        meta=meta,
+                    )
+                    if not guard_writes and not guard_effects:
+                        continue
+                    state=guard["state"]
+                    rules.append(BehaviorRule(
+                        f"{hook}:event-outcome-state:{branch['csid']}:{outcome_index}:{guard_index}",
+                        "event_outcome_guarded_effects",
+                        subject,
+                        trigger=hook.upper(),
+                        conditions=(
+                            BehaviorCondition(
+                                "event:csid","EVENT_ID_EQUALS",branch["csid"],
+                                {"event_id":branch["csid"]},
+                            ),
+                            BehaviorCondition(
+                                f"event:{outcome['selector']}",
+                                "EVENT_OUTCOME_EQUALS",
+                                outcome["literal"],
+                                {
+                                    "event_id":branch["csid"],
+                                    "selector":outcome["selector"],
+                                },
+                            ),
+                            BehaviorCondition(
+                                state["state_id"],
+                                "STATE_EQUALS",
+                                guard["literal"],
+                                {
+                                    "scope":state["scope"],
+                                    "receiver":state["receiver"],
+                                    "name":state["name"],
+                                    "selector_expression":guard["selector_expression"],
+                                    "source_line":guard["start_line"],
+                                    "source_line_text":guard["source_line"],
+                                },
+                            ),
+                        ),
+                        effects=tuple(
+                            BehaviorEffect(
+                                "WRITE_STATE",row["state_id"],row["value"],
+                                {
+                                    "scope":row["scope"],
+                                    "receiver":row["receiver"],
+                                    "name":row["name"],
+                                    "source_line":row["line"],
+                                    "source_line_text":row["source_line"],
+                                    "event_id":branch["csid"],
+                                    "outcome_selector":outcome["selector"],
+                                    "outcome_literal":outcome["literal"],
+                                    "guard_state_id":state["state_id"],
+                                    "guard_literal":guard["literal"],
+                                },
+                            )
+                            for row in guard_writes
+                        ) + tuple(
+                            BehaviorEffect(
+                                effect.effect,effect.target,effect.value,
+                                {
+                                    **dict(effect.metadata),
+                                    "event_id":branch["csid"],
+                                    "outcome_selector":outcome["selector"],
+                                    "outcome_literal":outcome["literal"],
+                                    "guard_state_id":state["state_id"],
+                                    "guard_literal":guard["literal"],
+                                },
+                            )
+                            for effect in guard_effects
+                        ),
+                        confidence="VERIFIED",
+                        implementation_status="PRESENT",
+                        metadata={
+                            **meta,
+                            "event_id":branch["csid"],
+                            "outcome_selector":outcome["selector"],
+                            "outcome_literal":outcome["literal"],
+                            "guard_state_id":state["state_id"],
+                            "guard_literal":guard["literal"],
+                            "source_lines":(guard["start_line"],guard["end_line"]),
+                            "branch_form":"EVENT_OUTCOME_STATE_LITERAL_BRANCH",
+                        },
+                    ))
+                    modeled_hooks.add(hook)
 
         if _TRADE_PREDICATE.search(text) or _CONFIRM_TRADE.search(text):
             rules.append(BehaviorRule(
