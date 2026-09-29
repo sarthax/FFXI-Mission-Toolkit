@@ -316,7 +316,7 @@ def extract_callback_blocks(text: str, *, start_line: int=1) -> tuple[CallbackBl
         event_name=None
         trigger=callback_type.upper()+"_CALLBACK"
         if callback_type in {"timer","queue"}:
-            delay_source=prefix.rstrip(",").strip() or None
+            delay_source=prefix.strip().rstrip(",").strip() or None
             trigger=("TIMER_CALLBACK" if callback_type=="timer" else "QUEUE_CALLBACK")
         elif callback_type=="addListener":
             quoted=re.findall(r"['\"]([^'\"]+)['\"]",prefix)
