@@ -63,6 +63,10 @@ def main():
         "Settings",
     ]
     assert route_owner("/captures/42/timeline")["home"] == "Captures"
+    assert route_owner("/ocr")["home"] == "Captures"
+    assert route_owner("/ocr")["section"] == "YouTube OCR"
+    assert route_owner("/ocr/example-run")["home"] == "Captures"
+    assert route_owner("/ocr/example-run")["section"] == "YouTube OCR"
     assert route_owner("/entity")["home"] == "Server"
     assert route_owner("/zoneplot/restore", "POST")["section"] == "Editors > Zone Editor"
     assert route_owner("/itemedit/123.json")["section"] == "Editors > Item Editor"
@@ -104,6 +108,13 @@ def main():
     assert next(section for section in validation_workspace["sections"] if section["label"] == "Dashboard")["href"] == "/validation"
     assert next(section for section in validation_workspace["sections"] if section["label"] == "Runs & Results")["href"] == "/validation/runs"
     assert next(section for section in validation_workspace["sections"] if section["label"] == "Live Target")["href"] == "/validation/live-target"
+
+    ocr = context_for("/ocr")
+    assert ocr["active_home"] == "Captures"
+    assert next(section for section in ocr["sections"] if section["active"])["label"] == "YouTube OCR"
+    ocr_run = context_for("/ocr/example-run")
+    assert ocr_run["active_home"] == "Captures"
+    assert next(section for section in ocr_run["sections"] if section["active"])["label"] == "YouTube OCR"
 
     captures = next(workspace for workspace in WORKSPACES if workspace["name"] == "Captures")
     assert {section["label"] for section in captures["sections"]}.isdisjoint({"Path Plot", "All Paths"})
