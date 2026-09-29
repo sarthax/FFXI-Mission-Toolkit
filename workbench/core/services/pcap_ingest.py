@@ -559,16 +559,29 @@ def ingest_pcap(con: sqlite3.Connection, capture_id: int, src, relname: str) -> 
                 (capture_id, int(seq)),
             )
     con.execute(
+        "DELETE FROM capture_network_ranges WHERE capture_id=? AND source_file=?",
+        (capture_id, relname),
+    )
+    con.execute(
+        "DELETE FROM capture_network_flows WHERE capture_id=? AND source_file=?",
+        (capture_id, relname),
+    )
+    con.execute(
         """DELETE FROM capture_row_locators
            WHERE capture_id=? AND filename=?
-             AND target_table IN ('capture_structured_records','capture_raw_packets')""",
+             AND target_table IN (
+                 'capture_structured_records','capture_raw_packets',
+                 'capture_network_flows','capture_network_ranges'
+             )""",
         (capture_id, relname),
     )
 
     frames = parse_capture_frames(data)
+    decoded_frames = []
     frame_count = chunk_count = 0
     for row in frames:
         decoded = decode_network_frame(row["frame"], row["linktype"])
+        decoded_frames.append({**row, "decoded": decoded})
         ts = _iso_utc(row["timestamp_seconds"])
         key = str(row["frame_no"])
         payload = {
@@ -651,4 +664,120 @@ def ingest_pcap(con: sqlite3.Connection, capture_id: int, src, relname: str) -> 
                 },
             )
             chunk_count += 1
+
+    for flow in reconstruct_tcp_flows(decoded_frames):
+        frame_meta = flow["frames"]
+        timestamps = [f["timestamp_seconds"] for f in frame_meta if f["timestamp_seconds"] is not None]
+        payload_frames = sum(1 for f in frame_meta if f["payload_len"] > 0)
+        flow_details = {
+            "endpoint_role_basis": "canonical_endpoint_sort_only",
+            "protocol_family": "unknown_tcp",
+            "frames": frame_meta,
+            "direction_summaries": {},
+        }
+        for direction, d in flow["directions"].items():
+            flow_details["direction_summaries"][direction] = {
+                "range_count": len(d["ranges"]),
+                "gap_count": len(d["gaps"]),
+                "retransmission_count": len(d["retransmissions"]),
+                "overlap_count": len(d["overlaps"]),
+                "conflicting_overlap_count": len(d["conflicting_overlaps"]),
+                "gaps": d["gaps"],
+                "retransmissions": d["retransmissions"],
+                "overlaps": d["overlaps"],
+                "conflicting_overlaps": d["conflicting_overlaps"],
+            }
+
+        con.execute(
+            """INSERT OR REPLACE INTO capture_network_flows
+               (capture_id,source_file,flow_id,transport,
+                endpoint_a_ip,endpoint_a_port,endpoint_b_ip,endpoint_b_port,
+                first_ts,last_ts,frame_count,payload_frame_count,metadata_json)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (
+                capture_id, relname, flow["flow_id"], "tcp",
+                flow["endpoint_a"]["ip"], flow["endpoint_a"]["port"],
+                flow["endpoint_b"]["ip"], flow["endpoint_b"]["port"],
+                _iso_utc(min(timestamps)) if timestamps else None,
+                _iso_utc(max(timestamps)) if timestamps else None,
+                len(frame_meta), payload_frames,
+                json.dumps(flow_details, sort_keys=True),
+            ),
+        )
+        capture_integrity.record_row_locator(
+            con, capture_id, relname, "capture_network_flows",
+            json.dumps({
+                "source_file": relname,
+                "flow_id": flow["flow_id"],
+            }, sort_keys=True),
+            "pcap-flow",
+            source_sha256=sha,
+            details={
+                "flow_id": flow["flow_id"],
+                "frame_numbers": [f["frame_no"] for f in frame_meta],
+                "transport": "tcp",
+            },
+        )
+
+        for direction, d in flow["directions"].items():
+            for range_index, rr in enumerate(d["ranges"]):
+                anomalies = {
+                    "gaps_before_or_after": d["gaps"],
+                    "retransmissions": [
+                        x for x in d["retransmissions"]
+                        if x["seq_start"] < rr["seq_end"] and x["seq_end"] > rr["seq_start"]
+                    ],
+                    "overlaps": [
+                        x for x in d["overlaps"]
+                        if x["seq_start"] < rr["seq_end"] and x["seq_end"] > rr["seq_start"]
+                    ],
+                    "conflicting_overlaps": [
+                        x for x in d["conflicting_overlaps"]
+                        if rr["seq_start"] <= x["seq"] < rr["seq_end"]
+                    ],
+                    "missing_bytes_fabricated": False,
+                    "byte_selection_rule": "first_observed_byte_wins_conflicts_recorded",
+                }
+                con.execute(
+                    """INSERT OR REPLACE INTO capture_network_ranges
+                       (capture_id,source_file,flow_id,direction,range_index,
+                        seq_start,seq_end,first_ts,last_ts,payload_hex,
+                        frame_numbers_json,anomalies_json)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (
+                        capture_id, relname, flow["flow_id"], direction, range_index,
+                        rr["seq_start"], rr["seq_end"],
+                        _iso_utc(rr["first_timestamp_seconds"]),
+                        _iso_utc(rr["last_timestamp_seconds"]),
+                        rr["payload_hex"],
+                        json.dumps(rr["frame_numbers"]),
+                        json.dumps(anomalies, sort_keys=True),
+                    ),
+                )
+                contributing_frames = [
+                    row for row in decoded_frames if row["frame_no"] in set(rr["frame_numbers"])
+                ]
+                start_offsets = [row["start_offset"] for row in contributing_frames if row.get("start_offset") is not None]
+                end_offsets = [row["end_offset"] for row in contributing_frames if row.get("end_offset") is not None]
+                capture_integrity.record_row_locator(
+                    con, capture_id, relname, "capture_network_ranges",
+                    json.dumps({
+                        "source_file": relname,
+                        "flow_id": flow["flow_id"],
+                        "direction": direction,
+                        "range_index": range_index,
+                    }, sort_keys=True),
+                    "pcap-tcp-range",
+                    source_sha256=sha,
+                    start_offset=min(start_offsets) if start_offsets else None,
+                    end_offset=max(end_offsets) if end_offsets else None,
+                    details={
+                        "flow_id": flow["flow_id"],
+                        "direction": direction,
+                        "seq_start": rr["seq_start"],
+                        "seq_end": rr["seq_end"],
+                        "frame_numbers": rr["frame_numbers"],
+                        "locator_note": "offset span covers contributing frames; exact frames listed explicitly",
+                    },
+                )
     return frame_count, chunk_count
