@@ -2717,3 +2717,18 @@ Absence of any auxiliary family is not a capture-quality failure; these sources 
 Capture ingestion now treats MalRD PacketDB SQLite and Ashita Packeteer text as first-class raw-packet sources alongside PacketLogger/PacketViewer. Canonical raw packet rows preserve optional zone id, packet size, sync id, injected/blocked state, source format, and source-native identity without collapsing independent evidence.
 
 Legacy NPCLogger Lua `raw_packet` bytes are promoted into the same canonical packet store with exact line provenance. Cross-source packet correlation now records exact-byte equivalence across independent raw sources while retaining each observation separately. Safe rebuild logic preserves mixed-source captures instead of assuming PacketLogger owns the whole raw-packet table.
+
+
+## 2026-09-28 — Capture hardening next wave
+
+The capture pipeline closed four previously documented evidence-loss/coverage gaps and expanded the logger archaeology record.
+
+- PacketDB `CHATLOG` is now normalized into the source-neutral `capture_chat_observations` table with native chat row ID, timestamp, direction, zone ID, text, source hash, and exact SQLite-row provenance. CapLog now dual-writes to the same canonical chat model while retaining `capture_caplog_chat` for compatibility.
+- Whole-session multi-zone EventView/IDView `simple.log` files are no longer discarded. Records whose source does not prove a zone are preserved under the explicit `__UNKNOWN_ZONE__` sentinel so later entity/packet/timeline evidence can resolve them without fabricated attribution.
+- YouTube/video OCR now includes a Capturebar profile based on Wiggo32's actual default display format, extracting zone ID/name, displayed name, XYZ, rotation, jobs/levels, and moon state when OCR succeeds.
+- Classic PCAP and PCAPNG are accepted as lossless network evidence in `capture_network_observations`, retaining timestamps, frame bytes, transport payload, endpoints, ports, lengths, source-native frame identity, and binary-frame provenance. Network payload is deliberately not promoted to `capture_raw_packets` until framing/application protocol is proven.
+- Captain StatTrack player and puppet CSV generations are now content-sniffed and retained through `capture_structured_records`.
+- Historical Captain ecosystem review classified ImmunityTrack, PacketBridge, PlayerInfo, TargetInfo, ZoneDump, OBS integration, and VersCheck by whether they actually persist data. Runtime/HUD/stream helpers are documented instead of being falsely advertised as file formats.
+- Lobby/world/search research is now captured in `docs/workbench/CAPTURE_PROTOCOL_RESEARCH.md`, with an explicit architecture boundary between zone packets, raw network frames, and future lobby/world protocol-specific observations.
+
+The user-facing support matrix at `/captures/help` was updated in the same milestone so implemented support and remaining gaps remain synchronized with the code.
