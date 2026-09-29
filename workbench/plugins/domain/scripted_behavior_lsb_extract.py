@@ -615,7 +615,7 @@ def _entity_reference_rule(
     effects=[]
     seen=set()
     for offset,raw_line in enumerate(text.splitlines()):
-        code=_strip_line_comment_preserve_strings(raw_line)
+        code=_structural_lua_lines(raw_line)[0] if raw_line else ""
         line_no=start_line+offset
         for match in _STATIC_ENTITY_REFERENCE.finditer(code):
             operation,id_expression,kind,symbol,sign,delta=match.groups()
