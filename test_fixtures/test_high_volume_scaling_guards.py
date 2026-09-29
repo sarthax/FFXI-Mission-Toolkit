@@ -3,9 +3,6 @@
 from __future__ import annotations
 
 import sqlite3
-from tempfile import NamedTemporaryFile
-from pathlib import Path
-
 import build_capture_index as bci
 import feature_trace
 from workbench.core import graph
@@ -106,28 +103,28 @@ def test_large_package_chain():
 
 
 def test_feature_trace_node_budget():
-    with NamedTemporaryFile(suffix=".db") as tmp:
-        con = graph.init_db(Path(tmp.name))
+    con = sqlite3.connect(":memory:")
+    con.executescript(graph.SCHEMA)
+    con.execute(
+        "INSERT OR REPLACE INTO entities(entity_id,entity_type,display_name,metadata_json) VALUES(?,?,?,?)",
+        ("root", "FEATURE", "root", "{}"),
+    )
+    for i in range(20):
+        node = f"n:{i}"
         con.execute(
             "INSERT OR REPLACE INTO entities(entity_id,entity_type,display_name,metadata_json) VALUES(?,?,?,?)",
-            ("root", "FEATURE", "root", "{}"),
+            (node, "TEST", node, "{}"),
         )
-        for i in range(20):
-            node = f"n:{i}"
-            con.execute(
-                "INSERT OR REPLACE INTO entities(entity_id,entity_type,display_name,metadata_json) VALUES(?,?,?,?)",
-                (node, "TEST", node, "{}"),
-            )
-            con.execute(
-                "INSERT OR REPLACE INTO entity_relationships VALUES(?,?,?,?,?,?,?,?,?)",
-                (f"edge:{i}", "root", node, "REFERENCES", None, "VERIFIED", "DISCOVERED", "{}", None),
-            )
-        con.commit()
-        traced = feature_trace.trace(con, "root", 3, "out", max_nodes=5)
-        assert traced["truncated"] is True
-        assert traced["max_nodes"] == 5
-        assert len(traced["nodes"]) == 5
-        con.close()
+        con.execute(
+            "INSERT OR REPLACE INTO entity_relationships VALUES(?,?,?,?,?,?,?,?,?)",
+            (f"edge:{i}", "root", node, "REFERENCES", None, "VERIFIED", "DISCOVERED", "{}", None),
+        )
+    con.commit()
+    traced = feature_trace.trace(con, "root", 3, "out", max_nodes=5)
+    assert traced["truncated"] is True
+    assert traced["max_nodes"] == 5
+    assert len(traced["nodes"]) == 5
+    con.close()
 
 
 def main():
