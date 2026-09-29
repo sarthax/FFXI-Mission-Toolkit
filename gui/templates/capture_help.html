@@ -42,7 +42,13 @@
 <h2>Raw packet convergence</h2>
 <p>Raw packet-producing tools feed the common <code>capture_raw_packets</code> evidence store while retaining their own <code>source_format</code>, native source identity, row/block provenance, and optional packet metadata. Equivalent packets may be correlated by <code>opcode + direction + exact raw bytes</code>; the original observations are not deleted or merged.</p>
 
-<h2>Canonical chat convergence</h2>\n<p>PacketDB <code>CHATLOG</code> and CapLog chat/system lines now also feed <code>capture_chat_observations</code>. The canonical row keeps timestamp, direction when the source provides it, zone ID/name context, text, source format, source-native identity, and exact row/line provenance. The older <code>capture_caplog_chat</code> table remains for compatibility.</p>\n\n<h2>Recognized but intentionally not duplicated</h2>
+<h2>Canonical chat convergence</h2>
+<p>PacketDB <code>CHATLOG</code> and CapLog chat/system lines now also feed <code>capture_chat_observations</code>. The canonical row keeps timestamp, direction when the source provides it, zone ID/name context, text, source format, source-native identity, and exact row/line provenance. The older <code>capture_caplog_chat</code> table remains for compatibility.</p>
+
+<h2>Visual / OCR evidence</h2>
+<p><strong>Capturebar</strong> has no persisted log file, so support is video/screenshot based rather than file ingestion. YouTube OCR includes a built-in <code>capturebar_overlay</code> layout template and <code>capturebar</code> parsing profile for the default Wiggo32 HUD format: zone number/name, target/player name, X/Z/Y coordinates, rotation, main/sub job and levels, moon percentage, and moon phase. Parsed frames materialize as <code>CAPTUREBAR_CONTEXT</code> video evidence with the original frame/timestamp/crop provenance. Custom Capturebar display strings may require a saved layout and/or future parser extension.</p>
+
+<h2>Recognized but intentionally not duplicated</h2>
 <div class="table-wrap"><table>
 <thead><tr><th>File / family</th><th>Why it is not normally ingested as a second copy</th></tr></thead>
 <tbody>
@@ -56,9 +62,6 @@
 <div class="table-wrap"><table>
 <thead><tr><th>Gap</th><th>Current behavior</th><th>Recommended direction</th></tr></thead>
 <tbody>
-<tr><td><strong>PacketDB CHATLOG</strong></td><td>PacketDB <code>PACKETS</code> is supported, but its <code>CHATLOG</code> table is not yet normalized.</td><td>Add a generic chat/message observation model shared by PacketDB, CapLog, and future loggers.</td></tr>
-<tr><td><strong>Whole-session multi-zone EventView raw/simple logs</strong></td><td>Known files may contain unique observations but lack trustworthy per-record zone attribution, so they are deliberately not normalized into a guessed zone.</td><td>Preserve as zone-unknown evidence and resolve zone later from packet/entity/timeline evidence.</td></tr>
-<tr><td><strong>Capturebar</strong></td><td>No persisted capture format; it is an on-screen HUD.</td><td>Add/use an OCR layout profile so video/screenshots can recover zone, target, coordinates, jobs, moon/world context.</td></tr>
 <tr><td><strong>Generic PCAP / PCAPNG</strong></td><td>No direct network-capture adapter.</td><td>Add a bounded FFXI stream/session decoder for Wireshark/Npcap-style captures.</td></tr>
 <tr><td><strong>Lobby / world-server packet streams</strong></td><td>Current addon capture support is primarily zone/game-server oriented.</td><td>Research and model lobby/search/AH/account/storage stream capture separately when needed.</td></tr>
 <tr><td><strong>PacketDB ZONES / PACKET_DEFINITION</strong></td><td>Not imported as runtime facts because they are reference metadata, not observations.</td><td>Optionally preserve as source-supplied historical reference metadata.</td></tr>
@@ -70,11 +73,10 @@
 
 <h2>Current priority gaps</h2>
 <ol>
-<li>PacketDB <code>CHATLOG</code> into a generic chat/message evidence store.</li>
-<li>Preserve unique whole-session, zone-unknown EventView observations instead of dropping them.</li>
-<li>Capturebar OCR profile for video/screenshot evidence.</li>
 <li>PCAP/PCAPNG adapter.</li>
 <li>Continue searching historical Windower/Ashita/community logger ecosystems for additional real formats.</li>
+<li>Lobby/world-server stream research for search, auction, storage/account, and related non-zone traffic.</li>
+<li>Optional preservation of PacketDB <code>ZONES</code>/<code>PACKET_DEFINITION</code> as historical reference metadata.</li>
 </ol>
 
 <p class="muted">This page documents current parser behavior, not every logger ever written. When a new sample appears, verify its real schema/output before declaring compatibility.</p>
