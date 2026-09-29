@@ -12,6 +12,9 @@ import re
 from typing import Any
 
 from workbench.plugins.domain.scripted_behavior_lsb_extract import (
+    _close_count,
+    _open_count,
+    _structural_lua_lines,
     extract_lsb_scripted_behavior,
 )
 
@@ -94,6 +97,36 @@ def _effect_category(effect: str) -> str:
     return "other"
 
 
+def _balanced_function_span(text: str, start_offset: int, *, preview_lines: int=40) -> dict:
+    """Return a balanced Lua function span starting at a matched function definition."""
+    raw=text.splitlines()
+    start_line=text.count("\n",0,start_offset)+1
+    structural=_structural_lua_lines(text)
+    start_index=max(0,start_line-1)
+    depth=0
+    started=False
+    end_index=start_index
+    for j in range(start_index,len(raw)):
+        opens=_open_count(structural[j])
+        closes=_close_count(structural[j])
+        if opens:
+            started=True
+        depth+=opens-closes
+        end_index=j
+        if started and depth<=0:
+            break
+    end_line=end_index+1
+    body_lines=raw[start_index:end_index+1]
+    preview=body_lines[:preview_lines]
+    return {
+        "line":start_line,
+        "end_line":end_line,
+        "line_count":max(0,end_line-start_line+1),
+        "source_preview":"\n".join(preview),
+        "preview_truncated":len(body_lines)>preview_lines,
+    }
+
+
 def _resolve_shared_helpers(root: Path, behavior) -> list[dict]:
     """Resolve xi.<module>.<function> calls to exact global Lua definition candidates."""
     globals_root=Path(root)/"scripts"/"globals"
@@ -125,10 +158,14 @@ def _resolve_shared_helpers(root: Path, behavior) -> list[dict]:
         for path in files:
             text=path.read_text(encoding="utf-8",errors="ignore")
             for match in pattern.finditer(text):
-                line=text.count("\n",0,match.start())+1
+                span=_balanced_function_span(text,match.start())
                 candidates.append({
                     "path":path.relative_to(root).as_posix(),
-                    "line":line,
+                    "line":span["line"],
+                    "end_line":span["end_line"],
+                    "line_count":span["line_count"],
+                    "source_preview":span["source_preview"],
+                    "preview_truncated":span["preview_truncated"],
                     "qualified_name":f"xi.{module}.{function}",
                 })
         status=(
