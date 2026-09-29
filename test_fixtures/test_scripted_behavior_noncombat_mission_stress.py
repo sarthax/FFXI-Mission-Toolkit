@@ -51,6 +51,35 @@ entity.onEventFinish = function(player, csid, option, npc)
                 npcUtil.giveItem(player, 700)
                 player:setCharVar('DynamicNestedOutcome', 1)
             end
+
+            if player:hasKeyItem(xi.keyItem.TEST_PASS) then
+                npcUtil.giveItem(player, 610)
+                player:setCharVar('KeyItemChoice', 11)
+
+                if dynamicPredicate(player) then
+                    npcUtil.giveItem(player, 711)
+                end
+            end
+
+            if not player:hasKeyItem(xi.keyItem.TEST_BLOCKER) then
+                npcUtil.giveItem(player, 611)
+                player:setCharVar('MissingKeyItemChoice', 12)
+            end
+
+            if npcUtil.tradeHasExactly(trade, xi.item.TEST_TOKEN) then
+                npcUtil.giveItem(player, 612)
+                player:setCharVar('ExactTradeChoice', 13)
+            end
+
+            if npcUtil.tradeHas(trade, 1234) then
+                npcUtil.giveItem(player, 613)
+                player:setCharVar('TradeChoice', 14)
+            end
+
+            if npcUtil.tradeHasExactly(trade, dynamicItem) then
+                npcUtil.giveItem(player, 712)
+                player:setCharVar('DynamicTradeChoice', 15)
+            end
         elseif option == 2 then
             player:addGil(100)
             GetNPCByID(ID.npc.SECOND_DOOR):openDoor(15)
@@ -214,6 +243,12 @@ def main():
     assert ("GRANT_ITEM","player","600") not in option1,option1
     assert ("GRANT_ITEM","player","601") not in option1,option1
     assert ("GRANT_ITEM","player","700") not in option1,option1
+    assert ("GRANT_ITEM","player","610") not in option1,option1
+    assert ("GRANT_ITEM","player","611") not in option1,option1
+    assert ("GRANT_ITEM","player","612") not in option1,option1
+    assert ("GRANT_ITEM","player","613") not in option1,option1
+    assert ("GRANT_ITEM","player","711") not in option1,option1
+    assert ("GRANT_ITEM","player","712") not in option1,option1
     assert ("WRITE_STATE","state:PLAYER_CHAR:player:GuardedChoice","9") not in option1,option1
     assert ("WRITE_STATE","state:PLAYER_CHAR:player:GuardedChoiceAlt","10") not in option1,option1
     assert ("WRITE_STATE","state:PLAYER_CHAR:player:DynamicNestedOutcome","1") not in option1,option1
@@ -292,6 +327,46 @@ def main():
         for effect in rule.effects
     ),guarded_rules
 
+    resource_rules=[rule for rule in rules if rule.kind=="event_outcome_resource_guarded_effects"]
+    resource_by_guard={
+        (rule.metadata.get("guard_kind"),rule.metadata.get("guard_operator"),rule.metadata.get("guard_value")):rule
+        for rule in resource_rules
+        if rule.metadata.get("event_id")==102
+        and rule.metadata.get("outcome_selector")=="option"
+        and rule.metadata.get("outcome_literal")=="1"
+    }
+    assert ("KEY_ITEM_POSSESSION","HAS_KEY_ITEM","TEST_PASS") in resource_by_guard,resource_by_guard
+    assert ("KEY_ITEM_POSSESSION","LACKS_KEY_ITEM","TEST_BLOCKER") in resource_by_guard,resource_by_guard
+    assert ("TRADE_REQUIREMENT","TRADE_HAS_EXACTLY","xi.item.TEST_TOKEN") in resource_by_guard,resource_by_guard
+    assert ("TRADE_REQUIREMENT","TRADE_HAS","1234") in resource_by_guard,resource_by_guard
+
+    key_rule=resource_by_guard[("KEY_ITEM_POSSESSION","HAS_KEY_ITEM","TEST_PASS")]
+    key_conditions={(condition.operator,condition.subject,condition.value) for condition in key_rule.conditions}
+    assert ("EVENT_ID_EQUALS","event:csid",102) in key_conditions,key_conditions
+    assert ("EVENT_OUTCOME_EQUALS","event:option","1") in key_conditions,key_conditions
+    assert ("HAS_KEY_ITEM","player","TEST_PASS") in key_conditions,key_conditions
+    key_effects={(effect.effect,effect.target,effect.value) for effect in key_rule.effects}
+    assert ("GRANT_ITEM","player","610") in key_effects,key_effects
+    assert ("WRITE_STATE","state:PLAYER_CHAR:player:KeyItemChoice","11") in key_effects,key_effects
+    assert ("GRANT_ITEM","player","711") not in key_effects,key_effects
+
+    lacks_effects={
+        (effect.effect,effect.target,effect.value)
+        for effect in resource_by_guard[("KEY_ITEM_POSSESSION","LACKS_KEY_ITEM","TEST_BLOCKER")].effects
+    }
+    assert ("GRANT_ITEM","player","611") in lacks_effects,lacks_effects
+
+    exact_trade_effects={
+        (effect.effect,effect.target,effect.value)
+        for effect in resource_by_guard[("TRADE_REQUIREMENT","TRADE_HAS_EXACTLY","xi.item.TEST_TOKEN")].effects
+    }
+    assert ("GRANT_ITEM","player","612") in exact_trade_effects,exact_trade_effects
+    assert not any(
+        rule.metadata.get("guard_value")=="dynamicItem"
+        or any(effect.effect=="GRANT_ITEM" and effect.value=="712" for effect in rule.effects)
+        for rule in resource_rules
+    ),resource_rules
+
     outcome_effects={
         (row["hook"],row["event_id"],row["selector"],row["literal"],row["effect"],row["target"],row["value"]):row
         for row in graph["event_outcome_effects"]
@@ -310,6 +385,17 @@ def main():
     assert (102,"option","1","state:PLAYER_CHAR:player:OutcomeGate","4","GRANT_ITEM","player","601") in guarded_projection,guarded_projection
     assert (102,"option","1","state:PLAYER_CHAR:player:OutcomeGate","4","WRITE_STATE","state:PLAYER_CHAR:player:GuardedChoiceAlt","10") in guarded_projection,guarded_projection
     assert not any(row["value"]=="700" for row in graph["event_outcome_guarded_effects"]),graph["event_outcome_guarded_effects"]
+    resource_projection={
+        (row["event_id"],row["selector"],row["literal"],row["guard_kind"],row["guard_operator"],row["guard_value"],row["effect"],row["target"],row["value"]):row
+        for row in graph["event_outcome_resource_guarded_effects"]
+    }
+    assert (102,"option","1","KEY_ITEM_POSSESSION","HAS_KEY_ITEM","TEST_PASS","GRANT_ITEM","player","610") in resource_projection,resource_projection
+    assert (102,"option","1","KEY_ITEM_POSSESSION","LACKS_KEY_ITEM","TEST_BLOCKER","GRANT_ITEM","player","611") in resource_projection,resource_projection
+    assert (102,"option","1","TRADE_REQUIREMENT","TRADE_HAS_EXACTLY","xi.item.TEST_TOKEN","GRANT_ITEM","player","612") in resource_projection,resource_projection
+    assert (102,"option","1","TRADE_REQUIREMENT","TRADE_HAS","1234","GRANT_ITEM","player","613") in resource_projection,resource_projection
+    assert not any(row["value"] in {"711","712"} for row in graph["event_outcome_resource_guarded_effects"]),graph["event_outcome_resource_guarded_effects"]
+    assert graph["summary"]["event_outcome_resource_guarded_effects"]>=8,graph["summary"]
+
     guarded_links=graph["event_outcome_guarded_state_links"]
     assert any(
         row["event_id"]==102
