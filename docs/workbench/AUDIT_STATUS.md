@@ -2761,3 +2761,20 @@ Capturebar is now supported as a visual evidence source even though the addon it
 - The OCR GUI exposes Capturebar as a selectable capture profile and the reusable layout list exposes the built-in Capturebar role template.
 
 This closes Capturebar as a known capture-support gap; it remains an OCR/video source, not a file-ingestion format.
+
+
+## 2026-09-28 — Bounded PCAP / PCAPNG network evidence ingestion
+
+Generic packet-capture containers can now be preserved without pretending encrypted/compressed FFXI wire traffic is already addon-level packet data.
+
+- Added a dependency-free classic PCAP and PCAPNG reader with exact frame/block byte offsets.
+- Common link layers are decoded conservatively: Ethernet (including VLAN), raw IP, Linux cooked v1, and Linux cooked v2.
+- IPv4 and direct IPv6 UDP/TCP payloads are exposed with source/destination addresses and ports. Fragmented IPv4 and IPv6 extension-chain traffic is retained but not reassembled/guessed.
+- Every captured frame is stored as a `pcap_network` structured observation with timestamp, interface id, link type, captured/original length, SHA-256, complete captured frame bytes, transport payload when available, and explicit decode status.
+- A UDP payload is promoted into `capture_raw_packets` only if the complete payload validates as a stream of known four-byte-header FFXI chunks. Partial matches are rejected.
+- Promoted PCAP chunks keep `direction='unknown'` because a standalone capture file does not prove which endpoint is the game client. No port-number heuristic is used to fabricate direction.
+- Opaque retail/map datagrams remain preserved network evidence. The adapter does not guess Blowfish keys, zlib state, session initialization, or decompression boundaries.
+- PCAP and PCAPNG participate in source manifests, exact `pcap-frame` row locators, safe source rebuilds, and ordinary capture deletion.
+- The implementation uses only Python's standard library; no Scapy/libpcap dependency is required for offline ingestion.
+
+Research basis: Windower packet documentation distinguishes UDP datagrams from the embedded four-byte-header packet chunks; current LandSandBoat map networking and independent FFXI transport implementations confirm UDP map transport with compression/encryption stages. Full retail-wire decoding remains a separate session-aware research milestone.
