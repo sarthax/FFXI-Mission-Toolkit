@@ -47,6 +47,7 @@ Usage:
     py -3 build_capture_index.py show <capture_id>
 """
 import argparse
+import bisect
 import csv
 import io
 import json
@@ -2357,13 +2358,13 @@ PACKETLOGGER_HEXROW_RE = re.compile(
 def parse_packetlogger_records(text: str, opcode: str) -> list[dict]:
     """Parse packet blocks while preserving exact physical source spans.
 
-    Offsets are UTF-8 byte offsets only when the decoded text round-trips exactly; callers may
-    leave byte offsets NULL for malformed/non-UTF-8 input while still retaining exact line/block
-    provenance. The legacy parse_packetlogger_log() API remains as a tuple-only compatibility
-    wrapper below.
+    This stays linear in source size. Historical PacketViewer files can contain tens of
+    thousands of blocks; rescanning the complete prefix for every line number made provenance
+    extraction quadratic and could make a valid capture appear to hang.
     """
     out = []
     headers = [(m.start(), m.end(), m.group(1)) for m in PACKETLOGGER_HEADER_RE.finditer(text)]
+    newline_positions = [m.start() for m in re.finditer("\\n", text)]
     for i, (hstart, hend, ts) in enumerate(headers):
         block_end = headers[i + 1][0] if i + 1 < len(headers) else len(text)
         block = text[hend:block_end]
@@ -2373,7 +2374,7 @@ def parse_packetlogger_records(text: str, opcode: str) -> list[dict]:
                 if tok != "--":
                     hex_bytes.append(tok)
         if hex_bytes:
-            header_end = text.find("\n", hstart)
+            header_end = text.find("\\n", hstart)
             if header_end < 0 or header_end > block_end:
                 header_end = block_end
             header_line = text[hstart:header_end]
@@ -2384,11 +2385,25 @@ def parse_packetlogger_records(text: str, opcode: str) -> list[dict]:
                 "is_blocked": "Blocked" in header_line,
                 "start_char": hstart,
                 "end_char": block_end,
-                "start_line": text.count("\n", 0, hstart) + 1,
-                "end_line": text.count("\n", 0, block_end) + 1,
+                "start_line": bisect.bisect_left(newline_positions, hstart) + 1,
+                "end_line": bisect.bisect_left(newline_positions, block_end) + 1,
             })
     return out
 
+
+def _utf8_offsets_for_positions(text: str, positions) -> dict[int, int]:
+    """Resolve many UTF-8 byte offsets in one forward pass."""
+    wanted = sorted(set(int(p) for p in positions))
+    out: dict[int, int] = {}
+    prev_char = 0
+    prev_bytes = 0
+    for pos in wanted:
+        if pos < prev_char or pos < 0 or pos > len(text):
+            continue
+        prev_bytes += len(text[prev_char:pos].encode("utf-8"))
+        out[pos] = prev_bytes
+        prev_char = pos
+    return out
 
 def parse_packetlogger_log(text: str, opcode: str) -> list[tuple[str, str]]:
     """Compatibility wrapper returning only timestamp + compact hex."""
@@ -2407,6 +2422,10 @@ def ingest_packetlogger(con, capture_id, src: Source, relnames: list[str]) -> in
     corpus (45 of 84) predate PacketLogger and only have PacketViewer, so skipping this older
     format would have silently left over half the corpus with zero raw packet coverage."""
     all_packets = []
+    print(
+        f"[capture {capture_id}] PacketViewer/PacketLogger: parsing {len(relnames)} per-opcode files...",
+        flush=True,
+    )
     for relname in relnames:
         direction = "incoming" if "/incoming/" in relname.lower() else (
             "outgoing" if "/outgoing/" in relname.lower() else "unknown")
@@ -2415,13 +2434,17 @@ def ingest_packetlogger(con, capture_id, src: Source, relnames: list[str]) -> in
         text = source_bytes.decode("utf-8", "replace")
         byte_offsets_exact = text.encode("utf-8") == source_bytes
         source_sha256 = capture_integrity.sha256_bytes(source_bytes)
-        for record in parse_packetlogger_records(text, opcode):
-            start_offset = (
-                len(text[:record["start_char"]].encode("utf-8")) if byte_offsets_exact else None
+        records = parse_packetlogger_records(text, opcode)
+        byte_offsets = (
+            _utf8_offsets_for_positions(
+                text,
+                [pos for record in records for pos in (record["start_char"], record["end_char"])],
             )
-            end_offset = (
-                len(text[:record["end_char"]].encode("utf-8")) if byte_offsets_exact else None
-            )
+            if byte_offsets_exact else {}
+        )
+        for record in records:
+            start_offset = byte_offsets.get(record["start_char"]) if byte_offsets_exact else None
+            end_offset = byte_offsets.get(record["end_char"]) if byte_offsets_exact else None
             lower_relname = relname.lower()
             source_format = (
                 "packetviewer"
@@ -2437,6 +2460,10 @@ def ingest_packetlogger(con, capture_id, src: Source, relnames: list[str]) -> in
                 record["is_injected"], record["is_blocked"],
             ))
 
+    print(
+        f"[capture {capture_id}] PacketViewer/PacketLogger: parsed {len(all_packets)} packets; indexing...",
+        flush=True,
+    )
     all_packets.sort(key=lambda p: (p[0], p[4], p[6]))
 
     # Replace only this raw-log family. Other canonical raw sources (PacketDB, Packeteer,
