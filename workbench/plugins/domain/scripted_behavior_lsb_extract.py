@@ -118,7 +118,7 @@ _ENTITY_ALIAS_ASSIGN=re.compile(
 )
 _ENTITY_ALIAS_CALL=re.compile(
     r"\b(GetNPCByID|GetMobByID|SpawnMob|DespawnMob)\(\s*"
-    r"([A-Za-z_][A-Za-z0-9_]*)(?:\s*([+-])\s*(\d+))?"
+    r"([A-Za-z_][A-Za-z0-9_]*)(?:\s*([+-])\s*(\d+))?\s*\)"
 )
 
 
