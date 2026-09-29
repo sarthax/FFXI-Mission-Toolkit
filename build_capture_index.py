@@ -1860,7 +1860,7 @@ def _npclogger_lua_optional_fields(fields: dict) -> tuple:
         _npclogger_lua_optional_int(fields, "flags1"),
         _npclogger_lua_optional_int(fields, "flags2"),
         _npclogger_lua_optional_int(fields, "flags3"),
-        _npclogger_lua_optional_int(fields, "legacy_flag"),
+        _npclogger_lua_optional_int(fields, "legacy_flag", "flag"),
         _npclogger_lua_optional_int(fields, "sub_kind", "subkind"),
     )
 
