@@ -32,6 +32,8 @@ DEPENDENCY_RELATIONSHIPS = {
     "CALLS",
     "IMPLEMENTED_BY",
     "HANDLED_BY",
+    "HAS_CONDITIONAL_DEPENDENCY",
+    "CONDITIONALLY_REQUIRES",
 }
 
 USER_DECISIONS = {
@@ -66,6 +68,7 @@ class ScopeItem:
     display_name: str | None
     artifact_type: str | None
     artifact_path: str | None
+    condition_summary: str | None
     root_action_id: str | None
     root_action: str | None
     root_action_status: str | None
@@ -128,22 +131,46 @@ def _node_info(con: sqlite3.Connection, node_id: str) -> dict[str, Any]:
         ("build_targets", "BUILD_TARGET", "target_id", "build_system", "name"),
     )
     for table, node_kind, key, type_col, label_col in probes:
-        row = con.execute(
-            f"SELECT {type_col}, {label_col} FROM {table} WHERE {key}=?",
-            (node_id,),
-        ).fetchone()
+        if table == "entities":
+            row = con.execute(
+                f"SELECT {type_col}, {label_col}, metadata_json FROM {table} WHERE {key}=?",
+                (node_id,),
+            ).fetchone()
+        else:
+            row = con.execute(
+                f"SELECT {type_col}, {label_col} FROM {table} WHERE {key}=?",
+                (node_id,),
+            ).fetchone()
         if row is not None:
+            condition_summary=None
+            if table == "entities" and row[0] == "CONDITIONAL_DEPENDENCY":
+                metadata=_json_value(row[2],{})
+                conditions=metadata.get("conditions",[]) if isinstance(metadata,dict) else []
+                rationale=metadata.get("rationale") if isinstance(metadata,dict) else None
+                if conditions:
+                    rendered=[]
+                    for condition in conditions:
+                        if isinstance(condition,dict):
+                            subject=condition.get("subject") or condition.get("kind") or "condition"
+                            operator=condition.get("operator") or condition.get("state") or ""
+                            value=condition.get("value")
+                            rendered.append(f"{subject} {operator} {value!r}".strip())
+                    condition_summary="; ".join(rendered) or rationale
+                else:
+                    condition_summary=rationale
             return {
-                "node_kind": node_kind,
+                "node_kind": row[0] if table == "entities" else node_kind,
                 "display_name": row[1],
                 "artifact_type": row[0] if table == "artifacts" else None,
                 "artifact_path": row[1] if table == "artifacts" else None,
+                "condition_summary": condition_summary,
             }
     return {
         "node_kind": "UNKNOWN",
         "display_name": None,
         "artifact_type": None,
         "artifact_path": None,
+        "condition_summary": None,
     }
 
 
@@ -362,6 +389,7 @@ def build_dependency_scope(
             display_name=info["display_name"],
             artifact_type=info["artifact_type"],
             artifact_path=info["artifact_path"],
+            condition_summary=info["condition_summary"],
             root_action_id=root["action_id"] if root else None,
             root_action=root["action"] if root else None,
             root_action_status=root["status"] if root else None,
