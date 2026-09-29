@@ -344,6 +344,35 @@ def _api_calls(text: str, *, start_line: int) -> tuple[dict,...]:
     return tuple(calls)
 
 
+def _strip_line_comment_preserve_strings(line: str) -> str:
+    """Remove Lua -- comments while preserving quoted string contents."""
+    out=[]
+    quote=None
+    i=0
+    while i<len(line):
+        ch=line[i]
+        if quote is not None:
+            out.append(ch)
+            if ch=="\\" and i+1<len(line):
+                out.append(line[i+1])
+                i+=2
+                continue
+            if ch==quote:
+                quote=None
+            i+=1
+            continue
+        if ch in {"'","\""}:
+            quote=ch
+            out.append(ch)
+            i+=1
+            continue
+        if line.startswith("--",i):
+            break
+        out.append(ch)
+        i+=1
+    return "".join(out)
+
+
 def _state_scope(receiver: str | None, method: str) -> str:
     if method in {"getCharVar","setCharVar"}:
         return "PLAYER_CHAR"
@@ -368,7 +397,7 @@ def _named_state_accesses(text: str, *, start_line: int) -> tuple[dict,...]:
     rows=[]
     seen=set()
     for offset,raw_line in enumerate(text.splitlines()):
-        code=_structural_lua_lines(raw_line)[0] if raw_line else ""
+        code=_strip_line_comment_preserve_strings(raw_line)
         line_no=start_line+offset
         for match in _NAMED_STATE_GET.finditer(code):
             receiver,method,name=match.groups()
@@ -382,7 +411,7 @@ def _named_state_accesses(text: str, *, start_line: int) -> tuple[dict,...]:
                 "name":name,"state_id":_state_id(scope,name,receiver),
                 "value":None,"line":line_no,"source_line":raw_line.strip(),
             })
-        match=_NAMED_STATE_SET.search(raw_line)
+        match=_NAMED_STATE_SET.search(code)
         if match:
             receiver,method,name,value=match.groups()
             scope=_state_scope(receiver,method)
@@ -406,7 +435,7 @@ def _named_state_accesses(text: str, *, start_line: int) -> tuple[dict,...]:
                 "name":name,"state_id":_state_id(scope,name),
                 "value":None,"line":line_no,"source_line":raw_line.strip(),
             })
-        match=_SERVER_STATE_SET.search(raw_line)
+        match=_SERVER_STATE_SET.search(code)
         if match:
             name,value=match.groups()
             scope="SERVER_GLOBAL"
