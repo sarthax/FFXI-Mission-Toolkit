@@ -1209,6 +1209,7 @@ def _literal_csid_branches(text: str, *, start_line: int) -> tuple[dict,...]:
             "start_line":start_line+body_start,
             "end_line":start_line+body_end,
             "source_line":active["source_line"],
+            "body":body,
             "state_accesses":_named_state_accesses(body,start_line=start_line+body_start),
         })
         active=None
@@ -1234,6 +1235,62 @@ def _literal_csid_branches(text: str, *, start_line: int) -> tuple[dict,...]:
     if active is not None:
         finish(len(raw)-1)
     return tuple(rows)
+
+
+def _event_branch_nonstate_effects(
+    text: str,
+    *,
+    start_line: int,
+    subject: str,
+    trigger: str,
+    meta: dict,
+) -> tuple[BehaviorEffect,...]:
+    """Extract conservative non-state effects from one literal CSID branch."""
+    effects=[]
+    effects.extend(
+        BehaviorEffect("GRANT_KEY_ITEM","player",symbol)
+        for symbol in dict.fromkeys(_KEYITEM_GIVE.findall(text))
+    )
+    effects.extend(
+        BehaviorEffect("REMOVE_KEY_ITEM","player",symbol)
+        for symbol in dict.fromkeys(_KEYITEM_DEL.findall(text))
+    )
+    effects.extend(
+        BehaviorEffect("GRANT_ITEM","player",value.strip())
+        for value in dict.fromkeys(_ITEM_GIVE.findall(text))
+    )
+    effects.extend(
+        BehaviorEffect("ADD_GIL","player",value.strip())
+        for value in dict.fromkeys(_ADD_GIL.findall(text))
+    )
+    effects.extend(
+        BehaviorEffect("REMOVE_GIL","player",value.strip())
+        for value in dict.fromkeys(_DEL_GIL.findall(text))
+    )
+    if _UPDATE_EVENT.search(text):
+        effects.append(BehaviorEffect("UPDATE_EVENT","player"))
+    for duration in _OPEN_DOOR.findall(text):
+        effects.append(BehaviorEffect("OPEN_DOOR","world_entity",duration.strip() or None))
+    for value in _SET_ANIMATION.findall(text):
+        effects.append(BehaviorEffect("SET_ANIMATION","world_entity",value.strip()))
+    for value in _SET_STATUS.findall(text):
+        effects.append(BehaviorEffect("SET_STATUS","world_entity",value.strip()))
+    for value in _SET_UNTARGETABLE.findall(text):
+        effects.append(BehaviorEffect("SET_UNTARGETABLE","world_entity",value.strip()))
+    if _SET_POS.search(text):
+        effects.append(BehaviorEffect("SET_POSITION","world_entity"))
+
+    entity_rule=_direct_entity_reference_rule(
+        rule_id="event-branch-entity-refs",
+        subject=subject,
+        trigger=trigger,
+        text=text,
+        start_line=start_line,
+        meta=meta,
+    )
+    if entity_rule is not None:
+        effects.extend(entity_rule.effects)
+    return tuple(effects)
 
 
 def _literal_csid_guards(text: str, *, start_line: int) -> tuple[dict,...]:
@@ -2032,11 +2089,18 @@ def extract_lsb_scripted_behavior(
                 row for row in branch["state_accesses"]
                 if row["access"]=="WRITE"
             ]
-            if not branch_writes:
+            branch_effects=_event_branch_nonstate_effects(
+                branch["body"],
+                start_line=branch["start_line"],
+                subject=subject,
+                trigger=hook.upper(),
+                meta=meta,
+            )
+            if not branch_writes and not branch_effects:
                 continue
             rules.append(BehaviorRule(
-                f"{hook}:event-branch-state:{branch['csid']}",
-                "event_branch_state",
+                f"{hook}:event-branch:{branch['csid']}",
+                "event_branch_effects",
                 subject,
                 trigger=hook.upper(),
                 conditions=(BehaviorCondition(
@@ -2060,6 +2124,12 @@ def extract_lsb_scripted_behavior(
                         },
                     )
                     for row in branch_writes
+                ) + tuple(
+                    BehaviorEffect(
+                        effect.effect,effect.target,effect.value,
+                        {**dict(effect.metadata),"event_id":branch["csid"]},
+                    )
+                    for effect in branch_effects
                 ),
                 confidence="VERIFIED",
                 implementation_status="PRESENT",
