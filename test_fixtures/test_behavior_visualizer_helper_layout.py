@@ -19,23 +19,16 @@ def main():
     assert match, "depthFor() not found in Behavior Inspector template"
     body=match.group("body")
 
-    expected={
-        "helper_input":"0",
-        "shared_helper":"4",
-        "helper_effect":"5",
-        "helper_call":"5",
-        "target":"6",
-    }
-    for kind,depth in expected.items():
-        if kind in {"helper_effect","helper_call"}:
-            continue
-        needle=f"if(n.kind==='{kind}') return {depth};"
-        assert needle in body,(kind,depth,body)
-
+    assert (
+        "if(n.kind==='condition' || n.kind==='helper_input') return 0;"
+        in body
+    ),body
+    assert "if(n.kind==='shared_helper') return 4;" in body,body
     assert (
         "if(n.kind==='helper_effect' || n.kind==='helper_call') return 5;"
         in body
     ),body
+    assert "if(n.kind==='target') return 6;" in body,body
 
     x_match=re.search(r"const x=\{([^}]+)\}",text)
     assert x_match,"layout x-column map missing"
