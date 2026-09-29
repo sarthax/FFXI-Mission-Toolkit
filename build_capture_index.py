@@ -198,10 +198,6 @@ def init_db(con: sqlite3.Connection):
             source_format TEXT, source_native_id TEXT,
             PRIMARY KEY (capture_id, seq)
         );
-        CREATE INDEX IF NOT EXISTS idx_capture_raw_packet_source
-            ON capture_raw_packets(capture_id,source_format,source_native_id);
-        CREATE INDEX IF NOT EXISTS idx_capture_raw_packet_opcode
-            ON capture_raw_packets(capture_id,opcode);
         CREATE TABLE IF NOT EXISTS capture_structured_records (
             capture_id INTEGER NOT NULL,
             source_file TEXT NOT NULL,
