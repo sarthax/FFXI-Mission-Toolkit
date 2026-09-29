@@ -230,7 +230,6 @@ def _route_pattern(path: str) -> re.Pattern[str]:
     return re.compile("^" + re.sub(r"\\\{[^}]+\\\}", r"[^/]+", escaped) + "$")
 
 
-@lru_cache(maxsize=1)
 def route_owners() -> tuple[dict, ...]:
     payload = json.loads(ROUTE_MAP.read_text(encoding="utf-8"))
     rows = []
