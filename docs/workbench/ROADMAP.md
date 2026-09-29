@@ -748,3 +748,5 @@ Roadmap authority rule: `docs/workbench/ROADMAP.md` is the detailed rework backl
 - [x] Capture balanced source spans for uniquely or ambiguously resolved shared `xi.<module>.<function>` definitions and expose bounded source previews in Behavior Inspector; helper bodies are still not recursively interpreted into parent behavior.
 
 - [x] Run one-level conservative semantic analysis for uniquely resolved shared `xi.<module>.<function>` bodies in Behavior Inspector (direct API calls, named state, literal context conditions, and entity references). Ambiguous/unresolved helpers are never expanded, and recursive shared-helper expansion remains disabled.
+
+- [x] Present uniquely resolved shared-helper one-level analysis as separate upstream inputs (state/context), downstream effects (state/entity), and raw direct calls in Behavior Inspector; ambiguous/unresolved helpers remain unexpanded.
