@@ -114,6 +114,7 @@ def _graph_for_behavior(behavior) -> dict:
         hook_nodes[hook]=node(hid,"hook",hook)
         edges.append({"source":root,"target":hid,"kind":"HAS_HOOK"})
 
+    callback_nodes={}
     for rule in behavior.rules:
         rid=f"rule:{rule.rule_id}"
         node(
@@ -125,9 +126,38 @@ def _graph_for_behavior(behavior) -> dict:
             source_lines=rule.metadata.get("source_lines"),
             helper=rule.metadata.get("helper"),
             call_chain=rule.metadata.get("call_chain"),
+            callback_type=rule.metadata.get("callback_type"),
+            callback_event=rule.metadata.get("callback_event"),
+            callback_delay_source=rule.metadata.get("callback_delay_source"),
+            callback_call_line=rule.metadata.get("callback_call_line"),
         )
         hook=rule.metadata.get("hook")
         parent=hook_nodes.get(hook,root)
+        callback_type=rule.metadata.get("callback_type")
+        callback_call_line=rule.metadata.get("callback_call_line")
+        if callback_type:
+            cbkey=(hook,callback_call_line,callback_type)
+            cbid=callback_nodes.get(cbkey)
+            if cbid is None:
+                cbid=f"callback:{hook}:{callback_call_line}:{callback_type}"
+                callback_nodes[cbkey]=cbid
+                cb_label=rule.metadata.get("callback_event") or callback_type
+                delay=rule.metadata.get("callback_delay_source")
+                if delay not in (None,""):
+                    cb_label=f"{callback_type} · {delay}"
+                node(
+                    cbid,"callback",cb_label,
+                    callback_type=callback_type,
+                    callback_event=rule.metadata.get("callback_event"),
+                    callback_delay_source=delay,
+                    callback_receiver=rule.metadata.get("callback_receiver"),
+                    callback_args=rule.metadata.get("callback_args"),
+                    source_path=rule.metadata.get("source_path"),
+                    source_lines=rule.metadata.get("source_lines"),
+                    hook=hook,
+                )
+                edges.append({"source":parent,"target":cbid,"kind":"SCHEDULES_CALLBACK"})
+            parent=cbid
         edges.append({"source":parent,"target":rid,"kind":"HAS_RULE"})
 
         for index,condition in enumerate(rule.conditions):
@@ -172,6 +202,9 @@ def _graph_for_behavior(behavior) -> dict:
                 hook=rule.metadata.get("hook"),
                 helper=rule.metadata.get("helper"),
                 call_chain=rule.metadata.get("call_chain"),
+                callback_type=rule.metadata.get("callback_type"),
+                callback_event=rule.metadata.get("callback_event"),
+                callback_delay_source=rule.metadata.get("callback_delay_source"),
             )
             edges.append({"source":rid,"target":eid,"kind":"EMITS"})
             target=effect.target
@@ -247,6 +280,7 @@ def _graph_for_behavior(behavior) -> dict:
             "conditions":sum(1 for n in nodes.values() if n["kind"]=="condition"),
             "targets":sum(1 for n in nodes.values() if n["kind"]=="target"),
             "states":len(state_rows),
+            "callbacks":len(callback_nodes),
             "effect_categories":dict(sorted(categories.items())),
             "unmodeled_hooks":list(behavior.metadata.get("unmodeled_hooks") or ()),
             "reachable_helpers":list(behavior.metadata.get("reachable_helpers") or ()),

@@ -103,6 +103,20 @@ class HelperBlock:
     owner: str = "local"
 
 
+@dataclass(frozen=True)
+class CallbackBlock:
+    callback_type: str
+    receiver: str | None
+    trigger: str
+    args: tuple[str,...]
+    call_line: int
+    start_line: int
+    end_line: int
+    body: str
+    delay_source: str | None = None
+    event_name: str | None = None
+
+
 def _structural_lua_lines(lua: str) -> list[str]:
     """Strip comments/string contents while retaining Lua structure and call punctuation."""
     out=[]
@@ -241,6 +255,185 @@ def extract_helper_blocks(lua: str) -> tuple[HelperBlock,...]:
                 out.append(HelperBlock(name,args,i+1,j+1,"\n".join(raw[i:j+1]),owner))
                 break
     return tuple(out)
+
+
+def extract_callback_blocks(text: str, *, start_line: int=1) -> tuple[CallbackBlock,...]:
+    """Extract bounded anonymous timer/queue/listener callbacks from a source block.
+
+    The parser recognizes the callback wrapper and balances the anonymous function body. It does
+    not execute delay expressions or listener predicates.
+    """
+    raw=text.splitlines()
+    structural=_structural_lua_lines(text)
+    out=[]
+    claimed_until=-1
+    for i,line in enumerate(raw):
+        if i<=claimed_until:
+            continue
+        code=structural[i] if i<len(structural) else ""
+        callback_type=None
+        for candidate in ("timer","queue","addListener"):
+            if re.search(rf":{candidate}\s*\(",code):
+                callback_type=candidate
+                break
+        if callback_type is None:
+            continue
+
+        function_line=None
+        header_lines=[]
+        for j in range(i,min(len(raw),i+5)):
+            header_lines.append(raw[j])
+            if re.search(r"\bfunction\s*\(",structural[j]):
+                function_line=j
+                break
+        if function_line is None:
+            continue
+        header="\n".join(header_lines)
+
+        receiver_match=re.search(
+            rf"(.+?):{callback_type}\s*\(",
+            header,
+            flags=re.DOTALL,
+        )
+        receiver=receiver_match.group(1).strip() if receiver_match else None
+        # Keep only the final source expression when indentation/previous text is captured.
+        if receiver and "\n" in receiver:
+            receiver=receiver.split("\n")[-1].strip()
+
+        args_match=re.search(r"\bfunction\s*\(([^)]*)\)",header,flags=re.DOTALL)
+        args=tuple(
+            part.strip() for part in (args_match.group(1) if args_match else "").split(",")
+            if part.strip()
+        )
+
+        prefix_match=re.search(
+            rf":{callback_type}\s*\((.*?)\bfunction\s*\(",
+            header,
+            flags=re.DOTALL,
+        )
+        prefix=(prefix_match.group(1).strip() if prefix_match else "")
+        delay_source=None
+        event_name=None
+        trigger=callback_type.upper()+"_CALLBACK"
+        if callback_type in {"timer","queue"}:
+            delay_source=prefix.strip().rstrip(",").strip() or None
+            trigger=("TIMER_CALLBACK" if callback_type=="timer" else "QUEUE_CALLBACK")
+        elif callback_type=="addListener":
+            quoted=re.findall(r"['\"]([^'\"]+)['\"]",prefix)
+            event_name=quoted[0] if quoted else None
+            trigger=f"LISTENER:{event_name}" if event_name else "LISTENER_CALLBACK"
+
+        depth=0
+        started=False
+        end_line=None
+        for j in range(function_line,len(raw)):
+            row=structural[j]
+            opens=_open_count(row)
+            closes=_close_count(row)
+            if opens:
+                started=True
+            depth+=opens-closes
+            if started and depth<=0:
+                end_line=j
+                break
+        if end_line is None:
+            continue
+        claimed_until=end_line
+        out.append(CallbackBlock(
+            callback_type=callback_type,
+            receiver=receiver,
+            trigger=trigger,
+            args=args,
+            call_line=start_line+i,
+            start_line=start_line+function_line,
+            end_line=start_line+end_line,
+            body="\n".join(raw[function_line:end_line+1]),
+            delay_source=delay_source,
+            event_name=event_name,
+        ))
+    return tuple(out)
+
+
+def _callback_rules(
+    *,
+    text: str,
+    start_line: int,
+    subject: str,
+    parent_hook: str,
+    source_path: str,
+    helper: str | None=None,
+    call_chain: tuple[str,...] | None=None,
+) -> tuple[BehaviorRule,...]:
+    rules=[]
+    for index,callback in enumerate(extract_callback_blocks(text,start_line=start_line),1):
+        meta={
+            "source_path":source_path,
+            "source_lines":(callback.start_line,callback.end_line),
+            "hook":parent_hook,
+            "callback_type":callback.callback_type,
+            "callback_receiver":callback.receiver,
+            "callback_call_line":callback.call_line,
+            "callback_event":callback.event_name,
+            "callback_delay_source":callback.delay_source,
+            "callback_args":callback.args,
+        }
+        if helper:
+            meta["helper"]=helper
+        if call_chain:
+            meta["call_chain"]=call_chain
+
+        conditions=[]
+        if callback.delay_source is not None:
+            conditions.append(BehaviorCondition(
+                "callback","DELAY_SOURCE",callback.delay_source,
+                {"source_line":callback.call_line},
+            ))
+        if callback.event_name is not None:
+            conditions.append(BehaviorCondition(
+                "callback","LISTENER_EVENT",callback.event_name,
+                {"source_line":callback.call_line},
+            ))
+        callback_id=f"{parent_hook}:callback:{index}:{callback.callback_type}"
+        rules.append(BehaviorRule(
+            callback_id,
+            "callback",
+            subject,
+            trigger=callback.trigger,
+            conditions=tuple(conditions),
+            effects=(BehaviorEffect(
+                "EXECUTE_CALLBACK",
+                callback.receiver or subject,
+                callback.trigger,
+                {
+                    "callback_type":callback.callback_type,
+                    "event":callback.event_name,
+                    "delay_source":callback.delay_source,
+                },
+            ),),
+            confidence="VERIFIED",
+            implementation_status="PRESENT",
+            metadata=meta,
+        ))
+
+        api_rule=_api_call_rule(
+            rule_id=f"{callback_id}:api",
+            subject=subject,
+            trigger=callback.trigger,
+            calls=_api_calls(callback.body,start_line=callback.start_line),
+            meta=meta,
+        )
+        if api_rule is not None:
+            rules.append(api_rule)
+        state_rule=_state_flow_rule(
+            rule_id=f"{callback_id}:state",
+            subject=subject,
+            trigger=callback.trigger,
+            accesses=_named_state_accesses(callback.body,start_line=callback.start_line),
+            meta=meta,
+        )
+        if state_rule is not None:
+            rules.append(state_rule)
+    return tuple(rules)
 
 
 def _reachable_helpers(hook: HookBlock, helpers: tuple[HelperBlock,...], *, max_depth: int=6):
@@ -585,6 +778,17 @@ def extract_lsb_scripted_behavior(
             rules.append(state_rule)
             modeled_hooks.add(hook)
 
+        callback_rules=_callback_rules(
+            text=text,
+            start_line=block.start_line,
+            subject=subject,
+            parent_hook=hook,
+            source_path=source_path,
+        )
+        if callback_rules:
+            rules.extend(callback_rules)
+            modeled_hooks.add(hook)
+
         # Hook classes are useful behavior facts even when the internal dynamic logic is not yet
         # structurally decoded.
         if hook=="onPlayerAbilityUse":
@@ -923,6 +1127,17 @@ def extract_lsb_scripted_behavior(
             )
             if helper_state_rule is not None:
                 rules.append(helper_state_rule)
+            helper_callback_rules=_callback_rules(
+                text=helper.body,
+                start_line=helper.start_line,
+                subject=subject,
+                parent_hook=hook,
+                source_path=source_path,
+                helper=helper.name,
+                call_chain=call_chain,
+            )
+            if helper_callback_rules:
+                rules.extend(helper_callback_rules)
             rules.append(BehaviorRule(
                 f"{hook}:helper:{helper.name}",
                 "helper_call",
@@ -1000,6 +1215,7 @@ def extract_lsb_scripted_behavior(
             "source_helper_count":len(helpers),
             "reachable_helper_count":len(reached_helpers),
             "reachable_helpers":sorted(reached_helpers),
+            "callback_count":sum(1 for rule in rules if rule.kind=="callback"),
             "modeled_hook_count":len(modeled_hooks),
             "unmodeled_hooks":sorted(set(hooks)-modeled_hooks),
         },

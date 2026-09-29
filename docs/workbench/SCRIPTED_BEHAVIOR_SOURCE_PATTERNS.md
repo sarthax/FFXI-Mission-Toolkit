@@ -247,3 +247,18 @@ The raw API-call layer preserves these cases, but stronger semantic extraction s
 - reward/treasure/currency calls mapped into the unified acquisition graph.
 
 Those are now explicit enrichment targets rather than blind spots: the generic call layer ensures the source evidence is retained even before semantic promotion exists.
+
+
+## Callback closure enrichment — 2026-09-29
+
+Timer, queue, and named listener closures are now represented as first-class behavior branches rather than only as raw calls inside their parent hook. The extractor preserves:
+
+- callback kind (`timer`, `queue`, `addListener`);
+- delay source expression where present;
+- listener event name where statically visible;
+- callback receiver and arguments;
+- callback call line and balanced function-body source span;
+- nested API-call observations;
+- nested named state reads/writes.
+
+The Behavior Inspector renders a callback node between the parent hook and the callback's rules/effects so delayed/event-driven behavior is visually distinct from synchronous hook behavior. This is still source-static: callback execution timing/order at runtime remains a validation concern.
