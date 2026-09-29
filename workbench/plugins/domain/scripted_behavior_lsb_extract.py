@@ -56,6 +56,9 @@ _CHAR_READ=re.compile(r"player:getCharVar\(\s*['\"]([^'\"]+)['\"]\s*\)")
 _CHAR_SET=re.compile(r"player:setCharVar\(\s*['\"]([^'\"]+)['\"]\s*,\s*([^\)]+)\)")
 _START_EVENT=re.compile(r"player:startEvent\(\s*(\d+)")
 _UPDATE_EVENT=re.compile(r"player:updateEvent\(")
+_CSID_LITERAL_COMPARE=re.compile(
+    r"\bcsid\s*==\s*(\d+)"
+)
 _CONFIRM_TRADE=re.compile(r"player:(?:confirmTrade|tradeComplete)\(\)")
 _TRADE_PREDICATE=re.compile(r"npcUtil\.(tradeHas|tradeHasExactly|tradeMatches)\(")
 _OPEN_DOOR=re.compile(r"(?:GetNPCByID\([^\n]+?\)|\b(?:npc|door)\b):openDoor\(\s*([^\)]*)\)")
@@ -1186,6 +1189,19 @@ def _context_condition_rule(
     )
 
 
+def _literal_csid_guards(text: str, *, start_line: int) -> tuple[dict,...]:
+    rows=[]
+    for offset,raw_line in enumerate(text.splitlines()):
+        code=_strip_line_comment_preserve_strings(raw_line)
+        for match in _CSID_LITERAL_COMPARE.finditer(code):
+            rows.append({
+                "csid":int(match.group(1)),
+                "line":start_line+offset,
+                "source_line":raw_line.strip(),
+            })
+    return tuple(rows)
+
+
 def _entity_symbol_target(kind: str, symbol: str, sign: str | None, offset: str | None) -> str:
     base=f"entity-symbol:{kind}:{symbol}"
     if sign and offset:
@@ -1933,16 +1949,31 @@ def extract_lsb_scripted_behavior(
             modeled_hooks.add(hook)
 
         event_ids=tuple(dict.fromkeys(int(x) for x in _START_EVENT.findall(text)))
-        if event_ids or _UPDATE_EVENT.search(text):
+        csid_guards=_literal_csid_guards(text,start_line=block.start_line)
+        if event_ids or _UPDATE_EVENT.search(text) or csid_guards:
             effects=[
                 BehaviorEffect("START_EVENT","player",event_id)
                 for event_id in event_ids
             ]
             if _UPDATE_EVENT.search(text):
                 effects.append(BehaviorEffect("UPDATE_EVENT","player"))
+            conditions=tuple(
+                BehaviorCondition(
+                    "event:csid",
+                    "EVENT_ID_EQUALS",
+                    row["csid"],
+                    {
+                        "source_line":row["line"],
+                        "source_line_text":row["source_line"],
+                        "event_id":row["csid"],
+                    },
+                )
+                for row in csid_guards
+            )
             rules.append(BehaviorRule(
                 f"{hook}:event-flow","event_flow",subject,
                 trigger=hook.upper(),
+                conditions=conditions,
                 effects=tuple(effects),
                 confidence="VERIFIED",implementation_status="PRESENT",metadata=meta,
             ))
