@@ -12,6 +12,7 @@ local entity = {}
 entity.onTrigger = function(player, npc)
     local missionStage = player:getCharVar('MissionStage')
     local guardedChoice = player:getCharVar('GuardedChoice')
+    local keyItemChoice = player:getCharVar('KeyItemChoice')
 
     if missionStage == 0 then
         player:startEvent(101)
@@ -395,6 +396,19 @@ def main():
     assert (102,"option","1","TRADE_REQUIREMENT","TRADE_HAS","1234","GRANT_ITEM","player","613") in resource_projection,resource_projection
     assert not any(row["value"] in {"711","712"} for row in graph["event_outcome_resource_guarded_effects"]),graph["event_outcome_resource_guarded_effects"]
     assert graph["summary"]["event_outcome_resource_guarded_effects"]>=8,graph["summary"]
+
+    resource_state_links=graph["event_outcome_resource_guarded_state_links"]
+    assert any(
+        row["event_id"]==102
+        and row["guard_kind"]=="KEY_ITEM_POSSESSION"
+        and row["guard_operator"]=="HAS_KEY_ITEM"
+        and row["guard_value"]=="TEST_PASS"
+        and row["state_id"]=="state:PLAYER_CHAR:player:KeyItemChoice"
+        and row["reader_hooks"]==["onTrigger"]
+        and row["ordering"]=="UNPROVEN"
+        for row in resource_state_links
+    ),resource_state_links
+    assert graph["summary"]["cross_hook_event_outcome_resource_guarded_state_links"]>=1,graph["summary"]
 
     guarded_links=graph["event_outcome_guarded_state_links"]
     assert any(
