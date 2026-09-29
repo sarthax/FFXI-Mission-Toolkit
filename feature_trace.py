@@ -117,9 +117,13 @@ def _legacy_search_nodes(con: sqlite3.Connection, term: str) -> list[dict]:
 
 def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
           catalog_con: sqlite3.Connection | None = None,
-          relationships: set[str] | None = None, include_runtime_edges: bool = False) -> dict:
+          relationships: set[str] | None = None, include_runtime_edges: bool = False,
+          max_nodes: int = 5000) -> dict:
+    if max_nodes < 1:
+        raise ValueError("max_nodes must be >= 1")
     queue = deque([(root, 0, [root], [])])
     visited = {root}
+    truncated = False
     seen_relationships = set()
     edges = []
     runtime_edges = []
@@ -171,6 +175,10 @@ def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
                 continue
             edges.append(edge)
             if neighbor not in visited:
+                if len(visited) >= max_nodes:
+                    truncated = True
+                    queue.clear()
+                    break
                 visited.add(neighbor)
                 next_nodes = node_path + [neighbor]
                 next_edges = edge_path + [rid]
@@ -181,6 +189,8 @@ def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
                     "edge_ids": next_edges,
                     "depth": level + 1,
                 })
+        if truncated:
+            break
 
     node_ids = sorted(visited)
     hierarchy = runtime_hierarchy(runtime_edges)
@@ -198,6 +208,8 @@ def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
         "direction": direction,
         "max_depth": depth,
         "relationship_filter": sorted(relationships) if relationships else [],
+        "max_nodes": max_nodes,
+        "truncated": truncated,
         "nodes": [node_info(con, n, catalog_con) for n in node_ids],
         "edges": edges,
         "runtime_hierarchy": hierarchy,
@@ -209,6 +221,7 @@ def trace(con: sqlite3.Connection, root: str, depth: int, direction: str,
         "notes": [
             "Trace connectivity is not an implementation verdict.",
             "Unrecorded relationships remain UNKNOWN rather than being inferred as absent.",
+            "Trace traversal is bounded by max_nodes; truncated=true means more graph nodes exist beyond the returned budget.",
         ],
     }
     if include_runtime_edges:
@@ -327,10 +340,14 @@ def main():
     ap.add_argument("--direction", choices=("out", "in", "both"), default="both")
     ap.add_argument("--relationship", action="append", default=[],
                     help="Limit traversal to this relationship; repeat for multiple types.")
+    ap.add_argument("--max-nodes", type=int, default=5000,
+                    help="Hard traversal budget; results report truncated=true when reached.")
     ap.add_argument("--json", type=Path)
     args = ap.parse_args()
     if args.depth < 0:
         ap.error("--depth must be >= 0")
+    if args.max_nodes < 1:
+        ap.error("--max-nodes must be >= 1")
 
     con = sqlite3.connect(args.db)
     root = args.node
@@ -347,7 +364,11 @@ def main():
             return 2
         root = matches[0]["node_id"]
 
-    result = trace(con, root, args.depth, args.direction, relationships=set(args.relationship) or None)
+    result = trace(
+        con, root, args.depth, args.direction,
+        relationships=set(args.relationship) or None,
+        max_nodes=args.max_nodes,
+    )
     con.close()
     output = json.dumps(result, indent=2, sort_keys=True)
     if args.json:
