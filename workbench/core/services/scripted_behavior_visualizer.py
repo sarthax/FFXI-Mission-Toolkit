@@ -930,5 +930,6 @@ def inspect_lsb_behavior(root: Path, relative: str) -> dict:
             "Cross-hook state links mean the same canonical state is written in one hook and read in another; execution ordering and causal sequencing remain unproven.",
             "Cross-hook event links mean the same literal CSID is started in one hook and guarded in another; this correlates event identity only and does not prove that a particular start reaches a particular finish.",
             "Event-branch state effects are source-local when a state write occurs inside a literal CSID branch; linking that state to readers in other hooks remains unordered cross-hook evidence.",
+            "Literal CSID branch effect bundles keep key items, world/entity actions, rewards, and event updates attached to the branch that contains them; unsupported or dynamic effects remain generic/raw evidence rather than being reassigned.",
         ],
     }
