@@ -2484,6 +2484,10 @@ def extract_lsb_scripted_behavior(
                     outcome["body"],
                     start_line=outcome["start_line"],
                 )
+                resource_guard_branches=_literal_resource_guard_branches(
+                    outcome["body"],
+                    start_line=outcome["start_line"],
+                )
                 nested_conditionals=_nested_conditional_spans(outcome["body"])
                 outcome_parent_body=_without_nested_conditionals(
                     outcome["body"],
@@ -2661,6 +2665,108 @@ def extract_lsb_scripted_behavior(
                             "guard_literal":guard["literal"],
                             "source_lines":(guard["start_line"],guard["end_line"]),
                             "branch_form":"EVENT_OUTCOME_STATE_LITERAL_BRANCH",
+                        },
+                    ))
+                    modeled_hooks.add(hook)
+
+                for guard_index,guard in enumerate(resource_guard_branches,1):
+                    guarded_body=_without_nested_conditionals(
+                        guard["body"],
+                        _nested_conditional_spans(guard["body"]),
+                    )
+                    guard_writes=[
+                        row for row in _named_state_accesses(
+                            guarded_body,
+                            start_line=guard["start_line"],
+                        )
+                        if row["access"]=="WRITE"
+                    ]
+                    guard_effects=_event_branch_nonstate_effects(
+                        guarded_body,
+                        start_line=guard["start_line"],
+                        subject=subject,
+                        trigger=hook.upper(),
+                        meta=meta,
+                    )
+                    if not guard_writes and not guard_effects:
+                        continue
+                    resource_condition=BehaviorCondition(
+                        guard["subject"],
+                        guard["operator"],
+                        guard["value"],
+                        {
+                            "guard_kind":guard["guard_kind"],
+                            "source_line":guard["start_line"],
+                            "source_line_text":guard["source_line"],
+                            "predicate_expression":guard["predicate_expression"],
+                        },
+                    )
+                    rules.append(BehaviorRule(
+                        f"{hook}:event-outcome-resource:{branch['csid']}:{outcome_index}:{guard_index}",
+                        "event_outcome_resource_guarded_effects",
+                        subject,
+                        trigger=hook.upper(),
+                        conditions=(
+                            BehaviorCondition(
+                                "event:csid","EVENT_ID_EQUALS",branch["csid"],
+                                {"event_id":branch["csid"]},
+                            ),
+                            BehaviorCondition(
+                                f"event:{outcome['selector']}",
+                                "EVENT_OUTCOME_EQUALS",
+                                outcome["literal"],
+                                {
+                                    "event_id":branch["csid"],
+                                    "selector":outcome["selector"],
+                                },
+                            ),
+                            resource_condition,
+                        ),
+                        effects=tuple(
+                            BehaviorEffect(
+                                "WRITE_STATE",row["state_id"],row["value"],
+                                {
+                                    "scope":row["scope"],
+                                    "receiver":row["receiver"],
+                                    "name":row["name"],
+                                    "source_line":row["line"],
+                                    "source_line_text":row["source_line"],
+                                    "event_id":branch["csid"],
+                                    "outcome_selector":outcome["selector"],
+                                    "outcome_literal":outcome["literal"],
+                                    "guard_kind":guard["guard_kind"],
+                                    "guard_operator":guard["operator"],
+                                    "guard_value":guard["value"],
+                                },
+                            )
+                            for row in guard_writes
+                        ) + tuple(
+                            BehaviorEffect(
+                                effect.effect,effect.target,effect.value,
+                                {
+                                    **dict(effect.metadata),
+                                    "event_id":branch["csid"],
+                                    "outcome_selector":outcome["selector"],
+                                    "outcome_literal":outcome["literal"],
+                                    "guard_kind":guard["guard_kind"],
+                                    "guard_operator":guard["operator"],
+                                    "guard_value":guard["value"],
+                                },
+                            )
+                            for effect in guard_effects
+                        ),
+                        confidence="VERIFIED",
+                        implementation_status="PRESENT",
+                        metadata={
+                            **meta,
+                            "event_id":branch["csid"],
+                            "outcome_selector":outcome["selector"],
+                            "outcome_literal":outcome["literal"],
+                            "guard_kind":guard["guard_kind"],
+                            "guard_operator":guard["operator"],
+                            "guard_value":guard["value"],
+                            "source_lines":(guard["start_line"],guard["end_line"]),
+                            "branch_form":"EVENT_OUTCOME_RESOURCE_LITERAL_BRANCH",
                         },
                     ))
                     modeled_hooks.add(hook)
