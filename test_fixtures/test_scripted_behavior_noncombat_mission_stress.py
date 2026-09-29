@@ -16,6 +16,8 @@ entity.onTrigger = function(player, npc)
         player:startEvent(101)
     elseif missionStage == 1 then
         player:startEvent(102)
+    elseif missionStage == 9 then
+        player:startEvent(103)
     end
 end
 
@@ -27,6 +29,8 @@ entity.onEventFinish = function(player, csid, option, npc)
         player:delKeyItem(xi.keyItem.TEST_SEAL)
         player:setCharVar('MissionStage', 2)
         GetNPCByID(ID.npc.TEST_DOOR):openDoor(30)
+    elseif csid == 999 then
+        player:setCharVar('UnrelatedStage', 1)
     end
 end
 
@@ -59,14 +63,14 @@ def main():
         effect.value for effect in effects
         if effect.effect=="START_EVENT"
     }
-    assert event_ids=={101,102},event_ids
+    assert event_ids=={101,102,103},event_ids
 
     event_guards={
         condition.value for condition in conditions
         if condition.operator=="EVENT_ID_EQUALS"
         and condition.subject=="event:csid"
     }
-    assert event_guards=={101,102},event_guards
+    assert event_guards=={101,102,999},event_guards
 
     assert any(
         condition.operator=="READS_STATE"
@@ -112,12 +116,13 @@ def main():
         for node in graph["nodes"]
         if node["kind"]=="event"
     }
-    assert {101,102} <= event_nodes,event_nodes
+    assert {101,102,103,999} <= event_nodes,event_nodes
     assert any(edge["kind"]=="STARTS_EVENT" for edge in graph["edges"]),graph["edges"]
     assert any(edge["kind"]=="EVENT_GUARD" for edge in graph["edges"]),graph["edges"]
 
     links={row["event_id"]:row for row in graph["event_links"]}
     assert set(links)=={101,102},links
+    assert 103 not in links and 999 not in links,links
     for event_id in (101,102):
         link=links[event_id]
         assert link["relationship"]=="SHARED_EVENT_ID_ACROSS_HOOKS",link
