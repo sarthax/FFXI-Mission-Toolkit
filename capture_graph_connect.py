@@ -131,19 +131,23 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
                         (rid2,enode,aid,"IMPLEMENTED_BY",ev,"VERIFIED","DISCOVERED",
                          json.dumps({"source":source,"path":script}),None))
             counts["edges"]+=1
-    # Raw PacketLogger/PacketViewer observations: one graph edge per normalized packet row.
-    # This is intentionally finer-grained than workbench_connect.py's historical distinct
-    # opcode/direction summary. The raw bytes remain in capture_raw_packets; the graph edge carries
-    # only identity/navigation metadata and a normalized-row key for exact provenance drill-down.
+    # Canonical raw-packet observations: PacketLogger/PacketViewer, PacketDB, Packeteer, and
+    # promoted logger-preserved packet bytes all converge here without losing source identity.
     if table_exists(src,"capture_raw_packets"):
-        rq="""SELECT capture_id,seq,ts,direction,opcode,raw_hex
+        raw_cols={r[1] for r in src.execute("PRAGMA table_info(capture_raw_packets)")}
+        sf="source_format" if "source_format" in raw_cols else "NULL AS source_format"
+        sn="source_native_id" if "source_native_id" in raw_cols else "NULL AS source_native_id"
+        zone="zone_id" if "zone_id" in raw_cols else "NULL AS zone_id"
+        size="packet_size" if "packet_size" in raw_cols else "NULL AS packet_size"
+        sync="sync_id" if "sync_id" in raw_cols else "NULL AS sync_id"
+        rq=f"""SELECT capture_id,seq,ts,direction,opcode,raw_hex,{zone},{size},{sync},{sf},{sn}
               FROM capture_raw_packets"""
         rargs=()
         if capture_id is not None:
             rq+=" WHERE capture_id=?"
             rargs=(capture_id,)
         rq+=" ORDER BY capture_id,seq"
-        for cap,seq,ts,direction,opcode,raw_hex in src.execute(rq,rargs):
+        for cap,seq,ts,direction,opcode,raw_hex,zone_id,packet_size,sync_id,source_format,source_native_id in src.execute(rq,rargs):
             pnode=packet_node_id(opcode)
             if pnode is None:
                 continue
@@ -162,7 +166,7 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
                 "INSERT OR REPLACE INTO evidence VALUES(?,?,?,?,?,?)",
                 (evidence_id,"PACKET_CAPTURE","capture_raw_packets",
                  f"capture:{cap}:packet:{seq}",None,
-                 "Exact raw PacketLogger/PacketViewer observation; packet bytes remain in the capture store."),
+                 "Exact raw packet observation; packet bytes and source provenance remain in the capture store."),
             )
             metadata={
                 "source_kind":"RAW_PACKET",
@@ -175,6 +179,11 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
                 "opcode":opcode,
                 "byte_length":len(raw_hex or "")//2,
                 "has_raw_bytes":bool(raw_hex),
+                "zone_id":zone_id,
+                "packet_size":packet_size,
+                "sync_id":sync_id,
+                "source_format":source_format,
+                "source_native_id":source_native_id,
             }
             dst.execute(
                 "INSERT OR REPLACE INTO entity_relationships VALUES(?,?,?,?,?,?,?,?,?)",

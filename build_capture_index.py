@@ -61,6 +61,7 @@ from pathlib import Path
 
 import entity_profile
 from workbench.core.services import capture_integrity
+from workbench.core.services import raw_packet_ingest
 
 TOOLS_ROOT = Path(__file__).parent
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
@@ -179,6 +180,9 @@ def init_db(con: sqlite3.Connection):
         );
         CREATE TABLE IF NOT EXISTS capture_raw_packets (
             capture_id INTEGER, seq INTEGER, ts TEXT, direction TEXT, opcode TEXT, raw_hex TEXT,
+            zone_id INTEGER, packet_size INTEGER, sync_id INTEGER,
+            is_injected INTEGER, is_blocked INTEGER,
+            source_format TEXT, source_native_id TEXT,
             PRIMARY KEY (capture_id, seq)
         );
         CREATE TABLE IF NOT EXISTS capture_structured_records (
@@ -244,6 +248,16 @@ def init_db(con: sqlite3.Connection):
         if col not in existing_cols:
             con.execute(f"ALTER TABLE captures ADD COLUMN {col} {decl}")
     con.execute("CREATE INDEX IF NOT EXISTS idx_captures_content_type ON captures(content_type)")
+    existing_raw_cols = {r[1] for r in con.execute("PRAGMA table_info(capture_raw_packets)")}
+    for col, decl in [
+        ("zone_id", "INTEGER"), ("packet_size", "INTEGER"), ("sync_id", "INTEGER"),
+        ("is_injected", "INTEGER"), ("is_blocked", "INTEGER"),
+        ("source_format", "TEXT"), ("source_native_id", "TEXT"),
+    ]:
+        if col not in existing_raw_cols:
+            con.execute(f"ALTER TABLE capture_raw_packets ADD COLUMN {col} {decl}")
+    con.execute("""CREATE INDEX IF NOT EXISTS idx_capture_raw_packet_source
+                   ON capture_raw_packets(capture_id,source_format,source_native_id)""")
     # legacy_look -- the real 20-byte look_t blob (see mmo.h) NPCLogger.db's `entries` table
     # carries per entity. model_id (above) is genuinely 0 for almost every real entity in this
     # addon's own output (confirmed against real capture bytes, not an ingestion bug) -- this is
@@ -804,6 +818,13 @@ def sniff_sqlite_format(data: bytes) -> str | None:
     try:
         con = sqlite3.connect(tmp.name)
         try:
+            tables = {str(r[0]).upper() for r in con.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            )}
+            if "PACKETS" in tables:
+                packet_cols = {str(r[1]).upper() for r in con.execute("PRAGMA table_info(PACKETS)")}
+            else:
+                packet_cols = set()
             cols = {r[1] for r in con.execute("PRAGMA table_info(entries)")}
         finally:
             con.close()
@@ -814,6 +835,9 @@ def sniff_sqlite_format(data: bytes) -> str | None:
             Path(tmp.name).unlink()
         except OSError:
             pass
+    if {"PACKET_ID","RECEIVED_DT","DIRECTION","ZONE_ID","PACKET_TYPE",
+        "PACKET_SIZE","PACKET_SYNC","PACKET_DATA"} <= packet_cols:
+        return "packetdb"
     if not cols:
         return None
     if {"UniqueNo", "Hpp", "model_id"} <= cols:
@@ -844,6 +868,8 @@ def sniff_text_format(text: str) -> str | None:
     so this looks at the first real content instead. Order matters: check the more specific
     signatures before the more generic ones."""
     head = text[:4000]
+    if re.search(r'\[(?:S->C|C->S)\].*PacketId:\s*[0-9A-Fa-f]{1,4}', head, re.IGNORECASE):
+        return "packeteer"
     if re.search(r'^(Incoming|Outgoing) Packet: 0x', head, re.MULTILINE):
         return "idview_simple"
     if IDVIEW2_HEADER_RE.search(head):
@@ -908,7 +934,9 @@ def ingest_single_file(con, capture_id: int, filename: str, data: bytes) -> dict
         if suffix in (".db", ".sqlite", ".sqlite3"):
             fmt = sniff_sqlite_format(data)
             src = SingleFileSource(filename, data)
-            if fmt == "npclogger_db":
+            if fmt == "packetdb":
+                rows = raw_packet_ingest.ingest_packetdb(con, capture_id, src, filename)
+            elif fmt == "npclogger_db":
                 e, h = ingest_npc_db(con, capture_id, src, zone_db + ".db")
                 rows = e + h
             elif fmt == "actionview_db":
@@ -933,7 +961,9 @@ def ingest_single_file(con, capture_id: int, filename: str, data: bytes) -> dict
             text = data.decode("utf-8", "replace")
             fmt = sniff_text_format(text)
             src = SingleFileSource(filename, data)
-            if fmt == "idview_simple":
+            if fmt == "packeteer":
+                rows = raw_packet_ingest.ingest_packeteer(con, capture_id, src, filename)
+            elif fmt == "idview_simple":
                 rows = ingest_idview_simple(con, capture_id, src, zone_db + ".log")
             elif fmt == "kitrack":
                 rows = ingest_kitrack(con, capture_id, src, zone_db + ".log")
@@ -2070,9 +2100,15 @@ def parse_packetlogger_records(text: str, opcode: str) -> list[dict]:
                 if tok != "--":
                     hex_bytes.append(tok)
         if hex_bytes:
+            header_end = text.find("\n", hstart)
+            if header_end < 0 or header_end > block_end:
+                header_end = block_end
+            header_line = text[hstart:header_end]
             out.append({
                 "ts": ts,
                 "raw_hex": "".join(hex_bytes),
+                "is_injected": "Injected" in header_line,
+                "is_blocked": "Blocked" in header_line,
                 "start_char": hstart,
                 "end_char": block_end,
                 "start_line": text.count("\n", 0, hstart) + 1,
@@ -2113,25 +2149,70 @@ def ingest_packetlogger(con, capture_id, src: Source, relnames: list[str]) -> in
             end_offset = (
                 len(text[:record["end_char"]].encode("utf-8")) if byte_offsets_exact else None
             )
+            lower_relname = relname.lower()
+            source_format = (
+                "packetviewer"
+                if lower_relname.startswith("packetviewer/") or "/packetviewer/" in lower_relname
+                else "packetlogger"
+            )
+            header = raw_packet_ingest.decode_packet_header(record["raw_hex"])
             all_packets.append((
                 record["ts"], direction, opcode, record["raw_hex"], relname, source_sha256,
                 record["start_line"], record["end_line"], start_offset, end_offset,
+                source_format, f"{relname}:{record['start_line']}",
+                header["packet_size"], header["sync_id"],
+                record["is_injected"], record["is_blocked"],
             ))
 
-    all_packets.sort(key=lambda p: p[0])
+    all_packets.sort(key=lambda p: (p[0], p[4], p[6]))
 
-    con.execute("DELETE FROM capture_raw_packets WHERE capture_id=?", (capture_id,))
+    # Replace only this raw-log family. Other canonical raw sources (PacketDB, Packeteer,
+    # NPCLogger-preserved bytes) remain independent evidence rows in the same capture. Delete
+    # locator-owned legacy rows too: databases created before source_format existed have NULL
+    # there, but their exact seq locators still prove ownership by these PacketViewer files.
+    old_locator_rows = con.execute(
+        """SELECT row_key FROM capture_row_locators
+           WHERE capture_id=? AND target_table='capture_raw_packets'
+             AND filename IN (%s)""" % ",".join("?" for _ in relnames),
+        [capture_id] + list(relnames),
+    ).fetchall()
+    for (row_key_raw,) in old_locator_rows:
+        try:
+            old_seq = json.loads(row_key_raw).get("seq")
+        except Exception:
+            old_seq = None
+        if old_seq is not None:
+            con.execute(
+                "DELETE FROM capture_raw_packets WHERE capture_id=? AND seq=?",
+                (capture_id, int(old_seq)),
+            )
     con.execute(
-        "DELETE FROM capture_row_locators WHERE capture_id=? AND target_table='capture_raw_packets'",
+        """DELETE FROM capture_raw_packets
+           WHERE capture_id=? AND source_format IN ('packetlogger','packetviewer')""",
         (capture_id,),
     )
-    for seq, (
+    con.execute(
+        """DELETE FROM capture_row_locators
+           WHERE capture_id=? AND target_table='capture_raw_packets'
+             AND filename IN (%s)""" % ",".join("?" for _ in relnames),
+        [capture_id] + list(relnames),
+    )
+    next_seq = con.execute(
+        "SELECT COALESCE(MAX(seq),-1)+1 FROM capture_raw_packets WHERE capture_id=?",
+        (capture_id,),
+    ).fetchone()[0]
+    for offset, (
         ts, direction, opcode, hexstr, relname, source_sha256,
         start_line, end_line, start_offset, end_offset,
+        source_format, source_native_id, packet_size, sync_id, is_injected, is_blocked,
     ) in enumerate(all_packets):
+        seq = int(next_seq) + offset
         con.execute("""INSERT OR REPLACE INTO capture_raw_packets
-            (capture_id, seq, ts, direction, opcode, raw_hex) VALUES (?,?,?,?,?,?)""",
-            (capture_id, seq, ts, direction, opcode, hexstr))
+            (capture_id,seq,ts,direction,opcode,raw_hex,zone_id,packet_size,sync_id,
+             is_injected,is_blocked,source_format,source_native_id)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (capture_id,seq,ts,direction,opcode,hexstr,None,packet_size,sync_id,
+             int(is_injected),int(is_blocked),source_format,source_native_id))
         capture_integrity.record_row_locator(
             con,
             capture_id,
@@ -2144,7 +2225,12 @@ def ingest_packetlogger(con, capture_id, src: Source, relnames: list[str]) -> in
             end_line=end_line,
             start_offset=start_offset,
             end_offset=end_offset,
-            details={"opcode": opcode, "direction": direction, "timestamp": ts},
+            details={
+                "opcode": opcode, "direction": direction, "timestamp": ts,
+                "source_format": source_format, "source_native_id": source_native_id,
+                "packet_size": packet_size, "sync_id": sync_id,
+                "is_injected": bool(is_injected), "is_blocked": bool(is_blocked),
+            },
         )
     return len(all_packets)
 
@@ -2306,7 +2392,7 @@ def ingest_npclogger_lua(con, capture_id, src: Source, relname: str, leg: int = 
     con.execute(
         """DELETE FROM capture_row_locators
            WHERE capture_id=? AND filename=?
-             AND target_table IN ('capture_npc_entries','capture_npc_path')""",
+             AND target_table IN ('capture_npc_entries','capture_npc_path','capture_raw_packets')""",
         (capture_id, relname),
     )
     n_entries = n_path = 0
@@ -2345,6 +2431,15 @@ def ingest_npclogger_lua(con, capture_id, src: Source, relname: str, leg: int = 
             end_offset=len(text[:char_pos].encode("utf-8")) if byte_offsets_exact else None,
             details={"source": "npclogger_lua", "leg": leg},
         )
+        if fields.get("raw_packet"):
+            raw_packet_ingest.promote_npclogger_raw_packet(
+                con, capture_id,
+                relname=relname, source_sha256=source_sha256,
+                line_number=step + 1, raw_hex=fields.get("raw_packet"),
+                start_offset=len(text[:start_char].encode("utf-8")) if byte_offsets_exact else None,
+                end_offset=len(text[:char_pos].encode("utf-8")) if byte_offsets_exact else None,
+                entity_id=entity_id,
+            )
         n_path += 1
 
         con.execute("""INSERT OR REPLACE INTO capture_npc_entries
@@ -2727,6 +2822,28 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         if result_sink is not None:
             result_sink.append({"filename": relname, "rows": 0, "error": None})
 
+    # Content-first raw-packet adapters for portable PacketDB SQLite and Ashita Packeteer text.
+    # These are source-independent formats, so folder names are deliberately not required.
+    all_source_names = sorted(src.list_files() if subroot is None
+                              else [n for n in src.list_files() if n.startswith(subroot + "/")])
+    for relname in all_source_names:
+        if relname in matched_names:
+            continue
+        fmt = _capture_source_format(src, relname)
+        if fmt not in {"packetdb", "packeteer"}:
+            continue
+        matched_names.add(relname)
+        try:
+            rows = (raw_packet_ingest.ingest_packetdb(con, capture_id, src, relname)
+                    if fmt == "packetdb"
+                    else raw_packet_ingest.ingest_packeteer(con, capture_id, src, relname))
+            counts["raw_packets"] += rows
+            if result_sink is not None:
+                result_sink.append({"filename": relname, "rows": rows, "error": None})
+        except Exception as ex:
+            if result_sink is not None:
+                result_sink.append({"filename": relname, "rows": 0, "error": str(ex)})
+
     # Content-first compatibility pass for auxiliary/past-and-present logger families. Core
     # mission/runtime parsers above retain priority; only otherwise-unmatched files are considered.
     all_source_names = sorted(src.list_files() if subroot is None
@@ -2900,6 +3017,7 @@ def _capture_source_format(src: "Source", relname: str) -> str | None:
 
 REBUILDABLE_CAPTURE_FORMATS = {
     "eventview", "idview_simple", "kitrack", "hptrack", "actionview_simple", "caplog", "packetlogger",
+    "packetdb", "packeteer",
     "npclogger_db", "actionview_db", "levelrange_db",
     "npclogger_lua", "pathlog_csv", "pc_pathlog_csv", "widescan", "attackdelay",
 } | AUX_STRUCTURED_FORMATS
@@ -3092,14 +3210,6 @@ def rebuild_capture_source(con, capture_id: int, filename: str) -> dict:
                     raise ValueError(f"packet source is missing: {packet_filename}")
                 if capture_integrity.sha256_bytes(src.read_bytes(packet_filename)) != packet_hash:
                     raise ValueError(f"packet source bytes changed since ingestion: {packet_filename}")
-            foreign = con.execute(
-                """SELECT 1 FROM capture_row_locators
-                   WHERE capture_id=? AND target_table='capture_raw_packets'
-                     AND filename NOT IN (%s) LIMIT 1""" % ",".join("?" for _ in packet_files),
-                [capture_id] + packet_files,
-            ).fetchone()
-            if foreign:
-                raise ValueError("capture_raw_packets also contains evidence from another source family")
             con.execute("SAVEPOINT capture_rebuild")
             try:
                 rows = ingest_packetlogger(con, capture_id, src, packet_files)
@@ -3134,7 +3244,11 @@ def rebuild_capture_source(con, capture_id: int, filename: str) -> dict:
         con.execute("SAVEPOINT capture_rebuild")
         try:
             deleted = _delete_exact_source_rows(con, capture_id, filename)
-            if fmt == "eventview":
+            if fmt == "packetdb":
+                result = raw_packet_ingest.ingest_packetdb(con, capture_id, src, filename)
+            elif fmt == "packeteer":
+                result = raw_packet_ingest.ingest_packeteer(con, capture_id, src, filename)
+            elif fmt == "eventview":
                 result = ingest_eventview(con, capture_id, src, filename)
             elif fmt == "idview_simple":
                 result = ingest_idview_simple(con, capture_id, src, filename)

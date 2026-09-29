@@ -88,9 +88,12 @@ def _rows(con: sqlite3.Connection, capture_id: int) -> dict[str,list[dict]]:
     con.row_factory=sqlite3.Row
     out={RAW:[],EVENTVIEW:[],IDVIEW:[],VIDEO:[]}
     if _table_exists(con,"capture_raw_packets"):
+        raw_cols={r[1] for r in con.execute("PRAGMA table_info(capture_raw_packets)")}
+        source_format_expr="source_format" if "source_format" in raw_cols else "NULL AS source_format"
+        source_native_expr="source_native_id" if "source_native_id" in raw_cols else "NULL AS source_native_id"
         for row in con.execute(
-            """SELECT seq,ts,direction,opcode,raw_hex FROM capture_raw_packets
-               WHERE capture_id=? ORDER BY seq""",(capture_id,)
+            f"""SELECT seq,ts,direction,opcode,raw_hex,{source_format_expr},{source_native_expr}
+                FROM capture_raw_packets WHERE capture_id=? ORDER BY seq""",(capture_id,)
         ):
             item=dict(row)
             item.update({
@@ -181,6 +184,37 @@ def _same_packet_dims(a,b):
         return False
     ad=a.get("direction_norm"); bd=b.get("direction_norm")
     return ad=="unknown" or bd=="unknown" or ad==bd
+
+
+def _raw_equivalence(con,capture_id,rows):
+    """Correlate exact raw packet observations across independently ingested source families."""
+    raw=rows[RAW]
+    groups={}
+    for item in raw:
+        packet=(item.get("raw_hex") or "").replace(" ","").upper()
+        source=item.get("source_format")
+        if not packet or not source:
+            continue
+        key=(item.get("opcode_norm"),item.get("direction_norm"),packet)
+        groups.setdefault(key,[]).append(item)
+    for (_opcode,_direction,_packet),items in groups.items():
+        items=sorted(items,key=lambda row:(str(row.get("source_format")),row["ref"]))
+        for i,a in enumerate(items):
+            for b in items[i+1:]:
+                if a.get("source_format")==b.get("source_format"):
+                    continue
+                _insert(
+                    con,capture_id,a,b,
+                    basis="opcode+direction+raw_bytes",
+                    status=STATUS_MATCHED,
+                    score=1.0,
+                    details={
+                        "source_format":a.get("source_format"),
+                        "target_format":b.get("source_format"),
+                        "source_native_id":a.get("source_native_id"),
+                        "target_native_id":b.get("source_native_id"),
+                    },
+                )
 
 
 def _raw_eventview(con,capture_id,rows,tolerance=1.0):
@@ -324,6 +358,7 @@ def correlate_capture(con: sqlite3.Connection, capture_id: int) -> dict:
     init_db(con)
     con.execute("DELETE FROM capture_packet_correlations WHERE capture_id=?",(int(capture_id),))
     rows=_rows(con,int(capture_id))
+    _raw_equivalence(con,int(capture_id),rows)
     _raw_eventview(con,int(capture_id),rows)
     _idview_eventview(con,int(capture_id),rows)
     _video_to_clock_candidates(
