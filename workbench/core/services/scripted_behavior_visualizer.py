@@ -12,7 +12,11 @@ import re
 from typing import Any
 
 from workbench.plugins.domain.scripted_behavior_lsb_extract import (
+    _api_calls,
     _close_count,
+    _context_condition_rule,
+    _direct_entity_reference_rule,
+    _named_state_accesses,
     _open_count,
     _structural_lua_lines,
     extract_lsb_scripted_behavior,
@@ -123,7 +127,78 @@ def _balanced_function_span(text: str, start_offset: int, *, preview_lines: int=
         "end_line":end_line,
         "line_count":max(0,end_line-start_line+1),
         "source_preview":"\n".join(preview),
+        "source_text":"\n".join(body_lines),
         "preview_truncated":len(body_lines)>preview_lines,
+    }
+
+
+def _analyze_shared_helper_body(
+    text: str,
+    *,
+    source_path: str,
+    start_line: int,
+    qualified_name: str,
+) -> dict:
+    """One-level conservative analysis of a uniquely resolved shared helper body."""
+    meta={
+        "source_path":source_path,
+        "source_lines":(start_line,start_line+max(0,len(text.splitlines())-1)),
+        "hook":f"shared-helper:{qualified_name}",
+    }
+    api_calls=[dict(row) for row in _api_calls(text,start_line=start_line)]
+    state_accesses=[dict(row) for row in _named_state_accesses(text,start_line=start_line)]
+
+    context_rule=_context_condition_rule(
+        rule_id=f"shared-helper:{qualified_name}:context",
+        subject=qualified_name,
+        trigger="SHARED_HELPER_CALL",
+        text=text,
+        start_line=start_line,
+        meta=meta,
+    )
+    context_conditions=[]
+    if context_rule is not None:
+        context_conditions=[
+            {
+                "subject":condition.subject,
+                "operator":condition.operator,
+                "value":condition.value,
+                "metadata":dict(condition.metadata),
+            }
+            for condition in context_rule.conditions
+        ]
+
+    entity_rule=_direct_entity_reference_rule(
+        rule_id=f"shared-helper:{qualified_name}:entity-refs",
+        subject=qualified_name,
+        trigger="SHARED_HELPER_CALL",
+        text=text,
+        start_line=start_line,
+        meta=meta,
+    )
+    entity_effects=[]
+    if entity_rule is not None:
+        entity_effects=[
+            {
+                "effect":effect.effect,
+                "target":effect.target,
+                "value":effect.value,
+                "metadata":dict(effect.metadata),
+            }
+            for effect in entity_rule.effects
+        ]
+
+    return {
+        "api_calls":api_calls,
+        "state_accesses":state_accesses,
+        "context_conditions":context_conditions,
+        "entity_effects":entity_effects,
+        "summary":{
+            "api_calls":len(api_calls),
+            "state_accesses":len(state_accesses),
+            "context_conditions":len(context_conditions),
+            "entity_effects":len(entity_effects),
+        },
     }
 
 
@@ -167,18 +242,32 @@ def _resolve_shared_helpers(root: Path, behavior) -> list[dict]:
                     "source_preview":span["source_preview"],
                     "preview_truncated":span["preview_truncated"],
                     "qualified_name":f"xi.{module}.{function}",
+                    "_source_text":span["source_text"],
                 })
         status=(
             "RESOLVED" if len(candidates)==1
             else "AMBIGUOUS" if len(candidates)>1
             else "UNRESOLVED"
         )
+        qualified_name=f"xi.{module}.{function}"
+        analysis=None
+        if status=="RESOLVED":
+            candidate=candidates[0]
+            analysis=_analyze_shared_helper_body(
+                candidate["_source_text"],
+                source_path=candidate["path"],
+                start_line=candidate["line"],
+                qualified_name=qualified_name,
+            )
+        for candidate in candidates:
+            candidate.pop("_source_text",None)
         rows.append({
             "module":module,
             "function":function,
-            "qualified_name":f"xi.{module}.{function}",
+            "qualified_name":qualified_name,
             "status":status,
             "candidates":candidates,
+            "analysis":analysis,
         })
     return rows
 
@@ -329,6 +418,7 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
                     hid,"shared_helper",qualified,
                     resolution_status=(resolution or {}).get("status","UNRESOLVED"),
                     candidates=(resolution or {}).get("candidates",[]),
+                    analysis=(resolution or {}).get("analysis"),
                     module=module,
                     function=function,
                 )
