@@ -94,6 +94,35 @@ def _filename_identity_candidate(relative: str) -> dict | None:
     }
 
 
+def _code_reference_line(line: str) -> str:
+    """Preserve code identifiers while masking quoted strings/comments."""
+    out=[]
+    quote=None
+    i=0
+    while i<len(line):
+        ch=line[i]
+        if quote is not None:
+            if ch=="\\" and i+1<len(line):
+                out.extend((" "," "))
+                i+=2
+                continue
+            if ch==quote:
+                quote=None
+            out.append(" ")
+            i+=1
+            continue
+        if ch in {"'","\""}:
+            quote=ch
+            out.append(" ")
+            i+=1
+            continue
+        if line.startswith("--",i):
+            break
+        out.append(ch)
+        i+=1
+    return "".join(out)
+
+
 def _upstream_reference_candidates(
     root: Path,
     primary: Path,
@@ -120,7 +149,7 @@ def _upstream_reference_candidates(
         if needle not in text:
             continue
         for line_no,line in enumerate(text.splitlines(),1):
-            if needle not in line:
+            if needle not in _code_reference_line(line):
                 continue
             rows.append({
                 "path":path.relative_to(root).as_posix(),
