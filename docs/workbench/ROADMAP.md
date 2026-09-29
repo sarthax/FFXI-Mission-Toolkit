@@ -742,3 +742,5 @@ Roadmap authority rule: `docs/workbench/ROADMAP.md` is the detailed rework backl
 - [x] Expand bounded literal numeric `for` loops that reference entity symbols (`ID.* + i` or literal symbol aliases `+/- i`) when the full iteration set is statically known and <=64; oversized/dynamic loops remain raw evidence. Direct-symbol matching now rejects dynamic suffixes rather than emitting false base targets.
 
 - [x] Expand bounded symbolic entity ranges where loop bounds are the same `ID.npc.*` / `ID.mob.*` base plus literal offsets (for example Nyzul lamp ranges), resolving each loop variable use into concrete `entity-symbol:*` targets with source/loop provenance. Oversized or mixed-base ranges remain unresolved.
+
+- [x] Resolve `xi.<module>.<function>` calls in Behavior Inspector to exact module-scoped LSB global Lua definition candidates. One candidate is marked RESOLVED, multiple candidates AMBIGUOUS, and none UNRESOLVED; no body inlining or arbitrary candidate selection is performed yet.

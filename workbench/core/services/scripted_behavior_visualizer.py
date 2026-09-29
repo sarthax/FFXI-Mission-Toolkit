@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections import Counter
 from pathlib import Path
+import re
 from typing import Any
 
 from workbench.plugins.domain.scripted_behavior_lsb_extract import (
@@ -93,9 +94,64 @@ def _effect_category(effect: str) -> str:
     return "other"
 
 
-def _graph_for_behavior(behavior) -> dict:
+def _resolve_shared_helpers(root: Path, behavior) -> list[dict]:
+    """Resolve xi.<module>.<function> calls to exact global Lua definition candidates."""
+    globals_root=Path(root)/"scripts"/"globals"
+    requested=sorted({
+        (
+            effect.metadata.get("module"),
+            effect.metadata.get("function"),
+        )
+        for rule in behavior.rules
+        for effect in rule.effects
+        if effect.effect=="CALL_SYSTEM_HELPER"
+        and effect.metadata.get("module")
+        and effect.metadata.get("function")
+    })
+    rows=[]
+    for module,function in requested:
+        candidates=[]
+        module_file=globals_root/f"{module}.lua"
+        module_dir=globals_root/module
+        files=[]
+        if module_file.is_file():
+            files.append(module_file)
+        if module_dir.is_dir():
+            files.extend(sorted(module_dir.rglob("*.lua")))
+        pattern=re.compile(
+            rf"(?:function\s+{re.escape('xi.'+module+'.'+function)}\s*\(|"
+            rf"{re.escape('xi.'+module+'.'+function)}\s*=\s*function\s*\()"
+        )
+        for path in files:
+            text=path.read_text(encoding="utf-8",errors="ignore")
+            for match in pattern.finditer(text):
+                line=text.count("\n",0,match.start())+1
+                candidates.append({
+                    "path":path.relative_to(root).as_posix(),
+                    "line":line,
+                    "qualified_name":f"xi.{module}.{function}",
+                })
+        status=(
+            "RESOLVED" if len(candidates)==1
+            else "AMBIGUOUS" if len(candidates)>1
+            else "UNRESOLVED"
+        )
+        rows.append({
+            "module":module,
+            "function":function,
+            "qualified_name":f"xi.{module}.{function}",
+            "status":status,
+            "candidates":candidates,
+        })
+    return rows
+
+
+def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None) -> dict:
     nodes={}
     edges=[]
+    helper_resolution_map={
+        row["qualified_name"]:row for row in (helper_resolutions or [])
+    }
 
     def node(node_id: str, kind: str, label: str, **meta):
         nodes.setdefault(node_id,{"id":node_id,"kind":kind,"label":label,"meta":meta})
@@ -223,6 +279,27 @@ def _graph_for_behavior(behavior) -> dict:
                     name=smeta.get("name"),
                 )
                 edges.append({"source":eid,"target":sid,"kind":"STATE_WRITE"})
+            elif effect.effect=="CALL_SYSTEM_HELPER":
+                module=effect.metadata.get("module")
+                function=effect.metadata.get("function")
+                qualified=(
+                    f"xi.{module}.{function}"
+                    if module and function else str(effect.value or target)
+                )
+                resolution=helper_resolution_map.get(qualified)
+                hid=f"shared-helper:{qualified}"
+                node(
+                    hid,"shared_helper",qualified,
+                    resolution_status=(resolution or {}).get("status","UNRESOLVED"),
+                    candidates=(resolution or {}).get("candidates",[]),
+                    module=module,
+                    function=function,
+                )
+                edges.append({"source":eid,"target":hid,"kind":"CALLS_SHARED_HELPER"})
+                if isinstance(target,str):
+                    tid=f"target:{target}"
+                    node(tid,"target",target)
+                    edges.append({"source":hid,"target":tid,"kind":"DEFINED_IN_SYSTEM"})
             elif isinstance(target,str) and target not in {"player","world_entity","global"}:
                 tid=f"target:{target}"
                 node(tid,"target",target)
@@ -316,6 +393,7 @@ def _graph_for_behavior(behavior) -> dict:
             "states":len(state_rows),
             "callbacks":len(callback_nodes),
             "transitions":len(transition_rows),
+            "shared_helpers":len(helper_resolutions or []),
             "effect_categories":dict(sorted(categories.items())),
             "unmodeled_hooks":list(behavior.metadata.get("unmodeled_hooks") or ()),
             "reachable_helpers":list(behavior.metadata.get("reachable_helpers") or ()),
@@ -356,7 +434,11 @@ def inspect_lsb_behavior(root: Path, relative: str) -> dict:
         zone=zone,
         source_path=rel,
     )
-    graph=_graph_for_behavior(behavior)
+    helper_resolutions=_resolve_shared_helpers(root,behavior)
+    graph=_graph_for_behavior(
+        behavior,
+        helper_resolutions=helper_resolutions,
+    )
 
     contexts=[]
     for row in _context_candidates(root,primary):
@@ -392,6 +474,7 @@ def inspect_lsb_behavior(root: Path, relative: str) -> dict:
         "source":{"path":rel,"zone":zone,"subject":behavior.subject},
         "behavior":behavior,
         "graph":graph,
+        "shared_helpers":helper_resolutions,
         "contexts":contexts,
         "notes":[
             "Primary graph edges come from the selected Lua source and bounded helper traversal.",
