@@ -27,6 +27,7 @@ def main():
         "EventView",
         "IDView",
         "CapLog",
+        "Windower Logger",
         "HPTrack",
         "KITrack",
         "LevelRangeTrack",
@@ -48,6 +49,7 @@ def main():
         assert name in template, name
 
     required_gaps = [
+        "Captain EventView v2 standalone logs",
         "Lobby / world-server packet streams",
         "PacketDB ZONES / PACKET_DEFINITION",
         "Unknown historical/community loggers",
@@ -58,6 +60,8 @@ def main():
     assert "Recognized but intentionally not duplicated" in template
     assert "Raw packet convergence" in template
     assert "Canonical chat convergence" in template
+    assert "Historical tool archaeology" in template
+    assert "CAPTURE_TOOL_ARCHAEOLOGY.md" in template
     assert "capture_chat_observations" in template
     assert "capturebar_overlay" in template
     assert "CAPTUREBAR_CONTEXT" in template
