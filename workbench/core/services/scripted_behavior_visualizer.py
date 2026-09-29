@@ -581,7 +581,7 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
     for rule in behavior.rules:
         hook=rule.metadata.get("hook")
         for condition in rule.conditions:
-            if condition.operator!="READS_STATE" or not isinstance(condition.subject,str):
+            if condition.operator not in {"READS_STATE","STATE_EQUALS"} or not isinstance(condition.subject,str):
                 continue
             meta=dict(condition.metadata)
             row=state_rows.setdefault(condition.subject,{
@@ -615,6 +615,36 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
                 "source":meta.get("source_line_text"),
                 "value":effect.value,
             })
+
+    state_links=[]
+    for state_id,row in state_rows.items():
+        read_hooks=sorted({
+            entry.get("hook") for entry in row["reads"]
+            if entry.get("hook")
+        })
+        write_hooks=sorted({
+            entry.get("hook") for entry in row["writes"]
+            if entry.get("hook")
+        })
+        cross_pairs=[
+            {"writer_hook":writer,"reader_hook":reader}
+            for writer in write_hooks
+            for reader in read_hooks
+            if writer!=reader
+        ]
+        if not cross_pairs:
+            continue
+        state_links.append({
+            "state_id":state_id,
+            "scope":row.get("scope"),
+            "name":row.get("name"),
+            "writer_hooks":write_hooks,
+            "reader_hooks":read_hooks,
+            "cross_hook_pairs":cross_pairs,
+            "relationship":"SHARED_STATE_ACROSS_HOOKS",
+            "ordering":"UNPROVEN",
+            "evidence_basis":"same canonical state identity is written in one hook and read in another",
+        })
 
     transition_rows=[]
     for rule in behavior.rules:
@@ -655,6 +685,7 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
         "nodes":list(nodes.values()),
         "edges":edges,
         "states":sorted(state_rows.values(),key=lambda row:(row["scope"] or "",row["name"])),
+        "state_links":sorted(state_links,key=lambda row:(row["scope"] or "",row["name"] or "",row["state_id"])),
         "transitions":transition_rows,
         "summary":{
             "hooks":len(behavior.hooks),
@@ -663,6 +694,7 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
             "conditions":sum(1 for n in nodes.values() if n["kind"]=="condition"),
             "targets":sum(1 for n in nodes.values() if n["kind"]=="target"),
             "states":len(state_rows),
+            "cross_hook_state_links":len(state_links),
             "callbacks":len(callback_nodes),
             "transitions":len(transition_rows),
             "shared_helpers":len(helper_resolutions or []),
