@@ -13,7 +13,7 @@
 <tbody>
 <tr><td><strong>Windower PacketLogger</strong></td><td>Raw incoming/outgoing packet bytes, timestamps, opcode, packet size, sync ID, injected/blocked flags, source identity.</td><td>Supported</td></tr>
 <tr><td><strong>z16 / legacy PacketViewer</strong></td><td>Per-opcode raw packet logs with exact source-block provenance.</td><td>Supported</td></tr>
-<tr><td><strong>MalRD PacketDB</strong></td><td>SQLite <code>PACKETS</code>: timestamp, direction, zone ID, opcode, packet size, sync ID, raw bytes, PacketDB row identity.</td><td>Supported</td></tr>
+<tr><td><strong>MalRD PacketDB</strong></td><td>SQLite <code>PACKETS</code> plus <code>CHATLOG</code>: packet bytes/metadata and canonical chat observations with timestamp, direction, zone ID, text, and native row identity.</td><td>Supported</td></tr>
 <tr><td><strong>Ashita Packeteer</strong></td><td>Text packet dumps: direction, raw bytes, opcode, packet size, sync ID, timestamp when present.</td><td>Supported</td></tr>
 <tr><td><strong>NPCLogger SQLite</strong></td><td>Entity state/history, positions, look data, flags, DoorId, ActIndex, subtype and related runtime fields.</td><td>Supported</td></tr>
 <tr><td><strong>Legacy NPCLogger Lua</strong></td><td>Entity snapshots, NPC path observations, and preserved <code>raw_packet</code> bytes promoted into canonical packet evidence.</td><td>Supported</td></tr>
@@ -42,7 +42,7 @@
 <h2>Raw packet convergence</h2>
 <p>Raw packet-producing tools feed the common <code>capture_raw_packets</code> evidence store while retaining their own <code>source_format</code>, native source identity, row/block provenance, and optional packet metadata. Equivalent packets may be correlated by <code>opcode + direction + exact raw bytes</code>; the original observations are not deleted or merged.</p>
 
-<h2>Recognized but intentionally not duplicated</h2>
+<h2>Canonical chat convergence</h2>\n<p>PacketDB <code>CHATLOG</code> and CapLog chat/system lines now also feed <code>capture_chat_observations</code>. The canonical row keeps timestamp, direction when the source provides it, zone ID/name context, text, source format, source-native identity, and exact row/line provenance. The older <code>capture_caplog_chat</code> table remains for compatibility.</p>\n\n<h2>Recognized but intentionally not duplicated</h2>
 <div class="table-wrap"><table>
 <thead><tr><th>File / family</th><th>Why it is not normally ingested as a second copy</th></tr></thead>
 <tbody>
