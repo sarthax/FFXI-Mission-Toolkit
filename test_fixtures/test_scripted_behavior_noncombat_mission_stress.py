@@ -25,6 +25,10 @@ entity.onEventFinish = function(player, csid, option, npc)
     if csid == 101 then
         npcUtil.giveKeyItem(player, xi.keyItem.TEST_SEAL)
         player:setCharVar('MissionStage', 1)
+        local result = option
+        if result == 4 then
+            player:setCharVar('ResultChoice', 4)
+        end
     elseif csid == 102 then
         player:delKeyItem(xi.keyItem.TEST_SEAL)
         player:setCharVar('MissionStage', 2)
@@ -39,6 +43,8 @@ entity.onEventFinish = function(player, csid, option, npc)
             player:setCharVar('OutcomeChoice', 2)
         elseif option == dynamicOption then
             player:setCharVar('DynamicOutcome', 1)
+        else
+            player:setCharVar('FallbackOutcome', 1)
         end
     elseif csid == 999 then
         player:setCharVar('UnrelatedStage', 1)
@@ -164,20 +170,31 @@ def main():
     ),effects_102
     assert not any(effect[0] in {"GRANT_KEY_ITEM","REMOVE_KEY_ITEM","OPEN_DOOR","REFERENCES_ENTITY"} for effect in effects_999),effects_999
     assert not any(effect[0] in {"GRANT_ITEM","ADD_GIL"} for effect in effects_102),effects_102
+    assert not any(
+        effect[0]=="WRITE_STATE"
+        and effect[1] in {
+            "state:PLAYER_CHAR:player:DynamicOutcome",
+            "state:PLAYER_CHAR:player:FallbackOutcome",
+        }
+        for effect in effects_102
+    ),effects_102
 
     outcome_rules=[rule for rule in rules if rule.kind=="event_outcome_effects"]
     outcomes={
         (rule.metadata["hook"],rule.metadata["event_id"],rule.metadata["outcome_selector"],rule.metadata["outcome_literal"]):rule
         for rule in outcome_rules
     }
+    assert ("onEventFinish",101,"result","4") in outcomes,outcomes
     assert ("onEventFinish",102,"option","1") in outcomes,outcomes
     assert ("onEventFinish",102,"option","2") in outcomes,outcomes
     assert ("onEventUpdate",101,"option","7") in outcomes,outcomes
     assert not any(key[3]=="dynamicOption" for key in outcomes),outcomes
 
+    result4={(effect.effect,effect.target,effect.value) for effect in outcomes[("onEventFinish",101,"result","4")].effects}
     option1={(effect.effect,effect.target,effect.value) for effect in outcomes[("onEventFinish",102,"option","1")].effects}
     option2={(effect.effect,effect.target,effect.value) for effect in outcomes[("onEventFinish",102,"option","2")].effects}
     update7={(effect.effect,effect.target,effect.value) for effect in outcomes[("onEventUpdate",101,"option","7")].effects}
+    assert ("WRITE_STATE","state:PLAYER_CHAR:player:ResultChoice","4") in result4,result4
     assert ("GRANT_ITEM","player","500") in option1,option1
     assert ("WRITE_STATE","state:PLAYER_CHAR:player:OutcomeChoice","1") in option1,option1
     assert ("ADD_GIL","player","100") in option2,option2
@@ -206,10 +223,13 @@ def main():
         assert link["relationship"]=="SHARED_EVENT_ID_ACROSS_HOOKS",link
         assert link["ordering"]=="UNPROVEN",link
         assert link["start_hooks"]==["onTrigger"],link
+        assert "onEventFinish" in link["guard_hooks"],link
         assert link["finish_guard_hooks"]==["onEventFinish"],link
-        assert {"start_hook":"onTrigger","finish_guard_hook":"onEventFinish"} in link["cross_hook_pairs"],link
+        assert {"start_hook":"onTrigger","guard_hook":"onEventFinish","handler_role":"FINISH","finish_guard_hook":"onEventFinish"} in link["cross_hook_pairs"],link
     assert graph["summary"]["events"]>=2,graph["summary"]
     assert graph["summary"]["cross_hook_event_links"]==2,graph["summary"]
+    assert links[101]["update_guard_hooks"]==["onEventUpdate"],links[101]
+    assert {"start_hook":"onTrigger","guard_hook":"onEventUpdate","handler_role":"UPDATE","update_guard_hook":"onEventUpdate"} in links[101]["cross_hook_pairs"],links[101]
 
     outcome_nodes=[
         node for node in graph["nodes"]
@@ -222,6 +242,7 @@ def main():
         (row["hook"],row["event_id"],row["selector"],row["literal"],row["effect"],row["target"],row["value"]):row
         for row in graph["event_outcome_effects"]
     }
+    assert ("onEventFinish",101,"result","4","WRITE_STATE","state:PLAYER_CHAR:player:ResultChoice","4") in outcome_effects,outcome_effects
     assert ("onEventFinish",102,"option","1","GRANT_ITEM","player","500") in outcome_effects,outcome_effects
     assert ("onEventFinish",102,"option","2","ADD_GIL","player","100") in outcome_effects,outcome_effects
     assert ("onEventUpdate",101,"option","7","UPDATE_EVENT","player",None) in outcome_effects,outcome_effects
