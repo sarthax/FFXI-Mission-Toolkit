@@ -2,6 +2,7 @@
 """Regression for conservative LSB scripted-entity Lua extraction."""
 from __future__ import annotations
 
+from workbench.plugins.domain.scripted_behavior import project_scripted_behavior
 from workbench.plugins.domain.scripted_behavior_lsb_extract import (
     extract_hook_blocks,
     extract_lsb_scripted_behavior,
@@ -146,6 +147,24 @@ def main():
     assert spawn.effects[0].metadata["delay_ms"]==10000,spawn
     inherit=next(rule for rule in jol.rules if rule.kind=="inherit_runtime_target")
     assert inherit.target=="entity-symbol:ABSOLUTE_VIRTUE",inherit
+
+    projection=project_scripted_behavior(
+        av,
+        source_snapshot_id="lsb:test",
+        evidence_source="LSB",
+        evidence_location="scripts/zones/AlTaieu/mobs/Absolute_Virtue.lua",
+    )
+    source_evidence=[
+        row for row in projection.evidence
+        if row.evidence_type=="SERVER_SOURCE" and row.location and ":L" in row.location
+    ]
+    assert source_evidence,projection.evidence
+    rule_edge=next(
+        edge for edge in projection.edges
+        if edge.relationship=="HAS_BEHAVIOR_RULE"
+    )
+    assert rule_edge.evidence_id in {row.evidence_id for row in source_evidence},rule_edge
+    assert ":L" in (rule_edge.source_location or ""),rule_edge
 
     print("LSB scripted behavior extraction regression: PASS")
 
