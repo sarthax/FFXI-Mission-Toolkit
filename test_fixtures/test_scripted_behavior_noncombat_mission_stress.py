@@ -110,6 +110,24 @@ def main():
     hooks=set(behavior.hooks)
     assert {"onTrigger","onEventFinish"} <= hooks,hooks
 
+    branch_rules=[
+        rule for rule in rules
+        if rule.kind=="event_branch_state"
+    ]
+    branch_by_event={rule.metadata["event_id"]:rule for rule in branch_rules}
+    assert set(branch_by_event)=={101,102,999},branch_by_event
+    assert {
+        effect.value for effect in branch_by_event[101].effects
+        if effect.effect=="WRITE_STATE"
+        and effect.target=="state:PLAYER_CHAR:player:MissionStage"
+    }=={"1"},branch_by_event[101]
+    assert {
+        effect.value for effect in branch_by_event[102].effects
+        if effect.effect=="WRITE_STATE"
+        and effect.target=="state:PLAYER_CHAR:player:MissionStage"
+    }=={"2"},branch_by_event[102]
+    assert all(rule.metadata["branch_form"]=="CSID_LITERAL_BRANCH" for rule in branch_rules),branch_rules
+
     graph=_graph_for_behavior(behavior)
     event_nodes={
         node["meta"].get("event_id")
