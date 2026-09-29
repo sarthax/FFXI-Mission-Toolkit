@@ -44,6 +44,8 @@ FORMAT_TARGETS = {
     "checkparam_csv": (("capture_structured_records","csv-row"),),
     "crafttrack_csv": (("capture_structured_records","csv-row"),),
     "conquesttrack_csv": (("capture_structured_records","csv-row"),),
+    "stattrack_csv": (("capture_structured_records","csv-row"),),
+    "puppet_stattrack_csv": (("capture_structured_records","csv-row"),),
     "pricelog_simple": (("capture_structured_records","block"),),
     "pricelog_lua": (("capture_structured_records","block"),),
 }
