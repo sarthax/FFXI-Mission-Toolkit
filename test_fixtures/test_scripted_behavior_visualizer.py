@@ -21,6 +21,7 @@ entity.onMobFight = function(mob, target)
 end
 
 entity.onMobDeath = function(mob, player, optParams)
+    mob:setLocalVar('phase', 0)
     if optParams.isKiller then
         GetNPCByID(ID.npc.TEST_DOOR):openDoor(30)
         SetServerVariable('[POP]Test', GetSystemTime() + 3600)
@@ -101,7 +102,7 @@ def main():
         phase_link=state_links["state:ENTITY_LOCAL:mob:phase"]
         assert phase_link["ordering"]=="UNPROVEN",phase_link
         assert {"writer_hook":"onMobFight","reader_hook":"onMobFight"} not in phase_link["cross_hook_pairs"],phase_link
-        assert {"writer_hook":"onMobFight","reader_hook":"onMobFight"} not in phase_link["cross_hook_pairs"],phase_link
+        assert {"writer_hook":"onMobDeath","reader_hook":"onMobFight"} in phase_link["cross_hook_pairs"],phase_link
         assert graph["summary"]["cross_hook_state_links"]>=1,graph["summary"]
 
         context_by_path={row["path"]:row for row in result["contexts"]}
