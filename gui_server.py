@@ -3578,6 +3578,7 @@ CAPTURE_QUERY_TABLES = {
     "capture_attack_delay": {"id_col": None, "name_col": "mob_name"},
     "capture_pc_path": {"id_col": None, "name_col": None},
     "capture_raw_packets": {"id_col": None, "name_col": "opcode"},
+    "capture_network_observations": {"id_col": None, "name_col": "service_hint"},
     "capture_caplog_chat": {"id_col": None, "name_col": "text"},
     "capture_chat_observations": {"id_col": None, "name_col": "text"},
     "capture_tags": {"id_col": None, "name_col": "tag"},
