@@ -713,6 +713,14 @@ def _switch_state_transition_rules(
     aliases=_state_aliases(text,start_line=start_line)
     rules=[]
     transition_index=0
+    context_parts=[trigger]
+    if meta.get("helper"):
+        context_parts.append(f"helper:{meta['helper']}")
+    if meta.get("callback_type"):
+        context_parts.append(
+            f"callback:{meta.get('callback_call_line')}:{meta.get('callback_type')}"
+        )
+    rule_prefix=":".join(str(part) for part in context_parts)
 
     for i,code in enumerate(structural):
         selector_match=_SWITCH_SELECTOR.search(code)
@@ -772,7 +780,7 @@ def _switch_state_transition_rules(
                             "source_line_text":write["source_line"],
                         }
                         rules.append(BehaviorRule(
-                            f"{trigger}:state-transition:{transition_index}",
+                            f"{rule_prefix}:state-transition:{transition_index}",
                             "state_transition",
                             subject,
                             trigger=trigger,
