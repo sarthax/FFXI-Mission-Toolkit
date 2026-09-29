@@ -90,6 +90,10 @@ _SERVER_ALIAS_ASSIGN=re.compile(
 )
 _SWITCH_SELECTOR=re.compile(r"\bswitch\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)\s*:\s*caseof")
 _SWITCH_CASE=re.compile(r"^\s*\[([^\]]+)\]\s*=\s*function\s*\(")
+_STATIC_ENTITY_REFERENCE=re.compile(
+    r"\b(GetNPCByID|GetMobByID|SpawnMob|DespawnMob)\(\s*"
+    r"(ID\.(npc|mob)\.([A-Z0-9_]+)(?:\s*([+-])\s*([^,\)]+))?)"
+)
 
 
 @dataclass(frozen=True)
@@ -442,6 +446,15 @@ def _callback_rules(
         )
         if state_rule is not None:
             rules.append(state_rule)
+        entity_reference_rule=_entity_reference_rule(
+            text=callback.body,
+            start_line=callback.start_line,
+            subject=subject,
+            trigger=callback.trigger,
+            meta=meta,
+        )
+        if entity_reference_rule is not None:
+            rules.append(entity_reference_rule)
         transition_rules=_switch_state_transition_rules(
             text=callback.body,
             start_line=callback.start_line,
@@ -582,6 +595,62 @@ def _strip_line_comment_preserve_strings(line: str) -> str:
         out.append(ch)
         i+=1
     return "".join(out)
+
+
+def _entity_target(kind: str, symbol: str, sign: str | None=None, offset: str | None=None) -> str:
+    if sign and offset:
+        normalized=re.sub(r"\s+","",offset)
+        return f"entity-expression:{kind}:{symbol}{sign}{normalized}"
+    return f"entity-symbol:{kind}:{symbol}"
+
+
+def _entity_reference_rule(
+    *,
+    text: str,
+    start_line: int,
+    subject: str,
+    trigger: str,
+    meta: dict,
+) -> BehaviorRule | None:
+    effects=[]
+    seen=set()
+    for offset,raw_line in enumerate(text.splitlines()):
+        code=_strip_line_comment_preserve_strings(raw_line)
+        line_no=start_line+offset
+        for match in _STATIC_ENTITY_REFERENCE.finditer(code):
+            operation,id_expression,kind,symbol,sign,delta=match.groups()
+            target=_entity_target(kind,symbol,sign,delta)
+            key=(operation,target,line_no)
+            if key in seen:
+                continue
+            seen.add(key)
+            effects.append(BehaviorEffect(
+                "REFERENCE_ENTITY",
+                target,
+                operation,
+                {
+                    "operation":operation,
+                    "entity_kind":kind,
+                    "symbol":symbol,
+                    "id_expression":id_expression.strip(),
+                    "offset_sign":sign,
+                    "offset_source":delta.strip() if delta else None,
+                    "source_line":line_no,
+                    "source_line_text":raw_line.strip(),
+                },
+            ))
+    if not effects:
+        return None
+    return BehaviorRule(
+        f"{trigger}:entity-references:{start_line}",
+        "entity_reference",
+        subject,
+        trigger=trigger,
+        effects=tuple(effects),
+        confidence="VERIFIED",
+        implementation_status="PRESENT",
+        metadata={**meta,"entity_reference_count":len(effects)},
+    )
 
 
 def _state_scope(receiver: str | None, method: str) -> str:
@@ -948,6 +1017,16 @@ def extract_lsb_scripted_behavior(
         if state_rule is not None:
             rules.append(state_rule)
             modeled_hooks.add(hook)
+        entity_reference_rule=_entity_reference_rule(
+            text=text,
+            start_line=block.start_line,
+            subject=subject,
+            trigger=hook.upper(),
+            meta=meta,
+        )
+        if entity_reference_rule is not None:
+            rules.append(entity_reference_rule)
+            modeled_hooks.add(hook)
         transition_rules=_switch_state_transition_rules(
             text=text,
             start_line=block.start_line,
@@ -1308,6 +1387,15 @@ def extract_lsb_scripted_behavior(
             )
             if helper_state_rule is not None:
                 rules.append(helper_state_rule)
+            helper_entity_reference_rule=_entity_reference_rule(
+                text=helper.body,
+                start_line=helper.start_line,
+                subject=subject,
+                trigger=hook.upper(),
+                meta=helper_meta,
+            )
+            if helper_entity_reference_rule is not None:
+                rules.append(helper_entity_reference_rule)
             helper_transition_rules=_switch_state_transition_rules(
                 text=helper.body,
                 start_line=helper.start_line,
@@ -1407,6 +1495,10 @@ def extract_lsb_scripted_behavior(
             "reachable_helpers":sorted(reached_helpers),
             "callback_count":sum(1 for rule in rules if rule.kind=="callback"),
             "state_transition_count":sum(1 for rule in rules if rule.kind=="state_transition"),
+            "entity_reference_count":sum(
+                1 for rule in rules for effect in rule.effects
+                if effect.effect=="REFERENCE_ENTITY"
+            ),
             "modeled_hook_count":len(modeled_hooks),
             "unmodeled_hooks":sorted(set(hooks)-modeled_hooks),
         },
