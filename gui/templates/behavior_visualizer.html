@@ -139,7 +139,14 @@
   <td><span class="chip">{{ helper.status }}</span></td>
   <td>
     {% for candidate in helper.candidates %}
-      <div><code>{{ candidate.path }}</code> <span class="muted">line {{ candidate.line }}</span></div>
+      <div>
+        <code>{{ candidate.path }}</code>
+        <span class="muted">lines {{ candidate.line }}–{{ candidate.end_line }} · {{ candidate.line_count }} lines</span>
+        <details style="margin:.35rem 0 .7rem;">
+          <summary>Source preview{% if candidate.preview_truncated %} (first 40 lines){% endif %}</summary>
+          <pre class="mono" style="white-space:pre-wrap;max-height:24rem;overflow:auto;">{{ candidate.source_preview }}</pre>
+        </details>
+      </div>
     {% else %}
       <span class="muted">No exact definition candidate found in module-scoped globals.</span>
     {% endfor %}
