@@ -719,6 +719,44 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
             "evidence_basis":"same literal CSID is started in one hook and guarded in another",
         })
 
+    event_state_effects=[]
+    event_state_links=[]
+    for rule in behavior.rules:
+        if rule.kind!="event_branch_state":
+            continue
+        event_id=rule.metadata.get("event_id")
+        branch_hook=rule.metadata.get("hook")
+        for effect in rule.effects:
+            if effect.effect!="WRITE_STATE" or not isinstance(effect.target,str):
+                continue
+            state_id=effect.target
+            exact={
+                "event_id":event_id,
+                "state_id":state_id,
+                "value":effect.value,
+                "hook":branch_hook,
+                "source_path":rule.metadata.get("source_path"),
+                "source_lines":rule.metadata.get("source_lines"),
+                "relationship":"EVENT_BRANCH_WRITES_STATE",
+                "ordering":"SOURCE_LOCAL",
+                "evidence_basis":"state write occurs inside the literal CSID branch",
+            }
+            event_state_effects.append(exact)
+            readers=[
+                row for row in state_rows.get(state_id,{}).get("reads",[])
+                if row.get("hook") and row.get("hook")!=branch_hook
+            ]
+            if not readers:
+                continue
+            event_state_links.append({
+                **exact,
+                "reader_hooks":sorted({row["hook"] for row in readers}),
+                "read_evidence":readers,
+                "relationship":"EVENT_BRANCH_STATE_SHARED_ACROSS_HOOKS",
+                "ordering":"UNPROVEN",
+                "evidence_basis":"literal CSID branch writes canonical state that another hook reads",
+            })
+
     transition_rows=[]
     for rule in behavior.rules:
         if rule.kind!="state_transition":
@@ -761,6 +799,8 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
         "state_links":sorted(state_links,key=lambda row:(row["scope"] or "",row["name"] or "",row["state_id"])),
         "events":sorted(event_rows.values(),key=lambda row:row["event_id"]),
         "event_links":sorted(event_links,key=lambda row:row["event_id"]),
+        "event_state_effects":sorted(event_state_effects,key=lambda row:(row["event_id"],row["state_id"],str(row["value"]))),
+        "event_state_links":sorted(event_state_links,key=lambda row:(row["event_id"],row["state_id"],str(row["value"]))),
         "transitions":transition_rows,
         "summary":{
             "hooks":len(behavior.hooks),
@@ -772,6 +812,8 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
             "cross_hook_state_links":len(state_links),
             "events":len(event_rows),
             "cross_hook_event_links":len(event_links),
+            "event_state_effects":len(event_state_effects),
+            "cross_hook_event_state_links":len(event_state_links),
             "callbacks":len(callback_nodes),
             "transitions":len(transition_rows),
             "shared_helpers":len(helper_resolutions or []),
