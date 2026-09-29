@@ -315,7 +315,7 @@ def _api_calls(text: str, *, start_line: int) -> tuple[dict,...]:
                 "receiver":parts[0] if len(parts)==2 else None,
                 "function":parts[-1],
                 "qualified_name":qualified,
-                "arguments_source":raw_line[match.end():].strip(),
+                "source_line":raw_line.strip(),
                 "line":line_no,
             })
         for match in _GLOBAL_API_CALL.finditer(code):
@@ -329,7 +329,7 @@ def _api_calls(text: str, *, start_line: int) -> tuple[dict,...]:
                 "receiver":None,
                 "function":name,
                 "qualified_name":name,
-                "arguments_source":raw_line[match.end():].strip(),
+                "source_line":raw_line.strip(),
                 "line":line_no,
             })
     calls.sort(key=lambda row:(row["line"],row["qualified_name"],row["style"]))
