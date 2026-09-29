@@ -104,6 +104,14 @@ _ALIAS_IF_LITERAL_EQUALS=re.compile(
     r"^\s*if\s+([A-Za-z_][A-Za-z0-9_]*)\s*==\s*"
     r"(-?\d+|true|false|['\"][^'\"]+['\"])\s+then\b"
 )
+_SERVER_DIRECT_IF_LITERAL_EQUALS=re.compile(
+    r"^\s*if\s+GetServerVariable\(\s*['\"]([^'\"]+)['\"]\s*\)\s*==\s*"
+    r"(-?\d+|true|false|['\"][^'\"]+['\"])\s+then\b"
+)
+_INSTANCE_DIRECT_IF_LITERAL_EQUALS=re.compile(
+    r"^\s*if\s+(instance):(getStage|getProgress)\(\s*\)\s*==\s*"
+    r"(-?\d+|true|false|['\"][^'\"]+['\"])\s+then\b"
+)
 _TIME_ALIAS_ASSIGN=re.compile(
     r"\blocal\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(VanadielHour|VanadielDay|VanadielDayOfTheWeek)\(\)"
 )
@@ -967,10 +975,43 @@ def _literal_if_transition_rules(
     for i,raw_line in enumerate(raw):
         code=_strip_line_comment_preserve_strings(raw_line)
         match=_ALIAS_IF_LITERAL_EQUALS.match(code)
-        if not match:
-            continue
-        alias,case_value=match.groups()
-        state=aliases.get(alias)
+        state=None
+        selector_alias=None
+        selector_expression=None
+        case_value=None
+        if match:
+            selector_alias,case_value=match.groups()
+            state=aliases.get(selector_alias)
+            selector_expression=selector_alias
+        else:
+            server_match=_SERVER_DIRECT_IF_LITERAL_EQUALS.match(code)
+            if server_match:
+                name,case_value=server_match.groups()
+                state={
+                    "scope":"SERVER_GLOBAL",
+                    "receiver":None,
+                    "method":"GetServerVariable",
+                    "name":name,
+                    "state_id":_state_id("SERVER_GLOBAL",name),
+                    "source_line":start_line+i,
+                    "source_line_text":raw_line.strip(),
+                }
+                selector_expression=f"GetServerVariable({name!r})"
+            else:
+                instance_match=_INSTANCE_DIRECT_IF_LITERAL_EQUALS.match(code)
+                if instance_match:
+                    receiver,method,case_value=instance_match.groups()
+                    name="stage" if method=="getStage" else "progress"
+                    state={
+                        "scope":"INSTANCE_LIFECYCLE",
+                        "receiver":receiver,
+                        "method":method,
+                        "name":name,
+                        "state_id":_state_id("INSTANCE_LIFECYCLE",name,receiver),
+                        "source_line":start_line+i,
+                        "source_line_text":raw_line.strip(),
+                    }
+                    selector_expression=f"{receiver}:{method}()"
         if state is None or state.get("scope") not in {"SERVER_GLOBAL","INSTANCE_LIFECYCLE"}:
             continue
 
@@ -1002,7 +1043,8 @@ def _literal_if_transition_rules(
                 "scope":state["scope"],
                 "name":state["name"],
                 "receiver":state["receiver"],
-                "selector_alias":alias,
+                "selector_alias":selector_alias,
+                "selector_expression":selector_expression,
                 "if_literal":case_value,
                 "source_line":write["line"],
                 "source_line_text":write["source_line"],
@@ -1031,7 +1073,8 @@ def _literal_if_transition_rules(
                     "state_id":state["state_id"],
                     "state_scope":state["scope"],
                     "state_name":state["name"],
-                    "selector_alias":alias,
+                    "selector_alias":selector_alias,
+                    "selector_expression":selector_expression,
                     "if_literal":case_value,
                     "transition_form":(
                         "SERVER_GLOBAL_LITERAL_IF"
