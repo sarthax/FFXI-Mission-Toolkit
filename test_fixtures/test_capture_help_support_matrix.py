@@ -47,7 +47,6 @@ def main():
         assert name in template, name
 
     required_gaps = [
-        "Whole-session multi-zone EventView",
         "Capturebar",
         "PCAP / PCAPNG",
         "Lobby / world-server packet streams",
@@ -61,6 +60,8 @@ def main():
     assert "Raw packet convergence" in template
     assert "Canonical chat convergence" in template
     assert "capture_chat_observations" in template
+    assert "__UNKNOWN__" in template
+    assert "whole-session" in template.lower()
     assert "source_format" in template
     assert "opcode + direction + exact raw bytes" in template
 
