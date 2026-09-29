@@ -113,7 +113,8 @@
   <select name="profile">
     <option value="plain">plain (no timestamps)</option>
     <option value="timestamped">timestamped chat</option>
-    <option value="packetlogger">packetlogger / overlay</option>
+    <option value="packetlogger">packetlogger / EView overlay</option>
+    <option value="capturebar">Capturebar context HUD</option>
   </select>
   <label class="muted">preprocess</label>
   <select name="preprocess">
@@ -128,7 +129,7 @@
 <p class="muted">Capture profile controls how the "match" step parses each OCR'd line -- <b>plain</b>
   for chat with timestamps off, <b>timestamped</b> tries to split a leading clock time and channel
   prefix (Say/Party/Linkshell/Tell/...) off the text, <b>packetlogger</b> is for on-screen
-  NPCLogger/packet-capture overlays (fast-moving, no chat channels -- see note below). Pick the one
+  packet/EView overlays, and <b>capturebar</b> parses Wiggo32 Capturebar's default zone/target/X-Z-Y/rotation/job/moon HUD. Pick the one
   that matches what this section will actually show. Capture profile controls parsing; preprocessing controls the image transformation Tesseract receives. Raw cropped frames are never modified.</p>
 <p class="muted"><b>Preprocessing presets:</b>
   {% for pp in preprocess_profiles %}<code>{{ pp.id }}</code> — {{ pp.description }}{% if not loop.last %}; {% endif %}{% endfor %}
