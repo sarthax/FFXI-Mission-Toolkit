@@ -32,6 +32,7 @@ Current sequence:
 - [x] Add a Behavior Inspector visualizer that scans a selected LSB Lua source into a causal condition/state → hook/rule → effect/API → target graph, with exact source provenance and separately labelled same-zone Zone.lua/globals.lua/instance context that is not promoted to dependency truth.
 - [x] Add structured named-state extraction and visualization for entity/player/instance/server variables, preserving exact read/write source lines and unevaluated write expressions so phase/progression/runtime state can be audited without executing Lua.
 - [x] Extract anonymous timer/queue/listener callbacks as first-class behavior branches, preserving delay/event trigger identity, callback source spans, and nested state/API observations so delayed/event-driven behavior is visually distinct from synchronous hook logic.
+- [x] Extract verified literal state transitions from direct named-state aliases used in `switch(...): caseof` phase machines, and render `from → to` transitions with hook/source provenance in Behavior Inspector.
 - [ ] Emit scripted combat behavior/dependencies into the canonical graph.
 - [ ] Unify acquisition/obtainability across shops, drops, rewards, HELM, gardening, exchange, appraisal, synthesis, and synergy.
 - [ ] Complete mission/quest dynamic helper, DefaultActions/fallback, client dialog/event-resource, trade/timer/spawn/death/battlefield closure.
