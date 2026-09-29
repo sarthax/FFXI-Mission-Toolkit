@@ -102,6 +102,7 @@ def _pcapng_frames(data: bytes):
                 endian = ">"
             else:
                 raise ValueError("invalid PCAPNG byte-order magic")
+            interfaces = {}
         if endian is None:
             raise ValueError("PCAPNG block encountered before section header")
         block_type, block_len = struct.unpack_from(endian + "II", data, pos)
@@ -362,13 +363,20 @@ def ingest_pcap(con: sqlite3.Connection, capture_id: int, src, relname: str) -> 
         (capture_id, relname),
     )
     old_raw = con.execute(
-        """SELECT seq FROM capture_raw_packets
-           WHERE capture_id=? AND source_format='pcap_plaintext_chunk'
-             AND source_native_id LIKE ?""",
-        (capture_id, f"{relname}:frame:%"),
+        """SELECT row_key FROM capture_row_locators
+           WHERE capture_id=? AND filename=? AND target_table='capture_raw_packets'""",
+        (capture_id, relname),
     ).fetchall()
-    for (seq,) in old_raw:
-        con.execute("DELETE FROM capture_raw_packets WHERE capture_id=? AND seq=?", (capture_id, seq))
+    for (row_key_raw,) in old_raw:
+        try:
+            seq = json.loads(row_key_raw).get("seq")
+        except Exception:
+            seq = None
+        if seq is not None:
+            con.execute(
+                "DELETE FROM capture_raw_packets WHERE capture_id=? AND seq=?",
+                (capture_id, int(seq)),
+            )
     con.execute(
         """DELETE FROM capture_row_locators
            WHERE capture_id=? AND filename=?
