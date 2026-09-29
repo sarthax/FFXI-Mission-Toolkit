@@ -131,12 +131,22 @@
 <h2>Shared Helper Definitions</h2>
 <p class="muted">Exact <code>xi.&lt;module&gt;.&lt;function&gt;</code> definitions found under the LSB globals tree. Multiple candidates remain ambiguous rather than being guessed.</p>
 <div class="table-wrap"><table>
-<thead><tr><th>Helper</th><th>Status</th><th>Definition candidates</th></tr></thead>
+<thead><tr><th>Helper</th><th>Status</th><th>One-level analysis</th><th>Definition candidates</th></tr></thead>
 <tbody>
 {% for helper in result.shared_helpers %}
 <tr>
   <td><code>{{ helper.qualified_name }}</code></td>
   <td><span class="chip">{{ helper.status }}</span></td>
+  <td>
+    {% if helper.analysis %}
+      API {{ helper.analysis.summary.api_calls }} ·
+      state {{ helper.analysis.summary.state_accesses }} ·
+      context {{ helper.analysis.summary.context_conditions }} ·
+      entities {{ helper.analysis.summary.entity_effects }}
+    {% else %}
+      <span class="muted">Not expanded</span>
+    {% endif %}
+  </td>
   <td>
     {% for candidate in helper.candidates %}
       <div>

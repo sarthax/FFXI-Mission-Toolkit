@@ -26,6 +26,9 @@ xi.salvage.onDoorOpen = function(npc, arg, option)
         for i = 1, 2 do
             npc:setLocalVar('doorStep', i)
         end
+        if npc:getXPos() > 10 then
+            GetNPCByID(ID.npc.TEST_DOOR):openDoor(30)
+        end
     end
     return true
 end
@@ -77,9 +80,29 @@ def main():
         assert "return true" in candidate["source_preview"],candidate
         assert candidate["source_preview"].strip().endswith("end"),candidate
         assert candidate["preview_truncated"] is False,candidate
+        analysis=salvage_row["analysis"]
+        assert analysis is not None,salvage_row
+        assert analysis["summary"]["api_calls"]>=3,analysis
+        assert analysis["summary"]["state_accesses"]>=1,analysis
+        assert analysis["summary"]["context_conditions"]>=1,analysis
+        assert analysis["summary"]["entity_effects"]>=1,analysis
+        assert any(
+            row["state_id"]=="state:ENTITY_LOCAL:npc:doorStep"
+            and row["access"]=="WRITE"
+            for row in analysis["state_accesses"]
+        ),analysis
+        assert any(
+            row["operator"]=="POSITION_COMPARE"
+            for row in analysis["context_conditions"]
+        ),analysis
+        assert any(
+            row["target"]=="entity-symbol:npc:TEST_DOOR"
+            for row in analysis["entity_effects"]
+        ),analysis
 
         instance_row=helpers["xi.instance.sharedCallback"]
         assert instance_row["status"]=="AMBIGUOUS",instance_row
+        assert instance_row["analysis"] is None,instance_row
         assert {
             row["path"] for row in instance_row["candidates"]
         }=={
@@ -89,6 +112,7 @@ def main():
 
         unknown=helpers["xi.unknown.missingThing"]
         assert unknown["status"]=="UNRESOLVED",unknown
+        assert unknown["analysis"] is None,unknown
         assert not unknown["candidates"],unknown
 
         graph=result["graph"]
