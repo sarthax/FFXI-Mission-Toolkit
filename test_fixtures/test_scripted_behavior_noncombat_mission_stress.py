@@ -42,6 +42,14 @@ entity.onEventFinish = function(player, csid, option, npc)
             if player:getCharVar('OutcomeGate') == 3 then
                 npcUtil.giveItem(player, 600)
                 player:setCharVar('GuardedChoice', 9)
+            elseif player:getCharVar('OutcomeGate') == 4 then
+                npcUtil.giveItem(player, 601)
+                player:setCharVar('GuardedChoiceAlt', 10)
+            end
+
+            if dynamicPredicate(player) then
+                npcUtil.giveItem(player, 700)
+                player:setCharVar('DynamicNestedOutcome', 1)
             end
         elseif option == 2 then
             player:addGil(100)
@@ -204,7 +212,11 @@ def main():
     assert ("GRANT_ITEM","player","500") in option1,option1
     assert ("WRITE_STATE","state:PLAYER_CHAR:player:OutcomeChoice","1") in option1,option1
     assert ("GRANT_ITEM","player","600") not in option1,option1
+    assert ("GRANT_ITEM","player","601") not in option1,option1
+    assert ("GRANT_ITEM","player","700") not in option1,option1
     assert ("WRITE_STATE","state:PLAYER_CHAR:player:GuardedChoice","9") not in option1,option1
+    assert ("WRITE_STATE","state:PLAYER_CHAR:player:GuardedChoiceAlt","10") not in option1,option1
+    assert ("WRITE_STATE","state:PLAYER_CHAR:player:DynamicNestedOutcome","1") not in option1,option1
     assert ("ADD_GIL","player","100") in option2,option2
     assert ("OPEN_DOOR","world_entity","15") in option2,option2
     assert ("WRITE_STATE","state:PLAYER_CHAR:player:OutcomeChoice","2") in option2,option2
@@ -263,6 +275,23 @@ def main():
     assert ("GRANT_ITEM","player","600") in guarded_effects,guarded_effects
     assert ("WRITE_STATE","state:PLAYER_CHAR:player:GuardedChoice","9") in guarded_effects,guarded_effects
 
+    guarded_alt=next(
+        rule for rule in guarded_rules
+        if rule.metadata.get("event_id")==102
+        and rule.metadata.get("outcome_selector")=="option"
+        and rule.metadata.get("outcome_literal")=="1"
+        and rule.metadata.get("guard_state_id")=="state:PLAYER_CHAR:player:OutcomeGate"
+        and rule.metadata.get("guard_literal")=="4"
+    )
+    guarded_alt_effects={(effect.effect,effect.target,effect.value) for effect in guarded_alt.effects}
+    assert ("GRANT_ITEM","player","601") in guarded_alt_effects,guarded_alt_effects
+    assert ("WRITE_STATE","state:PLAYER_CHAR:player:GuardedChoiceAlt","10") in guarded_alt_effects,guarded_alt_effects
+    assert not any(
+        effect.effect=="GRANT_ITEM" and effect.value=="700"
+        for rule in guarded_rules
+        for effect in rule.effects
+    ),guarded_rules
+
     outcome_effects={
         (row["hook"],row["event_id"],row["selector"],row["literal"],row["effect"],row["target"],row["value"]):row
         for row in graph["event_outcome_effects"]
@@ -278,6 +307,9 @@ def main():
     }
     assert (102,"option","1","state:PLAYER_CHAR:player:OutcomeGate","3","GRANT_ITEM","player","600") in guarded_projection,guarded_projection
     assert (102,"option","1","state:PLAYER_CHAR:player:OutcomeGate","3","WRITE_STATE","state:PLAYER_CHAR:player:GuardedChoice","9") in guarded_projection,guarded_projection
+    assert (102,"option","1","state:PLAYER_CHAR:player:OutcomeGate","4","GRANT_ITEM","player","601") in guarded_projection,guarded_projection
+    assert (102,"option","1","state:PLAYER_CHAR:player:OutcomeGate","4","WRITE_STATE","state:PLAYER_CHAR:player:GuardedChoiceAlt","10") in guarded_projection,guarded_projection
+    assert not any(row["value"]=="700" for row in graph["event_outcome_guarded_effects"]),graph["event_outcome_guarded_effects"]
     guarded_links=graph["event_outcome_guarded_state_links"]
     assert any(
         row["event_id"]==102
@@ -287,7 +319,7 @@ def main():
         and row["ordering"]=="UNPROVEN"
         for row in guarded_links
     ),guarded_links
-    assert graph["summary"]["event_outcome_guarded_effects"]>=2,graph["summary"]
+    assert graph["summary"]["event_outcome_guarded_effects"]>=4,graph["summary"]
     assert graph["summary"]["cross_hook_event_outcome_guarded_state_links"]>=1,graph["summary"]
 
     branch_effects={(row["event_id"],row["effect"],row["target"],row["value"]):row for row in graph["event_branch_effects"]}
