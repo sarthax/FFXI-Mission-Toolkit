@@ -50,7 +50,7 @@ def main():
 
     required_gaps = [
         "Captain EventView v2 standalone logs",
-        "Lobby / world-server packet streams",
+        "Lobby + search/cache TCP decoding",
         "PacketDB ZONES / PACKET_DEFINITION",
         "Unknown historical/community loggers",
     ]
@@ -66,6 +66,10 @@ def main():
     assert "capturebar_overlay" in template
     assert "CAPTUREBAR_CONTEXT" in template
     assert "PCAP/PCAPNG limits" in template
+    assert "Network planes" in template
+    assert "LOBBY_WORLD_STREAM_RESEARCH.md" in template
+    assert "search/cache" in template
+    assert "storage/account subflows" in template
     assert "direction <code>unknown</code>" in template
     assert "Blowfish" in template and "zlib" in template
     assert "X/Z/Y" in template
