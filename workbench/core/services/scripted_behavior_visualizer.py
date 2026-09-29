@@ -74,6 +74,8 @@ def _subject_for(path: Path, relative: str) -> str:
 def _effect_category(effect: str) -> str:
     if effect=="API_CALL":
         return "api"
+    if effect=="WRITE_STATE":
+        return "state"
     if "KEY_ITEM" in effect or effect in {"GRANT_ITEM","ADD_GIL","REMOVE_GIL","SET_CHAR_VAR","COMPLETE_TRADE"}:
         return "progression"
     if effect in {"OPEN_DOOR","SET_ANIMATION","SET_STATUS","SET_UNTARGETABLE","SET_POSITION"}:
@@ -140,6 +142,17 @@ def _graph_for_behavior(behavior) -> dict:
                 hook=rule.metadata.get("hook"),
             )
             edges.append({"source":cid,"target":rid,"kind":"GUARDS"})
+            if condition.operator=="READS_STATE" and isinstance(condition.subject,str) and condition.subject.startswith("state:"):
+                smeta=dict(condition.metadata)
+                sid=f"state-node:{condition.subject}"
+                node(
+                    sid,"state",smeta.get("name") or condition.subject,
+                    state_id=condition.subject,
+                    scope=smeta.get("scope"),
+                    receiver=smeta.get("receiver"),
+                    name=smeta.get("name"),
+                )
+                edges.append({"source":sid,"target":cid,"kind":"STATE_READ"})
 
         for index,effect in enumerate(rule.effects):
             eid=f"{rid}:effect:{index}"
@@ -162,10 +175,60 @@ def _graph_for_behavior(behavior) -> dict:
             )
             edges.append({"source":rid,"target":eid,"kind":"EMITS"})
             target=effect.target
-            if isinstance(target,str) and target not in {"player","world_entity","global"}:
+            if effect.effect=="WRITE_STATE" and isinstance(target,str) and target.startswith("state:"):
+                smeta=dict(effect.metadata)
+                sid=f"state-node:{target}"
+                node(
+                    sid,"state",smeta.get("name") or target,
+                    state_id=target,
+                    scope=smeta.get("scope"),
+                    receiver=smeta.get("receiver"),
+                    name=smeta.get("name"),
+                )
+                edges.append({"source":eid,"target":sid,"kind":"STATE_WRITE"})
+            elif isinstance(target,str) and target not in {"player","world_entity","global"}:
                 tid=f"target:{target}"
                 node(tid,"target",target)
                 edges.append({"source":eid,"target":tid,"kind":"AFFECTS"})
+
+    state_rows={}
+    for rule in behavior.rules:
+        hook=rule.metadata.get("hook")
+        for condition in rule.conditions:
+            if condition.operator!="READS_STATE" or not isinstance(condition.subject,str):
+                continue
+            meta=dict(condition.metadata)
+            row=state_rows.setdefault(condition.subject,{
+                "state_id":condition.subject,
+                "scope":meta.get("scope"),
+                "receiver":meta.get("receiver"),
+                "name":meta.get("name") or condition.subject,
+                "reads":[],
+                "writes":[],
+            })
+            row["reads"].append({
+                "hook":hook,
+                "line":meta.get("source_line"),
+                "source":meta.get("source_line_text"),
+            })
+        for effect in rule.effects:
+            if effect.effect!="WRITE_STATE" or not isinstance(effect.target,str):
+                continue
+            meta=dict(effect.metadata)
+            row=state_rows.setdefault(effect.target,{
+                "state_id":effect.target,
+                "scope":meta.get("scope"),
+                "receiver":meta.get("receiver"),
+                "name":meta.get("name") or effect.target,
+                "reads":[],
+                "writes":[],
+            })
+            row["writes"].append({
+                "hook":hook,
+                "line":meta.get("source_line"),
+                "source":meta.get("source_line_text"),
+                "value":effect.value,
+            })
 
     categories=Counter(
         n["meta"].get("category")
@@ -176,12 +239,14 @@ def _graph_for_behavior(behavior) -> dict:
         "root":root,
         "nodes":list(nodes.values()),
         "edges":edges,
+        "states":sorted(state_rows.values(),key=lambda row:(row["scope"] or "",row["name"])),
         "summary":{
             "hooks":len(behavior.hooks),
             "rules":len(behavior.rules),
             "effects":sum(1 for n in nodes.values() if n["kind"]=="effect"),
             "conditions":sum(1 for n in nodes.values() if n["kind"]=="condition"),
             "targets":sum(1 for n in nodes.values() if n["kind"]=="target"),
+            "states":len(state_rows),
             "effect_categories":dict(sorted(categories.items())),
             "unmodeled_hooks":list(behavior.metadata.get("unmodeled_hooks") or ()),
             "reachable_helpers":list(behavior.metadata.get("reachable_helpers") or ()),

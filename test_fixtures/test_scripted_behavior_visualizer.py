@@ -13,6 +13,13 @@ from workbench.core.services.scripted_behavior_visualizer import (
 
 MOB = r'''
 local entity = {}
+entity.onMobFight = function(mob, target)
+    local phase = mob:getLocalVar('phase')
+    if phase == 1 then
+        mob:setLocalVar('phase', 2)
+    end
+end
+
 entity.onMobDeath = function(mob, player, optParams)
     if optParams.isKiller then
         GetNPCByID(ID.npc.TEST_DOOR):openDoor(30)
@@ -59,7 +66,8 @@ def main():
         result=inspect_lsb_behavior(root,"scripts/zones/Test_Zone/mobs/Test_Mob.lua")
         assert result["source"]["zone"]=="Test_Zone",result["source"]
         graph=result["graph"]
-        assert graph["summary"]["hooks"]==1,graph["summary"]
+        assert graph["summary"]["hooks"]==2,graph["summary"]
+        assert graph["summary"]["states"]>=2,graph["summary"]
         labels={n["label"] for n in graph["nodes"]}
         assert "onMobDeath" in labels,labels
         api_nodes=[
@@ -76,6 +84,19 @@ def main():
             n["kind"]=="effect" and n["meta"].get("effect")=="OPEN_DOOR"
             for n in graph["nodes"]
         ),graph["nodes"]
+
+        state_by_id={row["state_id"]:row for row in graph["states"]}
+        phase=state_by_id["state:ENTITY_LOCAL:mob:phase"]
+        assert phase["reads"] and phase["writes"],phase
+        assert phase["writes"][0]["value"]=="2",phase
+        server=state_by_id["state:SERVER_GLOBAL:server:[POP]Test"]
+        assert not server["reads"],server
+        assert server["writes"],server
+        state_nodes={n["meta"].get("state_id") for n in graph["nodes"] if n["kind"]=="state"}
+        assert phase["state_id"] in state_nodes,state_nodes
+        assert server["state_id"] in state_nodes,state_nodes
+        assert any(e["kind"]=="STATE_READ" for e in graph["edges"]),graph["edges"]
+        assert any(e["kind"]=="STATE_WRITE" for e in graph["edges"]),graph["edges"]
 
         context_by_path={row["path"]:row for row in result["contexts"]}
         assert "scripts/zones/Test_Zone/Zone.lua" in context_by_path,context_by_path
