@@ -3326,6 +3326,11 @@ def _capture_source_format(src: "Source", relname: str) -> str | None:
         return "levelrange_db"
     if re.search(r'packet(?:logger|viewer)/(incoming|outgoing)/0x[0-9a-f]{3}\.log$', lower):
         return "packetlogger"
+    if re.search(r'packet(?:logger|viewer)/(?:full|incoming|outgoing)\.log$', lower):
+        # Whole-session flat views duplicate the per-opcode packet files. Recognize by path here
+        # so provenance finalization does not decompress/read tens of megabytes again merely to
+        # rediscover that already-known redundancy.
+        return "packetlogger_redundant"
     if "caplog/" in lower and lower.endswith((".txt", ".log")):
         return "caplog"
     if WINDOWER_LOGGER_FILENAME_RE.search(lower):

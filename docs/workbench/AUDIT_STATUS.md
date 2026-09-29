@@ -2868,3 +2868,24 @@ Authentication tokens, hashed session password fields, and auth checksums are no
 Regression coverage includes a lobby request split across TCP segments, valid server responses, endpoint-role inference, feature flag decoding, next-login endpoint decoding, and an IXFF/known-command false positive with an invalid MD5 that must remain `unknown_tcp`.
 
 The next network milestone is the search/cache TCP decoder, which requires session-aware Blowfish/MD5 handling and real capture fixtures.
+
+
+
+## 2026-09-28 — High-volume pipeline scalability audit
+
+The Heroines Holdfast capture exposed an O(n²) PacketViewer provenance regression at roughly 83k raw packet observations. A follow-up audit used that scale as the reference case across capture, correlation, Feature Trace, and migration-package paths.
+
+Findings and hardening:
+
+- PacketViewer/PacketLogger provenance now indexes line and UTF-8 byte offsets in linear passes instead of rescanning source prefixes per packet.
+- Packeteer had the same UTF-8 prefix-offset pattern and now uses the same linear offset strategy.
+- PacketDB/Packeteer bulk insertion now allocates source-native sequence ownership once per import instead of performing per-packet source identity/MAX(seq) lookups, leveraging the canonical raw-packet indexes already maintained by schema migration.
+- Redundant flat PacketViewer/PacketLogger full/incoming/outgoing logs are recognized by path during provenance finalization so they are not decompressed a second time merely for format sniffing.
+- Cross-source packet correlation no longer compares same-source exact-packet repeats pairwise. Raw/EventView and video/runtime matching now use opcode/time-window indexes, while IDView/EventView matching uses opcode/entity/message indexes.
+- Migration package action ordering now uses Kahn topological sorting with reverse adjacency rather than repeatedly rescanning all remaining actions.
+- Package dependency scope was confirmed already bounded by max_depth and max_nodes.
+- Feature Trace runtime edges remain terminal rather than recursively expanded. Feature Trace now also has a hard max_nodes traversal budget (default 5000) and reports truncated=true when the budget is reached.
+- Capture graph emission remains linear in observation count and commits as one transaction, but very large captures still produce one evidence row and one relationship row per raw packet by design; this is a storage/linear-throughput cost rather than an unbounded recursion.
+- Feature Trace node presentation still performs per-node catalog metadata resolution. The traversal is now bounded, so this is a bounded N+1 cost rather than an unbounded graph explosion; batch catalog hydration remains a future optimization if real traces approach the node ceiling.
+
+Focused high-volume regression coverage is part of the Workbench regression workflow.

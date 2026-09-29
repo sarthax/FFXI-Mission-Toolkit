@@ -6,6 +6,7 @@ dependency edges. It plans only; it never writes source trees, SQL, DATs, or pac
 from __future__ import annotations
 
 from dataclasses import dataclass
+import heapq
 from typing import Iterable
 
 from workbench.core.schema import DependencyEdge, MigrationAction
@@ -76,19 +77,28 @@ def build_package_plan(
                 prereqs[action.action_id].add(prerequisite)
                 links.add((action.action_id, prerequisite))
 
-    ordered_ids: list[str] = []
-    remaining = {k: set(v) for k, v in prereqs.items()}
-    while remaining:
-        ready = sorted(k for k, v in remaining.items() if not v)
-        if not ready:
-            break
-        for action_id in ready:
-            ordered_ids.append(action_id)
-            remaining.pop(action_id)
-        for requirements in remaining.values():
-            requirements.difference_update(ready)
+    # Kahn topological sort with reverse adjacency. The older implementation rescanned every
+    # remaining action after each ready batch; a long dependency chain therefore degraded toward
+    # O(n²). Package plans are usually modest, but generated/mission-scale packages can be large,
+    # so keep ordering proportional to actions + dependency links.
+    dependents = {action_id: set() for action_id in prereqs}
+    indegree = {action_id: len(requirements) for action_id, requirements in prereqs.items()}
+    for action_id, requirements in prereqs.items():
+        for prerequisite in requirements:
+            dependents.setdefault(prerequisite, set()).add(action_id)
 
-    cycle_ids = tuple(sorted(remaining))
+    ready = [action_id for action_id, degree in indegree.items() if degree == 0]
+    heapq.heapify(ready)
+    ordered_ids: list[str] = []
+    while ready:
+        action_id = heapq.heappop(ready)
+        ordered_ids.append(action_id)
+        for dependent in sorted(dependents.get(action_id, ())):
+            indegree[dependent] -= 1
+            if indegree[dependent] == 0:
+                heapq.heappush(ready, dependent)
+
+    cycle_ids = tuple(sorted(action_id for action_id, degree in indegree.items() if degree > 0))
     ordered = tuple(by_id[action_id] for action_id in ordered_ids)
     if cycle_ids:
         status = "BLOCKED"

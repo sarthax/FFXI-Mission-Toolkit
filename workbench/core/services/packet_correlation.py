@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import math
+from bisect import bisect_left, bisect_right
 import sqlite3
 from datetime import datetime
 from workbench.core.services import timeline_alignment as ta
@@ -187,7 +188,11 @@ def _same_packet_dims(a,b):
 
 
 def _raw_equivalence(con,capture_id,rows):
-    """Correlate exact raw packet observations across independently ingested source families."""
+    """Correlate exact raw packets without quadratic same-source comparisons.
+
+    Equivalent observations are partitioned by source family first. Same-source repeats are never
+    candidates, so they must not be compared pairwise merely to discover that fact.
+    """
     raw=rows[RAW]
     groups={}
     for item in raw:
@@ -196,40 +201,70 @@ def _raw_equivalence(con,capture_id,rows):
         if not packet or not source:
             continue
         key=(item.get("opcode_norm"),item.get("direction_norm"),packet)
-        groups.setdefault(key,[]).append(item)
-    for (_opcode,_direction,_packet),items in groups.items():
-        items=sorted(items,key=lambda row:(str(row.get("source_format")),row["ref"]))
-        for i,a in enumerate(items):
-            for b in items[i+1:]:
-                if a.get("source_format")==b.get("source_format"):
-                    continue
-                _insert(
-                    con,capture_id,a,b,
-                    basis="opcode+direction+raw_bytes",
-                    status=STATUS_MATCHED,
-                    score=1.0,
-                    details={
-                        "source_format":a.get("source_format"),
-                        "target_format":b.get("source_format"),
-                        "source_native_id":a.get("source_native_id"),
-                        "target_native_id":b.get("source_native_id"),
-                    },
-                )
+        groups.setdefault(key,{}).setdefault(str(source),[]).append(item)
+    for (_opcode,_direction,_packet),by_source in groups.items():
+        source_names=sorted(by_source)
+        for i,source_name in enumerate(source_names):
+            left=sorted(by_source[source_name],key=lambda row:row["ref"])
+            for target_name in source_names[i+1:]:
+                right=sorted(by_source[target_name],key=lambda row:row["ref"])
+                # Pairwise rows are intentional here: each stored correlation names two concrete
+                # source observations. The critical bound is that same-source repeats no longer
+                # create O(k²) rejected comparisons.
+                for a in left:
+                    for b in right:
+                        _insert(
+                            con,capture_id,a,b,
+                            basis="opcode+direction+raw_bytes",
+                            status=STATUS_MATCHED if len(left)==1 and len(right)==1 else STATUS_AMBIGUOUS,
+                            score=1.0,
+                            details={
+                                "source_format":source_name,
+                                "target_format":target_name,
+                                "source_native_id":a.get("source_native_id"),
+                                "target_native_id":b.get("source_native_id"),
+                                "source_candidate_count":len(left),
+                                "target_candidate_count":len(right),
+                            },
+                        )
+
+
+def _time_index(items, timestamp_getter):
+    """Index timestamped observations by opcode for bounded range lookup."""
+    by_opcode={}
+    for item in items:
+        opcode=item.get("opcode_norm")
+        ts=timestamp_getter(item)
+        if not opcode or ts is None:
+            continue
+        by_opcode.setdefault(opcode,[]).append((float(ts),item["ref"],item))
+    out={}
+    for opcode,entries in by_opcode.items():
+        entries.sort(key=lambda row:(row[0],row[1]))
+        out[opcode]=([row[0] for row in entries],entries)
+    return out
 
 
 def _raw_eventview(con,capture_id,rows,tolerance=1.0):
     raw=rows[RAW]; ev=rows[EVENTVIEW]
+    event_index=_time_index(ev,lambda row:row.get("absolute_ts"))
     candidates={}
     for a in raw:
-        if a.get("absolute_ts") is None:
+        ats=a.get("absolute_ts")
+        opcode=a.get("opcode_norm")
+        indexed=event_index.get(opcode)
+        if ats is None or indexed is None:
+            candidates[a["ref"]]=[]
             continue
+        times,entries=indexed
+        lo=bisect_left(times,float(ats)-tolerance)
+        hi=bisect_right(times,float(ats)+tolerance)
         matches=[]
-        for b in ev:
-            if b.get("absolute_ts") is None or not _same_packet_dims(a,b):
+        for _ts,_ref,b in entries[lo:hi]:
+            if not _same_packet_dims(a,b):
                 continue
-            delta=b["absolute_ts"]-a["absolute_ts"]
-            if abs(delta)<=tolerance:
-                matches.append((abs(delta),delta,b))
+            delta=b["absolute_ts"]-ats
+            matches.append((abs(delta),delta,b))
         matches.sort(key=lambda x:(x[0],x[2]["ref"]))
         candidates[a["ref"]]=matches
     reverse={}
@@ -257,21 +292,37 @@ def _raw_eventview(con,capture_id,rows,tolerance=1.0):
 
 def _idview_eventview(con,capture_id,rows):
     ids=rows[IDVIEW]; evs=rows[EVENTVIEW]
+    by_entity={}
+    by_message={}
+    for b in evs:
+        opcode=b.get("opcode_norm")
+        if not opcode:
+            continue
+        if b.get("entity_id") is not None:
+            by_entity.setdefault((opcode,int(b["entity_id"])),[]).append(b)
+        for value in (b.get("mes_num"),b.get("message_number")):
+            if value is not None:
+                by_message.setdefault((opcode,int(value)),[]).append(b)
+
     candidates={}
     for a in ids:
-        matches=[]
-        for b in evs:
-            if not _same_packet_dims(a,b):
-                continue
-            shared=[]
-            if a.get("entity_id") is not None and b.get("entity_id") is not None and int(a["entity_id"])==int(b["entity_id"]):
-                shared.append("entity_id")
-            mid=a.get("message_id")
-            if mid is not None and mid in (b.get("mes_num"),b.get("message_number")):
-                shared.append("message_id")
-            if not shared:
-                continue
-            matches.append((b,shared))
+        opcode=a.get("opcode_norm")
+        pool={}
+        shared_by_ref={}
+        if opcode and a.get("entity_id") is not None:
+            for b in by_entity.get((opcode,int(a["entity_id"])),()):
+                pool[b["ref"]]=b
+                shared_by_ref.setdefault(b["ref"],set()).add("entity_id")
+        if opcode and a.get("message_id") is not None:
+            for b in by_message.get((opcode,int(a["message_id"])),()):
+                pool[b["ref"]]=b
+                shared_by_ref.setdefault(b["ref"],set()).add("message_id")
+        matches=[
+            (b,sorted(shared_by_ref[ref]))
+            for ref,b in pool.items()
+            if _same_packet_dims(a,b)
+        ]
+        matches.sort(key=lambda pair:pair[0]["ref"])
         candidates[a["ref"]]=matches
     reverse={}
     for a_ref,matches in candidates.items():
@@ -306,22 +357,23 @@ def _video_to_clock_candidates(con,capture_id,rows,target_kind,clock_kind,tolera
         (target_kind==RAW and row["source_type"]=="RAW_PACKET") or
         (target_kind==EVENTVIEW and row["source_type"]=="EVENTVIEW")
     )}
+    target_index=_time_index(target,lambda row:capture_time_by_ref.get(row["ref"]))
 
     candidates={}
     for a in video:
         if a.get("video_ts") is None:
             continue
         projected=model.video_to_capture(float(a["video_ts"]))
+        indexed=target_index.get(a.get("opcode_norm"))
         matches=[]
-        for b in target:
-            if not _same_packet_dims(a,b):
-                continue
-            ref=b["ref"]
-            target_ts=capture_time_by_ref.get(ref)
-            if target_ts is None:
-                continue
-            delta=target_ts-projected
-            if abs(delta)<=tolerance:
+        if indexed is not None:
+            times,entries=indexed
+            lo=bisect_left(times,projected-tolerance)
+            hi=bisect_right(times,projected+tolerance)
+            for target_ts,_ref,b in entries[lo:hi]:
+                if not _same_packet_dims(a,b):
+                    continue
+                delta=target_ts-projected
                 matches.append((abs(delta),delta,b,projected,target_ts))
         matches.sort(key=lambda x:(x[0],x[2]["ref"]))
         candidates[a["ref"]]=matches
