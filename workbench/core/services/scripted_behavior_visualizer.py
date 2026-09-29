@@ -465,6 +465,14 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
                     "target":cid,
                     "kind":"STATE_GUARD" if condition.operator=="STATE_EQUALS" else "STATE_READ",
                 })
+            elif condition.operator=="EVENT_ID_EQUALS":
+                event_id=condition.value
+                evid=f"event-node:{event_id}"
+                node(
+                    evid,"event",f"CSID {event_id}",
+                    event_id=event_id,
+                )
+                edges.append({"source":evid,"target":cid,"kind":"EVENT_GUARD"})
 
         for index,effect in enumerate(rule.effects):
             eid=f"{rid}:effect:{index}"
@@ -490,6 +498,13 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
             )
             edges.append({"source":rid,"target":eid,"kind":"EMITS"})
             target=effect.target
+            if effect.effect=="START_EVENT":
+                evid=f"event-node:{effect.value}"
+                node(
+                    evid,"event",f"CSID {effect.value}",
+                    event_id=effect.value,
+                )
+                edges.append({"source":eid,"target":evid,"kind":"STARTS_EVENT"})
             if effect.effect=="WRITE_STATE" and isinstance(target,str) and target.startswith("state:"):
                 smeta=dict(effect.metadata)
                 sid=f"state-node:{target}"
@@ -646,6 +661,64 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
             "evidence_basis":"same canonical state identity is written in one hook and read in another",
         })
 
+    event_rows={}
+    for rule in behavior.rules:
+        hook=rule.metadata.get("hook")
+        for condition in rule.conditions:
+            if condition.operator!="EVENT_ID_EQUALS":
+                continue
+            event_id=condition.value
+            row=event_rows.setdefault(event_id,{
+                "event_id":event_id,
+                "start_hooks":[],
+                "finish_guard_hooks":[],
+                "start_evidence":[],
+                "finish_guard_evidence":[],
+            })
+            if hook and hook not in row["finish_guard_hooks"]:
+                row["finish_guard_hooks"].append(hook)
+            row["finish_guard_evidence"].append({
+                "hook":hook,
+                "line":condition.metadata.get("source_line"),
+                "source":condition.metadata.get("source_line_text"),
+            })
+        for effect in rule.effects:
+            if effect.effect!="START_EVENT":
+                continue
+            event_id=effect.value
+            row=event_rows.setdefault(event_id,{
+                "event_id":event_id,
+                "start_hooks":[],
+                "finish_guard_hooks":[],
+                "start_evidence":[],
+                "finish_guard_evidence":[],
+            })
+            if hook and hook not in row["start_hooks"]:
+                row["start_hooks"].append(hook)
+            row["start_evidence"].append({
+                "hook":hook,
+                "source_path":rule.metadata.get("source_path"),
+                "source_lines":rule.metadata.get("source_lines"),
+            })
+
+    event_links=[]
+    for event_id,row in event_rows.items():
+        pairs=[
+            {"start_hook":starter,"finish_guard_hook":finisher}
+            for starter in sorted(row["start_hooks"])
+            for finisher in sorted(row["finish_guard_hooks"])
+            if starter!=finisher
+        ]
+        if not pairs:
+            continue
+        event_links.append({
+            **row,
+            "relationship":"SHARED_EVENT_ID_ACROSS_HOOKS",
+            "cross_hook_pairs":pairs,
+            "ordering":"UNPROVEN",
+            "evidence_basis":"same literal CSID is started in one hook and guarded in another",
+        })
+
     transition_rows=[]
     for rule in behavior.rules:
         if rule.kind!="state_transition":
@@ -686,6 +759,8 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
         "edges":edges,
         "states":sorted(state_rows.values(),key=lambda row:(row["scope"] or "",row["name"])),
         "state_links":sorted(state_links,key=lambda row:(row["scope"] or "",row["name"] or "",row["state_id"])),
+        "events":sorted(event_rows.values(),key=lambda row:row["event_id"]),
+        "event_links":sorted(event_links,key=lambda row:row["event_id"]),
         "transitions":transition_rows,
         "summary":{
             "hooks":len(behavior.hooks),
@@ -695,6 +770,8 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
             "targets":sum(1 for n in nodes.values() if n["kind"]=="target"),
             "states":len(state_rows),
             "cross_hook_state_links":len(state_links),
+            "events":len(event_rows),
+            "cross_hook_event_links":len(event_links),
             "callbacks":len(callback_nodes),
             "transitions":len(transition_rows),
             "shared_helpers":len(helper_resolutions or []),
