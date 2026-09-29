@@ -744,3 +744,5 @@ Roadmap authority rule: `docs/workbench/ROADMAP.md` is the detailed rework backl
 - [x] Expand bounded symbolic entity ranges where loop bounds are the same `ID.npc.*` / `ID.mob.*` base plus literal offsets (for example Nyzul lamp ranges), resolving each loop variable use into concrete `entity-symbol:*` targets with source/loop provenance. Oversized or mixed-base ranges remain unresolved.
 
 - [x] Resolve `xi.<module>.<function>` calls in Behavior Inspector to exact module-scoped LSB global Lua definition candidates. One candidate is marked RESOLVED, multiple candidates AMBIGUOUS, and none UNRESOLVED; no body inlining or arbitrary candidate selection is performed yet.
+
+- [x] Capture balanced source spans for uniquely or ambiguously resolved shared `xi.<module>.<function>` definitions and expose bounded source previews in Behavior Inspector; helper bodies are still not recursively interpreted into parent behavior.
