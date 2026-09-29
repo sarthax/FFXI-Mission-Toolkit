@@ -13,6 +13,8 @@ FORMAT_TARGETS = {
     "actionview_db": (("capture_actions","sqlite-row"),),
     "levelrange_db": (("capture_level_range","sqlite-row"),),
     "idview_simple": (("capture_events","block"),),
+    "eventview_session_simple": (("capture_events","block"),),
+    "eventview_session_raw": (("capture_raw_packets","block"),),
     "eventview": (("capture_eventview","block"),),
     "kitrack": (("capture_ki_events","block"),),
     "attackdelay": (("capture_attack_delay","block"),),

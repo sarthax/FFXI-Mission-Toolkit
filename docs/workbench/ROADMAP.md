@@ -170,6 +170,7 @@ Current public flagship E2E: pinned LSB → legacy DSP Chains of Promathia 2-5 (
 - [ ] richer runtime probes/capture producers (P1) — expand only as specific systems need them.
   - [x] Broad optional logger ingestion — capture ingestion now accepts MissionTrack, ShopStock/GuildStock, SpawnTrack, WeatherTrack, PriceLog/findPrice, CraftTrack, CheckParam, POITrack, and ConquestTrack when those source files are supplied, preserving full payloads plus promoted searchable fields and exact source provenance. Historical Captain GuildStock and CheckParam schemas are explicitly supported.
   - [x] PacketDB CHATLOG canonicalization — PacketDB chat rows and CapLog text observations converge into `capture_chat_observations` while preserving source identity, direction/zone context, and exact SQLite-row or physical-line provenance; legacy CapLog storage remains for compatibility.
+  - [x] Whole-session EventView preservation — session-wide `simple.log` decoded events are retained with explicit `__UNKNOWN__` zone attribution, while `raw.log` contributes canonical raw packet bytes with NULL zone/time where the source cannot prove them; per-zone evidence remains separate with exact provenance.
   - [ ] Keep persistent global telemetry (WeatherTrack, POITrack, ConquestTrack) source-scoped rather than forcing it into capture_id.
   - [ ] Regression-test Captain EventViewV2/HPTrackV2/NPCLoggerV2/PathLogV2 samples against existing parser families before declaring compatibility.
 

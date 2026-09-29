@@ -970,12 +970,22 @@ def ingest_single_file(con, capture_id: int, filename: str, data: bytes) -> dict
                 error = "Unrecognized CSV schema"
         else:
             text = data.decode("utf-8", "replace")
-            fmt = sniff_text_format(text)
+            basename = Path(filename).name.lower()
+            if basename == "simple.log" and IDVIEW2_HEADER_RE.search(text):
+                fmt = "eventview_session_simple"
+            elif basename == "raw.log" and IDVIEW2_HEADER_RE.search(text) and PACKETLOGGER_HEXROW_RE.search(text):
+                fmt = "eventview_session_raw"
+            else:
+                fmt = sniff_text_format(text)
             src = SingleFileSource(filename, data)
             if fmt == "packeteer":
                 rows = raw_packet_ingest.ingest_packeteer(con, capture_id, src, filename)
             elif fmt == "idview_simple":
                 rows = ingest_idview_simple(con, capture_id, src, zone_db + ".log")
+            elif fmt == "eventview_session_simple":
+                rows = ingest_eventview_session_simple(con, capture_id, src, filename)
+            elif fmt == "eventview_session_raw":
+                rows = ingest_eventview_session_raw(con, capture_id, src, filename)
             elif fmt == "kitrack":
                 rows = ingest_kitrack(con, capture_id, src, zone_db + ".log")
             elif fmt == "eventview":
@@ -2095,6 +2105,80 @@ def ingest_eventview(
     return n
 
 
+EVENTVIEW_SESSION_RAW_HEADER_RE = re.compile(
+    r'(?m)^\s*(INCOMING|OUTGOING)\s*[<>].*?\((0x[0-9A-Fa-f]{3})\):.*$'
+)
+
+
+def ingest_eventview_session_simple(con, capture_id, src: Source, relname: str) -> int:
+    """Preserve whole-session EventView decoded records without inventing a zone."""
+    return ingest_idview_simple(con, capture_id, src, relname, zone_db_override=ZONE_UNKNOWN)
+
+
+def ingest_eventview_session_raw(con, capture_id, src: Source, relname: str) -> int:
+    """Preserve whole-session EventView raw packets with unknown zone/time attribution."""
+    source_bytes = src.read_bytes(relname)
+    text = source_bytes.decode("utf-8", "replace")
+    byte_offsets_exact = text.encode("utf-8") == source_bytes
+    source_sha256 = capture_integrity.sha256_bytes(source_bytes)
+
+    old_locators = con.execute(
+        """SELECT row_key FROM capture_row_locators
+           WHERE capture_id=? AND filename=? AND target_table='capture_raw_packets'""",
+        (capture_id, relname),
+    ).fetchall()
+    for (row_key_raw,) in old_locators:
+        try:
+            old_seq = json.loads(row_key_raw).get("seq")
+        except Exception:
+            old_seq = None
+        if old_seq is not None:
+            con.execute(
+                "DELETE FROM capture_raw_packets WHERE capture_id=? AND seq=?",
+                (capture_id, int(old_seq)),
+            )
+    con.execute(
+        """DELETE FROM capture_row_locators
+           WHERE capture_id=? AND filename=? AND target_table='capture_raw_packets'""",
+        (capture_id, relname),
+    )
+
+    headers = list(EVENTVIEW_SESSION_RAW_HEADER_RE.finditer(text))
+    count = 0
+    for index, match in enumerate(headers):
+        block_end = headers[index + 1].start() if index + 1 < len(headers) else len(text)
+        block = text[match.end():block_end]
+        hex_bytes = []
+        for rowmatch in PACKETLOGGER_HEXROW_RE.finditer(block):
+            for token in rowmatch.group(1).split():
+                if token != "--":
+                    hex_bytes.append(token)
+        if not hex_bytes:
+            continue
+        start_char = match.start()
+        direction_word, opcode = match.groups()
+        raw_packet_ingest.insert_raw_packet(
+            con, capture_id,
+            ts=None,
+            direction="incoming" if direction_word == "INCOMING" else "outgoing",
+            opcode=opcode,
+            raw_hex="".join(hex_bytes),
+            zone_id=None,
+            source_format="eventview_session_raw",
+            source_native_id=f"{relname}:block:{index}",
+            filename=relname,
+            source_sha256=source_sha256,
+            locator_basis="block",
+            start_line=text.count("\n", 0, start_char) + 1,
+            end_line=text.count("\n", 0, block_end) + 1,
+            start_offset=len(text[:start_char].encode("utf-8")) if byte_offsets_exact else None,
+            end_offset=len(text[:block_end].encode("utf-8")) if byte_offsets_exact else None,
+            details={"zone_attribution": "unknown", "session_scope": True},
+        )
+        count += 1
+    return count
+
+
 PACKETLOGGER_HEADER_RE = re.compile(
     r'\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]'
 )
@@ -2282,9 +2366,15 @@ IDVIEW2_MESSAGE_RE = re.compile(r'^Message:\s*(\d+)\s*$', re.MULTILINE)
 IDVIEW2_PARAMS_RE = re.compile(r'^Params:\s*(.*)$', re.MULTILINE)
 
 
-def ingest_idview_simple(con, capture_id, src: Source, relname: str) -> int:
+ZONE_UNKNOWN = "__UNKNOWN__"
+_ZONE_FROM_FILENAME = object()
+
+
+def ingest_idview_simple(
+    con, capture_id, src: Source, relname: str, *, zone_db_override=_ZONE_FROM_FILENAME
+) -> int:
     """Ingest either real IDView simple format with exact source line/block provenance."""
-    zone_db = Path(relname).stem
+    zone_db = Path(relname).stem if zone_db_override is _ZONE_FROM_FILENAME else zone_db_override
     source_bytes = src.read_bytes(relname)
     text = source_bytes.decode("utf-8", "replace")
     byte_offsets_exact = text.encode("utf-8") == source_bytes
@@ -2800,6 +2890,34 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
             counts["npc_entries"] += e
             counts["path"] += p
 
+    # Whole-session EventView files contain real observations that can span multiple zones.
+    # Preserve them with explicit unknown-zone attribution rather than dropping them or guessing.
+    session_simple_files = sfind(r'[Ee]ventview/(?:[^/]+/)?simple\.log$')
+    session_raw_files = sfind(r'[Ee]ventview/(?:[^/]+/)?raw\.log$')
+    session_simple_set = set(session_simple_files)
+    all_source_names_set = set(src.list_files())
+    for relname in session_simple_files:
+        counts["events"] += run1(
+            relname, ingest_eventview_session_simple, con, capture_id, src, relname
+        )
+    for relname in session_raw_files:
+        counts["raw_packets"] += run1(
+            relname, ingest_eventview_session_raw, con, capture_id, src, relname
+        )
+        peer = relname.rsplit("/", 1)[0] + "/simple.log"
+        if peer not in session_simple_set and peer not in all_source_names_set:
+            try:
+                counts["events"] += ingest_eventview_session_simple(
+                    con, capture_id, src, relname
+                )
+            except Exception as ex:
+                if result_sink is not None:
+                    result_sink.append({
+                        "filename": relname,
+                        "rows": 0,
+                        "error": f"raw fallback decode failed: {ex}",
+                    })
+
     # The tools that write NPCLogger/ActionView/EventView bundles also write their own redundant
     # secondary views alongside the real per-event data those tools' primary format already
     # ingests above -- confirmed by direct content inspection, not assumed (2026-09-06, real
@@ -2831,7 +2949,6 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         # never-fabricate-ids rule. Recognized here so it reports "ok, not ingested" instead of a
         # false "not a recognized capture-log format" failure -- the exclusion is deliberate, not
         # a coverage gap.
-        + sfind(r'[Ee]ventview/(?:[^/]+/)?(?:raw|simple)\.log$')
         # 2026-09-08, same real Tacocat capture: packetviewer/full.log, incoming.log, outgoing.log
         # (bare, directly under packetviewer/) are a whole-session concatenation of the exact same
         # packets already ingested per-opcode from packetviewer/incoming/0x*.log and
@@ -3010,6 +3127,10 @@ def _capture_source_format(src: "Source", relname: str) -> str | None:
         return "widescan"
     if "actionview/simple/" in lower:
         return "actionview_simple"
+    if re.search(r'eventview/(?:[^/]+/)?simple\.log$', lower):
+        return "eventview_session_simple"
+    if re.search(r'eventview/(?:[^/]+/)?raw\.log$', lower):
+        return "eventview_session_raw"
     if "eventview/" in lower and "/simple/" in lower:
         return "idview_simple"
     if re.search(r'eventview/(?!.*(?:simple|raw)/)[^/]+/[^/]+\.log$', lower):
@@ -3038,7 +3159,8 @@ def _capture_source_format(src: "Source", relname: str) -> str | None:
 
 
 REBUILDABLE_CAPTURE_FORMATS = {
-    "eventview", "idview_simple", "kitrack", "hptrack", "actionview_simple", "caplog", "packetlogger",
+    "eventview", "idview_simple", "eventview_session_simple", "eventview_session_raw",
+    "kitrack", "hptrack", "actionview_simple", "caplog", "packetlogger",
     "packetdb", "packeteer",
     "npclogger_db", "actionview_db", "levelrange_db",
     "npclogger_lua", "pathlog_csv", "pc_pathlog_csv", "widescan", "attackdelay",
@@ -3274,6 +3396,10 @@ def rebuild_capture_source(con, capture_id: int, filename: str) -> dict:
                 result = ingest_eventview(con, capture_id, src, filename)
             elif fmt == "idview_simple":
                 result = ingest_idview_simple(con, capture_id, src, filename)
+            elif fmt == "eventview_session_simple":
+                result = ingest_eventview_session_simple(con, capture_id, src, filename)
+            elif fmt == "eventview_session_raw":
+                result = ingest_eventview_session_raw(con, capture_id, src, filename)
             elif fmt == "kitrack":
                 result = ingest_kitrack(con, capture_id, src, filename)
             elif fmt == "hptrack":

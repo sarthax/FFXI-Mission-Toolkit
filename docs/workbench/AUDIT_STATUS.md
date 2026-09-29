@@ -2731,3 +2731,18 @@ PacketDB chat evidence is no longer discarded.
 - PacketDB and CapLog lineage declarations now include the canonical chat target, and the table participates in capture deletion safety.
 
 The next capture evidence-loss target is preservation of whole-session EventView/simple or raw observations whose zone cannot be attributed safely.
+
+
+## 2026-09-28 — Whole-session EventView evidence preservation
+
+Whole-session EventView logs are no longer recognized-but-discarded.
+
+- `eventview/simple.log` is normalized into decoded event evidence with the explicit `__UNKNOWN__` zone sentinel. The sentinel records that the source did not prove a zone; it is not a real zone name and is never inferred from the capture label.
+- `eventview/raw.log` contributes canonical raw packet observations with exact packet bytes, direction, and opcode.
+- Session raw packets retain `zone_id=NULL` and `ts=NULL` because these files do not provide trustworthy per-record zone or clock attribution.
+- Per-zone EventView/simple evidence remains independent and keeps its actual source zone.
+- Exact source line/block and byte provenance is retained for both decoded session events and session raw packets.
+- Source manifest identities distinguish `eventview_session_simple` and `eventview_session_raw`; both are included in safe exact-source rebuild.
+- Bare uploads named `simple.log` or `raw.log` are treated as session-scoped evidence instead of fabricating zones named "simple" or "raw".
+
+Later correlation may resolve candidate zone/time context from independent entity, packet, or timeline evidence, but ingestion itself does not invent those dimensions.
