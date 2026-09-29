@@ -1304,6 +1304,7 @@ def _event_outcome_branches(text: str, *, start_line: int) -> tuple[dict,...]:
     rows=[]
     depth=0
     active=None
+    last_selector=None
 
     def finish(end_index: int):
         nonlocal active
