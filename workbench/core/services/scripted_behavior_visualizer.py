@@ -190,6 +190,20 @@ def _analyze_shared_helper_body(
 
     state_reads=[row for row in state_accesses if row.get("access")=="READ"]
     state_writes=[row for row in state_accesses if row.get("access")=="WRITE"]
+    shared_helper_callees=[
+        {
+            "qualified_name":row.get("qualified_name"),
+            "line":row.get("line"),
+            "source_line":row.get("source_line"),
+        }
+        for row in api_calls
+        if isinstance(row.get("qualified_name"),str)
+        and re.fullmatch(
+            r"xi\.[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*",
+            row["qualified_name"],
+        )
+        and row["qualified_name"]!=qualified_name
+    ]
     impact={
         "upstream":[
             {
@@ -245,12 +259,14 @@ def _analyze_shared_helper_body(
         "state_accesses":state_accesses,
         "context_conditions":context_conditions,
         "entity_effects":entity_effects,
+        "shared_helper_callees":shared_helper_callees,
         "impact":impact,
         "summary":{
             "api_calls":len(api_calls),
             "state_accesses":len(state_accesses),
             "context_conditions":len(context_conditions),
             "entity_effects":len(entity_effects),
+            "shared_helper_callees":len(shared_helper_callees),
             "upstream_impacts":len(impact["upstream"]),
             "downstream_impacts":len(impact["downstream"]),
         },
@@ -515,6 +531,19 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
                             helper=qualified,
                         )
                         edges.append({"source":hid,"target":cid,"kind":"HELPER_DIRECT_CALL"})
+                    for callee_index,callee in enumerate(analysis.get("shared_helper_callees",[])):
+                        nid=f"shared-helper-callee:{qualified}:{callee_index}"
+                        node(
+                            nid,"shared_helper_callee",
+                            str(callee.get("qualified_name") or "SHARED_HELPER"),
+                            **dict(callee),
+                            helper=qualified,
+                        )
+                        edges.append({
+                            "source":hid,
+                            "target":nid,
+                            "kind":"CALLS_NESTED_SHARED_HELPER",
+                        })
                 if isinstance(target,str):
                     tid=f"target:{target}"
                     node(tid,"target",target)
@@ -616,6 +645,10 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
             "shared_helper_impact_nodes":sum(
                 1 for row in nodes.values()
                 if row["kind"] in {"helper_input","helper_effect","helper_call"}
+            ),
+            "shared_helper_callee_nodes":sum(
+                1 for row in nodes.values()
+                if row["kind"]=="shared_helper_callee"
             ),
             "effect_categories":dict(sorted(categories.items())),
             "unmodeled_hooks":list(behavior.metadata.get("unmodeled_hooks") or ()),
