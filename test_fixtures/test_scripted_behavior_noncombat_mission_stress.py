@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from workbench.plugins.domain.scripted_behavior_lsb_extract import extract_lsb_scripted_behavior
+from workbench.core.services.scripted_behavior_visualizer import _graph_for_behavior
 
 
 SCRIPT=r'''
@@ -60,6 +61,13 @@ def main():
     }
     assert event_ids=={101,102},event_ids
 
+    event_guards={
+        condition.value for condition in conditions
+        if condition.operator=="EVENT_ID_EQUALS"
+        and condition.subject=="event:csid"
+    }
+    assert event_guards=={101,102},event_guards
+
     assert any(
         condition.operator=="READS_STATE"
         and condition.subject=="state:PLAYER_CHAR:player:MissionStage"
@@ -97,6 +105,28 @@ def main():
 
     hooks=set(behavior.hooks)
     assert {"onTrigger","onEventFinish"} <= hooks,hooks
+
+    graph=_graph_for_behavior(behavior)
+    event_nodes={
+        node["meta"].get("event_id")
+        for node in graph["nodes"]
+        if node["kind"]=="event"
+    }
+    assert {101,102} <= event_nodes,event_nodes
+    assert any(edge["kind"]=="STARTS_EVENT" for edge in graph["edges"]),graph["edges"]
+    assert any(edge["kind"]=="EVENT_GUARD" for edge in graph["edges"]),graph["edges"]
+
+    links={row["event_id"]:row for row in graph["event_links"]}
+    assert set(links)=={101,102},links
+    for event_id in (101,102):
+        link=links[event_id]
+        assert link["relationship"]=="SHARED_EVENT_ID_ACROSS_HOOKS",link
+        assert link["ordering"]=="UNPROVEN",link
+        assert link["start_hooks"]==["onTrigger"],link
+        assert link["finish_guard_hooks"]==["onEventFinish"],link
+        assert {"start_hook":"onTrigger","finish_guard_hook":"onEventFinish"} in link["cross_hook_pairs"],link
+    assert graph["summary"]["events"]>=2,graph["summary"]
+    assert graph["summary"]["cross_hook_event_links"]==2,graph["summary"]
 
     print("non-combat mission behavior stress regression: PASS")
 
