@@ -532,7 +532,7 @@ def carve_plaintext_ffxi_chunks(payload: bytes) -> list[dict]:
     return chunks if pos == len(payload) else []
 
 
-def ingest_pcap(con: sqlite3.Connection, capture_id: int, src, relname: str) -> tuple[int, int]:
+def ingest_pcap(con: sqlite3.Connection, capture_id: int, src, relname: str) -> tuple[int, int, int, int]:
     data = src.read_bytes(relname)
     fmt = sniff_pcap_format(data)
     if not fmt:
@@ -666,6 +666,7 @@ def ingest_pcap(con: sqlite3.Connection, capture_id: int, src, relname: str) -> 
             )
             chunk_count += 1
 
+    flow_count = range_count = 0
     for flow in reconstruct_tcp_flows(decoded_frames):
         frame_meta = flow["frames"]
         timestamps = [f["timestamp_seconds"] for f in frame_meta if f["timestamp_seconds"] is not None]
@@ -689,6 +690,7 @@ def ingest_pcap(con: sqlite3.Connection, capture_id: int, src, relname: str) -> 
                 "conflicting_overlaps": d["conflicting_overlaps"],
             }
 
+        flow_count += 1
         con.execute(
             """INSERT OR REPLACE INTO capture_network_flows
                (capture_id,source_file,flow_id,transport,
@@ -739,6 +741,7 @@ def ingest_pcap(con: sqlite3.Connection, capture_id: int, src, relname: str) -> 
                     "missing_bytes_fabricated": False,
                     "byte_selection_rule": "first_observed_byte_wins_conflicts_recorded",
                 }
+                range_count += 1
                 con.execute(
                     """INSERT OR REPLACE INTO capture_network_ranges
                        (capture_id,source_file,flow_id,direction,range_index,
@@ -781,4 +784,4 @@ def ingest_pcap(con: sqlite3.Connection, capture_id: int, src, relname: str) -> 
                         "locator_note": "offset span covers contributing frames; exact frames listed explicitly",
                     },
                 )
-    return frame_count, chunk_count
+    return frame_count, chunk_count, flow_count, range_count
