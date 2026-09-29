@@ -19,7 +19,9 @@ from .scripted_behavior import (
 
 
 _HOOK_HEADER=re.compile(
-    r"^\s*entity\.(on[A-Za-z0-9_]+)\s*=\s*function\s*\(([^)]*)\)"
+    r"^\s*([A-Za-z_][A-Za-z0-9_]*)\."
+    r"(on[A-Za-z0-9_]+|registryRequirements|entryRequirements|afterInstanceRegister)"
+    r"\s*=\s*function\s*\(([^)]*)\)"
 )
 _LOCAL_HELPER_HEADER=re.compile(
     r"^\s*local\s+(?:function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(([^)]*)\)|"
@@ -63,6 +65,14 @@ _SET_UNTARGETABLE=re.compile(r"\b(?:npc|door|mob|mobArg|npcArg):setUntargetable\
 _SET_POS=re.compile(r"\b(?:npc|door|mob|mobArg|npcArg|bombMob):setPos\(")
 _PATH_CALL=re.compile(r"\b(?:mob|mobArg|npc|npcArg):(pathTo|pathThrough)\(")
 _SYSTEM_HELPER=re.compile(r"\bxi\.([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)\s*\(")
+_METHOD_API_CALL=re.compile(
+    r"\b([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)"
+    r":([A-Za-z_][A-Za-z0-9_]*)\s*\("
+)
+_DOTTED_API_CALL=re.compile(
+    r"\b((?:[A-Za-z_][A-Za-z0-9_]*\.)+[A-Za-z_][A-Za-z0-9_]*)\s*\("
+)
+_GLOBAL_API_CALL=re.compile(r"(?<![\w\.:])([A-Z][A-Za-z0-9_]*)\s*\(")
 
 
 @dataclass(frozen=True)
@@ -72,6 +82,7 @@ class HookBlock:
     start_line: int
     end_line: int
     body: str
+    owner: str = "entity"
 
 
 @dataclass(frozen=True)
@@ -153,7 +164,7 @@ def _close_count(code: str) -> int:
 
 
 def extract_hook_blocks(lua: str) -> tuple[HookBlock,...]:
-    """Return balanced top-level entity.on* hook functions with exact source line ranges."""
+    """Return balanced top-level scripted hook functions with exact source line ranges."""
     raw=lua.splitlines()
     structural=_structural_lua_lines(lua)
     out=[]
@@ -164,6 +175,7 @@ def extract_hook_blocks(lua: str) -> tuple[HookBlock,...]:
         match=_HOOK_HEADER.match(code)
         if not match:
             continue
+        owner,hook,args_text=match.groups()
         depth=0
         started=False
         for j in range(i,len(raw)):
@@ -176,10 +188,10 @@ def extract_hook_blocks(lua: str) -> tuple[HookBlock,...]:
             if started and depth<=0:
                 claimed_until=j
                 args=tuple(
-                    part.strip() for part in match.group(2).split(",") if part.strip()
+                    part.strip() for part in args_text.split(",") if part.strip()
                 )
                 out.append(HookBlock(
-                    match.group(1),args,i+1,j+1,"\n".join(raw[i:j+1])
+                    hook,args,i+1,j+1,"\n".join(raw[i:j+1]),owner
                 ))
                 break
     return tuple(out)
@@ -254,7 +266,109 @@ def _source_meta(block: HookBlock, source_path: str) -> dict:
         "source_path":source_path,
         "source_lines":(block.start_line,block.end_line),
         "hook":block.hook,
+        "hook_owner":block.owner,
     }
+
+
+def _api_calls(text: str, *, start_line: int) -> tuple[dict,...]:
+    """Preserve statically visible Lua-bound calls without requiring semantic knowledge.
+
+    This is intentionally syntax-level evidence. Nested argument expressions are retained as the
+    visible remainder of the source line rather than evaluated.
+    """
+    raw=text.splitlines()
+    structural=_structural_lua_lines(text)
+    calls=[]
+    seen=set()
+    for offset,code in enumerate(structural):
+        line_no=start_line+offset
+        raw_line=raw[offset] if offset < len(raw) else ""
+        for match in _METHOD_API_CALL.finditer(code):
+            receiver,method=match.groups()
+            key=(line_no,"method",receiver,method,match.start())
+            if key in seen:
+                continue
+            seen.add(key)
+            calls.append({
+                "style":"method",
+                "receiver":receiver,
+                "function":method,
+                "qualified_name":f"{receiver}:{method}",
+                "source_line":raw_line.strip(),
+                "line":line_no,
+            })
+        for match in _DOTTED_API_CALL.finditer(code):
+            qualified=match.group(1)
+            # A dotted call that starts at a method receiver's method token is a duplicate.
+            if any(
+                row["line"]==line_no and row["qualified_name"].replace(":",".")==qualified
+                for row in calls
+            ):
+                continue
+            key=(line_no,"dotted",qualified,match.start())
+            if key in seen:
+                continue
+            seen.add(key)
+            parts=qualified.rsplit(".",1)
+            calls.append({
+                "style":"dotted",
+                "receiver":parts[0] if len(parts)==2 else None,
+                "function":parts[-1],
+                "qualified_name":qualified,
+                "source_line":raw_line.strip(),
+                "line":line_no,
+            })
+        for match in _GLOBAL_API_CALL.finditer(code):
+            name=match.group(1)
+            key=(line_no,"global",name,match.start())
+            if key in seen:
+                continue
+            seen.add(key)
+            calls.append({
+                "style":"global",
+                "receiver":None,
+                "function":name,
+                "qualified_name":name,
+                "source_line":raw_line.strip(),
+                "line":line_no,
+            })
+    calls.sort(key=lambda row:(row["line"],row["qualified_name"],row["style"]))
+    return tuple(calls)
+
+
+def _api_call_rule(
+    *,
+    rule_id: str,
+    subject: str,
+    trigger: str,
+    calls: tuple[dict,...],
+    meta: dict,
+) -> BehaviorRule | None:
+    if not calls:
+        return None
+    return BehaviorRule(
+        rule_id,
+        "api_calls",
+        subject,
+        trigger=trigger,
+        effects=tuple(
+            BehaviorEffect(
+                "API_CALL",
+                call.get("receiver") or "global",
+                call["function"],
+                {
+                    "style":call["style"],
+                    "qualified_name":call["qualified_name"],
+                    "source_line_text":call["source_line"],
+                    "source_line":call["line"],
+                },
+            )
+            for call in calls
+        ),
+        confidence="VERIFIED",
+        implementation_status="PRESENT",
+        metadata={**meta,"api_call_count":len(calls)},
+    )
 
 
 def _dedupe_rules(rules: Iterable[BehaviorRule]) -> tuple[BehaviorRule,...]:
@@ -292,6 +406,17 @@ def extract_lsb_scripted_behavior(
         text=block.body
         meta=_source_meta(block,source_path)
         hook=block.hook
+
+        api_rule=_api_call_rule(
+            rule_id=f"{hook}:api-calls",
+            subject=subject,
+            trigger=hook.upper(),
+            calls=_api_calls(text,start_line=block.start_line),
+            meta=meta,
+        )
+        if api_rule is not None:
+            rules.append(api_rule)
+            modeled_hooks.add(hook)
 
         # Hook classes are useful behavior facts even when the internal dynamic logic is not yet
         # structurally decoded.
@@ -613,6 +738,15 @@ def extract_lsb_scripted_behavior(
                 "helper_owner":helper.owner,
                 "call_chain":call_chain,
             }
+            helper_api_rule=_api_call_rule(
+                rule_id=f"{hook}:helper-api:{helper.name}",
+                subject=subject,
+                trigger=hook.upper(),
+                calls=_api_calls(helper.body,start_line=helper.start_line),
+                meta=helper_meta,
+            )
+            if helper_api_rule is not None:
+                rules.append(helper_api_rule)
             rules.append(BehaviorRule(
                 f"{hook}:helper:{helper.name}",
                 "helper_call",
@@ -686,6 +820,7 @@ def extract_lsb_scripted_behavior(
             "extractor":"lsb_scripted_behavior_v1",
             "source_path":source_path,
             "source_hook_count":len(blocks),
+            "hook_owners":sorted({block.owner for block in blocks}),
             "source_helper_count":len(helpers),
             "reachable_helper_count":len(reached_helpers),
             "reachable_helpers":sorted(reached_helpers),

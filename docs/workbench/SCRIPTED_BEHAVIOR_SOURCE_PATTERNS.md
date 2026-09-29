@@ -184,3 +184,66 @@ Lua source
 
 This prevents mission-specific assumptions from leaking into the universal dependency framework
 while still allowing higher-level feature analyzers to derive stronger semantics.
+
+
+## Larger LSB behavior sweep — 2026-09-29
+
+A broader repository search across zone/entity/instance Lua found recurring behavior outside the first mob/NPC sample:
+
+- global/server state through `GetServerVariable` / `SetServerVariable`;
+- respawn scheduling and spawn eligibility through `setRespawnTime`, `DisallowRespawn`, and related calls;
+- time/day/weather gated logic through `VanadielHour`, day-element/weather lookups, and weather-change listeners;
+- party/alliance-sensitive behavior through `getParty` / `getAlliance`;
+- instance orchestration through instance local vars, stage/progress, character/mob lists, registry/entry callbacks, and completion/failure callbacks;
+- zone-level trigger areas, weather callbacks, conquest callbacks, and zone-in positioning;
+- AI/combat-mode mutation such as auto-attack/magic/mob-ability enablement, behavior modes, roam flags, spell lists, skill selection, immunities, and status effects;
+- packet/animation/message surfaces such as action packet injection, entity animation packets, messageSpecial/messageName/messageBasic, cutscenes, and event updates;
+- mission/quest progression APIs such as add/complete mission/quest;
+- currencies, titles, temp items, treasure injection, drop overrides, and other reward systems;
+- teleport/position/zone transfer and instance-exit movement;
+- listeners/callbacks and anonymous timer/queue closures that carry additional behavior;
+- table/switch-driven phases and weighted action selection;
+- shared-system modules such as `xi.nyzul`, `xi.salvage`, `xi.instance`, `xi.combat`, `xi.treasure`, and others.
+
+### Open-ended behavior requirement
+
+This sweep confirms that the semantic effect list must **not** be treated as exhaustive. Lua can invoke any bound engine API or shared Lua module, and new bindings may appear over time.
+
+The extractor therefore has two layers:
+
+1. **Semantic effects** for patterns the Workbench understands well enough to normalize, such as key-item grants, door opens, state changes, spawn/despawn, pathing, rewards, and shared-system dependencies.
+2. **Generic API-call evidence** for every statically visible call shape the extractor can identify. These records preserve call style, receiver/namespace, function name, original source line, line number, hook/helper owner, and provenance without claiming semantic interpretation.
+
+This means an unfamiliar call such as `mob:setSomeFutureEngineFlag(...)` is still visible in Feature Trace and evidence review immediately. A later analyzer can promote it to a stronger semantic class without losing the original source observation.
+
+### Broadened hook ownership
+
+Behavior entry points are no longer limited to `entity.on*`. The generic hook scanner now recognizes owner objects such as:
+
+- `entity.on*`;
+- `zoneObject.on*`;
+- `instanceObject.on*`;
+- registry/entry callbacks such as `registryRequirements`, `entryRequirements`, and `afterInstanceRegister`.
+
+Additional owner conventions can be added without changing the behavior graph model.
+
+### Still unresolved after the broad sweep
+
+The raw API-call layer preserves these cases, but stronger semantic extraction still needs dedicated work for:
+
+- nested anonymous timer/queue/listener callback bodies;
+- table-driven/switch-driven phase machines;
+- dynamically computed entity IDs and ranges;
+- alias/data-flow propagation across locals/tables/helpers;
+- imported helper/module body expansion;
+- party/alliance predicates and per-member effects;
+- weather/time/day predicates as structured conditions;
+- instance stage/progress/state semantics;
+- server/global variable identities and lifecycle;
+- mission/quest API calls mapped to canonical progression identities;
+- packet/message/event APIs mapped to protocol/client evidence;
+- AI/spell/skill/status/immunity APIs mapped to normalized engine/binding identities;
+- zone transfer/teleport semantics with destination identity;
+- reward/treasure/currency calls mapped into the unified acquisition graph.
+
+Those are now explicit enrichment targets rather than blind spots: the generic call layer ensures the source evidence is retained even before semantic promotion exists.
