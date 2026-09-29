@@ -94,6 +94,10 @@ _STATE_ALIAS_ASSIGN=re.compile(
 _SERVER_ALIAS_ASSIGN=re.compile(
     r"\blocal\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*GetServerVariable\(\s*['\"]([^'\"]+)['\"]\s*\)"
 )
+_INSTANCE_LIFECYCLE_ALIAS_ASSIGN=re.compile(
+    r"\blocal\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"
+    r"(instance):(getStage|getProgress)\(\s*\)"
+)
 _SWITCH_SELECTOR=re.compile(r"\bswitch\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)\s*:\s*caseof")
 _SWITCH_CASE=re.compile(r"^\s*\[([^\]]+)\]\s*=\s*function\s*\(")
 _ALIAS_IF_LITERAL_EQUALS=re.compile(
@@ -794,6 +798,20 @@ def _state_aliases(text: str, *, start_line: int) -> dict[str,dict]:
                 "source_line":line_no,
                 "source_line_text":raw_line.strip(),
             }
+        for match in _INSTANCE_LIFECYCLE_ALIAS_ASSIGN.finditer(code):
+            alias,receiver,method=match.groups()
+            name="stage" if method=="getStage" else "progress"
+            scope="INSTANCE_LIFECYCLE"
+            aliases[alias]={
+                "alias":alias,
+                "scope":scope,
+                "receiver":receiver,
+                "method":method,
+                "name":name,
+                "state_id":_state_id(scope,name,receiver),
+                "source_line":line_no,
+                "source_line_text":raw_line.strip(),
+            }
     return aliases
 
 
@@ -913,7 +931,7 @@ def _switch_state_transition_rules(
             brace_depth+=row.count("{")-row.count("}")
             j+=1
 
-    rules.extend(_server_global_if_transition_rules(
+    rules.extend(_literal_if_transition_rules(
         text=text,
         start_line=start_line,
         subject=subject,
@@ -923,7 +941,7 @@ def _switch_state_transition_rules(
     return tuple(rules)
 
 
-def _server_global_if_transition_rules(
+def _literal_if_transition_rules(
     *,
     text: str,
     start_line: int,
@@ -931,7 +949,7 @@ def _server_global_if_transition_rules(
     trigger: str,
     meta: dict,
 ) -> tuple[BehaviorRule,...]:
-    """Recognize literal if-equality transitions for canonical server-global state."""
+    """Recognize literal if-equality transitions for supported canonical lifecycle state."""
     raw=text.splitlines()
     structural=_structural_lua_lines(text)
     aliases=_state_aliases(text,start_line=start_line)
@@ -953,7 +971,7 @@ def _server_global_if_transition_rules(
             continue
         alias,case_value=match.groups()
         state=aliases.get(alias)
-        if state is None or state.get("scope")!="SERVER_GLOBAL":
+        if state is None or state.get("scope") not in {"SERVER_GLOBAL","INSTANCE_LIFECYCLE"}:
             continue
 
         depth=0
@@ -990,7 +1008,7 @@ def _server_global_if_transition_rules(
                 "source_line_text":write["source_line"],
             }
             rules.append(BehaviorRule(
-                f"{rule_prefix}:server-global-transition:{transition_index}",
+                f"{rule_prefix}:literal-if-transition:{transition_index}",
                 "state_transition",
                 subject,
                 trigger=trigger,
@@ -1015,7 +1033,11 @@ def _server_global_if_transition_rules(
                     "state_name":state["name"],
                     "selector_alias":alias,
                     "if_literal":case_value,
-                    "transition_form":"SERVER_GLOBAL_LITERAL_IF",
+                    "transition_form":(
+                        "SERVER_GLOBAL_LITERAL_IF"
+                        if state["scope"]=="SERVER_GLOBAL"
+                        else "INSTANCE_LIFECYCLE_LITERAL_IF"
+                    ),
                 },
             ))
     return tuple(rules)
