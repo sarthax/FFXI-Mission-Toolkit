@@ -102,6 +102,7 @@ jobs:
           python test_fixtures/test_scripted_behavior_entity_loops.py
           python test_fixtures/test_scripted_behavior_symbolic_ranges.py
           python test_fixtures/test_scripted_behavior_shared_helpers.py
+          python test_fixtures/test_scripted_behavior_shared_helper_callees.py
           python test_fixtures/test_behavior_visualizer_helper_layout.py
           python test_fixtures/test_scripted_behavior_state_transitions.py
           python test_fixtures/test_wotg25_bastok_chain_ingestion.py
