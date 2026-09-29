@@ -126,6 +126,10 @@ def _graph_for_behavior(behavior) -> dict:
             source_lines=rule.metadata.get("source_lines"),
             helper=rule.metadata.get("helper"),
             call_chain=rule.metadata.get("call_chain"),
+            callback_type=rule.metadata.get("callback_type"),
+            callback_event=rule.metadata.get("callback_event"),
+            callback_delay_source=rule.metadata.get("callback_delay_source"),
+            callback_call_line=rule.metadata.get("callback_call_line"),
         )
         hook=rule.metadata.get("hook")
         parent=hook_nodes.get(hook,root)
@@ -198,6 +202,9 @@ def _graph_for_behavior(behavior) -> dict:
                 hook=rule.metadata.get("hook"),
                 helper=rule.metadata.get("helper"),
                 call_chain=rule.metadata.get("call_chain"),
+                callback_type=rule.metadata.get("callback_type"),
+                callback_event=rule.metadata.get("callback_event"),
+                callback_delay_source=rule.metadata.get("callback_delay_source"),
             )
             edges.append({"source":rid,"target":eid,"kind":"EMITS"})
             target=effect.target
