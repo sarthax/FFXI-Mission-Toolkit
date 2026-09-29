@@ -200,8 +200,8 @@ def decode_packet(packet: bytes) -> dict:
         fields["worlds"] = worlds
     elif command == 0x0026:
         fields.update({
-            "version_code": _cstr(packet[108:124]),
-            "excode_client": struct.unpack_from("<I", packet, 124)[0],
+            "version_code": _cstr(packet[116:132]),
+            "excode_client": struct.unpack_from("<I", packet, 132)[0],
         })
     elif command == 0x0028:
         fields.update({
