@@ -68,11 +68,13 @@
     <span><i class="legend-dot effect"></i> downstream effect/API</span>
     <span><i class="legend-dot state"></i> named state variable</span>
     <span><i class="legend-dot shared-helper"></i> resolved shared helper</span>
+    <span><i class="legend-dot helper-input"></i> helper upstream input</span>
+    <span><i class="legend-dot helper-effect"></i> helper downstream/direct call</span>
     <span><i class="legend-dot target"></i> affected actor/system</span>
   </div>
   <p id="behavior-status" class="muted"></p>
   <div class="behavior-canvas-wrap">
-    <svg id="behavior-graph" viewBox="0 0 1280 760" role="img" aria-label="Lua behavior causal graph"></svg>
+    <svg id="behavior-graph" viewBox="0 0 1480 760" role="img" aria-label="Lua behavior causal graph"></svg>
   </div>
   <div id="behavior-detail" class="behavior-detail">
     <strong>Select a graph node</strong>
@@ -235,7 +237,7 @@
 
 <script id="behavior-data" type="application/json">{{ result.graph|tojson }}</script>
 <style>
-.behavior-inspector{margin-top:1.5rem}.behavior-controls,.behavior-legend{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;margin:.6rem 0}.behavior-controls input{min-width:20rem}.behavior-legend span{font-size:.85rem;color:var(--muted)}.legend-dot{display:inline-block;width:.75rem;height:.75rem;border-radius:50%;margin-right:.25rem;vertical-align:-.05rem;border:1px solid var(--border)}.legend-dot.condition{background:#7c3aed}.legend-dot.hook{background:#2563eb}.legend-dot.callback{background:#be185d}.legend-dot.rule{background:#475569}.legend-dot.effect{background:#059669}.legend-dot.state{background:#0891b2}.legend-dot.shared-helper{background:#7c2d12}.legend-dot.target{background:#d97706}.behavior-canvas-wrap{overflow:auto;border:1px solid var(--border);border-radius:6px;background:var(--panel,#0f172a)}#behavior-graph{width:100%;min-width:900px;min-height:620px}.behavior-edge{stroke:#64748b;stroke-width:1.4;fill:none;marker-end:url(#behavior-arrow)}.behavior-edge.dim{opacity:.12}.behavior-node{cursor:pointer}.behavior-node rect{rx:8;ry:8;stroke:#cbd5e1;stroke-width:1.3}.behavior-node text{fill:#f8fafc;font-size:11px;pointer-events:none}.behavior-node .secondary{fill:#cbd5e1;font-size:9px}.behavior-node.condition rect{fill:#5b21b6}.behavior-node.hook rect{fill:#1d4ed8}.behavior-node.callback rect{fill:#9d174d}.behavior-node.rule rect{fill:#334155}.behavior-node.effect rect{fill:#047857}.behavior-node.state rect{fill:#0e7490}.behavior-node.shared_helper rect{fill:#7c2d12}.behavior-node.target rect{fill:#b45309}.behavior-node.subject rect{fill:#0f766e}.behavior-node.selected rect{stroke:#fff;stroke-width:3}.behavior-node.dim{opacity:.2}.behavior-detail{margin-top:.8rem;padding:1rem;border:1px solid var(--border);border-radius:6px;background:var(--card,#111827);white-space:normal}.behavior-detail code{white-space:pre-wrap;word-break:break-word}.behavior-detail dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:.3rem .8rem}.behavior-detail dt{color:var(--muted)}.behavior-detail dd{margin:0;min-width:0;word-break:break-word}
+.behavior-inspector{margin-top:1.5rem}.behavior-controls,.behavior-legend{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;margin:.6rem 0}.behavior-controls input{min-width:20rem}.behavior-legend span{font-size:.85rem;color:var(--muted)}.legend-dot{display:inline-block;width:.75rem;height:.75rem;border-radius:50%;margin-right:.25rem;vertical-align:-.05rem;border:1px solid var(--border)}.legend-dot.condition{background:#7c3aed}.legend-dot.hook{background:#2563eb}.legend-dot.callback{background:#be185d}.legend-dot.rule{background:#475569}.legend-dot.effect{background:#059669}.legend-dot.state{background:#0891b2}.legend-dot.shared-helper{background:#7c2d12}.legend-dot.helper-input{background:#6d28d9}.legend-dot.helper-effect{background:#15803d}.legend-dot.target{background:#d97706}.behavior-canvas-wrap{overflow:auto;border:1px solid var(--border);border-radius:6px;background:var(--panel,#0f172a)}#behavior-graph{width:100%;min-width:900px;min-height:620px}.behavior-edge{stroke:#64748b;stroke-width:1.4;fill:none;marker-end:url(#behavior-arrow)}.behavior-edge.dim{opacity:.12}.behavior-node{cursor:pointer}.behavior-node rect{rx:8;ry:8;stroke:#cbd5e1;stroke-width:1.3}.behavior-node text{fill:#f8fafc;font-size:11px;pointer-events:none}.behavior-node .secondary{fill:#cbd5e1;font-size:9px}.behavior-node.condition rect{fill:#5b21b6}.behavior-node.hook rect{fill:#1d4ed8}.behavior-node.callback rect{fill:#9d174d}.behavior-node.rule rect{fill:#334155}.behavior-node.effect rect{fill:#047857}.behavior-node.state rect{fill:#0e7490}.behavior-node.shared_helper rect{fill:#7c2d12}.behavior-node.helper_input rect{fill:#6d28d9}.behavior-node.helper_effect rect,.behavior-node.helper_call rect{fill:#15803d}.behavior-node.target rect{fill:#b45309}.behavior-node.subject rect{fill:#0f766e}.behavior-node.selected rect{stroke:#fff;stroke-width:3}.behavior-node.dim{opacity:.2}.behavior-detail{margin-top:.8rem;padding:1rem;border:1px solid var(--border);border-radius:6px;background:var(--card,#111827);white-space:normal}.behavior-detail code{white-space:pre-wrap;word-break:break-word}.behavior-detail dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:.3rem .8rem}.behavior-detail dt{color:var(--muted)}.behavior-detail dd{margin:0;min-width:0;word-break:break-word}
 </style>
 <script>
 (() => {
@@ -256,13 +258,16 @@
    if(n.kind==='callback') return 2;
    if(n.kind==='rule') return n.meta?.callback_type?3:2;
    if(n.kind==='effect') return n.meta?.callback_type?4:3;
+   if(n.kind==='helper_input') return 4;
+   if(n.kind==='shared_helper') return 5;
+   if(n.kind==='helper_effect' || n.kind==='helper_call' || n.kind==='target') return 6;
    return 5;
  }
  function layout(visible){
-   const levels={0:[],1:[],2:[],3:[],4:[],5:[]};
+   const levels={0:[],1:[],2:[],3:[],4:[],5:[],6:[]};
    visible.forEach(n=>levels[depthFor(n)].push(n));
    Object.values(levels).forEach(rows=>rows.sort((a,b)=>a.label.localeCompare(b.label)));
-   const x={0:100,1:310,2:520,3:740,4:970,5:1210}, pos={};
+   const x={0:90,1:280,2:470,3:670,4:880,5:1100,6:1340}, pos={};
    Object.entries(levels).forEach(([d,rows])=>{
      const gap=Math.max(70,680/Math.max(1,rows.length));
      rows.forEach((n,i)=>pos[n.id]={x:x[d],y:50+i*gap});
