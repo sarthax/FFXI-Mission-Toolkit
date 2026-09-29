@@ -96,6 +96,10 @@ _SERVER_ALIAS_ASSIGN=re.compile(
 )
 _SWITCH_SELECTOR=re.compile(r"\bswitch\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)\s*:\s*caseof")
 _SWITCH_CASE=re.compile(r"^\s*\[([^\]]+)\]\s*=\s*function\s*\(")
+_ALIAS_IF_LITERAL_EQUALS=re.compile(
+    r"^\s*if\s+([A-Za-z_][A-Za-z0-9_]*)\s*==\s*"
+    r"(-?\d+|true|false|['\"][^'\"]+['\"])\s+then\b"
+)
 _TIME_ALIAS_ASSIGN=re.compile(
     r"\blocal\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(VanadielHour|VanadielDay|VanadielDayOfTheWeek)\(\)"
 )
@@ -909,6 +913,111 @@ def _switch_state_transition_rules(
             brace_depth+=row.count("{")-row.count("}")
             j+=1
 
+    rules.extend(_server_global_if_transition_rules(
+        text=text,
+        start_line=start_line,
+        subject=subject,
+        trigger=trigger,
+        meta=meta,
+    ))
+    return tuple(rules)
+
+
+def _server_global_if_transition_rules(
+    *,
+    text: str,
+    start_line: int,
+    subject: str,
+    trigger: str,
+    meta: dict,
+) -> tuple[BehaviorRule,...]:
+    """Recognize literal if-equality transitions for canonical server-global state."""
+    raw=text.splitlines()
+    structural=_structural_lua_lines(text)
+    aliases=_state_aliases(text,start_line=start_line)
+    rules=[]
+    transition_index=0
+    context_parts=[trigger]
+    if meta.get("helper"):
+        context_parts.append(f"helper:{meta['helper']}")
+    if meta.get("callback_type"):
+        context_parts.append(
+            f"callback:{meta.get('callback_call_line')}:{meta.get('callback_type')}"
+        )
+    rule_prefix=":".join(str(part) for part in context_parts)
+
+    for i,raw_line in enumerate(raw):
+        code=_strip_line_comment_preserve_strings(raw_line)
+        match=_ALIAS_IF_LITERAL_EQUALS.match(code)
+        if not match:
+            continue
+        alias,case_value=match.groups()
+        state=aliases.get(alias)
+        if state is None or state.get("scope")!="SERVER_GLOBAL":
+            continue
+
+        depth=0
+        started=False
+        block_end=None
+        for j in range(i,len(raw)):
+            row=structural[j]
+            opens=_open_count(row)
+            closes=_close_count(row)
+            if opens:
+                started=True
+            depth+=opens-closes
+            if started and depth<=0:
+                block_end=j
+                break
+        if block_end is None:
+            continue
+
+        body="\n".join(raw[i:block_end+1])
+        accesses=_named_state_accesses(body,start_line=start_line+i)
+        writes=[
+            row for row in accesses
+            if row["access"]=="WRITE" and row["state_id"]==state["state_id"]
+        ]
+        for write in writes:
+            transition_index+=1
+            common={
+                "scope":state["scope"],
+                "name":state["name"],
+                "receiver":state["receiver"],
+                "selector_alias":alias,
+                "if_literal":case_value,
+                "source_line":write["line"],
+                "source_line_text":write["source_line"],
+            }
+            rules.append(BehaviorRule(
+                f"{rule_prefix}:server-global-transition:{transition_index}",
+                "state_transition",
+                subject,
+                trigger=trigger,
+                conditions=(BehaviorCondition(
+                    state["state_id"],"STATE_EQUALS",case_value,
+                    {
+                        **common,
+                        "selector_source_line":state["source_line"],
+                        "selector_source_line_text":state["source_line_text"],
+                    },
+                ),),
+                effects=(BehaviorEffect(
+                    "WRITE_STATE",state["state_id"],write["value"],common
+                ),),
+                confidence="VERIFIED",
+                implementation_status="PRESENT",
+                metadata={
+                    **meta,
+                    "source_lines":(start_line+i,start_line+block_end),
+                    "state_id":state["state_id"],
+                    "state_scope":state["scope"],
+                    "state_name":state["name"],
+                    "selector_alias":alias,
+                    "if_literal":case_value,
+                    "transition_form":"SERVER_GLOBAL_LITERAL_IF",
+                },
+            ))
     return tuple(rules)
 
 
