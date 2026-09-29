@@ -13,6 +13,7 @@ import tempfile
 from pathlib import Path
 
 from workbench.core.services import capture_integrity
+from workbench.core.services import capture_chat
 
 _HEX = re.compile(r"^[0-9A-Fa-f]{2}$")
 _PACKETEER_DIRECTION = {
@@ -159,6 +160,7 @@ def ingest_packetdb(con: sqlite3.Connection, capture_id: int, src, relname: str)
     tmp.write(source_bytes)
     tmp.close()
     rows = []
+    chat_rows = []
     try:
         db = sqlite3.connect(tmp.name)
         try:
@@ -174,6 +176,13 @@ def ingest_packetdb(con: sqlite3.Connection, capture_id: int, src, relname: str)
                           PACKET_SIZE,PACKET_SYNC,PACKET_DATA
                    FROM PACKETS ORDER BY RECEIVED_DT,PACKET_ID"""
             ).fetchall()
+            chat_cols = {r[1].upper() for r in db.execute("PRAGMA table_info(CHATLOG)")}
+            chat_required = {"CHAT_ID","RECEIVED_DT","DIRECTION","ZONE_ID","CHAT_TEXT"}
+            if chat_required <= chat_cols:
+                chat_rows = db.execute(
+                    """SELECT CHAT_ID,RECEIVED_DT,DIRECTION,ZONE_ID,CHAT_TEXT
+                       FROM CHATLOG ORDER BY RECEIVED_DT,CHAT_ID"""
+                ).fetchall()
         finally:
             db.close()
     finally:
@@ -184,7 +193,8 @@ def ingest_packetdb(con: sqlite3.Connection, capture_id: int, src, relname: str)
 
     con.execute(
         """DELETE FROM capture_row_locators
-           WHERE capture_id=? AND filename=? AND target_table='capture_raw_packets'""",
+           WHERE capture_id=? AND filename=?
+             AND target_table IN ('capture_raw_packets','capture_chat_observations')""",
         (capture_id, relname),
     )
     count = 0
@@ -208,6 +218,26 @@ def ingest_packetdb(con: sqlite3.Connection, capture_id: int, src, relname: str)
             source_sha256=source_sha256,
             locator_basis="sqlite-row",
             details={"packetdb_packet_id": packet_id},
+        )
+        count += 1
+
+    for chat_id, ts, direction, zone_id, chat_text in chat_rows:
+        direction_name = "incoming" if int(direction) == 0 else (
+            "outgoing" if int(direction) == 1 else "unknown"
+        )
+        capture_chat.insert_chat_observation(
+            con, capture_id,
+            ts=str(ts) if ts is not None else None,
+            direction=direction_name,
+            zone_id=int(zone_id) if zone_id is not None else None,
+            zone_db=None,
+            text=str(chat_text),
+            source_format="packetdb_chatlog",
+            source_native_id=f"{relname}:chat:{chat_id}",
+            filename=relname,
+            source_sha256=source_sha256,
+            locator_basis="sqlite-row",
+            details={"packetdb_chat_id": chat_id, "source_table": "CHATLOG"},
         )
         count += 1
     return count
