@@ -188,16 +188,71 @@ def _analyze_shared_helper_body(
             for effect in entity_rule.effects
         ]
 
+    state_reads=[row for row in state_accesses if row.get("access")=="READ"]
+    state_writes=[row for row in state_accesses if row.get("access")=="WRITE"]
+    impact={
+        "upstream":[
+            {
+                "kind":"STATE_READ",
+                "label":row.get("state_id"),
+                "value":row.get("value"),
+                "source_line":row.get("line"),
+                "source_line_text":row.get("source_line"),
+            }
+            for row in state_reads
+        ] + [
+            {
+                "kind":"CONTEXT",
+                "label":f"{row.get('subject')} {row.get('operator')}",
+                "value":row.get("value"),
+                "source_line":row.get("metadata",{}).get("source_line"),
+                "source_line_text":row.get("metadata",{}).get("source_line_text"),
+            }
+            for row in context_conditions
+        ],
+        "downstream":[
+            {
+                "kind":"STATE_WRITE",
+                "label":row.get("state_id"),
+                "value":row.get("value"),
+                "source_line":row.get("line"),
+                "source_line_text":row.get("source_line"),
+            }
+            for row in state_writes
+        ] + [
+            {
+                "kind":row.get("effect"),
+                "label":row.get("target"),
+                "value":row.get("value"),
+                "source_line":row.get("metadata",{}).get("source_line"),
+                "source_line_text":row.get("metadata",{}).get("source_line_text"),
+            }
+            for row in entity_effects
+        ],
+        "calls":[
+            {
+                "qualified_name":row.get("qualified_name"),
+                "receiver":row.get("receiver"),
+                "function":row.get("function"),
+                "line":row.get("line"),
+                "source_line":row.get("source_line"),
+            }
+            for row in api_calls
+        ],
+    }
     return {
         "api_calls":api_calls,
         "state_accesses":state_accesses,
         "context_conditions":context_conditions,
         "entity_effects":entity_effects,
+        "impact":impact,
         "summary":{
             "api_calls":len(api_calls),
             "state_accesses":len(state_accesses),
             "context_conditions":len(context_conditions),
             "entity_effects":len(entity_effects),
+            "upstream_impacts":len(impact["upstream"]),
+            "downstream_impacts":len(impact["downstream"]),
         },
     }
 
