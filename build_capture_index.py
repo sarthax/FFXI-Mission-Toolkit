@@ -62,6 +62,7 @@ from pathlib import Path
 import entity_profile
 from workbench.core.services import capture_integrity
 from workbench.core.services import raw_packet_ingest
+from workbench.core.services import pcap_ingest
 
 TOOLS_ROOT = Path(__file__).parent
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
@@ -195,6 +196,18 @@ def init_db(con: sqlite3.Connection):
             source_format TEXT, source_native_id TEXT,
             PRIMARY KEY (capture_id, seq)
         );
+        CREATE TABLE IF NOT EXISTS capture_network_observations (
+            capture_id INTEGER, seq INTEGER, ts REAL, linktype INTEGER,
+            src_ip TEXT, dst_ip TEXT, src_port INTEGER, dst_port INTEGER,
+            transport TEXT, payload_hex TEXT, frame_hex TEXT,
+            frame_len INTEGER, captured_len INTEGER, service_hint TEXT,
+            source_format TEXT, source_native_id TEXT,
+            PRIMARY KEY (capture_id, seq)
+        );
+        CREATE INDEX IF NOT EXISTS idx_capture_network_endpoints
+            ON capture_network_observations(capture_id,src_ip,dst_ip,src_port,dst_port);
+        CREATE INDEX IF NOT EXISTS idx_capture_network_source
+            ON capture_network_observations(capture_id,source_format,source_native_id);
         CREATE TABLE IF NOT EXISTS capture_structured_records (
             capture_id INTEGER NOT NULL,
             source_file TEXT NOT NULL,
@@ -941,7 +954,14 @@ def ingest_single_file(con, capture_id: int, filename: str, data: bytes) -> dict
     rows = 0
     error = None
     try:
-        if suffix in (".db", ".sqlite", ".sqlite3"):
+        if suffix in (".pcap", ".pcapng"):
+            fmt = pcap_ingest.sniff_format(data)
+            if fmt:
+                src = SingleFileSource(filename, data)
+                rows = pcap_ingest.ingest_network_capture(con, capture_id, src, filename, fmt)
+            else:
+                error = "Unrecognized packet-capture binary format"
+        elif suffix in (".db", ".sqlite", ".sqlite3"):
             fmt = sniff_sqlite_format(data)
             src = SingleFileSource(filename, data)
             if fmt == "packetdb":
@@ -2693,7 +2713,8 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
 
     counts = {"npc_entries": 0, "npc_hist": 0, "actions": 0, "path": 0, "hp": 0, "events": 0,
               "ki": 0, "eventview": 0, "level_range": 0, "attack_delay": 0, "raw_packets": 0,
-              "pc_path": 0, "widescan": 0, "caplog_chat": 0, "chat": 0, "structured": 0}
+              "pc_path": 0, "widescan": 0, "caplog_chat": 0, "chat": 0,
+              "network": 0, "structured": 0}
     npc_db_files = sfind(r'NPCLogger/[^/]+\.db$')
     for relname in npc_db_files:
         e, h = run2(relname, ingest_npc_db, con, capture_id, src, relname)
@@ -2848,6 +2869,26 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         matched_names.add(relname)
         if result_sink is not None:
             result_sink.append({"filename": relname, "rows": 0, "error": None})
+
+    # Lossless generic network-capture adapters. These preserve transport payload/frame evidence
+    # without pretending a socket payload is already a decoded FFXI application packet.
+    all_source_names = sorted(src.list_files() if subroot is None
+                              else [n for n in src.list_files() if n.startswith(subroot + "/")])
+    for relname in all_source_names:
+        if relname in matched_names:
+            continue
+        fmt = _capture_source_format(src, relname)
+        if fmt not in {"pcap", "pcapng"}:
+            continue
+        matched_names.add(relname)
+        try:
+            rows = pcap_ingest.ingest_network_capture(con, capture_id, src, relname, fmt)
+            counts["network"] += rows
+            if result_sink is not None:
+                result_sink.append({"filename": relname, "rows": rows, "error": None})
+        except Exception as ex:
+            if result_sink is not None:
+                result_sink.append({"filename": relname, "rows": 0, "error": str(ex)})
 
     # Content-first raw-packet adapters for portable PacketDB SQLite and Ashita Packeteer text.
     # These are source-independent formats, so folder names are deliberately not required.
@@ -3025,6 +3066,11 @@ def _capture_source_format(src: "Source", relname: str) -> str | None:
         return "eventview"
     if "npclogger/" in lower and lower.endswith(".lua"):
         return "npclogger_lua"
+    if lower.endswith((".pcap", ".pcapng")):
+        try:
+            return pcap_ingest.sniff_format(src.read_bytes(relname))
+        except Exception:
+            return None
     # Auxiliary logger generations are content-addressed rather than path-bound. This lets old
     # bundles, renamed files, and current Captain output share one detection contract.
     try:
@@ -3048,7 +3094,7 @@ def _capture_source_format(src: "Source", relname: str) -> str | None:
 
 REBUILDABLE_CAPTURE_FORMATS = {
     "eventview", "idview_simple", "kitrack", "hptrack", "actionview_simple", "caplog", "packetlogger",
-    "packetdb", "packeteer",
+    "packetdb", "packeteer", "pcap", "pcapng",
     "npclogger_db", "actionview_db", "levelrange_db",
     "npclogger_lua", "pathlog_csv", "pc_pathlog_csv", "widescan", "attackdelay",
 } | AUX_STRUCTURED_FORMATS
@@ -3277,6 +3323,8 @@ def rebuild_capture_source(con, capture_id: int, filename: str) -> dict:
             deleted = _delete_exact_source_rows(con, capture_id, filename)
             if fmt == "packetdb":
                 result = raw_packet_ingest.ingest_packetdb(con, capture_id, src, filename)
+            elif fmt in {"pcap", "pcapng"}:
+                result = pcap_ingest.ingest_network_capture(con, capture_id, src, filename, fmt)
             elif fmt == "packeteer":
                 result = raw_packet_ingest.ingest_packeteer(con, capture_id, src, filename)
             elif fmt == "eventview":
@@ -3351,7 +3399,8 @@ CAPTURE_CHILD_TABLES = [
     "capture_level_range", "capture_attack_delay", "capture_pc_path", "capture_structured_records", "capture_source_files",
     "capture_source_manifest", "capture_source_artifacts", "capture_content_manifest",
     "capture_ingest_lineage",
-    "capture_raw_packets", "capture_video_observations", "capture_tags", "capture_caplog_chat",
+    "capture_raw_packets", "capture_network_observations",
+    "capture_video_observations", "capture_tags", "capture_caplog_chat",
     "capture_chat_observations",
     "capture_alignment_anchors", "capture_key_evidence",
 ]
