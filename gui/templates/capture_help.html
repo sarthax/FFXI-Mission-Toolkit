@@ -37,6 +37,7 @@
 <tr><td><strong>CraftTrack</strong></td><td>Craft result/material/crystal observations.</td><td>Supported</td></tr>
 <tr><td><strong>ConquestTrack</strong></td><td>Conquest and related world-state observations.</td><td>Supported</td></tr>
 <tr><td><strong>Wiggo PriceLog / findPrice</strong></td><td>Historical NPC resale/vendor-price observations.</td><td>Supported</td></tr>
+<tr><td><strong>PCAP / PCAPNG</strong></td><td>Classic PCAP and PCAPNG network frames with timestamp, interface/link type, IP/transport endpoints, captured payload/frame bytes, and exact frame provenance. UDP payloads are promoted into canonical FFXI packet chunks only when the complete payload already validates as a known plaintext FFXI chunk stream.</td><td>Bounded support</td></tr>
 </tbody></table></div>
 
 <h2>Raw packet convergence</h2>
@@ -62,18 +63,19 @@
 <div class="table-wrap"><table>
 <thead><tr><th>Gap</th><th>Current behavior</th><th>Recommended direction</th></tr></thead>
 <tbody>
-<tr><td><strong>Generic PCAP / PCAPNG</strong></td><td>No direct network-capture adapter.</td><td>Add a bounded FFXI stream/session decoder for Wireshark/Npcap-style captures.</td></tr>
 <tr><td><strong>Lobby / world-server packet streams</strong></td><td>Current addon capture support is primarily zone/game-server oriented.</td><td>Research and model lobby/search/AH/account/storage stream capture separately when needed.</td></tr>
 <tr><td><strong>PacketDB ZONES / PACKET_DEFINITION</strong></td><td>Not imported as runtime facts because they are reference metadata, not observations.</td><td>Optionally preserve as source-supplied historical reference metadata.</td></tr>
 <tr><td><strong>Unknown historical/community loggers</strong></td><td>Unrecognized source files remain visible in ingestion results rather than being silently ignored.</td><td>Add adapters when real samples/schemas are found; prefer content signatures over folder-name assumptions.</td></tr>
 </tbody></table></div>
+
+<h2>PCAP/PCAPNG limits</h2>
+<p>PCAP support is deliberately evidence-first. FFXI zone traffic uses UDP, but live wire payloads can require session-aware Blowfish decryption and zlib decompression before the familiar four-byte FFXI chunks exist. The adapter therefore always preserves network frames and transport payloads, but it does <strong>not</strong> guess keys, decompression state, client/server role, or packet direction. Opaque/encrypted datagrams remain network-frame evidence. A UDP payload is promoted into <code>capture_raw_packets</code> only when the entire payload is already a structurally valid stream of known FFXI chunks; promoted rows use direction <code>unknown</code> until independent evidence establishes endpoint roles.</p>
 
 <h2>How unsupported files are handled</h2>
 <p>Files that do not match a supported parser are reported as unrecognized. Known formats found in unexpected paths are content-sniffed and reported as likely known formats so path/layout regressions can be distinguished from genuinely new logger families. Source manifests, hashes, ingestion lineage, and row locators preserve what was actually consumed.</p>
 
 <h2>Current priority gaps</h2>
 <ol>
-<li>PCAP/PCAPNG adapter.</li>
 <li>Continue searching historical Windower/Ashita/community logger ecosystems for additional real formats.</li>
 <li>Lobby/world-server stream research for search, auction, storage/account, and related non-zone traffic.</li>
 <li>Optional preservation of PacketDB <code>ZONES</code>/<code>PACKET_DEFINITION</code> as historical reference metadata.</li>

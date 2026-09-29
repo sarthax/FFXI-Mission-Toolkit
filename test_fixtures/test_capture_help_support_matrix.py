@@ -42,12 +42,12 @@ def main():
         "CraftTrack",
         "ConquestTrack",
         "PriceLog",
+        "PCAP / PCAPNG",
     ]
     for name in required_supported:
         assert name in template, name
 
     required_gaps = [
-        "PCAP / PCAPNG",
         "Lobby / world-server packet streams",
         "PacketDB ZONES / PACKET_DEFINITION",
         "Unknown historical/community loggers",
@@ -61,6 +61,9 @@ def main():
     assert "capture_chat_observations" in template
     assert "capturebar_overlay" in template
     assert "CAPTUREBAR_CONTEXT" in template
+    assert "PCAP/PCAPNG limits" in template
+    assert "direction <code>unknown</code>" in template
+    assert "Blowfish" in template and "zlib" in template
     assert "X/Z/Y" in template
     assert "__UNKNOWN__" in template
     assert "whole-session" in template.lower()

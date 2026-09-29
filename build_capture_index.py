@@ -63,6 +63,7 @@ import entity_profile
 from workbench.core.services import capture_integrity
 from workbench.core.services import raw_packet_ingest
 from workbench.core.services import capture_chat
+from workbench.core.services import pcap_ingest
 
 TOOLS_ROOT = Path(__file__).parent
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
@@ -942,7 +943,15 @@ def ingest_single_file(con, capture_id: int, filename: str, data: bytes) -> dict
     rows = 0
     error = None
     try:
-        if suffix in (".db", ".sqlite", ".sqlite3"):
+        if suffix in (".pcap", ".pcapng") or pcap_ingest.sniff_pcap_format(data):
+            fmt = pcap_ingest.sniff_pcap_format(data)
+            src = SingleFileSource(filename, data)
+            if fmt:
+                frames, chunks = pcap_ingest.ingest_pcap(con, capture_id, src, filename)
+                rows = frames + chunks
+            else:
+                error = "Unrecognized packet-capture container"
+        elif suffix in (".db", ".sqlite", ".sqlite3"):
             fmt = sniff_sqlite_format(data)
             src = SingleFileSource(filename, data)
             if fmt == "packetdb":
@@ -2961,22 +2970,30 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         if result_sink is not None:
             result_sink.append({"filename": relname, "rows": 0, "error": None})
 
-    # Content-first raw-packet adapters for portable PacketDB SQLite and Ashita Packeteer text.
-    # These are source-independent formats, so folder names are deliberately not required.
+    # Content-first packet/network adapters: PacketDB and Packeteer already expose decoded
+    # FFXI chunks, while PCAP/PCAPNG preserves network frames and promotes only proven plaintext
+    # FFXI UDP chunk streams.
     all_source_names = sorted(src.list_files() if subroot is None
                               else [n for n in src.list_files() if n.startswith(subroot + "/")])
     for relname in all_source_names:
         if relname in matched_names:
             continue
         fmt = _capture_source_format(src, relname)
-        if fmt not in {"packetdb", "packeteer"}:
+        if fmt not in {"packetdb", "packeteer", "pcap", "pcapng"}:
             continue
         matched_names.add(relname)
         try:
-            rows = (raw_packet_ingest.ingest_packetdb(con, capture_id, src, relname)
-                    if fmt == "packetdb"
-                    else raw_packet_ingest.ingest_packeteer(con, capture_id, src, relname))
-            counts["raw_packets"] += rows
+            if fmt == "packetdb":
+                rows = raw_packet_ingest.ingest_packetdb(con, capture_id, src, relname)
+                counts["raw_packets"] += rows
+            elif fmt == "packeteer":
+                rows = raw_packet_ingest.ingest_packeteer(con, capture_id, src, relname)
+                counts["raw_packets"] += rows
+            else:
+                frames, chunks = pcap_ingest.ingest_pcap(con, capture_id, src, relname)
+                counts["structured"] += frames
+                counts["raw_packets"] += chunks
+                rows = frames + chunks
             if result_sink is not None:
                 result_sink.append({"filename": relname, "rows": rows, "error": None})
         except Exception as ex:
@@ -3102,6 +3119,13 @@ def _capture_source_format(src: "Source", relname: str) -> str | None:
     basename = lower.rsplit("/", 1)[-1]
     if basename in {"manifest.txt", "thumbs.db", "desktop.ini", ".ds_store"}:
         return "manifest" if basename == "manifest.txt" else "benign"
+    if lower.endswith((".pcap", ".pcapng")):
+        try:
+            detected = pcap_ingest.sniff_pcap_format(src.read_bytes(relname))
+            if detected:
+                return detected
+        except Exception:
+            return "pcapng" if lower.endswith(".pcapng") else "pcap"
     if re.search(r'npclogger/[^/]+\.db$', lower):
         try:
             return sniff_sqlite_format(src.read_bytes(relname))
@@ -3161,7 +3185,7 @@ def _capture_source_format(src: "Source", relname: str) -> str | None:
 REBUILDABLE_CAPTURE_FORMATS = {
     "eventview", "idview_simple", "eventview_session_simple", "eventview_session_raw",
     "kitrack", "hptrack", "actionview_simple", "caplog", "packetlogger",
-    "packetdb", "packeteer",
+    "packetdb", "packeteer", "pcap", "pcapng",
     "npclogger_db", "actionview_db", "levelrange_db",
     "npclogger_lua", "pathlog_csv", "pc_pathlog_csv", "widescan", "attackdelay",
 } | AUX_STRUCTURED_FORMATS
@@ -3392,6 +3416,8 @@ def rebuild_capture_source(con, capture_id: int, filename: str) -> dict:
                 result = raw_packet_ingest.ingest_packetdb(con, capture_id, src, filename)
             elif fmt == "packeteer":
                 result = raw_packet_ingest.ingest_packeteer(con, capture_id, src, filename)
+            elif fmt in {"pcap", "pcapng"}:
+                result = pcap_ingest.ingest_pcap(con, capture_id, src, filename)
             elif fmt == "eventview":
                 result = ingest_eventview(con, capture_id, src, filename)
             elif fmt == "idview_simple":
