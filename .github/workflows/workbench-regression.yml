@@ -87,6 +87,7 @@ jobs:
           python test_fixtures/test_crafting_closure.py
           python test_fixtures/test_wotg25_branching_mission_truth.py
           python test_fixtures/test_scripted_behavior_model.py
+          python test_fixtures/test_scripted_behavior_lsb_extract.py
           python test_fixtures/test_wotg25_bastok_chain_ingestion.py
           python test_fixtures/test_mission_section_completion_scope.py
           python test_fixtures/test_package_manifest.py
