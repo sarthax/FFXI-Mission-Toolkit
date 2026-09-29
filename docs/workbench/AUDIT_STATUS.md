@@ -2717,3 +2717,17 @@ Absence of any auxiliary family is not a capture-quality failure; these sources 
 Capture ingestion now treats MalRD PacketDB SQLite and Ashita Packeteer text as first-class raw-packet sources alongside PacketLogger/PacketViewer. Canonical raw packet rows preserve optional zone id, packet size, sync id, injected/blocked state, source format, and source-native identity without collapsing independent evidence.
 
 Legacy NPCLogger Lua `raw_packet` bytes are promoted into the same canonical packet store with exact line provenance. Cross-source packet correlation now records exact-byte equivalence across independent raw sources while retaining each observation separately. Safe rebuild logic preserves mixed-source captures instead of assuming PacketLogger owns the whole raw-packet table.
+
+
+## 2026-09-28 — Canonical chat observations and PacketDB CHATLOG
+
+PacketDB chat evidence is no longer discarded.
+
+- MalRD PacketDB `CHATLOG` rows are ingested with native `CHAT_ID`, timestamp, direction, zone ID, and exact text.
+- A generic `capture_chat_observations` table now stores chat/message evidence independently of any one logger.
+- CapLog chat/system lines dual-write into the canonical chat store while the older `capture_caplog_chat` table remains intact for compatibility.
+- Canonical rows retain `source_format` and `source_native_id`, preventing cross-tool evidence from being silently collapsed.
+- PacketDB uses exact SQLite-row provenance; CapLog retains exact source-line/byte provenance.
+- PacketDB and CapLog lineage declarations now include the canonical chat target, and the table participates in capture deletion safety.
+
+The next capture evidence-loss target is preservation of whole-session EventView/simple or raw observations whose zone cannot be attributed safely.
