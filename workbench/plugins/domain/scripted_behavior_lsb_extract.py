@@ -125,6 +125,12 @@ _NUMERIC_FOR=re.compile(
     r"^\s*for\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(-?\d+)\s*,\s*(-?\d+)"
     r"(?:\s*,\s*(-?\d+))?\s+do\b"
 )
+_SYMBOLIC_FOR=re.compile(
+    r"^\s*for\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"
+    r"ID\.(npc|mob)\.([A-Z0-9_]+)(?:\s*([+-])\s*(\d+))?\s*,\s*"
+    r"ID\.(npc|mob)\.([A-Z0-9_]+)(?:\s*([+-])\s*(\d+))?"
+    r"(?:\s*,\s*(-?\d+))?\s+do\b"
+)
 
 
 @dataclass(frozen=True)
@@ -998,6 +1004,80 @@ def _literal_entity_aliases(text: str) -> dict[str,dict]:
     return aliases
 
 
+def _symbolic_range_loop_entity_effects(
+    text: str,
+    *,
+    start_line: int,
+    max_expansion: int=64,
+) -> tuple[BehaviorEffect,...]:
+    """Expand loops whose bounds are the same direct entity symbol plus literal offsets."""
+    raw=text.splitlines()
+    structural=_structural_lua_lines(text)
+    effects=[]
+    for i,code in enumerate(structural):
+        match=_SYMBOLIC_FOR.match(code)
+        if not match:
+            continue
+        (
+            var,kind1,symbol1,sign1,off1,
+            kind2,symbol2,sign2,off2,step_raw
+        )=match.groups()
+        if kind1!=kind2 or symbol1!=symbol2:
+            continue
+        start_off=(int(off1)*(1 if sign1=="+" else -1)) if sign1 and off1 else 0
+        end_off=(int(off2)*(1 if sign2=="+" else -1)) if sign2 and off2 else 0
+        step=int(step_raw) if step_raw is not None else (1 if end_off>=start_off else -1)
+        if step==0 or (end_off-start_off)*step < 0:
+            continue
+        offsets=list(range(start_off,end_off+(1 if step>0 else -1),step))
+        if not offsets or len(offsets)>max_expansion:
+            continue
+
+        depth=0
+        loop_end=None
+        for j in range(i,len(raw)):
+            depth+=_open_count(structural[j])-_close_count(structural[j])
+            if j>i and depth<=0:
+                loop_end=j
+                break
+        if loop_end is None:
+            continue
+
+        call_re=re.compile(
+            rf"\b(GetNPCByID|GetMobByID|SpawnMob|DespawnMob)\(\s*{re.escape(var)}"
+            rf"(?=\s*(?:,|\)))"
+        )
+        for body_index in range(i+1,loop_end):
+            body_line=raw[body_index]
+            body_code=_strip_line_comment_preserve_strings(body_line)
+            source_line=start_line+body_index
+            for call in call_re.findall(body_code):
+                for offset in offsets:
+                    target=_entity_symbol_target(
+                        kind1,symbol1,
+                        "+" if offset>0 else "-" if offset<0 else None,
+                        str(abs(offset)) if offset else None,
+                    )
+                    effect_name={
+                        "GetNPCByID":"REFERENCES_ENTITY",
+                        "GetMobByID":"REFERENCES_ENTITY",
+                        "SpawnMob":"SPAWN_ENTITY",
+                        "DespawnMob":"DESPAWN_ENTITY",
+                    }[call]
+                    effects.append(BehaviorEffect(
+                        effect_name,target,f"{var}[{offset:+d}]",
+                        {
+                            "call":call,"entity_kind":kind1,"symbol":symbol1,
+                            "offset":offset,"resolution":"SYMBOLIC_RANGE_LOOP",
+                            "loop_variable":var,"loop_start_offset":start_off,
+                            "loop_end_offset":end_off,"loop_step":step,
+                            "loop_source_line":start_line+i,
+                            "source_line":source_line,"source_line_text":body_line.strip(),
+                        },
+                    ))
+    return tuple(effects)
+
+
 def _bounded_numeric_loop_entity_effects(
     text: str,
     *,
@@ -1119,6 +1199,9 @@ def _direct_entity_reference_rule(
     """Resolve only direct ID.npc/ID.mob symbols with optional literal integer offsets."""
     effects=[]
     aliases=_literal_entity_aliases(text)
+    effects.extend(_symbolic_range_loop_entity_effects(
+        text,start_line=start_line
+    ))
     effects.extend(_bounded_numeric_loop_entity_effects(
         text,start_line=start_line,aliases=aliases
     ))

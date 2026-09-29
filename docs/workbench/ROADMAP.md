@@ -740,3 +740,5 @@ Roadmap authority rule: `docs/workbench/ROADMAP.md` is the detailed rework backl
 - [x] Propagate literal local aliases of `ID.npc.*` / `ID.mob.*` through direct entity calls, combining literal base/call offsets while preserving alias provenance. Dynamic loop/index offsets remain open.
 
 - [x] Expand bounded literal numeric `for` loops that reference entity symbols (`ID.* + i` or literal symbol aliases `+/- i`) when the full iteration set is statically known and <=64; oversized/dynamic loops remain raw evidence. Direct-symbol matching now rejects dynamic suffixes rather than emitting false base targets.
+
+- [x] Expand bounded symbolic entity ranges where loop bounds are the same `ID.npc.*` / `ID.mob.*` base plus literal offsets (for example Nyzul lamp ranges), resolving each loop variable use into concrete `entity-symbol:*` targets with source/loop provenance. Oversized or mixed-base ranges remain unresolved.
