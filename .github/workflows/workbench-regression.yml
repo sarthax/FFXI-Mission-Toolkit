@@ -168,6 +168,7 @@ jobs:
           python test_fixtures/test_capture_safe_rebuild.py
           python test_fixtures/test_capture_sqlite_row_provenance.py
           python test_fixtures/test_capture_legacy_row_provenance.py
+          python test_fixtures/test_npclogger_lua_look_ingest.py
           python test_fixtures/test_capture_feature_trace_source_drilldown.py
           python test_fixtures/test_capture_raw_eventview_graph.py
           python test_fixtures/test_capture_packet_correlation.py
