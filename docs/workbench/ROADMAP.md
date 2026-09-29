@@ -738,3 +738,5 @@ Roadmap authority rule: `docs/workbench/ROADMAP.md` is the detailed rework backl
 - [x] Resolve direct symbolic Lua entity references (`ID.npc.*` / `ID.mob.*`) with optional literal integer offsets in `GetNPCByID`, `GetMobByID`, `SpawnMob`, and `DespawnMob` calls, preserving source provenance and projecting concrete `entity-symbol:*` targets. Dynamic aliases/loop offsets remain open.
 
 - [x] Propagate literal local aliases of `ID.npc.*` / `ID.mob.*` through direct entity calls, combining literal base/call offsets while preserving alias provenance. Dynamic loop/index offsets remain open.
+
+- [x] Expand bounded literal numeric `for` loops that reference entity symbols (`ID.* + i` or literal symbol aliases `+/- i`) when the full iteration set is statically known and <=64; oversized/dynamic loops remain raw evidence. Direct-symbol matching now rejects dynamic suffixes rather than emitting false base targets.
