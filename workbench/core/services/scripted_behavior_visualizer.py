@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections import Counter
 from pathlib import Path
+import re
 from typing import Any
 
 from workbench.plugins.domain.scripted_behavior_lsb_extract import (
