@@ -97,6 +97,12 @@ def main():
         assert server["state_id"] in state_nodes,state_nodes
         assert any(e["kind"]=="STATE_READ" for e in graph["edges"]),graph["edges"]
         assert any(e["kind"]=="STATE_WRITE" for e in graph["edges"]),graph["edges"]
+        state_links={row["state_id"]:row for row in graph["state_links"]}
+        phase_link=state_links["state:ENTITY_LOCAL:mob:phase"]
+        assert phase_link["ordering"]=="UNPROVEN",phase_link
+        assert {"writer_hook":"onMobFight","reader_hook":"onMobFight"} not in phase_link["cross_hook_pairs"],phase_link
+        assert {"writer_hook":"onMobFight","reader_hook":"onMobFight"} not in phase_link["cross_hook_pairs"],phase_link
+        assert graph["summary"]["cross_hook_state_links"]>=1,graph["summary"]
 
         context_by_path={row["path"]:row for row in result["contexts"]}
         assert "scripts/zones/Test_Zone/Zone.lua" in context_by_path,context_by_path
