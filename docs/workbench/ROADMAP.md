@@ -122,7 +122,7 @@ First active foundation milestone:
 - [x] Generic conditional/cross-zone/system-state dependency representation and Package Scope
       traversal are implemented; conditional nodes remain QUESTIONABLE until explicitly reviewed.
 - [~] Discover conditional system coupling automatically from source-family implementation evidence. LSB mob-script discovery now recognizes alternate-zone variants that explicitly delegate multiple lifecycle hooks to the same shared `xi.<system>` module; broader system-state patterns remain.
-- [~] Implement generic scripted-entity/combat behavior representation and graph projection. The generic model and canonical projection are implemented; source-family extraction remains.
+- [~] Implement generic scripted-entity/combat behavior representation and graph projection. The generic model and canonical projection are implemented, and a bounded LSB Lua extractor now emits source-backed rules with exact line provenance; helper-function expansion and more dynamic source patterns remain.
 - [ ] Unify acquisition/obtainability across all supported acquisition families.
 
 ## Major roadmap
@@ -727,6 +727,6 @@ Roadmap authority rule: `docs/workbench/ROADMAP.md` is the detailed rework backl
 - [x] Stress a non-mission scripted NM with Absolute Virtue + Jailer of Love spawn closure.
 - [x] Confirm mission state machines are not the universal behavioral representation.
 - [x] Identify generic combat-map requirements: hooks, probabilistic/delayed spawn, runtime state transfer, cross-entity state, HP thresholds, random timers, ability responses/sets, combat modifiers, spell/magic responses, cleanup, loot overrides.
-- [~] Implement the generic scripted-entity/combat behavior representation and source extractor. Generic behavior-map representation and canonical graph projection now pass the Absolute Virtue/Jailer proof; source extraction remains.
+- [~] Implement the generic scripted-entity/combat behavior representation and source extractor. Generic behavior-map representation, canonical graph projection, and bounded direct-hook LSB extraction now pass AV/Jailer-shaped regressions. Remaining work is deeper helper-call expansion, dynamic state flow, and a second mechanically different NM stress case.
 - [x] Emit modeled scripted-NM behavior/dependency evidence into the canonical graph, including cross-entity actor requirements; runtime/source verification remains distinct from proof-derived EXPECTED evidence.
 - [ ] Stress the representation with a second mechanically different NM before declaring combat-map coverage stable.
