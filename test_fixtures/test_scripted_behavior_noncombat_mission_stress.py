@@ -11,6 +11,7 @@ local entity = {}
 
 entity.onTrigger = function(player, npc)
     local missionStage = player:getCharVar('MissionStage')
+    local guardedChoice = player:getCharVar('GuardedChoice')
 
     if missionStage == 0 then
         player:startEvent(101)
@@ -37,6 +38,11 @@ entity.onEventFinish = function(player, csid, option, npc)
         if option == 1 then
             npcUtil.giveItem(player, 500)
             player:setCharVar('OutcomeChoice', 1)
+
+            if player:getCharVar('OutcomeGate') == 3 then
+                npcUtil.giveItem(player, 600)
+                player:setCharVar('GuardedChoice', 9)
+            end
         elseif option == 2 then
             player:addGil(100)
             GetNPCByID(ID.npc.SECOND_DOOR):openDoor(15)
@@ -197,6 +203,8 @@ def main():
     assert ("WRITE_STATE","state:PLAYER_CHAR:player:ResultChoice","4") in result4,result4
     assert ("GRANT_ITEM","player","500") in option1,option1
     assert ("WRITE_STATE","state:PLAYER_CHAR:player:OutcomeChoice","1") in option1,option1
+    assert ("GRANT_ITEM","player","600") not in option1,option1
+    assert ("WRITE_STATE","state:PLAYER_CHAR:player:GuardedChoice","9") not in option1,option1
     assert ("ADD_GIL","player","100") in option2,option2
     assert ("OPEN_DOOR","world_entity","15") in option2,option2
     assert ("WRITE_STATE","state:PLAYER_CHAR:player:OutcomeChoice","2") in option2,option2
@@ -238,6 +246,23 @@ def main():
     assert any(node["meta"].get("selector")=="option" and node["meta"].get("literal")=="1" for node in outcome_nodes),outcome_nodes
     assert any(edge["kind"]=="EVENT_OUTCOME_GUARD" for edge in graph["edges"]),graph["edges"]
 
+    guarded_rules=[rule for rule in rules if rule.kind=="event_outcome_guarded_effects"]
+    guarded=next(
+        rule for rule in guarded_rules
+        if rule.metadata.get("event_id")==102
+        and rule.metadata.get("outcome_selector")=="option"
+        and rule.metadata.get("outcome_literal")=="1"
+        and rule.metadata.get("guard_state_id")=="state:PLAYER_CHAR:player:OutcomeGate"
+        and rule.metadata.get("guard_literal")=="3"
+    )
+    guard_conditions={(condition.operator,condition.subject,condition.value) for condition in guarded.conditions}
+    assert ("EVENT_ID_EQUALS","event:csid",102) in guard_conditions,guard_conditions
+    assert ("EVENT_OUTCOME_EQUALS","event:option","1") in guard_conditions,guard_conditions
+    assert ("STATE_EQUALS","state:PLAYER_CHAR:player:OutcomeGate","3") in guard_conditions,guard_conditions
+    guarded_effects={(effect.effect,effect.target,effect.value) for effect in guarded.effects}
+    assert ("GRANT_ITEM","player","600") in guarded_effects,guarded_effects
+    assert ("WRITE_STATE","state:PLAYER_CHAR:player:GuardedChoice","9") in guarded_effects,guarded_effects
+
     outcome_effects={
         (row["hook"],row["event_id"],row["selector"],row["literal"],row["effect"],row["target"],row["value"]):row
         for row in graph["event_outcome_effects"]
@@ -247,6 +272,23 @@ def main():
     assert ("onEventFinish",102,"option","2","ADD_GIL","player","100") in outcome_effects,outcome_effects
     assert ("onEventUpdate",101,"option","7","UPDATE_EVENT","player",None) in outcome_effects,outcome_effects
     assert graph["summary"]["event_outcome_effects"]>=7,graph["summary"]
+    guarded_projection={
+        (row["event_id"],row["selector"],row["literal"],row["guard_state_id"],row["guard_literal"],row["effect"],row["target"],row["value"]):row
+        for row in graph["event_outcome_guarded_effects"]
+    }
+    assert (102,"option","1","state:PLAYER_CHAR:player:OutcomeGate","3","GRANT_ITEM","player","600") in guarded_projection,guarded_projection
+    assert (102,"option","1","state:PLAYER_CHAR:player:OutcomeGate","3","WRITE_STATE","state:PLAYER_CHAR:player:GuardedChoice","9") in guarded_projection,guarded_projection
+    guarded_links=graph["event_outcome_guarded_state_links"]
+    assert any(
+        row["event_id"]==102
+        and row["guard_state_id"]=="state:PLAYER_CHAR:player:OutcomeGate"
+        and row["state_id"]=="state:PLAYER_CHAR:player:GuardedChoice"
+        and row["reader_hooks"]==["onTrigger"]
+        and row["ordering"]=="UNPROVEN"
+        for row in guarded_links
+    ),guarded_links
+    assert graph["summary"]["event_outcome_guarded_effects"]>=2,graph["summary"]
+    assert graph["summary"]["cross_hook_event_outcome_guarded_state_links"]>=1,graph["summary"]
 
     branch_effects={(row["event_id"],row["effect"],row["target"],row["value"]):row for row in graph["event_branch_effects"]}
     assert (101,"GRANT_KEY_ITEM","player","TEST_SEAL") in branch_effects,branch_effects
