@@ -2795,3 +2795,22 @@ Findings:
 Detailed tool-by-tool results are maintained in `docs/workbench/CAPTURE_TOOL_ARCHAEOLOGY.md`.
 
 This closes the planned broad historical-tool search pass while keeping the inventory open for future forum/Discord/deleted-repository samples. The next major research boundary is lobby/world/non-zone traffic.
+
+
+## 2026-09-28 — Lobby / search-cache / world-map stream research
+
+The capture architecture now has a documented network-plane model instead of treating every FFXI packet source as one stream.
+
+Confirmed boundaries:
+- Retail lobby/character-service traffic is TCP and uses a lobby-specific header/MD5 command protocol. Character selection returns the information needed to reach the gameplay server and search/cache service.
+- Search/cache is a separate TCP service. Current LandSandBoat source confirms player search, ID/group lists, party/linkshell lists, search comments, auction listing, and auction history request families. Its handler uses its own Blowfish/MD5 packet framing.
+- World/map gameplay traffic uses UDP and contains the familiar 9-bit opcode / 7-bit size / 16-bit sync packet chunks after transport/session processing.
+- Modern LandSandBoat additionally exposes loader/auth/data/profile endpoints. Those are implementation-specific private-server surfaces and are not being presented as retail socket topology.
+
+Capture implications:
+- Windower/Ashita packet hooks and Captain PacketBridge primarily expose the world/map chunk plane.
+- PCAP/PCAPNG is the current evidence-preserving route for observing all socket families, but the toolkit does not yet reassemble or decode lobby/search TCP sessions.
+- Search/AH/group/comment responsibilities are proven. Storage/inventory/account traffic is not being assigned to search merely from feature naming; it remains source-evidence dependent.
+- Future decoding must start with generic TCP reassembly and validated structural classification rather than hard-coded port guesses.
+
+The implementation sequence, open questions, and recommended network-flow/message evidence model are documented in `docs/workbench/LOBBY_WORLD_STREAM_RESEARCH.md`.
