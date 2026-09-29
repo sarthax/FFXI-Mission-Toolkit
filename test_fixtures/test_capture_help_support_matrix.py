@@ -47,7 +47,6 @@ def main():
         assert name in template, name
 
     required_gaps = [
-        "PacketDB CHATLOG",
         "Whole-session multi-zone EventView",
         "Capturebar",
         "PCAP / PCAPNG",
@@ -60,6 +59,8 @@ def main():
 
     assert "Recognized but intentionally not duplicated" in template
     assert "Raw packet convergence" in template
+    assert "Canonical chat convergence" in template
+    assert "capture_chat_observations" in template
     assert "source_format" in template
     assert "opcode + direction + exact raw bytes" in template
 
