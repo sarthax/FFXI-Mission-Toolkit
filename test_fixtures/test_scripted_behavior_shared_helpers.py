@@ -22,6 +22,11 @@ SALVAGE=r'''
 xi = xi or {}
 xi.salvage = xi.salvage or {}
 xi.salvage.onDoorOpen = function(npc, arg, option)
+    if option == 1 then
+        for i = 1, 2 do
+            npc:setLocalVar('doorStep', i)
+        end
+    end
     return true
 end
 '''
@@ -64,7 +69,14 @@ def main():
         salvage_row=helpers["xi.salvage.onDoorOpen"]
         assert salvage_row["status"]=="RESOLVED",salvage_row
         assert len(salvage_row["candidates"])==1,salvage_row
-        assert salvage_row["candidates"][0]["path"]=="scripts/globals/salvage.lua",salvage_row
+        candidate=salvage_row["candidates"][0]
+        assert candidate["path"]=="scripts/globals/salvage.lua",salvage_row
+        assert candidate["end_line"]>candidate["line"],candidate
+        assert candidate["line_count"]>=7,candidate
+        assert "npc:setLocalVar('doorStep', i)" in candidate["source_preview"],candidate
+        assert "return true" in candidate["source_preview"],candidate
+        assert candidate["source_preview"].strip().endswith("end"),candidate
+        assert candidate["preview_truncated"] is False,candidate
 
         instance_row=helpers["xi.instance.sharedCallback"]
         assert instance_row["status"]=="AMBIGUOUS",instance_row
