@@ -97,6 +97,34 @@ Do not collapse the audit into a single percentage. Track dimensions independent
 - runtime/capture validation
 - reference evidence
 
+## Current direction — 2026-09-29
+
+The Workbench foundation is now largely established. Forward work is organized by the newer
+direction roadmap rather than treating Phases 0-8 as a strictly sequential implementation plan.
+
+Current priority order:
+
+1. **Behavioral dependency closure** — conditional/cross-zone/system-state dependencies, scripted
+   entity/combat behavior, unified acquisition/obtainability, and deeper mission/quest closure.
+2. **Client/server synchronization** — packet ↔ DAT/EXE/DLL ↔ server relationships, richer client
+   capability validation, and new-item client/server write orchestration.
+3. **Protocol/capture research** — search/cache TCP and cross-plane correlation after the lobby/TCP
+   foundation completed.
+4. **Named delivery systems** — Assault, Nyzul, Salvage, then Abyssea/Einherjar/Limbus using generic
+   Workbench capabilities rather than core hard-coding.
+5. **Migration completion** — database apply/rollback, approval/apply GUI, and broader proven
+   conversion backends.
+6. **Product workflow** — live ingestion, annotations, capture requests/completeness, hosted access,
+   and capture-to-development export.
+
+First active foundation milestone:
+- [x] Mission/quest source state machines already project canonical graph evidence.
+- [x] Generic conditional/cross-zone/system-state dependency representation and Package Scope
+      traversal are implemented; conditional nodes remain QUESTIONABLE until explicitly reviewed.
+- [ ] Discover conditional system coupling automatically from source-family implementation evidence.
+- [ ] Implement generic scripted-entity/combat behavior representation and graph projection.
+- [ ] Unify acquisition/obtainability across all supported acquisition families.
+
 ## Major roadmap
 ### Phase 0 — Preserve and baseline
 - Freeze main as the stable reference.

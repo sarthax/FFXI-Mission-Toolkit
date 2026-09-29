@@ -69,6 +69,7 @@ jobs:
           python test_fixtures/test_migration_backend_probe_plan.py
           python test_fixtures/test_dependency_package_plan.py
           python test_fixtures/test_package_scope_review.py
+          python test_fixtures/test_conditional_system_dependencies.py
           python test_fixtures/test_dependency_truth_cross_zone_entity.py
           python test_fixtures/test_lua_dependency_discovery.py
           python test_fixtures/test_lua_text_title_dependencies.py

@@ -59,6 +59,7 @@
     {% if item.display_name %}<div>{{ item.display_name }}</div>{% endif %}
     {% if item.artifact_path %}<div class="muted"><code>{{ item.artifact_path }}</code></div>{% endif %}
     <div class="muted">{{ item.node_kind }}{% if item.artifact_type %} / {{ item.artifact_type }}{% endif %}</div>
+    {% if item.condition_summary %}<div class="warn" style="margin-top:5px;">Condition: {{ item.condition_summary }}</div>{% endif %}
   </div>
 </td>
 <td>
