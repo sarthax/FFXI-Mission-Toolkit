@@ -368,9 +368,10 @@ def reconstruct_tcp_flows(frame_rows: list[dict]) -> list[dict]:
             "timestamp_seconds": row.get("timestamp_seconds"),
         })
         if payload and decoded.get("tcp_seq") is not None:
+            payload_seq = (int(decoded["tcp_seq"]) + (1 if flags.get("syn") else 0)) & 0xFFFFFFFF
             flow["segments"][direction].append({
                 "frame_no": row["frame_no"],
-                "seq": int(decoded["tcp_seq"]),
+                "seq": payload_seq,
                 "payload": payload,
                 "timestamp_seconds": row.get("timestamp_seconds"),
                 "start_offset": row.get("start_offset"),
