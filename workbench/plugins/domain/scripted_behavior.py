@@ -222,7 +222,7 @@ def project_scripted_behavior(
         },
     )
     evidence_id=f"evidence:scripted-behavior:{_token(behavior.map_id,evidence_source,evidence_location,source_snapshot_id)}"
-    evidence=Evidence(
+    base_evidence=Evidence(
         evidence_id,
         "REFERENCE_PROOF" if evidence_source=="SCRIPTED_BEHAVIOR_PROOF" else "SERVER_SOURCE",
         evidence_source,
@@ -231,6 +231,7 @@ def project_scripted_behavior(
         "Scripted behavior projection; static/proof evidence does not claim runtime validation.",
     )
 
+    evidence={base_evidence.evidence_id:base_evidence}
     entities={}
     edges=[]
     map_node=f"scripted-behavior-map:{_token(behavior.map_id)}"
@@ -285,6 +286,27 @@ def project_scripted_behavior(
 
     for rule in behavior.rules:
         rule_node=_rule_node(behavior.map_id,rule.rule_id)
+        rule_evidence_id=evidence_id
+        rule_location=evidence_location
+        if isinstance(rule.metadata,Mapping):
+            source_path=rule.metadata.get("source_path")
+            source_lines=rule.metadata.get("source_lines")
+            if source_path:
+                start=end=None
+                if isinstance(source_lines,(tuple,list)) and len(source_lines)==2:
+                    start,end=source_lines
+                rule_location=str(source_path)
+                if start is not None:
+                    rule_location+=f":L{start}" + (f"-L{end}" if end is not None and end!=start else "")
+                rule_evidence_id=f"evidence:scripted-rule:{_token(behavior.map_id,rule.rule_id,rule_location,source_snapshot_id)}"
+                evidence[rule_evidence_id]=Evidence(
+                    rule_evidence_id,
+                    "SERVER_SOURCE",
+                    evidence_source if evidence_source!="SCRIPTED_BEHAVIOR_PROOF" else "LSB_LUA",
+                    rule_location,
+                    source_snapshot_id,
+                    "Static Lua source span supporting this scripted behavior rule; runtime behavior remains separately validated.",
+                )
         entities[rule_node]=Entity(
             rule_node,"BEHAVIOR_RULE",rule.kind,
             {
@@ -319,9 +341,9 @@ def project_scripted_behavior(
         edges.append(DependencyEdge(
             f"behavior-rule:{_token(map_node,rule_node)}",
             map_node,rule_node,"HAS_BEHAVIOR_RULE",
-            evidence_id,rule.confidence,"DISCOVERED",
+            rule_evidence_id,rule.confidence,"DISCOVERED",
             discovered_by="scripted_behavior_projection",
-            source_location=evidence_location,
+            source_location=rule_location,
             source_snapshot_id=source_snapshot_id,
         ))
 
@@ -347,9 +369,9 @@ def project_scripted_behavior(
             edges.append(DependencyEdge(
                 f"behavior-rule-subject:{_token(rule_node,subject_node,relation)}",
                 rule_node,subject_node,relation,
-                evidence_id,rule.confidence,"DISCOVERED",
+                rule_evidence_id,rule.confidence,"DISCOVERED",
                 discovered_by="scripted_behavior_projection",
-                source_location=evidence_location,
+                source_location=rule_location,
                 source_snapshot_id=source_snapshot_id,
             ))
             # A non-root named actor referenced by a behavior rule is part of dependency review.
@@ -357,16 +379,16 @@ def project_scripted_behavior(
                 edges.append(DependencyEdge(
                     f"behavior-rule-requires:{_token(rule_node,subject_node)}",
                     rule_node,subject_node,"REQUIRES",
-                    evidence_id,rule.confidence,"DISCOVERED",
+                    rule_evidence_id,rule.confidence,"DISCOVERED",
                     discovered_by="scripted_behavior_projection",
-                    source_location=evidence_location,
+                    source_location=rule_location,
                     notes="Cross-entity scripted behavior requires this referenced runtime actor to be reviewed.",
                     source_snapshot_id=source_snapshot_id,
                 ))
 
     return ScriptedBehaviorProjection(
         feature,
-        (evidence,),
+        tuple(evidence.values()),
         tuple(entities.values()),
         tuple(edges),
     )
