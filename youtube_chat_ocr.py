@@ -99,7 +99,13 @@ DEFAULT_SECTION_LABEL = "chat"
 CAPTURE_PROFILE_PLAIN = "plain"
 CAPTURE_PROFILE_TIMESTAMPED = "timestamped"
 CAPTURE_PROFILE_PACKETLOGGER = "packetlogger"
-CAPTURE_PROFILES = [CAPTURE_PROFILE_PLAIN, CAPTURE_PROFILE_TIMESTAMPED, CAPTURE_PROFILE_PACKETLOGGER]
+CAPTURE_PROFILE_CAPTUREBAR = "capturebar"
+CAPTURE_PROFILES = [
+    CAPTURE_PROFILE_PLAIN,
+    CAPTURE_PROFILE_TIMESTAMPED,
+    CAPTURE_PROFILE_PACKETLOGGER,
+    CAPTURE_PROFILE_CAPTUREBAR,
+]
 DEFAULT_CAPTURE_PROFILE = CAPTURE_PROFILE_PLAIN
 
 PREPROCESS_PROFILE_STANDARD = "standard"
@@ -172,6 +178,18 @@ _BUILTIN_LAYOUT_PROFILES = {
             "fps": 2.0,
             "capture_profile": CAPTURE_PROFILE_PACKETLOGGER,
             "preprocess_profile": PREPROCESS_PROFILE_PACKET,
+        }],
+        "builtin": True,
+    },
+    "capturebar_overlay": {
+        "name": "Capturebar overlay",
+        "description": "Wiggo Capturebar header: zone, target/player name, XYZ, rotation, jobs/levels and moon state. Coordinates must be filled from a real video layout.",
+        "regions": [{
+            "label": "capturebar",
+            "crop": None,
+            "fps": 2.0,
+            "capture_profile": CAPTURE_PROFILE_CAPTUREBAR,
+            "preprocess_profile": PREPROCESS_PROFILE_SMALL,
         }],
         "builtin": True,
     },
@@ -676,12 +694,44 @@ def apply_cross_frame_consensus(records: list[dict], max_gap_seconds: float = 1.
     return records
 
 
+CAPTUREBAR_RE = re.compile(
+    r"^\[(?P<zone_id>\d+)\](?P<zone_name>.+?)\s+-\s+(?P<name>.+?)\s+"
+    r"\((?P<x>-?\d+(?:\.\d+)?),(?P<z>-?\d+(?:\.\d+)?),(?P<y>-?\d+(?:\.\d+)?)\)\s+"
+    r"R\((?P<rotation>-?\d+)\)\s+"
+    r"\((?P<main_job>[A-Za-z]{2,4})(?P<main_level>\d+)/"
+    r"(?P<sub_job>[A-Za-z]{2,4})(?P<sub_level>\d+)\)\s+"
+    r"Moon:\s*(?P<moon_pct>\d+(?:\.\d+)?)%?\s+(?P<moon_phase>.+?)\s*$"
+)
+
+
 def parse_capture_line(profile: str, text: str) -> dict:
     """Turn one OCR'd (post dialog-match) line into structured fields per the section's capture
     profile. Never fabricates a value it can't actually find in the text -- fields it can't
     confidently parse come back None/empty rather than guessed. NOTE: packetlogger is handled
     separately by parse_packetlogger_block() since it needs the pre-flattened multi-line text;
     cmd_match() branches on profile before calling either."""
+    if profile == CAPTURE_PROFILE_CAPTUREBAR:
+        match = CAPTUREBAR_RE.match(text.strip())
+        if not match:
+            return {
+                "timestamp": None,
+                "channel": None,
+                "speaker": None,
+                "text": text,
+                "capturebar": None,
+            }
+        fields = match.groupdict()
+        for key in ("zone_id", "rotation", "main_level", "sub_level"):
+            fields[key] = int(fields[key])
+        for key in ("x", "y", "z", "moon_pct"):
+            fields[key] = float(fields[key])
+        return {
+            "timestamp": None,
+            "channel": "Capturebar",
+            "speaker": fields["name"],
+            "text": text,
+            "capturebar": fields,
+        }
     if profile == CAPTURE_PROFILE_TIMESTAMPED:
         m = _TIMESTAMP_RE.match(text)
         timestamp, rest = (m.group(1), m.group(2)) if m else (None, text)
