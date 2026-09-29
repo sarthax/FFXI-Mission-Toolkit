@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 198,
+  "route_count": 199,
   "routes": [
     {
       "method": "GET",
@@ -482,6 +482,14 @@
       "section": "Capture Library & Detail",
       "role": "page",
       "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/help",
+      "home": "Captures",
+      "section": "Help / Supported Formats",
+      "role": "page",
+      "disposition": "KEEP"
     },
     {
       "method": "GET",
