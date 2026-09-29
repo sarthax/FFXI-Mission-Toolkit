@@ -758,6 +758,9 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
 
     event_branch_effects=[]
     event_outcome_effects=[]
+    event_outcome_guarded_effects=[]
+    event_outcome_guarded_state_effects=[]
+    event_outcome_guarded_state_links=[]
     event_outcome_state_effects=[]
     event_outcome_state_links=[]
     event_state_effects=[]
@@ -857,6 +860,56 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
                     "evidence_basis":"literal event outcome writes canonical state that another hook reads",
                 })
 
+    for rule in behavior.rules:
+        if rule.kind!="event_outcome_guarded_effects":
+            continue
+        event_id=rule.metadata.get("event_id")
+        selector=rule.metadata.get("outcome_selector")
+        literal=rule.metadata.get("outcome_literal")
+        guard_state_id=rule.metadata.get("guard_state_id")
+        guard_literal=rule.metadata.get("guard_literal")
+        branch_hook=rule.metadata.get("hook")
+        for effect in rule.effects:
+            exact={
+                "event_id":event_id,
+                "selector":selector,
+                "literal":literal,
+                "guard_state_id":guard_state_id,
+                "guard_literal":guard_literal,
+                "effect":effect.effect,
+                "target":effect.target,
+                "value":effect.value,
+                "category":_effect_category(effect.effect),
+                "hook":branch_hook,
+                "source_path":rule.metadata.get("source_path"),
+                "source_lines":rule.metadata.get("source_lines"),
+                "relationship":"EVENT_OUTCOME_GUARDED_EFFECT",
+                "ordering":"SOURCE_LOCAL",
+                "evidence_basis":"effect occurs inside literal event outcome and canonical state guard branch",
+            }
+            event_outcome_guarded_effects.append(exact)
+            if effect.effect!="WRITE_STATE" or not isinstance(effect.target,str):
+                continue
+            state_exact={
+                **exact,
+                "state_id":effect.target,
+                "relationship":"EVENT_OUTCOME_GUARD_WRITES_STATE",
+            }
+            event_outcome_guarded_state_effects.append(state_exact)
+            readers=[
+                row for row in state_rows.get(effect.target,{}).get("reads",[])
+                if row.get("hook") and row.get("hook")!=branch_hook
+            ]
+            if readers:
+                event_outcome_guarded_state_links.append({
+                    **state_exact,
+                    "reader_hooks":sorted({row["hook"] for row in readers}),
+                    "read_evidence":readers,
+                    "relationship":"EVENT_OUTCOME_GUARDED_STATE_SHARED_ACROSS_HOOKS",
+                    "ordering":"UNPROVEN",
+                    "evidence_basis":"guarded event outcome writes canonical state that another hook reads",
+                })
+
     transition_rows=[]
     for rule in behavior.rules:
         if rule.kind!="state_transition":
@@ -901,6 +954,9 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
         "event_links":sorted(event_links,key=lambda row:row["event_id"]),
         "event_branch_effects":sorted(event_branch_effects,key=lambda row:(row["event_id"],row["effect"],str(row["target"]),str(row["value"]))),
         "event_outcome_effects":sorted(event_outcome_effects,key=lambda row:(row["event_id"],str(row["selector"]),str(row["literal"]),row["effect"],str(row["target"]))),
+        "event_outcome_guarded_effects":sorted(event_outcome_guarded_effects,key=lambda row:(row["event_id"],str(row["selector"]),str(row["literal"]),str(row["guard_state_id"]),str(row["guard_literal"]),row["effect"])),
+        "event_outcome_guarded_state_effects":sorted(event_outcome_guarded_state_effects,key=lambda row:(row["event_id"],str(row["selector"]),str(row["literal"]),str(row["guard_state_id"]),str(row["guard_literal"]),row["state_id"])),
+        "event_outcome_guarded_state_links":sorted(event_outcome_guarded_state_links,key=lambda row:(row["event_id"],str(row["selector"]),str(row["literal"]),str(row["guard_state_id"]),str(row["guard_literal"]),row["state_id"])),
         "event_outcome_state_effects":sorted(event_outcome_state_effects,key=lambda row:(row["event_id"],str(row["selector"]),str(row["literal"]),row["state_id"])),
         "event_outcome_state_links":sorted(event_outcome_state_links,key=lambda row:(row["event_id"],str(row["selector"]),str(row["literal"]),row["state_id"])),
         "event_state_effects":sorted(event_state_effects,key=lambda row:(row["event_id"],row["state_id"],str(row["value"]))),
@@ -918,6 +974,9 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
             "cross_hook_event_links":len(event_links),
             "event_branch_effects":len(event_branch_effects),
             "event_outcome_effects":len(event_outcome_effects),
+            "event_outcome_guarded_effects":len(event_outcome_guarded_effects),
+            "event_outcome_guarded_state_effects":len(event_outcome_guarded_state_effects),
+            "cross_hook_event_outcome_guarded_state_links":len(event_outcome_guarded_state_links),
             "event_outcome_state_effects":len(event_outcome_state_effects),
             "cross_hook_event_outcome_state_links":len(event_outcome_state_links),
             "event_state_effects":len(event_state_effects),
