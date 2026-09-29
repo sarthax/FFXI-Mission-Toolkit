@@ -30,6 +30,7 @@ FORMAT_TARGETS = {
     "pcap": (("capture_structured_records","pcap-frame"),("capture_raw_packets","pcap-frame")),
     "pcapng": (("capture_structured_records","pcap-frame"),("capture_raw_packets","pcap-frame")),
     "caplog": (("capture_events","line"),("capture_hp_events","line"),("capture_eventview","line"),("capture_caplog_chat","line"),("capture_chat_observations","line")),
+    "windower_logger": (("capture_chat_observations","line"),),
     "NPCLogger table/database Lua": (("capture_npc_entries","line"),("capture_npc_path","line"),("capture_raw_packets","line")),
     "EventView/IDView packet log": (("capture_events","block"),("capture_eventview","block")),
     "HPTrack": (("capture_hp_events","line"),),
