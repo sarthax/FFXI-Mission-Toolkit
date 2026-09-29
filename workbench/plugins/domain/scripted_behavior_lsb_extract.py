@@ -49,6 +49,13 @@ _SPELL_OVERRIDE=re.compile(r"\bspell:set(?:AoE|Radius|Animation|MPCost|CastTime|
 _ENMITY_TRANSFER=re.compile(r"\b(?:updateEnmity|updateClaim)\s*\(")
 _KEYITEM_GIVE=re.compile(r"npcUtil\.giveKeyItem\(\s*player\s*,\s*xi\.keyItem\.([A-Z0-9_]+)")
 _KEYITEM_DEL=re.compile(r"player:delKeyItem\(\s*xi\.keyItem\.([A-Z0-9_]+)")
+_KEYITEM_HAS_GUARD=re.compile(
+    r"^\s*(?:if|elseif)\s+(not\s+)?player:hasKeyItem\(\s*xi\.keyItem\.([A-Z0-9_]+)\s*\)\s+then\b"
+)
+_TRADE_LITERAL_GUARD=re.compile(
+    r"^\s*(?:if|elseif)\s+npcUtil\.(tradeHas|tradeHasExactly)\(\s*trade\s*,\s*"
+    r"(xi\.item\.[A-Z0-9_]+|-?\d+)\s*\)\s+then\b"
+)
 _ITEM_GIVE=re.compile(r"npcUtil\.giveItem\(\s*player\s*,\s*([^\n\)]+)")
 _ADD_GIL=re.compile(r"player:addGil\(\s*([^\)]+)\)")
 _DEL_GIL=re.compile(r"player:delGil\(\s*([^\)]+)\)")
@@ -1300,6 +1307,72 @@ def _event_branch_nonstate_effects(
     if entity_rule is not None:
         effects.extend(entity_rule.effects)
     return tuple(effects)
+
+
+def _literal_resource_guard_branches(text: str, *, start_line: int) -> tuple[dict,...]:
+    """Bounded key-item/trade guards nested inside a selected literal event outcome."""
+    raw=text.splitlines()
+    structural=_structural_lua_lines(text)
+    rows=[]
+    depth=0
+    active=None
+
+    def finish(end_index: int):
+        nonlocal active
+        if active is None:
+            return
+        body_start=active["start_index"]
+        body_end=max(body_start,end_index)
+        rows.append({
+            **active,
+            "start_line":start_line+body_start,
+            "end_line":start_line+body_end,
+            "body":"\n".join(raw[body_start:body_end+1]),
+        })
+        active=None
+
+    for i,raw_line in enumerate(raw):
+        code=_strip_line_comment_preserve_strings(raw_line)
+        stripped=code.strip()
+        if active is not None and depth==active["branch_depth"]:
+            if re.match(r"^(?:elseif\b|else\b|end\b)",stripped):
+                finish(i-1)
+
+        guard=None
+        key_item=_KEYITEM_HAS_GUARD.match(code)
+        if key_item:
+            negated,symbol=key_item.groups()
+            guard={
+                "guard_kind":"KEY_ITEM_POSSESSION",
+                "subject":"player",
+                "operator":"LACKS_KEY_ITEM" if negated else "HAS_KEY_ITEM",
+                "value":symbol,
+                "predicate_expression":raw_line.strip(),
+            }
+        if guard is None:
+            trade=_TRADE_LITERAL_GUARD.match(code)
+            if trade:
+                method,requirement=trade.groups()
+                guard={
+                    "guard_kind":"TRADE_REQUIREMENT",
+                    "subject":"trade",
+                    "operator":"TRADE_HAS_EXACTLY" if method=="tradeHasExactly" else "TRADE_HAS",
+                    "value":requirement,
+                    "predicate_expression":raw_line.strip(),
+                }
+        if guard is not None:
+            active={
+                **guard,
+                "start_index":i,
+                "source_line":raw_line.strip(),
+                "branch_depth":depth + (1 if stripped.startswith("if ") else 0),
+            }
+
+        depth+=_open_count(structural[i])-_close_count(structural[i])
+
+    if active is not None:
+        finish(len(raw)-1)
+    return tuple(rows)
 
 
 def _literal_state_guard_branches(text: str, *, start_line: int) -> tuple[dict,...]:
