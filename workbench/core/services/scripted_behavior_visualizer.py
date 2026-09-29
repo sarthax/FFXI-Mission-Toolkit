@@ -531,6 +531,19 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
                             helper=qualified,
                         )
                         edges.append({"source":hid,"target":cid,"kind":"HELPER_DIRECT_CALL"})
+                    for callee_index,callee in enumerate(analysis.get("shared_helper_callees",[])):
+                        nid=f"shared-helper-callee:{qualified}:{callee_index}"
+                        node(
+                            nid,"shared_helper_callee",
+                            str(callee.get("qualified_name") or "SHARED_HELPER"),
+                            **dict(callee),
+                            helper=qualified,
+                        )
+                        edges.append({
+                            "source":hid,
+                            "target":nid,
+                            "kind":"CALLS_NESTED_SHARED_HELPER",
+                        })
                 if isinstance(target,str):
                     tid=f"target:{target}"
                     node(tid,"target",target)
@@ -632,6 +645,10 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
             "shared_helper_impact_nodes":sum(
                 1 for row in nodes.values()
                 if row["kind"] in {"helper_input","helper_effect","helper_call"}
+            ),
+            "shared_helper_callee_nodes":sum(
+                1 for row in nodes.values()
+                if row["kind"]=="shared_helper_callee"
             ),
             "effect_categories":dict(sorted(categories.items())),
             "unmodeled_hooks":list(behavior.metadata.get("unmodeled_hooks") or ()),
