@@ -59,6 +59,9 @@ _UPDATE_EVENT=re.compile(r"player:updateEvent\(")
 _CSID_LITERAL_COMPARE=re.compile(
     r"\bcsid\s*==\s*(\d+)"
 )
+_EVENT_OUTCOME_LITERAL_COMPARE=re.compile(
+    r"\b(option|result)\s*==\s*(-?\d+|true|false|['\"][^'\"]+['\"])"
+)
 _CONFIRM_TRADE=re.compile(r"player:(?:confirmTrade|tradeComplete)\(\)")
 _TRADE_PREDICATE=re.compile(r"npcUtil\.(tradeHas|tradeHasExactly|tradeMatches)\(")
 _OPEN_DOOR=re.compile(r"(?:GetNPCByID\([^\n]+?\)|\b(?:npc|door)\b):openDoor\(\s*([^\)]*)\)")
@@ -1293,6 +1296,73 @@ def _event_branch_nonstate_effects(
     return tuple(effects)
 
 
+def _literal_event_outcome_branches(text: str, *, start_line: int) -> tuple[dict,...]:
+    """Return bounded nested literal option/result branches inside an event branch."""
+    raw=text.splitlines()
+    structural=_structural_lua_lines(text)
+    rows=[]
+    depth=0
+    active=None
+
+    def finish(end_index: int):
+        nonlocal active
+        if active is None:
+            return
+        body_start=active["start_index"]
+        body_end=max(body_start,end_index)
+        body="\n".join(raw[body_start:body_end+1])
+        rows.append({
+            "selector":active["selector"],
+            "literal":active["literal"],
+            "start_index":body_start,
+            "end_index":body_end,
+            "start_line":start_line+body_start,
+            "end_line":start_line+body_end,
+            "source_line":active["source_line"],
+            "body":body,
+            "state_accesses":_named_state_accesses(body,start_line=start_line+body_start),
+        })
+        active=None
+
+    for i,raw_line in enumerate(raw):
+        code=_strip_line_comment_preserve_strings(raw_line)
+        stripped=code.strip()
+        if active is not None and depth==active["branch_depth"]:
+            if re.match(r"^(?:elseif\b|else\b|end\b)",stripped):
+                finish(i-1)
+
+        match=re.match(
+            r"^\s*(?:if|elseif)\s+(option|result)\s*==\s*"
+            r"(-?\d+|true|false|['\"][^'\"]+['\"])\s+then\b",
+            code,
+        )
+        if match:
+            selector,literal=match.groups()
+            active={
+                "selector":selector,
+                "literal":literal,
+                "start_index":i,
+                "source_line":raw_line.strip(),
+                "branch_depth":depth + (1 if stripped.startswith("if ") else 0),
+            }
+
+        depth+=_open_count(structural[i])-_close_count(structural[i])
+
+    if active is not None:
+        finish(len(raw)-1)
+    return tuple(rows)
+
+
+def _without_event_outcome_branches(text: str, branches: tuple[dict,...]) -> str:
+    """Blank nested outcome branch spans so parent CSID effects are not double-attributed."""
+    raw=text.splitlines()
+    for branch in branches:
+        for index in range(branch["start_index"],branch["end_index"]+1):
+            if 0 <= index < len(raw):
+                raw[index]=""
+    return "\n".join(raw)
+
+
 def _literal_csid_guards(text: str, *, start_line: int) -> tuple[dict,...]:
     rows=[]
     for offset,raw_line in enumerate(text.splitlines()):
@@ -2085,12 +2155,17 @@ def extract_lsb_scripted_behavior(
             modeled_hooks.add(hook)
 
         for branch in csid_branches:
+            outcome_branches=_literal_event_outcome_branches(
+                branch["body"],
+                start_line=branch["start_line"],
+            )
+            parent_body=_without_event_outcome_branches(branch["body"],outcome_branches)
             branch_writes=[
-                row for row in branch["state_accesses"]
+                row for row in _named_state_accesses(parent_body,start_line=branch["start_line"])
                 if row["access"]=="WRITE"
             ]
             branch_effects=_event_branch_nonstate_effects(
-                branch["body"],
+                parent_body,
                 start_line=branch["start_line"],
                 subject=subject,
                 trigger=hook.upper(),
@@ -2141,6 +2216,87 @@ def extract_lsb_scripted_behavior(
                 },
             ))
             modeled_hooks.add(hook)
+
+            for outcome_index,outcome in enumerate(outcome_branches,1):
+                outcome_writes=[
+                    row for row in outcome["state_accesses"]
+                    if row["access"]=="WRITE"
+                ]
+                outcome_effects=_event_branch_nonstate_effects(
+                    outcome["body"],
+                    start_line=outcome["start_line"],
+                    subject=subject,
+                    trigger=hook.upper(),
+                    meta=meta,
+                )
+                if not outcome_writes and not outcome_effects:
+                    continue
+                outcome_conditions=(
+                    BehaviorCondition(
+                        "event:csid","EVENT_ID_EQUALS",branch["csid"],
+                        {
+                            "event_id":branch["csid"],
+                            "source_line":branch["start_line"],
+                            "source_line_text":branch["source_line"],
+                        },
+                    ),
+                    BehaviorCondition(
+                        f"event:{outcome['selector']}",
+                        "EVENT_OUTCOME_EQUALS",
+                        outcome["literal"],
+                        {
+                            "event_id":branch["csid"],
+                            "selector":outcome["selector"],
+                            "source_line":outcome["start_line"],
+                            "source_line_text":outcome["source_line"],
+                        },
+                    ),
+                )
+                rules.append(BehaviorRule(
+                    f"{hook}:event-outcome:{branch['csid']}:{outcome_index}",
+                    "event_outcome_effects",
+                    subject,
+                    trigger=hook.upper(),
+                    conditions=outcome_conditions,
+                    effects=tuple(
+                        BehaviorEffect(
+                            "WRITE_STATE",row["state_id"],row["value"],
+                            {
+                                "scope":row["scope"],
+                                "receiver":row["receiver"],
+                                "name":row["name"],
+                                "source_line":row["line"],
+                                "source_line_text":row["source_line"],
+                                "event_id":branch["csid"],
+                                "outcome_selector":outcome["selector"],
+                                "outcome_literal":outcome["literal"],
+                            },
+                        )
+                        for row in outcome_writes
+                    ) + tuple(
+                        BehaviorEffect(
+                            effect.effect,effect.target,effect.value,
+                            {
+                                **dict(effect.metadata),
+                                "event_id":branch["csid"],
+                                "outcome_selector":outcome["selector"],
+                                "outcome_literal":outcome["literal"],
+                            },
+                        )
+                        for effect in outcome_effects
+                    ),
+                    confidence="VERIFIED",
+                    implementation_status="PRESENT",
+                    metadata={
+                        **meta,
+                        "event_id":branch["csid"],
+                        "outcome_selector":outcome["selector"],
+                        "outcome_literal":outcome["literal"],
+                        "source_lines":(outcome["start_line"],outcome["end_line"]),
+                        "branch_form":"EVENT_OUTCOME_LITERAL_BRANCH",
+                    },
+                ))
+                modeled_hooks.add(hook)
 
         if _TRADE_PREDICATE.search(text) or _CONFIRM_TRADE.search(text):
             rules.append(BehaviorRule(
