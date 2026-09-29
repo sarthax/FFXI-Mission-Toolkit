@@ -85,6 +85,7 @@ jobs:
           python test_fixtures/test_dependency_truth_attachment_runtime.py
           python test_fixtures/test_automaton_acquisition_truth.py
           python test_fixtures/test_crafting_closure.py
+          python test_fixtures/test_scripted_behavior_reward_obtainability.py
           python test_fixtures/test_wotg25_branching_mission_truth.py
           python test_fixtures/test_scripted_behavior_model.py
           python test_fixtures/test_scripted_behavior_lsb_extract.py
