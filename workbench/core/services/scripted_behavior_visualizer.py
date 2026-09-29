@@ -333,6 +333,7 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
     helper_resolution_map={
         row["qualified_name"]:row for row in (helper_resolutions or [])
     }
+    expanded_shared_helpers=set()
 
     def node(node_id: str, kind: str, label: str, **meta):
         nodes.setdefault(node_id,{"id":node_id,"kind":kind,"label":label,"meta":meta})
@@ -478,6 +479,36 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
                     function=function,
                 )
                 edges.append({"source":eid,"target":hid,"kind":"CALLS_SHARED_HELPER"})
+                analysis=(resolution or {}).get("analysis")
+                if analysis and qualified not in expanded_shared_helpers:
+                    expanded_shared_helpers.add(qualified)
+                    for impact_index,impact in enumerate(analysis.get("impact",{}).get("upstream",[])):
+                        iid=f"shared-helper-input:{qualified}:{impact_index}"
+                        node(
+                            iid,"helper_input",
+                            f"{impact.get('kind')} · {impact.get('label')}",
+                            **dict(impact),
+                            helper=qualified,
+                        )
+                        edges.append({"source":iid,"target":hid,"kind":"HELPER_UPSTREAM_INPUT"})
+                    for impact_index,impact in enumerate(analysis.get("impact",{}).get("downstream",[])):
+                        oid=f"shared-helper-effect:{qualified}:{impact_index}"
+                        node(
+                            oid,"helper_effect",
+                            f"{impact.get('kind')} · {impact.get('label')}",
+                            **dict(impact),
+                            helper=qualified,
+                        )
+                        edges.append({"source":hid,"target":oid,"kind":"HELPER_DOWNSTREAM_EFFECT"})
+                    for call_index,call in enumerate(analysis.get("impact",{}).get("calls",[])):
+                        cid=f"shared-helper-call:{qualified}:{call_index}"
+                        node(
+                            cid,"helper_call",
+                            str(call.get("qualified_name") or call.get("function") or "API_CALL"),
+                            **dict(call),
+                            helper=qualified,
+                        )
+                        edges.append({"source":hid,"target":cid,"kind":"HELPER_DIRECT_CALL"})
                 if isinstance(target,str):
                     tid=f"target:{target}"
                     node(tid,"target",target)
@@ -576,6 +607,10 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
             "callbacks":len(callback_nodes),
             "transitions":len(transition_rows),
             "shared_helpers":len(helper_resolutions or []),
+            "shared_helper_impact_nodes":sum(
+                1 for row in nodes.values()
+                if row["kind"] in {"helper_input","helper_effect","helper_call"}
+            ),
             "effect_categories":dict(sorted(categories.items())),
             "unmodeled_hooks":list(behavior.metadata.get("unmodeled_hooks") or ()),
             "reachable_helpers":list(behavior.metadata.get("reachable_helpers") or ()),
