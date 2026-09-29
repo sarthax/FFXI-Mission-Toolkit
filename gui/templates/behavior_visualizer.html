@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}Behavior Inspector — Mission Toolkit{% endblock %}
+{% block content %}
+<h1>Behavior Inspector</h1>
+<p class="muted">Scan LandSandBoat Lua as a behavior/evidence graph. The primary source produces causal behavior edges; same-zone Zone.lua, globals.lua, and instance scripts are shown separately as context unless another analyzer proves a dependency.</p>
+
+<form class="search" method="get" action="/behavior">
+  <input type="text" name="q" value="{{ q }}" placeholder="Mob, NPC, object, zone, instance, or Lua filename">
+  <button type="submit">Find source</button>
+</form>
+
+{% if error %}<div class="warn">{{ error }}</div>{% endif %}
+
+{% if matches and not result %}
+<h2>Matching Lua sources</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Name</th><th>Role</th><th>Zone</th><th>Source</th></tr></thead>
+<tbody>
+{% for row in matches %}
+<tr>
+  <td>{{ row.name }}</td>
+  <td><span class="chip">{{ row.role }}</span></td>
+  <td>{{ row.zone or "—" }}</td>
+  <td><a class="zonelink mono" href="/behavior?source={{ row.path|urlencode }}">{{ row.path }}</a></td>
+</tr>
+{% endfor %}
+</tbody>
+</table></div>
+{% endif %}
+
+{% if result %}
+<h2>{{ result.source.subject }}</h2>
+<p><code>{{ result.source.path }}</code>{% if result.source.zone %} · {{ result.source.zone }}{% endif %}</p>
+
+<div class="stats">
+  <div class="stat"><div class="n">{{ result.graph.summary.hooks }}</div><div class="l">Hooks</div></div>
+  <div class="stat"><div class="n">{{ result.graph.summary.rules }}</div><div class="l">Rules</div></div>
+  <div class="stat"><div class="n">{{ result.graph.summary.conditions }}</div><div class="l">Conditions</div></div>
+  <div class="stat"><div class="n">{{ result.graph.summary.effects }}</div><div class="l">Effects / calls</div></div>
+  <div class="stat"><div class="n">{{ result.graph.summary.targets }}</div><div class="l">Targets / systems</div></div>
+</div>
+
+{% if result.graph.summary.hook_owners %}
+<p><strong>Hook owners:</strong> {% for owner in result.graph.summary.hook_owners %}<span class="chip">{{ owner }}</span>{% endfor %}</p>
+{% endif %}
+{% if result.graph.summary.reachable_helpers %}
+<p><strong>Reachable helpers:</strong> {% for helper in result.graph.summary.reachable_helpers %}<span class="chip">{{ helper }}</span>{% endfor %}</p>
+{% endif %}
+{% if result.graph.summary.unmodeled_hooks %}
+<div class="warn"><strong>Unmodeled hooks:</strong> {{ result.graph.summary.unmodeled_hooks|join(", ") }}</div>
+{% endif %}
+
+<section class="behavior-inspector" aria-labelledby="behavior-graph-heading">
+  <h2 id="behavior-graph-heading">Behavior / State Graph</h2>
+  <div class="behavior-controls">
+    <label>Filter <input id="behavior-filter" type="search" placeholder="hook, effect, API, state, target"></label>
+    <button type="button" id="behavior-reset">Reset selection</button>
+  </div>
+  <div class="behavior-legend" aria-label="Graph legend">
+    <span><i class="legend-dot condition"></i> upstream condition/state</span>
+    <span><i class="legend-dot hook"></i> hook</span>
+    <span><i class="legend-dot rule"></i> rule/helper</span>
+    <span><i class="legend-dot effect"></i> downstream effect/API</span>
+    <span><i class="legend-dot target"></i> affected actor/system</span>
+  </div>
+  <p id="behavior-status" class="muted"></p>
+  <div class="behavior-canvas-wrap">
+    <svg id="behavior-graph" viewBox="0 0 1280 760" role="img" aria-label="Lua behavior causal graph"></svg>
+  </div>
+  <div id="behavior-detail" class="behavior-detail">
+    <strong>Select a graph node</strong>
+    <p class="muted">Inspect exact source provenance, trigger/state/effect metadata, API identity, or affected target.</p>
+  </div>
+</section>
+
+<h2>Same-zone controllers / context</h2>
+<p class="muted">These files are scanned because they can influence actors in the same zone. They are <strong>context, not proven dependencies</strong>, unless another evidence path establishes a direct relationship.</p>
+{% if result.contexts %}
+<div class="table-wrap"><table>
+<thead><tr><th>Role</th><th>Source</th><th>Hooks</th><th>Rules</th><th>API calls</th><th>Shared systems</th><th>Scope</th></tr></thead>
+<tbody>
+{% for row in result.contexts %}
+<tr>
+  <td><span class="chip">{{ row.role }}</span></td>
+  <td><a class="zonelink mono" href="/behavior?source={{ row.path|urlencode }}">{{ row.path }}</a></td>
+  <td>{% for hook in row.hooks %}<span class="chip">{{ hook }}</span>{% else %}<span class="muted">—</span>{% endfor %}</td>
+  <td>{{ row.rule_count }}</td>
+  <td>{{ row.api_call_count }}</td>
+  <td>{% for system in row.shared_systems %}<code>{{ system }}</code><br>{% else %}<span class="muted">—</span>{% endfor %}</td>
+  <td class="muted">{{ row.scope_basis }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table></div>
+{% else %}
+<p class="muted">No same-zone controller files were found within the bounded context scan.</p>
+{% endif %}
+
+<h2>Coverage notes</h2>
+{% for note in result.notes %}<p class="muted">• {{ note }}</p>{% endfor %}
+
+<script id="behavior-data" type="application/json">{{ result.graph|tojson }}</script>
+<style>
+.behavior-inspector{margin-top:1.5rem}.behavior-controls,.behavior-legend{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;margin:.6rem 0}.behavior-controls input{min-width:20rem}.behavior-legend span{font-size:.85rem;color:var(--muted)}.legend-dot{display:inline-block;width:.75rem;height:.75rem;border-radius:50%;margin-right:.25rem;vertical-align:-.05rem;border:1px solid var(--border)}.legend-dot.condition{background:#7c3aed}.legend-dot.hook{background:#2563eb}.legend-dot.rule{background:#475569}.legend-dot.effect{background:#059669}.legend-dot.target{background:#d97706}.behavior-canvas-wrap{overflow:auto;border:1px solid var(--border);border-radius:6px;background:var(--panel,#0f172a)}#behavior-graph{width:100%;min-width:900px;min-height:620px}.behavior-edge{stroke:#64748b;stroke-width:1.4;fill:none;marker-end:url(#behavior-arrow)}.behavior-edge.dim{opacity:.12}.behavior-node{cursor:pointer}.behavior-node rect{rx:8;ry:8;stroke:#cbd5e1;stroke-width:1.3}.behavior-node text{fill:#f8fafc;font-size:11px;pointer-events:none}.behavior-node .secondary{fill:#cbd5e1;font-size:9px}.behavior-node.condition rect{fill:#5b21b6}.behavior-node.hook rect{fill:#1d4ed8}.behavior-node.rule rect{fill:#334155}.behavior-node.effect rect{fill:#047857}.behavior-node.target rect{fill:#b45309}.behavior-node.subject rect{fill:#0f766e}.behavior-node.selected rect{stroke:#fff;stroke-width:3}.behavior-node.dim{opacity:.2}.behavior-detail{margin-top:.8rem;padding:1rem;border:1px solid var(--border);border-radius:6px;background:var(--card,#111827);white-space:normal}.behavior-detail code{white-space:pre-wrap;word-break:break-word}.behavior-detail dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:.3rem .8rem}.behavior-detail dt{color:var(--muted)}.behavior-detail dd{margin:0;min-width:0;word-break:break-word}
+</style>
+<script>
+(() => {
+ const data=JSON.parse(document.getElementById('behavior-data').textContent);
+ const svg=document.getElementById('behavior-graph'), detail=document.getElementById('behavior-detail'), filter=document.getElementById('behavior-filter'), status=document.getElementById('behavior-status');
+ const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ const nodes=new Map(data.nodes.map(n=>[n.id,n])), outgoing=new Map(), incoming=new Map();
+ data.edges.forEach(e=>{(outgoing.get(e.source)||outgoing.set(e.source,[]).get(e.source)).push(e);(incoming.get(e.target)||incoming.set(e.target,[]).get(e.target)).push(e);});
+ let selected=null;
+ function depthFor(n){
+   if(n.kind==='condition') return 0;
+   if(n.kind==='subject') return 0;
+   if(n.kind==='hook') return 1;
+   if(n.kind==='rule') return 2;
+   if(n.kind==='effect') return 3;
+   return 4;
+ }
+ function layout(visible){
+   const levels={0:[],1:[],2:[],3:[],4:[]};
+   visible.forEach(n=>levels[depthFor(n)].push(n));
+   Object.values(levels).forEach(rows=>rows.sort((a,b)=>a.label.localeCompare(b.label)));
+   const x={0:120,1:350,2:610,3:890,4:1160}, pos={};
+   Object.entries(levels).forEach(([d,rows])=>{
+     const gap=Math.max(70,680/Math.max(1,rows.length));
+     rows.forEach((n,i)=>pos[n.id]={x:x[d],y:50+i*gap});
+   });
+   return pos;
+ }
+ function related(id){
+   if(!id)return new Set();
+   const keep=new Set([id]),q=[id];
+   while(q.length){
+     const cur=q.shift();
+     [...(incoming.get(cur)||[]),...(outgoing.get(cur)||[])].forEach(e=>{
+       const other=e.source===cur?e.target:e.source;
+       if(!keep.has(other)){keep.add(other);q.push(other);}
+     });
+   }
+   return keep;
+ }
+ function matches(n,query){
+   if(!query)return true;
+   const hay=[n.id,n.kind,n.label,JSON.stringify(n.meta||{})].join(' ').toLowerCase();
+   return hay.includes(query);
+ }
+ function render(){
+   const query=filter.value.trim().toLowerCase();
+   const visible=data.nodes.filter(n=>matches(n,query));
+   const visibleIds=new Set(visible.map(n=>n.id)), pos=layout(visible), focus=related(selected);
+   let html='<defs><marker id="behavior-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/></marker></defs>';
+   data.edges.forEach(e=>{
+     if(!visibleIds.has(e.source)||!visibleIds.has(e.target))return;
+     const a=pos[e.source],b=pos[e.target],dim=selected&&!focus.has(e.source)&&!focus.has(e.target);
+     const ax=a.x+82,bx=b.x-82;
+     html+=`<path class="behavior-edge${dim?' dim':''}" d="M ${ax} ${a.y+20} C ${ax+70} ${a.y+20}, ${bx-70} ${b.y+20}, ${bx} ${b.y+20}"><title>${esc(e.kind)}</title></path>`;
+   });
+   visible.forEach(n=>{
+     const p=pos[n.id],dim=selected&&!focus.has(n.id),sel=selected===n.id;
+     const label=n.label.length>28?n.label.slice(0,27)+'…':n.label;
+     html+=`<g class="behavior-node ${esc(n.kind)}${dim?' dim':''}${sel?' selected':''}" data-id="${esc(n.id)}" transform="translate(${p.x-80},${p.y})"><rect width="160" height="42"/><text x="8" y="17">${esc(label)}</text><text class="secondary" x="8" y="32">${esc(n.kind)}</text></g>`;
+   });
+   svg.innerHTML=html;
+   svg.querySelectorAll('.behavior-node').forEach(el=>el.addEventListener('click',()=>select(el.dataset.id)));
+   status.textContent=`Showing ${visible.length} of ${data.nodes.length} nodes and ${data.edges.filter(e=>visibleIds.has(e.source)&&visibleIds.has(e.target)).length} causal edges.`;
+ }
+ function select(id){
+   selected=id;
+   const n=nodes.get(id),meta=n.meta||{};
+   const ins=incoming.get(id)||[],outs=outgoing.get(id)||[];
+   const rows=Object.entries(meta).filter(([,v])=>v!==null&&v!==''&&!(Array.isArray(v)&&!v.length)).map(([k,v])=>`<dt>${esc(k)}</dt><dd><code>${esc(typeof v==='string'?v:JSON.stringify(v,null,2))}</code></dd>`).join('');
+   detail.innerHTML=`<strong>${esc(n.label)}</strong> <span class="chip">${esc(n.kind)}</span><p><code>${esc(n.id)}</code></p><dl>${rows||'<dt>Metadata</dt><dd class="muted">No additional metadata</dd>'}</dl><p><strong>Incoming:</strong> ${esc(ins.map(e=>e.kind).join(', ')||'none')}<br><strong>Outgoing:</strong> ${esc(outs.map(e=>e.kind).join(', ')||'none')}</p>`;
+   render();
+ }
+ filter.addEventListener('input',render);
+ document.getElementById('behavior-reset').addEventListener('click',()=>{selected=null;filter.value='';detail.innerHTML='<strong>Select a graph node</strong><p class="muted">Inspect exact source provenance, trigger/state/effect metadata, API identity, or affected target.</p>';render();});
+ render();
+})();
+</script>
+{% endif %}
+{% endblock %}

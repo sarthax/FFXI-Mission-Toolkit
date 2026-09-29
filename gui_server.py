@@ -52,6 +52,10 @@ import explore_event
 import feature_trace
 from workbench.core.services.feature_trace_catalog import present_relationships
 from workbench.core.services.feature_trace_dossier import build_dossier
+from workbench.core.services.scripted_behavior_visualizer import (
+    find_lsb_behavior_sources,
+    inspect_lsb_behavior,
+)
 from workbench.core.services import timeline_alignment, packet_correlation
 from workbench.core.services import capture_integrity, capture_spatial
 import feature_checker
@@ -3250,6 +3254,59 @@ def validation_live_target_run(
         "result": result,
         "error": error,
     })
+
+
+@app.get("/behavior", response_class=HTMLResponse)
+def behavior_visualizer_page(
+    request: Request,
+    q: str = "",
+    source: str = "",
+):
+    """Inspect LSB scripted behavior without promoting same-zone context to dependency truth."""
+    matches=[]
+    result=None
+    error=None
+    lsb_root=build_lsb_index.LSB_ROOT
+    if not lsb_root.is_dir():
+        error="LandSandBoat source root is not available. Configure/install the LSB checkout first."
+    elif source.strip():
+        try:
+            result=inspect_lsb_behavior(lsb_root,source.strip())
+        except Exception as exc:
+            error=f"{type(exc).__name__}: {exc}"
+    elif q.strip():
+        matches=find_lsb_behavior_sources(lsb_root,q.strip(),limit=100)
+        if len(matches)==1:
+            try:
+                result=inspect_lsb_behavior(lsb_root,matches[0]["path"])
+                source=matches[0]["path"]
+            except Exception as exc:
+                error=f"{type(exc).__name__}: {exc}"
+    return templates.TemplateResponse(request,"behavior_visualizer.html",{
+        "request":request,
+        "q":q,
+        "source":source,
+        "matches":matches,
+        "result":result,
+        "error":error,
+    })
+
+
+@app.get("/behavior/graph.json")
+def behavior_visualizer_graph(source: str):
+    lsb_root=build_lsb_index.LSB_ROOT
+    if not lsb_root.is_dir():
+        return JSONResponse({"error":"LandSandBoat source root is not available."},status_code=404)
+    try:
+        result=inspect_lsb_behavior(lsb_root,source.strip())
+        return JSONResponse({
+            "source":result["source"],
+            "graph":result["graph"],
+            "contexts":result["contexts"],
+            "notes":result["notes"],
+        })
+    except Exception as exc:
+        return JSONResponse({"error":f"{type(exc).__name__}: {exc}"},status_code=400)
 
 
 @app.get("/features/trace", response_class=HTMLResponse)
