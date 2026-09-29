@@ -111,6 +111,7 @@ _GROUP_ACCESS=re.compile(
 _DIRECT_ENTITY_EXPR=re.compile(
     r"\b(GetNPCByID|GetMobByID|SpawnMob|DespawnMob)\(\s*"
     r"(ID\.(npc|mob)\.([A-Z0-9_]+)(?:\s*([+-])\s*(\d+))?)"
+    r"(?=\s*(?:,|\)))"
 )
 _ENTITY_ALIAS_ASSIGN=re.compile(
     r"\blocal\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"
@@ -119,6 +120,10 @@ _ENTITY_ALIAS_ASSIGN=re.compile(
 _ENTITY_ALIAS_CALL=re.compile(
     r"\b(GetNPCByID|GetMobByID|SpawnMob|DespawnMob)\(\s*"
     r"([A-Za-z_][A-Za-z0-9_]*)(?:\s*([+-])\s*(\d+))?\s*\)"
+)
+_NUMERIC_FOR=re.compile(
+    r"^\s*for\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(-?\d+)\s*,\s*(-?\d+)"
+    r"(?:\s*,\s*(-?\d+))?\s+do\b"
 )
 
 
@@ -993,6 +998,115 @@ def _literal_entity_aliases(text: str) -> dict[str,dict]:
     return aliases
 
 
+def _bounded_numeric_loop_entity_effects(
+    text: str,
+    *,
+    start_line: int,
+    aliases: dict[str,dict],
+    max_expansion: int=64,
+) -> tuple[BehaviorEffect,...]:
+    """Expand literal numeric for-loops only when their full iteration set is small and provable."""
+    raw=text.splitlines()
+    structural=_structural_lua_lines(text)
+    effects=[]
+    for i,code in enumerate(structural):
+        match=_NUMERIC_FOR.match(code)
+        if not match:
+            continue
+        var,start_raw,end_raw,step_raw=match.groups()
+        start=int(start_raw)
+        end=int(end_raw)
+        step=int(step_raw) if step_raw is not None else (1 if end>=start else -1)
+        if step==0:
+            continue
+        if (end-start)*step < 0:
+            continue
+        values=list(range(start,end+(1 if step>0 else -1),step))
+        if not values or len(values)>max_expansion:
+            continue
+
+        depth=0
+        loop_end=None
+        for j in range(i,len(raw)):
+            depth+=_open_count(structural[j])-_close_count(structural[j])
+            if j>i and depth<=0:
+                loop_end=j
+                break
+        if loop_end is None:
+            continue
+
+        direct_re=re.compile(
+            rf"\b(GetNPCByID|GetMobByID|SpawnMob|DespawnMob)\(\s*"
+            rf"ID\.(npc|mob)\.([A-Z0-9_]+)\s*([+-])\s*{re.escape(var)}"
+            rf"(?=\s*(?:,|\)))"
+        )
+        alias_re=re.compile(
+            rf"\b(GetNPCByID|GetMobByID|SpawnMob|DespawnMob)\(\s*"
+            rf"([A-Za-z_][A-Za-z0-9_]*)\s*([+-])\s*{re.escape(var)}"
+            rf"(?=\s*(?:,|\)))"
+        )
+        for body_index in range(i+1,loop_end):
+            body_line=raw[body_index]
+            body_code=_strip_line_comment_preserve_strings(body_line)
+            source_line=start_line+body_index
+            for call,kind,symbol,sign in direct_re.findall(body_code):
+                for value in values:
+                    total=value if sign=="+" else -value
+                    target=_entity_symbol_target(
+                        kind,symbol,
+                        "+" if total>0 else "-" if total<0 else None,
+                        str(abs(total)) if total else None,
+                    )
+                    effect_name={
+                        "GetNPCByID":"REFERENCES_ENTITY",
+                        "GetMobByID":"REFERENCES_ENTITY",
+                        "SpawnMob":"SPAWN_ENTITY",
+                        "DespawnMob":"DESPAWN_ENTITY",
+                    }[call]
+                    effects.append(BehaviorEffect(
+                        effect_name,target,f"ID.{kind}.{symbol}{total:+d}",
+                        {
+                            "call":call,"entity_kind":kind,"symbol":symbol,"offset":total,
+                            "resolution":"BOUNDED_NUMERIC_LOOP",
+                            "loop_variable":var,"loop_value":value,
+                            "loop_start":start,"loop_end":end,"loop_step":step,
+                            "loop_source_line":start_line+i,
+                            "source_line":source_line,"source_line_text":body_line.strip(),
+                        },
+                    ))
+            for call,alias,sign in alias_re.findall(body_code):
+                if alias not in aliases:
+                    continue
+                base=aliases[alias]
+                for value in values:
+                    delta=value if sign=="+" else -value
+                    total=base["offset"]+delta
+                    target=_entity_symbol_target(
+                        base["kind"],base["symbol"],
+                        "+" if total>0 else "-" if total<0 else None,
+                        str(abs(total)) if total else None,
+                    )
+                    effect_name={
+                        "GetNPCByID":"REFERENCES_ENTITY",
+                        "GetMobByID":"REFERENCES_ENTITY",
+                        "SpawnMob":"SPAWN_ENTITY",
+                        "DespawnMob":"DESPAWN_ENTITY",
+                    }[call]
+                    effects.append(BehaviorEffect(
+                        effect_name,target,f"{alias}{delta:+d}",
+                        {
+                            "call":call,"entity_kind":base["kind"],"symbol":base["symbol"],
+                            "offset":total,"resolution":"BOUNDED_NUMERIC_LOOP",
+                            "alias":alias,"alias_base_offset":base["offset"],
+                            "loop_variable":var,"loop_value":value,
+                            "loop_start":start,"loop_end":end,"loop_step":step,
+                            "loop_source_line":start_line+i,
+                            "source_line":source_line,"source_line_text":body_line.strip(),
+                        },
+                    ))
+    return tuple(effects)
+
+
 def _direct_entity_reference_rule(
     *,
     rule_id: str,
@@ -1005,6 +1119,9 @@ def _direct_entity_reference_rule(
     """Resolve only direct ID.npc/ID.mob symbols with optional literal integer offsets."""
     effects=[]
     aliases=_literal_entity_aliases(text)
+    effects.extend(_bounded_numeric_loop_entity_effects(
+        text,start_line=start_line,aliases=aliases
+    ))
     for offset_idx,raw_line in enumerate(text.splitlines()):
         code=_strip_line_comment_preserve_strings(raw_line)
         line_no=start_line+offset_idx
