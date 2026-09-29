@@ -356,6 +356,12 @@ def project_scripted_behavior(
                 value=source_observation.get(key)
                 if isinstance(value,str) and value:
                     named_subjects.add(value)
+        for effect in rule.effects:
+            if isinstance(effect.target,str) and (
+                effect.target.startswith("system:")
+                or effect.target.startswith("entity-symbol:")
+            ):
+                named_subjects.add(effect.target)
 
         for named in sorted(named_subjects):
             subject_node=_subject_node(behavior.map_id,named)
@@ -374,8 +380,8 @@ def project_scripted_behavior(
                 source_location=rule_location,
                 source_snapshot_id=source_snapshot_id,
             ))
-            # A non-root named actor referenced by a behavior rule is part of dependency review.
-            if named not in {behavior.subject,"player"}:
+            # A non-root named actor/system referenced by a behavior rule is part of dependency review.
+            if named not in {behavior.subject,"player"} and not named.startswith("helper:"):
                 edges.append(DependencyEdge(
                     f"behavior-rule-requires:{_token(rule_node,subject_node)}",
                     rule_node,subject_node,"REQUIRES",
