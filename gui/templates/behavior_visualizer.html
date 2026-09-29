@@ -39,6 +39,7 @@
   <div class="stat"><div class="n">{{ result.graph.summary.effects }}</div><div class="l">Effects / calls</div></div>
   <div class="stat"><div class="n">{{ result.graph.summary.targets }}</div><div class="l">Targets / systems</div></div>
   <div class="stat"><div class="n">{{ result.graph.summary.states }}</div><div class="l">Named states</div></div>
+  <div class="stat"><div class="n">{{ result.graph.summary.callbacks }}</div><div class="l">Callbacks</div></div>
 </div>
 
 {% if result.graph.summary.hook_owners %}
@@ -60,6 +61,7 @@
   <div class="behavior-legend" aria-label="Graph legend">
     <span><i class="legend-dot condition"></i> upstream condition/state</span>
     <span><i class="legend-dot hook"></i> hook</span>
+    <span><i class="legend-dot callback"></i> timer/queue/listener callback</span>
     <span><i class="legend-dot rule"></i> rule/helper</span>
     <span><i class="legend-dot effect"></i> downstream effect/API</span>
     <span><i class="legend-dot state"></i> named state variable</span>
@@ -131,7 +133,7 @@
 
 <script id="behavior-data" type="application/json">{{ result.graph|tojson }}</script>
 <style>
-.behavior-inspector{margin-top:1.5rem}.behavior-controls,.behavior-legend{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;margin:.6rem 0}.behavior-controls input{min-width:20rem}.behavior-legend span{font-size:.85rem;color:var(--muted)}.legend-dot{display:inline-block;width:.75rem;height:.75rem;border-radius:50%;margin-right:.25rem;vertical-align:-.05rem;border:1px solid var(--border)}.legend-dot.condition{background:#7c3aed}.legend-dot.hook{background:#2563eb}.legend-dot.rule{background:#475569}.legend-dot.effect{background:#059669}.legend-dot.state{background:#0891b2}.legend-dot.target{background:#d97706}.behavior-canvas-wrap{overflow:auto;border:1px solid var(--border);border-radius:6px;background:var(--panel,#0f172a)}#behavior-graph{width:100%;min-width:900px;min-height:620px}.behavior-edge{stroke:#64748b;stroke-width:1.4;fill:none;marker-end:url(#behavior-arrow)}.behavior-edge.dim{opacity:.12}.behavior-node{cursor:pointer}.behavior-node rect{rx:8;ry:8;stroke:#cbd5e1;stroke-width:1.3}.behavior-node text{fill:#f8fafc;font-size:11px;pointer-events:none}.behavior-node .secondary{fill:#cbd5e1;font-size:9px}.behavior-node.condition rect{fill:#5b21b6}.behavior-node.hook rect{fill:#1d4ed8}.behavior-node.rule rect{fill:#334155}.behavior-node.effect rect{fill:#047857}.behavior-node.state rect{fill:#0e7490}.behavior-node.target rect{fill:#b45309}.behavior-node.subject rect{fill:#0f766e}.behavior-node.selected rect{stroke:#fff;stroke-width:3}.behavior-node.dim{opacity:.2}.behavior-detail{margin-top:.8rem;padding:1rem;border:1px solid var(--border);border-radius:6px;background:var(--card,#111827);white-space:normal}.behavior-detail code{white-space:pre-wrap;word-break:break-word}.behavior-detail dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:.3rem .8rem}.behavior-detail dt{color:var(--muted)}.behavior-detail dd{margin:0;min-width:0;word-break:break-word}
+.behavior-inspector{margin-top:1.5rem}.behavior-controls,.behavior-legend{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;margin:.6rem 0}.behavior-controls input{min-width:20rem}.behavior-legend span{font-size:.85rem;color:var(--muted)}.legend-dot{display:inline-block;width:.75rem;height:.75rem;border-radius:50%;margin-right:.25rem;vertical-align:-.05rem;border:1px solid var(--border)}.legend-dot.condition{background:#7c3aed}.legend-dot.hook{background:#2563eb}.legend-dot.callback{background:#be185d}.legend-dot.rule{background:#475569}.legend-dot.effect{background:#059669}.legend-dot.state{background:#0891b2}.legend-dot.target{background:#d97706}.behavior-canvas-wrap{overflow:auto;border:1px solid var(--border);border-radius:6px;background:var(--panel,#0f172a)}#behavior-graph{width:100%;min-width:900px;min-height:620px}.behavior-edge{stroke:#64748b;stroke-width:1.4;fill:none;marker-end:url(#behavior-arrow)}.behavior-edge.dim{opacity:.12}.behavior-node{cursor:pointer}.behavior-node rect{rx:8;ry:8;stroke:#cbd5e1;stroke-width:1.3}.behavior-node text{fill:#f8fafc;font-size:11px;pointer-events:none}.behavior-node .secondary{fill:#cbd5e1;font-size:9px}.behavior-node.condition rect{fill:#5b21b6}.behavior-node.hook rect{fill:#1d4ed8}.behavior-node.callback rect{fill:#9d174d}.behavior-node.rule rect{fill:#334155}.behavior-node.effect rect{fill:#047857}.behavior-node.state rect{fill:#0e7490}.behavior-node.target rect{fill:#b45309}.behavior-node.subject rect{fill:#0f766e}.behavior-node.selected rect{stroke:#fff;stroke-width:3}.behavior-node.dim{opacity:.2}.behavior-detail{margin-top:.8rem;padding:1rem;border:1px solid var(--border);border-radius:6px;background:var(--card,#111827);white-space:normal}.behavior-detail code{white-space:pre-wrap;word-break:break-word}.behavior-detail dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:.3rem .8rem}.behavior-detail dt{color:var(--muted)}.behavior-detail dd{margin:0;min-width:0;word-break:break-word}
 </style>
 <script>
 (() => {
@@ -145,19 +147,20 @@
    if(n.kind==='condition') return 0;
    if(n.kind==='state'){
      const reads=(outgoing.get(n.id)||[]).some(e=>e.kind==='STATE_READ');
-     return reads?0:4;
+     return reads?0:5;
    }
    if(n.kind==='subject') return 0;
    if(n.kind==='hook') return 1;
-   if(n.kind==='rule') return 2;
-   if(n.kind==='effect') return 3;
-   return 4;
+   if(n.kind==='callback') return 2;
+   if(n.kind==='rule') return n.meta?.callback_type?3:2;
+   if(n.kind==='effect') return n.meta?.callback_type?4:3;
+   return 5;
  }
  function layout(visible){
-   const levels={0:[],1:[],2:[],3:[],4:[]};
+   const levels={0:[],1:[],2:[],3:[],4:[],5:[]};
    visible.forEach(n=>levels[depthFor(n)].push(n));
    Object.values(levels).forEach(rows=>rows.sort((a,b)=>a.label.localeCompare(b.label)));
-   const x={0:120,1:350,2:610,3:890,4:1160}, pos={};
+   const x={0:100,1:310,2:520,3:740,4:970,5:1210}, pos={};
    Object.entries(levels).forEach(([d,rows])=>{
      const gap=Math.max(70,680/Math.max(1,rows.length));
      rows.forEach((n,i)=>pos[n.id]={x:x[d],y:50+i*gap});
