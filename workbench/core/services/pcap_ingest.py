@@ -304,10 +304,191 @@ def decode_network_frame(frame: bytes, linktype: int) -> dict:
             out["decode_status"] = "invalid_tcp_header"
             return out
         out["src_port"], out["dst_port"] = int(src_port), int(dst_port)
+        out["tcp_seq"] = struct.unpack_from("!I", frame, offset + 4)[0]
+        out["tcp_ack"] = struct.unpack_from("!I", frame, offset + 8)[0]
+        flags = frame[offset + 13]
+        out["tcp_flags"] = {
+            "fin": bool(flags & 0x01),
+            "syn": bool(flags & 0x02),
+            "rst": bool(flags & 0x04),
+            "psh": bool(flags & 0x08),
+            "ack": bool(flags & 0x10),
+            "urg": bool(flags & 0x20),
+            "ece": bool(flags & 0x40),
+            "cwr": bool(flags & 0x80),
+        }
         out["transport_payload_hex"] = frame[offset + data_offset:network_end].hex().upper()
         out["decode_status"] = "tcp_payload"
     else:
         out["decode_status"] = f"unsupported_ip_protocol_{proto}"
+    return out
+
+
+def _endpoint_key(ip: str, port: int) -> str:
+    return f"{ip}:{port}"
+
+
+def reconstruct_tcp_flows(frame_rows: list[dict]) -> list[dict]:
+    """Reconstruct contiguous TCP byte ranges conservatively from decoded frames.
+
+    Missing bytes remain explicit gaps. Retransmitted identical bytes are recorded as retransmits.
+    Conflicting overlaps are recorded and the first observed byte wins so reconstruction is
+    deterministic without inventing a preferred packet.
+    """
+    flows: dict[tuple, dict] = {}
+    for row in frame_rows:
+        decoded = row.get("decoded") or {}
+        if decoded.get("transport") != "tcp":
+            continue
+        src_ip, dst_ip = decoded.get("src_ip"), decoded.get("dst_ip")
+        src_port, dst_port = decoded.get("src_port"), decoded.get("dst_port")
+        if None in (src_ip, dst_ip, src_port, dst_port):
+            continue
+        ep1 = (src_ip, int(src_port))
+        ep2 = (dst_ip, int(dst_port))
+        a, b = sorted((ep1, ep2))
+        key = (a, b)
+        flow = flows.setdefault(key, {
+            "endpoint_a": {"ip": a[0], "port": a[1]},
+            "endpoint_b": {"ip": b[0], "port": b[1]},
+            "segments": {"a_to_b": [], "b_to_a": []},
+            "frames": [],
+        })
+        direction = "a_to_b" if ep1 == a else "b_to_a"
+        payload_hex = decoded.get("transport_payload_hex") or ""
+        payload = bytes.fromhex(payload_hex) if payload_hex else b""
+        flags = decoded.get("tcp_flags") or {}
+        flow["frames"].append({
+            "frame_no": row["frame_no"],
+            "direction": direction,
+            "seq": decoded.get("tcp_seq"),
+            "ack": decoded.get("tcp_ack"),
+            "payload_len": len(payload),
+            "flags": flags,
+            "timestamp_seconds": row.get("timestamp_seconds"),
+        })
+        if payload and decoded.get("tcp_seq") is not None:
+            flow["segments"][direction].append({
+                "frame_no": row["frame_no"],
+                "seq": int(decoded["tcp_seq"]),
+                "payload": payload,
+                "timestamp_seconds": row.get("timestamp_seconds"),
+                "start_offset": row.get("start_offset"),
+                "end_offset": row.get("end_offset"),
+            })
+
+    out = []
+    for (a, b), flow in sorted(flows.items()):
+        flow_id = f"tcp:{a[0]}:{a[1]}-{b[0]}:{b[1]}"
+        flow_out = {
+            "flow_id": flow_id,
+            "endpoint_a": flow["endpoint_a"],
+            "endpoint_b": flow["endpoint_b"],
+            "transport": "tcp",
+            "frames": flow["frames"],
+            "directions": {},
+        }
+        for direction in ("a_to_b", "b_to_a"):
+            segs = sorted(flow["segments"][direction], key=lambda s: (s["seq"], s["frame_no"]))
+            if not segs:
+                flow_out["directions"][direction] = {
+                    "ranges": [],
+                    "gaps": [],
+                    "retransmissions": [],
+                    "overlaps": [],
+                    "conflicting_overlaps": [],
+                }
+                continue
+
+            ranges = []
+            gaps = []
+            retransmissions = []
+            overlaps = []
+            conflicts = []
+            current_start = None
+            current_end = None
+            byte_map: dict[int, int] = {}
+            byte_frames: dict[int, list[int]] = {}
+            min_seq = min(s["seq"] for s in segs)
+            max_end = max(s["seq"] + len(s["payload"]) for s in segs)
+
+            for seg in segs:
+                seq = seg["seq"]
+                payload = seg["payload"]
+                fully_seen_same = True
+                had_existing = False
+                for i, value in enumerate(payload):
+                    pos = seq + i
+                    if pos in byte_map:
+                        had_existing = True
+                        byte_frames.setdefault(pos, []).append(seg["frame_no"])
+                        if byte_map[pos] != value:
+                            fully_seen_same = False
+                            conflicts.append({
+                                "seq": pos,
+                                "first_byte": byte_map[pos],
+                                "new_byte": value,
+                                "frame_no": seg["frame_no"],
+                            })
+                    else:
+                        fully_seen_same = False
+                        byte_map[pos] = value
+                        byte_frames[pos] = [seg["frame_no"]]
+                if had_existing:
+                    overlaps.append({
+                        "frame_no": seg["frame_no"],
+                        "seq_start": seq,
+                        "seq_end": seq + len(payload),
+                    })
+                    if fully_seen_same:
+                        retransmissions.append({
+                            "frame_no": seg["frame_no"],
+                            "seq_start": seq,
+                            "seq_end": seq + len(payload),
+                        })
+
+            pos = min_seq
+            while pos < max_end:
+                if pos not in byte_map:
+                    gap_start = pos
+                    while pos < max_end and pos not in byte_map:
+                        pos += 1
+                    gaps.append({"seq_start": gap_start, "seq_end": pos, "length": pos - gap_start})
+                    continue
+                range_start = pos
+                buf = bytearray()
+                contributing = set()
+                first_ts = last_ts = None
+                while pos < max_end and pos in byte_map:
+                    buf.append(byte_map[pos])
+                    for frame_no in byte_frames.get(pos, []):
+                        contributing.add(frame_no)
+                    pos += 1
+                for seg in segs:
+                    seg_end = seg["seq"] + len(seg["payload"])
+                    if seg["seq"] < pos and seg_end > range_start:
+                        ts = seg.get("timestamp_seconds")
+                        if ts is not None:
+                            first_ts = ts if first_ts is None else min(first_ts, ts)
+                            last_ts = ts if last_ts is None else max(last_ts, ts)
+                ranges.append({
+                    "seq_start": range_start,
+                    "seq_end": pos,
+                    "length": len(buf),
+                    "payload_hex": bytes(buf).hex().upper(),
+                    "frame_numbers": sorted(contributing),
+                    "first_timestamp_seconds": first_ts,
+                    "last_timestamp_seconds": last_ts,
+                })
+
+            flow_out["directions"][direction] = {
+                "ranges": ranges,
+                "gaps": gaps,
+                "retransmissions": retransmissions,
+                "overlaps": overlaps,
+                "conflicting_overlaps": conflicts,
+            }
+        out.append(flow_out)
     return out
 
 
