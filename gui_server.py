@@ -3303,6 +3303,7 @@ def behavior_visualizer_graph(source: str):
             "source":result["source"],
             "graph":result["graph"],
             "contexts":result["contexts"],
+            "upstream_candidates":result.get("upstream_candidates",[]),
             "notes":result["notes"],
         })
     except Exception as exc:
