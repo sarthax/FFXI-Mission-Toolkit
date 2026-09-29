@@ -153,6 +153,7 @@ jobs:
           python test_fixtures/test_capture_tcp_reassembly.py
           python test_fixtures/test_capture_lobby_decoder.py
           python test_fixtures/test_capture_help_support_matrix.py
+          python test_fixtures/test_capture_stattrack_ingest.py
           python test_fixtures/test_windower_logger_ingest.py
           python test_fixtures/test_eventview_session_unknown_zone.py
           python test_fixtures/test_capture_broad_formats.py

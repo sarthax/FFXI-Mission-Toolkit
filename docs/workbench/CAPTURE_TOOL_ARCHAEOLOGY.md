@@ -22,6 +22,7 @@ Purpose: track historical/current FFXI logging and packet-analysis tools that ha
 | HPTrack / KITrack / LevelRangeTrack / AttackDelay | CaptureSuite/Captain | text/SQLite mechanic observations | Supported | Existing capture parsers cover these families. |
 | ShopStock / GuildStock / PriceLog/findPrice | CaptureSuite/Captain | SQLite/text vendor and guild pricing evidence | Supported | Current and historical schema variants are covered where verified. |
 | WeatherTrack / POITrack / SpawnTrack / CheckParam / CraftTrack / ConquestTrack / MissionTrack | Captain / misc capture suites | SQLite/CSV/text structured observations | Supported | Stored in generic structured observations with promoted searchable fields. |
+| Captain StatTrack | Captain | player and puppet CSV stat snapshots | Supported | Both verified generations are content-sniffed: player HP/MP/jobs/base stats and puppet HP/MP/melee/ranged/magic/base stats. |
 | Capturebar | Windower | no persistent log; on-screen HUD only | Supported through OCR | Built-in OCR profile extracts zone/target/X-Z-Y/rotation/job/moon context from video/screenshots. |
 | Windower QuestLog | Windower | none | Not an ingestion target | Consumes packet 0x056 and renders quest state to chat; no reusable file output in the audited source. |
 | Windower Pricer | Windower | none | Not an ingestion target | Fetches FFXIAH sale data and writes to chat only; no capture file. This is distinct from Captain PriceLog/findPrice, which is supported. |
