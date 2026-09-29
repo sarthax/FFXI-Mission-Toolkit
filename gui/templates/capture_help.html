@@ -68,10 +68,13 @@
 <thead><tr><th>Gap</th><th>Current behavior</th><th>Recommended direction</th></tr></thead>
 <tbody>
 <tr><td><strong>Captain EventView v2 standalone logs</strong></td><td>Current Captain source writes a newer per-zone decoded-event text shape than the legacy EventView parser grammar.</td><td>Obtain/fixture-test a real emitted file, then add a generation-specific adapter without guessing opcode/class fields that are not present.</td></tr>
-<tr><td><strong>Lobby / world-server packet streams</strong></td><td>Current addon capture support is primarily zone/game-server oriented.</td><td>Research and model lobby/search/AH/account/storage stream capture separately when needed.</td></tr>
+<tr><td><strong>Lobby + search/cache TCP decoding</strong></td><td>World/map packet evidence is already supported at addon level and bounded PCAP frame level, but the separate lobby/character-service and search/cache TCP protocols are not yet decoded from captures.</td><td>Add generic TCP flow reconstruction first, then validated lobby framing and search/cache session decoding. Search/AH/group/comment responsibilities are confirmed; do not classify storage/account subflows without direct evidence.</td></tr>
 <tr><td><strong>PacketDB ZONES / PACKET_DEFINITION</strong></td><td>Not imported as runtime facts because they are reference metadata, not observations.</td><td>Optionally preserve as source-supplied historical reference metadata.</td></tr>
 <tr><td><strong>Unknown historical/community loggers</strong></td><td>Unrecognized source files remain visible in ingestion results rather than being silently ignored.</td><td>Add adapters when real samples/schemas are found; prefer content signatures over folder-name assumptions.</td></tr>
 </tbody></table></div>
+
+<h2>Network planes</h2>
+<p>FFXI capture evidence spans separate network planes. The <strong>lobby/character-service</strong> TCP flow handles login setup, character/world lists and character selection; the separate <strong>search/cache</strong> TCP flow handles confirmed player search, party/linkshell lists, search comments, and auction-house listing/history; the <strong>world/map</strong> flow uses UDP and contains the familiar FFXI packet chunks used by PacketViewer-style tools. Modern private-server loaders may expose additional auth/data/profile sockets that are implementation-specific and should not be treated as retail protocol facts. The detailed research map is maintained in <code>docs/workbench/LOBBY_WORLD_STREAM_RESEARCH.md</code>.</p>
 
 <h2>PCAP/PCAPNG limits</h2>
 <p>PCAP support is deliberately evidence-first. FFXI zone traffic uses UDP, but live wire payloads can require session-aware Blowfish decryption and zlib decompression before the familiar four-byte FFXI chunks exist. The adapter therefore always preserves network frames and transport payloads, but it does <strong>not</strong> guess keys, decompression state, client/server role, or packet direction. Opaque/encrypted datagrams remain network-frame evidence. A UDP payload is promoted into <code>capture_raw_packets</code> only when the entire payload is already a structurally valid stream of known FFXI chunks; promoted rows use direction <code>unknown</code> until independent evidence establishes endpoint roles.</p>
@@ -82,7 +85,7 @@
 <h2>Current priority gaps</h2>
 <ol>
 <li>Fixture-test and normalize Captain EventView v2 standalone logs.</li>
-<li>Lobby/world-server stream research for search, auction, storage/account, and related non-zone traffic.</li>
+<li>Implement TCP flow reconstruction, then lobby and search/cache protocol classification/decoding from PCAP evidence.</li>
 <li>Optional preservation of PacketDB <code>ZONES</code>/<code>PACKET_DEFINITION</code> as historical reference metadata.</li>
 </ol>
 
