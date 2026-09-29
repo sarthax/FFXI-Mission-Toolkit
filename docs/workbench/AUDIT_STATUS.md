@@ -2778,3 +2778,20 @@ Generic packet-capture containers can now be preserved without pretending encryp
 - The implementation uses only Python's standard library; no Scapy/libpcap dependency is required for offline ingestion.
 
 Research basis: Windower packet documentation distinguishes UDP datagrams from the embedded four-byte-header packet chunks; current LandSandBoat map networking and independent FFXI transport implementations confirm UDP map transport with compression/encryption stages. Full retail-wire decoding remains a separate session-aware research milestone.
+
+
+## 2026-09-28 — Historical Windower/Ashita/Captain capture-tool archaeology
+
+A source-level archaeology pass separated real persisted formats from addons that merely consume packets or print/display derived state.
+
+Findings:
+- Windower's stock Logger is a real previously-unhandled persisted format. It writes daily `<player>_YYYY.MM.DD.log` files and can optionally prefix each line with a configurable clock timestamp. These files now feed canonical `capture_chat_observations` with exact line/byte provenance. If timestamps are disabled, `ts` remains NULL.
+- Classic Windower PacketViewer and current Captain PacketLogger are the same compatibility family for toolkit purposes. Captain explicitly targets PVLV/VieweD compatibility and writes per-ID incoming/outgoing timestamped hexdumps; no duplicate adapter is needed.
+- Windower QuestLog consumes packet 0x056 and writes results to chat only; old Windower Pricer fetches FFXIAH sale data and writes to chat only; Ashita ScanZone displays/prints entity observations. None creates a reusable capture file in the audited source, so adding fake file ingesters would be incorrect.
+- Captain PacketBridge forwards packets over UDP but does not create a static log. It is a potential future live-input connector, not an ingestion format.
+- Current Captain EventView v2 standalone files are a distinct compatibility question. Source inspection shows a newer full-datetime direction/type + dumped-table writer that does not match the legacy EventView header grammar. A real emitted sample is required before normalization; support is not claimed yet.
+- Current Captain NPCLogger remains SQLite-backed and its packet logger remains in the existing raw-packet family.
+
+Detailed tool-by-tool results are maintained in `docs/workbench/CAPTURE_TOOL_ARCHAEOLOGY.md`.
+
+This closes the planned broad historical-tool search pass while keeping the inventory open for future forum/Discord/deleted-repository samples. The next major research boundary is lobby/world/non-zone traffic.

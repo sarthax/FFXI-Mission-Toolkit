@@ -874,6 +874,95 @@ def sniff_sqlite_format(data: bytes) -> str | None:
     return None
 
 
+WINDOWER_LOGGER_FILENAME_RE = re.compile(
+    r'(?i)(?:^|/)logs/([^/]+)_(\d{4})\.(\d{2})\.(\d{2})\.log$'
+)
+WINDOWER_LOGGER_BASENAME_RE = re.compile(
+    r'(?i)^([^/]+)_(\d{4})\.(\d{2})\.(\d{2})\.log$'
+)
+WINDOWER_LOGGER_TIME_RE = re.compile(r'^(\d{2}:\d{2}:\d{2})(.*)$')
+
+
+def ingest_windower_logger(con, capture_id: int, src: Source, relname: str) -> int:
+    """Ingest Windower Logger daily chat files into canonical chat observations.
+
+    Logger timestamps are optional and default to HH:MM:SS without a separator before the text.
+    The filename supplies the date. Untimestamped lines retain ts=NULL.
+    """
+    data = src.read_bytes(relname)
+    text = data.decode("utf-8", "replace")
+    exact = text.encode("utf-8") == data
+    sha = capture_integrity.sha256_bytes(data)
+    base = relname.rsplit("/", 1)[-1]
+    m = WINDOWER_LOGGER_BASENAME_RE.match(base)
+    if not m:
+        raise ValueError("Windower Logger filename must be <player>_YYYY.MM.DD.log")
+    player, year, month, day = m.groups()
+
+    old_rows = con.execute(
+        """SELECT row_key FROM capture_row_locators
+           WHERE capture_id=? AND filename=? AND target_table='capture_chat_observations'""",
+        (capture_id, relname),
+    ).fetchall()
+    for (row_key_raw,) in old_rows:
+        try:
+            seq = json.loads(row_key_raw).get("seq")
+        except Exception:
+            seq = None
+        if seq is not None:
+            con.execute(
+                "DELETE FROM capture_chat_observations WHERE capture_id=? AND seq=?",
+                (capture_id, int(seq)),
+            )
+    con.execute(
+        """DELETE FROM capture_row_locators
+           WHERE capture_id=? AND filename=? AND target_table='capture_chat_observations'""",
+        (capture_id, relname),
+    )
+
+    count = 0
+    char_pos = 0
+    for line_number, raw_line in enumerate(text.splitlines(keepends=True), start=1):
+        content = raw_line.rstrip("\r\n")
+        start_char = char_pos
+        char_pos += len(raw_line)
+        if not content:
+            continue
+        tm = WINDOWER_LOGGER_TIME_RE.match(content)
+        if tm:
+            clock, message = tm.groups()
+            ts = f"{year}-{month}-{day} {clock}"
+        else:
+            message = content
+            ts = None
+        if not message:
+            continue
+        capture_chat.insert_chat_observation(
+            con, capture_id,
+            ts=ts,
+            direction=None,
+            zone_id=None,
+            zone_db=None,
+            text=message,
+            source_format="windower_logger",
+            source_native_id=f"{relname}:line:{line_number}",
+            filename=relname,
+            source_sha256=sha,
+            locator_basis="line",
+            start_line=line_number,
+            end_line=line_number,
+            start_offset=(len(text[:start_char].encode("utf-8")) if exact else None),
+            end_offset=(len(text[:char_pos].encode("utf-8")) if exact else None),
+            details={
+                "player_from_filename": player,
+                "date_from_filename": f"{year}-{month}-{day}",
+                "timestamp_present": bool(tm),
+            },
+        )
+        count += 1
+    return count
+
+
 def sniff_text_format(text: str) -> str | None:
     """Which capture log format this text file is, by real content signature -- a dropped file's
     own name can't be trusted to carry the addon folder it came from (idview/, KITrack/, etc.),
@@ -980,7 +1069,9 @@ def ingest_single_file(con, capture_id: int, filename: str, data: bytes) -> dict
         else:
             text = data.decode("utf-8", "replace")
             basename = Path(filename).name.lower()
-            if basename == "simple.log" and IDVIEW2_HEADER_RE.search(text):
+            if WINDOWER_LOGGER_BASENAME_RE.match(basename):
+                fmt = "windower_logger"
+            elif basename == "simple.log" and IDVIEW2_HEADER_RE.search(text):
                 fmt = "eventview_session_simple"
             elif basename == "raw.log" and IDVIEW2_HEADER_RE.search(text) and PACKETLOGGER_HEXROW_RE.search(text):
                 fmt = "eventview_session_raw"
@@ -989,6 +1080,8 @@ def ingest_single_file(con, capture_id: int, filename: str, data: bytes) -> dict
             src = SingleFileSource(filename, data)
             if fmt == "packeteer":
                 rows = raw_packet_ingest.ingest_packeteer(con, capture_id, src, filename)
+            elif fmt == "windower_logger":
+                rows = ingest_windower_logger(con, capture_id, src, filename)
             elif fmt == "idview_simple":
                 rows = ingest_idview_simple(con, capture_id, src, zone_db + ".log")
             elif fmt == "eventview_session_simple":
@@ -2834,6 +2927,10 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
     # titlecase "CapLog" folder with a ".log" extension instead -- same real underlying tool
     # family (see ingest_caplog's own docstring on the [EView] variant), just different real
     # casing/extension, confirmed by direct content inspection of multiple real Thris captures.
+    for relname in sfind(r'(?:^|/)logs/[^/]+_\d{4}\.\d{2}\.\d{2}\.log$'):
+        counts["caplog_chat"] += run1(
+            relname, ingest_windower_logger, con, capture_id, src, relname
+        )
     for relname in sfind(r'[Cc]ap[Ll]og/[^/]+\.(?:txt|log)$'):
         events_n, hp_n, eview_n, chat_n = run4(relname, ingest_caplog, con, capture_id, src, relname)
         counts["events"] += events_n
@@ -3139,6 +3236,8 @@ def _capture_source_format(src: "Source", relname: str) -> str | None:
         return "packetlogger"
     if "caplog/" in lower and lower.endswith((".txt", ".log")):
         return "caplog"
+    if WINDOWER_LOGGER_FILENAME_RE.search(lower):
+        return "windower_logger"
     if "kitrack/" in lower:
         return "kitrack"
     if "hptrack/" in lower:
@@ -3184,7 +3283,7 @@ def _capture_source_format(src: "Source", relname: str) -> str | None:
 
 REBUILDABLE_CAPTURE_FORMATS = {
     "eventview", "idview_simple", "eventview_session_simple", "eventview_session_raw",
-    "kitrack", "hptrack", "actionview_simple", "caplog", "packetlogger",
+    "kitrack", "hptrack", "actionview_simple", "caplog", "windower_logger", "packetlogger",
     "packetdb", "packeteer", "pcap", "pcapng",
     "npclogger_db", "actionview_db", "levelrange_db",
     "npclogger_lua", "pathlog_csv", "pc_pathlog_csv", "widescan", "attackdelay",
@@ -3434,6 +3533,8 @@ def rebuild_capture_source(con, capture_id: int, filename: str) -> dict:
                 result = ingest_actionview_simple(con, capture_id, src, filename)
             elif fmt == "caplog":
                 result = ingest_caplog(con, capture_id, src, filename)
+            elif fmt == "windower_logger":
+                result = ingest_windower_logger(con, capture_id, src, filename)
             elif fmt == "npclogger_db":
                 result = ingest_npc_db(con, capture_id, src, filename)
             elif fmt == "actionview_db":
