@@ -1296,8 +1296,8 @@ def _event_branch_nonstate_effects(
     return tuple(effects)
 
 
-def _literal_event_outcome_branches(text: str, *, start_line: int) -> tuple[dict,...]:
-    """Return bounded nested literal option/result branches inside an event branch."""
+def _event_outcome_branches(text: str, *, start_line: int) -> tuple[dict,...]:
+    """Return bounded nested option/result branches, marking only literal equality as modeled."""
     raw=text.splitlines()
     structural=_structural_lua_lines(text)
     rows=[]
@@ -1314,6 +1314,8 @@ def _literal_event_outcome_branches(text: str, *, start_line: int) -> tuple[dict
         rows.append({
             "selector":active["selector"],
             "literal":active["literal"],
+            "predicate":active["predicate"],
+            "modeled":active["modeled"],
             "start_index":body_start,
             "end_index":body_end,
             "start_line":start_line+body_start,
@@ -1332,15 +1334,21 @@ def _literal_event_outcome_branches(text: str, *, start_line: int) -> tuple[dict
                 finish(i-1)
 
         match=re.match(
-            r"^\s*(?:if|elseif)\s+(option|result)\s*==\s*"
-            r"(-?\d+|true|false|['\"][^'\"]+['\"])\s+then\b",
+            r"^\s*(?:if|elseif)\s+(option|result)\s+(.+?)\s+then\b",
             code,
         )
         if match:
-            selector,literal=match.groups()
+            selector,predicate=match.groups()
+            literal_match=re.fullmatch(
+                r"==\s*(-?\d+|true|false|['\"][^'\"]+['\"])",
+                predicate.strip(),
+            )
+            literal=literal_match.group(1) if literal_match else None
             active={
                 "selector":selector,
                 "literal":literal,
+                "predicate":predicate.strip(),
+                "modeled":literal is not None,
                 "start_index":i,
                 "source_line":raw_line.strip(),
                 "branch_depth":depth + (1 if stripped.startswith("if ") else 0),
@@ -2155,9 +2163,12 @@ def extract_lsb_scripted_behavior(
             modeled_hooks.add(hook)
 
         for branch in csid_branches:
-            outcome_branches=_literal_event_outcome_branches(
+            outcome_branches=_event_outcome_branches(
                 branch["body"],
                 start_line=branch["start_line"],
+            )
+            literal_outcome_branches=tuple(
+                row for row in outcome_branches if row.get("modeled")
             )
             parent_body=_without_event_outcome_branches(branch["body"],outcome_branches)
             branch_writes=[
@@ -2217,7 +2228,7 @@ def extract_lsb_scripted_behavior(
             ))
             modeled_hooks.add(hook)
 
-            for outcome_index,outcome in enumerate(outcome_branches,1):
+            for outcome_index,outcome in enumerate(literal_outcome_branches,1):
                 outcome_writes=[
                     row for row in outcome["state_accesses"]
                     if row["access"]=="WRITE"
