@@ -792,5 +792,6 @@ def inspect_lsb_behavior(root: Path, relative: str) -> dict:
             "Primary graph edges come from the selected Lua source and bounded helper traversal.",
             "Zone/global/instance files are contextual controllers unless another analyzer proves a direct dependency.",
             "API_CALL observations preserve unfamiliar Lua-bound behavior even when no semantic effect classifier exists yet.",
+            "Cross-hook state links mean the same canonical state is written in one hook and read in another; execution ordering and causal sequencing remain unproven.",
         ],
     }
