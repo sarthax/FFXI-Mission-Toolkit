@@ -2422,6 +2422,10 @@ def ingest_packetlogger(con, capture_id, src: Source, relnames: list[str]) -> in
     corpus (45 of 84) predate PacketLogger and only have PacketViewer, so skipping this older
     format would have silently left over half the corpus with zero raw packet coverage."""
     all_packets = []
+    print(
+        f"[capture {capture_id}] PacketViewer/PacketLogger: parsing {len(relnames)} per-opcode files...",
+        flush=True,
+    )
     for relname in relnames:
         direction = "incoming" if "/incoming/" in relname.lower() else (
             "outgoing" if "/outgoing/" in relname.lower() else "unknown")
@@ -2456,6 +2460,10 @@ def ingest_packetlogger(con, capture_id, src: Source, relnames: list[str]) -> in
                 record["is_injected"], record["is_blocked"],
             ))
 
+    print(
+        f"[capture {capture_id}] PacketViewer/PacketLogger: parsed {len(all_packets)} packets; indexing...",
+        flush=True,
+    )
     all_packets.sort(key=lambda p: (p[0], p[4], p[6]))
 
     # Replace only this raw-log family. Other canonical raw sources (PacketDB, Packeteer,
