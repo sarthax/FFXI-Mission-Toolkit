@@ -58,6 +58,29 @@ def main():
             assert "chat_only" in profiles and profiles["chat_only"]["builtin"] is True
             assert profiles["my_1080p_layout"]["builtin"] is False
             assert profiles["my_1080p_layout"]["regions"][1]["preprocess_profile"] == ocr.PREPROCESS_PROFILE_PACKET
+            assert "capturebar_overlay" in profiles
+            capturebar_template = profiles["capturebar_overlay"]
+            assert capturebar_template["builtin"] is True
+            assert capturebar_template["regions"][0]["capture_profile"] == ocr.CAPTURE_PROFILE_CAPTUREBAR
+            assert capturebar_template["regions"][0]["preprocess_profile"] == ocr.PREPROCESS_PROFILE_SMALL
+
+            sample = "[72]Al Zahbi - Runic Seal (12.345,-67.890,1.250) R(192) (WAR99/NIN49) Moon: 42% First Quarter"
+            parsed = ocr.parse_capture_line(ocr.CAPTURE_PROFILE_CAPTUREBAR, sample)
+            assert parsed["capturebar_parsed"] is True, parsed
+            fields = parsed["fields"]
+            assert fields["zone_id"] == 72, fields
+            assert fields["zone_name"] == "Al Zahbi", fields
+            assert fields["target_name"] == "Runic Seal", fields
+            assert fields["x"] == 12.345 and fields["z"] == -67.89 and fields["y"] == 1.25, fields
+            assert fields["coordinate_display_order"] == "x,z,y", fields
+            assert fields["rotation"] == 192, fields
+            assert fields["main_job"] == "WAR" and fields["main_job_level"] == 99, fields
+            assert fields["sub_job"] == "NIN" and fields["sub_job_level"] == 49, fields
+            assert fields["moon_percent"] == 42 and fields["moon_phase"] == "First Quarter", fields
+
+            unparsed = ocr.parse_capture_line(ocr.CAPTURE_PROFILE_CAPTUREBAR, "garbled overlay text")
+            assert unparsed["capturebar_parsed"] is False
+            assert unparsed["fields"] is None
 
             calls = []
             def fake_cmd_frames(args):
@@ -113,6 +136,7 @@ def main():
             assert "Reusable screen layouts" in template
             assert 'name="preprocess"' in template
             assert "Save current sections as layout" in template
+            assert "Capturebar context HUD" in template
 
     finally:
         ocr.RUNS_ROOT = original_runs
