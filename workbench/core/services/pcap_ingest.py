@@ -13,7 +13,7 @@ import json
 import sqlite3
 import struct
 
-from workbench.core.services import capture_integrity, raw_packet_ingest
+from workbench.core.services import capture_integrity, raw_packet_ingest, lobby_ingest
 
 
 PCAP_MAGICS = {
@@ -560,6 +560,10 @@ def ingest_pcap(con: sqlite3.Connection, capture_id: int, src, relname: str) -> 
                 (capture_id, int(seq)),
             )
     con.execute(
+        "DELETE FROM capture_network_messages WHERE capture_id=? AND source_file=?",
+        (capture_id, relname),
+    )
+    con.execute(
         "DELETE FROM capture_network_ranges WHERE capture_id=? AND source_file=?",
         (capture_id, relname),
     )
@@ -572,7 +576,7 @@ def ingest_pcap(con: sqlite3.Connection, capture_id: int, src, relname: str) -> 
            WHERE capture_id=? AND filename=?
              AND target_table IN (
                  'capture_structured_records','capture_raw_packets',
-                 'capture_network_flows','capture_network_ranges'
+                 'capture_network_flows','capture_network_ranges','capture_network_messages'
              )""",
         (capture_id, relname),
     )
@@ -666,14 +670,22 @@ def ingest_pcap(con: sqlite3.Connection, capture_id: int, src, relname: str) -> 
             )
             chunk_count += 1
 
-    flow_count = range_count = 0
+    flow_count = range_count = message_count = 0
     for flow in reconstruct_tcp_flows(decoded_frames):
+        classification = lobby_ingest.classify_flow(flow["directions"])
         frame_meta = flow["frames"]
         timestamps = [f["timestamp_seconds"] for f in frame_meta if f["timestamp_seconds"] is not None]
         payload_frames = sum(1 for f in frame_meta if f["payload_len"] > 0)
         flow_details = {
-            "endpoint_role_basis": "canonical_endpoint_sort_only",
-            "protocol_family": "unknown_tcp",
+            "endpoint_role_basis": (
+                "validated_lobby_command_direction"
+                if classification["endpoint_roles"] else "canonical_endpoint_sort_only"
+            ),
+            "protocol_family": classification["protocol_family"],
+            "classification_validated": classification["classification_validated"],
+            "classification_basis": classification.get("validation_basis"),
+            "endpoint_roles": classification.get("endpoint_roles"),
+            "role_status": classification.get("role_status"),
             "frames": frame_meta,
             "direction_summaries": {},
         }
@@ -784,4 +796,77 @@ def ingest_pcap(con: sqlite3.Connection, capture_id: int, src, relname: str) -> 
                         "locator_note": "offset span covers contributing frames; exact frames listed explicitly",
                     },
                 )
-    return frame_count, chunk_count, flow_count, range_count
+        for message in classification["messages"]:
+            validation = message["validation"]
+            fields = message.get("fields") or {}
+            direction = message["direction"]
+            range_index = int(message["range_index"])
+            message_index = int(message["message_index"])
+            seq_start = int(message["seq_start"])
+            seq_end = int(message["seq_end"])
+            direction_frames = []
+            for fm in frame_meta:
+                if fm["direction"] != direction or fm["payload_len"] <= 0 or fm.get("seq") is None:
+                    continue
+                payload_seq = (int(fm["seq"]) + (1 if (fm.get("flags") or {}).get("syn") else 0)) & 0xFFFFFFFF
+                payload_end = payload_seq + int(fm["payload_len"])
+                if payload_seq < seq_end and payload_end > seq_start:
+                    direction_frames.append(int(fm["frame_no"]))
+            direction_frames = sorted(set(direction_frames))
+
+            provenance = {
+                "validation_basis": classification.get("validation_basis"),
+                "md5_valid": bool(validation.get("md5_valid")),
+                "declared_packet_size": validation.get("packet_size"),
+                "command_direction": validation.get("command_direction"),
+                "endpoint_roles": classification.get("endpoint_roles"),
+                "role_status": classification.get("role_status"),
+                "frame_numbers": direction_frames,
+                "sensitive_field_policy": "raw_packet_retained_decoded_fields_omit_auth_password_material",
+            }
+            con.execute(
+                """INSERT OR REPLACE INTO capture_network_messages
+                   (capture_id,source_file,flow_id,protocol_family,direction,range_index,
+                    message_index,seq_start,seq_end,command,command_name,validation_status,
+                    raw_hex,fields_json,provenance_json)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    capture_id, relname, flow["flow_id"], "ffxi_lobby", direction,
+                    range_index, message_index, seq_start, seq_end,
+                    int(validation["command"]), validation["command_name"], "MD5_VALID",
+                    message["raw_hex"], json.dumps(fields, sort_keys=True),
+                    json.dumps(provenance, sort_keys=True),
+                ),
+            )
+            contributing = [
+                row for row in decoded_frames if row["frame_no"] in set(direction_frames)
+            ]
+            offsets_start = [row["start_offset"] for row in contributing if row.get("start_offset") is not None]
+            offsets_end = [row["end_offset"] for row in contributing if row.get("end_offset") is not None]
+            capture_integrity.record_row_locator(
+                con, capture_id, relname, "capture_network_messages",
+                json.dumps({
+                    "source_file": relname,
+                    "flow_id": flow["flow_id"],
+                    "direction": direction,
+                    "range_index": range_index,
+                    "message_index": message_index,
+                }, sort_keys=True),
+                "pcap-tcp-message",
+                source_sha256=sha,
+                start_offset=min(offsets_start) if offsets_start else None,
+                end_offset=max(offsets_end) if offsets_end else None,
+                details={
+                    "flow_id": flow["flow_id"],
+                    "protocol_family": "ffxi_lobby",
+                    "command": int(validation["command"]),
+                    "command_name": validation["command_name"],
+                    "seq_start": seq_start,
+                    "seq_end": seq_end,
+                    "frame_numbers": direction_frames,
+                    "md5_valid": True,
+                },
+            )
+            message_count += 1
+
+    return frame_count, chunk_count, flow_count, range_count, message_count
