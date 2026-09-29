@@ -2835,3 +2835,36 @@ PCAP/PCAPNG ingestion now includes a protocol-neutral TCP reconstruction layer s
 Known bounded limitation: 32-bit TCP sequence wrap across extremely large captured directional streams is not normalized into an extended sequence space yet. That should be addressed if a real FFXI capture demonstrates a flow large enough to cross the wrap boundary.
 
 This completes the generic transport prerequisite for validated lobby/search-cache protocol classification.
+
+
+## 2026-09-28 — Validated retail lobby TCP classifier / framing decoder
+
+The generic TCP reconstruction layer now supports a conservative retail FFXI lobby decoder.
+
+Validation/classification:
+- TCP port numbers are never sufficient to classify a lobby flow.
+- A candidate packet must be completely present inside one reconstructed contiguous range.
+- The packet's little-endian header must contain the exact `IXFF` terminator and a known XiPackets lobby command.
+- Fixed-size commands must match their documented packet size; variable character/world-list commands must match their count-derived layout size.
+- The 16-byte identifier must match MD5 of the complete packet after bytes 12-27 are zeroed.
+- Only MD5-valid messages can promote a parent flow from `unknown_tcp` to `ffxi_lobby`.
+- Known command direction can infer client/server endpoint roles only if all validated messages agree. Contradiction leaves roles unresolved/conflicting.
+
+Persistence:
+- Added `capture_network_messages` for validated protocol messages, separate from raw TCP ranges.
+- Each message retains source file, flow, direction, range/message index, reconstructed sequence span, command/name, full raw bytes, decoded fields, validation state, and exact contributing-frame provenance.
+- Reingestion deletes/rebuilds only source-owned message evidence.
+
+Initial field decoders cover:
+- ResponseKey: lobby MD5 key, server expansion flags, feature flags including security token and Wardrobes 3-8.
+- ResponseNextLogin: character identifiers/name, game-server id/address/port, and returned search/cache address/port.
+- ResponseChrInfo2: character count and basic per-character ids/world/status/name flags.
+- ResponseWorldList: world ids/names.
+- RequestLobbyLogin: client version code and client expansion flags.
+- RequestSelect/Delete/CreatePre/Rename and ResponseError/Ok: non-secret identifying/status fields where structurally documented.
+
+Authentication tokens, hashed session password fields, and auth checksums are not promoted into normal decoded fields. They remain present only in the immutable raw packet evidence for forensic reproducibility.
+
+Regression coverage includes a lobby request split across TCP segments, valid server responses, endpoint-role inference, feature flag decoding, next-login endpoint decoding, and an IXFF/known-command false positive with an invalid MD5 that must remain `unknown_tcp`.
+
+The next network milestone is the search/cache TCP decoder, which requires session-aware Blowfish/MD5 handling and real capture fixtures.

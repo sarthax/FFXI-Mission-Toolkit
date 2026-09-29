@@ -79,6 +79,10 @@
 <h2>TCP reconstruction</h2>
 <p>PCAP/PCAPNG ingestion now reconstructs generic bidirectional TCP flows before any FFXI protocol classification. Endpoints are labeled deterministically as A/B rather than guessed as client/server. Reassembled byte ranges preserve TCP sequence boundaries, contributing frame numbers, exact source provenance, and explicit gap/retransmission/overlap/conflicting-overlap diagnostics. Missing bytes are never synthesized. When overlapping segments disagree, the first observed byte is retained and the conflict is recorded for review. Protocol family remains <code>unknown_tcp</code> until a later structural classifier proves lobby, search/cache, loader-auth, or another protocol.</p>
 
+<h2>Validated lobby decoding</h2>
+<p>Reconstructed TCP ranges are now structurally tested for the retail FFXI lobby protocol. A flow is classified as <code>ffxi_lobby</code> only when at least one complete packet has the declared size fully present, the <code>IXFF</code> terminator, a known lobby command, a command-compatible packet size/layout, and a valid MD5 identifier computed with the 16-byte identifier field zeroed. Ports are not used as proof. Known request/response direction can assign endpoint roles only when all validated messages agree; conflicts remain explicit.</p>
+<p>Validated lobby messages are stored separately in <code>capture_network_messages</code> with raw packet bytes, command/name, reconstructed sequence span, contributing frames, MD5 status, and decoded non-secret fields. Current decoding includes ResponseKey feature/expansion metadata (including Wardrobes 3-8 flags), ResponseNextLogin world/map and search/cache endpoints, character/world list basics, common character-selection/create/delete/rename identifiers, errors, and client version/expansion fields from RequestLobbyLogin. Authentication/password material is retained only inside the original raw evidence and is not promoted into decoded fields.</p>
+
 <h2>PCAP/PCAPNG limits</h2>
 <p>PCAP support is deliberately evidence-first. FFXI zone traffic uses UDP, but live wire payloads can require session-aware Blowfish decryption and zlib decompression before the familiar four-byte FFXI chunks exist. The adapter therefore always preserves network frames and transport payloads, but it does <strong>not</strong> guess keys, decompression state, client/server role, or packet direction. Opaque/encrypted datagrams remain network-frame evidence. A UDP payload is promoted into <code>capture_raw_packets</code> only when the entire payload is already a structurally valid stream of known FFXI chunks; promoted rows use direction <code>unknown</code> until independent evidence establishes endpoint roles.</p>
 
@@ -88,7 +92,7 @@
 <h2>Current priority gaps</h2>
 <ol>
 <li>Fixture-test and normalize Captain EventView v2 standalone logs.</li>
-<li>Add validated lobby and search/cache structural classification/decoding on top of the generic TCP flow layer.</li>
+<li>Add the search/cache TCP Blowfish/MD5 session decoder on top of the generic TCP flow layer; lobby classification/decoding is now supported.</li>
 <li>Optional preservation of PacketDB <code>ZONES</code>/<code>PACKET_DEFINITION</code> as historical reference metadata.</li>
 </ol>
 

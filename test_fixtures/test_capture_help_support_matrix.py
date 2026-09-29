@@ -68,6 +68,10 @@ def main():
     assert "PCAP/PCAPNG limits" in template
     assert "Network planes" in template
     assert "TCP reconstruction" in template
+    assert "Validated lobby decoding" in template
+    assert "capture_network_messages" in template
+    assert "ffxi_lobby" in template
+    assert "Ports are not used as proof" in template
     assert "unknown_tcp" in template
     assert "Missing bytes are never synthesized" in template
     assert "LOBBY_WORLD_STREAM_RESEARCH.md" in template
