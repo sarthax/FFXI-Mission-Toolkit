@@ -73,6 +73,38 @@ def _existing_seq(
     return int(row[0]) if row else None
 
 
+def _source_sequence_state(
+    con: sqlite3.Connection,
+    capture_id: int,
+    source_format: str,
+) -> tuple[dict[str, int], int]:
+    """Load source-native sequence ownership once for a bulk importer."""
+    existing = {
+        str(native_id): int(seq)
+        for native_id, seq in con.execute(
+            """SELECT source_native_id,seq FROM capture_raw_packets
+               WHERE capture_id=? AND source_format=? AND source_native_id IS NOT NULL""",
+            (capture_id, source_format),
+        )
+    }
+    return existing, _next_seq(con, capture_id)
+
+
+def _utf8_offsets_for_positions(text: str, positions) -> dict[int, int]:
+    """Resolve many UTF-8 byte offsets in one forward pass."""
+    wanted = sorted(set(int(p) for p in positions))
+    out: dict[int, int] = {}
+    prev_char = 0
+    prev_bytes = 0
+    for pos in wanted:
+        if pos < prev_char or pos < 0 or pos > len(text):
+            continue
+        prev_bytes += len(text[prev_char:pos].encode("utf-8"))
+        out[pos] = prev_bytes
+        prev_char = pos
+    return out
+
+
 def insert_raw_packet(
     con: sqlite3.Connection,
     capture_id: int,
@@ -113,8 +145,8 @@ def insert_raw_packet(
     elif opcode is not None:
         opcode = str(opcode)
 
-    existing = _existing_seq(con, capture_id, source_format, source_native_id)
     if seq is None:
+        existing = _existing_seq(con, capture_id, source_format, source_native_id)
         seq = existing if existing is not None else _next_seq(con, capture_id)
 
     con.execute(
@@ -198,11 +230,16 @@ def ingest_packetdb(con: sqlite3.Connection, capture_id: int, src, relname: str)
         (capture_id, relname),
     )
     count = 0
+    existing_seq, next_seq = _source_sequence_state(con, capture_id, "packetdb")
     for packet_id, ts, direction, zone_id, packet_type, packet_size, sync_id, packet_data in rows:
         direction_name = "incoming" if int(direction) == 0 else (
             "outgoing" if int(direction) == 1 else "unknown"
         )
         native_id = f"{relname}:{packet_id}"
+        assigned_seq = existing_seq.get(native_id)
+        if assigned_seq is None:
+            assigned_seq = next_seq
+            next_seq += 1
         insert_raw_packet(
             con, capture_id,
             ts=str(ts) if ts is not None else None,
@@ -218,6 +255,7 @@ def ingest_packetdb(con: sqlite3.Connection, capture_id: int, src, relname: str)
             source_sha256=source_sha256,
             locator_basis="sqlite-row",
             details={"packetdb_packet_id": packet_id},
+            seq=assigned_seq,
         )
         count += 1
 
@@ -342,8 +380,21 @@ def ingest_packeteer(con: sqlite3.Connection, capture_id: int, src, relname: str
         (capture_id, relname),
     )
     count = 0
-    for row in parse_packeteer_records(text):
+    records = parse_packeteer_records(text)
+    byte_offsets = (
+        _utf8_offsets_for_positions(
+            text,
+            [pos for row in records for pos in (row["start_char"], row["end_char"])],
+        )
+        if exact_offsets else {}
+    )
+    existing_seq, next_seq = _source_sequence_state(con, capture_id, "packeteer")
+    for row in records:
         native_id = f"{relname}:block:{row['block_index']}"
+        assigned_seq = existing_seq.get(native_id)
+        if assigned_seq is None:
+            assigned_seq = next_seq
+            next_seq += 1
         insert_raw_packet(
             con, capture_id,
             ts=row["ts"],
@@ -359,16 +410,13 @@ def ingest_packeteer(con: sqlite3.Connection, capture_id: int, src, relname: str
             locator_basis="block",
             start_line=row["start_line"],
             end_line=row["end_line"],
-            start_offset=(
-                len(text[:row["start_char"]].encode("utf-8")) if exact_offsets else None
-            ),
-            end_offset=(
-                len(text[:row["end_char"]].encode("utf-8")) if exact_offsets else None
-            ),
+            start_offset=byte_offsets.get(row["start_char"]) if exact_offsets else None,
+            end_offset=byte_offsets.get(row["end_char"]) if exact_offsets else None,
             details={
                 "header": row["header"],
                 "header_opcode": row["header_opcode"],
             },
+            seq=assigned_seq,
         )
         count += 1
     return count
