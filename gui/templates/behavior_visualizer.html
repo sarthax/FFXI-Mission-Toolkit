@@ -139,10 +139,51 @@
   <td><span class="chip">{{ helper.status }}</span></td>
   <td>
     {% if helper.analysis %}
-      API {{ helper.analysis.summary.api_calls }} ·
-      state {{ helper.analysis.summary.state_accesses }} ·
-      context {{ helper.analysis.summary.context_conditions }} ·
-      entities {{ helper.analysis.summary.entity_effects }}
+      <div>
+        API {{ helper.analysis.summary.api_calls }} ·
+        state {{ helper.analysis.summary.state_accesses }} ·
+        context {{ helper.analysis.summary.context_conditions }} ·
+        entities {{ helper.analysis.summary.entity_effects }}
+      </div>
+      <details style="margin-top:.35rem;">
+        <summary>Upstream / downstream impact</summary>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.8rem;margin-top:.5rem;">
+          <div>
+            <strong>Upstream inputs</strong>
+            {% for impact in helper.analysis.impact.upstream %}
+              <div style="margin:.35rem 0;">
+                <span class="chip">{{ impact.kind }}</span>
+                <code>{{ impact.label }}</code>
+                {% if impact.value is not none %} → <code>{{ impact.value }}</code>{% endif %}
+                {% if impact.source_line %}<span class="muted"> line {{ impact.source_line }}</span>{% endif %}
+              </div>
+            {% else %}
+              <div class="muted">No structured upstream input observed.</div>
+            {% endfor %}
+          </div>
+          <div>
+            <strong>Downstream effects</strong>
+            {% for impact in helper.analysis.impact.downstream %}
+              <div style="margin:.35rem 0;">
+                <span class="chip">{{ impact.kind }}</span>
+                <code>{{ impact.label }}</code>
+                {% if impact.value is not none %} → <code>{{ impact.value }}</code>{% endif %}
+                {% if impact.source_line %}<span class="muted"> line {{ impact.source_line }}</span>{% endif %}
+              </div>
+            {% else %}
+              <div class="muted">No structured downstream effect observed.</div>
+            {% endfor %}
+          </div>
+        </div>
+        <div style="margin-top:.7rem;">
+          <strong>Direct calls</strong>
+          {% for call in helper.analysis.impact.calls %}
+            <div><code>{{ call.qualified_name }}</code>{% if call.line %} <span class="muted">line {{ call.line }}</span>{% endif %}</div>
+          {% else %}
+            <div class="muted">No direct API call observed.</div>
+          {% endfor %}
+        </div>
+      </details>
     {% else %}
       <span class="muted">Not expanded</span>
     {% endif %}
