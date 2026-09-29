@@ -133,6 +133,22 @@ def main():
     assert graph["summary"]["events"]>=2,graph["summary"]
     assert graph["summary"]["cross_hook_event_links"]==2,graph["summary"]
 
+    event_state={(row["event_id"],row["state_id"],row["value"]):row for row in graph["event_state_effects"]}
+    assert (101,"state:PLAYER_CHAR:player:MissionStage","1") in event_state,event_state
+    assert (102,"state:PLAYER_CHAR:player:MissionStage","2") in event_state,event_state
+    assert (999,"state:PLAYER_CHAR:player:UnrelatedStage","1") in event_state,event_state
+    assert event_state[(101,"state:PLAYER_CHAR:player:MissionStage","1")]["ordering"]=="SOURCE_LOCAL",event_state
+    assert event_state[(102,"state:PLAYER_CHAR:player:MissionStage","2")]["relationship"]=="EVENT_BRANCH_WRITES_STATE",event_state
+
+    event_state_links={(row["event_id"],row["state_id"],row["value"]):row for row in graph["event_state_links"]}
+    assert (101,"state:PLAYER_CHAR:player:MissionStage","1") in event_state_links,event_state_links
+    assert (102,"state:PLAYER_CHAR:player:MissionStage","2") in event_state_links,event_state_links
+    assert (999,"state:PLAYER_CHAR:player:UnrelatedStage","1") not in event_state_links,event_state_links
+    assert event_state_links[(101,"state:PLAYER_CHAR:player:MissionStage","1")]["ordering"]=="UNPROVEN",event_state_links
+    assert event_state_links[(101,"state:PLAYER_CHAR:player:MissionStage","1")]["reader_hooks"]==["onTrigger"],event_state_links
+    assert graph["summary"]["event_state_effects"]>=3,graph["summary"]
+    assert graph["summary"]["cross_hook_event_state_links"]>=2,graph["summary"]
+
     print("non-combat mission behavior stress regression: PASS")
 
 
