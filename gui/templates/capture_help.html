@@ -19,7 +19,7 @@
 <tr><td><strong>Legacy NPCLogger Lua</strong></td><td>Entity snapshots, NPC path observations, and preserved <code>raw_packet</code> bytes promoted into canonical packet evidence.</td><td>Supported</td></tr>
 <tr><td><strong>NPCLogger Widescan</strong></td><td>Entity/widescan observations and level-range evidence.</td><td>Supported</td></tr>
 <tr><td><strong>ActionView SQLite / simple text</strong></td><td>Actor actions, abilities, weaponskills/spells, animation/category/message IDs. Text is fallback when SQLite is absent.</td><td>Supported</td></tr>
-<tr><td><strong>EventView</strong></td><td>Decoded packet observations, GP commands, packet class, entity/message fields.</td><td>Supported</td></tr>
+<tr><td><strong>EventView</strong></td><td>Per-zone decoded packet observations plus whole-session <code>simple.log</code>/<code>raw.log</code> preservation. Session-wide records use explicit unknown-zone attribution rather than a guessed zone; raw session packets retain bytes with unknown zone/time when the source does not provide them.</td><td>Supported</td></tr>
 <tr><td><strong>IDView</strong></td><td>Event/CSID/entity/message observations across known legacy and block-text generations.</td><td>Supported</td></tr>
 <tr><td><strong>CapLog</strong></td><td>EventView/IDView-style records, HP observations, and CapLog chat/system text.</td><td>Supported</td></tr>
 <tr><td><strong>HPTrack</strong></td><td>Observed mob HP ranges.</td><td>Supported</td></tr>
