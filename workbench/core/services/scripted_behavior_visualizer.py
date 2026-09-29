@@ -71,9 +71,76 @@ def _subject_for(path: Path, relative: str) -> str:
     return path.stem.replace("_"," ")
 
 
+def _filename_identity_candidate(relative: str) -> dict | None:
+    normalized=relative.replace("\\","/")
+    if "/mobs/" in normalized:
+        kind="mob"
+    elif "/npcs/" in normalized:
+        kind="npc"
+    else:
+        return None
+    stem=Path(normalized).stem
+    if stem.startswith("_"):
+        return None
+    symbol=re.sub(r"[^A-Za-z0-9]+","_",stem).strip("_").upper()
+    if not symbol:
+        return None
+    return {
+        "kind":kind,
+        "symbol":symbol,
+        "reference":f"ID.{kind}.{symbol}",
+        "basis":"filename-normalized candidate; exact source references are real but identity remains inferred",
+    }
+
+
+def _upstream_reference_candidates(
+    root: Path,
+    primary: Path,
+    *,
+    max_files: int=5000,
+    max_matches: int=100,
+) -> list[dict]:
+    rel=primary.relative_to(root).as_posix()
+    zone,_=_zone_parts(rel)
+    candidate=_filename_identity_candidate(rel)
+    if not zone or candidate is None:
+        return []
+    zone_root=root/"scripts"/"zones"/zone
+    rows=[]
+    scanned=0
+    needle=candidate["reference"]
+    for path in sorted(zone_root.rglob("*.lua")):
+        if path.resolve()==primary.resolve():
+            continue
+        scanned+=1
+        if scanned>max_files or len(rows)>=max_matches:
+            break
+        text=path.read_text(encoding="utf-8",errors="ignore")
+        if needle not in text:
+            continue
+        for line_no,line in enumerate(text.splitlines(),1):
+            if needle not in line:
+                continue
+            rows.append({
+                "path":path.relative_to(root).as_posix(),
+                "line":line_no,
+                "source_line":line.strip(),
+                "reference":needle,
+                "entity_kind":candidate["kind"],
+                "symbol":candidate["symbol"],
+                "confidence":"INFERRED_IDENTITY",
+                "basis":candidate["basis"],
+            })
+            if len(rows)>=max_matches:
+                break
+    return rows
+
+
 def _effect_category(effect: str) -> str:
     if effect=="API_CALL":
         return "api"
+    if effect=="REFERENCE_ENTITY":
+        return "entity"
     if effect=="WRITE_STATE":
         return "state"
     if "KEY_ITEM" in effect or effect in {"GRANT_ITEM","ADD_GIL","REMOVE_GIL","SET_CHAR_VAR","COMPLETE_TRADE"}:
@@ -228,6 +295,27 @@ def _graph_for_behavior(behavior) -> dict:
                 node(tid,"target",target)
                 edges.append({"source":eid,"target":tid,"kind":"AFFECTS"})
 
+    entity_references=[]
+    for rule in behavior.rules:
+        for effect in rule.effects:
+            if effect.effect!="REFERENCE_ENTITY" or not isinstance(effect.target,str):
+                continue
+            meta=dict(effect.metadata)
+            entity_references.append({
+                "target":effect.target,
+                "operation":meta.get("operation") or effect.value,
+                "entity_kind":meta.get("entity_kind"),
+                "symbol":meta.get("symbol"),
+                "id_expression":meta.get("id_expression"),
+                "offset_sign":meta.get("offset_sign"),
+                "offset_source":meta.get("offset_source"),
+                "hook":rule.metadata.get("hook"),
+                "source_path":rule.metadata.get("source_path"),
+                "source_line":meta.get("source_line"),
+                "source_line_text":meta.get("source_line_text"),
+                "confidence":rule.confidence,
+            })
+
     state_rows={}
     for rule in behavior.rules:
         hook=rule.metadata.get("hook")
@@ -307,6 +395,7 @@ def _graph_for_behavior(behavior) -> dict:
         "edges":edges,
         "states":sorted(state_rows.values(),key=lambda row:(row["scope"] or "",row["name"])),
         "transitions":transition_rows,
+        "entity_references":entity_references,
         "summary":{
             "hooks":len(behavior.hooks),
             "rules":len(behavior.rules),
@@ -316,6 +405,7 @@ def _graph_for_behavior(behavior) -> dict:
             "states":len(state_rows),
             "callbacks":len(callback_nodes),
             "transitions":len(transition_rows),
+            "entity_references":len(entity_references),
             "effect_categories":dict(sorted(categories.items())),
             "unmodeled_hooks":list(behavior.metadata.get("unmodeled_hooks") or ()),
             "reachable_helpers":list(behavior.metadata.get("reachable_helpers") or ()),
@@ -388,14 +478,18 @@ def inspect_lsb_behavior(root: Path, relative: str) -> dict:
             "scope_basis":"same-zone context; not a proven dependency",
         })
 
+    upstream_candidates=_upstream_reference_candidates(root,primary)
+
     return {
         "source":{"path":rel,"zone":zone,"subject":behavior.subject},
         "behavior":behavior,
         "graph":graph,
         "contexts":contexts,
+        "upstream_candidates":upstream_candidates,
         "notes":[
             "Primary graph edges come from the selected Lua source and bounded helper traversal.",
             "Zone/global/instance files are contextual controllers unless another analyzer proves a direct dependency.",
             "API_CALL observations preserve unfamiliar Lua-bound behavior even when no semantic effect classifier exists yet.",
+            "Static ID.mob/ID.npc calls are verified downstream source references; reverse same-zone references based on filename-normalized identity are labelled INFERRED_IDENTITY.",
         ],
     }
