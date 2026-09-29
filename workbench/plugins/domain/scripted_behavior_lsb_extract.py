@@ -38,6 +38,24 @@ _MOD_CALL=re.compile(
 _DESPAWN=re.compile(r"\bDespawnMob\(")
 _SPELL_OVERRIDE=re.compile(r"\bspell:set(?:AoE|Radius|Animation|MPCost|CastTime|Recast)\(")
 _ENMITY_TRANSFER=re.compile(r"\b(?:updateEnmity|updateClaim)\s*\(")
+_KEYITEM_GIVE=re.compile(r"npcUtil\.giveKeyItem\(\s*player\s*,\s*xi\.keyItem\.([A-Z0-9_]+)")
+_KEYITEM_DEL=re.compile(r"player:delKeyItem\(\s*xi\.keyItem\.([A-Z0-9_]+)")
+_ITEM_GIVE=re.compile(r"npcUtil\.giveItem\(\s*player\s*,\s*([^\n\)]+)")
+_ADD_GIL=re.compile(r"player:addGil\(\s*([^\)]+)\)")
+_DEL_GIL=re.compile(r"player:delGil\(\s*([^\)]+)\)")
+_CHAR_READ=re.compile(r"player:getCharVar\(\s*['\"]([^'\"]+)['\"]\s*\)")
+_CHAR_SET=re.compile(r"player:setCharVar\(\s*['\"]([^'\"]+)['\"]\s*,\s*([^\)]+)\)")
+_START_EVENT=re.compile(r"player:startEvent\(\s*(\d+)")
+_UPDATE_EVENT=re.compile(r"player:updateEvent\(")
+_CONFIRM_TRADE=re.compile(r"player:(?:confirmTrade|tradeComplete)\(\)")
+_TRADE_PREDICATE=re.compile(r"npcUtil\.(tradeHas|tradeHasExactly|tradeMatches)\(")
+_OPEN_DOOR=re.compile(r"(?:GetNPCByID\([^\n]+?\)|\b(?:npc|door)\b):openDoor\(\s*([^\)]*)\)")
+_SET_ANIMATION=re.compile(r"\b(?:npc|door|mob|mobArg|npcArg):setAnimation\(\s*([^\)]+)\)")
+_SET_STATUS=re.compile(r"\b(?:npc|door|mob|mobArg|npcArg|bombMob):setStatus\(\s*([^\)]+)\)")
+_SET_UNTARGETABLE=re.compile(r"\b(?:npc|door|mob|mobArg|npcArg):setUntargetable\(\s*([^\)]+)\)")
+_SET_POS=re.compile(r"\b(?:npc|door|mob|mobArg|npcArg|bombMob):setPos\(")
+_PATH_CALL=re.compile(r"\b(?:mob|mobArg|npc|npcArg):(pathTo|pathThrough)\(")
+_SYSTEM_HELPER=re.compile(r"\bxi\.([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)\s*\(")
 
 
 @dataclass(frozen=True)
@@ -182,7 +200,11 @@ def extract_lsb_scripted_behavior(
     zone: str | None,
     source_path: str,
 ) -> ScriptedBehaviorMap:
-    """Extract conservative scripted behavior from one LSB-style mob Lua script."""
+    """Extract conservative scripted behavior from one LSB entity Lua script.
+
+    The same representation is used for mobs, NPCs, doors/objects, escorts, and other scripted
+    actors; domain-specific mission/quest interpretation remains a separate layer.
+    """
     blocks=extract_hook_blocks(lua)
     rules=[]
     modeled_hooks=set()
@@ -357,6 +379,147 @@ def extract_lsb_scripted_behavior(
                 f"{hook}:cleanup","cleanup",subject,
                 trigger=hook.upper(),
                 effects=(BehaviorEffect("CLEANUP_RELATED_ENTITIES",subject),),
+                confidence="VERIFIED",implementation_status="PRESENT",metadata=meta,
+            ))
+            modeled_hooks.add(hook)
+
+        # Generic NPC/object/player/world-state effects. These are intentionally semantic
+        # primitives rather than quest/mission-specific conclusions.
+        keyitems=tuple(dict.fromkeys(_KEYITEM_GIVE.findall(text)))
+        if keyitems:
+            rules.append(BehaviorRule(
+                f"{hook}:grant-key-items","player_progression",subject,
+                trigger=hook.upper(),
+                effects=tuple(
+                    BehaviorEffect("GRANT_KEY_ITEM","player",symbol)
+                    for symbol in keyitems
+                ),
+                confidence="VERIFIED",implementation_status="PRESENT",metadata=meta,
+            ))
+            modeled_hooks.add(hook)
+
+        removed_keyitems=tuple(dict.fromkeys(_KEYITEM_DEL.findall(text)))
+        if removed_keyitems:
+            rules.append(BehaviorRule(
+                f"{hook}:remove-key-items","player_progression",subject,
+                trigger=hook.upper(),
+                effects=tuple(
+                    BehaviorEffect("REMOVE_KEY_ITEM","player",symbol)
+                    for symbol in removed_keyitems
+                ),
+                confidence="VERIFIED",implementation_status="PRESENT",metadata=meta,
+            ))
+            modeled_hooks.add(hook)
+
+        char_reads=tuple(dict.fromkeys(_CHAR_READ.findall(text)))
+        char_sets=tuple(dict.fromkeys(_CHAR_SET.findall(text)))
+        if char_reads or char_sets:
+            rules.append(BehaviorRule(
+                f"{hook}:player-state","player_state",subject,
+                trigger=hook.upper(),
+                conditions=tuple(
+                    BehaviorCondition("player","READS_CHAR_VAR",name)
+                    for name in char_reads
+                ),
+                effects=tuple(
+                    BehaviorEffect("SET_CHAR_VAR","player",{"name":name,"value":value.strip()})
+                    for name,value in char_sets
+                ),
+                confidence="VERIFIED",implementation_status="PRESENT",metadata=meta,
+            ))
+            modeled_hooks.add(hook)
+
+        event_ids=tuple(dict.fromkeys(int(x) for x in _START_EVENT.findall(text)))
+        if event_ids or _UPDATE_EVENT.search(text):
+            effects=[
+                BehaviorEffect("START_EVENT","player",event_id)
+                for event_id in event_ids
+            ]
+            if _UPDATE_EVENT.search(text):
+                effects.append(BehaviorEffect("UPDATE_EVENT","player"))
+            rules.append(BehaviorRule(
+                f"{hook}:event-flow","event_flow",subject,
+                trigger=hook.upper(),
+                effects=tuple(effects),
+                confidence="VERIFIED",implementation_status="PRESENT",metadata=meta,
+            ))
+            modeled_hooks.add(hook)
+
+        if _TRADE_PREDICATE.search(text) or _CONFIRM_TRADE.search(text):
+            rules.append(BehaviorRule(
+                f"{hook}:trade","trade_flow",subject,
+                trigger=hook.upper(),
+                conditions=(BehaviorCondition("trade","TRADE_PREDICATE_PRESENT",True),)
+                if _TRADE_PREDICATE.search(text) else (),
+                effects=(BehaviorEffect("COMPLETE_TRADE","player"),)
+                if _CONFIRM_TRADE.search(text) else (),
+                confidence="VERIFIED",implementation_status="PRESENT",metadata=meta,
+            ))
+            modeled_hooks.add(hook)
+
+        item_rewards=tuple(dict.fromkeys(x.strip() for x in _ITEM_GIVE.findall(text)))
+        gil_add=tuple(dict.fromkeys(x.strip() for x in _ADD_GIL.findall(text)))
+        gil_del=tuple(dict.fromkeys(x.strip() for x in _DEL_GIL.findall(text)))
+        if item_rewards or gil_add or gil_del:
+            effects=[]
+            effects.extend(BehaviorEffect("GRANT_ITEM","player",value) for value in item_rewards)
+            effects.extend(BehaviorEffect("ADD_GIL","player",value) for value in gil_add)
+            effects.extend(BehaviorEffect("REMOVE_GIL","player",value) for value in gil_del)
+            rules.append(BehaviorRule(
+                f"{hook}:rewards","player_reward",subject,
+                trigger=hook.upper(),
+                effects=tuple(effects),
+                confidence="VERIFIED",implementation_status="PRESENT",metadata=meta,
+            ))
+            modeled_hooks.add(hook)
+
+        world_effects=[]
+        for duration in _OPEN_DOOR.findall(text):
+            world_effects.append(BehaviorEffect("OPEN_DOOR","world_entity",duration.strip() or None))
+        for value in _SET_ANIMATION.findall(text):
+            world_effects.append(BehaviorEffect("SET_ANIMATION","world_entity",value.strip()))
+        for value in _SET_STATUS.findall(text):
+            world_effects.append(BehaviorEffect("SET_STATUS","world_entity",value.strip()))
+        for value in _SET_UNTARGETABLE.findall(text):
+            world_effects.append(BehaviorEffect("SET_UNTARGETABLE","world_entity",value.strip()))
+        if _SET_POS.search(text):
+            world_effects.append(BehaviorEffect("SET_POSITION","world_entity"))
+        if world_effects:
+            rules.append(BehaviorRule(
+                f"{hook}:world-state","world_state_change",subject,
+                trigger=hook.upper(),
+                effects=tuple(world_effects),
+                confidence="VERIFIED",implementation_status="PRESENT",metadata=meta,
+            ))
+            modeled_hooks.add(hook)
+
+        paths=tuple(dict.fromkeys(_PATH_CALL.findall(text)))
+        if paths:
+            rules.append(BehaviorRule(
+                f"{hook}:pathing","path_control",subject,
+                trigger=hook.upper(),
+                effects=tuple(
+                    BehaviorEffect("PATH_ACTOR",subject,method)
+                    for method in paths
+                ),
+                confidence="VERIFIED",implementation_status="PRESENT",metadata=meta,
+            ))
+            modeled_hooks.add(hook)
+
+        system_calls=tuple(dict.fromkeys(_SYSTEM_HELPER.findall(text)))
+        if system_calls:
+            rules.append(BehaviorRule(
+                f"{hook}:system-calls","system_helper_call",subject,
+                trigger=hook.upper(),
+                effects=tuple(
+                    BehaviorEffect(
+                        "CALL_SYSTEM_HELPER",
+                        f"system:xi.{module}",
+                        function,
+                        {"module":module,"function":function},
+                    )
+                    for module,function in system_calls
+                ),
                 confidence="VERIFIED",implementation_status="PRESENT",metadata=meta,
             ))
             modeled_hooks.add(hook)
