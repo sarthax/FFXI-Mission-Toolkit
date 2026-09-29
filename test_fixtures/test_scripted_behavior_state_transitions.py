@@ -2,6 +2,10 @@
 """Regression for literal switch/case named-state transitions."""
 from __future__ import annotations
 
+import tempfile
+from pathlib import Path
+
+from workbench.core.services.scripted_behavior_visualizer import inspect_lsb_behavior
 from workbench.plugins.domain.scripted_behavior_lsb_extract import extract_lsb_scripted_behavior
 
 
@@ -90,6 +94,29 @@ def main():
         for effect in rule.effects if effect.target=="state:ENTITY_LOCAL:mob:abilityOrder"
     ]
     assert generic_writes,generic_writes
+
+    with tempfile.TemporaryDirectory() as td:
+        root=Path(td)
+        path=root/"scripts/zones/Test/mobs/Phase_Boss.lua"
+        path.parent.mkdir(parents=True)
+        path.write_text(SCRIPT,encoding="utf-8")
+        result=inspect_lsb_behavior(root,"scripts/zones/Test/mobs/Phase_Boss.lua")
+        graph=result["graph"]
+        assert graph["summary"]["transitions"]==3,graph["summary"]
+        assert [(row["from"],row["to"]) for row in graph["transitions"]]==[
+            ("1","2"),("2","3"),("3","4")
+        ],graph["transitions"]
+        phase_nodes=[
+            node for node in graph["nodes"]
+            if node["kind"]=="state"
+            and node["meta"].get("state_id")=="state:ENTITY_LOCAL:mob:phase"
+        ]
+        assert len(phase_nodes)==1,phase_nodes
+        phase_id=phase_nodes[0]["id"]
+        assert any(
+            edge["source"]==phase_id and edge["kind"]=="STATE_GUARD"
+            for edge in graph["edges"]
+        ),graph["edges"]
 
     print("literal switch state-transition regression: PASS")
 
