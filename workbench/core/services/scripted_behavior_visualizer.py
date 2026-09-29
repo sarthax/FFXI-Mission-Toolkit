@@ -719,14 +719,28 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
             "evidence_basis":"same literal CSID is started in one hook and guarded in another",
         })
 
+    event_branch_effects=[]
     event_state_effects=[]
     event_state_links=[]
     for rule in behavior.rules:
-        if rule.kind!="event_branch_state":
+        if rule.kind!="event_branch_effects":
             continue
         event_id=rule.metadata.get("event_id")
         branch_hook=rule.metadata.get("hook")
         for effect in rule.effects:
+            event_branch_effects.append({
+                "event_id":event_id,
+                "effect":effect.effect,
+                "target":effect.target,
+                "value":effect.value,
+                "category":_effect_category(effect.effect),
+                "hook":branch_hook,
+                "source_path":rule.metadata.get("source_path"),
+                "source_lines":rule.metadata.get("source_lines"),
+                "relationship":"EVENT_BRANCH_EFFECT",
+                "ordering":"SOURCE_LOCAL",
+                "evidence_basis":"effect occurs inside the literal CSID branch",
+            })
             if effect.effect!="WRITE_STATE" or not isinstance(effect.target,str):
                 continue
             state_id=effect.target
@@ -799,6 +813,7 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
         "state_links":sorted(state_links,key=lambda row:(row["scope"] or "",row["name"] or "",row["state_id"])),
         "events":sorted(event_rows.values(),key=lambda row:row["event_id"]),
         "event_links":sorted(event_links,key=lambda row:row["event_id"]),
+        "event_branch_effects":sorted(event_branch_effects,key=lambda row:(row["event_id"],row["effect"],str(row["target"]),str(row["value"]))),
         "event_state_effects":sorted(event_state_effects,key=lambda row:(row["event_id"],row["state_id"],str(row["value"]))),
         "event_state_links":sorted(event_state_links,key=lambda row:(row["event_id"],row["state_id"],str(row["value"]))),
         "transitions":transition_rows,
@@ -812,6 +827,7 @@ def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None)
             "cross_hook_state_links":len(state_links),
             "events":len(event_rows),
             "cross_hook_event_links":len(event_links),
+            "event_branch_effects":len(event_branch_effects),
             "event_state_effects":len(event_state_effects),
             "cross_hook_event_state_links":len(event_state_links),
             "callbacks":len(callback_nodes),
