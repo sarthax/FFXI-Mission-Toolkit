@@ -15,7 +15,9 @@ entity.onMobDeath = function(mob)
     DespawnMob(ID.npc.TEST_DOOR - 1)
 
     local base = ID.mob.TEST_ADD
-    GetMobByID(base + 1) -- deliberately unresolved in this milestone
+    for i = 0, 1 do
+        GetMobByID(base + i) -- deliberately unresolved dynamic offset
+    end
 end
 
 return entity
@@ -57,7 +59,8 @@ def main():
     ),effects
 
     assert not any(
-        "base" in str(effect.value)
+        effect.metadata.get("resolution")=="LITERAL_ALIAS"
+        and effect.metadata.get("alias")=="base"
         for effect in effects
     ),effects
 

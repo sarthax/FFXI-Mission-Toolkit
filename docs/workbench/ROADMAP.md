@@ -736,3 +736,5 @@ Roadmap authority rule: `docs/workbench/ROADMAP.md` is the detailed rework backl
 - [x] Stress the behavior representation with King Vinegarroon as a mechanically different NM: weather listener, helper-driven Vana'diel-hour behavior, respawn timing, immunities/modifiers, alliance draw-in, dynamic TP-skill selection, title reward, and weather-driven despawn all remain traceable with source provenance. Literal weather-element, Vana’diel-hour-range, position/distance, and party/alliance access conditions are now promoted into structured behavior conditions; more dynamic environmental predicates remain.
 
 - [x] Resolve direct symbolic Lua entity references (`ID.npc.*` / `ID.mob.*`) with optional literal integer offsets in `GetNPCByID`, `GetMobByID`, `SpawnMob`, and `DespawnMob` calls, preserving source provenance and projecting concrete `entity-symbol:*` targets. Dynamic aliases/loop offsets remain open.
+
+- [x] Propagate literal local aliases of `ID.npc.*` / `ID.mob.*` through direct entity calls, combining literal base/call offsets while preserving alias provenance. Dynamic loop/index offsets remain open.

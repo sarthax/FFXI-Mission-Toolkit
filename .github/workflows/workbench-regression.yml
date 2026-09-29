@@ -96,6 +96,7 @@ jobs:
           python test_fixtures/test_king_vinegarroon_behavior_stress.py
           python test_fixtures/test_scripted_behavior_context_conditions.py
           python test_fixtures/test_scripted_behavior_entity_symbols.py
+          python test_fixtures/test_scripted_behavior_entity_aliases.py
           python test_fixtures/test_scripted_behavior_state_transitions.py
           python test_fixtures/test_wotg25_bastok_chain_ingestion.py
           python test_fixtures/test_mission_section_completion_scope.py

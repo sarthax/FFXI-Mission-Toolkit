@@ -112,6 +112,14 @@ _DIRECT_ENTITY_EXPR=re.compile(
     r"\b(GetNPCByID|GetMobByID|SpawnMob|DespawnMob)\(\s*"
     r"(ID\.(npc|mob)\.([A-Z0-9_]+)(?:\s*([+-])\s*(\d+))?)"
 )
+_ENTITY_ALIAS_ASSIGN=re.compile(
+    r"\blocal\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"
+    r"ID\.(npc|mob)\.([A-Z0-9_]+)(?:\s*([+-])\s*(\d+))?"
+)
+_ENTITY_ALIAS_CALL=re.compile(
+    r"\b(GetNPCByID|GetMobByID|SpawnMob|DespawnMob)\(\s*"
+    r"([A-Za-z_][A-Za-z0-9_]*)(?:\s*([+-])\s*(\d+))?\s*\)"
+)
 
 
 @dataclass(frozen=True)
@@ -965,6 +973,26 @@ def _entity_symbol_target(kind: str, symbol: str, sign: str | None, offset: str 
     return base
 
 
+def _literal_entity_aliases(text: str) -> dict[str,dict]:
+    aliases={}
+    for raw_line in text.splitlines():
+        code=_strip_line_comment_preserve_strings(raw_line)
+        match=_ENTITY_ALIAS_ASSIGN.search(code)
+        if not match:
+            continue
+        alias,kind,symbol,sign,offset=match.groups()
+        base_offset=0
+        if sign and offset:
+            base_offset=int(offset) * (1 if sign=="+" else -1)
+        aliases[alias]={
+            "kind":kind,
+            "symbol":symbol,
+            "offset":base_offset,
+            "source_line_text":raw_line.strip(),
+        }
+    return aliases
+
+
 def _direct_entity_reference_rule(
     *,
     rule_id: str,
@@ -976,6 +1004,7 @@ def _direct_entity_reference_rule(
 ) -> BehaviorRule | None:
     """Resolve only direct ID.npc/ID.mob symbols with optional literal integer offsets."""
     effects=[]
+    aliases=_literal_entity_aliases(text)
     for offset_idx,raw_line in enumerate(text.splitlines()):
         code=_strip_line_comment_preserve_strings(raw_line)
         line_no=start_line+offset_idx
@@ -1000,6 +1029,46 @@ def _direct_entity_reference_rule(
                         int(offset) * (1 if sign=="+" else -1)
                         if sign and offset else 0
                     ),
+                    "resolution":"DIRECT_SYMBOL",
+                    "source_line":line_no,
+                    "source_line_text":raw_line.strip(),
+                },
+            ))
+        for match in _ENTITY_ALIAS_CALL.finditer(code):
+            call,alias,sign,offset=match.groups()
+            if alias not in aliases:
+                continue
+            base=aliases[alias]
+            call_offset=0
+            if sign and offset:
+                call_offset=int(offset) * (1 if sign=="+" else -1)
+            total=base["offset"]+call_offset
+            target=_entity_symbol_target(
+                base["kind"],
+                base["symbol"],
+                "+" if total>=0 and total!=0 else "-" if total<0 else None,
+                str(abs(total)) if total!=0 else None,
+            )
+            effect_name={
+                "GetNPCByID":"REFERENCES_ENTITY",
+                "GetMobByID":"REFERENCES_ENTITY",
+                "SpawnMob":"SPAWN_ENTITY",
+                "DespawnMob":"DESPAWN_ENTITY",
+            }[call]
+            effects.append(BehaviorEffect(
+                effect_name,
+                target,
+                f"{alias}{'' if call_offset==0 else f'{call_offset:+d}'}",
+                {
+                    "call":call,
+                    "entity_kind":base["kind"],
+                    "symbol":base["symbol"],
+                    "offset":total,
+                    "resolution":"LITERAL_ALIAS",
+                    "alias":alias,
+                    "alias_base_offset":base["offset"],
+                    "call_offset":call_offset,
+                    "alias_source_line_text":base["source_line_text"],
                     "source_line":line_no,
                     "source_line_text":raw_line.strip(),
                 },
