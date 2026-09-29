@@ -274,8 +274,46 @@ def _analyze_shared_helper_body(
 
 
 def _resolve_shared_helpers(root: Path, behavior) -> list[dict]:
-    """Resolve xi.<module>.<function> calls to exact global Lua definition candidates."""
+    """Resolve top-level and direct nested xi.<module>.<function> definition candidates."""
     globals_root=Path(root)/"scripts"/"globals"
+
+    def definition_candidates(module: str, function: str) -> list[dict]:
+        candidates=[]
+        module_file=globals_root/f"{module}.lua"
+        module_dir=globals_root/module
+        files=[]
+        if module_file.is_file():
+            files.append(module_file)
+        if module_dir.is_dir():
+            files.extend(sorted(module_dir.rglob("*.lua")))
+        qualified_name=f"xi.{module}.{function}"
+        pattern=re.compile(
+            rf"(?:function\s+{re.escape(qualified_name)}\s*\(|"
+            rf"{re.escape(qualified_name)}\s*=\s*function\s*\()"
+        )
+        for path in files:
+            text=path.read_text(encoding="utf-8",errors="ignore")
+            for match in pattern.finditer(text):
+                span=_balanced_function_span(text,match.start())
+                candidates.append({
+                    "path":path.relative_to(root).as_posix(),
+                    "line":span["line"],
+                    "end_line":span["end_line"],
+                    "line_count":span["line_count"],
+                    "source_preview":span["source_preview"],
+                    "preview_truncated":span["preview_truncated"],
+                    "qualified_name":qualified_name,
+                    "_source_text":span["source_text"],
+                })
+        return candidates
+
+    def resolution_status(candidates: list[dict]) -> str:
+        return (
+            "RESOLVED" if len(candidates)==1
+            else "AMBIGUOUS" if len(candidates)>1
+            else "UNRESOLVED"
+        )
+
     requested=sorted({
         (
             effect.metadata.get("module"),
@@ -289,37 +327,8 @@ def _resolve_shared_helpers(root: Path, behavior) -> list[dict]:
     })
     rows=[]
     for module,function in requested:
-        candidates=[]
-        module_file=globals_root/f"{module}.lua"
-        module_dir=globals_root/module
-        files=[]
-        if module_file.is_file():
-            files.append(module_file)
-        if module_dir.is_dir():
-            files.extend(sorted(module_dir.rglob("*.lua")))
-        pattern=re.compile(
-            rf"(?:function\s+{re.escape('xi.'+module+'.'+function)}\s*\(|"
-            rf"{re.escape('xi.'+module+'.'+function)}\s*=\s*function\s*\()"
-        )
-        for path in files:
-            text=path.read_text(encoding="utf-8",errors="ignore")
-            for match in pattern.finditer(text):
-                span=_balanced_function_span(text,match.start())
-                candidates.append({
-                    "path":path.relative_to(root).as_posix(),
-                    "line":span["line"],
-                    "end_line":span["end_line"],
-                    "line_count":span["line_count"],
-                    "source_preview":span["source_preview"],
-                    "preview_truncated":span["preview_truncated"],
-                    "qualified_name":f"xi.{module}.{function}",
-                    "_source_text":span["source_text"],
-                })
-        status=(
-            "RESOLVED" if len(candidates)==1
-            else "AMBIGUOUS" if len(candidates)>1
-            else "UNRESOLVED"
-        )
+        candidates=definition_candidates(module,function)
+        status=resolution_status(candidates)
         qualified_name=f"xi.{module}.{function}"
         analysis=None
         if status=="RESOLVED":
@@ -330,6 +339,21 @@ def _resolve_shared_helpers(root: Path, behavior) -> list[dict]:
                 start_line=candidate["line"],
                 qualified_name=qualified_name,
             )
+            for callee in analysis.get("shared_helper_callees",[]):
+                callee_name=callee.get("qualified_name")
+                match=re.fullmatch(
+                    r"xi\.([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)",
+                    str(callee_name or ""),
+                )
+                if not match:
+                    continue
+                callee_module,callee_function=match.groups()
+                callee_candidates=definition_candidates(callee_module,callee_function)
+                callee["status"]=resolution_status(callee_candidates)
+                callee["candidates"]=[
+                    {key:value for key,value in row.items() if key!="_source_text"}
+                    for row in callee_candidates
+                ]
         for candidate in candidates:
             candidate.pop("_source_text",None)
         rows.append({
