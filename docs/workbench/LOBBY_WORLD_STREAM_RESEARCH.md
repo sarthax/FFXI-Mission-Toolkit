@@ -196,11 +196,11 @@ Candidate classes:
 
 Ports may be retained as supporting evidence, but should not be sufficient to declare a protocol.
 
-### P3 — Lobby framing/decoder
+### P3 — Lobby framing/decoder — IMPLEMENTED
 
-Implement the documented lobby header and known command set.
+Implemented on top of reconstructed TCP ranges. Classification requires a complete known-command packet with exact size/layout, IXFF terminator, and a valid MD5 identifier after zeroing the identifier field. No port-only classification is used. Validated messages are persisted in `capture_network_messages`, and consistent request/response direction may establish client/server endpoint roles.
 
-Initial useful records:
+Current useful records:
 
 - request/response command
 - packet size
