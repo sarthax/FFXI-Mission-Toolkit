@@ -3970,7 +3970,29 @@ def backfill_npc_fields(con):
             def sfind(pattern, _subroot=(subroot if sep else None)):
                 hits = src.find(pattern)
                 return hits if _subroot is None else [h for h in hits if h.startswith(_subroot + "/")]
-            npc_db_files = sfind(r'NPCLogger/[^/]+\.db            for relname in npc_db_files:
+
+            npc_db_files = sfind(r'NPCLogger/[^/]+\.db$')
+            if not npc_db_files:
+                lua_files = (
+                    sfind(r'[Nn]pclogger/(?:[^/]+/)?tables/[^/]+\.lua$')
+                    + sfind(r'[Nn]pclogger/(?:[^/]+/)?database/[^/]+\.lua$')
+                )
+                if not lua_files:
+                    continue
+                n_updated = 0
+                for relname in lua_files:
+                    n_updated += _backfill_npclogger_lua_fields(
+                        con, capture_id, src, relname
+                    )
+                if n_updated:
+                    print(f"  capture #{capture_id}: {n_updated} legacy-Lua entities backfilled")
+                n_captures += 1
+                n_updated_total += n_updated
+                continue
+
+            # Existing NPCLogger.db backfill logic remains unchanged.
+            n_updated = 0
+            for relname in npc_db_files:
                 zone_db = Path(relname).stem
                 sub, tmp_path = src.open_sqlite(relname)
                 try:
@@ -3978,9 +4000,9 @@ def backfill_npc_fields(con):
                     if "UniqueNo" not in cols:
                         continue
                     select_cols = ["UniqueNo"]
-                    for c in ("legacy_look", "DoorId", "ActIndex", "Flags0", "Flags1", "Flags2",
-                              "Flags3", "legacy_flag", "SubKind"):
-                        select_cols.append(c if c in cols else "NULL")
+                    for col in ("legacy_look", "DoorId", "ActIndex", "Flags0", "Flags1", "Flags2",
+                                "Flags3", "legacy_flag", "SubKind"):
+                        select_cols.append(col if col in cols else "NULL")
                     sql = f"SELECT {', '.join(select_cols)} FROM entries"
                     for (uid, look, door_id, act_index, flags0, flags1, flags2, flags3,
                          legacy_flag, sub_kind) in sub.execute(sql):
@@ -4016,8 +4038,10 @@ def backfill_npc_fields(con):
         finally:
             src.close()
     con.commit()
-    print(f"Done -- {n_updated_total} entities backfilled across {n_captures} capture(s) with original NPCLogger DB/Lua sources.")
-
+    print(
+        f"Done -- {n_updated_total} entities backfilled across {n_captures} capture(s) "
+        "with original NPCLogger DB/Lua sources."
+    )
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
