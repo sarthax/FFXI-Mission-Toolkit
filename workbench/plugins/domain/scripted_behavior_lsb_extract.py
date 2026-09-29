@@ -1199,6 +1199,7 @@ def _literal_csid_branches(text: str, *, start_line: int) -> tuple[dict,...]:
     rows=[]
     depth=0
     active=None
+    last_selector=None
 
     def finish(end_index: int):
         nonlocal active
@@ -1329,9 +1330,23 @@ def _event_outcome_branches(text: str, *, start_line: int) -> tuple[dict,...]:
     for i,raw_line in enumerate(raw):
         code=_strip_line_comment_preserve_strings(raw_line)
         stripped=code.strip()
+        previous_selector=active.get("selector") if active is not None else last_selector
         if active is not None and depth==active["branch_depth"]:
             if re.match(r"^(?:elseif\b|else\b|end\b)",stripped):
+                previous_selector=active.get("selector")
                 finish(i-1)
+                last_selector=previous_selector
+
+        if stripped.startswith("else") and previous_selector:
+            active={
+                "selector":previous_selector,
+                "literal":None,
+                "predicate":"else",
+                "modeled":False,
+                "start_index":i,
+                "source_line":raw_line.strip(),
+                "branch_depth":depth,
+            }
 
         match=re.match(
             r"^\s*(?:if|elseif)\s+(option|result)\s+(.+?)\s+then\b",
@@ -1339,6 +1354,7 @@ def _event_outcome_branches(text: str, *, start_line: int) -> tuple[dict,...]:
         )
         if match:
             selector,predicate=match.groups()
+            last_selector=selector
             literal_match=re.fullmatch(
                 r"==\s*(-?\d+|true|false|['\"][^'\"]+['\"])",
                 predicate.strip(),
