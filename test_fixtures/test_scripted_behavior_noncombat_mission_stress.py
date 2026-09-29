@@ -29,8 +29,31 @@ entity.onEventFinish = function(player, csid, option, npc)
         player:delKeyItem(xi.keyItem.TEST_SEAL)
         player:setCharVar('MissionStage', 2)
         GetNPCByID(ID.npc.TEST_DOOR):openDoor(30)
+
+        if option == 1 then
+            npcUtil.giveItem(player, 500)
+            player:setCharVar('OutcomeChoice', 1)
+        elseif option == 2 then
+            player:addGil(100)
+            GetNPCByID(ID.npc.SECOND_DOOR):openDoor(15)
+            player:setCharVar('OutcomeChoice', 2)
+        elseif option == dynamicOption then
+            player:setCharVar('DynamicOutcome', 1)
+        end
     elseif csid == 999 then
         player:setCharVar('UnrelatedStage', 1)
+    end
+end
+
+entity.onEventUpdate = function(player, csid, option, npc)
+    if csid == 101 then
+        if option == 7 then
+            player:updateEvent(1)
+            player:setCharVar('UpdateChoice', 7)
+        elseif option == dynamicOption then
+            player:updateEvent(2)
+            player:setCharVar('DynamicUpdateChoice', 1)
+        end
     end
 end
 
@@ -108,7 +131,7 @@ def main():
     ),effects
 
     hooks=set(behavior.hooks)
-    assert {"onTrigger","onEventFinish"} <= hooks,hooks
+    assert {"onTrigger","onEventFinish","onEventUpdate"} <= hooks,hooks
 
     branch_rules=[
         rule for rule in rules
@@ -140,6 +163,30 @@ def main():
         for effect in effects_102
     ),effects_102
     assert not any(effect[0] in {"GRANT_KEY_ITEM","REMOVE_KEY_ITEM","OPEN_DOOR","REFERENCES_ENTITY"} for effect in effects_999),effects_999
+    assert not any(effect[0] in {"GRANT_ITEM","ADD_GIL"} for effect in effects_102),effects_102
+
+    outcome_rules=[rule for rule in rules if rule.kind=="event_outcome_effects"]
+    outcomes={
+        (rule.metadata["hook"],rule.metadata["event_id"],rule.metadata["outcome_selector"],rule.metadata["outcome_literal"]):rule
+        for rule in outcome_rules
+    }
+    assert ("onEventFinish",102,"option","1") in outcomes,outcomes
+    assert ("onEventFinish",102,"option","2") in outcomes,outcomes
+    assert ("onEventUpdate",101,"option","7") in outcomes,outcomes
+    assert not any(key[3]=="dynamicOption" for key in outcomes),outcomes
+
+    option1={(effect.effect,effect.target,effect.value) for effect in outcomes[("onEventFinish",102,"option","1")].effects}
+    option2={(effect.effect,effect.target,effect.value) for effect in outcomes[("onEventFinish",102,"option","2")].effects}
+    update7={(effect.effect,effect.target,effect.value) for effect in outcomes[("onEventUpdate",101,"option","7")].effects}
+    assert ("GRANT_ITEM","player","500") in option1,option1
+    assert ("WRITE_STATE","state:PLAYER_CHAR:player:OutcomeChoice","1") in option1,option1
+    assert ("ADD_GIL","player","100") in option2,option2
+    assert ("OPEN_DOOR","world_entity","15") in option2,option2
+    assert ("WRITE_STATE","state:PLAYER_CHAR:player:OutcomeChoice","2") in option2,option2
+    assert ("UPDATE_EVENT","player",None) in update7,update7
+    assert ("WRITE_STATE","state:PLAYER_CHAR:player:UpdateChoice","7") in update7,update7
+    assert not any(effect[0]=="ADD_GIL" for effect in option1),option1
+    assert not any(effect[0]=="GRANT_ITEM" for effect in option2),option2
 
     graph=_graph_for_behavior(behavior)
     event_nodes={
@@ -163,6 +210,22 @@ def main():
         assert {"start_hook":"onTrigger","finish_guard_hook":"onEventFinish"} in link["cross_hook_pairs"],link
     assert graph["summary"]["events"]>=2,graph["summary"]
     assert graph["summary"]["cross_hook_event_links"]==2,graph["summary"]
+
+    outcome_nodes=[
+        node for node in graph["nodes"]
+        if node["kind"]=="event_outcome"
+    ]
+    assert any(node["meta"].get("selector")=="option" and node["meta"].get("literal")=="1" for node in outcome_nodes),outcome_nodes
+    assert any(edge["kind"]=="EVENT_OUTCOME_GUARD" for edge in graph["edges"]),graph["edges"]
+
+    outcome_effects={
+        (row["hook"],row["event_id"],row["selector"],row["literal"],row["effect"],row["target"],row["value"]):row
+        for row in graph["event_outcome_effects"]
+    }
+    assert ("onEventFinish",102,"option","1","GRANT_ITEM","player","500") in outcome_effects,outcome_effects
+    assert ("onEventFinish",102,"option","2","ADD_GIL","player","100") in outcome_effects,outcome_effects
+    assert ("onEventUpdate",101,"option","7","UPDATE_EVENT","player",None) in outcome_effects,outcome_effects
+    assert graph["summary"]["event_outcome_effects"]>=7,graph["summary"]
 
     branch_effects={(row["event_id"],row["effect"],row["target"],row["value"]):row for row in graph["event_branch_effects"]}
     assert (101,"GRANT_KEY_ITEM","player","TEST_SEAL") in branch_effects,branch_effects
