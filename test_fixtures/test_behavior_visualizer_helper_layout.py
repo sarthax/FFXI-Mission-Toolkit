@@ -25,7 +25,7 @@ def main():
     ),body
     assert "if(n.kind==='shared_helper') return 4;" in body,body
     assert (
-        "if(n.kind==='helper_effect' || n.kind==='helper_call') return 5;"
+        "if(n.kind==='helper_effect' || n.kind==='helper_call' || n.kind==='shared_helper_callee') return 5;"
         in body
     ),body
     assert "if(n.kind==='target') return 6;" in body,body
