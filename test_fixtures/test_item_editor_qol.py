@@ -147,6 +147,15 @@ def main():
     assert "async function reconcileField(field,direction)" in template
     assert "label:'reconcile '+field" in template
 
+    # DAT-only discovery searches client records without requiring a server row.
+    assert "def search_dat_only(q: str, category: str = \"\", limit: int = 200) -> list:" in item_dat
+    assert 'client_state": "dat-only"' in item_dat
+    assert 'if client_state == "dat-only":' in item_edit
+    assert '<option value="dat-only">DAT-only</option>' in template
+    assert 'id="datOnlyPreview"' in template
+    assert "async function inspectDatOnlyItem(itemid)" in template
+    assert "data-inspect-dat-only" in template
+
     # Richer search grid and recent navigation.
     assert "def search(q, category=\"\", min_level=-1, max_level=-1, job=-1, skill=-1, client_state=\"\", limit=200):" in item_edit
     assert "server-only" in item_edit and "mismatch" in item_edit and "synced" in item_edit
