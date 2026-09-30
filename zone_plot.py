@@ -128,11 +128,11 @@ def zone_data(zid, instance=0, server=None):
     # mob_groups has a "name" column on Topaz; this DSP checkout's mob_groups has no name column at
     # all (group identity there is poolid-only), so fall back to the spawn row's own mobname for "g".
     group_name_col = "g.name" if "name" in _columns(cu, "mob_groups") else "s.mobname"
-    cu.execute(f"""select s.mobid,s.mobname,s.pos_x,s.pos_y,s.pos_z,{group_name_col},g.minLevel,g.maxLevel,s.pos_rot
+    cu.execute(f"""select s.mobid,s.mobname,s.pos_x,s.pos_y,s.pos_z,{group_name_col},g.minLevel,g.maxLevel,s.pos_rot,s.groupid
                   from mob_spawn_points s join mob_groups g on g.groupid=s.groupid and g.zoneid=%s
                   where ((s.mobid-16777216)>>12)&511=%s""", (zid, zid))
-    for i, n, x, y, z, gn, lo, hi, rot in cu.fetchall():
-        ents.append({"k": "m", "id": i, "n": n, "x": float(x), "y": float(y), "z": float(z), "r": int(rot or 0), "g": gn, "lv": f"{lo}-{hi}"})
+    for i, n, x, y, z, gn, lo, hi, rot, gid in cu.fetchall():
+        ents.append({"k": "m", "id": i, "n": n, "x": float(x), "y": float(y), "z": float(z), "r": int(rot or 0), "g": gn, "gid": int(gid), "lv": f"{lo}-{hi}"})
     cu.execute("""select npcid,name,polutils_name,pos_x,pos_y,pos_z,status,entityFlags,pos_rot,animation,animationsub from npc_list
                   where ((npcid-16777216)>>12)&511=%s""", (zid,))
     for i, n, pn, x, y, z, st, fl, rot, an, asub in cu.fetchall():
