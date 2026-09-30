@@ -198,25 +198,29 @@ def restore_entity_previous(kind, eid):
 
     source = history[0]
     b = json.loads((BACKUPS / f"{source['backup']}.json").read_text())
+    owner_table = source.get("shared_owner") or table
+    owner_key = [source.get("shared_key")] if source.get("shared_owner") else [eid]
     source_op = next(
         op for op in b["ops"]
-        if op.get("table") == table and op.get("key") == [eid]
+        if op.get("table") == owner_table and op.get("key") == owner_key
     )
 
     db = zone_plot._db()
     cu = db.cursor()
-    current = _capture(cu, table, [eid])
+    current = _capture(cu, owner_table, owner_key)
     pre_id = _save_backup(
         f"auto: before entity restore {kind}:{eid} from {source['backup']}",
         _zone_of(eid),
         [current],
     )
     row = source_op.get("row")
+    table = owner_table
+    eid_for_write = owner_key[0]
     keycol = TABLES[table][0]
     lines = []
     if row is None:
-        cu.execute(f"delete from {table} where {keycol}=%s", (eid,))
-        lines.append(f"DELETE FROM {table} WHERE {keycol}={eid};")
+        cu.execute(f"delete from {table} where {keycol}=%s", (eid_for_write,))
+        lines.append(f"DELETE FROM {table} WHERE {keycol}={eid_for_write};")
     else:
         cols = list(row)
         cu.execute(
