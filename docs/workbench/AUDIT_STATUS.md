@@ -1,3 +1,12 @@
+## 2026-09-30 — Unified acquisition catalog foundation
+
+- Added a source-neutral acquisition catalog over already-audited producer families: mob drops, synthesis, synergy, and scripted Lua rewards.
+- Acquisition rows preserve source family/table/identity, confidence, evidence IDs, rates, recipe requirements, ingredient IDs, crystal/key-item requirements, and scripted reward provenance.
+- VERIFIED DROP_POOL and SCRIPTED_REWARD item literals can now supply the external-obtainability input used by the existing recursive crafting closure.
+- The catalog explicitly does not invent canonical item identities. Scripted rewards currently use opaque obtainable nodes, so graph-node reconciliation remains a separate explicit step.
+- SHOP is explicitly listed as unsupported until a logical shop schema/profile is audited; no physical table assumptions are guessed.
+- Added focused CI regression combining drop, crafting, synergy, scripted reward, and crafting-closure handoff.
+
 ## 2026-09-30 — Package Scope / Create / Review workflow UX
 
 - Package Scope, Create, and Review now use the shared dense shell and a common three-stage workflow bar: Scope → Create → Review, with Package Library always available.
