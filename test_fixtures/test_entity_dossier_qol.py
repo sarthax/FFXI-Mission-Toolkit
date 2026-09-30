@@ -42,6 +42,51 @@ def main():
     assert any(row["label"] == "instance_entities" for row in profile["wiring_chain"])
     assert profile["attention"] == [], profile
 
+    # Missing evidence alone must not create implementation actions.
+    profile["behavior_summary"] = {}
+    profile["event_wiring"] = []
+    assert entity_profile.synthesize_implementation_actions(profile) == [], profile
+
+    action_profile = {
+        "attention": [{
+            "kind": "provenance_conflict",
+            "label": "Sources disagree on position",
+            "detail": "client_dat=(1,2,3) · topaz_sql=(4,5,6)",
+        }],
+        "lua_hits": {"scripts/zones/Test/npcs/Test.lua": []},
+        "behavior_summary": {
+            "available": True,
+            "shared_helpers": [
+                {"qualified_name": "xi.test.missingHelper", "status": "UNRESOLVED"},
+            ],
+        },
+        "event_wiring": [
+            {
+                "event_id": 202,
+                "runtime_observed": True,
+                "client_defined": False,
+                "count": 3,
+                "href": "/events/view?zone=Test&entity=1&csid=202",
+            },
+            {
+                "event_id": 203,
+                "runtime_observed": False,
+                "client_defined": True,
+                "decompile_status": "invalid",
+                "decompile_detail": "invalid bytecode",
+                "href": "/events/view?zone=Test&entity=1&csid=203",
+            },
+        ],
+    }
+    actions = entity_profile.synthesize_implementation_actions(action_profile)
+    kinds = {row["kind"] for row in actions}
+    assert {
+        "provenance_conflict",
+        "shared_helper_resolution",
+        "runtime_event_client_gap",
+        "client_event_decompile",
+    } <= kinds, actions
+
     server = (ROOT / "gui_server.py").read_text(encoding="utf-8")
     template = (ROOT / "gui" / "templates" / "entity_detail.html").read_text(encoding="utf-8")
 
@@ -52,6 +97,9 @@ def main():
     assert "def _entity_behavior_summary(" in server
     assert "inspect_lsb_behavior(root, chosen[\"path\"])" in server
     assert '"behavior_summary"' in server
+    assert '"callback_ownership": []' in server
+    assert '"scheduled_callbacks": []' in server
+    assert "entity_profile.synthesize_implementation_actions(profile)" in server
     assert "def _entity_relationship_summary(" in server
     assert "feature_trace.trace(" in server
     assert '"incoming": []' in server
@@ -68,6 +116,10 @@ def main():
     assert "State / helper summary" in template
     assert "Binding Reference" in template
     assert "Open full Behavior Inspector" in template
+    assert "Callback / source ownership" in template
+    assert "Scheduled callback evidence" in template
+    assert "Evidence-backed implementation actions" in template
+    assert "Missing evidence by itself does not create an action" in template
     assert "Used By / direct canonical relationships" in template
     assert "Used by / incoming" in template
     assert "Direct dependencies / outgoing" in template
