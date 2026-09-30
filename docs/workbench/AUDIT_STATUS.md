@@ -1,3 +1,13 @@
+## 2026-09-30 — Compact Item Editor rollout
+
+- Item Editor now uses the shared dense shell and a compact top command bar.
+- Server selection and search controls are consolidated into dense toolbar surfaces.
+- The long introductory explanation moves behind an on-demand About disclosure.
+- The constrained batch editor is collapsed by default into a details surface instead of permanently occupying vertical space.
+- Session history and selected-item controls reuse the shared dense toolbar pattern.
+- The selected item editor starts closer to the top of the viewport without changing edit, DAT reconciliation, backup, journal, compare, or validation behavior.
+- Shared shell regression coverage now protects the Item Editor dense layout contract.
+
 ## 2026-09-30 — Compact viewer rollout
 
 - Model Viewer now opts into the shared dense shell, uses the shared dense side-panel/toolbar primitives, and reclaims vertical space without changing model resolution or rendering behavior.
