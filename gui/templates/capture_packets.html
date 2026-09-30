@@ -60,13 +60,14 @@
   <tr><th>seq</th><th>ts</th><th>dir</th><th>opcode</th><th>description</th><th>fields</th></tr>
   {% for r in rows %}
   <tr>
-    <td class="mono">{{ r.seq }}</td>
+    <td class="mono"><a class="inline" href="/captures/{{ capture_id }}/packets/{{ r.seq }}">{{ r.seq }}</a></td>
     <td class="mono">{{ r.ts }}</td>
     <td>{{ r.direction }}</td>
     <td class="mono">{{ r.opcode }}</td>
     <td>{{ r.description or '(no definition)' }}
-      <br><a class="inline" style="font-size:11px;"
-         href="/packets/decode?direction={{ r.pd_direction }}&opcode={{ r.opcode }}&hex_bytes={{ r.raw_hex }}">open in manual decoder &rarr;</a>
+      <br><a class="inline" style="font-size:11px;" href="/captures/{{ capture_id }}/packets/{{ r.seq }}">inspect in capture context &rarr;</a>
+      &nbsp;&middot;&nbsp;<a class="inline muted" style="font-size:11px;"
+         href="/packets/decode?direction={{ r.pd_direction }}&opcode={{ r.opcode }}&hex_bytes={{ r.raw_hex }}">open scratch decoder</a>
     </td>
     <td>
       {% if r.fields %}
