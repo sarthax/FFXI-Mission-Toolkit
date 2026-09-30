@@ -69,6 +69,7 @@ server's permission gate. Every write is backed up first and journalled to
     <button id="saveAllBtn" onclick="saveAll()" disabled>Save Item</button>
     <button id="itemUndoBtn" type="button" disabled>Undo</button>
     <button id="itemRedoBtn" type="button" disabled>Redo</button>
+    <button id="cloneCurrentBtn" type="button">Clone This Item</button>
     <span id="saveStatus" class="muted"></span>
   </div>
   <div id="dirtySummary" class="mono" style="margin-top:8px;padding:6px 8px;border:1px solid var(--border);border-radius:4px;color:#b0bec5;">Saved state</div>
@@ -129,7 +130,12 @@ record there, then inserts matching rows server-side at that same id.</p>
 <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
   <input type="number" id="cloneSourceId" placeholder="clone from item ID" style="width:150px;">
   <button type="button" onclick="loadCloneTemplate()">Load as template</button>
-  <label class="muted" style="display:flex; align-items:center; gap:4px;"><input type="checkbox" id="cloneModsToo" checked> also copy mods/pet mods/latents</label>
+  <select id="cloneEffectScope" title="Effects copied into the new item transaction">
+    <option value="none">template only · no effects</option>
+    <option value="mods">+ item mods</option>
+    <option value="mods_pet">+ item mods + pet mods</option>
+    <option value="all" selected>+ mods + pet mods + latents</option>
+  </select>
   <span id="cloneStatus" class="muted"></span>
 </div>
 <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
@@ -599,9 +605,11 @@ async function deleteItem() {
   if (j.error) { msg.textContent = 'ERROR: ' + j.error; return; }
   document.getElementById('deleteConfirmCheck').checked = false;
   document.getElementById('deleteItemBtn').disabled = true;
-  msg.textContent = `Deleted item ${currentItemId} (backup ${j.backup})`
+  const deletedId=currentItemId;
+  msg.textContent = `Deleted item ${deletedId} (backup ${j.backup})`
     + (j.client_dat_cleared ? ', client DAT record cleared.' : j.warning ? ` -- ${j.warning}` : '.')
-    + ' Restore it from the Backups list if this was a mistake.';
+    + ' Undo is available in this session.';
+  itemUndoStack.push({itemId:deletedId,backup:j.backup,label:'delete item'}); if(itemUndoStack.length>80) itemUndoStack.shift(); itemRedoStack.length=0; refreshItemUndoUI();
   document.getElementById('editorWrap').style.display = 'none';
   currentItemId = null;
 }
@@ -740,8 +748,13 @@ async function restoreItemHistory(source,target,verb){
   if(!res.ok){ source.push(a); alert(j.error||res.statusText); refreshItemUndoUI(); return; }
   target.push({itemId:a.itemId,backup:j.pre_restore_backup,label:a.label});
   refreshItemUndoUI();
-  if(Number(currentItemId)===Number(a.itemId)) await loadItem(a.itemId); else await loadItem(a.itemId);
-  document.getElementById('saveStatus').textContent=verb+': '+a.label;
+  if(j.item_exists){
+    await loadItem(a.itemId);
+    document.getElementById('saveStatus').textContent=verb+': '+a.label;
+  } else {
+    document.getElementById('editorWrap').style.display='none';
+    currentItemId=null; loadedServerState=null; loadedEffects={mods:[],pet_mods:[],latents:[]}; stagedEffects=cloneEffects(loadedEffects);
+  }
 }
 document.getElementById('itemUndoBtn').onclick=()=>restoreItemHistory(itemUndoStack,itemRedoStack,'Undid');
 document.getElementById('itemRedoBtn').onclick=()=>restoreItemHistory(itemRedoStack,itemUndoStack,'Redid');
@@ -754,6 +767,14 @@ window.addEventListener('keydown',ev=>{
 window.addEventListener('beforeunload',ev=>{ if(hasUnsavedItemChanges()){ ev.preventDefault(); ev.returnValue=''; } });
 let cloneTemplate = null;
 
+async function cloneCurrentItem(){
+  if(!currentItemId) return;
+  if(hasUnsavedItemChanges() && !confirm('Clone the currently saved state and discard unsaved edits?')) return;
+  document.getElementById('cloneSourceId').value=currentItemId;
+  await loadCloneTemplate();
+  if(cloneTemplate) startDraft();
+}
+document.getElementById('cloneCurrentBtn').onclick=cloneCurrentItem;
 async function loadCloneTemplate() {
   const srcId = document.getElementById('cloneSourceId').value.trim();
   const status = document.getElementById('cloneStatus');
@@ -855,36 +876,26 @@ async function saveDraft() {
   if (draftItemType === 4 && entry.dmgType !== undefined) entry.kind = entry.dmgType;
   if (!entry.name) { status.textContent = 'name is required'; return; }
 
-  status.textContent = 'Saving (allocating DAT slot + writing SQL)...';
+  status.textContent = 'Saving atomically (DAT + SQL + selected effects)...';
   const comment = document.getElementById('draftComment').value;
+  let effects=null;
+  if(cloneTemplate){
+    const scope=document.getElementById('cloneEffectScope').value;
+    effects={mods:[],pet_mods:[],latents:[]};
+    if(['mods','mods_pet','all'].includes(scope)) effects.mods=cloneTemplate.mods||[];
+    if(['mods_pet','all'].includes(scope)) effects.pet_mods=cloneTemplate.pet_mods||[];
+    if(scope==='all') effects.latents=cloneTemplate.latents||[];
+  }
   const res = await fetch('/itemedit/create', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({category: draftCategory, item_type: draftItemType, entry, comment}),
+    body: JSON.stringify({category: draftCategory, item_type: draftItemType, entry, effects, comment}),
   });
   const j = await res.json();
   if (!res.ok) { status.textContent = `Error: ${j.error || res.statusText}`; return; }
   status.textContent = `Created item ${j.item_id} (backup ${j.backup})`;
 
-  if (cloneTemplate && document.getElementById('cloneModsToo').checked) {
-    const newId = j.item_id;
-    let copied = 0, failed = 0;
-    for (const m of cloneTemplate.mods || []) {
-      const r = await fetch('/itemedit/mods/set', {method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({item_id: newId, mod_id: m.modId, value: m.value, comment: `cloned from item ${cloneTemplate.source_item_id}`})});
-      r.ok ? copied++ : failed++;
-    }
-    for (const m of cloneTemplate.pet_mods || []) {
-      const r = await fetch('/itemedit/petmods/set', {method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({item_id: newId, mod_id: m.modId, pet_type: m.petType, value: m.value, comment: `cloned from item ${cloneTemplate.source_item_id}`})});
-      r.ok ? copied++ : failed++;
-    }
-    for (const l of cloneTemplate.latents || []) {
-      const r = await fetch('/itemedit/latents/add', {method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({item_id: newId, mod_id: l.modId, value: l.value, latent_id: l.latentId, latent_param: l.latentParam, comment: `cloned from item ${cloneTemplate.source_item_id}`})});
-      r.ok ? copied++ : failed++;
-    }
-    status.textContent += ` | copied ${copied} mod/latent row(s)${failed ? `, ${failed} failed` : ''}`;
-  }
+  itemUndoStack.push({itemId:j.item_id,backup:j.backup,label:'create item'}); if(itemUndoStack.length>80) itemUndoStack.shift(); itemRedoStack.length=0; refreshItemUndoUI();
+  status.textContent += ` · ${j.effect_changes||0} effect row(s)`;
 
   draftMode = false; cloneTemplate = null;
   document.getElementById('cloneSourceId').value = '';
