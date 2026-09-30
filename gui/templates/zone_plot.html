@@ -18,7 +18,7 @@
     #panel h3{margin:10px 0 4px;font-size:13px}
     .tabb.on{background:#3a6ea5;color:#fff}
     #list{max-height:220px;overflow:auto;font:11px monospace;border:1px solid var(--border);padding:4px}
-    #list div{cursor:pointer;white-space:nowrap} #list div:hover{background:#334} #list div.selected-row{background:#665c16;color:#fff;font-weight:600}
+    #list div{cursor:pointer;white-space:nowrap} #list div:hover{background:#334} #list div.selected-row{background:#665c16;color:#fff;font-weight:600} #list div.multi-row{background:#4a245f;color:#fff}
     .lbl{color:#fff;font:11px monospace;background:rgba(0,0,0,.7);padding:0 3px;border-radius:3px;pointer-events:none;white-space:nowrap}
   </style>
   <label>Server <select id="srv"><option value="topaz">Topaz</option><option value="dsp">DSP</option></select></label>
@@ -90,6 +90,21 @@
   <label style="margin:0"><span>Transform gizmo</span><input type="checkbox" id="gizmoEnabled" checked></label>
   <button type="button" id="gizmoMove">Move</button>
   <button type="button" id="gizmoRotate">Rotate</button>
+</div>
+<div id="bulk-panel" hidden style="border:1px solid var(--border);border-radius:4px;padding:6px;margin:5px 0">
+  <div class="mono" id="bulk-count" style="font-size:11px;margin-bottom:4px">1 selected</div>
+  <div class="muted" style="font-size:10px;margin-bottom:4px">Ctrl/Cmd-click dots or list rows to add/remove. Bulk transforms are relative offsets only; relative spacing is preserved.</div>
+  <label>ΔX <input type="number" step="0.1" id="bulk-dx" value="0"></label>
+  <label>ΔY <input type="number" step="0.1" id="bulk-dy" value="0"></label>
+  <label>ΔZ <input type="number" step="0.1" id="bulk-dz" value="0"></label>
+  <label>ΔRot <input type="number" step="1" id="bulk-dr" value="0"></label>
+  <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
+    <button id="bulk-preview" type="button">Preview bulk</button>
+    <button id="bulk-save" type="button" disabled>Save bulk to live DB</button>
+    <button id="bulk-revert" type="button" disabled>Revert bulk preview</button>
+    <button id="bulk-clear" type="button">Clear multi-select</button>
+  </div>
+  <div id="bulk-msg" class="mono" style="font-size:10px;margin-top:4px;white-space:pre-wrap"></div>
 </div>
       <label>Nudge step <input type="number" id="estep" value="1" step="0.5" min="0.1"></label>
       <label>Rotation step <input type="number" id="erstep" value="1" step="1" min="1" max="128"></label>
@@ -275,6 +290,20 @@ scene.add(new THREE.AmbientLight(0x8899aa, 1.1));
 const sun = new THREE.DirectionalLight(0xfff2e0, 1.4); sun.position.set(300,500,200); scene.add(sun);
 
 let Z = null, R = null, meshObj = null, navMesh = null, inst = null, anchor = null, selected = -1, hoverI = -1;
+const multiSelected=new Set();
+let bulkOrig=new Map();
+let bulkPreviewActive=false;
+function multiCount(){ return multiSelected.size; }
+function syncMultiUI(){
+  const n=multiCount();
+  $('bulk-panel').hidden=n<2;
+  $('bulk-count').textContent=`${n} selected · primary ${selected>=0&&Z?.entities[selected]?Z.entities[selected].id:'none'}`;
+  $('bulk-save').disabled=!bulkPreviewActive;
+  $('bulk-revert').disabled=!bulkPreviewActive;
+  $('list').querySelectorAll('div').forEach(d=>{
+    const i=+d.dataset.i; d.classList.toggle('selected-row',i===selected); d.classList.toggle('multi-row',multiSelected.has(i)&&i!==selected);
+  });
+}
 // ---- add-position marker: a visible cyan dot at the X/Y/Z the Add tab currently has queued, so
 // "did that click/drop actually set a position" is never a guessing game ----
 const addMarkerGeo = new THREE.SphereGeometry(1.6, 12, 8);
@@ -604,7 +633,7 @@ let loadGen = 0;  // bumped on every loadZone() call; async loaders below check 
 async function loadZone(){
   const zid = +$('zone').value, ii = +$('inst').value; $('viewer-loading').hidden=false; $('viewer-loading').textContent='Loading zone '+zid+'…';
   const gen = ++loadGen;
-  anchor=null; selected=-1; R=null;
+  anchor=null; selected=-1; multiSelected.clear(); bulkOrig.clear(); bulkPreviewActive=false; R=null;
   if (meshObj){ scene.remove(meshObj); meshObj=null; } if (navMesh){ scene.remove(navMesh); navMesh=null; }
   const z = await (await fetch(`/zoneplot/${zid}/data.json?instance=${ii}`)).json();
   if (gen!==loadGen) return;
@@ -738,7 +767,7 @@ function rebuild(){
   Z.entities.forEach((e,i)=>{ if(e.zero) return; if(e.k==='m'&&!$('showm').checked) return; if(e.k==='n'&&!$('shown').checked) return; if(e.k==='d'&&!$('showd').checked) return; visible.push(i); });
   inst = new THREE.InstancedMesh(geo, mat, Math.max(1,visible.length)); inst.count=visible.length; inst.renderOrder=10;
   const M=new THREE.Matrix4(), S=+$('dsz').value;
-  visible.forEach((ei,k)=>{ const e=Z.entities[ei]; M.compose(P(e), new THREE.Quaternion(), new THREE.Vector3(S,S,S)); inst.setMatrixAt(k,M); inst.setColorAt(k,colorOf(ei)); });
+  visible.forEach((ei,k)=>{ const e=Z.entities[ei]; M.compose(P(e), new THREE.Quaternion(), new THREE.Vector3(S,S,S)); inst.setMatrixAt(k,M); inst.setColorAt(k, multiSelected.has(ei) ? new THREE.Color(ei===selected?0xffe066:0xd66bff) : colorOf(ei)); });
   inst.instanceMatrix.needsUpdate=true; if(inst.instanceColor) inst.instanceColor.needsUpdate=true; scene.add(inst);
   // summary + list
   const cnt={}; Z.entities.forEach((e,i)=>{ const s=e.zero?'zero':stateOf(i); cnt[s]=(cnt[s]||0)+1; });
@@ -748,8 +777,10 @@ function rebuild(){
   $('cnt').textContent = `(${ms.length}${ms.length===400?'+':''})`;
   $('list').innerHTML = ms.map(([e,i])=>`<div data-i="${i}">${e.k==='m'?'M':e.k==='d'?'D':'N'} ${e.id} ${(e.n||'').slice(0,22)}${e.zero?' [0,0,0]':''} ${e.zero?'':stateOf(i)}</div>`).join('');
   $('list').querySelectorAll('div').forEach(d=>{
-    d.classList.toggle('selected-row', +d.dataset.i===selected);
-    d.onclick=()=>select(+d.dataset.i, true);
+    const i=+d.dataset.i;
+    d.classList.toggle('selected-row', i===selected);
+    d.classList.toggle('multi-row', multiSelected.has(i)&&i!==selected);
+    d.onclick=ev=>{ if(ev.ctrlKey||ev.metaKey) toggleMultiSelect(i,true); else select(i,true); };
   });
 }
 function setLabel(i, text){ if(labels.has(i)) return; const d=document.createElement('div'); d.className='lbl'; d.textContent=text; const o=new CSS2DObject(d); o.position.copy(P(Z.entities[i])); o.position.y+=2; scene.add(o); labels.set(i,o); }
@@ -761,16 +792,39 @@ function select(i, fly){
     if(typeof restorePreviewFromOrig==='function') restorePreviewFromOrig();
   }
   selected=i;
+  multiSelected.clear(); multiSelected.add(i); bulkOrig.clear(); bulkPreviewActive=false;
   if(changed&&typeof loadEditor==='function') loadEditor(i);
   const e=Z.entities[i];
   if(fly && !e.zero) frameSelected();
   updateHeadingArrow(); updateSelectionVisual();
   if(typeof updateDirtyUI==='function') updateDirtyUI(); if(typeof updateEntitySyncStatus==='function') updateEntitySyncStatus();
   $('frameSelBtn').disabled=!!e.zero;
-  $('list').querySelectorAll('div').forEach(d=>d.classList.toggle('selected-row',+d.dataset.i===selected));
+  syncMultiUI();
   const row=$('list').querySelector(`div[data-i="${i}"]`); if(row) row.scrollIntoView({block:'nearest'});
   $('hover').textContent = `${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${txt(e)}  grp=${e.g}  (${e.x}, ${e.y}, ${e.z})  ${rotText(e.r)}  ${stateOf(i)}${e.zero?' ZERO-POS: never loads in instances':''}`;
   return true;
+}
+function toggleMultiSelect(i,fly=false){
+  if(!Z?.entities[i] || Z.entities[i].zero) return;
+  if(isTransformDirty()){
+    if(!confirm('Discard unsaved preview before changing multi-selection?')) return;
+    restorePreviewFromOrig();
+  }
+  if(!multiSelected.size && selected>=0) multiSelected.add(selected);
+  if(multiSelected.has(i)){
+    if(i===selected && multiSelected.size===1) return;
+    multiSelected.delete(i);
+    if(i===selected){
+      selected=[...multiSelected][0] ?? -1;
+      if(selected>=0) loadEditor(selected);
+    }
+  } else {
+    multiSelected.add(i);
+    if(selected<0){ selected=i; loadEditor(i); }
+  }
+  bulkOrig.clear(); bulkPreviewActive=false;
+  rebuild(); syncMultiUI();
+  if(fly && selected>=0) frameSelected();
 }
 let lastLab=0;
 function updateLabels(){
@@ -797,7 +851,9 @@ renderer.domElement.addEventListener('mousemove',ev=>{ const i=pick(ev); if(i!==
     else { const p=screenToWorld(ev); $('hover').textContent = p ? `Cursor: (${p.x.toFixed(2)}, ${(-p.y).toFixed(2)}, ${(-p.z).toFixed(2)})  (visual mesh, no navmesh here)` : ''; } } } });
 let down=null; renderer.domElement.addEventListener('pointerdown',ev=>down=[ev.clientX,ev.clientY]);
 renderer.domElement.addEventListener('pointerup',async ev=>{ if(!down||Math.hypot(ev.clientX-down[0],ev.clientY-down[1])>4) return; const i=pick(ev); if(i<0) return;
-  if (ev.shiftKey){ const e=Z.entities[i]; anchor={x:e.x,y:e.y,z:e.z}; await computeReach(); rebuild(); } else select(i,false); });
+  if (ev.shiftKey){ const e=Z.entities[i]; anchor={x:e.x,y:e.y,z:e.z}; await computeReach(); rebuild(); }
+  else if(ev.ctrlKey||ev.metaKey) toggleMultiSelect(i,false);
+  else select(i,false); });
 $('zone').onchange=()=>{ $('buildCacheBtn').hidden=true; fillInst(); saveZoneEditorState(); loadZone(); };
 $('inst').onchange=()=>{ if($('ainst').querySelector(`option[value="${$('inst').value}"]`)) $('ainst').value=$('inst').value; saveZoneEditorState(); loadZone(); };
 $('lod').onchange=()=>{ if($('lod').value!=='obj') $('buildCacheBtn').hidden=true; saveZoneEditorState(); Z&&loadZMesh(Z.zid); };
