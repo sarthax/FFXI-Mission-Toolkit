@@ -20,6 +20,10 @@
 .entity-chain-arrow{align-self:center;color:var(--muted)}
 .entity-event-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:8px}
 .entity-event{border:1px solid var(--border);border-radius:6px;padding:8px;background:var(--code-bg)}
+.entity-behavior-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.entity-behavior-list{display:grid;gap:6px}
+.entity-behavior-row{border:1px solid var(--border);border-radius:6px;padding:7px 8px;background:var(--code-bg)}
+.entity-behavior-row .meta{font-size:11px;color:var(--muted);margin-top:3px}
 @media(max-width:1000px){.entity-summary-grid{grid-template-columns:1fr}}
 </style>
 <p><a class="inline" href="/entity?q={{ q }}&page={{ page }}">&larr; back to search</a></p>
@@ -49,6 +53,7 @@
 </div>
 <div class="entity-actions" style="margin-top:-6px">
   <a class="chip" href="#entity-wiring">Wiring</a>
+  <a class="chip" href="#entity-behavior">Behavior</a>
   <a class="chip" href="#entity-runtime">Runtime</a>
   <a class="chip" href="#entity-sql">SQL</a>
   <a class="chip" href="#entity-lua">Lua</a>
@@ -106,6 +111,106 @@
     </div>
   </aside>
 </div>
+
+{% if profile.behavior_summary %}
+<section class="entity-card" id="entity-behavior" style="margin-bottom:14px">
+  <h3>Lua behavior summary</h3>
+  <div class="body">
+    {% if profile.behavior_summary.available %}
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:9px">
+        <span class="chip mono">{{ profile.behavior_summary.source.path }}</span>
+        {% for hook in profile.behavior_summary.hooks %}<span class="chip">{{ hook }}</span>{% endfor %}
+        <a class="chip" href="/behavior?source={{ profile.behavior_summary.source.path|urlencode }}">Open full Behavior Inspector &rarr;</a>
+      </div>
+
+      <div class="entity-behavior-grid">
+        <section>
+          <h4 style="margin:0 0 6px">Important effects / engine-facing behavior</h4>
+          <div class="entity-behavior-list">
+            {% for e in profile.behavior_summary.effects %}
+            <div class="entity-behavior-row">
+              <div><strong>{{ e.effect }}</strong>
+                {% if e.target is not none %}<span class="chip mono">{{ e.target }}</span>{% endif %}
+                {% if e.value is not none and e.value != '' %}<span class="mono">&rarr; {{ e.value }}</span>{% endif %}
+              </div>
+              <div class="meta">{{ e.hook or 'source' }}{% if e.source_lines %} · lines {{ e.source_lines[0] }}–{{ e.source_lines[1] }}{% endif %}</div>
+            </div>
+            {% else %}
+            <div class="muted">No structured semantic effects were extracted from the selected LSB source.</div>
+            {% endfor %}
+          </div>
+        </section>
+
+        <section>
+          <h4 style="margin:0 0 6px">Lua / engine API calls</h4>
+          <div class="entity-behavior-list">
+            {% for call in profile.behavior_summary.api_calls %}
+            <div class="entity-behavior-row">
+              <div>
+                <code>{{ call.qualified_name }}</code>
+                {% if call.function %}<a class="chip" href="/backport/bindings?q={{ call.function|urlencode }}">Binding Reference</a>{% endif %}
+              </div>
+              <div class="meta">{{ call.hook or 'source' }}{% if call.line %} · line {{ call.line }}{% endif %}</div>
+              {% if call.source_line %}<div class="mono muted" style="font-size:11px;margin-top:3px">{{ call.source_line }}</div>{% endif %}
+            </div>
+            {% else %}
+            <div class="muted">No syntax-level Lua API calls were extracted from the selected LSB source.</div>
+            {% endfor %}
+          </div>
+        </section>
+      </div>
+
+      {% if profile.behavior_summary.events or profile.behavior_summary.states or profile.behavior_summary.shared_helpers %}
+      <div class="entity-behavior-grid" style="margin-top:10px">
+        <section>
+          <h4 style="margin:0 0 6px">Event lifecycle</h4>
+          <div class="entity-behavior-list">
+            {% for ev in profile.behavior_summary.events %}
+            <div class="entity-behavior-row">
+              <strong>CSID {{ ev.event_id }}</strong>
+              {% if ev.start_hooks %}<div class="meta">started from: {{ ev.start_hooks|join(', ') }}</div>{% endif %}
+              {% if ev.update_guard_hooks %}<div class="meta">update handlers: {{ ev.update_guard_hooks|join(', ') }}</div>{% endif %}
+              {% if ev.finish_guard_hooks %}<div class="meta">finish handlers: {{ ev.finish_guard_hooks|join(', ') }}</div>{% endif %}
+            </div>
+            {% else %}
+            <div class="muted">No literal CSID lifecycle was extracted.</div>
+            {% endfor %}
+          </div>
+        </section>
+
+        <section>
+          <h4 style="margin:0 0 6px">State / helper summary</h4>
+          <div class="entity-behavior-list">
+            {% for state in profile.behavior_summary.states %}
+            <div class="entity-behavior-row">
+              <strong>{{ state.name }}</strong> <span class="chip">{{ state.scope or 'unknown scope' }}</span>
+              <div class="meta">{{ state.reads|length }} read{{ '' if state.reads|length == 1 else 's' }} · {{ state.writes|length }} write{{ '' if state.writes|length == 1 else 's' }}</div>
+            </div>
+            {% endfor %}
+            {% for helper in profile.behavior_summary.shared_helpers %}
+            <div class="entity-behavior-row">
+              <code>{{ helper.qualified_name }}</code> <span class="chip">{{ helper.status }}</span>
+            </div>
+            {% endfor %}
+            {% if not profile.behavior_summary.states and not profile.behavior_summary.shared_helpers %}
+            <div class="muted">No named state or shared helper relationship was extracted.</div>
+            {% endif %}
+          </div>
+        </section>
+      </div>
+      {% endif %}
+
+      <p class="muted" style="margin-bottom:0;margin-top:10px">
+        Inline behavior is a bounded projection of the existing Behavior Inspector, not a second parser.
+        Same-zone controllers remain context unless another evidence path proves a dependency.
+      </p>
+    {% else %}
+      <div class="muted">{{ profile.behavior_summary.error or 'No LSB behavior summary is available for this entity.' }}</div>
+      <a class="chip" style="margin-top:7px" href="/behavior?q={{ profile.name|urlencode }}">Search Behavior Inspector</a>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
 
 {% if profile.event_wiring %}
 <section class="entity-card" style="margin-bottom:14px">
