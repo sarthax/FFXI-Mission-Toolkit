@@ -924,6 +924,7 @@ let down=null; renderer.domElement.addEventListener('pointerdown',ev=>{
   }
 });
 renderer.domElement.addEventListener('pointerup',async ev=>{
+  if(measureMode){ down=null; return; }
   if(facingDrag){ const p=screenToWorld(ev); if(p) rotationTowardPoint(p); facingDrag=false; controls.enabled=true; down=null; return; }
   if(!down||Math.hypot(ev.clientX-down[0],ev.clientY-down[1])>4) return; const i=pick(ev); if(i<0) return;
   if (ev.shiftKey){ const e=Z.entities[i]; anchor={x:e.x,y:e.y,z:e.z}; await computeReach(); rebuild(); }
@@ -1276,6 +1277,7 @@ function previewRotation(){
   const e=Z.entities[selected];
   e.r=((+$('er').value%256)+256)%256; $('er').value=e.r; $('er-dir').textContent=rotText(e.r);
   updateHeadingArrow(); syncGizmoFromSelection(); updateDirtyUI();
+  if(labels.has(selected)){ const l=labels.get(selected); l.element.textContent=txt(e)+($('labelHeading').checked?` · ${rotInfo(e.r).dir} r${rotInfo(e.r).raw}`:''); }
   $('hover').textContent = `${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${txt(e)}  grp=${e.g}  (${e.x}, ${e.y}, ${e.z})  ${rotText(e.r)}  ${stateOf(selected)}`;
 }
 function previewEdit(){ if(selected<0) return; const e=Z.entities[selected]; e.x=+$('ex').value; e.y=+$('ey').value; e.z=+$('ez').value; previewRotation(); rebuild(); updateSelectionVisual(); updateDirtyUI(); }
@@ -1381,10 +1383,12 @@ function snapGrid(applyY){
 }
 function verticalSnapY(target){
   if(selected<0 || !target) return false;
-  const e=Z.entities[selected], x=e.x, z=-e.z;
-  ray.set(new THREE.Vector3(x,5000,z),new THREE.Vector3(0,-1,0));
-  const hits=ray.intersectObject(target,true);
+  const e=Z.entities[selected], p=P(e);
+  const hits=[];
+  ray.set(p.clone(),new THREE.Vector3(0,1,0)); hits.push(...ray.intersectObject(target,true));
+  ray.set(p.clone(),new THREE.Vector3(0,-1,0)); hits.push(...ray.intersectObject(target,true));
   if(!hits.length) return false;
+  hits.sort((a,b)=>a.distance-b.distance);
   $('ey').value=(-hits[0].point.y).toFixed(3); previewEdit(); return true;
 }
 $('snapXYZ').onclick=()=>snapGrid(true);
