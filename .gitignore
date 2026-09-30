@@ -47,3 +47,6 @@ data/item_edit_log.sql
 vendor/ffmpeg/
 vendor/tesseract/
 vendor/*.exe
+
+# User-configured shell branding uploaded from Settings
+gui/static/branding/custom_brand.*
