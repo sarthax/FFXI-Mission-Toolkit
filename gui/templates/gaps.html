@@ -1,15 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Zero-Position / Unregistered{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}entity-gaps-page{% endblock %}
 {% block content %}
-<h1>Zero-Position / Unregistered Entities</h1>
-<p class="muted">Finds entities with a zero/unset position in SQL, and entities that exist in
-npc_list/mob_spawn_points but were never registered in instance_entities.sql. Neither list is
-automatically a bug: some entities are legitimately repositioned dynamically via Lua (setPos)
-rather than through their static SQL row, and a zone shared with other content types may hold
-entities that were never meant to be registered for this content type at all -- check
-content_tag and cross-reference with Entity Lookup before assuming anything here needs fixing.</p>
+<style>main.entity-gaps-page{padding:8px 10px 24px}</style>
+<div class="dense-toolbar"><strong>Zero-Position / Unregistered</strong><span class="sp"></span><a class="chip" href="/entity">Entity Lookup</a><details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:760px">Diagnostic browse for zero/unset positions and entities missing expected instance registration. These are review signals, not automatic bugs; Lua repositioning and shared-zone content can be legitimate.</div></details></div>
 
-<form class="search" method="get">
+<form class="search dense-toolbar" method="get" style="margin:6px 0">
   <select name="zone">
     <option value="">Pick a zone...</option>
     {% for z in zones %}
@@ -24,7 +21,7 @@ content_tag and cross-reference with Entity Lookup before assuming anything here
 </form>
 
 {% if zone %}
-<h2>{{ rows|length }} result(s) in {{ zone }}</h2>
+<div class="dense-toolbar" style="margin:4px 0"><strong>{{ rows|length }} result(s)</strong><span class="chip">{{ zone }}</span><span class="sp"></span><span class="chip">{{ mode }}</span></div>
 {% if not rows %}
 <p class="muted">None found -- either genuinely clean, or this zone hasn't been indexed yet
 (run <code class="chip">py -3 build_npc_index.py --zone {{ zone }}</code> and
