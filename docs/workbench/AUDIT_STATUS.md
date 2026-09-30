@@ -1,3 +1,14 @@
+## 2026-09-30 — Compact Feature Trace rollout
+
+- Feature Trace now uses the shared dense shell and a compact trace command bar.
+- The explanatory intro moves behind an About disclosure so searches and results start at the top of the workspace.
+- Implementation Path cards, summaries, branch grids, and status chips use denser spacing while preserving evidence/provenance content.
+- Evidence Dossier is presented as an expandable dense card, with semantic trace controls and statistics grouped directly beneath it.
+- Runtime capture/packet observations move behind a collapsed disclosure by default; bounded lazy loading behavior is unchanged.
+- Relationships retain their existing grouped drill-down behavior but use compact section headers.
+- No Feature Trace evidence semantics, canonical identity rules, provider traversal, binding drill-down, or runtime observation logic changed.
+- Shared shell regression coverage now protects the Feature Trace dense layout contract.
+
 ## 2026-09-30 — Compact Item Editor rollout
 
 - Item Editor now uses the shared dense shell and a compact top command bar.
