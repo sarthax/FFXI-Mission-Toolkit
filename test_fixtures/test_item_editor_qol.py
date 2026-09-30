@@ -51,6 +51,20 @@ def main():
     assert 'id="datLatestBackup"' in template
     assert "async function refreshLatestDatBackup" in template
 
+    # Active-target vs pristine DAT comparison.
+    assert "PRISTINE_COMPARE_FIELDS" in item_dat
+    assert "def compare_client_record_to_pristine(item_id: int)" in item_dat
+    assert '@app.get("/itemedit/{item_id}/dat-pristine-diff.json")' in gui
+    assert 'id="datPristineDiff"' in template
+    assert "async function refreshPristineDiff()" in template
+    assert "Changed from pristine (" in template
+
+    # Exact snapshots remain bound to the authority they were captured from.
+    assert "def capture_client_record(item_id: int, target: str | None = None)" in item_dat
+    assert '"target_existed": target_existed' in item_dat
+    assert "target = snapshot.get(\"target\", dat_target())" in item_dat
+    assert "restore_target = saved_client.get(\"target\") if saved_client else None" in item_edit
+
     # Explicit per-field server/client reconciliation.
     assert "RECONCILE_SERVER_FIELDS" in item_edit
     assert "def reconcile_item(item_id, field, direction, comment=" in item_edit
