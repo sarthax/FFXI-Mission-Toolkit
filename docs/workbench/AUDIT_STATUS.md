@@ -1,3 +1,14 @@
+## 2026-09-30 — Feature Trace Lua → binding → engine drill-down
+
+- Resolved server Lua branches now expose syntax-level direct API calls from the existing Behavior Inspector model and join those method names to binding-registration evidence from the configured provider tree.
+- LSB/Topaz-style trees are indexed through SOL_REGISTER; DSP trees through LUNAR_DECLARE_METHOD. Exact, case-only, and unindexed outcomes remain distinct.
+- Binding locations expose class, C++ file, registration line/excerpt, and a bounded implementation-candidate excerpt when an exact class::method definition is visible in the same source file.
+- Shared-helper API calls reuse the same binding index; callback ownership comes from the existing bounded Behavior Inspector callback graph.
+- A binding registration proves the Lua-to-C++ handoff name/location only. It does not by itself establish the semantics or correctness of the C++ implementation.
+- Unindexed and case-only calls are review cues, not declarations that a Lua script is invalid.
+- Binding Reference navigation preserves the originating Feature Trace entity context, and Behavior API nodes link directly to Binding Reference.
+- The read-only /features/trace/binding.json endpoint exposes the same binding lookup evidence without mutating graph state.
+
 ## 2026-09-30 — Feature Trace source-level implementation drill-down
 
 - Server Lua excerpts are resolved at request time from the configured LSB/Topaz/DSP checkout through the existing Behavior Inspector resolver; source text is not copied into the canonical graph or catalog database.

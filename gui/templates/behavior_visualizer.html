@@ -329,7 +329,9 @@
    const n=nodes.get(id),meta=n.meta||{};
    const ins=incoming.get(id)||[],outs=outgoing.get(id)||[];
    const rows=Object.entries(meta).filter(([,v])=>v!==null&&v!==''&&!(Array.isArray(v)&&!v.length)).map(([k,v])=>`<dt>${esc(k)}</dt><dd><code>${esc(typeof v==='string'?v:JSON.stringify(v,null,2))}</code></dd>`).join('');
-   detail.innerHTML=`<strong>${esc(n.label)}</strong> <span class="chip">${esc(n.kind)}</span><p><code>${esc(n.id)}</code></p><dl>${rows||'<dt>Metadata</dt><dd class="muted">No additional metadata</dd>'}</dl><p><strong>Incoming:</strong> ${esc(ins.map(e=>e.kind).join(', ')||'none')}<br><strong>Outgoing:</strong> ${esc(outs.map(e=>e.kind).join(', ')||'none')}</p>`;
+   const method=(meta.effect==='API_CALL' && meta.value)?String(meta.value):'';
+   const bindingLink=method?`<p><a class="chip" href="/backport/bindings?q=${encodeURIComponent(method)}">Binding Reference: ${esc(method)}</a></p>`:'';
+   detail.innerHTML=`<strong>${esc(n.label)}</strong> <span class="chip">${esc(n.kind)}</span><p><code>${esc(n.id)}</code></p>${bindingLink}<dl>${rows||'<dt>Metadata</dt><dd class="muted">No additional metadata</dd>'}</dl><p><strong>Incoming:</strong> ${esc(ins.map(e=>e.kind).join(', ')||'none')}<br><strong>Outgoing:</strong> ${esc(outs.map(e=>e.kind).join(', ')||'none')}</p>`;
    render();
  }
  filter.addEventListener('input',render);

@@ -11,6 +11,7 @@ def main():
     event=(ROOT/"gui/templates/event_view.html").read_text(encoding="utf-8")
     sql=(ROOT/"gui/templates/sql.html").read_text(encoding="utf-8")
     server=(ROOT/"gui_server.py").read_text(encoding="utf-8")
+    binding_service=(ROOT/"workbench/core/services/feature_trace_binding_drilldown.py").read_text(encoding="utf-8")
 
     for text in (
         "Server Lua drill-down",
@@ -50,6 +51,42 @@ def main():
     assert "fuzzy/content Behavior Inspector matches only" in server
     assert "drill.candidates" in feature
     assert "match basis:" in feature
+
+    for text in (
+        "Lua → binding → engine handoff",
+        "direct Lua API call",
+        "Binding Reference",
+        "C++ binding target",
+        "Registration excerpt",
+        "C++ implementation excerpt",
+        "Shared helpers",
+        "Callback ownership",
+    ):
+        assert text in feature,text
+
+
+    bindings=(ROOT/"gui/templates/backport_bindings.html").read_text(encoding="utf-8")
+    assert "trace_q" in bindings
+    assert "Feature Trace entity {{ trace_q }}" in bindings
+    assert "Binding Reference:" in behavior
+    assert "feature_trace_binding_drilldown" in server
+    assert "feature_trace_behavior_engine_drilldown(" in server
+    assert "feature_trace_binding_lookup(" in server
+    for text in (
+        "def binding_index_for_server",
+        "def binding_location",
+        "def binding_lookup",
+        "def behavior_engine_drilldown",
+        "binding_index=binding_index_for_server(server,source_root)",
+        "index=binding_index",
+        '"CASE_ONLY"',
+        '"NOT_INDEXED"',
+        "registration_excerpt",
+        "implementation_excerpt",
+        '"shared_helpers":helpers',
+        '"callbacks":callbacks',
+    ):
+        assert text in binding_service,text
 
     print("Feature Trace cross-tool source drill-down regression: PASS")
 

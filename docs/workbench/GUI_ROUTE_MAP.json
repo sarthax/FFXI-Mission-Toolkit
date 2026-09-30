@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 234,
+  "route_count": 235,
   "routes": [
     {
       "method": "GET",
@@ -342,6 +342,14 @@
     {
       "method": "GET",
       "path": "/features/trace/path.json",
+      "home": "Features",
+      "section": "Feature Trace",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/features/trace/binding.json",
       "home": "Features",
       "section": "Feature Trace",
       "role": "data",

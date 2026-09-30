@@ -52,6 +52,7 @@ import explore_event
 import feature_trace
 from workbench.core.services.feature_trace_catalog import present_relationships
 from workbench.core.services.feature_trace_dossier import build_dossier
+from workbench.core.services.feature_trace_binding_drilldown import binding_lookup as feature_trace_binding_lookup, behavior_engine_drilldown as feature_trace_behavior_engine_drilldown
 from workbench.core.services.scripted_behavior_visualizer import (
     find_lsb_behavior_sources,
     find_behavior_sources_multi,
@@ -1602,7 +1603,7 @@ STATUS_LABELS = {
 
 
 @app.get("/backport/bindings", response_class=HTMLResponse)
-def bindings_index(request: Request, q: str = "", status: str = "", page: int = 1):
+def bindings_index(request: Request, q: str = "", status: str = "", page: int = 1, trace_q: str = ""):
     """Dedicated browse/search page over the full Topaz<->old-dsp-reference binding inventory --
     separate from the Lua Converter (which only surfaces bindings actually hit by whatever source
     got pasted in) so a name can be looked up for reference at any time, not just mid-conversion."""
@@ -1635,7 +1636,7 @@ def bindings_index(request: Request, q: str = "", status: str = "", page: int = 
     return templates.TemplateResponse(request, "backport_bindings.html", {
         "rows": page_rows, "total": total, "q": q, "status": status,
         "page": page, "total_pages": total_pages, "counts": counts,
-        "status_labels": STATUS_LABELS, "index_missing": index_missing,
+        "status_labels": STATUS_LABELS, "index_missing": index_missing, "trace_q": trace_q,
     })
 
 
@@ -4000,6 +4001,9 @@ def _feature_trace_branch_source_drilldown(implementation_path: dict | None) -> 
                 excerpt = None
 
         graph_data = inspected.get("graph") or {}
+        engine = feature_trace_behavior_engine_drilldown(
+            inspected,server=server,source_root=source_root
+        )
         events = []
         zone = (inspected.get("source") or {}).get("zone") or chosen.get("zone")
         for event in (graph_data.get("events") or [])[:20]:
@@ -4035,6 +4039,7 @@ def _feature_trace_branch_source_drilldown(implementation_path: dict | None) -> 
                 if node.get("kind") == "hook" and node.get("label")
             }),
             "summary": graph_data.get("summary") or {},
+            "engine": engine,
         })
 
 
@@ -4133,6 +4138,26 @@ def feature_trace_page(
         "dossier": dossier,
         "implementation_path": implementation_path,
         "query_diagnostics": query_diagnostics,
+    })
+
+
+@app.get("/features/trace/binding.json")
+def feature_trace_binding_detail(server: str = "", method: str = ""):
+    """Read-only binding registration/implementation lookup for Feature Trace drill-down."""
+    method=method.strip()
+    if not method:
+        return JSONResponse({"error":"method is required"},status_code=400)
+    roots=_behavior_roots()
+    if server not in roots:
+        return JSONResponse({
+            "error":"server must name a configured behavior tree",
+            "configured_servers":list(roots),
+        },status_code=404)
+    root=Path(roots[server])
+    return JSONResponse({
+        "server":server,
+        "method":method,
+        "binding":feature_trace_binding_lookup(server,root,method),
     })
 
 
