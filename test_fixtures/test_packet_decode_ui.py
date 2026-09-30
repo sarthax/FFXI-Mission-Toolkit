@@ -26,6 +26,7 @@ def main():
     assert all("range_hex" in r and "raw_hex" in r and "end" in r for r in layout["rows"])
 
     template = (ROOT / "gui" / "templates" / "packets_decode.html").read_text(encoding="utf-8")
+    tools_template = (ROOT / "gui" / "templates" / "packets.html").read_text(encoding="utf-8")
     server = (ROOT / "gui_server.py").read_text(encoding="utf-8")
     backend = (ROOT / "packet_decode.py").read_text(encoding="utf-8")
 
@@ -41,6 +42,14 @@ def main():
     assert "function esc(value)" in template
     assert "uint32 LE" in template
     assert "float32 LE" in template
+    assert "Bulk Packet Decode" in template
+    assert 'action="/packets/bulk"' in template
+    assert "Open in Packet Viewer" in template
+    assert "r.raw_hex|urlencode" in template
+    assert 'href="/packets/decode?mode=bulk"' in tools_template
+    assert 'RedirectResponse(url="/packets/decode?mode=bulk", status_code=303)' in server
+    assert '"mode": "bulk"' in server
+    assert '"bulk_rows": rows' in server
     assert "analyze_layout(direction, opcode_int, hex_bytes)" in server
     assert "def analyze_layout(" in backend
 
