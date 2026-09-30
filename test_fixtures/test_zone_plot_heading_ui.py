@@ -84,7 +84,15 @@ def main():
     assert 'id="bulk-panel"' in template
     assert "Ctrl/Cmd-click dots or list rows to add/remove" in template
     assert "function toggleMultiSelect(i,fly=false)" in template
-    assert "relative offsets only; relative spacing is preserved" in template
+    assert "Multi-select defaults to moving the group while preserving relative spacing" in template
+    assert 'id="bulk-anchor"' in template
+    assert 'id="bulk-move-preview"' in template
+    assert 'id="bulk-pick"' in template
+    assert "function bulkAnchor(source=null)" in template
+    assert "function previewBulkMoveTo(x,y,z,source='coordinates')" in template
+    assert "bulkPickMode && multiSelected.size>=2" in template
+    assert "previewBulkMoveTo(+transformProxy.position.x" in template
+    assert "Nudge / Offset" in template
     assert "async function saveBulkTransform()" in template
     assert "fetch('/zoneplot/edit_bulk'" in template
     assert "recordUndo(`bulk transform ${j.count} entities`" in template
