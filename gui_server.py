@@ -4061,11 +4061,21 @@ def _feature_trace_behavior_engine_drilldown(
     binding_counts=Counter(
         row["binding"]["status"] for row in deduped
     )
+    unindexed=[
+        row for row in deduped if row["binding"]["status"]=="NOT_INDEXED"
+    ]
+    case_only=[
+        row for row in deduped if row["binding"]["status"]=="CASE_ONLY"
+    ]
     return {
         "direct_calls":deduped,
         "direct_call_count":len(deduped),
         "binding_counts":dict(sorted(binding_counts.items())),
         "binding_index_size":len(binding_index),
+        "unindexed_calls":unindexed,
+        "unindexed_call_count":len(unindexed),
+        "case_only_calls":case_only,
+        "case_only_call_count":len(case_only),
         "shared_helpers":helpers,
         "callbacks":callbacks,
         "callback_count":len(callbacks),
@@ -4307,6 +4317,26 @@ def feature_trace_page(
         "dossier": dossier,
         "implementation_path": implementation_path,
         "query_diagnostics": query_diagnostics,
+    })
+
+
+@app.get("/features/trace/binding.json")
+def feature_trace_binding_detail(server: str = "", method: str = ""):
+    """Read-only binding registration/implementation lookup for Feature Trace drill-down."""
+    method=method.strip()
+    if not method:
+        return JSONResponse({"error":"method is required"},status_code=400)
+    roots=_behavior_roots()
+    if server not in roots:
+        return JSONResponse({
+            "error":"server must name a configured behavior tree",
+            "configured_servers":list(roots),
+        },status_code=404)
+    root=Path(roots[server])
+    return JSONResponse({
+        "server":server,
+        "method":method,
+        "binding":_feature_trace_binding_lookup(server,root,method),
     })
 
 
