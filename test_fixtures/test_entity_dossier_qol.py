@@ -52,6 +52,10 @@ def main():
     assert "def _entity_behavior_summary(" in server
     assert "inspect_lsb_behavior(root, chosen[\"path\"])" in server
     assert '"behavior_summary"' in server
+    assert "def _entity_relationship_summary(" in server
+    assert "feature_trace.trace(" in server
+    assert '"incoming": []' in server
+    assert '"outgoing": []' in server
 
     assert "Entity evidence bridge" in template
     assert "Needs attention" in template
@@ -64,6 +68,11 @@ def main():
     assert "State / helper summary" in template
     assert "Binding Reference" in template
     assert "Open full Behavior Inspector" in template
+    assert "Used By / direct canonical relationships" in template
+    assert "Used by / incoming" in template
+    assert "Direct dependencies / outgoing" in template
+    assert "Exact source-native links" in template
+    assert "Open full Feature Trace" in template
     assert "defined in client" in template
     assert "not observed in captures" in template
     assert "Open Event Wiring Dossier" in template
