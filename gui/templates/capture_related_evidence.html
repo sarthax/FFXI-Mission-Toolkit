@@ -55,6 +55,38 @@
     {% endif %}
   </div>
 
+  {% if packet_matches %}
+    <div class="dense-panel">
+      <div class="related-head">
+        <span class="chip">Explicit packet correlation</span>
+        <strong>Cross-source packet identity</strong>
+      </div>
+      <div class="muted" style="margin-top:4px">
+        These matches come from unique non-temporal packet correlation rules only. Timestamp/alignment
+        matches and ambiguous candidates are intentionally excluded from this verified section.
+      </div>
+    </div>
+    {% for r in packet_matches %}
+    <article class="related-card">
+      <div class="related-head">
+        <span class="chip">{{ r.peer_kind }}</span>
+        <strong>{{ r.target_table }}</strong>
+        <span class="muted">{{ r.basis }}</span>
+        {% if r.score is not none %}<span class="chip mono">score {{ '%.2f'|format(r.score) }}</span>{% endif %}
+      </div>
+      <div class="mono muted related-key" style="margin-top:5px">{{ r.row_key }}</div>
+      {% if r.details.shared_fields %}
+      <div class="muted" style="margin-top:4px">shared fields: {{ r.details.shared_fields|join(', ') }}</div>
+      {% endif %}
+      <div class="related-actions">
+        {% if r.source_url %}<a class="chip" href="{{ r.source_url }}">Source Locator</a>{% endif %}
+        <a class="chip" href="{{ r.data_url }}">Data Explorer</a>
+        {% if r.packet_url %}<a class="chip" href="{{ r.packet_url }}">Packet Viewer</a>{% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  {% endif %}
+
   {% if related %}
     {% for r in related %}
     <article class="related-card">
