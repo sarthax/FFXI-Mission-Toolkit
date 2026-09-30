@@ -1,3 +1,11 @@
+
+## 2026-09-30 — Feature Trace Implementation Path diagnostics
+
+- Implementation Path now distinguishes unique mapping, drifted IDs to one root, no mapping, partial mapping, numeric collisions, and multiple canonical roots instead of collapsing these into generic ambiguity.
+- Canonical identity summaries expose recorded identifiers, direct relationship/evidence counts, bounded evidence/provenance rows, and canonical-node integrity state.
+- Provider branches now report provider/domain, exact native-link counts/depth/targets, source identity/alias fields, match basis, and source inspect links where available.
+- A read-only `/features/trace/path.json` endpoint exposes the same resolution/path diagnostics for troubleshooting without changing graph state.
+- Missing relationships remain UNKNOWN; diagnostics explain why traversal is unavailable without inferring absence or implementation failure.
 ## Repository structure
 - Began staged repository restructuring with `workbench/` package namespaces.
 - Canonical schema, graph, and provenance implementations now live under `workbench/core/`; root modules are compatibility shims.
