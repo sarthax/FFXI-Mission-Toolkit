@@ -129,6 +129,115 @@ def _summary(result) -> dict:
     return {"kind": type(result).__name__, "value": str(result)[:160]}
 
 
+
+FAMILY_EXPECTED_PARSERS = {
+    "events": {"parse_events"},
+    "dialog": {"parse_dialog", "parse_dmsg_table", "parse_xistring_table"},
+    "entities": {"parse_entity_names"},
+}
+PARSER_TOOL_KIND = {
+    "parse_events": "events",
+    "parse_dialog": "dialog",
+    "parse_dmsg_table": "dialog",
+    "parse_xistring_table": "dialog",
+    "parse_entity_names": "entities",
+    "parse_item_info": "items",
+    "parse_menu_table": "menu",
+    "parse_status_info": "status",
+    "parse_auto_translate": "auto_translate",
+    "parse_furniture_data": "furniture",
+}
+
+
+def resource_context(dat_id: int | None) -> dict:
+    if dat_id is None:
+        return {"family": None, "zone_id": None}
+    for name, base in FAMILIES:
+        if base <= int(dat_id) <= base + 255:
+            return {"family": name, "zone_id": int(dat_id) - base}
+    return {"family": None, "zone_id": None}
+
+
+def _sample_rows(value, limit: int = 12) -> list[dict]:
+    """Normalize arbitrary parser collections into a small table-friendly preview."""
+    rows = []
+    if isinstance(value, dict):
+        for key, item in list(value.items())[:limit]:
+            if isinstance(item, dict):
+                row = {"key": key}
+                row.update({str(k): v for k, v in list(item.items())[:8] if not isinstance(v, (list, tuple, dict))})
+            else:
+                row = {"key": key, "value": item}
+            rows.append(row)
+        return rows
+    if isinstance(value, (list, tuple)):
+        for idx, item in enumerate(list(value)[:limit]):
+            if isinstance(item, dict):
+                row = {"#": idx}
+                row.update({str(k): v for k, v in list(item.items())[:8] if not isinstance(v, (list, tuple, dict))})
+            else:
+                row = {"#": idx, "value": item}
+            rows.append(row)
+    return rows
+
+
+def _presentation(result) -> dict:
+    scalars = []
+    collections = []
+    if isinstance(result, dict):
+        for key, value in result.items():
+            if isinstance(value, (list, tuple, dict)):
+                collections.append({
+                    "name": str(key),
+                    "count": len(value),
+                    "rows": _sample_rows(value),
+                })
+            else:
+                scalars.append({"name": str(key), "value": value})
+    elif isinstance(result, (list, tuple)):
+        collections.append({
+            "name": "entries",
+            "count": len(result),
+            "rows": _sample_rows(result),
+        })
+    else:
+        scalars.append({"name": "value", "value": result})
+    return {"scalars": scalars[:24], "collections": collections[:12]}
+
+
+def _classify(matches: list[dict], family: str | None) -> dict:
+    names = [m["parser"] for m in matches]
+    warnings = []
+    if not matches:
+        verdict = "No supported structured parser recognized this DAT"
+        status = "unknown"
+        confidence = "unclassified"
+    elif len(matches) == 1:
+        verdict = f"Decoded as {matches[0]['label']}"
+        status = "recognized"
+        confidence = "parser accepted"
+    else:
+        verdict = f"{len(matches)} compatible parser interpretations"
+        status = "multiple"
+        confidence = "ambiguous structure"
+        warnings.append(
+            "Multiple parsers accepted this DAT. Keep each interpretation separate until additional evidence identifies the resource type."
+        )
+
+    expected = FAMILY_EXPECTED_PARSERS.get(family or "")
+    if family and expected and matches and not (set(names) & expected):
+        warnings.append(
+            f"The DAT ID falls in the {FAMILY_LABELS.get(family, family)} zone-family range, "
+            "but none of the expected parsers accepted it. Treat the family as an ID hint only."
+        )
+    return {
+        "status": status,
+        "verdict": verdict,
+        "confidence": confidence,
+        "warnings": warnings,
+        "parser_names": names,
+    }
+
 def _inspect_path(
     path: Path,
     *,
@@ -150,7 +259,9 @@ def _inspect_path(
                 "parser": name,
                 "label": PARSER_LABELS.get(name, name),
                 "summary": _summary(parsed),
+                "presentation": _presentation(parsed),
                 "preview": _preview(parsed),
+                "tool_kind": PARSER_TOOL_KIND.get(name, "generic"),
             })
         except Exception as ex:
             rejected.append({
@@ -165,6 +276,8 @@ def _inspect_path(
             relative = path.name
     else:
         relative = path.name
+    context = resource_context(dat_id)
+    classification = _classify(matches, context["family"])
     return {
         "dat_id": dat_id,
         "path": str(path),
@@ -177,6 +290,9 @@ def _inspect_path(
         "header_ascii": "".join(chr(b) if 32 <= b < 127 else "." for b in data[:64]),
         "extractor_note": extractor_note,
         "family_hint": family_hint,
+        "family": context["family"],
+        "zone_id": context["zone_id"],
+        "classification": classification,
         "matches": matches,
         "rejected": rejected,
         "parser_match_count": len(matches),
