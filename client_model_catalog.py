@@ -203,14 +203,18 @@ def build_catalog(server: str | None = None, refresh: bool = False) -> list[dict
             hints.append(h)
         rec["visual_hints"] = hints
 
-        render_hint = next((h for h in hints if h.get("rom_path")), None)
+        registered_hints = [h for h in hints if h.get("rom_path")]
+        hint_file_ids = {h["file_id"] for h in registered_hints}
+        render_hint = registered_hints[0] if len(hint_file_ids) == 1 else None
         rec["render_file_id"] = render_hint["file_id"] if render_hint else rec["resource_file_id"]
         rec["render_rom_path"] = render_hint["rom_path"] if render_hint else rec["resource_rom_path"]
-        rec["render_source"] = (
-            "legacy hand-verified family visual DAT"
-            if render_hint else
-            "FFXiMain monster resource (may be skeleton-only)"
-        )
+        if render_hint:
+            rec["render_source"] = "legacy hand-verified family visual DAT"
+        elif len(hint_file_ids) > 1:
+            rec["render_source"] = "FFXiMain monster resource; family visual hints are ambiguous"
+        else:
+            rec["render_source"] = "FFXiMain monster resource (may be skeleton-only)"
+        rec["visual_hint_ambiguous"] = len(hint_file_ids) > 1
 
         rec["names"] = sorted(rec["names"], key=str.casefold)
         rec["mob_names"] = sorted(rec["mob_names"], key=str.casefold)
