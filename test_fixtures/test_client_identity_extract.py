@@ -106,6 +106,12 @@ def main() -> None:
             ("client:30191204_1",),
         ).fetchone()[0]
         assert entity_count == 4, entity_count
+        assert ingested["entity_graph"]["status"] == "OK", ingested
+        assert ingested["entity_graph"]["semantic_entities"] == 2, ingested
+        mirrored = con.execute(
+            "SELECT COUNT(*) FROM entity_identifiers WHERE identifier_type LIKE 'client_snapshot_entity_id:%'"
+        ).fetchone()[0]
+        assert mirrored == 4, mirrored
         snap = con.execute(
             "SELECT version,fingerprint FROM identity_snapshots WHERE snapshot_id=?",
             ("client:30191204_1",),
