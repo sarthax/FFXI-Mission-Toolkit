@@ -125,11 +125,20 @@ def resolve(kind: str, eid: int, server=None) -> dict:
     return info
 
 
+def _client_dat_path(ffxi_path: str, rom_path: str) -> Path:
+    """Resolve a DAT path while refusing paths outside the configured client root."""
+    root = Path(ffxi_path).resolve()
+    raw = Path(rom_path)
+    candidate = raw.resolve() if raw.is_absolute() else (root / raw).resolve()
+    if candidate != root and root not in candidate.parents:
+        raise ValueError("DAT path must stay inside the configured FFXI client install")
+    return candidate
+
+
 def read_dat_bytes(ffxi_path: str, rom_path: str) -> bytes:
-    """Read the actual DAT bytes off the local client install disk. rom_path is dat-extractor's
-    own output (e.g. "ROM2/34/12.DAT"), always relative to the install root."""
-    p = Path(ffxi_path) / rom_path
-    if not p.exists():
+    """Read DAT bytes from the configured client root (absolute in-root resolver paths are OK)."""
+    p = _client_dat_path(ffxi_path, rom_path)
+    if not p.is_file():
         raise FileNotFoundError(f"{p} does not exist under the configured FFXI install")
     return p.read_bytes()
 
@@ -177,7 +186,10 @@ def resolve_dat(
     if not resolved_path:
         return {"error": "provide file_id or rom_path"}
 
-    full = Path(ffxi_path) / resolved_path
+    try:
+        full = _client_dat_path(ffxi_path, resolved_path)
+    except ValueError as ex:
+        return {"error": str(ex)}
     if not full.is_file():
         return {"error": f"DAT not found under configured client: {resolved_path}"}
 
