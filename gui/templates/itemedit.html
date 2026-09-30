@@ -667,23 +667,23 @@ function recomputeMask(table, field) {
 
 async function saveAll() {
   if (!currentItemId) return;
-  const tables=changedTables();
-  if(!Object.keys(tables).length){ updateDirtySummary(); return; }
+  const tables=changedTables(), effects=stagedEffectPayload();
+  if(!Object.keys(tables).length && !effects){ updateDirtySummary(); return; }
   const comment=document.getElementById('editComment').value;
   const status=document.getElementById('saveStatus'); status.textContent='Validating...';
-  const vr=await fetch('/itemedit/validate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_id:currentItemId,tables})});
+  const vr=await fetch('/itemedit/validate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_id:currentItemId,tables,effects})});
   const v=await vr.json();
   if(!vr.ok){ status.textContent='VALIDATION ERROR: '+(v.error||vr.statusText); return; }
   renderItemDiagnostics(v.comparison,v);
   if(v.errors?.length){ status.textContent='Save blocked by validation errors.'; return; }
   if(v.warnings?.length && !confirm('Validation warnings:\n\n'+v.warnings.map(x=>'• '+x.message).join('\n')+'\n\nSave anyway?')){ status.textContent='Save cancelled.'; return; }
   status.textContent='Saving atomically...';
-  const res=await fetch('/itemedit/save-atomic',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_id:currentItemId,tables,comment})});
+  const res=await fetch('/itemedit/save-atomic',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_id:currentItemId,tables,effects,comment})});
   const j=await res.json();
   if(!res.ok){ status.textContent='ERROR: '+(j.error||res.statusText); return; }
   itemUndoStack.push({itemId:currentItemId,backup:j.backup,label:'save item'}); if(itemUndoStack.length>80) itemUndoStack.shift(); itemRedoStack.length=0;
   const clientText=j.client ? (j.client.ok?' · client DAT synced':(j.client.skipped?' · client DAT unavailable; server saved':' · client DAT warning')) : '';
-  status.textContent=`Saved ${j.tables.length} table(s) · backup ${j.backup}${clientText}`;
+  status.textContent=`Saved ${j.tables.length} table(s) + ${j.effect_changes||0} effect change(s) · backup ${j.backup}${clientText}`;
   refreshItemUndoUI();
   await loadItem(currentItemId);
 }
