@@ -2353,7 +2353,7 @@ def entity_detail(request: Request, npcid: int, q: str = "", page: int = 1):
     # export merely because Entity Profile was opened. If Events/CSID already has this zone
     # exported, reuse its fingerprinted health cache.
     profile["event_wiring"] = []
-    if not profile.get("error") and profile.get("zone_folder") and profile.get("capture_events"):
+    if not profile.get("error") and profile.get("zone_folder"):
         event_dir = TOOLS_ROOT / "mission_reports" / profile["zone_folder"]
         health = {}
         if (event_dir / "events.yml").exists():
@@ -2362,6 +2362,8 @@ def entity_detail(request: Request, npcid: int, q: str = "", page: int = 1):
             except Exception:
                 health = {}
         rows_by_key = health.get("rows") or {}
+
+        observed_by_id = {}
         for observed in profile.get("capture_events") or []:
             event_hex = observed.get("event_hex")
             if not event_hex:
@@ -2370,16 +2372,37 @@ def entity_detail(request: Request, npcid: int, q: str = "", page: int = 1):
                 event_id = int(str(event_hex), 0)
             except ValueError:
                 continue
-            key = f"{int(npcid)}:{event_id}"
-            health_row = rows_by_key.get(key, {})
+            bucket = observed_by_id.setdefault(event_id, {
+                "count": 0, "message_ids": set(),
+            })
+            bucket["count"] += int(observed.get("count") or 0)
+            if observed.get("message_id") is not None:
+                bucket["message_ids"].add(int(observed["message_id"]))
+
+        event_ids = set(observed_by_id)
+        prefix = f"{int(npcid)}:"
+        for key in rows_by_key:
+            if key.startswith(prefix):
+                try:
+                    event_ids.add(int(key.split(":", 1)[1]))
+                except ValueError:
+                    pass
+
+        for event_id in sorted(event_ids):
+            health_row = rows_by_key.get(f"{int(npcid)}:{event_id}", {})
+            observed = observed_by_id.get(event_id, {"count": 0, "message_ids": set()})
+            client_messages = [int(v) for v in health_row.get("message_ids") or []]
+            runtime_messages = sorted(observed["message_ids"])
             profile["event_wiring"].append({
                 "event_id": event_id,
                 "event_hex": f"0x{event_id:04X}",
-                "count": observed.get("count"),
-                "message_id": observed.get("message_id"),
+                "client_defined": bool(health_row),
+                "runtime_observed": bool(observed["count"]),
+                "count": observed["count"],
+                "runtime_message_ids": runtime_messages,
                 "decompile_status": health_row.get("status", "not_scanned"),
                 "decompile_detail": health_row.get("detail"),
-                "message_ids": health_row.get("message_ids") or [],
+                "message_ids": client_messages,
                 "href": (
                     f"/events/view?zone={quote(profile['zone_folder'], safe='')}"
                     f"&entity={npcid}&csid={event_id}"
