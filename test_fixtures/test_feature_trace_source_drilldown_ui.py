@@ -40,7 +40,7 @@ def main():
     assert "def _feature_trace_branch_source_drilldown" in server
     assert "find_behavior_sources_multi({server: source_root}" in server
     assert "inspect_lsb_behavior(source_root, chosen" in server
-    assert "candidate.read_text(encoding="utf-8", errors="replace")" in server
+    assert 'candidate.read_text(encoding="utf-8", errors="replace")' in server
     assert "len(exact) != 1" in server
     assert '"candidate_count"' in server
     assert '"events": events' in server
