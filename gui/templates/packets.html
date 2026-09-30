@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Packet Decoder{% endblock %}
+{% block title %}Packet Tools{% endblock %}
 {% block content %}
-<h1>Packet Decoder</h1>
-<p class="muted">Decodes a raw captured packet into named, typed fields using real field definitions
+<h1>Packet Tools</h1>
+<p class="muted">Use the <strong>Manual Packet Viewer / Decoder</strong> for arbitrary bytes and opcode research. For packets already ingested into a capture, use that capture's <strong>Packet Browser</strong> and open the richer capture-native <strong>Packet Viewer</strong>, which preserves session context and provenance. This tool decodes a raw packet into named, typed fields using real field definitions
 (315+ known opcodes) -- no manual byte-offset math required. Captures from PacketViewer/NPCLogger
 are already plaintext (decrypted at the client/addon layer), so this just maps the raw hex onto
 its real field layout, with lookup-table resolution (item/npc/zone names, etc.) where available.</p>
 
-<h2>Decode a packet</h2>
+<h2>Manual Packet Viewer / Decoder</h2>
 <form class="search" method="get" action="/packets/decode" style="flex-wrap:wrap;">
   <input type="hidden" name="q" value="{{ q }}">
   <select name="direction">
@@ -16,7 +16,7 @@ its real field layout, with lookup-table resolution (item/npc/zone names, etc.) 
   </select>
   <input type="text" name="opcode" placeholder="opcode, e.g. 0x02A" style="width:120px;">
   <input type="text" name="hex_bytes" placeholder="raw hex bytes (spaces ok)" style="flex:1;min-width:280px;">
-  <button type="submit">Decode</button>
+  <button type="submit">Open manual viewer</button>
 </form>
 
 <p><a class="inline" href="/packets/bulk">bulk-decode a whole raw log file &rarr;</a></p>
