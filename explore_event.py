@@ -289,6 +289,137 @@ def summarize_decompile(decompiled: str) -> dict:
     }
 
 
+WORK_REF_PATTERNS = (
+    ("WorkLocal", re.compile(r"(?:ExtData\[1\]->)?WorkLocal\[(\d+)\]")),
+    ("Work_Zone", re.compile(r"Work_Zone\[(\d+)\]")),
+    ("Work_Zone_Memorize", re.compile(r"Work_Zone_Memorize\[(\d+)\]")),
+    ("Work_Zone_1700", re.compile(r"Work_Zone_1700\[(\d+)\]")),
+    ("References", re.compile(r"References\[(\d+)\]")),
+)
+UPDATE_MARKER_RE = re.compile(r"\b(?:SEND_EVENT_UPDATE|updateEvent|eventUpdate)\b", re.IGNORECASE)
+
+
+def _split_uninterpreted_params(raw: str) -> list[str]:
+    """Split a captured parameter rendering on top-level commas only.
+
+    Values remain strings. Nested braces/brackets/parentheses are preserved and no slot semantics
+    are assigned.
+    """
+    text = str(raw or "").strip()
+    if not text:
+        return []
+    parts, buf = [], []
+    depth = 0
+    quote = None
+    for ch in text:
+        if quote:
+            buf.append(ch)
+            if ch == quote:
+                quote = None
+            continue
+        if ch in ("'", '"'):
+            quote = ch
+            buf.append(ch)
+            continue
+        if ch in "([{":
+            depth += 1
+        elif ch in ")]}" and depth:
+            depth -= 1
+        if ch == "," and depth == 0:
+            parts.append("".join(buf).strip())
+            buf = []
+            continue
+        buf.append(ch)
+    if buf or text.endswith(","):
+        parts.append("".join(buf).strip())
+    return parts
+
+
+def event_flow_summary(decompiled: str, capture_rows=None, server_refs=None) -> dict:
+    """Inventory literal client work references and observed server/runtime flow evidence.
+
+    This is presentation-only. Work-variable names, parameter slots, and option values are never
+    assigned gameplay meaning.
+    """
+    decompiled = decompiled or ""
+    capture_rows = [dict(row) for row in (capture_rows or [])]
+    server_refs = [dict(row) for row in (server_refs or [])]
+
+    work_refs = []
+    seen_refs = set()
+    for family, pattern in WORK_REF_PATTERNS:
+        for match in pattern.finditer(decompiled):
+            key = (family, int(match.group(1)))
+            if key in seen_refs:
+                continue
+            seen_refs.add(key)
+            work_refs.append({"family": family, "index": key[1], "label": f"{family}[{key[1]}]"})
+    work_refs.sort(key=lambda row: (row["family"], row["index"]))
+
+    update_markers = []
+    for line_no, line in enumerate(decompiled.splitlines(), 1):
+        if UPDATE_MARKER_RE.search(line):
+            update_markers.append({"line": line_no, "text": line.strip()})
+
+    option_values = {}
+    param_slots = {}
+    for row in capture_rows:
+        option = row.get("option")
+        if option is not None:
+            bucket = option_values.setdefault(str(option), {"value": option, "observations": []})
+            bucket["observations"].append({"capture_id": row.get("capture_id"), "seq": row.get("seq")})
+        for index, value in enumerate(_split_uninterpreted_params(row.get("params_raw"))):
+            slot = param_slots.setdefault(index, {"index": index, "values": {}})
+            val = slot["values"].setdefault(value, {"value": value, "observations": []})
+            val["observations"].append({"capture_id": row.get("capture_id"), "seq": row.get("seq")})
+
+    parameter_slots = []
+    for index in sorted(param_slots):
+        slot = param_slots[index]
+        parameter_slots.append({
+            "index": index,
+            "values": sorted(slot["values"].values(), key=lambda item: item["value"]),
+            "value_count": len(slot["values"]),
+        })
+
+    stages = []
+    for ref in server_refs:
+        function = ref.get("function")
+        fn = str(function or "")
+        lower = fn.lower()
+        if "eventupdate" in lower:
+            stage = "UPDATE"
+        elif "eventfinish" in lower:
+            stage = "FINISH"
+        elif "trigger" in lower or "trade" in lower:
+            stage = "START"
+        else:
+            stage = "REFERENCE"
+        stages.append({
+            "stage": stage,
+            "source": ref.get("source"),
+            "npc_script": ref.get("npc_script"),
+            "function": function,
+            "path": ref.get("path"),
+            "line": ref.get("line"),
+            "calls": [call.get("method") for call in (ref.get("calls") or []) if call.get("method")],
+        })
+
+    return {
+        "work_refs": work_refs,
+        "work_ref_count": len(work_refs),
+        "update_markers": update_markers,
+        "option_values": sorted(option_values.values(), key=lambda row: row["value"]),
+        "parameter_slots": parameter_slots,
+        "server_stages": stages,
+        "notes": [
+            "Work-variable references are literal client decompile tokens only.",
+            "Captured parameter slots are positional and uninterpreted.",
+            "Server stages are classified only from callback/function names.",
+        ],
+    }
+
+
 def lua_scaffold(csid: int, observed_options=None, observed_params=None) -> str:
     """Create copyable *scaffolding*, never a claim that these callbacks are sufficient.
 
