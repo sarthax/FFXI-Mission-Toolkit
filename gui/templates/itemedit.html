@@ -68,7 +68,9 @@ server's permission gate. Every write is backed up first and journalled to
   #editorWrap .editor-toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px; padding:8px; border:1px solid var(--border); border-radius:6px; }
   #editorWrap .logical-group { border-top:1px solid rgba(128,128,128,.22); margin-top:7px; padding-top:5px; }
   #editorWrap .logical-group:first-of-type { border-top:0; margin-top:0; padding-top:0; }
-  #editorWrap .logical-group-title { font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; opacity:.58; margin:0 0 3px; }
+  #editorWrap .logical-group-title { font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; opacity:.58; margin:0 0 3px; display:flex; align-items:center; gap:5px; }
+  #editorWrap .copy-controls { margin-left:auto; display:inline-flex; gap:3px; }
+  #editorWrap .copy-controls button { font-size:9px; padding:1px 4px; opacity:.82; }
   #editorWrap .field-help { cursor:help; border-bottom:1px dotted currentColor; }
   #decodedSummary .summary-chip { display:inline-block; margin:2px 4px 2px 0; padding:2px 6px; border:1px solid var(--border); border-radius:10px; font-size:11px; }
   #itemCompareResult .compare-add { color:#a5d6a7; }
@@ -151,6 +153,7 @@ server's permission gate. Every write is backed up first and journalled to
       </select>
     </label>
     <span class="muted" style="font-size:11px;">Basic shows the common gameplay fields; Advanced exposes the full raw SQL surface.</span>
+    <span id="fieldClipboardStatus" class="muted" style="font-size:11px;">Field clipboard empty</span>
     <span style="flex:1"></span>
     <input type="number" id="compareItemId" placeholder="compare item ID" style="width:140px;">
     <button type="button" id="compareItemBtn">Compare</button>
@@ -339,6 +342,7 @@ let itemEditorMode = localStorage.getItem("itemEditorMode") || "basic";
 let currentItemId = null;
 let loadedServerState = null;
 let loadedEffects={mods:[],pet_mods:[],latents:[]};
+let itemFieldClipboard=null;
 let stagedEffects={mods:[],pet_mods:[],latents:[]};
 function cloneEffects(v){ return JSON.parse(JSON.stringify(v)); }
 function effectSortKey(kind,row){
@@ -372,6 +376,85 @@ function collectCurrentTables(){
   });
   return byTable;
 }
+function currentFieldValue(table,field){
+  return collectCurrentTables()?.[table]?.[field];
+}
+function setEditorFieldValue(table,field,value){
+  const wrap=document.getElementById('editorTables');
+  const direct=wrap.querySelector('[data-table="'+table+'"][data-field="'+field+'"]');
+  if(direct && !direct.matches('[data-mask-group]')){
+    direct.value=value ?? '';
+    direct.dispatchEvent(new Event('input',{bubbles:true}));
+    direct.dispatchEvent(new Event('change',{bubbles:true}));
+    return true;
+  }
+  const group=wrap.querySelector('[data-mask-group="'+table+'.'+field+'"]');
+  if(!group) return false;
+  const n=Number(value)||0;
+  if(group.dataset.maskType==='nibbles'){
+    const width=Number(group.dataset.maskWidth)||4, max=(1<<width)-1;
+    group.querySelectorAll('input[data-mask-shift]').forEach(inp=>{ inp.value=(n>>Number(inp.dataset.maskShift))&max; });
+  }else{
+    group.querySelectorAll('input[data-mask-bit]').forEach(cb=>{ cb.checked=(n&Number(cb.dataset.maskBit))!==0; });
+  }
+  const display=wrap.querySelector('[data-mask-display="'+table+'.'+field+'"]');
+  if(display) display.textContent=String(n);
+  updateDirtySummary(); renderDecodedSummary();
+  return true;
+}
+function setFieldClipboardStatus(text){
+  const el=document.getElementById('fieldClipboardStatus'); if(el) el.textContent=text;
+}
+function copyEditorField(table,field){
+  const value=currentFieldValue(table,field);
+  itemFieldClipboard={type:'field',table,field,value};
+  setFieldClipboardStatus('Copied '+table+'.'+field);
+}
+function pasteEditorField(table,field){
+  const c=itemFieldClipboard;
+  if(!c || c.type!=='field'){ alert('Copy a field first.'); return; }
+  if(c.table!==table || c.field!==field){ alert('Field clipboard is '+c.table+'.'+c.field+'; paste is limited to the same field.'); return; }
+  if(setEditorFieldValue(table,field,c.value)) setFieldClipboardStatus('Pasted '+table+'.'+field);
+}
+function copyEditorGroup(table,groupName){
+  const fields=FIELD_GROUPS?.[table]?.[groupName]||[];
+  const current=collectCurrentTables()[table]||{}, values={};
+  for(const field of fields) if(field in current) values[field]=current[field];
+  itemFieldClipboard={type:'group',table,groupName,values};
+  setFieldClipboardStatus('Copied '+table+' / '+groupName);
+}
+function pasteEditorGroup(table,groupName){
+  const c=itemFieldClipboard;
+  if(!c || c.type!=='group'){ alert('Copy a logical group first.'); return; }
+  if(c.table!==table || c.groupName!==groupName){ alert('Group clipboard is '+c.table+' / '+c.groupName+'; paste is limited to the same logical group.'); return; }
+  let count=0;
+  for(const [field,value] of Object.entries(c.values||{})) if(setEditorFieldValue(table,field,value)) count++;
+  setFieldClipboardStatus('Pasted '+count+' field(s) into '+table+' / '+groupName);
+}
+function addEditorCopyControls(wrap){
+  if(wrap.id!=='editorTables') return;
+  wrap.querySelectorAll('[data-editor-field]').forEach(el=>{
+    const [table,field]=String(el.dataset.editorField||'').split('.');
+    const host=el.classList.contains('mask-row')?el.querySelector('.mask-label'):el;
+    if(!host || host.querySelector('[data-copy-field]')) return;
+    const controls=document.createElement('span'); controls.className='copy-controls';
+    controls.innerHTML='<button type="button" data-copy-field="'+table+'.'+field+'" title="Copy this field value">Copy</button>'+
+      '<button type="button" data-paste-field="'+table+'.'+field+'" title="Paste only a value copied from this same field">Paste</button>';
+    host.appendChild(controls);
+  });
+  wrap.querySelectorAll('.logical-group[data-group-table]').forEach(group=>{
+    const title=group.querySelector('.logical-group-title'); if(!title || title.querySelector('[data-copy-group]')) return;
+    const table=group.dataset.groupTable, name=group.dataset.groupName;
+    const controls=document.createElement('span'); controls.className='copy-controls';
+    controls.innerHTML='<button type="button" data-copy-group="1">Copy group</button><button type="button" data-paste-group="1">Paste group</button>';
+    title.appendChild(controls);
+  });
+  wrap.querySelectorAll('[data-copy-field]').forEach(btn=>btn.onclick=()=>{ const [t,f]=btn.dataset.copyField.split('.'); copyEditorField(t,f); });
+  wrap.querySelectorAll('[data-paste-field]').forEach(btn=>btn.onclick=()=>{ const [t,f]=btn.dataset.pasteField.split('.'); pasteEditorField(t,f); });
+  wrap.querySelectorAll('[data-copy-group]').forEach(btn=>btn.onclick=()=>{ const g=btn.closest('.logical-group'); copyEditorGroup(g.dataset.groupTable,g.dataset.groupName); });
+  wrap.querySelectorAll('[data-paste-group]').forEach(btn=>btn.onclick=()=>{ const g=btn.closest('.logical-group'); pasteEditorGroup(g.dataset.groupTable,g.dataset.groupName); });
+}
+
 function changedTables(){
   if(!loadedServerState) return {};
   const cur=collectCurrentTables(), out={};
@@ -587,18 +670,18 @@ function buildTablesGrid(wrap, serverObj) {
     for(const [groupName,groupFields] of Object.entries(groups)){
       const present=groupFields.filter(f=>fields.includes(f));
       if(!present.length) continue;
-      body+='<div class="logical-group"><div class="logical-group-title">'+groupName+'</div>'+
+      body+='<div class="logical-group" data-group-table="'+table+'" data-group-name="'+groupName+'"><div class="logical-group-title">'+groupName+'</div>'+
         present.map(f=>itemFieldHtml(table,row,f,schemaForTable)).join('')+'</div>';
     }
     const grouped=new Set(Object.values(groups).flat());
     const leftover=fields.filter(f=>!grouped.has(f));
-    if(leftover.length) body+='<div class="logical-group"><div class="logical-group-title">Other</div>'+
+    if(leftover.length) body+='<div class="logical-group" data-group-table="'+table+'" data-group-name="Other"><div class="logical-group-title">Other</div>'+
       leftover.map(f=>itemFieldHtml(table,row,f,schemaForTable)).join('')+'</div>';
     box.innerHTML='<h3>'+(TABLE_LABELS[table]||table)+' <span class="hint">'+table+'</span></h3>'+body;
     wrap.appendChild(box);
   }
   wrap.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',()=>{ updateDirtySummary(); renderDecodedSummary(); }));
-  if(wrap.id==='editorTables') applyEditorModeVisibility();
+  if(wrap.id==='editorTables'){ addEditorCopyControls(wrap); applyEditorModeVisibility(); }
 }
 function decodeField(table,field,value){
   const schema=BITMASK_SCHEMA?.[table]?.[field], n=Number(value)||0;
