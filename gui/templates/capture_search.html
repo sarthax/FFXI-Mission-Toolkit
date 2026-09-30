@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Capture Search{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}capture-search-page{% endblock %}
 
 {% macro pager() %}
 {% if total_pages > 1 %}
@@ -14,19 +16,21 @@
 {% endmacro %}
 
 {% block content %}
-<p><a class="inline" href="/captures">&larr; back to Captures</a></p>
-<h1>Capture Search</h1>
-<p class="muted">Cross-capture search across all 84 ingested captures at once -- find every time
-  an NPC said something, or every real observed instance of a packet type, anywhere in the corpus,
-  not just one capture at a time.</p>
+<style>main.capture-search-page{padding:8px 10px 24px}.capture-search-page .modebar{margin:6px 0}</style>
+<div class="dense-toolbar">
+  <a class="chip" href="/captures">&larr; Captures</a>
+  <strong>Cross-capture Search</strong>
+  <span class="sp"></span>
+  <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:680px">Search indexed event/dialog evidence or raw packet observations across every capture in the corpus.</div></details>
+</div>
 
-<div style="display:flex; gap:8px; margin-bottom:12px;">
+<div class="modebar dense-tabs" style="display:flex;gap:5px;">
   <a class="chip {% if mode == 'events' %}chip-active{% endif %}" href="/captures/search?mode=events">Events / Dialogue</a>
   <a class="chip {% if mode == 'packets' %}chip-active{% endif %}" href="/captures/search?mode=packets">Raw Packets</a>
 </div>
 
 {% if mode == 'events' %}
-<form class="search" method="get">
+<form class="search dense-toolbar" method="get" style="margin:6px 0;flex-wrap:wrap">
   <input type="hidden" name="mode" value="events">
   <input type="text" name="entity" value="{{ entity }}" placeholder="NPC name">
   <input type="text" name="message_id" value="{{ message_id }}" placeholder="message id (exact)">
@@ -43,7 +47,7 @@
 </form>
 
 {% if events %}
-<p class="muted">{{ total }} result(s) -- page {{ page }} of {{ total_pages }}.</p>
+<div class="dense-toolbar" style="margin:4px 0"><strong>{{ total }} result(s)</strong><span class="sp"></span><span class="muted">page {{ page }} of {{ total_pages }}</span></div>
 {{ pager() }}
 <div class="table-wrap"><table>
   <tr><th>capture</th><th>seq</th><th>dir</th><th>opcode</th><th>entity</th><th>csid</th><th>option</th><th>message</th><th>dialogue</th></tr>
@@ -67,7 +71,7 @@
 {% endif %}
 
 {% else %}
-<form class="search" method="get">
+<form class="search dense-toolbar" method="get" style="margin:6px 0;flex-wrap:wrap">
   <input type="hidden" name="mode" value="packets">
   <select name="pk_category">
     <option value="">(choose a category)</option>
@@ -80,7 +84,7 @@
 </form>
 
 {% if packets %}
-<p class="muted">{{ total }} result(s) -- page {{ page }} of {{ total_pages }}.</p>
+<div class="dense-toolbar" style="margin:4px 0"><strong>{{ total }} result(s)</strong><span class="sp"></span><span class="muted">page {{ page }} of {{ total_pages }}</span></div>
 {{ pager() }}
 <div class="table-wrap"><table>
   <tr><th>capture</th><th>seq</th><th>ts</th><th>dir</th><th>opcode</th><th>description</th><th>fields</th></tr>
@@ -94,11 +98,9 @@
     <td>{{ p.description or '' }}</td>
     <td>
       {% if p.fields %}
-      <table style="margin:0;">
-        {% for f in p.fields %}
-        <tr><td class="mono muted">{{ f.name }}</td><td class="mono">{{ f.value }}</td></tr>
-        {% endfor %}
-      </table>
+      <details><summary>{{ p.fields|length }} fields</summary><table style="margin:3px 0 0;font-size:10px;">
+        {% for f in p.fields %}<tr><td class="mono muted">{{ f.name }}</td><td class="mono">{{ f.value }}</td></tr>{% endfor %}
+      </table></details>
       {% endif %}
     </td>
   </tr>
