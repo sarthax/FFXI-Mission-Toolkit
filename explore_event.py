@@ -98,6 +98,7 @@ def scan_event_health(out_dir: Path, zone_id: int | None, *, force: bool = False
         return {"rows": {}, "summary": {"missing_export": 1}}
 
     fingerprint = {
+        "schema_version": 2,
         "events_mtime_ns": events_path.stat().st_mtime_ns,
         "events_size": events_path.stat().st_size,
         "dialog_mtime_ns": dialog_path.stat().st_mtime_ns if dialog_path.exists() else None,
@@ -136,10 +137,12 @@ def scan_event_health(out_dir: Path, zone_id: int | None, *, force: bool = False
                     events_doc, int(entity_id), int(event_id), strings, int(zone_id or 0)
                 )
                 text = bridge.decompile(fixture)
+                decompile_summary = summarize_decompile(text)
                 rows[key] = {
                     "status": "ok",
                     "detail": None,
                     "line_count": len(text.splitlines()),
+                    "message_ids": decompile_summary["message_ids"],
                 }
                 summary["ok"] += 1
             except SystemExit as exc:
@@ -155,7 +158,23 @@ def scan_event_health(out_dir: Path, zone_id: int | None, *, force: bool = False
                 }
                 summary["failed"] += 1
 
-    payload = {"fingerprint": fingerprint, "rows": rows, "summary": summary}
+    message_refs = {}
+    for key, row in rows.items():
+        if row.get("status") != "ok":
+            continue
+        entity_id, event_id = (int(part) for part in key.split(":", 1))
+        for message_id in row.get("message_ids", []):
+            message_refs.setdefault(str(int(message_id)), []).append({
+                "entity_id": entity_id,
+                "event_id": event_id,
+            })
+
+    payload = {
+        "fingerprint": fingerprint,
+        "rows": rows,
+        "summary": summary,
+        "message_refs": message_refs,
+    }
     try:
         cache_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
     except OSError:
