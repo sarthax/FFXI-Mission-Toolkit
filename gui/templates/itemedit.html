@@ -131,6 +131,10 @@ server's permission gate. Every write is backed up first and journalled to
     <div class="muted" style="font-size:11px; margin-top:6px;">A snapshot of this DAT file is taken automatically before every edit (not just the first), so you can restore to right before any specific edit, not only all the way back to pristine.</div>
     <div id="datBackupList" class="rowtable-wrap table-wrap" style="margin-top:8px;"></div>
     <div id="datPristineDiff" class="mono" style="margin-top:8px;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:10px;white-space:pre-wrap;"></div>
+    <details style="margin-top:8px;">
+      <summary style="cursor:pointer;">Legacy 0xC00 ↔ retail 0x1400 layout audit</summary>
+      <div id="clientLayoutAudit" class="mono muted" style="margin-top:6px;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:10px;white-space:pre-wrap;">Open to load structural audit.</div>
+    </details>
 <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
   <button type="button" id="compareLivePivotBtn">Compare Live ↔ Xi-Pivot</button>
   <button type="button" id="copyLiveToPivotBtn">Copy this record Live → Pivot</button>
@@ -811,6 +815,13 @@ async function refreshClientRecordInspector(itemid){
       ['icon bytes',d.icon_size],['record SHA-256',j.record_sha256]
     ]]
   ];
+  if(j.furniture?.available){
+    sections.push(['Furniture FUD',[
+      ['properties DAT',j.furniture.dat_ui],['entry index',j.furniture.entry_index],['entry offset',j.furniture.entry_offset_hex],
+      ['model number',j.furniture.model_no],['footprint X',j.furniture.size_x],['footprint Z',j.furniture.size_z],
+      ['height',j.furniture.height],['placement flags',j.furniture.placement_flags],['info raw',j.furniture.info_raw]
+    ]]);
+  }
   grid.innerHTML=sections.map(([title,rows])=>'<div class="client-record-section"><h4>'+htmlEsc(title)+'</h4>'+inspectorRows(rows)+'</div>').join('');
   unresolved.textContent=j.unresolved_note||'';
 }
@@ -840,6 +851,20 @@ function refreshDatInfo(data) {
   document.getElementById('datBackupList').innerHTML = '';
   refreshLatestDatBackup(st.dat_ui);
   refreshPristineDiff();
+  refreshClientLayoutAudit();
+}
+async function refreshClientLayoutAudit(){
+  const box=document.getElementById('clientLayoutAudit');
+  if(!box || box.dataset.loaded==='1') return;
+  const r=await fetch('/itemedit/client-layout-audit.json'); const j=await r.json();
+  if(!r.ok){ box.textContent='Layout audit unavailable: '+(j.error||r.statusText); return; }
+  box.textContent=
+    'legacy stride: 0x'+Number(j.legacy_stride).toString(16).toUpperCase()+' ('+j.legacy_stride+' bytes)\n'+
+    'retail stride: 0x'+Number(j.retail_stride).toString(16).toUpperCase()+' ('+j.retail_stride+' bytes)\n'+
+    'growth: 0x'+Number(j.growth_bytes).toString(16).toUpperCase()+' ('+j.growth_bytes+' bytes)\n'+
+    'icon anchor: 0x'+Number(j.icon_size_offset).toString(16).toUpperCase()+' / data 0x'+Number(j.icon_data_offset).toString(16).toUpperCase()+'\n'+
+    'icon/padding capacity: '+j.legacy_icon_capacity+' → '+j.retail_icon_capacity+' bytes\n\n'+j.conclusion;
+  box.dataset.loaded='1';
 }
 
 async function refreshPristineDiff(){
