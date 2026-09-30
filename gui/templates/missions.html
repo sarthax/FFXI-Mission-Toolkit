@@ -1,15 +1,24 @@
 {% extends "base.html" %}
 {% block title %}Assault Missions{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}missions-browser-page{% endblock %}
 {% block content %}
-<h1>Assault Missions</h1>
-<p class="muted">Real client text (area/objective/recruitment/orders), from missions-assault.xml.</p>
-<form class="search" method="get">
+<style>
+main.missions-browser-page{padding:8px 10px 24px}
+.mission-card{border:1px solid var(--border);border-radius:7px;background:var(--surface);margin:6px 0;overflow:hidden}
+.mission-card>summary{padding:7px 9px;cursor:pointer;font-weight:600}
+.mission-body{padding:0 8px 8px}
+</style>
+<div class="dense-toolbar"><strong>Assault Missions</strong><span class="sp"></span><details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:650px">Client mission text with server wiring/capture rollups. Expand only the mission you need instead of scrolling every full objective block.</div></details></div>
+<form class="search dense-toolbar" method="get" style="margin:6px 0">
   <input type="text" name="q" value="{{ q }}" placeholder="filter by name">
   <button type="submit">Filter</button>
 </form>
 {% for r in rows %}
 {% set roll = rollups[r.mission_id] %}
-<h2>{{ r.mission_id }}. {{ r.name }}</h2>
+<details class="mission-card">
+<summary>{{ r.mission_id }}. {{ r.name }} {% if roll.n_entities %}<span class="chip">{{ roll.n_entities }} entities</span>{% endif %}{% if roll.n_captured %}<span class="chip">{{ roll.n_captured }} captured</span>{% endif %}</summary>
+<div class="mission-body">
 <pre style="white-space:pre-wrap;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">{{ r.full_text }}</pre>
 
 {% if roll.n_entities %}
@@ -31,5 +40,6 @@
 {% else %}
 <p class="muted">No entities found in instance_entities.sql for this mission_id -- either not yet wired, or this row isn't Assault content.</p>
 {% endif %}
+</div></details>
 {% endfor %}
 {% endblock %}
