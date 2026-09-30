@@ -201,6 +201,17 @@ server's permission gate. Every write is backed up first and journalled to
     <div id="itemBackupMsg" class="mono muted" style="margin-top:6px; white-space:pre-wrap; font-size:11px;"></div>
   </div>
 
+  <div class="edit-card wide" id="itemUsagePanel" style="margin-top:12px;">
+    <h3>Dependency / usage <span class="hint">pre-delete references from exact active-server content rows plus lower-confidence Lua source-text matches</span></h3>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+      <button type="button" id="refreshItemUsageBtn">Refresh usage</button>
+      <span id="itemUsageSummary" class="muted"></span>
+    </div>
+    <div id="itemUsageWarnings" class="warn" style="display:none;margin-bottom:6px;"></div>
+    <div id="itemUsageList" class="rowtable-wrap table-wrap"></div>
+    <div id="itemUsageNotes" class="muted" style="font-size:10px;margin-top:6px;"></div>
+  </div>
+
   <div class="edit-card wide" style="margin-top:12px; border-color:#a33;">
     <h3 style="color:#c55;">Delete this item <span class="hint">removes every server-side row this item touches (item_basic/equipment/weapon/usable/puppet/furnishing + mods + pet mods + latents), all in one backed-up, journalled operation. Restorable from the Backups list above afterward.</span></h3>
     <label class="muted" style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
@@ -844,6 +855,7 @@ async function loadItem(itemid, remember=true) {
   refreshDatInfo(data);
   await refreshClientRecordInspector(itemid);
   await refreshSelectedItemHistory();
+  await refreshItemUsage();
 
   buildTablesGrid(document.getElementById('editorTables'), data.server);
   loadedServerState=JSON.parse(JSON.stringify(data.server));
@@ -1137,13 +1149,53 @@ async function restoreItemDatRecord(bid){
   await loadItem(currentItemId);
 }
 
+let lastItemUsage=null;
+function usageRowSummary(ref){
+  if(ref.evidence==='database_exact'){
+    const cols=(ref.matched_columns||[]).join(', ');
+    const row=ref.row||{};
+    const idbits=Object.entries(row).filter(([k])=>/id$|name$|zone/i.test(k)).slice(0,6).map(([k,v])=>k+'='+v).join(' · ');
+    return (ref.table||ref.category)+(cols?' · '+cols:'')+(idbits?' · '+idbits:'');
+  }
+  return (ref.path||'script')+':'+(ref.line||'')+' · '+(ref.text||'');
+}
+async function refreshItemUsage(){
+  if(!currentItemId) return;
+  const list=document.getElementById('itemUsageList'), summary=document.getElementById('itemUsageSummary');
+  const warn=document.getElementById('itemUsageWarnings'), notes=document.getElementById('itemUsageNotes');
+  list.innerHTML='<span class="muted">Scanning active server references...</span>'; warn.style.display='none'; warn.textContent='';
+  const r=await fetch('/itemedit/'+currentItemId+'/usage.json?source_limit=100');
+  const j=await r.json();
+  if(!r.ok){ list.innerHTML=''; summary.textContent='usage scan unavailable'; notes.textContent=j.error||r.statusText; lastItemUsage=null; return; }
+  lastItemUsage=j;
+  summary.textContent=j.total+' reference(s) · '+j.blocking_reference_count+' exact DB · '+j.source_text_count+' source text';
+  if(j.blocking_reference_count>0){
+    warn.style.display='';
+    warn.textContent='This item is referenced by '+j.blocking_reference_count+' exact content row(s). Deleting it may break drops, recipes, shops, rewards, or other content.';
+  }
+  if(!j.references?.length){
+    list.innerHTML='<div class="muted">No references found in the currently scanned sources.</div>';
+  }else{
+    let html='<table><thead><tr><th>evidence</th><th>category</th><th>reference</th></tr></thead><tbody>';
+    for(const ref of j.references){
+      html+='<tr><td>'+htmlEsc(ref.evidence)+'</td><td>'+htmlEsc(ref.category)+'</td><td class="mono" style="font-size:10px;">'+htmlEsc(usageRowSummary(ref))+'</td></tr>';
+    }
+    list.innerHTML=html+'</tbody></table>';
+  }
+  notes.textContent=(j.notes||[]).join(' · ');
+}
+document.getElementById('refreshItemUsageBtn').onclick=refreshItemUsage;
+
 async function deleteItem() {
   if (!currentItemId) return;
   if (!document.getElementById('deleteConfirmCheck').checked) return;
   const clearDat = document.getElementById('deleteClearDat').checked;
-  const warn = clearDat
+  const usageWarning=lastItemUsage?.blocking_reference_count
+    ? `\n\nDEPENDENCY WARNING: ${lastItemUsage.blocking_reference_count} exact active-server content reference(s) currently point at this item. Review the Dependency / usage panel before deleting.`
+    : '';
+  const warn = (clearDat
     ? `Delete item ${currentItemId} from the server DB AND clear its client DAT record? This removes its rows from every item_* table plus mods/pet mods/latents, and blanks the DAT slot so it reads as free again. Both are backed up first (restorable from the lists above). This action is backup-backed and can be undone from Session history. Continue?`
-    : `Delete item ${currentItemId} from the server DB? This removes its rows from every item_* table plus mods/pet mods/latents. A backup is taken first (restorable from the list above), but the client DAT slot is left in place and will show as an orphaned/unusable item id until something else is written there. Continue?`;
+    : `Delete item ${currentItemId} from the server DB? This removes its rows from every item_* table plus mods/pet mods/latents. A backup is taken first (restorable from the list above), but the client DAT slot is left in place and will show as an orphaned/unusable item id until something else is written there. Continue?`) + usageWarning;
   if (!confirm(warn)) return;
   const comment = document.getElementById('editComment').value;
   const res = await fetch('/itemedit/delete', {
