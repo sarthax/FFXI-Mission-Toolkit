@@ -6801,6 +6801,15 @@ def itemedit_history(item_id: int, limit: int = 100):
         return JSONResponse({"error": str(ex)}, status_code=400)
 
 
+@app.get("/itemedit/{item_id}/usage.json")
+def itemedit_usage(item_id: int, source_limit: int = 100):
+    import item_edit
+    try:
+        return JSONResponse(item_edit.item_usage(item_id, source_limit))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
 @app.get("/itemedit/bitmasks.json")
 def itemedit_bitmasks():
     import item_edit
