@@ -137,7 +137,7 @@ First active foundation milestone:
 - [x] Move active-workspace subsections and snapshot/project context into bounded dropdown/popover surfaces.
 - [x] Add shared dense-workstation primitives for toolbars, panels, tabs, drawers, cards, control sizing, and common panel widths.
 - [x] Migrate Zone Editor New Layout (`/zoneplot2`) onto the shared dense shell and remove its page-local hidden-header/site-menu workaround.
-- [ ] Roll the compact/dense shell into Model Viewer and 3D Viewer after validation.
+- [x] Roll the compact/dense shell into Model Viewer and 3D Viewer after validation.
 - [ ] Roll shared dense patterns into Item Editor, Feature Trace, Entity/Events/Packets, then standard list/admin pages where appropriate.
 - [ ] Keep prose/help/report pages on a roomier reading layout instead of forcing workstation density everywhere.
 
