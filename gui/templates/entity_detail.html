@@ -47,6 +47,14 @@
   <a class="chip" href="/dialog?zone={{ profile.zone_folder|urlencode if profile.zone_folder else '' }}">Dialog Browser</a>
   <a class="chip" href="/captures/query?table=capture_npc_entries&q={{ profile.npcid }}">Capture evidence</a>
 </div>
+<div class="entity-actions" style="margin-top:-6px">
+  <a class="chip" href="#entity-wiring">Wiring</a>
+  <a class="chip" href="#entity-runtime">Runtime</a>
+  <a class="chip" href="#entity-sql">SQL</a>
+  <a class="chip" href="#entity-lua">Lua</a>
+  <a class="chip" href="#entity-wiki">Wiki</a>
+  <a class="chip" href="#entity-provenance">Provenance</a>
+</div>
 
 <p>Zone: <strong>{{ profile.zone_name }}</strong> ({{ profile.zoneid }})
   <span class="muted">-- id-decoded zone_bits={{ d.zone_bits }}, local_bits={{ d.local_bits }}</span>
@@ -56,7 +64,7 @@
 </p>
 
 <div class="entity-summary-grid">
-  <section class="entity-card">
+  <section class="entity-card" id="entity-wiring">
     <h3>Entity evidence bridge</h3>
     <div class="body">
       <div class="entity-evidence">
@@ -272,7 +280,7 @@
 {% endif %}
 
 {% if profile.capture_abilities %}
-  <h2>Observed abilities <span class="muted">(from real captures)</span></h2>
+  <h2 id="entity-runtime">Observed abilities <span class="muted">(from real captures)</span></h2>
   <div class="table-wrap"><table>
     <tr><th>name</th><th>type</th><th>animation</th><th>category</th><th>message</th><th>times seen</th></tr>
     {% for a in profile.capture_abilities %}
@@ -346,7 +354,7 @@
 
 {% if profile.script_name_guess %}<p class="muted">Likely script filename: <span class="chip mono">{{ profile.script_name_guess }}.lua</span></p>{% endif %}
 
-<h2>SQL references</h2>
+<h2 id="entity-sql">SQL references</h2>
 {% if profile.sql_hits %}
 <div class="table-wrap"><table>
   <tr><th>file</th><th>rows</th></tr>
@@ -356,16 +364,17 @@
 </table></div>
 {% else %}<p class="muted">(none found)</p>{% endif %}
 
-<h2>Lua references</h2>
+<h2 id="entity-lua">Lua references</h2>
 {% if profile.lua_hits %}
 <div class="table-wrap"><table>
+  <tr><th>source</th><th>analysis</th></tr>
   {% for fname in profile.lua_hits %}
   <tr><td class="mono">{{ fname }}</td><td><a class="chip" href="/behavior?source={{ fname|urlencode }}">Inspect behavior</a></td></tr>
   {% endfor %}
 </table></div>
 {% else %}<p class="muted">(none found)</p>{% endif %}
 
-<h2>Wiki references</h2>
+<h2 id="entity-wiki">Wiki references</h2>
 {% if profile.wiki_references %}
 <div class="table-wrap"><table>
   <tr><th>page</th><th></th></tr>
@@ -381,7 +390,7 @@
 {% endif %}
 {% else %}<p class="muted">(none found)</p>{% endif %}
 
-<h2>Field provenance</h2>
+<h2 id="entity-provenance">Field provenance</h2>
 <p class="muted">Every fact above, tagged by source. Multiple sources on one field is real
 confidence; disagreeing values are flagged, never silently picked for you.</p>
 <div class="table-wrap"><table>
