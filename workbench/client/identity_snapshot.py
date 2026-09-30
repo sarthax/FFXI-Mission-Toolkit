@@ -23,6 +23,7 @@ from workbench.core.services.identity_resolver import (
     ingest_event_structure_records,
     register_snapshot,
 )
+from workbench.core.services.client_entity_graph import sync_client_entity_graph
 
 
 @dataclass(frozen=True)
@@ -275,6 +276,8 @@ def ingest_client_identity_manifest(
             "relative_path": rel,
         })
 
+    entity_graph = sync_client_entity_graph(con, snapshot_id=manifest.snapshot_id)
+
     return {
         "snapshot_id": manifest.snapshot_id,
         "build": manifest.build,
@@ -282,4 +285,5 @@ def ingest_client_identity_manifest(
         "zones": zones,
         "record_count": record_count,
         "failures": failures,
+        "entity_graph": entity_graph,
     }
