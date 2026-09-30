@@ -237,6 +237,30 @@ def main():
         source=(TEMPLATES/template_name).read_text(encoding="utf-8")
         for marker in markers:
             assert marker in source,(template_name,marker)
+    library_search_contracts = {
+        "items.html": ["{% block shell_mode %}dense{% endblock %}", "item-browser-page", "Item Editor"],
+        "keyitems.html": ["{% block shell_mode %}dense{% endblock %}", "keyitems-page"],
+        "dialog.html": ["{% block shell_mode %}dense{% endblock %}", "dialog-browser-page", "Dialog Drift Overview"],
+        "dialog_drift.html": ["{% block shell_mode %}dense{% endblock %}", "dialog-drift-page", "Dialog Browser"],
+        "sql.html": ["{% block shell_mode %}dense{% endblock %}", "sql-browser-page", "Entity Lookup"],
+        "zones_browse.html": ["{% block shell_mode %}dense{% endblock %}", "zones-browser-page"],
+        "missions.html": ["{% block shell_mode %}dense{% endblock %}", "missions-browser-page", "mission-card"],
+        "backport_bindings.html": ["{% block shell_mode %}dense{% endblock %}", "binding-reference-page"],
+        "gaps.html": ["{% block shell_mode %}dense{% endblock %}", "entity-gaps-page"],
+        "domains_index.html": ["{% block shell_mode %}dense{% endblock %}", "domains-index-page"],
+        "feature_checker.html": ["{% block shell_mode %}dense{% endblock %}", "feature-checker-page", "Feature Trace"],
+        "research_sessions.html": ["{% block shell_mode %}dense{% endblock %}", "research-sessions-page", 'href="/researchgaps"'],
+        "research_contradictions.html": ["{% block shell_mode %}dense{% endblock %}", "research-contradictions-page", 'href="/researchgaps"'],
+        "research_evidence.html": ["{% block shell_mode %}dense{% endblock %}", "research-evidence-page"],
+        "research_gaps.html": ["{% block shell_mode %}dense{% endblock %}", "research-gaps-page"],
+    }
+    for template_name, markers in library_search_contracts.items():
+        capture_env.get_template(template_name)
+        source=(TEMPLATES/template_name).read_text(encoding="utf-8")
+        assert 'href="/research/gaps"' not in source,(template_name,"stale Research Gaps route")
+        for marker in markers:
+            assert marker in source,(template_name,marker)
+
     assert '<body class="shell-dense">' in captures_html
     assert '<strong>Captures</strong>' in captures_html
     assert 'form class="search dense-toolbar"' in captures_html

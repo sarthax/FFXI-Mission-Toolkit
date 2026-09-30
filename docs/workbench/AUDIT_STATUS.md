@@ -1,3 +1,15 @@
+## 2026-09-30 — Library and search workspace UX refresh
+
+- Item Browser, Key Items, Dialog Browser, SQL Index Browser, Zone Browser, Assault Missions, and Binding Reference now use the shared dense shell with compact search/filter/result chrome.
+- Dialog Browser retains its evidence-rich result drill-down but reduces row/header spacing and moves the explanatory copy behind About.
+- Assault Missions no longer renders every mission's full client text and wiring rollup expanded at once; mission cards are expandable.
+- Dialog Drift, entity Data Gaps, Domains, and Feature Checker now use compact status/navigation surfaces instead of large introductory blocks.
+- Research Sessions, Research Contradictions, Evidence Detail, and Research Gaps now use consistent compact research navigation, filter bars, and count/status headers.
+- Research Session creation is collapsed by default so session history remains immediately visible.
+- Regression contracts compile each refreshed template and guard the canonical /researchgaps route.
+- Wiki Compiler and Research Session Detail were intentionally excluded: both are workflow-heavy pages whose remaining UX problems require a dedicated information-architecture pass rather than simple density.
+- Browse/search semantics, evidence rules, server/reference joins, and research logic are unchanged.
+
 ## 2026-09-30 — Captures workspace UX refresh
 
 - Capture Detail was rebuilt as a compact evidence workspace: one action/navigation bar, high-value counters, compact metadata cards, collapsible health/provenance/edit/secondary-data sections, and an in-page NPC/entity filter.

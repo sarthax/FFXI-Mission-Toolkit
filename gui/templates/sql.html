@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% block title %}SQL Index Browser{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}sql-browser-page{% endblock %}
 
 {% macro pager() %}
 {% if total_pages > 1 %}
@@ -21,12 +23,10 @@
 {% endmacro %}
 
 {% block content %}
-<h1>SQL Index Browser</h1>
-<p class="muted">Direct search over the indexed SQL tables (real column names and types) --
-  for browsing/spot-checking the raw data itself, not a specific entity's full cross-reference
-  (use Entity Lookup for that).</p>
+<style>main.sql-browser-page{padding:8px 10px 24px}</style>
+<div class="dense-toolbar"><strong>SQL Index Browser</strong><span class="sp"></span><a class="chip" href="/entity">Entity Lookup</a><details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:680px">Direct search over indexed SQL tables and their real columns. Use Entity Lookup when you want a cross-tool dossier instead of raw rows.</div></details></div>
 
-<form class="search" method="get">
+<form class="search dense-toolbar" method="get" style="margin:6px 0">
   <select name="table">
     {% for t in tables %}
     <option value="{{ t }}" {% if table == t %}selected{% endif %}>{{ t }}</option>
@@ -37,7 +37,7 @@
 </form>
 
 {% if q %}
-<h2>{{ total }} result(s) in {{ table }} -- page {{ page }} of {{ total_pages }}</h2>
+<div class="dense-toolbar" style="margin:4px 0"><strong>{{ total }} result(s)</strong><span class="chip mono">{{ table }}</span><span class="sp"></span><span class="muted">page {{ page }} of {{ total_pages }}</span></div>
 {% if not rows %}
 <p class="muted">No matches.</p>
 {% else %}
