@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Capture Packet Decode{% endblock %}
+{% block title %}Packet Viewer{% endblock %}
 {% block main_class %}wide-workbench{% endblock %}
 {% block content %}
 <style>
@@ -53,12 +53,14 @@
 <div class="packet-breadcrumb">
   <a class="inline" href="/captures">Captures</a> &rsaquo;
   <a class="inline" href="/captures/{{ capture_id }}">{{ cap.capture_label }}</a> &rsaquo;
-  Packet {{ packet.seq }}
+  <a class="inline" href="/captures/{{ capture_id }}/packets">Packet Browser</a> &rsaquo;
+  Packet Viewer
 </div>
 
 <div class="packet-titlebar">
   <div>
-    <h1>{{ cap.capture_label }} &mdash; packet {{ packet.seq }}</h1>
+    <h1>Packet Viewer <span class="chip mono">seq {{ packet.seq }}</span></h1>
+    <div class="muted">{{ cap.capture_label }} &mdash; capture #{{ capture_id }}</div>
     <div class="packet-chips">
       <span class="packet-chip {{ 'in' if packet.direction == 'incoming' else 'out' }}">{{ packet.direction }}{% if packet.pd_direction %} ({{ packet.pd_direction }}){% endif %}</span>
       <span class="packet-chip mono">{{ packet.opcode }}</span>
@@ -68,6 +70,7 @@
     </div>
   </div>
   <div class="nav-actions">
+    <a class="chip" href="/captures/{{ capture_id }}/packets">&larr; Packet Browser</a>
     {% if prev_packet %}<a class="chip" href="/captures/{{ capture_id }}/packets/{{ prev_packet.seq }}">&larr; Previous ({{ prev_packet.seq }})</a>{% endif %}
     {% if next_packet %}<a class="chip" href="/captures/{{ capture_id }}/packets/{{ next_packet.seq }}">Next ({{ next_packet.seq }}) &rarr;</a>{% endif %}
   </div>
