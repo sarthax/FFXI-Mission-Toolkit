@@ -1707,9 +1707,11 @@ def backup_dat_once(path: Path, rom_path: str) -> Optional[Path]:
 
 PRISTINE_COMPARE_FIELDS = (
     "type", "flags", "stack", "resource_id", "targets",
-    "name", "singular", "plural", "description",
-    "level", "slots", "races", "jobs", "superior_level",
-    "kind", "dmg", "delay", "dps", "skill", "icon_size",
+    "name", "singular", "plural", "description", "name_jp", "description_jp", "article",
+    "level", "slots", "races", "jobs", "superior_level", "shield_size",
+    "max_charges", "cast_time", "use_delay", "reuse_delay", "item_level",
+    "kind", "dmg", "delay", "dps", "skill", "jug_size", "base_item_id",
+    "puppet_slot", "element_charge", "icon_size", "icon_sha256",
 )
 
 
@@ -2162,7 +2164,8 @@ def inject_client_item(cat_name: str, entry: dict) -> dict:
 
 def item_to_dict(item: ItemRecord) -> dict:
     d = asdict(item)
-    d.pop('icon_data', None)
+    icon_data = d.pop('icon_data', None) or b''
+    d['icon_sha256'] = hashlib.sha256(icon_data).hexdigest() if icon_data else None
     d.pop('dat', None)
     d['flags_decoded'] = decode_flags(d['flags'])
     if d.get('jobs'):
