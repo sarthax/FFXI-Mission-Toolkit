@@ -33,14 +33,15 @@ import settings
 from dat_extractor_bin import ensure_dat_extractor
 
 TOOLS_ROOT = Path(__file__).parent
-TOPAZ_ROOT = settings.get_topaz_root()
+# Active server (Topaz or DSP, per Settings) -- not hard-wired to Topaz.
+TOPAZ_ROOT = settings.get_active_server_root()
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
 DAT_EXTRACTOR_EXE = TOOLS_ROOT / "vendor/dat-extractor/bin/Debug/net9.0/dat-extractor.exe"
 DEFAULT_FFXI_PATH = "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
 
 # NAME = 1234[, -- optional comment] -- matches every entry in a zone's IDs.lua text{} block,
 # not just ones with an inline real-text comment (audit_dialog_drift.py's ENTRY_RE requires one).
-TEXT_ENTRY_RE = re.compile(r'^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(\d+)\s*,', re.M)
+TEXT_ENTRY_RE = re.compile(r'^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(\d+)\s*[,;]', re.M)
 
 
 def dat_id_for_zone(zoneid: int) -> int:
@@ -161,7 +162,7 @@ def index_zone_dialog(con: sqlite3.Connection, zoneid: int, ffxi_path: str, forc
 # this bridge a bare `NAME = NUM,` line into an unrelated standalone `--` comment on the *next*
 # line (found live: PATHOS_RECEIVED = 7346, has no inline comment at all, but this bug attached
 # the following line's documentation comment to it as if it were real wired text).
-COMMENT_ENTRY_RE = re.compile(r'^[ \t]*([A-Z_][A-Z0-9_]*)[ \t]*=[ \t]*(\d+),[ \t]*--[ \t]*"?(.+?)"?[ \t]*$', re.M)
+COMMENT_ENTRY_RE = re.compile(r'^[ \t]*([A-Z_][A-Z0-9_]*)[ \t]*=[ \t]*(\d+)[,;][ \t]*--[ \t]*"?(.+?)"?[ \t]*$', re.M)
 
 
 def normalize(s: str) -> str:
@@ -176,6 +177,14 @@ def normalize(s: str) -> str:
     return re.sub(r"[^a-z0-9]", "", s.lower())
 
 
+def _zone_ids_file(zone_dir: Path) -> Path | None:
+    """Topaz/LSB ship IDs.lua; old DSP ships TextIDs.lua."""
+    for name in ("IDs.lua", "TextIDs.lua"):
+        if (zone_dir / name).exists():
+            return zone_dir / name
+    return None
+
+
 def audit_zone(con: sqlite3.Connection, zoneid: int, zone_name: str, ids_lua_path: Path) -> dict:
     """Cross-references every id in this zone's IDs.lua text{} block against the indexed real
     dialog table. Returns a summary dict; writes per-id rows into dialog_drift_report."""
@@ -184,9 +193,13 @@ def audit_zone(con: sqlite3.Connection, zoneid: int, zone_name: str, ids_lua_pat
     # Scope to the text{} block only, not the whole file (mob{}/npc{} tables use the same
     # NAME = NUMBER shape and would otherwise get misread as dialog ids).
     block_match = re.search(r"\btext\s*=\s*\{(.*?)\n\s*\},", ids_text, re.S)
-    if not block_match:
+    if block_match:
+        block = block_match.group(1)
+    elif ids_lua_path.name == "TextIDs.lua":
+        # Old DSP: flat `NAME = 1234; -- text` globals, no text{} wrapper.
+        block = ids_text
+    else:
         return {"annotated": 0, "unannotated": 0, "match": 0, "mismatch": 0, "no_real_entry": 0}
-    block = block_match.group(1)
 
     commented = {name: (int(num), txt) for name, num, txt in COMMENT_ENTRY_RE.findall(block)}
     all_entries = {name: int(num) for name, num in TEXT_ENTRY_RE.findall(block)}
@@ -266,9 +279,9 @@ def print_zone_report(con: sqlite3.Connection, zoneid: int, zone_name: str, entr
 
 
 def process_zone(con: sqlite3.Connection, zone_folder_name: str, ffxi_path: str, force: bool, quiet: bool = False):
-    ids_lua_path = TOPAZ_ROOT / "scripts/zones" / zone_folder_name / "IDs.lua"
-    if not ids_lua_path.exists():
-        print(f"[{zone_folder_name}] no IDs.lua, skipping")
+    ids_lua_path = _zone_ids_file(TOPAZ_ROOT / "scripts/zones" / zone_folder_name)
+    if ids_lua_path is None:
+        print(f"[{zone_folder_name}] no IDs.lua/TextIDs.lua, skipping")
         return
     zoneid = resolve_zoneid(con, zone_folder_name)
     if zoneid is None:
@@ -324,13 +337,13 @@ def main():
     elif args.all:
         zones_dir = TOPAZ_ROOT / "scripts/zones" if TOPAZ_ROOT else None
         if not zones_dir or not zones_dir.is_dir():
-            print("[build_dialog_index] --all needs a real Topaz checkout (scripts/zones/*/IDs.lua "
+            print("[build_dialog_index] --all needs a real Topaz/DSP checkout (scripts/zones/*/IDs.lua or TextIDs.lua "
                   "supplies the per-zone dialog-audit worklist; nothing else in this toolkit currently "
-                  f"provides an equivalent). Configured topaz_server_path: {TOPAZ_ROOT}")
+                  f"provides an equivalent). Active server root: {TOPAZ_ROOT}")
             con.close()
             return
         for zone_dir in sorted(zones_dir.iterdir()):
-            if (zone_dir / "IDs.lua").exists():
+            if _zone_ids_file(zone_dir):
                 process_zone(con, zone_dir.name, args.ffxi_path, args.force, quiet=args.quiet)
 
     if args.search:

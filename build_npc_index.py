@@ -36,7 +36,8 @@ from pathlib import Path
 
 
 TOOLS_ROOT = Path(__file__).parent
-TOPAZ_ROOT = settings.get_topaz_root()
+# Active server (Topaz or DSP, per Settings) -- not hard-wired to Topaz.
+TOPAZ_ROOT = settings.get_active_server_root()
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
 DAT_EXTRACTOR_EXE = TOOLS_ROOT / "vendor/dat-extractor/bin/Debug/net9.0/dat-extractor.exe"
 DEFAULT_FFXI_PATH = "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
@@ -217,7 +218,7 @@ def main():
         if not zones_dir or not zones_dir.is_dir():
             print("[build_npc_index] --all needs a real Topaz checkout (scripts/zones/ supplies the "
                   "per-zone worklist; nothing else in this toolkit currently provides an equivalent). "
-                  f"Configured topaz_server_path: {TOPAZ_ROOT}")
+                  f"Active server root: {TOPAZ_ROOT}")
             con.close()
             return
         for zone_dir in sorted(zones_dir.iterdir()):
