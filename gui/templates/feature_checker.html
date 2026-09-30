@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Feature Checker — Mission Toolkit{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}feature-checker-page{% endblock %}
 {% block content %}
-<h1>Feature Checker</h1>
-<p class="muted">Evaluate declared feature capability requirements against canonical evidence. Requirements, implementation, and validation remain separate dimensions; no numeric score is produced.</p>
+<style>main.feature-checker-page{padding:8px 10px 24px}.feature-checker-page h2{font-size:14px;margin:9px 0 5px}</style>
+<div class="dense-toolbar"><strong>Feature Checker</strong><span class="sp"></span><a class="chip" href="/features/trace">Feature Trace</a><details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:720px">Evaluate declared capability requirements against canonical evidence while keeping requirements, implementation, and validation as separate dimensions.</div></details></div>
 
-<form class="search" method="get" action="/features/check">
+<form class="search dense-toolbar" method="get" action="/features/check" style="margin:6px 0">
   <input type="text" name="q" value="{{ q }}" placeholder="Feature ID or partial feature name">
   <button type="submit">Check</button>
 </form>
@@ -14,7 +16,7 @@
 {% endif %}
 
 {% if matches and not result %}
-<h2>Matching features</h2>
+<div class="dense-toolbar" style="margin:6px 0 4px"><strong>Matching features</strong><span class="chip">{{ matches|length }}</span></div>
 <div class="table-wrap">
 <table>
 <thead><tr><th>Feature ID</th><th>Name</th><th>Type</th><th>Status</th></tr></thead>
@@ -35,8 +37,7 @@
 {% endif %}
 
 {% if result %}
-<h2>{{ result.feature.name }}</h2>
-<p><code>{{ result.feature.feature_id }}</code> &nbsp; <span class="chip">{{ result.feature.feature_type or "UNKNOWN" }}</span></p>
+<div class="dense-toolbar" style="margin:6px 0"><strong>{{ result.feature.name }}</strong><code>{{ result.feature.feature_id }}</code><span class="chip">{{ result.feature.feature_type or "UNKNOWN" }}</span></div>
 
 <div class="stats">
   <div class="stat"><div class="n">{{ result.status }}</div><div class="l">Requirement aggregate</div></div>
@@ -45,7 +46,7 @@
   <div class="stat"><div class="n">{{ result.requirements|length }}</div><div class="l">Requirements</div></div>
 </div>
 
-<h2>Capability requirements</h2>
+<div class="dense-toolbar" style="margin:8px 0 5px"><strong>Capability requirements</strong></div>
 {% if result.requirements %}
 <div class="table-wrap">
 <table>
@@ -70,7 +71,7 @@
 <p class="muted">No capability requirements are declared for this feature.</p>
 {% endif %}
 
-<h2>Implementation records</h2>
+<div class="dense-toolbar" style="margin:8px 0 5px"><strong>Implementation records</strong></div>
 {% if result.implementation_records %}
 <div class="table-wrap">
 <table>
@@ -91,7 +92,7 @@
 <p class="muted">No implementation records are indexed for this feature.</p>
 {% endif %}
 
-<h2>Validation results</h2>
+<div class="dense-toolbar" style="margin:8px 0 5px"><strong>Validation results</strong></div>
 {% if result.validation_results %}
 <div class="table-wrap">
 <table>
@@ -113,7 +114,7 @@
 <p class="muted">No validation results are indexed for this feature.</p>
 {% endif %}
 
-<h2>Semantic relationships</h2>
+<div class="dense-toolbar" style="margin:8px 0 5px"><strong>Semantic relationships</strong></div>
 {% if result.semantic_relationships %}
 <div class="table-wrap">
 <table>
