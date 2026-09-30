@@ -69,6 +69,7 @@ def main():
     assert route_owner("/ocr/example-run")["section"] == "YouTube OCR"
     assert route_owner("/entity")["home"] == "Server"
     assert route_owner("/zoneplot/restore", "POST")["section"] == "Editors > Zone Editor"
+    assert route_owner("/zoneplot2")["section"] == "Editors > Zone Editor"
     assert route_owner("/itemedit/123.json")["section"] == "Editors > Item Editor"
     assert route_owner("/features/trace")["home"] == "Features"
     assert route_owner("/features/trace")["section"] == "Feature Trace"
@@ -224,7 +225,7 @@ def main():
     domains_html = render("domain_assault.html", "/domains/assault")
     assert 'class="shell-menu section-menu"' in domains_html
     assert '<div class="shell-group-title">Battle Systems</div>' in domains_html
-    assert 'class="section-link active"\n                 href="/domains/assault" aria-current="page">Assault</a>' in domains_html
+    assert re.search(r'class="section-link active"\s+href="/domains/assault" aria-current="page">Assault</a>', domains_html)
     assert "↳ Assault" not in domains_html
 
     model_html = render("model_viewer.html", "/modelviewer")
