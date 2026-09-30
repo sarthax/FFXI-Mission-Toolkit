@@ -215,6 +215,26 @@ def main():
         "captures.html", "/captures", q="", missions=[], content_types=[],
         content_type="", all_tags=[], tag="", rows=[],
     )
+    capture_template_contracts = {
+        "capture_detail.html": ["{% block shell_mode %}dense{% endblock %}", "capture-stats", "capture-meta", "capture-actions", "Capture integrity"],
+        "capture_timeline.html": ["{% block shell_mode %}dense{% endblock %}", "capture-timeline-page", "position:sticky", "Packet Browser"],
+        "capture_packets.html": ["{% block shell_mode %}dense{% endblock %}", "capture-packets-page", "decoded field"],
+        "capture_packet_detail.html": ["{% block shell_mode %}dense{% endblock %}", "capture-packet-page", "Session packets", "Source provenance"],
+        "capture_search.html": ["{% block shell_mode %}dense{% endblock %}", "capture-search-page", "Cross-capture Search"],
+        "capture_add.html": ["{% block shell_mode %}dense{% endblock %}", "capture-upload-grid", "Formats / guidance"],
+        "capture_new.html": ["{% block shell_mode %}dense{% endblock %}", "capture-new-form"],
+        "capture_alignment.html": ["{% block shell_mode %}dense{% endblock %}", "align-section", "Alignment candidates"],
+        "capture_query.html": ["{% block shell_mode %}dense{% endblock %}", "capture-query-page"],
+        "capture_source_locator.html": ["{% block shell_mode %}dense{% endblock %}", "capture-source-page"],
+        "capture_delete_confirm.html": ["{% block shell_mode %}dense{% endblock %}", "capture-delete-page"],
+        "capture_help.html": ["capture-help-section", "Capture Ingestion Help"],
+    }
+    capture_env = Environment(loader=FileSystemLoader(str(TEMPLATES)), autoescape=select_autoescape(("html",)))
+    for template_name, markers in capture_template_contracts.items():
+        capture_env.get_template(template_name)
+        source=(TEMPLATES/template_name).read_text(encoding="utf-8")
+        for marker in markers:
+            assert marker in source,(template_name,marker)
     assert '<body class="shell-dense">' in captures_html
     assert '<strong>Captures</strong>' in captures_html
     assert 'form class="search dense-toolbar"' in captures_html
