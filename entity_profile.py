@@ -402,6 +402,96 @@ def _synthesize_profile(profile: dict) -> None:
     profile["wiring_chain"] = wiring
 
 
+def synthesize_implementation_actions(profile: dict) -> list[dict]:
+    """Create review actions only from concrete evidence already present on the profile.
+
+    Absence of capture/Lua/wiki/etc. is not treated as a defect. Actions require an explicit
+    conflict, warning, observed cross-source discrepancy, or failed resolution of a known source.
+    """
+    actions = []
+    attention_actions = {
+        "provenance_conflict": ("Resolve source disagreement", "#entity-provenance"),
+        "zone_identity": ("Review entity identity mapping", "#entity-provenance"),
+        "position": ("Validate registered SQL position", "#entity-sql"),
+        "flags": ("Validate targetability/interaction flags", "#entity-sql"),
+        "instance_registration": ("Review instance membership expectation", "#entity-wiring"),
+        "model": ("Confirm model identity before changing it", "#entity-wiring"),
+        "level_range": ("Reconcile observed and configured level range", "#entity-runtime"),
+        "attack_delay": ("Reconcile observed and configured attack delay", "#entity-runtime"),
+    }
+    for issue in profile.get("attention") or []:
+        kind = issue.get("kind")
+        action = attention_actions.get(kind)
+        if not action:
+            continue
+        label, href = action
+        actions.append({
+            "kind": kind,
+            "status": "REVIEW",
+            "label": label,
+            "detail": issue.get("detail"),
+            "basis": f"Entity dossier attention signal: {issue.get('label')}",
+            "href": href,
+        })
+
+    behavior = profile.get("behavior_summary") or {}
+    if profile.get("lua_hits") and behavior and not behavior.get("available"):
+        actions.append({
+            "kind": "behavior_source_resolution",
+            "status": "REVIEW",
+            "label": "Resolve known Lua source into Behavior Inspector",
+            "detail": behavior.get("error") or "Lua references are indexed, but no behavior source was resolved.",
+            "basis": "Indexed Lua reference(s) exist while the behavior projection failed to resolve a source.",
+            "href": "#entity-lua",
+        })
+
+    for helper in behavior.get("shared_helpers") or []:
+        status = str(helper.get("status") or "").upper()
+        if status in {"RESOLVED", ""}:
+            continue
+        actions.append({
+            "kind": "shared_helper_resolution",
+            "status": "REVIEW",
+            "label": f"Review {status.lower()} shared helper",
+            "detail": str(helper.get("qualified_name") or "shared helper"),
+            "basis": f"Behavior Inspector helper resolution status is {status}.",
+            "href": "#entity-behavior",
+        })
+
+    for event in profile.get("event_wiring") or []:
+        event_id = event.get("event_id")
+        if event.get("runtime_observed") and not event.get("client_defined"):
+            actions.append({
+                "kind": "runtime_event_client_gap",
+                "status": "REVIEW",
+                "label": f"Review runtime-observed CSID {event_id}",
+                "detail": "Capture evidence contains this CSID, but the cached client event export has no matching actor/CSID definition.",
+                "basis": f"{event.get('count') or 0} runtime observation(s) for this entity/CSID.",
+                "href": event.get("href") or "#entity-runtime",
+            })
+        decompile_status = str(event.get("decompile_status") or "").lower()
+        if event.get("client_defined") and decompile_status in {"stub", "invalid", "failed"}:
+            actions.append({
+                "kind": "client_event_decompile",
+                "status": "REVIEW",
+                "label": f"Review CSID {event_id} client decompile",
+                "detail": event.get("decompile_detail") or f"Client event decompile status: {decompile_status}.",
+                "basis": "A concrete client event resource exists but its decompile is not healthy.",
+                "href": event.get("href") or "#entity-runtime",
+            })
+
+    deduped = []
+    seen = set()
+    for action in actions:
+        key = (action.get("kind"), action.get("label"), action.get("detail"))
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(action)
+    profile["implementation_actions"] = deduped
+    return deduped
+
+
 def build_profile(con: sqlite3.Connection, npcid: int) -> dict:
     """The one canonical 'everything about this entity' assembly -- reuses every existing
     resolver rather than re-deriving them (get_npc_list_row_detail, get_mob_chain_detail,
