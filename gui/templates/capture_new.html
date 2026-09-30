@@ -1,15 +1,20 @@
 {% extends "base.html" %}
 {% block title %}New Capture{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}capture-new-page{% endblock %}
 {% block content %}
-<h1>New capture</h1>
-<p class="muted">Starts a real capture record with no source file yet -- you'll drop individual
-  logs/dbs (or a whole zip) onto it on the next page, one at a time or all at once, whenever you
-  have them.</p>
+<style>
+main.capture-new-page{padding:8px 10px 24px}
+.capture-new-form{display:grid;grid-template-columns:minmax(260px,1fr) minmax(220px,.7fr);gap:8px;max-width:900px}
+.capture-new-form .wide{grid-column:1/-1}
+@media(max-width:720px){.capture-new-form{grid-template-columns:1fr}}
+</style>
+<div class="dense-toolbar"><a class="chip" href="/captures">&larr; Captures</a><strong>New capture</strong><span class="sp"></span><span class="muted">Create the record first; add logs/files immediately afterward.</span></div>
 
 {% if error %}<div class="warn">{{ error }}</div>{% endif %}
 
 <form method="post" action="/captures/new">
-  <div class="table-wrap" style="padding:14px; display:flex; flex-direction:column; gap:14px; max-width:520px;">
+  <div class="capture-new-form dense-card" style="padding:8px;margin-top:6px">
     <div>
       <label class="muted">Label</label><br>
       <input type="text" name="label" placeholder="e.g. Nyzul Isle - manual test 1" style="width:100%; margin-top:6px;" required>
@@ -26,7 +31,7 @@
       <label class="muted">Mission name (optional)</label><br>
       <input type="text" name="mission_name" placeholder="leave blank if unknown" style="width:100%; margin-top:6px;">
     </div>
-    <div>
+    <div class="wide">
       <label class="muted">Content categories (tag as many as apply)</label><br>
       <div style="display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:6px;">
         {% for t in all_tags %}
@@ -37,6 +42,6 @@
       </div>
     </div>
   </div>
-  <div style="margin-top:18px;"><button type="submit">Create</button></div>
+  <div style="margin-top:8px;"><button type="submit">Create capture &amp; add files</button></div>
 </form>
 {% endblock %}
