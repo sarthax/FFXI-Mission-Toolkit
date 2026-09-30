@@ -587,8 +587,9 @@ function rebuild(){
 }
 function setLabel(i, text){ if(labels.has(i)) return; const d=document.createElement('div'); d.className='lbl'; d.textContent=text; const o=new CSS2DObject(d); o.position.copy(P(Z.entities[i])); o.position.y+=2; scene.add(o); labels.set(i,o); }
 const txt = e => `${e.n||e.g} [${e.id}]${e.lv?' Lv'+e.lv:''}`;
-function select(i, fly){ const changed=selected!==i; selected=i; if(changed&&typeof loadEditor==='function') loadEditor(i); const e=Z.entities[i]; if(fly && !e.zero){ const c=P(e); controls.target.copy(c); camera.position.copy(c).add(new THREE.Vector3(40,50,40)); }
-  $('hover').textContent = `${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${txt(e)}  grp=${e.g}  (${e.x}, ${e.y}, ${e.z})  ${stateOf(i)}${e.zero?' ZERO-POS: never loads in instances':''}`; }
+function select(i, fly){ const changed=selected!==i; selected=i; if(changed&&typeof loadEditor==='function') loadEditor(i); const e=Z.entities[i]; if(fly && !e.zero){ const c=P(e); controls.target.copy(c); camera.position.copy(c).add(new THREE.Vector3(40,50,40)); updateZoomSpeed(); }
+  updateHeadingArrow();
+  $('hover').textContent = `${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${txt(e)}  grp=${e.g}  (${e.x}, ${e.y}, ${e.z})  ${rotText(e.r)}  ${stateOf(i)}${e.zero?' ZERO-POS: never loads in instances':''}`; }
 let lastLab=0;
 function updateLabels(){
   const now=performance.now(); if(now-lastLab<250||!inst) return; lastLab=now;
@@ -602,7 +603,7 @@ const ray=new THREE.Raycaster(), mouse=new THREE.Vector2();
 function pick(ev){ if(!inst) return -1; const r=renderer.domElement.getBoundingClientRect(); mouse.set(((ev.clientX-r.left)/r.width)*2-1,-((ev.clientY-r.top)/r.height)*2+1);
   ray.setFromCamera(mouse,camera); const h=ray.intersectObject(inst,false); return h.length?visible[h[0].instanceId]:-1; }
 let lastCoord=0;
-renderer.domElement.addEventListener('mousemove',ev=>{ const i=pick(ev); if(i!==hoverI){ hoverI=i; if(i>=0){ const e=Z.entities[i]; $('hover').textContent=`${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${txt(e)}  (${e.x}, ${e.y}, ${e.z})  ${stateOf(i)}`; } }
+renderer.domElement.addEventListener('mousemove',ev=>{ const i=pick(ev); if(i!==hoverI){ hoverI=i; if(i>=0){ const e=Z.entities[i]; $('hover').textContent=`${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${txt(e)}  (${e.x}, ${e.y}, ${e.z})  ${rotText(e.r)}  ${stateOf(i)}`; } }
   if(i<0){ const now=performance.now(); if(now-lastCoord>60){ lastCoord=now;
     const nh=screenToNav(ev);
     if(nh){ const p=nh.point, m=nh.meta;
@@ -638,7 +639,7 @@ $('reachbtn').onclick=async()=>{ await computeReach(); rebuild(); };
 $('clran').onclick=async()=>{ anchor=null; await computeReach(); rebuild(); };
 window.addEventListener('resize',()=>{ const w=container.clientWidth,h=container.clientHeight; camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h); lr.setSize(w,h); });
 const liveClock = new THREE.Clock();
-(function loop(){ requestAnimationFrame(loop); controls.update(); updateLabels();
+(function loop(){ requestAnimationFrame(loop); controls.update(); updateLabels(); updateHeadingArrow(); updateCompass();
   if (waterMaterials.length>0){ const t=liveClock.getElapsedTime(); for(const m of waterMaterials) m.uniforms.time.value=t; }
   renderer.render(scene,camera); lr.render(scene,camera); })();
 const qz=new URLSearchParams(location.search); if(qz.get('zone')) $('zone').value=qz.get('zone');
@@ -698,7 +699,7 @@ let orig=null;
 function loadEditor(i){ const e=Z.entities[i]; if(!e){ $('ed').hidden=true; $('ed-none').hidden=false; return; }
   $('ed').hidden=false; $('ed-none').hidden=true; orig={x:e.x,y:e.y,z:e.z,r:e.r||0};
   $('ed-title').textContent=`${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${e.id}  ${e.n||e.g}`;
-  $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r||0; $('emsg').textContent=''; $('ecomment').value='';
+  $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r||0; $('er-dir').textContent=rotText(e.r||0); $('emsg').textContent=''; $('ecomment').value='';
   if (e.k==='n' || e.k==='d'){
     $('ed-anim').hidden=false;
     setAnimSelect('ean','eanRaw', e.an||0);
@@ -836,8 +837,9 @@ $('eanimsave').onclick=async()=>{ const e=Z.entities[selected]; if(!e) return;
   if(j.error){ $('eanimmsg').textContent='ERROR: '+j.error; return; }
   e.an=animation; e.asub=animationsub; lastTouched={k:e.k,id:e.id};
   $('eanimmsg').textContent=`Saved to live DB (backup ${j.backup}).\n`+j.sql; };
-function previewEdit(){ if(selected<0) return; const e=Z.entities[selected]; e.x=+$('ex').value; e.y=+$('ey').value; e.z=+$('ez').value; e.r=+$('er').value; rebuild(); select(selected,false); }
-['ex','ey','ez','er'].forEach(id=>$(id).addEventListener('change',previewEdit));
+function previewEdit(){ if(selected<0) return; const e=Z.entities[selected]; e.x=+$('ex').value; e.y=+$('ey').value; e.z=+$('ez').value; e.r=((+$('er').value%256)+256)%256; $('er').value=e.r; $('er-dir').textContent=rotText(e.r); rebuild(); select(selected,false); }
+['ex','ey','ez'].forEach(id=>$(id).addEventListener('change',previewEdit));
+$('er').addEventListener('input',previewEdit);
 document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{ const a=b.dataset.n[0], sg=b.dataset.n[1]==='+'?1:-1; const f=$('e'+a); f.value=(+f.value+sg*(+$('estep').value)).toFixed(3); previewEdit(); });
 $('erev').onclick=()=>{ if(!orig) return; $('ex').value=orig.x; $('ey').value=orig.y; $('ez').value=orig.z; $('er').value=orig.r; previewEdit(); };
 let lastSql='';
