@@ -1,3 +1,13 @@
+## 2026-09-30 Library and search workspace UX refresh
+
+- [x] Compact Item Browser, Key Items, Dialog, SQL Index, Zone Browser, Missions, and Binding Reference.
+- [x] Compact Dialog Drift, Data Gaps, Domains, and Feature Checker.
+- [x] Compact Research Sessions, Contradictions, Evidence Detail, and Research Gaps.
+- [x] Collapse full mission text/rollups into on-demand mission cards.
+- [x] Add template compilation/layout regression contracts and canonical Research Gaps route checks.
+- [ ] Redesign Wiki Compiler as a dedicated evidence-review workspace.
+- [ ] Redesign Research Session Detail around run/replay, evidence transcript, proposals, budgets, and report tabs/sections.
+
 # FFXI Server/Client Development & Backport Workbench
 
 Status: ACTIVE REWORK
