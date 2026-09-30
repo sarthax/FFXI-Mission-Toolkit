@@ -48,7 +48,7 @@ import struct
 from pathlib import Path
 
 import gear_tables
-import mob_model_tables
+import client_model_resolver
 import settings
 
 TOPAZ_ROOT = settings.get_topaz_root()
@@ -77,12 +77,10 @@ def decode_look_data(blob: bytes, familyid: int | None = None) -> dict:
     rather than refactoring decode_look() itself, to avoid any risk of changing that function's
     already-correct, already-used CLI print behavior.
 
-    familyid (mob_pools.familyid, when known -- NPCs don't have one) is used to look up a real,
-    per-family-verified modelid->file_id table (mob_model_tables.py) instead of the disproven
-    universal ENTITY_MODEL_OFFSET formula. If the family has no verified table entry yet (or
-    familyid wasn't supplied, e.g. for an NPC), the old offset is still computed as a fallback but
-    explicitly flagged "unverified" -- callers must not treat it as trustworthy for anything
-    beyond a rough guess pending real verification (see mob_model_tables.py docstring)."""
+    familyid is retained for API compatibility but flat-model resolution no longer depends on
+    hand-built per-family offsets. Server look_t model ids use FFXiMain's piecewise NpcTable mapping,
+    implemented in client_model_resolver.py; physical DAT existence is checked separately through
+    the configured client's FTABLE/VTABLE when the Model Viewer resolves the entity."""
     if len(blob) != 20:
         return {"error": f"expected a 20-byte look_t blob, got {len(blob)} bytes"}
     size = struct.unpack_from("<H", blob, 0)[0]
@@ -91,22 +89,12 @@ def decode_look_data(blob: bytes, familyid: int | None = None) -> dict:
     if size in FLAT_MODEL_TYPES:
         modelid = struct.unpack_from("<H", blob, 2)[0]
         result.update({"kind": "flat", "modelid": modelid})
-        verified_file_id = (
-            mob_model_tables.resolve_family_file_id(familyid, modelid)
-            if familyid is not None else None
-        )
-        if verified_file_id is not None:
-            result.update({
-                "file_id": verified_file_id,
-                "file_id_source": "mob_model_tables (verified per-family table)",
-                "unverified": False,
-            })
-        else:
-            result.update({
-                "file_id": ENTITY_MODEL_OFFSET + modelid,
-                "file_id_source": "ENTITY_MODEL_OFFSET fallback -- NOT VERIFIED, do not trust",
-                "unverified": True,
-            })
+        file_id, rule = client_model_resolver.model_id_to_file_id(modelid)
+        result.update({
+            "file_id": file_id,
+            "file_id_source": f"FFXiMain NpcTable piecewise mapping ({rule})",
+            "unverified": False,
+        })
     elif size in GEAR_MODEL_TYPES:
         face, race = blob[2], blob[3]
         head, body, hands, legs, feet, main, sub, ranged = struct.unpack_from("<8H", blob, 4)
