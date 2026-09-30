@@ -138,6 +138,11 @@ def main():
         assert "evidence:one" in detail_html
         assert "Draft evidence report." in detail_html
         assert "No provider has been run by this page." in detail_html
+        assert '<body class="shell-dense">' in detail_html
+        assert 'class="research-meta"' in detail_html
+        assert 'class="research-section" open' in detail_html
+        assert "Typed Tool Transcript" in detail_html
+        assert "Final Report" in detail_html
 
         proposal=store.get("research:second")
         proposal_html=render(
@@ -163,7 +168,9 @@ def main():
         assert "Run session" in proposal_html
         assert "Replay as new session" in proposal_html
         assert "Max provider calls" in proposal_html
-        assert "Timeout / provider call" in proposal_html
+        assert "Timeout / call" in proposal_html
+        assert "research-run-grid" in proposal_html
+        assert "Research Proposals" in proposal_html
 
     source=(ROOT/"gui_server.py").read_text(encoding="utf-8")
     assert '@app.get("/research"' in source
