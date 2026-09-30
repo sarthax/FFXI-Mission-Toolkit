@@ -9,6 +9,7 @@ uses, but are shown as a hint, not as proof of content.
 from __future__ import annotations
 
 import hashlib
+import struct
 import subprocess
 from pathlib import Path
 
@@ -43,6 +44,87 @@ PARSER_LABELS = {
     "parse_furniture_data": "Furniture data",
 }
 PREVIEW_ITEMS = 25
+
+# Generic FFXI DAT block-chain types already consumed by this toolkit's own ffxi-dat parser.
+# Unknown numeric types remain unknown; the inspector must not borrow semantic labels merely
+# because another viewer happens to have assigned one.
+BLOCK_TYPE_LABELS = {
+    32: "Texture",
+    41: "Skeleton",
+    42: "Skeleton mesh",
+    43: "Skeleton animation",
+}
+
+
+def scan_sections(data: bytes) -> dict:
+    """Inventory the generic block chain without interpreting section semantics beyond known types.
+
+    FFXI block headers are 8 bytes: 4-byte name + packed u32. The low 7 bits are type and the
+    following 19 bits encode the next block size in 16-byte units. This structural scan is useful
+    even when no high-level xi-tinkerer parser recognizes the DAT.
+    """
+    rows = []
+    offset = 0
+    seen = set()
+    warnings = []
+    while offset + 8 <= len(data):
+        if offset in seen:
+            warnings.append(f"block chain loop detected at 0x{offset:X}")
+            break
+        seen.add(offset)
+
+        raw_name = data[offset:offset + 4]
+        name = "".join(chr(b) if 32 <= b < 127 else "." for b in raw_name)
+        packed = struct.unpack_from("<I", data, offset + 4)[0]
+        type_id = packed & 0x7F
+        next_units = (packed >> 7) & 0x7FFFF
+        block_size = next_units * 16
+
+        # next_units==0 is a legal terminator. For a non-terminal block, a size smaller than its
+        # own header cannot advance safely and is therefore recorded as malformed.
+        terminal = next_units == 0
+        if not terminal and block_size < 8:
+            warnings.append(
+                f"section {len(rows)} at 0x{offset:X} has invalid block size {block_size}"
+            )
+            block_size = 0
+
+        effective_size = (
+            max(0, len(data) - offset) if terminal else min(block_size, max(0, len(data) - offset))
+        )
+        truncated = (not terminal and block_size > len(data) - offset)
+        rows.append({
+            "index": len(rows),
+            "name": name.rstrip("\x00"),
+            "name_hex": raw_name.hex(" "),
+            "type_id": type_id,
+            "type_label": BLOCK_TYPE_LABELS.get(type_id, f"Unknown type {type_id}"),
+            "offset": offset,
+            "offset_hex": f"0x{offset:X}",
+            "size": effective_size,
+            "declared_size": block_size,
+            "terminal": terminal,
+            "truncated": truncated,
+        })
+
+        if terminal:
+            break
+        if block_size <= 0:
+            break
+        offset += block_size
+        if len(rows) >= 2000:
+            warnings.append("section scan stopped after 2000 blocks")
+            break
+
+    counts = {}
+    for row in rows:
+        counts[row["type_label"]] = counts.get(row["type_label"], 0) + 1
+    return {
+        "sections": rows,
+        "section_count": len(rows),
+        "type_counts": counts,
+        "warnings": warnings,
+    }
 
 
 def id_hint(dat_id: int) -> str | None:
@@ -278,6 +360,7 @@ def _inspect_path(
         relative = path.name
     context = resource_context(dat_id)
     classification = _classify(matches, context["family"])
+    section_scan = scan_sections(data)
     return {
         "dat_id": dat_id,
         "path": str(path),
@@ -293,6 +376,7 @@ def _inspect_path(
         "family": context["family"],
         "zone_id": context["zone_id"],
         "classification": classification,
+        "section_scan": section_scan,
         "matches": matches,
         "rejected": rejected,
         "parser_match_count": len(matches),
