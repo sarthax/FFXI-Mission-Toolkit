@@ -39,8 +39,11 @@
   <label><span>Mobs</span><input type="checkbox" id="showm" checked></label>
   <label><span>NPCs</span><input type="checkbox" id="shown" checked></label>
   <label><span>Doors / props (_names)</span><input type="checkbox" id="showd" checked></label>
-  <label>Colour by <select id="mode"><option value="reach">Reachability</option><option value="kind">Kind</option><option value="comp">Nav region</option></select></label>
+  <label>Colour by <select id="mode"><option value="reach">Reachability</option><option value="kind">Kind</option><option value="comp">Nav region</option><option value="height">Elevation</option></select></label>
   <label><span>Navmesh overlay</span><input type="checkbox" id="shownav" checked></label>
+<label><span>Nav diagnostics</span><input type="checkbox" id="navdiag"></label>
+<div id="navdiagOut" class="mono muted" style="font-size:10px;white-space:pre-wrap;margin:3px 0 5px"></div>
+<label><span>Door/prop facing ticks</span><input type="checkbox" id="showDoorFacing" checked></label>
   <label>Mesh complexity <select id="lod"><option value="live">Live (textured)</option><option value="0">Full</option><option value="1">High (drop &lt;0.75u)</option><option value="2">Medium (&lt;1.5u)</option><option value="3">Low (&lt;3u)</option><option value="obj">Legacy OBJ (full)</option></select></label>
   <button id="buildCacheBtn" hidden style="margin-top:4px">Build visual mesh cache for this zone</button>
   <label>Mesh opacity <input type="range" id="opac" min="0.05" max="1" step="0.05" value="0.35"></label>
@@ -325,7 +328,7 @@ function cameraPreset(name){
 function saveZoneEditorState(){
   try{
     localStorage.setItem(ZONE_EDITOR_STATE_KEY,JSON.stringify({
-      zone:$('zone').value,instance:$('inst').value,lod:$('lod').value,mode:$('mode').value,
+      zone:$('zone').value,instance:$('inst').value,lod:$('lod').value,mode:$('mode').value,navdiag:$('navdiag')?.checked||false,showDoorFacing:$('showDoorFacing')?.checked!==false,
       showm:$('showm').checked,shown:$('shown').checked,showd:$('showd').checked,shownav:$('shownav').checked,
       opacity:$('opac').value,dotSize:$('dsz').value,labels:$('nlab').value,projection:$('projection').value,
       labelHeading:$('labelHeading')?.checked||false,camera:vecArray(camera.position),target:vecArray(controls.target),zoom:camera.isOrthographicCamera?camera.zoom:null
@@ -401,9 +404,15 @@ const selectionRing=new THREE.Mesh(
   new THREE.MeshBasicMaterial({color:0xffe066,side:THREE.DoubleSide,transparent:true,opacity:.9,depthTest:false})
 );
 selectionRing.rotation.x=-Math.PI/2; selectionRing.visible=false; selectionRing.renderOrder=29; scene.add(selectionRing);
+const doorFacingMat=new THREE.LineBasicMaterial({color:0xffc857,transparent:true,opacity:.8,depthTest:false});
+let doorFacingLines=null;
+const navDiagGeom=new THREE.BufferGeometry();
+const navDiagLine=new THREE.Line(navDiagGeom,new THREE.LineBasicMaterial({color:0x00e5ff,depthTest:false,transparent:true,opacity:.95}));
+navDiagLine.visible=false; navDiagLine.renderOrder=31; scene.add(navDiagLine);
+let selectedNavDiag=null;
 function updateSelectionVisual(){
   if(!Z || selected<0 || !Z.entities[selected] || Z.entities[selected].zero){ selectionRing.visible=false; return; }
-  const p=P(Z.entities[selected]); selectionRing.position.set(p.x,p.y+1.7,p.z); selectionRing.visible=true;
+  const p=P(Z.entities[selected]); selectionRing.position.set(p.x,p.y+1.7,p.z); selectionRing.material.color.setHex(selectedNavDiag ? (selectedNavDiag.placement_valid?0x55dd88:0xff4d4d) : 0xffe066); selectionRing.visible=true;
 }
 const transformProxy=new THREE.Object3D(); scene.add(transformProxy);
 transformControls=new TransformControls(camera,renderer.domElement);
@@ -656,7 +665,7 @@ $('zone').value = savedUiState?.zone && ZL.zones.some(z=>String(z.id)===String(s
 for(const [id,key] of [['lod','lod'],['mode','mode'],['opac','opacity'],['dsz','dotSize'],['nlab','labels']]){
   if(savedUiState?.[key]!==undefined && $(id)) $(id).value=String(savedUiState[key]);
 }
-for(const [id,key] of [['showm','showm'],['shown','shown'],['showd','showd'],['shownav','shownav'],['labelHeading','labelHeading']]){
+for(const [id,key] of [['showm','showm'],['shown','shown'],['showd','showd'],['shownav','shownav'],['labelHeading','labelHeading'],['navdiag','navdiag'],['showDoorFacing','showDoorFacing']]){
   if(savedUiState?.[key]!==undefined && $(id)) $(id).checked=!!savedUiState[key];
 }
 if(savedUiState?.projection) switchProjection(savedUiState.projection,false);
@@ -806,6 +815,11 @@ function stateOf(i){ return R ? R.state[i] : 'none'; }
 function colorOf(i){ const e=Z.entities[i], m=$('mode').value;
   if (m==='kind') return new THREE.Color(COL[e.k]);
   if (m==='comp' && R) return R.comp[i]==null? new THREE.Color(COL.off): hsl(R.comp[i]);
+  if (m==='height'){
+    const ys=Z.entities.filter(x=>!x.zero).map(x=>x.y), lo=Math.min(...ys), hi=Math.max(...ys);
+    const t=hi>lo?(e.y-lo)/(hi-lo):.5;
+    return new THREE.Color().setHSL((.66*(1-t)),.8,.55);
+  }
   return new THREE.Color(COL[stateOf(i)]); }
 function matches(e,i){
   const q=$('q').value.trim().toLowerCase();
@@ -839,6 +853,12 @@ function rebuild(){
   const M=new THREE.Matrix4(), S=+$('dsz').value;
   visible.forEach((ei,k)=>{ const e=Z.entities[ei]; M.compose(P(e), new THREE.Quaternion(), new THREE.Vector3(S,S,S)); inst.setMatrixAt(k,M); inst.setColorAt(k, multiSelected.has(ei) ? new THREE.Color(ei===selected?0xffe066:0xd66bff) : colorOf(ei)); });
   inst.instanceMatrix.needsUpdate=true; if(inst.instanceColor) inst.instanceColor.needsUpdate=true; scene.add(inst);
+  if(doorFacingLines){ scene.remove(doorFacingLines); doorFacingLines.geometry.dispose(); doorFacingLines=null; }
+  if($('showDoorFacing').checked){
+    const pts=[];
+    for(const i of visible){ const e=Z.entities[i]; if(e.k!=='d') continue; const p=P(e), d=sceneHeading(e.r); pts.push(p.x,p.y+1.2,p.z,p.x+d.x*5,p.y+1.2,p.z+d.z*5); }
+    if(pts.length){ const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3)); doorFacingLines=new THREE.LineSegments(g,doorFacingMat); doorFacingLines.renderOrder=18; scene.add(doorFacingLines); }
+  }
   // summary + list
   const cnt={}; Z.entities.forEach((e,i)=>{ const s=e.zero?'zero':stateOf(i); cnt[s]=(cnt[s]||0)+1; });
   $('sum').textContent = `${Z.entities.length} rows  mobs ${Z.entities.filter(e=>e.k==='m').length}  npcs ${Z.entities.filter(e=>e.k==='n').length}  doors ${Z.entities.filter(e=>e.k==='d').length}\n` +
@@ -860,6 +880,19 @@ function rebuild(){
 }
 function setLabel(i, text){ if(labels.has(i)) return; const d=document.createElement('div'); d.className='lbl'; d.textContent=text; const o=new CSS2DObject(d); o.position.copy(P(Z.entities[i])); o.position.y+=2; scene.add(o); labels.set(i,o); }
 const txt = e => `${e.n||e.g} [${e.id}]${e.lv?' Lv'+e.lv:''}`;
+async function loadSelectedNavDiag(){
+  selectedNavDiag=null; navDiagLine.visible=false;
+  if(!$('navdiag').checked || selected<0 || !Z?.entities[selected] || Z.entities[selected].zero){ $('navdiagOut').textContent=''; updateSelectionVisual(); return; }
+  const e=Z.entities[selected];
+  const r=await fetch(`/zoneplot/${Z.zid}/navdiag.json?x=${encodeURIComponent(e.x)}&y=${encodeURIComponent(e.y)}&z=${encodeURIComponent(e.z)}`);
+  const j=await r.json();
+  if(j.error){ $('navdiagOut').textContent='Nav diagnostics: '+j.error; return; }
+  selectedNavDiag=j;
+  const b=j.bounds, n=j.nearest;
+  $('navdiagOut').textContent=`poly ${j.polygon} tri ${j.triangle} · comp ${j.component} · distance ${j.distance.toFixed(3)}\narea ${j.area} type ${j.poly_type} · valid ${j.placement_valid?'YES':'NO'}\nbounds X ${b.xmin.toFixed(2)}..${b.xmax.toFixed(2)}  Y ${b.ymin.toFixed(2)}..${b.ymax.toFixed(2)}  Z ${b.zmin.toFixed(2)}..${b.zmax.toFixed(2)}`;
+  navDiagGeom.setFromPoints([P(e),new THREE.Vector3(n.x,-n.y,-n.z)]); navDiagLine.visible=true;
+  updateSelectionVisual();
+}
 function select(i, fly){
   const changed=selected!==i;
   if(changed && typeof isTransformDirty==='function' && isTransformDirty()){
@@ -871,7 +904,7 @@ function select(i, fly){
   if(changed&&typeof loadEditor==='function') loadEditor(i);
   const e=Z.entities[i];
   if(fly && !e.zero) frameSelected();
-  updateHeadingArrow(); updateSelectionVisual();
+  updateHeadingArrow(); updateSelectionVisual(); loadSelectedNavDiag();
   if(typeof updateDirtyUI==='function') updateDirtyUI(); if(typeof updateEntitySyncStatus==='function') updateEntitySyncStatus();
   $('frameSelBtn').disabled=!!e.zero;
   syncMultiUI();
@@ -950,6 +983,8 @@ $('labelHeading').addEventListener('change',()=>{ saveZoneEditorState(); labels.
 $('q').addEventListener('input',()=>Z&&rebuild());
 ['lf-kind','lf-reach','lf-sort','lf-dir'].forEach(id=>$(id).addEventListener('change',()=>Z&&rebuild()));
 $('shownav').onchange=()=>{ if(navMesh) navMesh.visible=$('shownav').checked; saveZoneEditorState(); };
+$('navdiag').onchange=()=>{ saveZoneEditorState(); loadSelectedNavDiag(); };
+$('showDoorFacing').onchange=()=>{ saveZoneEditorState(); if(Z) rebuild(); };
 $('opac').oninput=()=>{ meshObj&&meshObj.traverse(c=>{ if(c.isMesh) c.material.opacity=+$('opac').value; }); saveZoneEditorState(); };
 document.querySelectorAll('[data-cam]').forEach(b=>b.onclick=()=>cameraPreset(b.dataset.cam));
 $('projection').onchange=()=>{ switchProjection($('projection').value); saveZoneEditorState(); };
@@ -1321,7 +1356,7 @@ function previewRotation(){
   if(labels.has(selected)){ const l=labels.get(selected); l.element.textContent=txt(e)+($('labelHeading').checked?` · ${rotInfo(e.r).dir} r${rotInfo(e.r).raw}`:''); }
   $('hover').textContent = `${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${txt(e)}  grp=${e.g}  (${e.x}, ${e.y}, ${e.z})  ${rotText(e.r)}  ${stateOf(selected)}`;
 }
-function previewEdit(){ if(selected<0) return; const e=Z.entities[selected]; e.x=+$('ex').value; e.y=+$('ey').value; e.z=+$('ez').value; previewRotation(); rebuild(); updateSelectionVisual(); updateDirtyUI(); }
+function previewEdit(){ if(selected<0) return; const e=Z.entities[selected]; e.x=+$('ex').value; e.y=+$('ey').value; e.z=+$('ez').value; previewRotation(); rebuild(); updateSelectionVisual(); updateDirtyUI(); loadSelectedNavDiag(); }
 ['ex','ey','ez'].forEach(id=>$(id).addEventListener('change',previewEdit));
 $('er').addEventListener('input',previewRotation);
 document.querySelectorAll('[data-rpreset]').forEach(b=>b.onclick=()=>{ $('er').value=b.dataset.rpreset; previewRotation(); });
