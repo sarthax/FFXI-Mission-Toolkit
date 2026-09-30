@@ -133,6 +133,23 @@ def main():
     assert "let measureMode=false, measureStart=null;" in template
     assert "horizontal ${horizontal.toFixed(2)}" in template
     assert "bearing ${bearing.toFixed(1)}°" in template
+
+
+    # Snap-to-selected and selected-entity history / restore.
+    assert "Snap XYZ to other selected" in template
+    assert "Snap Y to other selected" in template
+    assert "function otherSelectedEntity()" in template
+    assert 'id="ed-history"' in template
+    assert "async function loadEntityHistory()" in template
+    assert "async function restoreSelectedPrevious()" in template
+    assert "fetch(`/zoneplot/history/${e.k}/${e.id}?limit=20`)" in template
+    assert "fetch('/zoneplot/restore_entity_previous'" in template
+    assert "recordUndo(`restore previous ${e.id}`" in template
+    assert "def entity_history(kind, eid, limit=20):" in zone_edit
+    assert "def restore_entity_previous(kind, eid):" in zone_edit
+    assert "This deliberately does not restore the entire source backup" in zone_edit
+    assert '@app.get("/zoneplot/history/{kind}/{eid}")' in gui_server
+    assert '@app.post("/zoneplot/restore_entity_previous")' in gui_server
     print("Zone Plot heading/compass/zoom UI regression: PASS")
     return 0
 
