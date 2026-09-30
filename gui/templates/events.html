@@ -37,17 +37,42 @@
   <span class="chip">decimal + hex CSID</span>
   <span class="chip">server refs</span>
   <span class="chip">runtime observations</span>
+  <span class="chip">decompile health</span>
 </div>
+{% if health_summary %}
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+  <span class="pill match">{{ health_summary.get('ok', 0) }} decompile OK</span>
+  {% if health_summary.get('stub', 0) %}<span class="pill no_real_entry">{{ health_summary.get('stub', 0) }} stub/empty</span>{% endif %}
+  {% if health_summary.get('invalid', 0) %}<span class="pill mismatch">{{ health_summary.get('invalid', 0) }} invalid bytecode</span>{% endif %}
+  {% if health_summary.get('failed', 0) %}<span class="pill mismatch">{{ health_summary.get('failed', 0) }} decompile failed</span>{% endif %}
+</div>
+{% endif %}
 {% if not rows %}
 <p class="muted">No events found (or no cached/generatable export for this zone).</p>
 {% else %}
 <div class="table-wrap"><table class="event-table">
-  <tr><th>entity</th><th>name</th><th>CSID</th><th>evidence</th><th>actions</th></tr>
+  <tr><th>entity</th><th>name</th><th>CSID</th><th>decompile</th><th>evidence</th><th>actions</th></tr>
   {% for r in rows %}
   <tr>
     <td class="event-id"><a class="inline" href="/entity/{{ r.entity_id }}">{{ r.entity_id }}</a></td>
     <td>{{ r.name or "" }}</td>
     <td class="event-id"><strong>{{ r.csid }}</strong> <span class="muted">/ 0x{{ "%04X"|format(r.csid) }}</span></td>
+    <td>
+      {% if r.decompile_status == 'ok' %}
+        <span class="pill match">OK{% if r.decompile_line_count %} · {{ r.decompile_line_count }} lines{% endif %}</span>
+      {% elif r.decompile_status == 'stub' %}
+        <span class="pill no_real_entry" title="{{ r.decompile_detail or '' }}">stub / empty</span>
+      {% elif r.decompile_status == 'invalid' %}
+        <span class="pill mismatch" title="{{ r.decompile_detail or '' }}">invalid bytecode</span>
+      {% elif r.decompile_status == 'failed' %}
+        <span class="pill mismatch" title="{{ r.decompile_detail or '' }}">decompile failed</span>
+      {% else %}
+        <span class="pill unannotated" title="{{ r.decompile_detail or '' }}">unknown</span>
+      {% endif %}
+      {% if r.decompile_status != 'ok' and r.decompile_detail %}
+        <div class="muted" style="font-size:11px;max-width:360px;margin-top:4px">{{ r.decompile_detail }}</div>
+      {% endif %}
+    </td>
     <td>
       <div class="event-evidence">
         {% if r.server_ref_count %}<span class="pill match">{{ r.server_ref_count }} server ref{{ '' if r.server_ref_count == 1 else 's' }}</span>{% else %}<span class="pill unannotated">no indexed server ref</span>{% endif %}
@@ -56,7 +81,7 @@
     </td>
     <td>
       <div class="event-actions">
-        <a class="chip" href="/events/view?zone={{ zone|urlencode }}&entity={{ r.entity_id }}&csid={{ r.csid }}">Wiring dossier &rarr;</a>
+        <a class="chip" href="/events/view?zone={{ zone|urlencode }}&entity={{ r.entity_id }}&csid={{ r.csid }}">{{ 'Wiring dossier' if r.decompile_status == 'ok' else 'View decompile issue' }} &rarr;</a>
         <a class="chip" href="/features/trace?q=entity:{{ r.entity_id }}">Feature Trace</a>
       </div>
     </td>
