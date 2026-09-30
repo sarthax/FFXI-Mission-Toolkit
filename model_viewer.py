@@ -14,6 +14,7 @@ from pathlib import Path
 
 import mob_look_decode as look
 import model_schedule_dump as msd
+import client_model_resolver
 import settings
 import zone_plot
 
@@ -62,11 +63,14 @@ def resolve(kind: str, eid: int, server=None) -> dict:
     info["ffxi_path"] = ffxi_path
 
     if info.get("kind") == "flat":
-        rom_path = msd.resolve_rom_path(ffxi_path, info["file_id"])
-        if not rom_path:
-            info["error"] = f"dat-extractor found no ROM file for file_id {info['file_id']}"
-            return info
-        info["rom_path"] = rom_path
+        mapped = client_model_resolver.resolve_model_id(info["modelid"], ffxi_path)
+        info["file_id"] = mapped["file_id"]
+        info["file_id_source"] = mapped["mapping_source"]
+        info["mapping_rule"] = mapped["mapping_rule"]
+        info["rom_path"] = mapped.get("rom_path")
+        info["registered"] = mapped.get("registered", False)
+        if mapped.get("error"):
+            info["error"] = mapped["error"]
         return info
 
     # kind == "gear": resolve the race skeleton DAT plus every equipped slot's gear DAT.
@@ -105,3 +109,9 @@ def read_dat_bytes(ffxi_path: str, rom_path: str) -> bytes:
     if not p.exists():
         raise FileNotFoundError(f"{p} does not exist under the configured FFXI install")
     return p.read_bytes()
+
+
+
+def resolve_model_id(model_id: int, ffxi_path: str | None = None) -> dict:
+    """Direct Client-tool entry point: raw server look_t model id -> file id -> real DAT."""
+    return client_model_resolver.resolve_model_id(model_id, ffxi_path)
