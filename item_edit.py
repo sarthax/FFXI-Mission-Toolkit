@@ -423,7 +423,7 @@ def item_usage(item_id: int, source_limit: int = 100) -> dict:
     explicitly lower-confidence source-text references and are never promoted to foreign-key proof.
     """
     item_id = int(item_id)
-    source_limit = max(1, min(int(source_limit), 500))
+    source_limit = max(0, min(int(source_limit), 500))
     db = zone_plot._db()
     cu = db.cursor()
     refs = []
@@ -474,6 +474,8 @@ def item_usage(item_id: int, source_limit: int = 100) -> dict:
 
     script_refs = []
     try:
+        if source_limit <= 0:
+            raise StopIteration
         root = zone_plot._server_root()
         scripts = root / "scripts"
         if scripts.is_dir():
@@ -506,6 +508,8 @@ def item_usage(item_id: int, source_limit: int = 100) -> dict:
                         "match": "item_name_token" if token_hit else "numeric_item_context",
                         "text": line.strip()[:500],
                     })
+    except StopIteration:
+        pass
     except Exception:
         pass
 
