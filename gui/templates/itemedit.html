@@ -27,7 +27,7 @@ server's permission gate. Every write is backed up first and journalled to
   <input type="number" id="searchMaxLevel" min="0" placeholder="max lv" style="width:72px;">
   <select id="searchJob"><option value="-1">all jobs</option></select>
   <input type="number" id="searchSkill" min="0" placeholder="skill id" style="width:72px;">
-  <select id="searchClientState"><option value="">all client states</option><option value="synced">synced</option><option value="mismatch">mismatch</option><option value="server-only">server-only</option></select>
+  <select id="searchClientState"><option value="">all client states</option><option value="synced">synced</option><option value="mismatch">mismatch</option><option value="server-only">server-only</option><option value="dat-only">DAT-only</option></select>
   <select id="searchSort"><option value="name">sort: name</option><option value="id">sort: id</option><option value="class">sort: class</option><option value="level">sort: level</option><option value="client">sort: client</option></select>
   <select id="searchDir"><option value="asc">ascending</option><option value="desc">descending</option></select>
   <button type="submit">Search</button>
@@ -38,6 +38,17 @@ server's permission gate. Every write is backed up first and journalled to
     <tr><th>id</th><th>name</th><th>class</th><th>level</th><th>jobs</th><th>skill</th><th>dmg</th><th>delay</th><th>client</th></tr>
     <tbody id="resultsBody"></tbody>
   </table>
+</div>
+<div id="datOnlyPreview" class="edit-card wide" style="display:none;margin-top:10px;">
+  <h3>DAT-only client item <span class="hint">decoded client record with no item_basic row on the active server</span></h3>
+  <div style="display:flex;gap:12px;align-items:flex-start;">
+    <img id="datOnlyPreviewIcon" class="client-icon" alt="DAT-only item icon" style="width:64px;height:64px;object-fit:contain;border:1px solid var(--border);border-radius:4px;">
+    <div style="flex:1;min-width:0;">
+      <div id="datOnlyPreviewName" style="font-weight:600;font-size:15px;"></div>
+      <div id="datOnlyPreviewMeta" class="mono muted" style="font-size:10px;margin-top:3px;"></div>
+      <div id="datOnlyPreviewDesc" class="muted" style="white-space:pre-wrap;margin-top:5px;font-size:11px;"></div>
+    </div>
+  </div>
 </div>
 
 <div id="itemSessionHistory" style="display:flex;gap:6px;align-items:center;margin:8px 0;">
@@ -598,17 +609,41 @@ function renderSearchResults(){
   const body=document.getElementById('resultsBody'); body.innerHTML='';
   for(const r of rows){
     const tr=document.createElement('tr');
-    tr.innerHTML='<td class="mono"><a href="#" data-open-item="'+r.itemid+'">'+r.itemid+'</a></td><td>'+(r.name||'')+'</td><td>'+(r.type_name||'')+'</td><td>'+(r.level??'')+'</td><td>'+(r.jobs??'')+'</td><td>'+(r.skill??'')+'</td><td>'+(r.dmg??'')+'</td><td>'+(r.delay??'')+'</td><td>'+r.client_state+'</td>';
+    const action=r.client_state==='dat-only'
+      ? '<a href="#" data-inspect-dat-only="'+r.itemid+'">'+r.itemid+'</a>'
+      : '<a href="#" data-open-item="'+r.itemid+'">'+r.itemid+'</a>';
+    tr.innerHTML='<td class="mono">'+action+'</td><td>'+(r.name||'')+'</td><td>'+(r.type_name||'')+'</td><td>'+(r.level??'')+'</td><td>'+(r.jobs??'')+'</td><td>'+(r.skill??'')+'</td><td>'+(r.dmg??'')+'</td><td>'+(r.delay??'')+'</td><td>'+r.client_state+'</td>';
     body.appendChild(tr);
   }
   body.querySelectorAll('[data-open-item]').forEach(a=>a.onclick=ev=>{ev.preventDefault();loadItem(Number(a.dataset.openItem));});
+  body.querySelectorAll('[data-inspect-dat-only]').forEach(a=>a.onclick=ev=>{ev.preventDefault();inspectDatOnlyItem(Number(a.dataset.inspectDatOnly));});
   document.getElementById('results').style.display=rows.length?'':'none';
+}
+
+async function inspectDatOnlyItem(itemid){
+  const box=document.getElementById('datOnlyPreview');
+  const name=document.getElementById('datOnlyPreviewName');
+  const meta=document.getElementById('datOnlyPreviewMeta');
+  const desc=document.getElementById('datOnlyPreviewDesc');
+  const icon=document.getElementById('datOnlyPreviewIcon');
+  const r=await fetch('/itemedit/'+itemid+'/client-record.json');
+  const j=await r.json();
+  if(!r.ok||!j.available){ box.style.display=''; name.textContent='Item '+itemid; meta.textContent='Unable to decode DAT record'; desc.textContent=j.error||j.reason||r.statusText; icon.style.display='none'; return; }
+  const d=j.record||{};
+  name.textContent='Item '+itemid+' — '+(d.name||'(unnamed)');
+  meta.textContent=(d.category||'')+' · '+(d.dat_ui||'')+' · record '+d.record_index+' · '+(d.format||'')+' · '+(j.record_size||0)+' bytes';
+  desc.textContent=d.description||d.description_jp||'';
+  icon.src='/itemedit/'+itemid+'/icon.png?record='+encodeURIComponent(j.record_sha256||'');
+  icon.style.display=j.icon?.available?'':'none';
+  box.style.display='';
 }
 
 async function doSearch(ev) {
   ev.preventDefault();
   const q=document.getElementById('q').value.trim();
-  if(/^\d+$/.test(q)){ document.getElementById('results').style.display='none'; return loadItem(Number(q)); }
+  if(/^\d+$/.test(q) && document.getElementById('searchClientState').value!=='dat-only'){
+    document.getElementById('results').style.display='none'; return loadItem(Number(q));
+  }
   if(q.length<2){ alert('type at least 2 characters, or enter a numeric item id'); return; }
   const p=new URLSearchParams({q,category:document.getElementById('category').value,client_state:document.getElementById('searchClientState').value});
   const min=document.getElementById('searchMinLevel').value,max=document.getElementById('searchMaxLevel').value,job=document.getElementById('searchJob').value,skill=document.getElementById('searchSkill').value;
