@@ -1,18 +1,21 @@
 {% extends "base.html" %}
 {% block title %}Event {{ csid }} · {{ zone }}{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}event-view-page{% endblock %}
 {% block content %}
 <style>
-.event-head{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px}
-.event-head h1{margin:0}
+main.event-view-page{padding:8px 10px 24px}
+.event-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface)}
+.event-head h1{margin:0;font-size:16px}
 .event-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
-.event-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(380px,.85fr);gap:14px;align-items:start}
+.event-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(340px,.8fr);gap:8px;align-items:start}
 .event-card{border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden}
-.event-card h3{margin:0;padding:10px 12px;border-bottom:1px solid var(--border);font-size:14px}
-.event-card .body{padding:10px 12px}
+.event-card h3{margin:0;padding:6px 8px;border-bottom:1px solid var(--border);font-size:12px}
+.event-card .body{padding:7px 8px}
 .event-card pre{margin:0;white-space:pre-wrap;font:12px/1.45 ui-monospace,Consolas,monospace;overflow:auto}
 .event-meta{display:grid;grid-template-columns:120px 1fr;gap:5px 10px}
 .event-meta>div:nth-child(odd){color:var(--muted)}
-.event-stack{display:grid;gap:14px}
+.event-stack{display:grid;gap:8px}
 .event-call-list{display:flex;gap:5px;flex-wrap:wrap}
 .server-ref{padding:10px 12px;border-bottom:1px solid var(--border)}.server-ref:last-child{border-bottom:0}
 .server-ref pre{margin-top:7px;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--code-bg);max-height:280px}
@@ -28,8 +31,8 @@
 
 <div class="event-head">
   <div>
-    <div class="muted"><a class="inline" href="/events?zone={{ zone|urlencode }}">&larr; Events / CSID</a></div>
     <h1>{{ entity_name or ('Entity ' ~ entity) }} &mdash; CSID {{ csid }}</h1>
+    <div class="muted"><a class="inline" href="/events?zone={{ zone|urlencode }}">&larr; Events</a></div>
     <div class="event-chips">
       <span class="chip">{{ zone }}{% if zoneid %} / zone {{ zoneid }}{% endif %}</span>
       <span class="chip mono">entity {{ entity }}</span>

@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Entity Lookup{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}entity-lookup-page{% endblock %}
 
 {% macro pager() %}
 {% if total_pages > 1 %}
@@ -20,18 +22,19 @@
 {% endmacro %}
 
 {% block content %}
-<h1>Entity Lookup</h1>
-<p class="muted">One canonical profile per entity (<code class="chip">entity_profile.py</code>) --
-the same builder Wiki Compiler's npc/mob resolution and the CLI both use, so this page can't
-silently disagree with them anymore. A single id search jumps straight to its profile page;
-a name search lists matches here to click through.</p>
-<form class="search" method="get">
+<style>main.entity-lookup-page{padding:8px 10px 24px}.entity-lookup-page .table-wrap{margin-top:6px}</style>
+<div class="dense-toolbar">
+  <strong>Entity Lookup</strong>
+  <form class="search dense-toolbar" method="get" style="margin:0;flex:1">
+
   <input type="text" name="q" value="{{ q }}" placeholder="npc/mob id, or a name substring (e.g. Vending Box)">
   <button type="submit">Look up</button>
-</form>
+  </form>
+  <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:680px">Canonical entity profiles shared by the GUI, Wiki Compiler resolution, and CLI. Exact IDs jump directly to a dossier; name searches list candidates.</div></details>
+</div>
 
 {% if matches %}
-<p>{{ total }} name match(es) -- page {{ page }} of {{ total_pages }} -- click one to open its profile:</p>
+<div class="dense-toolbar" style="margin-top:6px"><strong>{{ total }} match(es)</strong><span class="sp"></span><span class="muted">page {{ page }} of {{ total_pages }}</span></div>
 {{ pager() }}
 <div class="table-wrap"><table>
   <tr><th>id</th><th>name</th><th>zone id</th><th>zone name</th></tr>

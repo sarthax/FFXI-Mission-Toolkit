@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Events / CSID Browser{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}events-browser-page{% endblock %}
 {% block content %}
 <style>
+main.events-browser-page{padding:8px 10px 24px}
 .event-browser-head{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px}
 .event-browser-head .hint{max-width:900px}
 .event-table td,.event-table th{vertical-align:middle}
@@ -11,14 +14,9 @@
 .event-actions a{text-decoration:none}
 </style>
 
-<div class="event-browser-head">
-  <div>
-    <h1 style="margin-bottom:4px">Events / CSID Browser</h1>
-    <div class="hint muted">Client event/CSID inventory by zone and entity. Open an event to see its decompiled client script alongside dialog IDs, server Lua references, observed capture traffic, and implementation scaffolding.</div>
-  </div>
-</div>
-
-<form class="search" method="get">
+<div class="dense-toolbar">
+  <strong>Events / CSID Browser</strong>
+  <form class="search dense-toolbar" method="get" style="margin:0;flex:1">
   <select name="zone">
     <option value="">Pick a zone...</option>
     {% for z in zones %}
@@ -27,13 +25,15 @@
   </select>
   <input type="text" name="q" value="{{ q }}" placeholder="entity id, NPC name, or exact CSID">
   <button type="submit">Browse</button>
-</form>
+  </form>
+  <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="hint muted" style="padding:6px 2px;max-width:760px">Client event/CSID inventory by zone and entity. Open an event to compare decompiled client script, dialog IDs, server Lua references, capture traffic, and implementation scaffolding.</div></details>
+</div>
 
 {% if generated_note %}<p class="muted">{{ generated_note }} (this can take a minute the first time.)</p>{% endif %}
 
 {% if zone %}
-<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0 8px">
-  <h2 style="margin:0">{{ rows|length }} event(s) in {{ zone }}</h2>
+<div class="dense-toolbar" style="margin:6px 0">
+  <strong>{{ rows|length }} event(s) in {{ zone }}</strong><span class="sp"></span>
   <span class="chip">decimal + hex CSID</span>
   <span class="chip">server refs</span>
   <span class="chip">runtime observations</span>
