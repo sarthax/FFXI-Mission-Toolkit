@@ -4,13 +4,14 @@ This module normalizes acquisition evidence without inventing cross-source canon
 identity.  Item/key-item literals remain literals until an explicit identity bridge
 maps them to canonical graph nodes.
 
-Supported producer families in v1:
+Supported producer families:
 - mob_drops logical SQL records -> DROP_POOL
+- audited static DSP/Topaz/LSB Lua general/nation shop inventories plus modern LSB guild shops -> SOLD_BY
 - synth_recipes logical SQL records -> SYNTHESIS
 - synergy_recipes logical SQL records -> SYNERGY
 - scripted-behavior reward projections -> SCRIPTED_REWARD
 
-Shop acquisition is intentionally absent until an audited logical shop profile exists.
+Special/dynamic shop systems remain separate until individually profiled.
 """
 from __future__ import annotations
 
@@ -20,11 +21,13 @@ from hashlib import sha1
 from typing import Any, Iterable
 
 from workbench.adapters.servers.base import LogicalRecord
+from workbench.adapters.servers.shop_lua import ShopRecord, numeric_item_id
 
 
 SCHEMA_VERSION = "acquisition-catalog/v1"
 SUPPORTED_ACQUISITION_TYPES = (
     "DROP_POOL",
+    "SOLD_BY",
     "SYNTHESIS",
     "SYNERGY",
     "SCRIPTED_REWARD",
@@ -203,15 +206,50 @@ def acquisition_paths_from_scripted_projection(projection: Any) -> tuple[Acquisi
     return tuple(sorted(paths, key=lambda row: (row.subject_kind, row.subject_id, row.path_id)))
 
 
+
+
+def acquisition_paths_from_shops(
+    shops: Iterable[ShopRecord],
+) -> tuple[AcquisitionPath, ...]:
+    """Normalize audited static Lua shop inventories into SOLD_BY paths."""
+    paths: list[AcquisitionPath] = []
+    for shop in shops:
+        for index, item in enumerate(shop.items):
+            metadata = {
+                "shop_id": shop.shop_id,
+                "shop_kind": shop.shop_kind,
+                "vendor_name": shop.vendor_name,
+                "price": item.price,
+                "item_literal": item.item_literal,
+                "item_numeric_id": numeric_item_id(item.item_literal),
+                "shop_metadata": dict(shop.metadata or {}),
+                "item_metadata": dict(item.metadata or {}),
+            }
+            paths.append(AcquisitionPath(
+                path_id=f"acquisition:sold-by:{_token(shop.shop_id, item.item_literal, index)}",
+                subject_kind="ITEM",
+                subject_id=str(item.item_literal),
+                acquisition_type="SOLD_BY",
+                source_family=f"{shop.source_family}_LUA_SHOP",
+                source_table=shop.shop_kind,
+                source_identity=(("shop_id", shop.shop_id), ("item_literal", item.item_literal)),
+                source_label=shop.vendor_name,
+                metadata=metadata,
+                confidence="VERIFIED",
+            ))
+    return tuple(sorted(paths, key=lambda row: (row.subject_id, row.path_id)))
+
 def build_acquisition_catalog(
     *,
     logical_records: Iterable[LogicalRecord] = (),
     scripted_projections: Iterable[Any] = (),
+    shops: Iterable[ShopRecord] = (),
 ) -> dict[str, Any]:
     """Build a deterministic acquisition catalog grouped by literal subject identity."""
     paths = list(acquisition_paths_from_logical_records(logical_records))
     for projection in scripted_projections:
         paths.extend(acquisition_paths_from_scripted_projection(projection))
+    paths.extend(acquisition_paths_from_shops(shops))
     paths.sort(key=lambda row: (row.subject_kind, row.subject_id, row.acquisition_type, row.path_id))
 
     grouped: dict[tuple[str, str], list[AcquisitionPath]] = defaultdict(list)
@@ -234,7 +272,7 @@ def build_acquisition_catalog(
     return {
         "schema_version": SCHEMA_VERSION,
         "supported_acquisition_types": list(SUPPORTED_ACQUISITION_TYPES),
-        "unsupported_until_profiled": ["SHOP"],
+        "unsupported_until_profiled": ["CURIO_VENDOR", "SPECIAL_DYNAMIC_SHOP"],
         "subject_count": len(subjects),
         "path_count": len(paths),
         "counts": dict(sorted(counts.items())),
@@ -242,7 +280,7 @@ def build_acquisition_catalog(
         "notes": [
             "Acquisition identities remain source literals until an explicit identity bridge maps them.",
             "Multiple acquisition paths are alternatives; presence of one path does not prove runtime obtainability.",
-            "Shop acquisition is not emitted until an audited logical shop profile exists.",
+            "SOLD_BY covers audited static general/nation/guild Lua shop inventories; special dynamic shop systems remain separate.",
         ],
     }
 
@@ -260,7 +298,7 @@ def verified_external_item_ids(catalog: dict[str, Any]) -> set[int]:
         rows = subject.get("paths", ())
         if not any(
             row.get("confidence") == "VERIFIED"
-            and row.get("acquisition_type") in {"DROP_POOL", "SCRIPTED_REWARD"}
+            and row.get("acquisition_type") in {"DROP_POOL", "SOLD_BY", "SCRIPTED_REWARD"}
             for row in rows
         ):
             continue

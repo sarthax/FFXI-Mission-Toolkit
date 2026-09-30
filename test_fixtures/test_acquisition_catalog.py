@@ -103,7 +103,10 @@ def main():
         scripted_projections=(projection,),
     )
     assert catalog["schema_version"] == "acquisition-catalog/v1", catalog
-    assert catalog["unsupported_until_profiled"] == ["SHOP"], catalog
+    assert catalog["unsupported_until_profiled"] == [
+        "CURIO_VENDOR",
+        "SPECIAL_DYNAMIC_SHOP",
+    ], catalog
     assert catalog["counts"] == {
         "DROP_POOL": 1,
         "SCRIPTED_REWARD": 2,
