@@ -77,6 +77,7 @@ server's permission gate. Every write is backed up first and journalled to
     <button id="cloneCurrentBtn" type="button">Clone This Item</button>
     <span id="saveStatus" class="muted"></span>
   </div>
+  <div id="itemStatusBar" class="mono" style="margin-top:8px;padding:7px 9px;border:2px solid var(--border);border-radius:4px;font-weight:600;">SERVER — · CLIENT DAT — · TARGET —</div>
   <div id="dirtySummary" class="mono" style="margin-top:8px;padding:6px 8px;border:1px solid var(--border);border-radius:4px;color:#b0bec5;">Saved state</div>
   <div id="clientMismatch" class="warn" style="display:none; margin-top:8px;"></div>
   <div id="itemValidation" style="display:none;margin-top:8px;padding:8px;border:1px solid var(--border);border-radius:4px;"></div>
@@ -87,6 +88,7 @@ server's permission gate. Every write is backed up first and journalled to
     <div class="field-row"><label>Category / record#</label><span class="mono" id="datCatIdx">--</span></div>
     <div class="field-row"><label>Format</label><span class="mono" id="datFormat">--</span></div>
     <div class="field-row"><label>Backed up?</label><span class="mono" id="datBackedUp">--</span></div>
+    <div class="field-row"><label>Latest backup</label><span class="mono" id="datLatestBackup">--</span></div>
     <div class="field-row">
       <label>Write target</label>
       <select id="datTarget" onchange="setDatTarget()">
@@ -423,6 +425,23 @@ function buildTablesGrid(wrap, serverObj) {
   }
 }
 
+function renderItemStatus(data){
+  const bar=document.getElementById('itemStatusBar'), st=data.dat_status||{}, cmp=data.comparison||{};
+  const client=!cmp.available ? 'CLIENT DAT —' : (cmp.mismatches?.length ? ('CLIENT DAT ⚠ '+cmp.mismatches.length+' mismatch'+(cmp.mismatches.length===1?'':'es')) : 'CLIENT DAT ✓');
+  const target=(st.target||'live')==='pivot' ? 'XI-PIVOT' : 'LIVE CLIENT WRITE';
+  const loc=data.client ? ((st.dat_ui||'?')+' #'+(st.record_index??'?')) : 'no client record';
+  bar.textContent='SERVER ✓ · '+client+' · '+target+' · '+loc;
+  if((st.target||'live')==='live'){ bar.style.borderColor='#d66'; bar.style.background='rgba(160,40,40,.14)'; }
+  else { bar.style.borderColor='var(--border)'; bar.style.background='rgba(60,120,180,.10)'; }
+}
+async function refreshLatestDatBackup(romPath){
+  const el=document.getElementById('datLatestBackup');
+  if(!romPath||romPath==='(unknown)'){ el.textContent='--'; return; }
+  const key=romPath.replace(/\//g,'_').replace(/\\/g,'_');
+  const all=await (await fetch('/itemedit/dat-backups.json')).json();
+  const mine=all.filter(b=>b.key===key).sort((a,b)=>b.mtime-a.mtime);
+  el.textContent=mine.length ? new Date(mine[0].mtime*1000).toLocaleString()+' · '+mine[0].kind : 'none yet';
+}
 function renderItemDiagnostics(comparison,validation){
   const mismatchBox=document.getElementById('clientMismatch');
   if(!comparison?.available){
@@ -457,6 +476,7 @@ async function loadItem(itemid, remember=true) {
   document.getElementById('editorTitle').textContent =
     `Item ${itemid} -- ${data.server.item_basic.name}`;
 
+  renderItemStatus(data);
   renderItemDiagnostics(data.comparison, data.validation);
   refreshDatInfo(data);
 
@@ -487,7 +507,11 @@ async function loadItem(itemid, remember=true) {
 function refreshDatInfo(data) {
   const card = document.getElementById('datInfoCard');
   const st = data.dat_status || {};
-  if (!data.client) { card.style.display = 'none'; return; }
+  if (!data.client) {
+    card.style.display = 'none';
+    document.getElementById('datLatestBackup').textContent='--';
+    return;
+  }
   card.style.display = '';
   document.getElementById('datRomPath').textContent = st.dat_ui || '(unknown)';
   document.getElementById('datCatIdx').textContent = `${st.category || '?'} / #${st.record_index ?? '?'}`;
@@ -503,6 +527,7 @@ function refreshDatInfo(data) {
     pivotLine.style.display = 'none';
   }
   document.getElementById('datBackupList').innerHTML = '';
+  refreshLatestDatBackup(st.dat_ui);
 }
 
 async function refreshDatBackups() {
