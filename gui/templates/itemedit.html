@@ -65,6 +65,15 @@ server's permission gate. Every write is backed up first and journalled to
   #editorWrap .rowtable-wrap table { font-size: 12px; }
   #editorWrap .rowtable-wrap th, #editorWrap .rowtable-wrap td { padding: 3px 6px; }
   #editorWrap .lists-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 12px; }
+  #editorWrap .editor-toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px; padding:8px; border:1px solid var(--border); border-radius:6px; }
+  #editorWrap .logical-group { border-top:1px solid rgba(128,128,128,.22); margin-top:7px; padding-top:5px; }
+  #editorWrap .logical-group:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+  #editorWrap .logical-group-title { font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; opacity:.58; margin:0 0 3px; }
+  #editorWrap .field-help { cursor:help; border-bottom:1px dotted currentColor; }
+  #decodedSummary .summary-chip { display:inline-block; margin:2px 4px 2px 0; padding:2px 6px; border:1px solid var(--border); border-radius:10px; font-size:11px; }
+  #itemCompareResult .compare-add { color:#a5d6a7; }
+  #itemCompareResult .compare-remove { color:#ef9a9a; }
+  #itemCompareResult .compare-change { color:#ffe082; }
 </style>
 
 <div id="editorWrap" style="display:none; margin-top:24px;">
@@ -112,6 +121,24 @@ server's permission gate. Every write is backed up first and journalled to
 <div id="livePivotDiff" class="mono" style="margin-top:8px;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:10px;white-space:pre-wrap;"></div>
   </div>
 
+  <div class="editor-toolbar">
+    <label>Editor mode
+      <select id="itemEditorMode">
+        <option value="basic">Basic</option>
+        <option value="advanced">Advanced</option>
+      </select>
+    </label>
+    <span class="muted" style="font-size:11px;">Basic shows the common gameplay fields; Advanced exposes the full raw SQL surface.</span>
+    <span style="flex:1"></span>
+    <input type="number" id="compareItemId" placeholder="compare item ID" style="width:140px;">
+    <button type="button" id="compareItemBtn">Compare</button>
+    <button type="button" id="clearItemCompareBtn">Clear diff</button>
+  </div>
+  <div id="decodedSummary" class="edit-card wide" style="margin-top:10px;">
+    <h3>Decoded item summary <span class="hint">human-readable interpretation of the currently staged fields and effects</span></h3>
+    <div id="decodedSummaryBody" class="muted">Load an item to see its decoded summary.</div>
+  </div>
+  <div id="itemCompareResult" class="edit-card wide mono" style="display:none;margin-top:10px;font-size:11px;white-space:pre-wrap;"></div>
   <div id="editorTables" class="edit-grid" style="margin-top:12px;"></div>
   <div class="edit-card wide" id="effectStagingTools" style="margin-top:12px;">
   <h3>Effect staging tools <span class="hint">all changes remain staged until Save Item</span></h3>
@@ -224,6 +251,69 @@ const TABLE_FIELDS = {
   item_puppet:     ["name","slot","element"],
   item_furnishing: ["name","storage","moghancement","element","aura"],
 };
+const TABLE_LABELS = {
+  item_basic:"Identity & economy", item_equipment:"Equip requirements", item_weapon:"Weapon combat",
+  item_usable:"Use behavior", item_puppet:"Automaton attachment", item_furnishing:"Furnishing"
+};
+const FIELD_GROUPS = {
+  item_basic:{Identity:["name","sortname","subid"],Inventory:["stackSize","flags"],Economy:["aH","NoSale","BaseSell"]},
+  item_equipment:{Requirements:["level","ilevel","jobs"],Placement:["slot","rslot"],Presentation:["MId","shieldSize","scriptType"],Identity:["name"]},
+  item_weapon:{Combat:["skill","subskill","dmg","delay","dmgType","hit"],ItemLevel:["ilvl_skill","ilvl_parry","ilvl_macc"],Unlock:["unlock_points"],Identity:["name"]},
+  item_usable:{Targeting:["validTargets","aoe"],Timing:["activation","animation","animationTime","useDelay","reuseDelay"],Charges:["maxCharges"],Identity:["name"]},
+  item_puppet:{Attachment:["slot","element"],Identity:["name"]},
+  item_furnishing:{Furnishing:["storage","moghancement","element","aura"],Identity:["name"]},
+};
+const BASIC_FIELDS = {
+  item_basic:new Set(["name","stackSize","flags","aH","NoSale","BaseSell"]),
+  item_equipment:new Set(["level","ilevel","jobs","slot","rslot"]),
+  item_weapon:new Set(["skill","subskill","dmg","delay","dmgType","hit"]),
+  item_usable:new Set(["validTargets","activation","animation","maxCharges","useDelay","reuseDelay","aoe"]),
+  item_puppet:new Set(["slot","element"]),
+  item_furnishing:new Set(["storage","moghancement","element","aura"]),
+};
+const FIELD_HELP = {
+  "item_basic.name":"Server-facing item name.",
+  "item_basic.sortname":"Sort/search name used by the server schema.",
+  "item_basic.subid":"Legacy/sub-record identifier; normally leave unchanged unless matching a known source item.",
+  "item_basic.stackSize":"Maximum inventory stack size.",
+  "item_basic.flags":"Item behavior/permission bitmask.",
+  "item_basic.aH":"Auction House category/availability field.",
+  "item_basic.NoSale":"Vendor-sale restriction field.",
+  "item_basic.BaseSell":"Base NPC vendor sell value.",
+  "item_equipment.level":"Minimum equip level.",
+  "item_equipment.ilevel":"Displayed/effective item level metadata.",
+  "item_equipment.jobs":"Allowed-job bitmask.",
+  "item_equipment.slot":"Equip-slot bitmask; linked ring/ear slots are handled together.",
+  "item_equipment.rslot":"Required/related slot metadata.",
+  "item_equipment.MId":"Client model identifier.",
+  "item_equipment.shieldSize":"Shield display/size class.",
+  "item_equipment.scriptType":"Equipment script/behavior class.",
+  "item_weapon.skill":"Primary combat skill family.",
+  "item_weapon.subskill":"Secondary weapon skill/subtype.",
+  "item_weapon.dmg":"Base weapon damage.",
+  "item_weapon.delay":"Weapon delay.",
+  "item_weapon.dmgType":"Physical damage type.",
+  "item_weapon.hit":"Hit-count metadata.",
+  "item_weapon.ilvl_skill":"Item-level combat-skill bonus metadata.",
+  "item_weapon.ilvl_parry":"Item-level parry bonus metadata.",
+  "item_weapon.ilvl_macc":"Item-level magic-accuracy metadata.",
+  "item_weapon.unlock_points":"Points required by unlock-style weapons.",
+  "item_usable.validTargets":"Valid-use target bitmask.",
+  "item_usable.activation":"Activation behavior/effect identifier.",
+  "item_usable.animation":"Use animation identifier.",
+  "item_usable.animationTime":"Animation duration metadata.",
+  "item_usable.maxCharges":"Maximum stored charges.",
+  "item_usable.useDelay":"Initial use delay.",
+  "item_usable.reuseDelay":"Reuse/cooldown delay.",
+  "item_usable.aoe":"Area-of-effect behavior flag.",
+  "item_puppet.slot":"Automaton attachment slot.",
+  "item_puppet.element":"Automaton elemental capacity/cost metadata.",
+  "item_furnishing.storage":"Mog House storage capacity provided.",
+  "item_furnishing.moghancement":"Moghancement identifier.",
+  "item_furnishing.element":"Furnishing element.",
+  "item_furnishing.aura":"Furnishing elemental aura strength."
+};
+let itemEditorMode = localStorage.getItem("itemEditorMode") || "basic";
 let currentItemId = null;
 let loadedServerState = null;
 let loadedEffects={mods:[],pet_mods:[],latents:[]};
@@ -401,61 +491,154 @@ document.getElementById('searchSort').onchange=renderSearchResults;
 document.getElementById('searchDir').onchange=renderSearchResults;
 document.getElementById('recentPrevBtn').onclick=()=>navigateRecent(-1);
 document.getElementById('recentNextBtn').onclick=()=>navigateRecent(1);
+document.getElementById('itemEditorMode').value=itemEditorMode;
+document.getElementById('itemEditorMode').onchange=()=>{
+  itemEditorMode=document.getElementById('itemEditorMode').value;
+  localStorage.setItem('itemEditorMode',itemEditorMode);
+  if(currentItemId && loadedServerState){
+    const current=collectCurrentTables();
+    const merged=JSON.parse(JSON.stringify(loadedServerState));
+    for(const [t,row] of Object.entries(current)) Object.assign(merged[t]||={},row);
+    buildTablesGrid(document.getElementById('editorTables'),merged);
+    renderDecodedSummary();
+  }
+};
+document.getElementById('compareItemBtn').onclick=compareCurrentItem;
+document.getElementById('clearItemCompareBtn').onclick=()=>{ const b=document.getElementById('itemCompareResult'); b.style.display='none'; b.innerHTML=''; };
 
 // Shared by loadItem() (a real existing item) and startDraft()/refreshDraftGrid() (a new item
 // that hasn't been saved yet) -- same field/bitmask/enum rendering either way.
+function itemFieldHtml(table, row, f, schemaForTable) {
+  const schema=schemaForTable[f], val=Number(row[f])||0;
+  const help=FIELD_HELP[table+'.'+f]||'Raw server field.';
+  const label='<span class="field-help" title="'+help.replace(/"/g,'&quot;')+'">'+f+'</span>';
+  if(schema && schema.type==='bits'){
+    return `<div class="mask-row" data-editor-field="${table}.${f}">
+      <div class="mask-label"><span>${label}</span><span class="mono">raw: <span data-mask-display="${table}.${f}">${val}</span></span></div>
+      <div class="mask-flags" data-mask-group="${table}.${f}" data-mask-type="bits" data-table="${table}" data-field="${f}">
+      ${schema.bits.map(b=>`<label title="${help.replace(/"/g,'&quot;')}"><input type="checkbox" data-mask-bit="${b.bit}" data-mask-label="${b.label}" ${(val&b.bit)?'checked':''}
+        onchange="${table==='item_equipment'&&f==='slot'?`slotCheckboxChanged(this,'${table}','${f}')`:`recomputeMask('${table}','${f}')`}">${b.label}</label>`).join('')}
+      </div></div>`;
+  }
+  if(schema && schema.type==='enum'){
+    const known=schema.options.some(o=>o.value===val);
+    const opts=known?schema.options:[{value:val,label:'(undocumented value)'},...schema.options];
+    return `<div class="field-row" data-editor-field="${table}.${f}"><label>${label}</label>
+      <select data-table="${table}" data-field="${f}" title="${help.replace(/"/g,'&quot;')}">
+        ${opts.map(o=>`<option value="${o.value}" ${o.value===val?'selected':''}>${o.value} -- ${o.label}</option>`).join('')}
+      </select></div>`;
+  }
+  if(schema && schema.type==='nibbles'){
+    const maxVal=(1<<schema.width)-1;
+    return `<div class="mask-row" data-editor-field="${table}.${f}">
+      <div class="mask-label"><span>${label}</span><span class="mono">raw: <span data-mask-display="${table}.${f}">${val}</span></span></div>
+      <div class="mask-flags" data-mask-group="${table}.${f}" data-mask-type="nibbles" data-mask-width="${schema.width}" data-table="${table}" data-field="${f}">
+      ${schema.fields.map(fl=>`<label title="${help.replace(/"/g,'&quot;')}">${fl.label}
+        <input type="number" min="0" max="${maxVal}" data-mask-shift="${fl.shift}" value="${(val>>fl.shift)&maxVal}" onchange="recomputeMask('${table}','${f}')">
+      </label>`).join('')}</div></div>`;
+  }
+  return `<div class="field-row" data-editor-field="${table}.${f}"><label>${label}</label>
+    <input type="text" data-table="${table}" data-field="${f}" title="${help.replace(/"/g,'&quot;')}"
+      value="${row[f]===null?'':String(row[f]).replace(/"/g,'&quot;')}"></div>`;
+}
 function buildTablesGrid(wrap, serverObj) {
-  wrap.innerHTML = '';
-  for (const [table, row] of Object.entries(serverObj)) {
-    const fields = TABLE_FIELDS[table] || Object.keys(row);
-    const schemaForTable = BITMASK_SCHEMA[table] || {};
-    const box = document.createElement('div');
-    box.className = 'edit-card';
-    box.innerHTML = `<h3>${table}</h3>
-        ${fields.filter(f => f in row).map(f => {
-          const schema = schemaForTable[f];
-          const val = Number(row[f]) || 0;
-          if (schema && schema.type === 'bits') {
-            return `<div class="mask-row">
-                <div class="mask-label"><span>${f}</span><span class="mono">raw: <span data-mask-display="${table}.${f}">${val}</span></span></div>
-                <div class="mask-flags" data-mask-group="${table}.${f}" data-mask-type="bits" data-table="${table}" data-field="${f}">
-                ${schema.bits.map(b => `<label>
-                    <input type="checkbox" data-mask-bit="${b.bit}" data-mask-label="${b.label}" ${(val & b.bit) ? 'checked' : ''}
-                           onchange="${table === 'item_equipment' && f === 'slot' ? `slotCheckboxChanged(this,'${table}','${f}')` : `recomputeMask('${table}','${f}')`}">${b.label}</input>
-                  </label>`).join('')}
-              </div></div>`;
-          }
-          if (schema && schema.type === 'enum') {
-            const known = schema.options.some(o => o.value === val);
-            const opts = known ? schema.options : [{value: val, label: '(undocumented value)'}, ...schema.options];
-            return `<div class="field-row"><label>${f}</label>
-              <select data-table="${table}" data-field="${f}">
-                ${opts.map(o => `<option value="${o.value}" ${o.value === val ? 'selected' : ''}>${o.value} -- ${o.label}</option>`).join('')}
-              </select>
-            </div>`;
-          }
-          if (schema && schema.type === 'nibbles') {
-            const maxVal = (1 << schema.width) - 1;
-            return `<div class="mask-row">
-                <div class="mask-label"><span>${f}</span><span class="mono">raw: <span data-mask-display="${table}.${f}">${val}</span></span></div>
-                <div class="mask-flags" data-mask-group="${table}.${f}" data-mask-type="nibbles" data-mask-width="${schema.width}" data-table="${table}" data-field="${f}">
-                ${schema.fields.map(fl => `<label>
-                    ${fl.label}
-                    <input type="number" min="0" max="${maxVal}" data-mask-shift="${fl.shift}"
-                           value="${(val >> fl.shift) & maxVal}"
-                           onchange="recomputeMask('${table}','${f}')">
-                  </label>`).join('')}
-              </div></div>`;
-          }
-          return `<div class="field-row"><label>${f}</label>
-            <input type="text" data-table="${table}" data-field="${f}"
-                   value="${row[f] === null ? '' : String(row[f]).replace(/"/g,'&quot;')}">
-          </div>`;
-        }).join('')}`;
+  wrap.innerHTML='';
+  for(const [table,row] of Object.entries(serverObj)){
+    const allFields=(TABLE_FIELDS[table]||Object.keys(row)).filter(f=>f in row);
+    const fields=itemEditorMode==='basic' ? allFields.filter(f=>BASIC_FIELDS[table]?.has(f)) : allFields;
+    if(!fields.length) continue;
+    const schemaForTable=BITMASK_SCHEMA[table]||{};
+    const box=document.createElement('div'); box.className='edit-card';
+    const groups=FIELD_GROUPS[table]||{Fields:fields};
+    let body='';
+    for(const [groupName,groupFields] of Object.entries(groups)){
+      const present=groupFields.filter(f=>fields.includes(f));
+      if(!present.length) continue;
+      body+='<div class="logical-group"><div class="logical-group-title">'+groupName+'</div>'+
+        present.map(f=>itemFieldHtml(table,row,f,schemaForTable)).join('')+'</div>';
+    }
+    const grouped=new Set(Object.values(groups).flat());
+    const leftover=fields.filter(f=>!grouped.has(f));
+    if(leftover.length) body+='<div class="logical-group"><div class="logical-group-title">Other</div>'+
+      leftover.map(f=>itemFieldHtml(table,row,f,schemaForTable)).join('')+'</div>';
+    box.innerHTML='<h3>'+(TABLE_LABELS[table]||table)+' <span class="hint">'+table+'</span></h3>'+body;
     wrap.appendChild(box);
   }
+  wrap.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',()=>{ updateDirtySummary(); renderDecodedSummary(); }));
 }
-
+function decodeField(table,field,value){
+  const schema=BITMASK_SCHEMA?.[table]?.[field], n=Number(value)||0;
+  if(!schema) return String(value??'');
+  if(schema.type==='bits'){
+    const labels=(schema.bits||[]).filter(b=>(n&Number(b.bit))!==0).map(b=>b.label);
+    return labels.length?labels.join(', '):'none';
+  }
+  if(schema.type==='enum'){
+    const hit=(schema.options||[]).find(o=>Number(o.value)===n);
+    return hit?hit.label:String(value);
+  }
+  if(schema.type==='nibbles'){
+    const max=(1<<schema.width)-1;
+    return (schema.fields||[]).map(fl=>fl.label+' '+((n>>Number(fl.shift))&max)).join(', ');
+  }
+  return String(value??'');
+}
+function renderDecodedSummary(tables=null){
+  const body=document.getElementById('decodedSummaryBody'); if(!body) return;
+  tables=tables||collectCurrentTables();
+  const chips=[];
+  const basic=tables.item_basic||{}, eq=tables.item_equipment||{}, wep=tables.item_weapon||{}, use=tables.item_usable||{};
+  if(basic.name) chips.push('Name: '+basic.name);
+  if(eq.level!==undefined) chips.push('Level '+eq.level+(Number(eq.ilevel)>0?' · iLvl '+eq.ilevel:''));
+  if(eq.slot!==undefined) chips.push('Slots: '+decodeField('item_equipment','slot',eq.slot));
+  if(eq.jobs!==undefined) chips.push('Jobs: '+decodeField('item_equipment','jobs',eq.jobs));
+  if(wep.skill!==undefined) chips.push('Weapon: skill '+decodeField('item_weapon','skill',wep.skill)+' · DMG '+wep.dmg+' · delay '+wep.delay);
+  if(wep.dmgType!==undefined) chips.push('Damage type: '+decodeField('item_weapon','dmgType',wep.dmgType));
+  if(use.validTargets!==undefined) chips.push('Use targets: '+decodeField('item_usable','validTargets',use.validTargets));
+  if(use.maxCharges!==undefined) chips.push('Charges '+use.maxCharges+' · reuse '+use.reuseDelay);
+  const effectBits=[];
+  if(stagedEffects.mods?.length) effectBits.push(stagedEffects.mods.length+' mod'+(stagedEffects.mods.length===1?'':'s'));
+  if(stagedEffects.pet_mods?.length) effectBits.push(stagedEffects.pet_mods.length+' pet mod'+(stagedEffects.pet_mods.length===1?'':'s'));
+  if(stagedEffects.latents?.length) effectBits.push(stagedEffects.latents.length+' latent'+(stagedEffects.latents.length===1?'':'s'));
+  chips.push('Effects: '+(effectBits.join(' · ')||'none'));
+  const namedMods=(stagedEffects.mods||[]).slice(0,8).map(m=>(MOD_NAMES[m.modId]||('mod '+m.modId))+' '+(Number(m.value)>=0?'+':'')+m.value);
+  if(namedMods.length) chips.push('Mods: '+namedMods.join(', ')+(stagedEffects.mods.length>8?' …':''));
+  body.innerHTML=chips.map(x=>'<span class="summary-chip">'+String(x).replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</span>').join('');
+}
+function flattenItemForCompare(tables,effects){
+  const out={};
+  for(const [table,row] of Object.entries(tables||{})) for(const [field,value] of Object.entries(row||{})) out[table+'.'+field]=String(value??'');
+  const e=normalizedEffects(effects||{});
+  for(const kind of ['mods','pet_mods','latents']) for(const row of e[kind]) out['effect.'+kind+'.'+effectSortKey(kind,row)]=JSON.stringify(row);
+  return out;
+}
+function effectCompareLabel(key,value){
+  const p=key.split('.');
+  if(p[0]!=='effect') return key;
+  const kind=p[1], row=JSON.parse(value);
+  if(kind==='mods') return 'mod '+(MOD_NAMES[row.modId]||row.modId)+' = '+row.value;
+  if(kind==='pet_mods') return 'pet mod '+(MOD_NAMES[row.modId]||row.modId)+' / '+(PET_TYPE_NAMES[row.petType]||row.petType)+' = '+row.value;
+  return 'latent '+(MOD_NAMES[row.modId]||row.modId)+' '+row.value+' when '+(LATENT_NAMES[row.latentId]||row.latentId)+' (param '+row.latentParam+')';
+}
+async function compareCurrentItem(){
+  if(!currentItemId) return;
+  const otherId=Number(document.getElementById('compareItemId').value);
+  if(!otherId){ alert('Enter an item ID to compare.'); return; }
+  const box=document.getElementById('itemCompareResult'); box.style.display=''; box.textContent='Loading comparison...';
+  const r=await fetch('/itemedit/'+otherId+'.json'); if(!r.ok){ box.textContent='Unable to load item '+otherId+': '+await r.text(); return; }
+  const other=await r.json();
+  const left=flattenItemForCompare(collectCurrentTables(),stagedEffects);
+  const right=flattenItemForCompare(other.server,{mods:other.mods||[],pet_mods:other.pet_mods||[],latents:other.latents||[]});
+  const keys=[...new Set([...Object.keys(left),...Object.keys(right)])].sort();
+  const lines=[];
+  for(const k of keys){
+    if(!(k in left)){ lines.push({cls:'compare-add',text:'+ '+effectCompareLabel(k,right[k])+' · only on item '+otherId}); continue; }
+    if(!(k in right)){ lines.push({cls:'compare-remove',text:'- '+effectCompareLabel(k,left[k])+' · only on current item'}); continue; }
+    if(left[k]!==right[k]) lines.push({cls:'compare-change',text:'~ '+k+': '+left[k]+' → '+right[k]});
+  }
+  box.innerHTML='<h3>Item comparison <span class="hint">current staged item '+currentItemId+' ↔ saved item '+otherId+'</span></h3>'+
+    (lines.length?lines.map(x=>'<div class="'+x.cls+'">'+x.text.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>').join(''):'<div class="muted">No differences in editable fields/effects.</div>');
+}
 function renderItemStatus(data){
   const bar=document.getElementById('itemStatusBar'), st=data.dat_status||{}, cmp=data.comparison||{};
   const client=!cmp.available ? 'CLIENT DAT —' : (cmp.mismatches?.length ? ('CLIENT DAT ⚠ '+cmp.mismatches.length+' mismatch'+(cmp.mismatches.length===1?'':'es')) : 'CLIENT DAT ✓');
@@ -517,6 +700,7 @@ async function loadItem(itemid, remember=true) {
   if (!res.ok) { alert(await res.text()); return; }
   const data = await res.json();
   currentItemId = itemid;
+  const compareBox=document.getElementById('itemCompareResult'); compareBox.style.display='none'; compareBox.innerHTML='';
   if(remember) rememberRecent(itemid);
   draftMode = false;
   document.getElementById('draftWrap').style.display = 'none';
@@ -537,6 +721,7 @@ async function loadItem(itemid, remember=true) {
   renderMods(stagedEffects.mods);
   renderPetMods(stagedEffects.pet_mods);
   renderLatents(stagedEffects.latents);
+  renderDecodedSummary();
   document.getElementById('editorWrap').style.display = '';
   document.getElementById('saveStatus').textContent = '';
   document.getElementById('itemBackupMsg').textContent = '';
@@ -771,13 +956,14 @@ function rerenderEffects(){
   const wrap=document.getElementById('editorLists'); wrap.innerHTML='';
   renderMods(stagedEffects.mods); renderPetMods(stagedEffects.pet_mods); renderLatents(stagedEffects.latents);
   updateDirtySummary();
+  renderDecodedSummary();
 }
 
 function renderMods(mods){
   const wrap=document.getElementById('editorLists'), box=document.createElement('div');
   box.className='edit-card';
   const rows=mods.map(m=>'<tr><td style="width:36px;">'+m.modId+'</td><td>'+(MOD_NAMES[m.modId]||'(unconfirmed modId)')+'</td><td style="width:80px;"><input type="number" data-stage-mod="'+m.modId+'" value="'+m.value+'" style="width:70px;"></td><td style="width:72px;"><button type="button" data-remove-mod="'+m.modId+'">remove</button></td></tr>').join('');
-  box.innerHTML='<h3>item_mods<span class="hint">staged; saved with Save Item</span></h3><div class="rowtable-wrap table-wrap"><table><tbody>'+(rows||'<tr><td class="muted">no mods on this item</td></tr>')+'<tr><td colspan="2"><input type="text" id="newModId" list="dl_mods" placeholder="type to search mods..." style="width:100%;"></td><td><input type="number" id="newModValue" value="0" style="width:70px;"></td><td><button type="button" id="stageAddMod">add</button></td></tr></tbody></table></div>';
+  box.innerHTML='<h3>Item modifiers ('+mods.length+')<span class="hint">resolved modifier names; staged until Save Item</span></h3><div class="rowtable-wrap table-wrap"><table><tbody>'+(rows||'<tr><td class="muted">no mods on this item</td></tr>')+'<tr><td colspan="2"><input type="text" id="newModId" list="dl_mods" placeholder="type to search mods..." style="width:100%;"></td><td><input type="number" id="newModValue" value="0" style="width:70px;"></td><td><button type="button" id="stageAddMod">add</button></td></tr></tbody></table></div>';
   wrap.appendChild(box);
   box.querySelectorAll('[data-stage-mod]').forEach(inp=>inp.oninput=()=>{ const row=stagedEffects.mods.find(x=>Number(x.modId)===Number(inp.dataset.stageMod)); if(row){ row.value=Number(inp.value)||0; updateDirtySummary(); } });
   box.querySelectorAll('[data-remove-mod]').forEach(btn=>btn.onclick=()=>{ stagedEffects.mods=stagedEffects.mods.filter(x=>Number(x.modId)!==Number(btn.dataset.removeMod)); rerenderEffects(); });
@@ -791,7 +977,7 @@ function renderMods(mods){
 function renderPetMods(rows){
   const wrap=document.getElementById('editorLists'), box=document.createElement('div'); box.className='edit-card';
   const body=rows.map(m=>'<tr><td>'+m.modId+'</td><td>'+(MOD_NAMES[m.modId]||'(unconfirmed modId)')+'</td><td>'+(PET_TYPE_NAMES[m.petType]||('pet '+m.petType))+'</td><td><input type="number" data-stage-petmod="'+m.modId+':'+m.petType+'" value="'+m.value+'" style="width:70px;"></td><td><button type="button" data-remove-petmod="'+m.modId+':'+m.petType+'">remove</button></td></tr>').join('');
-  box.innerHTML='<h3>item_mods_pet<span class="hint">staged; saved with Save Item</span></h3><div class="rowtable-wrap table-wrap"><table><tbody>'+(body||'<tr><td class="muted">no pet mods on this item</td></tr>')+'<tr><td colspan="2"><input type="text" id="newPetModId" list="dl_mods" placeholder="mod..."></td><td><input type="text" id="newPetModType" list="dl_pettypes" placeholder="pet type..."></td><td><input type="number" id="newPetModValue" value="0" style="width:70px;"></td><td><button type="button" id="stageAddPetMod">add</button></td></tr></tbody></table></div>';
+  box.innerHTML='<h3>Pet modifiers ('+rows.length+')<span class="hint">modifier + pet family metadata; staged until Save Item</span></h3><div class="rowtable-wrap table-wrap"><table><tbody>'+(body||'<tr><td class="muted">no pet mods on this item</td></tr>')+'<tr><td colspan="2"><input type="text" id="newPetModId" list="dl_mods" placeholder="mod..."></td><td><input type="text" id="newPetModType" list="dl_pettypes" placeholder="pet type..."></td><td><input type="number" id="newPetModValue" value="0" style="width:70px;"></td><td><button type="button" id="stageAddPetMod">add</button></td></tr></tbody></table></div>';
   wrap.appendChild(box);
   box.querySelectorAll('[data-stage-petmod]').forEach(inp=>inp.oninput=()=>{ const [m,p]=inp.dataset.stagePetmod.split(':').map(Number); const row=stagedEffects.pet_mods.find(x=>Number(x.modId)===m&&Number(x.petType)===p); if(row){ row.value=Number(inp.value)||0; updateDirtySummary(); } });
   box.querySelectorAll('[data-remove-petmod]').forEach(btn=>btn.onclick=()=>{ const [m,p]=btn.dataset.removePetmod.split(':').map(Number); stagedEffects.pet_mods=stagedEffects.pet_mods.filter(x=>!(Number(x.modId)===m&&Number(x.petType)===p)); rerenderEffects(); });
@@ -806,7 +992,7 @@ function renderPetMods(rows){
 function renderLatents(rows){
   const wrap=document.getElementById('editorLists'), box=document.createElement('div'); box.className='edit-card';
   const body=rows.map(l=>'<tr><td>'+l.modId+'</td><td>'+(MOD_NAMES[l.modId]||'(unconfirmed modId)')+'</td><td>'+l.value+'</td><td>'+(LATENT_NAMES[l.latentId]||('latent '+l.latentId))+'</td><td>param '+l.latentParam+'</td><td><button type="button" data-remove-latent="'+l.modId+':'+l.value+':'+l.latentId+':'+l.latentParam+'">remove</button></td></tr>').join('');
-  box.innerHTML='<h3>item_latents<span class="hint">staged; saved with Save Item</span></h3><div class="rowtable-wrap table-wrap"><table><tbody>'+(body||'<tr><td class="muted">no latents on this item</td></tr>')+'<tr><td colspan="2"><input type="text" id="newLatentModId" list="dl_mods" placeholder="mod..."></td><td><input type="number" id="newLatentValue" value="0" style="width:55px;"></td><td><input type="text" id="newLatentId" list="dl_latents" placeholder="condition..."></td><td><input type="number" id="newLatentParam" value="0" style="width:55px;"></td><td><button type="button" id="stageAddLatent">add</button></td></tr></tbody></table></div>';
+  box.innerHTML='<h3>Latent effects ('+rows.length+')<span class="hint">modifier + activation condition metadata; staged until Save Item</span></h3><div class="rowtable-wrap table-wrap"><table><tbody>'+(body||'<tr><td class="muted">no latents on this item</td></tr>')+'<tr><td colspan="2"><input type="text" id="newLatentModId" list="dl_mods" placeholder="mod..."></td><td><input type="number" id="newLatentValue" value="0" style="width:55px;"></td><td><input type="text" id="newLatentId" list="dl_latents" placeholder="condition..."></td><td><input type="number" id="newLatentParam" value="0" style="width:55px;"></td><td><button type="button" id="stageAddLatent">add</button></td></tr></tbody></table></div>';
   wrap.appendChild(box);
   box.querySelectorAll('[data-remove-latent]').forEach(btn=>btn.onclick=()=>{ const k=btn.dataset.removeLatent.split(':').map(Number); stagedEffects.latents=stagedEffects.latents.filter(x=>!(Number(x.modId)===k[0]&&Number(x.value)===k[1]&&Number(x.latentId)===k[2]&&Number(x.latentParam)===k[3])); rerenderEffects(); });
   box.querySelector('#stageAddLatent').onclick=()=>{
