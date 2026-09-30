@@ -1,208 +1,264 @@
 {% extends "base.html" %}
 {% block title %}DAT Inspector{% endblock %}
 {% block content %}
-<h1>DAT Inspector</h1>
-<p class="muted">
-  Read-only client resource inspector. Pick a DAT by numeric ID, derive one from a zone and common
-  resource family, or enter a ROM-relative path such as <code>ROM/7/44.DAT</code>.
-  The inspector never modifies client files.
-</p>
+<style>
+.dat-head{display:flex;gap:14px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}
+.dat-head h1{margin:0 0 4px}
+.dat-locator{display:grid;grid-template-columns:minmax(420px,1.35fr) minmax(320px,.65fr);gap:14px;align-items:start}
+.dat-card{border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden}
+.dat-card>h3{margin:0;padding:10px 12px;border-bottom:1px solid var(--border);font-size:14px}
+.dat-card .body{padding:12px}
+.dat-primary-form{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:8px}
+.dat-alt-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dat-alt-grid form{border:1px solid var(--border);border-radius:6px;padding:10px;background:var(--code-bg)}
+.dat-alt-grid h4{margin:0 0 5px}
+.dat-alt-grid input,.dat-alt-grid select{width:100%;box-sizing:border-box}
+.dat-result-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.45fr);gap:14px;margin-top:16px}
+.dat-verdict{padding:16px;border:1px solid var(--border);border-radius:8px;background:var(--surface)}
+.dat-verdict.recognized{box-shadow:inset 4px 0 0 var(--accent)}
+.dat-verdict.multiple{box-shadow:inset 4px 0 0 #b3893f}
+.dat-verdict.unknown{box-shadow:inset 4px 0 0 var(--red)}
+.dat-verdict h2{margin:0 0 5px}
+.dat-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.dat-warning{margin-top:10px;padding:8px 10px;border:1px solid #b3893f;border-radius:6px;background:var(--amber-soft)}
+.dat-actions{display:grid;gap:7px}
+.dat-action{display:block;border:1px solid var(--border);border-radius:6px;padding:9px 10px;text-decoration:none;color:var(--ink);background:var(--surface)}
+.dat-action:hover{background:var(--accent-soft)}
+.dat-action.primary{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.dat-action strong{display:block}.dat-action span{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.dat-match-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:14px;margin-top:14px}
+.dat-match{border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden}
+.dat-match-head{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.dat-match-head h3{margin:0}
+.dat-match .section{padding:10px 12px;border-bottom:1px solid var(--border)}
+.dat-match .section:last-child{border-bottom:0}
+.dat-scalars{display:grid;grid-template-columns:minmax(150px,.4fr) minmax(0,1fr);gap:5px 10px}
+.dat-scalars>div:nth-child(odd){color:var(--muted)}
+.dat-collection{margin-top:10px;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.dat-collection summary{padding:7px 9px;background:var(--code-bg);cursor:pointer}
+.dat-preview-table{width:100%;border-collapse:collapse;font-size:12px}.dat-preview-table th,.dat-preview-table td{padding:5px 7px;border-top:1px solid var(--border);vertical-align:top}
+.dat-preview-table td{max-width:340px;word-break:break-word}
+.dat-advanced{margin-top:14px}
+.dat-advanced details{border:1px solid var(--border);border-radius:7px;margin-bottom:8px;background:var(--surface)}
+.dat-advanced summary{padding:9px 11px;cursor:pointer;font-weight:600}
+.dat-advanced .inner{padding:0 11px 11px}
+.dat-neighbors{display:flex;gap:6px;flex-wrap:wrap}
+@media(max-width:1000px){.dat-locator,.dat-result-head{grid-template-columns:1fr}.dat-alt-grid{grid-template-columns:1fr}.dat-match-grid{grid-template-columns:1fr}}
+</style>
 
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:18px 0;">
-  <form method="get" style="border:1px solid var(--border,#ccc);border-radius:8px;padding:14px;">
-    <h2 style="margin-top:0;">DAT ID</h2>
-    <p class="muted">Use this when another tool, server record, or capture already gave you a DAT ID.</p>
-    <input type="number" name="dat_id" value="{{ dat_id if selected_mode != 'zone' else '' }}"
-           placeholder="e.g. 6497" min="0" style="width:100%;box-sizing:border-box;" required>
-    <input type="hidden" name="ffxi_path" value="{{ ffxi_path }}">
-    <p><button type="submit">Inspect DAT ID</button></p>
-  </form>
-
-  <form method="get" style="border:1px solid var(--border,#ccc);border-radius:8px;padding:14px;">
-    <h2 style="margin-top:0;">Zone resource</h2>
-    <p class="muted">Pick a zone and one of the common per-zone DAT families. The numeric DAT ID is calculated for you.</p>
-    <label>Zone<br>
-      {% if zones %}
-      <select name="zoneid" style="width:100%;" required>
-        <option value="">Select zone…</option>
-        {% for z in zones %}
-        <option value="{{ z.zoneid }}" {% if zoneid|string == z.zoneid|string %}selected{% endif %}>
-          {{ z.zoneid }} — {{ z.name }}
-        </option>
-        {% endfor %}
-      </select>
-      {% else %}
-      <input type="number" name="zoneid" value="{{ zoneid }}" min="0" max="255"
-             placeholder="Zone ID" style="width:100%;box-sizing:border-box;" required>
-      {% endif %}
-    </label>
-    <br>
-    <label>Resource family<br>
-      <select name="family" style="width:100%;" required>
-        <option value="">Select family…</option>
-        {% for f in families %}
-        <option value="{{ f.name }}" {% if family == f.name %}selected{% endif %}>
-          {{ f.label }} (base {{ f.base }})
-        </option>
-        {% endfor %}
-      </select>
-    </label>
-    <input type="hidden" name="ffxi_path" value="{{ ffxi_path }}">
-    <p><button type="submit">Inspect zone DAT</button></p>
-  </form>
-
-  <form method="get" style="border:1px solid var(--border,#ccc);border-radius:8px;padding:14px;">
-    <h2 style="margin-top:0;">Client DAT path</h2>
-    <p class="muted">Use a path inside the configured FFXI client. Relative paths are resolved from the client root.</p>
-    <input type="text" name="dat_path" value="{{ dat_path }}"
-           placeholder="ROM/7/44.DAT" style="width:100%;box-sizing:border-box;" required>
-    <input type="hidden" name="ffxi_path" value="{{ ffxi_path }}">
-    <p><button type="submit">Inspect DAT path</button></p>
-  </form>
+<div class="dat-head">
+  <div>
+    <h1>DAT Inspector</h1>
+    <div class="muted">Read-only client resource workbench. Identify a DAT, inspect meaningful decoded records, and jump directly into the tool that can use them.</div>
+  </div>
+  <div class="dat-chips">
+    <span class="chip">client: {{ ffxi_path }}</span>
+    <a class="chip" href="/settings">Change client path</a>
+  </div>
 </div>
 
-<details style="margin-bottom:18px;">
-  <summary>Client root and DAT-family details</summary>
-  <div class="table-wrap"><table>
-    <tr><th>FFXI client root</th><td><code>{{ ffxi_path }}</code></td></tr>
-    {% for f in families %}
-    <tr><th>{{ f.label }}</th><td><code>DAT ID = {{ f.base }} + zone ID</code></td></tr>
-    {% endfor %}
+<div class="dat-locator">
+  <section class="dat-card">
+    <h3>Open a DAT</h3>
+    <div class="body">
+      <p class="muted" style="margin-top:0">If you already have a numeric DAT/file ID from a trace, model lookup, or another tool, this is the quickest route.</p>
+      <form class="dat-primary-form" method="get">
+        <input type="number" name="dat_id" value="{{ dat_id if selected_mode != 'zone' else '' }}" placeholder="DAT / file ID, e.g. 6497" min="0" required>
+        <input type="hidden" name="ffxi_path" value="{{ ffxi_path }}">
+        <button type="submit">Inspect</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="dat-card">
+    <h3>Alternate ways to locate one</h3>
+    <div class="body dat-alt-grid">
+      <form method="get">
+        <h4>Zone resource</h4>
+        <p class="muted" style="font-size:11px">Use a known per-zone family without calculating its DAT ID yourself.</p>
+        {% if zones %}
+        <select name="zoneid" required>
+          <option value="">Zone…</option>
+          {% for z in zones %}<option value="{{ z.zoneid }}" {% if zoneid|string == z.zoneid|string %}selected{% endif %}>{{ z.zoneid }} — {{ z.name }}</option>{% endfor %}
+        </select>
+        {% else %}
+        <input type="number" name="zoneid" value="{{ zoneid }}" min="0" max="255" placeholder="Zone ID" required>
+        {% endif %}
+        <select name="family" required style="margin-top:6px">
+          <option value="">Resource family…</option>
+          {% for fam in families %}<option value="{{ fam.name }}" {% if family == fam.name %}selected{% endif %}>{{ fam.label }}</option>{% endfor %}
+        </select>
+        <input type="hidden" name="ffxi_path" value="{{ ffxi_path }}">
+        <button type="submit" style="margin-top:7px">Inspect zone resource</button>
+      </form>
+
+      <form method="get">
+        <h4>ROM-relative path</h4>
+        <p class="muted" style="font-size:11px">Useful when a parser, catalog, or capture already gave you the client path.</p>
+        <input type="text" name="dat_path" value="{{ dat_path }}" placeholder="ROM/7/44.DAT" required>
+        <input type="hidden" name="ffxi_path" value="{{ ffxi_path }}">
+        <button type="submit" style="margin-top:7px">Inspect path</button>
+      </form>
+    </div>
+  </section>
+</div>
+
+<details style="margin:10px 0 0">
+  <summary>How zone-family shortcuts are calculated</summary>
+  <div class="table-wrap" style="margin-top:8px"><table>
+    {% for fam in families %}<tr><th>{{ fam.label }}</th><td><code>DAT ID = {{ fam.base }} + zone ID</code></td></tr>{% endfor %}
   </table></div>
-  <p class="muted">
-    The zone-family shortcuts are conveniences, not type proof. Actual content identification still
-    comes from parsers that successfully decode the selected file.
-  </p>
+  <p class="muted">These ranges are navigation hints only. A successful parser is structural evidence; neither the range nor one parser acceptance alone is semantic proof.</p>
 </details>
 
 {% if error %}
-<div style="border:1px solid #c33;border-radius:8px;padding:12px;margin:14px 0;">
-  <strong>Could not inspect that DAT.</strong><br>
-  <span>{{ error }}</span>
-</div>
+<div class="warn" style="margin-top:14px"><strong>Could not inspect that DAT.</strong><br><span class="mono">{{ error }}</span></div>
 {% endif %}
 
 {% if result %}
-<hr>
-<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
-  <div>
-    <h2 style="margin-bottom:4px;">{{ result.rom_relative or result.filename }}</h2>
-    <p class="muted" style="margin-top:0;">
-      {% if result.dat_id is not none %}DAT ID <code>{{ result.dat_id }}</code>{% endif %}
-      {% if result.family_hint %} · {{ result.family_hint }}{% endif %}
-    </p>
-  </div>
+<div class="dat-result-head">
+  <section class="dat-verdict {{ result.classification.status }}">
+    <div class="muted">Identification verdict</div>
+    <h2>{{ result.classification.verdict }}</h2>
+    <div class="muted">{{ result.rom_relative or result.filename }}</div>
+    <div class="dat-chips">
+      {% if result.dat_id is not none %}<span class="chip mono">DAT {{ result.dat_id }}</span>{% endif %}
+      {% if result.zone_id is not none %}<span class="chip">zone {{ result.zone_id }}{% if result.zone_name %} — {{ result.zone_name }}{% endif %}</span>{% endif %}
+      {% if result.family %}<span class="chip">{{ result.family|replace('_',' ') }}</span>{% endif %}
+      <span class="chip">{{ "{:,}".format(result.size) }} bytes</span>
+      <span class="chip">{{ result.parser_match_count }} parser match{{ '' if result.parser_match_count == 1 else 'es' }}</span>
+      <span class="chip">{{ result.classification.confidence }}</span>
+    </div>
 
-  {% if result.dat_id is not none %}
-  <div>
-    {% if result.dat_id > 0 %}
-    <a class="chip" href="/datinspector?dat_id={{ result.dat_id - 1 }}&ffxi_path={{ ffxi_path|urlencode }}">← {{ result.dat_id - 1 }}</a>
+    {% if result.classification.warnings %}
+      {% for w in result.classification.warnings %}<div class="dat-warning">{{ w }}</div>{% endfor %}
     {% endif %}
-    <a class="chip" href="/datinspector?dat_id={{ result.dat_id + 1 }}&ffxi_path={{ ffxi_path|urlencode }}">{{ result.dat_id + 1 }} →</a>
-  </div>
-  {% endif %}
+
+    {% if result.family_hint %}<p class="muted" style="margin-bottom:0">ID-range hint: {{ result.family_hint }}</p>{% endif %}
+
+    {% if result.dat_id is not none %}
+    <div class="dat-neighbors" style="margin-top:10px">
+      {% if result.dat_id > 0 %}<a class="chip" href="/datinspector?dat_id={{ result.dat_id - 1 }}&ffxi_path={{ ffxi_path|urlencode }}">← DAT {{ result.dat_id - 1 }}</a>{% endif %}
+      <a class="chip" href="/datinspector?dat_id={{ result.dat_id + 1 }}&ffxi_path={{ ffxi_path|urlencode }}">DAT {{ result.dat_id + 1 }} →</a>
+    </div>
+    {% endif %}
+  </section>
+
+  <aside class="dat-card">
+    <h3>What can I do with this?</h3>
+    <div class="body dat-actions">
+      {% for a in result.actions %}
+      <a class="dat-action{% if a.primary %} primary{% endif %}" href="{{ a.href }}">
+        <strong>{{ a.label }}</strong><span>{{ a.note }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </aside>
 </div>
 
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:14px 0;">
-  <div style="border:1px solid var(--border,#ccc);border-radius:8px;padding:12px;">
-    <div class="muted">File size</div>
-    <strong>{{ "{:,}".format(result.size) }} bytes</strong><br>
-    <span class="muted">{{ result.size_kib }} KiB</span>
-  </div>
-  <div style="border:1px solid var(--border,#ccc);border-radius:8px;padding:12px;">
-    <div class="muted">Recognized formats</div>
-    <strong>{{ result.parser_match_count }}</strong><br>
-    <span class="muted">{{ result.parser_reject_count }} parsers rejected</span>
-  </div>
-  <div style="border:1px solid var(--border,#ccc);border-radius:8px;padding:12px;">
-    <div class="muted">Resolved file</div>
-    <strong>{{ result.filename }}</strong><br>
-    <span class="muted">{{ result.rom_relative }}</span>
-  </div>
-</div>
-
-<h3>Identification</h3>
-<div class="table-wrap"><table>
-  {% if result.dat_id is not none %}
-  <tr><th>DAT ID</th><td><code>{{ result.dat_id }}</code></td></tr>
-  {% endif %}
-  <tr><th>Client path</th><td><code>{{ result.path }}</code></td></tr>
-  <tr><th>ROM-relative path</th><td><code>{{ result.rom_relative }}</code></td></tr>
-  {% if result.family_hint %}<tr><th>Family hint</th><td>{{ result.family_hint }}</td></tr>{% endif %}
-  {% if result.extractor_note %}<tr><th>Resolver detail</th><td>{{ result.extractor_note }}</td></tr>{% endif %}
-  <tr><th>SHA-256</th><td><code style="word-break:break-all;">{{ result.sha256 }}</code></td></tr>
-</table></div>
-
-<h3>Recognized content</h3>
 {% if result.matches %}
-<p class="muted">
-  More than one parser may legitimately accept a DAT. Successful parser results are evidence of a
-  compatible structure; they are shown separately rather than forcing a single guessed type.
-</p>
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;">
+<div class="dat-match-grid">
   {% for m in result.matches %}
-  <section style="border:1px solid var(--border,#ccc);border-radius:8px;padding:14px;">
-    <h3 style="margin-top:0;">{{ m.label }}</h3>
-    <p><code>{{ m.parser }}</code></p>
+  <section class="dat-match">
+    <div class="dat-match-head">
+      <div>
+        <div class="muted" style="font-size:11px">Decoded interpretation</div>
+        <h3>{{ m.label }}</h3>
+      </div>
+      <span class="chip mono">{{ m.parser }}</span>
+    </div>
 
-    {% if m.summary.kind == "list" %}
-      <p><strong>{{ m.summary.count }}</strong> decoded entries.</p>
-    {% elif m.summary.kind == "mapping" %}
-      <p><strong>{{ m.summary.top_level_fields }}</strong> top-level fields.</p>
-      {% if m.summary.field_names %}
-      <p class="muted">Fields: {{ m.summary.field_names|join(", ") }}</p>
-      {% endif %}
-      {% if m.summary.collection_counts %}
-      <div class="table-wrap"><table>
-        <tr><th>Collection</th><th>Entries</th></tr>
-        {% for name, count in m.summary.collection_counts.items() %}
-        <tr><td>{{ name }}</td><td>{{ count }}</td></tr>
+    {% if m.presentation.scalars %}
+    <div class="section">
+      <h4 style="margin:0 0 7px">Fields</h4>
+      <div class="dat-scalars">
+        {% for row in m.presentation.scalars %}
+        <div>{{ row.name }}</div><div class="mono">{{ row.value }}</div>
         {% endfor %}
-      </table></div>
-      {% endif %}
-    {% else %}
-      <p>{{ m.summary.value or m.summary.kind }}</p>
+      </div>
+    </div>
     {% endif %}
 
-    <details>
-      <summary>Show decoded preview</summary>
-      <pre style="max-height:420px;overflow:auto;white-space:pre-wrap;">{{ m.preview | tojson(indent=2) }}</pre>
-    </details>
+    <div class="section">
+      {% if m.presentation.collections %}
+        <h4 style="margin:0 0 4px">Decoded collections</h4>
+        <p class="muted" style="margin:0">Counts and representative rows from the parser result. Raw JSON remains available below for exact structure.</p>
+        {% for coll in m.presentation.collections %}
+        <details class="dat-collection" {% if loop.first %}open{% endif %}>
+          <summary><strong>{{ coll.name }}</strong> — {{ coll.count }} entr{{ 'y' if coll.count == 1 else 'ies' }}</summary>
+          {% if coll.rows %}
+            {% set cols = coll.rows[0].keys()|list %}
+            <div style="overflow:auto">
+              <table class="dat-preview-table">
+                <tr>{% for col in cols %}<th>{{ col }}</th>{% endfor %}</tr>
+                {% for row in coll.rows %}
+                <tr>{% for col in cols %}<td class="{% if col in ['id','idx','key','#','value'] %}mono{% endif %}">{{ row.get(col, '') }}</td>{% endfor %}</tr>
+                {% endfor %}
+              </table>
+            </div>
+            {% if coll.count > coll.rows|length %}<div class="muted" style="padding:7px 9px">Showing {{ coll.rows|length }} of {{ coll.count }} entries.</div>{% endif %}
+          {% else %}
+            <div class="muted" style="padding:7px 9px">Collection decoded, but its entries are nested/non-scalar and are best inspected in the raw JSON view.</div>
+          {% endif %}
+        </details>
+        {% endfor %}
+      {% else %}
+        <p class="muted">This parser returned no list/mapping collections to tabulate.</p>
+      {% endif %}
+    </div>
+
+    <div class="section">
+      <details>
+        <summary>Raw decoded JSON</summary>
+        <pre style="max-height:420px;overflow:auto;white-space:pre-wrap">{{ m.preview|tojson(indent=2) }}</pre>
+      </details>
+    </div>
   </section>
   {% endfor %}
 </div>
 {% else %}
-<div style="border:1px solid var(--border,#ccc);border-radius:8px;padding:14px;">
-  <strong>No supported structured parser accepted this DAT.</strong>
-  <p class="muted">
-    This commonly means the file is a model, texture, animation, zone mesh, sound, or another
-    client format not handled by the current xi-tinkerer parser set. The file identity and header
-    below are still useful for research.
-  </p>
-</div>
+<section class="dat-card" style="margin-top:14px">
+  <h3>No structured parser match</h3>
+  <div class="body">
+    <p><strong>This does not mean the DAT is invalid.</strong></p>
+    <p class="muted">Models, textures, animation resources, zone geometry, sound, and other client formats commonly fall outside this xi-tinkerer structured parser set. Use the ROM path/header and the Model Viewer/catalog tools as the next research path.</p>
+  </div>
+</section>
 {% endif %}
 
-<h3>Binary header</h3>
-<p class="muted">First 64 bytes. This is useful when comparing unknown or unsupported DAT formats.</p>
-<div style="overflow:auto;border:1px solid var(--border,#ccc);border-radius:8px;padding:12px;">
-  <div><strong>Hex</strong></div>
-  <code style="white-space:pre-wrap;word-break:break-all;">{{ result.header_hex }}</code>
-  <div style="margin-top:10px;"><strong>ASCII</strong></div>
-  <code>{{ result.header_ascii }}</code>
-</div>
+<div class="dat-advanced">
+  <details>
+    <summary>File identity / provenance</summary>
+    <div class="inner">
+      <div class="table-wrap"><table>
+        {% if result.dat_id is not none %}<tr><th>DAT ID</th><td class="mono">{{ result.dat_id }}</td></tr>{% endif %}
+        <tr><th>Client path</th><td class="mono">{{ result.path }}</td></tr>
+        <tr><th>ROM-relative</th><td class="mono">{{ result.rom_relative }}</td></tr>
+        {% if result.extractor_note %}<tr><th>Resolver</th><td>{{ result.extractor_note }}</td></tr>{% endif %}
+        <tr><th>SHA-256</th><td class="mono" style="word-break:break-all">{{ result.sha256 }}</td></tr>
+      </table></div>
+    </div>
+  </details>
 
-<details style="margin-top:16px;">
-  <summary>Rejected parsers ({{ result.rejected|length }})</summary>
-  {% if result.rejected %}
-  <div class="table-wrap"><table>
-    <tr><th>Parser</th><th>Reason</th></tr>
-    {% for r in result.rejected %}
-    <tr><td>{{ r.label }}<br><code>{{ r.parser }}</code></td><td>{{ r.reason }}</td></tr>
-    {% endfor %}
-  </table></div>
-  {% else %}
-  <p class="muted">None.</p>
-  {% endif %}
-</details>
+  <details>
+    <summary>Binary header — first 64 bytes</summary>
+    <div class="inner">
+      <div><strong>Hex</strong></div><code style="white-space:pre-wrap;word-break:break-all">{{ result.header_hex }}</code>
+      <div style="margin-top:8px"><strong>ASCII</strong></div><code>{{ result.header_ascii }}</code>
+    </div>
+  </details>
+
+  <details>
+    <summary>Rejected structured parsers ({{ result.rejected|length }})</summary>
+    <div class="inner">
+      {% if result.rejected %}
+      <div class="table-wrap"><table>
+        <tr><th>Parser</th><th>Reason</th></tr>
+        {% for r in result.rejected %}<tr><td>{{ r.label }}<br><code>{{ r.parser }}</code></td><td>{{ r.reason }}</td></tr>{% endfor %}
+      </table></div>
+      {% else %}<p class="muted">None.</p>{% endif %}
+    </div>
+  </details>
+</div>
 {% endif %}
 {% endblock %}
