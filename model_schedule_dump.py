@@ -45,16 +45,25 @@ def model_id_to_file_id(model_id: int) -> int:
 
 
 
-def resolve_rom_path(ffxi_path: str, dat_id: int) -> str | None:
+def resolve_rom_paths(ffxi_path: str, dat_ids) -> dict[int, str]:
+    """Resolve many FTABLE file ids in one dat-extractor invocation."""
+    ids = sorted({int(x) for x in dat_ids if x is not None})
+    if not ids:
+        return {}
     result = subprocess.run(
-        ["dotnet", "exec", str(DAT_EXTRACTOR_DLL), "--resolve", ffxi_path, str(dat_id)],
+        ["dotnet", "exec", str(DAT_EXTRACTOR_DLL), "--resolve", ffxi_path, *[str(x) for x in ids]],
         capture_output=True, text=True,
     )
+    paths = {}
     for line in result.stdout.splitlines():
         parts = line.split("\t")
-        if len(parts) >= 2 and parts[0] == str(dat_id):
-            return None if parts[1] == "(not found)" else parts[1]
-    return None
+        if len(parts) >= 2 and parts[0].isdigit() and parts[1] != "(not found)":
+            paths[int(parts[0])] = parts[1]
+    return paths
+
+
+def resolve_rom_path(ffxi_path: str, dat_id: int) -> str | None:
+    return resolve_rom_paths(ffxi_path, [dat_id]).get(int(dat_id))
 
 
 # ---------------------------------------------------------------------------
