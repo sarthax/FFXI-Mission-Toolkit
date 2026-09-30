@@ -214,32 +214,12 @@ function addParsedMeshes(parsed, group, skeleton) {
       material = new THREE.MeshStandardMaterial({color: 0x9fb4c2, side: THREE.DoubleSide});
     }
 
-    if (skeleton && mesh.boneIndices?.length) {
-      const nv = mesh.vertices.length / 3;
-      // Prefer dualBoneWeights (the real per-vertex authored w1/w2 blend weights, present for both
-      // MV1 and MV2 verts) over boneWeights, whose MV2 entries the vendored parser stores as a flat
-      // (1.0, 1.0) placeholder rather than the true weights -- using that as-is would double a dual-
-      // bone vertex's displacement away from bind pose. boneIndices itself is correct either way.
-      const skinIndex = new Uint16Array(nv * 4);
-      const skinWeight = new Float32Array(nv * 4);
-      for (let v = 0; v < nv; v++) {
-        skinIndex[v*4] = mesh.boneIndices[v*4]; skinIndex[v*4+1] = mesh.boneIndices[v*4+1];
-        skinIndex[v*4+2] = mesh.boneIndices[v*4+2]; skinIndex[v*4+3] = mesh.boneIndices[v*4+3];
-        if (mesh.dualBoneWeights) {
-          skinWeight[v*4] = mesh.dualBoneWeights[v*2]; skinWeight[v*4+1] = mesh.dualBoneWeights[v*2+1];
-        } else {
-          skinWeight[v*4] = mesh.boneWeights[v*4]; skinWeight[v*4+1] = mesh.boneWeights[v*4+1];
-          skinWeight[v*4+2] = mesh.boneWeights[v*4+2]; skinWeight[v*4+3] = mesh.boneWeights[v*4+3];
-        }
-      }
-      geo.setAttribute('skinIndex', new THREE.BufferAttribute(skinIndex, 4));
-      geo.setAttribute('skinWeight', new THREE.BufferAttribute(skinWeight, 4));
-      const smesh = new THREE.SkinnedMesh(geo, material);
-      smesh.bind(skeleton);
-      group.add(smesh);
-    } else {
-      group.add(new THREE.Mesh(geo, material));
-    }
+    // MeshParser has already baked these vertices through the FFXI skeleton matrices into
+    // bind-pose world space. Do NOT hand them to THREE.SkinnedMesh: standard LBS would apply
+    // another bind transform and does not match FFXI's pre-weighted dual-bone formula anyway.
+    // Until the viewer has a dedicated FFXI skinning shader/CPU evaluator, render the trustworthy
+    // static bind pose only.
+    group.add(new THREE.Mesh(geo, material));
   }
 }
 
@@ -270,7 +250,10 @@ async function loadGearModel(r) {
   // scene-graph transform on top of the skin computation, so it needs no changes to the vendored
   // parser's bind-pose math and doesn't care about bind timing. Materials are already DoubleSide,
   // so the resulting winding/handedness flip doesn't introduce backface culling artifacts.
-  modelGroup.scale.y = -1;
+  // Entity DAT coordinates are Y-down. Convert to Three.js display space with a proper
+  // rotation (180° about X): X unchanged, Y/Z negated. A Y-only scale is a reflection and swaps
+  // handedness; it made composites look mirrored/inverted.
+  modelGroup.rotation.x = Math.PI;
   skelParsed.skeleton.bones.forEach((pb, i) => { if (pb.parentIndex < 0) modelGroup.add(skelBones[i]); });
   // The skeleton DAT itself carries no mesh (confirmed: player-race skeleton files are skeleton-only,
   // see module history) -- only per-slot gear DATs below contribute geometry.
@@ -397,6 +380,7 @@ async function loadModel(preResolved=null) {
     }
 
     modelGroup = new THREE.Group();
+    modelGroup.rotation.x = Math.PI;
     window.__dbg = { scene, THREE, camera, controls, get modelGroup() { return modelGroup; } }; // TEMP diagnostic, revert after use
     if (skeleton) parsed.skeleton.bones.forEach((pb, i) => { if (pb.parentIndex < 0) modelGroup.add(skelBones[i]); });
 
@@ -419,32 +403,10 @@ async function loadModel(preResolved=null) {
         material = new THREE.MeshStandardMaterial({color: 0x9fb4c2, side: THREE.DoubleSide});
       }
 
-      if (skeleton && mesh.boneIndices?.length) {
-        const nv = mesh.vertices.length / 3;
-        // Prefer dualBoneWeights (the real per-vertex authored w1/w2 blend weights, present for both
-        // MV1 and MV2 verts) over boneWeights, whose MV2 entries the vendored parser stores as a flat
-        // (1.0, 1.0) placeholder rather than the true weights -- using that as-is would double a dual-
-        // bone vertex's displacement away from bind pose. boneIndices itself is correct either way.
-        const skinIndex = new Uint16Array(nv * 4);
-        const skinWeight = new Float32Array(nv * 4);
-        for (let v = 0; v < nv; v++) {
-          skinIndex[v*4] = mesh.boneIndices[v*4]; skinIndex[v*4+1] = mesh.boneIndices[v*4+1];
-          skinIndex[v*4+2] = mesh.boneIndices[v*4+2]; skinIndex[v*4+3] = mesh.boneIndices[v*4+3];
-          if (mesh.dualBoneWeights) {
-            skinWeight[v*4] = mesh.dualBoneWeights[v*2]; skinWeight[v*4+1] = mesh.dualBoneWeights[v*2+1];
-          } else {
-            skinWeight[v*4] = mesh.boneWeights[v*4]; skinWeight[v*4+1] = mesh.boneWeights[v*4+1];
-            skinWeight[v*4+2] = mesh.boneWeights[v*4+2]; skinWeight[v*4+3] = mesh.boneWeights[v*4+3];
-          }
-        }
-        geo.setAttribute('skinIndex', new THREE.BufferAttribute(skinIndex, 4));
-        geo.setAttribute('skinWeight', new THREE.BufferAttribute(skinWeight, 4));
-        const smesh = new THREE.SkinnedMesh(geo, material);
-        smesh.bind(skeleton);
-        modelGroup.add(smesh);
-      } else {
-        modelGroup.add(new THREE.Mesh(geo, material));
-      }
+      // Parsed vertices are already in bind-pose world space. Standard Three.js skinning is
+      // not equivalent to FFXI's pre-weighted dual-bone deformation, so keep this path static
+      // until the dedicated FFXI pose evaluator is wired into rendering.
+      modelGroup.add(new THREE.Mesh(geo, material));
     }
     scene.add(modelGroup);
 
@@ -458,15 +420,9 @@ async function loadModel(preResolved=null) {
 
     let animMsg = '';
     if (parsed.skeleton) animMsg += `, ${parsed.skeleton.bones.length} bone(s)`;
-    if (skeleton && parsed.animations.length) {
+    if (parsed.animations.length) {
       const maxFrame = Math.max(...parsed.animations.map(a => a.frameCount), 1);
-      currentAnim = { animations: parsed.animations, bones: skelBones, maxFrame, frame: 0, playing: true };
-      applyAnimFrame(0);
-      $('anim-controls').style.display = '';
-      $('frame').max = String(maxFrame - 1);
-      $('frame').value = '0'; $('frame-label').textContent = '0';
-      $('playpause').textContent = 'Pause';
-      animMsg += `, ${parsed.animations.length} animation layer(s), ${maxFrame} frame(s) (playback rate is an unverified ${ANIM_FPS}fps approximation -- real per-clip timing isn't decoded)`;
+      animMsg += `, ${parsed.animations.length} animation layer(s), ${maxFrame} frame(s) detected but playback disabled: FFXI-specific skinning/pose math is not yet wired into this viewer`;
     } else if (parsed.skeleton) {
       animMsg += ' (no embedded animation in this DAT, bind pose only)';
     }
