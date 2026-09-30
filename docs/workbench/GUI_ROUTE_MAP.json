@@ -1253,6 +1253,38 @@
     },
     {
       "method": "GET",
+      "path": "/modelviewer/model.json",
+      "home": "Client",
+      "section": "Model Viewer",
+      "role": "api",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/modelviewer/catalog.json",
+      "home": "Client",
+      "section": "Model Viewer",
+      "role": "api",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/modelviewer/catalog/correlate.json",
+      "home": "Client",
+      "section": "Model Viewer",
+      "role": "api",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/modelviewer/dat-info.json",
+      "home": "Client",
+      "section": "Model Viewer",
+      "role": "api",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
       "path": "/modelviewer/dat",
       "home": "Client",
       "section": "Model Viewer",
