@@ -30,6 +30,9 @@
 .entity-rel-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
 .entity-rel-row{display:grid;grid-template-columns:minmax(180px,.7fr) minmax(0,1fr);gap:8px;padding:7px 0;border-bottom:1px solid var(--border)}
 .entity-rel-row:last-child{border-bottom:0}.entity-rel-name{min-width:0;word-break:break-word}
+.entity-trace-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:7px}
+.entity-trace-stat{border:1px solid var(--border);border-radius:6px;padding:7px 8px;background:var(--code-bg)}
+.entity-trace-stat strong{display:block;font-size:18px}.entity-trace-cues{display:grid;gap:6px;margin-top:8px}
 @media(max-width:1000px){.entity-summary-grid{grid-template-columns:1fr}}
 </style>
 <p><a class="inline" href="/entity?q={{ q }}&page={{ page }}">&larr; back to search</a></p>
@@ -59,6 +62,7 @@
 </div>
 <div class="entity-actions" style="margin-top:-6px">
   <a class="chip" href="#entity-wiring">Wiring</a>
+  <a class="chip" href="#entity-feature-trace">Feature Trace path</a>
   <a class="chip" href="#entity-behavior">Behavior</a>
   <a class="chip" href="#entity-relationships">Used By</a>
   <a class="chip" href="#entity-runtime">Runtime</a>
@@ -118,6 +122,50 @@
     </div>
   </aside>
 </div>
+
+{% if profile.feature_trace_path %}
+<section class="entity-card" id="entity-feature-trace" style="margin-bottom:14px">
+  <h3>Feature Trace implementation path</h3>
+  <div class="body">
+    {% if profile.feature_trace_path.available %}
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+      <span class="chip">{{ profile.feature_trace_path.mapping_status }}</span>
+      {% if profile.feature_trace_path.canonical_root %}<span class="chip mono">{{ profile.feature_trace_path.canonical_root }}</span>{% endif %}
+      <a class="chip" href="{{ profile.feature_trace_path.href }}">Open full Implementation Path &rarr;</a>
+    </div>
+    <div class="entity-trace-grid">
+      <div class="entity-trace-stat"><strong>{{ profile.feature_trace_path.representation_count }}</strong><span class="muted">source representations</span></div>
+      <div class="entity-trace-stat"><strong>{{ profile.feature_trace_path.branch_count }}</strong><span class="muted">provider branches</span></div>
+      <div class="entity-trace-stat"><strong>{{ profile.feature_trace_path.native_link_count }}</strong><span class="muted">source-native links</span></div>
+      <div class="entity-trace-stat"><strong>{{ profile.feature_trace_path.direct_relationship_count }}</strong><span class="muted">direct graph relationships</span></div>
+      <div class="entity-trace-stat"><strong>{{ profile.feature_trace_path.direct_evidence_count }}</strong><span class="muted">direct evidence IDs</span></div>
+    </div>
+    {% if profile.feature_trace_path.provider_counts %}
+    <div class="entity-actions" style="margin-bottom:4px">
+      {% for row in profile.feature_trace_path.provider_counts %}<span class="chip">{{ row.provider }} {{ row.count }}</span>{% endfor %}
+    </div>
+    {% endif %}
+    {% if profile.feature_trace_path.coverage_cues %}
+    <div class="entity-trace-cues">
+      {% for cue in profile.feature_trace_path.coverage_cues %}
+      <div class="entity-action-row">
+        <div><span class="chip">{{ cue.level }}</span> <strong>{{ cue.label }}</strong></div>
+        {% if cue.detail %}<div>{{ cue.detail }}</div>{% endif %}
+        <div class="basis">{{ cue.basis }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted" style="margin-bottom:0">No concrete Feature Trace identity/integrity cue is currently recorded for this entity.</p>
+    {% endif %}
+    <p class="muted" style="margin-bottom:0">Feature Trace coverage cues describe indexed evidence state only; missing evidence is not treated as proof of missing implementation.</p>
+    {% else %}
+    <div class="muted">Feature Trace path summary is unavailable{% if profile.feature_trace_path.error %}: {{ profile.feature_trace_path.error }}{% endif %}.</div>
+    <a class="chip" style="margin-top:7px" href="{{ profile.feature_trace_path.href }}">Open Feature Trace</a>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
 
 {% if profile.implementation_actions %}
 <section class="entity-card" id="entity-actions-evidence" style="margin-bottom:14px">

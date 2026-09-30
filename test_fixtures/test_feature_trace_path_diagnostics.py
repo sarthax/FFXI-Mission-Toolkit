@@ -50,10 +50,14 @@ def main():
         assert path["canonical"]["direct_evidence_count"]==1,path
         assert path["canonical"]["direct_evidence"][0]["evidence_source"]=="lsb_mob_spawn_points",path
         assert path["native_link_count"]>=2,path
+        labels={row["label"] for row in path["handoffs"]}
+        assert {"Entity Dossier","Canonical Trace","Behavior Inspector","Events / CSID","Capture Evidence","Path diagnostics JSON","Capture #1"} <= labels,path["handoffs"]
+        assert path["coverage_cues"]==[],path["coverage_cues"]
         branch=next(b for b in path["branches"] if b["root"]["table"]=="lsb_mob_spawn_points")
         assert branch["native_link_count"]>=2,branch
         assert branch["max_depth"]>=2,branch
         assert branch["target_count"]>=2,branch
+        assert branch["root"]["details"]["groupid"]==38,branch["root"]
 
         # No canonical identity: keep source-native path, but explain why semantic traversal is withheld.
         con.execute("DELETE FROM entity_identifiers")
@@ -62,6 +66,7 @@ def main():
         assert unmapped["status"]=="NO_CANONICAL_MAPPING",unmapped
         path_unmapped=feature_trace.entity_implementation_path(con,catalog,"17084539")
         assert path_unmapped and not path_unmapped["canonical_mapped"],path_unmapped
+        assert any(cue["code"]=="IDENTITY_BRIDGE_INCOMPLETE" for cue in path_unmapped["coverage_cues"]),path_unmapped
 
         # One numeric identity claimed by two canonical roots must be explicit ambiguity.
         for node in ("mob:a","mob:b"):
@@ -95,6 +100,15 @@ def main():
             "Trace canonical root",
             "Entity resolution diagnostic",
             "matched on:",
+            "Entity workflow",
+            "Evidence coverage cues",
+            "impl-provider-filter",
+            "impl-domain-filter",
+            "impl-branch-filter",
+            "impl-linked-only",
+            "impl-reset-filters",
+            "Trace this representation",
+            "impl-source-facts",
         ):
             assert text in template,text
         assert "feature_trace.entity_query_diagnostics" in server

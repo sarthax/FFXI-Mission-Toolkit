@@ -19,6 +19,15 @@
 .impl-diagnostic.good{border-left-color:#4a8}.impl-diagnostic.warn{border-left-color:#c88b2b}.impl-diagnostic.bad{border-left-color:#b44}
 .impl-meta{display:flex;gap:5px;flex-wrap:wrap;margin:5px 0}
 .impl-evidence{max-height:420px;overflow:auto}
+.impl-workflow{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.impl-cues{display:grid;gap:7px;margin:10px 0}
+.impl-cue{border-left:4px solid var(--border);padding:7px 9px;background:var(--code-bg)}
+.impl-cue.action{border-left-color:#b44}.impl-cue.review{border-left-color:#c88b2b}.impl-cue.coverage{border-left-color:#5684a5}
+.impl-filter{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:8px 0 10px}
+.impl-filter input,.impl-filter select{min-width:150px}
+.impl-branch[hidden]{display:none}
+.impl-source-facts{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:3px 8px;margin-top:7px;font-size:12px}
+.impl-source-facts dt{color:var(--muted)}.impl-source-facts dd{margin:0;word-break:break-word}
 </style>
 <h1>Feature Trace</h1>
 <p class="muted">Trace a canonical Workbench feature, entity, capability, function, binding, build target, artifact, or enum through recorded graph relationships. Connectivity is evidence navigation, not an implementation verdict.</p>
@@ -77,6 +86,29 @@
       </div>
       {% endif %}
     </div>
+
+    {% if implementation_path.handoffs %}
+    <h3>Entity workflow</h3>
+    <div class="impl-workflow">
+      {% for handoff in implementation_path.handoffs %}
+      <a class="chip" href="{{ handoff.href }}" title="{{ handoff.basis }}">{{ handoff.label }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if implementation_path.coverage_cues %}
+    <h3>Evidence coverage cues</h3>
+    <div class="impl-cues">
+      {% for cue in implementation_path.coverage_cues %}
+      <div class="impl-cue {{ cue.level|lower }}">
+        <div><span class="chip">{{ cue.level }}</span> <strong>{{ cue.label }}</strong> <code>{{ cue.code }}</code></div>
+        {% if cue.detail %}<div>{{ cue.detail }}</div>{% endif %}
+        <div class="muted">{{ cue.basis }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="muted">Coverage cues describe the indexed evidence state. They do not declare that gameplay behavior is absent.</p>
+    {% endif %}
 
     <div class="impl-summary">
       <div class="box"><div class="n">{{ implementation_path.branches|length }}</div><div class="l">Provider branches</div></div>
@@ -158,26 +190,54 @@
 
     {% if implementation_path.branches %}
     <h3>Source / provider branches</h3>
+    <div class="impl-filter">
+      <label>Provider
+        <select id="impl-provider-filter">
+          <option value="">All</option>
+          {% for row in implementation_path.provider_counts %}<option value="{{ row.provider }}">{{ row.provider }} ({{ row.count }})</option>{% endfor %}
+        </select>
+      </label>
+      <label>Domain
+        <select id="impl-domain-filter">
+          <option value="">All</option>
+          {% for row in implementation_path.domain_counts %}<option value="{{ row.domain }}">{{ row.domain }} ({{ row.count }})</option>{% endfor %}
+        </select>
+      </label>
+      <label>Branch search <input id="impl-branch-filter" type="search" placeholder="name, table, id, link"></label>
+      <label><input id="impl-linked-only" type="checkbox"> only branches with native links</label>
+      <button type="button" id="impl-reset-filters">Reset</button>
+      <button type="button" id="impl-expand-all">Expand visible</button>
+      <button type="button" id="impl-collapse-all">Collapse visible</button>
+      <span id="impl-filter-status" class="muted"></span>
+    </div>
     <div class="impl-branches">
       {% for branch in implementation_path.branches %}
-      <section class="impl-branch">
-        <div class="impl-branch-head">
+      <details class="impl-branch" data-provider="{{ branch.provider }}" data-domain="{{ branch.domain or 'unknown' }}"{% if implementation_path.branches|length <= 4 %} open{% endif %}>
+        <summary class="impl-branch-head">
           <strong>{{ branch.provider }}</strong>
           {% if branch.domain %}<span class="chip">{{ branch.domain }}</span>{% endif %}
           <span class="chip">{{ branch.native_link_count }} link{{ '' if branch.native_link_count == 1 else 's' }}</span>
           <span class="chip">depth {{ branch.max_depth }}</span>
           <span class="chip">{{ branch.target_count }} target{{ '' if branch.target_count == 1 else 's' }}</span>
-        </div>
+        </summary>
         <div class="impl-root">
           <div><span class="chip">{{ branch.root.node_type }}</span> <strong>{{ branch.root.display_name or branch.root.node_id }}</strong></div>
           <code>{{ branch.root.node_id }}</code>
           <div class="muted" style="font-size:11px;margin-top:3px">source: {{ branch.root.table }}</div>
-          {% if branch.root.inspect_href %}<div><a class="zonelink" href="{{ branch.root.inspect_href }}">Open source view</a></div>{% endif %}
+          <div class="impl-workflow">
+            <a class="chip" href="/features/trace?q={{ branch.root.node_id|urlencode }}">Trace this representation</a>
+            {% if branch.root.inspect_href %}<a class="chip" href="{{ branch.root.inspect_href }}">Open source view</a>{% endif %}
+          </div>
           {% if branch.root.identity %}
           <div class="impl-meta">{% for key,value in branch.root.identity.items() %}<span class="chip mono">{{ key }}={{ value }}</span>{% endfor %}</div>
           {% endif %}
           {% if branch.root.aliases %}
           <div class="impl-meta">{% for key,value in branch.root.aliases.items() %}{% if value is not none and value != '' %}<span class="chip">{{ key }}={{ value }}</span>{% endif %}{% endfor %}</div>
+          {% endif %}
+          {% if branch.root.details %}
+          <dl class="impl-source-facts">
+            {% for key,value in branch.root.details.items() %}{% if value is not none and value != '' %}<dt>{{ key }}</dt><dd><code>{{ value }}</code></dd>{% endif %}{% endfor %}
+          </dl>
           {% endif %}
           {% if branch.root.matched_on %}<div class="muted">matched on: {{ branch.root.matched_on|join(', ') }}</div>{% endif %}
         </div>
@@ -196,9 +256,37 @@
         {% else %}
         <div class="muted" style="padding:8px 10px">This representation is indexed, but no exact downstream provider-native relationship is currently available from it.</div>
         {% endfor %}
-      </section>
+      </details>
       {% endfor %}
     </div>
+    <script>
+    (() => {
+      const provider=document.getElementById('impl-provider-filter');
+      const domain=document.getElementById('impl-domain-filter');
+      const query=document.getElementById('impl-branch-filter');
+      const linked=document.getElementById('impl-linked-only');
+      const status=document.getElementById('impl-filter-status');
+      const branches=[...document.querySelectorAll('.impl-branch')];
+      const apply=()=>{
+        const p=(provider?.value||'').toLowerCase(), d=(domain?.value||'').toLowerCase(), q=(query?.value||'').toLowerCase().trim();
+        let visible=0;
+        branches.forEach(branch=>{
+          const okProvider=!p||(branch.dataset.provider||'').toLowerCase()===p;
+          const okDomain=!d||(branch.dataset.domain||'').toLowerCase()===d;
+          const okQuery=!q||branch.textContent.toLowerCase().includes(q);
+          const hasLinks=!linked?.checked||!/\b0 links?\b/i.test(branch.querySelector('summary')?.textContent||'');
+          branch.hidden=!(okProvider&&okDomain&&okQuery&&hasLinks);
+          if(!branch.hidden) visible++;
+        });
+        if(status) status.textContent=visible+' of '+branches.length+' branch(es) visible';
+      };
+      provider?.addEventListener('change',apply); domain?.addEventListener('change',apply); query?.addEventListener('input',apply); linked?.addEventListener('change',apply);
+      document.getElementById('impl-reset-filters')?.addEventListener('click',()=>{if(provider)provider.value='';if(domain)domain.value='';if(query)query.value='';if(linked)linked.checked=false;apply();});
+      document.getElementById('impl-expand-all')?.addEventListener('click',()=>branches.filter(x=>!x.hidden).forEach(x=>x.open=true));
+      document.getElementById('impl-collapse-all')?.addEventListener('click',()=>branches.filter(x=>!x.hidden).forEach(x=>x.open=false));
+      apply();
+    })();
+    </script>
     {% else %}
     <p class="muted">No indexed server/client representation matched this entity identity.</p>
     {% endif %}
