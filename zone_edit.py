@@ -192,6 +192,86 @@ def update_position(kind, eid, x, y, z, rot, comment=""):
     return {"sql": sql, "backup": bid}
 
 
+def update_positions_bulk(rows, comment=""):
+    """Atomically update a bounded set of existing entity transforms with one backup.
+
+    Each row must contain k/id/x/y/z/r. All rows must resolve to the same zone so the backup
+    remains a coherent Zone Editor action. No identity/model/group fields are changed here.
+    """
+    if not isinstance(rows, list) or not rows:
+        raise ValueError("rows must be a non-empty list")
+    if len(rows) > 256:
+        raise ValueError("bulk transform is limited to 256 entities per action")
+
+    normalized = []
+    seen = set()
+    zones = set()
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError("each bulk row must be an object")
+        kind = row.get("k")
+        if kind not in KIND_TABLE:
+            raise ValueError(f"unsupported entity kind: {kind}")
+        eid = int(row["id"])
+        key = (kind, eid)
+        if key in seen:
+            raise ValueError(f"duplicate bulk entity: {kind}:{eid}")
+        seen.add(key)
+        x = round(float(row["x"]), 3)
+        y = round(float(row["y"]), 3)
+        z = round(float(row["z"]), 3)
+        rot = int(row.get("r", 0)) & 0xFF
+        if x == y == z == 0:
+            raise ValueError(f"{kind}:{eid} would move to excluded position (0,0,0)")
+        zones.add(_zone_of(eid))
+        normalized.append((kind, eid, x, y, z, rot))
+    if len(zones) != 1:
+        raise ValueError("bulk transform must stay within one zone")
+
+    db = zone_plot._db()
+    cu = db.cursor()
+    ops = []
+    originals = {}
+    try:
+        for kind, eid, x, y, z, rot in normalized:
+            table = KIND_TABLE[kind]
+            op = _capture(cu, table, [eid])
+            if op["row"] is None:
+                raise ValueError(f"{table}.{TABLES[table][0]}={eid} not found")
+            ops.append(op)
+            originals[(kind, eid)] = op["row"]
+
+        zid = next(iter(zones))
+        bid = _save_backup(f"bulk transform {len(normalized)} entities", zid, ops)
+        sqls = []
+        for kind, eid, x, y, z, rot in normalized:
+            table = KIND_TABLE[kind]
+            keycol = TABLES[table][0]
+            cu.execute(
+                f"update {table} set pos_x=%s,pos_y=%s,pos_z=%s,pos_rot=%s where {keycol}=%s",
+                (x, y, z, rot, eid),
+            )
+            sqls.append(
+                f"UPDATE {table} SET pos_x={x}, pos_y={y}, pos_z={z}, pos_rot={rot} "
+                f"WHERE {keycol}={eid};"
+            )
+        db.commit()
+    except Exception:
+        db.rollback()
+        db.close()
+        raise
+    db.close()
+
+    notes = [f"-- bulk transform backup {bid}"]
+    for kind, eid, x, y, z, rot in normalized:
+        o = originals[(kind, eid)]
+        notes.append(
+            f"-- {kind}:{eid} was ({o['pos_x']}, {o['pos_y']}, {o['pos_z']}, rot {o['pos_rot']})"
+        )
+    _journal(comment, notes + sqls)
+    return {"sql": "\n".join(sqls), "backup": bid, "count": len(normalized), "zone": zid}
+
+
 def update_animation(kind, eid, animation, animationsub, comment=""):
     """npc_list only (doors/props/npcs) -- mob_spawn_points has no animation columns."""
     if kind not in ("n", "d"):
