@@ -1,3 +1,13 @@
+## 2026-09-30 — Static Lua shop acquisition bridge
+
+- Audited current LSB shop storage before implementation: ordinary NPC shops use local Lua stock tables passed to xi.shop.general / xi.shop.nation, while guild inventory is centralized in scripts/data/guild_shops.lua rather than SQL.
+- Added conservative Lua shop adapters for those real patterns. Static { item, price } NPC stock and structured guild stock are extracted; unsupported dynamic stock expressions are reported instead of guessed.
+- Guild stock preserves vendor name, prices, initial/max/target stock, restock rate, no-sell flags, and shared-stock aliases.
+- Unified acquisition catalog now emits SOLD_BY alongside DROP_POOL, SYNTHESIS, SYNERGY, and SCRIPTED_REWARD.
+- Numeric item literals may participate in verified external-obtainability handoff. Symbolic xi.item.* literals remain unresolved until explicit item-identity reconciliation; no enum/value guess is made.
+- Curio Vendor Moogle and other special/dynamic shop systems remain intentionally outside this producer until separately profiled.
+- Added focused shop-parser/catalog regression and CI coverage.
+
 ## 2026-09-30 — Unified acquisition catalog foundation
 
 - Added a source-neutral acquisition catalog over already-audited producer families: mob drops, synthesis, synergy, and scripted Lua rewards.
