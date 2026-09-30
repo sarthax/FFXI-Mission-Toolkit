@@ -1,3 +1,13 @@
+## 2026-09-30 — Zone Editor cleanup, 3D viewer fix, and packet input expansion
+
+- Removed the legacy Zone Editor page/template from active UI navigation. /zoneplot remains only as a permanent compatibility redirect to the current /zoneplot2 editor; the shared /zoneplot/* data/mutation APIs remain because the current editor uses them.
+- Fixed the Server 3D Viewer Jinja crash: a responsive CSS rule began with "{#viewer-container", which Jinja parsed as an unterminated template comment. The template now compiles normally.
+- Packet Decoder bulk mode now accepts multiple uploaded files and capture bundles and runs them through the same capture-ingestion adapters used by Captures.
+- Manual Packet Decoder now uses a large multiline textarea submitted by POST and accepts either plain hex or a full PacketLogger/PacketViewer hex-grid block.
+- Added the provided 2025-05-01 0x037-style multiline hex-grid shape as an explicit regression fixture.
+- Uploaded sources retain detected format/status, and mixed decoded rows carry their own direction/opcode/raw bytes into Open in Packet Viewer.
+- No packet decoding schema semantics, capture ingestion behavior, or Zone Editor mutation APIs were changed.
+
 ## 2026-09-30 — Capture Data Explorer foundation
 
 - Reframed /captures/query from a raw physical-table dump into a dataset-aware Capture Data Explorer.
