@@ -1895,6 +1895,23 @@ def restore_dat_backup(rom_path: str, backup_id: Optional[str] = None) -> dict:
             'restored_from': src.name, 'backup_id': backup_id or ('latest' if src != pristine else 'orig')}
 
 
+def preview_free_slot(cat_name: str) -> dict:
+    """Return the current next verified free candidate without reserving it."""
+    row = next((r for r in ITEM_DATS if r[0] == cat_name), None)
+    if row is None:
+        raise ValueError(f"unknown item DAT category {cat_name!r}")
+    _, base_id, item_type, en_rom, _jp_rom = row
+    slots = free_slots(cat_name, 1)
+    if not slots:
+        raise ValueError(f"no free slots left in {cat_name}")
+    idx = slots[0]
+    return {
+        "category": cat_name, "item_type": item_type, "candidate_item_id": base_id + idx,
+        "record_index": idx, "dat_ui": en_rom, "target": dat_target(),
+        "source": str(dat_write_source(en_rom)), "destination": str(dat_write_dest(en_rom)),
+        "reserved": False,
+    }
+
 def inject_client_item(cat_name: str, entry: dict) -> dict:
     """Write a brand-new item into the first free slot of `cat_name`'s DAT.
     Returns {'ok', 'item_id', 'category', ...}. Caller is responsible for then
