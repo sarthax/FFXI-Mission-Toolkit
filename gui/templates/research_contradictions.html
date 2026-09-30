@@ -4,7 +4,7 @@
 {% block main_class %}research-contradictions-page{% endblock %}
 {% block content %}
 <style>main.research-contradictions-page{padding:8px 10px 24px}.contradiction-card{border:1px solid var(--border);border-radius:7px;padding:8px;margin:7px 0;background:var(--surface)}</style>
-<div class="dense-toolbar"><strong>Research Contradictions</strong><span class="sp"></span><a class="chip" href="/research">Sessions</a><a class="chip" href="/research/gaps">Gaps</a><details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:700px">Read-only contradictions/conflicting canonical observations. Filters never promote one source over another.</div></details></div>
+<div class="dense-toolbar"><strong>Research Contradictions</strong><span class="sp"></span><a class="chip" href="/research">Sessions</a><a class="chip" href="/researchgaps">Gaps</a><details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:700px">Read-only contradictions/conflicting canonical observations. Filters never promote one source over another.</div></details></div>
 
 <form class="dense-toolbar" method="get" action="/research/contradictions" style="margin:6px 0;flex-wrap:wrap">
   <input name="session_id" value="{{ session_id }}" placeholder="research session id">
