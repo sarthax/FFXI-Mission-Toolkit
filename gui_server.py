@@ -4539,17 +4539,53 @@ CAPTURE_QUERY_TABLES = {
         "id_col": None, "name_col": "text",
         "display_cols": ("capture_id", "zone_db", "ts", "direction", "text"),
     },
+    "capture_chat_observations": {
+        "label": "Canonical chat observations", "group": "Events & Dialogue",
+        "description": "Normalized chat/text observations with source format/native identity and zone context.",
+        "id_col": None, "name_col": "text",
+        "display_cols": ("capture_id", "seq", "ts", "direction", "zone_db", "text", "source_format"),
+    },
     "capture_ki_events": {
         "label": "Key item events", "group": "Items & Progression",
         "description": "Observed key-item grants/removals and progression evidence.",
         "id_col": "keyitem_id", "name_col": "keyitem_name",
         "display_cols": ("capture_id", "zone_db", "ts", "keyitem_id", "keyitem_name", "action"),
     },
+    "capture_structured_records": {
+        "label": "Structured observations", "group": "Items & Progression",
+        "description": "Canonical auxiliary observations such as vendor stock, pricing, crafting, weather, conquest, POI, spawn and mission records.",
+        "id_col": "item_id", "name_col": "item_name",
+        "display_cols": ("capture_id", "family", "record_type", "ts", "zone", "entity_id", "entity_name", "item_id", "item_name", "price", "source_file"),
+    },
     "capture_raw_packets": {
         "label": "Raw packets", "group": "Protocol & Raw Evidence",
         "description": "Canonical raw packet bytes with source provenance. Use Packet Viewer for field/byte drill-down.",
         "id_col": None, "name_col": "opcode",
         "display_cols": ("capture_id", "seq", "ts", "direction", "opcode", "packet_size", "source_format", "source_file"),
+    },
+    "capture_network_flows": {
+        "label": "Network flows", "group": "Protocol & Raw Evidence",
+        "description": "PCAP/PCAPNG TCP/transport flow summaries and endpoint evidence.",
+        "id_col": None, "name_col": "transport",
+        "display_cols": ("capture_id", "source_file", "flow_id", "transport", "endpoint_a_ip", "endpoint_a_port", "endpoint_b_ip", "endpoint_b_port", "frame_count", "payload_frame_count"),
+    },
+    "capture_network_ranges": {
+        "label": "Network byte ranges", "group": "Protocol & Raw Evidence",
+        "description": "Canonical contiguous stream ranges with sequence boundaries and anomaly metadata.",
+        "id_col": None, "name_col": "direction",
+        "display_cols": ("capture_id", "source_file", "flow_id", "direction", "range_index", "seq_start", "seq_end", "first_ts", "last_ts"),
+    },
+    "capture_network_messages": {
+        "label": "Network messages", "group": "Protocol & Raw Evidence",
+        "description": "Framed/decoded network messages from validated transport classifiers.",
+        "id_col": "command", "name_col": "command_name",
+        "display_cols": ("capture_id", "source_file", "flow_id", "protocol_family", "direction", "command", "command_name", "validation_status"),
+    },
+    "capture_video_observations": {
+        "label": "Video / OCR observations", "group": "Protocol & Raw Evidence",
+        "description": "Timestamped packet/event observations recovered from video and screenshot OCR evidence.",
+        "id_col": None, "name_col": "raw_text",
+        "display_cols": ("capture_id", "video_ts", "observation_type", "direction", "opcode", "gp_command", "packet_class", "ocr_confidence"),
     },
     "capture_source_files": {
         "label": "Source files", "group": "Provenance & Integrity",
