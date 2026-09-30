@@ -371,6 +371,7 @@ function updateAddMarker(){
 }
 ['aX','aY','aZ'].forEach(id=>$(id).addEventListener('input',updateAddMarker));
 let visible = [];            // indices of entities currently drawn (instance slot -> entity idx)
+let heightRange={lo:0,hi:0};
 const labels = new Map();    // entity idx -> CSS2DObject
 const geo = new THREE.SphereGeometry(1, 8, 6);
 const mat = new THREE.MeshBasicMaterial({depthTest:false, transparent:true});
@@ -438,6 +439,7 @@ function applyGizmoPreview(){
 transformControls.addEventListener('objectChange',()=>{
   if(!gizmoPreviewQueued){ gizmoPreviewQueued=true; requestAnimationFrame(applyGizmoPreview); }
 });
+transformControls.addEventListener('mouseUp',()=>{ if($('navdiag')?.checked) loadSelectedNavDiag(); });
 function setGizmoMode(mode){
   transformControls.setMode(mode);
   transformControls.showX=mode==='translate'; transformControls.showY=true; transformControls.showZ=mode==='translate';
@@ -816,8 +818,7 @@ function colorOf(i){ const e=Z.entities[i], m=$('mode').value;
   if (m==='kind') return new THREE.Color(COL[e.k]);
   if (m==='comp' && R) return R.comp[i]==null? new THREE.Color(COL.off): hsl(R.comp[i]);
   if (m==='height'){
-    const ys=Z.entities.filter(x=>!x.zero).map(x=>x.y), lo=Math.min(...ys), hi=Math.max(...ys);
-    const t=hi>lo?(e.y-lo)/(hi-lo):.5;
+    const {lo,hi}=heightRange, t=hi>lo?(e.y-lo)/(hi-lo):.5;
     return new THREE.Color().setHSL((.66*(1-t)),.8,.55);
   }
   return new THREE.Color(COL[stateOf(i)]); }
@@ -848,6 +849,7 @@ function rebuild(){
   if (inst){ scene.remove(inst); inst.dispose(); }
   labels.forEach(l=>{ l.element.remove(); scene.remove(l); }); labels.clear();
   visible=[]; const list=[];
+  const ys=Z.entities.filter(e=>!e.zero).map(e=>e.y); heightRange=ys.length?{lo:Math.min(...ys),hi:Math.max(...ys)}:{lo:0,hi:0};
   Z.entities.forEach((e,i)=>{ if(e.zero) return; if(e.k==='m'&&!$('showm').checked) return; if(e.k==='n'&&!$('shown').checked) return; if(e.k==='d'&&!$('showd').checked) return; visible.push(i); });
   inst = new THREE.InstancedMesh(geo, mat, Math.max(1,visible.length)); inst.count=visible.length; inst.renderOrder=10;
   const M=new THREE.Matrix4(), S=+$('dsz').value;
