@@ -792,7 +792,7 @@ Additional QOL backlog:
 - [x] Navmesh diagnostics mode: nearest polygon, component, bounds, distance-to-navmesh, and invalid-placement highlighting.
 - [x] Height/elevation coloring.
 - [x] Door/prop orientation markers that remain visible without selection.
-- [ ] Spawn/roam-radius visualization where those values genuinely exist in server data.
+- [x] Spawn/roam-radius visualization where values genuinely exist: Zone Editor draws explicit `ROAM_DISTANCE` and `SPAWN_LEASH` circles from `mob_pool_mods` or direct literal per-mob Lua overrides, records provenance in the selected-entity panel, supports selected-only or all-explicit overlays, and deliberately omits engine defaults/dynamic conditional values that cannot be resolved safely.
 - [x] Clone-selected shortcut in Add workflow.
 - [x] Repeated placement mode for multiple copies.
 - [x] Ghost preview before add, including heading and instance linkage.
