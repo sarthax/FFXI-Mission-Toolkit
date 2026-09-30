@@ -160,6 +160,22 @@ def main():
     assert '@app.post("/zoneplot/restore_entity_previous")' in gui_server
 
 
+    # Explicit mob roam/spawn-leash radii: source-backed only, never inferred from engine defaults.
+    assert "RADIUS_MOB_MODS" in zone_plot
+    assert '31: ("roam_radius", "ROAM_DISTANCE")' in zone_plot
+    assert '47: ("leash_radius", "SPAWN_LEASH")' in zone_plot
+    assert "def _mob_radius_pool_values(cu, pool_ids):" in zone_plot
+    assert "def _mob_radius_script_values(root: Path, zone_name: str, mob_name: str):" in zone_plot
+    assert '"source": "mob_pool_mods"' in zone_plot
+    assert '"source": "mob_script_literal"' in zone_plot
+    assert "Nested conditional assignments are deliberately not promoted" in zone_plot
+    assert 'id="showMobRadii"' in template
+    assert 'id="ed-radius"' in template
+    assert "const mobRadiusGroup=new THREE.Group()" in template
+    assert "function updateMobRadiusVisuals()" in template
+    assert "function radiusText(e)" in template
+    assert "No explicit ROAM_DISTANCE or SPAWN_LEASH stored for this mob; engine/default behavior is not visualized." in template
+
     # Nav diagnostics / elevation / persistent door orientation.
     assert 'id="navdiag"' in template
     assert 'id="navdiagOut"' in template
