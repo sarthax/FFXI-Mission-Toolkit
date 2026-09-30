@@ -1,12 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Dialog Drift{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}dialog-drift-page{% endblock %}
 {% block content %}
-<h1>Dialog Drift Overview</h1>
-<p class="muted">Read-only. Compares the text commented beside each wired dialog id against the real client dialog
-DAT (from <code>dialog_drift_report</code>, last checked {{ checked or "unknown" }}). For each zone, a suggested offset
-is <b>inferred</b> when one shift explains most mismatches; it is a hint, never applied automatically.</p>
-<p>{% for k, v in summary.items() if k != "offset_histogram" %}<span class="chip">{{ k }} {{ v }}</span> {% endfor %}
-{% for k, v in summary.offset_histogram.items() %}<span class="chip">offset {{ k }}: {{ v }} zones</span> {% endfor %}</p>
+<style>main.dialog-drift-page{padding:8px 10px 24px}</style>
+<div class="dense-toolbar"><strong>Dialog Drift Overview</strong><span class="sp"></span><a class="chip" href="/dialog">Dialog Browser</a><details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:720px">Read-only comparison of IDs.lua comments against current client dialog DAT. Suggested offsets are inferred hints only and are never applied automatically.</div></details></div>
+<div class="dense-toolbar" style="margin:6px 0;flex-wrap:wrap">{% for k, v in summary.items() if k != "offset_histogram" %}<span class="chip">{{ k }} {{ v }}</span>{% endfor %}{% for k, v in summary.offset_histogram.items() %}<span class="chip">offset {{ k }}: {{ v }} zones</span>{% endfor %}<span class="sp"></span><span class="muted">checked {{ checked or "unknown" }}</span></div>
 <div class="table-wrap"><table>
 <tr><th>Zone</th><th>Match</th><th>Mismatch</th><th>No real entry</th><th>Suggested offset</th><th>Evidence</th></tr>
 {% for r in rows %}<tr>
