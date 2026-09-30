@@ -65,7 +65,7 @@ def main():
     assert "function refreshSelectedModelPreview(force=false)" in zone
     assert '"face": {' in decode
     assert 'gear_tables.model_id_to_file_id(race_name, "face", face)' in decode
-    assert '"composition" in backend' or "composition" in backend
+    assert 'info["composition"] = composition' in backend
     assert '"role": "skeleton"' in backend
     assert '"face", "head", "body", "hands", "legs", "feet", "main", "sub", "ranged"' in backend
     assert "composition manifest:" in viewer
