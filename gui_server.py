@@ -3908,6 +3908,174 @@ def _feature_trace_norm_source_name(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "", str(value or "").casefold())
 
 
+def _feature_trace_binding_index_for_server(server: str, root: Path) -> dict[str, list[dict]]:
+    """Return the real binding index for one configured server tree.
+
+    Topaz/LSB use SOL_REGISTER; DSP uses LUNAR_DECLARE_METHOD. This is source-registration
+    evidence only and does not imply runtime behavior beyond the binding handoff.
+    """
+    try:
+        if server == "dsp":
+            return backport_binding_index.build_dsp_index(root)
+        return backport_binding_index.build_topaz_index(root)
+    except Exception:
+        return {}
+
+
+def _feature_trace_binding_location(root: Path, method: str, location: dict) -> dict:
+    row=dict(location)
+    rel=str(row.get("file") or "")
+    path=(Path(root)/rel).resolve()
+    root_resolved=Path(root).resolve()
+    row["registration_excerpt"]=None
+    row["implementation_line"]=None
+    row["implementation_excerpt"]=None
+    if not path.is_file() or not (path==root_resolved or root_resolved in path.parents):
+        return row
+    try:
+        lines=path.read_text(encoding="utf-8",errors="replace").splitlines()
+    except OSError:
+        return row
+    reg_line=int(row.get("line") or 0)
+    if reg_line>0:
+        a=max(0,reg_line-3); b=min(len(lines),reg_line+2)
+        row["registration_excerpt"]={
+            "start_line":a+1,"end_line":b,"text":"\n".join(lines[a:b]),
+        }
+    cls=str(row.get("class") or "")
+    if cls and method:
+        pattern=re.compile(rf"\b{re.escape(cls)}::{re.escape(method)}\s*\(")
+        for idx,line in enumerate(lines):
+            if not pattern.search(line):
+                continue
+            a=max(0,idx-2); b=min(len(lines),idx+12)
+            row["implementation_line"]=idx+1
+            row["implementation_excerpt"]={
+                "start_line":a+1,"end_line":b,"text":"\n".join(lines[a:b]),
+                "truncated": b < len(lines),
+            }
+            break
+    return row
+
+
+def _feature_trace_binding_lookup(server: str, root: Path, method: str) -> dict:
+    index=_feature_trace_binding_index_for_server(server,root)
+    if not method:
+        return {"status":"NO_METHOD","locations":[]}
+    locations=index.get(method) or []
+    exact_name=method if locations else None
+    case_name=None
+    if not locations:
+        lowered={name.casefold():name for name in index}
+        case_name=lowered.get(method.casefold())
+        if case_name:
+            locations=index.get(case_name) or []
+    status=(
+        "EXACT" if exact_name
+        else "CASE_ONLY" if case_name
+        else "NOT_INDEXED"
+    )
+    resolved_name=exact_name or case_name or method
+    return {
+        "status":status,
+        "query":method,
+        "resolved_name":resolved_name,
+        "locations":[
+            _feature_trace_binding_location(root,resolved_name,row)
+            for row in locations[:8]
+        ],
+        "binding_href":f"/backport/bindings?q={quote(method,safe='')}",
+        "basis":"Binding registration index generated from configured server C++ binding sources.",
+    }
+
+
+def _feature_trace_behavior_engine_drilldown(
+    inspected: dict,
+    *,
+    server: str,
+    source_root: Path,
+) -> dict:
+    behavior=inspected.get("behavior")
+    direct_calls=[]
+    if behavior is not None:
+        for rule in behavior.rules:
+            for effect in rule.effects:
+                if effect.effect!="API_CALL":
+                    continue
+                meta=dict(effect.metadata or {})
+                direct_calls.append({
+                    "receiver":effect.target,
+                    "function":effect.value,
+                    "qualified_name":meta.get("qualified_name"),
+                    "line":meta.get("source_line"),
+                    "source_line":meta.get("source_line_text"),
+                    "hook":rule.metadata.get("hook"),
+                    "hook_owner":rule.metadata.get("hook_owner"),
+                    "trigger":rule.trigger,
+                    "binding":_feature_trace_binding_lookup(
+                        server,source_root,str(effect.value or "")
+                    ),
+                })
+    seen=set()
+    deduped=[]
+    for row in sorted(direct_calls,key=lambda x:(x.get("line") or 0,str(x.get("qualified_name") or ""))):
+        key=(row.get("line"),row.get("qualified_name"),row.get("hook"))
+        if key in seen:
+            continue
+        seen.add(key); deduped.append(row)
+
+    helpers=[]
+    for row in inspected.get("shared_helpers") or []:
+        helper={
+            "qualified_name":row.get("qualified_name"),
+            "status":row.get("status"),
+            "candidates":row.get("candidates") or [],
+            "api_calls":[],
+            "callees":[],
+        }
+        analysis=row.get("analysis") or {}
+        for call in analysis.get("api_calls") or []:
+            helper["api_calls"].append({
+                **call,
+                "binding":_feature_trace_binding_lookup(
+                    server,source_root,str(call.get("function") or "")
+                ),
+            })
+        helper["callees"]=analysis.get("shared_helper_callees") or []
+        helpers.append(helper)
+
+    callbacks=[]
+    graph_data=inspected.get("graph") or {}
+    for node in graph_data.get("nodes") or []:
+        if node.get("kind")!="callback":
+            continue
+        callbacks.append({
+            "id":node.get("id"),
+            "label":node.get("label"),
+            "callback_type":(node.get("meta") or {}).get("callback_type"),
+            "event":(node.get("meta") or {}).get("callback_event"),
+            "delay":(node.get("meta") or {}).get("callback_delay_source"),
+        })
+
+    binding_counts=Counter(
+        row["binding"]["status"] for row in deduped
+    )
+    return {
+        "direct_calls":deduped,
+        "direct_call_count":len(deduped),
+        "binding_counts":dict(sorted(binding_counts.items())),
+        "shared_helpers":helpers,
+        "callbacks":callbacks,
+        "callback_count":len(callbacks),
+        "notes":[
+            "Lua API calls are syntax-level observations from the selected source/helper bodies.",
+            "Binding matches come from registered C++ Lua binding names in the configured server tree.",
+            "A binding registration proves a Lua-to-C++ handoff name/location, not the semantics of the C++ body.",
+            "Shared-helper and callback ownership come from the existing bounded Behavior Inspector analysis.",
+        ],
+    }
+
+
 def _feature_trace_branch_source_drilldown(implementation_path: dict | None) -> None:
     """Attach bounded, read-only Lua source previews to exact server branches.
 
@@ -4000,6 +4168,9 @@ def _feature_trace_branch_source_drilldown(implementation_path: dict | None) -> 
                 excerpt = None
 
         graph_data = inspected.get("graph") or {}
+        engine = _feature_trace_behavior_engine_drilldown(
+            inspected,server=server,source_root=source_root
+        )
         events = []
         zone = (inspected.get("source") or {}).get("zone") or chosen.get("zone")
         for event in (graph_data.get("events") or [])[:20]:
@@ -4035,6 +4206,7 @@ def _feature_trace_branch_source_drilldown(implementation_path: dict | None) -> 
                 if node.get("kind") == "hook" and node.get("label")
             }),
             "summary": graph_data.get("summary") or {},
+            "engine": engine,
         })
 
 
