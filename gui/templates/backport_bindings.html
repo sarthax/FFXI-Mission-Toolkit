@@ -6,6 +6,7 @@
 <form method="get" style="display:flex;gap:8px;align-items:center;margin:12px 0;">
   <input type="hidden" name="q" value="{{ q }}">
   <input type="hidden" name="status" value="{{ status }}">
+  <input type="hidden" name="trace_q" value="{{ trace_q }}">
   {% if page > 1 %}
   <a class="chip" href="/backport/bindings?q={{ q }}&status={{ status }}&page={{ page - 1 }}">&larr; prev</a>
   {% endif %}
@@ -24,7 +25,8 @@
 <h1>Binding Reference</h1>
 <p class="tabs" style="margin:-6px 0 14px;">
   <a class="chip" href="/backport/lua-convert">&larr; Convert</a>
-  <a class="chip" href="/backport/bindings" style="background:var(--accent);color:#fff;">Binding Reference</a>
+  <a class="chip" href="/backport/bindings{% if trace_q %}?trace_q={{ trace_q|urlencode }}{% endif %}" style="background:var(--accent);color:#fff;">Binding Reference</a>
+  {% if trace_q %}<a class="chip" href="/features/trace?q={{ trace_q|urlencode }}">&larr; Feature Trace entity {{ trace_q }}</a>{% endif %}
 </p>
 <p class="muted">Every Lua method binding registered in Topaz (<code>SOL_REGISTER</code>) and in
 old-dsp-reference (<code>LUNAR_DECLARE_METHOD</code>), cross-referenced against
@@ -44,7 +46,7 @@ the underlying indexes after a DSP engine patch with
 <table>
   <tr>
     {% for key, label in status_labels.items() %}
-    <th><a href="/backport/bindings?status={{ key }}">{{ label }}</a></th>
+    <th><a href="/backport/bindings?status={{ key }}{% if trace_q %}&trace_q={{ trace_q|urlencode }}{% endif %}">{{ label }}</a></th>
     {% endfor %}
   </tr>
   <tr>
@@ -60,6 +62,7 @@ the underlying indexes after a DSP engine patch with
 </div>
 
 <form class="search" method="get">
+  <input type="hidden" name="trace_q" value="{{ trace_q }}">
   <select name="status">
     <option value="">All statuses</option>
     {% for key, label in status_labels.items() %}
@@ -68,7 +71,7 @@ the underlying indexes after a DSP engine patch with
   </select>
   <input type="text" name="q" value="{{ q }}" placeholder="search by Topaz or DSP name">
   <button type="submit">Filter</button>
-  {% if q or status %}<a class="chip" href="/backport/bindings">clear</a>{% endif %}
+  {% if q or status %}<a class="chip" href="/backport/bindings{% if trace_q %}?trace_q={{ trace_q|urlencode }}{% endif %}">clear</a>{% endif %}
 </form>
 
 <p>{{ total }} binding(s){{ " for \"%s\"" % q if q else "" }} -- page {{ page }} of {{ total_pages }}</p>
