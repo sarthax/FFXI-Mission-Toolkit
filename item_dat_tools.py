@@ -913,6 +913,66 @@ PET_TYPE_NAMES = {
 # CItemEquipment::addLatent(latentId, latentParam, modID, value). latentParam's meaning is
 # condition-specific (HP%, job id, zone id, etc, per the comment on each LATENT entry below,
 # copied verbatim from latent_effect.h) -- shown as a plain number since it has no single enum.
+
+def _enum_comment_parts(raw: str) -> tuple[str, str]:
+    raw = str(raw or "")
+    if " -- " in raw:
+        name, comment = raw.split(" -- ", 1)
+        return name.strip(), comment.strip()
+    return raw.strip(), ""
+
+
+def _explicit_mod_unit(comment: str) -> str | None:
+    """Return only units explicitly established by the source comment."""
+    c = (comment or "").lower()
+    if "seconds" in c or "duration in second" in c:
+        return "seconds"
+    if "tenths" in c:
+        return "tenths"
+    if "10000 base" in c and "3.75%" in c:
+        return "1 = 0.01%"
+    if "%" in comment or "percent" in c or "percentage" in c or "percents" in c:
+        return "percent"
+    if "skill" in c and ("automaton" in c or "fishing" in c or "magic skill" in c or "combat skill" in c):
+        return "skill points"
+    return None
+
+
+def mod_metadata() -> dict:
+    """Structured, conservative metadata derived only from the source enum comment text."""
+    out = {}
+    for mod_id, raw in MOD_NAMES.items():
+        name, comment = _enum_comment_parts(raw)
+        out[int(mod_id)] = {
+            "id": int(mod_id),
+            "name": name,
+            "comment": comment or None,
+            "unit": _explicit_mod_unit(comment),
+            "source": "Topaz modifier.h enum comment",
+        }
+    return out
+
+
+def latent_metadata() -> dict:
+    """Expose condition and latentParam semantics from latent_effect.h comments without inference."""
+    out = {}
+    for latent_id, raw in LATENT_NAMES.items():
+        name, comment = _enum_comment_parts(raw)
+        param = None
+        lower = comment.lower()
+        idx = lower.find("param:")
+        if idx >= 0:
+            param = comment[idx + len("param:"):].strip()
+        out[int(latent_id)] = {
+            "id": int(latent_id),
+            "name": name,
+            "comment": comment or None,
+            "param_semantics": param or None,
+            "source": "Topaz latent_effect.h enum comment",
+        }
+    return out
+
+
 LATENT_NAMES = {
     0: 'HP_UNDER_PERCENT -- hp less than or equal to % (param: hp percent)',
     1: 'HP_OVER_PERCENT -- hp more than % (param: hp percent)',
