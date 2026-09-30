@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Model Viewer{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}model-viewer-page{% endblock %}
 {% block content %}
 <style>
-  main { max-width:none; width:100%; padding:0; overflow:hidden; display:flex; }
+  main.model-viewer-page { max-width:none; width:100%; padding:0; overflow:hidden; display:flex; }
   #model-viewer { display:flex; flex:1; min-height:0; background:#0a0d10; color:#d7dee3; font:13px/1.4 system-ui,sans-serif; }
-  #panel{width:340px;flex:none;background:#12171c;border-right:1px solid #26313a;padding:12px;overflow-y:auto}
+  #panel{width:var(--panel-right);flex:none;background:#12171c;border-right:1px solid #26313a;padding:8px;overflow-y:auto}
   #viewer-container{flex:1;position:relative}
   #model-viewer h1{font-size:14px;margin:0 0 10px}
   #model-viewer label{display:block;margin:8px 0 3px;color:#8b98a1;font-size:11px}
@@ -28,9 +30,9 @@
   .catalog-meta{font-size:10px;color:#8b98a1;word-break:break-all}
 </style>
 <div id="model-viewer">
-<div id="panel">
-  <h1>Model Viewer</h1>
-  <div class="muted">Renders an NPC/mob's real model DAT(s), resolved live from the DB via <span class="mono">mob_look_decode.py</span> + <span class="mono">gear_tables.py</span> + dat-extractor. Single-DAT ("flat") entities render one file; gear-composite humanoids render the race skeleton DAT plus every equipped slot's gear DAT, skinned to the shared skeleton. Find an id first on the <a href="/entity" target="_blank">Entity search</a> page.</div>
+<div id="panel" class="dense-panel">
+  <div class="dense-toolbar" style="margin:-8px -8px 8px;border-top:0;"><strong>Model Viewer</strong><span class="sp"></span><a href="/entity" target="_blank">Entity search ↗</a></div>
+  <div class="muted">Renders an NPC/mob's real model DAT(s), resolved live from the DB via <span class="mono">mob_look_decode.py</span> + <span class="mono">gear_tables.py</span> + dat-extractor. Single-DAT ("flat") entities render one file; gear-composite humanoids render the race skeleton DAT plus every equipped slot's gear DAT, skinned to the shared skeleton. Find an id first through Entity search when needed.</div>
 
   <label>Server</label>
   <select id="server"><option value="topaz">topaz</option><option value="dsp">dsp</option></select>
