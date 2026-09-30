@@ -859,6 +859,19 @@ History / audit / safety:
 - [x] Preserve older hand-verified per-family visible mesh DATs as explicit render hints where available; do not treat those mesh anchors as competing model-ID formulas.
 - [x] Add direct raw `look_t` model-ID loading to Client > Model Viewer with mapping/render provenance.
 - [x] Add query-string autoload/embed support and a lazy selected-entity model preview inside Zone Editor.
-- [ ] Build a searchable local-client model catalog with names/categories and explicit distinction between resource/skeleton DATs and visible mesh bundles.
+- [x] Build a searchable local-client model catalog from actual Topaz/DSP mob/NPC references plus the configured client's FTABLE/VTABLE: names/aliases, model IDs, resource/render file IDs and DAT paths, family IDs, pool IDs, reference counts, verified visual hints, reverse DAT correlation, Model Viewer picker/direct-DAT lookup, and read-only Zone Editor candidate preview. Resource/skeleton identity stays distinct from visible render hints.
 - [ ] Add safe Zone Editor model editing: NPC flat-look replacement and mob-pool model changes only after showing shared-pool impact, backups, undo, and SQL-sync consequences.
 - [ ] Expand multi-DAT actor composition/animation fidelity only where it materially helps validation; do not reproduce the full external viewer.
+
+
+### 2026-09-29 Client model catalog milestone
+- [x] Correlate flat creature model IDs from live `mob_pools` and `npc_list` rather than inventing labels from DAT filenames.
+- [x] Aggregate server aliases, mob/NPC source kind, family IDs, pool IDs, and reference counts per model ID.
+- [x] Resolve FFXiMain resource file IDs and verified family visual hints to the configured client's real DAT paths in bounded batches.
+- [x] Search by name/alias, model ID, file ID, family ID, pool ID, or ROM path.
+- [x] Reverse-correlate a model ID, file ID, or DAT path back to known model names and server evidence.
+- [x] Add Client > Model Viewer catalog picker plus direct DAT/file-ID correlation and rendering.
+- [x] Add read-only Zone Editor candidate model search/preview without mutating server data.
+- [x] Refuse ambiguous family-specific visual hints for context-free catalog loads; entity-specific loads may still use their exact verified family hint.
+- [x] Constrain direct DAT loads to the configured FFXI client root.
+- [ ] Next: safe model mutation with impact preview. NPC flat looks can be row-local; mob model changes may affect every spawn/group sharing a `mob_pools` row and must show that blast radius before write.
