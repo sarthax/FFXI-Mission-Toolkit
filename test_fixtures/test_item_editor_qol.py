@@ -181,13 +181,23 @@ def main():
     assert "const FIELD_GROUPS =" in template
     assert "const BASIC_FIELDS =" in template
     assert "const FIELD_HELP =" in template
-    assert "wrap.id==='editorTables' && itemEditorMode==='basic'" in template
+    assert "function applyEditorModeVisibility()" in template
+    assert "el.style.display=(basic && !BASIC_FIELDS[table]?.has(field))?'none':'';" in template
+    assert "if(wrap.id==='editorTables'){ addEditorCopyControls(wrap); applyEditorModeVisibility(); }" in template
     assert 'id="decodedSummary"' in template
     assert "function renderDecodedSummary(" in template
     assert 'id="compareItemId"' in template
     assert "async function compareCurrentItem()" in template
     assert "flattenItemForCompare" in template
     assert "effectCompareLabel" in template
+    assert 'id="fieldClipboardStatus"' in template
+    assert "let itemFieldClipboard=null;" in template
+    assert "function copyEditorField(table,field)" in template
+    assert "function pasteEditorField(table,field)" in template
+    assert "paste is limited to the same field" in template
+    assert "function copyEditorGroup(table,groupName)" in template
+    assert "function pasteEditorGroup(table,groupName)" in template
+    assert "paste is limited to the same logical group" in template
 
     # Staged mods / pet mods / latents are part of the same dirty/save transaction.
     assert "let loadedEffects={mods:[],pet_mods:[],latents:[]};" in template
