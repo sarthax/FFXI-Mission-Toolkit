@@ -6618,6 +6618,15 @@ async def zoneplot_animate(request: Request):
         return JSONResponse({"error": str(ex)}, status_code=400)
 
 
+@app.get("/zoneplot/animation-meta.json")
+def zoneplot_animation_meta():
+    import zone_animation_meta
+    try:
+        return JSONResponse(zone_animation_meta.metadata())
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
 @app.post("/zoneplot/model/preview")
 async def zoneplot_model_preview(request: Request):
     import zone_edit
