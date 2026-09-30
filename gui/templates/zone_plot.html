@@ -18,7 +18,7 @@
     #panel h3{margin:10px 0 4px;font-size:13px}
     .tabb.on{background:#3a6ea5;color:#fff}
     #list{max-height:220px;overflow:auto;font:11px monospace;border:1px solid var(--border);padding:4px}
-    #list div{cursor:pointer;white-space:nowrap} #list div:hover{background:#334}
+    #list div{cursor:pointer;white-space:nowrap} #list div:hover{background:#334} #list div.selected-row{background:#665c16;color:#fff;font-weight:600}
     .lbl{color:#fff;font:11px monospace;background:rgba(0,0,0,.7);padding:0 3px;border-radius:3px;pointer-events:none;white-space:nowrap}
   </style>
   <label>Server <select id="srv"><option value="topaz">Topaz</option><option value="dsp">DSP</option></select></label>
@@ -250,6 +250,15 @@ const headingArrow=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vect
 headingArrow.visible=false; headingArrow.renderOrder=30;
 headingArrow.traverse?.(o=>{ if(o.material){ o.material.depthTest=false; o.material.transparent=true; } });
 scene.add(headingArrow);
+const selectionRing=new THREE.Mesh(
+  new THREE.RingGeometry(1.5,2.15,48),
+  new THREE.MeshBasicMaterial({color:0xffe066,side:THREE.DoubleSide,transparent:true,opacity:.9,depthTest:false})
+);
+selectionRing.rotation.x=-Math.PI/2; selectionRing.visible=false; selectionRing.renderOrder=29; scene.add(selectionRing);
+function updateSelectionVisual(){
+  if(!Z || selected<0 || !Z.entities[selected] || Z.entities[selected].zero){ selectionRing.visible=false; return; }
+  const p=P(Z.entities[selected]); selectionRing.position.set(p.x,p.y+1.7,p.z); selectionRing.visible=true;
+}
 function updateHeadingArrow(){
   if(!Z || selected<0 || !Z.entities[selected] || Z.entities[selected].zero){ headingArrow.visible=false; return; }
   const e=Z.entities[selected], p=P(e);
@@ -576,6 +585,14 @@ function frameAll(){
   const c=b.getCenter(new THREE.Vector3()), s=b.getSize(new THREE.Vector3()); const d=Math.max(s.x,s.z,50);
   controls.target.copy(c); camera.position.set(c.x+d*.6,c.y+d*.7,c.z+d*.6); controls.update();
 }
+function frameSelected(){
+  if(!Z || selected<0 || !Z.entities[selected] || Z.entities[selected].zero) return;
+  const c=P(Z.entities[selected]);
+  const view=camera.position.clone().sub(controls.target);
+  if(view.lengthSq()<1e-6) view.set(1,.8,1);
+  view.normalize().multiplyScalar(28);
+  controls.target.copy(c); camera.position.copy(c).add(view); updateZoomSpeed(); controls.update();
+}
 
 // ---- dots ----
 function stateOf(i){ return R ? R.state[i] : 'none'; }
@@ -600,13 +617,31 @@ function rebuild(){
   const ms = Z.entities.map((e,i)=>[e,i]).filter(([e])=>matches(e)).slice(0,400);
   $('cnt').textContent = `(${ms.length}${ms.length===400?'+':''})`;
   $('list').innerHTML = ms.map(([e,i])=>`<div data-i="${i}">${e.k==='m'?'M':e.k==='d'?'D':'N'} ${e.id} ${(e.n||'').slice(0,22)}${e.zero?' [0,0,0]':''} ${e.zero?'':stateOf(i)}</div>`).join('');
-  $('list').querySelectorAll('div').forEach(d=>d.onclick=()=>select(+d.dataset.i, true));
+  $('list').querySelectorAll('div').forEach(d=>{
+    d.classList.toggle('selected-row', +d.dataset.i===selected);
+    d.onclick=()=>select(+d.dataset.i, true);
+  });
 }
 function setLabel(i, text){ if(labels.has(i)) return; const d=document.createElement('div'); d.className='lbl'; d.textContent=text; const o=new CSS2DObject(d); o.position.copy(P(Z.entities[i])); o.position.y+=2; scene.add(o); labels.set(i,o); }
 const txt = e => `${e.n||e.g} [${e.id}]${e.lv?' Lv'+e.lv:''}`;
-function select(i, fly){ const changed=selected!==i; selected=i; if(changed&&typeof loadEditor==='function') loadEditor(i); const e=Z.entities[i]; if(fly && !e.zero){ const c=P(e); controls.target.copy(c); camera.position.copy(c).add(new THREE.Vector3(40,50,40)); updateZoomSpeed(); }
-  updateHeadingArrow();
-  $('hover').textContent = `${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${txt(e)}  grp=${e.g}  (${e.x}, ${e.y}, ${e.z})  ${rotText(e.r)}  ${stateOf(i)}${e.zero?' ZERO-POS: never loads in instances':''}`; }
+function select(i, fly){
+  const changed=selected!==i;
+  if(changed && typeof isTransformDirty==='function' && isTransformDirty()){
+    if(!confirm('Discard unsaved position/rotation preview for the current entity?')) return false;
+    if(typeof restorePreviewFromOrig==='function') restorePreviewFromOrig();
+  }
+  selected=i;
+  if(changed&&typeof loadEditor==='function') loadEditor(i);
+  const e=Z.entities[i];
+  if(fly && !e.zero) frameSelected();
+  updateHeadingArrow(); updateSelectionVisual();
+  if(typeof updateDirtyUI==='function') updateDirtyUI();
+  $('frameSelBtn').disabled=!!e.zero;
+  $('list').querySelectorAll('div').forEach(d=>d.classList.toggle('selected-row',+d.dataset.i===selected));
+  const row=$('list').querySelector(`div[data-i="${i}"]`); if(row) row.scrollIntoView({block:'nearest'});
+  $('hover').textContent = `${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${txt(e)}  grp=${e.g}  (${e.x}, ${e.y}, ${e.z})  ${rotText(e.r)}  ${stateOf(i)}${e.zero?' ZERO-POS: never loads in instances':''}`;
+  return true;
+}
 let lastLab=0;
 function updateLabels(){
   const now=performance.now(); if(now-lastLab<250||!inst) return; lastLab=now;
@@ -656,7 +691,7 @@ $('reachbtn').onclick=async()=>{ await computeReach(); rebuild(); };
 $('clran').onclick=async()=>{ anchor=null; await computeReach(); rebuild(); };
 window.addEventListener('resize',()=>{ const w=container.clientWidth,h=container.clientHeight; camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h); lr.setSize(w,h); });
 const liveClock = new THREE.Clock();
-(function loop(){ requestAnimationFrame(loop); controls.update(); updateLabels(); updateHeadingArrow(); updateCompass();
+(function loop(){ requestAnimationFrame(loop); controls.update(); updateLabels(); updateHeadingArrow(); updateSelectionVisual(); updateCompass();
   if (waterMaterials.length>0){ const t=liveClock.getElapsedTime(); for(const m of waterMaterials) m.uniforms.time.value=t; }
   renderer.render(scene,camera); lr.render(scene,camera); })();
 const qz=new URLSearchParams(location.search); if(qz.get('zone')) $('zone').value=qz.get('zone');
