@@ -86,6 +86,11 @@
   <button type="button" data-rdelta="128">180°</button>
 </div>
 <div class="muted" style="font-size:10px;margin-bottom:5px">Keyboard: arrows move X/Z · PgUp/PgDn Y · [ ] rotate · Shift = large · Alt = precision · F = frame selected</div>
+<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:4px 0 6px">
+  <label style="margin:0"><span>Transform gizmo</span><input type="checkbox" id="gizmoEnabled" checked></label>
+  <button type="button" id="gizmoMove">Move</button>
+  <button type="button" id="gizmoRotate">Rotate</button>
+</div>
       <label>Nudge step <input type="number" id="estep" value="1" step="0.5" min="0.1"></label>
       <label>Rotation step <input type="number" id="erstep" value="1" step="1" min="1" max="128"></label>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin:4px 0">
@@ -182,6 +187,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { parseZoneFile } from '/static/ffxi-dat/index.js';
@@ -236,7 +242,7 @@ function switchProjection(mode,preserveView=true){
   const oldPos=camera.position.clone(), oldTarget=controls.target.clone();
   controls.dispose(); camera=mode==='orthographic'?orthoCamera:perspectiveCamera;
   if(preserveView){ camera.position.copy(oldPos); }
-  controls=new OrbitControls(camera,renderer.domElement); configureControls(); controls.target.copy(oldTarget); controls.addEventListener('end',saveZoneEditorState);
+  controls=new OrbitControls(camera,renderer.domElement); configureControls(); controls.target.copy(oldTarget); controls.addEventListener('end',saveZoneEditorState); if(typeof transformControls!=='undefined') transformControls.camera=camera;
   $('projection').value=mode; updateCameraProjection(); updateZoomSpeed(); repanSpeed(); controls.update();
 }
 function cameraPreset(name){
@@ -321,6 +327,39 @@ function updateSelectionVisual(){
   if(!Z || selected<0 || !Z.entities[selected] || Z.entities[selected].zero){ selectionRing.visible=false; return; }
   const p=P(Z.entities[selected]); selectionRing.position.set(p.x,p.y+1.7,p.z); selectionRing.visible=true;
 }
+const transformProxy=new THREE.Object3D(); scene.add(transformProxy);
+const transformControls=new TransformControls(camera,renderer.domElement);
+transformControls.setMode('translate'); transformControls.setSpace('world'); scene.add(transformControls);
+transformControls.addEventListener('dragging-changed',ev=>{ controls.enabled=!ev.value; });
+let gizmoPreviewQueued=false;
+function syncGizmoFromSelection(){
+  if(!Z || selected<0 || !Z.entities[selected] || Z.entities[selected].zero || !$('gizmoEnabled')?.checked){ transformControls.detach(); return; }
+  const e=Z.entities[selected], p=P(e), a=rotInfo(e.r).raw*Math.PI*2/256;
+  transformProxy.position.copy(p); transformProxy.rotation.set(0,-a,0); transformProxy.scale.set(1,1,1);
+  transformControls.attach(transformProxy);
+}
+function applyGizmoPreview(){
+  gizmoPreviewQueued=false; if(selected<0 || !Z?.entities[selected]) return;
+  const e=Z.entities[selected];
+  e.x=+transformProxy.position.x.toFixed(3); e.y=+(-transformProxy.position.y).toFixed(3); e.z=+(-transformProxy.position.z).toFixed(3);
+  const turns=(((-transformProxy.rotation.y)/(Math.PI*2))%1+1)%1;
+  e.r=Math.round(turns*256)%256;
+  $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r; $('er-dir').textContent=rotText(e.r);
+  updateHeadingArrow(); updateSelectionVisual(); syncGizmoFromSelection(); updateDirtyUI();
+  rebuild(); syncGizmoFromSelection();
+}
+transformControls.addEventListener('objectChange',()=>{
+  if(!gizmoPreviewQueued){ gizmoPreviewQueued=true; requestAnimationFrame(applyGizmoPreview); }
+});
+function setGizmoMode(mode){
+  transformControls.setMode(mode);
+  transformControls.showX=mode==='translate'; transformControls.showY=true; transformControls.showZ=mode==='translate';
+  $('gizmoMove').disabled=mode==='translate'; $('gizmoRotate').disabled=mode==='rotate';
+}
+setGizmoMode('translate');
+$('gizmoEnabled').onchange=syncGizmoFromSelection;
+$('gizmoMove').onclick=()=>setGizmoMode('translate');
+$('gizmoRotate').onclick=()=>setGizmoMode('rotate');
 function updateHeadingArrow(){
   if(!Z || selected<0 || !Z.entities[selected] || Z.entities[selected].zero){ headingArrow.visible=false; return; }
   const e=Z.entities[selected], p=P(e);
@@ -1037,7 +1076,7 @@ function previewRotation(){
   if(selected<0) return;
   const e=Z.entities[selected];
   e.r=((+$('er').value%256)+256)%256; $('er').value=e.r; $('er-dir').textContent=rotText(e.r);
-  updateHeadingArrow(); updateDirtyUI();
+  updateHeadingArrow(); syncGizmoFromSelection(); updateDirtyUI();
   $('hover').textContent = `${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${txt(e)}  grp=${e.g}  (${e.x}, ${e.y}, ${e.z})  ${rotText(e.r)}  ${stateOf(selected)}`;
 }
 function previewEdit(){ if(selected<0) return; const e=Z.entities[selected]; e.x=+$('ex').value; e.y=+$('ey').value; e.z=+$('ez').value; previewRotation(); rebuild(); updateSelectionVisual(); updateDirtyUI(); }
