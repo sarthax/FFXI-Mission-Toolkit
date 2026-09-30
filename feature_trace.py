@@ -149,14 +149,16 @@ def _catalog_entity_id(row: dict) -> int | None:
         try:
             return int(value)
         except (TypeError, ValueError):
-            return None
+            pass
     identity = row.get("identity") or {}
-    for key in ("npcid", "mobid", "entity_id", "id", "numeric_id"):
-        if key in identity:
-            try:
-                return int(identity[key])
-            except (TypeError, ValueError):
-                pass
+    aliases = row.get("aliases") or {}
+    for source in (identity, aliases):
+        for key in ("npcid", "mobid", "entity_id", "id", "numeric_id"):
+            if key in source:
+                try:
+                    return int(source[key])
+                except (TypeError, ValueError):
+                    pass
     # Canonical search rows expose the key in matched_on but do not currently populate numeric_id.
     node_id = str(row.get("node_id") or "")
     if not row.get("catalog_only") and ":" in node_id:
@@ -185,27 +187,53 @@ def entity_implementation_path(
     *,
     max_provider_depth: int = 4,
 ) -> dict | None:
-    """Project an exact entity ID across indexed source representations.
+    """Project an exact entity identity across indexed source representations.
 
-    This is presentation/navigation evidence. It deliberately does not insert or infer canonical
-    graph edges between SQL/LSB/Topaz/DSP rows that merely share a numeric entity ID.
+    Numeric IDs remain source/snapshot representations. A name that resolves to multiple numeric
+    IDs is accepted only when every one of those IDs maps to the same explicit canonical root.
     """
     numeric_id = _numeric_entity_query(query)
     initial_matches = search_nodes(graph_con, query, catalog_con)
+    canonical_root_override = None
     if numeric_id is None:
         candidate_ids = {
             entity_id for row in initial_matches
             if (entity_id := _catalog_entity_id(row)) is not None
         }
-        if len(candidate_ids) != 1:
+        if not candidate_ids:
             return None
-        numeric_id = next(iter(candidate_ids))
+        if len(candidate_ids) == 1:
+            numeric_ids = candidate_ids
+        else:
+            mapped_roots = {
+                candidate: canonical_entity_root(graph_con, candidate)
+                for candidate in candidate_ids
+            }
+            roots = {root for root in mapped_roots.values() if root is not None}
+            if len(roots) != 1 or any(root is None for root in mapped_roots.values()):
+                return None
+            canonical_root_override = next(iter(roots))
+            numeric_ids = candidate_ids
+        numeric_id = sorted(numeric_ids)[0]
+    else:
+        numeric_ids = {numeric_id}
 
-    # Re-search by the resolved numeric ID so every source representation participates even when
-    # the user started from a name that only one provider happened to match textually.
-    matches = search_nodes(graph_con, str(numeric_id), catalog_con)
-    entity_rows = [row for row in matches if _entity_catalog_match(row, numeric_id)]
-    root = canonical_entity_root(graph_con, numeric_id)
+    # Search each representation ID so drifted client snapshots can participate together when
+    # explicit canonical mappings prove that they are the same semantic entity.
+    entity_rows = []
+    seen_rows = set()
+    for candidate in sorted(numeric_ids):
+        matches = search_nodes(graph_con, str(candidate), catalog_con)
+        for row in matches:
+            if not _entity_catalog_match(row, candidate):
+                continue
+            key = (row.get("node_id"), row.get("source"))
+            if key in seen_rows:
+                continue
+            seen_rows.add(key)
+            entity_rows.append(row)
+
+    root = canonical_root_override or canonical_entity_root(graph_con, numeric_id)
 
     branches = []
     seen_roots = set()
@@ -255,14 +283,15 @@ def entity_implementation_path(
     ))
     return {
         "numeric_id": numeric_id,
+        "numeric_ids": sorted(numeric_ids),
         "canonical_root": root,
         "canonical_mapped": root is not None,
         "branches": branches,
         "representation_count": len(entity_rows),
         "notes": [
-            "Rows that share this numeric entity ID remain separate source representations.",
+            "Rows that share this entity identity remain separate source/snapshot representations.",
             "Provider-native links are schema relationships, not inferred canonical graph edges.",
-            "Canonical runtime/semantic traversal is available only when an explicit canonical identity mapping exists.",
+            "Multiple numeric IDs are consolidated only when every ID maps to the same explicit canonical root.",
         ],
     }
 
