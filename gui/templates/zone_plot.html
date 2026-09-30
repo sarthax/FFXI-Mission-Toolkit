@@ -32,6 +32,7 @@
   <button id="redoBtn" disabled title="Redo last undone Zone Editor action (Ctrl+Y / Ctrl+Shift+Z)">Redo</button>
   <button id="frameSelBtn" disabled title="Frame selected entity (F)">Frame selected</button>
   <button id="frameAllBtn" title="Frame all entities">Frame all</button>
+  <button id="cloneSelectedBtn" disabled title="Use the selected entity as the Add source">Clone selected</button>
   <span id="undoStatus" class="muted mono" style="font-size:10px"></span>
 </div>
   <label>Search <input type="text" id="q" placeholder="name / id"></label>
@@ -206,6 +207,8 @@
     <label>Z <input type="number" step="0.1" id="aZ"></label>
     <label>Rot (0-255) <input type="number" step="1" min="0" max="255" id="aR" value="0"></label>
     <label>Link to instance <select id="ainst"><option value="0">None (general zone pool)</option></select></label>
+<label><span>Repeated placement</span><input type="checkbox" id="repeatAdd"></label>
+<div id="addGhostInfo" class="mono muted" style="font-size:10px;margin:3px 0 5px"></div>
     <div class="muted" style="font-size:11px">A fixed-placement instance (e.g. an assault like Heroines' Holdfast) only spawns rows also linked into instance_entities &mdash; picking one here writes that link row too. Leave "None" to add to the zone's general pool instead (visible in every instance and in unrestricted zone entry).</div>
     <div class="muted" style="font-size:11px">Click anywhere in the viewport (or drag a result above onto it) to set X/Y/Z from that point &mdash; the cyan marker shows where it'll be added. No marker means the click found no mesh/navmesh there; set X/Y/Z by hand instead.</div>
     <label style="align-items:flex-start">Comment <textarea id="acomment" rows="2" style="width:170px" placeholder="why"></textarea></label>
@@ -361,6 +364,11 @@ const addMarkerGeo = new THREE.SphereGeometry(1.6, 12, 8);
 const addMarker = new THREE.Mesh(addMarkerGeo, new THREE.MeshBasicMaterial({color:0x00e5ff, depthTest:false}));
 addMarker.renderOrder = 20; addMarker.visible = false;
 scene.add(addMarker);
+const addHeadingGeom=new THREE.BufferGeometry();
+const addHeadingLine=new THREE.Line(addHeadingGeom,new THREE.LineBasicMaterial({color:0x00e5ff,depthTest:false}));
+addHeadingLine.visible=false; addHeadingLine.renderOrder=21; scene.add(addHeadingLine);
+const addGhostDiv=document.createElement('div'); addGhostDiv.className='lbl';
+const addGhostLabel=new CSS2DObject(addGhostDiv); addGhostLabel.visible=false; scene.add(addGhostLabel);
 function setAddPos(x,y,z){
   $('aX').value=x.toFixed(3); $('aY').value=y.toFixed(3); $('aZ').value=z.toFixed(3); updateAddMarker();
 }
