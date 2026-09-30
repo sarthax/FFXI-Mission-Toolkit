@@ -801,11 +801,11 @@ Additional QOL backlog:
 ### 2026-09-29 Item Editor strengthening / quality-of-life backlog
 
 Priority stack:
-- [ ] Unified dirty-state and field-level change summary across item tables, masks, client-relevant fields, mods, pet mods, and latents; warn before navigation discards unsaved edits.
-- [ ] Atomic whole-item save: validate first, capture one coherent backup, write all changed SQL tables in one DB transaction, then synchronize supported client DAT fields without leaving a partial multi-table save.
-- [ ] Session undo / redo backed by the existing item backup system, with Ctrl+Z / Ctrl+Y and redo through the pre-restore backup.
-- [ ] Expanded server-vs-client DAT comparison across every decoded overlapping field, with explicit per-field mismatches rather than level-only comparison.
-- [ ] Centralized item validation panel with source-proven errors/warnings/info; errors block save, warnings require explicit confirmation.
+- [~] Unified dirty-state and field-level change summary across item tables, masks, and client-relevant fields; navigation discard warnings are complete. Mods, pet mods, and latents remain on immediate-write paths and are not yet staged/dirty-tracked.
+- [~] Atomic whole-item save for the core one-row item_* tables: validate first, capture one coherent backup, update all changed tables in one DB transaction, validate/patch the DAT once, and restore the DAT snapshot if DB commit fails. Staged mods/pet-mods/latents are not yet included.
+- [~] Session undo / redo is implemented for atomic Save Item actions with Ctrl+Z / Ctrl+Y and redo via the pre-restore backup. Immediate mod/pet-mod/latent actions plus create/delete are not yet enrolled.
+- [x] Expanded server-vs-client DAT comparison across every decoded overlapping field, with explicit per-field mismatches rather than level-only comparison.
+- [x] Centralized item validation panel with source-proven errors/warnings/info; errors block save, warnings require explicit confirmation.
 - [ ] Improved item search/results grid: exact ID lookup, name/ID search, richer filters, sortable columns, mismatch/server-only/DAT-only state, and recent-item navigation.
 
 Editing / presentation:
