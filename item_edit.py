@@ -220,9 +220,38 @@ def list_backups():
     out = []
     for f in sorted(BACKUPS.glob("*.json"), reverse=True) if BACKUPS.exists() else []:
         b = json.loads(f.read_text())
-        out.append({"id": b["id"], "ts": b["ts"], "label": b["label"], "item_id": b["item_id"], "rows": len(b["ops"])})
+        snap = b.get("client_record")
+        out.append({
+            "id": b["id"], "ts": b["ts"], "label": b["label"], "item_id": b["item_id"],
+            "rows": len(b["ops"]), "has_client_record": bool(snap),
+            "client_target": snap.get("target") if snap else None,
+        })
     return out
 
+
+def restore_client_record_from_backup(bid, comment=""):
+    """Restore only this item's exact client DAT record from an item backup; SQL is untouched."""
+    b = json.loads((BACKUPS / f"{bid}.json").read_text())
+    snapshot = b.get("client_record")
+    if not snapshot:
+        raise ValueError(f"backup {bid} predates exact client-record snapshots")
+    item_id = int(b["item_id"])
+    target = snapshot.get("target")
+    current = dat.capture_client_record(item_id, target=target)
+    if current is None:
+        raise ValueError("current client record is unavailable for backup before record restore")
+    pre_id = _save_backup(
+        f"auto: before client-record restore of {bid}", item_id, [], client_snapshot=current
+    )
+    report = dat.restore_client_record(snapshot)
+    _journal(comment or f"RESTORE client record from backup {bid}", [
+        f"-- item {item_id} client record only",
+        f"-- source backup {bid}; undo backup {pre_id}; target {report.get('target')}",
+    ])
+    return {
+        "item_id": item_id, "source_backup": bid, "backup": pre_id,
+        "client": report, "sql_touched": False,
+    }
 
 def restore(bid):
     """Restore a backup across SQL and the exact captured client record when available."""
