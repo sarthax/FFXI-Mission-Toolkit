@@ -796,3 +796,51 @@ Additional QOL backlog:
 - [x] Clone-selected shortcut in Add workflow.
 - [x] Repeated placement mode for multiple copies.
 - [x] Ghost preview before add, including heading and instance linkage.
+
+
+### 2026-09-29 Item Editor strengthening / quality-of-life backlog
+
+Priority stack:
+- [ ] Unified dirty-state and field-level change summary across item tables, masks, client-relevant fields, mods, pet mods, and latents; warn before navigation discards unsaved edits.
+- [ ] Atomic whole-item save: validate first, capture one coherent backup, write all changed SQL tables in one DB transaction, then synchronize supported client DAT fields without leaving a partial multi-table save.
+- [ ] Session undo / redo backed by the existing item backup system, with Ctrl+Z / Ctrl+Y and redo through the pre-restore backup.
+- [ ] Expanded server-vs-client DAT comparison across every decoded overlapping field, with explicit per-field mismatches rather than level-only comparison.
+- [ ] Centralized item validation panel with source-proven errors/warnings/info; errors block save, warnings require explicit confirmation.
+- [ ] Improved item search/results grid: exact ID lookup, name/ID search, richer filters, sortable columns, mismatch/server-only/DAT-only state, and recent-item navigation.
+
+Editing / presentation:
+- [ ] Basic vs Advanced field modes while retaining raw values.
+- [ ] Group fields by identity, equip requirements, jobs/slots, combat, usable behavior, auction/vendor, client/DAT, and effects.
+- [ ] Human-readable decoded value summaries beside raw masks/enums/delay fields.
+- [ ] Inline source-backed field descriptions/tooltips.
+- [ ] Copy/paste individual values and selected field groups where safe.
+
+Create / clone:
+- [ ] One-click Clone This Item from the open editor.
+- [ ] Clone options for SQL structure only, SQL+mods, SQL+mods+latents, and full server+client template where supported.
+- [ ] Pre-create summary showing allocated item ID, DAT category/record, SQL rows, copied mods/latents, and write target before commit.
+- [ ] Free ID / DAT-slot browser showing server occupancy, DAT occupancy, mismatches, and only verified reserved/unsafe ranges.
+- [ ] After creation, open the new item automatically with Server/DAT synchronization status and undo-create support.
+
+Mods / pet mods / latents:
+- [ ] Stage mod/pet-mod/latent edits instead of immediately writing each row; include them in unified Save Item.
+- [ ] Multi-add and copy-all-effects from another item.
+- [ ] Duplicate mod/latent detection and clearer sorting/filtering.
+- [ ] Surface known mod units/comments and latent-condition parameter semantics only where confirmed.
+- [ ] Item-to-item effect diff for added/removed/changed mods and latents.
+
+DAT workflow:
+- [ ] Persistent item status header showing Server state, Client DAT state, mismatch count, and current Live/Xi-Pivot target.
+- [ ] Strong visual distinction for LIVE CLIENT WRITE target.
+- [ ] Always show exact DAT ROM path/category/record and latest backup timestamp.
+- [ ] Compare current decoded DAT record against pristine backup and show changed fields.
+- [ ] Explicit reconcile actions: use server values or use client values per supported field; never guess authority.
+- [ ] Safe record-level restore where the DAT format supports replacing only this record.
+- [ ] Compare Live DAT vs Xi-Pivot copy and copy one direction explicitly.
+
+History / audit / safety:
+- [ ] Selected-item change-history panel with field-level summaries, comments, SQL/DAT/effect action types, and one-click previous-state restore.
+- [ ] Whole-item delete/create/edit history integrates with session undo/redo.
+- [ ] Dependency/usage view before destructive changes: rewards, drops, shops, recipes, scripts, missions/quests, and client references when indexed.
+- [ ] Optional constrained batch editor with preview and one atomic backup for proven-safe field classes.
+- [ ] Item comparison mode for SQL, DAT, mods, pet mods, and latents side-by-side.
