@@ -6836,6 +6836,27 @@ async def itemedit_dat_target_set(request: Request):
         return JSONResponse({"error": str(ex)}, status_code=400)
 
 
+@app.get("/itemedit/{item_id}/client-record.json")
+def itemedit_client_record(item_id: int):
+    import item_dat_tools
+    try:
+        return JSONResponse(item_dat_tools.client_record_inspector(item_id))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.get("/itemedit/{item_id}/icon.png")
+def itemedit_icon(item_id: int):
+    import item_dat_tools
+    try:
+        png = item_dat_tools.item_icon_png(item_id)
+        if not png:
+            return Response(status_code=404)
+        return Response(png, media_type="image/png", headers={"Cache-Control": "no-store"})
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
 @app.get("/itemedit/{item_id}/live-pivot-diff.json")
 def itemedit_live_pivot_diff(item_id: int):
     import item_dat_tools
