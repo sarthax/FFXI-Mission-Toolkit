@@ -11,6 +11,7 @@ def main():
     event=(ROOT/"gui/templates/event_view.html").read_text(encoding="utf-8")
     sql=(ROOT/"gui/templates/sql.html").read_text(encoding="utf-8")
     server=(ROOT/"gui_server.py").read_text(encoding="utf-8")
+    binding_service=(ROOT/"workbench/core/services/feature_trace_binding_drilldown.py").read_text(encoding="utf-8")
 
     for text in (
         "Server Lua drill-down",
@@ -63,23 +64,29 @@ def main():
     ):
         assert text in feature,text
 
-    assert "def _feature_trace_binding_index_for_server" in server
-    assert "def _feature_trace_binding_location" in server
-    assert "def _feature_trace_binding_lookup" in server
-    assert "def _feature_trace_behavior_engine_drilldown" in server
-    assert "binding_index=_feature_trace_binding_index_for_server(server,source_root)" in server
-    assert "index=binding_index" in server
-    assert '"CASE_ONLY"' in server
-    assert '"NOT_INDEXED"' in server
-    assert "registration_excerpt" in server
-    assert "implementation_excerpt" in server
-    assert '"shared_helpers":helpers' in server
-    assert '"callbacks":callbacks' in server
 
     bindings=(ROOT/"gui/templates/backport_bindings.html").read_text(encoding="utf-8")
     assert "trace_q" in bindings
     assert "Feature Trace entity {{ trace_q }}" in bindings
     assert "Binding Reference:" in behavior
+    assert "feature_trace_binding_drilldown" in server
+    assert "feature_trace_behavior_engine_drilldown(" in server
+    assert "feature_trace_binding_lookup(" in server
+    for text in (
+        "def binding_index_for_server",
+        "def binding_location",
+        "def binding_lookup",
+        "def behavior_engine_drilldown",
+        "binding_index=binding_index_for_server(server,source_root)",
+        "index=binding_index",
+        '"CASE_ONLY"',
+        '"NOT_INDEXED"',
+        "registration_excerpt",
+        "implementation_excerpt",
+        '"shared_helpers":helpers',
+        '"callbacks":callbacks',
+    ):
+        assert text in binding_service,text
 
     print("Feature Trace cross-tool source drill-down regression: PASS")
 
