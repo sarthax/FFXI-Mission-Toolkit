@@ -137,6 +137,7 @@
       <div>lines</div><div class="mono">{{ provenance.start_line or '—' }}{% if provenance.end_line and provenance.end_line != provenance.start_line %}-{{ provenance.end_line }}{% endif %}</div>
       <div>byte offsets</div><div class="mono">{{ provenance.start_offset if provenance.start_offset is not none else '—' }}{% if provenance.end_offset is not none %}-{{ provenance.end_offset }}{% endif %}</div>
       <div>source SHA-256</div><div class="mono" style="word-break:break-all">{{ provenance.source_sha256 or 'unknown' }}</div>
+      <div>original evidence</div><div><a class="inline" href="/captures/{{ capture_id }}/source-locator?filename={{ provenance.filename|urlencode }}&target_table=capture_raw_packets&row_key={{ ('{"seq": ' ~ packet.seq ~ '}')|urlencode }}">open exact source row/block &rarr;</a></div>
     </div>
     {% else %}<p class="muted" style="padding:0 12px 10px">No row locator is available for this observation.</p>{% endif %}
   </section>
@@ -149,7 +150,7 @@
       {% for c in correlations %}
       <tr>
         <td><span class="chip">{{ c.status }}</span></td>
-        <td><span class="mono">{{ c.other_kind }}</span><br><span class="muted mono">{{ c.other_ref }}</span></td>
+        <td>{% if c.other_href %}<a class="inline" href="{{ c.other_href }}"><span class="mono">{{ c.other_kind }}</span><br><span class="muted mono">{{ c.other_ref }}</span></a>{% else %}<span class="mono">{{ c.other_kind }}</span><br><span class="muted mono">{{ c.other_ref }}</span>{% endif %}</td>
         <td>{{ c.basis }}</td>
         <td class="mono">{{ c.time_delta_seconds if c.time_delta_seconds is not none else '—' }}</td>
         <td class="mono">{{ c.score if c.score is not none else '—' }}</td>
