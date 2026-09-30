@@ -188,6 +188,7 @@ jobs:
           python test_fixtures/test_eventview_session_unknown_zone.py
           python test_fixtures/test_capture_broad_formats.py
           python test_fixtures/test_capture_spatial_viewer.py
+          python test_fixtures/test_capture_evidence_search_modules.py
           python test_fixtures/test_capture_content_fingerprint.py
           python test_fixtures/test_capture_event_packet_graph.py
           python test_fixtures/test_server_catalog_identity.py
