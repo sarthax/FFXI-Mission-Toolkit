@@ -1,3 +1,11 @@
+## 2026-09-30 — Wiki Compiler and Research Session workflow UX
+
+- Wiki Compiler now behaves as an evidence-review workspace: page/source lookup and build/compare actions stay at the top, claim mapping review is the primary expanded evidence surface, dual-wiki comparison is secondary/on-demand, and compiled report sections/excerpts are progressively disclosed.
+- Wiki linked-entity results now have compact found/ambiguous/not-found KPI cards and per-kind expandable tables instead of one long vertically stacked report.
+- Research Session Detail now behaves as a session console: compact identity/context cards, bounded Run / Replay controls, and separate expandable sections for full metadata, budgets/usage, tool transcript, proposals, and final report.
+- Run/replay semantics, permission profiles, provider/model budgets, evidence links, proposal payloads, and final reports are unchanged.
+- GUI regressions now protect the dense workflow contracts while retaining existing functional assertions for research execution and wiki evidence/review behavior.
+
 ## 2026-09-30 — Library and search workspace UX refresh
 
 - Item Browser, Key Items, Dialog Browser, SQL Index Browser, Zone Browser, Assault Missions, and Binding Reference now use the shared dense shell with compact search/filter/result chrome.
