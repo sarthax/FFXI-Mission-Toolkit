@@ -12,10 +12,10 @@ def main():
     # Real 52-byte 0x034 shape used as a bounded layout exercise. The assertions deliberately
     # check byte mapping/coverage mechanics rather than assigning semantics beyond the active DB.
     raw = (
-        "34 1A F4 03 BD 11 0F 01 00 00 00 00 00 00 00 00 "
-        "05 00 00 00 00 00 00 00 FF C3 3F 00 47 D2 14 0B "
-        "FF 0F 00 00 1A 00 02 00 BD 01 F1 00 5F 03 B8 00 "
-        "F1 00 00 00"
+        "34 1A C0 00 38 D3 04 01 01 00 00 00 00 00 00 00 "
+        "94 0B 00 00 90 00 00 00 90 00 00 00 00 00 00 00 "
+        "03 00 00 00 FF 0F 00 00 38 03 4D 00 2D 01 08 00 "
+        "4D 00 00 00"
     )
     layout = packet_decode.analyze_layout("s2c", 0x034, raw)
     assert layout["length"] == 52
@@ -29,12 +29,16 @@ def main():
     server = (ROOT / "gui_server.py").read_text(encoding="utf-8")
     backend = (ROOT / "packet_decode.py").read_text(encoding="utf-8")
 
+    assert "{% block main_class %}wide-workbench{% endblock %}" in template
     assert "Decoded structure" in template
     assert "Raw packet map" in template
-    assert "schema coverage" in template
+    assert "Selected field" in template
+    assert "Scratch context" in template
+    assert "coverage {{ layout.coverage_pct }}%" in template
     assert 'class="packet-field' in template
     assert 'class="hex-byte' in template
     assert "function selectRow(row)" in template
+    assert "function esc(value)" in template
     assert "uint32 LE" in template
     assert "float32 LE" in template
     assert "analyze_layout(direction, opcode_int, hex_bytes)" in server
