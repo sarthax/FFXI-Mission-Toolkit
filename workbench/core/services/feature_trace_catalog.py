@@ -161,11 +161,21 @@ def search_catalog(con: sqlite3.Connection, term: str, limit: int = 200):
                 cols[column.lower()] for column in spec.search_columns
                 if column.lower() in cols and cols[column.lower()] not in excluded
             ]
+        detail_columns=[]
+        if spec is not None:
+            excluded=set(identity_columns)
+            if name:
+                excluded.add(name)
+            excluded.update(alias_columns)
+            detail_columns=[
+                cols[column.lower()] for column in spec.detail_columns
+                if column.lower() in cols and cols[column.lower()] not in excluded
+            ]
         search_columns=[*identity_columns]
         if name:
             search_columns.append(name)
         search_columns.extend(alias_columns)
-        select_columns=search_columns
+        select_columns=[*search_columns,*detail_columns]
         where=" OR ".join(f"lower(COALESCE(CAST({column} AS TEXT),'')) LIKE ?" for column in search_columns)
         params=[pattern]*len(search_columns)+[limit]
         for row in con.execute(
@@ -186,12 +196,17 @@ def search_catalog(con: sqlite3.Connection, term: str, limit: int = 200):
                 column:row[alias_offset+index]
                 for index,column in enumerate(alias_columns)
             }
+            detail_offset=alias_offset+len(alias_columns)
+            details={
+                column:row[detail_offset+index]
+                for index,column in enumerate(detail_columns)
+            }
             inspect_href=None
             if spec is not None and spec.inspect_path:
                 primary_value=identity.get(cols[spec.id_column.lower()])
                 inspect_href=spec.inspect_path.replace("{id}",quote(str(primary_value),safe=""))
             item={"node_id":node_id,"node_type":object_type,"display_name":display,"domain":domain,"source":table,"table":table,"provider":provider_id,"catalog_only":True,
-                  "identity":identity,"aliases":aliases,"matched_on":matched,"inspect_href":inspect_href}
+                  "identity":identity,"aliases":aliases,"details":details,"matched_on":matched,"inspect_href":inspect_href}
             if len(identity_values)==1 and identity_columns[0].lower() in ID_COLUMNS:
                 item["numeric_id"]=identity_values[0]
             rows.append(item)
