@@ -28,6 +28,9 @@ def main():
 
     assert "main.wide-workbench" in base
     assert "{% block main_class %}{% endblock %}" in base
+    assert "max-width: 980px" not in base
+    assert "main { width: 100%; max-width: none;" in base
+    assert "main.narrow-content" in base
     assert "{% block main_class %}wide-workbench{% endblock %}" in packet_detail
     assert "Session packets" in packet_detail
     assert "Decoded structure" in packet_detail
