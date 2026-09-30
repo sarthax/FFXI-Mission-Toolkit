@@ -296,7 +296,7 @@
                 <div class="impl-engine-call">
                   <div><strong class="mono">{{ call.qualified_name }}</strong> <span class="chip">{{ call.binding.status }}</span>{% if call.hook %}<span class="chip">{{ call.hook }}</span>{% endif %}</div>
                   <div class="muted mono">line {{ call.line or '?' }}{% if call.source_line %} · {{ call.source_line }}{% endif %}</div>
-                  <div class="impl-workflow"><a class="chip" href="{{ call.binding.binding_href }}">Binding Reference</a></div>
+                  <div class="impl-workflow"><a class="chip" href="{{ call.binding.binding_href }}&trace_q={{ implementation_path.numeric_id|urlencode }}">Binding Reference</a></div>
                   {% for loc in call.binding.locations %}
                   <div class="impl-engine-grid">
                     <div class="k">C++ binding target</div><div><code>{{ loc.class }} · {{ loc.file }}:{{ loc.line }}</code>{% if loc.implementation_line %}<br><span class="muted">implementation candidate line {{ loc.implementation_line }}</span>{% endif %}</div>
