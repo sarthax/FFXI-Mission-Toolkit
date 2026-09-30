@@ -201,8 +201,9 @@ def main():
     # Explicit non-server providers expose durable searchable records, not raw observation rows.
     con.execute("CREATE TABLE identity_snapshots (snapshot_id TEXT, version TEXT)")
     con.execute("INSERT INTO identity_snapshots VALUES ('client:2022','30120222_1')")
-    con.execute("CREATE TABLE identity_records (record_id TEXT, semantic_key TEXT, numeric_id TEXT, zone_key TEXT, actor_key TEXT, owner_key TEXT, evidence_id TEXT)")
-    con.execute("INSERT INTO identity_records VALUES ('identity:event:1','EVENT:zone:actor:149','16974347','SOUTHERN_SAN_DORIA_S','Raustigne',NULL,'evidence:client:1')")
+    con.execute("CREATE TABLE identity_records (record_id TEXT, semantic_key TEXT, snapshot_id TEXT, namespace TEXT, numeric_id TEXT, zone_key TEXT, actor_key TEXT, owner_key TEXT, evidence_id TEXT)")
+    con.execute("INSERT INTO identity_records VALUES ('identity:event:1','EVENT:zone:actor:149','client:2022','EVENT','16974347','SOUTHERN_SAN_DORIA_S','Raustigne',NULL,'evidence:client:1')")
+    con.execute("INSERT INTO identity_records VALUES ('identity:entity:1','ENTITY:SOUTHERN_SAN_DORIA_S:NPC:Raustigne','client:2022','ENTITY','16974347','SOUTHERN_SAN_DORIA_S','Raustigne',NULL,'evidence:client:entity:1')")
     con.execute("CREATE TABLE captures (capture_id INTEGER, capture_label TEXT, capturer TEXT, content_type TEXT, zones TEXT, mission_name TEXT, client_build TEXT, is_retail INTEGER, start_time INTEGER)")
     con.execute("INSERT INTO captures VALUES (17,'Ancient Vows retail','tester','Missions','Riverne - Site #A01','Ancient Vows','30120222_1',1,12345)")
     con.execute("CREATE TABLE research_sessions (research_session_id TEXT, question TEXT, provider TEXT, model TEXT, feature_root TEXT, entity_root TEXT, verification_state TEXT)")
@@ -244,6 +245,16 @@ def main():
         hit=next((row for row in rows if row.get("provider")==provider),None)
         assert hit is not None,(query,rows)
         assert field in hit.get("matched_on",[]),(query,hit)
+
+    # Numeric client identity aliases remain searchable across namespaces, but an entity
+    # Implementation Path must admit only ENTITY rows rather than conflating EVENT ids.
+    numeric_identity_rows=[
+        row for row in feature_trace.search_nodes(con,"16974347")
+        if row.get("table")=="identity_records"
+    ]
+    assert {row.get("aliases",{}).get("namespace") for row in numeric_identity_rows}=={"EVENT","ENTITY"},numeric_identity_rows
+    assert all(row.get("aliases",{}).get("numeric_id")=="16974347" for row in numeric_identity_rows),numeric_identity_rows
+    assert all("numeric_id" not in row for row in numeric_identity_rows),numeric_identity_rows
     graph=sqlite3.connect(":memory:")
     graph.execute("CREATE TABLE entities (entity_id TEXT, entity_type TEXT, display_name TEXT, metadata_json TEXT)")
     graph.execute("CREATE TABLE entity_relationships (relationship_id TEXT, source_node TEXT, target_node TEXT, relationship TEXT, evidence_id TEXT, confidence TEXT, status TEXT, metadata_json TEXT, source_snapshot_id TEXT)")
@@ -251,6 +262,15 @@ def main():
     graph.execute("INSERT INTO validation_runs VALUES ('run:graph','Graph-side validation')")
     graph.execute("CREATE TABLE validation_results (validation_id TEXT, validation_type TEXT, run_id TEXT)")
     graph.execute("INSERT INTO validation_results VALUES ('validation:graph','EVENT_MATCH','run:graph')")
+
+    client_entity_path=feature_trace.entity_implementation_path(graph,con,"16974347")
+    assert client_entity_path is not None,client_entity_path
+    client_identity_branches=[
+        branch for branch in client_entity_path["branches"]
+        if (branch.get("root") or {}).get("table")=="identity_records"
+    ]
+    assert len(client_identity_branches)==1,client_entity_path
+    assert client_identity_branches[0]["root"]["aliases"]["namespace"]=="ENTITY",client_entity_path
     graph_trace=feature_trace.trace(graph,"catalog:validation_results:validation:graph",3,"both",con)
     graph_dossier=build_dossier(graph_trace)
     assert graph_dossier["identity"]["provider"]=="validation"
