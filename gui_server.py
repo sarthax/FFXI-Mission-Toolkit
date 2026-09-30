@@ -6836,6 +6836,14 @@ async def itemedit_dat_target_set(request: Request):
         return JSONResponse({"error": str(ex)}, status_code=400)
 
 
+@app.get("/itemedit/{item_id}/dat-pristine-diff.json")
+def itemedit_dat_pristine_diff(item_id: int):
+    import item_dat_tools
+    try:
+        return JSONResponse(item_dat_tools.compare_client_record_to_pristine(item_id))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
 @app.get("/itemedit/dat-backups.json")
 def itemedit_dat_backups():
     import item_dat_tools
