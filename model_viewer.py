@@ -5,7 +5,8 @@ renders it with three.js. Reuses mob_look_decode.py's already-verified look_t de
 model_schedule_dump.py's dat-extractor-backed FTABLE/VTABLE resolution rather than re-deriving
 either.
 
-MODEL_STANDARD/UNK_5/AUTOMATON ("flat") entities resolve to a single real DAT. MODEL_EQUIPED/
+MODEL_STANDARD/UNK_5/AUTOMATON ("flat") entities expose the FFXiMain model resource and, where
+the earlier Noesis work proved a separate visible family mesh DAT, use that mesh as the render hint. MODEL_EQUIPED/
 CHOCOBO ("gear") entities are a client-side composite of a race skeleton DAT + up to 8 per-slot
 gear DATs -- the slot-id-to-file-id mapping (gear_tables.py, confirmed 2026-09-21, see its
 docstring and mob_look_decode.py's) is now resolved to real ROM paths for every equipped slot.
@@ -15,6 +16,7 @@ from pathlib import Path
 import mob_look_decode as look
 import model_schedule_dump as msd
 import client_model_resolver
+import mob_model_tables
 import settings
 import zone_plot
 
@@ -67,9 +69,30 @@ def resolve(kind: str, eid: int, server=None) -> dict:
         info["file_id"] = mapped["file_id"]
         info["file_id_source"] = mapped["mapping_source"]
         info["mapping_rule"] = mapped["mapping_rule"]
-        info["rom_path"] = mapped.get("rom_path")
+        info["resource_file_id"] = mapped["file_id"]
+        info["resource_rom_path"] = mapped.get("rom_path")
         info["registered"] = mapped.get("registered", False)
-        if mapped.get("error"):
+
+        # The FFXiMain model-id formula identifies the monster resource/skeleton entry. Some
+        # families also have a separately hand-verified visible mesh DAT from the earlier Noesis
+        # investigation. Keep that as a *render hint*, not as a competing model-id formula.
+        visual_fid = (
+            mob_model_tables.resolve_family_file_id(int(familyid), int(info["modelid"]))
+            if familyid is not None else None
+        )
+        visual_path = msd.resolve_rom_path(ffxi_path, visual_fid) if visual_fid is not None else None
+        if visual_path:
+            info["render_file_id"] = visual_fid
+            info["render_rom_path"] = visual_path
+            info["render_source"] = "legacy hand-verified family visual DAT"
+            info["rom_path"] = visual_path
+        else:
+            info["render_file_id"] = mapped["file_id"]
+            info["render_rom_path"] = mapped.get("rom_path")
+            info["render_source"] = "FFXiMain monster resource (may be skeleton-only)"
+            info["rom_path"] = mapped.get("rom_path")
+
+        if mapped.get("error") and not visual_path:
             info["error"] = mapped["error"]
         return info
 
