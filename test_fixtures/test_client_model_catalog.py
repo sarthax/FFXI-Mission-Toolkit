@@ -2,8 +2,10 @@
 """Regression coverage for the searchable client model catalog."""
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import client_model_catalog as catalog
+import model_schedule_dump as msd
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -59,8 +61,24 @@ def main():
     finally:
         catalog.build_catalog = original
 
+    # Large catalogs resolve file ids in bounded subprocess batches.
+    original_run = msd.subprocess.run
+    calls = []
+    try:
+        def fake_run(args, capture_output=True, text=True):
+            ids = [int(x) for x in args[5:]]
+            calls.append(ids)
+            return SimpleNamespace(stdout="".join(f"{x}\tROM/0/{x}.DAT\n" for x in ids))
+        msd.subprocess.run = fake_run
+        got = msd.resolve_rom_paths("C:/FFXI", range(5), batch_size=2)
+        assert len(calls) == 3
+        assert got[4] == "ROM/0/4.DAT"
+    finally:
+        msd.subprocess.run = original_run
+
     server = (ROOT / "gui_server.py").read_text(encoding="utf-8")
     viewer = (ROOT / "gui" / "templates" / "model_viewer.html").read_text(encoding="utf-8")
+    zone = (ROOT / "gui" / "templates" / "zone_plot.html").read_text(encoding="utf-8")
     route_map = (ROOT / "docs" / "workbench" / "GUI_ROUTE_MAP.json").read_text(encoding="utf-8")
 
     for route in (
@@ -77,6 +95,11 @@ def main():
     assert "async function searchCatalog()" in viewer
     assert "async function loadDirectDat()" in viewer
     assert "catalog aliases:" in viewer
+    assert 'id="modelCandidateSearch"' in zone
+    assert 'id="modelCandidateResults"' in zone
+    assert "function previewCandidateModel(mid,name)" in zone
+    assert "CANDIDATE PREVIEW ONLY" in zone
+    assert "function modelCatalogEsc(v)" in zone
 
     print("Client model catalog regression: PASS")
     return 0
