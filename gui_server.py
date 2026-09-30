@@ -6618,6 +6618,38 @@ async def zoneplot_animate(request: Request):
         return JSONResponse({"error": str(ex)}, status_code=400)
 
 
+@app.post("/zoneplot/model/preview")
+async def zoneplot_model_preview(request: Request):
+    import zone_edit
+    b = await request.json()
+    try:
+        return JSONResponse(zone_edit.preview_model_change(b["k"], b["id"], b["model_id"]))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/zoneplot/model/apply")
+async def zoneplot_model_apply(request: Request):
+    import zone_edit
+    b = await request.json()
+    try:
+        return JSONResponse(zone_edit.apply_model_change(
+            b["k"], b["id"], b["model_id"], b.get("comment", "")
+        ))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/zoneplot/model/sync_sql")
+async def zoneplot_model_sync_sql(request: Request):
+    import zone_edit
+    b = await request.json()
+    try:
+        return JSONResponse(zone_edit.sync_model_sql(b["k"], b["id"]))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
 @app.post("/zoneplot/delete")
 async def zoneplot_delete(request: Request):
     import zone_edit
