@@ -1,19 +1,34 @@
 {% extends "base.html" %}
 {% block title %}Capture / Video Alignment{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}capture-alignment-page{% endblock %}
 {% block content %}
-<p><a class="inline" href="/captures/{{ cap.capture_id }}">&larr; capture #{{ cap.capture_id }}</a></p>
-<h1>Capture / Video Alignment</h1>
-<p class="muted">Align gameplay video time with one real capture clock using explicit landmarks. Different logger clocks remain separate until anchored; repeated packet opcodes are shown as candidates, not auto-matched.</p>
+<style>
+main.capture-alignment-page{padding:8px 10px 24px}
+.capture-alignment-page h2{font-size:14px;margin:9px 0 5px}
+.capture-alignment-page form[style*="grid"]{gap:7px!important}
+.capture-alignment-page .table-wrap{margin-top:5px}
+.align-section{border:1px solid var(--border);border-radius:7px;background:var(--surface);margin:7px 0;overflow:hidden}
+.align-section>summary{padding:7px 9px;cursor:pointer;font-weight:600}
+.align-section>.body{padding:0 8px 8px}
+</style>
+<div class="dense-toolbar">
+  <a class="chip" href="/captures/{{ cap.capture_id }}">&larr; Capture</a>
+  <strong>Capture / Video Alignment</strong>
+  <span class="chip mono">#{{ cap.capture_id }}</span>
+  <span class="sp"></span>
+  {% if cap.video_url %}<a class="chip" href="{{ cap.video_url }}" target="_blank" rel="noopener">Open video</a>{% endif %}
+  {% if cap.ocr_run_id %}<a class="chip" href="/ocr/{{ cap.ocr_run_id }}">OCR run</a>{% endif %}
+  <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:720px">Align video time to one explicit capture clock using landmarks. Logger clocks remain independent until anchored; repeated opcodes stay ambiguous rather than being auto-matched.</div></details>
+</div>
 {% if error %}<div class="warn">{{ error }}</div>{% endif %}
 
-{% if cap.video_url %}
-<p><b>Video:</b> <a class="inline" href="{{ cap.video_url }}" target="_blank" rel="noopener">{{ cap.video_url }}</a>{% if cap.ocr_run_id %} &middot; <a class="inline" href="/ocr/{{ cap.ocr_run_id }}">OCR run</a>{% endif %}</p>
-{% else %}
+{% if not cap.video_url %}
 <div class="warn">This capture has no linked video URL yet. You can still create anchors, but video jump links will not be available.</div>
 {% endif %}
 
 
-<h2>Cross-source packet correlation</h2>
+<details class="align-section"><summary>Cross-source packet correlation <span class="chip">{{ correlation_summary.total }} link(s)</span></summary><div class="body">
 <p class="muted">Correlations link independent observations without merging them. Unique candidates are marked MATCHED; repeated candidates remain AMBIGUOUS. Raw PacketLogger bytes, EventView decodes, IDView events, and video OCR keep their own provenance.</p>
 <form method="post" action="/captures/{{ cap.capture_id }}/alignment/correlate" style="margin-bottom:10px;">
   <button type="submit">Rebuild packet correlations</button>
@@ -38,8 +53,9 @@
 {% else %}
 <p class="muted">No correlations have been built yet, or no conservative cross-source candidates were found.</p>
 {% endif %}
+</div></details>
 
-<h2>Alignment models</h2>
+<details class="align-section"{% if summary.models %} open{% endif %}><summary>Alignment models <span class="chip">{{ summary.models|length }}</span></summary><div class="body">
 {% if summary.models %}
 <div class="table-wrap"><table>
 <tr><th>clock</th><th>anchors</th><th>offset</th><th>slope</th><th>drift</th><th>RMS error</th><th>max error</th></tr>
@@ -59,8 +75,9 @@
 {% else %}
 <p class="muted">No anchors yet.</p>
 {% endif %}
+</div></details>
 
-<h2>Add alignment anchor</h2>
+<details class="align-section" open><summary>Add alignment anchor</summary><div class="body">
 <form method="post" action="/captures/{{ cap.capture_id }}/alignment/anchors" style="display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:10px;max-width:900px;">
   <label>Video time (seconds)<input type="number" name="video_ts" step="0.001" min="0" required value="{{ prefill_video_ts if prefill_video_ts is not none else '' }}"></label>
   <label>Capture time (seconds)<input type="number" name="capture_ts" step="0.001" required value="{{ prefill_capture_ts if prefill_capture_ts is not none else '' }}"></label>
@@ -83,9 +100,10 @@
   <label style="grid-column:1/-1;">Notes<textarea name="notes" rows="2"></textarea></label>
   <div><button type="submit">Add anchor</button></div>
 </form>
+</div></details>
 
 {% if summary.anchors %}
-<h2>Anchors</h2>
+<details class="align-section"><summary>Anchors <span class="chip">{{ summary.anchors|length }}</span></summary><div class="body">
 <div class="table-wrap"><table>
 <tr><th>video</th><th>capture</th><th>clock</th><th>source</th><th>label</th><th>refs</th><th></th></tr>
 {% for a in summary.anchors %}
@@ -103,9 +121,10 @@
 </tr>
 {% endfor %}
 </table></div>
+</div></details>
 {% endif %}
 
-<h2>Key evidence</h2>
+<details class="align-section"><summary>Key evidence <span class="chip">{{ summary.key_evidence|length }}</span></summary><div class="body">
 <p class="muted">Attach a screenshot or record a named key event against video time, capture time, or an existing alignment anchor. If only one side of the timeline is supplied and a fitted model exists, the other side is shown as an aligned estimate rather than stored as observed truth.</p>
 
 <form method="post" action="/captures/{{ cap.capture_id }}/alignment/evidence" enctype="multipart/form-data"
@@ -172,8 +191,9 @@
 {% else %}
 <p class="muted">No key evidence recorded yet.</p>
 {% endif %}
+</div></details>
 
-<h2>Shared packet landmarks</h2>
+<details class="align-section"><summary>Shared packet landmarks <span class="chip">{{ landmarks|length }}</span></summary><div class="body">
 {% if landmarks %}
 <div class="table-wrap"><table>
 <tr><th>opcode</th><th>video occurrences</th><th>capture occurrences</th><th>candidate quality</th></tr>
@@ -193,8 +213,10 @@
 {% else %}
 <p class="muted">No packet opcodes currently appear in both VIDEO_OCR and timestamped capture sources.</p>
 {% endif %}
+</div></details>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;">
+<details class="align-section"><summary>Alignment candidates <span class="chip">{{ video_candidates|length }} video / {{ capture_candidates|length }} capture</span></summary><div class="body">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start;">
 <div>
 <h2>Video OCR candidates</h2>
 <div class="table-wrap" style="max-height:600px;overflow:auto;"><table>
@@ -224,5 +246,5 @@
 {% endfor %}
 </table></div>
 </div>
-</div>
+</div></details>
 {% endblock %}
