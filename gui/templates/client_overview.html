@@ -1,10 +1,30 @@
 {% extends "base.html" %}
 {% block title %}Client Overview{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}client-overview-page{% endblock %}
 {% block content %}
-<h1>Client Overview / Build</h1>
-<p class="muted">Fingerprint the installed client, retain portable identity snapshots from other builds, and compare EVENT identities across builds.</p>
+<style>
+main.client-overview-page{padding:8px 10px 24px}
+.client-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:5px;margin:6px 0}
+.client-kpi{border:1px solid var(--border);border-radius:6px;padding:5px 7px;background:var(--surface)}
+.client-kpi .n{font-weight:700;font-size:16px}.client-kpi .l{font-size:10px;color:var(--muted)}
+.client-section{border:1px solid var(--border);border-radius:7px;background:var(--surface);margin:7px 0;overflow:hidden}
+.client-section>summary{padding:7px 9px;cursor:pointer;font-weight:600}
+.client-section>.body{padding:0 8px 8px}
+.client-form-grid{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:6px}
+.client-form-grid label{display:flex;flex-direction:column;gap:3px}
+@media(max-width:800px){.client-form-grid{grid-template-columns:1fr}}
+</style>
+<div class="dense-toolbar">
+  <strong>Client Overview / Build</strong>
+  <span class="sp"></span>
+  <a class="chip" href="/modelviewer">Model Viewer</a>
+  <a class="chip" href="/datinspector">DAT Inspector</a>
+  <a class="chip" href="/binaryinspector">Binary Inspector</a>
+  <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:720px">Fingerprint the installed client, retain portable identity snapshots from other builds, and compare EVENT/ENTITY identities across builds.</div></details>
+</div>
 
-<h2>Installed Client Fingerprint</h2>
+<div class="dense-toolbar" style="margin:7px 0 5px"><strong>Installed Client Fingerprint</strong>{% if not error %}<span class="chip mono">{{ ov.build_id }}</span><span class="sp"></span><span class="muted">{{ ov.install }}</span>{% endif %}</div>
 {% if error %}
 <p class="chip" style="color:#c33;">{{ error }}</p>
 {% else %}
@@ -16,19 +36,20 @@
   <tr><th>ROM folders</th><td>{{ ov.rom_dirs|length }}: {{ ov.rom_dirs|join(", ") }}</td></tr>
 </table></div>
 
-<h3>Binaries</h3>
+<details class="client-section"><summary>Binaries <span class="chip">{{ ov.binaries|length }}</span></summary><div class="body">
 <div class="table-wrap"><table><tr><th>File</th><th>Size</th><th>PE</th><th>Link time</th><th>SHA-256</th><th></th></tr>
 {% for b in ov.binaries %}<tr><td>{{ b.name }}</td><td>{{ "{:,}".format(b.size) }}</td><td>{{ b.pe or "-" }}</td><td>{{ b.link_time or "-" }}</td>
-<td><code>{{ b.sha256 }}</code></td><td>{% if b.pe %}<a href="/binaryinspector?path={{ (ov.install ~ '/' ~ b.name)|urlencode }}">inspect</a>{% endif %}</td></tr>{% endfor %}</table></div>
+<td><code>{{ b.sha256 }}</code></td><td>{% if b.pe %}<a href="/binaryinspector?path={{ (ov.install ~ '/' ~ b.name)|urlencode }}">inspect</a>{% endif %}</td></tr>{% endfor %}</table></div></div></details>
 
-<h3>Saved feature probes for this build</h3>
+<details class="client-section"><summary>Saved feature probes for this build {% if ov.observations.graph_built %}<span class="chip">{{ ov.observations.rows|length }}</span>{% endif %}</summary><div class="body">
 {% if not ov.observations.graph_built %}<p class="muted">Workbench graph not built yet, so no saved probe results.</p>
 {% elif not ov.observations.rows %}<p class="muted">None saved. Run a probe set on the <a href="/binaryinspector">Binary Inspector</a> and click Save to graph.</p>
 {% else %}<p>{% for s, n in ov.observations.counts.items() %}<span class="chip">{{ s }} {{ n }}</span> {% endfor %}</p>
 <div class="table-wrap"><table>{% for r in ov.observations.rows %}<tr><td>{{ r.capability }}</td><td>{{ r.status }}</td></tr>{% endfor %}</table></div>{% endif %}
+</div></details>
 {% endif %}
 
-<h2>Imported Client Snapshots</h2>
+<div class="dense-toolbar" style="margin:7px 0 5px"><strong>Imported Client Snapshots</strong><span class="chip">{{ snapshots|length }}</span></div>
 <p class="muted">Portable client identity snapshots already ingested into <code>workbench.db</code>. Snapshot payloads stay local under <code>client_snapshots/</code> and are git-ignored.</p>
 {% if not snapshots %}
 <p class="muted">No imported client identity snapshots yet.</p>
@@ -55,8 +76,7 @@
 </table></div>
 {% endif %}
 
-<h2>Import Client Snapshot</h2>
-<p class="muted">Extracts all known zones through the existing xi-tinkerer identity pipeline, writes a portable manifest under <code>client_snapshots/&lt;safe-snapshot-name&gt;</code>, then ingests identities into <code>workbench.db</code>. Existing snapshot IDs and non-empty output directories are never overwritten.</p>
+<details class="client-section"><summary>Import Client Snapshot</summary><div class="body"><p class="muted">Extracts all known zones through the existing xi-tinkerer identity pipeline, writes a portable manifest under <code>client_snapshots/&lt;safe-snapshot-name&gt;</code>, then ingests identities into <code>workbench.db</code>. Existing snapshot IDs and non-empty output directories are never overwritten.</p>
 {% if import_error %}<p class="chip" style="color:#c33;">{{ import_error }}</p>{% endif %}
 {% if import_result %}
 <p class="chip">Imported <code>{{ import_result.snapshot_id }}</code>: {{ import_result.record_count }} identity records from {{ import_result.resources }} extracted resources across {{ import_result.zones_requested }} requested zones.</p>
@@ -68,52 +88,51 @@
 {% endif %}
 {% endif %}
 <form method="post" action="/clientoverview/import">
-  <div class="table-wrap"><table>
-    <tr><th>FFXI client root path</th><td><input style="width:100%;" name="client_root" value="{{ import_form.client_root }}" required></td></tr>
-    <tr><th>Snapshot ID</th><td><input name="snapshot_id" value="{{ import_form.snapshot_id }}" placeholder="retail-2022-wardrobe" required></td></tr>
-    <tr><th>Build label</th><td><input name="build_label" value="{{ import_form.build_label }}" placeholder="2022-05 retail" required></td></tr>
-    <tr><th>Region</th><td><input name="region" value="{{ import_form.region }}" placeholder="optional"></td></tr>
-    <tr><th>Language</th><td><input name="language" value="{{ import_form.language }}" placeholder="optional"></td></tr>
-  </table></div>
+  <div class="client-form-grid">
+    <label style="grid-column:1/-1">FFXI client root path<input name="client_root" value="{{ import_form.client_root }}" required></label>
+    <label>Snapshot ID<input name="snapshot_id" value="{{ import_form.snapshot_id }}" placeholder="retail-2022-wardrobe" required></label>
+    <label>Build label<input name="build_label" value="{{ import_form.build_label }}" placeholder="2022-05 retail" required></label>
+    <label>Region<input name="region" value="{{ import_form.region }}" placeholder="optional"></label>
+    <label>Language<input name="language" value="{{ import_form.language }}" placeholder="optional"></label>
+  </div>
   <button type="submit">Import all-zone identity snapshot</button>
-</form>
+</form></div></details>
 
-<h2>Compare Client Builds</h2>
+<details class="client-section" open><summary>Compare Client Builds</summary><div class="body">
 <p class="muted">Uses the existing bulk EVENT identity resolver. Actor context is carried across builds when a high-confidence ENTITY mapping is available.</p>
 {% if compare_error %}<p class="chip" style="color:#c33;">{{ compare_error }}</p>{% endif %}
 <form method="post" action="/clientoverview/compare">
-  <div class="table-wrap"><table>
-    <tr><th>Source snapshot</th><td><select name="source_snapshot" required>
+  <div class="client-form-grid">
+    <label>Source snapshot<select name="source_snapshot" required>
       <option value="">Select source…</option>
       {% for s in snapshots %}<option value="{{ s.snapshot_id }}" {% if compare_form.source_snapshot == s.snapshot_id %}selected{% endif %}>{{ s.snapshot_id }}{% if s.build %} — {{ s.build }}{% endif %}</option>{% endfor %}
-    </select></td></tr>
-    <tr><th>Target snapshot</th><td><select name="target_snapshot" required>
+    </select></label>
+    <label>Target snapshot<select name="target_snapshot" required>
       <option value="">Select target…</option>
       {% for s in snapshots %}<option value="{{ s.snapshot_id }}" {% if compare_form.target_snapshot == s.snapshot_id %}selected{% endif %}>{{ s.snapshot_id }}{% if s.build %} — {{ s.build }}{% endif %}</option>{% endfor %}
-    </select></td></tr>
-    <tr><th>Zone</th><td><input name="zone" value="{{ compare_form.zone }}" placeholder="optional semantic zone key"></td></tr>
-    <tr><th>Minimum confidence</th><td><select name="minimum_confidence">
+    </select></label>
+    <label>Zone<input name="zone" value="{{ compare_form.zone }}" placeholder="optional semantic zone key"></label>
+    <label>Minimum confidence<select name="minimum_confidence">
       {% for level in ["VERIFIED", "HIGH", "INFERRED", "LOW", "UNKNOWN"] %}
       <option value="{{ level }}" {% if compare_form.minimum_confidence == level %}selected{% endif %}>{{ level }}</option>
       {% endfor %}
-    </select></td></tr>
-  </table></div>
+    </select></label>
+  </div>
   <button type="submit">Compare builds</button>
 </form>
 
 {% if comparison %}
-<h3>Comparison Summary</h3>
-<p>
-  <span class="chip">Total {{ comparison_summary.total }}</span>
-  <span class="chip">EXACT {{ comparison_summary.EXACT }}</span>
-  <span class="chip">TARGET_EQUIVALENT {{ comparison_summary.TARGET_EQUIVALENT }}</span>
-  <span class="chip">Ambiguous {{ comparison_summary.ambiguous }}</span>
-  <span class="chip">LOW_CONFIDENCE {{ comparison_summary.LOW_CONFIDENCE }}</span>
-  <span class="chip">Unresolved {{ comparison_summary.unresolved }}</span>
-</p>
+<div class="client-kpis">
+  <div class="client-kpi"><div class="n">{{ comparison_summary.total }}</div><div class="l">EVENT rows</div></div>
+  <div class="client-kpi"><div class="n">{{ comparison_summary.EXACT }}</div><div class="l">EXACT</div></div>
+  <div class="client-kpi"><div class="n">{{ comparison_summary.TARGET_EQUIVALENT }}</div><div class="l">TARGET_EQUIVALENT</div></div>
+  <div class="client-kpi"><div class="n">{{ comparison_summary.ambiguous }}</div><div class="l">Ambiguous</div></div>
+  <div class="client-kpi"><div class="n">{{ comparison_summary.LOW_CONFIDENCE }}</div><div class="l">LOW_CONFIDENCE</div></div>
+  <div class="client-kpi"><div class="n">{{ comparison_summary.unresolved }}</div><div class="l">Unresolved</div></div>
+</div>
 <p><a href="/clientoverview/compare.csv?source_snapshot={{ comparison.source_snapshot_id|urlencode }}&target_snapshot={{ comparison.target_snapshot_id|urlencode }}{% if comparison.zone_key %}&zone={{ comparison.zone_key|urlencode }}{% endif %}&minimum_confidence={{ comparison.minimum_confidence|urlencode }}">Export comparison CSV</a></p>
 
-<h3>ENTITY / Actor Identity Coverage</h3>
+<details class="client-section" open><summary>ENTITY / Actor Identity Coverage <span class="chip">{{ entity_summary.total }}</span></summary><div class="body">
 <p class="muted">These mappings determine whether EVENT comparison can safely constrain a source actor to one target actor.</p>
 <p>
   <span class="chip">Actors {{ entity_summary.total }}</span>
@@ -142,8 +161,9 @@
 {% else %}
 <p class="muted">No ENTITY identity records were available for the selected source snapshot/zone.</p>
 {% endif %}
+</div></details>
 
-<h3>EVENT Identity Results</h3>
+<details class="client-section" open><summary>EVENT Identity Results <span class="chip">{{ comparison.rows|length }}</span></summary><div class="body">
 <div class="table-wrap"><table>
   <tr><th>Zone</th><th>Source actor</th><th>Source event</th><th>Target actor</th><th>Actor mapping</th><th>Target event</th><th>Status</th><th>Confidence</th><th>Match basis</th><th>Reason</th></tr>
   {% for r in comparison.rows %}
@@ -161,5 +181,7 @@
   </tr>
   {% endfor %}
 </table></div>
+</div></details>
 {% endif %}
+</div></details>
 {% endblock %}
