@@ -85,6 +85,84 @@ def decompile_event(out_dir: Path, entity_id: int, event_id: int, zone_id: int |
         return {"decompiled": None, "error": f"{type(exc).__name__}: {exc}"}
 
 
+def scan_event_health(out_dir: Path, zone_id: int | None, *, force: bool = False) -> dict:
+    """Preflight every exported entity/CSID once and cache the result beside the zone export.
+
+    Cache validity is tied to events.yml + dialog.yml mtimes/sizes so replacing or rebuilding the
+    client export automatically invalidates old health results.
+    """
+    events_path = out_dir / "events.yml"
+    dialog_path = out_dir / "dialog.yml"
+    cache_path = out_dir / "event_health.json"
+    if not events_path.exists():
+        return {"rows": {}, "summary": {"missing_export": 1}}
+
+    fingerprint = {
+        "events_mtime_ns": events_path.stat().st_mtime_ns,
+        "events_size": events_path.stat().st_size,
+        "dialog_mtime_ns": dialog_path.stat().st_mtime_ns if dialog_path.exists() else None,
+        "dialog_size": dialog_path.stat().st_size if dialog_path.exists() else None,
+    }
+    if not force and cache_path.exists():
+        try:
+            cached = json.loads(cache_path.read_text(encoding="utf-8"))
+            if cached.get("fingerprint") == fingerprint:
+                return cached
+        except (OSError, json.JSONDecodeError):
+            pass
+
+    bridge = _load_xi_events_bridge()
+    with events_path.open(encoding="utf-8") as fh:
+        events_doc = yaml.safe_load(fh)
+    strings = {}
+    if dialog_path.exists():
+        with dialog_path.open(encoding="utf-8") as fh:
+            dialog_doc = yaml.safe_load(fh)
+        strings = dialog_doc.get("entries", dialog_doc)
+
+    rows = {}
+    summary = {"ok": 0, "stub": 0, "invalid": 0, "failed": 0}
+    for block in events_doc.get("blocks", []):
+        entity_id = block.get("entity_id")
+        if entity_id is None:
+            continue
+        for event in block.get("events", []):
+            event_id = event.get("id")
+            if event_id in (None, 65535):
+                continue
+            key = f"{int(entity_id)}:{int(event_id)}"
+            try:
+                fixture = bridge.fixture_from_documents(
+                    events_doc, int(entity_id), int(event_id), strings, int(zone_id or 0)
+                )
+                text = bridge.decompile(fixture)
+                rows[key] = {
+                    "status": "ok",
+                    "detail": None,
+                    "line_count": len(text.splitlines()),
+                }
+                summary["ok"] += 1
+            except SystemExit as exc:
+                detail = str(exc)
+                status = "stub" if "bare '0x00' stub" in detail else "invalid"
+                rows[key] = {"status": status, "detail": detail, "line_count": 0}
+                summary[status] += 1
+            except Exception as exc:
+                rows[key] = {
+                    "status": "failed",
+                    "detail": f"{type(exc).__name__}: {exc}",
+                    "line_count": 0,
+                }
+                summary["failed"] += 1
+
+    payload = {"fingerprint": fingerprint, "rows": rows, "summary": summary}
+    try:
+        cache_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+    except OSError:
+        pass
+    return payload
+
+
 def resolve_entity(con: sqlite3.Connection, zoneid: int, query: str) -> int | None:
     if query.isdigit():
         return int(query)
