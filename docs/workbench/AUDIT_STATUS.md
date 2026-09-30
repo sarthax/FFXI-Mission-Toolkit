@@ -1,3 +1,12 @@
+## 2026-09-30 — Feature Trace binding evidence hardening
+
+- Provider binding-index build failures are now distinct from a successfully built index that lacks a method; failed indexes emit `INDEX_UNAVAILABLE` rather than false `NOT_INDEXED` evidence.
+- Case-fold collisions preserve all registered-name candidates as `CASE_AMBIGUOUS` instead of choosing one arbitrarily.
+- Duplicate binding registrations retain class/file/location summaries, and same-class implementation overload candidates are counted and bounded rather than collapsed.
+- Source-read status is explicit for missing/out-of-root/read-error binding files.
+- Engine summaries now expose raw-vs-deduplicated API observations, ambiguous/multi-location calls, helper binding counts, deterministic callbacks, and binding-index status.
+- Focused regression covers Topaz/SOL, DSP/LUNAR, duplicate registrations, case ambiguity, index failure, path containment, helper calls, callbacks, and implementation candidates.
+
 ## 2026-09-30 — Feature Trace Lua → binding → engine drill-down
 
 - Resolved server Lua branches now expose syntax-level direct API calls from the existing Behavior Inspector model and join those method names to binding-registration evidence from the configured provider tree.
