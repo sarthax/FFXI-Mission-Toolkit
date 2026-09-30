@@ -1,164 +1,210 @@
 {% extends "base.html" %}
 {% block title %}Capture Packet Decode{% endblock %}
+{% block main_class %}wide-workbench{% endblock %}
 {% block content %}
 <style>
-.packet-shell{display:grid;grid-template-columns:minmax(560px,1.2fr) minmax(420px,1fr);gap:14px;align-items:start}
+.packet-breadcrumb{font-size:12px;color:var(--muted);margin-bottom:4px}
+.packet-titlebar{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.packet-titlebar h1{margin:0}
+.packet-titlebar .nav-actions{margin-left:auto;display:flex;gap:6px}
+.packet-chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.packet-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);border-radius:6px;padding:4px 8px;background:var(--surface);font-size:12px}
+.packet-chip.good{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.packet-chip.in{color:#2469c8}.packet-chip.out{color:#b33f3f}
+.capture-packet-layout{display:grid;grid-template-columns:265px minmax(0,1fr);gap:14px;align-items:start}
+.packet-rail{border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden;position:sticky;top:0}
+.packet-rail h3,.packet-card h3{margin:0;padding:10px 12px;border-bottom:1px solid var(--border);font-size:14px}
+.packet-rail-row{display:grid;grid-template-columns:34px 42px 58px 1fr;gap:5px;align-items:center;padding:7px 9px;border-bottom:1px solid var(--border);text-decoration:none;color:var(--ink);font-size:12px}
+.packet-rail-row:last-child{border-bottom:0}.packet-rail-row:hover{background:var(--code-bg)}
+.packet-rail-row.active{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.packet-rail-row .dir-in{color:#2e8b57;font-weight:700}.packet-rail-row .dir-out{color:var(--red);font-weight:700}
+.packet-rail-row .seq,.packet-rail-row .op{font-family:ui-monospace,Consolas,monospace}
+.packet-main-grid{display:grid;grid-template-columns:minmax(650px,1.35fr) minmax(450px,.95fr);gap:14px;align-items:start}
 .packet-card{border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden}
-.packet-card h3{margin:0;padding:10px 12px;border-bottom:1px solid var(--border);font-size:14px}
-.packet-meta{display:flex;gap:8px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--border)}
-.packet-fields table{width:100%;border-collapse:collapse}
+.packet-meta{display:flex;gap:8px;flex-wrap:wrap;padding:9px 12px;border-bottom:1px solid var(--border)}
+.packet-fields table{width:100%;border-collapse:collapse;min-width:640px}
 .packet-fields th,.packet-fields td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:top}
-.packet-field{cursor:pointer}.packet-field:hover,.packet-field.selected{outline:2px solid currentColor;outline-offset:-2px}
+.packet-field{cursor:pointer}.packet-field:hover,.packet-field.selected{background:var(--accent-soft)}
+.packet-field.selected{box-shadow:inset 3px 0 0 var(--fc)}
 .field-swatch{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}
-.f0{--fc:#4fc3f7;color:#4fc3f7}.f1{--fc:#ffb74d;color:#ffb74d}.f2{--fc:#81c784;color:#81c784}.f3{--fc:#ba68c8;color:#ba68c8}
-.f4{--fc:#e57373;color:#e57373}.f5{--fc:#64b5f6;color:#64b5f6}.f6{--fc:#ffd54f;color:#ffd54f}.f7{--fc:#4db6ac;color:#4db6ac}
+.f0{--fc:#4fc3f7;color:#208fbd}.f1{--fc:#ffb74d;color:#b96d00}.f2{--fc:#81c784;color:#3b8c42}.f3{--fc:#ba68c8;color:#8f3ea0}
+.f4{--fc:#e57373;color:#bd4040}.f5{--fc:#64b5f6;color:#267dcc}.f6{--fc:#ffd54f;color:#9a7810}.f7{--fc:#4db6ac;color:#27867e}
 .field-swatch,.hex-byte.claimed{background:var(--fc)}
 .hex-byte{display:inline-block;min-width:22px;padding:2px 3px;margin:1px;border-radius:3px;text-align:center;color:var(--ink);cursor:pointer}
 .hex-byte.claimed{color:#071014;font-weight:700}.hex-byte.unknown{border:1px dashed var(--border);color:var(--muted)}
-.hex-byte.overlap{outline:2px solid #ff5252}.hex-byte.selected,.ascii-byte.selected{outline:2px solid #fff;outline-offset:1px}
-.hex-table{width:100%;border-collapse:collapse;font-family:ui-monospace,Consolas,monospace;font-size:12px}.hex-table td{padding:3px 4px;white-space:nowrap}
-.hex-off{color:var(--muted);width:48px;text-align:right}.ascii-run{letter-spacing:1px;padding-left:8px!important;border-left:1px solid var(--border)}
-.ascii-byte{display:inline-block;min-width:8px;text-align:center;cursor:pointer}.manual-panel{padding:10px 12px;border-top:1px solid var(--border);font-family:ui-monospace,Consolas,monospace;font-size:12px}
-.manual-grid{display:grid;grid-template-columns:110px 1fr;gap:3px 8px}.raw-field{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--muted)}
-.context-grid{display:grid;grid-template-columns:150px 1fr;gap:5px 10px;padding:10px 12px}.context-grid>div:nth-child(odd){color:var(--muted)}
-@media(max-width:1100px){.packet-shell{grid-template-columns:1fr}}
+.hex-byte.overlap{outline:2px solid #ff5252}.hex-byte.selected,.ascii-byte.selected{outline:2px solid var(--ink);outline-offset:1px}
+.hex-table{width:100%;border-collapse:collapse;font-family:ui-monospace,Consolas,monospace;font-size:12px;min-width:670px}
+.hex-table td{padding:3px 4px;white-space:nowrap}.hex-off{color:var(--muted);width:48px;text-align:right}
+.ascii-run{letter-spacing:1px;padding-left:8px!important;border-left:1px solid var(--border)}
+.ascii-byte{display:inline-block;min-width:8px;text-align:center;cursor:pointer}
+.selected-field{border-top:1px solid var(--border)}
+.selected-field-title{padding:8px 12px;background:var(--code-bg);font-weight:700}
+.selected-field-body{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(190px,.85fr);gap:14px;padding:10px 12px}
+.manual-grid{display:grid;grid-template-columns:110px 1fr;gap:3px 8px;font-family:ui-monospace,Consolas,monospace;font-size:12px}
+.semantic-panel{border-left:1px solid var(--border);padding-left:14px}
+.semantic-panel .big-value{font-size:18px;font-weight:700;color:var(--accent);word-break:break-word}
+.raw-field{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--muted)}
+.context-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:14px}
+.context-grid{display:grid;grid-template-columns:125px 1fr;gap:5px 10px;padding:10px 12px}.context-grid>div:nth-child(odd){color:var(--muted)}
+.context-code{margin:0 12px 12px;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--code-bg);font-family:ui-monospace,Consolas,monospace;font-size:11px;white-space:pre-wrap}
+@media(max-width:1320px){.capture-packet-layout{grid-template-columns:1fr}.packet-rail{position:static}.packet-main-grid{grid-template-columns:1fr}.packet-rail .rail-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}.context-row{grid-template-columns:1fr}}
 </style>
 
-<p>
-  <a class="inline" href="/captures/{{ capture_id }}/packets">&larr; raw packet browser</a>
-  &nbsp;&middot;&nbsp; <a class="inline" href="/captures/{{ capture_id }}/timeline">timeline</a>
-  &nbsp;&middot;&nbsp; <a class="inline" href="/captures/{{ capture_id }}">capture #{{ capture_id }}</a>
-</p>
-
-<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-  <h1 style="margin:0;">{{ cap.capture_label }} &mdash; packet {{ packet.seq }}</h1>
-  <span class="chip mono">{{ packet.direction }} {{ packet.opcode }}</span>
-  {% if packet.ts %}<span class="chip mono">{{ packet.ts }}</span>{% endif %}
-  <span style="margin-left:auto;display:flex;gap:6px;">
-    {% if prev_packet %}<a class="chip" href="/captures/{{ capture_id }}/packets/{{ prev_packet.seq }}">&larr; {{ prev_packet.seq }} {{ prev_packet.opcode }}</a>{% endif %}
-    {% if next_packet %}<a class="chip" href="/captures/{{ capture_id }}/packets/{{ next_packet.seq }}">{{ next_packet.seq }} {{ next_packet.opcode }} &rarr;</a>{% endif %}
-  </span>
+<div class="packet-breadcrumb">
+  <a class="inline" href="/captures">Captures</a> &rsaquo;
+  <a class="inline" href="/captures/{{ capture_id }}">{{ cap.capture_label }}</a> &rsaquo;
+  Packet {{ packet.seq }}
 </div>
 
-<div class="packet-card" style="margin-top:12px;">
-  <h3>Capture context</h3>
-  <div class="context-grid">
-    <div>timestamp</div><div class="mono">{{ packet.ts or 'unknown' }}</div>
-    <div>direction</div><div>{{ packet.direction }} <span class="muted">({{ packet.pd_direction }})</span></div>
-    <div>opcode</div><div class="mono">{{ packet.opcode }}</div>
-    <div>packet size</div><div class="mono">{{ packet.packet_size if packet.packet_size is not none else 'unknown' }}</div>
-    <div>sync id</div><div class="mono">{{ packet.sync_id if packet.sync_id is not none else 'unknown' }}</div>
-    <div>zone id</div><div class="mono">{{ packet.zone_id if packet.zone_id is not none else 'unknown' }}</div>
-    <div>source</div><div>{{ packet.source_format or 'unknown' }}{% if packet.source_native_id %} <span class="mono muted">{{ packet.source_native_id }}</span>{% endif %}</div>
-    <div>flags</div><div>injected={{ packet.is_injected if packet.is_injected is not none else 'unknown' }} &middot; blocked={{ packet.is_blocked if packet.is_blocked is not none else 'unknown' }}</div>
-    {% if layout %}<div>definition</div><div>{{ layout.description }}</div>{% endif %}
+<div class="packet-titlebar">
+  <div>
+    <h1>{{ cap.capture_label }} &mdash; packet {{ packet.seq }}</h1>
+    <div class="packet-chips">
+      <span class="packet-chip {{ 'in' if packet.direction == 'incoming' else 'out' }}">{{ packet.direction }}{% if packet.pd_direction %} ({{ packet.pd_direction }}){% endif %}</span>
+      <span class="packet-chip mono">{{ packet.opcode }}</span>
+      {% if layout %}<span class="packet-chip">{{ layout.length }} bytes</span>{% elif packet.packet_size is not none %}<span class="packet-chip">{{ packet.packet_size }} bytes</span>{% endif %}
+      {% if packet.ts %}<span class="packet-chip mono">{{ packet.ts }}</span>{% endif %}
+      {% if layout %}<span class="packet-chip{% if layout.coverage_pct == 100 %} good{% endif %}">coverage {{ layout.coverage_pct }}%</span>{% endif %}
+    </div>
+  </div>
+  <div class="nav-actions">
+    {% if prev_packet %}<a class="chip" href="/captures/{{ capture_id }}/packets/{{ prev_packet.seq }}">&larr; Previous ({{ prev_packet.seq }})</a>{% endif %}
+    {% if next_packet %}<a class="chip" href="/captures/{{ capture_id }}/packets/{{ next_packet.seq }}">Next ({{ next_packet.seq }}) &rarr;</a>{% endif %}
   </div>
 </div>
 
-{% if decode_error %}
-<div class="warn" style="margin-top:12px;"><strong>Decode error:</strong> {{ decode_error }}</div>
-{% endif %}
-
-{% if layout %}
-<div class="packet-shell" style="margin-top:14px;">
-  <section class="packet-card packet-fields">
-    <h3>Decoded structure</h3>
-    <div class="packet-meta">
-      <span class="chip">{{ layout.length }} bytes / {{ layout.length_hex }}</span>
-      <span class="chip">{{ layout.coverage_pct }}% schema coverage</span>
-      <span class="chip">{{ layout.claimed_bytes }} claimed</span>
-      {% if layout.unknown_bytes %}<span class="chip">{{ layout.unknown_bytes }} unknown</span>{% endif %}
-      {% if layout.overlap_bytes %}<span class="chip mismatch">{{ layout.overlap_bytes }} overlapping</span>{% endif %}
-    </div>
-    <div class="table-wrap"><table>
-      <tr><th>pos</th><th>field</th><th>type</th><th>raw bytes</th><th>value</th></tr>
-      {% for f in layout.rows %}
-      <tr class="packet-field f{{ f.index % 8 }}" data-index="{{ f.index }}" data-start="{{ f.pos }}" data-end="{{ f.end }}">
-        <td class="mono">{{ f.range_hex }}</td>
-        <td><span class="field-swatch"></span><strong>{{ f.name }}</strong>
-          {% if f.derived %}<span class="chip">derived</span>{% endif %}
-          {% if f.lookup %}<span class="chip">lookup: {{ f.lookup }}</span>{% endif %}
-          {% if f.comment %}<div class="muted" style="font-size:11px">{{ f.comment }}</div>{% endif %}
-        </td>
-        <td class="mono">{{ f.type }}</td>
-        <td class="raw-field">{{ f.raw_hex or '—' }}</td>
-        <td>{% if f.out_of_range %}<span class="muted">out of range</span>{% else %}
-          <div class="mono">{{ f.value if f.value is not none else '—' }}</div>
-          {% if f.value_hex %}<div class="muted mono" style="font-size:11px">{{ f.value_hex }}</div>{% endif %}
-        {% endif %}</td>
-      </tr>
+<div class="capture-packet-layout">
+  <aside class="packet-rail">
+    <h3>Session packets</h3>
+    <div class="rail-list">
+      {% for n in neighbors %}
+      <a class="packet-rail-row{% if n.seq == packet.seq %} active{% endif %}" href="/captures/{{ capture_id }}/packets/{{ n.seq }}">
+        <span class="seq">{{ n.seq }}</span>
+        <span class="{{ 'dir-in' if n.direction == 'incoming' else 'dir-out' }}">{{ 'IN' if n.direction == 'incoming' else ('OUT' if n.direction == 'outgoing' else '?') }}</span>
+        <span class="op">{{ n.opcode }}</span>
+        <span title="{{ n.description or '' }}">{{ n.description or '(no definition)' }}</span>
+      </a>
       {% endfor %}
-    </table></div>
-    {% if layout.gaps %}
-    <div style="padding:8px 12px;font-size:11px;color:var(--muted)">
-      <strong>Unclaimed ranges:</strong>
-      {% for g in layout.gaps %}<span class="chip">{{ g.range_hex }} ({{ g.length }})</span>{% endfor %}
+    </div>
+  </aside>
+
+  <div>
+    {% if decode_error %}<div class="warn"><strong>Decode note:</strong> {{ decode_error }}</div>{% endif %}
+
+    {% if layout %}
+    <div class="packet-main-grid">
+      <section class="packet-card packet-fields">
+        <h3>Decoded structure</h3>
+        <div class="table-wrap" style="border:0;border-radius:0"><table>
+          <tr><th>pos</th><th>field</th><th>type</th><th>raw bytes</th><th>value / description</th></tr>
+          {% for f in layout.rows %}
+          <tr class="packet-field f{{ f.index % 8 }}"
+              data-index="{{ f.index }}" data-start="{{ f.pos }}" data-end="{{ f.end }}"
+              data-type="{{ f.type|e }}" data-value="{{ (f.value if f.value is not none else '')|e }}"
+              data-value-hex="{{ (f.value_hex or '')|e }}" data-lookup="{{ (f.lookup or '')|e }}"
+              data-comment="{{ (f.comment or '')|e }}">
+            <td class="mono">{{ f.range_hex }}</td>
+            <td><span class="field-swatch"></span><strong>{{ f.name }}</strong>
+              {% if f.derived %}<span class="chip">derived</span>{% endif %}
+              {% if f.lookup %}<span class="chip">lookup: {{ f.lookup }}</span>{% endif %}
+              {% if f.comment %}<div class="muted" style="font-size:11px">{{ f.comment }}</div>{% endif %}
+            </td>
+            <td class="mono">{{ f.type }}</td>
+            <td class="raw-field">{{ f.raw_hex or '—' }}</td>
+            <td>{% if f.out_of_range %}<span class="muted">out of range</span>{% else %}
+              <div class="mono">{{ f.value if f.value is not none else '—' }}</div>
+              {% if f.value_hex %}<div class="muted mono" style="font-size:11px">{{ f.value_hex }}</div>{% endif %}
+            {% endif %}</td>
+          </tr>
+          {% endfor %}
+        </table></div>
+        {% if layout.gaps %}
+        <div class="packet-meta"><strong>Unclaimed:</strong>{% for g in layout.gaps %}<span class="chip">{{ g.range_hex }} ({{ g.length }})</span>{% endfor %}</div>
+        {% endif %}
+      </section>
+
+      <section class="packet-card">
+        <h3>Raw packet map</h3>
+        <div style="overflow:auto;padding:8px 10px;">
+          <table class="hex-table">
+            <tr><td></td><td colspan="16" class="muted">00&nbsp; 01&nbsp; 02&nbsp; 03&nbsp; 04&nbsp; 05&nbsp; 06&nbsp; 07&nbsp; 08&nbsp; 09&nbsp; 0A&nbsp; 0B&nbsp; 0C&nbsp; 0D&nbsp; 0E&nbsp; 0F</td><td class="muted">ASCII</td></tr>
+            {% for chunk in layout.bytes|batch(16, none) %}
+            <tr>
+              <td class="hex-off">{{ "%04X"|format(loop.index0 * 16) }}</td>
+              {% for b in chunk %}
+                {% if b %}
+                  {% if b.claimed and not b.overlap %}
+                    <td><span class="hex-byte claimed f{{ b.owner % 8 }}" data-offset="{{ b.offset }}" data-owner="{{ b.owner }}">{{ b.hex }}</span></td>
+                  {% elif b.overlap %}
+                    <td><span class="hex-byte claimed overlap" data-offset="{{ b.offset }}">{{ b.hex }}</span></td>
+                  {% else %}
+                    <td><span class="hex-byte unknown" data-offset="{{ b.offset }}">{{ b.hex }}</span></td>
+                  {% endif %}
+                {% else %}<td></td>{% endif %}
+              {% endfor %}
+              <td class="ascii-run">{% for b in chunk %}{% if b %}<span class="ascii-byte" data-offset="{{ b.offset }}">{{ b.ascii }}</span>{% endif %}{% endfor %}</td>
+            </tr>
+            {% endfor %}
+          </table>
+        </div>
+        <div class="selected-field">
+          <div id="selected-title" class="selected-field-title">Selected field</div>
+          <div class="selected-field-body">
+            <div id="selected-values" class="manual-grid"><div class="muted" style="grid-column:1/-1">Select a decoded field or raw byte.</div></div>
+            <div id="selected-semantic" class="semantic-panel"><div class="muted">Field interpretation will appear here.</div></div>
+          </div>
+        </div>
+      </section>
     </div>
     {% endif %}
-  </section>
 
-  <section class="packet-card">
-    <h3>Raw packet map</h3>
-    <div class="packet-meta"><span class="muted">Click a field or byte. Colors coordinate decoded structure with exact raw bytes; dashed bytes are currently unclaimed.</span></div>
-    <div style="overflow:auto;padding:8px;">
-      <table class="hex-table">
-        <tr><td></td><td colspan="16" class="muted">00&nbsp; 01&nbsp; 02&nbsp; 03&nbsp; 04&nbsp; 05&nbsp; 06&nbsp; 07&nbsp; 08&nbsp; 09&nbsp; 0A&nbsp; 0B&nbsp; 0C&nbsp; 0D&nbsp; 0E&nbsp; 0F</td><td class="muted">ASCII</td></tr>
-        {% for chunk in layout.bytes|batch(16, none) %}
-        <tr>
-          <td class="hex-off">{{ "%04X"|format(loop.index0 * 16) }}</td>
-          {% for b in chunk %}
-            {% if b %}
-              {% if b.claimed and not b.overlap %}
-                <td><span class="hex-byte claimed f{{ b.owner % 8 }}" data-offset="{{ b.offset }}" data-owner="{{ b.owner }}">{{ b.hex }}</span></td>
-              {% elif b.overlap %}
-                <td><span class="hex-byte claimed overlap" data-offset="{{ b.offset }}">{{ b.hex }}</span></td>
-              {% else %}
-                <td><span class="hex-byte unknown" data-offset="{{ b.offset }}">{{ b.hex }}</span></td>
-              {% endif %}
-            {% else %}<td></td>{% endif %}
+    <div class="context-row">
+      <section class="packet-card">
+        <h3>Capture context</h3>
+        <div class="context-grid">
+          <div>Timestamp</div><div class="mono">{{ packet.ts or 'unknown' }}</div>
+          <div>Direction</div><div>{{ packet.direction }}{% if packet.pd_direction %} ({{ packet.pd_direction }}){% endif %}</div>
+          <div>Opcode</div><div class="mono">{{ packet.opcode }}{% if layout %} &mdash; {{ layout.description }}{% endif %}</div>
+          <div>Packet size</div><div class="mono">{{ packet.packet_size if packet.packet_size is not none else 'unknown' }}</div>
+          <div>Sync ID</div><div class="mono">{{ packet.sync_id if packet.sync_id is not none else 'unknown' }}</div>
+          <div>Zone ID</div><div class="mono">{{ packet.zone_id if packet.zone_id is not none else 'unknown' }}</div>
+          <div>Source</div><div>{{ packet.source_format or 'unknown' }}</div>
+          {% if prev_packet %}<div>Previous</div><div><a class="inline mono" href="/captures/{{ capture_id }}/packets/{{ prev_packet.seq }}">{{ prev_packet.opcode }} ({{ prev_packet.seq }})</a></div>{% endif %}
+          {% if next_packet %}<div>Next</div><div><a class="inline mono" href="/captures/{{ capture_id }}/packets/{{ next_packet.seq }}">{{ next_packet.opcode }} ({{ next_packet.seq }})</a></div>{% endif %}
+        </div>
+      </section>
+
+      <section class="packet-card">
+        <h3>Source provenance</h3>
+        {% if provenance %}
+        <div class="context-grid">
+          <div>File</div><div class="mono">{{ provenance.filename }}</div>
+          <div>Locator</div><div>{{ provenance.locator_basis }}{% if provenance.start_line %} &middot; line {{ provenance.start_line }}{% if provenance.end_line and provenance.end_line != provenance.start_line %}-{{ provenance.end_line }}{% endif %}{% endif %}</div>
+          <div>SHA-256</div><div class="mono" style="word-break:break-all">{{ provenance.source_sha256 or 'unknown' }}</div>
+          <div>Original</div><div><a class="inline" href="/captures/{{ capture_id }}/source-locator?filename={{ provenance.filename|urlencode }}&target_table=capture_raw_packets&row_key={{ provenance.row_key|urlencode }}">open exact source row/block &rarr;</a></div>
+        </div>
+        {% if provenance.details %}<pre class="context-code">{{ provenance.details }}</pre>{% endif %}
+        {% else %}<p class="muted" style="padding:0 12px 10px">No row locator is available for this observation.</p>{% endif %}
+      </section>
+
+      <section class="packet-card">
+        <h3>Cross-source correlations</h3>
+        {% if correlations %}
+        <div class="table-wrap" style="border:0;border-radius:0"><table>
+          <tr><th>status</th><th>evidence</th><th>basis</th><th>&Delta;t</th></tr>
+          {% for c in correlations %}
+          <tr>
+            <td><span class="chip">{{ c.status }}</span></td>
+            <td>{% if c.other_href %}<a class="inline" href="{{ c.other_href }}">{{ c.other_kind }}<br><span class="muted mono">{{ c.other_ref }}</span></a>{% else %}{{ c.other_kind }}<br><span class="muted mono">{{ c.other_ref }}</span>{% endif %}</td>
+            <td>{{ c.basis }}</td>
+            <td class="mono">{{ c.time_delta_seconds if c.time_delta_seconds is not none else '—' }}</td>
+          </tr>
           {% endfor %}
-          <td class="ascii-run">{% for b in chunk %}{% if b %}<span class="ascii-byte" data-offset="{{ b.offset }}">{{ b.ascii }}</span>{% endif %}{% endfor %}</td>
-        </tr>
-        {% endfor %}
-      </table>
+        </table></div>
+        {% else %}<p class="muted" style="padding:0 12px 10px">No stored cross-source correlations for this raw packet.</p>{% endif %}
+      </section>
     </div>
-    <div id="manual-byte" class="manual-panel"><div class="muted">Select a byte or field to inspect the raw range.</div></div>
-  </section>
-</div>
-{% endif %}
-
-<div class="packet-shell" style="margin-top:14px;">
-  <section class="packet-card">
-    <h3>Source provenance</h3>
-    {% if provenance %}
-    <div class="context-grid">
-      <div>file</div><div class="mono">{{ provenance.filename }}</div>
-      <div>locator</div><div>{{ provenance.locator_basis }}</div>
-      <div>lines</div><div class="mono">{{ provenance.start_line or '—' }}{% if provenance.end_line and provenance.end_line != provenance.start_line %}-{{ provenance.end_line }}{% endif %}</div>
-      <div>byte offsets</div><div class="mono">{{ provenance.start_offset if provenance.start_offset is not none else '—' }}{% if provenance.end_offset is not none %}-{{ provenance.end_offset }}{% endif %}</div>
-      <div>source SHA-256</div><div class="mono" style="word-break:break-all">{{ provenance.source_sha256 or 'unknown' }}</div>
-      <div>original evidence</div><div><a class="inline" href="/captures/{{ capture_id }}/source-locator?filename={{ provenance.filename|urlencode }}&target_table=capture_raw_packets&row_key={{ provenance.row_key|urlencode }}">open exact source row/block &rarr;</a></div>
-    </div>
-    {% else %}<p class="muted" style="padding:0 12px 10px">No row locator is available for this observation.</p>{% endif %}
-  </section>
-
-  <section class="packet-card">
-    <h3>Cross-source correlations</h3>
-    {% if correlations %}
-    <div class="table-wrap"><table>
-      <tr><th>status</th><th>other evidence</th><th>basis</th><th>&Delta;t</th><th>score</th></tr>
-      {% for c in correlations %}
-      <tr>
-        <td><span class="chip">{{ c.status }}</span></td>
-        <td>{% if c.other_href %}<a class="inline" href="{{ c.other_href }}"><span class="mono">{{ c.other_kind }}</span><br><span class="muted mono">{{ c.other_ref }}</span></a>{% else %}<span class="mono">{{ c.other_kind }}</span><br><span class="muted mono">{{ c.other_ref }}</span>{% endif %}</td>
-        <td>{{ c.basis }}</td>
-        <td class="mono">{{ c.time_delta_seconds if c.time_delta_seconds is not none else '—' }}</td>
-        <td class="mono">{{ c.score if c.score is not none else '—' }}</td>
-      </tr>
-      {% endfor %}
-    </table></div>
-    {% else %}<p class="muted" style="padding:0 12px 10px">No stored cross-source correlations for this raw packet.</p>{% endif %}
-  </section>
+  </div>
 </div>
 
 {% if layout %}
@@ -167,25 +213,48 @@
   const rows=[...document.querySelectorAll('.packet-field')];
   const bytes=[...document.querySelectorAll('.hex-byte')];
   const ascii=[...document.querySelectorAll('.ascii-byte')];
-  const panel=document.getElementById('manual-byte');
-  function clearSelection(){ rows.forEach(x=>x.classList.remove('selected')); bytes.forEach(x=>x.classList.remove('selected')); ascii.forEach(x=>x.classList.remove('selected')); }
-  function bytesInRange(start,end){ return bytes.filter(x=>{const o=+x.dataset.offset; return o>=start && o<end;}); }
-  function inspect(start,end,label){
+  const title=document.getElementById('selected-title');
+  const values=document.getElementById('selected-values');
+  const semantic=document.getElementById('selected-semantic');
+
+  function clearSelection(){
+    rows.forEach(x=>x.classList.remove('selected'));
+    bytes.forEach(x=>x.classList.remove('selected'));
+    ascii.forEach(x=>x.classList.remove('selected'));
+  }
+  function bytesInRange(start,end){return bytes.filter(x=>{const o=+x.dataset.offset;return o>=start&&o<end;});}
+  function numericRows(vals){
+    let out='';
+    if(vals.length>=1) out+=`<div>uint8 (b0)</div><div>${vals[0]} / 0x${vals[0].toString(16).toUpperCase().padStart(2,'0')}</div>`;
+    if(vals.length>=2){const u=vals[0]|(vals[1]<<8),i=(u&0x8000)?u-0x10000:u;out+=`<div>uint16 LE</div><div>${u} / 0x${u.toString(16).toUpperCase().padStart(4,'0')}</div><div>int16 LE</div><div>${i}</div>`;}
+    if(vals.length>=4){const a=new Uint8Array(vals.slice(0,4)),dv=new DataView(a.buffer),u=dv.getUint32(0,true),i=dv.getInt32(0,true),fl=dv.getFloat32(0,true);out+=`<div>uint32 LE</div><div>${u} / 0x${u.toString(16).toUpperCase().padStart(8,'0')}</div><div>int32 LE</div><div>${i}</div><div>float32 LE</div><div>${Number.isFinite(fl)?fl:'—'}</div>`;}
+    return out;
+  }
+  function inspect(start,end,label,row){
+    clearSelection();
+    if(row) row.classList.add('selected');
     const selected=bytesInRange(start,end), vals=selected.map(x=>parseInt(x.textContent,16));
     selected.forEach(x=>x.classList.add('selected'));
     ascii.filter(x=>{const o=+x.dataset.offset;return o>=start&&o<end;}).forEach(x=>x.classList.add('selected'));
-    if(!vals.length){panel.innerHTML='<div class="muted">No packet bytes in this range.</div>';return;}
     const hex=vals.map(v=>v.toString(16).padStart(2,'0').toUpperCase()).join(' ');
-    let extra='';
-    if(vals.length>=1) extra+=`<div>uint8</div><div>${vals[0]}</div>`;
-    if(vals.length>=2){const u=vals[0]|(vals[1]<<8),i=(u&0x8000)?u-0x10000:u;extra+=`<div>uint16 LE</div><div>${u} / 0x${u.toString(16).toUpperCase().padStart(4,'0')}</div><div>int16 LE</div><div>${i}</div>`;}
-    if(vals.length>=4){const a=new Uint8Array(vals.slice(0,4)),dv=new DataView(a.buffer),u=dv.getUint32(0,true),i=dv.getInt32(0,true),fl=dv.getFloat32(0,true);extra+=`<div>uint32 LE</div><div>${u} / 0x${u.toString(16).toUpperCase().padStart(8,'0')}</div><div>int32 LE</div><div>${i}</div><div>float32 LE</div><div>${Number.isFinite(fl)?fl:'—'}</div>`;}
-    panel.innerHTML=`<div><strong>${label||'selection'}</strong> · 0x${start.toString(16).toUpperCase().padStart(2,'0')}${end-start>1?'-0x'+(end-1).toString(16).toUpperCase().padStart(2,'0'):''}</div><div class="raw-field" style="margin:5px 0 8px">${hex}</div><div class="manual-grid">${extra}</div>`;
+    title.textContent='Selected field: '+label;
+    values.innerHTML=`<div>Byte range</div><div>0x${start.toString(16).toUpperCase().padStart(2,'0')}${end-start>1?' - 0x'+(end-1).toString(16).toUpperCase().padStart(2,'0'):''} (${Math.max(0,end-start)} byte${end-start===1?'':'s'})</div><div>Raw bytes</div><div>${hex||'—'}</div>`+numericRows(vals);
+    if(row){
+      const type=row.dataset.type||'';
+      const value=row.dataset.value||'';
+      const valueHex=row.dataset.valueHex||'';
+      const lookup=row.dataset.lookup||'';
+      const comment=row.dataset.comment||'';
+      semantic.innerHTML=`<div class="muted">Interpreted as</div><strong>${label}</strong><div class="big-value">${value||'—'}</div>${valueHex?`<div class="mono muted">${valueHex}</div>`:''}${type?`<div style="margin-top:8px"><span class="chip">${type}</span></div>`:''}${lookup?`<div class="muted" style="margin-top:8px">lookup: ${lookup}</div>`:''}${comment?`<div class="muted" style="margin-top:8px">${comment}</div>`:''}`;
+    }else{
+      semantic.innerHTML='<div class="muted">Raw byte selection has no field semantic assigned by the active schema.</div>';
+    }
   }
-  function selectRow(row){clearSelection();row.classList.add('selected');inspect(+row.dataset.start,+row.dataset.end,row.querySelector('strong')?.textContent||'field');}
+  function selectRow(row){inspect(+row.dataset.start,+row.dataset.end,row.querySelector('strong')?.textContent||'field',row);}
   rows.forEach(r=>r.addEventListener('click',()=>selectRow(r)));
-  bytes.forEach(b=>b.addEventListener('click',()=>{const off=+b.dataset.offset,owner=b.dataset.owner;if(owner!==undefined){const row=rows.find(r=>r.dataset.index===owner);if(row){selectRow(row);return;}}clearSelection();inspect(off,off+1,'raw byte');}));
+  bytes.forEach(b=>b.addEventListener('click',()=>{const owner=b.dataset.owner;if(owner!==undefined){const row=rows.find(r=>r.dataset.index===owner);if(row){selectRow(row);return;}}const off=+b.dataset.offset;inspect(off,off+1,'raw byte',null);}));
   ascii.forEach(a=>a.addEventListener('click',()=>{const b=bytes.find(x=>+x.dataset.offset===+a.dataset.offset);if(b)b.click();}));
+  if(rows.length) selectRow(rows[0]);
 })();
 </script>
 {% endif %}
