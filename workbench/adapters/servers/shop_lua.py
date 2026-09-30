@@ -1,13 +1,14 @@
 """Audited Lua shop-source adapters for acquisition evidence.
 
-Supported v1 patterns are intentionally narrow:
-- NPC scripts that build a local `stock = { { item, price }, ... }` table and pass it
-  to `xi.shop.general` or `xi.shop.nation`.
-- Modern LSB `scripts/data/guild_shops.lua` entries with named shop blocks and
-  `stock = { { id = item, ... }, ... }`.
+Supported patterns are intentionally narrow and source-shape driven:
+- LSB-style pair-row stock tables passed to `xi.shop.general` / `xi.shop.nation`.
+- Topaz-style flat alternating item/price arrays passed to `tpz.shop.general` / `tpz.shop.nation`.
+- DSP-style flat alternating item/price arrays passed to `dsp.shop.general` / `dsp.shop.nation`.
+- Modern LSB `scripts/data/guild_shops.lua` named shop blocks with structured stock rows.
 
-The parser is evidence extraction, not a Lua interpreter. Unsupported dynamic stock
-expressions are reported rather than guessed.
+File location is not part of detection: supported stock/call patterns may be extracted
+from NPC, zone, instance, module, or other Lua files. The parser is evidence extraction,
+not a Lua interpreter. Unsupported dynamic stock expressions are reported rather than guessed.
 """
 from __future__ import annotations
 
@@ -107,7 +108,7 @@ def _local_stock_block(text: str) -> str | None:
 
 
 def parse_npc_shop_script(text: str, *, source_path: str) -> dict[str, Any]:
-    """Parse one regular/nation NPC shop script conservatively."""
+    """Parse one regular/nation shop source conservatively, independent of file location."""
     calls = []
     for namespace, source_family in (("xi", "LSB"), ("tpz", "TOPAZ"), ("dsp", "DSP")):
         for kind in ("general", "nation"):
