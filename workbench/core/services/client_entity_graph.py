@@ -52,7 +52,7 @@ def _metadata(raw: str | None) -> dict:
 
 def sync_client_entity_graph(con: sqlite3.Connection, *, snapshot_id: str) -> dict:
     """Reconcile one imported client snapshot's ENTITY rows into canonical graph structures."""
-    graph.ensure_schema(con)
+    con.executescript(graph.SCHEMA)
 
     tables = {
         row[0] for row in con.execute(
@@ -91,6 +91,11 @@ def sync_client_entity_graph(con: sqlite3.Connection, *, snapshot_id: str) -> di
         "DELETE FROM entity_relationships WHERE relationship=? AND source_snapshot_id=?",
         (RELATIONSHIP, snapshot_id),
     )
+    stale_identifiers = con.execute(
+        """SELECT COUNT(*) FROM entity_identifiers
+            WHERE identifier_type=? AND source_snapshot_id=?""",
+        (IDENTIFIER_TYPE, snapshot_id),
+    ).fetchone()[0]
     con.execute(
         """DELETE FROM entity_identifiers
             WHERE identifier_type=? AND source_snapshot_id=?""",
@@ -109,12 +114,8 @@ def sync_client_entity_graph(con: sqlite3.Connection, *, snapshot_id: str) -> di
         "relationships": 0,
         "ambiguous_semantic_roots": 0,
         "removed_relationships": len(stale_relationships),
-        "removed_identifiers": 0,
+        "removed_identifiers": int(stale_identifiers or 0),
     }
-    # changes() only reports the latest statement, so count stale identifiers before deleting next time.
-    # This value is diagnostic; correctness does not depend on it.
-    # Recompute from the pre-sync state is not necessary for current callers.
-
     for record_id, semantic_key, numeric_id, zone_key, source_evidence_id, confidence, metadata_json in rows:
         if not semantic_key or numeric_id is None:
             continue
