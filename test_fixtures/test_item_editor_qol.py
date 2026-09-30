@@ -22,6 +22,15 @@ def main():
     assert "dat.validate_client_patch(item_id, client_fields)" in item_edit
     assert "client_report = dat.patch_client_item(item_id, client_fields)" in item_edit
 
+    # Safe item-level DAT record restore from exact backup snapshots.
+    assert "def restore_client_record_from_backup(bid, comment=" in item_edit
+    assert '"has_client_record": bool(snap)' in item_edit
+    assert '@app.post("/itemedit/restore-client-record")' in gui
+    assert "data-restore-record" in template
+    assert "async function restoreItemDatRecord(bid)" in template
+    assert "Server SQL will not be changed" in template
+    assert "label:'restore DAT record'" in template
+
     # Exact client-record snapshots make create/delete/edit undo-redo faithful.
     assert "def capture_client_record(item_id: int)" in item_dat
     assert "def restore_client_record(snapshot: dict)" in item_dat
