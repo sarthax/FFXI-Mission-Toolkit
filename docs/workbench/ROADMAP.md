@@ -809,11 +809,11 @@ Priority stack:
 - [~] Improved item search/results grid: exact ID lookup, name search, level/job/skill/client-state filters, sortable columns, synced/mismatch/server-only state, and recent-item navigation are complete. True DAT-only discovery remains because it requires scanning/indexing client DAT ranges rather than the server-backed search.
 
 Editing / presentation:
-- [x] Basic vs Advanced field modes while retaining raw values; mode is persisted locally and Basic only filters existing-item editing so create/clone drafts remain lossless.
+- [x] Basic vs Advanced field modes while retaining raw values; mode is persisted locally, all existing-item fields remain mounted so unsaved Advanced values survive mode toggles, and create/clone drafts remain lossless.
 - [x] Group fields into logical presentation sections across identity/economy, equip requirements/placement, combat/item-level, usable targeting/timing/charges, puppet, furnishing, client/DAT, and effects.
 - [~] Human-readable decoded summary now resolves known bitmasks/enums plus common weapon/use/effect metadata while preserving raw values; richer unit conversions/confirmed semantics remain.
 - [x] Inline field descriptions/tooltips added for the editable item schema; descriptions stay conservative where semantics are only partially established.
-- [ ] Copy/paste individual values and selected field groups where safe.
+- [x] Copy/paste individual values and logical field groups with schema-identity guards: fields only paste to the same table.field and groups only to the same table/group.
 
 Create / clone:
 - [x] One-click Clone This Item from the open editor.
