@@ -166,8 +166,11 @@ lr.domElement.style.cssText='position:absolute;top:0;left:0;pointer-events:none'
 const controls = new OrbitControls(camera, renderer.domElement); controls.enableDamping = true;
 controls.zoomToCursor = true;  // scroll-zoom converges on the point under the cursor instead of always
                                 // the orbit target, so the user isn't forced to re-pan after every zoom.
-controls.zoomSpeed = 2.5;      // default (1) needs a huge number of scroll ticks to close in on a large
-                                // zone's bounding box -- felt like a hard zoom-in cap, it's just slow.
+// Keep far travel quick, but progressively reduce wheel-step size near the target for precise placement.
+function updateZoomSpeed(){
+  const d=camera.position.distanceTo(controls.target);
+  controls.zoomSpeed = d>300 ? 2.0 : d>120 ? 1.25 : d>50 ? 0.8 : d>20 ? 0.5 : d>8 ? 0.3 : 0.18;
+}
 controls.minDistance = 0.05;   // was unset (defaults to 0, fine) but the camera's near plane (below)
 camera.near = 0.01; camera.updateProjectionMatrix();  // was 0.1 -- too coarse to get right up on detail
 // OrbitControls' built-in right-drag pan intentionally scales the pan offset by the camera-target
@@ -180,8 +183,8 @@ camera.near = 0.01; camera.updateProjectionMatrix();  // was 0.1 -- too coarse t
 const BASE_PAN = 35;
 function repanSpeed(){ const d = camera.position.distanceTo(controls.target) || 1; controls.panSpeed = Math.min(25, Math.max(0.25, BASE_PAN / d)); }
 renderer.domElement.addEventListener('pointerdown', ev=>{ if (ev.button===2) repanSpeed(); });
-renderer.domElement.addEventListener('wheel', repanSpeed, {passive:true});
-repanSpeed();
+renderer.domElement.addEventListener('wheel', ()=>{ updateZoomSpeed(); repanSpeed(); }, {passive:true});
+updateZoomSpeed(); repanSpeed();
 scene.add(new THREE.AmbientLight(0x8899aa, 1.1));
 const sun = new THREE.DirectionalLight(0xfff2e0, 1.4); sun.position.set(300,500,200); scene.add(sun);
 
@@ -208,6 +211,47 @@ const mat = new THREE.MeshBasicMaterial({depthTest:false, transparent:true});
 const COL = {ok:0x2ecc71, blocked:0xe74c3c, off:0xe08a1e, zero:0x888888, none:0x8899aa, m:0xe74c3c, n:0x3498db, d:0xf1c40f};
 const P = e => new THREE.Vector3(e.x, -e.y, -e.z);
 const hsl = c => new THREE.Color().setHSL(((c*2654435761)>>>0)%360/360, .7, .55);
+
+// FFXI heading byte: 0=East; values increase counter-clockwise (64=N, 128=W, 192=S).
+const ROT_DIRS=['E','NE','N','NW','W','SW','S','SE'];
+function rotInfo(raw){
+  const r=((Math.round(+raw||0)%256)+256)%256;
+  const ffxiDeg=r*360/256;
+  const bearing=(90-ffxiDeg+360)%360;
+  const dir=ROT_DIRS[Math.round(r/32)%8];
+  return {raw:r,dir,ffxiDeg,bearing};
+}
+function rotText(raw){
+  const h=rotInfo(raw);
+  return `rot=${h.raw} · ${h.dir} · compass ${h.bearing.toFixed(1)}° (FFXI ${h.ffxiDeg.toFixed(1)}° from East)`;
+}
+function sceneHeading(raw){
+  const a=rotInfo(raw).raw*Math.PI*2/256;
+  return new THREE.Vector3(Math.cos(a),0,Math.sin(a)).normalize();
+}
+const headingArrow=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vector3(),12,0xffd54a,3.0,1.8);
+headingArrow.visible=false; headingArrow.renderOrder=30;
+headingArrow.traverse?.(o=>{ if(o.material){ o.material.depthTest=false; o.material.transparent=true; } });
+scene.add(headingArrow);
+function updateHeadingArrow(){
+  if(!Z || selected<0 || !Z.entities[selected] || Z.entities[selected].zero){ headingArrow.visible=false; return; }
+  const e=Z.entities[selected], p=P(e);
+  headingArrow.position.set(p.x,p.y+2.2,p.z);
+  headingArrow.setDirection(sceneHeading(e.r));
+  const d=camera.position.distanceTo(controls.target);
+  const len=Math.max(5,Math.min(16,d*0.08));
+  headingArrow.setLength(len,Math.min(3,len*.28),Math.min(2,len*.18));
+  headingArrow.visible=true;
+}
+function updateCompass(){
+  const rose=$('compass-rose'); if(!rose) return;
+  const a=controls.target.clone().project(camera);
+  const b=controls.target.clone().add(new THREE.Vector3(0,0,25)).project(camera);
+  const dx=b.x-a.x, dy=b.y-a.y;
+  if(Math.hypot(dx,dy)<1e-5) return;
+  const angle=Math.atan2(dx,dy);
+  rose.style.transform=`rotate(${angle}rad)`;
+}
 
 // ---- Live (textured) mesh -- ported from zone_view3d.html's Phase 3 (real in-browser MZB/MMB
 // parse via gui/static/ffxi-dat, from Soverance/Vanalytics MIT). No height-fog/sky here (this
