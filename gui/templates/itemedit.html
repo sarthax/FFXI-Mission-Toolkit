@@ -294,9 +294,10 @@ function rememberRecent(itemId){
   recentItems=recentItems.filter(x=>x!==itemId); recentItems.push(itemId);
   if(recentItems.length>30) recentItems.shift(); recentPos=recentItems.length-1; refreshRecentNav();
 }
-function navigateRecent(delta){
+async function navigateRecent(delta){
   const next=recentPos+delta; if(next<0||next>=recentItems.length) return;
-  recentPos=next; refreshRecentNav(); loadItem(recentItems[recentPos],false);
+  const ok=await loadItem(recentItems[next],false);
+  if(ok!==false){ recentPos=next; refreshRecentNav(); }
 }
 fetch('/itemedit/latentnames.json').then(r => r.json()).then(j => { LATENT_NAMES = j; fillDatalist(document.getElementById('dl_latents'), j); });
 
@@ -432,7 +433,7 @@ function renderItemDiagnostics(comparison,validation){
 }
 async function loadItem(itemid, remember=true) {
   if(currentItemId && Number(itemid)!==Number(currentItemId) && hasUnsavedItemChanges()){
-    if(!confirm('Discard unsaved Item Editor changes?')) return;
+    if(!confirm('Discard unsaved Item Editor changes?')) return false;
   }  const res = await fetch(`/itemedit/${itemid}.json`);
   if (!res.ok) { alert(await res.text()); return; }
   const data = await res.json();
@@ -468,6 +469,7 @@ async function loadItem(itemid, remember=true) {
   document.getElementById('editorTables').oninput=updateDirtySummary;
   document.getElementById('editorTables').onchange=updateDirtySummary;
   updateDirtySummary(); refreshItemUndoUI();
+  return true;
 }
 
 function refreshDatInfo(data) {
