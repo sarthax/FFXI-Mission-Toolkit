@@ -1,55 +1,156 @@
 {% extends "base.html" %}
-{% block title %}Capture Query{% endblock %}
+{% block title %}Capture Data Explorer{% endblock %}
 {% block shell_mode %}dense{% endblock %}
 {% block main_class %}capture-query-page{% endblock %}
 
 {% macro pager() %}
 {% if total_pages > 1 %}
-<form method="get" style="display:flex;gap:8px;align-items:center;margin:12px 0;">
-  <input type="hidden" name="table" value="{{ table }}">
-  <input type="hidden" name="capture_id" value="{{ capture_id }}">
-  <input type="hidden" name="q" value="{{ q }}">
+<div class="data-pager">
   {% if page > 1 %}
-  <a class="chip" href="/captures/query?table={{ table }}&capture_id={{ capture_id }}&q={{ q }}&page={{ page - 1 }}">&larr; prev</a>
+  <a class="chip" href="/captures/query?table={{ table|urlencode }}&capture_id={{ capture_id|urlencode }}&q={{ q|urlencode }}&page={{ page - 1 }}">&larr; prev</a>
   {% endif %}
-  <span class="muted">page</span>
-  <input type="number" name="page" value="{{ page }}" min="1" max="{{ total_pages }}" style="width:70px;">
-  <span class="muted">of {{ total_pages }}</span>
-  <button type="submit">Go</button>
+  <span class="muted">page {{ page }} of {{ total_pages }}</span>
   {% if page < total_pages %}
-  <a class="chip" href="/captures/query?table={{ table }}&capture_id={{ capture_id }}&q={{ q }}&page={{ page + 1 }}">next &rarr;</a>
+  <a class="chip" href="/captures/query?table={{ table|urlencode }}&capture_id={{ capture_id|urlencode }}&q={{ q|urlencode }}&page={{ page + 1 }}">next &rarr;</a>
   {% endif %}
-</form>
+</div>
 {% endif %}
 {% endmacro %}
 
+{% macro value_cell(c, r) %}
+  {% if c == 'capture_id' and r[c] is not none %}
+    <a href="/captures/{{ r[c] }}">#{{ r[c] }}</a>
+  {% elif table == 'capture_raw_packets' and c == 'seq' %}
+    <a href="/captures/{{ r['capture_id'] }}/packets/{{ r[c] }}">{{ r[c] }}</a>
+  {% elif c == 'entity_id' and r[c] %}
+    <a href="/entity/{{ r[c] }}">{{ r[c] }}</a>
+  {% else %}
+    {{ r[c] if r[c] is not none else '' }}
+  {% endif %}
+{% endmacro %}
+
 {% block content %}
-<style>main.capture-query-page{padding:8px 10px 24px}</style>
-<div class="dense-toolbar"><a class="chip" href="/captures">&larr; Captures</a><strong>Capture Query</strong><span class="sp"></span><details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:680px">Direct search over normalized capture_* tables. Leave Capture ID blank to search across all captures; use this when the summarized detail/timeline views are too narrow.</div></details></div>
+<style>
+main.capture-query-page{padding:8px 10px 24px}
+.data-explorer{display:grid;grid-template-columns:245px minmax(0,1fr);gap:8px;align-items:start}
+.dataset-nav{position:sticky;top:calc(var(--shell-h) + 8px);max-height:calc(100vh - var(--shell-h) - 22px);overflow:auto}
+.dataset-group{margin-bottom:8px}
+.dataset-group>strong{display:block;padding:4px 5px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.dataset-link{display:block;padding:5px 7px;margin:1px 0;border-radius:5px;text-decoration:none;color:var(--ink)}
+.dataset-link:hover{background:var(--surface-2)}
+.dataset-link.active{background:var(--accent-soft);font-weight:600}
+.dataset-meta{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:start;margin-bottom:7px}
+.result-card{border:1px solid var(--border);border-radius:7px;background:var(--surface);margin:5px 0;overflow:hidden}
+.result-summary{display:grid;grid-template-columns:repeat(var(--col-count),minmax(90px,1fr));gap:0}
+.result-field{padding:6px 8px;border-right:1px solid var(--border);min-width:0}
+.result-field:last-child{border-right:0}
+.result-field .label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.result-field .value{margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.result-raw{border-top:1px solid var(--border);padding:6px 8px}
+.raw-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 12px}
+.raw-pair{display:grid;grid-template-columns:minmax(110px,.35fr) minmax(0,1fr);gap:6px;padding:2px 0;border-bottom:1px dotted var(--border)}
+.raw-pair .mono{overflow-wrap:anywhere}
+.data-pager{display:flex;gap:7px;align-items:center;justify-content:flex-end;margin:6px 0}
+@media(max-width:950px){
+  .data-explorer{grid-template-columns:1fr}
+  .dataset-nav{position:static;max-height:none}
+  .dataset-nav .dataset-group{display:inline-block;vertical-align:top;min-width:180px}
+  .result-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .raw-grid{grid-template-columns:1fr}
+}
+</style>
 
-<form class="search dense-toolbar" method="get" style="flex-wrap:wrap;margin:6px 0;">
-  <select name="table">
-    {% for t in tables %}
-    <option value="{{ t }}" {% if table == t %}selected{% endif %}>{{ t }}</option>
+<div class="dense-toolbar">
+  <a class="chip" href="/captures">&larr; Captures</a>
+  <strong>Capture Data Explorer</strong>
+  <a class="chip" href="/captures/search">Evidence Search</a>
+  <span class="sp"></span>
+  <details class="dense-card" style="margin:0;padding:0 6px">
+    <summary>About</summary>
+    <div class="muted" style="padding:6px 2px;max-width:700px">
+      Deep inspection of normalized capture datasets. The main result view shows useful fields first;
+      every row keeps its complete physical database record under Raw row / provenance.
+    </div>
+  </details>
+</div>
+
+<div class="data-explorer">
+  <aside class="dense-panel dataset-nav">
+    {% for group in dataset_groups %}
+    <div class="dataset-group">
+      <strong>{{ group.label }}</strong>
+      {% for d in group.datasets %}
+      <a class="dataset-link{% if d.table == table %} active{% endif %}"
+         href="/captures/query?table={{ d.table|urlencode }}{% if capture_id %}&capture_id={{ capture_id|urlencode }}{% endif %}">
+        {{ d.label }}
+      </a>
+      {% endfor %}
+    </div>
     {% endfor %}
-  </select>
-  <input type="text" name="capture_id" value="{{ capture_id }}" placeholder="capture id (blank = all)" style="width:170px;">
-  <input type="text" name="q" value="{{ q }}" placeholder="id (exact) or name/text (substring)">
-  <button type="submit">Search</button>
-  <a class="chip" href="/captures/query.csv?table={{ table }}&capture_id={{ capture_id }}&q={{ q }}">Export matching rows as CSV</a>
-</form>
+  </aside>
 
-<div class="dense-toolbar" style="margin:4px 0"><strong>{{ total }} row(s)</strong><span class="chip mono">{{ table }}</span>{% if capture_id %}<span class="chip">capture #{{ capture_id }}</span>{% endif %}<span class="sp"></span><span class="muted">page {{ page }} of {{ total_pages }}</span></div>
-{% if not rows %}
-<p class="muted">No matches.</p>
-{% else %}
-{{ pager() }}
-<div class="table-wrap"><table>
-  <tr>{% for c in cols %}<th>{{ c }}</th>{% endfor %}</tr>
-  {% for r in rows %}
-  <tr>{% for c in cols %}<td class="mono">{% if c == 'capture_id' %}<a href="/captures/{{ r[c] }}">{{ r[c] }}</a>{% elif table == 'capture_raw_packets' and c == 'seq' %}<a href="/captures/{{ r['capture_id'] }}/packets/{{ r[c] }}">{{ r[c] }}</a>{% elif c == 'entity_id' and r[c] %}<a href="/entity/{{ r[c] }}">{{ r[c] }}</a>{% else %}{{ r[c] }}{% endif %}</td>{% endfor %}</tr>
-  {% endfor %}
-</table></div>
-{{ pager() }}
-{% endif %}
+  <section>
+    <div class="dataset-meta">
+      <div>
+        <div class="dense-toolbar" style="margin:0 0 4px">
+          <strong>{{ dataset.label }}</strong>
+          <span class="chip mono">{{ table }}</span>
+          <span class="chip">{{ total }} row{{ '' if total == 1 else 's' }}</span>
+          {% if capture_id %}<span class="chip">capture #{{ capture_id }}</span>{% endif %}
+        </div>
+        <div class="muted">{{ dataset.description }}</div>
+      </div>
+      <a class="chip" href="/captures/query.csv?table={{ table|urlencode }}&capture_id={{ capture_id|urlencode }}&q={{ q|urlencode }}">Export full matching CSV</a>
+    </div>
+
+    <form class="search dense-toolbar" method="get" action="/captures/query" style="flex-wrap:wrap;margin:6px 0">
+      <input type="hidden" name="table" value="{{ table }}">
+      <input type="text" name="capture_id" value="{{ capture_id }}" placeholder="capture id (blank = all)" style="width:170px">
+      <input type="text" name="q" value="{{ q }}" placeholder="ID exact or name/text substring">
+      <button type="submit">Filter dataset</button>
+      {% if capture_id or q %}<a class="chip" href="/captures/query?table={{ table|urlencode }}">Clear filters</a>{% endif %}
+    </form>
+
+    {% if not rows %}
+      <div class="dense-panel muted">No matching rows in this dataset.</div>
+    {% else %}
+      {{ pager() }}
+      {% for r in rows %}
+      <article class="result-card">
+        <div class="result-summary" style="--col-count:{{ display_cols|length }}">
+          {% for c in display_cols %}
+          <div class="result-field">
+            <div class="label">{{ c }}</div>
+            <div class="value {% if c not in ['name','entity_name','mob_name','text','filename'] %}mono{% endif %}">{{ value_cell(c, r) }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        <details class="result-raw">
+          <summary>Raw row / provenance <span class="muted">{{ cols|length }} columns</span></summary>
+          <div class="raw-grid" style="margin-top:5px">
+            {% for c in cols %}
+            <div class="raw-pair">
+              <span class="muted mono">{{ c }}</span>
+              <span class="mono">{{ value_cell(c, r) }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="dense-toolbar" style="margin-top:6px">
+            {% if r['capture_id'] is defined %}
+            <a class="chip" href="/captures/{{ r['capture_id'] }}/timeline">Capture timeline</a>
+            {% endif %}
+            {% if table == 'capture_raw_packets' %}
+            <a class="chip" href="/captures/{{ r['capture_id'] }}/packets/{{ r['seq'] }}">Packet Viewer</a>
+            {% endif %}
+            {% if r['entity_id'] is defined and r['entity_id'] %}
+            <a class="chip" href="/entity/{{ r['entity_id'] }}">Entity Profile</a>
+            {% endif %}
+          </div>
+        </details>
+      </article>
+      {% endfor %}
+      {{ pager() }}
+    {% endif %}
+  </section>
+</div>
 {% endblock %}
