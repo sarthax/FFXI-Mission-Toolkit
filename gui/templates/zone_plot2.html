@@ -1,12 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Zone Editor (new layout){% endblock %}
+{% block shell_mode %}dense{% endblock %}
 {% block main_class %}zp2page{% endblock %}
 {% block content %}
 <style>
-main{max-width:none !important;padding:0 !important}
-body>header{display:none}
-body.zp2-menu>header{display:block;position:fixed;top:36px;left:0;right:0;z-index:60;max-height:70vh;overflow:auto;box-shadow:0 8px 24px #000a}
-#zp2{display:flex;flex-direction:column;height:calc(100vh - 0px);min-height:480px;font-size:13px}
+main.zp2page{max-width:none !important;padding:0 !important;overflow:hidden}
+#zp2{display:flex;flex-direction:column;height:100%;min-height:480px;font-size:13px}
 #zbar{display:flex;align-items:center;gap:8px;height:36px;flex:none;padding:0 8px;border-bottom:1px solid var(--border);background:var(--surface);overflow:hidden;white-space:nowrap}
 #zbar label{display:flex;align-items:center;gap:4px;margin:0}
 #zbar select{width:auto;max-width:170px}
@@ -23,7 +22,7 @@ body.zp2-menu>header{display:block;position:fixed;top:36px;left:0;right:0;z-inde
 .ztabs{display:flex;gap:2px;padding:4px 4px 0;border-bottom:1px solid var(--border);flex:none}
 .ztabs button{flex:1;padding:2px 2px;border-radius:4px 4px 0 0}
 .zpane{flex:1;min-height:0;overflow:auto;padding:6px 8px}
-#list{max-height:none;height:calc(100vh - 330px);overflow:auto;font:10px monospace;border:1px solid var(--border);padding:0}
+#list{max-height:none;height:calc(100vh - var(--shell-h) - 330px);overflow:auto;font:10px monospace;border:1px solid var(--border);padding:0}
 #list .entity-row{cursor:pointer;display:grid;grid-template-columns:30px 60px minmax(90px,1fr) 44px;gap:4px;align-items:center;padding:2px 4px;border-bottom:1px solid rgba(255,255,255,.08)}
 #list .entity-row>*:nth-child(n+5){display:none}
 #list .entity-row:hover{background:#334} #list .entity-row.selected-row{background:#665c16;color:#fff;font-weight:600} #list .entity-row.multi-row{background:#4a245f;color:#fff}
@@ -63,8 +62,7 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
 </style>
 
 <div id="zp2">
-<div id="zbar">
-  <button id="zmenuBtn" type="button" title="Show/hide the site navigation">&#9776;</button>
+<div id="zbar" class="dense-toolbar">
   <strong>Zone Editor</strong><span class="chip mono" id="zname"></span>
   <label>Server <select id="srv"><option value="topaz">Topaz</option><option value="dsp">DSP</option></select></label>
   <label>Zone <input type="search" id="zfilter" placeholder="filter&hellip;" style="width:70px" title="Partial match on zone id or name"><select id="zsort" title="Sort zone list"><option value="id">by #</option><option value="name">by name</option></select><select id="zone"></select></label>
@@ -84,8 +82,8 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
   <span class="muted mono" id="zpanelToggles" style="display:none"></span>
 </div>
 <div id="zmain">
-<div id="lpanel" class="zpanel">
-  <div class="ztabs" id="ltabs"><button class="tabb" data-lt="ents">Entities</button><button class="tabb" data-lt="layers">Layers</button><button class="tabb" data-lt="rev">Review</button><button class="tabb" data-lt="tools">Tools</button></div>
+<div id="lpanel" class="zpanel dense-panel">
+  <div class="ztabs dense-tabs" id="ltabs"><button class="tabb" data-lt="ents">Entities</button><button class="tabb" data-lt="layers">Layers</button><button class="tabb" data-lt="rev">Review</button><button class="tabb" data-lt="tools">Tools</button></div>
   <div class="zpane" id="lp-ents">
   <h3 id="matchhdr">Matches <span class="muted" id="cnt"></span></h3>
   <div id="listfilters" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:4px;font-size:11px">
@@ -146,7 +144,7 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
     </details>
   </div>
   <div class="zpane" id="lp-tools" hidden>
-    <div class="ztabs" id="ttabs"><button class="tabb" data-tt="gen">Generator</button><button class="tabb" data-tt="add">Add</button><button class="tabb" data-tt="backup">Backups</button></div>
+    <div class="ztabs dense-tabs" id="ttabs"><button class="tabb" data-tt="gen">Generator</button><button class="tabb" data-tt="add">Add</button><button class="tabb" data-tt="backup">Backups</button></div>
     <div id="tt-gen">
   <div class="muted" style="font-size:10px">Preview a pattern of ghost markers around a centre point, then place copies of the current <b>Add</b> source.</div>
   <label>Pattern <select id="lgPat"><option value="cluster">Cluster (scatter)</option><option value="row">Row / line</option><option value="grid">Grid</option><option value="ring">Ring</option><option value="arc">Arc / crescent</option><option value="camp">Camp (centre + ring + outskirts)</option><option value="flank">Flank pair (gate guards)</option></select></label>
@@ -233,7 +231,7 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
   </div>
   <div id="measureOut" class="lbl" style="position:absolute;left:10px;top:44px;z-index:9;font-size:11px"></div>
   <div id="hover" class="lbl" style="position:absolute;left:8px;bottom:8px;font-size:12px"></div>
-  <div id="helpdrawer" hidden>
+  <div id="helpdrawer" class="dense-drawer" hidden>
     <button type="button" id="zhelpClose" style="float:right">Close &times;</button>
   <div id="tab-help" style="font-size:12px;line-height:1.45">
     <h3>Zone Editor help</h3>
@@ -335,7 +333,7 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
   </div>
   </div>
 </div>
-<div id="rpanel" class="zpanel">
+<div id="rpanel" class="zpanel dense-panel">
   <div id="tab-edit">
     <div class="muted" style="font-size:10px">Select a dot or a list row. Writes are backed up first (Tools &gt; Backups).</div>
     <div id="ed-none" class="muted" style="margin:6px 0">Nothing selected.</div>
@@ -1610,7 +1608,6 @@ document.querySelectorAll('[data-tt]').forEach(b=>b.onclick=()=>toolTab(b.datase
 let _lt='ents'; try{ _lt=localStorage.getItem('zoneEditor2.leftTab')||'ents'; }catch(e){}
 leftTab(_lt==='tools'?'ents':_lt); toolTab('gen');
 $('zhelpBtn').onclick=()=>tab('help'); $('zhelpClose').onclick=()=>{ $('helpdrawer').hidden=true; };
-$('zmenuBtn').onclick=()=>document.body.classList.toggle('zp2-menu');
 function toggleFocus(){ document.body.classList.toggle('zp2-focus'); setTimeout(()=>window.dispatchEvent(new Event('resize')),30); }
 $('zfocusBtn').onclick=toggleFocus;
 document.addEventListener('keydown',ev=>{ if(ev.key==='Tab' && !/INPUT|TEXTAREA|SELECT/.test((ev.target.tagName||'')) ){ ev.preventDefault(); toggleFocus(); } });

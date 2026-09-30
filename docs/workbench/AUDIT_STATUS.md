@@ -1,3 +1,14 @@
+## 2026-09-30 — Compact Workbench shell v2
+
+- The shared application shell is now one persistent compact global row instead of three permanently stacked context/workspace/subsection rows.
+- Primary workspaces remain directly visible on desktop; narrow layouts switch to a workspace menu without changing route ownership.
+- Active-workspace subsections move into a bounded dropdown, including nested domain/tool groups and existing mutation/legacy cues.
+- Project/source/target/client context remains available in a compact Context popover rather than consuming permanent vertical space.
+- Shared dense-workstation primitives now cover toolbars, panels, tabs, drawers, cards, control height, and common left/right panel widths.
+- `/zoneplot2` is the first dense consumer: it keeps the shared shell visible, removes its one-off hidden-header/menu hack, and reuses shared dense toolbar/panel/tab/drawer classes.
+- Navigation data and canonical IA ownership remain in `workbench/gui_shell.py`; this is a presentation/layout change, not another navigation model.
+- The next rollout targets Model Viewer / 3D Viewer, then Item Editor and evidence-heavy inspector pages after shell validation.
+
 ## 2026-09-30 — Feature Trace binding evidence hardening
 
 - Provider binding-index build failures are now distinct from a successfully built index that lacks a method; failed indexes emit `INDEX_UNAVAILABLE` rather than false `NOT_INDEXED` evidence.
