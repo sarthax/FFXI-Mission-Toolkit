@@ -117,14 +117,15 @@
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
           <strong>CSID {{ e.event_id }}</strong>
           <span class="chip mono">{{ e.event_hex }}</span>
-          <span class="chip">{{ e.count }} runtime obs.</span>
+          {% if e.client_defined %}<span class="chip">defined in client</span>{% endif %}
+          {% if e.runtime_observed %}<span class="pill match">{{ e.count }} runtime obs.</span>{% else %}<span class="pill unannotated">not observed in captures</span>{% endif %}
           {% if e.decompile_status == 'ok' %}<span class="pill match">client decompile OK</span>
           {% elif e.decompile_status == 'not_scanned' %}<span class="pill unannotated">client export not scanned</span>
           {% else %}<span class="pill mismatch">{{ e.decompile_status }}</span>{% endif %}
         </div>
-        {% if e.message_id %}
-        <div style="margin-top:5px">Observed message:
-          <a class="inline mono" href="/dialog?zone={{ profile.zone_folder|urlencode }}&q={{ e.message_id }}">{{ e.message_id }} / 0x{{ "%04X"|format(e.message_id) }}</a>
+        {% if e.runtime_message_ids %}
+        <div style="margin-top:5px">Observed message IDs:
+          {% for mid in e.runtime_message_ids %}<a class="chip mono" href="/dialog?zone={{ profile.zone_folder|urlencode }}&q={{ mid }}">{{ mid }}</a>{% endfor %}
         </div>
         {% endif %}
         {% if e.message_ids %}
