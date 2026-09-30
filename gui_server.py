@@ -6900,7 +6900,7 @@ async def itemedit_validate(request: Request):
     import item_edit
     b = await request.json()
     try:
-        return JSONResponse(item_edit.validate_item_changes(b["item_id"], b.get("tables", {})))
+        return JSONResponse(item_edit.validate_item_changes(b["item_id"], b.get("tables", {}), b.get("effects")))
     except Exception as ex:
         return JSONResponse({"error": str(ex)}, status_code=400)
 
@@ -6910,7 +6910,7 @@ async def itemedit_save_atomic(request: Request):
     b = await request.json()
     try:
         return JSONResponse(item_edit.save_item_atomic(
-            b["item_id"], b["tables"], b.get("comment", "")
+            b["item_id"], b.get("tables", {}), b.get("effects"), b.get("comment", "")
         ))
     except Exception as ex:
         return JSONResponse({"error": str(ex)}, status_code=400)
