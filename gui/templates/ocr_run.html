@@ -313,8 +313,8 @@
         {% set conf = r.confidence %}
         <tr data-conf="{{ conf if conf is not none else '' }}"{% if conf is not none and conf < 40 %} style="opacity:0.55;"{% endif %}>
           <td class="mono">
-            {% if r.video_timestamp_seconds is not none %}
-              {% set vt = r.video_timestamp_seconds %}
+            {% if r.get("video_timestamp_seconds") is not none %}
+              {% set vt = r.get("video_timestamp_seconds") %}
               {% if status.url %}<a class="inline" href="{{ status.url }}{% if '?' in status.url %}&{% else %}?{% endif %}t={{ vt|int }}s" target="_blank" rel="noopener">{{ "%.2f"|format(vt) }}s</a>{% else %}{{ "%.2f"|format(vt) }}s{% endif %}
               <div class="muted" style="font-size:10px;">{{ r.frame }}</div>
             {% else %}

@@ -2587,7 +2587,7 @@ def entity_detail(request: Request, npcid: int, q: str = "", page: int = 1):
     profile["behavior_summary"] = (
         _entity_behavior_summary(profile) if not profile.get("error") else {}
     )
-    if profile.get("behavior_summary", {}).get("source", {}).get("path"):
+    if ((profile.get("behavior_summary") or {}).get("source") or {}).get("path"):
         # Prefer the verified LSB path for UI handoff. Keep raw server-source lua_hits separately.
         profile["behavior_source"] = profile["behavior_summary"]["source"]["path"]
     profile["relationship_summary"] = (

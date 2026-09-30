@@ -67,6 +67,31 @@ def find_lsb_behavior_sources(root: Path, query: str, *, limit: int=100) -> list
         rows.append({"path":rel,"zone":zone,"role":role,"name":path.stem})
         if len(rows)>=max(1,min(limit,250)):
             break
+    if not rows:
+        # Many NPCs/mobs have no Lua file of their own (e.g. DefaultActions.lua tables, Zone.lua
+        # spawn tables), so fall back to a bounded content search for the literal name.
+        raw=query.strip().lower()
+        variants={raw,raw.replace(" ","_"),raw.replace("_"," ")}
+        for path in zones.rglob("*.lua"):
+            try:
+                text=path.read_text(encoding="utf-8",errors="replace").lower()
+            except OSError:
+                continue
+            if not any(v in text for v in variants):
+                continue
+            rel=path.relative_to(root).as_posix()
+            zone,_=_zone_parts(rel)
+            role=(
+                "mob" if "/mobs/" in rel else
+                "npc" if "/npcs/" in rel else
+                "instance" if "/instances/" in rel else
+                "zone" if path.name=="Zone.lua" else
+                "zone-global" if path.name=="globals.lua" else
+                "script"
+            )
+            rows.append({"path":rel,"zone":zone,"role":role,"name":path.stem,"match":"content"})
+            if len(rows)>=max(1,min(limit,250)):
+                break
     return sorted(rows,key=lambda row:(row["zone"] or "",row["role"],row["path"]))
 
 
