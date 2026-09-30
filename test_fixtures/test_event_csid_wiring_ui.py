@@ -25,6 +25,33 @@ end
         observed_options=[0, 1, 1],
         observed_params=["1, 2, 3", "4, 5, 6"],
     )
+    flow = explore_event.event_flow_summary(
+        """ExtData[1]->WorkLocal[3] = Work_Zone[4]
+SEND_EVENT_UPDATE: Send pending tag to server (packet 0x005B)
+References[2]
+""",
+        capture_rows=[
+            {"capture_id": 7, "seq": 10, "option": 1, "params_raw": "10, {20, 30}, 40"},
+            {"capture_id": 8, "seq": 11, "option": 2, "params_raw": "10, {20, 31}, 41"},
+        ],
+        server_refs=[
+            {"source": "lsb", "npc_script": "Fixture", "function": "entity.onTrigger",
+             "path": "scripts/zones/Test/npcs/Fixture.lua", "line": 10,
+             "calls": [{"method": "startEvent"}]},
+            {"source": "lsb", "npc_script": "Fixture", "function": "entity.onEventUpdate",
+             "path": "scripts/zones/Test/npcs/Fixture.lua", "line": 20,
+             "calls": [{"method": "updateEvent"}]},
+        ],
+    )
+    assert [r["label"] for r in flow["work_refs"]] == [
+        "References[2]", "WorkLocal[3]", "Work_Zone[4]"
+    ], flow
+    assert flow["update_markers"][0]["line"] == 2, flow
+    assert [o["value"] for o in flow["option_values"]] == [1, 2], flow
+    assert [slot["index"] for slot in flow["parameter_slots"]] == [0, 1, 2], flow
+    assert [v["value"] for v in flow["parameter_slots"][1]["values"]] == ["{20, 30}", "{20, 31}"], flow
+    assert [stage["stage"] for stage in flow["server_stages"]] == ["START", "UPDATE"], flow
+
     assert "player:startEvent(202)" in scaffold
     assert "observed option values: 0, 1" in scaffold
     assert "observed capture params (uninterpreted)" in scaffold
@@ -67,6 +94,10 @@ end
     assert "Copy Lua" in detail
     assert "Client decompile unavailable" in detail
     assert "independent server/runtime evidence" in detail
+    assert "Parameter / option / update flow" in detail
+    assert "Work variables and parameter positions remain uninterpreted" in detail
+    assert "flow_summary.parameter_slots" in detail
+    assert "explore_event.event_flow_summary(" in server
 
     print("Events/CSID wiring dossier regression: PASS")
     return 0

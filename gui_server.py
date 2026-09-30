@@ -4542,6 +4542,9 @@ def events_view(request: Request, zone: str, entity: int, csid: int):
     observed_options = [row["option"] for row in capture_rows if row.get("option") is not None]
     observed_params = [row["params_raw"] for row in capture_rows if row.get("params_raw")]
     scaffold = explore_event.lua_scaffold(csid, observed_options, observed_params)
+    flow_summary = explore_event.event_flow_summary(
+        result["decompiled"] or "", capture_rows, server_refs
+    )
 
     dialog_rows = []
     for msg_id, our_text, note in checks:
@@ -4556,7 +4559,7 @@ def events_view(request: Request, zone: str, entity: int, csid: int):
         "zone": zone, "zoneid": zoneid, "entity": entity, "entity_name": entity_name, "csid": csid,
         "decompiled": result["decompiled"], "error": result["error"], "checks": checks,
         "summary": summary, "server_refs": server_refs, "capture_rows": capture_rows,
-        "dialog_rows": dialog_rows, "scaffold": scaffold,
+        "dialog_rows": dialog_rows, "scaffold": scaffold, "flow_summary": flow_summary,
     })
 
 
