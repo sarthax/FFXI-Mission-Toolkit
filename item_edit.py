@@ -196,10 +196,18 @@ def _journal(comment, lines):
             f.write(l + "\n")
 
 
-def _save_backup(label, item_id, ops):
+def _save_backup(label, item_id, ops, client_snapshot="auto"):
     BACKUPS.mkdir(parents=True, exist_ok=True)
+    if client_snapshot == "auto":
+        try:
+            client_snapshot = dat.capture_client_record(item_id)
+        except Exception:
+            client_snapshot = None
     bid = time.strftime("%Y%m%d-%H%M%S") + f"-{len([1 for _ in BACKUPS.glob('*.json')]) % 1000:03d}"
-    b = {"id": bid, "ts": time.strftime("%Y-%m-%d %H:%M:%S"), "label": label, "item_id": item_id, "ops": ops}
+    b = {
+        "id": bid, "ts": time.strftime("%Y-%m-%d %H:%M:%S"), "label": label,
+        "item_id": item_id, "ops": ops, "client_record": client_snapshot,
+    }
     (BACKUPS / f"{bid}.json").write_text(json.dumps(b, default=lambda o: float(o) if isinstance(o, Decimal) else str(o)))
     return bid
 
@@ -1032,7 +1040,15 @@ def create_item(category, item_type, entry, comment=""):
         ops.append({"table": table, "key": [item_id], "row": None})
     db.commit(); db.close()
 
-    bid = _save_backup(f"create item {item_id} ({basic_row['name']}) in {category}", item_id, ops)
+    pre_client = {
+        "item_id": item_id, "category": client_result["category"], "dat_ui": client_result["dat_ui"],
+        "record_index": client_result["record_index"], "format": client_result["format"],
+        "record_hex": client_result["previous_record_hex"],
+    }
+    bid = _save_backup(
+        f"create item {item_id} ({basic_row['name']}) in {category}",
+        item_id, ops, client_snapshot=pre_client,
+    )
     _journal(comment or f"CREATE item {item_id} in {category}", [f"-- backup {bid}", f"-- client DAT: {client_result}"] + lines)
     return {"item_id": item_id, "backup": bid, "sql": "\n".join(lines), "client": client_result}
 
