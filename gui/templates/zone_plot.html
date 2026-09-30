@@ -127,6 +127,7 @@
       <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap"><button id="esave" disabled>Save to live DB</button><button id="erev">Revert</button><button id="ecopy">Copy SQL</button><button id="edel" style="color:#e74c3c">Delete entity&hellip;</button></div>
       <div class="muted" style="font-size:11px;margin-top:6px">"Save to live DB" above does NOT touch the checked-in sql/*.sql files -- a later dbtool.py reimport would silently revert it. Use this once you're happy with the change:</div>
       <div style="margin-top:4px"><button id="esyncsql">Sync to SQL file</button></div>
+<div id="esyncstatus" class="mono" style="font-size:11px;margin-top:4px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;color:#b0bec5">Live DB / SQL status: no saved edit this session</div>
       <div id="emsg" class="mono" style="font-size:11px;margin-top:4px;white-space:pre-wrap"></div>
     </div>
   </div>
@@ -710,7 +711,7 @@ function select(i, fly){
   const e=Z.entities[i];
   if(fly && !e.zero) frameSelected();
   updateHeadingArrow(); updateSelectionVisual();
-  if(typeof updateDirtyUI==='function') updateDirtyUI();
+  if(typeof updateDirtyUI==='function') updateDirtyUI(); if(typeof updateEntitySyncStatus==='function') updateEntitySyncStatus();
   $('frameSelBtn').disabled=!!e.zero;
   $('list').querySelectorAll('div').forEach(d=>d.classList.toggle('selected-row',+d.dataset.i===selected));
   const row=$('list').querySelector(`div[data-i="${i}"]`); if(row) row.scrollIntoView({block:'nearest'});
@@ -834,8 +835,8 @@ function refreshUndoUI(){
   $('undoBtn').disabled=undoStack.length===0; $('redoBtn').disabled=redoStack.length===0;
   $('undoStatus').textContent=undoStack.length ? `undo: ${undoStack[undoStack.length-1].label}` : (redoStack.length ? `redo: ${redoStack[redoStack.length-1].label}` : '');
 }
-function recordUndo(label, backup){
-  if(!backup) return; undoStack.push({label,backup}); if(undoStack.length>80) undoStack.shift(); redoStack.length=0; refreshUndoUI();
+function recordUndo(label, backup, syncKey=null){
+  if(!backup) return; undoStack.push({label,backup,syncKey}); if(undoStack.length>80) undoStack.shift(); redoStack.length=0; refreshUndoUI();
 }
 async function restoreHistory(source,target,verb){
   if(!source.length) return;
@@ -847,7 +848,8 @@ async function restoreHistory(source,target,verb){
   const r=await fetch('/zoneplot/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:action.backup,exact:false})});
   const j=await r.json();
   if(j.error){ source.push(action); refreshUndoUI(); alert(`${verb} failed: ${j.error}`); return; }
-  target.push({label:action.label,backup:j.pre_restore_backup});
+  target.push({label:action.label,backup:j.pre_restore_backup,syncKey:action.syncKey});
+  if(action.syncKey){ entitySyncState.set(action.syncKey,{db:'modified',sql:'not synced'}); updateEntitySyncStatus(); }
   refreshUndoUI();
   if(Z) await loadZone();
   $('undoStatus').textContent=`${verb}: ${action.label}`;
@@ -879,7 +881,7 @@ function restorePreviewFromOrig(){
 function loadEditor(i){ const e=Z.entities[i]; if(!e){ $('ed').hidden=true; $('ed-none').hidden=false; return; }
   $('ed').hidden=false; $('ed-none').hidden=true; orig={x:e.x,y:e.y,z:e.z,r:e.r||0};
   $('ed-title').textContent=`${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${e.id}  ${e.n||e.g}`;
-  $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r||0; $('er-dir').textContent=rotText(e.r||0); $('emsg').textContent=''; $('ecomment').value=''; updateDirtyUI();
+  $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r||0; $('er-dir').textContent=rotText(e.r||0); $('emsg').textContent=''; $('ecomment').value=''; updateDirtyUI(); updateEntitySyncStatus();
   if (e.k==='n' || e.k==='d'){
     $('ed-anim').hidden=false;
     setAnimSelect('ean','eanRaw', e.an||0);
@@ -1015,7 +1017,7 @@ $('eanimsave').onclick=async()=>{ const e=Z.entities[selected]; if(!e) return;
   const animation=animSelectVal('ean','eanRaw'), animationsub=animSelectVal('easub','easubRaw');
   const r=await fetch('/zoneplot/animate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:e.k,id:e.id,animation,animationsub,comment:$('ecomment').value})}); const j=await r.json();
   if(j.error){ $('eanimmsg').textContent='ERROR: '+j.error; return; }
-  e.an=animation; e.asub=animationsub; lastTouched={k:e.k,id:e.id}; recordUndo(`animation ${e.id}`,j.backup);
+  e.an=animation; e.asub=animationsub; lastTouched={k:e.k,id:e.id}; markDbModified(e.k,e.id); recordUndo(`animation ${e.id}`,j.backup,entityKey(e.k,e.id));
   $('eanimmsg').textContent=`Saved to live DB (backup ${j.backup}).\n`+j.sql; };
 function previewRotation(){
   if(selected<0) return;
@@ -1072,21 +1074,35 @@ $('frameAllBtn').onclick=()=>{ if(Z) frameAll(); };
 $('erev').onclick=()=>restorePreviewFromOrig();
 let lastSql='';
 let lastTouched=null; // {k,id} of the last entity successfully written to the live DB -- what "Sync to SQL file" targets
+const entitySyncState=new Map();
+const entityKey=(k,id)=>`${k}:${id}`;
+function markDbModified(k,id){ entitySyncState.set(entityKey(k,id),{db:'modified',sql:'not synced'}); updateEntitySyncStatus(); }
+function markSqlSynced(k,id){ entitySyncState.set(entityKey(k,id),{db:'modified',sql:'synced'}); updateEntitySyncStatus(); }
+function updateEntitySyncStatus(){
+  const el=$('esyncstatus'); if(!el) return;
+  const e=Z&&selected>=0?Z.entities[selected]:null;
+  if(!e){ el.textContent='Live DB / SQL status: no entity selected'; el.style.color='#b0bec5'; return; }
+  const st=entitySyncState.get(entityKey(e.k,e.id));
+  if(!st){ el.textContent='Live DB / SQL status: no saved edit this session'; el.style.color='#b0bec5'; return; }
+  if(st.sql==='synced'){ el.textContent='Live DB ✓   SQL source ✓'; el.style.color='#81c784'; }
+  else { el.textContent='Live DB: modified   SQL source: NOT SYNCED'; el.style.color='#ffb74d'; }
+}
 $('esave').onclick=async()=>{ const e=Z.entities[selected]; if(!e) return; previewEdit();
   const r=await fetch('/zoneplot/edit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:e.k,id:e.id,x:e.x,y:e.y,z:e.z,r:e.r,comment:$('ecomment').value})}); const j=await r.json();
   if(j.error){ $('emsg').textContent='ERROR: '+j.error; return; }
-  lastSql=j.sql; orig={x:e.x,y:e.y,z:e.z,r:e.r}; lastTouched={k:e.k,id:e.id}; recordUndo(`move/rotate ${e.id}`,j.backup); $('emsg').textContent=`Saved to live DB (backup ${j.backup}).\n`+j.sql; updateDirtyUI(); await computeReach(); rebuild(); select(selected,false); };
+  lastSql=j.sql; orig={x:e.x,y:e.y,z:e.z,r:e.r}; lastTouched={k:e.k,id:e.id}; markDbModified(e.k,e.id); recordUndo(`move/rotate ${e.id}`,j.backup,entityKey(e.k,e.id)); $('emsg').textContent=`Saved to live DB (backup ${j.backup}).\n`+j.sql; updateDirtyUI(); await computeReach(); rebuild(); select(selected,false); };
 $('ecopy').onclick=()=>{ if(lastSql) navigator.clipboard.writeText(lastSql); };
 $('edel').onclick=async()=>{ const e=Z.entities[selected]; if(!e) return;
   if(!confirm(`Delete ${e.k==='m'?'MOB':'NPC'} ${e.id} (${e.n||e.g}) from the live DB?`)) return;
   const touched={k:e.k,id:e.id};
   const r=await fetch('/zoneplot/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:e.k,id:e.id,comment:$('ecomment').value})}); const j=await r.json();
   if(j.error){ $('emsg').textContent='ERROR: '+j.error; return; }
-  lastTouched=touched; recordUndo(`delete ${e.id}`,j.backup);
+  lastTouched=touched; markDbModified(touched.k,touched.id); recordUndo(`delete ${e.id}`,j.backup,entityKey(touched.k,touched.id));
   $('emsg').textContent=`Deleted (backup ${j.backup}).${j.warning?'\nWARNING: '+j.warning:''}\n`+j.sql;
   Z.entities.splice(selected,1); selected=-1; loadEditor(-1); await computeReach(); rebuild(); };
 $('esyncsql').onclick=async()=>{ if(!lastTouched){ $('emsg').textContent='Nothing saved to the live DB yet this session -- click "Save to live DB" (or Delete) first.'; return; }
   const r=await fetch('/zoneplot/sync_sql/entity',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lastTouched)}); const j=await r.json();
+  if(!j.error) markSqlSynced(lastTouched.k,lastTouched.id);
   $('emsg').textContent = j.error ? 'SYNC ERROR: '+j.error : `SQL file ${j.action}: ${j.file}`; };
 $('edropsyncsql').onclick=()=>syncDropRowSql();
 function screenToWorld(ev){
@@ -1153,7 +1169,7 @@ $('aadd').onclick=async()=>{ if(!aSel||!Z){ $('amsg').textContent='Pick a source
   const r=await fetch('/zoneplot/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const j=await r.json();
   if(j.error){ $('amsg').textContent='ERROR: '+j.error; return; }
   $('amsg').textContent=`Added as id ${j.id} (backup ${j.backup})${j.instance?` -- linked to instance ${j.instance}`:''}.\n`+j.sql;
-  lastTouched={k:kind,id:j.id}; recordUndo(`add ${j.id}`,j.backup);
+  lastTouched={k:kind,id:j.id}; markDbModified(kind,j.id); recordUndo(`add ${j.id}`,j.backup,entityKey(kind,j.id));
   addMarker.visible=false;
   await loadZone();
   const idx=Z.entities.findIndex(e=>e.k===kind && +e.id===+j.id);
