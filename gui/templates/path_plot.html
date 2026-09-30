@@ -1,11 +1,25 @@
 {% extends "base.html" %}
 {% block title %}Path Plot{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}capture-path-page{% endblock %}
 
 {% block content %}
+<style>
+main.capture-path-page{padding:8px 10px 24px}
+#plot-viewport{width:min(100%,1100px);max-width:none!important}
+.capture-path-lower{display:grid!important;grid-template-columns:minmax(360px,.8fr) minmax(360px,1.2fr);gap:10px!important}
+@media(max-width:900px){.capture-path-lower{grid-template-columns:1fr}}
+</style>
 {% set qs_id = ('pc=1&zone_db=' + (zone_db|urlencode)) if pc else ('entity_id=' + entity_id|string) %}
-<h1>Path plot {% if pc %}<span class="chip">PC trace</span>{% else %}<span class="chip mono">{{ entity_id }}</span>{% endif %}</h1>
-<p><a class="inline" href="/captures/{{ capture_id }}">&larr; back to capture #{{ capture_id }}</a>
-  {% if zoneid %}&nbsp;&middot;&nbsp; <a class="inline" href="/zones/{{ zoneid }}/view3d?capture_id={{ capture_id }}&{{ qs_id }}">view in 3D &rarr;</a>{% endif %}</p>
+<div class="dense-toolbar">
+  <a class="chip" href="/captures/{{ capture_id }}">&larr; Capture</a>
+  <strong>Path Plot</strong>
+  {% if pc %}<span class="chip">PC trace</span>{% else %}<span class="chip mono">{{ entity_id }}</span>{% endif %}
+  {% if entry %}<span class="muted">{{ entry.name or 'unknown' }} · {{ entry.zone_db }}</span>{% endif %}
+  <span class="sp"></span>
+  <a class="chip" href="/captures/plot_all?capture_id={{ capture_id }}">All paths</a>
+  {% if zoneid %}<a class="chip" href="/zones/{{ zoneid }}/view3d?capture_id={{ capture_id }}&{{ qs_id }}">3D view</a>{% endif %}
+</div>
 
 {% if entry %}
 <p>{% if pc %}Capturing character's own path{% else %}{{ entry.name or '?' }}{% endif %} in <strong>{{ entry.zone_db }}</strong>
@@ -15,7 +29,7 @@
 {% if topdown_available and svg %}
 <h2>Aligned overlay</h2>
 
-<form method="get" style="display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
+<form method="get" class="dense-toolbar" style="margin:6px 0;flex-wrap:wrap;">
   <input type="hidden" name="capture_id" value="{{ capture_id }}">
   {% if pc %}
   <input type="hidden" name="pc" value="1">
@@ -38,16 +52,11 @@
   {% endif %}
 </form>
 
-<div id="plot-viewport" style="overflow:hidden; border:1px solid var(--border); border-radius:8px; max-width:520px; cursor:grab; background:var(--code-bg);">
+<div id="plot-viewport" style="overflow:hidden; border:1px solid var(--border); border-radius:8px; cursor:grab; background:var(--code-bg);">
   <img id="plot-img" src="/captures/plot.png?capture_id={{ capture_id }}&{{ qs_id }}&pad_yalms={{ pad_yalms }}&detail={{ detail }}"
        style="display:block; width:100%; transform-origin:0 0; user-select:none;" draggable="false">
 </div>
-<p class="muted">Scroll to zoom, drag to pan, double-click to reset. Green = first position, red =
-  last. Drawn directly onto a real top-down silhouette of the zone's own collision mesh (client
-  geometry, not the decorative in-game minimap) -- coordinate-aligned by construction, empirically
-  verified against real capture data (avg. 1.33 units from nearest mesh vertex vs. 15-33 for the
-  wrong axis-sign combinations). Zones are often stitched together from several sub-areas, so this
-  crops to the path's own bounding box by default rather than showing the whole zone.</p>
+<details class="dense-card" style="margin:6px 0;width:min(100%,1100px)"><summary>Plot controls / coordinate notes</summary><div class="muted" style="padding-top:5px">Scroll to zoom, drag to pan, double-click to reset. Green is the first position; red is the last. The aligned overlay uses the real client collision-mesh silhouette and crops to the path bounds by default.</div></details>
 <script>
 (function() {
   const viewport = document.getElementById('plot-viewport');
@@ -87,7 +96,7 @@
 </script>
 {% endif %}
 
-<div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start;">
+<div class="capture-path-lower" style="align-items:start;">
   <div>
     <h2>Path (autoscaled to real x/z coordinates)</h2>
     {% if svg %}
