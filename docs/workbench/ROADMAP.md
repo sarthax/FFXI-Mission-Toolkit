@@ -798,6 +798,10 @@ Additional QOL backlog:
 - [x] Ghost preview before add, including heading and instance linkage.
 
 
+### 2026-09-29 Animation evidence correlation backlog
+
+- [ ] Correlate actual model DAT animation schedules + capture/runtime evidence + LSB script usage into model-specific animation/subanimation labels with provenance and explicit observed/correlated/verified states; do not promote global numeric labels without model-family evidence.
+
 ### 2026-09-29 Item Editor strengthening / quality-of-life backlog
 
 Priority stack:
