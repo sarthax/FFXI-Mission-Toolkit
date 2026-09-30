@@ -43,6 +43,9 @@ STRIDE_BY_FORMAT = {v: k for k, v in FORMAT_BY_STRIDE.items()}
 ICON_OFFSET = 0x280
 ICON_DATA = ICON_OFFSET + 4
 TERMINATOR = 0xFF
+FURNITURE_DAT = 'ROM/74/21.DAT'  # upstream FFXI-Resources scripts/items/dats.yaml
+FUD_FIRST_ENTRY = 0x170
+FUD_ENTRY_SIZE = 8
 
 LAYOUTS = ('general', 'usable', 'puppet', 'armor', 'weapon', 'maze', 'instinct', 'roe')
 TYPE_LAYOUT = {0: 'general', 1: 'usable', 3: 'armor', 4: 'weapon', 5: 'puppet', 6: 'maze'}
@@ -2233,6 +2236,93 @@ def item_icon_png(item_id: int) -> bytes | None:
     return bitmap_a_to_png(item.icon_data) if item is not None else None
 
 
+def furniture_properties(item_id: int) -> dict | None:
+    """Correlate the authoritative furniture-properties DAT (ROM/74/21.DAT).
+
+    Layout/source mapping follows the vendored/upstream FFXI-Resources parser:
+    entries start at 0x170, are 8 bytes each, and map index <512 directly to
+    item id; later entries map to item id index+3072.
+    """
+    path = dat_path(FURNITURE_DAT)
+    if not path.exists():
+        return None
+    data = path.read_bytes()
+    max_entries = max(0, (len(data) - FUD_FIRST_ENTRY) // FUD_ENTRY_SIZE)
+    for idx in range(max_entries):
+        mapped_id = idx if idx < 512 else idx + 3072
+        if mapped_id != int(item_id):
+            continue
+        off = FUD_FIRST_ENTRY + idx * FUD_ENTRY_SIZE
+        info, model_no, size_x, size_z, height = struct.unpack_from("<HHBBH", data, off)
+        if not any((info, model_no, size_x, size_z, height)):
+            return None
+        placement = []
+        if info & 0x01:
+            placement.append("CanBeHung")
+        if info & 0x02:
+            placement.append("CanBePut")
+        if info & 0x04:
+            placement.append("CanPutOn")
+        return {
+            "available": True,
+            "dat_ui": FURNITURE_DAT,
+            "entry_index": idx,
+            "entry_offset": off,
+            "entry_offset_hex": f"0x{off:X}",
+            "info_raw": info,
+            "model_no": model_no,
+            "size_x": size_x,
+            "size_z": size_z,
+            "height": height,
+            "placement_flags": placement,
+        }
+    return None
+
+
+def item_record_layout_audit() -> dict:
+    """Source-backed legacy-vs-retail structural audit; assigns no meaning to unknown bytes."""
+    layouts = {}
+    for layout in LAYOUTS:
+        legacy = fields_for(layout, FORMAT_LEGACY)
+        retail = fields_for(layout, FORMAT_RETAIL)
+        names = sorted(set(legacy) | set(retail))
+        rows = []
+        for name in names:
+            lo = legacy.get(name)
+            ro = retail.get(name)
+            rows.append({
+                "field": name,
+                "legacy_offset": lo[0] if lo else None,
+                "retail_offset": ro[0] if ro else None,
+                "shift": (ro[0] - lo[0]) if lo and ro else None,
+                "legacy_storage": lo[1] if lo else None,
+                "retail_storage": ro[1] if ro else None,
+            })
+        layouts[layout] = rows
+    return {
+        "legacy_stride": STRIDE_LEGACY,
+        "retail_stride": STRIDE_RETAIL,
+        "growth_bytes": STRIDE_RETAIL - STRIDE_LEGACY,
+        "data_icon_boundary": ICON_OFFSET,
+        "icon_size_offset": ICON_OFFSET,
+        "icon_data_offset": ICON_DATA,
+        "legacy_terminator_offset": STRIDE_LEGACY - 1,
+        "retail_terminator_offset": STRIDE_RETAIL - 1,
+        "legacy_icon_capacity": STRIDE_LEGACY - ICON_DATA - 1,
+        "retail_icon_capacity": STRIDE_RETAIL - ICON_DATA - 1,
+        "extra_tail_capacity": STRIDE_RETAIL - STRIDE_LEGACY,
+        "layouts": layouts,
+        "conclusion": (
+            "Confirmed named item fields remain before the fixed 0x280 icon boundary, with "
+            "retail-specific offset shifts in that header/data region. The icon size/data anchor "
+            "remains 0x280/0x284 while the record terminator moves from 0xBFF to 0x13FF. "
+            "No additional named post-icon fields are established by the current source-backed "
+            "schema; the extra 0x800 bytes are therefore treated as additional icon/padding tail "
+            "capacity until binary evidence proves otherwise."
+        ),
+    }
+
+
 def client_record_inspector(item_id: int) -> dict:
     """Read-only, source-backed Item DAT inspector. Unknown bytes stay explicitly unresolved."""
     item = read_client_item(int(item_id))
@@ -2261,10 +2351,12 @@ def client_record_inspector(item_id: int) -> dict:
     d["slots_decoded"] = decode_slots(item.slots) if item.slots else []
     d["targets_decoded"] = [label for bit, label in VALID_TARGETS.items() if item.targets & bit]
     d["element_charge_decoded"] = decode_element_slots(item.element_charge) if item.element_charge else {}
+    furniture = furniture_properties(int(item_id))
     return {
         "available": True,
         "record": d,
         "icon": icon,
+        "furniture": furniture,
         "known_layout_fields": known_layout,
         "record_sha256": hashlib.sha256(rec).hexdigest() if rec is not None else None,
         "layout": layout,
