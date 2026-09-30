@@ -59,6 +59,7 @@ from workbench.core.services.scripted_behavior_visualizer import (
 )
 from workbench.core.services import timeline_alignment, packet_correlation
 from workbench.core.services import capture_integrity, capture_spatial
+from workbench.core.services.server_catalog_identity import sync_server_catalog_entities
 from workbench.runtime.interaction_reconstruction import reconstruct_interaction_candidates
 from workbench.analyzers.server import lua_events
 import feature_checker
@@ -265,6 +266,7 @@ def rebuild_lsb_index() -> str:
     con = get_con()
     build_lsb_index.init_db(con)
     build_lsb_index.build_all(con)
+    sync_server_catalog_entities(con, WORKBENCH_DB)
     lsb_events = con.execute("SELECT COUNT(*) FROM npc_event_refs WHERE source='lsb'").fetchone()[0]
     topaz_events = con.execute("SELECT COUNT(*) FROM npc_event_refs WHERE source='topaz'").fetchone()[0]
     lsb_items = con.execute("SELECT COUNT(*) FROM lsb_item_basic").fetchone()[0]
@@ -280,6 +282,7 @@ def rebuild_dsp_index() -> str:
     con = get_con()
     build_dsp_index.init_db(con)
     build_dsp_index.build_all(con)
+    sync_server_catalog_entities(con, WORKBENCH_DB)
     dsp_events = con.execute("SELECT COUNT(*) FROM npc_event_refs WHERE source='dsp'").fetchone()[0]
     dsp_items = con.execute("SELECT COUNT(*) FROM dsp_item_basic").fetchone()[0]
     con.close()
@@ -294,6 +297,7 @@ def rebuild_topaz_index() -> str:
     con = get_con()
     build_topaz_index.init_db(con)
     build_topaz_index.build_all(con)
+    sync_server_catalog_entities(con, WORKBENCH_DB)
     topaz_items = con.execute("SELECT COUNT(*) FROM topaz_item_basic").fetchone()[0]
     topaz_npcs = con.execute("SELECT COUNT(*) FROM topaz_npc_list").fetchone()[0]
     con.close()
@@ -318,6 +322,7 @@ def rebuild_sql_index() -> int:
     con = get_con()
     build_sql_index.init_db(con)
     build_sql_index.build_all(con)
+    sync_server_catalog_entities(con, WORKBENCH_DB)
     con.commit()
     count = con.execute("SELECT COUNT(*) FROM sql_npc_list").fetchone()[0]
     con.close()
