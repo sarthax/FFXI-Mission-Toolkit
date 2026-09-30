@@ -3940,6 +3940,30 @@ def feature_trace_page(
     })
 
 
+@app.get("/features/trace/path.json")
+def feature_trace_path_detail(q: str = ""):
+    """Return bounded entity resolution/Implementation Path diagnostics for troubleshooting."""
+    query=q.strip()
+    if not query:
+        return JSONResponse({"error":"q is required"},status_code=400)
+    con=_workbench_graph_connection()
+    catalog_con=get_con()
+    if con is None:
+        catalog_con.close()
+        return JSONResponse({"error":"Canonical Workbench graph is not available."},status_code=404)
+    try:
+        diagnostics=feature_trace.entity_query_diagnostics(con,catalog_con,query)
+        path=feature_trace.entity_implementation_path(con,catalog_con,query)
+        return JSONResponse({
+            "query":query,
+            "diagnostics":diagnostics,
+            "implementation_path":path,
+        })
+    finally:
+        con.close()
+        catalog_con.close()
+
+
 @app.get("/features/trace/runtime.json")
 def feature_trace_runtime_detail(
     root: str,
