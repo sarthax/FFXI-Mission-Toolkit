@@ -130,13 +130,28 @@
 </div>
 <div id="bulk-panel" hidden style="border:1px solid var(--border);border-radius:4px;padding:6px;margin:5px 0">
   <div class="mono" id="bulk-count" style="font-size:11px;margin-bottom:4px">1 selected</div>
-  <div class="muted" style="font-size:10px;margin-bottom:4px">Ctrl/Cmd-click dots or list rows to add/remove. Bulk transforms are relative offsets only; relative spacing is preserved.</div>
-  <label>ΔX <input type="number" step="0.1" id="bulk-dx" value="0"></label>
-  <label>ΔY <input type="number" step="0.1" id="bulk-dy" value="0"></label>
-  <label>ΔZ <input type="number" step="0.1" id="bulk-dz" value="0"></label>
-  <label>ΔRot <input type="number" step="1" id="bulk-dr" value="0"></label>
+  <div class="muted" style="font-size:10px;margin-bottom:6px">Ctrl/Cmd-click dots or list rows to add/remove. Multi-select defaults to moving the group while preserving relative spacing; offsets remain available for precise nudges.</div>
+  <div style="border:1px solid rgba(255,255,255,.12);border-radius:4px;padding:5px;margin-bottom:6px">
+    <div style="font-weight:600;font-size:11px;margin-bottom:3px">Move Group</div>
+    <label>Anchor <select id="bulk-anchor"><option value="center">Selection center</option><option value="primary">Primary selected entity</option></select></label>
+    <label>Target X <input type="number" step="0.1" id="bulk-x"></label>
+    <label>Target Y <input type="number" step="0.1" id="bulk-y"></label>
+    <label>Target Z <input type="number" step="0.1" id="bulk-z"></label>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
+      <button id="bulk-move-preview" type="button">Preview move to coordinates</button>
+      <button id="bulk-pick" type="button">Pick target on map</button>
+    </div>
+    <div class="muted" style="font-size:9px;margin-top:3px">The transform gizmo also moves the whole selection when 2+ entities are selected.</div>
+  </div>
+  <div style="border:1px solid rgba(255,255,255,.12);border-radius:4px;padding:5px;margin-bottom:6px">
+    <div style="font-weight:600;font-size:11px;margin-bottom:3px">Nudge / Offset</div>
+    <label>ΔX <input type="number" step="0.1" id="bulk-dx" value="0"></label>
+    <label>ΔY <input type="number" step="0.1" id="bulk-dy" value="0"></label>
+    <label>ΔZ <input type="number" step="0.1" id="bulk-dz" value="0"></label>
+    <label>ΔRot <input type="number" step="1" id="bulk-dr" value="0"></label>
+    <button id="bulk-preview" type="button" style="margin-top:4px">Preview offset</button>
+  </div>
   <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
-    <button id="bulk-preview" type="button">Preview bulk</button>
     <button id="bulk-save" type="button" disabled>Save bulk to live DB</button>
     <button id="bulk-sync" type="button">Sync selection to SQL files</button>
     <button id="bulk-revert" type="button" disabled>Revert bulk preview</button>
@@ -430,13 +445,40 @@ let Z = null, R = null, meshObj = null, navMesh = null, inst = null, anchor = nu
 const multiSelected=new Set();
 let bulkOrig=new Map();
 let bulkPreviewActive=false;
+let bulkPickMode=false;
 function multiCount(){ return multiSelected.size; }
+function bulkAnchor(source=null){
+  if(!Z || multiSelected.size<2) return null;
+  const rows=[...multiSelected].map(i=>{
+    const e=Z.entities[i], o=source?.get(i);
+    return o || (e ? {x:e.x,y:e.y,z:e.z,r:e.r} : null);
+  }).filter(Boolean);
+  if(!rows.length) return null;
+  if($('bulk-anchor')?.value==='primary' && selected>=0){
+    const e=source?.get(selected) || Z.entities[selected];
+    if(e) return {x:+e.x,y:+e.y,z:+e.z};
+  }
+  return {x:rows.reduce((a,e)=>a+(+e.x||0),0)/rows.length,y:rows.reduce((a,e)=>a+(+e.y||0),0)/rows.length,z:rows.reduce((a,e)=>a+(+e.z||0),0)/rows.length};
+}
+function setBulkTargetFromSelection(){
+  const a=bulkAnchor(); if(!a) return;
+  $('bulk-x').value=a.x.toFixed(3); $('bulk-y').value=a.y.toFixed(3); $('bulk-z').value=a.z.toFixed(3);
+}
+function setBulkPickMode(on){
+  bulkPickMode=!!on;
+  $('bulk-pick').textContent=bulkPickMode?'Click map for target…':'Pick target on map';
+  $('bulk-pick').style.fontWeight=bulkPickMode?'700':'';
+  if(bulkPickMode) $('bulk-msg').textContent='Pick mode: click the zone mesh/navmesh to preview the whole selection at that target.';
+}
 function syncMultiUI(){
   const n=multiCount();
   $('bulk-panel').hidden=n<2;
   $('bulk-count').textContent=`${n} selected · primary ${selected>=0&&Z?.entities[selected]?Z.entities[selected].id:'none'}`;
   $('bulk-save').disabled=!bulkPreviewActive;
   $('bulk-revert').disabled=!bulkPreviewActive;
+  if(n<2) setBulkPickMode(false); else if(!bulkPreviewActive) setBulkTargetFromSelection();
+  if(n>=2 && typeof setGizmoMode==='function') setGizmoMode('translate');
+  if(typeof syncGizmoFromSelection==='function') syncGizmoFromSelection();
   $('list').querySelectorAll('.entity-row[data-i]').forEach(d=>{
     const i=+d.dataset.i; d.classList.toggle('selected-row',i===selected); d.classList.toggle('multi-row',multiSelected.has(i)&&i!==selected);
   });
@@ -547,12 +589,19 @@ transformControls.addEventListener('dragging-changed',ev=>{ controls.enabled=!ev
 let gizmoPreviewQueued=false;
 function syncGizmoFromSelection(){
   if(!Z || selected<0 || !Z.entities[selected] || Z.entities[selected].zero || !$('gizmoEnabled')?.checked){ transformControls.detach(); return; }
-  const e=Z.entities[selected], p=P(e), a=rotInfo(e.r).raw*Math.PI*2/256;
-  transformProxy.position.copy(p); transformProxy.rotation.set(0,-a,0); transformProxy.scale.set(1,1,1);
+  if(multiSelected.size>=2){
+    const a=bulkAnchor(); if(!a){ transformControls.detach(); return; }
+    transformProxy.position.set(a.x,-a.y,-a.z); transformProxy.rotation.set(0,0,0); transformProxy.scale.set(1,1,1);
+    transformControls.setMode('translate'); transformControls.showX=true; transformControls.showY=true; transformControls.showZ=true;
+  } else {
+    const e=Z.entities[selected], p=P(e), a=rotInfo(e.r).raw*Math.PI*2/256;
+    transformProxy.position.copy(p); transformProxy.rotation.set(0,-a,0); transformProxy.scale.set(1,1,1);
+  }
   transformControls.attach(transformProxy);
 }
 function applyGizmoPreview(){
   gizmoPreviewQueued=false; if(selected<0 || !Z?.entities[selected]) return;
+  if(multiSelected.size>=2){ previewBulkMoveTo(+transformProxy.position.x,+(-transformProxy.position.y),+(-transformProxy.position.z),'gizmo'); return; }
   const e=Z.entities[selected];
   e.x=+transformProxy.position.x.toFixed(3); e.y=+(-transformProxy.position.y).toFixed(3); e.z=+(-transformProxy.position.z).toFixed(3);
   const turns=(((-transformProxy.rotation.y)/(Math.PI*2))%1+1)%1;
@@ -1059,7 +1108,7 @@ function toggleMultiSelect(i,fly=false){
     multiSelected.add(i);
     if(selected<0){ selected=i; loadEditor(i); }
   }
-  bulkOrig.clear(); bulkPreviewActive=false;
+  bulkOrig.clear(); bulkPreviewActive=false; setBulkPickMode(false);
   rebuild(); syncMultiUI();
   if(fly && selected>=0) frameSelected();
 }
@@ -1395,6 +1444,29 @@ function beginBulkOrig(){
     const e=Z?.entities[i]; if(e) bulkOrig.set(i,{x:e.x,y:e.y,z:e.z,r:e.r});
   }
 }
+function finishBulkPreview(message){
+  bulkPreviewActive=true;
+  if(selected>=0 && Z.entities[selected]){
+    const e=Z.entities[selected];
+    $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r; $('er-dir').textContent=rotText(e.r);
+  }
+  rebuild(); syncMultiUI(); updateHeadingArrow(); updateSelectionVisual(); updateDirtyUI();
+  $('bulk-msg').textContent=message;
+}
+function previewBulkMoveTo(x,y,z,source='coordinates'){
+  if(multiSelected.size<2) return;
+  if(![x,y,z].every(Number.isFinite)){ $('bulk-msg').textContent='Enter valid target X / Y / Z coordinates.'; return; }
+  beginBulkOrig();
+  const a=bulkAnchor(bulkOrig); if(!a) return;
+  const dx=x-a.x, dy=y-a.y, dz=z-a.z;
+  for(const [i,o] of bulkOrig){
+    const e=Z.entities[i];
+    e.x=+(o.x+dx).toFixed(3); e.y=+(o.y+dy).toFixed(3); e.z=+(o.z+dz).toFixed(3); e.r=o.r;
+  }
+  $('bulk-x').value=(+x).toFixed(3); $('bulk-y').value=(+y).toFixed(3); $('bulk-z').value=(+z).toFixed(3);
+  finishBulkPreview(`Move Group preview (${source}): anchor → (${(+x).toFixed(3)}, ${(+y).toFixed(3)}, ${(+z).toFixed(3)}) · spacing preserved across ${multiSelected.size} entities.`);
+}
+function previewBulkMoveCoordinates(){ previewBulkMoveTo(+$('bulk-x').value,+$('bulk-y').value,+$('bulk-z').value,'coordinates'); }
 function previewBulkTransform(){
   if(multiSelected.size<2) return;
   beginBulkOrig();
@@ -1403,13 +1475,7 @@ function previewBulkTransform(){
     const e=Z.entities[i];
     e.x=+(o.x+dx).toFixed(3); e.y=+(o.y+dy).toFixed(3); e.z=+(o.z+dz).toFixed(3); e.r=((o.r+dr)%256+256)%256;
   }
-  bulkPreviewActive=true;
-  if(selected>=0 && Z.entities[selected]){
-    const e=Z.entities[selected];
-    $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r; $('er-dir').textContent=rotText(e.r);
-  }
-  rebuild(); syncMultiUI(); updateHeadingArrow(); updateSelectionVisual(); updateDirtyUI();
-  $('bulk-msg').textContent=`Preview: Δ(${dx}, ${dy}, ${dz}) rot ${dr>=0?'+':''}${dr} across ${multiSelected.size} entities.`;
+  finishBulkPreview(`Offset preview: Δ(${dx}, ${dy}, ${dz}) rot ${dr>=0?'+':''}${dr} across ${multiSelected.size} entities.`);
 }
 async function saveBulkTransform(){
   if(!bulkPreviewActive || multiSelected.size<2) return;
@@ -1425,6 +1491,9 @@ async function saveBulkTransform(){
   $('bulk-msg').textContent=`Saved ${j.count} entities to live DB (backup ${j.backup}).`;
   syncMultiUI(); updateDirtyUI(); await computeReach(); rebuild();
 }
+$('bulk-move-preview').onclick=previewBulkMoveCoordinates;
+$('bulk-pick').onclick=()=>setBulkPickMode(!bulkPickMode);
+$('bulk-anchor').onchange=()=>{ if(!bulkPreviewActive) setBulkTargetFromSelection(); else $('bulk-msg').textContent='Anchor changed. Revert or save the current preview before starting another placement.'; };
 $('bulk-preview').onclick=previewBulkTransform;
 $('bulk-save').onclick=saveBulkTransform;
 $('bulk-sync').onclick=async()=>{
@@ -1833,6 +1902,11 @@ renderer.domElement.addEventListener('click',ev=>{
     if(!measureStart){ measureStart=p.clone(); $('measureOut').textContent='Start set; click second point.'; }
     else { setMeasurement(measureStart,p); measureMode=false; $('measureBtn').textContent='Measure'; }
     return;
+  }
+  if(bulkPickMode && multiSelected.size>=2 && !$('tab-edit').hidden){
+    const p=screenToWorld(ev);
+    if(!p){ $('bulk-msg').textContent='No mesh/navmesh under that click; enter target coordinates instead.'; return; }
+    previewBulkMoveTo(p.x,-p.y,-p.z,'map click'); setBulkPickMode(false); return;
   }
   if($('eplace').checked && !$('tab-edit').hidden && selected>=0){ const p=screenToWorld(ev); if(!p) return;
     $('ex').value=p.x.toFixed(3); $('ey').value=(-p.y).toFixed(3); $('ez').value=(-p.z).toFixed(3); previewEdit(); }
