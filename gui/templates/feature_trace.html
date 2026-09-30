@@ -86,8 +86,14 @@
       {% if implementation_path.trace_summary %}
       <div class="box"><div class="n">{{ implementation_path.trace_summary.semantic_relationship_count }}</div><div class="l">Semantic trace edges</div></div>
       <div class="box"><div class="n">{{ implementation_path.trace_summary.runtime_observation_count }}</div><div class="l">Runtime observations</div></div>
+      <div class="box"><div class="n">{{ implementation_path.trace_summary.runtime_capture_count }}</div><div class="l">Runtime captures</div></div>
+      <div class="box"><div class="n">{{ implementation_path.trace_summary.runtime_group_count }}</div><div class="l">Runtime groups</div></div>
       {% endif %}
     </div>
+
+    {% if implementation_path.trace_summary and implementation_path.trace_summary.truncated %}
+    <div class="warn">Canonical semantic traversal reached its node budget. Implementation Path source branches are still complete within their configured provider depth, but the semantic trace below is truncated.</div>
+    {% endif %}
 
     <div class="impl-meta">
       {% for row in implementation_path.provider_counts %}<span class="chip">{{ row.provider }} {{ row.count }}</span>{% endfor %}
