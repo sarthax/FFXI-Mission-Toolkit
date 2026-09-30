@@ -24,11 +24,18 @@ function quatToMatrix(qi, qj, qk, qw, tx, ty, tz) {
   ];
 }
 function mat4Multiply(a, b) {
+  // Column-major 4x4 multiply, matching quatToMatrix()/mat4TransformPoint().
+  // out = a * b for column vectors: parentWorld * local -> childWorld.
   const r = new Array(16).fill(0);
-  for (let i = 0; i < 4; i++)
-    for (let j = 0; j < 4; j++)
-      for (let k = 0; k < 4; k++)
-        r[i * 4 + j] += a[i * 4 + k] * b[k * 4 + j];
+  for (let col = 0; col < 4; col++) {
+    for (let row = 0; row < 4; row++) {
+      r[col * 4 + row] =
+        a[0 * 4 + row] * b[col * 4 + 0] +
+        a[1 * 4 + row] * b[col * 4 + 1] +
+        a[2 * 4 + row] * b[col * 4 + 2] +
+        a[3 * 4 + row] * b[col * 4 + 3];
+    }
+  }
   return r;
 }
 function mat4TransformPoint(m, x, y, z, w) {
@@ -76,7 +83,7 @@ function parseSkeleton(reader) {
         if (parent === 255) {
           matrices.push(local);
         } else {
-          matrices.push(mat4Multiply(local, matrices[parent]));
+          matrices.push(mat4Multiply(matrices[parent], local));
         }
       }
       return { bones, matrices };
