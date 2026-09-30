@@ -908,6 +908,38 @@
       "disposition": "KEEP"
     },
     {
+      "method": "GET",
+      "path": "/zoneplot/animation-meta.json",
+      "home": "Tools",
+      "section": "Zone Editor",
+      "role": "api",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/zoneplot/model/preview",
+      "home": "Tools",
+      "section": "Zone Editor",
+      "role": "api/action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/zoneplot/model/apply",
+      "home": "Tools",
+      "section": "Zone Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/zoneplot/model/sync_sql",
+      "home": "Tools",
+      "section": "Zone Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
       "method": "POST",
       "path": "/zoneplot/delete",
       "home": "Tools",
