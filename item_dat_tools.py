@@ -1708,13 +1708,18 @@ def compare_client_record_to_pristine(item_id: int) -> dict:
         "changes": changes, "changed_count": len(changes),
     }
 
-def capture_client_record(item_id: int) -> dict | None:
-    """Capture the exact encrypted-DAT logical record bytes for one item without writing anything."""
+def capture_client_record(item_id: int, target: str | None = None) -> dict | None:
+    """Capture one exact logical record from a specific DAT target without writing anything."""
     found = category_for_item(item_id)
     if found is None:
         return None
     cat_name, base_id, item_type, en_rom, _jp_rom = found
-    src_path = dat_write_source(en_rom)
+    target = target or dat_target()
+    if target not in ("live", "pivot"):
+        raise ValueError(f"invalid client record target {target!r}")
+    pivot_path = pivot_dat_path(en_rom)
+    target_existed = dat_path(en_rom).exists() if target == "live" else pivot_path.exists()
+    src_path = dat_path(en_rom) if target == "live" else (pivot_path if pivot_path.exists() else dat_path(en_rom))
     if not src_path.exists():
         return None
     idx = int(item_id) - base_id
@@ -1723,8 +1728,8 @@ def capture_client_record(item_id: int) -> dict | None:
         return None
     return {
         "item_id": int(item_id), "category": cat_name, "dat_ui": en_rom,
-        "record_index": idx, "format": item_dat.format, "target": dat_target(),
-        "record_hex": item_dat.record(idx).hex(),
+        "record_index": idx, "format": item_dat.format, "target": target,
+        "target_existed": target_existed, "record_hex": item_dat.record(idx).hex(),
     }
 
 
