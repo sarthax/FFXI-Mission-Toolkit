@@ -2,10 +2,16 @@
 {% block title %}Behavior Inspector — Mission Toolkit{% endblock %}
 {% block content %}
 <h1>Behavior Inspector</h1>
-<p class="muted">Scan LandSandBoat Lua as a behavior/evidence graph. The primary source produces causal behavior edges; same-zone Zone.lua, globals.lua, and instance scripts are shown separately as context unless another analyzer proves a dependency.</p>
+<p class="muted">Scan server Lua (Topaz, DSP or LandSandBoat -- whichever trees are configured) as a behavior/evidence graph. The primary source produces causal behavior edges; same-zone Zone.lua, globals.lua, and instance scripts are shown separately as context unless another analyzer proves a dependency.</p>
 
 <form class="search" method="get" action="/behavior">
   <input type="text" name="q" value="{{ q }}" placeholder="Mob, NPC, object, zone, instance, or Lua filename">
+  {% if servers and servers|length > 1 %}
+  <select name="server" title="Which server tree to search">
+    <option value="">All configured trees ({{ servers|join(", ") }})</option>
+    {% for s in servers %}<option value="{{ s }}"{% if server == s %} selected{% endif %}>{{ s }}</option>{% endfor %}
+  </select>
+  {% endif %}
   <button type="submit">Find source</button>
 </form>
 
@@ -14,14 +20,15 @@
 {% if matches and not result %}
 <h2>Matching Lua sources</h2>
 <div class="table-wrap"><table>
-<thead><tr><th>Name</th><th>Role</th><th>Zone</th><th>Source</th></tr></thead>
+<thead><tr><th>Name</th><th>Server</th><th>Role</th><th>Zone</th><th>Source</th></tr></thead>
 <tbody>
 {% for row in matches %}
 <tr>
-  <td>{{ row.name }}</td>
+  <td>{{ row.name }}{% if row.match == "content" %} <span class="muted" title="No file with this name; found by searching script contents">(in script text)</span>{% endif %}</td>
+  <td><span class="chip">{{ row.server or "—" }}</span></td>
   <td><span class="chip">{{ row.role }}</span></td>
   <td>{{ row.zone or "—" }}</td>
-  <td><a class="zonelink mono" href="/behavior?source={{ row.path|urlencode }}">{{ row.path }}</a></td>
+  <td><a class="zonelink mono" href="/behavior?source={{ row.path|urlencode }}&server={{ row.server|urlencode }}">{{ row.path }}</a></td>
 </tr>
 {% endfor %}
 </tbody>
@@ -30,7 +37,7 @@
 
 {% if result %}
 <h2>{{ result.source.subject }}</h2>
-<p><code>{{ result.source.path }}</code>{% if result.source.zone %} · {{ result.source.zone }}{% endif %}</p>
+<p>{% if server %}<span class="chip">{{ server }}</span> {% endif %}<code>{{ result.source.path }}</code>{% if result.source.zone %} · {{ result.source.zone }}{% endif %}</p>
 
 <div class="stats">
   <div class="stat"><div class="n">{{ result.graph.summary.hooks }}</div><div class="l">Hooks</div></div>
@@ -218,7 +225,7 @@
 {% for row in result.contexts %}
 <tr>
   <td><span class="chip">{{ row.role }}</span></td>
-  <td><a class="zonelink mono" href="/behavior?source={{ row.path|urlencode }}">{{ row.path }}</a></td>
+  <td><a class="zonelink mono" href="/behavior?source={{ row.path|urlencode }}&server={{ server|urlencode }}">{{ row.path }}</a></td>
   <td>{% for hook in row.hooks %}<span class="chip">{{ hook }}</span>{% else %}<span class="muted">—</span>{% endfor %}</td>
   <td>{{ row.rule_count }}</td>
   <td>{{ row.api_call_count }}</td>

@@ -51,7 +51,8 @@ import gear_tables
 import client_model_resolver
 import settings
 
-TOPAZ_ROOT = settings.get_topaz_root()
+# The user's active server (Topaz or DSP), not necessarily Topaz -- see settings.get_active_server_root().
+TOPAZ_ROOT = settings.get_active_server_root()
 MODEL_TYPES = {
     0: "MODEL_STANDARD", 1: "MODEL_EQUIPED", 2: "MODEL_DOOR", 3: "MODEL_ELEVATOR",
     4: "MODEL_SHIP", 5: "MODEL_UNK_5", 6: "MODEL_AUTOMATON", 7: "MODEL_CHOCOBO",

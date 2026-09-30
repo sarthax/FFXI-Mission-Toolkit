@@ -42,7 +42,7 @@ def _zone_parts(relative: str) -> tuple[str | None,str | None]:
     return None,None
 
 
-def find_lsb_behavior_sources(root: Path, query: str, *, limit: int=100) -> list[dict]:
+def find_lsb_behavior_sources(root: Path, query: str, *, limit: int=100, server: str|None=None) -> list[dict]:
     """Find candidate zone Lua files by filename/path substring."""
     root=Path(root)
     zones=root/"scripts"/"zones"
@@ -64,7 +64,7 @@ def find_lsb_behavior_sources(root: Path, query: str, *, limit: int=100) -> list
             "zone-global" if path.name=="globals.lua" else
             "script"
         )
-        rows.append({"path":rel,"zone":zone,"role":role,"name":path.stem})
+        rows.append({"path":rel,"zone":zone,"role":role,"name":path.stem,"server":server})
         if len(rows)>=max(1,min(limit,250)):
             break
     if not rows:
@@ -89,10 +89,26 @@ def find_lsb_behavior_sources(root: Path, query: str, *, limit: int=100) -> list
                 "zone-global" if path.name=="globals.lua" else
                 "script"
             )
-            rows.append({"path":rel,"zone":zone,"role":role,"name":path.stem,"match":"content"})
+            rows.append({"path":rel,"zone":zone,"role":role,"name":path.stem,"match":"content","server":server})
             if len(rows)>=max(1,min(limit,250)):
                 break
     return sorted(rows,key=lambda row:(row["zone"] or "",row["role"],row["path"]))
+
+
+def find_behavior_sources_multi(roots: dict, query: str, *, limit: int=100) -> list[dict]:
+    """Search several server trees ({"topaz": Path, "dsp": Path, "lsb": Path}, in priority order).
+
+    Each tree is searched independently (filename first, then the content fallback), and every row
+    is tagged with the tree it came from -- LSB, Topaz and DSP lay the same NPC out differently, so
+    a hit in one tree must never be presented as if it came from another.
+    """
+    rows=[]
+    for name,root in roots.items():
+        if root is None or not Path(root).is_dir():
+            continue
+        rows.extend(find_lsb_behavior_sources(Path(root),query,limit=limit,server=name))
+    order={name:i for i,name in enumerate(roots)}
+    return sorted(rows,key=lambda r:(order.get(r["server"],99),r["zone"] or "",r["role"],r["path"]))[:max(1,min(limit,250))]
 
 
 def _subject_for(path: Path, relative: str) -> str:

@@ -32,7 +32,8 @@ from pathlib import Path
 import settings
 
 TOOLS_ROOT = Path(__file__).parent
-TOPAZ_ROOT = settings.get_topaz_root()
+# The user's active server (Topaz or DSP), not necessarily Topaz -- see settings.get_active_server_root().
+TOPAZ_ROOT = settings.get_active_server_root()
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
 
 

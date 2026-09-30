@@ -17,7 +17,7 @@ from pathlib import Path
 
 import settings
 
-SQL_PATH = settings.get_topaz_root() / "sql/mob_spawn_points.sql"
+SQL_PATH = settings.get_active_server_root() / "sql/mob_spawn_points.sql"
 
 
 def find_csv(capture_dir: Path, mob_id: int):

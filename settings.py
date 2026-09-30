@@ -116,6 +116,31 @@ def get_dsp_root() -> Path | None:
     return Path(value) if value else None
 
 
+def get_server_roots() -> list[Path]:
+    """Every configured Topaz/DSP checkout that exists on disk, the user's active server
+    (Zone Plot's `zoneplot_server` setting) first.
+
+    The toolkit administers whichever server the user points it at -- Topaz or DSP -- so code
+    that reads a server file (scripts/globals/*.lua, sql/*.sql, ...) should walk this list rather
+    than assume Topaz. LandSandBoat is a bundled reference tree, not an administered server, so
+    it is deliberately not part of this list."""
+    con = sqlite3.connect(str(DB_PATH))
+    try:
+        active = get(con, "zoneplot_server")
+    finally:
+        con.close()
+    named = {"topaz": get_topaz_root(), "dsp": get_dsp_root()}
+    order = ["dsp", "topaz"] if active == "dsp" else ["topaz", "dsp"]
+    return [named[k] for k in order if named[k] and Path(named[k]).is_dir()]
+
+
+def get_active_server_root() -> Path:
+    """The single server checkout the user is currently administering (Topaz or DSP, per the
+    `zoneplot_server` setting), falling back to the Topaz default when neither exists on disk."""
+    roots = get_server_roots()
+    return roots[0] if roots else get_topaz_root()
+
+
 def get_backport_root() -> Path:
     """The backport checkout root (holds mission-packages/, dsp-engine-changes/, reports/) --
     Settings' backport_root if set (point this at your own real backport project), else the
