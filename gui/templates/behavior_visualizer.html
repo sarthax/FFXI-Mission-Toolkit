@@ -20,7 +20,7 @@
 {% if matches and not result %}
 <h2>Matching Lua sources</h2>
 <div class="table-wrap"><table>
-<thead><tr><th>Name</th><th>Server</th><th>Role</th><th>Zone</th><th>Source</th></tr></thead>
+<thead><tr><th>Name</th><th>Server</th><th>Role</th><th>Zone</th><th>Source</th><th>Cross-tool</th></tr></thead>
 <tbody>
 {% for row in matches %}
 <tr>
@@ -29,6 +29,7 @@
   <td><span class="chip">{{ row.role }}</span></td>
   <td>{{ row.zone or "—" }}</td>
   <td><a class="zonelink mono" href="/behavior?source={{ row.path|urlencode }}&server={{ row.server|urlencode }}">{{ row.path }}</a></td>
+  <td><a class="chip" href="/features/trace?q={{ row.name|urlencode }}">Feature Trace</a></td>
 </tr>
 {% endfor %}
 </tbody>
@@ -38,6 +39,11 @@
 {% if result %}
 <h2>{{ result.source.subject }}</h2>
 <p>{% if server %}<span class="chip">{{ server }}</span> {% endif %}<code>{{ result.source.path }}</code>{% if result.source.zone %} · {{ result.source.zone }}{% endif %}</p>
+<div class="behavior-controls">
+  <a class="chip" href="/features/trace?q={{ result.source.subject|urlencode }}">Feature Trace for subject</a>
+  <a class="chip" href="/features/trace?q={{ result.source.path|urlencode }}">Trace source path</a>
+  <a class="chip" href="/behavior/graph.json?source={{ result.source.path|urlencode }}&server={{ server|urlencode }}">Graph JSON</a>
+</div>
 
 <div class="stats">
   <div class="stat"><div class="n">{{ result.graph.summary.hooks }}</div><div class="l">Hooks</div></div>
