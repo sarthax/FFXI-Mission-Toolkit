@@ -32,6 +32,30 @@ def main():
     assert "d>8 ? 0.3 : 0.18" in template
     assert "renderer.domElement.addEventListener('wheel', ()=>{ updateZoomSpeed();" in template
 
+    # First Zone Editor QOL priority stack.
+    assert "const undoStack=[], redoStack=[];" in template
+    assert "pre_restore_backup" in template
+    for marker in (
+        "recordUndo(\`move/rotate ${e.id}\`,j.backup)",
+        "recordUndo(\`animation ${e.id}\`,j.backup)",
+        "recordUndo(\`delete ${e.id}\`,j.backup)",
+        "recordUndo(\`add ${j.id}\`,j.backup)",
+        "recordUndo(\`dropid ${dropsState.mobid}\`,j.backup)",
+        "recordUndo(\`drop row ${dropsState.dropid}/${item_id}\`,j.backup)",
+        "recordUndo(\`delete drop ${dropsState.dropid}/${origItem}\`,j.backup)",
+    ):
+        assert marker.replace("\\\`", "`") in template, marker
+
+    assert "UNSAVED PREVIEW" in template
+    assert "Discard unsaved position/rotation preview" in template
+    assert "const selectionRing=new THREE.Mesh" in template
+    assert "function frameSelected()" in template
+    assert "selected-row" in template
+    assert "ArrowLeft" in template and "PageUp" in template
+    assert "rotateSelected" in template
+    assert 'data-rpreset="64"' in template and 'data-rpreset="0"' in template
+    assert "Ctrl+Z" in template and "Ctrl+Y" in template
+
     print("Zone Plot heading/compass/zoom UI regression: PASS")
     return 0
 
