@@ -6571,6 +6571,25 @@ async def zoneplot_edit(request: Request):
         return JSONResponse({"error": str(ex)}, status_code=400)
 
 
+@app.get("/zoneplot/history/{kind}/{eid}")
+async def zoneplot_entity_history(kind: str, eid: int, limit: int = 20):
+    import zone_edit
+    try:
+        return JSONResponse(zone_edit.entity_history(kind, eid, limit))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/zoneplot/restore_entity_previous")
+async def zoneplot_restore_entity_previous(request: Request):
+    import zone_edit
+    b = await request.json()
+    try:
+        return JSONResponse(zone_edit.restore_entity_previous(b["k"], b["id"]))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
 @app.post("/zoneplot/edit_bulk")
 async def zoneplot_edit_bulk(request: Request):
     import zone_edit
