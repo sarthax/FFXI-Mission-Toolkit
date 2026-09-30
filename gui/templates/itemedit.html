@@ -104,6 +104,12 @@ server's permission gate. Every write is backed up first and journalled to
     <div class="muted" style="font-size:11px; margin-top:6px;">A snapshot of this DAT file is taken automatically before every edit (not just the first), so you can restore to right before any specific edit, not only all the way back to pristine.</div>
     <div id="datBackupList" class="rowtable-wrap table-wrap" style="margin-top:8px;"></div>
     <div id="datPristineDiff" class="mono" style="margin-top:8px;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:10px;white-space:pre-wrap;"></div>
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+  <button type="button" id="compareLivePivotBtn">Compare Live ↔ Xi-Pivot</button>
+  <button type="button" id="copyLiveToPivotBtn">Copy this record Live → Pivot</button>
+  <button type="button" id="copyPivotToLiveBtn">Copy this record Pivot → Live</button>
+</div>
+<div id="livePivotDiff" class="mono" style="margin-top:8px;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:10px;white-space:pre-wrap;"></div>
   </div>
 
   <div id="editorTables" class="edit-grid" style="margin-top:12px;"></div>
@@ -169,6 +175,15 @@ record there, then inserts matching rows server-side at that same id.</p>
 </div>
 <div id="createStatus" class="muted"></div>
 <div id="createPreview" class="mono" style="margin:6px 0 10px;padding:7px;border:1px solid var(--border);border-radius:4px;font-size:11px;white-space:pre-wrap;"></div>
+<div class="edit-card wide" style="margin:8px 0 12px;">
+  <h3>DAT / Item ID Slot Browser <span class="hint">observational only; never reserves or invents an ID</span></h3>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
+    <select id="slotState"><option value="">all states</option><option value="free">free</option><option value="used-both">used server + DAT</option><option value="server-only">server-only mismatch</option><option value="dat-only">DAT-only mismatch</option><option value="reserved">reserved</option></select>
+    <button type="button" id="slotRefreshBtn">Browse selected category</button>
+    <span id="slotBrowserSummary" class="muted"></span>
+  </div>
+  <div id="slotBrowser" class="rowtable-wrap table-wrap"></div>
+</div>
 
 <div id="draftWrap" style="display:none; margin-top:16px;">
   <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
@@ -954,6 +969,42 @@ function startDraft() {
 
 // Step 2 of 2: the only place that actually calls /itemedit/create (allocates the real DAT
 // slot + writes the SQL rows), gated behind the explicit "Save New Item" click.
+async function refreshSlotBrowser(){
+  const category=document.getElementById('newCategory').value, state=document.getElementById('slotState').value;
+  const p=new URLSearchParams({category,state,limit:'200'});
+  const r=await fetch('/itemedit/slot-browser.json?'+p.toString()), j=await r.json();
+  const box=document.getElementById('slotBrowser'), sum=document.getElementById('slotBrowserSummary');
+  if(!r.ok){ box.innerHTML='<div class="warn">'+(j.error||r.statusText)+'</div>'; sum.textContent=''; return; }
+  sum.textContent=j.total+' matching slot(s) · '+j.dat_ui+' · target '+j.target;
+  box.innerHTML='<table><thead><tr><th>ID</th><th>Record</th><th>State</th><th>DAT name</th><th>Server</th><th>DAT</th><th></th></tr></thead><tbody>'+
+    j.rows.map(x=>'<tr><td class="mono">'+x.item_id+'</td><td>'+x.record_index+'</td><td>'+x.state+'</td><td>'+(x.name||'')+'</td><td>'+(x.server_occupied?'yes':'no')+'</td><td>'+(x.dat_occupied?'yes':'no')+'</td><td>'+(x.state==='free'?'<button type="button" data-use-slot="'+x.item_id+'">Use category</button>':'')+'</td></tr>').join('')+'</tbody></table>';
+  box.querySelectorAll('[data-use-slot]').forEach(btn=>btn.onclick=()=>{
+    document.getElementById('createStatus').textContent='Verified free candidate '+btn.dataset.useSlot+' selected for this category. Final allocation is revalidated at Save.';
+    refreshCreatePreview();
+  });
+}
+document.getElementById('slotRefreshBtn').onclick=refreshSlotBrowser;
+document.getElementById('slotState').onchange=refreshSlotBrowser;
+document.getElementById('newCategory').addEventListener('change',()=>{ refreshCreatePreview(); refreshSlotBrowser(); });
+
+async function compareLivePivot(){
+  const box=document.getElementById('livePivotDiff'); if(!currentItemId) return;
+  const r=await fetch('/itemedit/'+currentItemId+'/live-pivot-diff.json'), j=await r.json();
+  if(!r.ok || !j.available){ box.textContent='Live/Pivot compare unavailable: '+(j.error||j.reason||r.statusText); return; }
+  if(!j.pivot_exists){ box.textContent='Xi-Pivot DAT does not exist yet for this item\'s DAT file.'; return; }
+  box.textContent=j.same_raw?'Live and Xi-Pivot records are byte-identical.':('Live vs Pivot differences ('+j.changed_count+'):\n'+j.changes.map(x=>x.field+': live '+x.live+' · pivot '+x.pivot).join('\n'));
+}
+async function copyLivePivot(direction){
+  if(!currentItemId) return;
+  const label=direction==='live_to_pivot'?'Live → Xi-Pivot':'Xi-Pivot → Live';
+  if(!confirm('Copy only item '+currentItemId+' record '+label+'? The destination DAT is backed up first.')) return;
+  const r=await fetch('/itemedit/live-pivot-copy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_id:currentItemId,direction})});
+  const j=await r.json(); if(!r.ok){ alert(j.error||r.statusText); return; }
+  await compareLivePivot(); await loadItem(currentItemId);
+}
+document.getElementById('compareLivePivotBtn').onclick=compareLivePivot;
+document.getElementById('copyLiveToPivotBtn').onclick=()=>copyLivePivot('live_to_pivot');
+document.getElementById('copyPivotToLiveBtn').onclick=()=>copyLivePivot('pivot_to_live');
 async function saveDraft() {
   if (!draftMode) return;
   const status = document.getElementById('draftSaveStatus');
