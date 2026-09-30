@@ -299,6 +299,22 @@ def main():
     checker_shell = context_for("/features/check")
     assert next(section for section in checker_shell["sections"] if section["active"])["label"] == "Feature Checker"
 
+    entity_html = render("entity.html", "/entity", q="", matches=[], total=0, page=1, total_pages=1, zone_names={})
+    assert '<body class="shell-dense">' in entity_html
+    assert '<strong>Entity Lookup</strong>' in entity_html
+    assert 'form class="search dense-toolbar"' in entity_html
+
+    events_html = render("events.html", "/events", zones=[], zone="", q="", rows=[], generated_note=None, health_summary={})
+    assert '<body class="shell-dense">' in events_html
+    assert '<strong>Events / CSID Browser</strong>' in events_html
+    assert 'form class="search dense-toolbar"' in events_html
+
+    packets_html = render("packets.html", "/packets", q="", direction="s2c", opcodes=[])
+    assert '<body class="shell-dense">' in packets_html
+    assert '<strong>Packet Tools</strong>' in packets_html
+    assert 'Manual Packet Viewer / Decoder' in packets_html
+    assert 'Browse known opcodes' in packets_html
+
     editor_html = render("itemedit.html", "/itemedit")
     assert "Editors: Zone Editor" in editor_html
     assert "Editors: Item Editor" in editor_html
