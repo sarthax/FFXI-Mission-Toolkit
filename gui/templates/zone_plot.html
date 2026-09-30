@@ -374,10 +374,21 @@ function setAddPos(x,y,z){
 }
 function updateAddMarker(){
   const show = !$('tab-add').hidden && $('aX').value!=='' && $('aY').value!=='' && $('aZ').value!=='';
-  addMarker.visible = show;
-  if (show) addMarker.position.set(+$('aX').value, -(+$('aY').value), -(+$('aZ').value));
+  addMarker.visible = show; addHeadingLine.visible=show; addGhostLabel.visible=show;
+  if(!show){ $('addGhostInfo').textContent=''; return; }
+  const p=new THREE.Vector3(+$('aX').value, -(+$('aY').value), -(+$('aZ').value));
+  addMarker.position.copy(p);
+  const d=sceneHeading(+$('aR').value||0), tip=p.clone().add(d.multiplyScalar(7));
+  addHeadingGeom.setFromPoints([p,tip]);
+  addGhostLabel.position.copy(p).add(new THREE.Vector3(0,3,0));
+  const kind=$('ak').value;
+  const src=aSel ? (kind==='m'?(aSel.name||'mob'):(aSel.pname||aSel.name||'NPC')) : '(no source)';
+  const h=rotInfo(+$('aR').value||0), inst=+$('ainst').value||0;
+  const instText=inst ? ('instance '+inst) : 'general zone pool';
+  addGhostDiv.textContent=src+' · '+h.dir+' r'+h.raw+' · '+instText;
+  $('addGhostInfo').textContent='Ghost: '+src+' at ('+$('aX').value+', '+$('aY').value+', '+$('aZ').value+') · '+h.dir+' r'+h.raw+' · '+instText;
 }
-['aX','aY','aZ'].forEach(id=>$(id).addEventListener('input',updateAddMarker));
+['aX','aY','aZ','aR','ainst'].forEach(id=>$(id).addEventListener('input',updateAddMarker));
 let visible = [];            // indices of entities currently drawn (instance slot -> entity idx)
 let heightRange={lo:0,hi:0};
 const labels = new Map();    // entity idx -> CSS2DObject
