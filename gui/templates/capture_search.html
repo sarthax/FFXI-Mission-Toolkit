@@ -1,114 +1,206 @@
 {% extends "base.html" %}
-{% block title %}Capture Search{% endblock %}
+{% block title %}Capture Evidence Search{% endblock %}
 {% block shell_mode %}dense{% endblock %}
 {% block main_class %}capture-search-page{% endblock %}
 
 {% macro pager() %}
 {% if total_pages > 1 %}
-<form method="get" action="/captures/search" style="display:flex;gap:8px;align-items:center;margin:12px 0;flex-wrap:wrap;">
+<form method="get" action="/captures/search" class="evidence-pager">
   {% for k, v in qs_pairs %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
-  <span class="muted">page</span>
-  <input type="number" name="page" value="{{ page }}" min="1" max="{{ total_pages }}" style="width:70px;">
-  <span class="muted">of {{ total_pages }}</span>
-  <button type="submit">Go</button>
+  {% if page > 1 %}<button type="submit" name="page" value="{{ page - 1 }}">&larr; prev</button>{% endif %}
+  <span class="muted">page {{ page }} of {{ total_pages }}</span>
+  {% if page < total_pages %}<button type="submit" name="page" value="{{ page + 1 }}">next &rarr;</button>{% endif %}
 </form>
 {% endif %}
 {% endmacro %}
 
 {% block content %}
-<style>main.capture-search-page{padding:8px 10px 24px}.capture-search-page .modebar{margin:6px 0}</style>
+<style>
+main.capture-search-page{padding:8px 10px 24px}
+.evidence-layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:8px;align-items:start}
+.evidence-modules{position:sticky;top:calc(var(--shell-h) + 8px);max-height:calc(100vh - var(--shell-h) - 20px);overflow:auto}
+.evidence-module{display:block;padding:7px 8px;margin:2px 0;border-radius:6px;text-decoration:none;color:var(--ink)}
+.evidence-module:hover{background:var(--surface-2)}
+.evidence-module.active{background:var(--accent-soft);font-weight:600}
+.evidence-module small{display:block;color:var(--muted);font-weight:400;margin-top:2px}
+.evidence-card{border:1px solid var(--border);border-radius:7px;background:var(--surface);margin:5px 0;padding:8px 10px}
+.evidence-head{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.evidence-summary{margin-top:5px}
+.evidence-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.evidence-pager{display:flex;gap:7px;align-items:center;justify-content:flex-end;margin:6px 0}
+.search-help{margin:4px 0 7px}
+@media(max-width:900px){
+  .evidence-layout{grid-template-columns:1fr}
+  .evidence-modules{position:static;max-height:none;display:flex;gap:4px;flex-wrap:wrap}
+  .evidence-module{display:inline-block;max-width:230px}
+}
+</style>
+
 <div class="dense-toolbar">
   <a class="chip" href="/captures">&larr; Captures</a>
-  <strong>Cross-capture Search</strong>
+  <strong>Evidence Search</strong>
+  <a class="chip" href="/captures/query">Data Explorer</a>
   <span class="sp"></span>
-  <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:680px">Search indexed event/dialog evidence or raw packet observations across every capture in the corpus.</div></details>
+  <details class="dense-card" style="margin:0;padding:0 6px">
+    <summary>About</summary>
+    <div class="muted" style="padding:6px 2px;max-width:720px">
+      Cross-capture discovery by evidence domain. Modules search canonical observations across the corpus
+      and hand results into Capture, Timeline, Entity, Packet Viewer or Data Explorer for deeper inspection.
+    </div>
+  </details>
 </div>
 
-<div class="modebar dense-tabs" style="display:flex;gap:5px;">
-  <a class="chip {% if mode == 'events' %}chip-active{% endif %}" href="/captures/search?mode=events">Events / Dialogue</a>
-  <a class="chip {% if mode == 'packets' %}chip-active{% endif %}" href="/captures/search?mode=packets">Raw Packets</a>
-</div>
-
-{% if mode == 'events' %}
-<form class="search dense-toolbar" method="get" style="margin:6px 0;flex-wrap:wrap">
-  <input type="hidden" name="mode" value="events">
-  <input type="text" name="entity" value="{{ entity }}" placeholder="NPC name">
-  <input type="text" name="message_id" value="{{ message_id }}" placeholder="message id (exact)">
-  <div style="display:flex; flex-wrap:wrap; gap:4px 14px; align-items:center;">
-    <span class="muted">opcodes:</span>
-    {% for o in available_ev_opcodes %}
-    <label style="display:flex; align-items:center; gap:4px; font-weight:normal;">
-      <input type="checkbox" name="ev_opcodes" value="{{ o.opcode }}" {% if o.opcode in ev_opcodes %}checked{% endif %}>
-      <span class="mono">{{ o.opcode }}</span> {{ o.opcode_name }}
-    </label>
+<div class="evidence-layout">
+  <aside class="dense-panel evidence-modules">
+    {% for m in modules %}
+    <a class="evidence-module{% if module == m.id %} active{% endif %}" href="/captures/search?module={{ m.id }}">
+      {{ m.label }}
+      <small>{{ m.description }}</small>
+    </a>
     {% endfor %}
-  </div>
-  <button type="submit">Search</button>
-</form>
+  </aside>
 
-{% if events %}
-<div class="dense-toolbar" style="margin:4px 0"><strong>{{ total }} result(s)</strong><span class="sp"></span><span class="muted">page {{ page }} of {{ total_pages }}</span></div>
-{{ pager() }}
-<div class="table-wrap"><table>
-  <tr><th>capture</th><th>seq</th><th>dir</th><th>opcode</th><th>entity</th><th>csid</th><th>option</th><th>message</th><th>dialogue</th></tr>
-  {% for e in events %}
-  <tr>
-    <td><a href="/captures/{{ e.capture_id }}/timeline">#{{ e.capture_id }}</a> <span class="muted">{{ e.capture_label }}</span></td>
-    <td class="mono">{{ e.seq }}</td>
-    <td>{{ e.direction }}</td>
-    <td><span class="chip mono">{{ e.opcode }}</span> {{ e.opcode_name }}</td>
-    <td>{{ e.entity_name or '' }}</td>
-    <td class="mono">{{ e.event_hex or '' }}</td>
-    <td class="mono">{{ e.option if e.option is not none else '' }}</td>
-    <td class="mono">{{ e.message_id if e.message_id is not none else '' }}</td>
-    <td>{{ e.dialog_text or '' }}</td>
-  </tr>
-  {% endfor %}
-</table></div>
-{{ pager() }}
-{% elif entity or message_id or ev_opcode %}
-<p class="muted">No matches.</p>
-{% endif %}
+  <section>
+    <div class="dense-toolbar" style="margin-bottom:4px">
+      <strong>{{ module_meta.label }}</strong>
+      {% if total %}<span class="chip">{{ total }} result{{ '' if total == 1 else 's' }}</span>{% endif %}
+    </div>
+    <div class="muted search-help">{{ module_meta.description }}</div>
 
-{% else %}
-<form class="search dense-toolbar" method="get" style="margin:6px 0;flex-wrap:wrap">
-  <input type="hidden" name="mode" value="packets">
-  <select name="pk_category">
-    <option value="">(choose a category)</option>
-    {% for c in categories %}
-    <option value="{{ c }}" {% if c == pk_category %}selected{% endif %}>{{ c }}</option>
-    {% endfor %}
-  </select>
-  <input type="text" name="pk_opcode" value="{{ pk_opcode }}" placeholder="or exact opcode, e.g. 0x020">
-  <button type="submit">Search</button>
-</form>
+    {% if module == 'events' %}
+    <form class="search dense-toolbar" method="get" action="/captures/search" style="margin:6px 0;flex-wrap:wrap">
+      <input type="hidden" name="module" value="events">
+      <input type="text" name="entity" value="{{ entity }}" placeholder="NPC / entity name">
+      <input type="text" name="message_id" value="{{ message_id }}" placeholder="message id (exact)">
+      <details class="dense-card" style="padding:0 6px;margin:0">
+        <summary>Event opcodes{% if ev_opcodes %} <span class="chip">{{ ev_opcodes|length }}</span>{% endif %}</summary>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 12px;padding:6px 2px">
+          {% for o in available_ev_opcodes %}
+          <label style="display:flex;align-items:center;gap:4px;font-weight:normal">
+            <input type="checkbox" name="ev_opcodes" value="{{ o.opcode }}" {% if o.opcode in ev_opcodes %}checked{% endif %}>
+            <span class="mono">{{ o.opcode }}</span> {{ o.opcode_name }}
+          </label>
+          {% endfor %}
+        </div>
+      </details>
+      <button type="submit">Search events</button>
+    </form>
 
-{% if packets %}
-<div class="dense-toolbar" style="margin:4px 0"><strong>{{ total }} result(s)</strong><span class="sp"></span><span class="muted">page {{ page }} of {{ total_pages }}</span></div>
-{{ pager() }}
-<div class="table-wrap"><table>
-  <tr><th>capture</th><th>seq</th><th>ts</th><th>dir</th><th>opcode</th><th>description</th><th>fields</th></tr>
-  {% for p in packets %}
-  <tr>
-    <td><a href="/captures/{{ p.capture_id }}/packets?opcode={{ p.opcode }}">#{{ p.capture_id }}</a> <span class="muted">{{ p.capture_label }}</span></td>
-    <td class="mono">{{ p.seq }}</td>
-    <td class="mono">{{ p.ts }}</td>
-    <td>{{ p.direction }}</td>
-    <td class="mono">{{ p.opcode }}</td>
-    <td>{{ p.description or '' }}</td>
-    <td>
-      {% if p.fields %}
-      <details><summary>{{ p.fields|length }} fields</summary><table style="margin:3px 0 0;font-size:10px;">
-        {% for f in p.fields %}<tr><td class="mono muted">{{ f.name }}</td><td class="mono">{{ f.value }}</td></tr>{% endfor %}
-      </table></details>
+    {% elif module == 'packets' %}
+    <form class="search dense-toolbar" method="get" action="/captures/search" style="margin:6px 0;flex-wrap:wrap">
+      <input type="hidden" name="module" value="packets">
+      <select name="pk_category">
+        <option value="">packet category</option>
+        {% for c in categories %}
+        <option value="{{ c }}" {% if c == pk_category %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+      <input type="text" name="pk_opcode" value="{{ pk_opcode }}" placeholder="or exact opcode, e.g. 0x020">
+      <button type="submit">Search protocol</button>
+    </form>
+
+    {% else %}
+    <form class="search dense-toolbar" method="get" action="/captures/search" style="margin:6px 0">
+      <input type="hidden" name="module" value="{{ module }}">
+      <input type="text" name="q" value="{{ q }}" placeholder="{{ module_meta.hint }}" style="min-width:340px">
+      <button type="submit">Search {{ module_meta.label }}</button>
+    </form>
+    {% endif %}
+
+    {% if module == 'events' %}
+      {% if events %}
+        {{ pager() }}
+        {% for e in events %}
+        <article class="evidence-card">
+          <div class="evidence-head">
+            <span class="chip">Event / CSID</span>
+            <a href="/captures/{{ e.capture_id }}/timeline"><strong>#{{ e.capture_id }}</strong></a>
+            <span>{{ e.capture_label }}</span>
+            <span class="chip mono">{{ e.opcode }}</span>
+            {% if e.zone_db %}<span class="muted">{{ e.zone_db }}</span>{% endif %}
+          </div>
+          <div class="evidence-summary">
+            <strong>{{ e.entity_name or e.entity_id or 'Unknown entity' }}</strong>
+            {% if e.event_hex %} · CSID <span class="mono">{{ e.event_hex }}</span>{% endif %}
+            {% if e.option is not none %} · option <span class="mono">{{ e.option }}</span>{% endif %}
+            {% if e.message_id is not none %} · message <span class="mono">{{ e.message_id }}</span>{% endif %}
+            {% if e.dialog_text %}<div style="margin-top:3px">{{ e.dialog_text }}</div>{% endif %}
+          </div>
+          <div class="evidence-actions">
+            <a class="chip" href="/captures/{{ e.capture_id }}/timeline">Timeline</a>
+            {% if e.entity_id %}<a class="chip" href="/entity/{{ e.entity_id }}">Entity Profile</a>{% endif %}
+            <a class="chip" href="/captures/query?table=capture_events&capture_id={{ e.capture_id }}">Data Explorer</a>
+          </div>
+        </article>
+        {% endfor %}
+        {{ pager() }}
+      {% elif entity or message_id or ev_opcodes %}
+        <div class="dense-panel muted">No event/dialogue evidence matched.</div>
       {% endif %}
-    </td>
-  </tr>
-  {% endfor %}
-</table></div>
-{{ pager() }}
-{% elif pk_category or pk_opcode %}
-<p class="muted">No matches.</p>
-{% endif %}
-{% endif %}
+
+    {% elif module == 'packets' %}
+      {% if packets %}
+        {{ pager() }}
+        {% for p in packets %}
+        <article class="evidence-card">
+          <div class="evidence-head">
+            <span class="chip">Raw Protocol</span>
+            <a href="/captures/{{ p.capture_id }}/packets?opcode={{ p.opcode }}"><strong>#{{ p.capture_id }}</strong></a>
+            <span>{{ p.capture_label }}</span>
+            <span class="chip mono">{{ p.opcode }}</span>
+            <span class="muted">{{ p.direction }} · {{ p.ts }}</span>
+          </div>
+          <div class="evidence-summary">{{ p.description or '(no packet definition)' }}</div>
+          {% if p.fields %}
+          <details style="margin-top:5px"><summary>{{ p.fields|length }} decoded fields</summary>
+            <div class="raw-grid">
+              {% for f in p.fields %}<div><span class="mono muted">{{ f.name }}</span> <span class="mono">{{ f.value }}</span></div>{% endfor %}
+            </div>
+          </details>
+          {% endif %}
+          <div class="evidence-actions">
+            <a class="chip" href="/captures/{{ p.capture_id }}/packets/{{ p.seq }}">Packet Viewer</a>
+            <a class="chip" href="/captures/{{ p.capture_id }}/timeline">Timeline</a>
+            <a class="chip" href="/captures/query?table=capture_raw_packets&capture_id={{ p.capture_id }}&q={{ p.opcode|urlencode }}">Data Explorer</a>
+          </div>
+        </article>
+        {% endfor %}
+        {{ pager() }}
+      {% elif pk_category or pk_opcode %}
+        <div class="dense-panel muted">No raw packet evidence matched.</div>
+      {% endif %}
+
+    {% else %}
+      {% if generic_rows %}
+        {{ pager() }}
+        {% for r in generic_rows %}
+        <article class="evidence-card">
+          <div class="evidence-head">
+            <span class="chip">{{ r.evidence_kind }}</span>
+            <a href="/captures/{{ r.capture_id }}"><strong>#{{ r.capture_id }}</strong></a>
+            <span>{{ r.capture_label }}</span>
+            {% if r.zone %}<span class="muted">{{ r.zone }}</span>{% endif %}
+            {% if r.ts %}<span class="muted mono">{{ r.ts }}</span>{% endif %}
+          </div>
+          <div class="evidence-summary">
+            <strong>{{ r.title or '(unnamed evidence)' }}</strong>
+            {% if r.subject_id is not none %}<span class="chip mono">{{ r.subject_id }}</span>{% endif %}
+            {% if r.summary %}<div class="muted" style="margin-top:3px">{{ r.summary }}</div>{% endif %}
+          </div>
+          <div class="evidence-actions">
+            <a class="chip" href="/captures/{{ r.capture_id }}/timeline">Timeline</a>
+            <a class="chip" href="/captures/query?table={{ r.dataset }}&capture_id={{ r.capture_id }}">Data Explorer</a>
+            {% if module == 'entities' and r.subject_id is not none %}<a class="chip" href="/entity/{{ r.subject_id }}">Entity Profile</a>{% endif %}
+          </div>
+        </article>
+        {% endfor %}
+        {{ pager() }}
+      {% elif q %}
+        <div class="dense-panel muted">No {{ module_meta.label|lower }} evidence matched “{{ q }}”.</div>
+      {% else %}
+        <div class="dense-panel muted">Enter {{ module_meta.hint|lower }} to search this module across all captures.</div>
+      {% endif %}
+    {% endif %}
+  </section>
+</div>
 {% endblock %}
