@@ -1,10 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Events / CSID Browser{% endblock %}
 {% block content %}
-<h1>Events / CSID Browser</h1>
-<p class="muted">Every real entity/CSID pair in a zone's events.yml (mission_toolkit.py export).
-Click a row to decompile it with real dialog text substituted in and cross-checked against our
-own dialog_text index -- the same thing explore_event.py does on the CLI.</p>
+<style>
+.event-browser-head{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px}
+.event-browser-head .hint{max-width:900px}
+.event-table td,.event-table th{vertical-align:middle}
+.event-id{font-family:ui-monospace,Consolas,monospace}
+.event-evidence{display:flex;gap:5px;flex-wrap:wrap}
+.event-actions{display:flex;gap:7px;flex-wrap:wrap}
+.event-actions a{text-decoration:none}
+</style>
+
+<div class="event-browser-head">
+  <div>
+    <h1 style="margin-bottom:4px">Events / CSID Browser</h1>
+    <div class="hint muted">Client event/CSID inventory by zone and entity. Open an event to see its decompiled client script alongside dialog IDs, server Lua references, observed capture traffic, and implementation scaffolding.</div>
+  </div>
+</div>
 
 <form class="search" method="get">
   <select name="zone">
@@ -13,25 +25,41 @@ own dialog_text index -- the same thing explore_event.py does on the CLI.</p>
     <option value="{{ z.name }}" {% if zone|upper == z.name %}selected{% endif %}>{{ z.name }}</option>
     {% endfor %}
   </select>
-  <input type="text" name="q" value="{{ q }}" placeholder="filter by entity id, name, or csid">
+  <input type="text" name="q" value="{{ q }}" placeholder="entity id, NPC name, or exact CSID">
   <button type="submit">Browse</button>
 </form>
 
 {% if generated_note %}<p class="muted">{{ generated_note }} (this can take a minute the first time.)</p>{% endif %}
 
 {% if zone %}
-<h2>{{ rows|length }} event(s) in {{ zone }}</h2>
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0 8px">
+  <h2 style="margin:0">{{ rows|length }} event(s) in {{ zone }}</h2>
+  <span class="chip">decimal + hex CSID</span>
+  <span class="chip">server refs</span>
+  <span class="chip">runtime observations</span>
+</div>
 {% if not rows %}
 <p class="muted">No events found (or no cached/generatable export for this zone).</p>
 {% else %}
-<div class="table-wrap"><table>
-  <tr><th>entity id</th><th>name</th><th>csid</th><th></th></tr>
+<div class="table-wrap"><table class="event-table">
+  <tr><th>entity</th><th>name</th><th>CSID</th><th>evidence</th><th>actions</th></tr>
   {% for r in rows %}
   <tr>
-    <td class="mono">{{ r.entity_id }}</td>
+    <td class="event-id"><a class="inline" href="/entity/{{ r.entity_id }}">{{ r.entity_id }}</a></td>
     <td>{{ r.name or "" }}</td>
-    <td class="mono">{{ r.csid }}</td>
-    <td><a href="/events/view?zone={{ zone }}&entity={{ r.entity_id }}&csid={{ r.csid }}">decompile</a></td>
+    <td class="event-id"><strong>{{ r.csid }}</strong> <span class="muted">/ 0x{{ "%04X"|format(r.csid) }}</span></td>
+    <td>
+      <div class="event-evidence">
+        {% if r.server_ref_count %}<span class="pill match">{{ r.server_ref_count }} server ref{{ '' if r.server_ref_count == 1 else 's' }}</span>{% else %}<span class="pill unannotated">no indexed server ref</span>{% endif %}
+        {% if r.runtime_count %}<span class="pill match">{{ r.runtime_count }} runtime obs.</span>{% else %}<span class="pill unannotated">not observed in captures</span>{% endif %}
+      </div>
+    </td>
+    <td>
+      <div class="event-actions">
+        <a class="chip" href="/events/view?zone={{ zone|urlencode }}&entity={{ r.entity_id }}&csid={{ r.csid }}">Wiring dossier &rarr;</a>
+        <a class="chip" href="/features/trace?q=entity:{{ r.entity_id }}">Feature Trace</a>
+      </div>
+    </td>
   </tr>
   {% endfor %}
 </table></div>
