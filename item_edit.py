@@ -1147,6 +1147,249 @@ RECONCILE_SERVER_FIELDS = {
 }
 
 
+BATCH_SAFE_FIELDS = dict(RECONCILE_SERVER_FIELDS)
+
+
+def _save_batch_backup(items, field, value, comment=""):
+    """One envelope containing every SQL row + exact client record touched by a batch."""
+    BACKUPS.mkdir(parents=True, exist_ok=True)
+    bid = time.strftime("%Y%m%d-%H%M%S") + f"-batch-{len([1 for _ in BACKUPS.glob('*-batch-*.json')]) % 1000:03d}"
+    payload = {
+        "id": bid,
+        "ts": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "kind": "batch",
+        "label": f"batch edit {field}={value}",
+        "item_id": None,
+        "metadata": {
+            "action_type": "batch_edit",
+            "comment": comment or "",
+            "field": field,
+            "value": value,
+            "summary": f"{len(items)} item(s): {field} -> {value}",
+        },
+        "items": items,
+    }
+    (BACKUPS / f"{bid}.json").write_text(json.dumps(payload, default=lambda o: float(o) if isinstance(o, Decimal) else str(o)))
+    return bid
+
+
+def preview_batch_edit(item_ids, field, value):
+    """Validate a constrained same-field batch without writing anything."""
+    if field not in BATCH_SAFE_FIELDS:
+        raise ValueError(f"batch field {field!r} is not in the proven-safe whitelist")
+    ids = []
+    for raw in item_ids or []:
+        iid = int(raw)
+        if iid not in ids:
+            ids.append(iid)
+    if not ids:
+        raise ValueError("no item ids supplied")
+    if len(ids) > 200:
+        raise ValueError("batch is limited to 200 unique items")
+    table, column = BATCH_SAFE_FIELDS[field]
+    db = zone_plot._db(); cu = db.cursor()
+    rows, errors, warnings = [], [], []
+    try:
+        cols = _cols(cu, table)
+        if column not in cols:
+            raise ValueError(f"{table} has no column {column}")
+        for item_id in ids:
+            op = _capture(cu, table, [item_id])
+            if op["row"] is None:
+                errors.append({"item_id": item_id, "message": f"{table} row does not exist"})
+                continue
+            before = op["row"].get(column)
+            patch = {table: {column: value}}
+            try:
+                validation = validate_item_changes(item_id, patch)
+            except Exception as ex:
+                errors.append({"item_id": item_id, "message": str(ex)})
+                continue
+            if validation.get("errors"):
+                errors.append({"item_id": item_id, "message": "; ".join(x.get("message", str(x)) for x in validation["errors"])})
+                continue
+            client_patch = _map_to_client_fields(table, {column: value})
+            client_available = False
+            if client_patch:
+                try:
+                    rec = dat.read_client_item(item_id)
+                    client_available = rec is not None
+                    if client_available:
+                        dat.validate_client_patch(item_id, client_patch)
+                    else:
+                        warnings.append({"item_id": item_id, "message": "client DAT record unavailable; SQL would change without client sync"})
+                except Exception as ex:
+                    errors.append({"item_id": item_id, "message": f"client validation failed: {ex}"})
+                    continue
+            rows.append({
+                "item_id": item_id,
+                "table": table,
+                "column": column,
+                "field": field,
+                "before": before,
+                "after": value,
+                "changed": before != value,
+                "client_field": next(iter(client_patch), None),
+                "client_available": client_available,
+            })
+    finally:
+        db.close()
+    changed = [r for r in rows if r["changed"]]
+    return {
+        "field": field,
+        "value": value,
+        "items": rows,
+        "item_count": len(rows),
+        "changed_count": len(changed),
+        "errors": errors,
+        "warnings": warnings,
+        "ok": not errors and bool(changed),
+        "safe_fields": sorted(BATCH_SAFE_FIELDS),
+        "notes": [
+            "batch editing is limited to fields already proven by single-item server/client reconciliation",
+            "all items are validated before the first write",
+            "apply uses one SQL transaction and one multi-item backup envelope",
+        ],
+    }
+
+
+def apply_batch_edit(item_ids, field, value, comment=""):
+    """Apply one proven-safe field/value across many items as one rollback-safe operation."""
+    preview = preview_batch_edit(item_ids, field, value)
+    if preview["errors"]:
+        raise ValueError("batch validation failed: " + "; ".join(f"{e['item_id']}: {e['message']}" for e in preview["errors"]))
+    changed = [r for r in preview["items"] if r["changed"]]
+    if not changed:
+        raise ValueError("batch contains no actual changes")
+
+    table, column = BATCH_SAFE_FIELDS[field]
+    db = zone_plot._db(); cu = db.cursor()
+    backup_items = []
+    patched_snapshots = []
+    sqls = []
+    try:
+        for row in changed:
+            item_id = row["item_id"]
+            op = _capture(cu, table, [item_id])
+            client_snapshot = None
+            try:
+                client_snapshot = dat.capture_client_record(item_id)
+            except Exception:
+                client_snapshot = None
+            backup_items.append({"item_id": item_id, "ops": [op], "client_record": client_snapshot})
+
+        bid = _save_batch_backup(backup_items, field, value, comment)
+
+        for row in changed:
+            item_id = row["item_id"]
+            cu.execute(f"update {table} set {column}=%s where {TABLES[table][0]}=%s", (value, item_id))
+            sqls.append(f"UPDATE {table} SET {column}={lit(value)} WHERE {TABLES[table][0]}={item_id};")
+            client_patch = _map_to_client_fields(table, {column: value})
+            if client_patch and row["client_available"]:
+                snapshot = next((x["client_record"] for x in backup_items if x["item_id"] == item_id), None)
+                dat.patch_client_item(item_id, client_patch)
+                if snapshot:
+                    patched_snapshots.append(snapshot)
+
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+            for snap in reversed(patched_snapshots):
+                try:
+                    dat.restore_client_record(snap)
+                except Exception:
+                    pass
+            raise
+    except Exception:
+        try:
+            db.rollback()
+        finally:
+            db.close()
+        for snap in reversed(patched_snapshots):
+            try:
+                dat.restore_client_record(snap)
+            except Exception:
+                pass
+        raise
+    db.close()
+    _journal(comment or f"batch edit {field}={value}", [f"-- batch backup {bid}", *sqls])
+    return {
+        "backup": bid,
+        "field": field,
+        "value": value,
+        "changed_count": len(changed),
+        "item_ids": [r["item_id"] for r in changed],
+        "sql": "\n".join(sqls),
+        "preview": preview,
+    }
+
+
+def restore_batch_backup(bid, comment=""):
+    """Restore all items in one batch envelope using one SQL transaction."""
+    path = BACKUPS / f"{bid}.json"
+    b = json.loads(path.read_text())
+    if b.get("kind") != "batch":
+        raise ValueError(f"backup {bid} is not a batch backup")
+    items = b.get("items") or []
+    if not items:
+        raise ValueError("batch backup contains no items")
+
+    current = []
+    db = zone_plot._db(); cu = db.cursor()
+    restored_dat = []
+    try:
+        for entry in items:
+            item_id = int(entry["item_id"])
+            ops = entry.get("ops") or []
+            cur_ops = [_capture(cu, op["table"], op["key"]) for op in ops]
+            try:
+                cur_client = dat.capture_client_record(item_id)
+            except Exception:
+                cur_client = None
+            current.append({"item_id": item_id, "ops": cur_ops, "client_record": cur_client})
+
+        undo_id = _save_batch_backup(current, b.get("metadata", {}).get("field", "restore"), b.get("metadata", {}).get("value"), comment or f"before restoring {bid}")
+
+        for entry in items:
+            for op in entry.get("ops") or []:
+                table = op["table"]
+                keys = op["key"]
+                saved = op.get("row")
+                pk = _pk_for(table)
+                where = " and ".join(f"{k}=%s" for k in pk)
+                if saved is None:
+                    cu.execute(f"delete from {table} where {where}", tuple(keys))
+                else:
+                    existing = _fetch(cu, table, keys)
+                    if existing is None:
+                        cols = list(saved)
+                        cu.execute(
+                            f"insert into {table} ({','.join(cols)}) values ({','.join(['%s'] * len(cols))})",
+                            tuple(saved[c] for c in cols),
+                        )
+                    else:
+                        cols = [c for c in saved if c not in pk]
+                        cu.execute(
+                            f"update {table} set {', '.join(c+'=%s' for c in cols)} where {where}",
+                            tuple(saved[c] for c in cols) + tuple(keys),
+                        )
+            snap = entry.get("client_record")
+            if snap:
+                dat.restore_client_record(snap)
+                restored_dat.append(int(entry["item_id"]))
+        db.commit()
+    except Exception:
+        db.rollback()
+        db.close()
+        raise
+    db.close()
+    _journal(comment or f"restore batch backup {bid}", [f"-- undo batch backup {undo_id}", f"-- restored {len(items)} item(s)"])
+    return {"source_backup": bid, "backup": undo_id, "restored_count": len(items), "client_restored": restored_dat}
+
+
+
+
 def reconcile_item(item_id, field, direction, comment=""):
     """Explicitly reconcile one confirmed overlapping field; item_type is diagnostic-only."""
     item_id = int(item_id)
