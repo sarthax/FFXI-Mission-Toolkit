@@ -59,6 +59,19 @@ def main():
     assert "Server SQL will not be changed" in template
     assert "label:'restore DAT record'" in template
 
+    # Selected-item change history is item-scoped, metadata-aware, and restorable.
+    assert "def list_item_history(item_id, limit=100):" in item_edit
+    assert '"metadata": metadata or {}' in item_edit
+    assert '"action_type": "edit"' in item_edit
+    assert '"action_type": "create"' in item_edit
+    assert '"action_type": "delete"' in item_edit
+    assert '"action_type": "reconcile"' in item_edit
+    assert '@app.get("/itemedit/{item_id}/history.json")' in gui
+    assert 'id="selectedItemHistory"' in template
+    assert "async function refreshSelectedItemHistory()" in template
+    assert "async function restoreSelectedHistory(bid)" in template
+    assert "Current state will be backed up first." in template
+
     # Exact client-record snapshots make create/delete/edit undo-redo faithful.
     assert "def capture_client_record(item_id: int)" in item_dat
     assert "def restore_client_record(snapshot: dict)" in item_dat
