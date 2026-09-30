@@ -1,16 +1,20 @@
 {% extends "base.html" %}
 {% block title %}Captures{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}captures-page{% endblock %}
 
 {% block content %}
-<h1>Captures</h1>
-<p><a class="inline" href="/captures/new">+ new capture (build from scratch, drop files in over time)</a>
-  &nbsp;&middot;&nbsp; <a class="inline" href="/captures/search">cross-capture search (events / raw packets) &rarr;</a>
-  &nbsp;&middot;&nbsp; <a class="inline" href="/captures/help">supported formats / known gaps &rarr;</a></p>
-<p class="muted">Every ingested capture bundle (<code class="chip">build_capture_index.py</code>),
-tagged by <strong>content_type</strong> so future non-Assault captures can't get silently
-conflated with this data -- every row here is explicitly typed, not inferred from folder location.</p>
+<style>main.captures-page{padding:8px 10px 24px}</style>
+<div class="dense-toolbar">
+  <strong>Captures</strong>
+  <a class="chip" href="/captures/new">+ New capture</a>
+  <a class="chip" href="/captures/search">Cross-capture search</a>
+  <a class="chip" href="/captures/help">Formats / gaps</a>
+  <span class="sp"></span>
+  <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:680px">Indexed capture bundles are explicitly typed and tagged so unrelated content is not silently conflated.</div></details>
+</div>
 
-<form class="search" method="get">
+<form class="search dense-toolbar" method="get" style="margin:6px 0">
   <input type="text" name="q" value="{{ q }}" placeholder="filter by mission or label" list="mission-list">
   <datalist id="mission-list">
     {% for m in missions %}<option value="{{ m }}">{% endfor %}
@@ -30,9 +34,7 @@ conflated with this data -- every row here is explicitly typed, not inferred fro
   <button type="submit">Filter</button>
 </form>
 
-<p class="muted">{{ rows|length }} capture(s). Click a row to open it on its own page --
-  Prev/Next there cycles through this same filtered list, and your browser's back button returns
-  you here at the same scroll position.</p>
+<div class="dense-toolbar" style="margin:4px 0 6px"><strong>{{ rows|length }} capture(s)</strong><span class="sp"></span><span class="muted">Open a row for detail; Prev/Next preserves the current filtered set.</span></div>
 <div class="table-wrap"><table>
   <tr><th>id</th><th>type</th><th>tags</th><th>zones</th><th>mission</th><th>npc</th><th>source file</th></tr>
   {% for r in rows %}
