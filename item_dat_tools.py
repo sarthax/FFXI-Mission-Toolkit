@@ -1723,7 +1723,7 @@ def capture_client_record(item_id: int) -> dict | None:
         return None
     return {
         "item_id": int(item_id), "category": cat_name, "dat_ui": en_rom,
-        "record_index": idx, "format": item_dat.format,
+        "record_index": idx, "format": item_dat.format, "target": dat_target(),
         "record_hex": item_dat.record(idx).hex(),
     }
 
@@ -1740,8 +1740,11 @@ def restore_client_record(snapshot: dict) -> dict:
     idx = item_id - base_id
     if idx != int(snapshot["record_index"]) or en_rom != snapshot["dat_ui"]:
         raise ValueError("client record snapshot location does not match current item mapping")
-    src_path = dat_write_source(en_rom)
-    dest_path = dat_write_dest(en_rom)
+    target = snapshot.get("target", dat_target())
+    if target not in ("live", "pivot"):
+        raise ValueError(f"invalid client record snapshot target {target!r}")
+    dest_path = pivot_dat_path(en_rom) if target == "pivot" else dat_path(en_rom)
+    src_path = dest_path if dest_path.exists() else dat_path(en_rom)
     item_dat = ItemDat.load(src_path)
     raw = bytes.fromhex(snapshot["record_hex"])
     expected = STRIDE_BY_FORMAT[item_dat.format]
@@ -1752,7 +1755,7 @@ def restore_client_record(snapshot: dict) -> dict:
     dest_path.parent.mkdir(parents=True, exist_ok=True)
     dest_path.write_bytes(item_dat.encrypted())
     return {"ok": True, "item_id": item_id, "category": cat_name, "dat_ui": en_rom,
-            "record_index": idx, "dat": str(dest_path), "format": item_dat.format, "target": dat_target()}
+            "record_index": idx, "dat": str(dest_path), "format": item_dat.format, "target": target}
 
 def validate_client_patch(item_id: int, fields: dict) -> dict:
     """Validate an existing-item patch entirely in memory without writing a DAT or backup."""
