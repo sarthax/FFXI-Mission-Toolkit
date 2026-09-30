@@ -126,6 +126,8 @@
     <button id="snapXZ" type="button">Snap X/Z to grid</button>
     <button id="snapNavY" type="button">Snap Y to navmesh</button>
     <button id="snapFloorY" type="button">Snap Y to visual floor</button>
+    <button id="snapSelXYZ" type="button">Snap XYZ to other selected</button>
+    <button id="snapSelY" type="button">Snap Y to other selected</button>
   </div>
 </div>
 <div style="border:1px solid var(--border);border-radius:4px;padding:5px;margin:5px 0">
@@ -172,6 +174,14 @@
         <div class="muted" style="font-size:11px">mob_spawn_points -&gt; mob_groups.dropid -&gt; mob_droplist, joined against item_basic for real names. A dropid is shared by the whole mob_groups group, so a dropid change or a row edit here affects every spawn using it (<span id="edrops-n"></span>), not just this one mob.</div>
         <div id="edrops-body" style="font-size:11px;margin-top:4px"></div>
         <div style="margin-top:6px"><button id="edropsyncsql">Sync last drop change to SQL file</button></div>
+      </div>
+      <div id="ed-history" style="border:1px solid var(--border);border-radius:4px;padding:5px;margin:6px 0">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:4px">
+          <span class="muted" style="font-size:10px">Selected entity history</span>
+          <div style="display:flex;gap:3px"><button id="histRefresh" type="button">Refresh</button><button id="histRestorePrev" type="button">Restore previous saved state</button></div>
+        </div>
+        <div id="histList" class="mono" style="font-size:10px;max-height:150px;overflow:auto;margin-top:4px"></div>
+        <div id="histMsg" class="mono" style="font-size:10px;margin-top:4px;white-space:pre-wrap"></div>
       </div>
       <label style="align-items:flex-start">Comment <textarea id="ecomment" rows="2" style="width:170px" placeholder="why (goes in the SQL as -- comment)"></textarea></label>
       <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap"><button id="esave" disabled>Save to live DB</button><button id="erev">Revert</button><button id="ecopy">Copy SQL</button><button id="edel" style="color:#e74c3c">Delete entity&hellip;</button></div>
@@ -1090,6 +1100,7 @@ function loadEditor(i){ const e=Z.entities[i]; if(!e){ $('ed').hidden=true; $('e
     $('eanimmsg').textContent='';
   } else { $('ed-anim').hidden=true; }
   if (e.k==='m'){ $('ed-drops').hidden=false; loadDrops(e.id); } else { $('ed-drops').hidden=true; }
+  loadEntityHistory();
 }
 function beginBulkOrig(){
   if(bulkOrig.size) return;
@@ -1143,6 +1154,36 @@ $('bulk-sync').onclick=async()=>{
 };
 $('bulk-revert').onclick=restorePreviewFromOrig;
 $('bulk-clear').onclick=()=>{ if(isTransformDirty()&&!confirm('Discard unsaved preview and clear multi-selection?')) return; restorePreviewFromOrig(); if(selected>=0){ multiSelected.clear(); multiSelected.add(selected); } syncMultiUI(); rebuild(); };
+async function loadEntityHistory(){
+  const el=$('histList'); if(!el) return;
+  if(selected<0 || !Z?.entities[selected]){ el.textContent='No entity selected.'; return; }
+  const e=Z.entities[selected];
+  el.textContent='loading…';
+  const r=await fetch(`/zoneplot/history/${e.k}/${e.id}?limit=20`); const j=await r.json();
+  if(j.error){ el.textContent='ERROR: '+j.error; return; }
+  if(!j.length){ el.textContent='No backups for this entity yet.'; return; }
+  el.innerHTML=j.map(h=>{
+    const t=h.transform ? `(${h.transform.x}, ${h.transform.y}, ${h.transform.z}) r${h.transform.r}` : '[entity absent]';
+    return `<div style="padding:2px 0;border-bottom:1px solid rgba(255,255,255,.06)"><span>${h.ts}</span> · <span>${h.label}</span><br><span class="muted">${t} · backup ${h.backup}</span></div>`;
+  }).join('');
+}
+async function restoreSelectedPrevious(){
+  if(selected<0 || !Z?.entities[selected]) return;
+  if(isTransformDirty()){ if(!confirm('Discard unsaved preview before restoring the previous saved state?')) return; restorePreviewFromOrig(); }
+  const e=Z.entities[selected];
+  if(!confirm(`Restore only ${e.id} to its most recent backed-up state?`)) return;
+  const r=await fetch('/zoneplot/restore_entity_previous',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:e.k,id:e.id})});
+  const j=await r.json();
+  if(j.error){ $('histMsg').textContent='ERROR: '+j.error; return; }
+  recordUndo(`restore previous ${e.id}`,j.pre_restore_backup,entityKey(e.k,e.id));
+  markDbModified(e.k,e.id);
+  $('histMsg').textContent=`Restored from ${j.source_backup} (${j.source_label}). Undo backup ${j.pre_restore_backup}.`;
+  await loadZone();
+  const idx=Z.entities.findIndex(x=>x.k===e.k&&x.id===e.id); if(idx>=0) select(idx,false);
+  await loadEntityHistory();
+}
+$('histRefresh').onclick=loadEntityHistory;
+$('histRestorePrev').onclick=restoreSelectedPrevious;
 let dropsState=null;
 async function loadDrops(mobid){
   $('edrops-body').innerHTML='<span class="muted">loading&hellip;</span>';
@@ -1395,6 +1436,18 @@ $('snapXYZ').onclick=()=>snapGrid(true);
 $('snapXZ').onclick=()=>snapGrid(false);
 $('snapNavY').onclick=()=>{ if(!verticalSnapY(navMesh)) $('emsg').textContent='No navmesh intersection at the selected X/Z.'; };
 $('snapFloorY').onclick=()=>{ if(!verticalSnapY(meshObj)) $('emsg').textContent='No visual-mesh floor intersection at the selected X/Z.'; };
+function otherSelectedEntity(){
+  for(const i of multiSelected){ if(i!==selected && Z?.entities[i]) return Z.entities[i]; }
+  return null;
+}
+$('snapSelXYZ').onclick=()=>{
+  const o=otherSelectedEntity(); if(!o){ $('emsg').textContent='Multi-select another entity first.'; return; }
+  $('ex').value=o.x; $('ey').value=o.y; $('ez').value=o.z; previewEdit();
+};
+$('snapSelY').onclick=()=>{
+  const o=otherSelectedEntity(); if(!o){ $('emsg').textContent='Multi-select another entity first.'; return; }
+  $('ey').value=o.y; previewEdit();
+};
 
 let facingDrag=false;
 function rotationTowardPoint(point){
