@@ -182,6 +182,16 @@ server's permission gate. Every write is backed up first and journalled to
 </div>
 <div id="editorLists" class="lists-row"></div>
 
+  <div class="edit-card wide" id="selectedItemHistory" style="margin-top:12px;">
+    <h3>Selected item change history <span class="hint">item-scoped edits, create/delete/reconcile actions, comments, DAT involvement, and previous-state restore</span></h3>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+      <button type="button" id="refreshSelectedHistoryBtn">Refresh history</button>
+      <span id="selectedHistorySummary" class="muted"></span>
+    </div>
+    <div id="selectedHistoryList" class="rowtable-wrap table-wrap"></div>
+    <div id="selectedHistoryMsg" class="mono muted" style="margin-top:6px;font-size:11px;"></div>
+  </div>
+
   <div class="edit-card wide" style="margin-top:12px;">
     <h3>Backups <span class="hint">every edit/add/delete on this item is auto-backed-up first (across all item_* tables, mods, pet mods and latents) -- restore any of them here</span></h3>
     <div style="display:flex; gap:8px; margin-bottom:6px;">
@@ -833,6 +843,7 @@ async function loadItem(itemid, remember=true) {
   renderItemDiagnostics(data.comparison, data.validation);
   refreshDatInfo(data);
   await refreshClientRecordInspector(itemid);
+  await refreshSelectedItemHistory();
 
   buildTablesGrid(document.getElementById('editorTables'), data.server);
   loadedServerState=JSON.parse(JSON.stringify(data.server));
@@ -1031,6 +1042,46 @@ async function downloadXiPivot() {
   if (!confirm(`Download Xi-Pivot.zip -- ${manifest.files.length} DAT file(s) from ${manifest.root}, packaged for distribution?`)) return;
   window.location.href = '/itemedit/xi-pivot/export.zip';
 }
+
+function historyActionLabel(v){
+  return ({edit:'EDIT',create:'CREATE',delete:'DELETE',reconcile:'RECONCILE',restore:'RESTORE',backup:'BACKUP'})[v]||String(v||'BACKUP').toUpperCase();
+}
+async function refreshSelectedItemHistory(){
+  if(!currentItemId) return;
+  const list=document.getElementById('selectedHistoryList'), summary=document.getElementById('selectedHistorySummary'), msg=document.getElementById('selectedHistoryMsg');
+  list.innerHTML='<span class="muted">Loading...</span>'; msg.textContent='';
+  const r=await fetch('/itemedit/'+currentItemId+'/history.json?limit=100');
+  const rows=await r.json();
+  if(!r.ok){ list.innerHTML=''; msg.textContent='History error: '+(rows.error||r.statusText); return; }
+  summary.textContent=rows.length+' entr'+(rows.length===1?'y':'ies');
+  if(!rows.length){ list.innerHTML='<div class="muted">No backup/change history for this item.</div>'; return; }
+  let html='<table><thead><tr><th>time</th><th>action</th><th>summary</th><th>comment</th><th>client DAT</th><th></th></tr></thead><tbody>';
+  for(const h of rows){
+    const dat=h.dat_touched?('yes'+(h.client_target?' · '+h.client_target:'')):(h.has_client_record?'snapshot':'no');
+    const detail=(h.field_changes?.length?('<div class="muted" style="font-size:10px;">'+htmlEsc(h.field_changes.map(x=>x.table+'.'+x.field+': '+String(x.before??'')+' → '+String(x.after??'')).join(' · '))+'</div>'):'')+
+      (h.effect_changes?.length?('<div class="muted" style="font-size:10px;">'+h.effect_changes.length+' effect change(s)</div>'):'');
+    html+='<tr><td class="mono">'+htmlEsc(h.ts||'')+'</td><td>'+historyActionLabel(h.action_type)+'</td><td>'+htmlEsc(h.summary||h.label||'')+detail+
+      (h.legacy_metadata?'<div class="muted" style="font-size:9px;">legacy backup metadata</div>':'')+
+      '</td><td>'+htmlEsc(h.comment||'')+'</td><td>'+htmlEsc(dat)+'</td><td><button type="button" data-history-restore="'+htmlEsc(h.id)+'">Restore</button></td></tr>';
+  }
+  list.innerHTML=html+'</tbody></table>';
+  list.querySelectorAll('[data-history-restore]').forEach(btn=>btn.onclick=()=>restoreSelectedHistory(btn.dataset.historyRestore));
+}
+async function restoreSelectedHistory(bid){
+  if(!confirm('Restore item '+currentItemId+' to the previous state stored in backup '+bid+'? Current state will be backed up first.')) return;
+  const msg=document.getElementById('selectedHistoryMsg'); msg.textContent='Restoring...';
+  const res=await fetch('/itemedit/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:bid})});
+  const j=await res.json();
+  if(!res.ok){ msg.textContent='ERROR: '+(j.error||res.statusText); return; }
+  if(j.item_exists){
+    await loadItem(currentItemId,false);
+    document.getElementById('saveStatus').textContent='Restored previous state from '+bid;
+  }else{
+    document.getElementById('editorWrap').style.display='none';
+    currentItemId=null; loadedServerState=null;
+  }
+}
+document.getElementById('refreshSelectedHistoryBtn').onclick=refreshSelectedItemHistory;
 
 async function refreshItemBackups() {
   const list = document.getElementById('itemBackupList');
