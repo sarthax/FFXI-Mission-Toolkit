@@ -781,7 +781,7 @@ Priority stack:
 Additional QOL backlog:
 - [x] Double-click entity to select, frame, and enter edit-ready camera distance.
 - [x] Improved sortable/filterable entity list with type/id/name/group/level/rotation/reachability/instance columns and dedicated filters.
-- [ ] Keep map selection and list selection synchronized, including highlighted/auto-scrolled list rows.
+- [x] Keep map selection and list selection synchronized, including highlighted/auto-scrolled list rows.
 - [x] Optional heading text on labels.
 - [x] Click/drag facing-direction control from the selected entity's heading arrow.
 - [x] Snap controls for coordinate grid, navmesh Y, selected entity, and nearest floor; snapping is always explicit/user-triggered.
@@ -789,9 +789,9 @@ Additional QOL backlog:
 - [x] Distance/bearing measurement tool with horizontal/3D distance and delta coordinates.
 - [x] Change-history panel for selected entity using the existing edit log/backups.
 - [x] One-click restore selected entity to its previous saved state.
-- [ ] Navmesh diagnostics mode: nearest polygon, component, bounds, distance-to-navmesh, and invalid-placement highlighting.
-- [ ] Height/elevation coloring.
-- [ ] Door/prop orientation markers that remain visible without selection.
+- [x] Navmesh diagnostics mode: nearest polygon, component, bounds, distance-to-navmesh, and invalid-placement highlighting.
+- [x] Height/elevation coloring.
+- [x] Door/prop orientation markers that remain visible without selection.
 - [ ] Spawn/roam-radius visualization where those values genuinely exist in server data.
 - [ ] Clone-selected shortcut in Add workflow.
 - [ ] Repeated placement mode for multiple copies.
