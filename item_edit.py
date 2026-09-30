@@ -276,36 +276,75 @@ def restore(bid):
     return {"restored": len(b["ops"]), "pre_restore_backup": pre_id, "client": client_report}
 
 # ---- search -----------------------------------------------------------------------------------
-def search(q, category="", limit=60):
-    """Search item_basic joined with whichever type-table applies, by name. category is one of
-    '', 'armor', 'weapon', 'consumable', 'puppet', 'furnishing', 'general'."""
+def search(q, category="", min_level=-1, max_level=-1, job=-1, skill=-1, client_state="", limit=200):
+    """Search server items with proven SQL filters and annotate decoded client synchronization state."""
     if not q or len(q) < 2:
         return []
+    min_level, max_level, job, skill, limit = int(min_level), int(max_level), int(job), int(skill), int(limit)
     db = zone_plot._db(); cu = db.cursor()
-    like = f"%{q}%"
-    cu.execute("""select b.itemid, b.name, b.flags, b.stackSize,
-                         e.level, e.jobs, e.slot,
-                         w.skill, w.dmg, w.delay
-                  from item_basic b
-                  left join item_equipment e on e.itemId = b.itemid
-                  left join item_weapon w on w.itemId = b.itemid
-                  where b.name like %s order by b.name limit %s""", (like, limit))
-    rows = cu.fetchall()
-    db.close()
+    where = ["b.name like %s"]
+    params = [f"%{q}%"]
+    if min_level >= 0:
+        where.append("e.level >= %s"); params.append(min_level)
+    if max_level >= 0:
+        where.append("e.level <= %s"); params.append(max_level)
+    if job >= 0:
+        where.append("(e.jobs & %s) <> 0"); params.append(1 << job)
+    if skill >= 0:
+        where.append("w.skill = %s"); params.append(skill)
+    sql = """select b.itemid,b.name,b.flags,b.stackSize,
+                    e.level,e.jobs,e.slot,
+                    w.skill,w.dmg,w.delay,
+                    u.itemid,p.itemid,f.itemid
+             from item_basic b
+             left join item_equipment e on e.itemId=b.itemid
+             left join item_weapon w on w.itemId=b.itemid
+             left join item_usable u on u.itemid=b.itemid
+             left join item_puppet p on p.itemid=b.itemid
+             left join item_furnishing f on f.itemid=b.itemid
+             where """ + " and ".join(where) + " order by b.name limit %s"
+    params.append(max(limit * 3, 200))
+    cu.execute(sql, tuple(params))
+    rows = cu.fetchall(); db.close()
     out = []
-    for itemid, name, flags, stack, level, jobs, slot, skill, wdmg, delay in rows:
-        if skill is not None:
+    for itemid, name, flags, stack, level, jobs, slot, wskill, wdmg, delay, usable_id, puppet_id, furnishing_id in rows:
+        if wskill is not None:
             type_name = "weapon"
         elif level is not None:
             type_name = "armor"
+        elif usable_id is not None:
+            type_name = "consumable"
+        elif puppet_id is not None:
+            type_name = "puppet"
+        elif furnishing_id is not None:
+            type_name = "furnishing"
         else:
-            type_name = "general/other"
-        if category and category not in (type_name, "general" if type_name == "general/other" else ""):
+            type_name = "general"
+        if category and category != type_name:
+            continue
+        client = None
+        try:
+            rec = dat.read_client_item(itemid)
+            client = dat.item_to_dict(rec) if rec is not None else None
+        except Exception:
+            client = None
+        if client is None:
+            cstate = "server-only"
+        else:
+            server_rows = {"item_basic": {"flags": flags, "stackSize": stack}}
+            if level is not None:
+                server_rows["item_equipment"] = {"level": level, "jobs": jobs, "slot": slot}
+            if wskill is not None:
+                server_rows["item_weapon"] = {"skill": wskill, "dmg": wdmg, "delay": delay}
+            cmp = compare_server_client(server_rows, client)
+            cstate = "mismatch" if cmp["mismatches"] else "synced"
+        if client_state and client_state != cstate:
             continue
         out.append({"itemid": itemid, "name": name, "type_name": type_name, "level": level,
-                     "jobs": jobs, "skill": skill, "dmg": wdmg, "delay": delay})
+                    "jobs": jobs, "skill": wskill, "dmg": wdmg, "delay": delay, "client_state": cstate})
+        if len(out) >= limit:
+            break
     return out
-
 
 def _server_item_type(rows):
     if rows.get('item_weapon') is not None:
