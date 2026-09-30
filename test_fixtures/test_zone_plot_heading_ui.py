@@ -118,6 +118,21 @@ def main():
     assert "first 1000 shown" in template
     assert "grid-template-columns:34px 78px" in template
 
+    # Orientation / snap / clipboard / measurement tools.
+    assert 'id="labelHeading"' in template
+    assert "Show heading on labels" in template
+    assert 'id="faceDrag"' in template
+    assert "function rotationTowardPoint(point)" in template
+    assert "Math.atan2(-dz,dx)" in template
+    assert 'id="snapGrid"' in template
+    assert "function verticalSnapY(target)" in template
+    assert "Snap Y to navmesh" in template and "Snap Y to visual floor" in template
+    assert "let transformClipboard=null;" in template
+    assert "Copy pos + rot" in template
+    assert "Paste X/Z" in template and "Paste rotation" in template
+    assert "let measureMode=false, measureStart=null;" in template
+    assert "horizontal ${horizontal.toFixed(2)}" in template
+    assert "bearing ${bearing.toFixed(1)}°" in template
     print("Zone Plot heading/compass/zoom UI regression: PASS")
     return 0
 
