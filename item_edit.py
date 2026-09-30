@@ -460,6 +460,114 @@ def latent_names():
 
 
 # ---- edits ----------------------------------------------------------------------------------
+def save_item_atomic(item_id, tables, comment=""):
+    """Save changed one-row item tables as one backed-up SQL transaction and one client-DAT patch.
+
+    tables is {table: {column: value}} and should contain only fields the caller intends to
+    change. All table/column/existence validation occurs before any write. If overlapping client
+    fields exist, the DAT patch is first validated in memory, then written once while the SQL
+    transaction is still open. If the final DB commit fails, the DAT write is rolled back from
+    its just-created snapshot (or a newly-created Pivot destination is removed).
+    """
+    item_id = int(item_id)
+    if not isinstance(tables, dict) or not tables:
+        raise ValueError("no item table changes supplied")
+
+    db = zone_plot._db()
+    cu = db.cursor()
+    ops = []
+    normalized = {}
+    client_fields = {}
+    client_available = False
+    try:
+        for table, fields in tables.items():
+            if table not in TABLES:
+                raise ValueError(f"unknown item table {table!r}")
+            if not isinstance(fields, dict) or not fields:
+                continue
+            key = TABLES[table][0]
+            op = _capture(cu, table, [item_id])
+            if op["row"] is None:
+                raise ValueError(f"{table}.{key}={item_id} not found")
+            cols = _cols(cu, table)
+            bad = [k for k in fields if k not in cols]
+            if bad:
+                raise ValueError(f"{table} has no column(s): {', '.join(bad)}")
+            normalized[table] = dict(fields)
+            ops.append(op)
+            client_fields.update(_map_to_client_fields(table, fields))
+
+        if not normalized:
+            raise ValueError("no item table changes supplied")
+
+        if client_fields:
+            try:
+                client_available = dat.read_client_item(item_id) is not None
+            except Exception:
+                client_available = False
+            if client_available:
+                dat.validate_client_patch(item_id, client_fields)
+
+        bid = _save_backup(f"atomic edit item {item_id}", item_id, ops)
+        sqls = []
+        for table, fields in normalized.items():
+            key = TABLES[table][0]
+            set_clause = ", ".join(f"{k}=%s" for k in fields)
+            cu.execute(
+                f"update {table} set {set_clause} where {key}=%s",
+                tuple(fields.values()) + (item_id,),
+            )
+            sqls.append(
+                f"UPDATE {table} SET "
+                + ", ".join(f"{k}={lit(v)}" for k, v in fields.items())
+                + f" WHERE {key}={item_id};"
+            )
+
+        client_report = None
+        if client_fields and client_available:
+            client_report = dat.patch_client_item(item_id, client_fields)
+        elif client_fields:
+            client_report = {
+                "ok": False,
+                "skipped": True,
+                "error": "no client DAT record found; server transaction saved without client sync",
+                "fields": list(client_fields),
+            }
+
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+            if client_report and client_report.get("ok"):
+                import shutil
+                dat_path = Path(client_report["dat"])
+                backup_path = client_report.get("backup_path")
+                if backup_path:
+                    shutil.copy2(backup_path, dat_path)
+                elif not client_report.get("target_existed", True) and dat_path.exists():
+                    dat_path.unlink()
+            raise
+    except Exception:
+        try:
+            db.rollback()
+        finally:
+            db.close()
+        raise
+    db.close()
+
+    before = {op["table"]: op["row"] for op in ops}
+    notes = [f"-- atomic item backup {bid}"]
+    for table, fields in normalized.items():
+        old = before[table]
+        notes.append("-- " + table + " was (" + ", ".join(f"{k} {old.get(k)}" for k in fields) + ")")
+    _journal(comment, notes + sqls)
+    return {
+        "backup": bid,
+        "tables": sorted(normalized),
+        "sql": "\n".join(sqls),
+        "client": client_report,
+    }
+
 def update_item(item_id, table, fields, comment="", sync_client=True):
     """Update one row of one item_* table live, backed up + journalled. `fields` is a dict of
     column -> new value for that table only. If sync_client and the table/fields overlap with a
