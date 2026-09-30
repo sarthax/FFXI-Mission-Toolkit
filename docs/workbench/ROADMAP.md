@@ -830,7 +830,7 @@ Mods / pet mods / latents:
 - [x] Item-to-item staged-vs-saved comparison now includes editable server fields plus added/removed/changed mods, pet mods, and latents with resolved names where available.
 
 DAT workflow:
-- [~] Full Item DAT Record Inspector now shows the embedded live item icon, client-facing EN/JP text, singular/plural/article metadata, confirmed common/equipment/weapon/puppet fields, record location/format/stride/hash, and explicit unresolved-byte status. Remaining inspector work: furniture FUD correlation plus a documented legacy 0xC00 vs retail 0x1400 unknown-byte/layout audit.
+- [x] Full Item DAT Record Inspector shows the embedded live item icon, client-facing EN/JP text, singular/plural/article metadata, confirmed common/equipment/weapon/puppet fields, record location/format/stride/hash, explicit unresolved-byte status, authoritative furniture FUD correlation (ROM/74/21.DAT), and a documented legacy 0xC00 vs retail 0x1400 structural audit.
 - [x] Embedded item icons are extracted in real time from the same item DAT record (BitmapA payload at 0x280) and rendered as PNG; no separate icon library/index is required.
 - [x] Persistent item status header showing Server state, Client DAT state, mismatch count, exact DAT record location, and current Live/Xi-Pivot target.
 - [x] Strong visual distinction for LIVE CLIENT WRITE target.
