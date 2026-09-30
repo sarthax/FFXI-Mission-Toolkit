@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Packet Decode{% endblock %}
+{% block title %}Manual Packet Viewer / Decoder{% endblock %}
 {% block main_class %}wide-workbench{% endblock %}
 {% block content %}
 <style>
@@ -32,10 +32,10 @@
 @media(max-width:1180px){.packet-main-grid,.scratch-row{grid-template-columns:1fr}.decode-form{grid-template-columns:1fr 1fr}.decode-form input[name=hex_bytes]{grid-column:1/-1}.decode-form button{grid-column:1/-1}}
 </style>
 
-<div class="packet-breadcrumb"><a class="inline" href="/packets?direction={{ direction }}&q={{ q }}">Packets</a> &rsaquo; Manual decoder</div>
+<div class="packet-breadcrumb"><a class="inline" href="/packets?direction={{ direction }}&q={{ q }}">Packet Tools</a> &rsaquo; Manual Packet Viewer / Decoder</div>
 <div class="packet-titlebar">
   <div>
-    <h1>Packet Decoder</h1>
+    <h1>Manual Packet Viewer / Decoder</h1>
     {% if layout %}
     <div class="packet-chips">
       <span class="packet-chip {{ 'in' if direction == 's2c' else 'out' }}">{{ 'incoming (s2c)' if direction == 's2c' else 'outgoing (c2s)' }}</span>
@@ -140,7 +140,7 @@
     <h3>Decoder notes</h3>
     <div style="padding:10px 12px">
       <p style="margin-top:0">This is an ad-hoc scratch decode using the active packet definition. Field colors map directly to raw byte spans; dashed bytes are not claimed by the current schema.</p>
-      <p class="muted" style="margin-bottom:0">Use the Capture packet workbench when the bytes came from a capture so timestamp, neighboring packets, source provenance, and cross-source correlations remain attached.</p>
+      <p class="muted" style="margin-bottom:0">If these bytes came from an ingested capture, use its <strong>Packet Browser → Packet Viewer</strong> workflow instead so timestamp, neighboring packets, source provenance, and cross-source correlations remain attached.</p>
     </div>
   </section>
 </div>
