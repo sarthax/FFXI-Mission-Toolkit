@@ -123,6 +123,102 @@ def list_backups():
     return out
 
 
+def entity_history(kind, eid, limit=20):
+    """Return backup entries that contain this exact entity row, newest first."""
+    if kind not in KIND_TABLE:
+        raise ValueError("kind must be m/n/d")
+    table = KIND_TABLE[kind]
+    eid = int(eid)
+    out = []
+    files = sorted(BACKUPS.glob("*.json"), reverse=True) if BACKUPS.exists() else []
+    for f in files:
+        b = json.loads(f.read_text())
+        for op in b.get("ops", []):
+            if op.get("table") == table and op.get("key") == [eid]:
+                row = op.get("row")
+                transform = None
+                if row is not None:
+                    transform = {
+                        "x": row.get("pos_x"),
+                        "y": row.get("pos_y"),
+                        "z": row.get("pos_z"),
+                        "r": row.get("pos_rot"),
+                    }
+                out.append({
+                    "backup": b["id"],
+                    "ts": b["ts"],
+                    "label": b["label"],
+                    "kind": b.get("kind", "auto"),
+                    "transform": transform,
+                    "existed": row is not None,
+                })
+                break
+        if len(out) >= max(1, min(int(limit), 100)):
+            break
+    return out
+
+
+def restore_entity_previous(kind, eid):
+    """Restore only one entity from its newest matching backup.
+
+    This deliberately does not restore the entire source backup because a bulk-transform backup
+    may contain many unrelated rows. The current entity row is backed up first so this action is
+    itself undoable through the normal Zone Editor history stack.
+    """
+    if kind not in KIND_TABLE:
+        raise ValueError("kind must be m/n/d")
+    table = KIND_TABLE[kind]
+    eid = int(eid)
+    history = entity_history(kind, eid, 100)
+    if not history:
+        raise ValueError(f"no prior backup found for {kind}:{eid}")
+
+    source = history[0]
+    b = json.loads((BACKUPS / f"{source['backup']}.json").read_text())
+    source_op = next(
+        op for op in b["ops"]
+        if op.get("table") == table and op.get("key") == [eid]
+    )
+
+    db = zone_plot._db()
+    cu = db.cursor()
+    current = _capture(cu, table, [eid])
+    pre_id = _save_backup(
+        f"auto: before entity restore {kind}:{eid} from {source['backup']}",
+        _zone_of(eid),
+        [current],
+    )
+    row = source_op.get("row")
+    keycol = TABLES[table][0]
+    lines = []
+    if row is None:
+        cu.execute(f"delete from {table} where {keycol}=%s", (eid,))
+        lines.append(f"DELETE FROM {table} WHERE {keycol}={eid};")
+    else:
+        cols = list(row)
+        cu.execute(
+            f"replace into {table} ({','.join(cols)}) values ({','.join(['%s'] * len(cols))})",
+            tuple(_dec(row[col]) for col in cols),
+        )
+        lines.append(
+            f"REPLACE INTO {table} ({','.join(cols)}) VALUES "
+            f"({','.join(lit(row[col]) for col in cols)});"
+        )
+    db.commit()
+    db.close()
+    _journal(
+        f"RESTORE entity {kind}:{eid} from backup {source['backup']} ({source['label']}); "
+        f"pre-restore state saved as {pre_id}",
+        lines,
+    )
+    return {
+        "restored": 1,
+        "source_backup": source["backup"],
+        "source_label": source["label"],
+        "pre_restore_backup": pre_id,
+    }
+
+
 def restore(bid, exact=False):
     """Put every row in the backup back (REPLACE / delete-if-it-did-not-exist). exact=True on a zone
     snapshot also deletes rows that exist now but are not in the snapshot. Backs up current state first."""
