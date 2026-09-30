@@ -6571,6 +6571,16 @@ async def zoneplot_edit(request: Request):
         return JSONResponse({"error": str(ex)}, status_code=400)
 
 
+@app.post("/zoneplot/edit_bulk")
+async def zoneplot_edit_bulk(request: Request):
+    import zone_edit
+    b = await request.json()
+    try:
+        return JSONResponse(zone_edit.update_positions_bulk(b["rows"], b.get("comment", "")))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
 @app.post("/zoneplot/animate")
 async def zoneplot_animate(request: Request):
     import zone_edit
