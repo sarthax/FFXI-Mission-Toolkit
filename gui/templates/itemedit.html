@@ -517,13 +517,8 @@ document.getElementById('itemEditorMode').value=itemEditorMode;
 document.getElementById('itemEditorMode').onchange=()=>{
   itemEditorMode=document.getElementById('itemEditorMode').value;
   localStorage.setItem('itemEditorMode',itemEditorMode);
-  if(currentItemId && loadedServerState){
-    const current=collectCurrentTables();
-    const merged=JSON.parse(JSON.stringify(loadedServerState));
-    for(const [t,row] of Object.entries(current)) Object.assign(merged[t]||={},row);
-    buildTablesGrid(document.getElementById('editorTables'),merged);
-    renderDecodedSummary();
-  }
+  applyEditorModeVisibility();
+  renderDecodedSummary();
 };
 document.getElementById('compareItemBtn').onclick=compareCurrentItem;
 document.getElementById('clearItemCompareBtn').onclick=()=>{ const b=document.getElementById('itemCompareResult'); b.style.display='none'; b.innerHTML=''; };
@@ -563,12 +558,27 @@ function itemFieldHtml(table, row, f, schemaForTable) {
     <input type="text" data-table="${table}" data-field="${f}" title="${help.replace(/"/g,'&quot;')}"
       value="${row[f]===null?'':String(row[f]).replace(/"/g,'&quot;')}"></div>`;
 }
+function applyEditorModeVisibility(){
+  const wrap=document.getElementById('editorTables');
+  if(!wrap) return;
+  const basic=itemEditorMode==='basic';
+  wrap.querySelectorAll('[data-editor-field]').forEach(el=>{
+    const [table,field]=String(el.dataset.editorField||'').split('.');
+    el.style.display=(basic && !BASIC_FIELDS[table]?.has(field))?'none':'';
+  });
+  wrap.querySelectorAll('.logical-group').forEach(group=>{
+    const visible=[...group.querySelectorAll('[data-editor-field]')].some(el=>el.style.display!=='none');
+    group.style.display=visible?'':'none';
+  });
+  wrap.querySelectorAll('.edit-card').forEach(card=>{
+    const visible=[...card.querySelectorAll('[data-editor-field]')].some(el=>el.style.display!=='none');
+    card.style.display=visible?'':'none';
+  });
+}
 function buildTablesGrid(wrap, serverObj) {
   wrap.innerHTML='';
   for(const [table,row] of Object.entries(serverObj)){
-    const allFields=(TABLE_FIELDS[table]||Object.keys(row)).filter(f=>f in row);
-    const useBasic=wrap.id==='editorTables' && itemEditorMode==='basic';
-    const fields=useBasic ? allFields.filter(f=>BASIC_FIELDS[table]?.has(f)) : allFields;
+    const fields=(TABLE_FIELDS[table]||Object.keys(row)).filter(f=>f in row);
     if(!fields.length) continue;
     const schemaForTable=BITMASK_SCHEMA[table]||{};
     const box=document.createElement('div'); box.className='edit-card';
@@ -588,6 +598,7 @@ function buildTablesGrid(wrap, serverObj) {
     wrap.appendChild(box);
   }
   wrap.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',()=>{ updateDirtySummary(); renderDecodedSummary(); }));
+  if(wrap.id==='editorTables') applyEditorModeVisibility();
 }
 function decodeField(table,field,value){
   const schema=BITMASK_SCHEMA?.[table]?.[field], n=Number(value)||0;
