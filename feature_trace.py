@@ -85,7 +85,7 @@ def search_nodes(con: sqlite3.Connection, term: str, catalog_con: sqlite3.Connec
     return sorted(rows, key=lambda row: (str(row.get("display_name") or "").casefold(), row["node_id"]))
 
 
-ENTITY_OBJECT_TYPES = {"NPC", "MOB", "INSTANCE_ENTITY", "CLIENT_IDENTITY"}
+ENTITY_OBJECT_TYPES = {"NPC", "MOB", "INSTANCE_ENTITY", "CLIENT_IDENTITY", "CLIENT_ENTITY"}
 
 
 def _numeric_entity_query(query: str) -> int | None:
@@ -146,14 +146,16 @@ def _catalog_entity_id(row: dict) -> int | None:
         try:
             return int(value)
         except (TypeError, ValueError):
-            return None
+            pass
     identity = row.get("identity") or {}
-    for key in ("npcid", "mobid", "entity_id", "id", "numeric_id"):
-        if key in identity:
-            try:
-                return int(identity[key])
-            except (TypeError, ValueError):
-                pass
+    aliases = row.get("aliases") or {}
+    for source in (identity, aliases):
+        for key in ("npcid", "mobid", "entity_id", "id", "numeric_id"):
+            if key in source:
+                try:
+                    return int(source[key])
+                except (TypeError, ValueError):
+                    pass
     # Canonical search rows expose the key in matched_on but do not currently populate numeric_id.
     node_id = str(row.get("node_id") or "")
     if not row.get("catalog_only") and ":" in node_id:
