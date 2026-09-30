@@ -545,7 +545,8 @@ function buildTablesGrid(wrap, serverObj) {
   wrap.innerHTML='';
   for(const [table,row] of Object.entries(serverObj)){
     const allFields=(TABLE_FIELDS[table]||Object.keys(row)).filter(f=>f in row);
-    const fields=itemEditorMode==='basic' ? allFields.filter(f=>BASIC_FIELDS[table]?.has(f)) : allFields;
+    const useBasic=wrap.id==='editorTables' && itemEditorMode==='basic';
+    const fields=useBasic ? allFields.filter(f=>BASIC_FIELDS[table]?.has(f)) : allFields;
     if(!fields.length) continue;
     const schemaForTable=BITMASK_SCHEMA[table]||{};
     const box=document.createElement('div'); box.className='edit-card';
