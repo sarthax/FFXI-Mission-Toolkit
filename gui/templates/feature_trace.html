@@ -99,6 +99,13 @@
       <summary><strong>Canonical identity</strong> · <code>{{ implementation_path.canonical.root }}</code></summary>
       <div style="padding:8px 10px">
         <div><strong>{{ implementation_path.canonical.display_name }}</strong> <span class="chip">{{ implementation_path.canonical.node_type }}</span></div>
+        {% if implementation_path.canonical.relationship_counts %}
+        <div class="impl-meta">
+          {% for rel in implementation_path.canonical.relationship_counts %}
+          <span class="chip">{{ rel.relationship }} {{ rel.count }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
         {% if implementation_path.canonical.identifiers %}
         <div class="impl-meta">
           {% for ident in implementation_path.canonical.identifiers %}
