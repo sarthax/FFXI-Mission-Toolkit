@@ -141,6 +141,10 @@ def main():
         assert "Evidence mapping ledger" in template
         assert "Build / refresh evidence map" in template
         assert "confirm identity" in template
+        assert "{% block shell_mode %}dense{% endblock %}" in template
+        assert "wiki-section" in template
+        assert "wiki-kpis" in template
+        assert "Export handoff packet" in template
 
     print("Wiki evidence mapping regression: PASS")
     return 0
