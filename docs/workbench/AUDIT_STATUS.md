@@ -1,3 +1,12 @@
+## 2026-09-30 — Spatial and Environment Evidence Search modules
+
+- Added Spatial & Movement and Environment & World State modules to the modular cross-capture Evidence Search workspace.
+- Spatial search combines entity position snapshots, aggregated NPC/mob path presence, POI observations, and SpawnTrack observations.
+- NPC/mob path results deliberately aggregate by capture + zone + entity, reporting path-point and leg counts instead of returning every path sample as a search hit.
+- Environment search uses the already-normalized WeatherTrack and ConquestTrack structured families and searches zone plus source payload text.
+- Both modules preserve Data Explorer drill-down to their canonical source datasets; no inferred packet associations are introduced.
+- The planned first-pass Evidence Search module set is now complete. Remaining work is richer evidence correlation, especially explicit packet relationships where provenance/correlation supports them.
+
 ## 2026-09-30 — Modular Capture Evidence Search foundation
 
 - Replaced the two-mode Cross-capture Search presentation with a reusable evidence-module registry.

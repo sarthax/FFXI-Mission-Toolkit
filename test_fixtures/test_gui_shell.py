@@ -409,6 +409,8 @@ def main():
             {"id": "vendors", "label": "Vendors & Shops", "description": "Shop evidence."},
             {"id": "crafting", "label": "Crafting", "description": "Craft evidence."},
             {"id": "chat", "label": "Chat & Text", "description": "Chat evidence."},
+            {"id": "spatial", "label": "Spatial & Movement", "description": "Spatial evidence."},
+            {"id": "environment", "label": "Environment & World State", "description": "World-state evidence."},
         ],
         q="Potion", entity="", message_id="", ev_opcodes=[], available_ev_opcodes=[],
         pk_category="", pk_opcode="", categories=[],
@@ -431,6 +433,8 @@ def main():
     assert "Vendors &amp; Shops" in evidence_search_html
     assert "Battle &amp; Actions" in evidence_search_html
     assert "Crafting" in evidence_search_html
+    assert "Spatial &amp; Movement" in evidence_search_html
+    assert "Environment &amp; World State" in evidence_search_html
     assert "shopstock_buy_db" in evidence_search_html
     assert "capture_structured_records" in evidence_search_html
     assert "/captures/9/timeline" in evidence_search_html

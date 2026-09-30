@@ -6467,6 +6467,16 @@ CAPTURE_EVIDENCE_MODULES = {
         "description": "Canonical chat observations and legacy CapLog chat text.",
         "hint": "Text substring",
     },
+    "spatial": {
+        "label": "Spatial & Movement",
+        "description": "Entity/path presence, player traces, POI and spawn observations without expanding every path point.",
+        "hint": "Zone, entity name, or exact entity ID",
+    },
+    "environment": {
+        "label": "Environment & World State",
+        "description": "Weather and conquest/world-state observations normalized from capture tools.",
+        "hint": "Zone, weather/state text, or value",
+    },
 }
 
 
@@ -6601,6 +6611,68 @@ def _capture_generic_search(con, module: str, q: str, page: int) -> tuple[list[d
                  FROM capture_caplog_chat h JOIN captures c ON c.capture_id=h.capture_id
                  WHERE h.text LIKE ?"""
         params = [like, like]
+    elif module == "spatial":
+        # Path tables can contain thousands of points per entity. Return one aggregate row
+        # per capture/zone/entity path instead of flooding search with every sample.
+        if numeric is not None:
+            entity_where = "(e.entity_id = ? OR e.name LIKE ?)"
+            entity_params = [numeric, like]
+            path_where = "p.entity_id = ?"
+            path_params = [numeric]
+        else:
+            entity_where = "(e.name LIKE ? OR e.zone_db LIKE ?)"
+            entity_params = [like, like]
+            path_where = "p.zone_db LIKE ?"
+            path_params = [like]
+        sql = f"""SELECT e.capture_id,c.capture_label,'ENTITY_POSITION' AS evidence_kind,
+                         e.zone_db AS zone,NULL AS ts,e.entity_id AS subject_id,
+                         COALESCE(e.name,CAST(e.entity_id AS TEXT)) AS title,
+                         'position=(' || COALESCE(CAST(e.x AS TEXT),'?') || ',' ||
+                         COALESCE(CAST(e.y AS TEXT),'?') || ',' ||
+                         COALESCE(CAST(e.z AS TEXT),'?') || ') dir=' ||
+                         COALESCE(CAST(e.dir AS TEXT),'?') AS summary,
+                         'capture_npc_entries' AS dataset,CAST(e.entity_id AS TEXT) AS record_id
+                  FROM capture_npc_entries e JOIN captures c ON c.capture_id=e.capture_id
+                  WHERE {entity_where}
+                  UNION ALL
+                  SELECT p.capture_id,c.capture_label,'ENTITY_PATH',p.zone_db,NULL,p.entity_id,
+                         COALESCE(MAX(e.name),CAST(p.entity_id AS TEXT)),
+                         CAST(COUNT(*) AS TEXT) || ' path points • legs=' ||
+                         CAST(COUNT(DISTINCT p.leg) AS TEXT),
+                         'capture_npc_path',CAST(p.entity_id AS TEXT)
+                  FROM capture_npc_path p
+                  JOIN captures c ON c.capture_id=p.capture_id
+                  LEFT JOIN capture_npc_entries e
+                    ON e.capture_id=p.capture_id AND e.zone_db=p.zone_db AND e.entity_id=p.entity_id
+                  WHERE {path_where}
+                  GROUP BY p.capture_id,p.zone_db,p.entity_id,c.capture_label
+                  UNION ALL
+                  SELECT s.capture_id,c.capture_label,
+                         CASE WHEN s.family='poitrack_db' THEN 'POI' ELSE 'SPAWN' END,
+                         s.zone,s.ts,s.entity_id,
+                         COALESCE(s.entity_name,s.record_type,s.family),
+                         s.family || ' • ' || substr(s.payload_json,1,180),
+                         'capture_structured_records',
+                         s.source_file || ':' || s.family || ':' || s.record_key
+                  FROM capture_structured_records s JOIN captures c ON c.capture_id=s.capture_id
+                  WHERE s.family IN ('poitrack_db','spawntrack_csv')
+                    AND (s.zone LIKE ? OR s.entity_name LIKE ? OR s.payload_json LIKE ?)"""
+        params = entity_params + path_params + [like, like, like]
+    elif module == "environment":
+        # Environment observations live in structured capture families. Search the
+        # normalized zone fields plus raw payload because weather/conquest generations
+        # expose different column names over time.
+        sql = """SELECT s.capture_id,c.capture_label,
+                        CASE WHEN s.family='weathertrack_db' THEN 'WEATHER' ELSE 'WORLD_STATE' END,
+                        s.zone,s.ts,s.entity_id,
+                        COALESCE(s.zone,s.record_type,s.family) AS title,
+                        s.family || ' • ' || substr(s.payload_json,1,220) AS summary,
+                        'capture_structured_records',
+                        s.source_file || ':' || s.family || ':' || s.record_key
+                 FROM capture_structured_records s JOIN captures c ON c.capture_id=s.capture_id
+                 WHERE s.family IN ('weathertrack_db','conquesttrack_csv')
+                   AND (s.zone LIKE ? OR s.payload_json LIKE ? OR s.record_type LIKE ?)"""
+        params = [like, like, like]
     else:
         return [], 0, 1, page
 

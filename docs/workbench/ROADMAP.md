@@ -1,3 +1,11 @@
+## 2026-09-30 Evidence Search module completion
+
+- [x] Add Spatial & Movement search over entity snapshots, aggregated entity paths, POI and SpawnTrack evidence.
+- [x] Prevent path-heavy evidence from flooding results by aggregating path observations per capture/zone/entity.
+- [x] Add Environment & World State search over WeatherTrack and ConquestTrack observations.
+- [ ] Add provenance-safe related-packet correlation to evidence result cards where an explicit correlation exists.
+- [ ] Add cross-module “related evidence” expansion without timestamp-only guessing.
+
 ## 2026-09-30 Zone / packet usability fixes
 
 - [x] Remove the legacy Zone Editor page from navigation and redirect old /zoneplot bookmarks to /zoneplot2.
@@ -17,8 +25,8 @@
 - [x] Rename Capture navigation to Evidence Search vs Data Explorer.
 - [x] Build modular Evidence Search framework.
 - [x] Migrate Events / Dialogue and Raw Packets into search modules.
-- [~] Add Entity, Battle, Items/KIs, Vendor, Crafting, Spatial, Environment and Chat search modules. Entity, Battle, Items/KIs, Vendor, Crafting and Chat are implemented; Spatial and Environment remain.
-- [~] Let modules return related evidence families and drill-down handoffs rather than one-table results. Multi-family Battle, Items/KIs, Vendor and Chat modules are implemented; richer related-packet joins remain.
+- [x] Add Entity, Battle, Items/KIs, Vendor, Crafting, Spatial, Environment and Chat search modules.
+- [~] Let modules return related evidence families and drill-down handoffs rather than one-table results. Multi-family Battle, Items/KIs, Vendor, Chat and Spatial modules are implemented; richer explicit related-packet joins remain.
 
 ## 2026-09-30 Configurable shell branding
 
