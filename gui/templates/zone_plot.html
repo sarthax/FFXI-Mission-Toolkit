@@ -26,7 +26,7 @@
   <label>Server <select id="srv"><option value="topaz">Topaz</option><option value="dsp">DSP</option></select></label>
   <label>Zone <select id="zone"></select></label>
   <label>Instance <select id="inst"><option value="0">All rows</option></select></label>
-  <div id="tabbar" style="display:flex;gap:4px;margin:6px 0;flex-wrap:wrap"><button data-t="view" class="tabb">View</button><button data-t="edit" class="tabb">Edit</button><button data-t="add" class="tabb">Add</button><button data-t="backup" class="tabb">Backups</button></div>
+  <div id="tabbar" style="display:flex;gap:4px;margin:6px 0;flex-wrap:wrap"><button data-t="view" class="tabb">View</button><button data-t="edit" class="tabb">Edit</button><button data-t="add" class="tabb">Add</button><button data-t="backup" class="tabb">Backups</button><button data-t="help" class="tabb">Help</button></div>
 <div id="edit-toolbar" style="display:flex;gap:4px;margin:4px 0 7px;flex-wrap:wrap;align-items:center">
   <button id="undoBtn" disabled title="Undo last saved Zone Editor action (Ctrl+Z)">Undo</button>
   <button id="redoBtn" disabled title="Redo last undone Zone Editor action (Ctrl+Y / Ctrl+Shift+Z)">Redo</button>
@@ -239,6 +239,77 @@
     <div style="display:flex;gap:6px;margin:6px 0"><button id="bsnap">Snapshot this zone</button><button id="bref">Refresh list</button></div>
     <div id="blist" style="max-height:320px;overflow:auto;font:11px monospace;border:1px solid var(--border);padding:4px"></div>
     <div id="bmsg" class="mono" style="font-size:11px;margin-top:4px;white-space:pre-wrap"></div>
+  </div>
+  <div id="tab-help" hidden style="font-size:12px;line-height:1.45">
+    <h3>Zone Editor help</h3>
+    <div class="muted">The editor separates preview state from saved state. Moving, rotating, snapping, or dragging an entity changes only the browser preview until you press <b>Save to live DB</b>. Every write is backed up first. Checked-in SQL files are updated only when you explicitly use a Sync to SQL action.</div>
+
+    <h3>Selection &amp; camera</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li>Click a dot or result row to select it. Selection always returns the transform gizmo to <b>Move</b> mode.</li>
+      <li>Double-click a dot or result row to select and frame it.</li>
+      <li>Ctrl/Cmd-click adds or removes entities from multi-select.</li>
+      <li>Shift-click a dot sets the reachability anchor.</li>
+      <li><b>F</b> frames the selected entity. Frame all fits the whole visible set.</li>
+      <li>Mouse drag orbits the camera; wheel zooms. Camera presets and Perspective/Orthographic projection are under View.</li>
+    </ul>
+
+    <h3>Transform shortcuts</h3>
+    <table class="mono" style="width:100%;font-size:10px;border-collapse:collapse">
+      <tr><td>Arrow keys</td><td>Move selected entity on X/Z</td></tr>
+      <tr><td>Page Up / Page Down</td><td>Move Y</td></tr>
+      <tr><td>[ / ]</td><td>Rotate left/right by Rotation step</td></tr>
+      <tr><td>Shift</td><td>Large-step modifier</td></tr>
+      <tr><td>Alt</td><td>Precision-step modifier</td></tr>
+      <tr><td>Ctrl+Z</td><td>Undo last saved Zone Editor action</td></tr>
+      <tr><td>Ctrl+Y or Ctrl+Shift+Z</td><td>Redo</td></tr>
+      <tr><td>F</td><td>Frame selected</td></tr>
+    </table>
+
+    <h3>Move / rotate / snap</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li><b>Move</b> uses the Three.js translation gizmo; <b>Rotate</b> uses the rotation gizmo. Clicking another model resets to Move.</li>
+      <li>Direction presets use FFXI rotation: 0=E, 64=N, 128=W, 192=S.</li>
+      <li>Drag facing direction lets you drag from the selected dot toward a point to set heading.</li>
+      <li>Snap XYZ/XZ uses the configured grid. Snap Y to navmesh or visual floor uses the corresponding geometry source.</li>
+      <li>Transform clipboard copies position+rotation and can paste all, X/Z only, or rotation only.</li>
+      <li>Bulk transform applies relative offsets to a multi-selection and preserves spacing.</li>
+    </ul>
+
+    <h3>View &amp; diagnostics</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li>Toggle mobs, NPCs, doors/props, navmesh, labels, heading labels, and door-facing ticks.</li>
+      <li>Colour by reachability, entity kind, nav region, or elevation.</li>
+      <li>Nav diagnostics shows polygon/triangle/component, placement bounds, and nearest nav point for the selection.</li>
+      <li>Measure reports distance between picked map points.</li>
+      <li>Explicit ROAM_DISTANCE and SPAWN_LEASH circles are shown only when the server data actually defines them.</li>
+      <li>Mesh complexity selects live textured mesh, reduced LOD, or legacy OBJ comparison.</li>
+    </ul>
+
+    <h3>Client model preview</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li>Open <b>Client model preview</b> on a selected mob/NPC to render its client model lazily.</li>
+      <li>The candidate model browser searches the shared Client Model Catalog by name, model/file ID, family, pool, or ROM path.</li>
+      <li>Candidate previews are read-only until you explicitly use the model-change workflow; previewing never changes server data.</li>
+    </ul>
+
+    <h3>Animation &amp; subanimation</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li>NPC/door rows expose the persistent <span class="mono">animation</span> and <span class="mono">animationsub</span> bytes sent in entity updates.</li>
+      <li>Known animation enum values come from current LandSandBoat <span class="mono">data/enums/animation.yaml</span>; unknown numeric values remain available through Custom.</li>
+      <li>Subanimation is model-dependent. Known observed values are labeled with their LSB usage evidence rather than treated as universal meanings.</li>
+      <li>FOURCC <span class="mono">entityAnimationPacket</span> effects are transient script-driven animations and are separate from the persistent animation/subanimation fields.</li>
+    </ul>
+
+    <h3>Add, delete, drops &amp; backups</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li>Add clones an existing mob group or NPC and can link the new row to an instance.</li>
+      <li>Repeated placement keeps the Add source active for multiple placements.</li>
+      <li>Mob drop editing follows spawn → group → dropid → mob_droplist and reports group sharing.</li>
+      <li>Delete, transform, animation, model, add, and drop edits are backup-backed before mutation.</li>
+      <li>The Backups tab can snapshot the entire zone and restore previous states.</li>
+      <li>Live DB and checked-in SQL are intentionally separate. Use the relevant <b>Sync to SQL</b> button when the live result is correct.</li>
+    </ul>
   </div>
   <h3 id="matchhdr">Matches <span class="muted" id="cnt"></span></h3>
   <div id="listfilters" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:4px;font-size:11px">
@@ -965,6 +1036,7 @@ function select(i, fly){
   }
   selected=i;
   multiSelected.clear(); multiSelected.add(i); bulkOrig.clear(); bulkPreviewActive=false;
+  if(typeof setGizmoMode==='function') setGizmoMode('translate');
   if(changed&&typeof loadEditor==='function') loadEditor(i);
   const e=Z.entities[i];
   if(fly && !e.zero) frameSelected();
@@ -1123,8 +1195,8 @@ $('grnd').onclick=()=>{ $('gseed').value=Math.floor(Math.random()*1e9); $('ggen'
 $('gclr').onclick=clearGen;
 
 // ---- tabs + editor ----
-function tab(t){ ['view','edit','add','backup'].forEach(x=>{ $('tab-'+x).hidden=x!==t; }); document.querySelectorAll('.tabb').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
-  $('matchhdr').style.display=(t==='add'||t==='backup')?'none':''; $('list').style.display=(t==='add'||t==='backup')?'none':'';
+function tab(t){ ['view','edit','add','backup','help'].forEach(x=>{ $('tab-'+x).hidden=x!==t; }); document.querySelectorAll('.tabb').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  const hideList=(t==='add'||t==='backup'||t==='help'); $('matchhdr').style.display=hideList?'none':''; $('listfilters').style.display=hideList?'none':'grid'; $('listctx').style.display=hideList?'none':''; $('list').style.display=hideList?'none':'';
   if(t==='backup') refreshBackups();
   if(typeof updateAddMarker==='function') updateAddMarker(); }
 document.querySelectorAll('.tabb').forEach(b=>b.onclick=()=>tab(b.dataset.t)); tab('view');
