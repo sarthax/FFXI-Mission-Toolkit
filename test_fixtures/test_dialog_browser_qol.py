@@ -19,6 +19,9 @@ def main():
     assert "capture_events" in server
     assert "LIKE ?" in server
     assert 'results = _enrich_dialog_rows(' in server
+    assert "SELECT COUNT(*) FROM dialog_text WHERE zoneid = ?" in server
+    assert "ORDER BY idx LIMIT ? OFFSET ?" in server
+    assert "SELECT COUNT(*) FROM dialog_text WHERE zoneid = ? AND idx < ?" in server
 
     assert '"message_ids": decompile_summary["message_ids"]' in explore
     assert '"message_refs": message_refs' in explore
@@ -26,6 +29,11 @@ def main():
 
     assert "Dialog Browser" in template
     assert "decimal ID (7465), or hex ID (0x1D29)" in template
+    assert "Zone browse mode" in template
+    assert "No search filter is active" in template
+    assert "Jump to ID" in template
+    assert "page {{ page }} of {{ total_pages }}" in template
+    assert "prev" in template and "next" in template
     assert "Research context / implementation links" in template
     assert "IDs.lua mapping" in template
     assert "Events / CSID references" in template
