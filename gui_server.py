@@ -3744,6 +3744,7 @@ def feature_trace_page(
         direction = "both"
     result = None
     matches = []
+    implementation_path = None
     error = None
     con = _workbench_graph_connection()
     catalog_con = get_con()
@@ -3751,13 +3752,25 @@ def feature_trace_page(
         error = "Canonical Workbench graph is not available. Build/import workbench.db before tracing features."
     elif q.strip():
         query = q.strip()
+        implementation_path = feature_trace.entity_implementation_path(con, catalog_con, query)
         exact = feature_trace.node_info(con, query, catalog_con)
         if exact["known"]:
             result = feature_trace.trace(con, query, depth, direction, catalog_con)
+        elif implementation_path and implementation_path.get("canonical_root"):
+            result = feature_trace.trace(
+                con, implementation_path["canonical_root"], depth, direction, catalog_con
+            )
         else:
             matches = feature_trace.search_nodes(con, query, catalog_con)
             if len(matches) == 1:
                 result = feature_trace.trace(con, matches[0]["node_id"], depth, direction, catalog_con)
+            elif implementation_path:
+                # Exact entity IDs often have multiple source representations by design.
+                # Keep those in the Implementation Path instead of presenting them as unresolved ambiguity.
+                entity_nodes = {
+                    branch["root"]["node_id"] for branch in implementation_path.get("branches", [])
+                }
+                matches = [row for row in matches if row.get("node_id") not in entity_nodes]
         con.close()
     elif con is not None:
         con.close()
@@ -3774,6 +3787,7 @@ def feature_trace_page(
         "error": error,
         "relationship_sections": relationship_sections,
         "dossier": dossier,
+        "implementation_path": implementation_path,
     })
 
 
