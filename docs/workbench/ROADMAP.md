@@ -767,11 +767,11 @@ Roadmap authority rule: `docs/workbench/ROADMAP.md` is the detailed rework backl
 ### 2026-09-29 Zone Editor quality-of-life backlog
 
 Priority stack:
-- [ ] Undo / redo for position/rotation, animation, add/delete, and drop-table edits; backups remain the hard recovery layer.
-- [ ] Keyboard transform controls for selected entities, with configurable movement/rotation increments and precision/large-step modifiers.
-- [ ] Strong selected-object highlighting plus Frame Selected / Frame All camera controls.
-- [ ] Dirty / unsaved-change state with original-vs-preview values, save-state emphasis, and protection when switching entities.
-- [ ] Rotation presets and quick-turn controls using the verified FFXI heading convention (0=E, 64=N, 128=W, 192=S).
+- [x] Undo / redo for position/rotation, animation, add/delete, and drop-table edits; backups remain the hard recovery layer.
+- [x] Keyboard transform controls for selected entities, with configurable movement/rotation increments and precision/large-step modifiers.
+- [x] Strong selected-object highlighting plus Frame Selected / Frame All camera controls.
+- [x] Dirty / unsaved-change state with original-vs-preview values, save-state emphasis, and protection when switching entities.
+- [x] Rotation presets and quick-turn controls using the verified FFXI heading convention (0=E, 64=N, 128=W, 192=S).
 - [ ] Camera presets (Top/North/South/East/West/Perspective) and remembered camera/UI state.
 - [ ] Three.js transform gizmo for direct XYZ/rotation manipulation without auto-saving.
 - [ ] Explicit live-DB vs checked-in SQL synchronization state per edited entity.
