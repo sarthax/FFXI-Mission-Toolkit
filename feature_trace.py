@@ -12,7 +12,7 @@ import argparse
 import json
 import re
 import sqlite3
-from collections import deque
+from collections import Counter, deque
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -101,44 +101,156 @@ def _numeric_entity_query(query: str) -> int | None:
         return None
 
 
-def canonical_entity_root(con: sqlite3.Connection, numeric_id: int) -> str | None:
-    """Resolve a numeric runtime/server entity ID through explicit canonical identifier mappings.
+ENTITY_IDENTIFIER_TYPES = (
+    "npcid", "mobid", "entity_id", "runtime_entity_id",
+    "server_entity_id", "client_entity_id", "numeric_entity_id",
+)
 
-    When identifier_type is available, only entity-style identifiers participate. Numeric IDs are
-    reused across unrelated domains (items, quests, events, etc.), so allowing every identifier
-    type to compete can turn an otherwise unique entity mapping into a false ambiguity.
-    """
+
+def canonical_entity_candidates(con: sqlite3.Connection, numeric_id: int) -> list[str]:
+    """Return every explicit canonical entity root claiming this numeric representation."""
     available = {r[0] for r in con.execute(
         "SELECT name FROM sqlite_master WHERE type='table'"
     )}
     if "entity_identifiers" not in available:
-        return None
+        return []
     cols = {r[1] for r in con.execute("PRAGMA table_info(entity_identifiers)")}
-    required = {"entity_id", "identifier_value"}
-    if not required.issubset(cols):
-        return None
+    if not {"entity_id", "identifier_value"}.issubset(cols):
+        return []
 
     clauses = ["CAST(identifier_value AS TEXT)=?"]
     params = [str(numeric_id)]
     if "identifier_type" in cols:
+        placeholders = ",".join("?" for _ in ENTITY_IDENTIFIER_TYPES)
         clauses.append(
-            """(
-                   lower(COALESCE(identifier_type,'')) IN (
-                       'npcid','mobid','entity_id','runtime_entity_id',
-                       'server_entity_id','client_entity_id','numeric_entity_id'
-                   )
-                   OR lower(COALESCE(identifier_type,'')) LIKE 'client_snapshot_entity_id:%'
-               )"""
+            f"""(
+                    lower(COALESCE(identifier_type,'')) IN ({placeholders})
+                    OR lower(COALESCE(identifier_type,'')) LIKE 'client_snapshot_entity_id:%'
+                )"""
         )
+        params.extend(ENTITY_IDENTIFIER_TYPES)
+    return [
+        row[0] for row in con.execute(
+            f"""SELECT DISTINCT entity_id
+                  FROM entity_identifiers
+                 WHERE {' AND '.join(clauses)}
+                 ORDER BY entity_id LIMIT 10""",
+            params,
+        ).fetchall()
+    ]
 
-    rows = con.execute(
-        f"""SELECT DISTINCT entity_id
-            FROM entity_identifiers
-            WHERE {' AND '.join(clauses)}
-            ORDER BY entity_id LIMIT 3""",
-        params,
-    ).fetchall()
-    return rows[0][0] if len(rows) == 1 else None
+
+def canonical_entity_root(con: sqlite3.Connection, numeric_id: int) -> str | None:
+    """Resolve one numeric entity representation only when the explicit mapping is unique."""
+    roots = canonical_entity_candidates(con, numeric_id)
+    return roots[0] if len(roots) == 1 else None
+
+
+def canonical_entity_identifiers(con: sqlite3.Connection, root: str | None) -> list[dict]:
+    if not root:
+        return []
+    available = {r[0] for r in con.execute(
+        "SELECT name FROM sqlite_master WHERE type='table'"
+    )}
+    if "entity_identifiers" not in available:
+        return []
+    cols = {r[1] for r in con.execute("PRAGMA table_info(entity_identifiers)")}
+    snapshot_expr = "source_snapshot_id" if "source_snapshot_id" in cols else "NULL"
+    order_snapshot = ",COALESCE(source_snapshot_id,'')" if "source_snapshot_id" in cols else ""
+    return [
+        {
+            "identifier_type": row[0],
+            "identifier_value": row[1],
+            "source_snapshot_id": row[2],
+        }
+        for row in con.execute(
+            f"""SELECT identifier_type,identifier_value,{snapshot_expr}
+                  FROM entity_identifiers
+                 WHERE entity_id=?
+                 ORDER BY identifier_type,identifier_value{order_snapshot}""",
+            (root,),
+        ).fetchall()
+    ]
+
+
+def canonical_entity_evidence(con: sqlite3.Connection, root: str | None, limit: int = 100) -> dict:
+    """Summarize direct canonical relationships/evidence touching one root, bounded for the UI."""
+    if not root:
+        return {"relationship_count": 0, "evidence_count": 0, "relationship_counts": [], "rows": [], "truncated": False}
+    available = {r[0] for r in con.execute(
+        "SELECT name FROM sqlite_master WHERE type='table'"
+    )}
+    if "entity_relationships" not in available:
+        return {"relationship_count": 0, "evidence_count": 0, "rows": [], "truncated": False}
+    total = con.execute(
+        """SELECT COUNT(*) FROM entity_relationships
+            WHERE source_node=? OR target_node=?""",
+        (root, root),
+    ).fetchone()[0]
+    evidence_total = con.execute(
+        """SELECT COUNT(DISTINCT evidence_id) FROM entity_relationships
+            WHERE (source_node=? OR target_node=?) AND evidence_id IS NOT NULL""",
+        (root, root),
+    ).fetchone()[0]
+    relationship_counts = [
+        {"relationship": row[0], "count": row[1]}
+        for row in con.execute(
+            """SELECT relationship,COUNT(*) FROM entity_relationships
+                WHERE source_node=? OR target_node=?
+                GROUP BY relationship ORDER BY COUNT(*) DESC,relationship""",
+            (root, root),
+        ).fetchall()
+    ]
+    evidence_available = "evidence" in available
+    if evidence_available:
+        rows = con.execute(
+            """SELECT r.relationship_id,r.source_node,r.target_node,r.relationship,
+                      r.evidence_id,r.confidence,r.status,r.source_snapshot_id,
+                      e.evidence_type,e.source,e.location,e.snapshot,e.notes
+                 FROM entity_relationships r
+                 LEFT JOIN evidence e ON e.evidence_id=r.evidence_id
+                WHERE r.source_node=? OR r.target_node=?
+                ORDER BY r.relationship,r.relationship_id
+                LIMIT ?""",
+            (root, root, limit),
+        ).fetchall()
+    else:
+        rows = [
+            (*row, None, None, None, None, None)
+            for row in con.execute(
+                """SELECT relationship_id,source_node,target_node,relationship,
+                          evidence_id,confidence,status,source_snapshot_id
+                     FROM entity_relationships
+                    WHERE source_node=? OR target_node=?
+                    ORDER BY relationship,relationship_id
+                    LIMIT ?""",
+                (root, root, limit),
+            ).fetchall()
+        ]
+    items = []
+    for row in rows:
+        items.append({
+            "relationship_id": row[0],
+            "source_node": row[1],
+            "target_node": row[2],
+            "relationship": row[3],
+            "evidence_id": row[4],
+            "confidence": row[5],
+            "status": row[6],
+            "source_snapshot_id": row[7],
+            "evidence_type": row[8],
+            "evidence_source": row[9],
+            "evidence_location": row[10],
+            "evidence_snapshot": row[11],
+            "evidence_notes": row[12],
+        })
+    return {
+        "relationship_count": int(total or 0),
+        "evidence_count": int(evidence_total or 0),
+        "relationship_counts": relationship_counts,
+        "rows": items,
+        "truncated": int(total or 0) > len(items),
+    }
 
 
 def _catalog_entity_id(row: dict) -> int | None:
@@ -159,7 +271,6 @@ def _catalog_entity_id(row: dict) -> int | None:
                     return int(source[key])
                 except (TypeError, ValueError):
                     pass
-    # Canonical search rows expose the key in matched_on but do not currently populate numeric_id.
     node_id = str(row.get("node_id") or "")
     if not row.get("catalog_only") and ":" in node_id:
         tail = node_id.rsplit(":", 1)[-1]
@@ -172,12 +283,79 @@ def _entity_catalog_match(row: dict, numeric_id: int) -> bool:
     resolved = _catalog_entity_id(row)
     if resolved is not None:
         return resolved == numeric_id
-    # Client identity providers keep the numeric entity in a searchable alias/detail field.
     return (
         row.get("node_type") == "CLIENT_IDENTITY"
         and "numeric_id" in (row.get("matched_on") or [])
         and str(numeric_id) in str(row)
     )
+
+
+def entity_query_diagnostics(
+    graph_con: sqlite3.Connection,
+    catalog_con: sqlite3.Connection,
+    query: str,
+) -> dict:
+    """Explain why an entity query can or cannot enter canonical traversal."""
+    exact_numeric = _numeric_entity_query(query)
+    matches = search_nodes(graph_con, query, catalog_con)
+    candidate_ids = {exact_numeric} if exact_numeric is not None else {
+        value for row in matches
+        if (value := _catalog_entity_id(row)) is not None
+    }
+    mappings = []
+    all_roots = set()
+    ambiguous_ids = []
+    unmapped_ids = []
+    for numeric_id in sorted(candidate_ids):
+        roots = canonical_entity_candidates(graph_con, numeric_id)
+        mappings.append({"numeric_id": numeric_id, "canonical_roots": roots})
+        all_roots.update(roots)
+        if len(roots) > 1:
+            ambiguous_ids.append(numeric_id)
+        elif not roots:
+            unmapped_ids.append(numeric_id)
+
+    if not candidate_ids:
+        status = "NO_ENTITY_MATCH"
+        reason = "No indexed entity representation supplied a numeric entity identity for this query."
+        action = "Refine the name/ID, rebuild the relevant server/client index, or inspect ordinary search matches."
+    elif ambiguous_ids:
+        status = "AMBIGUOUS_NUMERIC_MAPPING"
+        reason = "At least one numeric entity ID is claimed by multiple canonical roots."
+        action = "Review the conflicting entity_identifiers/evidence before canonical traversal."
+    elif len(all_roots) > 1:
+        status = "MULTIPLE_CANONICAL_ROOTS"
+        reason = "The matched numeric IDs resolve to different explicit canonical entities."
+        action = "Refine the query or inspect each source representation separately."
+    elif unmapped_ids and len(candidate_ids) > 1:
+        status = "PARTIALLY_MAPPED"
+        reason = "Some matched numeric representations have no canonical identity mapping."
+        action = "Use the provider branches below; canonical traversal stays withheld until every matched ID is explicitly bridged."
+    elif unmapped_ids:
+        status = "NO_CANONICAL_MAPPING"
+        reason = "The indexed representation has no explicit canonical entity mapping."
+        action = "Use the provider-native Implementation Path or ingest identity evidence before expecting semantic/runtime traversal."
+    elif len(all_roots) == 1 and len(candidate_ids) > 1:
+        status = "DRIFTED_IDS_ONE_ROOT"
+        reason = "Multiple numeric representations are explicitly bridged to one canonical entity."
+        action = "Canonical traversal is safe; provider branches remain separate representations."
+    else:
+        status = "UNIQUE_CANONICAL_MAPPING"
+        reason = "The numeric representation resolves to one explicit canonical entity."
+        action = "Canonical semantic/runtime traversal is available."
+
+    return {
+        "query": query,
+        "status": status,
+        "reason": reason,
+        "next_action": action,
+        "candidate_numeric_ids": sorted(candidate_ids),
+        "canonical_roots": sorted(all_roots),
+        "mappings": mappings,
+        "search_match_count": len(matches),
+        "ambiguous_numeric_ids": ambiguous_ids,
+        "unmapped_numeric_ids": unmapped_ids,
+    }
 
 
 def entity_implementation_path(
@@ -187,44 +365,23 @@ def entity_implementation_path(
     *,
     max_provider_depth: int = 4,
 ) -> dict | None:
-    """Project an exact entity identity across indexed source representations.
-
-    Numeric IDs remain source/snapshot representations. A name that resolves to multiple numeric
-    IDs is accepted only when every one of those IDs maps to the same explicit canonical root.
-    """
-    numeric_id = _numeric_entity_query(query)
-    initial_matches = search_nodes(graph_con, query, catalog_con)
-    canonical_root_override = None
-    if numeric_id is None:
-        candidate_ids = {
-            entity_id for row in initial_matches
-            if (entity_id := _catalog_entity_id(row)) is not None
-        }
-        if not candidate_ids:
+    """Project an exact entity identity across indexed source representations."""
+    diagnostics = entity_query_diagnostics(graph_con, catalog_con, query)
+    numeric_ids = set(diagnostics["candidate_numeric_ids"])
+    if not numeric_ids:
+        return None
+    if diagnostics["status"] in {"AMBIGUOUS_NUMERIC_MAPPING", "MULTIPLE_CANONICAL_ROOTS", "PARTIALLY_MAPPED"}:
+        # Numeric exact queries may still show provider branches even when canonical mapping is
+        # withheld. Name queries spanning unrelated/partially mapped IDs remain unresolved.
+        if _numeric_entity_query(query) is None:
             return None
-        if len(candidate_ids) == 1:
-            numeric_ids = candidate_ids
-        else:
-            mapped_roots = {
-                candidate: canonical_entity_root(graph_con, candidate)
-                for candidate in candidate_ids
-            }
-            roots = {root for root in mapped_roots.values() if root is not None}
-            if len(roots) != 1 or any(root is None for root in mapped_roots.values()):
-                return None
-            canonical_root_override = next(iter(roots))
-            numeric_ids = candidate_ids
-        numeric_id = sorted(numeric_ids)[0]
-    else:
-        numeric_ids = {numeric_id}
+        numeric_ids = {_numeric_entity_query(query)}
 
-    # Search each representation ID so drifted client snapshots can participate together when
-    # explicit canonical mappings prove that they are the same semantic entity.
+    numeric_id = sorted(numeric_ids)[0]
     entity_rows = []
     seen_rows = set()
     for candidate in sorted(numeric_ids):
-        matches = search_nodes(graph_con, str(candidate), catalog_con)
-        for row in matches:
+        for row in search_nodes(graph_con, str(candidate), catalog_con):
             if not _entity_catalog_match(row, candidate):
                 continue
             key = (row.get("node_id"), row.get("source"))
@@ -233,7 +390,11 @@ def entity_implementation_path(
             seen_rows.add(key)
             entity_rows.append(row)
 
-    root = canonical_root_override or canonical_entity_root(graph_con, numeric_id)
+    mapped_roots = {
+        root for candidate in numeric_ids
+        for root in canonical_entity_candidates(graph_con, candidate)
+    }
+    root = next(iter(mapped_roots)) if len(mapped_roots) == 1 and not diagnostics["unmapped_numeric_ids"] else None
 
     branches = []
     seen_roots = set()
@@ -274,6 +435,9 @@ def entity_implementation_path(
                 if target not in visited:
                     visited.add(target)
                     queue.append((target, depth + 1))
+        branch["native_link_count"] = len(branch["steps"])
+        branch["max_depth"] = max((step["depth"] for step in branch["steps"]), default=0)
+        branch["target_count"] = len({step["target_node"] for step in branch["steps"]})
         branches.append(branch)
 
     branches.sort(key=lambda b: (
@@ -281,20 +445,49 @@ def entity_implementation_path(
         str((b.get("root") or {}).get("table") or ""),
         str((b.get("root") or {}).get("node_id") or ""),
     ))
+    provider_counts = Counter(branch["provider"] for branch in branches)
+    domain_counts = Counter(branch.get("domain") or "unknown" for branch in branches)
+    canonical_node = node_info(graph_con, root, catalog_con) if root else None
+    canonical_reps = (canonical_node or {}).get("representations") or []
+    canonical_primary = canonical_reps[0] if canonical_reps else {}
+    evidence = canonical_entity_evidence(graph_con, root)
     return {
         "numeric_id": numeric_id,
         "numeric_ids": sorted(numeric_ids),
         "canonical_root": root,
         "canonical_mapped": root is not None,
+        "mapping_status": diagnostics["status"],
+        "diagnostics": diagnostics,
+        "canonical": {
+            "root": root,
+            "known": bool((canonical_node or {}).get("known")),
+            "display_name": canonical_primary.get("display_name") or root,
+            "node_type": canonical_primary.get("node_type") or ("ENTITY" if root else None),
+            "representations": canonical_reps,
+            "identifiers": canonical_entity_identifiers(graph_con, root),
+            "direct_relationship_count": evidence["relationship_count"],
+            "direct_evidence_count": evidence["evidence_count"],
+            "relationship_counts": evidence["relationship_counts"],
+            "direct_evidence": evidence["rows"],
+            "evidence_truncated": evidence["truncated"],
+        },
         "branches": branches,
         "representation_count": len(entity_rows),
+        "provider_counts": [
+            {"provider": key, "count": count}
+            for key, count in sorted(provider_counts.items())
+        ],
+        "domain_counts": [
+            {"domain": key, "count": count}
+            for key, count in sorted(domain_counts.items())
+        ],
+        "native_link_count": sum(branch["native_link_count"] for branch in branches),
         "notes": [
-            "Rows that share this entity identity remain separate source/snapshot representations.",
-            "Provider-native links are schema relationships, not inferred canonical graph edges.",
-            "Multiple numeric IDs are consolidated only when every ID maps to the same explicit canonical root.",
+            "Source/provider rows remain separate representations even when they share one canonical identity.",
+            "Provider-native links are exact schema/source relationships, not inferred canonical graph edges.",
+            "Canonical traversal is enabled only by explicit entity_identifiers evidence.",
         ],
     }
-
 
 def _legacy_search_nodes(con: sqlite3.Connection, term: str) -> list[dict]:
     pattern = f"%{term}%"

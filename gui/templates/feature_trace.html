@@ -12,6 +12,13 @@
 .impl-step{display:grid;grid-template-columns:36px minmax(130px,.5fr) minmax(0,1fr);gap:7px;padding:7px 9px;border-bottom:1px solid var(--border)}
 .impl-step:last-child{border-bottom:0}.impl-depth{color:var(--muted);font-family:ui-monospace,Consolas,monospace}
 .impl-root{padding:8px 10px}
+.impl-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:10px 0}
+.impl-summary .box{border:1px solid var(--border);border-radius:7px;padding:8px 10px;background:var(--code-bg)}
+.impl-summary .n{font-size:20px;font-weight:700}.impl-summary .l{font-size:11px;color:var(--muted)}
+.impl-diagnostic{border-left:4px solid var(--border);padding:8px 10px;margin:9px 0;background:var(--code-bg)}
+.impl-diagnostic.good{border-left-color:#4a8}.impl-diagnostic.warn{border-left-color:#c88b2b}.impl-diagnostic.bad{border-left-color:#b44}
+.impl-meta{display:flex;gap:5px;flex-wrap:wrap;margin:5px 0}
+.impl-evidence{max-height:420px;overflow:auto}
 </style>
 <h1>Feature Trace</h1>
 <p class="muted">Trace a canonical Workbench feature, entity, capability, function, binding, build target, artifact, or enum through recorded graph relationships. Connectivity is evidence navigation, not an implementation verdict.</p>
@@ -37,31 +44,142 @@
 
 {% if implementation_path %}
 <section class="impl-path">
-  <h2>Implementation Path <span class="chip mono">entity {{ implementation_path.numeric_id }}</span></h2>
+  <h2>Implementation Path
+    {% for entity_id in implementation_path.numeric_ids %}
+      <span class="chip mono">entity {{ entity_id }}</span>
+    {% endfor %}
+  </h2>
   <div class="body">
     <div class="impl-status">
-      <span class="chip">{{ implementation_path.representation_count }} indexed source representation{{ '' if implementation_path.representation_count == 1 else 's' }}</span>
+      <span class="chip">{{ implementation_path.representation_count }} source representation{{ '' if implementation_path.representation_count == 1 else 's' }}</span>
+      <span class="chip">{{ implementation_path.branches|length }} provider branch{{ '' if implementation_path.branches|length == 1 else 'es' }}</span>
+      <span class="chip">{{ implementation_path.native_link_count }} source-native link{{ '' if implementation_path.native_link_count == 1 else 's' }}</span>
       {% if implementation_path.canonical_mapped %}
-        <span class="pill match">canonical graph identity mapped</span>
-        <span class="chip mono">{{ implementation_path.canonical_root }}</span>
+        <span class="pill match">canonical identity mapped</span>
       {% else %}
-        <span class="pill unannotated">no canonical graph identity mapping yet</span>
+        <span class="pill unannotated">canonical traversal withheld</span>
       {% endif %}
       <a class="chip" href="/entity/{{ implementation_path.numeric_id }}">Open Entity Dossier</a>
+      {% if implementation_path.canonical_root %}
+        <a class="chip" href="/features/trace?q={{ implementation_path.canonical_root|urlencode }}">Trace canonical root</a>
+      {% endif %}
     </div>
 
+    {% set diag = implementation_path.diagnostics %}
+    <div class="impl-diagnostic {% if diag.status in ['UNIQUE_CANONICAL_MAPPING','DRIFTED_IDS_ONE_ROOT'] %}good{% elif diag.status in ['NO_CANONICAL_MAPPING','PARTIALLY_MAPPED'] %}warn{% else %}bad{% endif %}">
+      <div><strong>{{ diag.status }}</strong> — {{ diag.reason }}</div>
+      <div class="muted" style="margin-top:3px">{{ diag.next_action }}</div>
+      {% if diag.mappings %}
+      <div class="impl-meta">
+        {% for mapping in diag.mappings %}
+          <span class="chip mono">{{ mapping.numeric_id }} → {% if mapping.canonical_roots %}{{ mapping.canonical_roots|join(', ') }}{% else %}unmapped{% endif %}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="impl-summary">
+      <div class="box"><div class="n">{{ implementation_path.branches|length }}</div><div class="l">Provider branches</div></div>
+      <div class="box"><div class="n">{{ implementation_path.native_link_count }}</div><div class="l">Native wiring links</div></div>
+      <div class="box"><div class="n">{{ implementation_path.canonical.direct_relationship_count }}</div><div class="l">Direct canonical relationships</div></div>
+      <div class="box"><div class="n">{{ implementation_path.canonical.direct_evidence_count }}</div><div class="l">Direct evidence IDs</div></div>
+      {% if implementation_path.trace_summary %}
+      <div class="box"><div class="n">{{ implementation_path.trace_summary.semantic_relationship_count }}</div><div class="l">Semantic trace edges</div></div>
+      <div class="box"><div class="n">{{ implementation_path.trace_summary.runtime_observation_count }}</div><div class="l">Runtime observations</div></div>
+      <div class="box"><div class="n">{{ implementation_path.trace_summary.runtime_capture_count }}</div><div class="l">Runtime captures</div></div>
+      <div class="box"><div class="n">{{ implementation_path.trace_summary.runtime_group_count }}</div><div class="l">Runtime groups</div></div>
+      {% endif %}
+    </div>
+
+    {% if implementation_path.trace_summary and implementation_path.trace_summary.truncated %}
+    <div class="warn">Canonical semantic traversal reached its node budget. Implementation Path source branches are still complete within their configured provider depth, but the semantic trace below is truncated.</div>
+    {% endif %}
+
+    <div class="impl-meta">
+      {% for row in implementation_path.provider_counts %}<span class="chip">{{ row.provider }} {{ row.count }}</span>{% endfor %}
+      {% for row in implementation_path.domain_counts %}<span class="chip">{{ row.domain }} {{ row.count }}</span>{% endfor %}
+    </div>
+
+    {% if implementation_path.canonical_mapped %}
+    {% if not implementation_path.canonical.known %}
+    <div class="warn">The identifier mapping resolves uniquely to <code>{{ implementation_path.canonical.root }}</code>, but that canonical entity row is not currently indexed. Identity evidence exists; canonical node metadata should be rebuilt/repaired.</div>
+    {% endif %}
+    <details open>
+      <summary><strong>Canonical identity</strong> · <code>{{ implementation_path.canonical.root }}</code></summary>
+      <div style="padding:8px 10px">
+        <div><strong>{{ implementation_path.canonical.display_name }}</strong> <span class="chip">{{ implementation_path.canonical.node_type }}</span></div>
+        {% if implementation_path.canonical.relationship_counts %}
+        <div class="impl-meta">
+          {% for rel in implementation_path.canonical.relationship_counts %}
+          <span class="chip">{{ rel.relationship }} {{ rel.count }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% if implementation_path.canonical.identifiers %}
+        <div class="impl-meta">
+          {% for ident in implementation_path.canonical.identifiers %}
+          <span class="chip mono">{{ ident.identifier_type }}={{ ident.identifier_value }}{% if ident.source_snapshot_id %} · {{ ident.source_snapshot_id }}{% endif %}</span>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="muted">No canonical identifier rows are recorded for this root.</p>
+        {% endif %}
+      </div>
+    </details>
+
+    {% if implementation_path.canonical.direct_evidence %}
+    <details>
+      <summary><strong>Direct canonical evidence / provenance</strong> · {{ implementation_path.canonical.direct_relationship_count }} relationship(s){% if implementation_path.canonical.evidence_truncated %} · first {{ implementation_path.canonical.direct_evidence|length }} shown{% endif %}</summary>
+      <div class="table-wrap impl-evidence"><table>
+        <thead><tr><th>Relationship</th><th>Other node</th><th>Status</th><th>Confidence</th><th>Evidence</th><th>Source / location</th><th>Snapshot</th></tr></thead>
+        <tbody>
+        {% for edge in implementation_path.canonical.direct_evidence %}
+        <tr>
+          <td><span class="chip">{{ edge.relationship }}</span></td>
+          <td>
+            {% if edge.source_node == implementation_path.canonical.root %}
+              <a class="zonelink mono" href="/features/trace?q={{ edge.target_node|urlencode }}">{{ edge.target_node }}</a>
+            {% else %}
+              <a class="zonelink mono" href="/features/trace?q={{ edge.source_node|urlencode }}">{{ edge.source_node }}</a>
+            {% endif %}
+          </td>
+          <td>{{ edge.status or 'UNKNOWN' }}</td>
+          <td>{{ edge.confidence or 'UNKNOWN' }}</td>
+          <td>{% if edge.evidence_id %}<a class="zonelink mono" href="/research/evidence?evidence_id={{ edge.evidence_id|urlencode }}">{{ edge.evidence_id }}</a>{% else %}<span class="muted">—</span>{% endif %}{% if edge.evidence_type %}<br><span class="chip">{{ edge.evidence_type }}</span>{% endif %}</td>
+          <td>{{ edge.evidence_source or '—' }}{% if edge.evidence_location %}<br><code>{{ edge.evidence_location }}</code>{% endif %}{% if edge.evidence_notes %}<br><span class="muted">{{ edge.evidence_notes }}</span>{% endif %}</td>
+          <td><code>{{ edge.evidence_snapshot or edge.source_snapshot_id or '—' }}</code></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+    </details>
+    {% endif %}
+    {% endif %}
+
     {% if implementation_path.branches %}
+    <h3>Source / provider branches</h3>
     <div class="impl-branches">
       {% for branch in implementation_path.branches %}
       <section class="impl-branch">
         <div class="impl-branch-head">
           <strong>{{ branch.provider }}</strong>
           {% if branch.domain %}<span class="chip">{{ branch.domain }}</span>{% endif %}
+          <span class="chip">{{ branch.native_link_count }} link{{ '' if branch.native_link_count == 1 else 's' }}</span>
+          <span class="chip">depth {{ branch.max_depth }}</span>
+          <span class="chip">{{ branch.target_count }} target{{ '' if branch.target_count == 1 else 's' }}</span>
         </div>
         <div class="impl-root">
           <div><span class="chip">{{ branch.root.node_type }}</span> <strong>{{ branch.root.display_name or branch.root.node_id }}</strong></div>
           <code>{{ branch.root.node_id }}</code>
           <div class="muted" style="font-size:11px;margin-top:3px">source: {{ branch.root.table }}</div>
+          {% if branch.root.inspect_href %}<div><a class="zonelink" href="{{ branch.root.inspect_href }}">Open source view</a></div>{% endif %}
+          {% if branch.root.identity %}
+          <div class="impl-meta">{% for key,value in branch.root.identity.items() %}<span class="chip mono">{{ key }}={{ value }}</span>{% endfor %}</div>
+          {% endif %}
+          {% if branch.root.aliases %}
+          <div class="impl-meta">{% for key,value in branch.root.aliases.items() %}{% if value is not none and value != '' %}<span class="chip">{{ key }}={{ value }}</span>{% endif %}{% endfor %}</div>
+          {% endif %}
+          {% if branch.root.matched_on %}<div class="muted">matched on: {{ branch.root.matched_on|join(', ') }}</div>{% endif %}
         </div>
         {% for step in branch.steps %}
         <div class="impl-step">
@@ -76,16 +194,31 @@
           </div>
         </div>
         {% else %}
-        <div class="muted" style="padding:8px 10px">No source-native downstream wiring is currently indexed from this representation.</div>
+        <div class="muted" style="padding:8px 10px">This representation is indexed, but no exact downstream provider-native relationship is currently available from it.</div>
         {% endfor %}
       </section>
       {% endfor %}
     </div>
     {% else %}
-    <p class="muted">No indexed server/client representation matched this exact entity ID.</p>
+    <p class="muted">No indexed server/client representation matched this entity identity.</p>
     {% endif %}
 
     {% for note in implementation_path.notes %}<p class="muted" style="margin-bottom:3px">{{ note }}</p>{% endfor %}
+  </div>
+</section>
+{% elif query_diagnostics and query_diagnostics.candidate_numeric_ids %}
+<section class="impl-path">
+  <h2>Entity resolution diagnostic</h2>
+  <div class="body">
+    <div class="impl-diagnostic {% if query_diagnostics.status in ['NO_CANONICAL_MAPPING','PARTIALLY_MAPPED'] %}warn{% else %}bad{% endif %}">
+      <div><strong>{{ query_diagnostics.status }}</strong> — {{ query_diagnostics.reason }}</div>
+      <div class="muted" style="margin-top:3px">{{ query_diagnostics.next_action }}</div>
+      <div class="impl-meta">
+        {% for mapping in query_diagnostics.mappings %}
+        <span class="chip mono">{{ mapping.numeric_id }} → {% if mapping.canonical_roots %}{{ mapping.canonical_roots|join(', ') }}{% else %}unmapped{% endif %}</span>
+        {% endfor %}
+      </div>
+    </div>
   </div>
 </section>
 {% endif %}

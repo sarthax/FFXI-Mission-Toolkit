@@ -3881,6 +3881,7 @@ def feature_trace_page(
     result = None
     matches = []
     implementation_path = None
+    query_diagnostics = None
     error = None
     con = _workbench_graph_connection()
     catalog_con = get_con()
@@ -3888,6 +3889,7 @@ def feature_trace_page(
         error = "Canonical Workbench graph is not available. Build/import workbench.db before tracing features."
     elif q.strip():
         query = q.strip()
+        query_diagnostics = feature_trace.entity_query_diagnostics(con, catalog_con, query)
         implementation_path = feature_trace.entity_implementation_path(con, catalog_con, query)
         exact = feature_trace.node_info(con, query, catalog_con)
         if exact["known"]:
@@ -3907,6 +3909,16 @@ def feature_trace_page(
                     branch["root"]["node_id"] for branch in implementation_path.get("branches", [])
                 }
                 matches = [row for row in matches if row.get("node_id") not in entity_nodes]
+        if implementation_path and result:
+            implementation_path["trace_summary"] = {
+                "root": result.get("root"),
+                "semantic_node_count": len(result.get("nodes") or []),
+                "semantic_relationship_count": len(result.get("edges") or []),
+                "runtime_observation_count": result.get("runtime_observation_count", 0),
+                "runtime_capture_count": result.get("runtime_capture_count", 0),
+                "runtime_group_count": result.get("runtime_group_count", 0),
+                "truncated": bool(result.get("truncated")),
+            }
         con.close()
     elif con is not None:
         con.close()
@@ -3924,7 +3936,32 @@ def feature_trace_page(
         "relationship_sections": relationship_sections,
         "dossier": dossier,
         "implementation_path": implementation_path,
+        "query_diagnostics": query_diagnostics,
     })
+
+
+@app.get("/features/trace/path.json")
+def feature_trace_path_detail(q: str = ""):
+    """Return bounded entity resolution/Implementation Path diagnostics for troubleshooting."""
+    query=q.strip()
+    if not query:
+        return JSONResponse({"error":"q is required"},status_code=400)
+    con=_workbench_graph_connection()
+    catalog_con=get_con()
+    if con is None:
+        catalog_con.close()
+        return JSONResponse({"error":"Canonical Workbench graph is not available."},status_code=404)
+    try:
+        diagnostics=feature_trace.entity_query_diagnostics(con,catalog_con,query)
+        path=feature_trace.entity_implementation_path(con,catalog_con,query)
+        return JSONResponse({
+            "query":query,
+            "diagnostics":diagnostics,
+            "implementation_path":path,
+        })
+    finally:
+        con.close()
+        catalog_con.close()
 
 
 @app.get("/features/trace/runtime.json")
