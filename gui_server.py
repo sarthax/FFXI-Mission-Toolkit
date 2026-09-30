@@ -7192,10 +7192,46 @@ def modelviewer_resolve(kind: str, id: int, server: str = None):
 
 
 @app.get("/modelviewer/model.json")
-def modelviewer_model(model_id: int):
+def modelviewer_model(model_id: int, server: str = None):
     import model_viewer
     try:
-        return JSONResponse(model_viewer.resolve_model_id(model_id))
+        return JSONResponse(model_viewer.resolve_model_id(model_id, server=server))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.get("/modelviewer/catalog.json")
+def modelviewer_catalog(q: str = "", server: str = None, limit: int = 100, refresh: int = 0):
+    import client_model_catalog
+    try:
+        return JSONResponse(client_model_catalog.search_catalog(
+            q, server=server, limit=limit, refresh=bool(refresh)
+        ))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.get("/modelviewer/catalog/correlate.json")
+def modelviewer_catalog_correlate(
+    model_id: int = None,
+    file_id: int = None,
+    rom_path: str = None,
+    server: str = None,
+):
+    import client_model_catalog
+    try:
+        return JSONResponse({"rows": client_model_catalog.correlate(
+            model_id=model_id, file_id=file_id, rom_path=rom_path, server=server
+        )})
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.get("/modelviewer/dat-info.json")
+def modelviewer_dat_info(file_id: int = None, rom_path: str = None, server: str = None):
+    import model_viewer
+    try:
+        return JSONResponse(model_viewer.resolve_dat(file_id=file_id, rom_path=rom_path, server=server))
     except Exception as ex:
         return JSONResponse({"error": str(ex)}, status_code=400)
 
