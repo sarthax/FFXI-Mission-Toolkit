@@ -6,7 +6,7 @@ maps them to canonical graph nodes.
 
 Supported producer families:
 - mob_drops logical SQL records -> DROP_POOL
-- audited static LSB Lua general/nation/guild shop inventories -> SOLD_BY
+- audited static DSP/Topaz/LSB Lua general/nation shop inventories plus modern LSB guild shops -> SOLD_BY
 - synth_recipes logical SQL records -> SYNTHESIS
 - synergy_recipes logical SQL records -> SYNERGY
 - scripted-behavior reward projections -> SCRIPTED_REWARD
