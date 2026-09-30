@@ -945,8 +945,8 @@ function refreshUndoUI(){
   $('undoBtn').disabled=undoStack.length===0; $('redoBtn').disabled=redoStack.length===0;
   $('undoStatus').textContent=undoStack.length ? `undo: ${undoStack[undoStack.length-1].label}` : (redoStack.length ? `redo: ${redoStack[redoStack.length-1].label}` : '');
 }
-function recordUndo(label, backup, syncKey=null){
-  if(!backup) return; undoStack.push({label,backup,syncKey}); if(undoStack.length>80) undoStack.shift(); redoStack.length=0; refreshUndoUI();
+function recordUndo(label, backup, syncKey=null, syncKeys=null){
+  if(!backup) return; undoStack.push({label,backup,syncKey,syncKeys}); if(undoStack.length>80) undoStack.shift(); redoStack.length=0; refreshUndoUI();
 }
 async function restoreHistory(source,target,verb){
   if(!source.length) return;
@@ -958,8 +958,10 @@ async function restoreHistory(source,target,verb){
   const r=await fetch('/zoneplot/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:action.backup,exact:false})});
   const j=await r.json();
   if(j.error){ source.push(action); refreshUndoUI(); alert(`${verb} failed: ${j.error}`); return; }
-  target.push({label:action.label,backup:j.pre_restore_backup,syncKey:action.syncKey});
-  if(action.syncKey){ entitySyncState.set(action.syncKey,{db:'modified',sql:'not synced'}); updateEntitySyncStatus(); }
+  target.push({label:action.label,backup:j.pre_restore_backup,syncKey:action.syncKey,syncKeys:action.syncKeys});
+  if(action.syncKey) entitySyncState.set(action.syncKey,{db:'modified',sql:'not synced'});
+  for(const key of action.syncKeys||[]) entitySyncState.set(key,{db:'modified',sql:'not synced'});
+  updateEntitySyncStatus();
   refreshUndoUI();
   if(Z) await loadZone();
   $('undoStatus').textContent=`${verb}: ${action.label}`;
@@ -969,6 +971,7 @@ function redoAction(){ return restoreHistory(redoStack,undoStack,'Redid'); }
 $('undoBtn').onclick=undoAction; $('redoBtn').onclick=redoAction; refreshUndoUI();
 let orig=null;
 function isTransformDirty(){
+  if(bulkPreviewActive) return true;
   if(!orig || !Z || selected<0 || !Z.entities[selected]) return false;
   const e=Z.entities[selected];
   return ['x','y','z','r'].some(k=>Number(e[k])!==Number(orig[k]));
@@ -983,6 +986,15 @@ function updateDirtyUI(){
   box.textContent='UNSAVED PREVIEW · '+parts.join(' · '); box.style.background='#6b4f00'; box.style.color='#ffe082';
 }
 function restorePreviewFromOrig(){
+  if(bulkPreviewActive && bulkOrig.size){
+    for(const [i,o] of bulkOrig){ if(Z?.entities[i]) Object.assign(Z.entities[i],o); }
+    bulkPreviewActive=false; bulkOrig.clear();
+    if(selected>=0 && Z?.entities[selected]){
+      const e=Z.entities[selected]; orig={x:e.x,y:e.y,z:e.z,r:e.r};
+      $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r; $('er-dir').textContent=rotText(e.r);
+    }
+    rebuild(); updateHeadingArrow(); updateSelectionVisual(); syncMultiUI(); updateDirtyUI(); return;
+  }
   if(!orig || !Z || selected<0 || !Z.entities[selected]) return;
   const e=Z.entities[selected]; Object.assign(e,{x:orig.x,y:orig.y,z:orig.z,r:orig.r});
   $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r; $('er-dir').textContent=rotText(e.r);
@@ -1000,6 +1012,46 @@ function loadEditor(i){ const e=Z.entities[i]; if(!e){ $('ed').hidden=true; $('e
   } else { $('ed-anim').hidden=true; }
   if (e.k==='m'){ $('ed-drops').hidden=false; loadDrops(e.id); } else { $('ed-drops').hidden=true; }
 }
+function beginBulkOrig(){
+  if(bulkOrig.size) return;
+  for(const i of multiSelected){
+    const e=Z?.entities[i]; if(e) bulkOrig.set(i,{x:e.x,y:e.y,z:e.z,r:e.r});
+  }
+}
+function previewBulkTransform(){
+  if(multiSelected.size<2) return;
+  beginBulkOrig();
+  const dx=+$('bulk-dx').value||0, dy=+$('bulk-dy').value||0, dz=+$('bulk-dz').value||0, dr=Math.round(+$('bulk-dr').value||0);
+  for(const [i,o] of bulkOrig){
+    const e=Z.entities[i];
+    e.x=+(o.x+dx).toFixed(3); e.y=+(o.y+dy).toFixed(3); e.z=+(o.z+dz).toFixed(3); e.r=((o.r+dr)%256+256)%256;
+  }
+  bulkPreviewActive=true;
+  if(selected>=0 && Z.entities[selected]){
+    const e=Z.entities[selected];
+    $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r; $('er-dir').textContent=rotText(e.r);
+  }
+  rebuild(); syncMultiUI(); updateHeadingArrow(); updateSelectionVisual(); updateDirtyUI();
+  $('bulk-msg').textContent=`Preview: Δ(${dx}, ${dy}, ${dz}) rot ${dr>=0?'+':''}${dr} across ${multiSelected.size} entities.`;
+}
+async function saveBulkTransform(){
+  if(!bulkPreviewActive || multiSelected.size<2) return;
+  const rows=[...multiSelected].map(i=>{ const e=Z.entities[i]; return {k:e.k,id:e.id,x:e.x,y:e.y,z:e.z,r:e.r}; });
+  const r=await fetch('/zoneplot/edit_bulk',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rows,comment:$('ecomment').value})});
+  const j=await r.json();
+  if(j.error){ $('bulk-msg').textContent='ERROR: '+j.error; return; }
+  const syncKeys=[];
+  for(const i of multiSelected){ const e=Z.entities[i]; markDbModified(e.k,e.id); syncKeys.push(entityKey(e.k,e.id)); }
+  recordUndo(`bulk transform ${j.count} entities`,j.backup,null,syncKeys);
+  bulkOrig.clear(); bulkPreviewActive=false;
+  if(selected>=0 && Z.entities[selected]){ const e=Z.entities[selected]; orig={x:e.x,y:e.y,z:e.z,r:e.r}; }
+  $('bulk-msg').textContent=`Saved ${j.count} entities to live DB (backup ${j.backup}).`;
+  syncMultiUI(); updateDirtyUI(); await computeReach(); rebuild();
+}
+$('bulk-preview').onclick=previewBulkTransform;
+$('bulk-save').onclick=saveBulkTransform;
+$('bulk-revert').onclick=restorePreviewFromOrig;
+$('bulk-clear').onclick=()=>{ if(isTransformDirty()&&!confirm('Discard unsaved preview and clear multi-selection?')) return; restorePreviewFromOrig(); if(selected>=0){ multiSelected.clear(); multiSelected.add(selected); } syncMultiUI(); rebuild(); };
 let dropsState=null;
 async function loadDrops(mobid){
   $('edrops-body').innerHTML='<span class="muted">loading&hellip;</span>';
