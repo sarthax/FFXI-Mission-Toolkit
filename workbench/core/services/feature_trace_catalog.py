@@ -353,7 +353,7 @@ def relationship_section(edge):
         return "Validation"
     if any(x in rel for x in ("ENTITY", "DAT", "CSID", "MODEL", "CLIENT")):
         return "Client"
-    if any(x in rel for x in ("LUA", "SQL", "CPP", "CXX", "BIND", "ENUM", "IMPORT")):
+    if any(x in rel for x in ("LUA", "SQL", "CPP", "CXX", "BIND", "ENUM", "IMPORT", "IMPLEMENT")):
         return "Implementation / Server"
     if any(x in rel for x in ("OBTAIN", "DROP", "TRADE", "ITEM", "MISSION", "ACCESS")):
         return "Acquisition / Progression"

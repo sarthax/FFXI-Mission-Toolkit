@@ -252,7 +252,7 @@ def _best_behavior_source(profile: dict) -> str | None:
         return sorted(preferred)[0]
     zone_hits = [
         path for path in hits
-        if zone and f"/zones/{zone}/" in f"/{path.replace('\\', '/').lower()}"
+        if zone and f"/zones/{zone}/" in "/" + path.replace("\\", "/").lower()
     ]
     return sorted(zone_hits or hits)[0]
 

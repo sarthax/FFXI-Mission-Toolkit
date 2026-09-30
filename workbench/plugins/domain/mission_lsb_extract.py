@@ -112,7 +112,7 @@ _STATUS_ALIAS_COMPARE=re.compile(
 )
 _STATUS_COMPARE_OPERATOR={"==":"EQ","~=":"NE","<":"LT","<=":"LE",">":"GT",">=":"GE"}
 _XPOS_EQ=re.compile(r"player:getXPos\(\)\s*==\s*(-?[0-9.]+)")
-_POP_QM=re.compile(r"npcUtil\.popFromQM\([^\n]*?,\s*([^,\n]+),")
+_POP_QM=re.compile(r"npcUtil\.popFromQM\(\s*[^,\n]+,\s*[^,\n]+,\s*([^,)\n]+)")
 _VAR_EQ=re.compile(r"mission:getVar\(player,\s*'([^']+)'\)\s*==\s*(\d+)")
 _LOCAL_EQ=re.compile(r"mission:getLocalVar\(player,\s*'([^']+)'\)\s*==\s*([A-Za-z0-9_\.]+)")
 _STATUS_ALIAS=re.compile(r"local\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*player:getMissionStatus\([^\n]*?xi\.mission\.status\.[A-Z0-9_]+\.([A-Z0-9_]+)\)")

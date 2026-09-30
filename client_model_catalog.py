@@ -247,7 +247,7 @@ def _haystack(row: dict) -> str:
     ]
     for hint in row.get("visual_hints") or []:
         vals.extend([hint.get("family_name"), hint.get("file_id"), hint.get("rom_path")])
-    return " ".join(str(v) for v in vals if v is not None).casefold()
+    return " ".join(str(v) for v in vals if v is not None).replace("\\", "/").casefold()
 
 
 def search_catalog(
@@ -258,7 +258,7 @@ def search_catalog(
     refresh: bool = False,
 ) -> dict:
     rows = build_catalog(server, refresh=refresh)
-    query = (q or "").strip().casefold()
+    query = (q or "").strip().replace("\\", "/").casefold()
     matched = rows if not query else [row for row in rows if query in _haystack(row)]
     limit = max(1, min(int(limit), 500))
     return {

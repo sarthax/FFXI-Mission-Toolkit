@@ -1507,12 +1507,12 @@ def _nested_conditional_spans(text: str) -> tuple[dict,...]:
         if i>0 and active is not None and current_depth==active["branch_depth"]:
             if re.match(r"^(?:elseif\b|else\b|end\b)",stripped):
                 finish(i-1)
-        if i>0 and current_depth>=1 and re.match(r"^(?:if|elseif)\b",stripped):
+        if i>0 and active is None and current_depth>=1 and re.match(r"^(?:if|elseif)\b",stripped):
             active={
                 "start_index":i,
                 "branch_depth":current_depth + (1 if stripped.startswith("if ") else 0),
             }
-        elif i>0 and current_depth>=1 and re.match(r"^else\b",stripped):
+        elif i>0 and active is None and current_depth>=1 and re.match(r"^else\b",stripped):
             active={
                 "start_index":i,
                 "branch_depth":current_depth,

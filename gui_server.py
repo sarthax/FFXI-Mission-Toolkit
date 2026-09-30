@@ -7771,15 +7771,6 @@ def itemedit_clone_template(item_id: int):
         return JSONResponse({"error": str(ex)}, status_code=400)
 
 
-@app.get("/itemedit/{itemid}.json")
-def itemedit_get(itemid: int):
-    import item_edit
-    try:
-        return JSONResponse(item_edit.get_item(itemid))
-    except Exception as ex:
-        return JSONResponse({"error": str(ex)}, status_code=400)
-
-
 @app.post("/itemedit/reconcile")
 async def itemedit_reconcile(request: Request):
     import item_edit
@@ -7836,6 +7827,16 @@ def itemedit_create_preview(category: str):
         return JSONResponse(item_dat_tools.preview_free_slot(category))
     except Exception as ex:
         return JSONResponse({"error": str(ex)}, status_code=400)
+
+# Must stay AFTER the static /itemedit/*.json routes above, or "{itemid}.json" (int) swallows them with a 422.
+@app.get("/itemedit/{itemid}.json")
+def itemedit_get(itemid: int):
+    import item_edit
+    try:
+        return JSONResponse(item_edit.get_item(itemid))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
 
 @app.post("/itemedit/create")
 async def itemedit_create(request: Request):

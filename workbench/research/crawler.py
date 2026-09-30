@@ -51,11 +51,19 @@ class BoundedSourceCrawler:
 
     def _allowed_rel(self, rel: Path) -> bool:
         rels=rel.as_posix()
+
+        def matches(pat: str) -> bool:
+            # fnmatch's "**/" needs a real path separator, so "**/*" alone would never match a
+            # file sitting directly in a root; also try the pattern with the "**/" prefix dropped.
+            if fnmatch.fnmatch(rels,pat):
+                return True
+            return pat.startswith("**/") and fnmatch.fnmatch(rels,pat[3:])
+
         if rel.suffix.lower() not in self.policy.allowed_extensions:
             return False
-        if not any(fnmatch.fnmatch(rels,pat) for pat in self.policy.include_globs):
+        if not any(matches(pat) for pat in self.policy.include_globs):
             return False
-        if any(fnmatch.fnmatch(rels,pat) for pat in self.policy.exclude_globs):
+        if any(matches(pat) for pat in self.policy.exclude_globs):
             return False
         return True
 
