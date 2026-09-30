@@ -59,6 +59,20 @@ def main():
     assert "Server SQL will not be changed" in template
     assert "label:'restore DAT record'" in template
 
+    # Dependency/usage view distinguishes exact DB references from advisory source text.
+    assert "def item_usage(item_id: int, source_limit: int = 100) -> dict:" in item_edit
+    assert "CONTENT_TABLE_HINTS" in item_edit
+    assert '"database_exact"' in item_edit
+    assert '"source_text"' in item_edit
+    assert '"blocking_reference_count"' in item_edit
+    assert "source_limit <= 0" in item_edit
+    assert '@app.get("/itemedit/{item_id}/usage.json")' in gui
+    assert 'id="itemUsagePanel"' in template
+    assert "async function refreshItemUsage(includeSource=false)" in template
+    assert "refreshItemUsage(false)" in template
+    assert "refreshItemUsage(true)" in template
+    assert "DEPENDENCY WARNING:" in template
+
     # Selected-item change history is item-scoped, metadata-aware, and restorable.
     assert "def list_item_history(item_id, limit=100):" in item_edit
     assert '"metadata": metadata or {}' in item_edit
