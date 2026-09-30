@@ -4,13 +4,14 @@ This module normalizes acquisition evidence without inventing cross-source canon
 identity.  Item/key-item literals remain literals until an explicit identity bridge
 maps them to canonical graph nodes.
 
-Supported producer families in v1:
+Supported producer families:
 - mob_drops logical SQL records -> DROP_POOL
+- audited static LSB Lua general/nation/guild shop inventories -> SOLD_BY
 - synth_recipes logical SQL records -> SYNTHESIS
 - synergy_recipes logical SQL records -> SYNERGY
 - scripted-behavior reward projections -> SCRIPTED_REWARD
 
-Shop acquisition is intentionally absent until an audited logical shop profile exists.
+Special/dynamic shop systems remain separate until individually profiled.
 """
 from __future__ import annotations
 
