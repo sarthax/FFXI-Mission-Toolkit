@@ -5,14 +5,15 @@ This deliberately separates three namespaces that were previously conflated:
 - client file_id (FTABLE/VTABLE key)
 - physical ROM DAT path
 
-The server modelid -> client file_id transform follows FFXiMain's NpcTable mapping as documented
-by xi-model-viewer's zone-NPC generator (vekien/xi-model-viewer, scripts/gen_zone_npcs.py).
+The server modelid -> client file_id transform follows FFXiMain's monster lookup at VA
+0x100C513D as documented by vekien/xi-tools. xi-model-viewer's older zone-NPC generator carries
+stale 3193/+98546 tail values; those are intentionally not copied here.
 It is piecewise, not one universal additive offset:
 
     modelid < 1500 -> file_id = modelid + 1300
     modelid < 3000 -> file_id = modelid + 50295
-    modelid < 3193 -> file_id = modelid + 96907
-    otherwise      -> file_id = modelid + 98546
+    modelid < 3500 -> file_id = modelid + 96907
+    otherwise      -> file_id = modelid + 98239
 
 The resulting file_id is still resolved through the configured client's FTABLE/VTABLE via the
 existing dat-extractor-backed resolver. A mapping is not considered usable unless that resolver
@@ -26,8 +27,8 @@ import model_schedule_dump as msd
 MODEL_RULES = (
     (1500, 1300, "<1500 +1300"),
     (3000, 50295, "1500-2999 +50295"),
-    (3193, 96907, "3000-3192 +96907"),
-    (None, 98546, "3193+ +98546"),
+    (3500, 96907, "3000-3499 +96907"),
+    (None, 98239, "3500+ +98239"),
 )
 
 
@@ -50,7 +51,7 @@ def resolve_model_id(model_id: int, ffxi_path: str | None = None) -> dict:
         "model_id": mid,
         "file_id": file_id,
         "mapping_rule": rule,
-        "mapping_source": "FFXiMain NpcTable mapping (piecewise; independently mirrored by xi-model-viewer)",
+        "mapping_source": "FFXiMain monster lookup VA 0x100C513D (piecewise; vekien/xi-tools decompilation)",
         "ffxi_path": install,
         "rom_path": None,
         "registered": False,
