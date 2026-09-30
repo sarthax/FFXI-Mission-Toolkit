@@ -22,6 +22,16 @@ def main():
     assert "dat.validate_client_patch(item_id, client_fields)" in item_edit
     assert "client_report = dat.patch_client_item(item_id, client_fields)" in item_edit
 
+    # Effect staging tools: copy from another item and batch multi-add without immediate writes.
+    assert 'id="effectStagingTools"' in template
+    assert 'id="copyEffectsSource"' in template
+    assert 'id="batchEffectsText"' in template
+    assert "async function copyEffectsFromItem()" in template
+    assert "function parseBatchEffects()" in template
+    assert "mergeEffectRows(kind, rows)" in template
+    assert "clone-template.json?item_id=" in template
+    assert "duplicate key in batch" in template
+
     # DAT/ID slot browser uses real server + DAT occupancy and only verified reservation rules.
     assert "def browse_slots(cat_name: str, offset: int = 0, limit: int = 200, state: str = '')" in item_dat
     assert "'used-both'" in item_dat and "'server-only'" in item_dat and "'dat-only'" in item_dat and "'free'" in item_dat
