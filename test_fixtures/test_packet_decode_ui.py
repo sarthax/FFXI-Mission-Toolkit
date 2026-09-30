@@ -65,6 +65,7 @@ def main():
     assert 'name="packet_files"' in template
     assert 'multiple' in template
     assert 'rows="18"' in template
+    assert 'method="post" action="/packets/decode"' in template
     assert 'name="hex_bytes" rows="8"' in template
     assert "Open in Packet Viewer" in template
     assert "r.raw_hex|urlencode" in template
@@ -76,7 +77,8 @@ def main():
     assert "build_capture_index.ingest_from_source" in server
     assert "def _packet_decoder_upload_rows(" in server
     assert "def _packet_decoder_normalize_text(" in server
-    assert "analyze_layout(direction, opcode_int, hex_bytes)" in server
+    assert "analyze_layout(direction, opcode_int, normalized_hex)" in server
+    assert '@app.post("/packets/decode"' in server
     assert "def analyze_layout(" in backend
 
     print("Packet decoder coordinated field/hex UI regression: PASS")
