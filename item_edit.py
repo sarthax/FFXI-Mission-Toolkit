@@ -11,6 +11,7 @@ authority" research finding.
 """
 import json
 import time
+import re
 from decimal import Decimal
 from pathlib import Path
 
@@ -380,6 +381,154 @@ def restore(bid):
         "restored": len(b["ops"]), "pre_restore_backup": pre_id,
         "client": client_report, "item_exists": item_exists,
     }
+
+CONTENT_TABLE_HINTS = ("drop", "shop", "vendor", "recipe", "reward", "helm", "garden", "exchange", "apprais")
+PLAYER_STATE_TABLE_HINTS = ("char", "inventory", "auction", "delivery", "bazaar", "account", "storage")
+
+
+def _usage_category(table: str) -> str:
+    t = table.lower()
+    if "drop" in t:
+        return "drop"
+    if "recipe" in t:
+        return "recipe"
+    if "shop" in t or "vendor" in t:
+        return "shop"
+    if "reward" in t:
+        return "reward"
+    if "helm" in t:
+        return "helm"
+    if "garden" in t:
+        return "gardening"
+    if "exchange" in t or "apprais" in t:
+        return "exchange/appraisal"
+    return "content"
+
+
+def _content_table_allowed(table: str) -> bool:
+    t = table.lower()
+    if any(x in t for x in PLAYER_STATE_TABLE_HINTS):
+        return False
+    return any(x in t for x in CONTENT_TABLE_HINTS)
+
+
+def _row_dict(cols, row):
+    return {str(k): _enc(v) for k, v in zip(cols, row)}
+
+
+def item_usage(item_id: int, source_limit: int = 100) -> dict:
+    """Conservative pre-delete usage scan against the active server DB and configured Lua tree.
+
+    Database hits are exact equality matches against item-id-bearing content columns. Lua hits are
+    explicitly lower-confidence source-text references and are never promoted to foreign-key proof.
+    """
+    item_id = int(item_id)
+    source_limit = max(1, min(int(source_limit), 500))
+    db = zone_plot._db()
+    cu = db.cursor()
+    refs = []
+    coverage = {"database": True, "source_scripts": False, "graph": False}
+    try:
+        cu.execute("show tables")
+        tables = [r[0] for r in cu.fetchall()]
+        for table in tables:
+            if not _content_table_allowed(table):
+                continue
+            try:
+                cu.execute("describe \`" + table + "\`")
+                cols = [r[0] for r in cu.fetchall()]
+            except Exception:
+                continue
+            lower = {c.lower(): c for c in cols}
+            match_cols = []
+            for key in ("itemid", "item_id"):
+                if key in lower:
+                    match_cols.append(lower[key])
+            if "recipe" in table.lower():
+                for c in cols:
+                    lc = c.lower()
+                    if re.fullmatch(r"ingredient\d+", lc) or re.fullmatch(r"result(?:hq\d*)?", lc) or lc in ("crystal", "hqcrystal"):
+                        match_cols.append(c)
+            match_cols = list(dict.fromkeys(match_cols))
+            if not match_cols:
+                continue
+            where = " OR ".join("\`" + c + "\`=%s" for c in match_cols)
+            try:
+                cu.execute("select * from \`" + table + "\` where " + where + " limit 100", tuple([item_id] * len(match_cols)))
+                rows = cu.fetchall()
+            except Exception:
+                continue
+            for row in rows:
+                rd = _row_dict(cols, row)
+                matched = [c for c in match_cols if str(rd.get(c)) == str(item_id)]
+                refs.append({
+                    "evidence": "database_exact",
+                    "category": _usage_category(table),
+                    "table": table,
+                    "matched_columns": matched,
+                    "row": rd,
+                    "summary": table + ": " + ", ".join(matched),
+                })
+    finally:
+        db.close()
+
+    script_refs = []
+    try:
+        root = zone_plot._server_root()
+        scripts = root / "scripts"
+        if scripts.is_dir():
+            coverage["source_scripts"] = True
+            data = get_item(item_id)
+            internal_name = str(data.get("server", {}).get("item_basic", {}).get("name") or "")
+            token = re.sub(r"[^A-Z0-9]+", "_", internal_name.upper()).strip("_")
+            token_re = re.compile(r"\b" + re.escape(token) + r"\b") if token else None
+            numeric_re = re.compile(r"(?<!\d)" + re.escape(str(item_id)) + r"(?!\d)")
+            context_re = re.compile(r"item|trade|reward|drop|add|del|give|has|obtain", re.I)
+            for p in scripts.rglob("*.lua"):
+                if len(script_refs) >= source_limit:
+                    break
+                try:
+                    lines = p.read_text(encoding="utf-8", errors="ignore").splitlines()
+                except Exception:
+                    continue
+                for lineno, line in enumerate(lines, 1):
+                    if len(script_refs) >= source_limit:
+                        break
+                    token_hit = bool(token_re and token_re.search(line))
+                    numeric_hit = bool(numeric_re.search(line) and context_re.search(line))
+                    if not (token_hit or numeric_hit):
+                        continue
+                    script_refs.append({
+                        "evidence": "source_text",
+                        "category": "script",
+                        "path": str(p.relative_to(root)).replace("\\", "/"),
+                        "line": lineno,
+                        "match": "item_name_token" if token_hit else "numeric_item_context",
+                        "text": line.strip()[:500],
+                    })
+    except Exception:
+        pass
+
+    refs.extend(script_refs)
+    counts = {}
+    for ref in refs:
+        counts[ref["category"]] = counts.get(ref["category"], 0) + 1
+    return {
+        "item_id": item_id,
+        "server": zone_plot.get_server(),
+        "references": refs,
+        "counts": counts,
+        "total": len(refs),
+        "blocking_reference_count": sum(1 for r in refs if r["evidence"] == "database_exact"),
+        "source_text_count": len(script_refs),
+        "coverage": coverage,
+        "notes": [
+            "database_exact rows are exact item-id matches in active-server content tables",
+            "source_text rows are textual evidence only and may require human interpretation",
+            "absence of a reference is not proof that the item is unused where a subsystem is not indexed",
+        ],
+    }
+
 
 # ---- search -----------------------------------------------------------------------------------
 def search(q, category="", min_level=-1, max_level=-1, job=-1, skill=-1, client_state="", limit=200):
