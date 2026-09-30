@@ -251,6 +251,15 @@ def main():
     assert "async function compareCurrentItem()" in template
     assert "flattenItemForCompare" in template
     assert "effectCompareLabel" in template
+    assert "function compareSideBySidePanel(title,leftObj,rightObj,leftLabel,rightLabel)" in template
+    assert "function flattenDatRecord(rec)" in template
+    assert "function effectMap(kind, rows)" in template
+    assert "SQL fields" in template
+    assert "Client DAT" in template
+    assert "Item mods" in template
+    assert "Pet mods" in template
+    assert "Latents" in template
+    assert "SQL + client DAT + mods + pet mods + latents" in template
     assert 'id="fieldClipboardStatus"' in template
     assert "let itemFieldClipboard=null;" in template
     assert "function copyEditorField(table,field)" in template
