@@ -216,7 +216,7 @@ def main():
         content_type="", all_tags=[], tag="", rows=[],
     )
     capture_template_contracts = {
-        "capture_detail.html": ["{% block shell_mode %}dense{% endblock %}", "capture-stats", "capture-meta", "capture-actions", "Capture integrity"],
+        "capture_detail.html": ["{% block shell_mode %}dense{% endblock %}", "capture-stats", "capture-meta", "capture-actions", "Capture integrity", "capture-npc-filter", "capture-npc-table"],
         "capture_timeline.html": ["{% block shell_mode %}dense{% endblock %}", "capture-timeline-page", "position:sticky", "Packet Browser"],
         "capture_packets.html": ["{% block shell_mode %}dense{% endblock %}", "capture-packets-page", "decoded field"],
         "capture_packet_detail.html": ["{% block shell_mode %}dense{% endblock %}", "capture-packet-page", "Session packets", "Source provenance"],
@@ -228,6 +228,8 @@ def main():
         "capture_source_locator.html": ["{% block shell_mode %}dense{% endblock %}", "capture-source-page"],
         "capture_delete_confirm.html": ["{% block shell_mode %}dense{% endblock %}", "capture-delete-page"],
         "capture_help.html": ["capture-help-section", "Capture Ingestion Help"],
+        "path_plot.html": ["{% block shell_mode %}dense{% endblock %}", "capture-path-page", "width:min(100%,1100px)", "All paths"],
+        "path_plot_all.html": ["{% block shell_mode %}dense{% endblock %}", "capture-all-paths-page", "width:min(100%,1200px)", "Capture entities"],
     }
     capture_env = Environment(loader=FileSystemLoader(str(TEMPLATES)), autoescape=select_autoescape(("html",)))
     for template_name, markers in capture_template_contracts.items():
