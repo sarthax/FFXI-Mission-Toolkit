@@ -122,17 +122,41 @@ def canonical_entity_root(con: sqlite3.Connection, numeric_id: int) -> str | Non
     return rows[0][0] if len(rows) == 1 else None
 
 
-def _entity_catalog_match(row: dict, numeric_id: int) -> bool:
+def _catalog_entity_id(row: dict) -> int | None:
     if row.get("node_type") not in ENTITY_OBJECT_TYPES:
-        return False
-    if row.get("numeric_id") is not None:
-        return str(row["numeric_id"]) == str(numeric_id)
+        return None
+    value = row.get("numeric_id")
+    if value is not None:
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
     identity = row.get("identity") or {}
     for key in ("npcid", "mobid", "entity_id", "id", "numeric_id"):
-        if key in identity and str(identity[key]) == str(numeric_id):
-            return True
+        if key in identity:
+            try:
+                return int(identity[key])
+            except (TypeError, ValueError):
+                pass
+    # Canonical search rows expose the key in matched_on but do not currently populate numeric_id.
+    node_id = str(row.get("node_id") or "")
+    if not row.get("catalog_only") and ":" in node_id:
+        tail = node_id.rsplit(":", 1)[-1]
+        if tail.isdigit():
+            return int(tail)
+    return None
+
+
+def _entity_catalog_match(row: dict, numeric_id: int) -> bool:
+    resolved = _catalog_entity_id(row)
+    if resolved is not None:
+        return resolved == numeric_id
     # Client identity providers keep the numeric entity in a searchable alias/detail field.
-    return "numeric_id" in (row.get("matched_on") or []) and str(numeric_id) in str(row)
+    return (
+        row.get("node_type") == "CLIENT_IDENTITY"
+        and "numeric_id" in (row.get("matched_on") or [])
+        and str(numeric_id) in str(row)
+    )
 
 
 def entity_implementation_path(
@@ -148,9 +172,18 @@ def entity_implementation_path(
     graph edges between SQL/LSB/Topaz/DSP rows that merely share a numeric entity ID.
     """
     numeric_id = _numeric_entity_query(query)
+    initial_matches = search_nodes(graph_con, query, catalog_con)
     if numeric_id is None:
-        return None
+        candidate_ids = {
+            entity_id for row in initial_matches
+            if (entity_id := _catalog_entity_id(row)) is not None
+        }
+        if len(candidate_ids) != 1:
+            return None
+        numeric_id = next(iter(candidate_ids))
 
+    # Re-search by the resolved numeric ID so every source representation participates even when
+    # the user started from a name that only one provider happened to match textually.
     matches = search_nodes(graph_con, str(numeric_id), catalog_con)
     entity_rows = [row for row in matches if _entity_catalog_match(row, numeric_id)]
     root = canonical_entity_root(graph_con, numeric_id)
