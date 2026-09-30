@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main():
     server = (ROOT / "gui_server.py").read_text(encoding="utf-8")
+    base = (ROOT / "gui" / "templates" / "base.html").read_text(encoding="utf-8")
     packet_list = (ROOT / "gui" / "templates" / "capture_packets.html").read_text(encoding="utf-8")
     packet_detail = (ROOT / "gui" / "templates" / "capture_packet_detail.html").read_text(encoding="utf-8")
     timeline = (ROOT / "gui" / "templates" / "capture_timeline.html").read_text(encoding="utf-8")
@@ -16,25 +17,34 @@ def main():
     roadmap = (ROOT / "docs" / "workbench" / "ROADMAP.md").read_text(encoding="utf-8")
 
     assert '@app.get("/captures/{capture_id}/packets/{seq}"' in server
-    assert "packet_decode.analyze_layout(pd_direction, opcode_int, packet["raw_hex"])" in server
+    assert 'packet_decode.analyze_layout(pd_direction, opcode_int, packet["raw_hex"])' in server
     assert "Capture direction is unknown" in server
     assert "unique known opcode definition; capture direction remains unknown" in server
     assert "capture_packet_correlations" in server
+    assert "neighbor_rows = con.execute(" in server
+    assert '"neighbors": neighbors' in server
     assert 'normalized_table") == "capture_raw_packets"' in server
     assert 'f"/captures/{locator[\'capture_id\']}/packets/{seq}"' in server
+
+    assert "main.wide-workbench" in base
+    assert "{% block main_class %}{% endblock %}" in base
+    assert "{% block main_class %}wide-workbench{% endblock %}" in packet_detail
+    assert "Session packets" in packet_detail
+    assert "Decoded structure" in packet_detail
+    assert "Raw packet map" in packet_detail
+    assert "Selected field" in packet_detail
+    assert "Capture context" in packet_detail
+    assert "Source provenance" in packet_detail
+    assert "Cross-source correlations" in packet_detail
+    assert "open exact source row/block" in packet_detail
+    assert "function esc(value)" in packet_detail
+    assert "coverage {{ layout.coverage_pct }}%" in packet_detail
 
     assert 'href="/captures/{{ capture_id }}/packets/{{ r.seq }}"' in packet_list
     assert "inspect in capture context" in packet_list
     assert "open scratch decoder" in packet_list
     assert 'href="/captures/{{ capture_id }}/packets/{{ r.seq }}"' in timeline
     assert "table == 'capture_raw_packets' and c == 'seq'" in query
-
-    assert "Decoded structure" in packet_detail
-    assert "Raw packet map" in packet_detail
-    assert "Source provenance" in packet_detail
-    assert "Cross-source correlations" in packet_detail
-    assert "open exact source row/block" in packet_detail
-    assert "schema coverage" in packet_detail
 
     assert "Packet inspection is capture-native" in help_page
     assert "Future live stream rule" in help_page
