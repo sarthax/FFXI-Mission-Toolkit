@@ -4046,17 +4046,9 @@ def events_view(request: Request, zone: str, entity: int, csid: int):
 
 
 def explore_event_run(out_dir: Path, entity_id: int, csid: int, zoneid: int | None) -> dict:
-    import subprocess, sys as _sys
-    env = os.environ.copy()
-    env["PYTHONIOENCODING"] = "utf-8"
-    result = subprocess.run(
-        [_sys.executable, str(explore_event.XI_EVENTS_BRIDGE), str(out_dir / "events.yml"),
-         str(entity_id), str(csid), str(out_dir / "dialog.yml"), str(zoneid or 0)],
-        capture_output=True, text=True, encoding="utf-8", errors="replace", env=env,
-    )
-    if result.returncode != 0:
-        return {"decompiled": None, "error": (result.stdout + "\n" + result.stderr).strip()}
-    return {"decompiled": result.stdout, "error": None}
+    # Canonical in-process path. Unicode dialog/event text remains Python str end-to-end; no
+    # Windows console/code-page boundary, and browser health scans use this exact same decoder.
+    return explore_event.decompile_event(out_dir, entity_id, csid, zoneid)
 
 
 @app.get("/packets", response_class=HTMLResponse)
