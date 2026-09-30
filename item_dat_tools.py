@@ -1762,6 +1762,71 @@ def restore_client_record(snapshot: dict) -> dict:
     return {"ok": True, "item_id": item_id, "category": cat_name, "dat_ui": en_rom,
             "record_index": idx, "dat": str(dest_path), "format": item_dat.format, "target": target}
 
+def compare_live_pivot_record(item_id: int) -> dict:
+    """Compare one exact item record between live install and Xi-Pivot without fallback substitution."""
+    found = category_for_item(item_id)
+    if found is None:
+        return {'available': False, 'reason': 'no client DAT covers this item'}
+    cat_name, base_id, item_type, en_rom, _jp_rom = found
+    idx = int(item_id) - base_id
+    live_path = dat_path(en_rom); piv_path = pivot_dat_path(en_rom)
+    if not live_path.exists():
+        return {'available': False, 'reason': f'live DAT missing: {live_path}'}
+    live_dat = ItemDat.load(live_path)
+    if idx < 0 or idx >= live_dat.count:
+        return {'available': False, 'reason': 'record index is outside live DAT'}
+    if not piv_path.exists():
+        return {'available': True, 'pivot_exists': False, 'item_id': int(item_id), 'dat_ui': en_rom,
+                'record_index': idx, 'same_raw': False, 'changes': []}
+    piv_dat = ItemDat.load(piv_path)
+    if idx >= piv_dat.count or live_dat.format != piv_dat.format:
+        return {'available': False, 'reason': 'live/pivot DAT layout differs'}
+    live_raw = live_dat.record(idx); piv_raw = piv_dat.record(idx)
+    live_rec = _parse_record(int(item_id), live_raw, None, item_type, str(live_path),
+                             dat_ui=en_rom, fmt=live_dat.format, record_index=idx, category=cat_name)
+    piv_rec = _parse_record(int(item_id), piv_raw, None, item_type, str(piv_path),
+                            dat_ui=en_rom, fmt=piv_dat.format, record_index=idx, category=cat_name)
+    live = item_to_dict(live_rec); pivot = item_to_dict(piv_rec)
+    changes = []
+    for field in PRISTINE_COMPARE_FIELDS:
+        if live.get(field) != pivot.get(field):
+            changes.append({'field': field, 'live': live.get(field), 'pivot': pivot.get(field)})
+    return {'available': True, 'pivot_exists': True, 'item_id': int(item_id), 'dat_ui': en_rom,
+            'record_index': idx, 'same_raw': live_raw == piv_raw, 'changes': changes,
+            'changed_count': len(changes), 'live_path': str(live_path), 'pivot_path': str(piv_path)}
+
+
+def copy_live_pivot_record(item_id: int, direction: str) -> dict:
+    """Copy only one selected item record live->pivot or pivot->live, backing up destination DAT first."""
+    if direction not in ('live_to_pivot', 'pivot_to_live'):
+        raise ValueError('direction must be live_to_pivot or pivot_to_live')
+    found = category_for_item(item_id)
+    if found is None:
+        raise ValueError(f'no client DAT covers item id {item_id}')
+    cat_name, base_id, _item_type, en_rom, _jp_rom = found
+    idx = int(item_id) - base_id
+    live_path = dat_path(en_rom); piv_path = pivot_dat_path(en_rom)
+    src_path, dest_path = (live_path, piv_path) if direction == 'live_to_pivot' else (piv_path, live_path)
+    if not src_path.exists():
+        raise ValueError(f'source DAT does not exist: {src_path}')
+    src_dat = ItemDat.load(src_path)
+    if idx < 0 or idx >= src_dat.count:
+        raise ValueError('record index is outside source DAT')
+    if dest_path.exists():
+        dest_dat = ItemDat.load(dest_path)
+    else:
+        if direction != 'live_to_pivot':
+            raise ValueError(f'destination DAT does not exist: {dest_path}')
+        dest_dat = ItemDat.load(live_path)
+    if idx >= dest_dat.count or src_dat.format != dest_dat.format:
+        raise ValueError('source/destination DAT layout differs')
+    backup_dat_snapshot(dest_path, en_rom)
+    dest_dat.set_record(idx, src_dat.record(idx))
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+    dest_path.write_bytes(dest_dat.encrypted())
+    return {'ok': True, 'item_id': int(item_id), 'direction': direction, 'dat_ui': en_rom,
+            'record_index': idx, 'source': str(src_path), 'destination': str(dest_path)}
+
 def validate_client_patch(item_id: int, fields: dict) -> dict:
     """Validate an existing-item patch entirely in memory without writing a DAT or backup."""
     found = category_for_item(item_id)
