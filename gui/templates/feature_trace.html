@@ -204,6 +204,8 @@
         </select>
       </label>
       <label>Branch search <input id="impl-branch-filter" type="search" placeholder="name, table, id, link"></label>
+      <label><input id="impl-linked-only" type="checkbox"> only branches with native links</label>
+      <button type="button" id="impl-reset-filters">Reset</button>
       <button type="button" id="impl-expand-all">Expand visible</button>
       <button type="button" id="impl-collapse-all">Collapse visible</button>
       <span id="impl-filter-status" class="muted"></span>
@@ -222,7 +224,10 @@
           <div><span class="chip">{{ branch.root.node_type }}</span> <strong>{{ branch.root.display_name or branch.root.node_id }}</strong></div>
           <code>{{ branch.root.node_id }}</code>
           <div class="muted" style="font-size:11px;margin-top:3px">source: {{ branch.root.table }}</div>
-          {% if branch.root.inspect_href %}<div><a class="zonelink" href="{{ branch.root.inspect_href }}">Open source view</a></div>{% endif %}
+          <div class="impl-workflow">
+            <a class="chip" href="/features/trace?q={{ branch.root.node_id|urlencode }}">Trace this representation</a>
+            {% if branch.root.inspect_href %}<a class="chip" href="{{ branch.root.inspect_href }}">Open source view</a>{% endif %}
+          </div>
           {% if branch.root.identity %}
           <div class="impl-meta">{% for key,value in branch.root.identity.items() %}<span class="chip mono">{{ key }}={{ value }}</span>{% endfor %}</div>
           {% endif %}
@@ -259,6 +264,7 @@
       const provider=document.getElementById('impl-provider-filter');
       const domain=document.getElementById('impl-domain-filter');
       const query=document.getElementById('impl-branch-filter');
+      const linked=document.getElementById('impl-linked-only');
       const status=document.getElementById('impl-filter-status');
       const branches=[...document.querySelectorAll('.impl-branch')];
       const apply=()=>{
@@ -268,12 +274,14 @@
           const okProvider=!p||(branch.dataset.provider||'').toLowerCase()===p;
           const okDomain=!d||(branch.dataset.domain||'').toLowerCase()===d;
           const okQuery=!q||branch.textContent.toLowerCase().includes(q);
-          branch.hidden=!(okProvider&&okDomain&&okQuery);
+          const hasLinks=!linked?.checked||!/\b0 links?\b/i.test(branch.querySelector('summary')?.textContent||'');
+          branch.hidden=!(okProvider&&okDomain&&okQuery&&hasLinks);
           if(!branch.hidden) visible++;
         });
         if(status) status.textContent=visible+' of '+branches.length+' branch(es) visible';
       };
-      provider?.addEventListener('change',apply); domain?.addEventListener('change',apply); query?.addEventListener('input',apply);
+      provider?.addEventListener('change',apply); domain?.addEventListener('change',apply); query?.addEventListener('input',apply); linked?.addEventListener('change',apply);
+      document.getElementById('impl-reset-filters')?.addEventListener('click',()=>{if(provider)provider.value='';if(domain)domain.value='';if(query)query.value='';if(linked)linked.checked=false;apply();});
       document.getElementById('impl-expand-all')?.addEventListener('click',()=>branches.filter(x=>!x.hidden).forEach(x=>x.open=true));
       document.getElementById('impl-collapse-all')?.addEventListener('click',()=>branches.filter(x=>!x.hidden).forEach(x=>x.open=false));
       apply();
