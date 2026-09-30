@@ -36,15 +36,15 @@ def main():
     assert "const undoStack=[], redoStack=[];" in template
     assert "pre_restore_backup" in template
     for marker in (
-        "recordUndo(\`move/rotate ${e.id}\`,j.backup)",
-        "recordUndo(\`animation ${e.id}\`,j.backup)",
-        "recordUndo(\`delete ${e.id}\`,j.backup)",
-        "recordUndo(\`add ${j.id}\`,j.backup)",
-        "recordUndo(\`dropid ${dropsState.mobid}\`,j.backup)",
-        "recordUndo(\`drop row ${dropsState.dropid}/${item_id}\`,j.backup)",
-        "recordUndo(\`delete drop ${dropsState.dropid}/${origItem}\`,j.backup)",
+        "recordUndo(`move/rotate ${e.id}`,j.backup)",
+        "recordUndo(`animation ${e.id}`,j.backup)",
+        "recordUndo(`delete ${e.id}`,j.backup)",
+        "recordUndo(`add ${j.id}`,j.backup)",
+        "recordUndo(`dropid ${dropsState.mobid}`,j.backup)",
+        "recordUndo(`drop row ${dropsState.dropid}/${item_id}`,j.backup)",
+        "recordUndo(`delete drop ${dropsState.dropid}/${origItem}`,j.backup)",
     ):
-        assert marker.replace("\\\`", "`") in template, marker
+        assert marker.replace("\\`", "`") in template, marker
 
     assert "UNSAVED PREVIEW" in template
     assert "Discard unsaved position/rotation preview" in template
