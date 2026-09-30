@@ -7649,6 +7649,63 @@ def datinspector_page(
     except sqlite3.Error:
         zones = []
 
+    if result:
+        zone_name = None
+        if result.get("zone_id") is not None:
+            match = next((z for z in zones if z["zoneid"] == result["zone_id"]), None)
+            zone_name = match["name"] if match else None
+        result["zone_name"] = zone_name
+
+        actions = []
+        kinds = {m.get("tool_kind") for m in result.get("matches", [])}
+        if "events" in kinds:
+            href = f"/events?zone={quote(zone_name)}" if zone_name else "/events"
+            actions.append({
+                "label": "Open Events / CSID",
+                "href": href,
+                "note": "Browse/decompile the event records from this zone.",
+                "primary": True,
+            })
+        if "dialog" in kinds:
+            href = f"/dialog?zone={quote(zone_name)}" if zone_name else "/dialog"
+            actions.append({
+                "label": "Open Dialog Browser",
+                "href": href,
+                "note": "Search the decoded message/string table.",
+                "primary": True,
+            })
+        if "entities" in kinds:
+            actions.append({
+                "label": "Open Entity Search",
+                "href": "/entity",
+                "note": "Resolve client entity names against indexed NPC/entity data.",
+                "primary": True,
+            })
+        if result.get("zone_id") is not None:
+            actions.append({
+                "label": "Open Zone Editor",
+                "href": "/zoneplot",
+                "note": f"Zone-aware follow-up for zone {result['zone_id']}"
+                        + (f" ({zone_name})" if zone_name else "") + ".",
+                "primary": False,
+            })
+
+        # The Model Viewer has its own direct-DAT input. Keep this available especially when no
+        # structured parser recognizes the file; that is a common outcome for model/texture DATs.
+        actions.append({
+            "label": "Open Model Viewer",
+            "href": "/modelviewer",
+            "note": f"Try direct DAT / file-ID correlation using {result.get('rom_relative') or result.get('filename')}.",
+            "primary": not bool(result.get("matches")),
+        })
+        actions.append({
+            "label": "Client Overview / ID Drift",
+            "href": "/clientoverview",
+            "note": "Compare this client/build against another snapshot.",
+            "primary": False,
+        })
+        result["actions"] = actions
+
     return templates.TemplateResponse(request, "dat_inspector.html", {
         "request": request,
         "result": result,
