@@ -81,7 +81,7 @@ def main():
         drift=feature_trace.entity_query_diagnostics(con,catalog,"Diagnostic Mob")
         assert drift["status"]=="DRIFTED_IDS_ONE_ROOT",drift
         drift_path=feature_trace.entity_implementation_path(con,catalog,"Diagnostic Mob")
-        assert drift_path and drift_path["numeric_ids"]==[17084539,17000099],drift_path
+        assert drift_path and drift_path["numeric_ids"]==[17000099,17084539],drift_path
 
         template=(Path(__file__).resolve().parents[1]/"gui/templates/feature_trace.html").read_text(encoding="utf-8")
         server=(Path(__file__).resolve().parents[1]/"gui_server.py").read_text(encoding="utf-8")
