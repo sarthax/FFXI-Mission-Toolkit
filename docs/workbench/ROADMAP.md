@@ -132,6 +132,11 @@ First active foundation milestone:
 - Record branch/PR workflow.
 - Record current audit findings and unresolved items.
 
+### 2026-09-30 Entity implementation dossier
+- [x] Preserve Entity Profile as the canonical cross-source evidence bridge while adding a synthesized dossier layer: evidence-presence summary, concrete needs-attention signals, instance memberships, SQL/Lua wiring chain, direct Behavior Inspector handoff, Feature Trace/Capture/Dialog/Event links, and unified client-defined + runtime-observed CSID/dialog wiring.
+- [x] Keep the existing detailed model, mob/group/pool, drops, capture observations, SQL references, Lua references, wiki references, and field-provenance tables intact below the summary instead of replacing them with an aggregate score.
+- [ ] Follow-up: richer callback/API summaries inline from Behavior Inspector and broader Used By/dependency relationships from the canonical graph/package-scope services where they add information beyond the current concrete wiring chain.
+
 ### 2026-09-30 Events / CSID wiring dossier
 - [x] Upgrade Events / CSID from a client-only decompile view into a runtime-to-implementation dossier: decimal/hex CSID browsing, direct entity links, actor-specific server-reference counts, exact capture observation counts, full dialog/message drill-down, server source excerpts, Lua handler/API-call inventory with Binding Reference links, and explicitly non-authoritative copyable Lua scaffolding derived from the selected CSID plus observed option/parameter evidence.
 - [ ] Follow-up QOL: parameter/work-variable visualization and eventUpdate/option flow graphs once additional real CSID samples justify a generic representation; do not assign semantics to work variables without evidence.
