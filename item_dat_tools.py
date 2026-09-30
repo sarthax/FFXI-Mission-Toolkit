@@ -22,6 +22,8 @@ from __future__ import annotations
 import os
 import sqlite3
 import struct
+import hashlib
+import io
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -1369,16 +1371,27 @@ class ItemRecord:
     description: str = ''
     name_jp: str = ''
     description_jp: str = ''
+    article: int = 0
     level: int = 0
     slots: int = 0
     races: int = 0
     jobs: int = 0
     superior_level: int = 0
+    shield_size: int = 0
+    max_charges: int = 0
+    cast_time: int = 0
+    use_delay: int = 0
+    reuse_delay: int = 0
+    item_level: int = 0
     kind: int = 0
     dmg: int = 0
     delay: int = 0
     dps: int = 0
     skill: int = 0
+    jug_size: int = 0
+    base_item_id: int = 0
+    puppet_slot: int = 0
+    element_charge: int = 0
     icon_size: int = 0
     icon_data: bytes = field(default_factory=bytes, repr=False)
     dat: str = ''
@@ -1386,6 +1399,25 @@ class ItemRecord:
     format: str = FORMAT_LEGACY
     record_index: int = 0
     category: str = ''
+    stride: int = 0
+
+
+def _read_article_value(rec: bytes, text_off: int) -> int:
+    """Read the English article metadata entry without pretending it is a string."""
+    base = rec[text_off:]
+    if len(base) < 20:
+        return 0
+    try:
+        count = struct.unpack_from('<I', base, 0)[0]
+        if count < 2:
+            return 0
+        value_off = struct.unpack_from('<I', base, 12)[0]
+        value_type = struct.unpack_from('<I', base, 16)[0]
+        if value_type != 1 or value_off + 4 > len(base):
+            return 0
+        return struct.unpack_from('<I', base, value_off)[0]
+    except (struct.error, ValueError):
+        return 0
 
 
 def _parse_record(item_id: int, rec_en: bytes, rec_jp: Optional[bytes], item_type: int,
@@ -1419,7 +1451,9 @@ def _parse_record(item_id: int, rec_en: bytes, rec_jp: Optional[bytes], item_typ
         description=en[4] if len(en) > 4 else '',
         name_jp=jp[0] if len(jp) > 0 else '',
         description_jp=jp[1] if len(jp) > 1 else '',
+        article=_read_article_value(rec_en, text_off),
         dat=dat_path_str, dat_ui=dat_ui, format=fmt, record_index=record_index, category=category,
+        stride=len(rec_en),
     )
     if item_type in (3, 4):
         item.level = rf('level')
@@ -1427,12 +1461,25 @@ def _parse_record(item_id: int, rec_en: bytes, rec_jp: Optional[bytes], item_typ
         item.races = rf('races')
         item.jobs = rf('jobs')
         item.superior_level = rf('superior_level')
+        item.shield_size = rf('shield_size')
+        item.max_charges = rf('max_charges')
+        item.cast_time = rf('cast_time')
+        item.use_delay = rf('use_delay')
+        item.reuse_delay = rf('reuse_delay')
+        item.item_level = rf('item_level')
     if item_type == 4:
         item.kind = rf('type')
         item.dmg = rf('dmg')
         item.delay = rf('delay')
         item.dps = rf('dps')
         item.skill = rf('skill')
+        item.jug_size = rf('jug_size')
+        item.base_item_id = rf('base_item_id')
+    elif item_type == 1:
+        item.cast_time = rf('cast_time')
+    elif item_type == 5:
+        item.puppet_slot = rf('puppet_slot')
+        item.element_charge = rf('element_charge')
 
     icon_size = struct.unpack_from('<I', rec_en, ICON_OFFSET)[0]
     if icon_size > 0 and ICON_DATA + icon_size <= len(rec_en):
@@ -2121,3 +2168,108 @@ def item_to_dict(item: ItemRecord) -> dict:
     if d.get('jobs'):
         d['jobs_list'] = decode_jobs(d['jobs'])
     return d
+
+
+def bitmap_a_metadata(raw: bytes) -> dict:
+    """Confirmed structural metadata for an embedded FFXI BitmapA icon."""
+    out = {"available": False, "size": len(raw or b"")}
+    if not raw or raw[0] != 0x91 or len(raw) < 57:
+        return out
+    try:
+        width = struct.unpack_from("<I", raw, 21)[0]
+        height = struct.unpack_from("<I", raw, 25)[0]
+        bit_count = struct.unpack_from("<H", raw, 31)[0]
+    except struct.error:
+        return out
+    out.update({"available": bool(width and height), "width": width, "height": height,
+                "bit_count": bit_count, "format": "BitmapA"})
+    return out
+
+
+def bitmap_a_to_png(raw: bytes) -> bytes | None:
+    """Convert the embedded FFXI BitmapA icon to PNG for the Item Editor preview."""
+    meta = bitmap_a_metadata(raw)
+    if not meta.get("available"):
+        return None
+    width, height, bit_count = meta["width"], meta["height"], meta["bit_count"]
+    from PIL import Image
+    if bit_count == 8:
+        palette_offset = 57
+        palette_bytes = raw[palette_offset:palette_offset + 1024]
+        pixel_offset = palette_offset + 1024
+        pixel_bytes = raw[pixel_offset:pixel_offset + width * height]
+        if len(palette_bytes) != 1024 or len(pixel_bytes) != width * height:
+            return None
+        rgb_palette = bytearray(256 * 3)
+        for i in range(256):
+            b, g, r, _ = palette_bytes[i * 4:i * 4 + 4]
+            rgb_palette[i * 3:i * 3 + 3] = bytes([r, g, b])
+        img = Image.frombytes("P", (width, height), pixel_bytes)
+        img.putpalette(bytes(rgb_palette))
+        img = img.transpose(Image.FLIP_TOP_BOTTOM)
+        img.info["transparency"] = 0
+    elif bit_count == 32:
+        pixel_bytes = raw[57:57 + width * height * 4]
+        if len(pixel_bytes) != width * height * 4:
+            return None
+        rgba = bytearray(len(pixel_bytes))
+        for i in range(0, len(pixel_bytes), 4):
+            b, g, r, a = pixel_bytes[i:i + 4]
+            rgba[i:i + 4] = bytes([r, g, b, a])
+        img = Image.frombytes("RGBA", (width, height), bytes(rgba))
+        img = img.transpose(Image.FLIP_TOP_BOTTOM)
+    else:
+        return None
+    buf = io.BytesIO()
+    img.save(buf, format="PNG", optimize=True)
+    return buf.getvalue()
+
+
+def item_icon_png(item_id: int) -> bytes | None:
+    item = read_client_item(int(item_id))
+    return bitmap_a_to_png(item.icon_data) if item is not None else None
+
+
+def client_record_inspector(item_id: int) -> dict:
+    """Read-only, source-backed Item DAT inspector. Unknown bytes stay explicitly unresolved."""
+    item = read_client_item(int(item_id))
+    if item is None:
+        return {"available": False, "reason": "no populated client DAT record covers this item"}
+    d = item_to_dict(item)
+    layout = layout_for_type(item.type)
+    known_layout = []
+    rec = None
+    found = category_for_item(int(item_id))
+    if found is not None:
+        _cat, base_id, _item_type, en_rom, _jp = found
+        p = dat_path(en_rom)
+        if p.exists():
+            item_dat = ItemDat.load(p)
+            idx = int(item_id) - base_id
+            if 0 <= idx < item_dat.count:
+                rec = item_dat.record(idx)
+    if rec is not None:
+        for name, (offset, sfmt) in fields_for(layout, item.format).items():
+            known_layout.append({
+                "field": name, "offset": offset, "offset_hex": f"0x{offset:X}",
+                "storage": sfmt, "value": read_field(rec, layout, item.format, name),
+            })
+    icon = bitmap_a_metadata(item.icon_data)
+    d["slots_decoded"] = decode_slots(item.slots) if item.slots else []
+    d["targets_decoded"] = [label for bit, label in VALID_TARGETS.items() if item.targets & bit]
+    d["element_charge_decoded"] = decode_element_slots(item.element_charge) if item.element_charge else {}
+    return {
+        "available": True,
+        "record": d,
+        "icon": icon,
+        "known_layout_fields": known_layout,
+        "record_sha256": hashlib.sha256(rec).hexdigest() if rec is not None else None,
+        "layout": layout,
+        "record_size": item.stride,
+        "icon_offset": ICON_OFFSET,
+        "icon_data_offset": ICON_DATA,
+        "unresolved_note": (
+            "Only source-confirmed fields are named here. Remaining bytes/string padding are "
+            "preserved by record-level copy/backup operations but are not assigned semantics."
+        ),
+    }
