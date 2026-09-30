@@ -856,7 +856,7 @@ def main():
 
     if not args.zero_position and not args.unregistered:
         build_all(con)
-    sync_server_catalog_entities(con, WORKBENCH_DB)
+        sync_server_catalog_entities(con, WORKBENCH_DB)
     if args.zero_position:
         zero_position_report(con, args.zero_position)
     if args.unregistered:
