@@ -6975,6 +6975,17 @@ async def itemedit_delete(request: Request):
         return JSONResponse({"error": str(ex)}, status_code=400)
 
 
+@app.post("/itemedit/restore-client-record")
+async def itemedit_restore_client_record(request: Request):
+    import item_edit
+    b = await request.json()
+    try:
+        return JSONResponse(item_edit.restore_client_record_from_backup(
+            b["id"], b.get("comment", "")
+        ))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
 @app.post("/itemedit/restore")
 async def itemedit_restore(request: Request):
     import item_edit
