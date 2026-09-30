@@ -199,6 +199,7 @@ const perspectiveCamera = new THREE.PerspectiveCamera(60, container.clientWidth/
 const orthoCamera = new THREE.OrthographicCamera(-100,100,100,-100,-8000,8000);
 orthoCamera.zoom=1;
 let camera=perspectiveCamera;
+let transformControls=null;
 const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(container.clientWidth, container.clientHeight); container.appendChild(renderer.domElement);
 const lr = new CSS2DRenderer(); lr.setSize(container.clientWidth, container.clientHeight);
@@ -242,7 +243,7 @@ function switchProjection(mode,preserveView=true){
   const oldPos=camera.position.clone(), oldTarget=controls.target.clone();
   controls.dispose(); camera=mode==='orthographic'?orthoCamera:perspectiveCamera;
   if(preserveView){ camera.position.copy(oldPos); }
-  controls=new OrbitControls(camera,renderer.domElement); configureControls(); controls.target.copy(oldTarget); controls.addEventListener('end',saveZoneEditorState); if(typeof transformControls!=='undefined') transformControls.camera=camera;
+  controls=new OrbitControls(camera,renderer.domElement); configureControls(); controls.target.copy(oldTarget); controls.addEventListener('end',saveZoneEditorState); if(transformControls) transformControls.camera=camera;
   $('projection').value=mode; updateCameraProjection(); updateZoomSpeed(); repanSpeed(); controls.update();
 }
 function cameraPreset(name){
@@ -328,7 +329,7 @@ function updateSelectionVisual(){
   const p=P(Z.entities[selected]); selectionRing.position.set(p.x,p.y+1.7,p.z); selectionRing.visible=true;
 }
 const transformProxy=new THREE.Object3D(); scene.add(transformProxy);
-const transformControls=new TransformControls(camera,renderer.domElement);
+transformControls=new TransformControls(camera,renderer.domElement);
 transformControls.setMode('translate'); transformControls.setSpace('world'); scene.add(transformControls);
 transformControls.addEventListener('dragging-changed',ev=>{ controls.enabled=!ev.value; });
 let gizmoPreviewQueued=false;
