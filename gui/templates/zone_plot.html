@@ -759,6 +759,10 @@ function recordUndo(label, backup){
 }
 async function restoreHistory(source,target,verb){
   if(!source.length) return;
+  if(typeof isTransformDirty==='function' && isTransformDirty()){
+    if(!confirm('Discard the current unsaved preview before changing saved history?')) return;
+    restorePreviewFromOrig();
+  }
   const action=source.pop(); refreshUndoUI();
   const r=await fetch('/zoneplot/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:action.backup,exact:false})});
   const j=await r.json();
