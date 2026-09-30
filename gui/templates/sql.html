@@ -43,9 +43,9 @@
 {% else %}
 {{ pager() }}
 <div class="table-wrap"><table>
-  <tr>{% for c in cols %}<th>{{ c }}</th>{% endfor %}</tr>
+  <tr>{% for c in cols %}<th>{{ c }}</th>{% endfor %}{% if entity_col %}<th>cross-tool</th>{% endif %}</tr>
   {% for r in rows %}
-  <tr>{% for c in cols %}<td class="mono">{% if entity_col and c == entity_col and r[c] %}<a href="/entity/{{ r[c] }}">{{ r[c] }}</a>{% else %}{{ r[c] }}{% endif %}</td>{% endfor %}</tr>
+  <tr>{% for c in cols %}<td class="mono">{% if entity_col and c == entity_col and r[c] %}<a href="/entity/{{ r[c] }}">{{ r[c] }}</a>{% else %}{{ r[c] }}{% endif %}</td>{% endfor %}{% if entity_col %}<td>{% if r[entity_col] %}<a class="chip" href="/features/trace?q={{ r[entity_col]|urlencode }}">Feature Trace</a>{% endif %}</td>{% endif %}</tr>
   {% endfor %}
 </table></div>
 {{ pager() }}
