@@ -11,6 +11,9 @@
   .tabpanel[hidden] { display:none; }
   .nodata { border:1px dashed var(--border); border-radius:8px; padding:14px; color:var(--muted); }
   .nodata.filtered { border-color:#c99; }
+  .interaction-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:10px; margin:10px 0 16px; }
+  .interaction-card { border:1px solid var(--border); border-radius:8px; padding:10px; background:var(--panel); }
+  .interaction-card .meta { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
 </style>
 
 <p><a class="inline" href="/captures/{{ capture_id }}">&larr; back to capture #{{ capture_id }}</a></p>
@@ -58,6 +61,49 @@
 
   {% if events %}
   <p class="muted">{{ events|length }} event(s){% if events|length != events_total %} of {{ events_total }} total{% endif %}.</p>
+
+  {% if interaction_candidates %}
+  <h3>Interaction candidates ({{ interaction_candidates|length }})</h3>
+  <p class="muted">Presentation-only reconstruction from contiguous <code class="chip">capture_events</code>
+    rows with compatible zone/entity/CSID. These clusters help read call/response sequences but are
+    <strong>not</strong> asserted as canonical gameplay transactions.</p>
+  <div class="interaction-grid">
+    {% for c in interaction_candidates %}
+    <div class="interaction-card">
+      <div class="meta">
+        <span class="chip mono">seq {{ c.start_seq }}{% if c.end_seq != c.start_seq %}–{{ c.end_seq }}{% endif %}</span>
+        <span class="chip">{{ c.zone_db }}</span>
+        {% if c.csid %}<span class="chip mono">CSID {{ c.csid }}</span>{% endif %}
+        <span class="chip">{{ c.row_count }} row{{ '' if c.row_count == 1 else 's' }}</span>
+        {% if not c.complete_signal %}<span class="chip muted">partial evidence</span>{% endif %}
+      </div>
+      <div>
+        {% if c.entity_id %}<a href="/entity/{{ c.entity_id }}">{{ c.entity_name or c.entity_id }}</a>
+        {% else %}<span class="muted">entity not present in these rows</span>{% endif %}
+      </div>
+      {% if c.options %}<div><span class="muted">options:</span> <span class="mono">{{ c.options|join(', ') }}</span></div>{% endif %}
+      {% if c.messages %}
+      <div><span class="muted">messages:</span>
+        {% for m in c.messages %}
+          <span class="mono">{{ m.message_id }}</span>{% if m.dialog_text %} {{ m.dialog_text }}{% endif %}{% if not loop.last %}<br>{% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+      <details style="margin-top:6px;">
+        <summary>{{ c.rows|length }} source row{{ '' if c.rows|length == 1 else 's' }}</summary>
+        {% for r in c.rows %}
+        <div class="mono muted">#{{ r.seq }} {{ r.direction }} {{ r.opcode }} {{ r.opcode_name }}
+          {% if r.event_hex %} event={{ r.event_hex }}{% endif %}
+          {% if r.option is not none %} option={{ r.option }}{% endif %}
+          {% if r.message_id is not none %} message={{ r.message_id }}{% endif %}
+        </div>
+        {% endfor %}
+      </details>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   <div class="table-wrap"><table>
     <tr>
       <th>seq</th><th>dir</th><th>opcode</th><th>entity</th><th>csid</th>
