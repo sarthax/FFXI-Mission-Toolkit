@@ -60,6 +60,9 @@
 {% if import_error %}<p class="chip" style="color:#c33;">{{ import_error }}</p>{% endif %}
 {% if import_result %}
 <p class="chip">Imported <code>{{ import_result.snapshot_id }}</code>: {{ import_result.record_count }} identity records from {{ import_result.resources }} extracted resources across {{ import_result.zones_requested }} requested zones.</p>
+{% if import_result.entity_graph %}
+<p class="muted">Feature Trace entity bridge: {{ import_result.entity_graph.records or 0 }} ENTITY record(s), {{ import_result.entity_graph.created_roots or 0 }} canonical client root(s) created, {{ import_result.entity_graph.reused_roots or 0 }} reused, {{ import_result.entity_graph.relationships or 0 }} representation edge(s).</p>
+{% endif %}
 {% if import_result.extraction_failures or import_result.ingest_failures %}
 <p class="muted">{{ import_result.extraction_failures|length }} extraction failure(s), {{ import_result.ingest_failures|length }} ingest failure(s). Successful resources were retained.</p>
 {% endif %}
