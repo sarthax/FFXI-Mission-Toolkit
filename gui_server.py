@@ -6896,6 +6896,17 @@ def itemedit_get(itemid: int):
         return JSONResponse({"error": str(ex)}, status_code=400)
 
 
+@app.post("/itemedit/reconcile")
+async def itemedit_reconcile(request: Request):
+    import item_edit
+    b = await request.json()
+    try:
+        return JSONResponse(item_edit.reconcile_item(
+            b["item_id"], b["field"], b["direction"], b.get("comment", "")
+        ))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
 @app.post("/itemedit/validate")
 async def itemedit_validate(request: Request):
     import item_edit
