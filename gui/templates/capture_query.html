@@ -48,7 +48,7 @@
 <div class="table-wrap"><table>
   <tr>{% for c in cols %}<th>{{ c }}</th>{% endfor %}</tr>
   {% for r in rows %}
-  <tr>{% for c in cols %}<td class="mono">{% if c == 'capture_id' %}<a href="/captures/{{ r[c] }}">{{ r[c] }}</a>{% elif c == 'entity_id' and r[c] %}<a href="/entity/{{ r[c] }}">{{ r[c] }}</a>{% else %}{{ r[c] }}{% endif %}</td>{% endfor %}</tr>
+  <tr>{% for c in cols %}<td class="mono">{% if c == 'capture_id' %}<a href="/captures/{{ r[c] }}">{{ r[c] }}</a>{% elif table == 'capture_raw_packets' and c == 'seq' %}<a href="/captures/{{ r['capture_id'] }}/packets/{{ r[c] }}">{{ r[c] }}</a>{% elif c == 'entity_id' and r[c] %}<a href="/entity/{{ r[c] }}">{{ r[c] }}</a>{% else %}{{ r[c] }}{% endif %}</td>{% endfor %}</tr>
   {% endfor %}
 </table></div>
 {{ pager() }}
