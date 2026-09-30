@@ -24,6 +24,9 @@
 .entity-behavior-list{display:grid;gap:6px}
 .entity-behavior-row{border:1px solid var(--border);border-radius:6px;padding:7px 8px;background:var(--code-bg)}
 .entity-behavior-row .meta{font-size:11px;color:var(--muted);margin-top:3px}
+.entity-rel-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.entity-rel-row{display:grid;grid-template-columns:minmax(180px,.7fr) minmax(0,1fr);gap:8px;padding:7px 0;border-bottom:1px solid var(--border)}
+.entity-rel-row:last-child{border-bottom:0}.entity-rel-name{min-width:0;word-break:break-word}
 @media(max-width:1000px){.entity-summary-grid{grid-template-columns:1fr}}
 </style>
 <p><a class="inline" href="/entity?q={{ q }}&page={{ page }}">&larr; back to search</a></p>
@@ -54,6 +57,7 @@
 <div class="entity-actions" style="margin-top:-6px">
   <a class="chip" href="#entity-wiring">Wiring</a>
   <a class="chip" href="#entity-behavior">Behavior</a>
+  <a class="chip" href="#entity-relationships">Used By</a>
   <a class="chip" href="#entity-runtime">Runtime</a>
   <a class="chip" href="#entity-sql">SQL</a>
   <a class="chip" href="#entity-lua">Lua</a>
@@ -207,6 +211,87 @@
     {% else %}
       <div class="muted">{{ profile.behavior_summary.error or 'No LSB behavior summary is available for this entity.' }}</div>
       <a class="chip" style="margin-top:7px" href="/behavior?q={{ profile.name|urlencode }}">Search Behavior Inspector</a>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+{% if profile.relationship_summary %}
+<section class="entity-card" id="entity-relationships" style="margin-bottom:14px">
+  <h3>Used By / direct canonical relationships</h3>
+  <div class="body">
+    {% if profile.relationship_summary.available %}
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:9px">
+        <span class="chip mono">{{ profile.relationship_summary.node_id }}</span>
+        <span class="chip">{{ profile.relationship_summary.incoming|length }} incoming</span>
+        <span class="chip">{{ profile.relationship_summary.outgoing|length }} outgoing</span>
+        <a class="chip" href="/features/trace?q={{ profile.relationship_summary.node_id|urlencode }}&depth=3&direction=both">Open full Feature Trace &rarr;</a>
+      </div>
+
+      <div class="entity-rel-grid">
+        <section>
+          <h4 style="margin:0 0 6px">Used by / incoming</h4>
+          {% for rel in profile.relationship_summary.incoming %}
+          <div class="entity-rel-row">
+            <div>
+              <strong>{{ rel.relationship }}</strong>
+              <div class="muted" style="font-size:11px">{{ rel.status }} · {{ rel.confidence }}</div>
+            </div>
+            <div class="entity-rel-name">
+              <strong>{{ rel.display_name }}</strong>
+              <div><span class="chip">{{ rel.node_type }}</span> <code>{{ rel.node_id }}</code></div>
+              {% if rel.evidence_id %}<div class="muted mono" style="font-size:11px">evidence: {{ rel.evidence_id }}</div>{% endif %}
+            </div>
+          </div>
+          {% else %}
+          <div class="muted">No depth-1 canonical incoming relationship is currently recorded.</div>
+          {% endfor %}
+        </section>
+
+        <section>
+          <h4 style="margin:0 0 6px">Direct dependencies / outgoing</h4>
+          {% for rel in profile.relationship_summary.outgoing %}
+          <div class="entity-rel-row">
+            <div>
+              <strong>{{ rel.relationship }}</strong>
+              <div class="muted" style="font-size:11px">{{ rel.status }} · {{ rel.confidence }}</div>
+            </div>
+            <div class="entity-rel-name">
+              <strong>{{ rel.display_name }}</strong>
+              <div><span class="chip">{{ rel.node_type }}</span> <code>{{ rel.node_id }}</code></div>
+              {% if rel.evidence_id %}<div class="muted mono" style="font-size:11px">evidence: {{ rel.evidence_id }}</div>{% endif %}
+            </div>
+          </div>
+          {% else %}
+          <div class="muted">No depth-1 canonical outgoing relationship is currently recorded.</div>
+          {% endfor %}
+        </section>
+      </div>
+
+      {% if profile.relationship_summary.provider_relationships %}
+      <details style="margin-top:10px">
+        <summary>Exact source-native links ({{ profile.relationship_summary.provider_relationships|length }})</summary>
+        <div class="table-wrap" style="margin-top:7px"><table>
+          <tr><th>relationship</th><th>target</th><th>type</th><th>basis</th></tr>
+          {% for rel in profile.relationship_summary.provider_relationships %}
+          <tr>
+            <td>{{ rel.relationship }}</td>
+            <td>{{ rel.target_name }}<br><code>{{ rel.target_node }}</code></td>
+            <td>{{ rel.target_type }}</td>
+            <td class="muted">{{ rel.basis or ('provider-native ' ~ (rel.adapter or 'catalog')) }}</td>
+          </tr>
+          {% endfor %}
+        </table></div>
+      </details>
+      {% endif %}
+
+      <p class="muted" style="margin-bottom:0;margin-top:9px">
+        This section is intentionally depth 1. It shows recorded graph direction/status, not an implementation verdict.
+        Use Feature Trace or Package Scope for transitive closure and migration review.
+      </p>
+    {% else %}
+      <div class="muted">{{ profile.relationship_summary.error or 'No canonical relationship summary is available.' }}</div>
+      <a class="chip" style="margin-top:7px" href="/features/trace?q={{ profile.npcid }}">Search Feature Trace</a>
     {% endif %}
   </div>
 </section>
