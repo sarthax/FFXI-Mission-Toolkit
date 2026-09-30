@@ -2405,6 +2405,8 @@ def _entity_behavior_summary_for_root(profile: dict, server: str, root: Path) ->
         "states": [],
         "transitions": [],
         "shared_helpers": [],
+        "callback_ownership": [],
+        "scheduled_callbacks": [],
         "summary": {},
         "contexts": 0,
     }
@@ -2520,6 +2522,64 @@ def _entity_behavior_summary_for_root(profile: dict, server: str, root: Path) ->
         }
         for row in (result.get("shared_helpers") or [])[:16]
     ]
+
+    # Consolidate callback/hook ownership from the already-parsed Behavior Inspector graph.
+    # This is presentation-only: source spans and counts come directly from graph nodes.
+    owners = {}
+    def owner_for(hook):
+        key = hook or "source"
+        return owners.setdefault(key, {
+            "hook": key,
+            "source_path": (result.get("source") or {}).get("path"),
+            "start_line": None,
+            "end_line": None,
+            "rule_count": 0,
+            "effect_count": 0,
+            "api_call_count": 0,
+            "event_ids": set(),
+            "scheduled_callbacks": 0,
+        })
+    for node in nodes:
+        meta = node.get("meta") or {}
+        if node.get("kind") == "rule":
+            owner = owner_for(meta.get("hook"))
+            owner["rule_count"] += 1
+            span = meta.get("source_lines") or ()
+            if len(span) >= 2 and span[0] is not None and span[1] is not None:
+                owner["start_line"] = span[0] if owner["start_line"] is None else min(owner["start_line"], span[0])
+                owner["end_line"] = span[1] if owner["end_line"] is None else max(owner["end_line"], span[1])
+        elif node.get("kind") == "callback":
+            owner = owner_for(meta.get("hook"))
+            owner["scheduled_callbacks"] += 1
+            out["scheduled_callbacks"].append({
+                "hook": meta.get("hook"),
+                "callback_type": meta.get("callback_type"),
+                "callback_event": meta.get("callback_event"),
+                "delay": meta.get("callback_delay_source"),
+                "source_path": meta.get("source_path"),
+                "source_lines": meta.get("source_lines"),
+            })
+    for row in out["effects"]:
+        owner_for(row.get("hook"))["effect_count"] += 1
+    for row in out["api_calls"]:
+        owner_for(row.get("hook"))["api_call_count"] += 1
+    for event in out["events"]:
+        event_id = event.get("event_id")
+        for hook in (
+            list(event.get("start_hooks") or [])
+            + list(event.get("update_guard_hooks") or [])
+            + list(event.get("finish_guard_hooks") or [])
+        ):
+            if event_id is not None:
+                owner_for(hook)["event_ids"].add(event_id)
+    out["callback_ownership"] = [
+        {
+            **row,
+            "event_ids": sorted(row["event_ids"], key=lambda value: str(value)),
+        }
+        for _hook, row in sorted(owners.items())
+    ][:24]
+    out["scheduled_callbacks"] = out["scheduled_callbacks"][:24]
     return out
 
 
@@ -2702,6 +2762,8 @@ def entity_detail(request: Request, npcid: int, q: str = "", page: int = 1):
                     f"&entity={npcid}&csid={event_id}"
                 ),
             })
+
+    entity_profile.synthesize_implementation_actions(profile)
 
     xi_model_viewer_url = settings_mod.get_all(con).get("xi_model_viewer_url", "").rstrip("/")
 

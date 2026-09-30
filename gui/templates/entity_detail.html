@@ -14,6 +14,9 @@
 .entity-status.no{color:var(--muted)}
 .entity-attention{display:grid;gap:7px}
 .entity-attention-row{border-left:3px solid #b3893f;padding:6px 8px;background:var(--amber-soft)}
+.entity-action-row{border:1px solid var(--border);border-radius:6px;padding:8px 9px;background:var(--code-bg)}
+.entity-action-row .basis{font-size:11px;color:var(--muted);margin-top:3px}
+.callback-table td,.callback-table th{vertical-align:top}
 .entity-chain{display:flex;gap:6px;align-items:stretch;flex-wrap:wrap}
 .entity-chain-node{border:1px solid var(--border);border-radius:6px;padding:7px 9px;min-width:135px;background:var(--code-bg)}
 .entity-chain-node strong{display:block;font-size:12px}.entity-chain-node span{font-size:11px;color:var(--muted);word-break:break-word}
@@ -116,6 +119,28 @@
   </aside>
 </div>
 
+{% if profile.implementation_actions %}
+<section class="entity-card" id="entity-actions-evidence" style="margin-bottom:14px">
+  <h3>Evidence-backed implementation actions</h3>
+  <div class="body">
+    <p class="muted" style="margin-top:0">These are review actions from concrete conflicts, observations, or failed resolution of known evidence. Missing evidence by itself does not create an action.</p>
+    <div class="entity-behavior-list">
+      {% for action in profile.implementation_actions %}
+      <div class="entity-action-row">
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <span class="chip">{{ action.status }}</span>
+          <strong>{{ action.label }}</strong>
+          {% if action.href %}<a class="chip" href="{{ action.href }}">inspect &rarr;</a>{% endif %}
+        </div>
+        {% if action.detail %}<div>{{ action.detail }}</div>{% endif %}
+        <div class="basis">{{ action.basis }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
 {% if profile.behavior_summary %}
 <section class="entity-card" id="entity-behavior" style="margin-bottom:14px">
   <h3>Lua behavior summary</h3>
@@ -202,6 +227,40 @@
           </div>
         </section>
       </div>
+      {% endif %}
+
+      {% if profile.behavior_summary.callback_ownership %}
+      <h4 style="margin:12px 0 6px">Callback / source ownership</h4>
+      <div class="table-wrap"><table class="callback-table">
+        <tr><th>hook</th><th>source span</th><th>rules</th><th>effects</th><th>API calls</th><th>CSIDs</th><th>scheduled callbacks</th></tr>
+        {% for owner in profile.behavior_summary.callback_ownership %}
+        <tr>
+          <td><code>{{ owner.hook }}</code></td>
+          <td class="mono muted">{{ owner.source_path or '' }}{% if owner.start_line %}:{{ owner.start_line }}{% if owner.end_line and owner.end_line != owner.start_line %}–{{ owner.end_line }}{% endif %}{% endif %}</td>
+          <td>{{ owner.rule_count }}</td>
+          <td>{{ owner.effect_count }}</td>
+          <td>{{ owner.api_call_count }}</td>
+          <td>{% if owner.event_ids %}{{ owner.event_ids|join(', ') }}{% else %}<span class="muted">—</span>{% endif %}</td>
+          <td>{{ owner.scheduled_callbacks }}</td>
+        </tr>
+        {% endfor %}
+      </table></div>
+      {% endif %}
+
+      {% if profile.behavior_summary.scheduled_callbacks %}
+      <details style="margin-top:8px">
+        <summary>Scheduled callback evidence ({{ profile.behavior_summary.scheduled_callbacks|length }})</summary>
+        <div class="entity-behavior-list" style="margin-top:7px">
+          {% for callback in profile.behavior_summary.scheduled_callbacks %}
+          <div class="entity-behavior-row">
+            <strong>{{ callback.callback_type or 'callback' }}</strong>
+            {% if callback.callback_event %}<span class="chip">{{ callback.callback_event }}</span>{% endif %}
+            {% if callback.delay is not none and callback.delay != '' %}<span class="chip mono">delay {{ callback.delay }}</span>{% endif %}
+            <div class="meta">{{ callback.hook or 'source' }}{% if callback.source_lines %} · lines {{ callback.source_lines[0] }}–{{ callback.source_lines[1] }}{% endif %}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </details>
       {% endif %}
 
       <p class="muted" style="margin-bottom:0;margin-top:10px">
