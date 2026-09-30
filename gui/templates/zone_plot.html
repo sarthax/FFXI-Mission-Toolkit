@@ -904,7 +904,9 @@ const ray=new THREE.Raycaster(), mouse=new THREE.Vector2();
 function pick(ev){ if(!inst) return -1; const r=renderer.domElement.getBoundingClientRect(); mouse.set(((ev.clientX-r.left)/r.width)*2-1,-((ev.clientY-r.top)/r.height)*2+1);
   ray.setFromCamera(mouse,camera); const h=ray.intersectObject(inst,false); return h.length?visible[h[0].instanceId]:-1; }
 let lastCoord=0;
-renderer.domElement.addEventListener('mousemove',ev=>{ const i=pick(ev); if(i!==hoverI){ hoverI=i; if(i>=0){ const e=Z.entities[i]; $('hover').textContent=`${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${txt(e)}  (${e.x}, ${e.y}, ${e.z})  ${rotText(e.r)}  ${stateOf(i)}`; } }
+renderer.domElement.addEventListener('mousemove',ev=>{
+  if(facingDrag){ const p=screenToWorld(ev); if(p) rotationTowardPoint(p); return; }
+  const i=pick(ev); if(i!==hoverI){ hoverI=i; if(i>=0){ const e=Z.entities[i]; $('hover').textContent=`${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${txt(e)}  (${e.x}, ${e.y}, ${e.z})  ${rotText(e.r)}  ${stateOf(i)}`; } }
   if(i<0){ const now=performance.now(); if(now-lastCoord>60){ lastCoord=now;
     const nh=screenToNav(ev);
     if(nh){ const p=nh.point, m=nh.meta;
@@ -914,8 +916,16 @@ renderer.domElement.addEventListener('mousemove',ev=>{ const i=pick(ev); if(i!==
       $('hover').textContent = `Cursor: (${p.x.toFixed(2)}, ${(-p.y).toFixed(2)}, ${(-p.z).toFixed(2)})` +
         (m ? `  |  placement Y: ${m.ymin.toFixed(2)} to ${m.ymax.toFixed(2)}  area=${m.area} type=${m.ptype}` : ''); }
     else { const p=screenToWorld(ev); $('hover').textContent = p ? `Cursor: (${p.x.toFixed(2)}, ${(-p.y).toFixed(2)}, ${(-p.z).toFixed(2)})  (visual mesh, no navmesh here)` : ''; } } } });
-let down=null; renderer.domElement.addEventListener('pointerdown',ev=>down=[ev.clientX,ev.clientY]);
-renderer.domElement.addEventListener('pointerup',async ev=>{ if(!down||Math.hypot(ev.clientX-down[0],ev.clientY-down[1])>4) return; const i=pick(ev); if(i<0) return;
+let down=null; renderer.domElement.addEventListener('pointerdown',ev=>{
+  down=[ev.clientX,ev.clientY];
+  if($('faceDrag')?.checked && selected>=0 && !$('tab-edit').hidden){
+    const i=pick(ev);
+    if(i===selected){ facingDrag=true; controls.enabled=false; ev.preventDefault(); }
+  }
+});
+renderer.domElement.addEventListener('pointerup',async ev=>{
+  if(facingDrag){ const p=screenToWorld(ev); if(p) rotationTowardPoint(p); facingDrag=false; controls.enabled=true; down=null; return; }
+  if(!down||Math.hypot(ev.clientX-down[0],ev.clientY-down[1])>4) return; const i=pick(ev); if(i<0) return;
   if (ev.shiftKey){ const e=Z.entities[i]; anchor={x:e.x,y:e.y,z:e.z}; await computeReach(); rebuild(); }
   else if(ev.ctrlKey||ev.metaKey) toggleMultiSelect(i,false);
   else select(i,false); });
@@ -1347,8 +1357,71 @@ $('esyncsql').onclick=async()=>{ if(!lastTouched){ $('emsg').textContent='Nothin
   if(!j.error) markSqlSynced(lastTouched.k,lastTouched.id);
   $('emsg').textContent = j.error ? 'SYNC ERROR: '+j.error : `SQL file ${j.action}: ${j.file}`; };
 $('edropsyncsql').onclick=()=>syncDropRowSql();
-function screenToWorld(ev){
-  const r=renderer.domElement.getBoundingClientRect(); mouse.set(((ev.clientX-r.left)/r.width)*2-1,-((ev.clientY-r.top)/r.height)*2+1); ray.setFromCamera(mouse,camera);
+let transformClipboard=null;
+function setTransformClipboard(e){
+  transformClipboard={x:e.x,y:e.y,z:e.z,r:e.r};
+  $('transformClipStatus').textContent=`Copied (${e.x}, ${e.y}, ${e.z}) r${e.r}`;
+}
+function pasteTransform(mode){
+  if(!transformClipboard || selected<0) return;
+  if(mode==='all'){ $('ex').value=transformClipboard.x; $('ey').value=transformClipboard.y; $('ez').value=transformClipboard.z; $('er').value=transformClipboard.r; previewEdit(); }
+  else if(mode==='xz'){ $('ex').value=transformClipboard.x; $('ez').value=transformClipboard.z; previewEdit(); }
+  else if(mode==='rot'){ $('er').value=transformClipboard.r; previewRotation(); }
+}
+$('copyTransform').onclick=()=>{ if(selected>=0&&Z?.entities[selected]) setTransformClipboard(Z.entities[selected]); };
+$('pasteTransform').onclick=()=>pasteTransform('all');
+$('pasteXZ').onclick=()=>pasteTransform('xz');
+$('pasteRot').onclick=()=>pasteTransform('rot');
+function snapValue(v,step){ return Math.round(v/step)*step; }
+function snapGrid(applyY){
+  if(selected<0) return; const s=Math.max(.001,+$('snapGrid').value||.5);
+  $('ex').value=snapValue(+$('ex').value,s).toFixed(3); $('ez').value=snapValue(+$('ez').value,s).toFixed(3);
+  if(applyY) $('ey').value=snapValue(+$('ey').value,s).toFixed(3);
+  previewEdit();
+}
+function verticalSnapY(target){
+  if(selected<0 || !target) return false;
+  const e=Z.entities[selected], x=e.x, z=-e.z;
+  ray.set(new THREE.Vector3(x,5000,z),new THREE.Vector3(0,-1,0));
+  const hits=ray.intersectObject(target,true);
+  if(!hits.length) return false;
+  $('ey').value=(-hits[0].point.y).toFixed(3); previewEdit(); return true;
+}
+$('snapXYZ').onclick=()=>snapGrid(true);
+$('snapXZ').onclick=()=>snapGrid(false);
+$('snapNavY').onclick=()=>{ if(!verticalSnapY(navMesh)) $('emsg').textContent='No navmesh intersection at the selected X/Z.'; };
+$('snapFloorY').onclick=()=>{ if(!verticalSnapY(meshObj)) $('emsg').textContent='No visual-mesh floor intersection at the selected X/Z.'; };
+
+let facingDrag=false;
+function rotationTowardPoint(point){
+  if(selected<0 || !point) return;
+  const e=Z.entities[selected], tx=point.x, tz=-point.z;
+  const dx=tx-e.x, dz=tz-e.z;
+  if(Math.hypot(dx,dz)<1e-6) return;
+  const angle=Math.atan2(-dz,dx);
+  const raw=((Math.round(angle/(Math.PI*2)*256)%256)+256)%256;
+  $('er').value=raw; previewRotation();
+}
+
+let measureMode=false, measureStart=null;
+const measureGeo=new THREE.BufferGeometry();
+const measureLine=new THREE.Line(measureGeo,new THREE.LineBasicMaterial({color:0x00e5ff,depthTest:false,transparent:true,opacity:.9}));
+measureLine.visible=false; measureLine.renderOrder=28; scene.add(measureLine);
+function serverPointFromScene(p){ return {x:p.x,y:-p.y,z:-p.z}; }
+function scenePointFromEntity(e){ return P(e).clone(); }
+function setMeasurement(a,b){
+  const sa=serverPointFromScene(a), sb=serverPointFromScene(b);
+  const dx=sb.x-sa.x, dy=sb.y-sa.y, dz=sb.z-sa.z;
+  const horizontal=Math.hypot(dx,dz), dist=Math.hypot(dx,dy,dz);
+  const bearing=(Math.atan2(dx,-dz)*180/Math.PI+360)%360;
+  measureGeo.setFromPoints([a,b]); measureLine.visible=true;
+  $('measureOut').textContent=`horizontal ${horizontal.toFixed(2)} · 3D ${dist.toFixed(2)} · ΔX ${dx.toFixed(2)} ΔY ${dy.toFixed(2)} ΔZ ${dz.toFixed(2)} · bearing ${bearing.toFixed(1)}°`;
+}
+function clearMeasurement(){ measureMode=false; measureStart=null; measureLine.visible=false; $('measureOut').textContent=''; $('measureBtn').textContent='Measure'; }
+$('measureBtn').onclick=()=>{ measureMode=!measureMode; measureStart=null; $('measureBtn').textContent=measureMode?'Measuring… click two points':'Measure'; if(!measureMode) clearMeasurement(); };
+$('measureClear').onclick=clearMeasurement;
+
+function screenToWorld(ev){  const r=renderer.domElement.getBoundingClientRect(); mouse.set(((ev.clientX-r.left)/r.width)*2-1,-((ev.clientY-r.top)/r.height)*2+1); ray.setFromCamera(mouse,camera);
   const tgt=navMesh||meshObj; if(!tgt) return null;
   const h=ray.intersectObject(tgt,true); return h.length ? h[0].point : null;
 }
@@ -1364,6 +1437,13 @@ function screenToNav(ev){
   return {point:h[0].point, meta};
 }
 renderer.domElement.addEventListener('click',ev=>{
+  if(measureMode){
+    let p=null, i=pick(ev); if(i>=0) p=scenePointFromEntity(Z.entities[i]); else p=screenToWorld(ev);
+    if(!p) return;
+    if(!measureStart){ measureStart=p.clone(); $('measureOut').textContent='Start set; click second point.'; }
+    else { setMeasurement(measureStart,p); measureMode=false; $('measureBtn').textContent='Measure'; }
+    return;
+  }
   if($('eplace').checked && !$('tab-edit').hidden && selected>=0){ const p=screenToWorld(ev); if(!p) return;
     $('ex').value=p.x.toFixed(3); $('ey').value=(-p.y).toFixed(3); $('ez').value=(-p.z).toFixed(3); previewEdit(); }
   else if(!$('tab-add').hidden){ const p=screenToWorld(ev); if(!p){ $('amsg').textContent='No mesh/navmesh under that click -- set X/Y/Z manually.'; return; }
