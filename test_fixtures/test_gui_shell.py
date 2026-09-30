@@ -258,7 +258,7 @@ def main():
         "capture_timeline.html": ["{% block shell_mode %}dense{% endblock %}", "capture-timeline-page", "position:sticky", "Packet Browser"],
         "capture_packets.html": ["{% block shell_mode %}dense{% endblock %}", "capture-packets-page", "decoded field"],
         "capture_packet_detail.html": ["{% block shell_mode %}dense{% endblock %}", "capture-packet-page", "Session packets", "Source provenance"],
-        "capture_search.html": ["{% block shell_mode %}dense{% endblock %}", "capture-search-page", "Cross-capture Search"],
+        "capture_search.html": ["{% block shell_mode %}dense{% endblock %}", "capture-search-page", "Evidence Search"],
         "capture_add.html": ["{% block shell_mode %}dense{% endblock %}", "capture-upload-grid", "Formats / guidance"],
         "capture_new.html": ["{% block shell_mode %}dense{% endblock %}", "capture-new-form"],
         "capture_alignment.html": ["{% block shell_mode %}dense{% endblock %}", "align-section", "Alignment candidates"],
@@ -391,6 +391,49 @@ def main():
     assert "Raw row / provenance" in data_explorer_html
     assert "7 columns" in data_explorer_html
     assert "/captures/7/packets/42" in data_explorer_html
+
+    evidence_search_html = render(
+        "capture_search.html", "/captures/search",
+        module="vendors",
+        module_meta={
+            "label": "Vendors & Shops",
+            "description": "ShopStock, GuildStock and price observations across captures.",
+            "hint": "Vendor/NPC name, item name, or exact item/entity ID",
+        },
+        modules=[
+            {"id": "events", "label": "Events & Dialogue", "description": "CSIDs and dialogue."},
+            {"id": "packets", "label": "Raw Protocol", "description": "Canonical raw packets."},
+            {"id": "entities", "label": "Entities", "description": "NPC/mob identity."},
+            {"id": "battle", "label": "Battle & Actions", "description": "Actions and HP."},
+            {"id": "items", "label": "Items & Key Items", "description": "Item evidence."},
+            {"id": "vendors", "label": "Vendors & Shops", "description": "Shop evidence."},
+            {"id": "crafting", "label": "Crafting", "description": "Craft evidence."},
+            {"id": "chat", "label": "Chat & Text", "description": "Chat evidence."},
+        ],
+        q="Potion", entity="", message_id="", ev_opcodes=[], available_ev_opcodes=[],
+        pk_category="", pk_opcode="", categories=[],
+        events=[], packets=[],
+        generic_rows=[{
+            "capture_id": 9,
+            "capture_label": "vendor sample",
+            "evidence_kind": "VENDOR",
+            "zone": "Port Bastok",
+            "ts": "2026-09-30T12:00:00",
+            "subject_id": 123,
+            "title": "Vendor NPC",
+            "summary": "shopstock_buy_db • Potion • price=100",
+            "dataset": "capture_structured_records",
+            "record_id": "shop.db:shopstock_buy_db:1",
+        }],
+        page=1, total=1, total_pages=1, qs_pairs=[("module", "vendors"), ("q", "Potion")],
+    )
+    assert "Evidence Search" in evidence_search_html
+    assert "Vendors &amp; Shops" in evidence_search_html
+    assert "Battle &amp; Actions" in evidence_search_html
+    assert "Crafting" in evidence_search_html
+    assert "shopstock_buy_db" in evidence_search_html
+    assert "capture_structured_records" in evidence_search_html
+    assert "/captures/9/timeline" in evidence_search_html
     capture_detail_template = (TEMPLATES / "capture_detail.html").read_text(encoding="utf-8")
     assert "/captures/plot?capture_id={{ detail.capture_id }}" in capture_detail_template
     assert "/captures/plot_all?capture_id={{ detail.capture_id }}" in capture_detail_template

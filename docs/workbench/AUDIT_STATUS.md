@@ -1,3 +1,17 @@
+## 2026-09-30 — Modular Capture Evidence Search foundation
+
+- Replaced the two-mode Cross-capture Search presentation with a reusable evidence-module registry.
+- Existing Events & Dialogue and Raw Protocol searches now live inside the same module workspace without breaking legacy mode=events / mode=packets URLs.
+- Added real cross-capture modules backed by canonical data for Entities, Battle & Actions, Items & Key Items, Vendors & Shops, Crafting, and Chat & Text.
+- Battle search spans action observations, HP observations, and attack-delay evidence rather than a single table.
+- Items/KI search spans key-item events plus item-bearing structured observations.
+- Vendor search spans ShopStock buy/sell, GuildStock, and PriceLog families already normalized into capture_structured_records.
+- Crafting search uses CraftTrack structured observations, including payload text for material/result lookup.
+- Chat search spans canonical capture_chat_observations plus legacy capture_caplog_chat.
+- Search results use a shared evidence-card shape with Capture/Timeline/Data Explorer handoffs and Entity Profile where identity is available.
+- Data Explorer coverage was expanded to canonical chat, structured records, network flows/ranges/messages, and video/OCR observations so module results never drill into an unsupported dataset.
+- Spatial and Environment remain the next module families; no new ingestion/schema was introduced in this slice.
+
 ## 2026-09-30 — Zone Editor cleanup, 3D viewer fix, and packet input expansion
 
 - Removed the legacy Zone Editor page/template from active UI navigation. /zoneplot remains only as a permanent compatibility redirect to the current /zoneplot2 editor; the shared /zoneplot/* data/mutation APIs remain because the current editor uses them.
