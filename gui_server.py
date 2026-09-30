@@ -1602,7 +1602,7 @@ STATUS_LABELS = {
 
 
 @app.get("/backport/bindings", response_class=HTMLResponse)
-def bindings_index(request: Request, q: str = "", status: str = "", page: int = 1):
+def bindings_index(request: Request, q: str = "", status: str = "", page: int = 1, trace_q: str = ""):
     """Dedicated browse/search page over the full Topaz<->old-dsp-reference binding inventory --
     separate from the Lua Converter (which only surfaces bindings actually hit by whatever source
     got pasted in) so a name can be looked up for reference at any time, not just mid-conversion."""
@@ -1635,7 +1635,7 @@ def bindings_index(request: Request, q: str = "", status: str = "", page: int = 
     return templates.TemplateResponse(request, "backport_bindings.html", {
         "rows": page_rows, "total": total, "q": q, "status": status,
         "page": page, "total_pages": total_pages, "counts": counts,
-        "status_labels": STATUS_LABELS, "index_missing": index_missing,
+        "status_labels": STATUS_LABELS, "index_missing": index_missing, "trace_q": trace_q,
     })
 
 
