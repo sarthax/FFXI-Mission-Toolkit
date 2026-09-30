@@ -841,7 +841,7 @@
       "home": "Tools",
       "section": "Editors > Zone Editor",
       "role": "redirect",
-      "disposition": "REDIRECT",
+      "disposition": "LEGACY",
       "target": "/zoneplot2"
     },
     {
