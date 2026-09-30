@@ -1,6 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Feature Trace — Mission Toolkit{% endblock %}
 {% block content %}
+<style>
+.impl-path{border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden;margin:14px 0}
+.impl-path h2{margin:0;padding:10px 12px;border-bottom:1px solid var(--border)}
+.impl-path .body{padding:11px 12px}
+.impl-status{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.impl-branches{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:10px}
+.impl-branch{border:1px solid var(--border);border-radius:7px;background:var(--code-bg);overflow:hidden}
+.impl-branch-head{padding:8px 10px;border-bottom:1px solid var(--border)}
+.impl-step{display:grid;grid-template-columns:36px minmax(130px,.5fr) minmax(0,1fr);gap:7px;padding:7px 9px;border-bottom:1px solid var(--border)}
+.impl-step:last-child{border-bottom:0}.impl-depth{color:var(--muted);font-family:ui-monospace,Consolas,monospace}
+.impl-root{padding:8px 10px}
+</style>
 <h1>Feature Trace</h1>
 <p class="muted">Trace a canonical Workbench feature, entity, capability, function, binding, build target, artifact, or enum through recorded graph relationships. Connectivity is evidence navigation, not an implementation verdict.</p>
 
@@ -23,9 +35,64 @@
 <div class="warn">{{ error }}</div>
 {% endif %}
 
+{% if implementation_path %}
+<section class="impl-path">
+  <h2>Implementation Path <span class="chip mono">entity {{ implementation_path.numeric_id }}</span></h2>
+  <div class="body">
+    <div class="impl-status">
+      <span class="chip">{{ implementation_path.representation_count }} indexed source representation{{ '' if implementation_path.representation_count == 1 else 's' }}</span>
+      {% if implementation_path.canonical_mapped %}
+        <span class="pill match">canonical graph identity mapped</span>
+        <span class="chip mono">{{ implementation_path.canonical_root }}</span>
+      {% else %}
+        <span class="pill unannotated">no canonical graph identity mapping yet</span>
+      {% endif %}
+      <a class="chip" href="/entity/{{ implementation_path.numeric_id }}">Open Entity Dossier</a>
+    </div>
+
+    {% if implementation_path.branches %}
+    <div class="impl-branches">
+      {% for branch in implementation_path.branches %}
+      <section class="impl-branch">
+        <div class="impl-branch-head">
+          <strong>{{ branch.provider }}</strong>
+          {% if branch.domain %}<span class="chip">{{ branch.domain }}</span>{% endif %}
+        </div>
+        <div class="impl-root">
+          <div><span class="chip">{{ branch.root.node_type }}</span> <strong>{{ branch.root.display_name or branch.root.node_id }}</strong></div>
+          <code>{{ branch.root.node_id }}</code>
+          <div class="muted" style="font-size:11px;margin-top:3px">source: {{ branch.root.table }}</div>
+        </div>
+        {% for step in branch.steps %}
+        <div class="impl-step">
+          <div class="impl-depth">+{{ step.depth }}</div>
+          <div>
+            <strong>{{ step.relationship }}</strong>
+            {% if step.basis %}<div class="muted" style="font-size:11px">{{ step.basis }}</div>{% endif %}
+          </div>
+          <div>
+            <a class="zonelink" href="/features/trace?q={{ step.target_node|urlencode }}">{{ step.target_name }}</a>
+            <div><span class="chip">{{ step.target_type }}</span> <code>{{ step.target_node }}</code></div>
+          </div>
+        </div>
+        {% else %}
+        <div class="muted" style="padding:8px 10px">No source-native downstream wiring is currently indexed from this representation.</div>
+        {% endfor %}
+      </section>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">No indexed server/client representation matched this exact entity ID.</p>
+    {% endif %}
+
+    {% for note in implementation_path.notes %}<p class="muted" style="margin-bottom:3px">{{ note }}</p>{% endfor %}
+  </div>
+</section>
+{% endif %}
+
 {% if matches and not result %}
 <h2>Matching nodes</h2>
-<p class="muted">{{ matches|length }} match(es). Refine the query or select a canonical node ID.</p>
+<p class="muted">{{ matches|length }} additional match(es). For exact entity IDs, source representations are consolidated above in Implementation Path; refine the query only for unrelated remaining matches.</p>
 <div class="table-wrap">
 <table>
 <thead><tr><th>Node ID</th><th>Type</th><th>Name</th><th>Matched on</th><th>Domain</th><th>Provider</th><th>Source</th></tr></thead>
