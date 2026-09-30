@@ -1,3 +1,15 @@
+## 2026-09-30 — Captures workspace UX refresh
+
+- Capture Detail was rebuilt as a compact evidence workspace: one action/navigation bar, high-value counters, compact metadata cards, collapsible health/provenance/edit/secondary-data sections, and an in-page NPC/entity filter.
+- Capture Timeline now uses the dense shell with a sticky compact tab bar and tighter filter/panel spacing.
+- Packet Browser and capture-native Packet Viewer use denser navigation, cards, and context layout; decoded field inventories collapse per browser row to avoid oversized tables.
+- Cross-capture Search, raw Capture Query, New Capture, Add Files, Alignment, Source Evidence, and delete confirmation now use consistent capture-workspace navigation and compact controls.
+- Capture / Video Alignment is grouped into expandable correlation/model/anchor/evidence/landmark/candidate sections instead of rendering every evidence table at once.
+- Capture Help keeps a reading-oriented width but now exposes supported ingestion immediately and collapses deeper protocol/history/gap sections into expandable references.
+- Capture 2D single/all-path plot pages now use the dense shell and expand to 1100–1200px responsive work areas instead of the previous 520–640px cap.
+- This pass is presentation/QOL only. Capture ingestion, evidence normalization, packet decoding, timeline semantics, alignment math, provenance, and plotting coordinate logic are unchanged.
+- Shared GUI regression coverage compiles and checks all refreshed capture templates.
+
 ## 2026-09-30 — Selective compact admin/list rollout
 
 - Captures, Validation Dashboard, Validation Runs, and Package Library now use the shared dense shell and compact command/filter bars.
