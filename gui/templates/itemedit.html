@@ -449,7 +449,12 @@ function renderItemDiagnostics(comparison,validation){
     mismatchBox.textContent='No client DAT record found for this item -- server edits can still be saved, but client synchronization is unavailable.';
   } else if(comparison.mismatches?.length){
     mismatchBox.style.display='';
-    mismatchBox.innerHTML='<b>Server / client DAT mismatches ('+comparison.mismatches.length+')</b><br>'+comparison.mismatches.map(r=>`${r.field}: server ${r.server} · client ${r.client}`).join('<br>');
+    mismatchBox.innerHTML='<b>Server / client DAT mismatches ('+comparison.mismatches.length+')</b><div style="margin-top:4px">'+comparison.mismatches.map(r=>{
+      const base='<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:2px 0"><span class="mono">'+r.field+': server '+r.server+' · client '+r.client+'</span>';
+      if(r.field==='item_type') return base+'<span class="muted">structural mismatch · reconcile manually</span></div>';
+      return base+'<button type="button" data-reconcile="'+r.field+':server_to_client">Use Server</button><button type="button" data-reconcile="'+r.field+':client_to_server">Use Client</button></div>';
+    }).join('')+'</div>';
+    mismatchBox.querySelectorAll('[data-reconcile]').forEach(btn=>btn.onclick=()=>{ const parts=btn.dataset.reconcile.split(':'); reconcileField(parts[0],parts[1]); });
   } else {
     mismatchBox.style.display='';
     mismatchBox.textContent='Server / client DAT: all decoded overlapping fields match.';
@@ -461,6 +466,18 @@ function renderItemDiagnostics(comparison,validation){
     (errs.length?'<div style="color:#ff8a80;margin-top:4px">'+errs.map(x=>'ERROR: '+x.message).join('<br>')+'</div>':'')+
     (warns.length?'<div style="color:#ffcc80;margin-top:4px">'+warns.map(x=>'WARNING: '+x.message).join('<br>')+'</div>':'')+
     (info.length?'<div class="muted" style="margin-top:4px">'+info.map(x=>x.message).join('<br>')+'</div>':'');
+}
+async function reconcileField(field,direction){
+  if(!currentItemId) return;
+  if(hasUnsavedItemChanges() && !confirm('Discard unsaved edits before reconciling this saved field?')) return;
+  const comment=document.getElementById('editComment').value;
+  const r=await fetch('/itemedit/reconcile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_id:currentItemId,field,direction,comment})});
+  const j=await r.json();
+  if(!r.ok){ alert(j.error||r.statusText); return; }
+  itemUndoStack.push({itemId:currentItemId,backup:j.backup,label:'reconcile '+field});
+  if(itemUndoStack.length>80) itemUndoStack.shift(); itemRedoStack.length=0; refreshItemUndoUI();
+  document.getElementById('itemHistoryStatus').textContent='Reconciled '+field+' · '+(direction==='server_to_client'?'server → client':'client → server');
+  await loadItem(currentItemId);
 }
 async function loadItem(itemid, remember=true) {
   if(currentItemId && Number(itemid)!==Number(currentItemId) && hasUnsavedItemChanges()){
