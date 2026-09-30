@@ -135,6 +135,59 @@ def read_dat_bytes(ffxi_path: str, rom_path: str) -> bytes:
 
 
 
-def resolve_model_id(model_id: int, ffxi_path: str | None = None) -> dict:
-    """Direct Client-tool entry point: raw server look_t model id -> file id -> real DAT."""
-    return client_model_resolver.resolve_model_id(model_id, ffxi_path)
+def resolve_model_id(model_id: int, ffxi_path: str | None = None, server: str | None = None) -> dict:
+    """Direct Client-tool entry point with catalog correlation."""
+    result = client_model_resolver.resolve_model_id(model_id, ffxi_path)
+    try:
+        import client_model_catalog
+        matches = client_model_catalog.correlate(model_id=int(model_id), server=server)
+    except Exception as ex:
+        matches = []
+        result["catalog_error"] = str(ex)
+    result["catalog_matches"] = matches
+    if matches:
+        result["catalog_name"] = matches[0].get("primary_name")
+        result["catalog_aliases"] = matches[0].get("names", [])
+    return result
+
+
+def resolve_dat(
+    *,
+    file_id: int | None = None,
+    rom_path: str | None = None,
+    server: str | None = None,
+) -> dict:
+    """Resolve a direct DAT/file-id load and correlate it back to catalog models/names."""
+    ffxi_path = settings.get_ffxi_install()
+    if not ffxi_path:
+        return {"error": "no FFXI client install path configured -- set one on the Settings page"}
+
+    resolved_path = (rom_path or "").strip()
+    if file_id is not None:
+        resolved_path = msd.resolve_rom_path(ffxi_path, int(file_id)) or ""
+        if not resolved_path:
+            return {"error": f"client FTABLE/VTABLE has no registered DAT for file_id {file_id}"}
+    if not resolved_path:
+        return {"error": "provide file_id or rom_path"}
+
+    full = Path(ffxi_path) / resolved_path
+    if not full.is_file():
+        return {"error": f"DAT not found under configured client: {resolved_path}"}
+
+    import client_model_catalog
+    matches = client_model_catalog.correlate(
+        file_id=int(file_id) if file_id is not None else None,
+        rom_path=resolved_path,
+        server=server,
+    )
+    return {
+        "kind": "flat",
+        "name": matches[0]["primary_name"] if matches else Path(resolved_path).name,
+        "model_type": "DIRECT DAT",
+        "ffxi_path": ffxi_path,
+        "file_id": int(file_id) if file_id is not None else None,
+        "rom_path": resolved_path,
+        "catalog_matches": matches,
+        "catalog_name": matches[0]["primary_name"] if matches else None,
+        "catalog_aliases": matches[0].get("names", []) if matches else [],
+    }
