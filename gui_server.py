@@ -3958,8 +3958,8 @@ def _feature_trace_binding_location(root: Path, method: str, location: dict) -> 
     return row
 
 
-def _feature_trace_binding_lookup(server: str, root: Path, method: str) -> dict:
-    index=_feature_trace_binding_index_for_server(server,root)
+def _feature_trace_binding_lookup(server: str, root: Path, method: str, *, index: dict[str,list[dict]] | None=None) -> dict:
+    index=index if index is not None else _feature_trace_binding_index_for_server(server,root)
     if not method:
         return {"status":"NO_METHOD","locations":[]}
     locations=index.get(method) or []
@@ -3996,6 +3996,7 @@ def _feature_trace_behavior_engine_drilldown(
     source_root: Path,
 ) -> dict:
     behavior=inspected.get("behavior")
+    binding_index=_feature_trace_binding_index_for_server(server,source_root)
     direct_calls=[]
     if behavior is not None:
         for rule in behavior.rules:
@@ -4013,7 +4014,7 @@ def _feature_trace_behavior_engine_drilldown(
                     "hook_owner":rule.metadata.get("hook_owner"),
                     "trigger":rule.trigger,
                     "binding":_feature_trace_binding_lookup(
-                        server,source_root,str(effect.value or "")
+                        server,source_root,str(effect.value or ""),index=binding_index
                     ),
                 })
     seen=set()
@@ -4038,7 +4039,7 @@ def _feature_trace_behavior_engine_drilldown(
             helper["api_calls"].append({
                 **call,
                 "binding":_feature_trace_binding_lookup(
-                    server,source_root,str(call.get("function") or "")
+                    server,source_root,str(call.get("function") or ""),index=binding_index
                 ),
             })
         helper["callees"]=analysis.get("shared_helper_callees") or []
@@ -4064,6 +4065,7 @@ def _feature_trace_behavior_engine_drilldown(
         "direct_calls":deduped,
         "direct_call_count":len(deduped),
         "binding_counts":dict(sorted(binding_counts.items())),
+        "binding_index_size":len(binding_index),
         "shared_helpers":helpers,
         "callbacks":callbacks,
         "callback_count":len(callbacks),
