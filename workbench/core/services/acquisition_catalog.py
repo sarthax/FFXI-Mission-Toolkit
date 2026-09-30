@@ -230,7 +230,7 @@ def acquisition_paths_from_shops(
                 subject_kind="ITEM",
                 subject_id=str(item.item_literal),
                 acquisition_type="SOLD_BY",
-                source_family="LSB_LUA_SHOP",
+                source_family=f"{shop.source_family}_LUA_SHOP",
                 source_table=shop.shop_kind,
                 source_identity=(("shop_id", shop.shop_id), ("item_literal", item.item_literal)),
                 source_label=shop.vendor_name,
