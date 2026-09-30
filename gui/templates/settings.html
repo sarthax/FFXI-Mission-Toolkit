@@ -4,6 +4,7 @@
 {% block content %}
 <h1>Settings</h1>
 {% if saved %}<div class="warn" style="border-left-color:var(--accent);background:var(--accent-soft);">Saved.</div>{% endif %}
+{% if brand_error %}<div class="warn"><strong>Branding:</strong> {{ brand_error }}</div>{% endif %}
 {% if backup_result %}
 <div class="warn" style="{{ 'border-left-color:var(--accent);background:var(--accent-soft);' if backup_ok else '' }}">{{ backup_result }}</div>
 {% endif %}
