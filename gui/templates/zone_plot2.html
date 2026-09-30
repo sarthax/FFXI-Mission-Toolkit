@@ -1,0 +1,2376 @@
+{% extends "base.html" %}
+{% block title %}Zone Editor (new layout){% endblock %}
+{% block main_class %}zp2page{% endblock %}
+{% block content %}
+<style>
+main{max-width:none !important;padding:0 !important}
+body>header{display:none}
+body.zp2-menu>header{display:block;position:fixed;top:36px;left:0;right:0;z-index:60;max-height:70vh;overflow:auto;box-shadow:0 8px 24px #000a}
+#zp2{display:flex;flex-direction:column;height:calc(100vh - 0px);min-height:480px;font-size:13px}
+#zbar{display:flex;align-items:center;gap:8px;height:36px;flex:none;padding:0 8px;border-bottom:1px solid var(--border);background:var(--surface);overflow:hidden;white-space:nowrap}
+#zbar label{display:flex;align-items:center;gap:4px;margin:0}
+#zbar select{width:auto;max-width:170px}
+#zbar input[type=text]{width:130px}
+#zbar .sp{flex:1}
+#zmain{display:flex;flex:1;min-height:0}
+.zpanel{flex:none;overflow:auto;padding:6px 8px;background:var(--bg,transparent)}
+#lpanel{width:270px;border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0}
+#rpanel{width:330px;border-left:1px solid var(--border)}
+.zpanel label{display:flex;justify-content:space-between;align-items:center;margin:3px 0;gap:6px}
+.zpanel select,.zpanel input[type=text],.zpanel input[type=number]{width:150px}
+.zpanel h3{margin:10px 0 4px;font-size:13px}
+.tabb.on{background:#3a6ea5;color:#fff}
+.ztabs{display:flex;gap:2px;padding:4px 4px 0;border-bottom:1px solid var(--border);flex:none}
+.ztabs button{flex:1;padding:2px 2px;border-radius:4px 4px 0 0}
+.zpane{flex:1;min-height:0;overflow:auto;padding:6px 8px}
+#list{max-height:none;height:calc(100vh - 330px);overflow:auto;font:10px monospace;border:1px solid var(--border);padding:0}
+#list .entity-row{cursor:pointer;display:grid;grid-template-columns:30px 60px minmax(90px,1fr) 44px;gap:4px;align-items:center;padding:2px 4px;border-bottom:1px solid rgba(255,255,255,.08)}
+#list .entity-row>*:nth-child(n+5){display:none}
+#list .entity-row:hover{background:#334} #list .entity-row.selected-row{background:#665c16;color:#fff;font-weight:600} #list .entity-row.multi-row{background:#4a245f;color:#fff}
+#list .entity-head{position:sticky;top:0;z-index:2;background:var(--surface);font-weight:700;color:var(--muted);cursor:default}
+.lbl{color:#fff;font:11px monospace;background:rgba(0,0,0,.7);padding:0 3px;border-radius:3px;pointer-events:none;white-space:nowrap}
+#viewer-container{flex:1;min-width:0;height:auto !important;border:0 !important;border-radius:0 !important;background:#0a0d10;position:relative;overflow:hidden}
+#abar{display:flex;align-items:center;gap:8px;flex:none;padding:4px 8px;border-top:1px solid var(--border);background:var(--surface);flex-wrap:wrap}
+#abar #ecomment{width:220px;height:26px;resize:none}
+#abar .sp{flex:1}
+#helpdrawer{position:absolute;inset:0 0 0 auto;width:min(560px,90%);background:var(--surface);border-left:1px solid var(--border);z-index:30;overflow:auto;padding:10px 14px;box-shadow:-8px 0 24px #0008}
+#ztool{position:absolute;left:10px;top:10px;z-index:9;display:flex;gap:4px;flex-wrap:wrap;background:rgba(4,8,12,.72);padding:4px;border-radius:6px;border:1px solid rgba(255,255,255,.25)}
+#ztool .gsep{width:1px;background:rgba(255,255,255,.25);margin:0 2px}
+.xyzgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:2px 0}
+.xyzgrid label{flex-direction:column;align-items:stretch;gap:1px;margin:0;font-size:10px}
+.xyzgrid input{width:100% !important;min-width:0;padding:2px 3px}
+.zpanel{font-size:12px}
+.zpanel button,#zbar button,#abar button,#ztool button,#ztool select{padding:1px 6px;font-size:11px;line-height:1.35}
+.zpanel select,.zpanel input[type=text],.zpanel input[type=number],.zpanel input[type=search]{padding:1px 3px;font-size:11px}
+.zpanel .zdet{border:1px solid var(--border);border-radius:4px;padding:3px 6px;margin:4px 0}
+.zpanel .zdet>summary{cursor:pointer;font-size:11px;color:var(--muted)}
+.zpanel h3{margin:6px 0 3px}
+.zpanel label.inl{display:inline-flex;justify-content:flex-start;gap:3px;margin:2px 8px 2px 0}
+.zpanel .chips{display:flex;flex-wrap:wrap}
+.zpanel .row{display:flex;gap:4px;flex-wrap:wrap;margin:4px 0;align-items:center}
+#alist div[data-i]{cursor:pointer;padding:1px 3px}#alist div[data-i]:hover{background:#334}#alist .asel-row{background:#665c16;color:#fff;font-weight:600}
+.zpanel .ztabs{padding:0 0 3px;border:0}
+#lpanel .xyzgrid input{width:100% !important}
+#lpanel select{max-width:150px}
+#lpanel .zpane>.ztabs{margin-bottom:4px}
+body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
+@media (max-width:1100px){
+  #lpanel,#rpanel{position:absolute;top:36px;bottom:0;z-index:40;background:var(--surface);display:none}
+  #lpanel{left:0} #rpanel{right:0}
+  body.zp2-showl #lpanel,body.zp2-showr #rpanel{display:flex}
+  #zmain{position:relative}
+}
+</style>
+
+<div id="zp2">
+<div id="zbar">
+  <button id="zmenuBtn" type="button" title="Show/hide the site navigation">&#9776;</button>
+  <strong>Zone Editor</strong><span class="chip mono" id="zname"></span>
+  <label>Server <select id="srv"><option value="topaz">Topaz</option><option value="dsp">DSP</option></select></label>
+  <label>Zone <input type="search" id="zfilter" placeholder="filter&hellip;" style="width:70px" title="Partial match on zone id or name"><select id="zsort" title="Sort zone list"><option value="id">by #</option><option value="name">by name</option></select><select id="zone"></select></label>
+  <label>Instance <select id="inst"><option value="0">All rows</option></select></label>
+  <label>Search <input type="text" id="q" placeholder="name / id"></label>
+  <span id="zedit-toolbar" style="display:flex;gap:4px;align-items:center">
+  <button id="undoBtn" disabled title="Undo last saved Zone Editor action (Ctrl+Z)">Undo</button>
+  <button id="redoBtn" disabled title="Redo last undone Zone Editor action (Ctrl+Y / Ctrl+Shift+Z)">Redo</button>
+  <button id="frameSelBtn" disabled title="Frame selected entity (F)">Frame selected</button>
+  <button id="frameAllBtn" title="Frame all entities">Frame all</button>
+  <button id="cloneSelectedBtn" disabled title="Use the selected entity as the Add source">Clone selected</button>
+  <span id="undoStatus" class="muted mono" style="font-size:10px"></span>
+  </span>
+  <span class="sp"></span>
+  <button id="zfocusBtn" type="button" title="Hide/show side panels (Tab)">Focus</button>
+  <button id="zhelpBtn" type="button" title="Help">?</button>
+  <span class="muted mono" id="zpanelToggles" style="display:none"></span>
+</div>
+<div id="zmain">
+<div id="lpanel" class="zpanel">
+  <div class="ztabs" id="ltabs"><button class="tabb" data-lt="ents">Entities</button><button class="tabb" data-lt="layers">Layers</button><button class="tabb" data-lt="rev">Review</button><button class="tabb" data-lt="tools">Tools</button></div>
+  <div class="zpane" id="lp-ents">
+  <h3 id="matchhdr">Matches <span class="muted" id="cnt"></span></h3>
+  <div id="listfilters" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:4px;font-size:11px">
+    <select id="lf-kind"><option value="">All types</option><option value="m">Mobs</option><option value="n">NPCs</option><option value="d">Doors/props</option></select>
+    <select id="lf-reach"><option value="">All reach states</option><option value="ok">Reachable</option><option value="blocked">Blocked</option><option value="off">Off navmesh</option><option value="zero">Zero position</option><option value="none">No reach data</option></select>
+    <select id="lf-sort"><option value="id">Sort: ID</option><option value="name">Sort: Name</option><option value="type">Sort: Type</option><option value="group">Sort: Group</option><option value="level">Sort: Level</option><option value="rotation">Sort: Rotation</option><option value="reach">Sort: Reach</option></select>
+    <select id="lf-dir"><option value="asc">Ascending</option><option value="desc">Descending</option></select>
+  </div>
+  <div id="listctx" class="muted mono" style="font-size:10px;margin-bottom:3px"></div>
+  <div id="list"></div>
+  </div>
+  <div class="zpane" id="lp-layers" hidden>
+  <div id="tab-view">
+  <details class="zdet" open><summary>Show</summary>
+    <div class="chips"><label class="inl"><span>Labels</span><input type="checkbox" id="showLabels" checked></label><label class="inl"><span>Mobs</span><input type="checkbox" id="showm" checked></label><label class="inl"><span>NPCs</span><input type="checkbox" id="shown" checked></label><label class="inl"><span>Doors / props (_names)</span><input type="checkbox" id="showd" checked></label><label class="inl"><span>Navmesh overlay</span><input type="checkbox" id="shownav" checked></label><label class="inl"><span>Door/prop facing ticks</span><input type="checkbox" id="showDoorFacing" checked></label><label class="inl"><span>Show heading on labels</span><input type="checkbox" id="labelHeading"></label></div>
+  </details>
+  <details class="zdet" open><summary>Colour &amp; labels</summary>
+    <label>Colour by <select id="mode"><option value="reach">Reachability</option><option value="kind">Kind</option><option value="family">Mob family</option><option value="comp">Nav region</option><option value="height">Elevation</option></select></label><div id="famLegend" class="mono" hidden style="font-size:10px;max-height:150px;overflow:auto;border:1px solid var(--border);border-radius:4px;padding:3px;margin:3px 0"></div><label>Dot size <input type="range" id="dsz" min="0.3" max="4" step="0.1" value="1.2"></label><label>Nearest labels <input type="number" id="nlab" value="40" min="0" max="300"></label>
+  </details>
+  <details class="zdet"><summary>Mesh</summary>
+    <label>Mesh complexity <select id="lod"><option value="live">Live (textured)</option><option value="0">Full</option><option value="1">High (drop &lt;0.75u)</option><option value="2">Medium (&lt;1.5u)</option><option value="3">Low (&lt;3u)</option><option value="obj">Legacy OBJ (full)</option></select></label>
+    <button id="buildCacheBtn" hidden style="margin-top:4px">Build visual mesh cache for this zone</button>
+    <label>Mesh opacity <input type="range" id="opac" min="0.05" max="1" step="0.05" value="0.35"></label>
+  </details>
+  <details class="zdet" open><summary>Mob ranges &amp; detection</summary>
+    <div class="chips"><label class="inl"><span>Show all explicit mob radii</span><input type="checkbox" id="showMobRadii"></label><label class="inl"><input type="checkbox" id="showDetect"><span>Detection (selected)</span></label><label class="inl"><input type="checkbox" id="showDetectAll"><span>all mobs</span></label></div>
+    <div class="chips" id="detSenses" title="Only mobs with a ticked sense are drawn"><label class="inl"><input type="checkbox" data-sense="sight" checked><span style="color:#ffa726">Sight</span></label><label class="inl"><input type="checkbox" data-sense="hearing" checked><span style="color:#b36bff">Hearing</span></label><label class="inl"><input type="checkbox" data-sense="lowhp" checked><span style="color:#ff4d4d">Low HP (blood)</span></label><label class="inl"><input type="checkbox" data-sense="scent" checked><span style="color:#6fdc6f">Scent</span></label><label class="inl"><input type="checkbox" data-sense="magic" checked><span style="color:#4da6ff">Magic</span></label><label class="inl"><input type="checkbox" data-sense="ws" checked><span style="color:#ffe066">Weapon skill</span></label><label class="inl"><input type="checkbox" data-sense="ja" checked><span style="color:#f5f5f5">Job ability</span></label><label class="inl"><input type="checkbox" data-sense="true" checked><span style="color:#ff69b4">True sight</span></label></div>
+    <div id="radiusLegend" class="mono muted" style="font-size:10px;white-space:pre-wrap;margin:3px 0">Roam / leash circles from explicit server data only.</div>
+    <div id="detectLegend" class="mono muted" style="font-size:10px;white-space:pre-wrap;margin:3px 0">Detection: orange cone = sight (forward &plusmn;45&deg;), purple circle = hearing. Senses without a range (low HP, scent, magic, weapon skill, job ability, true sight) show as small coloured rings stacked around the mob.</div>
+  </details>
+  <details class="zdet"><summary>Navmesh &amp; reach</summary>
+    <div class="chips"><label class="inl"><span>Nav diagnostics</span><input type="checkbox" id="navdiag"></label></div>
+    <div id="navdiagOut" class="mono muted" style="font-size:10px;white-space:pre-wrap;margin:3px 0"></div>
+    <div style="display:flex;gap:4px"><button id="reachbtn">Recompute reach</button><button id="clran">Clear anchor</button></div>
+  </details>
+  <details class="zdet" open><summary>Summary</summary><div id="sum" class="mono"></div></details>
+  </div>
+  </div>
+  <div class="zpane" id="lp-rev" hidden>
+    <details class="zdet" open><summary>Missing scripts (NPCs)</summary>
+      <div class="muted" style="font-size:10px">NPCs with no <span class="mono">scripts/zones/&lt;zone&gt;/npcs/&lt;Name&gt;.lua</span>. They spawn but do nothing when clicked. Doors/props are skipped.</div>
+      <div><button id="rvScripts" type="button">Scan</button> <span id="rvScriptsMsg" class="muted" style="font-size:10px"></span></div>
+      <div id="rvScriptsList" class="mono" style="font-size:10px;max-height:170px;overflow:auto"></div>
+    </details>
+    <details class="zdet" open><summary>Duplicates &amp; collisions</summary>
+      <div class="muted" style="font-size:10px">Rows stacked at nearly the same spot (horizontal distance, and within 3y in height).</div>
+      <label style="font-size:11px">Within <input type="number" id="rvDupD" value="0.5" step="0.1" min="0.05" style="width:60px"> y</label> <button id="rvDup" type="button">Scan</button> <button id="rvDupClr" type="button">Clear rings</button>
+      <div id="rvDupMsg" class="muted" style="font-size:10px"></div>
+      <div id="rvDupList" class="mono" style="font-size:10px;max-height:170px;overflow:auto"></div>
+    </details>
+    <details class="zdet" open><summary>Spawn groups</summary>
+      <div class="muted" style="font-size:10px">Click a row to select the whole group and frame it. Spread = farthest spawn from the group centre.</div>
+      <div id="rvGroups" class="mono" style="font-size:10px;max-height:260px;overflow:auto"></div>
+    </details>
+    <details class="zdet" open><summary>Camera bookmarks</summary>
+      <div style="display:flex;gap:4px"><input id="bmName" placeholder="Bookmark name" style="flex:1;min-width:0"><button id="bmSave" type="button">Save view</button></div>
+      <div id="bmList" style="font-size:11px;margin-top:4px"></div>
+    </details>
+  </div>
+  <div class="zpane" id="lp-tools" hidden>
+    <div class="ztabs" id="ttabs"><button class="tabb" data-tt="gen">Generator</button><button class="tabb" data-tt="add">Add</button><button class="tabb" data-tt="backup">Backups</button></div>
+    <div id="tt-gen">
+  <div class="muted" style="font-size:10px">Preview a pattern of ghost markers around a centre point, then place copies of the current <b>Add</b> source.</div>
+  <label>Pattern <select id="lgPat"><option value="cluster">Cluster (scatter)</option><option value="row">Row / line</option><option value="grid">Grid</option><option value="ring">Ring</option><option value="arc">Arc / crescent</option><option value="camp">Camp (centre + ring + outskirts)</option><option value="flank">Flank pair (gate guards)</option></select></label>
+  <div class="xyzgrid" id="lgNums">
+    <label data-lg="n"><span>Count</span><input type="number" id="lgN" value="6" min="1" max="60"></label>
+    <label data-lg="r"><span>Radius</span><input type="number" id="lgR" value="8" min="0.5" step="0.5"></label>
+    <label data-lg="sp"><span>Spacing</span><input type="number" id="lgSp" value="3" min="0.5" step="0.5"></label>
+    <label data-lg="cols"><span>Columns</span><input type="number" id="lgCols" value="3" min="1" max="20"></label>
+    <label data-lg="ang"><span>Heading</span><input type="number" id="lgAng" value="0" min="0" max="255" title="FFXI rotation byte: 0=E, 64=S, 128=W, 192=N"></label>
+    <label data-lg="span"><span>Arc &deg;</span><input type="number" id="lgSpan" value="180" min="10" max="360"></label>
+    <label><span>Seed</span><input type="number" id="lgSeed" value="1"></label>
+  </div>
+  <label>Facing <select id="lgFace"><option value="in">Toward centre</option><option value="out">Away from centre</option><option value="dir">Along heading</option><option value="rand">Random</option></select></label>
+  <div class="xyzgrid" style="grid-template-columns:repeat(3,1fr)">
+    <label><span>Centre X</span><input type="number" id="lgCx" step="0.1"></label>
+    <label><span>Centre Y</span><input type="number" id="lgCy" step="0.1"></label>
+    <label><span>Centre Z</span><input type="number" id="lgCz" step="0.1"></label>
+  </div>
+  <div class="row"><button id="lgSel" type="button">Centre = selected</button><button id="lgView" type="button">= view centre</button><button id="lgAddPos" type="button">= Add pos</button></div>
+  <label class="inl"><input type="checkbox" id="lgSnap" checked><span>Snap each Y to navmesh</span></label>
+  <div class="row"><button id="lgGen" type="button">Preview</button><button id="lgRnd" type="button">Reseed</button><button id="lgClr" type="button">Clear</button></div>
+  <div class="row"><select id="lgRole"><option value="all">Place: all</option><option value="c">Centre only</option><option value="r">Ring only</option><option value="o">Outskirts only</option></select><button id="lgPlace" type="button">Place via Add source</button></div>
+  <div id="lgMsg" class="mono" style="font-size:10px;white-space:pre-wrap;margin-top:3px"></div>
+  <details class="zdet" style="margin-top:6px"><summary>Templates (save / re-stamp)</summary>
+    <div class="muted" style="font-size:10px">Save the current preview as a named template (offsets relative to the centre). Stamp re-creates it around the centre in any zone; then Place as usual.</div>
+    <div style="display:flex;gap:4px"><input id="tplName" placeholder="Template name" style="flex:1;min-width:0"><button id="tplSave" type="button">Save preview</button></div>
+    <div style="display:flex;gap:4px;margin-top:4px"><select id="tplSel" style="flex:1;min-width:0"></select><button id="tplStamp" type="button">Stamp at centre</button><button id="tplDel" type="button">Delete</button></div>
+  </details>
+  <details class="zdet"><summary>Mission descriptors (existing mechanics)</summary>  
+  <label>Mechanic <select id="gd"><option value="">(none)</option></select></label>
+  <label>Seed <input type="number" id="gseed" value="1"></label>
+  <div id="gnote" class="muted" style="font-size:11px"></div>
+  <div id="gopts"></div>
+  <div style="display:flex;gap:6px;margin-top:4px"><button id="ggen">Generate</button><button id="grnd">Random seed</button><button id="gclr">Clear</button></div>
+  <div id="gout" class="mono" style="font-size:11px;max-height:160px;overflow:auto"></div>
+  </details>
+    </div>
+  <div id="tab-add" hidden>
+    <div class="muted" style="font-size:10px">Clone a mob group or NPC from anywhere into this zone. Click the map (or drag a result onto it) to set the position.</div>
+    <div class="xyzgrid" style="grid-template-columns:1fr 2fr"><label>Kind <select id="ak"><option value="m">Mob (mob_groups)</option><option value="n">NPC (npc_list)</option></select></label><label>Search <input type="text" id="aq" placeholder="name contains&hellip;"></label></div>
+    <div class="xyzgrid" style="grid-template-columns:1fr 1fr 1fr"><label><span>Zone</span><select id="azone"><option value="">any</option></select></label><label><span>Family</span><input type="text" id="afam" placeholder="mobs only"></label><label><span>Sort</span><select id="asort"><option value="name">Name</option><option value="zone">Zone</option><option value="level">Level</option></select></label></div>
+    <div id="anext" class="mono muted" style="font-size:10px"></div>
+    <div id="alist" style="max-height:140px;overflow:auto;font:11px monospace;border:1px solid var(--border);padding:3px;margin:3px 0"></div>
+    <div id="asel" class="mono" style="font-size:11px;margin:3px 0"></div>
+    <label>Name override <input type="text" id="aname" placeholder="(keep source name)"></label>
+    <div class="xyzgrid"><label><span>X</span><input type="number" step="0.1" id="aX"></label><label><span>Y</span><input type="number" step="0.1" id="aY"></label><label><span>Z</span><input type="number" step="0.1" id="aZ"></label><label><span>Rot (0-255)</span><input type="number" step="1" min="0" max="255" id="aR" value="0"></label></div>
+    <label>Link to instance <select id="ainst"><option value="0">None (general zone pool)</option></select></label>
+    <label class="inl" title="Keep the source, rotation and instance active so each click places another copy"><input type="checkbox" id="repeatAdd"><span>Repeated placement</span></label>
+    <div id="addGhostInfo" class="mono muted" style="font-size:10px;margin:2px 0"></div>
+    <textarea id="acomment" rows="1" placeholder="comment (goes in the SQL)" style="width:100%"></textarea>
+    <div class="row" title="Fixed-placement instances only spawn rows linked in instance_entities; choose an instance above to write that link, or None for the zone pool."><button id="aadd">Add to zone</button></div>
+    <div id="amsg" class="mono" style="font-size:10px;margin-top:3px;white-space:pre-wrap"></div>
+  </div>
+  <div id="tab-backup" hidden style="font-size:12px">
+    <div class="muted" style="font-size:10px">Every write auto-backs-up the rows it touches. Snapshot the whole zone before a big session.</div>
+    <div style="display:flex;gap:6px;margin:6px 0"><button id="bsnap">Snapshot this zone</button><button id="bref">Refresh list</button></div>
+    <div id="blist" style="max-height:320px;overflow:auto;font:11px monospace;border:1px solid var(--border);padding:4px"></div>
+    <div id="bmsg" class="mono" style="font-size:11px;margin-top:4px;white-space:pre-wrap"></div>
+  </div>
+  </div>
+</div>
+<div id="viewer-container">
+  <div id="viewer-loading" class="muted" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">Pick a zone&hellip;</div>
+  <div id="ztool">
+    <button type="button" data-cam="perspective">Persp</button><button type="button" data-cam="top">Top</button><button type="button" data-cam="north">N</button><button type="button" data-cam="south">S</button><button type="button" data-cam="east">E</button><button type="button" data-cam="west">W</button>
+    <span class="gsep"></span>
+    <button id="zgMove" type="button" title="Gizmo: move">Move</button><button id="zgRotate" type="button" title="Gizmo: rotate">Rotate</button>
+    <span class="gsep"></span>
+    <select id="projection" title="Projection"><option value="perspective">Perspective</option><option value="orthographic">Orthographic</option></select>
+    <button id="measureBtn" type="button" title="Measure distance between two map points">Measure</button><label title="Also measure along the navmesh (A* over walkable polygons)" style="font-size:11px"><input type="checkbox" id="measurePath" checked> path</label><button id="measureClear" type="button" title="Clear measurement">&times;</button>
+  </div>
+  <div id="map-compass" title="World compass. FFXI rotation: 0=East, 64=South, 128=West, 192=North (world +Z is north)."
+       style="position:absolute;right:12px;top:12px;width:92px;height:92px;border-radius:50%;border:1px solid rgba(255,255,255,.45);background:rgba(4,8,12,.72);z-index:8;pointer-events:none;box-shadow:0 2px 8px #0008">
+    <div id="compass-rose" style="position:absolute;inset:7px;transform-origin:50% 50%;">
+      <div style="position:absolute;left:50%;top:0;transform:translateX(-50%);font:bold 13px monospace;color:#ff6b6b">N</div>
+      <div style="position:absolute;right:0;top:50%;transform:translateY(-50%);font:11px monospace;color:#ddd">E</div>
+      <div style="position:absolute;left:50%;bottom:0;transform:translateX(-50%);font:11px monospace;color:#ddd">S</div>
+      <div style="position:absolute;left:0;top:50%;transform:translateY(-50%);font:11px monospace;color:#ddd">W</div>
+      <div style="position:absolute;left:50%;top:18px;width:2px;height:24px;background:#ff6b6b;transform:translateX(-50%)"></div>
+      <div style="position:absolute;left:50%;top:14px;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid #ff6b6b;transform:translateX(-50%) rotate(180deg)"></div>
+      <div style="position:absolute;left:50%;top:50%;width:6px;height:6px;border-radius:50%;background:#fff;transform:translate(-50%,-50%)"></div>
+    </div>
+    <div style="position:absolute;left:50%;bottom:-17px;transform:translateX(-50%);white-space:nowrap;font:10px monospace;color:#aaa">0=E · 192=N</div>
+  </div>
+  <div id="measureOut" class="lbl" style="position:absolute;left:10px;top:44px;z-index:9;font-size:11px"></div>
+  <div id="hover" class="lbl" style="position:absolute;left:8px;bottom:8px;font-size:12px"></div>
+  <div id="helpdrawer" hidden>
+    <button type="button" id="zhelpClose" style="float:right">Close &times;</button>
+  <div id="tab-help" style="font-size:12px;line-height:1.45">
+    <h3>Zone Editor help</h3>
+    <div class="muted">Moving, rotating, snapping or dragging only changes the browser preview until you press <b>Save to live DB</b> (bottom bar). Every write is backed up first. The checked-in <span class="mono">sql/*.sql</span> files are separate: press <b>Sync to SQL file</b> once the live result is right.</div>
+
+    <h3>Layout</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li><b>Top bar:</b> server / zone / instance, search, Undo / Redo, Frame, Clone. &#9776; toggles the site menu, <b>Focus</b> (or <b>Tab</b>) hides both side panels.</li>
+      <li><b>Left panel:</b> <b>Entities</b> (filterable match list), <b>Layers</b> (what to draw, colours, mesh, ranges/detection, navmesh) and <b>Tools</b> (Generator, Add, Backups).</li>
+      <li><b>3D view toolbar:</b> camera presets (Persp / Top / N / S / E / W), gizmo Move / Rotate, projection, Measure.</li>
+      <li><b>Right inspector:</b> X / Y / Z / Rot for the selection with facing presets, step sizes, then collapsible Snap, Nudge and Model sections, animation, drops and history.</li>
+      <li><b>Bottom bar:</b> dirty state, Save to live DB, Sync to SQL file, Revert, Copy SQL, comment and status.</li>
+    </ul>
+
+    <h3>Selection &amp; camera</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li>Click a dot or list row to select; double-click to select and frame. Ctrl/Cmd-click toggles multi-select. Shift-click sets the reachability anchor.</li>
+      <li>Left-drag orbits, right-drag pans (1:1 with the map under the cursor), wheel zooms toward the cursor. Zoom is proportional and scales with the zone size; <b>Shift+wheel</b> = fine, <b>Ctrl+wheel</b> = fast.</li>
+      <li><b>F</b> frames the selection; Frame all fits the zone. Compass: FFXI rotation 0 = East, 64 = South, 128 = West, 192 = North (world +Z is north).</li>
+    </ul>
+
+    <h3>Transform shortcuts</h3>
+    <table class="mono" style="width:100%;font-size:10px;border-collapse:collapse">
+      <tr><td>Arrow keys</td><td>Move on X/Z</td></tr>
+      <tr><td>Page Up / Page Down</td><td>Move Y</td></tr>
+      <tr><td>[ / ]</td><td>Rotate by Rot step</td></tr>
+      <tr><td>Shift / Alt</td><td>Large / precision step</td></tr>
+      <tr><td>Ctrl+Z, Ctrl+Y</td><td>Undo / redo saved actions</td></tr>
+      <tr><td>F, Tab</td><td>Frame selected, toggle focus mode</td></tr>
+    </table>
+
+    <h3>Generator (Tools)</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li>Pick a pattern (Cluster, Row, Grid, Ring, Arc, Camp, Flank pair), set count / radius / spacing / heading / facing, choose the centre (selected entity, view centre or Add position) and press <b>Preview</b> to see ghost markers with their rotation.</li>
+      <li><b>Camp</b> = one centre marker, a ring around it facing inward, and a looser outskirts ring facing out. Use the Place dropdown to place each role separately with different Add sources (e.g. fire, tents, crates).</li>
+      <li><b>Place via Add source</b> creates one row per marker from the source picked in the Add tab (each write is backed up and undoable). Y can snap to the navmesh.</li>
+      <li>The older <b>Mission descriptors</b> previews existing mission mechanics.</li>
+    </ul>
+
+    <h3>Inspector (right panel)</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li><b>X / Y / Z / Rot</b> edit the <i>preview</i>; the dirty flag in the bottom bar lights up until you Save. Step / Rot step size the arrow keys, Nudge buttons and [ ] keys. Rot is the FFXI 0-255 byte; the line below it shows direction and compass degrees.</li>
+      <li><b>Facing presets</b> (N&hellip;NW) set the rotation; &#8630;45&deg; / 45&deg;&#8631; / 180&deg; turn relative to the current value.</li>
+      <li><b>Transform gizmo:</b> Move / Rotate handles in the 3D view. <b>Drag facing direction</b> lets you drag in the view to aim; <b>Click mesh to place</b> moves the entity to the clicked mesh point with Y snapped.</li>
+      <li><b>Roam / detection text</b> lists explicit roam/leash radii, family, detection senses and ranges (see below).</li>
+      <li><b>Snap &amp; clipboard</b> snaps to navmesh/mesh and copies or pastes positions. <b>Nudge buttons &amp; keyboard</b> is the on-screen d-pad. <b>Client model preview</b> loads the model lazily.</li>
+      <li><b>Multi-select</b> (Ctrl-click) shows the bulk panel for moving or rotating a group together.</li>
+      <li><b>Animation</b> (NPC/door rows) and <b>Drops</b> (mobs) write to their own tables. A drop table is shared by the whole mob group, so a change affects every spawn of that group; the panel shows how many.</li>
+      <li><b>History</b> lists backups of the selected entity. <b>Delete&hellip;</b> removes the row (and its instance links) after a backup; it never removes a now-empty mob group.</li>
+      <li><b>Bottom bar:</b> Save writes the live DB, Sync writes the checked-in SQL file, Revert drops the preview, Copy SQL copies the statements; the comment is stored in the journal.</li>
+    </ul>
+
+    <h3>Add tab: what it does and does not do</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li><b>Finding sources:</b> search by name, or filter by source zone, mob family (partial) and sort by name / zone / level. Click a result to select it (highlighted), then click the map or drag the row onto the map to set the position.</li>
+      <li><b>Mob:</b> inserts one <span class="mono">mob_spawn_points</span> row. If the source group comes from another zone, its <span class="mono">mob_groups</span> row is first cloned into this zone with groupid = highest in this zone + 1 (same pool, levels, drop table). If it is from this zone, the existing group is reused and shares its drops.</li>
+      <li><b>NPC:</b> inserts a copy of the source <span class="mono">npc_list</span> row (look, flags, animation, etc.) with the new id and position.</li>
+      <li><b>Instance:</b> if you pick an instance, a row is also added to <span class="mono">instance_entities</span> so a fixed instance loads it. With &ldquo;None&rdquo; it only joins the zone&rsquo;s normal pool.</li>
+      <li><b>ID choice:</b> the new id is the highest mob/npc id already used in this zone&rsquo;s 4096-id block, plus 1 (shown as &ldquo;Next id&rdquo;). It does not fill gaps, does not look in the client DAT, and does not check other tables. The client only resolves mob/npc slots below 1024 (0x3FF); beyond that the tool warns you and the entity will not work in game.</li>
+      <li><b>Not done:</b> it does not edit the zone Lua, <span class="mono">IDs.lua</span>, mob Lua scripts, <span class="mono">mob_pools</span>, family tables, spawn sets/respawn times or drop tables. A new NPC needs its <span class="mono">scripts/zones/&lt;zone&gt;/npcs/&lt;Name&gt;.lua</span> file or nothing happens when clicked, and a new mob with a new behaviour needs its Lua. Use <b>Backups</b> to undo.</li>
+      <li>Every add is backed up first and the SQL is shown in the message box and journal. Editing <span class="mono">sql/*.sql</span> by hand has no live effect until reimported; the live DB is written immediately.</li>
+    </ul>
+
+    <h3>Review tab</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li><b>Missing scripts:</b> lists NPCs with no Lua file under <span class="mono">scripts/zones/&lt;zone&gt;/npcs</span>; click one to select it.</li>
+      <li><b>Duplicates &amp; collisions:</b> finds rows within the chosen distance (and 3y in height) and draws red rings on them.</li>
+      <li><b>Spawn groups:</b> per mob group: family, level range, spawn count, centre and spread. Click to select the whole group.</li>
+      <li><b>Camera bookmarks:</b> named views saved per zone in this browser (not in the database).</li>
+    </ul>
+    <h3>Script &amp; mods, bulk tools, templates, path measure</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li><b>Script &amp; mods</b> (inspector): whether the entity's Lua file exists and every line that sets mods, flags or local vars. Add never writes these, so this shows what you still need to supply. Read-only.</li>
+      <li><b>Align / Spread / Mirror</b> (multi-select): Align sets X, Y, Z or facing to the selection average / primary. Spread spaces rows evenly. Mirror flips about the selection centre and mirrors facing. Preview first, then Save.</li>
+      <li><b>Measure &rarr; path:</b> with &ldquo;path&rdquo; ticked, the tool also routes across the navmesh (orange) and reports the walking distance, or says there is no route.</li>
+      <li><b>Generator templates:</b> Save preview stores the layout as offsets from its centre (this browser only). Stamp re-creates it at the current centre; Place then adds rows from the Add source.</li>
+    </ul>
+
+    <h3>Quick finds</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li>The zone box filters the zone list by partial name or number; the &ldquo;by #&rdquo; / &ldquo;by name&rdquo; control sorts it. If only one zone matches it is opened.</li>
+      <li><b>Colour by Mob family</b> shows a legend of the families present in the zone with counts.</li>
+    </ul>
+
+    <h3>Backups</h3>
+    <ul style="padding-left:18px;margin:4px 0"><li>Snapshot the whole zone before large sessions; restore rolls back rows to an earlier state.</li></ul>
+
+    <h3>Ranges &amp; detection (Layers)</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li>Roam / leash circles show only when the server data defines them. <b>Detection</b> draws a sight cone (forward &plusmn;45&deg;) and a hearing circle for the selected mob, or all mobs.</li>
+      <li>Which senses a mob has comes from SQL (<span class="mono">mob_family_system.detects</span>, <span class="mono">mob_pools.aggro</span> / <span class="mono">true_detection</span>). The default ranges (sight 15, sound 8 yalms) are engine constants, overridden by SIGHT_RANGE / SOUND_RANGE mob mods when set in SQL or literally in the mob's Lua. Other senses (low HP, magic, weapon skill, job ability, scent) have no radius and are listed as text.</li>
+    </ul>
+
+    <h3>Animation, model preview, NPC rows</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li>NPC/door rows expose persistent <span class="mono">animation</span> / <span class="mono">animationsub</span> bytes (enum from LSB <span class="mono">animation.yaml</span>; subanimation meanings are model-dependent). FOURCC animation packets are transient and separate.</li>
+      <li><b>Client model preview</b> (inspector) renders the model lazily and browses candidates read-only until you use the model-change workflow.</li>
+    </ul>
+  </div>
+  </div>
+</div>
+<div id="rpanel" class="zpanel">
+  <div id="tab-edit">
+    <div class="muted" style="font-size:10px">Select a dot or a list row. Writes are backed up first (Tools &gt; Backups).</div>
+    <div id="ed-none" class="muted" style="margin:6px 0">Nothing selected.</div>
+    <div id="ed" hidden>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div id="ed-title" class="mono" style="margin:6px 0"></div><button id="edel" style="color:#e74c3c" title="Delete this entity">Delete&hellip;</button></div>
+      <div class="xyzgrid"><label><span>X</span><input type="number" step="0.1" id="ex"></label><label><span>Y</span><input type="number" step="0.1" id="ey"></label><label><span>Z</span><input type="number" step="0.1" id="ez"></label><label><span>Rot</span><input type="number" step="1" min="0" max="255" id="er"></label></div>
+      <div class="xyzgrid" style="margin:2px 0 4px"><label title="Nudge step"><span>Step</span><input type="number" id="estep" value="1" step="0.5" min="0.1"></label><label title="Rotation step"><span>Rot step</span><input type="number" id="erstep" value="1" step="1" min="1" max="128"></label></div>
+      <div id="er-dir" class="mono" style="font-size:11px;margin:-1px 0 5px;padding:4px 6px;border:1px solid var(--border);border-radius:4px"></div>
+<div style="display:flex;gap:3px;flex-wrap:wrap;margin:3px 0 6px">
+  <button type="button" data-rpreset="192">N</button><button type="button" data-rpreset="224">NE</button>
+  <button type="button" data-rpreset="0">E</button><button type="button" data-rpreset="32">SE</button>
+  <button type="button" data-rpreset="64">S</button><button type="button" data-rpreset="96">SW</button>
+  <button type="button" data-rpreset="128">W</button><button type="button" data-rpreset="160">NW</button>
+</div>
+<div style="display:flex;gap:3px;flex-wrap:wrap;margin:0 0 6px">
+  <button type="button" data-rdelta="-32">↶45°</button><button type="button" data-rdelta="32">45°↷</button>
+  <button type="button" data-rdelta="128">180°</button>
+</div>
+<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:4px 0 6px">
+  <label style="margin:0"><span>Transform gizmo</span><input type="checkbox" id="gizmoEnabled" checked></label>
+  <button type="button" id="gizmoMove">Move</button>
+  <button type="button" id="gizmoRotate">Rotate</button>
+</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><label><span>Drag facing direction</span><input type="checkbox" id="faceDrag"></label><label><span>Click mesh to place</span><input type="checkbox" id="eplace"></label></div>
+      <div id="ed-radius" class="mono muted" style="font-size:10px;margin:0 0 6px;padding:4px 6px;border:1px solid var(--border);border-radius:4px">No explicit roam/leash radius stored for this entity.</div>
+<div id="bulk-panel" hidden style="border:1px solid var(--border);border-radius:4px;padding:6px;margin:5px 0">
+  <div class="mono" id="bulk-count" style="font-size:11px;margin-bottom:4px">1 selected</div>
+  <div class="muted" style="font-size:10px;margin-bottom:6px">Ctrl/Cmd-click dots or list rows to add/remove. Multi-select defaults to moving the group while preserving relative spacing; offsets remain available for precise nudges.</div>
+  <div style="border:1px solid rgba(255,255,255,.12);border-radius:4px;padding:5px;margin-bottom:6px">
+    <div style="font-weight:600;font-size:11px;margin-bottom:3px">Move Group</div>
+    <label>Anchor <select id="bulk-anchor"><option value="center">Selection center</option><option value="primary">Primary selected entity</option></select></label>
+    <label>Target X <input type="number" step="0.1" id="bulk-x"></label>
+    <label>Target Y <input type="number" step="0.1" id="bulk-y"></label>
+    <label>Target Z <input type="number" step="0.1" id="bulk-z"></label>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
+      <button id="bulk-move-preview" type="button">Preview move to coordinates</button>
+      <button id="bulk-pick" type="button">Pick target on map</button>
+    </div>
+    <div class="muted" style="font-size:9px;margin-top:3px">The transform gizmo also moves the whole selection when 2+ entities are selected.</div>
+  </div>
+  <div style="border:1px solid rgba(255,255,255,.12);border-radius:4px;padding:5px;margin-bottom:6px">
+    <div style="font-weight:600;font-size:11px;margin-bottom:3px">Nudge / Offset</div>
+    <label>ΔX <input type="number" step="0.1" id="bulk-dx" value="0"></label>
+    <label>ΔY <input type="number" step="0.1" id="bulk-dy" value="0"></label>
+    <label>ΔZ <input type="number" step="0.1" id="bulk-dz" value="0"></label>
+    <label>ΔRot <input type="number" step="1" id="bulk-dr" value="0"></label>
+    <button id="bulk-preview" type="button" style="margin-top:4px">Preview offset</button>
+  </div>
+  <div style="border:1px solid rgba(255,255,255,.12);border-radius:4px;padding:5px;margin-bottom:6px">
+    <div style="font-weight:600;font-size:11px;margin-bottom:3px">Align / Distribute / Mirror</div>
+    <div class="muted" style="font-size:9px">Align sets one value to the selection average. Distribute spaces 3+ rows evenly between the two extremes. Mirror flips across the selection centre and fixes facing. All are previews until you Save.</div>
+    <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:3px"><span style="font-size:10px;width:48px">Align</span><button data-bop="al-x" type="button">X</button><button data-bop="al-y" type="button">Y</button><button data-bop="al-z" type="button">Z</button><button data-bop="al-r" type="button" title="Give everyone the primary's facing">Facing</button></div>
+    <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:3px"><span style="font-size:10px;width:48px">Spread</span><button data-bop="di-x" type="button">Along X</button><button data-bop="di-z" type="button">Along Z</button><button data-bop="di-l" type="button" title="Even steps along the line between the two farthest rows">Line</button></div>
+    <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:3px"><span style="font-size:10px;width:48px">Mirror</span><button data-bop="mi-x" type="button">Flip X</button><button data-bop="mi-z" type="button">Flip Z</button></div>
+  </div>
+  <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
+    <button id="bulk-save" type="button" disabled>Save bulk to live DB</button>
+    <button id="bulk-sync" type="button">Sync selection to SQL files</button>
+    <button id="bulk-revert" type="button" disabled>Revert bulk preview</button>
+    <button id="bulk-clear" type="button">Clear multi-select</button>
+  </div>
+  <div id="bulk-msg" class="mono" style="font-size:10px;margin-top:4px;white-space:pre-wrap"></div>
+</div>
+      <details class="zdet"><summary>Snap &amp; clipboard</summary><div style="border:1px solid var(--border);border-radius:4px;padding:5px;margin:5px 0">
+  <div class="muted" style="font-size:10px;margin-bottom:3px">Explicit snap</div>
+  <label>Grid size <input type="number" id="snapGrid" value="0.5" step="0.1" min="0.01"></label>
+  <div style="display:flex;gap:3px;flex-wrap:wrap">
+    <button id="snapXYZ" type="button">Snap XYZ to grid</button>
+    <button id="snapXZ" type="button">Snap X/Z to grid</button>
+    <button id="snapNavY" type="button">Snap Y to navmesh</button>
+    <button id="snapFloorY" type="button">Snap Y to visual floor</button>
+    <button id="snapSelXYZ" type="button">Snap XYZ to other selected</button>
+    <button id="snapSelY" type="button">Snap Y to other selected</button>
+  </div>
+</div>
+<div style="border:1px solid var(--border);border-radius:4px;padding:5px;margin:5px 0">
+  <div class="muted" style="font-size:10px;margin-bottom:3px">Transform clipboard</div>
+  <div style="display:flex;gap:3px;flex-wrap:wrap">
+    <button id="copyTransform" type="button">Copy pos + rot</button>
+    <button id="pasteTransform" type="button">Paste all</button>
+    <button id="pasteXZ" type="button">Paste X/Z</button>
+    <button id="pasteRot" type="button">Paste rotation</button>
+  </div>
+  <div id="transformClipStatus" class="mono muted" style="font-size:10px;margin-top:3px"></div>
+</div>
+</details>
+      <details class="zdet"><summary>Nudge buttons &amp; keyboard</summary>      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin:4px 0">
+        <button data-n="x-">X&minus;</button><button data-n="y-">Y&minus; (up)</button><button data-n="z-">Z&minus;</button>
+        <button data-n="x+">X+</button><button data-n="y+">Y+ (down)</button><button data-n="z+">Z+</button></div>
+      
+<div class="muted" style="font-size:10px;margin-bottom:5px">Keyboard: arrows move X/Z · PgUp/PgDn Y · [ ] rotate · Shift = large · Alt = precision · F = frame selected</div>
+</details>
+      <details class="zdet"><summary>Client model preview</summary>      <div id="ed-model-details" style="border:1px solid var(--border);border-radius:4px;padding:5px;margin:5px 0">
+        
+        <div class="muted" style="font-size:10px;margin:4px 0">Uses the configured local client and the same Model Viewer resolver. Preview is lazy-loaded only when opened.</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">
+          <button type="button" id="modelPreviewLoad">Refresh preview</button>
+          <a id="modelPreviewOpen" href="/modelviewer" target="_blank" style="align-self:center">Open full viewer</a>
+        </div>
+        <div id="modelPreviewStatus" class="mono muted" style="font-size:10px;margin-bottom:4px"></div>
+        <div style="border-top:1px solid var(--border);padding-top:5px;margin-top:5px">
+          <div class="muted" style="font-size:10px">Candidate flat model browser. Selecting a candidate only previews it; Apply remains disabled until its shared-row impact is checked.</div>
+          <input id="modelCandidateSearch" type="search" placeholder="name, model/file id, family, pool, ROM path" style="width:100%;margin-top:3px">
+          <div id="modelCandidateStatus" class="mono muted" style="font-size:9px;margin-top:3px"></div>
+          <div id="modelCandidateResults" style="max-height:140px;overflow:auto;font-size:10px"></div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
+            <button type="button" id="modelImpactBtn" disabled>Check change impact</button>
+            <button type="button" id="modelApplyBtn" disabled>Apply model</button>
+            <button type="button" id="modelSyncSqlBtn" disabled>Sync model to SQL</button>
+          </div>
+          <div id="modelImpactOut" class="mono muted" style="font-size:9px;white-space:pre-wrap;margin-top:4px"></div>
+        </div>
+        <iframe id="modelPreviewFrame" title="Selected entity client model" style="width:100%;height:330px;border:1px solid var(--border);background:#0a0d10" loading="lazy"></iframe>
+      </div>
+</details>
+      <div id="ed-anim" hidden>
+        <hr style="border-color:var(--border);margin:6px 0">
+        <div class="muted" style="font-size:11px">npc_list-only persistent render fields. <span class="mono">animation</span> is populated from the current bundled LSB <span class="mono">data/enums/animation.yaml</span>. <span class="mono">animationsub</span> remains model-dependent; the picker shows literal LSB <span class="mono">setAnimationSub(N)</span> usage evidence instead of assigning universal meanings. FOURCC <span class="mono">entityAnimationPacket</span> effects are separate transient animations.</div>
+        <label>Animation <select id="ean"><option value="custom">loading LSB enum&hellip;</option></select></label>
+        <input type="number" step="1" min="0" max="255" id="eanRaw" style="width:60px;display:none" placeholder="0-255">
+        <label>Animation Sub <select id="easub"><option value="0">0 &mdash; default / no selector</option><option value="custom">custom&hellip;</option></select></label>
+        <input type="number" step="1" min="0" max="255" id="easubRaw" style="width:60px;display:none" placeholder="0-255">
+        <div id="animEvidence" class="mono muted" style="font-size:9px;white-space:pre-wrap;border:1px solid var(--border);border-radius:4px;padding:4px;margin-top:4px">Loading LSB animation evidence&hellip;</div>
+        <details style="margin-top:4px"><summary>Transient FOURCC animation reference</summary><div id="animFourcc" class="mono muted" style="font-size:9px;max-height:150px;overflow:auto;white-space:pre-wrap;margin-top:3px"></div></details>
+        <div style="margin-top:4px"><button id="eanimsave">Save animation to live DB</button></div>
+        <div id="eanimmsg" class="mono" style="font-size:11px;margin-top:4px;white-space:pre-wrap"></div>
+      </div>
+      <div id="ed-drops" hidden>
+        <hr style="border-color:var(--border);margin:6px 0">
+        <div class="muted" style="font-size:11px">mob_spawn_points -&gt; mob_groups.dropid -&gt; mob_droplist, joined against item_basic for real names. A dropid is shared by the whole mob_groups group, so a dropid change or a row edit here affects every spawn using it (<span id="edrops-n"></span>), not just this one mob.</div>
+        <div id="edrops-body" style="font-size:11px;margin-top:4px"></div>
+        <div style="margin-top:6px"><button id="edropsyncsql">Sync last drop change to SQL file</button></div>
+      </div>
+      <details id="ed-script" class="zdet" hidden><summary>Script &amp; mods (read-only)</summary>
+        <div id="escript-body" class="mono" style="font-size:10px;white-space:pre-wrap"></div>
+      </details>
+      <details id="ed-history" class="zdet"><summary>Selected entity history</summary>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:4px">
+          <span class="muted" style="font-size:10px">Selected entity history</span>
+          <div style="display:flex;gap:3px"><button id="histRefresh" type="button">Refresh</button><button id="histRestorePrev" type="button">Restore previous saved state</button></div>
+        </div>
+        <div id="histList" class="mono" style="font-size:10px;max-height:150px;overflow:auto;margin-top:4px"></div>
+        <div id="histMsg" class="mono" style="font-size:10px;margin-top:4px;white-space:pre-wrap"></div>
+      </details>
+    </div>
+  </div>
+</div>
+</div>
+<div id="abar">
+<div id="ed-dirty" class="mono" style="font-size:11px;margin:3px 0 6px;padding:4px 6px;border-radius:4px;background:#263238;color:#b0bec5">Saved state</div>
+  <button id="esave" disabled title="Write this edit to the live database">Save to live DB</button>
+  <button id="esyncsql" title="Live-DB saves do NOT touch the checked-in sql/*.sql; use this to sync them">Sync to SQL file</button>
+  <button id="erev">Revert</button><button id="ecopy">Copy SQL</button>
+  <textarea id="ecomment" rows="1" placeholder="why (goes in the SQL as -- comment)"></textarea>
+  <span class="sp"></span>
+<div id="esyncstatus" class="mono" style="font-size:11px;margin-top:4px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;color:#b0bec5">Live DB / SQL status: no saved edit this session</div>
+      <div id="emsg" class="mono" style="font-size:11px;margin-top:4px;white-space:pre-wrap"></div>
+</div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { TransformControls } from 'three/addons/controls/TransformControls.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { parseZoneFile } from '/static/ffxi-dat/index.js';
+const $ = id => document.getElementById(id);
+const container = $('viewer-container');
+
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0a0d10);
+const perspectiveCamera = new THREE.PerspectiveCamera(60, container.clientWidth/container.clientHeight, 0.01, 8000);
+const orthoCamera = new THREE.OrthographicCamera(-100,100,100,-100,-8000,8000);
+orthoCamera.zoom=1;
+let camera=perspectiveCamera;
+let transformControls=null;
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(container.clientWidth, container.clientHeight); container.appendChild(renderer.domElement);
+const lr = new CSS2DRenderer(); lr.setSize(container.clientWidth, container.clientHeight);
+lr.domElement.style.cssText='position:absolute;top:0;left:0;pointer-events:none'; container.appendChild(lr.domElement);
+let controls = new OrbitControls(camera, renderer.domElement);
+function configureControls(){
+  controls.enableDamping=true; controls.zoomToCursor=true;
+  controls.screenSpacePanning=true;
+}
+configureControls();
+// Proportional zoom scaled to the zone: every wheel notch changes the camera distance by a constant
+// fraction (OrbitControls uses 0.95^zoomSpeed per notch), faster when far out, finer when close, with no
+// stepped jumps. Shift+wheel = fine, Ctrl+wheel = fast. Pan is the stock 1:1 screen-space pan.
+let zoneExtent=400;
+function updateZoomSpeed(mult=1){
+  const d=camera.position.distanceTo(controls.target)||1;
+  const far=Math.min(1, d/Math.max(60,zoneExtent*0.6));
+  controls.zoomSpeed=(1.4+2.6*far)*mult;
+  controls.maxDistance=Math.max(1500, zoneExtent*4);
+  controls.minDistance=0.05;
+}
+function repanSpeed(){ controls.panSpeed=1.0; }
+renderer.domElement.addEventListener('wheel', ev=>{ ev.preventDefault(); updateZoomSpeed(ev.shiftKey?0.3:(ev.ctrlKey?2.5:1)); }, {passive:false, capture:true});
+renderer.domElement.addEventListener('pointerdown', ev=>{ if (ev.button===2) repanSpeed(); });
+updateZoomSpeed(); repanSpeed();
+const ZONE_EDITOR_STATE_KEY='zoneEditor.ui.v1';
+function vecArray(v){ return [v.x,v.y,v.z]; }
+function applyVec(v,a){ if(Array.isArray(a)&&a.length===3&&a.every(Number.isFinite)) v.set(a[0],a[1],a[2]); }
+function updateCameraProjection(){
+  const w=Math.max(1,container.clientWidth), h=Math.max(1,container.clientHeight), aspect=w/h;
+  perspectiveCamera.aspect=aspect; perspectiveCamera.updateProjectionMatrix();
+  const halfH=100, halfW=halfH*aspect;
+  orthoCamera.left=-halfW; orthoCamera.right=halfW; orthoCamera.top=halfH; orthoCamera.bottom=-halfH; orthoCamera.updateProjectionMatrix();
+}
+function switchProjection(mode,preserveView=true){
+  mode=mode==='orthographic'?'orthographic':'perspective';
+  const oldPos=camera.position.clone(), oldTarget=controls.target.clone();
+  controls.dispose(); camera=mode==='orthographic'?orthoCamera:perspectiveCamera;
+  if(preserveView){ camera.position.copy(oldPos); }
+  controls=new OrbitControls(camera,renderer.domElement); configureControls(); controls.target.copy(oldTarget); controls.addEventListener('end',saveZoneEditorState); if(transformControls) transformControls.camera=camera;
+  $('projection').value=mode; updateCameraProjection(); updateZoomSpeed(); repanSpeed(); controls.update();
+}
+function cameraPreset(name){
+  if(!Z) return;
+  const center=selected>=0&&Z.entities[selected]&&!Z.entities[selected].zero ? P(Z.entities[selected]) : controls.target.clone();
+  const distance=Math.max(35,camera.position.distanceTo(controls.target)||80);
+  if(name==='perspective'){ switchProjection('perspective'); camera.position.copy(center).add(new THREE.Vector3(distance*.6,distance*.7,distance*.6)); }
+  else {
+    if(name==='top') switchProjection('orthographic');
+    const dirs={top:new THREE.Vector3(0,1,0.0001),north:new THREE.Vector3(0,.05,-1),south:new THREE.Vector3(0,.05,1),east:new THREE.Vector3(1,.05,0),west:new THREE.Vector3(-1,.05,0)};
+    const dir=dirs[name]||dirs.top; camera.position.copy(center).add(dir.normalize().multiplyScalar(distance));
+    if(camera.isOrthographicCamera) camera.up.set(0,0,-1); else camera.up.set(0,1,0);
+  }
+  controls.target.copy(center); camera.lookAt(center); controls.update(); saveZoneEditorState();
+}
+function saveZoneEditorState(){
+  try{
+    localStorage.setItem(ZONE_EDITOR_STATE_KEY,JSON.stringify({
+      zone:$('zone').value,instance:$('inst').value,lod:$('lod').value,mode:$('mode').value,navdiag:$('navdiag')?.checked||false,showDoorFacing:$('showDoorFacing')?.checked!==false,showMobRadii:$('showMobRadii')?.checked||false,
+      showm:$('showm').checked,shown:$('shown').checked,showd:$('showd').checked,shownav:$('shownav').checked,
+      opacity:$('opac').value,dotSize:$('dsz').value,labels:$('nlab').value,projection:$('projection').value,
+      labelHeading:$('labelHeading')?.checked||false,camera:vecArray(camera.position),target:vecArray(controls.target),zoom:camera.isOrthographicCamera?camera.zoom:null
+    }));
+  }catch(e){}
+}
+function loadZoneEditorState(){ try{return JSON.parse(localStorage.getItem(ZONE_EDITOR_STATE_KEY)||'null');}catch(e){return null;} }
+updateCameraProjection();
+scene.add(new THREE.AmbientLight(0x8899aa, 1.1));
+const sun = new THREE.DirectionalLight(0xfff2e0, 1.4); sun.position.set(300,500,200); scene.add(sun);
+
+let Z = null, R = null, meshObj = null, navMesh = null, inst = null, anchor = null, selected = -1, hoverI = -1;
+const multiSelected=new Set();
+let bulkOrig=new Map();
+let bulkPreviewActive=false;
+let bulkPickMode=false;
+function multiCount(){ return multiSelected.size; }
+function bulkAnchor(source=null){
+  if(!Z || multiSelected.size<2) return null;
+  const rows=[...multiSelected].map(i=>{
+    const e=Z.entities[i], o=source?.get(i);
+    return o || (e ? {x:e.x,y:e.y,z:e.z,r:e.r} : null);
+  }).filter(Boolean);
+  if(!rows.length) return null;
+  if($('bulk-anchor')?.value==='primary' && selected>=0){
+    const e=source?.get(selected) || Z.entities[selected];
+    if(e) return {x:+e.x,y:+e.y,z:+e.z};
+  }
+  return {x:rows.reduce((a,e)=>a+(+e.x||0),0)/rows.length,y:rows.reduce((a,e)=>a+(+e.y||0),0)/rows.length,z:rows.reduce((a,e)=>a+(+e.z||0),0)/rows.length};
+}
+function setBulkTargetFromSelection(){
+  const a=bulkAnchor(); if(!a) return;
+  $('bulk-x').value=a.x.toFixed(3); $('bulk-y').value=a.y.toFixed(3); $('bulk-z').value=a.z.toFixed(3);
+}
+function setBulkPickMode(on){
+  bulkPickMode=!!on;
+  $('bulk-pick').textContent=bulkPickMode?'Click map for target…':'Pick target on map';
+  $('bulk-pick').style.fontWeight=bulkPickMode?'700':'';
+  if(bulkPickMode) $('bulk-msg').textContent='Pick mode: click the zone mesh/navmesh to preview the whole selection at that target.';
+}
+function syncMultiUI(){
+  const n=multiCount();
+  $('bulk-panel').hidden=n<2;
+  $('bulk-count').textContent=`${n} selected · primary ${selected>=0&&Z?.entities[selected]?Z.entities[selected].id:'none'}`;
+  $('bulk-save').disabled=!bulkPreviewActive;
+  $('bulk-revert').disabled=!bulkPreviewActive;
+  if(n<2) setBulkPickMode(false); else if(!bulkPreviewActive) setBulkTargetFromSelection();
+  if(n>=2 && typeof setGizmoMode==='function') setGizmoMode('translate');
+  if(typeof syncGizmoFromSelection==='function') syncGizmoFromSelection();
+  $('list').querySelectorAll('.entity-row[data-i]').forEach(d=>{
+    const i=+d.dataset.i; d.classList.toggle('selected-row',i===selected); d.classList.toggle('multi-row',multiSelected.has(i)&&i!==selected);
+  });
+}
+// ---- add-position marker: a visible cyan dot at the X/Y/Z the Add tab currently has queued, so
+// "did that click/drop actually set a position" is never a guessing game ----
+const addMarkerGeo = new THREE.SphereGeometry(1.6, 12, 8);
+const addMarker = new THREE.Mesh(addMarkerGeo, new THREE.MeshBasicMaterial({color:0x00e5ff, depthTest:false}));
+addMarker.renderOrder = 20; addMarker.visible = false;
+scene.add(addMarker);
+const addHeadingGeom=new THREE.BufferGeometry();
+const addHeadingLine=new THREE.Line(addHeadingGeom,new THREE.LineBasicMaterial({color:0x00e5ff,depthTest:false}));
+addHeadingLine.visible=false; addHeadingLine.renderOrder=21; scene.add(addHeadingLine);
+const addGhostDiv=document.createElement('div'); addGhostDiv.className='lbl';
+const addGhostLabel=new CSS2DObject(addGhostDiv); addGhostLabel.visible=false; scene.add(addGhostLabel);
+function setAddPos(x,y,z){
+  $('aX').value=x.toFixed(3); $('aY').value=y.toFixed(3); $('aZ').value=z.toFixed(3); updateAddMarker();
+}
+function updateAddMarker(){
+  const show = !$('tab-add').hidden && $('aX').value!=='' && $('aY').value!=='' && $('aZ').value!=='';
+  addMarker.visible = show; addHeadingLine.visible=show; addGhostLabel.visible=show;
+  if(!show){ $('addGhostInfo').textContent=''; return; }
+  const p=new THREE.Vector3(+$('aX').value, -(+$('aY').value), -(+$('aZ').value));
+  addMarker.position.copy(p);
+  const d=sceneHeading(+$('aR').value||0), tip=p.clone().add(d.multiplyScalar(7));
+  addHeadingGeom.setFromPoints([p,tip]);
+  addGhostLabel.position.copy(p).add(new THREE.Vector3(0,3,0));
+  const kind=$('ak').value;
+  const src=aSel ? (kind==='m'?(aSel.name||'mob'):(aSel.pname||aSel.name||'NPC')) : '(no source)';
+  const h=rotInfo(+$('aR').value||0), inst=+$('ainst').value||0;
+  const instText=inst ? ('instance '+inst) : 'general zone pool';
+  addGhostDiv.textContent=src+' · '+h.dir+' r'+h.raw+' · '+instText;
+  $('addGhostInfo').textContent='Ghost: '+src+' at ('+$('aX').value+', '+$('aY').value+', '+$('aZ').value+') · '+h.dir+' r'+h.raw+' · '+instText;
+}
+['aX','aY','aZ','aR','ainst'].forEach(id=>$(id).addEventListener('input',updateAddMarker));
+let visible = [];            // indices of entities currently drawn (instance slot -> entity idx)
+let heightRange={lo:0,hi:0};
+const labels = new Map();    // entity idx -> CSS2DObject
+const geo = new THREE.SphereGeometry(1, 8, 6);
+const mat = new THREE.MeshBasicMaterial({depthTest:false, transparent:true});
+const COL = {ok:0x2ecc71, blocked:0xe74c3c, off:0xe08a1e, zero:0x888888, none:0x8899aa, m:0xe74c3c, n:0x3498db, d:0xf1c40f};
+const P = e => new THREE.Vector3(e.x, -e.y, -e.z);
+const hsl = c => new THREE.Color().setHSL(((c*2654435761)>>>0)%360/360, .7, .55);
+
+// FFXI heading byte: 0=East; values increase counter-clockwise (64=N, 128=W, 192=S).
+const ROT_DIRS=['E','SE','S','SW','W','NW','N','NE'];
+function rotInfo(raw){
+  const r=((Math.round(+raw||0)%256)+256)%256;
+  const ffxiDeg=r*360/256;
+  const bearing=(90+ffxiDeg)%360;
+  const dir=ROT_DIRS[Math.round(r/32)%8];
+  return {raw:r,dir,ffxiDeg,bearing};
+}
+function rotText(raw){
+  const h=rotInfo(raw);
+  return `rot=${h.raw} · ${h.dir} · compass ${h.bearing.toFixed(1)}° (FFXI ${h.ffxiDeg.toFixed(1)}° from East)`;
+}
+function sceneHeading(raw){
+  const a=rotInfo(raw).raw*Math.PI*2/256;
+  return new THREE.Vector3(Math.cos(a),0,Math.sin(a)).normalize();
+}
+const headingArrow=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vector3(),12,0xffd54a,3.0,1.8);
+headingArrow.visible=false; headingArrow.renderOrder=30;
+headingArrow.traverse?.(o=>{ if(o.material){ o.material.depthTest=false; o.material.transparent=true; } });
+scene.add(headingArrow);
+const selectionRing=new THREE.Mesh(
+  new THREE.RingGeometry(1.5,2.15,48),
+  new THREE.MeshBasicMaterial({color:0xffe066,side:THREE.DoubleSide,transparent:true,opacity:.9,depthTest:false})
+);
+selectionRing.rotation.x=-Math.PI/2; selectionRing.visible=false; selectionRing.renderOrder=29; scene.add(selectionRing);
+const doorFacingMat=new THREE.LineBasicMaterial({color:0xffc857,transparent:true,opacity:.8,depthTest:false});
+let doorFacingLines=null;
+const mobRadiusGroup=new THREE.Group(); mobRadiusGroup.renderOrder=19; scene.add(mobRadiusGroup);
+const roamRadiusMat=new THREE.LineBasicMaterial({color:0x56d6ff,transparent:true,opacity:.9,depthTest:false});
+const leashRadiusMat=new THREE.LineBasicMaterial({color:0xff8a65,transparent:true,opacity:.9,depthTest:false});
+function clearMobRadiusVisuals(){
+  while(mobRadiusGroup.children.length){ const o=mobRadiusGroup.children.pop(); o.geometry?.dispose?.(); }
+}
+function addMobRadiusCircle(e,radius,material){
+  radius=Number(radius); if(!Number.isFinite(radius)||radius<=0) return;
+  const p=P(e), pts=[], segs=96;
+  for(let i=0;i<segs;i++){ const a=i*Math.PI*2/segs; pts.push(new THREE.Vector3(p.x+Math.cos(a)*radius,p.y+1.0,p.z+Math.sin(a)*radius)); }
+  const g=new THREE.BufferGeometry().setFromPoints(pts); const line=new THREE.LineLoop(g,material); line.renderOrder=19; mobRadiusGroup.add(line);
+}
+function updateMobRadiusVisuals(){
+  clearMobRadiusVisuals(); if(!Z) return; const all=$('showMobRadii')?.checked;
+  if($('showDetect')?.checked){ const allD=$('showDetectAll')?.checked; Z.entities.forEach((e,i)=>{ if(e.k!=='m'||e.zero) return; if(!allD&&i!==selected) return; addDetectionVisual(e); }); }
+  Z.entities.forEach((e,i)=>{ if(e.k!=='m'||e.zero) return; if(!all&&i!==selected) return; if(e.roam_radius!==undefined) addMobRadiusCircle(e,e.roam_radius,roamRadiusMat); if(e.leash_radius!==undefined) addMobRadiusCircle(e,e.leash_radius,leashRadiusMat); });
+}
+const DETECT_BITS=[[0x01,'sight'],[0x02,'hearing'],[0x04,'low HP'],[0x20,'magic'],[0x40,'weapon skill'],[0x80,'job ability'],[0x100,'scent']];
+const detectSightMat=new THREE.LineBasicMaterial({color:0xffa726,transparent:true,opacity:.95,depthTest:false});
+const detectSoundMat=new THREE.LineBasicMaterial({color:0xb36bff,transparent:true,opacity:.95,depthTest:false});
+function detectInfo(e){
+  if(!e||e.k!=='m'||e.detects===undefined) return null;
+  const senses=DETECT_BITS.filter(([b])=>e.detects&b).map(([,n])=>n);
+  const sight=e.sight_range!==undefined?+e.sight_range:15, sound=e.sound_range!==undefined?+e.sound_range:8;
+  return {senses,sight,sound,sightDefault:e.sight_range===undefined,soundDefault:e.sound_range===undefined,
+          hasSight:!!(e.detects&0x01), hasSound:!!(e.detects&0x02), aggro:!!e.aggro, trueDet:!!e.true_detection};
+}
+function detectText(e){
+  const d=detectInfo(e); if(!d) return '';
+  const bits=[(e.family?'Family: '+e.family+'\n':'')+'Detects: '+(d.senses.join(', ')||'nothing')+(d.aggro?'':' (passive: aggro=0)')+(d.trueDet?' · true detection':'')];
+  if(d.hasSight) bits.push('Sight '+d.sight+'y forward cone'+(d.sightDefault?' (engine default)':' (SIGHT_RANGE mod)'));
+  if(d.hasSound) bits.push('Hearing '+d.sound+'y'+(d.soundDefault?' (engine default)':' (SOUND_RANGE mod)'));
+  return bits.join('\n');
+}
+const SENSE_BITS={lowhp:[0x04,0xff4d4d],scent:[0x100,0x6fdc6f],magic:[0x20,0x4da6ff],ws:[0x40,0xffe066],ja:[0x80,0xf5f5f5]};
+const senseOn=k=>document.querySelector(`#detSenses [data-sense="${k}"]`)?.checked;
+function addDetectionVisual(e){
+  const d=detectInfo(e); if(!d) return; const p=P(e);
+  const seg=(pts,color,loop)=>{ const l=new (loop?THREE.LineLoop:THREE.Line)(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color,transparent:true,opacity:.95,depthTest:false})); l.renderOrder=19; mobRadiusGroup.add(l); };
+  const circle=(r,y)=>{ const pts=[]; for(let i=0;i<48;i++){ const a=i*Math.PI*2/48; pts.push(new THREE.Vector3(p.x+Math.cos(a)*r,p.y+y,p.z+Math.sin(a)*r)); } return pts; };
+  if(d.hasSound&&senseOn('hearing')) seg(circle(d.sound,0.6),0xb36bff,true);
+  if(d.hasSight&&senseOn('sight')){ const h=(((e.r||0)%256)+256)%256*Math.PI*2/256, half=Math.PI/4, pts=[new THREE.Vector3(p.x,p.y+0.8,p.z)], segs=24;
+    for(let i=0;i<=segs;i++){ const a=h-half+(2*half)*i/segs; pts.push(new THREE.Vector3(p.x+Math.cos(a)*d.sight,p.y+0.8,p.z+Math.sin(a)*d.sight)); }
+    pts.push(pts[0].clone()); seg(pts,0xffa726,false); }
+  let ring=1.6;
+  for(const [k,[bit,col]] of Object.entries(SENSE_BITS)){ if((e.detects&bit)&&senseOn(k)){ seg(circle(ring,1.0),col,true); ring+=0.45; } }
+  if(d.trueDet&&senseOn('true')){ seg(circle(ring,1.0),0xff69b4,true); }
+}
+function radiusText(e){
+  if(!e||e.k!=='m') return 'No mob radius metadata for this entity.';
+  const dt=detectText(e); const bits=[];
+  if(e.roam_radius!==undefined) bits.push('ROAM_DISTANCE '+e.roam_radius+' yalms · '+(e.roam_radius_detail||e.roam_radius_source||'explicit server data'));
+  if(e.leash_radius!==undefined) bits.push('SPAWN_LEASH '+e.leash_radius+' yalms · '+(e.leash_radius_detail||e.leash_radius_source||'explicit server data'));
+  const base=bits.length?bits.join('\n'):'No explicit ROAM_DISTANCE or SPAWN_LEASH stored for this mob.';
+  return dt?base+'\n'+dt:base;
+}
+const navDiagGeom=new THREE.BufferGeometry();
+const navDiagLine=new THREE.Line(navDiagGeom,new THREE.LineBasicMaterial({color:0x00e5ff,depthTest:false,transparent:true,opacity:.95}));
+navDiagLine.visible=false; navDiagLine.renderOrder=31; scene.add(navDiagLine);
+let selectedNavDiag=null;
+function updateSelectionVisual(){
+  if(!Z || selected<0 || !Z.entities[selected] || Z.entities[selected].zero){ selectionRing.visible=false; return; }
+  const p=P(Z.entities[selected]); selectionRing.position.set(p.x,p.y+1.7,p.z); selectionRing.material.color.setHex(selectedNavDiag ? (selectedNavDiag.placement_valid?0x55dd88:0xff4d4d) : 0xffe066); selectionRing.visible=true;
+}
+const transformProxy=new THREE.Object3D(); scene.add(transformProxy);
+transformControls=new TransformControls(camera,renderer.domElement);
+transformControls.setMode('translate'); transformControls.setSpace('world'); scene.add(transformControls);
+transformControls.addEventListener('dragging-changed',ev=>{ controls.enabled=!ev.value; });
+let gizmoPreviewQueued=false;
+function syncGizmoFromSelection(){
+  if(!Z || selected<0 || !Z.entities[selected] || Z.entities[selected].zero || !$('gizmoEnabled')?.checked){ transformControls.detach(); return; }
+  if(multiSelected.size>=2){
+    const a=bulkAnchor(); if(!a){ transformControls.detach(); return; }
+    transformProxy.position.set(a.x,-a.y,-a.z); transformProxy.rotation.set(0,0,0); transformProxy.scale.set(1,1,1);
+    transformControls.setMode('translate'); transformControls.showX=true; transformControls.showY=true; transformControls.showZ=true;
+  } else {
+    const e=Z.entities[selected], p=P(e), a=rotInfo(e.r).raw*Math.PI*2/256;
+    transformProxy.position.copy(p); transformProxy.rotation.set(0,-a,0); transformProxy.scale.set(1,1,1);
+  }
+  transformControls.attach(transformProxy);
+}
+function applyGizmoPreview(){
+  gizmoPreviewQueued=false; if(selected<0 || !Z?.entities[selected]) return;
+  if(multiSelected.size>=2){ previewBulkMoveTo(+transformProxy.position.x,+(-transformProxy.position.y),+(-transformProxy.position.z),'gizmo'); return; }
+  const e=Z.entities[selected];
+  e.x=+transformProxy.position.x.toFixed(3); e.y=+(-transformProxy.position.y).toFixed(3); e.z=+(-transformProxy.position.z).toFixed(3);
+  const turns=(((-transformProxy.rotation.y)/(Math.PI*2))%1+1)%1;
+  e.r=Math.round(turns*256)%256;
+  $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r; $('er-dir').textContent=rotText(e.r);
+  updateHeadingArrow(); updateSelectionVisual(); updateDirtyUI();
+  rebuild(); syncGizmoFromSelection();
+}
+transformControls.addEventListener('objectChange',()=>{
+  if(!gizmoPreviewQueued){ gizmoPreviewQueued=true; requestAnimationFrame(applyGizmoPreview); }
+});
+transformControls.addEventListener('mouseUp',()=>{ if($('navdiag')?.checked) loadSelectedNavDiag(); });
+function setGizmoMode(mode){
+  transformControls.setMode(mode);
+  transformControls.showX=mode==='translate'; transformControls.showY=true; transformControls.showZ=mode==='translate';
+  $('gizmoMove').disabled=mode==='translate'; $('gizmoRotate').disabled=mode==='rotate';
+}
+setGizmoMode('translate');
+$('gizmoEnabled').onchange=syncGizmoFromSelection;
+$('gizmoMove').onclick=()=>setGizmoMode('translate');
+$('gizmoRotate').onclick=()=>setGizmoMode('rotate');
+function updateHeadingArrow(){
+  if(!Z || selected<0 || !Z.entities[selected] || Z.entities[selected].zero){ headingArrow.visible=false; return; }
+  const e=Z.entities[selected], p=P(e);
+  headingArrow.position.set(p.x,p.y+2.2,p.z);
+  headingArrow.setDirection(sceneHeading(e.r));
+  const d=camera.position.distanceTo(controls.target);
+  const len=Math.max(5,Math.min(16,d*0.08));
+  headingArrow.setLength(len,Math.min(3,len*.28),Math.min(2,len*.18));
+  headingArrow.visible=true;
+}
+function updateCompass(){
+  const rose=$('compass-rose'); if(!rose) return;
+  const a=controls.target.clone().project(camera);
+  const b=controls.target.clone().add(new THREE.Vector3(0,0,-25)).project(camera);
+  const dx=b.x-a.x, dy=b.y-a.y;
+  if(Math.hypot(dx,dy)<1e-5) return;
+  const angle=Math.atan2(dx,dy);
+  rose.style.transform=`rotate(${angle}rad)`;
+}
+
+// ---- Live (textured) mesh -- ported from zone_view3d.html's Phase 3 (real in-browser MZB/MMB
+// parse via gui/static/ffxi-dat, from Soverance/Vanalytics MIT). No height-fog/sky here (this
+// viewer has no scene.fog / time-of-day system) -- purely the textured geometry itself, as an
+// alternative to the untextured .zmesh/OBJ LOD pipeline the Edit/Add tools already work against.
+const WATER_NAME_RE = /water|sea|umi|wtr|river|wave|pool|lake|aqua|suimen|suime|mizu|ike|kawa|taki/i;
+const SKY_WEATHER_RE = /^(aura|fine|suny|wind|star|moon|effect|lf\d+)\s/i;
+const WATER_VERT = `
+  attribute vec3 color;
+  varying vec2 vUv; varying vec3 vWorldPos; varying vec3 vViewDir; varying vec3 vWorldNormal; varying vec3 vColor;
+  void main() {
+    vUv = uv; vColor = color;
+    #ifdef USE_INSTANCING
+      vec4 worldPos = modelMatrix * instanceMatrix * vec4(position, 1.0);
+      vWorldNormal = normalize(mat3(modelMatrix * instanceMatrix) * normal);
+      vec4 mvPosition = modelViewMatrix * instanceMatrix * vec4(position, 1.0);
+    #else
+      vec4 worldPos = modelMatrix * vec4(position, 1.0);
+      vWorldNormal = normalize(mat3(modelMatrix) * normal);
+      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    #endif
+    vWorldPos = worldPos.xyz;
+    vViewDir = normalize(cameraPosition - worldPos.xyz);
+    gl_Position = projectionMatrix * mvPosition;
+  }
+`;
+const WATER_FRAG = `
+  uniform sampler2D map; uniform float time;
+  varying vec2 vUv; varying vec3 vWorldPos; varying vec3 vViewDir; varying vec3 vWorldNormal; varying vec3 vColor;
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float noise(vec2 p) {
+    vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+  }
+  void main() {
+    vec2 uv1 = vUv + vec2(time * 0.03, time * 0.02);
+    vec2 uv2 = vUv * 1.3 + vec2(-time * 0.02, time * 0.035);
+    vec4 tex = mix(texture2D(map, uv1), texture2D(map, uv2), 0.5);
+    vec3 color = tex.rgb * vColor;
+    float ripple = noise(vWorldPos.xz * 0.5 + time * 0.8);
+    color += vec3(0.04) * smoothstep(0.55, 0.8, ripple);
+    float fresnel = pow(1.0 - max(dot(normalize(vViewDir), normalize(vWorldNormal)), 0.0), 3.0);
+    float alpha = mix(0.3, 0.8, fresnel) * tex.a;
+    if (alpha < 0.01) discard;
+    gl_FragColor = vec4(color, alpha);
+  }
+`;
+function createWaterMaterial(texture) {
+  const uniforms = { time: { value: 0 } };
+  if (texture) uniforms.map = { value: texture };
+  return new THREE.ShaderMaterial({
+    uniforms, vertexShader: WATER_VERT, fragmentShader: WATER_FRAG,
+    transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: false,
+  });
+}
+let waterMaterials = [];
+function isWaterMesh(prefab) { return WATER_NAME_RE.test(prefab.textureName || ''); }
+function isSkyWeatherMesh(prefab) { return SKY_WEATHER_RE.test(prefab.textureName || ''); }
+
+function buildLiveZoneGroup(zoneData) {
+  const group = new THREE.Group();
+  const geoMap = new Map();
+  const matMap = new Map();
+  const curOpacity = +$('opac').value;
+
+  for (let prefabIdx = 0; prefabIdx < zoneData.prefabs.length; prefabIdx++) {
+    const prefab = zoneData.prefabs[prefabIdx];
+    if (isSkyWeatherMesh(prefab)) continue;
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(prefab.vertices), 3));
+    geometry.setAttribute('normal', new THREE.Float32BufferAttribute(new Float32Array(prefab.normals), 3));
+    const rgbColors = [];
+    for (let i = 0; i < prefab.colors.length; i += 4) rgbColors.push(prefab.colors[i], prefab.colors[i + 1], prefab.colors[i + 2]);
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(rgbColors), 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(prefab.uvs), 2));
+    let maxIndex = 0;
+    for (let i = 0; i < prefab.indices.length; i++) if (prefab.indices[i] > maxIndex) maxIndex = prefab.indices[i];
+    geometry.setIndex(new THREE.BufferAttribute(maxIndex > 65535 ? new Uint32Array(prefab.indices) : new Uint16Array(prefab.indices), 1));
+    geometry.computeBoundingBox();
+    geoMap.set(prefabIdx, geometry);
+
+    const tex = zoneData.textures[prefab.materialIndex];
+    let texture = null;
+    if (tex) {
+      texture = new THREE.DataTexture(new Uint8Array(tex.rgba), tex.width, tex.height, THREE.RGBAFormat);
+      texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping;
+      texture.needsUpdate = true;
+      texture.magFilter = THREE.LinearFilter; texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texture.generateMipmaps = true; texture.flipY = false;
+    }
+
+    if (isWaterMesh(prefab)) {
+      const waterMat = createWaterMaterial(texture);
+      waterMaterials.push(waterMat);
+      matMap.set(prefabIdx, waterMat);
+    } else {
+      const useAlpha = prefab.blending > 0;
+      const mat = new THREE.MeshBasicMaterial({
+        ...(texture && { map: texture }),
+        vertexColors: true, side: THREE.DoubleSide, transparent: true, opacity: curOpacity, depthWrite: false,
+        ...(useAlpha && { alphaTest: 0.1, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
+      });
+      matMap.set(prefabIdx, mat);
+    }
+  }
+
+  const normalGroups = new Map(), mirroredGroups = new Map();
+  for (const inst of zoneData.instances) {
+    if (!geoMap.has(inst.meshIndex)) continue;
+    const matrix = new THREE.Matrix4().fromArray(inst.transform);
+    const target = matrix.determinant() < 0 ? mirroredGroups : normalGroups;
+    let arr = target.get(inst.meshIndex);
+    if (!arr) { arr = []; target.set(inst.meshIndex, arr); }
+    arr.push(matrix);
+  }
+  function cloneWithFlippedWinding(src) {
+    const clone = src.clone();
+    const index = clone.index;
+    if (index) {
+      const arr = index.array;
+      for (let i = 0; i < arr.length; i += 3) { const tmp = arr[i + 1]; arr[i + 1] = arr[i + 2]; arr[i + 2] = tmp; }
+      index.needsUpdate = true;
+    }
+    return clone;
+  }
+  for (const [meshIdx, matrices] of normalGroups) {
+    const geo = geoMap.get(meshIdx), mat = matMap.get(meshIdx);
+    if (!geo || !mat) continue;
+    const mesh = new THREE.InstancedMesh(geo, mat, matrices.length);
+    mesh.frustumCulled = false;
+    matrices.forEach((m, i) => mesh.setMatrixAt(i, m));
+    mesh.instanceMatrix.needsUpdate = true;
+    group.add(mesh);
+  }
+  for (const [meshIdx, matrices] of mirroredGroups) {
+    const geo = geoMap.get(meshIdx), mat = matMap.get(meshIdx);
+    if (!geo || !mat) continue;
+    const flippedGeo = cloneWithFlippedWinding(geo);
+    const mesh = new THREE.InstancedMesh(flippedGeo, mat, matrices.length);
+    mesh.frustumCulled = false;
+    matrices.forEach((m, i) => mesh.setMatrixAt(i, m));
+    mesh.instanceMatrix.needsUpdate = true;
+    group.add(mesh);
+  }
+  return group;
+}
+const liveInfoCache = new Map();
+async function getLiveInfo(zid) {
+  if (liveInfoCache.has(zid)) return liveInfoCache.get(zid);
+  const info = await (await fetch(`/zoneplot/${zid}/live_info.json`)).json();
+  liveInfoCache.set(zid, info);
+  return info;
+}
+async function loadLiveMesh(zid, gen) {
+  const info = await getLiveInfo(zid);
+  if (+$('zone').value !== zid || $('lod').value !== 'live' || (gen !== undefined && gen !== loadGen)) return;
+  if (!info.available) {
+    if (meshObj) { scene.remove(meshObj); meshObj = null; }
+    $('sum').textContent += '\n(live textured mesh unavailable: FFXI install path or this zone\'s geometry DAT is unknown -- pick another mesh complexity)';
+    return;
+  }
+  const datUrl = `/modelviewer/dat?ffxi_path=${encodeURIComponent(info.ffxi_path)}&rom_path=${encodeURIComponent(info.geometry_rom_path)}`;
+  const buffer = await (await fetch(datUrl)).arrayBuffer();
+  if (+$('zone').value !== zid || $('lod').value !== 'live' || (gen !== undefined && gen !== loadGen)) return;
+  const zoneData = parseZoneFile(buffer, () => {});
+  if (zoneData.prefabs.length === 0 || zoneData.instances.length === 0) throw new Error('live parse produced no geometry');
+  waterMaterials = [];
+  const group = buildLiveZoneGroup(zoneData);
+  // Raw parseZoneFile() output uses the client's own coordinate convention, which does not
+  // match the (x, -y, -z) convention this app's navmesh/spawn-markers/legacy OBJ bake all use
+  // (confirmed empirically: zone 77 live-mesh bbox is Z-mirrored vs navmesh bbox). All materials
+  // here are DoubleSide, so the winding flip from a negative scale doesn't affect visibility.
+  group.scale.set(1, -1, -1);
+  if (+$('zone').value !== zid || $('lod').value !== 'live' || (gen !== undefined && gen !== loadGen)) return;
+  if (meshObj) { scene.remove(meshObj); }
+  meshObj = group; scene.add(meshObj);
+}
+
+// ---- server + zones ----
+let ZL = {zones:[],instances:[]};
+function renderZoneOptions(keep){
+  const prev = keep!==undefined?keep:$('zone').value, q=$('zfilter').value.trim().toLowerCase().replace(/[ _]+/g,' ');
+  let zs=ZL.zones.filter(z=>!q||(z.id+' '+z.name.replace(/_/g,' ')).toLowerCase().includes(q)||String(z.id)===q);
+  zs=[...zs].sort($('zsort').value==='name'?(a,b)=>a.name.localeCompare(b.name):(a,b)=>a.id-b.id);
+  $('zone').innerHTML = zs.map(z=>`<option value="${z.id}">${z.id} ${z.name}${z.nav?'':' (no nav)'}</option>`).join('');
+  if (prev && zs.some(z=>String(z.id)===String(prev))) $('zone').value = prev;
+}
+let zfTimer=null;
+$('zfilter').addEventListener('input',()=>{ clearTimeout(zfTimer); zfTimer=setTimeout(()=>{ const before=$('zone').value; renderZoneOptions(before); if($('zone').value && $('zone').value!==before) $('zone').dispatchEvent(new Event('change')); },300); });
+$('zsort').addEventListener('change',()=>renderZoneOptions());
+async function loadZoneList(){
+  const prev = $('zone').value;
+  try { const r = await fetch('/zoneplot/zones.json'); if(!r.ok) throw new Error('HTTP '+r.status); ZL = await r.json(); }
+  catch(e){ $('viewer-loading').textContent = 'Zone list failed to load: '+e.message+' (check the server console)'; return; }
+  renderZoneOptions(prev);
+  $('azone').innerHTML='<option value="">any</option>'+[...ZL.zones].sort((a,b)=>a.name.localeCompare(b.name)).map(z=>`<option value="${z.id}">${z.name} (${z.id})</option>`).join('');  // keep selection across a server switch if that zone id also exists there
+}
+try {
+  const sr = await (await fetch('/zoneplot/server.json')).json();
+  $('srv').value = sr.server;
+  if (!sr.dsp_configured) $('srv').querySelector('option[value=dsp]').textContent = 'DSP (not configured)';
+} catch(e){ console.warn('server.json', e); }
+await loadZoneList();
+const savedUiState=loadZoneEditorState();
+$('zone').value = savedUiState?.zone && ZL.zones.some(z=>String(z.id)===String(savedUiState.zone)) ? savedUiState.zone : 77;
+for(const [id,key] of [['lod','lod'],['mode','mode'],['opac','opacity'],['dsz','dotSize'],['nlab','labels']]){
+  if(savedUiState?.[key]!==undefined && $(id)) $(id).value=String(savedUiState[key]);
+}
+for(const [id,key] of [['showm','showm'],['shown','shown'],['showd','showd'],['shownav','shownav'],['labelHeading','labelHeading'],['navdiag','navdiag'],['showDoorFacing','showDoorFacing'],['showMobRadii','showMobRadii']]){
+  if(savedUiState?.[key]!==undefined && $(id)) $(id).checked=!!savedUiState[key];
+}
+if(savedUiState?.projection) switchProjection(savedUiState.projection,false);
+function fillInst(){ const zid=+$('zone').value; const opts=ZL.instances.filter(i=>i.zone===zid).map(i=>`<option value="${i.id}">${i.id} ${i.instance_name||i.name}</option>`).join('');
+  $('inst').innerHTML='<option value="0">All rows</option>'+opts;
+  $('ainst').innerHTML='<option value="0">None (general zone pool)</option>'+opts; }
+$('srv').onchange=async()=>{
+  const server=$('srv').value;
+  const r=await fetch('/zoneplot/server.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({server})});
+  const j=await r.json();
+  if(j.error){ alert(j.error); $('srv').value = server==='dsp'?'topaz':'dsp'; return; }
+  lodAutoDone.clear();
+  await loadZoneList(); fillInst(); await loadZone();
+};
+
+let loadGen = 0;  // bumped on every loadZone() call; async loaders below check theirs is still current
+// before touching meshObj/navMesh/Z, so a slow in-flight fetch for a zone/instance the user has
+// since switched away from can never resolve late and silently overlay onto whatever's now showing
+// (this was the concrete bug: loadNav() had no such guard and ran un-awaited, so a still-loading
+// zone's navmesh would land on top of the next zone -- including a "no nav" zone that should have
+// shown none at all).
+async function loadZone(){
+  const zid = +$('zone').value, ii = +$('inst').value; $('viewer-loading').hidden=false; $('viewer-loading').textContent='Loading zone '+zid+'…';
+  const gen = ++loadGen;
+  anchor=null; selected=-1; multiSelected.clear(); bulkOrig.clear(); bulkPreviewActive=false; R=null;
+  if (meshObj){ scene.remove(meshObj); meshObj=null; } if (navMesh){ scene.remove(navMesh); navMesh=null; }
+  const z = await (await fetch(`/zoneplot/${zid}/data.json?instance=${ii}`)).json();
+  if (gen!==loadGen) return;
+  Z = z;
+  $('zname').textContent = Z.zone;
+  await computeReach();
+  if (gen!==loadGen) return;
+  const st=loadZoneEditorState();
+  if(st && String(st.zone)===String(zid) && Array.isArray(st.camera) && Array.isArray(st.target)){
+    applyVec(camera.position,st.camera); applyVec(controls.target,st.target);
+    if(camera.isOrthographicCamera && Number.isFinite(st.zoom)) camera.zoom=Math.max(.01,st.zoom);
+    camera.updateProjectionMatrix(); controls.update();
+  } else frameAll();
+  rebuild(); updateFamLegend(); if(typeof aNextId==='function') aNextId(); if(typeof zoneChanged==='function') zoneChanged(); $('viewer-loading').hidden = true;
+  if (Z.obj) await autoLodAndLoad(zid, gen);
+  else $('sum').textContent += '\n(no cached visual mesh: py -3 build_zone_visual_cache.py '+zid+')';
+  if (Z.has_nav) await loadNav(zid, gen);
+}
+const lodAutoDone = new Set();
+async function autoLodAndLoad(zid, gen){
+  // First time seeing this zone this session: peek its base triangle count and, if huge, drop the
+  // dropdown to a lighter LOD so the tab doesn't choke downloading/parsing a multi-million-tri mesh.
+  // User's own dropdown choice (once made) is left alone on later zone switches.
+  if (!lodAutoDone.has(zid)) {
+    lodAutoDone.add(zid);
+    try {
+      const info = await (await fetch(`/zoneplot/${zid}/mesh_info.json`)).json();
+      if (gen!==undefined && gen!==loadGen) return;
+      const cur = $('lod').value;
+      if (cur === '0' && info.ntris > 1500000) {
+        $('lod').value = info.ntris > 3000000 ? '3' : '2';
+        $('sum').textContent += `\n(large zone: ${info.ntris.toLocaleString()} tris -- defaulted mesh complexity to ${$('lod').selectedOptions[0].text}; pick Full/Legacy OBJ to see everything)`;
+      }
+    } catch (e) { console.warn('mesh_info', e); }
+  }
+  if (gen!==undefined && gen!==loadGen) return;
+  await loadZMesh(zid, gen);
+}
+async function loadZMesh(zid, gen){
+  const lod=$('lod').value;
+  if (lod==='live'){
+    try { await loadLiveMesh(zid, gen); }
+    catch(e){ console.warn('[ZonePlot] live mesh load failed:', e); $('sum').textContent += '\n(live textured mesh failed: '+e.message+')'; }
+    return;
+  }
+  if (meshObj){ scene.remove(meshObj); meshObj=null; }
+  if (lod==='obj'){
+    $('buildCacheBtn').hidden = true;
+    new OBJLoader().load(`/static/zone_visual/${zid}.obj`, o=>{
+      if(+$('zone').value!==zid || $('lod').value!=='obj' || (gen!==undefined && gen!==loadGen)) return;
+      o.traverse(c=>{ if(c.isMesh) c.material=new THREE.MeshStandardMaterial({color:0x4a5a68,roughness:.9,transparent:true,opacity:+$('opac').value,side:THREE.DoubleSide,depthWrite:false}); }); meshObj=o; scene.add(o); },
+      undefined,
+      ()=>{ if(+$('zone').value!==zid || $('lod').value!=='obj' || (gen!==undefined && gen!==loadGen)) return;
+        $('sum').textContent += '\n(no cached Legacy OBJ mesh for this zone yet)';
+        $('buildCacheBtn').hidden = false; });
+    return; }
+  const buf = await (await fetch(`/zoneplot/${zid}/mesh.zmesh?lod=${lod}`)).arrayBuffer();
+  if (+$('zone').value!==zid || $('lod').value!==lod || buf.byteLength<12 || (gen!==undefined && gen!==loadGen)) return;
+  const hd = new Uint32Array(buf,4,2), nv=hd[0], nt=hd[1];
+  const pos = new Float32Array(buf,12,nv*3), idx = new Uint32Array(buf,12+nv*12,nt*3);
+  const g = new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(pos,3)); g.setIndex(new THREE.BufferAttribute(idx,1));
+  g.computeVertexNormals();
+  const m = new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:0x4a5a68,roughness:.9,transparent:true,opacity:+$('opac').value,side:THREE.DoubleSide,depthWrite:false}));
+  if (meshObj){ scene.remove(meshObj); }  // in case another in-flight load for this same still-current zid finished first
+  meshObj = new THREE.Group(); meshObj.add(m); scene.add(meshObj);
+}
+let navMeta=null;  // Float32Array, 4 values (yMin,yMax,area,polyType) per triangle, same order as navMesh's faces
+async function loadNav(zid, gen){
+  const [buf, metaBuf] = await Promise.all([
+    (async()=>new Float32Array(await (await fetch(`/zoneplot/${zid}/navmesh.bin`)).arrayBuffer()))(),
+    (async()=>new Float32Array(await (await fetch(`/zoneplot/${zid}/navmesh_meta.bin`)).arrayBuffer()))(),
+  ]);
+  // Bail if empty, OR if the user has since switched zone/instance away from this load (gen stale) --
+  // without this check a slow navmesh.bin fetch for a zone the user has already left resolves late
+  // and silently overlays that old zone's navmesh onto whatever's showing now, including a "no nav"
+  // zone that should show none at all. loadZMesh() already had the equivalent guard; this didn't.
+  if (!buf.length || (gen!==undefined && gen!==loadGen) || +$('zone').value!==zid) return;
+  for (let i=0;i<buf.length;i+=3){ buf[i+1]=-buf[i+1]; buf[i+2]=-buf[i+2]; }
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(buf,3));
+  if (navMesh){ scene.remove(navMesh); }  // in case another in-flight load for this same still-current zid finished first
+  navMesh=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:0x2a9d8f,wireframe:true,transparent:true,opacity:.3}));
+  navMesh.visible=$('shownav').checked; scene.add(navMesh);
+  navMeta = metaBuf.length===(buf.length/9)*4 ? metaBuf : null;  // one (yMin,yMax,area,type) quad per triangle
+}
+async function computeReach(){
+  if (!Z.has_nav){ R=null; return; }
+  const a = anchor ? `&ax=${anchor.x}&ay=${anchor.y}&az=${anchor.z}` : '';
+  R = await (await fetch(`/zoneplot/${Z.zid}/reach.json?instance=${+$('inst').value}${a}`)).json();
+  if (R.error) R=null;
+}
+function frameAll(){
+  const pts = Z.entities.filter(e=>!e.zero); if(!pts.length) return;
+  const b = new THREE.Box3(); pts.forEach(e=>b.expandByPoint(P(e)));
+  const center=b.getCenter(new THREE.Vector3()), s=b.getSize(new THREE.Vector3()); const d=Math.max(s.x,s.z,50); zoneExtent=d;
+  controls.target.copy(center);
+  if(camera.isOrthographicCamera){
+    camera.position.set(center.x,center.y+d,center.z+.001);
+    camera.up.set(0,0,-1);
+    camera.zoom=Math.max(.05,Math.min(12,180/d));
+    camera.lookAt(center); camera.updateProjectionMatrix();
+  } else camera.position.set(center.x+d*.6,center.y+d*.7,center.z+d*.6);
+  controls.update(); saveZoneEditorState();
+}
+function frameSelected(){
+  if(!Z || selected<0 || !Z.entities[selected] || Z.entities[selected].zero) return;
+  const center=P(Z.entities[selected]);
+  controls.target.copy(center);
+  if(camera.isOrthographicCamera){
+    camera.position.set(center.x,center.y+60,center.z+.001);
+    camera.up.set(0,0,-1); camera.zoom=5; camera.lookAt(center); camera.updateProjectionMatrix();
+  } else {
+    const view=camera.position.clone().sub(controls.target);
+    if(view.lengthSq()<1e-6) view.set(1,.8,1);
+    view.normalize().multiplyScalar(28);
+    camera.position.copy(center).add(view);
+  }
+  updateZoomSpeed(); controls.update(); saveZoneEditorState();
+}
+
+// ---- dots ----
+function stateOf(i){ return R ? R.state[i] : 'none'; }
+const familyColor=id=>new THREE.Color().setHSL((((id*0.61803398875)%1)+1)%1,.85,.55);
+function updateFamLegend(){
+  const box=$('famLegend'); if(!box) return; const on=$('mode').value==='family'&&Z; box.hidden=!on; if(!on) return;
+  const m=new Map(); Z.entities.forEach(e=>{ if(e.k==='m'&&e.familyid!==undefined&&!e.zero){ const o=m.get(e.familyid)||{n:e.family||('family '+e.familyid),c:0}; o.c++; m.set(e.familyid,o); } });
+  const rows=[...m.entries()].sort((a,b)=>b[1].c-a[1].c);
+  box.innerHTML=rows.length?rows.map(([id,o])=>`<div><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#${familyColor(id).getHexString()};margin-right:4px"></span>${o.n} <span class="muted">${o.c}</span></div>`).join('')+'<div class="muted">NPCs/doors keep kind colours.</div>':'<div class="muted">No family data for this zone/server.</div>';
+}
+function colorOf(i){ const e=Z.entities[i], m=$('mode').value;
+  if (m==='kind') return new THREE.Color(COL[e.k]);
+  if (m==='family'){ if(e.k!=='m'||e.familyid===undefined) return new THREE.Color(COL[e.k]||COL.none); return familyColor(e.familyid); }
+  if (m==='comp' && R) return R.comp[i]==null? new THREE.Color(COL.off): hsl(R.comp[i]);
+  if (m==='height'){
+    const {lo,hi}=heightRange, t=hi>lo?(e.y-lo)/(hi-lo):.5;
+    return new THREE.Color().setHSL((.66*(1-t)),.8,.55);
+  }
+  return new THREE.Color(COL[stateOf(i)]); }
+function matches(e,i){
+  const q=$('q').value.trim().toLowerCase();
+  if(q && !(e.n||'').toLowerCase().includes(q) && !(e.g||'').toLowerCase().includes(q) && !String(e.id).includes(q)) return false;
+  const kind=$('lf-kind').value; if(kind && e.k!==kind) return false;
+  const reach=$('lf-reach').value; if(reach && stateOf(i)!==reach) return false;
+  return true;
+}
+function entitySortValue(e,i,key){
+  if(key==='name') return (e.n||'').toLowerCase();
+  if(key==='type') return e.k;
+  if(key==='group') return (e.g||'').toLowerCase();
+  if(key==='level'){ const m=String(e.lv||'').match(/\d+/); return m?+m[0]:-1; }
+  if(key==='rotation') return +e.r||0;
+  if(key==='reach') return stateOf(i);
+  return +e.id||0;
+}
+function sortedMatches(){
+  const key=$('lf-sort').value, dir=$('lf-dir').value==='desc'?-1:1;
+  return Z.entities.map((e,i)=>[e,i]).filter(([e,i])=>matches(e,i)).sort((a,b)=>{
+    const av=entitySortValue(a[0],a[1],key), bv=entitySortValue(b[0],b[1],key);
+    return ((av>bv)-(av<bv))*dir || (a[0].id-b[0].id);
+  });
+}
+function rebuild(){
+  if (inst){ scene.remove(inst); inst.dispose(); }
+  labels.forEach(l=>{ l.element.remove(); scene.remove(l); }); labels.clear();
+  visible=[]; const list=[];
+  const ys=Z.entities.filter(e=>!e.zero).map(e=>e.y); heightRange=ys.length?{lo:Math.min(...ys),hi:Math.max(...ys)}:{lo:0,hi:0};
+  Z.entities.forEach((e,i)=>{ if(e.zero) return; if(e.k==='m'&&!$('showm').checked) return; if(e.k==='n'&&!$('shown').checked) return; if(e.k==='d'&&!$('showd').checked) return; visible.push(i); });
+  inst = new THREE.InstancedMesh(geo, mat, Math.max(1,visible.length)); inst.count=visible.length; inst.renderOrder=10;
+  const M=new THREE.Matrix4(), S=+$('dsz').value;
+  visible.forEach((ei,k)=>{ const e=Z.entities[ei]; M.compose(P(e), new THREE.Quaternion(), new THREE.Vector3(S,S,S)); inst.setMatrixAt(k,M); inst.setColorAt(k, multiSelected.has(ei) ? new THREE.Color(ei===selected?0xffe066:0xd66bff) : colorOf(ei)); });
+  inst.instanceMatrix.needsUpdate=true; if(inst.instanceColor) inst.instanceColor.needsUpdate=true; scene.add(inst);
+  if(doorFacingLines){ scene.remove(doorFacingLines); doorFacingLines.geometry.dispose(); doorFacingLines=null; }
+  if($('showDoorFacing').checked){
+    const pts=[];
+    for(const i of visible){ const e=Z.entities[i]; if(e.k!=='d') continue; const p=P(e), d=sceneHeading(e.r); pts.push(p.x,p.y+1.2,p.z,p.x+d.x*5,p.y+1.2,p.z+d.z*5); }
+    if(pts.length){ const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3)); doorFacingLines=new THREE.LineSegments(g,doorFacingMat); doorFacingLines.renderOrder=18; scene.add(doorFacingLines); }
+  }
+  updateMobRadiusVisuals();
+  // summary + list
+  const cnt={}; Z.entities.forEach((e,i)=>{ const s=e.zero?'zero':stateOf(i); cnt[s]=(cnt[s]||0)+1; });
+  $('sum').textContent = `${Z.entities.length} rows  mobs ${Z.entities.filter(e=>e.k==='m').length}  npcs ${Z.entities.filter(e=>e.k==='n').length}  doors ${Z.entities.filter(e=>e.k==='d').length}\n` +
+    Object.entries(cnt).map(([k,v])=>`${k}: ${v}`).join('  ') + (anchor?`\nanchor (${anchor.x.toFixed(1)}, ${anchor.y.toFixed(1)}, ${anchor.z.toFixed(1)})`:'\nanchor: auto (largest region)') + (Z.has_nav?'':'\n(no navmesh: reachability unavailable)');
+  const all=sortedMatches(), ms=all.slice(0,1000);
+  $('cnt').textContent = `(${all.length}${all.length>1000?' · first 1000 shown':''})`;
+  const instVal=+$('inst').value;
+  const instOpt=$('inst').selectedOptions[0];
+  $('listctx').textContent=instVal ? `Instance filter: ${instOpt?.textContent||instVal}` : 'Instance filter: all zone rows';
+  const head='<div class="entity-row entity-head"><span>Type</span><span>ID</span><span>Name</span><span>Group</span><span>Lv</span><span>Rot</span><span>Reach</span></div>';
+  $('list').innerHTML = head + ms.map(([e,i])=>`<div class="entity-row" data-i="${i}" title="Double-click to select and frame"><span>${e.k==='m'?'MOB':e.k==='d'?'PROP':'NPC'}</span><span>${e.id}</span><span>${e.n||''}</span><span>${e.g||''}</span><span>${e.lv||''}</span><span>${e.r||0}</span><span>${stateOf(i)}</span></div>`).join('');
+  $('list').querySelectorAll('.entity-row[data-i]').forEach(d=>{
+    const i=+d.dataset.i;
+    d.classList.toggle('selected-row', i===selected);
+    d.classList.toggle('multi-row', multiSelected.has(i)&&i!==selected);
+    d.onclick=ev=>{ if(ev.ctrlKey||ev.metaKey) toggleMultiSelect(i,false); else select(i,false); };
+    d.ondblclick=ev=>{ ev.preventDefault(); if(select(i,false)!==false) frameSelected(); };
+  });
+}
+function setLabel(i, text){ if(labels.has(i)) return; const d=document.createElement('div'); d.className='lbl'; d.textContent=text; const o=new CSS2DObject(d); o.position.copy(P(Z.entities[i])); o.position.y+=2; scene.add(o); labels.set(i,o); }
+const txt = e => `${e.n||e.g} [${e.id}]${e.lv?' Lv'+e.lv:''}`;
+async function loadSelectedNavDiag(){
+  selectedNavDiag=null; navDiagLine.visible=false;
+  if(!$('navdiag').checked || selected<0 || !Z?.entities[selected] || Z.entities[selected].zero){ $('navdiagOut').textContent=''; updateSelectionVisual(); return; }
+  const e=Z.entities[selected];
+  const r=await fetch(`/zoneplot/${Z.zid}/navdiag.json?x=${encodeURIComponent(e.x)}&y=${encodeURIComponent(e.y)}&z=${encodeURIComponent(e.z)}`);
+  const j=await r.json();
+  if(j.error){ $('navdiagOut').textContent='Nav diagnostics: '+j.error; return; }
+  selectedNavDiag=j;
+  const b=j.bounds, n=j.nearest;
+  $('navdiagOut').textContent=`poly ${j.polygon} tri ${j.triangle} · comp ${j.component} · distance ${j.distance.toFixed(3)}\narea ${j.area} type ${j.poly_type} · valid ${j.placement_valid?'YES':'NO'}\nbounds X ${b.xmin.toFixed(2)}..${b.xmax.toFixed(2)}  Y ${b.ymin.toFixed(2)}..${b.ymax.toFixed(2)}  Z ${b.zmin.toFixed(2)}..${b.zmax.toFixed(2)}`;
+  navDiagGeom.setFromPoints([P(e),new THREE.Vector3(n.x,-n.y,-n.z)]); navDiagLine.visible=true;
+  updateSelectionVisual();
+}
+function select(i, fly){
+  const changed=selected!==i;
+  if(changed && typeof isTransformDirty==='function' && isTransformDirty()){
+    if(!confirm('Discard unsaved position/rotation preview for the current entity?')) return false;
+    if(typeof restorePreviewFromOrig==='function') restorePreviewFromOrig();
+  }
+  selected=i;
+  multiSelected.clear(); multiSelected.add(i); bulkOrig.clear(); bulkPreviewActive=false;
+  if(typeof setGizmoMode==='function') setGizmoMode('translate');
+  if(changed&&typeof loadEditor==='function') loadEditor(i);
+  const e=Z.entities[i];
+  if(fly && !e.zero) frameSelected();
+  updateHeadingArrow(); updateSelectionVisual(); updateMobRadiusVisuals(); loadSelectedNavDiag(); showScriptInfo(e);
+  if(typeof updateDirtyUI==='function') updateDirtyUI(); if(typeof updateEntitySyncStatus==='function') updateEntitySyncStatus();
+  $('frameSelBtn').disabled=!!e.zero; $('cloneSelectedBtn').disabled=false;
+  syncMultiUI();
+  const row=$('list').querySelector(`div[data-i="${i}"]`); if(row) row.scrollIntoView({block:'nearest'});
+  $('hover').textContent = `${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${txt(e)}  grp=${e.g}  (${e.x}, ${e.y}, ${e.z})  ${rotText(e.r)}  ${stateOf(i)}${e.roam_radius!==undefined?'  roam='+e.roam_radius:''}${e.leash_radius!==undefined?'  leash='+e.leash_radius:''}${e.zero?' ZERO-POS: never loads in instances':''}`;
+  return true;
+}
+function toggleMultiSelect(i,fly=false){
+  if(!Z?.entities[i] || Z.entities[i].zero) return;
+  if(isTransformDirty()){
+    if(!confirm('Discard unsaved preview before changing multi-selection?')) return;
+    restorePreviewFromOrig();
+  }
+  if(!multiSelected.size && selected>=0) multiSelected.add(selected);
+  if(multiSelected.has(i)){
+    if(i===selected && multiSelected.size===1) return;
+    multiSelected.delete(i);
+    if(i===selected){
+      selected=[...multiSelected][0] ?? -1;
+      if(selected>=0) loadEditor(selected);
+    }
+  } else {
+    multiSelected.add(i);
+    if(selected<0){ selected=i; loadEditor(i); }
+  }
+  bulkOrig.clear(); bulkPreviewActive=false; setBulkPickMode(false);
+  rebuild(); syncMultiUI();
+  if(fly && selected>=0) frameSelected();
+}
+let lastLab=0;
+function updateLabels(){
+  const now=performance.now(); if(now-lastLab<250||!inst) return; lastLab=now;
+  const labOn=$('showLabels').checked; const n=labOn?+$('nlab').value:0; const want=new Set(); if(labOn){ if(selected>=0) want.add(selected); if(hoverI>=0) want.add(hoverI); }
+  if (n>0){ const d=visible.map(ei=>[P(Z.entities[ei]).distanceToSquared(camera.position),ei]).sort((a,b)=>a[0]-b[0]).slice(0,n); d.forEach(([,ei])=>want.add(ei)); }
+  labels.forEach((l,i)=>{ if(!want.has(i)){ l.element.remove(); scene.remove(l); labels.delete(i); } });
+  want.forEach(i=>{ if(Z.entities[i] && !Z.entities[i].zero){ const e=Z.entities[i]; setLabel(i, txt(e)+($('labelHeading').checked?` · ${rotInfo(e.r).dir} r${rotInfo(e.r).raw}`:'')); } });
+}
+// ---- interaction ----
+const ray=new THREE.Raycaster(), mouse=new THREE.Vector2();
+function pick(ev){ if(!inst) return -1; const r=renderer.domElement.getBoundingClientRect(); mouse.set(((ev.clientX-r.left)/r.width)*2-1,-((ev.clientY-r.top)/r.height)*2+1);
+  ray.setFromCamera(mouse,camera); const h=ray.intersectObject(inst,false); return h.length?visible[h[0].instanceId]:-1; }
+let lastCoord=0;
+renderer.domElement.addEventListener('mousemove',ev=>{
+  if(facingDrag){ const p=screenToWorld(ev); if(p) rotationTowardPoint(p); return; }
+  const i=pick(ev); if(i!==hoverI){ hoverI=i; if(i>=0){ const e=Z.entities[i]; $('hover').textContent=`${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${txt(e)}  (${e.x}, ${e.y}, ${e.z})  ${rotText(e.r)}  ${stateOf(i)}`; } }
+  if(i<0){ const now=performance.now(); if(now-lastCoord>60){ lastCoord=now;
+    const nh=screenToNav(ev);
+    if(nh){ const p=nh.point, m=nh.meta;
+      // nh.meta's yMin/yMax come straight from nav_polys_with_area() server-side, which is already
+      // in the same (unflipped) DB/display space as the (-p.y) conversion below -- do NOT negate
+      // them again, unlike p itself (which is in Three scene space and needs the flip).
+      $('hover').textContent = `Cursor: (${p.x.toFixed(2)}, ${(-p.y).toFixed(2)}, ${(-p.z).toFixed(2)})` +
+        (m ? `  |  placement Y: ${m.ymin.toFixed(2)} to ${m.ymax.toFixed(2)}  area=${m.area} type=${m.ptype}` : ''); }
+    else { const p=screenToWorld(ev); $('hover').textContent = p ? `Cursor: (${p.x.toFixed(2)}, ${(-p.y).toFixed(2)}, ${(-p.z).toFixed(2)})  (visual mesh, no navmesh here)` : ''; } } } });
+let down=null; renderer.domElement.addEventListener('pointerdown',ev=>{
+  down=[ev.clientX,ev.clientY];
+  if($('faceDrag')?.checked && selected>=0 && editActive()){
+    const i=pick(ev);
+    if(i===selected){ facingDrag=true; controls.enabled=false; ev.preventDefault(); }
+  }
+});
+renderer.domElement.addEventListener('pointerup',async ev=>{
+  if(measureMode){ down=null; return; }
+  if(facingDrag){ const p=screenToWorld(ev); if(p) rotationTowardPoint(p); facingDrag=false; controls.enabled=true; down=null; return; }
+  if(!down||Math.hypot(ev.clientX-down[0],ev.clientY-down[1])>4) return; const i=pick(ev); if(i<0) return;
+  if (ev.shiftKey){ const e=Z.entities[i]; anchor={x:e.x,y:e.y,z:e.z}; await computeReach(); rebuild(); }
+  else if(ev.ctrlKey||ev.metaKey) toggleMultiSelect(i,false);
+  else select(i,false); });
+renderer.domElement.addEventListener('dblclick',ev=>{ const i=pick(ev); if(i<0) return; ev.preventDefault(); if(select(i,false)!==false) frameSelected(); });
+$('zone').onchange=()=>{ $('buildCacheBtn').hidden=true; fillInst(); saveZoneEditorState(); loadZone(); };
+$('inst').onchange=()=>{ if($('ainst').querySelector(`option[value="${$('inst').value}"]`)) $('ainst').value=$('inst').value; saveZoneEditorState(); loadZone(); };
+$('lod').onchange=()=>{ if($('lod').value!=='obj') $('buildCacheBtn').hidden=true; saveZoneEditorState(); Z&&loadZMesh(Z.zid); };
+['showm','shown','showd','mode','dsz'].forEach(id=>$(id).addEventListener('input',()=>{ saveZoneEditorState(); Z&&rebuild(); updateFamLegend(); }));
+$('nlab').addEventListener('change',saveZoneEditorState);
+$('showLabels').onchange=()=>{ lastLab=0; updateLabels(); };
+$('labelHeading').addEventListener('change',()=>{ saveZoneEditorState(); labels.forEach(l=>{l.element.remove();scene.remove(l);}); labels.clear(); });
+$('q').addEventListener('input',()=>Z&&rebuild());
+['lf-kind','lf-reach','lf-sort','lf-dir'].forEach(id=>$(id).addEventListener('change',()=>Z&&rebuild()));
+$('shownav').onchange=()=>{ if(navMesh) navMesh.visible=$('shownav').checked; saveZoneEditorState(); };
+$('navdiag').onchange=()=>{ saveZoneEditorState(); loadSelectedNavDiag(); };
+$('showDoorFacing').onchange=()=>{ saveZoneEditorState(); if(Z) rebuild(); };
+$('showMobRadii').onchange=()=>{ saveZoneEditorState(); updateMobRadiusVisuals(); };
+$('showDetect').onchange=$('showDetectAll').onchange=()=>{ updateMobRadiusVisuals(); };
+document.querySelectorAll('#detSenses input').forEach(c=>c.onchange=()=>updateMobRadiusVisuals());
+$('opac').oninput=()=>{ meshObj&&meshObj.traverse(c=>{ if(c.isMesh) c.material.opacity=+$('opac').value; }); saveZoneEditorState(); };
+document.querySelectorAll('[data-cam]').forEach(b=>b.onclick=()=>cameraPreset(b.dataset.cam));
+$('projection').onchange=()=>{ switchProjection($('projection').value); saveZoneEditorState(); };
+$('buildCacheBtn').onclick=async()=>{
+  const zid=+$('zone').value, btn=$('buildCacheBtn');
+  btn.disabled=true; btn.textContent='Building…';
+  try {
+    const r=await fetch(`/zoneplot/${zid}/build_cache`,{method:'POST'});
+    const j=await r.json();
+    $('sum').textContent += '\n'+(j.log || (j.ok?'(build succeeded)':'(build failed)'));
+    if (j.ok && $('lod').value==='obj') await loadZMesh(zid);
+    else if (!j.ok) btn.hidden=false;
+  } catch(e){ $('sum').textContent += '\n(build request failed: '+e.message+')'; btn.hidden=false; }
+  finally { btn.disabled=false; btn.textContent='Build visual mesh cache for this zone'; }
+};
+$('reachbtn').onclick=async()=>{ await computeReach(); rebuild(); };
+$('clran').onclick=async()=>{ anchor=null; await computeReach(); rebuild(); };
+controls.addEventListener('end',saveZoneEditorState);
+window.addEventListener('resize',()=>{ const w=container.clientWidth,h=container.clientHeight; updateCameraProjection(); renderer.setSize(w,h); lr.setSize(w,h); });
+const liveClock = new THREE.Clock();
+(function loop(){ requestAnimationFrame(loop); controls.update(); updateLabels(); updateHeadingArrow(); updateSelectionVisual(); updateCompass();
+  if (waterMaterials.length>0){ const t=liveClock.getElapsedTime(); for(const m of waterMaterials) m.uniforms.time.value=t; }
+  renderer.render(scene,camera); lr.render(scene,camera); })();
+const qz=new URLSearchParams(location.search); if(qz.get('zone')) $('zone').value=qz.get('zone');
+fillInst();
+if(!qz.get('zone') && savedUiState?.instance && $('inst').querySelector(`option[value="${savedUiState.instance}"]`)) $('inst').value=String(savedUiState.instance);
+loadZone();
+
+// ---- generator descriptors (see build_plot_descriptors.py) ----
+let DESC = []; try { DESC = await (await fetch('/zoneplot/descriptors.json')).json(); } catch(e){ console.warn('descriptors', e); }
+$('gd').innerHTML += DESC.map(d=>`<option value="${d.id}">${d.title}</option>`).join('');
+let genGroup = null; const genLabels=[];
+function rng(a){ return ()=>{ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function clearGen(){ if(genGroup){ scene.remove(genGroup); genGroup=null; } genLabels.forEach(l=>{l.element.remove(); scene.remove(l);}); genLabels.length=0; $('gout').textContent=''; }
+function drawGen(items){
+  clearGen(); genGroup=new THREE.Group();
+  items.forEach(it=>{ const m=new THREE.Mesh(new THREE.SphereGeometry(1.6,10,8), new THREE.MeshBasicMaterial({color:it.color,depthTest:false,transparent:true})); m.position.set(it.x,-it.y,-it.z); m.renderOrder=20; genGroup.add(m);
+    const d=document.createElement('div'); d.className='lbl'; d.style.borderLeft='3px solid #'+it.color.toString(16).padStart(6,'0'); d.textContent=it.text; const o=new CSS2DObject(d); o.position.set(it.x,-it.y+3,-it.z); scene.add(o); genLabels.push(o); });
+  scene.add(genGroup);
+  $('gout').innerHTML = items.map(i=>`<div>${i.text} (${i.x.toFixed(1)}, ${i.y.toFixed(1)}, ${i.z.toFixed(1)})</div>`).join('');
+}
+function rowById(id){ return Z.entities.find(e=>e.id===id); }
+function runDesc(d, seed, opt){
+  const r=rng(seed), out=[], made={}; const pick=a=>a[Math.floor(r()*a.length)];
+  d.ops.forEach(op=>{
+    if(op.op==='regionDraw'){
+      const always=op.regions.filter(g=>g.always), rest=op.regions.filter(g=>!g.always);
+      for(let i=rest.length-1;i>0;i--){ const j=Math.floor(r()*(i+1)); [rest[i],rest[j]]=[rest[j],rest[i]]; }
+      const chosen=always.concat(rest.slice(0,opt.random??op.random)); made[op.label]=[];
+      chosen.forEach(g=>{ const pt=pick(g.points); const it={x:pt[0],y:pt[1],z:pt[2],color:g.always?0xf1c40f:0x3498db,text:`${op.label} R${g.id} ${g.name}${g.always?' (boat)':''}`}; out.push(it); made[op.label].push(it); });
+    } else if(op.op==='markOne'){
+      const it=pick(made[op.from]); it.color=0xff3df2; it.text=op.label+' - '+it.text;
+    } else if(op.op==='spawnIds'){
+      const ids=(op.ids||[]).slice(); (op.ranges||[]).forEach(([a,b])=>Z.entities.forEach(e=>{ if(e.id>=a&&e.id<=b) ids.push(e.id); }));
+      ids.forEach(id=>{ const e=rowById(id); if(e&&!e.zero) out.push({x:e.x,y:e.y,z:e.z,color:0x2ecc71,text:`${op.label} ${txt(e)}`}); });
+    } else if(op.op==='groupChoice'){
+      const gi = opt.group>=0 ? opt.group : Math.floor(r()*op.groups.length), g=op.groups[gi];
+      Z.entities.forEach(e=>{ if(e.id>=g.from&&e.id<=g.to&&!e.zero) out.push({x:e.x,y:e.y,z:e.z,color:0xe67e22,text:`${g.name} ${txt(e)}`}); });
+    }
+  });
+  return out;
+}
+function curDesc(){ return DESC.find(d=>d.id===$('gd').value); }
+$('gd').onchange=async()=>{ const d=curDesc(); clearGen(); $('gopts').innerHTML=''; $('gnote').textContent=d?d.notes:''; if(!d) return;
+  if($('zone').value!=d.zone){ $('zone').value=d.zone; fillInst(); await loadZone(); }
+  const ro=d.ops.find(o=>o.op==='regionDraw'), go=d.ops.find(o=>o.op==='groupChoice');
+  if(ro) $('gopts').innerHTML+=`<label>Random regions <input type="number" id="gr" value="${ro.random}" min="0" max="${ro.regions.filter(g=>!g.always).length}"></label>`;
+  if(go) $('gopts').innerHTML+=`<label>Group <select id="gg"><option value="-1">seeded pick</option>${go.groups.map((g,i)=>`<option value="${i}">${g.name}</option>`).join('')}</select></label>`; };
+$('ggen').onclick=()=>{ const d=curDesc(); if(!d||!Z) return; drawGen(runDesc(d,+$('gseed').value,{random:$('gr')?+$('gr').value:undefined,group:$('gg')?+$('gg').value:-1})); };
+$('grnd').onclick=()=>{ $('gseed').value=Math.floor(Math.random()*1e9); $('ggen').onclick(); };
+$('gclr').onclick=clearGen;
+
+
+// ---- layout generator: Cluster / Row / Grid / Ring / Arc / Camp / Flank ----
+let lgItems=[];
+const LG_SHOW={cluster:['n','r'],row:['n','sp','ang'],grid:['n','sp','cols','ang'],ring:['n','r'],arc:['n','r','ang','span'],camp:['n','r'],flank:['sp','ang']};
+function lgSyncUI(){ const show=LG_SHOW[$('lgPat').value]||[]; document.querySelectorAll('#lgNums [data-lg]').forEach(l=>{ l.style.display=show.includes(l.dataset.lg)?'':'none'; }); }
+$('lgPat').onchange=()=>{ lgSyncUI(); lgPreview(); }; lgSyncUI();
+const rotTo=(f,t)=>{ const a=-Math.atan2(t.z-f.z,t.x-f.x)*256/(Math.PI*2); return ((Math.round(a)%256)+256)%256; };
+const rotVec=r=>{ const a=r*Math.PI*2/256; return {x:Math.cos(a),z:-Math.sin(a)}; };
+function lgFace(it,c,mode,ang,rnd){ it.r = mode==='in'?rotTo(it,c) : mode==='out'?(rotTo(it,c)+128)%256 : mode==='rand'?Math.floor(rnd()*256) : ang; return it; }
+function lgBuild(){
+  const pat=$('lgPat').value, c={x:+$('lgCx').value||0,y:+$('lgCy').value||0,z:+$('lgCz').value||0};
+  const n=Math.max(1,+$('lgN').value||1), R=Math.max(.5,+$('lgR').value||8), sp=Math.max(.5,+$('lgSp').value||3), cols=Math.max(1,+$('lgCols').value||3);
+  const ang=((+$('lgAng').value||0)%256+256)%256, span=(+$('lgSpan').value||180)*Math.PI/180, mode=$('lgFace').value, rnd=rng(+$('lgSeed').value||1);
+  const fwd=rotVec(ang), side={x:-fwd.z,z:fwd.x}, out=[]; const mk=(x,z,role,text)=>out.push(lgFace({x,y:c.y,z,role,text,color:role==='c'?0xf1c40f:role==='o'?0x9b59b6:0x1abc9c},c,mode,ang,rnd));
+  if(pat==='cluster'){ const minD=Math.min(R*.6,Math.max(1.5,R*1.6/Math.sqrt(n))); let tries=0; while(out.length<n&&tries++<n*40){ const a=rnd()*Math.PI*2, d=R*Math.sqrt(rnd()), x=c.x+Math.cos(a)*d, z=c.z+Math.sin(a)*d; if(out.every(o=>Math.hypot(o.x-x,o.z-z)>=minD)) mk(x,z,'r','cluster'); } }
+  else if(pat==='row'){ for(let i=0;i<n;i++){ const t=(i-(n-1)/2)*sp; mk(c.x+fwd.x*t,c.z+fwd.z*t,'r','row'); } }
+  else if(pat==='grid'){ const rows=Math.ceil(n/cols); for(let i=0;i<n;i++){ const ci=i%cols, ri=Math.floor(i/cols), u=(ci-(cols-1)/2)*sp, v=(ri-(rows-1)/2)*sp; mk(c.x+fwd.x*u+side.x*v,c.z+fwd.z*u+side.z*v,'r','grid'); } }
+  else if(pat==='ring'){ for(let i=0;i<n;i++){ const a=i*Math.PI*2/n; mk(c.x+Math.cos(a)*R,c.z+Math.sin(a)*R,'r','ring'); } }
+  else if(pat==='arc'){ const base=Math.atan2(-fwd.z,fwd.x)*-1; for(let i=0;i<n;i++){ const a=n===1?0:(i/(n-1)-.5)*span; const dx=fwd.x*Math.cos(a)-fwd.z*Math.sin(a), dz=fwd.x*Math.sin(a)+fwd.z*Math.cos(a); mk(c.x+dx*R,c.z+dz*R,'r','arc'); } }
+  else if(pat==='camp'){ mk(c.x,c.z,'c','camp centre'); const ring=Math.max(3,n); for(let i=0;i<ring;i++){ const a=i*Math.PI*2/ring+rnd()*.15; mk(c.x+Math.cos(a)*R,c.z+Math.sin(a)*R,'r','camp ring'); }
+    const outer=Math.max(2,Math.ceil(n/2)); for(let i=0;i<outer;i++){ const a=rnd()*Math.PI*2, d=R*(1.6+rnd()*.8); const it=mk(c.x+Math.cos(a)*d,c.z+Math.sin(a)*d,'o','camp outskirts'); } out.forEach(o=>{ if(o.role==='c') o.r=ang; else if(o.role==='o') o.r=(rotTo(o,c)+128)%256; else o.r=rotTo(o,c); }); }
+  else if(pat==='flank'){ [-1,1].forEach(sg=>mk(c.x+side.x*sg*sp/2,c.z+side.z*sg*sp/2,'r','flank')); out.forEach(o=>o.r=ang); }
+  return out;
+}
+function lgSnapY(it){ if(!navMesh) return; const p=new THREE.Vector3(it.x,-it.y,-it.z), hits=[]; ray.set(p.clone().add(new THREE.Vector3(0,400,0)),new THREE.Vector3(0,-1,0)); hits.push(...ray.intersectObject(navMesh,true));
+  if(!hits.length) return; hits.sort((a,b)=>Math.abs(a.point.y-p.y)-Math.abs(b.point.y-p.y)); it.y=-hits[0].point.y; }
+function lgPreview(){ if(!Z) return; lgItems=lgBuild(); if($('lgSnap').checked) lgItems.forEach(lgSnapY);
+  drawGen(lgItems.map((it,i)=>({x:it.x,y:it.y,z:it.z,color:it.color,text:`${i+1} ${it.text} r${it.r}`}))); $('lgMsg').textContent=`${lgItems.length} marker(s). Roles: ${['c','r','o'].map(k=>k+'='+lgItems.filter(i=>i.role===k).length).join(' ')}`; }
+function lgSetCentre(x,y,z){ $('lgCx').value=(+x).toFixed(2); $('lgCy').value=(+y).toFixed(2); $('lgCz').value=(+z).toFixed(2); lgPreview(); }
+$('lgSel').onclick=()=>{ const e=Z&&Z.entities[selected]; if(!e||e.zero){ $('lgMsg').textContent='Select an entity first.'; return; } lgSetCentre(e.x,e.y,e.z); };
+$('lgView').onclick=()=>{ const t=controls.target; lgSetCentre(t.x,-t.y,-t.z); };
+$('lgAddPos').onclick=()=>{ if($('aX').value===''){ $('lgMsg').textContent='No Add position set yet.'; return; } lgSetCentre($('aX').value,$('aY').value,$('aZ').value); };
+$('lgGen').onclick=()=>{ if($('lgCx').value===''){ $('lgView').click(); } else lgPreview(); };
+$('lgRnd').onclick=()=>{ $('lgSeed').value=Math.floor(Math.random()*1e9); $('lgGen').onclick(); };
+$('lgClr').onclick=()=>{ lgItems=[]; clearGen(); $('lgMsg').textContent=''; };
+['lgN','lgR','lgSp','lgCols','lgAng','lgSpan','lgFace','lgCx','lgCy','lgCz','lgSnap'].forEach(id=>$(id).addEventListener('change',()=>{ if(lgItems.length) lgPreview(); }));
+$('lgPlace').onclick=async()=>{
+  if(!aSel||!Z){ $('lgMsg').textContent='Pick a source in the Add tab first.'; return; }
+  const role=$('lgRole').value, items=lgItems.filter(i=>role==='all'||i.role===role); if(!items.length){ $('lgMsg').textContent='Nothing to place -- press Preview.'; return; }
+  if(!confirm(`Add ${items.length} row(s) to zone ${Z.zid} using the current Add source?`)) return;
+  const kind=$('ak').value, src=kind==='m'?{groupid:aSel.groupid,zone:aSel.zone}:{npcid:aSel.npcid}; let ok=0, err='';
+  for(const it of items){
+    const body={k:kind,zone:Z.zid,src,x:+it.x.toFixed(3),y:+it.y.toFixed(3),z:+it.z.toFixed(3),r:it.r,name:$('aname').value,comment:'layout generator: '+$('lgPat').value+' ('+it.text+')',instance:+$('ainst').value||0};
+    const j=await (await fetch('/zoneplot/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
+    if(j.error){ err=j.error; break; } ok++; markDbModified(kind,j.id); recordUndo(`add ${j.id}`,j.backup,entityKey(kind,j.id));
+  }
+  $('lgMsg').textContent=`Placed ${ok}/${items.length}.`+(err?' ERROR: '+err:''); clearGen(); lgItems=[]; await loadZone();
+};
+
+
+// ---- Review tab, script info, bulk align/distribute/mirror, bookmarks, templates ----
+let scriptInfo=null, scriptInfoZid=null, flagGroup=null;
+function esc(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+async function ensureScripts(){
+  if(!Z) return null;
+  if(scriptInfo && scriptInfoZid===Z.zid) return scriptInfo;
+  try{ const j=await (await fetch(`/zoneplot/${Z.zid}/scripts.json`)).json(); scriptInfo=j.scripts||{}; scriptInfoZid=Z.zid; }catch(e){ scriptInfo=null; }
+  return scriptInfo;
+}
+async function showScriptInfo(e){
+  const box=$('ed-script'); if(!e||e.k==='d'){ box.hidden=true; return; }
+  box.hidden=false; $('escript-body').textContent='Loading…';
+  const zid=Z.zid, si=await ensureScripts(); if(!Z||Z.zid!==zid||Z.entities[selected]!==e) return;
+  const v=si&&si[String(e.id)]; if(!v){ $('escript-body').textContent='Script info unavailable.'; return; }
+  const srcs=[]; ['roam_radius','leash_radius','sight_range','sound_range'].forEach(k=>{ if(e[k]!==undefined) srcs.push(`${k} = ${e[k]}  (${e[k+'_source']||''})`); });
+  let h=v.exists?`<b style="color:#55dd88">Script found</b>\n${esc(v.file)}\n`:`<b style="color:${e.k==='n'?'#ff6b6b':'#ffd166'}">No script file</b>${e.k==='n'?' — clicking this NPC does nothing':' — uses generic mob behaviour only'}\n`;
+  if(srcs.length) h+=`\nResolved radii / ranges:\n${esc(srcs.join('\n'))}\n`;
+  if(v.lines.length) h+=`\nMod / flag lines:\n${v.lines.map(l=>`${l[0]}: ${esc(l[1])}`).join('\n')}`;
+  else if(v.exists) h+='\nNo setMobMod / setMod / setLocalVar lines found.';
+  $('escript-body').innerHTML=h;
+}
+function revSelect(i){ if(i>=0) select(i,true); }
+$('rvScripts').onclick=async()=>{
+  if(!Z) return; $('rvScriptsMsg').textContent='Scanning…'; const si=await ensureScripts(); if(!si){ $('rvScriptsMsg').textContent='Script info unavailable.'; return; }
+  const miss=Z.entities.map((e,i)=>({e,i})).filter(o=>o.e.k==='n'&&si[String(o.e.id)]&&!si[String(o.e.id)].exists);
+  const mobsNo=Z.entities.filter(e=>e.k==='m'&&si[String(e.id)]&&!si[String(e.id)].exists).length;
+  $('rvScriptsMsg').textContent=`${miss.length} NPC(s) without a script. (${mobsNo} mob rows use no per-mob script, which is normal.)`;
+  $('rvScriptsList').innerHTML=miss.map(o=>`<div class="rvrow" data-i="${o.i}" style="cursor:pointer;padding:1px 0">${o.e.id} ${esc(o.e.g||o.e.n)}</div>`).join('');
+  $('rvScriptsList').querySelectorAll('.rvrow').forEach(r=>r.onclick=()=>revSelect(+r.dataset.i));
+};
+function clearFlags(){ if(flagGroup){ scene.remove(flagGroup); flagGroup=null; } }
+function drawFlags(idx){
+  clearFlags(); flagGroup=new THREE.Group();
+  idx.forEach(i=>{ const e=Z.entities[i], m=new THREE.Mesh(new THREE.RingGeometry(1.4,2,24),new THREE.MeshBasicMaterial({color:0xff3b3b,side:THREE.DoubleSide,depthTest:false,transparent:true})); m.rotation.x=-Math.PI/2; m.position.copy(P(e)).add(new THREE.Vector3(0,.6,0)); m.renderOrder=22; flagGroup.add(m); });
+  scene.add(flagGroup);
+}
+$('rvDupClr').onclick=()=>{ clearFlags(); };
+$('rvDup').onclick=()=>{
+  if(!Z) return; const thr=Math.max(.05,+$('rvDupD').value||.5), C=Math.max(thr,1), cells=new Map(), pairs=[];
+  Z.entities.forEach((e,i)=>{ if(e.zero) return; const k=Math.floor(e.x/C)+','+Math.floor(e.z/C); (cells.get(k)||cells.set(k,[]).get(k)).push(i); });
+  cells.forEach((arr,k)=>{ const [cx,cz]=k.split(',').map(Number);
+    for(let dx=-1;dx<=1;dx++) for(let dz=-1;dz<=1;dz++){ const nb=cells.get((cx+dx)+','+(cz+dz)); if(!nb) continue;
+      arr.forEach(a=>nb.forEach(b=>{ if(a>=b) return; const A=Z.entities[a],B=Z.entities[b]; const d=Math.hypot(A.x-B.x,A.z-B.z); if(d<=thr&&Math.abs(A.y-B.y)<=3) pairs.push({a,b,d}); })); } });
+  pairs.sort((p,q)=>p.d-q.d);
+  const inv=new Set(); pairs.forEach(p=>{ inv.add(p.a); inv.add(p.b); }); drawFlags([...inv]);
+  $('rvDupMsg').textContent=`${pairs.length} pair(s), ${inv.size} row(s) flagged (red rings).`;
+  $('rvDupList').innerHTML=pairs.slice(0,300).map(p=>{ const A=Z.entities[p.a],B=Z.entities[p.b]; return `<div class="rvrow" data-a="${p.a}" data-b="${p.b}" style="cursor:pointer;padding:1px 0">${p.d.toFixed(2)}y · ${A.id} ${esc(A.g||A.n)} ⟷ ${B.id} ${esc(B.g||B.n)}</div>`; }).join('');
+  $('rvDupList').querySelectorAll('.rvrow').forEach(r=>r.onclick=()=>{ select(+r.dataset.a,true); multiSelected.add(+r.dataset.b); rebuild(); syncMultiUI(); });
+};
+function renderGroups(){
+  const g=new Map(); Z.entities.forEach((e,i)=>{ if(e.k!=='m'||e.zero) return; (g.get(e.gid)||g.set(e.gid,[]).get(e.gid)).push(i); });
+  const rows=[...g.entries()].map(([gid,idx])=>{ const es=idx.map(i=>Z.entities[i]); const cx=es.reduce((a,e)=>a+e.x,0)/es.length, cz=es.reduce((a,e)=>a+e.z,0)/es.length;
+    return {gid,idx,name:es[0].g||es[0].n,fam:es[0].family||'',lv:es[0].lv,n:es.length,cx,cz,sp:Math.max(...es.map(e=>Math.hypot(e.x-cx,e.z-cz)))}; }).sort((a,b)=>b.n-a.n);
+  $('rvGroups').innerHTML=rows.length?`<div class="muted">${rows.length} groups, ${rows.reduce((a,r)=>a+r.n,0)} spawns</div>`+rows.map(r=>`<div class="rvrow" data-gid="${r.gid}" style="cursor:pointer;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.06)"><b>${esc(r.name)}</b> ×${r.n} · Lv ${esc(r.lv)}${r.fam?' · '+esc(r.fam):''}<br><span class="muted">centre (${r.cx.toFixed(0)}, ${r.cz.toFixed(0)}) · spread ${r.sp.toFixed(0)}y · gid ${r.gid}</span></div>`).join(''):'<div class="muted">No mob spawns.</div>';
+  $('rvGroups').querySelectorAll('.rvrow').forEach(r=>r.onclick=()=>{ const idx=(g.get(+r.dataset.gid)||[]); if(!idx.length) return;
+    if(select(idx[0],false)===false) return; idx.slice(1).forEach(i=>multiSelected.add(i)); rebuild(); syncMultiUI(); updateSelectionVisual();
+    const b=new THREE.Box3(); idx.forEach(i=>b.expandByPoint(P(Z.entities[i]))); const c=b.getCenter(new THREE.Vector3()), sz=Math.max(b.getSize(new THREE.Vector3()).length(),30);
+    const off=camera.position.clone().sub(controls.target); controls.target.copy(c); camera.position.copy(c).add(off.setLength(camera.isOrthographicCamera?off.length():sz*1.4)); if(camera.isOrthographicCamera){ camera.zoom=Math.max(.05,Math.min(12,150/sz)); camera.updateProjectionMatrix(); } controls.update(); });
+}
+// bookmarks
+const BM_KEY='zoneEditor2.bookmarks';
+function bmAll(){ try{ return JSON.parse(localStorage.getItem(BM_KEY)||'{}'); }catch(e){ return {}; } }
+function bmSaveAll(o){ try{ localStorage.setItem(BM_KEY,JSON.stringify(o)); }catch(e){} }
+function renderBookmarks(){
+  const list=(bmAll()[Z?.zid]||[]);
+  $('bmList').innerHTML=list.length?list.map((b,i)=>`<div style="display:flex;gap:4px;align-items:center;margin:2px 0"><span style="flex:1;overflow:hidden;text-overflow:ellipsis">${esc(b.name)}</span><button data-go="${i}" type="button">Go</button><button data-del="${i}" type="button">&times;</button></div>`).join(''):'<div class="muted" style="font-size:10px">No bookmarks for this zone yet.</div>';
+  $('bmList').querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{ const v=list[+b.dataset.go]; if((v.ortho?'orthographic':'perspective')!==(camera.isOrthographicCamera?'orthographic':'perspective')) switchProjection(v.ortho?'orthographic':'perspective');
+    camera.position.fromArray(v.pos); controls.target.fromArray(v.tgt); if(camera.isOrthographicCamera&&v.zoom){ camera.zoom=v.zoom; camera.updateProjectionMatrix(); } controls.update(); saveZoneEditorState(); });
+  $('bmList').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ const o=bmAll(); (o[Z.zid]||[]).splice(+b.dataset.del,1); bmSaveAll(o); renderBookmarks(); });
+}
+$('bmSave').onclick=()=>{ if(!Z) return; const o=bmAll(), l=o[Z.zid]||(o[Z.zid]=[]); l.push({name:$('bmName').value.trim()||('View '+(l.length+1)),pos:camera.position.toArray(),tgt:controls.target.toArray(),ortho:!!camera.isOrthographicCamera,zoom:camera.zoom}); bmSaveAll(o); $('bmName').value=''; renderBookmarks(); };
+// templates
+const TPL_KEY='zoneEditor2.lgTemplates';
+function tplAll(){ try{ return JSON.parse(localStorage.getItem(TPL_KEY)||'[]'); }catch(e){ return []; } }
+function renderTemplates(){ const l=tplAll(); $('tplSel').innerHTML=l.length?l.map((t,i)=>`<option value="${i}">${esc(t.name)} (${t.items.length})</option>`).join(''):'<option value="">(none saved)</option>'; }
+function lgCentre(){ if($('lgCx').value===''){ const t=controls.target; return {x:t.x,y:-t.y,z:-t.z}; } return {x:+$('lgCx').value,y:+$('lgCy').value,z:+$('lgCz').value}; }
+$('tplSave').onclick=()=>{ if(!lgItems.length){ $('lgMsg').textContent='Nothing to save -- press Preview first.'; return; }
+  const c={x:+$('lgCx').value||0,y:+$('lgCy').value||0,z:+$('lgCz').value||0}, l=tplAll();
+  l.push({name:$('tplName').value.trim()||('Template '+(l.length+1)),items:lgItems.map(i=>({dx:i.x-c.x,dy:i.y-c.y,dz:i.z-c.z,r:i.r,role:i.role,text:i.text,color:i.color}))});
+  try{ localStorage.setItem(TPL_KEY,JSON.stringify(l)); }catch(e){} $('tplName').value=''; renderTemplates(); $('lgMsg').textContent=`Saved template (${lgItems.length} markers).`; };
+$('tplStamp').onclick=()=>{ const t=tplAll()[+$('tplSel').value]; if(!t||!Z) return; const c=lgCentre(); lgSetCentre(c.x,c.y,c.z);
+  lgItems=t.items.map(i=>({x:c.x+i.dx,y:c.y+i.dy,z:c.z+i.dz,r:i.r,role:i.role,text:i.text,color:i.color})); if($('lgSnap').checked) lgItems.forEach(lgSnapY);
+  drawGen(lgItems.map((it,i)=>({x:it.x,y:it.y,z:it.z,color:it.color,text:`${i+1} ${it.text} r${it.r}`}))); $('lgMsg').textContent=`Stamped "${t.name}": ${lgItems.length} marker(s). Place uses the Add source.`; };
+$('tplDel').onclick=()=>{ const l=tplAll(), i=+$('tplSel').value; if(isNaN(i)||!l[i]||!confirm('Delete template "'+l[i].name+'"?')) return; l.splice(i,1); try{ localStorage.setItem(TPL_KEY,JSON.stringify(l)); }catch(e){} renderTemplates(); };
+function zoneChanged(){ scriptInfo=null; scriptInfoZid=null; clearFlags(); $('rvScriptsList').innerHTML=''; $('rvScriptsMsg').textContent=''; $('rvDupList').innerHTML=''; $('rvDupMsg').textContent=''; renderGroups(); renderBookmarks(); renderTemplates(); }
+// bulk align / distribute / mirror
+function bulkOp(op){
+  if(multiSelected.size<2){ $('bulk-msg').textContent='Select 2+ entities.'; return; }
+  beginBulkOrig(); const idx=[...multiSelected].filter(i=>Z.entities[i]&&bulkOrig.has(i)), es=idx.map(i=>Z.entities[i]); if(es.length<2) return;
+  const mean=k=>es.reduce((a,e)=>a+e[k],0)/es.length; let msg='';
+  if(op.startsWith('al-')){ const k=op[3];
+    if(k==='r'){ const pr=Z.entities[selected]; if(!pr) return; es.forEach(e=>e.r=pr.r); msg=`Aligned facing to ${pr.r}.`; }
+    else { const m=+mean(k).toFixed(3); es.forEach(e=>e[k]=m); msg=`Aligned ${k.toUpperCase()} to ${m}.`; } }
+  else if(op.startsWith('di-')){ if(es.length<3){ $('bulk-msg').textContent='Spread needs 3+ entities.'; return; }
+    let a,b; if(op==='di-l'){ let bd=-1; for(const p of es) for(const q of es){ const d=Math.hypot(p.x-q.x,p.z-q.z); if(d>bd){ bd=d; a=p; b=q; } } }
+    else { const k=op[3]; const s=[...es].sort((p,q)=>p[k]-q[k]); a=s[0]; b=s[s.length-1]; }
+    const ax={x:b.x-a.x,y:b.y-a.y,z:b.z-a.z}; const L2=ax.x*ax.x+ax.z*ax.z||1;
+    const ord=[...es].sort((p,q)=>(((p.x-a.x)*ax.x+(p.z-a.z)*ax.z)-((q.x-a.x)*ax.x+(q.z-a.z)*ax.z)));
+    ord.forEach((e,j)=>{ const t=j/(ord.length-1); if(op==='di-l'){ e.x=+(a.x+ax.x*t).toFixed(3); e.z=+(a.z+ax.z*t).toFixed(3); e.y=+(a.y+ax.y*t).toFixed(3); }
+      else if(op==='di-x'){ e.x=+(a.x+ax.x*t).toFixed(3); } else { e.z=+(a.z+ax.z*t).toFixed(3); } });
+    msg=`Spread ${es.length} rows evenly.`; }
+  else if(op.startsWith('mi-')){ const k=op[3], c=(Math.min(...es.map(e=>e[k]))+Math.max(...es.map(e=>e[k])))/2;
+    es.forEach(e=>{ e[k]=+(2*c-e[k]).toFixed(3); e.r=k==='x'?((128-e.r)%256+256)%256:((256-e.r)%256+256)%256; }); msg=`Mirrored across ${k.toUpperCase()}=${c.toFixed(2)}.`; }
+  finishBulkPreview(msg+' Preview only -- Save to keep.');
+}
+document.querySelectorAll('[data-bop]').forEach(b=>b.onclick=()=>bulkOp(b.dataset.bop));
+
+// ---- tabs + editor ----
+function editActive(){ return $('tab-add').hidden; }
+function leftTab(t){ ['ents','layers','rev','tools'].forEach(x=>{ $('lp-'+x).hidden=x!==t; }); document.querySelectorAll('[data-lt]').forEach(b=>b.classList.toggle('on',b.dataset.lt===t)); try{localStorage.setItem('zoneEditor2.leftTab',t);}catch(e){} }
+function toolTab(t){ $('tt-gen').hidden=t!=='gen'; $('tab-add').hidden=t!=='add'; $('tab-backup').hidden=t!=='backup';
+  document.querySelectorAll('[data-tt]').forEach(b=>b.classList.toggle('on',b.dataset.tt===t));
+  if(t==='backup') refreshBackups();
+  if(typeof updateAddMarker==='function') updateAddMarker(); }
+function tab(t){
+  if(t==='add'||t==='backup'){ leftTab('tools'); toolTab(t); }
+  else if(t==='view'){ leftTab('ents'); toolTab('gen'); }
+  else if(t==='help'){ $('helpdrawer').hidden=!$('helpdrawer').hidden; }
+  else if(t==='edit'){ toolTab('gen'); }
+}
+document.querySelectorAll('[data-lt]').forEach(b=>b.onclick=()=>{ leftTab(b.dataset.lt); if(b.dataset.lt!=='tools') toolTab('gen'); else if(typeof updateAddMarker==='function') updateAddMarker(); });
+document.querySelectorAll('[data-tt]').forEach(b=>b.onclick=()=>toolTab(b.dataset.tt));
+let _lt='ents'; try{ _lt=localStorage.getItem('zoneEditor2.leftTab')||'ents'; }catch(e){}
+leftTab(_lt==='tools'?'ents':_lt); toolTab('gen');
+$('zhelpBtn').onclick=()=>tab('help'); $('zhelpClose').onclick=()=>{ $('helpdrawer').hidden=true; };
+$('zmenuBtn').onclick=()=>document.body.classList.toggle('zp2-menu');
+function toggleFocus(){ document.body.classList.toggle('zp2-focus'); setTimeout(()=>window.dispatchEvent(new Event('resize')),30); }
+$('zfocusBtn').onclick=toggleFocus;
+document.addEventListener('keydown',ev=>{ if(ev.key==='Tab' && !/INPUT|TEXTAREA|SELECT/.test((ev.target.tagName||'')) ){ ev.preventDefault(); toggleFocus(); } });
+$('zgMove').onclick=()=>$('gizmoMove').click(); $('zgRotate').onclick=()=>$('gizmoRotate').click();
+try{ new ResizeObserver(()=>window.dispatchEvent(new Event('resize'))).observe($('viewer-container')); }catch(e){}
+
+const undoStack=[], redoStack=[];
+function refreshUndoUI(){
+  $('undoBtn').disabled=undoStack.length===0; $('redoBtn').disabled=redoStack.length===0;
+  $('undoStatus').textContent=undoStack.length ? `undo: ${undoStack[undoStack.length-1].label}` : (redoStack.length ? `redo: ${redoStack[redoStack.length-1].label}` : '');
+}
+function recordUndo(label, backup, syncKey=null, syncKeys=null){
+  if(!backup) return; undoStack.push({label,backup,syncKey,syncKeys}); if(undoStack.length>80) undoStack.shift(); redoStack.length=0; refreshUndoUI();
+}
+async function restoreHistory(source,target,verb){
+  if(!source.length) return;
+  if(typeof isTransformDirty==='function' && isTransformDirty()){
+    if(!confirm('Discard the current unsaved preview before changing saved history?')) return;
+    restorePreviewFromOrig();
+  }
+  const action=source.pop(); refreshUndoUI();
+  const r=await fetch('/zoneplot/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:action.backup,exact:false})});
+  const j=await r.json();
+  if(j.error){ source.push(action); refreshUndoUI(); alert(`${verb} failed: ${j.error}`); return; }
+  target.push({label:action.label,backup:j.pre_restore_backup,syncKey:action.syncKey,syncKeys:action.syncKeys});
+  if(action.syncKey) entitySyncState.set(action.syncKey,{db:'modified',sql:'not synced'});
+  for(const key of action.syncKeys||[]) entitySyncState.set(key,{db:'modified',sql:'not synced'});
+  updateEntitySyncStatus();
+  refreshUndoUI();
+  if(Z) await loadZone();
+  $('undoStatus').textContent=`${verb}: ${action.label}`;
+}
+function undoAction(){ return restoreHistory(undoStack,redoStack,'Undid'); }
+function redoAction(){ return restoreHistory(redoStack,undoStack,'Redid'); }
+$('undoBtn').onclick=undoAction; $('redoBtn').onclick=redoAction; refreshUndoUI();
+let orig=null;
+function isTransformDirty(){
+  if(bulkPreviewActive) return true;
+  if(!orig || !Z || selected<0 || !Z.entities[selected]) return false;
+  const e=Z.entities[selected];
+  return ['x','y','z','r'].some(k=>Number(e[k])!==Number(orig[k]));
+}
+function updateDirtyUI(){
+  const box=$('ed-dirty'), save=$('esave'); if(!box||!save) return;
+  const dirty=isTransformDirty(); save.disabled=!dirty;
+  if(!orig || selected<0){ box.textContent='Saved state'; box.style.background='#263238'; box.style.color='#b0bec5'; return; }
+  if(!dirty){ box.textContent='Saved state · preview matches live DB'; box.style.background='#1b4332'; box.style.color='#b7e4c7'; return; }
+  const e=Z.entities[selected], parts=[];
+  for(const k of ['x','y','z','r']) if(Number(e[k])!==Number(orig[k])) parts.push(`${k.toUpperCase()} ${orig[k]} → ${e[k]}`);
+  box.textContent='UNSAVED PREVIEW · '+parts.join(' · '); box.style.background='#6b4f00'; box.style.color='#ffe082';
+}
+function restorePreviewFromOrig(){
+  if(bulkPreviewActive && bulkOrig.size){
+    for(const [i,o] of bulkOrig){ if(Z?.entities[i]) Object.assign(Z.entities[i],o); }
+    bulkPreviewActive=false; bulkOrig.clear();
+    if(selected>=0 && Z?.entities[selected]){
+      const e=Z.entities[selected]; orig={x:e.x,y:e.y,z:e.z,r:e.r};
+      $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r; $('er-dir').textContent=rotText(e.r);
+    }
+    rebuild(); updateHeadingArrow(); updateSelectionVisual(); syncMultiUI(); updateDirtyUI(); return;
+  }
+  if(!orig || !Z || selected<0 || !Z.entities[selected]) return;
+  const e=Z.entities[selected]; Object.assign(e,{x:orig.x,y:orig.y,z:orig.z,r:orig.r});
+  $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r; $('er-dir').textContent=rotText(e.r);
+  rebuild(); updateHeadingArrow(); updateSelectionVisual(); updateDirtyUI();
+}
+function selectedModelViewerUrl(embed=false){
+  if(selected<0 || !Z?.entities[selected]) return null;
+  const ent=Z.entities[selected], server=$('srv').value;
+  const kind=ent.k==='m'?'m':'n';
+  const q=new URLSearchParams({server:server,kind:kind,id:String(ent.id),autoload:'1'});
+  if(embed) q.set('embed','1');
+  return '/modelviewer?'+q.toString();
+}
+function refreshSelectedModelPreview(force=false){
+  const frame=$('modelPreviewFrame'), link=$('modelPreviewOpen'), status=$('modelPreviewStatus');
+  const url=selectedModelViewerUrl(false);
+  if(!url){ frame.removeAttribute('src'); link.href='/modelviewer'; status.textContent='No entity selected.'; return; }
+  const ent=Z.entities[selected];
+  link.href=url;
+  status.textContent=(ent.k==='d'?'Door/prop rows may not have a renderable entity model. ':'')+'Entity '+ent.id+' · '+(ent.n||ent.g||'')+' · '+(ent.k==='m'?'mob':'npc')+' resolver';
+  if(!force){
+    $('modelCandidateSearch').value=''; $('modelCandidateResults').innerHTML=''; $('modelCandidateStatus').textContent='';
+    selectedModelCandidate=null; lastModelImpact=null; $('modelImpactBtn').disabled=true; $('modelApplyBtn').disabled=true; $('modelSyncSqlBtn').disabled=true; $('modelImpactOut').textContent='';
+  }
+  if(force || $('ed-model-details').open) frame.src=selectedModelViewerUrl(true);
+}
+let modelCandidateTimer=null;
+let selectedModelCandidate=null;
+let lastModelImpact=null;
+function invalidateModelImpact(){
+  lastModelImpact=null;
+  $('modelApplyBtn').disabled=true;
+  $('modelImpactOut').textContent=selectedModelCandidate
+    ? 'Candidate model '+selectedModelCandidate.model_id+' selected. Check impact before applying.'
+    : '';
+}
+function modelCatalogEsc(v){
+  return String(v ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function previewCandidateModel(mid,name){
+  selectedModelCandidate={model_id:Number(mid),name:String(name||('Model '+mid))};
+  invalidateModelImpact();
+  $('modelImpactBtn').disabled=false;
+  const q=new URLSearchParams({server:$('srv').value,model_id:String(mid),autoload:'1',embed:'1'});
+  $('modelPreviewFrame').src='/modelviewer?'+q.toString();
+  $('modelPreviewStatus').textContent='CANDIDATE PREVIEW ONLY · model '+mid+' · '+name+' · no server data changed';
+  $('modelPreviewOpen').href='/modelviewer?'+new URLSearchParams({server:$('srv').value,model_id:String(mid),autoload:'1'}).toString();
+}
+async function searchModelCandidates(){
+  const q=$('modelCandidateSearch').value.trim();
+  const box=$('modelCandidateResults'), status=$('modelCandidateStatus');
+  if(!q){ box.innerHTML=''; status.textContent=''; return; }
+  status.textContent='searching…';
+  const r=await fetch('/modelviewer/catalog.json?q='+encodeURIComponent(q)+'&server='+encodeURIComponent($('srv').value)+'&limit=40');
+  const j=await r.json();
+  if(j.error){ status.textContent='ERROR: '+j.error; box.innerHTML=''; return; }
+  status.textContent=j.matched+' match(es)'+(j.truncated?' · first 40 shown':'');
+  box.innerHTML=(j.rows||[]).map(row=>{
+    const meta=['model '+row.model_id,'file '+row.resource_file_id,(row.family_ids||[]).length?'family '+row.family_ids.join(','):'',row.render_rom_path||row.resource_rom_path||'unresolved'].filter(Boolean).join(' · ');
+    return '<button type="button" class="model-candidate" data-mid="'+modelCatalogEsc(row.model_id)+'" data-name="'+modelCatalogEsc(row.primary_name||'')+'" style="display:block;width:100%;text-align:left;margin:2px 0;padding:3px 5px"><b>'+modelCatalogEsc(row.primary_name||('Model '+row.model_id))+'</b><br><span class="muted">'+modelCatalogEsc(meta)+'</span></button>';
+  }).join('');
+  box.querySelectorAll('.model-candidate').forEach(btn=>btn.onclick=()=>previewCandidateModel(btn.dataset.mid,btn.dataset.name));
+}
+$('modelCandidateSearch').oninput=()=>{
+  clearTimeout(modelCandidateTimer);
+  modelCandidateTimer=setTimeout(searchModelCandidates,180);
+};
+async function checkModelImpact(){
+  if(!selectedModelCandidate || selected<0 || !Z?.entities[selected]) return;
+  const ent=Z.entities[selected];
+  const payload={k:ent.k,id:ent.id,model_id:selectedModelCandidate.model_id};
+  $('modelImpactOut').textContent='Checking owning row and shared usage…';
+  const r=await fetch('/zoneplot/model/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const j=await r.json();
+  if(!r.ok){ lastModelImpact=null; $('modelApplyBtn').disabled=true; $('modelImpactOut').textContent='ERROR: '+(j.error||r.statusText); return; }
+  lastModelImpact={entityKey:ent.k+':'+ent.id,model_id:selectedModelCandidate.model_id,data:j};
+  const sample=(j.sample||[]).slice(0,12).map(x=>{
+    if(j.scope==='row-local') return 'NPC '+x.npcid+' · '+(x.name||'')+' · zone '+x.zoneid;
+    return 'zone '+x.zoneid+' · group '+x.groupid+' · '+x.spawn_count+' spawn(s)'+(x.sample_name?' · '+x.sample_name:'');
+  });
+  $('modelImpactOut').textContent=
+    j.warning+'\n'+
+    'Current: '+(j.current?.modelid!==undefined?('model '+j.current.modelid+' · '+(j.current.model_type||'')):(j.current?.model_type||'unknown look'))+'\n'+
+    'Candidate: model '+j.candidate_model_id+' · file '+j.candidate.file_id+' · '+(j.candidate.rom_path||'unresolved')+
+    (sample.length?'\nAffected sample:\n  '+sample.join('\n  '):'')+
+    (j.sample_truncated?'\n  …more groups omitted from display':'');
+  $('modelApplyBtn').disabled=false;
+}
+async function applySelectedModel(){
+  if(!lastModelImpact || !selectedModelCandidate || selected<0 || !Z?.entities[selected]) return;
+  const ent=Z.entities[selected], key=ent.k+':'+ent.id;
+  if(lastModelImpact.entityKey!==key || lastModelImpact.model_id!==selectedModelCandidate.model_id){
+    invalidateModelImpact(); $('modelImpactOut').textContent='Selection/candidate changed. Check impact again.'; return;
+  }
+  const j=lastModelImpact.data;
+  const msg=j.scope==='shared-mob-pool'
+    ? 'Apply model '+selectedModelCandidate.model_id+' to shared mob pool '+j.poolid+'? This affects '+j.affected_rows+' spawn(s) across '+j.affected_groups+' group(s) / '+j.affected_zones.length+' zone(s).'
+    : 'Apply model '+selectedModelCandidate.model_id+' to NPC '+ent.id+'?';
+  if(!confirm(msg)) return;
+  const r=await fetch('/zoneplot/model/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:ent.k,id:ent.id,model_id:selectedModelCandidate.model_id,comment:$('ecomment').value})});
+  const out=await r.json();
+  if(!r.ok){ $('modelImpactOut').textContent='ERROR: '+(out.error||r.statusText); return; }
+  recordUndo('model change '+ent.id+' -> '+selectedModelCandidate.model_id,out.backup,entityKey(ent.k,ent.id));
+  markDbModified(ent.k,ent.id);
+  $('modelSyncSqlBtn').disabled=false;
+  $('modelImpactOut').textContent='Saved model change. Backup '+out.backup+'. Live DB differs from checked-in SQL until synced.';
+  lastModelImpact=null; $('modelApplyBtn').disabled=true;
+  refreshSelectedModelPreview(true);
+  updateEntitySyncStatus();
+}
+async function syncSelectedModelSql(){
+  if(selected<0 || !Z?.entities[selected]) return;
+  const ent=Z.entities[selected];
+  const r=await fetch('/zoneplot/model/sync_sql',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:ent.k,id:ent.id})});
+  const j=await r.json();
+  if(!r.ok){ $('modelImpactOut').textContent='ERROR: '+(j.error||r.statusText); return; }
+  markSqlSynced(ent.k,ent.id); updateEntitySyncStatus();
+  $('modelImpactOut').textContent='Model source synced: '+j.action+' '+j.file;
+}
+$('modelImpactBtn').onclick=checkModelImpact;
+$('modelApplyBtn').onclick=applySelectedModel;
+$('modelSyncSqlBtn').onclick=syncSelectedModelSql;
+$('modelPreviewLoad').onclick=()=>refreshSelectedModelPreview(true);
+$('ed-model-details').ontoggle=()=>{ if($('ed-model-details').open) refreshSelectedModelPreview(true); };
+function loadEditor(i){ const e=Z.entities[i]; if(!e){ $('ed').hidden=true; $('ed-none').hidden=false; return; }
+  $('ed').hidden=false; $('ed-none').hidden=true; orig={x:e.x,y:e.y,z:e.z,r:e.r||0};
+  $('ed-title').textContent=`${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${e.id}  ${e.n||e.g}`;
+  $('ed-radius').textContent=radiusText(e);
+  refreshSelectedModelPreview(false);
+  $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r||0; $('er-dir').textContent=rotText(e.r||0); $('emsg').textContent=''; $('ecomment').value=''; updateDirtyUI(); updateEntitySyncStatus();
+  if (e.k==='n' || e.k==='d'){
+    $('ed-anim').hidden=false;
+    setAnimSelect('ean','eanRaw', e.an||0);
+    setAnimSelect('easub','easubRaw', e.asub||0);
+    renderAnimationEvidence();
+    $('eanimmsg').textContent='';
+  } else { $('ed-anim').hidden=true; }
+  if (e.k==='m'){ $('ed-drops').hidden=false; loadDrops(e.id); } else { $('ed-drops').hidden=true; }
+  loadEntityHistory();
+}
+function beginBulkOrig(){
+  if(bulkOrig.size) return;
+  for(const i of multiSelected){
+    const e=Z?.entities[i]; if(e) bulkOrig.set(i,{x:e.x,y:e.y,z:e.z,r:e.r});
+  }
+}
+function finishBulkPreview(message){
+  bulkPreviewActive=true;
+  if(selected>=0 && Z.entities[selected]){
+    const e=Z.entities[selected];
+    $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r; $('er-dir').textContent=rotText(e.r);
+  }
+  rebuild(); syncMultiUI(); updateHeadingArrow(); updateSelectionVisual(); updateDirtyUI();
+  $('bulk-msg').textContent=message;
+}
+function previewBulkMoveTo(x,y,z,source='coordinates'){
+  if(multiSelected.size<2) return;
+  if(![x,y,z].every(Number.isFinite)){ $('bulk-msg').textContent='Enter valid target X / Y / Z coordinates.'; return; }
+  beginBulkOrig();
+  const a=bulkAnchor(bulkOrig); if(!a) return;
+  const dx=x-a.x, dy=y-a.y, dz=z-a.z;
+  for(const [i,o] of bulkOrig){
+    const e=Z.entities[i];
+    e.x=+(o.x+dx).toFixed(3); e.y=+(o.y+dy).toFixed(3); e.z=+(o.z+dz).toFixed(3); e.r=o.r;
+  }
+  $('bulk-x').value=(+x).toFixed(3); $('bulk-y').value=(+y).toFixed(3); $('bulk-z').value=(+z).toFixed(3);
+  finishBulkPreview(`Move Group preview (${source}): anchor → (${(+x).toFixed(3)}, ${(+y).toFixed(3)}, ${(+z).toFixed(3)}) · spacing preserved across ${multiSelected.size} entities.`);
+}
+function previewBulkMoveCoordinates(){ previewBulkMoveTo(+$('bulk-x').value,+$('bulk-y').value,+$('bulk-z').value,'coordinates'); }
+function previewBulkTransform(){
+  if(multiSelected.size<2) return;
+  beginBulkOrig();
+  const dx=+$('bulk-dx').value||0, dy=+$('bulk-dy').value||0, dz=+$('bulk-dz').value||0, dr=Math.round(+$('bulk-dr').value||0);
+  for(const [i,o] of bulkOrig){
+    const e=Z.entities[i];
+    e.x=+(o.x+dx).toFixed(3); e.y=+(o.y+dy).toFixed(3); e.z=+(o.z+dz).toFixed(3); e.r=((o.r+dr)%256+256)%256;
+  }
+  finishBulkPreview(`Offset preview: Δ(${dx}, ${dy}, ${dz}) rot ${dr>=0?'+':''}${dr} across ${multiSelected.size} entities.`);
+}
+async function saveBulkTransform(){
+  if(!bulkPreviewActive || multiSelected.size<2) return;
+  const rows=[...multiSelected].map(i=>{ const e=Z.entities[i]; return {k:e.k,id:e.id,x:e.x,y:e.y,z:e.z,r:e.r}; });
+  const r=await fetch('/zoneplot/edit_bulk',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rows,comment:$('ecomment').value})});
+  const j=await r.json();
+  if(j.error){ $('bulk-msg').textContent='ERROR: '+j.error; return; }
+  const syncKeys=[];
+  for(const i of multiSelected){ const e=Z.entities[i]; markDbModified(e.k,e.id); syncKeys.push(entityKey(e.k,e.id)); }
+  recordUndo(`bulk transform ${j.count} entities`,j.backup,null,syncKeys);
+  bulkOrig.clear(); bulkPreviewActive=false;
+  if(selected>=0 && Z.entities[selected]){ const e=Z.entities[selected]; orig={x:e.x,y:e.y,z:e.z,r:e.r}; }
+  $('bulk-msg').textContent=`Saved ${j.count} entities to live DB (backup ${j.backup}).`;
+  syncMultiUI(); updateDirtyUI(); await computeReach(); rebuild();
+}
+$('bulk-move-preview').onclick=previewBulkMoveCoordinates;
+$('bulk-pick').onclick=()=>setBulkPickMode(!bulkPickMode);
+$('bulk-anchor').onchange=()=>{ if(!bulkPreviewActive) setBulkTargetFromSelection(); else $('bulk-msg').textContent='Anchor changed. Revert or save the current preview before starting another placement.'; };
+$('bulk-preview').onclick=previewBulkTransform;
+$('bulk-save').onclick=saveBulkTransform;
+$('bulk-sync').onclick=async()=>{
+  if(multiSelected.size<2){ $('bulk-msg').textContent='Select at least two entities first.'; return; }
+  const results=[];
+  for(const i of multiSelected){
+    const e=Z?.entities[i]; if(!e) continue;
+    const r=await fetch('/zoneplot/sync_sql/entity',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:e.k,id:e.id})});
+    const j=await r.json();
+    if(j.error) results.push(`${e.id}: ERROR ${j.error}`);
+    else { markSqlSynced(e.k,e.id); results.push(`${e.id}: ${j.action} ${j.file}`); }
+  }
+  $('bulk-msg').textContent=results.join('\n');
+};
+$('bulk-revert').onclick=restorePreviewFromOrig;
+$('bulk-clear').onclick=()=>{ if(isTransformDirty()&&!confirm('Discard unsaved preview and clear multi-selection?')) return; restorePreviewFromOrig(); if(selected>=0){ multiSelected.clear(); multiSelected.add(selected); } syncMultiUI(); rebuild(); };
+async function loadEntityHistory(){
+  const el=$('histList'); if(!el) return;
+  if(selected<0 || !Z?.entities[selected]){ el.textContent='No entity selected.'; return; }
+  const e=Z.entities[selected];
+  el.textContent='loading…';
+  const r=await fetch(`/zoneplot/history/${e.k}/${e.id}?limit=20`); const j=await r.json();
+  if(j.error){ el.textContent='ERROR: '+j.error; return; }
+  if(!j.length){ el.textContent='No backups for this entity yet.'; return; }
+  el.innerHTML=j.map(h=>{
+    const t=h.transform ? `(${h.transform.x}, ${h.transform.y}, ${h.transform.z}) r${h.transform.r}` : '[entity absent]';
+    return `<div style="padding:2px 0;border-bottom:1px solid rgba(255,255,255,.06)"><span>${h.ts}</span> · <span>${h.label}</span><br><span class="muted">${t} · backup ${h.backup}</span></div>`;
+  }).join('');
+}
+async function restoreSelectedPrevious(){
+  if(selected<0 || !Z?.entities[selected]) return;
+  if(isTransformDirty()){ if(!confirm('Discard unsaved preview before restoring the previous saved state?')) return; restorePreviewFromOrig(); }
+  const e=Z.entities[selected];
+  if(!confirm(`Restore only ${e.id} to its most recent backed-up state?`)) return;
+  const r=await fetch('/zoneplot/restore_entity_previous',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:e.k,id:e.id})});
+  const j=await r.json();
+  if(j.error){ $('histMsg').textContent='ERROR: '+j.error; return; }
+  recordUndo(`restore previous ${e.id}`,j.pre_restore_backup,entityKey(e.k,e.id));
+  markDbModified(e.k,e.id);
+  $('histMsg').textContent=`Restored from ${j.source_backup} (${j.source_label}). Undo backup ${j.pre_restore_backup}.`;
+  await loadZone();
+  const idx=Z.entities.findIndex(x=>x.k===e.k&&x.id===e.id); if(idx>=0) select(idx,false);
+  await loadEntityHistory();
+}
+$('histRefresh').onclick=loadEntityHistory;
+$('histRestorePrev').onclick=restoreSelectedPrevious;
+let dropsState=null;
+async function loadDrops(mobid){
+  $('edrops-body').innerHTML='<span class="muted">loading&hellip;</span>';
+  const r=await fetch(`/zoneplot/${mobid}/drops.json`); const j=await r.json();
+  if(j.error){ $('edrops-body').innerHTML='ERROR: '+j.error; return; }
+  dropsState=j; $('edrops-n').textContent=`${j.n_sharing_group} mob(s) share groupid ${j.groupid}`;
+  renderDrops();
+}
+function renderDrops(){
+  const j=dropsState; if(!j) return;
+  let h=`<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+    <span>dropid</span><input type="number" id="edropid" value="${j.dropid||0}" style="width:70px">
+    <button id="edropid-save">Save dropid</button>
+    <button id="edropid-new">Assign new dropid</button>
+    <button id="edropid-syncsql">Sync to SQL file</button></div>`;
+  if(!j.dropid){ h+=`<div class="muted">No drop table assigned to this group yet -- click "Assign new dropid" to create one, then add items.</div>`;
+    $('edrops-body').innerHTML=h; $('edropid-save').onclick=()=>saveDropid($('edropid').value); $('edropid-new').onclick=()=>saveDropid('new');
+    $('edropid-syncsql').onclick=()=>syncDropidSql(); return; }
+  h+=`<table class="mono" style="width:100%;border-collapse:collapse"><tr style="text-align:left">
+    <th>type</th><th>group</th><th>item</th><th>group%</th><th>item%</th><th>eff%</th><th></th></tr>`;
+  (j.drops||[]).forEach((d,i)=>{
+    h+=`<tr data-i="${i}">
+      <td><input type="number" class="dtype" value="${d.drop_type}" style="width:28px"></td>
+      <td><input type="number" class="dgroup" value="${d.group_id}" style="width:32px"></td>
+      <td><input type="text" class="ditemname" value="${(d.item_name||'item#'+d.item_id).replace(/"/g,'&quot;')}" style="width:110px" placeholder="type to search&hellip;">
+          <input type="hidden" class="ditemid" value="${d.item_id}">
+          <div class="ditem-results" style="position:relative"></div></td>
+      <td><input type="number" class="dgrate" value="${d.group_rate}" min="0" max="1000" style="width:50px"></td>
+      <td><input type="number" class="dirate" value="${d.item_rate}" min="0" max="1000" style="width:50px"></td>
+      <td class="deff">${d.effective_pct}%</td>
+      <td><button class="dsave" data-ot="${d.drop_type}" data-og="${d.group_id}" data-oi="${d.item_id}">Save</button>
+          <button class="ddel" data-ot="${d.drop_type}" data-og="${d.group_id}" data-oi="${d.item_id}" style="color:#e74c3c">Del</button></td></tr>`;
+  });
+  h+=`<tr data-i="new">
+      <td><input type="number" class="dtype" value="0" style="width:28px"></td>
+      <td><input type="number" class="dgroup" value="0" style="width:32px"></td>
+      <td><input type="text" class="ditemname" style="width:110px" placeholder="type to search&hellip;">
+          <input type="hidden" class="ditemid" value="">
+          <div class="ditem-results" style="position:relative"></div></td>
+      <td><input type="number" class="dgrate" value="1000" min="0" max="1000" style="width:50px"></td>
+      <td><input type="number" class="dirate" value="1000" min="0" max="1000" style="width:50px"></td>
+      <td class="deff"></td>
+      <td><button class="dadd">Add</button></td></tr>`;
+  h+=`</table><div id="edropsmsg" class="mono" style="font-size:11px;margin-top:4px;white-space:pre-wrap"></div>`;
+  $('edrops-body').innerHTML=h;
+  wireItemSearch();
+  $('edropid-save').onclick=()=>saveDropid($('edropid').value);
+  $('edropid-new').onclick=()=>saveDropid('new');
+  $('edropid-syncsql').onclick=()=>syncDropidSql();
+  $('edrops-body').querySelectorAll('.dsave').forEach(b=>b.onclick=()=>saveDropRow(b.closest('tr'), b.dataset.ot, b.dataset.og, b.dataset.oi));
+  $('edrops-body').querySelectorAll('.ddel').forEach(b=>b.onclick=()=>delDropRow(b.dataset.ot, b.dataset.og, b.dataset.oi));
+  $('edrops-body').querySelector('.dadd').onclick=()=>saveDropRow($('edrops-body').querySelector('tr[data-i="new"]'), null, null, null);
+}
+function wireItemSearch(){
+  $('edrops-body').querySelectorAll('.ditemname').forEach(inp=>{
+    let t=null;
+    inp.addEventListener('input',()=>{ clearTimeout(t); const box=inp.nextElementSibling.nextElementSibling;
+      t=setTimeout(async()=>{ const q=inp.value.trim(); if(q.length<2){ box.innerHTML=''; return; }
+        const rows=await (await fetch('/zoneplot/items.json?q='+encodeURIComponent(q))).json();
+        box.innerHTML = rows.length ? `<div style="position:absolute;z-index:9;background:var(--surface);border:1px solid var(--border);max-height:140px;overflow:auto;width:220px">
+          ${rows.map(r=>`<div data-id="${r.itemid}" data-n="${r.name.replace(/"/g,'&quot;')}" style="padding:2px 4px;cursor:pointer">${r.name} <span class="muted">#${r.itemid}</span></div>`).join('')}
+          </div>` : '';
+        box.querySelectorAll('[data-id]').forEach(d=>d.onclick=()=>{ inp.value=d.dataset.n; inp.previousElementSibling.value=d.dataset.id; box.innerHTML=''; }); }, 250); }); });
+}
+async function saveDropid(dropid){
+  if(!dropsState) return;
+  const r=await fetch('/zoneplot/drops/dropid',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({mobid:dropsState.mobid,dropid,comment:$('ecomment').value})}); const j=await r.json();
+  if(j.error){ $('edropsmsg').textContent='ERROR: '+j.error; return; }
+  recordUndo(`dropid ${dropsState.mobid}`,j.backup); $('edropsmsg').textContent=`Saved to live DB (backup ${j.backup}).\n`+j.sql;
+  await loadDrops(dropsState.mobid);
+}
+let lastDropSync=null; // args to re-post to /zoneplot/sync_sql/drop_row for the last live-DB drop-row write
+async function syncDropidSql(){
+  if(!dropsState){ $('edropsmsg').textContent='No mob selected.'; return; }
+  const r=await fetch('/zoneplot/sync_sql/dropid',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mobid:dropsState.mobid})}); const j=await r.json();
+  $('edropsmsg').textContent = j.error ? 'SYNC ERROR: '+j.error : `SQL file ${j.action}: ${j.file}`;
+}
+async function syncDropRowSql(){
+  if(!lastDropSync){ $('edropsmsg').textContent='Nothing saved to the live DB yet this session -- Save or Delete a drop row first.'; return; }
+  const r=await fetch('/zoneplot/sync_sql/drop_row',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lastDropSync)}); const j=await r.json();
+  $('edropsmsg').textContent = j.error ? 'SYNC ERROR: '+j.error : j.results.map(x=>`${x.action}: ${x.file}`).join('\n');
+}
+async function saveDropRow(tr, origType, origGroup, origItem){
+  if(!dropsState) return;
+  const itemId=tr.querySelector('.ditemid').value;
+  if(!itemId){ $('edropsmsg').textContent='Pick a real item from the search results first.'; return; }
+  const drop_type=+tr.querySelector('.dtype').value, group_id=+tr.querySelector('.dgroup').value, item_id=+itemId;
+  const body={dropid: dropsState.dropid, drop_type, group_id, item_id,
+    group_rate:+tr.querySelector('.dgrate').value, item_rate:+tr.querySelector('.dirate').value,
+    comment:$('ecomment').value};
+  const hasOrig = origGroup!==null && origGroup!==undefined;
+  if(hasOrig){ body.orig_drop_type=+origType; body.orig_group_id=+origGroup; body.orig_item_id=+origItem; }
+  const r=await fetch('/zoneplot/drops/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const j=await r.json();
+  if(j.error){ $('edropsmsg').textContent='ERROR: '+j.error; return; }
+  lastDropSync={dropid:dropsState.dropid, drop_type, group_id, item_id,
+    orig_drop_type: hasOrig?+origType:undefined, orig_group_id: hasOrig?+origGroup:undefined, orig_item_id: hasOrig?+origItem:undefined};
+  recordUndo(`drop row ${dropsState.dropid}/${item_id}`,j.backup); $('edropsmsg').textContent=`Saved to live DB (backup ${j.backup}).\n`+j.sql;
+  await loadDrops(dropsState.mobid);
+}
+async function delDropRow(origType, origGroup, origItem){
+  if(!dropsState) return;
+  if(!confirm(`Delete this drop row from dropid ${dropsState.dropid}?`)) return;
+  const r=await fetch('/zoneplot/drops/delete',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({dropid:dropsState.dropid,drop_type:+origType,group_id:+origGroup,item_id:+origItem,comment:$('ecomment').value})}); const j=await r.json();
+  if(j.error){ $('edropsmsg').textContent='ERROR: '+j.error; return; }
+  lastDropSync={dropid:dropsState.dropid, drop_type:+origType, group_id:+origGroup, item_id:+origItem}; recordUndo(`delete drop ${dropsState.dropid}/${origItem}`,j.backup);
+  $('edropsmsg').textContent=`Deleted (backup ${j.backup}).\n`+j.sql;
+  await loadDrops(dropsState.mobid);
+}
+let ANIM_META={animations:[],subanimations:[],animation_strings:[]};
+function animMetaByValue(list,value){ return (list||[]).find(x=>Number(x.value)===Number(value)); }
+function renderAnimationEvidence(){
+  const a=animSelectVal('ean','eanRaw'), sub=animSelectVal('easub','easubRaw');
+  const am=animMetaByValue(ANIM_META.animations,a), sm=animMetaByValue(ANIM_META.subanimations,sub);
+  const lines=[];
+  lines.push('animation '+a+(am?' · '+am.label+' · '+am.source:' · not named in current LSB enum'));
+  if(sm){
+    lines.push('animationsub '+sub+' · observed in '+sm.uses+' LSB setAnimationSub() call(s) · model-dependent');
+    if(sm.nearby_model_ids?.length) lines.push('nearby setModelId values: '+sm.nearby_model_ids.join(', '));
+    for(const x of (sm.samples||[]).slice(0,4)) lines.push('  '+x.source+':'+x.line+' · '+x.text);
+  }else{
+    lines.push('animationsub '+sub+' · no literal setAnimationSub('+sub+') evidence found in bundled LSB scripts');
+  }
+  $('animEvidence').textContent=lines.join('\n');
+}
+async function loadAnimationMetadata(){
+  const r=await fetch('/zoneplot/animation-meta.json'), j=await r.json();
+  if(!r.ok){ $('animEvidence').textContent='Animation metadata unavailable: '+(j.error||r.statusText); return; }
+  ANIM_META=j;
+  const anim=$('ean'), sub=$('easub');
+  anim.innerHTML=(j.animations||[]).map(x=>'<option value="'+x.value+'">'+x.value+' — '+modelCatalogEsc(x.label)+'</option>').join('')+'<option value="custom">custom…</option>';
+  sub.innerHTML='<option value="0">0 — default / no selector</option>'+
+    (j.subanimations||[]).filter(x=>Number(x.value)!==0).map(x=>'<option value="'+x.value+'">'+x.value+' — observed '+x.uses+' use(s)'+(x.nearby_model_ids?.length?' · models '+x.nearby_model_ids.join(','):'')+'</option>').join('')+
+    '<option value="custom">custom…</option>';
+  $('animFourcc').textContent=(j.animation_strings||[]).map(x=>x.name+' = '+x.fourcc+' · '+x.source+':'+x.line).join('\n');
+  if(selected>=0 && Z?.entities[selected]){
+    const e=Z.entities[selected];
+    setAnimSelect('ean','eanRaw',e.an||0);
+    setAnimSelect('easub','easubRaw',e.asub||0);
+  }
+  renderAnimationEvidence();
+}
+loadAnimationMetadata();
+
+function setAnimSelect(selId, rawId, val){
+  const sel=$(selId), raw=$(rawId);
+  const has=[...sel.options].some(o=>o.value===String(val) && o.value!=='custom');
+  if (has){ sel.value=String(val); raw.style.display='none'; }
+  else { sel.value='custom'; raw.style.display=''; raw.value=val; }
+}
+function animSelectVal(selId, rawId){
+  const sel=$(selId), raw=$(rawId);
+  return sel.value==='custom' ? (+raw.value||0) : +sel.value;
+}
+['ean','easub'].forEach(id=>$(id).addEventListener('change',()=>{
+  const raw=$(id+'Raw'); raw.style.display = $(id).value==='custom' ? '' : 'none'; renderAnimationEvidence();
+}));
+['eanRaw','easubRaw'].forEach(id=>$(id).addEventListener('input',renderAnimationEvidence));
+$('eanimsave').onclick=async()=>{ const e=Z.entities[selected]; if(!e) return;
+  const animation=animSelectVal('ean','eanRaw'), animationsub=animSelectVal('easub','easubRaw');
+  const r=await fetch('/zoneplot/animate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:e.k,id:e.id,animation,animationsub,comment:$('ecomment').value})}); const j=await r.json();
+  if(j.error){ $('eanimmsg').textContent='ERROR: '+j.error; return; }
+  e.an=animation; e.asub=animationsub; lastTouched={k:e.k,id:e.id}; markDbModified(e.k,e.id); recordUndo(`animation ${e.id}`,j.backup,entityKey(e.k,e.id));
+  $('eanimmsg').textContent=`Saved to live DB (backup ${j.backup}).\n`+j.sql; };
+function previewRotation(){
+  if(selected<0) return;
+  const e=Z.entities[selected];
+  e.r=((+$('er').value%256)+256)%256; $('er').value=e.r; $('er-dir').textContent=rotText(e.r);
+  updateHeadingArrow(); syncGizmoFromSelection(); updateDirtyUI();
+  if(labels.has(selected)){ const l=labels.get(selected); l.element.textContent=txt(e)+($('labelHeading').checked?` · ${rotInfo(e.r).dir} r${rotInfo(e.r).raw}`:''); }
+  $('hover').textContent = `${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${txt(e)}  grp=${e.g}  (${e.x}, ${e.y}, ${e.z})  ${rotText(e.r)}  ${stateOf(selected)}`;
+}
+function previewEdit(){ if(selected<0) return; const e=Z.entities[selected]; e.x=+$('ex').value; e.y=+$('ey').value; e.z=+$('ez').value; previewRotation(); rebuild(); updateSelectionVisual(); updateDirtyUI(); loadSelectedNavDiag(); }
+['ex','ey','ez'].forEach(id=>$(id).addEventListener('change',previewEdit));
+$('er').addEventListener('input',previewRotation);
+document.querySelectorAll('[data-rpreset]').forEach(b=>b.onclick=()=>{ $('er').value=b.dataset.rpreset; previewRotation(); });
+document.querySelectorAll('[data-rdelta]').forEach(b=>b.onclick=()=>{ $('er').value=((+$('er').value + +b.dataset.rdelta)%256+256)%256; previewRotation(); });
+document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{ const a=b.dataset.n[0], sg=b.dataset.n[1]==='+'?1:-1; const f=$('e'+a); f.value=(+f.value+sg*(+$('estep').value)).toFixed(3); previewEdit(); });
+function editorKeyStep(ev){
+  const base=Math.max(.001,+$('estep').value||1);
+  return base*(ev.shiftKey?10:ev.altKey?.1:1);
+}
+function nudgeSelected(dx,dy,dz,ev){
+  if(selected<0 || !editActive()) return;
+  const s=editorKeyStep(ev);
+  $('ex').value=(+$('ex').value+dx*s).toFixed(3);
+  $('ey').value=(+$('ey').value+dy*s).toFixed(3);
+  $('ez').value=(+$('ez').value+dz*s).toFixed(3);
+  previewEdit();
+}
+function rotateSelected(sign,ev){
+  if(selected<0 || !editActive()) return;
+  let step=Math.max(1,Math.round(+$('erstep').value||1));
+  if(ev.shiftKey) step=32; else if(ev.altKey) step=1;
+  $('er').value=((+$('er').value+sign*step)%256+256)%256; previewRotation();
+}
+function typingTarget(el){ return !!el && ['INPUT','TEXTAREA','SELECT'].includes(el.tagName); }
+window.addEventListener('keydown',ev=>{
+  const mod=ev.ctrlKey||ev.metaKey;
+  if(mod && !typingTarget(document.activeElement)){
+    if(ev.key.toLowerCase()==='z'){ ev.preventDefault(); ev.shiftKey?redoAction():undoAction(); return; }
+    if(ev.key.toLowerCase()==='y'){ ev.preventDefault(); redoAction(); return; }
+  }
+  if(typingTarget(document.activeElement)) return;
+  if(ev.key==='f' || ev.key==='F'){ if(selected>=0){ ev.preventDefault(); frameSelected(); } return; }
+  if(!editActive() || selected<0) return;
+  if(ev.key==='ArrowLeft'){ ev.preventDefault(); nudgeSelected(-1,0,0,ev); }
+  else if(ev.key==='ArrowRight'){ ev.preventDefault(); nudgeSelected(1,0,0,ev); }
+  else if(ev.key==='ArrowUp'){ ev.preventDefault(); nudgeSelected(0,0,-1,ev); }
+  else if(ev.key==='ArrowDown'){ ev.preventDefault(); nudgeSelected(0,0,1,ev); }
+  else if(ev.key==='PageUp'){ ev.preventDefault(); nudgeSelected(0,-1,0,ev); }
+  else if(ev.key==='PageDown'){ ev.preventDefault(); nudgeSelected(0,1,0,ev); }
+  else if(ev.key==='['){ ev.preventDefault(); rotateSelected(-1,ev); }
+  else if(ev.key===']'){ ev.preventDefault(); rotateSelected(1,ev); }
+});
+$('frameSelBtn').onclick=frameSelected;
+$('frameAllBtn').onclick=()=>{ if(Z) frameAll(); };
+$('cloneSelectedBtn').onclick=()=>{
+  if(selected<0 || !Z?.entities[selected]) return;
+  const e=Z.entities[selected], kind=e.k==='m'?'m':'n';
+  if(kind==='m' && !Number.isFinite(e.gid)){ $('emsg').textContent='Selected mob has no source group identity in this payload.'; return; }
+  aSel=kind==='m' ? {groupid:e.gid,zone:Z.zid,zname:Z.zone,name:e.n,lv:e.lv} : {npcid:e.id,zname:Z.zone,name:e.g,pname:e.n};
+  $('ak').value=kind; $('asel').textContent=aSelText(kind,aSel); $('aq').value=''; $('alist').innerHTML=''; $('aname').value='';
+  $('aR').value=e.r||0;
+  if($('inst').value && $('ainst').querySelector(`option[value="${$('inst').value}"]`)) $('ainst').value=$('inst').value; else $('ainst').value='0';
+  tab('add'); setAddPos(e.x,e.y,e.z); updateAddMarker();
+};
+$('erev').onclick=()=>restorePreviewFromOrig();
+let lastSql='';
+let lastTouched=null; // {k,id} of the last entity successfully written to the live DB -- what "Sync to SQL file" targets
+const entitySyncState=new Map();
+const entityKey=(k,id)=>`${k}:${id}`;
+function markDbModified(k,id){ entitySyncState.set(entityKey(k,id),{db:'modified',sql:'not synced'}); updateEntitySyncStatus(); }
+function markSqlSynced(k,id){ entitySyncState.set(entityKey(k,id),{db:'modified',sql:'synced'}); updateEntitySyncStatus(); }
+function updateEntitySyncStatus(){
+  const el=$('esyncstatus'); if(!el) return;
+  const e=Z&&selected>=0?Z.entities[selected]:null;
+  if(!e){ el.textContent='Live DB / SQL status: no entity selected'; el.style.color='#b0bec5'; return; }
+  const st=entitySyncState.get(entityKey(e.k,e.id));
+  if(!st){ el.textContent='Live DB / SQL status: no saved edit this session'; el.style.color='#b0bec5'; return; }
+  if(st.sql==='synced'){ el.textContent='Live DB ✓   SQL source ✓'; el.style.color='#81c784'; }
+  else { el.textContent='Live DB: modified   SQL source: NOT SYNCED'; el.style.color='#ffb74d'; }
+}
+$('esave').onclick=async()=>{ const e=Z.entities[selected]; if(!e) return; previewEdit();
+  const r=await fetch('/zoneplot/edit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:e.k,id:e.id,x:e.x,y:e.y,z:e.z,r:e.r,comment:$('ecomment').value})}); const j=await r.json();
+  if(j.error){ $('emsg').textContent='ERROR: '+j.error; return; }
+  lastSql=j.sql; orig={x:e.x,y:e.y,z:e.z,r:e.r}; lastTouched={k:e.k,id:e.id}; markDbModified(e.k,e.id); recordUndo(`move/rotate ${e.id}`,j.backup,entityKey(e.k,e.id)); $('emsg').textContent=`Saved to live DB (backup ${j.backup}).\n`+j.sql; updateDirtyUI(); await computeReach(); rebuild(); select(selected,false); };
+$('ecopy').onclick=()=>{ if(lastSql) navigator.clipboard.writeText(lastSql); };
+$('edel').onclick=async()=>{ const e=Z.entities[selected]; if(!e) return;
+  if(!confirm(`Delete ${e.k==='m'?'MOB':'NPC'} ${e.id} (${e.n||e.g}) from the live DB?`)) return;
+  const touched={k:e.k,id:e.id};
+  const r=await fetch('/zoneplot/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:e.k,id:e.id,comment:$('ecomment').value})}); const j=await r.json();
+  if(j.error){ $('emsg').textContent='ERROR: '+j.error; return; }
+  lastTouched=touched; markDbModified(touched.k,touched.id); recordUndo(`delete ${e.id}`,j.backup,entityKey(touched.k,touched.id));
+  $('emsg').textContent=`Deleted (backup ${j.backup}).${j.warning?'\nWARNING: '+j.warning:''}\n`+j.sql;
+  Z.entities.splice(selected,1); selected=-1; loadEditor(-1); await computeReach(); rebuild(); };
+$('esyncsql').onclick=async()=>{ if(!lastTouched){ $('emsg').textContent='Nothing saved to the live DB yet this session -- click "Save to live DB" (or Delete) first.'; return; }
+  const r=await fetch('/zoneplot/sync_sql/entity',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lastTouched)}); const j=await r.json();
+  if(!j.error) markSqlSynced(lastTouched.k,lastTouched.id);
+  $('emsg').textContent = j.error ? 'SYNC ERROR: '+j.error : `SQL file ${j.action}: ${j.file}`; };
+$('edropsyncsql').onclick=()=>syncDropRowSql();
+let transformClipboard=null;
+function setTransformClipboard(e){
+  transformClipboard={x:e.x,y:e.y,z:e.z,r:e.r};
+  $('transformClipStatus').textContent=`Copied (${e.x}, ${e.y}, ${e.z}) r${e.r}`;
+}
+function pasteTransform(mode){
+  if(!transformClipboard || selected<0) return;
+  if(mode==='all'){ $('ex').value=transformClipboard.x; $('ey').value=transformClipboard.y; $('ez').value=transformClipboard.z; $('er').value=transformClipboard.r; previewEdit(); }
+  else if(mode==='xz'){ $('ex').value=transformClipboard.x; $('ez').value=transformClipboard.z; previewEdit(); }
+  else if(mode==='rot'){ $('er').value=transformClipboard.r; previewRotation(); }
+}
+$('copyTransform').onclick=()=>{ if(selected>=0&&Z?.entities[selected]) setTransformClipboard(Z.entities[selected]); };
+$('pasteTransform').onclick=()=>pasteTransform('all');
+$('pasteXZ').onclick=()=>pasteTransform('xz');
+$('pasteRot').onclick=()=>pasteTransform('rot');
+function snapValue(v,step){ return Math.round(v/step)*step; }
+function snapGrid(applyY){
+  if(selected<0) return; const s=Math.max(.001,+$('snapGrid').value||.5);
+  $('ex').value=snapValue(+$('ex').value,s).toFixed(3); $('ez').value=snapValue(+$('ez').value,s).toFixed(3);
+  if(applyY) $('ey').value=snapValue(+$('ey').value,s).toFixed(3);
+  previewEdit();
+}
+function verticalSnapY(target){
+  if(selected<0 || !target) return false;
+  const e=Z.entities[selected], p=P(e);
+  const hits=[];
+  ray.set(p.clone(),new THREE.Vector3(0,1,0)); hits.push(...ray.intersectObject(target,true));
+  ray.set(p.clone(),new THREE.Vector3(0,-1,0)); hits.push(...ray.intersectObject(target,true));
+  if(!hits.length) return false;
+  hits.sort((a,b)=>a.distance-b.distance);
+  $('ey').value=(-hits[0].point.y).toFixed(3); previewEdit(); return true;
+}
+$('snapXYZ').onclick=()=>snapGrid(true);
+$('snapXZ').onclick=()=>snapGrid(false);
+$('snapNavY').onclick=()=>{ if(!verticalSnapY(navMesh)) $('emsg').textContent='No navmesh intersection at the selected X/Z.'; };
+$('snapFloorY').onclick=()=>{ if(!verticalSnapY(meshObj)) $('emsg').textContent='No visual-mesh floor intersection at the selected X/Z.'; };
+function otherSelectedEntity(){
+  for(const i of multiSelected){ if(i!==selected && Z?.entities[i]) return Z.entities[i]; }
+  return null;
+}
+$('snapSelXYZ').onclick=()=>{
+  const o=otherSelectedEntity(); if(!o){ $('emsg').textContent='Multi-select another entity first.'; return; }
+  $('ex').value=o.x; $('ey').value=o.y; $('ez').value=o.z; previewEdit();
+};
+$('snapSelY').onclick=()=>{
+  const o=otherSelectedEntity(); if(!o){ $('emsg').textContent='Multi-select another entity first.'; return; }
+  $('ey').value=o.y; previewEdit();
+};
+
+let facingDrag=false;
+function rotationTowardPoint(point){
+  if(selected<0 || !point) return;
+  const e=Z.entities[selected], tx=point.x, tz=-point.z;
+  const dx=tx-e.x, dz=tz-e.z;
+  if(Math.hypot(dx,dz)<1e-6) return;
+  const angle=Math.atan2(-dz,dx);
+  const raw=((Math.round(angle/(Math.PI*2)*256)%256)+256)%256;
+  $('er').value=raw; previewRotation();
+}
+
+let measureMode=false, measureStart=null;
+const measureGeo=new THREE.BufferGeometry();
+const pathLine=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0xff9f1a,depthTest:false,transparent:true,opacity:.95})); pathLine.visible=false; pathLine.renderOrder=29; scene.add(pathLine);
+const measureLine=new THREE.Line(measureGeo,new THREE.LineBasicMaterial({color:0x00e5ff,depthTest:false,transparent:true,opacity:.9}));
+measureLine.visible=false; measureLine.renderOrder=28; scene.add(measureLine);
+function serverPointFromScene(p){ return {x:p.x,y:-p.y,z:-p.z}; }
+function scenePointFromEntity(e){ return P(e).clone(); }
+function setMeasurement(a,b){
+  const sa=serverPointFromScene(a), sb=serverPointFromScene(b);
+  const dx=sb.x-sa.x, dy=sb.y-sa.y, dz=sb.z-sa.z;
+  const horizontal=Math.hypot(dx,dz), dist=Math.hypot(dx,dy,dz);
+  const bearing=(Math.atan2(dx,-dz)*180/Math.PI+360)%360;
+  measureGeo.setFromPoints([a,b]); measureLine.visible=true;
+  const base=`horizontal ${horizontal.toFixed(2)} · 3D ${dist.toFixed(2)} · ΔX ${dx.toFixed(2)} ΔY ${dy.toFixed(2)} ΔZ ${dz.toFixed(2)} · bearing ${bearing.toFixed(1)}°`;
+  $('measureOut').textContent=base; pathLine.visible=false;
+  if($('measurePath').checked && Z){
+    $('measureOut').textContent=base+' · path…';
+    fetch(`/zoneplot/${Z.zid}/navpath.json?x1=${sa.x}&y1=${sa.y}&z1=${sa.z}&x2=${sb.x}&y2=${sb.y}&z2=${sb.z}`).then(r=>r.json()).then(j=>{
+      if(measureStart===null && !measureLine.visible) return;
+      if(j.ok){ pathLine.geometry.setFromPoints(j.points.map(q=>new THREE.Vector3(q[0],-q[1]+.4,-q[2]))); pathLine.visible=true;
+        $('measureOut').textContent=base+` · path ${j.length.toFixed(2)} (${(j.length/Math.max(horizontal,.01)).toFixed(2)}x straight)`; }
+      else $('measureOut').textContent=base+' · path: '+(j.reason||'unavailable');
+    }).catch(()=>{ $('measureOut').textContent=base+' · path: request failed'; });
+  }
+}
+function clearMeasurement(){ pathLine.visible=false; measureMode=false; measureStart=null; measureLine.visible=false; $('measureOut').textContent=''; $('measureBtn').textContent='Measure'; }
+$('measureBtn').onclick=()=>{ measureMode=!measureMode; measureStart=null; $('measureBtn').textContent=measureMode?'Measuring… click two points':'Measure'; if(!measureMode) clearMeasurement(); };
+$('measureClear').onclick=clearMeasurement;
+
+function screenToWorld(ev){  const r=renderer.domElement.getBoundingClientRect(); mouse.set(((ev.clientX-r.left)/r.width)*2-1,-((ev.clientY-r.top)/r.height)*2+1); ray.setFromCamera(mouse,camera);
+  const tgt=navMesh||meshObj; if(!tgt) return null;
+  const h=ray.intersectObject(tgt,true); return h.length ? h[0].point : null;
+}
+// Like screenToWorld, but only raycasts the navmesh (never the visual mesh) and also returns
+// this hit triangle's meta quad (yMin,yMax,area,polyType) from navMeta, when available -- used
+// by the hover readout so it can show the same kind of per-point info xi-visualizer surfaces.
+function screenToNav(ev){
+  if (!navMesh) return null;
+  const r=renderer.domElement.getBoundingClientRect(); mouse.set(((ev.clientX-r.left)/r.width)*2-1,-((ev.clientY-r.top)/r.height)*2+1); ray.setFromCamera(mouse,camera);
+  const h=ray.intersectObject(navMesh,true); if(!h.length) return null;
+  const fi=h[0].faceIndex;
+  const meta = (navMeta && fi!==undefined && (fi*4+3)<navMeta.length) ? {ymin:navMeta[fi*4],ymax:navMeta[fi*4+1],area:navMeta[fi*4+2],ptype:navMeta[fi*4+3]} : null;
+  return {point:h[0].point, meta};
+}
+renderer.domElement.addEventListener('click',ev=>{
+  if(measureMode){
+    let p=null, i=pick(ev); if(i>=0) p=scenePointFromEntity(Z.entities[i]); else p=screenToWorld(ev);
+    if(!p) return;
+    if(!measureStart){ measureStart=p.clone(); $('measureOut').textContent='Start set; click second point.'; }
+    else { setMeasurement(measureStart,p); measureMode=false; $('measureBtn').textContent='Measure'; }
+    return;
+  }
+  if(bulkPickMode && multiSelected.size>=2 && editActive()){
+    const p=screenToWorld(ev);
+    if(!p){ $('bulk-msg').textContent='No mesh/navmesh under that click; enter target coordinates instead.'; return; }
+    previewBulkMoveTo(p.x,-p.y,-p.z,'map click'); setBulkPickMode(false); return;
+  }
+  if($('eplace').checked && editActive() && selected>=0){ const p=screenToWorld(ev); if(!p) return;
+    $('ex').value=p.x.toFixed(3); $('ey').value=(-p.y).toFixed(3); $('ez').value=(-p.z).toFixed(3); previewEdit(); }
+  else if(!$('tab-add').hidden){ const p=screenToWorld(ev); if(!p){ $('amsg').textContent='No mesh/navmesh under that click -- set X/Y/Z manually.'; return; }
+    setAddPos(p.x, -p.y, -p.z); $('amsg').textContent=`Position set from click: (${$('aX').value}, ${$('aY').value}, ${$('aZ').value}).`; } });
+
+// ---- asset-browser drag-to-viewport: drag a catalogue row from the Add tab list straight onto the 3D view ----
+const dropHint=document.createElement('div');
+dropHint.id='drop-hint'; dropHint.style.cssText='position:absolute;inset:0;border:2px dashed #5fb3ff;background:rgba(95,179,255,.08);pointer-events:none;display:none;z-index:5;align-items:center;justify-content:center;color:#bfe0ff;font:600 13px system-ui;text-shadow:0 1px 2px #000';
+dropHint.textContent='Drop to place here';
+$('viewer-container').appendChild(dropHint);
+$('viewer-container').addEventListener('dragover',ev=>{ if(!Array.from(ev.dataTransfer.types||[]).includes('text/plain')) return; ev.preventDefault(); ev.dataTransfer.dropEffect='copy'; dropHint.style.display='flex'; });
+$('viewer-container').addEventListener('dragleave',ev=>{ if(ev.target===$('viewer-container')||ev.target===dropHint) dropHint.style.display='none'; });
+$('viewer-container').addEventListener('drop',ev=>{
+  ev.preventDefault(); dropHint.style.display='none';
+  const idx=ev.dataTransfer.getData('text/plain'); const rows=$('alist').__rows;
+  if(idx==='' || !rows || !rows[+idx]) return;
+  const kind=$('ak').value, row=rows[+idx];
+  aSel=row; $('asel').textContent=aSelText(kind,row);
+  if($('tab-add').hidden) tab('add');
+  const p=screenToWorld(ev);
+  if(p){ setAddPos(p.x, -p.y, -p.z);
+    $('amsg').textContent=`Position set from drop: (${$('aX').value}, ${$('aY').value}, ${$('aZ').value}). Review and click Add.`; }
+  else $('amsg').textContent='Dropped, but no mesh/navmesh under the cursor there -- set X/Y/Z manually.'; });
+
+// ---- add tab ----
+let aSel=null, aTimer=null;
+function aSelText(kind, row){ return kind==='m' ? `Selected: ${row.name} (zone ${row.zname}, groupid ${row.groupid}, Lv${row.lv})` : `Selected: ${row.pname||row.name} (npcid ${row.npcid}, from ${row.zname})`; }
+async function aSearch(){ const kind=$('ak').value, q=$('aq').value.trim(), zf=$('azone').value, fam=$('afam').value.trim();
+  if(q.length<2 && !zf && !fam){ $('alist').innerHTML='<div class="muted">Type 2+ letters, or pick a zone / family.</div>'; $('alist').__rows=[]; return; }
+  const r=await fetch(`/zoneplot/catalogue.json?kind=${kind}&q=${encodeURIComponent(q)}&zone=${zf}&family=${encodeURIComponent(kind==='m'?fam:'')}&sort=${$('asort').value}`); const rows=await r.json();
+  $('alist').innerHTML=(rows.map((row,i)=>kind==='m'
+    ? `<div data-i="${i}" draggable="true" title="Drag onto the viewport to place">${row.name} [${row.zname} #${row.groupid}] Lv${row.lv}${row.family?' · '+row.family:''}</div>`
+    : `<div data-i="${i}" draggable="true" title="Drag onto the viewport to place">${row.pname||row.name} [${row.zname} #${row.npcid}]</div>`).join(''))+(rows.length>=200?'<div class="muted">200 shown -- narrow the filter.</div>':'');
+  $('alist').__rows=rows;
+  $('alist').querySelectorAll('div[data-i]').forEach(d=>{
+    d.onclick=()=>{ aSel=$('alist').__rows[+d.dataset.i]; $('asel').textContent=aSelText(kind,aSel); updateAddMarker(); $('alist').querySelectorAll('.asel-row').forEach(x=>x.classList.remove('asel-row')); d.classList.add('asel-row'); };
+    d.addEventListener('dragstart',ev=>{ ev.dataTransfer.effectAllowed='copy'; ev.dataTransfer.setData('text/plain', d.dataset.i); d.classList.add('dragging'); });
+    d.addEventListener('dragend',()=>d.classList.remove('dragging'));
+  }); }
+async function aNextId(){ if(!Z) return; try{ const j=await (await fetch(`/zoneplot/${Z.zid}/next_id.json`)).json(); $('anext').innerHTML=j.error?'':`Next id: ${j.id} (slot ${j.slot}/1023 · ${j.mobs} mobs + ${j.npcs} npcs in zone)`+(j.warning?` <span style="color:#e74c3c">${j.warning}</span>`:''); }catch(e){} }
+$('azone').onchange=$('afam').oninput=$('asort').onchange=()=>{ clearTimeout(aTimer); aTimer=setTimeout(aSearch,200); };
+$('ak').onchange=()=>{ aSel=null; $('asel').textContent=''; updateAddMarker(); aSearch(); };
+$('aq').addEventListener('input',()=>{ clearTimeout(aTimer); aTimer=setTimeout(aSearch,250); });
+$('aadd').onclick=async()=>{ if(!aSel||!Z){ $('amsg').textContent='Pick a source first.'; return; }
+  if($('aX').value===''||$('aY').value===''||$('aZ').value===''){ $('amsg').textContent='No position set -- click the viewport, drag a result onto it, or type X/Y/Z.'; return; }
+  const kind=$('ak').value, src = kind==='m' ? {groupid:aSel.groupid, zone:aSel.zone} : {npcid:aSel.npcid};
+  const body={k:kind, zone:Z.zid, src, x:+$('aX').value||0, y:+$('aY').value||0, z:+$('aZ').value||0, r:+$('aR').value||0, name:$('aname').value, comment:$('acomment').value, instance:+$('ainst').value||0};
+  const r=await fetch('/zoneplot/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const j=await r.json();
+  if(j.error){ $('amsg').textContent='ERROR: '+j.error; return; }
+  $('amsg').textContent=`Added as id ${j.id} (backup ${j.backup})${j.instance?` -- linked to instance ${j.instance}`:''}.`+(j.warning?`\nWARNING: ${j.warning}`:'')+'\n'+j.sql; aNextId();
+  lastTouched={k:kind,id:j.id}; markDbModified(kind,j.id); recordUndo(`add ${j.id}`,j.backup,entityKey(kind,j.id));
+  addMarker.visible=false; addHeadingLine.visible=false; addGhostLabel.visible=false;
+  const repeat=$('repeatAdd').checked;
+  await loadZone();
+  if(repeat){
+    tab('add'); $('aX').value=''; $('aY').value=''; $('aZ').value=''; updateAddMarker();
+    $('amsg').textContent+='\nRepeated placement active: source/rotation/instance retained; click the next position.';
+  } else {
+    const idx=Z.entities.findIndex(e=>e.k===kind && +e.id===+j.id);
+    if(idx>=0) select(idx,true);
+  }
+};
+
+// ---- backups tab ----
+async function refreshBackups(){ const rows=await (await fetch('/zoneplot/backups.json')).json();
+  $('blist').innerHTML = rows.length? rows.map(b=>`<div style="margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid var(--border)">
+    <b>${b.ts}</b> zone ${b.zone} [${b.kind}] ${b.rows} row(s)<br>${b.label}<br>
+    <button data-r="${b.id}">Restore</button> <button data-rx="${b.id}">Restore exact</button></div>`).join('') : '<span class="muted">No backups yet.</span>';
+  $('blist').querySelectorAll('[data-r]').forEach(btn=>btn.onclick=()=>doRestore(btn.dataset.r,false));
+  $('blist').querySelectorAll('[data-rx]').forEach(btn=>btn.onclick=()=>doRestore(btn.dataset.rx,true)); }
+async function doRestore(id, exact){
+  if(!confirm(`Restore backup ${id}${exact?' EXACTLY (also deletes rows added since)':''}? This writes to the live DB now.`)) return;
+  const r=await fetch('/zoneplot/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,exact})}); const j=await r.json();
+  $('bmsg').textContent = j.error? 'ERROR: '+j.error : `Restored ${j.restored} row(s), deleted ${j.deleted_extra} extra. Pre-restore state saved as backup ${j.pre_restore_backup}.`;
+  refreshBackups(); if(Z) await loadZone(); }
+$('bsnap').onclick=async()=>{ if(!Z) return; const r=await fetch(`/zoneplot/${Z.zid}/snapshot`,{method:'POST'}); const j=await r.json(); $('bmsg').textContent='Snapshot saved: '+j.id; refreshBackups(); };
+$('bref').onclick=refreshBackups;
+
+window.__zp = {runDesc, get DESC(){return DESC}, get Z(){return Z}, get R(){return R}, camera, controls};
+</script>
+{% endblock %}

@@ -119,7 +119,29 @@ def nav_path(zone_name, server=None):
 RADIUS_MOB_MODS = {
     31: ("roam_radius", "ROAM_DISTANCE"),
     47: ("leash_radius", "SPAWN_LEASH"),
+    4: ("sight_range", "SIGHT_RANGE"),
+    5: ("sound_range", "SOUND_RANGE"),
 }
+MOBMOD_IDS = {name: mid for mid, (_k, name) in RADIUS_MOB_MODS.items()}
+
+
+def _mob_detect_values(cu, pool_ids):
+    """Per-pool detection setup straight from SQL: mob_pools.aggro / true_detection and the
+    family's mob_family_system.detects bitmask (engine DETECT_* flags). {} on schema mismatch."""
+    out = {}
+    ids = sorted({int(x) for x in pool_ids if x is not None})
+    if not ids:
+        return out
+    try:
+        ph = ",".join(["%s"] * len(ids))
+        cu.execute(
+            f"select p.poolid,p.aggro,p.true_detection,f.detects,p.familyid,f.family from mob_pools p "
+            f"left join mob_family_system f on f.familyid=p.familyid where p.poolid in ({ph})", tuple(ids))
+        for poolid, aggro, true_det, detects, famid, fam in cu.fetchall():
+            out[int(poolid)] = {"familyid": int(famid or 0), "family": fam or "","aggro": int(aggro or 0), "true_detection": int(true_det or 0), "detects": int(detects or 0)}
+    except Exception:
+        return {}
+    return out
 
 
 def _mob_radius_pool_values(cu, pool_ids):
@@ -138,7 +160,7 @@ def _mob_radius_pool_values(cu, pool_ids):
         if not ids:
             return out
         ph = ",".join(["%s"] * len(ids))
-        sql = f"select poolid,modid,value{',is_mob_mod' if has_kind else ''} from mob_pool_mods where poolid in ({ph}) and modid in (31,47)"
+        sql = f"select poolid,modid,value{',is_mob_mod' if has_kind else ''} from mob_pool_mods where poolid in ({ph}) and modid in (31,47,4,5)"
         cu.execute(sql, tuple(ids))
         for row in cu.fetchall():
             poolid, modid, value = int(row[0]), int(row[1]), int(row[2])
@@ -176,13 +198,13 @@ def _mob_radius_script_values(root: Path, zone_name: str, mob_name: str):
     except Exception:
         return {}
     found = {}
-    rx = re.compile(r"^(?: {4}|\t)mob:setMobMod\(xi\.mobMod\.(ROAM_DISTANCE|SPAWN_LEASH),\s*(-?\d+(?:\.\d+)?)\s*\)")
+    rx = re.compile(r"^(?: {4}|\t)mob:setMobMod\(xi\.mobMod\.(ROAM_DISTANCE|SPAWN_LEASH|SIGHT_RANGE|SOUND_RANGE),\s*(-?\d+(?:\.\d+)?)\s*\)")
     for lineno, line in enumerate(lines, 1):
         m = rx.match(line)
         if not m:
             continue
         enum_name, raw = m.groups()
-        modid = 31 if enum_name == "ROAM_DISTANCE" else 47
+        modid = {"ROAM_DISTANCE": 31, "SPAWN_LEASH": 47}.get(enum_name) or MOBMOD_IDS[enum_name]
         key, _ = RADIUS_MOB_MODS[modid]
         value = float(raw)
         if value.is_integer():
@@ -214,6 +236,7 @@ def zone_data(zid, instance=0, server=None):
                   where ((s.mobid-16777216)>>12)&511=%s""", (zid, zid))
     mob_rows = cu.fetchall()
     pool_radii = _mob_radius_pool_values(cu, [r[10] for r in mob_rows])
+    pool_detect = _mob_detect_values(cu, [r[10] for r in mob_rows])
     root = _server_root(server)
     script_cache = {}
     for i, n, x, y, z, gn, lo, hi, rot, gid, poolid in mob_rows:
@@ -225,7 +248,9 @@ def zone_data(zid, instance=0, server=None):
         ent = {"k": "m", "id": i, "n": n, "x": float(x), "y": float(y), "z": float(z), "r": int(rot or 0), "g": gn, "gid": int(gid), "lv": f"{lo}-{hi}"}
         if poolid is not None:
             ent["poolid"] = int(poolid)
-        for radius_key in ("roam_radius", "leash_radius"):
+        if poolid is not None and int(poolid) in pool_detect:
+            ent.update(pool_detect[int(poolid)])
+        for radius_key in ("roam_radius", "leash_radius", "sight_range", "sound_range"):
             if radius_key in explicit:
                 ent[radius_key] = explicit[radius_key]["value"]
                 ent[radius_key + "_source"] = explicit[radius_key]["source"]
@@ -251,6 +276,47 @@ def nav_diagnostics(zid, x, y, z, server=None):
         return {"error": "no navmesh for this zone"}
     diag = nav.point_diagnostics(float(x), float(y), float(z), p)
     return diag or {"error": "navmesh contains no polygons"}
+
+
+def nav_route(zid, a, b, server=None):
+    d = zone_data(zid, server=server)
+    p = nav_path(d["zone"], server)
+    if not p:
+        return {"ok": False, "reason": "no navmesh for this zone"}
+    return nav.nav_route(tuple(a), tuple(b), p)
+
+
+def script_info(zid, server=None):
+    """Per-entity Lua script presence and every literal mobMod line. Read-only."""
+    d = zone_data(zid, server=server)
+    root = _server_root(server)
+    zname = d["zone"]
+    out, cache = {}, {}
+    rx = re.compile(r"setMobMod\(|setMod\(|addMod\(|setLocalVar\(|setMobFlags|setSpellList|setDropID")
+    for e in d["entities"]:
+        if e["k"] == "m":
+            sub, nm = "mobs", str(e.get("n") or "")
+        elif e["k"] == "n":
+            sub, nm = "npcs", str(e.get("g") or "")
+        else:
+            continue
+        key = (sub, nm)
+        if key not in cache:
+            path = next((p for z in (zname, zname.replace(" ", "_")) for v in (nm, nm.replace(" ", "_"))
+                         for p in [root / "scripts" / "zones" / z / sub / f"{v}.lua"] if p.is_file()), None)
+            info = {"exists": path is not None, "file": None, "lines": []}
+            if path:
+                info["file"] = path.relative_to(root).as_posix()
+                try:
+                    for ln, line in enumerate(path.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
+                        if rx.search(line):
+                            info["lines"].append([ln, line.strip()[:160]])
+                except Exception:
+                    pass
+                info["lines"] = info["lines"][:60]
+            cache[key] = info
+        out[str(e["id"])] = cache[key]
+    return {"zone": zname, "scripts": out}
 
 
 def reach(zid, anchor=None, instance=0, server=None):
