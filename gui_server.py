@@ -3846,15 +3846,15 @@ def events_browse(request: Request, zone: str = "", q: str = ""):
             generated_note = f"Generated a fresh events export for {zone} via mission_toolkit.py."
         zoneid_row = con.execute("SELECT zoneid FROM zones WHERE name = ?", (zone.upper(),)).fetchone()
         zoneid = zoneid_row[0] if zoneid_row else None
-        server_counts = {
-            int(row["csid"]): int(row["n"])
-            for row in con.execute(
-                "SELECT csid,COUNT(*) AS n FROM npc_event_refs WHERE zone_name=? GROUP BY csid",
-                (zone,),
-            ).fetchall()
-        } if con.execute(
+        server_refs_by_csid = {}
+        if con.execute(
             "SELECT 1 FROM sqlite_master WHERE type='table' AND name='npc_event_refs'"
-        ).fetchone() else {}
+        ).fetchone():
+            for row in con.execute(
+                "SELECT source,npc_script,csid FROM npc_event_refs WHERE zone_name=?",
+                (zone,),
+            ).fetchall():
+                server_refs_by_csid.setdefault(int(row["csid"]), []).append(dict(row))
         runtime_counts = {}
         if zoneid is not None:
             for row in con.execute(
@@ -3889,9 +3889,16 @@ def events_browse(request: Request, zone: str = "", q: str = ""):
                     continue
                 if q_stripped and not entity_match and eid != q_csid:
                     continue
+                actor_norm = re.sub(r"[^a-z0-9]+", "", (name or "").lower())
+                actor_server_refs = [
+                    ref for ref in server_refs_by_csid.get(int(eid), [])
+                    if actor_norm
+                    and re.sub(r"[^a-z0-9]+", "", str(ref["npc_script"]).lower()) == actor_norm
+                ]
                 rows.append({
                     "entity_id": entity_id, "name": name, "csid": eid,
-                    "server_ref_count": server_counts.get(int(eid), 0),
+                    "server_ref_count": len(actor_server_refs),
+                    "zone_csid_server_ref_count": len(server_refs_by_csid.get(int(eid), [])),
                     "runtime_count": runtime_counts.get((int(entity_id), int(eid)), 0),
                 })
     con.close()
