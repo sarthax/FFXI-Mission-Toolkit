@@ -10,12 +10,14 @@ from collections import defaultdict
 from hashlib import sha256
 import json
 import sqlite3
+from urllib.parse import quote
 
 from workbench.core import graph
 from workbench.core.services.identity_resolver import ensure_schema as ensure_identity_schema
 
 
 CLIENT_IDENTIFIER_PREFIX = "client_snapshot_entity_id:"
+CLIENT_REPRESENTATION_RELATIONSHIP = "CLIENT_REPRESENTATION"
 
 BASE_ENTITY_IDENTIFIER_TYPES = (
     "npcid", "mobid", "entity_id", "runtime_entity_id",
@@ -76,6 +78,8 @@ def sync_client_entity_graph(con: sqlite3.Connection) -> dict:
         "ambiguous_numeric_representations": 0,
         "root_conflicts": 0,
         "removed_stale_identifiers": 0,
+        "relationships": 0,
+        "removed_stale_relationships": 0,
     }
     try:
         stale = con.execute(
@@ -87,6 +91,20 @@ def sync_client_entity_graph(con: sqlite3.Connection) -> dict:
             "DELETE FROM entity_identifiers WHERE lower(identifier_type) LIKE ?",
             (CLIENT_IDENTIFIER_PREFIX + "%",),
         )
+        stale_relationships = list(con.execute(
+            """SELECT relationship_id,evidence_id
+                 FROM entity_relationships
+                WHERE relationship=?""",
+            (CLIENT_REPRESENTATION_RELATIONSHIP,),
+        ))
+        counts["removed_stale_relationships"] = len(stale_relationships)
+        con.execute(
+            "DELETE FROM entity_relationships WHERE relationship=?",
+            (CLIENT_REPRESENTATION_RELATIONSHIP,),
+        )
+        for _relationship_id, evidence_id in stale_relationships:
+            if evidence_id:
+                con.execute("DELETE FROM evidence WHERE evidence_id=?", (evidence_id,))
 
         rows = list(con.execute(
             """SELECT record_id,snapshot_id,semantic_key,numeric_id,zone_key,
@@ -166,6 +184,51 @@ def sync_client_entity_graph(con: sqlite3.Connection) -> dict:
                 )
                 if con.execute("SELECT changes()").fetchone()[0]:
                     counts["identifiers"] += 1
+            for row in group:
+                record_id = str(row["record_id"])
+                snapshot_id = str(row["snapshot_id"])
+                evidence_id = "evidence:client-entity-graph:" + sha256(
+                    record_id.encode("utf-8")
+                ).hexdigest()[:24]
+                con.execute(
+                    "INSERT OR REPLACE INTO evidence VALUES(?,?,?,?,?,?)",
+                    (
+                        evidence_id,
+                        "CLIENT_IDENTITY",
+                        "identity_records",
+                        record_id,
+                        snapshot_id,
+                        "Snapshot-aware client ENTITY identity mirrored into Feature Trace.",
+                    ),
+                )
+                target = "catalog:identity_records:" + quote(record_id, safe="")
+                relationship_id = "client-entity-representation:" + sha256(
+                    record_id.encode("utf-8")
+                ).hexdigest()[:24]
+                con.execute(
+                    """INSERT OR REPLACE INTO entity_relationships
+                       VALUES(?,?,?,?,?,?,?,?,?)""",
+                    (
+                        relationship_id,
+                        root,
+                        target,
+                        CLIENT_REPRESENTATION_RELATIONSHIP,
+                        evidence_id,
+                        str(row["confidence"] or "UNKNOWN").upper(),
+                        "DISCOVERED",
+                        json.dumps({
+                            "record_id": record_id,
+                            "snapshot_id": snapshot_id,
+                            "zone_key": row["zone_key"],
+                            "numeric_id": str(row["numeric_id"]),
+                            "semantic_key": semantic_key,
+                            "source_evidence_id": row["evidence_id"],
+                        }, sort_keys=True),
+                        snapshot_id,
+                    ),
+                )
+                counts["relationships"] += 1
+
             counts["semantic_entities"] += 1
 
         con.commit()
