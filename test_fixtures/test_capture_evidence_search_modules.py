@@ -37,6 +37,21 @@ def main():
     assert "Evidence Search" in template
     assert "Data Explorer" in template
 
+    # Related Evidence must be provenance-driven rather than timestamp-neighbor guessing.
+    related_template = (ROOT / "gui" / "templates" / "capture_related_evidence.html").read_text(
+        encoding="utf-8"
+    )
+    assert "def _capture_related_locators(" in server
+    assert "same source byte span" in server
+    assert "same source line span" in server
+    assert "same SQLite source row" in server
+    assert "source_sha256" in server
+    assert "timestamp proximity" not in server.lower()
+    assert "/related-evidence" in server
+    assert "Related Evidence" in template
+    assert "Timestamp proximity" in related_template
+    assert "same hashed physical source" in related_template
+
     print("Capture Evidence Search module regression: PASS")
     return 0
 
