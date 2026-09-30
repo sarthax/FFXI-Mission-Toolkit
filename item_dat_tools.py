@@ -1658,6 +1658,52 @@ def backup_dat_once(path: Path, rom_path: str) -> Optional[Path]:
     return backup_dat_snapshot(path, rom_path)
 
 
+def capture_client_record(item_id: int) -> dict | None:
+    """Capture the exact encrypted-DAT logical record bytes for one item without writing anything."""
+    found = category_for_item(item_id)
+    if found is None:
+        return None
+    cat_name, base_id, item_type, en_rom, _jp_rom = found
+    src_path = dat_write_source(en_rom)
+    if not src_path.exists():
+        return None
+    idx = int(item_id) - base_id
+    item_dat = ItemDat.load(src_path)
+    if idx < 0 or idx >= item_dat.count:
+        return None
+    return {
+        "item_id": int(item_id), "category": cat_name, "dat_ui": en_rom,
+        "record_index": idx, "format": item_dat.format,
+        "record_hex": item_dat.record(idx).hex(),
+    }
+
+
+def restore_client_record(snapshot: dict) -> dict:
+    """Restore one exact item record from capture_client_record(), backing up the destination DAT first."""
+    if not snapshot or "record_hex" not in snapshot:
+        raise ValueError("invalid client record snapshot")
+    item_id = int(snapshot["item_id"])
+    found = category_for_item(item_id)
+    if found is None:
+        raise ValueError(f"no client DAT covers item id {item_id}")
+    cat_name, base_id, _item_type, en_rom, _jp_rom = found
+    idx = item_id - base_id
+    if idx != int(snapshot["record_index"]) or en_rom != snapshot["dat_ui"]:
+        raise ValueError("client record snapshot location does not match current item mapping")
+    src_path = dat_write_source(en_rom)
+    dest_path = dat_write_dest(en_rom)
+    item_dat = ItemDat.load(src_path)
+    raw = bytes.fromhex(snapshot["record_hex"])
+    expected = STRIDE_BY_FORMAT[item_dat.format]
+    if len(raw) != expected:
+        raise ValueError(f"client record snapshot length {len(raw)} does not match {item_dat.format} stride {expected}")
+    backup_dat_snapshot(dest_path, en_rom)
+    item_dat.set_record(idx, raw)
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+    dest_path.write_bytes(item_dat.encrypted())
+    return {"ok": True, "item_id": item_id, "category": cat_name, "dat_ui": en_rom,
+            "record_index": idx, "dat": str(dest_path), "format": item_dat.format, "target": dat_target()}
+
 def validate_client_patch(item_id: int, fields: dict) -> dict:
     """Validate an existing-item patch entirely in memory without writing a DAT or backup."""
     found = category_for_item(item_id)
