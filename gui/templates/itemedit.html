@@ -626,11 +626,16 @@ async function refreshItemBackups() {
           <td class="mono" style="width:140px;">${b.ts}</td>
           <td>${b.label}</td>
           <td style="width:60px;">${b.rows} row(s)</td>
-          <td style="width:70px;"><button data-restore-backup="${b.id}">Restore</button></td>
+          <td style="width:170px;">
+            <button data-restore-backup="${b.id}">Restore item</button>
+            ${b.has_client_record ? `<button data-restore-record="${b.id}" title="Restore only this item\'s exact DAT record (${b.client_target || \'record target\'})">DAT only</button>` : \'\'}
+          </td>
         </tr>`).join('')}
     </tbody></table>` : `<div class="muted" style="padding:6px;">No backups yet for this item.</div>`;
   list.querySelectorAll('[data-restore-backup]').forEach(btn =>
     btn.onclick = () => doItemRestore(btn.dataset.restoreBackup));
+  list.querySelectorAll('[data-restore-record]').forEach(btn =>
+    btn.onclick = () => restoreItemDatRecord(btn.dataset.restoreRecord));
 }
 
 async function doItemRestore(bid) {
@@ -643,7 +648,26 @@ async function doItemRestore(bid) {
   const msg = document.getElementById('itemBackupMsg');
   msg.textContent = j.error ? 'ERROR: ' + j.error
     : `Restored ${j.restored} row(s). Pre-restore state saved as backup ${j.pre_restore_backup}.`;
-  if (!j.error) loadItem(currentItemId);
+  if (!j.error) {
+    itemUndoStack.push({itemId:currentItemId,backup:j.pre_restore_backup,label:'restore item backup'});
+    if(itemUndoStack.length>80) itemUndoStack.shift(); itemRedoStack.length=0; refreshItemUndoUI();
+    loadItem(currentItemId);
+  }
+}
+
+async function restoreItemDatRecord(bid){
+  if(!currentItemId) return;
+  if(hasUnsavedItemChanges() && !confirm('Discard unsaved edits before restoring the saved DAT record?')) return;
+  if(!confirm('Restore only this item\'s exact DAT record from backup '+bid+'? Server SQL will not be changed.')) return;
+  const comment=document.getElementById('editComment').value;
+  const r=await fetch('/itemedit/restore-client-record',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:bid,comment})});
+  const j=await r.json();
+  const msg=document.getElementById('itemBackupMsg');
+  if(!r.ok){ msg.textContent='ERROR: '+(j.error||r.statusText); return; }
+  itemUndoStack.push({itemId:currentItemId,backup:j.backup,label:'restore DAT record'});
+  if(itemUndoStack.length>80) itemUndoStack.shift(); itemRedoStack.length=0; refreshItemUndoUI();
+  msg.textContent='Restored DAT record only from backup '+bid+' · undo backup '+j.backup+'.';
+  await loadItem(currentItemId);
 }
 
 async function deleteItem() {
@@ -651,7 +675,7 @@ async function deleteItem() {
   if (!document.getElementById('deleteConfirmCheck').checked) return;
   const clearDat = document.getElementById('deleteClearDat').checked;
   const warn = clearDat
-    ? `Delete item ${currentItemId} from the server DB AND clear its client DAT record? This removes its rows from every item_* table plus mods/pet mods/latents, and blanks the DAT slot so it reads as free again. Both are backed up first (restorable from the lists above). This cannot be undone from here. Continue?`
+    ? `Delete item ${currentItemId} from the server DB AND clear its client DAT record? This removes its rows from every item_* table plus mods/pet mods/latents, and blanks the DAT slot so it reads as free again. Both are backed up first (restorable from the lists above). This action is backup-backed and can be undone from Session history. Continue?`
     : `Delete item ${currentItemId} from the server DB? This removes its rows from every item_* table plus mods/pet mods/latents. A backup is taken first (restorable from the list above), but the client DAT slot is left in place and will show as an orphaned/unusable item id until something else is written there. Continue?`;
   if (!confirm(warn)) return;
   const comment = document.getElementById('editComment').value;
