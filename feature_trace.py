@@ -564,6 +564,7 @@ def entity_implementation_path(
                     continue
                 info = node_info(graph_con, target, catalog_con)
                 rep = (info.get("representations") or [{}])[0]
+                rep_meta=rep.get("metadata") or {}
                 branch["steps"].append({
                     "depth": depth + 1,
                     "relationship": link.get("relationship"),
@@ -572,6 +573,12 @@ def entity_implementation_path(
                     "target_node": target,
                     "target_name": link.get("target_name") or rep.get("display_name") or target,
                     "target_type": link.get("target_type") or rep.get("node_type") or "UNKNOWN",
+                    "target_table": rep.get("table"),
+                    "target_provider": rep_meta.get("provider"),
+                    "target_domain": rep_meta.get("domain"),
+                    "target_inspect_href": rep_meta.get("inspect_href"),
+                    "target_sql_href": rep_meta.get("sql_href"),
+                    "target_details": rep_meta.get("details") or {},
                     "provider_native": True,
                 })
                 if target not in visited:
