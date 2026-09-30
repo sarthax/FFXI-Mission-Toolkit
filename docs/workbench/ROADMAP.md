@@ -1,3 +1,12 @@
+## 2026-09-30 Zone / packet usability fixes
+
+- [x] Remove the legacy Zone Editor page from navigation and redirect old /zoneplot bookmarks to /zoneplot2.
+- [x] Fix Server 3D Viewer template compilation crash.
+- [x] Add packet/capture file uploads to Bulk Packet Decode using the existing capture adapters.
+- [x] Expand manual packet input to a large multiline textarea submitted via POST.
+- [x] Accept full PacketLogger/PacketViewer hex-grid blocks directly.
+- [x] Add regression coverage for the provided multiline 0x037-style packet sample.
+
 ## 2026-09-30 Configurable shell branding
 
 - [x] Replace hard-coded ValhallaXI shell logo/text with settings-backed branding.
