@@ -156,6 +156,40 @@
   </aside>
 </div>
 
+<section class="dat-card" style="margin-top:14px">
+  <h3>DAT structure</h3>
+  <div class="body">
+    <div class="dat-chips">
+      <span class="chip">{{ result.section_scan.section_count }} section{{ '' if result.section_scan.section_count == 1 else 's' }}</span>
+      {% for label,count in result.section_scan.type_counts.items() %}
+      <span class="chip">{{ label }} × {{ count }}</span>
+      {% endfor %}
+    </div>
+    {% if result.section_scan.warnings %}
+      {% for w in result.section_scan.warnings %}<div class="dat-warning">{{ w }}</div>{% endfor %}
+    {% endif %}
+  </div>
+  {% if result.section_scan.sections %}
+  <div class="table-wrap" style="border:0;border-radius:0">
+    <table>
+      <tr><th>#</th><th>name</th><th>type</th><th>offset</th><th>size</th><th>status</th></tr>
+      {% for s in result.section_scan.sections %}
+      <tr>
+        <td class="mono">{{ s.index }}</td>
+        <td><strong>{{ s.name or '(unnamed)' }}</strong><br><span class="muted mono" style="font-size:11px">{{ s.name_hex }}</span></td>
+        <td>{{ s.type_label }}<br><span class="muted mono">type {{ s.type_id }}</span></td>
+        <td class="mono">{{ s.offset_hex }}</td>
+        <td class="mono">{{ "{:,}".format(s.size) }} B{% if s.declared_size and s.declared_size != s.size %}<br><span class="muted">declared {{ "{:,}".format(s.declared_size) }}</span>{% endif %}</td>
+        <td>{% if s.truncated %}<span class="pill mismatch">truncated</span>{% elif s.terminal %}<span class="pill unannotated">terminal</span>{% else %}<span class="pill match">bounded</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% else %}
+  <div class="body muted">No block-chain sections could be enumerated from this DAT header.</div>
+  {% endif %}
+</section>
+
 {% if result.matches %}
 <div class="dat-match-grid">
   {% for m in result.matches %}
