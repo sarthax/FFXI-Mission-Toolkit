@@ -21,6 +21,20 @@ def main():
     assert 'bid = _save_backup(f"atomic edit item {item_id}"' in item_edit
     assert "dat.validate_client_patch(item_id, client_fields)" in item_edit
     assert "client_report = dat.patch_client_item(item_id, client_fields)" in item_edit
+
+    # Richer search grid and recent navigation.
+    assert "def search(q, category=\"\", min_level=-1, max_level=-1, job=-1, skill=-1, client_state=\"\", limit=200):" in item_edit
+    assert "server-only" in item_edit and "mismatch" in item_edit and "synced" in item_edit
+    assert 'id="searchMinLevel"' in template
+    assert 'id="searchMaxLevel"' in template
+    assert 'id="searchJob"' in template
+    assert 'id="searchSkill"' in template
+    assert 'id="searchClientState"' in template
+    assert 'id="searchSort"' in template and 'id="searchDir"' in template
+    assert "function renderSearchResults()" in template
+    assert "let recentItems=[];" in template
+    assert "async function navigateRecent(delta)" in template
+    assert '@app.get("/itemedit/search.json")' in gui
     assert 'backup_path = client_report.get("backup_path")' in item_edit
     assert "shutil.copy2(backup_path, dat_path)" in item_edit
     assert "def validate_client_patch(item_id: int, fields: dict)" in item_dat
