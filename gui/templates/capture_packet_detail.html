@@ -1,25 +1,27 @@
 {% extends "base.html" %}
 {% block title %}Packet Viewer{% endblock %}
-{% block main_class %}wide-workbench{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}wide-workbench capture-packet-page{% endblock %}
 {% block content %}
 <style>
+main.capture-packet-page{padding:8px 10px 24px}
 .packet-breadcrumb{font-size:12px;color:var(--muted);margin-bottom:4px}
-.packet-titlebar{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-.packet-titlebar h1{margin:0}
+.packet-titlebar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:6px;padding:5px 7px;border:1px solid var(--border);border-radius:7px;background:var(--surface)}
+.packet-titlebar h1{margin:0;font-size:16px}
 .packet-titlebar .nav-actions{margin-left:auto;display:flex;gap:6px}
-.packet-chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.packet-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
 .packet-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);border-radius:6px;padding:4px 8px;background:var(--surface);font-size:12px}
 .packet-chip.good{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
 .packet-chip.in{color:#2469c8}.packet-chip.out{color:#b33f3f}
-.capture-packet-layout{display:grid;grid-template-columns:265px minmax(0,1fr);gap:14px;align-items:start}
-.packet-rail{border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden;position:sticky;top:0}
-.packet-rail h3,.packet-card h3{margin:0;padding:10px 12px;border-bottom:1px solid var(--border);font-size:14px}
-.packet-rail-row{display:grid;grid-template-columns:34px 42px 58px 1fr;gap:5px;align-items:center;padding:7px 9px;border-bottom:1px solid var(--border);text-decoration:none;color:var(--ink);font-size:12px}
+.capture-packet-layout{display:grid;grid-template-columns:245px minmax(0,1fr);gap:8px;align-items:start}
+.packet-rail{border:1px solid var(--border);border-radius:7px;background:var(--surface);overflow:hidden;position:sticky;top:calc(var(--shell-h) + 6px)}
+.packet-rail h3,.packet-card h3{margin:0;padding:6px 8px;border-bottom:1px solid var(--border);font-size:12px}
+.packet-rail-row{display:grid;grid-template-columns:34px 42px 58px 1fr;gap:4px;align-items:center;padding:5px 7px;border-bottom:1px solid var(--border);text-decoration:none;color:var(--ink);font-size:12px}
 .packet-rail-row:last-child{border-bottom:0}.packet-rail-row:hover{background:var(--code-bg)}
 .packet-rail-row.active{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
 .packet-rail-row .dir-in{color:#2e8b57;font-weight:700}.packet-rail-row .dir-out{color:var(--red);font-weight:700}
 .packet-rail-row .seq,.packet-rail-row .op{font-family:ui-monospace,Consolas,monospace}
-.packet-main-grid{display:grid;grid-template-columns:minmax(650px,1.35fr) minmax(450px,.95fr);gap:14px;align-items:start}
+.packet-main-grid{display:grid;grid-template-columns:minmax(620px,1.35fr) minmax(420px,.95fr);gap:8px;align-items:start}
 .packet-card{border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden}
 .packet-meta{display:flex;gap:8px;flex-wrap:wrap;padding:9px 12px;border-bottom:1px solid var(--border)}
 .packet-fields table{width:100%;border-collapse:collapse;min-width:640px}
@@ -44,7 +46,7 @@
 .semantic-panel{border-left:1px solid var(--border);padding-left:14px}
 .semantic-panel .big-value{font-size:18px;font-weight:700;color:var(--accent);word-break:break-word}
 .raw-field{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--muted)}
-.context-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:14px}
+.context-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
 .context-grid{display:grid;grid-template-columns:125px 1fr;gap:5px 10px;padding:10px 12px}.context-grid>div:nth-child(odd){color:var(--muted)}
 .context-code{margin:0 12px 12px;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--code-bg);font-family:ui-monospace,Consolas,monospace;font-size:11px;white-space:pre-wrap}
 @media(max-width:1320px){.capture-packet-layout{grid-template-columns:1fr}.packet-rail{position:static}.packet-main-grid{grid-template-columns:1fr}.packet-rail .rail-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}.context-row{grid-template-columns:1fr}}
@@ -57,7 +59,7 @@
   Packet Viewer
 </div>
 
-<div class="packet-titlebar">
+<div class="packet-titlebar dense-toolbar">
   <div>
     <h1>Packet Viewer <span class="chip mono">seq {{ packet.seq }}</span></h1>
     <div class="muted">{{ cap.capture_label }} &mdash; capture #{{ capture_id }}</div>

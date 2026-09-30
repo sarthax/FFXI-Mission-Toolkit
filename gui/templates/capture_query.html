@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Capture Query{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}capture-query-page{% endblock %}
 
 {% macro pager() %}
 {% if total_pages > 1 %}
@@ -22,13 +24,10 @@
 {% endmacro %}
 
 {% block content %}
-<h1>Capture Query</h1>
-<p class="muted">Direct search over the real <code class="chip">capture_*</code> tables every ingested
-  capture writes into -- for pulling specific rows out across one capture or all of them, not the
-  summarized/truncated view <a href="/captures">a capture's own detail page</a> shows. Leave
-  Capture ID blank to search across every capture.</p>
+<style>main.capture-query-page{padding:8px 10px 24px}</style>
+<div class="dense-toolbar"><a class="chip" href="/captures">&larr; Captures</a><strong>Capture Query</strong><span class="sp"></span><details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:680px">Direct search over normalized capture_* tables. Leave Capture ID blank to search across all captures; use this when the summarized detail/timeline views are too narrow.</div></details></div>
 
-<form class="search" method="get" style="flex-wrap:wrap;">
+<form class="search dense-toolbar" method="get" style="flex-wrap:wrap;margin:6px 0;">
   <select name="table">
     {% for t in tables %}
     <option value="{{ t }}" {% if table == t %}selected{% endif %}>{{ t }}</option>
@@ -40,7 +39,7 @@
   <a class="chip" href="/captures/query.csv?table={{ table }}&capture_id={{ capture_id }}&q={{ q }}">Export matching rows as CSV</a>
 </form>
 
-<h2>{{ total }} row(s) in {{ table }}{% if capture_id %} for capture #{{ capture_id }}{% endif %} -- page {{ page }} of {{ total_pages }}</h2>
+<div class="dense-toolbar" style="margin:4px 0"><strong>{{ total }} row(s)</strong><span class="chip mono">{{ table }}</span>{% if capture_id %}<span class="chip">capture #{{ capture_id }}</span>{% endif %}<span class="sp"></span><span class="muted">page {{ page }} of {{ total_pages }}</span></div>
 {% if not rows %}
 <p class="muted">No matches.</p>
 {% else %}

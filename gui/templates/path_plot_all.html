@@ -1,14 +1,23 @@
 {% extends "base.html" %}
 {% block title %}All Paths{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}capture-all-paths-page{% endblock %}
 
 {% block content %}
-<h1>All paths <span class="chip mono">capture #{{ capture_id }}</span></h1>
-<p><a class="inline" href="/captures/{{ capture_id }}">&larr; back to capture #{{ capture_id }}</a>
-  {% if zoneid %}&nbsp;&middot;&nbsp; <a class="inline" href="/zones/{{ zoneid }}/view3d_all?capture_id={{ capture_id }}&zone_db={{ zone_db }}">view in 3D &rarr;</a>{% endif %}</p>
+<style>
+main.capture-all-paths-page{padding:8px 10px 24px}
+#plot-viewport{width:min(100%,1200px);max-width:none!important}
+</style>
+<div class="dense-toolbar">
+  <a class="chip" href="/captures/{{ capture_id }}">&larr; Capture</a>
+  <strong>All Paths</strong>
+  <span class="chip mono">#{{ capture_id }}</span>
+  {% if cap %}<span class="muted">{{ cap.capture_label }}{% if cap.mission_name %} · {{ cap.mission_name }}{% endif %}</span>{% endif %}
+  <span class="sp"></span>
+  {% if zoneid %}<a class="chip" href="/zones/{{ zoneid }}/view3d_all?capture_id={{ capture_id }}&zone_db={{ zone_db }}">3D view</a>{% endif %}
+</div>
 
-{% if cap %}<p>{{ cap.capture_label }}{% if cap.mission_name %} &mdash; {{ cap.mission_name }}{% endif %}</p>{% endif %}
-
-<form method="get" style="display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
+<form method="get" class="dense-toolbar" style="margin:6px 0;flex-wrap:wrap;">
   <input type="hidden" name="capture_id" value="{{ capture_id }}">
   {% if zones|length > 1 %}
   <span class="muted">zone:</span>
@@ -43,14 +52,14 @@
 {% endif %}
 
 {% if topdown_available and entities %}
-<div id="plot-viewport" style="overflow:hidden; border:1px solid var(--border); border-radius:8px; max-width:640px; cursor:grab; background:var(--code-bg);">
+<div id="plot-viewport" style="overflow:hidden; border:1px solid var(--border); border-radius:8px; cursor:grab; background:var(--code-bg);">
   <img id="plot-img" src="/captures/plot_all.png?capture_id={{ capture_id }}&zone_db={{ zone_db | urlencode }}&pad_yalms={{ pad_yalms }}&detail={{ detail }}&q={{ q | urlencode }}&labels={{ 1 if labels else 0 }}"
        style="display:block; width:100%; transform-origin:0 0; user-select:none;" draggable="false">
 </div>
-<p class="muted">Scroll to zoom, drag to pan, double-click to reset. Path-capable entities retain their colored traces; every capture-observed entity with a real XYZ position is also marked in gold, including fixed NPCs/props that never produced PathLog history. Labels show name, entity ID, and observed XYZ when enabled. Search filters the map and entity table together. "Collision" is the clean walkable-space outline; "visual" shows wall/prop/terrain detail.</p>
+<details class="dense-card" style="margin:6px 0;width:min(100%,1200px)"><summary>Plot controls / display notes</summary><div class="muted" style="padding-top:5px">Scroll to zoom, drag to pan, double-click to reset. Colored lines are path traces; gold markers include positioned fixed NPCs/props. Labels can show name, entity ID, and XYZ. Search filters the map and table together.</div></details>
 <p class="muted"><b>{{ spatial_count }}</b> positioned capture entit{{ 'y' if spatial_count == 1 else 'ies' }} shown{% if q %} matching <code>{{ q }}</code>{% endif %}.</p>
 
-<h2>Capture entities</h2>
+<div class="dense-toolbar" style="margin:8px 0 5px"><strong>Capture entities</strong><span class="chip">{{ spatial_count }}</span></div>
 <div class="table-wrap"><table>
   <tr><th></th><th>id</th><th>name</th><th>model</th><th>position (x, y, z)</th><th>hp%</th><th>path</th></tr>
   {% for l in legend %}

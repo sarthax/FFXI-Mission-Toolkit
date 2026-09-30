@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Capture Source Evidence — Mission Toolkit{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}capture-source-page{% endblock %}
 {% block content %}
-<h1>Capture Source Evidence</h1>
-<p><a class="zonelink" href="/captures/{{ cap.capture_id }}">← Capture #{{ cap.capture_id }}</a></p>
+<style>main.capture-source-page{padding:8px 10px 24px}.source-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:5px;margin:6px 0}.source-meta>div{border:1px solid var(--border);border-radius:6px;padding:6px;background:var(--surface)}</style>
+<div class="dense-toolbar"><a class="chip" href="/captures/{{ cap.capture_id }}">← Capture</a><strong>Source Evidence</strong><span class="chip mono">#{{ cap.capture_id }}</span><span class="sp"></span><span class="muted">{{ locator.filename }}</span></div>
 
 <div class="table-wrap"><table>
 <tr><th>Capture</th><td>#{{ cap.capture_id }} · {{ cap.capture_label }}</td></tr>
@@ -33,12 +35,12 @@
 {% if source_error %}<p class="muted">{{ source_error }}</p>{% endif %}
 
 {% if source_excerpt is not none %}
-<h2>Exact source excerpt</h2>
+<div class="dense-toolbar" style="margin:8px 0 5px"><strong>Exact source excerpt</strong></div>
 <pre style="white-space:pre-wrap;overflow:auto;max-height:65vh;">{{ source_excerpt }}</pre>
 {% endif %}
 
 {% if source_row %}
-<h2>Exact SQLite source row</h2>
+<div class="dense-toolbar" style="margin:8px 0 5px"><strong>Exact SQLite source row</strong></div>
 <div class="table-wrap"><table>
 <thead><tr>{% for col in source_columns %}<th>{{ col }}</th>{% endfor %}</tr></thead>
 <tbody><tr>{% for col in source_columns %}<td><code>{{ source_row[col] }}</code></td>{% endfor %}</tr></tbody>

@@ -1,28 +1,32 @@
 {% extends "base.html" %}
 {% block title %}Add Files{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}capture-add-page{% endblock %}
 {% block content %}
-<p><a class="inline" href="/captures/{{ cap.capture_id }}">&larr; back to capture #{{ cap.capture_id }}</a></p>
-<h1>Add files <span class="chip mono">#{{ cap.capture_id }}</span></h1>
-<p>{{ cap.capture_label }} <span class="chip">{{ cap.content_type }}</span>
-  {% if cap.mission_name %}&mdash; {{ cap.mission_name }}{% endif %}</p>
-
-<p class="muted">Drop any real capture log/db here -- NPCLogger/ActionView/LevelRangeTrack <code class="chip">.db</code>,
-  KITrack/EventView/idview-simple/ActionView-simple/AttackDelay/HPTrack/Npclogger-tables <code class="chip">.log/.lua</code>,
-  or a whole bundle as <code class="chip">.zip</code> or <code class="chip">.7z</code>. Format is
-  detected from real content, not the filename or folder path -- a bare dropped file has neither.
-  PathLog CSVs need their real folder path for zone context -- use "Choose a folder" below (or a
-  zip/7z upload) for those, not the bare-files picker. <strong>RAR archives aren't supported</strong>
-  (re-compress as .zip or .7z first) -- if a file can't be read at all, you'll see a clear reason
-  below rather than it silently doing nothing.</p>
+<style>
+main.capture-add-page{padding:8px 10px 24px}
+.capture-upload-grid{display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));gap:7px;margin:6px 0}
+.capture-upload-card{border:1px solid var(--border);border-radius:7px;padding:8px;background:var(--surface)}
+@media(max-width:760px){.capture-upload-grid{grid-template-columns:1fr}}
+</style>
+<div class="dense-toolbar">
+  <a class="chip" href="/captures/{{ cap.capture_id }}">&larr; Capture</a>
+  <strong>Add files</strong>
+  <span class="chip mono">#{{ cap.capture_id }}</span>
+  <span class="chip">{{ cap.content_type }}</span>
+  {% if cap.mission_name %}<span class="muted">{{ cap.mission_name }}</span>{% endif %}
+  <span class="sp"></span>
+  <details class="dense-card" style="margin:0;padding:0 6px"><summary>Formats / guidance</summary><div class="muted" style="padding:6px 2px;max-width:760px">Formats are detected from content. Use whole-folder upload when directory layout carries zone/context information, especially PathLog CSVs. ZIP and 7z are supported; RAR is not.</div></details>
+</div>
 
 <form method="post" action="/captures/{{ cap.capture_id }}/add" enctype="multipart/form-data" id="add-files-form">
-  <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:14px;">
-    <div style="flex:1; min-width:260px; border:1px solid var(--border); border-radius:8px; padding:12px 14px; background:var(--surface);">
+  <div class="capture-upload-grid">
+    <div class="capture-upload-card">
       <label for="files-input" style="display:block; font-weight:600; margin-bottom:2px;">Option A &mdash; Pick individual files</label>
       <p class="muted" style="margin:0 0 8px;">One or more loose <code class="chip">.log</code>/<code class="chip">.lua</code>/<code class="chip">.db</code> files, a single <code class="chip">.zip</code>/<code class="chip">.7z</code> bundle, or several at once. No folder structure is preserved -- fine for anything whose format is detected from content alone.</p>
       <input type="file" name="files" id="files-input" multiple>
     </div>
-    <div style="flex:1; min-width:260px; border:1px solid var(--border); border-radius:8px; padding:12px 14px; background:var(--surface);">
+    <div class="capture-upload-card">
       <label for="folder-input" style="display:block; font-weight:600; margin-bottom:2px;">Option B &mdash; Pick a whole folder</label>
       <p class="muted" style="margin:0 0 8px;">Upload an entire capture folder (with all its real subfolders, e.g. <code class="chip">actionview/</code>, <code class="chip">npclogger/</code>, <code class="chip">PathLog/</code>) in one go, preserving the real directory layout some formats need for zone context. <strong>Use this one</strong> if you're not sure which to pick.</p>
       <input type="file" id="folder-input" webkitdirectory directory multiple>
@@ -60,7 +64,7 @@
 </script>
 
 {% if last_results is not none %}
-<h2 style="margin-top:24px;">Just added</h2>
+<div class="dense-toolbar" style="margin-top:8px"><strong>Just added</strong><span class="chip">{{ last_results|length }}</span></div>
 <div class="table-wrap"><table>
   <tr><th>file</th><th>detected format</th><th>rows</th><th></th></tr>
   {% for r in last_results %}
@@ -74,7 +78,7 @@
 </table></div>
 {% endif %}
 
-<h2 style="margin-top:24px;">All files added so far</h2>
+<div class="dense-toolbar" style="margin-top:8px"><strong>All files added so far</strong><span class="chip">{{ files|length }}</span></div>
 {% if files %}
 <div class="table-wrap"><table>
   <tr><th>file</th><th>format</th><th>rows</th><th>status</th><th>when</th></tr>

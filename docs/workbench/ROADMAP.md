@@ -132,7 +132,18 @@ First active foundation milestone:
 - Record branch/PR workflow.
 - Record current audit findings and unresolved items.
 
-### 2026-09-30 Compact Workbench shell / UX alignment
+### 2026-09-30 Captures workspace UX refresh
+
+- [x] Rework Capture Detail into a compact evidence-first workspace.
+- [x] Consolidate capture navigation/actions and add at-a-glance evidence counts.
+- [x] Collapse healthy integrity/provenance and secondary datasets while keeping warnings visible.
+- [x] Add quick NPC/entity filtering on Capture Detail.
+- [x] Refresh Timeline, Packet Browser/Viewer, Search, Query, New/Add, Alignment, Source Evidence, delete confirmation, and Help.
+- [x] Expand capture 2D plot workspaces to use available screen width.
+- [x] Add template compilation/layout regression contracts.
+- [ ] Follow up from real-user testing on which capture panels should default open/closed and whether any high-frequency actions should be promoted further.
+
+## 2026-09-30 Compact Workbench shell / UX alignment
 - [x] Replace the three permanently stacked global header rows with a single compact shared shell while preserving existing workspace/route ownership.
 - [x] Move active-workspace subsections and snapshot/project context into bounded dropdown/popover surfaces.
 - [x] Add shared dense-workstation primitives for toolbars, panels, tabs, drawers, cards, control sizing, and common panel widths.
