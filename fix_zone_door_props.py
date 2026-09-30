@@ -27,7 +27,7 @@ from pathlib import Path
 import settings
 
 TOOLS_ROOT = Path(__file__).parent
-NPC_LIST_PATH = settings.get_topaz_root() / "sql/npc_list.sql"
+NPC_LIST_PATH = settings.get_active_server_root() / "sql/npc_list.sql"
 DOOR_JSON_PATH = TOOLS_ROOT / "FFXI-DATS/Info/Door or Objects.json"
 ENTITIES_DIR = TOOLS_ROOT / "FFXI-DATS/Entities"
 

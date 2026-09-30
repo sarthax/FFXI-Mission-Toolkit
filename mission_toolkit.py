@@ -92,7 +92,13 @@ def normalize(name: str) -> str:
 
 def resolve_topaz_zone(query: str) -> tuple[int, str]:
     """Returns (zoneid, zone_name) from either a numeric zoneid or a zone.lua constant name."""
-    zone_lua = (TOPAZ_ROOT / "scripts/globals/zone.lua").read_text(encoding="utf-8", errors="ignore")
+    # Zone ids are the same across Topaz/DSP/LSB, so read zone.lua / zone_settings.sql from the
+    # user's active server first and fall back to the other configured tree.
+    roots = settings.get_server_roots() or [TOPAZ_ROOT]
+    zone_lua_path = next((r / "scripts/globals/zone.lua" for r in roots if (r / "scripts/globals/zone.lua").is_file()), None)
+    if zone_lua_path is None:
+        raise SystemExit("No scripts/globals/zone.lua found under any configured server root.")
+    zone_lua = zone_lua_path.read_text(encoding="utf-8", errors="ignore")
 
     if query.isdigit():
         zoneid = int(query)
@@ -107,7 +113,10 @@ def resolve_topaz_zone(query: str) -> tuple[int, str]:
         return int(m.group(1)), query
 
     # Fall back to fuzzy matching against zone_settings.sql's display name column.
-    settings_sql = (TOPAZ_ROOT / "sql/zone_settings.sql").read_text(encoding="utf-8", errors="ignore")
+    settings_sql_path = next((r / "sql/zone_settings.sql" for r in roots if (r / "sql/zone_settings.sql").is_file()), None)
+    if settings_sql_path is None:
+        raise SystemExit(f"Could not resolve zone '{query}': no sql/zone_settings.sql under any configured server root.")
+    settings_sql = settings_sql_path.read_text(encoding="utf-8", errors="ignore")
     target = normalize(query)
     for row_match in re.finditer(r"VALUES \((\d+),\d+,'[^']*',\d+,'([^']+)'", settings_sql):
         zid, zname = row_match.groups()

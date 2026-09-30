@@ -23,6 +23,21 @@ _HOOK_HEADER=re.compile(
     r"(on[A-Za-z0-9_]+|registryRequirements|entryRequirements|afterInstanceRegister)"
     r"\s*=\s*function\s*\(([^)]*)\)"
 )
+# Old-DSP scripts declare hooks as bare globals (`function onTrigger(player,npc)`), not entity.onX.
+_GLOBAL_HOOK_HEADER=re.compile(
+    r"^\s*function\s+(on[A-Za-z0-9_]+)\s*\(([^)]*)\)"
+)
+# Topaz uses the `tpz.` namespace where LSB uses `xi.`; old DSP has neither (bare globals).
+_NS=r"(?:xi|tpz)"
+_INT_LIT=r"0[xX][0-9A-Fa-f]+|\d+"
+
+
+def _lit_int(text: str) -> int:
+    """Parse a Lua integer literal; DSP scripts write CSIDs in hex (0x0063)."""
+    text=text.strip()
+    return int(text,16) if text[:2].lower()=="0x" else int(text)
+
+
 _LOCAL_HELPER_HEADER=re.compile(
     r"^\s*local\s+(?:function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(([^)]*)\)|"
     r"([A-Za-z_][A-Za-z0-9_]*)\s*=\s*function\s*\(([^)]*)\))"
@@ -42,15 +57,15 @@ _LOCAL_READ=re.compile(r"getLocalVar\(\s*['\"]([^'\"]+)['\"]\s*\)")
 _DROP_ID=re.compile(r"setDropID\(\s*(\d+)\s*\)")
 _MOD_CALL=re.compile(
     r"\b(?:setMod|addMod|delMod|setMobMod|addMobMod|delMobMod)\(\s*"
-    r"xi\.(?:mod|mobMod)\.([A-Z0-9_]+)"
+    r"(?:xi|tpz)\.(?:mod|mobMod)\.([A-Z0-9_]+)"
 )
 _DESPAWN=re.compile(r"\bDespawnMob\(")
 _SPELL_OVERRIDE=re.compile(r"\bspell:set(?:AoE|Radius|Animation|MPCost|CastTime|Recast)\(")
 _ENMITY_TRANSFER=re.compile(r"\b(?:updateEnmity|updateClaim)\s*\(")
-_KEYITEM_GIVE=re.compile(r"npcUtil\.giveKeyItem\(\s*player\s*,\s*xi\.keyItem\.([A-Z0-9_]+)")
-_KEYITEM_DEL=re.compile(r"player:delKeyItem\(\s*xi\.keyItem\.([A-Z0-9_]+)")
+_KEYITEM_GIVE=re.compile(r"npcUtil\.giveKeyItem\(\s*player\s*,\s*(?:xi\.keyItem|tpz\.ki)\.([A-Z0-9_]+)")
+_KEYITEM_DEL=re.compile(r"player:delKeyItem\(\s*(?:xi\.keyItem|tpz\.ki)\.([A-Z0-9_]+)")
 _KEYITEM_HAS_GUARD=re.compile(
-    r"^\s*(?:if|elseif)\s+(not\s+)?player:hasKeyItem\(\s*xi\.keyItem\.([A-Z0-9_]+)\s*\)\s+then\b"
+    r"^\s*(?:if|elseif)\s+(not\s+)?player:hasKeyItem\(\s*(?:xi\.keyItem|tpz\.ki)\.([A-Z0-9_]+)\s*\)\s+then\b"
 )
 _TRADE_LITERAL_GUARD=re.compile(
     r"^\s*(?:if|elseif)\s+npcUtil\.(tradeHas|tradeHasExactly)\(\s*trade\s*,\s*"
@@ -59,12 +74,12 @@ _TRADE_LITERAL_GUARD=re.compile(
 _ITEM_GIVE=re.compile(r"npcUtil\.giveItem\(\s*player\s*,\s*([^\n\)]+)")
 _ADD_GIL=re.compile(r"player:addGil\(\s*([^\)]+)\)")
 _DEL_GIL=re.compile(r"player:delGil\(\s*([^\)]+)\)")
-_CHAR_READ=re.compile(r"player:getCharVar\(\s*['\"]([^'\"]+)['\"]\s*\)")
-_CHAR_SET=re.compile(r"player:setCharVar\(\s*['\"]([^'\"]+)['\"]\s*,\s*([^\)]+)\)")
-_START_EVENT=re.compile(r"player:startEvent\(\s*(\d+)")
+_CHAR_READ=re.compile(r"player:get(?:Char)?Var\(\s*['\"]([^'\"]+)['\"]\s*\)")
+_CHAR_SET=re.compile(r"player:set(?:Char)?Var\(\s*['\"]([^'\"]+)['\"]\s*,\s*([^\)]+)\)")
+_START_EVENT=re.compile(r"player:startEvent\(\s*("+_INT_LIT+r")")
 _UPDATE_EVENT=re.compile(r"player:updateEvent\(")
 _CSID_LITERAL_COMPARE=re.compile(
-    r"\bcsid\s*==\s*(\d+)"
+    r"\bcsid\s*==\s*("+_INT_LIT+r")"
 )
 _EVENT_OUTCOME_LITERAL_COMPARE=re.compile(
     r"\b(option|result)\s*==\s*(-?\d+|true|false|['\"][^'\"]+['\"])"
@@ -77,7 +92,7 @@ _SET_STATUS=re.compile(r"\b(?:npc|door|mob|mobArg|npcArg|bombMob):setStatus\(\s*
 _SET_UNTARGETABLE=re.compile(r"\b(?:npc|door|mob|mobArg|npcArg):setUntargetable\(\s*([^\)]+)\)")
 _SET_POS=re.compile(r"\b(?:npc|door|mob|mobArg|npcArg|bombMob):setPos\(")
 _PATH_CALL=re.compile(r"\b(?:mob|mobArg|npc|npcArg):(pathTo|pathThrough)\(")
-_SYSTEM_HELPER=re.compile(r"\bxi\.([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)\s*\(")
+_SYSTEM_HELPER=re.compile(r"\b(?:xi|tpz)\.([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)\s*\(")
 _METHOD_API_CALL=re.compile(
     r"\b([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)"
     r":([A-Za-z_][A-Za-z0-9_]*)\s*\("
@@ -289,9 +304,14 @@ def extract_hook_blocks(lua: str) -> tuple[HookBlock,...]:
         if i<=claimed_until:
             continue
         match=_HOOK_HEADER.match(code)
-        if not match:
-            continue
-        owner,hook,args_text=match.groups()
+        if match:
+            owner,hook,args_text=match.groups()
+        else:
+            global_match=_GLOBAL_HOOK_HEADER.match(code)
+            if not global_match:
+                continue
+            hook,args_text=global_match.groups()
+            owner="global"
         depth=0
         started=False
         for j in range(i,len(raw)):
@@ -1237,10 +1257,10 @@ def _literal_csid_branches(text: str, *, start_line: int) -> tuple[dict,...]:
             if re.match(r"^(?:elseif\b|else\b|end\b)",stripped):
                 finish(i-1)
 
-        branch_match=re.match(r"^\s*(?:if|elseif)\s+csid\s*==\s*(\d+)\s+then\b",code)
+        branch_match=re.match(r"^\s*(?:if|elseif)\s+\(?\s*csid\s*==\s*("+_INT_LIT+r")\s*\)?\s+then\b",code)
         if branch_match:
             active={
-                "csid":int(branch_match.group(1)),
+                "csid":_lit_int(branch_match.group(1)),
                 "start_index":i,
                 "source_line":raw_line.strip(),
                 "branch_depth":depth + (1 if stripped.startswith("if ") else 0),
@@ -1629,7 +1649,7 @@ def _literal_csid_guards(text: str, *, start_line: int) -> tuple[dict,...]:
         code=_strip_line_comment_preserve_strings(raw_line)
         for match in _CSID_LITERAL_COMPARE.finditer(code):
             rows.append({
-                "csid":int(match.group(1)),
+                "csid":_lit_int(match.group(1)),
                 "line":start_line+offset,
                 "source_line":raw_line.strip(),
             })
@@ -2382,7 +2402,7 @@ def extract_lsb_scripted_behavior(
             ))
             modeled_hooks.add(hook)
 
-        event_ids=tuple(dict.fromkeys(int(x) for x in _START_EVENT.findall(text)))
+        event_ids=tuple(dict.fromkeys(_lit_int(x) for x in _START_EVENT.findall(text)))
         csid_guards=_literal_csid_guards(text,start_line=block.start_line)
         csid_branches=_literal_csid_branches(text,start_line=block.start_line)
         if event_ids or _UPDATE_EVENT.search(text) or csid_guards:

@@ -54,6 +54,7 @@ from workbench.core.services.feature_trace_catalog import present_relationships
 from workbench.core.services.feature_trace_dossier import build_dossier
 from workbench.core.services.scripted_behavior_visualizer import (
     find_lsb_behavior_sources,
+    find_behavior_sources_multi,
     inspect_lsb_behavior,
 )
 from workbench.core.services import timeline_alignment, packet_correlation
@@ -2339,7 +2340,48 @@ def entity_search(request: Request, q: str = "", page: int = 1):
     })
 
 
+def _behavior_roots(server: str = "") -> dict:
+    """Configured script trees for the Behavior Inspector, in priority order.
+
+    The toolkit administers whichever server the user configured (Topaz, DSP or LandSandBoat),
+    not just LSB. The active Zone Plot server is searched first, then LSB, then the remaining
+    tree; trees that aren't configured or don't exist on disk are left out. `server` narrows to
+    one tree ("topaz" | "dsp" | "lsb").
+    """
+    candidates = {
+        "topaz": settings_mod.get_topaz_root(),
+        "dsp": settings_mod.get_dsp_root(),
+        "lsb": build_lsb_index.LSB_ROOT,
+    }
+    try:
+        active = zone_plot.get_server()
+    except Exception:
+        active = "topaz"
+    order = [active] + [k for k in ("lsb", "topaz", "dsp") if k != active]
+    roots = {
+        k: Path(candidates[k]) for k in order
+        if candidates.get(k) and (Path(candidates[k]) / "scripts" / "zones").is_dir()
+    }
+    if server:
+        roots = {k: v for k, v in roots.items() if k == server}
+    return roots
+
+
 def _entity_behavior_summary(profile: dict) -> dict:
+    """Try each configured server tree in priority order and keep the first that resolves."""
+    roots = _behavior_roots()
+    if not roots:
+        return _entity_behavior_summary_for_root(profile, "lsb", build_lsb_index.LSB_ROOT)
+    first = None
+    for name, root in roots.items():
+        out = _entity_behavior_summary_for_root(profile, name, root)
+        if out.get("available"):
+            return out
+        first = first or out
+    return first
+
+
+def _entity_behavior_summary_for_root(profile: dict, server: str, root: Path) -> dict:
     """Project the existing Behavior Inspector into a bounded Entity summary.
 
     Source resolution is against the configured LSB tree. Entity Profile's raw lua_hits may come
@@ -2347,6 +2389,7 @@ def _entity_behavior_summary(profile: dict) -> dict:
     """
     out = {
         "available": False,
+        "server": server,
         "source": None,
         "error": None,
         "hooks": [],
@@ -2359,9 +2402,8 @@ def _entity_behavior_summary(profile: dict) -> dict:
         "summary": {},
         "contexts": 0,
     }
-    root = build_lsb_index.LSB_ROOT
     if not root.is_dir():
-        out["error"] = "LandSandBoat source root is not available."
+        out["error"] = f"{server} source root is not available."
         return out
 
     zone = str(profile.get("zone_folder") or "")
@@ -2397,7 +2439,7 @@ def _entity_behavior_summary(profile: dict) -> dict:
         ]
 
     if not candidates:
-        out["error"] = "No matching LSB behavior source was resolved for this entity."
+        out["error"] = f"No matching {server} behavior source was resolved for this entity."
         return out
 
     chosen = sorted(candidates, key=lambda row: (
@@ -2587,9 +2629,10 @@ def entity_detail(request: Request, npcid: int, q: str = "", page: int = 1):
     profile["behavior_summary"] = (
         _entity_behavior_summary(profile) if not profile.get("error") else {}
     )
-    if profile.get("behavior_summary", {}).get("source", {}).get("path"):
+    if ((profile.get("behavior_summary") or {}).get("source") or {}).get("path"):
         # Prefer the verified LSB path for UI handoff. Keep raw server-source lua_hits separately.
         profile["behavior_source"] = profile["behavior_summary"]["source"]["path"]
+        profile["behavior_server"] = profile["behavior_summary"].get("server") or ""
     profile["relationship_summary"] = (
         _entity_relationship_summary(profile, con) if not profile.get("error") else {}
     )
@@ -3684,31 +3727,54 @@ def behavior_visualizer_page(
     request: Request,
     q: str = "",
     source: str = "",
+    server: str = "",
 ):
-    """Inspect LSB scripted behavior without promoting same-zone context to dependency truth."""
+    """Inspect scripted behavior in whichever server tree is configured (Topaz, DSP or LSB)
+    without promoting same-zone context to dependency truth."""
     matches=[]
     result=None
     error=None
-    lsb_root=build_lsb_index.LSB_ROOT
-    if not lsb_root.is_dir():
-        error="LandSandBoat source root is not available. Configure/install the LSB checkout first."
+    roots=_behavior_roots()
+    if not roots:
+        error=("No server script tree is available. Configure a Topaz or DSP path on the Settings "
+               "page, or install the LandSandBoat checkout.")
     elif source.strip():
+        pick=server if server in roots else next(iter(roots))
         try:
-            result=inspect_lsb_behavior(lsb_root,source.strip())
+            result=inspect_lsb_behavior(roots[pick],source.strip())
+            server=pick
+        except FileNotFoundError:
+            # Path isn't in the requested/primary tree; try the others before giving up.
+            for name,root in roots.items():
+                if name == pick:
+                    continue
+                try:
+                    result=inspect_lsb_behavior(root,source.strip())
+                    server=name
+                    break
+                except Exception:
+                    continue
+            if result is None:
+                error=f"{source.strip()} was not found in any configured server tree ({', '.join(roots)})."
         except Exception as exc:
             error=f"{type(exc).__name__}: {exc}"
     elif q.strip():
-        matches=find_lsb_behavior_sources(lsb_root,q.strip(),limit=100)
+        matches=find_behavior_sources_multi(_behavior_roots(server),q.strip(),limit=100)
         if len(matches)==1:
             try:
-                result=inspect_lsb_behavior(lsb_root,matches[0]["path"])
+                result=inspect_lsb_behavior(roots[matches[0]["server"]],matches[0]["path"])
                 source=matches[0]["path"]
+                server=matches[0]["server"]
             except Exception as exc:
                 error=f"{type(exc).__name__}: {exc}"
+        elif not matches:
+            error=f"No match for '{q.strip()}' in: {', '.join(roots)} (searched file names, then script contents)."
     return templates.TemplateResponse(request,"behavior_visualizer.html",{
         "request":request,
         "q":q,
         "source":source,
+        "server":server,
+        "servers":list(roots),
         "matches":matches,
         "result":result,
         "error":error,
@@ -3716,13 +3782,15 @@ def behavior_visualizer_page(
 
 
 @app.get("/behavior/graph.json")
-def behavior_visualizer_graph(source: str):
-    lsb_root=build_lsb_index.LSB_ROOT
-    if not lsb_root.is_dir():
-        return JSONResponse({"error":"LandSandBoat source root is not available."},status_code=404)
+def behavior_visualizer_graph(source: str, server: str = ""):
+    roots=_behavior_roots()
+    if not roots:
+        return JSONResponse({"error":"No server script tree is available."},status_code=404)
+    pick=server if server in roots else next(iter(roots))
     try:
-        result=inspect_lsb_behavior(lsb_root,source.strip())
+        result=inspect_lsb_behavior(roots[pick],source.strip())
         return JSONResponse({
+            "server":pick,
             "source":result["source"],
             "graph":result["graph"],
             "contexts":result["contexts"],

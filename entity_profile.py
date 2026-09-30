@@ -45,11 +45,30 @@ CONFIDENCE = {
     "client_dat": "highest -- ground truth for this client build",
     "topaz_sql": "authoritative for 'does Topaz implement this', not 'is this the real value'",
     "topaz_lua": "authoritative for 'does Topaz implement this', not 'is this the real value'",
+    "dsp_sql": "authoritative for 'does DSP implement this', not 'is this the real value'",
+    "dsp_lua": "authoritative for 'does DSP implement this', not 'is this the real value'",
     "wiki": "reference only -- never load-bearing alone",
     "packet_decode": "high, but scoped to that capture's calling convention",
     "derived": "computed from another already-recorded field, not an independent source",
     "capture": "observed behavior from a real captured session -- not a guarantee of Topaz's own scripted behavior",
 }
+
+
+def _P() -> str:
+    return settings.get_active_sql_prefix()
+
+
+def _col(con: sqlite3.Connection, table: str, column: str, default: str = "NULL") -> str:
+    """`column` if the active server's table has it, else a NULL literal -- the topaz_*/dsp_*
+    tables don't carry every column the legacy LSB-derived sql_* tables do (cmbDelay,
+    instance_zone, ...)."""
+    cols = {r[1] for r in con.execute(f"PRAGMA table_info({table})")}
+    return column if column in cols else default
+
+
+def _src(kind: str) -> str:
+    """Provenance source key for the active server: topaz_sql / dsp_sql / topaz_lua / dsp_lua."""
+    return _P() + kind
 
 
 def init_db(con: sqlite3.Connection):
@@ -108,10 +127,10 @@ def get_wiring_status(con: sqlite3.Connection, npcid: int) -> str:
     tables that actually define 'wired'). Both now call this single function instead of two
     independently-maintained near-duplicates that could silently disagree."""
     in_instance = con.execute(
-        "SELECT 1 FROM sql_instance_entities WHERE id = ? LIMIT 1", (npcid,)
+        f"SELECT 1 FROM {_P()}instance_entities WHERE id = ? LIMIT 1", (npcid,)
     ).fetchone()
     in_spawn = con.execute(
-        "SELECT 1 FROM sql_mob_spawn_points WHERE mobid = ? LIMIT 1", (npcid,)
+        f"SELECT 1 FROM {_P()}mob_spawn_points WHERE mobid = ? LIMIT 1", (npcid,)
     ).fetchone()
     if in_instance:
         return "wired (instance_entities)"
@@ -187,7 +206,7 @@ def get_mission_rollup(con: sqlite3.Connection, mission_id: int, mission_name: s
         return {"n_entities": 0, "is_placeholder": True}
 
     entity_ids = [r[0] for r in con.execute(
-        "SELECT id FROM sql_instance_entities WHERE instanceid = ?", (mission_id,)
+        f"SELECT id FROM {_P()}instance_entities WHERE instanceid = ?", (mission_id,)
     ).fetchall()]
     if not entity_ids:
         return {"n_entities": 0}
@@ -211,10 +230,10 @@ def get_mission_rollup(con: sqlite3.Connection, mission_id: int, mission_name: s
         f"SELECT COUNT(DISTINCT actor) FROM capture_actions WHERE actor IN ({placeholders})"
     )
     n_with_drops = con.execute(
-        f"""SELECT COUNT(DISTINCT msp.mobid) FROM sql_mob_spawn_points msp
-            JOIN sql_mob_groups g ON g.groupid = msp.groupid
+        f"""SELECT COUNT(DISTINCT msp.mobid) FROM {_P()}mob_spawn_points msp
+            JOIN {_P()}mob_groups g ON g.groupid = msp.groupid
             WHERE msp.mobid IN ({placeholders}) AND g.dropid > 0
-              AND EXISTS (SELECT 1 FROM sql_mob_droplist d WHERE d.dropid = g.dropid)""",
+              AND EXISTS (SELECT 1 FROM {_P()}mob_droplist d WHERE d.dropid = g.dropid)""",
         entity_ids,
     ).fetchone()[0]
     captures_for_mission = con.execute(
@@ -413,32 +432,32 @@ def build_profile(con: sqlite3.Connection, npcid: int) -> dict:
     row_detail = lookup_entity.get_npc_list_row_detail(npcid)
     profile["npc_list"] = row_detail
     if row_detail:
-        record_field(con, "npc", npcid, "position", "topaz_sql", row_detail["pos"])
+        record_field(con, "npc", npcid, "position", _src("sql"), row_detail["pos"])
         if row_detail["content_tag"]:
-            record_field(con, "npc", npcid, "content_tag", "topaz_sql", row_detail["content_tag"])
+            record_field(con, "npc", npcid, "content_tag", _src("sql"), row_detail["content_tag"])
 
     mob_chain = lookup_entity.get_mob_chain_detail(con, npcid, zoneid)
     profile["mob_chain"] = mob_chain
     if mob_chain and "pool_name" in mob_chain:
-        record_field(con, "npc", npcid, "mob_pool", "topaz_sql", mob_chain["pool_name"])
+        record_field(con, "npc", npcid, "mob_pool", _src("sql"), mob_chain["pool_name"])
         if mob_chain.get("min_level") is not None:
-            record_field(con, "npc", npcid, "observed_level_range", "topaz_sql",
+            record_field(con, "npc", npcid, "observed_level_range", _src("sql"),
                          f"{mob_chain['min_level']}-{mob_chain['max_level']}")
         # Model DAT: mob_pools.modelid, decoded via mob_look_decode.py's real ground-truth
         # struct parser -- wired in here (it existed but was never connected to a profile view).
         model_row = con.execute(
-            "SELECT modelid, cmbDelay FROM sql_mob_pools WHERE poolid = ?", (mob_chain["poolid"],)
+            f"SELECT modelid, {_col(con, _P() + 'mob_pools', 'cmbDelay')} FROM {_P()}mob_pools WHERE poolid = ?", (mob_chain["poolid"],)
         ).fetchone()
         if model_row and model_row[1] is not None:
             mob_chain["cmb_delay"] = model_row[1]
-            record_field(con, "npc", npcid, "observed_attack_delay", "topaz_sql", str(model_row[1]))
+            record_field(con, "npc", npcid, "observed_attack_delay", _src("sql"), str(model_row[1]))
         if model_row and model_row[0]:
             hexstr = model_row[0][2:] if model_row[0].startswith("0x") else model_row[0]
             try:
                 model_data = mob_look_decode.decode_look_data(bytes.fromhex(hexstr))
                 profile["model"] = model_data
                 if model_data.get("kind") == "flat":
-                    record_field(con, "npc", npcid, "model_file_id", "topaz_sql", model_data["file_id"])
+                    record_field(con, "npc", npcid, "model_file_id", _src("sql"), model_data["file_id"])
                     # Real bug found 2026-09-04: the decode math is correct, but a whole mob
                     # family (Lamia_NoXX) turned out to share only ~8 distinct modelid values
                     # across 14 real, distinct mobs -- the classic "generic placeholder, copy-
@@ -449,7 +468,7 @@ def build_profile(con: sqlite3.Connection, npcid: int) -> dict:
                     # raw blob -- a value reused by several unrelated mobs is a real placeholder
                     # signal, a value unique to this pool is real signal the other way.
                     dupe_row = con.execute(
-                        "SELECT COUNT(DISTINCT name) FROM sql_mob_pools WHERE modelid = ? AND poolid != ?",
+                        f"SELECT COUNT(DISTINCT name) FROM {_P()}mob_pools WHERE modelid = ? AND poolid != ?",
                         (model_row[0], mob_chain["poolid"]),
                     ).fetchone()
                     if dupe_row and dupe_row[0]:
@@ -469,18 +488,18 @@ def build_profile(con: sqlite3.Connection, npcid: int) -> dict:
     # but only the last of each survived before this fix). Fold the filename into field_name so
     # each real reference gets its own row.
     for fname in sql_hits:
-        record_field(con, "npc", npcid, f"referenced_in_sql:{fname}", "topaz_sql", fname)
+        record_field(con, "npc", npcid, f"referenced_in_sql:{fname}", _src("sql"), fname)
     for fname in lua_hits:
-        record_field(con, "npc", npcid, f"referenced_in_lua:{fname}", "topaz_lua", fname)
+        record_field(con, "npc", npcid, f"referenced_in_lua:{fname}", _src("lua"), fname)
 
     in_instance = "instance_entities.sql" in sql_hits
     in_spawn = "npc_list.sql" in sql_hits or "mob_spawn_points.sql" in sql_hits
     profile["gap_warning"] = in_spawn and not in_instance
 
     instance_rows = con.execute(
-        """SELECT ie.instanceid, il.instance_name, il.instance_zone, il.entrance_zone
-           FROM sql_instance_entities ie
-           LEFT JOIN sql_instance_list il ON il.instanceid=ie.instanceid
+        f"""SELECT ie.instanceid, il.instance_name, {_col(con, _P() + 'instance_list', 'instance_zone', 'NULL').replace('instance_zone', 'il.instance_zone')} AS instance_zone, il.entrance_zone
+           FROM {_P()}instance_entities ie
+           LEFT JOIN {_P()}instance_list il ON il.instanceid=ie.instanceid
            WHERE ie.id=? ORDER BY ie.instanceid""",
         (npcid,),
     ).fetchall()
@@ -496,29 +515,29 @@ def build_profile(con: sqlite3.Connection, npcid: int) -> dict:
     for inst in profile["instance_memberships"]:
         record_field(
             con, "npc", npcid, f"instance_membership:{inst['instanceid']}",
-            "topaz_sql", inst.get("instance_name") or str(inst["instanceid"])
+            _src("sql"), inst.get("instance_name") or str(inst["instanceid"])
         )
 
     # Assault mission link: instance_entities.instanceid -> assault_missions.mission_id --
     # confirmed real this session (Leujaoam Worm 17059841 -> instanceid 1 -> "Leujaoam Cleansing",
     # mission_id 1, exact match), not assumed.
     mission_row = con.execute(
-        """SELECT am.mission_id, am.name FROM sql_instance_entities ie
+        f"""SELECT am.mission_id, am.name FROM {_P()}instance_entities ie
            JOIN assault_missions am ON am.mission_id = ie.instanceid
            WHERE ie.id = ? LIMIT 1""",
         (npcid,),
     ).fetchone()
     if mission_row:
         profile["assault_mission"] = {"id": mission_row[0], "name": mission_row[1]}
-        record_field(con, "npc", npcid, "assault_mission", "topaz_sql", mission_row[1])
+        record_field(con, "npc", npcid, "assault_mission", _src("sql"), mission_row[1])
 
     # Drop table: mob_groups.dropid is the real FK into mob_droplist (NOT mob_pools.poolid --
     # confirmed directly against Topaz's own C++, see build_sql_index.py's load_mob_droplist
     # docstring). dropid=0 is a real, valid "no drop table configured" state, not a lookup miss.
     if mob_chain and mob_chain.get("dropid"):
         drop_rows = con.execute(
-            """SELECT d.groupId, d.groupRate, d.itemId, d.itemRate, i.name
-               FROM sql_mob_droplist d LEFT JOIN items_ours i ON i.itemid = d.itemId
+            f"""SELECT d.groupId, d.groupRate, d.itemId, d.itemRate, i.name
+               FROM {_P()}mob_droplist d LEFT JOIN items_ours i ON i.itemid = d.itemId
                WHERE d.dropid = ? ORDER BY d.groupId, d.itemRate DESC""",
             (mob_chain["dropid"],),
         ).fetchall()
@@ -530,7 +549,7 @@ def build_profile(con: sqlite3.Connection, npcid: int) -> dict:
             ]
             for d in profile["drops"]:
                 label = d["item_name"] or f"item#{d['item_id']}"
-                record_field(con, "npc", npcid, f"drops:{label}", "topaz_sql",
+                record_field(con, "npc", npcid, f"drops:{label}", _src("sql"),
                              f"{d['effective_pct']}%")
 
     # Real capture data -- abilities/weaponskills this entity was actually observed using

@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 201,
+  "route_count": 233,
   "routes": [
     {
       "method": "GET",
@@ -1672,6 +1672,198 @@
       "path": "/wiki/compare",
       "home": "Tools",
       "section": "Wiki Compiler",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/{capture_id}/packets/{seq}",
+      "home": "Captures",
+      "section": "Packets / Raw Packets",
+      "role": "page",
+      "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/{zid}/navdiag.json",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/history/{kind}/{eid}",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/zoneplot/restore_entity_previous",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/zoneplot/edit_bulk",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/{item_id}/history.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/{item_id}/usage.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/itemedit/batch/preview",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/itemedit/batch/apply",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/itemedit/batch/restore",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/modmeta.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/latentmeta.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/client-layout-audit.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/{item_id}/client-record.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/{item_id}/icon.png",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/{item_id}/live-pivot-diff.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/itemedit/live-pivot-copy",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/{item_id}/dat-pristine-diff.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/itemedit/reconcile",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/itemedit/validate",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/itemedit/save-atomic",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/slot-browser.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/create-preview.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/itemedit/restore-client-record",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
       "role": "mutation",
       "disposition": "KEEP"
     }

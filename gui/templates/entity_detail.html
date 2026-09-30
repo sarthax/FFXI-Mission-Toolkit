@@ -45,7 +45,7 @@
 </div>
 <div class="entity-actions">
   {% if profile.behavior_source %}
-  <a class="chip" href="/behavior?source={{ profile.behavior_source|urlencode }}">Inspect Lua behavior</a>
+  <a class="chip" href="/behavior?source={{ profile.behavior_source|urlencode }}&server={{ (profile.behavior_server or "")|urlencode }}">Inspect Lua behavior</a>
   {% else %}
   <a class="chip" href="/behavior?q={{ profile.name|urlencode }}">Find Lua behavior</a>
   {% endif %}
@@ -124,7 +124,7 @@
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:9px">
         <span class="chip mono">{{ profile.behavior_summary.source.path }}</span>
         {% for hook in profile.behavior_summary.hooks %}<span class="chip">{{ hook }}</span>{% endfor %}
-        <a class="chip" href="/behavior?source={{ profile.behavior_summary.source.path|urlencode }}">Open full Behavior Inspector &rarr;</a>
+        <a class="chip" href="/behavior?source={{ profile.behavior_summary.source.path|urlencode }}&server={{ (profile.behavior_summary.server or "")|urlencode }}">Open full Behavior Inspector &rarr;</a>
       </div>
 
       <div class="entity-behavior-grid">

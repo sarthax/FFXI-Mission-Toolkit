@@ -32,7 +32,8 @@ from pathlib import Path
 import settings
 
 TOOLS_ROOT = Path(__file__).parent
-TOPAZ_ROOT = settings.get_topaz_root()
+# The user's active server (Topaz or DSP), not necessarily Topaz -- see settings.get_active_server_root().
+TOPAZ_ROOT = settings.get_active_server_root()
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
 
 
@@ -167,8 +168,10 @@ def get_mob_chain_detail(con: sqlite3.Connection, npcid: int, zoneid: int | None
     zone's row happens to match first, which is a real, confirmed-live bug (found via 17002517,
     Lamia No. 13 in Ilrusi Atoll, resolving to a completely unrelated "fishtrap" pool from some
     other zone's same-numbered group). zoneid is required here specifically to prevent that."""
+    _sqlp = settings.get_active_sql_prefix()
+    pn = "packet_name" if "packet_name" in {r[1] for r in con.execute(f"PRAGMA table_info({_sqlp}mob_pools)")} else "name"
     spawn = con.execute(
-        "SELECT groupid FROM sql_mob_spawn_points WHERE mobid = ?", (npcid,)
+        f"SELECT groupid FROM {_sqlp}mob_spawn_points WHERE mobid = ?", (npcid,)
     ).fetchone()
     if not spawn:
         return None
@@ -176,7 +179,7 @@ def get_mob_chain_detail(con: sqlite3.Connection, npcid: int, zoneid: int | None
     if zoneid is None:
         return {"groupid": groupid}
     group = con.execute(
-        "SELECT poolid, name, respawntime, minLevel, maxLevel, dropid FROM sql_mob_groups "
+        f"SELECT poolid, name, respawntime, minLevel, maxLevel, dropid FROM {_sqlp}mob_groups "
         "WHERE groupid = ? AND zoneid = ?",
         (groupid, zoneid),
     ).fetchone()
@@ -184,7 +187,7 @@ def get_mob_chain_detail(con: sqlite3.Connection, npcid: int, zoneid: int | None
         return {"groupid": groupid}
     poolid, group_name, respawntime, min_level, max_level, dropid = group
     pool = con.execute(
-        "SELECT name, packet_name, familyid FROM sql_mob_pools WHERE poolid = ?", (poolid,)
+        f"SELECT name, {pn}, familyid FROM {_sqlp}mob_pools WHERE poolid = ?", (poolid,)
     ).fetchone()
     detail = {
         "groupid": groupid, "poolid": poolid, "group_name": group_name,

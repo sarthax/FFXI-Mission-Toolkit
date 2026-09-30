@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,7 +19,7 @@ def main():
     assert "beforeunload" in template
 
     assert "def save_item_atomic(item_id, tables, effects=None, comment=" in item_edit
-    assert 'bid = _save_backup(f"atomic edit item {item_id}"' in item_edit
+    assert re.search(r'bid = _save_backup\(\s*f"atomic edit item \{item_id\}"', item_edit)
     assert "dat.validate_client_patch(item_id, client_fields)" in item_edit
     assert "client_report = dat.patch_client_item(item_id, client_fields)" in item_edit
 
@@ -91,11 +92,11 @@ def main():
     assert '@app.get("/itemedit/{item_id}/history.json")' in gui
     assert 'id="selectedItemHistory"' in template
     assert "async function refreshSelectedItemHistory()" in template
-    assert "async function restoreSelectedHistory(bid)" in template
+    assert "async function restoreSelectedHistory(bid" in template
     assert "Current state will be backed up first." in template
 
     # Exact client-record snapshots make create/delete/edit undo-redo faithful.
-    assert "def capture_client_record(item_id: int)" in item_dat
+    assert "def capture_client_record(item_id: int" in item_dat
     assert "def restore_client_record(snapshot: dict)" in item_dat
     assert "previous_record_hex" in item_dat
     assert 'client_snapshot="auto"' in item_edit
@@ -306,7 +307,7 @@ def main():
 
     # Restore keeps SQL and decoded client DAT overlaps synchronized for undo/redo.
     assert 'def restore(bid):' in item_edit
-    assert "client_fields.update(_map_to_client_fields(t, row))" in item_edit
+    assert "client_fields.update(_map_to_client_fields(table, fields))" in item_edit
     assert "client_report = dat.patch_client_item(item_id, client_fields)" in item_edit
 
 
