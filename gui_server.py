@@ -4917,7 +4917,14 @@ def packets_browse(request: Request, q: str = "", direction: str = "s2c"):
 
 
 @app.get("/packets/decode", response_class=HTMLResponse)
-def packets_decode(request: Request, direction: str = "s2c", opcode: str = "", hex_bytes: str = "", q: str = ""):
+def packets_decode(
+    request: Request,
+    direction: str = "s2c",
+    opcode: str = "",
+    hex_bytes: str = "",
+    q: str = "",
+    mode: str = "manual",
+):
     decoded = None
     decode_error = None
     schema = None
@@ -4961,14 +4968,15 @@ def packets_decode(request: Request, direction: str = "s2c", opcode: str = "", h
     return templates.TemplateResponse(request, "packets_decode.html", {
         "q": q, "direction": direction, "opcode": opcode, "hex_bytes": hex_bytes,
         "decoded": decoded, "decode_error": decode_error, "schema": schema, "layout": layout,
+        "mode": "bulk" if mode == "bulk" else "manual",
+        "bulk_rows": None, "bulk_log_text": "", "bulk_parse_error": None,
     })
 
 
 @app.get("/packets/bulk", response_class=HTMLResponse)
 def packets_bulk_form(request: Request):
-    return templates.TemplateResponse(request, "packets_bulk.html", {
-        "direction": "s2c", "opcode": "", "log_text": "", "rows": None, "parse_error": None,
-    })
+    """Compatibility entrypoint: bulk decoding now lives in the shared packet workbench."""
+    return RedirectResponse(url="/packets/decode?mode=bulk", status_code=303)
 
 
 @app.post("/packets/bulk", response_class=HTMLResponse)
@@ -5006,9 +5014,11 @@ async def packets_bulk_submit(request: Request):
                                 "'[timestamp] Packet 0xNNN' header followed by a 16-column hex grid).")
         except Exception as e:
             parse_error = str(e)
-    return templates.TemplateResponse(request, "packets_bulk.html", {
-        "direction": direction, "opcode": opcode, "log_text": log_text,
-        "rows": rows, "parse_error": parse_error,
+    return templates.TemplateResponse(request, "packets_decode.html", {
+        "q": "", "direction": direction, "opcode": opcode, "hex_bytes": "",
+        "decoded": None, "decode_error": None, "schema": None, "layout": None,
+        "mode": "bulk",
+        "bulk_rows": rows, "bulk_log_text": log_text, "bulk_parse_error": parse_error,
     })
 
 

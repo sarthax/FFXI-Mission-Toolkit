@@ -32,10 +32,10 @@
 @media(max-width:1180px){.packet-main-grid,.scratch-row{grid-template-columns:1fr}.decode-form{grid-template-columns:1fr 1fr}.decode-form input[name=hex_bytes]{grid-column:1/-1}.decode-form button{grid-column:1/-1}}
 </style>
 
-<div class="packet-breadcrumb"><a class="inline" href="/packets?direction={{ direction }}&q={{ q }}">Packet Tools</a> &rsaquo; Manual Packet Viewer / Decoder</div>
+<div class="packet-breadcrumb"><a class="inline" href="/packets?direction={{ direction }}&q={{ q }}">Packet Tools</a> &rsaquo; {{ 'Bulk Packet Decode' if mode == 'bulk' else 'Manual Packet Viewer / Decoder' }}</div>
 <div class="packet-titlebar">
   <div>
-    <h1>Manual Packet Viewer / Decoder</h1>
+    <h1>{{ 'Bulk Packet Decode' if mode == 'bulk' else 'Manual Packet Viewer / Decoder' }}</h1>
     {% if layout %}
     <div class="packet-chips">
       <span class="packet-chip {{ 'in' if direction == 's2c' else 'out' }}">{{ 'incoming (s2c)' if direction == 's2c' else 'outgoing (c2s)' }}</span>
@@ -46,7 +46,52 @@
     {% endif %}
   </div>
 </div>
+<div class="dense-toolbar" style="margin:6px 0">
+  <a class="chip{% if mode != 'bulk' %} active{% endif %}" href="/packets/decode?direction={{ direction }}&opcode={{ opcode }}&q={{ q }}">Manual decode</a>
+  <a class="chip{% if mode == 'bulk' %} active{% endif %}" href="/packets/decode?mode=bulk&direction={{ direction }}&opcode={{ opcode }}">Bulk decode</a>
+  <span class="sp"></span>
+  {% if mode == 'bulk' %}<span class="muted">Paste a PacketLogger / PacketViewer per-opcode log, then open any decoded row in this same workbench.</span>{% endif %}
+</div>
 
+{% if mode == 'bulk' %}
+<form method="post" action="/packets/bulk" class="packet-card" style="padding:10px 12px;margin-bottom:10px">
+  <div class="decode-form" style="margin:0 0 8px;grid-template-columns:190px 150px minmax(320px,1fr)">
+    <select name="direction">
+      <option value="s2c" {% if direction == "s2c" %}selected{% endif %}>incoming / s2c</option>
+      <option value="c2s" {% if direction == "c2s" %}selected{% endif %}>outgoing / c2s</option>
+    </select>
+    <input type="text" name="opcode" value="{{ opcode }}" placeholder="opcode, e.g. 0x034">
+    <span class="muted" style="align-self:center">One opcode per source log, matching PacketLogger / PacketViewer output.</span>
+  </div>
+  <textarea name="log_text" rows="11" placeholder="paste the raw per-opcode log here" style="width:100%;font-family:ui-monospace,Consolas,monospace;font-size:12px;padding:9px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--ink)">{{ bulk_log_text }}</textarea>
+  <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+    <button type="submit">Decode all packets</button>
+    {% if bulk_rows %}<span class="chip">{{ bulk_rows|length }} packet{{ '' if bulk_rows|length == 1 else 's' }}</span>{% endif %}
+  </div>
+</form>
+
+{% if bulk_parse_error %}
+<div class="warn"><strong>Could not decode:</strong> {{ bulk_parse_error }}</div>
+{% elif bulk_rows %}
+<div class="packet-card" style="margin-bottom:10px">
+  <h3>Decoded packets</h3>
+  <div class="table-wrap" style="border:0;border-radius:0"><table>
+    <tr><th>#</th><th>timestamp</th><th>description</th><th>decoded fields</th><th></th></tr>
+    {% for r in bulk_rows %}
+    <tr>
+      <td class="mono">{{ loop.index }}</td>
+      <td class="mono">{{ r.ts or '—' }}</td>
+      <td>{{ r.description or '(no definition)' }}{% if r.decode_error %}<div class="muted">{{ r.decode_error }}</div>{% endif %}</td>
+      <td>{% if r.fields %}<span class="chip">{{ r.fields|length }} fields</span>{% else %}<span class="muted">none</span>{% endif %}</td>
+      <td>
+        <a class="chip" href="/packets/decode?direction={{ direction }}&opcode={{ opcode|urlencode }}&hex_bytes={{ r.raw_hex|urlencode }}">Open in Packet Viewer &rarr;</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </table></div>
+</div>
+{% endif %}
+{% else %}
 <form class="decode-form" method="get" action="/packets/decode">
   <input type="hidden" name="q" value="{{ q }}">
   <select name="direction">
@@ -165,6 +210,8 @@
 {% endif %}
 {% elif not decode_error %}
 <p class="muted">Choose a direction and opcode, then paste raw bytes. You can also open an opcode from the <a class="inline" href="/packets?direction={{ direction }}&q={{ q }}">packet lookup</a>.</p>
+{% endif %}
+
 {% endif %}
 
 {% if layout %}

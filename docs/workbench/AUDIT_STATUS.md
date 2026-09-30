@@ -1,3 +1,11 @@
+## 2026-09-30 — Bulk Packet Decode workbench routing fix
+
+- Fixed Packet Tools' Bulk Decode action so it opens the modern coordinated Packet Viewer / Decoder in bulk mode instead of the legacy standalone bulk page.
+- Bulk PacketLogger / PacketViewer text is still parsed with the existing capture-ingestion parser and decoded with the same packet decoder backend.
+- Bulk results now remain inside the modern workbench and each row can open its exact direction/opcode/raw bytes in the coordinated field + raw-byte viewer.
+- The legacy packets_bulk.html template was removed; /packets/bulk GET remains as a compatibility redirect and POST remains the bulk-processing endpoint.
+- Added packet UI regression contracts for the Bulk Decode route and per-row viewer handoff.
+
 ## 2026-09-30 — Configurable shell branding
 
 - Replaced the hard-coded ValhallaXI shell brand with per-install settings while retaining the existing logo/text as defaults.
