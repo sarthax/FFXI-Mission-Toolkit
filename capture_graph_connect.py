@@ -15,10 +15,34 @@ from workbench.core.services import packet_correlation
 def table_exists(con,name):
     return con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",(name,)).fetchone() is not None
 
+_ENTITY_IDENTIFIER_TYPES=(
+    "npcid","mobid","entity_id","runtime_entity_id",
+    "server_entity_id","client_entity_id","numeric_entity_id",
+)
+
+def _canonical_entity_for_numeric_id(con: sqlite3.Connection, numeric_id: int | None) -> str | None:
+    """Resolve an observed runtime entity id only through explicit canonical entity identifiers.
+
+    Numeric ids are reused across unrelated namespaces, so item/event/etc. identifiers do not
+    participate. Ambiguous entity mappings are withheld rather than guessed.
+    """
+    if numeric_id is None or not table_exists(con,"entity_identifiers"):
+        return None
+    placeholders=",".join("?" for _ in _ENTITY_IDENTIFIER_TYPES)
+    rows=con.execute(
+        f"""SELECT DISTINCT entity_id
+            FROM entity_identifiers
+            WHERE lower(COALESCE(identifier_type,'')) IN ({placeholders})
+              AND CAST(identifier_value AS TEXT)=?
+            ORDER BY entity_id LIMIT 3""",
+        (*_ENTITY_IDENTIFIER_TYPES,str(numeric_id)),
+    ).fetchall()
+    return rows[0][0] if len(rows)==1 else None
+
 def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: Path | None = None) -> dict:
     src=sqlite3.connect(db)
     dst=workbench_graph.init_db(graph_db)
-    counts={"capture_events":0,"raw_packet_observations":0,"eventview_observations":0,"packet_observations":0,"video_ocr_observations":0,"packet_correlations":0,"packet_correlations_ambiguous":0,"key_evidence":0,"event_nodes":0,"event_refs":0,"edges":0,"action_nodes":0,"lua_functions":0,"lua_calls":0,"binding_candidates":0}
+    counts={"capture_events":0,"entity_observations":0,"raw_packet_observations":0,"eventview_observations":0,"packet_observations":0,"video_ocr_observations":0,"packet_correlations":0,"packet_correlations_ambiguous":0,"key_evidence":0,"event_nodes":0,"event_refs":0,"edges":0,"action_nodes":0,"lua_functions":0,"lua_calls":0,"binding_candidates":0}
     where="" if capture_id is None else " WHERE capture_id=?"
     args=() if capture_id is None else (capture_id,)
 
@@ -41,8 +65,8 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
 
     # Reconcile row-level runtime evidence owned by this bridge. INSERT OR REPLACE alone cannot
     # remove graph rows when a rebuilt capture now contains fewer observations.
-    owned_relationship_prefixes=("raw-packet-observation:","eventview-packet-observation:")
-    owned_evidence_prefixes=("evidence:raw-packet:","evidence:eventview-packet:")
+    owned_relationship_prefixes=("capture-entity:","raw-packet-observation:","eventview-packet-observation:")
+    owned_evidence_prefixes=("evidence:capture-entity:","evidence:raw-packet:","evidence:eventview-packet:")
     if capture_id is None:
         for prefix in owned_relationship_prefixes:
             dst.execute("DELETE FROM entity_relationships WHERE relationship_id LIKE ?",(prefix+"%",))
@@ -87,6 +111,32 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
                              "opcode_name":opcode_name,
                          },sort_keys=True),None))
             counts["packet_observations"]+=1; counts["edges"]+=1
+        canonical_entity=_canonical_entity_for_numeric_id(dst,entity_id)
+        if canonical_entity is not None:
+            entity_ev=f"evidence:capture-entity:{cap}:{zone}:{seq}"
+            dst.execute(
+                "INSERT OR REPLACE INTO evidence VALUES(?,?,?,?,?,?)",
+                (entity_ev,"CAPTURE","capture_events",f"capture:{cap}:{zone}:{seq}",None,
+                 "Observed runtime entity id matched one explicit canonical entity identity."),
+            )
+            dst.execute(
+                "INSERT OR REPLACE INTO entity_relationships VALUES(?,?,?,?,?,?,?,?,?)",
+                (f"capture-entity:{cap}:{zone}:{seq}",cid,canonical_entity,"OBSERVES_ENTITY",
+                 entity_ev,"VERIFIED","DISCOVERED",
+                 json.dumps({
+                     "capture_id":cap,
+                     "capture_table":"capture_events",
+                     "capture_row_key":{"zone_db":zone,"seq":seq},
+                     "entity_id":entity_id,
+                     "entity_name":entity_name,
+                     "direction":direction,
+                     "opcode":opcode,
+                     "opcode_name":opcode_name,
+                 },sort_keys=True),None),
+            )
+            counts["entity_observations"]+=1
+            counts["edges"]+=1
+
         if message_id is None: continue
         # A capture message becomes an event node only after it has a server-side event reference.
         refs=src.execute(
