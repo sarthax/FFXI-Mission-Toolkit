@@ -840,6 +840,9 @@ DAT workflow:
 - [x] Safe record-level restore from exact item backup snapshots, replacing only the selected item's DAT record and enrolling the action in session undo/redo.
 - [x] Compare Live DAT vs Xi-Pivot at the selected item-record level and explicitly copy only that record Live→Pivot or Pivot→Live with destination backup.
 
+Search / discovery:
+- [x] DAT-only item discovery: opt-in client-record search by name or ID finds populated DAT records with no active-server item_basic row and provides a decoded client-record/icon preview without requiring a server-backed editor load.
+
 History / audit / safety:
 - [x] Selected-item change-history panel with field-level summaries, comments, SQL/DAT/effect action types, legacy-backup fallback metadata, and one-click previous-state restore that backs up the current state first.
 - [x] Whole-item delete/create/edit history integrates with session undo/redo using exact client-record snapshots.
