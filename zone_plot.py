@@ -146,6 +146,15 @@ def zone_data(zid, instance=0, server=None):
     return {"zone": name, "zid": zid, "entities": ents, "has_nav": nav_path(name, server) is not None}
 
 
+def nav_diagnostics(zid, x, y, z, server=None):
+    d = zone_data(zid, server=server)
+    p = nav_path(d["zone"], server)
+    if not p:
+        return {"error": "no navmesh for this zone"}
+    diag = nav.point_diagnostics(float(x), float(y), float(z), p)
+    return diag or {"error": "navmesh contains no polygons"}
+
+
 def reach(zid, anchor=None, instance=0, server=None):
     """Per-entity state: ok (same component as anchor), blocked (other component), off (no polygon).
     Anchor defaults to the component holding the most entities."""
