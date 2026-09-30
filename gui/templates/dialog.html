@@ -1,29 +1,62 @@
 {% extends "base.html" %}
-{% block title %}Dialog Search{% endblock %}
+{% block title %}Dialog Browser{% endblock %}
 
 {% macro pager() %}
 {% if total_pages > 1 %}
-<form method="get" style="display:flex;gap:8px;align-items:center;margin:12px 0;">
+<form method="get" style="display:flex;gap:8px;align-items:center;margin:12px 0;flex-wrap:wrap">
   <input type="hidden" name="q" value="{{ q }}">
   <input type="hidden" name="zone" value="{{ zone }}">
   {% if page > 1 %}
-  <a class="chip" href="/dialog?q={{ q }}&zone={{ zone }}&page={{ page - 1 }}">&larr; prev</a>
+  <a class="chip" href="/dialog?q={{ q|urlencode }}&zone={{ zone|urlencode }}&page={{ page - 1 }}">&larr; prev</a>
   {% endif %}
   <span class="muted">page</span>
   <input type="number" name="page" value="{{ page }}" min="1" max="{{ total_pages }}" style="width:70px;">
   <span class="muted">of {{ total_pages }}</span>
   <button type="submit">Go</button>
   {% if page < total_pages %}
-  <a class="chip" href="/dialog?q={{ q }}&zone={{ zone }}&page={{ page + 1 }}">next &rarr;</a>
+  <a class="chip" href="/dialog?q={{ q|urlencode }}&zone={{ zone|urlencode }}&page={{ page + 1 }}">next &rarr;</a>
   {% endif %}
 </form>
 {% endif %}
 {% endmacro %}
 
 {% block content %}
-<h1>Dialog Search</h1>
+<style>
+.dialog-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px}
+.dialog-head h1{margin:0 0 4px}
+.dialog-result{border-bottom:1px solid var(--border)}
+.dialog-main{display:grid;grid-template-columns:150px 170px minmax(300px,1fr) 230px;gap:10px;padding:9px 10px;align-items:start}
+.dialog-main:hover{background:var(--code-bg)}
+.dialog-id{font-family:ui-monospace,Consolas,monospace}
+.dialog-evidence{display:flex;gap:5px;flex-wrap:wrap}
+.dialog-detail{padding:0 10px 10px}
+.dialog-detail details{border:1px solid var(--border);border-radius:6px;background:var(--surface)}
+.dialog-detail summary{padding:7px 9px;cursor:pointer}
+.dialog-detail-body{padding:9px;border-top:1px solid var(--border)}
+.dialog-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.dialog-card{border:1px solid var(--border);border-radius:6px;padding:8px;background:var(--code-bg)}
+.dialog-card h4{margin:0 0 6px}
+.dialog-context{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dialog-context a{display:block;border:1px solid var(--border);border-radius:5px;padding:7px;text-decoration:none;color:var(--ink)}
+.dialog-context a:hover{background:var(--accent-soft)}
+.dialog-copy{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.dialog-copy button{font-size:11px;padding:4px 7px}
+@media(max-width:1050px){.dialog-main{grid-template-columns:130px 150px 1fr}.dialog-main>div:last-child{grid-column:1/-1}.dialog-grid{grid-template-columns:1fr}}
+</style>
+
+<div class="dialog-head">
+  <div>
+    <h1>Dialog Browser</h1>
+    <div class="muted">Search real client dialog text by words, decimal ID, or hex ID. Results connect client text back to IDs.lua wiring, Events/CSID, captures, and drift evidence.</div>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap">
+    <a class="chip" href="/dialogdrift">Dialog Drift Overview</a>
+    <a class="chip" href="/events{% if zone %}?zone={{ zone|urlencode }}{% endif %}">Events / CSID</a>
+  </div>
+</div>
+
 <form class="search" method="get">
-  <input type="text" name="q" value="{{ q }}" placeholder="text to search for, or a dialog id (e.g. 7465)">
+  <input type="text" name="q" value="{{ q }}" placeholder="text, decimal ID (7465), or hex ID (0x1D29)">
   <select name="zone">
     <option value="">All zones</option>
     {% for z in zones %}
@@ -33,40 +66,190 @@
   <button type="submit">Search</button>
 </form>
 
-<details style="margin-bottom:18px;">
-  <summary class="muted" style="cursor:pointer;">look up a zone's dialog drift report</summary>
-  <form class="search" action="/zone/redirect" method="get" style="margin-top:8px;"
-        onsubmit="window.location.href='/zone/' + document.getElementById('zsel').value + '/drift'; return false;">
-    <select id="zsel" name="zone">
-      {% for z in zones %}
-      <option value="{{ z.name }}">{{ z.name }}</option>
-      {% endfor %}
-    </select>
-    <button type="submit">View drift report</button>
+{% if zone %}
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 14px">
+  <form method="get" style="display:flex;gap:6px;align-items:center">
+    <input type="hidden" name="zone" value="{{ zone }}">
+    <span class="muted">Jump to ID</span>
+    <input type="number" name="jump_id" placeholder="7465" style="width:100px">
+    <button type="submit">Jump</button>
   </form>
-</details>
+  <a class="chip" href="/zone/{{ zone|urlencode }}/drift">Zone drift report</a>
+  <a class="chip" href="/events?zone={{ zone|urlencode }}">Zone Events / CSID</a>
+</div>
+{% endif %}
 
 {% if q %}
-<p>{{ total }} result(s) for "{{ q }}"{% if zone %} in {{ zone }}{% endif %} -- page {{ page }} of {{ total_pages }}:</p>
+<p>{{ total }} result(s) for <strong>{{ q }}</strong>{% if zone %} in {{ zone }}{% endif %} — page {{ page }} of {{ total_pages }}</p>
 {% elif zone %}
-<p>Browsing {{ total }} indexed dialog entries in {{ zone }} -- page {{ page }} of {{ total_pages }}:</p>
-<form method="get" style="display:flex;gap:8px;align-items:center;margin:6px 0 16px;">
-  <input type="hidden" name="zone" value="{{ zone }}">
-  <span class="muted">Jump to id:</span>
-  <input type="number" name="jump_id" placeholder="e.g. 7465" style="width:110px;">
-  <button type="submit">Jump</button>
-</form>
+<p>Browsing {{ total }} indexed dialog entries in {{ zone }} — page {{ page }} of {{ total_pages }}</p>
 {% endif %}
+
 {% if q or zone %}
 {{ pager() }}
-<div class="table-wrap"><table>
-  <tr><th>zone</th><th>id</th><th>text</th></tr>
+
+<div class="table-wrap" style="overflow:visible">
+  <div style="display:grid;grid-template-columns:150px 170px minmax(300px,1fr) 230px;gap:10px;padding:7px 10px;border-bottom:1px solid var(--border);font-weight:600">
+    <div>Zone</div><div>ID</div><div>Text</div><div>Evidence</div>
+  </div>
+
   {% for r in results %}
-  <tr {% if not q and jump_id and r.idx == jump_id %}style="background:var(--accent-soft);"{% endif %}>
-    <td>{{ r.zone }}</td><td class="mono">{{ r.idx }}</td><td>{{ r.text }}</td>
-  </tr>
+  <div class="dialog-result" {% if not q and jump_id and r.idx == jump_id %}style="background:var(--accent-soft)"{% endif %}>
+    <div class="dialog-main">
+      <div>
+        <strong>{{ r.zone }}</strong>
+        <div class="muted mono" style="font-size:11px">zone {{ r.zoneid }}</div>
+      </div>
+
+      <div class="dialog-id">
+        <strong>{{ r.idx }}</strong>
+        <div class="muted">{{ r.id_hex }}</div>
+        <div class="dialog-copy">
+          <button type="button" data-copy="{{ r.idx }}">Copy dec</button>
+          <button type="button" data-copy="{{ r.id_hex }}">Copy hex</button>
+        </div>
+      </div>
+
+      <div>
+        <div>{{ r.text }}</div>
+        {% if r.drift_rows %}
+          {% for d in r.drift_rows %}
+          <div style="margin-top:5px">
+            <span class="chip mono">{{ d.constant_name }}</span>
+            {% if d.status == 'match' %}<span class="pill match">IDs.lua match</span>
+            {% elif d.status == 'mismatch' %}<span class="pill mismatch">IDs.lua text mismatch</span>
+            {% elif d.status == 'no_real_entry' %}<span class="pill no_real_entry">no real entry</span>
+            {% else %}<span class="pill unannotated">{{ d.status }}</span>{% endif %}
+            <button type="button" class="copy-btn" data-copy="{{ d.constant_name }}" style="font-size:10px;padding:2px 5px">copy constant</button>
+          </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+
+      <div class="dialog-evidence">
+        {% if r.drift_rows %}<span class="chip">{{ r.drift_rows|length }} IDs.lua ref{{ '' if r.drift_rows|length == 1 else 's' }}</span>{% else %}<span class="chip muted">no indexed constant</span>{% endif %}
+        {% if r.event_refs %}<span class="pill match">{{ r.event_refs|length }} CSID ref{{ '' if r.event_refs|length == 1 else 's' }}</span>{% else %}<span class="chip muted">no cached CSID ref</span>{% endif %}
+        {% if r.runtime_count %}<span class="pill match">{{ r.runtime_count }} runtime obs.</span>{% else %}<span class="chip muted">not seen in captures</span>{% endif %}
+      </div>
+    </div>
+
+    <div class="dialog-detail">
+      <details>
+        <summary>Research context / implementation links</summary>
+        <div class="dialog-detail-body">
+          <div class="dialog-grid">
+            <section class="dialog-card">
+              <h4>IDs.lua mapping</h4>
+              {% if r.drift_rows %}
+                {% for d in r.drift_rows %}
+                <div style="margin-bottom:8px">
+                  <div><strong class="mono">{{ d.constant_name }}</strong> = <span class="mono">{{ d.wired_id }}</span></div>
+                  <div class="muted">status: {{ d.status }}</div>
+                  {% if d.commented_text %}<div style="margin-top:3px">comment: {{ d.commented_text }}</div>{% endif %}
+                  {% if d.status == 'mismatch' %}<div class="warn" style="margin-top:5px">The IDs.lua annotation does not match the current client text. Review the zone drift report before reusing this ID.</div>{% endif %}
+                </div>
+                {% endfor %}
+                <a class="chip" href="/zone/{{ r.zone|urlencode }}/drift">Open zone drift report &rarr;</a>
+              {% else %}
+                <div class="muted">No indexed IDs.lua constant currently points at this real client dialog ID.</div>
+              {% endif %}
+            </section>
+
+            <section class="dialog-card">
+              <h4>Events / CSID references</h4>
+              {% if r.event_refs %}
+                {% for e in r.event_refs %}
+                <div style="margin-bottom:7px">
+                  <a class="inline" href="/events/view?zone={{ r.zone|urlencode }}&entity={{ e.entity_id }}&csid={{ e.event_id }}">
+                    entity {{ e.entity_id }} · CSID {{ e.event_id }} / 0x{{ "%04X"|format(e.event_id) }}
+                  </a>
+                </div>
+                {% endfor %}
+              {% else %}
+                <div class="muted">No cached client-event reference is available. Event references appear here after this zone has been exported/scanned by Events / CSID.</div>
+                <a class="chip" style="margin-top:6px" href="/events?zone={{ r.zone|urlencode }}">Open zone Events / CSID</a>
+              {% endif %}
+            </section>
+
+            <section class="dialog-card">
+              <h4>Runtime capture evidence</h4>
+              {% if r.runtime_rows %}
+                {% for c in r.runtime_rows %}
+                <div style="margin-bottom:8px">
+                  <a class="inline" href="/captures/{{ c.capture_id }}/timeline?tab=events">
+                    {{ c.capture_label or ('capture #' ~ c.capture_id) }}
+                  </a>
+                  <div class="muted">
+                    {% if c.entity_name %}{{ c.entity_name }} {% endif %}
+                    {% if c.entity_id %}<a class="inline mono" href="/entity/{{ c.entity_id }}">{{ c.entity_id }}</a>{% endif %}
+                    {% if c.event_hex %} · event {{ c.event_hex }}{% endif %}
+                    {% if c.option is not none %} · option {{ c.option }}{% endif %}
+                  </div>
+                </div>
+                {% endfor %}
+                {% if r.runtime_count > r.runtime_rows|length %}<div class="muted">Showing {{ r.runtime_rows|length }} of {{ r.runtime_count }} observations.</div>{% endif %}
+              {% else %}
+                <div class="muted">This message ID has not been observed in indexed capture event rows for this zone.</div>
+              {% endif %}
+            </section>
+          </div>
+
+          <div class="dialog-grid" style="margin-top:10px">
+            <section class="dialog-card">
+              <h4>Nearby dialog IDs</h4>
+              <div class="dialog-context">
+                {% if r.prev_dialog %}
+                <a href="/dialog?zone={{ r.zone|urlencode }}&q={{ r.prev_dialog.idx }}">
+                  <strong>&larr; {{ r.prev_dialog.idx }}</strong>
+                  <span class="muted">{{ r.prev_dialog.text[:100] }}</span>
+                </a>
+                {% else %}<div class="muted">No previous entry.</div>{% endif %}
+                {% if r.next_dialog %}
+                <a href="/dialog?zone={{ r.zone|urlencode }}&q={{ r.next_dialog.idx }}">
+                  <strong>{{ r.next_dialog.idx }} &rarr;</strong>
+                  <span class="muted">{{ r.next_dialog.text[:100] }}</span>
+                </a>
+                {% else %}<div class="muted">No next entry.</div>{% endif %}
+              </div>
+            </section>
+
+            <section class="dialog-card">
+              <h4>Copy / implementation helpers</h4>
+              <div class="dialog-copy">
+                <button type="button" data-copy="{{ r.idx }}">Dialog ID {{ r.idx }}</button>
+                <button type="button" data-copy="{{ r.id_hex }}">Hex {{ r.id_hex }}</button>
+                {% for d in r.drift_rows %}<button type="button" data-copy="text.{{ d.constant_name }}">text.{{ d.constant_name }}</button>{% endfor %}
+              </div>
+              <p class="muted" style="margin-bottom:0">Copy helpers do not imply a specific Lua API call. Use the linked CSID/server evidence to determine whether the implementation should use <code>showText</code>, <code>messageSpecial</code>, <code>startEvent</code>, or another engine path.</p>
+            </section>
+
+            <section class="dialog-card">
+              <h4>Related tools</h4>
+              <div class="dialog-copy">
+                <a class="chip" href="/events?zone={{ r.zone|urlencode }}">Events / CSID</a>
+                <a class="chip" href="/zone/{{ r.zone|urlencode }}/drift">Drift</a>
+                <a class="chip" href="/features/trace?q={{ r.idx }}">Feature Trace</a>
+              </div>
+            </section>
+          </div>
+        </div>
+      </details>
+    </div>
+  </div>
   {% endfor %}
-</table></div>
+</div>
+
 {{ pager() }}
 {% endif %}
+
+<script>
+document.querySelectorAll('[data-copy]').forEach(btn=>{
+  btn.addEventListener('click',async()=>{
+    try{
+      await navigator.clipboard.writeText(btn.dataset.copy);
+      const old=btn.textContent; btn.textContent='Copied'; setTimeout(()=>btn.textContent=old,900);
+    }catch(_e){ btn.textContent='Copy failed'; }
+  });
+});
+</script>
 {% endblock %}
