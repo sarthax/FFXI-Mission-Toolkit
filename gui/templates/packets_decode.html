@@ -107,7 +107,7 @@
 </div>
 {% endif %}
 {% else %}
-<form class="decode-form" method="get" action="/packets/decode">
+<form class="decode-form" method="post" action="/packets/decode">
   <input type="hidden" name="q" value="{{ q }}">
   <select name="direction">
     <option value="s2c" {% if direction == "s2c" %}selected{% endif %}>incoming / s2c</option>
