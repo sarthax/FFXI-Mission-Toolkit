@@ -258,7 +258,7 @@ def main():
         "capture_timeline.html": ["{% block shell_mode %}dense{% endblock %}", "capture-timeline-page", "position:sticky", "Packet Browser"],
         "capture_packets.html": ["{% block shell_mode %}dense{% endblock %}", "capture-packets-page", "decoded field"],
         "capture_packet_detail.html": ["{% block shell_mode %}dense{% endblock %}", "capture-packet-page", "Session packets", "Source provenance"],
-        "capture_search.html": ["{% block shell_mode %}dense{% endblock %}", "capture-search-page", "Cross-capture Search"],
+        "capture_search.html": ["{% block shell_mode %}dense{% endblock %}", "capture-search-page", "Evidence Search"],
         "capture_add.html": ["{% block shell_mode %}dense{% endblock %}", "capture-upload-grid", "Formats / guidance"],
         "capture_new.html": ["{% block shell_mode %}dense{% endblock %}", "capture-new-form"],
         "capture_alignment.html": ["{% block shell_mode %}dense{% endblock %}", "align-section", "Alignment candidates"],
