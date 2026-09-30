@@ -1,3 +1,12 @@
+## 2026-09-30 — Compact lookup / event / packet tools rollout
+
+- Entity Lookup now uses the shared dense shell with a compact search header and an on-demand About disclosure.
+- Events / CSID Browser now uses a compact zone/query command bar and dense result header.
+- Event View now uses the dense shell, tighter evidence-card spacing, and a more compact dossier header while preserving all decompile/runtime/server-reference content.
+- Packet Tools now uses the dense shell, collapses explanatory copy behind About, and groups manual decode / bulk decode / opcode browsing into compact command surfaces.
+- Lookup, event decompile, capture correlation, server-reference, and packet decode semantics are unchanged.
+- Shared shell regression coverage now protects Entity, Events, and Packet Tools dense layouts.
+
 ## 2026-09-30 — Compact Feature Trace rollout
 
 - Feature Trace now uses the shared dense shell and a compact trace command bar.
