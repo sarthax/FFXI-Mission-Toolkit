@@ -1,10 +1,28 @@
 {% extends "base.html" %}
 {% block title %}Package Scope Review — Mission Toolkit{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}package-scope-page{% endblock %}
 {% block content %}
-<h1>Dependency Closure &amp; Scope Review</h1>
-<p class="muted">Review what the Workbench discovered before a package is assembled. Discovery evidence and user decisions are kept separate. New transitive dependencies default to <strong>QUESTIONABLE</strong> until explicitly resolved.</p>
+<style>
+main.package-scope-page{padding:8px 10px 24px}
+.package-stagebar{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.package-section{border:1px solid var(--border);border-radius:7px;background:var(--surface);margin:7px 0;overflow:hidden}
+.package-section>summary{padding:7px 9px;cursor:pointer;font-weight:600}
+.package-section>.body{padding:0 8px 8px}
+.scope-decision-form{display:grid;grid-template-columns:150px minmax(180px,1fr) minmax(160px,.8fr) auto;gap:5px}
+@media(max-width:900px){.scope-decision-form{grid-template-columns:1fr}}
+</style>
+<div class="dense-toolbar package-stagebar">
+  <strong>Package Workflow</strong>
+  <span class="chip">1 · Scope</span>
+  <a class="chip" href="/packages/create">2 · Create</a>
+  <a class="chip" href="/packages/review">3 · Review</a>
+  <span class="sp"></span>
+  <a class="chip" href="/packages">Library</a>
+  <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:760px">Review discovered dependency closure before assembly. Discovery evidence and user decisions remain separate; new transitive dependencies default to QUESTIONABLE until explicitly resolved.</div></details>
+</div>
 
-<form class="search" method="get" action="/packages/scope">
+<form class="search dense-toolbar" method="get" action="/packages/scope" style="margin:6px 0;flex-wrap:wrap">
   <select name="migration_id">
     <option value="">Select migration</option>
     {% for row in migrations %}
@@ -29,25 +47,23 @@
 {% if error %}<div class="warn">{{ error }}</div>{% endif %}
 
 {% if scope %}
-<div class="stats">
+<div class="stats" style="margin:6px 0">
   <div class="stat"><div class="n">{{ scope.discovered_count }}</div><div class="l">Discovered</div></div>
   <div class="stat"><div class="n">{{ scope.counts.get("INCLUDE", 0) }}</div><div class="l">Included</div></div>
   <div class="stat"><div class="n">{{ scope.counts.get("QUESTIONABLE", 0) }}</div><div class="l">Questionable</div></div>
   <div class="stat"><div class="n">{{ scope.package_gate }}</div><div class="l">Package gate</div></div>
 </div>
 
-<p>
+<div class="dense-toolbar" style="margin:4px 0 6px">
 <strong>Closure:</strong> {{ scope.closure_status }}
 &nbsp; <strong>Review:</strong> {{ scope.review.status }}
 &nbsp; <strong>Roots:</strong> {{ scope.root_count }}
-{% if scope.truncated %}<span class="pill mismatch">TRUNCATED</span>{% endif %}
-</p>
-
-<div class="warn">
-<strong>How to read this:</strong> INCLUDE means the dependency remains in package scope; TARGET_EQUIVALENT means you are asserting the target already satisfies it; NOT_REQUIRED means it is semantically unnecessary; EXCLUDE is an explicit user omission. The last three require a reason. QUESTIONABLE blocks final scope review.
+{% if scope.truncated %}<span class="pill mismatch">TRUNCATED</span>{% endif %}<span class="sp"></span><span class="chip">{{ scope.package_gate }}</span>
 </div>
 
-<div class="table-wrap"><table>
+<details class="package-section"><summary>Decision guide</summary><div class="body muted">INCLUDE keeps the dependency in package scope. TARGET_EQUIVALENT asserts the target already satisfies it. NOT_REQUIRED marks it semantically unnecessary. EXCLUDE is an explicit omission. The latter three require a reason. QUESTIONABLE blocks final review.</div></details>
+
+<div class="table-wrap"><table class="scope-table">
 <thead><tr><th>Dependency</th><th>Found through</th><th>Evidence</th><th>Recommendation</th><th>Decision / tags</th></tr></thead>
 <tbody>
 {% for item in scope.items %}
@@ -87,7 +103,7 @@
   {% endif %}
 </td>
 <td style="min-width:300px;">
-  <form method="post" action="/packages/scope/decision">
+  <form method="post" action="/packages/scope/decision" class="scope-decision-form">
     <input type="hidden" name="migration_id" value="{{ migration_id }}">
     <input type="hidden" name="node_id" value="{{ item.node_id }}">
     <select name="decision">
@@ -110,18 +126,16 @@
 </table></div>
 
 {% if scope.unresolved_node_ids %}
-<h2>Unresolved</h2>
-<p class="muted">{{ scope.unresolved_node_ids|length }} dependency item(s) still require a decision before the scope can be frozen.</p>
+<div class="warn" style="margin-top:8px"><strong>{{ scope.unresolved_node_ids|length }} unresolved dependency item(s)</strong> still require a decision before scope can be frozen.</div>
 {% else %}
-<h2>Freeze reviewed scope</h2>
-<form method="post" action="/packages/scope/review">
+<div class="dense-toolbar" style="margin:8px 0 5px"><strong>Freeze reviewed scope</strong><span class="sp"></span><span class="chip">Ready for review</span></div>
+<form method="post" action="/packages/scope/review" class="dense-toolbar" style="flex-wrap:wrap">
   <input type="hidden" name="migration_id" value="{{ migration_id }}">
   <input type="text" name="notes" placeholder="Optional review notes">
   <button type="submit">Mark scope reviewed</button>
 </form>
 {% endif %}
 
-<h2>Guardrails</h2>
-<p class="muted">Scope decisions do not rewrite graph evidence. Marking something TARGET_EQUIVALENT, NOT_REQUIRED, or EXCLUDE records your reviewed decision and reason. Package creation remains blocked until the scope is reviewed, and the complete scope ledger is embedded into the package manifest for later audit.</p>
+<details class="package-section"><summary>Guardrails</summary><div class="body muted">Scope decisions do not rewrite graph evidence. TARGET_EQUIVALENT, NOT_REQUIRED, and EXCLUDE record reviewed decisions plus reasons. Package creation remains blocked until scope is reviewed, and the complete ledger is embedded into the package manifest.</div></details>
 {% endif %}
 {% endblock %}

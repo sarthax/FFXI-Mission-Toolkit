@@ -1,3 +1,13 @@
+## 2026-09-30 — Package Scope / Create / Review workflow UX
+
+- Package Scope, Create, and Review now use the shared dense shell and a common three-stage workflow bar: Scope → Create → Review, with Package Library always available.
+- Scope Review emphasizes closure/review/gate state, unresolved dependencies, and per-item decisions while moving explanatory decision guidance and guardrails behind focused disclosures.
+- Per-dependency decision controls are laid out as a compact decision/reason/tags/save grid without changing review requirements or scope semantics.
+- Create Package replaces the table-form layout with a compact two-column assembly form and promotes Review & Readiness immediately after creation.
+- Package creation result artifacts are grouped into materialized, missing, and skipped sections rather than one long vertical result.
+- Review & Readiness keeps overall status KPIs visible and groups package summary, dependency scope, execution plan, and validation package into focused evidence sections.
+- Package planning, scope ledger, review gating, assembly, validation metadata, and apply-readiness semantics are unchanged.
+
 ## 2026-09-30 — Client Overview build-comparison UX refresh
 
 - Client Overview now uses the shared dense shell and presents installed-client fingerprint, saved binaries/probes, imported snapshots, snapshot import, and build comparison as distinct workspace sections.

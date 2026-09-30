@@ -1,24 +1,35 @@
 {% extends "base.html" %}
 {% block title %}Package Review — Mission Toolkit{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}package-review-page{% endblock %}
 {% block content %}
-<h1>Review &amp; Readiness</h1>
-<p class="muted">Consolidated read-only package review. This page does not approve, apply, or modify package/target files.</p>
+<style>
+main.package-review-page{padding:8px 10px 24px}
+.package-review-section{border:1px solid var(--border);border-radius:7px;background:var(--surface);margin:7px 0;overflow:hidden}
+.package-review-section>summary{padding:7px 9px;cursor:pointer;font-weight:600}
+.package-review-section>.body{padding:0 8px 8px}
+</style>
+<div class="dense-toolbar">
+  <strong>Package Workflow</strong>
+  <a class="chip" href="/packages/scope">1 · Scope</a>
+  <a class="chip" href="/packages/create">2 · Create</a>
+  <span class="chip">3 · Review</span>
+  <span class="sp"></span>
+  <a class="chip" href="/packages">Library</a>
+  <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:680px">Read-only consolidated package review. This page does not approve, apply, or modify package/target files.</div></details>
+</div>
 
-<form method="get" action="/packages/review">
-  <div class="table-wrap"><table>
-  <tbody>
-  <tr><th>Package</th><td>
+<form method="get" action="/packages/review" class="dense-toolbar" style="margin:6px 0;flex-wrap:wrap">
+  <label>Package
     <select name="package">
       <option value="">Select a package</option>
       {% for row in packages %}
       <option value="{{ row.relative_path }}"{% if package == row.relative_path %} selected{% endif %}>{{ row.relative_path }}{% if row.feature_id %} — {{ row.feature_id }}{% endif %}</option>
       {% endfor %}
     </select>
-  </td></tr>
-  <tr><th>Target root</th><td><input type="text" name="target_root" value="{{ target_root }}" placeholder="Required for patch lifecycle drift/readiness checks"></td></tr>
-  </tbody>
-  </table></div>
-  <p><button type="submit">Review package</button></p>
+  </label>
+  <label>Target root <input type="text" name="target_root" value="{{ target_root }}" placeholder="Target root for drift/readiness checks"></label>
+  <button type="submit">Review package</button>
 </form>
 
 {% if error %}<div class="warn">{{ error }}</div>{% endif %}
@@ -31,7 +42,7 @@
   <div class="stat"><div class="n">{{ review.apply_readiness }}</div><div class="l">Apply readiness</div></div>
 </div>
 
-<div class="table-wrap"><table>
+<details class="package-review-section"><summary>Package summary</summary><div class="body"><div class="table-wrap"><table>
 <tbody>
 <tr><th>Migration</th><td><code>{{ review.migration_id or "" }}</code></td></tr>
 <tr><th>Feature</th><td><code>{{ review.feature_id or "" }}</code></td></tr>
@@ -40,10 +51,10 @@
 <tr><th>Excluded actions</th><td>{{ review.excluded_action_count }}</td></tr>
 <tr><th>Generated artifacts</th><td>{{ review.generated_artifact_count }}</td></tr>
 </tbody>
-</table></div>
+</table></div></div></details>
 
 {% set dep_scope = manifest.get("dependency_scope", {}) %}
-<h2>Dependency scope</h2>
+<details class="package-review-section" open><summary>Dependency scope {% if dep_scope %}<span class="chip">{{ dep_scope.get("package_gate", "UNKNOWN") }}</span>{% endif %}</summary><div class="body">
 {% if dep_scope %}
 <p>
   <strong>Closure:</strong> {{ dep_scope.get("closure_status", "UNKNOWN") }}
@@ -82,8 +93,9 @@
 {% else %}
 <div class="warn">This package predates dependency-scope review or was not created through the reviewed-scope workflow. Full inclusion/exclusion provenance is unavailable.</div>
 {% endif %}
+</div></details>
 
-<h2>Execution plan</h2>
+<details class="package-review-section" open><summary>Execution plan</summary><div class="body">
 {% set steps = manifest.get("execution", {}).get("steps", []) %}
 {% if steps %}
 <div class="table-wrap"><table>
@@ -105,8 +117,9 @@
 {% else %}
 <p class="muted">No execution steps are recorded.</p>
 {% endif %}
+</div></details>
 
-<h2>Validation package</h2>
+<details class="package-review-section" open><summary>Validation package {% if validation %}<span class="chip">{{ validation.status or "UNKNOWN" }}</span>{% endif %}</summary><div class="body">
 {% if validation %}
 <p><strong>Status:</strong> {{ validation.status or "UNKNOWN" }}</p>
 {% set requirements = validation.get("requirements", []) %}
@@ -128,7 +141,8 @@
 {% else %}
 <p class="muted">Validation package metadata is not available.</p>
 {% endif %}
+</div></details>
 
-<p class="muted">READY or ELIGIBLE status is evidence for review/apply gating only. This page does not grant approval or execute changes.</p>
+<div class="muted" style="margin-top:8px">READY or ELIGIBLE status is evidence for review/apply gating only. This page does not grant approval or execute changes.</div>
 {% endif %}
 {% endblock %}

@@ -285,6 +285,17 @@ def main():
     for marker in client_overview_contracts:
         assert marker in client_overview_source,marker
 
+    package_workflow_contracts = {
+        "packages_scope.html": ["{% block shell_mode %}dense{% endblock %}", "package-scope-page", "Package Workflow", "1 · Scope", "scope-decision-form"],
+        "packages_create.html": ["{% block shell_mode %}dense{% endblock %}", "package-create-page", "2 · Create", "package-form-grid"],
+        "packages_review.html": ["{% block shell_mode %}dense{% endblock %}", "package-review-page", "3 · Review", "package-review-section"],
+    }
+    for template_name, markers in package_workflow_contracts.items():
+        capture_env.get_template(template_name)
+        source=(TEMPLATES/template_name).read_text(encoding="utf-8")
+        for marker in markers:
+            assert marker in source,(template_name,marker)
+
     assert '<body class="shell-dense">' in captures_html
     assert '<strong>Captures</strong>' in captures_html
     assert 'form class="search dense-toolbar"' in captures_html
