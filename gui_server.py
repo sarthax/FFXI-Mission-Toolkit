@@ -6089,6 +6089,88 @@ def captures_timeline(
     })
 
 
+@app.get("/captures/{capture_id}/packets/{seq}", response_class=HTMLResponse)
+def capture_packet_detail(request: Request, capture_id: int, seq: int):
+    """Contextual decoder for one canonical raw packet observation.
+
+    Unlike the ad-hoc /packets/decode page, this keeps the packet inside its capture/session:
+    timestamp, source provenance, neighboring packets and cross-source correlations remain visible
+    while the exact same packet_decode.analyze_layout() drives the byte/field inspector.
+    """
+    con = get_con()
+    cap = con.execute("SELECT * FROM captures WHERE capture_id=?", (capture_id,)).fetchone()
+    row = con.execute(
+        "SELECT * FROM capture_raw_packets WHERE capture_id=? AND seq=?",
+        (capture_id, seq),
+    ).fetchone()
+    if not cap or not row:
+        con.close()
+        return HTMLResponse("Capture packet not found", status_code=404)
+
+    packet = dict(row)
+    pd_direction = "s2c" if packet["direction"] == "incoming" else "c2s"
+    packet["pd_direction"] = pd_direction
+    layout = None
+    decode_error = None
+    try:
+        opcode_int = int(packet["opcode"], 0)
+        layout = packet_decode.analyze_layout(pd_direction, opcode_int, packet["raw_hex"])
+    except Exception as exc:
+        decode_error = str(exc)
+
+    prev_row = con.execute(
+        """SELECT seq,ts,direction,opcode FROM capture_raw_packets
+           WHERE capture_id=? AND seq<? ORDER BY seq DESC LIMIT 1""",
+        (capture_id, seq),
+    ).fetchone()
+    next_row = con.execute(
+        """SELECT seq,ts,direction,opcode FROM capture_raw_packets
+           WHERE capture_id=? AND seq>? ORDER BY seq ASC LIMIT 1""",
+        (capture_id, seq),
+    ).fetchone()
+
+    locator = con.execute(
+        """SELECT filename,source_sha256,locator_basis,start_line,end_line,start_offset,end_offset,details_json
+           FROM capture_row_locators
+           WHERE capture_id=? AND target_table='capture_raw_packets' AND row_key=?
+           ORDER BY filename LIMIT 1""",
+        (capture_id, json.dumps({"seq": seq}, sort_keys=True)),
+    ).fetchone()
+    provenance = dict(locator) if locator else None
+    if provenance:
+        try:
+            provenance["details"] = json.loads(provenance.pop("details_json") or "{}")
+        except json.JSONDecodeError:
+            provenance["details"] = {}
+
+    packet_correlation.init_db(con)
+    raw_ref = f"raw-packet:{seq}"
+    corr_rows = con.execute(
+        """SELECT * FROM capture_packet_correlations
+           WHERE capture_id=?
+             AND ((source_kind=? AND source_ref=?) OR (target_kind=? AND target_ref=?))
+           ORDER BY status,basis,ABS(COALESCE(time_delta_seconds,0)),correlation_id""",
+        (capture_id, packet_correlation.RAW, raw_ref, packet_correlation.RAW, raw_ref),
+    ).fetchall()
+    correlations = []
+    for corr in corr_rows:
+        d = dict(corr)
+        d["other_kind"] = d["target_kind"] if d["source_kind"] == packet_correlation.RAW and d["source_ref"] == raw_ref else d["source_kind"]
+        d["other_ref"] = d["target_ref"] if d["source_kind"] == packet_correlation.RAW and d["source_ref"] == raw_ref else d["source_ref"]
+        try:
+            d["details"] = json.loads(d.get("details_json") or "{}")
+        except json.JSONDecodeError:
+            d["details"] = {}
+        correlations.append(d)
+
+    con.close()
+    return templates.TemplateResponse(request, "capture_packet_detail.html", {
+        "cap": cap, "capture_id": capture_id, "packet": packet, "layout": layout,
+        "decode_error": decode_error, "prev_packet": prev_row, "next_packet": next_row,
+        "provenance": provenance, "correlations": correlations,
+    })
+
+
 @app.get("/captures/{capture_id}/packets", response_class=HTMLResponse)
 def captures_raw_packets(
     request: Request, capture_id: int,
