@@ -906,6 +906,7 @@ function rebuild(){
     for(const i of visible){ const e=Z.entities[i]; if(e.k!=='d') continue; const p=P(e), d=sceneHeading(e.r); pts.push(p.x,p.y+1.2,p.z,p.x+d.x*5,p.y+1.2,p.z+d.z*5); }
     if(pts.length){ const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3)); doorFacingLines=new THREE.LineSegments(g,doorFacingMat); doorFacingLines.renderOrder=18; scene.add(doorFacingLines); }
   }
+  updateMobRadiusVisuals();
   // summary + list
   const cnt={}; Z.entities.forEach((e,i)=>{ const s=e.zero?'zero':stateOf(i); cnt[s]=(cnt[s]||0)+1; });
   $('sum').textContent = `${Z.entities.length} rows  mobs ${Z.entities.filter(e=>e.k==='m').length}  npcs ${Z.entities.filter(e=>e.k==='n').length}  doors ${Z.entities.filter(e=>e.k==='d').length}\n` +
@@ -951,12 +952,12 @@ function select(i, fly){
   if(changed&&typeof loadEditor==='function') loadEditor(i);
   const e=Z.entities[i];
   if(fly && !e.zero) frameSelected();
-  updateHeadingArrow(); updateSelectionVisual(); loadSelectedNavDiag();
+  updateHeadingArrow(); updateSelectionVisual(); updateMobRadiusVisuals(); loadSelectedNavDiag();
   if(typeof updateDirtyUI==='function') updateDirtyUI(); if(typeof updateEntitySyncStatus==='function') updateEntitySyncStatus();
   $('frameSelBtn').disabled=!!e.zero; $('cloneSelectedBtn').disabled=false;
   syncMultiUI();
   const row=$('list').querySelector(`div[data-i="${i}"]`); if(row) row.scrollIntoView({block:'nearest'});
-  $('hover').textContent = `${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${txt(e)}  grp=${e.g}  (${e.x}, ${e.y}, ${e.z})  ${rotText(e.r)}  ${stateOf(i)}${e.zero?' ZERO-POS: never loads in instances':''}`;
+  $('hover').textContent = `${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${txt(e)}  grp=${e.g}  (${e.x}, ${e.y}, ${e.z})  ${rotText(e.r)}  ${stateOf(i)}${e.roam_radius!==undefined?'  roam='+e.roam_radius:''}${e.leash_radius!==undefined?'  leash='+e.leash_radius:''}${e.zero?' ZERO-POS: never loads in instances':''}`;
   return true;
 }
 function toggleMultiSelect(i,fly=false){
@@ -1032,6 +1033,7 @@ $('q').addEventListener('input',()=>Z&&rebuild());
 $('shownav').onchange=()=>{ if(navMesh) navMesh.visible=$('shownav').checked; saveZoneEditorState(); };
 $('navdiag').onchange=()=>{ saveZoneEditorState(); loadSelectedNavDiag(); };
 $('showDoorFacing').onchange=()=>{ saveZoneEditorState(); if(Z) rebuild(); };
+$('showMobRadii').onchange=()=>{ saveZoneEditorState(); updateMobRadiusVisuals(); };
 $('opac').oninput=()=>{ meshObj&&meshObj.traverse(c=>{ if(c.isMesh) c.material.opacity=+$('opac').value; }); saveZoneEditorState(); };
 document.querySelectorAll('[data-cam]').forEach(b=>b.onclick=()=>cameraPreset(b.dataset.cam));
 $('projection').onchange=()=>{ switchProjection($('projection').value); saveZoneEditorState(); };
@@ -1174,6 +1176,7 @@ function restorePreviewFromOrig(){
 function loadEditor(i){ const e=Z.entities[i]; if(!e){ $('ed').hidden=true; $('ed-none').hidden=false; return; }
   $('ed').hidden=false; $('ed-none').hidden=true; orig={x:e.x,y:e.y,z:e.z,r:e.r||0};
   $('ed-title').textContent=`${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${e.id}  ${e.n||e.g}`;
+  $('ed-radius').textContent=radiusText(e);
   $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r||0; $('er-dir').textContent=rotText(e.r||0); $('emsg').textContent=''; $('ecomment').value=''; updateDirtyUI(); updateEntitySyncStatus();
   if (e.k==='n' || e.k==='d'){
     $('ed-anim').hidden=false;
