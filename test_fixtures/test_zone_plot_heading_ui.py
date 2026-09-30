@@ -25,12 +25,12 @@ def main():
     # World compass follows the projected world-North vector.
     assert 'id="map-compass"' in template
     assert 'id="compass-rose"' in template
-    assert "add(new THREE.Vector3(0,0,25)).project(camera)" in template
+    assert "add(new THREE.Vector3(0,0,-25)).project(camera)" in template
 
     # Close zoom is deliberately finer than far-distance zoom.
-    assert "d>300 ? 2.0" in template
-    assert "d>8 ? 0.3 : 0.18" in template
-    assert "renderer.domElement.addEventListener('wheel', ()=>{ updateZoomSpeed();" in template
+    assert "controls.zoomSpeed=(1.4+2.6*far)*mult;" in template
+    assert "controls.minDistance=0.05;" in template
+    assert "renderer.domElement.addEventListener('wheel', ev=>{ ev.preventDefault(); updateZoomSpeed(" in template
 
     # First Zone Editor QOL priority stack.
     assert "const undoStack=[], redoStack=[];" in template
@@ -132,7 +132,7 @@ def main():
     assert "Sort: Rotation" in template
     assert "Instance filter: all zone rows" in template
     assert "first 1000 shown" in template
-    assert "grid-template-columns:34px 78px" in template
+    assert "grid-template-columns:30px 60px minmax(90px,1fr) 44px" in template
 
     # Orientation / snap / clipboard / measurement tools.
     assert 'id="labelHeading"' in template
@@ -185,16 +185,16 @@ def main():
     assert "const mobRadiusGroup=new THREE.Group()" in template
     assert "function updateMobRadiusVisuals()" in template
     assert "function radiusText(e)" in template
-    assert "No explicit ROAM_DISTANCE or SPAWN_LEASH stored for this mob; engine/default behavior is not visualized." in template
+    assert "No explicit ROAM_DISTANCE or SPAWN_LEASH stored for this mob." in template
 
     # Selection defaults back to Move mode and Help documents the editor surface.
     assert "if(typeof setGizmoMode==='function') setGizmoMode('translate');" in template
-    assert '<button data-t="help" class="tabb">Help</button>' in template
+    assert 'id="zhelpBtn"' in template
     assert 'id="tab-help"' in template
     assert "Zone Editor help" in template
     assert "Transform shortcuts" in template
     assert "Client model preview" in template
-    assert "Animation &amp; subanimation" in template
+    assert "Animation, model preview, NPC rows" in template
 
     # Model changes are preview/impact gated, backup-backed, and pool-aware for mobs.
     assert "def _flat_look_blob(model_id):" in zone_edit
