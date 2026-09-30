@@ -199,6 +199,22 @@ def main():
     assert "function pasteEditorGroup(table,groupName)" in template
     assert "paste is limited to the same logical group" in template
 
+    # Source-backed modifier units/comments and latentParam semantics.
+    assert "def mod_metadata() -> dict:" in item_dat
+    assert "def latent_metadata() -> dict:" in item_dat
+    assert "Topaz modifier.h enum comment" in item_dat
+    assert "Topaz latent_effect.h enum comment" in item_dat
+    assert "def mod_metadata():" in item_edit
+    assert "def latent_metadata():" in item_edit
+    assert '@app.get("/itemedit/modmeta.json")' in gui
+    assert '@app.get("/itemedit/latentmeta.json")' in gui
+    assert "let MOD_META = {};" in template
+    assert "let LATENT_META = {};" in template
+    assert "function modMetaLine(modId)" in template
+    assert "function latentParamLine(latentId)" in template
+    assert "source-backed modifier comments/units" in template
+    assert "source-backed activation-condition and latentParam semantics" in template
+
     # Staged mods / pet mods / latents are part of the same dirty/save transaction.
     assert "let loadedEffects={mods:[],pet_mods:[],latents:[]};" in template
     assert "function effectsDirty()" in template
