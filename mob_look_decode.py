@@ -12,8 +12,8 @@ Ground truth, read directly from Topaz source (2026-08-31):
         STANDARD=0, EQUIPED=1, DOOR=2, ELEVATOR=3, SHIP=4, UNK_5=5, AUTOMATON=6, CHOCOBO=7
     C:\\topaz\\src\\map\\packets\\entity_update.cpp  CEntityUpdatePacket ctor:
         STANDARD/UNK_5/AUTOMATON -> only 4 bytes sent (size+union as one u32) -- a single flat
-            numeric model id, exactly the file_id space model_schedule_dump.py resolves
-            (ENTITY_MODEL_OFFSET 98239 + modelid) -- ONE DAT.
+            numeric model id. FFXiMain maps that id through a 4-band lookup before FTABLE/VTABLE
+            resolution; it is NOT a universal 98239+modelid calculation.
         EQUIPED/CHOCOBO -> the FULL 20-byte look_t is sent -- race + 8 per-slot gear ids. This is
             NOT "one DAT with several models inside it" -- there is no single DAT to find. The
             client renders a live composite of the race's base skeleton DAT plus one DAT per
@@ -52,12 +52,6 @@ import client_model_resolver
 import settings
 
 TOPAZ_ROOT = settings.get_topaz_root()
-# DISPROVEN 2026-09-22 as a universal monster-model offset (it's a fileId classification
-# threshold in xi-model-viewer's own source, dattypes.js:138 -- never an additive offset). Kept
-# only as an explicitly-marked-unverified LAST RESORT below for families with no real table entry
-# yet in mob_model_tables.py -- never trust a "flat" result with unverified=True.
-ENTITY_MODEL_OFFSET = 98239
-
 MODEL_TYPES = {
     0: "MODEL_STANDARD", 1: "MODEL_EQUIPED", 2: "MODEL_DOOR", 3: "MODEL_ELEVATOR",
     4: "MODEL_SHIP", 5: "MODEL_UNK_5", 6: "MODEL_AUTOMATON", 7: "MODEL_CHOCOBO",
@@ -128,9 +122,10 @@ def decode_look(blob: bytes):
 
     if size in FLAT_MODEL_TYPES:
         modelid = struct.unpack_from("<H", blob, 2)[0]
-        file_id = ENTITY_MODEL_OFFSET + modelid
+        file_id, rule = client_model_resolver.model_id_to_file_id(modelid)
         print(f"  flat modelid = {modelid}")
-        print(f"  -> single DAT, file_id = {ENTITY_MODEL_OFFSET} + {modelid} = {file_id}")
+        print(f"  -> FFXiMain lookup: {rule} -> file_id {file_id}")
+        print(f"  -> this file_id identifies the client monster resource/skeleton entry; visible mesh resources may be linked separately")
         print(f"  -> python model_schedule_dump.py --file-id {file_id}")
     elif size in GEAR_MODEL_TYPES:
         face, race = blob[2], blob[3]
