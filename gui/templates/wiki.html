@@ -1,15 +1,27 @@
 {% extends "base.html" %}
 {% block title %}Wiki Compiler{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}wiki-compiler-page{% endblock %}
 {% block content %}
-<h1>Wiki Compiler</h1>
-<p class="muted">Real <code class="chip">[[wikilinks]]</code> and <code class="chip">{{ '{{' }}Item Tooltip{{ '}}' }}</code>
-references from a BG Wiki page (via <code class="chip">mwparserfromhell</code>, a real MediaWiki
-parser -- not free-text NLP or an LLM), resolved against the indexed
-zones/NPCs/mobs/key items/items. Reference only -- verify anything load-bearing against Topaz's
-own SQL/Lua before relying on it.</p>
+<style>
+main.wiki-compiler-page{padding:8px 10px 24px}
+.wiki-section{border:1px solid var(--border);border-radius:7px;background:var(--surface);margin:7px 0;overflow:hidden}
+.wiki-section>summary{padding:7px 9px;cursor:pointer;font-weight:600}
+.wiki-section>.body{padding:0 8px 8px}
+.wiki-actions{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.wiki-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:5px;margin:6px 0}
+.wiki-kpi{border:1px solid var(--border);border-radius:6px;padding:5px 7px;background:var(--surface)}
+.wiki-kpi .n{font-weight:700;font-size:16px}.wiki-kpi .l{font-size:10px;color:var(--muted)}
+</style>
+<div class="dense-toolbar">
+  <strong>Wiki Compiler</strong>
+  <span class="sp"></span>
+  <a class="chip" href="/research">Research Sessions</a>
+  <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:760px">Parses real MediaWiki links/templates and resolves them against indexed zones, NPCs, mobs, key items, and items. Wiki evidence stays reference-only until independently verified against server/client/capture evidence.</div></details>
+</div>
 
-{% if error %}<div class="warn">{{ error }}</div>{% endif %}
-<form class="search" method="get" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+{% if error %}<div class="warn" style="margin:6px 0">{{ error }}</div>{% endif %}
+<form class="search dense-toolbar" method="get" style="margin:6px 0;flex-wrap:wrap;">
   <select name="source">
     {% for src in available_sources %}
     <option value="{{ src.id }}" {% if src.id == source %}selected{% endif %} {% if not src.available %}disabled{% endif %}>{{ src.label }}{% if not src.available %} (not imported){% endif %}</option>
@@ -19,25 +31,29 @@ own SQL/Lua before relying on it.</p>
   <button type="submit">Open</button>
 </form>
 {% if title %}
-<form method="post" action="/wiki/map" style="margin-top:8px;">
+<div class="wiki-actions dense-toolbar" style="margin:4px 0">
+<form method="post" action="/wiki/map" style="margin:0">
   <input type="hidden" name="title" value="{{ title }}">
   <input type="hidden" name="source" value="{{ source }}">
   <button type="submit">Build / refresh evidence map</button>
-  <span class="muted">Extracts revision-stamped claims and conservative mapping candidates; reference-only evidence is never promoted to server truth.</span>
 </form>
 {% endif %}
 {% if title %}
-<form method="post" action="/wiki/compare" style="margin-top:8px;">
+<form method="post" action="/wiki/compare" style="margin:0;">
   <input type="hidden" name="title" value="{{ title }}">
   <button type="submit">Compare BG Wiki ↔ FFXIclopedia</button>
-  <span class="muted">Aligns claim ledgers and flags deterministic numeric/negation conflicts without selecting a winner.</span>
 </form>
+{% if report and not report.error %}<a class="chip" href="/wiki/export?title={{ title }}" target="_blank">Export handoff packet</a>{% endif %}
+<span class="sp"></span><span class="muted">Claims stay revision-stamped and reference-only.</span>
+</div>
 {% endif %}
 
 {% if evidence and evidence.status == "OK" %}
-<div class="table-wrap" style="padding:14px;margin-top:18px;">
-  <h2 style="margin-top:0;">Evidence mapping ledger — {{ source }}</h2>
+<details class="wiki-section" open>
+<summary>Evidence mapping ledger — {{ source }} {% if evidence.claims %}<span class="chip">{{ evidence.claims|length }} claims</span>{% endif %}</summary>
+<div class="body">
   <p class="muted">Each row preserves the wiki claim separately from its proposed toolkit identity. Confirming a mapping verifies only the identity link; the wiki claim remains <code>REFERENCE_ONLY</code>.</p>
+  <div class="table-wrap">
   {% if evidence.claims %}
   <table>
     <tr><th>section</th><th>claim</th><th>excerpt</th><th>mapping</th><th>review</th></tr>
@@ -87,20 +103,21 @@ own SQL/Lua before relying on it.</p>
       </td>
     </tr>
     {% endfor %}
-  </table>
+  </table></div>
   {% else %}
   <p class="muted">No claim ledger has been built for this page yet. Use <b>Build / refresh evidence map</b>.</p>
   {% endif %}
-</div>
+</div></details>
 {% elif evidence and evidence.status == "NOT_FOUND" and source != "BGWiki" %}
 <div class="warn">No imported {{ source }} page matched this title.</div>
 {% endif %}
 
 {% if comparison and comparison.status == "OK" %}
-<div class="table-wrap" style="padding:14px;margin-top:18px;">
-  <h2 style="margin-top:0;">Dual-wiki claim comparison</h2>
-  <p class="muted">BG Wiki and FFXIclopedia are compared as peer reference sources. <b>REFERENCE_CONFLICT</b> means a deterministic contradiction signal was found; it does not identify which source is correct.</p>
-  <table>
+<details class="wiki-section">
+<summary>Dual-wiki claim comparison <span class="chip">{{ comparison.pairs|length }} aligned claims</span></summary>
+<div class="body">
+  <p class="muted">BG Wiki and FFXIclopedia are peer reference sources. <b>REFERENCE_CONFLICT</b> is a deterministic contradiction signal; it does not identify which source is correct.</p>
+  <div class="table-wrap"><table>
     <tr><th>status</th><th>type / section</th><th>BG Wiki</th><th>FFXIclopedia</th><th>details</th></tr>
     {% for p in comparison.pairs %}
     <tr>
@@ -129,8 +146,8 @@ own SQL/Lua before relying on it.</p>
       </td>
     </tr>
     {% endfor %}
-  </table>
-</div>
+  </table></div>
+</div></details>
 {% elif comparison and comparison.status == "NOT_BUILT" and title %}
 <p class="muted" style="margin-top:14px;">No dual-wiki comparison has been built for this title yet.</p>
 {% endif %}
@@ -139,30 +156,30 @@ own SQL/Lua before relying on it.</p>
 {% if report.error %}
 <div class="warn">{{ report.error }}</div>
 {% else %}
-<h2>{{ report.title }}</h2>
-<p class="muted"><a class="inline" href="{{ report.url }}" target="_blank">{{ report.url }}</a></p>
-<p>{{ report.rows|length }} real linked entities:
-  <span class="pill exists">{{ report.counts.found }} found</span>
-  <span class="pill gap">{{ report.counts.ambiguous }} ambiguous</span>
-  <span class="pill mismatch">{{ report.counts.not_found }} not found</span>
-  &nbsp;&nbsp;<a class="inline" href="/wiki/export?title={{ title }}" target="_blank">&#8681; export handoff packet (.md)</a>
-</p>
+<div class="dense-toolbar" style="margin:8px 0 5px">
+  <strong>{{ report.title }}</strong>
+  <span class="sp"></span>
+  <a class="chip" href="{{ report.url }}" target="_blank">Open source page</a>
+</div>
+<div class="wiki-kpis">
+  <div class="wiki-kpi"><div class="n">{{ report.rows|length }}</div><div class="l">linked entities</div></div>
+  <div class="wiki-kpi"><div class="n">{{ report.counts.found }}</div><div class="l">found</div></div>
+  <div class="wiki-kpi"><div class="n">{{ report.counts.ambiguous }}</div><div class="l">ambiguous</div></div>
+  <div class="wiki-kpi"><div class="n">{{ report.counts.not_found }}</div><div class="l">not found</div></div>
+</div>
 
 {% if report.excerpt.client_text %}
-<h3>Mission text <span class="muted">(real client text, missions-assault.xml)</span></h3>
-<pre style="white-space:pre-wrap;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12.5px;">{{ report.excerpt.client_text }}</pre>
+<details class="wiki-section"><summary>Mission text <span class="muted">(real client text)</span></summary><div class="body"><pre style="white-space:pre-wrap;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12.5px;">{{ report.excerpt.client_text }}</pre></div></details>
 {% endif %}
 {% for heading, body in report.excerpt.sections.items() %}
-<h3>{{ heading }} <span class="muted">(wiki text, BG Wiki -- reference only)</span></h3>
-<pre style="white-space:pre-wrap;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12.5px;">{{ body }}</pre>
+<details class="wiki-section"><summary>{{ heading }} <span class="muted">(wiki text · reference only)</span></summary><div class="body"><pre style="white-space:pre-wrap;background:var(--code-bg);border:1px solid var(--border);border-radius:6px;padding:8px;font-size:12px;">{{ body }}</pre></div></details>
 {% endfor %}
 {% if report.excerpt.fallback_text %}
-<h3>Page text <span class="muted">({{ report.excerpt.fallback_source }})</span></h3>
-<pre style="white-space:pre-wrap;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12.5px;">{{ report.excerpt.fallback_text }}</pre>
+<details class="wiki-section"><summary>Page text <span class="muted">({{ report.excerpt.fallback_source }})</span></summary><div class="body"><pre style="white-space:pre-wrap;background:var(--code-bg);border:1px solid var(--border);border-radius:6px;padding:8px;font-size:12px;">{{ report.excerpt.fallback_text }}</pre></div></details>
 {% endif %}
 
 {% for kind, entries in report.sections %}
-<h3 style="margin-top:24px;">{{ kind }} <span class="muted">({{ entries|length }})</span></h3>
+<details class="wiki-section"{% if loop.first %} open{% endif %}><summary>{{ kind }} <span class="chip">{{ entries|length }}</span></summary><div class="body">
 <div class="table-wrap"><table>
   <tr><th>status</th><th>wiki name</th><th>match</th></tr>
   {% for e in entries %}
@@ -194,17 +211,17 @@ own SQL/Lua before relying on it.</p>
   </tr>
   {% endfor %}
   {% endfor %}
-</table></div>
+</table></div></div></details>
 {% endfor %}
 
 {% if report.not_found_names %}
-<h3 style="margin-top:24px;">not found <span class="muted">({{ report.not_found_names|length }})</span></h3>
+<details class="wiki-section"><summary>Not found <span class="chip">{{ report.not_found_names|length }}</span></summary><div class="body">
 <div class="table-wrap"><table>
   <tr><th>wiki name</th></tr>
   {% for name in report.not_found_names %}
   <tr><td><span class="pill mismatch">&#128308;</span> {{ name }}</td></tr>
   {% endfor %}
-</table></div>
+</table></div></div></details>
 {% endif %}
 {% endif %}
 {% endif %}

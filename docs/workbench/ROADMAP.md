@@ -1,3 +1,13 @@
+## 2026-09-30 Wiki Compiler and Research Session workflow UX
+
+- [x] Redesign Wiki Compiler as an evidence-review workspace with progressive disclosure.
+- [x] Keep claim mapping/review primary and dual-wiki comparison secondary/on-demand.
+- [x] Add compact linked-entity KPI summaries and expandable per-kind results.
+- [x] Redesign Research Session Detail as a session console.
+- [x] Separate run/replay, metadata, budgets, transcript, proposals, and final report into focused sections.
+- [x] Preserve research execution, evidence, proposal, permission, and wiki mapping semantics.
+- [x] Extend GUI/research/wiki regressions for the new workflow contracts.
+
 ## 2026-09-30 Library and search workspace UX refresh
 
 - [x] Compact Item Browser, Key Items, Dialog, SQL Index, Zone Browser, Missions, and Binding Reference.

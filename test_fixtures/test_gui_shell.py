@@ -261,6 +261,16 @@ def main():
         for marker in markers:
             assert marker in source,(template_name,marker)
 
+    workflow_ux_contracts = {
+        "wiki.html": ["{% block shell_mode %}dense{% endblock %}", "wiki-compiler-page", "wiki-actions", "wiki-kpis", "Evidence mapping ledger", "Dual-wiki claim comparison"],
+        "research_session_detail.html": ["{% block shell_mode %}dense{% endblock %}", "research-session-page", "research-meta", "research-run-grid", "Typed Tool Transcript", "Research Proposals", "Final Report"],
+    }
+    for template_name, markers in workflow_ux_contracts.items():
+        capture_env.get_template(template_name)
+        source=(TEMPLATES/template_name).read_text(encoding="utf-8")
+        for marker in markers:
+            assert marker in source,(template_name,marker)
+
     assert '<body class="shell-dense">' in captures_html
     assert '<strong>Captures</strong>' in captures_html
     assert 'form class="search dense-toolbar"' in captures_html

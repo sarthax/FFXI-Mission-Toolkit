@@ -1,11 +1,41 @@
 {% extends "base.html" %}
 {% block title %}Research Session{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}research-session-page{% endblock %}
 {% block content %}
-<p><a href="/research">← Research Sessions</a> · <a href="/research/contradictions?session_id={{ session.research_session_id|urlencode }}">Contradictions for this session</a></p>
-<h1>Research Session</h1>
-{% if created %}<p class="chip">Session created. No provider has been run by this page.</p>{% endif %}
+<style>
+main.research-session-page{padding:8px 10px 24px}
+.research-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:5px;margin:6px 0}
+.research-meta .item{border:1px solid var(--border);border-radius:6px;background:var(--surface);padding:5px 7px;min-width:0}
+.research-meta .k{font-size:10px;text-transform:uppercase;color:var(--muted);letter-spacing:.04em}
+.research-meta .v{margin-top:2px;word-break:break-word}
+.research-section{border:1px solid var(--border);border-radius:7px;background:var(--surface);margin:7px 0;overflow:hidden}
+.research-section>summary{padding:7px 9px;cursor:pointer;font-weight:600}
+.research-section>.body{padding:0 8px 8px}
+.research-run-grid{display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:6px}
+.research-run-grid label{display:flex;flex-direction:column;gap:3px}
+@media(max-width:850px){.research-run-grid{grid-template-columns:1fr}}
+</style>
+<div class="dense-toolbar">
+  <a class="chip" href="/research">← Sessions</a>
+  <strong>Research Session</strong>
+  <span class="chip mono">{{ session.research_session_id }}</span>
+  <span class="chip">{{ session.verification_state }}</span>
+  <span class="sp"></span>
+  <a class="chip" href="/research/contradictions?session_id={{ session.research_session_id|urlencode }}">Contradictions</a>
+</div>
+{% if created %}<div class="chip" style="margin:6px 0">Session created. No provider has been run by this page.</div>{% endif %}
 
-<div class="table-wrap"><table>
+<div class="research-meta">
+  <div class="item"><div class="k">Question</div><div class="v">{{ session.question }}</div></div>
+  <div class="item"><div class="k">Provider / Model</div><div class="v">{{ session.provider }} / {{ session.model }}</div></div>
+  <div class="item"><div class="k">Permission</div><div class="v">{{ session.permission_profile }}</div></div>
+  <div class="item"><div class="k">Feature root</div><div class="v mono">{{ session.feature_root or "-" }}</div></div>
+  <div class="item"><div class="k">Entity root</div><div class="v mono">{{ session.entity_root or "-" }}</div></div>
+  <div class="item"><div class="k">Snapshots</div><div class="v mono">{{ session.source_snapshot_id or "-" }} → {{ session.target_snapshot_id or "-" }}</div></div>
+  <div class="item"><div class="k">Created / Updated</div><div class="v">{{ session.created_at }} · {{ session.updated_at }}</div></div>
+</div>
+<details class="research-section"><summary>Full session metadata</summary><div class="body"><div class="table-wrap"><table>
   <tr><th>ID</th><td><code>{{ session.research_session_id }}</code></td></tr>
   <tr><th>Question</th><td>{{ session.question }}</td></tr>
   <tr><th>Provider / Model</th><td>{{ session.provider }} / {{ session.model }}</td></tr>
@@ -17,35 +47,25 @@
   <tr><th>Entity root</th><td><code>{{ session.entity_root or "-" }}</code></td></tr>
   <tr><th>Created</th><td>{{ session.created_at }}</td></tr>
   <tr><th>Updated</th><td>{{ session.updated_at }}</td></tr>
-</table></div>
+</table></div></div></details>
 
-<h2>Run / Replay</h2>
-<p class="muted">
-  Runs are bounded by the typed Workbench tool registry and this session's permission profile.
-  A session can be run in place once. Replay always creates a new child session so the original
-  transcript, evidence trail, and report remain unchanged.
-</p>
+<details class="research-section" open><summary>Run / Replay {% if has_run %}<span class="chip">completed</span>{% else %}<span class="chip">not run</span>{% endif %}</summary><div class="body">
+<p class="muted">Runs are bounded by the typed Workbench tool registry and this session's permission profile. A session can run in place once; Replay creates a new child session so the original transcript/evidence/report stay unchanged.</p>
 {% if run_status %}<p class="chip">{{ run_status }}</p>{% endif %}
 {% if run_error %}<p class="chip" style="color:#c33;">{{ run_error }}</p>{% endif %}
 {% if replayed_from %}<p class="muted">Replay created from <code>{{ replayed_from }}</code>.</p>{% endif %}
 
 <form method="post" action="/research/run">
   <input type="hidden" name="research_session_id" value="{{ session.research_session_id }}">
-  <div class="table-wrap"><table>
-    <tr><th>Provider</th><td>
-      <select name="provider">
-        {% for p in ["openwebui", "ollama"] %}
-        <option value="{{ p }}" {% if run_defaults.provider|lower|replace("_","-") in [p, "open-webui"] and (p != "openwebui" or run_defaults.provider|lower|replace("_","-") in ["openwebui","open-webui"]) %}selected{% endif %}>{{ p }}</option>
-        {% endfor %}
-      </select>
-    </td></tr>
-    <tr><th>Model</th><td><input name="model" value="{{ run_defaults.model }}" required></td></tr>
-    <tr><th>Max tool calls</th><td><input type="number" name="max_tool_calls" min="0" max="100" value="{{ run_defaults.max_tool_calls }}"></td></tr>
-    <tr><th>Max provider calls</th><td><input type="number" name="max_provider_calls" min="1" max="100" value="{{ run_defaults.max_provider_calls }}"></td></tr>
-    <tr><th>Timeout / provider call</th><td><input type="number" name="timeout" min="1" max="900" step="1" value="{{ run_defaults.timeout }}"> seconds</td></tr>
-    <tr><th>Temperature</th><td><input type="number" name="temperature" min="0" max="2" step="0.1" value="{{ run_defaults.temperature }}"></td></tr>
-    <tr><th>Provider base URL</th><td><input name="provider_base_url" value="{{ run_defaults.provider_base_url }}" placeholder="optional; Open WebUI uses configured URL, Ollama defaults to localhost:11434" style="width:100%;"></td></tr>
-  </table></div>
+  <div class="research-run-grid">
+    <label>Provider<select name="provider">{% for p in ["openwebui", "ollama"] %}<option value="{{ p }}" {% if run_defaults.provider|lower|replace("_","-") in [p, "open-webui"] and (p != "openwebui" or run_defaults.provider|lower|replace("_","-") in ["openwebui","open-webui"]) %}selected{% endif %}>{{ p }}</option>{% endfor %}</select></label>
+    <label>Model<input name="model" value="{{ run_defaults.model }}" required></label>
+    <label>Max tool calls<input type="number" name="max_tool_calls" min="0" max="100" value="{{ run_defaults.max_tool_calls }}"></label>
+    <label>Max provider calls<input type="number" name="max_provider_calls" min="1" max="100" value="{{ run_defaults.max_provider_calls }}"></label>
+    <label>Timeout / call<input type="number" name="timeout" min="1" max="900" step="1" value="{{ run_defaults.timeout }}"></label>
+    <label>Temperature<input type="number" name="temperature" min="0" max="2" step="0.1" value="{{ run_defaults.temperature }}"></label>
+    <label style="grid-column:1/-1">Provider base URL<input name="provider_base_url" value="{{ run_defaults.provider_base_url }}" placeholder="optional provider URL"></label>
+  </div>
   {% if has_run %}
     <p class="muted">This session already has execution output. Run-in-place is disabled; use Replay.</p>
     <button type="submit" disabled>Run session</button>
@@ -54,15 +74,15 @@
   {% endif %}
   <button type="submit" formaction="/research/replay">Replay as new session</button>
 </form>
+</div></details>
 
-<h2>Budgets & Usage</h2>
-<div class="table-wrap"><table>
+<details class="research-section"><summary>Budgets & Usage</summary><div class="body"><div class="table-wrap"><table>
   <tr><th>Budgets</th><td><pre>{{ session.budgets|tojson(indent=2) }}</pre></td></tr>
   <tr><th>Usage</th><td><pre>{{ session.usage|tojson(indent=2) }}</pre></td></tr>
   <tr><th>Replay metadata</th><td><pre>{{ session.replay_metadata|tojson(indent=2) }}</pre></td></tr>
-</table></div>
+</table></div></div></details>
 
-<h2>Typed Tool Transcript</h2>
+<details class="research-section"{% if session.tool_calls %} open{% endif %}><summary>Typed Tool Transcript <span class="chip">{{ session.tool_calls|length }}</span></summary><div class="body">
 {% if not session.tool_calls %}
 <p class="muted">No typed tool calls recorded.</p>
 {% else %}
@@ -77,8 +97,9 @@
 </details>
 {% endfor %}
 {% endif %}
+</div></details>
 
-<h2>Research Proposals</h2>
+<details class="research-section"><summary>Research Proposals <span class="chip">{{ session.proposals|length }}</span></summary><div class="body">
 {% if not session.proposals %}
 <p class="muted">No proposals recorded.</p>
 {% else %}
@@ -97,8 +118,10 @@
   {% endfor %}
 </table></div>
 {% endif %}
+</div></details>
 
-<h2>Final Report</h2>
-{% if session.final_report %}<pre style="white-space:pre-wrap;">{{ session.final_report }}</pre>
+<details class="research-section"{% if session.final_report %} open{% endif %}><summary>Final Report {% if session.final_report %}<span class="chip">available</span>{% endif %}</summary><div class="body">
+{% if session.final_report %}<pre style="white-space:pre-wrap;max-height:70vh;overflow:auto">{{ session.final_report }}</pre>
 {% else %}<p class="muted">No final report recorded.</p>{% endif %}
+</div></details>
 {% endblock %}
