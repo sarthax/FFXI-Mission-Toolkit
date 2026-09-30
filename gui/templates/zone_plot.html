@@ -46,6 +46,12 @@
   <label>Mesh opacity <input type="range" id="opac" min="0.05" max="1" step="0.05" value="0.35"></label>
   <label>Dot size <input type="range" id="dsz" min="0.3" max="4" step="0.1" value="1.2"></label>
   <label>Nearest labels <input type="number" id="nlab" value="40" min="0" max="300"></label>
+<label><span>Show heading on labels</span><input type="checkbox" id="labelHeading"></label>
+<div style="display:flex;gap:4px;flex-wrap:wrap;margin:4px 0">
+  <button id="measureBtn" type="button">Measure</button>
+  <button id="measureClear" type="button">Clear measurement</button>
+</div>
+<div id="measureOut" class="mono muted" style="font-size:10px;margin-bottom:4px"></div>
 <div style="margin-top:6px">
   <div class="muted" style="font-size:10px;margin-bottom:3px">Camera</div>
   <div style="display:flex;gap:3px;flex-wrap:wrap">
@@ -111,6 +117,27 @@
 </div>
       <label>Nudge step <input type="number" id="estep" value="1" step="0.5" min="0.1"></label>
       <label>Rotation step <input type="number" id="erstep" value="1" step="1" min="1" max="128"></label>
+<label><span>Drag facing direction</span><input type="checkbox" id="faceDrag"></label>
+<div style="border:1px solid var(--border);border-radius:4px;padding:5px;margin:5px 0">
+  <div class="muted" style="font-size:10px;margin-bottom:3px">Explicit snap</div>
+  <label>Grid size <input type="number" id="snapGrid" value="0.5" step="0.1" min="0.01"></label>
+  <div style="display:flex;gap:3px;flex-wrap:wrap">
+    <button id="snapXYZ" type="button">Snap XYZ to grid</button>
+    <button id="snapXZ" type="button">Snap X/Z to grid</button>
+    <button id="snapNavY" type="button">Snap Y to navmesh</button>
+    <button id="snapFloorY" type="button">Snap Y to visual floor</button>
+  </div>
+</div>
+<div style="border:1px solid var(--border);border-radius:4px;padding:5px;margin:5px 0">
+  <div class="muted" style="font-size:10px;margin-bottom:3px">Transform clipboard</div>
+  <div style="display:flex;gap:3px;flex-wrap:wrap">
+    <button id="copyTransform" type="button">Copy pos + rot</button>
+    <button id="pasteTransform" type="button">Paste all</button>
+    <button id="pasteXZ" type="button">Paste X/Z</button>
+    <button id="pasteRot" type="button">Paste rotation</button>
+  </div>
+  <div id="transformClipStatus" class="mono muted" style="font-size:10px;margin-top:3px"></div>
+</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin:4px 0">
         <button data-n="x-">X&minus;</button><button data-n="y-">Y&minus; (up)</button><button data-n="z-">Z&minus;</button>
         <button data-n="x+">X+</button><button data-n="y+">Y+ (down)</button><button data-n="z+">Z+</button></div>
@@ -291,7 +318,7 @@ function saveZoneEditorState(){
       zone:$('zone').value,instance:$('inst').value,lod:$('lod').value,mode:$('mode').value,
       showm:$('showm').checked,shown:$('shown').checked,showd:$('showd').checked,shownav:$('shownav').checked,
       opacity:$('opac').value,dotSize:$('dsz').value,labels:$('nlab').value,projection:$('projection').value,
-      camera:vecArray(camera.position),target:vecArray(controls.target),zoom:camera.isOrthographicCamera?camera.zoom:null
+      labelHeading:$('labelHeading')?.checked||false,camera:vecArray(camera.position),target:vecArray(controls.target),zoom:camera.isOrthographicCamera?camera.zoom:null
     }));
   }catch(e){}
 }
@@ -619,7 +646,7 @@ $('zone').value = savedUiState?.zone && ZL.zones.some(z=>String(z.id)===String(s
 for(const [id,key] of [['lod','lod'],['mode','mode'],['opac','opacity'],['dsz','dotSize'],['nlab','labels']]){
   if(savedUiState?.[key]!==undefined && $(id)) $(id).value=String(savedUiState[key]);
 }
-for(const [id,key] of [['showm','showm'],['shown','shown'],['showd','showd'],['shownav','shownav']]){
+for(const [id,key] of [['showm','showm'],['shown','shown'],['showd','showd'],['shownav','shownav'],['labelHeading','labelHeading']]){
   if(savedUiState?.[key]!==undefined && $(id)) $(id).checked=!!savedUiState[key];
 }
 if(savedUiState?.projection) switchProjection(savedUiState.projection,false);
@@ -870,7 +897,7 @@ function updateLabels(){
   const n=+$('nlab').value; const want=new Set(); if(selected>=0) want.add(selected); if(hoverI>=0) want.add(hoverI);
   if (n>0){ const d=visible.map(ei=>[P(Z.entities[ei]).distanceToSquared(camera.position),ei]).sort((a,b)=>a[0]-b[0]).slice(0,n); d.forEach(([,ei])=>want.add(ei)); }
   labels.forEach((l,i)=>{ if(!want.has(i)){ l.element.remove(); scene.remove(l); labels.delete(i); } });
-  want.forEach(i=>{ if(Z.entities[i] && !Z.entities[i].zero) setLabel(i, txt(Z.entities[i])); });
+  want.forEach(i=>{ if(Z.entities[i] && !Z.entities[i].zero){ const e=Z.entities[i]; setLabel(i, txt(e)+($('labelHeading').checked?` · ${rotInfo(e.r).dir} r${rotInfo(e.r).raw}`:'')); } });
 }
 // ---- interaction ----
 const ray=new THREE.Raycaster(), mouse=new THREE.Vector2();
@@ -898,6 +925,7 @@ $('inst').onchange=()=>{ if($('ainst').querySelector(`option[value="${$('inst').
 $('lod').onchange=()=>{ if($('lod').value!=='obj') $('buildCacheBtn').hidden=true; saveZoneEditorState(); Z&&loadZMesh(Z.zid); };
 ['showm','shown','showd','mode','dsz'].forEach(id=>$(id).addEventListener('input',()=>{ saveZoneEditorState(); Z&&rebuild(); }));
 $('nlab').addEventListener('change',saveZoneEditorState);
+$('labelHeading').addEventListener('change',()=>{ saveZoneEditorState(); labels.forEach(l=>{l.element.remove();scene.remove(l);}); labels.clear(); });
 $('q').addEventListener('input',()=>Z&&rebuild());
 ['lf-kind','lf-reach','lf-sort','lf-dir'].forEach(id=>$(id).addEventListener('change',()=>Z&&rebuild()));
 $('shownav').onchange=()=>{ if(navMesh) navMesh.visible=$('shownav').checked; saveZoneEditorState(); };
