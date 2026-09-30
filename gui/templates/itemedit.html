@@ -113,7 +113,22 @@ server's permission gate. Every write is backed up first and journalled to
   </div>
 
   <div id="editorTables" class="edit-grid" style="margin-top:12px;"></div>
-  <div id="editorLists" class="lists-row"></div>
+  <div class="edit-card wide" id="effectStagingTools" style="margin-top:12px;">
+  <h3>Effect staging tools <span class="hint">all changes remain staged until Save Item</span></h3>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
+    <input type="number" id="copyEffectsSource" placeholder="source item ID" style="width:130px;">
+    <select id="copyEffectsScope"><option value="all">all effects</option><option value="mods">mods only</option><option value="mods_pet">mods + pet mods</option><option value="latents">latents only</option></select>
+    <button type="button" id="copyEffectsBtn">Copy into staging</button>
+    <span id="copyEffectsStatus" class="muted"></span>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start">
+    <select id="batchEffectType"><option value="mods">mods: modId,value</option><option value="pet_mods">pet mods: modId,petType,value</option><option value="latents">latents: modId,value,latentId,latentParam</option></select>
+    <textarea id="batchEffectsText" rows="4" style="min-width:360px;flex:1" placeholder="one row per line"></textarea>
+    <button type="button" id="batchEffectsAddBtn">Add rows to staging</button>
+  </div>
+  <div id="batchEffectsStatus" class="mono muted" style="font-size:10px;margin-top:4px;white-space:pre-wrap"></div>
+</div>
+<div id="editorLists" class="lists-row"></div>
 
   <div class="edit-card wide" style="margin-top:12px;">
     <h3>Backups <span class="hint">every edit/add/delete on this item is auto-backed-up first (across all item_* tables, mods, pet mods and latents) -- restore any of them here</span></h3>
@@ -711,6 +726,46 @@ async function deleteItem() {
   document.getElementById('editorWrap').style.display = 'none';
   currentItemId = null;
 }
+
+function mergeEffectRows(kind, rows){
+  const target=stagedEffects[kind];
+  for(const row of rows){
+    const key=effectSortKey(kind,row);
+    const existing=target.find(x=>effectSortKey(kind,x)===key);
+    if(existing){ Object.assign(existing,row); } else target.push(row);
+  }
+  stagedEffects=normalizedEffects(stagedEffects); rerenderEffects();
+}
+async function copyEffectsFromItem(){
+  const id=Number(document.getElementById('copyEffectsSource').value); if(!id){ alert('enter a source item ID'); return; }
+  const r=await fetch('/itemedit/clone-template.json?item_id='+id), j=await r.json();
+  if(!r.ok){ document.getElementById('copyEffectsStatus').textContent='ERROR: '+(j.error||r.statusText); return; }
+  const scope=document.getElementById('copyEffectsScope').value;
+  if(scope==='all'||scope==='mods'||scope==='mods_pet') mergeEffectRows('mods',j.mods||[]);
+  if(scope==='all'||scope==='mods_pet') mergeEffectRows('pet_mods',j.pet_mods||[]);
+  if(scope==='all'||scope==='latents') mergeEffectRows('latents',j.latents||[]);
+  document.getElementById('copyEffectsStatus').textContent='Copied selected effect scope from item '+id+' into staging.';
+}
+function parseBatchEffects(){
+  const kind=document.getElementById('batchEffectType').value;
+  const text=document.getElementById('batchEffectsText').value;
+  const rows=[], errors=[];
+  text.split(/\r?\n/).forEach((line,idx)=>{
+    line=line.trim(); if(!line||line.startsWith('#')) return;
+    const vals=line.split(',').map(x=>x.trim());
+    const expected=kind==='mods'?2:kind==='pet_mods'?3:4;
+    if(vals.length!==expected || vals.some(x=>!/^[-+]?\d+$/.test(x))){ errors.push('line '+(idx+1)+': expected '+expected+' integer comma-separated values'); return; }
+    const n=vals.map(Number);
+    rows.push(kind==='mods'?{modId:n[0],value:n[1]}:kind==='pet_mods'?{modId:n[0],petType:n[1],value:n[2]}:{modId:n[0],value:n[1],latentId:n[2],latentParam:n[3]});
+  });
+  if(errors.length){ document.getElementById('batchEffectsStatus').textContent=errors.join('\n'); return; }
+  const seen=new Set();
+  for(const row of rows){ const key=effectSortKey(kind,row); if(seen.has(key)){ document.getElementById('batchEffectsStatus').textContent='duplicate key in batch: '+key; return; } seen.add(key); }
+  mergeEffectRows(kind,rows);
+  document.getElementById('batchEffectsStatus').textContent='Staged '+rows.length+' '+kind+' row(s).';
+}
+document.getElementById('copyEffectsBtn').onclick=copyEffectsFromItem;
+document.getElementById('batchEffectsAddBtn').onclick=parseBatchEffects;
 
 function rerenderEffects(){
   const wrap=document.getElementById('editorLists'); wrap.innerHTML='';
