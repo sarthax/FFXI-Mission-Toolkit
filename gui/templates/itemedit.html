@@ -855,7 +855,7 @@ async function loadItem(itemid, remember=true) {
   refreshDatInfo(data);
   await refreshClientRecordInspector(itemid);
   await refreshSelectedItemHistory();
-  await refreshItemUsage();
+  await refreshItemUsage(false);
 
   buildTablesGrid(document.getElementById('editorTables'), data.server);
   loadedServerState=JSON.parse(JSON.stringify(data.server));
@@ -1159,12 +1159,12 @@ function usageRowSummary(ref){
   }
   return (ref.path||'script')+':'+(ref.line||'')+' · '+(ref.text||'');
 }
-async function refreshItemUsage(){
+async function refreshItemUsage(includeSource=false){
   if(!currentItemId) return;
   const list=document.getElementById('itemUsageList'), summary=document.getElementById('itemUsageSummary');
   const warn=document.getElementById('itemUsageWarnings'), notes=document.getElementById('itemUsageNotes');
   list.innerHTML='<span class="muted">Scanning active server references...</span>'; warn.style.display='none'; warn.textContent='';
-  const r=await fetch('/itemedit/'+currentItemId+'/usage.json?source_limit=100');
+  const r=await fetch('/itemedit/'+currentItemId+'/usage.json?source_limit='+(includeSource?100:0));
   const j=await r.json();
   if(!r.ok){ list.innerHTML=''; summary.textContent='usage scan unavailable'; notes.textContent=j.error||r.statusText; lastItemUsage=null; return; }
   lastItemUsage=j;
@@ -1182,9 +1182,9 @@ async function refreshItemUsage(){
     }
     list.innerHTML=html+'</tbody></table>';
   }
-  notes.textContent=(j.notes||[]).join(' · ');
+  notes.textContent=(j.notes||[]).join(' · ')+(includeSource?'':' · Click Refresh usage to include Lua source-text references.');
 }
-document.getElementById('refreshItemUsageBtn').onclick=refreshItemUsage;
+document.getElementById('refreshItemUsageBtn').onclick=()=>refreshItemUsage(true);
 
 async function deleteItem() {
   if (!currentItemId) return;
