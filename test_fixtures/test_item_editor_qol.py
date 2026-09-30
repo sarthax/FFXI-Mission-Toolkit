@@ -60,6 +60,14 @@ def main():
     assert "label:'restore DAT record'" in template
 
     # Dependency/usage view distinguishes exact DB references from advisory source text.
+    assert "def _indexed_item_usage(item_id: int, internal_name: str)" in item_edit
+    assert '"catalog_relationship"' in item_edit
+    assert '"graph_relationship"' in item_edit
+    assert '"client_index"' in item_edit
+    assert '"graph_reference_count"' in item_edit
+    assert '"client_reference_count"' in item_edit
+    assert "graph/catalog" in template
+    assert "client-index references" in template
     assert "def item_usage(item_id: int, source_limit: int = 100) -> dict:" in item_edit
     assert "CONTENT_TABLE_HINTS" in item_edit
     assert '"database_exact"' in item_edit
