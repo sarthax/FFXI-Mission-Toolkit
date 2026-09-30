@@ -100,6 +100,12 @@
           <a id="modelPreviewOpen" href="/modelviewer" target="_blank" style="align-self:center">Open full viewer</a>
         </div>
         <div id="modelPreviewStatus" class="mono muted" style="font-size:10px;margin-bottom:4px"></div>
+        <div style="border-top:1px solid var(--border);padding-top:5px;margin-top:5px">
+          <div class="muted" style="font-size:10px">Candidate flat model browser — preview only; does not change server data.</div>
+          <input id="modelCandidateSearch" type="search" placeholder="name, model/file id, family, pool, ROM path" style="width:100%;margin-top:3px">
+          <div id="modelCandidateStatus" class="mono muted" style="font-size:9px;margin-top:3px"></div>
+          <div id="modelCandidateResults" style="max-height:140px;overflow:auto;font-size:10px"></div>
+        </div>
         <iframe id="modelPreviewFrame" title="Selected entity client model" style="width:100%;height:330px;border:1px solid var(--border);background:#0a0d10" loading="lazy"></iframe>
       </details>
 <div style="display:flex;gap:3px;flex-wrap:wrap;margin:3px 0 6px">
@@ -1198,8 +1204,35 @@ function refreshSelectedModelPreview(force=false){
   const ent=Z.entities[selected];
   link.href=url;
   status.textContent=(ent.k==='d'?'Door/prop rows may not have a renderable entity model. ':'')+'Entity '+ent.id+' · '+(ent.n||ent.g||'')+' · '+(ent.k==='m'?'mob':'npc')+' resolver';
+  if(!force){ $('modelCandidateSearch').value=''; $('modelCandidateResults').innerHTML=''; $('modelCandidateStatus').textContent=''; }
   if(force || $('ed-model-details').open) frame.src=selectedModelViewerUrl(true);
 }
+let modelCandidateTimer=null;
+function previewCandidateModel(mid,name){
+  const q=new URLSearchParams({server:$('srv').value,model_id:String(mid),autoload:'1',embed:'1'});
+  $('modelPreviewFrame').src='/modelviewer?'+q.toString();
+  $('modelPreviewStatus').textContent='CANDIDATE PREVIEW ONLY · model '+mid+' · '+name+' · no server data changed';
+  $('modelPreviewOpen').href='/modelviewer?'+new URLSearchParams({server:$('srv').value,model_id:String(mid),autoload:'1'}).toString();
+}
+async function searchModelCandidates(){
+  const q=$('modelCandidateSearch').value.trim();
+  const box=$('modelCandidateResults'), status=$('modelCandidateStatus');
+  if(!q){ box.innerHTML=''; status.textContent=''; return; }
+  status.textContent='searching…';
+  const r=await fetch('/modelviewer/catalog.json?q='+encodeURIComponent(q)+'&server='+encodeURIComponent($('srv').value)+'&limit=40');
+  const j=await r.json();
+  if(j.error){ status.textContent='ERROR: '+j.error; box.innerHTML=''; return; }
+  status.textContent=j.matched+' match(es)'+(j.truncated?' · first 40 shown':'');
+  box.innerHTML=(j.rows||[]).map(row=>{
+    const meta=['model '+row.model_id,'file '+row.resource_file_id,(row.family_ids||[]).length?'family '+row.family_ids.join(','):'',row.render_rom_path||row.resource_rom_path||'unresolved'].filter(Boolean).join(' · ');
+    return '<button type="button" class="model-candidate" data-mid="'+row.model_id+'" data-name="'+String(row.primary_name||'').replace(/"/g,'&quot;')+'" style="display:block;width:100%;text-align:left;margin:2px 0;padding:3px 5px"><b>'+String(row.primary_name||('Model '+row.model_id))+'</b><br><span class="muted">'+meta+'</span></button>';
+  }).join('');
+  box.querySelectorAll('.model-candidate').forEach(btn=>btn.onclick=()=>previewCandidateModel(btn.dataset.mid,btn.dataset.name));
+}
+$('modelCandidateSearch').oninput=()=>{
+  clearTimeout(modelCandidateTimer);
+  modelCandidateTimer=setTimeout(searchModelCandidates,180);
+};
 $('modelPreviewLoad').onclick=()=>refreshSelectedModelPreview(true);
 $('ed-model-details').ontoggle=()=>{ if($('ed-model-details').open) refreshSelectedModelPreview(true); };
 function loadEditor(i){ const e=Z.entities[i]; if(!e){ $('ed').hidden=true; $('ed-none').hidden=false; return; }
