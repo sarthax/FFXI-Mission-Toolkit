@@ -346,7 +346,7 @@ function applyGizmoPreview(){
   const turns=(((-transformProxy.rotation.y)/(Math.PI*2))%1+1)%1;
   e.r=Math.round(turns*256)%256;
   $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r; $('er-dir').textContent=rotText(e.r);
-  updateHeadingArrow(); updateSelectionVisual(); syncGizmoFromSelection(); updateDirtyUI();
+  updateHeadingArrow(); updateSelectionVisual(); updateDirtyUI();
   rebuild(); syncGizmoFromSelection();
 }
 transformControls.addEventListener('objectChange',()=>{
