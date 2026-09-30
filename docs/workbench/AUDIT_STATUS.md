@@ -1,3 +1,11 @@
+## 2026-09-30 — Selective compact admin/list rollout
+
+- Captures, Validation Dashboard, Validation Runs, and Package Library now use the shared dense shell and compact command/filter bars.
+- High-frequency list actions are promoted into persistent compact toolbars; explanatory copy moves behind lightweight disclosures where appropriate.
+- Validation and package list views preserve their existing read-only semantics and filtering behavior.
+- Package Scope/Review/Create and Client Overview were intentionally left on their roomier layouts for now because they are workflow-heavy surfaces that need a more deliberate restructuring pass rather than simple density.
+- Help and documentation surfaces remain reading-oriented rather than adopting dense workstation mode.
+
 ## 2026-09-30 — Compact lookup / event / packet tools rollout
 
 - Entity Lookup now uses the shared dense shell with a compact search header and an on-demand About disclosure.
