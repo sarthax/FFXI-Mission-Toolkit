@@ -6792,6 +6792,15 @@ def itemedit_backups():
     return JSONResponse(item_edit.list_backups())
 
 
+@app.get("/itemedit/{item_id}/history.json")
+def itemedit_history(item_id: int, limit: int = 100):
+    import item_edit
+    try:
+        return JSONResponse(item_edit.list_item_history(item_id, limit))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
 @app.get("/itemedit/bitmasks.json")
 def itemedit_bitmasks():
     import item_edit
