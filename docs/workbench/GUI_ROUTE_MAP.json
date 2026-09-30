@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 240,
+  "route_count": 241,
   "routes": [
     {
       "method": "GET",
@@ -650,6 +650,14 @@
       "section": "Search & Correlation",
       "role": "page",
       "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/{capture_id}/related-evidence",
+      "home": "Captures",
+      "section": "Evidence / Provenance",
+      "role": "detail",
+      "disposition": "KEEP"
     },
     {
       "method": "GET",
