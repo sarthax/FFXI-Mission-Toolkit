@@ -101,10 +101,16 @@
         </div>
         <div id="modelPreviewStatus" class="mono muted" style="font-size:10px;margin-bottom:4px"></div>
         <div style="border-top:1px solid var(--border);padding-top:5px;margin-top:5px">
-          <div class="muted" style="font-size:10px">Candidate flat model browser — preview only; does not change server data.</div>
+          <div class="muted" style="font-size:10px">Candidate flat model browser. Selecting a candidate only previews it; Apply remains disabled until its shared-row impact is checked.</div>
           <input id="modelCandidateSearch" type="search" placeholder="name, model/file id, family, pool, ROM path" style="width:100%;margin-top:3px">
           <div id="modelCandidateStatus" class="mono muted" style="font-size:9px;margin-top:3px"></div>
           <div id="modelCandidateResults" style="max-height:140px;overflow:auto;font-size:10px"></div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
+            <button type="button" id="modelImpactBtn" disabled>Check change impact</button>
+            <button type="button" id="modelApplyBtn" disabled>Apply model</button>
+            <button type="button" id="modelSyncSqlBtn" disabled>Sync model to SQL</button>
+          </div>
+          <div id="modelImpactOut" class="mono muted" style="font-size:9px;white-space:pre-wrap;margin-top:4px"></div>
         </div>
         <iframe id="modelPreviewFrame" title="Selected entity client model" style="width:100%;height:330px;border:1px solid var(--border);background:#0a0d10" loading="lazy"></iframe>
       </details>
@@ -1276,14 +1282,29 @@ function refreshSelectedModelPreview(force=false){
   const ent=Z.entities[selected];
   link.href=url;
   status.textContent=(ent.k==='d'?'Door/prop rows may not have a renderable entity model. ':'')+'Entity '+ent.id+' · '+(ent.n||ent.g||'')+' · '+(ent.k==='m'?'mob':'npc')+' resolver';
-  if(!force){ $('modelCandidateSearch').value=''; $('modelCandidateResults').innerHTML=''; $('modelCandidateStatus').textContent=''; }
+  if(!force){
+    $('modelCandidateSearch').value=''; $('modelCandidateResults').innerHTML=''; $('modelCandidateStatus').textContent='';
+    selectedModelCandidate=null; lastModelImpact=null; $('modelImpactBtn').disabled=true; $('modelApplyBtn').disabled=true; $('modelSyncSqlBtn').disabled=true; $('modelImpactOut').textContent='';
+  }
   if(force || $('ed-model-details').open) frame.src=selectedModelViewerUrl(true);
 }
 let modelCandidateTimer=null;
+let selectedModelCandidate=null;
+let lastModelImpact=null;
+function invalidateModelImpact(){
+  lastModelImpact=null;
+  $('modelApplyBtn').disabled=true;
+  $('modelImpactOut').textContent=selectedModelCandidate
+    ? 'Candidate model '+selectedModelCandidate.model_id+' selected. Check impact before applying.'
+    : '';
+}
 function modelCatalogEsc(v){
   return String(v ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 function previewCandidateModel(mid,name){
+  selectedModelCandidate={model_id:Number(mid),name:String(name||('Model '+mid))};
+  invalidateModelImpact();
+  $('modelImpactBtn').disabled=false;
   const q=new URLSearchParams({server:$('srv').value,model_id:String(mid),autoload:'1',embed:'1'});
   $('modelPreviewFrame').src='/modelviewer?'+q.toString();
   $('modelPreviewStatus').textContent='CANDIDATE PREVIEW ONLY · model '+mid+' · '+name+' · no server data changed';
@@ -1308,6 +1329,61 @@ $('modelCandidateSearch').oninput=()=>{
   clearTimeout(modelCandidateTimer);
   modelCandidateTimer=setTimeout(searchModelCandidates,180);
 };
+async function checkModelImpact(){
+  if(!selectedModelCandidate || selected<0 || !Z?.entities[selected]) return;
+  const ent=Z.entities[selected];
+  const payload={k:ent.k,id:ent.id,model_id:selectedModelCandidate.model_id};
+  $('modelImpactOut').textContent='Checking owning row and shared usage…';
+  const r=await fetch('/zoneplot/model/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const j=await r.json();
+  if(!r.ok){ lastModelImpact=null; $('modelApplyBtn').disabled=true; $('modelImpactOut').textContent='ERROR: '+(j.error||r.statusText); return; }
+  lastModelImpact={entityKey:ent.k+':'+ent.id,model_id:selectedModelCandidate.model_id,data:j};
+  const sample=(j.sample||[]).slice(0,12).map(x=>{
+    if(j.scope==='row-local') return 'NPC '+x.npcid+' · '+(x.name||'')+' · zone '+x.zoneid;
+    return 'zone '+x.zoneid+' · group '+x.groupid+' · '+x.spawn_count+' spawn(s)'+(x.sample_name?' · '+x.sample_name:'');
+  });
+  $('modelImpactOut').textContent=
+    j.warning+'\n'+
+    'Current: '+(j.current?.modelid!==undefined?('model '+j.current.modelid+' · '+(j.current.model_type||'')):(j.current?.model_type||'unknown look'))+'\n'+
+    'Candidate: model '+j.candidate_model_id+' · file '+j.candidate.file_id+' · '+(j.candidate.rom_path||'unresolved')+
+    (sample.length?'\nAffected sample:\n  '+sample.join('\n  '):'')+
+    (j.sample_truncated?'\n  …more groups omitted from display':'');
+  $('modelApplyBtn').disabled=false;
+}
+async function applySelectedModel(){
+  if(!lastModelImpact || !selectedModelCandidate || selected<0 || !Z?.entities[selected]) return;
+  const ent=Z.entities[selected], key=ent.k+':'+ent.id;
+  if(lastModelImpact.entityKey!==key || lastModelImpact.model_id!==selectedModelCandidate.model_id){
+    invalidateModelImpact(); $('modelImpactOut').textContent='Selection/candidate changed. Check impact again.'; return;
+  }
+  const j=lastModelImpact.data;
+  const msg=j.scope==='shared-mob-pool'
+    ? 'Apply model '+selectedModelCandidate.model_id+' to shared mob pool '+j.poolid+'? This affects '+j.affected_rows+' spawn(s) across '+j.affected_groups+' group(s) / '+j.affected_zones.length+' zone(s).'
+    : 'Apply model '+selectedModelCandidate.model_id+' to NPC '+ent.id+'?';
+  if(!confirm(msg)) return;
+  const r=await fetch('/zoneplot/model/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:ent.k,id:ent.id,model_id:selectedModelCandidate.model_id,comment:$('ecomment').value})});
+  const out=await r.json();
+  if(!r.ok){ $('modelImpactOut').textContent='ERROR: '+(out.error||r.statusText); return; }
+  recordUndo('model change '+ent.id+' -> '+selectedModelCandidate.model_id,out.backup,entityKey(ent.k,ent.id));
+  markDbModified(ent.k,ent.id);
+  $('modelSyncSqlBtn').disabled=false;
+  $('modelImpactOut').textContent='Saved model change. Backup '+out.backup+'. Live DB differs from checked-in SQL until synced.';
+  lastModelImpact=null; $('modelApplyBtn').disabled=true;
+  refreshSelectedModelPreview(true);
+  updateEntitySyncStatus();
+}
+async function syncSelectedModelSql(){
+  if(selected<0 || !Z?.entities[selected]) return;
+  const ent=Z.entities[selected];
+  const r=await fetch('/zoneplot/model/sync_sql',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:ent.k,id:ent.id})});
+  const j=await r.json();
+  if(!r.ok){ $('modelImpactOut').textContent='ERROR: '+(j.error||r.statusText); return; }
+  markSqlSynced(ent.k,ent.id); updateEntitySyncStatus();
+  $('modelImpactOut').textContent='Model source synced: '+j.action+' '+j.file;
+}
+$('modelImpactBtn').onclick=checkModelImpact;
+$('modelApplyBtn').onclick=applySelectedModel;
+$('modelSyncSqlBtn').onclick=syncSelectedModelSql;
 $('modelPreviewLoad').onclick=()=>refreshSelectedModelPreview(true);
 $('ed-model-details').ontoggle=()=>{ if($('ed-model-details').open) refreshSelectedModelPreview(true); };
 function loadEditor(i){ const e=Z.entities[i]; if(!e){ $('ed').hidden=true; $('ed-none').hidden=false; return; }
