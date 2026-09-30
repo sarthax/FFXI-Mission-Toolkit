@@ -674,9 +674,11 @@ def item_usage(item_id: int, source_limit: int = 100) -> dict:
 
 # ---- search -----------------------------------------------------------------------------------
 def search(q, category="", min_level=-1, max_level=-1, job=-1, skill=-1, client_state="", limit=200):
-    """Search server items with proven SQL filters and annotate decoded client synchronization state."""
+    """Search server items, or opt-in DAT-only client records when client_state='dat-only'."""
     if not q or len(q) < 2:
         return []
+    if client_state == "dat-only":
+        return dat.search_dat_only(q, category=category, limit=limit)
     min_level, max_level, job, skill, limit = int(min_level), int(max_level), int(job), int(skill), int(limit)
     db = zone_plot._db(); cu = db.cursor()
     where = ["b.name like %s"]
