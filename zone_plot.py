@@ -116,6 +116,85 @@ def nav_path(zone_name, server=None):
     return None
 
 
+RADIUS_MOB_MODS = {
+    31: ("roam_radius", "ROAM_DISTANCE"),
+    47: ("leash_radius", "SPAWN_LEASH"),
+}
+
+
+def _mob_radius_pool_values(cu, pool_ids):
+    """Explicit pool-level roam/leash mob mods only; no engine defaults are invented."""
+    out = {}
+    if not pool_ids:
+        return out
+    try:
+        cu.execute("describe mob_pool_mods")
+        cols = {r[0] for r in cu.fetchall()}
+        required = {"poolid", "modid", "value"}
+        if not required.issubset(cols):
+            return out
+        has_kind = "is_mob_mod" in cols
+        ids = sorted({int(x) for x in pool_ids if x is not None})
+        if not ids:
+            return out
+        ph = ",".join(["%s"] * len(ids))
+        sql = f"select poolid,modid,value{',is_mob_mod' if has_kind else ''} from mob_pool_mods where poolid in ({ph}) and modid in (31,47)"
+        cu.execute(sql, tuple(ids))
+        for row in cu.fetchall():
+            poolid, modid, value = int(row[0]), int(row[1]), int(row[2])
+            if has_kind and not bool(row[3]):
+                continue
+            if modid not in RADIUS_MOB_MODS:
+                continue
+            key, enum_name = RADIUS_MOB_MODS[modid]
+            out.setdefault(poolid, {})[key] = {
+                "value": value,
+                "source": "mob_pool_mods",
+                "detail": f"poolid {poolid} · mob mod {enum_name} ({modid})",
+            }
+    except Exception:
+        return {}
+    return out
+
+
+def _mob_radius_script_values(root: Path, zone_name: str, mob_name: str):
+    """Direct literal per-mob Lua overrides only.
+
+    To stay conservative, only assignments at one indentation level inside the callback are
+    accepted. Nested conditional assignments are deliberately not promoted because they may apply
+    only to one spawn/id/state rather than every row sharing this mob script.
+    """
+    candidates = [
+        root / "scripts" / "zones" / zone_name / "mobs" / f"{mob_name}.lua",
+        root / "scripts" / "zones" / zone_name.replace(" ", "_") / "mobs" / f"{mob_name}.lua",
+    ]
+    path = next((p for p in candidates if p.is_file()), None)
+    if path is None:
+        return {}
+    try:
+        lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+    except Exception:
+        return {}
+    found = {}
+    rx = re.compile(r"^[ \t]{4}mob:setMobMod\(xi\.mobMod\.(ROAM_DISTANCE|SPAWN_LEASH),\s*(-?\d+(?:\.\d+)?)\s*\)")
+    for lineno, line in enumerate(lines, 1):
+        m = rx.match(line)
+        if not m:
+            continue
+        enum_name, raw = m.groups()
+        modid = 31 if enum_name == "ROAM_DISTANCE" else 47
+        key, _ = RADIUS_MOB_MODS[modid]
+        value = float(raw)
+        if value.is_integer():
+            value = int(value)
+        found[key] = {
+            "value": value,
+            "source": "mob_script_literal",
+            "detail": f"{path.relative_to(root).as_posix()}:{lineno} · {enum_name}",
+        }
+    return found
+
+
 def zone_data(zid, instance=0, server=None):
     db = _db(server); cu = db.cursor()
     cu.execute("select name from zone_settings where zoneid=%s", (zid,))
@@ -127,12 +206,31 @@ def zone_data(zid, instance=0, server=None):
         inst_ids = {r[0] for r in cu.fetchall()}
     # mob_groups has a "name" column on Topaz; this DSP checkout's mob_groups has no name column at
     # all (group identity there is poolid-only), so fall back to the spawn row's own mobname for "g".
-    group_name_col = "g.name" if "name" in _columns(cu, "mob_groups") else "s.mobname"
-    cu.execute(f"""select s.mobid,s.mobname,s.pos_x,s.pos_y,s.pos_z,{group_name_col},g.minLevel,g.maxLevel,s.pos_rot,s.groupid
+    group_cols = _columns(cu, "mob_groups")
+    group_name_col = "g.name" if "name" in group_cols else "s.mobname"
+    pool_col = "g.poolid" if "poolid" in group_cols else "NULL"
+    cu.execute(f"""select s.mobid,s.mobname,s.pos_x,s.pos_y,s.pos_z,{group_name_col},g.minLevel,g.maxLevel,s.pos_rot,s.groupid,{pool_col}
                   from mob_spawn_points s join mob_groups g on g.groupid=s.groupid and g.zoneid=%s
                   where ((s.mobid-16777216)>>12)&511=%s""", (zid, zid))
-    for i, n, x, y, z, gn, lo, hi, rot, gid in cu.fetchall():
-        ents.append({"k": "m", "id": i, "n": n, "x": float(x), "y": float(y), "z": float(z), "r": int(rot or 0), "g": gn, "gid": int(gid), "lv": f"{lo}-{hi}"})
+    mob_rows = cu.fetchall()
+    pool_radii = _mob_radius_pool_values(cu, [r[10] for r in mob_rows])
+    root = _server_root(server)
+    script_cache = {}
+    for i, n, x, y, z, gn, lo, hi, rot, gid, poolid in mob_rows:
+        explicit = dict(pool_radii.get(int(poolid), {})) if poolid is not None else {}
+        cache_key = str(n or "")
+        if cache_key not in script_cache:
+            script_cache[cache_key] = _mob_radius_script_values(root, name, cache_key)
+        explicit.update(script_cache[cache_key])
+        ent = {"k": "m", "id": i, "n": n, "x": float(x), "y": float(y), "z": float(z), "r": int(rot or 0), "g": gn, "gid": int(gid), "lv": f"{lo}-{hi}"}
+        if poolid is not None:
+            ent["poolid"] = int(poolid)
+        for radius_key in ("roam_radius", "leash_radius"):
+            if radius_key in explicit:
+                ent[radius_key] = explicit[radius_key]["value"]
+                ent[radius_key + "_source"] = explicit[radius_key]["source"]
+                ent[radius_key + "_detail"] = explicit[radius_key]["detail"]
+        ents.append(ent)
     cu.execute("""select npcid,name,polutils_name,pos_x,pos_y,pos_z,status,entityFlags,pos_rot,animation,animationsub from npc_list
                   where ((npcid-16777216)>>12)&511=%s""", (zid,))
     for i, n, pn, x, y, z, st, fl, rot, an, asub in cu.fetchall():
