@@ -51,6 +51,33 @@ server's permission gate. Every write is backed up first and journalled to
   </div>
 </div>
 
+<div id="itemBatchEditor" class="edit-card wide" style="margin-top:12px;">
+  <h3>Constrained batch editor <span class="hint">same value across many items; only server↔client fields already proven by reconciliation are permitted</span></h3>
+  <div style="display:grid;grid-template-columns:minmax(260px,1fr) 150px 120px;gap:8px;align-items:start;">
+    <textarea id="batchItemIds" rows="4" placeholder="Item IDs, separated by spaces, commas, or new lines"></textarea>
+    <select id="batchField">
+      <option value="flags">flags</option>
+      <option value="stack">stack</option>
+      <option value="level">level</option>
+      <option value="jobs">jobs</option>
+      <option value="slots">slots</option>
+      <option value="damage">damage</option>
+      <option value="delay">delay</option>
+      <option value="skill">skill</option>
+    </select>
+    <input type="number" id="batchValue" value="0">
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;">
+    <input type="text" id="batchComment" placeholder="Batch journal comment" style="flex:1;min-width:220px;">
+    <button type="button" id="batchPreviewBtn">Preview batch</button>
+    <button type="button" id="batchApplyBtn" disabled>Apply validated batch</button>
+    <button type="button" id="batchRestoreBtn" disabled>Restore last batch</button>
+  </div>
+  <div id="batchSummary" class="muted" style="margin-top:6px;"></div>
+  <div id="batchPreview" class="rowtable-wrap table-wrap" style="margin-top:6px;"></div>
+  <div id="batchMsg" class="mono muted" style="margin-top:6px;white-space:pre-wrap;font-size:11px;"></div>
+</div>
+
 <div id="itemSessionHistory" style="display:flex;gap:6px;align-items:center;margin:8px 0;">
   <span class="muted">Session history</span>
   <button id="itemUndoBtn" type="button" disabled>Undo</button>
@@ -638,6 +665,80 @@ async function inspectDatOnlyItem(itemid){
   box.style.display='';
 }
 
+let lastBatchPreview=null;
+let lastBatchBackup=null;
+function parseBatchItemIds(){
+  const raw=document.getElementById('batchItemIds').value;
+  const ids=raw.split(/[\s,;]+/).filter(Boolean).map(Number);
+  if(ids.some(x=>!Number.isInteger(x)||x<0)) throw new Error('Item IDs must be non-negative integers.');
+  return [...new Set(ids)];
+}
+function currentBatchPayload(){
+  return {
+    item_ids:parseBatchItemIds(),
+    field:document.getElementById('batchField').value,
+    value:Number(document.getElementById('batchValue').value),
+    comment:document.getElementById('batchComment').value
+  };
+}
+function invalidateBatchPreview(){
+  lastBatchPreview=null;
+  document.getElementById('batchApplyBtn').disabled=true;
+  document.getElementById('batchSummary').textContent='Preview required before apply.';
+}
+async function previewItemBatch(){
+  const box=document.getElementById('batchPreview'), msg=document.getElementById('batchMsg');
+  msg.textContent=''; box.innerHTML='';
+  let payload;
+  try{ payload=currentBatchPayload(); }catch(ex){ msg.textContent='ERROR: '+ex.message; return; }
+  if(!payload.item_ids.length){ msg.textContent='ERROR: enter at least one item ID'; return; }
+  const r=await fetch('/itemedit/batch/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const j=await r.json();
+  if(!r.ok){ msg.textContent='ERROR: '+(j.error||r.statusText); return; }
+  lastBatchPreview={payload:JSON.stringify({item_ids:payload.item_ids,field:payload.field,value:payload.value}),result:j};
+  document.getElementById('batchSummary').textContent=j.item_count+' validated · '+j.changed_count+' change(s) · '+j.errors.length+' error(s) · '+j.warnings.length+' warning(s)';
+  let html='<table><thead><tr><th>item</th><th>field</th><th>before</th><th>after</th><th>client</th><th>state</th></tr></thead><tbody>';
+  for(const row of j.items||[]){
+    html+='<tr><td>'+row.item_id+'</td><td>'+htmlEsc(row.table+'.'+row.column)+'</td><td>'+htmlEsc(row.before)+'</td><td>'+htmlEsc(row.after)+'</td><td>'+htmlEsc(row.client_field||'')+'</td><td>'+(row.changed?'change':'unchanged')+'</td></tr>';
+  }
+  for(const er of j.errors||[]) html+='<tr><td>'+er.item_id+'</td><td colspan="5" class="warn">ERROR: '+htmlEsc(er.message)+'</td></tr>';
+  for(const w of j.warnings||[]) html+='<tr><td>'+w.item_id+'</td><td colspan="5" class="muted">WARNING: '+htmlEsc(w.message)+'</td></tr>';
+  box.innerHTML=html+'</tbody></table>';
+  document.getElementById('batchApplyBtn').disabled=!j.ok;
+}
+async function applyItemBatch(){
+  if(!lastBatchPreview?.result?.ok) return;
+  let payload;
+  try{ payload=currentBatchPayload(); }catch(ex){ document.getElementById('batchMsg').textContent='ERROR: '+ex.message; return; }
+  const signature=JSON.stringify({item_ids:payload.item_ids,field:payload.field,value:payload.value});
+  if(signature!==lastBatchPreview.payload){ invalidateBatchPreview(); document.getElementById('batchMsg').textContent='Batch inputs changed after preview. Preview again.'; return; }
+  if(!confirm('Apply '+lastBatchPreview.result.changed_count+' validated item change(s) as one atomic batch?')) return;
+  const r=await fetch('/itemedit/batch/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const j=await r.json();
+  const msg=document.getElementById('batchMsg');
+  if(!r.ok){ msg.textContent='ERROR: '+(j.error||r.statusText); return; }
+  lastBatchBackup=j.backup;
+  document.getElementById('batchRestoreBtn').disabled=false;
+  msg.textContent='Applied '+j.changed_count+' item(s). Batch backup '+j.backup+'.';
+  invalidateBatchPreview();
+  if(currentItemId && j.item_ids?.includes(Number(currentItemId))) await loadItem(currentItemId,false);
+}
+async function restoreLastItemBatch(){
+  if(!lastBatchBackup) return;
+  if(!confirm('Restore all items from batch backup '+lastBatchBackup+'? The current batch state will be backed up first.')) return;
+  const r=await fetch('/itemedit/batch/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:lastBatchBackup,comment:'restore from Item Editor batch panel'})});
+  const j=await r.json();
+  const msg=document.getElementById('batchMsg');
+  if(!r.ok){ msg.textContent='ERROR: '+(j.error||r.statusText); return; }
+  msg.textContent='Restored '+j.restored_count+' item(s) from '+lastBatchBackup+' · undo batch '+j.backup+'.';
+  lastBatchBackup=j.backup;
+  if(currentItemId) await loadItem(currentItemId,false);
+}
+document.getElementById('batchPreviewBtn').onclick=previewItemBatch;
+document.getElementById('batchApplyBtn').onclick=applyItemBatch;
+document.getElementById('batchRestoreBtn').onclick=restoreLastItemBatch;
+['batchItemIds','batchField','batchValue'].forEach(id=>document.getElementById(id).addEventListener('input',invalidateBatchPreview));
+
 async function doSearch(ev) {
   ev.preventDefault();
   const q=document.getElementById('q').value.trim();
@@ -1109,18 +1210,21 @@ async function refreshSelectedItemHistory(){
       (h.effect_changes?.length?('<div class="muted" style="font-size:10px;">'+h.effect_changes.length+' effect change(s)</div>'):'');
     html+='<tr><td class="mono">'+htmlEsc(h.ts||'')+'</td><td>'+historyActionLabel(h.action_type)+'</td><td>'+htmlEsc(h.summary||h.label||'')+detail+
       (h.legacy_metadata?'<div class="muted" style="font-size:9px;">legacy backup metadata</div>':'')+
-      '</td><td>'+htmlEsc(h.comment||'')+'</td><td>'+htmlEsc(dat)+'</td><td><button type="button" data-history-restore="'+htmlEsc(h.id)+'">Restore</button></td></tr>';
+      '</td><td>'+htmlEsc(h.comment||'')+'</td><td>'+htmlEsc(dat)+'</td><td><button type="button" data-history-restore="'+htmlEsc(h.id)+'" data-history-batch="'+(h.batch?'1':'0')+'">Restore</button></td></tr>';
   }
   list.innerHTML=html+'</tbody></table>';
-  list.querySelectorAll('[data-history-restore]').forEach(btn=>btn.onclick=()=>restoreSelectedHistory(btn.dataset.historyRestore));
+  list.querySelectorAll('[data-history-restore]').forEach(btn=>btn.onclick=()=>restoreSelectedHistory(btn.dataset.historyRestore,btn.dataset.historyBatch==='1'));
 }
-async function restoreSelectedHistory(bid){
+async function restoreSelectedHistory(bid,isBatch=false){
   if(!confirm('Restore item '+currentItemId+' to the previous state stored in backup '+bid+'? Current state will be backed up first.')) return;
   const msg=document.getElementById('selectedHistoryMsg'); msg.textContent='Restoring...';
-  const res=await fetch('/itemedit/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:bid})});
+  const res=await fetch(isBatch?'/itemedit/batch/restore':'/itemedit/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:bid})});
   const j=await res.json();
   if(!res.ok){ msg.textContent='ERROR: '+(j.error||res.statusText); return; }
-  if(j.item_exists){
+  if(isBatch){
+    await loadItem(currentItemId,false);
+    document.getElementById('saveStatus').textContent='Restored batch backup '+bid;
+  }else if(j.item_exists){
     await loadItem(currentItemId,false);
     document.getElementById('saveStatus').textContent='Restored previous state from '+bid;
   }else{
