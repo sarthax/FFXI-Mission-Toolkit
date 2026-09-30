@@ -101,6 +101,9 @@
     </div>
 
     {% if implementation_path.canonical_mapped %}
+    {% if not implementation_path.canonical.known %}
+    <div class="warn">The identifier mapping resolves uniquely to <code>{{ implementation_path.canonical.root }}</code>, but that canonical entity row is not currently indexed. Identity evidence exists; canonical node metadata should be rebuilt/repaired.</div>
+    {% endif %}
     <details open>
       <summary><strong>Canonical identity</strong> · <code>{{ implementation_path.canonical.root }}</code></summary>
       <div style="padding:8px 10px">
@@ -142,7 +145,7 @@
           </td>
           <td>{{ edge.status or 'UNKNOWN' }}</td>
           <td>{{ edge.confidence or 'UNKNOWN' }}</td>
-          <td><code>{{ edge.evidence_id or '—' }}</code>{% if edge.evidence_type %}<br><span class="chip">{{ edge.evidence_type }}</span>{% endif %}</td>
+          <td>{% if edge.evidence_id %}<a class="zonelink mono" href="/research/evidence?evidence_id={{ edge.evidence_id|urlencode }}">{{ edge.evidence_id }}</a>{% else %}<span class="muted">—</span>{% endif %}{% if edge.evidence_type %}<br><span class="chip">{{ edge.evidence_type }}</span>{% endif %}</td>
           <td>{{ edge.evidence_source or '—' }}{% if edge.evidence_location %}<br><code>{{ edge.evidence_location }}</code>{% endif %}{% if edge.evidence_notes %}<br><span class="muted">{{ edge.evidence_notes }}</span>{% endif %}</td>
           <td><code>{{ edge.evidence_snapshot or edge.source_snapshot_id or '—' }}</code></td>
         </tr>
