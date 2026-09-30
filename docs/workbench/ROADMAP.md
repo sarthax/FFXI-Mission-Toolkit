@@ -5,7 +5,7 @@
 - [x] Adapt scripted-behavior GRANT_ITEM / GRANT_KEY_ITEM reward evidence without changing its canonical graph IDs.
 - [x] Feed VERIFIED non-crafting ITEM acquisition evidence into the existing recursive crafting closure.
 - [x] Keep source literals/provenance intact instead of inventing cross-source item identity.
-- [x] Add audited static Lua shop extraction for general, nation, and guild shops and emit SOLD_BY acquisition paths.
+- [x] Add audited static Lua shop extraction across DSP/Topaz/LSB general/nation shops plus modern LSB guild shops and emit SOLD_BY acquisition paths. Detection is based on stock/call shape, not NPC-only paths, so zone/instance Lua can participate too.
 - [ ] Profile special/dynamic shop families such as Curio Vendor Moogle separately.
 - [ ] Add explicit canonical item/key-item identity reconciliation before projecting the unified catalog into shared graph nodes.
 
