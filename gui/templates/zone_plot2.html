@@ -39,6 +39,14 @@ body.zp2-menu>header{display:block;position:fixed;top:36px;left:0;right:0;z-inde
 #ztool{position:absolute;left:10px;top:10px;z-index:9;display:flex;gap:4px;flex-wrap:wrap;background:rgba(4,8,12,.72);padding:4px;border-radius:6px;border:1px solid rgba(255,255,255,.25)}
 #ztool button{padding:2px 8px}
 #ztool .gsep{width:1px;background:rgba(255,255,255,.25);margin:0 2px}
+.xyzgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:2px 0}
+.xyzgrid label{flex-direction:column;align-items:stretch;gap:1px;margin:0;font-size:10px}
+.xyzgrid input{width:100% !important;min-width:0;padding:2px 3px}
+#rpanel{font-size:12px}
+#rpanel button{padding:1px 6px;font-size:11px}
+#rpanel .zdet{border:1px solid var(--border);border-radius:4px;padding:3px 6px;margin:4px 0}
+#rpanel .zdet>summary{cursor:pointer;font-size:11px;color:var(--muted)}
+#rpanel h3{margin:6px 0 3px}
 body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
 @media (max-width:1100px){
   #lpanel,#rpanel{position:absolute;top:36px;bottom:0;z-index:40;background:var(--surface);display:none}
@@ -168,7 +176,7 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
     <span class="gsep"></span>
     <button id="zgMove" type="button" title="Gizmo: move">Move</button><button id="zgRotate" type="button" title="Gizmo: rotate">Rotate</button>
   </div>
-  <div id="map-compass" title="World compass. FFXI rotation: 0=East, 64=North, 128=West, 192=South."
+  <div id="map-compass" title="World compass. FFXI rotation: 0=East, 64=South, 128=West, 192=North (world +Z is north)."
        style="position:absolute;right:12px;top:12px;width:92px;height:92px;border-radius:50%;border:1px solid rgba(255,255,255,.45);background:rgba(4,8,12,.72);z-index:8;pointer-events:none;box-shadow:0 2px 8px #0008">
     <div id="compass-rose" style="position:absolute;inset:7px;transform-origin:50% 50%;">
       <div style="position:absolute;left:50%;top:0;transform:translateX(-50%);font:bold 13px monospace;color:#ff6b6b">N</div>
@@ -179,7 +187,7 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
       <div style="position:absolute;left:50%;top:14px;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid #ff6b6b;transform:translateX(-50%) rotate(180deg)"></div>
       <div style="position:absolute;left:50%;top:50%;width:6px;height:6px;border-radius:50%;background:#fff;transform:translate(-50%,-50%)"></div>
     </div>
-    <div style="position:absolute;left:50%;bottom:-17px;transform:translateX(-50%);white-space:nowrap;font:10px monospace;color:#aaa">0=E · 64=N</div>
+    <div style="position:absolute;left:50%;bottom:-17px;transform:translateX(-50%);white-space:nowrap;font:10px monospace;color:#aaa">0=E · 192=N</div>
   </div>
   <div id="hover" class="lbl" style="position:absolute;left:8px;bottom:8px;font-size:12px"></div>
   <div id="helpdrawer" hidden>
@@ -260,52 +268,28 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
 </div>
 <div id="rpanel" class="zpanel">
   <div id="tab-edit">
-    <div class="muted" style="font-size:11px">Select a dot or a match. Every write is backed up first (Backups tab) and appended, with your comment, to <span class="mono">data/zoneplot_edit_log.sql</span>. The map server needs a zone reload/restart to see it.</div>
+    <div class="muted" style="font-size:10px">Select a dot or a list row. Writes are backed up first (Tools &gt; Backups).</div>
     <div id="ed-none" class="muted" style="margin:6px 0">Nothing selected.</div>
     <div id="ed" hidden>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div id="ed-title" class="mono" style="margin:6px 0"></div><button id="edel" style="color:#e74c3c" title="Delete this entity">Delete&hellip;</button></div>
-      <label>X <input type="number" step="0.1" id="ex"></label>
-      <label>Y <input type="number" step="0.1" id="ey"></label>
-      <label>Z <input type="number" step="0.1" id="ez"></label>
-      <label>Rot (0-255) <input type="number" step="1" min="0" max="255" id="er"></label>
+      <div class="xyzgrid"><label><span>X</span><input type="number" step="0.1" id="ex"></label><label><span>Y</span><input type="number" step="0.1" id="ey"></label><label><span>Z</span><input type="number" step="0.1" id="ez"></label><label><span>Rot</span><input type="number" step="1" min="0" max="255" id="er"></label></div>
       <div id="er-dir" class="mono" style="font-size:11px;margin:-1px 0 5px;padding:4px 6px;border:1px solid var(--border);border-radius:4px"></div>
-      <div id="ed-radius" class="mono muted" style="font-size:10px;margin:0 0 6px;padding:4px 6px;border:1px solid var(--border);border-radius:4px">No explicit roam/leash radius stored for this entity.</div>
-      <details id="ed-model-details" style="border:1px solid var(--border);border-radius:4px;padding:5px;margin:5px 0">
-        <summary>Client model preview</summary>
-        <div class="muted" style="font-size:10px;margin:4px 0">Uses the configured local client and the same Model Viewer resolver. Preview is lazy-loaded only when opened.</div>
-        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">
-          <button type="button" id="modelPreviewLoad">Refresh preview</button>
-          <a id="modelPreviewOpen" href="/modelviewer" target="_blank" style="align-self:center">Open full viewer</a>
-        </div>
-        <div id="modelPreviewStatus" class="mono muted" style="font-size:10px;margin-bottom:4px"></div>
-        <div style="border-top:1px solid var(--border);padding-top:5px;margin-top:5px">
-          <div class="muted" style="font-size:10px">Candidate flat model browser. Selecting a candidate only previews it; Apply remains disabled until its shared-row impact is checked.</div>
-          <input id="modelCandidateSearch" type="search" placeholder="name, model/file id, family, pool, ROM path" style="width:100%;margin-top:3px">
-          <div id="modelCandidateStatus" class="mono muted" style="font-size:9px;margin-top:3px"></div>
-          <div id="modelCandidateResults" style="max-height:140px;overflow:auto;font-size:10px"></div>
-          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
-            <button type="button" id="modelImpactBtn" disabled>Check change impact</button>
-            <button type="button" id="modelApplyBtn" disabled>Apply model</button>
-            <button type="button" id="modelSyncSqlBtn" disabled>Sync model to SQL</button>
-          </div>
-          <div id="modelImpactOut" class="mono muted" style="font-size:9px;white-space:pre-wrap;margin-top:4px"></div>
-        </div>
-        <iframe id="modelPreviewFrame" title="Selected entity client model" style="width:100%;height:330px;border:1px solid var(--border);background:#0a0d10" loading="lazy"></iframe>
-      </details>
 <div style="display:flex;gap:3px;flex-wrap:wrap;margin:3px 0 6px">
-  <button type="button" data-rpreset="64">N</button><button type="button" data-rpreset="32">NE</button>
-  <button type="button" data-rpreset="0">E</button><button type="button" data-rpreset="224">SE</button>
-  <button type="button" data-rpreset="192">S</button><button type="button" data-rpreset="160">SW</button>
-  <button type="button" data-rpreset="128">W</button><button type="button" data-rpreset="96">NW</button>
+  <button type="button" data-rpreset="192">N</button><button type="button" data-rpreset="224">NE</button>
+  <button type="button" data-rpreset="0">E</button><button type="button" data-rpreset="32">SE</button>
+  <button type="button" data-rpreset="64">S</button><button type="button" data-rpreset="96">SW</button>
+  <button type="button" data-rpreset="128">W</button><button type="button" data-rpreset="160">NW</button>
   <button type="button" data-rdelta="-32">↶45°</button><button type="button" data-rdelta="32">45°↷</button>
   <button type="button" data-rdelta="128">180°</button>
 </div>
-<div class="muted" style="font-size:10px;margin-bottom:5px">Keyboard: arrows move X/Z · PgUp/PgDn Y · [ ] rotate · Shift = large · Alt = precision · F = frame selected</div>
 <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:4px 0 6px">
   <label style="margin:0"><span>Transform gizmo</span><input type="checkbox" id="gizmoEnabled" checked></label>
   <button type="button" id="gizmoMove">Move</button>
   <button type="button" id="gizmoRotate">Rotate</button>
 </div>
+      <div class="xyzgrid" style="margin:4px 0"><label title="Nudge step"><span>Step</span><input type="number" id="estep" value="1" step="0.5" min="0.1"></label><label title="Rotation step"><span>Rot step</span><input type="number" id="erstep" value="1" step="1" min="1" max="128"></label></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><label><span>Drag facing direction</span><input type="checkbox" id="faceDrag"></label><label><span>Click mesh to place</span><input type="checkbox" id="eplace"></label></div>
+      <div id="ed-radius" class="mono muted" style="font-size:10px;margin:0 0 6px;padding:4px 6px;border:1px solid var(--border);border-radius:4px">No explicit roam/leash radius stored for this entity.</div>
 <div id="bulk-panel" hidden style="border:1px solid var(--border);border-radius:4px;padding:6px;margin:5px 0">
   <div class="mono" id="bulk-count" style="font-size:11px;margin-bottom:4px">1 selected</div>
   <div class="muted" style="font-size:10px;margin-bottom:6px">Ctrl/Cmd-click dots or list rows to add/remove. Multi-select defaults to moving the group while preserving relative spacing; offsets remain available for precise nudges.</div>
@@ -337,10 +321,7 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
   </div>
   <div id="bulk-msg" class="mono" style="font-size:10px;margin-top:4px;white-space:pre-wrap"></div>
 </div>
-      <label>Nudge step <input type="number" id="estep" value="1" step="0.5" min="0.1"></label>
-      <label>Rotation step <input type="number" id="erstep" value="1" step="1" min="1" max="128"></label>
-<label><span>Drag facing direction</span><input type="checkbox" id="faceDrag"></label>
-<div style="border:1px solid var(--border);border-radius:4px;padding:5px;margin:5px 0">
+      <details class="zdet"><summary>Snap &amp; clipboard</summary><div style="border:1px solid var(--border);border-radius:4px;padding:5px;margin:5px 0">
   <div class="muted" style="font-size:10px;margin-bottom:3px">Explicit snap</div>
   <label>Grid size <input type="number" id="snapGrid" value="0.5" step="0.1" min="0.01"></label>
   <div style="display:flex;gap:3px;flex-wrap:wrap">
@@ -362,10 +343,36 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
   </div>
   <div id="transformClipStatus" class="mono muted" style="font-size:10px;margin-top:3px"></div>
 </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin:4px 0">
+</details>
+      <details class="zdet"><summary>Nudge buttons &amp; keyboard</summary>      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin:4px 0">
         <button data-n="x-">X&minus;</button><button data-n="y-">Y&minus; (up)</button><button data-n="z-">Z&minus;</button>
         <button data-n="x+">X+</button><button data-n="y+">Y+ (down)</button><button data-n="z+">Z+</button></div>
-      <label><span>Click mesh to place</span><input type="checkbox" id="eplace"></label>
+      
+<div class="muted" style="font-size:10px;margin-bottom:5px">Keyboard: arrows move X/Z · PgUp/PgDn Y · [ ] rotate · Shift = large · Alt = precision · F = frame selected</div>
+</details>
+      <details class="zdet"><summary>Client model preview</summary>      <div id="ed-model-details" style="border:1px solid var(--border);border-radius:4px;padding:5px;margin:5px 0">
+        
+        <div class="muted" style="font-size:10px;margin:4px 0">Uses the configured local client and the same Model Viewer resolver. Preview is lazy-loaded only when opened.</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">
+          <button type="button" id="modelPreviewLoad">Refresh preview</button>
+          <a id="modelPreviewOpen" href="/modelviewer" target="_blank" style="align-self:center">Open full viewer</a>
+        </div>
+        <div id="modelPreviewStatus" class="mono muted" style="font-size:10px;margin-bottom:4px"></div>
+        <div style="border-top:1px solid var(--border);padding-top:5px;margin-top:5px">
+          <div class="muted" style="font-size:10px">Candidate flat model browser. Selecting a candidate only previews it; Apply remains disabled until its shared-row impact is checked.</div>
+          <input id="modelCandidateSearch" type="search" placeholder="name, model/file id, family, pool, ROM path" style="width:100%;margin-top:3px">
+          <div id="modelCandidateStatus" class="mono muted" style="font-size:9px;margin-top:3px"></div>
+          <div id="modelCandidateResults" style="max-height:140px;overflow:auto;font-size:10px"></div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
+            <button type="button" id="modelImpactBtn" disabled>Check change impact</button>
+            <button type="button" id="modelApplyBtn" disabled>Apply model</button>
+            <button type="button" id="modelSyncSqlBtn" disabled>Sync model to SQL</button>
+          </div>
+          <div id="modelImpactOut" class="mono muted" style="font-size:9px;white-space:pre-wrap;margin-top:4px"></div>
+        </div>
+        <iframe id="modelPreviewFrame" title="Selected entity client model" style="width:100%;height:330px;border:1px solid var(--border);background:#0a0d10" loading="lazy"></iframe>
+      </div>
+</details>
       <div id="ed-anim" hidden>
         <hr style="border-color:var(--border);margin:6px 0">
         <div class="muted" style="font-size:11px">npc_list-only persistent render fields. <span class="mono">animation</span> is populated from the current bundled LSB <span class="mono">data/enums/animation.yaml</span>. <span class="mono">animationsub</span> remains model-dependent; the picker shows literal LSB <span class="mono">setAnimationSub(N)</span> usage evidence instead of assigning universal meanings. FOURCC <span class="mono">entityAnimationPacket</span> effects are separate transient animations.</div>
@@ -384,14 +391,14 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
         <div id="edrops-body" style="font-size:11px;margin-top:4px"></div>
         <div style="margin-top:6px"><button id="edropsyncsql">Sync last drop change to SQL file</button></div>
       </div>
-      <div id="ed-history" style="border:1px solid var(--border);border-radius:4px;padding:5px;margin:6px 0">
+      <details id="ed-history" class="zdet"><summary>Selected entity history</summary>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:4px">
           <span class="muted" style="font-size:10px">Selected entity history</span>
           <div style="display:flex;gap:3px"><button id="histRefresh" type="button">Refresh</button><button id="histRestorePrev" type="button">Restore previous saved state</button></div>
         </div>
         <div id="histList" class="mono" style="font-size:10px;max-height:150px;overflow:auto;margin-top:4px"></div>
         <div id="histMsg" class="mono" style="font-size:10px;margin-top:4px;white-space:pre-wrap"></div>
-      </div>
+      </details>
     </div>
   </div>
 </div>
@@ -481,9 +488,9 @@ function cameraPreset(name){
   if(name==='perspective'){ switchProjection('perspective'); camera.position.copy(center).add(new THREE.Vector3(distance*.6,distance*.7,distance*.6)); }
   else {
     if(name==='top') switchProjection('orthographic');
-    const dirs={top:new THREE.Vector3(0,1,0.0001),north:new THREE.Vector3(0,.05,1),south:new THREE.Vector3(0,.05,-1),east:new THREE.Vector3(1,.05,0),west:new THREE.Vector3(-1,.05,0)};
+    const dirs={top:new THREE.Vector3(0,1,0.0001),north:new THREE.Vector3(0,.05,-1),south:new THREE.Vector3(0,.05,1),east:new THREE.Vector3(1,.05,0),west:new THREE.Vector3(-1,.05,0)};
     const dir=dirs[name]||dirs.top; camera.position.copy(center).add(dir.normalize().multiplyScalar(distance));
-    if(camera.isOrthographicCamera) camera.up.set(0,0,1); else camera.up.set(0,1,0);
+    if(camera.isOrthographicCamera) camera.up.set(0,0,-1); else camera.up.set(0,1,0);
   }
   controls.target.copy(center); camera.lookAt(center); controls.update(); saveZoneEditorState();
 }
@@ -585,11 +592,11 @@ const P = e => new THREE.Vector3(e.x, -e.y, -e.z);
 const hsl = c => new THREE.Color().setHSL(((c*2654435761)>>>0)%360/360, .7, .55);
 
 // FFXI heading byte: 0=East; values increase counter-clockwise (64=N, 128=W, 192=S).
-const ROT_DIRS=['E','NE','N','NW','W','SW','S','SE'];
+const ROT_DIRS=['E','SE','S','SW','W','NW','N','NE'];
 function rotInfo(raw){
   const r=((Math.round(+raw||0)%256)+256)%256;
   const ffxiDeg=r*360/256;
-  const bearing=(90-ffxiDeg+360)%360;
+  const bearing=(90+ffxiDeg)%360;
   const dir=ROT_DIRS[Math.round(r/32)%8];
   return {raw:r,dir,ffxiDeg,bearing};
 }
@@ -697,7 +704,7 @@ function updateHeadingArrow(){
 function updateCompass(){
   const rose=$('compass-rose'); if(!rose) return;
   const a=controls.target.clone().project(camera);
-  const b=controls.target.clone().add(new THREE.Vector3(0,0,25)).project(camera);
+  const b=controls.target.clone().add(new THREE.Vector3(0,0,-25)).project(camera);
   const dx=b.x-a.x, dy=b.y-a.y;
   if(Math.hypot(dx,dy)<1e-5) return;
   const angle=Math.atan2(dx,dy);
@@ -1025,7 +1032,7 @@ function frameAll(){
   controls.target.copy(center);
   if(camera.isOrthographicCamera){
     camera.position.set(center.x,center.y+d,center.z+.001);
-    camera.up.set(0,0,1);
+    camera.up.set(0,0,-1);
     camera.zoom=Math.max(.05,Math.min(12,180/d));
     camera.lookAt(center); camera.updateProjectionMatrix();
   } else camera.position.set(center.x+d*.6,center.y+d*.7,center.z+d*.6);
@@ -1037,7 +1044,7 @@ function frameSelected(){
   controls.target.copy(center);
   if(camera.isOrthographicCamera){
     camera.position.set(center.x,center.y+60,center.z+.001);
-    camera.up.set(0,0,1); camera.zoom=5; camera.lookAt(center); camera.updateProjectionMatrix();
+    camera.up.set(0,0,-1); camera.zoom=5; camera.lookAt(center); camera.updateProjectionMatrix();
   } else {
     const view=camera.position.clone().sub(controls.target);
     if(view.lengthSq()<1e-6) view.set(1,.8,1);
