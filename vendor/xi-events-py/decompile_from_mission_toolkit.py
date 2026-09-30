@@ -80,6 +80,14 @@ def load_fixture(events_yml: str, entity_id: int, event_id: int, dialog_yml: str
 
 
 if __name__ == "__main__":
+    # Windows console/subprocess stdout commonly defaults to cp1252. Event/dialog text is UTF-8
+    # and legitimately contains symbols such as ★, so never let the active ANSI code page decide
+    # whether a valid event can be decompiled.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
     if len(sys.argv) < 4:
         print(__doc__)
         sys.exit(1)
