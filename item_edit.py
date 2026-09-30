@@ -217,29 +217,63 @@ def list_backups():
 
 
 def restore(bid):
-    """Put every row in the backup back (REPLACE / delete-if-it-did-not-exist). Backs up current state first."""
+    """Restore a backup across SQL and every confirmed overlapping client-DAT field."""
     b = json.loads((BACKUPS / f"{bid}.json").read_text())
+    item_id = int(b["item_id"])
     db = zone_plot._db(); cu = db.cursor()
-    pre, lines = [], []
+    pre, lines, client_fields = [], [], {}
     for op in b["ops"]:
         pre.append(_capture(cu, op["table"], op["key"]))
-    pre_id = _save_backup(f"auto: before restore of {bid}", b["item_id"], pre)
-    for op in b["ops"]:
-        t, kv, row = op["table"], op["key"], op["row"]
-        pk = _pk_for(t)
-        where = " and ".join(f"{k}={lit(v)}" for k, v in zip(pk, kv))
-        if row is None:
-            cu.execute(f"delete from {t} where " + " and ".join(f"{k}=%s" for k in pk), tuple(kv))
-            lines.append(f"DELETE FROM {t} WHERE {where};")
-        else:
-            cols = list(row)
-            cu.execute(f"replace into {t} ({','.join(cols)}) values ({','.join(['%s'] * len(cols))})",
-                       tuple(_dec(row[c]) for c in cols))
-            lines.append(f"REPLACE INTO {t} ({','.join(cols)}) VALUES ({','.join(lit(row[c]) for c in cols)});")
-    db.commit(); db.close()
-    _journal(f"RESTORE from backup {bid} ({b['label']}); pre-restore state saved as {pre_id}", lines)
-    return {"restored": len(b["ops"]), "pre_restore_backup": pre_id}
+    pre_id = _save_backup(f"auto: before restore of {bid}", item_id, pre)
+    client_report = None
+    try:
+        for op in b["ops"]:
+            t, kv, row = op["table"], op["key"], op["row"]
+            pk = _pk_for(t)
+            where = " and ".join(f"{k}={lit(v)}" for k, v in zip(pk, kv))
+            if row is None:
+                cu.execute(f"delete from {t} where " + " and ".join(f"{k}=%s" for k in pk), tuple(kv))
+                lines.append(f"DELETE FROM {t} WHERE {where};")
+            else:
+                cols = list(row)
+                cu.execute(f"replace into {t} ({','.join(cols)}) values ({','.join(['%s'] * len(cols))})", tuple(_dec(row[col]) for col in cols))
+                lines.append(f"REPLACE INTO {t} ({','.join(cols)}) VALUES ({','.join(lit(row[col]) for col in cols)});")
+                if t in TABLES:
+                    client_fields.update(_map_to_client_fields(t, row))
 
+        if client_fields:
+            try:
+                client_available = dat.read_client_item(item_id) is not None
+            except Exception:
+                client_available = False
+            if client_available:
+                dat.validate_client_patch(item_id, client_fields)
+                client_report = dat.patch_client_item(item_id, client_fields)
+            else:
+                client_report = {"ok": False, "skipped": True, "error": "no client DAT record found during restore"}
+
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+            if client_report and client_report.get("ok"):
+                import shutil
+                dat_path = Path(client_report["dat"])
+                backup_path = client_report.get("backup_path")
+                if backup_path:
+                    shutil.copy2(backup_path, dat_path)
+                elif not client_report.get("target_existed", True) and dat_path.exists():
+                    dat_path.unlink()
+            raise
+    except Exception:
+        try:
+            db.rollback()
+        finally:
+            db.close()
+        raise
+    db.close()
+    _journal(f"RESTORE from backup {bid} ({b['label']}); pre-restore state saved as {pre_id}", lines)
+    return {"restored": len(b["ops"]), "pre_restore_backup": pre_id, "client": client_report}
 
 # ---- search -----------------------------------------------------------------------------------
 def search(q, category="", limit=60):
