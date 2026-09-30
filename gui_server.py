@@ -7628,9 +7628,10 @@ async def nyzul_save_exclusions(request: Request):
 # (imported above, alongside nyzul_plot)
 
 
-@app.get("/zoneplot", response_class=HTMLResponse)
-def zoneplot_page(request: Request):
-    return templates.TemplateResponse(request, "zone_plot.html", {"request": request})
+@app.get("/zoneplot")
+def zoneplot_page():
+    """Legacy Zone Editor entrypoint retained only for old bookmarks."""
+    return RedirectResponse(url="/zoneplot2", status_code=308)
 
 
 @app.get("/zoneplot2", response_class=HTMLResponse)
@@ -7661,7 +7662,7 @@ def zoneplot_zones():
 
 @app.get("/zoneplot/{zid}/live_info.json")
 def zoneplot_live_info(zid: int):
-    """Same live-parse availability check as zone_view3d (Phase 3) -- reused by zone_plot.html's
+    """Same live-parse availability check as zone_view3d (Phase 3) -- reused by the Zone Editor's
     'Live (textured)' mesh complexity option so it can fetch+parse the real zone DAT client-side
     instead of the untextured .zmesh/OBJ pipeline."""
     con = get_con()
