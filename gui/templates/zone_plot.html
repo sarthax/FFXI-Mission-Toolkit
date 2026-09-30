@@ -837,9 +837,16 @@ $('eanimsave').onclick=async()=>{ const e=Z.entities[selected]; if(!e) return;
   if(j.error){ $('eanimmsg').textContent='ERROR: '+j.error; return; }
   e.an=animation; e.asub=animationsub; lastTouched={k:e.k,id:e.id};
   $('eanimmsg').textContent=`Saved to live DB (backup ${j.backup}).\n`+j.sql; };
-function previewEdit(){ if(selected<0) return; const e=Z.entities[selected]; e.x=+$('ex').value; e.y=+$('ey').value; e.z=+$('ez').value; e.r=((+$('er').value%256)+256)%256; $('er').value=e.r; $('er-dir').textContent=rotText(e.r); rebuild(); select(selected,false); }
+function previewRotation(){
+  if(selected<0) return;
+  const e=Z.entities[selected];
+  e.r=((+$('er').value%256)+256)%256; $('er').value=e.r; $('er-dir').textContent=rotText(e.r);
+  updateHeadingArrow();
+  $('hover').textContent = `${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${txt(e)}  grp=${e.g}  (${e.x}, ${e.y}, ${e.z})  ${rotText(e.r)}  ${stateOf(selected)}`;
+}
+function previewEdit(){ if(selected<0) return; const e=Z.entities[selected]; e.x=+$('ex').value; e.y=+$('ey').value; e.z=+$('ez').value; previewRotation(); rebuild(); select(selected,false); }
 ['ex','ey','ez'].forEach(id=>$(id).addEventListener('change',previewEdit));
-$('er').addEventListener('input',previewEdit);
+$('er').addEventListener('input',previewRotation);
 document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{ const a=b.dataset.n[0], sg=b.dataset.n[1]==='+'?1:-1; const f=$('e'+a); f.value=(+f.value+sg*(+$('estep').value)).toFixed(3); previewEdit(); });
 $('erev').onclick=()=>{ if(!orig) return; $('ex').value=orig.x; $('ey').value=orig.y; $('ez').value=orig.z; $('er').value=orig.r; previewEdit(); };
 let lastSql='';
