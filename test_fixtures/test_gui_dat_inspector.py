@@ -87,6 +87,31 @@ def main() -> int:
         assert summary["collection_counts"]=={"entries":3,"metadata":2},summary
         assert "name" in summary["field_names"],summary
 
+        presentation=dat_inspector._presentation({
+            "language":"English",
+            "entries":[{"id":1,"text":"One"},{"id":2,"text":"Two"}],
+        })
+        assert presentation["scalars"]==[{"name":"language","value":"English"}],presentation
+        assert presentation["collections"][0]["name"]=="entries",presentation
+        assert presentation["collections"][0]["count"]==2,presentation
+
+        classification=dat_inspector._classify([
+            {"parser":"parse_dialog","label":"Dialog text"},
+        ],"dialog")
+        assert classification["status"]=="recognized",classification
+        assert classification["verdict"]=="Decoded as Dialog text",classification
+
+        mismatch=dat_inspector._classify([
+            {"parser":"parse_entity_names","label":"Entity names"},
+        ],"dialog")
+        assert mismatch["warnings"],mismatch
+
+        multiple=dat_inspector._classify([
+            {"parser":"parse_dialog","label":"Dialog text"},
+            {"parser":"parse_xistring_table","label":"XI string table"},
+        ],"dialog")
+        assert multiple["status"]=="multiple",multiple
+
         original_parsers=dat_inspector.PARSERS
         original_module=dat_inspector.xi_tinkerer
         fake_module=SimpleNamespace()
@@ -111,6 +136,8 @@ def main() -> int:
         assert result["parser_reject_count"]==1,result
         assert result["matches"][0]["label"]=="Dialog text",result
         assert result["matches"][0]["summary"]["collection_counts"]["strings"]==3,result
+        assert result["matches"][0]["presentation"]["collections"][0]["name"]=="strings",result
+        assert result["classification"]["status"]=="recognized",result
         assert len(result["header_hex"].split())==64,result
 
         html=render(
@@ -119,6 +146,11 @@ def main() -> int:
                 "dat_id":6497,
                 "family_hint":"per-zone dialog for zoneid 77",
                 "extractor_note":"fixture resolver",
+                "zone_name":"Nyzul Isle",
+                "actions":[
+                    {"label":"Open Dialog Browser","href":"/dialog?zone=Nyzul%20Isle","note":"Search decoded messages.","primary":True},
+                    {"label":"Open Model Viewer","href":"/modelviewer","note":"Try direct DAT correlation.","primary":False},
+                ],
             },
             error=None,
             dat_id="6497",
@@ -137,15 +169,17 @@ def main() -> int:
                 {"zoneid":77,"name":"Nyzul Isle"},
             ],
         )
-        assert "DAT ID" in html
-        assert "Zone resource" in html
-        assert "Client DAT path" in html
+        assert "Open a DAT" in html
+        assert "Alternate ways to locate one" in html
         assert "77 — Nyzul Isle" in html
-        assert "Dialog / message text" in html
-        assert "Recognized content" in html
-        assert "Dialog text" in html
-        assert "Show decoded preview" in html
-        assert "Rejected parsers (1)" in html
+        assert "Identification verdict" in html
+        assert "Decoded as Dialog text" in html
+        assert "What can I do with this?" in html
+        assert "Open Dialog Browser" in html
+        assert "Decoded collections" in html
+        assert "Raw decoded JSON" in html
+        assert "File identity / provenance" in html
+        assert "Rejected structured parsers (1)" in html
         assert "6496" in html and "6498" in html
         assert "ROM/7/44.DAT" in html
 
@@ -154,6 +188,10 @@ def main() -> int:
     assert 'family: str = ""' in source
     assert "dat_id_for_zone_family" in source
     assert "SELECT zoneid,name FROM zones" in source
+    assert 'result["actions"] = actions' in source
+    assert "Open Events / CSID" in source
+    assert "Open Dialog Browser" in source
+    assert "Client Overview / ID Drift" in source
 
     print("DAT Inspector UX regression: PASS")
     return 0
