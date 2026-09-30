@@ -779,8 +779,8 @@ Priority stack:
 - [x] Multi-select / bulk transform workflow with conservative edit scope.
 
 Additional QOL backlog:
-- [ ] Double-click entity to select, frame, and enter edit-ready camera distance.
-- [ ] Improved sortable/filterable entity list with type/id/name/group/level/rotation/reachability/instance columns and dedicated filters.
+- [x] Double-click entity to select, frame, and enter edit-ready camera distance.
+- [x] Improved sortable/filterable entity list with type/id/name/group/level/rotation/reachability/instance columns and dedicated filters.
 - [ ] Keep map selection and list selection synchronized, including highlighted/auto-scrolled list rows.
 - [ ] Optional heading text on labels.
 - [ ] Click/drag facing-direction control from the selected entity's heading arrow.
