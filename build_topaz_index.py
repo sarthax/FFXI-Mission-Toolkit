@@ -66,7 +66,8 @@ import settings
 from workbench.core.services.server_catalog_identity import sync_server_catalog_entities
 
 TOOLS_ROOT = Path(__file__).parent
-DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"\nWORKBENCH_DB = TOOLS_ROOT / "workbench.db"
+DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
+WORKBENCH_DB = TOOLS_ROOT / "workbench.db"
 TOPAZ_ROOT = settings.get_topaz_root()
 TOPAZ_SQL_DIR = (TOPAZ_ROOT / "sql") if (TOPAZ_ROOT and (TOPAZ_ROOT / "sql").is_dir()) else None
 
