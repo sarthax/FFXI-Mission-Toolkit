@@ -153,11 +153,25 @@ def main():
     assert "Validation warnings:" in template
 
 
+    # Editing/presentation QOL: mode switching, logical grouping, decoded summaries,
+    # field help, and staged item-to-item field/effect comparison stay presentation-only.
+    assert 'id="itemEditorMode"' in template
+    assert "const FIELD_GROUPS =" in template
+    assert "const BASIC_FIELDS =" in template
+    assert "const FIELD_HELP =" in template
+    assert "wrap.id==='editorTables' && itemEditorMode==='basic'" in template
+    assert 'id="decodedSummary"' in template
+    assert "function renderDecodedSummary(" in template
+    assert 'id="compareItemId"' in template
+    assert "async function compareCurrentItem()" in template
+    assert "flattenItemForCompare" in template
+    assert "effectCompareLabel" in template
+
     # Staged mods / pet mods / latents are part of the same dirty/save transaction.
     assert "let loadedEffects={mods:[],pet_mods:[],latents:[]};" in template
     assert "function effectsDirty()" in template
     assert "function stagedEffectPayload()" in template
-    assert "staged; saved with Save Item" in template
+    assert "staged until Save Item" in template
     assert "data-stage-mod" in template
     assert "data-stage-petmod" in template
     assert "stageAddLatent" in template
