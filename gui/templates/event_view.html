@@ -20,6 +20,9 @@
 .copy-row{display:flex;justify-content:space-between;gap:8px;align-items:center;border-bottom:1px solid var(--border);padding:8px 12px}
 .copy-btn{font-size:12px;padding:4px 8px}
 .scaffold-note{padding:8px 12px;background:var(--amber-soft);border-bottom:1px solid var(--border);font-size:12px}
+.flow-rows{display:grid;gap:8px}
+.flow-row{display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:start}
+.flow-list{display:flex;gap:5px;flex-wrap:wrap}
 @media(max-width:1150px){.event-grid{grid-template-columns:1fr}}
 </style>
 
@@ -79,6 +82,65 @@
       {% else %}
       <div class="body muted">No exact zone + entity + CSID observation is currently indexed in capture_events.</div>
       {% endif %}
+    </section>
+
+    <section class="event-card">
+      <h3>Parameter / option / update flow</h3>
+      <div class="body">
+        <p class="muted" style="margin-top:0">Evidence inventory only. Work variables and parameter positions remain uninterpreted; this view does not assign gameplay meaning to any slot.</p>
+        <div class="flow-rows">
+          <div class="flow-row">
+            <div class="muted">Client work refs</div>
+            <div class="flow-list">
+              {% if flow_summary.work_refs %}
+                {% for ref in flow_summary.work_refs %}<span class="chip mono">{{ ref.label }}</span>{% endfor %}
+              {% else %}<span class="muted">none emitted by this decompile</span>{% endif %}
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="muted">Update markers</div>
+            <div>
+              {% if flow_summary.update_markers %}
+                {% for u in flow_summary.update_markers %}<div class="mono">line {{ u.line }}: {{ u.text }}</div>{% endfor %}
+              {% else %}<span class="muted">no literal update marker found in the client decompile</span>{% endif %}
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="muted">Observed options</div>
+            <div class="flow-list">
+              {% if flow_summary.option_values %}
+                {% for o in flow_summary.option_values %}<span class="chip mono">{{ o.value }} · {{ o.observations|length }} obs.</span>{% endfor %}
+              {% else %}<span class="muted">no option values captured for this exact entity + CSID</span>{% endif %}
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="muted">Captured params</div>
+            <div>
+              {% if flow_summary.parameter_slots %}
+                {% for slot in flow_summary.parameter_slots %}
+                <div style="margin-bottom:5px"><span class="chip mono">param[{{ slot.index }}]</span>
+                  {% for value in slot.values %}<span class="mono">{{ value.value }}</span><span class="muted"> ({{ value.observations|length }} obs.)</span>{% if not loop.last %}, {% endif %}{% endfor %}
+                </div>
+                {% endfor %}
+              {% else %}<span class="muted">no captured parameter vectors for this exact entity + CSID</span>{% endif %}
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="muted">Server callbacks</div>
+            <div>
+              {% if flow_summary.server_stages %}
+                {% for stage in flow_summary.server_stages %}
+                <div style="margin-bottom:5px">
+                  <span class="chip">{{ stage.stage }}</span>
+                  <span class="mono">{{ stage.source|upper }} · {{ stage.npc_script }}{% if stage.function %} · {{ stage.function }}(){% endif %}</span>
+                  {% if stage.calls %}<span class="muted"> → {{ stage.calls|join(', ') }}</span>{% endif %}
+                </div>
+                {% endfor %}
+              {% else %}<span class="muted">no matching server callback reference indexed</span>{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="event-card">
