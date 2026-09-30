@@ -154,6 +154,9 @@ def canonical_entity_identifiers(con: sqlite3.Connection, root: str | None) -> l
     )}
     if "entity_identifiers" not in available:
         return []
+    cols = {r[1] for r in con.execute("PRAGMA table_info(entity_identifiers)")}
+    snapshot_expr = "source_snapshot_id" if "source_snapshot_id" in cols else "NULL"
+    order_snapshot = ",COALESCE(source_snapshot_id,'')" if "source_snapshot_id" in cols else ""
     return [
         {
             "identifier_type": row[0],
@@ -161,10 +164,10 @@ def canonical_entity_identifiers(con: sqlite3.Connection, root: str | None) -> l
             "source_snapshot_id": row[2],
         }
         for row in con.execute(
-            """SELECT identifier_type,identifier_value,source_snapshot_id
-                 FROM entity_identifiers
-                WHERE entity_id=?
-                ORDER BY identifier_type,identifier_value,COALESCE(source_snapshot_id,'')""",
+            f"""SELECT identifier_type,identifier_value,{snapshot_expr}
+                  FROM entity_identifiers
+                 WHERE entity_id=?
+                 ORDER BY identifier_type,identifier_value{order_snapshot}""",
             (root,),
         ).fetchall()
     ]
