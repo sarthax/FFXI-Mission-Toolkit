@@ -20,6 +20,8 @@ Usage:
 """
 import argparse
 import io
+import importlib.util
+import json
 import re
 import sqlite3
 import subprocess
@@ -32,6 +34,55 @@ DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
 MISSION_REPORTS = TOOLS_ROOT / "mission_reports"
 XI_EVENTS_BRIDGE = TOOLS_ROOT / "vendor/xi-events-py/decompile_from_mission_toolkit.py"
 DEFAULT_FFXI_PATH = "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
+
+_XI_EVENTS_MODULE = None
+
+
+def _load_xi_events_bridge():
+    """Load the vendored xi-events bridge as a Python module, once.
+
+    The GUI should never shell out to this bridge: subprocess stdout introduces a Windows console
+    encoding boundary that can corrupt otherwise-valid Unicode dialog/event text. Keeping decompile
+    results as Python str values makes Unicode lossless end-to-end.
+    """
+    global _XI_EVENTS_MODULE
+    if _XI_EVENTS_MODULE is not None:
+        return _XI_EVENTS_MODULE
+
+    vendor_root = XI_EVENTS_BRIDGE.parent
+    vendor_root_s = str(vendor_root)
+    if vendor_root_s not in sys.path:
+        sys.path.insert(0, vendor_root_s)
+
+    spec = importlib.util.spec_from_file_location("mission_toolkit_xi_events_bridge", XI_EVENTS_BRIDGE)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Could not load xi-events bridge from {XI_EVENTS_BRIDGE}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    _XI_EVENTS_MODULE = module
+    return module
+
+
+def decompile_event(out_dir: Path, entity_id: int, event_id: int, zone_id: int | None) -> dict:
+    """Canonical in-process CSID decompile used by GUI/health scans.
+
+    Returns a structured result rather than printing. SystemExit from fixture validation is
+    converted to a normal error string so invalid/stub events cannot crash the web request.
+    """
+    bridge = _load_xi_events_bridge()
+    try:
+        fixture = bridge.load_fixture(
+            str(out_dir / "events.yml"),
+            int(entity_id),
+            int(event_id),
+            str(out_dir / "dialog.yml"),
+            int(zone_id or 0),
+        )
+        return {"decompiled": bridge.decompile(fixture), "error": None}
+    except SystemExit as exc:
+        return {"decompiled": None, "error": str(exc)}
+    except Exception as exc:
+        return {"decompiled": None, "error": f"{type(exc).__name__}: {exc}"}
 
 
 def resolve_entity(con: sqlite3.Connection, zoneid: int, query: str) -> int | None:
@@ -194,17 +245,11 @@ def main():
 
     out_dir = ensure_export(args.zone, args.ffxi_path)
 
-    result = subprocess.run(
-        [sys.executable, str(XI_EVENTS_BRIDGE), str(out_dir / "events.yml"), str(entity_id),
-         str(args.csid), str(out_dir / "dialog.yml"), str(zoneid)],
-        capture_output=True, text=True,
-    )
-    if result.returncode != 0:
-        print(result.stdout)
-        print(result.stderr)
-        raise SystemExit(1)
+    result = decompile_event(out_dir, entity_id, args.csid, zoneid)
+    if result["error"]:
+        raise SystemExit(result["error"])
 
-    decompiled = result.stdout
+    decompiled = result["decompiled"]
     print(decompiled)
 
     print("=" * 70)
