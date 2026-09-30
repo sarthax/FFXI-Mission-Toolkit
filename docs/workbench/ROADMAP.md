@@ -833,7 +833,7 @@ DAT workflow:
 - [x] Persistent item status header showing Server state, Client DAT state, mismatch count, exact DAT record location, and current Live/Xi-Pivot target.
 - [x] Strong visual distinction for LIVE CLIENT WRITE target.
 - [x] Always show exact DAT ROM path/category/record and latest backup timestamp.
-- [ ] Compare current decoded DAT record against pristine backup and show changed fields.
+- [x] Compare the active write target's decoded DAT record against the permanent pristine backup and show changed fields.
 - [x] Explicit reconcile actions: use server values or use client values per confirmed overlapping field; structural item-type mismatches remain diagnostic-only and never guess authority.
 - [ ] Safe record-level restore where the DAT format supports replacing only this record.
 - [ ] Compare Live DAT vs Xi-Pivot copy and copy one direction explicitly.
