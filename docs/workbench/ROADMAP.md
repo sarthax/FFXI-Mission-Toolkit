@@ -826,7 +826,7 @@ Mods / pet mods / latents:
 - [x] Stage mod/pet-mod/latent edits instead of immediately writing each row; include them in unified Save Item.
 - [x] Multi-add and copy-all-effects from another item into staging, with scope controls and strict integer/composite-key parsing; nothing writes until Save Item.
 - [~] Duplicate mod/pet-mod/latent composite-key detection is enforced in UI staging, batch parsing, and backend validation; effect lists render in normalized key order, while richer filtering remains.
-- [ ] Surface known mod units/comments and latent-condition parameter semantics only where confirmed.
+- [x] Surface known mod units/comments and latent-condition parameter semantics only where confirmed; Item Editor now shows verbatim source comments plus conservative structured unit/parameter hints, leaving ambiguous values raw.
 - [x] Item-to-item staged-vs-saved comparison now includes editable server fields plus added/removed/changed mods, pet mods, and latents with resolved names where available.
 
 DAT workflow:
