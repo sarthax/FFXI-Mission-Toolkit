@@ -1253,7 +1253,8 @@ def preview_batch_edit(item_ids, field, value):
                     if client_available:
                         dat.validate_client_patch(item_id, client_patch)
                     else:
-                        warnings.append({"item_id": item_id, "message": "client DAT record unavailable; SQL would change without client sync"})
+                        errors.append({"item_id": item_id, "message": "client DAT record unavailable; bulk dual-authority edit is blocked"})
+                        continue
                 except Exception as ex:
                     errors.append({"item_id": item_id, "message": f"client validation failed: {ex}"})
                     continue
@@ -1327,16 +1328,7 @@ def apply_batch_edit(item_ids, field, value, comment=""):
                 if snapshot:
                     patched_snapshots.append(snapshot)
 
-        try:
-            db.commit()
-        except Exception:
-            db.rollback()
-            for snap in reversed(patched_snapshots):
-                try:
-                    dat.restore_client_record(snap)
-                except Exception:
-                    pass
-            raise
+        db.commit()
     except Exception:
         try:
             db.rollback()
