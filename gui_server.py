@@ -3919,6 +3919,31 @@ def feature_trace_page(
                 "runtime_group_count": result.get("runtime_group_count", 0),
                 "truncated": bool(result.get("truncated")),
             }
+            runtime_capture_ids=sorted({
+                int(capture.get("capture_id"))
+                for group in (result.get("runtime_hierarchy") or {}).get("groups", [])
+                for capture in group.get("capture_groups", [])
+                if str(capture.get("capture_id") or "").isdigit()
+            })
+            existing_hrefs={row.get("href") for row in implementation_path.get("handoffs") or []}
+            for capture_id in runtime_capture_ids:
+                href=f"/captures/{capture_id}"
+                if href not in existing_hrefs:
+                    implementation_path.setdefault("handoffs",[]).append({
+                        "kind":"RUNTIME_CAPTURE",
+                        "label":f"Runtime Capture #{capture_id}",
+                        "href":href,
+                        "basis":"Capture contributes a runtime observation in the current bounded trace.",
+                    })
+            implementation_path["runtime_capture_ids"]=runtime_capture_ids
+            if not result.get("runtime_observation_count"):
+                implementation_path.setdefault("coverage_cues",[]).append({
+                    "code":"NO_RUNTIME_OBSERVATIONS_IN_TRACE",
+                    "level":"COVERAGE",
+                    "label":"No runtime observations are present in this trace window",
+                    "detail":f"No runtime edge was returned within depth {result.get('max_depth')}.",
+                    "basis":"Bounded Feature Trace result only; this is not proof the entity was never observed.",
+                })
         con.close()
     elif con is not None:
         con.close()
