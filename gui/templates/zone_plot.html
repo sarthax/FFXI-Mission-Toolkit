@@ -927,7 +927,7 @@ function select(i, fly){
   if(fly && !e.zero) frameSelected();
   updateHeadingArrow(); updateSelectionVisual(); loadSelectedNavDiag();
   if(typeof updateDirtyUI==='function') updateDirtyUI(); if(typeof updateEntitySyncStatus==='function') updateEntitySyncStatus();
-  $('frameSelBtn').disabled=!!e.zero;
+  $('frameSelBtn').disabled=!!e.zero; $('cloneSelectedBtn').disabled=false;
   syncMultiUI();
   const row=$('list').querySelector(`div[data-i="${i}"]`); if(row) row.scrollIntoView({block:'nearest'});
   $('hover').textContent = `${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${txt(e)}  grp=${e.g}  (${e.x}, ${e.y}, ${e.z})  ${rotText(e.r)}  ${stateOf(i)}${e.zero?' ZERO-POS: never loads in instances':''}`;
@@ -1422,6 +1422,16 @@ window.addEventListener('keydown',ev=>{
 });
 $('frameSelBtn').onclick=frameSelected;
 $('frameAllBtn').onclick=()=>{ if(Z) frameAll(); };
+$('cloneSelectedBtn').onclick=()=>{
+  if(selected<0 || !Z?.entities[selected]) return;
+  const e=Z.entities[selected], kind=e.k==='m'?'m':'n';
+  if(kind==='m' && !Number.isFinite(e.gid)){ $('emsg').textContent='Selected mob has no source group identity in this payload.'; return; }
+  aSel=kind==='m' ? {groupid:e.gid,zone:Z.zid,zname:Z.zone,name:e.n,lv:e.lv} : {npcid:e.id,zname:Z.zone,name:e.g,pname:e.n};
+  $('ak').value=kind; $('asel').textContent=aSelText(kind,aSel); $('aq').value=''; $('alist').innerHTML=''; $('aname').value='';
+  $('aR').value=e.r||0;
+  if($('inst').value && $('ainst').querySelector(`option[value="${$('inst').value}"]`)) $('ainst').value=$('inst').value; else $('ainst').value='0';
+  tab('add'); setAddPos(e.x,e.y,e.z); updateAddMarker();
+};
 $('erev').onclick=()=>restorePreviewFromOrig();
 let lastSql='';
 let lastTouched=null; // {k,id} of the last entity successfully written to the live DB -- what "Sync to SQL file" targets
@@ -1591,11 +1601,11 @@ async function aSearch(){ const kind=$('ak').value, q=$('aq').value.trim(); if(q
     : `<div data-i="${i}" draggable="true" title="Drag onto the viewport to place">${row.pname||row.name} [${row.zname} #${row.npcid}]</div>`).join('');
   $('alist').__rows=rows;
   $('alist').querySelectorAll('div').forEach(d=>{
-    d.onclick=()=>{ aSel=$('alist').__rows[+d.dataset.i]; $('asel').textContent=aSelText(kind,aSel); };
+    d.onclick=()=>{ aSel=$('alist').__rows[+d.dataset.i]; $('asel').textContent=aSelText(kind,aSel); updateAddMarker(); };
     d.addEventListener('dragstart',ev=>{ ev.dataTransfer.effectAllowed='copy'; ev.dataTransfer.setData('text/plain', d.dataset.i); d.classList.add('dragging'); });
     d.addEventListener('dragend',()=>d.classList.remove('dragging'));
   }); }
-$('ak').onchange=()=>{ aSel=null; $('asel').textContent=''; aSearch(); };
+$('ak').onchange=()=>{ aSel=null; $('asel').textContent=''; updateAddMarker(); aSearch(); };
 $('aq').addEventListener('input',()=>{ clearTimeout(aTimer); aTimer=setTimeout(aSearch,250); });
 $('aadd').onclick=async()=>{ if(!aSel||!Z){ $('amsg').textContent='Pick a source first.'; return; }
   if($('aX').value===''||$('aY').value===''||$('aZ').value===''){ $('amsg').textContent='No position set -- click the viewport, drag a result onto it, or type X/Y/Z.'; return; }
@@ -1605,10 +1615,17 @@ $('aadd').onclick=async()=>{ if(!aSel||!Z){ $('amsg').textContent='Pick a source
   if(j.error){ $('amsg').textContent='ERROR: '+j.error; return; }
   $('amsg').textContent=`Added as id ${j.id} (backup ${j.backup})${j.instance?` -- linked to instance ${j.instance}`:''}.\n`+j.sql;
   lastTouched={k:kind,id:j.id}; markDbModified(kind,j.id); recordUndo(`add ${j.id}`,j.backup,entityKey(kind,j.id));
-  addMarker.visible=false;
+  addMarker.visible=false; addHeadingLine.visible=false; addGhostLabel.visible=false;
+  const repeat=$('repeatAdd').checked;
   await loadZone();
-  const idx=Z.entities.findIndex(e=>e.k===kind && +e.id===+j.id);
-  if(idx>=0) select(idx,true); };
+  if(repeat){
+    tab('add'); $('aX').value=''; $('aY').value=''; $('aZ').value=''; updateAddMarker();
+    $('amsg').textContent+='\nRepeated placement active: source/rotation/instance retained; click the next position.';
+  } else {
+    const idx=Z.entities.findIndex(e=>e.k===kind && +e.id===+j.id);
+    if(idx>=0) select(idx,true);
+  }
+};
 
 // ---- backups tab ----
 async function refreshBackups(){ const rows=await (await fetch('/zoneplot/backups.json')).json();
