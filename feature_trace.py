@@ -15,6 +15,7 @@ import sqlite3
 from collections import Counter, deque
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import quote
 
 from workbench.core.services.feature_trace_catalog import catalog_node, is_runtime_edge, runtime_hierarchy, filter_runtime_observations, provider_relationships, search_catalog
 from workbench.core.services import capture_integrity
@@ -358,6 +359,147 @@ def entity_query_diagnostics(
     }
 
 
+def _entity_capture_ids(evidence_rows: list[dict]) -> list[int]:
+    capture_ids=set()
+    for row in evidence_rows:
+        for node in (row.get("source_node"),row.get("target_node")):
+            text=str(node or "")
+            if text.startswith("capture:") and text[8:].isdigit():
+                capture_ids.add(int(text[8:]))
+        snapshot=str(row.get("evidence_snapshot") or row.get("source_snapshot_id") or "")
+        if snapshot.startswith("capture:") and snapshot[8:].isdigit():
+            capture_ids.add(int(snapshot[8:]))
+    return sorted(capture_ids)
+
+
+def entity_workflow_handoffs(
+    numeric_id: int,
+    numeric_ids: list[int],
+    canonical_root: str | None,
+    display_name: str | None,
+    evidence_rows: list[dict],
+) -> list[dict]:
+    """Build navigation-only handoffs for entity research without asserting new evidence."""
+    label=(display_name or str(numeric_id)).strip()
+    handoffs=[
+        {
+            "kind":"ENTITY",
+            "label":"Entity Dossier",
+            "href":f"/entity/{numeric_id}",
+            "basis":"Primary entity representation ID.",
+        },
+        {
+            "kind":"BEHAVIOR",
+            "label":"Behavior Inspector",
+            "href":f"/behavior?q={quote(label,safe='')}",
+            "basis":"Search configured server Lua trees by the resolved display name.",
+        },
+        {
+            "kind":"EVENTS",
+            "label":"Events / CSID",
+            "href":f"/events?q={numeric_id}",
+            "basis":"Search client event inventory by entity ID; zone selection may still be required.",
+        },
+        {
+            "kind":"CAPTURES",
+            "label":"Capture Evidence",
+            "href":f"/captures/query?table=capture_npc_entries&q={numeric_id}",
+            "basis":"Query normalized capture entity observations by entity ID.",
+        },
+        {
+            "kind":"PATH_JSON",
+            "label":"Path diagnostics JSON",
+            "href":f"/features/trace/path.json?q={quote(str(numeric_id),safe='')}",
+            "basis":"Read-only machine-readable identity/path diagnostics.",
+        },
+    ]
+    if canonical_root:
+        handoffs.insert(1,{
+            "kind":"CANONICAL",
+            "label":"Canonical Trace",
+            "href":f"/features/trace?q={quote(canonical_root,safe='')}",
+            "basis":"Explicit canonical identity mapping.",
+        })
+    for capture_id in _entity_capture_ids(evidence_rows):
+        handoffs.append({
+            "kind":"CAPTURE",
+            "label":f"Capture #{capture_id}",
+            "href":f"/captures/{capture_id}",
+            "basis":"Direct canonical relationship/evidence references this capture.",
+        })
+    if len(numeric_ids)>1:
+        handoffs.append({
+            "kind":"DRIFT",
+            "label":"Compare numeric representations",
+            "href":f"/features/trace?q={quote(label,safe='')}",
+            "basis":"Multiple explicit numeric representations resolve through this entity query.",
+        })
+    return handoffs
+
+
+def entity_coverage_cues(path: dict) -> list[dict]:
+    """Describe concrete integrity/coverage conditions without inferring implementation absence."""
+    cues=[]
+    diag=path.get("diagnostics") or {}
+    status=diag.get("status")
+    if status in {"AMBIGUOUS_NUMERIC_MAPPING","MULTIPLE_CANONICAL_ROOTS"}:
+        cues.append({
+            "code":"IDENTITY_CONFLICT",
+            "level":"ACTION",
+            "label":"Identity conflict blocks canonical traversal",
+            "detail":diag.get("reason"),
+            "basis":"Explicit entity identifier mappings disagree.",
+        })
+    elif status in {"NO_CANONICAL_MAPPING","PARTIALLY_MAPPED"}:
+        cues.append({
+            "code":"IDENTITY_BRIDGE_INCOMPLETE",
+            "level":"COVERAGE",
+            "label":"Canonical identity bridge is incomplete",
+            "detail":diag.get("reason"),
+            "basis":"Indexed source representations exist, but explicit identity evidence is incomplete.",
+        })
+
+    canonical=path.get("canonical") or {}
+    if path.get("canonical_mapped") and not canonical.get("known"):
+        cues.append({
+            "code":"CANONICAL_NODE_METADATA_MISSING",
+            "level":"ACTION",
+            "label":"Canonical identifier points to a missing entity row",
+            "detail":f"Identity resolves to {path.get('canonical_root')}, but node metadata is not indexed.",
+            "basis":"Identifier mapping exists independently of canonical entity metadata.",
+        })
+    if canonical.get("direct_relationship_count",0) and not canonical.get("direct_evidence_count",0):
+        cues.append({
+            "code":"RELATIONSHIPS_WITHOUT_EVIDENCE_IDS",
+            "level":"REVIEW",
+            "label":"Direct graph relationships lack evidence IDs",
+            "detail":f"{canonical.get('direct_relationship_count',0)} direct relationship(s) are recorded with no evidence ID.",
+            "basis":"Canonical graph relationship rows.",
+        })
+
+    empty_branches=[
+        branch for branch in path.get("branches") or []
+        if not branch.get("native_link_count")
+    ]
+    if empty_branches:
+        cues.append({
+            "code":"SOURCE_BRANCH_NO_NATIVE_LINKS",
+            "level":"COVERAGE",
+            "label":"Some source representations have no indexed downstream wiring",
+            "detail":f"{len(empty_branches)} of {len(path.get('branches') or [])} provider branch(es) stop at the source record.",
+            "basis":"Provider-native schema/source adapters only; this is not proof the implementation is absent.",
+        })
+    if not path.get("branches"):
+        cues.append({
+            "code":"NO_SOURCE_REPRESENTATIONS",
+            "level":"COVERAGE",
+            "label":"No provider representation is currently indexed",
+            "detail":"The entity identity can be discussed only from canonical graph data currently loaded.",
+            "basis":"Feature Trace provider catalog search.",
+        })
+    return cues
+
+
 def entity_implementation_path(
     graph_con: sqlite3.Connection,
     catalog_con: sqlite3.Connection,
@@ -451,7 +593,11 @@ def entity_implementation_path(
     canonical_reps = (canonical_node or {}).get("representations") or []
     canonical_primary = canonical_reps[0] if canonical_reps else {}
     evidence = canonical_entity_evidence(graph_con, root)
-    return {
+    display_name=canonical_primary.get("display_name") or next(
+        (row.get("display_name") for row in entity_rows if row.get("display_name")),
+        str(numeric_id),
+    )
+    result = {
         "numeric_id": numeric_id,
         "numeric_ids": sorted(numeric_ids),
         "canonical_root": root,
@@ -486,8 +632,18 @@ def entity_implementation_path(
             "Source/provider rows remain separate representations even when they share one canonical identity.",
             "Provider-native links are exact schema/source relationships, not inferred canonical graph edges.",
             "Canonical traversal is enabled only by explicit entity_identifiers evidence.",
+            "Coverage cues describe indexed evidence state only; they do not declare gameplay implementation absent.",
         ],
     }
+    result["handoffs"]=entity_workflow_handoffs(
+        numeric_id,
+        result["numeric_ids"],
+        root,
+        display_name,
+        evidence["rows"],
+    )
+    result["coverage_cues"]=entity_coverage_cues(result)
+    return result
 
 def _legacy_search_nodes(con: sqlite3.Connection, term: str) -> list[dict]:
     pattern = f"%{term}%"
