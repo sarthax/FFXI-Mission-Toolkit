@@ -7191,6 +7191,15 @@ def modelviewer_resolve(kind: str, id: int, server: str = None):
         return JSONResponse({"error": str(ex)}, status_code=400)
 
 
+@app.get("/modelviewer/model.json")
+def modelviewer_model(model_id: int):
+    import model_viewer
+    try:
+        return JSONResponse(model_viewer.resolve_model_id(model_id))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
 @app.get("/modelviewer/dat")
 def modelviewer_dat(ffxi_path: str, rom_path: str):
     import model_viewer
