@@ -87,6 +87,9 @@ def main():
         server=(Path(__file__).resolve().parents[1]/"gui_server.py").read_text(encoding="utf-8")
         for text in (
             "Direct canonical evidence / provenance",
+            "Canonical semantic traversal reached its node budget",
+            "identifier mapping resolves uniquely",
+            "/research/evidence?evidence_id=",
             "Provider branches",
             "Native wiring links",
             "Trace canonical root",
@@ -96,6 +99,8 @@ def main():
             assert text in template,text
         assert "feature_trace.entity_query_diagnostics" in server
         assert 'implementation_path["trace_summary"]' in server
+        assert '@app.get("/features/trace/path.json")' in server
+        assert '"implementation_path":path' in server
 
         con.close(); catalog.close()
 
