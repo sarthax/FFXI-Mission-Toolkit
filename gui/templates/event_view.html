@@ -1,28 +1,166 @@
 {% extends "base.html" %}
 {% block title %}Event {{ csid }} · {{ zone }}{% endblock %}
 {% block content %}
-<h1>{{ zone }} -- entity {{ entity }}, CSID {{ csid }}</h1>
-<p><a href="/events?zone={{ zone }}">&larr; back to event list</a></p>
+<style>
+.event-head{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px}
+.event-head h1{margin:0}
+.event-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.event-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(380px,.85fr);gap:14px;align-items:start}
+.event-card{border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden}
+.event-card h3{margin:0;padding:10px 12px;border-bottom:1px solid var(--border);font-size:14px}
+.event-card .body{padding:10px 12px}
+.event-card pre{margin:0;white-space:pre-wrap;font:12px/1.45 ui-monospace,Consolas,monospace;overflow:auto}
+.event-meta{display:grid;grid-template-columns:120px 1fr;gap:5px 10px}
+.event-meta>div:nth-child(odd){color:var(--muted)}
+.event-stack{display:grid;gap:14px}
+.event-call-list{display:flex;gap:5px;flex-wrap:wrap}
+.server-ref{padding:10px 12px;border-bottom:1px solid var(--border)}.server-ref:last-child{border-bottom:0}
+.server-ref pre{margin-top:7px;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--code-bg);max-height:280px}
+.runtime-table td,.runtime-table th{vertical-align:top}
+.copy-row{display:flex;justify-content:space-between;gap:8px;align-items:center;border-bottom:1px solid var(--border);padding:8px 12px}
+.copy-btn{font-size:12px;padding:4px 8px}
+.scaffold-note{padding:8px 12px;background:var(--amber-soft);border-bottom:1px solid var(--border);font-size:12px}
+@media(max-width:1150px){.event-grid{grid-template-columns:1fr}}
+</style>
+
+<div class="event-head">
+  <div>
+    <div class="muted"><a class="inline" href="/events?zone={{ zone|urlencode }}">&larr; Events / CSID</a></div>
+    <h1>{{ entity_name or ('Entity ' ~ entity) }} &mdash; CSID {{ csid }}</h1>
+    <div class="event-chips">
+      <span class="chip">{{ zone }}{% if zoneid %} / zone {{ zoneid }}{% endif %}</span>
+      <span class="chip mono">entity {{ entity }}</span>
+      <span class="chip mono">CSID {{ csid }} / 0x{{ "%04X"|format(csid) }}</span>
+      {% if summary %}<span class="chip">{{ summary.line_count }} decompiled lines</span>{% endif %}
+      {% if server_refs %}<span class="pill match">{{ server_refs|length }} server ref{{ '' if server_refs|length == 1 else 's' }}</span>{% endif %}
+      {% if capture_rows %}<span class="pill match">{{ capture_rows|length }} runtime obs.</span>{% endif %}
+    </div>
+  </div>
+  <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
+    <a class="chip" href="/entity/{{ entity }}">Entity Profile</a>
+    <a class="chip" href="/features/trace?q={{ entity }}">Feature Trace</a>
+    {% if zoneid %}<a class="chip" href="/dialog?zone={{ zone|urlencode }}">Zone Dialog</a>{% endif %}
+  </div>
+</div>
 
 {% if error %}
 <div class="warn"><strong>Could not decompile:</strong><br><span class="mono">{{ error }}</span></div>
 {% else %}
-<pre style="white-space:pre-wrap;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-size:12.5px;overflow-x:auto;">{{ decompiled }}</pre>
+<div class="event-grid">
+  <div class="event-stack">
+    <section class="event-card">
+      <h3>Client CSID decompile</h3>
+      <div class="copy-row">
+        <span class="muted">Client event bytecode decompiled through xi-events with dialog substitution.</span>
+        <button class="copy-btn" type="button" data-copy-target="decompiled-code">Copy decompile</button>
+      </div>
+      <div class="body"><pre id="decompiled-code">{{ decompiled }}</pre></div>
+    </section>
 
-<h2>Cross-check against our own dialog_text index</h2>
-{% if not checks %}
-<p class="muted">(no systemMessage/dialog/messageSpecial calls found to check)</p>
-{% else %}
-<div class="table-wrap"><table>
-  <tr><th>message id</th><th>status</th><th>our text</th></tr>
-  {% for msg_id, our_text, note in checks %}
-  <tr>
-    <td class="mono">{{ msg_id }}</td>
-    <td>{% if note == "OK" %}<span class="pill match">OK</span>{% else %}<span class="pill mismatch">{{ note }}</span>{% endif %}</td>
-    <td>{{ (our_text or "")[:120] }}</td>
-  </tr>
-  {% endfor %}
-</table></div>
+    <section class="event-card">
+      <h3>Runtime observations</h3>
+      {% if capture_rows %}
+      <div class="table-wrap" style="border:0;border-radius:0"><table class="runtime-table">
+        <tr><th>capture</th><th>packet/event</th><th>option</th><th>params / message</th><th></th></tr>
+        {% for r in capture_rows %}
+        <tr>
+          <td><a class="inline" href="/captures/{{ r.capture_id }}">{{ r.capture_label or ('capture #' ~ r.capture_id) }}</a><br><span class="muted">{{ r.zone_db }}</span></td>
+          <td><span class="mono">{{ r.direction }} {{ r.opcode }}</span><br>{{ r.opcode_name or '' }}<br><span class="mono muted">{{ r.event_hex }}</span></td>
+          <td class="mono">{{ r.option if r.option is not none else '—' }}</td>
+          <td>{% if r.params_raw %}<div class="mono">{{ r.params_raw }}</div>{% endif %}{% if r.message_id is not none %}<div>message <a class="inline mono" href="/dialog?zone={{ zone|urlencode }}&q={{ r.message_id }}">{{ r.message_id }}</a></div>{% endif %}</td>
+          <td><a class="chip" href="/captures/{{ r.capture_id }}/timeline?tab=events&entity={{ entity }}">capture timeline &rarr;</a></td>
+        </tr>
+        {% endfor %}
+      </table></div>
+      {% else %}
+      <div class="body muted">No exact zone + entity + CSID observation is currently indexed in capture_events.</div>
+      {% endif %}
+    </section>
+
+    <section class="event-card">
+      <h3>Dialog / message IDs</h3>
+      {% if dialog_rows %}
+      <div class="table-wrap" style="border:0;border-radius:0"><table>
+        <tr><th>message id</th><th>status</th><th>dialog text</th><th></th></tr>
+        {% for d in dialog_rows %}
+        <tr>
+          <td class="mono">{{ d.message_id }} / 0x{{ "%04X"|format(d.message_id) }}</td>
+          <td>{% if d.note == "OK" %}<span class="pill match">independent index match</span>{% else %}<span class="pill mismatch">{{ d.note }}</span>{% endif %}</td>
+          <td>{{ d.text or "" }}</td>
+          <td><a class="chip" href="/dialog?zone={{ zone|urlencode }}&q={{ d.message_id }}">open dialog &rarr;</a></td>
+        </tr>
+        {% endfor %}
+      </table></div>
+      {% else %}
+      <div class="body muted">No systemMessage/dialog/messageSpecial literal IDs were emitted by this decompile.</div>
+      {% endif %}
+    </section>
+  </div>
+
+  <aside class="event-stack">
+    <section class="event-card">
+      <h3>Event wiring summary</h3>
+      <div class="body">
+        <div class="event-meta">
+          <div>Zone</div><div>{{ zone }}{% if zoneid %} <span class="mono">({{ zoneid }})</span>{% endif %}</div>
+          <div>Entity</div><div><a class="inline" href="/entity/{{ entity }}">{{ entity_name or entity }}</a> <span class="mono muted">{{ entity }}</span></div>
+          <div>CSID</div><div class="mono">{{ csid }} / 0x{{ "%04X"|format(csid) }}</div>
+          <div>Messages</div><div>{{ summary.message_count }}</div>
+          <div>Client calls</div><div>{{ summary.call_count }}</div>
+          <div>Server refs</div><div>{{ server_refs|length }}</div>
+          <div>Runtime obs.</div><div>{{ capture_rows|length }}</div>
+        </div>
+        {% if summary.calls %}
+        <h4 style="margin:12px 0 6px">Decompiler call inventory</h4>
+        <div class="event-call-list">{% for call in summary.calls %}<span class="chip mono">{{ call.object }}:{{ call.method }}()</span>{% endfor %}</div>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="event-card">
+      <h3>Server implementation references</h3>
+      {% if server_refs %}
+        {% for s in server_refs %}
+        <div class="server-ref">
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <strong>{{ s.source|upper }}</strong>
+            <span class="mono">{{ s.npc_script }}.lua</span>
+            {% if s.actor_match %}<span class="pill match">actor-name match</span>{% else %}<span class="pill unannotated">same zone + CSID</span>{% endif %}
+          </div>
+          {% if s.path %}<div class="muted mono" style="margin-top:4px">{{ s.path }}{% if s.line %}:{{ s.line }}{% endif %}</div>{% endif %}
+          {% if s.excerpt %}<pre>{{ s.excerpt }}</pre>{% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+      <div class="body muted">No indexed LSB/Topaz server reference currently uses this CSID in this zone.</div>
+      {% endif %}
+    </section>
+
+    <section class="event-card">
+      <h3>Lua implementation scaffold</h3>
+      <div class="scaffold-note"><strong>Scaffolding only.</strong> This is not generated proof of correct behavior. Observed options/params are comments; implement engine calls only when supported by server/client/capture evidence.</div>
+      <div class="copy-row">
+        <span class="muted">Useful starting shape for an NPC/door/teleporter script.</span>
+        <button class="copy-btn" type="button" data-copy-target="lua-scaffold">Copy Lua</button>
+      </div>
+      <div class="body"><pre id="lua-scaffold">{{ scaffold }}</pre></div>
+    </section>
+  </aside>
+</div>
 {% endif %}
-{% endif %}
+
+<script>
+document.querySelectorAll('[data-copy-target]').forEach(btn=>{
+  btn.addEventListener('click', async ()=>{
+    const el=document.getElementById(btn.dataset.copyTarget);
+    if(!el)return;
+    try{
+      await navigator.clipboard.writeText(el.textContent);
+      const old=btn.textContent; btn.textContent='Copied'; setTimeout(()=>btn.textContent=old,1200);
+    }catch(_e){
+      btn.textContent='Copy failed';
+    }
+  });
+});
+</script>
 {% endblock %}
