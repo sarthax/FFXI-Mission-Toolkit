@@ -748,10 +748,30 @@ function tab(t){ ['view','edit','add','backup'].forEach(x=>{ $('tab-'+x).hidden=
   if(typeof updateAddMarker==='function') updateAddMarker(); }
 document.querySelectorAll('.tabb').forEach(b=>b.onclick=()=>tab(b.dataset.t)); tab('view');
 let orig=null;
+function isTransformDirty(){
+  if(!orig || !Z || selected<0 || !Z.entities[selected]) return false;
+  const e=Z.entities[selected];
+  return ['x','y','z','r'].some(k=>Number(e[k])!==Number(orig[k]));
+}
+function updateDirtyUI(){
+  const box=$('ed-dirty'), save=$('esave'); if(!box||!save) return;
+  const dirty=isTransformDirty(); save.disabled=!dirty;
+  if(!orig || selected<0){ box.textContent='Saved state'; box.style.background='#263238'; box.style.color='#b0bec5'; return; }
+  if(!dirty){ box.textContent='Saved state · preview matches live DB'; box.style.background='#1b4332'; box.style.color='#b7e4c7'; return; }
+  const e=Z.entities[selected], parts=[];
+  for(const k of ['x','y','z','r']) if(Number(e[k])!==Number(orig[k])) parts.push(`${k.toUpperCase()} ${orig[k]} → ${e[k]}`);
+  box.textContent='UNSAVED PREVIEW · '+parts.join(' · '); box.style.background='#6b4f00'; box.style.color='#ffe082';
+}
+function restorePreviewFromOrig(){
+  if(!orig || !Z || selected<0 || !Z.entities[selected]) return;
+  const e=Z.entities[selected]; Object.assign(e,{x:orig.x,y:orig.y,z:orig.z,r:orig.r});
+  $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r; $('er-dir').textContent=rotText(e.r);
+  rebuild(); updateHeadingArrow(); updateSelectionVisual(); updateDirtyUI();
+}
 function loadEditor(i){ const e=Z.entities[i]; if(!e){ $('ed').hidden=true; $('ed-none').hidden=false; return; }
   $('ed').hidden=false; $('ed-none').hidden=true; orig={x:e.x,y:e.y,z:e.z,r:e.r||0};
   $('ed-title').textContent=`${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${e.id}  ${e.n||e.g}`;
-  $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r||0; $('er-dir').textContent=rotText(e.r||0); $('emsg').textContent=''; $('ecomment').value='';
+  $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r||0; $('er-dir').textContent=rotText(e.r||0); $('emsg').textContent=''; $('ecomment').value=''; updateDirtyUI();
   if (e.k==='n' || e.k==='d'){
     $('ed-anim').hidden=false;
     setAnimSelect('ean','eanRaw', e.an||0);
@@ -893,20 +913,20 @@ function previewRotation(){
   if(selected<0) return;
   const e=Z.entities[selected];
   e.r=((+$('er').value%256)+256)%256; $('er').value=e.r; $('er-dir').textContent=rotText(e.r);
-  updateHeadingArrow();
+  updateHeadingArrow(); updateDirtyUI();
   $('hover').textContent = `${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${txt(e)}  grp=${e.g}  (${e.x}, ${e.y}, ${e.z})  ${rotText(e.r)}  ${stateOf(selected)}`;
 }
-function previewEdit(){ if(selected<0) return; const e=Z.entities[selected]; e.x=+$('ex').value; e.y=+$('ey').value; e.z=+$('ez').value; previewRotation(); rebuild(); select(selected,false); }
+function previewEdit(){ if(selected<0) return; const e=Z.entities[selected]; e.x=+$('ex').value; e.y=+$('ey').value; e.z=+$('ez').value; previewRotation(); rebuild(); updateSelectionVisual(); updateDirtyUI(); }
 ['ex','ey','ez'].forEach(id=>$(id).addEventListener('change',previewEdit));
 $('er').addEventListener('input',previewRotation);
 document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{ const a=b.dataset.n[0], sg=b.dataset.n[1]==='+'?1:-1; const f=$('e'+a); f.value=(+f.value+sg*(+$('estep').value)).toFixed(3); previewEdit(); });
-$('erev').onclick=()=>{ if(!orig) return; $('ex').value=orig.x; $('ey').value=orig.y; $('ez').value=orig.z; $('er').value=orig.r; previewEdit(); };
+$('erev').onclick=()=>restorePreviewFromOrig();
 let lastSql='';
 let lastTouched=null; // {k,id} of the last entity successfully written to the live DB -- what "Sync to SQL file" targets
 $('esave').onclick=async()=>{ const e=Z.entities[selected]; if(!e) return; previewEdit();
   const r=await fetch('/zoneplot/edit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:e.k,id:e.id,x:e.x,y:e.y,z:e.z,r:e.r,comment:$('ecomment').value})}); const j=await r.json();
   if(j.error){ $('emsg').textContent='ERROR: '+j.error; return; }
-  lastSql=j.sql; orig={x:e.x,y:e.y,z:e.z,r:e.r}; lastTouched={k:e.k,id:e.id}; $('emsg').textContent=`Saved to live DB (backup ${j.backup}).\n`+j.sql; await computeReach(); rebuild(); select(selected,false); };
+  lastSql=j.sql; orig={x:e.x,y:e.y,z:e.z,r:e.r}; lastTouched={k:e.k,id:e.id}; recordUndo(`move/rotate ${e.id}`,j.backup); $('emsg').textContent=`Saved to live DB (backup ${j.backup}).\n`+j.sql; updateDirtyUI(); await computeReach(); rebuild(); select(selected,false); };
 $('ecopy').onclick=()=>{ if(lastSql) navigator.clipboard.writeText(lastSql); };
 $('edel').onclick=async()=>{ const e=Z.entities[selected]; if(!e) return;
   if(!confirm(`Delete ${e.k==='m'?'MOB':'NPC'} ${e.id} (${e.n||e.g}) from the live DB?`)) return;
