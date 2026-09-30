@@ -65,8 +65,8 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
 
     # Reconcile row-level runtime evidence owned by this bridge. INSERT OR REPLACE alone cannot
     # remove graph rows when a rebuilt capture now contains fewer observations.
-    owned_relationship_prefixes=("raw-packet-observation:","eventview-packet-observation:")
-    owned_evidence_prefixes=("evidence:raw-packet:","evidence:eventview-packet:")
+    owned_relationship_prefixes=("capture-entity:","raw-packet-observation:","eventview-packet-observation:")
+    owned_evidence_prefixes=("evidence:capture-entity:","evidence:raw-packet:","evidence:eventview-packet:")
     if capture_id is None:
         for prefix in owned_relationship_prefixes:
             dst.execute("DELETE FROM entity_relationships WHERE relationship_id LIKE ?",(prefix+"%",))
