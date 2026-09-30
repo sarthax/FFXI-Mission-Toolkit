@@ -273,6 +273,94 @@ def search(q, category="", limit=60):
     return out
 
 
+def _server_item_type(rows):
+    if rows.get('item_weapon') is not None:
+        return 4
+    if rows.get('item_usable') is not None:
+        return 1
+    if rows.get('item_puppet') is not None:
+        return 5
+    if rows.get('item_furnishing') is not None:
+        return 6
+    if rows.get('item_equipment') is not None:
+        return 3
+    return 0
+
+
+def compare_server_client(rows, client):
+    """Compare only fields with confirmed server<->client mappings used by the write path."""
+    if client is None:
+        return {'available': False, 'mismatches': [], 'matches': [], 'fields': []}
+    specs = [
+        ('item_type', _server_item_type(rows), client.get('type')),
+        ('flags', rows.get('item_basic', {}).get('flags'), client.get('flags')),
+        ('stack', rows.get('item_basic', {}).get('stackSize'), client.get('stack')),
+    ]
+    eq = rows.get('item_equipment')
+    if eq is not None:
+        specs.extend([
+            ('level', eq.get('level'), client.get('level')),
+            ('jobs', eq.get('jobs'), client.get('jobs')),
+            ('slots', eq.get('slot'), client.get('slots')),
+        ])
+    weapon = rows.get('item_weapon')
+    if weapon is not None:
+        specs.extend([
+            ('damage', weapon.get('dmg'), client.get('dmg')),
+            ('delay', weapon.get('delay'), client.get('delay')),
+            ('skill', weapon.get('skill'), client.get('skill')),
+        ])
+    fields = []
+    for name, server_value, client_value in specs:
+        if server_value is None or client_value is None:
+            continue
+        same = int(server_value) == int(client_value) if isinstance(server_value, (int, float, Decimal)) and isinstance(client_value, (int, float)) else server_value == client_value
+        fields.append({'field': name, 'server': server_value, 'client': client_value, 'match': same})
+    return {
+        'available': True,
+        'fields': fields,
+        'matches': [r for r in fields if r['match']],
+        'mismatches': [r for r in fields if not r['match']],
+    }
+
+
+def validate_item_state(rows, client=None):
+    """Conservative structural/mask validation using only confirmed schemas already in this module."""
+    errors, warnings, info = [], [], []
+    if rows.get('item_basic') is None:
+        errors.append({'code': 'MISSING_BASIC', 'message': 'item_basic row is required'})
+        return {'errors': errors, 'warnings': warnings, 'info': info}
+    if rows.get('item_weapon') is not None and rows.get('item_equipment') is None:
+        errors.append({'code': 'WEAPON_WITHOUT_EQUIPMENT', 'message': 'item_weapon exists without item_equipment'})
+
+    for table, schemas in BITMASK_SCHEMAS.items():
+        row = rows.get(table)
+        if row is None:
+            continue
+        for field, bits in schemas.items():
+            if row.get(field) is None:
+                continue
+            known = 0
+            for bit, _label in bits:
+                known |= int(bit)
+            raw = int(row[field])
+            unknown = raw & ~known
+            if unknown:
+                warnings.append({
+                    'code': 'UNKNOWN_MASK_BITS',
+                    'message': f'{table}.{field} has unknown/unmapped bits {unknown:#x}',
+                    'table': table, 'field': field, 'value': raw, 'unknown_bits': unknown,
+                })
+
+    server_type = _server_item_type(rows)
+    info.append({'code': 'SERVER_TYPE', 'message': f'server table structure resolves to item type {server_type}'})
+    if client is not None and client.get('type') is not None and int(client['type']) != server_type:
+        warnings.append({
+            'code': 'TYPE_MISMATCH',
+            'message': f"server table structure is type {server_type}, client DAT is type {client['type']}",
+        })
+    return {'errors': errors, 'warnings': warnings, 'info': info}
+
 def get_item(item_id):
     """Full live row(s) for one item, across every table it actually appears in, plus its
     real client-DAT record (level/jobs/etc as the client itself sees them) for comparison."""
@@ -312,8 +400,10 @@ def get_item(item_id):
         dat_status["format"] = client.get("format")
         dat_status["category"] = client.get("category")
         dat_status["has_backup"] = any(b["key"] == key for b in backups)
+    comparison = compare_server_client(rows, client)
+    validation = validate_item_state(rows, client)
     return {"item_id": item_id, "server": rows, "mods": mods, "pet_mods": pet_mods, "latents": latents,
-            "client": client, "dat_status": dat_status}
+            "client": client, "dat_status": dat_status, "comparison": comparison, "validation": validation}
 
 
 # ---- item_mods (one-to-many: multiple (modId,value) rows per item, composite PK) ------------
@@ -500,6 +590,17 @@ def save_item_atomic(item_id, tables, comment=""):
         if not normalized:
             raise ValueError("no item table changes supplied")
 
+        proposed = {}
+        for table in TABLES:
+            row = _fetch(cu, table, [item_id])
+            if row is not None:
+                proposed[table] = row
+        for table, fields in normalized.items():
+            proposed[table] = {**proposed[table], **fields}
+        validation = validate_item_state(proposed, None)
+        if validation["errors"]:
+            raise ValueError("; ".join(v["message"] for v in validation["errors"]))
+
         if client_fields:
             try:
                 client_available = dat.read_client_item(item_id) is not None
@@ -566,6 +667,7 @@ def save_item_atomic(item_id, tables, comment=""):
         "tables": sorted(normalized),
         "sql": "\n".join(sqls),
         "client": client_report,
+        "validation": validation,
     }
 
 def update_item(item_id, table, fields, comment="", sync_client=True):
