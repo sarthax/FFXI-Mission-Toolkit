@@ -762,3 +762,37 @@ Roadmap authority rule: `docs/workbench/ROADMAP.md` is the detailed rework backl
 - [x] Split literal `option == ...` / `result == ...` event outcomes into outcome-specific effect bundles, including `onEventUpdate` handling. Dynamic predicates and `else` fallback arms are excluded from parent CSID attribution rather than guessed; event guard hooks preserve finish/update handler roles.
 - [x] Model literal canonical-state guards nested inside literal event outcomes as a third condition layer (`CSID + option/result + state == literal`) with branch-local effects and cross-hook state-reader correlation. Unsupported nested predicates are masked from the parent outcome bundle rather than promoted.
 - [x] Model source-literal resource guards nested inside literal event outcomes: direct `player:hasKeyItem(xi.keyItem.*)`, negated key-item possession, and simple `npcUtil.tradeHas` / `tradeHasExactly` requirements over literal item symbols or numeric ids. Deeper dynamic/compound predicates stay unpromoted, and cross-hook state sequencing remains `UNPROVEN`.
+
+
+### 2026-09-29 Zone Editor quality-of-life backlog
+
+Priority stack:
+- [ ] Undo / redo for position/rotation, animation, add/delete, and drop-table edits; backups remain the hard recovery layer.
+- [ ] Keyboard transform controls for selected entities, with configurable movement/rotation increments and precision/large-step modifiers.
+- [ ] Strong selected-object highlighting plus Frame Selected / Frame All camera controls.
+- [ ] Dirty / unsaved-change state with original-vs-preview values, save-state emphasis, and protection when switching entities.
+- [ ] Rotation presets and quick-turn controls using the verified FFXI heading convention (0=E, 64=N, 128=W, 192=S).
+- [ ] Camera presets (Top/North/South/East/West/Perspective) and remembered camera/UI state.
+- [ ] Three.js transform gizmo for direct XYZ/rotation manipulation without auto-saving.
+- [ ] Explicit live-DB vs checked-in SQL synchronization state per edited entity.
+- [ ] Orthographic/top-down editing mode using the same selection/transform tools.
+- [ ] Multi-select / bulk transform workflow with conservative edit scope.
+
+Additional QOL backlog:
+- [ ] Double-click entity to select, frame, and enter edit-ready camera distance.
+- [ ] Improved sortable/filterable entity list with type/id/name/group/level/rotation/reachability/instance columns and dedicated filters.
+- [ ] Keep map selection and list selection synchronized, including highlighted/auto-scrolled list rows.
+- [ ] Optional heading text on labels.
+- [ ] Click/drag facing-direction control from the selected entity's heading arrow.
+- [ ] Snap controls for coordinate grid, navmesh Y, selected entity, and nearest floor; snapping is always explicit/user-triggered.
+- [ ] Copy/paste full or partial transforms (position, X/Z, rotation).
+- [ ] Distance/bearing measurement tool with horizontal/3D distance and delta coordinates.
+- [ ] Change-history panel for selected entity using the existing edit log/backups.
+- [ ] One-click restore selected entity to its previous saved state.
+- [ ] Navmesh diagnostics mode: nearest polygon, component, bounds, distance-to-navmesh, and invalid-placement highlighting.
+- [ ] Height/elevation coloring.
+- [ ] Door/prop orientation markers that remain visible without selection.
+- [ ] Spawn/roam-radius visualization where those values genuinely exist in server data.
+- [ ] Clone-selected shortcut in Add workflow.
+- [ ] Repeated placement mode for multiple copies.
+- [ ] Ghost preview before add, including heading and instance linkage.
