@@ -134,11 +134,16 @@ def parse_npc_shop_script(text: str, *, source_path: str) -> dict[str, Any]:
         return result
 
     items: list[ShopItem] = []
-    entry_re = re.compile(
-        rf"\{{\s*({_ITEM_EXPR})\s*,\s*({_PRICE_EXPR})\s*(?:,\s*[^}}]+)?\}}"
-    )
-    for m in entry_re.finditer(block):
-        items.append(ShopItem(m.group(1), int(m.group(2)), {"stock_syntax": "PAIR_ROWS"}))
+    inner = block[1:-1]
+    # LSB pair-row stock has nested row braces. Do not apply this parser to
+    # legacy DSP/Topaz flat alternating arrays, where the outer table is the
+    # only brace pair.
+    if "{" in inner:
+        entry_re = re.compile(
+            rf"\{{\s*({_ITEM_EXPR})\s*,\s*({_PRICE_EXPR})\s*(?:,\s*[^}}]+)?\}}"
+        )
+        for m in entry_re.finditer(inner):
+            items.append(ShopItem(m.group(1), int(m.group(2)), {"stock_syntax": "PAIR_ROWS"}))
 
     # DSP/Topaz commonly use a flat alternating array:
     # { item_id, price, item_id, price, ... }.
