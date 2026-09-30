@@ -13,17 +13,13 @@ global animation-id table -- tags are per-model wildcard clip refs like `at0?`).
 Usage:
     python model_schedule_dump.py --file-id 98450                 # raw FTABLE file id
     python model_schedule_dump.py --model-id 211                  # monster/NPC model id
-                                                                    # (file_id = 98239 + model_id)
+                                                                    # (FFXiMain 4-band lookup)
     python model_schedule_dump.py --dat "ROM/2/45.DAT"             # already-known ROM-relative path
 
-NOTE on finding a model id for a specific Topaz mob/NPC: mob_pools.modelid / npc_list look-string
-fields are PACKED per-slot blobs (race + up to 9 gear-slot ids for humanoid-look entities), not a
-single flat number -- decoding that packing is NOT done by this script (would need real capture
-verification before trusting an offset guess, same standing rule as everywhere else in this
-project). This script's real, verified entry point is a single numeric model id or file id, same
-as what xi-model-viewer itself takes -- use its `dat/modelids.js` ENTITY_MODEL_OFFSET (98239) by
-hand for a pure single-model monster, or open xi-model-viewer itself to find the id visually via
-its NPC/monster browser, until a dedicated look-string decoder is built and verified.
+NOTE on finding a model id for a specific Topaz/DSP mob/NPC: mob_pools.modelid / npc_list look
+is a 20-byte look_t. mob_look_decode.py handles that structure. A flat creature model id is mapped
+by FFXiMain through four historical bands before FTABLE/VTABLE lookup; only the 3500+ band uses
++98239. Humanoid equipped looks use the separate race/slot gear tables.
 """
 import argparse
 import re
@@ -34,7 +30,19 @@ from pathlib import Path
 TOOLS_ROOT = Path(__file__).parent
 DAT_EXTRACTOR_DLL = TOOLS_ROOT / "vendor/dat-extractor/bin/Debug/net9.0/dat-extractor.dll"
 DEFAULT_FFXI_PATH = "C:/ValhallaXI/SquareEnix/FINAL FANTASY XI"
-ENTITY_MODEL_OFFSET = 98239  # xi-model-viewer dat/modelids.js -- monster/NPC flat model range
+def model_id_to_file_id(model_id: int) -> int:
+    """FFXiMain monster lookup at VA 0x100C513D; keep in sync with client_model_resolver.py."""
+    mid = int(model_id)
+    if mid < 0 or mid > 0xFFFF:
+        raise ValueError("model id must be 0..65535")
+    if mid < 1500:
+        return mid + 1300
+    if mid < 3000:
+        return mid + 50295
+    if mid < 3500:
+        return mid + 96907
+    return mid + 98239
+
 
 
 def resolve_rom_path(ffxi_path: str, dat_id: int) -> str | None:
@@ -182,7 +190,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--file-id", type=int, help="raw FTABLE file id to resolve and dump")
-    g.add_argument("--model-id", type=int, help="monster/NPC flat model id (file_id = 98239 + this)")
+    g.add_argument("--model-id", type=int, help="monster/NPC flat model id (resolved by FFXiMain 4-band lookup)")
     g.add_argument("--dat", help="already-known ROM-relative DAT path, read directly")
     ap.add_argument("--ffxi-path", default=DEFAULT_FFXI_PATH)
     args = ap.parse_args()
@@ -191,7 +199,7 @@ def main():
         full_path = Path(args.ffxi_path) / args.dat.replace("/", "\\")
         label = args.dat
     else:
-        file_id = args.file_id if args.file_id is not None else ENTITY_MODEL_OFFSET + args.model_id
+        file_id = args.file_id if args.file_id is not None else model_id_to_file_id(args.model_id)
         rom_path = resolve_rom_path(args.ffxi_path, file_id)
         if not rom_path:
             raise SystemExit(f"dat-extractor could not resolve file id {file_id} to a ROM path.")
