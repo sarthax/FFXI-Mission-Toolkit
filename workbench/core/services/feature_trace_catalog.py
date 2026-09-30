@@ -186,8 +186,12 @@ def search_catalog(con: sqlite3.Connection, term: str, limit: int = 200):
                 column:row[alias_offset+index]
                 for index,column in enumerate(alias_columns)
             }
+            inspect_href=None
+            if spec is not None and spec.inspect_path:
+                primary_value=identity.get(cols[spec.id_column.lower()])
+                inspect_href=spec.inspect_path.replace("{id}",quote(str(primary_value),safe=""))
             item={"node_id":node_id,"node_type":object_type,"display_name":display,"domain":domain,"source":table,"table":table,"provider":provider_id,"catalog_only":True,
-                  "identity":identity,"aliases":aliases,"matched_on":matched}
+                  "identity":identity,"aliases":aliases,"matched_on":matched,"inspect_href":inspect_href}
             if len(identity_values)==1 and identity_columns[0].lower() in ID_COLUMNS:
                 item["numeric_id"]=identity_values[0]
             rows.append(item)
