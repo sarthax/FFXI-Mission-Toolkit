@@ -331,7 +331,19 @@ def main() -> int:
             error="installed client fixture unavailable",
             ov=None,
             snapshots=rows,
-            import_result=None,
+            import_result={
+                "snapshot_id": "fixture-import",
+                "record_count": 4,
+                "resources": 3,
+                "zones_requested": 1,
+                "extraction_failures": [],
+                "ingest_failures": [],
+                "entity_graph": {
+                    "semantic_entities": 2,
+                    "identifiers": 2,
+                    "relationships": 2,
+                },
+            },
             import_error=None,
             comparison=comparison,
             comparison_summary=identity_gui.summarize_comparison({
