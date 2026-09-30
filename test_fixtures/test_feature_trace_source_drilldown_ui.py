@@ -44,6 +44,12 @@ def main():
     assert "len(exact) != 1" in server
     assert '"candidate_count"' in server
     assert '"events": events' in server
+    assert '"candidates"' in server
+    assert '"match_basis"' in server
+    assert "multiple exact-normalized script/entity names" in server
+    assert "fuzzy/content Behavior Inspector matches only" in server
+    assert "drill.candidates" in feature
+    assert "match basis:" in feature
 
     print("Feature Trace cross-tool source drill-down regression: PASS")
 
