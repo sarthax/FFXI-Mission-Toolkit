@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 235,
+  "route_count": 236,
   "routes": [
     {
       "method": "GET",
@@ -817,6 +817,14 @@
       "home": "Domains",
       "section": "Battle Systems > Nyzul Isle",
       "role": "api/action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot2",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "page",
       "disposition": "KEEP"
     },
     {

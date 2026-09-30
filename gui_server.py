@@ -7583,6 +7583,11 @@ def zoneplot_page(request: Request):
     return templates.TemplateResponse(request, "zone_plot.html", {"request": request})
 
 
+@app.get("/zoneplot2", response_class=HTMLResponse)
+def zoneplot2_page(request: Request):
+    return templates.TemplateResponse(request, "zone_plot2.html", {"request": request})
+
+
 @app.get("/zoneplot/server.json")
 def zoneplot_server_get():
     import settings
