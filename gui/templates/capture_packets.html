@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Raw Packets{% endblock %}
+{% block title %}Packet Browser{% endblock %}
 
 {% macro pager() %}
 {% if total_pages > 1 %}
@@ -25,8 +25,8 @@
 <p><a class="inline" href="/captures/{{ capture_id }}">&larr; back to capture #{{ capture_id }}</a>
   &nbsp;&middot;&nbsp; <a class="inline" href="/captures/{{ capture_id }}/timeline">event timeline &rarr;</a></p>
 
-<h1 style="margin-bottom:2px;">{{ cap.capture_label }} <span class="chip mono">#{{ capture_id }}</span> &mdash; raw packets</h1>
-<p class="muted">Every real opcode PacketLogger observed in this capture (<code class="chip">capture_raw_packets</code>),
+<h1 style="margin-bottom:2px;">{{ cap.capture_label }} <span class="chip mono">#{{ capture_id }}</span> &mdash; Packet Browser</h1>
+<p class="muted">Browse every canonical raw packet observation in this capture. Open any row in the <strong>Packet Viewer</strong> to inspect coordinated decoded fields, raw bytes/ASCII, neighboring session packets, provenance, and correlations. The underlying observations live in <code class="chip">capture_raw_packets</code>,
   decoded on demand via <code class="chip">packet_decode.py</code> -- not just dialog/event
   packets, but battle actions, item grants, shop transactions, everything. Category is a
   real, data-derived classification (<code class="chip">packet_decode.categorize_opcode</code>)
@@ -65,9 +65,9 @@
     <td>{{ r.direction }}</td>
     <td class="mono">{{ r.opcode }}</td>
     <td>{{ r.description or '(no definition)' }}
-      <br><a class="inline" style="font-size:11px;" href="/captures/{{ capture_id }}/packets/{{ r.seq }}">inspect in capture context &rarr;</a>
-      &nbsp;&middot;&nbsp;<a class="inline muted" style="font-size:11px;"
-         href="/packets/decode?direction={{ r.pd_direction }}&opcode={{ r.opcode }}&hex_bytes={{ r.raw_hex }}">open scratch decoder</a>
+      <br><a class="chip" style="font-size:11px;margin-top:4px;" href="/captures/{{ capture_id }}/packets/{{ r.seq }}">Open Packet Viewer &rarr;</a>
+      &nbsp;<a class="inline muted" style="font-size:11px;"
+         href="/packets/decode?direction={{ r.pd_direction }}&opcode={{ r.opcode }}&hex_bytes={{ r.raw_hex }}">open in manual decoder</a>
     </td>
     <td>
       {% if r.fields %}
