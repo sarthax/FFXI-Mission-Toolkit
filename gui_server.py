@@ -6108,13 +6108,36 @@ def capture_packet_detail(request: Request, capture_id: int, seq: int):
         return HTMLResponse("Capture packet not found", status_code=404)
 
     packet = dict(row)
-    pd_direction = "s2c" if packet["direction"] == "incoming" else "c2s"
-    packet["pd_direction"] = pd_direction
     layout = None
     decode_error = None
+    pd_direction = None
+    direction_basis = "capture observation"
     try:
         opcode_int = int(packet["opcode"], 0)
-        layout = packet_decode.analyze_layout(pd_direction, opcode_int, packet["raw_hex"])
+        if packet["direction"] == "incoming":
+            pd_direction = "s2c"
+        elif packet["direction"] == "outgoing":
+            pd_direction = "c2s"
+        else:
+            # Network-level evidence may legitimately have unknown endpoint roles. Do not coerce
+            # unknown to c2s. A unique definition can select a decode schema for inspection while
+            # the underlying observation direction remains unknown.
+            known = [
+                d for d in ("s2c", "c2s")
+                if packet_decode.get_field_schema(d, opcode_int) is not None
+            ]
+            if len(known) == 1:
+                pd_direction = known[0]
+                direction_basis = "unique known opcode definition; capture direction remains unknown"
+        packet["pd_direction"] = pd_direction
+        packet["decode_direction_basis"] = direction_basis
+        if pd_direction is None:
+            decode_error = (
+                "Capture direction is unknown and this opcode does not have exactly one unambiguous "
+                "known direction definition; raw evidence is preserved without guessing a decoder side."
+            )
+        else:
+            layout = packet_decode.analyze_layout(pd_direction, opcode_int, packet["raw_hex"])
     except Exception as exc:
         decode_error = str(exc)
 
@@ -6138,6 +6161,7 @@ def capture_packet_detail(request: Request, capture_id: int, seq: int):
     ).fetchone()
     provenance = dict(locator) if locator else None
     if provenance:
+        provenance["row_key"] = json.dumps({"seq": seq}, sort_keys=True)
         try:
             provenance["details"] = json.loads(provenance.pop("details_json") or "{}")
         except json.JSONDecodeError:
