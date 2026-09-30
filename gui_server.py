@@ -6161,6 +6161,19 @@ def capture_packet_detail(request: Request, capture_id: int, seq: int):
             d["details"] = json.loads(d.get("details_json") or "{}")
         except json.JSONDecodeError:
             d["details"] = {}
+        d["other_href"] = None
+        if d["other_kind"] == packet_correlation.RAW and d["other_ref"].startswith("raw-packet:"):
+            try:
+                other_seq = int(d["other_ref"].split(":", 1)[1])
+                d["other_href"] = f"/captures/{capture_id}/packets/{other_seq}"
+            except ValueError:
+                pass
+        elif d["other_kind"] == packet_correlation.EVENTVIEW:
+            d["other_href"] = f"/captures/{capture_id}/timeline?tab=raw&show_raw=1"
+        elif d["other_kind"] == packet_correlation.IDVIEW:
+            d["other_href"] = f"/captures/{capture_id}/timeline?tab=events"
+        elif d["other_kind"] == packet_correlation.VIDEO:
+            d["other_href"] = f"/captures/{capture_id}/alignment"
         correlations.append(d)
 
     con.close()
