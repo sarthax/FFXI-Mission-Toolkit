@@ -615,6 +615,23 @@ def _normalize_effects(effects):
     return result
 
 
+def _effect_validation(desired):
+    warnings = []
+    for row in desired["mods"]:
+        if row["modId"] not in dat.MOD_NAMES:
+            warnings.append({"code": "UNKNOWN_MOD_ID", "message": f"item_mods modId {row['modId']} is not present in the confirmed Mod enum map"})
+    for row in desired["pet_mods"]:
+        if row["modId"] not in dat.MOD_NAMES:
+            warnings.append({"code": "UNKNOWN_MOD_ID", "message": f"item_mods_pet modId {row['modId']} is not present in the confirmed Mod enum map"})
+        if row["petType"] not in dat.PET_TYPE_NAMES:
+            warnings.append({"code": "UNKNOWN_PET_TYPE", "message": f"item_mods_pet petType {row['petType']} is not present in the confirmed PetModType enum map"})
+    for row in desired["latents"]:
+        if row["modId"] not in dat.MOD_NAMES:
+            warnings.append({"code": "UNKNOWN_MOD_ID", "message": f"item_latents modId {row['modId']} is not present in the confirmed Mod enum map"})
+        if row["latentId"] not in dat.LATENT_NAMES:
+            warnings.append({"code": "UNKNOWN_LATENT_ID", "message": f"item_latents latentId {row['latentId']} is not present in the confirmed LATENT enum map"})
+    return warnings
+
 def _effect_state(cu, item_id):
     cu.execute("select modId,value from item_mods where itemId=%s", (item_id,))
     mods = {int(r[0]): {"itemId": item_id, "modId": int(r[0]), "value": int(r[1])} for r in cu.fetchall()}
@@ -696,6 +713,7 @@ def validate_item_changes(item_id, tables, effects=None):
     desired_effects = _normalize_effects(effects) if effects is not None else None
     if desired_effects is not None:
         result["effect_counts"] = {k: len(v) for k, v in desired_effects.items()}
+        result["warnings"].extend(_effect_validation(desired_effects))
     result["comparison"] = compare_server_client(rows, client)
     return result
 
@@ -749,6 +767,8 @@ def save_item_atomic(item_id, tables, effects=None, comment=""):
         for table, fields in normalized.items():
             proposed[table] = {**proposed[table], **fields}
         validation = validate_item_state(proposed, None)
+        if desired_effects is not None:
+            validation["warnings"].extend(_effect_validation(desired_effects))
         if validation["errors"]:
             raise ValueError("; ".join(v["message"] for v in validation["errors"]))
 
