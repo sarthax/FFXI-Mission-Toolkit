@@ -834,7 +834,7 @@ DAT workflow:
 - [x] Strong visual distinction for LIVE CLIENT WRITE target.
 - [x] Always show exact DAT ROM path/category/record and latest backup timestamp.
 - [ ] Compare current decoded DAT record against pristine backup and show changed fields.
-- [ ] Explicit reconcile actions: use server values or use client values per supported field; never guess authority.
+- [x] Explicit reconcile actions: use server values or use client values per confirmed overlapping field; structural item-type mismatches remain diagnostic-only and never guess authority.
 - [ ] Safe record-level restore where the DAT format supports replacing only this record.
 - [ ] Compare Live DAT vs Xi-Pivot copy and copy one direction explicitly.
 
