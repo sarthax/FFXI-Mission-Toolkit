@@ -2087,6 +2087,68 @@ def browse_slots(cat_name: str, offset: int = 0, limit: int = 200, state: str = 
         'offset': offset, 'limit': limit, 'total': total, 'rows': page,
     }
 
+def search_dat_only(q: str, category: str = "", limit: int = 200) -> list:
+    """Search populated client DAT records that have no item_basic row on the active server."""
+    q = str(q or "").strip()
+    if len(q) < 2 and not q.isdigit():
+        return []
+    exact_id = int(q) if q.isdigit() else None
+    needle = q.casefold()
+    limit = max(1, min(int(limit), 500))
+    out = []
+    seen = set()
+    for cat_name, base_id, item_type, en_rom, _jp_rom in ITEM_DATS:
+        type_name = TYPE_NAME.get(item_type, str(item_type))
+        if category and category != type_name:
+            continue
+        src_path = dat_write_source(en_rom)
+        if not src_path.exists():
+            continue
+        try:
+            item_dat = ItemDat.load(src_path)
+        except Exception:
+            continue
+        used_ids = _server_item_ids_in_range(base_id, base_id + item_dat.count)
+        for idx in range(item_dat.count):
+            item_id = base_id + idx
+            if item_id in seen or item_id in used_ids:
+                continue
+            if exact_id is not None and item_id != exact_id:
+                continue
+            rec = item_dat.record(idx)
+            text_off = _resolve_text_offset(rec, item_type, item_dat.format)
+            strings = _read_strings(rec, text_off) if text_off is not None else []
+            if not strings or not strings[0] or strings[0] == ".":
+                continue
+            name = strings[0]
+            if exact_id is None and needle not in name.casefold():
+                continue
+            parsed = _parse_record(
+                item_id, rec, None, item_type, str(src_path),
+                dat_ui=en_rom, fmt=item_dat.format, record_index=idx, category=cat_name,
+            )
+            if parsed is None:
+                continue
+            seen.add(item_id)
+            out.append({
+                "itemid": item_id,
+                "name": parsed.name,
+                "type_name": parsed.type_name,
+                "level": parsed.level,
+                "jobs": parsed.jobs,
+                "skill": parsed.skill,
+                "dmg": parsed.dmg,
+                "delay": parsed.delay,
+                "client_state": "dat-only",
+                "dat_ui": en_rom,
+                "record_index": idx,
+                "format": parsed.format,
+            })
+            if len(out) >= limit:
+                return out
+    return out
+
+
 def free_slots(cat_name: str, count: int) -> list:
     """First `count` empty (placeholder-name) record indices in a DAT category. Never returns
     item id 0 (reserved "no item" sentinel) or an id the server DB already has a real
