@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Binding Reference{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}binding-reference-page{% endblock %}
 
 {% macro pager() %}
 {% if total_pages > 1 %}
@@ -22,18 +24,22 @@
 {% endmacro %}
 
 {% block content %}
-<h1>Binding Reference</h1>
-<p class="tabs" style="margin:-6px 0 14px;">
+<style>main.binding-reference-page{padding:8px 10px 24px}</style>
+<div class="dense-toolbar">
+  <strong>Binding Reference</strong>
+  <span class="sp"></span>
+  <p class="tabs" style="margin:0;">
   <a class="chip" href="/backport/lua-convert">&larr; Convert</a>
   <a class="chip" href="/backport/bindings{% if trace_q %}?trace_q={{ trace_q|urlencode }}{% endif %}" style="background:var(--accent);color:#fff;">Binding Reference</a>
   {% if trace_q %}<a class="chip" href="/features/trace?q={{ trace_q|urlencode }}">&larr; Feature Trace entity {{ trace_q }}</a>{% endif %}
 </p>
-<p class="muted">Every Lua method binding registered in Topaz (<code>SOL_REGISTER</code>) and in
+  <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:760px">Every Lua method binding registered in Topaz (<code>SOL_REGISTER</code>) and in
 old-dsp-reference (<code>LUNAR_DECLARE_METHOD</code>), cross-referenced against
 <code>data/dsp_namespace_map.json</code>'s confirmed renames. Built for reference/lookup outside a
 conversion run -- e.g. checking what a name is called before writing new Lua by hand. Regenerate
 the underlying indexes after a DSP engine patch with
-<code>py -3 backport_binding_index.py --build</code>.</p>
+<code>py -3 backport_binding_index.py --build</code>.</div></details>
+</div>
 
 {% if index_missing %}
 <div class="warn">
@@ -61,7 +67,7 @@ the underlying indexes after a DSP engine patch with
 </table>
 </div>
 
-<form class="search" method="get">
+<form class="search dense-toolbar" method="get" style="margin:6px 0">
   <input type="hidden" name="trace_q" value="{{ trace_q }}">
   <select name="status">
     <option value="">All statuses</option>
@@ -74,7 +80,7 @@ the underlying indexes after a DSP engine patch with
   {% if q or status %}<a class="chip" href="/backport/bindings{% if trace_q %}?trace_q={{ trace_q|urlencode }}{% endif %}">clear</a>{% endif %}
 </form>
 
-<p>{{ total }} binding(s){{ " for \"%s\"" % q if q else "" }} -- page {{ page }} of {{ total_pages }}</p>
+<div class="dense-toolbar" style="margin:4px 0"><strong>{{ total }} binding(s)</strong>{% if q %}<span class="muted">for "{{ q }}"</span>{% endif %}<span class="sp"></span><span class="muted">page {{ page }} of {{ total_pages }}</span></div>
 {{ pager() }}
 
 {% if rows %}
