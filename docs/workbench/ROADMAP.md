@@ -849,3 +849,16 @@ History / audit / safety:
 - [x] Dependency/usage view before destructive changes combines exact active-server content-table references, canonical Workbench graph/catalog relationships, item-scoped client-index identities when present, and opt-in Lua source-text evidence. Exact DB references drive destructive-action warnings; lower-authority evidence stays visibly distinct.
 - [x] Constrained batch editor with mandatory dry-run preview, proven-safe dual-authority field whitelist (flags/stack/level/jobs/slots/damage/delay/skill), all-item validation before write, one SQL transaction, one multi-item backup envelope, client-DAT rollback, and batch restore.
 - [x] Item comparison mode for SQL, DAT, mods, pet mods, and latents side-by-side, preserving a concise diff summary while showing staged-vs-saved SQL/effect values and saved client DAT records with highlighted differences.
+
+
+### 2026-09-29 Client Model Viewer integration
+- [x] Keep the existing lightweight Three.js/MIT DAT renderer rather than importing the GPL-3.0 `xi-model-viewer` application wholesale.
+- [x] Separate server `look_t` model IDs, client FTABLE file IDs, and physical ROM DAT paths instead of treating them as one offset namespace.
+- [x] Implement the four-band FFXiMain monster-model lookup documented from VA `0x100C513D`: `+1300`, `+50295`, `+96907`, then `+98239` from model ID 3500 upward.
+- [x] Validate the mapped file ID through the configured client's FTABLE/VTABLE before treating it as registered.
+- [x] Preserve older hand-verified per-family visible mesh DATs as explicit render hints where available; do not treat those mesh anchors as competing model-ID formulas.
+- [x] Add direct raw `look_t` model-ID loading to Client > Model Viewer with mapping/render provenance.
+- [x] Add query-string autoload/embed support and a lazy selected-entity model preview inside Zone Editor.
+- [ ] Build a searchable local-client model catalog with names/categories and explicit distinction between resource/skeleton DATs and visible mesh bundles.
+- [ ] Add safe Zone Editor model editing: NPC flat-look replacement and mob-pool model changes only after showing shared-pool impact, backups, undo, and SQL-sync consequences.
+- [ ] Expand multi-DAT actor composition/animation fidelity only where it materially helps validation; do not reproduce the full external viewer.
