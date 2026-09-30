@@ -6931,7 +6931,9 @@ async def itemedit_create(request: Request):
     import item_edit
     b = await request.json()
     try:
-        return JSONResponse(item_edit.create_item(b["category"], b["item_type"], b["entry"], b.get("comment", "")))
+        return JSONResponse(item_edit.create_item(
+            b["category"], b["item_type"], b["entry"], b.get("effects"), b.get("comment", "")
+        ))
     except Exception as ex:
         return JSONResponse({"error": str(ex)}, status_code=400)
 
