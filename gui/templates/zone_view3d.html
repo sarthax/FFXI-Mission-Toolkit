@@ -1,8 +1,18 @@
 {% extends "base.html" %}
 {% block title %}3D Zone Viewer{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}zone-view3d-page{% endblock %}
 {% block content %}
-<h1>3D Zone Viewer <span class="chip mono">{{ zone_name }} ({{ zoneid }})</span></h1>
-<p class="muted">Real client visual mesh (walls/buildings/props -- not the invisible collision
+<style>
+  main.zone-view3d-page{padding:8px 10px 24px}
+  #zone3d-title{margin-bottom:6px}
+  #zone3d-title .chip{font-weight:500}
+  #viewer-container{height:calc(100vh - var(--shell-h) - 185px) !important;min-height:480px}
+  #capture-spatial-controls{padding:5px 7px;border:1px solid var(--border);border-radius:6px;background:var(--surface)}
+  @media (max-width:900px){#viewer-container{height:calc(100vh - var(--shell-h) - 235px) !important;min-height:400px}}
+</style>
+<div id="zone3d-title" class="dense-toolbar"><strong>3D Zone Viewer</strong><span class="chip mono">{{ zone_name }} ({{ zoneid }})</span><span class="sp"></span>{% if not multi %}<a class="inline" href="/zoneplot2?zone={{ zoneid }}">Open Zone Editor ↗</a>{% endif %}</div>
+<details class="dense-card" style="margin:0 0 6px"><summary>About this view</summary><div class="muted" style="padding-top:4px">Real client visual mesh (walls/buildings/props -- not the invisible collision
   mesh the 2D top-down view uses).
   {% if live_parse_available %}Parsed live from the zone's own DAT in-browser (real textures,
   water, day/night sky) via the vendored <code class="chip">ffxi-dat</code> bindings.
@@ -13,7 +23,7 @@
   {% if multi %}Showing capture-observed entities and available paths from capture
   <a class="inline" href="/captures/{{ capture_id }}">#{{ capture_id }}</a> in {{ zone_db }}.
   {% elif entity_name %}Showing {{ entity_name }}'s real path from capture
-  <a class="inline" href="/captures/{{ capture_id }}">#{{ capture_id }}</a>.{% endif %}</p>
+  <a class="inline" href="/captures/{{ capture_id }}">#{{ capture_id }}</a>.{% endif %}</div></details>
 
 {% if multi %}
 <form method="get" style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
@@ -58,7 +68,7 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
   Zone meshes run 30-75MB and take a real parse (up to a minute) -- or run
   <code class="chip">py -3 build_zone_visual_cache.py {{ zoneid }}</code> from a terminal instead.</div>
 {% else %}
-<div style="display:flex; gap:12px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
+<div class="dense-toolbar" style="margin-bottom:6px; flex-wrap:wrap;">
   <label class="muted" for="tod-slider">Time of day</label>
   <input type="range" id="tod-slider" min="0" max="24" step="0.1" value="12" style="width:220px;">
   <span id="tod-label" class="chip mono">12:00</span>
@@ -68,7 +78,7 @@ document.getElementById('zone-select').addEventListener('change', (e) => {
   <label class="muted" for="xray-slider">Wall opacity</label>
   <input type="range" id="xray-slider" min="0.15" max="1" step="0.05" value="1" style="width:120px;">
   <label class="muted" style="display:flex; align-items:center; gap:4px;"><input type="checkbox" id="shownav-toggle" disabled> Show navmesh</label>
-  {% if not multi %}<a class="inline" href="/zoneplot?zone={{ zoneid }}" style="margin-left:auto;">Edit this zone &rarr;</a>{% endif %}
+  {% if not multi %}<a class="inline" href="/zoneplot2?zone={{ zoneid }}" style="margin-left:auto;">Edit this zone &rarr;</a>{% endif %}
 </div>
 {% if capture_id and zone_db %}
 <div id="capture-spatial-controls" style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;margin:8px 0 10px;">
