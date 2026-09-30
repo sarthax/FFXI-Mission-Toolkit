@@ -267,6 +267,7 @@ def import_client_snapshot(
         "extraction_failures": list(extraction.failures),
         "record_count": int(ingest.get("record_count") or 0),
         "ingest_failures": list(ingest.get("failures") or []),
+        "entity_graph": dict(ingest.get("entity_graph") or {}),
     }
 
 
