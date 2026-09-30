@@ -45,20 +45,28 @@ def model_id_to_file_id(model_id: int) -> int:
 
 
 
-def resolve_rom_paths(ffxi_path: str, dat_ids) -> dict[int, str]:
-    """Resolve many FTABLE file ids in one dat-extractor invocation."""
+def resolve_rom_paths(ffxi_path: str, dat_ids, batch_size: int = 400) -> dict[int, str]:
+    """Resolve many FTABLE file ids with bounded dat-extractor command lines.
+
+    Windows' process command line is finite, so a complete model catalog must not pass several
+    thousand ids in one invocation. Four hundred short numeric ids stays comfortably bounded
+    while still avoiding one subprocess per model.
+    """
     ids = sorted({int(x) for x in dat_ids if x is not None})
     if not ids:
         return {}
-    result = subprocess.run(
-        ["dotnet", "exec", str(DAT_EXTRACTOR_DLL), "--resolve", ffxi_path, *[str(x) for x in ids]],
-        capture_output=True, text=True,
-    )
     paths = {}
-    for line in result.stdout.splitlines():
-        parts = line.split("\t")
-        if len(parts) >= 2 and parts[0].isdigit() and parts[1] != "(not found)":
-            paths[int(parts[0])] = parts[1]
+    batch_size = max(1, int(batch_size))
+    for start in range(0, len(ids), batch_size):
+        batch = ids[start:start + batch_size]
+        result = subprocess.run(
+            ["dotnet", "exec", str(DAT_EXTRACTOR_DLL), "--resolve", ffxi_path, *[str(x) for x in batch]],
+            capture_output=True, text=True,
+        )
+        for line in result.stdout.splitlines():
+            parts = line.split("\t")
+            if len(parts) >= 2 and parts[0].isdigit() and parts[1] != "(not found)":
+                paths[int(parts[0])] = parts[1]
     return paths
 
 
