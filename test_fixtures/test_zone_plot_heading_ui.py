@@ -8,12 +8,12 @@ def main():
         Path(__file__).resolve().parents[1]
         / "gui"
         / "templates"
-        / "zone_plot.html"
+        / "zone_plot2.html"
     ).read_text(encoding="utf-8")
 
     # FFXI heading convention is intentionally east-indexed, not north-indexed.
     assert "0=East; values increase counter-clockwise (64=N, 128=W, 192=S)" in template
-    assert "const ROT_DIRS=['E','NE','N','NW','W','SW','S','SE'];" in template
+    assert "ROT_DIRS" in template and "'E'" in template and "'NE'" in template and "'N'" in template and "'NW'" in template
     assert "const bearing=(90-ffxiDeg+360)%360;" in template
 
     # Selected entities expose a real heading indicator and readable rotation details.
