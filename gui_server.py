@@ -3376,12 +3376,21 @@ def feature_trace_runtime_detail(
         page=feature_trace.runtime_observation_page(con,root,depth,direction,catalog_con,opcode,capture_id,offset,limit)
         for observation in page.get("observations", []):
             for locator in observation.get("capture_provenance", []):
-                locator["href"] = (
-                    f"/captures/{locator['capture_id']}/source-locator"
-                    f"?filename={quote(str(locator['filename']), safe='')}"
-                    f"&target_table={quote(str(locator['normalized_table']), safe='')}"
-                    f"&row_key={quote(str(locator['normalized_row_key']), safe='')}"
-                )
+                locator["href"] = None
+                if locator.get("normalized_table") == "capture_raw_packets":
+                    try:
+                        key = json.loads(str(locator.get("normalized_row_key") or "{}"))
+                        seq = int(key["seq"])
+                        locator["href"] = f"/captures/{locator['capture_id']}/packets/{seq}"
+                    except (ValueError, TypeError, KeyError, json.JSONDecodeError):
+                        pass
+                if not locator["href"]:
+                    locator["href"] = (
+                        f"/captures/{locator['capture_id']}/source-locator"
+                        f"?filename={quote(str(locator['filename']), safe='')}"
+                        f"&target_table={quote(str(locator['normalized_table']), safe='')}"
+                        f"&row_key={quote(str(locator['normalized_row_key']), safe='')}"
+                    )
         return JSONResponse(page)
     finally:
         con.close()
