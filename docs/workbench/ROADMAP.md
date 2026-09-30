@@ -803,7 +803,7 @@ Additional QOL backlog:
 Priority stack:
 - [x] Unified dirty-state and field-level change summary across item tables, masks, client-relevant fields, mods, pet mods, and latents; navigation discard warnings are enforced.
 - [x] Atomic whole-item save covers the core item_* tables plus staged mods/pet-mods/latents: validate first, capture one coherent backup, update all SQL rows in one DB transaction, validate/patch the DAT once, and restore the DAT snapshot if DB commit fails.
-- [~] Session undo / redo is implemented for whole-item Save Item actions, including mods/pet-mods/latents and synchronized DAT rollback/redo, with Ctrl+Z / Ctrl+Y. Create/delete actions remain outside the session stack.
+- [x] Session undo / redo covers Save Item, create, and delete actions with Ctrl+Z / Ctrl+Y; exact client-record snapshots keep SQL and DAT state synchronized across undo/redo.
 - [x] Expanded server-vs-client DAT comparison across every decoded overlapping field, with explicit per-field mismatches rather than level-only comparison.
 - [x] Centralized item validation panel with source-proven errors/warnings/info; errors block save, warnings require explicit confirmation.
 - [~] Improved item search/results grid: exact ID lookup, name search, level/job/skill/client-state filters, sortable columns, synced/mismatch/server-only state, and recent-item navigation are complete. True DAT-only discovery remains because it requires scanning/indexing client DAT ranges rather than the server-backed search.
@@ -816,11 +816,11 @@ Editing / presentation:
 - [ ] Copy/paste individual values and selected field groups where safe.
 
 Create / clone:
-- [ ] One-click Clone This Item from the open editor.
-- [ ] Clone options for SQL structure only, SQL+mods, SQL+mods+latents, and full server+client template where supported.
-- [ ] Pre-create summary showing allocated item ID, DAT category/record, SQL rows, copied mods/latents, and write target before commit.
+- [x] One-click Clone This Item from the open editor.
+- [~] Clone effect scopes support template-only, +mods, +mods/pet-mods, and +all latents in the same creation transaction. A distinct pure SQL-only/no-client template mode remains.
+- [~] Pre-create summary shows the current verified free-slot candidate ID, DAT category/record/destination, SQL rows, copied effect counts, and write target. The candidate is intentionally not reserved and is revalidated at Save.
 - [ ] Free ID / DAT-slot browser showing server occupancy, DAT occupancy, mismatches, and only verified reserved/unsafe ranges.
-- [ ] After creation, open the new item automatically with Server/DAT synchronization status and undo-create support.
+- [x] After creation, open the new item automatically with Server/DAT synchronization status and undo-create support.
 
 Mods / pet mods / latents:
 - [x] Stage mod/pet-mod/latent edits instead of immediately writing each row; include them in unified Save Item.
@@ -830,9 +830,9 @@ Mods / pet mods / latents:
 - [ ] Item-to-item effect diff for added/removed/changed mods and latents.
 
 DAT workflow:
-- [ ] Persistent item status header showing Server state, Client DAT state, mismatch count, and current Live/Xi-Pivot target.
-- [ ] Strong visual distinction for LIVE CLIENT WRITE target.
-- [ ] Always show exact DAT ROM path/category/record and latest backup timestamp.
+- [x] Persistent item status header showing Server state, Client DAT state, mismatch count, exact DAT record location, and current Live/Xi-Pivot target.
+- [x] Strong visual distinction for LIVE CLIENT WRITE target.
+- [x] Always show exact DAT ROM path/category/record and latest backup timestamp.
 - [ ] Compare current decoded DAT record against pristine backup and show changed fields.
 - [ ] Explicit reconcile actions: use server values or use client values per supported field; never guess authority.
 - [ ] Safe record-level restore where the DAT format supports replacing only this record.
@@ -840,7 +840,7 @@ DAT workflow:
 
 History / audit / safety:
 - [ ] Selected-item change-history panel with field-level summaries, comments, SQL/DAT/effect action types, and one-click previous-state restore.
-- [ ] Whole-item delete/create/edit history integrates with session undo/redo.
+- [x] Whole-item delete/create/edit history integrates with session undo/redo using exact client-record snapshots.
 - [ ] Dependency/usage view before destructive changes: rewards, drops, shops, recipes, scripts, missions/quests, and client references when indexed.
 - [ ] Optional constrained batch editor with preview and one atomic backup for proven-safe field classes.
 - [ ] Item comparison mode for SQL, DAT, mods, pet mods, and latents side-by-side.
