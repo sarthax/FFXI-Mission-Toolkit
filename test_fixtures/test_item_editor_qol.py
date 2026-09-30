@@ -22,6 +22,24 @@ def main():
     assert "dat.validate_client_patch(item_id, client_fields)" in item_edit
     assert "client_report = dat.patch_client_item(item_id, client_fields)" in item_edit
 
+    # DAT/ID slot browser uses real server + DAT occupancy and only verified reservation rules.
+    assert "def browse_slots(cat_name: str, offset: int = 0, limit: int = 200, state: str = '')" in item_dat
+    assert "'used-both'" in item_dat and "'server-only'" in item_dat and "'dat-only'" in item_dat and "'free'" in item_dat
+    assert "reserved = item_id == 0" in item_dat
+    assert '@app.get("/itemedit/slot-browser.json")' in gui
+    assert 'id="slotBrowser"' in template
+    assert "async function refreshSlotBrowser()" in template
+
+    # Live <-> Xi-Pivot comparison/copy operates on this item record only.
+    assert "def compare_live_pivot_record(item_id: int) -> dict:" in item_dat
+    assert "def copy_live_pivot_record(item_id: int, direction: str) -> dict:" in item_dat
+    assert "backup_dat_snapshot(dest_path, en_rom)" in item_dat
+    assert '@app.get("/itemedit/{item_id}/live-pivot-diff.json")' in gui
+    assert '@app.post("/itemedit/live-pivot-copy")' in gui
+    assert 'id="livePivotDiff"' in template
+    assert "async function compareLivePivot()" in template
+    assert "async function copyLivePivot(direction)" in template
+
     # Safe item-level DAT record restore from exact backup snapshots.
     assert "def restore_client_record_from_backup(bid, comment=" in item_edit
     assert '"has_client_record": bool(snap)' in item_edit
