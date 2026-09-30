@@ -841,7 +841,7 @@ DAT workflow:
 - [x] Compare Live DAT vs Xi-Pivot at the selected item-record level and explicitly copy only that record Live→Pivot or Pivot→Live with destination backup.
 
 History / audit / safety:
-- [ ] Selected-item change-history panel with field-level summaries, comments, SQL/DAT/effect action types, and one-click previous-state restore.
+- [x] Selected-item change-history panel with field-level summaries, comments, SQL/DAT/effect action types, legacy-backup fallback metadata, and one-click previous-state restore that backs up the current state first.
 - [x] Whole-item delete/create/edit history integrates with session undo/redo using exact client-record snapshots.
 - [ ] Dependency/usage view before destructive changes: rewards, drops, shops, recipes, scripts, missions/quests, and client references when indexed.
 - [ ] Optional constrained batch editor with preview and one atomic backup for proven-safe field classes.
