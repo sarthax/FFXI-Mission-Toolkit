@@ -835,7 +835,7 @@ DAT workflow:
 - [x] Always show exact DAT ROM path/category/record and latest backup timestamp.
 - [x] Compare the active write target's decoded DAT record against the permanent pristine backup and show changed fields.
 - [x] Explicit reconcile actions: use server values or use client values per confirmed overlapping field; structural item-type mismatches remain diagnostic-only and never guess authority.
-- [ ] Safe record-level restore where the DAT format supports replacing only this record.
+- [x] Safe record-level restore from exact item backup snapshots, replacing only the selected item's DAT record and enrolling the action in session undo/redo.
 - [ ] Compare Live DAT vs Xi-Pivot copy and copy one direction explicitly.
 
 History / audit / safety:
