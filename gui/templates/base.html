@@ -165,11 +165,15 @@
 </head>
 <body class="shell-{% block shell_mode %}standard{% endblock %}">
 {% set shell = shell_context(request) %}
+{% set brand = shell_brand() %}
 <header id="app-shell">
   <div class="shellbar">
-    <a href="/" class="shell-brand" title="ValhallaXI Mission Toolkit">
-      <img src="/static/valhalla_logo.png" alt=""><span>ValhallaXI</span>
+    {% if brand.enabled %}
+    <a href="/" class="shell-brand" title="{{ brand.text or 'Mission Toolkit' }}">
+      {% if brand.icon %}<img src="{{ brand.icon }}" alt="">{% endif %}
+      {% if brand.text %}<span>{{ brand.text }}</span>{% endif %}
     </a>
+    {% endif %}
 
     <details class="shell-menu nav-menu shell-mobile-only">
       <summary class="shell-summary" aria-label="Open workspace navigation">☰</summary>
