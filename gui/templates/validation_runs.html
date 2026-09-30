@@ -1,9 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Validation Runs — Mission Toolkit{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}validation-runs-page{% endblock %}
 {% block content %}
-<h1>Validation Runs &amp; Results</h1>
+<style>main.validation-runs-page{padding:8px 10px 24px}</style>
+<div class="dense-toolbar"><strong>Validation Runs &amp; Results</strong><span class="sp"></span><a class="chip" href="/validation">Dashboard</a></div>
 
-<form class="search" method="get" action="/validation/runs">
+<form class="search dense-toolbar" method="get" action="/validation/runs" style="margin:6px 0">
   <input type="text" name="q" value="{{ q }}" placeholder="Run ID, name, or feature ID">
   <select name="status">
     <option value="">All statuses</option>
@@ -17,6 +20,7 @@
 {% if error %}<div class="warn">{{ error }}</div>{% endif %}
 
 {% if runs %}
+<div class="dense-toolbar" style="margin:4px 0 6px"><strong>{{ runs|length }} run(s)</strong></div>
 <div class="table-wrap"><table>
 <thead><tr><th>Run</th><th>Status</th><th>Feature</th><th>Results</th><th>Source → Target</th><th>Finished</th></tr></thead>
 <tbody>
