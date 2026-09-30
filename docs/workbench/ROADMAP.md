@@ -860,7 +860,7 @@ History / audit / safety:
 - [x] Add direct raw `look_t` model-ID loading to Client > Model Viewer with mapping/render provenance.
 - [x] Add query-string autoload/embed support and a lazy selected-entity model preview inside Zone Editor.
 - [x] Build a searchable local-client model catalog from actual Topaz/DSP mob/NPC references plus the configured client's FTABLE/VTABLE: names/aliases, model IDs, resource/render file IDs and DAT paths, family IDs, pool IDs, reference counts, verified visual hints, reverse DAT correlation, Model Viewer picker/direct-DAT lookup, and read-only Zone Editor candidate preview. Resource/skeleton identity stays distinct from visible render hints.
-- [ ] Add safe Zone Editor model editing: NPC flat-look replacement and mob-pool model changes only after showing shared-pool impact, backups, undo, and SQL-sync consequences.
+- [x] Add safe Zone Editor flat-model editing: candidate preview is read-only; Apply requires a fresh impact preview. NPC changes are row-local; mob changes resolve spawn → group → shared mob_pools row and show affected spawn/group/zone counts before write. Changes are backup-backed, undoable, and have explicit model-row SQL sync.
 - [ ] Expand multi-DAT actor composition/animation fidelity only where it materially helps validation; do not reproduce the full external viewer.
 
 
@@ -875,3 +875,15 @@ History / audit / safety:
 - [x] Refuse ambiguous family-specific visual hints for context-free catalog loads; entity-specific loads may still use their exact verified family hint.
 - [x] Constrain direct DAT loads to the configured FFXI client root.
 - [ ] Next: safe model mutation with impact preview. NPC flat looks can be row-local; mob model changes may affect every spawn/group sharing a `mob_pools` row and must show that blast radius before write.
+
+
+### 2026-09-29 Zone Editor model / help / animation hardening
+- [x] Reset TransformControls to Move/translate whenever a model/entity is clicked or selected, so a previous Rotate mode does not carry into the next selection.
+- [x] Add a dedicated Zone Editor Help tab covering selection, camera, transform shortcuts, move/rotate/snap, nav diagnostics, roam/leash overlays, model preview/catalog, animation/subanimation, add/delete/drop editing, backups, and live-DB vs SQL synchronization.
+- [x] Add impact-gated model replacement from the shared Client Model Catalog. NPC flat looks mutate only the selected npc_list row; mob flat looks mutate the owning mob_pools row and report all groups/spawns/zones sharing it.
+- [x] Store model changes as proper 20-byte MODEL_STANDARD look_t blobs rather than writing raw scalar model IDs into look/modelid columns.
+- [x] Back up the actual owning row (npc_list or mob_pools), journal exact SQL, support undo through Zone Editor restore, and provide explicit checked-in SQL sync for the model owner row.
+- [x] Replace the sparse hardcoded animation dropdown with current bundled LSB data/enums/animation.yaml values.
+- [x] Scan bundled LSB scripts for literal setAnimationSub(N) uses and show counts, nearby literal setModelId values, and source-line samples as model-dependent evidence.
+- [x] Expose LSB animationString FOURCC values separately so transient entityAnimationPacket effects are not confused with persistent npc_list animation/animationsub bytes.
+- [ ] Future animation work: correlate captures/client model schedules with specific model IDs so subanimation meanings can be promoted from observed script evidence to model-specific verified labels where evidence is sufficient.
