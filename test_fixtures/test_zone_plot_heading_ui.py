@@ -56,6 +56,29 @@ def main():
     assert 'data-rpreset="64"' in template and 'data-rpreset="0"' in template
     assert "Ctrl+Z" in template and "Ctrl+Y" in template
 
+    # Next Zone Editor QOL stacks: cameras/state, gizmo, SQL sync state, orthographic mode.
+    assert "const perspectiveCamera = new THREE.PerspectiveCamera" in template
+    assert "const orthoCamera = new THREE.OrthographicCamera" in template
+    assert "function cameraPreset(name)" in template
+    assert "ZONE_EDITOR_STATE_KEY='zoneEditor.ui.v1'" in template
+    assert "localStorage.setItem" in template and "loadZoneEditorState()" in template
+    assert 'data-cam="top"' in template and 'data-cam="north"' in template
+    assert 'id="projection"' in template
+    assert "camera.isOrthographicCamera" in template
+
+    assert "TransformControls" in template
+    assert "const transformProxy=new THREE.Object3D()" in template
+    assert "transformControls.showX=mode==='translate'" in template
+    assert "transformControls.showY=true" in template
+    assert "transformControls.showZ=mode==='translate'" in template
+    assert "e.r=Math.round(turns*256)%256" in template
+
+    assert 'id="esyncstatus"' in template
+    assert "const entitySyncState=new Map();" in template
+    assert "Live DB: modified   SQL source: NOT SYNCED" in template
+    assert "Live DB ✓   SQL source ✓" in template
+    assert "markSqlSynced(lastTouched.k,lastTouched.id)" in template
+
     print("Zone Plot heading/compass/zoom UI regression: PASS")
     return 0
 
