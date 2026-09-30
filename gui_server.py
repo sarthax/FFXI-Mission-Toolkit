@@ -132,6 +132,15 @@ if MAPS_DIR.exists():
 STATIC_DIR = TOOLS_ROOT / "gui" / "static"
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+BRANDING_DIR = STATIC_DIR / "branding"
+BRANDING_DIR.mkdir(parents=True, exist_ok=True)
+BRAND_ICON_MAX_BYTES = 2 * 1024 * 1024
+BRAND_ICON_FORMATS = {
+    "PNG": ".png",
+    "JPEG": ".jpg",
+    "WEBP": ".webp",
+    "GIF": ".gif",
+}
 OCR_RUNS_DIR = TOOLS_ROOT / "mission_reports_v2" / "_ocr_runs"
 OCR_RUNS_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/ocr_runs", StaticFiles(directory=str(OCR_RUNS_DIR)), name="ocr_runs")
@@ -7341,13 +7350,14 @@ def _list_backups() -> list[dict]:
 
 
 @app.get("/settings", response_class=HTMLResponse)
-def settings_page(request: Request, saved: str = "", backup: str = "", ok: str = ""):
+def settings_page(request: Request, saved: str = "", backup: str = "", ok: str = "", brand_error: str = ""):
     con = get_con()
     values = settings_mod.get_all(con)
     con.close()
     return templates.TemplateResponse(request, "settings.html", {
         "values": values, "saved": bool(saved), "backups": _list_backups(),
         "backup_result": backup, "backup_ok": bool(int(ok)) if ok else None,
+        "brand_error": brand_error,
         "llm_key_configured": llm_client.has_api_key(),
     })
 
@@ -7368,6 +7378,33 @@ def theme_toggle(request: Request):
 @app.post("/settings", response_class=HTMLResponse)
 async def settings_save(request: Request):
     form = await request.form()
+
+    brand_icon_value = None
+    if form.get("shell_brand_reset_icon"):
+        for existing in BRANDING_DIR.glob("custom_brand.*"):
+            existing.unlink(missing_ok=True)
+        brand_icon_value = "/static/valhalla_logo.png"
+    else:
+        upload = form.get("shell_brand_icon_upload")
+        if upload is not None and getattr(upload, "filename", ""):
+            raw = await upload.read()
+            if len(raw) > BRAND_ICON_MAX_BYTES:
+                return RedirectResponse(url="/settings?brand_error=Brand+icon+must+be+2+MB+or+smaller", status_code=303)
+            try:
+                with Image.open(io.BytesIO(raw)) as img:
+                    image_format = (img.format or "").upper()
+                    img.verify()
+            except Exception:
+                return RedirectResponse(url="/settings?brand_error=Uploaded+brand+icon+is+not+a+valid+image", status_code=303)
+            ext = BRAND_ICON_FORMATS.get(image_format)
+            if not ext:
+                return RedirectResponse(url="/settings?brand_error=Brand+icon+must+be+PNG,+JPG,+WEBP,+or+GIF", status_code=303)
+            for existing in BRANDING_DIR.glob("custom_brand.*"):
+                existing.unlink(missing_ok=True)
+            output = BRANDING_DIR / f"custom_brand{ext}"
+            output.write_bytes(raw)
+            brand_icon_value = f"/static/branding/{output.name}"
+
     con = get_con()
     port_raw = form.get("port", "").strip()
     port_value = port_raw if port_raw.isdigit() and 1 <= int(port_raw) <= 65535 else settings_mod.DEFAULTS["port"]
@@ -7382,6 +7419,9 @@ async def settings_save(request: Request):
         "backport_root": form.get("backport_root", "").strip(),
         "ffxi_install_path": form.get("ffxi_install_path", "").strip(),
         "xi_model_viewer_url": form.get("xi_model_viewer_url", "").strip(),
+        "shell_brand_enabled": "1" if form.get("shell_brand_enabled") else "0",
+        "shell_brand_text": form.get("shell_brand_text", "").strip()[:80],
+        **({"shell_brand_icon": brand_icon_value} if brand_icon_value is not None else {}),
         "port": port_value,
         "backup_retention_count": retention_value,
         "llm_base_url": form.get("llm_base_url", "").strip() or settings_mod.DEFAULTS["llm_base_url"],

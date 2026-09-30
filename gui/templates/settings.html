@@ -4,11 +4,40 @@
 {% block content %}
 <h1>Settings</h1>
 {% if saved %}<div class="warn" style="border-left-color:var(--accent);background:var(--accent-soft);">Saved.</div>{% endif %}
+{% if brand_error %}<div class="warn"><strong>Branding:</strong> {{ brand_error }}</div>{% endif %}
 {% if backup_result %}
 <div class="warn" style="{{ 'border-left-color:var(--accent);background:var(--accent-soft);' if backup_ok else '' }}">{{ backup_result }}</div>
 {% endif %}
 
-<form method="post" action="/settings" id="settings-form">
+<form method="post" action="/settings" id="settings-form" enctype="multipart/form-data">
+  <h2>Branding</h2>
+  <p class="muted">Controls the brand shown in the top-left shell. Changes apply immediately after Save; no restart is required.</p>
+  <div class="table-wrap" style="padding:14px; display:grid; grid-template-columns:minmax(220px,1fr) minmax(220px,1fr); gap:14px;">
+    <div>
+      <label><input type="checkbox" name="shell_brand_enabled" value="1" {% if values.shell_brand_enabled != '0' %}checked{% endif %}> Show shell branding</label>
+      <div style="margin-top:12px;">
+        <label class="muted">Brand text</label><br>
+        <input type="text" name="shell_brand_text" value="{{ values.shell_brand_text }}" maxlength="80" style="width:100%; margin-top:6px;" placeholder="ValhallaXI">
+      </div>
+      <div style="margin-top:12px;">
+        <label class="muted">Upload icon (PNG, JPG, WEBP, GIF; max 2 MB)</label><br>
+        <input type="file" name="shell_brand_icon_upload" accept="image/png,image/jpeg,image/webp,image/gif" style="margin-top:6px;">
+      </div>
+      <label style="display:block;margin-top:10px;"><input type="checkbox" name="shell_brand_reset_icon" value="1"> Restore default ValhallaXI icon</label>
+    </div>
+    <div>
+      <div class="muted" style="margin-bottom:6px;">Current preview</div>
+      <div style="display:flex;align-items:center;gap:8px;min-height:50px;border:1px solid var(--border);border-radius:7px;padding:10px;background:var(--surface);">
+        {% if values.shell_brand_enabled != '0' %}
+          {% if values.shell_brand_icon %}<img src="{{ values.shell_brand_icon }}" alt="" style="width:28px;height:28px;object-fit:contain;">{% endif %}
+          <strong>{{ values.shell_brand_text or '(icon only)' }}</strong>
+        {% else %}
+          <span class="muted">Hidden</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
   <h2>Paths</h2>
   <p class="muted">Consumed by every SQL/Lua-grepping tool (Entity Lookup, SQL Index, Wiki
     Compiler, Zero-Position/Unregistered) and by zone geometry rendering (the path plot's
