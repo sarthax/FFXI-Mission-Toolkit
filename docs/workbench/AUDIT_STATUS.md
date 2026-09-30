@@ -1,3 +1,12 @@
+## 2026-09-30 — Configurable shell branding
+
+- Replaced the hard-coded ValhallaXI shell brand with per-install settings while retaining the existing logo/text as defaults.
+- Settings can now show/hide shell branding, set custom brand text, upload a PNG/JPG/WEBP/GIF icon, or restore the default ValhallaXI icon.
+- Brand changes are read per request and apply after Save without restarting the toolkit.
+- Uploaded icons are validated as real images, limited to 2 MB, stored under the existing static tree, and ignored by Git as user runtime data.
+- Empty brand text supports icon-only branding; disabling branding removes the shell brand entirely without affecting workspace navigation.
+- Shared shell regression coverage now verifies default, custom, and hidden brand states.
+
 ## 2026-09-30 — Static Lua shop acquisition bridge
 
 - Audited current LSB plus predecessor DSP/Topaz shop storage before implementation. LSB ordinary shops use pair-row stock tables passed to xi.shop.general / xi.shop.nation; DSP and Topaz use flat alternating item/price arrays with dsp.shop.* / tpz.shop.*; modern LSB guild inventory is centralized in scripts/data/guild_shops.lua.
