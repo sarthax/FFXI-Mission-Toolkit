@@ -1,13 +1,27 @@
 {% extends "base.html" %}
 {% block title %}Capture Help — Mission Toolkit{% endblock %}
+{% block main_class %}capture-help-page{% endblock %}
 
 {% block content %}
-<h1>Capture Ingestion Help</h1>
-<p class="muted">Reference for capture/logging formats currently understood by Mission Toolkit. This page distinguishes formats that are ingested, files that are recognized but intentionally not duplicated, and known gaps that still need adapters or special handling.</p>
+<style>
+main.capture-help-page{max-width:1200px}
+.capture-help-section{border:1px solid var(--border);border-radius:7px;background:var(--surface);margin:7px 0;overflow:hidden}
+.capture-help-section>summary{padding:7px 9px;cursor:pointer;font-weight:600}
+.capture-help-section>.body{padding:0 9px 9px}
+.capture-help-section .table-wrap{margin-top:5px}
+</style>
+<div class="dense-toolbar">
+  <a class="chip" href="/captures">&larr; Captures</a>
+  <strong>Capture Ingestion Help</strong>
+  <span class="sp"></span>
+  <a class="chip" href="/captures/new">New capture</a>
+  <a class="chip" href="/captures/search">Search captures</a>
+</div>
+<p class="muted">Reference for supported capture/logging formats, intentionally deduplicated secondary files, network evidence handling, and known adapter gaps.</p>
 
 <div class="warn"><strong>Evidence stays source-specific.</strong> When the same packet or observation exists in multiple tools, Mission Toolkit keeps each source observation and provenance separately, then correlates equivalent evidence instead of silently collapsing it.</div>
 
-<h2>Fully supported ingestion</h2>
+<details class="capture-help-section" open><summary>Fully supported ingestion</summary><div class="body">
 <div class="table-wrap"><table>
 <thead><tr><th>Tool / format</th><th>Evidence ingested</th><th>Status</th></tr></thead>
 <tbody>
@@ -42,18 +56,22 @@
 <tr><td><strong>PCAP / PCAPNG</strong></td><td>Classic PCAP and PCAPNG network frames with timestamp, interface/link type, IP/transport endpoints, captured payload/frame bytes, and exact frame provenance. UDP payloads are promoted into canonical FFXI packet chunks only when the complete payload already validates as a known plaintext FFXI chunk stream.</td><td>Bounded support</td></tr>
 </tbody></table></div>
 
-<h2>Raw packet convergence</h2>
+</div></details>
+<details class="capture-help-section"><summary>Raw packet convergence</summary><div class="body">
 <p>Raw packet-producing tools feed the common <code>capture_raw_packets</code> evidence store while retaining their own <code>source_format</code>, native source identity, row/block provenance, and optional packet metadata. Equivalent packets may be correlated by <code>opcode + direction + exact raw bytes</code>; the original observations are not deleted or merged.</p>
 <p><strong>Packet inspection is capture-native.</strong> Each raw packet row can be opened in a contextual decoder keyed by <code>capture_id + seq</code>. It uses the same canonical packet definitions as the standalone scratch decoder, but keeps the session timestamp, neighboring packets, packet header metadata, exact source locator, source hash, and cross-source correlations visible. Decoded fields are color-coordinated with their exact raw byte spans; unclaimed and overlapping bytes remain explicit rather than being assigned guessed meanings.</p>
 <p><strong>Future live stream rule:</strong> a live FFXI producer should write timestamped observations through the same canonical raw-packet ingestion contract and then use this same decoder/correlation UI. It must not create a second live-only decode database. Endpoint role/direction, decryption state, and inferred semantics stay explicit evidence fields; unknown direction must remain unknown unless independently established.</p>
 
-<h2>Canonical chat convergence</h2>
+</div></details>
+<details class="capture-help-section"><summary>Canonical chat convergence</summary><div class="body">
 <p>PacketDB <code>CHATLOG</code>, CapLog chat/system lines, and Windower Logger daily chat files feed <code>capture_chat_observations</code>. The canonical row keeps timestamp, direction when the source provides it, zone ID/name context, text, source format, source-native identity, and exact row/line provenance. The older <code>capture_caplog_chat</code> table remains for compatibility.</p>
 
-<h2>Visual / OCR evidence</h2>
+</div></details>
+<details class="capture-help-section"><summary>Visual / OCR evidence</summary><div class="body">
 <p><strong>Capturebar</strong> has no persisted log file, so support is video/screenshot based rather than file ingestion. YouTube OCR includes a built-in <code>capturebar_overlay</code> layout template and <code>capturebar</code> parsing profile for the default Wiggo32 HUD format: zone number/name, target/player name, X/Z/Y coordinates, rotation, main/sub job and levels, moon percentage, and moon phase. Parsed frames materialize as <code>CAPTUREBAR_CONTEXT</code> video evidence with the original frame/timestamp/crop provenance. Custom Capturebar display strings may require a saved layout and/or future parser extension.</p>
 
-<h2>Recognized but intentionally not duplicated</h2>
+</div></details>
+<details class="capture-help-section"><summary>Recognized but intentionally not duplicated</summary><div class="body">
 <div class="table-wrap"><table>
 <thead><tr><th>File / family</th><th>Why it is not normally ingested as a second copy</th></tr></thead>
 <tbody>
@@ -63,10 +81,12 @@
 <tr><td>Per-zone EventView raw siblings</td><td>Often redundant with the decoded/simple sibling already normalized.</td></tr>
 </tbody></table></div>
 
-<h2>Historical tool archaeology</h2>
+</div></details>
+<details class="capture-help-section"><summary>Historical tool archaeology</summary><div class="body">
 <p>The current archaeology pass audited stock Windower Logger/QuestLog/Pricer, classic and modern PacketViewer families, current Captain PacketLogger/PacketBridge/EventView v2, and Ashita entity utilities. The important distinction is whether a tool actually leaves reusable evidence on disk. QuestLog, old Pricer, and ScanZone do not; Captain PacketLogger is already format-compatible with the PacketViewer/VieweD raw-log family; PacketBridge is a live UDP forwarding opportunity rather than a file format. The detailed inventory and evidence notes are maintained in <code>docs/workbench/CAPTURE_TOOL_ARCHAEOLOGY.md</code>.</p>
 
-<h2>Known gaps / future adapters</h2>
+</div></details>
+<details class="capture-help-section"><summary>Known gaps / future adapters</summary><div class="body">
 <div class="table-wrap"><table>
 <thead><tr><th>Gap</th><th>Current behavior</th><th>Recommended direction</th></tr></thead>
 <tbody>
@@ -76,28 +96,35 @@
 <tr><td><strong>Unknown historical/community loggers</strong></td><td>Unrecognized source files remain visible in ingestion results rather than being silently ignored.</td><td>Add adapters when real samples/schemas are found; prefer content signatures over folder-name assumptions.</td></tr>
 </tbody></table></div>
 
-<h2>Network planes</h2>
+</div></details>
+<details class="capture-help-section"><summary>Network planes</summary><div class="body">
 <p>FFXI capture evidence spans separate network planes. The <strong>lobby/character-service</strong> TCP flow handles login setup, character/world lists and character selection; the separate <strong>search/cache</strong> TCP flow handles confirmed player search, party/linkshell lists, search comments, and auction-house listing/history; the <strong>world/map</strong> flow uses UDP and contains the familiar FFXI packet chunks used by PacketViewer-style tools. Modern private-server loaders may expose additional auth/data/profile sockets that are implementation-specific and should not be treated as retail protocol facts. The detailed research map is maintained in <code>docs/workbench/LOBBY_WORLD_STREAM_RESEARCH.md</code>.</p>
 
-<h2>TCP reconstruction</h2>
+</div></details>
+<details class="capture-help-section"><summary>TCP reconstruction</summary><div class="body">
 <p>PCAP/PCAPNG ingestion now reconstructs generic bidirectional TCP flows before any FFXI protocol classification. Endpoints are labeled deterministically as A/B rather than guessed as client/server. Reassembled byte ranges preserve TCP sequence boundaries, contributing frame numbers, exact source provenance, and explicit gap/retransmission/overlap/conflicting-overlap diagnostics. Missing bytes are never synthesized. When overlapping segments disagree, the first observed byte is retained and the conflict is recorded for review. Protocol family remains <code>unknown_tcp</code> until a later structural classifier proves lobby, search/cache, loader-auth, or another protocol.</p>
 
-<h2>Validated lobby decoding</h2>
+</div></details>
+<details class="capture-help-section"><summary>Validated lobby decoding</summary><div class="body">
 <p>Reconstructed TCP ranges are now structurally tested for the retail FFXI lobby protocol. A flow is classified as <code>ffxi_lobby</code> only when at least one complete packet has the declared size fully present, the <code>IXFF</code> terminator, a known lobby command, a command-compatible packet size/layout, and a valid MD5 identifier computed with the 16-byte identifier field zeroed. Ports are not used as proof. Known request/response direction can assign endpoint roles only when all validated messages agree; conflicts remain explicit.</p>
 <p>Validated lobby messages are stored separately in <code>capture_network_messages</code> with raw packet bytes, command/name, reconstructed sequence span, contributing frames, MD5 status, and decoded non-secret fields. Current decoding includes ResponseKey feature/expansion metadata (including Wardrobes 3-8 flags), ResponseNextLogin world/map and search/cache endpoints, character/world list basics, common character-selection/create/delete/rename identifiers, errors, and client version/expansion fields from RequestLobbyLogin. Authentication/password material is retained only inside the original raw evidence and is not promoted into decoded fields.</p>
 
-<h2>PCAP/PCAPNG limits</h2>
+</div></details>
+<details class="capture-help-section"><summary>PCAP/PCAPNG limits</summary><div class="body">
 <p>PCAP support is deliberately evidence-first. FFXI zone traffic uses UDP, but live wire payloads can require session-aware Blowfish decryption and zlib decompression before the familiar four-byte FFXI chunks exist. The adapter therefore always preserves network frames and transport payloads, but it does <strong>not</strong> guess keys, decompression state, client/server role, or packet direction. Opaque/encrypted datagrams remain network-frame evidence. A UDP payload is promoted into <code>capture_raw_packets</code> only when the entire payload is already a structurally valid stream of known FFXI chunks; promoted rows use direction <code>unknown</code> until independent evidence establishes endpoint roles.</p>
 
-<h2>How unsupported files are handled</h2>
+</div></details>
+<details class="capture-help-section"><summary>How unsupported files are handled</summary><div class="body">
 <p>Files that do not match a supported parser are reported as unrecognized. Known formats found in unexpected paths are content-sniffed and reported as likely known formats so path/layout regressions can be distinguished from genuinely new logger families. Source manifests, hashes, ingestion lineage, and row locators preserve what was actually consumed.</p>
 
-<h2>Current priority gaps</h2>
+</div></details>
+<details class="capture-help-section"><summary>Current priority gaps</summary><div class="body">
 <ol>
 <li>Fixture-test and normalize Captain EventView v2 standalone logs.</li>
 <li>Add the search/cache TCP Blowfish/MD5 session decoder on top of the generic TCP flow layer; lobby classification/decoding is now supported.</li>
 <li>Optional preservation of PacketDB <code>ZONES</code>/<code>PACKET_DEFINITION</code> as historical reference metadata.</li>
 </ol>
 
+</div></details>
 <p class="muted">This page documents current parser behavior, not every logger ever written. When a new sample appears, verify its real schema/output before declaring compatibility.</p>
 {% endblock %}
