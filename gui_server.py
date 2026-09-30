@@ -6211,7 +6211,198 @@ def captures_delete_submit(capture_id: int):
     return RedirectResponse(url="/captures", status_code=303)
 
 
-CAPTURE_SEARCH_PAGE_SIZE = 300
+CAPTURE_SEARCH_PAGE_SIZE = 200
+
+CAPTURE_EVIDENCE_MODULES = {
+    "events": {
+        "label": "Events & Dialogue",
+        "description": "CSIDs, NPC events, options, message IDs and resolved dialogue.",
+        "hint": "NPC name, message ID, or event opcode",
+    },
+    "packets": {
+        "label": "Raw Protocol",
+        "description": "Canonical raw packets searched by protocol category or opcode.",
+        "hint": "Packet category or exact opcode",
+    },
+    "entities": {
+        "label": "Entities",
+        "description": "NPC/mob identity, model, position and runtime snapshots across captures.",
+        "hint": "Entity name or exact entity ID",
+    },
+    "battle": {
+        "label": "Battle & Actions",
+        "description": "ActionView actions, HP observations and attack-delay evidence.",
+        "hint": "Actor/mob/action name or exact actor ID",
+    },
+    "items": {
+        "label": "Items & Key Items",
+        "description": "Key-item events plus item-bearing structured capture observations.",
+        "hint": "Item/key-item name or exact ID",
+    },
+    "vendors": {
+        "label": "Vendors & Shops",
+        "description": "ShopStock, GuildStock and price observations across captures.",
+        "hint": "Vendor/NPC name, item name, or exact item/entity ID",
+    },
+    "crafting": {
+        "label": "Crafting",
+        "description": "CraftTrack synthesis/crafting observations and their material/result payload.",
+        "hint": "Item name/ID or text contained in the crafting observation",
+    },
+    "chat": {
+        "label": "Chat & Text",
+        "description": "Canonical chat observations and legacy CapLog chat text.",
+        "hint": "Text substring",
+    },
+}
+
+
+def _capture_generic_search(con, module: str, q: str, page: int) -> tuple[list[dict], int, int, int]:
+    """Return a normalized evidence row shape for non-event/protocol modules."""
+    q = (q or "").strip()
+    page = max(1, page)
+    if not q:
+        return [], 0, 1, page
+
+    like = f"%{q}%"
+    numeric = int(q) if q.lstrip("-").isdigit() else None
+    sql = ""
+    params: list = []
+
+    if module == "entities":
+        where = "e.entity_id = ?" if numeric is not None else "e.name LIKE ?"
+        params = [numeric if numeric is not None else like]
+        sql = f"""SELECT e.capture_id,c.capture_label,'ENTITY' AS evidence_kind,
+                         e.zone_db AS zone,NULL AS ts,e.entity_id AS subject_id,
+                         COALESCE(e.name, CAST(e.entity_id AS TEXT)) AS title,
+                         'model=' || COALESCE(CAST(e.model_id AS TEXT),'?') ||
+                         ' pos=(' || COALESCE(CAST(e.x AS TEXT),'?') || ',' ||
+                         COALESCE(CAST(e.y AS TEXT),'?') || ',' ||
+                         COALESCE(CAST(e.z AS TEXT),'?') || ') hpp=' ||
+                         COALESCE(CAST(e.hpp AS TEXT),'?') AS summary,
+                         'capture_npc_entries' AS dataset,
+                         CAST(e.entity_id AS TEXT) AS record_id
+                  FROM capture_npc_entries e
+                  JOIN captures c ON c.capture_id=e.capture_id
+                  WHERE {where}"""
+    elif module == "battle":
+        if numeric is not None:
+            action_where = "(a.actor = ? OR a.actor_name LIKE ? OR a.name LIKE ?)"
+            action_params = [numeric, like, like]
+        else:
+            action_where = "(a.actor_name LIKE ? OR a.name LIKE ? OR a.action_type LIKE ?)"
+            action_params = [like, like, like]
+        sql = f"""SELECT a.capture_id,c.capture_label,'ACTION' AS evidence_kind,
+                         NULL AS zone,CAST(a.ts AS TEXT) AS ts,a.actor AS subject_id,
+                         COALESCE(a.actor_name,a.name,CAST(a.actor AS TEXT)) AS title,
+                         COALESCE(a.action_type,'action') || ' • ' ||
+                         COALESCE(a.name,'') || ' • animation=' ||
+                         COALESCE(CAST(a.animation AS TEXT),'?') || ' message=' ||
+                         COALESCE(CAST(a.message AS TEXT),'?') AS summary,
+                         'capture_actions' AS dataset,a.action_key AS record_id
+                  FROM capture_actions a JOIN captures c ON c.capture_id=a.capture_id
+                  WHERE {action_where}
+                  UNION ALL
+                  SELECT h.capture_id,c.capture_label,'HP_EVENT',NULL,NULL,NULL,
+                         h.mob_name,
+                         'HP ' || COALESCE(CAST(h.hp_low AS TEXT),'?') || '–' ||
+                         COALESCE(CAST(h.hp_high AS TEXT),'?'),
+                         'capture_hp_events',CAST(h.seq AS TEXT)
+                  FROM capture_hp_events h JOIN captures c ON c.capture_id=h.capture_id
+                  WHERE h.mob_name LIKE ?
+                  UNION ALL
+                  SELECT d.capture_id,c.capture_label,'ATTACK_DELAY',d.zone_db,NULL,NULL,
+                         d.mob_name,
+                         'avg=' || COALESCE(CAST(d.delay_avg AS TEXT),'?') ||
+                         ' min=' || COALESCE(CAST(d.delay_min AS TEXT),'?') ||
+                         ' max=' || COALESCE(CAST(d.delay_max AS TEXT),'?') ||
+                         ' hits=' || COALESCE(CAST(d.hit_count AS TEXT),'?'),
+                         'capture_attack_delay',d.mob_name
+                  FROM capture_attack_delay d JOIN captures c ON c.capture_id=d.capture_id
+                  WHERE d.mob_name LIKE ?"""
+        params = action_params + [like, like]
+    elif module == "items":
+        structured_where = "(s.item_id = ? OR s.item_name LIKE ?)" if numeric is not None else "s.item_name LIKE ?"
+        structured_params = [numeric, like] if numeric is not None else [like]
+        ki_where = "(k.keyitem_id = ? OR k.keyitem_name LIKE ?)" if numeric is not None else "k.keyitem_name LIKE ?"
+        ki_params = [numeric, like] if numeric is not None else [like]
+        sql = f"""SELECT k.capture_id,c.capture_label,'KEY_ITEM' AS evidence_kind,
+                         k.zone_name AS zone,k.ts,k.keyitem_id AS subject_id,
+                         COALESCE(k.keyitem_name,CAST(k.keyitem_id AS TEXT)) AS title,
+                         COALESCE(k.event_type,'key-item event') AS summary,
+                         'capture_ki_events' AS dataset,CAST(k.seq AS TEXT) AS record_id
+                  FROM capture_ki_events k JOIN captures c ON c.capture_id=k.capture_id
+                  WHERE {ki_where}
+                  UNION ALL
+                  SELECT s.capture_id,c.capture_label,'ITEM_OBSERVATION',
+                         s.zone,s.ts,s.item_id,
+                         COALESCE(s.item_name,CAST(s.item_id AS TEXT)),
+                         s.family || CASE WHEN s.price IS NOT NULL THEN ' • price=' || s.price ELSE '' END,
+                         'capture_structured_records',
+                         s.source_file || ':' || s.family || ':' || s.record_key
+                  FROM capture_structured_records s JOIN captures c ON c.capture_id=s.capture_id
+                  WHERE s.item_id IS NOT NULL AND {structured_where}"""
+        params = ki_params + structured_params
+    elif module == "vendors":
+        families = ("shopstock_buy_db","shopstock_sell_db","guildstock_db","pricelog_simple","pricelog_lua")
+        placeholders = ",".join("?" for _ in families)
+        search = "(s.item_id = ? OR s.entity_id = ? OR s.item_name LIKE ? OR s.entity_name LIKE ?)" if numeric is not None else "(s.item_name LIKE ? OR s.entity_name LIKE ?)"
+        search_params = [numeric,numeric,like,like] if numeric is not None else [like,like]
+        sql = f"""SELECT s.capture_id,c.capture_label,'VENDOR' AS evidence_kind,
+                         s.zone,s.ts,COALESCE(s.entity_id,s.item_id) AS subject_id,
+                         COALESCE(s.entity_name,s.item_name,s.family) AS title,
+                         s.family || ' • ' || COALESCE(s.item_name,'item ' || s.item_id,'') ||
+                         CASE WHEN s.price IS NOT NULL THEN ' • price=' || s.price ELSE '' END,
+                         'capture_structured_records',
+                         s.source_file || ':' || s.family || ':' || s.record_key
+                  FROM capture_structured_records s JOIN captures c ON c.capture_id=s.capture_id
+                  WHERE s.family IN ({placeholders}) AND {search}"""
+        params = list(families) + search_params
+    elif module == "crafting":
+        if numeric is not None:
+            where = "(s.item_id = ? OR s.item_name LIKE ? OR s.payload_json LIKE ?)"
+            params = [numeric, like, like]
+        else:
+            where = "(s.item_name LIKE ? OR s.payload_json LIKE ?)"
+            params = [like, like]
+        sql = f"""SELECT s.capture_id,c.capture_label,'CRAFTING' AS evidence_kind,
+                         s.zone,s.ts,s.item_id AS subject_id,
+                         COALESCE(s.item_name,'Craft observation') AS title,
+                         s.family || ' • ' || COALESCE(s.record_type,'CRAFTTRACK'),
+                         'capture_structured_records',
+                         s.source_file || ':' || s.family || ':' || s.record_key
+                  FROM capture_structured_records s JOIN captures c ON c.capture_id=s.capture_id
+                  WHERE s.family='crafttrack_csv' AND {where}"""
+    elif module == "chat":
+        sql = """SELECT o.capture_id,c.capture_label,'CHAT' AS evidence_kind,
+                        o.zone_db AS zone,o.ts,NULL AS subject_id,
+                        substr(o.text,1,120) AS title,
+                        COALESCE(o.source_format,'chat') AS summary,
+                        'capture_chat_observations' AS dataset,CAST(o.seq AS TEXT) AS record_id
+                 FROM capture_chat_observations o JOIN captures c ON c.capture_id=o.capture_id
+                 WHERE o.text LIKE ?
+                 UNION ALL
+                 SELECT h.capture_id,c.capture_label,'CAPLOG_CHAT',
+                        h.zone_db,h.ts,NULL,substr(h.text,1,120),
+                        'caplog_chat','capture_caplog_chat',CAST(h.seq AS TEXT)
+                 FROM capture_caplog_chat h JOIN captures c ON c.capture_id=h.capture_id
+                 WHERE h.text LIKE ?"""
+        params = [like, like]
+    else:
+        return [], 0, 1, page
+
+    count_sql = f"SELECT COUNT(*) FROM ({sql})"
+    total = int(con.execute(count_sql, params).fetchone()[0])
+    total_pages = max(1, (total + CAPTURE_SEARCH_PAGE_SIZE - 1) // CAPTURE_SEARCH_PAGE_SIZE)
+    page = min(page, total_pages)
+    offset = (page - 1) * CAPTURE_SEARCH_PAGE_SIZE
+    rows = [
+        dict(r) for r in con.execute(
+            f"SELECT * FROM ({sql}) ORDER BY capture_id, ts LIMIT ? OFFSET ?",
+            params + [CAPTURE_SEARCH_PAGE_SIZE, offset],
+        ).fetchall()
+    ]
+    return rows, total, total_pages, page
 
 
 @app.get("/captures/search", response_class=HTMLResponse)
@@ -6219,7 +6410,7 @@ def captures_search(
     request: Request,
     entity: str = "", message_id: str = "", ev_opcodes: list[str] = Query(default=[]),
     pk_category: str = "", pk_opcode: str = "",
-    mode: str = "events", page: int = 1,
+    module: str = "", mode: str = "", q: str = "", page: int = 1,
 ):
     """Cross-capture search -- the point of ingesting everything per-capture (capture_events,
     capture_raw_packets) is worthless if you can only ever look at one capture at a time. Two
@@ -6232,9 +6423,13 @@ def captures_search(
     the single-capture timeline page). Registered BEFORE /captures/{capture_id}/* -- a plain path
     param route matches any single segment, so /captures/search must come first or it would be
     shadowed (same real trap documented at /captures/plot's own registration-order note)."""
+    selected_module = module or mode or "events"
+    if selected_module not in CAPTURE_EVIDENCE_MODULES:
+        selected_module = "events"
     con = get_con()
     events = []
     packets = []
+    generic_rows = []
     total = 0
     total_pages = 1
     page = max(1, page)
@@ -6242,7 +6437,7 @@ def captures_search(
     available_ev_opcodes = [dict(r) for r in con.execute(
         "SELECT DISTINCT opcode, opcode_name FROM capture_events ORDER BY opcode").fetchall()]
 
-    if mode == "events" and (entity or message_id or ev_opcodes):
+    if selected_module == "events" and (entity or message_id or ev_opcodes):
         where_sql = "1=1"
         params = []
         if entity:
@@ -6278,7 +6473,7 @@ def captures_search(
                 d["dialog_text"] = trow[0] if trow else None
             events.append(d)
 
-    if mode == "packets" and (pk_category or pk_opcode):
+    if selected_module == "packets" and (pk_category or pk_opcode):
         # category filtering needs each distinct opcode's real description classified, same as
         # the single-capture packets page -- resolved here in Python (not SQL) since
         # categorize_opcode is logic over packet_decode's real opcode catalog, not a DB column.
@@ -6331,6 +6526,11 @@ def captures_search(
                 d["fields"] = None
             packets.append(d)
 
+    if selected_module not in {"events", "packets"}:
+        generic_rows, total, total_pages, page = _capture_generic_search(
+            con, selected_module, q, page
+        )
+
     categories = packet_decode.list_categories()
     con.close()
     # Pager needs to resubmit the current search's own filters (mode + whichever are set) plus a
@@ -6339,12 +6539,17 @@ def captures_search(
     # request's own query params (minus "page") are passed through as hidden inputs.
     qs_pairs = [(k, v) for k, v in request.query_params.multi_items() if k != "page"]
     if not qs_pairs:
-        qs_pairs = [("mode", mode)]
+        qs_pairs = [("module", selected_module)]
     return templates.TemplateResponse(request, "capture_search.html", {
-        "mode": mode, "entity": entity, "message_id": message_id,
+        "module": selected_module,
+        "module_meta": CAPTURE_EVIDENCE_MODULES[selected_module],
+        "modules": [
+            {"id": key, **value} for key, value in CAPTURE_EVIDENCE_MODULES.items()
+        ],
+        "q": q, "entity": entity, "message_id": message_id,
         "ev_opcodes": ev_opcodes, "available_ev_opcodes": available_ev_opcodes,
         "pk_category": pk_category, "pk_opcode": pk_opcode, "categories": categories,
-        "events": events, "packets": packets,
+        "events": events, "packets": packets, "generic_rows": generic_rows,
         "page": page, "total": total, "total_pages": total_pages, "qs_pairs": qs_pairs,
     })
 
