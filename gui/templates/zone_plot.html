@@ -45,6 +45,8 @@
 <label><span>Nav diagnostics</span><input type="checkbox" id="navdiag"></label>
 <div id="navdiagOut" class="mono muted" style="font-size:10px;white-space:pre-wrap;margin:3px 0 5px"></div>
 <label><span>Door/prop facing ticks</span><input type="checkbox" id="showDoorFacing" checked></label>
+<label><span>Show all explicit mob radii</span><input type="checkbox" id="showMobRadii"></label>
+<div id="radiusLegend" class="mono muted" style="font-size:10px;white-space:pre-wrap;margin:3px 0 5px">Selected mob: explicit ROAM_DISTANCE/SPAWN_LEASH only · no engine defaults inferred</div>
   <label>Mesh complexity <select id="lod"><option value="live">Live (textured)</option><option value="0">Full</option><option value="1">High (drop &lt;0.75u)</option><option value="2">Medium (&lt;1.5u)</option><option value="3">Low (&lt;3u)</option><option value="obj">Legacy OBJ (full)</option></select></label>
   <button id="buildCacheBtn" hidden style="margin-top:4px">Build visual mesh cache for this zone</button>
   <label>Mesh opacity <input type="range" id="opac" min="0.05" max="1" step="0.05" value="0.35"></label>
@@ -89,6 +91,7 @@
       <label>Z <input type="number" step="0.1" id="ez"></label>
       <label>Rot (0-255) <input type="number" step="1" min="0" max="255" id="er"></label>
       <div id="er-dir" class="mono" style="font-size:11px;margin:-1px 0 5px;padding:4px 6px;border:1px solid var(--border);border-radius:4px"></div>
+      <div id="ed-radius" class="mono muted" style="font-size:10px;margin:0 0 6px;padding:4px 6px;border:1px solid var(--border);border-radius:4px">No explicit roam/leash radius stored for this entity.</div>
 <div style="display:flex;gap:3px;flex-wrap:wrap;margin:3px 0 6px">
   <button type="button" data-rpreset="64">N</button><button type="button" data-rpreset="32">NE</button>
   <button type="button" data-rpreset="0">E</button><button type="button" data-rpreset="224">SE</button>
@@ -331,7 +334,7 @@ function cameraPreset(name){
 function saveZoneEditorState(){
   try{
     localStorage.setItem(ZONE_EDITOR_STATE_KEY,JSON.stringify({
-      zone:$('zone').value,instance:$('inst').value,lod:$('lod').value,mode:$('mode').value,navdiag:$('navdiag')?.checked||false,showDoorFacing:$('showDoorFacing')?.checked!==false,
+      zone:$('zone').value,instance:$('inst').value,lod:$('lod').value,mode:$('mode').value,navdiag:$('navdiag')?.checked||false,showDoorFacing:$('showDoorFacing')?.checked!==false,showMobRadii:$('showMobRadii')?.checked||false,
       showm:$('showm').checked,shown:$('shown').checked,showd:$('showd').checked,shownav:$('shownav').checked,
       opacity:$('opac').value,dotSize:$('dsz').value,labels:$('nlab').value,projection:$('projection').value,
       labelHeading:$('labelHeading')?.checked||false,camera:vecArray(camera.position),target:vecArray(controls.target),zoom:camera.isOrthographicCamera?camera.zoom:null
@@ -426,6 +429,29 @@ const selectionRing=new THREE.Mesh(
 selectionRing.rotation.x=-Math.PI/2; selectionRing.visible=false; selectionRing.renderOrder=29; scene.add(selectionRing);
 const doorFacingMat=new THREE.LineBasicMaterial({color:0xffc857,transparent:true,opacity:.8,depthTest:false});
 let doorFacingLines=null;
+const mobRadiusGroup=new THREE.Group(); mobRadiusGroup.renderOrder=19; scene.add(mobRadiusGroup);
+const roamRadiusMat=new THREE.LineBasicMaterial({color:0x56d6ff,transparent:true,opacity:.9,depthTest:false});
+const leashRadiusMat=new THREE.LineBasicMaterial({color:0xff8a65,transparent:true,opacity:.9,depthTest:false});
+function clearMobRadiusVisuals(){
+  while(mobRadiusGroup.children.length){ const o=mobRadiusGroup.children.pop(); o.geometry?.dispose?.(); }
+}
+function addMobRadiusCircle(e,radius,material){
+  radius=Number(radius); if(!Number.isFinite(radius)||radius<=0) return;
+  const p=P(e), pts=[], segs=96;
+  for(let i=0;i<segs;i++){ const a=i*Math.PI*2/segs; pts.push(new THREE.Vector3(p.x+Math.cos(a)*radius,p.y+1.0,p.z+Math.sin(a)*radius)); }
+  const g=new THREE.BufferGeometry().setFromPoints(pts); const line=new THREE.LineLoop(g,material); line.renderOrder=19; mobRadiusGroup.add(line);
+}
+function updateMobRadiusVisuals(){
+  clearMobRadiusVisuals(); if(!Z) return; const all=$('showMobRadii')?.checked;
+  Z.entities.forEach((e,i)=>{ if(e.k!=='m'||e.zero) return; if(!all&&i!==selected) return; if(e.roam_radius!==undefined) addMobRadiusCircle(e,e.roam_radius,roamRadiusMat); if(e.leash_radius!==undefined) addMobRadiusCircle(e,e.leash_radius,leashRadiusMat); });
+}
+function radiusText(e){
+  if(!e||e.k!=='m') return 'No mob radius metadata for this entity.';
+  const bits=[];
+  if(e.roam_radius!==undefined) bits.push('ROAM_DISTANCE '+e.roam_radius+' yalms · '+(e.roam_radius_detail||e.roam_radius_source||'explicit server data'));
+  if(e.leash_radius!==undefined) bits.push('SPAWN_LEASH '+e.leash_radius+' yalms · '+(e.leash_radius_detail||e.leash_radius_source||'explicit server data'));
+  return bits.length?bits.join('\n'):'No explicit ROAM_DISTANCE or SPAWN_LEASH stored for this mob; engine/default behavior is not visualized.';
+}
 const navDiagGeom=new THREE.BufferGeometry();
 const navDiagLine=new THREE.Line(navDiagGeom,new THREE.LineBasicMaterial({color:0x00e5ff,depthTest:false,transparent:true,opacity:.95}));
 navDiagLine.visible=false; navDiagLine.renderOrder=31; scene.add(navDiagLine);
@@ -686,7 +712,7 @@ $('zone').value = savedUiState?.zone && ZL.zones.some(z=>String(z.id)===String(s
 for(const [id,key] of [['lod','lod'],['mode','mode'],['opac','opacity'],['dsz','dotSize'],['nlab','labels']]){
   if(savedUiState?.[key]!==undefined && $(id)) $(id).value=String(savedUiState[key]);
 }
-for(const [id,key] of [['showm','showm'],['shown','shown'],['showd','showd'],['shownav','shownav'],['labelHeading','labelHeading'],['navdiag','navdiag'],['showDoorFacing','showDoorFacing']]){
+for(const [id,key] of [['showm','showm'],['shown','shown'],['showd','showd'],['shownav','shownav'],['labelHeading','labelHeading'],['navdiag','navdiag'],['showDoorFacing','showDoorFacing'],['showMobRadii','showMobRadii']]){
   if(savedUiState?.[key]!==undefined && $(id)) $(id).checked=!!savedUiState[key];
 }
 if(savedUiState?.projection) switchProjection(savedUiState.projection,false);
