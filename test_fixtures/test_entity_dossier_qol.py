@@ -49,11 +49,21 @@ def main():
     assert '"client_defined": bool(health_row)' in server
     assert '"runtime_observed": bool(observed["count"])' in server
     assert "scan_event_health(event_dir" in server
+    assert "def _entity_behavior_summary(" in server
+    assert "inspect_lsb_behavior(root, chosen[\"path\"])" in server
+    assert '"behavior_summary"' in server
 
     assert "Entity evidence bridge" in template
     assert "Needs attention" in template
     assert "SQL / implementation wiring" in template
     assert "Observed CSID / dialog wiring" in template
+    assert "Lua behavior summary" in template
+    assert "Important effects / engine-facing behavior" in template
+    assert "Lua / engine API calls" in template
+    assert "Event lifecycle" in template
+    assert "State / helper summary" in template
+    assert "Binding Reference" in template
+    assert "Open full Behavior Inspector" in template
     assert "defined in client" in template
     assert "not observed in captures" in template
     assert "Open Event Wiring Dossier" in template
