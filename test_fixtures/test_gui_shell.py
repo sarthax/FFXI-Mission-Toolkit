@@ -232,6 +232,17 @@ def main():
     assert 'aria-label="Primary workspaces"' in model_html
     assert re.search(r'class="workspace-link active"\s+href="/modelviewer"', model_html)
 
+    assert '<body class="shell-dense">' in model_html
+    assert 'class="dense-panel"' in model_html
+    assert 'class="dense-toolbar"' in model_html
+
+    zone_view3d_template=(TEMPLATES/"zone_view3d.html").read_text(encoding="utf-8")
+    assert "{% block shell_mode %}dense{% endblock %}" in zone_view3d_template
+    assert "{% block main_class %}zone-view3d-page{% endblock %}" in zone_view3d_template
+    assert 'id="zone3d-title" class="dense-toolbar"' in zone_view3d_template
+    assert 'href="/zoneplot2?zone={{ zoneid }}"' in zone_view3d_template
+    assert "calc(100vh - var(--shell-h)" in zone_view3d_template
+
     # Compact shell v2 stays one persistent global row and moves secondary state into popovers.
     assert 'id="app-shell"' in model_html
     assert 'class="shellbar"' in model_html
