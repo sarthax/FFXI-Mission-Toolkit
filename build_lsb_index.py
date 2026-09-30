@@ -62,7 +62,8 @@ from workbench.core.services.server_catalog_identity import sync_server_catalog_
 
 TOOLS_ROOT = Path(__file__).parent
 TOPAZ_ROOT = settings.get_topaz_root()
-DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"\nWORKBENCH_DB = TOOLS_ROOT / "workbench.db"
+DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
+WORKBENCH_DB = TOOLS_ROOT / "workbench.db"
 LSB_ROOT = TOOLS_ROOT / "LandSandBoat"
 LSB_SQL_DIR = LSB_ROOT / "sql"
 LSB_SCRIPTS_DIR = LSB_ROOT / "scripts" / "zones"
