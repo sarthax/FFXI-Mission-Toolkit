@@ -1658,6 +1658,56 @@ def backup_dat_once(path: Path, rom_path: str) -> Optional[Path]:
     return backup_dat_snapshot(path, rom_path)
 
 
+PRISTINE_COMPARE_FIELDS = (
+    "type", "flags", "stack", "resource_id", "targets",
+    "name", "singular", "plural", "description",
+    "level", "slots", "races", "jobs", "superior_level",
+    "kind", "dmg", "delay", "dps", "skill", "icon_size",
+)
+
+
+def compare_client_record_to_pristine(item_id: int) -> dict:
+    """Compare decoded active-target fields to the permanent first-seen .orig DAT backup."""
+    found = category_for_item(item_id)
+    if found is None:
+        return {"available": False, "reason": "no client DAT covers this item", "changes": []}
+    cat_name, base_id, item_type, en_rom, _jp_rom = found
+    idx = int(item_id) - base_id
+    current_path = dat_write_source(en_rom)
+    pristine = _dat_backup_root() / (_dat_backup_key(en_rom) + ".orig")
+    if not current_path.exists():
+        return {"available": False, "reason": f"active DAT not found: {current_path}", "changes": []}
+    if not pristine.exists():
+        return {"available": False, "reason": "no pristine .orig backup exists yet", "changes": []}
+
+    active_dat = ItemDat.load(current_path)
+    pristine_dat = ItemDat.load(pristine)
+    if idx >= active_dat.count or idx >= pristine_dat.count:
+        return {"available": False, "reason": "record index is outside active/pristine DAT", "changes": []}
+    if active_dat.format != pristine_dat.format:
+        return {"available": False, "reason": "active/pristine DAT formats differ", "changes": []}
+
+    active_rec = _parse_record(
+        int(item_id), active_dat.record(idx), None, item_type, str(current_path),
+        dat_ui=en_rom, fmt=active_dat.format, record_index=idx, category=cat_name,
+    )
+    pristine_rec = _parse_record(
+        int(item_id), pristine_dat.record(idx), None, item_type, str(pristine),
+        dat_ui=en_rom, fmt=pristine_dat.format, record_index=idx, category=cat_name,
+    )
+    active = item_to_dict(active_rec)
+    base = item_to_dict(pristine_rec)
+    changes = []
+    for field in PRISTINE_COMPARE_FIELDS:
+        if active.get(field) != base.get(field):
+            changes.append({"field": field, "pristine": base.get(field), "current": active.get(field)})
+    return {
+        "available": True, "item_id": int(item_id), "dat_ui": en_rom,
+        "record_index": idx, "target": dat_target(),
+        "active_path": str(current_path), "pristine_path": str(pristine),
+        "changes": changes, "changed_count": len(changes),
+    }
+
 def capture_client_record(item_id: int) -> dict | None:
     """Capture the exact encrypted-DAT logical record bytes for one item without writing anything."""
     found = category_for_item(item_id)
