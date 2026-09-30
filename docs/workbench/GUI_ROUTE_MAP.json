@@ -476,6 +476,14 @@
       "disposition": "REWORK"
     },
     {
+      "method": "POST",
+      "path": "/packets/decode",
+      "home": "Server",
+      "section": "Packets / Protocol",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
       "method": "GET",
       "path": "/packets/bulk",
       "home": "Server",
