@@ -30,6 +30,9 @@ DEFAULT_BACKPORT_ROOT = TOOLS_ROOT / "backport-workspace"
 
 DEFAULTS = {
     "theme": "light",              # light | dark
+    "shell_brand_enabled": "1",     # 1 = show shell brand, 0 = hide it
+    "shell_brand_text": "ValhallaXI",
+    "shell_brand_icon": "/static/valhalla_logo.png",
     "topaz_server_path": "",       # empty = use DEFAULT_TOPAZ_ROOT, see get_topaz_root()
     "dsp_server_path": "",         # empty = DSP cross-reference disabled, see get_dsp_root()
     "zoneplot_server": "topaz",    # "topaz" | "dsp" -- which live DB Zone Plot's level editor targets
