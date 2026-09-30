@@ -156,6 +156,9 @@ def main():
     assert "def entity_history(kind, eid, limit=20):" in zone_edit
     assert "def restore_entity_previous(kind, eid):" in zone_edit
     assert "This deliberately does not restore the entire source backup" in zone_edit
+    assert '"shared_owner": "mob_pools" if shared_model else None' in zone_edit
+    assert 'owner_table = source.get("shared_owner") or table' in zone_edit
+    assert "familyid" in zone_edit and "combat/species behavior are unchanged" in zone_edit
     assert '@app.get("/zoneplot/history/{kind}/{eid}")' in gui_server
     assert '@app.post("/zoneplot/restore_entity_previous")' in gui_server
 
