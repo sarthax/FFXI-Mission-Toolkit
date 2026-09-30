@@ -1191,15 +1191,27 @@ def delete_item(item_id, comment="", clear_dat=False):
         table, key = op["table"], TABLES[op["table"]][0]
         cu.execute(f"delete from {table} where {key}=%s", (item_id,))
         lines.append(f"DELETE FROM {table} WHERE {key}={item_id};")
-    db.commit(); db.close()
     dat_result = None
     dat_warning = "client DAT record left in place -- clear it separately if you want the slot to read as free"
-    if clear_dat:
-        try:
+    try:
+        if clear_dat:
             dat_result = dat.delete_client_item(item_id)
             dat_warning = None
-        except ValueError as ex:
-            dat_warning = f"client DAT record NOT cleared: {ex}"
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+            snap = json.loads((BACKUPS / f"{bid}.json").read_text()).get("client_record")
+            if snap:
+                dat.restore_client_record(snap)
+            raise
+    except Exception:
+        try:
+            db.rollback()
+        finally:
+            db.close()
+        raise
+    db.close()
     journal_lines = [f"-- backup {bid}"]
     if dat_result:
         journal_lines.append(f"-- client DAT cleared: {dat_result}")
