@@ -296,6 +296,9 @@ def main():
     assert "canonical graph identity mapped" in template
     assert "no canonical graph identity mapping yet" in template
     assert "Open Entity Dossier" in template
+    assert "Canonical Dependency Map" in template
+    assert "No canonical root selected" in template
+    assert "Absolute Virtue reference fixture" not in template
     assert "Source details" in template and "Open source view" in template
     assert "Source-native links" in template
     assert "Matched on" in template
