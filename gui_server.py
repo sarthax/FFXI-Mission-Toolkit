@@ -6895,6 +6895,17 @@ def itemedit_get(itemid: int):
         return JSONResponse({"error": str(ex)}, status_code=400)
 
 
+@app.post("/itemedit/save-atomic")
+async def itemedit_save_atomic(request: Request):
+    import item_edit
+    b = await request.json()
+    try:
+        return JSONResponse(item_edit.save_item_atomic(
+            b["item_id"], b["tables"], b.get("comment", "")
+        ))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
 @app.post("/itemedit/update")
 async def itemedit_update(request: Request):
     import item_edit
