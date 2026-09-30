@@ -280,9 +280,14 @@ def restore(bid):
         finally:
             db.close()
         raise
+    cu.execute("select 1 from item_basic where itemid=%s", (item_id,))
+    item_exists = cu.fetchone() is not None
     db.close()
     _journal(f"RESTORE from backup {bid} ({b['label']}); pre-restore state saved as {pre_id}", lines)
-    return {"restored": len(b["ops"]), "pre_restore_backup": pre_id, "client": client_report}
+    return {
+        "restored": len(b["ops"]), "pre_restore_backup": pre_id,
+        "client": client_report, "item_exists": item_exists,
+    }
 
 # ---- search -----------------------------------------------------------------------------------
 def search(q, category="", min_level=-1, max_level=-1, job=-1, skill=-1, client_state="", limit=200):
