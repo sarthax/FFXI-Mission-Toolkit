@@ -2702,6 +2702,35 @@ def entity_detail(request: Request, npcid: int, q: str = "", page: int = 1):
     profile["relationship_summary"] = (
         _entity_relationship_summary(profile, con) if not profile.get("error") else {}
     )
+    profile["feature_trace_path"] = {}
+    if not profile.get("error"):
+        graph_con = _workbench_graph_connection()
+        if graph_con is not None:
+            try:
+                path = feature_trace.entity_implementation_path(graph_con, con, str(npcid))
+                if path:
+                    profile["feature_trace_path"] = {
+                        "available": True,
+                        "mapping_status": path.get("mapping_status"),
+                        "canonical_root": path.get("canonical_root"),
+                        "canonical_mapped": bool(path.get("canonical_mapped")),
+                        "representation_count": path.get("representation_count", 0),
+                        "branch_count": len(path.get("branches") or []),
+                        "provider_counts": path.get("provider_counts") or [],
+                        "native_link_count": path.get("native_link_count", 0),
+                        "direct_relationship_count": (path.get("canonical") or {}).get("direct_relationship_count", 0),
+                        "direct_evidence_count": (path.get("canonical") or {}).get("direct_evidence_count", 0),
+                        "coverage_cues": path.get("coverage_cues") or [],
+                        "href": f"/features/trace?q={npcid}&depth=3&direction=both",
+                    }
+            except Exception as exc:
+                profile["feature_trace_path"] = {
+                    "available": False,
+                    "error": f"{type(exc).__name__}: {exc}",
+                    "href": f"/features/trace?q={npcid}&depth=3&direction=both",
+                }
+            finally:
+                graph_con.close()
 
     # Add client-event dossier status to runtime-observed CSIDs without forcing a new client
     # export merely because Entity Profile was opened. If Events/CSID already has this zone
