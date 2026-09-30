@@ -782,11 +782,11 @@ Additional QOL backlog:
 - [x] Double-click entity to select, frame, and enter edit-ready camera distance.
 - [x] Improved sortable/filterable entity list with type/id/name/group/level/rotation/reachability/instance columns and dedicated filters.
 - [ ] Keep map selection and list selection synchronized, including highlighted/auto-scrolled list rows.
-- [ ] Optional heading text on labels.
-- [ ] Click/drag facing-direction control from the selected entity's heading arrow.
-- [ ] Snap controls for coordinate grid, navmesh Y, selected entity, and nearest floor; snapping is always explicit/user-triggered.
-- [ ] Copy/paste full or partial transforms (position, X/Z, rotation).
-- [ ] Distance/bearing measurement tool with horizontal/3D distance and delta coordinates.
+- [x] Optional heading text on labels.
+- [x] Click/drag facing-direction control from the selected entity's heading arrow.
+- [~] Snap controls for coordinate grid, navmesh Y, selected entity, and nearest floor; snapping is always explicit/user-triggered. Grid, navmesh Y, and visual-floor Y are complete; selected-entity snap remains.
+- [x] Copy/paste full or partial transforms (position, X/Z, rotation).
+- [x] Distance/bearing measurement tool with horizontal/3D distance and delta coordinates.
 - [ ] Change-history panel for selected entity using the existing edit log/backups.
 - [ ] One-click restore selected entity to its previous saved state.
 - [ ] Navmesh diagnostics mode: nearest polygon, component, bounds, distance-to-navmesh, and invalid-placement highlighting.
