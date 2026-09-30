@@ -12,6 +12,7 @@ authority" research finding.
 import json
 import time
 import re
+import sqlite3
 from decimal import Decimal
 from pathlib import Path
 
@@ -416,6 +417,132 @@ def _row_dict(cols, row):
     return {str(k): _enc(v) for k, v in zip(cols, row)}
 
 
+def _indexed_item_usage(item_id: int, internal_name: str) -> tuple[list[dict], dict]:
+    """Recorded Workbench/catalog relationships and item-scoped client identity records."""
+    from workbench.core.services.feature_trace_catalog import search_catalog, provider_relationships
+    root = Path(__file__).parent
+    dbs = [
+        ("index", root / "ffxi_zone_database.db"),
+        ("graph", root / "workbench.db"),
+    ]
+    refs = []
+    coverage = {"catalog": False, "graph": False, "client_identity": False}
+    candidate_nodes = set()
+    for label, db_path in dbs:
+        if not db_path.exists():
+            continue
+        con = sqlite3.connect(db_path)
+        try:
+            tables = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+            if label == "index":
+                coverage["catalog"] = True
+                if "identity_records" in tables:
+                    coverage["client_identity"] = True
+                    cols = {r[1] for r in con.execute("PRAGMA table_info(identity_records)")}
+                    if {"record_id", "snapshot_id", "namespace", "numeric_id"}.issubset(cols):
+                        rows = con.execute(
+                            "SELECT record_id,snapshot_id,namespace,numeric_id,semantic_key,confidence,evidence_id "
+                            "FROM identity_records WHERE CAST(numeric_id AS TEXT)=?",
+                            (str(item_id),),
+                        ).fetchall()
+                        for rec_id, snap, namespace, numeric_id, semantic_key, confidence, evidence_id in rows:
+                            if "ITEM" not in str(namespace or "").upper():
+                                continue
+                            refs.append({
+                                "evidence": "client_index",
+                                "category": "client",
+                                "record_id": rec_id,
+                                "snapshot_id": snap,
+                                "namespace": namespace,
+                                "numeric_id": numeric_id,
+                                "semantic_key": semantic_key,
+                                "confidence": confidence,
+                                "evidence_id": evidence_id,
+                                "summary": f"client identity {namespace} {numeric_id} in snapshot {snap}",
+                            })
+            if "entity_relationships" in tables:
+                coverage["graph"] = True
+
+            terms = [str(item_id)]
+            if internal_name:
+                terms.append(internal_name)
+            for term in terms:
+                try:
+                    rows = search_catalog(con, term, limit=200)
+                except Exception:
+                    rows = []
+                for row in rows:
+                    if str(row.get("node_type") or "").upper() != "ITEM":
+                        continue
+                    exact = False
+                    if str(row.get("numeric_id", "")) == str(item_id):
+                        exact = True
+                    ident = row.get("identity") or {}
+                    if any(str(v) == str(item_id) for v in ident.values()):
+                        exact = True
+                    if internal_name and str(row.get("display_name") or "").casefold() == internal_name.casefold():
+                        exact = True
+                    node_id = str(row.get("node_id") or "")
+                    if re.search(r"(^|[:=&])" + re.escape(str(item_id)) + r"($|[&])", node_id):
+                        exact = True
+                    if exact:
+                        candidate_nodes.add(node_id)
+
+            for node_id in sorted(candidate_nodes):
+                for link in provider_relationships(con, node_id):
+                    refs.append({
+                        "evidence": "catalog_relationship",
+                        "category": "graph/catalog",
+                        "relationship": link.get("relationship"),
+                        "source_node": link.get("source_node"),
+                        "target_node": link.get("target_node"),
+                        "target_name": link.get("target_name"),
+                        "target_type": link.get("target_type"),
+                        "provider_native": bool(link.get("provider_native")),
+                        "basis": link.get("basis"),
+                        "summary": f"{link.get('relationship')} -> {link.get('target_name') or link.get('target_node')}",
+                    })
+
+                if "entity_relationships" in tables:
+                    rows = con.execute(
+                        "SELECT relationship_id,source_node,target_node,relationship,evidence_id,confidence,status,metadata_json "
+                        "FROM entity_relationships WHERE source_node=? OR target_node=? ORDER BY relationship_id LIMIT 250",
+                        (node_id, node_id),
+                    ).fetchall()
+                    for rid, src, dst, rel, evidence_id, confidence, status, metadata_json in rows:
+                        other = dst if src == node_id else src
+                        refs.append({
+                            "evidence": "graph_relationship",
+                            "category": "graph/catalog",
+                            "relationship_id": rid,
+                            "relationship": rel,
+                            "source_node": src,
+                            "target_node": dst,
+                            "other_node": other,
+                            "evidence_id": evidence_id,
+                            "confidence": confidence,
+                            "status": status,
+                            "metadata": metadata_json,
+                            "summary": f"{rel}: {src} -> {dst}",
+                        })
+        finally:
+            con.close()
+
+    dedup = []
+    seen = set()
+    for ref in refs:
+        key = (
+            ref.get("evidence"), ref.get("relationship_id"), ref.get("record_id"),
+            ref.get("relationship"), ref.get("source_node"), ref.get("target_node"),
+            ref.get("snapshot_id"), ref.get("namespace"),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        dedup.append(ref)
+    return dedup, coverage
+
+
 def item_usage(item_id: int, source_limit: int = 100) -> dict:
     """Conservative pre-delete usage scan against the active server DB and configured Lua tree.
 
@@ -472,6 +599,15 @@ def item_usage(item_id: int, source_limit: int = 100) -> dict:
     finally:
         db.close()
 
+    try:
+        current_data = get_item(item_id)
+        internal_name = str(current_data.get("server", {}).get("item_basic", {}).get("name") or "")
+    except Exception:
+        internal_name = ""
+    indexed_refs, indexed_coverage = _indexed_item_usage(item_id, internal_name)
+    refs.extend(indexed_refs)
+    coverage.update(indexed_coverage)
+
     script_refs = []
     try:
         if source_limit <= 0:
@@ -480,8 +616,6 @@ def item_usage(item_id: int, source_limit: int = 100) -> dict:
         scripts = root / "scripts"
         if scripts.is_dir():
             coverage["source_scripts"] = True
-            data = get_item(item_id)
-            internal_name = str(data.get("server", {}).get("item_basic", {}).get("name") or "")
             token = re.sub(r"[^A-Z0-9]+", "_", internal_name.upper()).strip("_")
             token_re = re.compile(r"\b" + re.escape(token) + r"\b") if token else None
             numeric_re = re.compile(r"(?<!\d)" + re.escape(str(item_id)) + r"(?!\d)")
@@ -524,10 +658,14 @@ def item_usage(item_id: int, source_limit: int = 100) -> dict:
         "counts": counts,
         "total": len(refs),
         "blocking_reference_count": sum(1 for r in refs if r["evidence"] == "database_exact"),
+        "graph_reference_count": sum(1 for r in refs if r["evidence"] in ("graph_relationship", "catalog_relationship")),
+        "client_reference_count": sum(1 for r in refs if r["evidence"] == "client_index"),
         "source_text_count": len(script_refs),
         "coverage": coverage,
         "notes": [
             "database_exact rows are exact item-id matches in active-server content tables",
+            "graph/catalog rows are recorded Workbench/index relationships and are not promoted to live DB foreign keys",
+            "client_index rows appear only when an item-scoped client identity namespace is actually indexed",
             "source_text rows are textual evidence only and may require human interpretation",
             "absence of a reference is not proof that the item is unused where a subsystem is not indexed",
         ],
