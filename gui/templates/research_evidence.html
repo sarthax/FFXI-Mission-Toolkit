@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Evidence Detail{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}research-evidence-page{% endblock %}
 {% block content %}
-<p><a href="/research/contradictions">← Research Contradictions</a></p>
-<h1>Evidence Detail</h1>
+<style>main.research-evidence-page{padding:8px 10px 24px}</style>
+<div class="dense-toolbar"><a class="chip" href="/research/contradictions">← Contradictions</a><strong>Evidence Detail</strong><span class="chip mono">{{ evidence.evidence_id }}</span><span class="sp"></span><span class="chip">{{ evidence.evidence_type }}</span></div>
 
 <div class="table-wrap"><table>
   <tr><th>Evidence ID</th><td><code>{{ evidence.evidence_id }}</code></td></tr>
@@ -14,7 +16,7 @@
   <tr><th>References</th><td>{{ evidence.reference_count }}</td></tr>
 </table></div>
 
-<h2>Known References</h2>
+<div class="dense-toolbar" style="margin:8px 0 5px"><strong>Known References</strong><span class="chip">{{ evidence.reference_count }}</span></div>
 {% if not evidence.references %}
 <p class="muted">No canonical or ResearchSession records currently reference this evidence ID.</p>
 {% else %}
