@@ -1,3 +1,13 @@
+## 2026-09-30 Unified acquisition catalog foundation
+
+- [x] Normalize existing mob-drop logical records into DROP_POOL acquisition paths.
+- [x] Normalize synthesis and synergy recipe records into source-neutral acquisition paths.
+- [x] Adapt scripted-behavior GRANT_ITEM / GRANT_KEY_ITEM reward evidence without changing its canonical graph IDs.
+- [x] Feed VERIFIED non-crafting ITEM acquisition evidence into the existing recursive crafting closure.
+- [x] Keep source literals/provenance intact instead of inventing cross-source item identity.
+- [ ] Add an audited shop logical schema/profile and SOLD_BY acquisition producer.
+- [ ] Add explicit canonical item/key-item identity reconciliation before projecting the unified catalog into shared graph nodes.
+
 ## 2026-09-30 Package Scope / Create / Review workflow UX
 
 - [x] Add a shared Scope → Create → Review workflow bar.
@@ -162,7 +172,7 @@ First active foundation milestone:
       traversal are implemented; conditional nodes remain QUESTIONABLE until explicitly reviewed.
 - [~] Discover conditional system coupling automatically from source-family implementation evidence. LSB mob-script discovery now recognizes alternate-zone variants that explicitly delegate multiple lifecycle hooks to the same shared `xi.<system>` module; broader system-state patterns remain.
 - [~] Implement generic scripted-entity/combat behavior representation and graph projection. The generic model and canonical projection are implemented, and a bounded LSB Lua extractor now emits source-backed rules with exact line provenance; helper-function expansion and more dynamic source patterns remain.
-- [ ] Unify acquisition/obtainability across all supported acquisition families.
+- [~] Unify acquisition/obtainability across all supported acquisition families. A source-neutral acquisition catalog now normalizes audited mob-drop, synthesis, synergy, and scripted-reward evidence and can feed verified non-crafting item sources into recursive crafting closure. Audited shop acquisition and explicit canonical item-identity reconciliation remain.
 
 ## Major roadmap
 ### Phase 0 — Preserve and baseline
