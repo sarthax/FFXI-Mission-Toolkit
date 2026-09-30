@@ -231,6 +231,158 @@ def get_mission_rollup(con: sqlite3.Connection, mission_id: int, mission_name: s
     }
 
 
+def _best_behavior_source(profile: dict) -> str | None:
+    """Prefer the entity's own zone npc/mob script over incidental references."""
+    hits = list((profile.get("lua_hits") or {}).keys())
+    if not hits:
+        return None
+    script = str(profile.get("script_name_guess") or "").lower()
+    zone = str(profile.get("zone_folder") or "").lower()
+    preferred = []
+    for path in hits:
+        norm = path.replace("\\", "/").lower()
+        if zone and f"/zones/{zone}/" not in f"/{norm}":
+            continue
+        if script and (
+            norm.endswith(f"/npcs/{script}.lua")
+            or norm.endswith(f"/mobs/{script}.lua")
+        ):
+            preferred.append(path)
+    if preferred:
+        return sorted(preferred)[0]
+    zone_hits = [
+        path for path in hits
+        if zone and f"/zones/{zone}/" in f"/{path.replace('\\', '/').lower()}"
+    ]
+    return sorted(zone_hits or hits)[0]
+
+
+def _synthesize_profile(profile: dict) -> None:
+    """Add navigation/status projections without replacing underlying evidence."""
+    field_sources = profile.get("field_sources") or {}
+    conflicts = []
+    for field_name, sources in field_sources.items():
+        values = {str(source.get("value")) for source in sources}
+        if len(values) > 1:
+            conflicts.append({
+                "kind": "provenance_conflict",
+                "field": field_name,
+                "label": f"Sources disagree on {field_name}",
+                "detail": " · ".join(
+                    f"{source.get('source')}={source.get('value')}" for source in sources
+                ),
+            })
+
+    attention = []
+    d = profile.get("id_decode") or {}
+    if profile.get("zoneid") is not None and d.get("zone_bits") != profile.get("zoneid"):
+        attention.append({
+            "kind": "zone_identity",
+            "label": "Entity ID zone bits disagree with indexed zone",
+            "detail": f"ID bits={d.get('zone_bits')} vs indexed zone={profile.get('zoneid')}",
+        })
+
+    row = profile.get("npc_list")
+    if row:
+        pos = tuple(row.get("pos") or ())
+        if pos == (0.0, 0.0, 0.0):
+            attention.append({
+                "kind": "position",
+                "label": "SQL position is zero",
+                "detail": "Entity is registered at (0, 0, 0).",
+            })
+        if row.get("untargetable"):
+            attention.append({
+                "kind": "flags",
+                "label": "FLAG_UNTARGETABLE is set",
+                "detail": "This can be intentional, but is a common cause of interaction failures.",
+            })
+
+    if profile.get("gap_warning"):
+        attention.append({
+            "kind": "instance_registration",
+            "label": "Spawn/registration exists without instance_entities membership",
+            "detail": "For instanced content this is a common wiring gap; validate whether membership is expected.",
+        })
+
+    model = profile.get("model") or {}
+    if model.get("shared_with_n_other_pools"):
+        attention.append({
+            "kind": "model",
+            "label": "Stored model is heavily reused",
+            "detail": f"Same model blob is shared by {model['shared_with_n_other_pools']} other pools; treat identity as unconfirmed.",
+        })
+
+    # Cross-source comparisons that are already represented elsewhere on the page.
+    chain = profile.get("mob_chain") or {}
+    if chain.get("min_level") is not None and profile.get("capture_level_range"):
+        sql_range = (chain.get("min_level"), chain.get("max_level"))
+        observed = {(row.get("min"), row.get("max")) for row in profile["capture_level_range"]}
+        if observed and observed != {sql_range}:
+            attention.append({
+                "kind": "level_range",
+                "label": "Capture level range differs from SQL",
+                "detail": f"SQL {sql_range[0]}-{sql_range[1]} vs capture " +
+                          ", ".join(f"{a}-{b}" for a, b in sorted(observed)),
+            })
+
+    sql_delay = chain.get("cmb_delay")
+    if sql_delay is not None and profile.get("capture_attack_delay"):
+        observed_delays = {
+            row.get("reverse_calc")
+            for row in profile["capture_attack_delay"]
+            if row.get("reverse_calc") is not None
+        }
+        if observed_delays and observed_delays != {sql_delay}:
+            attention.append({
+                "kind": "attack_delay",
+                "label": "Capture attack-delay estimate differs from SQL",
+                "detail": f"SQL cmbDelay={sql_delay}; capture reverse-calc={sorted(observed_delays)}",
+            })
+
+    attention.extend(conflicts)
+    profile["attention"] = attention
+    profile["provenance_conflicts"] = conflicts
+    profile["behavior_source"] = _best_behavior_source(profile)
+
+    capture_present = any(profile.get(key) for key in (
+        "capture_abilities", "capture_events", "capture_eventview",
+        "capture_appearances", "capture_level_range", "capture_attack_delay",
+    ))
+    profile["evidence_summary"] = [
+        {"key": "client", "label": "Client identity", "present": bool(profile.get("name"))},
+        {"key": "sql", "label": "SQL references", "present": bool(profile.get("sql_hits")),
+         "count": len(profile.get("sql_hits") or {})},
+        {"key": "lua", "label": "Lua references", "present": bool(profile.get("lua_hits")),
+         "count": len(profile.get("lua_hits") or {})},
+        {"key": "runtime", "label": "Capture evidence", "present": capture_present},
+        {"key": "events", "label": "Event/dialog evidence",
+         "present": bool(profile.get("capture_events") or profile.get("capture_eventview"))},
+        {"key": "wiki", "label": "Wiki references", "present": bool(profile.get("wiki_references")),
+         "count": len(profile.get("wiki_references") or [])},
+    ]
+
+    wiring = [{"kind": "client", "label": "Client entity", "value": profile.get("name")}]
+    if profile.get("npc_list"):
+        wiring.append({"kind": "sql", "label": "npc_list", "value": "registered"})
+    if profile.get("mob_chain"):
+        mc = profile["mob_chain"]
+        wiring.append({"kind": "sql", "label": "mob_spawn_points", "value": f"group {mc.get('groupid')}"})
+        if mc.get("poolid") is not None:
+            wiring.append({"kind": "sql", "label": "mob_groups", "value": f"pool {mc.get('poolid')}"})
+        if mc.get("pool_name"):
+            wiring.append({"kind": "sql", "label": "mob_pools", "value": mc.get("pool_name")})
+    for inst in profile.get("instance_memberships") or []:
+        wiring.append({
+            "kind": "instance",
+            "label": "instance_entities",
+            "value": f"{inst['instanceid']} · {inst.get('instance_name') or 'unnamed instance'}",
+        })
+    if profile.get("behavior_source"):
+        wiring.append({"kind": "lua", "label": "Lua behavior", "value": profile["behavior_source"]})
+    profile["wiring_chain"] = wiring
+
+
 def build_profile(con: sqlite3.Connection, npcid: int) -> dict:
     """The one canonical 'everything about this entity' assembly -- reuses every existing
     resolver rather than re-deriving them (get_npc_list_row_detail, get_mob_chain_detail,
@@ -324,6 +476,28 @@ def build_profile(con: sqlite3.Connection, npcid: int) -> dict:
     in_instance = "instance_entities.sql" in sql_hits
     in_spawn = "npc_list.sql" in sql_hits or "mob_spawn_points.sql" in sql_hits
     profile["gap_warning"] = in_spawn and not in_instance
+
+    instance_rows = con.execute(
+        """SELECT ie.instanceid, il.instance_name, il.instance_zone, il.entrance_zone
+           FROM sql_instance_entities ie
+           LEFT JOIN sql_instance_list il ON il.instanceid=ie.instanceid
+           WHERE ie.id=? ORDER BY ie.instanceid""",
+        (npcid,),
+    ).fetchall()
+    profile["instance_memberships"] = [
+        {
+            "instanceid": row[0],
+            "instance_name": row[1],
+            "instance_zone": row[2],
+            "entrance_zone": row[3],
+        }
+        for row in instance_rows
+    ]
+    for inst in profile["instance_memberships"]:
+        record_field(
+            con, "npc", npcid, f"instance_membership:{inst['instanceid']}",
+            "topaz_sql", inst.get("instance_name") or str(inst["instanceid"])
+        )
 
     # Assault mission link: instance_entities.instanceid -> assault_missions.mission_id --
     # confirmed real this session (Leujaoam Worm 17059841 -> instanceid 1 -> "Leujaoam Cleansing",
@@ -489,6 +663,7 @@ def build_profile(con: sqlite3.Connection, npcid: int) -> dict:
 
     con.commit()
     profile["field_sources"] = get_field_history(con, "npc", npcid)
+    _synthesize_profile(profile)
     return profile
 
 
