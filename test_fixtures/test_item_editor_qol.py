@@ -22,6 +22,35 @@ def main():
     assert "dat.validate_client_patch(item_id, client_fields)" in item_edit
     assert "client_report = dat.patch_client_item(item_id, client_fields)" in item_edit
 
+    # Exact client-record snapshots make create/delete/edit undo-redo faithful.
+    assert "def capture_client_record(item_id: int)" in item_dat
+    assert "def restore_client_record(snapshot: dict)" in item_dat
+    assert "previous_record_hex" in item_dat
+    assert 'client_snapshot="auto"' in item_edit
+    assert '"client_record": client_snapshot' in item_edit
+    assert "saved_client = b.get(\"client_record\")" in item_edit
+    assert "client_report = dat.restore_client_record(saved_client)" in item_edit
+    assert '"item_exists": item_exists' in item_edit
+    assert "itemUndoStack.push({itemId:j.item_id,backup:j.backup,label:'create item'})" in template
+    assert "itemUndoStack.push({itemId:deletedId,backup:j.backup,label:'delete item'})" in template
+    assert 'id="itemSessionHistory"' in template
+
+    # Clone/create preview and atomic effect copy.
+    assert 'id="cloneCurrentBtn"' in template
+    assert 'id="cloneEffectScope"' in template
+    assert "async function cloneCurrentItem()" in template
+    assert "def preview_free_slot(cat_name: str)" in item_dat
+    assert '@app.get("/itemedit/create-preview.json")' in gui
+    assert "CURRENT CANDIDATE (not reserved; revalidated at Save)" in template
+    assert "effects,comment" in template
+
+    # Persistent authority / target status.
+    assert 'id="itemStatusBar"' in template
+    assert "LIVE CLIENT WRITE" in template
+    assert "XI-PIVOT" in template
+    assert 'id="datLatestBackup"' in template
+    assert "async function refreshLatestDatBackup" in template
+
     # Richer search grid and recent navigation.
     assert "def search(q, category=\"\", min_level=-1, max_level=-1, job=-1, skill=-1, client_state=\"\", limit=200):" in item_edit
     assert "server-only" in item_edit and "mismatch" in item_edit and "synced" in item_edit
