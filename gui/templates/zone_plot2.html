@@ -99,10 +99,10 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
   <div class="zpane" id="lp-layers" hidden>
   <div id="tab-view">
   <details class="zdet" open><summary>Show</summary>
-    <div class="chips"><label class="inl"><span>Mobs</span><input type="checkbox" id="showm" checked></label><label class="inl"><span>NPCs</span><input type="checkbox" id="shown" checked></label><label class="inl"><span>Doors / props (_names)</span><input type="checkbox" id="showd" checked></label><label class="inl"><span>Navmesh overlay</span><input type="checkbox" id="shownav" checked></label><label class="inl"><span>Door/prop facing ticks</span><input type="checkbox" id="showDoorFacing" checked></label><label class="inl"><span>Show heading on labels</span><input type="checkbox" id="labelHeading"></label></div>
+    <div class="chips"><label class="inl"><span>Labels</span><input type="checkbox" id="showLabels" checked></label><label class="inl"><span>Mobs</span><input type="checkbox" id="showm" checked></label><label class="inl"><span>NPCs</span><input type="checkbox" id="shown" checked></label><label class="inl"><span>Doors / props (_names)</span><input type="checkbox" id="showd" checked></label><label class="inl"><span>Navmesh overlay</span><input type="checkbox" id="shownav" checked></label><label class="inl"><span>Door/prop facing ticks</span><input type="checkbox" id="showDoorFacing" checked></label><label class="inl"><span>Show heading on labels</span><input type="checkbox" id="labelHeading"></label></div>
   </details>
   <details class="zdet" open><summary>Colour &amp; labels</summary>
-    <label>Colour by <select id="mode"><option value="reach">Reachability</option><option value="kind">Kind</option><option value="comp">Nav region</option><option value="height">Elevation</option></select></label><label>Dot size <input type="range" id="dsz" min="0.3" max="4" step="0.1" value="1.2"></label><label>Nearest labels <input type="number" id="nlab" value="40" min="0" max="300"></label>
+    <label>Colour by <select id="mode"><option value="reach">Reachability</option><option value="kind">Kind</option><option value="family">Mob family</option><option value="comp">Nav region</option><option value="height">Elevation</option></select></label><label>Dot size <input type="range" id="dsz" min="0.3" max="4" step="0.1" value="1.2"></label><label>Nearest labels <input type="number" id="nlab" value="40" min="0" max="300"></label>
   </details>
   <details class="zdet"><summary>Mesh</summary>
     <label>Mesh complexity <select id="lod"><option value="live">Live (textured)</option><option value="0">Full</option><option value="1">High (drop &lt;0.75u)</option><option value="2">Medium (&lt;1.5u)</option><option value="3">Low (&lt;3u)</option><option value="obj">Legacy OBJ (full)</option></select></label>
@@ -111,8 +111,9 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
   </details>
   <details class="zdet" open><summary>Mob ranges &amp; detection</summary>
     <div class="chips"><label class="inl"><span>Show all explicit mob radii</span><input type="checkbox" id="showMobRadii"></label><label class="inl"><input type="checkbox" id="showDetect"><span>Detection (selected)</span></label><label class="inl"><input type="checkbox" id="showDetectAll"><span>all mobs</span></label></div>
+    <div class="chips" id="detSenses" title="Only mobs with a ticked sense are drawn"><label class="inl"><input type="checkbox" data-sense="sight" checked><span style="color:#ffa726">Sight</span></label><label class="inl"><input type="checkbox" data-sense="hearing" checked><span style="color:#b36bff">Hearing</span></label><label class="inl"><input type="checkbox" data-sense="lowhp" checked><span style="color:#ff4d4d">Low HP (blood)</span></label><label class="inl"><input type="checkbox" data-sense="scent" checked><span style="color:#6fdc6f">Scent</span></label><label class="inl"><input type="checkbox" data-sense="magic" checked><span style="color:#4da6ff">Magic</span></label><label class="inl"><input type="checkbox" data-sense="ws" checked><span style="color:#ffe066">Weapon skill</span></label><label class="inl"><input type="checkbox" data-sense="ja" checked><span style="color:#f5f5f5">Job ability</span></label><label class="inl"><input type="checkbox" data-sense="true" checked><span style="color:#ff69b4">True sight</span></label></div>
     <div id="radiusLegend" class="mono muted" style="font-size:10px;white-space:pre-wrap;margin:3px 0">Roam / leash circles from explicit server data only.</div>
-    <div id="detectLegend" class="mono muted" style="font-size:10px;white-space:pre-wrap;margin:3px 0">Detection: orange cone = sight (forward &plusmn;45&deg;), purple circle = hearing, for the selected mob (or all).</div>
+    <div id="detectLegend" class="mono muted" style="font-size:10px;white-space:pre-wrap;margin:3px 0">Detection: orange cone = sight (forward &plusmn;45&deg;), purple circle = hearing. Senses without a range (low HP, scent, magic, weapon skill, job ability, true sight) show as small coloured rings stacked around the mob.</div>
   </details>
   <details class="zdet"><summary>Navmesh &amp; reach</summary>
     <div class="chips"><label class="inl"><span>Nav diagnostics</span><input type="checkbox" id="navdiag"></label></div>
@@ -271,12 +272,15 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
     <div id="ed" hidden>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div id="ed-title" class="mono" style="margin:6px 0"></div><button id="edel" style="color:#e74c3c" title="Delete this entity">Delete&hellip;</button></div>
       <div class="xyzgrid"><label><span>X</span><input type="number" step="0.1" id="ex"></label><label><span>Y</span><input type="number" step="0.1" id="ey"></label><label><span>Z</span><input type="number" step="0.1" id="ez"></label><label><span>Rot</span><input type="number" step="1" min="0" max="255" id="er"></label></div>
+      <div class="xyzgrid" style="margin:2px 0 4px"><label title="Nudge step"><span>Step</span><input type="number" id="estep" value="1" step="0.5" min="0.1"></label><label title="Rotation step"><span>Rot step</span><input type="number" id="erstep" value="1" step="1" min="1" max="128"></label></div>
       <div id="er-dir" class="mono" style="font-size:11px;margin:-1px 0 5px;padding:4px 6px;border:1px solid var(--border);border-radius:4px"></div>
 <div style="display:flex;gap:3px;flex-wrap:wrap;margin:3px 0 6px">
   <button type="button" data-rpreset="192">N</button><button type="button" data-rpreset="224">NE</button>
   <button type="button" data-rpreset="0">E</button><button type="button" data-rpreset="32">SE</button>
   <button type="button" data-rpreset="64">S</button><button type="button" data-rpreset="96">SW</button>
   <button type="button" data-rpreset="128">W</button><button type="button" data-rpreset="160">NW</button>
+</div>
+<div style="display:flex;gap:3px;flex-wrap:wrap;margin:0 0 6px">
   <button type="button" data-rdelta="-32">↶45°</button><button type="button" data-rdelta="32">45°↷</button>
   <button type="button" data-rdelta="128">180°</button>
 </div>
@@ -285,7 +289,6 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
   <button type="button" id="gizmoMove">Move</button>
   <button type="button" id="gizmoRotate">Rotate</button>
 </div>
-      <div class="xyzgrid" style="margin:4px 0"><label title="Nudge step"><span>Step</span><input type="number" id="estep" value="1" step="0.5" min="0.1"></label><label title="Rotation step"><span>Rot step</span><input type="number" id="erstep" value="1" step="1" min="1" max="128"></label></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap"><label><span>Drag facing direction</span><input type="checkbox" id="faceDrag"></label><label><span>Click mesh to place</span><input type="checkbox" id="eplace"></label></div>
       <div id="ed-radius" class="mono muted" style="font-size:10px;margin:0 0 6px;padding:4px 6px;border:1px solid var(--border);border-radius:4px">No explicit roam/leash radius stored for this entity.</div>
 <div id="bulk-panel" hidden style="border:1px solid var(--border);border-radius:4px;padding:6px;margin:5px 0">
@@ -642,19 +645,24 @@ function detectInfo(e){
 }
 function detectText(e){
   const d=detectInfo(e); if(!d) return '';
-  const bits=['Detects: '+(d.senses.join(', ')||'nothing')+(d.aggro?'':' (passive: aggro=0)')+(d.trueDet?' · true detection':'')];
+  const bits=[(e.family?'Family: '+e.family+'\n':'')+'Detects: '+(d.senses.join(', ')||'nothing')+(d.aggro?'':' (passive: aggro=0)')+(d.trueDet?' · true detection':'')];
   if(d.hasSight) bits.push('Sight '+d.sight+'y forward cone'+(d.sightDefault?' (engine default)':' (SIGHT_RANGE mod)'));
   if(d.hasSound) bits.push('Hearing '+d.sound+'y'+(d.soundDefault?' (engine default)':' (SOUND_RANGE mod)'));
   return bits.join('\n');
 }
+const SENSE_BITS={lowhp:[0x04,0xff4d4d],scent:[0x100,0x6fdc6f],magic:[0x20,0x4da6ff],ws:[0x40,0xffe066],ja:[0x80,0xf5f5f5]};
+const senseOn=k=>document.querySelector(`#detSenses [data-sense="${k}"]`)?.checked;
 function addDetectionVisual(e){
   const d=detectInfo(e); if(!d) return; const p=P(e);
-  if(d.hasSound){ const pts=[],segs=72; for(let i=0;i<segs;i++){ const a=i*Math.PI*2/segs; pts.push(new THREE.Vector3(p.x+Math.cos(a)*d.sound,p.y+0.6,p.z+Math.sin(a)*d.sound)); }
-    const l=new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts),detectSoundMat); l.renderOrder=19; mobRadiusGroup.add(l); }
-  if(d.hasSight){ const h=(((e.r||0)%256)+256)%256*Math.PI*2/256, half=Math.PI/4, pts=[new THREE.Vector3(p.x,p.y+0.8,p.z)], segs=24;
+  const seg=(pts,color,loop)=>{ const l=new (loop?THREE.LineLoop:THREE.Line)(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color,transparent:true,opacity:.95,depthTest:false})); l.renderOrder=19; mobRadiusGroup.add(l); };
+  const circle=(r,y)=>{ const pts=[]; for(let i=0;i<48;i++){ const a=i*Math.PI*2/48; pts.push(new THREE.Vector3(p.x+Math.cos(a)*r,p.y+y,p.z+Math.sin(a)*r)); } return pts; };
+  if(d.hasSound&&senseOn('hearing')) seg(circle(d.sound,0.6),0xb36bff,true);
+  if(d.hasSight&&senseOn('sight')){ const h=(((e.r||0)%256)+256)%256*Math.PI*2/256, half=Math.PI/4, pts=[new THREE.Vector3(p.x,p.y+0.8,p.z)], segs=24;
     for(let i=0;i<=segs;i++){ const a=h-half+(2*half)*i/segs; pts.push(new THREE.Vector3(p.x+Math.cos(a)*d.sight,p.y+0.8,p.z+Math.sin(a)*d.sight)); }
-    pts.push(pts[0].clone());
-    const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),detectSightMat); l.renderOrder=19; mobRadiusGroup.add(l); }
+    pts.push(pts[0].clone()); seg(pts,0xffa726,false); }
+  let ring=1.6;
+  for(const [k,[bit,col]] of Object.entries(SENSE_BITS)){ if((e.detects&bit)&&senseOn(k)){ seg(circle(ring,1.0),col,true); ring+=0.45; } }
+  if(d.trueDet&&senseOn('true')){ seg(circle(ring,1.0),0xff69b4,true); }
 }
 function radiusText(e){
   if(!e||e.k!=='m') return 'No mob radius metadata for this entity.';
@@ -1080,6 +1088,7 @@ function frameSelected(){
 function stateOf(i){ return R ? R.state[i] : 'none'; }
 function colorOf(i){ const e=Z.entities[i], m=$('mode').value;
   if (m==='kind') return new THREE.Color(COL[e.k]);
+  if (m==='family'){ if(e.k!=='m'||e.familyid===undefined) return new THREE.Color(COL[e.k]||COL.none); return new THREE.Color().setHSL((((e.familyid*0.61803398875)%1)+1)%1,.85,.55); }
   if (m==='comp' && R) return R.comp[i]==null? new THREE.Color(COL.off): hsl(R.comp[i]);
   if (m==='height'){
     const {lo,hi}=heightRange, t=hi>lo?(e.y-lo)/(hi-lo):.5;
@@ -1205,7 +1214,7 @@ function toggleMultiSelect(i,fly=false){
 let lastLab=0;
 function updateLabels(){
   const now=performance.now(); if(now-lastLab<250||!inst) return; lastLab=now;
-  const n=+$('nlab').value; const want=new Set(); if(selected>=0) want.add(selected); if(hoverI>=0) want.add(hoverI);
+  const labOn=$('showLabels').checked; const n=labOn?+$('nlab').value:0; const want=new Set(); if(labOn){ if(selected>=0) want.add(selected); if(hoverI>=0) want.add(hoverI); }
   if (n>0){ const d=visible.map(ei=>[P(Z.entities[ei]).distanceToSquared(camera.position),ei]).sort((a,b)=>a[0]-b[0]).slice(0,n); d.forEach(([,ei])=>want.add(ei)); }
   labels.forEach((l,i)=>{ if(!want.has(i)){ l.element.remove(); scene.remove(l); labels.delete(i); } });
   want.forEach(i=>{ if(Z.entities[i] && !Z.entities[i].zero){ const e=Z.entities[i]; setLabel(i, txt(e)+($('labelHeading').checked?` · ${rotInfo(e.r).dir} r${rotInfo(e.r).raw}`:'')); } });
@@ -1247,6 +1256,7 @@ $('inst').onchange=()=>{ if($('ainst').querySelector(`option[value="${$('inst').
 $('lod').onchange=()=>{ if($('lod').value!=='obj') $('buildCacheBtn').hidden=true; saveZoneEditorState(); Z&&loadZMesh(Z.zid); };
 ['showm','shown','showd','mode','dsz'].forEach(id=>$(id).addEventListener('input',()=>{ saveZoneEditorState(); Z&&rebuild(); }));
 $('nlab').addEventListener('change',saveZoneEditorState);
+$('showLabels').onchange=()=>{ lastLab=0; updateLabels(); };
 $('labelHeading').addEventListener('change',()=>{ saveZoneEditorState(); labels.forEach(l=>{l.element.remove();scene.remove(l);}); labels.clear(); });
 $('q').addEventListener('input',()=>Z&&rebuild());
 ['lf-kind','lf-reach','lf-sort','lf-dir'].forEach(id=>$(id).addEventListener('change',()=>Z&&rebuild()));
@@ -1255,6 +1265,7 @@ $('navdiag').onchange=()=>{ saveZoneEditorState(); loadSelectedNavDiag(); };
 $('showDoorFacing').onchange=()=>{ saveZoneEditorState(); if(Z) rebuild(); };
 $('showMobRadii').onchange=()=>{ saveZoneEditorState(); updateMobRadiusVisuals(); };
 $('showDetect').onchange=$('showDetectAll').onchange=()=>{ updateMobRadiusVisuals(); };
+document.querySelectorAll('#detSenses input').forEach(c=>c.onchange=()=>updateMobRadiusVisuals());
 $('opac').oninput=()=>{ meshObj&&meshObj.traverse(c=>{ if(c.isMesh) c.material.opacity=+$('opac').value; }); saveZoneEditorState(); };
 document.querySelectorAll('[data-cam]').forEach(b=>b.onclick=()=>cameraPreset(b.dataset.cam));
 $('projection').onchange=()=>{ switchProjection($('projection').value); saveZoneEditorState(); };

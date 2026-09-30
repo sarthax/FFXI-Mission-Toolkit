@@ -135,10 +135,10 @@ def _mob_detect_values(cu, pool_ids):
     try:
         ph = ",".join(["%s"] * len(ids))
         cu.execute(
-            f"select p.poolid,p.aggro,p.true_detection,f.detects from mob_pools p "
+            f"select p.poolid,p.aggro,p.true_detection,f.detects,p.familyid,f.family from mob_pools p "
             f"left join mob_family_system f on f.familyid=p.familyid where p.poolid in ({ph})", tuple(ids))
-        for poolid, aggro, true_det, detects in cu.fetchall():
-            out[int(poolid)] = {"aggro": int(aggro or 0), "true_detection": int(true_det or 0), "detects": int(detects or 0)}
+        for poolid, aggro, true_det, detects, famid, fam in cu.fetchall():
+            out[int(poolid)] = {"familyid": int(famid or 0), "family": fam or "","aggro": int(aggro or 0), "true_detection": int(true_det or 0), "detects": int(detects or 0)}
     except Exception:
         return {}
     return out
