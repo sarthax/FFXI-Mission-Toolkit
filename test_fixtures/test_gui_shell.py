@@ -287,6 +287,12 @@ def main():
     assert package_create_shell["active_home"] == "Packages"
     assert next(section for section in package_create_shell["sections"] if section["active"])["label"] == "Create Package"
 
+    trace_html = render("feature_trace.html", "/features/trace", q="", depth=3, direction="both", result=None, matches=[], error=None)
+    assert '<body class="shell-dense">' in trace_html
+    assert 'id="featureTraceTop" class="dense-toolbar"' in trace_html
+    assert 'form class="search dense-toolbar"' in trace_html
+    assert '<summary>About</summary>' in trace_html
+
     trace_shell = context_for("/features/trace")
     assert trace_shell["active_home"] == "Features"
     assert next(section for section in trace_shell["sections"] if section["active"])["label"] == "Feature Trace"

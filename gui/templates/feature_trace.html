@@ -1,20 +1,27 @@
 {% extends "base.html" %}
 {% block title %}Feature Trace — Mission Toolkit{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}feature-trace-page{% endblock %}
 {% block content %}
 <style>
-.impl-path{border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden;margin:14px 0}
-.impl-path h2{margin:0;padding:10px 12px;border-bottom:1px solid var(--border)}
-.impl-path .body{padding:11px 12px}
-.impl-status{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-.impl-branches{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:10px}
+main.feature-trace-page{padding:8px 10px 24px}
+#featureTraceTop{margin-bottom:6px}
+#featureTraceTop form{margin:0;flex:1}
+#featureTraceTop input[type=text]{min-width:280px}
+#featureTraceAbout{margin:0 0 6px}
+.impl-path{border:1px solid var(--border);border-radius:7px;background:var(--surface);overflow:hidden;margin:8px 0}
+.impl-path h2{margin:0;padding:6px 8px;border-bottom:1px solid var(--border);font-size:14px}
+.impl-path .body{padding:7px 8px}
+.impl-status{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+.impl-branches{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:7px}
 .impl-branch{border:1px solid var(--border);border-radius:7px;background:var(--code-bg);overflow:hidden}
 .impl-branch-head{padding:8px 10px;border-bottom:1px solid var(--border)}
 .impl-step{display:grid;grid-template-columns:36px minmax(130px,.5fr) minmax(0,1fr);gap:7px;padding:7px 9px;border-bottom:1px solid var(--border)}
 .impl-step:last-child{border-bottom:0}.impl-depth{color:var(--muted);font-family:ui-monospace,Consolas,monospace}
 .impl-root{padding:8px 10px}
-.impl-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:10px 0}
-.impl-summary .box{border:1px solid var(--border);border-radius:7px;padding:8px 10px;background:var(--code-bg)}
-.impl-summary .n{font-size:20px;font-weight:700}.impl-summary .l{font-size:11px;color:var(--muted)}
+.impl-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:5px;margin:6px 0}
+.impl-summary .box{border:1px solid var(--border);border-radius:6px;padding:5px 7px;background:var(--code-bg)}
+.impl-summary .n{font-size:17px;font-weight:700}.impl-summary .l{font-size:10px;color:var(--muted)}
 .impl-diagnostic{border-left:4px solid var(--border);padding:8px 10px;margin:9px 0;background:var(--code-bg)}
 .impl-diagnostic.good{border-left-color:#4a8}.impl-diagnostic.warn{border-left-color:#c88b2b}.impl-diagnostic.bad{border-left-color:#b44}
 .impl-meta{display:flex;gap:5px;flex-wrap:wrap;margin:5px 0}
@@ -38,10 +45,9 @@
 .impl-engine-grid{display:grid;grid-template-columns:minmax(180px,.8fr) minmax(0,1.2fr);gap:6px 10px;align-items:start}
 .impl-engine-grid .k{color:var(--muted);font-size:11px}.impl-engine pre{white-space:pre-wrap;max-height:18rem;overflow:auto;font-size:11px}
 </style>
-<h1>Feature Trace</h1>
-<p class="muted">Trace a canonical Workbench feature, entity, capability, function, binding, build target, artifact, or enum through recorded graph relationships. Connectivity is evidence navigation, not an implementation verdict.</p>
-
-<form class="search" method="get" action="/features/trace">
+<div id="featureTraceTop" class="dense-toolbar">
+  <strong>Feature Trace</strong>
+  <form class="search dense-toolbar" method="get" action="/features/trace">
   <input type="text" name="q" value="{{ q }}" placeholder="Canonical node ID or partial name">
   <select name="direction">
     <option value="both"{% if direction == "both" %} selected{% endif %}>Both directions</option>
@@ -54,7 +60,12 @@
     {% endfor %}
   </select>
   <button type="submit">Trace</button>
-</form>
+  </form>
+  <details class="dense-card" style="margin:0;padding:0 6px;">
+    <summary>About</summary>
+    <div class="muted" style="padding:6px 2px;max-width:720px;">Trace canonical Workbench features, entities, capabilities, functions, bindings, build targets, artifacts, and enums through recorded graph relationships. Connectivity is evidence navigation, not an implementation verdict.</div>
+  </details>
+</div>
 
 {% if error %}
 <div class="warn">{{ error }}</div>
@@ -469,8 +480,9 @@
 {% endif %}
 
 {% if result %}
-<h2>Evidence Dossier</h2>
-<div class="table-wrap"><table>
+<details class="dense-card" open>
+<summary><strong>Evidence Dossier</strong> · {{ dossier.identity.display_name }}</summary>
+<div class="table-wrap" style="margin-top:6px"><table>
 <tr><th>Identity</th><td><strong>{{ dossier.identity.display_name }}</strong><br><code>{{ dossier.identity.node_id }}</code> · {{ dossier.identity.node_type }}{% if dossier.identity.provider %} · provider {{ dossier.identity.provider }}{% endif %}{% if dossier.identity.domain %} · {{ dossier.identity.domain }}{% endif %} · {{ dossier.identity.source_count }} indexed representation(s){% if dossier.identity.inspect_href %}<br><a class="zonelink" href="{{ dossier.identity.inspect_href }}">Open source view</a>{% endif %}</td></tr>
 {% if dossier.identity.details %}
 <tr><th>Source details</th><td>{% for key,value in dossier.identity.details.items() %}{% if value is not none and value != "" %}<div><span class="chip">{{ key }}</span> {{ value }}</div>{% endif %}{% endfor %}</td></tr>
@@ -488,18 +500,20 @@
 {% endfor %}
 </table></div>
 <p class="muted">The dossier summarizes recorded knowledge; a zero or absent facet is UNKNOWN, not proof that the underlying implementation is absent.</p>
+</details>
 
-<h2>Semantic Trace</h2>
+<div class="dense-toolbar" style="margin:8px 0 5px"><strong>Semantic Trace</strong><span class="sp"></span><span class="mono muted">{{ result.root }}</span></div>
 <div class="stats">
   <div class="stat"><div class="n">{{ dossier.semantic_node_count }}</div><div class="l">Semantic nodes</div></div>
   <div class="stat"><div class="n">{{ dossier.semantic_relationship_count }}</div><div class="l">Semantic edges</div></div>
   <div class="stat"><div class="n">{{ result.paths|length }}</div><div class="l">Paths</div></div>
   <div class="stat"><div class="n">{{ result.max_depth }}</div><div class="l">Max depth</div></div>
 </div>
-<p><strong>Root:</strong> <code>{{ result.root }}</code> &nbsp; <strong>Direction:</strong> {{ result.direction }}</p>
+<div class="impl-meta"><span class="chip">direction {{ result.direction }}</span><span class="chip">depth {{ result.max_depth }}</span></div>
 
 {% if result.runtime_hierarchy.observation_count %}
-<h2>Runtime / Captures &amp; Packets</h2>
+<details class="dense-card">
+<summary><strong>Runtime / Captures &amp; Packets</strong> · {{ result.runtime_hierarchy.observation_count }} observation(s) / {{ result.runtime_hierarchy.capture_count }} capture(s)</summary>
 <p class="muted">{{ result.runtime_hierarchy.observation_count }} observations across {{ result.runtime_hierarchy.capture_count }} capture(s), grouped without expanding semantic topology. Raw observations load only when requested.</p>
 {% for group in result.runtime_hierarchy.groups %}
 <details class="trace-runtime-group">
@@ -537,9 +551,10 @@ document.querySelectorAll('.runtime-load').forEach(button=>button.addEventListen
  target.dataset.loaded='1';
 }));
 </script>
+</details>
 {% endif %}
 
-<h2>Relationships</h2>
+<div class="dense-toolbar" style="margin:8px 0 5px"><strong>Relationships</strong><span class="sp"></span>{% if result.edges %}<span class="chip">{{ result.edges|length }} edge(s)</span>{% endif %}</div>
 {% if result.edges %}
 {% for section in relationship_sections %}
 <details class="trace-section"{% if section.name != "Runtime / Captures & Packets" %} open{% endif %}>
