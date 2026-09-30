@@ -101,11 +101,18 @@ def main() -> None:
         con.commit()
         assert ingested["record_count"] == 10, ingested
         assert len(ingested["zones"]) == 6, ingested
+        assert ingested["entity_graph"]["status"] == "OK", ingested
+        assert ingested["entity_graph"]["records"] == 4, ingested
+        assert ingested["entity_graph"]["relationships"] == 4, ingested
         entity_count = con.execute(
             "SELECT COUNT(*) FROM identity_records WHERE snapshot_id=? AND namespace='ENTITY'",
             ("client:30191204_1",),
         ).fetchone()[0]
         assert entity_count == 4, entity_count
+        client_graph_ids = con.execute(
+            "SELECT COUNT(*) FROM entity_identifiers WHERE identifier_type='client_entity_id'"
+        ).fetchone()[0]
+        assert client_graph_ids == 4, client_graph_ids
         snap = con.execute(
             "SELECT version,fingerprint FROM identity_snapshots WHERE snapshot_id=?",
             ("client:30191204_1",),
