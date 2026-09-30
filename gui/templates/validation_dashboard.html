@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Validation — Mission Toolkit{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}validation-dashboard-page{% endblock %}
 {% block content %}
-<h1>Validation</h1>
-<p class="muted">Read-only view of canonical ValidationRun and ValidationResult history. Validation dimensions remain independent; a passing run does not imply unrelated dimensions are verified.</p>
+<style>main.validation-dashboard-page{padding:8px 10px 24px}</style>
+<div class="dense-toolbar"><strong>Validation</strong><span class="sp"></span><a class="chip" href="/validation/runs">Browse all runs</a><details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:680px">Read-only canonical ValidationRun / ValidationResult history. Validation dimensions remain independent.</div></details></div>
 
 {% if error %}<div class="warn">{{ error }}</div>{% endif %}
 
@@ -14,7 +16,7 @@
   <div class="stat"><div class="n">{{ total_results }}</div><div class="l">Validation results</div></div>
 </div>
 
-<h2>Recent runs</h2>
+<div class="dense-toolbar" style="margin:8px 0 5px"><strong>Recent runs</strong><span class="sp"></span><span class="chip">{{ runs|length }}</span></div>
 {% if runs %}
 <div class="table-wrap"><table>
 <thead><tr><th>Run</th><th>Status</th><th>Feature</th><th>Source → Target</th><th>Finished</th></tr></thead>
@@ -33,6 +35,6 @@
 <p class="muted">No validation runs are recorded.</p>
 {% endif %}
 
-<p><a class="zonelink" href="/validation/runs">Browse all runs &amp; results</a></p>
+
 {% endif %}
 {% endblock %}

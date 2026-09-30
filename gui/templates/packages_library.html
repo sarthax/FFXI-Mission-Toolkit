@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Package Library — Mission Toolkit{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}package-library-page{% endblock %}
 {% block content %}
-<h1>Package Library</h1>
-<p class="muted">Read-only discovery of assembled Workbench migration packages beneath the configured project/backport root.</p>
+<style>main.package-library-page{padding:8px 10px 24px}</style>
+<div class="dense-toolbar"><strong>Package Library</strong><span class="chip mono">{{ project_root }}</span><span class="sp"></span><a class="chip" href="/packages/create">Create package</a><a class="chip" href="/packages/scope">Scope review</a><a class="chip" href="/packages/review">Review</a></div>
 
-<p><strong>Project root:</strong> <code>{{ project_root }}</code></p>
-
-<form class="search" method="get" action="/packages">
+<form class="search dense-toolbar" method="get" action="/packages" style="margin:6px 0">
   <input type="text" name="q" value="{{ q }}" placeholder="Package path, migration ID, or feature ID">
   <button type="submit">Filter</button>
 </form>
@@ -31,5 +31,5 @@
 <p class="muted">No assembled Workbench packages were found under the configured project root.</p>
 {% endif %}
 
-<p class="muted">The legacy package builder remains available under Backport Package (legacy) until the new Packages workspace reaches full creation/apply parity.</p>
+<details class="dense-card" style="margin-top:8px"><summary>Legacy package builder</summary><div class="muted" style="padding-top:5px">Backport Package (legacy) remains available until the new Packages workspace reaches full creation/apply parity.</div></details>
 {% endblock %}

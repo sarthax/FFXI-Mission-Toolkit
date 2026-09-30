@@ -138,7 +138,7 @@ First active foundation milestone:
 - [x] Add shared dense-workstation primitives for toolbars, panels, tabs, drawers, cards, control sizing, and common panel widths.
 - [x] Migrate Zone Editor New Layout (`/zoneplot2`) onto the shared dense shell and remove its page-local hidden-header/site-menu workaround.
 - [x] Roll the compact/dense shell into Model Viewer and 3D Viewer after validation.
-- [x] Roll shared dense patterns into Item Editor, Feature Trace, Entity/Events/Packets, then standard list/admin pages where appropriate. Core workstation surfaces complete; standard list/admin pages remain for selective migration.
+- [x] Roll shared dense patterns into Item Editor, Feature Trace, Entity/Events/Packets, then selectively into standard list/admin pages. Captures, Validation lists, and Package Library migrated; workflow-heavy Scope/Review/Create and Client Overview remain intentionally roomier pending dedicated UX passes.
 - [ ] Keep prose/help/report pages on a roomier reading layout instead of forcing workstation density everywhere.
 
 ### 2026-09-30 Feature Trace implementation path
