@@ -1,7 +1,9 @@
 """Zone Plot editing layer: every write to the live DB goes through here so it is
   1. backed up first (data/zoneplot_backups/*.json: full previous rows, restorable),
   2. journalled as annotated SQL (data/zoneplot_edit_log.sql: `-- comment` + the exact statement).
-Tables touched: mob_spawn_points, npc_list, and (when cloning a mob from another zone) mob_groups."""
+Tables touched include mob_spawn_points, npc_list, mob_groups, mob_pools (model changes), mob_droplist,
+and instance_entities. Shared-owner edits such as mob model changes back up the owning row, not only
+the selected spawn row."""
 import json
 import re
 import struct
@@ -135,13 +137,28 @@ def entity_history(kind, eid, limit=20):
     eid = int(eid)
     out = []
     files = sorted(BACKUPS.glob("*.json"), reverse=True) if BACKUPS.exists() else []
+    poolid = None
+    if kind == "m":
+        db = zone_plot._db(); cu = db.cursor()
+        try:
+            _gid, poolid, _name = _mob_pool_for_spawn(cu, eid)
+        except Exception:
+            poolid = None
+        finally:
+            db.close()
+
     for f in files:
         b = json.loads(f.read_text())
         for op in b.get("ops", []):
-            if op.get("table") == table and op.get("key") == [eid]:
+            direct = op.get("table") == table and op.get("key") == [eid]
+            shared_model = (
+                kind == "m" and poolid is not None and
+                op.get("table") == "mob_pools" and op.get("key") == [poolid]
+            )
+            if direct or shared_model:
                 row = op.get("row")
                 transform = None
-                if row is not None:
+                if direct and row is not None:
                     transform = {
                         "x": row.get("pos_x"),
                         "y": row.get("pos_y"),
@@ -155,6 +172,8 @@ def entity_history(kind, eid, limit=20):
                     "kind": b.get("kind", "auto"),
                     "transform": transform,
                     "existed": row is not None,
+                    "shared_owner": "mob_pools" if shared_model else None,
+                    "shared_key": poolid if shared_model else None,
                 })
                 break
         if len(out) >= max(1, min(int(limit), 100)):
@@ -452,7 +471,8 @@ def preview_model_change(kind, eid, model_id):
             "current": current, "candidate_model_id": model_id, "candidate": mapped,
             "warning": (
                 f"Changing pool {poolid} changes every mob using that mob_pools row: "
-                f"{affected_rows} spawn(s) across {len(groups)} group(s) / {len(zones)} zone(s)."
+                f"{affected_rows} spawn(s) across {len(groups)} group(s) / {len(zones)} zone(s). "
+                f"This replaces only the look/model blob; familyid {familyid} and combat/species behavior are unchanged."
             ),
             "sample": groups[:100],
             "sample_truncated": len(groups) > 100,
