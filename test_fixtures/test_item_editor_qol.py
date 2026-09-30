@@ -17,7 +17,7 @@ def main():
     assert "Discard unsaved Item Editor changes?" in template
     assert "beforeunload" in template
 
-    assert "def save_item_atomic(item_id, tables, comment=" in item_edit
+    assert "def save_item_atomic(item_id, tables, effects=None, comment=" in item_edit
     assert 'bid = _save_backup(f"atomic edit item {item_id}"' in item_edit
     assert "dat.validate_client_patch(item_id, client_fields)" in item_edit
     assert "client_report = dat.patch_client_item(item_id, client_fields)" in item_edit
@@ -40,13 +40,38 @@ def main():
     assert "all decoded overlapping fields match" in template
 
     assert "def validate_item_state(rows, client=None):" in item_edit
-    assert "def validate_item_changes(item_id, tables):" in item_edit
+    assert "def validate_item_changes(item_id, tables, effects=None):" in item_edit
     assert "MISSING_BASIC" in item_edit
     assert "WEAPON_WITHOUT_EQUIPMENT" in item_edit
     assert "UNKNOWN_MASK_BITS" in item_edit
     assert '@app.post("/itemedit/validate")' in gui
     assert "Save blocked by validation errors." in template
     assert "Validation warnings:" in template
+
+
+    # Staged mods / pet mods / latents are part of the same dirty/save transaction.
+    assert "let loadedEffects={mods:[],pet_mods:[],latents:[]};" in template
+    assert "function effectsDirty()" in template
+    assert "function stagedEffectPayload()" in template
+    assert "staged; saved with Save Item" in template
+    assert "data-stage-mod" in template
+    assert "data-stage-petmod" in template
+    assert "stageAddLatent" in template
+    assert "body:JSON.stringify({item_id:currentItemId,tables,effects,comment})" in template
+    assert "effect_changes" in item_edit
+    assert "def _normalize_effects(effects):" in item_edit
+    assert "def _effect_changes(cu, item_id, desired):" in item_edit
+    assert "duplicate item_mods modId" in item_edit
+    assert "duplicate item_mods_pet key" in item_edit
+    assert "duplicate item_latents key" in item_edit
+    assert "UNKNOWN_MOD_ID" in item_edit
+    assert "UNKNOWN_PET_TYPE" in item_edit
+    assert "UNKNOWN_LATENT_ID" in item_edit
+
+    # Restore keeps SQL and decoded client DAT overlaps synchronized for undo/redo.
+    assert 'def restore(bid):' in item_edit
+    assert "client_fields.update(_map_to_client_fields(t, row))" in item_edit
+    assert "client_report = dat.patch_client_item(item_id, client_fields)" in item_edit
 
 
 if __name__ == "__main__":
