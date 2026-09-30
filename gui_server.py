@@ -3911,6 +3911,7 @@ def packets_decode(request: Request, direction: str = "s2c", opcode: str = "", h
     decoded = None
     decode_error = None
     schema = None
+    layout = None
     opcode_int = None
     if opcode:
         try:
@@ -3925,6 +3926,7 @@ def packets_decode(request: Request, direction: str = "s2c", opcode: str = "", h
         if hex_bytes:
             try:
                 result = packet_decode.decode(direction, opcode_int, hex_bytes)
+                layout = packet_decode.analyze_layout(direction, opcode_int, hex_bytes)
                 decoded_by_name = {f.name: f for f in result.fields}
                 decoded = {
                     "description": result.description,
@@ -3948,7 +3950,7 @@ def packets_decode(request: Request, direction: str = "s2c", opcode: str = "", h
                 decode_error = str(e)
     return templates.TemplateResponse(request, "packets_decode.html", {
         "q": q, "direction": direction, "opcode": opcode, "hex_bytes": hex_bytes,
-        "decoded": decoded, "decode_error": decode_error, "schema": schema,
+        "decoded": decoded, "decode_error": decode_error, "schema": schema, "layout": layout,
     })
 
 
