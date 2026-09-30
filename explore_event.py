@@ -101,6 +101,79 @@ def cross_check(con: sqlite3.Connection, zoneid: int, decompiled: str) -> list[t
     return results
 
 
+
+CALL_SITE_RE = re.compile(
+    r"(?P<object>[A-Za-z_][A-Za-z0-9_]*)\s*:\s*(?P<method>[A-Za-z_][A-Za-z0-9_]*)\s*\("
+)
+
+
+def summarize_decompile(decompiled: str) -> dict:
+    """Extract presentation-only facts from xi-events' decompiled text.
+
+    This intentionally does not assign new semantics to work variables or event parameters.
+    It only inventories literal message IDs and method names that the decompiler actually emitted
+    so the GUI can make a long CSID easier to navigate.
+    """
+    message_ids = []
+    seen_messages = set()
+    for match in MESSAGE_ID_RE.finditer(decompiled or ""):
+        msg_id = int(match.group(1))
+        if msg_id not in seen_messages:
+            seen_messages.add(msg_id)
+            message_ids.append(msg_id)
+
+    calls = []
+    seen_calls = set()
+    for match in CALL_SITE_RE.finditer(decompiled or ""):
+        key = (match.group("object"), match.group("method"))
+        if key in seen_calls:
+            continue
+        seen_calls.add(key)
+        calls.append({"object": key[0], "method": key[1]})
+
+    return {
+        "message_ids": message_ids,
+        "calls": calls,
+        "message_count": len(message_ids),
+        "call_count": len(calls),
+        "line_count": len((decompiled or "").splitlines()),
+    }
+
+
+def lua_scaffold(csid: int, observed_options=None, observed_params=None) -> str:
+    """Create copyable *scaffolding*, never a claim that these callbacks are sufficient.
+
+    Observed option/param values are emitted only as comments. The generated code deliberately
+    avoids inventing engine behavior or interpreting parameter positions.
+    """
+    observed_options = sorted({int(v) for v in (observed_options or []) if v is not None})
+    observed_params = [str(v) for v in (observed_params or []) if v]
+    option_note = (
+        " -- observed option values: " + ", ".join(map(str, observed_options))
+        if observed_options else ""
+    )
+    param_note = (
+        "\n    -- observed capture params (uninterpreted): " + " | ".join(observed_params[:5])
+        if observed_params else ""
+    )
+    return f"""-- Scaffolding only: verify callback/parameter semantics against source + capture evidence.
+entity.onTrigger = function(player, npc)
+    player:startEvent({int(csid)})
+end
+
+entity.onEventUpdate = function(player, csid, option, npc)
+    if csid == {int(csid)} then{option_note}{param_note}
+        -- TODO: implement only behavior supported by evidence.
+    end
+end
+
+entity.onEventFinish = function(player, csid, option, npc)
+    if csid == {int(csid)} then{option_note}
+        -- TODO: apply completion/warp/door/etc. behavior only after verification.
+    end
+end
+"""
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("zone", help="Zone folder name under scripts/zones (e.g. Nyzul_Isle)")
