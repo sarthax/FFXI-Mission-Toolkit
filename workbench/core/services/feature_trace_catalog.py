@@ -202,11 +202,14 @@ def search_catalog(con: sqlite3.Connection, term: str, limit: int = 200):
                 for index,column in enumerate(detail_columns)
             }
             inspect_href=None
+            primary_value=identity.get(cols[spec.id_column.lower()]) if spec is not None else (identity_values[0] if identity_values else None)
             if spec is not None and spec.inspect_path:
-                primary_value=identity.get(cols[spec.id_column.lower()])
                 inspect_href=spec.inspect_path.replace("{id}",quote(str(primary_value),safe=""))
+            sql_href=None
+            if domain=="server" and primary_value is not None:
+                sql_href=f"/sql?table={quote(table,safe='')}&q={quote(str(primary_value),safe='')}"
             item={"node_id":node_id,"node_type":object_type,"display_name":display,"domain":domain,"source":table,"table":table,"provider":provider_id,"catalog_only":True,
-                  "identity":identity,"aliases":aliases,"details":details,"matched_on":matched,"inspect_href":inspect_href}
+                  "identity":identity,"aliases":aliases,"details":details,"matched_on":matched,"inspect_href":inspect_href,"sql_href":sql_href}
             if len(identity_values)==1 and identity_columns[0].lower() in ID_COLUMNS:
                 item["numeric_id"]=identity_values[0]
             rows.append(item)
@@ -259,7 +262,9 @@ def catalog_node(con: sqlite3.Connection, node_id: str):
         if spec is not None and spec.inspect_path:
             primary_value=identity.get(cols[spec.id_column.lower()])
             inspect_href=spec.inspect_path.replace("{id}",quote(str(primary_value),safe=""))
-        metadata={"catalog_only":True,"source_table":table,"provider":provider_id,"domain":domain,"identity":identity,"details":details}
+        primary_value=identity.get(cols[spec.id_column.lower()]) if spec is not None else (actual_identity[0] if actual_identity else None)
+        sql_href=f"/sql?table={quote(table,safe='')}&q={quote(str(primary_value),safe='')}" if domain=="server" and primary_value is not None else None
+        metadata={"catalog_only":True,"source_table":table,"provider":provider_id,"domain":domain,"identity":identity,"details":details,"sql_href":sql_href}
         if len(actual_identity)==1:
             metadata["numeric_id"]=actual_identity[0]
         if inspect_href:

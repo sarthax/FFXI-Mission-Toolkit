@@ -191,6 +191,7 @@ jobs:
           python test_fixtures/test_server_catalog_identity.py
           python test_fixtures/test_client_entity_graph.py
           python test_fixtures/test_feature_trace_path_diagnostics.py
+          python test_fixtures/test_feature_trace_source_drilldown_ui.py
           python test_fixtures/test_capture_timeline_interactions.py
           python test_fixtures/test_event_csid_wiring_ui.py
           python test_fixtures/test_lua_event_typing.py

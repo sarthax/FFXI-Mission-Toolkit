@@ -58,6 +58,9 @@ def main():
         assert branch["max_depth"]>=2,branch
         assert branch["target_count"]>=2,branch
         assert branch["root"]["details"]["groupid"]==38,branch["root"]
+        assert branch["root"]["sql_href"].startswith("/sql?table=lsb_mob_spawn_points"),branch["root"]
+        assert branch["steps"][0]["target_sql_href"].startswith("/sql?table=lsb_mob_groups"),branch["steps"][0]
+        assert branch["steps"][0]["target_details"]["poolid"]==2002,branch["steps"][0]
 
         # No canonical identity: keep source-native path, but explain why semantic traversal is withheld.
         con.execute("DELETE FROM entity_identifiers")
@@ -109,12 +112,24 @@ def main():
             "impl-reset-filters",
             "Trace this representation",
             "impl-source-facts",
+            "Server Lua drill-down",
+            "Open indexed SQL row",
+            "Behavior graph JSON",
+            "Source preview",
+            "Indexed SQL row",
         ):
             assert text in template,text
         assert "feature_trace.entity_query_diagnostics" in server
         assert 'implementation_path["trace_summary"]' in server
         assert '@app.get("/features/trace/path.json")' in server
         assert '"implementation_path":path' in server
+        assert "def _feature_trace_branch_source_drilldown(" in server
+        assert "_FEATURE_TRACE_PROVIDER_SERVER" in server
+        assert "preview_lines = lines[:40]" in server
+        assert '"status": "RESOLVED"' in server
+        assert '"AMBIGUOUS" if len(exact) > 1 else "SEARCH_ONLY"' in server
+        assert "_feature_trace_branch_source_drilldown(implementation_path)" in server
+        assert "_feature_trace_branch_source_drilldown(path)" in server
 
         con.close(); catalog.close()
 

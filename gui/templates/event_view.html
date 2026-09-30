@@ -193,7 +193,13 @@
             <span class="mono">{{ s.npc_script }}.lua</span>
             {% if s.actor_match %}<span class="pill match">actor-name match</span>{% else %}<span class="pill unannotated">same zone + CSID</span>{% endif %}
           </div>
-          {% if s.path %}<div class="muted mono" style="margin-top:4px">{{ s.path }}{% if s.line %}:{{ s.line }}{% endif %}{% if s.function %} &middot; {{ s.function }}(){% endif %}</div>{% endif %}
+          {% if s.path %}
+          <div class="muted mono" style="margin-top:4px">{{ s.path }}{% if s.line %}:{{ s.line }}{% endif %}{% if s.function %} &middot; {{ s.function }}(){% endif %}</div>
+          <div class="event-call-list" style="margin-top:5px">
+            <a class="chip" href="/behavior?source={{ s.path|urlencode }}&server={{ s.source|urlencode }}">Behavior source</a>
+            <a class="chip" href="/features/trace?q={{ s.npc_script|urlencode }}">Feature Trace script/entity</a>
+          </div>
+          {% endif %}
           {% if s.calls %}
           <div style="margin-top:7px">
             <div class="muted" style="font-size:11px;margin-bottom:4px">Lua / engine handoff calls in this handler</div>
