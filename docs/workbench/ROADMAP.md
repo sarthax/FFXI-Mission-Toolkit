@@ -801,9 +801,9 @@ Additional QOL backlog:
 ### 2026-09-29 Item Editor strengthening / quality-of-life backlog
 
 Priority stack:
-- [~] Unified dirty-state and field-level change summary across item tables, masks, and client-relevant fields; navigation discard warnings are complete. Mods, pet mods, and latents remain on immediate-write paths and are not yet staged/dirty-tracked.
-- [~] Atomic whole-item save for the core one-row item_* tables: validate first, capture one coherent backup, update all changed tables in one DB transaction, validate/patch the DAT once, and restore the DAT snapshot if DB commit fails. Staged mods/pet-mods/latents are not yet included.
-- [~] Session undo / redo is implemented for atomic Save Item actions with Ctrl+Z / Ctrl+Y and redo via the pre-restore backup. Immediate mod/pet-mod/latent actions plus create/delete are not yet enrolled.
+- [x] Unified dirty-state and field-level change summary across item tables, masks, client-relevant fields, mods, pet mods, and latents; navigation discard warnings are enforced.
+- [x] Atomic whole-item save covers the core item_* tables plus staged mods/pet-mods/latents: validate first, capture one coherent backup, update all SQL rows in one DB transaction, validate/patch the DAT once, and restore the DAT snapshot if DB commit fails.
+- [~] Session undo / redo is implemented for whole-item Save Item actions, including mods/pet-mods/latents and synchronized DAT rollback/redo, with Ctrl+Z / Ctrl+Y. Create/delete actions remain outside the session stack.
 - [x] Expanded server-vs-client DAT comparison across every decoded overlapping field, with explicit per-field mismatches rather than level-only comparison.
 - [x] Centralized item validation panel with source-proven errors/warnings/info; errors block save, warnings require explicit confirmation.
 - [ ] Improved item search/results grid: exact ID lookup, name/ID search, richer filters, sortable columns, mismatch/server-only/DAT-only state, and recent-item navigation.
@@ -823,9 +823,9 @@ Create / clone:
 - [ ] After creation, open the new item automatically with Server/DAT synchronization status and undo-create support.
 
 Mods / pet mods / latents:
-- [ ] Stage mod/pet-mod/latent edits instead of immediately writing each row; include them in unified Save Item.
+- [x] Stage mod/pet-mod/latent edits instead of immediately writing each row; include them in unified Save Item.
 - [ ] Multi-add and copy-all-effects from another item.
-- [ ] Duplicate mod/latent detection and clearer sorting/filtering.
+- [~] Duplicate mod/pet-mod/latent composite-key detection is enforced in both UI staging and backend validation; clearer sorting/filtering remains.
 - [ ] Surface known mod units/comments and latent-condition parameter semantics only where confirmed.
 - [ ] Item-to-item effect diff for added/removed/changed mods and latents.
 
