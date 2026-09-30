@@ -6926,6 +6926,14 @@ async def itemedit_update(request: Request):
         return JSONResponse({"error": str(ex)}, status_code=400)
 
 
+@app.get("/itemedit/create-preview.json")
+def itemedit_create_preview(category: str):
+    import item_dat_tools
+    try:
+        return JSONResponse(item_dat_tools.preview_free_slot(category))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
 @app.post("/itemedit/create")
 async def itemedit_create(request: Request):
     import item_edit
