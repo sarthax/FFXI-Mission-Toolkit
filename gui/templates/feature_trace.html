@@ -258,6 +258,7 @@
             {% if drill.behavior_href %}<a class="chip" href="{{ drill.behavior_href }}">{{ 'Open exact Behavior source' if drill.status == 'RESOLVED' else 'Search Behavior Inspector' }}</a>{% endif %}
             {% if drill.graph_href %}<a class="chip" href="{{ drill.graph_href }}">Behavior graph JSON</a>{% endif %}
           </div>
+          {% if drill.match_basis %}<div class="muted" style="padding:6px 9px 0">match basis: {{ drill.match_basis }}</div>{% endif %}
           <div class="body">
             {% if drill.status == 'RESOLVED' %}
               <div><code>{{ drill.source.path }}</code>{% if drill.source.zone %} <span class="chip">{{ drill.source.zone }}</span>{% endif %}</div>
@@ -277,8 +278,10 @@
               {% else %}<div class="muted">Exact source resolved, but a text preview could not be read.</div>{% endif %}
             {% elif drill.status == 'AMBIGUOUS' %}
               <div class="muted">{{ drill.candidate_count or 0 }} exact-normalized source candidates matched. Feature Trace will not choose one automatically.</div>
+              {% if drill.candidates %}<div class="impl-event-links">{% for c in drill.candidates %}<a class="chip" href="{{ c.href }}">{{ c.name or c.path }}{% if c.zone %} · {{ c.zone }}{% endif %}</a>{% endfor %}</div>{% endif %}
             {% elif drill.status == 'SEARCH_ONLY' %}
               <div class="muted">No exact-normalized source name resolved in this provider tree. Use Behavior Inspector to review fuzzy/content matches.</div>
+              {% if drill.candidates %}<div class="impl-event-links">{% for c in drill.candidates %}<a class="chip" href="{{ c.href }}">{{ c.name or c.path }}{% if c.match %} · {{ c.match }}{% endif %}</a>{% endfor %}</div>{% endif %}
             {% elif drill.status == 'INSPECT_ERROR' or drill.status == 'SEARCH_ERROR' %}
               <div class="muted">Source drill-down could not be completed{% if drill.error %}: {{ drill.error }}{% endif %}.</div>
             {% else %}
