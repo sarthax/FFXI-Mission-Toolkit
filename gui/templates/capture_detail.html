@@ -142,7 +142,7 @@ main.capture-detail-page{padding:8px 10px 24px}
       {% elif dim.status == "PARTIAL" %}<span class="pill gap">partial</span>
       {% else %}<span class="pill">unknown</span>{% endif %}
     </td>
-    <td class="mono" style="font-size:11px;">{{ dim }}</td>
+    <td><details><summary class="muted">details</summary><pre class="mono" style="white-space:pre-wrap;font-size:10px;max-height:220px;overflow:auto">{{ dim }}</pre></details></td>
   </tr>
   {% endfor %}
 </table></div>
@@ -268,13 +268,15 @@ main.capture-detail-page{padding:8px 10px 24px}
 <div class="dense-toolbar" style="margin:8px 0 5px">
   <strong>NPC entries</strong>
   <span class="chip">{{ detail.npc_entries|length }}{% if detail.npc_entries|length == 200 %}+{% endif %}</span>
+  <input id="capture-npc-filter" type="search" placeholder="filter name / id / zone" style="min-width:190px">
+  <span id="capture-npc-visible" class="muted"></span>
   <span class="sp"></span>
   <a class="chip" href="/captures/plot_all?capture_id={{ detail.capture_id }}">Plot all paths</a>
 </div>
-<div class="table-wrap"><table>
+<div class="table-wrap"><table id="capture-npc-table">
   <tr><th>id</th><th>name</th><th>model</th><th>pos</th><th>hp%</th><th>zone</th><th></th></tr>
   {% for eid, name, model, x, y, z, hpp, zone_db in detail.npc_entries %}
-  <tr>
+  <tr data-search="{{ eid }} {{ name or '' }} {{ zone_db or '' }}">
     <td class="mono"><a href="/entity/{{ eid }}">{{ eid }}</a></td>
     <td>{{ name or '?' }}</td>
     <td class="mono">{{ model if model is not none else '?' }}</td>
@@ -293,6 +295,24 @@ main.capture-detail-page{padding:8px 10px 24px}
 </div>
 
 <script>
+(function(){
+  const input=document.getElementById('capture-npc-filter');
+  const table=document.getElementById('capture-npc-table');
+  const status=document.getElementById('capture-npc-visible');
+  if(input&&table){
+    const rows=[...table.querySelectorAll('tr[data-search]')];
+    const apply=()=>{
+      const q=input.value.trim().toLowerCase();
+      let visible=0;
+      rows.forEach(row=>{
+        const show=!q||(row.dataset.search||'').toLowerCase().includes(q);
+        row.hidden=!show;if(show)visible++;
+      });
+      if(status)status.textContent=q?visible+' shown':'';
+    };
+    input.addEventListener('input',apply);
+  }
+})();
 document.getElementById("summarize-capture-btn").addEventListener("click", async function () {
   var btn = this;
   var out = document.getElementById("summarize-capture-result");
