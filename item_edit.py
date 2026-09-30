@@ -336,6 +336,12 @@ def search(q, category="", min_level=-1, max_level=-1, job=-1, skill=-1, client_
                 server_rows["item_equipment"] = {"level": level, "jobs": jobs, "slot": slot}
             if wskill is not None:
                 server_rows["item_weapon"] = {"skill": wskill, "dmg": wdmg, "delay": delay}
+            elif type_name == "consumable":
+                server_rows["item_usable"] = {}
+            elif type_name == "puppet":
+                server_rows["item_puppet"] = {}
+            elif type_name == "furnishing":
+                server_rows["item_furnishing"] = {}
             cmp = compare_server_client(server_rows, client)
             cstate = "mismatch" if cmp["mismatches"] else "synced"
         if client_state and client_state != cstate:
