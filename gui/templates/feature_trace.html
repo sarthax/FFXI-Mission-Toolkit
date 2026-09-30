@@ -28,6 +28,11 @@
 .impl-branch[hidden]{display:none}
 .impl-source-facts{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:3px 8px;margin-top:7px;font-size:12px}
 .impl-source-facts dt{color:var(--muted)}.impl-source-facts dd{margin:0;word-break:break-word}
+.impl-source-drill{margin:8px 10px 10px;border:1px solid var(--border);border-radius:6px;background:var(--code-bg);overflow:hidden}
+.impl-source-drill .head{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:7px 9px;border-bottom:1px solid var(--border)}
+.impl-source-drill .body{padding:8px 9px}
+.impl-source-drill pre{white-space:pre-wrap;max-height:26rem;overflow:auto;font-size:11px;line-height:1.4}
+.impl-event-links{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0}
 </style>
 <h1>Feature Trace</h1>
 <p class="muted">Trace a canonical Workbench feature, entity, capability, function, binding, build target, artifact, or enum through recorded graph relationships. Connectivity is evidence navigation, not an implementation verdict.</p>
@@ -227,6 +232,7 @@
           <div class="impl-workflow">
             <a class="chip" href="/features/trace?q={{ branch.root.node_id|urlencode }}">Trace this representation</a>
             {% if branch.root.inspect_href %}<a class="chip" href="{{ branch.root.inspect_href }}">Open source view</a>{% endif %}
+            {% if branch.root.sql_href %}<a class="chip" href="{{ branch.root.sql_href }}">Open indexed SQL row</a>{% endif %}
           </div>
           {% if branch.root.identity %}
           <div class="impl-meta">{% for key,value in branch.root.identity.items() %}<span class="chip mono">{{ key }}={{ value }}</span>{% endfor %}</div>
@@ -241,6 +247,47 @@
           {% endif %}
           {% if branch.root.matched_on %}<div class="muted">matched on: {{ branch.root.matched_on|join(', ') }}</div>{% endif %}
         </div>
+
+        {% set drill = branch.source_drilldown %}
+        {% if drill %}
+        <div class="impl-source-drill">
+          <div class="head">
+            <strong>Server Lua drill-down</strong>
+            {% if drill.server %}<span class="chip">{{ drill.server }}</span>{% endif %}
+            <span class="chip">{{ drill.status }}</span>
+            {% if drill.behavior_href %}<a class="chip" href="{{ drill.behavior_href }}">{{ 'Open exact Behavior source' if drill.status == 'RESOLVED' else 'Search Behavior Inspector' }}</a>{% endif %}
+            {% if drill.graph_href %}<a class="chip" href="{{ drill.graph_href }}">Behavior graph JSON</a>{% endif %}
+          </div>
+          <div class="body">
+            {% if drill.status == 'RESOLVED' %}
+              <div><code>{{ drill.source.path }}</code>{% if drill.source.zone %} <span class="chip">{{ drill.source.zone }}</span>{% endif %}</div>
+              {% if drill.hooks %}<div class="impl-meta">{% for hook in drill.hooks %}<span class="chip">{{ hook }}</span>{% endfor %}</div>{% endif %}
+              {% if drill.events %}
+              <div class="impl-event-links">
+                {% for ev in drill.events %}
+                  {% if ev.href %}<a class="chip" href="{{ ev.href }}">CSID {{ ev.event_id }}</a>{% else %}<span class="chip">CSID {{ ev.event_id }}</span>{% endif %}
+                {% endfor %}
+              </div>
+              {% endif %}
+              {% if drill.excerpt %}
+              <details>
+                <summary>Source preview · lines {{ drill.excerpt.start_line }}–{{ drill.excerpt.end_line }}{% if drill.excerpt.truncated %} of {{ drill.excerpt.total_lines }}{% endif %}</summary>
+                <pre>{{ drill.excerpt.text }}</pre>
+              </details>
+              {% else %}<div class="muted">Exact source resolved, but a text preview could not be read.</div>{% endif %}
+            {% elif drill.status == 'AMBIGUOUS' %}
+              <div class="muted">{{ drill.candidate_count or 0 }} exact-normalized source candidates matched. Feature Trace will not choose one automatically.</div>
+            {% elif drill.status == 'SEARCH_ONLY' %}
+              <div class="muted">No exact-normalized source name resolved in this provider tree. Use Behavior Inspector to review fuzzy/content matches.</div>
+            {% elif drill.status == 'INSPECT_ERROR' or drill.status == 'SEARCH_ERROR' %}
+              <div class="muted">Source drill-down could not be completed{% if drill.error %}: {{ drill.error }}{% endif %}.</div>
+            {% else %}
+              <div class="muted">No configured script tree is available for this provider branch.</div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
         {% for step in branch.steps %}
         <div class="impl-step">
           <div class="impl-depth">+{{ step.depth }}</div>
