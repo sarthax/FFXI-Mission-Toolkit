@@ -3874,20 +3874,114 @@ def events_browse(request: Request, zone: str = "", q: str = ""):
     })
 
 
+def _event_server_refs(con: sqlite3.Connection, zone: str, entity_name: str | None, csid: int) -> list[dict]:
+    """Exact zone+CSID server refs, with actor-name matching presented as evidence quality only."""
+    if not con.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='npc_event_refs'"
+    ).fetchone():
+        return []
+    rows = con.execute(
+        """SELECT source,zone_name,npc_script,csid
+           FROM npc_event_refs
+           WHERE zone_name=? AND csid=?
+           ORDER BY source,npc_script""",
+        (zone, csid),
+    ).fetchall()
+    wanted = re.sub(r"[^a-z0-9]+", "", (entity_name or "").lower())
+    out = []
+    for row in rows:
+        d = dict(row)
+        script_norm = re.sub(r"[^a-z0-9]+", "", str(d["npc_script"]).lower())
+        d["actor_match"] = bool(wanted and wanted == script_norm)
+        d["path"] = None
+        d["excerpt"] = None
+        root = None
+        source = str(d["source"]).lower()
+        if source == "lsb":
+            root = build_lsb_index.LSB_ROOT
+        elif source == "topaz":
+            root = build_lsb_index.TOPAZ_ROOT
+        if root:
+            candidate = Path(root) / "scripts" / "zones" / zone / "npcs" / f"{d['npc_script']}.lua"
+            if candidate.is_file():
+                d["path"] = candidate.as_posix()
+                try:
+                    lines = candidate.read_text(encoding="utf-8", errors="replace").splitlines()
+                    hits = [
+                        i for i, line in enumerate(lines)
+                        if re.search(rf"(?:startEvent\s*\(\s*|(?:csid|event)\s*==\s*){int(csid)}\b", line)
+                    ]
+                    if hits:
+                        start = max(0, hits[0] - 4)
+                        end = min(len(lines), hits[0] + 10)
+                        d["excerpt"] = "\n".join(
+                            f"{idx + 1:04d}: {lines[idx]}" for idx in range(start, end)
+                        )
+                        d["line"] = hits[0] + 1
+                except OSError:
+                    pass
+        out.append(d)
+    return out
+
+
+def _event_capture_rows(con: sqlite3.Connection, zone: str, entity: int, csid: int) -> list[dict]:
+    event_hex = f"0x{int(csid):04X}"
+    rows = con.execute(
+        """SELECT e.capture_id,c.capture_label,e.zone_db,e.seq,e.direction,e.opcode,e.opcode_name,
+                  e.entity_id,e.entity_name,e.event_hex,e.option,e.message_id,e.params_raw
+           FROM capture_events e
+           LEFT JOIN captures c ON c.capture_id=e.capture_id
+           WHERE e.entity_id=? AND upper(e.event_hex)=upper(?)
+             AND (replace(lower(e.zone_db),' ','_')=replace(lower(?),' ','_')
+                  OR e.zone_db='__UNKNOWN__')
+           ORDER BY e.capture_id,e.seq
+           LIMIT 200""",
+        (entity, event_hex, zone),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
 @app.get("/events/view", response_class=HTMLResponse)
 def events_view(request: Request, zone: str, entity: int, csid: int):
     con = get_con()
     zoneid_row = con.execute("SELECT zoneid FROM zones WHERE name = ?", (zone.upper(),)).fetchone()
     zoneid = zoneid_row[0] if zoneid_row else None
-    out_dir = explore_event.ensure_export(zone, settings_mod.get_ffxi_install() or explore_event.DEFAULT_FFXI_PATH)
+    entity_row = (
+        con.execute("SELECT name FROM npc_names WHERE zoneid=? AND npcid=?", (zoneid, entity)).fetchone()
+        if zoneid is not None else None
+    )
+    entity_name = entity_row[0] if entity_row else None
+
+    out_dir = explore_event.ensure_export(
+        zone, settings_mod.get_ffxi_install() or explore_event.DEFAULT_FFXI_PATH
+    )
     result = explore_event_run(out_dir, entity, csid, zoneid)
     checks = []
+    summary = {"message_ids": [], "calls": [], "message_count": 0, "call_count": 0, "line_count": 0}
     if zoneid is not None and result["decompiled"]:
         checks = explore_event.cross_check(con, zoneid, result["decompiled"])
+        summary = explore_event.summarize_decompile(result["decompiled"])
+
+    server_refs = _event_server_refs(con, zone, entity_name, csid)
+    capture_rows = _event_capture_rows(con, zone, entity, csid)
+    observed_options = [row["option"] for row in capture_rows if row.get("option") is not None]
+    observed_params = [row["params_raw"] for row in capture_rows if row.get("params_raw")]
+    scaffold = explore_event.lua_scaffold(csid, observed_options, observed_params)
+
+    dialog_rows = []
+    for msg_id, our_text, note in checks:
+        dialog_rows.append({
+            "message_id": msg_id,
+            "text": our_text,
+            "note": note,
+        })
+
     con.close()
     return templates.TemplateResponse(request, "event_view.html", {
-        "zone": zone, "entity": entity, "csid": csid,
+        "zone": zone, "zoneid": zoneid, "entity": entity, "entity_name": entity_name, "csid": csid,
         "decompiled": result["decompiled"], "error": result["error"], "checks": checks,
+        "summary": summary, "server_refs": server_refs, "capture_rows": capture_rows,
+        "dialog_rows": dialog_rows, "scaffold": scaffold,
     })
 
 
