@@ -159,6 +159,31 @@ def main():
     assert '@app.get("/zoneplot/history/{kind}/{eid}")' in gui_server
     assert '@app.post("/zoneplot/restore_entity_previous")' in gui_server
 
+
+    # Nav diagnostics / elevation / persistent door orientation.
+    assert 'id="navdiag"' in template
+    assert 'id="navdiagOut"' in template
+    assert "async function loadSelectedNavDiag()" in template
+    assert "selectedNavDiag.placement_valid?0x55dd88:0xff4d4d" in template
+    assert '<option value="height">Elevation</option>' in template
+    assert "let heightRange={lo:0,hi:0};" in template
+    assert "Door/prop facing ticks" in template
+    assert "let doorFacingLines=null;" in template
+    assert "if(e.k!=='d') continue" in template
+    assert "def point_diagnostics(x, y, z, path=None):" in nyzul_plot
+    assert "def nav_diagnostics(zid, x, y, z, server=None):" in zone_plot
+    assert '@app.get("/zoneplot/{zid}/navdiag.json")' in gui_server
+
+    # Add workflow: clone selected, repeat placement, richer ghost.
+    assert 'id="cloneSelectedBtn"' in template
+    assert 'id="repeatAdd"' in template
+    assert 'id="addGhostInfo"' in template
+    assert "const addHeadingLine=new THREE.Line" in template
+    assert "const addGhostLabel=new CSS2DObject" in template
+    assert "aSel=kind==='m' ? {groupid:e.gid" in template
+    assert "Repeated placement active: source/rotation/instance retained" in template
+    assert '"gid": int(gid)' in zone_plot
+
     # Nav diagnostics / elevation / persistent door orientation.
     assert 'id="navdiag"' in template
     assert 'id="navdiagOut"' in template
