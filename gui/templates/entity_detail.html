@@ -2,6 +2,26 @@
 {% block title %}Entity Detail{% endblock %}
 
 {% block content %}
+<style>
+.entity-actions{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 14px}
+.entity-summary-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(340px,.8fr);gap:14px;margin:12px 0}
+.entity-card{border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden}
+.entity-card h3{margin:0;padding:9px 11px;border-bottom:1px solid var(--border);font-size:14px}
+.entity-card .body{padding:10px 11px}
+.entity-evidence{display:flex;gap:6px;flex-wrap:wrap}
+.entity-status{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);border-radius:6px;padding:5px 8px}
+.entity-status.yes{background:var(--accent-soft);border-color:var(--accent)}
+.entity-status.no{color:var(--muted)}
+.entity-attention{display:grid;gap:7px}
+.entity-attention-row{border-left:3px solid #b3893f;padding:6px 8px;background:var(--amber-soft)}
+.entity-chain{display:flex;gap:6px;align-items:stretch;flex-wrap:wrap}
+.entity-chain-node{border:1px solid var(--border);border-radius:6px;padding:7px 9px;min-width:135px;background:var(--code-bg)}
+.entity-chain-node strong{display:block;font-size:12px}.entity-chain-node span{font-size:11px;color:var(--muted);word-break:break-word}
+.entity-chain-arrow{align-self:center;color:var(--muted)}
+.entity-event-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:8px}
+.entity-event{border:1px solid var(--border);border-radius:6px;padding:8px;background:var(--code-bg)}
+@media(max-width:1000px){.entity-summary-grid{grid-template-columns:1fr}}
+</style>
 <p><a class="inline" href="/entity?q={{ q }}&page={{ page }}">&larr; back to search</a></p>
 
 {% if profile and not profile.error %}
@@ -16,13 +36,101 @@
   </div>
   {% endif %}
 </div>
-<p><a class="chip" href="/behavior?q={{ profile.name|urlencode }}">Inspect Lua behavior</a></p>
+<div class="entity-actions">
+  {% if profile.behavior_source %}
+  <a class="chip" href="/behavior?source={{ profile.behavior_source|urlencode }}">Inspect Lua behavior</a>
+  {% else %}
+  <a class="chip" href="/behavior?q={{ profile.name|urlencode }}">Find Lua behavior</a>
+  {% endif %}
+  <a class="chip" href="/features/trace?q={{ profile.npcid }}">Feature Trace</a>
+  {% if profile.zone_folder %}<a class="chip" href="/events?zone={{ profile.zone_folder|urlencode }}&q={{ profile.npcid }}">Events / CSID</a>{% endif %}
+  <a class="chip" href="/dialog?zone={{ profile.zone_folder|urlencode if profile.zone_folder else '' }}">Dialog Browser</a>
+  <a class="chip" href="/captures/query?table=capture_npc_entries&q={{ profile.npcid }}">Capture evidence</a>
+</div>
+
 <p>Zone: <strong>{{ profile.zone_name }}</strong> ({{ profile.zoneid }})
   <span class="muted">-- id-decoded zone_bits={{ d.zone_bits }}, local_bits={{ d.local_bits }}</span>
   {% if profile.zoneid is not none and d.zone_bits != profile.zoneid %}
   <span class="pill mismatch">id's own zone bits disagree with indexed zoneid -- worth a closer look</span>
   {% endif %}
 </p>
+
+<div class="entity-summary-grid">
+  <section class="entity-card">
+    <h3>Entity evidence bridge</h3>
+    <div class="body">
+      <div class="entity-evidence">
+        {% for s in profile.evidence_summary %}
+        <span class="entity-status {{ 'yes' if s.present else 'no' }}">
+          <strong>{{ s.label }}</strong>
+          <span>{{ 'present' if s.present else 'none indexed' }}{% if s.count is defined and s.count %} · {{ s.count }}{% endif %}</span>
+        </span>
+        {% endfor %}
+      </div>
+
+      <h4 style="margin:12px 0 6px">SQL / implementation wiring</h4>
+      <div class="entity-chain">
+        {% for step in profile.wiring_chain %}
+        {% if not loop.first %}<span class="entity-chain-arrow">&rarr;</span>{% endif %}
+        <div class="entity-chain-node">
+          <strong>{{ step.label }}</strong>
+          <span>{{ step.value }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <p class="muted" style="margin-bottom:0">This is the concrete entity wiring chain only. Use Feature Trace or Package Scope for broader transitive dependency closure.</p>
+    </div>
+  </section>
+
+  <aside class="entity-card">
+    <h3>Needs attention</h3>
+    <div class="body entity-attention">
+      {% if profile.attention %}
+        {% for issue in profile.attention %}
+        <div class="entity-attention-row">
+          <strong>{{ issue.label }}</strong>
+          <div class="muted">{{ issue.detail }}</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="muted">No concrete conflict/gap signal was synthesized from the currently indexed client, SQL, capture, and provenance evidence.</div>
+      {% endif %}
+    </div>
+  </aside>
+</div>
+
+{% if profile.event_wiring %}
+<section class="entity-card" style="margin-bottom:14px">
+  <h3>Observed CSID / dialog wiring</h3>
+  <div class="body">
+    <div class="entity-event-grid">
+      {% for e in profile.event_wiring %}
+      <div class="entity-event">
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <strong>CSID {{ e.event_id }}</strong>
+          <span class="chip mono">{{ e.event_hex }}</span>
+          <span class="chip">{{ e.count }} runtime obs.</span>
+          {% if e.decompile_status == 'ok' %}<span class="pill match">client decompile OK</span>
+          {% elif e.decompile_status == 'not_scanned' %}<span class="pill unannotated">client export not scanned</span>
+          {% else %}<span class="pill mismatch">{{ e.decompile_status }}</span>{% endif %}
+        </div>
+        {% if e.message_id %}
+        <div style="margin-top:5px">Observed message:
+          <a class="inline mono" href="/dialog?zone={{ profile.zone_folder|urlencode }}&q={{ e.message_id }}">{{ e.message_id }} / 0x{{ "%04X"|format(e.message_id) }}</a>
+        </div>
+        {% endif %}
+        {% if e.message_ids %}
+        <div class="muted" style="margin-top:4px">Client decompile message IDs:
+          {% for mid in e.message_ids %}<a class="chip mono" href="/dialog?zone={{ profile.zone_folder|urlencode }}&q={{ mid }}">{{ mid }}</a>{% endfor %}
+        </div>
+        {% endif %}
+        <div style="margin-top:7px"><a class="chip" href="{{ e.href }}">Open Event Wiring Dossier &rarr;</a></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
 
 {% if profile.npc_list %}
   {% set rd = profile.npc_list %}
@@ -121,6 +229,21 @@
     {% endfor %}
   </table></div>
   {% endif %}
+{% endif %}
+
+{% if profile.instance_memberships %}
+  <h2>Instance memberships</h2>
+  <div class="table-wrap"><table>
+    <tr><th>instance id</th><th>instance</th><th>instance zone</th><th>entrance zone</th></tr>
+    {% for inst in profile.instance_memberships %}
+    <tr>
+      <td class="mono">{{ inst.instanceid }}</td>
+      <td>{{ inst.instance_name or '(unnamed)' }}</td>
+      <td class="mono">{{ inst.instance_zone if inst.instance_zone is not none else '—' }}</td>
+      <td class="mono">{{ inst.entrance_zone if inst.entrance_zone is not none else '—' }}</td>
+    </tr>
+    {% endfor %}
+  </table></div>
 {% endif %}
 
 {% if profile.assault_mission %}
@@ -237,7 +360,7 @@
 {% if profile.lua_hits %}
 <div class="table-wrap"><table>
   {% for fname in profile.lua_hits %}
-  <tr><td class="mono">{{ fname }}</td></tr>
+  <tr><td class="mono">{{ fname }}</td><td><a class="chip" href="/behavior?source={{ fname|urlencode }}">Inspect behavior</a></td></tr>
   {% endfor %}
 </table></div>
 {% else %}<p class="muted">(none found)</p>{% endif %}
