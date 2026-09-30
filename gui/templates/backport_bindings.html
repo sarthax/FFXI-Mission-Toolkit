@@ -8,14 +8,14 @@
   <input type="hidden" name="status" value="{{ status }}">
   <input type="hidden" name="trace_q" value="{{ trace_q }}">
   {% if page > 1 %}
-  <a class="chip" href="/backport/bindings?q={{ q }}&status={{ status }}&page={{ page - 1 }}">&larr; prev</a>
+  <a class="chip" href="/backport/bindings?q={{ q }}&status={{ status }}&page={{ page - 1 }}{% if trace_q %}&trace_q={{ trace_q|urlencode }}{% endif %}">&larr; prev</a>
   {% endif %}
   <span class="muted">page</span>
   <input type="number" name="page" value="{{ page }}" min="1" max="{{ total_pages }}" style="width:70px;">
   <span class="muted">of {{ total_pages }}</span>
   <button type="submit">Go</button>
   {% if page < total_pages %}
-  <a class="chip" href="/backport/bindings?q={{ q }}&status={{ status }}&page={{ page + 1 }}">next &rarr;</a>
+  <a class="chip" href="/backport/bindings?q={{ q }}&status={{ status }}&page={{ page + 1 }}{% if trace_q %}&trace_q={{ trace_q|urlencode }}{% endif %}">next &rarr;</a>
   {% endif %}
 </form>
 {% endif %}
