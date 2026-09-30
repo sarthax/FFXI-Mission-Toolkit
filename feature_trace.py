@@ -85,6 +85,136 @@ def search_nodes(con: sqlite3.Connection, term: str, catalog_con: sqlite3.Connec
     return sorted(rows, key=lambda row: (str(row.get("display_name") or "").casefold(), row["node_id"]))
 
 
+ENTITY_OBJECT_TYPES = {"NPC", "MOB", "INSTANCE_ENTITY", "CLIENT_IDENTITY"}
+
+
+def _numeric_entity_query(query: str) -> int | None:
+    """Parse an exact entity-style query without treating arbitrary embedded digits as identity."""
+    value = (query or "").strip()
+    for prefix in ("npc:", "mob:", "entity:"):
+        if value.lower().startswith(prefix):
+            value = value[len(prefix):]
+            break
+    try:
+        return int(value, 0)
+    except ValueError:
+        return None
+
+
+def canonical_entity_root(con: sqlite3.Connection, numeric_id: int) -> str | None:
+    """Resolve a numeric runtime/server entity ID through explicit canonical identifier mappings."""
+    available = {r[0] for r in con.execute(
+        "SELECT name FROM sqlite_master WHERE type='table'"
+    )}
+    if "entity_identifiers" not in available:
+        return None
+    cols = {r[1] for r in con.execute("PRAGMA table_info(entity_identifiers)")}
+    required = {"entity_id", "identifier_value"}
+    if not required.issubset(cols):
+        return None
+    rows = con.execute(
+        """SELECT DISTINCT entity_id
+           FROM entity_identifiers
+           WHERE CAST(identifier_value AS TEXT)=?
+           ORDER BY entity_id LIMIT 3""",
+        (str(numeric_id),),
+    ).fetchall()
+    return rows[0][0] if len(rows) == 1 else None
+
+
+def _entity_catalog_match(row: dict, numeric_id: int) -> bool:
+    if row.get("node_type") not in ENTITY_OBJECT_TYPES:
+        return False
+    if row.get("numeric_id") is not None:
+        return str(row["numeric_id"]) == str(numeric_id)
+    identity = row.get("identity") or {}
+    for key in ("npcid", "mobid", "entity_id", "id", "numeric_id"):
+        if key in identity and str(identity[key]) == str(numeric_id):
+            return True
+    # Client identity providers keep the numeric entity in a searchable alias/detail field.
+    return "numeric_id" in (row.get("matched_on") or []) and str(numeric_id) in str(row)
+
+
+def entity_implementation_path(
+    graph_con: sqlite3.Connection,
+    catalog_con: sqlite3.Connection,
+    query: str,
+    *,
+    max_provider_depth: int = 4,
+) -> dict | None:
+    """Project an exact entity ID across indexed source representations.
+
+    This is presentation/navigation evidence. It deliberately does not insert or infer canonical
+    graph edges between SQL/LSB/Topaz/DSP rows that merely share a numeric entity ID.
+    """
+    numeric_id = _numeric_entity_query(query)
+    if numeric_id is None:
+        return None
+
+    matches = search_nodes(graph_con, str(numeric_id), catalog_con)
+    entity_rows = [row for row in matches if _entity_catalog_match(row, numeric_id)]
+    root = canonical_entity_root(graph_con, numeric_id)
+
+    branches = []
+    seen_roots = set()
+    for row in entity_rows:
+        node_id = row["node_id"]
+        if node_id in seen_roots:
+            continue
+        seen_roots.add(node_id)
+        branch = {
+            "provider": row.get("provider") or ("canonical" if not row.get("catalog_only") else "schema-fallback"),
+            "domain": row.get("domain"),
+            "root": row,
+            "steps": [],
+        }
+        queue = deque([(node_id, 0)])
+        visited = {node_id}
+        while queue:
+            current, depth = queue.popleft()
+            if depth >= max_provider_depth:
+                continue
+            links = provider_relationships(catalog_con, current)
+            for link in links:
+                target = link.get("target_node")
+                if not target:
+                    continue
+                info = node_info(graph_con, target, catalog_con)
+                rep = (info.get("representations") or [{}])[0]
+                branch["steps"].append({
+                    "depth": depth + 1,
+                    "relationship": link.get("relationship"),
+                    "basis": link.get("basis"),
+                    "source_node": current,
+                    "target_node": target,
+                    "target_name": link.get("target_name") or rep.get("display_name") or target,
+                    "target_type": link.get("target_type") or rep.get("node_type") or "UNKNOWN",
+                    "provider_native": True,
+                })
+                if target not in visited:
+                    visited.add(target)
+                    queue.append((target, depth + 1))
+        branches.append(branch)
+
+    branches.sort(key=lambda b: (
+        str(b.get("provider") or ""),
+        str((b.get("root") or {}).get("table") or ""),
+        str((b.get("root") or {}).get("node_id") or ""),
+    ))
+    return {
+        "numeric_id": numeric_id,
+        "canonical_root": root,
+        "canonical_mapped": root is not None,
+        "branches": branches,
+        "representation_count": len(entity_rows),
+        "notes": [
+            "Rows that share this numeric entity ID remain separate source representations.",
+            "Provider-native links are schema relationships, not inferred canonical graph edges.",
+            "Canonical runtime/semantic traversal is available only when an explicit canonical identity mapping exists.",
+        ],
+    }
+
+
 def _legacy_search_nodes(con: sqlite3.Connection, term: str) -> list[dict]:
     pattern = f"%{term}%"
     matches = []
