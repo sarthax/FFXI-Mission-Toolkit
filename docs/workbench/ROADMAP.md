@@ -137,7 +137,7 @@ First active foundation milestone:
 - [x] Add an Implementation Path view that preserves each source/provider branch and recursively follows exact provider-native wiring such as instance membership and mob spawn → group → pool without manufacturing canonical graph edges.
 - [x] Automatically use an explicit canonical entity mapping when entity_identifiers resolves one unique graph root, preserving runtime/semantic traversal where available.
 - [x] Remove the silent Absolute Virtue dependency-map fallback from the normal Feature Trace page; canonical dependency visualization now waits for a real mapped root and clearly distinguishes canonical graph coverage from catalog-backed implementation wiring.
-- [ ] Continue broadening canonical identity ingestion/bridging so more catalog-backed entities also gain runtime/semantic graph connectivity without relying on presentation-time identity assumptions.
+- [~] Continue broadening canonical identity ingestion/bridging so more catalog-backed entities also gain runtime/semantic graph connectivity without relying on presentation-time identity assumptions. Capture-event entity IDs now bridge to an existing canonical NPC/MOB root only when one explicit entity-style identifier mapping exists; unrelated numeric namespaces are ignored and ambiguous/stale runtime bridges are withheld/reconciled. Broader automatic identity ingestion across remaining providers is still open.
 
 ### 2026-09-30 Entity implementation dossier
 - [x] Preserve Entity Profile as the canonical cross-source evidence bridge while adding a synthesized dossier layer: evidence-presence summary, concrete needs-attention signals, instance memberships, SQL/Lua wiring chain, direct Behavior Inspector handoff, Feature Trace/Capture/Dialog/Event links, and unified client-defined + runtime-observed CSID/dialog wiring.
@@ -146,9 +146,14 @@ First active foundation milestone:
 - [x] Add depth-1 canonical Used By / direct relationship projection from the Workbench graph, preserving direction, confidence, status, evidence IDs, and provider-native links; leave transitive closure to Feature Trace / Package Scope.
 - [ ] Follow-up: consolidate source excerpts/callback ownership where useful and add richer implementation-gap actions only where backed by existing evidence rather than inferred absence.
 
+### 2026-09-30 Capture Timeline interaction reconstruction
+- [x] Add presentation-only interaction candidates over real `capture_events` sequence evidence, grouping only contiguous rows with compatible zone/entity/CSID context.
+- [x] Split candidates on zone changes, large sequence gaps, conflicting explicit entities, or a new explicit CSID rather than fabricating cross-row transactions.
+- [x] Surface source rows, observed options/messages, entity links, and partial-evidence state in the Capture Timeline while explicitly labeling the grouping as non-canonical.
+
 ### 2026-09-30 Events / CSID wiring dossier
 - [x] Upgrade Events / CSID from a client-only decompile view into a runtime-to-implementation dossier: decimal/hex CSID browsing, direct entity links, actor-specific server-reference counts, exact capture observation counts, full dialog/message drill-down, server source excerpts, Lua handler/API-call inventory with Binding Reference links, and explicitly non-authoritative copyable Lua scaffolding derived from the selected CSID plus observed option/parameter evidence.
-- [ ] Follow-up QOL: parameter/work-variable visualization and eventUpdate/option flow graphs once additional real CSID samples justify a generic representation; do not assign semantics to work variables without evidence.
+- [x] Follow-up QOL: parameter/work-variable and eventUpdate/option flow visualization is implemented as evidence-only inventory: literal client work-area references, literal update markers, observed option values, positional captured parameter values, and server callback stages. Work-variable and parameter semantics remain explicitly uninterpreted.
 
 ### Phase 1 — Canonical evidence and feature graph (P0)
 - [x] Formalize Source/Snapshot.
