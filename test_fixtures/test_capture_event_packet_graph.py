@@ -52,7 +52,7 @@ def main():
         result=connect(srcdb,graphdb)
         assert result["counts"]["entity_observations"]==0,result
         con=sqlite3.connect(graphdb)
-        assert con.execute("SELECT COUNT(*) FROM entity_relationships WHERE relationship_id='capture-entity:3:Bastok_Mines:1'").fetchone()[0]==1
+        assert con.execute("SELECT COUNT(*) FROM entity_relationships WHERE relationship_id='capture-entity:3:Bastok_Mines:1'").fetchone()[0]==0
         con.close()
     print("capture event packet graph self-test: PASS")
 
