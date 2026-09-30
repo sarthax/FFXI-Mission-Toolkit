@@ -585,23 +585,6 @@ def current_theme() -> str:
 templates.env.globals["current_theme"] = current_theme
 
 
-def shell_brand() -> dict:
-    """Current shell branding, read fresh so Settings changes apply without restart."""
-    con = get_con()
-    try:
-        values = settings_mod.get_all(con)
-    finally:
-        con.close()
-    return {
-        "enabled": values.get("shell_brand_enabled", "1") != "0",
-        "text": (values.get("shell_brand_text") or "").strip(),
-        "icon": (values.get("shell_brand_icon") or "").strip(),
-    }
-
-
-templates.env.globals["shell_brand"] = shell_brand
-
-
 def backport_enabled() -> bool:
     """Module boundary from CORE_AGNOSTIC_DESIGN.md: the backport module (ID Drift, and any future
     Topaz/DSP-vs-LSB browse page) is gated by whether the user has a real Topaz or DSP checkout
