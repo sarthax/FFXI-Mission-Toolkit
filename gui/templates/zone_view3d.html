@@ -9,7 +9,7 @@
   #zone3d-title .chip{font-weight:500}
   #viewer-container{height:calc(100vh - var(--shell-h) - 185px) !important;min-height:480px}
   #capture-spatial-controls{padding:5px 7px;border:1px solid var(--border);border-radius:6px;background:var(--surface)}
-  @media (max-width:900px){#viewer-container{height:calc(100vh - var(--shell-h) - 235px) !important;min-height:400px}}
+  @media (max-width:900px) { #viewer-container{height:calc(100vh - var(--shell-h) - 235px) !important;min-height:400px} }
 </style>
 <div id="zone3d-title" class="dense-toolbar"><strong>3D Zone Viewer</strong><span class="chip mono">{{ zone_name }} ({{ zoneid }})</span><span class="sp"></span>{% if not multi %}<a class="inline" href="/zoneplot2?zone={{ zoneid }}">Open Zone Editor ↗</a>{% endif %}</div>
 <details class="dense-card" style="margin:0 0 6px"><summary>About this view</summary><div class="muted" style="padding-top:4px">Real client visual mesh (walls/buildings/props -- not the invisible collision
