@@ -5680,7 +5680,7 @@ def zone_view3d(request: Request, zoneid: int, capture_id: int = 0, entity_id: i
     con = get_con()
     if zoneid == 0:
         # Nav-bar entry point has no zone context yet -- land on the first real zone and let the
-        # page's own zone dropdown take it from there, same pattern as /zoneplot's implicit default.
+        # page's own zone dropdown take it from there, same pattern as the current Zone Editor's implicit default.
         first = con.execute("SELECT zoneid FROM zones WHERE zoneid > 0 ORDER BY name LIMIT 1").fetchone()
         con.close()
         if first:
