@@ -6836,6 +6836,24 @@ async def itemedit_dat_target_set(request: Request):
         return JSONResponse({"error": str(ex)}, status_code=400)
 
 
+@app.get("/itemedit/{item_id}/live-pivot-diff.json")
+def itemedit_live_pivot_diff(item_id: int):
+    import item_dat_tools
+    try:
+        return JSONResponse(item_dat_tools.compare_live_pivot_record(item_id))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/itemedit/live-pivot-copy")
+async def itemedit_live_pivot_copy(request: Request):
+    import item_dat_tools
+    b = await request.json()
+    try:
+        return JSONResponse(item_dat_tools.copy_live_pivot_record(b["item_id"], b["direction"]))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
 @app.get("/itemedit/{item_id}/dat-pristine-diff.json")
 def itemedit_dat_pristine_diff(item_id: int):
     import item_dat_tools
