@@ -843,6 +843,6 @@ DAT workflow:
 History / audit / safety:
 - [x] Selected-item change-history panel with field-level summaries, comments, SQL/DAT/effect action types, legacy-backup fallback metadata, and one-click previous-state restore that backs up the current state first.
 - [x] Whole-item delete/create/edit history integrates with session undo/redo using exact client-record snapshots.
-- [ ] Dependency/usage view before destructive changes: rewards, drops, shops, recipes, scripts, missions/quests, and client references when indexed.
+- [~] Dependency/usage view before destructive changes now scans exact active-server content-table item references (including drops/recipes/shops/rewards where present) and opt-in Lua source-text references, and surfaces exact-reference warnings in the delete flow. Remaining: canonical Workbench graph relationships and client-reference/index integration.
 - [ ] Optional constrained batch editor with preview and one atomic backup for proven-safe field classes.
 - [ ] Item comparison mode for SQL, DAT, mods, pet mods, and latents side-by-side.
