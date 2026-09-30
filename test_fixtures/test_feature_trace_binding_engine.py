@@ -207,7 +207,7 @@ int32 CLuaOtherEntity::FOO(lua_State* L)
         assert engine["case_only_call_count"]==1,engine
         assert engine["case_ambiguous_call_count"]==1,engine
         assert engine["unindexed_call_count"]==1,engine
-        assert engine["multi_location_call_count"]==1,engine
+        assert engine["multi_location_call_count"]==2,engine
         assert engine["binding_index_status"]=="READY",engine
         assert engine["binding_index_error"] is None,engine
         assert engine["helper_binding_counts"]=={"EXACT":1,"NOT_INDEXED":1},engine

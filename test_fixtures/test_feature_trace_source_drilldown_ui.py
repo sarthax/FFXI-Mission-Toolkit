@@ -82,7 +82,7 @@ def main():
         "def binding_location",
         "def binding_lookup",
         "def behavior_engine_drilldown",
-        "binding_index=binding_index_for_server(server,source_root)",
+        "binding_index,index_error=_build_binding_index(server,source_root)",
         "index=binding_index",
         '"CASE_ONLY"',
         '"NOT_INDEXED"',
