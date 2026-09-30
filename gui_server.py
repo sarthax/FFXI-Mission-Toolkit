@@ -2374,6 +2374,93 @@ def entity_detail(request: Request, npcid: int, q: str = "", page: int = 1):
 DIALOG_PAGE_SIZE = 200
 
 
+def _dialog_event_refs(zone_name: str, zoneid: int | None) -> dict[int, list[dict]]:
+    """Read cached client-CSID message references without triggering a fresh event export.
+
+    Dialog browsing must stay cheap. If the Events/CSID tool has already produced events.yml for
+    this zone, refresh/use its fingerprinted health cache; otherwise simply report no cached refs.
+    """
+    if not zone_name or zoneid is None:
+        return {}
+    out_dir = TOOLS_ROOT / "mission_reports" / zone_name
+    if not (out_dir / "events.yml").exists():
+        return {}
+    try:
+        health = explore_event.scan_event_health(out_dir, zoneid)
+    except Exception:
+        return {}
+    refs = {}
+    for message_id, rows in (health.get("message_refs") or {}).items():
+        try:
+            refs[int(message_id)] = list(rows)
+        except (TypeError, ValueError):
+            continue
+    return refs
+
+
+def _enrich_dialog_rows(con: sqlite3.Connection, rows: list[dict], zone_name: str, zoneid: int | None) -> list[dict]:
+    event_refs = _dialog_event_refs(zone_name, zoneid) if zoneid is not None else {}
+    tables = {row[0] for row in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    has_drift = "dialog_drift_report" in tables
+    has_capture_events = "capture_events" in tables and "captures" in tables
+
+    for item in rows:
+        zid = int(item["zoneid"])
+        idx = int(item["idx"])
+
+        item["id_hex"] = f"0x{idx:04X}"
+        item["drift_rows"] = []
+        if has_drift:
+            item["drift_rows"] = [
+                dict(row) for row in con.execute(
+                    """SELECT constant_name,wired_id,commented_text,real_text,status,zone_content_tags
+                       FROM dialog_drift_report WHERE zoneid=? AND wired_id=?
+                       ORDER BY constant_name""",
+                    (zid, idx),
+                ).fetchall()
+            ]
+
+        item["prev_dialog"] = None
+        item["next_dialog"] = None
+        prev_row = con.execute(
+            "SELECT idx,text FROM dialog_text WHERE zoneid=? AND idx<? ORDER BY idx DESC LIMIT 1",
+            (zid, idx),
+        ).fetchone()
+        next_row = con.execute(
+            "SELECT idx,text FROM dialog_text WHERE zoneid=? AND idx>? ORDER BY idx ASC LIMIT 1",
+            (zid, idx),
+        ).fetchone()
+        if prev_row:
+            item["prev_dialog"] = {"idx": prev_row["idx"], "text": prev_row["text"]}
+        if next_row:
+            item["next_dialog"] = {"idx": next_row["idx"], "text": next_row["text"]}
+
+        item["runtime_count"] = 0
+        item["runtime_rows"] = []
+        if has_capture_events:
+            item["runtime_count"] = con.execute(
+                "SELECT COUNT(*) FROM capture_events WHERE message_id=? AND "
+                "(zone_db=? OR replace(lower(zone_db),' ','_')=replace(lower(?),' ','_'))",
+                (idx, item["zone"], item["zone"]),
+            ).fetchone()[0]
+            item["runtime_rows"] = [
+                dict(row) for row in con.execute(
+                    """SELECT e.capture_id,c.capture_label,e.seq,e.entity_id,e.entity_name,
+                              e.event_hex,e.option,e.direction,e.opcode,e.opcode_name
+                       FROM capture_events e
+                       LEFT JOIN captures c ON c.capture_id=e.capture_id
+                       WHERE e.message_id=?
+                         AND (e.zone_db=? OR replace(lower(e.zone_db),' ','_')=replace(lower(?),' ','_'))
+                       ORDER BY e.capture_id,e.seq LIMIT 5""",
+                    (idx, item["zone"], item["zone"]),
+                ).fetchall()
+            ]
+
+        item["event_refs"] = event_refs.get(idx, []) if zid == zoneid else []
+
+    return rows
+
+
 @app.get("/dialog", response_class=HTMLResponse)
 def dialog_search(request: Request, q: str = "", zone: str = "", page: int = 1, jump_id: int | None = None):
     con = get_con()
@@ -2402,7 +2489,7 @@ def dialog_search(request: Request, q: str = "", zone: str = "", page: int = 1, 
             (zoneid, DIALOG_PAGE_SIZE, offset),
         ).fetchall()
         for r in rows:
-            results.append({"zone": zone.upper(), "idx": r["idx"], "text": r["text"]})
+            results.append({"zoneid": zoneid, "zone": zone.upper(), "idx": r["idx"], "text": r["text"]})
     if q:
         if q.isdigit():
             # Dialog id lookup -- exact idx match, not a text search. Across all zones unless a
@@ -2433,9 +2520,10 @@ def dialog_search(request: Request, q: str = "", zone: str = "", page: int = 1, 
                 rows = []
         for r in rows:
             zname = con.execute("SELECT name FROM zones WHERE zoneid = ?", (r["zoneid"],)).fetchone()
-            results.append({"zone": zname[0] if zname else "?", "idx": r["idx"], "text": r["text"]})
+            results.append({"zoneid": r["zoneid"], "zone": zname[0] if zname else "?", "idx": r["idx"], "text": r["text"]})
 
     total_pages = max(1, (total + DIALOG_PAGE_SIZE - 1) // DIALOG_PAGE_SIZE)
+    results = _enrich_dialog_rows(con, results, zone.upper() if zone else "", zoneid)
     zones = con.execute("SELECT zoneid, name FROM zones WHERE zoneid > 0 ORDER BY name").fetchall()
     con.close()
     return templates.TemplateResponse(request, "dialog.html", {
