@@ -1,3 +1,13 @@
+## 2026-09-30 Configurable shell branding
+
+- [x] Replace hard-coded ValhallaXI shell logo/text with settings-backed branding.
+- [x] Add show/hide branding toggle.
+- [x] Add user-defined brand text.
+- [x] Add validated custom icon upload and default-icon reset.
+- [x] Keep uploaded branding as local runtime data outside Git.
+- [x] Preserve ValhallaXI logo/text as the default for existing installs.
+- [x] Add shell rendering regressions for default/custom/hidden branding.
+
 ## 2026-09-30 Unified acquisition catalog foundation
 
 - [x] Normalize existing mob-drop logical records into DROP_POOL acquisition paths.
