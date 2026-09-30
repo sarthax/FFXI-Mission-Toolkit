@@ -819,7 +819,7 @@ Create / clone:
 - [x] One-click Clone This Item from the open editor.
 - [~] Clone effect scopes support template-only, +mods, +mods/pet-mods, and +all latents in the same creation transaction. A distinct pure SQL-only/no-client template mode remains.
 - [~] Pre-create summary shows the current verified free-slot candidate ID, DAT category/record/destination, SQL rows, copied effect counts, and write target. The candidate is intentionally not reserved and is revalidated at Save.
-- [ ] Free ID / DAT-slot browser showing server occupancy, DAT occupancy, mismatches, and only verified reserved/unsafe ranges.
+- [x] Free ID / DAT-slot browser showing server occupancy, DAT occupancy, used-both/server-only/DAT-only/free states, and only verified reservation rules (item id 0 sentinel).
 - [x] After creation, open the new item automatically with Server/DAT synchronization status and undo-create support.
 
 Mods / pet mods / latents:
@@ -836,7 +836,7 @@ DAT workflow:
 - [x] Compare the active write target's decoded DAT record against the permanent pristine backup and show changed fields.
 - [x] Explicit reconcile actions: use server values or use client values per confirmed overlapping field; structural item-type mismatches remain diagnostic-only and never guess authority.
 - [x] Safe record-level restore from exact item backup snapshots, replacing only the selected item's DAT record and enrolling the action in session undo/redo.
-- [ ] Compare Live DAT vs Xi-Pivot copy and copy one direction explicitly.
+- [x] Compare Live DAT vs Xi-Pivot at the selected item-record level and explicitly copy only that record Live→Pivot or Pivot→Live with destination backup.
 
 History / audit / safety:
 - [ ] Selected-item change-history panel with field-level summaries, comments, SQL/DAT/effect action types, and one-click previous-state restore.
