@@ -85,7 +85,7 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
 </div>
 <div id="zmain">
 <div id="lpanel" class="zpanel">
-  <div class="ztabs" id="ltabs"><button class="tabb" data-lt="ents">Entities</button><button class="tabb" data-lt="layers">Layers</button><button class="tabb" data-lt="tools">Tools</button></div>
+  <div class="ztabs" id="ltabs"><button class="tabb" data-lt="ents">Entities</button><button class="tabb" data-lt="layers">Layers</button><button class="tabb" data-lt="rev">Review</button><button class="tabb" data-lt="tools">Tools</button></div>
   <div class="zpane" id="lp-ents">
   <h3 id="matchhdr">Matches <span class="muted" id="cnt"></span></h3>
   <div id="listfilters" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:4px;font-size:11px">
@@ -124,6 +124,27 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
   <details class="zdet" open><summary>Summary</summary><div id="sum" class="mono"></div></details>
   </div>
   </div>
+  <div class="zpane" id="lp-rev" hidden>
+    <details class="zdet" open><summary>Missing scripts (NPCs)</summary>
+      <div class="muted" style="font-size:10px">NPCs with no <span class="mono">scripts/zones/&lt;zone&gt;/npcs/&lt;Name&gt;.lua</span>. They spawn but do nothing when clicked. Doors/props are skipped.</div>
+      <div><button id="rvScripts" type="button">Scan</button> <span id="rvScriptsMsg" class="muted" style="font-size:10px"></span></div>
+      <div id="rvScriptsList" class="mono" style="font-size:10px;max-height:170px;overflow:auto"></div>
+    </details>
+    <details class="zdet" open><summary>Duplicates &amp; collisions</summary>
+      <div class="muted" style="font-size:10px">Rows stacked at nearly the same spot (horizontal distance, and within 3y in height).</div>
+      <label style="font-size:11px">Within <input type="number" id="rvDupD" value="0.5" step="0.1" min="0.05" style="width:60px"> y</label> <button id="rvDup" type="button">Scan</button> <button id="rvDupClr" type="button">Clear rings</button>
+      <div id="rvDupMsg" class="muted" style="font-size:10px"></div>
+      <div id="rvDupList" class="mono" style="font-size:10px;max-height:170px;overflow:auto"></div>
+    </details>
+    <details class="zdet" open><summary>Spawn groups</summary>
+      <div class="muted" style="font-size:10px">Click a row to select the whole group and frame it. Spread = farthest spawn from the group centre.</div>
+      <div id="rvGroups" class="mono" style="font-size:10px;max-height:260px;overflow:auto"></div>
+    </details>
+    <details class="zdet" open><summary>Camera bookmarks</summary>
+      <div style="display:flex;gap:4px"><input id="bmName" placeholder="Bookmark name" style="flex:1;min-width:0"><button id="bmSave" type="button">Save view</button></div>
+      <div id="bmList" style="font-size:11px;margin-top:4px"></div>
+    </details>
+  </div>
   <div class="zpane" id="lp-tools" hidden>
     <div class="ztabs" id="ttabs"><button class="tabb" data-tt="gen">Generator</button><button class="tabb" data-tt="add">Add</button><button class="tabb" data-tt="backup">Backups</button></div>
     <div id="tt-gen">
@@ -149,6 +170,11 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
   <div class="row"><button id="lgGen" type="button">Preview</button><button id="lgRnd" type="button">Reseed</button><button id="lgClr" type="button">Clear</button></div>
   <div class="row"><select id="lgRole"><option value="all">Place: all</option><option value="c">Centre only</option><option value="r">Ring only</option><option value="o">Outskirts only</option></select><button id="lgPlace" type="button">Place via Add source</button></div>
   <div id="lgMsg" class="mono" style="font-size:10px;white-space:pre-wrap;margin-top:3px"></div>
+  <details class="zdet" style="margin-top:6px"><summary>Templates (save / re-stamp)</summary>
+    <div class="muted" style="font-size:10px">Save the current preview as a named template (offsets relative to the centre). Stamp re-creates it around the centre in any zone; then Place as usual.</div>
+    <div style="display:flex;gap:4px"><input id="tplName" placeholder="Template name" style="flex:1;min-width:0"><button id="tplSave" type="button">Save preview</button></div>
+    <div style="display:flex;gap:4px;margin-top:4px"><select id="tplSel" style="flex:1;min-width:0"></select><button id="tplStamp" type="button">Stamp at centre</button><button id="tplDel" type="button">Delete</button></div>
+  </details>
   <details class="zdet"><summary>Mission descriptors (existing mechanics)</summary>  
   <label>Mechanic <select id="gd"><option value="">(none)</option></select></label>
   <label>Seed <input type="number" id="gseed" value="1"></label>
@@ -190,7 +216,7 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
     <button id="zgMove" type="button" title="Gizmo: move">Move</button><button id="zgRotate" type="button" title="Gizmo: rotate">Rotate</button>
     <span class="gsep"></span>
     <select id="projection" title="Projection"><option value="perspective">Perspective</option><option value="orthographic">Orthographic</option></select>
-    <button id="measureBtn" type="button" title="Measure distance between two map points">Measure</button><button id="measureClear" type="button" title="Clear measurement">&times;</button>
+    <button id="measureBtn" type="button" title="Measure distance between two map points">Measure</button><label title="Also measure along the navmesh (A* over walkable polygons)" style="font-size:11px"><input type="checkbox" id="measurePath" checked> path</label><button id="measureClear" type="button" title="Clear measurement">&times;</button>
   </div>
   <div id="map-compass" title="World compass. FFXI rotation: 0=East, 64=South, 128=West, 192=North (world +Z is north)."
        style="position:absolute;right:12px;top:12px;width:92px;height:92px;border-radius:50%;border:1px solid rgba(255,255,255,.45);background:rgba(4,8,12,.72);z-index:8;pointer-events:none;box-shadow:0 2px 8px #0008">
@@ -271,6 +297,21 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
       <li>Every add is backed up first and the SQL is shown in the message box and journal. Editing <span class="mono">sql/*.sql</span> by hand has no live effect until reimported; the live DB is written immediately.</li>
     </ul>
 
+    <h3>Review tab</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li><b>Missing scripts:</b> lists NPCs with no Lua file under <span class="mono">scripts/zones/&lt;zone&gt;/npcs</span>; click one to select it.</li>
+      <li><b>Duplicates &amp; collisions:</b> finds rows within the chosen distance (and 3y in height) and draws red rings on them.</li>
+      <li><b>Spawn groups:</b> per mob group: family, level range, spawn count, centre and spread. Click to select the whole group.</li>
+      <li><b>Camera bookmarks:</b> named views saved per zone in this browser (not in the database).</li>
+    </ul>
+    <h3>Script &amp; mods, bulk tools, templates, path measure</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li><b>Script &amp; mods</b> (inspector): whether the entity's Lua file exists and every line that sets mods, flags or local vars. Add never writes these, so this shows what you still need to supply. Read-only.</li>
+      <li><b>Align / Spread / Mirror</b> (multi-select): Align sets X, Y, Z or facing to the selection average / primary. Spread spaces rows evenly. Mirror flips about the selection centre and mirrors facing. Preview first, then Save.</li>
+      <li><b>Measure &rarr; path:</b> with &ldquo;path&rdquo; ticked, the tool also routes across the navmesh (orange) and reports the walking distance, or says there is no route.</li>
+      <li><b>Generator templates:</b> Save preview stores the layout as offsets from its centre (this browser only). Stamp re-creates it at the current centre; Place then adds rows from the Add source.</li>
+    </ul>
+
     <h3>Quick finds</h3>
     <ul style="padding-left:18px;margin:4px 0">
       <li>The zone box filters the zone list by partial name or number; the &ldquo;by #&rdquo; / &ldquo;by name&rdquo; control sorts it. If only one zone matches it is opened.</li>
@@ -342,6 +383,13 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
     <label>ΔZ <input type="number" step="0.1" id="bulk-dz" value="0"></label>
     <label>ΔRot <input type="number" step="1" id="bulk-dr" value="0"></label>
     <button id="bulk-preview" type="button" style="margin-top:4px">Preview offset</button>
+  </div>
+  <div style="border:1px solid rgba(255,255,255,.12);border-radius:4px;padding:5px;margin-bottom:6px">
+    <div style="font-weight:600;font-size:11px;margin-bottom:3px">Align / Distribute / Mirror</div>
+    <div class="muted" style="font-size:9px">Align sets one value to the selection average. Distribute spaces 3+ rows evenly between the two extremes. Mirror flips across the selection centre and fixes facing. All are previews until you Save.</div>
+    <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:3px"><span style="font-size:10px;width:48px">Align</span><button data-bop="al-x" type="button">X</button><button data-bop="al-y" type="button">Y</button><button data-bop="al-z" type="button">Z</button><button data-bop="al-r" type="button" title="Give everyone the primary's facing">Facing</button></div>
+    <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:3px"><span style="font-size:10px;width:48px">Spread</span><button data-bop="di-x" type="button">Along X</button><button data-bop="di-z" type="button">Along Z</button><button data-bop="di-l" type="button" title="Even steps along the line between the two farthest rows">Line</button></div>
+    <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:3px"><span style="font-size:10px;width:48px">Mirror</span><button data-bop="mi-x" type="button">Flip X</button><button data-bop="mi-z" type="button">Flip Z</button></div>
   </div>
   <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
     <button id="bulk-save" type="button" disabled>Save bulk to live DB</button>
@@ -421,6 +469,9 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
         <div id="edrops-body" style="font-size:11px;margin-top:4px"></div>
         <div style="margin-top:6px"><button id="edropsyncsql">Sync last drop change to SQL file</button></div>
       </div>
+      <details id="ed-script" class="zdet" hidden><summary>Script &amp; mods (read-only)</summary>
+        <div id="escript-body" class="mono" style="font-size:10px;white-space:pre-wrap"></div>
+      </details>
       <details id="ed-history" class="zdet"><summary>Selected entity history</summary>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:4px">
           <span class="muted" style="font-size:10px">Selected entity history</span>
@@ -1017,7 +1068,7 @@ async function loadZone(){
     if(camera.isOrthographicCamera && Number.isFinite(st.zoom)) camera.zoom=Math.max(.01,st.zoom);
     camera.updateProjectionMatrix(); controls.update();
   } else frameAll();
-  rebuild(); updateFamLegend(); if(typeof aNextId==='function') aNextId(); $('viewer-loading').hidden = true;
+  rebuild(); updateFamLegend(); if(typeof aNextId==='function') aNextId(); if(typeof zoneChanged==='function') zoneChanged(); $('viewer-loading').hidden = true;
   if (Z.obj) await autoLodAndLoad(zid, gen);
   else $('sum').textContent += '\n(no cached visual mesh: py -3 build_zone_visual_cache.py '+zid+')';
   if (Z.has_nav) await loadNav(zid, gen);
@@ -1227,7 +1278,7 @@ function select(i, fly){
   if(changed&&typeof loadEditor==='function') loadEditor(i);
   const e=Z.entities[i];
   if(fly && !e.zero) frameSelected();
-  updateHeadingArrow(); updateSelectionVisual(); updateMobRadiusVisuals(); loadSelectedNavDiag();
+  updateHeadingArrow(); updateSelectionVisual(); updateMobRadiusVisuals(); loadSelectedNavDiag(); showScriptInfo(e);
   if(typeof updateDirtyUI==='function') updateDirtyUI(); if(typeof updateEntitySyncStatus==='function') updateEntitySyncStatus();
   $('frameSelBtn').disabled=!!e.zero; $('cloneSelectedBtn').disabled=false;
   syncMultiUI();
@@ -1433,9 +1484,117 @@ $('lgPlace').onclick=async()=>{
   $('lgMsg').textContent=`Placed ${ok}/${items.length}.`+(err?' ERROR: '+err:''); clearGen(); lgItems=[]; await loadZone();
 };
 
+
+// ---- Review tab, script info, bulk align/distribute/mirror, bookmarks, templates ----
+let scriptInfo=null, scriptInfoZid=null, flagGroup=null;
+function esc(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+async function ensureScripts(){
+  if(!Z) return null;
+  if(scriptInfo && scriptInfoZid===Z.zid) return scriptInfo;
+  try{ const j=await (await fetch(`/zoneplot/${Z.zid}/scripts.json`)).json(); scriptInfo=j.scripts||{}; scriptInfoZid=Z.zid; }catch(e){ scriptInfo=null; }
+  return scriptInfo;
+}
+async function showScriptInfo(e){
+  const box=$('ed-script'); if(!e||e.k==='d'){ box.hidden=true; return; }
+  box.hidden=false; $('escript-body').textContent='Loading…';
+  const zid=Z.zid, si=await ensureScripts(); if(!Z||Z.zid!==zid||Z.entities[selected]!==e) return;
+  const v=si&&si[String(e.id)]; if(!v){ $('escript-body').textContent='Script info unavailable.'; return; }
+  const srcs=[]; ['roam_radius','leash_radius','sight_range','sound_range'].forEach(k=>{ if(e[k]!==undefined) srcs.push(`${k} = ${e[k]}  (${e[k+'_source']||''})`); });
+  let h=v.exists?`<b style="color:#55dd88">Script found</b>\n${esc(v.file)}\n`:`<b style="color:${e.k==='n'?'#ff6b6b':'#ffd166'}">No script file</b>${e.k==='n'?' — clicking this NPC does nothing':' — uses generic mob behaviour only'}\n`;
+  if(srcs.length) h+=`\nResolved radii / ranges:\n${esc(srcs.join('\n'))}\n`;
+  if(v.lines.length) h+=`\nMod / flag lines:\n${v.lines.map(l=>`${l[0]}: ${esc(l[1])}`).join('\n')}`;
+  else if(v.exists) h+='\nNo setMobMod / setMod / setLocalVar lines found.';
+  $('escript-body').innerHTML=h;
+}
+function revSelect(i){ if(i>=0) select(i,true); }
+$('rvScripts').onclick=async()=>{
+  if(!Z) return; $('rvScriptsMsg').textContent='Scanning…'; const si=await ensureScripts(); if(!si){ $('rvScriptsMsg').textContent='Script info unavailable.'; return; }
+  const miss=Z.entities.map((e,i)=>({e,i})).filter(o=>o.e.k==='n'&&si[String(o.e.id)]&&!si[String(o.e.id)].exists);
+  const mobsNo=Z.entities.filter(e=>e.k==='m'&&si[String(e.id)]&&!si[String(e.id)].exists).length;
+  $('rvScriptsMsg').textContent=`${miss.length} NPC(s) without a script. (${mobsNo} mob rows use no per-mob script, which is normal.)`;
+  $('rvScriptsList').innerHTML=miss.map(o=>`<div class="rvrow" data-i="${o.i}" style="cursor:pointer;padding:1px 0">${o.e.id} ${esc(o.e.g||o.e.n)}</div>`).join('');
+  $('rvScriptsList').querySelectorAll('.rvrow').forEach(r=>r.onclick=()=>revSelect(+r.dataset.i));
+};
+function clearFlags(){ if(flagGroup){ scene.remove(flagGroup); flagGroup=null; } }
+function drawFlags(idx){
+  clearFlags(); flagGroup=new THREE.Group();
+  idx.forEach(i=>{ const e=Z.entities[i], m=new THREE.Mesh(new THREE.RingGeometry(1.4,2,24),new THREE.MeshBasicMaterial({color:0xff3b3b,side:THREE.DoubleSide,depthTest:false,transparent:true})); m.rotation.x=-Math.PI/2; m.position.copy(P(e)).add(new THREE.Vector3(0,.6,0)); m.renderOrder=22; flagGroup.add(m); });
+  scene.add(flagGroup);
+}
+$('rvDupClr').onclick=()=>{ clearFlags(); };
+$('rvDup').onclick=()=>{
+  if(!Z) return; const thr=Math.max(.05,+$('rvDupD').value||.5), C=Math.max(thr,1), cells=new Map(), pairs=[];
+  Z.entities.forEach((e,i)=>{ if(e.zero) return; const k=Math.floor(e.x/C)+','+Math.floor(e.z/C); (cells.get(k)||cells.set(k,[]).get(k)).push(i); });
+  cells.forEach((arr,k)=>{ const [cx,cz]=k.split(',').map(Number);
+    for(let dx=-1;dx<=1;dx++) for(let dz=-1;dz<=1;dz++){ const nb=cells.get((cx+dx)+','+(cz+dz)); if(!nb) continue;
+      arr.forEach(a=>nb.forEach(b=>{ if(a>=b) return; const A=Z.entities[a],B=Z.entities[b]; const d=Math.hypot(A.x-B.x,A.z-B.z); if(d<=thr&&Math.abs(A.y-B.y)<=3) pairs.push({a,b,d}); })); } });
+  pairs.sort((p,q)=>p.d-q.d);
+  const inv=new Set(); pairs.forEach(p=>{ inv.add(p.a); inv.add(p.b); }); drawFlags([...inv]);
+  $('rvDupMsg').textContent=`${pairs.length} pair(s), ${inv.size} row(s) flagged (red rings).`;
+  $('rvDupList').innerHTML=pairs.slice(0,300).map(p=>{ const A=Z.entities[p.a],B=Z.entities[p.b]; return `<div class="rvrow" data-a="${p.a}" data-b="${p.b}" style="cursor:pointer;padding:1px 0">${p.d.toFixed(2)}y · ${A.id} ${esc(A.g||A.n)} ⟷ ${B.id} ${esc(B.g||B.n)}</div>`; }).join('');
+  $('rvDupList').querySelectorAll('.rvrow').forEach(r=>r.onclick=()=>{ select(+r.dataset.a,true); multiSelected.add(+r.dataset.b); rebuild(); syncMultiUI(); });
+};
+function renderGroups(){
+  const g=new Map(); Z.entities.forEach((e,i)=>{ if(e.k!=='m'||e.zero) return; (g.get(e.gid)||g.set(e.gid,[]).get(e.gid)).push(i); });
+  const rows=[...g.entries()].map(([gid,idx])=>{ const es=idx.map(i=>Z.entities[i]); const cx=es.reduce((a,e)=>a+e.x,0)/es.length, cz=es.reduce((a,e)=>a+e.z,0)/es.length;
+    return {gid,idx,name:es[0].g||es[0].n,fam:es[0].family||'',lv:es[0].lv,n:es.length,cx,cz,sp:Math.max(...es.map(e=>Math.hypot(e.x-cx,e.z-cz)))}; }).sort((a,b)=>b.n-a.n);
+  $('rvGroups').innerHTML=rows.length?`<div class="muted">${rows.length} groups, ${rows.reduce((a,r)=>a+r.n,0)} spawns</div>`+rows.map(r=>`<div class="rvrow" data-gid="${r.gid}" style="cursor:pointer;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.06)"><b>${esc(r.name)}</b> ×${r.n} · Lv ${esc(r.lv)}${r.fam?' · '+esc(r.fam):''}<br><span class="muted">centre (${r.cx.toFixed(0)}, ${r.cz.toFixed(0)}) · spread ${r.sp.toFixed(0)}y · gid ${r.gid}</span></div>`).join(''):'<div class="muted">No mob spawns.</div>';
+  $('rvGroups').querySelectorAll('.rvrow').forEach(r=>r.onclick=()=>{ const idx=(g.get(+r.dataset.gid)||[]); if(!idx.length) return;
+    if(select(idx[0],false)===false) return; idx.slice(1).forEach(i=>multiSelected.add(i)); rebuild(); syncMultiUI(); updateSelectionVisual();
+    const b=new THREE.Box3(); idx.forEach(i=>b.expandByPoint(P(Z.entities[i]))); const c=b.getCenter(new THREE.Vector3()), sz=Math.max(b.getSize(new THREE.Vector3()).length(),30);
+    const off=camera.position.clone().sub(controls.target); controls.target.copy(c); camera.position.copy(c).add(off.setLength(camera.isOrthographicCamera?off.length():sz*1.4)); if(camera.isOrthographicCamera){ camera.zoom=Math.max(.05,Math.min(12,150/sz)); camera.updateProjectionMatrix(); } controls.update(); });
+}
+// bookmarks
+const BM_KEY='zoneEditor2.bookmarks';
+function bmAll(){ try{ return JSON.parse(localStorage.getItem(BM_KEY)||'{}'); }catch(e){ return {}; } }
+function bmSaveAll(o){ try{ localStorage.setItem(BM_KEY,JSON.stringify(o)); }catch(e){} }
+function renderBookmarks(){
+  const list=(bmAll()[Z?.zid]||[]);
+  $('bmList').innerHTML=list.length?list.map((b,i)=>`<div style="display:flex;gap:4px;align-items:center;margin:2px 0"><span style="flex:1;overflow:hidden;text-overflow:ellipsis">${esc(b.name)}</span><button data-go="${i}" type="button">Go</button><button data-del="${i}" type="button">&times;</button></div>`).join(''):'<div class="muted" style="font-size:10px">No bookmarks for this zone yet.</div>';
+  $('bmList').querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{ const v=list[+b.dataset.go]; if((v.ortho?'orthographic':'perspective')!==(camera.isOrthographicCamera?'orthographic':'perspective')) switchProjection(v.ortho?'orthographic':'perspective');
+    camera.position.fromArray(v.pos); controls.target.fromArray(v.tgt); if(camera.isOrthographicCamera&&v.zoom){ camera.zoom=v.zoom; camera.updateProjectionMatrix(); } controls.update(); saveZoneEditorState(); });
+  $('bmList').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ const o=bmAll(); (o[Z.zid]||[]).splice(+b.dataset.del,1); bmSaveAll(o); renderBookmarks(); });
+}
+$('bmSave').onclick=()=>{ if(!Z) return; const o=bmAll(), l=o[Z.zid]||(o[Z.zid]=[]); l.push({name:$('bmName').value.trim()||('View '+(l.length+1)),pos:camera.position.toArray(),tgt:controls.target.toArray(),ortho:!!camera.isOrthographicCamera,zoom:camera.zoom}); bmSaveAll(o); $('bmName').value=''; renderBookmarks(); };
+// templates
+const TPL_KEY='zoneEditor2.lgTemplates';
+function tplAll(){ try{ return JSON.parse(localStorage.getItem(TPL_KEY)||'[]'); }catch(e){ return []; } }
+function renderTemplates(){ const l=tplAll(); $('tplSel').innerHTML=l.length?l.map((t,i)=>`<option value="${i}">${esc(t.name)} (${t.items.length})</option>`).join(''):'<option value="">(none saved)</option>'; }
+function lgCentre(){ if($('lgCx').value===''){ const t=controls.target; return {x:t.x,y:-t.y,z:-t.z}; } return {x:+$('lgCx').value,y:+$('lgCy').value,z:+$('lgCz').value}; }
+$('tplSave').onclick=()=>{ if(!lgItems.length){ $('lgMsg').textContent='Nothing to save -- press Preview first.'; return; }
+  const c={x:+$('lgCx').value||0,y:+$('lgCy').value||0,z:+$('lgCz').value||0}, l=tplAll();
+  l.push({name:$('tplName').value.trim()||('Template '+(l.length+1)),items:lgItems.map(i=>({dx:i.x-c.x,dy:i.y-c.y,dz:i.z-c.z,r:i.r,role:i.role,text:i.text,color:i.color}))});
+  try{ localStorage.setItem(TPL_KEY,JSON.stringify(l)); }catch(e){} $('tplName').value=''; renderTemplates(); $('lgMsg').textContent=`Saved template (${lgItems.length} markers).`; };
+$('tplStamp').onclick=()=>{ const t=tplAll()[+$('tplSel').value]; if(!t||!Z) return; const c=lgCentre(); lgSetCentre(c.x,c.y,c.z);
+  lgItems=t.items.map(i=>({x:c.x+i.dx,y:c.y+i.dy,z:c.z+i.dz,r:i.r,role:i.role,text:i.text,color:i.color})); if($('lgSnap').checked) lgItems.forEach(lgSnapY);
+  drawGen(lgItems.map((it,i)=>({x:it.x,y:it.y,z:it.z,color:it.color,text:`${i+1} ${it.text} r${it.r}`}))); $('lgMsg').textContent=`Stamped "${t.name}": ${lgItems.length} marker(s). Place uses the Add source.`; };
+$('tplDel').onclick=()=>{ const l=tplAll(), i=+$('tplSel').value; if(isNaN(i)||!l[i]||!confirm('Delete template "'+l[i].name+'"?')) return; l.splice(i,1); try{ localStorage.setItem(TPL_KEY,JSON.stringify(l)); }catch(e){} renderTemplates(); };
+function zoneChanged(){ scriptInfo=null; scriptInfoZid=null; clearFlags(); $('rvScriptsList').innerHTML=''; $('rvScriptsMsg').textContent=''; $('rvDupList').innerHTML=''; $('rvDupMsg').textContent=''; renderGroups(); renderBookmarks(); renderTemplates(); }
+// bulk align / distribute / mirror
+function bulkOp(op){
+  if(multiSelected.size<2){ $('bulk-msg').textContent='Select 2+ entities.'; return; }
+  beginBulkOrig(); const idx=[...multiSelected].filter(i=>Z.entities[i]&&bulkOrig.has(i)), es=idx.map(i=>Z.entities[i]); if(es.length<2) return;
+  const mean=k=>es.reduce((a,e)=>a+e[k],0)/es.length; let msg='';
+  if(op.startsWith('al-')){ const k=op[3];
+    if(k==='r'){ const pr=Z.entities[selected]; if(!pr) return; es.forEach(e=>e.r=pr.r); msg=`Aligned facing to ${pr.r}.`; }
+    else { const m=+mean(k).toFixed(3); es.forEach(e=>e[k]=m); msg=`Aligned ${k.toUpperCase()} to ${m}.`; } }
+  else if(op.startsWith('di-')){ if(es.length<3){ $('bulk-msg').textContent='Spread needs 3+ entities.'; return; }
+    let a,b; if(op==='di-l'){ let bd=-1; for(const p of es) for(const q of es){ const d=Math.hypot(p.x-q.x,p.z-q.z); if(d>bd){ bd=d; a=p; b=q; } } }
+    else { const k=op[3]; const s=[...es].sort((p,q)=>p[k]-q[k]); a=s[0]; b=s[s.length-1]; }
+    const ax={x:b.x-a.x,y:b.y-a.y,z:b.z-a.z}; const L2=ax.x*ax.x+ax.z*ax.z||1;
+    const ord=[...es].sort((p,q)=>(((p.x-a.x)*ax.x+(p.z-a.z)*ax.z)-((q.x-a.x)*ax.x+(q.z-a.z)*ax.z)));
+    ord.forEach((e,j)=>{ const t=j/(ord.length-1); if(op==='di-l'){ e.x=+(a.x+ax.x*t).toFixed(3); e.z=+(a.z+ax.z*t).toFixed(3); e.y=+(a.y+ax.y*t).toFixed(3); }
+      else if(op==='di-x'){ e.x=+(a.x+ax.x*t).toFixed(3); } else { e.z=+(a.z+ax.z*t).toFixed(3); } });
+    msg=`Spread ${es.length} rows evenly.`; }
+  else if(op.startsWith('mi-')){ const k=op[3], c=(Math.min(...es.map(e=>e[k]))+Math.max(...es.map(e=>e[k])))/2;
+    es.forEach(e=>{ e[k]=+(2*c-e[k]).toFixed(3); e.r=k==='x'?((128-e.r)%256+256)%256:((256-e.r)%256+256)%256; }); msg=`Mirrored across ${k.toUpperCase()}=${c.toFixed(2)}.`; }
+  finishBulkPreview(msg+' Preview only -- Save to keep.');
+}
+document.querySelectorAll('[data-bop]').forEach(b=>b.onclick=()=>bulkOp(b.dataset.bop));
+
 // ---- tabs + editor ----
 function editActive(){ return $('tab-add').hidden; }
-function leftTab(t){ ['ents','layers','tools'].forEach(x=>{ $('lp-'+x).hidden=x!==t; }); document.querySelectorAll('[data-lt]').forEach(b=>b.classList.toggle('on',b.dataset.lt===t)); try{localStorage.setItem('zoneEditor2.leftTab',t);}catch(e){} }
+function leftTab(t){ ['ents','layers','rev','tools'].forEach(x=>{ $('lp-'+x).hidden=x!==t; }); document.querySelectorAll('[data-lt]').forEach(b=>b.classList.toggle('on',b.dataset.lt===t)); try{localStorage.setItem('zoneEditor2.leftTab',t);}catch(e){} }
 function toolTab(t){ $('tt-gen').hidden=t!=='gen'; $('tab-add').hidden=t!=='add'; $('tab-backup').hidden=t!=='backup';
   document.querySelectorAll('[data-tt]').forEach(b=>b.classList.toggle('on',b.dataset.tt===t));
   if(t==='backup') refreshBackups();
@@ -2079,6 +2238,7 @@ function rotationTowardPoint(point){
 
 let measureMode=false, measureStart=null;
 const measureGeo=new THREE.BufferGeometry();
+const pathLine=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0xff9f1a,depthTest:false,transparent:true,opacity:.95})); pathLine.visible=false; pathLine.renderOrder=29; scene.add(pathLine);
 const measureLine=new THREE.Line(measureGeo,new THREE.LineBasicMaterial({color:0x00e5ff,depthTest:false,transparent:true,opacity:.9}));
 measureLine.visible=false; measureLine.renderOrder=28; scene.add(measureLine);
 function serverPointFromScene(p){ return {x:p.x,y:-p.y,z:-p.z}; }
@@ -2089,9 +2249,19 @@ function setMeasurement(a,b){
   const horizontal=Math.hypot(dx,dz), dist=Math.hypot(dx,dy,dz);
   const bearing=(Math.atan2(dx,-dz)*180/Math.PI+360)%360;
   measureGeo.setFromPoints([a,b]); measureLine.visible=true;
-  $('measureOut').textContent=`horizontal ${horizontal.toFixed(2)} · 3D ${dist.toFixed(2)} · ΔX ${dx.toFixed(2)} ΔY ${dy.toFixed(2)} ΔZ ${dz.toFixed(2)} · bearing ${bearing.toFixed(1)}°`;
+  const base=`horizontal ${horizontal.toFixed(2)} · 3D ${dist.toFixed(2)} · ΔX ${dx.toFixed(2)} ΔY ${dy.toFixed(2)} ΔZ ${dz.toFixed(2)} · bearing ${bearing.toFixed(1)}°`;
+  $('measureOut').textContent=base; pathLine.visible=false;
+  if($('measurePath').checked && Z){
+    $('measureOut').textContent=base+' · path…';
+    fetch(`/zoneplot/${Z.zid}/navpath.json?x1=${sa.x}&y1=${sa.y}&z1=${sa.z}&x2=${sb.x}&y2=${sb.y}&z2=${sb.z}`).then(r=>r.json()).then(j=>{
+      if(measureStart===null && !measureLine.visible) return;
+      if(j.ok){ pathLine.geometry.setFromPoints(j.points.map(q=>new THREE.Vector3(q[0],-q[1]+.4,-q[2]))); pathLine.visible=true;
+        $('measureOut').textContent=base+` · path ${j.length.toFixed(2)} (${(j.length/Math.max(horizontal,.01)).toFixed(2)}x straight)`; }
+      else $('measureOut').textContent=base+' · path: '+(j.reason||'unavailable');
+    }).catch(()=>{ $('measureOut').textContent=base+' · path: request failed'; });
+  }
 }
-function clearMeasurement(){ measureMode=false; measureStart=null; measureLine.visible=false; $('measureOut').textContent=''; $('measureBtn').textContent='Measure'; }
+function clearMeasurement(){ pathLine.visible=false; measureMode=false; measureStart=null; measureLine.visible=false; $('measureOut').textContent=''; $('measureBtn').textContent='Measure'; }
 $('measureBtn').onclick=()=>{ measureMode=!measureMode; measureStart=null; $('measureBtn').textContent=measureMode?'Measuring… click two points':'Measure'; if(!measureMode) clearMeasurement(); };
 $('measureClear').onclick=clearMeasurement;
 

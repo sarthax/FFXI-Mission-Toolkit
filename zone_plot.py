@@ -278,6 +278,47 @@ def nav_diagnostics(zid, x, y, z, server=None):
     return diag or {"error": "navmesh contains no polygons"}
 
 
+def nav_route(zid, a, b, server=None):
+    d = zone_data(zid, server=server)
+    p = nav_path(d["zone"], server)
+    if not p:
+        return {"ok": False, "reason": "no navmesh for this zone"}
+    return nav.nav_route(tuple(a), tuple(b), p)
+
+
+def script_info(zid, server=None):
+    """Per-entity Lua script presence and every literal mobMod line. Read-only."""
+    d = zone_data(zid, server=server)
+    root = _server_root(server)
+    zname = d["zone"]
+    out, cache = {}, {}
+    rx = re.compile(r"setMobMod\(|setMod\(|addMod\(|setLocalVar\(|setMobFlags|setSpellList|setDropID")
+    for e in d["entities"]:
+        if e["k"] == "m":
+            sub, nm = "mobs", str(e.get("n") or "")
+        elif e["k"] == "n":
+            sub, nm = "npcs", str(e.get("g") or "")
+        else:
+            continue
+        key = (sub, nm)
+        if key not in cache:
+            path = next((p for z in (zname, zname.replace(" ", "_")) for v in (nm, nm.replace(" ", "_"))
+                         for p in [root / "scripts" / "zones" / z / sub / f"{v}.lua"] if p.is_file()), None)
+            info = {"exists": path is not None, "file": None, "lines": []}
+            if path:
+                info["file"] = path.relative_to(root).as_posix()
+                try:
+                    for ln, line in enumerate(path.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
+                        if rx.search(line):
+                            info["lines"].append([ln, line.strip()[:160]])
+                except Exception:
+                    pass
+                info["lines"] = info["lines"][:60]
+            cache[key] = info
+        out[str(e["id"])] = cache[key]
+    return {"zone": zname, "scripts": out}
+
+
 def reach(zid, anchor=None, instance=0, server=None):
     """Per-entity state: ok (same component as anchor), blocked (other component), off (no polygon).
     Anchor defaults to the component holding the most entities."""

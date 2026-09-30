@@ -7653,6 +7653,22 @@ def zoneplot_navdiag(zid: int, x: float, y: float, z: float):
         return JSONResponse({"error": str(ex)}, status_code=400)
 
 
+@app.get("/zoneplot/{zid}/navpath.json")
+def zoneplot_navpath(zid: int, x1: float, y1: float, z1: float, x2: float, y2: float, z2: float):
+    try:
+        return JSONResponse(zone_plot.nav_route(zid, (x1, y1, z1), (x2, y2, z2)))
+    except Exception as ex:
+        return JSONResponse({"ok": False, "reason": str(ex)}, status_code=400)
+
+
+@app.get("/zoneplot/{zid}/scripts.json")
+def zoneplot_scripts(zid: int):
+    try:
+        return JSONResponse(zone_plot.script_info(zid))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
 @app.get("/zoneplot/{zid}/mesh.zmesh")
 def zoneplot_mesh(zid: int, lod: int = 0):
     import zmesh

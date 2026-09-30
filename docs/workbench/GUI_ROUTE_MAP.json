@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 236,
+  "route_count": 239,
   "routes": [
     {
       "method": "GET",
@@ -1706,6 +1706,30 @@
       "section": "Packets / Raw Packets",
       "role": "page",
       "disposition": "REWORK"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/{zid}/navpath.json",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/{zid}/scripts.json",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/{zid}/next_id.json",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "data",
+      "disposition": "KEEP"
     },
     {
       "method": "GET",
