@@ -225,14 +225,18 @@ def list_backups():
 
 
 def restore(bid):
-    """Restore a backup across SQL and every confirmed overlapping client-DAT field."""
+    """Restore a backup across SQL and the exact captured client record when available."""
     b = json.loads((BACKUPS / f"{bid}.json").read_text())
     item_id = int(b["item_id"])
     db = zone_plot._db(); cu = db.cursor()
-    pre, lines, client_fields = [], [], {}
+    pre, lines = [], []
+    try:
+        pre_client = dat.capture_client_record(item_id)
+    except Exception:
+        pre_client = None
     for op in b["ops"]:
         pre.append(_capture(cu, op["table"], op["key"]))
-    pre_id = _save_backup(f"auto: before restore of {bid}", item_id, pre)
+    pre_id = _save_backup(f"auto: before restore of {bid}", item_id, pre, client_snapshot=pre_client)
     client_report = None
     try:
         for op in b["ops"]:
@@ -244,34 +248,31 @@ def restore(bid):
                 lines.append(f"DELETE FROM {t} WHERE {where};")
             else:
                 cols = list(row)
-                cu.execute(f"replace into {t} ({','.join(cols)}) values ({','.join(['%s'] * len(cols))})", tuple(_dec(row[col]) for col in cols))
+                cu.execute(
+                    f"replace into {t} ({','.join(cols)}) values ({','.join(['%s'] * len(cols))})",
+                    tuple(_dec(row[col]) for col in cols),
+                )
                 lines.append(f"REPLACE INTO {t} ({','.join(cols)}) VALUES ({','.join(lit(row[col]) for col in cols)});")
-                if t in TABLES:
-                    client_fields.update(_map_to_client_fields(t, row))
 
-        if client_fields:
-            try:
-                client_available = dat.read_client_item(item_id) is not None
-            except Exception:
-                client_available = False
-            if client_available:
+        saved_client = b.get("client_record")
+        if saved_client:
+            client_report = dat.restore_client_record(saved_client)
+        else:
+            # Legacy backups predate exact record snapshots; restore only confirmed mapped fields.
+            client_fields = {}
+            for op in b["ops"]:
+                if op["row"] is not None and op["table"] in TABLES:
+                    client_fields.update(_map_to_client_fields(op["table"], op["row"]))
+            if client_fields and dat.read_client_item(item_id) is not None:
                 dat.validate_client_patch(item_id, client_fields)
                 client_report = dat.patch_client_item(item_id, client_fields)
-            else:
-                client_report = {"ok": False, "skipped": True, "error": "no client DAT record found during restore"}
 
         try:
             db.commit()
         except Exception:
             db.rollback()
-            if client_report and client_report.get("ok"):
-                import shutil
-                dat_path = Path(client_report["dat"])
-                backup_path = client_report.get("backup_path")
-                if backup_path:
-                    shutil.copy2(backup_path, dat_path)
-                elif not client_report.get("target_existed", True) and dat_path.exists():
-                    dat_path.unlink()
+            if pre_client:
+                dat.restore_client_record(pre_client)
             raise
     except Exception:
         try:
