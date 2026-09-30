@@ -371,7 +371,11 @@ def main() -> int:
         )
         assert "Imported Client Snapshots" in html
         assert "Compare Client Builds" in html
-        assert "TARGET_EQUIVALENT 1" in html
+        assert "TARGET_EQUIVALENT" in html
+        assert "EVENT rows" in html
+        assert '<body class="shell-dense">' in html
+        assert 'class="client-kpis"' in html
+        assert 'class="client-form-grid"' in html
         assert "17000001" in html
         assert "17000099" in html
         assert "DECODED_STRUCTURE" in html
