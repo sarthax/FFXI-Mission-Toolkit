@@ -1410,6 +1410,13 @@ def restore_batch_backup(bid, comment=""):
     except Exception:
         db.rollback()
         db.close()
+        for entry in reversed(current):
+            snap = entry.get("client_record")
+            if snap:
+                try:
+                    dat.restore_client_record(snap)
+                except Exception:
+                    pass
         raise
     db.close()
     _journal(comment or f"restore batch backup {bid}", [f"-- undo batch backup {undo_id}", f"-- restored {len(items)} item(s)"])
