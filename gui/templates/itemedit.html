@@ -173,6 +173,25 @@ const TABLE_FIELDS = {
 };
 let currentItemId = null;
 let loadedServerState = null;
+let loadedEffects={mods:[],pet_mods:[],latents:[]};
+let stagedEffects={mods:[],pet_mods:[],latents:[]};
+function cloneEffects(v){ return JSON.parse(JSON.stringify(v)); }
+function effectSortKey(kind,row){
+  if(kind==='mods') return String(Number(row.modId));
+  if(kind==='pet_mods') return Number(row.modId)+':'+Number(row.petType);
+  return Number(row.modId)+':'+Number(row.value)+':'+Number(row.latentId)+':'+Number(row.latentParam);
+}
+function normalizedEffects(v){
+  const out={
+    mods:(v.mods||[]).map(x=>({modId:Number(x.modId),value:Number(x.value)})),
+    pet_mods:(v.pet_mods||[]).map(x=>({modId:Number(x.modId),petType:Number(x.petType),value:Number(x.value)})),
+    latents:(v.latents||[]).map(x=>({modId:Number(x.modId),value:Number(x.value),latentId:Number(x.latentId),latentParam:Number(x.latentParam)})),
+  };
+  for(const kind of Object.keys(out)) out[kind].sort((a,b)=>effectSortKey(kind,a).localeCompare(effectSortKey(kind,b),undefined,{numeric:true}));
+  return out;
+}
+function effectsDirty(){ return JSON.stringify(normalizedEffects(stagedEffects))!==JSON.stringify(normalizedEffects(loadedEffects)); }
+function stagedEffectPayload(){ return effectsDirty()?normalizedEffects(stagedEffects):null; }
 const itemUndoStack = [], itemRedoStack = [];
 function itemValueEqual(a,b){ return String(a ?? '') === String(b ?? ''); }
 function collectCurrentTables(){
@@ -203,14 +222,26 @@ function updateDirtySummary(){
   const changes=changedTables(), parts=[];
   for(const [table,fields] of Object.entries(changes)){
     const old=loadedServerState?.[table]||{};
-    for(const [field,val] of Object.entries(fields)) parts.push(`${table}.${field}: ${old[field] ?? ''} → ${val}`);
+    for(const [field,val] of Object.entries(fields)) parts.push(table+'.'+field+': '+(old[field] ?? '')+' → '+val);
+  }
+  if(effectsDirty()){
+    const oldN=normalizedEffects(loadedEffects), newN=normalizedEffects(stagedEffects);
+    for(const kind of ['mods','pet_mods','latents']){
+      const oldMap=new Map(oldN[kind].map(x=>[effectSortKey(kind,x),x]));
+      const newMap=new Map(newN[kind].map(x=>[effectSortKey(kind,x),x]));
+      for(const [k,row] of newMap){
+        if(!oldMap.has(k)) parts.push(kind+': add '+k);
+        else if(JSON.stringify(oldMap.get(k))!==JSON.stringify(row)) parts.push(kind+': change '+k);
+      }
+      for(const k of oldMap.keys()) if(!newMap.has(k)) parts.push(kind+': remove '+k);
+    }
   }
   const box=document.getElementById('dirtySummary'), btn=document.getElementById('saveAllBtn');
   btn.disabled=parts.length===0;
   if(!parts.length){ box.textContent='Saved state'; box.style.color='#b0bec5'; return; }
   box.textContent='UNSAVED · '+parts.join(' · '); box.style.color='#ffcc80';
 }
-function hasUnsavedItemChanges(){ return Object.keys(changedTables()).length>0; }
+function hasUnsavedItemChanges(){ return Object.keys(changedTables()).length>0 || effectsDirty(); }
 function refreshItemUndoUI(){
   document.getElementById('itemUndoBtn').disabled=!itemUndoStack.length;
   document.getElementById('itemRedoBtn').disabled=!itemRedoStack.length;
@@ -379,9 +410,11 @@ async function loadItem(itemid) {
   loadedServerState=JSON.parse(JSON.stringify(data.server));
   const listsWrap = document.getElementById('editorLists');
   listsWrap.innerHTML = '';
-  renderMods(data.mods || []);
-  renderPetMods(data.pet_mods || []);
-  renderLatents(data.latents || []);
+  loadedEffects=normalizedEffects({mods:data.mods||[],pet_mods:data.pet_mods||[],latents:data.latents||[]});
+  stagedEffects=cloneEffects(loadedEffects);
+  renderMods(stagedEffects.mods);
+  renderPetMods(stagedEffects.pet_mods);
+  renderLatents(stagedEffects.latents);
   document.getElementById('editorWrap').style.display = '';
   document.getElementById('saveStatus').textContent = '';
   document.getElementById('itemBackupMsg').textContent = '';
