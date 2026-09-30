@@ -217,6 +217,7 @@
   const values=document.getElementById('selected-values');
   const semantic=document.getElementById('selected-semantic');
 
+  function esc(value){return String(value??'').replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));}
   function clearSelection(){
     rows.forEach(x=>x.classList.remove('selected'));
     bytes.forEach(x=>x.classList.remove('selected'));
@@ -245,7 +246,7 @@
       const valueHex=row.dataset.valueHex||'';
       const lookup=row.dataset.lookup||'';
       const comment=row.dataset.comment||'';
-      semantic.innerHTML=`<div class="muted">Interpreted as</div><strong>${label}</strong><div class="big-value">${value||'—'}</div>${valueHex?`<div class="mono muted">${valueHex}</div>`:''}${type?`<div style="margin-top:8px"><span class="chip">${type}</span></div>`:''}${lookup?`<div class="muted" style="margin-top:8px">lookup: ${lookup}</div>`:''}${comment?`<div class="muted" style="margin-top:8px">${comment}</div>`:''}`;
+      semantic.innerHTML=`<div class="muted">Interpreted as</div><strong>${esc(label)}</strong><div class="big-value">${esc(value||'—')}</div>${valueHex?`<div class="mono muted">${esc(valueHex)}</div>`:''}${type?`<div style="margin-top:8px"><span class="chip">${esc(type)}</span></div>`:''}${lookup?`<div class="muted" style="margin-top:8px">lookup: ${esc(lookup)}</div>`:''}${comment?`<div class="muted" style="margin-top:8px">${esc(comment)}</div>`:''}`;
     }else{
       semantic.innerHTML='<div class="muted">Raw byte selection has no field semantic assigned by the active schema.</div>';
     }
