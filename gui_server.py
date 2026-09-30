@@ -2374,6 +2374,20 @@ def entity_detail(request: Request, npcid: int, q: str = "", page: int = 1):
 DIALOG_PAGE_SIZE = 200
 
 
+def _parse_dialog_id_query(value: str) -> int | None:
+    value = (value or "").strip()
+    if not value:
+        return None
+    try:
+        if value.lower().startswith("0x"):
+            return int(value, 16)
+        if value.isdigit():
+            return int(value, 10)
+    except ValueError:
+        return None
+    return None
+
+
 def _dialog_event_refs(zone_name: str, zoneid: int | None) -> dict[int, list[dict]]:
     """Read cached client-CSID message references without triggering a fresh event export.
 
@@ -2491,12 +2505,13 @@ def dialog_search(request: Request, q: str = "", zone: str = "", page: int = 1, 
         for r in rows:
             results.append({"zoneid": zoneid, "zone": zone.upper(), "idx": r["idx"], "text": r["text"]})
     if q:
-        if q.isdigit():
-            # Dialog id lookup -- exact idx match, not a text search. Across all zones unless a
-            # zone is picked, since the same numeric id means something different per zone.
+        q_dialog_id = _parse_dialog_id_query(q)
+        if q_dialog_id is not None:
+            # Exact dialog id lookup. Accept decimal or 0x-prefixed hex. Across all zones unless
+            # a zone is picked, since the same numeric id can mean different text per zone.
             count_sql = "SELECT COUNT(*) FROM dialog_text WHERE idx = ?"
             sql = "SELECT zoneid, idx, text FROM dialog_text WHERE idx = ?"
-            params = [int(q)]
+            params = [q_dialog_id]
             if zoneid is not None:
                 count_sql += " AND zoneid = ?"
                 sql += " AND zoneid = ?"
@@ -2517,7 +2532,20 @@ def dialog_search(request: Request, q: str = "", zone: str = "", page: int = 1, 
                 total = con.execute(count_sql, params).fetchone()[0]
                 rows = con.execute(sql, params + [DIALOG_PAGE_SIZE, offset]).fetchall()
             except sqlite3.OperationalError:
-                rows = []
+                # FTS5 treats punctuation/quotes/operators as query syntax. For ad-hoc dialog
+                # research a literal fallback is more useful than an empty result set.
+                like_sql = "SELECT zoneid,idx,text FROM dialog_text WHERE text LIKE ?"
+                like_count = "SELECT COUNT(*) FROM dialog_text WHERE text LIKE ?"
+                like_params = [f"%{q}%"]
+                if zoneid is not None:
+                    like_sql += " AND zoneid=?"
+                    like_count += " AND zoneid=?"
+                    like_params.append(zoneid)
+                total = con.execute(like_count, like_params).fetchone()[0]
+                rows = con.execute(
+                    like_sql + " ORDER BY zoneid,idx LIMIT ? OFFSET ?",
+                    like_params + [DIALOG_PAGE_SIZE, offset],
+                ).fetchall()
         for r in rows:
             zname = con.execute("SELECT name FROM zones WHERE zoneid = ?", (r["zoneid"],)).fetchone()
             results.append({"zoneid": r["zoneid"], "zone": zname[0] if zname else "?", "idx": r["idx"], "text": r["text"]})
