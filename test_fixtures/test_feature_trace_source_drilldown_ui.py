@@ -61,6 +61,11 @@ def main():
         "C++ implementation excerpt",
         "Shared helpers",
         "Callback ownership",
+        "binding index could not be built",
+        "match multiple registered names after case folding",
+        "multiple binding locations/classes",
+        "registered-name candidates",
+        "source read:",
     ):
         assert text in feature,text
 
