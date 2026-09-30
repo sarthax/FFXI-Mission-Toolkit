@@ -73,6 +73,7 @@ def sync_client_entity_graph(con: sqlite3.Connection) -> dict:
         "reused_roots": 0,
         "identifiers": 0,
         "ambiguous_semantics": 0,
+        "ambiguous_numeric_representations": 0,
         "root_conflicts": 0,
         "removed_stale_identifiers": 0,
     }
@@ -95,8 +96,15 @@ def sync_client_entity_graph(con: sqlite3.Connection) -> dict:
                ORDER BY semantic_key,snapshot_id,numeric_id,record_id"""
         ))
         grouped: dict[str, list[sqlite3.Row]] = defaultdict(list)
+        numeric_semantics: dict[tuple[str, str], set[str]] = defaultdict(set)
         for row in rows:
             grouped[row["semantic_key"]].append(row)
+            numeric_semantics[(str(row["snapshot_id"]), str(row["numeric_id"]))].add(
+                str(row["semantic_key"])
+            )
+        ambiguous_numeric = {
+            key for key, semantics in numeric_semantics.items() if len(semantics) > 1
+        }
 
         for semantic_key in sorted(grouped):
             group = grouped[semantic_key]
@@ -107,6 +115,16 @@ def sync_client_entity_graph(con: sqlite3.Connection) -> dict:
             # Same semantic identity mapping to multiple actor IDs in one snapshot is ambiguous.
             if any(len(values) != 1 for values in by_snapshot.values()):
                 counts["ambiguous_semantics"] += 1
+                continue
+
+            # One snapshot-local numeric representation claimed by multiple semantic identities
+            # is also ambiguous. Fail closed instead of letting deterministic sort order decide.
+            if any(
+                (snapshot_id, numeric_id) in ambiguous_numeric
+                for snapshot_id, values in by_snapshot.items()
+                for numeric_id in values
+            ):
+                counts["ambiguous_numeric_representations"] += 1
                 continue
 
             numeric_ids = {next(iter(values)) for values in by_snapshot.values()}
