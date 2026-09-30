@@ -17,8 +17,10 @@
     #panel select,#panel input[type=text],#panel input[type=number]{width:230px}
     #panel h3{margin:10px 0 4px;font-size:13px}
     .tabb.on{background:#3a6ea5;color:#fff}
-    #list{max-height:220px;overflow:auto;font:11px monospace;border:1px solid var(--border);padding:4px}
-    #list div{cursor:pointer;white-space:nowrap} #list div:hover{background:#334} #list div.selected-row{background:#665c16;color:#fff;font-weight:600} #list div.multi-row{background:#4a245f;color:#fff}
+    #list{max-height:300px;overflow:auto;font:10px monospace;border:1px solid var(--border);padding:0}
+    #list .entity-row{cursor:pointer;display:grid;grid-template-columns:34px 78px minmax(110px,1fr) minmax(80px,1fr) 54px 44px 64px;gap:4px;align-items:center;padding:2px 4px;border-bottom:1px solid rgba(255,255,255,.05);white-space:nowrap}
+    #list .entity-row:hover{background:#334} #list .entity-row.selected-row{background:#665c16;color:#fff;font-weight:600} #list .entity-row.multi-row{background:#4a245f;color:#fff}
+    #list .entity-head{position:sticky;top:0;z-index:2;background:var(--surface);font-weight:700;color:var(--muted);cursor:default}
     .lbl{color:#fff;font:11px monospace;background:rgba(0,0,0,.7);padding:0 3px;border-radius:3px;pointer-events:none;white-space:nowrap}
   </style>
   <label>Server <select id="srv"><option value="topaz">Topaz</option><option value="dsp">DSP</option></select></label>
@@ -176,7 +178,15 @@
     <div id="blist" style="max-height:320px;overflow:auto;font:11px monospace;border:1px solid var(--border);padding:4px"></div>
     <div id="bmsg" class="mono" style="font-size:11px;margin-top:4px;white-space:pre-wrap"></div>
   </div>
-  <h3 id="matchhdr">Matches <span class="muted" id="cnt"></span></h3><div id="list"></div>
+  <h3 id="matchhdr">Matches <span class="muted" id="cnt"></span></h3>
+  <div id="listfilters" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:4px;font-size:11px">
+    <select id="lf-kind"><option value="">All types</option><option value="m">Mobs</option><option value="n">NPCs</option><option value="d">Doors/props</option></select>
+    <select id="lf-reach"><option value="">All reach states</option><option value="ok">Reachable</option><option value="blocked">Blocked</option><option value="off">Off navmesh</option><option value="zero">Zero position</option><option value="none">No reach data</option></select>
+    <select id="lf-sort"><option value="id">Sort: ID</option><option value="name">Sort: Name</option><option value="type">Sort: Type</option><option value="group">Sort: Group</option><option value="level">Sort: Level</option><option value="rotation">Sort: Rotation</option><option value="reach">Sort: Reach</option></select>
+    <select id="lf-dir"><option value="asc">Ascending</option><option value="desc">Descending</option></select>
+  </div>
+  <div id="listctx" class="muted mono" style="font-size:10px;margin-bottom:3px"></div>
+  <div id="list"></div>
 </div>
 <div id="viewer-container" style="flex:1; height:820px; border:1px solid var(--border); border-radius:8px; background:#0a0d10; position:relative; overflow:hidden;">
   <div id="viewer-loading" class="muted" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">Pick a zone&hellip;</div>
@@ -301,7 +311,7 @@ function syncMultiUI(){
   $('bulk-count').textContent=`${n} selected · primary ${selected>=0&&Z?.entities[selected]?Z.entities[selected].id:'none'}`;
   $('bulk-save').disabled=!bulkPreviewActive;
   $('bulk-revert').disabled=!bulkPreviewActive;
-  $('list').querySelectorAll('div').forEach(d=>{
+  $('list').querySelectorAll('.entity-row[data-i]').forEach(d=>{
     const i=+d.dataset.i; d.classList.toggle('selected-row',i===selected); d.classList.toggle('multi-row',multiSelected.has(i)&&i!==selected);
   });
 }
@@ -760,7 +770,29 @@ function colorOf(i){ const e=Z.entities[i], m=$('mode').value;
   if (m==='kind') return new THREE.Color(COL[e.k]);
   if (m==='comp' && R) return R.comp[i]==null? new THREE.Color(COL.off): hsl(R.comp[i]);
   return new THREE.Color(COL[stateOf(i)]); }
-function matches(e){ const q=$('q').value.trim().toLowerCase(); if(!q) return true; return (e.n||'').toLowerCase().includes(q)||(e.g||'').toLowerCase().includes(q)||String(e.id).includes(q); }
+function matches(e,i){
+  const q=$('q').value.trim().toLowerCase();
+  if(q && !(e.n||'').toLowerCase().includes(q) && !(e.g||'').toLowerCase().includes(q) && !String(e.id).includes(q)) return false;
+  const kind=$('lf-kind').value; if(kind && e.k!==kind) return false;
+  const reach=$('lf-reach').value; if(reach && stateOf(i)!==reach) return false;
+  return true;
+}
+function entitySortValue(e,i,key){
+  if(key==='name') return (e.n||'').toLowerCase();
+  if(key==='type') return e.k;
+  if(key==='group') return (e.g||'').toLowerCase();
+  if(key==='level'){ const m=String(e.lv||'').match(/\d+/); return m?+m[0]:-1; }
+  if(key==='rotation') return +e.r||0;
+  if(key==='reach') return stateOf(i);
+  return +e.id||0;
+}
+function sortedMatches(){
+  const key=$('lf-sort').value, dir=$('lf-dir').value==='desc'?-1:1;
+  return Z.entities.map((e,i)=>[e,i]).filter(([e,i])=>matches(e,i)).sort((a,b)=>{
+    const av=entitySortValue(a[0],a[1],key), bv=entitySortValue(b[0],b[1],key);
+    return ((av>bv)-(av<bv))*dir || (a[0].id-b[0].id);
+  });
+}
 function rebuild(){
   if (inst){ scene.remove(inst); inst.dispose(); }
   labels.forEach(l=>{ l.element.remove(); scene.remove(l); }); labels.clear();
@@ -774,14 +806,19 @@ function rebuild(){
   const cnt={}; Z.entities.forEach((e,i)=>{ const s=e.zero?'zero':stateOf(i); cnt[s]=(cnt[s]||0)+1; });
   $('sum').textContent = `${Z.entities.length} rows  mobs ${Z.entities.filter(e=>e.k==='m').length}  npcs ${Z.entities.filter(e=>e.k==='n').length}  doors ${Z.entities.filter(e=>e.k==='d').length}\n` +
     Object.entries(cnt).map(([k,v])=>`${k}: ${v}`).join('  ') + (anchor?`\nanchor (${anchor.x.toFixed(1)}, ${anchor.y.toFixed(1)}, ${anchor.z.toFixed(1)})`:'\nanchor: auto (largest region)') + (Z.has_nav?'':'\n(no navmesh: reachability unavailable)');
-  const ms = Z.entities.map((e,i)=>[e,i]).filter(([e])=>matches(e)).slice(0,400);
-  $('cnt').textContent = `(${ms.length}${ms.length===400?'+':''})`;
-  $('list').innerHTML = ms.map(([e,i])=>`<div data-i="${i}">${e.k==='m'?'M':e.k==='d'?'D':'N'} ${e.id} ${(e.n||'').slice(0,22)}${e.zero?' [0,0,0]':''} ${e.zero?'':stateOf(i)}</div>`).join('');
-  $('list').querySelectorAll('div').forEach(d=>{
+  const all=sortedMatches(), ms=all.slice(0,1000);
+  $('cnt').textContent = `(${all.length}${all.length>1000?' · first 1000 shown':''})`;
+  const instVal=+$('inst').value;
+  const instOpt=$('inst').selectedOptions[0];
+  $('listctx').textContent=instVal ? `Instance filter: ${instOpt?.textContent||instVal}` : 'Instance filter: all zone rows';
+  const head='<div class="entity-row entity-head"><span>Type</span><span>ID</span><span>Name</span><span>Group</span><span>Lv</span><span>Rot</span><span>Reach</span></div>';
+  $('list').innerHTML = head + ms.map(([e,i])=>`<div class="entity-row" data-i="${i}" title="Double-click to select and frame"><span>${e.k==='m'?'MOB':e.k==='d'?'PROP':'NPC'}</span><span>${e.id}</span><span>${e.n||''}</span><span>${e.g||''}</span><span>${e.lv||''}</span><span>${e.r||0}</span><span>${stateOf(i)}</span></div>`).join('');
+  $('list').querySelectorAll('.entity-row[data-i]').forEach(d=>{
     const i=+d.dataset.i;
     d.classList.toggle('selected-row', i===selected);
     d.classList.toggle('multi-row', multiSelected.has(i)&&i!==selected);
-    d.onclick=ev=>{ if(ev.ctrlKey||ev.metaKey) toggleMultiSelect(i,true); else select(i,true); };
+    d.onclick=ev=>{ if(ev.ctrlKey||ev.metaKey) toggleMultiSelect(i,false); else select(i,false); };
+    d.ondblclick=ev=>{ ev.preventDefault(); if(select(i,false)!==false) frameSelected(); };
   });
 }
 function setLabel(i, text){ if(labels.has(i)) return; const d=document.createElement('div'); d.className='lbl'; d.textContent=text; const o=new CSS2DObject(d); o.position.copy(P(Z.entities[i])); o.position.y+=2; scene.add(o); labels.set(i,o); }
@@ -855,12 +892,14 @@ renderer.domElement.addEventListener('pointerup',async ev=>{ if(!down||Math.hypo
   if (ev.shiftKey){ const e=Z.entities[i]; anchor={x:e.x,y:e.y,z:e.z}; await computeReach(); rebuild(); }
   else if(ev.ctrlKey||ev.metaKey) toggleMultiSelect(i,false);
   else select(i,false); });
+renderer.domElement.addEventListener('dblclick',ev=>{ const i=pick(ev); if(i<0) return; ev.preventDefault(); if(select(i,false)!==false) frameSelected(); });
 $('zone').onchange=()=>{ $('buildCacheBtn').hidden=true; fillInst(); saveZoneEditorState(); loadZone(); };
 $('inst').onchange=()=>{ if($('ainst').querySelector(`option[value="${$('inst').value}"]`)) $('ainst').value=$('inst').value; saveZoneEditorState(); loadZone(); };
 $('lod').onchange=()=>{ if($('lod').value!=='obj') $('buildCacheBtn').hidden=true; saveZoneEditorState(); Z&&loadZMesh(Z.zid); };
 ['showm','shown','showd','mode','dsz'].forEach(id=>$(id).addEventListener('input',()=>{ saveZoneEditorState(); Z&&rebuild(); }));
 $('nlab').addEventListener('change',saveZoneEditorState);
 $('q').addEventListener('input',()=>Z&&rebuild());
+['lf-kind','lf-reach','lf-sort','lf-dir'].forEach(id=>$(id).addEventListener('change',()=>Z&&rebuild()));
 $('shownav').onchange=()=>{ if(navMesh) navMesh.visible=$('shownav').checked; saveZoneEditorState(); };
 $('opac').oninput=()=>{ meshObj&&meshObj.traverse(c=>{ if(c.isMesh) c.material.opacity=+$('opac').value; }); saveZoneEditorState(); };
 document.querySelectorAll('[data-cam]').forEach(b=>b.onclick=()=>cameraPreset(b.dataset.cam));
