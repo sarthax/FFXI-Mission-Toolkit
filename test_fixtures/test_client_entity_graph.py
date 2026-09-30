@@ -67,6 +67,19 @@ def main():
                 semantic_key=ambiguous_key,numeric_id=numeric,zone_key=ZONE,
                 confidence="HIGH",metadata={"semantic_identity":"NPC:DUPLICATE"},
             ))
+
+        # A single snapshot-local numeric id claimed by two different semantic identities is
+        # independently ambiguous and must also be withheld.
+        for suffix in ("A","B"):
+            upsert_record(con,IdentityRecord(
+                record_id=f"identity:client:new:ENTITY:{ZONE}:4001:{suffix}",
+                snapshot_id="client:new",namespace="ENTITY",
+                semantic_key=semantic_entity_key(
+                    zone_key=ZONE,semantic_identity=f"NPC:NUMERIC_COLLISION_{suffix}"
+                ),
+                numeric_id=4001,zone_key=ZONE,confidence="HIGH",
+                metadata={"semantic_identity":f"NPC:NUMERIC_COLLISION_{suffix}"},
+            ))
         con.commit()
 
         result=sync_client_entity_graph(con)
@@ -74,6 +87,10 @@ def main():
         assert result["semantic_entities"]==1,result
         assert result["reused_roots"]==1,result
         assert result["ambiguous_semantics"]==1,result
+        assert result["ambiguous_numeric_representations"]==2,result
+        assert con.execute(
+            "SELECT COUNT(*) FROM entity_identifiers WHERE identifier_value='4001'"
+        ).fetchone()[0]==0
 
         rows=con.execute(
             """SELECT entity_id,identifier_type,identifier_value,source_snapshot_id
