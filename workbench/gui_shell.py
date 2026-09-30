@@ -156,7 +156,7 @@ WORKSPACES = (
             {"label": "SQL", "href": "/sql"},
             {"label": "Dialog", "href": "/dialog"},
             {"label": "Events / CSIDs", "href": "/events"},
-            {"label": "Packets", "href": "/packets"},
+            {"label": "Packet Tools", "href": "/packets"},
             {"label": "Data Gaps", "href": "/gaps"},
             {
                 "label": "3D Viewer",
@@ -208,7 +208,7 @@ WORKSPACES = (
             {"label": "Editors: Zone Editor", "href": "/zoneplot", "mutation": True},
             {"label": "Editors: Item Editor", "href": "/itemedit", "mutation": True},
             {"label": "Lookup & Decode: Entity", "href": "/entity?shell=tools"},
-            {"label": "Lookup & Decode: Packets", "href": "/packets?shell=tools"},
+            {"label": "Lookup & Decode: Packet Tools", "href": "/packets?shell=tools"},
             {"label": "Diagnostics: Gaps", "href": "/gaps?shell=tools"},
             {"label": "Diagnostics: ID Drift", "href": "/iddrift?shell=tools"},
         ),
