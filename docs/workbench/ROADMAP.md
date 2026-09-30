@@ -793,6 +793,6 @@ Additional QOL backlog:
 - [x] Height/elevation coloring.
 - [x] Door/prop orientation markers that remain visible without selection.
 - [ ] Spawn/roam-radius visualization where those values genuinely exist in server data.
-- [ ] Clone-selected shortcut in Add workflow.
-- [ ] Repeated placement mode for multiple copies.
-- [ ] Ghost preview before add, including heading and instance linkage.
+- [x] Clone-selected shortcut in Add workflow.
+- [x] Repeated placement mode for multiple copies.
+- [x] Ghost preview before add, including heading and instance linkage.
