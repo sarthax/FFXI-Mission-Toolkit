@@ -51,6 +51,16 @@ def main():
     assert 'id="datLatestBackup"' in template
     assert "async function refreshLatestDatBackup" in template
 
+    # Explicit per-field server/client reconciliation.
+    assert "RECONCILE_SERVER_FIELDS" in item_edit
+    assert "def reconcile_item(item_id, field, direction, comment=" in item_edit
+    assert "field not in RECONCILE_SERVER_FIELDS" in item_edit
+    assert '@app.post("/itemedit/reconcile")' in gui
+    assert "Use Server" in template and "Use Client" in template
+    assert "structural mismatch · reconcile manually" in template
+    assert "async function reconcileField(field,direction)" in template
+    assert "label:'reconcile '+field" in template
+
     # Richer search grid and recent navigation.
     assert "def search(q, category=\"\", min_level=-1, max_level=-1, job=-1, skill=-1, client_state=\"\", limit=200):" in item_edit
     assert "server-only" in item_edit and "mismatch" in item_edit and "synced" in item_edit
