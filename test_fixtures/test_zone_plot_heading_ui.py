@@ -79,6 +79,32 @@ def main():
     assert "Live DB ✓   SQL source ✓" in template
     assert "markSqlSynced(lastTouched.k,lastTouched.id)" in template
 
+    # Conservative multi-select / bulk transform workflow.
+    assert "const multiSelected=new Set();" in template
+    assert 'id="bulk-panel"' in template
+    assert "Ctrl/Cmd-click dots or list rows to add/remove" in template
+    assert "function toggleMultiSelect(i,fly=false)" in template
+    assert "relative offsets only; relative spacing is preserved" in template
+    assert "async function saveBulkTransform()" in template
+    assert "fetch('/zoneplot/edit_bulk'" in template
+    assert "recordUndo(`bulk transform ${j.count} entities`" in template
+    assert 'id="bulk-sync"' in template
+    assert "markSqlSynced(e.k,e.id)" in template
+
+    zone_edit = (
+        Path(__file__).resolve().parents[1]
+        / "zone_edit.py"
+    ).read_text(encoding="utf-8")
+    gui_server = (
+        Path(__file__).resolve().parents[1]
+        / "gui_server.py"
+    ).read_text(encoding="utf-8")
+    assert "def update_positions_bulk(rows, comment=" in zone_edit
+    assert "bulk transform is limited to 256 entities per action" in zone_edit
+    assert "bulk transform must stay within one zone" in zone_edit
+    assert "_save_backup(f\"bulk transform {len(normalized)} entities\"" in zone_edit
+    assert '@app.post("/zoneplot/edit_bulk")' in gui_server
+
     print("Zone Plot heading/compass/zoom UI regression: PASS")
     return 0
 
