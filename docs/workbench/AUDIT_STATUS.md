@@ -1,3 +1,12 @@
+## 2026-09-30 — Feature Trace source-level implementation drill-down
+
+- Server Lua excerpts are resolved at request time from the configured LSB/Topaz/DSP checkout through the existing Behavior Inspector resolver; source text is not copied into the canonical graph or catalog database.
+- Feature Trace auto-selects a Lua source only when exactly one normalized script/entity name matches inside the provider-specific tree. Multiple exact matches and fuzzy/content-only matches remain review candidates rather than being guessed.
+- Resolved sources expose a bounded first-40-line preview, hooks, Behavior graph JSON handoff, and literal CSID links emitted by the existing scripted-behavior analysis.
+- Server catalog roots and downstream provider-native steps expose direct SQL Index Browser links using the exact provider table and identity.
+- Behavior Inspector, Event wiring, and SQL entity rows now include Feature Trace handoffs so cross-tool navigation is bidirectional.
+- Source previews and cross-tool links are presentation/navigation evidence only; they do not create new canonical dependency edges or upgrade confidence.
+
 
 ## 2026-09-30 — Feature Trace Implementation Path diagnostics
 
