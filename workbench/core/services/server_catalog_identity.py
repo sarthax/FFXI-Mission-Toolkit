@@ -46,7 +46,10 @@ def _existing_root(con: sqlite3.Connection, numeric_id: int) -> tuple[str | None
     rows = con.execute(
         f"""SELECT DISTINCT entity_id
             FROM entity_identifiers
-            WHERE lower(identifier_type) IN ({placeholders})
+            WHERE (
+                    lower(identifier_type) IN ({placeholders})
+                    OR lower(identifier_type) LIKE 'client_snapshot_entity_id:%'
+                  )
               AND CAST(identifier_value AS TEXT)=?
             ORDER BY entity_id LIMIT 3""",
         (*ENTITY_IDENTIFIER_TYPES, str(numeric_id)),
