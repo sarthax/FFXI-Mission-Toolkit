@@ -20,6 +20,12 @@
   #info .warn{color:#ffcc80}
   #model-viewer a{color:#4fc3f7}
   #loading{position:absolute;top:10px;left:10px;color:#8b98a1;font-size:12px}
+  #catalog-results{max-height:260px;overflow:auto;border:1px solid #26313a;border-radius:4px;margin-top:5px}
+  .catalog-row{padding:6px 7px;border-bottom:1px solid #1d2730;cursor:pointer}
+  .catalog-row:last-child{border-bottom:0}
+  .catalog-row:hover{background:#18232c}
+  .catalog-title{font-weight:600}
+  .catalog-meta{font-size:10px;color:#8b98a1;word-break:break-all}
 </style>
 <div id="model-viewer">
 <div id="panel">
@@ -28,6 +34,11 @@
 
   <label>Server</label>
   <select id="server"><option value="topaz">topaz</option><option value="dsp">dsp</option></select>
+
+  <label>Model catalog</label>
+  <input type="search" id="catalog-search" placeholder="name, model id, file id, family, pool, ROM path">
+  <div id="catalog-status" class="muted" style="font-size:10px;margin-top:3px"></div>
+  <div id="catalog-results"></div>
 
   <label>Kind</label>
   <select id="kind"><option value="n">NPC (npc_list)</option><option value="m">Mob (mob_spawn_points)</option></select>
@@ -42,6 +53,10 @@
   <label>Raw look_t model ID</label>
   <input type="number" id="modelid" min="0" max="65535" placeholder="e.g. 740">
   <button id="load-modelid">Resolve model ID &amp; render</button>
+
+  <label>Direct DAT / file ID</label>
+  <input type="text" id="datref" placeholder="file id (e.g. 2040) or ROM/7/64.DAT">
+  <button id="load-dat">Correlate DAT &amp; render</button>
 
   <div id="anim-controls" style="display:none">
     <label>Animation</label>
@@ -326,7 +341,11 @@ async function loadModel(preResolved=null) {
       return;
     }
     // kind === 'flat'
-    let msg = `<b>${esc(r.name)}</b> &mdash; ${esc(r.model_type)}, modelid ${r.modelid}, resource file_id ${r.file_id}`;
+    let identity = r.modelid!==undefined && r.modelid!==null
+      ? `modelid ${r.modelid}, resource file_id ${r.file_id}`
+      : (r.file_id!==undefined && r.file_id!==null ? `file_id ${r.file_id}` : 'direct DAT');
+    let msg = `<b>${esc(r.name)}</b> &mdash; ${esc(r.model_type)}, ${identity}`;
+    if(r.catalog_aliases?.length) msg += `<br>catalog aliases: ${r.catalog_aliases.map(esc).join(', ')}`;
     if(r.mapping_rule) msg += `<br>FFXiMain mapping: ${esc(r.mapping_rule)}`;
     if(r.render_file_id!==undefined && r.render_file_id!==r.file_id) msg += `<br>render hint: file_id ${r.render_file_id} · ${esc(r.render_source||'verified visual DAT')}`;
     if (r.error) { setInfo(msg + `<br><span class="err">${esc(r.error)}</span>`); loading.textContent=''; return; }
@@ -449,25 +468,84 @@ async function loadModel(preResolved=null) {
   }
 }
 
+function catalogSummary(row){
+  const aliases=(row.names||[]).slice(0,4).join(', ');
+  const families=(row.family_ids||[]).length ? 'families '+row.family_ids.join(',') : '';
+  const refs=row.reference_count ? row.reference_count+' refs' : '';
+  const path=row.render_rom_path||row.resource_rom_path||'unresolved DAT';
+  return {aliases,families,refs,path};
+}
+function renderCatalog(data){
+  const box=$('catalog-results'), status=$('catalog-status');
+  if(data.error){ status.textContent=data.error; box.innerHTML=''; return; }
+  status.textContent=`${data.matched} match(es) / ${data.total} catalog models${data.truncated?' · first '+data.rows.length+' shown':''}`;
+  box.innerHTML=(data.rows||[]).map(row=>{
+    const x=catalogSummary(row);
+    const meta=[`model ${row.model_id}`,`file ${row.resource_file_id}`,x.families,x.refs,x.path].filter(Boolean).join(' · ');
+    return `<div class="catalog-row" data-mid="${row.model_id}" title="${esc((row.names||[]).join(', '))}">
+      <div class="catalog-title">${esc(row.primary_name||('Model '+row.model_id))}</div>
+      <div class="catalog-meta">${esc(meta)}</div>
+      ${x.aliases && x.aliases!==row.primary_name ? `<div class="catalog-meta">aliases: ${esc(x.aliases)}</div>` : ''}
+    </div>`;
+  }).join('');
+  box.querySelectorAll('.catalog-row').forEach(el=>el.addEventListener('click',()=>{
+    $('modelid').value=el.dataset.mid;
+    loadRawModel();
+  }));
+}
+let catalogTimer=null;
+async function searchCatalog(){
+  const q=$('catalog-search').value;
+  $('catalog-status').textContent='searching catalog...';
+  const u=`/modelviewer/catalog.json?q=${encodeURIComponent(q)}&server=${encodeURIComponent($('server').value)}&limit=100`;
+  const data=await fetch(u).then(x=>x.json());
+  renderCatalog(data);
+}
+function scheduleCatalogSearch(){
+  clearTimeout(catalogTimer);
+  catalogTimer=setTimeout(searchCatalog,180);
+}
 async function loadRawModel(){
   const mid=$('modelid').value;
   if(mid===''){ setInfo('<span class="err">enter a raw model id</span>'); return; }
   loading.textContent='resolving model id...';
-  const r=await fetch(`/modelviewer/model.json?model_id=${encodeURIComponent(mid)}`).then(x=>x.json());
+  const r=await fetch(`/modelviewer/model.json?model_id=${encodeURIComponent(mid)}&server=${encodeURIComponent($('server').value)}`).then(x=>x.json());
   if(r.error && !r.registered){ setInfo(`<span class="err">${esc(r.error)}</span>`); loading.textContent=''; return; }
-  r.kind='flat'; r.name=`model ${r.model_id}`; r.modelid=r.model_id; r.model_type='DIRECT CLIENT MODEL';
+  r.kind='flat'; r.name=r.catalog_name||`model ${r.model_id}`; r.modelid=r.model_id; r.model_type='DIRECT CLIENT MODEL';
+  await loadModel(r);
+}
+async function loadDirectDat(){
+  const ref=$('datref').value.trim();
+  if(!ref){ setInfo('<span class="err">enter a file id or ROM path</span>'); return; }
+  loading.textContent='correlating DAT...';
+  const numeric=/^\d+$/.test(ref);
+  const arg=numeric?`file_id=${encodeURIComponent(ref)}`:`rom_path=${encodeURIComponent(ref)}`;
+  const r=await fetch(`/modelviewer/dat-info.json?${arg}&server=${encodeURIComponent($('server').value)}`).then(x=>x.json());
+  if(r.error){ setInfo(`<span class="err">${esc(r.error)}</span>`); loading.textContent=''; return; }
+  r.model_type='DIRECT DAT';
+  r.modelid=r.catalog_matches?.[0]?.model_id;
+  if(r.catalog_matches?.length){
+    const c=r.catalog_matches[0];
+    r.name=c.primary_name||r.name;
+    r.catalog_aliases=c.names||[];
+  }
   await loadModel(r);
 }
 $('load').addEventListener('click', ()=>loadModel());
 $('eid').addEventListener('keydown', ev => { if (ev.key === 'Enter') loadModel(); });
 $('load-modelid').addEventListener('click', loadRawModel);
 $('modelid').addEventListener('keydown', ev => { if (ev.key === 'Enter') loadRawModel(); });
+$('load-dat').addEventListener('click', loadDirectDat);
+$('datref').addEventListener('keydown', ev => { if (ev.key === 'Enter') loadDirectDat(); });
+$('catalog-search').addEventListener('input', scheduleCatalogSearch);
+$('server').addEventListener('change', searchCatalog);
 
 const qp=new URLSearchParams(location.search);
 if(qp.get('server')) $('server').value=qp.get('server');
 if(qp.get('kind')) $('kind').value=qp.get('kind');
 if(qp.get('id')) $('eid').value=qp.get('id');
 if(qp.get('model_id')) $('modelid').value=qp.get('model_id');
+if(qp.get('dat')) $('datref').value=qp.get('dat');
 if(qp.get('embed')==='1'){
   $('panel').style.display='none';
   document.querySelector('main').style.height='100vh';
@@ -475,8 +553,10 @@ if(qp.get('embed')==='1'){
 }
 if(qp.get('autoload')==='1'){
   if(qp.get('model_id')) loadRawModel();
+  else if(qp.get('dat')) loadDirectDat();
   else if(qp.get('id')) loadModel();
 }
+if(qp.get('embed')!=='1') searchCatalog();
 </script>
 </div>
 {% endblock %}
