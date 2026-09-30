@@ -103,6 +103,7 @@ server's permission gate. Every write is backed up first and journalled to
     </div>
     <div class="muted" style="font-size:11px; margin-top:6px;">A snapshot of this DAT file is taken automatically before every edit (not just the first), so you can restore to right before any specific edit, not only all the way back to pristine.</div>
     <div id="datBackupList" class="rowtable-wrap table-wrap" style="margin-top:8px;"></div>
+    <div id="datPristineDiff" class="mono" style="margin-top:8px;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:10px;white-space:pre-wrap;"></div>
   </div>
 
   <div id="editorTables" class="edit-grid" style="margin-top:12px;"></div>
@@ -545,8 +546,18 @@ function refreshDatInfo(data) {
   }
   document.getElementById('datBackupList').innerHTML = '';
   refreshLatestDatBackup(st.dat_ui);
+  refreshPristineDiff();
 }
 
+async function refreshPristineDiff(){
+  const box=document.getElementById('datPristineDiff');
+  if(!currentItemId){ box.textContent=''; return; }
+  const r=await fetch('/itemedit/'+currentItemId+'/dat-pristine-diff.json'); const j=await r.json();
+  if(!r.ok){ box.textContent='Pristine comparison error: '+(j.error||r.statusText); return; }
+  if(!j.available){ box.textContent='Pristine comparison unavailable: '+j.reason; return; }
+  if(!j.changes?.length){ box.textContent='Pristine comparison: no decoded field changes.'; return; }
+  box.textContent='Changed from pristine ('+j.changed_count+') · '+j.target+'\n'+j.changes.map(x=>x.field+': '+x.pristine+' → '+x.current).join('\n');
+}
 async function refreshDatBackups() {
   const romPath = document.getElementById('datRomPath').textContent;
   const box = document.getElementById('datBackupList');
