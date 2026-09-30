@@ -747,6 +747,29 @@ function tab(t){ ['view','edit','add','backup'].forEach(x=>{ $('tab-'+x).hidden=
   if(t==='backup') refreshBackups();
   if(typeof updateAddMarker==='function') updateAddMarker(); }
 document.querySelectorAll('.tabb').forEach(b=>b.onclick=()=>tab(b.dataset.t)); tab('view');
+
+const undoStack=[], redoStack=[];
+function refreshUndoUI(){
+  $('undoBtn').disabled=undoStack.length===0; $('redoBtn').disabled=redoStack.length===0;
+  $('undoStatus').textContent=undoStack.length ? `undo: ${undoStack[undoStack.length-1].label}` : (redoStack.length ? `redo: ${redoStack[redoStack.length-1].label}` : '');
+}
+function recordUndo(label, backup){
+  if(!backup) return; undoStack.push({label,backup}); if(undoStack.length>80) undoStack.shift(); redoStack.length=0; refreshUndoUI();
+}
+async function restoreHistory(source,target,verb){
+  if(!source.length) return;
+  const action=source.pop(); refreshUndoUI();
+  const r=await fetch('/zoneplot/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:action.backup,exact:false})});
+  const j=await r.json();
+  if(j.error){ source.push(action); refreshUndoUI(); alert(`${verb} failed: ${j.error}`); return; }
+  target.push({label:action.label,backup:j.pre_restore_backup});
+  refreshUndoUI();
+  if(Z) await loadZone();
+  $('undoStatus').textContent=`${verb}: ${action.label}`;
+}
+function undoAction(){ return restoreHistory(undoStack,redoStack,'Undid'); }
+function redoAction(){ return restoreHistory(redoStack,undoStack,'Redid'); }
+$('undoBtn').onclick=undoAction; $('redoBtn').onclick=redoAction; refreshUndoUI();
 let orig=null;
 function isTransformDirty(){
   if(!orig || !Z || selected<0 || !Z.entities[selected]) return false;
@@ -849,7 +872,7 @@ async function saveDropid(dropid){
   const r=await fetch('/zoneplot/drops/dropid',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({mobid:dropsState.mobid,dropid,comment:$('ecomment').value})}); const j=await r.json();
   if(j.error){ $('edropsmsg').textContent='ERROR: '+j.error; return; }
-  $('edropsmsg').textContent=`Saved to live DB (backup ${j.backup}).\n`+j.sql;
+  recordUndo(`dropid ${dropsState.mobid}`,j.backup); $('edropsmsg').textContent=`Saved to live DB (backup ${j.backup}).\n`+j.sql;
   await loadDrops(dropsState.mobid);
 }
 let lastDropSync=null; // args to re-post to /zoneplot/sync_sql/drop_row for the last live-DB drop-row write
@@ -877,7 +900,7 @@ async function saveDropRow(tr, origType, origGroup, origItem){
   if(j.error){ $('edropsmsg').textContent='ERROR: '+j.error; return; }
   lastDropSync={dropid:dropsState.dropid, drop_type, group_id, item_id,
     orig_drop_type: hasOrig?+origType:undefined, orig_group_id: hasOrig?+origGroup:undefined, orig_item_id: hasOrig?+origItem:undefined};
-  $('edropsmsg').textContent=`Saved to live DB (backup ${j.backup}).\n`+j.sql;
+  recordUndo(`drop row ${dropsState.dropid}/${item_id}`,j.backup); $('edropsmsg').textContent=`Saved to live DB (backup ${j.backup}).\n`+j.sql;
   await loadDrops(dropsState.mobid);
 }
 async function delDropRow(origType, origGroup, origItem){
@@ -886,7 +909,7 @@ async function delDropRow(origType, origGroup, origItem){
   const r=await fetch('/zoneplot/drops/delete',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({dropid:dropsState.dropid,drop_type:+origType,group_id:+origGroup,item_id:+origItem,comment:$('ecomment').value})}); const j=await r.json();
   if(j.error){ $('edropsmsg').textContent='ERROR: '+j.error; return; }
-  lastDropSync={dropid:dropsState.dropid, drop_type:+origType, group_id:+origGroup, item_id:+origItem};
+  lastDropSync={dropid:dropsState.dropid, drop_type:+origType, group_id:+origGroup, item_id:+origItem}; recordUndo(`delete drop ${dropsState.dropid}/${origItem}`,j.backup);
   $('edropsmsg').textContent=`Deleted (backup ${j.backup}).\n`+j.sql;
   await loadDrops(dropsState.mobid);
 }
@@ -907,7 +930,7 @@ $('eanimsave').onclick=async()=>{ const e=Z.entities[selected]; if(!e) return;
   const animation=animSelectVal('ean','eanRaw'), animationsub=animSelectVal('easub','easubRaw');
   const r=await fetch('/zoneplot/animate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:e.k,id:e.id,animation,animationsub,comment:$('ecomment').value})}); const j=await r.json();
   if(j.error){ $('eanimmsg').textContent='ERROR: '+j.error; return; }
-  e.an=animation; e.asub=animationsub; lastTouched={k:e.k,id:e.id};
+  e.an=animation; e.asub=animationsub; lastTouched={k:e.k,id:e.id}; recordUndo(`animation ${e.id}`,j.backup);
   $('eanimmsg').textContent=`Saved to live DB (backup ${j.backup}).\n`+j.sql; };
 function previewRotation(){
   if(selected<0) return;
@@ -933,7 +956,7 @@ $('edel').onclick=async()=>{ const e=Z.entities[selected]; if(!e) return;
   const touched={k:e.k,id:e.id};
   const r=await fetch('/zoneplot/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:e.k,id:e.id,comment:$('ecomment').value})}); const j=await r.json();
   if(j.error){ $('emsg').textContent='ERROR: '+j.error; return; }
-  lastTouched=touched;
+  lastTouched=touched; recordUndo(`delete ${e.id}`,j.backup);
   $('emsg').textContent=`Deleted (backup ${j.backup}).${j.warning?'\nWARNING: '+j.warning:''}\n`+j.sql;
   Z.entities.splice(selected,1); selected=-1; loadEditor(-1); await computeReach(); rebuild(); };
 $('esyncsql').onclick=async()=>{ if(!lastTouched){ $('emsg').textContent='Nothing saved to the live DB yet this session -- click "Save to live DB" (or Delete) first.'; return; }
@@ -1004,7 +1027,7 @@ $('aadd').onclick=async()=>{ if(!aSel||!Z){ $('amsg').textContent='Pick a source
   const r=await fetch('/zoneplot/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const j=await r.json();
   if(j.error){ $('amsg').textContent='ERROR: '+j.error; return; }
   $('amsg').textContent=`Added as id ${j.id} (backup ${j.backup})${j.instance?` -- linked to instance ${j.instance}`:''}.\n`+j.sql;
-  lastTouched={k:kind,id:j.id};
+  lastTouched={k:kind,id:j.id}; recordUndo(`add ${j.id}`,j.backup);
   addMarker.visible=false;
   await loadZone();
   const idx=Z.entities.findIndex(e=>e.k===kind && +e.id===+j.id);
