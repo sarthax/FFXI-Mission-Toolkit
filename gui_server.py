@@ -3951,7 +3951,27 @@ def _feature_trace_branch_source_drilldown(implementation_path: dict | None) -> 
         ]
         if len(exact) != 1:
             drill["status"] = "AMBIGUOUS" if len(exact) > 1 else "SEARCH_ONLY"
-            drill["candidate_count"] = len(exact) if exact else len(matches)
+            candidates = exact if exact else matches
+            drill["candidate_count"] = len(candidates)
+            drill["candidates"] = [
+                {
+                    "name": row.get("name"),
+                    "path": row.get("path"),
+                    "zone": row.get("zone"),
+                    "role": row.get("role"),
+                    "match": row.get("match"),
+                    "href": (
+                        f"/behavior?source={quote(str(row.get('path') or ''), safe='')}"
+                        f"&server={quote(server or '', safe='')}"
+                    ),
+                }
+                for row in candidates[:8]
+                if row.get("path")
+            ]
+            drill["match_basis"] = (
+                "multiple exact-normalized script/entity names"
+                if exact else "fuzzy/content Behavior Inspector matches only"
+            )
             continue
         chosen = exact[0]
         try:
@@ -3999,6 +4019,7 @@ def _feature_trace_branch_source_drilldown(implementation_path: dict | None) -> 
             })
         drill.update({
             "status": "RESOLVED",
+            "match_basis": "one exact-normalized script/entity name in the provider tree",
             "source": {
                 "path": relative_path,
                 "zone": zone,
