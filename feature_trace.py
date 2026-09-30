@@ -176,7 +176,7 @@ def canonical_entity_identifiers(con: sqlite3.Connection, root: str | None) -> l
 def canonical_entity_evidence(con: sqlite3.Connection, root: str | None, limit: int = 100) -> dict:
     """Summarize direct canonical relationships/evidence touching one root, bounded for the UI."""
     if not root:
-        return {"relationship_count": 0, "evidence_count": 0, "rows": [], "truncated": False}
+        return {"relationship_count": 0, "evidence_count": 0, "relationship_counts": [], "rows": [], "truncated": False}
     available = {r[0] for r in con.execute(
         "SELECT name FROM sqlite_master WHERE type='table'"
     )}
