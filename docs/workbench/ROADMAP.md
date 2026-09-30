@@ -1,3 +1,16 @@
+## 2026-09-30 Capture discovery / forensics redesign
+
+- [x] Reframe Capture Query as Capture Data Explorer rather than a raw-table dump.
+- [x] Group existing capture datasets by investigative domain.
+- [x] Add human-readable dataset labels/descriptions and curated summary columns.
+- [x] Preserve complete physical rows behind Raw row / provenance drill-down.
+- [x] Keep direct Packet Viewer, Entity Profile, Capture and Timeline drill-downs.
+- [x] Rename Capture navigation to Evidence Search vs Data Explorer.
+- [ ] Build modular Evidence Search framework.
+- [ ] Migrate Events / Dialogue and Raw Packets into search modules.
+- [ ] Add Entity, Battle, Items/KIs, Vendor, Crafting, Spatial, Environment and Chat search modules.
+- [ ] Let modules return related evidence families and packet handoffs rather than one-table results.
+
 ## 2026-09-30 Configurable shell branding
 
 - [x] Replace hard-coded ValhallaXI shell logo/text with settings-backed branding.
