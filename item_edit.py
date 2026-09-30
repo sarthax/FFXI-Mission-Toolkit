@@ -970,7 +970,7 @@ def _map_to_client_fields(table, fields):
     return out
 
 
-def create_item(category, item_type, entry, comment=""):
+def create_item(category, item_type, entry, effects=None, comment=""):
     """Allocate a real free client-DAT slot in `category` (e.g. 'Armor_1', 'Weapons',
     'Consumable' -- see item_dat_tools.ITEM_DATS), write the new item record there, then insert
     matching rows into item_basic + whichever type-table(s) TYPE_TABLES[item_type] says this
@@ -980,6 +980,7 @@ def create_item(category, item_type, entry, comment=""):
     client_result = dat.inject_client_item(category, entry)
     item_id = client_result["item_id"]
 
+    desired_effects = _normalize_effects(effects) if effects is not None else {"mods": [], "pet_mods": [], "latents": []}
     db = zone_plot._db(); cu = db.cursor()
     cu.execute("select 1 from item_basic where itemid=%s", (item_id,))
     if cu.fetchone():
@@ -1034,25 +1035,51 @@ def create_item(category, item_type, entry, comment=""):
 
     lines = []
     ops = []
-    for table, row in inserts:
-        cols = list(row)
-        cu.execute(f"insert into {table} ({','.join(cols)}) values ({','.join(['%s'] * len(cols))})", tuple(row[c] for c in cols))
-        lines.append(f"INSERT INTO {table} ({','.join(cols)}) VALUES ({','.join(lit(row[c]) for c in cols)});")
-        ops.append({"table": table, "key": [item_id], "row": None})
-    db.commit(); db.close()
-
     pre_client = {
         "item_id": item_id, "category": client_result["category"], "dat_ui": client_result["dat_ui"],
         "record_index": client_result["record_index"], "format": client_result["format"],
         "record_hex": client_result["previous_record_hex"],
     }
-    bid = _save_backup(
-        f"create item {item_id} ({basic_row['name']}) in {category}",
-        item_id, ops, client_snapshot=pre_client,
-    )
-    _journal(comment or f"CREATE item {item_id} in {category}", [f"-- backup {bid}", f"-- client DAT: {client_result}"] + lines)
-    return {"item_id": item_id, "backup": bid, "sql": "\n".join(lines), "client": client_result}
+    bid = None
+    try:
+        for table, row in inserts:
+            cols = list(row)
+            cu.execute(f"insert into {table} ({','.join(cols)}) values ({','.join(['%s'] * len(cols))})", tuple(row[col] for col in cols))
+            lines.append(f"INSERT INTO {table} ({','.join(cols)}) VALUES ({','.join(lit(row[col]) for col in cols)});")
+            ops.append({"table": table, "key": [item_id], "row": None})
 
+        effect_changes = _effect_changes(cu, item_id, desired_effects)
+        for table, keyvals, _cur, _want in effect_changes:
+            ops.append({"table": table, "key": list(keyvals), "row": None})
+        lines.extend(_apply_effect_changes(cu, item_id, effect_changes))
+
+        bid = _save_backup(
+            f"create item {item_id} ({basic_row['name']}) in {category}",
+            item_id, ops, client_snapshot=pre_client,
+        )
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+            dat.restore_client_record(pre_client)
+            raise
+    except Exception:
+        try:
+            db.rollback()
+        finally:
+            db.close()
+        try:
+            dat.restore_client_record(pre_client)
+        except Exception:
+            pass
+        raise
+    db.close()
+
+    _journal(comment or f"CREATE item {item_id} in {category}", [f"-- backup {bid}", f"-- client DAT: {client_result}"] + lines)
+    return {
+        "item_id": item_id, "backup": bid, "sql": "\n".join(lines), "client": client_result,
+        "effect_changes": len(effect_changes),
+    }
 
 def clone_template(item_id):
     """Build a create_item()-ready {category, item_type, entry} template from an existing item,
