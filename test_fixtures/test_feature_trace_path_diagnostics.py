@@ -127,7 +127,7 @@ def main():
         assert "_FEATURE_TRACE_PROVIDER_SERVER" in server
         assert "preview_lines = lines[:40]" in server
         assert '"status": "RESOLVED"' in server
-        assert '"status": "AMBIGUOUS"' in server
+        assert '"AMBIGUOUS" if len(exact) > 1 else "SEARCH_ONLY"' in server
         assert "_feature_trace_branch_source_drilldown(implementation_path)" in server
         assert "_feature_trace_branch_source_drilldown(path)" in server
 
