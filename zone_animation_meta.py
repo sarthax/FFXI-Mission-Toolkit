@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from pathlib import Path
+from functools import lru_cache
 import re
 
 import yaml
@@ -123,6 +124,7 @@ def subanimation_evidence(max_samples_per_value: int = 12) -> list[dict]:
     return out
 
 
+@lru_cache(maxsize=1)
 def metadata() -> dict:
     return {
         "animations": animation_values(),
