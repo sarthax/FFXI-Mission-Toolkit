@@ -215,6 +215,9 @@ def main():
         "captures.html", "/captures", q="", missions=[], content_types=[],
         content_type="", all_tags=[], tag="", rows=[],
     )
+    assert '<body class="shell-dense">' in captures_html
+    assert '<strong>Captures</strong>' in captures_html
+    assert 'form class="search dense-toolbar"' in captures_html
     assert re.search(r'class="workspace-link active"\s+href="/captures"', captures_html)
     assert 'href="/captures/plot"' not in captures_html
     assert 'href="/captures/plot_all"' not in captures_html
@@ -263,6 +266,19 @@ def main():
     assert 'body>header{display:none}' not in zone2_html
     assert 'zp2-menu' not in zone2_html
     assert 'id="zmenuBtn"' not in zone2_html
+
+    validation_html = render("validation_dashboard.html", "/validation", runs=[], status_counts={}, result_counts={}, total_results=0, error=None)
+    assert '<body class="shell-dense">' in validation_html
+    assert '<strong>Validation</strong>' in validation_html
+
+    validation_runs_html = render("validation_runs.html", "/validation/runs", q="", status="", statuses=[], runs=[], error=None)
+    assert '<body class="shell-dense">' in validation_runs_html
+    assert 'form class="search dense-toolbar"' in validation_runs_html
+
+    packages_html = render("packages_library.html", "/packages", q="", project_root="C:/workspace", packages=[])
+    assert '<body class="shell-dense">' in packages_html
+    assert '<strong>Package Library</strong>' in packages_html
+    assert 'form class="search dense-toolbar"' in packages_html
 
     validation_shell = context_for("/validation")
     assert validation_shell["active_home"] == "Validation"
