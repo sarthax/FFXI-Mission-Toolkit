@@ -187,6 +187,20 @@ def canonical_entity_evidence(con: sqlite3.Connection, root: str | None, limit: 
             WHERE source_node=? OR target_node=?""",
         (root, root),
     ).fetchone()[0]
+    evidence_total = con.execute(
+        """SELECT COUNT(DISTINCT evidence_id) FROM entity_relationships
+            WHERE (source_node=? OR target_node=?) AND evidence_id IS NOT NULL""",
+        (root, root),
+    ).fetchone()[0]
+    relationship_counts = [
+        {"relationship": row[0], "count": row[1]}
+        for row in con.execute(
+            """SELECT relationship,COUNT(*) FROM entity_relationships
+                WHERE source_node=? OR target_node=?
+                GROUP BY relationship ORDER BY COUNT(*) DESC,relationship""",
+            (root, root),
+        ).fetchall()
+    ]
     evidence_available = "evidence" in available
     if evidence_available:
         rows = con.execute(
@@ -214,10 +228,7 @@ def canonical_entity_evidence(con: sqlite3.Connection, root: str | None, limit: 
             ).fetchall()
         ]
     items = []
-    evidence_ids = set()
     for row in rows:
-        if row[4]:
-            evidence_ids.add(row[4])
         items.append({
             "relationship_id": row[0],
             "source_node": row[1],
@@ -235,7 +246,8 @@ def canonical_entity_evidence(con: sqlite3.Connection, root: str | None, limit: 
         })
     return {
         "relationship_count": int(total or 0),
-        "evidence_count": len(evidence_ids),
+        "evidence_count": int(evidence_total or 0),
+        "relationship_counts": relationship_counts,
         "rows": items,
         "truncated": int(total or 0) > len(items),
     }
@@ -455,6 +467,7 @@ def entity_implementation_path(
             "identifiers": canonical_entity_identifiers(graph_con, root),
             "direct_relationship_count": evidence["relationship_count"],
             "direct_evidence_count": evidence["evidence_count"],
+            "relationship_counts": evidence["relationship_counts"],
             "direct_evidence": evidence["rows"],
             "evidence_truncated": evidence["truncated"],
         },
