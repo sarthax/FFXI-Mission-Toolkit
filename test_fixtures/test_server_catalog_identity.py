@@ -104,7 +104,9 @@ def main():
             "SELECT COUNT(*) FROM entity_identifiers WHERE identifier_value='200'"
         ).fetchone()[0] == 0
         assert g.execute(
-            "SELECT COUNT(*) FROM entity_identifiers WHERE entity_id='npc:existing' AND identifier_value='100'"
+            """SELECT COUNT(*) FROM entity_identifiers
+               WHERE entity_id='npc:existing' AND identifier_type='npcid'
+                 AND identifier_value='100' AND source_snapshot_id='entity-profile'"""
         ).fetchone()[0] == 1
         g.close()
         source.close()
