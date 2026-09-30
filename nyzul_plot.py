@@ -261,6 +261,86 @@ def _in_poly(x, z, poly):
     return inside
 
 
+def _closest_point_triangle(p, a, b, c):
+    """Closest point on triangle ABC to point P (Real-Time Collision Detection region tests)."""
+    px, py, pz = p
+    ax, ay, az = a
+    bx, by, bz = b
+    cx, cy, cz = c
+    ab = (bx - ax, by - ay, bz - az)
+    ac = (cx - ax, cy - ay, cz - az)
+    ap = (px - ax, py - ay, pz - az)
+    d1 = sum(ab[i] * ap[i] for i in range(3))
+    d2 = sum(ac[i] * ap[i] for i in range(3))
+    if d1 <= 0 and d2 <= 0:
+        return a
+    bp = (px - bx, py - by, pz - bz)
+    d3 = sum(ab[i] * bp[i] for i in range(3))
+    d4 = sum(ac[i] * bp[i] for i in range(3))
+    if d3 >= 0 and d4 <= d3:
+        return b
+    vc = d1 * d4 - d3 * d2
+    if vc <= 0 and d1 >= 0 and d3 <= 0:
+        v = d1 / (d1 - d3)
+        return tuple(a[i] + v * ab[i] for i in range(3))
+    cp = (px - cx, py - cy, pz - cz)
+    d5 = sum(ab[i] * cp[i] for i in range(3))
+    d6 = sum(ac[i] * cp[i] for i in range(3))
+    if d6 >= 0 and d5 <= d6:
+        return c
+    vb = d5 * d2 - d1 * d6
+    if vb <= 0 and d2 >= 0 and d6 <= 0:
+        w = d2 / (d2 - d6)
+        return tuple(a[i] + w * ac[i] for i in range(3))
+    va = d3 * d6 - d5 * d4
+    if va <= 0 and (d4 - d3) >= 0 and (d5 - d6) >= 0:
+        bc = (cx - bx, cy - by, cz - bz)
+        w = (d4 - d3) / ((d4 - d3) + (d5 - d6))
+        return tuple(b[i] + w * bc[i] for i in range(3))
+    denom = 1.0 / (va + vb + vc)
+    v = vb * denom
+    w = vc * denom
+    return tuple(a[i] + ab[i] * v + ac[i] * w for i in range(3))
+
+
+def point_diagnostics(x, y, z, path=None):
+    """Exact nearest nav polygon/triangle diagnostics for an FFXI world-space point."""
+    path = Path(path or _default_nav())
+    polys_area = nav_polys_with_area(path)
+    comp, _, _ = _components(path)
+    p = (float(x), float(y), float(z))
+    best = None
+    best_d2 = float("inf")
+    for pi, (poly, area, ptype) in enumerate(polys_area):
+        for ti in range(1, len(poly) - 1):
+            q = _closest_point_triangle(p, poly[0], poly[ti], poly[ti + 1])
+            d2 = sum((q[i] - p[i]) ** 2 for i in range(3))
+            if d2 < best_d2:
+                best_d2 = d2
+                best = (pi, ti - 1, poly, area, ptype, q)
+    if best is None:
+        return None
+    pi, tri, poly, area, ptype, q = best
+    xs = [v[0] for v in poly]
+    ys = [v[1] for v in poly]
+    zs = [v[2] for v in poly]
+    return {
+        "polygon": pi,
+        "triangle": tri,
+        "component": comp[pi],
+        "distance": best_d2 ** 0.5,
+        "nearest": {"x": q[0], "y": q[1], "z": q[2]},
+        "bounds": {
+            "xmin": min(xs), "xmax": max(xs),
+            "ymin": min(ys), "ymax": max(ys),
+            "zmin": min(zs), "zmax": max(zs),
+        },
+        "area": area,
+        "poly_type": ptype,
+        "placement_valid": locate(x, y, z, path) is not None,
+    }
+
+
 def locate(x, y, z, path=None):
     """Component id of the navmesh polygon under (x,z) closest in height to y, else None."""
     comp, grid, C = _components(path)
