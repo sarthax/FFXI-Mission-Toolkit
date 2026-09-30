@@ -6836,6 +6836,12 @@ async def itemedit_dat_target_set(request: Request):
         return JSONResponse({"error": str(ex)}, status_code=400)
 
 
+@app.get("/itemedit/client-layout-audit.json")
+def itemedit_client_layout_audit():
+    import item_dat_tools
+    return JSONResponse(item_dat_tools.item_record_layout_audit())
+
+
 @app.get("/itemedit/{item_id}/client-record.json")
 def itemedit_client_record(item_id: int):
     import item_dat_tools
