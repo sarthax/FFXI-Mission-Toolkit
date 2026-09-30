@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}Capture Packet Decode{% endblock %}
+{% block content %}
+<style>
+.packet-shell{display:grid;grid-template-columns:minmax(560px,1.2fr) minmax(420px,1fr);gap:14px;align-items:start}
+.packet-card{border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden}
+.packet-card h3{margin:0;padding:10px 12px;border-bottom:1px solid var(--border);font-size:14px}
+.packet-meta{display:flex;gap:8px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--border)}
+.packet-fields table{width:100%;border-collapse:collapse}
+.packet-fields th,.packet-fields td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+.packet-field{cursor:pointer}.packet-field:hover,.packet-field.selected{outline:2px solid currentColor;outline-offset:-2px}
+.field-swatch{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}
+.f0{--fc:#4fc3f7;color:#4fc3f7}.f1{--fc:#ffb74d;color:#ffb74d}.f2{--fc:#81c784;color:#81c784}.f3{--fc:#ba68c8;color:#ba68c8}
+.f4{--fc:#e57373;color:#e57373}.f5{--fc:#64b5f6;color:#64b5f6}.f6{--fc:#ffd54f;color:#ffd54f}.f7{--fc:#4db6ac;color:#4db6ac}
+.field-swatch,.hex-byte.claimed{background:var(--fc)}
+.hex-byte{display:inline-block;min-width:22px;padding:2px 3px;margin:1px;border-radius:3px;text-align:center;color:var(--ink);cursor:pointer}
+.hex-byte.claimed{color:#071014;font-weight:700}.hex-byte.unknown{border:1px dashed var(--border);color:var(--muted)}
+.hex-byte.overlap{outline:2px solid #ff5252}.hex-byte.selected,.ascii-byte.selected{outline:2px solid #fff;outline-offset:1px}
+.hex-table{width:100%;border-collapse:collapse;font-family:ui-monospace,Consolas,monospace;font-size:12px}.hex-table td{padding:3px 4px;white-space:nowrap}
+.hex-off{color:var(--muted);width:48px;text-align:right}.ascii-run{letter-spacing:1px;padding-left:8px!important;border-left:1px solid var(--border)}
+.ascii-byte{display:inline-block;min-width:8px;text-align:center;cursor:pointer}.manual-panel{padding:10px 12px;border-top:1px solid var(--border);font-family:ui-monospace,Consolas,monospace;font-size:12px}
+.manual-grid{display:grid;grid-template-columns:110px 1fr;gap:3px 8px}.raw-field{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--muted)}
+.context-grid{display:grid;grid-template-columns:150px 1fr;gap:5px 10px;padding:10px 12px}.context-grid>div:nth-child(odd){color:var(--muted)}
+@media(max-width:1100px){.packet-shell{grid-template-columns:1fr}}
+</style>
+
+<p>
+  <a class="inline" href="/captures/{{ capture_id }}/packets">&larr; raw packet browser</a>
+  &nbsp;&middot;&nbsp; <a class="inline" href="/captures/{{ capture_id }}/timeline">timeline</a>
+  &nbsp;&middot;&nbsp; <a class="inline" href="/captures/{{ capture_id }}">capture #{{ capture_id }}</a>
+</p>
+
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+  <h1 style="margin:0;">{{ cap.capture_label }} &mdash; packet {{ packet.seq }}</h1>
+  <span class="chip mono">{{ packet.direction }} {{ packet.opcode }}</span>
+  {% if packet.ts %}<span class="chip mono">{{ packet.ts }}</span>{% endif %}
+  <span style="margin-left:auto;display:flex;gap:6px;">
+    {% if prev_packet %}<a class="chip" href="/captures/{{ capture_id }}/packets/{{ prev_packet.seq }}">&larr; {{ prev_packet.seq }} {{ prev_packet.opcode }}</a>{% endif %}
+    {% if next_packet %}<a class="chip" href="/captures/{{ capture_id }}/packets/{{ next_packet.seq }}">{{ next_packet.seq }} {{ next_packet.opcode }} &rarr;</a>{% endif %}
+  </span>
+</div>
+
+<div class="packet-card" style="margin-top:12px;">
+  <h3>Capture context</h3>
+  <div class="context-grid">
+    <div>timestamp</div><div class="mono">{{ packet.ts or 'unknown' }}</div>
+    <div>direction</div><div>{{ packet.direction }} <span class="muted">({{ packet.pd_direction }})</span></div>
+    <div>opcode</div><div class="mono">{{ packet.opcode }}</div>
+    <div>packet size</div><div class="mono">{{ packet.packet_size if packet.packet_size is not none else 'unknown' }}</div>
+    <div>sync id</div><div class="mono">{{ packet.sync_id if packet.sync_id is not none else 'unknown' }}</div>
+    <div>zone id</div><div class="mono">{{ packet.zone_id if packet.zone_id is not none else 'unknown' }}</div>
+    <div>source</div><div>{{ packet.source_format or 'unknown' }}{% if packet.source_native_id %} <span class="mono muted">{{ packet.source_native_id }}</span>{% endif %}</div>
+    <div>flags</div><div>injected={{ packet.is_injected if packet.is_injected is not none else 'unknown' }} &middot; blocked={{ packet.is_blocked if packet.is_blocked is not none else 'unknown' }}</div>
+    {% if layout %}<div>definition</div><div>{{ layout.description }}</div>{% endif %}
+  </div>
+</div>
+
+{% if decode_error %}
+<div class="warn" style="margin-top:12px;"><strong>Decode error:</strong> {{ decode_error }}</div>
+{% endif %}
+
+{% if layout %}
+<div class="packet-shell" style="margin-top:14px;">
+  <section class="packet-card packet-fields">
+    <h3>Decoded structure</h3>
+    <div class="packet-meta">
+      <span class="chip">{{ layout.length }} bytes / {{ layout.length_hex }}</span>
+      <span class="chip">{{ layout.coverage_pct }}% schema coverage</span>
+      <span class="chip">{{ layout.claimed_bytes }} claimed</span>
+      {% if layout.unknown_bytes %}<span class="chip">{{ layout.unknown_bytes }} unknown</span>{% endif %}
+      {% if layout.overlap_bytes %}<span class="chip mismatch">{{ layout.overlap_bytes }} overlapping</span>{% endif %}
+    </div>
+    <div class="table-wrap"><table>
+      <tr><th>pos</th><th>field</th><th>type</th><th>raw bytes</th><th>value</th></tr>
+      {% for f in layout.rows %}
+      <tr class="packet-field f{{ f.index % 8 }}" data-index="{{ f.index }}" data-start="{{ f.pos }}" data-end="{{ f.end }}">
+        <td class="mono">{{ f.range_hex }}</td>
+        <td><span class="field-swatch"></span><strong>{{ f.name }}</strong>
+          {% if f.derived %}<span class="chip">derived</span>{% endif %}
+          {% if f.lookup %}<span class="chip">lookup: {{ f.lookup }}</span>{% endif %}
+          {% if f.comment %}<div class="muted" style="font-size:11px">{{ f.comment }}</div>{% endif %}
+        </td>
+        <td class="mono">{{ f.type }}</td>
+        <td class="raw-field">{{ f.raw_hex or '—' }}</td>
+        <td>{% if f.out_of_range %}<span class="muted">out of range</span>{% else %}
+          <div class="mono">{{ f.value if f.value is not none else '—' }}</div>
+          {% if f.value_hex %}<div class="muted mono" style="font-size:11px">{{ f.value_hex }}</div>{% endif %}
+        {% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table></div>
+    {% if layout.gaps %}
+    <div style="padding:8px 12px;font-size:11px;color:var(--muted)">
+      <strong>Unclaimed ranges:</strong>
+      {% for g in layout.gaps %}<span class="chip">{{ g.range_hex }} ({{ g.length }})</span>{% endfor %}
+    </div>
+    {% endif %}
+  </section>
+
+  <section class="packet-card">
+    <h3>Raw packet map</h3>
+    <div class="packet-meta"><span class="muted">Click a field or byte. Colors coordinate decoded structure with exact raw bytes; dashed bytes are currently unclaimed.</span></div>
+    <div style="overflow:auto;padding:8px;">
+      <table class="hex-table">
+        <tr><td></td><td colspan="16" class="muted">00&nbsp; 01&nbsp; 02&nbsp; 03&nbsp; 04&nbsp; 05&nbsp; 06&nbsp; 07&nbsp; 08&nbsp; 09&nbsp; 0A&nbsp; 0B&nbsp; 0C&nbsp; 0D&nbsp; 0E&nbsp; 0F</td><td class="muted">ASCII</td></tr>
+        {% for chunk in layout.bytes|batch(16, none) %}
+        <tr>
+          <td class="hex-off">{{ "%04X"|format(loop.index0 * 16) }}</td>
+          {% for b in chunk %}
+            {% if b %}
+              {% if b.claimed and not b.overlap %}
+                <td><span class="hex-byte claimed f{{ b.owner % 8 }}" data-offset="{{ b.offset }}" data-owner="{{ b.owner }}">{{ b.hex }}</span></td>
+              {% elif b.overlap %}
+                <td><span class="hex-byte claimed overlap" data-offset="{{ b.offset }}">{{ b.hex }}</span></td>
+              {% else %}
+                <td><span class="hex-byte unknown" data-offset="{{ b.offset }}">{{ b.hex }}</span></td>
+              {% endif %}
+            {% else %}<td></td>{% endif %}
+          {% endfor %}
+          <td class="ascii-run">{% for b in chunk %}{% if b %}<span class="ascii-byte" data-offset="{{ b.offset }}">{{ b.ascii }}</span>{% endif %}{% endfor %}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+    <div id="manual-byte" class="manual-panel"><div class="muted">Select a byte or field to inspect the raw range.</div></div>
+  </section>
+</div>
+{% endif %}
+
+<div class="packet-shell" style="margin-top:14px;">
+  <section class="packet-card">
+    <h3>Source provenance</h3>
+    {% if provenance %}
+    <div class="context-grid">
+      <div>file</div><div class="mono">{{ provenance.filename }}</div>
+      <div>locator</div><div>{{ provenance.locator_basis }}</div>
+      <div>lines</div><div class="mono">{{ provenance.start_line or '—' }}{% if provenance.end_line and provenance.end_line != provenance.start_line %}-{{ provenance.end_line }}{% endif %}</div>
+      <div>byte offsets</div><div class="mono">{{ provenance.start_offset if provenance.start_offset is not none else '—' }}{% if provenance.end_offset is not none %}-{{ provenance.end_offset }}{% endif %}</div>
+      <div>source SHA-256</div><div class="mono" style="word-break:break-all">{{ provenance.source_sha256 or 'unknown' }}</div>
+    </div>
+    {% else %}<p class="muted" style="padding:0 12px 10px">No row locator is available for this observation.</p>{% endif %}
+  </section>
+
+  <section class="packet-card">
+    <h3>Cross-source correlations</h3>
+    {% if correlations %}
+    <div class="table-wrap"><table>
+      <tr><th>status</th><th>other evidence</th><th>basis</th><th>&Delta;t</th><th>score</th></tr>
+      {% for c in correlations %}
+      <tr>
+        <td><span class="chip">{{ c.status }}</span></td>
+        <td><span class="mono">{{ c.other_kind }}</span><br><span class="muted mono">{{ c.other_ref }}</span></td>
+        <td>{{ c.basis }}</td>
+        <td class="mono">{{ c.time_delta_seconds if c.time_delta_seconds is not none else '—' }}</td>
+        <td class="mono">{{ c.score if c.score is not none else '—' }}</td>
+      </tr>
+      {% endfor %}
+    </table></div>
+    {% else %}<p class="muted" style="padding:0 12px 10px">No stored cross-source correlations for this raw packet.</p>{% endif %}
+  </section>
+</div>
+
+{% if layout %}
+<script>
+(() => {
+  const rows=[...document.querySelectorAll('.packet-field')];
+  const bytes=[...document.querySelectorAll('.hex-byte')];
+  const ascii=[...document.querySelectorAll('.ascii-byte')];
+  const panel=document.getElementById('manual-byte');
+  function clearSelection(){ rows.forEach(x=>x.classList.remove('selected')); bytes.forEach(x=>x.classList.remove('selected')); ascii.forEach(x=>x.classList.remove('selected')); }
+  function bytesInRange(start,end){ return bytes.filter(x=>{const o=+x.dataset.offset; return o>=start && o<end;}); }
+  function inspect(start,end,label){
+    const selected=bytesInRange(start,end), vals=selected.map(x=>parseInt(x.textContent,16));
+    selected.forEach(x=>x.classList.add('selected'));
+    ascii.filter(x=>{const o=+x.dataset.offset;return o>=start&&o<end;}).forEach(x=>x.classList.add('selected'));
+    if(!vals.length){panel.innerHTML='<div class="muted">No packet bytes in this range.</div>';return;}
+    const hex=vals.map(v=>v.toString(16).padStart(2,'0').toUpperCase()).join(' ');
+    let extra='';
+    if(vals.length>=1) extra+=`<div>uint8</div><div>${vals[0]}</div>`;
+    if(vals.length>=2){const u=vals[0]|(vals[1]<<8),i=(u&0x8000)?u-0x10000:u;extra+=`<div>uint16 LE</div><div>${u} / 0x${u.toString(16).toUpperCase().padStart(4,'0')}</div><div>int16 LE</div><div>${i}</div>`;}
+    if(vals.length>=4){const a=new Uint8Array(vals.slice(0,4)),dv=new DataView(a.buffer),u=dv.getUint32(0,true),i=dv.getInt32(0,true),fl=dv.getFloat32(0,true);extra+=`<div>uint32 LE</div><div>${u} / 0x${u.toString(16).toUpperCase().padStart(8,'0')}</div><div>int32 LE</div><div>${i}</div><div>float32 LE</div><div>${Number.isFinite(fl)?fl:'—'}</div>`;}
+    panel.innerHTML=`<div><strong>${label||'selection'}</strong> · 0x${start.toString(16).toUpperCase().padStart(2,'0')}${end-start>1?'-0x'+(end-1).toString(16).toUpperCase().padStart(2,'0'):''}</div><div class="raw-field" style="margin:5px 0 8px">${hex}</div><div class="manual-grid">${extra}</div>`;
+  }
+  function selectRow(row){clearSelection();row.classList.add('selected');inspect(+row.dataset.start,+row.dataset.end,row.querySelector('strong')?.textContent||'field');}
+  rows.forEach(r=>r.addEventListener('click',()=>selectRow(r)));
+  bytes.forEach(b=>b.addEventListener('click',()=>{const off=+b.dataset.offset,owner=b.dataset.owner;if(owner!==undefined){const row=rows.find(r=>r.dataset.index===owner);if(row){selectRow(row);return;}}clearSelection();inspect(off,off+1,'raw byte');}));
+  ascii.forEach(a=>a.addEventListener('click',()=>{const b=bytes.find(x=>+x.dataset.offset===+a.dataset.offset);if(b)b.click();}));
+})();
+</script>
+{% endif %}
+{% endblock %}
