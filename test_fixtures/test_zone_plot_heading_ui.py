@@ -99,6 +99,14 @@ def main():
         Path(__file__).resolve().parents[1]
         / "gui_server.py"
     ).read_text(encoding="utf-8")
+    nyzul_plot = (
+        Path(__file__).resolve().parents[1]
+        / "nyzul_plot.py"
+    ).read_text(encoding="utf-8")
+    zone_plot = (
+        Path(__file__).resolve().parents[1]
+        / "zone_plot.py"
+    ).read_text(encoding="utf-8")
     assert "def update_positions_bulk(rows, comment=" in zone_edit
     assert "bulk transform is limited to 256 entities per action" in zone_edit
     assert "bulk transform must stay within one zone" in zone_edit
@@ -150,6 +158,22 @@ def main():
     assert "This deliberately does not restore the entire source backup" in zone_edit
     assert '@app.get("/zoneplot/history/{kind}/{eid}")' in gui_server
     assert '@app.post("/zoneplot/restore_entity_previous")' in gui_server
+
+    # Nav diagnostics / elevation / persistent door orientation.
+    assert 'id="navdiag"' in template
+    assert 'id="navdiagOut"' in template
+    assert "async function loadSelectedNavDiag()" in template
+    assert "navdiag.json?x=${encodeURIComponent(e.x)}" in template
+    assert "placement_valid" in template
+    assert "selectedNavDiag.placement_valid?0x55dd88:0xff4d4d" in template
+    assert '<option value="height">Elevation</option>' in template
+    assert "let heightRange={lo:0,hi:0};" in template
+    assert "Door/prop facing ticks" in template
+    assert "let doorFacingLines=null;" in template
+    assert "if(e.k!=='d') continue" in template
+    assert "def point_diagnostics(x, y, z, path=None):" in nyzul_plot
+    assert "def nav_diagnostics(zid, x, y, z, server=None):" in zone_plot
+    assert '@app.get("/zoneplot/{zid}/navdiag.json")' in gui_server
     print("Zone Plot heading/compass/zoom UI regression: PASS")
     return 0
 
