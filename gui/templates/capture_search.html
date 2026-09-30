@@ -130,6 +130,7 @@ main.capture-search-page{padding:8px 10px 24px}
             <a class="chip" href="/captures/{{ e.capture_id }}/timeline">Timeline</a>
             {% if e.entity_id %}<a class="chip" href="/entity/{{ e.entity_id }}">Entity Profile</a>{% endif %}
             <a class="chip" href="/captures/query?table=capture_events&capture_id={{ e.capture_id }}">Data Explorer</a>
+            {% if e.related_row_key %}<a class="chip" href="/captures/{{ e.capture_id }}/related-evidence?target_table=capture_events&row_key={{ e.related_row_key|urlencode }}">Related Evidence</a>{% endif %}
           </div>
         </article>
         {% endfor %}
@@ -162,6 +163,7 @@ main.capture-search-page{padding:8px 10px 24px}
             <a class="chip" href="/captures/{{ p.capture_id }}/packets/{{ p.seq }}">Packet Viewer</a>
             <a class="chip" href="/captures/{{ p.capture_id }}/timeline">Timeline</a>
             <a class="chip" href="/captures/query?table=capture_raw_packets&capture_id={{ p.capture_id }}&q={{ p.opcode|urlencode }}">Data Explorer</a>
+            {% if p.related_row_key %}<a class="chip" href="/captures/{{ p.capture_id }}/related-evidence?target_table=capture_raw_packets&row_key={{ p.related_row_key|urlencode }}">Related Evidence</a>{% endif %}
           </div>
         </article>
         {% endfor %}
@@ -191,6 +193,7 @@ main.capture-search-page{padding:8px 10px 24px}
             <a class="chip" href="/captures/{{ r.capture_id }}/timeline">Timeline</a>
             <a class="chip" href="/captures/query?table={{ r.dataset }}&capture_id={{ r.capture_id }}">Data Explorer</a>
             {% if module == 'entities' and r.subject_id is not none %}<a class="chip" href="/entity/{{ r.subject_id }}">Entity Profile</a>{% endif %}
+            {% if r.related_row_key %}<a class="chip" href="/captures/{{ r.capture_id }}/related-evidence?target_table={{ r.dataset|urlencode }}&row_key={{ r.related_row_key|urlencode }}">Related Evidence</a>{% endif %}
           </div>
         </article>
         {% endfor %}
