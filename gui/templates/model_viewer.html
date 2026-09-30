@@ -326,9 +326,12 @@ async function loadModel(preResolved=null) {
       return;
     }
     // kind === 'flat'
-    let msg = `<b>${esc(r.name)}</b> &mdash; ${esc(r.model_type)}, modelid ${r.modelid}, file_id ${r.file_id}`;
+    let msg = `<b>${esc(r.name)}</b> &mdash; ${esc(r.model_type)}, modelid ${r.modelid}, resource file_id ${r.file_id}`;
+    if(r.mapping_rule) msg += `<br>FFXiMain mapping: ${esc(r.mapping_rule)}`;
+    if(r.render_file_id!==undefined && r.render_file_id!==r.file_id) msg += `<br>render hint: file_id ${r.render_file_id} · ${esc(r.render_source||'verified visual DAT')}`;
     if (r.error) { setInfo(msg + `<br><span class="err">${esc(r.error)}</span>`); loading.textContent=''; return; }
-    msg += `<br>${esc(r.rom_path)}`;
+    msg += `<br>render DAT: ${esc(r.rom_path)}`;
+    if(r.resource_rom_path && r.resource_rom_path!==r.rom_path) msg += `<br>FFXiMain resource: ${esc(r.resource_rom_path)}`;
     setInfo(msg);
 
     loading.textContent = 'fetching DAT...';
