@@ -68,6 +68,7 @@
 
 {% if zone %}
 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 14px">
+  {% if not q %}<span class="pill match">Zone browse mode</span>{% endif %}
   <form method="get" style="display:flex;gap:6px;align-items:center">
     <input type="hidden" name="zone" value="{{ zone }}">
     <span class="muted">Jump to ID</span>
@@ -82,7 +83,8 @@
 {% if q %}
 <p>{{ total }} result(s) for <strong>{{ q }}</strong>{% if zone %} in {{ zone }}{% endif %} — page {{ page }} of {{ total_pages }}</p>
 {% elif zone %}
-<p>Browsing {{ total }} indexed dialog entries in {{ zone }} — page {{ page }} of {{ total_pages }}</p>
+<p><strong>Browsing {{ total }} indexed dialog entries in {{ zone }}</strong> — page {{ page }} of {{ total_pages }}.</p>
+<p class="muted" style="margin-top:-6px">No search filter is active. Use pagination to comb the full client dialog table in ID order, or jump directly to a known/suspected ID.</p>
 {% endif %}
 
 {% if q or zone %}
