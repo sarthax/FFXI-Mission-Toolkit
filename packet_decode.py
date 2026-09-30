@@ -110,15 +110,107 @@ def get_field_schema(direction: str, opcode: int) -> list[dict] | None:
         return None
     out = []
     for f in defn.fields:
+        byte_size = get_decoder()._get_field_byte_size(f)
         out.append({"name": f.name, "type": f.type, "pos": f.pos, "size": f.size,
-                     "lookup": f.lookup, "comment": f.comment or ""})
+                     "byte_size": byte_size, "lookup": f.lookup, "comment": f.comment or "",
+                     "derived": False})
         if f.type == "a" and f.name == "num" and f.size and f.size % 4 == 0:
             for i in range(f.size // 4):
                 out.append({"name": f"num[{i}]", "type": "int32 (derived)",
-                             "pos": f.pos + i * 4, "size": 4, "lookup": None,
-                             "comment": "split from the real N x int32 'num' params blob above"})
+                             "pos": f.pos + i * 4, "size": 4, "byte_size": 4, "lookup": None,
+                             "comment": "split from the real N x int32 'num' params blob above",
+                             "derived": True})
     return out
 
+
+
+def analyze_layout(direction: str, opcode: int, hex_str: str) -> dict:
+    """Describe how a packet definition maps onto concrete bytes for the GUI inspector.
+
+    This is presentation metadata over the canonical Packetlyzer definition/decoder. It does not
+    infer unknown semantics. Derived num[] rows are included for row highlighting, but coverage
+    and ownership prefer canonical (non-derived) fields so one container plus its derived children
+    do not falsely appear as schema conflicts.
+    """
+    raw = parse_hex(hex_str)
+    schema = get_field_schema(direction, opcode) or []
+    decoded = decode(direction, opcode, hex_str)
+    decoded_by_name = {f.name: f for f in decoded.fields}
+
+    canonical_owners: list[list[int]] = [[] for _ in raw]
+    rows = []
+    for idx, field in enumerate(schema):
+        start = int(field.get("pos") or 0)
+        size = int(field.get("byte_size") or field.get("size") or 0)
+        end = start + max(size, 0)
+        available_end = min(end, len(raw))
+        field_bytes = raw[start:available_end] if 0 <= start < len(raw) else b""
+        dec = decoded_by_name.get(field["name"])
+        row = dict(field)
+        row.update({
+            "index": idx,
+            "end": end,
+            "range_hex": f"0x{start:02X}" if size <= 1 else f"0x{start:02X}-0x{max(start, end - 1):02X}",
+            "raw_hex": " ".join(f"{b:02X}" for b in field_bytes),
+            "value": dec.display_value if dec is not None else None,
+            "raw_value": dec.raw_value if dec is not None else None,
+            "out_of_range": bool(dec.out_of_range) if dec is not None else end > len(raw),
+        })
+        if dec is not None and isinstance(dec.raw_value, int):
+            bits = max(size * 8, 1)
+            mask = (1 << bits) - 1 if bits < 128 else None
+            unsigned = dec.raw_value if dec.raw_value >= 0 or mask is None else dec.raw_value & mask
+            row["value_hex"] = f"0x{unsigned:X}"
+        else:
+            row["value_hex"] = None
+        rows.append(row)
+
+        if not field.get("derived"):
+            for pos in range(max(0, start), min(end, len(raw))):
+                canonical_owners[pos].append(idx)
+
+    bytes_view = []
+    for pos, b in enumerate(raw):
+        owners = canonical_owners[pos]
+        bytes_view.append({
+            "offset": pos,
+            "hex": f"{b:02X}",
+            "ascii": chr(b) if 32 <= b <= 126 else ".",
+            "owners": owners,
+            "owner": owners[0] if len(owners) == 1 else None,
+            "overlap": len(owners) > 1,
+            "claimed": bool(owners),
+        })
+
+    gaps = []
+    start = None
+    for pos, owners in enumerate(canonical_owners + [[]]):
+        claimed = bool(owners) if pos < len(raw) else True
+        if not claimed and start is None:
+            start = pos
+        elif claimed and start is not None:
+            gaps.append({
+                "start": start, "end": pos,
+                "range_hex": f"0x{start:02X}" if pos - start == 1 else f"0x{start:02X}-0x{pos - 1:02X}",
+                "length": pos - start,
+            })
+            start = None
+
+    claimed_count = sum(1 for x in canonical_owners if x)
+    overlap_count = sum(1 for x in canonical_owners if len(x) > 1)
+    return {
+        "length": len(raw),
+        "length_hex": f"0x{len(raw):X}",
+        "rows": rows,
+        "bytes": bytes_view,
+        "gaps": gaps,
+        "claimed_bytes": claimed_count,
+        "unknown_bytes": len(raw) - claimed_count,
+        "overlap_bytes": overlap_count,
+        "coverage_pct": round((claimed_count / len(raw) * 100.0), 1) if raw else 0.0,
+        "has_definition": decoded.has_definition,
+        "description": decoded.description,
+    }
 
 def list_opcodes(query: str = "") -> list[dict]:
     """Every real (direction, opcode, description) this DB knows, optionally filtered by a
