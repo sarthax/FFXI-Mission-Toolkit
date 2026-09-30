@@ -292,6 +292,9 @@
                   <span class="chip">{{ engine.shared_helpers|length }} shared helper{{ '' if engine.shared_helpers|length == 1 else 's' }}</span>
                   {% for status,count in engine.binding_counts.items() %}<span class="chip">{{ status }} {{ count }}</span>{% endfor %}
                 </div>
+                {% if engine.binding_index_size == 0 %}
+                <div class="warn">No Lua binding registrations were indexed from this configured provider tree. API calls remain visible as source evidence, but engine handoff resolution is unavailable.</div>
+                {% endif %}
                 {% if engine.unindexed_call_count %}
                 <div class="warn">{{ engine.unindexed_call_count }} direct Lua API call{{ '' if engine.unindexed_call_count == 1 else 's' }} have no binding registration under this configured provider tree. This is a binding-index gap/review cue, not proof the Lua call is invalid.</div>
                 {% endif %}
