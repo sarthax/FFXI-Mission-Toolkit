@@ -104,8 +104,19 @@ def main():
     assert "feature_trace.trace(" in server
     assert '"incoming": []' in server
     assert '"outgoing": []' in server
+    assert 'profile["feature_trace_path"] = {}' in server
+    assert "feature_trace.entity_implementation_path(graph_con, con, str(npcid))" in server
+    assert '"coverage_cues": path.get("coverage_cues") or []' in server
 
     assert "Entity evidence bridge" in template
+    assert "Feature Trace implementation path" in template
+    assert "Open full Implementation Path" in template
+    assert "source representations" in template
+    assert "provider branches" in template
+    assert "source-native links" in template
+    assert "direct graph relationships" in template
+    assert "direct evidence IDs" in template
+    assert "Feature Trace coverage cues describe indexed evidence state only" in template
     assert "Needs attention" in template
     assert "SQL / implementation wiring" in template
     assert "Observed CSID / dialog wiring" in template
