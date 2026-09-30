@@ -517,10 +517,13 @@ function pickerValue(inputId, namesObj) {
 }
 
 let MOD_NAMES = {};
+let MOD_META = {};
 fetch('/itemedit/modnames.json').then(r => r.json()).then(j => { MOD_NAMES = j; fillDatalist(document.getElementById('dl_mods'), j); });
+fetch('/itemedit/modmeta.json').then(r => r.json()).then(j => { MOD_META = j; if(currentItemId) rerenderEffects(); });
 let PET_TYPE_NAMES = {};
 fetch('/itemedit/pettypes.json').then(r => r.json()).then(j => { PET_TYPE_NAMES = j; fillDatalist(document.getElementById('dl_pettypes'), j); });
 let LATENT_NAMES = {};
+let LATENT_META = {};
 let lastSearchRows=[];
 let recentItems=[];
 let recentPos=-1;
@@ -540,6 +543,7 @@ async function navigateRecent(delta){
   if(ok!==false){ recentPos=next; refreshRecentNav(); }
 }
 fetch('/itemedit/latentnames.json').then(r => r.json()).then(j => { LATENT_NAMES = j; fillDatalist(document.getElementById('dl_latents'), j); });
+fetch('/itemedit/latentmeta.json').then(r => r.json()).then(j => { LATENT_META = j; if(currentItemId) rerenderEffects(); });
 
 (async () => {
   try {
@@ -1156,11 +1160,27 @@ function rerenderEffects(){
   renderDecodedSummary();
 }
 
+function modMetaLine(modId){
+  const m=MOD_META?.[modId]; if(!m) return '';
+  const bits=[];
+  if(m.unit) bits.push('unit: '+m.unit);
+  if(m.comment) bits.push(m.comment);
+  return bits.join(' · ');
+}
+function latentParamLine(latentId){
+  const m=LATENT_META?.[latentId]; if(!m) return '';
+  return m.param_semantics ? ('param: '+m.param_semantics) : (m.comment||'');
+}
 function renderMods(mods){
   const wrap=document.getElementById('editorLists'), box=document.createElement('div');
   box.className='edit-card';
-  const rows=mods.map(m=>'<tr><td style="width:36px;">'+m.modId+'</td><td>'+(MOD_NAMES[m.modId]||'(unconfirmed modId)')+'</td><td style="width:80px;"><input type="number" data-stage-mod="'+m.modId+'" value="'+m.value+'" style="width:70px;"></td><td style="width:72px;"><button type="button" data-remove-mod="'+m.modId+'">remove</button></td></tr>').join('');
-  box.innerHTML='<h3>Item modifiers ('+mods.length+')<span class="hint">resolved modifier names; staged until Save Item</span></h3><div class="rowtable-wrap table-wrap"><table><tbody>'+(rows||'<tr><td class="muted">no mods on this item</td></tr>')+'<tr><td colspan="2"><input type="text" id="newModId" list="dl_mods" placeholder="type to search mods..." style="width:100%;"></td><td><input type="number" id="newModValue" value="0" style="width:70px;"></td><td><button type="button" id="stageAddMod">add</button></td></tr></tbody></table></div>';
+  const rows=mods.map(m=>{
+    const meta=modMetaLine(m.modId);
+    return '<tr><td style="width:36px;">'+m.modId+'</td><td>'+(MOD_NAMES[m.modId]||'(unconfirmed modId)')+
+      (meta?'<div class="muted" style="font-size:10px;">'+htmlEsc(meta)+'</div>':'')+
+      '</td><td style="width:80px;"><input type="number" data-stage-mod="'+m.modId+'" value="'+m.value+'" style="width:70px;"></td><td style="width:72px;"><button type="button" data-remove-mod="'+m.modId+'">remove</button></td></tr>';
+  }).join('');
+  box.innerHTML='<h3>Item modifiers ('+mods.length+')<span class="hint">source-backed modifier comments/units where explicitly documented; raw values remain authoritative</span></h3><div class="rowtable-wrap table-wrap"><table><tbody>'+(rows||'<tr><td class="muted">no mods on this item</td></tr>')+'<tr><td colspan="2"><input type="text" id="newModId" list="dl_mods" placeholder="type to search mods..." style="width:100%;"></td><td><input type="number" id="newModValue" value="0" style="width:70px;"></td><td><button type="button" id="stageAddMod">add</button></td></tr></tbody></table></div>';
   wrap.appendChild(box);
   box.querySelectorAll('[data-stage-mod]').forEach(inp=>inp.oninput=()=>{ const row=stagedEffects.mods.find(x=>Number(x.modId)===Number(inp.dataset.stageMod)); if(row){ row.value=Number(inp.value)||0; updateDirtySummary(); } });
   box.querySelectorAll('[data-remove-mod]').forEach(btn=>btn.onclick=()=>{ stagedEffects.mods=stagedEffects.mods.filter(x=>Number(x.modId)!==Number(btn.dataset.removeMod)); rerenderEffects(); });
@@ -1173,8 +1193,13 @@ function renderMods(mods){
 
 function renderPetMods(rows){
   const wrap=document.getElementById('editorLists'), box=document.createElement('div'); box.className='edit-card';
-  const body=rows.map(m=>'<tr><td>'+m.modId+'</td><td>'+(MOD_NAMES[m.modId]||'(unconfirmed modId)')+'</td><td>'+(PET_TYPE_NAMES[m.petType]||('pet '+m.petType))+'</td><td><input type="number" data-stage-petmod="'+m.modId+':'+m.petType+'" value="'+m.value+'" style="width:70px;"></td><td><button type="button" data-remove-petmod="'+m.modId+':'+m.petType+'">remove</button></td></tr>').join('');
-  box.innerHTML='<h3>Pet modifiers ('+rows.length+')<span class="hint">modifier + pet family metadata; staged until Save Item</span></h3><div class="rowtable-wrap table-wrap"><table><tbody>'+(body||'<tr><td class="muted">no pet mods on this item</td></tr>')+'<tr><td colspan="2"><input type="text" id="newPetModId" list="dl_mods" placeholder="mod..."></td><td><input type="text" id="newPetModType" list="dl_pettypes" placeholder="pet type..."></td><td><input type="number" id="newPetModValue" value="0" style="width:70px;"></td><td><button type="button" id="stageAddPetMod">add</button></td></tr></tbody></table></div>';
+  const body=rows.map(m=>{
+    const meta=modMetaLine(m.modId);
+    return '<tr><td>'+m.modId+'</td><td>'+(MOD_NAMES[m.modId]||'(unconfirmed modId)')+
+      (meta?'<div class="muted" style="font-size:10px;">'+htmlEsc(meta)+'</div>':'')+
+      '</td><td>'+(PET_TYPE_NAMES[m.petType]||('pet '+m.petType))+'</td><td><input type="number" data-stage-petmod="'+m.modId+':'+m.petType+'" value="'+m.value+'" style="width:70px;"></td><td><button type="button" data-remove-petmod="'+m.modId+':'+m.petType+'">remove</button></td></tr>';
+  }).join('');
+  box.innerHTML='<h3>Pet modifiers ('+rows.length+')<span class="hint">same modifier semantics as item mods, scoped by pet family</span></h3><div class="rowtable-wrap table-wrap"><table><tbody>'+(body||'<tr><td class="muted">no pet mods on this item</td></tr>')+'<tr><td colspan="2"><input type="text" id="newPetModId" list="dl_mods" placeholder="mod..."></td><td><input type="text" id="newPetModType" list="dl_pettypes" placeholder="pet type..."></td><td><input type="number" id="newPetModValue" value="0" style="width:70px;"></td><td><button type="button" id="stageAddPetMod">add</button></td></tr></tbody></table></div>';
   wrap.appendChild(box);
   box.querySelectorAll('[data-stage-petmod]').forEach(inp=>inp.oninput=()=>{ const [m,p]=inp.dataset.stagePetmod.split(':').map(Number); const row=stagedEffects.pet_mods.find(x=>Number(x.modId)===m&&Number(x.petType)===p); if(row){ row.value=Number(inp.value)||0; updateDirtySummary(); } });
   box.querySelectorAll('[data-remove-petmod]').forEach(btn=>btn.onclick=()=>{ const [m,p]=btn.dataset.removePetmod.split(':').map(Number); stagedEffects.pet_mods=stagedEffects.pet_mods.filter(x=>!(Number(x.modId)===m&&Number(x.petType)===p)); rerenderEffects(); });
@@ -1188,8 +1213,15 @@ function renderPetMods(rows){
 
 function renderLatents(rows){
   const wrap=document.getElementById('editorLists'), box=document.createElement('div'); box.className='edit-card';
-  const body=rows.map(l=>'<tr><td>'+l.modId+'</td><td>'+(MOD_NAMES[l.modId]||'(unconfirmed modId)')+'</td><td>'+l.value+'</td><td>'+(LATENT_NAMES[l.latentId]||('latent '+l.latentId))+'</td><td>param '+l.latentParam+'</td><td><button type="button" data-remove-latent="'+l.modId+':'+l.value+':'+l.latentId+':'+l.latentParam+'">remove</button></td></tr>').join('');
-  box.innerHTML='<h3>Latent effects ('+rows.length+')<span class="hint">modifier + activation condition metadata; staged until Save Item</span></h3><div class="rowtable-wrap table-wrap"><table><tbody>'+(body||'<tr><td class="muted">no latents on this item</td></tr>')+'<tr><td colspan="2"><input type="text" id="newLatentModId" list="dl_mods" placeholder="mod..."></td><td><input type="number" id="newLatentValue" value="0" style="width:55px;"></td><td><input type="text" id="newLatentId" list="dl_latents" placeholder="condition..."></td><td><input type="number" id="newLatentParam" value="0" style="width:55px;"></td><td><button type="button" id="stageAddLatent">add</button></td></tr></tbody></table></div>';
+  const body=rows.map(l=>{
+    const modMeta=modMetaLine(l.modId), paramMeta=latentParamLine(l.latentId);
+    return '<tr><td>'+l.modId+'</td><td>'+(MOD_NAMES[l.modId]||'(unconfirmed modId)')+
+      (modMeta?'<div class="muted" style="font-size:10px;">'+htmlEsc(modMeta)+'</div>':'')+
+      '</td><td>'+l.value+'</td><td>'+(LATENT_NAMES[l.latentId]||('latent '+l.latentId))+
+      (paramMeta?'<div class="muted" style="font-size:10px;">'+htmlEsc(paramMeta)+'</div>':'')+
+      '</td><td>param '+l.latentParam+'</td><td><button type="button" data-remove-latent="'+l.modId+':'+l.value+':'+l.latentId+':'+l.latentParam+'">remove</button></td></tr>';
+  }).join('');
+  box.innerHTML='<h3>Latent effects ('+rows.length+')<span class="hint">modifier magnitude plus source-backed activation-condition and latentParam semantics</span></h3><div class="rowtable-wrap table-wrap"><table><tbody>'+(body||'<tr><td class="muted">no latents on this item</td></tr>')+'<tr><td colspan="2"><input type="text" id="newLatentModId" list="dl_mods" placeholder="mod..."></td><td><input type="number" id="newLatentValue" value="0" style="width:55px;"></td><td><input type="text" id="newLatentId" list="dl_latents" placeholder="condition..."></td><td><input type="number" id="newLatentParam" value="0" style="width:55px;"></td><td><button type="button" id="stageAddLatent">add</button></td></tr></tbody></table></div>';
   wrap.appendChild(box);
   box.querySelectorAll('[data-remove-latent]').forEach(btn=>btn.onclick=()=>{ const k=btn.dataset.removeLatent.split(':').map(Number); stagedEffects.latents=stagedEffects.latents.filter(x=>!(Number(x.modId)===k[0]&&Number(x.value)===k[1]&&Number(x.latentId)===k[2]&&Number(x.latentParam)===k[3])); rerenderEffects(); });
   box.querySelector('#stageAddLatent').onclick=()=>{
