@@ -6690,6 +6690,116 @@ def _capture_generic_search(con, module: str, q: str, page: int) -> tuple[list[d
     return rows, total, total_pages, page
 
 
+def _capture_search_row_key(row: dict) -> str | None:
+    """Canonical locator key for an Evidence Search result.
+
+    This deliberately returns None for aggregate/search-only rows that do not correspond to one
+    physical normalized row (for example aggregated NPC path summaries). Related Evidence must
+    never manufacture a row identity merely to make a drill-down link available.
+    """
+    dataset = row.get("dataset")
+    record_id = row.get("record_id")
+    if not dataset or record_id is None:
+        return None
+    try:
+        if dataset == "capture_npc_entries":
+            if row.get("zone") is None or row.get("subject_id") is None:
+                return None
+            key = {"zone_db": row["zone"], "entity_id": int(row["subject_id"])}
+        elif dataset == "capture_actions":
+            key = {"action_key": str(record_id)}
+        elif dataset in {"capture_hp_events", "capture_ki_events",
+                         "capture_chat_observations", "capture_caplog_chat",
+                         "capture_raw_packets"}:
+            key = {"seq": int(record_id)}
+        elif dataset == "capture_attack_delay":
+            if row.get("zone") is None:
+                return None
+            key = {"zone_db": row["zone"], "mob_name": str(record_id)}
+        elif dataset == "capture_structured_records":
+            source_file, family, source_key = str(record_id).rsplit(":", 2)
+            key = {"source_file": source_file, "family": family, "record_key": source_key}
+        else:
+            return None
+    except (TypeError, ValueError):
+        return None
+    return capture_integrity.canonical_row_key(key)
+
+
+def _capture_related_locators(
+    con: sqlite3.Connection, capture_id: int, target_table: str, row_key: str
+) -> tuple[list[dict], list[dict]]:
+    """Return exact source locators plus normalized rows sharing the same physical evidence.
+
+    Correlation is intentionally strict. A relation is emitted only when two normalized records
+    point at the same hashed source artifact and their byte/line spans overlap, or both identify
+    the same SQLite source table+rowid. Timestamps, entity IDs, item IDs, names, and nearby packet
+    sequence numbers are NOT correlation keys here.
+    """
+    anchors = capture_integrity.find_row_locators(con, capture_id, target_table, row_key)
+    related: list[dict] = []
+    seen: set[tuple[str, str, str]] = set()
+    old_factory = con.row_factory
+    con.row_factory = sqlite3.Row
+    try:
+        for anchor in anchors:
+            source_sha = anchor.get("source_sha256")
+            if not source_sha:
+                continue
+            candidates = con.execute(
+                """SELECT capture_id,filename,target_table,row_key,source_sha256,locator_basis,
+                          start_line,end_line,start_offset,end_offset,details_json
+                   FROM capture_row_locators
+                   WHERE capture_id=? AND filename=? AND source_sha256=?
+                     AND NOT (target_table=? AND row_key=?)
+                   ORDER BY target_table,row_key""",
+                (capture_id, anchor["filename"], source_sha, target_table,
+                 capture_integrity.canonical_row_key(row_key)),
+            ).fetchall()
+            for candidate_row in candidates:
+                candidate = dict(candidate_row)
+                try:
+                    candidate["details"] = json.loads(candidate.pop("details_json") or "{}")
+                except json.JSONDecodeError:
+                    candidate["details"] = {}
+                    candidate.pop("details_json", None)
+
+                relation = None
+                a_start, a_end = anchor.get("start_offset"), anchor.get("end_offset")
+                c_start, c_end = candidate.get("start_offset"), candidate.get("end_offset")
+                if None not in (a_start, a_end, c_start, c_end):
+                    if int(a_start) < int(c_end) and int(c_start) < int(a_end):
+                        relation = "same source byte span"
+                if relation is None:
+                    a_first, a_last = anchor.get("start_line"), anchor.get("end_line")
+                    c_first, c_last = candidate.get("start_line"), candidate.get("end_line")
+                    if None not in (a_first, a_last, c_first, c_last):
+                        if int(a_first) <= int(c_last) and int(c_first) <= int(a_last):
+                            relation = "same source line span"
+                if relation is None and anchor.get("locator_basis") == "sqlite-row" \
+                        and candidate.get("locator_basis") == "sqlite-row":
+                    ad = anchor.get("details") or {}
+                    cd = candidate.get("details") or {}
+                    if (ad.get("source_table") is not None and ad.get("source_rowid") is not None
+                            and ad.get("source_table") == cd.get("source_table")
+                            and ad.get("source_rowid") == cd.get("source_rowid")):
+                        relation = "same SQLite source row"
+                if relation is None:
+                    continue
+
+                identity = (
+                    candidate["filename"], candidate["target_table"], candidate["row_key"]
+                )
+                if identity in seen:
+                    continue
+                seen.add(identity)
+                candidate["relation"] = relation
+                related.append(candidate)
+    finally:
+        con.row_factory = old_factory
+    return anchors, related
+
+
 @app.get("/captures/search", response_class=HTMLResponse)
 def captures_search(
     request: Request,
@@ -6756,6 +6866,9 @@ def captures_search(
                     "SELECT text FROM dialog_text WHERE zoneid=? AND idx=?", (zoneid, d["message_id"])
                 ).fetchone()
                 d["dialog_text"] = trow[0] if trow else None
+            d["related_row_key"] = capture_integrity.canonical_row_key(
+                {"zone_db": d.get("zone_db"), "seq": d.get("seq")}
+            )
             events.append(d)
 
     if selected_module == "packets" and (pk_category or pk_opcode):
@@ -6809,12 +6922,15 @@ def captures_search(
             except Exception:
                 d["description"] = None
                 d["fields"] = None
+            d["related_row_key"] = capture_integrity.canonical_row_key({"seq": d.get("seq")})
             packets.append(d)
 
     if selected_module not in {"events", "packets"}:
         generic_rows, total, total_pages, page = _capture_generic_search(
             con, selected_module, q, page
         )
+        for row in generic_rows:
+            row["related_row_key"] = _capture_search_row_key(row)
 
     categories = packet_decode.list_categories()
     con.close()
@@ -6836,6 +6952,64 @@ def captures_search(
         "pk_category": pk_category, "pk_opcode": pk_opcode, "categories": categories,
         "events": events, "packets": packets, "generic_rows": generic_rows,
         "page": page, "total": total, "total_pages": total_pages, "qs_pairs": qs_pairs,
+    })
+
+
+@app.get("/captures/{capture_id}/related-evidence", response_class=HTMLResponse)
+def captures_related_evidence(
+    request: Request, capture_id: int, target_table: str, row_key: str,
+):
+    """Show only provenance-proven sibling evidence from the same physical source span."""
+    con = get_con()
+    cap = con.execute(
+        "SELECT capture_id,capture_label FROM captures WHERE capture_id=?", (capture_id,)
+    ).fetchone()
+    if not cap:
+        con.close()
+        return HTMLResponse("Capture not found", status_code=404)
+
+    allowed_tables = {
+        "capture_actions", "capture_attack_delay", "capture_caplog_chat",
+        "capture_chat_observations", "capture_events", "capture_eventview",
+        "capture_hp_events", "capture_ki_events", "capture_level_range",
+        "capture_npc_entries", "capture_npc_history", "capture_npc_path",
+        "capture_pc_path", "capture_raw_packets", "capture_structured_records",
+    }
+    if target_table not in allowed_tables:
+        con.close()
+        raise HTTPException(status_code=400, detail="Unsupported capture evidence table")
+
+    canonical_key = capture_integrity.canonical_row_key(row_key)
+    anchors, related = _capture_related_locators(
+        con, capture_id, target_table, canonical_key
+    )
+    for item in anchors + related:
+        item["source_url"] = (
+            f"/captures/{capture_id}/source-locator?"
+            f"filename={quote(str(item['filename']))}&"
+            f"target_table={quote(str(item['target_table']))}&"
+            f"row_key={quote(str(item['row_key']))}"
+        )
+        item["data_url"] = (
+            f"/captures/query?table={quote(str(item['target_table']))}&capture_id={capture_id}"
+        )
+        item["packet_url"] = None
+        if item["target_table"] == "capture_raw_packets":
+            try:
+                seq = json.loads(item["row_key"]).get("seq")
+            except (TypeError, json.JSONDecodeError):
+                seq = None
+            if seq is not None:
+                item["packet_url"] = f"/captures/{capture_id}/packets/{int(seq)}"
+
+    cap_dict = dict(cap)
+    con.close()
+    return templates.TemplateResponse(request, "capture_related_evidence.html", {
+        "cap": cap_dict,
+        "target_table": target_table,
+        "row_key": canonical_key,
+        "anchors": anchors,
+        "related": related,
     })
 
 
