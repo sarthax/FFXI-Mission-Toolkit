@@ -122,6 +122,37 @@ def resolve(kind: str, eid: int, server=None) -> dict:
             info.setdefault("errors", []).append(
                 f"dat-extractor found no ROM file for {slot} file_id {fid}")
 
+    # Ordered multi-DAT composition manifest for validation/UI. This is intentionally
+    # structural only: it says which client resources compose the actor, not how retail
+    # animation scheduling/blending selects or times them.
+    composition = [{
+        "role": "skeleton",
+        "slot": None,
+        "model_id": None,
+        "file_id": None,
+        "rom_path": info.get("skeleton_rom_path"),
+        "status": "resolved" if info.get("skeleton_rom_path") else "missing",
+        "source": "race skeleton mapping",
+    }]
+    order = ("face", "head", "body", "hands", "legs", "feet", "main", "sub", "ranged")
+    for slot in order:
+        resolved = info.get("gear_resolved", {}).get(slot)
+        if resolved is None:
+            continue
+        composition.append({
+            "role": "face" if slot == "face" else ("weapon" if slot in {"main", "sub", "ranged"} else "equipment"),
+            "slot": slot,
+            "model_id": resolved.get("model_id"),
+            "file_id": resolved.get("file_id"),
+            "rom_path": resolved.get("rom_path"),
+            "status": "resolved" if resolved.get("rom_path") else "unresolved",
+            "source": resolved.get("source") or "look_t gear slot -> race GEAR_TABLES",
+            **({"error": resolved.get("error")} if resolved.get("error") else {}),
+        })
+    info["composition"] = composition
+    info["composition_resolved"] = sum(1 for part in composition if part["status"] == "resolved")
+    info["composition_missing"] = sum(1 for part in composition if part["status"] != "resolved")
+
     return info
 
 
