@@ -29,7 +29,7 @@
 .semantic-panel{border-left:1px solid var(--border);padding-left:14px}.semantic-panel .big-value{font-size:18px;font-weight:700;color:var(--accent);word-break:break-word}
 .raw-field{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--muted)}
 .scratch-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;margin-top:14px}.context-grid{display:grid;grid-template-columns:130px 1fr;gap:5px 10px;padding:10px 12px}.context-grid>div:nth-child(odd){color:var(--muted)}
-@media(max-width:1180px){.packet-main-grid,.scratch-row{grid-template-columns:1fr}.decode-form{grid-template-columns:1fr 1fr}.decode-form input[name=hex_bytes]{grid-column:1/-1}.decode-form button{grid-column:1/-1}}
+@media(max-width:1180px){.packet-main-grid,.scratch-row{grid-template-columns:1fr}.decode-form{grid-template-columns:1fr 1fr}.decode-form input[name=hex_bytes],.decode-form textarea[name=hex_bytes]{grid-column:1/-1}.decode-form button{grid-column:1/-1}}
 </style>
 
 <div class="packet-breadcrumb"><a class="inline" href="/packets?direction={{ direction }}&q={{ q }}">Packet Tools</a> &rsaquo; {{ 'Bulk Packet Decode' if mode == 'bulk' else 'Manual Packet Viewer / Decoder' }}</div>
@@ -54,7 +54,7 @@
 </div>
 
 {% if mode == 'bulk' %}
-<form method="post" action="/packets/bulk" class="packet-card" style="padding:10px 12px;margin-bottom:10px">
+<form method="post" action="/packets/bulk" enctype="multipart/form-data" class="packet-card" style="padding:10px 12px;margin-bottom:10px">
   <div class="decode-form" style="margin:0 0 8px;grid-template-columns:190px 150px minmax(320px,1fr)">
     <select name="direction">
       <option value="s2c" {% if direction == "s2c" %}selected{% endif %}>incoming / s2c</option>
@@ -63,13 +63,28 @@
     <input type="text" name="opcode" value="{{ opcode }}" placeholder="opcode, e.g. 0x034">
     <span class="muted" style="align-self:center">One opcode per source log, matching PacketLogger / PacketViewer output.</span>
   </div>
-  <textarea name="log_text" rows="11" placeholder="paste the raw per-opcode log here" style="width:100%;font-family:ui-monospace,Consolas,monospace;font-size:12px;padding:9px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--ink)">{{ bulk_log_text }}</textarea>
+  <div class="dense-toolbar" style="margin:6px 0">
+    <label><strong>Upload capture/log file(s)</strong> <input type="file" name="packet_files" multiple></label>
+    <span class="muted">Uses the same format detection/adapters as Capture ingestion: PacketDB, Packeteer, Windower logs, PCAP/PCAPNG, PacketLogger/PacketViewer bundles, and other sources that preserve raw packet bytes.</span>
+  </div>
+  <textarea name="log_text" rows="18" placeholder="or paste raw packet log text / multiline hex-grid blocks here" style="width:100%;min-height:300px;resize:vertical;font-family:ui-monospace,Consolas,monospace;font-size:12px;padding:9px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--ink)">{{ bulk_log_text }}</textarea>
   <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
     <button type="submit">Decode all packets</button>
     {% if bulk_rows %}<span class="chip">{{ bulk_rows|length }} packet{{ '' if bulk_rows|length == 1 else 's' }}</span>{% endif %}
   </div>
 </form>
 
+{% if bulk_sources %}
+<details class="packet-card" style="margin-bottom:10px" open>
+  <summary style="padding:8px 10px;font-weight:600">Uploaded sources <span class="chip">{{ bulk_sources|length }}</span></summary>
+  <div class="table-wrap" style="border:0;border-radius:0"><table>
+    <tr><th>file</th><th>detected format</th><th>rows</th><th>status</th></tr>
+    {% for s in bulk_sources %}
+    <tr><td class="mono">{{ s.filename }}</td><td>{{ s.format or 'unrecognized' }}</td><td>{{ s.rows }}</td><td>{% if s.error %}<span class="muted">{{ s.error }}</span>{% else %}<span class="chip">parsed</span>{% endif %}</td></tr>
+    {% endfor %}
+  </table></div>
+</details>
+{% endif %}
 {% if bulk_parse_error %}
 <div class="warn"><strong>Could not decode:</strong> {{ bulk_parse_error }}</div>
 {% elif bulk_rows %}
@@ -84,7 +99,7 @@
       <td>{{ r.description or '(no definition)' }}{% if r.decode_error %}<div class="muted">{{ r.decode_error }}</div>{% endif %}</td>
       <td>{% if r.fields %}<span class="chip">{{ r.fields|length }} fields</span>{% else %}<span class="muted">none</span>{% endif %}</td>
       <td>
-        <a class="chip" href="/packets/decode?direction={{ direction }}&opcode={{ opcode|urlencode }}&hex_bytes={{ r.raw_hex|urlencode }}">Open in Packet Viewer &rarr;</a>
+        <a class="chip" href="/packets/decode?direction={{ r.pd_direction }}&opcode={{ r.opcode|urlencode }}&hex_bytes={{ r.raw_hex|urlencode }}">Open in Packet Viewer &rarr;</a>
       </td>
     </tr>
     {% endfor %}
@@ -92,17 +107,18 @@
 </div>
 {% endif %}
 {% else %}
-<form class="decode-form" method="get" action="/packets/decode">
+<form class="decode-form" method="post" action="/packets/decode">
   <input type="hidden" name="q" value="{{ q }}">
   <select name="direction">
     <option value="s2c" {% if direction == "s2c" %}selected{% endif %}>incoming / s2c</option>
     <option value="c2s" {% if direction == "c2s" %}selected{% endif %}>outgoing / c2s</option>
   </select>
   <input type="text" name="opcode" value="{{ opcode }}" placeholder="opcode, e.g. 0x034">
-  <input type="text" name="hex_bytes" value="{{ hex_bytes }}" placeholder="paste raw hex bytes (spaces/newlines are fine)">
-  <button type="submit">Decode</button>
+  <textarea name="hex_bytes" rows="8" placeholder="paste plain hex bytes or a full PacketLogger / PacketViewer multiline hex-grid block" style="grid-column:3/4;min-height:150px;resize:vertical;font-family:ui-monospace,Consolas,monospace">{{ hex_bytes }}</textarea>
+  <button type="submit" style="align-self:start">Decode</button>
 </form>
 
+{% if input_note %}<div class="chip" style="margin-bottom:6px">{{ input_note }}</div>{% endif %}
 {% if decode_error %}<div class="warn"><strong>Could not decode:</strong> {{ decode_error }}</div>{% endif %}
 
 {% if schema is not none %}

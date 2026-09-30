@@ -5022,6 +5022,108 @@ def explore_event_run(out_dir: Path, entity_id: int, csid: int, zoneid: int | No
     return explore_event.decompile_event(out_dir, entity_id, csid, zoneid)
 
 
+def _packet_decoder_normalize_text(text: str, opcode: str) -> tuple[str, str | None]:
+    """Normalize plain hex or a pasted PacketLogger/PacketViewer hex-grid block."""
+    raw = (text or "").strip()
+    if not raw:
+        return "", None
+    if opcode:
+        try:
+            opcode_norm = f"0x{int(opcode, 0):03X}"
+            records = build_capture_index.parse_packetlogger_records(raw, opcode_norm)
+        except Exception:
+            records = []
+        if records:
+            if len(records) > 1:
+                raise ValueError(
+                    f"Pasted input contains {len(records)} packet blocks. Use Bulk decode for multi-packet input."
+                )
+            return records[0]["raw_hex"], "Parsed multiline PacketLogger / PacketViewer hex grid."
+    compact = "".join(raw.split())
+    if compact and all(ch in "0123456789abcdefABCDEF" for ch in compact) and len(compact) % 2 == 0:
+        return compact, None
+    raise ValueError(
+        "Input is neither plain hexadecimal bytes nor a recognized PacketLogger/PacketViewer hex-grid block."
+    )
+
+
+def _packet_decoder_upload_rows(
+    filename: str,
+    data: bytes,
+    *,
+    fallback_direction: str = "s2c",
+    fallback_opcode: str = "",
+) -> tuple[list[dict], dict]:
+    """Run an uploaded capture/log through the real capture ingestion adapters in a scratch DB."""
+    con = sqlite3.connect(":memory:")
+    con.row_factory = sqlite3.Row
+    build_capture_index.init_db(con)
+    capture_id = build_capture_index.create_manual_capture(
+        con, "packet-decoder-upload", "PACKET_DECODE", None
+    )
+    result = {"filename": filename, "format": None, "rows": 0, "error": None}
+    tmp_path = None
+    src = None
+    try:
+        suffix = Path(filename).suffix.lower()
+        if suffix in {".zip", ".7z"}:
+            tmp = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
+            tmp.write(data)
+            tmp.close()
+            tmp_path = Path(tmp.name)
+            src = build_capture_index.Source(tmp_path)
+            file_results = []
+            counts = build_capture_index.ingest_from_source(
+                con, capture_id, src, file_results=file_results
+            )
+            result["format"] = "capture_bundle"
+            result["rows"] = int(counts.get("raw_packets", 0))
+            failures = [row for row in file_results if row.get("error")]
+            if failures and not result["rows"]:
+                result["error"] = "; ".join(
+                    f"{row.get('filename')}: {row.get('error')}" for row in failures[:5]
+                )
+        else:
+            result.update(build_capture_index.ingest_single_file(con, capture_id, filename, data))
+
+        rows = [
+            dict(row)
+            for row in con.execute(
+                """SELECT seq,ts,direction,opcode,raw_hex,source_file,source_format
+                   FROM capture_raw_packets WHERE capture_id=? ORDER BY seq""",
+                (capture_id,),
+            ).fetchall()
+        ]
+
+        if not rows and fallback_opcode:
+            text = data.decode("utf-8", "replace")
+            opcode_norm = f"0x{int(fallback_opcode, 0):03X}"
+            parsed = build_capture_index.parse_packetlogger_records(text, opcode_norm)
+            if parsed:
+                direction = "incoming" if fallback_direction == "s2c" else "outgoing"
+                rows = [
+                    {
+                        "seq": i,
+                        "ts": row["ts"],
+                        "direction": direction,
+                        "opcode": opcode_norm,
+                        "raw_hex": row["raw_hex"],
+                        "source_file": filename,
+                        "source_format": "packetlogger-upload",
+                    }
+                    for i, row in enumerate(parsed, 1)
+                ]
+                result.update({"format": "packetlogger", "rows": len(rows), "error": None})
+
+        return rows, result
+    finally:
+        if src is not None:
+            src.close()
+        con.close()
+        if tmp_path is not None:
+            tmp_path.unlink(missing_ok=True)
+
+
 @app.get("/packets", response_class=HTMLResponse)
 def packets_browse(request: Request, q: str = "", direction: str = "s2c"):
     """List-only page now -- decoding a specific opcode lives at its own URL (/packets/decode),
@@ -5047,6 +5149,7 @@ def packets_decode(
     decode_error = None
     schema = None
     layout = None
+    input_note = None
     opcode_int = None
     if opcode:
         try:
@@ -5060,8 +5163,9 @@ def packets_decode(
         schema = packet_decode.get_field_schema(direction, opcode_int)
         if hex_bytes:
             try:
-                result = packet_decode.decode(direction, opcode_int, hex_bytes)
-                layout = packet_decode.analyze_layout(direction, opcode_int, hex_bytes)
+                normalized_hex, input_note = _packet_decoder_normalize_text(hex_bytes, opcode)
+                result = packet_decode.decode(direction, opcode_int, normalized_hex)
+                layout = packet_decode.analyze_layout(direction, opcode_int, normalized_hex)
                 decoded_by_name = {f.name: f for f in result.fields}
                 decoded = {
                     "description": result.description,
@@ -5087,8 +5191,23 @@ def packets_decode(
         "q": q, "direction": direction, "opcode": opcode, "hex_bytes": hex_bytes,
         "decoded": decoded, "decode_error": decode_error, "schema": schema, "layout": layout,
         "mode": "bulk" if mode == "bulk" else "manual",
-        "bulk_rows": None, "bulk_log_text": "", "bulk_parse_error": None,
+        "input_note": input_note,
+        "bulk_rows": None, "bulk_log_text": "", "bulk_parse_error": None, "bulk_sources": [],
     })
+
+
+@app.post("/packets/decode", response_class=HTMLResponse)
+async def packets_decode_submit(request: Request):
+    """POST form companion for large/multiline ad-hoc packet input."""
+    form = await request.form()
+    return packets_decode(
+        request,
+        direction=(form.get("direction") or "s2c"),
+        opcode=(form.get("opcode") or "").strip(),
+        hex_bytes=form.get("hex_bytes") or "",
+        q=(form.get("q") or "").strip(),
+        mode="manual",
+    )
 
 
 @app.get("/packets/bulk", response_class=HTMLResponse)
@@ -5099,44 +5218,102 @@ def packets_bulk_form(request: Request):
 
 @app.post("/packets/bulk", response_class=HTMLResponse)
 async def packets_bulk_submit(request: Request):
-    """Decode every real packet in one pasted raw PacketLogger/PacketViewer per-opcode log file at
-    once -- reuses build_capture_index.parse_packetlogger_log (the exact same real hex-dump-block
-    parser the actual capture ingestion pipeline uses), so this gets a chance to catch/inspect a
-    log BEFORE committing to a full capture ingest, not a second parser that could drift from it."""
+    """Decode pasted logs or uploaded capture/log files using the canonical capture adapters."""
     form = await request.form()
     direction = form.get("direction", "s2c")
     opcode = (form.get("opcode") or "").strip()
     log_text = form.get("log_text") or ""
-    rows = None
+    uploads = [u for u in form.getlist("packet_files") if getattr(u, "filename", "")]
+    rows = []
+    sources = []
     parse_error = None
-    if opcode and log_text.strip():
+
+    for upload in uploads:
         try:
-            opcode_norm = f"0x{int(opcode, 0):03X}"
-            pairs = build_capture_index.parse_packetlogger_log(log_text, opcode_norm)
-            opcode_int = int(opcode, 0)
-            rows = []
-            for ts, hex_bytes in pairs:
-                try:
-                    result = packet_decode.decode(direction, opcode_int, hex_bytes)
+            data = await upload.read()
+            file_rows, source = _packet_decoder_upload_rows(
+                upload.filename,
+                data,
+                fallback_direction=direction,
+                fallback_opcode=opcode,
+            )
+            sources.append(source)
+            rows.extend(file_rows)
+        except Exception as exc:
+            sources.append({
+                "filename": upload.filename,
+                "format": None,
+                "rows": 0,
+                "error": str(exc),
+            })
+
+    if log_text.strip():
+        if not opcode:
+            parse_error = "Opcode is required for pasted PacketLogger/PacketViewer text."
+        else:
+            try:
+                opcode_norm = f"0x{int(opcode, 0):03X}"
+                pairs = build_capture_index.parse_packetlogger_log(log_text, opcode_norm)
+                for ts, raw_hex in pairs:
                     rows.append({
-                        "ts": ts, "raw_hex": hex_bytes, "description": result.description,
-                        "fields": [{"name": f.name, "value": f.display_value, "out_of_range": f.out_of_range}
-                                   for f in result.fields],
-                        "decode_error": None,
+                        "ts": ts,
+                        "raw_hex": raw_hex,
+                        "direction": "incoming" if direction == "s2c" else "outgoing",
+                        "opcode": opcode_norm,
+                        "source_file": "pasted input",
+                        "source_format": "packetlogger-paste",
                     })
-                except Exception as e:
-                    rows.append({"ts": ts, "raw_hex": hex_bytes, "description": None, "fields": [], "decode_error": str(e)})
-            if not rows:
-                parse_error = ("No real packet blocks found in this text -- expected the real "
-                                "PacketLogger/PacketViewer per-opcode log shape ('[timestamp]' or "
-                                "'[timestamp] Packet 0xNNN' header followed by a 16-column hex grid).")
-        except Exception as e:
-            parse_error = str(e)
+                if not pairs and not uploads:
+                    parse_error = (
+                        "No packet blocks found. Paste a PacketLogger/PacketViewer hex-grid block "
+                        "or upload a supported capture/log file."
+                    )
+            except Exception as exc:
+                parse_error = str(exc)
+
+    decoded_rows = []
+    for index, row in enumerate(rows, 1):
+        pd_direction = "s2c" if row.get("direction") == "incoming" else "c2s"
+        opcode_value = row.get("opcode") or opcode
+        try:
+            opcode_int = int(str(opcode_value), 0)
+            result = packet_decode.decode(pd_direction, opcode_int, row["raw_hex"])
+            decoded_rows.append({
+                **row,
+                "seq": row.get("seq") or index,
+                "pd_direction": pd_direction,
+                "description": result.description,
+                "fields": [
+                    {"name": f.name, "value": f.display_value, "out_of_range": f.out_of_range}
+                    for f in result.fields
+                ],
+                "decode_error": None,
+            })
+        except Exception as exc:
+            decoded_rows.append({
+                **row,
+                "seq": row.get("seq") or index,
+                "pd_direction": pd_direction,
+                "description": None,
+                "fields": [],
+                "decode_error": str(exc),
+            })
+
+    if uploads and not decoded_rows and not parse_error:
+        recognized = [s for s in sources if s.get("format")]
+        if recognized:
+            parse_error = "Uploaded source was recognized, but it contained no canonical raw packet bytes."
+        else:
+            parse_error = "No supported packet/capture format was recognized in the uploaded file(s)."
+
     return templates.TemplateResponse(request, "packets_decode.html", {
         "q": "", "direction": direction, "opcode": opcode, "hex_bytes": "",
         "decoded": None, "decode_error": None, "schema": None, "layout": None,
-        "mode": "bulk",
-        "bulk_rows": rows, "bulk_log_text": log_text, "bulk_parse_error": parse_error,
+        "mode": "bulk", "input_note": None,
+        "bulk_rows": decoded_rows or None,
+        "bulk_log_text": log_text,
+        "bulk_parse_error": parse_error,
+        "bulk_sources": sources,
     })
 
 
@@ -5630,7 +5807,7 @@ def zone_view3d(request: Request, zoneid: int, capture_id: int = 0, entity_id: i
     con = get_con()
     if zoneid == 0:
         # Nav-bar entry point has no zone context yet -- land on the first real zone and let the
-        # page's own zone dropdown take it from there, same pattern as /zoneplot's implicit default.
+        # page's own zone dropdown take it from there, same pattern as the current Zone Editor's implicit default.
         first = con.execute("SELECT zoneid FROM zones WHERE zoneid > 0 ORDER BY name LIMIT 1").fetchone()
         con.close()
         if first:
@@ -7746,9 +7923,10 @@ async def nyzul_save_exclusions(request: Request):
 # (imported above, alongside nyzul_plot)
 
 
-@app.get("/zoneplot", response_class=HTMLResponse)
-def zoneplot_page(request: Request):
-    return templates.TemplateResponse(request, "zone_plot.html", {"request": request})
+@app.get("/zoneplot")
+def zoneplot_page():
+    """Legacy Zone Editor entrypoint retained only for old bookmarks."""
+    return RedirectResponse(url="/zoneplot2", status_code=308)
 
 
 @app.get("/zoneplot2", response_class=HTMLResponse)
@@ -7779,7 +7957,7 @@ def zoneplot_zones():
 
 @app.get("/zoneplot/{zid}/live_info.json")
 def zoneplot_live_info(zid: int):
-    """Same live-parse availability check as zone_view3d (Phase 3) -- reused by zone_plot.html's
+    """Same live-parse availability check as zone_view3d (Phase 3) -- reused by the Zone Editor's
     'Live (textured)' mesh complexity option so it can fetch+parse the real zone DAT client-side
     instead of the untextured .zmesh/OBJ pipeline."""
     con = get_con()
