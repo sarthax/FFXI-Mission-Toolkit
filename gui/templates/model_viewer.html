@@ -280,6 +280,10 @@ async function loadGearModel(r) {
   $('anim-controls').style.display = 'none';
 
   const slotLines = [];
+  const manifest = r.composition || [];
+  const manifestSummary = manifest.length
+    ? `composition manifest: ${r.composition_resolved || 0} resolved / ${manifest.length} component(s)${r.composition_missing ? ` · ${r.composition_missing} unresolved` : ''}`
+    : 'composition manifest unavailable';
   let meshCount = 0, texCount = 0;
   for (const [slot, resolved] of Object.entries(r.gear_resolved || {})) {
     if (!resolved.rom_path) {
@@ -314,7 +318,14 @@ async function loadGearModel(r) {
   camera.near = Math.max(dist / 1000, 0.001); camera.far = dist * 50; camera.updateProjectionMatrix();
   controls.update();
 
-  setInfo(msg + `<br>skeleton: ${esc(r.skeleton_rom_path)}, ${skelParsed.skeleton.bones.length} bone(s)<br>` +
+  const manifestLines = manifest.map(p => {
+    const label = p.slot || p.role;
+    const ident = p.file_id !== undefined && p.file_id !== null ? `file_id ${p.file_id}` : '';
+    const path = p.rom_path ? esc(p.rom_path) : '<span class="err">unresolved</span>';
+    return `  ${esc(label)} [${esc(p.role)}]: ${ident}${ident?' · ':''}${path}`;
+  });
+  setInfo(msg + `<br>${esc(manifestSummary)}<br>skeleton: ${esc(r.skeleton_rom_path)}, ${skelParsed.skeleton.bones.length} bone(s)<br>` +
+    (manifestLines.length ? manifestLines.join('<br>') + '<br>' : '') +
     slotLines.join('<br>') + `<br>${meshCount} total mesh(es), ${texCount} total texture(s)` +
     ((r.errors && r.errors.length) ? `<br><span class="warn">${r.errors.map(esc).join('; ')}</span>` : ''));
   loading.textContent = '';
