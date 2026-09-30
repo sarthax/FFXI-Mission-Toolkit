@@ -2475,6 +2475,106 @@ def _entity_behavior_summary(profile: dict) -> dict:
     return out
 
 
+def _entity_relationship_summary(profile: dict, catalog_con: sqlite3.Connection) -> dict:
+    """Return only depth-1 canonical graph relationships for the Entity dossier."""
+    out = {
+        "available": False,
+        "node_id": None,
+        "incoming": [],
+        "outgoing": [],
+        "provider_relationships": [],
+        "error": None,
+    }
+    graph_con = _workbench_graph_connection()
+    if graph_con is None:
+        out["error"] = "Canonical Workbench graph is not available."
+        return out
+    try:
+        npcid = str(profile.get("npcid"))
+        tables = {
+            row[0] for row in graph_con.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()
+        }
+        node_id = None
+        if "entity_identifiers" in tables:
+            rows = graph_con.execute(
+                """SELECT entity_id,identifier_type
+                   FROM entity_identifiers
+                   WHERE identifier_value=?
+                   ORDER BY CASE identifier_type
+                     WHEN 'npcid' THEN 0
+                     WHEN 'entity_id' THEN 1
+                     WHEN 'id' THEN 2
+                     ELSE 9 END, entity_id
+                   LIMIT 10""",
+                (npcid,),
+            ).fetchall()
+            if rows:
+                node_id = rows[0][0]
+
+        if node_id is None:
+            matches = feature_trace.search_nodes(graph_con, npcid, catalog_con)
+            exact = [
+                row for row in matches
+                if str(row.get("numeric_id", "")) == npcid
+                or str(row.get("node_id", "")) == npcid
+            ]
+            if exact:
+                node_id = exact[0]["node_id"]
+
+        if node_id is None:
+            out["error"] = "No canonical graph node is currently mapped to this entity ID."
+            return out
+
+        traced = feature_trace.trace(
+            graph_con, node_id, 1, "both", catalog_con,
+            include_runtime_edges=False, max_nodes=250,
+        )
+        out["available"] = True
+        out["node_id"] = node_id
+        out["provider_relationships"] = traced.get("provider_relationships") or []
+
+        def neighbor_info(edge):
+            incoming = edge["target_node"] == node_id
+            neighbor = edge["source_node"] if incoming else edge["target_node"]
+            info = feature_trace.node_info(graph_con, neighbor, catalog_con)
+            rep = (info.get("representations") or [{}])[0]
+            return {
+                "relationship_id": edge.get("relationship_id"),
+                "relationship": edge.get("relationship"),
+                "confidence": edge.get("confidence"),
+                "status": edge.get("status"),
+                "evidence_id": edge.get("evidence_id"),
+                "node_id": neighbor,
+                "display_name": rep.get("display_name") or neighbor,
+                "node_type": rep.get("node_type") or "UNKNOWN",
+                "table": rep.get("table"),
+                "incoming": incoming,
+            }
+
+        for edge in traced.get("edges") or []:
+            row = neighbor_info(edge)
+            if row["incoming"]:
+                out["incoming"].append(row)
+            else:
+                out["outgoing"].append(row)
+
+        key = lambda row: (
+            str(row.get("relationship") or ""),
+            str(row.get("display_name") or "").casefold(),
+            str(row.get("node_id") or ""),
+        )
+        out["incoming"] = sorted(out["incoming"], key=key)[:80]
+        out["outgoing"] = sorted(out["outgoing"], key=key)[:80]
+        return out
+    except Exception as exc:
+        out["error"] = f"{type(exc).__name__}: {exc}"
+        return out
+    finally:
+        graph_con.close()
+
+
 @app.get("/entity/{npcid}", response_class=HTMLResponse)
 def entity_detail(request: Request, npcid: int, q: str = "", page: int = 1):
     """Dedicated profile page. When reached from a name search, prev/next cycles through that
@@ -2490,6 +2590,9 @@ def entity_detail(request: Request, npcid: int, q: str = "", page: int = 1):
     if profile.get("behavior_summary", {}).get("source", {}).get("path"):
         # Prefer the verified LSB path for UI handoff. Keep raw server-source lua_hits separately.
         profile["behavior_source"] = profile["behavior_summary"]["source"]["path"]
+    profile["relationship_summary"] = (
+        _entity_relationship_summary(profile, con) if not profile.get("error") else {}
+    )
 
     # Add client-event dossier status to runtime-observed CSIDs without forcing a new client
     # export merely because Entity Profile was opened. If Events/CSID already has this zone
