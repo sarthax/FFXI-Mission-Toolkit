@@ -409,6 +409,8 @@ def main():
     assert 'class="dense-panel"' in model_html
     assert 'class="dense-toolbar"' in model_html
 
+    capture_env.get_template("zone_view3d.html")
+    capture_env.get_template("packets_decode.html")
     zone_view3d_template=(TEMPLATES/"zone_view3d.html").read_text(encoding="utf-8")
     assert "{% block shell_mode %}dense{% endblock %}" in zone_view3d_template
     assert "{% block main_class %}zone-view3d-page{% endblock %}" in zone_view3d_template
@@ -502,7 +504,9 @@ def main():
     assert 'Browse known opcodes' in packets_html
 
     editor_html = render("itemedit.html", "/itemedit")
-    assert "Editors: Zone Editor" in editor_html
+    assert editor_html.count("Editors: Zone Editor") == 1
+    assert 'href="/zoneplot2"' in editor_html
+    assert 'href="/zoneplot"' not in editor_html
     assert "Editors: Item Editor" in editor_html
     assert "Lookup &amp; Decode: Entity" in editor_html
     assert "section-link active mutation" in editor_html
