@@ -176,6 +176,37 @@ def main():
     assert "function radiusText(e)" in template
     assert "No explicit ROAM_DISTANCE or SPAWN_LEASH stored for this mob; engine/default behavior is not visualized." in template
 
+    # Selection defaults back to Move mode and Help documents the editor surface.
+    assert "if(typeof setGizmoMode==='function') setGizmoMode('translate');" in template
+    assert '<button data-t="help" class="tabb">Help</button>' in template
+    assert 'id="tab-help"' in template
+    assert "Zone Editor help" in template
+    assert "Transform shortcuts" in template
+    assert "Client model preview" in template
+    assert "Animation &amp; subanimation" in template
+
+    # Model changes are preview/impact gated, backup-backed, and pool-aware for mobs.
+    assert "def _flat_look_blob(model_id):" in zone_edit
+    assert "def preview_model_change(kind, eid, model_id):" in zone_edit
+    assert "def apply_model_change(kind, eid, model_id, comment=\"\"):" in zone_edit
+    assert "def sync_model_sql(kind, eid, server=None):" in zone_edit
+    assert '"mob_pools": ["poolid"]' in zone_edit
+    assert "shared-mob-pool" in zone_edit
+    assert "/zoneplot/model/preview" in gui
+    assert "/zoneplot/model/apply" in gui
+    assert "/zoneplot/model/sync_sql" in gui
+    assert 'id="modelImpactBtn"' in template
+    assert 'id="modelApplyBtn"' in template
+    assert "async function checkModelImpact()" in template
+    assert "async function applySelectedModel()" in template
+    assert "Selection/candidate changed. Check impact again." in template
+
+    # Animation metadata comes from current bundled LSB sources, with subanimation evidence.
+    assert "/zoneplot/animation-meta.json" in gui
+    assert "loadAnimationMetadata()" in template
+    assert "renderAnimationEvidence()" in template
+    assert "Transient FOURCC animation reference" in template
+
     # Nav diagnostics / elevation / persistent door orientation.
     assert 'id="navdiag"' in template
     assert 'id="navdiagOut"' in template
