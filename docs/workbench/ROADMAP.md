@@ -809,10 +809,10 @@ Priority stack:
 - [~] Improved item search/results grid: exact ID lookup, name search, level/job/skill/client-state filters, sortable columns, synced/mismatch/server-only state, and recent-item navigation are complete. True DAT-only discovery remains because it requires scanning/indexing client DAT ranges rather than the server-backed search.
 
 Editing / presentation:
-- [ ] Basic vs Advanced field modes while retaining raw values.
-- [ ] Group fields by identity, equip requirements, jobs/slots, combat, usable behavior, auction/vendor, client/DAT, and effects.
-- [ ] Human-readable decoded value summaries beside raw masks/enums/delay fields.
-- [ ] Inline source-backed field descriptions/tooltips.
+- [x] Basic vs Advanced field modes while retaining raw values; mode is persisted locally and Basic only filters existing-item editing so create/clone drafts remain lossless.
+- [x] Group fields into logical presentation sections across identity/economy, equip requirements/placement, combat/item-level, usable targeting/timing/charges, puppet, furnishing, client/DAT, and effects.
+- [~] Human-readable decoded summary now resolves known bitmasks/enums plus common weapon/use/effect metadata while preserving raw values; richer unit conversions/confirmed semantics remain.
+- [x] Inline field descriptions/tooltips added for the editable item schema; descriptions stay conservative where semantics are only partially established.
 - [ ] Copy/paste individual values and selected field groups where safe.
 
 Create / clone:
@@ -827,7 +827,7 @@ Mods / pet mods / latents:
 - [x] Multi-add and copy-all-effects from another item into staging, with scope controls and strict integer/composite-key parsing; nothing writes until Save Item.
 - [~] Duplicate mod/pet-mod/latent composite-key detection is enforced in UI staging, batch parsing, and backend validation; effect lists render in normalized key order, while richer filtering remains.
 - [ ] Surface known mod units/comments and latent-condition parameter semantics only where confirmed.
-- [ ] Item-to-item effect diff for added/removed/changed mods and latents.
+- [x] Item-to-item staged-vs-saved comparison now includes editable server fields plus added/removed/changed mods, pet mods, and latents with resolved names where available.
 
 DAT workflow:
 - [x] Persistent item status header showing Server state, Client DAT state, mismatch count, exact DAT record location, and current Live/Xi-Pivot target.
