@@ -6497,6 +6497,14 @@ def zoneplot_reach(zid: int, instance: int = 0, ax: float = None, ay: float = 0.
     return JSONResponse(zone_plot.reach(zid, (ax, ay, az) if ax is not None else None, instance))
 
 
+@app.get("/zoneplot/{zid}/navdiag.json")
+def zoneplot_navdiag(zid: int, x: float, y: float, z: float):
+    try:
+        return JSONResponse(zone_plot.nav_diagnostics(zid, x, y, z))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
 @app.get("/zoneplot/{zid}/mesh.zmesh")
 def zoneplot_mesh(zid: int, lod: int = 0):
     import zmesh
