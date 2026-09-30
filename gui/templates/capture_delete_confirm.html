@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Delete Capture{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}capture-delete-page{% endblock %}
 {% block content %}
-<p><a class="inline" href="/captures/{{ cap.capture_id }}">&larr; back to capture #{{ cap.capture_id }}</a></p>
-
-<h1>Delete capture <span class="chip mono">#{{ cap.capture_id }}</span>?</h1>
+<style>main.capture-delete-page{padding:8px 10px 24px;max-width:900px}</style>
+<div class="dense-toolbar"><a class="chip" href="/captures/{{ cap.capture_id }}">&larr; Cancel</a><strong>Delete capture?</strong><span class="chip mono">#{{ cap.capture_id }}</span><span class="sp"></span><span class="muted">{{ cap.capture_label }}</span></div>
 
 <div class="warn">
   <strong>This is permanent -- there is no undo.</strong> Deleting
@@ -13,7 +14,7 @@
   type / tags</a> on the capture's own page rather than deleting it.
 </div>
 
-<div class="table-wrap" style="margin-top:16px;"><table>
+<div class="table-wrap" style="margin-top:8px;"><table>
   <tr><th>table</th><th>rows that will be deleted</th></tr>
   {% for t, n in row_counts.items() %}
   <tr><td class="mono">{{ t }}</td><td>{{ n }}</td></tr>
@@ -21,7 +22,7 @@
   <tr><td><strong>captures (the record itself)</strong></td><td>1</td></tr>
 </table></div>
 
-<form method="post" action="/captures/{{ cap.capture_id }}/delete" style="margin-top:20px;">
+<form method="post" action="/captures/{{ cap.capture_id }}/delete" style="margin-top:10px;">
   <button type="submit" style="background:var(--red); color:white;">Yes, permanently delete this capture</button>
   <a class="chip" href="/captures/{{ cap.capture_id }}" style="margin-left:10px;">Cancel</a>
 </form>
