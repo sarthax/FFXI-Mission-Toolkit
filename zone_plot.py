@@ -176,7 +176,7 @@ def _mob_radius_script_values(root: Path, zone_name: str, mob_name: str):
     except Exception:
         return {}
     found = {}
-    rx = re.compile(r"^[ \t]{4}mob:setMobMod\(xi\.mobMod\.(ROAM_DISTANCE|SPAWN_LEASH),\s*(-?\d+(?:\.\d+)?)\s*\)")
+    rx = re.compile(r"^(?: {4}|\t)mob:setMobMod\(xi\.mobMod\.(ROAM_DISTANCE|SPAWN_LEASH),\s*(-?\d+(?:\.\d+)?)\s*\)")
     for lineno, line in enumerate(lines, 1):
         m = rx.match(line)
         if not m:
