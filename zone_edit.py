@@ -4,12 +4,15 @@
 Tables touched: mob_spawn_points, npc_list, and (when cloning a mob from another zone) mob_groups."""
 import json
 import re
+import struct
 import time
 from decimal import Decimal
 from pathlib import Path
 
 import settings
 import zone_plot
+import client_model_resolver
+import mob_look_decode
 
 DATA = Path(__file__).parent / "data"
 BACKUPS = DATA / "zoneplot_backups"
@@ -34,6 +37,7 @@ TABLES = {  # table -> primary key columns
     "mob_spawn_points": ["mobid"],
     "npc_list": ["npcid"],
     "mob_groups": ["groupid", "zoneid"],
+    "mob_pools": ["poolid"],
     "mob_droplist": ["dropid", "dropType", "groupId", "itemId"],
     "instance_entities": ["instanceid", "id"],
 }
@@ -366,6 +370,151 @@ def update_positions_bulk(rows, comment=""):
         )
     _journal(comment, notes + sqls)
     return {"sql": "\n".join(sqls), "backup": bid, "count": len(normalized), "zone": zid}
+
+
+def _flat_look_blob(model_id):
+    """Construct a MODEL_STANDARD look_t with one flat model id and zeroed gear slots."""
+    model_id = int(model_id)
+    if model_id < 0 or model_id > 0xFFFF:
+        raise ValueError("model_id must be 0..65535")
+    return struct.pack("<HH8H", 0, model_id, 0, 0, 0, 0, 0, 0, 0, 0)
+
+
+def _mob_pool_for_spawn(cu, eid):
+    eid = int(eid)
+    zid = _zone_of(eid)
+    cu.execute(
+        "select s.groupid,g.poolid,s.mobname from mob_spawn_points s "
+        "join mob_groups g on g.groupid=s.groupid and g.zoneid=%s "
+        "where s.mobid=%s",
+        (zid, eid),
+    )
+    row = cu.fetchone()
+    if not row:
+        raise ValueError(f"mob_spawn_points.mobid={eid} has no matching mob_group/pool")
+    return int(row[0]), int(row[1]), row[2]
+
+
+def preview_model_change(kind, eid, model_id):
+    """Return the exact blast radius of replacing the selected entity with a flat look model."""
+    if kind not in ("m", "n", "d"):
+        raise ValueError("kind must be m/n/d")
+    if kind == "d":
+        raise ValueError("door/prop model rows are not eligible for flat-model replacement")
+    eid, model_id = int(eid), int(model_id)
+    mapped = client_model_resolver.resolve_model_id(model_id)
+    if not mapped.get("registered"):
+        raise ValueError(mapped.get("error") or f"model {model_id} is not registered in the configured client")
+
+    db = zone_plot._db(); cu = db.cursor()
+    try:
+        if kind == "n":
+            op = _capture(cu, "npc_list", [eid])
+            if op["row"] is None:
+                raise ValueError(f"npc_list.npcid={eid} not found")
+            current_blob = _dec(op["row"].get("look"))
+            current = mob_look_decode.decode_look_data(bytes(current_blob)) if current_blob else {}
+            return {
+                "kind": kind, "eid": eid, "target_table": "npc_list", "target_key": [eid],
+                "scope": "row-local", "affected_rows": 1, "affected_groups": 0, "affected_zones": [_zone_of(eid)],
+                "current": current, "candidate_model_id": model_id, "candidate": mapped,
+                "warning": "This changes only this npc_list row's look_t.",
+                "sample": [{"npcid": eid, "name": op["row"].get("name"), "zoneid": _zone_of(eid)}],
+            }
+
+        groupid, poolid, mobname = _mob_pool_for_spawn(cu, eid)
+        pool = _capture(cu, "mob_pools", [poolid])
+        if pool["row"] is None:
+            raise ValueError(f"mob_pools.poolid={poolid} not found")
+        current_blob = _dec(pool["row"].get("modelid"))
+        familyid = pool["row"].get("familyid")
+        current = mob_look_decode.decode_look_data(
+            bytes(current_blob), familyid=int(familyid) if familyid is not None else None
+        ) if current_blob else {}
+
+        cu.execute(
+            "select g.zoneid,g.groupid,count(s.mobid),min(s.mobname) "
+            "from mob_groups g left join mob_spawn_points s "
+            "on s.groupid=g.groupid and (((s.mobid-16777216)>>12)&511)=g.zoneid "
+            "where g.poolid=%s group by g.zoneid,g.groupid order by g.zoneid,g.groupid",
+            (poolid,),
+        )
+        groups = [
+            {"zoneid": int(z), "groupid": int(g), "spawn_count": int(c or 0), "sample_name": n}
+            for z, g, c, n in cu.fetchall()
+        ]
+        affected_rows = sum(x["spawn_count"] for x in groups)
+        zones = sorted({x["zoneid"] for x in groups})
+        return {
+            "kind": kind, "eid": eid, "target_table": "mob_pools", "target_key": [poolid],
+            "poolid": poolid, "selected_groupid": groupid, "scope": "shared-mob-pool",
+            "affected_rows": affected_rows, "affected_groups": len(groups), "affected_zones": zones,
+            "current": current, "candidate_model_id": model_id, "candidate": mapped,
+            "warning": (
+                f"Changing pool {poolid} changes every mob using that mob_pools row: "
+                f"{affected_rows} spawn(s) across {len(groups)} group(s) / {len(zones)} zone(s)."
+            ),
+            "sample": groups[:100],
+            "sample_truncated": len(groups) > 100,
+            "selected_name": mobname,
+        }
+    finally:
+        db.close()
+
+
+def apply_model_change(kind, eid, model_id, comment=""):
+    """Apply a previewable flat-model replacement with a backup of the actual owning row."""
+    preview = preview_model_change(kind, eid, model_id)
+    table = preview["target_table"]
+    keyvals = preview["target_key"]
+    blob = _flat_look_blob(model_id)
+
+    db = zone_plot._db(); cu = db.cursor()
+    try:
+        op = _capture(cu, table, keyvals)
+        if op["row"] is None:
+            raise ValueError(f"{table} row disappeared before apply")
+        zid = _zone_of(eid)
+        bid = _save_backup(
+            f"edit {table} {keyvals[0]} flat model -> {int(model_id)}",
+            zid,
+            [op],
+        )
+        keycol = TABLES[table][0]
+        field = "look" if table == "npc_list" else "modelid"
+        cu.execute(f"update {table} set {field}=%s where {keycol}=%s", (blob, keyvals[0]))
+        db.commit()
+    except Exception:
+        db.rollback()
+        db.close()
+        raise
+    db.close()
+
+    sql = f"UPDATE {table} SET {field}={lit(blob)} WHERE {keycol}={int(keyvals[0])};"
+    _journal(
+        comment,
+        [
+            f"-- model change backup {bid}; selected entity {kind}:{int(eid)}",
+            f"-- impact: {preview['affected_rows']} spawn/row(s), {preview['affected_groups']} group(s), zones {preview['affected_zones']}",
+            sql,
+        ],
+    )
+    return {"backup": bid, "sql": sql, "impact": preview}
+
+
+def sync_model_sql(kind, eid, server=None):
+    """Sync the actual owning model row to checked-in SQL."""
+    if kind in ("n", "d"):
+        return sync_sql_file("npc_list", [int(eid)], server)
+    if kind != "m":
+        raise ValueError("kind must be m/n/d")
+    server = server or zone_plot.get_server()
+    db = zone_plot._db(server); cu = db.cursor()
+    try:
+        _groupid, poolid, _name = _mob_pool_for_spawn(cu, int(eid))
+    finally:
+        db.close()
+    return sync_sql_file("mob_pools", [poolid], server)
 
 
 def update_animation(kind, eid, animation, animationsub, comment=""):
