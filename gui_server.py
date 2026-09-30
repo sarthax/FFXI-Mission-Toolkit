@@ -6810,6 +6810,38 @@ def itemedit_usage(item_id: int, source_limit: int = 100):
         return JSONResponse({"error": str(ex)}, status_code=400)
 
 
+@app.post("/itemedit/batch/preview")
+async def itemedit_batch_preview(request: Request):
+    import item_edit
+    try:
+        body = await request.json()
+        return JSONResponse(item_edit.preview_batch_edit(body.get("item_ids") or [], body.get("field"), body.get("value")))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/itemedit/batch/apply")
+async def itemedit_batch_apply(request: Request):
+    import item_edit
+    try:
+        body = await request.json()
+        return JSONResponse(item_edit.apply_batch_edit(
+            body.get("item_ids") or [], body.get("field"), body.get("value"), body.get("comment") or ""
+        ))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.post("/itemedit/batch/restore")
+async def itemedit_batch_restore(request: Request):
+    import item_edit
+    try:
+        body = await request.json()
+        return JSONResponse(item_edit.restore_batch_backup(body.get("id"), body.get("comment") or ""))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
 @app.get("/itemedit/bitmasks.json")
 def itemedit_bitmasks():
     import item_edit
