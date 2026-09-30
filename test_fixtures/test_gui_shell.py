@@ -21,11 +21,11 @@ def request(path: str):
     return SimpleNamespace(url=SimpleNamespace(path=path), method="GET")
 
 
-def context_for(path: str) -> dict:
+def context_for(path: str, settings=None) -> dict:
     return build_shell_context(
         path=path,
         method="GET",
-        settings={},
+        settings=settings or {},
         default_topaz_root="C:/missing-topaz",
         default_backport_root="C:/missing-workspace",
         path_exists=lambda _path: False,
@@ -42,11 +42,15 @@ def render(name: str, path: str, **values) -> str:
         loader=FileSystemLoader(str(TEMPLATES)),
         autoescape=select_autoescape(("html",)),
     )
+    brand_settings = {
+        "shell_brand_enabled": "1" if brand.get("enabled") else "0",
+        "shell_brand_text": brand.get("text", ""),
+        "shell_brand_icon": brand.get("icon", ""),
+    }
     env.globals.update(
         current_theme=lambda: "light",
         backport_enabled=lambda: False,
-        shell_context=lambda _request: context_for(path),
-        shell_brand=lambda: brand,
+        shell_context=lambda _request: context_for(path, settings=brand_settings),
     )
     return env.get_template(name).render(request=request(path), **values)
 
