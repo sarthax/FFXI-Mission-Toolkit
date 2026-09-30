@@ -832,8 +832,9 @@
       "path": "/zoneplot",
       "home": "Tools",
       "section": "Editors > Zone Editor",
-      "role": "page",
-      "disposition": "KEEP"
+      "role": "redirect",
+      "disposition": "REDIRECT",
+      "target": "/zoneplot2"
     },
     {
       "method": "GET",
