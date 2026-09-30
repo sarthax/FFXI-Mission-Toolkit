@@ -40,6 +40,13 @@ server's permission gate. Every write is backed up first and journalled to
   </table>
 </div>
 
+<div id="itemSessionHistory" style="display:flex;gap:6px;align-items:center;margin:8px 0;">
+  <span class="muted">Session history</span>
+  <button id="itemUndoBtn" type="button" disabled>Undo</button>
+  <button id="itemRedoBtn" type="button" disabled>Redo</button>
+  <span id="itemHistoryStatus" class="muted"></span>
+</div>
+
 <style>
   #editorWrap .edit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin-bottom: 14px; align-items: start; }
   #editorWrap .edit-card { border: 1px solid rgba(128,128,128,.35); border-radius: 6px; padding: 8px 12px 10px; }
@@ -67,8 +74,6 @@ server's permission gate. Every write is backed up first and journalled to
     <button id="recentNextBtn" type="button" disabled title="Next recently opened item">Next ▶</button>
     <input type="text" id="editComment" style="flex:1; min-width:220px;" placeholder="Comment for SQL journal (e.g. lowering to level 90 for X quest reward)">
     <button id="saveAllBtn" onclick="saveAll()" disabled>Save Item</button>
-    <button id="itemUndoBtn" type="button" disabled>Undo</button>
-    <button id="itemRedoBtn" type="button" disabled>Redo</button>
     <button id="cloneCurrentBtn" type="button">Clone This Item</button>
     <span id="saveStatus" class="muted"></span>
   </div>
@@ -751,9 +756,11 @@ async function restoreItemHistory(source,target,verb){
   if(j.item_exists){
     await loadItem(a.itemId);
     document.getElementById('saveStatus').textContent=verb+': '+a.label;
+    document.getElementById('itemHistoryStatus').textContent=verb+': '+a.label;
   } else {
     document.getElementById('editorWrap').style.display='none';
     currentItemId=null; loadedServerState=null; loadedEffects={mods:[],pet_mods:[],latents:[]}; stagedEffects=cloneEffects(loadedEffects);
+    document.getElementById('itemHistoryStatus').textContent=verb+': '+a.label+' · item is now absent';
   }
 }
 document.getElementById('itemUndoBtn').onclick=()=>restoreItemHistory(itemUndoStack,itemRedoStack,'Undid');
