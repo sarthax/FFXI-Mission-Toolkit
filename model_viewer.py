@@ -146,8 +146,15 @@ def resolve_model_id(model_id: int, ffxi_path: str | None = None, server: str | 
         result["catalog_error"] = str(ex)
     result["catalog_matches"] = matches
     if matches:
-        result["catalog_name"] = matches[0].get("primary_name")
-        result["catalog_aliases"] = matches[0].get("names", [])
+        first = matches[0]
+        result["catalog_name"] = first.get("primary_name")
+        result["catalog_aliases"] = first.get("names", [])
+        result["resource_file_id"] = result["file_id"]
+        result["resource_rom_path"] = result.get("rom_path")
+        result["render_file_id"] = first.get("render_file_id", result["file_id"])
+        result["render_rom_path"] = first.get("render_rom_path") or result.get("rom_path")
+        result["render_source"] = first.get("render_source")
+        result["rom_path"] = result["render_rom_path"]
     return result
 
 
