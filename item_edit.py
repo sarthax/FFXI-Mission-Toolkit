@@ -550,6 +550,38 @@ def latent_names():
 
 
 # ---- edits ----------------------------------------------------------------------------------
+def validate_item_changes(item_id, tables):
+    """Validate a proposed table patch without writing anything."""
+    item_id = int(item_id)
+    db = zone_plot._db(); cu = db.cursor()
+    try:
+        rows = {}
+        for table in TABLES:
+            row = _fetch(cu, table, [item_id])
+            if row is not None:
+                rows[table] = row
+        for table, fields in (tables or {}).items():
+            if table not in TABLES:
+                raise ValueError(f"unknown item table {table!r}")
+            if table not in rows:
+                raise ValueError(f"{table} row does not exist for item {item_id}")
+            cols = _cols(cu, table)
+            bad = [k for k in fields if k not in cols]
+            if bad:
+                raise ValueError(f"{table} has no column(s): {', '.join(bad)}")
+            rows[table] = {**rows[table], **fields}
+    finally:
+        db.close()
+    client = None
+    try:
+        rec = dat.read_client_item(item_id)
+        client = dat.item_to_dict(rec) if rec is not None else None
+    except Exception:
+        client = None
+    result = validate_item_state(rows, client)
+    result["comparison"] = compare_server_client(rows, client)
+    return result
+
 def save_item_atomic(item_id, tables, comment=""):
     """Save changed one-row item tables as one backed-up SQL transaction and one client-DAT patch.
 
