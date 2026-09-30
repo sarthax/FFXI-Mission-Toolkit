@@ -1208,6 +1208,9 @@ function refreshSelectedModelPreview(force=false){
   if(force || $('ed-model-details').open) frame.src=selectedModelViewerUrl(true);
 }
 let modelCandidateTimer=null;
+function modelCatalogEsc(v){
+  return String(v ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 function previewCandidateModel(mid,name){
   const q=new URLSearchParams({server:$('srv').value,model_id:String(mid),autoload:'1',embed:'1'});
   $('modelPreviewFrame').src='/modelviewer?'+q.toString();
@@ -1225,7 +1228,7 @@ async function searchModelCandidates(){
   status.textContent=j.matched+' match(es)'+(j.truncated?' · first 40 shown':'');
   box.innerHTML=(j.rows||[]).map(row=>{
     const meta=['model '+row.model_id,'file '+row.resource_file_id,(row.family_ids||[]).length?'family '+row.family_ids.join(','):'',row.render_rom_path||row.resource_rom_path||'unresolved'].filter(Boolean).join(' · ');
-    return '<button type="button" class="model-candidate" data-mid="'+row.model_id+'" data-name="'+String(row.primary_name||'').replace(/"/g,'&quot;')+'" style="display:block;width:100%;text-align:left;margin:2px 0;padding:3px 5px"><b>'+String(row.primary_name||('Model '+row.model_id))+'</b><br><span class="muted">'+meta+'</span></button>';
+    return '<button type="button" class="model-candidate" data-mid="'+modelCatalogEsc(row.model_id)+'" data-name="'+modelCatalogEsc(row.primary_name||'')+'" style="display:block;width:100%;text-align:left;margin:2px 0;padding:3px 5px"><b>'+modelCatalogEsc(row.primary_name||('Model '+row.model_id))+'</b><br><span class="muted">'+modelCatalogEsc(meta)+'</span></button>';
   }).join('');
   box.querySelectorAll('.model-candidate').forEach(btn=>btn.onclick=()=>previewCandidateModel(btn.dataset.mid,btn.dataset.name));
 }
