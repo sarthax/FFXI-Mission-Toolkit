@@ -824,8 +824,8 @@ Create / clone:
 
 Mods / pet mods / latents:
 - [x] Stage mod/pet-mod/latent edits instead of immediately writing each row; include them in unified Save Item.
-- [ ] Multi-add and copy-all-effects from another item.
-- [~] Duplicate mod/pet-mod/latent composite-key detection is enforced in both UI staging and backend validation; effect lists now render in normalized key order, while richer filtering remains.
+- [x] Multi-add and copy-all-effects from another item into staging, with scope controls and strict integer/composite-key parsing; nothing writes until Save Item.
+- [~] Duplicate mod/pet-mod/latent composite-key detection is enforced in UI staging, batch parsing, and backend validation; effect lists render in normalized key order, while richer filtering remains.
 - [ ] Surface known mod units/comments and latent-condition parameter semantics only where confirmed.
 - [ ] Item-to-item effect diff for added/removed/changed mods and latents.
 
