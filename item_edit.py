@@ -230,8 +230,10 @@ def restore(bid):
     item_id = int(b["item_id"])
     db = zone_plot._db(); cu = db.cursor()
     pre, lines = [], []
+    saved_client = b.get("client_record")
+    restore_target = saved_client.get("target") if saved_client else None
     try:
-        pre_client = dat.capture_client_record(item_id)
+        pre_client = dat.capture_client_record(item_id, target=restore_target)
     except Exception:
         pre_client = None
     for op in b["ops"]:
@@ -254,7 +256,6 @@ def restore(bid):
                 )
                 lines.append(f"REPLACE INTO {t} ({','.join(cols)}) VALUES ({','.join(lit(row[col]) for col in cols)});")
 
-        saved_client = b.get("client_record")
         if saved_client:
             client_report = dat.restore_client_record(saved_client)
         else:
@@ -1089,6 +1090,7 @@ def create_item(category, item_type, entry, effects=None, comment=""):
     pre_client = {
         "item_id": item_id, "category": client_result["category"], "dat_ui": client_result["dat_ui"],
         "record_index": client_result["record_index"], "format": client_result["format"],
+        "target": client_result["target"], "target_existed": True,
         "record_hex": client_result["previous_record_hex"],
     }
     bid = None
