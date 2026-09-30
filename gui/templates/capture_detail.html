@@ -1,71 +1,90 @@
 {% extends "base.html" %}
 {% block title %}Capture Detail{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}capture-detail-page{% endblock %}
 
 {% block content %}
-<p><a class="inline" href="/captures?content_type={{ content_type }}&q={{ q }}">&larr; back to captures list</a>
-  &nbsp;&middot;&nbsp; <a class="inline" href="/captures/{{ detail.capture_id }}/add">add more files &rarr;</a>
-  &nbsp;&middot;&nbsp; <a class="inline" href="/captures/{{ detail.capture_id }}/timeline">browse event timeline &rarr;</a>
-  {% if detail.n_raw_packets %}
-  &nbsp;&middot;&nbsp; <a class="inline" href="/captures/{{ detail.capture_id }}/packets"><strong>open Packet Browser &rarr;</strong></a>
-  {% endif %}
-  &nbsp;&middot;&nbsp; <a class="inline" href="/captures/query?capture_id={{ detail.capture_id }}">query this capture's raw data &rarr;</a>
-  &nbsp;&middot;&nbsp; <a class="inline" href="/captures/{{ detail.capture_id }}/export.zip">export all data (.zip) &darr;</a>
-  &nbsp;&middot;&nbsp; <a class="inline" href="/captures/{{ detail.capture_id }}/delete" style="color:var(--red);">delete capture</a>
-  &nbsp;&middot;&nbsp; <button type="button" class="chip" id="summarize-capture-btn" style="cursor:pointer;">summarize with LLM &rarr;</button></p>
+<style>
+main.capture-detail-page{padding:8px 10px 24px}
+.capture-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.capture-head .title{font-size:15px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.capture-head .sp{flex:1}
+.capture-actions{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.capture-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:5px;margin:6px 0}
+.capture-stat{border:1px solid var(--border);border-radius:6px;background:var(--surface);padding:5px 7px;min-width:0}
+.capture-stat .n{font:700 17px/1.1 system-ui,sans-serif}
+.capture-stat .l{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.capture-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:5px;margin:6px 0 8px}
+.capture-meta .item{border:1px solid var(--border);border-radius:6px;background:var(--surface);padding:5px 7px;min-width:0}
+.capture-meta .k{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.capture-meta .v{margin-top:2px;min-width:0;word-break:break-word}
+.capture-section{margin:7px 0;border:1px solid var(--border);border-radius:7px;background:var(--surface);overflow:hidden}
+.capture-section>summary{cursor:pointer;padding:7px 9px;font-weight:600}
+.capture-section>.section-body{padding:0 8px 8px}
+.capture-section h2{font-size:14px;margin:8px 0 5px}
+.capture-section .table-wrap{margin-top:5px}
+.capture-more{position:relative}
+.capture-more[open]{z-index:5}
+.capture-more .menu{position:absolute;right:0;top:100%;min-width:220px;padding:6px;border:1px solid var(--border);border-radius:6px;background:var(--surface);box-shadow:0 8px 22px rgba(0,0,0,.18)}
+.capture-more .menu>*{display:block;width:100%;margin:3px 0;text-align:left}
+@media(max-width:850px){.capture-meta{grid-template-columns:1fr}.capture-head .sp{display:none}.capture-actions{width:100%}}
+</style>
+<div class="capture-head dense-toolbar">
+  <a class="chip" href="/captures?content_type={{ content_type }}&q={{ q }}">&larr; Captures</a>
+  <span class="title">{{ detail.capture_label }}</span>
+  <span class="chip mono">#{{ detail.capture_id }}</span>
+  {% if detail.health and detail.health.status == "OK" %}<span class="chip">{{ detail.health.overall }}</span>{% endif %}
+  <span class="sp"></span>
+  {% if prev_id %}<a class="chip" href="/captures/{{ prev_id }}?content_type={{ content_type }}&q={{ q }}">&larr;</a>{% endif %}
+  {% if position %}<span class="muted mono">{{ position }}</span>{% endif %}
+  {% if next_id %}<a class="chip" href="/captures/{{ next_id }}?content_type={{ content_type }}&q={{ q }}">&rarr;</a>{% endif %}
+</div>
+<div class="capture-actions dense-toolbar">
+  <a class="chip" href="/captures/{{ detail.capture_id }}/timeline">Timeline</a>
+  {% if detail.n_raw_packets %}<a class="chip" href="/captures/{{ detail.capture_id }}/packets">Packet Browser</a>{% endif %}
+  <a class="chip" href="/captures/{{ detail.capture_id }}/add">Add files</a>
+  <a class="chip" href="/captures/{{ detail.capture_id }}/alignment">Alignment</a>
+  <a class="chip" href="/captures/query?capture_id={{ detail.capture_id }}">Raw query</a>
+  <a class="chip" href="/captures/{{ detail.capture_id }}/export.zip">Export ZIP</a>
+  <span class="sp"></span>
+  <details class="capture-more">
+    <summary class="chip">More ▾</summary>
+    <div class="menu">
+      <button type="button" class="chip" id="summarize-capture-btn">Summarize with LLM</button>
+      <a class="chip" href="/captures/{{ detail.capture_id }}/delete" style="color:var(--red);">Delete capture</a>
+    </div>
+  </details>
+</div>
 <div id="summarize-capture-result"></div>
-{% if rebuild_status %}<div class="ok" style="margin:10px 0;">{{ rebuild_status }}</div>{% endif %}
-{% if rebuild_error %}<div class="warn" style="margin:10px 0;"><b>Rebuild refused:</b> {{ rebuild_error }}</div>{% endif %}
+{% if rebuild_status %}<div class="ok" style="margin:6px 0;">{{ rebuild_status }}</div>{% endif %}
+{% if rebuild_error %}<div class="warn" style="margin:6px 0;"><b>Rebuild refused:</b> {{ rebuild_error }}</div>{% endif %}
 
-<div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:6px;">
-  <h1 style="margin:0;">{{ detail.capture_label }} <span class="chip mono">#{{ detail.capture_id }}</span></h1>
-  <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
-    {% if prev_id %}
-    <a class="chip" href="/captures/{{ prev_id }}?content_type={{ content_type }}&q={{ q }}">&larr; prev</a>
-    {% endif %}
-    {% if position %}<span class="muted mono">{{ position }}</span>{% endif %}
-    {% if next_id %}
-    <a class="chip" href="/captures/{{ next_id }}?content_type={{ content_type }}&q={{ q }}">next &rarr;</a>
-    {% endif %}
-  </div>
+<div class="capture-stats">
+  <div class="capture-stat"><div class="n">{{ detail.n_events }}</div><div class="l">Events</div></div>
+  <div class="capture-stat"><div class="n">{{ detail.n_raw_packets }}</div><div class="l">Raw packets</div></div>
+  <div class="capture-stat"><div class="n">{{ detail.n_actions }}</div><div class="l">Actions</div></div>
+  <div class="capture-stat"><div class="n">{{ detail.npc_entries|length }}</div><div class="l">NPC entries shown</div></div>
+  <div class="capture-stat"><div class="n">{{ detail.n_path }}</div><div class="l">Path points</div></div>
+  <div class="capture-stat"><div class="n">{{ detail.n_structured_records }}</div><div class="l">Structured records</div></div>
+  <div class="capture-stat"><div class="n">{{ detail.n_ki_events }}</div><div class="l">Key-item events</div></div>
+  <div class="capture-stat"><div class="n">{{ detail.n_history }}</div><div class="l">NPC history deltas</div></div>
 </div>
 
-<div class="table-wrap"><table>
-  <tr><td>content_type</td><td><span class="chip">{{ detail.content_type }}</span></td></tr>
-  <tr><td>tags</td><td>
-    {% for t in detail.tags %}<span class="chip">{{ t }}</span>{% endfor %}
-    {% if not detail.tags %}<span class="muted">none yet</span>{% endif %}
-  </td></tr>
-  <tr><td>zones</td><td>{{ detail.zones | join(', ') }}</td></tr>
-  <tr><td>mission</td><td>{{ detail.mission_name or '(unresolved)' }}</td></tr>
-  <tr><td>capturer</td><td>{{ detail.capturer or '(unknown)' }}</td></tr>
-  <tr><td>video</td><td>
-    {% if detail.video_url %}<a class="inline" href="{{ detail.video_url }}" target="_blank" rel="noopener">{{ detail.video_url }}</a>
-    {% else %}<span class="muted">none linked</span>{% endif %}
-    {% if detail.ocr_run_id %} &middot; <a class="inline" href="/ocr/{{ detail.ocr_run_id }}">OCR transcript</a>{% endif %}
-    &middot; <a class="inline" href="/captures/{{ detail.capture_id }}/alignment">align timeline</a>
-  </td></tr>
-  <tr><td>client build</td><td class="mono">{{ detail.client_build }}</td></tr>
-  <tr><td>source</td><td class="mono">{{ detail.source_path }}</td></tr>
-  <tr><td>npc history deltas</td><td>{{ detail.n_history }}</td></tr>
-  <tr><td>path points</td><td>{{ detail.n_path }}</td></tr>
-  <tr><td>actions</td><td>{{ detail.n_actions }}</td></tr>
-  <tr><td>events</td><td>{{ detail.n_events }} <a class="inline" href="/captures/{{ detail.capture_id }}/timeline">browse &rarr;</a></td></tr>
-  <tr><td>key items obtained</td><td>{{ detail.n_ki_events }}</td></tr>
-  <tr><td>packet evidence</td><td>{{ detail.n_raw_packets }} raw packet{{ '' if detail.n_raw_packets == 1 else 's' }}
-    {% if detail.n_raw_packets %}<a class="chip" href="/captures/{{ detail.capture_id }}/packets">Open Packet Browser</a>{% endif %}
-  </td></tr>
-  <tr><td>structured logger records</td><td>{{ detail.n_structured_records }}</td></tr>
-  <tr><td>capturer's own path (PC trace)</td><td>
-    {% if detail.pc_path_zones %}
-      {% for zdb in detail.pc_path_zones %}
-      <a class="chip" href="/captures/plot?capture_id={{ detail.capture_id }}&pc=1&zone_db={{ zdb | urlencode }}">{{ zdb }}</a>
-      {% endfor %}
-    {% else %}<span class="muted">none</span>{% endif %}
-  </td></tr>
-</table></div>
+<div class="capture-meta">
+  <div class="item"><div class="k">Content</div><div class="v"><span class="chip">{{ detail.content_type }}</span>{% for t in detail.tags %} <span class="chip">{{ t }}</span>{% endfor %}{% if not detail.tags %} <span class="muted">no tags</span>{% endif %}</div></div>
+  <div class="item"><div class="k">Mission</div><div class="v">{{ detail.mission_name or '(unresolved)' }}</div></div>
+  <div class="item"><div class="k">Zones</div><div class="v">{{ detail.zones | join(', ') or '—' }}</div></div>
+  <div class="item"><div class="k">Capturer</div><div class="v">{{ detail.capturer or '(unknown)' }}</div></div>
+  <div class="item"><div class="k">Client build</div><div class="v mono">{{ detail.client_build or '—' }}</div></div>
+  <div class="item"><div class="k">Video / OCR</div><div class="v">{% if detail.video_url %}<a class="inline" href="{{ detail.video_url }}" target="_blank" rel="noopener">Open linked video</a>{% else %}<span class="muted">No linked video</span>{% endif %}{% if detail.ocr_run_id %} &middot; <a class="inline" href="/ocr/{{ detail.ocr_run_id }}">OCR transcript</a>{% endif %}</div></div>
+  <div class="item"><div class="k">Source</div><div class="v mono">{{ detail.source_path }}</div></div>
+  <div class="item"><div class="k">PC trace</div><div class="v">{% if detail.pc_path_zones %}{% for zdb in detail.pc_path_zones %}<a class="chip" href="/captures/plot?capture_id={{ detail.capture_id }}&pc=1&zone_db={{ zdb | urlencode }}">{{ zdb }}</a>{% endfor %}{% else %}<span class="muted">none</span>{% endif %}</div></div>
+</div>
 
 {% if detail.health and detail.health.status == "OK" %}
-<h2>Capture integrity <span class="chip">{{ detail.health.overall }}</span></h2>
+<details class="capture-section"{% if detail.health.overall not in ['COMPLETE','OK'] %} open{% endif %}>
+<summary>Capture integrity <span class="chip">{{ detail.health.overall }}</span></summary>
+<div class="section-body">
 {% if detail.health.content_identity and detail.health.content_identity.sha256 %}
 <p class="muted"><b>Capture content fingerprint:</b>
   <code title="{{ detail.health.content_identity.sha256 }}">{{ detail.health.content_identity.sha256 }}</code>
@@ -163,10 +182,13 @@
   &middot; source history: <a class="inline" href="/captures/query?table=capture_source_artifacts&capture_id={{ detail.capture_id }}">inspect content-addressed versions ({{ detail.health.source_artifact_count }})</a>
 </p>
 {% endif %}
+</div>
+</details>
 {% endif %}
 
-<details style="margin-top:10px;">
-  <summary class="muted" style="cursor:pointer;">edit mission / content type / capturer / video</summary>
+<details class="capture-section">
+  <summary>Edit capture metadata</summary>
+  <div class="section-body">
   <form method="post" action="/captures/{{ detail.capture_id }}/details" style="margin-top:8px; display:flex; flex-direction:column; gap:10px; max-width:480px;">
     <div>
       <label class="muted">Mission name</label><br>
@@ -190,10 +212,12 @@
     </div>
     <div><button type="submit">Save</button></div>
   </form>
+  </div>
 </details>
 
-<details style="margin-top:10px;">
-  <summary class="muted" style="cursor:pointer;">edit tags</summary>
+<details class="capture-section">
+  <summary>Edit tags</summary>
+  <div class="section-body">
   <form method="post" action="/captures/{{ detail.capture_id }}/tags" style="margin-top:8px;">
     <div style="display:flex; flex-wrap:wrap; gap:6px 14px;">
       {% for t in all_tags %}
@@ -204,20 +228,24 @@
     </div>
     <button type="submit" style="margin-top:10px;">Save tags</button>
   </form>
+  </div>
 </details>
 
 {% if detail.hp_events %}
-<h2>HP events</h2>
-<div class="table-wrap"><table>
+<details class="capture-section">
+<summary>HP events <span class="chip">{{ detail.hp_events|length }}</span></summary>
+<div class="section-body"><div class="table-wrap"><table>
   <tr><th>mob</th><th>hp range</th></tr>
   {% for mob, lo, hi in detail.hp_events %}
   <tr><td>{{ mob }}</td><td class="mono">{{ lo }}&ndash;{{ hi }}</td></tr>
   {% endfor %}
-</table></div>
+</table></div></div></details>
 {% endif %}
 
 {% if detail.structured_records %}
-<h2>Structured logger records {% if detail.n_structured_records > 200 %}<span class="muted">(first 200 of {{ detail.n_structured_records }})</span>{% endif %}</h2>
+<details class="capture-section">
+<summary>Structured logger records <span class="chip">{{ detail.n_structured_records }}</span>{% if detail.n_structured_records > 200 %} <span class="muted">(first 200 shown)</span>{% endif %}</summary>
+<div class="section-body">
 <p class="muted">MissionTrack, vendor/guild stock, spawn/weather/crafting/checkparam/world-state and historical PriceLog/findPrice records are preserved here with their original payload and source provenance.</p>
 <div class="table-wrap"><table>
 <tr><th>family</th><th>type</th><th>time</th><th>zone</th><th>entity</th><th>item</th><th>price</th><th>source</th></tr>
@@ -234,10 +262,15 @@
 </tr>
 {% endfor %}
 </table></div>
+</div></details>
 {% endif %}
 
-<h2>NPC entries {% if detail.npc_entries|length == 200 %}<span class="muted">(first 200)</span>{% endif %}</h2>
-<p><a class="inline" href="/captures/plot_all?capture_id={{ detail.capture_id }}">plot all paths together &rarr;</a></p>
+<div class="dense-toolbar" style="margin:8px 0 5px">
+  <strong>NPC entries</strong>
+  <span class="chip">{{ detail.npc_entries|length }}{% if detail.npc_entries|length == 200 %}+{% endif %}</span>
+  <span class="sp"></span>
+  <a class="chip" href="/captures/plot_all?capture_id={{ detail.capture_id }}">Plot all paths</a>
+</div>
 <div class="table-wrap"><table>
   <tr><th>id</th><th>name</th><th>model</th><th>pos</th><th>hp%</th><th>zone</th><th></th></tr>
   {% for eid, name, model, x, y, z, hpp, zone_db in detail.npc_entries %}
@@ -253,9 +286,10 @@
   {% endfor %}
 </table></div>
 
-<div style="display:flex; justify-content:space-between; margin-top:16px;">
-  {% if prev_id %}<a class="chip" href="/captures/{{ prev_id }}?content_type={{ content_type }}&q={{ q }}">&larr; prev</a>{% else %}<span></span>{% endif %}
-  {% if next_id %}<a class="chip" href="/captures/{{ next_id }}?content_type={{ content_type }}&q={{ q }}">next &rarr;</a>{% endif %}
+<div class="dense-toolbar" style="margin-top:8px;">
+  {% if prev_id %}<a class="chip" href="/captures/{{ prev_id }}?content_type={{ content_type }}&q={{ q }}">&larr; Previous</a>{% endif %}
+  <span class="sp"></span>
+  {% if next_id %}<a class="chip" href="/captures/{{ next_id }}?content_type={{ content_type }}&q={{ q }}">Next &rarr;</a>{% endif %}
 </div>
 
 <script>
