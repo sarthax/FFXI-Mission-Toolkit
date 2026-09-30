@@ -3897,6 +3897,126 @@ def behavior_visualizer_graph(source: str, server: str = ""):
         return JSONResponse({"error":f"{type(exc).__name__}: {exc}"},status_code=400)
 
 
+_FEATURE_TRACE_PROVIDER_SERVER = {
+    "landsandboat": "lsb",
+    "topaz": "topaz",
+    "dsp": "dsp",
+}
+
+
+def _feature_trace_norm_source_name(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", str(value or "").casefold())
+
+
+def _feature_trace_branch_source_drilldown(implementation_path: dict | None) -> None:
+    """Attach bounded, read-only Lua source previews to exact server branches.
+
+    Source text remains in configured server checkouts. We resolve only one exact normalized
+    entity/script name inside the branch's provider tree; ambiguous matches stay unresolved.
+    """
+    if not implementation_path:
+        return
+    roots = _behavior_roots()
+    numeric_id = implementation_path.get("numeric_id")
+    for branch_row in implementation_path.get("branches") or []:
+        provider = branch_row.get("provider")
+        server = _FEATURE_TRACE_PROVIDER_SERVER.get(provider)
+        source_root = roots.get(server) if server else None
+        display_name = str((branch_row.get("root") or {}).get("display_name") or "").strip()
+        drill = {
+            "status": "UNAVAILABLE",
+            "server": server,
+            "query": display_name,
+            "behavior_href": (
+                f"/behavior?q={quote(display_name, safe='')}&server={quote(server or '', safe='')}"
+                if display_name else None
+            ),
+            "source": None,
+            "excerpt": None,
+            "events": [],
+            "hooks": [],
+            "summary": {},
+        }
+        branch_row["source_drilldown"] = drill
+        if not source_root or not display_name:
+            continue
+        try:
+            matches = find_behavior_sources_multi({server: source_root}, display_name, limit=50)
+        except Exception:
+            drill["status"] = "SEARCH_ERROR"
+            continue
+        exact = [
+            row for row in matches
+            if _feature_trace_norm_source_name(row.get("name")) == _feature_trace_norm_source_name(display_name)
+        ]
+        if len(exact) != 1:
+            drill["status"] = "AMBIGUOUS" if len(exact) > 1 else "SEARCH_ONLY"
+            drill["candidate_count"] = len(exact) if exact else len(matches)
+            continue
+        chosen = exact[0]
+        try:
+            inspected = inspect_lsb_behavior(source_root, chosen["path"])
+        except Exception as exc:
+            drill["status"] = "INSPECT_ERROR"
+            drill["error"] = f"{type(exc).__name__}: {exc}"
+            continue
+
+        relative_path = str((inspected.get("source") or {}).get("path") or chosen["path"]).replace("\\", "/")
+        candidate = (Path(source_root) / relative_path).resolve()
+        root_resolved = Path(source_root).resolve()
+        excerpt = None
+        if candidate.is_file() and (candidate == root_resolved or root_resolved in candidate.parents):
+            try:
+                lines = candidate.read_text(encoding="utf-8", errors="replace").splitlines()
+                preview_lines = lines[:40]
+                excerpt = {
+                    "start_line": 1,
+                    "end_line": len(preview_lines),
+                    "text": "\n".join(preview_lines),
+                    "truncated": len(lines) > len(preview_lines),
+                    "total_lines": len(lines),
+                }
+            except OSError:
+                excerpt = None
+
+        graph_data = inspected.get("graph") or {}
+        events = []
+        zone = (inspected.get("source") or {}).get("zone") or chosen.get("zone")
+        for event in (graph_data.get("events") or [])[:20]:
+            event_id = event.get("event_id")
+            if event_id is None:
+                continue
+            events.append({
+                "event_id": event_id,
+                "href": (
+                    f"/events/view?zone={quote(str(zone or ''), safe='')}"
+                    f"&entity={numeric_id}&csid={event_id}"
+                    if zone and numeric_id is not None else None
+                ),
+                "start_hooks": list(event.get("start_hooks") or []),
+                "update_hooks": list(event.get("update_guard_hooks") or []),
+                "finish_hooks": list(event.get("finish_guard_hooks") or []),
+            })
+        drill.update({
+            "status": "RESOLVED",
+            "source": {
+                "path": relative_path,
+                "zone": zone,
+                "subject": (inspected.get("source") or {}).get("subject") or display_name,
+                "role": chosen.get("role"),
+            },
+            "behavior_href": f"/behavior?source={quote(relative_path, safe='')}&server={quote(server, safe='')}",
+            "graph_href": f"/behavior/graph.json?source={quote(relative_path, safe='')}&server={quote(server, safe='')}",
+            "excerpt": excerpt,
+            "events": events,
+            "hooks": sorted({
+                node.get("label") for node in (graph_data.get("nodes") or [])
+                if node.get("kind") == "hook" and node.get("label")
+            }),
+            "summary": graph_data.get("summary") or {},
+        })
+
+
 @app.get("/features/trace", response_class=HTMLResponse)
 def feature_trace_page(
     request: Request,
@@ -3920,6 +4040,7 @@ def feature_trace_page(
         query = q.strip()
         query_diagnostics = feature_trace.entity_query_diagnostics(con, catalog_con, query)
         implementation_path = feature_trace.entity_implementation_path(con, catalog_con, query)
+        _feature_trace_branch_source_drilldown(implementation_path)
         exact = feature_trace.node_info(con, query, catalog_con)
         if exact["known"]:
             result = feature_trace.trace(con, query, depth, direction, catalog_con)
@@ -4008,6 +4129,7 @@ def feature_trace_path_detail(q: str = ""):
     try:
         diagnostics=feature_trace.entity_query_diagnostics(con,catalog_con,query)
         path=feature_trace.entity_implementation_path(con,catalog_con,query)
+        _feature_trace_branch_source_drilldown(path)
         return JSONResponse({
             "query":query,
             "diagnostics":diagnostics,
