@@ -298,6 +298,13 @@
           <div>
             <a class="zonelink" href="/features/trace?q={{ step.target_node|urlencode }}">{{ step.target_name }}</a>
             <div><span class="chip">{{ step.target_type }}</span> <code>{{ step.target_node }}</code></div>
+            <div class="impl-workflow">
+              {% if step.target_sql_href %}<a class="chip" href="{{ step.target_sql_href }}">Indexed SQL row</a>{% endif %}
+              {% if step.target_inspect_href %}<a class="chip" href="{{ step.target_inspect_href }}">Source view</a>{% endif %}
+            </div>
+            {% if step.target_details %}
+            <div class="impl-meta">{% for key,value in step.target_details.items() %}{% if value is not none and value != '' %}<span class="chip">{{ key }}={{ value }}</span>{% endif %}{% endfor %}</div>
+            {% endif %}
           </div>
         </div>
         {% else %}
