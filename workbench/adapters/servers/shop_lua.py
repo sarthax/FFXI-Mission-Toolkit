@@ -38,6 +38,7 @@ class ShopRecord:
     shop_kind: str
     vendor_name: str | None
     source_path: str
+    source_family: str
     items: tuple[ShopItem, ...]
     metadata: dict[str, Any] | None = None
 
@@ -47,6 +48,7 @@ class ShopRecord:
             "shop_kind": self.shop_kind,
             "vendor_name": self.vendor_name,
             "source_path": self.source_path,
+            "source_family": self.source_family,
             "items": [item.as_dict() for item in self.items],
             "metadata": dict(self.metadata or {}),
         }
@@ -55,6 +57,17 @@ class ShopRecord:
 def _vendor_from_path(source_path: str) -> str | None:
     name = source_path.replace("\\", "/").rsplit("/", 1)[-1]
     return name[:-4] if name.lower().endswith(".lua") else (name or None)
+
+
+def _source_scope(source_path: str) -> str:
+    path = source_path.replace("\\", "/").lower()
+    if "/npcs/" in path:
+        return "NPC"
+    if "/instances/" in path or "/instance/" in path:
+        return "INSTANCE"
+    if path.endswith("/zone.lua") or "/zones/" in path:
+        return "ZONE"
+    return "OTHER"
 
 
 def _balanced_brace_block(text: str, start: int) -> str | None:
@@ -96,12 +109,11 @@ def _local_stock_block(text: str) -> str | None:
 def parse_npc_shop_script(text: str, *, source_path: str) -> dict[str, Any]:
     """Parse one regular/nation NPC shop script conservatively."""
     calls = []
-    for kind, pattern in (
-        ("GENERAL", r"xi\.shop\.general\s*\(\s*player\s*,\s*stock\b"),
-        ("NATION", r"xi\.shop\.nation\s*\(\s*player\s*,\s*stock\b"),
-    ):
-        if re.search(pattern, text):
-            calls.append(kind)
+    for namespace, source_family in (("xi", "LSB"), ("tpz", "TOPAZ"), ("dsp", "DSP")):
+        for kind in ("general", "nation"):
+            pattern = rf"{namespace}\.shop\.{kind}\s*\(\s*player\s*,\s*stock\b"
+            if re.search(pattern, text):
+                calls.append((kind.upper(), namespace, source_family))
 
     result = {
         "status": "UNSUPPORTED",
@@ -111,7 +123,7 @@ def parse_npc_shop_script(text: str, *, source_path: str) -> dict[str, Any]:
     }
     if len(calls) != 1:
         result["warnings"].append(
-            "Expected exactly one supported xi.shop.general/nation call using local stock."
+            "Expected exactly one supported xi/tpz/dsp shop.general or shop.nation call using local stock."
         )
         return result
 
@@ -125,24 +137,45 @@ def parse_npc_shop_script(text: str, *, source_path: str) -> dict[str, Any]:
         rf"\{{\s*({_ITEM_EXPR})\s*,\s*({_PRICE_EXPR})\s*(?:,\s*[^}}]+)?\}}"
     )
     for m in entry_re.finditer(block):
-        items.append(ShopItem(m.group(1), int(m.group(2))))
+        items.append(ShopItem(m.group(1), int(m.group(2)), {"stock_syntax": "PAIR_ROWS"}))
 
-    # Count top-level-looking pair entries that we could not decode, so the caller
-    # can distinguish an empty shop from unsupported dynamic rows.
-    candidate_count = len(re.findall(r"\{\s*[^{}]+\}", block))
-    if candidate_count and not items:
-        result["warnings"].append("Stock table exists but no static { item, price } rows were decoded.")
+    # DSP/Topaz commonly use a flat alternating array:
+    # { item_id, price, item_id, price, ... }.
+    if not items:
+        scrubbed = re.sub(r"--[^\n]*", "", block[1:-1])
+        tokens = [token.strip() for token in scrubbed.split(",") if token.strip()]
+        if tokens and len(tokens) % 2 == 0:
+            flat_ok = True
+            flat_items: list[ShopItem] = []
+            for index in range(0, len(tokens), 2):
+                item_token, price_token = tokens[index], tokens[index + 1]
+                if not re.fullmatch(_ITEM_EXPR, item_token) or not re.fullmatch(_PRICE_EXPR, price_token):
+                    flat_ok = False
+                    break
+                flat_items.append(ShopItem(item_token, int(price_token), {"stock_syntax": "FLAT_PAIRS"}))
+            if flat_ok:
+                items = flat_items
+
+    if not items and block.strip() not in {"{}", "{\n}"}:
+        result["warnings"].append(
+            "Stock table exists but no supported static pair-row or flat item/price rows were decoded."
+        )
         return result
 
-    kind = calls[0]
+    kind, namespace, source_family = calls[0]
     vendor = _vendor_from_path(source_path)
     shop = ShopRecord(
         shop_id=f"lua-shop:{source_path}",
         shop_kind=kind,
         vendor_name=vendor,
         source_path=source_path,
+        source_family=source_family,
         items=tuple(items),
-        metadata={"static_stock": True},
+        metadata={
+            "static_stock": True,
+            "shop_namespace": namespace,
+            "source_scope": _source_scope(source_path),
+        },
     )
     result["status"] = "OK"
     result["shop"] = shop
@@ -190,8 +223,9 @@ def parse_guild_shops_data(text: str, *, source_path: str = "scripts/data/guild_
                 shop_kind="GUILD",
                 vendor_name=name,
                 source_path=source_path,
+                source_family="LSB",
                 items=(),
-                metadata={"shared_stock": shared.group(1)},
+                metadata={"shared_stock": shared.group(1), "source_scope": "DATA"},
             ))
             continue
 
@@ -234,8 +268,9 @@ def parse_guild_shops_data(text: str, *, source_path: str = "scripts/data/guild_
             shop_kind="GUILD",
             vendor_name=name,
             source_path=source_path,
+            source_family="LSB",
             items=tuple(items),
-            metadata={"static_stock": True},
+            metadata={"static_stock": True, "source_scope": "DATA"},
         ))
 
     return {
