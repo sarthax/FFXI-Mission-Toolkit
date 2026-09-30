@@ -3846,6 +3846,28 @@ def events_browse(request: Request, zone: str = "", q: str = ""):
             generated_note = f"Generated a fresh events export for {zone} via mission_toolkit.py."
         zoneid_row = con.execute("SELECT zoneid FROM zones WHERE name = ?", (zone.upper(),)).fetchone()
         zoneid = zoneid_row[0] if zoneid_row else None
+        server_counts = {
+            int(row["csid"]): int(row["n"])
+            for row in con.execute(
+                "SELECT csid,COUNT(*) AS n FROM npc_event_refs WHERE zone_name=? GROUP BY csid",
+                (zone,),
+            ).fetchall()
+        } if con.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='npc_event_refs'"
+        ).fetchone() else {}
+        runtime_counts = {}
+        if zoneid is not None:
+            for row in con.execute(
+                """SELECT entity_id,event_hex,COUNT(*) AS n
+                   FROM capture_events
+                   WHERE replace(lower(zone_db),' ','_')=replace(lower(?),' ','_')
+                   GROUP BY entity_id,event_hex""",
+                (zone,),
+            ).fetchall():
+                try:
+                    runtime_counts[(int(row["entity_id"]), int(str(row["event_hex"]), 0))] = int(row["n"])
+                except (TypeError, ValueError):
+                    continue
         for b in blocks:
             entity_id = b["entity_id"]
             name_row = None
@@ -3867,7 +3889,11 @@ def events_browse(request: Request, zone: str = "", q: str = ""):
                     continue
                 if q_stripped and not entity_match and eid != q_csid:
                     continue
-                rows.append({"entity_id": entity_id, "name": name, "csid": eid})
+                rows.append({
+                    "entity_id": entity_id, "name": name, "csid": eid,
+                    "server_ref_count": server_counts.get(int(eid), 0),
+                    "runtime_count": runtime_counts.get((int(entity_id), int(eid)), 0),
+                })
     con.close()
     return templates.TemplateResponse(request, "events.html", {
         "zone": zone, "q": q, "zones": zones, "rows": rows, "generated_note": generated_note,
