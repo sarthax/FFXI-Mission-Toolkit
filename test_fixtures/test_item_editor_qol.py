@@ -147,6 +147,23 @@ def main():
     assert "async function reconcileField(field,direction)" in template
     assert "label:'reconcile '+field" in template
 
+    # Constrained batch editing is preview-first, whitelisted, atomic, and backup-backed.
+    assert "BATCH_SAFE_FIELDS = dict(RECONCILE_SERVER_FIELDS)" in item_edit
+    assert "def preview_batch_edit(item_ids, field, value):" in item_edit
+    assert "def apply_batch_edit(item_ids, field, value, comment=\"\"):" in item_edit
+    assert "def restore_batch_backup(bid, comment=\"\"):" in item_edit
+    assert "bulk dual-authority edit is blocked" in item_edit
+    assert '"kind": "batch"' in item_edit
+    assert '@app.post("/itemedit/batch/preview")' in gui
+    assert '@app.post("/itemedit/batch/apply")' in gui
+    assert '@app.post("/itemedit/batch/restore")' in gui
+    assert 'id="itemBatchEditor"' in template
+    assert "async function previewItemBatch()" in template
+    assert "async function applyItemBatch()" in template
+    assert "Batch inputs changed after preview. Preview again." in template
+    assert "async function restoreLastItemBatch()" in template
+    assert "data-history-batch" in template
+
     # DAT-only discovery searches client records without requiring a server row.
     assert "def search_dat_only(q: str, category: str = \"\", limit: int = 200) -> list:" in item_dat
     assert 'client_state": "dat-only"' in item_dat
