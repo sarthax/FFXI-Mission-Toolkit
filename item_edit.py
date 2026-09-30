@@ -196,7 +196,7 @@ def _journal(comment, lines):
             f.write(l + "\n")
 
 
-def _save_backup(label, item_id, ops, client_snapshot="auto"):
+def _save_backup(label, item_id, ops, client_snapshot="auto", metadata=None):
     BACKUPS.mkdir(parents=True, exist_ok=True)
     if client_snapshot == "auto":
         try:
@@ -207,6 +207,7 @@ def _save_backup(label, item_id, ops, client_snapshot="auto"):
     b = {
         "id": bid, "ts": time.strftime("%Y-%m-%d %H:%M:%S"), "label": label,
         "item_id": item_id, "ops": ops, "client_record": client_snapshot,
+        "metadata": metadata or {},
     }
     (BACKUPS / f"{bid}.json").write_text(json.dumps(b, default=lambda o: float(o) if isinstance(o, Decimal) else str(o)))
     return bid
@@ -226,6 +227,67 @@ def list_backups():
             "rows": len(b["ops"]), "has_client_record": bool(snap),
             "client_target": snap.get("target") if snap else None,
         })
+    return out
+
+
+def list_item_history(item_id, limit=100):
+    """Selected-item backup/change history, including legacy backups without metadata."""
+    item_id, limit = int(item_id), max(1, min(int(limit), 500))
+    out = []
+    if not BACKUPS.exists():
+        return out
+    for f in sorted(BACKUPS.glob("*.json"), reverse=True):
+        try:
+            b = json.loads(f.read_text())
+        except Exception:
+            continue
+        if int(b.get("item_id", -1)) != item_id:
+            continue
+        meta = b.get("metadata") or {}
+        ops = b.get("ops") or []
+        tables = sorted({op.get("table") for op in ops if op.get("table")})
+        effect_tables = {"item_mods", "item_mods_pet", "item_latents"}
+        action = meta.get("action_type")
+        label = str(b.get("label", ""))
+        if not action:
+            lower = label.lower()
+            if lower.startswith("create item"):
+                action = "create"
+            elif lower.startswith("delete item"):
+                action = "delete"
+            elif lower.startswith("reconcile"):
+                action = "reconcile"
+            elif "restore" in lower:
+                action = "restore"
+            elif "edit" in lower:
+                action = "edit"
+            else:
+                action = "backup"
+        summary = meta.get("summary")
+        if not summary:
+            regular = [t for t in tables if t not in effect_tables]
+            effects = [t for t in tables if t in effect_tables]
+            bits = []
+            if regular:
+                bits.append("tables: " + ", ".join(regular))
+            if effects:
+                bits.append("effects: " + ", ".join(effects))
+            summary = " · ".join(bits) or "client-record snapshot"
+        snap = b.get("client_record")
+        out.append({
+            "id": b.get("id"), "ts": b.get("ts"), "label": label,
+            "action_type": action, "comment": meta.get("comment") or "",
+            "summary": summary, "tables": tables,
+            "field_changes": meta.get("field_changes") or [],
+            "effect_changes": meta.get("effect_changes") or [],
+            "dat_touched": bool(meta.get("dat_touched")),
+            "has_client_record": bool(snap),
+            "client_target": snap.get("target") if snap else None,
+            "restorable": bool(b.get("id")),
+            "legacy_metadata": not bool(meta),
+        })
+        if len(out) >= limit:
+            break
     return out
 
 
@@ -811,7 +873,15 @@ def reconcile_item(item_id, field, direction, comment=""):
     current = dat.capture_client_record(item_id)
     if current is None:
         raise ValueError("no client DAT record is available to reconcile")
-    bid = _save_backup(f"reconcile {field} server -> client", item_id, [], client_snapshot=current)
+    bid = _save_backup(
+        f"reconcile {field} server -> client", item_id, [], client_snapshot=current,
+        metadata={
+            "action_type": "reconcile", "comment": comment or "",
+            "summary": f"{field}: client {row['client']} -> server {row['server']}",
+            "field_changes": [{"table": "client_dat", "field": field, "before": row["client"], "after": row["server"]}],
+            "dat_touched": True,
+        },
+    )
     client_key = {
         "stack": "stack", "slots": "slots", "damage": "dmg",
         "flags": "flags", "level": "level", "jobs": "jobs",
@@ -927,7 +997,31 @@ def save_item_atomic(item_id, tables, effects=None, comment=""):
 
         for table, keyvals, cur, want in effect_changes:
             ops.append({"table": table, "key": list(keyvals), "row": cur})
-        bid = _save_backup(f"atomic edit item {item_id}", item_id, ops)
+        field_change_meta = [
+            {"table": table, "field": field,
+             "before": (next((op["row"] for op in ops if op["table"] == table and op.get("row") is not None), {}) or {}).get(field),
+             "after": value}
+            for table, fields in normalized.items() for field, value in fields.items()
+        ]
+        effect_change_meta = [
+            {"table": table, "key": list(keyvals), "before": cur, "after": want}
+            for table, keyvals, cur, want in effect_changes
+        ]
+        summary_bits = []
+        if field_change_meta:
+            summary_bits.append(f"{len(field_change_meta)} field change(s)")
+        if effect_change_meta:
+            summary_bits.append(f"{len(effect_change_meta)} effect change(s)")
+        bid = _save_backup(
+            f"atomic edit item {item_id}", item_id, ops,
+            metadata={
+                "action_type": "edit", "comment": comment or "",
+                "summary": " · ".join(summary_bits),
+                "field_changes": field_change_meta,
+                "effect_changes": effect_change_meta,
+                "dat_touched": bool(client_fields and client_available),
+            },
+        )
         sqls = []
         for table, fields in normalized.items():
             key = TABLES[table][0]
@@ -1010,7 +1104,15 @@ def update_item(item_id, table, fields, comment="", sync_client=True):
     if bad:
         db.close()
         raise ValueError(f"{table} has no column(s): {', '.join(bad)}")
-    bid = _save_backup(f"edit {table} {item_id}", item_id, [op])
+    bid = _save_backup(
+        f"edit {table} {item_id}", item_id, [op],
+        metadata={
+            "action_type": "edit", "comment": comment or "",
+            "summary": f"{table}: {len(fields)} field change(s)",
+            "field_changes": [{"table": table, "field": k, "before": op["row"].get(k), "after": v} for k, v in fields.items()],
+            "dat_touched": bool(sync_client and _map_to_client_fields(table, fields)),
+        },
+    )
     set_clause = ", ".join(f"{k}=%s" for k in fields)
     cu.execute(f"update {table} set {set_clause} where {key}=%s", tuple(fields.values()) + (item_id,))
     db.commit(); db.close()
@@ -1148,6 +1250,15 @@ def create_item(category, item_type, entry, effects=None, comment=""):
         bid = _save_backup(
             f"create item {item_id} ({basic_row['name']}) in {category}",
             item_id, ops, client_snapshot=pre_client,
+            metadata={
+                "action_type": "create", "comment": comment or "",
+                "summary": f"created {len(inserts)} SQL row(s) + {len(effect_changes)} effect row(s)",
+                "effect_changes": [
+                    {"table": table, "key": list(keyvals), "before": cur, "after": want}
+                    for table, keyvals, cur, want in effect_changes
+                ],
+                "dat_touched": True,
+            },
         )
         try:
             db.commit()
@@ -1261,7 +1372,14 @@ def delete_item(item_id, comment="", clear_dat=False):
     if not ops:
         db.close()
         raise ValueError(f"no item_* rows found for itemid={item_id}")
-    bid = _save_backup(f"delete item {item_id}", item_id, ops)
+    bid = _save_backup(
+        f"delete item {item_id}", item_id, ops,
+        metadata={
+            "action_type": "delete", "comment": comment or "",
+            "summary": f"deleted {len(ops)} SQL/effect row(s)" + (" and cleared client DAT" if clear_dat else ""),
+            "dat_touched": bool(clear_dat),
+        },
+    )
     lines = []
     for op in ops:
         if op["table"] == "item_mods":
