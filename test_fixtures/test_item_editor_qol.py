@@ -154,6 +154,14 @@ def main():
 
 
     # Full client Item DAT record inspector: embedded icon preview and source-backed fields.
+    assert "FURNITURE_DAT = 'ROM/74/21.DAT'" in item_dat
+    assert "def furniture_properties(item_id: int)" in item_dat
+    assert "def item_record_layout_audit() -> dict:" in item_dat
+    assert '"extra_tail_capacity"' in item_dat
+    assert '@app.get("/itemedit/client-layout-audit.json")' in gui
+    assert "Furniture FUD" in template
+    assert 'id="clientLayoutAudit"' in template
+    assert "async function refreshClientLayoutAudit()" in template
     assert "def client_record_inspector(item_id: int) -> dict:" in item_dat
     assert "def item_icon_png(item_id: int)" in item_dat
     assert "def bitmap_a_to_png(raw: bytes)" in item_dat
