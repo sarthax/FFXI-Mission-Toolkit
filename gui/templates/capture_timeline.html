@@ -194,7 +194,7 @@
     <tr><th>seq</th><th>ts</th><th>dir</th><th>item</th><th>quantity</th><th>bag</th><th>slot</th><th>fields</th></tr>
     {% for r in items %}
     <tr>
-      <td class="mono">{{ r.seq }}</td>
+      <td class="mono"><a class="inline" href="/captures/{{ capture_id }}/packets/{{ r.seq }}">{{ r.seq }}</a></td>
       <td class="mono">{{ r.ts }}</td>
       <td>{{ r.direction }}</td>
       <td>{% if r.item_name %}{{ r.item_name }}{% endif %} <span class="chip mono">{{ r.item_id }}</span></td>
