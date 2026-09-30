@@ -575,6 +575,11 @@ def mod_names():
     return dat.MOD_NAMES
 
 
+def mod_metadata():
+    """Source-backed modifier comments/units for Item Editor presentation."""
+    return dat.mod_metadata()
+
+
 # ---- item_mods_pet (one-to-many: multiple (modId,petType,value) rows per item, composite PK) --
 # Same modId space as item_mods (dat.MOD_NAMES). petType is dat.PET_TYPE_NAMES, extracted from
 # C:\topaz\src\map\modifier.h's `enum class PetModType` (8 entries: All/Avatar/Wyvern/Automaton/
@@ -670,6 +675,11 @@ def delete_item_latent(item_id, mod_id, value, latent_id, latent_param, comment=
 def latent_names():
     """{latentId: name} for the UI's add-latent dropdown."""
     return dat.LATENT_NAMES
+
+
+def latent_metadata():
+    """Source-backed latent-condition/parameter semantics for Item Editor presentation."""
+    return dat.latent_metadata()
 
 
 # ---- edits ----------------------------------------------------------------------------------
