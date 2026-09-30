@@ -105,6 +105,19 @@ def main():
     assert "_save_backup(f\"bulk transform {len(normalized)} entities\"" in zone_edit
     assert '@app.post("/zoneplot/edit_bulk")' in gui_server
 
+    # Entity discovery / navigation chunk.
+    assert "renderer.domElement.addEventListener('dblclick'" in template
+    assert "Double-click to select and frame" in template
+    assert 'id="lf-kind"' in template
+    assert 'id="lf-reach"' in template
+    assert 'id="lf-sort"' in template
+    assert 'id="lf-dir"' in template
+    assert "function sortedMatches()" in template
+    assert "Sort: Rotation" in template
+    assert "Instance filter: all zone rows" in template
+    assert "first 1000 shown" in template
+    assert "grid-template-columns:34px 78px" in template
+
     print("Zone Plot heading/compass/zoom UI regression: PASS")
     return 0
 
