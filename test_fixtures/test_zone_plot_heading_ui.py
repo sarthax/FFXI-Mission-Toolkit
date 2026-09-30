@@ -192,9 +192,9 @@ def main():
     assert "def sync_model_sql(kind, eid, server=None):" in zone_edit
     assert '"mob_pools": ["poolid"]' in zone_edit
     assert "shared-mob-pool" in zone_edit
-    assert "/zoneplot/model/preview" in gui
-    assert "/zoneplot/model/apply" in gui
-    assert "/zoneplot/model/sync_sql" in gui
+    assert "/zoneplot/model/preview" in gui_server
+    assert "/zoneplot/model/apply" in gui_server
+    assert "/zoneplot/model/sync_sql" in gui_server
     assert 'id="modelImpactBtn"' in template
     assert 'id="modelApplyBtn"' in template
     assert "async function checkModelImpact()" in template
@@ -202,7 +202,7 @@ def main():
     assert "Selection/candidate changed. Check impact again." in template
 
     # Animation metadata comes from current bundled LSB sources, with subanimation evidence.
-    assert "/zoneplot/animation-meta.json" in gui
+    assert "/zoneplot/animation-meta.json" in gui_server
     assert "loadAnimationMetadata()" in template
     assert "renderAnimationEvidence()" in template
     assert "Transient FOURCC animation reference" in template
