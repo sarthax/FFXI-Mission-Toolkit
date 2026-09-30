@@ -44,17 +44,21 @@
 </div>
 
 {% if error %}
-<div class="warn"><strong>Could not decompile:</strong><br><span class="mono">{{ error }}</span></div>
-{% else %}
+<div class="warn"><strong>Client decompile unavailable:</strong><br><span class="mono">{{ error }}</span><br><span class="muted">Server references, capture observations, and other independent evidence below remain available.</span></div>
+{% endif %}
 <div class="event-grid">
   <div class="event-stack">
     <section class="event-card">
       <h3>Client CSID decompile</h3>
+      {% if decompiled %}
       <div class="copy-row">
         <span class="muted">Client event bytecode decompiled through xi-events with dialog substitution.</span>
         <button class="copy-btn" type="button" data-copy-target="decompiled-code">Copy decompile</button>
       </div>
       <div class="body"><pre id="decompiled-code">{{ decompiled }}</pre></div>
+      {% else %}
+      <div class="body muted">No client decompile is available for this entity/CSID. Use the independent server/runtime evidence below and the browser health reason above.</div>
+      {% endif %}
     </section>
 
     <section class="event-card">
@@ -157,7 +161,6 @@
     </section>
   </aside>
 </div>
-{% endif %}
 
 <script>
 document.querySelectorAll('[data-copy-target]').forEach(btn=>{
