@@ -6804,6 +6804,12 @@ def itemedit_modnames():
     return JSONResponse(item_edit.mod_names())
 
 
+@app.get("/itemedit/modmeta.json")
+def itemedit_modmeta():
+    import item_edit
+    return JSONResponse(item_edit.mod_metadata())
+
+
 @app.get("/itemedit/pettypes.json")
 def itemedit_pettypes():
     import item_edit
@@ -6814,6 +6820,12 @@ def itemedit_pettypes():
 def itemedit_latentnames():
     import item_edit
     return JSONResponse(item_edit.latent_names())
+
+
+@app.get("/itemedit/latentmeta.json")
+def itemedit_latentmeta():
+    import item_edit
+    return JSONResponse(item_edit.latent_metadata())
 
 
 @app.get("/itemedit/dat-target.json")
