@@ -1658,6 +1658,25 @@ def backup_dat_once(path: Path, rom_path: str) -> Optional[Path]:
     return backup_dat_snapshot(path, rom_path)
 
 
+def validate_client_patch(item_id: int, fields: dict) -> dict:
+    """Validate an existing-item patch entirely in memory without writing a DAT or backup."""
+    found = category_for_item(item_id)
+    if found is None:
+        raise ValueError(f'no client DAT covers item id {item_id}')
+    cat_name, base_id, item_type, en_rom, jp_rom = found
+    src_path = dat_write_source(en_rom)
+    idx = item_id - base_id
+    item_dat = ItemDat.load(src_path)
+    if idx >= item_dat.count:
+        raise ValueError(f'item id {item_id} has no record in {cat_name} ({src_path})')
+    rec = bytearray(item_dat.record(idx))
+    _patch_record(rec, fields, item_type, item_dat.format)
+    return {
+        'ok': True, 'category': cat_name, 'dat_ui': en_rom, 'record_index': idx,
+        'format': item_dat.format, 'fields': list(fields.keys()), 'target': dat_target(),
+    }
+
+
 def patch_client_item(item_id: int, fields: dict) -> dict:
     """Patch an existing item's client-DAT record in place. `fields` uses the
     same key names as ItemRecord (level, jobs (or jobs_list), races, slots,
