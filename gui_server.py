@@ -3847,6 +3847,9 @@ def events_browse(request: Request, zone: str = "", q: str = ""):
             generated_note = f"Generated a fresh events export for {zone} via mission_toolkit.py."
         zoneid_row = con.execute("SELECT zoneid FROM zones WHERE name = ?", (zone.upper(),)).fetchone()
         zoneid = zoneid_row[0] if zoneid_row else None
+        health = explore_event.scan_event_health(events_yml.parent, zoneid) if events_yml.exists() else {
+            "rows": {}, "summary": {"ok": 0, "stub": 0, "invalid": 0, "failed": 0}
+        }
         server_refs_by_csid = {}
         if con.execute(
             "SELECT 1 FROM sqlite_master WHERE type='table' AND name='npc_event_refs'"
@@ -3896,15 +3899,22 @@ def events_browse(request: Request, zone: str = "", q: str = ""):
                     if actor_norm
                     and re.sub(r"[^a-z0-9]+", "", str(ref["npc_script"]).lower()) == actor_norm
                 ]
+                health_row = health.get("rows", {}).get(f"{int(entity_id)}:{int(eid)}", {
+                    "status": "unknown", "detail": "No decompile health result is available."
+                })
                 rows.append({
                     "entity_id": entity_id, "name": name, "csid": eid,
                     "server_ref_count": len(actor_server_refs),
                     "zone_csid_server_ref_count": len(server_refs_by_csid.get(int(eid), [])),
                     "runtime_count": runtime_counts.get((int(entity_id), int(eid)), 0),
+                    "decompile_status": health_row.get("status", "unknown"),
+                    "decompile_detail": health_row.get("detail"),
+                    "decompile_line_count": health_row.get("line_count", 0),
                 })
     con.close()
     return templates.TemplateResponse(request, "events.html", {
         "zone": zone, "q": q, "zones": zones, "rows": rows, "generated_note": generated_note,
+        "health_summary": health.get("summary", {}) if zone else {},
     })
 
 
