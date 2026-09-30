@@ -415,7 +415,7 @@
       "method": "GET",
       "path": "/captures/query",
       "home": "Captures",
-      "section": "Data Query",
+      "section": "Data Explorer",
       "role": "page",
       "disposition": "REWORK"
     },
@@ -423,7 +423,7 @@
       "method": "GET",
       "path": "/captures/query.csv",
       "home": "Captures",
-      "section": "Data Query",
+      "section": "Data Explorer",
       "role": "api/action",
       "disposition": "REWORK"
     },
