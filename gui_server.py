@@ -6161,6 +6161,24 @@ def capture_packet_detail(request: Request, capture_id: int, seq: int):
         (capture_id, seq),
     ).fetchone()
 
+    neighbor_rows = con.execute(
+        """SELECT seq,ts,direction,opcode FROM capture_raw_packets
+           WHERE capture_id=? AND seq BETWEEN ? AND ? ORDER BY seq""",
+        (capture_id, max(0, seq - 6), seq + 6),
+    ).fetchall()
+    neighbors = []
+    for neighbor in neighbor_rows:
+        item = dict(neighbor)
+        try:
+            n_direction = "s2c" if item["direction"] == "incoming" else (
+                "c2s" if item["direction"] == "outgoing" else None
+            )
+            n_result = packet_decode.decode(n_direction, int(item["opcode"], 0), "") if n_direction else None
+            item["description"] = n_result.description if n_result else None
+        except Exception:
+            item["description"] = None
+        neighbors.append(item)
+
     locator = con.execute(
         """SELECT filename,source_sha256,locator_basis,start_line,end_line,start_offset,end_offset,details_json
            FROM capture_row_locators
@@ -6213,7 +6231,7 @@ def capture_packet_detail(request: Request, capture_id: int, seq: int):
     return templates.TemplateResponse(request, "capture_packet_detail.html", {
         "cap": cap, "capture_id": capture_id, "packet": packet, "layout": layout,
         "decode_error": decode_error, "prev_packet": prev_row, "next_packet": next_row,
-        "provenance": provenance, "correlations": correlations,
+        "neighbors": neighbors, "provenance": provenance, "correlations": correlations,
     })
 
 
