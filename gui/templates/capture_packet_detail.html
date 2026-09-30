@@ -137,7 +137,7 @@
       <div>lines</div><div class="mono">{{ provenance.start_line or '—' }}{% if provenance.end_line and provenance.end_line != provenance.start_line %}-{{ provenance.end_line }}{% endif %}</div>
       <div>byte offsets</div><div class="mono">{{ provenance.start_offset if provenance.start_offset is not none else '—' }}{% if provenance.end_offset is not none %}-{{ provenance.end_offset }}{% endif %}</div>
       <div>source SHA-256</div><div class="mono" style="word-break:break-all">{{ provenance.source_sha256 or 'unknown' }}</div>
-      <div>original evidence</div><div><a class="inline" href="/captures/{{ capture_id }}/source-locator?filename={{ provenance.filename|urlencode }}&target_table=capture_raw_packets&row_key={{ ('{"seq": ' ~ packet.seq ~ '}')|urlencode }}">open exact source row/block &rarr;</a></div>
+      <div>original evidence</div><div><a class="inline" href="/captures/{{ capture_id }}/source-locator?filename={{ provenance.filename|urlencode }}&target_table=capture_raw_packets&row_key={{ provenance.row_key|urlencode }}">open exact source row/block &rarr;</a></div>
     </div>
     {% else %}<p class="muted" style="padding:0 12px 10px">No row locator is available for this observation.</p>{% endif %}
   </section>
