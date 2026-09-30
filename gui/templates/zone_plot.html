@@ -92,6 +92,16 @@
       <label>Rot (0-255) <input type="number" step="1" min="0" max="255" id="er"></label>
       <div id="er-dir" class="mono" style="font-size:11px;margin:-1px 0 5px;padding:4px 6px;border:1px solid var(--border);border-radius:4px"></div>
       <div id="ed-radius" class="mono muted" style="font-size:10px;margin:0 0 6px;padding:4px 6px;border:1px solid var(--border);border-radius:4px">No explicit roam/leash radius stored for this entity.</div>
+      <details id="ed-model-details" style="border:1px solid var(--border);border-radius:4px;padding:5px;margin:5px 0">
+        <summary>Client model preview</summary>
+        <div class="muted" style="font-size:10px;margin:4px 0">Uses the configured local client and the same Model Viewer resolver. Preview is lazy-loaded only when opened.</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">
+          <button type="button" id="modelPreviewLoad">Refresh preview</button>
+          <a id="modelPreviewOpen" href="/modelviewer" target="_blank" style="align-self:center">Open full viewer</a>
+        </div>
+        <div id="modelPreviewStatus" class="mono muted" style="font-size:10px;margin-bottom:4px"></div>
+        <iframe id="modelPreviewFrame" title="Selected entity client model" style="width:100%;height:330px;border:1px solid var(--border);background:#0a0d10" loading="lazy"></iframe>
+      </details>
 <div style="display:flex;gap:3px;flex-wrap:wrap;margin:3px 0 6px">
   <button type="button" data-rpreset="64">N</button><button type="button" data-rpreset="32">NE</button>
   <button type="button" data-rpreset="0">E</button><button type="button" data-rpreset="224">SE</button>
@@ -1173,10 +1183,30 @@ function restorePreviewFromOrig(){
   $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r; $('er-dir').textContent=rotText(e.r);
   rebuild(); updateHeadingArrow(); updateSelectionVisual(); updateDirtyUI();
 }
+function selectedModelViewerUrl(embed=false){
+  if(selected<0 || !Z?.entities[selected]) return null;
+  const ent=Z.entities[selected], server=$('srv').value;
+  const kind=ent.k==='m'?'m':'n';
+  const q=new URLSearchParams({server:server,kind:kind,id:String(ent.id),autoload:'1'});
+  if(embed) q.set('embed','1');
+  return '/modelviewer?'+q.toString();
+}
+function refreshSelectedModelPreview(force=false){
+  const frame=$('modelPreviewFrame'), link=$('modelPreviewOpen'), status=$('modelPreviewStatus');
+  const url=selectedModelViewerUrl(false);
+  if(!url){ frame.removeAttribute('src'); link.href='/modelviewer'; status.textContent='No entity selected.'; return; }
+  const ent=Z.entities[selected];
+  link.href=url;
+  status.textContent=(ent.k==='d'?'Door/prop rows may not have a renderable entity model. ':'')+'Entity '+ent.id+' · '+(ent.n||ent.g||'')+' · '+(ent.k==='m'?'mob':'npc')+' resolver';
+  if(force || $('ed-model-details').open) frame.src=selectedModelViewerUrl(true);
+}
+$('modelPreviewLoad').onclick=()=>refreshSelectedModelPreview(true);
+$('ed-model-details').ontoggle=()=>{ if($('ed-model-details').open) refreshSelectedModelPreview(true); };
 function loadEditor(i){ const e=Z.entities[i]; if(!e){ $('ed').hidden=true; $('ed-none').hidden=false; return; }
   $('ed').hidden=false; $('ed-none').hidden=true; orig={x:e.x,y:e.y,z:e.z,r:e.r||0};
   $('ed-title').textContent=`${e.k==='m'?'MOB':e.k==='d'?'DOOR/PROP':'NPC'} ${e.id}  ${e.n||e.g}`;
   $('ed-radius').textContent=radiusText(e);
+  refreshSelectedModelPreview(false);
   $('ex').value=e.x; $('ey').value=e.y; $('ez').value=e.z; $('er').value=e.r||0; $('er-dir').textContent=rotText(e.r||0); $('emsg').textContent=''; $('ecomment').value=''; updateDirtyUI(); updateEntitySyncStatus();
   if (e.k==='n' || e.k==='d'){
     $('ed-anim').hidden=false;
