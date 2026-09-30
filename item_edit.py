@@ -740,6 +740,52 @@ def _apply_effect_changes(cu, item_id, changes):
             sqls.append(f"REPLACE INTO item_latents (itemId,modId,value,latentId,latentParam) VALUES ({item_id},{want['modId']},{want['value']},{want['latentId']},{want['latentParam']});")
     return sqls
 
+RECONCILE_SERVER_FIELDS = {
+    "flags": ("item_basic", "flags"),
+    "stack": ("item_basic", "stackSize"),
+    "level": ("item_equipment", "level"),
+    "jobs": ("item_equipment", "jobs"),
+    "slots": ("item_equipment", "slot"),
+    "damage": ("item_weapon", "dmg"),
+    "delay": ("item_weapon", "delay"),
+    "skill": ("item_weapon", "skill"),
+}
+
+
+def reconcile_item(item_id, field, direction, comment=""):
+    """Explicitly reconcile one confirmed overlapping field; item_type is diagnostic-only."""
+    item_id = int(item_id)
+    if field not in RECONCILE_SERVER_FIELDS:
+        raise ValueError(f"field {field!r} is not an explicitly reconcilable overlap")
+    if direction not in ("server_to_client", "client_to_server"):
+        raise ValueError("direction must be server_to_client or client_to_server")
+    data = get_item(item_id)
+    row = next((x for x in data["comparison"]["fields"] if x["field"] == field), None)
+    if row is None:
+        raise ValueError(f"no decoded server/client comparison is available for {field}")
+    table, column = RECONCILE_SERVER_FIELDS[field]
+
+    if direction == "client_to_server":
+        return save_item_atomic(item_id, {table: {column: row["client"]}}, None, comment or f"reconcile {field}: client -> server")
+
+    current = dat.capture_client_record(item_id)
+    if current is None:
+        raise ValueError("no client DAT record is available to reconcile")
+    bid = _save_backup(f"reconcile {field} server -> client", item_id, [], client_snapshot=current)
+    client_key = {
+        "stack": "stack", "slots": "slots", "damage": "dmg",
+        "flags": "flags", "level": "level", "jobs": "jobs",
+        "delay": "delay", "skill": "skill",
+    }[field]
+    patch = {client_key: row["server"]}
+    dat.validate_client_patch(item_id, patch)
+    report = dat.patch_client_item(item_id, patch)
+    _journal(comment or f"reconcile {field}: server -> client", [
+        f"-- backup {bid}",
+        f"-- client DAT {client_key}: {row['client']} -> {row['server']}",
+    ])
+    return {"backup": bid, "field": field, "direction": direction, "client": report}
+
 def validate_item_changes(item_id, tables, effects=None):
     """Validate a proposed table patch without writing anything."""
     item_id = int(item_id)
