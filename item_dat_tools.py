@@ -1914,12 +1914,14 @@ def inject_client_item(cat_name: str, entry: dict) -> dict:
     item_id = base_id + idx
     backup_dat_snapshot(dest_path, en_rom)
     dat = ItemDat.load(src_path)
+    previous_record = dat.record(idx)
     new_rec = build_record(entry, item_type, dat.format, item_id=item_id)
     dat.set_record(idx, new_rec)
     dest_path.parent.mkdir(parents=True, exist_ok=True)
     dest_path.write_bytes(dat.encrypted())
     return {'ok': True, 'item_id': item_id, 'category': cat_name, 'record_index': idx,
-            'dat': str(dest_path), 'dat_ui': en_rom, 'format': dat.format, 'target': target}
+            'dat': str(dest_path), 'dat_ui': en_rom, 'format': dat.format, 'target': target,
+            'previous_record_hex': previous_record.hex()}
 
 
 def item_to_dict(item: ItemRecord) -> dict:
