@@ -33,13 +33,16 @@ def _bytecode_hex(raw) -> str:
     return "0" + hexstr if len(hexstr) % 2 else hexstr
 
 
-def load_fixture(events_yml: str, entity_id: int, event_id: int, dialog_yml: str = None, zone_id: int = 0) -> Fixture:
-    with open(events_yml, encoding="utf-8") as f:
-        doc = yaml.safe_load(f)
+def fixture_from_documents(events_doc: dict, entity_id: int, event_id: int,
+                           strings: dict | None = None, zone_id: int = 0) -> Fixture:
+    """Build one xi-events Fixture from already-loaded Mission Toolkit documents.
 
-    block = next((b for b in doc["blocks"] if b.get("entity_id") == entity_id), None)
+    Browser preflight can call this for every event in a zone without reparsing the same YAML for
+    each CSID. Validation is identical to load_fixture().
+    """
+    block = next((b for b in events_doc["blocks"] if b.get("entity_id") == entity_id), None)
     if block is None:
-        raise SystemExit(f"entity_id {entity_id} not found in {events_yml}")
+        raise SystemExit(f"entity_id {entity_id} not found in events document")
 
     ev = next((e for e in block["events"] if e["id"] == event_id), None)
     if ev is None:
@@ -50,20 +53,16 @@ def load_fixture(events_yml: str, entity_id: int, event_id: int, dialog_yml: str
         raise SystemExit(
             f"event {event_id} on entity {entity_id} is a bare '0x00' stub in this export -- "
             "no real bytecode to decompile. NOTE: this does not necessarily mean the real client "
-            "has no content here -- see topaz_startevent_padding_required memory for a real case "
-            "this session where confirmed-working events (5000/5002/5020/5022) showed this same "
-            "false-empty signature. Check other entities in this zone that might own the same csid, "
-            "or verify via a real GM !cs test in-game before concluding the event is truly empty."
+            "has no content here; verify against another actor owning the CSID or runtime evidence "
+            "before concluding the event itself is absent."
         )
 
-    bytecode = bytes.fromhex(hexstr)
-    imed_data = block.get("data") or []
-
-    strings = {}
-    if dialog_yml:
-        with open(dialog_yml, encoding="utf-8") as f:
-            dd = yaml.safe_load(f)
-        strings = dd.get("entries", dd)
+    try:
+        bytecode = bytes.fromhex(hexstr)
+    except ValueError as exc:
+        raise SystemExit(
+            f"event {event_id} on entity {entity_id} has invalid bytecode hex: {exc}"
+        ) from exc
 
     return Fixture(
         zone_id=zone_id,
@@ -73,10 +72,23 @@ def load_fixture(events_yml: str, entity_id: int, event_id: int, dialog_yml: str
         event_id=event_id,
         bytecode=bytecode,
         entrypoint=0,
-        imed_data=imed_data,
-        strings=strings,
+        imed_data=block.get("data") or [],
+        strings=strings or {},
         entities={},
     )
+
+
+def load_fixture(events_yml: str, entity_id: int, event_id: int, dialog_yml: str = None, zone_id: int = 0) -> Fixture:
+    with open(events_yml, encoding="utf-8") as f:
+        doc = yaml.safe_load(f)
+
+    strings = {}
+    if dialog_yml:
+        with open(dialog_yml, encoding="utf-8") as f:
+            dd = yaml.safe_load(f)
+        strings = dd.get("entries", dd)
+
+    return fixture_from_documents(doc, entity_id, event_id, strings, zone_id)
 
 
 if __name__ == "__main__":
