@@ -33,6 +33,10 @@
 .impl-source-drill .body{padding:8px 9px}
 .impl-source-drill pre{white-space:pre-wrap;max-height:26rem;overflow:auto;font-size:11px;line-height:1.4}
 .impl-event-links{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0}
+.impl-engine{margin-top:9px;border-top:1px solid var(--border);padding-top:8px}
+.impl-engine-call{border:1px solid var(--border);border-radius:6px;padding:7px 8px;margin:6px 0;background:var(--surface)}
+.impl-engine-grid{display:grid;grid-template-columns:minmax(180px,.8fr) minmax(0,1.2fr);gap:6px 10px;align-items:start}
+.impl-engine-grid .k{color:var(--muted);font-size:11px}.impl-engine pre{white-space:pre-wrap;max-height:18rem;overflow:auto;font-size:11px}
 </style>
 <h1>Feature Trace</h1>
 <p class="muted">Trace a canonical Workbench feature, entity, capability, function, binding, build target, artifact, or enum through recorded graph relationships. Connectivity is evidence navigation, not an implementation verdict.</p>
@@ -276,6 +280,56 @@
                 <pre>{{ drill.excerpt.text }}</pre>
               </details>
               {% else %}<div class="muted">Exact source resolved, but a text preview could not be read.</div>{% endif %}
+
+              {% set engine = drill.engine %}
+              {% if engine %}
+              <div class="impl-engine">
+                <h4 style="margin:0 0 6px">Lua → binding → engine handoff</h4>
+                <div class="impl-meta">
+                  <span class="chip">{{ engine.direct_call_count }} direct Lua API call{{ '' if engine.direct_call_count == 1 else 's' }}</span>
+                  <span class="chip">{{ engine.binding_index_size }} indexed binding name{{ '' if engine.binding_index_size == 1 else 's' }}</span>
+                  <span class="chip">{{ engine.callback_count }} callback{{ '' if engine.callback_count == 1 else 's' }}</span>
+                  <span class="chip">{{ engine.shared_helpers|length }} shared helper{{ '' if engine.shared_helpers|length == 1 else 's' }}</span>
+                  {% for status,count in engine.binding_counts.items() %}<span class="chip">{{ status }} {{ count }}</span>{% endfor %}
+                </div>
+                {% for call in engine.direct_calls %}
+                <div class="impl-engine-call">
+                  <div><strong class="mono">{{ call.qualified_name }}</strong> <span class="chip">{{ call.binding.status }}</span>{% if call.hook %}<span class="chip">{{ call.hook }}</span>{% endif %}</div>
+                  <div class="muted mono">line {{ call.line or '?' }}{% if call.source_line %} · {{ call.source_line }}{% endif %}</div>
+                  <div class="impl-workflow"><a class="chip" href="{{ call.binding.binding_href }}">Binding Reference</a></div>
+                  {% for loc in call.binding.locations %}
+                  <div class="impl-engine-grid">
+                    <div class="k">C++ binding target</div><div><code>{{ loc.class }} · {{ loc.file }}:{{ loc.line }}</code>{% if loc.implementation_line %}<br><span class="muted">implementation candidate line {{ loc.implementation_line }}</span>{% endif %}</div>
+                  </div>
+                  {% if loc.registration_excerpt %}<details><summary>Registration excerpt · {{ loc.registration_excerpt.start_line }}–{{ loc.registration_excerpt.end_line }}</summary><pre>{{ loc.registration_excerpt.text }}</pre></details>{% endif %}
+                  {% if loc.implementation_excerpt %}<details><summary>C++ implementation excerpt · {{ loc.implementation_excerpt.start_line }}–{{ loc.implementation_excerpt.end_line }}</summary><pre>{{ loc.implementation_excerpt.text }}</pre></details>{% endif %}
+                  {% else %}<div class="muted">No binding registration with this exact/case-folded method name is indexed for this provider tree.</div>{% endfor %}
+                </div>
+                {% else %}<div class="muted">No syntax-level Lua API call observations were emitted for this source.</div>{% endfor %}
+
+                {% if engine.shared_helpers %}
+                <details>
+                  <summary>Shared helpers · {{ engine.shared_helpers|length }}</summary>
+                  {% for helper in engine.shared_helpers %}
+                  <div class="impl-engine-call">
+                    <div><strong class="mono">{{ helper.qualified_name }}</strong> <span class="chip">{{ helper.status }}</span></div>
+                    {% for c in helper.candidates %}<div class="muted mono">{{ c.path }}{% if c.line %}:{{ c.line }}{% endif %}</div>{% endfor %}
+                    {% if helper.api_calls %}<div class="impl-meta">{% for call in helper.api_calls %}<a class="chip mono" href="{{ call.binding.binding_href }}">{{ call.qualified_name }} · {{ call.binding.status }}</a>{% endfor %}</div>{% endif %}
+                    {% if helper.callees %}<div class="impl-meta">{% for callee in helper.callees %}<span class="chip mono">{{ callee.qualified_name }} · {{ callee.status or 'UNKNOWN' }}</span>{% endfor %}</div>{% endif %}
+                  </div>
+                  {% endfor %}
+                </details>
+                {% endif %}
+
+                {% if engine.callbacks %}
+                <details>
+                  <summary>Callback ownership · {{ engine.callback_count }}</summary>
+                  <div class="impl-meta">{% for cb in engine.callbacks %}<span class="chip">{{ cb.callback_type or 'callback' }}{% if cb.event %} · {{ cb.event }}{% endif %}{% if cb.delay %} · {{ cb.delay }}{% endif %}</span>{% endfor %}</div>
+                </details>
+                {% endif %}
+                {% for note in engine.notes %}<div class="muted">{{ note }}</div>{% endfor %}
+              </div>
+              {% endif %}
             {% elif drill.status == 'AMBIGUOUS' %}
               <div class="muted">{{ drill.candidate_count or 0 }} exact-normalized source candidates matched. Feature Trace will not choose one automatically.</div>
               {% if drill.candidates %}<div class="impl-event-links">{% for c in drill.candidates %}<a class="chip" href="{{ c.href }}">{{ c.name or c.path }}{% if c.zone %} · {{ c.zone }}{% endif %}</a>{% endfor %}</div>{% endif %}
