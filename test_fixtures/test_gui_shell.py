@@ -33,6 +33,11 @@ def context_for(path: str) -> dict:
 
 
 def render(name: str, path: str, **values) -> str:
+    brand = values.pop("_brand", {
+        "enabled": True,
+        "text": "ValhallaXI",
+        "icon": "/static/valhalla_logo.png",
+    })
     env = Environment(
         loader=FileSystemLoader(str(TEMPLATES)),
         autoescape=select_autoescape(("html",)),
@@ -41,6 +46,7 @@ def render(name: str, path: str, **values) -> str:
         current_theme=lambda: "light",
         backport_enabled=lambda: False,
         shell_context=lambda _request: context_for(path),
+        shell_brand=lambda: brand,
     )
     return env.get_template(name).render(request=request(path), **values)
 
@@ -210,6 +216,32 @@ def main():
         assert "Source snapshot" in html
         assert "Not configured" in html
         assert 'aria-label="Primary workspaces"' in html
+
+    default_brand_html = render("help.html", "/help")
+    assert "/static/valhalla_logo.png" in default_brand_html
+    assert ">ValhallaXI</span>" in default_brand_html
+
+    custom_brand_html = render(
+        "help.html", "/help",
+        _brand={"enabled": True, "text": "My Server", "icon": "/static/branding/custom_brand.png"},
+    )
+    assert "/static/branding/custom_brand.png" in custom_brand_html
+    assert ">My Server</span>" in custom_brand_html
+    assert ">ValhallaXI</span>" not in custom_brand_html
+
+    hidden_brand_html = render(
+        "help.html", "/help",
+        _brand={"enabled": False, "text": "Hidden Brand", "icon": "/static/branding/custom_brand.png"},
+    )
+    assert "Hidden Brand" not in hidden_brand_html
+    assert 'class="shell-brand"' not in hidden_brand_html
+
+    settings_source=(TEMPLATES/"settings.html").read_text(encoding="utf-8")
+    assert 'name="shell_brand_enabled"' in settings_source
+    assert 'name="shell_brand_text"' in settings_source
+    assert 'name="shell_brand_icon_upload"' in settings_source
+    assert 'name="shell_brand_reset_icon"' in settings_source
+    assert 'enctype="multipart/form-data"' in settings_source
 
     captures_html = render(
         "captures.html", "/captures", q="", missions=[], content_types=[],
