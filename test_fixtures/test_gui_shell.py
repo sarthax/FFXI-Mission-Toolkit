@@ -222,14 +222,35 @@ def main():
     assert "/captures/plot_all?capture_id={{ detail.capture_id }}" in capture_detail_template
 
     domains_html = render("domain_assault.html", "/domains/assault")
-    assert '<details class="section-group" open>' in domains_html
-    assert '<summary class="section-link active">Battle Systems</summary>' in domains_html
-    assert 'href="/domains/assault" aria-current="page">Assault</a>' in domains_html
+    assert 'class="shell-menu section-menu"' in domains_html
+    assert '<div class="shell-group-title">Battle Systems</div>' in domains_html
+    assert 'class="section-link active"\n                 href="/domains/assault" aria-current="page">Assault</a>' in domains_html
     assert "↳ Assault" not in domains_html
 
     model_html = render("model_viewer.html", "/modelviewer")
     assert 'aria-label="Primary workspaces"' in model_html
     assert re.search(r'class="workspace-link active"\s+href="/modelviewer"', model_html)
+
+    # Compact shell v2 stays one persistent global row and moves secondary state into popovers.
+    assert 'id="app-shell"' in model_html
+    assert 'class="shellbar"' in model_html
+    assert 'class="shell-menu section-menu"' in model_html
+    assert 'class="shell-menu context-menu"' in model_html
+    assert 'class="context-list"' in model_html
+    assert 'class="navrow contextbar"' not in model_html
+    assert 'class="navrow workspace-nav"' not in model_html
+    assert 'class="navrow section-nav"' not in model_html
+
+    zone2_html = render("zone_plot2.html", "/zoneplot2")
+    assert '<body class="shell-dense">' in zone2_html
+    assert 'id="app-shell"' in zone2_html
+    assert 'id="zbar" class="dense-toolbar"' in zone2_html
+    assert 'class="zpanel dense-panel"' in zone2_html
+    assert 'class="ztabs dense-tabs"' in zone2_html
+    assert 'id="helpdrawer" class="dense-drawer"' in zone2_html
+    assert 'body>header{display:none}' not in zone2_html
+    assert 'zp2-menu' not in zone2_html
+    assert 'id="zmenuBtn"' not in zone2_html
 
     validation_shell = context_for("/validation")
     assert validation_shell["active_home"] == "Validation"
