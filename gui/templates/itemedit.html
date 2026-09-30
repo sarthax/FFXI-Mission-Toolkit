@@ -58,9 +58,12 @@ server's permission gate. Every write is backed up first and journalled to
   <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
     <h2 id="editorTitle" style="margin:0;"></h2>
     <input type="text" id="editComment" style="flex:1; min-width:220px;" placeholder="Comment for SQL journal (e.g. lowering to level 90 for X quest reward)">
-    <button onclick="saveAll()">Save All Changes</button>
+    <button id="saveAllBtn" onclick="saveAll()" disabled>Save Item</button>
+    <button id="itemUndoBtn" type="button" disabled>Undo</button>
+    <button id="itemRedoBtn" type="button" disabled>Redo</button>
     <span id="saveStatus" class="muted"></span>
   </div>
+  <div id="dirtySummary" class="mono" style="margin-top:8px;padding:6px 8px;border:1px solid var(--border);border-radius:4px;color:#b0bec5;">Saved state</div>
   <div id="clientMismatch" class="warn" style="display:none; margin-top:8px;"></div>
 
   <div id="datInfoCard" class="edit-card wide" style="margin-top:8px; display:none;">
@@ -168,6 +171,49 @@ const TABLE_FIELDS = {
   item_furnishing: ["name","storage","moghancement","element","aura"],
 };
 let currentItemId = null;
+let loadedServerState = null;
+const itemUndoStack = [], itemRedoStack = [];
+function itemValueEqual(a,b){ return String(a ?? '') === String(b ?? ''); }
+function collectCurrentTables(){
+  const byTable={};
+  document.querySelectorAll('#editorTables input[data-table], #editorTables select[data-table]').forEach(inp=>{
+    const t=inp.dataset.table,f=inp.dataset.field; (byTable[t] ||= {})[f]=inp.value;
+  });
+  document.querySelectorAll('#editorTables [data-mask-group]').forEach(g=>{
+    const t=g.dataset.table,f=g.dataset.field; let val=0;
+    if(g.dataset.maskType==='nibbles'){ g.querySelectorAll('input[data-mask-shift]').forEach(inp=>{ val|=(Number(inp.value)||0)<<Number(inp.dataset.maskShift); }); }
+    else g.querySelectorAll('input[data-mask-bit]').forEach(cb=>{ if(cb.checked) val|=Number(cb.dataset.maskBit); });
+    (byTable[t] ||= {})[f]=val;
+  });
+  return byTable;
+}
+function changedTables(){
+  if(!loadedServerState) return {};
+  const cur=collectCurrentTables(), out={};
+  for(const [table,fields] of Object.entries(cur)){
+    const old=loadedServerState[table]||{};
+    for(const [field,val] of Object.entries(fields)){
+      if(!itemValueEqual(val,old[field])) (out[table] ||= {})[field]=val;
+    }
+  }
+  return out;
+}
+function updateDirtySummary(){
+  const changes=changedTables(), parts=[];
+  for(const [table,fields] of Object.entries(changes)){
+    const old=loadedServerState?.[table]||{};
+    for(const [field,val] of Object.entries(fields)) parts.push(`${table}.${field}: ${old[field] ?? ''} → ${val}`);
+  }
+  const box=document.getElementById('dirtySummary'), btn=document.getElementById('saveAllBtn');
+  btn.disabled=parts.length===0;
+  if(!parts.length){ box.textContent='Saved state'; box.style.color='#b0bec5'; return; }
+  box.textContent='UNSAVED · '+parts.join(' · '); box.style.color='#ffcc80';
+}
+function hasUnsavedItemChanges(){ return Object.keys(changedTables()).length>0; }
+function refreshItemUndoUI(){
+  document.getElementById('itemUndoBtn').disabled=!itemUndoStack.length;
+  document.getElementById('itemRedoBtn').disabled=!itemRedoStack.length;
+}
 let BITMASK_SCHEMA = {};
 fetch('/itemedit/bitmasks.json').then(r => r.json()).then(j => { BITMASK_SCHEMA = j; });
 // Searchable id-pickers: each is a text <input list="dl_x"> paired with a <datalist> of
@@ -202,6 +248,7 @@ fetch('/itemedit/latentnames.json').then(r => r.json()).then(j => { LATENT_NAMES
 })();
 
 async function setItemServer() {
+  if(hasUnsavedItemChanges() && !confirm('Discard unsaved Item Editor changes before switching server?')) return;
   const srv = document.getElementById('srv');
   const server = srv.value;
   const res = await fetch('/zoneplot/server.json', {
@@ -292,7 +339,9 @@ function buildTablesGrid(wrap, serverObj) {
 }
 
 async function loadItem(itemid) {
-  const res = await fetch(`/itemedit/${itemid}.json`);
+  if(currentItemId && Number(itemid)!==Number(currentItemId) && hasUnsavedItemChanges()){
+    if(!confirm('Discard unsaved Item Editor changes?')) return;
+  }  const res = await fetch(`/itemedit/${itemid}.json`);
   if (!res.ok) { alert(await res.text()); return; }
   const data = await res.json();
   currentItemId = itemid;
@@ -321,6 +370,7 @@ async function loadItem(itemid) {
   refreshDatInfo(data);
 
   buildTablesGrid(document.getElementById('editorTables'), data.server);
+  loadedServerState=JSON.parse(JSON.stringify(data.server));
   const listsWrap = document.getElementById('editorLists');
   listsWrap.innerHTML = '';
   renderMods(data.mods || []);
@@ -335,6 +385,9 @@ async function loadItem(itemid) {
   document.getElementById('deleteClearDat').checked = false;
   document.getElementById('deleteItemBtn').disabled = true;
   refreshItemBackups();
+  document.getElementById('editorTables').addEventListener('input', updateDirtySummary, {once:false});
+  document.getElementById('editorTables').addEventListener('change', updateDirtySummary, {once:false});
+  updateDirtySummary(); refreshItemUndoUI();
 }
 
 function refreshDatInfo(data) {
@@ -708,40 +761,41 @@ function recomputeMask(table, field) {
 
 async function saveAll() {
   if (!currentItemId) return;
-  const comment = document.getElementById('editComment').value;
-  const inputs = document.querySelectorAll('#editorTables input[data-table], #editorTables select[data-table]');
-  const byTable = {};
-  for (const inp of inputs) {
-    const t = inp.dataset.table, f = inp.dataset.field;
-    (byTable[t] ||= {})[f] = inp.value;
-  }
-  const maskGroups = document.querySelectorAll('#editorTables [data-mask-group]');
-  for (const g of maskGroups) {
-    const t = g.dataset.table, f = g.dataset.field;
-    let val = 0;
-    if (g.dataset.maskType === 'nibbles') {
-      g.querySelectorAll('input[data-mask-shift]').forEach(inp => { val |= (Number(inp.value) || 0) << Number(inp.dataset.maskShift); });
-    } else {
-      g.querySelectorAll('input[data-mask-bit]').forEach(cb => { if (cb.checked) val |= Number(cb.dataset.maskBit); });
-    }
-    (byTable[t] ||= {})[f] = val;
-  }
-  const status = document.getElementById('saveStatus');
-  status.textContent = 'Saving...';
-  const reports = [];
-  for (const [table, fields] of Object.entries(byTable)) {
-    const res = await fetch('/itemedit/update', {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({item_id: currentItemId, table, fields, comment}),
-    });
-    const j = await res.json();
-    if (!res.ok) { status.textContent = `Error on ${table}: ${j.error || res.statusText}`; return; }
-    reports.push(`${table}: saved (backup ${j.backup})`);
-  }
-  status.textContent = reports.join(' | ');
-  loadItem(currentItemId);
+  const tables=changedTables();
+  if(!Object.keys(tables).length){ updateDirtySummary(); return; }
+  const comment=document.getElementById('editComment').value;
+  const status=document.getElementById('saveStatus'); status.textContent='Saving atomically...';
+  const res=await fetch('/itemedit/save-atomic',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_id:currentItemId,tables,comment})});
+  const j=await res.json();
+  if(!res.ok){ status.textContent='ERROR: '+(j.error||res.statusText); return; }
+  itemUndoStack.push({itemId:currentItemId,backup:j.backup,label:'save item'}); if(itemUndoStack.length>80) itemUndoStack.shift(); itemRedoStack.length=0;
+  const clientText=j.client ? (j.client.ok?' · client DAT synced':(j.client.skipped?' · client DAT unavailable; server saved':' · client DAT warning')) : '';
+  status.textContent=`Saved ${j.tables.length} table(s) · backup ${j.backup}${clientText}`;
+  refreshItemUndoUI();
+  await loadItem(currentItemId);
 }
 
+async function restoreItemHistory(source,target,verb){
+  if(!source.length) return;
+  if(hasUnsavedItemChanges() && !confirm('Discard unsaved changes before changing saved history?')) return;
+  const a=source.pop();
+  const res=await fetch('/itemedit/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:a.backup})});
+  const j=await res.json();
+  if(!res.ok){ source.push(a); alert(j.error||res.statusText); refreshItemUndoUI(); return; }
+  target.push({itemId:a.itemId,backup:j.pre_restore_backup,label:a.label});
+  refreshItemUndoUI();
+  if(Number(currentItemId)===Number(a.itemId)) await loadItem(a.itemId); else await loadItem(a.itemId);
+  document.getElementById('saveStatus').textContent=verb+': '+a.label;
+}
+document.getElementById('itemUndoBtn').onclick=()=>restoreItemHistory(itemUndoStack,itemRedoStack,'Undid');
+document.getElementById('itemRedoBtn').onclick=()=>restoreItemHistory(itemRedoStack,itemUndoStack,'Redid');
+window.addEventListener('keydown',ev=>{
+  if(!(ev.ctrlKey||ev.metaKey)) return;
+  const tag=document.activeElement?.tagName; if(['INPUT','TEXTAREA','SELECT'].includes(tag)) return;
+  if(ev.key.toLowerCase()==='z'){ ev.preventDefault(); ev.shiftKey?restoreItemHistory(itemRedoStack,itemUndoStack,'Redid'):restoreItemHistory(itemUndoStack,itemRedoStack,'Undid'); }
+  else if(ev.key.toLowerCase()==='y'){ ev.preventDefault(); restoreItemHistory(itemRedoStack,itemUndoStack,'Redid'); }
+});
+window.addEventListener('beforeunload',ev=>{ if(hasUnsavedItemChanges()){ ev.preventDefault(); ev.returnValue=''; } });
 let cloneTemplate = null;
 
 async function loadCloneTemplate() {
