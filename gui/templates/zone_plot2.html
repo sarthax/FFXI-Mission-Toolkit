@@ -48,6 +48,7 @@ body.zp2-menu>header{display:block;position:fixed;top:36px;left:0;right:0;z-inde
 .zpanel label.inl{display:inline-flex;justify-content:flex-start;gap:3px;margin:2px 8px 2px 0}
 .zpanel .chips{display:flex;flex-wrap:wrap}
 .zpanel .row{display:flex;gap:4px;flex-wrap:wrap;margin:4px 0;align-items:center}
+#alist div[data-i]{cursor:pointer;padding:1px 3px}#alist div[data-i]:hover{background:#334}#alist .asel-row{background:#665c16;color:#fff;font-weight:600}
 .zpanel .ztabs{padding:0 0 3px;border:0}
 #lpanel .xyzgrid input{width:100% !important}
 #lpanel select{max-width:150px}
@@ -66,7 +67,7 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
   <button id="zmenuBtn" type="button" title="Show/hide the site navigation">&#9776;</button>
   <strong>Zone Editor</strong><span class="chip mono" id="zname"></span>
   <label>Server <select id="srv"><option value="topaz">Topaz</option><option value="dsp">DSP</option></select></label>
-  <label>Zone <select id="zone"></select></label>
+  <label>Zone <input type="search" id="zfilter" placeholder="filter&hellip;" style="width:70px" title="Partial match on zone id or name"><select id="zsort" title="Sort zone list"><option value="id">by #</option><option value="name">by name</option></select><select id="zone"></select></label>
   <label>Instance <select id="inst"><option value="0">All rows</option></select></label>
   <label>Search <input type="text" id="q" placeholder="name / id"></label>
   <span id="zedit-toolbar" style="display:flex;gap:4px;align-items:center">
@@ -102,7 +103,7 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
     <div class="chips"><label class="inl"><span>Labels</span><input type="checkbox" id="showLabels" checked></label><label class="inl"><span>Mobs</span><input type="checkbox" id="showm" checked></label><label class="inl"><span>NPCs</span><input type="checkbox" id="shown" checked></label><label class="inl"><span>Doors / props (_names)</span><input type="checkbox" id="showd" checked></label><label class="inl"><span>Navmesh overlay</span><input type="checkbox" id="shownav" checked></label><label class="inl"><span>Door/prop facing ticks</span><input type="checkbox" id="showDoorFacing" checked></label><label class="inl"><span>Show heading on labels</span><input type="checkbox" id="labelHeading"></label></div>
   </details>
   <details class="zdet" open><summary>Colour &amp; labels</summary>
-    <label>Colour by <select id="mode"><option value="reach">Reachability</option><option value="kind">Kind</option><option value="family">Mob family</option><option value="comp">Nav region</option><option value="height">Elevation</option></select></label><label>Dot size <input type="range" id="dsz" min="0.3" max="4" step="0.1" value="1.2"></label><label>Nearest labels <input type="number" id="nlab" value="40" min="0" max="300"></label>
+    <label>Colour by <select id="mode"><option value="reach">Reachability</option><option value="kind">Kind</option><option value="family">Mob family</option><option value="comp">Nav region</option><option value="height">Elevation</option></select></label><div id="famLegend" class="mono" hidden style="font-size:10px;max-height:150px;overflow:auto;border:1px solid var(--border);border-radius:4px;padding:3px;margin:3px 0"></div><label>Dot size <input type="range" id="dsz" min="0.3" max="4" step="0.1" value="1.2"></label><label>Nearest labels <input type="number" id="nlab" value="40" min="0" max="300"></label>
   </details>
   <details class="zdet"><summary>Mesh</summary>
     <label>Mesh complexity <select id="lod"><option value="live">Live (textured)</option><option value="0">Full</option><option value="1">High (drop &lt;0.75u)</option><option value="2">Medium (&lt;1.5u)</option><option value="3">Low (&lt;3u)</option><option value="obj">Legacy OBJ (full)</option></select></label>
@@ -160,6 +161,8 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
   <div id="tab-add" hidden>
     <div class="muted" style="font-size:10px">Clone a mob group or NPC from anywhere into this zone. Click the map (or drag a result onto it) to set the position.</div>
     <div class="xyzgrid" style="grid-template-columns:1fr 2fr"><label>Kind <select id="ak"><option value="m">Mob (mob_groups)</option><option value="n">NPC (npc_list)</option></select></label><label>Search <input type="text" id="aq" placeholder="name contains&hellip;"></label></div>
+    <div class="xyzgrid" style="grid-template-columns:1fr 1fr 1fr"><label><span>Zone</span><select id="azone"><option value="">any</option></select></label><label><span>Family</span><input type="text" id="afam" placeholder="mobs only"></label><label><span>Sort</span><select id="asort"><option value="name">Name</option><option value="zone">Zone</option><option value="level">Level</option></select></label></div>
+    <div id="anext" class="mono muted" style="font-size:10px"></div>
     <div id="alist" style="max-height:140px;overflow:auto;font:11px monospace;border:1px solid var(--border);padding:3px;margin:3px 0"></div>
     <div id="asel" class="mono" style="font-size:11px;margin:3px 0"></div>
     <label>Name override <input type="text" id="aname" placeholder="(keep source name)"></label>
@@ -244,12 +247,38 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
       <li>The older <b>Mission descriptors</b> previews existing mission mechanics.</li>
     </ul>
 
-    <h3>Add, delete, drops &amp; backups</h3>
+    <h3>Inspector (right panel)</h3>
     <ul style="padding-left:18px;margin:4px 0">
-      <li>Add clones a mob group or NPC and can link the new row to an instance. Repeated placement keeps the source active.</li>
-      <li>Mob drops follow spawn &rarr; group &rarr; dropid &rarr; droplist and report group sharing.</li>
-      <li>Backups can snapshot the whole zone and restore earlier states.</li>
+      <li><b>X / Y / Z / Rot</b> edit the <i>preview</i>; the dirty flag in the bottom bar lights up until you Save. Step / Rot step size the arrow keys, Nudge buttons and [ ] keys. Rot is the FFXI 0-255 byte; the line below it shows direction and compass degrees.</li>
+      <li><b>Facing presets</b> (N&hellip;NW) set the rotation; &#8630;45&deg; / 45&deg;&#8631; / 180&deg; turn relative to the current value.</li>
+      <li><b>Transform gizmo:</b> Move / Rotate handles in the 3D view. <b>Drag facing direction</b> lets you drag in the view to aim; <b>Click mesh to place</b> moves the entity to the clicked mesh point with Y snapped.</li>
+      <li><b>Roam / detection text</b> lists explicit roam/leash radii, family, detection senses and ranges (see below).</li>
+      <li><b>Snap &amp; clipboard</b> snaps to navmesh/mesh and copies or pastes positions. <b>Nudge buttons &amp; keyboard</b> is the on-screen d-pad. <b>Client model preview</b> loads the model lazily.</li>
+      <li><b>Multi-select</b> (Ctrl-click) shows the bulk panel for moving or rotating a group together.</li>
+      <li><b>Animation</b> (NPC/door rows) and <b>Drops</b> (mobs) write to their own tables. A drop table is shared by the whole mob group, so a change affects every spawn of that group; the panel shows how many.</li>
+      <li><b>History</b> lists backups of the selected entity. <b>Delete&hellip;</b> removes the row (and its instance links) after a backup; it never removes a now-empty mob group.</li>
+      <li><b>Bottom bar:</b> Save writes the live DB, Sync writes the checked-in SQL file, Revert drops the preview, Copy SQL copies the statements; the comment is stored in the journal.</li>
     </ul>
+
+    <h3>Add tab: what it does and does not do</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li><b>Finding sources:</b> search by name, or filter by source zone, mob family (partial) and sort by name / zone / level. Click a result to select it (highlighted), then click the map or drag the row onto the map to set the position.</li>
+      <li><b>Mob:</b> inserts one <span class="mono">mob_spawn_points</span> row. If the source group comes from another zone, its <span class="mono">mob_groups</span> row is first cloned into this zone with groupid = highest in this zone + 1 (same pool, levels, drop table). If it is from this zone, the existing group is reused and shares its drops.</li>
+      <li><b>NPC:</b> inserts a copy of the source <span class="mono">npc_list</span> row (look, flags, animation, etc.) with the new id and position.</li>
+      <li><b>Instance:</b> if you pick an instance, a row is also added to <span class="mono">instance_entities</span> so a fixed instance loads it. With &ldquo;None&rdquo; it only joins the zone&rsquo;s normal pool.</li>
+      <li><b>ID choice:</b> the new id is the highest mob/npc id already used in this zone&rsquo;s 4096-id block, plus 1 (shown as &ldquo;Next id&rdquo;). It does not fill gaps, does not look in the client DAT, and does not check other tables. The client only resolves mob/npc slots below 1024 (0x3FF); beyond that the tool warns you and the entity will not work in game.</li>
+      <li><b>Not done:</b> it does not edit the zone Lua, <span class="mono">IDs.lua</span>, mob Lua scripts, <span class="mono">mob_pools</span>, family tables, spawn sets/respawn times or drop tables. A new NPC needs its <span class="mono">scripts/zones/&lt;zone&gt;/npcs/&lt;Name&gt;.lua</span> file or nothing happens when clicked, and a new mob with a new behaviour needs its Lua. Use <b>Backups</b> to undo.</li>
+      <li>Every add is backed up first and the SQL is shown in the message box and journal. Editing <span class="mono">sql/*.sql</span> by hand has no live effect until reimported; the live DB is written immediately.</li>
+    </ul>
+
+    <h3>Quick finds</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li>The zone box filters the zone list by partial name or number; the &ldquo;by #&rdquo; / &ldquo;by name&rdquo; control sorts it. If only one zone matches it is opened.</li>
+      <li><b>Colour by Mob family</b> shows a legend of the families present in the zone with counts.</li>
+    </ul>
+
+    <h3>Backups</h3>
+    <ul style="padding-left:18px;margin:4px 0"><li>Snapshot the whole zone before large sessions; restore rolls back rows to an earlier state.</li></ul>
 
     <h3>Ranges &amp; detection (Layers)</h3>
     <ul style="padding-left:18px;margin:4px 0">
@@ -921,12 +950,22 @@ async function loadLiveMesh(zid, gen) {
 
 // ---- server + zones ----
 let ZL = {zones:[],instances:[]};
+function renderZoneOptions(keep){
+  const prev = keep!==undefined?keep:$('zone').value, q=$('zfilter').value.trim().toLowerCase().replace(/[ _]+/g,' ');
+  let zs=ZL.zones.filter(z=>!q||(z.id+' '+z.name.replace(/_/g,' ')).toLowerCase().includes(q)||String(z.id)===q);
+  zs=[...zs].sort($('zsort').value==='name'?(a,b)=>a.name.localeCompare(b.name):(a,b)=>a.id-b.id);
+  $('zone').innerHTML = zs.map(z=>`<option value="${z.id}">${z.id} ${z.name}${z.nav?'':' (no nav)'}</option>`).join('');
+  if (prev && zs.some(z=>String(z.id)===String(prev))) $('zone').value = prev;
+}
+let zfTimer=null;
+$('zfilter').addEventListener('input',()=>{ clearTimeout(zfTimer); zfTimer=setTimeout(()=>{ const before=$('zone').value; renderZoneOptions(before); if($('zone').value && $('zone').value!==before) $('zone').dispatchEvent(new Event('change')); },300); });
+$('zsort').addEventListener('change',()=>renderZoneOptions());
 async function loadZoneList(){
   const prev = $('zone').value;
   try { const r = await fetch('/zoneplot/zones.json'); if(!r.ok) throw new Error('HTTP '+r.status); ZL = await r.json(); }
   catch(e){ $('viewer-loading').textContent = 'Zone list failed to load: '+e.message+' (check the server console)'; return; }
-  $('zone').innerHTML = ZL.zones.map(z=>`<option value="${z.id}">${z.id} ${z.name}${z.nav?'':' (no nav)'}</option>`).join('');
-  if (prev && ZL.zones.some(z=>String(z.id)===prev)) $('zone').value = prev;  // keep selection across a server switch if that zone id also exists there
+  renderZoneOptions(prev);
+  $('azone').innerHTML='<option value="">any</option>'+[...ZL.zones].sort((a,b)=>a.name.localeCompare(b.name)).map(z=>`<option value="${z.id}">${z.name} (${z.id})</option>`).join('');  // keep selection across a server switch if that zone id also exists there
 }
 try {
   const sr = await (await fetch('/zoneplot/server.json')).json();
@@ -978,7 +1017,7 @@ async function loadZone(){
     if(camera.isOrthographicCamera && Number.isFinite(st.zoom)) camera.zoom=Math.max(.01,st.zoom);
     camera.updateProjectionMatrix(); controls.update();
   } else frameAll();
-  rebuild(); $('viewer-loading').hidden = true;
+  rebuild(); updateFamLegend(); if(typeof aNextId==='function') aNextId(); $('viewer-loading').hidden = true;
   if (Z.obj) await autoLodAndLoad(zid, gen);
   else $('sum').textContent += '\n(no cached visual mesh: py -3 build_zone_visual_cache.py '+zid+')';
   if (Z.has_nav) await loadNav(zid, gen);
@@ -1086,9 +1125,16 @@ function frameSelected(){
 
 // ---- dots ----
 function stateOf(i){ return R ? R.state[i] : 'none'; }
+const familyColor=id=>new THREE.Color().setHSL((((id*0.61803398875)%1)+1)%1,.85,.55);
+function updateFamLegend(){
+  const box=$('famLegend'); if(!box) return; const on=$('mode').value==='family'&&Z; box.hidden=!on; if(!on) return;
+  const m=new Map(); Z.entities.forEach(e=>{ if(e.k==='m'&&e.familyid!==undefined&&!e.zero){ const o=m.get(e.familyid)||{n:e.family||('family '+e.familyid),c:0}; o.c++; m.set(e.familyid,o); } });
+  const rows=[...m.entries()].sort((a,b)=>b[1].c-a[1].c);
+  box.innerHTML=rows.length?rows.map(([id,o])=>`<div><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#${familyColor(id).getHexString()};margin-right:4px"></span>${o.n} <span class="muted">${o.c}</span></div>`).join('')+'<div class="muted">NPCs/doors keep kind colours.</div>':'<div class="muted">No family data for this zone/server.</div>';
+}
 function colorOf(i){ const e=Z.entities[i], m=$('mode').value;
   if (m==='kind') return new THREE.Color(COL[e.k]);
-  if (m==='family'){ if(e.k!=='m'||e.familyid===undefined) return new THREE.Color(COL[e.k]||COL.none); return new THREE.Color().setHSL((((e.familyid*0.61803398875)%1)+1)%1,.85,.55); }
+  if (m==='family'){ if(e.k!=='m'||e.familyid===undefined) return new THREE.Color(COL[e.k]||COL.none); return familyColor(e.familyid); }
   if (m==='comp' && R) return R.comp[i]==null? new THREE.Color(COL.off): hsl(R.comp[i]);
   if (m==='height'){
     const {lo,hi}=heightRange, t=hi>lo?(e.y-lo)/(hi-lo):.5;
@@ -1254,7 +1300,7 @@ renderer.domElement.addEventListener('dblclick',ev=>{ const i=pick(ev); if(i<0) 
 $('zone').onchange=()=>{ $('buildCacheBtn').hidden=true; fillInst(); saveZoneEditorState(); loadZone(); };
 $('inst').onchange=()=>{ if($('ainst').querySelector(`option[value="${$('inst').value}"]`)) $('ainst').value=$('inst').value; saveZoneEditorState(); loadZone(); };
 $('lod').onchange=()=>{ if($('lod').value!=='obj') $('buildCacheBtn').hidden=true; saveZoneEditorState(); Z&&loadZMesh(Z.zid); };
-['showm','shown','showd','mode','dsz'].forEach(id=>$(id).addEventListener('input',()=>{ saveZoneEditorState(); Z&&rebuild(); }));
+['showm','shown','showd','mode','dsz'].forEach(id=>$(id).addEventListener('input',()=>{ saveZoneEditorState(); Z&&rebuild(); updateFamLegend(); }));
 $('nlab').addEventListener('change',saveZoneEditorState);
 $('showLabels').onchange=()=>{ lastLab=0; updateLabels(); };
 $('labelHeading').addEventListener('change',()=>{ saveZoneEditorState(); labels.forEach(l=>{l.element.remove();scene.remove(l);}); labels.clear(); });
@@ -2104,17 +2150,20 @@ $('viewer-container').addEventListener('drop',ev=>{
 // ---- add tab ----
 let aSel=null, aTimer=null;
 function aSelText(kind, row){ return kind==='m' ? `Selected: ${row.name} (zone ${row.zname}, groupid ${row.groupid}, Lv${row.lv})` : `Selected: ${row.pname||row.name} (npcid ${row.npcid}, from ${row.zname})`; }
-async function aSearch(){ const kind=$('ak').value, q=$('aq').value.trim(); if(q.length<2){ $('alist').innerHTML=''; return; }
-  const r=await fetch(`/zoneplot/catalogue.json?kind=${kind}&q=${encodeURIComponent(q)}`); const rows=await r.json();
-  $('alist').innerHTML=rows.map((row,i)=>kind==='m'
-    ? `<div data-i="${i}" draggable="true" title="Drag onto the viewport to place">${row.name} [${row.zname} #${row.groupid}] Lv${row.lv}</div>`
-    : `<div data-i="${i}" draggable="true" title="Drag onto the viewport to place">${row.pname||row.name} [${row.zname} #${row.npcid}]</div>`).join('');
+async function aSearch(){ const kind=$('ak').value, q=$('aq').value.trim(), zf=$('azone').value, fam=$('afam').value.trim();
+  if(q.length<2 && !zf && !fam){ $('alist').innerHTML='<div class="muted">Type 2+ letters, or pick a zone / family.</div>'; $('alist').__rows=[]; return; }
+  const r=await fetch(`/zoneplot/catalogue.json?kind=${kind}&q=${encodeURIComponent(q)}&zone=${zf}&family=${encodeURIComponent(kind==='m'?fam:'')}&sort=${$('asort').value}`); const rows=await r.json();
+  $('alist').innerHTML=(rows.map((row,i)=>kind==='m'
+    ? `<div data-i="${i}" draggable="true" title="Drag onto the viewport to place">${row.name} [${row.zname} #${row.groupid}] Lv${row.lv}${row.family?' · '+row.family:''}</div>`
+    : `<div data-i="${i}" draggable="true" title="Drag onto the viewport to place">${row.pname||row.name} [${row.zname} #${row.npcid}]</div>`).join(''))+(rows.length>=200?'<div class="muted">200 shown -- narrow the filter.</div>':'');
   $('alist').__rows=rows;
-  $('alist').querySelectorAll('div').forEach(d=>{
-    d.onclick=()=>{ aSel=$('alist').__rows[+d.dataset.i]; $('asel').textContent=aSelText(kind,aSel); updateAddMarker(); };
+  $('alist').querySelectorAll('div[data-i]').forEach(d=>{
+    d.onclick=()=>{ aSel=$('alist').__rows[+d.dataset.i]; $('asel').textContent=aSelText(kind,aSel); updateAddMarker(); $('alist').querySelectorAll('.asel-row').forEach(x=>x.classList.remove('asel-row')); d.classList.add('asel-row'); };
     d.addEventListener('dragstart',ev=>{ ev.dataTransfer.effectAllowed='copy'; ev.dataTransfer.setData('text/plain', d.dataset.i); d.classList.add('dragging'); });
     d.addEventListener('dragend',()=>d.classList.remove('dragging'));
   }); }
+async function aNextId(){ if(!Z) return; try{ const j=await (await fetch(`/zoneplot/${Z.zid}/next_id.json`)).json(); $('anext').innerHTML=j.error?'':`Next id: ${j.id} (slot ${j.slot}/1023 · ${j.mobs} mobs + ${j.npcs} npcs in zone)`+(j.warning?` <span style="color:#e74c3c">${j.warning}</span>`:''); }catch(e){} }
+$('azone').onchange=$('afam').oninput=$('asort').onchange=()=>{ clearTimeout(aTimer); aTimer=setTimeout(aSearch,200); };
 $('ak').onchange=()=>{ aSel=null; $('asel').textContent=''; updateAddMarker(); aSearch(); };
 $('aq').addEventListener('input',()=>{ clearTimeout(aTimer); aTimer=setTimeout(aSearch,250); });
 $('aadd').onclick=async()=>{ if(!aSel||!Z){ $('amsg').textContent='Pick a source first.'; return; }
@@ -2123,7 +2172,7 @@ $('aadd').onclick=async()=>{ if(!aSel||!Z){ $('amsg').textContent='Pick a source
   const body={k:kind, zone:Z.zid, src, x:+$('aX').value||0, y:+$('aY').value||0, z:+$('aZ').value||0, r:+$('aR').value||0, name:$('aname').value, comment:$('acomment').value, instance:+$('ainst').value||0};
   const r=await fetch('/zoneplot/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const j=await r.json();
   if(j.error){ $('amsg').textContent='ERROR: '+j.error; return; }
-  $('amsg').textContent=`Added as id ${j.id} (backup ${j.backup})${j.instance?` -- linked to instance ${j.instance}`:''}.\n`+j.sql;
+  $('amsg').textContent=`Added as id ${j.id} (backup ${j.backup})${j.instance?` -- linked to instance ${j.instance}`:''}.`+(j.warning?`\nWARNING: ${j.warning}`:'')+'\n'+j.sql; aNextId();
   lastTouched={k:kind,id:j.id}; markDbModified(kind,j.id); recordUndo(`add ${j.id}`,j.backup,entityKey(kind,j.id));
   addMarker.visible=false; addHeadingLine.visible=false; addGhostLabel.visible=false;
   const repeat=$('repeatAdd').checked;

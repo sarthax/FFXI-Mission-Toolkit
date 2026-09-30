@@ -7818,9 +7818,18 @@ async def zoneplot_delete(request: Request):
 
 
 @app.get("/zoneplot/catalogue.json")
-def zoneplot_catalogue(kind: str, q: str = ""):
+def zoneplot_catalogue(kind: str, q: str = "", zone: str = "", family: str = "", sort: str = "name"):
     import zone_edit
-    return JSONResponse(zone_edit.catalogue(kind, q))
+    return JSONResponse(zone_edit.catalogue(kind, q, zone=zone, family=family, sort=sort))
+
+
+@app.get("/zoneplot/{zid}/next_id.json")
+def zoneplot_next_id(zid: int):
+    import zone_edit
+    try:
+        return JSONResponse(zone_edit.next_id_info(zid))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
 
 
 @app.get("/zoneplot/{eid}/drops.json")
