@@ -101,6 +101,7 @@
   <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">
     <button id="bulk-preview" type="button">Preview bulk</button>
     <button id="bulk-save" type="button" disabled>Save bulk to live DB</button>
+    <button id="bulk-sync" type="button">Sync selection to SQL files</button>
     <button id="bulk-revert" type="button" disabled>Revert bulk preview</button>
     <button id="bulk-clear" type="button">Clear multi-select</button>
   </div>
@@ -1050,6 +1051,18 @@ async function saveBulkTransform(){
 }
 $('bulk-preview').onclick=previewBulkTransform;
 $('bulk-save').onclick=saveBulkTransform;
+$('bulk-sync').onclick=async()=>{
+  if(multiSelected.size<2){ $('bulk-msg').textContent='Select at least two entities first.'; return; }
+  const results=[];
+  for(const i of multiSelected){
+    const e=Z?.entities[i]; if(!e) continue;
+    const r=await fetch('/zoneplot/sync_sql/entity',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:e.k,id:e.id})});
+    const j=await r.json();
+    if(j.error) results.push(`${e.id}: ERROR ${j.error}`);
+    else { markSqlSynced(e.k,e.id); results.push(`${e.id}: ${j.action} ${j.file}`); }
+  }
+  $('bulk-msg').textContent=results.join('\n');
+};
 $('bulk-revert').onclick=restorePreviewFromOrig;
 $('bulk-clear').onclick=()=>{ if(isTransformDirty()&&!confirm('Discard unsaved preview and clear multi-selection?')) return; restorePreviewFromOrig(); if(selected>=0){ multiSelected.clear(); multiSelected.add(selected); } syncMultiUI(); rebuild(); };
 let dropsState=null;
