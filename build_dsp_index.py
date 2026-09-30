@@ -43,10 +43,12 @@ from pathlib import Path
 import build_database
 import build_sql_index as sqlidx
 import settings
+from workbench.core.services.server_catalog_identity import sync_server_catalog_entities
 
 TOOLS_ROOT = Path(__file__).parent
 TOPAZ_ROOT = settings.get_topaz_root()
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
+WORKBENCH_DB = TOOLS_ROOT / "workbench.db"
 DSP_ROOT = settings.get_dsp_root()
 DSP_SQL_DIR = (DSP_ROOT / "sql") if DSP_ROOT else None
 DSP_SCRIPTS_DIR = (DSP_ROOT / "scripts" / "zones") if DSP_ROOT else None
@@ -538,6 +540,7 @@ def main():
     con = sqlite3.connect(DB_PATH)
     init_db(con)
     build_all(con)
+    sync_server_catalog_entities(con, WORKBENCH_DB)
     con.close()
 
 

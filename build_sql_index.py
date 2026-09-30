@@ -29,10 +29,12 @@ import sys
 from pathlib import Path
 
 import settings
+from workbench.core.services.server_catalog_identity import sync_server_catalog_entities
 
 TOOLS_ROOT = Path(__file__).parent
 TOPAZ_ROOT = settings.get_topaz_root()
 DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
+WORKBENCH_DB = TOOLS_ROOT / "workbench.db"
 LSB_ROOT = TOOLS_ROOT / "LandSandBoat"
 SQL_DIR = LSB_ROOT / "sql"
 
@@ -855,6 +857,7 @@ def main():
 
     if not args.zero_position and not args.unregistered:
         build_all(con)
+        sync_server_catalog_entities(con, WORKBENCH_DB)
     if args.zero_position:
         zero_position_report(con, args.zero_position)
     if args.unregistered:
