@@ -74,6 +74,12 @@ server's permission gate. Every write is backed up first and journalled to
   #itemCompareResult .compare-add { color:#a5d6a7; }
   #itemCompareResult .compare-remove { color:#ef9a9a; }
   #itemCompareResult .compare-change { color:#ffe082; }
+  #clientRecordInspector .client-record-hero { display:flex; gap:14px; align-items:flex-start; padding:8px; border:1px solid var(--border); border-radius:6px; margin-bottom:8px; }
+  #clientRecordInspector .client-icon { width:64px; height:64px; image-rendering:auto; object-fit:contain; border:1px solid var(--border); border-radius:4px; background:rgba(0,0,0,.18); }
+  #clientRecordInspector .client-description { white-space:pre-wrap; font-size:11px; margin-top:4px; max-width:820px; }
+  #clientRecordInspector .client-record-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:8px; }
+  #clientRecordInspector .client-record-section { border:1px solid var(--border); border-radius:5px; padding:7px; }
+  #clientRecordInspector .client-record-section h4 { margin:0 0 5px; font-size:11px; text-transform:uppercase; opacity:.7; }
 </style>
 
 <div id="editorWrap" style="display:none; margin-top:24px;">
@@ -93,6 +99,18 @@ server's permission gate. Every write is backed up first and journalled to
 
   <div id="datInfoCard" class="edit-card wide" style="margin-top:8px; display:none;">
     <h3>Client DAT <span class="hint">the real client-side .DAT record backing this item, and where edits to it get written</span></h3>
+    <div id="clientRecordInspector">
+      <div class="client-record-hero">
+        <img id="clientItemIcon" class="client-icon" alt="Item icon" style="display:none;">
+        <div style="min-width:0;flex:1;">
+          <div id="clientDisplayName" style="font-size:16px;font-weight:600;">--</div>
+          <div id="clientDisplayAliases" class="muted" style="font-size:11px;"></div>
+          <div id="clientDescription" class="client-description muted"></div>
+        </div>
+      </div>
+      <div id="clientRecordGrid" class="client-record-grid"></div>
+      <div id="clientRecordUnresolved" class="muted" style="font-size:10px;margin-top:6px;"></div>
+    </div>
     <div class="field-row"><label>ROM path</label><span class="mono" id="datRomPath">--</span></div>
     <div class="field-row"><label>Category / record#</label><span class="mono" id="datCatIdx">--</span></div>
     <div class="field-row"><label>Format</label><span class="mono" id="datFormat">--</span></div>
@@ -712,6 +730,7 @@ async function loadItem(itemid, remember=true) {
   renderItemStatus(data);
   renderItemDiagnostics(data.comparison, data.validation);
   refreshDatInfo(data);
+  await refreshClientRecordInspector(itemid);
 
   buildTablesGrid(document.getElementById('editorTables'), data.server);
   loadedServerState=JSON.parse(JSON.stringify(data.server));
@@ -736,6 +755,64 @@ async function loadItem(itemid, remember=true) {
   document.getElementById('editorTables').onchange=updateDirtySummary;
   updateDirtySummary(); refreshItemUndoUI();
   return true;
+}
+
+function htmlEsc(v){
+  return String(v ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function inspectorRows(rows){
+  return rows.filter(r=>r[1]!==undefined && r[1]!==null && r[1]!=='').map(([k,v])=>
+    '<div class="field-row"><label>'+htmlEsc(k)+'</label><span class="mono">'+htmlEsc(Array.isArray(v)?v.join(', '):(typeof v==='object'?JSON.stringify(v):v))+'</span></div>'
+  ).join('');
+}
+async function refreshClientRecordInspector(itemid){
+  const grid=document.getElementById('clientRecordGrid');
+  const unresolved=document.getElementById('clientRecordUnresolved');
+  const icon=document.getElementById('clientItemIcon');
+  const name=document.getElementById('clientDisplayName');
+  const aliases=document.getElementById('clientDisplayAliases');
+  const desc=document.getElementById('clientDescription');
+  grid.innerHTML=''; unresolved.textContent=''; icon.style.display='none'; icon.removeAttribute('src');
+  name.textContent='--'; aliases.textContent=''; desc.textContent='';
+  const r=await fetch('/itemedit/'+itemid+'/client-record.json');
+  const j=await r.json();
+  if(!r.ok || !j.available){
+    unresolved.textContent='Client record unavailable: '+(j.error||j.reason||r.statusText);
+    return;
+  }
+  const d=j.record||{}, im=j.icon||{};
+  name.textContent=d.name||('(client item '+itemid+')');
+  aliases.textContent=[d.singular&&('singular: '+d.singular),d.plural&&('plural: '+d.plural),d.name_jp&&('JP: '+d.name_jp)].filter(Boolean).join(' · ');
+  desc.textContent=d.description||d.description_jp||'';
+  if(im.available){
+    icon.src='/itemedit/'+itemid+'/icon.png?record='+encodeURIComponent(j.record_sha256||'');
+    icon.style.display='';
+    icon.title=(im.format||'icon')+' · '+im.width+'×'+im.height+' · '+im.bit_count+' bpp · '+im.size+' bytes';
+    icon.onerror=()=>{icon.style.display='none';};
+  }
+  const sections=[
+    ['Identity / display',[
+      ['item id',d.id],['category',d.category],['client type',d.type_name+' ('+d.type+')'],['article metadata',d.article],
+      ['stack',d.stack],['flags',d.flags_decoded?.length?d.flags_decoded:('raw '+d.flags)],['resource id',d.resource_id],
+      ['valid targets',d.targets_decoded?.length?d.targets_decoded:('raw '+d.targets)]
+    ]],
+    ['Equipment',[
+      ['level',d.level],['item level',d.item_level],['superior level',d.superior_level],['slots',d.slots_decoded],
+      ['jobs',d.jobs_list],['races raw',d.races],['shield size',d.shield_size],
+      ['max charges',d.max_charges],['cast time raw',d.cast_time],['use delay',d.use_delay],['reuse delay',d.reuse_delay]
+    ]],
+    ['Weapon / puppet',[
+      ['damage',d.dmg],['delay',d.delay],['DPS raw',d.dps],['skill',d.skill],['damage type/raw kind',d.kind],
+      ['jug size',d.jug_size],['base item id',d.base_item_id],['puppet slot',d.puppet_slot],['element capacity',d.element_charge_decoded]
+    ]],
+    ['Record metadata',[
+      ['ROM path',d.dat_ui],['record index',d.record_index],['layout',j.layout],['format',d.format],
+      ['stride',j.record_size+' bytes'],['icon offset','0x'+Number(j.icon_offset).toString(16).toUpperCase()],
+      ['icon bytes',d.icon_size],['record SHA-256',j.record_sha256]
+    ]]
+  ];
+  grid.innerHTML=sections.map(([title,rows])=>'<div class="client-record-section"><h4>'+htmlEsc(title)+'</h4>'+inspectorRows(rows)+'</div>').join('');
+  unresolved.textContent=j.unresolved_note||'';
 }
 
 function refreshDatInfo(data) {
