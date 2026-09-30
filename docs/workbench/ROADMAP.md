@@ -132,6 +132,13 @@ First active foundation milestone:
 - Record branch/PR workflow.
 - Record current audit findings and unresolved items.
 
+### 2026-09-30 Feature Trace implementation path
+- [x] Resolve exact entity IDs and unique entity-name matches across SQL/LSB/Topaz/DSP/client catalog representations instead of treating normal multi-source identity as unresolved search ambiguity.
+- [x] Add an Implementation Path view that preserves each source/provider branch and recursively follows exact provider-native wiring such as instance membership and mob spawn → group → pool without manufacturing canonical graph edges.
+- [x] Automatically use an explicit canonical entity mapping when entity_identifiers resolves one unique graph root, preserving runtime/semantic traversal where available.
+- [x] Remove the silent Absolute Virtue dependency-map fallback from the normal Feature Trace page; canonical dependency visualization now waits for a real mapped root and clearly distinguishes canonical graph coverage from catalog-backed implementation wiring.
+- [ ] Continue broadening canonical identity ingestion/bridging so more catalog-backed entities also gain runtime/semantic graph connectivity without relying on presentation-time identity assumptions.
+
 ### 2026-09-30 Entity implementation dossier
 - [x] Preserve Entity Profile as the canonical cross-source evidence bridge while adding a synthesized dossier layer: evidence-presence summary, concrete needs-attention signals, instance memberships, SQL/Lua wiring chain, direct Behavior Inspector handoff, Feature Trace/Capture/Dialog/Event links, and unified client-defined + runtime-observed CSID/dialog wiring.
 - [x] Keep the existing detailed model, mob/group/pool, drops, capture observations, SQL references, Lua references, wiki references, and field-provenance tables intact below the summary instead of replacing them with an aggregate score.
