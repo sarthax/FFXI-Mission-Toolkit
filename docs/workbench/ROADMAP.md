@@ -132,6 +132,10 @@ First active foundation milestone:
 - Record branch/PR workflow.
 - Record current audit findings and unresolved items.
 
+### 2026-09-30 Events / CSID wiring dossier
+- [x] Upgrade Events / CSID from a client-only decompile view into a runtime-to-implementation dossier: decimal/hex CSID browsing, direct entity links, actor-specific server-reference counts, exact capture observation counts, full dialog/message drill-down, server source excerpts, Lua handler/API-call inventory with Binding Reference links, and explicitly non-authoritative copyable Lua scaffolding derived from the selected CSID plus observed option/parameter evidence.
+- [ ] Follow-up QOL: parameter/work-variable visualization and eventUpdate/option flow graphs once additional real CSID samples justify a generic representation; do not assign semantics to work variables without evidence.
+
 ### Phase 1 — Canonical evidence and feature graph (P0)
 - [x] Formalize Source/Snapshot.
 - [x] Formalize Entity/Relationship.
