@@ -165,6 +165,7 @@ record there, then inserts matching rows server-side at that same id.</p>
   <button onclick="startDraft()">Load into editor</button>
 </div>
 <div id="createStatus" class="muted"></div>
+<div id="createPreview" class="mono" style="margin:6px 0 10px;padding:7px;border:1px solid var(--border);border-radius:4px;font-size:11px;white-space:pre-wrap;"></div>
 
 <div id="draftWrap" style="display:none; margin-top:16px;">
   <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
@@ -800,6 +801,7 @@ async function loadCloneTemplate() {
   document.getElementById('newName').value = j.entry.name || '';
   const modCount = (j.mods || []).length + (j.pet_mods || []).length + (j.latents || []).length;
   status.textContent = `Template loaded from item ${j.source_item_id} (${j.entry.name}) -- ${modCount} mod/latent row(s) available to copy. Review the fields below, then "Load into editor".`;
+  refreshCreatePreview();
 }
 
 // entry-name (item_dat_tools/create_item convention) for each editable column, per table --
@@ -820,6 +822,27 @@ const COLUMN_TO_ENTRY = {
 const TYPE_TABLES_JS = {0: [], 1: ['item_usable'], 3: ['item_equipment'], 4: ['item_equipment', 'item_weapon'], 5: ['item_puppet'], 6: ['item_furnishing']};
 
 let draftMode = false, draftCategory = null, draftItemType = null;
+async function refreshCreatePreview(){
+  const category=document.getElementById('newCategory').value, type=Number(document.getElementById('newType').value);
+  const box=document.getElementById('createPreview'); box.textContent='Checking current free-slot candidate…';
+  const r=await fetch('/itemedit/create-preview.json?category='+encodeURIComponent(category)); const j=await r.json();
+  if(!r.ok){ box.textContent='Preview unavailable: '+(j.error||r.statusText); return; }
+  const tables=['item_basic',...(TYPE_TABLES_JS[type]||[])];
+  let effects={mods:0,pet_mods:0,latents:0};
+  if(cloneTemplate){ const s=document.getElementById('cloneEffectScope').value;
+    if(['mods','mods_pet','all'].includes(s)) effects.mods=(cloneTemplate.mods||[]).length;
+    if(['mods_pet','all'].includes(s)) effects.pet_mods=(cloneTemplate.pet_mods||[]).length;
+    if(s==='all') effects.latents=(cloneTemplate.latents||[]).length;
+  }
+  box.textContent='CURRENT CANDIDATE (not reserved; revalidated at Save)\n'+
+    'item id '+j.candidate_item_id+' · DAT '+j.dat_ui+' record '+j.record_index+' · target '+j.target+'\n'+
+    'SQL rows: '+tables.join(', ')+'\n'+
+    'effects: '+effects.mods+' mods · '+effects.pet_mods+' pet mods · '+effects.latents+' latents\n'+
+    'destination: '+j.destination;
+}
+document.getElementById('newCategory').addEventListener('change',refreshCreatePreview);
+document.getElementById('newType').addEventListener('change',refreshCreatePreview);
+document.getElementById('cloneEffectScope').addEventListener('change',refreshCreatePreview);
 
 function buildDraftRow(table, name) {
   const row = {};
@@ -849,6 +872,7 @@ function startDraft() {
   document.getElementById('draftSaveStatus').textContent = '';
   document.getElementById('createStatus').textContent =
     `Draft loaded for ${category} (type ${item_type}) -- review the fields below, nothing is saved yet.`;
+  refreshCreatePreview();
 }
 
 // Step 2 of 2: the only place that actually calls /itemedit/create (allocates the real DAT
