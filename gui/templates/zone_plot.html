@@ -235,7 +235,7 @@ function switchProjection(mode,preserveView=true){
   const oldPos=camera.position.clone(), oldTarget=controls.target.clone();
   controls.dispose(); camera=mode==='orthographic'?orthoCamera:perspectiveCamera;
   if(preserveView){ camera.position.copy(oldPos); }
-  controls=new OrbitControls(camera,renderer.domElement); configureControls(); controls.target.copy(oldTarget);
+  controls=new OrbitControls(camera,renderer.domElement); configureControls(); controls.target.copy(oldTarget); controls.addEventListener('end',saveZoneEditorState);
   $('projection').value=mode; updateCameraProjection(); updateZoomSpeed(); repanSpeed(); controls.update();
 }
 function cameraPreset(name){
@@ -533,7 +533,15 @@ try {
   if (!sr.dsp_configured) $('srv').querySelector('option[value=dsp]').textContent = 'DSP (not configured)';
 } catch(e){ console.warn('server.json', e); }
 await loadZoneList();
-$('zone').value = 77;
+const savedUiState=loadZoneEditorState();
+$('zone').value = savedUiState?.zone && ZL.zones.some(z=>String(z.id)===String(savedUiState.zone)) ? savedUiState.zone : 77;
+for(const [id,key] of [['lod','lod'],['mode','mode'],['opac','opacity'],['dsz','dotSize'],['nlab','labels']]){
+  if(savedUiState?.[key]!==undefined && $(id)) $(id).value=String(savedUiState[key]);
+}
+for(const [id,key] of [['showm','showm'],['shown','shown'],['showd','showd'],['shownav','shownav']]){
+  if(savedUiState?.[key]!==undefined && $(id)) $(id).checked=!!savedUiState[key];
+}
+if(savedUiState?.projection) switchProjection(savedUiState.projection,false);
 function fillInst(){ const zid=+$('zone').value; const opts=ZL.instances.filter(i=>i.zone===zid).map(i=>`<option value="${i.id}">${i.id} ${i.instance_name||i.name}</option>`).join('');
   $('inst').innerHTML='<option value="0">All rows</option>'+opts;
   $('ainst').innerHTML='<option value="0">None (general zone pool)</option>'+opts; }
@@ -563,7 +571,13 @@ async function loadZone(){
   $('zname').textContent = Z.zone;
   await computeReach();
   if (gen!==loadGen) return;
-  frameAll(); rebuild(); $('viewer-loading').hidden = true;
+  const st=loadZoneEditorState();
+  if(st && String(st.zone)===String(zid) && Array.isArray(st.camera) && Array.isArray(st.target)){
+    applyVec(camera.position,st.camera); applyVec(controls.target,st.target);
+    if(camera.isOrthographicCamera && Number.isFinite(st.zoom)) camera.zoom=Math.max(.01,st.zoom);
+    camera.updateProjectionMatrix(); controls.update();
+  } else frameAll();
+  rebuild(); $('viewer-loading').hidden = true;
   if (Z.obj) await autoLodAndLoad(zid, gen);
   else $('sum').textContent += '\n(no cached visual mesh: py -3 build_zone_visual_cache.py '+zid+')';
   if (Z.has_nav) await loadNav(zid, gen);
@@ -729,13 +743,16 @@ renderer.domElement.addEventListener('mousemove',ev=>{ const i=pick(ev); if(i!==
 let down=null; renderer.domElement.addEventListener('pointerdown',ev=>down=[ev.clientX,ev.clientY]);
 renderer.domElement.addEventListener('pointerup',async ev=>{ if(!down||Math.hypot(ev.clientX-down[0],ev.clientY-down[1])>4) return; const i=pick(ev); if(i<0) return;
   if (ev.shiftKey){ const e=Z.entities[i]; anchor={x:e.x,y:e.y,z:e.z}; await computeReach(); rebuild(); } else select(i,false); });
-$('zone').onchange=()=>{ $('buildCacheBtn').hidden=true; fillInst(); loadZone(); };
-$('inst').onchange=()=>{ if($('ainst').querySelector(`option[value="${$('inst').value}"]`)) $('ainst').value=$('inst').value; loadZone(); };
-$('lod').onchange=()=>{ if($('lod').value!=='obj') $('buildCacheBtn').hidden=true; Z&&loadZMesh(Z.zid); };
-['showm','shown','showd','mode','dsz'].forEach(id=>$(id).addEventListener('input',()=>Z&&rebuild()));
+$('zone').onchange=()=>{ $('buildCacheBtn').hidden=true; fillInst(); saveZoneEditorState(); loadZone(); };
+$('inst').onchange=()=>{ if($('ainst').querySelector(`option[value="${$('inst').value}"]`)) $('ainst').value=$('inst').value; saveZoneEditorState(); loadZone(); };
+$('lod').onchange=()=>{ if($('lod').value!=='obj') $('buildCacheBtn').hidden=true; saveZoneEditorState(); Z&&loadZMesh(Z.zid); };
+['showm','shown','showd','mode','dsz'].forEach(id=>$(id).addEventListener('input',()=>{ saveZoneEditorState(); Z&&rebuild(); }));
+$('nlab').addEventListener('change',saveZoneEditorState);
 $('q').addEventListener('input',()=>Z&&rebuild());
-$('shownav').onchange=()=>{ if(navMesh) navMesh.visible=$('shownav').checked; };
-$('opac').oninput=()=>meshObj&&meshObj.traverse(c=>{ if(c.isMesh) c.material.opacity=+$('opac').value; });
+$('shownav').onchange=()=>{ if(navMesh) navMesh.visible=$('shownav').checked; saveZoneEditorState(); };
+$('opac').oninput=()=>{ meshObj&&meshObj.traverse(c=>{ if(c.isMesh) c.material.opacity=+$('opac').value; }); saveZoneEditorState(); };
+document.querySelectorAll('[data-cam]').forEach(b=>b.onclick=()=>cameraPreset(b.dataset.cam));
+$('projection').onchange=()=>{ switchProjection($('projection').value); saveZoneEditorState(); };
 $('buildCacheBtn').onclick=async()=>{
   const zid=+$('zone').value, btn=$('buildCacheBtn');
   btn.disabled=true; btn.textContent='Building…';
@@ -750,13 +767,16 @@ $('buildCacheBtn').onclick=async()=>{
 };
 $('reachbtn').onclick=async()=>{ await computeReach(); rebuild(); };
 $('clran').onclick=async()=>{ anchor=null; await computeReach(); rebuild(); };
-window.addEventListener('resize',()=>{ const w=container.clientWidth,h=container.clientHeight; camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h); lr.setSize(w,h); });
+controls.addEventListener('end',saveZoneEditorState);
+window.addEventListener('resize',()=>{ const w=container.clientWidth,h=container.clientHeight; updateCameraProjection(); renderer.setSize(w,h); lr.setSize(w,h); });
 const liveClock = new THREE.Clock();
 (function loop(){ requestAnimationFrame(loop); controls.update(); updateLabels(); updateHeadingArrow(); updateSelectionVisual(); updateCompass();
   if (waterMaterials.length>0){ const t=liveClock.getElapsedTime(); for(const m of waterMaterials) m.uniforms.time.value=t; }
   renderer.render(scene,camera); lr.render(scene,camera); })();
 const qz=new URLSearchParams(location.search); if(qz.get('zone')) $('zone').value=qz.get('zone');
-fillInst(); loadZone();
+fillInst();
+if(!qz.get('zone') && savedUiState?.instance && $('inst').querySelector(`option[value="${savedUiState.instance}"]`)) $('inst').value=String(savedUiState.instance);
+loadZone();
 
 // ---- generator descriptors (see build_plot_descriptors.py) ----
 let DESC = []; try { DESC = await (await fetch('/zoneplot/descriptors.json')).json(); } catch(e){ console.warn('descriptors', e); }
