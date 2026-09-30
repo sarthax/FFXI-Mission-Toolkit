@@ -80,6 +80,9 @@ def main():
 
     graph_entity.execute("CREATE TABLE entity_identifiers (entity_id TEXT, identifier_type TEXT, identifier_value TEXT)")
     graph_entity.execute("INSERT INTO entity_identifiers VALUES ('npc:zone75fixture','mobid',?)",(str(zone75_mobid),))
+    # Unrelated domains can reuse the same numeric value; they must not make entity identity
+    # ambiguous when identifier_type distinguishes the namespace.
+    graph_entity.execute("INSERT INTO entity_identifiers VALUES ('item:numeric-collision','itemid',?)",(str(zone75_mobid),))
     path_mapped=feature_trace.entity_implementation_path(graph_entity,con,str(zone75_mobid))
     assert path_mapped["canonical_root"]=="npc:zone75fixture",path_mapped
     assert path_mapped["canonical_mapped"] is True,path_mapped
