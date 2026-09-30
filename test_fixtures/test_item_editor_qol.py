@@ -153,6 +153,20 @@ def main():
     assert "Validation warnings:" in template
 
 
+    # Full client Item DAT record inspector: embedded icon preview and source-backed fields.
+    assert "def client_record_inspector(item_id: int) -> dict:" in item_dat
+    assert "def item_icon_png(item_id: int)" in item_dat
+    assert "def bitmap_a_to_png(raw: bytes)" in item_dat
+    assert "icon_sha256" in item_dat
+    assert '"shield_size"' in item_dat and '"base_item_id"' in item_dat and '"element_charge"' in item_dat
+    assert '@app.get("/itemedit/{item_id}/client-record.json")' in gui
+    assert '@app.get("/itemedit/{item_id}/icon.png")' in gui
+    assert 'id="clientRecordInspector"' in template
+    assert 'id="clientItemIcon"' in template
+    assert "async function refreshClientRecordInspector(itemid)" in template
+    assert "await refreshClientRecordInspector(itemid)" in template
+    assert "Only source-confirmed fields are named here" in item_dat
+
     # Editing/presentation QOL: mode switching, logical grouping, decoded summaries,
     # field help, and staged item-to-item field/effect comparison stay presentation-only.
     assert 'id="itemEditorMode"' in template
