@@ -356,7 +356,7 @@ def main():
     assert 'class="dense-panel"' in model_html
     assert 'class="dense-toolbar"' in model_html
 
-    env.get_template("zone_view3d.html")
+    capture_env.get_template("zone_view3d.html")
     zone_view3d_template=(TEMPLATES/"zone_view3d.html").read_text(encoding="utf-8")
     assert "{% block shell_mode %}dense{% endblock %}" in zone_view3d_template
     assert "{% block main_class %}zone-view3d-page{% endblock %}" in zone_view3d_template
