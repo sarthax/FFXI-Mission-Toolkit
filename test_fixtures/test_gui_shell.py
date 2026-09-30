@@ -128,6 +128,8 @@ def main():
     assert next(section for section in ocr_run["sections"] if section["active"])["label"] == "YouTube OCR"
 
     captures = next(workspace for workspace in WORKSPACES if workspace["name"] == "Captures")
+    assert next(section for section in captures["sections"] if section["href"] == "/captures/search")["label"] == "Evidence Search"
+    assert next(section for section in captures["sections"] if section["href"] == "/captures/query")["label"] == "Data Explorer"
     assert {section["label"] for section in captures["sections"]}.isdisjoint({"Path Plot", "All Paths"})
 
     viewer = context_for("/zones/42/view3d_all")
@@ -338,6 +340,57 @@ def main():
     assert re.search(r'class="workspace-link active"\s+href="/captures"', captures_html)
     assert 'href="/captures/plot"' not in captures_html
     assert 'href="/captures/plot_all"' not in captures_html
+
+    data_explorer_html = render(
+        "capture_query.html", "/captures/query",
+        table="capture_raw_packets",
+        dataset={
+            "label": "Raw packets",
+            "description": "Canonical raw packet bytes with source provenance.",
+        },
+        dataset_groups=[
+            {
+                "label": "Protocol & Raw Evidence",
+                "datasets": [
+                    {
+                        "table": "capture_raw_packets",
+                        "label": "Raw packets",
+                        "description": "Canonical raw packet bytes.",
+                    },
+                ],
+            },
+            {
+                "label": "Battle & Actions",
+                "datasets": [
+                    {
+                        "table": "capture_actions",
+                        "label": "Battle actions",
+                        "description": "Canonical action observations.",
+                    },
+                ],
+            },
+        ],
+        capture_id="", q="",
+        cols=["capture_id", "seq", "ts", "direction", "opcode", "raw_hex", "source_file"],
+        display_cols=["capture_id", "seq", "ts", "direction", "opcode", "source_file"],
+        rows=[{
+            "capture_id": 7,
+            "seq": 42,
+            "ts": "2026-09-30T12:00:00",
+            "direction": "incoming",
+            "opcode": "0x037",
+            "raw_hex": "37304E00",
+            "source_file": "incoming/0x037.log",
+        }],
+        page=1, total=1, total_pages=1,
+    )
+    assert "Capture Data Explorer" in data_explorer_html
+    assert "Evidence Search" in data_explorer_html
+    assert "Protocol &amp; Raw Evidence" in data_explorer_html
+    assert "Battle &amp; Actions" in data_explorer_html
+    assert "Raw row / provenance" in data_explorer_html
+    assert "7 columns" in data_explorer_html
+    assert "/captures/7/packets/42" in data_explorer_html
     capture_detail_template = (TEMPLATES / "capture_detail.html").read_text(encoding="utf-8")
     assert "/captures/plot?capture_id={{ detail.capture_id }}" in capture_detail_template
     assert "/captures/plot_all?capture_id={{ detail.capture_id }}" in capture_detail_template

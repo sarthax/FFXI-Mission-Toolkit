@@ -1,3 +1,15 @@
+## 2026-09-30 — Capture Data Explorer foundation
+
+- Reframed /captures/query from a raw physical-table dump into a dataset-aware Capture Data Explorer.
+- The 18 existing capture datasets are grouped by investigative purpose: Entities & Spatial, Battle & Actions, Events & Dialogue, Items & Progression, Protocol & Raw Evidence, Provenance & Integrity, and Capture Metadata.
+- Each dataset now has a human-readable label/description and curated first-glance columns instead of rendering every database column horizontally.
+- Complete physical rows remain available under per-result Raw row / provenance drill-down, preserving low-level forensic access and export fidelity.
+- Raw packet rows link directly to Packet Viewer; entity-bearing rows link to Entity Profile; rows retain Capture/Timeline drill-down.
+- Result page size is reduced from 200 to 100 because each result is now an evidence card rather than an ultra-wide table row.
+- Capture navigation now distinguishes Evidence Search (cross-capture discovery) from Data Explorer (deep dataset/table inspection).
+- CSV export remains based on the complete physical dataset and existing filters; no capture schema or ingestion semantics changed.
+- Next Capture UX slice: modular Evidence Search framework, migrating Events/Dialogue and Raw Packets into reusable modules before adding Battle, Vendor, Crafting, Entity, Items/KIs and Spatial modules.
+
 ## 2026-09-30 — Bulk Packet Decode workbench routing fix
 
 - Fixed Packet Tools' Bulk Decode action so it opens the modern coordinated Packet Viewer / Decoder in bulk mode instead of the legacy standalone bulk page.

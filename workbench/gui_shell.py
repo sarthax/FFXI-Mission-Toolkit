@@ -139,8 +139,8 @@ WORKSPACES = (
         "sections": (
             {"label": "Library", "href": "/captures"},
             {"label": "Import", "href": "/captures/new"},
-            {"label": "Search", "href": "/captures/search"},
-            {"label": "Query", "href": "/captures/query"},
+            {"label": "Evidence Search", "href": "/captures/search"},
+            {"label": "Data Explorer", "href": "/captures/query"},
             {"label": "YouTube OCR", "href": "/ocr"},
             {"label": "Help / Supported Formats", "href": "/captures/help"},
         ),

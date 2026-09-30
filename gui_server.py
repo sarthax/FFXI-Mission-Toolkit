@@ -4473,30 +4473,143 @@ SQL_TABLES = {
 # thing to drift out of sync with build_capture_index.py's own init_db(), the same class of bug
 # this project has already hit more than once with sql_*/lsb_*/topaz_* schema assumptions.
 CAPTURE_QUERY_TABLES = {
-    "capture_npc_entries": {"id_col": "entity_id", "name_col": "name"},
-    "capture_npc_history": {"id_col": "entity_id", "name_col": None},
-    "capture_npc_path": {"id_col": "entity_id", "name_col": None},
-    "capture_actions": {"id_col": "actor", "name_col": "name"},
-    "capture_hp_events": {"id_col": None, "name_col": "mob_name"},
-    "capture_events": {"id_col": "entity_id", "name_col": "entity_name"},
-    "capture_ki_events": {"id_col": "keyitem_id", "name_col": "keyitem_name"},
-    "capture_eventview": {"id_col": "entity_id", "name_col": None},
-    "capture_level_range": {"id_col": "entity_id", "name_col": "name"},
-    "capture_attack_delay": {"id_col": None, "name_col": "mob_name"},
-    "capture_pc_path": {"id_col": None, "name_col": None},
-    "capture_raw_packets": {"id_col": None, "name_col": "opcode"},
-    "capture_caplog_chat": {"id_col": None, "name_col": "text"},
-    "capture_tags": {"id_col": None, "name_col": "tag"},
-    "capture_source_files": {"id_col": None, "name_col": "filename"},
-    "capture_source_manifest": {"id_col": None, "name_col": "filename"},
-    "capture_source_artifacts": {"id_col": None, "name_col": "filename"},
-    "capture_content_manifest": {"id_col": None, "name_col": "sha256"},
+    "capture_npc_entries": {
+        "label": "Entity snapshots", "group": "Entities & Spatial",
+        "description": "Observed NPC/mob entity state, identity, model/look, position and runtime flags.",
+        "id_col": "entity_id", "name_col": "name",
+        "display_cols": ("capture_id", "zone_db", "entity_id", "name", "model_id", "x", "y", "z", "dir", "hpp"),
+    },
+    "capture_npc_history": {
+        "label": "Entity history", "group": "Entities & Spatial",
+        "description": "Runtime entity state/history deltas captured over time.",
+        "id_col": "entity_id", "name_col": None,
+        "display_cols": ("capture_id", "zone_db", "entity_id", "seq", "ts"),
+    },
+    "capture_npc_path": {
+        "label": "NPC / mob paths", "group": "Entities & Spatial",
+        "description": "Observed NPC/mob position tracks and path points.",
+        "id_col": "entity_id", "name_col": None,
+        "display_cols": ("capture_id", "zone_db", "entity_id", "step", "ts", "x", "y", "z"),
+    },
+    "capture_pc_path": {
+        "label": "Player paths", "group": "Entities & Spatial",
+        "description": "Capturing player's observed movement path.",
+        "id_col": None, "name_col": None,
+        "display_cols": ("capture_id", "zone_db", "step", "ts", "x", "y", "z"),
+    },
+    "capture_actions": {
+        "label": "Battle actions", "group": "Battle & Actions",
+        "description": "Canonical action observations including actor, target, action name/category and effects.",
+        "id_col": "actor", "name_col": "name",
+        "display_cols": ("capture_id", "zone_db", "ts", "actor", "name", "target", "category", "animation", "message"),
+    },
+    "capture_hp_events": {
+        "label": "HP events", "group": "Battle & Actions",
+        "description": "Observed HP changes and mob HP state transitions.",
+        "id_col": None, "name_col": "mob_name",
+        "display_cols": ("capture_id", "zone_db", "ts", "mob_name", "hpp", "delta"),
+    },
+    "capture_attack_delay": {
+        "label": "Attack delay", "group": "Battle & Actions",
+        "description": "Attack-delay timing observations from supported capture tools.",
+        "id_col": None, "name_col": "mob_name",
+        "display_cols": ("capture_id", "zone_db", "ts", "mob_name", "delay"),
+    },
+    "capture_level_range": {
+        "label": "Level range", "group": "Battle & Actions",
+        "description": "Observed entity level/range evidence.",
+        "id_col": "entity_id", "name_col": "name",
+        "display_cols": ("capture_id", "zone_db", "ts", "entity_id", "name", "level", "range"),
+    },
+    "capture_events": {
+        "label": "Events / CSIDs", "group": "Events & Dialogue",
+        "description": "Canonical event observations with entity, CSID, option, message and event packet identity.",
+        "id_col": "entity_id", "name_col": "entity_name",
+        "display_cols": ("capture_id", "zone_db", "seq", "ts", "direction", "opcode", "entity_id", "entity_name", "event_hex", "option", "message_id"),
+    },
+    "capture_eventview": {
+        "label": "EventView observations", "group": "Events & Dialogue",
+        "description": "EventView-derived event observations retained separately from canonical event rows.",
+        "id_col": "entity_id", "name_col": None,
+        "display_cols": ("capture_id", "zone_db", "ts", "entity_id", "event_id", "params", "option", "message"),
+    },
+    "capture_caplog_chat": {
+        "label": "Chat / text", "group": "Events & Dialogue",
+        "description": "Canonical chat/text observations from CapLog, PacketDB CHATLOG and supported text sources.",
+        "id_col": None, "name_col": "text",
+        "display_cols": ("capture_id", "zone_db", "ts", "direction", "text"),
+    },
+    "capture_ki_events": {
+        "label": "Key item events", "group": "Items & Progression",
+        "description": "Observed key-item grants/removals and progression evidence.",
+        "id_col": "keyitem_id", "name_col": "keyitem_name",
+        "display_cols": ("capture_id", "zone_db", "ts", "keyitem_id", "keyitem_name", "action"),
+    },
+    "capture_raw_packets": {
+        "label": "Raw packets", "group": "Protocol & Raw Evidence",
+        "description": "Canonical raw packet bytes with source provenance. Use Packet Viewer for field/byte drill-down.",
+        "id_col": None, "name_col": "opcode",
+        "display_cols": ("capture_id", "seq", "ts", "direction", "opcode", "packet_size", "source_format", "source_file"),
+    },
+    "capture_source_files": {
+        "label": "Source files", "group": "Provenance & Integrity",
+        "description": "Every source file ingestion attempt, detected format, row count and parser error.",
+        "id_col": None, "name_col": "filename",
+        "display_cols": ("capture_id", "filename", "format_detected", "row_count", "error", "ingested_at"),
+    },
+    "capture_source_manifest": {
+        "label": "Source manifest", "group": "Provenance & Integrity",
+        "description": "Source-level provenance manifest retained for capture audit.",
+        "id_col": None, "name_col": "filename",
+        "display_cols": ("capture_id", "filename", "sha256", "size_bytes"),
+    },
+    "capture_source_artifacts": {
+        "label": "Source artifacts", "group": "Provenance & Integrity",
+        "description": "Materialized or linked source artifacts associated with capture evidence.",
+        "id_col": None, "name_col": "filename",
+        "display_cols": ("capture_id", "filename", "artifact_type", "sha256"),
+    },
+    "capture_content_manifest": {
+        "label": "Content manifest", "group": "Provenance & Integrity",
+        "description": "Content hashes and canonical manifest evidence used for integrity/provenance.",
+        "id_col": None, "name_col": "sha256",
+        "display_cols": ("capture_id", "sha256", "content_type", "source_file"),
+    },
+    "capture_tags": {
+        "label": "Capture tags", "group": "Capture Metadata",
+        "description": "Normalized capture taxonomy tags.",
+        "id_col": None, "name_col": "tag",
+        "display_cols": ("capture_id", "tag"),
+    },
 }
-CAPTURE_QUERY_PAGE_SIZE = 200
+CAPTURE_QUERY_PAGE_SIZE = 100
+
 
 
 def capture_query_columns(con, table: str) -> list[str]:
     return [r[1] for r in con.execute(f"PRAGMA table_info({table})").fetchall()]
+
+
+def capture_query_display_columns(cols: list[str], spec: dict) -> list[str]:
+    """Curated first-glance columns; full physical rows remain available in row drill-down."""
+    preferred = [name for name in spec.get("display_cols", ()) if name in cols]
+    if preferred:
+        return preferred
+    return cols[:10]
+
+
+def capture_query_groups() -> list[dict]:
+    groups: dict[str, list[dict]] = {}
+    for table, spec in CAPTURE_QUERY_TABLES.items():
+        groups.setdefault(spec["group"], []).append({
+            "table": table,
+            "label": spec["label"],
+            "description": spec["description"],
+        })
+    return [
+        {"label": group, "datasets": datasets}
+        for group, datasets in groups.items()
+    ]
 
 
 def build_capture_query_sql(table: str, cols: list[str], spec: dict, capture_id: int | None, q: str):
@@ -4530,6 +4643,7 @@ def captures_query(request: Request, table: str = "capture_npc_entries", capture
     cid = int(capture_id) if capture_id.strip().lstrip("-").isdigit() else None
     con = get_con()
     cols = capture_query_columns(con, table)
+    display_cols = capture_query_display_columns(cols, spec)
     base_sql, params = build_capture_query_sql(table, cols, spec, cid, q)
 
     total = con.execute(f"SELECT COUNT(*) FROM ({base_sql})", params).fetchone()[0]
@@ -4543,8 +4657,12 @@ def captures_query(request: Request, table: str = "capture_npc_entries", capture
     con.close()
 
     return templates.TemplateResponse(request, "capture_query.html", {
-        "table": table, "tables": list(CAPTURE_QUERY_TABLES.keys()), "capture_id": capture_id,
-        "q": q, "cols": cols, "rows": rows, "page": page, "total": total, "total_pages": total_pages,
+        "table": table,
+        "dataset": {"table": table, **spec},
+        "dataset_groups": capture_query_groups(),
+        "capture_id": capture_id, "q": q,
+        "cols": cols, "display_cols": display_cols,
+        "rows": rows, "page": page, "total": total, "total_pages": total_pages,
     })
 
 
