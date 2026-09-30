@@ -60,6 +60,33 @@ xi.data.guildShops =
 """
 
 
+
+
+DSP_SHOP = r"""
+function onTrigger(player,npc)
+    local stock =
+    {
+        12440, 457, -- Leather Bandana
+        12448, 174, -- Bronze Cap
+    }
+
+    dsp.shop.general(player, stock)
+end
+"""
+
+
+TOPAZ_ZONE_SHOP = r"""
+function onTrigger(player,npc)
+    local stock =
+    {
+        4096, 100,
+    }
+
+    tpz.shop.nation(player, stock, tpz.nation.BASTOK)
+end
+"""
+
+
 DYNAMIC_UNSUPPORTED = r"""
 entity.onTrigger = function(player, npc)
     local stock = buildDynamicStock(player)
@@ -88,6 +115,26 @@ def main():
     )
     assert nation["status"] == "OK", nation
     assert nation["shop"].shop_kind == "NATION", nation
+
+    dsp = parse_npc_shop_script(
+        DSP_SHOP,
+        source_path="scripts/zones/Mhaura/npcs/Graine.lua",
+    )
+    assert dsp["status"] == "OK", dsp
+    assert dsp["shop"].source_family == "DSP", dsp
+    assert dsp["shop"].metadata["shop_namespace"] == "dsp", dsp
+    assert dsp["shop"].metadata["source_scope"] == "NPC", dsp
+    assert [item.item_literal for item in dsp["shop"].items] == ["12440", "12448"], dsp
+    assert dsp["shop"].items[0].metadata["stock_syntax"] == "FLAT_PAIRS", dsp
+
+    topaz = parse_npc_shop_script(
+        TOPAZ_ZONE_SHOP,
+        source_path="scripts/zones/Test/Zone.lua",
+    )
+    assert topaz["status"] == "OK", topaz
+    assert topaz["shop"].source_family == "TOPAZ", topaz
+    assert topaz["shop"].shop_kind == "NATION", topaz
+    assert topaz["shop"].metadata["source_scope"] == "ZONE", topaz
 
     dynamic = parse_npc_shop_script(
         DYNAMIC_UNSUPPORTED,
@@ -118,9 +165,9 @@ def main():
     assert alias.metadata["shared_stock"] == "Achika", alias
 
     catalog = build_acquisition_catalog(
-        shops=(shop, nation["shop"], *guild["shops"]),
+        shops=(shop, nation["shop"], dsp["shop"], topaz["shop"], *guild["shops"]),
     )
-    assert catalog["counts"]["SOLD_BY"] == 6, catalog
+    assert catalog["counts"]["SOLD_BY"] == 9, catalog
     assert "SOLD_BY" in catalog["supported_acquisition_types"], catalog
     assert catalog["unsupported_until_profiled"] == [
         "CURIO_VENDOR",
@@ -140,7 +187,12 @@ def main():
     assert guild_numeric["paths"][0]["metadata"]["item_numeric_id"] == 1888, guild_numeric
 
     external = verified_external_item_ids(catalog)
-    assert external == {936, 1888}, external
+    assert external == {936, 1888, 4096, 12440, 12448}, external
+
+    dsp_subject = by_subject[("ITEM", "12440")]
+    assert dsp_subject["paths"][0]["source_family"] == "DSP_LUA_SHOP", dsp_subject
+    topaz_subject = by_subject[("ITEM", "4096")]
+    assert topaz_subject["paths"][0]["source_family"] == "TOPAZ_LUA_SHOP", topaz_subject
 
     print("shop Lua acquisition self-test: PASS")
     return 0
