@@ -5082,6 +5082,20 @@ def packets_decode(
     })
 
 
+@app.post("/packets/decode", response_class=HTMLResponse)
+async def packets_decode_submit(request: Request):
+    """POST form companion for large/multiline ad-hoc packet input."""
+    form = await request.form()
+    return packets_decode(
+        request,
+        direction=(form.get("direction") or "s2c"),
+        opcode=(form.get("opcode") or "").strip(),
+        hex_bytes=form.get("hex_bytes") or "",
+        q=(form.get("q") or "").strip(),
+        mode="manual",
+    )
+
+
 @app.get("/packets/bulk", response_class=HTMLResponse)
 def packets_bulk_form(request: Request):
     """Compatibility entrypoint: bulk decoding now lives in the shared packet workbench."""
