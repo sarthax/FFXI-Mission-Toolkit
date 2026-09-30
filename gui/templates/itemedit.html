@@ -1,22 +1,20 @@
 {% extends "base.html" %}
 {% block title %}Item Editor{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}item-editor-page{% endblock %}
 
 {% block content %}
-<h1>Item Editor</h1>
-<p class="muted">Search any live item and edit every column its class actually has, across all six
-item_* tables (item_basic, item_equipment, item_weapon, item_usable, item_puppet, item_furnishing).
-Edits to a field the FFXI client itself enforces (level/jobs/slots/races/superior_level on
-item_equipment; dmg/delay/skill on item_weapon; flags/stack on item_basic) are mirrored into the
-real client DAT record automatically, since the client checks its own copy independently of the
-server's permission gate. Every write is backed up first and journalled to
-<code>data/item_edit_log.sql</code>, same as Zone Plot.</p>
-
-<div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+<div id="itemEditorTop" class="dense-toolbar">
+  <strong>Item Editor</strong>
   <label>Server <select id="srv" onchange="setItemServer()"><option value="topaz">Topaz</option><option value="dsp">DSP</option></select></label>
-  <span class="muted" style="font-size:11px;">shares the same live-DB target as Zone Plot / the NPC-mob editor -- switching here switches it everywhere.</span>
+  <span class="sp"></span>
+  <details class="dense-card" style="margin:0;padding:0 6px;">
+    <summary>About</summary>
+    <div class="muted" style="padding:6px 2px;max-width:760px;">Search and edit live item_* rows. Client-enforced fields are mirrored into the client DAT, with backup and SQL journaling before writes. The server selector shares the same live DB target used by the Zone Editor.</div>
+  </details>
 </div>
 
-<form class="search" onsubmit="doSearch(event)" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+<form class="search dense-toolbar" onsubmit="doSearch(event)" style="margin:6px 0;flex-wrap:wrap;">
   <input type="text" id="q" placeholder="item name substring (min 2 chars), or exact item id">
   <select id="category">
     <option value="">all classes</option><option value="armor">armor</option><option value="weapon">weapon</option>
@@ -51,8 +49,9 @@ server's permission gate. Every write is backed up first and journalled to
   </div>
 </div>
 
-<div id="itemBatchEditor" class="edit-card wide" style="margin-top:12px;">
-  <h3>Constrained batch editor <span class="hint">same value across many items; only server↔client fields already proven by reconciliation are permitted</span></h3>
+<details id="itemBatchEditor" class="edit-card wide dense-card" style="margin-top:8px;">
+  <summary><strong>Constrained batch editor</strong> <span class="hint">same value across many items; proven synchronized fields only</span></summary>
+  <div style="padding-top:6px;">
   <div style="display:grid;grid-template-columns:minmax(260px,1fr) 150px 120px;gap:8px;align-items:start;">
     <textarea id="batchItemIds" rows="4" placeholder="Item IDs, separated by spaces, commas, or new lines"></textarea>
     <select id="batchField">
@@ -76,9 +75,10 @@ server's permission gate. Every write is backed up first and journalled to
   <div id="batchSummary" class="muted" style="margin-top:6px;"></div>
   <div id="batchPreview" class="rowtable-wrap table-wrap" style="margin-top:6px;"></div>
   <div id="batchMsg" class="mono muted" style="margin-top:6px;white-space:pre-wrap;font-size:11px;"></div>
-</div>
+  </div>
+</details>
 
-<div id="itemSessionHistory" style="display:flex;gap:6px;align-items:center;margin:8px 0;">
+<div id="itemSessionHistory" class="dense-toolbar" style="display:flex;gap:6px;align-items:center;margin:8px 0;">
   <span class="muted">Session history</span>
   <button id="itemUndoBtn" type="button" disabled>Undo</button>
   <button id="itemRedoBtn" type="button" disabled>Redo</button>
@@ -86,6 +86,11 @@ server's permission gate. Every write is backed up first and journalled to
 </div>
 
 <style>
+  main.item-editor-page{padding:8px 10px 24px}
+  #itemEditorTop label{display:flex;align-items:center;gap:4px;margin:0}
+  form.search.dense-toolbar input[type=text]{min-width:260px;flex:1}
+  #results{max-height:260px;overflow:auto}
+  #itemSessionHistory{margin:6px 0}
   #editorWrap .edit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin-bottom: 14px; align-items: start; }
   #editorWrap .edit-card { border: 1px solid rgba(128,128,128,.35); border-radius: 6px; padding: 8px 12px 10px; }
   #editorWrap .edit-card.wide { grid-column: 1 / -1; }
@@ -129,8 +134,8 @@ server's permission gate. Every write is backed up first and journalled to
   #clientRecordInspector .client-record-section h4 { margin:0 0 5px; font-size:11px; text-transform:uppercase; opacity:.7; }
 </style>
 
-<div id="editorWrap" style="display:none; margin-top:24px;">
-  <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+<div id="editorWrap" style="display:none; margin-top:10px;">
+  <div class="dense-toolbar" style="align-items:center;flex-wrap:wrap;">
     <h2 id="editorTitle" style="margin:0;"></h2>
     <button id="recentPrevBtn" type="button" disabled title="Previous recently opened item">◀ Previous</button>
     <button id="recentNextBtn" type="button" disabled title="Next recently opened item">Next ▶</button>
@@ -190,7 +195,7 @@ server's permission gate. Every write is backed up first and journalled to
 <div id="livePivotDiff" class="mono" style="margin-top:8px;padding:6px;border:1px solid var(--border);border-radius:4px;font-size:10px;white-space:pre-wrap;"></div>
   </div>
 
-  <div class="editor-toolbar">
+  <div class="editor-toolbar dense-toolbar">
     <label>Editor mode
       <select id="itemEditorMode">
         <option value="basic">Basic</option>

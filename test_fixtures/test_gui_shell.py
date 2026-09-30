@@ -299,6 +299,11 @@ def main():
     assert "Lookup &amp; Decode: Entity" in editor_html
     assert "section-link active mutation" in editor_html
     assert "Specialized: Nyzul" not in editor_html
+    assert '<body class="shell-dense">' in editor_html
+    assert 'id="itemEditorTop" class="dense-toolbar"' in editor_html
+    assert '<details id="itemBatchEditor"' in editor_html
+    assert 'id="itemSessionHistory" class="dense-toolbar"' in editor_html
+    assert 'class="editor-toolbar dense-toolbar"' in editor_html
     assert any(
         section.get("href") == "/backport/package"
         for workspace in WORKSPACES
