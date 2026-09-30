@@ -271,6 +271,20 @@ def main():
         for marker in markers:
             assert marker in source,(template_name,marker)
 
+    client_overview_contracts = [
+        "{% block shell_mode %}dense{% endblock %}",
+        "client-overview-page",
+        "client-kpis",
+        "client-form-grid",
+        "Compare Client Builds",
+        "ENTITY / Actor Identity Coverage",
+        "EVENT Identity Results",
+    ]
+    client_overview_source=(TEMPLATES/"client_overview.html").read_text(encoding="utf-8")
+    capture_env.get_template("client_overview.html")
+    for marker in client_overview_contracts:
+        assert marker in client_overview_source,marker
+
     assert '<body class="shell-dense">' in captures_html
     assert '<strong>Captures</strong>' in captures_html
     assert 'form class="search dense-toolbar"' in captures_html

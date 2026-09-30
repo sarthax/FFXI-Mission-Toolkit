@@ -1,3 +1,13 @@
+## 2026-09-30 — Client Overview build-comparison UX refresh
+
+- Client Overview now uses the shared dense shell and presents installed-client fingerprint, saved binaries/probes, imported snapshots, snapshot import, and build comparison as distinct workspace sections.
+- Installed fingerprint remains immediately visible; binary and saved-probe detail moves behind expandable sections.
+- Imported client snapshots stay directly visible with EVENT/ENTITY/DIALOG counts.
+- Snapshot import moves into an on-demand form, while build comparison remains expanded as the primary cross-client workflow.
+- EVENT comparison now uses compact KPI cards, with ENTITY/actor coverage and EVENT result tables grouped into focused expandable sections.
+- Direct handoffs to Model Viewer, DAT Inspector, and Binary Inspector are promoted into the workspace toolbar.
+- Snapshot extraction, identity ingestion, Feature Trace mirroring, comparison semantics, confidence rules, and CSV export behavior are unchanged.
+
 ## 2026-09-30 — Wiki Compiler and Research Session workflow UX
 
 - Wiki Compiler now behaves as an evidence-review workspace: page/source lookup and build/compare actions stay at the top, claim mapping review is the primary expanded evidence surface, dual-wiki comparison is secondary/on-demand, and compiled report sections/excerpts are progressively disclosed.

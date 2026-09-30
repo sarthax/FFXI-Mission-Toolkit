@@ -1,3 +1,13 @@
+## 2026-09-30 Client Overview build-comparison UX refresh
+
+- [x] Convert Client Overview into a dense build-comparison workspace.
+- [x] Keep installed fingerprint and imported snapshots immediately visible.
+- [x] Collapse binary/probe/import detail behind focused sections.
+- [x] Promote cross-build EVENT/ENTITY comparison as the primary workflow.
+- [x] Add compact comparison KPI cards and inspector/model-viewer handoffs.
+- [x] Preserve snapshot import, Feature Trace mirroring, confidence, and CSV semantics.
+- [ ] Package Scope / Review / Create remain the next workflow UX redesign.
+
 ## 2026-09-30 Wiki Compiler and Research Session workflow UX
 
 - [x] Redesign Wiki Compiler as an evidence-review workspace with progressive disclosure.
