@@ -136,6 +136,13 @@ def main():
     assert topaz["shop"].shop_kind == "NATION", topaz
     assert topaz["shop"].metadata["source_scope"] == "ZONE", topaz
 
+    instance_shop = parse_npc_shop_script(
+        TOPAZ_ZONE_SHOP,
+        source_path="scripts/zones/Test/instances/Shop_Instance.lua",
+    )
+    assert instance_shop["status"] == "OK", instance_shop
+    assert instance_shop["shop"].metadata["source_scope"] == "INSTANCE", instance_shop
+
     dynamic = parse_npc_shop_script(
         DYNAMIC_UNSUPPORTED,
         source_path="scripts/zones/Test/npcs/Dynamic.lua",
