@@ -59,6 +59,7 @@ from workbench.core.services.scripted_behavior_visualizer import (
 )
 from workbench.core.services import timeline_alignment, packet_correlation
 from workbench.core.services import capture_integrity, capture_spatial
+from workbench.runtime.interaction_reconstruction import reconstruct_interaction_candidates
 from workbench.analyzers.server import lua_events
 import feature_checker
 from workbench.core.services.feature_trace_closure import build_feature_trace_closure
@@ -6579,6 +6580,8 @@ def captures_timeline(
             d["dialog_text"] = trow[0] if trow else None
         events.append(d)
 
+    interaction_candidates = reconstruct_interaction_candidates(events)
+
     ki_events = con.execute(
         "SELECT * FROM capture_ki_events WHERE capture_id=? ORDER BY seq", (capture_id,)
     ).fetchall()
@@ -6748,7 +6751,8 @@ def captures_timeline(
     con.close()
     return templates.TemplateResponse(request, "capture_timeline.html", {
         "cap": cap, "capture_id": capture_id,
-        "events": events, "ki_events": ki_events, "eventview": eventview, "items": items,
+        "events": events, "interaction_candidates": interaction_candidates,
+        "ki_events": ki_events, "eventview": eventview, "items": items,
         "actions": actions,
         "events_total": events_total, "eventview_total": eventview_total,
         "raw_packets_total": raw_packets_total,
