@@ -223,10 +223,20 @@ def list_backups():
     out = []
     for f in sorted(BACKUPS.glob("*.json"), reverse=True) if BACKUPS.exists() else []:
         b = json.loads(f.read_text())
+        if b.get("kind") == "batch":
+            items = b.get("items") or []
+            out.append({
+                "id": b["id"], "ts": b["ts"], "label": b["label"], "item_id": None,
+                "kind": "batch", "item_ids": [int(x["item_id"]) for x in items],
+                "rows": sum(len(x.get("ops") or []) for x in items),
+                "has_client_record": any(bool(x.get("client_record")) for x in items),
+                "client_target": None,
+            })
+            continue
         snap = b.get("client_record")
         out.append({
-            "id": b["id"], "ts": b["ts"], "label": b["label"], "item_id": b["item_id"],
-            "rows": len(b["ops"]), "has_client_record": bool(snap),
+            "id": b["id"], "ts": b["ts"], "label": b["label"], "item_id": b.get("item_id"),
+            "kind": "item", "rows": len(b.get("ops") or []), "has_client_record": bool(snap),
             "client_target": snap.get("target") if snap else None,
         })
     return out
@@ -243,7 +253,33 @@ def list_item_history(item_id, limit=100):
             b = json.loads(f.read_text())
         except Exception:
             continue
-        if int(b.get("item_id", -1)) != item_id:
+        if b.get("kind") == "batch":
+            member = next((x for x in (b.get("items") or []) if int(x.get("item_id", -1)) == item_id), None)
+            if member is None:
+                continue
+            meta = b.get("metadata") or {}
+            ops = member.get("ops") or []
+            snap = member.get("client_record")
+            out.append({
+                "id": b.get("id"), "ts": b.get("ts"), "label": b.get("label") or "batch edit",
+                "action_type": "batch_edit", "comment": meta.get("comment") or "",
+                "summary": meta.get("summary") or "batch edit",
+                "tables": sorted({op.get("table") for op in ops if op.get("table")}),
+                "field_changes": [{
+                    "table": BATCH_SAFE_FIELDS.get(meta.get("field"), ("batch", meta.get("field")))[0],
+                    "field": BATCH_SAFE_FIELDS.get(meta.get("field"), ("batch", meta.get("field")))[1],
+                    "before": (ops[0].get("row") or {}).get(BATCH_SAFE_FIELDS.get(meta.get("field"), ("", ""))[1]) if ops else None,
+                    "after": meta.get("value"),
+                }] if meta.get("field") else [],
+                "effect_changes": [], "dat_touched": bool(snap),
+                "has_client_record": bool(snap), "client_target": snap.get("target") if snap else None,
+                "restorable": True, "batch": True, "legacy_metadata": False,
+            })
+            if len(out) >= limit:
+                break
+            continue
+        raw_item_id = b.get("item_id", -1)
+        if raw_item_id is None or int(raw_item_id) != item_id:
             continue
         meta = b.get("metadata") or {}
         ops = b.get("ops") or []
