@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Related Capture Evidence{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block content %}
+<style>
+.related-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.related-card{border:1px solid var(--border);border-radius:7px;background:var(--surface);padding:9px 11px}
+.related-head{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.related-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.related-key{word-break:break-all}
+</style>
+
+<div class="dense-toolbar">
+  <a class="chip" href="/captures/search">&larr; Evidence Search</a>
+  <a class="chip" href="/captures/{{ cap.capture_id }}">Capture #{{ cap.capture_id }}</a>
+  <strong>Related Evidence</strong>
+  <span class="sp"></span>
+  <span class="muted">{{ cap.capture_label }}</span>
+</div>
+
+<div class="dense-panel" style="margin-top:8px">
+  <strong>Correlation rule</strong>
+  <div class="muted" style="margin-top:4px">
+    Results below are linked only when normalized records point to the same hashed physical source
+    span, or to the same SQLite source row. Timestamp proximity, matching names/IDs, and packet
+    sequence proximity are deliberately not used as evidence relationships.
+  </div>
+</div>
+
+<section class="related-grid" style="margin-top:8px">
+  <div class="related-card">
+    <div class="related-head">
+      <span class="chip">Anchor</span>
+      <strong>{{ target_table }}</strong>
+    </div>
+    <div class="mono muted related-key" style="margin-top:5px">{{ row_key }}</div>
+    {% if anchors %}
+      {% for a in anchors %}
+      <div style="margin-top:7px">
+        <div><strong>{{ a.filename }}</strong></div>
+        <div class="muted">
+          {{ a.locator_basis }}
+          {% if a.start_line is not none %} · lines {{ a.start_line }}{% if a.end_line is not none and a.end_line != a.start_line %}-{{ a.end_line }}{% endif %}{% endif %}
+          {% if a.start_offset is not none %} · bytes {{ a.start_offset }}{% if a.end_offset is not none %}-{{ a.end_offset }}{% endif %}{% endif %}
+        </div>
+        <div class="related-actions">
+          <a class="chip" href="{{ a.source_url }}">Source Locator</a>
+          <a class="chip" href="{{ a.data_url }}">Data Explorer</a>
+          {% if a.packet_url %}<a class="chip" href="{{ a.packet_url }}">Packet Viewer</a>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="muted" style="margin-top:6px">No exact source locator exists for this normalized row.</div>
+    {% endif %}
+  </div>
+
+  {% if related %}
+    {% for r in related %}
+    <article class="related-card">
+      <div class="related-head">
+        <span class="chip">{{ r.relation }}</span>
+        <strong>{{ r.target_table }}</strong>
+        <span class="muted">{{ r.locator_basis }}</span>
+      </div>
+      <div style="margin-top:5px"><strong>{{ r.filename }}</strong></div>
+      <div class="mono muted related-key">{{ r.row_key }}</div>
+      <div class="muted" style="margin-top:4px">
+        {% if r.start_line is not none %}lines {{ r.start_line }}{% if r.end_line is not none and r.end_line != r.start_line %}-{{ r.end_line }}{% endif %}{% endif %}
+        {% if r.start_offset is not none %}{% if r.start_line is not none %} · {% endif %}bytes {{ r.start_offset }}{% if r.end_offset is not none %}-{{ r.end_offset }}{% endif %}{% endif %}
+      </div>
+      <div class="related-actions">
+        <a class="chip" href="{{ r.source_url }}">Source Locator</a>
+        <a class="chip" href="{{ r.data_url }}">Data Explorer</a>
+        {% if r.packet_url %}<a class="chip" href="{{ r.packet_url }}">Packet Viewer</a>{% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  {% elif anchors %}
+    <div class="dense-panel muted">
+      This row has verified provenance, but no other normalized evidence shares its exact physical source span.
+    </div>
+  {% endif %}
+</section>
+{% endblock %}
