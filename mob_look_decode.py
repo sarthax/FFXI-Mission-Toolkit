@@ -103,7 +103,22 @@ def decode_look_data(blob: bytes, familyid: int | None = None) -> dict:
             "skeleton_path": gear_tables.RACE_SKELETON_RELS.get(composer_race) if composer_race else None,
         })
         if race_name in gear_tables.GEAR_TABLES:
-            result["gear_resolved"] = gear_tables.resolve_gear_file_ids(race_name, gear)
+            resolved = gear_tables.resolve_gear_file_ids(race_name, gear)
+            # Face is not one of the eight u16 gear-slot fields; it is the separate u8
+            # face byte and is a direct per-race face model index (0 is a valid first face,
+            # not an unequipped sentinel). GEAR_TABLES already includes the face file-id range.
+            face_fid = gear_tables.model_id_to_file_id(race_name, "face", face)
+            resolved = {
+                "face": {
+                    "model_id": int(face),
+                    "file_id": face_fid,
+                    "source": "look_t.face byte -> race face GEAR_TABLES",
+                    **({"error": f"face model_id {face} is outside the known {race_name} face table"}
+                       if face_fid is None else {}),
+                },
+                **resolved,
+            }
+            result["gear_resolved"] = resolved
         else:
             result["gear_resolved"] = {}
             result["error"] = f"no GEAR_TABLES entry for race {race_name!r}"
