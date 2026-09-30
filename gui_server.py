@@ -2339,6 +2339,142 @@ def entity_search(request: Request, q: str = "", page: int = 1):
     })
 
 
+def _entity_behavior_summary(profile: dict) -> dict:
+    """Project the existing Behavior Inspector into a bounded Entity summary.
+
+    Source resolution is against the configured LSB tree. Entity Profile's raw lua_hits may come
+    from another indexed server tree, so never assume the same relative path exists in LSB.
+    """
+    out = {
+        "available": False,
+        "source": None,
+        "error": None,
+        "hooks": [],
+        "api_calls": [],
+        "effects": [],
+        "events": [],
+        "states": [],
+        "transitions": [],
+        "shared_helpers": [],
+        "summary": {},
+        "contexts": 0,
+    }
+    root = build_lsb_index.LSB_ROOT
+    if not root.is_dir():
+        out["error"] = "LandSandBoat source root is not available."
+        return out
+
+    zone = str(profile.get("zone_folder") or "")
+    script_guess = str(profile.get("script_name_guess") or "")
+    candidates = []
+
+    # Reuse an already-known path only when it really exists in the LSB checkout.
+    existing = profile.get("behavior_source")
+    if existing:
+        candidate = root / str(existing).replace("\\", "/")
+        if candidate.is_file():
+            candidates.append({
+                "path": str(existing).replace("\\", "/"),
+                "zone": zone,
+                "name": candidate.stem,
+                "role": "entity",
+            })
+
+    if not candidates:
+        query = script_guess or str(profile.get("name") or "")
+        matches = find_lsb_behavior_sources(root, query, limit=100) if query else []
+        exact = [
+            row for row in matches
+            if (not zone or row.get("zone") == zone)
+            and (
+                not script_guess
+                or str(row.get("name") or "").replace("_", "").lower()
+                   == script_guess.replace("_", "").lower()
+            )
+        ]
+        candidates = exact or [
+            row for row in matches if not zone or row.get("zone") == zone
+        ]
+
+    if not candidates:
+        out["error"] = "No matching LSB behavior source was resolved for this entity."
+        return out
+
+    chosen = sorted(candidates, key=lambda row: (
+        0 if row.get("role") in {"npc", "mob", "entity"} else 1,
+        str(row.get("path") or ""),
+    ))[0]
+    try:
+        result = inspect_lsb_behavior(root, chosen["path"])
+    except Exception as exc:
+        out["error"] = f"{type(exc).__name__}: {exc}"
+        return out
+
+    graph = result["graph"]
+    nodes = graph.get("nodes") or []
+    out["available"] = True
+    out["source"] = result["source"]
+    out["summary"] = graph.get("summary") or {}
+    out["contexts"] = len(result.get("contexts") or [])
+    out["hooks"] = sorted(
+        {node["label"] for node in nodes if node.get("kind") == "hook"}
+    )
+
+    api_seen = set()
+    for node in nodes:
+        meta = node.get("meta") or {}
+        if node.get("kind") != "effect" or meta.get("effect") != "API_CALL":
+            continue
+        call_meta = meta.get("metadata") or {}
+        qualified = call_meta.get("qualified_name") or node.get("label")
+        key = (meta.get("hook"), qualified, call_meta.get("line"))
+        if key in api_seen:
+            continue
+        api_seen.add(key)
+        out["api_calls"].append({
+            "qualified_name": qualified,
+            "function": call_meta.get("function"),
+            "receiver": call_meta.get("receiver"),
+            "hook": meta.get("hook"),
+            "line": call_meta.get("line"),
+            "source_line": call_meta.get("source_line"),
+        })
+    out["api_calls"] = out["api_calls"][:24]
+
+    effect_seen = set()
+    omitted = {"API_CALL", "EXECUTE_CALLBACK"}
+    for node in nodes:
+        meta = node.get("meta") or {}
+        effect = meta.get("effect")
+        if node.get("kind") != "effect" or not effect or effect in omitted:
+            continue
+        key = (meta.get("hook"), effect, str(meta.get("target")), str(meta.get("value")))
+        if key in effect_seen:
+            continue
+        effect_seen.add(key)
+        out["effects"].append({
+            "effect": effect,
+            "target": meta.get("target"),
+            "value": meta.get("value"),
+            "hook": meta.get("hook"),
+            "category": meta.get("category"),
+            "source_lines": meta.get("source_lines"),
+        })
+    out["effects"] = out["effects"][:24]
+
+    out["events"] = list(graph.get("events") or [])[:16]
+    out["states"] = list(graph.get("states") or [])[:16]
+    out["transitions"] = list(graph.get("transitions") or [])[:16]
+    out["shared_helpers"] = [
+        {
+            "qualified_name": row.get("qualified_name"),
+            "status": row.get("status"),
+        }
+        for row in (result.get("shared_helpers") or [])[:16]
+    ]
+    return out
+
+
 @app.get("/entity/{npcid}", response_class=HTMLResponse)
 def entity_detail(request: Request, npcid: int, q: str = "", page: int = 1):
     """Dedicated profile page. When reached from a name search, prev/next cycles through that
@@ -2348,6 +2484,12 @@ def entity_detail(request: Request, npcid: int, q: str = "", page: int = 1):
     at the bottom of the /entity routes if one is ever added)."""
     con = get_con()
     profile = entity_profile.build_profile(con, npcid)
+    profile["behavior_summary"] = (
+        _entity_behavior_summary(profile) if not profile.get("error") else {}
+    )
+    if profile.get("behavior_summary", {}).get("source", {}).get("path"):
+        # Prefer the verified LSB path for UI handoff. Keep raw server-source lua_hits separately.
+        profile["behavior_source"] = profile["behavior_summary"]["source"]["path"]
 
     # Add client-event dossier status to runtime-observed CSIDs without forcing a new client
     # export merely because Entity Profile was opened. If Events/CSID already has this zone
