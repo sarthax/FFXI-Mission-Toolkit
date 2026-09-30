@@ -848,4 +848,4 @@ History / audit / safety:
 - [x] Whole-item delete/create/edit history integrates with session undo/redo using exact client-record snapshots.
 - [x] Dependency/usage view before destructive changes combines exact active-server content-table references, canonical Workbench graph/catalog relationships, item-scoped client-index identities when present, and opt-in Lua source-text evidence. Exact DB references drive destructive-action warnings; lower-authority evidence stays visibly distinct.
 - [x] Constrained batch editor with mandatory dry-run preview, proven-safe dual-authority field whitelist (flags/stack/level/jobs/slots/damage/delay/skill), all-item validation before write, one SQL transaction, one multi-item backup envelope, client-DAT rollback, and batch restore.
-- [ ] Item comparison mode for SQL, DAT, mods, pet mods, and latents side-by-side.
+- [x] Item comparison mode for SQL, DAT, mods, pet mods, and latents side-by-side, preserving a concise diff summary while showing staged-vs-saved SQL/effect values and saved client DAT records with highlighted differences.
