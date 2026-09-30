@@ -32,7 +32,10 @@ def _canonical_entity_for_numeric_id(con: sqlite3.Connection, numeric_id: int | 
     rows=con.execute(
         f"""SELECT DISTINCT entity_id
             FROM entity_identifiers
-            WHERE lower(COALESCE(identifier_type,'')) IN ({placeholders})
+            WHERE (
+                    lower(COALESCE(identifier_type,'')) IN ({placeholders})
+                    OR lower(COALESCE(identifier_type,'')) LIKE 'client_snapshot_entity_id:%'
+                  )
               AND CAST(identifier_value AS TEXT)=?
             ORDER BY entity_id LIMIT 3""",
         (*_ENTITY_IDENTIFIER_TYPES,str(numeric_id)),

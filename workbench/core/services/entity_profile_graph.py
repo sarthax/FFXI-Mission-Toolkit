@@ -35,8 +35,12 @@ def _evidence_type(source: str) -> str:
 
 def _entity_node(con: sqlite3.Connection, npcid: int) -> str:
     hits=con.execute(
-        "SELECT DISTINCT entity_id FROM entity_identifiers "
-        "WHERE identifier_type IN ('npcid','entity_id') AND identifier_value=?",
+        """SELECT DISTINCT entity_id FROM entity_identifiers
+           WHERE (
+                   lower(identifier_type) IN ('npcid','entity_id','mobid','numeric_entity_id')
+                   OR lower(identifier_type) LIKE 'client_snapshot_entity_id:%'
+                 )
+             AND identifier_value=?""",
         (str(npcid),),
     ).fetchall()
     if len(hits)==1:

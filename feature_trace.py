@@ -122,9 +122,12 @@ def canonical_entity_root(con: sqlite3.Connection, numeric_id: int) -> str | Non
     params = [str(numeric_id)]
     if "identifier_type" in cols:
         clauses.append(
-            """lower(COALESCE(identifier_type,'')) IN (
-                   'npcid','mobid','entity_id','runtime_entity_id',
-                   'server_entity_id','client_entity_id','numeric_entity_id'
+            """(
+                   lower(COALESCE(identifier_type,'')) IN (
+                       'npcid','mobid','entity_id','runtime_entity_id',
+                       'server_entity_id','client_entity_id','numeric_entity_id'
+                   )
+                   OR lower(COALESCE(identifier_type,'')) LIKE 'client_snapshot_entity_id:%'
                )"""
         )
 
