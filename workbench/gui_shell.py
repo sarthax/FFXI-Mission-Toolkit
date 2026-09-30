@@ -370,6 +370,11 @@ def build_shell_context(
         "active_home": owner["home"],
         "active_section": owner["section"],
         "sections": tuple(section_rows),
+        "brand": {
+            "enabled": settings.get("shell_brand_enabled", "1") != "0",
+            "text": (settings.get("shell_brand_text") or "ValhallaXI").strip(),
+            "icon": (settings.get("shell_brand_icon") or "/static/valhalla_logo.png").strip(),
+        },
         "snapshot_context": build_snapshot_context(
             settings,
             default_topaz_root=default_topaz_root,
