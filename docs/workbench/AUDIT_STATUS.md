@@ -1,3 +1,10 @@
+## 2026-09-30 — Compact viewer rollout
+
+- Model Viewer now opts into the shared dense shell, uses the shared dense side-panel/toolbar primitives, and reclaims vertical space without changing model resolution or rendering behavior.
+- Server 3D Zone Viewer now opts into the dense shell, moves its long explanatory copy into an on-demand details card, uses a compact command toolbar, grows the Three.js viewport relative to available browser height, and links directly into the new Zone Editor layout for the same zone.
+- Viewer rendering, client DAT parsing, capture overlays, navmesh, fly mode, and model animation semantics are unchanged by this presentation pass.
+- Shared GUI regression coverage now protects the dense viewer shell contract.
+
 ## 2026-09-30 — Compact Workbench shell v2
 
 - The shared application shell is now one persistent compact global row instead of three permanently stacked context/workspace/subsection rows.
