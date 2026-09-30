@@ -16,20 +16,26 @@ server's permission gate. Every write is backed up first and journalled to
   <span class="muted" style="font-size:11px;">shares the same live-DB target as Zone Plot / the NPC-mob editor -- switching here switches it everywhere.</span>
 </div>
 
-<form class="search" onsubmit="doSearch(event)">
-  <input type="text" id="q" placeholder="item name substring (min 2 chars), or an item id">
+<form class="search" onsubmit="doSearch(event)" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+  <input type="text" id="q" placeholder="item name substring (min 2 chars), or exact item id">
   <select id="category">
-    <option value="">all classes</option>
-    <option value="armor">armor</option>
-    <option value="weapon">weapon</option>
-    <option value="general/other">general / consumable / other</option>
+    <option value="">all classes</option><option value="armor">armor</option><option value="weapon">weapon</option>
+    <option value="consumable">consumable</option><option value="puppet">puppet</option>
+    <option value="furnishing">furnishing</option><option value="general">general</option>
   </select>
+  <input type="number" id="searchMinLevel" min="0" placeholder="min lv" style="width:72px;">
+  <input type="number" id="searchMaxLevel" min="0" placeholder="max lv" style="width:72px;">
+  <select id="searchJob"><option value="-1">all jobs</option></select>
+  <input type="number" id="searchSkill" min="0" placeholder="skill id" style="width:72px;">
+  <select id="searchClientState"><option value="">all client states</option><option value="synced">synced</option><option value="mismatch">mismatch</option><option value="server-only">server-only</option></select>
+  <select id="searchSort"><option value="name">sort: name</option><option value="id">sort: id</option><option value="class">sort: class</option><option value="level">sort: level</option><option value="client">sort: client</option></select>
+  <select id="searchDir"><option value="asc">ascending</option><option value="desc">descending</option></select>
   <button type="submit">Search</button>
 </form>
 
 <div id="results" class="table-wrap" style="display:none;">
   <table>
-    <tr><th>id</th><th>name</th><th>class</th><th>level</th><th>jobs</th><th>skill</th><th>dmg</th><th>delay</th></tr>
+    <tr><th>id</th><th>name</th><th>class</th><th>level</th><th>jobs</th><th>skill</th><th>dmg</th><th>delay</th><th>client</th></tr>
     <tbody id="resultsBody"></tbody>
   </table>
 </div>
@@ -57,6 +63,8 @@ server's permission gate. Every write is backed up first and journalled to
 <div id="editorWrap" style="display:none; margin-top:24px;">
   <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
     <h2 id="editorTitle" style="margin:0;"></h2>
+    <button id="recentPrevBtn" type="button" disabled title="Previous recently opened item">◀ Previous</button>
+    <button id="recentNextBtn" type="button" disabled title="Next recently opened item">Next ▶</button>
     <input type="text" id="editComment" style="flex:1; min-width:220px;" placeholder="Comment for SQL journal (e.g. lowering to level 90 for X quest reward)">
     <button id="saveAllBtn" onclick="saveAll()" disabled>Save Item</button>
     <button id="itemUndoBtn" type="button" disabled>Undo</button>
@@ -247,7 +255,11 @@ function refreshItemUndoUI(){
   document.getElementById('itemRedoBtn').disabled=!itemRedoStack.length;
 }
 let BITMASK_SCHEMA = {};
-fetch('/itemedit/bitmasks.json').then(r => r.json()).then(j => { BITMASK_SCHEMA = j; });
+fetch('/itemedit/bitmasks.json').then(r => r.json()).then(j => {
+  BITMASK_SCHEMA = j;
+  const sel=document.getElementById('searchJob'), bits=j?.item_equipment?.jobs?.bits||[];
+  for(const b of bits){ const idx=Math.round(Math.log2(Number(b.bit))); sel.add(new Option(b.label,idx)); }
+});
 // Searchable id-pickers: each is a text <input list="dl_x"> paired with a <datalist> of
 // "id -- name" options (native browser autocomplete/filtering -- no custom dropdown JS needed).
 // pickerValue() below resolves whatever the user typed/picked back to a numeric id.
@@ -269,6 +281,23 @@ fetch('/itemedit/modnames.json').then(r => r.json()).then(j => { MOD_NAMES = j; 
 let PET_TYPE_NAMES = {};
 fetch('/itemedit/pettypes.json').then(r => r.json()).then(j => { PET_TYPE_NAMES = j; fillDatalist(document.getElementById('dl_pettypes'), j); });
 let LATENT_NAMES = {};
+let lastSearchRows=[];
+let recentItems=[];
+let recentPos=-1;
+function refreshRecentNav(){
+  document.getElementById('recentPrevBtn').disabled=recentPos<=0;
+  document.getElementById('recentNextBtn').disabled=recentPos<0||recentPos>=recentItems.length-1;
+}
+function rememberRecent(itemId){
+  itemId=Number(itemId);
+  if(recentPos>=0 && recentItems[recentPos]===itemId){ refreshRecentNav(); return; }
+  recentItems=recentItems.filter(x=>x!==itemId); recentItems.push(itemId);
+  if(recentItems.length>30) recentItems.shift(); recentPos=recentItems.length-1; refreshRecentNav();
+}
+function navigateRecent(delta){
+  const next=recentPos+delta; if(next<0||next>=recentItems.length) return;
+  recentPos=next; refreshRecentNav(); loadItem(recentItems[recentPos],false);
+}
 fetch('/itemedit/latentnames.json').then(r => r.json()).then(j => { LATENT_NAMES = j; fillDatalist(document.getElementById('dl_latents'), j); });
 
 (async () => {
@@ -293,28 +322,39 @@ async function setItemServer() {
   currentItemId = null;
 }
 
-async function doSearch(ev) {
-  ev.preventDefault();
-  const q = document.getElementById('q').value.trim();
-  const category = document.getElementById('category').value;
-  if (/^\d+$/.test(q)) {
-    document.getElementById('results').style.display = 'none';
-    return loadItem(Number(q));
-  }
-  if (q.length < 2) { alert('type at least 2 characters, or enter a numeric item id'); return; }
-  const res = await fetch(`/itemedit/search.json?q=${encodeURIComponent(q)}&category=${encodeURIComponent(category)}`);
-  const rows = await res.json();
-  const body = document.getElementById('resultsBody');
-  body.innerHTML = '';
-  for (const r of rows) {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="mono"><a href="#" onclick="loadItem(${r.itemid});return false;">${r.itemid}</a></td>
-      <td>${r.name || ''}</td><td>${r.type_name || ''}</td><td>${r.level ?? ''}</td>
-      <td>${r.jobs ?? ''}</td><td>${r.skill ?? ''}</td><td>${r.dmg ?? ''}</td><td>${r.delay ?? ''}</td>`;
+function renderSearchResults(){
+  const key=document.getElementById('searchSort').value, dir=document.getElementById('searchDir').value==='desc'?-1:1;
+  const rows=[...lastSearchRows].sort((a,b)=>{
+    const av=key==='id'?Number(a.itemid):key==='class'?(a.type_name||''):key==='level'?Number(a.level??-1):key==='client'?(a.client_state||''):(a.name||'').toLowerCase();
+    const bv=key==='id'?Number(b.itemid):key==='class'?(b.type_name||''):key==='level'?Number(b.level??-1):key==='client'?(b.client_state||''):(b.name||'').toLowerCase();
+    return ((av>bv)-(av<bv))*dir || Number(a.itemid)-Number(b.itemid);
+  });
+  const body=document.getElementById('resultsBody'); body.innerHTML='';
+  for(const r of rows){
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td class="mono"><a href="#" data-open-item="'+r.itemid+'">'+r.itemid+'</a></td><td>'+(r.name||'')+'</td><td>'+(r.type_name||'')+'</td><td>'+(r.level??'')+'</td><td>'+(r.jobs??'')+'</td><td>'+(r.skill??'')+'</td><td>'+(r.dmg??'')+'</td><td>'+(r.delay??'')+'</td><td>'+r.client_state+'</td>';
     body.appendChild(tr);
   }
-  document.getElementById('results').style.display = rows.length ? '' : 'none';
+  body.querySelectorAll('[data-open-item]').forEach(a=>a.onclick=ev=>{ev.preventDefault();loadItem(Number(a.dataset.openItem));});
+  document.getElementById('results').style.display=rows.length?'':'none';
 }
+
+async function doSearch(ev) {
+  ev.preventDefault();
+  const q=document.getElementById('q').value.trim();
+  if(/^\d+$/.test(q)){ document.getElementById('results').style.display='none'; return loadItem(Number(q)); }
+  if(q.length<2){ alert('type at least 2 characters, or enter a numeric item id'); return; }
+  const p=new URLSearchParams({q,category:document.getElementById('category').value,client_state:document.getElementById('searchClientState').value});
+  const min=document.getElementById('searchMinLevel').value,max=document.getElementById('searchMaxLevel').value,job=document.getElementById('searchJob').value,skill=document.getElementById('searchSkill').value;
+  if(min!=='') p.set('min_level',min); if(max!=='') p.set('max_level',max); if(job!=='-1') p.set('job',job); if(skill!=='') p.set('skill',skill);
+  const res=await fetch('/itemedit/search.json?'+p.toString()); const rows=await res.json();
+  if(!res.ok){ alert(rows.error||res.statusText); return; }
+  lastSearchRows=rows; renderSearchResults();
+}
+document.getElementById('searchSort').onchange=renderSearchResults;
+document.getElementById('searchDir').onchange=renderSearchResults;
+document.getElementById('recentPrevBtn').onclick=()=>navigateRecent(-1);
+document.getElementById('recentNextBtn').onclick=()=>navigateRecent(1);
 
 // Shared by loadItem() (a real existing item) and startDraft()/refreshDraftGrid() (a new item
 // that hasn't been saved yet) -- same field/bitmask/enum rendering either way.
@@ -390,13 +430,14 @@ function renderItemDiagnostics(comparison,validation){
     (warns.length?'<div style="color:#ffcc80;margin-top:4px">'+warns.map(x=>'WARNING: '+x.message).join('<br>')+'</div>':'')+
     (info.length?'<div class="muted" style="margin-top:4px">'+info.map(x=>x.message).join('<br>')+'</div>':'');
 }
-async function loadItem(itemid) {
+async function loadItem(itemid, remember=true) {
   if(currentItemId && Number(itemid)!==Number(currentItemId) && hasUnsavedItemChanges()){
     if(!confirm('Discard unsaved Item Editor changes?')) return;
   }  const res = await fetch(`/itemedit/${itemid}.json`);
   if (!res.ok) { alert(await res.text()); return; }
   const data = await res.json();
   currentItemId = itemid;
+  if(remember) rememberRecent(itemid);
   draftMode = false;
   document.getElementById('draftWrap').style.display = 'none';
   document.getElementById('results').style.display = 'none';
