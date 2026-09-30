@@ -51,6 +51,10 @@ def main():
     assert "Related Evidence" in template
     assert "Timestamp proximity" in related_template
     assert "same hashed physical source" in related_template
+    assert "list_non_temporal_matches" in server
+    assert "Explicit packet correlation" in related_template
+    assert "Timestamp/alignment" in related_template
+    assert "ambiguous candidates" in related_template
 
     print("Capture Evidence Search module regression: PASS")
     return 0
