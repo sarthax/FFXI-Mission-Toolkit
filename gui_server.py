@@ -6777,10 +6777,11 @@ def itemedit_page(request: Request):
 
 
 @app.get("/itemedit/search.json")
-def itemedit_search(q: str = "", category: str = ""):
+def itemedit_search(q: str = "", category: str = "", min_level: int = -1, max_level: int = -1,
+                    job: int = -1, skill: int = -1, client_state: str = ""):
     import item_edit
     try:
-        return JSONResponse(item_edit.search(q, category))
+        return JSONResponse(item_edit.search(q, category, min_level, max_level, job, skill, client_state))
     except Exception as ex:
         return JSONResponse({"error": str(ex)}, status_code=400)
 
