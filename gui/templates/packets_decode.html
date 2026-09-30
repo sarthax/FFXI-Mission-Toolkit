@@ -29,7 +29,7 @@
 .semantic-panel{border-left:1px solid var(--border);padding-left:14px}.semantic-panel .big-value{font-size:18px;font-weight:700;color:var(--accent);word-break:break-word}
 .raw-field{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--muted)}
 .scratch-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;margin-top:14px}.context-grid{display:grid;grid-template-columns:130px 1fr;gap:5px 10px;padding:10px 12px}.context-grid>div:nth-child(odd){color:var(--muted)}
-@media(max-width:1180px){.packet-main-grid,.scratch-row{grid-template-columns:1fr}.decode-form{grid-template-columns:1fr 1fr}.decode-form input[name=hex_bytes]{grid-column:1/-1}.decode-form button{grid-column:1/-1}}
+@media(max-width:1180px){.packet-main-grid,.scratch-row{grid-template-columns:1fr}.decode-form{grid-template-columns:1fr 1fr}.decode-form input[name=hex_bytes],.decode-form textarea[name=hex_bytes]{grid-column:1/-1}.decode-form button{grid-column:1/-1}}
 </style>
 
 <div class="packet-breadcrumb"><a class="inline" href="/packets?direction={{ direction }}&q={{ q }}">Packet Tools</a> &rsaquo; {{ 'Bulk Packet Decode' if mode == 'bulk' else 'Manual Packet Viewer / Decoder' }}</div>
