@@ -182,3 +182,19 @@ def get_ffxi_install() -> str | None:
         except (FileNotFoundError, OSError):
             continue
     return None
+
+
+def get_active_sql_prefix() -> str:
+    """Table prefix of the active server's parsed SQL/Lua tables in ffxi_zone_database.db:
+    "topaz_" or "dsp_" (zoneplot_server). The legacy sql_* tables are LSB-derived, so entity
+    views must not read them when the user manages a Topaz or DSP checkout."""
+    import sqlite3
+    try:
+        con = sqlite3.connect(str(DB_PATH))
+        try:
+            v = get(con, "zoneplot_server")
+        finally:
+            con.close()
+    except Exception:
+        v = None
+    return "dsp_" if v == "dsp" else "topaz_"
