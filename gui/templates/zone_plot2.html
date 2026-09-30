@@ -11,7 +11,6 @@ body.zp2-menu>header{display:block;position:fixed;top:36px;left:0;right:0;z-inde
 #zbar label{display:flex;align-items:center;gap:4px;margin:0}
 #zbar select{width:auto;max-width:170px}
 #zbar input[type=text]{width:130px}
-#zbar button{padding:2px 8px}
 #zbar .sp{flex:1}
 #zmain{display:flex;flex:1;min-height:0}
 .zpanel{flex:none;overflow:auto;padding:6px 8px;background:var(--bg,transparent)}
@@ -22,7 +21,7 @@ body.zp2-menu>header{display:block;position:fixed;top:36px;left:0;right:0;z-inde
 .zpanel h3{margin:10px 0 4px;font-size:13px}
 .tabb.on{background:#3a6ea5;color:#fff}
 .ztabs{display:flex;gap:2px;padding:4px 4px 0;border-bottom:1px solid var(--border);flex:none}
-.ztabs button{flex:1;padding:4px 2px;border-radius:4px 4px 0 0}
+.ztabs button{flex:1;padding:2px 2px;border-radius:4px 4px 0 0}
 .zpane{flex:1;min-height:0;overflow:auto;padding:6px 8px}
 #list{max-height:none;height:calc(100vh - 330px);overflow:auto;font:10px monospace;border:1px solid var(--border);padding:0}
 #list .entity-row{cursor:pointer;display:grid;grid-template-columns:30px 60px minmax(90px,1fr) 44px;gap:4px;align-items:center;padding:2px 4px;border-bottom:1px solid rgba(255,255,255,.08)}
@@ -32,21 +31,27 @@ body.zp2-menu>header{display:block;position:fixed;top:36px;left:0;right:0;z-inde
 .lbl{color:#fff;font:11px monospace;background:rgba(0,0,0,.7);padding:0 3px;border-radius:3px;pointer-events:none;white-space:nowrap}
 #viewer-container{flex:1;min-width:0;height:auto !important;border:0 !important;border-radius:0 !important;background:#0a0d10;position:relative;overflow:hidden}
 #abar{display:flex;align-items:center;gap:8px;flex:none;padding:4px 8px;border-top:1px solid var(--border);background:var(--surface);flex-wrap:wrap}
-#abar button{padding:3px 10px}
 #abar #ecomment{width:220px;height:26px;resize:none}
 #abar .sp{flex:1}
 #helpdrawer{position:absolute;inset:0 0 0 auto;width:min(560px,90%);background:var(--surface);border-left:1px solid var(--border);z-index:30;overflow:auto;padding:10px 14px;box-shadow:-8px 0 24px #0008}
 #ztool{position:absolute;left:10px;top:10px;z-index:9;display:flex;gap:4px;flex-wrap:wrap;background:rgba(4,8,12,.72);padding:4px;border-radius:6px;border:1px solid rgba(255,255,255,.25)}
-#ztool button{padding:2px 8px}
 #ztool .gsep{width:1px;background:rgba(255,255,255,.25);margin:0 2px}
 .xyzgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:2px 0}
 .xyzgrid label{flex-direction:column;align-items:stretch;gap:1px;margin:0;font-size:10px}
 .xyzgrid input{width:100% !important;min-width:0;padding:2px 3px}
-#rpanel{font-size:12px}
-#rpanel button{padding:1px 6px;font-size:11px}
-#rpanel .zdet{border:1px solid var(--border);border-radius:4px;padding:3px 6px;margin:4px 0}
-#rpanel .zdet>summary{cursor:pointer;font-size:11px;color:var(--muted)}
-#rpanel h3{margin:6px 0 3px}
+.zpanel{font-size:12px}
+.zpanel button,#zbar button,#abar button,#ztool button,#ztool select{padding:1px 6px;font-size:11px;line-height:1.35}
+.zpanel select,.zpanel input[type=text],.zpanel input[type=number],.zpanel input[type=search]{padding:1px 3px;font-size:11px}
+.zpanel .zdet{border:1px solid var(--border);border-radius:4px;padding:3px 6px;margin:4px 0}
+.zpanel .zdet>summary{cursor:pointer;font-size:11px;color:var(--muted)}
+.zpanel h3{margin:6px 0 3px}
+.zpanel label.inl{display:inline-flex;justify-content:flex-start;gap:3px;margin:2px 8px 2px 0}
+.zpanel .chips{display:flex;flex-wrap:wrap}
+.zpanel .row{display:flex;gap:4px;flex-wrap:wrap;margin:4px 0;align-items:center}
+.zpanel .ztabs{padding:0 0 3px;border:0}
+#lpanel .xyzgrid input{width:100% !important}
+#lpanel select{max-width:150px}
+#lpanel .zpane>.ztabs{margin-bottom:4px}
 body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
 @media (max-width:1100px){
   #lpanel,#rpanel{position:absolute;top:36px;bottom:0;z-index:40;background:var(--surface);display:none}
@@ -93,76 +98,80 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
   </div>
   <div class="zpane" id="lp-layers" hidden>
   <div id="tab-view">
-  <label><span>Mobs</span><input type="checkbox" id="showm" checked></label>
-  <label><span>NPCs</span><input type="checkbox" id="shown" checked></label>
-  <label><span>Doors / props (_names)</span><input type="checkbox" id="showd" checked></label>
-  <label>Colour by <select id="mode"><option value="reach">Reachability</option><option value="kind">Kind</option><option value="comp">Nav region</option><option value="height">Elevation</option></select></label>
-  <label><span>Navmesh overlay</span><input type="checkbox" id="shownav" checked></label>
-<label><span>Nav diagnostics</span><input type="checkbox" id="navdiag"></label>
-<div id="navdiagOut" class="mono muted" style="font-size:10px;white-space:pre-wrap;margin:3px 0 5px"></div>
-<label><span>Door/prop facing ticks</span><input type="checkbox" id="showDoorFacing" checked></label>
-<label><span>Show all explicit mob radii</span><input type="checkbox" id="showMobRadii"></label>
-<div id="radiusLegend" class="mono muted" style="font-size:10px;white-space:pre-wrap;margin:3px 0 5px">Selected mob: explicit ROAM_DISTANCE/SPAWN_LEASH only · no engine defaults inferred</div>
-  <label>Mesh complexity <select id="lod"><option value="live">Live (textured)</option><option value="0">Full</option><option value="1">High (drop &lt;0.75u)</option><option value="2">Medium (&lt;1.5u)</option><option value="3">Low (&lt;3u)</option><option value="obj">Legacy OBJ (full)</option></select></label>
-  <button id="buildCacheBtn" hidden style="margin-top:4px">Build visual mesh cache for this zone</button>
-  <label>Mesh opacity <input type="range" id="opac" min="0.05" max="1" step="0.05" value="0.35"></label>
-  <label>Dot size <input type="range" id="dsz" min="0.3" max="4" step="0.1" value="1.2"></label>
-  <label>Nearest labels <input type="number" id="nlab" value="40" min="0" max="300"></label>
-<label><span>Show heading on labels</span><input type="checkbox" id="labelHeading"></label>
-<div style="display:flex;gap:4px;flex-wrap:wrap;margin:4px 0">
-  <button id="measureBtn" type="button">Measure</button>
-  <button id="measureClear" type="button">Clear measurement</button>
-</div>
-<div id="measureOut" class="mono muted" style="font-size:10px;margin-bottom:4px"></div>
-<div style="margin-top:6px">
-  <div class="muted" style="font-size:10px;margin-bottom:3px">Camera</div>
-  <div style="display:flex;gap:3px;flex-wrap:wrap">
-    <button type="button" data-cam="perspective">Perspective</button>
-    <button type="button" data-cam="top">Top</button>
-    <button type="button" data-cam="north">North</button>
-    <button type="button" data-cam="south">South</button>
-    <button type="button" data-cam="east">East</button>
-    <button type="button" data-cam="west">West</button>
-  </div>
-  <label style="margin-top:4px">Projection <select id="projection"><option value="perspective">Perspective</option><option value="orthographic">Orthographic</option></select></label>
-</div>
-  <div style="display:flex;gap:6px;margin-top:6px"><button id="reachbtn">Recompute reach</button><button id="clran">Clear anchor</button></div>
-  <h3>Summary</h3><div id="sum" class="mono"></div>
+  <details class="zdet" open><summary>Show</summary>
+    <div class="chips"><label class="inl"><span>Mobs</span><input type="checkbox" id="showm" checked></label><label class="inl"><span>NPCs</span><input type="checkbox" id="shown" checked></label><label class="inl"><span>Doors / props (_names)</span><input type="checkbox" id="showd" checked></label><label class="inl"><span>Navmesh overlay</span><input type="checkbox" id="shownav" checked></label><label class="inl"><span>Door/prop facing ticks</span><input type="checkbox" id="showDoorFacing" checked></label><label class="inl"><span>Show heading on labels</span><input type="checkbox" id="labelHeading"></label></div>
+  </details>
+  <details class="zdet" open><summary>Colour &amp; labels</summary>
+    <label>Colour by <select id="mode"><option value="reach">Reachability</option><option value="kind">Kind</option><option value="comp">Nav region</option><option value="height">Elevation</option></select></label><label>Dot size <input type="range" id="dsz" min="0.3" max="4" step="0.1" value="1.2"></label><label>Nearest labels <input type="number" id="nlab" value="40" min="0" max="300"></label>
+  </details>
+  <details class="zdet"><summary>Mesh</summary>
+    <label>Mesh complexity <select id="lod"><option value="live">Live (textured)</option><option value="0">Full</option><option value="1">High (drop &lt;0.75u)</option><option value="2">Medium (&lt;1.5u)</option><option value="3">Low (&lt;3u)</option><option value="obj">Legacy OBJ (full)</option></select></label>
+    <button id="buildCacheBtn" hidden style="margin-top:4px">Build visual mesh cache for this zone</button>
+    <label>Mesh opacity <input type="range" id="opac" min="0.05" max="1" step="0.05" value="0.35"></label>
+  </details>
+  <details class="zdet" open><summary>Mob ranges &amp; detection</summary>
+    <div class="chips"><label class="inl"><span>Show all explicit mob radii</span><input type="checkbox" id="showMobRadii"></label><label class="inl"><input type="checkbox" id="showDetect"><span>Detection (selected)</span></label><label class="inl"><input type="checkbox" id="showDetectAll"><span>all mobs</span></label></div>
+    <div id="radiusLegend" class="mono muted" style="font-size:10px;white-space:pre-wrap;margin:3px 0">Roam / leash circles from explicit server data only.</div>
+    <div id="detectLegend" class="mono muted" style="font-size:10px;white-space:pre-wrap;margin:3px 0">Detection: orange cone = sight (forward &plusmn;45&deg;), purple circle = hearing, for the selected mob (or all).</div>
+  </details>
+  <details class="zdet"><summary>Navmesh &amp; reach</summary>
+    <div class="chips"><label class="inl"><span>Nav diagnostics</span><input type="checkbox" id="navdiag"></label></div>
+    <div id="navdiagOut" class="mono muted" style="font-size:10px;white-space:pre-wrap;margin:3px 0"></div>
+    <div style="display:flex;gap:4px"><button id="reachbtn">Recompute reach</button><button id="clran">Clear anchor</button></div>
+  </details>
+  <details class="zdet" open><summary>Summary</summary><div id="sum" class="mono"></div></details>
   </div>
   </div>
   <div class="zpane" id="lp-tools" hidden>
     <div class="ztabs" id="ttabs"><button class="tabb" data-tt="gen">Generator</button><button class="tabb" data-tt="add">Add</button><button class="tabb" data-tt="backup">Backups</button></div>
     <div id="tt-gen">
-  <h3>Generator <span class="muted">(descriptor)</span></h3>
+  <div class="muted" style="font-size:10px">Preview a pattern of ghost markers around a centre point, then place copies of the current <b>Add</b> source.</div>
+  <label>Pattern <select id="lgPat"><option value="cluster">Cluster (scatter)</option><option value="row">Row / line</option><option value="grid">Grid</option><option value="ring">Ring</option><option value="arc">Arc / crescent</option><option value="camp">Camp (centre + ring + outskirts)</option><option value="flank">Flank pair (gate guards)</option></select></label>
+  <div class="xyzgrid" id="lgNums">
+    <label data-lg="n"><span>Count</span><input type="number" id="lgN" value="6" min="1" max="60"></label>
+    <label data-lg="r"><span>Radius</span><input type="number" id="lgR" value="8" min="0.5" step="0.5"></label>
+    <label data-lg="sp"><span>Spacing</span><input type="number" id="lgSp" value="3" min="0.5" step="0.5"></label>
+    <label data-lg="cols"><span>Columns</span><input type="number" id="lgCols" value="3" min="1" max="20"></label>
+    <label data-lg="ang"><span>Heading</span><input type="number" id="lgAng" value="0" min="0" max="255" title="FFXI rotation byte: 0=E, 64=S, 128=W, 192=N"></label>
+    <label data-lg="span"><span>Arc &deg;</span><input type="number" id="lgSpan" value="180" min="10" max="360"></label>
+    <label><span>Seed</span><input type="number" id="lgSeed" value="1"></label>
+  </div>
+  <label>Facing <select id="lgFace"><option value="in">Toward centre</option><option value="out">Away from centre</option><option value="dir">Along heading</option><option value="rand">Random</option></select></label>
+  <div class="xyzgrid" style="grid-template-columns:repeat(3,1fr)">
+    <label><span>Centre X</span><input type="number" id="lgCx" step="0.1"></label>
+    <label><span>Centre Y</span><input type="number" id="lgCy" step="0.1"></label>
+    <label><span>Centre Z</span><input type="number" id="lgCz" step="0.1"></label>
+  </div>
+  <div class="row"><button id="lgSel" type="button">Centre = selected</button><button id="lgView" type="button">= view centre</button><button id="lgAddPos" type="button">= Add pos</button></div>
+  <label class="inl"><input type="checkbox" id="lgSnap" checked><span>Snap each Y to navmesh</span></label>
+  <div class="row"><button id="lgGen" type="button">Preview</button><button id="lgRnd" type="button">Reseed</button><button id="lgClr" type="button">Clear</button></div>
+  <div class="row"><select id="lgRole"><option value="all">Place: all</option><option value="c">Centre only</option><option value="r">Ring only</option><option value="o">Outskirts only</option></select><button id="lgPlace" type="button">Place via Add source</button></div>
+  <div id="lgMsg" class="mono" style="font-size:10px;white-space:pre-wrap;margin-top:3px"></div>
+  <details class="zdet"><summary>Mission descriptors (existing mechanics)</summary>  
   <label>Mechanic <select id="gd"><option value="">(none)</option></select></label>
   <label>Seed <input type="number" id="gseed" value="1"></label>
   <div id="gnote" class="muted" style="font-size:11px"></div>
   <div id="gopts"></div>
   <div style="display:flex;gap:6px;margin-top:4px"><button id="ggen">Generate</button><button id="grnd">Random seed</button><button id="gclr">Clear</button></div>
   <div id="gout" class="mono" style="font-size:11px;max-height:160px;overflow:auto"></div>
+  </details>
     </div>
-  <div id="tab-add" hidden style="font-size:13px">
-    <div class="muted" style="font-size:11px">Clone an existing mob group or NPC from anywhere in the game into the current zone at a chosen position. A cloned mob group from another zone gets a fresh groupid in this zone; ids are auto-assigned in this zone's id block.</div>
-    <label>Kind <select id="ak"><option value="m">Mob (mob_groups)</option><option value="n">NPC (npc_list)</option></select></label>
-    <label>Search <input type="text" id="aq" placeholder="name contains&hellip;"></label>
-    <div id="alist" style="max-height:160px;overflow:auto;font:11px monospace;border:1px solid var(--border);padding:4px;margin:4px 0"></div>
-    <div id="asel" class="mono" style="font-size:11px;margin:4px 0"></div>
+  <div id="tab-add" hidden>
+    <div class="muted" style="font-size:10px">Clone a mob group or NPC from anywhere into this zone. Click the map (or drag a result onto it) to set the position.</div>
+    <div class="xyzgrid" style="grid-template-columns:1fr 2fr"><label>Kind <select id="ak"><option value="m">Mob (mob_groups)</option><option value="n">NPC (npc_list)</option></select></label><label>Search <input type="text" id="aq" placeholder="name contains&hellip;"></label></div>
+    <div id="alist" style="max-height:140px;overflow:auto;font:11px monospace;border:1px solid var(--border);padding:3px;margin:3px 0"></div>
+    <div id="asel" class="mono" style="font-size:11px;margin:3px 0"></div>
     <label>Name override <input type="text" id="aname" placeholder="(keep source name)"></label>
-    <label>X <input type="number" step="0.1" id="aX"></label>
-    <label>Y <input type="number" step="0.1" id="aY"></label>
-    <label>Z <input type="number" step="0.1" id="aZ"></label>
-    <label>Rot (0-255) <input type="number" step="1" min="0" max="255" id="aR" value="0"></label>
+    <div class="xyzgrid"><label><span>X</span><input type="number" step="0.1" id="aX"></label><label><span>Y</span><input type="number" step="0.1" id="aY"></label><label><span>Z</span><input type="number" step="0.1" id="aZ"></label><label><span>Rot (0-255)</span><input type="number" step="1" min="0" max="255" id="aR" value="0"></label></div>
     <label>Link to instance <select id="ainst"><option value="0">None (general zone pool)</option></select></label>
-<label><span>Repeated placement</span><input type="checkbox" id="repeatAdd"></label>
-<div id="addGhostInfo" class="mono muted" style="font-size:10px;margin:3px 0 5px"></div>
-    <div class="muted" style="font-size:11px">A fixed-placement instance (e.g. an assault like Heroines' Holdfast) only spawns rows also linked into instance_entities &mdash; picking one here writes that link row too. Leave "None" to add to the zone's general pool instead (visible in every instance and in unrestricted zone entry).</div>
-    <div class="muted" style="font-size:11px">Click anywhere in the viewport (or drag a result above onto it) to set X/Y/Z from that point &mdash; the cyan marker shows where it'll be added. No marker means the click found no mesh/navmesh there; set X/Y/Z by hand instead.</div>
-    <label style="align-items:flex-start">Comment <textarea id="acomment" rows="2" style="width:170px" placeholder="why"></textarea></label>
-    <div style="margin-top:4px"><button id="aadd">Add to zone</button></div>
-    <div id="amsg" class="mono" style="font-size:11px;margin-top:4px;white-space:pre-wrap"></div>
+    <label class="inl" title="Keep the source, rotation and instance active so each click places another copy"><input type="checkbox" id="repeatAdd"><span>Repeated placement</span></label>
+    <div id="addGhostInfo" class="mono muted" style="font-size:10px;margin:2px 0"></div>
+    <textarea id="acomment" rows="1" placeholder="comment (goes in the SQL)" style="width:100%"></textarea>
+    <div class="row" title="Fixed-placement instances only spawn rows linked in instance_entities; choose an instance above to write that link, or None for the zone pool."><button id="aadd">Add to zone</button></div>
+    <div id="amsg" class="mono" style="font-size:10px;margin-top:3px;white-space:pre-wrap"></div>
   </div>
   <div id="tab-backup" hidden style="font-size:12px">
-    <div class="muted" style="font-size:11px">Every edit/add/delete auto-backs-up the row(s) it touches. You can also snapshot the whole current zone before a bigger session, then restore it later.</div>
+    <div class="muted" style="font-size:10px">Every write auto-backs-up the rows it touches. Snapshot the whole zone before a big session.</div>
     <div style="display:flex;gap:6px;margin:6px 0"><button id="bsnap">Snapshot this zone</button><button id="bref">Refresh list</button></div>
     <div id="blist" style="max-height:320px;overflow:auto;font:11px monospace;border:1px solid var(--border);padding:4px"></div>
     <div id="bmsg" class="mono" style="font-size:11px;margin-top:4px;white-space:pre-wrap"></div>
@@ -175,6 +184,9 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
     <button type="button" data-cam="perspective">Persp</button><button type="button" data-cam="top">Top</button><button type="button" data-cam="north">N</button><button type="button" data-cam="south">S</button><button type="button" data-cam="east">E</button><button type="button" data-cam="west">W</button>
     <span class="gsep"></span>
     <button id="zgMove" type="button" title="Gizmo: move">Move</button><button id="zgRotate" type="button" title="Gizmo: rotate">Rotate</button>
+    <span class="gsep"></span>
+    <select id="projection" title="Projection"><option value="perspective">Perspective</option><option value="orthographic">Orthographic</option></select>
+    <button id="measureBtn" type="button" title="Measure distance between two map points">Measure</button><button id="measureClear" type="button" title="Clear measurement">&times;</button>
   </div>
   <div id="map-compass" title="World compass. FFXI rotation: 0=East, 64=South, 128=West, 192=North (world +Z is north)."
        style="position:absolute;right:12px;top:12px;width:92px;height:92px;border-radius:50%;border:1px solid rgba(255,255,255,.45);background:rgba(4,8,12,.72);z-index:8;pointer-events:none;box-shadow:0 2px 8px #0008">
@@ -189,79 +201,65 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
     </div>
     <div style="position:absolute;left:50%;bottom:-17px;transform:translateX(-50%);white-space:nowrap;font:10px monospace;color:#aaa">0=E · 192=N</div>
   </div>
+  <div id="measureOut" class="lbl" style="position:absolute;left:10px;top:44px;z-index:9;font-size:11px"></div>
   <div id="hover" class="lbl" style="position:absolute;left:8px;bottom:8px;font-size:12px"></div>
   <div id="helpdrawer" hidden>
     <button type="button" id="zhelpClose" style="float:right">Close &times;</button>
   <div id="tab-help" style="font-size:12px;line-height:1.45">
     <h3>Zone Editor help</h3>
-    <div class="muted">The editor separates preview state from saved state. Moving, rotating, snapping, or dragging an entity changes only the browser preview until you press <b>Save to live DB</b>. Every write is backed up first. Checked-in SQL files are updated only when you explicitly use a Sync to SQL action.</div>
+    <div class="muted">Moving, rotating, snapping or dragging only changes the browser preview until you press <b>Save to live DB</b> (bottom bar). Every write is backed up first. The checked-in <span class="mono">sql/*.sql</span> files are separate: press <b>Sync to SQL file</b> once the live result is right.</div>
+
+    <h3>Layout</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li><b>Top bar:</b> server / zone / instance, search, Undo / Redo, Frame, Clone. &#9776; toggles the site menu, <b>Focus</b> (or <b>Tab</b>) hides both side panels.</li>
+      <li><b>Left panel:</b> <b>Entities</b> (filterable match list), <b>Layers</b> (what to draw, colours, mesh, ranges/detection, navmesh) and <b>Tools</b> (Generator, Add, Backups).</li>
+      <li><b>3D view toolbar:</b> camera presets (Persp / Top / N / S / E / W), gizmo Move / Rotate, projection, Measure.</li>
+      <li><b>Right inspector:</b> X / Y / Z / Rot for the selection with facing presets, step sizes, then collapsible Snap, Nudge and Model sections, animation, drops and history.</li>
+      <li><b>Bottom bar:</b> dirty state, Save to live DB, Sync to SQL file, Revert, Copy SQL, comment and status.</li>
+    </ul>
 
     <h3>Selection &amp; camera</h3>
     <ul style="padding-left:18px;margin:4px 0">
-      <li>Click a dot or result row to select it. Selection always returns the transform gizmo to <b>Move</b> mode.</li>
-      <li>Double-click a dot or result row to select and frame it.</li>
-      <li>Ctrl/Cmd-click adds or removes entities from multi-select.</li>
-      <li>Shift-click a dot sets the reachability anchor.</li>
-      <li><b>F</b> frames the selected entity. Frame all fits the whole visible set.</li>
-      <li>Mouse drag orbits the camera; wheel zooms. Camera presets and Perspective/Orthographic projection are under View.</li>
+      <li>Click a dot or list row to select; double-click to select and frame. Ctrl/Cmd-click toggles multi-select. Shift-click sets the reachability anchor.</li>
+      <li>Left-drag orbits, right-drag pans (1:1 with the map under the cursor), wheel zooms toward the cursor. Zoom is proportional and scales with the zone size; <b>Shift+wheel</b> = fine, <b>Ctrl+wheel</b> = fast.</li>
+      <li><b>F</b> frames the selection; Frame all fits the zone. Compass: FFXI rotation 0 = East, 64 = South, 128 = West, 192 = North (world +Z is north).</li>
     </ul>
 
     <h3>Transform shortcuts</h3>
     <table class="mono" style="width:100%;font-size:10px;border-collapse:collapse">
-      <tr><td>Arrow keys</td><td>Move selected entity on X/Z</td></tr>
+      <tr><td>Arrow keys</td><td>Move on X/Z</td></tr>
       <tr><td>Page Up / Page Down</td><td>Move Y</td></tr>
-      <tr><td>[ / ]</td><td>Rotate left/right by Rotation step</td></tr>
-      <tr><td>Shift</td><td>Large-step modifier</td></tr>
-      <tr><td>Alt</td><td>Precision-step modifier</td></tr>
-      <tr><td>Ctrl+Z</td><td>Undo last saved Zone Editor action</td></tr>
-      <tr><td>Ctrl+Y or Ctrl+Shift+Z</td><td>Redo</td></tr>
-      <tr><td>F</td><td>Frame selected</td></tr>
+      <tr><td>[ / ]</td><td>Rotate by Rot step</td></tr>
+      <tr><td>Shift / Alt</td><td>Large / precision step</td></tr>
+      <tr><td>Ctrl+Z, Ctrl+Y</td><td>Undo / redo saved actions</td></tr>
+      <tr><td>F, Tab</td><td>Frame selected, toggle focus mode</td></tr>
     </table>
 
-    <h3>Move / rotate / snap</h3>
+    <h3>Generator (Tools)</h3>
     <ul style="padding-left:18px;margin:4px 0">
-      <li><b>Move</b> uses the Three.js translation gizmo; <b>Rotate</b> uses the rotation gizmo. Clicking another model resets to Move.</li>
-      <li>Direction presets use FFXI rotation: 0=E, 64=N, 128=W, 192=S.</li>
-      <li>Drag facing direction lets you drag from the selected dot toward a point to set heading.</li>
-      <li>Snap XYZ/XZ uses the configured grid. Snap Y to navmesh or visual floor uses the corresponding geometry source.</li>
-      <li>Transform clipboard copies position+rotation and can paste all, X/Z only, or rotation only.</li>
-      <li><b>Multi-select / Move Group:</b> Ctrl/Cmd-click 2+ entities, then move the selection center (or primary entity anchor) by entering absolute X/Y/Z, clicking <b>Pick target on map</b>, or dragging the translation gizmo. Relative spacing is preserved.</li>
-      <li><b>Nudge / Offset:</b> ΔX/ΔY/ΔZ/ΔRot remains available when you intentionally want a relative transform instead of absolute group placement.</li>
-    </ul>
-
-    <h3>View &amp; diagnostics</h3>
-    <ul style="padding-left:18px;margin:4px 0">
-      <li>Toggle mobs, NPCs, doors/props, navmesh, labels, heading labels, and door-facing ticks.</li>
-      <li>Colour by reachability, entity kind, nav region, or elevation.</li>
-      <li>Nav diagnostics shows polygon/triangle/component, placement bounds, and nearest nav point for the selection.</li>
-      <li>Measure reports distance between picked map points.</li>
-      <li>Explicit ROAM_DISTANCE and SPAWN_LEASH circles are shown only when the server data actually defines them.</li>
-      <li>Mesh complexity selects live textured mesh, reduced LOD, or legacy OBJ comparison.</li>
-    </ul>
-
-    <h3>Client model preview</h3>
-    <ul style="padding-left:18px;margin:4px 0">
-      <li>Open <b>Client model preview</b> on a selected mob/NPC to render its client model lazily.</li>
-      <li>The candidate model browser searches the shared Client Model Catalog by name, model/file ID, family, pool, or ROM path.</li>
-      <li>Candidate previews are read-only until you explicitly use the model-change workflow; previewing never changes server data.</li>
-    </ul>
-
-    <h3>Animation &amp; subanimation</h3>
-    <ul style="padding-left:18px;margin:4px 0">
-      <li>NPC/door rows expose the persistent <span class="mono">animation</span> and <span class="mono">animationsub</span> bytes sent in entity updates.</li>
-      <li>Known animation enum values come from current LandSandBoat <span class="mono">data/enums/animation.yaml</span>; unknown numeric values remain available through Custom.</li>
-      <li>Subanimation is model-dependent. Known observed values are labeled with their LSB usage evidence rather than treated as universal meanings.</li>
-      <li>FOURCC <span class="mono">entityAnimationPacket</span> effects are transient script-driven animations and are separate from the persistent animation/subanimation fields.</li>
+      <li>Pick a pattern (Cluster, Row, Grid, Ring, Arc, Camp, Flank pair), set count / radius / spacing / heading / facing, choose the centre (selected entity, view centre or Add position) and press <b>Preview</b> to see ghost markers with their rotation.</li>
+      <li><b>Camp</b> = one centre marker, a ring around it facing inward, and a looser outskirts ring facing out. Use the Place dropdown to place each role separately with different Add sources (e.g. fire, tents, crates).</li>
+      <li><b>Place via Add source</b> creates one row per marker from the source picked in the Add tab (each write is backed up and undoable). Y can snap to the navmesh.</li>
+      <li>The older <b>Mission descriptors</b> previews existing mission mechanics.</li>
     </ul>
 
     <h3>Add, delete, drops &amp; backups</h3>
     <ul style="padding-left:18px;margin:4px 0">
-      <li>Add clones an existing mob group or NPC and can link the new row to an instance.</li>
-      <li>Repeated placement keeps the Add source active for multiple placements.</li>
-      <li>Mob drop editing follows spawn → group → dropid → mob_droplist and reports group sharing.</li>
-      <li>Delete, transform, animation, model, add, and drop edits are backup-backed before mutation.</li>
-      <li>The Backups tab can snapshot the entire zone and restore previous states.</li>
-      <li>Live DB and checked-in SQL are intentionally separate. Use the relevant <b>Sync to SQL</b> button when the live result is correct.</li>
+      <li>Add clones a mob group or NPC and can link the new row to an instance. Repeated placement keeps the source active.</li>
+      <li>Mob drops follow spawn &rarr; group &rarr; dropid &rarr; droplist and report group sharing.</li>
+      <li>Backups can snapshot the whole zone and restore earlier states.</li>
+    </ul>
+
+    <h3>Ranges &amp; detection (Layers)</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li>Roam / leash circles show only when the server data defines them. <b>Detection</b> draws a sight cone (forward &plusmn;45&deg;) and a hearing circle for the selected mob, or all mobs.</li>
+      <li>Which senses a mob has comes from SQL (<span class="mono">mob_family_system.detects</span>, <span class="mono">mob_pools.aggro</span> / <span class="mono">true_detection</span>). The default ranges (sight 15, sound 8 yalms) are engine constants, overridden by SIGHT_RANGE / SOUND_RANGE mob mods when set in SQL or literally in the mob's Lua. Other senses (low HP, magic, weapon skill, job ability, scent) have no radius and are listed as text.</li>
+    </ul>
+
+    <h3>Animation, model preview, NPC rows</h3>
+    <ul style="padding-left:18px;margin:4px 0">
+      <li>NPC/door rows expose persistent <span class="mono">animation</span> / <span class="mono">animationsub</span> bytes (enum from LSB <span class="mono">animation.yaml</span>; subanimation meanings are model-dependent). FOURCC animation packets are transient and separate.</li>
+      <li><b>Client model preview</b> (inspector) renders the model lazily and browses candidates read-only until you use the model-change workflow.</li>
     </ul>
   </div>
   </div>
@@ -445,24 +443,20 @@ function configureControls(){
   controls.screenSpacePanning=true;
 }
 configureControls();
-// Proportional zoom: every wheel notch changes the distance by the same ~9% at any range (OrbitControls
-// scales by 0.95^zoomSpeed per notch), so there is no stepped-speed "jump" and close work stays precise.
-function updateZoomSpeed(){
-  controls.zoomSpeed = 1.8;
-  controls.maxDistance = 1500;
+// Proportional zoom scaled to the zone: every wheel notch changes the camera distance by a constant
+// fraction (OrbitControls uses 0.95^zoomSpeed per notch), faster when far out, finer when close, with no
+// stepped jumps. Shift+wheel = fine, Ctrl+wheel = fast. Pan is the stock 1:1 screen-space pan.
+let zoneExtent=400;
+function updateZoomSpeed(mult=1){
+  const d=camera.position.distanceTo(controls.target)||1;
+  const far=Math.min(1, d/Math.max(60,zoneExtent*0.6));
+  controls.zoomSpeed=(1.4+2.6*far)*mult;
+  controls.maxDistance=Math.max(1500, zoneExtent*4);
+  controls.minDistance=0.05;
 }
-controls.minDistance = 0.3;
-// OrbitControls' built-in right-drag pan intentionally scales the pan offset by the camera-target
-// distance (its normal perspective-camera behavior: same drag = same *screen* fraction at any zoom).
-// That's exactly backwards for a level editor -- zoomed in close, a full drag barely nudges the
-// world position, matching the report ("zoom is inversely proportional to how much the map moves").
-// Counteract it by setting panSpeed = BASE_PAN/distance right before each drag starts, which cancels
-// OrbitControls' own distance multiplication so a given drag covers roughly the same world-space
-// distance regardless of zoom level.
-const BASE_PAN = 35;
-function repanSpeed(){ const d = camera.position.distanceTo(controls.target) || 1; controls.panSpeed = Math.min(25, Math.max(0.25, BASE_PAN / d)); }
+function repanSpeed(){ controls.panSpeed=1.0; }
+renderer.domElement.addEventListener('wheel', ev=>{ ev.preventDefault(); updateZoomSpeed(ev.shiftKey?0.3:(ev.ctrlKey?2.5:1)); }, {passive:false, capture:true});
 renderer.domElement.addEventListener('pointerdown', ev=>{ if (ev.button===2) repanSpeed(); });
-renderer.domElement.addEventListener('wheel', ev=>{ ev.preventDefault(); repanSpeed(); }, {passive:false});
 updateZoomSpeed(); repanSpeed();
 const ZONE_EDITOR_STATE_KEY='zoneEditor.ui.v1';
 function vecArray(v){ return [v.x,v.y,v.z]; }
@@ -633,14 +627,42 @@ function addMobRadiusCircle(e,radius,material){
 }
 function updateMobRadiusVisuals(){
   clearMobRadiusVisuals(); if(!Z) return; const all=$('showMobRadii')?.checked;
+  if($('showDetect')?.checked){ const allD=$('showDetectAll')?.checked; Z.entities.forEach((e,i)=>{ if(e.k!=='m'||e.zero) return; if(!allD&&i!==selected) return; addDetectionVisual(e); }); }
   Z.entities.forEach((e,i)=>{ if(e.k!=='m'||e.zero) return; if(!all&&i!==selected) return; if(e.roam_radius!==undefined) addMobRadiusCircle(e,e.roam_radius,roamRadiusMat); if(e.leash_radius!==undefined) addMobRadiusCircle(e,e.leash_radius,leashRadiusMat); });
+}
+const DETECT_BITS=[[0x01,'sight'],[0x02,'hearing'],[0x04,'low HP'],[0x20,'magic'],[0x40,'weapon skill'],[0x80,'job ability'],[0x100,'scent']];
+const detectSightMat=new THREE.LineBasicMaterial({color:0xffa726,transparent:true,opacity:.95,depthTest:false});
+const detectSoundMat=new THREE.LineBasicMaterial({color:0xb36bff,transparent:true,opacity:.95,depthTest:false});
+function detectInfo(e){
+  if(!e||e.k!=='m'||e.detects===undefined) return null;
+  const senses=DETECT_BITS.filter(([b])=>e.detects&b).map(([,n])=>n);
+  const sight=e.sight_range!==undefined?+e.sight_range:15, sound=e.sound_range!==undefined?+e.sound_range:8;
+  return {senses,sight,sound,sightDefault:e.sight_range===undefined,soundDefault:e.sound_range===undefined,
+          hasSight:!!(e.detects&0x01), hasSound:!!(e.detects&0x02), aggro:!!e.aggro, trueDet:!!e.true_detection};
+}
+function detectText(e){
+  const d=detectInfo(e); if(!d) return '';
+  const bits=['Detects: '+(d.senses.join(', ')||'nothing')+(d.aggro?'':' (passive: aggro=0)')+(d.trueDet?' · true detection':'')];
+  if(d.hasSight) bits.push('Sight '+d.sight+'y forward cone'+(d.sightDefault?' (engine default)':' (SIGHT_RANGE mod)'));
+  if(d.hasSound) bits.push('Hearing '+d.sound+'y'+(d.soundDefault?' (engine default)':' (SOUND_RANGE mod)'));
+  return bits.join('\n');
+}
+function addDetectionVisual(e){
+  const d=detectInfo(e); if(!d) return; const p=P(e);
+  if(d.hasSound){ const pts=[],segs=72; for(let i=0;i<segs;i++){ const a=i*Math.PI*2/segs; pts.push(new THREE.Vector3(p.x+Math.cos(a)*d.sound,p.y+0.6,p.z+Math.sin(a)*d.sound)); }
+    const l=new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts),detectSoundMat); l.renderOrder=19; mobRadiusGroup.add(l); }
+  if(d.hasSight){ const h=(((e.r||0)%256)+256)%256*Math.PI*2/256, half=Math.PI/4, pts=[new THREE.Vector3(p.x,p.y+0.8,p.z)], segs=24;
+    for(let i=0;i<=segs;i++){ const a=h-half+(2*half)*i/segs; pts.push(new THREE.Vector3(p.x+Math.cos(a)*d.sight,p.y+0.8,p.z+Math.sin(a)*d.sight)); }
+    pts.push(pts[0].clone());
+    const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),detectSightMat); l.renderOrder=19; mobRadiusGroup.add(l); }
 }
 function radiusText(e){
   if(!e||e.k!=='m') return 'No mob radius metadata for this entity.';
-  const bits=[];
+  const dt=detectText(e); const bits=[];
   if(e.roam_radius!==undefined) bits.push('ROAM_DISTANCE '+e.roam_radius+' yalms · '+(e.roam_radius_detail||e.roam_radius_source||'explicit server data'));
   if(e.leash_radius!==undefined) bits.push('SPAWN_LEASH '+e.leash_radius+' yalms · '+(e.leash_radius_detail||e.leash_radius_source||'explicit server data'));
-  return bits.length?bits.join('\n'):'No explicit ROAM_DISTANCE or SPAWN_LEASH stored for this mob; engine/default behavior is not visualized.';
+  const base=bits.length?bits.join('\n'):'No explicit ROAM_DISTANCE or SPAWN_LEASH stored for this mob.';
+  return dt?base+'\n'+dt:base;
 }
 const navDiagGeom=new THREE.BufferGeometry();
 const navDiagLine=new THREE.Line(navDiagGeom,new THREE.LineBasicMaterial({color:0x00e5ff,depthTest:false,transparent:true,opacity:.95}));
@@ -1028,7 +1050,7 @@ async function computeReach(){
 function frameAll(){
   const pts = Z.entities.filter(e=>!e.zero); if(!pts.length) return;
   const b = new THREE.Box3(); pts.forEach(e=>b.expandByPoint(P(e)));
-  const center=b.getCenter(new THREE.Vector3()), s=b.getSize(new THREE.Vector3()); const d=Math.max(s.x,s.z,50);
+  const center=b.getCenter(new THREE.Vector3()), s=b.getSize(new THREE.Vector3()); const d=Math.max(s.x,s.z,50); zoneExtent=d;
   controls.target.copy(center);
   if(camera.isOrthographicCamera){
     camera.position.set(center.x,center.y+d,center.z+.001);
@@ -1232,6 +1254,7 @@ $('shownav').onchange=()=>{ if(navMesh) navMesh.visible=$('shownav').checked; sa
 $('navdiag').onchange=()=>{ saveZoneEditorState(); loadSelectedNavDiag(); };
 $('showDoorFacing').onchange=()=>{ saveZoneEditorState(); if(Z) rebuild(); };
 $('showMobRadii').onchange=()=>{ saveZoneEditorState(); updateMobRadiusVisuals(); };
+$('showDetect').onchange=$('showDetectAll').onchange=()=>{ updateMobRadiusVisuals(); };
 $('opac').oninput=()=>{ meshObj&&meshObj.traverse(c=>{ if(c.isMesh) c.material.opacity=+$('opac').value; }); saveZoneEditorState(); };
 document.querySelectorAll('[data-cam]').forEach(b=>b.onclick=()=>cameraPreset(b.dataset.cam));
 $('projection').onchange=()=>{ switchProjection($('projection').value); saveZoneEditorState(); };
@@ -1303,6 +1326,55 @@ $('gd').onchange=async()=>{ const d=curDesc(); clearGen(); $('gopts').innerHTML=
 $('ggen').onclick=()=>{ const d=curDesc(); if(!d||!Z) return; drawGen(runDesc(d,+$('gseed').value,{random:$('gr')?+$('gr').value:undefined,group:$('gg')?+$('gg').value:-1})); };
 $('grnd').onclick=()=>{ $('gseed').value=Math.floor(Math.random()*1e9); $('ggen').onclick(); };
 $('gclr').onclick=clearGen;
+
+
+// ---- layout generator: Cluster / Row / Grid / Ring / Arc / Camp / Flank ----
+let lgItems=[];
+const LG_SHOW={cluster:['n','r'],row:['n','sp','ang'],grid:['n','sp','cols','ang'],ring:['n','r'],arc:['n','r','ang','span'],camp:['n','r'],flank:['sp','ang']};
+function lgSyncUI(){ const show=LG_SHOW[$('lgPat').value]||[]; document.querySelectorAll('#lgNums [data-lg]').forEach(l=>{ l.style.display=show.includes(l.dataset.lg)?'':'none'; }); }
+$('lgPat').onchange=()=>{ lgSyncUI(); lgPreview(); }; lgSyncUI();
+const rotTo=(f,t)=>{ const a=-Math.atan2(t.z-f.z,t.x-f.x)*256/(Math.PI*2); return ((Math.round(a)%256)+256)%256; };
+const rotVec=r=>{ const a=r*Math.PI*2/256; return {x:Math.cos(a),z:-Math.sin(a)}; };
+function lgFace(it,c,mode,ang,rnd){ it.r = mode==='in'?rotTo(it,c) : mode==='out'?(rotTo(it,c)+128)%256 : mode==='rand'?Math.floor(rnd()*256) : ang; return it; }
+function lgBuild(){
+  const pat=$('lgPat').value, c={x:+$('lgCx').value||0,y:+$('lgCy').value||0,z:+$('lgCz').value||0};
+  const n=Math.max(1,+$('lgN').value||1), R=Math.max(.5,+$('lgR').value||8), sp=Math.max(.5,+$('lgSp').value||3), cols=Math.max(1,+$('lgCols').value||3);
+  const ang=((+$('lgAng').value||0)%256+256)%256, span=(+$('lgSpan').value||180)*Math.PI/180, mode=$('lgFace').value, rnd=rng(+$('lgSeed').value||1);
+  const fwd=rotVec(ang), side={x:-fwd.z,z:fwd.x}, out=[]; const mk=(x,z,role,text)=>out.push(lgFace({x,y:c.y,z,role,text,color:role==='c'?0xf1c40f:role==='o'?0x9b59b6:0x1abc9c},c,mode,ang,rnd));
+  if(pat==='cluster'){ const minD=Math.min(R*.6,Math.max(1.5,R*1.6/Math.sqrt(n))); let tries=0; while(out.length<n&&tries++<n*40){ const a=rnd()*Math.PI*2, d=R*Math.sqrt(rnd()), x=c.x+Math.cos(a)*d, z=c.z+Math.sin(a)*d; if(out.every(o=>Math.hypot(o.x-x,o.z-z)>=minD)) mk(x,z,'r','cluster'); } }
+  else if(pat==='row'){ for(let i=0;i<n;i++){ const t=(i-(n-1)/2)*sp; mk(c.x+fwd.x*t,c.z+fwd.z*t,'r','row'); } }
+  else if(pat==='grid'){ const rows=Math.ceil(n/cols); for(let i=0;i<n;i++){ const ci=i%cols, ri=Math.floor(i/cols), u=(ci-(cols-1)/2)*sp, v=(ri-(rows-1)/2)*sp; mk(c.x+fwd.x*u+side.x*v,c.z+fwd.z*u+side.z*v,'r','grid'); } }
+  else if(pat==='ring'){ for(let i=0;i<n;i++){ const a=i*Math.PI*2/n; mk(c.x+Math.cos(a)*R,c.z+Math.sin(a)*R,'r','ring'); } }
+  else if(pat==='arc'){ const base=Math.atan2(-fwd.z,fwd.x)*-1; for(let i=0;i<n;i++){ const a=n===1?0:(i/(n-1)-.5)*span; const dx=fwd.x*Math.cos(a)-fwd.z*Math.sin(a), dz=fwd.x*Math.sin(a)+fwd.z*Math.cos(a); mk(c.x+dx*R,c.z+dz*R,'r','arc'); } }
+  else if(pat==='camp'){ mk(c.x,c.z,'c','camp centre'); const ring=Math.max(3,n); for(let i=0;i<ring;i++){ const a=i*Math.PI*2/ring+rnd()*.15; mk(c.x+Math.cos(a)*R,c.z+Math.sin(a)*R,'r','camp ring'); }
+    const outer=Math.max(2,Math.ceil(n/2)); for(let i=0;i<outer;i++){ const a=rnd()*Math.PI*2, d=R*(1.6+rnd()*.8); const it=mk(c.x+Math.cos(a)*d,c.z+Math.sin(a)*d,'o','camp outskirts'); } out.forEach(o=>{ if(o.role==='c') o.r=ang; else if(o.role==='o') o.r=(rotTo(o,c)+128)%256; else o.r=rotTo(o,c); }); }
+  else if(pat==='flank'){ [-1,1].forEach(sg=>mk(c.x+side.x*sg*sp/2,c.z+side.z*sg*sp/2,'r','flank')); out.forEach(o=>o.r=ang); }
+  return out;
+}
+function lgSnapY(it){ if(!navMesh) return; const p=new THREE.Vector3(it.x,-it.y,-it.z), hits=[]; ray.set(p.clone().add(new THREE.Vector3(0,400,0)),new THREE.Vector3(0,-1,0)); hits.push(...ray.intersectObject(navMesh,true));
+  if(!hits.length) return; hits.sort((a,b)=>Math.abs(a.point.y-p.y)-Math.abs(b.point.y-p.y)); it.y=-hits[0].point.y; }
+function lgPreview(){ if(!Z) return; lgItems=lgBuild(); if($('lgSnap').checked) lgItems.forEach(lgSnapY);
+  drawGen(lgItems.map((it,i)=>({x:it.x,y:it.y,z:it.z,color:it.color,text:`${i+1} ${it.text} r${it.r}`}))); $('lgMsg').textContent=`${lgItems.length} marker(s). Roles: ${['c','r','o'].map(k=>k+'='+lgItems.filter(i=>i.role===k).length).join(' ')}`; }
+function lgSetCentre(x,y,z){ $('lgCx').value=(+x).toFixed(2); $('lgCy').value=(+y).toFixed(2); $('lgCz').value=(+z).toFixed(2); lgPreview(); }
+$('lgSel').onclick=()=>{ const e=Z&&Z.entities[selected]; if(!e||e.zero){ $('lgMsg').textContent='Select an entity first.'; return; } lgSetCentre(e.x,e.y,e.z); };
+$('lgView').onclick=()=>{ const t=controls.target; lgSetCentre(t.x,-t.y,-t.z); };
+$('lgAddPos').onclick=()=>{ if($('aX').value===''){ $('lgMsg').textContent='No Add position set yet.'; return; } lgSetCentre($('aX').value,$('aY').value,$('aZ').value); };
+$('lgGen').onclick=()=>{ if($('lgCx').value===''){ $('lgView').click(); } else lgPreview(); };
+$('lgRnd').onclick=()=>{ $('lgSeed').value=Math.floor(Math.random()*1e9); $('lgGen').onclick(); };
+$('lgClr').onclick=()=>{ lgItems=[]; clearGen(); $('lgMsg').textContent=''; };
+['lgN','lgR','lgSp','lgCols','lgAng','lgSpan','lgFace','lgCx','lgCy','lgCz','lgSnap'].forEach(id=>$(id).addEventListener('change',()=>{ if(lgItems.length) lgPreview(); }));
+$('lgPlace').onclick=async()=>{
+  if(!aSel||!Z){ $('lgMsg').textContent='Pick a source in the Add tab first.'; return; }
+  const role=$('lgRole').value, items=lgItems.filter(i=>role==='all'||i.role===role); if(!items.length){ $('lgMsg').textContent='Nothing to place -- press Preview.'; return; }
+  if(!confirm(`Add ${items.length} row(s) to zone ${Z.zid} using the current Add source?`)) return;
+  const kind=$('ak').value, src=kind==='m'?{groupid:aSel.groupid,zone:aSel.zone}:{npcid:aSel.npcid}; let ok=0, err='';
+  for(const it of items){
+    const body={k:kind,zone:Z.zid,src,x:+it.x.toFixed(3),y:+it.y.toFixed(3),z:+it.z.toFixed(3),r:it.r,name:$('aname').value,comment:'layout generator: '+$('lgPat').value+' ('+it.text+')',instance:+$('ainst').value||0};
+    const j=await (await fetch('/zoneplot/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
+    if(j.error){ err=j.error; break; } ok++; markDbModified(kind,j.id); recordUndo(`add ${j.id}`,j.backup,entityKey(kind,j.id));
+  }
+  $('lgMsg').textContent=`Placed ${ok}/${items.length}.`+(err?' ERROR: '+err:''); clearGen(); lgItems=[]; await loadZone();
+};
 
 // ---- tabs + editor ----
 function editActive(){ return $('tab-add').hidden; }
