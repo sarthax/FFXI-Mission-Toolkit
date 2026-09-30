@@ -292,11 +292,20 @@
                   <span class="chip">{{ engine.shared_helpers|length }} shared helper{{ '' if engine.shared_helpers|length == 1 else 's' }}</span>
                   {% for status,count in engine.binding_counts.items() %}<span class="chip">{{ status }} {{ count }}</span>{% endfor %}
                 </div>
+                {% if engine.unindexed_call_count %}
+                <div class="warn">{{ engine.unindexed_call_count }} direct Lua API call{{ '' if engine.unindexed_call_count == 1 else 's' }} have no binding registration under this configured provider tree. This is a binding-index gap/review cue, not proof the Lua call is invalid.</div>
+                {% endif %}
+                {% if engine.case_only_call_count %}
+                <div class="warn">{{ engine.case_only_call_count }} direct Lua API call{{ '' if engine.case_only_call_count == 1 else 's' }} matched only after case folding. Review the exact registered casing before porting.</div>
+                {% endif %}
                 {% for call in engine.direct_calls %}
                 <div class="impl-engine-call">
                   <div><strong class="mono">{{ call.qualified_name }}</strong> <span class="chip">{{ call.binding.status }}</span>{% if call.hook %}<span class="chip">{{ call.hook }}</span>{% endif %}</div>
                   <div class="muted mono">line {{ call.line or '?' }}{% if call.source_line %} · {{ call.source_line }}{% endif %}</div>
-                  <div class="impl-workflow"><a class="chip" href="{{ call.binding.binding_href }}&trace_q={{ implementation_path.numeric_id|urlencode }}">Binding Reference</a></div>
+                  <div class="impl-workflow">
+                    <a class="chip" href="{{ call.binding.binding_href }}&trace_q={{ implementation_path.numeric_id|urlencode }}">Binding Reference</a>
+                    <a class="chip" href="/features/trace/binding.json?server={{ drill.server|urlencode }}&method={{ call.binding.query|urlencode }}">Binding JSON</a>
+                  </div>
                   {% for loc in call.binding.locations %}
                   <div class="impl-engine-grid">
                     <div class="k">C++ binding target</div><div><code>{{ loc.class }} · {{ loc.file }}:{{ loc.line }}</code>{% if loc.implementation_line %}<br><span class="muted">implementation candidate line {{ loc.implementation_line }}</span>{% endif %}</div>
