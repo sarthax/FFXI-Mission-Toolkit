@@ -69,6 +69,12 @@ def main():
     assert '"role": "skeleton"' in backend
     assert '"face", "head", "body", "hands", "legs", "feet", "main", "sub", "ranged"' in backend
     assert "composition manifest:" in viewer
+    assert "modelGroup.rotation.x = Math.PI" in viewer
+    assert "Parsed vertices are already in bind-pose world space" in viewer
+    assert "playback disabled: FFXI-specific skinning/pose math" in viewer
+    skeleton_parser = (ROOT / "gui" / "static" / "ffxi-dat" / "SkeletonParser.js").read_text(encoding="utf-8")
+    assert "Column-major 4x4 multiply" in skeleton_parser
+    assert "mat4Multiply(matrices[parent], local)" in skeleton_parser
 
     print("Client model resolver/viewer integration regression: PASS")
     return 0
