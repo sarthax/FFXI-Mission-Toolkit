@@ -2763,6 +2763,8 @@ def entity_detail(request: Request, npcid: int, q: str = "", page: int = 1):
                 ),
             })
 
+    entity_profile.synthesize_implementation_actions(profile)
+
     xi_model_viewer_url = settings_mod.get_all(con).get("xi_model_viewer_url", "").rstrip("/")
 
     prev_id = next_id = position = None
