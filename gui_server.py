@@ -2348,6 +2348,44 @@ def entity_detail(request: Request, npcid: int, q: str = "", page: int = 1):
     at the bottom of the /entity routes if one is ever added)."""
     con = get_con()
     profile = entity_profile.build_profile(con, npcid)
+
+    # Add client-event dossier status to runtime-observed CSIDs without forcing a new client
+    # export merely because Entity Profile was opened. If Events/CSID already has this zone
+    # exported, reuse its fingerprinted health cache.
+    profile["event_wiring"] = []
+    if not profile.get("error") and profile.get("zone_folder") and profile.get("capture_events"):
+        event_dir = TOOLS_ROOT / "mission_reports" / profile["zone_folder"]
+        health = {}
+        if (event_dir / "events.yml").exists():
+            try:
+                health = explore_event.scan_event_health(event_dir, profile.get("zoneid"))
+            except Exception:
+                health = {}
+        rows_by_key = health.get("rows") or {}
+        for observed in profile.get("capture_events") or []:
+            event_hex = observed.get("event_hex")
+            if not event_hex:
+                continue
+            try:
+                event_id = int(str(event_hex), 0)
+            except ValueError:
+                continue
+            key = f"{int(npcid)}:{event_id}"
+            health_row = rows_by_key.get(key, {})
+            profile["event_wiring"].append({
+                "event_id": event_id,
+                "event_hex": f"0x{event_id:04X}",
+                "count": observed.get("count"),
+                "message_id": observed.get("message_id"),
+                "decompile_status": health_row.get("status", "not_scanned"),
+                "decompile_detail": health_row.get("detail"),
+                "message_ids": health_row.get("message_ids") or [],
+                "href": (
+                    f"/events/view?zone={quote(profile['zone_folder'], safe='')}"
+                    f"&entity={npcid}&csid={event_id}"
+                ),
+            })
+
     xi_model_viewer_url = settings_mod.get_all(con).get("xi_model_viewer_url", "").rstrip("/")
 
     prev_id = next_id = position = None
