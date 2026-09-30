@@ -865,7 +865,7 @@ History / audit / safety:
 - [x] Add query-string autoload/embed support and a lazy selected-entity model preview inside Zone Editor.
 - [x] Build a searchable local-client model catalog from actual Topaz/DSP mob/NPC references plus the configured client's FTABLE/VTABLE: names/aliases, model IDs, resource/render file IDs and DAT paths, family IDs, pool IDs, reference counts, verified visual hints, reverse DAT correlation, Model Viewer picker/direct-DAT lookup, and read-only Zone Editor candidate preview. Resource/skeleton identity stays distinct from visible render hints.
 - [x] Add safe Zone Editor flat-model editing: candidate preview is read-only; Apply requires a fresh impact preview. NPC changes are row-local; mob changes resolve spawn → group → shared mob_pools row and show affected spawn/group/zone counts before write. Changes are backup-backed, undoable, and have explicit model-row SQL sync.
-- [ ] Expand multi-DAT actor composition/animation fidelity only where it materially helps validation; do not reproduce the full external viewer.
+- [~] Expand multi-DAT actor composition/animation fidelity only where it materially helps validation; do not reproduce the full external viewer. Humanoid composition now resolves the separate race face DAT in addition to the race skeleton and equipped slot DATs, exposes an ordered composition manifest with resolved/missing provenance, and renders the face as part of the shared-skeleton composite. Model-specific animation schedule/capture correlation remains deferred in the dedicated animation-evidence backlog.
 
 
 ### 2026-09-29 Client model catalog milestone
