@@ -5,6 +5,9 @@
 <p><a class="inline" href="/captures?content_type={{ content_type }}&q={{ q }}">&larr; back to captures list</a>
   &nbsp;&middot;&nbsp; <a class="inline" href="/captures/{{ detail.capture_id }}/add">add more files &rarr;</a>
   &nbsp;&middot;&nbsp; <a class="inline" href="/captures/{{ detail.capture_id }}/timeline">browse event timeline &rarr;</a>
+  {% if detail.n_raw_packets %}
+  &nbsp;&middot;&nbsp; <a class="inline" href="/captures/{{ detail.capture_id }}/packets"><strong>open Packet Browser &rarr;</strong></a>
+  {% endif %}
   &nbsp;&middot;&nbsp; <a class="inline" href="/captures/query?capture_id={{ detail.capture_id }}">query this capture's raw data &rarr;</a>
   &nbsp;&middot;&nbsp; <a class="inline" href="/captures/{{ detail.capture_id }}/export.zip">export all data (.zip) &darr;</a>
   &nbsp;&middot;&nbsp; <a class="inline" href="/captures/{{ detail.capture_id }}/delete" style="color:var(--red);">delete capture</a>
@@ -48,7 +51,9 @@
   <tr><td>actions</td><td>{{ detail.n_actions }}</td></tr>
   <tr><td>events</td><td>{{ detail.n_events }} <a class="inline" href="/captures/{{ detail.capture_id }}/timeline">browse &rarr;</a></td></tr>
   <tr><td>key items obtained</td><td>{{ detail.n_ki_events }}</td></tr>
-  <tr><td>raw packets</td><td>{{ detail.n_raw_packets }} <a class="inline" href="/captures/{{ detail.capture_id }}/packets">browse &rarr;</a></td></tr>
+  <tr><td>packet evidence</td><td>{{ detail.n_raw_packets }} raw packet{{ '' if detail.n_raw_packets == 1 else 's' }}
+    {% if detail.n_raw_packets %}<a class="chip" href="/captures/{{ detail.capture_id }}/packets">Open Packet Browser</a>{% endif %}
+  </td></tr>
   <tr><td>structured logger records</td><td>{{ detail.n_structured_records }}</td></tr>
   <tr><td>capturer's own path (PC trace)</td><td>
     {% if detail.pc_path_zones %}
