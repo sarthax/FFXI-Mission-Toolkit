@@ -806,7 +806,7 @@ Priority stack:
 - [~] Session undo / redo is implemented for whole-item Save Item actions, including mods/pet-mods/latents and synchronized DAT rollback/redo, with Ctrl+Z / Ctrl+Y. Create/delete actions remain outside the session stack.
 - [x] Expanded server-vs-client DAT comparison across every decoded overlapping field, with explicit per-field mismatches rather than level-only comparison.
 - [x] Centralized item validation panel with source-proven errors/warnings/info; errors block save, warnings require explicit confirmation.
-- [ ] Improved item search/results grid: exact ID lookup, name/ID search, richer filters, sortable columns, mismatch/server-only/DAT-only state, and recent-item navigation.
+- [~] Improved item search/results grid: exact ID lookup, name search, level/job/skill/client-state filters, sortable columns, synced/mismatch/server-only state, and recent-item navigation are complete. True DAT-only discovery remains because it requires scanning/indexing client DAT ranges rather than the server-backed search.
 
 Editing / presentation:
 - [ ] Basic vs Advanced field modes while retaining raw values.
@@ -825,7 +825,7 @@ Create / clone:
 Mods / pet mods / latents:
 - [x] Stage mod/pet-mod/latent edits instead of immediately writing each row; include them in unified Save Item.
 - [ ] Multi-add and copy-all-effects from another item.
-- [~] Duplicate mod/pet-mod/latent composite-key detection is enforced in both UI staging and backend validation; clearer sorting/filtering remains.
+- [~] Duplicate mod/pet-mod/latent composite-key detection is enforced in both UI staging and backend validation; effect lists now render in normalized key order, while richer filtering remains.
 - [ ] Surface known mod units/comments and latent-condition parameter semantics only where confirmed.
 - [ ] Item-to-item effect diff for added/removed/changed mods and latents.
 
