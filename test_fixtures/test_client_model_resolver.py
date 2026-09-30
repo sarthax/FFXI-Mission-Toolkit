@@ -49,10 +49,15 @@ def main():
     assert "client_model_resolver.model_id_to_file_id(modelid)" in decode
     assert "mob_model_tables.resolve_family_file_id" not in decode
     assert "def resolve_model_id(model_id: int" in backend
+    assert "legacy hand-verified family visual DAT" in backend
+    assert "resource_rom_path" in backend
+    assert "render_rom_path" in backend
     assert '@app.get("/modelviewer/model.json")' in server
     assert 'id="modelid"' in viewer
     assert 'id="load-modelid"' in viewer
     assert "async function loadRawModel()" in viewer
+    assert "FFXiMain mapping:" in viewer
+    assert "render hint:" in viewer
     assert "qp.get('embed')==='1'" in viewer
     assert 'id="ed-model-details"' in zone
     assert 'id="modelPreviewFrame"' in zone
