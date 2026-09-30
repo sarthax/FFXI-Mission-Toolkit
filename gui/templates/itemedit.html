@@ -114,6 +114,13 @@ server's permission gate. Every write is backed up first and journalled to
   #itemCompareResult .compare-add { color:#a5d6a7; }
   #itemCompareResult .compare-remove { color:#ef9a9a; }
   #itemCompareResult .compare-change { color:#ffe082; }
+  #itemCompareResult .compare-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(420px,1fr)); gap:10px; margin-top:8px; }
+  #itemCompareResult .compare-panel { border:1px solid var(--border); border-radius:6px; padding:7px; overflow:auto; }
+  #itemCompareResult .compare-panel h4 { margin:0 0 5px; font-size:11px; text-transform:uppercase; opacity:.72; }
+  #itemCompareResult .compare-panel table { width:100%; font-size:10px; border-collapse:collapse; }
+  #itemCompareResult .compare-panel th, #itemCompareResult .compare-panel td { padding:2px 5px; vertical-align:top; border-bottom:1px solid rgba(128,128,128,.15); }
+  #itemCompareResult .compare-different { background:rgba(255,193,7,.10); }
+  #itemCompareResult .compare-missing { opacity:.55; font-style:italic; }
   #clientRecordInspector .client-record-hero { display:flex; gap:14px; align-items:flex-start; padding:8px; border:1px solid var(--border); border-radius:6px; margin-bottom:8px; }
   #clientRecordInspector .client-icon { width:64px; height:64px; image-rendering:auto; object-fit:contain; border:1px solid var(--border); border-radius:4px; background:rgba(0,0,0,.18); }
   #clientRecordInspector .client-description { white-space:pre-wrap; font-size:11px; margin-top:4px; max-width:820px; }
@@ -898,15 +905,63 @@ function effectCompareLabel(key,value){
   if(kind==='pet_mods') return 'pet mod '+(MOD_NAMES[row.modId]||row.modId)+' / '+(PET_TYPE_NAMES[row.petType]||row.petType)+' = '+row.value;
   return 'latent '+(MOD_NAMES[row.modId]||row.modId)+' '+row.value+' when '+(LATENT_NAMES[row.latentId]||row.latentId)+' (param '+row.latentParam+')';
 }
+function compareValue(v){
+  if(v===undefined) return '<span class="compare-missing">not present</span>';
+  if(v===null) return '<span class="compare-missing">null</span>';
+  if(Array.isArray(v)) return htmlEsc(v.join(', '));
+  if(typeof v==='object') return htmlEsc(JSON.stringify(v));
+  return htmlEsc(v);
+}
+function compareSideBySidePanel(title,leftObj,rightObj,leftLabel,rightLabel){
+  const keys=[...new Set([...Object.keys(leftObj||{}),...Object.keys(rightObj||{})])].sort();
+  let rows='';
+  for(const key of keys){
+    const lv=leftObj?.[key], rv=rightObj?.[key];
+    const same=JSON.stringify(lv)===JSON.stringify(rv);
+    rows+='<tr class="'+(same?'':'compare-different')+'"><td class="mono">'+htmlEsc(key)+'</td><td>'+compareValue(lv)+'</td><td>'+compareValue(rv)+'</td></tr>';
+  }
+  return '<div class="compare-panel"><h4>'+htmlEsc(title)+'</h4><table><thead><tr><th>field</th><th>'+htmlEsc(leftLabel)+'</th><th>'+htmlEsc(rightLabel)+'</th></tr></thead><tbody>'+
+    (rows||'<tr><td colspan="3" class="muted">No rows.</td></tr>')+'</tbody></table></div>';
+}
+function flattenDatRecord(rec){
+  const out={}, skip=new Set(['id','dat','dat_ui','category','record_index','format','stride']);
+  for(const [k,v] of Object.entries(rec||{})){
+    if(skip.has(k)) continue;
+    if(k.endsWith('_decoded') || k.endsWith('_list') || k==='jobs_list') continue;
+    out[k]=v;
+  }
+  return out;
+}
+function effectMap(kind, rows){
+  const out={};
+  for(const row of normalizedEffects({[kind]:rows||[]})[kind]){
+    const key=effectSortKey(kind,row);
+    if(kind==='mods') out[MOD_NAMES[row.modId]||('mod '+row.modId)]=row.value;
+    else if(kind==='pet_mods') out[(MOD_NAMES[row.modId]||('mod '+row.modId))+' / '+(PET_TYPE_NAMES[row.petType]||row.petType)]=row.value;
+    else out[(MOD_NAMES[row.modId]||('mod '+row.modId))+' / '+(LATENT_NAMES[row.latentId]||('latent '+row.latentId))+' / param '+row.latentParam]=row.value;
+  }
+  return out;
+}
 async function compareCurrentItem(){
   if(!currentItemId) return;
   const otherId=Number(document.getElementById('compareItemId').value);
   if(!otherId){ alert('Enter an item ID to compare.'); return; }
   const box=document.getElementById('itemCompareResult'); box.style.display=''; box.textContent='Loading comparison...';
-  const r=await fetch('/itemedit/'+otherId+'.json'); if(!r.ok){ box.textContent='Unable to load item '+otherId+': '+await r.text(); return; }
-  const other=await r.json();
-  const left=flattenItemForCompare(collectCurrentTables(),stagedEffects);
-  const right=flattenItemForCompare(other.server,{mods:other.mods||[],pet_mods:other.pet_mods||[],latents:other.latents||[]});
+
+  const [otherRes,leftDatRes,rightDatRes]=await Promise.all([
+    fetch('/itemedit/'+otherId+'.json'),
+    fetch('/itemedit/'+currentItemId+'/client-record.json'),
+    fetch('/itemedit/'+otherId+'/client-record.json')
+  ]);
+  if(!otherRes.ok){ box.textContent='Unable to load item '+otherId+': '+await otherRes.text(); return; }
+  const other=await otherRes.json();
+  const leftDat=leftDatRes.ok?await leftDatRes.json():null;
+  const rightDat=rightDatRes.ok?await rightDatRes.json():null;
+
+  const currentTables=collectCurrentTables();
+  const otherEffects={mods:other.mods||[],pet_mods:other.pet_mods||[],latents:other.latents||[]};
+  const left=flattenItemForCompare(currentTables,stagedEffects);
+  const right=flattenItemForCompare(other.server,otherEffects);
   const keys=[...new Set([...Object.keys(left),...Object.keys(right)])].sort();
   const lines=[];
   for(const k of keys){
@@ -914,8 +969,26 @@ async function compareCurrentItem(){
     if(!(k in right)){ lines.push({cls:'compare-remove',text:'- '+effectCompareLabel(k,left[k])+' · only on current item'}); continue; }
     if(left[k]!==right[k]) lines.push({cls:'compare-change',text:'~ '+k+': '+left[k]+' → '+right[k]});
   }
-  box.innerHTML='<h3>Item comparison <span class="hint">current staged item '+currentItemId+' ↔ saved item '+otherId+'</span></h3>'+
-    (lines.length?lines.map(x=>'<div class="'+x.cls+'">'+x.text.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>').join(''):'<div class="muted">No differences in editable fields/effects.</div>');
+
+  const leftLabel='current '+currentItemId;
+  const rightLabel='item '+otherId;
+  const panels=[
+    compareSideBySidePanel('SQL fields',
+      Object.fromEntries(Object.entries(currentTables).flatMap(([t,row])=>Object.entries(row||{}).map(([k,v])=>[t+'.'+k,v]))),
+      Object.fromEntries(Object.entries(other.server||{}).flatMap(([t,row])=>Object.entries(row||{}).map(([k,v])=>[t+'.'+k,v]))),
+      leftLabel+' (staged)',rightLabel+' (saved)'),
+    compareSideBySidePanel('Client DAT',
+      flattenDatRecord(leftDat?.record||{}),flattenDatRecord(rightDat?.record||{}),
+      leftLabel+' (saved DAT)',rightLabel+' (saved DAT)'),
+    compareSideBySidePanel('Item mods',effectMap('mods',stagedEffects.mods),effectMap('mods',other.mods||[]),leftLabel+' (staged)',rightLabel),
+    compareSideBySidePanel('Pet mods',effectMap('pet_mods',stagedEffects.pet_mods),effectMap('pet_mods',other.pet_mods||[]),leftLabel+' (staged)',rightLabel),
+    compareSideBySidePanel('Latents',effectMap('latents',stagedEffects.latents),effectMap('latents',other.latents||[]),leftLabel+' (staged)',rightLabel)
+  ];
+
+  box.innerHTML='<h3>Item comparison <span class="hint">SQL + client DAT + mods + pet mods + latents · current staged item '+currentItemId+' ↔ saved item '+otherId+'</span></h3>'+
+    '<details open><summary>'+lines.length+' difference(s)</summary><div style="margin-top:5px;">'+
+    (lines.length?lines.map(x=>'<div class="'+x.cls+'">'+htmlEsc(x.text)+'</div>').join(''):'<div class="muted">No differences in editable SQL/effects.</div>')+
+    '</div></details><div class="compare-grid">'+panels.join('')+'</div>';
 }
 function renderItemStatus(data){
   const bar=document.getElementById('itemStatusBar'), st=data.dat_status||{}, cmp=data.comparison||{};
