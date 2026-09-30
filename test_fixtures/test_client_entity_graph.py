@@ -44,7 +44,7 @@ def main():
             """INSERT INTO entity_identifiers(
                    entity_id,identifier_type,identifier_value,source_snapshot_id
                ) VALUES(?,?,?,?)""",
-            ("npc:supply-officer","npcid","2002","server-catalog"),
+            ("npc:supply-officer","npcid","2002","entity-profile"),
         )
 
         ingest_entity_identity_records(
