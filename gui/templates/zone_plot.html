@@ -175,26 +175,13 @@
       <label><span>Click mesh to place</span><input type="checkbox" id="eplace"></label>
       <div id="ed-anim" hidden>
         <hr style="border-color:var(--border);margin:6px 0">
-        <div class="muted" style="font-size:11px">npc_list-only. Both fields are raw bytes (baseentity.h `animation`/`animationsub`) sent straight to the client's own per-model animation table &mdash; the server has no dispatch table beyond a few engine-special-cased values, so anything not listed below is genuinely model-dependent, not universal. Confirmed values come from <span class="mono">scripts/globals/status.lua</span>'s ANIMATION_* enum and real per-object scripts (Switch.lua, entity_update.cpp); everything else is an open question, not a guess &mdash; use custom and test live.</div>
-        <label>Animation <select id="ean">
-          <option value="0">0 &mdash; none (engine default)</option>
-          <option value="8">8 &mdash; open door (confirmed, 163 real uses)</option>
-          <option value="9">9 &mdash; close door (confirmed, 135 real uses)</option>
-          <option value="10">10 &mdash; elevator up (confirmed, transport.cpp)</option>
-          <option value="11">11 &mdash; elevator down (confirmed, transport.cpp)</option>
-          <option value="1">1 &mdash; attack (player/mob anim, not door-relevant)</option>
-          <option value="3">3 &mdash; death (player/mob anim, not door-relevant)</option>
-          <option value="custom">custom&hellip;</option>
-        </select></label>
+        <div class="muted" style="font-size:11px">npc_list-only persistent render fields. <span class="mono">animation</span> is populated from the current bundled LSB <span class="mono">data/enums/animation.yaml</span>. <span class="mono">animationsub</span> remains model-dependent; the picker shows literal LSB <span class="mono">setAnimationSub(N)</span> usage evidence instead of assigning universal meanings. FOURCC <span class="mono">entityAnimationPacket</span> effects are separate transient animations.</div>
+        <label>Animation <select id="ean"><option value="custom">loading LSB enum&hellip;</option></select></label>
         <input type="number" step="1" min="0" max="255" id="eanRaw" style="width:60px;display:none" placeholder="0-255">
-        <label>Animation Sub <select id="easub">
-          <option value="0">0 &mdash; seen as "closed" (Rune of Transfer/Runic Lamp)</option>
-          <option value="1">1 &mdash; seen as "open/lit" (Rune of Transfer/Runic Lamp)</option>
-          <option value="4">4 &mdash; seen as inactive (Lebros_Cavern Switch.lua)</option>
-          <option value="5">5 &mdash; seen as activated (Lebros_Cavern Switch.lua)</option>
-          <option value="custom">custom&hellip;</option>
-        </select></label>
+        <label>Animation Sub <select id="easub"><option value="0">0 &mdash; default / no selector</option><option value="custom">custom&hellip;</option></select></label>
         <input type="number" step="1" min="0" max="255" id="easubRaw" style="width:60px;display:none" placeholder="0-255">
+        <div id="animEvidence" class="mono muted" style="font-size:9px;white-space:pre-wrap;border:1px solid var(--border);border-radius:4px;padding:4px;margin-top:4px">Loading LSB animation evidence&hellip;</div>
+        <details style="margin-top:4px"><summary>Transient FOURCC animation reference</summary><div id="animFourcc" class="mono muted" style="font-size:9px;max-height:150px;overflow:auto;white-space:pre-wrap;margin-top:3px"></div></details>
         <div style="margin-top:4px"><button id="eanimsave">Save animation to live DB</button></div>
         <div id="eanimmsg" class="mono" style="font-size:11px;margin-top:4px;white-space:pre-wrap"></div>
       </div>
@@ -1396,6 +1383,7 @@ function loadEditor(i){ const e=Z.entities[i]; if(!e){ $('ed').hidden=true; $('e
     $('ed-anim').hidden=false;
     setAnimSelect('ean','eanRaw', e.an||0);
     setAnimSelect('easub','easubRaw', e.asub||0);
+    renderAnimationEvidence();
     $('eanimmsg').textContent='';
   } else { $('ed-anim').hidden=true; }
   if (e.k==='m'){ $('ed-drops').hidden=false; loadDrops(e.id); } else { $('ed-drops').hidden=true; }
@@ -1593,6 +1581,41 @@ async function delDropRow(origType, origGroup, origItem){
   $('edropsmsg').textContent=`Deleted (backup ${j.backup}).\n`+j.sql;
   await loadDrops(dropsState.mobid);
 }
+let ANIM_META={animations:[],subanimations:[],animation_strings:[]};
+function animMetaByValue(list,value){ return (list||[]).find(x=>Number(x.value)===Number(value)); }
+function renderAnimationEvidence(){
+  const a=animSelectVal('ean','eanRaw'), sub=animSelectVal('easub','easubRaw');
+  const am=animMetaByValue(ANIM_META.animations,a), sm=animMetaByValue(ANIM_META.subanimations,sub);
+  const lines=[];
+  lines.push('animation '+a+(am?' · '+am.label+' · '+am.source:' · not named in current LSB enum'));
+  if(sm){
+    lines.push('animationsub '+sub+' · observed in '+sm.uses+' LSB setAnimationSub() call(s) · model-dependent');
+    if(sm.nearby_model_ids?.length) lines.push('nearby setModelId values: '+sm.nearby_model_ids.join(', '));
+    for(const x of (sm.samples||[]).slice(0,4)) lines.push('  '+x.source+':'+x.line+' · '+x.text);
+  }else{
+    lines.push('animationsub '+sub+' · no literal setAnimationSub('+sub+') evidence found in bundled LSB scripts');
+  }
+  $('animEvidence').textContent=lines.join('\n');
+}
+async function loadAnimationMetadata(){
+  const r=await fetch('/zoneplot/animation-meta.json'), j=await r.json();
+  if(!r.ok){ $('animEvidence').textContent='Animation metadata unavailable: '+(j.error||r.statusText); return; }
+  ANIM_META=j;
+  const anim=$('ean'), sub=$('easub');
+  anim.innerHTML=(j.animations||[]).map(x=>'<option value="'+x.value+'">'+x.value+' — '+modelCatalogEsc(x.label)+'</option>').join('')+'<option value="custom">custom…</option>';
+  sub.innerHTML='<option value="0">0 — default / no selector</option>'+
+    (j.subanimations||[]).filter(x=>Number(x.value)!==0).map(x=>'<option value="'+x.value+'">'+x.value+' — observed '+x.uses+' use(s)'+(x.nearby_model_ids?.length?' · models '+x.nearby_model_ids.join(','):'')+'</option>').join('')+
+    '<option value="custom">custom…</option>';
+  $('animFourcc').textContent=(j.animation_strings||[]).map(x=>x.name+' = '+x.fourcc+' · '+x.source+':'+x.line).join('\n');
+  if(selected>=0 && Z?.entities[selected]){
+    const e=Z.entities[selected];
+    setAnimSelect('ean','eanRaw',e.an||0);
+    setAnimSelect('easub','easubRaw',e.asub||0);
+  }
+  renderAnimationEvidence();
+}
+loadAnimationMetadata();
+
 function setAnimSelect(selId, rawId, val){
   const sel=$(selId), raw=$(rawId);
   const has=[...sel.options].some(o=>o.value===String(val) && o.value!=='custom');
@@ -1604,8 +1627,9 @@ function animSelectVal(selId, rawId){
   return sel.value==='custom' ? (+raw.value||0) : +sel.value;
 }
 ['ean','easub'].forEach(id=>$(id).addEventListener('change',()=>{
-  const raw=$(id+'Raw'); raw.style.display = $(id).value==='custom' ? '' : 'none';
+  const raw=$(id+'Raw'); raw.style.display = $(id).value==='custom' ? '' : 'none'; renderAnimationEvidence();
 }));
+['eanRaw','easubRaw'].forEach(id=>$(id).addEventListener('input',renderAnimationEvidence));
 $('eanimsave').onclick=async()=>{ const e=Z.entities[selected]; if(!e) return;
   const animation=animSelectVal('ean','eanRaw'), animationsub=animSelectVal('easub','easubRaw');
   const r=await fetch('/zoneplot/animate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:e.k,id:e.id,animation,animationsub,comment:$('ecomment').value})}); const j=await r.json();
