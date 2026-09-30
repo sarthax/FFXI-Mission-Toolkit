@@ -550,7 +550,87 @@ def latent_names():
 
 
 # ---- edits ----------------------------------------------------------------------------------
-def validate_item_changes(item_id, tables):
+def _normalize_effects(effects):
+    """Normalize desired effect lists and reject duplicate composite keys before any write."""
+    effects = effects or {}
+    result = {"mods": [], "pet_mods": [], "latents": []}
+    seen = set()
+    for row in effects.get("mods", []):
+        item = {"modId": int(row["modId"]), "value": int(row["value"])}
+        key = item["modId"]
+        if key in seen:
+            raise ValueError(f"duplicate item_mods modId {key}")
+        seen.add(key); result["mods"].append(item)
+    seen = set()
+    for row in effects.get("pet_mods", []):
+        item = {"modId": int(row["modId"]), "petType": int(row["petType"]), "value": int(row["value"])}
+        key = (item["modId"], item["petType"])
+        if key in seen:
+            raise ValueError(f"duplicate item_mods_pet key {key}")
+        seen.add(key); result["pet_mods"].append(item)
+    seen = set()
+    for row in effects.get("latents", []):
+        item = {
+            "modId": int(row["modId"]), "value": int(row["value"]),
+            "latentId": int(row["latentId"]), "latentParam": int(row["latentParam"]),
+        }
+        key = (item["modId"], item["value"], item["latentId"], item["latentParam"])
+        if key in seen:
+            raise ValueError(f"duplicate item_latents key {key}")
+        seen.add(key); result["latents"].append(item)
+    return result
+
+
+def _effect_state(cu, item_id):
+    cu.execute("select modId,value from item_mods where itemId=%s", (item_id,))
+    mods = {int(r[0]): {"itemId": item_id, "modId": int(r[0]), "value": int(r[1])} for r in cu.fetchall()}
+    cu.execute("select modId,value,petType from item_mods_pet where itemId=%s", (item_id,))
+    pet = {(int(r[0]), int(r[2])): {"itemId": item_id, "modId": int(r[0]), "value": int(r[1]), "petType": int(r[2])} for r in cu.fetchall()}
+    cu.execute("select modId,value,latentId,latentParam from item_latents where itemId=%s", (item_id,))
+    lat = {(int(r[0]), int(r[1]), int(r[2]), int(r[3])): {"itemId": item_id, "modId": int(r[0]), "value": int(r[1]), "latentId": int(r[2]), "latentParam": int(r[3])} for r in cu.fetchall()}
+    return {"mods": mods, "pet_mods": pet, "latents": lat}
+
+
+def _effect_changes(cu, item_id, desired):
+    current = _effect_state(cu, item_id)
+    changes = []
+    wanted_mods = {r["modId"]: r for r in desired["mods"]}
+    for key in set(current["mods"]) | set(wanted_mods):
+        cur = current["mods"].get(key); want = wanted_mods.get(key)
+        if cur is None or want is None or int(cur["value"]) != int(want["value"]):
+            changes.append(("item_mods", [item_id, key], cur, want))
+    wanted_pet = {(r["modId"], r["petType"]): r for r in desired["pet_mods"]}
+    for key in set(current["pet_mods"]) | set(wanted_pet):
+        cur = current["pet_mods"].get(key); want = wanted_pet.get(key)
+        if cur is None or want is None or int(cur["value"]) != int(want["value"]):
+            changes.append(("item_mods_pet", [item_id, key[0], key[1]], cur, want))
+    wanted_lat = {(r["modId"], r["value"], r["latentId"], r["latentParam"]): r for r in desired["latents"]}
+    for key in set(current["latents"]) | set(wanted_lat):
+        cur = current["latents"].get(key); want = wanted_lat.get(key)
+        if cur is None or want is None:
+            changes.append(("item_latents", [item_id, key[0], key[1], key[2], key[3]], cur, want))
+    return changes
+
+
+def _apply_effect_changes(cu, item_id, changes):
+    sqls = []
+    for table, keyvals, cur, want in changes:
+        if want is None:
+            pk = _pk_for(table)
+            cu.execute(f"delete from {table} where " + " and ".join(f"{k}=%s" for k in pk), tuple(keyvals))
+            sqls.append("DELETE FROM " + table + " WHERE " + " AND ".join(f"{k}={lit(v)}" for k, v in zip(pk, keyvals)) + ";")
+        elif table == "item_mods":
+            cu.execute("replace into item_mods (itemId,modId,value) values (%s,%s,%s)", (item_id, want["modId"], want["value"]))
+            sqls.append(f"REPLACE INTO item_mods (itemId,modId,value) VALUES ({item_id},{want['modId']},{want['value']});")
+        elif table == "item_mods_pet":
+            cu.execute("replace into item_mods_pet (itemId,modId,value,petType) values (%s,%s,%s,%s)", (item_id, want["modId"], want["value"], want["petType"]))
+            sqls.append(f"REPLACE INTO item_mods_pet (itemId,modId,value,petType) VALUES ({item_id},{want['modId']},{want['value']},{want['petType']});")
+        else:
+            cu.execute("replace into item_latents (itemId,modId,value,latentId,latentParam) values (%s,%s,%s,%s,%s)", (item_id, want["modId"], want["value"], want["latentId"], want["latentParam"]))
+            sqls.append(f"REPLACE INTO item_latents (itemId,modId,value,latentId,latentParam) VALUES ({item_id},{want['modId']},{want['value']},{want['latentId']},{want['latentParam']});")
+    return sqls
+
+def validate_item_changes(item_id, tables, effects=None):
     """Validate a proposed table patch without writing anything."""
     item_id = int(item_id)
     db = zone_plot._db(); cu = db.cursor()
@@ -579,10 +659,13 @@ def validate_item_changes(item_id, tables):
     except Exception:
         client = None
     result = validate_item_state(rows, client)
+    desired_effects = _normalize_effects(effects) if effects is not None else None
+    if desired_effects is not None:
+        result["effect_counts"] = {k: len(v) for k, v in desired_effects.items()}
     result["comparison"] = compare_server_client(rows, client)
     return result
 
-def save_item_atomic(item_id, tables, comment=""):
+def save_item_atomic(item_id, tables, effects=None, comment=""):
     """Save changed one-row item tables as one backed-up SQL transaction and one client-DAT patch.
 
     tables is {table: {column: value}} and should contain only fields the caller intends to
@@ -592,8 +675,9 @@ def save_item_atomic(item_id, tables, comment=""):
     its just-created snapshot (or a newly-created Pivot destination is removed).
     """
     item_id = int(item_id)
-    if not isinstance(tables, dict) or not tables:
-        raise ValueError("no item table changes supplied")
+    if not isinstance(tables, dict):
+        raise ValueError("tables must be an object")
+    desired_effects = _normalize_effects(effects) if effects is not None else None
 
     db = zone_plot._db()
     cu = db.cursor()
@@ -619,8 +703,9 @@ def save_item_atomic(item_id, tables, comment=""):
             ops.append(op)
             client_fields.update(_map_to_client_fields(table, fields))
 
-        if not normalized:
-            raise ValueError("no item table changes supplied")
+        effect_changes = _effect_changes(cu, item_id, desired_effects) if desired_effects is not None else []
+        if not normalized and not effect_changes:
+            raise ValueError("no item changes supplied")
 
         proposed = {}
         for table in TABLES:
@@ -641,6 +726,8 @@ def save_item_atomic(item_id, tables, comment=""):
             if client_available:
                 dat.validate_client_patch(item_id, client_fields)
 
+        for table, keyvals, cur, want in effect_changes:
+            ops.append({"table": table, "key": list(keyvals), "row": cur})
         bid = _save_backup(f"atomic edit item {item_id}", item_id, ops)
         sqls = []
         for table, fields in normalized.items():
@@ -655,6 +742,7 @@ def save_item_atomic(item_id, tables, comment=""):
                 + ", ".join(f"{k}={lit(v)}" for k, v in fields.items())
                 + f" WHERE {key}={item_id};"
             )
+        sqls.extend(_apply_effect_changes(cu, item_id, effect_changes))
 
         client_report = None
         if client_fields and client_available:
@@ -697,6 +785,7 @@ def save_item_atomic(item_id, tables, comment=""):
     return {
         "backup": bid,
         "tables": sorted(normalized),
+        "effect_changes": len(effect_changes),
         "sql": "\n".join(sqls),
         "client": client_report,
         "validation": validation,
