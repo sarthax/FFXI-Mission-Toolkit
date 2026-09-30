@@ -1157,6 +1157,13 @@ function usageRowSummary(ref){
     const idbits=Object.entries(row).filter(([k])=>/id$|name$|zone/i.test(k)).slice(0,6).map(([k,v])=>k+'='+v).join(' · ');
     return (ref.table||ref.category)+(cols?' · '+cols:'')+(idbits?' · '+idbits:'');
   }
+  if(ref.evidence==='graph_relationship'||ref.evidence==='catalog_relationship'){
+    return (ref.relationship||'relationship')+' · '+(ref.summary||((ref.source_node||'')+' → '+(ref.target_node||'')))+
+      (ref.confidence?' · confidence '+ref.confidence:'')+(ref.status?' · '+ref.status:'');
+  }
+  if(ref.evidence==='client_index'){
+    return (ref.summary||'client identity')+(ref.confidence?' · confidence '+ref.confidence:'')+(ref.evidence_id?' · '+ref.evidence_id:'');
+  }
   return (ref.path||'script')+':'+(ref.line||'')+' · '+(ref.text||'');
 }
 async function refreshItemUsage(includeSource=false){
@@ -1168,10 +1175,10 @@ async function refreshItemUsage(includeSource=false){
   const j=await r.json();
   if(!r.ok){ list.innerHTML=''; summary.textContent='usage scan unavailable'; notes.textContent=j.error||r.statusText; lastItemUsage=null; return; }
   lastItemUsage=j;
-  summary.textContent=j.total+' reference(s) · '+j.blocking_reference_count+' exact DB · '+j.source_text_count+' source text';
+  summary.textContent=j.total+' reference(s) · '+j.blocking_reference_count+' exact DB · '+(j.graph_reference_count||0)+' graph/catalog · '+(j.client_reference_count||0)+' client · '+j.source_text_count+' source text';
   if(j.blocking_reference_count>0){
     warn.style.display='';
-    warn.textContent='This item is referenced by '+j.blocking_reference_count+' exact content row(s). Deleting it may break drops, recipes, shops, rewards, or other content.';
+    warn.textContent='This item is referenced by '+j.blocking_reference_count+' exact content row(s). Deleting it may break drops, recipes, shops, rewards, or other content. Graph/catalog and client-index references below are additional evidence, not live DB foreign-key proof.';
   }
   if(!j.references?.length){
     list.innerHTML='<div class="muted">No references found in the currently scanned sources.</div>';
