@@ -292,8 +292,10 @@
                   <span class="chip">{{ engine.shared_helpers|length }} shared helper{{ '' if engine.shared_helpers|length == 1 else 's' }}</span>
                   {% for status,count in engine.binding_counts.items() %}<span class="chip">{{ status }} {{ count }}</span>{% endfor %}
                 </div>
-                {% if engine.binding_index_size == 0 %}
-                <div class="warn">No Lua binding registrations were indexed from this configured provider tree. API calls remain visible as source evidence, but engine handoff resolution is unavailable.</div>
+                {% if engine.binding_index_status == 'UNAVAILABLE' %}
+                <div class="warn">The configured provider binding index could not be built. API calls remain visible, but missing binding matches are unknown rather than NOT_INDEXED.{% if engine.binding_index_error %}<br><code>{{ engine.binding_index_error }}</code>{% endif %}</div>
+                {% elif engine.binding_index_size == 0 %}
+                <div class="warn">The provider binding index built successfully but contains no registered Lua binding names. API calls remain visible as source evidence.</div>
                 {% endif %}
                 {% if engine.unindexed_call_count %}
                 <div class="warn">{{ engine.unindexed_call_count }} direct Lua API call{{ '' if engine.unindexed_call_count == 1 else 's' }} have no binding registration under this configured provider tree. This is a binding-index gap/review cue, not proof the Lua call is invalid.</div>
@@ -301,9 +303,16 @@
                 {% if engine.case_only_call_count %}
                 <div class="warn">{{ engine.case_only_call_count }} direct Lua API call{{ '' if engine.case_only_call_count == 1 else 's' }} matched only after case folding. Review the exact registered casing before porting.</div>
                 {% endif %}
+                {% if engine.case_ambiguous_call_count %}
+                <div class="warn">{{ engine.case_ambiguous_call_count }} direct Lua API call{{ '' if engine.case_ambiguous_call_count == 1 else 's' }} match multiple registered names after case folding. Feature Trace preserves every candidate instead of choosing one.</div>
+                {% endif %}
+                {% if engine.multi_location_call_count %}
+                <div class="warn">{{ engine.multi_location_call_count }} direct Lua API call{{ '' if engine.multi_location_call_count == 1 else 's' }} resolve to multiple binding locations/classes. Treat these as multiple handoff candidates, not one collapsed implementation.</div>
+                {% endif %}
                 {% for call in engine.direct_calls %}
                 <div class="impl-engine-call">
-                  <div><strong class="mono">{{ call.qualified_name }}</strong> <span class="chip">{{ call.binding.status }}</span>{% if call.hook %}<span class="chip">{{ call.hook }}</span>{% endif %}</div>
+                  <div><strong class="mono">{{ call.qualified_name }}</strong> <span class="chip">{{ call.binding.status }}</span>{% if call.binding.location_count > 1 %}<span class="chip">{{ call.binding.location_count }} locations</span>{% endif %}{% if call.hook %}<span class="chip">{{ call.hook }}</span>{% endif %}</div>
+                  {% if call.binding.candidate_names|length > 1 %}<div class="muted mono">registered-name candidates: {{ call.binding.candidate_names|join(', ') }}</div>{% endif %}
                   <div class="muted mono">line {{ call.line or '?' }}{% if call.source_line %} · {{ call.source_line }}{% endif %}</div>
                   <div class="impl-workflow">
                     <a class="chip" href="{{ call.binding.binding_href }}&trace_q={{ implementation_path.numeric_id|urlencode }}">Binding Reference</a>
@@ -314,8 +323,10 @@
                     <div class="k">C++ binding target</div><div><code>{{ loc.class }} · {{ loc.file }}:{{ loc.line }}</code>{% if loc.implementation_line %}<br><span class="muted">implementation candidate line {{ loc.implementation_line }}</span>{% endif %}</div>
                   </div>
                   {% if loc.registration_excerpt %}<details><summary>Registration excerpt · {{ loc.registration_excerpt.start_line }}–{{ loc.registration_excerpt.end_line }}</summary><pre>{{ loc.registration_excerpt.text }}</pre></details>{% endif %}
-                  {% if loc.implementation_excerpt %}<details><summary>C++ implementation excerpt · {{ loc.implementation_excerpt.start_line }}–{{ loc.implementation_excerpt.end_line }}</summary><pre>{{ loc.implementation_excerpt.text }}</pre></details>{% endif %}
-                  {% else %}<div class="muted">No binding registration with this exact/case-folded method name is indexed for this provider tree.</div>{% endfor %}
+                  {% if loc.implementation_excerpt %}<details><summary>C++ implementation excerpt · {{ loc.implementation_excerpt.start_line }}–{{ loc.implementation_excerpt.end_line }}{% if loc.implementation_candidate_count > 1 %} · first of {{ loc.implementation_candidate_count }} candidates{% endif %}</summary><pre>{{ loc.implementation_excerpt.text }}</pre></details>{% endif %}
+                  {% if loc.implementation_candidate_count > 1 %}<div class="muted">{{ loc.implementation_candidate_count }} same class::method implementation candidates were found in this file; Feature Trace preserves the count and previews only the first candidate here.</div>{% endif %}
+                  {% if loc.source_read_status != 'READ' %}<div class="muted">source read: {{ loc.source_read_status }}</div>{% endif %}
+                  {% else %}<div class="muted">{% if call.binding.status == 'INDEX_UNAVAILABLE' %}Binding resolution is unavailable because the provider index failed to build.{% elif call.binding.status == 'CASE_AMBIGUOUS' %}Multiple registered names match after case folding; no single binding target was selected.{% else %}No binding registration with this exact/case-folded method name is indexed for this provider tree.{% endif %}</div>{% endfor %}
                 </div>
                 {% else %}<div class="muted">No syntax-level Lua API call observations were emitted for this source.</div>{% endfor %}
 
