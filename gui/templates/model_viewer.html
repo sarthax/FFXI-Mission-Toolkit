@@ -37,6 +37,12 @@
 
   <button id="load">Resolve &amp; render</button>
 
+  <hr style="border-color:#26313a;margin:14px 0 10px">
+  <div class="muted">Direct client model check</div>
+  <label>Raw look_t model ID</label>
+  <input type="number" id="modelid" min="0" max="65535" placeholder="e.g. 740">
+  <button id="load-modelid">Resolve model ID &amp; render</button>
+
   <div id="anim-controls" style="display:none">
     <label>Animation</label>
     <div class="row">
@@ -299,14 +305,15 @@ async function loadGearModel(r) {
   loading.textContent = '';
 }
 
-async function loadModel() {
+async function loadModel(preResolved=null) {
+  let r=preResolved;
   const server = $('server').value, kind = $('kind').value, eid = $('eid').value;
-  if (!eid) { setInfo('<span class="err">enter an id</span>'); return; }
+  if (!r && !eid) { setInfo('<span class="err">enter an id</span>'); return; }
   if (modelGroup) { scene.remove(modelGroup); modelGroup = null; }
   loading.textContent = 'resolving...';
   setInfo('');
   try {
-    const r = await fetch(`/modelviewer/resolve.json?kind=${kind}&id=${eid}&server=${server}`).then(x => x.json());
+    if(!r) r = await fetch(`/modelviewer/resolve.json?kind=${kind}&id=${eid}&server=${server}`).then(x => x.json());
     if (r.error && r.kind === undefined) { setInfo(`<span class="err">${esc(r.error)}</span>`); loading.textContent=''; return; }
 
     if (r.kind === 'prop') {
@@ -439,8 +446,34 @@ async function loadModel() {
   }
 }
 
-$('load').addEventListener('click', loadModel);
+async function loadRawModel(){
+  const mid=$('modelid').value;
+  if(mid===''){ setInfo('<span class="err">enter a raw model id</span>'); return; }
+  loading.textContent='resolving model id...';
+  const r=await fetch(`/modelviewer/model.json?model_id=${encodeURIComponent(mid)}`).then(x=>x.json());
+  if(r.error && !r.registered){ setInfo(`<span class="err">${esc(r.error)}</span>`); loading.textContent=''; return; }
+  r.kind='flat'; r.name=`model ${r.model_id}`; r.modelid=r.model_id; r.model_type='DIRECT CLIENT MODEL';
+  await loadModel(r);
+}
+$('load').addEventListener('click', ()=>loadModel());
 $('eid').addEventListener('keydown', ev => { if (ev.key === 'Enter') loadModel(); });
+$('load-modelid').addEventListener('click', loadRawModel);
+$('modelid').addEventListener('keydown', ev => { if (ev.key === 'Enter') loadRawModel(); });
+
+const qp=new URLSearchParams(location.search);
+if(qp.get('server')) $('server').value=qp.get('server');
+if(qp.get('kind')) $('kind').value=qp.get('kind');
+if(qp.get('id')) $('eid').value=qp.get('id');
+if(qp.get('model_id')) $('modelid').value=qp.get('model_id');
+if(qp.get('embed')==='1'){
+  $('panel').style.display='none';
+  document.querySelector('main').style.height='100vh';
+  document.querySelector('main').style.minHeight='100vh';
+}
+if(qp.get('autoload')==='1'){
+  if(qp.get('model_id')) loadRawModel();
+  else if(qp.get('id')) loadModel();
+}
 </script>
 </div>
 {% endblock %}
