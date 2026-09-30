@@ -65,6 +65,7 @@ server's permission gate. Every write is backed up first and journalled to
   </div>
   <div id="dirtySummary" class="mono" style="margin-top:8px;padding:6px 8px;border:1px solid var(--border);border-radius:4px;color:#b0bec5;">Saved state</div>
   <div id="clientMismatch" class="warn" style="display:none; margin-top:8px;"></div>
+  <div id="itemValidation" style="display:none;margin-top:8px;padding:8px;border:1px solid var(--border);border-radius:4px;"></div>
 
   <div id="datInfoCard" class="edit-card wide" style="margin-top:8px; display:none;">
     <h3>Client DAT <span class="hint">the real client-side .DAT record backing this item, and where edits to it get written</span></h3>
@@ -338,6 +339,26 @@ function buildTablesGrid(wrap, serverObj) {
   }
 }
 
+function renderItemDiagnostics(comparison,validation){
+  const mismatchBox=document.getElementById('clientMismatch');
+  if(!comparison?.available){
+    mismatchBox.style.display='';
+    mismatchBox.textContent='No client DAT record found for this item -- server edits can still be saved, but client synchronization is unavailable.';
+  } else if(comparison.mismatches?.length){
+    mismatchBox.style.display='';
+    mismatchBox.innerHTML='<b>Server / client DAT mismatches ('+comparison.mismatches.length+')</b><br>'+comparison.mismatches.map(r=>`${r.field}: server ${r.server} · client ${r.client}`).join('<br>');
+  } else {
+    mismatchBox.style.display='';
+    mismatchBox.textContent='Server / client DAT: all decoded overlapping fields match.';
+  }
+  const box=document.getElementById('itemValidation');
+  const errs=validation?.errors||[], warns=validation?.warnings||[], info=validation?.info||[];
+  box.style.display='';
+  box.innerHTML='<b>Validation</b> · '+errs.length+' error(s) · '+warns.length+' warning(s)'+
+    (errs.length?'<div style="color:#ff8a80;margin-top:4px">'+errs.map(x=>'ERROR: '+x.message).join('<br>')+'</div>':'')+
+    (warns.length?'<div style="color:#ffcc80;margin-top:4px">'+warns.map(x=>'WARNING: '+x.message).join('<br>')+'</div>':'')+
+    (info.length?'<div class="muted" style="margin-top:4px">'+info.map(x=>x.message).join('<br>')+'</div>':'');
+}
 async function loadItem(itemid) {
   if(currentItemId && Number(itemid)!==Number(currentItemId) && hasUnsavedItemChanges()){
     if(!confirm('Discard unsaved Item Editor changes?')) return;
@@ -351,22 +372,7 @@ async function loadItem(itemid) {
   document.getElementById('editorTitle').textContent =
     `Item ${itemid} -- ${data.server.item_basic.name}`;
 
-  const mismatchBox = document.getElementById('clientMismatch');
-  if (data.client) {
-    const eq = data.server.item_equipment;
-    const diffs = [];
-    if (eq && data.client.level !== undefined && eq.level !== data.client.level)
-      diffs.push(`server level=${eq.level} vs client level=${data.client.level}`);
-    if (diffs.length) {
-      mismatchBox.style.display = '';
-      mismatchBox.textContent = 'Client/server disagree: ' + diffs.join('; ') + ' -- saving will resync them.';
-    } else {
-      mismatchBox.style.display = 'none';
-    }
-  } else {
-    mismatchBox.style.display = '';
-    mismatchBox.textContent = 'No client DAT record found for this item (FFXI install not configured, or this id has no client-side record) -- edits will be server-only.';
-  }
+  renderItemDiagnostics(data.comparison, data.validation);
   refreshDatInfo(data);
 
   buildTablesGrid(document.getElementById('editorTables'), data.server);
@@ -385,8 +391,8 @@ async function loadItem(itemid) {
   document.getElementById('deleteClearDat').checked = false;
   document.getElementById('deleteItemBtn').disabled = true;
   refreshItemBackups();
-  document.getElementById('editorTables').addEventListener('input', updateDirtySummary, {once:false});
-  document.getElementById('editorTables').addEventListener('change', updateDirtySummary, {once:false});
+  document.getElementById('editorTables').oninput=updateDirtySummary;
+  document.getElementById('editorTables').onchange=updateDirtySummary;
   updateDirtySummary(); refreshItemUndoUI();
 }
 
@@ -764,7 +770,14 @@ async function saveAll() {
   const tables=changedTables();
   if(!Object.keys(tables).length){ updateDirtySummary(); return; }
   const comment=document.getElementById('editComment').value;
-  const status=document.getElementById('saveStatus'); status.textContent='Saving atomically...';
+  const status=document.getElementById('saveStatus'); status.textContent='Validating...';
+  const vr=await fetch('/itemedit/validate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_id:currentItemId,tables})});
+  const v=await vr.json();
+  if(!vr.ok){ status.textContent='VALIDATION ERROR: '+(v.error||vr.statusText); return; }
+  renderItemDiagnostics(v.comparison,v);
+  if(v.errors?.length){ status.textContent='Save blocked by validation errors.'; return; }
+  if(v.warnings?.length && !confirm('Validation warnings:\n\n'+v.warnings.map(x=>'• '+x.message).join('\n')+'\n\nSave anyway?')){ status.textContent='Save cancelled.'; return; }
+  status.textContent='Saving atomically...';
   const res=await fetch('/itemedit/save-atomic',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_id:currentItemId,tables,comment})});
   const j=await res.json();
   if(!res.ok){ status.textContent='ERROR: '+(j.error||res.statusText); return; }
