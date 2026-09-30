@@ -563,189 +563,56 @@ async function deleteItem() {
   currentItemId = null;
 }
 
-function renderMods(mods) {
-  const wrap = document.getElementById('editorLists');
-  const box = document.createElement('div');
-  box.className = 'edit-card';
-  box.innerHTML = `<h3>item_mods<span class="hint">stat/effect bonuses granted by this item -- saved individually, not part of Save All</span></h3>
-    <div class="rowtable-wrap table-wrap"><table><tbody>
-      ${mods.map(m => `<tr>
-          <td style="width:36px;">${m.modId}</td>
-          <td>${m.name || '(unconfirmed modId)'}</td>
-          <td style="width:70px;"><input type="number" data-mod-id="${m.modId}" data-mod-value value="${m.value}" style="width:64px;"></td>
-          <td style="width:110px;">
-            <button onclick="saveMod(${m.modId})">save</button>
-            <button onclick="deleteMod(${m.modId})">remove</button>
-          </td>
-        </tr>`).join('') || `<tr><td class="muted">no mods on this item</td></tr>`}
-      <tr>
-        <td colspan="2"><input type="text" id="newModId" list="dl_mods" placeholder="type to search mods..." style="width:100%;"></td>
-        <td><input type="number" id="newModValue" value="0" style="width:64px;"></td>
-        <td><button onclick="addMod()">add</button></td>
-      </tr>
-    </tbody></table></div>`;
+function rerenderEffects(){
+  const wrap=document.getElementById('editorLists'); wrap.innerHTML='';
+  renderMods(stagedEffects.mods); renderPetMods(stagedEffects.pet_mods); renderLatents(stagedEffects.latents);
+  updateDirtySummary();
+}
+
+function renderMods(mods){
+  const wrap=document.getElementById('editorLists'), box=document.createElement('div');
+  box.className='edit-card';
+  const rows=mods.map(m=>'<tr><td style="width:36px;">'+m.modId+'</td><td>'+(MOD_NAMES[m.modId]||'(unconfirmed modId)')+'</td><td style="width:80px;"><input type="number" data-stage-mod="'+m.modId+'" value="'+m.value+'" style="width:70px;"></td><td style="width:72px;"><button type="button" data-remove-mod="'+m.modId+'">remove</button></td></tr>').join('');
+  box.innerHTML='<h3>item_mods<span class="hint">staged; saved with Save Item</span></h3><div class="rowtable-wrap table-wrap"><table><tbody>'+(rows||'<tr><td class="muted">no mods on this item</td></tr>')+'<tr><td colspan="2"><input type="text" id="newModId" list="dl_mods" placeholder="type to search mods..." style="width:100%;"></td><td><input type="number" id="newModValue" value="0" style="width:70px;"></td><td><button type="button" id="stageAddMod">add</button></td></tr></tbody></table></div>';
   wrap.appendChild(box);
+  box.querySelectorAll('[data-stage-mod]').forEach(inp=>inp.oninput=()=>{ const row=stagedEffects.mods.find(x=>Number(x.modId)===Number(inp.dataset.stageMod)); if(row){ row.value=Number(inp.value)||0; updateDirtySummary(); } });
+  box.querySelectorAll('[data-remove-mod]').forEach(btn=>btn.onclick=()=>{ stagedEffects.mods=stagedEffects.mods.filter(x=>Number(x.modId)!==Number(btn.dataset.removeMod)); rerenderEffects(); });
+  box.querySelector('#stageAddMod').onclick=()=>{
+    const modId=pickerValue('newModId',MOD_NAMES); if(modId===null){ alert('pick a mod'); return; }
+    if(stagedEffects.mods.some(x=>Number(x.modId)===modId)){ alert('that modId is already staged'); return; }
+    stagedEffects.mods.push({modId,value:Number(document.getElementById('newModValue').value)||0}); rerenderEffects();
+  };
 }
 
-async function saveMod(modId) {
-  const inp = document.querySelector(`input[data-mod-value][data-mod-id="${modId}"]`);
-  const comment = document.getElementById('editComment').value;
-  const res = await fetch('/itemedit/mods/set', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({item_id: currentItemId, mod_id: modId, value: Number(inp.value) || 0, comment})
-  });
-  const j = await res.json();
-  if (j.error) { alert(j.error); return; }
-  loadItem(currentItemId);
-}
-
-async function deleteMod(modId) {
-  if (!confirm(`Remove modId ${modId} from item ${currentItemId}?`)) return;
-  const comment = document.getElementById('editComment').value;
-  const res = await fetch('/itemedit/mods/delete', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({item_id: currentItemId, mod_id: modId, comment})
-  });
-  const j = await res.json();
-  if (j.error) { alert(j.error); return; }
-  loadItem(currentItemId);
-}
-
-async function addMod() {
-  const modId = pickerValue('newModId', MOD_NAMES);
-  if (modId === null) { alert('pick a mod'); return; }
-  const value = Number(document.getElementById('newModValue').value) || 0;
-  const comment = document.getElementById('editComment').value;
-  const res = await fetch('/itemedit/mods/set', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({item_id: currentItemId, mod_id: modId, value, comment})
-  });
-  const j = await res.json();
-  if (j.error) { alert(j.error); return; }
-  loadItem(currentItemId);
-}
-
-function renderPetMods(petMods) {
-  const wrap = document.getElementById('editorLists');
-  const box = document.createElement('div');
-  box.className = 'edit-card';
-  box.innerHTML = `<h3>item_mods_pet<span class="hint">bonuses applied to your pet (avatar/wyvern/automaton/etc) while equipped -- saved individually, not part of Save All</span></h3>
-    <div class="rowtable-wrap table-wrap"><table><tbody>
-      ${petMods.map(m => `<tr>
-          <td style="width:36px;">${m.modId}</td>
-          <td>${m.name || '(unconfirmed modId)'}</td>
-          <td style="width:80px;">${m.petTypeName || `pet ${m.petType}`}</td>
-          <td style="width:70px;"><input type="number" data-petmod-id="${m.modId}" data-petmod-pettype="${m.petType}" data-petmod-value value="${m.value}" style="width:64px;"></td>
-          <td style="width:110px;">
-            <button onclick="savePetMod(${m.modId}, ${m.petType})">save</button>
-            <button onclick="deletePetMod(${m.modId}, ${m.petType})">remove</button>
-          </td>
-        </tr>`).join('') || `<tr><td class="muted">no pet mods on this item</td></tr>`}
-      <tr>
-        <td colspan="2"><input type="text" id="newPetModId" list="dl_mods" placeholder="type to search mods..." style="width:100%;"></td>
-        <td><input type="text" id="newPetModType" list="dl_pettypes" placeholder="pet type..." style="width:100%;"></td>
-        <td><input type="number" id="newPetModValue" value="0" style="width:64px;"></td>
-        <td><button onclick="addPetMod()">add</button></td>
-      </tr>
-    </tbody></table></div>`;
+function renderPetMods(rows){
+  const wrap=document.getElementById('editorLists'), box=document.createElement('div'); box.className='edit-card';
+  const body=rows.map(m=>'<tr><td>'+m.modId+'</td><td>'+(MOD_NAMES[m.modId]||'(unconfirmed modId)')+'</td><td>'+(PET_TYPE_NAMES[m.petType]||('pet '+m.petType))+'</td><td><input type="number" data-stage-petmod="'+m.modId+':'+m.petType+'" value="'+m.value+'" style="width:70px;"></td><td><button type="button" data-remove-petmod="'+m.modId+':'+m.petType+'">remove</button></td></tr>').join('');
+  box.innerHTML='<h3>item_mods_pet<span class="hint">staged; saved with Save Item</span></h3><div class="rowtable-wrap table-wrap"><table><tbody>'+(body||'<tr><td class="muted">no pet mods on this item</td></tr>')+'<tr><td colspan="2"><input type="text" id="newPetModId" list="dl_mods" placeholder="mod..."></td><td><input type="text" id="newPetModType" list="dl_pettypes" placeholder="pet type..."></td><td><input type="number" id="newPetModValue" value="0" style="width:70px;"></td><td><button type="button" id="stageAddPetMod">add</button></td></tr></tbody></table></div>';
   wrap.appendChild(box);
+  box.querySelectorAll('[data-stage-petmod]').forEach(inp=>inp.oninput=()=>{ const [m,p]=inp.dataset.stagePetmod.split(':').map(Number); const row=stagedEffects.pet_mods.find(x=>Number(x.modId)===m&&Number(x.petType)===p); if(row){ row.value=Number(inp.value)||0; updateDirtySummary(); } });
+  box.querySelectorAll('[data-remove-petmod]').forEach(btn=>btn.onclick=()=>{ const [m,p]=btn.dataset.removePetmod.split(':').map(Number); stagedEffects.pet_mods=stagedEffects.pet_mods.filter(x=>!(Number(x.modId)===m&&Number(x.petType)===p)); rerenderEffects(); });
+  box.querySelector('#stageAddPetMod').onclick=()=>{
+    const modId=pickerValue('newPetModId',MOD_NAMES); if(modId===null){ alert('pick a mod'); return; }
+    const petType=pickerValue('newPetModType',PET_TYPE_NAMES); if(petType===null){ alert('pick a pet type'); return; }
+    if(stagedEffects.pet_mods.some(x=>Number(x.modId)===modId&&Number(x.petType)===petType)){ alert('that mod/petType key is already staged'); return; }
+    stagedEffects.pet_mods.push({modId,petType,value:Number(document.getElementById('newPetModValue').value)||0}); rerenderEffects();
+  };
 }
 
-function renderLatents(latents) {
-  const wrap = document.getElementById('editorLists');
-  const box = document.createElement('div');
-  box.className = 'edit-card';
-  box.innerHTML = `<h3>item_latents<span class="hint">conditional/hidden effects (e.g. Vs. Undead, HP under X%) -- value is part of the row's key, so rows are add/remove only, not part of Save All</span></h3>
-    <div class="rowtable-wrap table-wrap"><table><tbody>
-      ${latents.map(l => `<tr>
-          <td style="width:36px;">${l.modId}</td>
-          <td>${l.name || '(unconfirmed modId)'}</td>
-          <td style="width:50px;">${l.value}</td>
-          <td>${l.latentName || `latent ${l.latentId}`}</td>
-          <td style="width:50px;">param ${l.latentParam}</td>
-          <td style="width:70px;">
-            <button onclick="deleteLatent(${l.modId}, ${l.value}, ${l.latentId}, ${l.latentParam})">remove</button>
-          </td>
-        </tr>`).join('') || `<tr><td class="muted">no latents on this item</td></tr>`}
-      <tr>
-        <td colspan="2"><input type="text" id="newLatentModId" list="dl_mods" placeholder="type to search mods..." style="width:100%;"></td>
-        <td><input type="number" id="newLatentValue" value="0" style="width:44px;" title="value"></td>
-        <td><input type="text" id="newLatentId" list="dl_latents" placeholder="type to search conditions..." style="width:100%;"></td>
-        <td><input type="number" id="newLatentParam" value="0" style="width:44px;" title="param"></td>
-        <td><button onclick="addLatent()">add</button></td>
-      </tr>
-    </tbody></table></div>`;
+function renderLatents(rows){
+  const wrap=document.getElementById('editorLists'), box=document.createElement('div'); box.className='edit-card';
+  const body=rows.map(l=>'<tr><td>'+l.modId+'</td><td>'+(MOD_NAMES[l.modId]||'(unconfirmed modId)')+'</td><td>'+l.value+'</td><td>'+(LATENT_NAMES[l.latentId]||('latent '+l.latentId))+'</td><td>param '+l.latentParam+'</td><td><button type="button" data-remove-latent="'+l.modId+':'+l.value+':'+l.latentId+':'+l.latentParam+'">remove</button></td></tr>').join('');
+  box.innerHTML='<h3>item_latents<span class="hint">staged; saved with Save Item</span></h3><div class="rowtable-wrap table-wrap"><table><tbody>'+(body||'<tr><td class="muted">no latents on this item</td></tr>')+'<tr><td colspan="2"><input type="text" id="newLatentModId" list="dl_mods" placeholder="mod..."></td><td><input type="number" id="newLatentValue" value="0" style="width:55px;"></td><td><input type="text" id="newLatentId" list="dl_latents" placeholder="condition..."></td><td><input type="number" id="newLatentParam" value="0" style="width:55px;"></td><td><button type="button" id="stageAddLatent">add</button></td></tr></tbody></table></div>';
   wrap.appendChild(box);
+  box.querySelectorAll('[data-remove-latent]').forEach(btn=>btn.onclick=()=>{ const k=btn.dataset.removeLatent.split(':').map(Number); stagedEffects.latents=stagedEffects.latents.filter(x=>!(Number(x.modId)===k[0]&&Number(x.value)===k[1]&&Number(x.latentId)===k[2]&&Number(x.latentParam)===k[3])); rerenderEffects(); });
+  box.querySelector('#stageAddLatent').onclick=()=>{
+    const modId=pickerValue('newLatentModId',MOD_NAMES); if(modId===null){ alert('pick a mod'); return; }
+    const latentId=pickerValue('newLatentId',LATENT_NAMES); if(latentId===null){ alert('pick a latent condition'); return; }
+    const row={modId,value:Number(document.getElementById('newLatentValue').value)||0,latentId,latentParam:Number(document.getElementById('newLatentParam').value)||0};
+    const key=effectSortKey('latents',row); if(stagedEffects.latents.some(x=>effectSortKey('latents',x)===key)){ alert('that latent row is already staged'); return; }
+    stagedEffects.latents.push(row); rerenderEffects();
+  };
 }
-
-async function addLatent() {
-  const modId = pickerValue('newLatentModId', MOD_NAMES);
-  if (modId === null) { alert('pick a mod'); return; }
-  const value = Number(document.getElementById('newLatentValue').value) || 0;
-  const latentId = pickerValue('newLatentId', LATENT_NAMES);
-  if (latentId === null) { alert('pick a latent condition'); return; }
-  const latentParam = Number(document.getElementById('newLatentParam').value) || 0;
-  const comment = document.getElementById('editComment').value;
-  const res = await fetch('/itemedit/latents/add', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({item_id: currentItemId, mod_id: modId, value, latent_id: latentId, latent_param: latentParam, comment})
-  });
-  const j = await res.json();
-  if (j.error) { alert(j.error); return; }
-  loadItem(currentItemId);
-}
-
-async function deleteLatent(modId, value, latentId, latentParam) {
-  if (!confirm(`Remove this latent row from item ${currentItemId}?`)) return;
-  const comment = document.getElementById('editComment').value;
-  const res = await fetch('/itemedit/latents/delete', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({item_id: currentItemId, mod_id: modId, value, latent_id: latentId, latent_param: latentParam, comment})
-  });
-  const j = await res.json();
-  if (j.error) { alert(j.error); return; }
-  loadItem(currentItemId);
-}
-
-async function savePetMod(modId, petType) {
-  const inp = document.querySelector(`input[data-petmod-value][data-petmod-id="${modId}"][data-petmod-pettype="${petType}"]`);
-  const comment = document.getElementById('editComment').value;
-  const res = await fetch('/itemedit/petmods/set', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({item_id: currentItemId, mod_id: modId, pet_type: petType, value: Number(inp.value) || 0, comment})
-  });
-  const j = await res.json();
-  if (j.error) { alert(j.error); return; }
-  loadItem(currentItemId);
-}
-
-async function deletePetMod(modId, petType) {
-  if (!confirm(`Remove modId ${modId} (petType ${petType}) from item ${currentItemId}?`)) return;
-  const comment = document.getElementById('editComment').value;
-  const res = await fetch('/itemedit/petmods/delete', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({item_id: currentItemId, mod_id: modId, pet_type: petType, comment})
-  });
-  const j = await res.json();
-  if (j.error) { alert(j.error); return; }
-  loadItem(currentItemId);
-}
-
-async function addPetMod() {
-  const modId = pickerValue('newPetModId', MOD_NAMES);
-  if (modId === null) { alert('pick a mod'); return; }
-  const petType = pickerValue('newPetModType', PET_TYPE_NAMES) || 0;
-  const value = Number(document.getElementById('newPetModValue').value) || 0;
-  const comment = document.getElementById('editComment').value;
-  const res = await fetch('/itemedit/petmods/set', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({item_id: currentItemId, mod_id: modId, pet_type: petType, value, comment})
-  });
-  const j = await res.json();
-  if (j.error) { alert(j.error); return; }
-  loadItem(currentItemId);
-}
-
 // item_equipment.slot is a bitmask of dat.SLOTS positions, but the client (and real gear data)
 // never actually treats it as an arbitrary multi-select: an item goes in exactly one slot, with
 // two documented exceptions where a pair of bits together mean "either of this pair" (rings,
