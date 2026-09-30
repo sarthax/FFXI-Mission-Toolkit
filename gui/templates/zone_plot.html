@@ -75,6 +75,7 @@
 </div>
 <div class="muted" style="font-size:10px;margin-bottom:5px">Keyboard: arrows move X/Z · PgUp/PgDn Y · [ ] rotate · Shift = large · Alt = precision · F = frame selected</div>
       <label>Nudge step <input type="number" id="estep" value="1" step="0.5" min="0.1"></label>
+      <label>Rotation step <input type="number" id="erstep" value="1" step="1" min="1" max="128"></label>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin:4px 0">
         <button data-n="x-">X&minus;</button><button data-n="y-">Y&minus; (up)</button><button data-n="z-">Z&minus;</button>
         <button data-n="x+">X+</button><button data-n="y+">Y+ (down)</button><button data-n="z+">Z+</button></div>
@@ -942,7 +943,48 @@ function previewRotation(){
 function previewEdit(){ if(selected<0) return; const e=Z.entities[selected]; e.x=+$('ex').value; e.y=+$('ey').value; e.z=+$('ez').value; previewRotation(); rebuild(); updateSelectionVisual(); updateDirtyUI(); }
 ['ex','ey','ez'].forEach(id=>$(id).addEventListener('change',previewEdit));
 $('er').addEventListener('input',previewRotation);
+document.querySelectorAll('[data-rpreset]').forEach(b=>b.onclick=()=>{ $('er').value=b.dataset.rpreset; previewRotation(); });
+document.querySelectorAll('[data-rdelta]').forEach(b=>b.onclick=()=>{ $('er').value=((+$('er').value + +b.dataset.rdelta)%256+256)%256; previewRotation(); });
 document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{ const a=b.dataset.n[0], sg=b.dataset.n[1]==='+'?1:-1; const f=$('e'+a); f.value=(+f.value+sg*(+$('estep').value)).toFixed(3); previewEdit(); });
+function editorKeyStep(ev){
+  const base=Math.max(.001,+$('estep').value||1);
+  return base*(ev.shiftKey?10:ev.altKey?.1:1);
+}
+function nudgeSelected(dx,dy,dz,ev){
+  if(selected<0 || $('tab-edit').hidden) return;
+  const s=editorKeyStep(ev);
+  $('ex').value=(+$('ex').value+dx*s).toFixed(3);
+  $('ey').value=(+$('ey').value+dy*s).toFixed(3);
+  $('ez').value=(+$('ez').value+dz*s).toFixed(3);
+  previewEdit();
+}
+function rotateSelected(sign,ev){
+  if(selected<0 || $('tab-edit').hidden) return;
+  let step=Math.max(1,Math.round(+$('erstep').value||1));
+  if(ev.shiftKey) step=32; else if(ev.altKey) step=1;
+  $('er').value=((+$('er').value+sign*step)%256+256)%256; previewRotation();
+}
+function typingTarget(el){ return !!el && ['INPUT','TEXTAREA','SELECT'].includes(el.tagName); }
+window.addEventListener('keydown',ev=>{
+  const mod=ev.ctrlKey||ev.metaKey;
+  if(mod && !typingTarget(document.activeElement)){
+    if(ev.key.toLowerCase()==='z'){ ev.preventDefault(); ev.shiftKey?redoAction():undoAction(); return; }
+    if(ev.key.toLowerCase()==='y'){ ev.preventDefault(); redoAction(); return; }
+  }
+  if(typingTarget(document.activeElement)) return;
+  if(ev.key==='f' || ev.key==='F'){ if(selected>=0){ ev.preventDefault(); frameSelected(); } return; }
+  if($('tab-edit').hidden || selected<0) return;
+  if(ev.key==='ArrowLeft'){ ev.preventDefault(); nudgeSelected(-1,0,0,ev); }
+  else if(ev.key==='ArrowRight'){ ev.preventDefault(); nudgeSelected(1,0,0,ev); }
+  else if(ev.key==='ArrowUp'){ ev.preventDefault(); nudgeSelected(0,0,-1,ev); }
+  else if(ev.key==='ArrowDown'){ ev.preventDefault(); nudgeSelected(0,0,1,ev); }
+  else if(ev.key==='PageUp'){ ev.preventDefault(); nudgeSelected(0,-1,0,ev); }
+  else if(ev.key==='PageDown'){ ev.preventDefault(); nudgeSelected(0,1,0,ev); }
+  else if(ev.key==='['){ ev.preventDefault(); rotateSelected(-1,ev); }
+  else if(ev.key===']'){ ev.preventDefault(); rotateSelected(1,ev); }
+});
+$('frameSelBtn').onclick=frameSelected;
+$('frameAllBtn').onclick=()=>{ if(Z) frameAll(); };
 $('erev').onclick=()=>restorePreviewFromOrig();
 let lastSql='';
 let lastTouched=null; // {k,id} of the last entity successfully written to the live DB -- what "Sync to SQL file" targets
