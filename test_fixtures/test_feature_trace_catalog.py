@@ -64,6 +64,27 @@ def main():
     assert spawn_links[0]["target_node"]=="catalog:lsb_mob_groups:zoneid=75&groupid=38"
     assert spawn_links[0]["adapter"]=="server"
 
+    # Arbitrary entity IDs/names consolidate source representations into an Implementation Path
+    # without manufacturing canonical graph edges.
+    graph_entity=sqlite3.connect(":memory:")
+    graph_entity.execute("CREATE TABLE entity_relationships (relationship_id TEXT, source_node TEXT, target_node TEXT, relationship TEXT, evidence_id TEXT, confidence TEXT, status TEXT, metadata_json TEXT, source_snapshot_id TEXT)")
+    path_by_id=feature_trace.entity_implementation_path(graph_entity,con,str(zone75_mobid))
+    assert path_by_id is not None,path_by_id
+    assert path_by_id["numeric_id"]==zone75_mobid,path_by_id
+    assert path_by_id["canonical_mapped"] is False,path_by_id
+    lsb_branch=next(b for b in path_by_id["branches"] if b["root"]["node_id"]==f"catalog:lsb_mob_spawn_points:{zone75_mobid}")
+    assert [s["relationship"] for s in lsb_branch["steps"]][:2]==["SPAWN_USES_GROUP","GROUP_USES_POOL"],lsb_branch
+
+    path_by_name=feature_trace.entity_implementation_path(graph_entity,con,"Zone Seventy Five Mob")
+    assert path_by_name and path_by_name["numeric_id"]==zone75_mobid,path_by_name
+
+    graph_entity.execute("CREATE TABLE entity_identifiers (entity_id TEXT, identifier_type TEXT, identifier_value TEXT)")
+    graph_entity.execute("INSERT INTO entity_identifiers VALUES ('npc:zone75fixture','mobid',?)",(str(zone75_mobid),))
+    path_mapped=feature_trace.entity_implementation_path(graph_entity,con,str(zone75_mobid))
+    assert path_mapped["canonical_root"]=="npc:zone75fixture",path_mapped
+    assert path_mapped["canonical_mapped"] is True,path_mapped
+    graph_entity.close()
+
     con.execute("CREATE TABLE lsb_instance_list (instanceid INTEGER, instance_name TEXT)")
     con.execute("INSERT INTO lsb_instance_list VALUES (100,'Fixture Instance')")
     con.execute("CREATE TABLE lsb_instance_entities (instanceid INTEGER, id INTEGER)")
@@ -271,6 +292,10 @@ def main():
     template=(Path(__file__).resolve().parents[1]/"gui"/"templates"/"feature_trace.html").read_text(encoding="utf-8")
     assert "grouped without expanding semantic topology" in template
     assert "Evidence Dossier" in template
+    assert "Implementation Path" in template
+    assert "canonical graph identity mapped" in template
+    assert "no canonical graph identity mapping yet" in template
+    assert "Open Entity Dossier" in template
     assert "Source details" in template and "Open source view" in template
     assert "Source-native links" in template
     assert "Matched on" in template
