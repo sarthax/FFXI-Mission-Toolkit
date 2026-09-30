@@ -102,7 +102,12 @@ def _numeric_entity_query(query: str) -> int | None:
 
 
 def canonical_entity_root(con: sqlite3.Connection, numeric_id: int) -> str | None:
-    """Resolve a numeric runtime/server entity ID through explicit canonical identifier mappings."""
+    """Resolve a numeric runtime/server entity ID through explicit canonical identifier mappings.
+
+    When identifier_type is available, only entity-style identifiers participate. Numeric IDs are
+    reused across unrelated domains (items, quests, events, etc.), so allowing every identifier
+    type to compete can turn an otherwise unique entity mapping into a false ambiguity.
+    """
     available = {r[0] for r in con.execute(
         "SELECT name FROM sqlite_master WHERE type='table'"
     )}
@@ -112,12 +117,23 @@ def canonical_entity_root(con: sqlite3.Connection, numeric_id: int) -> str | Non
     required = {"entity_id", "identifier_value"}
     if not required.issubset(cols):
         return None
+
+    clauses = ["CAST(identifier_value AS TEXT)=?"]
+    params = [str(numeric_id)]
+    if "identifier_type" in cols:
+        clauses.append(
+            """lower(COALESCE(identifier_type,'')) IN (
+                   'npcid','mobid','entity_id','runtime_entity_id',
+                   'server_entity_id','client_entity_id','numeric_entity_id'
+               )"""
+        )
+
     rows = con.execute(
-        """SELECT DISTINCT entity_id
-           FROM entity_identifiers
-           WHERE CAST(identifier_value AS TEXT)=?
-           ORDER BY entity_id LIMIT 3""",
-        (str(numeric_id),),
+        f"""SELECT DISTINCT entity_id
+            FROM entity_identifiers
+            WHERE {' AND '.join(clauses)}
+            ORDER BY entity_id LIMIT 3""",
+        params,
     ).fetchall()
     return rows[0][0] if len(rows) == 1 else None
 
