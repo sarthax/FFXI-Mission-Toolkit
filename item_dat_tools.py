@@ -1861,6 +1861,55 @@ def _server_item_ids_in_range(lo: int, hi: int) -> set:
         return set()
 
 
+def browse_slots(cat_name: str, offset: int = 0, limit: int = 200, state: str = '') -> dict:
+    """Browse real DAT/server occupancy for one category without allocating or changing anything."""
+    row = next((r for r in ITEM_DATS if r[0] == cat_name), None)
+    if row is None:
+        raise ValueError(f'unknown item DAT category {cat_name!r}')
+    _, base_id, item_type, en_rom, _jp_rom = row
+    src_path = dat_write_source(en_rom)
+    if not src_path.exists():
+        raise ValueError(f'DAT not found for category {cat_name!r}: {src_path}')
+    item_dat = ItemDat.load(src_path)
+    used_ids = _server_item_ids_in_range(base_id, base_id + item_dat.count)
+    offset = max(0, int(offset)); limit = max(1, min(int(limit), 500))
+    allowed = {'', 'used-both', 'server-only', 'dat-only', 'free', 'reserved'}
+    if state not in allowed:
+        raise ValueError(f'unknown slot state {state!r}')
+    rows = []
+    for idx in range(item_dat.count):
+        item_id = base_id + idx
+        rec = item_dat.record(idx)
+        text_off = _resolve_text_offset(rec, item_type, item_dat.format)
+        strings = _read_strings(rec, text_off) if text_off is not None else []
+        dat_used = bool(strings and strings[0] and strings[0] != '.')
+        server_used = item_id in used_ids
+        reserved = item_id == 0
+        if reserved:
+            slot_state = 'reserved'
+        elif dat_used and server_used:
+            slot_state = 'used-both'
+        elif server_used:
+            slot_state = 'server-only'
+        elif dat_used:
+            slot_state = 'dat-only'
+        else:
+            slot_state = 'free'
+        if state and slot_state != state:
+            continue
+        rows.append({
+            'item_id': item_id, 'record_index': idx, 'state': slot_state,
+            'server_occupied': server_used, 'dat_occupied': dat_used, 'reserved': reserved,
+            'name': strings[0] if dat_used and strings else '',
+        })
+    total = len(rows)
+    page = rows[offset:offset + limit]
+    return {
+        'category': cat_name, 'base_id': base_id, 'item_type': item_type,
+        'dat_ui': en_rom, 'source': str(src_path), 'target': dat_target(),
+        'offset': offset, 'limit': limit, 'total': total, 'rows': page,
+    }
+
 def free_slots(cat_name: str, count: int) -> list:
     """First `count` empty (placeholder-name) record indices in a DAT category. Never returns
     item id 0 (reserved "no item" sentinel) or an id the server DB already has a real
