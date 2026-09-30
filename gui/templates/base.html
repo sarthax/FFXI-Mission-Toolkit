@@ -165,7 +165,7 @@
 </head>
 <body class="shell-{% block shell_mode %}standard{% endblock %}">
 {% set shell = shell_context(request) %}
-{% set brand = shell_brand() %}
+{% set brand = shell.brand if shell.brand is defined else {'enabled': true, 'text': 'ValhallaXI', 'icon': '/static/valhalla_logo.png'} %}
 <header id="app-shell">
   <div class="shellbar">
     {% if brand.enabled %}
