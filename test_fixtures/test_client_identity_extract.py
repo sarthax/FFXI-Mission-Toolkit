@@ -38,10 +38,12 @@ def main() -> None:
             if "--dat-id" in argv:
                 dat_id = int(argv[argv.index("--dat-id") + 1])
                 if 6720 <= dat_id <= 6975 or dat_id >= 86491:
+                    # Use zone-distinct entity ids, matching the real client/server-id model.
+                    base = 12345 if dat_id == dat_id_for_zone(87, "entities") else 22345
                     output.write_text(
-                        "- id: 12345\n"
+                        f"- id: {base}\n"
                         "  name: 'Door Alpha'\n"
-                        "- id: 12346\n"
+                        f"- id: {base + 1}\n"
                         "  name: 'Research NPC'\n",
                         encoding="utf-8",
                     )
@@ -107,7 +109,7 @@ def main() -> None:
         ).fetchone()[0]
         assert entity_count == 4, entity_count
         assert ingested["entity_graph"]["status"] == "OK", ingested
-        assert ingested["entity_graph"]["semantic_entities"] == 2, ingested
+        assert ingested["entity_graph"]["semantic_entities"] == 4, ingested
         mirrored = con.execute(
             "SELECT COUNT(*) FROM entity_identifiers WHERE identifier_type LIKE 'client_snapshot_entity_id:%'"
         ).fetchone()[0]
