@@ -218,7 +218,16 @@ def main() -> int:
                 "manifest_path": Path(manifest_path),
                 "snapshot_root": Path(snapshot_root),
             }
-            return {"record_count": 12, "failures": []}
+            return {
+                "record_count": 12,
+                "failures": [],
+                "entity_graph": {
+                    "status": "OK",
+                    "semantic_entities": 4,
+                    "identifiers": 4,
+                    "relationships": 4,
+                },
+            }
 
         try:
             identity_gui.extract_client_identity_snapshot = fake_extract
@@ -239,6 +248,8 @@ def main() -> int:
             identity_gui.ingest_client_identity_manifest = original_ingest
 
         assert result["record_count"] == 12
+        assert result["entity_graph"]["semantic_entities"] == 4
+        assert result["entity_graph"]["relationships"] == 4
         requests = list(captured["extract"]["zones"])
         assert [(r.zone_id, r.zone_key) for r in requests] == [
             (1, "PHANAUET_CHANNEL"),
@@ -320,7 +331,19 @@ def main() -> int:
             error="installed client fixture unavailable",
             ov=None,
             snapshots=rows,
-            import_result=None,
+            import_result={
+                "snapshot_id": "fixture-import",
+                "record_count": 4,
+                "resources": 3,
+                "zones_requested": 1,
+                "extraction_failures": [],
+                "ingest_failures": [],
+                "entity_graph": {
+                    "semantic_entities": 2,
+                    "identifiers": 2,
+                    "relationships": 2,
+                },
+            },
             import_error=None,
             comparison=comparison,
             comparison_summary=identity_gui.summarize_comparison({
@@ -353,6 +376,7 @@ def main() -> int:
         assert "17000099" in html
         assert "DECODED_STRUCTURE" in html
         assert "ENTITY / Actor Identity Coverage" in html
+        assert "Feature Trace mirror" in html
         assert "Constraint-ready 1" in html
         assert "Door Alpha" in html
         assert "Export comparison CSV" in html

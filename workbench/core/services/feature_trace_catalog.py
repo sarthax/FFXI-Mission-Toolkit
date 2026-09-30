@@ -181,9 +181,14 @@ def search_catalog(con: sqlite3.Connection, term: str, limit: int = 200):
                 column for column,value in zip(search_columns,row)
                 if term.casefold() in str(value or "").casefold()
             ]
+            alias_offset=len(identity_columns)+(1 if name else 0)
+            aliases={
+                column:row[alias_offset+index]
+                for index,column in enumerate(alias_columns)
+            }
             item={"node_id":node_id,"node_type":object_type,"display_name":display,"domain":domain,"source":table,"table":table,"provider":provider_id,"catalog_only":True,
-                  "identity":identity,"matched_on":matched}
-            if len(identity_values)==1:
+                  "identity":identity,"aliases":aliases,"matched_on":matched}
+            if len(identity_values)==1 and identity_columns[0].lower() in ID_COLUMNS:
                 item["numeric_id"]=identity_values[0]
             rows.append(item)
     rows.sort(key=lambda r:(str(r.get("display_name") or "").casefold(),r["node_id"]))
