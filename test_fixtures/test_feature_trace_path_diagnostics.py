@@ -16,10 +16,10 @@ def main():
         graph_db=root/"workbench.db"
         catalog=sqlite3.connect(":memory:")
         catalog.execute("CREATE TABLE lsb_mob_spawn_points (mobid INTEGER, mobname TEXT, groupid INTEGER)")
-        catalog.execute("CREATE TABLE lsb_mob_groups (zoneid INTEGER, groupid INTEGER, poolid INTEGER, name TEXT)")
+        catalog.execute("CREATE TABLE lsb_mob_groups (zoneid INTEGER, groupid INTEGER, poolid INTEGER, name TEXT, dropid INTEGER, respawntime INTEGER, minLevel INTEGER, maxLevel INTEGER)")
         catalog.execute("CREATE TABLE lsb_mob_pools (poolid INTEGER, name TEXT)")
-        catalog.execute("INSERT INTO lsb_mob_spawn_points VALUES (17000001,'Diagnostic Mob',38)")
-        catalog.execute("INSERT INTO lsb_mob_groups VALUES (75,38,2002,'Diagnostic Group')")
+        catalog.execute("INSERT INTO lsb_mob_spawn_points VALUES (17084539,'Diagnostic Mob',38)")
+        catalog.execute("INSERT INTO lsb_mob_groups VALUES (75,38,2002,'Diagnostic Group',777,600,75,78)")
         catalog.execute("INSERT INTO lsb_mob_pools VALUES (2002,'Diagnostic Pool')")
         catalog.commit()
 
@@ -27,11 +27,11 @@ def main():
         con.execute("INSERT INTO entities VALUES (?,?,?,?)",("mob:diagnostic","MOB","Diagnostic Mob","{}"))
         con.execute(
             "INSERT INTO entity_identifiers VALUES (?,?,?,?)",
-            ("mob:diagnostic","mobid","17000001","server-catalog"),
+            ("mob:diagnostic","mobid","17084539","server-catalog"),
         )
         con.execute(
             "INSERT INTO evidence VALUES (?,?,?,?,?,?)",
-            ("evidence:diag","SQL","lsb_mob_spawn_points","mobid=17000001","server:lsb","fixture evidence"),
+            ("evidence:diag","SQL","lsb_mob_spawn_points","mobid=17084539","server:lsb","fixture evidence"),
         )
         con.execute(
             "INSERT INTO entity_relationships VALUES (?,?,?,?,?,?,?,?,?)",
@@ -39,11 +39,11 @@ def main():
         )
         con.commit()
 
-        diag=feature_trace.entity_query_diagnostics(con,catalog,"17000001")
+        diag=feature_trace.entity_query_diagnostics(con,catalog,"17084539")
         assert diag["status"]=="UNIQUE_CANONICAL_MAPPING",diag
         assert diag["canonical_roots"]==["mob:diagnostic"],diag
 
-        path=feature_trace.entity_implementation_path(con,catalog,"17000001")
+        path=feature_trace.entity_implementation_path(con,catalog,"17084539")
         assert path["mapping_status"]=="UNIQUE_CANONICAL_MAPPING",path
         assert path["canonical"]["root"]=="mob:diagnostic",path
         assert path["canonical"]["direct_relationship_count"]==1,path
@@ -58,30 +58,30 @@ def main():
         # No canonical identity: keep source-native path, but explain why semantic traversal is withheld.
         con.execute("DELETE FROM entity_identifiers")
         con.commit()
-        unmapped=feature_trace.entity_query_diagnostics(con,catalog,"17000001")
+        unmapped=feature_trace.entity_query_diagnostics(con,catalog,"17084539")
         assert unmapped["status"]=="NO_CANONICAL_MAPPING",unmapped
-        path_unmapped=feature_trace.entity_implementation_path(con,catalog,"17000001")
+        path_unmapped=feature_trace.entity_implementation_path(con,catalog,"17084539")
         assert path_unmapped and not path_unmapped["canonical_mapped"],path_unmapped
 
         # One numeric identity claimed by two canonical roots must be explicit ambiguity.
         for node in ("mob:a","mob:b"):
             con.execute("INSERT OR IGNORE INTO entities VALUES (?,?,?,?)",(node,"MOB",node,"{}"))
-            con.execute("INSERT INTO entity_identifiers VALUES (?,?,?,?)",(node,"mobid","17000001","fixture"))
+            con.execute("INSERT INTO entity_identifiers VALUES (?,?,?,?)",(node,"mobid","17084539","fixture"))
         con.commit()
-        ambiguous=feature_trace.entity_query_diagnostics(con,catalog,"17000001")
+        ambiguous=feature_trace.entity_query_diagnostics(con,catalog,"17084539")
         assert ambiguous["status"]=="AMBIGUOUS_NUMERIC_MAPPING",ambiguous
         assert len(ambiguous["mappings"][0]["canonical_roots"])==2,ambiguous
 
         # Two drifted numeric IDs may consolidate only when both map to one explicit root.
         catalog.execute("INSERT INTO lsb_mob_spawn_points VALUES (17000099,'Drifted Diagnostic Mob',38)")
         con.execute("DELETE FROM entity_identifiers")
-        con.execute("INSERT INTO entity_identifiers VALUES (?,?,?,?)",("mob:diagnostic","mobid","17000001","old"))
+        con.execute("INSERT INTO entity_identifiers VALUES (?,?,?,?)",("mob:diagnostic","mobid","17084539","old"))
         con.execute("INSERT INTO entity_identifiers VALUES (?,?,?,?)",("mob:diagnostic","client_snapshot_entity_id:new","17000099","new"))
         con.commit()
         drift=feature_trace.entity_query_diagnostics(con,catalog,"Diagnostic Mob")
         assert drift["status"]=="DRIFTED_IDS_ONE_ROOT",drift
         drift_path=feature_trace.entity_implementation_path(con,catalog,"Diagnostic Mob")
-        assert drift_path and drift_path["numeric_ids"]==[17000001,17000099],drift_path
+        assert drift_path and drift_path["numeric_ids"]==[17084539,17000099],drift_path
 
         template=(Path(__file__).resolve().parents[1]/"gui/templates/feature_trace.html").read_text(encoding="utf-8")
         server=(Path(__file__).resolve().parents[1]/"gui_server.py").read_text(encoding="utf-8")
