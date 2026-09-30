@@ -4047,10 +4047,12 @@ def events_view(request: Request, zone: str, entity: int, csid: int):
 
 def explore_event_run(out_dir: Path, entity_id: int, csid: int, zoneid: int | None) -> dict:
     import subprocess, sys as _sys
+    env = os.environ.copy()
+    env["PYTHONIOENCODING"] = "utf-8"
     result = subprocess.run(
         [_sys.executable, str(explore_event.XI_EVENTS_BRIDGE), str(out_dir / "events.yml"),
          str(entity_id), str(csid), str(out_dir / "dialog.yml"), str(zoneid or 0)],
-        capture_output=True, text=True,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", env=env,
     )
     if result.returncode != 0:
         return {"decompiled": None, "error": (result.stdout + "\n" + result.stderr).strip()}
