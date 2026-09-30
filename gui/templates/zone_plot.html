@@ -44,6 +44,18 @@
   <label>Mesh opacity <input type="range" id="opac" min="0.05" max="1" step="0.05" value="0.35"></label>
   <label>Dot size <input type="range" id="dsz" min="0.3" max="4" step="0.1" value="1.2"></label>
   <label>Nearest labels <input type="number" id="nlab" value="40" min="0" max="300"></label>
+<div style="margin-top:6px">
+  <div class="muted" style="font-size:10px;margin-bottom:3px">Camera</div>
+  <div style="display:flex;gap:3px;flex-wrap:wrap">
+    <button type="button" data-cam="perspective">Perspective</button>
+    <button type="button" data-cam="top">Top</button>
+    <button type="button" data-cam="north">North</button>
+    <button type="button" data-cam="south">South</button>
+    <button type="button" data-cam="east">East</button>
+    <button type="button" data-cam="west">West</button>
+  </div>
+  <label style="margin-top:4px">Projection <select id="projection"><option value="perspective">Perspective</option><option value="orthographic">Orthographic</option></select></label>
+</div>
   <div style="display:flex;gap:6px;margin-top:6px"><button id="reachbtn">Recompute reach</button><button id="clran">Clear anchor</button></div>
   <h3>Generator <span class="muted">(descriptor)</span></h3>
   <label>Mechanic <select id="gd"><option value="">(none)</option></select></label>
@@ -176,21 +188,27 @@ const $ = id => document.getElementById(id);
 const container = $('viewer-container');
 
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0a0d10);
-const camera = new THREE.PerspectiveCamera(60, container.clientWidth/container.clientHeight, 0.1, 8000);
+const perspectiveCamera = new THREE.PerspectiveCamera(60, container.clientWidth/container.clientHeight, 0.01, 8000);
+const orthoCamera = new THREE.OrthographicCamera(-100,100,100,-100,-8000,8000);
+orthoCamera.zoom=1;
+let camera=perspectiveCamera;
 const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(container.clientWidth, container.clientHeight); container.appendChild(renderer.domElement);
 const lr = new CSS2DRenderer(); lr.setSize(container.clientWidth, container.clientHeight);
 lr.domElement.style.cssText='position:absolute;top:0;left:0;pointer-events:none'; container.appendChild(lr.domElement);
-const controls = new OrbitControls(camera, renderer.domElement); controls.enableDamping = true;
-controls.zoomToCursor = true;  // scroll-zoom converges on the point under the cursor instead of always
-                                // the orbit target, so the user isn't forced to re-pan after every zoom.
+let controls = new OrbitControls(camera, renderer.domElement);
+function configureControls(){
+  controls.enableDamping=true; controls.zoomToCursor=true;
+  controls.screenSpacePanning=true;
+}
+configureControls();
 // Keep far travel quick, but progressively reduce wheel-step size near the target for precise placement.
 function updateZoomSpeed(){
+  if(camera.isOrthographicCamera){ controls.zoomSpeed=.35; return; }
   const d=camera.position.distanceTo(controls.target);
   controls.zoomSpeed = d>300 ? 2.0 : d>120 ? 1.25 : d>50 ? 0.8 : d>20 ? 0.5 : d>8 ? 0.3 : 0.18;
 }
-controls.minDistance = 0.05;   // was unset (defaults to 0, fine) but the camera's near plane (below)
-camera.near = 0.01; camera.updateProjectionMatrix();  // was 0.1 -- too coarse to get right up on detail
+controls.minDistance = 0.05;
 // OrbitControls' built-in right-drag pan intentionally scales the pan offset by the camera-target
 // distance (its normal perspective-camera behavior: same drag = same *screen* fraction at any zoom).
 // That's exactly backwards for a level editor -- zoomed in close, a full drag barely nudges the
@@ -203,6 +221,48 @@ function repanSpeed(){ const d = camera.position.distanceTo(controls.target) || 
 renderer.domElement.addEventListener('pointerdown', ev=>{ if (ev.button===2) repanSpeed(); });
 renderer.domElement.addEventListener('wheel', ()=>{ updateZoomSpeed(); repanSpeed(); }, {passive:true});
 updateZoomSpeed(); repanSpeed();
+const ZONE_EDITOR_STATE_KEY='zoneEditor.ui.v1';
+function vecArray(v){ return [v.x,v.y,v.z]; }
+function applyVec(v,a){ if(Array.isArray(a)&&a.length===3&&a.every(Number.isFinite)) v.set(a[0],a[1],a[2]); }
+function updateCameraProjection(){
+  const w=Math.max(1,container.clientWidth), h=Math.max(1,container.clientHeight), aspect=w/h;
+  perspectiveCamera.aspect=aspect; perspectiveCamera.updateProjectionMatrix();
+  const halfH=100, halfW=halfH*aspect;
+  orthoCamera.left=-halfW; orthoCamera.right=halfW; orthoCamera.top=halfH; orthoCamera.bottom=-halfH; orthoCamera.updateProjectionMatrix();
+}
+function switchProjection(mode,preserveView=true){
+  mode=mode==='orthographic'?'orthographic':'perspective';
+  const oldPos=camera.position.clone(), oldTarget=controls.target.clone();
+  controls.dispose(); camera=mode==='orthographic'?orthoCamera:perspectiveCamera;
+  if(preserveView){ camera.position.copy(oldPos); }
+  controls=new OrbitControls(camera,renderer.domElement); configureControls(); controls.target.copy(oldTarget);
+  $('projection').value=mode; updateCameraProjection(); updateZoomSpeed(); repanSpeed(); controls.update();
+}
+function cameraPreset(name){
+  if(!Z) return;
+  const center=selected>=0&&Z.entities[selected]&&!Z.entities[selected].zero ? P(Z.entities[selected]) : controls.target.clone();
+  const distance=Math.max(35,camera.position.distanceTo(controls.target)||80);
+  if(name==='perspective'){ switchProjection('perspective'); camera.position.copy(center).add(new THREE.Vector3(distance*.6,distance*.7,distance*.6)); }
+  else {
+    if(name==='top') switchProjection('orthographic');
+    const dirs={top:new THREE.Vector3(0,1,0.0001),north:new THREE.Vector3(0,.05,1),south:new THREE.Vector3(0,.05,-1),east:new THREE.Vector3(1,.05,0),west:new THREE.Vector3(-1,.05,0)};
+    const dir=dirs[name]||dirs.top; camera.position.copy(center).add(dir.normalize().multiplyScalar(distance));
+    if(camera.isOrthographicCamera) camera.up.set(0,0,1); else camera.up.set(0,1,0);
+  }
+  controls.target.copy(center); camera.lookAt(center); controls.update(); saveZoneEditorState();
+}
+function saveZoneEditorState(){
+  try{
+    localStorage.setItem(ZONE_EDITOR_STATE_KEY,JSON.stringify({
+      zone:$('zone').value,instance:$('inst').value,lod:$('lod').value,mode:$('mode').value,
+      showm:$('showm').checked,shown:$('shown').checked,showd:$('showd').checked,shownav:$('shownav').checked,
+      opacity:$('opac').value,dotSize:$('dsz').value,labels:$('nlab').value,projection:$('projection').value,
+      camera:vecArray(camera.position),target:vecArray(controls.target),zoom:camera.isOrthographicCamera?camera.zoom:null
+    }));
+  }catch(e){}
+}
+function loadZoneEditorState(){ try{return JSON.parse(localStorage.getItem(ZONE_EDITOR_STATE_KEY)||'null');}catch(e){return null;} }
+updateCameraProjection();
 scene.add(new THREE.AmbientLight(0x8899aa, 1.1));
 const sun = new THREE.DirectionalLight(0xfff2e0, 1.4); sun.position.set(300,500,200); scene.add(sun);
 
