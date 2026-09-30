@@ -1,3 +1,12 @@
+## 2026-09-30 Package Scope / Create / Review workflow UX
+
+- [x] Add a shared Scope → Create → Review workflow bar.
+- [x] Redesign Scope Review around closure/gate state and compact dependency decisions.
+- [x] Redesign Create Package as a compact assembly form.
+- [x] Group package creation result artifacts by materialized / missing / skipped.
+- [x] Redesign Review & Readiness around package summary, dependency scope, execution plan, and validation sections.
+- [x] Preserve scope ledger, package gating, assembly, validation, and apply-readiness semantics.
+
 ## 2026-09-30 Client Overview build-comparison UX refresh
 
 - [x] Convert Client Overview into a dense build-comparison workspace.
