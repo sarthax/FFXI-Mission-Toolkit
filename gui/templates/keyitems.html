@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Key Items{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}keyitems-page{% endblock %}
 
 {% macro pager() %}
 {% if total_pages > 1 %}
@@ -20,17 +22,18 @@
 {% endmacro %}
 
 {% block content %}
-<h1>Key Items</h1>
-<p class="muted">Real client name/description (from key-items.xml) cross-referenced against
-LSB's own <code class="chip">scripts/enum/key_item.lua</code> enum
-(<code class="chip">xi.keyItem</code>), with a readiness check and the real scripting constant
-name for each.</p>
-<form class="search" method="get">
+<style>main.keyitems-page{padding:8px 10px 24px}</style>
+<div class="dense-toolbar">
+  <strong>Key Items</strong>
+  <span class="sp"></span>
+  <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:720px">Client key-item names/descriptions cross-referenced against server enums, scripting constants, readiness, and observed capture evidence.</div></details>
+</div>
+<form class="search dense-toolbar" method="get" style="margin:6px 0">
   <input type="text" name="q" value="{{ q }}" placeholder="search by name, e.g. Zeruhn">
   <button type="submit">Search</button>
 </form>
 {% if q %}
-<p class="muted">{{ total }} result(s) for "{{ q }}" -- page {{ page }} of {{ total_pages }}</p>
+<div class="dense-toolbar" style="margin:4px 0"><strong>{{ total }} result(s)</strong><span class="muted">for "{{ q }}"</span><span class="sp"></span><span class="muted">page {{ page }} of {{ total_pages }}</span></div>
 {{ pager() }}
 <div class="table-wrap"><table>
   <tr><th>id</th><th>name</th><th>readiness</th><th>enum / scripting constant</th><th>description</th>
