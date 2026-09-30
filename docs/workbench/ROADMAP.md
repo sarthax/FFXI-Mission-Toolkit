@@ -776,7 +776,7 @@ Priority stack:
 - [x] Three.js transform gizmo for direct XYZ/rotation manipulation without auto-saving.
 - [x] Explicit live-DB vs checked-in SQL synchronization state per edited entity.
 - [x] Orthographic/top-down editing mode using the same selection/transform tools.
-- [ ] Multi-select / bulk transform workflow with conservative edit scope.
+- [x] Multi-select / bulk transform workflow with conservative edit scope.
 
 Additional QOL backlog:
 - [ ] Double-click entity to select, frame, and enter edit-ready camera distance.
