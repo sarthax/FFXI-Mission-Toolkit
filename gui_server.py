@@ -58,6 +58,7 @@ from workbench.core.services.scripted_behavior_visualizer import (
 )
 from workbench.core.services import timeline_alignment, packet_correlation
 from workbench.core.services import capture_integrity, capture_spatial
+from workbench.analyzers.server import lua_events
 import feature_checker
 from workbench.core.services.feature_trace_closure import build_feature_trace_closure
 import ingest_global_tables
@@ -3934,23 +3935,49 @@ def _event_server_refs(con: sqlite3.Connection, zone: str, entity_name: str | No
             root = build_lsb_index.LSB_ROOT
         elif source == "topaz":
             root = build_lsb_index.TOPAZ_ROOT
+        elif source == "dsp":
+            root = build_dsp_index.DSP_ROOT
+        d["calls"] = []
         if root:
             candidate = Path(root) / "scripts" / "zones" / zone / "npcs" / f"{d['npc_script']}.lua"
             if candidate.is_file():
                 d["path"] = candidate.as_posix()
                 try:
-                    lines = candidate.read_text(encoding="utf-8", errors="replace").splitlines()
-                    hits = [
-                        i for i, line in enumerate(lines)
-                        if re.search(rf"(?:startEvent\s*\(\s*|(?:csid|event)\s*==\s*){int(csid)}\b", line)
+                    text = candidate.read_text(encoding="utf-8", errors="replace")
+                    lines = text.splitlines()
+                    event_matches = [
+                        match for match in lua_events.EVENT_RE.finditer(text)
+                        if int(match.group("id")) == int(csid)
                     ]
-                    if hits:
-                        start = max(0, hits[0] - 4)
-                        end = min(len(lines), hits[0] + 10)
+                    if event_matches:
+                        event_match = event_matches[0]
+                        hit_line = text.count("\n", 0, event_match.start()) + 1
+                        start = max(0, hit_line - 5)
+                        end = min(len(lines), hit_line + 9)
                         d["excerpt"] = "\n".join(
                             f"{idx + 1:04d}: {lines[idx]}" for idx in range(start, end)
                         )
-                        d["line"] = hits[0] + 1
+                        d["line"] = hit_line
+
+                        funcs = list(lua_events.FUNC_RE.finditer(text))
+                        containing = None
+                        fn_index = -1
+                        for idx, fn in enumerate(funcs):
+                            if fn.start() <= event_match.start():
+                                containing = fn
+                                fn_index = idx
+                            else:
+                                break
+                        fn_start = containing.start() if containing else max(0, event_match.start() - 1000)
+                        fn_end = (
+                            funcs[fn_index + 1].start()
+                            if containing and fn_index + 1 < len(funcs)
+                            else min(len(text), event_match.end() + 2500)
+                        )
+                        d["function"] = containing.group(1) if containing else None
+                        d["calls"] = lua_events.typed_calls(
+                            text, fn_start, fn_end, containing
+                        )
                 except OSError:
                     pass
         out.append(d)
