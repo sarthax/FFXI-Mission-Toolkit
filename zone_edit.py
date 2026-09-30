@@ -606,30 +606,70 @@ def delete_entity(kind, eid, comment=""):
             "warning": (f"also unlinked from instance_entities ({in_inst} instance row(s): {', '.join(map(str, inst_rows))})" if in_inst else "") + group_note}
 
 
-def catalogue(kind, q, limit=60):
-    """Search everything that can be cloned into a zone. kind m: mob_groups (any zone); n: npc_list (any zone)."""
+def catalogue(kind, q, limit=200, zone=None, family="", sort="name"):
+    """Search everything that can be cloned into a zone. kind m: mob_groups (any zone); n: npc_list (any zone).
+    Optional filters: zone (zone id), family (partial mob family name, mobs only); sort: name | zone | level."""
     db = zone_plot._db(); cu = db.cursor()
     like = f"%{q}%"
+    zone = int(zone) if str(zone or "").strip() not in ("", "0", "None") else None
     if kind == "m":
-        # mob_groups has a "name" column on Topaz; this DSP checkout's mob_groups has none at all
-        # (group identity there is poolid-only) -- fall back to the spawn rows' own mobname.
+        order = {"zone": "g.zoneid,g.name", "level": "g.minLevel,g.name"}.get(sort, "g.name,g.zoneid")
+        out = None
         if "name" in zone_plot._columns(cu, "mob_groups"):
-            cu.execute("""select g.groupid,g.zoneid,z.name,g.name,g.minLevel,g.maxLevel,g.poolid from mob_groups g
-                          left join zone_settings z on z.zoneid=g.zoneid where g.name like %s order by g.name,g.zoneid limit %s""", (like, limit))
-        else:
-            cu.execute("""select g.groupid,g.zoneid,z.name,min(s.mobname),g.minLevel,g.maxLevel,g.poolid
+            where, args = ["g.name like %s"], [like]
+            if zone is not None:
+                where.append("g.zoneid=%s"); args.append(zone)
+            if family:
+                where.append("f.family like %s"); args.append(f"%{family}%")
+            try:
+                cu.execute(f"""select g.groupid,g.zoneid,z.name,g.name,g.minLevel,g.maxLevel,g.poolid,f.familyid,f.family from mob_groups g
+                              left join zone_settings z on z.zoneid=g.zoneid
+                              left join mob_pools p on p.poolid=g.poolid
+                              left join mob_family_system f on f.familyid=p.familyid
+                              where {' and '.join(where)} order by {order} limit %s""", tuple(args + [limit]))
+                out = [{"groupid": a, "zone": b, "zname": c, "name": d, "lv": f"{e}-{f}", "poolid": g, "familyid": h, "family": i or ""}
+                       for a, b, c, d, e, f, g, h, i in cu.fetchall()]
+            except Exception:
+                out = None
+        if out is None:
+            # DSP (no mob_groups.name / maybe no family tables): poolid-only groups, name from spawn rows
+            where, args = ["s.mobname like %s"], [like]
+            if zone is not None:
+                where.append("g.zoneid=%s"); args.append(zone)
+            cu.execute(f"""select g.groupid,g.zoneid,z.name,min(s.mobname),g.minLevel,g.maxLevel,g.poolid
                           from mob_groups g join mob_spawn_points s on s.groupid=g.groupid
                           left join zone_settings z on z.zoneid=g.zoneid
-                          where s.mobname like %s group by g.groupid,g.zoneid,z.name,g.minLevel,g.maxLevel,g.poolid
-                          order by min(s.mobname) limit %s""", (like, limit))
-        out = [{"groupid": a, "zone": b, "zname": c, "name": d, "lv": f"{e}-{f}", "poolid": g} for a, b, c, d, e, f, g in cu.fetchall()]
+                          where {' and '.join(where)} group by g.groupid,g.zoneid,z.name,g.minLevel,g.maxLevel,g.poolid
+                          order by {'g.zoneid' if sort == 'zone' else 'min(s.mobname)'} limit %s""", tuple(args + [limit]))
+            out = [{"groupid": a, "zone": b, "zname": c, "name": d, "lv": f"{e}-{f}", "poolid": g, "family": ""} for a, b, c, d, e, f, g in cu.fetchall()]
     else:
-        cu.execute("""select n.npcid,z.name,n.name,n.polutils_name from npc_list n
+        where, args = ["(n.name like %s or n.polutils_name like %s)"], [like, like]
+        if zone is not None:
+            where.append("(((n.npcid-16777216)>>12)&511)=%s"); args.append(zone)
+        order = "n.npcid" if sort == "zone" else "n.name"
+        cu.execute(f"""select n.npcid,z.name,n.name,n.polutils_name from npc_list n
                       left join zone_settings z on z.zoneid=((n.npcid-16777216)>>12)&511
-                      where n.name like %s or n.polutils_name like %s order by n.name limit %s""", (like, like, limit))
+                      where {' and '.join(where)} order by {order} limit %s""", tuple(args + [limit]))
         out = [{"npcid": a, "zname": b, "name": c, "pname": d} for a, b, c, d in cu.fetchall()]
     db.close()
     return out
+
+
+def next_id_info(zid):
+    """What add_entity would assign next in zone `zid`, plus how full the id space is."""
+    zid = int(zid)
+    db = zone_plot._db(); cu = db.cursor()
+    lo = (zid << 12) + 16777216
+    hi = lo + 4095
+    cu.execute("select (select count(*) from mob_spawn_points where mobid between %s and %s),"
+               "(select count(*) from npc_list where npcid between %s and %s)", (lo, hi, lo, hi))
+    nm, nn = cu.fetchone()
+    n = _next_id(cu, zid)
+    db.close()
+    slot = n & 0xFFF
+    return {"id": n, "slot": slot, "mobs": int(nm), "npcs": int(nn),
+            "warning": (f"slot {slot} is above 0x3FF: the client only resolves mob/npc targids below 1024, "
+                        "so this entity will not be usable in game") if slot >= 0x400 else None}
 
 
 def add_entity(kind, zid, src, x, y, z, rot, name="", comment="", instance=0):
@@ -648,6 +688,7 @@ def add_entity(kind, zid, src, x, y, z, rot, name="", comment="", instance=0):
         raise ValueError("(0,0,0) is excluded from instance loading; use a real position")
     db = zone_plot._db(); cu = db.cursor()
     nid = _next_id(cu, zid)
+    id_warning = (f"id slot {nid & 0xFFF} is above 0x3FF; the client only resolves mob/npc targids below 1024" if (nid & 0xFFF) >= 0x400 else None)
     lines, ops = [], []
     if kind == "m":
         g = _fetch(cu, "mob_groups", [int(src["groupid"]), int(src["zone"])])
@@ -691,7 +732,7 @@ def add_entity(kind, zid, src, x, y, z, rot, name="", comment="", instance=0):
         lines.append(f"INSERT INTO instance_entities (instanceid, id) VALUES ({instance}, {nid});")
     db.commit(); db.close()
     _journal(comment, [f"-- backup {bid}"] + lines)
-    return {"id": nid, "backup": bid, "sql": "\n".join(lines), "instance": instance or None}
+    return {"id": nid, "backup": bid, "sql": "\n".join(lines), "instance": instance or None, "warning": id_warning}
 
 
 # ---- drops ------------------------------------------------------------------------------------

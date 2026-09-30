@@ -7583,6 +7583,11 @@ def zoneplot_page(request: Request):
     return templates.TemplateResponse(request, "zone_plot.html", {"request": request})
 
 
+@app.get("/zoneplot2", response_class=HTMLResponse)
+def zoneplot2_page(request: Request):
+    return templates.TemplateResponse(request, "zone_plot2.html", {"request": request})
+
+
 @app.get("/zoneplot/server.json")
 def zoneplot_server_get():
     import settings
@@ -7644,6 +7649,22 @@ def zoneplot_reach(zid: int, instance: int = 0, ax: float = None, ay: float = 0.
 def zoneplot_navdiag(zid: int, x: float, y: float, z: float):
     try:
         return JSONResponse(zone_plot.nav_diagnostics(zid, x, y, z))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.get("/zoneplot/{zid}/navpath.json")
+def zoneplot_navpath(zid: int, x1: float, y1: float, z1: float, x2: float, y2: float, z2: float):
+    try:
+        return JSONResponse(zone_plot.nav_route(zid, (x1, y1, z1), (x2, y2, z2)))
+    except Exception as ex:
+        return JSONResponse({"ok": False, "reason": str(ex)}, status_code=400)
+
+
+@app.get("/zoneplot/{zid}/scripts.json")
+def zoneplot_scripts(zid: int):
+    try:
+        return JSONResponse(zone_plot.script_info(zid))
     except Exception as ex:
         return JSONResponse({"error": str(ex)}, status_code=400)
 
@@ -7813,9 +7834,18 @@ async def zoneplot_delete(request: Request):
 
 
 @app.get("/zoneplot/catalogue.json")
-def zoneplot_catalogue(kind: str, q: str = ""):
+def zoneplot_catalogue(kind: str, q: str = "", zone: str = "", family: str = "", sort: str = "name"):
     import zone_edit
-    return JSONResponse(zone_edit.catalogue(kind, q))
+    return JSONResponse(zone_edit.catalogue(kind, q, zone=zone, family=family, sort=sort))
+
+
+@app.get("/zoneplot/{zid}/next_id.json")
+def zoneplot_next_id(zid: int):
+    import zone_edit
+    try:
+        return JSONResponse(zone_edit.next_id_info(zid))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
 
 
 @app.get("/zoneplot/{eid}/drops.json")

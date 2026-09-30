@@ -382,3 +382,79 @@ def load_exclusions():
 def save_exclusions(obj):
     EXCL_FILE.parent.mkdir(exist_ok=True)
     EXCL_FILE.write_text(json.dumps(obj, indent=1))
+
+
+def _poly_locate(x, y, z, path):
+    comp, grid, C = _components(path)
+    polys = nav_polys(path)
+    best, bd = None, 1e9
+    for pi in grid.get((int(x // C), int(z // C)), []):
+        poly = polys[pi]
+        if _in_poly(x, z, poly):
+            d = abs(sum(v[1] for v in poly) / len(poly) - y)
+            if d < bd:
+                best, bd = pi, d
+    return best if best is not None and bd <= 6 else None
+
+
+def nav_route(a, b, path=None):
+    """A* across navmesh polygons between world points a and b (x,y,z).
+    Returns {"ok", "points": [[x,y,z]..], "length"} ; ok False with a reason when unreachable."""
+    import heapq
+    path = Path(path or _default_nav())
+    polys = nav_polys(path)
+    if ("adj", path) not in _nav_cache:
+        q = lambda v: (round(v[0] * 10), round(v[1] * 4), round(v[2] * 10))
+        edges, adj = {}, {}
+        for pi, poly in enumerate(polys):
+            n = len(poly)
+            for i in range(n):
+                k1, k2 = q(poly[i]), q(poly[(i + 1) % n])
+                key = (k1, k2) if k1 < k2 else (k2, k1)
+                mid = tuple((poly[i][j] + poly[(i + 1) % n][j]) / 2 for j in range(3))
+                if key in edges:
+                    pj, _m = edges[key]
+                    adj.setdefault(pi, []).append((pj, mid))
+                    adj.setdefault(pj, []).append((pi, mid))
+                else:
+                    edges[key] = (pi, mid)
+        cen = [tuple(sum(v[j] for v in p) / len(p) for j in range(3)) for p in polys]
+        _nav_cache[("adj", path)] = (adj, cen)
+    adj, cen = _nav_cache[("adj", path)]
+    sa, sb = _poly_locate(*a, path), _poly_locate(*b, path)
+    if sa is None or sb is None:
+        return {"ok": False, "reason": "point is off the navmesh"}
+    d3 = lambda p, q_: math.dist(p, q_)
+    # nodes are (poly) entered through an edge midpoint; state = poly, position = entry midpoint
+    start = tuple(a)
+    goal = tuple(b)
+    best = {sa: 0.0}
+    pos = {sa: start}
+    prev = {}
+    heap = [(d3(start, goal), sa)]
+    done = set()
+    while heap:
+        _f, pi = heapq.heappop(heap)
+        if pi in done:
+            continue
+        done.add(pi)
+        if pi == sb:
+            break
+        for pj, mid in adj.get(pi, []):
+            if pj in done:
+                continue
+            g = best[pi] + d3(pos[pi], mid)
+            if g < best.get(pj, 1e18):
+                best[pj] = g
+                pos[pj] = mid
+                prev[pj] = pi
+                heapq.heappush(heap, (g + d3(mid, goal), pj))
+    if sb not in done:
+        return {"ok": False, "reason": "no navmesh route (different walkable areas)"}
+    chain = [sb]
+    while chain[-1] in prev:
+        chain.append(prev[chain[-1]])
+    chain.reverse()
+    pts = [list(start)] + [list(pos[p]) for p in chain[1:]] + [list(goal)]
+    length = sum(d3(pts[i], pts[i + 1]) for i in range(len(pts) - 1))
+    return {"ok": True, "points": pts, "length": length}

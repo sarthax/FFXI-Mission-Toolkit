@@ -206,6 +206,7 @@ WORKSPACES = (
             {"label": "Research: LLM", "href": "/llm"},
             {"label": "Research: Wiki", "href": "/wiki"},
             {"label": "Editors: Zone Editor", "href": "/zoneplot", "mutation": True},
+            {"label": "Editors: Zone Editor (new layout)", "href": "/zoneplot2", "mutation": True},
             {"label": "Editors: Item Editor", "href": "/itemedit", "mutation": True},
             {"label": "Lookup & Decode: Entity", "href": "/entity?shell=tools"},
             {"label": "Lookup & Decode: Packet Tools", "href": "/packets?shell=tools"},
