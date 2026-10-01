@@ -6829,6 +6829,35 @@ def _capture_entity_identity_matches(
     return matches
 
 
+def _capture_item_identity_matches(
+    con: sqlite3.Connection, capture_id: int, target_table: str, row_key: str
+) -> list[dict]:
+    """Decorate service-level ordinary-item matches with GUI drill-down links."""
+    matches = capture_related_evidence.item_identity_matches(
+        con, capture_id, target_table, row_key
+    )
+    for item in matches:
+        peer_table = item["target_table"]
+        peer_key = item["row_key"]
+        item["data_url"] = (
+            f"/captures/query?table={quote(peer_table)}&capture_id={capture_id}"
+        )
+        item["item_url"] = f"/items/{int(item['item_id'])}"
+        item["source_url"] = None
+        locators = capture_integrity.find_row_locators(
+            con, capture_id, peer_table, peer_key
+        )
+        if locators:
+            locator = locators[0]
+            item["source_url"] = (
+                f"/captures/{capture_id}/source-locator?"
+                f"filename={quote(str(locator['filename']))}&"
+                f"target_table={quote(peer_table)}&"
+                f"row_key={quote(peer_key)}"
+            )
+    return matches
+
+
 def _packet_correlation_ref_for_row(target_table: str, row_key: str) -> tuple[str, str] | None:
     """Translate one normalized capture row into packet_correlation's stable ref namespace."""
     try:
@@ -7055,6 +7084,9 @@ def captures_related_evidence(
     entity_matches = _capture_entity_identity_matches(
         con, capture_id, target_table, canonical_key
     )
+    item_matches = _capture_item_identity_matches(
+        con, capture_id, target_table, canonical_key
+    )
 
     packet_matches = []
     correlation_ref = _packet_correlation_ref_for_row(target_table, canonical_key)
@@ -7133,6 +7165,7 @@ def captures_related_evidence(
         "related": related,
         "packet_matches": packet_matches,
         "entity_matches": entity_matches,
+        "item_matches": item_matches,
     })
 
 
