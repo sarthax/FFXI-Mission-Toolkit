@@ -7,8 +7,9 @@ import sqlite3
 from pathlib import Path
 
 from workbench.domains.salvage_reconstruction import dossier_json
+from workbench.runtime.paths import DATABASE_PATH
 
-DB_PATH = Path(__file__).with_name("ffxi_zone_database.db")
+DB_PATH = DATABASE_PATH
 
 
 def main() -> int:
