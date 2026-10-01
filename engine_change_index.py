@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse, json, re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from workbench_schema import Implementation
+from workbench.core.schema import Implementation
 
 DIFF_FILE_RE = re.compile(r"^diff --git a/(.+?) b/(.+?)$", re.MULTILINE)
 HUNK_RE = re.compile(r"^@@ .*? @@(?:\s*(.*))?$", re.MULTILINE)

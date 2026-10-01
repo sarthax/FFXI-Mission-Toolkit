@@ -4,8 +4,8 @@ from __future__ import annotations
 import argparse,json,re
 from dataclasses import asdict
 from pathlib import Path
-from source_snapshot import snapshot_id
-from workbench_schema import AnalysisResult, DependencyEdge
+from workbench.core.provenance import snapshot_id
+from workbench.core.schema import AnalysisResult, DependencyEdge
 from cpp_api_index import index as index_api
 
 INCLUDE_RE=re.compile(r'^\s*#\s*include\s*[<"]([^>"]+)[>"]',re.M)

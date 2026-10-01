@@ -37,6 +37,24 @@ def main() -> None:
     assert "__path__.append" in bridge_text
     assert "Do not add implementation modules" in bridge_text
 
+    # These former root compatibility modules are retired. First-party code and regressions must
+    # use the canonical package imports directly rather than recreating hidden wrapper coupling.
+    retired = ("workbench_graph.py", "workbench_schema.py", "source_snapshot.py")
+    for name in retired:
+        assert not (ROOT / name).exists(), name
+    forbidden_imports = (
+        "import workbench_graph",
+        "from workbench_schema import",
+        "from source_snapshot import",
+    )
+    first_party_python = list(ROOT.glob("*.py")) + list(SRC_PACKAGE.rglob("*.py")) + list((ROOT / "test_fixtures").glob("*.py"))
+    for path in first_party_python:
+        if path.resolve() == Path(__file__).resolve():
+            continue
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        for legacy_import in forbidden_imports:
+            assert legacy_import not in text, f"{legacy_import!r} remains in {path.relative_to(ROOT)}"
+
     workflow = (ROOT / ".github" / "workflows" / "workbench-regression.yml").read_text(encoding="utf-8")
     assert '- "src/workbench/**"' in workflow
 
