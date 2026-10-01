@@ -4,7 +4,7 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 from workbench.core import graph
-from workbench_schema import Feature,CapabilityRequirement,Implementation,ValidationResult
+from workbench.core.schema import Feature,CapabilityRequirement,Implementation,ValidationResult
 
 def main():
     with tempfile.TemporaryDirectory() as td:
