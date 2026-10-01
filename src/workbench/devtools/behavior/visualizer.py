@@ -1,0 +1,1192 @@
+"""Behavior inspector projection for LSB Lua source.
+
+Builds a bounded visualization model from one primary script plus same-zone context. Context files
+are explicitly labelled CONTEXT unless source evidence proves a stronger link elsewhere; merely
+sharing a zone is never promoted to a dependency.
+"""
+from __future__ import annotations
+
+from collections import Counter
+from pathlib import Path
+import re
+from typing import Any
+
+from workbench.plugins.domain.scripted_behavior_lsb_extract import (
+    _api_calls,
+    _close_count,
+    _context_condition_rule,
+    _direct_entity_reference_rule,
+    _named_state_accesses,
+    _open_count,
+    _structural_lua_lines,
+    extract_lsb_scripted_behavior,
+)
+
+
+def _safe_path(root: Path, relative: str) -> Path:
+    root=Path(root).resolve()
+    candidate=(root/relative.replace("\\","/")).resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError as exc:
+        raise ValueError("Source path must stay inside the configured LSB root.") from exc
+    if not candidate.is_file():
+        raise FileNotFoundError(relative)
+    return candidate
+
+
+def _zone_parts(relative: str) -> tuple[str | None,str | None]:
+    parts=relative.replace("\\","/").split("/")
+    if len(parts)>=3 and parts[:2]==["scripts","zones"]:
+        return parts[2],"/".join(parts[3:])
+    return None,None
+
+
+def find_lsb_behavior_sources(root: Path, query: str, *, limit: int=100, server: str|None=None) -> list[dict]:
+    """Find candidate zone Lua files by filename/path substring."""
+    root=Path(root)
+    zones=root/"scripts"/"zones"
+    if not query.strip() or not zones.is_dir():
+        return []
+    needle=query.strip().lower().replace(" ","_")
+    rows=[]
+    for path in zones.rglob("*.lua"):
+        rel=path.relative_to(root).as_posix()
+        hay=(path.stem+" "+rel).lower()
+        if needle not in hay:
+            continue
+        zone,_=_zone_parts(rel)
+        role=(
+            "mob" if "/mobs/" in rel else
+            "npc" if "/npcs/" in rel else
+            "instance" if "/instances/" in rel else
+            "zone" if path.name=="Zone.lua" else
+            "zone-global" if path.name=="globals.lua" else
+            "script"
+        )
+        rows.append({"path":rel,"zone":zone,"role":role,"name":path.stem,"server":server})
+        if len(rows)>=max(1,min(limit,250)):
+            break
+    if not rows:
+        # Many NPCs/mobs have no Lua file of their own (e.g. DefaultActions.lua tables, Zone.lua
+        # spawn tables), so fall back to a bounded content search for the literal name.
+        raw=query.strip().lower()
+        variants={raw,raw.replace(" ","_"),raw.replace("_"," ")}
+        for path in zones.rglob("*.lua"):
+            try:
+                text=path.read_text(encoding="utf-8",errors="replace").lower()
+            except OSError:
+                continue
+            if not any(v in text for v in variants):
+                continue
+            rel=path.relative_to(root).as_posix()
+            zone,_=_zone_parts(rel)
+            role=(
+                "mob" if "/mobs/" in rel else
+                "npc" if "/npcs/" in rel else
+                "instance" if "/instances/" in rel else
+                "zone" if path.name=="Zone.lua" else
+                "zone-global" if path.name=="globals.lua" else
+                "script"
+            )
+            rows.append({"path":rel,"zone":zone,"role":role,"name":path.stem,"match":"content","server":server})
+            if len(rows)>=max(1,min(limit,250)):
+                break
+    return sorted(rows,key=lambda row:(row["zone"] or "",row["role"],row["path"]))
+
+
+def find_behavior_sources_multi(roots: dict, query: str, *, limit: int=100) -> list[dict]:
+    """Search several server trees ({"topaz": Path, "dsp": Path, "lsb": Path}, in priority order).
+
+    Each tree is searched independently (filename first, then the content fallback), and every row
+    is tagged with the tree it came from -- LSB, Topaz and DSP lay the same NPC out differently, so
+    a hit in one tree must never be presented as if it came from another.
+    """
+    rows=[]
+    for name,root in roots.items():
+        if root is None or not Path(root).is_dir():
+            continue
+        rows.extend(find_lsb_behavior_sources(Path(root),query,limit=limit,server=name))
+    order={name:i for i,name in enumerate(roots)}
+    return sorted(rows,key=lambda r:(order.get(r["server"],99),r["zone"] or "",r["role"],r["path"]))[:max(1,min(limit,250))]
+
+
+def _subject_for(path: Path, relative: str) -> str:
+    zone,tail=_zone_parts(relative)
+    if path.name=="Zone.lua":
+        return f"{zone or 'Zone'} controller"
+    if path.name=="globals.lua":
+        return f"{zone or 'Zone'} globals"
+    return path.stem.replace("_"," ")
+
+
+def _effect_category(effect: str) -> str:
+    if effect=="API_CALL":
+        return "api"
+    if effect=="WRITE_STATE":
+        return "state"
+    if "KEY_ITEM" in effect or effect in {"GRANT_ITEM","ADD_GIL","REMOVE_GIL","SET_CHAR_VAR","COMPLETE_TRADE"}:
+        return "progression"
+    if effect in {"OPEN_DOOR","SET_ANIMATION","SET_STATUS","SET_UNTARGETABLE","SET_POSITION"}:
+        return "world"
+    if effect in {"SPAWN_ENTITY","DESPAWN_ENTITY","CLEANUP_RELATED_ENTITIES","TRANSFER_RUNTIME_STATE"}:
+        return "lifecycle"
+    if effect in {"PATH_ACTOR"}:
+        return "movement"
+    if "SPELL" in effect or "COMBAT" in effect or effect in {"RESPOND_TO_ACTION","ADJUST_COMBAT_STATE","SELECT_ACTION","TIMED_BEHAVIOR"}:
+        return "combat"
+    if effect in {"CALL_SYSTEM_HELPER","CALL_LOCAL_HELPER"}:
+        return "helper"
+    if effect in {"START_EVENT","UPDATE_EVENT"}:
+        return "event"
+    return "other"
+
+
+def _balanced_function_span(text: str, start_offset: int, *, preview_lines: int=40) -> dict:
+    """Return a balanced Lua function span starting at a matched function definition."""
+    raw=text.splitlines()
+    start_line=text.count("\n",0,start_offset)+1
+    structural=_structural_lua_lines(text)
+    start_index=max(0,start_line-1)
+    depth=0
+    started=False
+    end_index=start_index
+    for j in range(start_index,len(raw)):
+        opens=_open_count(structural[j])
+        closes=_close_count(structural[j])
+        if opens:
+            started=True
+        depth+=opens-closes
+        end_index=j
+        if started and depth<=0:
+            break
+    end_line=end_index+1
+    body_lines=raw[start_index:end_index+1]
+    preview=body_lines[:preview_lines]
+    return {
+        "line":start_line,
+        "end_line":end_line,
+        "line_count":max(0,end_line-start_line+1),
+        "source_preview":"\n".join(preview),
+        "source_text":"\n".join(body_lines),
+        "preview_truncated":len(body_lines)>preview_lines,
+    }
+
+
+def _analyze_shared_helper_body(
+    text: str,
+    *,
+    source_path: str,
+    start_line: int,
+    qualified_name: str,
+) -> dict:
+    """One-level conservative analysis of a uniquely resolved shared helper body."""
+    meta={
+        "source_path":source_path,
+        "source_lines":(start_line,start_line+max(0,len(text.splitlines())-1)),
+        "hook":f"shared-helper:{qualified_name}",
+    }
+    api_calls=[dict(row) for row in _api_calls(text,start_line=start_line)]
+    state_accesses=[dict(row) for row in _named_state_accesses(text,start_line=start_line)]
+
+    context_rule=_context_condition_rule(
+        rule_id=f"shared-helper:{qualified_name}:context",
+        subject=qualified_name,
+        trigger="SHARED_HELPER_CALL",
+        text=text,
+        start_line=start_line,
+        meta=meta,
+    )
+    context_conditions=[]
+    if context_rule is not None:
+        context_conditions=[
+            {
+                "subject":condition.subject,
+                "operator":condition.operator,
+                "value":condition.value,
+                "metadata":dict(condition.metadata),
+            }
+            for condition in context_rule.conditions
+        ]
+
+    entity_rule=_direct_entity_reference_rule(
+        rule_id=f"shared-helper:{qualified_name}:entity-refs",
+        subject=qualified_name,
+        trigger="SHARED_HELPER_CALL",
+        text=text,
+        start_line=start_line,
+        meta=meta,
+    )
+    entity_effects=[]
+    if entity_rule is not None:
+        entity_effects=[
+            {
+                "effect":effect.effect,
+                "target":effect.target,
+                "value":effect.value,
+                "metadata":dict(effect.metadata),
+            }
+            for effect in entity_rule.effects
+        ]
+
+    state_reads=[row for row in state_accesses if row.get("access")=="READ"]
+    state_writes=[row for row in state_accesses if row.get("access")=="WRITE"]
+    shared_helper_callees=[
+        {
+            "qualified_name":row.get("qualified_name"),
+            "line":row.get("line"),
+            "source_line":row.get("source_line"),
+        }
+        for row in api_calls
+        if isinstance(row.get("qualified_name"),str)
+        and re.fullmatch(
+            r"xi\.[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*",
+            row["qualified_name"],
+        )
+        and row["qualified_name"]!=qualified_name
+    ]
+    impact={
+        "upstream":[
+            {
+                "kind":"STATE_READ",
+                "label":row.get("state_id"),
+                "value":row.get("value"),
+                "source_line":row.get("line"),
+                "source_line_text":row.get("source_line"),
+            }
+            for row in state_reads
+        ] + [
+            {
+                "kind":"CONTEXT",
+                "label":f"{row.get('subject')} {row.get('operator')}",
+                "value":row.get("value"),
+                "source_line":row.get("metadata",{}).get("source_line"),
+                "source_line_text":row.get("metadata",{}).get("source_line_text"),
+            }
+            for row in context_conditions
+        ],
+        "downstream":[
+            {
+                "kind":"STATE_WRITE",
+                "label":row.get("state_id"),
+                "value":row.get("value"),
+                "source_line":row.get("line"),
+                "source_line_text":row.get("source_line"),
+            }
+            for row in state_writes
+        ] + [
+            {
+                "kind":row.get("effect"),
+                "label":row.get("target"),
+                "value":row.get("value"),
+                "source_line":row.get("metadata",{}).get("source_line"),
+                "source_line_text":row.get("metadata",{}).get("source_line_text"),
+            }
+            for row in entity_effects
+        ],
+        "calls":[
+            {
+                "qualified_name":row.get("qualified_name"),
+                "receiver":row.get("receiver"),
+                "function":row.get("function"),
+                "line":row.get("line"),
+                "source_line":row.get("source_line"),
+            }
+            for row in api_calls
+        ],
+    }
+    return {
+        "api_calls":api_calls,
+        "state_accesses":state_accesses,
+        "context_conditions":context_conditions,
+        "entity_effects":entity_effects,
+        "shared_helper_callees":shared_helper_callees,
+        "impact":impact,
+        "summary":{
+            "api_calls":len(api_calls),
+            "state_accesses":len(state_accesses),
+            "context_conditions":len(context_conditions),
+            "entity_effects":len(entity_effects),
+            "shared_helper_callees":len(shared_helper_callees),
+            "upstream_impacts":len(impact["upstream"]),
+            "downstream_impacts":len(impact["downstream"]),
+        },
+    }
+
+
+def _resolve_shared_helpers(root: Path, behavior) -> list[dict]:
+    """Resolve top-level and direct nested xi.<module>.<function> definition candidates."""
+    globals_root=Path(root)/"scripts"/"globals"
+
+    def definition_candidates(module: str, function: str) -> list[dict]:
+        candidates=[]
+        module_file=globals_root/f"{module}.lua"
+        module_dir=globals_root/module
+        files=[]
+        if module_file.is_file():
+            files.append(module_file)
+        if module_dir.is_dir():
+            files.extend(sorted(module_dir.rglob("*.lua")))
+        qualified_name=f"xi.{module}.{function}"
+        pattern=re.compile(
+            rf"(?:function\s+{re.escape(qualified_name)}\s*\(|"
+            rf"{re.escape(qualified_name)}\s*=\s*function\s*\()"
+        )
+        for path in files:
+            text=path.read_text(encoding="utf-8",errors="ignore")
+            for match in pattern.finditer(text):
+                span=_balanced_function_span(text,match.start())
+                candidates.append({
+                    "path":path.relative_to(root).as_posix(),
+                    "line":span["line"],
+                    "end_line":span["end_line"],
+                    "line_count":span["line_count"],
+                    "source_preview":span["source_preview"],
+                    "preview_truncated":span["preview_truncated"],
+                    "qualified_name":qualified_name,
+                    "_source_text":span["source_text"],
+                })
+        return candidates
+
+    def resolution_status(candidates: list[dict]) -> str:
+        return (
+            "RESOLVED" if len(candidates)==1
+            else "AMBIGUOUS" if len(candidates)>1
+            else "UNRESOLVED"
+        )
+
+    requested=sorted({
+        (
+            effect.metadata.get("module"),
+            effect.metadata.get("function"),
+        )
+        for rule in behavior.rules
+        for effect in rule.effects
+        if effect.effect=="CALL_SYSTEM_HELPER"
+        and effect.metadata.get("module")
+        and effect.metadata.get("function")
+    })
+    rows=[]
+    for module,function in requested:
+        candidates=definition_candidates(module,function)
+        status=resolution_status(candidates)
+        qualified_name=f"xi.{module}.{function}"
+        analysis=None
+        if status=="RESOLVED":
+            candidate=candidates[0]
+            analysis=_analyze_shared_helper_body(
+                candidate["_source_text"],
+                source_path=candidate["path"],
+                start_line=candidate["line"],
+                qualified_name=qualified_name,
+            )
+            for callee in analysis.get("shared_helper_callees",[]):
+                callee_name=callee.get("qualified_name")
+                match=re.fullmatch(
+                    r"xi\.([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)",
+                    str(callee_name or ""),
+                )
+                if not match:
+                    continue
+                callee_module,callee_function=match.groups()
+                callee_candidates=definition_candidates(callee_module,callee_function)
+                callee["status"]=resolution_status(callee_candidates)
+                callee["candidates"]=[
+                    {key:value for key,value in row.items() if key!="_source_text"}
+                    for row in callee_candidates
+                ]
+        for candidate in candidates:
+            candidate.pop("_source_text",None)
+        rows.append({
+            "module":module,
+            "function":function,
+            "qualified_name":qualified_name,
+            "status":status,
+            "candidates":candidates,
+            "analysis":analysis,
+        })
+    return rows
+
+
+def _graph_for_behavior(behavior, *, helper_resolutions: list[dict] | None=None) -> dict:
+    nodes={}
+    edges=[]
+    helper_resolution_map={
+        row["qualified_name"]:row for row in (helper_resolutions or [])
+    }
+    expanded_shared_helpers=set()
+
+    def node(node_id: str, kind: str, label: str, **meta):
+        nodes.setdefault(node_id,{"id":node_id,"kind":kind,"label":label,"meta":meta})
+        return node_id
+
+    root=node(
+        f"behavior:{behavior.feature_id}",
+        "subject",
+        behavior.subject,
+        zone=behavior.zone,
+        source_path=behavior.metadata.get("source_path"),
+    )
+    hook_nodes={}
+    for hook in behavior.hooks:
+        hid=f"hook:{hook}"
+        hook_nodes[hook]=node(hid,"hook",hook)
+        edges.append({"source":root,"target":hid,"kind":"HAS_HOOK"})
+
+    callback_nodes={}
+    for rule in behavior.rules:
+        rid=f"rule:{rule.rule_id}"
+        node(
+            rid,"rule",rule.kind,
+            trigger=rule.trigger,
+            confidence=rule.confidence,
+            implementation_status=rule.implementation_status,
+            source_path=rule.metadata.get("source_path"),
+            source_lines=rule.metadata.get("source_lines"),
+            helper=rule.metadata.get("helper"),
+            call_chain=rule.metadata.get("call_chain"),
+            callback_type=rule.metadata.get("callback_type"),
+            callback_event=rule.metadata.get("callback_event"),
+            callback_delay_source=rule.metadata.get("callback_delay_source"),
+            callback_call_line=rule.metadata.get("callback_call_line"),
+        )
+        hook=rule.metadata.get("hook")
+        parent=hook_nodes.get(hook,root)
+        callback_type=rule.metadata.get("callback_type")
+        callback_call_line=rule.metadata.get("callback_call_line")
+        if callback_type:
+            cbkey=(hook,callback_call_line,callback_type)
+            cbid=callback_nodes.get(cbkey)
+            if cbid is None:
+                cbid=f"callback:{hook}:{callback_call_line}:{callback_type}"
+                callback_nodes[cbkey]=cbid
+                cb_label=rule.metadata.get("callback_event") or callback_type
+                delay=rule.metadata.get("callback_delay_source")
+                if delay not in (None,""):
+                    cb_label=f"{callback_type} · {delay}"
+                node(
+                    cbid,"callback",cb_label,
+                    callback_type=callback_type,
+                    callback_event=rule.metadata.get("callback_event"),
+                    callback_delay_source=delay,
+                    callback_receiver=rule.metadata.get("callback_receiver"),
+                    callback_args=rule.metadata.get("callback_args"),
+                    source_path=rule.metadata.get("source_path"),
+                    source_lines=rule.metadata.get("source_lines"),
+                    hook=hook,
+                )
+                edges.append({"source":parent,"target":cbid,"kind":"SCHEDULES_CALLBACK"})
+            parent=cbid
+        edges.append({"source":parent,"target":rid,"kind":"HAS_RULE"})
+
+        for index,condition in enumerate(rule.conditions):
+            cid=f"{rid}:condition:{index}"
+            label=f"{condition.subject} {condition.operator}"
+            node(
+                cid,"condition",label,
+                value=condition.value,
+                metadata=dict(condition.metadata),
+                source_path=rule.metadata.get("source_path"),
+                source_lines=rule.metadata.get("source_lines"),
+                hook=rule.metadata.get("hook"),
+            )
+            edges.append({"source":cid,"target":rid,"kind":"GUARDS"})
+            if condition.operator in {"READS_STATE","STATE_EQUALS"} and isinstance(condition.subject,str) and condition.subject.startswith("state:"):
+                smeta=dict(condition.metadata)
+                sid=f"state-node:{condition.subject}"
+                node(
+                    sid,"state",smeta.get("name") or condition.subject,
+                    state_id=condition.subject,
+                    scope=smeta.get("scope"),
+                    receiver=smeta.get("receiver"),
+                    name=smeta.get("name"),
+                )
+                edges.append({
+                    "source":sid,
+                    "target":cid,
+                    "kind":"STATE_GUARD" if condition.operator=="STATE_EQUALS" else "STATE_READ",
+                })
+            elif condition.operator=="EVENT_ID_EQUALS":
+                event_id=condition.value
+                evid=f"event-node:{event_id}"
+                node(
+                    evid,"event",f"CSID {event_id}",
+                    event_id=event_id,
+                )
+                edges.append({"source":evid,"target":cid,"kind":"EVENT_GUARD"})
+            elif condition.operator=="EVENT_OUTCOME_EQUALS":
+                selector=condition.metadata.get("selector") or str(condition.subject).split(":")[-1]
+                oid=f"event-outcome:{rule.metadata.get('event_id')}:{selector}:{condition.value}"
+                node(
+                    oid,"event_outcome",f"{selector} = {condition.value}",
+                    event_id=rule.metadata.get("event_id"),
+                    selector=selector,
+                    literal=condition.value,
+                )
+                edges.append({"source":oid,"target":cid,"kind":"EVENT_OUTCOME_GUARD"})
+
+        for index,effect in enumerate(rule.effects):
+            eid=f"{rid}:effect:{index}"
+            category=_effect_category(effect.effect)
+            label=effect.effect
+            if effect.value not in (None,""):
+                label+=f" · {effect.value}"
+            node(
+                eid,"effect",label,
+                effect=effect.effect,
+                target=effect.target,
+                value=effect.value,
+                category=category,
+                metadata=dict(effect.metadata),
+                source_path=rule.metadata.get("source_path"),
+                source_lines=rule.metadata.get("source_lines"),
+                hook=rule.metadata.get("hook"),
+                helper=rule.metadata.get("helper"),
+                call_chain=rule.metadata.get("call_chain"),
+                callback_type=rule.metadata.get("callback_type"),
+                callback_event=rule.metadata.get("callback_event"),
+                callback_delay_source=rule.metadata.get("callback_delay_source"),
+            )
+            edges.append({"source":rid,"target":eid,"kind":"EMITS"})
+            target=effect.target
+            if effect.effect=="START_EVENT":
+                evid=f"event-node:{effect.value}"
+                node(
+                    evid,"event",f"CSID {effect.value}",
+                    event_id=effect.value,
+                )
+                edges.append({"source":eid,"target":evid,"kind":"STARTS_EVENT"})
+            if effect.effect=="WRITE_STATE" and isinstance(target,str) and target.startswith("state:"):
+                smeta=dict(effect.metadata)
+                sid=f"state-node:{target}"
+                node(
+                    sid,"state",smeta.get("name") or target,
+                    state_id=target,
+                    scope=smeta.get("scope"),
+                    receiver=smeta.get("receiver"),
+                    name=smeta.get("name"),
+                )
+                edges.append({"source":eid,"target":sid,"kind":"STATE_WRITE"})
+            elif effect.effect=="CALL_SYSTEM_HELPER":
+                module=effect.metadata.get("module")
+                function=effect.metadata.get("function")
+                qualified=(
+                    f"xi.{module}.{function}"
+                    if module and function else str(effect.value or target)
+                )
+                resolution=helper_resolution_map.get(qualified)
+                hid=f"shared-helper:{qualified}"
+                node(
+                    hid,"shared_helper",qualified,
+                    resolution_status=(resolution or {}).get("status","UNRESOLVED"),
+                    candidates=(resolution or {}).get("candidates",[]),
+                    analysis=(resolution or {}).get("analysis"),
+                    module=module,
+                    function=function,
+                )
+                edges.append({"source":eid,"target":hid,"kind":"CALLS_SHARED_HELPER"})
+                analysis=(resolution or {}).get("analysis")
+                if analysis and qualified not in expanded_shared_helpers:
+                    expanded_shared_helpers.add(qualified)
+                    for impact_index,impact in enumerate(analysis.get("impact",{}).get("upstream",[])):
+                        iid=f"shared-helper-input:{qualified}:{impact_index}"
+                        impact_meta=dict(impact)
+                        impact_meta["impact_kind"]=impact_meta.pop("kind",None)
+                        impact_meta["impact_label"]=impact_meta.pop("label",None)
+                        node(
+                            iid,"helper_input",
+                            f"{impact.get('kind')} · {impact.get('label')}",
+                            **impact_meta,
+                            helper=qualified,
+                        )
+                        edges.append({"source":iid,"target":hid,"kind":"HELPER_UPSTREAM_INPUT"})
+                    for impact_index,impact in enumerate(analysis.get("impact",{}).get("downstream",[])):
+                        oid=f"shared-helper-effect:{qualified}:{impact_index}"
+                        impact_meta=dict(impact)
+                        impact_meta["impact_kind"]=impact_meta.pop("kind",None)
+                        impact_meta["impact_label"]=impact_meta.pop("label",None)
+                        node(
+                            oid,"helper_effect",
+                            f"{impact.get('kind')} · {impact.get('label')}",
+                            **impact_meta,
+                            helper=qualified,
+                        )
+                        edges.append({"source":hid,"target":oid,"kind":"HELPER_DOWNSTREAM_EFFECT"})
+                    for call_index,call in enumerate(analysis.get("impact",{}).get("calls",[])):
+                        cid=f"shared-helper-call:{qualified}:{call_index}"
+                        node(
+                            cid,"helper_call",
+                            str(call.get("qualified_name") or call.get("function") or "API_CALL"),
+                            **dict(call),
+                            helper=qualified,
+                        )
+                        edges.append({"source":hid,"target":cid,"kind":"HELPER_DIRECT_CALL"})
+                    for callee_index,callee in enumerate(analysis.get("shared_helper_callees",[])):
+                        nid=f"shared-helper-callee:{qualified}:{callee_index}"
+                        node(
+                            nid,"shared_helper_callee",
+                            str(callee.get("qualified_name") or "SHARED_HELPER"),
+                            **dict(callee),
+                            helper=qualified,
+                        )
+                        edges.append({
+                            "source":hid,
+                            "target":nid,
+                            "kind":"CALLS_NESTED_SHARED_HELPER",
+                        })
+                if isinstance(target,str):
+                    tid=f"target:{target}"
+                    node(tid,"target",target)
+                    edges.append({"source":hid,"target":tid,"kind":"DEFINED_IN_SYSTEM"})
+            elif isinstance(target,str) and target not in {"player","world_entity","global"}:
+                tid=f"target:{target}"
+                node(tid,"target",target)
+                edges.append({"source":eid,"target":tid,"kind":"AFFECTS"})
+
+    state_rows={}
+    for rule in behavior.rules:
+        hook=rule.metadata.get("hook")
+        for condition in rule.conditions:
+            if condition.operator not in {"READS_STATE","STATE_EQUALS"} or not isinstance(condition.subject,str):
+                continue
+            meta=dict(condition.metadata)
+            row=state_rows.setdefault(condition.subject,{
+                "state_id":condition.subject,
+                "scope":meta.get("scope"),
+                "receiver":meta.get("receiver"),
+                "name":meta.get("name") or condition.subject,
+                "reads":[],
+                "writes":[],
+            })
+            row["reads"].append({
+                "hook":hook,
+                "line":meta.get("source_line"),
+                "source":meta.get("source_line_text"),
+            })
+        for effect in rule.effects:
+            if effect.effect!="WRITE_STATE" or not isinstance(effect.target,str):
+                continue
+            meta=dict(effect.metadata)
+            row=state_rows.setdefault(effect.target,{
+                "state_id":effect.target,
+                "scope":meta.get("scope"),
+                "receiver":meta.get("receiver"),
+                "name":meta.get("name") or effect.target,
+                "reads":[],
+                "writes":[],
+            })
+            row["writes"].append({
+                "hook":hook,
+                "line":meta.get("source_line"),
+                "source":meta.get("source_line_text"),
+                "value":effect.value,
+            })
+
+    state_links=[]
+    for state_id,row in state_rows.items():
+        read_hooks=sorted({
+            entry.get("hook") for entry in row["reads"]
+            if entry.get("hook")
+        })
+        write_hooks=sorted({
+            entry.get("hook") for entry in row["writes"]
+            if entry.get("hook")
+        })
+        cross_pairs=[
+            {"writer_hook":writer,"reader_hook":reader}
+            for writer in write_hooks
+            for reader in read_hooks
+            if writer!=reader
+        ]
+        if not cross_pairs:
+            continue
+        state_links.append({
+            "state_id":state_id,
+            "scope":row.get("scope"),
+            "name":row.get("name"),
+            "writer_hooks":write_hooks,
+            "reader_hooks":read_hooks,
+            "cross_hook_pairs":cross_pairs,
+            "relationship":"SHARED_STATE_ACROSS_HOOKS",
+            "ordering":"UNPROVEN",
+            "evidence_basis":"same canonical state identity is written in one hook and read in another",
+        })
+
+    event_rows={}
+    for rule in behavior.rules:
+        hook=rule.metadata.get("hook")
+        for condition in rule.conditions:
+            if condition.operator!="EVENT_ID_EQUALS":
+                continue
+            event_id=condition.value
+            row=event_rows.setdefault(event_id,{
+                "event_id":event_id,
+                "start_hooks":[],
+                "guard_hooks":[],
+                "finish_guard_hooks":[],
+                "update_guard_hooks":[],
+                "start_evidence":[],
+                "guard_evidence":[],
+                "finish_guard_evidence":[],
+                "update_guard_evidence":[],
+            })
+            evidence={
+                "hook":hook,
+                "line":condition.metadata.get("source_line"),
+                "source":condition.metadata.get("source_line_text"),
+            }
+            if hook and hook not in row["guard_hooks"]:
+                row["guard_hooks"].append(hook)
+            row["guard_evidence"].append(evidence)
+            if hook=="onEventFinish":
+                if hook not in row["finish_guard_hooks"]:
+                    row["finish_guard_hooks"].append(hook)
+                row["finish_guard_evidence"].append(evidence)
+            elif hook=="onEventUpdate":
+                if hook not in row["update_guard_hooks"]:
+                    row["update_guard_hooks"].append(hook)
+                row["update_guard_evidence"].append(evidence)
+        for effect in rule.effects:
+            if effect.effect!="START_EVENT":
+                continue
+            event_id=effect.value
+            row=event_rows.setdefault(event_id,{
+                "event_id":event_id,
+                "start_hooks":[],
+                "guard_hooks":[],
+                "finish_guard_hooks":[],
+                "update_guard_hooks":[],
+                "start_evidence":[],
+                "guard_evidence":[],
+                "finish_guard_evidence":[],
+                "update_guard_evidence":[],
+            })
+            if hook and hook not in row["start_hooks"]:
+                row["start_hooks"].append(hook)
+            row["start_evidence"].append({
+                "hook":hook,
+                "source_path":rule.metadata.get("source_path"),
+                "source_lines":rule.metadata.get("source_lines"),
+            })
+
+    event_links=[]
+    for event_id,row in event_rows.items():
+        pairs=[
+            {
+                "start_hook":starter,
+                "guard_hook":guard,
+                "handler_role":(
+                    "FINISH" if guard=="onEventFinish"
+                    else "UPDATE" if guard=="onEventUpdate"
+                    else "OTHER"
+                ),
+                **({"finish_guard_hook":guard} if guard=="onEventFinish" else {}),
+                **({"update_guard_hook":guard} if guard=="onEventUpdate" else {}),
+            }
+            for starter in sorted(row["start_hooks"])
+            for guard in sorted(row["guard_hooks"])
+            if starter!=guard
+        ]
+        if not pairs:
+            continue
+        event_links.append({
+            **row,
+            "relationship":"SHARED_EVENT_ID_ACROSS_HOOKS",
+            "cross_hook_pairs":pairs,
+            "ordering":"UNPROVEN",
+            "evidence_basis":"same literal CSID is started in one hook and guarded in another event handler",
+        })
+
+    event_branch_effects=[]
+    event_outcome_effects=[]
+    event_outcome_guarded_effects=[]
+    event_outcome_guarded_state_effects=[]
+    event_outcome_guarded_state_links=[]
+    event_outcome_resource_guarded_effects=[]
+    event_outcome_resource_guarded_state_effects=[]
+    event_outcome_resource_guarded_state_links=[]
+    event_outcome_state_effects=[]
+    event_outcome_state_links=[]
+    event_state_effects=[]
+    event_state_links=[]
+    for rule in behavior.rules:
+        if rule.kind!="event_branch_effects":
+            continue
+        event_id=rule.metadata.get("event_id")
+        branch_hook=rule.metadata.get("hook")
+        for effect in rule.effects:
+            event_branch_effects.append({
+                "event_id":event_id,
+                "effect":effect.effect,
+                "target":effect.target,
+                "value":effect.value,
+                "category":_effect_category(effect.effect),
+                "hook":branch_hook,
+                "source_path":rule.metadata.get("source_path"),
+                "source_lines":rule.metadata.get("source_lines"),
+                "relationship":"EVENT_BRANCH_EFFECT",
+                "ordering":"SOURCE_LOCAL",
+                "evidence_basis":"effect occurs inside the literal CSID branch",
+            })
+            if effect.effect!="WRITE_STATE" or not isinstance(effect.target,str):
+                continue
+            state_id=effect.target
+            exact={
+                "event_id":event_id,
+                "state_id":state_id,
+                "value":effect.value,
+                "hook":branch_hook,
+                "source_path":rule.metadata.get("source_path"),
+                "source_lines":rule.metadata.get("source_lines"),
+                "relationship":"EVENT_BRANCH_WRITES_STATE",
+                "ordering":"SOURCE_LOCAL",
+                "evidence_basis":"state write occurs inside the literal CSID branch",
+            }
+            event_state_effects.append(exact)
+            readers=[
+                row for row in state_rows.get(state_id,{}).get("reads",[])
+                if row.get("hook") and row.get("hook")!=branch_hook
+            ]
+            if not readers:
+                continue
+            event_state_links.append({
+                **exact,
+                "reader_hooks":sorted({row["hook"] for row in readers}),
+                "read_evidence":readers,
+                "relationship":"EVENT_BRANCH_STATE_SHARED_ACROSS_HOOKS",
+                "ordering":"UNPROVEN",
+                "evidence_basis":"literal CSID branch writes canonical state that another hook reads",
+            })
+
+    for rule in behavior.rules:
+        if rule.kind!="event_outcome_effects":
+            continue
+        event_id=rule.metadata.get("event_id")
+        selector=rule.metadata.get("outcome_selector")
+        literal=rule.metadata.get("outcome_literal")
+        branch_hook=rule.metadata.get("hook")
+        for effect in rule.effects:
+            exact={
+                "event_id":event_id,
+                "selector":selector,
+                "literal":literal,
+                "effect":effect.effect,
+                "target":effect.target,
+                "value":effect.value,
+                "category":_effect_category(effect.effect),
+                "hook":branch_hook,
+                "source_path":rule.metadata.get("source_path"),
+                "source_lines":rule.metadata.get("source_lines"),
+                "relationship":"EVENT_OUTCOME_EFFECT",
+                "ordering":"SOURCE_LOCAL",
+                "evidence_basis":"effect occurs inside the literal event outcome branch",
+            }
+            event_outcome_effects.append(exact)
+            if effect.effect!="WRITE_STATE" or not isinstance(effect.target,str):
+                continue
+            state_exact={
+                **exact,
+                "state_id":effect.target,
+                "relationship":"EVENT_OUTCOME_WRITES_STATE",
+            }
+            event_outcome_state_effects.append(state_exact)
+            readers=[
+                row for row in state_rows.get(effect.target,{}).get("reads",[])
+                if row.get("hook") and row.get("hook")!=branch_hook
+            ]
+            if readers:
+                event_outcome_state_links.append({
+                    **state_exact,
+                    "reader_hooks":sorted({row["hook"] for row in readers}),
+                    "read_evidence":readers,
+                    "relationship":"EVENT_OUTCOME_STATE_SHARED_ACROSS_HOOKS",
+                    "ordering":"UNPROVEN",
+                    "evidence_basis":"literal event outcome writes canonical state that another hook reads",
+                })
+
+    for rule in behavior.rules:
+        if rule.kind!="event_outcome_guarded_effects":
+            continue
+        event_id=rule.metadata.get("event_id")
+        selector=rule.metadata.get("outcome_selector")
+        literal=rule.metadata.get("outcome_literal")
+        guard_state_id=rule.metadata.get("guard_state_id")
+        guard_literal=rule.metadata.get("guard_literal")
+        branch_hook=rule.metadata.get("hook")
+        for effect in rule.effects:
+            exact={
+                "event_id":event_id,
+                "selector":selector,
+                "literal":literal,
+                "guard_state_id":guard_state_id,
+                "guard_literal":guard_literal,
+                "effect":effect.effect,
+                "target":effect.target,
+                "value":effect.value,
+                "category":_effect_category(effect.effect),
+                "hook":branch_hook,
+                "source_path":rule.metadata.get("source_path"),
+                "source_lines":rule.metadata.get("source_lines"),
+                "relationship":"EVENT_OUTCOME_GUARDED_EFFECT",
+                "ordering":"SOURCE_LOCAL",
+                "evidence_basis":"effect occurs inside literal event outcome and canonical state guard branch",
+            }
+            event_outcome_guarded_effects.append(exact)
+            if effect.effect!="WRITE_STATE" or not isinstance(effect.target,str):
+                continue
+            state_exact={
+                **exact,
+                "state_id":effect.target,
+                "relationship":"EVENT_OUTCOME_GUARD_WRITES_STATE",
+            }
+            event_outcome_guarded_state_effects.append(state_exact)
+            readers=[
+                row for row in state_rows.get(effect.target,{}).get("reads",[])
+                if row.get("hook") and row.get("hook")!=branch_hook
+            ]
+            if readers:
+                event_outcome_guarded_state_links.append({
+                    **state_exact,
+                    "reader_hooks":sorted({row["hook"] for row in readers}),
+                    "read_evidence":readers,
+                    "relationship":"EVENT_OUTCOME_GUARDED_STATE_SHARED_ACROSS_HOOKS",
+                    "ordering":"UNPROVEN",
+                    "evidence_basis":"guarded event outcome writes canonical state that another hook reads",
+                })
+
+    for rule in behavior.rules:
+        if rule.kind!="event_outcome_resource_guarded_effects":
+            continue
+        event_id=rule.metadata.get("event_id")
+        selector=rule.metadata.get("outcome_selector")
+        literal=rule.metadata.get("outcome_literal")
+        guard_kind=rule.metadata.get("guard_kind")
+        guard_operator=rule.metadata.get("guard_operator")
+        guard_value=rule.metadata.get("guard_value")
+        branch_hook=rule.metadata.get("hook")
+        for effect in rule.effects:
+            exact={
+                "event_id":event_id,
+                "selector":selector,
+                "literal":literal,
+                "guard_kind":guard_kind,
+                "guard_operator":guard_operator,
+                "guard_value":guard_value,
+                "effect":effect.effect,
+                "target":effect.target,
+                "value":effect.value,
+                "category":_effect_category(effect.effect),
+                "hook":branch_hook,
+                "source_path":rule.metadata.get("source_path"),
+                "source_lines":rule.metadata.get("source_lines"),
+                "relationship":"EVENT_OUTCOME_RESOURCE_GUARDED_EFFECT",
+                "ordering":"SOURCE_LOCAL",
+                "evidence_basis":"effect occurs inside literal event outcome and source-literal resource guard branch",
+            }
+            event_outcome_resource_guarded_effects.append(exact)
+            if effect.effect!="WRITE_STATE" or not isinstance(effect.target,str):
+                continue
+            state_exact={
+                **exact,
+                "state_id":effect.target,
+                "relationship":"EVENT_OUTCOME_RESOURCE_GUARD_WRITES_STATE",
+            }
+            event_outcome_resource_guarded_state_effects.append(state_exact)
+            readers=[
+                row for row in state_rows.get(effect.target,{}).get("reads",[])
+                if row.get("hook") and row.get("hook")!=branch_hook
+            ]
+            if readers:
+                event_outcome_resource_guarded_state_links.append({
+                    **state_exact,
+                    "reader_hooks":sorted({row["hook"] for row in readers}),
+                    "read_evidence":readers,
+                    "relationship":"EVENT_OUTCOME_RESOURCE_GUARDED_STATE_SHARED_ACROSS_HOOKS",
+                    "ordering":"UNPROVEN",
+                    "evidence_basis":"resource-guarded event outcome writes canonical state that another hook reads",
+                })
+
+    transition_rows=[]
+    for rule in behavior.rules:
+        if rule.kind!="state_transition":
+            continue
+        guards=[
+            condition for condition in rule.conditions
+            if condition.operator=="STATE_EQUALS" and isinstance(condition.subject,str)
+        ]
+        writes=[
+            effect for effect in rule.effects
+            if effect.effect=="WRITE_STATE" and isinstance(effect.target,str)
+        ]
+        for condition in guards:
+            for effect in writes:
+                if condition.subject!=effect.target:
+                    continue
+                transition_rows.append({
+                    "state_id":condition.subject,
+                    "scope":condition.metadata.get("scope"),
+                    "name":condition.metadata.get("name") or rule.metadata.get("state_name") or condition.subject,
+                    "from":condition.value,
+                    "to":effect.value,
+                    "hook":rule.metadata.get("hook"),
+                    "source_path":rule.metadata.get("source_path"),
+                    "source_lines":rule.metadata.get("source_lines"),
+                    "selector_alias":rule.metadata.get("selector_alias"),
+                    "confidence":rule.confidence,
+                })
+
+    categories=Counter(
+        n["meta"].get("category")
+        for n in nodes.values()
+        if n["kind"]=="effect" and n["meta"].get("category")
+    )
+    return {
+        "root":root,
+        "nodes":list(nodes.values()),
+        "edges":edges,
+        "states":sorted(state_rows.values(),key=lambda row:(row["scope"] or "",row["name"])),
+        "state_links":sorted(state_links,key=lambda row:(row["scope"] or "",row["name"] or "",row["state_id"])),
+        "events":sorted(event_rows.values(),key=lambda row:row["event_id"]),
+        "event_links":sorted(event_links,key=lambda row:row["event_id"]),
+        "event_branch_effects":sorted(event_branch_effects,key=lambda row:(row["event_id"],row["effect"],str(row["target"]),str(row["value"]))),
+        "event_outcome_effects":sorted(event_outcome_effects,key=lambda row:(row["event_id"],str(row["selector"]),str(row["literal"]),row["effect"],str(row["target"]))),
+        "event_outcome_guarded_effects":sorted(event_outcome_guarded_effects,key=lambda row:(row["event_id"],str(row["selector"]),str(row["literal"]),str(row["guard_state_id"]),str(row["guard_literal"]),row["effect"])),
+        "event_outcome_guarded_state_effects":sorted(event_outcome_guarded_state_effects,key=lambda row:(row["event_id"],str(row["selector"]),str(row["literal"]),str(row["guard_state_id"]),str(row["guard_literal"]),row["state_id"])),
+        "event_outcome_guarded_state_links":sorted(event_outcome_guarded_state_links,key=lambda row:(row["event_id"],str(row["selector"]),str(row["literal"]),str(row["guard_state_id"]),str(row["guard_literal"]),row["state_id"])),
+        "event_outcome_resource_guarded_effects":sorted(event_outcome_resource_guarded_effects,key=lambda row:(row["event_id"],str(row["selector"]),str(row["literal"]),str(row["guard_kind"]),str(row["guard_operator"]),str(row["guard_value"]),row["effect"])),
+        "event_outcome_resource_guarded_state_effects":sorted(event_outcome_resource_guarded_state_effects,key=lambda row:(row["event_id"],str(row["selector"]),str(row["literal"]),str(row["guard_kind"]),str(row["guard_operator"]),str(row["guard_value"]),row["state_id"])),
+        "event_outcome_resource_guarded_state_links":sorted(event_outcome_resource_guarded_state_links,key=lambda row:(row["event_id"],str(row["selector"]),str(row["literal"]),str(row["guard_kind"]),str(row["guard_operator"]),str(row["guard_value"]),row["state_id"])),
+        "event_outcome_state_effects":sorted(event_outcome_state_effects,key=lambda row:(row["event_id"],str(row["selector"]),str(row["literal"]),row["state_id"])),
+        "event_outcome_state_links":sorted(event_outcome_state_links,key=lambda row:(row["event_id"],str(row["selector"]),str(row["literal"]),row["state_id"])),
+        "event_state_effects":sorted(event_state_effects,key=lambda row:(row["event_id"],row["state_id"],str(row["value"]))),
+        "event_state_links":sorted(event_state_links,key=lambda row:(row["event_id"],row["state_id"],str(row["value"]))),
+        "transitions":transition_rows,
+        "summary":{
+            "hooks":len(behavior.hooks),
+            "rules":len(behavior.rules),
+            "effects":sum(1 for n in nodes.values() if n["kind"]=="effect"),
+            "conditions":sum(1 for n in nodes.values() if n["kind"]=="condition"),
+            "targets":sum(1 for n in nodes.values() if n["kind"]=="target"),
+            "states":len(state_rows),
+            "cross_hook_state_links":len(state_links),
+            "events":len(event_rows),
+            "cross_hook_event_links":len(event_links),
+            "event_branch_effects":len(event_branch_effects),
+            "event_outcome_effects":len(event_outcome_effects),
+            "event_outcome_guarded_effects":len(event_outcome_guarded_effects),
+            "event_outcome_guarded_state_effects":len(event_outcome_guarded_state_effects),
+            "cross_hook_event_outcome_guarded_state_links":len(event_outcome_guarded_state_links),
+            "event_outcome_resource_guarded_effects":len(event_outcome_resource_guarded_effects),
+            "event_outcome_resource_guarded_state_effects":len(event_outcome_resource_guarded_state_effects),
+            "cross_hook_event_outcome_resource_guarded_state_links":len(event_outcome_resource_guarded_state_links),
+            "event_outcome_state_effects":len(event_outcome_state_effects),
+            "cross_hook_event_outcome_state_links":len(event_outcome_state_links),
+            "event_state_effects":len(event_state_effects),
+            "cross_hook_event_state_links":len(event_state_links),
+            "callbacks":len(callback_nodes),
+            "transitions":len(transition_rows),
+            "shared_helpers":len(helper_resolutions or []),
+            "shared_helper_impact_nodes":sum(
+                1 for row in nodes.values()
+                if row["kind"] in {"helper_input","helper_effect","helper_call"}
+            ),
+            "shared_helper_callee_nodes":sum(
+                1 for row in nodes.values()
+                if row["kind"]=="shared_helper_callee"
+            ),
+            "effect_categories":dict(sorted(categories.items())),
+            "unmodeled_hooks":list(behavior.metadata.get("unmodeled_hooks") or ()),
+            "reachable_helpers":list(behavior.metadata.get("reachable_helpers") or ()),
+            "hook_owners":list(behavior.metadata.get("hook_owners") or ()),
+        },
+    }
+
+
+def _context_candidates(root: Path, primary: Path, *, max_instances: int=24) -> list[dict]:
+    rel=primary.relative_to(root).as_posix()
+    zone,_=_zone_parts(rel)
+    if not zone:
+        return []
+    zone_root=root/"scripts"/"zones"/zone
+    candidates=[]
+    for role,name in (("zone","Zone.lua"),("zone-global","globals.lua")):
+        path=zone_root/name
+        if path.is_file() and path.resolve()!=primary.resolve():
+            candidates.append((role,path))
+    instance_dir=zone_root/"instances"
+    if instance_dir.is_dir():
+        for path in sorted(instance_dir.glob("*.lua"))[:max_instances]:
+            if path.resolve()!=primary.resolve():
+                candidates.append(("instance-context",path))
+    return [{"role":role,"path":path} for role,path in candidates]
+
+
+def inspect_lsb_behavior(root: Path, relative: str) -> dict:
+    root=Path(root).resolve()
+    primary=_safe_path(root,relative)
+    rel=primary.relative_to(root).as_posix()
+    zone,_=_zone_parts(rel)
+    text=primary.read_text(encoding="utf-8",errors="ignore")
+    behavior=extract_lsb_scripted_behavior(
+        text,
+        feature_id=f"behavior-source:{rel}",
+        subject=_subject_for(primary,rel),
+        zone=zone,
+        source_path=rel,
+    )
+    helper_resolutions=_resolve_shared_helpers(root,behavior)
+    graph=_graph_for_behavior(
+        behavior,
+        helper_resolutions=helper_resolutions,
+    )
+
+    contexts=[]
+    for row in _context_candidates(root,primary):
+        path=row["path"]
+        context_rel=path.relative_to(root).as_posix()
+        context_text=path.read_text(encoding="utf-8",errors="ignore")
+        context_behavior=extract_lsb_scripted_behavior(
+            context_text,
+            feature_id=f"behavior-context:{context_rel}",
+            subject=_subject_for(path,context_rel),
+            zone=zone,
+            source_path=context_rel,
+        )
+        api_calls=sum(
+            1 for rule in context_behavior.rules for effect in rule.effects
+            if effect.effect=="API_CALL"
+        )
+        contexts.append({
+            "role":row["role"],
+            "path":context_rel,
+            "subject":context_behavior.subject,
+            "hooks":list(context_behavior.hooks),
+            "rule_count":len(context_behavior.rules),
+            "api_call_count":api_calls,
+            "shared_systems":sorted({
+                effect.target for rule in context_behavior.rules for effect in rule.effects
+                if effect.effect=="CALL_SYSTEM_HELPER" and isinstance(effect.target,str)
+            }),
+            "scope_basis":"same-zone context; not a proven dependency",
+        })
+
+    return {
+        "source":{"path":rel,"zone":zone,"subject":behavior.subject},
+        "behavior":behavior,
+        "graph":graph,
+        "shared_helpers":helper_resolutions,
+        "contexts":contexts,
+        "notes":[
+            "Primary graph edges come from the selected Lua source and bounded helper traversal.",
+            "Zone/global/instance files are contextual controllers unless another analyzer proves a direct dependency.",
+            "API_CALL observations preserve unfamiliar Lua-bound behavior even when no semantic effect classifier exists yet.",
+            "Cross-hook state links mean the same canonical state is written in one hook and read in another; execution ordering and causal sequencing remain unproven.",
+            "Cross-hook event links mean the same literal CSID is started in one hook and guarded in another; this correlates event identity only and does not prove that a particular start reaches a particular finish.",
+            "Event-branch state effects are source-local when a state write occurs inside a literal CSID branch; linking that state to readers in other hooks remains unordered cross-hook evidence.",
+            "Literal CSID branch effect bundles keep key items, world/entity actions, rewards, and event updates attached to the branch that contains them; unsupported or dynamic effects remain generic/raw evidence rather than being reassigned.",
+            "Literal option/result outcomes are split from their parent CSID bundle. Only equality against a literal is promoted; dynamic predicates and fallback arms are masked from parent attribution and remain generic evidence.",
+            "CSID guard hooks retain their handler role: onEventFinish and onEventUpdate are tracked separately while sharing the same event identity model.",
+            "Literal canonical-state guards nested inside a literal event outcome are modeled as an additional condition layer. Unsupported nested predicates are masked from the parent outcome bundle rather than treated as unconditional.",
+            "Literal key-item possession and simple literal trade guards nested inside a literal event outcome are modeled as source-local resource conditions. Dynamic/compound resource predicates and effects below deeper unsupported conditions are not promoted.",
+        ],
+    }
