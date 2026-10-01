@@ -11,7 +11,7 @@ from pathlib import Path
 import re
 from urllib.parse import quote
 
-from workbench.devtools.server import binding_index
+from workbench.devtools.server import binding_index as server_binding_index
 
 
 def _build_binding_index(server: str, root: Path) -> tuple[dict[str, list[dict]], str | None]:
@@ -19,8 +19,8 @@ def _build_binding_index(server: str, root: Path) -> tuple[dict[str, list[dict]]
     root=Path(root)
     try:
         if server=="dsp":
-            return binding_index.build_dsp_index(root),None
-        return binding_index.build_topaz_index(root),None
+            return server_binding_index.build_dsp_index(root),None
+        return server_binding_index.build_topaz_index(root),None
     except Exception as exc:
         return {},f"{type(exc).__name__}: {exc}"
 
@@ -192,7 +192,7 @@ def binding_lookup(
 
 def behavior_engine_drilldown(inspected: dict, *, server: str, source_root: Path) -> dict:
     behavior=inspected.get("behavior")
-    binding_index_data,index_error=_build_binding_index(server,source_root)
+    binding_index,index_error=_build_binding_index(server,source_root)
     direct_calls=[]
     raw_direct_call_count=0
     if behavior is not None:
@@ -213,7 +213,7 @@ def behavior_engine_drilldown(inspected: dict, *, server: str, source_root: Path
                     "trigger":rule.trigger,
                     "binding":binding_lookup(
                         server,source_root,str(effect.value or ""),
-                        index=binding_index_data,index_error=index_error,
+                        index=binding_index,index_error=index_error,
                     ),
                 })
     seen=set(); deduped=[]
@@ -237,7 +237,7 @@ def behavior_engine_drilldown(inspected: dict, *, server: str, source_root: Path
         for call in analysis.get("api_calls") or []:
             lookup=binding_lookup(
                 server,source_root,str(call.get("function") or ""),
-                index=binding_index_data,index_error=index_error,
+                index=binding_index,index_error=index_error,
             )
             helper_binding_counts[lookup["status"]]+=1
             helper["api_calls"].append({**call,"binding":lookup})
@@ -271,7 +271,7 @@ def behavior_engine_drilldown(inspected: dict, *, server: str, source_root: Path
         "duplicate_direct_call_count":max(0,raw_direct_call_count-len(deduped)),
         "direct_call_count":len(deduped),
         "binding_counts":dict(sorted(binding_counts.items())),
-        "binding_index_size":len(binding_index_data),
+        "binding_index_size":len(binding_index),
         "binding_index_status":"UNAVAILABLE" if index_error else "READY",
         "binding_index_error":index_error,
         "unindexed_calls":unindexed,
