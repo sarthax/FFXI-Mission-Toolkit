@@ -1,6 +1,6 @@
 """Generic presentation-state helpers for dependency graph explorers.
 
-These functions never alter closure records. They derive the initial disclosure,
+These functions never alter closure records.  They derive the initial disclosure,
 branch visibility, and directed root path from a canonical closure projection.
 """
 from __future__ import annotations
@@ -18,6 +18,7 @@ def _outgoing(projection: dict[str, Any], node_id: str) -> list[dict[str, Any]]:
 
 
 def direct_dependencies(projection: dict[str, Any], node_id: str) -> set[str]:
+    """Return immediate prerequisite nodes, retaining any gate between parent and child."""
     node_types = {node["node_id"]: node.get("node_type") for node in projection.get("nodes", [])}
     result: set[str] = set()
     for edge in _outgoing(projection, node_id):
@@ -29,6 +30,7 @@ def direct_dependencies(projection: dict[str, Any], node_id: str) -> set[str]:
 
 
 def visible_nodes(projection: dict[str, Any], expanded: set[str]) -> set[str]:
+    """Return union of branches reachable from root through explicitly expanded nodes."""
     root = projection["root"]
     node_types = {node["node_id"]: node.get("node_type") for node in projection.get("nodes", [])}
     visible: set[str] = set()
@@ -52,6 +54,7 @@ def visible_nodes(projection: dict[str, Any], expanded: set[str]) -> set[str]:
 
 
 def path_from_root(projection: dict[str, Any], target: str) -> tuple[set[str], set[str]]:
+    """Return a shortest directed root path as node IDs and edge keys."""
     root = projection["root"]
     queue = deque([(root, [root], [])])
     seen = {root}
