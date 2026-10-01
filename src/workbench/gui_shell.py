@@ -10,10 +10,9 @@ import re
 from pathlib import Path
 from typing import Callable, Mapping
 
+from workbench.runtime.paths import repo_path
 
-ROOT = Path(__file__).resolve().parents[1]
-ROUTE_MAP = ROOT / "docs" / "workbench" / "GUI_ROUTE_MAP.json"
-
+ROUTE_MAP = repo_path("docs", "workbench", "GUI_ROUTE_MAP.json")
 
 WORKSPACES = (
     {
@@ -327,15 +326,11 @@ def build_shell_context(
     shell_override: str | None = None,
 ) -> dict:
     owner = route_owner(path, method)
-    # Assault Missions is an Assault-domain view, even though the historical route-map entry still
-    # classifies /missions under Features. Keep the legacy URL but present it in its real domain.
     if path == "/missions":
         owner = {**owner, "home": "Domains", "section": "Battle Systems > Assault Missions"}
     planned_home = {"validation": "Validation", "packages": "Packages"}.get(workspace_slug or "")
     if planned_home:
         owner = {**owner, "home": planned_home, "section": "Dashboard"}
-    # Contextual tools render their canonical route and keep its route-map ownership.
-    # The optional shell marker only chooses the surrounding navigation workspace.
     tools_context_roots = ("/entity", "/packets", "/gaps", "/iddrift")
     if shell_override == "tools" and any(
         path == root or path.startswith(root + "/") for root in tools_context_roots
