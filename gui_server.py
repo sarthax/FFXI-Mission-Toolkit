@@ -6800,6 +6800,45 @@ def _capture_related_locators(
     return anchors, related
 
 
+def _packet_correlation_ref_for_row(target_table: str, row_key: str) -> tuple[str, str] | None:
+    """Translate one normalized capture row into packet_correlation's stable ref namespace."""
+    try:
+        key = json.loads(capture_integrity.canonical_row_key(row_key))
+    except (TypeError, json.JSONDecodeError):
+        return None
+    try:
+        if target_table == "capture_raw_packets":
+            return packet_correlation.RAW, f"raw-packet:{int(key['seq'])}"
+        if target_table == "capture_events":
+            return packet_correlation.IDVIEW, f"idview:{key['zone_db']}:{int(key['seq'])}"
+        if target_table == "capture_eventview":
+            return packet_correlation.EVENTVIEW, f"eventview:{key['zone_db']}:{int(key['seq'])}"
+    except (KeyError, TypeError, ValueError):
+        return None
+    return None
+
+
+def _packet_correlation_row_for_ref(kind: str, ref: str) -> tuple[str, str] | None:
+    """Translate a packet correlation peer ref back to a Data Explorer row identity."""
+    try:
+        if kind == packet_correlation.RAW and ref.startswith("raw-packet:"):
+            seq = int(ref.split(":", 1)[1])
+            return "capture_raw_packets", capture_integrity.canonical_row_key({"seq": seq})
+        if kind == packet_correlation.EVENTVIEW and ref.startswith("eventview:"):
+            zone, seq = ref.removeprefix("eventview:").rsplit(":", 1)
+            return "capture_eventview", capture_integrity.canonical_row_key(
+                {"zone_db": zone, "seq": int(seq)}
+            )
+        if kind == packet_correlation.IDVIEW and ref.startswith("idview:"):
+            zone, seq = ref.removeprefix("idview:").rsplit(":", 1)
+            return "capture_events", capture_integrity.canonical_row_key(
+                {"zone_db": zone, "seq": int(seq)}
+            )
+    except (TypeError, ValueError):
+        return None
+    return None
+
+
 @app.get("/captures/search", response_class=HTMLResponse)
 def captures_search(
     request: Request,
@@ -6983,6 +7022,55 @@ def captures_related_evidence(
     anchors, related = _capture_related_locators(
         con, capture_id, target_table, canonical_key
     )
+
+    packet_matches = []
+    correlation_ref = _packet_correlation_ref_for_row(target_table, canonical_key)
+    if correlation_ref is not None:
+        # Rebuild from normalized observations so this drill-down never depends on a stale
+        # correlation cache. Temporal/alignment matches may be persisted for the Alignment view,
+        # but list_non_temporal_matches() excludes them from this verified Related Evidence panel.
+        packet_correlation.correlate_capture(con, capture_id)
+        kind, ref = correlation_ref
+        for match in packet_correlation.list_non_temporal_matches(con, capture_id, kind, ref):
+            peer = _packet_correlation_row_for_ref(match["peer_kind"], match["peer_ref"])
+            if peer is None:
+                continue
+            peer_table, peer_key = peer
+            item = {
+                "target_table": peer_table,
+                "row_key": peer_key,
+                "relation": "explicit packet correlation",
+                "basis": match["basis"],
+                "score": match.get("score"),
+                "peer_kind": match["peer_kind"],
+                "peer_ref": match["peer_ref"],
+                "details": match.get("details") or {},
+                "data_url": (
+                    f"/captures/query?table={quote(peer_table)}&capture_id={capture_id}"
+                ),
+                "packet_url": None,
+                "source_url": None,
+            }
+            if peer_table == "capture_raw_packets":
+                try:
+                    seq = int(json.loads(peer_key)["seq"])
+                except (TypeError, ValueError, KeyError, json.JSONDecodeError):
+                    seq = None
+                if seq is not None:
+                    item["packet_url"] = f"/captures/{capture_id}/packets/{seq}"
+            peer_locators = capture_integrity.find_row_locators(
+                con, capture_id, peer_table, peer_key
+            )
+            if peer_locators:
+                locator = peer_locators[0]
+                item["source_url"] = (
+                    f"/captures/{capture_id}/source-locator?"
+                    f"filename={quote(str(locator['filename']))}&"
+                    f"target_table={quote(peer_table)}&"
+                    f"row_key={quote(peer_key)}"
+                )
+            packet_matches.append(item)
+
     for item in anchors + related:
         item["source_url"] = (
             f"/captures/{capture_id}/source-locator?"
@@ -7010,6 +7098,7 @@ def captures_related_evidence(
         "row_key": canonical_key,
         "anchors": anchors,
         "related": related,
+        "packet_matches": packet_matches,
     })
 
 

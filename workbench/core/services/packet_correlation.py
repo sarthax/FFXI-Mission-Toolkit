@@ -21,6 +21,11 @@ VIDEO = "VIDEO_OCR"
 STATUS_MATCHED = "MATCHED"
 STATUS_AMBIGUOUS = "AMBIGUOUS"
 
+NON_TEMPORAL_MATCH_BASES = frozenset({
+    "opcode+direction+raw_bytes",
+    "opcode+direction+shared_decoded_fields",
+})
+
 
 def init_db(con: sqlite3.Connection) -> None:
     con.executescript("""
@@ -454,5 +459,45 @@ def list_correlations(con: sqlite3.Connection,capture_id:int,status:str|None=Non
             item["details"]=json.loads(item.pop("details_json") or "{}")
         except json.JSONDecodeError:
             item["details"]={}
+        out.append(item)
+    return out
+
+
+def list_non_temporal_matches(
+    con: sqlite3.Connection, capture_id: int, kind: str, ref: str
+) -> list[dict]:
+    """Return only unique matched correlations whose basis does not depend on clock proximity.
+
+    These are suitable for a verified Related Evidence surface. Timestamp/alignment-based matches
+    and AMBIGUOUS candidates remain available through list_correlations(), but are intentionally
+    excluded here.
+    """
+    init_db(con)
+    con.row_factory = sqlite3.Row
+    placeholders = ",".join("?" for _ in NON_TEMPORAL_MATCH_BASES)
+    params = [
+        int(capture_id), STATUS_MATCHED, *sorted(NON_TEMPORAL_MATCH_BASES),
+        str(kind), str(ref), str(kind), str(ref),
+    ]
+    rows = con.execute(
+        f"""SELECT * FROM capture_packet_correlations
+            WHERE capture_id=? AND status=? AND basis IN ({placeholders})
+              AND ((source_kind=? AND source_ref=?) OR (target_kind=? AND target_ref=?))
+            ORDER BY basis,source_kind,source_ref,target_kind,target_ref""",
+        params,
+    ).fetchall()
+    out = []
+    for row in rows:
+        item = dict(row)
+        try:
+            item["details"] = json.loads(item.pop("details_json") or "{}")
+        except json.JSONDecodeError:
+            item["details"] = {}
+        if item["source_kind"] == kind and item["source_ref"] == ref:
+            item["peer_kind"] = item["target_kind"]
+            item["peer_ref"] = item["target_ref"]
+        else:
+            item["peer_kind"] = item["source_kind"]
+            item["peer_ref"] = item["source_ref"]
         out.append(item)
     return out

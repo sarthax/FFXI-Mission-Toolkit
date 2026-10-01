@@ -115,6 +115,15 @@ def main():
         assert all(r["status"]==pc.STATUS_MATCHED for r in video),video
         assert all(abs(r["time_delta_seconds"])<1e-9 for r in video),video
 
+        # Related Evidence consumes only non-temporal, unique MATCHED correlations.
+        id_explicit=pc.list_non_temporal_matches(con,cid,pc.IDVIEW,"idview:Test Zone:0")
+        assert len(id_explicit)==1,id_explicit
+        assert id_explicit[0]["peer_kind"]==pc.EVENTVIEW,id_explicit
+        assert id_explicit[0]["peer_ref"]=="eventview:Test Zone:0",id_explicit
+        assert id_explicit[0]["basis"]=="opcode+direction+shared_decoded_fields",id_explicit
+        assert pc.list_non_temporal_matches(con,cid,pc.RAW,"raw-packet:0")==[],rows
+        assert pc.list_non_temporal_matches(con,cid,pc.VIDEO,"video-ocr:v0")==[],video
+
         # Rebuild is deterministic and clears obsolete correlations.
         con.execute("DELETE FROM capture_raw_packets WHERE capture_id=? AND seq=3",(cid,))
         con.commit()

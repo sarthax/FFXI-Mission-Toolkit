@@ -3,8 +3,8 @@
 - [x] Add Spatial & Movement search over entity snapshots, aggregated entity paths, POI and SpawnTrack evidence.
 - [x] Prevent path-heavy evidence from flooding results by aggregating path observations per capture/zone/entity.
 - [x] Add Environment & World State search over WeatherTrack and ConquestTrack observations.
-- [~] Add provenance-safe related-packet correlation to evidence result cards where an explicit correlation exists. The first slice links normalized rows that share the same hashed physical source span/SQLite source row; broader explicit packet-native keys remain.
-- [~] Add cross-module “related evidence” expansion without timestamp-only guessing. Evidence Search now hands eligible rows into a Related Evidence view backed only by exact source provenance; richer normalized summaries and additional explicit correlation keys remain.
+- [~] Add provenance-safe related-packet correlation to evidence result cards where an explicit correlation exists. Related Evidence now combines exact source-span/SQLite-row provenance with unique non-temporal packet correlations (exact raw-byte equivalence and unique shared decoded-field matches). Temporal/alignment-only and ambiguous correlations remain excluded from the verified panel.
+- [~] Add cross-module “related evidence” expansion without timestamp-only guessing. Evidence Search now hands eligible rows into a Related Evidence view with separate provenance-overlap and explicit packet-correlation sections; richer normalized summaries and additional deterministic domain relationships remain.
 
 ## 2026-09-30 Zone / packet usability fixes
 
