@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression checks for the transitional src-layout package foundation."""
+"""Regression checks for the canonical src-layout package and repo-root bootstrap."""
 from __future__ import annotations
 
 import os
@@ -10,7 +10,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC_PACKAGE = ROOT / "src" / "workbench"
-BRIDGE = ROOT / "workbench" / "__init__.py"
+ROOT_PACKAGE = ROOT / "workbench"
+BRIDGE = ROOT_PACKAGE / "__init__.py"
 
 
 def main() -> None:
@@ -20,19 +21,24 @@ def main() -> None:
     assert (SRC_PACKAGE / "runtime" / "paths.py").is_file()
     assert (SRC_PACKAGE / "domains" / "service.py").is_file()
     assert (SRC_PACKAGE / "domains" / "definitions.json").is_file()
-    assert not (ROOT / "workbench" / "domains").exists()
     assert (SRC_PACKAGE / "client" / "binary_index.py").is_file()
     assert (SRC_PACKAGE / "client" / "identity_snapshot.py").is_file()
     assert (SRC_PACKAGE / "client" / "event_fingerprint.py").is_file()
     assert (SRC_PACKAGE / "client" / "identity_extract.py").is_file()
-    assert not (ROOT / "workbench" / "client").exists()
     assert (SRC_PACKAGE / "gui_shell.py").is_file()
-    assert not (ROOT / "workbench" / "gui_shell.py").exists()
-    assert BRIDGE.is_file()
 
+    # Canonical implementation lives under src/workbench. The root package is intentionally
+    # limited to one compatibility bootstrap so implementation files cannot drift back there.
+    assert ROOT_PACKAGE.is_dir()
+    assert sorted(path.name for path in ROOT_PACKAGE.iterdir()) == ["__init__.py"]
+    assert BRIDGE.is_file()
     bridge_text = BRIDGE.read_text(encoding="utf-8")
     assert "src" in bridge_text and "workbench" in bridge_text
     assert "__path__.append" in bridge_text
+    assert "Do not add implementation modules" in bridge_text
+
+    workflow = (ROOT / ".github" / "workflows" / "workbench-regression.yml").read_text(encoding="utf-8")
+    assert '- "src/workbench/**"' in workflow
 
     # Editable installation in CI must make the canonical src package importable even when
     # neither the repository root nor PYTHONPATH participates in import resolution. Package

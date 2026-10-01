@@ -1,9 +1,14 @@
-"""Temporary compatibility bridge for the src-layout migration.
+"""Repo-root compatibility bootstrap for the canonical src-layout Workbench package.
 
-The canonical package now lives in ``src/workbench``. This root package remains for one
-transition cycle so existing repo-root execution continues to resolve ``workbench.*`` imports
-before editable installation is universal. New code must target the installed src-layout
-package; this bridge is removed in the root-cleanup phase.
+All Workbench implementation code lives under ``src/workbench``. This one-file bridge is kept
+intentionally because supported checkout workflows still launch root entry points directly
+(e.g. ``python gui_server.py``) and the broad regression suite still exercises repo-root imports
+with ``PYTHONPATH=.``. In those contexts the project is not guaranteed to be installed as a
+package first, so this shim extends the package search path to the canonical src package.
+
+Do not add implementation modules below this root ``workbench/`` directory. The bridge can be
+removed only after launch/setup and CI universally install the project or put ``src`` on the
+Python import path.
 """
 from pathlib import Path
 

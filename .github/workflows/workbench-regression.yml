@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "workbench/**"
+      - "src/workbench/**"
       - "test_fixtures/**"
       - "feature_*.py"
       - "capture_*.py"
