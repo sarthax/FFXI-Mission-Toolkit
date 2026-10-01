@@ -45,6 +45,11 @@ def main():
     assert item_identity_matches(con,1,"capture_ki_events",key(seq=1))==[]
 
     con.close()
+
+    # Keep the deterministic chat/native-source relation on the registered core capture path.
+    from test_capture_chat_related_evidence import main as chat_related_main
+    assert chat_related_main() == 0
+
     print("Capture item Related Evidence runtime regression: PASS")
     return 0
 
