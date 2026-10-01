@@ -36,9 +36,22 @@ VARIANT="""return {
 }
 """
 
+EXTENDED_VARIANT="""return {
+    onMobEngage = function(mob, target)
+        xi.besieged.onMobEngage(mob, target)
+    end,
+    onMobFight = function(mob, target)
+        xi.besieged.onMobFight(mob, target)
+    end,
+    onMobDisengage = function(mob)
+        xi.besieged.onMobDisengage(mob)
+    end,
+}
+"""
+
 NOISE="""return {
-    onMobSpawn = function(mob)
-        xi.other.onMobSpawn(mob)
+    onMobRoam = function(mob)
+        xi.other.onMobRoam(mob)
     end,
 }
 """
@@ -50,14 +63,16 @@ def main():
         arr=root/"scripts/zones/Arrapago_Reef/mobs/Medusa.lua"
         alz=root/"scripts/zones/Al_Zahbi/mobs/Medusa.lua"
         bha=root/"scripts/zones/Bhaflau_Thickets/mobs/Medusa.lua"
+        mam=root/"scripts/zones/Mamook/mobs/Medusa.lua"
         noise=root/"scripts/zones/Test_Zone/mobs/Medusa.lua"
         bes=root/"scripts/globals/besieged.lua"
         other=root/"scripts/globals/other.lua"
-        for path in (arr,alz,bha,noise,bes,other):
+        for path in (arr,alz,bha,mam,noise,bes,other):
             path.parent.mkdir(parents=True,exist_ok=True)
         arr.write_text(ROOT_SCRIPT,encoding="utf-8")
         alz.write_text(VARIANT,encoding="utf-8")
         bha.write_text(VARIANT,encoding="utf-8")
+        mam.write_text(EXTENDED_VARIANT,encoding="utf-8")
         noise.write_text(NOISE,encoding="utf-8")
         bes.write_text("return {}\n",encoding="utf-8")
         other.write_text("return {}\n",encoding="utf-8")
@@ -66,16 +81,25 @@ def main():
             root,arr,source_snapshot_id="lsb:test"
         )
         summary=payload["summary"]
-        assert summary["candidate_variant_files"]==3,summary
+        assert summary["candidate_variant_files"]==4,summary
         assert summary["qualified_systems"]==1,summary
-        assert summary["conditional_gate_nodes"]==3,summary
-        assert summary["conditional_edges"]==6,summary
+        assert summary["conditional_gate_nodes"]==4,summary
+        assert summary["conditional_edges"]==8,summary
 
         paths={row["path"] for row in payload["artifacts"]}
         assert "scripts/globals/besieged.lua" in paths,paths
         assert "scripts/zones/Al_Zahbi/mobs/Medusa.lua" in paths,paths
         assert "scripts/zones/Bhaflau_Thickets/mobs/Medusa.lua" in paths,paths
+        assert "scripts/zones/Mamook/mobs/Medusa.lua" in paths,paths
         assert "scripts/zones/Test_Zone/mobs/Medusa.lua" not in paths,paths
+
+        extended=next(
+            row for row in payload["artifacts"]
+            if row["path"]=="scripts/zones/Mamook/mobs/Medusa.lua"
+        )
+        assert set(extended["metadata"]["lifecycle_methods"])=={
+            "onMobEngage","onMobFight","onMobDisengage"
+        },extended
 
         root_artifact=next(
             row["artifact_id"] for row in payload["artifacts"]
@@ -119,7 +143,7 @@ def main():
             row["artifact_id"] for row in payload["artifacts"]
             if row["metadata"].get("analysis_role")=="CROSS_ZONE_SYSTEM_VARIANT"
         ]
-        assert len(variants)==2,variants
+        assert len(variants)==3,variants
         assert all(variant in by_id for variant in variants),scope
         assert all(by_id[variant]["effective_decision"]=="QUESTIONABLE" for variant in variants),scope
         assert any(
