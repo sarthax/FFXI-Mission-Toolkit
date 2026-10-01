@@ -18,7 +18,7 @@ def main():
     capture_detail = (ROOT / "gui" / "templates" / "capture_detail.html").read_text(encoding="utf-8")
     packet_tools = (ROOT / "gui" / "templates" / "packets.html").read_text(encoding="utf-8")
     packet_manual = (ROOT / "gui" / "templates" / "packets_decode.html").read_text(encoding="utf-8")
-    shell = (ROOT / "workbench" / "gui_shell.py").read_text(encoding="utf-8")
+    shell = (ROOT / "src" / "workbench" / "gui_shell.py").read_text(encoding="utf-8")
 
     assert '@app.get("/captures/{capture_id}/packets/{seq}"' in server
     assert 'packet_decode.analyze_layout(pd_direction, opcode_int, packet["raw_hex"])' in server
