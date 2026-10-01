@@ -16,20 +16,32 @@ def test_salvage_dossier():
     CREATE TABLE capture_npc_entries(capture_id INTEGER,zone_db TEXT,entity_id INTEGER,name TEXT,model_id INTEGER,x REAL,y REAL,z REAL,dir INTEGER,hpp INTEGER,door_id INTEGER,act_index INTEGER,sub_kind INTEGER);
     INSERT INTO capture_npc_entries VALUES(7,'ZHAYOLM_REMNANTS',100,'_door',55,1,2,3,64,100,12,4,2);
     INSERT INTO capture_npc_entries VALUES(7,'ZHAYOLM_REMNANTS',101,'Archaic_Gear',99,4,5,6,32,100,0,0,0);
+    CREATE TABLE capture_npc_history(capture_id INTEGER,zone_db TEXT,entity_id INTEGER,seq INTEGER,ts INTEGER,delta_json TEXT);
+    INSERT INTO capture_npc_history VALUES(7,'ZHAYOLM_REMNANTS',100,1,10,'{"animation":8}');
+    INSERT INTO capture_npc_history VALUES(7,'ZHAYOLM_REMNANTS',100,2,20,'{"animation":9}');
     CREATE TABLE capture_events(capture_id INTEGER,zone_db TEXT,seq INTEGER,direction TEXT,opcode TEXT,opcode_name TEXT,entity_id INTEGER,entity_name TEXT,event_hex TEXT,option INTEGER,message_id INTEGER,params_raw TEXT);
     INSERT INTO capture_events VALUES(7,'ZHAYOLM_REMNANTS',1,'S2C','0x034','EVENT',100,'_door','00AF',2,NULL,'[]');
     CREATE TABLE capture_npc_path(capture_id INTEGER,zone_db TEXT,entity_id INTEGER,leg INTEGER,step INTEGER,x REAL,y REAL,z REAL,dir INTEGER,delta INTEGER);
     INSERT INTO capture_npc_path VALUES(7,'ZHAYOLM_REMNANTS',101,1,1,4,5,6,32,0);
+    CREATE TABLE capture_pc_path(capture_id INTEGER,zone_db TEXT,leg INTEGER,step INTEGER,x REAL,y REAL,z REAL,dir INTEGER,delta INTEGER);
+    INSERT INTO capture_pc_path VALUES(7,'ZHAYOLM_REMNANTS',1,1,0,0,0,0,0);
+    INSERT INTO capture_pc_path VALUES(7,'ZHAYOLM_REMNANTS',1,2,40,0,40,0,0);
     CREATE TABLE capture_actions(capture_id INTEGER,action_key TEXT,actor INTEGER,actor_name TEXT,action_type TEXT,animation INTEGER,category INTEGER,message INTEGER,name TEXT,ts INTEGER);
     INSERT INTO capture_actions VALUES(7,'a',101,'Archaic_Gear','ABILITY',44,1,10,'Gear Ability',1);
+    INSERT INTO capture_actions VALUES(7,'b',999,'Other_Zone_Mob','ABILITY',55,1,11,'Wrong Zone',2);
     """)
     d = build_dossier(con, 7, "ZHAYOLM_REMNANTS")
     assert len(d["entities"]) == 2
     assert d["doors"][0]["entity_id"] == 100
     assert d["doors"][0]["basis"] == "capture_npc_entries.door_id"
+    assert d["entity_state_changes"][0]["observations"] == 2
     assert d["event_observations"][0]["event_hex"] == "00AF"
+    assert d["player_path"][0]["samples"] == 2
+    assert len(d["actions"]) == 1 and d["actions"][0]["actor"] == 101
     assert d["proposal_readiness"]["npc_or_mob_rows"] == "READY_FOR_REVIEW"
+    assert d["proposal_readiness"]["door_state_rows"] == "READY_FOR_REVIEW"
     assert d["proposal_readiness"]["telepad_csid_mapping"] == "PARTIAL"
+    assert d["proposal_readiness"]["telepad_destination"] == "PARTIAL"
     assert any("evidence only" in g for g in d["gaps"])
     con.close()
 
