@@ -16,6 +16,7 @@ on:
       - "packet_decode.py"
       - "packet_opcode_index.py"
       - "salvage_reconstruct.py"
+      - "addon_tools.py"
       - "test_fixtures/test_src_layout_package.py"
       - "test_fixtures/test_feature_trace_package_migration.py"
       - "test_fixtures/test_dependency_services_package_migration.py"
@@ -41,6 +42,7 @@ on:
       - "test_fixtures/test_packet_decode_package_migration.py"
       - "test_fixtures/test_packet_opcode_index_package_migration.py"
       - "test_fixtures/test_salvage_reconstruct_package_migration.py"
+      - "test_fixtures/test_addon_tools_package_migration.py"
       - ".github/workflows/src-layout-regression.yml"
   workflow_dispatch:
 
@@ -85,3 +87,4 @@ jobs:
           python test_fixtures/test_packet_decode_package_migration.py
           python test_fixtures/test_packet_opcode_index_package_migration.py
           python test_fixtures/test_salvage_reconstruct_package_migration.py
+          python test_fixtures/test_addon_tools_package_migration.py
