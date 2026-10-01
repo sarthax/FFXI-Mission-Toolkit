@@ -14,6 +14,7 @@ on:
       - "test_fixtures/test_server_catalog_identity_package_migration.py"
       - "test_fixtures/test_feature_surface_component_boundary.py"
       - "test_fixtures/test_scripted_behavior_visualizer_package_migration.py"
+      - "test_fixtures/test_map_confidence_graph_package_migration.py"
       - ".github/workflows/src-layout-regression.yml"
   workflow_dispatch:
 
@@ -40,3 +41,4 @@ jobs:
           python test_fixtures/test_server_catalog_identity_package_migration.py
           python test_fixtures/test_feature_surface_component_boundary.py
           python test_fixtures/test_scripted_behavior_visualizer_package_migration.py
+          python test_fixtures/test_map_confidence_graph_package_migration.py
