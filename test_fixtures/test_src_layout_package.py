@@ -42,13 +42,7 @@ def main() -> None:
     # These former root compatibility/implementation modules are retired. First-party code and
     # regressions must use canonical package imports directly rather than recreating hidden root
     # coupling.
-    retired = (
-        "workbench_graph.py",
-        "workbench_schema.py",
-        "source_snapshot.py",
-        "feature_candidates.py",
-        "feature_checker.py",
-    )
+    retired = ("workbench_graph.py", "workbench_schema.py", "source_snapshot.py", "feature_candidates.py")
     for name in retired:
         assert not (ROOT / name).exists(), name
     forbidden_imports = (
@@ -56,8 +50,6 @@ def main() -> None:
         "from workbench_schema import",
         "from source_snapshot import",
         "from feature_candidates import",
-        "import feature_checker",
-        "from feature_checker import",
     )
     first_party_python = list(ROOT.glob("*.py")) + list(SRC_PACKAGE.rglob("*.py")) + list((ROOT / "test_fixtures").glob("*.py"))
     for path in first_party_python:
@@ -66,6 +58,23 @@ def main() -> None:
         text = path.read_text(encoding="utf-8", errors="ignore")
         for legacy_import in forbidden_imports:
             assert legacy_import not in text, f"{legacy_import!r} remains in {path.relative_to(ROOT)}"
+
+    # Feature Checker is canonical under src. One compatibility wrapper remains solely because
+    # gui_server.py is still a monolithic root entry point; every other first-party caller must use
+    # the canonical service directly.
+    feature_checker_wrapper_path = ROOT / "feature_checker.py"
+    assert feature_checker_wrapper_path.is_file()
+    feature_checker_wrapper = feature_checker_wrapper_path.read_text(encoding="utf-8")
+    assert "workbench.core.services.feature_checker" in feature_checker_wrapper
+    assert "gui_server.py" in feature_checker_wrapper
+    legacy_feature_checker_callers = []
+    for path in first_party_python:
+        if path.resolve() in {Path(__file__).resolve(), feature_checker_wrapper_path.resolve()}:
+            continue
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        if "import feature_checker" in text or "from feature_checker import" in text:
+            legacy_feature_checker_callers.append(path.relative_to(ROOT).as_posix())
+    assert legacy_feature_checker_callers == ["gui_server.py"], legacy_feature_checker_callers
 
     workflow = (ROOT / ".github" / "workflows" / "workbench-regression.yml").read_text(encoding="utf-8")
     assert '- "src/workbench/**"' in workflow
