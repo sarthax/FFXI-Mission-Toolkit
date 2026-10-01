@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from workbench.core.schema import Artifact, Evidence, record_dict
-from workbench.core.services.conditional_dependencies import (
+from workbench.devtools.dependencies.conditional import (
     ConditionalDependency,
     project_conditional_dependency,
 )
