@@ -1,0 +1,139 @@
+#!/usr/bin/env python3
+"""Index packet definitions into generic Workbench relationships.
+
+This is evidence mapping, not semantic handler inference. It records opcode definitions as packet
+artifacts and can optionally inspect a server source tree for explicit opcode/handler references.
+"""
+from __future__ import annotations
+import argparse,json,re
+from pathlib import Path
+from workbench.core.provenance import snapshot_id
+from workbench.core.services.packet_identity import canonical_opcode, parse_opcode, packet_node_id
+
+# Only explicit dispatch/registration patterns become HANDLED_BY. Generic opcode references remain REFERENCES.
+SWITCH_CASE_RE=re.compile(r'\bcase\s+(0x[0-9A-Fa-f]+|\d+)\s*:',re.I)
+CASE_HANDLER_RE=re.compile(r'\bcase\s+(0x[0-9A-Fa-f]+|\d+)\s*:\s*(?:return\s+)?([A-Za-z_][A-Za-z0-9_:]*)\s*\(',re.I)
+DISPATCH_RE=re.compile(r'\b(?:register|add|set)[A-Za-z_]*(?:Handler|PacketHandler|CommandHandler)\s*\(\s*(0x[0-9A-Fa-f]+|\d+)\s*,\s*&?([A-Za-z_][A-Za-z0-9_:]*)',re.I)
+PACKET_PARSER_ASSIGN_RE=re.compile(r'\bPacketParser\s*\[\s*(0x[0-9A-Fa-f]+|\d+)\s*\]\s*=\s*&?([A-Za-z_][A-Za-z0-9_:]*)',re.I)
+
+OP_RE=re.compile(r'\b(?:0x)?([0-9A-Fa-f]{2,4})\b')
+HANDLER_RE=re.compile(r'\b(?:opcode|packet|command|type)\s*\(?\s*([0-9A-Fa-fx]+)',re.I)
+
+def index_packet_db(path:Path):
+    text=path.read_text(encoding="utf-8",errors="replace")
+    rows=[]
+    for m in re.finditer(r'<packet[^>]*?(?:opcode|id)=["\']([^"\']+)["\'][^>]*>',text,re.I):
+        raw=m.group(1)
+        canonical=canonical_opcode(raw)
+        if canonical is None:
+            continue
+        rows.append({"opcode":canonical,"raw_opcode":raw,"location":f"{path}:{text.count(chr(10),0,m.start())+1}"})
+    if not rows:
+        for m in re.finditer(r'GP_(?:CLI|SERV)_COMMAND_[A-Z0-9_]+',text):
+            rows.append({"symbol":m.group(),"location":f"{path}:{text.count(chr(10),0,m.start())+1}"})
+    return rows
+
+def index_server(root:Path,opcodes):
+    edges=[]
+    known={str(op.get("opcode","")) for op in opcodes if op.get("opcode")}
+    normalized={}
+    for token in known:
+        value=parse_opcode(token)
+        canonical=canonical_opcode(token)
+        if value is not None and canonical is not None:
+            normalized[canonical]=value
+    for p in root.rglob("*"):
+        if not p.is_file() or p.suffix.lower() not in {".cpp",".h",".hpp",".cc",".cxx"}: continue
+        t=p.read_text(encoding="utf-8",errors="replace")
+        for n,line in enumerate(t.splitlines(),1):
+            parser_assign=PACKET_PARSER_ASSIGN_RE.search(line)
+            if parser_assign:
+                try: value=int(parser_assign.group(1),0)
+                except ValueError: value=None
+                if value is not None:
+                    for tok,val in normalized.items():
+                        if val==value:
+                            edges.append({"source_node":packet_node_id(tok),"target_node":f"cpp-symbol:{parser_assign.group(2)}",
+                                          "relationship":"HANDLED_BY","confidence":"VERIFIED","status":"DISCOVERED",
+                                          "source_location":f"{p}:{n}","notes":["Explicit DSP PacketParser opcode-to-handler assignment matched."]})
+            direct=CASE_HANDLER_RE.search(line)
+            if direct:
+                try: value=int(direct.group(1),0)
+                except ValueError: value=None
+                if value is not None:
+                    for tok,val in normalized.items():
+                        if val==value:
+                            edges.append({"source_node":packet_node_id(tok),"target_node":f"cpp-symbol:{direct.group(2)}",
+                                          "relationship":"HANDLED_BY","confidence":"VERIFIED","status":"DISCOVERED",
+                                          "source_location":f"{p}:{n}","notes":["Explicit switch/case directly invokes handler symbol on the same statement."]})
+            m=SWITCH_CASE_RE.search(line)
+            if m:
+                try: value=int(m.group(1),0)
+                except ValueError: continue
+                for tok,val in normalized.items():
+                    if val==value:
+                        edges.append({"source_node":packet_node_id(tok),"target_node":f"cpp:{p.relative_to(root).as_posix()}:{n}",
+                                      "relationship":"HANDLED_BY","confidence":"VERIFIED","status":"DISCOVERED",
+                                      "source_location":f"{p}:{n}","notes":["Explicit switch/case opcode dispatch; downstream handler resolution is not inferred."]})
+            m=DISPATCH_RE.search(line)
+            if m:
+                try: value=int(m.group(1),0)
+                except ValueError: continue
+                for tok,val in normalized.items():
+                    if val==value:
+                        edges.append({"source_node":packet_node_id(tok),"target_node":f"cpp-symbol:{m.group(2)}",
+                                      "relationship":"HANDLED_BY","confidence":"VERIFIED","status":"DISCOVERED",
+                                      "source_location":f"{p}:{n}","notes":["Explicit packet-handler registration pattern matched."]})
+            for tok,val in normalized.items():
+                hex_digits=tok[2:]
+                decimal=str(val)
+                token_re=rf'(?<![A-Za-z0-9_])(?:0x0*{re.escape(hex_digits)}|{re.escape(decimal)})(?![A-Za-z0-9_])'
+                if re.search(token_re,line,re.I):
+                    if not any(e["source_node"]==packet_node_id(tok) and e["source_location"]==f"{p}:{n}" and e["relationship"]=="HANDLED_BY" for e in edges):
+                        edges.append({"source_node":packet_node_id(tok),"target_node":f"cpp:{p.relative_to(root).as_posix()}:{n}",
+                                      "relationship":"REFERENCES","confidence":"INFERRED","status":"DISCOVERED",
+                                      "source_location":f"{p}:{n}","notes":["Opcode token occurrence only; not proof this code is the runtime handler."]})
+    return edges
+
+def self_test():
+    """Exercise only deterministic dispatch patterns with a tiny synthetic source fixture."""
+    from tempfile import TemporaryDirectory
+    with TemporaryDirectory() as td:
+        root=Path(td)
+        packet_db=root/"packets.xml"
+        server=root/"server.cpp"
+        packet_db.write_text('<packet opcode="0x02A" />', encoding="utf-8")
+        server.write_text(
+            'switch (opcode) {\n'
+            '  case 0x02A: handle_dialog(); break;\n'
+            '}\n'
+            'PacketParser[0x02A] = &SmallPacket0x02A;\n',
+            encoding="utf-8",
+        )
+        ops=index_packet_db(packet_db)
+        edges=index_server(root,[ops[0]])
+        assert any(e["relationship"]=="HANDLED_BY" and e["target_node"]=="cpp-symbol:handle_dialog" and e["confidence"]=="VERIFIED" for e in edges)
+        assert any(e["relationship"]=="HANDLED_BY" and e["target_node"]=="cpp-symbol:SmallPacket0x02A" and e["confidence"]=="VERIFIED" for e in edges)
+        assert any(e["relationship"]=="REFERENCES" for e in edges) is False
+
+
+def main():
+    ap=argparse.ArgumentParser(); ap.add_argument("--self-test",action="store_true"); ap.add_argument("packet_db",type=Path,nargs="?"); ap.add_argument("--server-root",type=Path); ap.add_argument("--json",type=Path); a=ap.parse_args()
+    if a.self_test:
+        self_test()
+        print("packet_opcode_index self-test: PASS")
+        return
+    if not a.packet_db: ap.error("packet_db is required unless --self-test")
+    ops=index_packet_db(a.packet_db)
+    edges=index_server(a.server_root,ops) if a.server_root else []
+    sid=snapshot_id(a.server_root) if a.server_root else None
+    for edge in edges:
+        edge["source_snapshot_id"]=sid
+        edge["evidence_id"]=f"snapshot:{sid}" if sid else None
+        edge["edge_id"]=f"packet-edge:{edge['source_node']}:{edge['target_node']}:{edge['relationship']}:{edge['source_location']}"
+    out={"schema":3,"analysis":{"analysis_id":"packet-opcode-index","analysis_type":"PACKET_OPCODE_SURFACE","source":str(a.packet_db),"status":"ANALYZED","source_snapshot_id":sid},
+         "opcodes":ops,"edges":edges}
+    s=json.dumps(out,indent=2)+"\n"
+    if a.json: a.json.parent.mkdir(parents=True,exist_ok=True); a.json.write_text(s,encoding="utf-8")
+    else: print(s)
+if __name__=="__main__": raise SystemExit(main())
