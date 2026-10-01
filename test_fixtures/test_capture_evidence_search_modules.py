@@ -82,6 +82,22 @@ def main():
     assert "is_chat_projection" in related_template
     assert "r.relation == 'same source line span'" in related_template
 
+    # Presentation summaries and handoffs must add context without introducing a new match rule.
+    assert "related-summary" in related_template
+    assert "source locator" in related_template
+    assert "provenance relation" in related_template
+    assert "packet match" in related_template
+    assert "entity match" in related_template
+    assert "item match" in related_template
+    assert "dataset_labels" in related_template
+    assert "item_family_labels" in related_template
+    assert "r.record_type" in related_template
+    assert "/captures/search?module=entities&q={{ r.entity_id }}" in related_template
+    assert "/captures/search?module=vendors&q={{ r.item_id }}" in related_template
+    assert "/captures/search?module=crafting&q={{ r.item_id }}" in related_template
+    assert "/captures/search?module=items&q={{ r.item_id }}" in related_template
+    assert "/captures/search?module=chat" in related_template
+
     print("Capture Evidence Search module regression: PASS")
     return 0
 
