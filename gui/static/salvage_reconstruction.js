@@ -62,7 +62,42 @@
     return m;
   }
 
-  function renderMap(spatial, pcPath) {
+  function buildSpatialRegions(pcPath, entities) {
+    const byLeg = new Map();
+    for (const row of pcPath) {
+      const leg = String(row.leg ?? '');
+      if (!leg) continue;
+      if (!byLeg.has(leg)) byLeg.set(leg, []);
+      byLeg.get(leg).push(row);
+    }
+    const regions = [];
+    const memberships = new Map();
+    for (const [leg, rawRows] of [...byLeg.entries()].sort((a,b) => Number(a[0]) - Number(b[0]))) {
+      const rows = rawRows.filter(r => Number.isFinite(num(r.x)) && Number.isFinite(num(r.z))).sort((a,b) => Number(a.step||0)-Number(b.step||0));
+      if (!rows.length) continue;
+      const xs=rows.map(r=>+r.x), zs=rows.map(r=>+r.z), ys=rows.filter(r=>Number.isFinite(num(r.y))).map(r=>+r.y);
+      const bounds={min_x:Math.min(...xs),max_x:Math.max(...xs),min_z:Math.min(...zs),max_z:Math.max(...zs),min_y:ys.length?Math.min(...ys):null,max_y:ys.length?Math.max(...ys):null};
+      const regionId=`pc_leg_${leg}`;
+      const entityIds=[];
+      const doorIds=[];
+      for (const e of entities) {
+        if (!Number.isFinite(num(e.x)) || !Number.isFinite(num(e.z))) continue;
+        if (+e.x >= bounds.min_x && +e.x <= bounds.max_x && +e.z >= bounds.min_z && +e.z <= bounds.max_z) {
+          const id=String(e.entity_id ?? e.id ?? '');
+          if (id) {
+            entityIds.push(id);
+            if (!memberships.has(id)) memberships.set(id, []);
+            memberships.get(id).push(regionId);
+            if (num(e.door_id) && num(e.door_id)!==0) doorIds.push(id);
+          }
+        }
+      }
+      regions.push({region_id:regionId,leg,samples:rows.length,start:rows[0],end:rows[rows.length-1],bounds,entity_ids:entityIds,door_ids:doorIds,floor_room_claim:'UNRESOLVED'});
+    }
+    return {regions,memberships};
+  }
+
+  function renderMap(spatial, pcPath, regions) {
     const host = $('#sr-map');
     const entities = spatial.entities || spatial.spatial_entities || [];
     const pts = [];
@@ -74,6 +109,11 @@
     const W=900,H=560,pad=28;
     const sx=x=>pad+(x-minX)/(maxX-minX)*(W-pad*2), sy=z=>H-pad-(z-minZ)/(maxZ-minZ)*(H-pad*2);
     const line = pcPath.filter(p=>Number.isFinite(num(p.x))&&Number.isFinite(num(p.z))).map(p=>`${sx(+p.x).toFixed(1)},${sy(+p.z).toFixed(1)}`).join(' ');
+    const regionMarks = regions.map(r => {
+      const x1=sx(r.bounds.min_x), x2=sx(r.bounds.max_x), y1=sy(r.bounds.max_z), y2=sy(r.bounds.min_z);
+      const w=Math.max(2,x2-x1), h=Math.max(2,y2-y1);
+      return `<g class="sr-region"><rect x="${x1}" y="${y1}" width="${w}" height="${h}"/><text x="${x1+4}" y="${y1+14}">leg ${esc(r.leg)} · unresolved region</text></g>`;
+    }).join('');
     const marks = entities.map(e => {
       if (!Number.isFinite(num(e.x)) || !Number.isFinite(num(e.z))) return '';
       const door = num(e.door_id) && num(e.door_id) !== 0;
@@ -88,9 +128,10 @@
     }).join('');
     host.innerHTML = `<svg class="sr-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Capture reconstruction map">
       <rect x="0" y="0" width="${W}" height="${H}" class="sr-map-bg"/>
+      ${regionMarks}
       ${line ? `<polyline points="${line}" class="sr-player-path"/>` : ''}
       ${marks}
-    </svg><div class="sr-legend"><span>● entity</span><span>◆ interactive</span><span>■ door</span><span>— player path</span></div>`;
+    </svg><div class="sr-legend"><span>▧ observed path region</span><span>● entity</span><span>◆ interactive</span><span>■ door</span><span>— player path</span></div>`;
   }
 
   function renderEntities(entities, pathMap) {
@@ -98,6 +139,13 @@
       const id=String(e.entity_id ?? e.id ?? ''), pathCount=(pathMap.get(id)||[]).length;
       return `<tr><td><a href="/captures/search?module=entities&q=${encodeURIComponent(id)}"><code>${esc(id)}</code></a></td><td>${esc(e.name ?? e.n ?? '?')}</td><td>${esc(e.model_id ?? e.model ?? '')}</td><td>${esc(e.x)}, ${esc(e.y)}, ${esc(e.z)}</td><td>${esc(e.dir ?? '')}</td><td>door ${esc(e.door_id ?? 0)} · act ${esc(e.act_index ?? 0)} · sub ${esc(e.sub_kind ?? 0)}</td><td>${pathCount ? `${pathCount} samples` : 'fixed / no path'}</td></tr>`;
     }).join('')}</table></div>` : '<div class="muted sr-empty">No entity snapshots found.</div>';
+  }
+
+  function renderRegions(regions, memberships, entities) {
+    const host=$('#sr-regions');
+    if (!regions.length) { host.innerHTML='<div class="muted sr-empty">No positioned player-path legs available for segmentation.</div>'; return; }
+    const ambiguous=[...memberships.entries()].filter(([,ids])=>ids.length>1);
+    host.innerHTML=`<div class="muted" style="margin-bottom:8px">These are observed path-region candidates only. A path leg is not a proven Salvage floor or room.</div>${regions.map(r=>`<div class="sr-card"><b>${esc(r.region_id)}</b> <span class="chip">UNRESOLVED floor/room</span><div>${r.samples} path samples · X ${r.bounds.min_x}…${r.bounds.max_x} · Z ${r.bounds.min_z}…${r.bounds.max_z}</div><div>${r.entity_ids.length} entity overlap candidates · ${r.door_ids.length} doors</div><div class="muted">start ${esc(r.start.x)}, ${esc(r.start.y)}, ${esc(r.start.z)} → end ${esc(r.end.x)}, ${esc(r.end.y)}, ${esc(r.end.z)}</div></div>`).join('')}${ambiguous.length?`<div class="sr-card"><b>Ambiguous overlap</b><div class="muted">${ambiguous.map(([id,ids])=>`${esc((entities.find(e=>String(e.entity_id??e.id??'')===id)||{}).name||id)}: ${ids.map(esc).join(', ')}`).join('<br>')}</div></div>`:''}`;
   }
 
   function renderDoors(entities, historyMap) {
@@ -112,13 +160,15 @@
     $('#sr-events').innerHTML = events.length ? `<div class="table-wrap"><table><tr><th>Seq</th><th>Actor</th><th>Opcode</th><th>CSID/event</th><th>Option</th><th>Destination evidence</th></tr>${events.map(e => `<tr><td>${esc(e.seq)}</td><td><code>${esc(e.entity_id)}</code> ${esc(e.entity_name)}</td><td>${esc(e.opcode)} ${esc(e.opcode_name)}</td><td>${esc(e.event_hex)}</td><td>${esc(e.option)}</td><td>${pcPath.length ? 'player path available for correlation' : '<span class="muted">no player path</span>'}</td></tr>`).join('')}</table></div>` : '<div class="muted sr-empty">No EVENT/CSID observations in this zone.</div>';
   }
 
-  function renderGaps({entities, doors, history, events, npcPath, pcPath}) {
+  function renderGaps({entities, doors, history, events, npcPath, pcPath, regions, memberships}) {
     const gaps=[];
     if (!entities.length) gaps.push('No captured entity roster for the selected zone.');
     if (doors.length && !history.length) gaps.push('Door entities exist, but no entity-history evidence proves open/close transitions.');
     if (events.length && !pcPath.length) gaps.push('EVENT/option evidence exists, but no player path is available to correlate telepad destination.');
     if (!npcPath.length) gaps.push('No NPC/mob path samples; roaming paths must remain unresolved.');
     if (events.length) gaps.push('CSID/option observations do not prove activation conditions or Lua ownership by themselves.');
+    if (regions.length) gaps.push('Player path legs are observed spatial regions only; door, telepad, transition, or reference evidence is still required before naming them as floors/rooms.');
+    if ([...memberships.values()].some(ids=>ids.length>1)) gaps.push('Some entities overlap multiple path regions; floor/room ownership remains ambiguous.');
     $('#sr-gaps').innerHTML = gaps.length ? `<ul>${gaps.map(g=>`<li>${esc(g)}</li>`).join('')}</ul>` : '<div class="sr-ok">No basic capture-evidence gaps detected. Dependency/mechanics closure is still a separate review.</div>';
   }
 
@@ -143,8 +193,10 @@
       ]);
       const entities=zoneRows(tables[0],zone), history=zoneRows(tables[1],zone), events=zoneRows(tables[2],zone), npcPath=zoneRows(tables[3],zone), pcPath=zoneRows(tables[4],zone);
       const doors=entities.filter(e=>num(e.door_id)&&num(e.door_id)!==0), historyMap=aggregateHistory(history), pathMap=aggregatePaths(npcPath);
+      const {regions,memberships}=buildSpatialRegions(pcPath,entities);
       const ready = {
         'Entity rows': entities.length ? 'READY_FOR_REVIEW' : 'NO_EVIDENCE',
+        'Floor / room segmentation': regions.length ? 'PARTIAL' : 'NO_EVIDENCE',
         'Door state': doors.length && history.length ? 'READY_FOR_REVIEW' : doors.length ? 'PARTIAL' : 'NO_EVIDENCE',
         'Instance registration': entities.length ? 'PARTIAL' : 'NO_EVIDENCE',
         'Mob paths': npcPath.length ? 'READY_FOR_REVIEW' : 'NO_EVIDENCE',
@@ -152,9 +204,9 @@
         'Telepad destination': events.length && pcPath.length ? 'PARTIAL' : 'NO_EVIDENCE',
       };
       $('#sr-readiness').innerHTML=Object.entries(ready).map(([k,v])=>readiness(k,v)).join('');
-      $('#sr-counts').innerHTML=`<span class="chip">${entities.length} entities</span> <span class="chip">${doors.length} doors</span> <span class="chip">${events.length} events</span> <span class="chip">${npcPath.length} NPC path pts</span> <span class="chip">${pcPath.length} player path pts</span>`;
+      $('#sr-counts').innerHTML=`<span class="chip">${entities.length} entities</span> <span class="chip">${doors.length} doors</span> <span class="chip">${regions.length} path regions</span> <span class="chip">${events.length} events</span> <span class="chip">${npcPath.length} NPC path pts</span> <span class="chip">${pcPath.length} player path pts</span>`;
       $('#sr-handoffs').innerHTML=`<a class="chip" href="/captures/${captureId}">Capture</a> <a class="chip" href="/captures/search?module=entities&q=">Entity search</a> <a class="chip" href="/captures/search?module=events&q=">Events/CSIDs</a> <a class="chip" href="/zoneplot2?capture_id=${captureId}&zone_db=${encodeURIComponent(zone)}">Zone Editor</a> <a class="chip" href="/features/trace">Feature Trace</a> <a class="chip" href="/packages/scope">Package Scope</a>`;
-      renderMap(spatial,pcPath); renderEntities(entities,pathMap); renderDoors(entities,historyMap); renderEvents(events,pcPath); renderGaps({entities,doors,history,events,npcPath,pcPath});
+      renderMap(spatial,pcPath,regions); renderEntities(entities,pathMap); renderRegions(regions,memberships,entities); renderDoors(entities,historyMap); renderEvents(events,pcPath); renderGaps({entities,doors,history,events,npcPath,pcPath,regions,memberships});
       $('#sr-status').textContent=`Loaded capture #${captureId}${zone ? ` · ${zone}` : ''}. Read-only evidence view.`;
     } catch (err) {
       $('#sr-status').textContent=`Unable to load reconstruction evidence: ${err.message}`;

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from collections import defaultdict
 
 
 def _table_exists(con: sqlite3.Connection, name: str) -> bool:
@@ -22,6 +23,75 @@ def _columns(con: sqlite3.Connection, name: str) -> set[str]:
 def _dict_rows(cur) -> list[dict]:
     names = [d[0] for d in cur.description]
     return [dict(zip(names, row)) for row in cur.fetchall()]
+
+
+def _path_regions(path_rows: list[dict], entities: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Build conservative spatial-region candidates from parser-native PC path legs.
+
+    A capture path leg is an observed trace region, not a proven Salvage floor or room.
+    Entity overlap uses only the observed X/Z envelope. It deliberately does not assign
+    ownership when an entity overlaps multiple legs or infer boundaries beyond the trace.
+    """
+    by_leg: dict[object, list[dict]] = defaultdict(list)
+    for row in path_rows:
+        by_leg[row.get("leg")].append(row)
+
+    regions: list[dict] = []
+    entity_candidates: dict[object, list[str]] = defaultdict(list)
+    for leg, rows in sorted(by_leg.items(), key=lambda item: (item[0] is None, item[0])):
+        rows = sorted(rows, key=lambda r: (r.get("step") is None, r.get("step")))
+        positioned = [r for r in rows if r.get("x") is not None and r.get("z") is not None]
+        if not positioned:
+            continue
+        xs = [float(r["x"]) for r in positioned]
+        ys = [float(r["y"]) for r in positioned if r.get("y") is not None]
+        zs = [float(r["z"]) for r in positioned]
+        region_id = f"pc_leg_{leg}"
+        overlaps = []
+        for entity in entities:
+            if entity.get("x") is None or entity.get("z") is None:
+                continue
+            ex, ez = float(entity["x"]), float(entity["z"])
+            if min(xs) <= ex <= max(xs) and min(zs) <= ez <= max(zs):
+                eid = entity.get("entity_id")
+                overlaps.append(eid)
+                entity_candidates[eid].append(region_id)
+        regions.append({
+            "region_id": region_id,
+            "source_leg": leg,
+            "status": "OBSERVED_PATH_REGION",
+            "basis": "capture_pc_path.leg + observed x/z envelope",
+            "samples": len(positioned),
+            "start": {k: positioned[0].get(k) for k in ("step", "x", "y", "z")},
+            "end": {k: positioned[-1].get(k) for k in ("step", "x", "y", "z")},
+            "bounds": {
+                "min_x": min(xs), "max_x": max(xs),
+                "min_y": min(ys) if ys else None, "max_y": max(ys) if ys else None,
+                "min_z": min(zs), "max_z": max(zs),
+            },
+            "entity_overlap_candidates": sorted(e for e in overlaps if e is not None),
+            "door_overlap_candidates": sorted(
+                e.get("entity_id") for e in entities
+                if e.get("entity_id") in overlaps and e.get("door_id") not in (None, 0)
+            ),
+            "floor_room_claim": "UNRESOLVED",
+        })
+
+    memberships = []
+    for entity in entities:
+        eid = entity.get("entity_id")
+        candidates = entity_candidates.get(eid, [])
+        memberships.append({
+            "entity_id": eid,
+            "name": entity.get("name"),
+            "candidate_regions": candidates,
+            "status": (
+                "SINGLE_REGION_CANDIDATE" if len(candidates) == 1
+                else "AMBIGUOUS_REGION_CANDIDATE" if len(candidates) > 1
+                else "NO_PATH_REGION_OVERLAP"
+            ),
+        })
+    return regions, memberships
 
 
 def build_dossier(con: sqlite3.Connection, capture_id: int, zone_db: str | None = None) -> dict:
@@ -52,6 +122,8 @@ def build_dossier(con: sqlite3.Connection, capture_id: int, zone_db: str | None 
         "event_observations": [],
         "movement": [],
         "player_path": [],
+        "spatial_regions": [],
+        "entity_region_candidates": [],
         "actions": [],
         "gaps": [],
         "proposal_readiness": {},
@@ -101,6 +173,11 @@ def build_dossier(con: sqlite3.Connection, capture_id: int, zone_db: str | None 
             "FROM capture_pc_path WHERE capture_id=? AND zone_db=? GROUP BY leg ORDER BY leg",
             (capture_id, selected_zone),
         ))
+        raw_path = _dict_rows(con.execute(
+            "SELECT leg,step,x,y,z FROM capture_pc_path WHERE capture_id=? AND zone_db=? ORDER BY leg,step",
+            (capture_id, selected_zone),
+        ))
+        dossier["spatial_regions"], dossier["entity_region_candidates"] = _path_regions(raw_path, dossier["entities"])
 
     entity_ids = {r.get("entity_id") for r in dossier["entities"] if r.get("entity_id") is not None}
     if _table_exists(con, "capture_actions"):
@@ -117,6 +194,7 @@ def build_dossier(con: sqlite3.Connection, capture_id: int, zone_db: str | None 
     event_entities = {r.get("entity_id") for r in dossier["event_observations"] if r.get("entity_id") is not None}
     dossier["proposal_readiness"] = {
         "npc_or_mob_rows": "READY_FOR_REVIEW" if dossier["entities"] else "NO_EVIDENCE",
+        "floor_room_segmentation": "PARTIAL" if dossier["spatial_regions"] else "NO_EVIDENCE",
         "door_state_rows": "READY_FOR_REVIEW" if dossier["doors"] and dossier["entity_state_changes"] else ("PARTIAL" if dossier["doors"] else "NO_EVIDENCE"),
         "instance_entities": "PARTIAL" if dossier["entities"] else "NO_EVIDENCE",
         "mob_paths": "READY_FOR_REVIEW" if dossier["movement"] else "NO_EVIDENCE",
@@ -131,6 +209,12 @@ def build_dossier(con: sqlite3.Connection, capture_id: int, zone_db: str | None 
         dossier["gaps"].append("Event/option observations are evidence only; destination and Lua condition ownership still require correlated player movement/server/reference evidence.")
     if not dossier["player_path"] and dossier["event_observations"]:
         dossier["gaps"].append("No player path evidence is available to correlate telepad activation with a destination.")
+    if dossier["spatial_regions"]:
+        dossier["gaps"].append("Player path legs are observed spatial regions only; they are not proven Salvage floors or rooms until door/telepad/reference evidence establishes boundaries.")
+        if any(r["status"] == "AMBIGUOUS_REGION_CANDIDATE" for r in dossier["entity_region_candidates"]):
+            dossier["gaps"].append("Some entities overlap multiple observed path regions; keep floor/room ownership unresolved until stronger boundary evidence exists.")
+    elif dossier["player_path"]:
+        dossier["gaps"].append("Player path summary exists but no positioned path samples were available for spatial segmentation.")
     if not dossier["movement"]:
         dossier["gaps"].append("No captured NPC path evidence for this zone; do not infer roaming paths.")
     if dossier["doors"] and not dossier["entity_state_changes"]:
