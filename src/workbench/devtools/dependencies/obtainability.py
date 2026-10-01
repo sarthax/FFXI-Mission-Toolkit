@@ -1,8 +1,14 @@
 """Generic recursive prerequisite closure over canonical graph relationships.
 
 The service deliberately knows nothing about a particular game, zone, mission, or
-entity type. A producer imports directed requirement relationships into the
-canonical graph and may annotate them with ``requirement_group`` metadata.
+entity type.  A producer imports directed requirement relationships into the
+canonical graph and may annotate them with ``requirement_group`` metadata:
+
+``{"id": "trade:example", "operator": "AND"}``
+
+Edges in an AND group are all needed; edges in an OR group are alternative ways
+to satisfy the same requirement.  Other metadata (quantity, probability,
+consumption, access restrictions, and provenance) is carried through unchanged.
 """
 from __future__ import annotations
 
@@ -12,10 +18,18 @@ import json
 import sqlite3
 from typing import Any, Iterable
 
+
 SCHEMA_VERSION="obtainability-closure/v1"
 
 
 def resolve_obtainability_root(con: sqlite3.Connection, selection: str) -> str:
+    """Resolve a user-visible graph selection to one unambiguous canonical entity ID.
+
+    Closure traversal intentionally operates on canonical IDs.  This adapter keeps that
+    invariant while allowing every GUI caller to submit an exact ID, display label, or
+    registered identifier.  Ambiguous labels are rejected rather than choosing an
+    arbitrary graph node.
+    """
     value = selection.strip()
     if not value:
         raise ValueError("A canonical root or unique display label is required.")
@@ -31,6 +45,9 @@ def resolve_obtainability_root(con: sqlite3.Connection, selection: str) -> str:
     ids = [row[0] for row in rows]
     if len(ids) == 1:
         return ids[0]
+    # A display label can legitimately identify both a raw entity observation and a
+    # canonical dependency root.  Prefer the sole candidate that owns graph edges:
+    # this is generic graph topology, not a name/type-specific exception.
     marks = ",".join("?" for _ in ids)
     connected = [
         row[0]
@@ -39,7 +56,7 @@ def resolve_obtainability_root(con: sqlite3.Connection, selection: str) -> str:
             "GROUP BY source_node HAVING COUNT(*) > 0 ORDER BY source_node",
             tuple(ids),
         ).fetchall()
-    ] if ids else []
+    ]
     if len(connected) == 1:
         return connected[0]
     if not ids:
@@ -82,11 +99,21 @@ def build_obtainability_closure(
     relationships: Iterable[str] | None = None,
     max_edges: int = 1000,
 ) -> dict[str,Any]:
+    """Return a deterministic, visualization-ready recursive prerequisite closure.
+
+    Relationships are traversed from ``source_node`` to ``target_node``.  Pass a
+    relationship allow-list when a graph holds non-prerequisite edges too.  Nodes
+    with no selected outgoing edge are reported as unresolved unless their entity
+    metadata contains ``obtainability_terminal: true`` (or ``terminal: true``).
+    """
     if not root:
         raise ValueError("root is required")
     if max_edges <= 0:
         raise ValueError("max_edges must be positive")
     allowed=set(relationships or ())
+    clauses=["source_node=?"]
+    params: list[Any]=[root]
+    # Fetch per node while walking so callers can use a bounded relationship set.
     queue=deque([(root,(root,))])
     seen_nodes={root}
     seen_edges=set()
@@ -173,6 +200,7 @@ def build_obtainability_closure(
 
 
 def closure_projection(closure: dict[str,Any]) -> dict[str,Any]:
+    """Project a closure into explicit gate nodes for a graph/map consumer."""
     nodes=list(closure["nodes"])
     edges=[]
     gates={(gate["owner"],gate["group_id"]):gate for gate in closure["gates"]}
