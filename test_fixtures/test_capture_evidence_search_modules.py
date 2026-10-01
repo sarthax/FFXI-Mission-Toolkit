@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main():
     server = (ROOT / "gui_server.py").read_text(encoding="utf-8")
+    related_service = (ROOT / "workbench" / "core" / "services" / "capture_related_evidence.py").read_text(encoding="utf-8")
     template = (ROOT / "gui" / "templates" / "capture_search.html").read_text(encoding="utf-8")
 
     for module in (
@@ -55,6 +56,14 @@ def main():
     assert "Explicit packet correlation" in related_template
     assert "Timestamp/alignment" in related_template
     assert "ambiguous candidates" in related_template
+
+    # Cross-module entity expansion must use numeric identity, never names or timestamp proximity.
+    assert "def _capture_entity_identity_matches(" in server
+    assert "same captured numeric entity id" in related_service
+    assert "len(npc_rows) != 1" in related_service
+    assert "Entity identity" in related_template
+    assert "same zone" in " ".join(related_template.lower().split())
+    assert "Names and timestamp proximity are not identity keys" in related_template
 
     print("Capture Evidence Search module regression: PASS")
     return 0

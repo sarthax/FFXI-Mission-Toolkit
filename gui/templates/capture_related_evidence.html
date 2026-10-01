@@ -55,6 +55,39 @@
     {% endif %}
   </div>
 
+  {% if entity_matches %}
+    <div class="dense-panel">
+      <div class="related-head">
+        <span class="chip">Entity identity</span>
+        <strong>Cross-module entity evidence</strong>
+      </div>
+      <div class="muted" style="margin-top:4px">
+        These links use the captured numeric entity ID. Event/EventView links also require the same
+        zone; battle actions are shown only when the actor ID resolves to one unique captured entity
+        snapshot. Names and timestamp proximity are not identity keys.
+      </div>
+    </div>
+    {% for r in entity_matches %}
+    <article class="related-card">
+      <div class="related-head">
+        <span class="chip">{{ r.relation }}</span>
+        <strong>{{ r.target_table }}</strong>
+        <span class="muted">{{ r.basis }}</span>
+      </div>
+      {% if r.title %}<div style="margin-top:5px"><strong>{{ r.title }}</strong></div>{% endif %}
+      <div class="mono muted related-key">{{ r.row_key }}</div>
+      <div class="muted" style="margin-top:4px">
+        entity {{ r.entity_id }}{% if r.zone_db %} · {{ r.zone_db }}{% endif %}
+      </div>
+      <div class="related-actions">
+        {% if r.source_url %}<a class="chip" href="{{ r.source_url }}">Source Locator</a>{% endif %}
+        <a class="chip" href="{{ r.data_url }}">Data Explorer</a>
+        <a class="chip" href="{{ r.entity_url }}">Entity Profile</a>
+      </div>
+    </article>
+    {% endfor %}
+  {% endif %}
+
   {% if packet_matches %}
     <div class="dense-panel">
       <div class="related-head">

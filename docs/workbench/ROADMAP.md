@@ -4,7 +4,7 @@
 - [x] Prevent path-heavy evidence from flooding results by aggregating path observations per capture/zone/entity.
 - [x] Add Environment & World State search over WeatherTrack and ConquestTrack observations.
 - [~] Add provenance-safe related-packet correlation to evidence result cards where an explicit correlation exists. Related Evidence now combines exact source-span/SQLite-row provenance with unique non-temporal packet correlations (exact raw-byte equivalence and unique shared decoded-field matches). Temporal/alignment-only and ambiguous correlations remain excluded from the verified panel.
-- [~] Add cross-module “related evidence” expansion without timestamp-only guessing. Evidence Search now hands eligible rows into a Related Evidence view with separate provenance-overlap and explicit packet-correlation sections; richer normalized summaries and additional deterministic domain relationships remain.
+- [~] Add cross-module “related evidence” expansion without timestamp-only guessing. Evidence Search now separates provenance-overlap, explicit packet-correlation, and deterministic entity-identity evidence. Events/EventView require capture+zone+numeric entity ID; battle actions require a uniquely resolved captured actor ID. Richer normalized summaries and additional deterministic item/vendor/crafting/chat relationships remain.
 
 ## 2026-09-30 Zone / packet usability fixes
 
