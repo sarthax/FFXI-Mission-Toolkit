@@ -68,6 +68,8 @@ def test_final_component_namespaces_have_expected_owners():
         "src/workbench/devtools/features/checker.py": "devtools",
         "src/workbench/devtools/features/trace_catalog.py": "devtools",
         "src/workbench/devtools/features/trace_providers.py": "devtools",
+        "src/workbench/devtools/features/trace_dossier.py": "devtools",
+        "src/workbench/devtools/features/trace_closure.py": "devtools",
     }.items():
         path = ROOT / rel
         assert path.exists(), rel
@@ -83,7 +85,7 @@ def test_known_core_services_product_code_is_explicitly_reclassified():
         "src/workbench/core/services/pcap_ingest.py": "captures",
         "src/workbench/core/services/feature_checker.py": "devtools",
         "src/workbench/core/services/feature_trace_catalog.py": "devtools",
-        "src/workbench/core/services/client_binary_graph.py": "client_shared",
+        "src/workbench/client/binary_graph.py": "client_shared",
         "src/workbench/core/services/feature_package_analyzer.py": "validation_packages",
         "src/workbench/core/services/id_bridge.py": "validation_packages",
     }
