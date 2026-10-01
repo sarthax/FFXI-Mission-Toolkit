@@ -3,6 +3,7 @@
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
+WORKBENCH_SRC=ROOT/"src/workbench"
 
 
 def main():
@@ -11,7 +12,7 @@ def main():
     event=(ROOT/"gui/templates/event_view.html").read_text(encoding="utf-8")
     sql=(ROOT/"gui/templates/sql.html").read_text(encoding="utf-8")
     server=(ROOT/"gui_server.py").read_text(encoding="utf-8")
-    binding_service=(ROOT/"workbench/core/services/feature_trace_binding_drilldown.py").read_text(encoding="utf-8")
+    binding_service=(WORKBENCH_SRC/"core/services/feature_trace_binding_drilldown.py").read_text(encoding="utf-8")
 
     for text in (
         "Server Lua drill-down",
