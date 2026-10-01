@@ -6,7 +6,9 @@ on:
       - "pyproject.toml"
       - "src/workbench/**"
       - "workbench/__init__.py"
+      - "feature_trace.py"
       - "test_fixtures/test_src_layout_package.py"
+      - "test_fixtures/test_feature_trace_package_migration.py"
       - ".github/workflows/src-layout-regression.yml"
   workflow_dispatch:
 
@@ -25,4 +27,6 @@ jobs:
       - name: Install package in editable mode
         run: python -m pip install --disable-pip-version-check -e .
       - name: Validate canonical src package outside repository cwd
-        run: python test_fixtures/test_src_layout_package.py
+        run: |
+          python test_fixtures/test_src_layout_package.py
+          python test_fixtures/test_feature_trace_package_migration.py
