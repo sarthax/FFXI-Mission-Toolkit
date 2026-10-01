@@ -1,8 +1,9 @@
 """Domain framework service (read-only).
 
-Loads definitions.json and, for each domain entity, reports what the configured server checkouts
-actually contain (glob matches per root) plus how many offline BG Wiki pages back the domain.
-"Present" only means the expected files exist; it says nothing about completeness or correctness.
+Loads the base definitions.json plus optional modular definitions from definitions.d/*.json and,
+for each domain entity, reports what the configured server checkouts actually contain (glob
+matches per root) plus how many offline BG Wiki pages back the domain. "Present" only means the
+expected files exist; it says nothing about completeness or correctness.
 """
 from __future__ import annotations
 
@@ -13,12 +14,29 @@ import re
 from pathlib import Path
 
 DEF_PATH = Path(__file__).with_name("definitions.json")
+DEF_DIR = Path(__file__).with_name("definitions.d")
 WIKI_DUMP = Path(__file__).resolve().parents[2] / "vendor/ffxi-wiki-dumps-dist/bg-wiki.jsonl.gz"
 _WIKI_CACHE: dict = {}
 
 
 def load() -> dict:
-    return json.loads(DEF_PATH.read_text(encoding="utf-8"))["domains"]
+    """Load base domains and merge optional one-domain-per-file modules.
+
+    Modular definitions are intentionally fail-closed: duplicate keys are rejected instead of
+    silently replacing the base catalog or another module.
+    """
+    domains = dict(json.loads(DEF_PATH.read_text(encoding="utf-8"))["domains"])
+    if DEF_DIR.is_dir():
+        for path in sorted(DEF_DIR.glob("*.json")):
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            rows = payload.get("domains", payload)
+            if not isinstance(rows, dict):
+                raise ValueError(f"domain module {path.name} must contain an object")
+            for key, definition in rows.items():
+                if key in domains:
+                    raise ValueError(f"duplicate domain key {key!r} in {path.name}")
+                domains[key] = definition
+    return domains
 
 
 def slug(label: str) -> str:
