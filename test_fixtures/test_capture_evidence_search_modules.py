@@ -56,6 +56,14 @@ def main():
     assert "Timestamp/alignment" in related_template
     assert "ambiguous candidates" in related_template
 
+    # Cross-module entity expansion must use numeric identity, never names or timestamp proximity.
+    assert "def _capture_entity_identity_matches(" in server
+    assert "same captured numeric entity id" in server
+    assert "len(npc_rows) != 1" in server
+    assert "Entity identity" in related_template
+    assert "same zone" in related_template
+    assert "Names and timestamp proximity are not identity keys" in related_template
+
     print("Capture Evidence Search module regression: PASS")
     return 0
 
