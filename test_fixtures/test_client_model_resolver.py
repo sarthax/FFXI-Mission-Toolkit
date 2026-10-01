@@ -4,11 +4,16 @@
 from pathlib import Path
 
 import client_model_resolver as cmr
+import gear_tables as legacy_gear_tables
+from workbench.client.models import gear_tables
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def main():
+    assert legacy_gear_tables.GEAR_TABLES is gear_tables.GEAR_TABLES
+    assert gear_tables.model_id_to_file_id("ElvaanFemale", "head", 20) == 16660
+
     # FFXiMain monster lookup boundaries (VA 0x100C513D).
     expected = {
         0: 1300,
