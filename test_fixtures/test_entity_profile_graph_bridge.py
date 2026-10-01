@@ -3,7 +3,7 @@ import sqlite3
 import tempfile
 from pathlib import Path
 
-from workbench.core.services.entity_profile_graph import import_entity_profile_provenance
+from workbench.devtools.entities.profile_graph import import_entity_profile_provenance
 
 
 def main():
