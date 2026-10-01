@@ -146,6 +146,10 @@ def main():
     assert closure["status"] == "OBTAINABLE", closure
     assert closure["root"]["satisfied_by"] == "CRAFTING", closure
 
+    # Keep canonical identity reconciliation in the registered acquisition regression path.
+    from test_acquisition_identity import main as identity_main
+    assert identity_main() == 0
+
     print("acquisition catalog self-test: PASS")
     return 0
 
