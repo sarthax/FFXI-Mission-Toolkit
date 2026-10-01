@@ -9,8 +9,17 @@
 <table>
   <thead><tr><th>Area</th><th>Purpose</th><th>Open</th></tr></thead>
   <tbody>
-    <tr><td>Mission data</td><td>Inspect indexed Assault missions and related mission text.</td><td><a class="zonelink" href="/missions">Mission Explorer</a></td></tr>
-    <tr><td>Assault zones</td><td>Inspect and edit zone entities, navmesh data, drops, and SQL using the canonical generic editor.</td><td><a class="zonelink" href="/zoneplot">Zone Editor</a></td></tr>
+    <tr>
+      <td>Mission data</td>
+      <td>Search indexed Assault mission names/text without calculating all runtime/capture coverage.</td>
+      <td><a class="zonelink" href="/missions?q=__coverage_not_loaded__">Mission Explorer</a></td>
+    </tr>
+    <tr>
+      <td>Observed coverage</td>
+      <td>Calculate server entity/drop wiring plus indexed capture observations for every Assault mission. This is intentionally on demand and can take several seconds.</td>
+      <td><a class="zonelink" href="/missions">Load all coverage</a></td>
+    </tr>
+    <tr><td>Assault zones</td><td>Inspect and edit zone entities, navmesh data, drops, and SQL using the canonical generic editor.</td><td><a class="zonelink" href="/zoneplot2">Zone Editor</a></td></tr>
     <tr><td>Captures</td><td>Inspect gameplay captures, paths, packets, and instance evidence.</td><td><a class="zonelink" href="/captures">Captures</a></td></tr>
     <tr><td>Server data</td><td>Inspect zones, entities, items, key items, dialog, events, and packets.</td><td><a class="zonelink" href="/zones">Server workspace</a></td></tr>
   </tbody>
