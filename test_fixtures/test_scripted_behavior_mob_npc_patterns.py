@@ -73,6 +73,20 @@ end
 return entity
 '''
 
+BARE_GLOBAL_HELPER=r'''
+local entity = {}
+function moveGlobal(mob)
+    mob:pathThrough({ 4, 5, 6 }, xi.path.flag.WALK)
+end
+function neverCalled(mob)
+    mob:setAnimation(xi.animation.CLOSE_DOOR)
+end
+entity.onMobRoam = function(mob)
+    moveGlobal(mob)
+end
+return entity
+'''
+
 SALVAGE_DOOR=r'''
 local entity = {}
 entity.onEventFinish = function(player, csid, option, npc)
@@ -136,6 +150,23 @@ def main():
         for rule in helper_effects for effect in rule.effects
     ),helper_effects
     assert all(rule.metadata.get("source_lines") for rule in helper_effects),helper_effects
+
+    bare_helpers=extract_helper_blocks(BARE_GLOBAL_HELPER)
+    assert {helper.name for helper in bare_helpers}=={"moveGlobal","neverCalled"},bare_helpers
+    assert all(helper.owner=="global" for helper in bare_helpers),bare_helpers
+    bare,bk=kinds(BARE_GLOBAL_HELPER,"Bare Global Helper")
+    assert "helper_call" in bk,bk
+    assert "helper_effects" in bk,bk
+    assert set(bare.metadata["reachable_helpers"])=={"moveGlobal"},bare.metadata
+    bare_effects=[rule for rule in bare.rules if rule.kind=="helper_effects"]
+    assert any(
+        effect.effect=="PATH_ACTOR"
+        for rule in bare_effects for effect in rule.effects
+    ),bare_effects
+    assert not any(
+        effect.effect=="SET_ANIMATION"
+        for rule in bare_effects for effect in rule.effects
+    ),bare_effects
 
     salvage,dk=kinds(SALVAGE_DOOR,"Salvage Door")
     assert {"system_helper_call","world_state_change"} <= dk,dk

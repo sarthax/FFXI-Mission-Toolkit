@@ -45,6 +45,9 @@ _LOCAL_HELPER_HEADER=re.compile(
 _ENTITY_HELPER_HEADER=re.compile(
     r"^\s*entity\.([A-Za-z_][A-Za-z0-9_]*)\s*=\s*function\s*\(([^)]*)\)"
 )
+_GLOBAL_HELPER_HEADER=re.compile(
+    r"^\s*function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(([^)]*)\)"
+)
 _HPP=re.compile(r"\b(?:mob|mobArg|target):getHPP\(\)\s*(<=|>=|<|>)\s*(\d+)")
 _RANDOM_RANGE=re.compile(r"math\.randomInt\(\s*(\d+)\s*,\s*(\d+)\s*\)")
 _RANDOM_PERCENT=re.compile(
@@ -334,7 +337,7 @@ def extract_hook_blocks(lua: str) -> tuple[HookBlock,...]:
 
 
 def extract_helper_blocks(lua: str) -> tuple[HelperBlock,...]:
-    """Return balanced local/entity helper functions, excluding entity.on* hooks."""
+    """Return balanced local/entity/bare-global helper functions, excluding on* hooks."""
     raw=lua.splitlines()
     structural=_structural_lua_lines(lua)
     out=[]
@@ -352,6 +355,12 @@ def extract_helper_blocks(lua: str) -> tuple[HelperBlock,...]:
             name=entity_match.group(1)
             args_text=entity_match.group(2) or ""
             owner="entity"
+        else:
+            global_match=_GLOBAL_HELPER_HEADER.match(code)
+            if global_match and not global_match.group(1).startswith("on"):
+                name=global_match.group(1)
+                args_text=global_match.group(2) or ""
+                owner="global"
         if not name or i in claimed:
             continue
         depth=0
