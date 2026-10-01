@@ -23,11 +23,15 @@ from workbench.core.services.conditional_dependencies import (
 LIFECYCLE_METHODS = {
     "onMobInitialize",
     "onMobSpawn",
+    "onMobEngage",
+    "onMobFight",
+    "onMobRoam",
+    "onMobDisengage",
     "onMobDeath",
     "onMobDespawn",
 }
 CALL_RE = re.compile(
-    r"\bxi\.([A-Za-z_][A-Za-z0-9_]*)\.(onMobInitialize|onMobSpawn|onMobDeath|onMobDespawn)\s*\("
+    r"\bxi\.([A-Za-z_][A-Za-z0-9_]*)\.(" + "|".join(sorted(LIFECYCLE_METHODS)) + r")\s*\("
 )
 
 
