@@ -27,7 +27,8 @@ def main() -> None:
     assert (SRC_PACKAGE / "client" / "identity_extract.py").is_file()
     assert (SRC_PACKAGE / "gui_shell.py").is_file()
     assert (SRC_PACKAGE / "core" / "services" / "feature_candidates.py").is_file()
-    assert (SRC_PACKAGE / "core" / "services" / "feature_checker.py").is_file()
+    assert (SRC_PACKAGE / "core" / "services" / "feature_checker.py").is_file()  # compatibility shim
+    assert (SRC_PACKAGE / "devtools" / "features" / "checker.py").is_file()
     assert (SRC_PACKAGE / "core" / "services" / "feature_package_analyzer.py").is_file()
     assert (SRC_PACKAGE / "core" / "services" / "id_bridge.py").is_file()
 
@@ -69,14 +70,15 @@ def main() -> None:
         for legacy_import in forbidden_imports:
             assert legacy_import not in text, f"{legacy_import!r} remains in {path.relative_to(ROOT)}"
 
-    # Feature Checker is canonical under src. One compatibility wrapper remains solely because
-    # gui_server.py is still a monolithic root entry point; every other first-party caller must use
-    # the canonical service directly.
+    # Feature Checker is canonical under Development. Root and old Core paths remain temporary
+    # compatibility shims while the monolithic GUI and older regressions migrate.
     feature_checker_wrapper_path = ROOT / "feature_checker.py"
     assert feature_checker_wrapper_path.is_file()
     feature_checker_wrapper = feature_checker_wrapper_path.read_text(encoding="utf-8")
-    assert "workbench.core.services.feature_checker" in feature_checker_wrapper
+    assert "workbench.devtools.features.checker" in feature_checker_wrapper
     assert "gui_server.py" in feature_checker_wrapper
+    core_checker_shim = (SRC_PACKAGE / "core" / "services" / "feature_checker.py").read_text(encoding="utf-8")
+    assert "workbench.devtools.features.checker" in core_checker_shim
     legacy_feature_checker_callers = []
     for path in first_party_python:
         if path.resolve() in {Path(__file__).resolve(), feature_checker_wrapper_path.resolve()}:
@@ -99,7 +101,8 @@ def main() -> None:
     workflow = (ROOT / ".github" / "workflows" / "workbench-regression.yml").read_text(encoding="utf-8")
     assert '- "src/workbench/**"' in workflow
     ancient_vows = (ROOT / ".github" / "workflows" / "workbench-ancient-vows.yml").read_text(encoding="utf-8")
-    assert 'src/workbench/core/services/feature_checker.py' in ancient_vows
+    assert 'src/workbench/devtools/features/checker.py' in ancient_vows
+    assert 'src/workbench/core/services/feature_checker.py' not in ancient_vows
     assert '"feature_checker.py"' not in ancient_vows
 
     # Editable installation in CI must make the canonical src package importable even when
@@ -118,7 +121,7 @@ def main() -> None:
             "import workbench.client.identity_extract as ie; "
             "import workbench.gui_shell as gs; "
             "from workbench.core.services.feature_candidates import candidates; "
-            "from workbench.core.services.feature_checker import resolve_feature, check_feature; "
+            "from workbench.devtools.features.checker import resolve_feature, check_feature; "
             "from workbench.core.services.feature_package_analyzer import analyze; "
             "from workbench.core.services import id_bridge as ib; "
             "pkg=Path(workbench.__file__).resolve(); "
