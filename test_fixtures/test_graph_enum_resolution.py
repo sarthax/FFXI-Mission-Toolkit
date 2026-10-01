@@ -4,7 +4,7 @@ from __future__ import annotations
 import json,tempfile
 from pathlib import Path
 from workbench.core import graph
-from workbench_schema import EnumDefinition
+from workbench.core.schema import EnumDefinition
 
 def main():
     with tempfile.TemporaryDirectory() as td:
