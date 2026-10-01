@@ -76,7 +76,8 @@ def main():
     assert "def chat_native_source_matches(" in related_service
     assert "same CapLog native source observation" in related_service
     assert "Chat native source" in related_template
-    assert "exact same\n          CapLog parser observation" in related_template
+    normalized_related = " ".join(related_template.split())
+    assert "exact same CapLog parser observation" in normalized_related
     assert "PacketDB row-number collisions" in related_template
     assert "is_chat_projection" in related_template
     assert "r.relation == 'same source line span'" in related_template
