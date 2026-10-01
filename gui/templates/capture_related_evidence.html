@@ -21,9 +21,13 @@
 <div class="dense-panel" style="margin-top:8px">
   <strong>Correlation rule</strong>
   <div class="muted" style="margin-top:4px">
-    Results below are linked only when normalized records point to the same hashed physical source
-    span, or to the same SQLite source row. Timestamp proximity, matching names/IDs, and packet
-    sequence proximity are deliberately not used as evidence relationships.
+    Related Evidence keeps deterministic relationship families separate. Provenance requires the
+    same hashed physical source span or SQLite source row; CapLog chat projection requires the
+    canonical and legacy rows to share the exact parser-owned source line; packet identity requires
+    an explicit non-temporal correlation; entity identity requires captured numeric entity IDs with
+    zone/uniqueness guards; and ordinary-item identity requires the same captured ordinary item ID.
+    Timestamp proximity, matching names, text similarity, prices, and numeric collisions across
+    namespaces are deliberately not identity keys.
   </div>
 </div>
 
@@ -54,6 +58,41 @@
       <div class="muted" style="margin-top:6px">No exact source locator exists for this normalized row.</div>
     {% endif %}
   </div>
+
+  {% set chat_tables = ['capture_chat_observations', 'capture_caplog_chat'] %}
+  {% if target_table in chat_tables %}
+    {% for r in related %}
+      {% if r.target_table in chat_tables and r.target_table != target_table and r.relation == 'same source line span' %}
+      <div class="dense-panel">
+        <div class="related-head">
+          <span class="chip">Chat native source</span>
+          <strong>Canonical / legacy CapLog projection</strong>
+        </div>
+        <div class="muted" style="margin-top:4px">
+          This pair is shown only because both normalized rows were emitted from the exact same
+          CapLog parser observation and hashed source line. Matching chat text or timestamps do not
+          create this relationship, and PacketDB row-number collisions are not treated as identity.
+        </div>
+      </div>
+      <article class="related-card">
+        <div class="related-head">
+          <span class="chip">same CapLog native source observation</span>
+          <strong>{{ r.target_table }}</strong>
+          <span class="muted">{{ r.locator_basis }}</span>
+        </div>
+        <div style="margin-top:5px"><strong>{{ r.filename }}</strong></div>
+        <div class="mono muted related-key">{{ r.row_key }}</div>
+        <div class="muted" style="margin-top:4px">
+          {% if r.start_line is not none %}line {{ r.start_line }}{% endif %}
+        </div>
+        <div class="related-actions">
+          <a class="chip" href="{{ r.source_url }}">Source Locator</a>
+          <a class="chip" href="{{ r.data_url }}">Data Explorer</a>
+        </div>
+      </article>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
 
   {% if item_matches %}
     <div class="dense-panel">
@@ -157,24 +196,27 @@
 
   {% if related %}
     {% for r in related %}
-    <article class="related-card">
-      <div class="related-head">
-        <span class="chip">{{ r.relation }}</span>
-        <strong>{{ r.target_table }}</strong>
-        <span class="muted">{{ r.locator_basis }}</span>
-      </div>
-      <div style="margin-top:5px"><strong>{{ r.filename }}</strong></div>
-      <div class="mono muted related-key">{{ r.row_key }}</div>
-      <div class="muted" style="margin-top:4px">
-        {% if r.start_line is not none %}lines {{ r.start_line }}{% if r.end_line is not none and r.end_line != r.start_line %}-{{ r.end_line }}{% endif %}{% endif %}
-        {% if r.start_offset is not none %}{% if r.start_line is not none %} · {% endif %}bytes {{ r.start_offset }}{% if r.end_offset is not none %}-{{ r.end_offset }}{% endif %}{% endif %}
-      </div>
-      <div class="related-actions">
-        <a class="chip" href="{{ r.source_url }}">Source Locator</a>
-        <a class="chip" href="{{ r.data_url }}">Data Explorer</a>
-        {% if r.packet_url %}<a class="chip" href="{{ r.packet_url }}">Packet Viewer</a>{% endif %}
-      </div>
-    </article>
+      {% set is_chat_projection = target_table in chat_tables and r.target_table in chat_tables and r.target_table != target_table and r.relation == 'same source line span' %}
+      {% if not is_chat_projection %}
+      <article class="related-card">
+        <div class="related-head">
+          <span class="chip">{{ r.relation }}</span>
+          <strong>{{ r.target_table }}</strong>
+          <span class="muted">{{ r.locator_basis }}</span>
+        </div>
+        <div style="margin-top:5px"><strong>{{ r.filename }}</strong></div>
+        <div class="mono muted related-key">{{ r.row_key }}</div>
+        <div class="muted" style="margin-top:4px">
+          {% if r.start_line is not none %}lines {{ r.start_line }}{% if r.end_line is not none and r.end_line != r.start_line %}-{{ r.end_line }}{% endif %}{% endif %}
+          {% if r.start_offset is not none %}{% if r.start_line is not none %} · {% endif %}bytes {{ r.start_offset }}{% if r.end_offset is not none %}-{{ r.end_offset }}{% endif %}{% endif %}
+        </div>
+        <div class="related-actions">
+          <a class="chip" href="{{ r.source_url }}">Source Locator</a>
+          <a class="chip" href="{{ r.data_url }}">Data Explorer</a>
+          {% if r.packet_url %}<a class="chip" href="{{ r.packet_url }}">Packet Viewer</a>{% endif %}
+        </div>
+      </article>
+      {% endif %}
     {% endfor %}
   {% elif anchors %}
     <div class="dense-panel muted">
