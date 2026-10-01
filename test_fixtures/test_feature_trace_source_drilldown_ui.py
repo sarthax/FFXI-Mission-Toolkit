@@ -12,7 +12,8 @@ def main():
     event=(ROOT/"gui/templates/event_view.html").read_text(encoding="utf-8")
     sql=(ROOT/"gui/templates/sql.html").read_text(encoding="utf-8")
     server=(ROOT/"gui_server.py").read_text(encoding="utf-8")
-    binding_service=(WORKBENCH_SRC/"core/services/feature_trace_binding_drilldown.py").read_text(encoding="utf-8")
+    binding_service=(WORKBENCH_SRC/"devtools/features/trace_binding_drilldown.py").read_text(encoding="utf-8")
+    binding_shim=(WORKBENCH_SRC/"core/services/feature_trace_binding_drilldown.py").read_text(encoding="utf-8")
 
     for text in (
         "Server Lua drill-down",
@@ -70,7 +71,6 @@ def main():
     ):
         assert text in feature,text
 
-
     bindings=(ROOT/"gui/templates/backport_bindings.html").read_text(encoding="utf-8")
     assert "trace_q" in bindings
     assert "Feature Trace entity {{ trace_q }}" in bindings
@@ -78,6 +78,7 @@ def main():
     assert "feature_trace_binding_drilldown" in server
     assert "feature_trace_behavior_engine_drilldown(" in server
     assert "feature_trace_binding_lookup(" in server
+    assert "workbench.devtools.features.trace_binding_drilldown" in binding_shim
     for text in (
         "def binding_index_for_server",
         "def binding_location",
