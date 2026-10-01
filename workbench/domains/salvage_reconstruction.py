@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from collections import defaultdict
 
 
 def _table_exists(con: sqlite3.Connection, name: str) -> bool:
@@ -49,8 +48,10 @@ def build_dossier(con: sqlite3.Connection, capture_id: int, zone_db: str | None 
         "entities": [],
         "doors": [],
         "interaction_candidates": [],
+        "entity_state_changes": [],
         "event_observations": [],
         "movement": [],
+        "player_path": [],
         "actions": [],
         "gaps": [],
         "proposal_readiness": {},
@@ -73,6 +74,13 @@ def build_dossier(con: sqlite3.Connection, capture_id: int, zone_db: str | None 
             if row.get("door_id") not in (None, 0) or row.get("act_index") not in (None, 0) or row.get("sub_kind") not in (None, 0):
                 dossier["interaction_candidates"].append({**row, "basis": "captured interactive entity fields"})
 
+    if _table_exists(con, "capture_npc_history"):
+        dossier["entity_state_changes"] = _dict_rows(con.execute(
+            "SELECT entity_id,COUNT(*) observations,MIN(ts) first_ts,MAX(ts) last_ts "
+            "FROM capture_npc_history WHERE capture_id=? AND zone_db=? GROUP BY entity_id ORDER BY entity_id",
+            (capture_id, selected_zone),
+        ))
+
     if _table_exists(con, "capture_events"):
         dossier["event_observations"] = _dict_rows(con.execute(
             "SELECT seq,direction,opcode,opcode_name,entity_id,entity_name,event_hex,option,message_id,params_raw "
@@ -87,30 +95,46 @@ def build_dossier(con: sqlite3.Connection, capture_id: int, zone_db: str | None 
             (capture_id, selected_zone),
         ))
 
-    if _table_exists(con, "capture_actions"):
-        dossier["actions"] = _dict_rows(con.execute(
-            "SELECT actor,actor_name,action_type,name,animation,message,COUNT(*) observations "
-            "FROM capture_actions WHERE capture_id=? GROUP BY actor,actor_name,action_type,name,animation,message ORDER BY actor,observations DESC",
-            (capture_id,),
+    if _table_exists(con, "capture_pc_path"):
+        dossier["player_path"] = _dict_rows(con.execute(
+            "SELECT leg,COUNT(*) samples,MIN(step) first_step,MAX(step) last_step,MIN(x) min_x,MAX(x) max_x,MIN(y) min_y,MAX(y) max_y,MIN(z) min_z,MAX(z) max_z "
+            "FROM capture_pc_path WHERE capture_id=? AND zone_db=? GROUP BY leg ORDER BY leg",
+            (capture_id, selected_zone),
         ))
 
+    entity_ids = {r.get("entity_id") for r in dossier["entities"] if r.get("entity_id") is not None}
+    if _table_exists(con, "capture_actions"):
+        if entity_ids:
+            marks = ",".join("?" for _ in entity_ids)
+            dossier["actions"] = _dict_rows(con.execute(
+                f"SELECT actor,actor_name,action_type,name,animation,message,COUNT(*) observations FROM capture_actions "
+                f"WHERE capture_id=? AND actor IN ({marks}) GROUP BY actor,actor_name,action_type,name,animation,message ORDER BY actor,observations DESC",
+                (capture_id, *sorted(entity_ids)),
+            ))
+        else:
+            dossier["actions"] = []
+
     event_entities = {r.get("entity_id") for r in dossier["event_observations"] if r.get("entity_id") is not None}
-    entity_ids = {r.get("entity_id") for r in dossier["entities"]}
     dossier["proposal_readiness"] = {
         "npc_or_mob_rows": "READY_FOR_REVIEW" if dossier["entities"] else "NO_EVIDENCE",
-        "door_state_rows": "READY_FOR_REVIEW" if dossier["doors"] else "NO_EVIDENCE",
+        "door_state_rows": "READY_FOR_REVIEW" if dossier["doors"] and dossier["entity_state_changes"] else ("PARTIAL" if dossier["doors"] else "NO_EVIDENCE"),
         "instance_entities": "PARTIAL" if dossier["entities"] else "NO_EVIDENCE",
         "mob_paths": "READY_FOR_REVIEW" if dossier["movement"] else "NO_EVIDENCE",
         "mob_lua": "PARTIAL" if dossier["actions"] else "NO_EVIDENCE",
         "telepad_csid_mapping": "PARTIAL" if dossier["event_observations"] else "NO_EVIDENCE",
+        "telepad_destination": "PARTIAL" if dossier["event_observations"] and dossier["player_path"] else "NO_EVIDENCE",
         "zone_or_instance_lua": "PARTIAL" if dossier["event_observations"] else "NO_EVIDENCE",
     }
     if event_entities - entity_ids:
         dossier["gaps"].append("Some event actors are not present in capture_npc_entries; resolve identity before generating NPC/telepad rows.")
     if dossier["event_observations"]:
-        dossier["gaps"].append("Event/option observations are evidence only; destination and Lua condition ownership still require correlated movement/server/reference evidence.")
+        dossier["gaps"].append("Event/option observations are evidence only; destination and Lua condition ownership still require correlated player movement/server/reference evidence.")
+    if not dossier["player_path"] and dossier["event_observations"]:
+        dossier["gaps"].append("No player path evidence is available to correlate telepad activation with a destination.")
     if not dossier["movement"]:
         dossier["gaps"].append("No captured NPC path evidence for this zone; do not infer roaming paths.")
+    if dossier["doors"] and not dossier["entity_state_changes"]:
+        dossier["gaps"].append("Door entities were observed but no NPC history is available; initial/final state must not be mistaken for an open/close transition rule.")
     return dossier
 
 
