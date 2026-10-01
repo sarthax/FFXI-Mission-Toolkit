@@ -4,7 +4,7 @@ from __future__ import annotations
 import sqlite3,tempfile
 from pathlib import Path
 from workbench.core import graph
-from workbench_schema import Feature
+from workbench.core.schema import Feature
 from feature_candidates import candidates
 
 def main():
