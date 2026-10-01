@@ -16,8 +16,8 @@ import sqlite3
 from workbench.core.services.packet_identity import canonical_opcode, packet_node_id
 from pathlib import Path
 
-import workbench_graph
-from workbench_schema import Feature
+from workbench.core import graph as workbench_graph
+from workbench.core.schema import Feature
 import re
 
 
