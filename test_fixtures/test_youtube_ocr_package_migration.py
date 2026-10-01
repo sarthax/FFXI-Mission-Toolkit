@@ -30,7 +30,8 @@ def main() -> None:
     assert canonical.LAYOUT_PROFILE_PATH == REPO_ROOT / "mission_reports_v2" / "youtube_chat_layout_profiles.json"
     assert canonical.VENDOR_FFMPEG_BIN == VENDOR_ROOT / "ffmpeg" / "bin"
     assert canonical.VENDOR_TESSERACT_DIR == VENDOR_ROOT / "tesseract"
-    assert callable(canonical.ingest_video_run)
+    assert callable(canonical.frame_index)
+    assert callable(canonical.capture_observations)
     assert callable(canonical.main)
 
     original_runs = canonical.RUNS_ROOT
@@ -50,7 +51,7 @@ def main() -> None:
         "assert ocr.LAYOUT_PROFILE_PATH == REPO_ROOT / 'mission_reports_v2' / 'youtube_chat_layout_profiles.json'; "
         "assert ocr.VENDOR_FFMPEG_BIN == VENDOR_ROOT / 'ffmpeg' / 'bin'; "
         "assert ocr.VENDOR_TESSERACT_DIR == VENDOR_ROOT / 'tesseract'; "
-        "assert callable(ocr.ingest_video_run); assert callable(ocr.main)"
+        "assert callable(ocr.frame_index); assert callable(ocr.capture_observations); assert callable(ocr.main)"
     )
     with tempfile.TemporaryDirectory() as tmp:
         subprocess.run([sys.executable, "-c", code], cwd=Path(tmp), check=True)
