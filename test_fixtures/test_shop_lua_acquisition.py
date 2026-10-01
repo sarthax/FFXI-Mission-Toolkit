@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Regression for audited LSB Lua shop acquisition extraction."""
+"""Regression for audited Lua shop acquisition extraction."""
 from __future__ import annotations
 
 from workbench.adapters.servers.shop_lua import (
     parse_guild_shops_data,
     parse_npc_shop_script,
 )
+from workbench.adapters.servers.curio_shop import parse_curio_vendor_stock
 from workbench.core.services.acquisition_catalog import (
     build_acquisition_catalog,
     verified_external_item_ids,
@@ -60,8 +61,6 @@ xi.data.guildShops =
 """
 
 
-
-
 DSP_SHOP = r"""
 function onTrigger(player,npc)
     local stock =
@@ -92,6 +91,24 @@ entity.onTrigger = function(player, npc)
     local stock = buildDynamicStock(player)
     xi.shop.general(player, stock)
 end
+"""
+
+
+CURIO_STOCK = r"""
+xi.shop.curioVendorMoogleStock =
+{
+    [xi.shop.curio.medicine] =
+    {
+        { xi.item.POTION, 300, xi.keyItem.RHAPSODY_IN_WHITE },
+        { 5000, 900, xi.keyItem.RHAPSODY_IN_UMBER, xi.zone.PORT_BASTOK },
+        { buildDynamicItem(), 1, xi.keyItem.RHAPSODY_IN_WHITE },
+    },
+
+    [xi.shop.curio.keys] =
+    {
+        { xi.item.OLDTON_CHEST_KEY, 2500, xi.keyItem.RHAPSODY_IN_WHITE },
+    },
+}
 """
 
 
@@ -171,15 +188,26 @@ def main():
     assert alias.items == (), alias
     assert alias.metadata["shared_stock"] == "Achika", alias
 
+    curio = parse_curio_vendor_stock(CURIO_STOCK)
+    assert curio["status"] == "OK", curio
+    assert curio["profile"] == "CURIO_VENDOR_MOOGLE", curio
+    assert [row.category for row in curio["categories"]] == ["medicine", "keys"], curio
+    assert curio["warnings"], curio  # dynamic row must remain visible, never guessed
+    medicine = curio["categories"][0]
+    assert len(medicine.items) == 2, medicine
+    assert medicine.items[0].required_key_item_literal == "xi.keyItem.RHAPSODY_IN_WHITE", medicine
+    assert medicine.items[1].item_literal == "5000", medicine
+    assert medicine.items[1].zone_literal == "xi.zone.PORT_BASTOK", medicine
+
     catalog = build_acquisition_catalog(
         shops=(shop, nation["shop"], dsp["shop"], topaz["shop"], *guild["shops"]),
+        curio_categories=curio["categories"],
     )
     assert catalog["counts"]["SOLD_BY"] == 9, catalog
+    assert catalog["counts"]["CURIO_VENDOR"] == 3, catalog
     assert "SOLD_BY" in catalog["supported_acquisition_types"], catalog
-    assert catalog["unsupported_until_profiled"] == [
-        "CURIO_VENDOR",
-        "SPECIAL_DYNAMIC_SHOP",
-    ], catalog
+    assert "CURIO_VENDOR" in catalog["supported_acquisition_types"], catalog
+    assert catalog["unsupported_until_profiled"] == ["SPECIAL_DYNAMIC_SHOP"], catalog
 
     by_subject = {
         (row["subject_kind"], row["subject_id"]): row
@@ -193,8 +221,19 @@ def main():
     assert guild_numeric["paths"][0]["metadata"]["shop_kind"] == "GUILD", guild_numeric
     assert guild_numeric["paths"][0]["metadata"]["item_numeric_id"] == 1888, guild_numeric
 
+    curio_numeric = by_subject[("ITEM", "5000")]
+    assert curio_numeric["acquisition_types"] == ["CURIO_VENDOR"], curio_numeric
+    curio_path = curio_numeric["paths"][0]
+    assert curio_path["source_family"] == "LSB_CURIO_VENDOR", curio_path
+    assert curio_path["metadata"]["required_key_item_literal"] == "xi.keyItem.RHAPSODY_IN_UMBER", curio_path
+    assert curio_path["metadata"]["zone_literal"] == "xi.zone.PORT_BASTOK", curio_path
+    assert curio_path["metadata"]["conditional"] is True, curio_path
+
+    potion = by_subject[("ITEM", "xi.item.POTION")]
+    assert {p["acquisition_type"] for p in potion["paths"]} == {"SOLD_BY", "CURIO_VENDOR"}, potion
+
     external = verified_external_item_ids(catalog)
-    assert external == {936, 1888, 4096, 12440, 12448}, external
+    assert external == {936, 1888, 4096, 5000, 12440, 12448}, external
 
     dsp_subject = by_subject[("ITEM", "12440")]
     assert dsp_subject["paths"][0]["source_family"] == "DSP_LUA_SHOP", dsp_subject
