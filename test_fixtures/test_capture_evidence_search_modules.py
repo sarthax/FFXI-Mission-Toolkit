@@ -3,11 +3,12 @@
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+WORKBENCH_SRC = ROOT / "src" / "workbench"
 
 
 def main():
     server = (ROOT / "gui_server.py").read_text(encoding="utf-8")
-    related_service = (ROOT / "workbench" / "core" / "services" / "capture_related_evidence.py").read_text(encoding="utf-8")
+    related_service = (WORKBENCH_SRC / "core" / "services" / "capture_related_evidence.py").read_text(encoding="utf-8")
     template = (ROOT / "gui" / "templates" / "capture_search.html").read_text(encoding="utf-8")
 
     for module in (
