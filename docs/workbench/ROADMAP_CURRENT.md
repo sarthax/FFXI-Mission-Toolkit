@@ -1,7 +1,7 @@
 # Current Workbench Roadmap
 
 Status: ACTIVE REWORK
-Last fully reconciled against merged PR history: 2026-10-01
+Last fully reconciled against merged PR and branch history: 2026-10-01
 Authoritative repository: `sarthax/FFXI-Mission-Toolkit`
 Authoritative branch: `main`
 
@@ -15,7 +15,7 @@ This is the authoritative current planning and capability inventory for the Miss
 - `[~]` = substantial foundation exists, but the capability is intentionally incomplete or evidence-limited.
 - `[ ]` = planned / not yet implemented.
 - Closed PRs that were explicitly superseded, rebased, transplanted, or replaced are **not roadmap capabilities**. Their surviving functionality is represented only by the later merged implementation.
-- Leftover non-`main` branches are not evidence of roadmap work. Current branch audit shows only stale/superseded or no-op branches in addition to `main`; roadmap status is derived from merged `main` capabilities.
+- Leftover non-`main` branches are not evidence of roadmap work. The 2026-10-01 branch audit found no outstanding feature branch that should be merged into `main`; surviving non-main branches are superseded implementations or no-op leftovers and are cleanup candidates only.
 
 ---
 
@@ -418,13 +418,24 @@ These PR histories are not independent roadmap features because later merged wor
 - PR #154 client ENTITY bridge: superseded by merged PR #153 and selective follow-up in #156/#165.
 - PR #180 Zone/packet fixes: superseded by rebased merged PR #182.
 - PR #183 Evidence Search: superseded by rebased merged PR #184.
-- Leftover branches `capture-evidence-search-modules`, `zone-3d-packet-input-fixes`, `noop-temp-do-not-use`, and `noop-temp-do-not-use-2` are stale/superseded/no-op and are not roadmap items.
+
+## 2026-10-01 surviving-branch reconciliation
+
+The repository branch audit found **no remaining branch that should be merged into `main`**. The apparent ahead counts on the two feature branches are artifacts of rebased replacement work, not missing capabilities:
+
+- `capture-evidence-search-modules` — 7 commits ahead / 114 behind at audit time. This was the head of closed PR #183, explicitly superseded by rebased PR #184, which merged the Evidence Search capability onto current `main`. **Do not merge; safe cleanup candidate.**
+- `zone-3d-packet-input-fixes` — 23 commits ahead / 115 behind at audit time. This was the head of closed PR #180, explicitly superseded by rebased PR #182, which merged the intended Zone Editor, Server 3D Viewer and packet-input fixes onto current `main`. **Do not merge; safe cleanup candidate.**
+- `noop-temp-do-not-use` — 0 commits ahead / 71 behind at audit time. Contains no unique work. **Safe cleanup candidate.**
+- `noop-temp-do-not-use-2` — 0 commits ahead / 16 behind at audit time. Contains no unique work. **Safe cleanup candidate.**
+
+Branch ancestry alone must not be interpreted as missing roadmap functionality when a branch was deliberately replaced by a rebased PR. For roadmap reconciliation, merged replacement PRs and current `main` behavior are authoritative.
 
 ---
 
 # Roadmap maintenance rules
 
 - Update this file whenever a roadmap-sized capability PR is merged.
+- Re-run branch/PR reconciliation before treating a long-lived or diverged branch as missing work.
 - Prefer **capability groups** over one bullet per PR; add PR numbers where they help trace provenance.
 - Mark completion only from merged `main`, never from an open/stale branch.
 - When a PR is superseded or transplanted, retain only the surviving merged capability and remove the obsolete implementation from current planning.
