@@ -106,6 +106,8 @@ def _authoritative_enum_candidates(
             "path": row[5],
             "line": row[6],
         })
+    # Duplicate rows that assert the same canonical identity are harmless; conflicting
+    # identities are intentionally preserved for the caller to classify as ambiguous.
     unique: dict[tuple[str, str], dict[str, Any]] = {}
     for row in out:
         unique[(row["canonical_id"], row["canonical_symbol"].casefold())] = row
@@ -172,6 +174,7 @@ def _resolve_path(
 
     numeric = _parse_int(subject_id)
     if numeric is None:
+        # Same-looking names/symbols across providers are not an identity bridge.
         return {
             **base,
             "status": UNRESOLVED,
@@ -233,6 +236,11 @@ def reconcile_acquisition_catalog(
     canonical_snapshot_id: str,
     provider_snapshots: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
+    """Annotate acquisition subjects with canonical identity without guessing.
+
+    The returned catalog is a deep copy.  ``canonical_subjects`` contains only VERIFIED
+    identities and is the safe input for a future shared-graph projection.
+    """
     provider_snapshots = dict(provider_snapshots or {})
     result = deepcopy(dict(catalog))
     counts = {VERIFIED: 0, UNRESOLVED: 0, AMBIGUOUS: 0}
@@ -302,6 +310,7 @@ def reconcile_acquisition_catalog(
 
 
 def verified_canonical_item_ids(catalog: Mapping[str, Any]) -> set[int]:
+    """Return only reconciled VERIFIED ITEM IDs; raw numeric literals are ignored."""
     return {
         int(row["canonical_id"])
         for row in catalog.get("canonical_subjects", ())
