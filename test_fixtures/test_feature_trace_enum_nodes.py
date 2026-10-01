@@ -3,7 +3,7 @@
 import tempfile
 from pathlib import Path
 from workbench.core import graph
-from workbench_schema import EnumDefinition
+from workbench.core.schema import EnumDefinition
 from feature_trace import node_info,search_nodes
 
 def main():
