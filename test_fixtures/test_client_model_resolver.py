@@ -5,7 +5,9 @@ from pathlib import Path
 
 import client_model_resolver as legacy_cmr
 import gear_tables as legacy_gear_tables
+import mob_look_decode as legacy_look
 from workbench.client.models import gear_tables
+from workbench.client.models import look_decode
 from workbench.client.models import resolver as cmr
 from workbench.runtime.paths import VENDOR_ROOT
 
@@ -16,6 +18,7 @@ def main():
     assert legacy_gear_tables.GEAR_TABLES is gear_tables.GEAR_TABLES
     assert gear_tables.model_id_to_file_id("ElvaanFemale", "head", 20) == 16660
     assert legacy_cmr.model_id_to_file_id is cmr.model_id_to_file_id
+    assert legacy_look.decode_look_data is look_decode.decode_look_data
     assert cmr.DAT_EXTRACTOR_DLL == VENDOR_ROOT / "dat-extractor/bin/Debug/net9.0/dat-extractor.dll"
 
     # FFXiMain monster lookup boundaries (VA 0x100C513D).
@@ -45,8 +48,15 @@ def main():
     except ValueError:
         pass
 
+    # Verify flat look_t decoding still uses the canonical model resolver.
+    flat = bytes.fromhex("0000640100000000000000000000000000000000")
+    decoded = look_decode.decode_look_data(flat)
+    assert decoded["kind"] == "flat", decoded
+    assert decoded["modelid"] == 356, decoded
+    assert decoded["file_id"] == 1656, decoded
+
     resolver = (ROOT / "src" / "workbench" / "client" / "models" / "resolver.py").read_text(encoding="utf-8")
-    decode = (ROOT / "mob_look_decode.py").read_text(encoding="utf-8")
+    decode = (ROOT / "src" / "workbench" / "client" / "models" / "look_decode.py").read_text(encoding="utf-8")
     backend = (ROOT / "model_viewer.py").read_text(encoding="utf-8")
     server = (ROOT / "gui_server.py").read_text(encoding="utf-8")
     viewer = (ROOT / "gui" / "templates" / "model_viewer.html").read_text(encoding="utf-8")
