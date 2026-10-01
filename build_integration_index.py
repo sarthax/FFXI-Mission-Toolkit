@@ -8,8 +8,8 @@ from __future__ import annotations
 import argparse, json, re
 from dataclasses import asdict
 from pathlib import Path
-from source_snapshot import snapshot_id
-from workbench_schema import AnalysisResult, Finding, BuildTarget, DependencyEdge
+from workbench.core.provenance import snapshot_id
+from workbench.core.schema import AnalysisResult, Finding, BuildTarget, DependencyEdge
 from cpp_api_index import index as index_api
 
 CPP_EXTENSIONS={".cpp",".cc",".cxx",".c",".h",".hpp",".hh",".hxx"}
