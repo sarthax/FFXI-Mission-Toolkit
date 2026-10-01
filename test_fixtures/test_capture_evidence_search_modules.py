@@ -74,7 +74,7 @@ def main():
     # the duplicate generic-provenance card. Text/timestamp similarity and PacketDB row ids remain
     # explicitly excluded as identity keys.
     assert "def chat_native_source_matches(" in related_service
-    assert "same CapLog native source observation" in related_service
+    assert "same CapLog parser observation sequence with typed native source id" in related_service
     assert "Chat native source" in related_template
     normalized_related = " ".join(related_template.split())
     assert "exact same CapLog parser observation" in normalized_related
