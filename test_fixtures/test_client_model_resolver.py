@@ -3,9 +3,11 @@
 
 from pathlib import Path
 
-import client_model_resolver as cmr
+import client_model_resolver as legacy_cmr
 import gear_tables as legacy_gear_tables
 from workbench.client.models import gear_tables
+from workbench.client.models import resolver as cmr
+from workbench.runtime.paths import VENDOR_ROOT
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -13,6 +15,8 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     assert legacy_gear_tables.GEAR_TABLES is gear_tables.GEAR_TABLES
     assert gear_tables.model_id_to_file_id("ElvaanFemale", "head", 20) == 16660
+    assert legacy_cmr.model_id_to_file_id is cmr.model_id_to_file_id
+    assert cmr.DAT_EXTRACTOR_DLL == VENDOR_ROOT / "dat-extractor/bin/Debug/net9.0/dat-extractor.dll"
 
     # FFXiMain monster lookup boundaries (VA 0x100C513D).
     expected = {
@@ -21,7 +25,7 @@ def main():
         1500: 51795,
         2999: 53294,
         3000: 99907,
-        3193: 100100,   # last currently registered retail id in band 3, not the band boundary
+        3193: 100100,
         3499: 100406,
         3500: 101739,
         4000: 102239,
@@ -41,7 +45,7 @@ def main():
     except ValueError:
         pass
 
-    resolver = (ROOT / "client_model_resolver.py").read_text(encoding="utf-8")
+    resolver = (ROOT / "src" / "workbench" / "client" / "models" / "resolver.py").read_text(encoding="utf-8")
     decode = (ROOT / "mob_look_decode.py").read_text(encoding="utf-8")
     backend = (ROOT / "model_viewer.py").read_text(encoding="utf-8")
     server = (ROOT / "gui_server.py").read_text(encoding="utf-8")
@@ -51,6 +55,7 @@ def main():
     assert "0x100C513D" in resolver
     assert '(3500, 96907, "3000-3499 +96907")' in resolver
     assert '(None, 98239, "3500+ +98239")' in resolver
+    assert "VENDOR_ROOT" in resolver
     assert "client_model_resolver.model_id_to_file_id(modelid)" in decode
     assert "mob_model_tables.resolve_family_file_id" not in decode
     assert "def resolve_model_id(model_id: int" in backend
