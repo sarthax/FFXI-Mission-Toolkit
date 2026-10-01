@@ -190,6 +190,7 @@ jobs:
           python test_fixtures/test_capture_spatial_viewer.py
           python test_fixtures/test_capture_evidence_search_modules.py
           python test_fixtures/test_capture_entity_related_evidence.py
+          python test_fixtures/test_capture_item_related_evidence.py
           python test_fixtures/test_capture_content_fingerprint.py
           python test_fixtures/test_capture_event_packet_graph.py
           python test_fixtures/test_server_catalog_identity.py
