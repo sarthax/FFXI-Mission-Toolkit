@@ -1,0 +1,111 @@
+{
+  "salvage": {
+    "label": "Salvage",
+    "archetype": "system.salvage",
+    "summary": "Alzadaal Remnants instance content: four physical Remnants zones with Salvage I and Salvage II implementation tracks, Pathos restrictions/cells, floor progression, doors/telepads, mob and NM conditions, drops, bosses, and extraction.",
+    "wiki": {
+      "categories": ["Salvage", "Salvage II"],
+      "templates": ["Zone Geography Row 2", "Adversary Row", "Item Monster 2", "Gdrop"],
+      "headings": ["Entry Requirements", "Maps", "Enemies", "Notorious Monsters", "Drops", "Pathos", "Floor", "Strategy", "Rewards"]
+    },
+    "children": [
+      "Zhayolm Remnants I",
+      "Zhayolm Remnants II",
+      "Arrapago Remnants I",
+      "Arrapago Remnants II",
+      "Bhaflau Remnants I",
+      "Bhaflau Remnants II",
+      "Silver Sea Remnants I",
+      "Silver Sea Remnants II"
+    ],
+    "entities": [
+      {
+        "kind": "Instance registry",
+        "fields": ["instance id", "instance name", "zone id", "entry zone", "time limit", "start position", "instance Lua", "completion/extraction condition"],
+        "server_globs": ["sql/instance_list.sql", "scripts/zones/Zhayolm_Remnants/instances/*.lua", "scripts/zones/Arrapago_Remnants/instances/*.lua", "scripts/zones/Bhaflau_Remnants/instances/*.lua", "scripts/zones/Silver_Sea_Remnants/instances/*.lua"],
+        "edit": "/sql"
+      },
+      {
+        "kind": "Instance entity registration",
+        "fields": ["instance id", "entity id", "zone", "entity type", "registration provenance", "capture/source evidence"],
+        "server_globs": ["sql/instance_entities.sql", "sql/mob_spawn_points.sql", "sql/npc_list.sql"],
+        "edit": "/entity"
+      },
+      {
+        "kind": "Mob / NM spawn",
+        "fields": ["entity id", "name", "pool/group", "position", "rotation", "respawn", "floor/path", "spawn condition", "death condition", "drops"],
+        "server_globs": ["sql/mob_spawn_points.sql", "sql/mob_groups.sql", "sql/mob_pools.sql", "sql/mob_droplist.sql", "scripts/zones/*Remnants/mobs/*.lua"],
+        "edit": "/zoneplot2"
+      },
+      {
+        "kind": "NPC / door / telepad",
+        "fields": ["entity id", "name", "position", "rotation", "animation/status", "floor/path", "trigger condition", "CSID", "event option", "destination"],
+        "server_globs": ["sql/npc_list.sql", "scripts/zones/*Remnants/npcs/*.lua", "scripts/zones/*Remnants/IDs.lua"],
+        "edit": "/zoneplot2"
+      },
+      {
+        "kind": "Zone and instance Lua",
+        "fields": ["onInitialize", "onInstanceZoneIn", "onInstanceLoad", "onInstanceTimeUpdate", "onInstanceFailure", "onInstanceComplete", "door/telepad state", "floor state", "Pathos state"],
+        "server_globs": ["scripts/zones/*Remnants/Zone.lua", "scripts/zones/*Remnants/instances/*.lua"],
+        "edit": "/features/trace"
+      },
+      {
+        "kind": "Mob Lua behavior",
+        "fields": ["mob id/name", "onMobSpawn", "onMobEngage", "onMobFight", "onMobDeath", "special spawn/unlock condition", "shared-system delegation"],
+        "server_globs": ["scripts/zones/*Remnants/mobs/*.lua"],
+        "edit": "/behavior"
+      },
+      {
+        "kind": "Pathos / cell progression",
+        "fields": ["restriction", "cell item", "drop source", "removal rule", "party/player scope", "floor-specific availability"],
+        "server_globs": ["scripts/zones/*Remnants/instances/*.lua", "scripts/zones/*Remnants/mobs/*.lua", "sql/mob_droplist.sql"],
+        "edit": "/items"
+      },
+      {
+        "kind": "Capture evidence",
+        "fields": ["capture id", "zone", "entity observations", "positions", "actions", "events/CSIDs", "chat", "packet evidence", "source provenance"],
+        "server_globs": [],
+        "edit": "/captures/search"
+      }
+    ],
+    "pipeline": [
+      {
+        "stage": "1. Evidence intake",
+        "status": "ready",
+        "summary": "Import supported captures and normalize entities, positions, actions, events/CSIDs, packets and provenance.",
+        "handoffs": [{"label": "Capture Import", "href": "/captures/new"}, {"label": "Evidence Search", "href": "/captures/search"}, {"label": "Data Explorer", "href": "/captures/query"}]
+      },
+      {
+        "stage": "2. Entity identity and spatial review",
+        "status": "ready",
+        "summary": "Correlate observed entity IDs/names/positions against server/client evidence and review them in the zone editor. Identity remains evidence-gated; names or proximity alone do not authorize writes.",
+        "handoffs": [{"label": "Entity Profile", "href": "/entity"}, {"label": "Zone Editor", "href": "/zoneplot2"}, {"label": "Feature Trace", "href": "/features/trace"}]
+      },
+      {
+        "stage": "3. Spawn and instance registration proposal",
+        "status": "partial",
+        "summary": "The toolkit can read/compare mob_spawn_points, npc_list and instance_entities and detect missing registration. A Salvage compiler still needs to emit a reviewable proposal instead of directly mutating SQL.",
+        "handoffs": [{"label": "SQL", "href": "/sql"}, {"label": "Packages Scope", "href": "/packages/scope"}, {"label": "Entity Profile", "href": "/entity"}]
+      },
+      {
+        "stage": "4. Lua scaffolding",
+        "status": "partial",
+        "summary": "Feature Trace and Behavior Inspector already model source hooks/dependencies, but automatic creation of Zone.lua, instance Lua and per-mob Lua from capture evidence is not yet a safe one-click operation. Scaffolds should be generated with TODO/evidence markers, never invented mechanics.",
+        "handoffs": [{"label": "Behavior Inspector", "href": "/behavior"}, {"label": "Feature Trace", "href": "/features/trace"}, {"label": "Packages", "href": "/packages"}]
+      },
+      {
+        "stage": "5. Telepad / door / CSID mapping",
+        "status": "partial",
+        "summary": "Captured EVENT evidence and existing event/CSID tooling can establish observed mappings. The missing layer is a Salvage-specific state machine tying each telepad/door to floor/path conditions and destination; unobserved CSIDs must remain unresolved.",
+        "handoffs": [{"label": "Events / CSIDs", "href": "/events"}, {"label": "Packet Tools", "href": "/packets"}, {"label": "Evidence Search", "href": "/captures/search?module=events"}]
+      },
+      {
+        "stage": "6. Package and validation",
+        "status": "ready",
+        "summary": "Once SQL/Lua proposals exist, the existing package scope/review and validation surfaces can carry them through dependency review and regression checks.",
+        "handoffs": [{"label": "Scope Review", "href": "/packages/scope"}, {"label": "Create Package", "href": "/packages/create"}, {"label": "Validation", "href": "/validation"}]
+      }
+    ],
+    "compare": "Per Salvage I/II implementation track: compare instance registration, entity roster, spawn positions, instance_entities coverage, doors/telepads and observed CSIDs, Lua hook coverage, NM spawn conditions, Pathos/cell logic, drops, bosses and extraction. Treat wiki text as mechanics reference only; IDs, CSIDs and positions require server/client/capture evidence."
+  }
+}
