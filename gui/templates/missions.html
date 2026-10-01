@@ -9,11 +9,23 @@ main.missions-browser-page{padding:8px 10px 24px}
 .mission-card>summary{padding:7px 9px;cursor:pointer;font-weight:600}
 .mission-body{padding:0 8px 8px}
 </style>
-<div class="dense-toolbar"><strong>Assault Missions</strong><span class="sp"></span><details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:650px">Client mission text with server wiring/capture rollups. Expand only the mission you need instead of scrolling every full objective block.</div></details></div>
+<div class="dense-toolbar">
+  <strong>Assault Missions</strong>
+  <span class="sp"></span>
+  <a class="chip" href="/domains/assault">Assault Domain</a>
+  <a class="chip" href="/missions">Load all observed coverage</a>
+  <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:700px">Assault-specific mission text and implementation coverage. Normal entry is lightweight. Searching a mission calculates coverage only for matching rows; “Load all observed coverage” deliberately runs the full server/capture aggregation and can take several seconds.</div></details>
+</div>
 <form class="search dense-toolbar" method="get" style="margin:6px 0">
-  <input type="text" name="q" value="{{ q }}" placeholder="filter by name">
-  <button type="submit">Filter</button>
+  <input type="text" name="q" value="{{ '' if q == '__coverage_not_loaded__' else q }}" placeholder="search Assault mission name">
+  <button type="submit">Search &amp; load matching coverage</button>
 </form>
+{% if q == '__coverage_not_loaded__' %}
+<div class="dense-card" style="margin:8px 0;padding:10px 12px">
+  <strong>Observed coverage is not loaded.</strong>
+  <p class="muted" style="margin:5px 0 0">Search for a mission to calculate its server wiring, drops, and indexed capture observations, or use <em>Load all observed coverage</em> for the full Assault set. Opening Features or the Assault domain no longer triggers the full aggregation.</p>
+</div>
+{% endif %}
 {% for r in rows %}
 {% set roll = rollups[r.mission_id] %}
 <details class="mission-card">
