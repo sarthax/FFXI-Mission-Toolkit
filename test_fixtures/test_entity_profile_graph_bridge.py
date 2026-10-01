@@ -3,15 +3,31 @@ import sqlite3
 import tempfile
 from pathlib import Path
 
+import entity_profile as legacy_profile
 import lookup_entity as legacy_lookup
-from workbench.devtools.entities import lookup
+from workbench.client.models import look_decode
+from workbench.devtools.entities import lookup, profile as entity_profile
 from workbench.devtools.entities.profile_graph import import_entity_profile_provenance
 from workbench.runtime.paths import DATABASE_PATH
 
 
 def main():
+    # Phase C root -> canonical package compatibility.
     assert lookup.DB_PATH == DATABASE_PATH
     assert legacy_lookup.resolve_query_to_ids is lookup.resolve_query_to_ids
+    assert entity_profile.DB_PATH == DATABASE_PATH
+    assert legacy_profile.build_profile is entity_profile.build_profile
+    assert legacy_profile.decode_entity_id is entity_profile.decode_entity_id
+
+    # The moved implementation must execute against canonical component dependencies rather than
+    # depending on repository-root modules being importable from sys.path.
+    profile_globals = entity_profile.build_profile.__globals__
+    assert profile_globals["DB_PATH"] == DATABASE_PATH
+    assert profile_globals["lookup_entity"] is lookup
+    assert profile_globals["mob_look_decode"] is look_decode
+    decoded = entity_profile.decode_entity_id(0x0103702A)
+    assert decoded["hex"] == "0x0103702A"
+    assert decoded["local_bits"] == 0x02A
 
     con=sqlite3.connect(":memory:")
     con.execute("CREATE TABLE npc_names(npcid INTEGER, name TEXT, zoneid INTEGER, norm_name TEXT)")
