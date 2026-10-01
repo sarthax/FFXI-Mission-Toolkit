@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse, json, sqlite3
 from pathlib import Path
 from datetime import datetime, timezone
-from feature_candidates import candidates as feature_candidates
+from workbench.core.services.feature_candidates import candidates as feature_candidates
 from workbench.core.services.packet_identity import packet_node_id
 
 SCHEMA=1

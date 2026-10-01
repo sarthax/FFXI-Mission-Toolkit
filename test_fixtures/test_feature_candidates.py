@@ -5,7 +5,7 @@ import sqlite3,tempfile
 from pathlib import Path
 from workbench.core import graph
 from workbench.core.schema import Feature
-from feature_candidates import candidates
+from workbench.core.services.feature_candidates import candidates
 
 def main():
     with tempfile.TemporaryDirectory() as td:

@@ -26,6 +26,7 @@ def main() -> None:
     assert (SRC_PACKAGE / "client" / "event_fingerprint.py").is_file()
     assert (SRC_PACKAGE / "client" / "identity_extract.py").is_file()
     assert (SRC_PACKAGE / "gui_shell.py").is_file()
+    assert (SRC_PACKAGE / "core" / "services" / "feature_candidates.py").is_file()
 
     # Canonical implementation lives under src/workbench. The root package is intentionally
     # limited to one compatibility bootstrap so implementation files cannot drift back there.
@@ -37,15 +38,17 @@ def main() -> None:
     assert "__path__.append" in bridge_text
     assert "Do not add implementation modules" in bridge_text
 
-    # These former root compatibility modules are retired. First-party code and regressions must
-    # use the canonical package imports directly rather than recreating hidden wrapper coupling.
-    retired = ("workbench_graph.py", "workbench_schema.py", "source_snapshot.py")
+    # These former root compatibility/implementation modules are retired. First-party code and
+    # regressions must use canonical package imports directly rather than recreating hidden root
+    # coupling.
+    retired = ("workbench_graph.py", "workbench_schema.py", "source_snapshot.py", "feature_candidates.py")
     for name in retired:
         assert not (ROOT / name).exists(), name
     forbidden_imports = (
         "import workbench_graph",
         "from workbench_schema import",
         "from source_snapshot import",
+        "from feature_candidates import",
     )
     first_party_python = list(ROOT.glob("*.py")) + list(SRC_PACKAGE.rglob("*.py")) + list((ROOT / "test_fixtures").glob("*.py"))
     for path in first_party_python:
@@ -73,12 +76,14 @@ def main() -> None:
             "import workbench.client.event_fingerprint as ef; "
             "import workbench.client.identity_extract as ie; "
             "import workbench.gui_shell as gs; "
+            "from workbench.core.services.feature_candidates import candidates; "
             "pkg=Path(workbench.__file__).resolve(); "
             "assert 'src' in pkg.parts, pkg; "
             "assert p.REPO_ROOT.name == 'FFXI-Mission-Toolkit', p.REPO_ROOT; "
             "assert d.DEF_PATH.parent == pkg.parent / 'domains', d.DEF_PATH; "
             "assert d.WIKI_DUMP == p.repo_path('vendor','ffxi-wiki-dumps-dist','bg-wiki.jsonl.gz'), d.WIKI_DUMP; "
             "assert d.load(), 'domain catalog must load'; "
+            "assert callable(candidates); "
             "assert 'src' in Path(bi.__file__).resolve().parts, bi.__file__; "
             "assert 'src' in Path(ef.__file__).resolve().parts, ef.__file__; "
             "assert 'src' in Path(ie.__file__).resolve().parts, ie.__file__; "

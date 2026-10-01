@@ -14,6 +14,8 @@ The canonical Python package is now `src/workbench`.
 - `workbench.gui_shell` moved to `src/workbench/gui_shell.py`; the GUI route map remains a repository-owned document resolved through `runtime.paths`.
 - Repository-owned data, vendor, GUI, database and documentation paths are centralized through `src/workbench/runtime/paths.py` where applicable.
 - Legacy root compatibility modules `workbench_graph.py`, `workbench_schema.py`, and `source_snapshot.py` are retired; first-party callers now import `workbench.core.graph`, `workbench.core.schema`, and `workbench.core.provenance` directly.
+- Feature-candidate traversal moved from root `feature_candidates.py` to `workbench.core.services.feature_candidates`; Capture Backtrace and regression callers now use the canonical service directly.
+- `lua_event_index.py` remains intentionally as a CLI compatibility entry point while capture tooling still documents that producer filename; its implementation remains canonical in `workbench.analyzers.server.lua_events`.
 - Editable-install CI validates that the canonical package imports from `src` outside the repository working directory.
 - Broad Workbench regression continues to validate the normal repo-root execution mode.
 
@@ -41,7 +43,7 @@ Both migration safety layers are required:
 
 `Workbench Regression` must watch both the root compatibility path and canonical `src/workbench/**` so package-only changes cannot bypass the broad suite.
 
-The src-layout self-test also rejects reintroduction of the retired root graph/schema/provenance shims or their legacy import forms.
+The src-layout self-test also rejects reintroduction of retired root graph/schema/provenance/feature-candidate modules or their legacy import forms.
 
 ## Remaining repository-root cleanup
 
