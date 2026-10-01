@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from workbench.core import graph
 from workbench.core.schema import DependencyEdge, Evidence
-from workbench.core.services.obtainability_closure import build_obtainability_closure, closure_projection
+from workbench.devtools.dependencies.obtainability import build_obtainability_closure, closure_projection
 
 
 RELATIONSHIPS={"SPAWNED_BY","REQUIRES_ITEMS","OBTAINED_FROM","REQUIRES_ACCESS","REQUIRES_MISSION","UNLOCKS"}
