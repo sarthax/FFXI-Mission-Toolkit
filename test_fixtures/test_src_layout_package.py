@@ -29,6 +29,7 @@ def main() -> None:
     assert (SRC_PACKAGE / "core" / "services" / "feature_candidates.py").is_file()
     assert (SRC_PACKAGE / "core" / "services" / "feature_checker.py").is_file()
     assert (SRC_PACKAGE / "core" / "services" / "feature_package_analyzer.py").is_file()
+    assert (SRC_PACKAGE / "core" / "services" / "id_bridge.py").is_file()
 
     # Canonical implementation lives under src/workbench. The root package is intentionally
     # limited to one compatibility bootstrap so implementation files cannot drift back there.
@@ -85,6 +86,16 @@ def main() -> None:
             legacy_feature_checker_callers.append(path.relative_to(ROOT).as_posix())
     assert legacy_feature_checker_callers == ["gui_server.py"], legacy_feature_checker_callers
 
+    # ID Bridge is canonical under src but retains a root CLI compatibility entry point because
+    # operator documentation still uses `python id_bridge.py ...`. The wrapper must contain no
+    # database-path derivation or implementation logic of its own.
+    id_bridge_wrapper_path = ROOT / "id_bridge.py"
+    assert id_bridge_wrapper_path.is_file()
+    id_bridge_wrapper = id_bridge_wrapper_path.read_text(encoding="utf-8")
+    assert "workbench.core.services.id_bridge" in id_bridge_wrapper
+    assert "Path(__file__)" not in id_bridge_wrapper
+    assert "sqlite3.connect" not in id_bridge_wrapper
+
     workflow = (ROOT / ".github" / "workflows" / "workbench-regression.yml").read_text(encoding="utf-8")
     assert '- "src/workbench/**"' in workflow
     ancient_vows = (ROOT / ".github" / "workflows" / "workbench-ancient-vows.yml").read_text(encoding="utf-8")
@@ -109,6 +120,7 @@ def main() -> None:
             "from workbench.core.services.feature_candidates import candidates; "
             "from workbench.core.services.feature_checker import resolve_feature, check_feature; "
             "from workbench.core.services.feature_package_analyzer import analyze; "
+            "from workbench.core.services import id_bridge as ib; "
             "pkg=Path(workbench.__file__).resolve(); "
             "assert 'src' in pkg.parts, pkg; "
             "assert p.REPO_ROOT.name == 'FFXI-Mission-Toolkit', p.REPO_ROOT; "
@@ -116,6 +128,8 @@ def main() -> None:
             "assert d.WIKI_DUMP == p.repo_path('vendor','ffxi-wiki-dumps-dist','bg-wiki.jsonl.gz'), d.WIKI_DUMP; "
             "assert d.load(), 'domain catalog must load'; "
             "assert callable(candidates) and callable(resolve_feature) and callable(check_feature) and callable(analyze); "
+            "assert callable(ib.normalize) and ib.DB_PATH == p.DATABASE_PATH, ib.DB_PATH; "
+            "assert 'src' in Path(ib.__file__).resolve().parts, ib.__file__; "
             "assert 'src' in Path(bi.__file__).resolve().parts, bi.__file__; "
             "assert 'src' in Path(ef.__file__).resolve().parts, ef.__file__; "
             "assert 'src' in Path(ie.__file__).resolve().parts, ie.__file__; "
