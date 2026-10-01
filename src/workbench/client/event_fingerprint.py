@@ -20,6 +20,8 @@ import re
 import sys
 from typing import Any, Iterable
 
+from workbench.runtime.paths import repo_path
+
 
 @dataclass(frozen=True)
 class EventResource:
@@ -52,7 +54,7 @@ class EventFingerprint:
 
 
 def _events_dump_root() -> Path:
-    return Path(__file__).resolve().parents[2] / "vendor" / "FFXI-EventsDump"
+    return repo_path("vendor", "FFXI-EventsDump")
 
 
 def _load_event_parser():
@@ -114,7 +116,6 @@ def _selector_predicate(node: ast.AST, selector: str) -> dict[str, Any] | None:
     if not isinstance(node, ast.Compare):
         return None
 
-    # selector == literal, selector in [literal...], selector <= literal, etc.
     if len(node.ops) == 1 and len(node.comparators) == 1:
         op = node.ops[0]
         rhs = node.comparators[0]
@@ -148,7 +149,6 @@ def _selector_predicate(node: ast.AST, selector: str) -> dict[str, Any] | None:
             }.get(type(op))
             return {"op": kind, "value": value} if kind else None
 
-    # literal <= selector <= literal
     if (
         len(node.ops) == 2
         and len(node.comparators) == 2
@@ -223,7 +223,6 @@ def _length_rules_from_function(node: ast.FunctionDef | ast.AsyncFunctionDef) ->
 
     for stmt in node.body:
         if isinstance(stmt, ast.If):
-            # Ignore pre-selector bounds guards such as "if offset + 2 > len(data)".
             if selector_name not in {n.id for n in ast.walk(stmt.test) if isinstance(n, ast.Name)}:
                 continue
             if consume_if(stmt):
@@ -443,7 +442,6 @@ def _decode_from_opcode_sources(
         if spec["variable"]:
             length = _evaluate_length_rule(spec.get("length_rule") or {}, byte_code, offset)
             if length is None:
-                # The source-defined length formula is outside the conservative static subset.
                 return (), (), 0, (), (), "RAW_ONLY"
         else:
             length = int(spec["length"])
@@ -547,7 +545,6 @@ def fingerprint_event(
 
     composite_payload = {
         "structural_sha256": structural,
-        # Message numeric IDs are intentionally excluded; resolved text survives ID drift.
         "message_text_fingerprints": text_fingerprints,
     }
     composite = sha256(
@@ -622,7 +619,6 @@ def compare_event_fingerprints(
     elif structure:
         status, confidence = "COARSE_SHAPE_MATCH", "LOW"
     elif text:
-        # Important safety property: same text alone does not prove event equivalence.
         status, confidence = "TEXT_ONLY_MATCH", "LOW"
     else:
         status, confidence = "NO_MATCH", "UNKNOWN"

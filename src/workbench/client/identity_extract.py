@@ -20,6 +20,7 @@ import re
 from typing import Callable, Iterable, Any
 
 from .identity_snapshot import ClientIdentityManifest, file_sha256, write_manifest
+from workbench.runtime.paths import repo_path
 
 
 def dat_id_for_zone(zone_id: int, category: str = "dialog") -> int:
@@ -200,10 +201,7 @@ def extract_client_identity_snapshot(
     resources: list[ExportedResource] = []
     failures: list[dict[str, Any]] = []
     if event_map_path is None:
-        event_map_path = (
-            Path(__file__).resolve().parents[2]
-            / "vendor" / "FFXI-Resources" / "scripts" / "events" / "dats.yaml"
-        )
+        event_map_path = repo_path("vendor", "FFXI-Resources", "scripts", "events", "dats.yaml")
     event_paths = load_zone_event_paths(event_map_path) if Path(event_map_path).is_file() else {}
 
     # Preserve hashes (and optionally copies) of the client resource index files. These hashes
