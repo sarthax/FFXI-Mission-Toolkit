@@ -30,6 +30,7 @@ The canonical Python package is now `src/workbench`.
 - Client model lookup dependencies used by Entity Profile (`gear_tables`, model resolver, look decoder) now live under `workbench.client.models` with root compatibility shims.
 - Capture chat, spatial, integrity, packet identity, timeline/correlation, raw-packet ingestion, PCAP/lobby ingestion, and related-evidence services now live under `workbench.captures` with compatibility shims preserving existing callers.
 - Capture Backtrace now lives at `workbench.captures.correlation.backtrace`; root `capture_backtrace.py` is only a compatibility CLI/import launcher, and the canonical module consumes Capture-owned packet identity directly.
+- Capture Graph Connect now lives at `workbench.captures.correlation.graph_connect`; its mature implementation is staged losslessly behind the canonical adapter, root `capture_graph_connect.py` is only a compatibility launcher, and packet identity/correlation are rebound directly to Capture-owned services while Core graph remains the neutral shared substrate.
 - `lua_event_index.py` remains intentionally as a CLI compatibility entry point while capture tooling still documents that producer filename; its implementation remains canonical in `workbench.analyzers.server.lua_events`.
 - Editable-install CI validates that the canonical package imports from `src` outside the repository working directory.
 - Broad Workbench regression continues to validate the normal repo-root execution mode.
@@ -53,12 +54,12 @@ That launcher/bootstrap conversion is a separate migration decision; it is not r
 
 Both migration safety layers are required:
 
-- **Src Layout Regression** — editable-install smoke outside repository cwd, including canonical Feature Trace, Development dependency/acquisition services, Development server catalog identity, Capture service migrations, and Capture Backtrace imports without repository-root participation.
+- **Src Layout Regression** — editable-install smoke outside repository cwd, including canonical Feature Trace, Development dependency/acquisition services, Development server catalog identity, Capture service migrations, Capture Backtrace, and Capture Graph Connect imports without repository-root participation.
 - **Workbench Regression** — existing repo-root application/regression behavior.
 
 `Workbench Regression` must watch both the root compatibility path and canonical `src/workbench/**` so package-only changes cannot bypass the broad suite. Specialized workflows must likewise watch their canonical `src` service paths; the Ancient Vows cross-fork workflow tracks `src/workbench/devtools/features/checker.py` directly.
 
-The src-layout self-test rejects reintroduction of retired root graph/schema/provenance/feature-candidate/feature-package modules or their legacy import forms. It also constrains legacy root Feature Checker importing to exactly one caller, `gui_server.py`, until that monolithic GUI surface is migrated separately, verifies the ID Bridge implementation imports from `src`, verifies root/canonical Feature Trace identity while its implementation is staged behind the Development adapter, verifies Development dependency/acquisition/server-catalog service shim identity plus outside-repo canonical imports, and validates the Capture Backtrace root launcher against its canonical Capture implementation.
+The src-layout self-test rejects reintroduction of retired root graph/schema/provenance/feature-candidate/feature-package modules or their legacy import forms. It also constrains legacy root Feature Checker importing to exactly one caller, `gui_server.py`, until that monolithic GUI surface is migrated separately, verifies the ID Bridge implementation imports from `src`, verifies root/canonical Feature Trace identity while its implementation is staged behind the Development adapter, verifies Development dependency/acquisition/server-catalog service shim identity plus outside-repo canonical imports, and validates the Capture Backtrace and Capture Graph Connect root launchers against their canonical Capture implementations.
 
 ## Remaining repository-root cleanup
 
