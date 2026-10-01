@@ -17,8 +17,8 @@ finally:
 
 _impl.wiki_evidence = _canonical_evidence
 
-for _name in dir(_impl):
-    if not _name.startswith("__"):
-        globals()[_name] = getattr(_impl, _name)
+if __name__ == "__main__":
+    raise SystemExit(_impl.main())
 
-wiki_evidence = _canonical_evidence
+# Preserve module-global mutation/monkeypatch semantics during migration.
+sys.modules[__name__] = _impl
