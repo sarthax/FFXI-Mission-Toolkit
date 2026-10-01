@@ -1,18 +1,31 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import importlib.util
 import subprocess
 import sys
 import tempfile
+from pathlib import Path
 
-import build_capture_index as legacy
 from workbench.captures import chat, integrity, pcap_ingest, raw_packet_ingest
 from workbench.captures.ingestion import build_index as canonical
 from workbench.devtools.entities import profile as entity_profile
 from workbench.runtime.paths import DATABASE_PATH, REPO_ROOT
 
 
+def _load_root_compat():
+    root_path = Path(__file__).resolve().parents[1] / "build_capture_index.py"
+    name = "build_capture_index_compat"
+    spec = importlib.util.spec_from_file_location(name, root_path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return sys.modules[name]
+
+
 def main() -> None:
+    legacy = _load_root_compat()
     assert legacy is canonical
     assert canonical.DB_PATH == DATABASE_PATH
     assert canonical.TOOLS_ROOT == REPO_ROOT
