@@ -6800,6 +6800,160 @@ def _capture_related_locators(
     return anchors, related
 
 
+def _capture_entity_identity_matches(
+    con: sqlite3.Connection, capture_id: int, target_table: str, row_key: str
+) -> list[dict]:
+    """Return deterministic cross-module rows linked by captured entity identity.
+
+    Event/EventView rows require the same capture + zone + numeric entity id. Actions have no zone
+    column, so an actor id is linked only when that id resolves to exactly one captured entity
+    snapshot in the capture. Names and timestamps are never identity keys.
+    """
+    try:
+        key = json.loads(capture_integrity.canonical_row_key(row_key))
+    except (TypeError, json.JSONDecodeError):
+        return []
+
+    seed_entity = None
+    seed_zone = None
+    if target_table == "capture_events":
+        row = con.execute(
+            """SELECT zone_db,entity_id FROM capture_events
+               WHERE capture_id=? AND zone_db=? AND seq=?""",
+            (capture_id, key.get("zone_db"), key.get("seq")),
+        ).fetchone()
+        if row:
+            seed_zone, seed_entity = row["zone_db"], row["entity_id"]
+    elif target_table == "capture_eventview":
+        row = con.execute(
+            """SELECT zone_db,entity_id FROM capture_eventview
+               WHERE capture_id=? AND zone_db=? AND seq=?""",
+            (capture_id, key.get("zone_db"), key.get("seq")),
+        ).fetchone()
+        if row:
+            seed_zone, seed_entity = row["zone_db"], row["entity_id"]
+    elif target_table == "capture_actions":
+        row = con.execute(
+            "SELECT actor FROM capture_actions WHERE capture_id=? AND action_key=?",
+            (capture_id, key.get("action_key")),
+        ).fetchone()
+        if row:
+            seed_entity = row["actor"]
+    elif target_table == "capture_npc_entries":
+        seed_zone = key.get("zone_db")
+        seed_entity = key.get("entity_id")
+    else:
+        return []
+
+    if seed_entity is None:
+        return []
+    try:
+        entity_id = int(seed_entity)
+    except (TypeError, ValueError):
+        return []
+
+    npc_rows = [
+        dict(r) for r in con.execute(
+            """SELECT zone_db,entity_id,name FROM capture_npc_entries
+               WHERE capture_id=? AND entity_id=? ORDER BY zone_db""",
+            (capture_id, entity_id),
+        ).fetchall()
+    ]
+    if target_table == "capture_actions":
+        # ActionView carries actor id but not zone. Do not guess if the same id appears in more
+        # than one captured zone/snapshot identity.
+        if len(npc_rows) != 1:
+            return []
+        seed_zone = npc_rows[0]["zone_db"]
+    elif seed_zone is not None:
+        npc_rows = [r for r in npc_rows if r["zone_db"] == seed_zone]
+
+    matches: list[dict] = []
+    seen: set[tuple[str, str]] = set()
+
+    def add_match(peer_table: str, peer_key: dict, *, relation: str, title: str | None = None):
+        canonical = capture_integrity.canonical_row_key(peer_key)
+        identity = (peer_table, canonical)
+        if identity == (target_table, capture_integrity.canonical_row_key(row_key)) or identity in seen:
+            return
+        seen.add(identity)
+        item = {
+            "target_table": peer_table,
+            "row_key": canonical,
+            "relation": relation,
+            "basis": "same captured numeric entity id",
+            "entity_id": entity_id,
+            "zone_db": seed_zone,
+            "title": title,
+            "data_url": f"/captures/query?table={quote(peer_table)}&capture_id={capture_id}",
+            "entity_url": f"/entity/{entity_id}",
+            "source_url": None,
+        }
+        locators = capture_integrity.find_row_locators(
+            con, capture_id, peer_table, canonical
+        )
+        if locators:
+            locator = locators[0]
+            item["source_url"] = (
+                f"/captures/{capture_id}/source-locator?"
+                f"filename={quote(str(locator['filename']))}&"
+                f"target_table={quote(peer_table)}&"
+                f"row_key={quote(canonical)}"
+            )
+        matches.append(item)
+
+    # Every eligible seed may link to the exact captured entity snapshot.
+    for npc in npc_rows:
+        add_match(
+            "capture_npc_entries",
+            {"zone_db": npc["zone_db"], "entity_id": entity_id},
+            relation="captured entity identity",
+            title=npc.get("name"),
+        )
+
+    # Reverse expansion from an entity snapshot is useful, but remains exact and bounded to the
+    # same zone/id for event streams. Actions are included only when the actor id has one unique
+    # captured entity snapshot, preserving the same no-zone ambiguity guard used above.
+    if target_table == "capture_npc_entries" and seed_zone is not None:
+        for row in con.execute(
+            """SELECT seq,entity_name FROM capture_events
+               WHERE capture_id=? AND zone_db=? AND entity_id=?
+               ORDER BY seq LIMIT 50""",
+            (capture_id, seed_zone, entity_id),
+        ).fetchall():
+            add_match(
+                "capture_events", {"zone_db": seed_zone, "seq": row["seq"]},
+                relation="event observed for captured entity", title=row["entity_name"],
+            )
+        for row in con.execute(
+            """SELECT seq FROM capture_eventview
+               WHERE capture_id=? AND zone_db=? AND entity_id=?
+               ORDER BY seq LIMIT 50""",
+            (capture_id, seed_zone, entity_id),
+        ).fetchall():
+            add_match(
+                "capture_eventview", {"zone_db": seed_zone, "seq": row["seq"]},
+                relation="EventView observed for captured entity",
+            )
+        if len([
+            r for r in con.execute(
+                "SELECT zone_db FROM capture_npc_entries WHERE capture_id=? AND entity_id=?",
+                (capture_id, entity_id),
+            ).fetchall()
+        ]) == 1:
+            for row in con.execute(
+                """SELECT action_key,name FROM capture_actions
+                   WHERE capture_id=? AND actor=? ORDER BY ts,action_key LIMIT 50""",
+                (capture_id, entity_id),
+            ).fetchall():
+                add_match(
+                    "capture_actions", {"action_key": row["action_key"]},
+                    relation="battle action by captured entity", title=row["name"],
+                )
+
+    return matches
+
+
 def _packet_correlation_ref_for_row(target_table: str, row_key: str) -> tuple[str, str] | None:
     """Translate one normalized capture row into packet_correlation's stable ref namespace."""
     try:
@@ -7023,6 +7177,10 @@ def captures_related_evidence(
         con, capture_id, target_table, canonical_key
     )
 
+    entity_matches = _capture_entity_identity_matches(
+        con, capture_id, target_table, canonical_key
+    )
+
     packet_matches = []
     correlation_ref = _packet_correlation_ref_for_row(target_table, canonical_key)
     if correlation_ref is not None:
@@ -7099,6 +7257,7 @@ def captures_related_evidence(
         "anchors": anchors,
         "related": related,
         "packet_matches": packet_matches,
+        "entity_matches": entity_matches,
     })
 
 
