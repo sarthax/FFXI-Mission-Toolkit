@@ -1,4 +1,4 @@
-"""Deterministic cross-module capture entity identity relationships."""
+"""Deterministic cross-module capture evidence relationships."""
 from __future__ import annotations
 
 import json
@@ -209,3 +209,60 @@ def item_identity_matches(
             "price": row["price"],
         })
     return out
+
+
+def chat_native_source_matches(
+    con: sqlite3.Connection, capture_id: int, target_table: str, row_key: str
+) -> list[dict]:
+    """Return the proven CapLog legacy/canonical pair for one chat observation.
+
+    CapLog ingestion writes ``capture_caplog_chat`` and ``capture_chat_observations`` from the
+    same parser iteration using the same capture-local sequence number. The canonical row is also
+    stamped ``source_format='caplog'`` with an exact ``filename:line:N`` native source id. Those
+    adapter-owned facts are sufficient to relate the two normalized rows without comparing text or
+    timestamps. No other source format is joined here: source-native numeric ids from independent
+    PacketDB tables, packet logs, or other adapters may occupy unrelated namespaces.
+    """
+    if target_table not in {"capture_chat_observations", "capture_caplog_chat"}:
+        return []
+    try:
+        key = json.loads(capture_integrity.canonical_row_key(row_key))
+        seq = int(key["seq"])
+    except (TypeError, ValueError, KeyError, json.JSONDecodeError):
+        return []
+
+    canonical = con.execute(
+        """SELECT seq,source_format,source_native_id,text,zone_db
+           FROM capture_chat_observations WHERE capture_id=? AND seq=?""",
+        (capture_id, seq),
+    ).fetchone()
+    legacy = con.execute(
+        """SELECT seq,text,zone_db FROM capture_caplog_chat
+           WHERE capture_id=? AND seq=?""",
+        (capture_id, seq),
+    ).fetchone()
+    if not canonical or not legacy:
+        return []
+    if str(canonical["source_format"] or "").lower() != "caplog":
+        return []
+    native_id = str(canonical["source_native_id"] or "")
+    if ":line:" not in native_id:
+        return []
+
+    peer_table = (
+        "capture_caplog_chat"
+        if target_table == "capture_chat_observations"
+        else "capture_chat_observations"
+    )
+    peer = legacy if peer_table == "capture_caplog_chat" else canonical
+    return [{
+        "target_table": peer_table,
+        "row_key": capture_integrity.canonical_row_key({"seq": seq}),
+        "relation": "same CapLog source observation",
+        "basis": "same CapLog parser observation sequence with typed native source id",
+        "source_format": "caplog",
+        "source_native_id": native_id,
+        "seq": seq,
+        "zone_db": peer["zone_db"],
+        "title": peer["text"],
+    }]
