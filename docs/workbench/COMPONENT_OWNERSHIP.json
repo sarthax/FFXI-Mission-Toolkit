@@ -1,0 +1,243 @@
+{
+  "allowed_dependencies": {
+    "bootstrap_tests": [
+      "*"
+    ],
+    "captures": [
+      "core",
+      "client_shared",
+      "captures",
+      "devtools_reference_contract"
+    ],
+    "client_shared": [
+      "core",
+      "client_shared"
+    ],
+    "core": [
+      "core"
+    ],
+    "devtools": [
+      "core",
+      "client_shared",
+      "captures_contract",
+      "devtools"
+    ],
+    "editors": [
+      "core",
+      "client_shared",
+      "devtools_contract",
+      "editors"
+    ],
+    "validation_packages": [
+      "core",
+      "client_shared",
+      "captures_contract",
+      "devtools_contract",
+      "validation_packages"
+    ]
+  },
+  "explicit_src_overrides": {
+    "src/workbench/cli/binding_compatibility.py": "validation_packages",
+    "src/workbench/cli/client_identity_snapshot.py": "client_shared",
+    "src/workbench/cli/event_identity_compare.py": "client_shared",
+    "src/workbench/cli/live_target_validation.py": "validation_packages",
+    "src/workbench/cli/package_review.py": "validation_packages",
+    "src/workbench/cli/patch_status.py": "validation_packages",
+    "src/workbench/core/services/acquisition_catalog.py": "devtools",
+    "src/workbench/core/services/acquisition_identity.py": "devtools",
+    "src/workbench/core/services/capture_chat.py": "captures",
+    "src/workbench/core/services/capture_integrity.py": "captures",
+    "src/workbench/core/services/capture_related_evidence.py": "captures",
+    "src/workbench/core/services/capture_spatial.py": "captures",
+    "src/workbench/core/services/client_binary_graph.py": "client_shared",
+    "src/workbench/core/services/client_entity_graph.py": "client_shared",
+    "src/workbench/core/services/conditional_dependencies.py": "devtools",
+    "src/workbench/core/services/dependency_map_presentation.py": "devtools",
+    "src/workbench/core/services/entity_profile_graph.py": "devtools",
+    "src/workbench/core/services/feature_candidates.py": "devtools",
+    "src/workbench/core/services/feature_checker.py": "devtools",
+    "src/workbench/core/services/feature_package_analyzer.py": "validation_packages",
+    "src/workbench/core/services/feature_surface_graph.py": "devtools",
+    "src/workbench/core/services/feature_surface_validation.py": "validation_packages",
+    "src/workbench/core/services/feature_trace_binding_drilldown.py": "devtools",
+    "src/workbench/core/services/feature_trace_catalog.py": "devtools",
+    "src/workbench/core/services/feature_trace_closure.py": "devtools",
+    "src/workbench/core/services/feature_trace_dossier.py": "devtools",
+    "src/workbench/core/services/feature_trace_providers.py": "devtools",
+    "src/workbench/core/services/id_bridge.py": "validation_packages",
+    "src/workbench/core/services/lobby_ingest.py": "captures",
+    "src/workbench/core/services/map_confidence_graph.py": "devtools",
+    "src/workbench/core/services/obtainability_closure.py": "devtools",
+    "src/workbench/core/services/packet_correlation.py": "captures",
+    "src/workbench/core/services/packet_identity.py": "captures",
+    "src/workbench/core/services/pcap_ingest.py": "captures",
+    "src/workbench/core/services/raw_packet_ingest.py": "captures",
+    "src/workbench/core/services/scripted_behavior_visualizer.py": "devtools",
+    "src/workbench/core/services/server_catalog_identity.py": "devtools",
+    "src/workbench/core/services/timeline_alignment.py": "captures",
+    "src/workbench/core/services/validation_run.py": "validation_packages",
+    "src/workbench/core/services/wiki_evidence_graph.py": "devtools",
+    "src/workbench/domains/salvage_reconstruction.py": "captures"
+  },
+  "needs_split_review": [
+    "src/workbench/core/services/capability_producers.py",
+    "src/workbench/core/services/identity_resolver.py"
+  ],
+  "owners": [
+    "core",
+    "captures",
+    "validation_packages",
+    "devtools",
+    "editors",
+    "client_shared",
+    "bootstrap_tests"
+  ],
+  "path_rules": [
+    {
+      "note": "Only shared primitives/contracts. Product-specific core/services entries use explicit overrides below.",
+      "owner": "core",
+      "prefix": "src/workbench/core/"
+    },
+    {
+      "owner": "core",
+      "prefix": "src/workbench/runtime/"
+    },
+    {
+      "note": "Read-only only; write-capable exceptions move to editors.",
+      "owner": "client_shared",
+      "prefix": "src/workbench/client/"
+    },
+    {
+      "note": "Split into validation and packages during migration.",
+      "owner": "validation_packages",
+      "prefix": "src/workbench/migrations/"
+    },
+    {
+      "owner": "devtools",
+      "prefix": "src/workbench/reference/"
+    },
+    {
+      "owner": "devtools",
+      "prefix": "src/workbench/research/"
+    },
+    {
+      "owner": "devtools",
+      "prefix": "src/workbench/analyzers/server/"
+    },
+    {
+      "owner": "devtools",
+      "prefix": "src/workbench/adapters/servers/"
+    },
+    {
+      "note": "Provider contracts may later move to core.",
+      "owner": "devtools",
+      "prefix": "src/workbench/plugins/"
+    },
+    {
+      "note": "salvage_reconstruction.py override belongs to captures.",
+      "owner": "devtools",
+      "prefix": "src/workbench/domains/"
+    }
+  ],
+  "root_python_files": {
+    "addon_tools.py": "core",
+    "audit_dialog_drift.py": "devtools",
+    "backport_binding_audit.py": "validation_packages",
+    "backport_binding_index.py": "validation_packages",
+    "backport_convert_7_packages.py": "validation_packages",
+    "backport_convert_gm_debug_tools.py": "validation_packages",
+    "backport_convert_nyzul_package.py": "validation_packages",
+    "backport_coverage_check.py": "validation_packages",
+    "backport_item_audit.py": "validation_packages",
+    "backport_lua_convert.py": "validation_packages",
+    "backport_lua_sanity_check.py": "validation_packages",
+    "backport_map_confidence_check.py": "validation_packages",
+    "backport_map_lint.py": "validation_packages",
+    "backport_package.py": "validation_packages",
+    "backport_sql_convert.py": "validation_packages",
+    "backport_sql_live_check.py": "validation_packages",
+    "binary_inspector.py": "client_shared",
+    "build_altana_index.py": "client_shared",
+    "build_capture_index.py": "captures",
+    "build_condition_index.py": "devtools",
+    "build_database.py": "devtools",
+    "build_dialog_index.py": "devtools",
+    "build_dsp_index.py": "devtools",
+    "build_integration_index.py": "devtools",
+    "build_lsb_index.py": "devtools",
+    "build_npc_index.py": "devtools",
+    "build_plot_descriptors.py": "devtools",
+    "build_sql_index.py": "devtools",
+    "build_topaz_index.py": "devtools",
+    "build_wiki_index.py": "devtools",
+    "build_zone_topdown.py": "devtools",
+    "build_zone_visual_cache.py": "devtools",
+    "capture_backtrace.py": "captures",
+    "capture_graph_connect.py": "captures",
+    "client_binary_analyze.py": "client_shared",
+    "client_binary_diff.py": "client_shared",
+    "client_binary_index.py": "client_shared",
+    "client_model_catalog.py": "client_shared",
+    "client_model_resolver.py": "client_shared",
+    "client_overview.py": "client_shared",
+    "cpp_api_index.py": "client_shared",
+    "cpp_dependency_index.py": "client_shared",
+    "dat_extractor_bin.py": "client_shared",
+    "dat_inspector.py": "client_shared",
+    "dialog_drift_overview.py": "devtools",
+    "engine_change_index.py": "validation_packages",
+    "engine_migration_compare.py": "validation_packages",
+    "entity_profile.py": "devtools",
+    "explore_event.py": "devtools",
+    "feature_checker.py": "devtools",
+    "feature_trace.py": "devtools",
+    "ffxiclopedia_adapter.py": "devtools",
+    "fix_zone_door_props.py": "editors",
+    "gear_tables.py": "client_shared",
+    "gui_server.py": "bootstrap_tests",
+    "id_bridge.py": "validation_packages",
+    "ingest_global_tables.py": "devtools",
+    "install_external_tools.py": "bootstrap_tests",
+    "install_xi_tinkerer.py": "bootstrap_tests",
+    "item_dat_tools.py": "editors",
+    "item_edit.py": "editors",
+    "llm_client.py": "devtools",
+    "llm_db_tools.py": "devtools",
+    "llm_log.py": "devtools",
+    "lookup_entity.py": "devtools",
+    "lua_event_index.py": "devtools",
+    "mission_event_reconcile.py": "devtools",
+    "mission_graph_ingest.py": "devtools",
+    "mission_toolkit.py": "devtools",
+    "mob_look_decode.py": "client_shared",
+    "mob_model_tables.py": "client_shared",
+    "model_schedule_dump.py": "client_shared",
+    "model_viewer.py": "client_shared",
+    "nyzul_plot.py": "devtools",
+    "packet_decode.py": "captures",
+    "packet_opcode_index.py": "captures",
+    "pull_mob_positions.py": "devtools",
+    "research_gaps.py": "devtools",
+    "reset_install.py": "bootstrap_tests",
+    "salvage_reconstruct.py": "captures",
+    "scrape_bg_wiki.py": "devtools",
+    "settings.py": "core",
+    "test_backport_lua_convert.py": "bootstrap_tests",
+    "test_backport_sql_convert.py": "bootstrap_tests",
+    "test_capture_ingestion.py": "bootstrap_tests",
+    "validation_pipeline.py": "validation_packages",
+    "wiki_claim_compare.py": "devtools",
+    "wiki_compile.py": "devtools",
+    "wiki_evidence.py": "devtools",
+    "wiki_lookup.py": "devtools",
+    "workbench_connect.py": "core",
+    "workbench_connect_server.py": "core",
+    "youtube_chat_ocr.py": "captures",
+    "zmesh.py": "devtools",
+    "zone_animation_meta.py": "client_shared",
+    "zone_edit.py": "editors",
+    "zone_plot.py": "devtools"
+  },
+  "status": "phase-a",
+  "version": 1
+}
