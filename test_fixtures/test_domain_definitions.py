@@ -13,6 +13,25 @@ def main():
         for f in ("label", "archetype", "summary", "wiki", "entities", "compare"):
             assert f in d, (k, f)
         assert all({"kind", "fields", "server_globs", "edit"} <= set(e) for e in d["entities"]), k
+        for p in d.get("pipeline", []):
+            assert {"stage", "status", "summary", "handoffs"} <= set(p), (k, p)
+            assert p["status"] in {"ready", "partial", "blocked"}, (k, p["status"])
+            assert all({"label", "href"} <= set(h) for h in p["handoffs"]), (k, p)
+
+    salvage = defs["salvage"]
+    assert salvage["archetype"] == "system.salvage"
+    assert salvage["children"] == [
+        "Zhayolm Remnants I", "Zhayolm Remnants II",
+        "Arrapago Remnants I", "Arrapago Remnants II",
+        "Bhaflau Remnants I", "Bhaflau Remnants II",
+        "Silver Sea Remnants I", "Silver Sea Remnants II",
+    ]
+    stages = {p["stage"]: p["status"] for p in salvage["pipeline"]}
+    assert stages["1. Evidence intake"] == "ready"
+    assert stages["3. Spawn and instance registration proposal"] == "partial"
+    assert stages["5. Telepad / door / CSID mapping"] == "partial"
+    assert stages["6. Package and validation"] == "ready"
+
     ws = next(w for w in WORKSPACES if w["name"] == "Domains")
     def walk(items):
         for s in items:
