@@ -1,17 +1,18 @@
 """Source-neutral acquisition catalog over audited Workbench producers.
 
 This module normalizes acquisition evidence without inventing cross-source canonical
-identity.  Item/key-item literals remain literals until an explicit identity bridge
+identity. Item/key-item literals remain literals until an explicit identity bridge
 maps them to canonical graph nodes.
 
 Supported producer families:
 - mob_drops logical SQL records -> DROP_POOL
 - audited static DSP/Topaz/LSB Lua general/nation shop inventories plus modern LSB guild shops -> SOLD_BY
+- profiled LSB Curio Vendor Moogle conditional stock -> CURIO_VENDOR
 - synth_recipes logical SQL records -> SYNTHESIS
 - synergy_recipes logical SQL records -> SYNERGY
 - scripted-behavior reward projections -> SCRIPTED_REWARD
 
-Special/dynamic shop systems remain separate until individually profiled.
+Unprofiled special/dynamic shop systems remain separate rather than being guessed.
 """
 from __future__ import annotations
 
@@ -22,12 +23,14 @@ from typing import Any, Iterable
 
 from workbench.adapters.servers.base import LogicalRecord
 from workbench.adapters.servers.shop_lua import ShopRecord, numeric_item_id
+from workbench.adapters.servers.curio_shop import CurioCategory
 
 
 SCHEMA_VERSION = "acquisition-catalog/v1"
 SUPPORTED_ACQUISITION_TYPES = (
     "DROP_POOL",
     "SOLD_BY",
+    "CURIO_VENDOR",
     "SYNTHESIS",
     "SYNERGY",
     "SCRIPTED_REWARD",
@@ -206,8 +209,6 @@ def acquisition_paths_from_scripted_projection(projection: Any) -> tuple[Acquisi
     return tuple(sorted(paths, key=lambda row: (row.subject_kind, row.subject_id, row.path_id)))
 
 
-
-
 def acquisition_paths_from_shops(
     shops: Iterable[ShopRecord],
 ) -> tuple[AcquisitionPath, ...]:
@@ -239,17 +240,60 @@ def acquisition_paths_from_shops(
             ))
     return tuple(sorted(paths, key=lambda row: (row.subject_id, row.path_id)))
 
+
+def acquisition_paths_from_curio(
+    categories: Iterable[CurioCategory],
+) -> tuple[AcquisitionPath, ...]:
+    """Normalize the profiled LSB Curio Vendor Moogle conditional inventory.
+
+    Curio remains a distinct acquisition type because every row is conditionally
+    available by key item and can also carry a zone restriction.
+    """
+    paths: list[AcquisitionPath] = []
+    for category in categories:
+        for index, item in enumerate(category.items):
+            metadata = {
+                "profile": "CURIO_VENDOR_MOOGLE",
+                "category": category.category,
+                "price": item.price,
+                "item_literal": item.item_literal,
+                "item_numeric_id": numeric_item_id(item.item_literal),
+                "required_key_item_literal": item.required_key_item_literal,
+                "zone_literal": item.zone_literal,
+                "conditional": True,
+            }
+            paths.append(AcquisitionPath(
+                path_id=f"acquisition:curio-vendor:{_token(category.source_path, category.category, item.item_literal, index)}",
+                subject_kind="ITEM",
+                subject_id=str(item.item_literal),
+                acquisition_type="CURIO_VENDOR",
+                source_family="LSB_CURIO_VENDOR",
+                source_table=category.category,
+                source_identity=(
+                    ("source_path", category.source_path),
+                    ("category", category.category),
+                    ("item_literal", item.item_literal),
+                ),
+                source_label="Curio Vendor Moogle",
+                metadata=metadata,
+                confidence="VERIFIED",
+            ))
+    return tuple(sorted(paths, key=lambda row: (row.subject_id, row.source_table, row.path_id)))
+
+
 def build_acquisition_catalog(
     *,
     logical_records: Iterable[LogicalRecord] = (),
     scripted_projections: Iterable[Any] = (),
     shops: Iterable[ShopRecord] = (),
+    curio_categories: Iterable[CurioCategory] = (),
 ) -> dict[str, Any]:
     """Build a deterministic acquisition catalog grouped by literal subject identity."""
     paths = list(acquisition_paths_from_logical_records(logical_records))
     for projection in scripted_projections:
         paths.extend(acquisition_paths_from_scripted_projection(projection))
     paths.extend(acquisition_paths_from_shops(shops))
+    paths.extend(acquisition_paths_from_curio(curio_categories))
     paths.sort(key=lambda row: (row.subject_kind, row.subject_id, row.acquisition_type, row.path_id))
 
     grouped: dict[tuple[str, str], list[AcquisitionPath]] = defaultdict(list)
@@ -272,7 +316,7 @@ def build_acquisition_catalog(
     return {
         "schema_version": SCHEMA_VERSION,
         "supported_acquisition_types": list(SUPPORTED_ACQUISITION_TYPES),
-        "unsupported_until_profiled": ["CURIO_VENDOR", "SPECIAL_DYNAMIC_SHOP"],
+        "unsupported_until_profiled": ["SPECIAL_DYNAMIC_SHOP"],
         "subject_count": len(subjects),
         "path_count": len(paths),
         "counts": dict(sorted(counts.items())),
@@ -280,7 +324,9 @@ def build_acquisition_catalog(
         "notes": [
             "Acquisition identities remain source literals until an explicit identity bridge maps them.",
             "Multiple acquisition paths are alternatives; presence of one path does not prove runtime obtainability.",
-            "SOLD_BY covers audited static general/nation/guild Lua shop inventories; special dynamic shop systems remain separate.",
+            "SOLD_BY covers audited static general/nation/guild Lua shop inventories.",
+            "CURIO_VENDOR preserves explicit Curio item rows plus required key-item and optional zone gates; it is not flattened into SOLD_BY.",
+            "Other special/dynamic shop systems remain unsupported until individually profiled.",
         ],
     }
 
@@ -289,7 +335,8 @@ def verified_external_item_ids(catalog: dict[str, Any]) -> set[int]:
     """Return numeric ITEM literals with at least one VERIFIED non-crafting acquisition path.
 
     This is suitable as the external-acquisition input to crafting closure while keeping
-    synthesis/synergy recursion inside the crafting engine itself.
+    synthesis/synergy recursion inside the crafting engine itself. Conditional Curio
+    availability remains encoded on the acquisition path and is not treated as unconditional.
     """
     result: set[int] = set()
     for subject in catalog.get("subjects", ()):
@@ -298,7 +345,7 @@ def verified_external_item_ids(catalog: dict[str, Any]) -> set[int]:
         rows = subject.get("paths", ())
         if not any(
             row.get("confidence") == "VERIFIED"
-            and row.get("acquisition_type") in {"DROP_POOL", "SOLD_BY", "SCRIPTED_REWARD"}
+            and row.get("acquisition_type") in {"DROP_POOL", "SOLD_BY", "CURIO_VENDOR", "SCRIPTED_REWARD"}
             for row in rows
         ):
             continue
