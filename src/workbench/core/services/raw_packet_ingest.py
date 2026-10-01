@@ -1,6 +1,7 @@
-"""Compatibility shim for Capture raw packet ingestion services."""
+"""Compatibility alias for Capture raw packet ingestion services."""
+from __future__ import annotations
+
+import sys
 from workbench.captures import raw_packet_ingest as _canonical
 
-for _name in dir(_canonical):
-    if not _name.startswith("__"):
-        globals()[_name] = getattr(_canonical, _name)
+sys.modules[__name__] = _canonical
