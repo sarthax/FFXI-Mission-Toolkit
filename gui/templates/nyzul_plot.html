@@ -1,6 +1,18 @@
 {% extends "base.html" %}
-{% block title %}Nyzul Plot{% endblock %}
+{% block title %}Nyzul Isle Layout Editor{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block main_class %}nyzul-page{% endblock %}
 {% block content %}
+<style>
+main.nyzul-page{max-width:none!important;padding:0!important;overflow:hidden}.lbl{color:#fff;font:11px monospace;background:rgba(0,0,0,.65);padding:0 3px;border-radius:3px;pointer-events:none;white-space:nowrap}
+#nyzul-header{padding:10px 14px 6px;border-bottom:1px solid var(--border);background:var(--surface)}#nyzul-header h1{margin:0 0 4px}#nyzul-header p{margin:0;max-width:1100px}
+#nyzul-editor{display:grid!important;grid-template-columns:minmax(225px,290px) minmax(0,1fr) minmax(220px,270px);gap:0!important;align-items:stretch!important;min-height:calc(100vh - var(--shell-h) - 112px)}
+#panel{width:auto!important;min-width:0!important;font-size:12px!important;border-right:1px solid var(--border);padding:0!important;overflow:auto;background:var(--bg)}#panel label{font-size:11px}#panel select,#panel input[type=number]{width:145px}#panel h3{margin:5px 0 3px}
+#nyzul-tabs{display:flex;gap:2px;padding:5px 5px 0;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:2}#nyzul-tabs button{flex:1;padding:3px;font-size:11px}.nyzul-tab.on{background:#3a6ea5;color:#fff}.nyzul-pane{padding:6px 8px}
+#viewer-container{height:auto!important;min-height:520px;border:0!important;border-radius:0!important;min-width:0}#nyzul-side{border-left:1px solid var(--border);padding:8px;overflow:auto;background:var(--bg);font-size:11px}#nyzul-side h3{font-size:12px;margin:5px 0}.nyzul-note{font-size:10px;line-height:1.35}.nyzul-history{max-height:260px;overflow:auto;font:10px monospace;border:1px solid var(--border);padding:4px;white-space:pre-wrap}#nyzul-side button{font-size:11px;padding:2px 5px}.nyzul-row{display:flex;gap:4px;flex-wrap:wrap;margin:5px 0}
+#nyzul-focus{position:absolute;right:10px;top:10px;z-index:12;background:rgba(4,8,12,.8);color:#fff;border:1px solid #789;border-radius:4px}body.nyzul-focus #panel,body.nyzul-focus #nyzul-side{display:none}body.nyzul-focus #nyzul-editor{grid-template-columns:minmax(0,1fr)}
+@media(max-width:1050px){#nyzul-editor{grid-template-columns:minmax(205px,270px) minmax(0,1fr)}#nyzul-side{display:none}body.nyzul-show-side #nyzul-side{display:block;position:absolute;right:0;top:0;bottom:0;width:270px;z-index:20;box-shadow:-5px 0 20px #0008}}@media(max-width:720px){#nyzul-editor{display:block!important;min-height:0}#panel{border-right:0;border-bottom:1px solid var(--border);max-height:42vh}#viewer-container{height:58vh!important;min-height:360px}#nyzul-side{display:block;border-left:0;border-top:1px solid var(--border);max-height:34vh}}
+</style>
 <h1>Nyzul Isle Plot <span class="chip mono">zone 77</span></h1>
 <p class="muted">Reads the DSP repo live (floor_layouts.lua, nyzul.lua, IDs.lua, Nyzul_Isle.nav). Pick a layout and
   drive the same rolls DSP's <code class="chip">finishPickSetPoint</code> makes (or let them roll from a seed); every spawn
@@ -254,18 +266,27 @@ function run(){
 }
 function frame(L){ const e=D.entrances[L]; if(!e) return; const c=V(e); controls.target.copy(c); camera.position.set(c.x+90, c.y+120, c.z+90); controls.update(); }
 
+
+const NYZUL_RULE_HISTORY='nyzulEditor.ruleHistory.v1';
+function ruleHistory(){try{return JSON.parse(localStorage.getItem(NYZUL_RULE_HISTORY)||'[]')}catch(_){return []}}
+function setRuleHistory(rows){try{localStorage.setItem(NYZUL_RULE_HISTORY,JSON.stringify(rows.slice(-30)))}catch(_){} renderRuleHistory()}
+function cloneRules(){return JSON.parse(JSON.stringify(EXC))}function snapshotRules(label){const rows=ruleHistory();rows.push({at:new Date().toLocaleString(),label,rules:cloneRules()});setRuleHistory(rows)}
+async function saveExclusions(label){snapshotRules(label);const r=await saveExclusions('rule update');if(!r.ok)throw new Error('Nyzul exclusion save failed');renderRuleHistory()}
+function renderRuleHistory(){const out=$('nyzul-history');if(!out)return;const rows=ruleHistory();out.innerHTML=rows.length?rows.slice().reverse().map((row,i)=>'<div style="margin-bottom:5px"><b>'+row.at+'</b> · '+row.label+' <button data-nyz-restore="'+(rows.length-1-i)+'">Restore</button></div>').join(''):'No local rule snapshots yet.';out.querySelectorAll('[data-nyz-restore]').forEach(b=>b.onclick=async()=>{const row=rows[+b.dataset.nyzRestore];if(!row)return;EXC=JSON.parse(JSON.stringify(row.rules));const r=await saveExclusions('rule update');if(!r.ok)return;redraw();renderRuleHistory()})}
+function installNyzulShell(){const shell=document.querySelector('div[style*="align-items:flex-start"]');if(!shell)return;shell.id='nyzul-editor';const header=document.createElement('div');header.id='nyzul-header';const title=document.querySelector('h1'),intro=title&&title.nextElementSibling;if(title)header.append(title);if(intro)header.append(intro);shell.before(header);const panel=$('panel'),viewer=$('viewer-container');if(!panel||!viewer)return;const tabs=document.createElement('div');tabs.id='nyzul-tabs';const panes={};[['setup','Setup'],['view','View'],['results','Results']].forEach(([id,name])=>{const b=document.createElement('button');b.className='nyzul-tab';b.textContent=name;b.dataset.nyzTab=id;tabs.append(b);const p=document.createElement('div');p.className='nyzul-pane';p.dataset.nyzPane=id;panes[id]=p});let bucket='setup';[...panel.children].filter(n=>n.tagName!=='STYLE').forEach(n=>{if(n.tagName==='H3'){const text=n.textContent.trim();if(text==='Display')bucket='view';if(text==='Result')bucket='results'}panes[bucket].append(n)});panel.replaceChildren(tabs,...Object.values(panes));const choose=id=>{Object.entries(panes).forEach(([k,p])=>p.hidden=k!==id);tabs.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.nyzTab===id));try{localStorage.setItem('nyzulEditor.tab',id)}catch(_){}};tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>choose(b.dataset.nyzTab));choose(localStorage.getItem('nyzulEditor.tab')||'setup');const side=document.createElement('aside');side.id='nyzul-side';side.innerHTML='<h3>Rule backups</h3><div class="nyzul-note">Exclusion rules are saved server-side. A local snapshot is retained before every rule change; restoring one re-saves that exact rule set.</div><div class="nyzul-row"><button id="nyzul-snapshot">Snapshot rules</button><button id="nyzul-clear-history">Clear history</button></div><div id="nyzul-history" class="nyzul-history"></div><h3>Viewport</h3><div class="nyzul-note">Drag to orbit, right-drag to pan, wheel to zoom. Candidate labels and the navmesh are optional layers; hiding them reduces overlay work.</div>';viewer.after(side);const focus=document.createElement('button');focus.id='nyzul-focus';focus.type='button';focus.textContent='Focus';viewer.append(focus);focus.onclick=()=>{document.body.classList.toggle('nyzul-focus');window.dispatchEvent(new Event('resize'))};$('nyzul-snapshot').onclick=()=>snapshotRules('manual snapshot');$('nyzul-clear-history').onclick=()=>setRuleHistory([]);renderRuleHistory();try{new ResizeObserver(()=>window.dispatchEvent(new Event('resize'))).observe(viewer)}catch(_){}}
+
 // ---------- interaction ----------
 const ray = new THREE.Raycaster(); const mouse = new THREE.Vector2();
 function pick(ev){ const r=renderer.domElement.getBoundingClientRect(); mouse.set(((ev.clientX-r.left)/r.width)*2-1, -((ev.clientY-r.top)/r.height)*2+1); ray.setFromCamera(mouse,camera);
   const h=ray.intersectObjects(pickables,false); return h.length?h[0].object:null; }
-renderer.domElement.addEventListener('mousemove', ev => { const o=pick(ev); $('hover').textContent = o? o.userData.info||'' : ''; });
+let hoverQueued=false,pendingHover=null;renderer.domElement.addEventListener('mousemove',ev=>{pendingHover=ev;if(hoverQueued)return;hoverQueued=true;requestAnimationFrame(()=>{hoverQueued=false;const o=pick(pendingHover);$('hover').textContent=o?o.userData.info||'':''})});
 let down=null; renderer.domElement.addEventListener('pointerdown', ev=>down=[ev.clientX,ev.clientY]);
 renderer.domElement.addEventListener('pointerup', async ev => {
   if(!down || Math.hypot(ev.clientX-down[0],ev.clientY-down[1])>4) return;
   const o=pick(ev); if(!o||!o.userData.kind) return; const {kind,L,i}=o.userData;
   const a=(EXC[kind][L] ||= []); const k=a.indexOf(i); if(k>=0) a.splice(k,1); else a.push(i);
   if(!a.length) delete EXC[kind][L];
-  await fetch('/nyzul/exclusions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(EXC)});
+  await saveExclusions('rule update');
   redraw();
 });
 $('gen').onclick=run; $('rnd').onclick=()=>{ $('seed').value=(parseInt($('seed').value)||0)+1; run(); };
@@ -275,13 +296,13 @@ $('opac').addEventListener('input',setOpacity);
 $('layout').addEventListener('change',()=>{ const L=parseInt($('layout').value); if(L){ lastRes=null; redraw(); frame(L);} });
 $('focus').onclick=()=>frame(lastRes?lastRes.L:(parseInt($('layout').value)||1));
 $('exclr').onclick=async()=>{ const L=lastRes?lastRes.L:parseInt($('layout').value); if(!L)return; delete EXC.points[L]; delete EXC.lamps[L];
-  await fetch('/nyzul/exclusions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(EXC)}); redraw(); };
+  await saveExclusions('rule update'); redraw(); };
 $('exp').onclick=()=>{ const f=(o)=>Object.keys(o).sort((a,b)=>a-b).map(L=>`    [${L}] = { ${o[L].slice().sort((a,b)=>a-b).join(', ')} },`).join('\n');
   $('lua').value = `-- indices into Nyzul.layoutSpawnPoints / lampSpawnPoints to skip (unreachable: door-blocked)\nNyzul.excludedSpawnPoints =\n{\n${f(EXC.points)}\n}\nNyzul.excludedLampPoints =\n{\n${f(EXC.lamps)}\n}`; };
 
 window.addEventListener('resize',()=>{ const w=container.clientWidth,h=container.clientHeight; camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h); lr.setSize(w,h); });
-(function loop(){ requestAnimationFrame(loop); controls.update(); renderer.render(scene,camera); lr.render(scene,camera); })();
-$('layout').value='1'; frame(1); redraw();
+let needsRender=true;controls.addEventListener('change',()=>needsRender=true);function requestRender(){needsRender=true}(function loop(){requestAnimationFrame(loop);if(controls.update()||needsRender){renderer.render(scene,camera);lr.render(scene,camera);needsRender=false}})();
+installNyzulShell();$('layout').value='1';frame(1);redraw();requestRender();
 window.__nyz = {D, run, generate};
 </script>
 {% endblock %}
