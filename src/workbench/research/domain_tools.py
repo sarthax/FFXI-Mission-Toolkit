@@ -6,7 +6,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-import feature_checker
+from workbench.core.services import feature_checker
 
 
 def _json(raw):
