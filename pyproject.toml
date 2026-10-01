@@ -16,3 +16,6 @@ package-dir = {"" = "src"}
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["workbench*"]
+
+[tool.setuptools.package-data]
+"workbench.domains" = ["definitions.json", "definitions.d/*.json"]
