@@ -60,7 +60,7 @@ def main():
         assert pr in current, f"ROADMAP_CURRENT.md must document superseded history boundary for {pr}"
     assert "merged `main`" in current
     assert "Search/cache TCP decoder" in current
-    assert "Generalized new-item DAT allocation/injection" in current
+    assert "generalized new-item DAT allocation/injection" in current
     assert "Salvage reconstruction compiler path" in current
 
     print("roadmap reconciliation self-test: PASS")
