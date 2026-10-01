@@ -69,6 +69,19 @@ def main():
     assert "Key-item IDs are a separate namespace" in related_template
     assert "Item identity" in related_template
 
+    # CapLog chat projection is a distinct deterministic family. The service enforces the typed
+    # native observation contract; the GUI surfaces the exact shared parser line and suppresses
+    # the duplicate generic-provenance card. Text/timestamp similarity and PacketDB row ids remain
+    # explicitly excluded as identity keys.
+    assert "def chat_native_source_matches(" in related_service
+    assert "same CapLog parser observation sequence with typed native source id" in related_service
+    assert "Chat native source" in related_template
+    normalized_related = " ".join(related_template.split())
+    assert "exact same CapLog parser observation" in normalized_related
+    assert "PacketDB row-number collisions" in related_template
+    assert "is_chat_projection" in related_template
+    assert "r.relation == 'same source line span'" in related_template
+
     print("Capture Evidence Search module regression: PASS")
     return 0
 
