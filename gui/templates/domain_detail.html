@@ -5,6 +5,18 @@
 <p>{{ d.summary }} <span class="chip">{{ d.archetype }}</span></p>
 {% if d.children %}<p>Sub-areas: {% for c in d.children %}<a id="{{ slug(c) }}"></a><span class="chip">{{ c }}</span> {% endfor %}
 <span class="muted">(per-area data is not split out yet)</span></p>{% endif %}
+{% if d.pipeline %}
+<h2>Implementation pipeline</h2>
+<div class="table-wrap"><table>
+<tr><th>Stage</th><th>Status</th><th>What is ready / missing</th><th>Handoffs</th></tr>
+{% for p in d.pipeline %}<tr>
+<td><b>{{ p.stage }}</b></td>
+<td><span class="chip">{{ p.status }}</span></td>
+<td>{{ p.summary }}</td>
+<td>{% for h in p.handoffs %}<a class="chip" href="{{ h.href }}">{{ h.label }}</a> {% endfor %}</td>
+</tr>{% endfor %}
+</table></div>
+{% endif %}
 <h2>Information this domain needs</h2>
 <div class="table-wrap"><table>
 <tr><th>Entity</th><th>Fields to hold</th><th>Editor</th>{% for r in roots %}<th>{{ r|upper }}</th>{% endfor %}</tr>
