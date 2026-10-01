@@ -46,8 +46,8 @@
 - [x] Feed VERIFIED non-crafting ITEM acquisition evidence into the existing recursive crafting closure.
 - [x] Keep source literals/provenance intact instead of inventing cross-source item identity.
 - [x] Add audited static Lua shop extraction across DSP/Topaz/LSB general/nation shops plus modern LSB guild shops and emit SOLD_BY acquisition paths. Detection is based on stock/call shape, not NPC-only paths, so zone/instance Lua can participate too.
-- [ ] Profile special/dynamic shop families such as Curio Vendor Moogle separately.
-- [ ] Add explicit canonical item/key-item identity reconciliation before projecting the unified catalog into shared graph nodes.
+- [x] Profile special/dynamic shop families separately; Curio Vendor Moogle is now represented as conditional CURIO_VENDOR acquisition evidence rather than flattened into static SOLD_BY stock.
+- [x] Add explicit canonical item/key-item identity reconciliation before projecting the unified catalog into shared graph nodes. ITEM and KEY_ITEM remain namespace-isolated, LSB identities resolve only through authoritative enum evidence, and cross-provider numeric IDs require VERIFIED snapshot bridges.
 
 ## 2026-09-30 Package Scope / Create / Review workflow UX
 
@@ -66,7 +66,7 @@
 - [x] Promote cross-build EVENT/ENTITY comparison as the primary workflow.
 - [x] Add compact comparison KPI cards and inspector/model-viewer handoffs.
 - [x] Preserve snapshot import, Feature Trace mirroring, confidence, and CSV semantics.
-- [ ] Package Scope / Review / Create remain the next workflow UX redesign.
+- [x] Package Scope / Review / Create received their dedicated workflow redesign in the completed section above.
 
 ## 2026-09-30 Wiki Compiler and Research Session workflow UX
 
@@ -85,8 +85,8 @@
 - [x] Compact Research Sessions, Contradictions, Evidence Detail, and Research Gaps.
 - [x] Collapse full mission text/rollups into on-demand mission cards.
 - [x] Add template compilation/layout regression contracts and canonical Research Gaps route checks.
-- [ ] Redesign Wiki Compiler as a dedicated evidence-review workspace.
-- [ ] Redesign Research Session Detail around run/replay, evidence transcript, proposals, budgets, and report tabs/sections.
+- [x] Redesign Wiki Compiler as a dedicated evidence-review workspace; completed in the dedicated Wiki Compiler / Research Session workflow pass above.
+- [x] Redesign Research Session Detail around run/replay, evidence transcript, proposals, budgets, and report sections; completed in the dedicated workflow pass above.
 
 # FFXI Server/Client Development & Backport Workbench
 
@@ -213,7 +213,7 @@ First active foundation milestone:
       traversal are implemented; conditional nodes remain QUESTIONABLE until explicitly reviewed.
 - [~] Discover conditional system coupling automatically from source-family implementation evidence. LSB mob-script discovery now recognizes alternate-zone variants that explicitly delegate multiple lifecycle hooks to the same shared `xi.<system>` module; broader system-state patterns remain.
 - [~] Implement generic scripted-entity/combat behavior representation and graph projection. The generic model and canonical projection are implemented, and a bounded LSB Lua extractor now emits source-backed rules with exact line provenance; helper-function expansion and more dynamic source patterns remain.
-- [~] Unify acquisition/obtainability across all supported acquisition families. The source-neutral acquisition catalog now normalizes audited mob-drop, static Lua shop (general/nation/guild), synthesis, synergy, and scripted-reward evidence and can feed verified numeric non-crafting item sources into recursive crafting closure. Special/dynamic shops and explicit canonical item-identity reconciliation remain.
+- [x] Unify acquisition/obtainability across the currently audited producer families. The source-neutral acquisition catalog covers mob drops, static Lua shops, Curio Vendor Moogle conditional stock, synthesis, synergy, and scripted rewards; VERIFIED canonical ITEM/KEY_ITEM reconciliation now gates shared identity. Additional acquisition families such as HELM, gardening, exchange, and appraisal remain separate future extensions rather than blockers for the completed foundation.
 
 ## Major roadmap
 ### Phase 0 — Preserve and baseline
