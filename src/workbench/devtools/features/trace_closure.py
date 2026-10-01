@@ -3,13 +3,13 @@ from __future__ import annotations
 
 import sqlite3
 
-from workbench.core.services.obtainability_closure import (
+from workbench.devtools.dependencies.obtainability import (
     build_obtainability_closure,
     closure_projection,
     resolve_obtainability_root,
 )
 from workbench.reference import seed_runtime_reference_graphs
-from workbench.core.services.dependency_map_presentation import initial_presentation
+from workbench.devtools.dependencies.presentation import initial_presentation
 
 
 def build_feature_trace_closure(con: sqlite3.Connection, selection: str = "") -> dict:

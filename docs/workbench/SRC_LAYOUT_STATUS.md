@@ -21,6 +21,7 @@ The canonical Python package is now `src/workbench`.
 - Feature Trace binding drill-down now lives at `workbench.devtools.features.trace_binding_drilldown` and consumes the read-only Development server binding scanner at `workbench.devtools.server.binding_index`. The Validation/Packages-owned `backport_binding_index.py` keeps its cache, diff, CLI, and package concerns unchanged.
 - Root Feature Trace now enters through `workbench.devtools.features.trace`; its mature implementation is staged under `_trace_impl.py` byte-for-byte while the canonical adapter binds historical imports to the final Development catalog and the read-only Core capture-row locator contract. Root `feature_trace.py` is only a compatibility CLI/import launcher.
 - Exact capture-row provenance needed by cross-component consumers is exposed through `workbench.core.contracts.capture_row_locators`; capture ingestion, lineage recording, and health logic remain Captures-owned.
+- Generic conditional dependency projection, recursive obtainability closure, and dependency-map presentation now live together under `workbench.devtools.dependencies`. Their former `workbench.core.services` paths are zero-logic compatibility shims, while Development/reference callers use the canonical namespace directly.
 - Feature/package analysis moved from root `feature_package_analyzer.py` to `workbench.core.services.feature_package_analyzer`; its graph-import regression uses the canonical service and the root implementation is retired.
 - ID Bridge implementation moved to `workbench.core.services.id_bridge`; it now resolves the primary SQLite database through `workbench.runtime.paths.DATABASE_PATH`. Root `id_bridge.py` remains only as the documented operator CLI compatibility entry point.
 - Development Entity Lookup and Entity Profile now have canonical package entry points under `workbench.devtools.entities`, with root files retained only for compatibility during Phase C.
@@ -48,12 +49,12 @@ That launcher/bootstrap conversion is a separate migration decision; it is not r
 
 Both migration safety layers are required:
 
-- **Src Layout Regression** — editable-install smoke outside repository cwd, including canonical Feature Trace import without repository-root participation.
+- **Src Layout Regression** — editable-install smoke outside repository cwd, including canonical Feature Trace and Development dependency-service imports without repository-root participation.
 - **Workbench Regression** — existing repo-root application/regression behavior.
 
 `Workbench Regression` must watch both the root compatibility path and canonical `src/workbench/**` so package-only changes cannot bypass the broad suite. Specialized workflows must likewise watch their canonical `src` service paths; the Ancient Vows cross-fork workflow tracks `src/workbench/devtools/features/checker.py` directly.
 
-The src-layout self-test rejects reintroduction of retired root graph/schema/provenance/feature-candidate/feature-package modules or their legacy import forms. It also constrains legacy root Feature Checker importing to exactly one caller, `gui_server.py`, until that monolithic GUI surface is migrated separately, verifies the ID Bridge implementation imports from `src`, and verifies root/canonical Feature Trace identity while its implementation is staged behind the Development adapter.
+The src-layout self-test rejects reintroduction of retired root graph/schema/provenance/feature-candidate/feature-package modules or their legacy import forms. It also constrains legacy root Feature Checker importing to exactly one caller, `gui_server.py`, until that monolithic GUI surface is migrated separately, verifies the ID Bridge implementation imports from `src`, verifies root/canonical Feature Trace identity while its implementation is staged behind the Development adapter, and verifies Development dependency-service shim identity plus outside-repo canonical imports.
 
 ## Remaining repository-root cleanup
 
