@@ -20,10 +20,9 @@ _impl.wiki_lookup = _canonical_lookup
 _impl.DB_PATH = DATABASE_PATH
 _impl.BG_DUMP_PATH = VENDOR_ROOT / "ffxi-wiki-dumps-dist" / "bg-wiki.jsonl.gz"
 
-for _name in dir(_impl):
-    if not _name.startswith("__"):
-        globals()[_name] = getattr(_impl, _name)
+if __name__ == "__main__":
+    raise SystemExit(_impl.main())
 
-DB_PATH = _impl.DB_PATH
-BG_DUMP_PATH = _impl.BG_DUMP_PATH
-wiki_lookup = _canonical_lookup
+# Preserve module-global mutation/monkeypatch semantics during migration: the canonical import
+# resolves to the staged implementation module itself after its dependencies and paths are rebound.
+sys.modules[__name__] = _impl
