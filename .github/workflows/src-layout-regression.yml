@@ -19,6 +19,7 @@ on:
       - "test_fixtures/test_map_confidence_graph_package_migration.py"
       - "test_fixtures/test_wiki_lookup_package_migration.py"
       - "test_fixtures/test_wiki_evidence_package_migration.py"
+      - "test_fixtures/test_wiki_evidence_graph_package_migration.py"
       - ".github/workflows/src-layout-regression.yml"
   workflow_dispatch:
 
@@ -48,3 +49,4 @@ jobs:
           python test_fixtures/test_map_confidence_graph_package_migration.py
           python test_fixtures/test_wiki_lookup_package_migration.py
           python test_fixtures/test_wiki_evidence_package_migration.py
+          python test_fixtures/test_wiki_evidence_graph_package_migration.py
