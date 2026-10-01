@@ -104,7 +104,7 @@ def main():
     assert item["status"] == "VERIFIED" and item["canonical_id"] == "100", item
     assert item["canonical_symbol"] == "xi.item.TEST_ITEM", item
     assert key_item["status"] == "VERIFIED" and key_item["canonical_id"] == "100", key_item
-    assert key_item["canonical_symbol"] == "xi.keyItem.TEST_KI", key_item
+    assert key_item["canonical_symbol"] == "xi.keyitem.TEST_KI", key_item
 
     assert rows[("ITEM", "xi.keyItem.TEST_KI")]["canonical_identity"]["status"] == "UNRESOLVED"
     assert rows[("ITEM", "Potion")]["canonical_identity"]["status"] == "UNRESOLVED"
