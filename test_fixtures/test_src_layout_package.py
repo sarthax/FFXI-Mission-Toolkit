@@ -27,6 +27,7 @@ def main() -> None:
     assert (SRC_PACKAGE / "client" / "identity_extract.py").is_file()
     assert (SRC_PACKAGE / "gui_shell.py").is_file()
     assert (SRC_PACKAGE / "core" / "services" / "feature_candidates.py").is_file()
+    assert (SRC_PACKAGE / "core" / "services" / "feature_checker.py").is_file()
 
     # Canonical implementation lives under src/workbench. The root package is intentionally
     # limited to one compatibility bootstrap so implementation files cannot drift back there.
@@ -58,8 +59,16 @@ def main() -> None:
         for legacy_import in forbidden_imports:
             assert legacy_import not in text, f"{legacy_import!r} remains in {path.relative_to(ROOT)}"
 
+    # Feature Checker has moved canonically but intentionally retains one root compatibility CLI
+    # and import wrapper until its remaining historical callers are migrated.
+    feature_checker_wrapper = (ROOT / "feature_checker.py").read_text(encoding="utf-8")
+    assert "workbench.core.services.feature_checker" in feature_checker_wrapper
+    assert "Compatibility entry point" in feature_checker_wrapper
+
     workflow = (ROOT / ".github" / "workflows" / "workbench-regression.yml").read_text(encoding="utf-8")
     assert '- "src/workbench/**"' in workflow
+    ancient_vows = (ROOT / ".github" / "workflows" / "workbench-ancient-vows.yml").read_text(encoding="utf-8")
+    assert 'src/workbench/core/services/feature_checker.py' in ancient_vows
 
     # Editable installation in CI must make the canonical src package importable even when
     # neither the repository root nor PYTHONPATH participates in import resolution. Package
@@ -77,13 +86,14 @@ def main() -> None:
             "import workbench.client.identity_extract as ie; "
             "import workbench.gui_shell as gs; "
             "from workbench.core.services.feature_candidates import candidates; "
+            "from workbench.core.services.feature_checker import resolve_feature, check_feature; "
             "pkg=Path(workbench.__file__).resolve(); "
             "assert 'src' in pkg.parts, pkg; "
             "assert p.REPO_ROOT.name == 'FFXI-Mission-Toolkit', p.REPO_ROOT; "
             "assert d.DEF_PATH.parent == pkg.parent / 'domains', d.DEF_PATH; "
             "assert d.WIKI_DUMP == p.repo_path('vendor','ffxi-wiki-dumps-dist','bg-wiki.jsonl.gz'), d.WIKI_DUMP; "
             "assert d.load(), 'domain catalog must load'; "
-            "assert callable(candidates); "
+            "assert callable(candidates) and callable(resolve_feature) and callable(check_feature); "
             "assert 'src' in Path(bi.__file__).resolve().parts, bi.__file__; "
             "assert 'src' in Path(ef.__file__).resolve().parts, ef.__file__; "
             "assert 'src' in Path(ie.__file__).resolve().parts, ie.__file__; "
