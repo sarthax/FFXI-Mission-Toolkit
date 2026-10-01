@@ -15,7 +15,7 @@ The canonical Python package is now `src/workbench`.
 - Repository-owned data, vendor, GUI, database and documentation paths are centralized through `src/workbench/runtime/paths.py` where applicable.
 - Legacy root compatibility modules `workbench_graph.py`, `workbench_schema.py`, and `source_snapshot.py` are retired; first-party callers now import `workbench.core.graph`, `workbench.core.schema`, and `workbench.core.provenance` directly.
 - Feature-candidate traversal moved from root `feature_candidates.py` to `workbench.core.services.feature_candidates`; Capture Backtrace and regression callers now use the canonical service directly.
-- Feature Checker lives at `workbench.core.services.feature_checker`; research tooling and regressions now use the canonical service directly and the root `feature_checker.py` compatibility wrapper is retired.
+- Feature Checker implementation lives at `workbench.core.services.feature_checker`; research tooling and regression callers use the canonical service directly. Root `feature_checker.py` remains only for the monolithic `gui_server.py` caller and contains no implementation logic.
 - `lua_event_index.py` remains intentionally as a CLI compatibility entry point while capture tooling still documents that producer filename; its implementation remains canonical in `workbench.analyzers.server.lua_events`.
 - Editable-install CI validates that the canonical package imports from `src` outside the repository working directory.
 - Broad Workbench regression continues to validate the normal repo-root execution mode.
@@ -44,7 +44,7 @@ Both migration safety layers are required:
 
 `Workbench Regression` must watch both the root compatibility path and canonical `src/workbench/**` so package-only changes cannot bypass the broad suite. Specialized workflows must likewise watch their canonical `src` service paths; the Ancient Vows cross-fork workflow tracks `src/workbench/core/services/feature_checker.py` directly.
 
-The src-layout self-test rejects reintroduction of retired root graph/schema/provenance/feature-candidate/feature-checker modules or their legacy import forms, and verifies the canonical services are importable independently of repository-root compatibility files.
+The src-layout self-test rejects reintroduction of retired root graph/schema/provenance/feature-candidate modules or their legacy import forms. It also constrains legacy Feature Checker importing to exactly one caller, `gui_server.py`, until that monolithic GUI surface is migrated separately.
 
 ## Remaining repository-root cleanup
 
