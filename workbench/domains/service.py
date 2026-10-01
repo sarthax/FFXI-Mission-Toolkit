@@ -13,9 +13,11 @@ import json
 import re
 from pathlib import Path
 
+from workbench.runtime.paths import repo_path
+
 DEF_PATH = Path(__file__).with_name("definitions.json")
 DEF_DIR = Path(__file__).with_name("definitions.d")
-WIKI_DUMP = Path(__file__).resolve().parents[2] / "vendor/ffxi-wiki-dumps-dist/bg-wiki.jsonl.gz"
+WIKI_DUMP = repo_path("vendor", "ffxi-wiki-dumps-dist", "bg-wiki.jsonl.gz")
 _WIKI_CACHE: dict = {}
 
 
