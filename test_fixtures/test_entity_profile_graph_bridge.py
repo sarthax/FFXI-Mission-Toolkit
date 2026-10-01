@@ -3,10 +3,29 @@ import sqlite3
 import tempfile
 from pathlib import Path
 
+import lookup_entity as legacy_lookup
+from workbench.devtools.entities import lookup
 from workbench.devtools.entities.profile_graph import import_entity_profile_provenance
+from workbench.runtime.paths import DATABASE_PATH
 
 
 def main():
+    assert lookup.DB_PATH == DATABASE_PATH
+    assert legacy_lookup.resolve_query_to_ids is lookup.resolve_query_to_ids
+
+    con=sqlite3.connect(":memory:")
+    con.execute("CREATE TABLE npc_names(npcid INTEGER, name TEXT, zoneid INTEGER, norm_name TEXT)")
+    con.executemany(
+        "INSERT INTO npc_names VALUES(?,?,?,?)",
+        [
+            (100,"Lamia No.13",55,"lamiano13"),
+            (101,"Qiqirn_Treasure_Hunter",56,"qiqirntreasurehunter"),
+        ],
+    )
+    assert lookup.resolve_query_to_ids(con,"Lamia No 13")==[(100,"Lamia No.13",55)]
+    assert lookup.count_name_matches(con,"Qiqirn Treasure Hunter")==1
+    con.close()
+
     with tempfile.TemporaryDirectory() as td:
         root=Path(td)
         profile=root/"legacy.db"
@@ -47,7 +66,7 @@ def main():
         assert sum(1 for field,status,_ in rows if field=="name" and status=="DISCOVERED")==2,rows
         con.close()
 
-    print("entity profile canonical graph bridge self-test: PASS")
+    print("entity profile and lookup canonical migration self-test: PASS")
 
 
 if __name__=="__main__":
