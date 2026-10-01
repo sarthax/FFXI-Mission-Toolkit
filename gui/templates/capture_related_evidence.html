@@ -8,7 +8,29 @@
 .related-head{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
 .related-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
 .related-key{word-break:break-all}
+.related-summary{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.related-summary .chip strong{margin-right:4px}
 </style>
+
+{% set dataset_labels = {
+  'capture_npc_entries': 'Entity snapshot',
+  'capture_events': 'IDView event',
+  'capture_eventview': 'EventView decode',
+  'capture_actions': 'Battle action',
+  'capture_raw_packets': 'Raw packet',
+  'capture_structured_records': 'Structured observation',
+  'capture_chat_observations': 'Canonical chat',
+  'capture_caplog_chat': 'Legacy CapLog chat'
+} %}
+{% set item_family_labels = {
+  'shopstock_buy_db': 'Shop buy stock',
+  'shopstock_sell_db': 'Shop sell stock',
+  'guildstock_db': 'Guild stock',
+  'pricelog_simple': 'Price observation',
+  'pricelog_lua': 'Lua price observation',
+  'crafttrack_csv': 'Craft observation'
+} %}
+{% set vendor_families = ['shopstock_buy_db', 'shopstock_sell_db', 'guildstock_db', 'pricelog_simple', 'pricelog_lua'] %}
 
 <div class="dense-toolbar">
   <a class="chip" href="/captures/search">&larr; Evidence Search</a>
@@ -29,13 +51,21 @@
     Timestamp proximity, matching names, text similarity, prices, and numeric collisions across
     namespaces are deliberately not identity keys.
   </div>
+  <div class="related-summary">
+    <span class="chip"><strong>{{ anchors|length }}</strong> source locator{% if anchors|length != 1 %}s{% endif %}</span>
+    <span class="chip"><strong>{{ related|length }}</strong> provenance relation{% if related|length != 1 %}s{% endif %}</span>
+    <span class="chip"><strong>{{ packet_matches|length }}</strong> packet match{% if packet_matches|length != 1 %}es{% endif %}</span>
+    <span class="chip"><strong>{{ entity_matches|length }}</strong> entity match{% if entity_matches|length != 1 %}es{% endif %}</span>
+    <span class="chip"><strong>{{ item_matches|length }}</strong> item match{% if item_matches|length != 1 %}es{% endif %}</span>
+  </div>
 </div>
 
 <section class="related-grid" style="margin-top:8px">
   <div class="related-card">
     <div class="related-head">
       <span class="chip">Anchor</span>
-      <strong>{{ target_table }}</strong>
+      <strong>{{ dataset_labels.get(target_table, target_table) }}</strong>
+      <span class="muted mono">{{ target_table }}</span>
     </div>
     <div class="mono muted related-key" style="margin-top:5px">{{ row_key }}</div>
     {% if anchors %}
@@ -77,7 +107,7 @@
       <article class="related-card">
         <div class="related-head">
           <span class="chip">same CapLog native source observation</span>
-          <strong>{{ r.target_table }}</strong>
+          <strong>{{ dataset_labels.get(r.target_table, r.target_table) }}</strong>
           <span class="muted">{{ r.locator_basis }}</span>
         </div>
         <div style="margin-top:5px"><strong>{{ r.filename }}</strong></div>
@@ -88,6 +118,7 @@
         <div class="related-actions">
           <a class="chip" href="{{ r.source_url }}">Source Locator</a>
           <a class="chip" href="{{ r.data_url }}">Data Explorer</a>
+          <a class="chip" href="/captures/search?module=chat">Chat Evidence Search</a>
         </div>
       </article>
       {% endif %}
@@ -109,7 +140,7 @@
     <article class="related-card">
       <div class="related-head">
         <span class="chip">{{ r.relation }}</span>
-        <strong>{{ r.family }}</strong>
+        <strong>{{ item_family_labels.get(r.family, r.family) }}</strong>
         <span class="muted">{{ r.basis }}</span>
       </div>
       <div style="margin-top:5px">
@@ -118,12 +149,22 @@
       </div>
       <div class="mono muted related-key">{{ r.row_key }}</div>
       <div class="muted" style="margin-top:4px">
-        item {{ r.item_id }}{% if r.zone %} · {{ r.zone }}{% endif %}{% if r.price is not none %} · price {{ r.price }}{% endif %}
+        item {{ r.item_id }}
+        {% if r.record_type %} · {{ r.record_type }}{% endif %}
+        {% if r.zone %} · {{ r.zone }}{% endif %}
+        {% if r.price is not none %} · price {{ r.price }}{% endif %}
       </div>
       <div class="related-actions">
         {% if r.source_url %}<a class="chip" href="{{ r.source_url }}">Source Locator</a>{% endif %}
         <a class="chip" href="{{ r.data_url }}">Data Explorer</a>
         <a class="chip" href="{{ r.item_url }}">Item Profile</a>
+        {% if r.family == 'crafttrack_csv' %}
+          <a class="chip" href="/captures/search?module=crafting&q={{ r.item_id }}">Crafting Evidence Search</a>
+        {% elif r.family in vendor_families %}
+          <a class="chip" href="/captures/search?module=vendors&q={{ r.item_id }}">Vendor Evidence Search</a>
+        {% else %}
+          <a class="chip" href="/captures/search?module=items&q={{ r.item_id }}">Item Evidence Search</a>
+        {% endif %}
       </div>
     </article>
     {% endfor %}
@@ -145,7 +186,7 @@
     <article class="related-card">
       <div class="related-head">
         <span class="chip">{{ r.relation }}</span>
-        <strong>{{ r.target_table }}</strong>
+        <strong>{{ dataset_labels.get(r.target_table, r.target_table) }}</strong>
         <span class="muted">{{ r.basis }}</span>
       </div>
       {% if r.title %}<div style="margin-top:5px"><strong>{{ r.title }}</strong></div>{% endif %}
@@ -157,6 +198,7 @@
         {% if r.source_url %}<a class="chip" href="{{ r.source_url }}">Source Locator</a>{% endif %}
         <a class="chip" href="{{ r.data_url }}">Data Explorer</a>
         <a class="chip" href="{{ r.entity_url }}">Entity Profile</a>
+        <a class="chip" href="/captures/search?module=entities&q={{ r.entity_id }}">Entity Evidence Search</a>
       </div>
     </article>
     {% endfor %}
@@ -177,7 +219,7 @@
     <article class="related-card">
       <div class="related-head">
         <span class="chip">{{ r.peer_kind }}</span>
-        <strong>{{ r.target_table }}</strong>
+        <strong>{{ dataset_labels.get(r.target_table, r.target_table) }}</strong>
         <span class="muted">{{ r.basis }}</span>
         {% if r.score is not none %}<span class="chip mono">score {{ '%.2f'|format(r.score) }}</span>{% endif %}
       </div>
@@ -201,7 +243,7 @@
       <article class="related-card">
         <div class="related-head">
           <span class="chip">{{ r.relation }}</span>
-          <strong>{{ r.target_table }}</strong>
+          <strong>{{ dataset_labels.get(r.target_table, r.target_table) }}</strong>
           <span class="muted">{{ r.locator_basis }}</span>
         </div>
         <div style="margin-top:5px"><strong>{{ r.filename }}</strong></div>
