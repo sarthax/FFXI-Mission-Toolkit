@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main():
     template = (ROOT / "gui" / "templates" / "capture_help.html").read_text(encoding="utf-8")
-    shell = (ROOT / "workbench" / "gui_shell.py").read_text(encoding="utf-8")
+    shell = (ROOT / "src" / "workbench" / "gui_shell.py").read_text(encoding="utf-8")
     server = (ROOT / "gui_server.py").read_text(encoding="utf-8")
     captures = (ROOT / "gui" / "templates" / "captures.html").read_text(encoding="utf-8")
 
