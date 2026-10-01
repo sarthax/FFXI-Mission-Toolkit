@@ -1,10 +1,49 @@
 #!/usr/bin/env python3
-"""Domain definitions are well-formed and every nav Domains link resolves to a defined domain."""
-import re, sys
+"""Domain definitions and Salvage reconstruction semantics are well-formed."""
+import re, sqlite3, sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from workbench.domains import service
+from workbench.domains.salvage_reconstruction import build_dossier
 from workbench.gui_shell import WORKSPACES
+
+
+def test_salvage_dossier():
+    con = sqlite3.connect(":memory:")
+    con.executescript("""
+    CREATE TABLE captures(capture_id INTEGER PRIMARY KEY,capture_label TEXT,content_type TEXT,zones TEXT,mission_name TEXT,client_build TEXT,start_time INTEGER,ingested_at TEXT);
+    INSERT INTO captures VALUES(7,'Zhayolm test','Salvage','ZHAYOLM_REMNANTS',NULL,'retail-x',1,'now');
+    CREATE TABLE capture_npc_entries(capture_id INTEGER,zone_db TEXT,entity_id INTEGER,name TEXT,model_id INTEGER,x REAL,y REAL,z REAL,dir INTEGER,hpp INTEGER,door_id INTEGER,act_index INTEGER,sub_kind INTEGER);
+    INSERT INTO capture_npc_entries VALUES(7,'ZHAYOLM_REMNANTS',100,'_door',55,1,2,3,64,100,12,4,2);
+    INSERT INTO capture_npc_entries VALUES(7,'ZHAYOLM_REMNANTS',101,'Archaic_Gear',99,4,5,6,32,100,0,0,0);
+    CREATE TABLE capture_npc_history(capture_id INTEGER,zone_db TEXT,entity_id INTEGER,seq INTEGER,ts INTEGER,delta_json TEXT);
+    INSERT INTO capture_npc_history VALUES(7,'ZHAYOLM_REMNANTS',100,1,10,'{"animation":8}');
+    INSERT INTO capture_npc_history VALUES(7,'ZHAYOLM_REMNANTS',100,2,20,'{"animation":9}');
+    CREATE TABLE capture_events(capture_id INTEGER,zone_db TEXT,seq INTEGER,direction TEXT,opcode TEXT,opcode_name TEXT,entity_id INTEGER,entity_name TEXT,event_hex TEXT,option INTEGER,message_id INTEGER,params_raw TEXT);
+    INSERT INTO capture_events VALUES(7,'ZHAYOLM_REMNANTS',1,'S2C','0x034','EVENT',100,'_door','00AF',2,NULL,'[]');
+    CREATE TABLE capture_npc_path(capture_id INTEGER,zone_db TEXT,entity_id INTEGER,leg INTEGER,step INTEGER,x REAL,y REAL,z REAL,dir INTEGER,delta INTEGER);
+    INSERT INTO capture_npc_path VALUES(7,'ZHAYOLM_REMNANTS',101,1,1,4,5,6,32,0);
+    CREATE TABLE capture_pc_path(capture_id INTEGER,zone_db TEXT,leg INTEGER,step INTEGER,x REAL,y REAL,z REAL,dir INTEGER,delta INTEGER);
+    INSERT INTO capture_pc_path VALUES(7,'ZHAYOLM_REMNANTS',1,1,0,0,0,0,0);
+    INSERT INTO capture_pc_path VALUES(7,'ZHAYOLM_REMNANTS',1,2,40,0,40,0,0);
+    CREATE TABLE capture_actions(capture_id INTEGER,action_key TEXT,actor INTEGER,actor_name TEXT,action_type TEXT,animation INTEGER,category INTEGER,message INTEGER,name TEXT,ts INTEGER);
+    INSERT INTO capture_actions VALUES(7,'a',101,'Archaic_Gear','ABILITY',44,1,10,'Gear Ability',1);
+    INSERT INTO capture_actions VALUES(7,'b',999,'Other_Zone_Mob','ABILITY',55,1,11,'Wrong Zone',2);
+    """)
+    d = build_dossier(con, 7, "ZHAYOLM_REMNANTS")
+    assert len(d["entities"]) == 2
+    assert d["doors"][0]["entity_id"] == 100
+    assert d["doors"][0]["basis"] == "capture_npc_entries.door_id"
+    assert d["entity_state_changes"][0]["observations"] == 2
+    assert d["event_observations"][0]["event_hex"] == "00AF"
+    assert d["player_path"][0]["samples"] == 2
+    assert len(d["actions"]) == 1 and d["actions"][0]["actor"] == 101
+    assert d["proposal_readiness"]["npc_or_mob_rows"] == "READY_FOR_REVIEW"
+    assert d["proposal_readiness"]["door_state_rows"] == "READY_FOR_REVIEW"
+    assert d["proposal_readiness"]["telepad_csid_mapping"] == "PARTIAL"
+    assert d["proposal_readiness"]["telepad_destination"] == "PARTIAL"
+    assert any("evidence only" in g for g in d["gaps"])
+    con.close()
 
 
 def main():
@@ -31,6 +70,7 @@ def main():
     assert stages["3. Spawn and instance registration proposal"] == "partial"
     assert stages["5. Telepad / door / CSID mapping"] == "partial"
     assert stages["6. Package and validation"] == "ready"
+    test_salvage_dossier()
 
     ws = next(w for w in WORKSPACES if w["name"] == "Domains")
     def walk(items):
