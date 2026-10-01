@@ -7,6 +7,8 @@ from workbench.domains import service
 from workbench.domains.salvage_reconstruction import build_dossier
 from workbench.gui_shell import WORKSPACES
 
+ROOT = Path(__file__).resolve().parent.parent
+
 
 def test_salvage_dossier():
     con = sqlite3.connect(":memory:")
@@ -46,6 +48,30 @@ def test_salvage_dossier():
     con.close()
 
 
+def test_salvage_workspace_assets():
+    template = (ROOT / "gui/templates/domain_detail.html").read_text(encoding="utf-8")
+    script = (ROOT / "gui/static/salvage_reconstruction.js").read_text(encoding="utf-8")
+    assert 'd.archetype == "system.salvage"' in template
+    assert 'id="salvage-reconstruction-workspace"' in template
+    assert 'id="sr-map"' in template
+    assert 'id="sr-readiness"' in template
+    assert 'id="sr-doors"' in template
+    assert 'id="sr-events"' in template
+    assert '/static/salvage_reconstruction.js' in template
+    for table in (
+        "capture_npc_entries", "capture_npc_history", "capture_events",
+        "capture_npc_path", "capture_pc_path",
+    ):
+        assert f"csvTable('{table}'" in script
+    assert '/spatial.json' in script
+    assert 'READY_FOR_REVIEW' in script
+    assert 'CSID/option observations do not prove activation conditions' in script
+    assert 'captured state must not be treated as an open/close rule' in script
+    assert '/zoneplot2?capture_id=' in script
+    assert '/features/trace' in script
+    assert '/packages/scope' in script
+
+
 def main():
     defs = service.load()
     for k, d in defs.items():
@@ -71,6 +97,7 @@ def main():
     assert stages["5. Telepad / door / CSID mapping"] == "partial"
     assert stages["6. Package and validation"] == "ready"
     test_salvage_dossier()
+    test_salvage_workspace_assets()
 
     ws = next(w for w in WORKSPACES if w["name"] == "Domains")
     def walk(items):
