@@ -64,6 +64,10 @@ def main():
     assert "Entity identity" in related_template
     assert "same zone" in " ".join(related_template.lower().split())
     assert "Names and timestamp proximity are not identity keys" in related_template
+    assert "def _capture_item_identity_matches(" in server
+    assert "same captured ordinary item id" in related_service
+    assert "Key-item IDs are a separate namespace" in related_template
+    assert "Item identity" in related_template
 
     print("Capture Evidence Search module regression: PASS")
     return 0
