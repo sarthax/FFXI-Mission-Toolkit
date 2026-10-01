@@ -39,12 +39,21 @@ def test_salvage_dossier():
     assert d["entity_state_changes"][0]["observations"] == 2
     assert d["event_observations"][0]["event_hex"] == "00AF"
     assert d["player_path"][0]["samples"] == 2
+    assert len(d["spatial_regions"]) == 1
+    region = d["spatial_regions"][0]
+    assert region["region_id"] == "pc_leg_1"
+    assert region["floor_room_claim"] == "UNRESOLVED"
+    assert region["entity_overlap_candidates"] == [100, 101]
+    assert region["door_overlap_candidates"] == [100]
+    assert all(r["status"] == "SINGLE_REGION_CANDIDATE" for r in d["entity_region_candidates"])
     assert len(d["actions"]) == 1 and d["actions"][0]["actor"] == 101
     assert d["proposal_readiness"]["npc_or_mob_rows"] == "READY_FOR_REVIEW"
+    assert d["proposal_readiness"]["floor_room_segmentation"] == "PARTIAL"
     assert d["proposal_readiness"]["door_state_rows"] == "READY_FOR_REVIEW"
     assert d["proposal_readiness"]["telepad_csid_mapping"] == "PARTIAL"
     assert d["proposal_readiness"]["telepad_destination"] == "PARTIAL"
     assert any("evidence only" in g for g in d["gaps"])
+    assert any("not proven Salvage floors or rooms" in g for g in d["gaps"])
     con.close()
 
 
@@ -55,6 +64,7 @@ def test_salvage_workspace_assets():
     assert 'id="salvage-reconstruction-workspace"' in template
     assert 'id="sr-map"' in template
     assert 'id="sr-readiness"' in template
+    assert 'id="sr-regions"' in template
     assert 'id="sr-doors"' in template
     assert 'id="sr-events"' in template
     assert '/static/salvage_reconstruction.js' in template
@@ -64,9 +74,13 @@ def test_salvage_workspace_assets():
     ):
         assert f"csvTable('{table}'" in script
     assert '/spatial.json' in script
+    assert 'buildSpatialRegions' in script
+    assert 'UNRESOLVED floor/room' in script
+    assert 'Floor / room segmentation' in script
     assert 'READY_FOR_REVIEW' in script
     assert 'CSID/option observations do not prove activation conditions' in script
     assert 'captured state must not be treated as an open/close rule' in script
+    assert 'path leg is not a proven Salvage floor or room' in script
     assert '/zoneplot2?capture_id=' in script
     assert '/features/trace' in script
     assert '/packages/scope' in script
