@@ -42,7 +42,13 @@ def main() -> None:
     # These former root compatibility/implementation modules are retired. First-party code and
     # regressions must use canonical package imports directly rather than recreating hidden root
     # coupling.
-    retired = ("workbench_graph.py", "workbench_schema.py", "source_snapshot.py", "feature_candidates.py")
+    retired = (
+        "workbench_graph.py",
+        "workbench_schema.py",
+        "source_snapshot.py",
+        "feature_candidates.py",
+        "feature_checker.py",
+    )
     for name in retired:
         assert not (ROOT / name).exists(), name
     forbidden_imports = (
@@ -50,6 +56,8 @@ def main() -> None:
         "from workbench_schema import",
         "from source_snapshot import",
         "from feature_candidates import",
+        "import feature_checker",
+        "from feature_checker import",
     )
     first_party_python = list(ROOT.glob("*.py")) + list(SRC_PACKAGE.rglob("*.py")) + list((ROOT / "test_fixtures").glob("*.py"))
     for path in first_party_python:
@@ -59,16 +67,11 @@ def main() -> None:
         for legacy_import in forbidden_imports:
             assert legacy_import not in text, f"{legacy_import!r} remains in {path.relative_to(ROOT)}"
 
-    # Feature Checker has moved canonically but intentionally retains one root compatibility CLI
-    # and import wrapper until its remaining historical callers are migrated.
-    feature_checker_wrapper = (ROOT / "feature_checker.py").read_text(encoding="utf-8")
-    assert "workbench.core.services.feature_checker" in feature_checker_wrapper
-    assert "Compatibility entry point" in feature_checker_wrapper
-
     workflow = (ROOT / ".github" / "workflows" / "workbench-regression.yml").read_text(encoding="utf-8")
     assert '- "src/workbench/**"' in workflow
     ancient_vows = (ROOT / ".github" / "workflows" / "workbench-ancient-vows.yml").read_text(encoding="utf-8")
     assert 'src/workbench/core/services/feature_checker.py' in ancient_vows
+    assert '"feature_checker.py"' not in ancient_vows
 
     # Editable installation in CI must make the canonical src package importable even when
     # neither the repository root nor PYTHONPATH participates in import resolution. Package
