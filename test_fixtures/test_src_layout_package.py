@@ -29,6 +29,8 @@ def main() -> None:
     assert (SRC_PACKAGE / "core" / "services" / "feature_candidates.py").is_file()
     assert (SRC_PACKAGE / "core" / "services" / "feature_checker.py").is_file()  # compatibility shim
     assert (SRC_PACKAGE / "devtools" / "features" / "checker.py").is_file()
+    assert (SRC_PACKAGE / "devtools" / "features" / "trace_binding_drilldown.py").is_file()
+    assert (SRC_PACKAGE / "devtools" / "server" / "binding_index.py").is_file()
     assert (SRC_PACKAGE / "core" / "services" / "feature_package_analyzer.py").is_file()
     assert (SRC_PACKAGE / "core" / "services" / "id_bridge.py").is_file()
 
@@ -122,6 +124,8 @@ def main() -> None:
             "import workbench.gui_shell as gs; "
             "from workbench.core.services.feature_candidates import candidates; "
             "from workbench.devtools.features.checker import resolve_feature, check_feature; "
+            "from workbench.devtools.features.trace_binding_drilldown import binding_lookup; "
+            "from workbench.devtools.server import binding_index as dbi; "
             "from workbench.core.services.feature_package_analyzer import analyze; "
             "from workbench.core.services import id_bridge as ib; "
             "pkg=Path(workbench.__file__).resolve(); "
@@ -131,6 +135,7 @@ def main() -> None:
             "assert d.WIKI_DUMP == p.repo_path('vendor','ffxi-wiki-dumps-dist','bg-wiki.jsonl.gz'), d.WIKI_DUMP; "
             "assert d.load(), 'domain catalog must load'; "
             "assert callable(candidates) and callable(resolve_feature) and callable(check_feature) and callable(analyze); "
+            "assert callable(binding_lookup) and callable(dbi.build_topaz_index) and callable(dbi.build_dsp_index); "
             "assert callable(ib.normalize) and ib.DB_PATH == p.DATABASE_PATH, ib.DB_PATH; "
             "assert 'src' in Path(ib.__file__).resolve().parts, ib.__file__; "
             "assert 'src' in Path(bi.__file__).resolve().parts, bi.__file__; "
