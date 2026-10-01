@@ -24,6 +24,7 @@ on:
       - "test_fixtures/test_capture_integrity_package_migration.py"
       - "test_fixtures/test_packet_identity_package_migration.py"
       - "test_fixtures/test_capture_timeline_correlation_package_migration.py"
+      - "test_fixtures/test_raw_packet_ingest_package_migration.py"
       - ".github/workflows/src-layout-regression.yml"
   workflow_dispatch:
 
@@ -58,3 +59,4 @@ jobs:
           python test_fixtures/test_capture_integrity_package_migration.py
           python test_fixtures/test_packet_identity_package_migration.py
           python test_fixtures/test_capture_timeline_correlation_package_migration.py
+          python test_fixtures/test_raw_packet_ingest_package_migration.py
