@@ -68,6 +68,8 @@ def test_final_component_namespaces_have_expected_owners():
         "src/workbench/devtools/features/checker.py": "devtools",
         "src/workbench/devtools/features/trace_catalog.py": "devtools",
         "src/workbench/devtools/features/trace_providers.py": "devtools",
+        "src/workbench/devtools/features/trace_dossier.py": "devtools",
+        "src/workbench/devtools/features/trace_closure.py": "devtools",
     }.items():
         path = ROOT / rel
         assert path.exists(), rel
