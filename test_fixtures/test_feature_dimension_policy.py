@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Regression checks for Feature Checker dimension policies."""
-from feature_checker import implementation_dimension, validation_dimension
+from workbench.core.services.feature_checker import implementation_dimension, validation_dimension
 
 def main():
     assert implementation_dimension([])=="NO_IMPLEMENTATION_RECORDS"

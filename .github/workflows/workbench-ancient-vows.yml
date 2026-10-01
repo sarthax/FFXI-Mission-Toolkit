@@ -9,7 +9,6 @@ on:
       - "workbench/core/**"
       - "workbench/migrations/**"
       - "src/workbench/core/services/feature_checker.py"
-      - "feature_checker.py"
       - "test_fixtures/test_ancient_vows_crossfork.py"
       - "backport_binding_audit.py"
       - "backport_binding_index.py"

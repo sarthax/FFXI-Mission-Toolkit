@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Pinned public-repository flagship E2E: CoP 2-5 Ancient Vows, LSB -> legacy DSP.\n\nP0 closure sentinel: comment-only edits may force a current flagship workflow run.\n"""
+"""Pinned public-repository flagship E2E: CoP 2-5 Ancient Vows, LSB -> legacy DSP.
+
+P0 closure sentinel: comment-only edits may force a current flagship workflow run.
+"""
 from __future__ import annotations
 import json,sys
 from pathlib import Path
@@ -30,8 +33,8 @@ from workbench.core import graph
 from workbench.core.schema import Artifact, CapabilityRequirement, DependencyEdge, Feature, MigrationAction
 from workbench.core.services.feature_surface_graph import persist_feature_surface
 from workbench.core.services.feature_surface_validation import build_feature_surface_validation
+from workbench.core.services.feature_checker import resolve_feature, check_feature
 from workbench.plugins.domain import PluginContext, default_registry, propose_dsp_battlefield_membership, propose_dsp_battlefield_policy, analyze_dsp_battlefield_callbacks, plan_dsp_battlefield_callback_adaptation, generated_outputs_for_dsp_battlefield, extract_lsb_battlefield_policy, extract_lsb_mission_level_cap, extract_lsb_battlefield_mob_groups, validate_dsp_battlefield_proposals, plan_dsp_battlefield_representation, battlefield_representation_finding, apply_plugin_reshape_findings, MissionRequirement, MissionRepresentation, plan_mission_representation, MissionPatchProposal, generated_mission_patch_proposals, mission_proposal_finding, apply_plugin_proposal_findings
-from feature_checker import resolve_feature, check_feature
 import tempfile
 import backport_binding_audit as bba
 import backport_lua_sanity_check as blsc

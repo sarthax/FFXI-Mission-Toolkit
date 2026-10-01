@@ -59,16 +59,28 @@ def main() -> None:
         for legacy_import in forbidden_imports:
             assert legacy_import not in text, f"{legacy_import!r} remains in {path.relative_to(ROOT)}"
 
-    # Feature Checker has moved canonically but intentionally retains one root compatibility CLI
-    # and import wrapper until its remaining historical callers are migrated.
-    feature_checker_wrapper = (ROOT / "feature_checker.py").read_text(encoding="utf-8")
+    # Feature Checker is canonical under src. One compatibility wrapper remains solely because
+    # gui_server.py is still a monolithic root entry point; every other first-party caller must use
+    # the canonical service directly.
+    feature_checker_wrapper_path = ROOT / "feature_checker.py"
+    assert feature_checker_wrapper_path.is_file()
+    feature_checker_wrapper = feature_checker_wrapper_path.read_text(encoding="utf-8")
     assert "workbench.core.services.feature_checker" in feature_checker_wrapper
-    assert "Compatibility entry point" in feature_checker_wrapper
+    assert "gui_server.py" in feature_checker_wrapper
+    legacy_feature_checker_callers = []
+    for path in first_party_python:
+        if path.resolve() in {Path(__file__).resolve(), feature_checker_wrapper_path.resolve()}:
+            continue
+        lines = [line.strip() for line in path.read_text(encoding="utf-8", errors="ignore").splitlines()]
+        if any(line == "import feature_checker" or line.startswith("from feature_checker import") for line in lines):
+            legacy_feature_checker_callers.append(path.relative_to(ROOT).as_posix())
+    assert legacy_feature_checker_callers == ["gui_server.py"], legacy_feature_checker_callers
 
     workflow = (ROOT / ".github" / "workflows" / "workbench-regression.yml").read_text(encoding="utf-8")
     assert '- "src/workbench/**"' in workflow
     ancient_vows = (ROOT / ".github" / "workflows" / "workbench-ancient-vows.yml").read_text(encoding="utf-8")
     assert 'src/workbench/core/services/feature_checker.py' in ancient_vows
+    assert '"feature_checker.py"' not in ancient_vows
 
     # Editable installation in CI must make the canonical src package importable even when
     # neither the repository root nor PYTHONPATH participates in import resolution. Package
