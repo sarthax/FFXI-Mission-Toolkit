@@ -8,6 +8,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import build_capture_index
+from workbench.core.contracts import capture_row_locators
 from workbench.core.services import capture_integrity
 
 
@@ -64,6 +65,20 @@ def main():
             (cid,),
         ).fetchone()
         assert normalized == ("0x034", 17000001, 42, 99), normalized
+
+        # Cross-component consumers use the Core contract, while Captures retains the ingestion
+        # implementation. Both query paths must preserve the same exact locator evidence.
+        contract_rows = capture_row_locators.find_row_locators(
+            con, cid, "capture_eventview", {"seq": 0, "zone_db": "Locator Zone"}
+        )
+        integrity_rows = capture_integrity.find_row_locators(
+            con, cid, "capture_eventview", {"zone_db": "Locator Zone", "seq": 0}
+        )
+        assert contract_rows == integrity_rows, (contract_rows, integrity_rows)
+        assert len(contract_rows) == 1, contract_rows
+        assert contract_rows[0]["filename"] == "Locator Zone.log", contract_rows
+        assert contract_rows[0]["details"]["opcode"] == "0x034", contract_rows
+        assert capture_row_locators.canonical_row_key({"b": 2, "a": 1}) == '{"a": 1, "b": 2}'
 
         health = capture_integrity.capture_health(con, cid)
         assert health["dimensions"]["lineage"]["exact_row_locators"] == 1, health
