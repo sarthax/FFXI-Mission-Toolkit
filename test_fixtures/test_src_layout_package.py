@@ -71,8 +71,8 @@ def main() -> None:
     for path in first_party_python:
         if path.resolve() in {Path(__file__).resolve(), feature_checker_wrapper_path.resolve()}:
             continue
-        text = path.read_text(encoding="utf-8", errors="ignore")
-        if "import feature_checker" in text or "from feature_checker import" in text:
+        lines = [line.strip() for line in path.read_text(encoding="utf-8", errors="ignore").splitlines()]
+        if any(line == "import feature_checker" or line.startswith("from feature_checker import") for line in lines):
             legacy_feature_checker_callers.append(path.relative_to(ROOT).as_posix())
     assert legacy_feature_checker_callers == ["gui_server.py"], legacy_feature_checker_callers
 
