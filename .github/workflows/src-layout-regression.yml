@@ -12,6 +12,7 @@ on:
       - "capture_backtrace.py"
       - "capture_graph_connect.py"
       - "build_capture_index.py"
+      - "youtube_chat_ocr.py"
       - "test_fixtures/test_src_layout_package.py"
       - "test_fixtures/test_feature_trace_package_migration.py"
       - "test_fixtures/test_dependency_services_package_migration.py"
@@ -33,6 +34,7 @@ on:
       - "test_fixtures/test_capture_backtrace_package_migration.py"
       - "test_fixtures/test_capture_graph_connect_package_migration.py"
       - "test_fixtures/test_capture_build_index_package_migration.py"
+      - "test_fixtures/test_youtube_ocr_package_migration.py"
       - ".github/workflows/src-layout-regression.yml"
   workflow_dispatch:
 
@@ -73,3 +75,4 @@ jobs:
           python test_fixtures/test_capture_backtrace_package_migration.py
           python test_fixtures/test_capture_graph_connect_package_migration.py
           python test_fixtures/test_capture_build_index_package_migration.py
+          python test_fixtures/test_youtube_ocr_package_migration.py
