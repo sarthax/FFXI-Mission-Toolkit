@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse,json,re
 from dataclasses import asdict
 from pathlib import Path
-from workbench_schema import AnalysisResult, Finding
+from workbench.core.schema import AnalysisResult, Finding
 
 CPP_EXTENSIONS={".cpp",".cc",".cxx",".c",".h",".hpp",".hh",".hxx"}
 BUILD_NAMES={"CMakeLists.txt","Makefile","makefile","GNUmakefile"}
