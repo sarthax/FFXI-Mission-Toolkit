@@ -65,6 +65,7 @@ def test_final_component_namespaces_have_expected_owners():
     manifest = _manifest()
     for rel, expected in {
         "src/workbench/devtools/entities/profile_graph.py": "devtools",
+        "src/workbench/devtools/features/checker.py": "devtools",
     }.items():
         path = ROOT / rel
         assert path.exists(), rel

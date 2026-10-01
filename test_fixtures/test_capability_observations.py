@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 from workbench.core import graph
 from workbench.core.schema import Capability, CapabilityObservation, CapabilityRequirement, Feature
-from workbench.core.services.feature_checker import resolve_feature, check_feature
+from workbench.devtools.features.checker import resolve_feature, check_feature
 
 def main():
     with tempfile.TemporaryDirectory() as td:
