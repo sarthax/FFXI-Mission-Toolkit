@@ -5,6 +5,45 @@
 <p>{{ d.summary }} <span class="chip">{{ d.archetype }}</span></p>
 {% if d.children %}<p>Sub-areas: {% for c in d.children %}<a id="{{ slug(c) }}"></a><span class="chip">{{ c }}</span> {% endfor %}
 <span class="muted">(per-area data is not split out yet)</span></p>{% endif %}
+
+{% if d.archetype == "system.salvage" %}
+<style>
+#salvage-reconstruction-workspace{margin:14px 0 24px}.sr-toolbar{display:flex;gap:8px;align-items:end;flex-wrap:wrap;padding:10px;border:1px solid var(--border,#444);border-radius:8px}.sr-toolbar label{display:grid;gap:4px}.sr-toolbar input{min-width:150px}.sr-grid{display:grid;grid-template-columns:minmax(220px,.75fr) minmax(420px,1.6fr) minmax(300px,1fr);gap:10px;margin-top:10px}.sr-pane{border:1px solid var(--border,#444);border-radius:8px;padding:10px;min-width:0}.sr-pane h3{margin:0 0 8px}.sr-stack{display:grid;gap:8px}.sr-ready{display:flex;justify-content:space-between;gap:8px;padding:7px 8px;border:1px solid var(--border,#444);border-radius:6px}.sr-ready span{font-family:monospace}.sr-ready-for-review span,.sr-ok{font-weight:700}.sr-card{padding:8px;border:1px solid var(--border,#444);border-radius:6px;margin:6px 0}.sr-svg{width:100%;min-height:360px;border:1px solid var(--border,#444);border-radius:6px}.sr-map-bg{fill:transparent}.sr-player-path{fill:none;stroke:currentColor;stroke-width:2;opacity:.7}.sr-entity-mark{fill:currentColor}.sr-door-mark{fill:currentColor;stroke:currentColor}.sr-interactive-mark{fill:transparent;stroke:currentColor;stroke-width:2}.sr-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.9em;margin-top:5px}.sr-empty{padding:12px}.sr-tabs details{border-top:1px solid var(--border,#444);padding:7px 0}.sr-tabs details:first-child{border-top:0}.sr-tabs summary{cursor:pointer;font-weight:700}.sr-tabs .table-wrap{max-height:360px;overflow:auto}.sr-status{margin-left:auto}.sr-handoffs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}@media(max-width:1100px){.sr-grid{grid-template-columns:1fr}.sr-svg{min-height:300px}}
+</style>
+<section id="salvage-reconstruction-workspace">
+  <h2>Salvage Reconstruction Workspace <span class="chip">read-only evidence</span></h2>
+  <p class="muted">Load an ingested capture and organize what was actually observed before proposing SQL/Lua. Captured state, CSID, option, position, or movement evidence is not promoted into an implementation rule without corroborating evidence.</p>
+  <form id="sr-form" class="sr-toolbar">
+    <label>Capture ID<input id="sr-capture-id" inputmode="numeric" placeholder="e.g. 42"></label>
+    <label>Zone DB name<input id="sr-zone" placeholder="optional; auto-selects first zone"></label>
+    <button type="submit">Load reconstruction</button>
+    <span id="sr-status" class="muted sr-status">Choose an ingested Salvage capture.</span>
+  </form>
+  <div id="sr-counts" style="margin-top:8px"></div>
+  <div id="sr-handoffs" class="sr-handoffs"></div>
+  <div class="sr-grid">
+    <aside class="sr-pane">
+      <h3>Evidence readiness</h3>
+      <div id="sr-readiness" class="sr-stack"><div class="muted">Load a capture to score evidence buckets.</div></div>
+      <h3 style="margin-top:14px">Implementation gaps</h3>
+      <div id="sr-gaps" class="muted">No capture loaded.</div>
+    </aside>
+    <section class="sr-pane">
+      <h3>Zone reconstruction</h3>
+      <div id="sr-map"><div class="muted sr-empty">Entity positions and player path will appear here.</div></div>
+    </section>
+    <aside class="sr-pane sr-tabs">
+      <h3>Implementation dossier</h3>
+      <details open><summary>Entities</summary><div id="sr-entities" class="muted sr-empty">No capture loaded.</div></details>
+      <details><summary>Doors</summary><div id="sr-doors" class="muted sr-empty">No capture loaded.</div></details>
+      <details><summary>Telepads / Events / CSIDs</summary><div id="sr-events" class="muted sr-empty">No capture loaded.</div></details>
+      <details><summary>Proposal</summary><p class="muted">Proposal generation remains intentionally disabled in this slice. Evidence marked READY_FOR_REVIEW will feed the later npc_list / mob_spawn_points / instance_entities and Lua scaffold compiler; unresolved mechanics remain TODO evidence gaps.</p></details>
+    </aside>
+  </div>
+</section>
+<script src="/static/salvage_reconstruction.js"></script>
+{% endif %}
+
 {% if d.pipeline %}
 <h2>Implementation pipeline</h2>
 <div class="table-wrap"><table>
