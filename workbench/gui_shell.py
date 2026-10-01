@@ -27,9 +27,8 @@ WORKSPACES = (
     },
     {
         "name": "Features",
-        "href": "/missions",
+        "href": "/features/trace",
         "sections": (
-            {"label": "Mission Explorer", "href": "/missions"},
             {"label": "Feature Trace", "href": "/features/trace"},
             {"label": "Behavior Inspector", "href": "/behavior"},
             {"label": "Feature Checker", "href": "/features/check"},
@@ -37,7 +36,7 @@ WORKSPACES = (
     },
     {
         "name": "Domains",
-        "href": "/domains/assault",
+        "href": "/domains",
         "sections": (
             {"label": "Overview", "href": "/domains"},
             {
@@ -78,6 +77,7 @@ WORKSPACES = (
                 "label": "Battle Systems",
                 "children": (
                     {"label": "Assault", "href": "/domains/assault"},
+                    {"label": "Assault Missions", "href": "/missions?q=__coverage_not_loaded__"},
                     {"label": "Nyzul Isle", "href": "/nyzul"},
                 ),
             },
@@ -327,6 +327,10 @@ def build_shell_context(
     shell_override: str | None = None,
 ) -> dict:
     owner = route_owner(path, method)
+    # Assault Missions is an Assault-domain view, even though the historical route-map entry still
+    # classifies /missions under Features. Keep the legacy URL but present it in its real domain.
+    if path == "/missions":
+        owner = {**owner, "home": "Domains", "section": "Battle Systems > Assault Missions"}
     planned_home = {"validation": "Validation", "packages": "Packages"}.get(workspace_slug or "")
     if planned_home:
         owner = {**owner, "home": planned_home, "section": "Dashboard"}
