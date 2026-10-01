@@ -4,6 +4,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / "docs" / "workbench" / "COMPONENT_OWNERSHIP.json"
+FINAL_NAMESPACE_OWNERS = {
+    "src/workbench/captures/": "captures",
+    "src/workbench/validation/": "validation_packages",
+    "src/workbench/packages/": "validation_packages",
+    "src/workbench/devtools/": "devtools",
+    "src/workbench/editors/": "editors",
+}
 
 
 def _manifest():
@@ -23,6 +30,10 @@ def _owner_for_src(path: Path, manifest: dict):
 
     if rel == "src/workbench/gui_shell.py":
         return "bootstrap_tests"
+
+    for prefix, owner in FINAL_NAMESPACE_OWNERS.items():
+        if rel.startswith(prefix):
+            return owner
 
     for rule in manifest["path_rules"]:
         if rel.startswith(rule["prefix"]):
@@ -48,6 +59,16 @@ def test_all_src_workbench_python_has_an_owner():
         if _owner_for_src(path, manifest) is None:
             unowned.append(path.relative_to(ROOT).as_posix())
     assert not unowned, f"Unowned src/workbench Python modules: {unowned}"
+
+
+def test_final_component_namespaces_have_expected_owners():
+    manifest = _manifest()
+    for rel, expected in {
+        "src/workbench/devtools/entities/profile_graph.py": "devtools",
+    }.items():
+        path = ROOT / rel
+        assert path.exists(), rel
+        assert _owner_for_src(path, manifest) == expected
 
 
 def test_known_core_services_product_code_is_explicitly_reclassified():
