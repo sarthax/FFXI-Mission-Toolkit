@@ -3,7 +3,7 @@ from pathlib import Path
 import sqlite3
 import tempfile
 
-from feature_package_analyzer import analyze, import_to_graph
+from workbench.core.services.feature_package_analyzer import analyze, import_to_graph
 
 
 def main():
