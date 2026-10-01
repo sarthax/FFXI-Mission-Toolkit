@@ -26,6 +26,8 @@ def main() -> None:
     assert (SRC_PACKAGE / "client" / "event_fingerprint.py").is_file()
     assert (SRC_PACKAGE / "client" / "identity_extract.py").is_file()
     assert not (ROOT / "workbench" / "client").exists()
+    assert (SRC_PACKAGE / "gui_shell.py").is_file()
+    assert not (ROOT / "workbench" / "gui_shell.py").exists()
     assert BRIDGE.is_file()
 
     bridge_text = BRIDGE.read_text(encoding="utf-8")
@@ -34,8 +36,8 @@ def main() -> None:
 
     # Editable installation in CI must make the canonical src package importable even when
     # neither the repository root nor PYTHONPATH participates in import resolution. Package
-    # resources must load from src while repository-owned vendor data remains anchored at the
-    # repository root via workbench.runtime.paths.
+    # resources must load from src while repository-owned vendor/docs data remains anchored at
+    # the repository root via workbench.runtime.paths.
     with tempfile.TemporaryDirectory() as td:
         env = dict(os.environ)
         env.pop("PYTHONPATH", None)
@@ -46,6 +48,7 @@ def main() -> None:
             "import workbench.client.binary_index as bi; "
             "import workbench.client.event_fingerprint as ef; "
             "import workbench.client.identity_extract as ie; "
+            "import workbench.gui_shell as gs; "
             "pkg=Path(workbench.__file__).resolve(); "
             "assert 'src' in pkg.parts, pkg; "
             "assert p.REPO_ROOT.name == 'FFXI-Mission-Toolkit', p.REPO_ROOT; "
@@ -55,8 +58,11 @@ def main() -> None:
             "assert 'src' in Path(bi.__file__).resolve().parts, bi.__file__; "
             "assert 'src' in Path(ef.__file__).resolve().parts, ef.__file__; "
             "assert 'src' in Path(ie.__file__).resolve().parts, ie.__file__; "
+            "assert 'src' in Path(gs.__file__).resolve().parts, gs.__file__; "
             "assert ef._events_dump_root() == p.repo_path('vendor','FFXI-EventsDump'), ef._events_dump_root(); "
             "assert ie.repo_path('vendor','FFXI-Resources','scripts','events','dats.yaml') == p.repo_path('vendor','FFXI-Resources','scripts','events','dats.yaml'); "
+            "assert gs.ROUTE_MAP == p.repo_path('docs','workbench','GUI_ROUTE_MAP.json'), gs.ROUTE_MAP; "
+            "assert gs.route_owner('/captures/search')['home'] == 'Captures'; "
             "print(pkg)"
         )
         subprocess.run([sys.executable, "-c", code], cwd=td, env=env, check=True)
