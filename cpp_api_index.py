@@ -13,8 +13,8 @@ import re
 from dataclasses import asdict
 from pathlib import Path
 
-from source_snapshot import snapshot_id
-from workbench_schema import (
+from workbench.core.provenance import snapshot_id
+from workbench.core.schema import (
     AnalysisResult, Binding, DependencyEdge, EnumDefinition, Finding, Function, FunctionSignature
 )
 
