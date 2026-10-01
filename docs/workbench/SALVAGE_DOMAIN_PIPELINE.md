@@ -20,13 +20,13 @@ The workflow is intentionally evidence-first:
 6. **Generate a review package**, not direct server writes.
 7. **Validate closure** against the original captures and known implementation truth set.
 
-`workbench/domains/salvage_reconstruction.py` now implements the read-only dossier. `salvage_reconstruct.py` exposes it as JSON:
+`workbench/domains/salvage_reconstruction.py` implements the read-only dossier. `salvage_reconstruct.py` exposes it as JSON:
 
 ```text
 py -3 salvage_reconstruct.py <capture_id> --zone ZHAYOLM_REMNANTS
 ```
 
-The dossier is designed to become the backing model for the Salvage GUI workspace. It currently separates:
+The dossier separates:
 
 - capture metadata and available zones;
 - observed entities with model, position, rotation and runtime fields;
@@ -34,11 +34,15 @@ The dossier is designed to become the backing model for the Salvage GUI workspac
 - other interactive candidates (`act_index` / `sub_kind` / door fields);
 - EVENT rows by entity, opcode, event payload, option and message id;
 - captured NPC movement/path coverage;
+- observed player-path legs as conservative spatial-region candidates;
+- entity/door overlap candidates for those observed path regions;
 - observed actions, animations and messages;
 - implementation-readiness states;
 - unresolved evidence gaps.
 
 Most importantly, **EVENT evidence is not automatically a telepad destination**. The dossier marks telepad/CSID mapping as partial until the event is correlated with movement/zone transition/server/reference evidence. This prevents the old workflow failure mode where an agent sees a plausible event and wires the wrong destination or state condition.
+
+Likewise, **a player-path leg is not automatically a Salvage floor or room**. The first segmentation slice records each positioned capture path leg as an observed spatial region, calculates its X/Z envelope, and reports entities/doors that overlap that envelope. Region labels remain unresolved, and entities that overlap multiple regions remain ambiguous until door, telepad, transition, map, or other corroborating evidence establishes the actual boundary.
 
 ## Current toolkit readiness
 
@@ -47,6 +51,8 @@ Most importantly, **EVENT evidence is not automatically a telepad destination**.
 - Capture ingestion across supported packet/entity/action/event/chat formats.
 - Canonical capture provenance and Related Evidence.
 - Salvage reconstruction dossier generation from normalized capture tables.
+- Visual Salvage reconstruction workspace on the Salvage domain page.
+- Conservative player-path-region segmentation foundation with unresolved floor/room semantics.
 - Entity identity review against capture/server/client evidence.
 - Zone Editor spatial review and editing.
 - Read/compare support for `mob_spawn_points.sql`, `npc_list.sql`, `mob_groups.sql`, `mob_pools.sql`, `mob_droplist.sql`, `instance_list.sql`, and `instance_entities.sql`.
@@ -58,7 +64,9 @@ Most importantly, **EVENT evidence is not automatically a telepad destination**.
 ### Partial / next compiler work
 
 1. **Floor/room segmentation**
-   - use PC paths, NPC positions, telepad observations, doors and reference maps to partition a capture into floors/rooms;
+   - implemented foundation: preserve parser-native player-path legs as observed spatial regions and show entity/door overlap candidates;
+   - next: correlate region transitions with doors, telepads, movement discontinuities and reference-map evidence;
+   - resolve ambiguous entity membership only when stronger evidence exists;
    - preserve uncertainty where a boundary cannot be established from evidence.
 
 2. **Entity proposal**
@@ -96,18 +104,18 @@ Most importantly, **EVENT evidence is not automatically a telepad destination**.
    - drops/rewards.
    - BGWiki is mechanics/reference evidence only; numeric IDs, positions, event IDs and server wiring require server/client/capture evidence.
 
-## Planned GUI dossier
+## GUI dossier
 
-The Salvage domain workspace should display one selected build target with these panels:
+The Salvage domain workspace displays one selected capture/zone with these panels:
 
-- **Capture set** — captures included, zones, source formats and coverage gaps.
-- **Floor / room map** — central zone view with PC path, entities, doors, telepads and unresolved points.
-- **Entity registry** — observed entity id/name/model/position, server match, instance registration state, proposed output type.
-- **Doors** — initial observed state, state changes, nearby trigger evidence, current server wiring.
-- **Telepads / events** — entity, observed event/option, before/after player position, proposed destination, confidence/evidence status.
-- **Mob behavior** — observed actions/animations plus existing Lua/Feature Trace coverage.
-- **Implementation gaps** — missing SQL registration, missing Lua, unresolved event destination, unresolved floor ownership, conflicting evidence.
-- **Proposal** — review-only SQL/Lua/package output once every required claim has sufficient evidence.
+- **Capture set** — selected capture, zone and handoffs into Capture/Evidence Search.
+- **Floor / room map** — central zone view with PC path, observed path-region envelopes, entities, doors, interactive candidates and unresolved regions.
+- **Entity registry** — observed entity id/name/model/position, runtime fields and captured path coverage.
+- **Floor / room candidates** — path-leg regions, bounds, overlapping entities/doors and ambiguous memberships, explicitly marked unresolved.
+- **Doors** — captured identity/state-history availability without inventing transition rules.
+- **Telepads / events** — entity, observed event/option and whether player-path evidence exists for later correlation.
+- **Implementation gaps** — missing evidence and ambiguity that must remain unresolved.
+- **Proposal** — still disabled until the review-only SQL/Lua/package compiler exists.
 
 ## Recommended truth-set development order
 
@@ -115,6 +123,7 @@ Use one of the two already-built Salvage implementations as the first truth set.
 
 - entity roster recall;
 - spawn/rotation accuracy;
+- floor/room segmentation accuracy and unresolved/ambiguous region count;
 - missing/extra instance registrations;
 - door initial-state accuracy;
 - telepad event/destination accuracy;
