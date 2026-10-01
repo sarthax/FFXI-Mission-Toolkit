@@ -6,6 +6,11 @@ import os
 import subprocess
 import sys
 import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 import feature_trace as legacy_trace
 from workbench.core.contracts import capture_row_locators
