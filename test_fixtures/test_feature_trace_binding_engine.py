@@ -6,12 +6,13 @@ from pathlib import Path
 from types import SimpleNamespace
 import tempfile
 
-from workbench.core.services import feature_trace_binding_drilldown as drill
-from workbench.core.services.feature_trace_binding_drilldown import (
+from workbench.devtools.features import trace_binding_drilldown as drill
+from workbench.devtools.features.trace_binding_drilldown import (
     binding_index_for_server,
     binding_lookup,
     behavior_engine_drilldown,
 )
+from workbench.core.services import feature_trace_binding_drilldown as legacy_drill
 
 
 def _effect(method,line):
@@ -28,6 +29,7 @@ def _effect(method,line):
 
 
 def main():
+    assert legacy_drill.binding_lookup is binding_lookup
     with tempfile.TemporaryDirectory() as td:
         root=Path(td)
         lua=root/"src"/"map"/"lua"
@@ -217,14 +219,14 @@ int32 CLuaOtherEntity::FOO(lua_State* L)
         assert [cb["callback_type"] for cb in engine["callbacks"]]==["event","timer"],engine
 
         # Index-build exceptions must propagate as INDEX_UNAVAILABLE, never NOT_INDEXED.
-        original=drill.backport_binding_index.build_topaz_index
+        original=drill.server_binding_index.build_topaz_index
         try:
             def boom(_root):
                 raise RuntimeError("synthetic provider failure")
-            drill.backport_binding_index.build_topaz_index=boom
+            drill.server_binding_index.build_topaz_index=boom
             failed=behavior_engine_drilldown(inspected,server="topaz",source_root=root)
         finally:
-            drill.backport_binding_index.build_topaz_index=original
+            drill.server_binding_index.build_topaz_index=original
         assert failed["binding_index_status"]=="UNAVAILABLE",failed
         assert failed["unavailable_call_count"]==4,failed
         assert failed["unindexed_call_count"]==0,failed
