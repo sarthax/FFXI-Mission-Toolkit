@@ -138,3 +138,74 @@ def entity_identity_matches(
                 )
 
     return matches
+
+
+def item_identity_matches(
+    con: sqlite3.Connection, capture_id: int, target_table: str, row_key: str
+) -> list[dict]:
+    """Return structured item/vendor/crafting rows linked by explicit ordinary item_id.
+
+    Key-item ids are a separate namespace and are intentionally not joined here. Names, prices,
+    timestamps, and nearby record order are never identity keys.
+    """
+    if target_table != "capture_structured_records":
+        return []
+    try:
+        key = json.loads(capture_integrity.canonical_row_key(row_key))
+        source_file = str(key["source_file"])
+        family = str(key["family"])
+        record_key = str(key["record_key"])
+    except (TypeError, ValueError, KeyError, json.JSONDecodeError):
+        return []
+
+    anchor = con.execute(
+        """SELECT item_id,item_name,family FROM capture_structured_records
+           WHERE capture_id=? AND source_file=? AND family=? AND record_key=?""",
+        (capture_id, source_file, family, record_key),
+    ).fetchone()
+    if not anchor or anchor["item_id"] is None:
+        return []
+
+    item_id = int(anchor["item_id"])
+    rows = con.execute(
+        """SELECT source_file,family,record_key,record_type,zone,entity_id,entity_name,
+                  item_id,item_name,price
+           FROM capture_structured_records
+           WHERE capture_id=? AND item_id=?
+             AND NOT (source_file=? AND family=? AND record_key=?)
+           ORDER BY family,source_file,record_key LIMIT 100""",
+        (capture_id, item_id, source_file, family, record_key),
+    ).fetchall()
+
+    vendor_families = {
+        "shopstock_buy_db", "shopstock_sell_db", "guildstock_db",
+        "pricelog_simple", "pricelog_lua",
+    }
+    out = []
+    for row in rows:
+        peer_family = str(row["family"])
+        if peer_family == "crafttrack_csv":
+            relation = "crafting evidence for captured item"
+        elif peer_family in vendor_families:
+            relation = "vendor/pricing evidence for captured item"
+        else:
+            relation = "captured observation for item"
+        out.append({
+            "target_table": "capture_structured_records",
+            "row_key": capture_integrity.canonical_row_key({
+                "source_file": row["source_file"],
+                "family": peer_family,
+                "record_key": row["record_key"],
+            }),
+            "relation": relation,
+            "basis": "same captured ordinary item id",
+            "item_id": item_id,
+            "item_name": row["item_name"],
+            "family": peer_family,
+            "record_type": row["record_type"],
+            "zone": row["zone"],
+            "entity_id": row["entity_id"],
+            "entity_name": row["entity_name"],
+            "price": row["price"],
+        })
+    return out
