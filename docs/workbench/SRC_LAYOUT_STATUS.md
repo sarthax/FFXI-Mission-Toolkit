@@ -13,6 +13,7 @@ The canonical Python package is now `src/workbench`.
 - Client EVENT and identity extraction vendor lookups use `workbench.runtime.paths` rather than physical `__file__` depth.
 - `workbench.gui_shell` moved to `src/workbench/gui_shell.py`; the GUI route map remains a repository-owned document resolved through `runtime.paths`.
 - Repository-owned data, vendor, GUI, database and documentation paths are centralized through `src/workbench/runtime/paths.py` where applicable.
+- Legacy root compatibility modules `workbench_graph.py`, `workbench_schema.py`, and `source_snapshot.py` are retired; first-party callers now import `workbench.core.graph`, `workbench.core.schema`, and `workbench.core.provenance` directly.
 - Editable-install CI validates that the canonical package imports from `src` outside the repository working directory.
 - Broad Workbench regression continues to validate the normal repo-root execution mode.
 
@@ -39,6 +40,8 @@ Both migration safety layers are required:
 - **Workbench Regression** — existing repo-root application/regression behavior.
 
 `Workbench Regression` must watch both the root compatibility path and canonical `src/workbench/**` so package-only changes cannot bypass the broad suite.
+
+The src-layout self-test also rejects reintroduction of the retired root graph/schema/provenance shims or their legacy import forms.
 
 ## Remaining repository-root cleanup
 
