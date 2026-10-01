@@ -61,7 +61,7 @@ def main():
     assert "same captured numeric entity id" in server
     assert "len(npc_rows) != 1" in server
     assert "Entity identity" in related_template
-    assert "same zone" in related_template.lower()
+    assert "same zone" in " ".join(related_template.lower().split())
     assert "Names and timestamp proximity are not identity keys" in related_template
 
     print("Capture Evidence Search module regression: PASS")
