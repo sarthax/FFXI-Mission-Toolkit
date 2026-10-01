@@ -6,7 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from workbench.core import graph
 from workbench.client.binary_probes import persist_probes
 from workbench.core.schema import Feature
-from workbench.core.services.feature_checker import resolve_feature, check_feature
+from workbench.devtools.features.checker import resolve_feature, check_feature
 
 
 def tiny_pe(payload: bytes) -> bytes:
