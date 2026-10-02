@@ -1,7 +1,7 @@
 """Guarded scalar-field editing for Character Editor.
 
-Only verified row-backed character/profile/job/EXP/skill fields are writable here. Packed/BLOB
-state is intentionally excluded until lineage-specific codecs exist.
+Only verified row-backed character state is writable here. Packed/BLOB state is intentionally
+excluded until lineage-specific codecs exist.
 """
 from __future__ import annotations
 
@@ -27,9 +27,16 @@ _ALLOWED_COLUMNS: dict[str, set[str] | None] = {
         "pet_id", "pet_type", "pet_level", "pet_hp", "pet_mp",
     },
     "char_skills": {"value", "rank"},
+    "char_points": None,
+    "char_merit": {"upgrades"},
+    "char_job_points": None,
 }
-_ALLOWED_SELECTORS = {"char_skills": {"skillid"}}
-_KEY_COLUMNS = {"charid", "char_id", "character_id", "skillid"}
+_ALLOWED_SELECTORS = {
+    "char_skills": {"skillid"},
+    "char_merit": {"meritid"},
+    "char_job_points": {"jobid"},
+}
+_KEY_COLUMNS = {"charid", "char_id", "character_id", "skillid", "meritid", "jobid"}
 _VERIFIED_FAMILIES = {"dsp", "topaz", "lsb"}
 
 
@@ -130,6 +137,9 @@ def _row(connection, schema: CharacterSchema, char_id: int, table_name: str, sel
     unknown = set(selector) - allowed_selectors
     if unknown:
         raise ValueError(f"Unsupported selector(s) for {table_name}: {', '.join(sorted(unknown))}")
+    if allowed_selectors and set(selector) != allowed_selectors:
+        missing = allowed_selectors - set(selector)
+        raise ValueError(f"Missing selector(s) for {table_name}: {', '.join(sorted(missing))}")
     clauses = [f"`{table.character_key}` = %s"]
     params: list[Any] = [int(char_id)]
     for key, value in selector.items():

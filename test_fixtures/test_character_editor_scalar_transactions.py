@@ -59,6 +59,53 @@ def test_skill_identity_is_read_only_but_value_and_rank_are_editable():
     assert {row["name"] for row in editable_columns(schema_for(table), "char_skills")} == {"value", "rank"}
 
 
+def test_currency_row_is_schema_driven_but_character_key_is_read_only():
+    table = TableInfo(
+        name="char_points",
+        character_key="charid",
+        columns=[
+            column("charid", "int unsigned", key="PRI"),
+            column("cruor", "int unsigned"),
+            column("imperial_standing", "int unsigned"),
+            column("daily_tally", "int signed"),
+        ],
+    )
+    assert {row["name"] for row in editable_columns(schema_for(table), "char_points")} == {
+        "cruor", "imperial_standing", "daily_tally"
+    }
+
+
+def test_merit_identity_is_read_only_and_only_upgrade_count_is_editable():
+    table = TableInfo(
+        name="char_merit",
+        character_key="charid",
+        columns=[
+            column("charid", "int unsigned"),
+            column("meritid", "smallint unsigned"),
+            column("upgrades", "smallint unsigned"),
+        ],
+    )
+    assert {row["name"] for row in editable_columns(schema_for(table), "char_merit")} == {"upgrades"}
+
+
+def test_job_point_identity_is_read_only_and_progression_fields_are_editable():
+    table = TableInfo(
+        name="char_job_points",
+        character_key="charid",
+        columns=[
+            column("charid", "int unsigned"),
+            column("jobid", "tinyint unsigned"),
+            column("capacity_points", "smallint unsigned"),
+            column("job_points", "smallint unsigned"),
+            column("job_points_spent", "smallint unsigned"),
+            column("jptype0", "tinyint unsigned"),
+        ],
+    )
+    assert {row["name"] for row in editable_columns(schema_for(table), "char_job_points")} == {
+        "capacity_points", "job_points", "job_points_spent", "jptype0"
+    }
+
+
 def test_integer_coercion_honors_sql_unsigned_bounds():
     tiny = column("war", "tinyint(2) unsigned")
     assert _coerce(tiny, "99") == 99
