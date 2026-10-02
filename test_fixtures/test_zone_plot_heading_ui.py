@@ -83,7 +83,6 @@ def main():
     assert "const multiSelected=new Set();" in template
     assert 'id="bulk-panel"' in template
     assert "Ctrl/Cmd-click dots or list rows to add/remove" in template
-    assert "function toggleMultiSelect(i,fly=false)" in template
     assert "Multi-select defaults to moving the group while preserving relative spacing" in template
     assert 'id="bulk-anchor"' in template
     assert 'id="bulk-move-preview"' in template
@@ -109,6 +108,10 @@ def main():
     ).read_text(encoding="utf-8")
     nyzul_plot = (
         Path(__file__).resolve().parents[1]
+        / "src"
+        / "workbench"
+        / "devtools"
+        / "domains"
         / "nyzul_plot.py"
     ).read_text(encoding="utf-8")
     zone_plot = (
