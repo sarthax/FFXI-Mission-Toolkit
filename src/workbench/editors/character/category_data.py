@@ -11,6 +11,7 @@ from typing import Any
 from .assault_catalog import assault_catalog
 from .campaign_catalog import campaign_catalog
 from .categories import TAB_DEFINITIONS, get_tab
+from .eminence_catalog import eminence_catalog
 from .eminence_codec import EminenceCodecError, decode_eminence
 from .packed_codecs import PackedCodecError, decode_packed_field
 from .progression_catalog import progression_catalog
@@ -87,6 +88,8 @@ def build_category_payload(service, char_id: int, tab_key: str) -> dict[str, Any
                         entry["catalog"] = assault_catalog(getattr(service, "server_root", None))
                     elif capability == "campaign":
                         entry["catalog"] = campaign_catalog(getattr(service, "server_root", None))
+                    elif capability == "eminence":
+                        entry["catalog"] = eminence_catalog(getattr(service, "server_root", None))
                     else:
                         if catalog_cache is None:
                             catalog_cache = progression_catalog(
