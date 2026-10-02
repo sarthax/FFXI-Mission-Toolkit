@@ -1,8 +1,4 @@
-"""Read-only Character Editor service foundation.
-
-Writes remain disabled in this slice. The service discovers the live schema and exposes exactly
-what can be administered on the connected server generation, plus adapter/capability readiness.
-"""
+"""Character Editor service over a detected DSP/Topaz/LSB live schema."""
 from __future__ import annotations
 
 from typing import Any
@@ -10,6 +6,8 @@ from typing import Any
 from .adapters import compare_schema
 from .adapters.inventory import inspect_inventory_contract
 from .inventory import inventory_summary
+from .item_catalog import ItemCatalogService
+from .item_transactions import apply_item_injection, build_item_injection_plan
 from .schema import CharacterSchema, discover_character_schema
 from .session_state import detect_online_state
 
@@ -31,6 +29,10 @@ class CharacterEditorService:
         if table is None:
             raise RuntimeError("Connected database has no recognized chars table")
         return table
+
+    def refresh_schema(self) -> CharacterSchema:
+        self.schema = discover_character_schema(self.connection)
+        return self.schema
 
     def search_characters(self, query: str = "", limit: int = 50) -> list[dict[str, Any]]:
         table = self._chars_table()
@@ -86,6 +88,55 @@ class CharacterEditorService:
     def inventory_contract(self) -> dict[str, Any]:
         return inspect_inventory_contract(self.schema, self.adapter_family).as_dict()
 
+    def search_items(self, query: str = "", *, limit: int = 100, client_snapshot_id: str | None = None) -> list[dict[str, Any]]:
+        catalog = ItemCatalogService(self.connection, client_snapshot_id=client_snapshot_id)
+        return [record.as_dict() for record in catalog.search(query, limit=limit)]
+
+    def get_item(self, item_id: int, *, client_snapshot_id: str | None = None) -> dict[str, Any] | None:
+        record = ItemCatalogService(self.connection, client_snapshot_id=client_snapshot_id).get(item_id)
+        return record.as_dict() if record else None
+
+    def preview_add_item(
+        self,
+        char_id: int,
+        item_id: int,
+        *,
+        quantity: int = 1,
+        location: int = 0,
+        client_snapshot_id: str | None = None,
+    ) -> dict[str, Any]:
+        plan = build_item_injection_plan(
+            self.connection,
+            char_id=char_id,
+            item_id=item_id,
+            quantity=quantity,
+            location=location,
+            adapter_family=self.adapter_family,
+            client_snapshot_id=client_snapshot_id,
+        )
+        return plan.as_dict()
+
+    def add_item(
+        self,
+        char_id: int,
+        item_id: int,
+        *,
+        quantity: int = 1,
+        location: int = 0,
+        client_snapshot_id: str | None = None,
+        approved: bool = False,
+    ) -> dict[str, Any]:
+        plan = build_item_injection_plan(
+            self.connection,
+            char_id=char_id,
+            item_id=item_id,
+            quantity=quantity,
+            location=location,
+            adapter_family=self.adapter_family,
+            client_snapshot_id=client_snapshot_id,
+        )
+        return apply_item_injection(self.connection, plan, approved=approved)
+
     def load_table(self, char_id: int, table_name: str, limit: int = 5000) -> list[dict[str, Any]]:
         table = self.schema.table(table_name)
         if table is None:
@@ -139,10 +190,11 @@ class CharacterEditorService:
             "lineage_comparison": compare_schema(self.schema, self.adapter_family),
             "inventory": inventory,
             "write_enabled": False,
+            "write_capabilities": ["inventory_basic_offline"],
         }
 
     def capability_manifest(self) -> dict[str, Any]:
-        """Stable JSON-friendly manifest for the future GUI and decoder worklist."""
+        """Stable JSON-friendly manifest for GUI and decoder worklists."""
         return {
             "adapter": {
                 "family": self.adapter_family,
@@ -153,4 +205,5 @@ class CharacterEditorService:
             "inventory_contract": self.inventory_contract(),
             "inventory": inventory_summary(self.schema, self.adapter_family),
             "write_enabled": False,
+            "write_capabilities": ["inventory_basic_offline"],
         }
