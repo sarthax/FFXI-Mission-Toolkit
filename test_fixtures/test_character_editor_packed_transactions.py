@@ -17,18 +17,26 @@ from workbench.editors.character.packed_codecs import (
     KEY_ITEM_TABLE_BYTES,
     MISSION_AREA_COUNT,
     MISSION_RECORD_SIZES,
+    QUEST_AREA_COUNT,
+    QUEST_RECORD_BYTES,
+    QUEST_SET_BYTES,
 )
 from workbench.editors.character.packed_transactions import (
     _blue_spell_edit,
     _character_bitset_edit,
     _key_item_edit,
     _mission_edit,
+    _quest_edit,
 )
 
 
 def mission_blob(family: str) -> bytes:
     record = MISSION_RECORD_SIZES[family]
     return bytes((index * 17 + 3) & 0xFF for index in range(record * MISSION_AREA_COUNT))
+
+
+def quest_blob() -> bytes:
+    return bytes((index * 11 + 9) & 0xFF for index in range(QUEST_AREA_COUNT * QUEST_RECORD_BYTES))
 
 
 def keyitem_blob(family: str) -> bytes:
@@ -50,7 +58,6 @@ def changed_offsets(before: bytes, after: bytes) -> set[int]:
 
 
 def main() -> None:
-    # DSP mission: current and one completion flag only touch those exact bytes.
     before = mission_blob("dsp")
     record = MISSION_RECORD_SIZES["dsp"]
     area = 2
@@ -65,7 +72,6 @@ def main() -> None:
     assert new["current"] == 321
     assert 7 in new["completed_ids"]
 
-    # DSP must never accept Topaz/LSB-only status fields.
     try:
         _mission_edit(before, "dsp", {"area_id": 0, "status_upper": 1})
     except ValueError as exc:
@@ -73,7 +79,6 @@ def main() -> None:
     else:
         raise AssertionError("DSP accepted status_upper")
 
-    # Topaz and LSB status words are independently writable without touching neighboring areas.
     for family in ("topaz", "lsb"):
         before = mission_blob(family)
         record = MISSION_RECORD_SIZES[family]
@@ -88,7 +93,39 @@ def main() -> None:
         assert new["status_upper"] == 0x1122
         assert new["status_lower"] == 0x3344
 
-    # Key-item mutation may alter only the target owned/seen bytes.
+    # Quest mutations are identical across DSP/Topaz/LSB and touch exactly one target byte.
+    for family in ("dsp", "topaz", "lsb"):
+        before = quest_blob()
+        for area_id, quest_id, state in ((0, 0, "current"), (5, 255, "current"), (10, 7, "completed"), (3, 248, "completed")):
+            set_offset = 0 if state == "current" else QUEST_SET_BYTES
+            byte_offset = area_id * QUEST_RECORD_BYTES + set_offset + quest_id // 8
+            mask = 1 << (quest_id % 8)
+            target = not bool(before[byte_offset] & mask)
+            after, old, new = _quest_edit(
+                before,
+                family,
+                {"area_id": area_id, "quest_id": quest_id, "state": state, "enabled": target},
+            )
+            assert changed_offsets(before, after).issubset({byte_offset})
+            assert old == {"area_id": area_id, "quest_id": quest_id, "state": state, "enabled": (not target)}
+            assert new == {"area_id": area_id, "quest_id": quest_id, "state": state, "enabled": target}
+
+        invalid_cases = (
+            ({"area_id": -1, "quest_id": 0, "state": "current", "enabled": True}, "area_id must be between"),
+            ({"area_id": QUEST_AREA_COUNT, "quest_id": 0, "state": "current", "enabled": True}, "area_id must be between"),
+            ({"area_id": 0, "quest_id": -1, "state": "current", "enabled": True}, "quest_id must be between"),
+            ({"area_id": 0, "quest_id": 256, "state": "current", "enabled": True}, "quest_id must be between"),
+            ({"area_id": 0, "quest_id": 1, "state": "unknown", "enabled": True}, "state must be either"),
+            ({"area_id": 0, "quest_id": 1, "state": "current"}, "enabled must be supplied"),
+        )
+        for operation, expected in invalid_cases:
+            try:
+                _quest_edit(before, family, operation)
+            except ValueError as exc:
+                assert expected in str(exc)
+            else:
+                raise AssertionError(f"{family} accepted invalid quest edit {operation}")
+
     for family, key_item_id in (("dsp", 700), ("topaz", 1500), ("lsb", 3900)):
         before = keyitem_blob(family)
         table = key_item_id // 512
@@ -107,7 +144,6 @@ def main() -> None:
         assert new["owned"] is owned_target
         assert new["seen"] is seen_target
 
-    # Blue-spell mutation replaces exactly one positional slot and preserves every other byte.
     for family in ("dsp", "topaz", "lsb"):
         before = blue_spell_blob()
         slot = 3
@@ -121,7 +157,6 @@ def main() -> None:
         assert clear_old["spell_id"] == 0x222
         assert clear_new == {"slot": slot, "stored_value": 0, "spell_id": None, "empty": True}
 
-        # Clearing with numeric zero is equivalent and duplicates elsewhere are intentionally allowed.
         duplicate_before = bytearray(before)
         duplicate_before[0] = 0x22
         duplicate_before[7] = 0x22
@@ -147,7 +182,6 @@ def main() -> None:
             else:
                 raise AssertionError(f"{family} accepted invalid blue-spell edit {operation}")
 
-    # Simple packed bitsets may alter only the byte containing the requested meaningful bit.
     cases = (
         ("abilities", "dsp", 16),
         ("abilities", "topaz", 200),
@@ -176,7 +210,6 @@ def main() -> None:
         assert old == {"bit_id": bit_id, "enabled": (not target)}
         assert new == {"bit_id": bit_id, "enabled": target}
 
-    # Legacy learned-weaponskill storage is 64 bits wide but only IDs 0-48 are meaningful.
     for family in ("dsp", "topaz"):
         before = bitset_blob("weaponskills", family)
         try:
@@ -186,7 +219,6 @@ def main() -> None:
         else:
             raise AssertionError(f"{family} accepted reserved learned-weaponskill bit 49")
 
-    # Every capability rejects an ID at or beyond its lineage-specific meaningful range.
     for capability in BITSET_BLOB_SIZES:
         for family in ("dsp", "topaz", "lsb"):
             invalid = BITSET_MEANINGFUL_BITS[capability][family]
