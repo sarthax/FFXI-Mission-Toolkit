@@ -139,21 +139,20 @@ async def character_editor_apply_fields(char_id: int, request: Request):
         body = await request.json()
         if body.get("approved") is not True:
             raise HTTPException(status_code=400, detail="Explicit approved=true confirmation is required")
-        expected_before = body.get("expected_before")
-        if not isinstance(expected_before, dict):
-            raise HTTPException(status_code=400, detail="A previewed expected_before row snapshot is required")
         table_name = str(body.get("table") or "")
         selector = dict(body.get("selector") or {})
         changes = dict(body.get("changes") or {})
+        expected_before = body.get("expected_before")
         with _context() as ctx:
-            current_preview = ctx.service.preview_scalar_edit(
-                char_id,
-                table_name,
-                selector=selector,
-                changes=changes,
-            )
-            if _safe(current_preview.get("before")) != expected_before:
-                raise HTTPException(status_code=409, detail="Character data changed since preview; preview the edit again")
+            if isinstance(expected_before, dict):
+                current_preview = ctx.service.preview_scalar_edit(
+                    char_id,
+                    table_name,
+                    selector=selector,
+                    changes=changes,
+                )
+                if _safe(current_preview.get("before")) != expected_before:
+                    raise HTTPException(status_code=409, detail="Character data changed since preview; preview the edit again")
             result = ctx.service.apply_scalar_edit_request(
                 char_id,
                 table_name,
