@@ -4,8 +4,29 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-# Stable database/runtime names used by DSP/Topaz/LSB.
+# Human-facing FFXI container names keyed by the stable runtime location id.
 CONTAINERS = {
+    0: "Inventory",
+    1: "Mog Safe",
+    2: "Storage",
+    3: "Temporary Items",
+    4: "Mog Locker",
+    5: "Mog Satchel",
+    6: "Mog Sack",
+    7: "Mog Case",
+    8: "Mog Wardrobe",
+    9: "Mog Safe 2",
+    10: "Mog Wardrobe 2",
+    11: "Mog Wardrobe 3",
+    12: "Mog Wardrobe 4",
+    13: "Mog Wardrobe 5",
+    14: "Mog Wardrobe 6",
+    15: "Mog Wardrobe 7",
+    16: "Mog Wardrobe 8",
+}
+
+# Stable database/runtime short names, kept separately from display labels.
+CONTAINER_KEYS = {
     0: "inventory",
     1: "safe",
     2: "storage",
@@ -25,27 +46,8 @@ CONTAINERS = {
     16: "wardrobe8",
 }
 
-# Human-facing FFXI names. Keep separate from CONTAINERS so display polish does not change
-# database/runtime contracts or callers that depend on the stable short names above.
-CONTAINER_LABELS = {
-    0: "Inventory",
-    1: "Mog Safe",
-    2: "Storage",
-    3: "Temporary Items",
-    4: "Mog Locker",
-    5: "Mog Satchel",
-    6: "Mog Sack",
-    7: "Mog Case",
-    8: "Mog Wardrobe",
-    9: "Mog Safe 2",
-    10: "Mog Wardrobe 2",
-    11: "Mog Wardrobe 3",
-    12: "Mog Wardrobe 4",
-    13: "Mog Wardrobe 5",
-    14: "Mog Wardrobe 6",
-    15: "Mog Wardrobe 7",
-    16: "Mog Wardrobe 8",
-}
+# Compatibility alias for callers that want an explicit label map.
+CONTAINER_LABELS = CONTAINERS
 
 # char_storage columns that directly carry capacity. Storage (2) is furnishing-derived and
 # Temporary Items (3) is runtime state, so neither is offered for direct DB injection here.
@@ -125,7 +127,7 @@ def inspect_slots(connection, char_id: int, location: int = 0) -> SlotState:
     first_free = next((slot for slot in range(1, capacity + 1) if slot not in occupied_set), None)
     return SlotState(
         location=location,
-        name=CONTAINERS.get(location, f"container_{location}"),
+        name=CONTAINERS.get(location, f"Container {location}"),
         capacity=capacity,
         occupied_slots=occupied,
         first_free_slot=first_free,
