@@ -1,22 +1,17 @@
 #!/usr/bin/env python3
-"""Reconcile emitted mission server events against source/client evidence.
-
-Preview is the default. Pass --write to persist only exact support relationships.
-"""
+"""Compatibility CLI/import wrapper for Development mission event reconciliation."""
 from __future__ import annotations
 
 import argparse
 import sqlite3
+import sys
 from pathlib import Path
 
-from workbench.plugins.domain.mission_event_reconcile import (
-    persist_event_reconciliation,
-    reconcile_feature_events,
-)
+from workbench.devtools.missions import event_reconcile as _canonical
 
 
 def main() -> None:
-    ap=argparse.ArgumentParser(description=__doc__)
+    ap=argparse.ArgumentParser(description=_canonical.__doc__)
     ap.add_argument("feature_id",help="Canonical mission/quest feature id already emitted to the graph")
     ap.add_argument("--db",type=Path,default=Path("workbench.db"),help="Workbench DB")
     ap.add_argument("--catalog-db",type=Path,default=Path("ffxi_zone_database.db"),help="Indexed source/reference DB")
@@ -26,7 +21,7 @@ def main() -> None:
     con=sqlite3.connect(args.db)
     catalog=sqlite3.connect(args.catalog_db) if args.catalog_db.exists() else None
     try:
-        rows=reconcile_feature_events(con,args.feature_id,catalog_con=catalog)
+        rows=_canonical.reconcile_feature_events(con,args.feature_id,catalog_con=catalog)
         if not rows:
             print("no emitted mission events found for feature")
             return
@@ -41,7 +36,7 @@ def main() -> None:
         if not args.write:
             print("preview only; pass --write to persist exact support relationships")
             return
-        count=persist_event_reconciliation(con,rows)
+        count=_canonical.persist_event_reconciliation(con,rows)
         print(f"persisted relationships: {count}")
     finally:
         if catalog is not None:
@@ -51,3 +46,5 @@ def main() -> None:
 
 if __name__=="__main__":
     main()
+else:
+    sys.modules[__name__] = _canonical
