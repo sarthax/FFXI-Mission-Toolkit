@@ -11,6 +11,7 @@ from typing import Any
 from .assault_catalog import assault_catalog
 from .campaign_catalog import campaign_catalog
 from .categories import TAB_DEFINITIONS, get_tab
+from .eminence_codec import EminenceCodecError, decode_eminence
 from .packed_codecs import PackedCodecError, decode_packed_field
 from .progression_catalog import progression_catalog
 from .quest_catalog import quest_catalog
@@ -71,7 +72,10 @@ def build_category_payload(service, char_id: int, tab_key: str) -> dict[str, Any
             value = identity.get(column) if table_name == "chars" else None
             entry: dict[str, Any] = {"location": location, "value": value, "editable": False}
             try:
-                decoded = decode_packed_field(capability, value, service.adapter_family)
+                if capability == "eminence":
+                    decoded = decode_eminence(value, service.adapter_family)
+                else:
+                    decoded = decode_packed_field(capability, value, service.adapter_family)
                 if decoded is not None:
                     entry["decoded"] = decoded
                     entry["codec"] = decoded.get("codec")
@@ -90,7 +94,7 @@ def build_category_payload(service, char_id: int, tab_key: str) -> dict[str, Any
                                 service.adapter_family,
                             )
                         entry["catalog"] = catalog_cache.get(capability, {})
-            except PackedCodecError as exc:
+            except (PackedCodecError, EminenceCodecError) as exc:
                 entry["decode_error"] = str(exc)
             packed[capability] = entry
 
