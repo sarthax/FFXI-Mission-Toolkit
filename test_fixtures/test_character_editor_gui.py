@@ -41,6 +41,7 @@ def test_character_editor_template_has_tabs_storage_and_guarded_scalar_flow():
     assert "scalar editing locked until offline" in template
     assert "char_merit" in template and "meritid" in template
     assert "char_job_points" in template and "jobid" in template
+    assert "char_vars" in template and "varname" in template
     assert "expected_before:preview.before" in template
     assert "approved:true" in template
     assert "previewScalarRow" in template
