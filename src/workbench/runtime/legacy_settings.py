@@ -36,5 +36,9 @@ def get_topaz_root():
     return _module().get_topaz_root()
 
 
+def get_dsp_root():
+    return _module().get_dsp_root()
+
+
 def get_ffxi_install():
     return _module().get_ffxi_install()
