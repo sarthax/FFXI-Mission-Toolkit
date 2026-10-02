@@ -15,6 +15,7 @@ from fastapi.templating import Jinja2Templates
 from workbench.runtime.legacy_settings import get_active_server_root
 from workbench.runtime.paths import GUI_ROOT
 
+from .category_data import build_category_payload
 from .factory import open_character_editor
 
 router = APIRouter(prefix="/character-editor", tags=["Character Editor"])
@@ -50,11 +51,7 @@ def _error(exc: Exception, status: int = 400) -> HTTPException:
 
 @router.get("", response_class=HTMLResponse)
 def character_editor_page(request: Request):
-    return templates.TemplateResponse(
-        request=request,
-        name="character_editor.html",
-        context={"title": "Character Editor"},
-    )
+    return templates.TemplateResponse(request=request, name="character_editor.html", context={"title": "Character Editor"})
 
 
 @router.get("/status.json")
@@ -79,8 +76,7 @@ def character_editor_characters(q: str = "", limit: int = Query(50, ge=1, le=200
 def character_editor_items(q: str = "", limit: int = Query(100, ge=1, le=500)):
     try:
         with _context() as ctx:
-            rows = ctx.service.search_items(q, limit=limit)
-            return JSONResponse({"rows": _safe(rows)})
+            return JSONResponse({"rows": _safe(ctx.service.search_items(q, limit=limit))})
     except Exception as exc:
         raise _error(exc, 503)
 
@@ -104,6 +100,17 @@ def character_editor_character(char_id: int):
     try:
         with _context() as ctx:
             return JSONResponse(_safe(ctx.service.load_character(char_id, include_rows=False)))
+    except KeyError as exc:
+        raise _error(exc, 404)
+    except Exception as exc:
+        raise _error(exc, 503)
+
+
+@router.get("/characters/{char_id}/categories/{tab_key}.json")
+def character_editor_category(char_id: int, tab_key: str):
+    try:
+        with _context() as ctx:
+            return JSONResponse(_safe(build_category_payload(ctx.service, char_id, tab_key)))
     except KeyError as exc:
         raise _error(exc, 404)
     except Exception as exc:
@@ -134,12 +141,7 @@ async def character_editor_preview_item(char_id: int, request: Request):
     try:
         body = await request.json()
         with _context() as ctx:
-            plan = ctx.service.preview_add_item(
-                char_id,
-                int(body.get("item_id")),
-                quantity=int(body.get("quantity", 1)),
-                location=int(body.get("location", 0)),
-            )
+            plan = ctx.service.preview_add_item(char_id, int(body.get("item_id")), quantity=int(body.get("quantity", 1)), location=int(body.get("location", 0)))
             return JSONResponse(_safe(plan))
     except Exception as exc:
         raise _error(exc)
@@ -151,15 +153,12 @@ async def character_editor_add_item(char_id: int, request: Request):
         body = await request.json()
         if body.get("approved") is not True:
             raise HTTPException(status_code=400, detail="Explicit approved=true confirmation is required")
-        item_id = int(body.get("item_id"))
-        quantity = int(body.get("quantity", 1))
-        location = int(body.get("location", 0))
         with _context() as ctx:
             result = ctx.service.add_item(
                 char_id,
-                item_id,
-                quantity=quantity,
-                location=location,
+                int(body.get("item_id")),
+                quantity=int(body.get("quantity", 1)),
+                location=int(body.get("location", 0)),
                 approved=True,
             )
             return JSONResponse(_safe(result))
