@@ -10,6 +10,7 @@ from .inventory import inventory_summary
 from .inventory_slots import CAPACITY_COLUMNS, CONTAINERS
 from .item_catalog import ItemCatalogService
 from .item_transactions import apply_item_injection, build_item_injection_plan
+from .scalar_transactions import apply_scalar_edit, build_scalar_edit_plan, editable_columns
 from .schema import CharacterSchema, discover_character_schema
 from .session_state import detect_online_state
 
@@ -93,6 +94,32 @@ class CharacterEditorService:
     def tab_manifest(self) -> list[dict[str, Any]]:
         inventory = inventory_summary(self.schema, self.adapter_family)
         return build_tab_manifest(self.schema, inventory)
+
+    def editable_fields(self, table_name: str) -> list[dict[str, Any]]:
+        return editable_columns(self.schema, table_name)
+
+    def preview_scalar_edit(self, char_id: int, table_name: str, *, selector: dict[str, Any] | None = None,
+                            changes: dict[str, Any] | None = None) -> dict[str, Any]:
+        return build_scalar_edit_plan(
+            self.connection,
+            char_id=char_id,
+            table_name=table_name,
+            selector=selector,
+            changes=changes,
+            adapter_family=self.adapter_family,
+        ).as_dict()
+
+    def apply_scalar_edit_request(self, char_id: int, table_name: str, *, selector: dict[str, Any] | None = None,
+                                  changes: dict[str, Any] | None = None, approved: bool = False) -> dict[str, Any]:
+        plan = build_scalar_edit_plan(
+            self.connection,
+            char_id=char_id,
+            table_name=table_name,
+            selector=selector,
+            changes=changes,
+            adapter_family=self.adapter_family,
+        )
+        return apply_scalar_edit(self.connection, plan, approved=approved)
 
     def search_items(self, query: str = "", *, limit: int = 100, client_snapshot_id: str | None = None) -> list[dict[str, Any]]:
         catalog = ItemCatalogService(self.connection, client_snapshot_id=client_snapshot_id)
@@ -192,10 +219,8 @@ class CharacterEditorService:
                 else:
                     supported = False
             elif location == 2:
-                # Mog Storage capacity is furnishing-derived in the map server; rows remain viewable.
                 supported = True
             elif location == 3:
-                # Temporary Items are runtime-managed; show persisted rows if a fork exposes them.
                 supported = bool(by_location.get(location))
 
             container_rows = sorted(by_location.get(location, []), key=lambda r: int(r.get("slot") or 0))
@@ -230,6 +255,11 @@ class CharacterEditorService:
             sections[capability] = section
 
         inventory = inventory_summary(self.schema, self.adapter_family)
+        scalar_tables = {
+            name: self.editable_fields(name)
+            for name in ("chars", "char_profile", "char_jobs", "char_exp", "char_stats", "char_skills")
+            if self.schema.table(name) is not None
+        }
         return {
             "character": identity,
             "adapter": {
@@ -244,12 +274,12 @@ class CharacterEditorService:
             "schema": self.schema.summary(),
             "lineage_comparison": compare_schema(self.schema, self.adapter_family),
             "inventory": inventory,
-            "write_enabled": False,
-            "write_capabilities": ["inventory_basic_offline"],
+            "scalar_editors": scalar_tables,
+            "write_enabled": True,
+            "write_capabilities": ["inventory_basic_offline", "scalar_character_offline"],
         }
 
     def capability_manifest(self) -> dict[str, Any]:
-        """Stable JSON-friendly manifest for GUI and decoder worklists."""
         inventory = inventory_summary(self.schema, self.adapter_family)
         return {
             "adapter": {
@@ -261,6 +291,6 @@ class CharacterEditorService:
             "inventory_contract": self.inventory_contract(),
             "tabs": build_tab_manifest(self.schema, inventory),
             "inventory": inventory,
-            "write_enabled": False,
-            "write_capabilities": ["inventory_basic_offline"],
+            "write_enabled": True,
+            "write_capabilities": ["inventory_basic_offline", "scalar_character_offline"],
         }
