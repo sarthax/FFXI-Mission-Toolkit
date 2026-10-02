@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from .assault_catalog import assault_catalog
 from .categories import TAB_DEFINITIONS, get_tab
 from .packed_codecs import PackedCodecError, decode_packed_field
 from .progression_catalog import progression_catalog
@@ -75,6 +76,8 @@ def build_category_payload(service, char_id: int, tab_key: str) -> dict[str, Any
                     entry["editable"] = capability in _PACKED_EDITABLE
                     if capability == "quests":
                         entry["catalog"] = quest_catalog(getattr(service, "server_root", None))
+                    elif capability == "assaults":
+                        entry["catalog"] = assault_catalog(getattr(service, "server_root", None))
                     else:
                         if catalog_cache is None:
                             catalog_cache = progression_catalog(
