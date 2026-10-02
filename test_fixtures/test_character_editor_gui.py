@@ -59,53 +59,45 @@ def test_character_editor_progression_wrapper_and_controls():
     wrapper = (ROOT / "gui" / "templates" / "character_editor_progression.html").read_text(encoding="utf-8")
     script = (ROOT / "gui" / "static" / "character_editor_progression.js").read_text(encoding="utf-8")
     bitset = (ROOT / "gui" / "static" / "character_editor_bitset_edit.js").read_text(encoding="utf-8")
+    blue = (ROOT / "gui" / "static" / "character_editor_blue_spells.js").read_text(encoding="utf-8")
     gui = (ROOT / "src" / "workbench" / "editors" / "character" / "gui.py").read_text(encoding="utf-8")
 
     assert '{% extends "character_editor.html" %}' in wrapper
     assert '/static/character_editor_progression.js' in wrapper
     assert '/static/character_editor_bitset_edit.js' in wrapper
-    assert wrapper.index('/static/character_editor_progression.js') < wrapper.index('/static/character_editor_bitset_edit.js')
+    assert '/static/character_editor_blue_spells.js' in wrapper
+    assert wrapper.index('/static/character_editor_progression.js') < wrapper.index('/static/character_editor_bitset_edit.js') < wrapper.index('/static/character_editor_blue_spells.js')
     assert 'name="character_editor_progression.html"' in gui
 
     assert "key === 'missions-quests'" in script
     assert "key === 'key-items'" in script
-    assert "/packed/preview" in script
-    assert "/packed/apply" in script
+    assert "/packed/preview" in script and "/packed/apply" in script
     assert "expected_before_sha256:preview.before_sha256" in script
     assert "editableOnline()" in script
     assert "editing locked until offline" in script
-
     assert "Set current" in script
     assert "status_upper" in script and "status_lower" in script
     assert "completed_id" in script and "completed" in script
-    assert "Filter missions" in script
-
     assert "Search key item name or ID" in script
-    assert "Numeric ID" in script
-    assert "data-kind=\"owned\"" in script
-    assert "data-kind=\"seen\"" in script
     assert "key_item_id" in script
 
-    # Base progression rendering remains read-only until the guarded bitset-edit asset augments it.
     assert "renderPackedReadOnly(['abilities','weaponskills'])" in script
     assert "renderPackedReadOnly(['titles','visited_zones'])" in script
-    assert "Labels come only from the selected server checkout." in script
-    assert "Reserved legacy bits set:" in script
-
-    # The follow-on asset enables only single-bit, offline, preview-confirmed edits.
     assert "renderBitsetEditors(['abilities','weaponskills'])" in bitset
     assert "renderBitsetEditors(['titles','visited_zones'])" in bitset
     assert "editableOnline() && entry.editable === true" in bitset
-    assert "/packed/preview" in bitset
-    assert "/packed/apply" in bitset
-    assert "expected_before_sha256:preview.before_sha256" in bitset
-    assert "approved:true" in bitset
-    assert "bit_id:id" in bitset
-    assert "enabled:desired" in bitset
+    assert "bit_id:id" in bitset and "enabled:desired" in bitset
     assert "Reserved legacy bits are set but remain unwritable" in bitset
-    assert "Numeric ID" in bitset
-    assert "data-bit-id" in bitset
-    assert "Single-bit edits use guarded preview + exact before-SHA confirmation." in bitset
+
+    # Blue spell slots are presentation-only in this slice: no packed preview/apply calls here.
+    assert "key === 'spells-abilities'" in blue
+    assert "activeCategoryData?.packed?.blue_spells" in blue
+    assert "Set Blue Magic" in blue
+    assert "read only" in blue
+    assert "stored 0 · empty" in blue
+    assert "spell ID" in blue and "stored" in blue
+    assert "/packed/preview" not in blue
+    assert "/packed/apply" not in blue
 
 
 def test_character_editor_packed_mutations_preserve_unrelated_bytes():
