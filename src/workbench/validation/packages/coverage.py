@@ -8,6 +8,7 @@ import re
 import sys
 
 from workbench.packages.migration import lua_convert as blc
+from workbench.runtime.legacy_settings import get_topaz_root
 
 
 def iter_lua_files(topaz_root: pathlib.Path, zones: list[str] | None):
@@ -116,13 +117,11 @@ def write_report(result: dict, out_path: pathlib.Path):
 
 
 def main():
-    import settings
-
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--zone", nargs="*", default=None, help="Limit to these zone folder names (default: all zones)")
     ap.add_argument("--report", type=str, default=None, help="Write a full Markdown report to this path")
     args = ap.parse_args()
-    result = run(settings.get_topaz_root(), args.zone)
+    result = run(get_topaz_root(), args.zone)
     print_summary(result)
     if args.report:
         write_report(result, pathlib.Path(args.report))
