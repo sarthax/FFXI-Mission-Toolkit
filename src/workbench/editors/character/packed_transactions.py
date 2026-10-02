@@ -20,11 +20,15 @@ from .packed_codecs import (
     KEY_ITEM_TABLE_COUNTS,
     MISSION_AREA_COUNT,
     MISSION_RECORD_SIZES,
+    QUEST_AREA_COUNT,
+    QUEST_RECORD_BYTES,
+    QUEST_SET_BYTES,
     PackedCodecError,
     decode_blue_spells,
     decode_character_bitset,
     decode_key_items,
     decode_missions,
+    decode_quests,
 )
 from .schema import CharacterSchema, discover_character_schema
 from .session_state import detect_online_state
@@ -33,6 +37,7 @@ from .session_state import detect_online_state
 _VERIFIED_FAMILIES = {"dsp", "topaz", "lsb"}
 _CAPABILITY_COLUMN = {
     "missions": "missions",
+    "quests": "quests",
     "key_items": "keyitems",
     "blue_spells": "set_blue_spells",
     "abilities": "abilities",
@@ -164,6 +169,49 @@ def _mission_edit(blob: bytes, family: str, operation: dict[str, Any]) -> tuple[
     after_blob = bytes(data)
     decoded_after = decode_missions(after_blob, family)
     return after_blob, decoded_before["areas"][area_id], decoded_after["areas"][area_id]
+
+
+def _quest_edit(blob: bytes, family: str, operation: dict[str, Any]) -> tuple[bytes, dict[str, Any], dict[str, Any]]:
+    """Toggle exactly one current/accepted or completed quest bit."""
+    decoded_before = decode_quests(blob, family)
+    area_id = int(operation.get("area_id", -1))
+    quest_id = int(operation.get("quest_id", -1))
+    state = str(operation.get("state", "")).strip().lower()
+    if not 0 <= area_id < QUEST_AREA_COUNT:
+        raise ValueError(f"area_id must be between 0 and {QUEST_AREA_COUNT - 1}")
+    if not 0 <= quest_id < QUEST_SET_BYTES * 8:
+        raise ValueError("quest_id must be between 0 and 255")
+    if state not in {"current", "completed"}:
+        raise ValueError("state must be either 'current' or 'completed'")
+    if "enabled" not in operation:
+        raise ValueError("enabled must be supplied for a quest flag edit")
+
+    start = area_id * QUEST_RECORD_BYTES
+    set_offset = 0 if state == "current" else QUEST_SET_BYTES
+    byte_offset = start + set_offset + quest_id // 8
+    mask = 1 << (quest_id % 8)
+    before_enabled = bool(blob[byte_offset] & mask)
+    data = bytearray(blob)
+    if bool(operation["enabled"]):
+        data[byte_offset] |= mask
+    else:
+        data[byte_offset] &= ~mask
+    after_blob = bytes(data)
+    decoded_after = decode_quests(after_blob, family)
+    return (
+        after_blob,
+        {"area_id": area_id, "quest_id": quest_id, "state": state, "enabled": before_enabled},
+        {
+            "area_id": area_id,
+            "quest_id": quest_id,
+            "state": state,
+            "enabled": quest_id in (
+                decoded_after["areas"][area_id]["current_ids"]
+                if state == "current"
+                else decoded_after["areas"][area_id]["completed_ids"]
+            ),
+        },
+    )
 
 
 def _bit_value(blob: bytes, key_item_id: int, *, seen: bool) -> bool:
@@ -319,6 +367,8 @@ def build_packed_edit_plan(
         try:
             if capability == "missions":
                 after_blob, before, after = _mission_edit(before_blob, family, operation)
+            elif capability == "quests":
+                after_blob, before, after = _quest_edit(before_blob, family, operation)
             elif capability == "key_items":
                 after_blob, before, after = _key_item_edit(before_blob, family, operation)
             elif capability == "blue_spells":
