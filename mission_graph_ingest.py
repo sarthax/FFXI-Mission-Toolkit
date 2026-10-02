@@ -1,22 +1,17 @@
 #!/usr/bin/env python3
-"""Extract one LSB mission/quest Lua source into canonical Workbench graph evidence.
-
-Preview is the default. Pass --write to persist records to the selected Workbench DB.
-"""
+"""Compatibility CLI/import wrapper for Development mission graph projection."""
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 from workbench.core import graph as graph_store
-from workbench.plugins.domain.mission_graph_emit import (
-    extract_and_project_lsb_mission,
-    persist_mission_graph,
-)
+from workbench.devtools.missions import graph_ingest as _canonical
 
 
 def main() -> None:
-    ap=argparse.ArgumentParser(description=__doc__)
+    ap=argparse.ArgumentParser(description=_canonical.__doc__)
     ap.add_argument("lua",type=Path,help="LSB Mission/Quest Lua source file")
     ap.add_argument("--feature-id",required=True,help="Canonical feature id, e.g. mission:cop:ancient-vows")
     ap.add_argument("--feature-name",help="Human-readable feature name")
@@ -26,7 +21,7 @@ def main() -> None:
     args=ap.parse_args()
 
     lua=args.lua.read_text(encoding="utf-8",errors="ignore")
-    projection=extract_and_project_lsb_mission(
+    projection=_canonical.extract_and_project_lsb_mission(
         lua,
         feature_id=args.feature_id,
         feature_name=args.feature_name,
@@ -55,7 +50,7 @@ def main() -> None:
 
     con=graph_store.init_db(args.db)
     try:
-        persist_mission_graph(con,projection)
+        _canonical.persist_mission_graph(con,projection)
     finally:
         con.close()
     print(f"persisted to: {args.db}")
@@ -63,3 +58,5 @@ def main() -> None:
 
 if __name__=="__main__":
     main()
+else:
+    sys.modules[__name__] = _canonical
