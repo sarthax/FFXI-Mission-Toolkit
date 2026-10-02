@@ -20,6 +20,7 @@ on:
       - "addon_tools.py"
       - "workbench_connect.py"
       - "workbench_connect_server.py"
+      - "audit_dialog_drift.py"
       - "dialog_drift_overview.py"
       - "ffxiclopedia_adapter.py"
       - "research_gaps.py"
@@ -75,6 +76,7 @@ on:
       - "test_fixtures/test_salvage_reconstruct_package_migration.py"
       - "test_fixtures/test_addon_tools_package_migration.py"
       - "test_fixtures/test_runtime_connectors_package_migration.py"
+      - "test_fixtures/test_dialog_drift_audit_package_migration.py"
       - "test_fixtures/test_dialog_drift_overview_package_migration.py"
       - "test_fixtures/test_ffxiclopedia_adapter_package_migration.py"
       - "test_fixtures/test_research_gaps_package_migration.py"
@@ -149,6 +151,7 @@ jobs:
           python test_fixtures/test_salvage_reconstruct_package_migration.py
           python test_fixtures/test_addon_tools_package_migration.py
           python test_fixtures/test_runtime_connectors_package_migration.py
+          python test_fixtures/test_dialog_drift_audit_package_migration.py
           python test_fixtures/test_dialog_drift_overview_package_migration.py
           python test_fixtures/test_ffxiclopedia_adapter_package_migration.py
           python test_fixtures/test_research_gaps_package_migration.py
