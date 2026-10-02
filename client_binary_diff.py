@@ -1,31 +1,10 @@
 #!/usr/bin/env python3
-"""Compare two precomputed client binary indexes."""
+"""Compatibility launcher for the packaged Client binary diff CLI."""
 from __future__ import annotations
+import sys
+from workbench.client.cli import binary_diff as _canonical
 
-import argparse
-import json
-from pathlib import Path
+if __name__ == "__main__":
+    raise SystemExit(_canonical.main())
 
-from workbench.client.binary_diff import diff_binary_indexes
-
-
-def main():
-    ap=argparse.ArgumentParser()
-    ap.add_argument("left",type=Path)
-    ap.add_argument("right",type=Path)
-    ap.add_argument("--max-items",type=int,default=500)
-    ap.add_argument("--output",type=Path)
-    args=ap.parse_args()
-
-    left=json.loads(args.left.read_text(encoding="utf-8"))
-    right=json.loads(args.right.read_text(encoding="utf-8"))
-    result=diff_binary_indexes(left,right,max_items=args.max_items)
-    text=json.dumps(result,indent=2,sort_keys=True)+"\n"
-    if args.output:
-        args.output.parent.mkdir(parents=True,exist_ok=True)
-        args.output.write_text(text,encoding="utf-8")
-    print(text,end="")
-
-
-if __name__=="__main__":
-    main()
+sys.modules[__name__] = _canonical
