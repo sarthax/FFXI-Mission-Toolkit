@@ -134,16 +134,24 @@ def test_character_editor_progression_wrapper_and_controls():
     assert "Blue spell ID must be between 513 (0x201) and 767 (0x2FF)." in blue_edit
     assert "editing locked until offline" in blue_edit
 
-    # Quest state is intentionally presentation-only in this slice.
+    # Quest editing is limited to one current/completed bit at a time through guarded packed writes.
     assert "key === 'missions-quests'" in quests
     assert "activeCategoryData?.packed?.quests" in quests
     assert "Quest State" in quests
-    assert "Active / accepted" in quests
-    assert "Completed" in quests
+    assert "Active" in quests and "Completed" in quests
     assert "Filter quest name or ID" in quests
     assert "checkout quest catalog unavailable" in quests
-    assert "/packed/preview" not in quests
-    assert "/packed/apply" not in quests
+    assert "editableOnline() && entry.editable === true" in quests
+    assert "capability:'quests'" in quests
+    assert "/packed/preview" in quests
+    assert "/packed/apply" in quests
+    assert "expected_before_sha256:preview.before_sha256" in quests
+    assert "approved:true" in quests
+    assert "quest_id:questId" in quests
+    assert "state, enabled:desired" in quests
+    assert "min=\"0\" max=\"255\"" in quests
+    assert "Quest ID must be between 0 and 255." in quests
+    assert "editing locked until offline" in quests
 
 
 def test_character_editor_packed_mutations_preserve_unrelated_bytes():
