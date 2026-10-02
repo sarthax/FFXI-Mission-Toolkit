@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import importlib.util
-import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -34,7 +33,7 @@ from pathlib import Path
 import sqlite3, tempfile
 from workbench.devtools.reference import ffxiclopedia
 
-xml = '''<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/"><page><title>Cait Sith (Mission)</title><id>42</id><revision><id>7</id><timestamp>2026-01-01T00:00:00Z</timestamp><text>Sample body</text></revision></page></mediawiki>'''
+xml = "<mediawiki xmlns='http://www.mediawiki.org/xml/export-0.11/'><page><title>Cait Sith (Mission)</title><id>42</id><revision><id>7</id><timestamp>2026-01-01T00:00:00Z</timestamp><text>Sample body</text></revision></page></mediawiki>"
 with tempfile.TemporaryDirectory() as td:
     root = Path(td)
     source = root / "wiki.xml"
