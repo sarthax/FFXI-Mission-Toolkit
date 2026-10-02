@@ -8,8 +8,10 @@ from __future__ import annotations
 from typing import Any
 
 from .adapters import compare_schema
+from .adapters.inventory import inspect_inventory_contract
 from .inventory import inventory_summary
 from .schema import CharacterSchema, discover_character_schema
+from .session_state import detect_online_state
 
 
 class CharacterEditorService:
@@ -78,6 +80,12 @@ class CharacterEditorService:
     def character_exists(self, char_id: int) -> bool:
         return self._identity(char_id) is not None
 
+    def session_state(self, char_id: int) -> dict[str, Any]:
+        return detect_online_state(self.connection, self.schema, char_id).as_dict()
+
+    def inventory_contract(self) -> dict[str, Any]:
+        return inspect_inventory_contract(self.schema, self.adapter_family).as_dict()
+
     def load_table(self, char_id: int, table_name: str, limit: int = 5000) -> list[dict[str, Any]]:
         table = self.schema.table(table_name)
         if table is None:
@@ -123,6 +131,8 @@ class CharacterEditorService:
                 "family": self.adapter_family,
                 "confidence": self.adapter_confidence,
             },
+            "online_state": self.session_state(char_id),
+            "inventory_contract": self.inventory_contract(),
             "sections": sections,
             "packed_fields": dict(self.schema.packed_fields),
             "schema": self.schema.summary(),
@@ -140,6 +150,7 @@ class CharacterEditorService:
             },
             "schema": self.schema.summary(),
             "lineage_comparison": compare_schema(self.schema, self.adapter_family),
+            "inventory_contract": self.inventory_contract(),
             "inventory": inventory_summary(self.schema, self.adapter_family),
             "write_enabled": False,
         }
