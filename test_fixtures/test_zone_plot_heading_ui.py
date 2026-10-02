@@ -116,6 +116,10 @@ def main():
     ).read_text(encoding="utf-8")
     zone_plot = (
         Path(__file__).resolve().parents[1]
+        / "src"
+        / "workbench"
+        / "devtools"
+        / "spatial"
         / "zone_plot.py"
     ).read_text(encoding="utf-8")
     assert "def update_positions_bulk(rows, comment=" in zone_edit
@@ -153,7 +157,6 @@ def main():
     assert "horizontal ${horizontal.toFixed(2)}" in template
     assert "bearing ${bearing.toFixed(1)}°" in template
 
-
     # Snap-to-selected and selected-entity history / restore.
     assert "Snap XYZ to other selected" in template
     assert "Snap Y to other selected" in template
@@ -172,7 +175,6 @@ def main():
     assert "familyid" in zone_edit and "combat/species behavior are unchanged" in zone_edit
     assert '@app.get("/zoneplot/history/{kind}/{eid}")' in gui_server
     assert '@app.post("/zoneplot/restore_entity_previous")' in gui_server
-
 
     # Explicit mob roam/spawn-leash radii: source-backed only, never inferred from engine defaults.
     assert "RADIUS_MOB_MODS" in zone_plot
