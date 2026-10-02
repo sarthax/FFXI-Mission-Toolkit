@@ -38,7 +38,8 @@ def test_packaged_tools_use_runtime_database_path_and_remain_read_only(tmp_path,
         "rows": [[1, "alpha"], [2, "beta"]],
         "truncated": False,
     }
-    assert "disallowed keyword" in canonical.query_sql("SELECT * FROM sample; DELETE FROM sample")["error"] or "single SQL statement" in canonical.query_sql("SELECT * FROM sample; DELETE FROM sample")["error"]
+    rejected = canonical.query_sql("SELECT * FROM sample; DELETE FROM sample")
+    assert "single SQL statement" in rejected["error"]
 
     con = canonical._readonly_connection()
     try:
@@ -52,4 +53,4 @@ def test_verified_relationship_text_is_preserved():
     relationships = canonical._relationships_for("dsp_instance_entities")
     notes = {item["from"]: item["note"] for item in relationships}
     assert "don't trust an unmatched instanceid as evidence of absence" in notes["dsp_instance_entities.instanceid"]
-    assert "distinct real matches against both dsp_npc_list.npcid and dsp_mob_spawn_points.mobid" in notes["dsp_instance_entities.id"]
+    assert "distinct real matches against both npc_list.npcid and mob_spawn_points.mobid" in notes["dsp_instance_entities.id"]
