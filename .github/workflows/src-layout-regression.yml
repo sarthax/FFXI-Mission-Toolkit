@@ -6,6 +6,7 @@ on:
       - "pyproject.toml"
       - "src/workbench/**"
       - "workbench/__init__.py"
+      - "docs/workbench/SRC_LAYOUT_STATUS.md"
       - "feature_trace.py"
       - "wiki_evidence.py"
       - "wiki_claim_compare.py"
