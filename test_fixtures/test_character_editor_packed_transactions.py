@@ -13,11 +13,13 @@ if str(SRC) not in sys.path:
 from workbench.editors.character.packed_codecs import (
     BITSET_BLOB_SIZES,
     BITSET_MEANINGFUL_BITS,
+    BLUE_SPELL_SLOT_COUNT,
     KEY_ITEM_TABLE_BYTES,
     MISSION_AREA_COUNT,
     MISSION_RECORD_SIZES,
 )
 from workbench.editors.character.packed_transactions import (
+    _blue_spell_edit,
     _character_bitset_edit,
     _key_item_edit,
     _mission_edit,
@@ -37,6 +39,10 @@ def keyitem_blob(family: str) -> bytes:
 def bitset_blob(capability: str, family: str) -> bytes:
     size = BITSET_BLOB_SIZES[capability][family]
     return bytes((index * 13 + 7) & 0xFF for index in range(size))
+
+
+def blue_spell_blob() -> bytes:
+    return bytes((index * 7 + 1) & 0xFF for index in range(BLUE_SPELL_SLOT_COUNT))
 
 
 def changed_offsets(before: bytes, after: bytes) -> set[int]:
@@ -100,6 +106,46 @@ def main() -> None:
         assert old["key_item_id"] == key_item_id
         assert new["owned"] is owned_target
         assert new["seen"] is seen_target
+
+    # Blue-spell mutation replaces exactly one positional slot and preserves every other byte.
+    for family in ("dsp", "topaz", "lsb"):
+        before = blue_spell_blob()
+        slot = 3
+        after, old, new = _blue_spell_edit(before, family, {"slot": slot, "spell_id": 0x222})
+        assert changed_offsets(before, after).issubset({slot})
+        assert old["slot"] == slot
+        assert new == {"slot": slot, "stored_value": 0x22, "spell_id": 0x222, "empty": False}
+
+        cleared, clear_old, clear_new = _blue_spell_edit(after, family, {"slot": slot, "spell_id": None})
+        assert changed_offsets(after, cleared).issubset({slot})
+        assert clear_old["spell_id"] == 0x222
+        assert clear_new == {"slot": slot, "stored_value": 0, "spell_id": None, "empty": True}
+
+        # Clearing with numeric zero is equivalent and duplicates elsewhere are intentionally allowed.
+        duplicate_before = bytearray(before)
+        duplicate_before[0] = 0x22
+        duplicate_before[7] = 0x22
+        duplicate_after, _, duplicate_new = _blue_spell_edit(
+            bytes(duplicate_before), family, {"slot": 12, "spell_id": 0x222}
+        )
+        assert changed_offsets(bytes(duplicate_before), duplicate_after).issubset({12})
+        assert duplicate_new["spell_id"] == 0x222
+        zero_after, _, zero_new = _blue_spell_edit(duplicate_after, family, {"slot": 12, "spell_id": 0})
+        assert zero_new["empty"] is True
+        assert changed_offsets(duplicate_after, zero_after).issubset({12})
+
+        for operation, expected in (
+            ({"slot": -1, "spell_id": 0x201}, "slot must be between"),
+            ({"slot": BLUE_SPELL_SLOT_COUNT, "spell_id": 0x201}, "slot must be between"),
+            ({"slot": 0, "spell_id": 0x200}, "spell_id must be"),
+            ({"slot": 0, "spell_id": 0x300}, "spell_id must be"),
+        ):
+            try:
+                _blue_spell_edit(before, family, operation)
+            except ValueError as exc:
+                assert expected in str(exc)
+            else:
+                raise AssertionError(f"{family} accepted invalid blue-spell edit {operation}")
 
     # Simple packed bitsets may alter only the byte containing the requested meaningful bit.
     cases = (
