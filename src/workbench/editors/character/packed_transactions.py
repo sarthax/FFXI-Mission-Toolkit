@@ -12,6 +12,8 @@ from typing import Any
 from .packed_codecs import (
     BITSET_BLOB_SIZES,
     BITSET_MEANINGFUL_BITS,
+    BLUE_SPELL_ID_OFFSET,
+    BLUE_SPELL_SLOT_COUNT,
     KEY_ITEM_BITS_PER_TABLE,
     KEY_ITEM_SET_BYTES,
     KEY_ITEM_TABLE_BYTES,
@@ -19,6 +21,7 @@ from .packed_codecs import (
     MISSION_AREA_COUNT,
     MISSION_RECORD_SIZES,
     PackedCodecError,
+    decode_blue_spells,
     decode_character_bitset,
     decode_key_items,
     decode_missions,
@@ -31,6 +34,7 @@ _VERIFIED_FAMILIES = {"dsp", "topaz", "lsb"}
 _CAPABILITY_COLUMN = {
     "missions": "missions",
     "key_items": "keyitems",
+    "blue_spells": "set_blue_spells",
     "abilities": "abilities",
     "weaponskills": "weaponskills",
     "titles": "titles",
@@ -209,6 +213,33 @@ def _key_item_edit(blob: bytes, family: str, operation: dict[str, Any]) -> tuple
     return after_blob, before, after
 
 
+def _blue_spell_edit(blob: bytes, family: str, operation: dict[str, Any]) -> tuple[bytes, dict[str, Any], dict[str, Any]]:
+    """Replace or clear exactly one verified set-blue-spell slot."""
+    decoded_before = decode_blue_spells(blob, family)
+    slot = int(operation.get("slot", -1))
+    if not 0 <= slot < BLUE_SPELL_SLOT_COUNT:
+        raise ValueError(f"slot must be between 0 and {BLUE_SPELL_SLOT_COUNT - 1}")
+    if "spell_id" not in operation:
+        raise ValueError("spell_id must be supplied for a blue spell slot edit")
+
+    raw_spell_id = operation.get("spell_id")
+    if raw_spell_id in (None, 0, ""):
+        stored_value = 0
+    else:
+        spell_id = int(raw_spell_id)
+        minimum = BLUE_SPELL_ID_OFFSET + 1
+        maximum = BLUE_SPELL_ID_OFFSET + 0xFF
+        if not minimum <= spell_id <= maximum:
+            raise ValueError(f"spell_id must be 0/None to clear or between {minimum} and {maximum}")
+        stored_value = spell_id - BLUE_SPELL_ID_OFFSET
+
+    data = bytearray(blob)
+    data[slot] = stored_value
+    after_blob = bytes(data)
+    decoded_after = decode_blue_spells(after_blob, family)
+    return after_blob, decoded_before["slots"][slot], decoded_after["slots"][slot]
+
+
 def _character_bitset_edit(
     blob: bytes,
     family: str,
@@ -290,6 +321,8 @@ def build_packed_edit_plan(
                 after_blob, before, after = _mission_edit(before_blob, family, operation)
             elif capability == "key_items":
                 after_blob, before, after = _key_item_edit(before_blob, family, operation)
+            elif capability == "blue_spells":
+                after_blob, before, after = _blue_spell_edit(before_blob, family, operation)
             elif capability in BITSET_BLOB_SIZES:
                 after_blob, before, after = _character_bitset_edit(before_blob, family, capability, operation)
         except (PackedCodecError, TypeError, ValueError) as exc:
