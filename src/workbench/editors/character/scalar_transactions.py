@@ -28,8 +28,9 @@ _ALLOWED_COLUMNS: dict[str, set[str] | None] = {
     },
     "char_skills": {"value", "rank"},
 }
-
+_ALLOWED_SELECTORS = {"char_skills": {"skillid"}}
 _KEY_COLUMNS = {"charid", "char_id", "character_id", "skillid"}
+_VERIFIED_FAMILIES = {"dsp", "topaz", "lsb"}
 
 
 @dataclass(frozen=True)
@@ -125,11 +126,13 @@ def _row(connection, schema: CharacterSchema, char_id: int, table_name: str, sel
     table = schema.table(table_name)
     if table is None or table.character_key is None:
         return None
+    allowed_selectors = _ALLOWED_SELECTORS.get(table_name, set())
+    unknown = set(selector) - allowed_selectors
+    if unknown:
+        raise ValueError(f"Unsupported selector(s) for {table_name}: {', '.join(sorted(unknown))}")
     clauses = [f"`{table.character_key}` = %s"]
     params: list[Any] = [int(char_id)]
     for key, value in selector.items():
-        if key == table.character_key:
-            continue
         if key not in table.column_names:
             raise ValueError(f"Unknown selector column {table_name}.{key}")
         clauses.append(f"`{key}` = %s")
@@ -149,9 +152,12 @@ def build_scalar_edit_plan(connection, *, char_id: int, table_name: str, selecto
     char_id = int(char_id)
     selector = dict(selector or {})
     requested = dict(changes or {})
+    family = str(adapter_family or "unknown").lower()
     issues: list[ScalarIssue] = []
     schema = discover_character_schema(connection)
     table = schema.table(table_name)
+    if family not in _VERIFIED_FAMILIES:
+        issues.append(ScalarIssue("adapter_unverified", "A detected DSP/Topaz/LSB adapter is required for scalar writes."))
     if table is None:
         issues.append(ScalarIssue("table_missing", f"{table_name} is not present on the connected server."))
     if table_name not in _ALLOWED_COLUMNS:
@@ -166,8 +172,11 @@ def build_scalar_edit_plan(connection, *, char_id: int, table_name: str, selecto
     before = None
     normalized: dict[str, Any] = {}
     if table is not None and table_name in _ALLOWED_COLUMNS:
-        before = _row(connection, schema, char_id, table_name, selector)
-        if before is None:
+        try:
+            before = _row(connection, schema, char_id, table_name, selector)
+        except ValueError as exc:
+            issues.append(ScalarIssue("invalid_selector", str(exc)))
+        if before is None and not any(i.code == "invalid_selector" for i in issues):
             issues.append(ScalarIssue("row_missing", "Target character row does not exist."))
         columns = {c.name: c for c in table.columns}
         editable = {row["name"] for row in editable_columns(schema, table_name)}
@@ -184,7 +193,7 @@ def build_scalar_edit_plan(connection, *, char_id: int, table_name: str, selecto
             except (TypeError, ValueError) as exc:
                 issues.append(ScalarIssue("invalid_value", str(exc)))
 
-    return ScalarEditPlan(char_id, table_name, selector, normalized, before, online_state.online, str(adapter_family or "unknown"), issues)
+    return ScalarEditPlan(char_id, table_name, selector, normalized, before, online_state.online, family, issues)
 
 
 def apply_scalar_edit(connection, plan: ScalarEditPlan, *, approved: bool = False) -> dict[str, Any]:
@@ -215,8 +224,6 @@ def apply_scalar_edit(connection, plan: ScalarEditPlan, *, approved: bool = Fals
         clauses = [f"`{table.character_key}` = %s"]
         params: list[Any] = list(plan.changes.values()) + [plan.char_id]
         for key, value in plan.selector.items():
-            if key == table.character_key:
-                continue
             clauses.append(f"`{key}` = %s")
             params.append(value)
         cursor = connection.cursor()
