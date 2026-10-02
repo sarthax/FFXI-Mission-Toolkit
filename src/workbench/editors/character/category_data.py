@@ -22,6 +22,7 @@ _ALIAS_CAPABILITIES = {
 }
 _PACKED_EDITABLE = {
     "missions",
+    "quests",
     "key_items",
     "blue_spells",
     "abilities",
