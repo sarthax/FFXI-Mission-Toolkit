@@ -62,6 +62,7 @@ on:
       - "test_fixtures/test_mission_domain_planning_package_migration.py"
       - "test_fixtures/test_quest_source_catalog_package_migration.py"
       - "test_fixtures/test_mission_ingest_package_migration.py"
+      - "test_fixtures/test_multizone_progression_package_migration.py"
       - ".github/workflows/src-layout-regression.yml"
   workflow_dispatch:
 
@@ -118,3 +119,4 @@ jobs:
           python test_fixtures/test_mission_domain_planning_package_migration.py
           python test_fixtures/test_quest_source_catalog_package_migration.py
           python test_fixtures/test_mission_ingest_package_migration.py
+          python test_fixtures/test_multizone_progression_package_migration.py
