@@ -71,23 +71,43 @@ def test_character_editor_progression_wrapper_and_controls():
 
     assert "key === 'missions-quests'" in script
     assert "key === 'key-items'" in script
-    assert "/packed/preview" in script and "/packed/apply" in script
+    assert "/packed/preview" in script
+    assert "/packed/apply" in script
     assert "expected_before_sha256:preview.before_sha256" in script
     assert "editableOnline()" in script
     assert "editing locked until offline" in script
+
     assert "Set current" in script
     assert "status_upper" in script and "status_lower" in script
     assert "completed_id" in script and "completed" in script
+    assert "Filter missions" in script
+
     assert "Search key item name or ID" in script
+    assert "Numeric ID" in script
+    assert "data-kind=\"owned\"" in script
+    assert "data-kind=\"seen\"" in script
     assert "key_item_id" in script
 
+    # Base progression rendering remains read-only until the guarded bitset-edit asset augments it.
     assert "renderPackedReadOnly(['abilities','weaponskills'])" in script
     assert "renderPackedReadOnly(['titles','visited_zones'])" in script
+    assert "Labels come only from the selected server checkout." in script
+    assert "Reserved legacy bits set:" in script
+
+    # The follow-on asset enables only single-bit, offline, preview-confirmed edits.
     assert "renderBitsetEditors(['abilities','weaponskills'])" in bitset
     assert "renderBitsetEditors(['titles','visited_zones'])" in bitset
     assert "editableOnline() && entry.editable === true" in bitset
-    assert "bit_id:id" in bitset and "enabled:desired" in bitset
+    assert "/packed/preview" in bitset
+    assert "/packed/apply" in bitset
+    assert "expected_before_sha256:preview.before_sha256" in bitset
+    assert "approved:true" in bitset
+    assert "bit_id:id" in bitset
+    assert "enabled:desired" in bitset
     assert "Reserved legacy bits are set but remain unwritable" in bitset
+    assert "Numeric ID" in bitset
+    assert "data-bit-id" in bitset
+    assert "Single-bit edits use guarded preview + exact before-SHA confirmation." in bitset
 
     # Blue spell slots are presentation-only in this slice: no packed preview/apply calls here.
     assert "key === 'spells-abilities'" in blue
