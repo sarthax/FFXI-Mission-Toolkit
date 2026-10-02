@@ -24,6 +24,7 @@ from .packed_codecs import (
     QUEST_RECORD_BYTES,
     QUEST_SET_BYTES,
     PackedCodecError,
+    decode_assaults,
     decode_blue_spells,
     decode_character_bitset,
     decode_key_items,
@@ -38,6 +39,7 @@ _VERIFIED_FAMILIES = {"dsp", "topaz", "lsb"}
 _CAPABILITY_COLUMN = {
     "missions": "missions",
     "quests": "quests",
+    "assaults": "assault",
     "key_items": "keyitems",
     "blue_spells": "set_blue_spells",
     "abilities": "abilities",
@@ -173,7 +175,7 @@ def _mission_edit(blob: bytes, family: str, operation: dict[str, Any]) -> tuple[
 
 def _quest_edit(blob: bytes, family: str, operation: dict[str, Any]) -> tuple[bytes, dict[str, Any], dict[str, Any]]:
     """Toggle exactly one current/accepted or completed quest bit."""
-    decoded_before = decode_quests(blob, family)
+    decode_quests(blob, family)
     area_id = int(operation.get("area_id", -1))
     quest_id = int(operation.get("quest_id", -1))
     state = str(operation.get("state", "")).strip().lower()
@@ -212,6 +214,41 @@ def _quest_edit(blob: bytes, family: str, operation: dict[str, Any]) -> tuple[by
             ),
         },
     )
+
+
+def _assault_edit(blob: bytes, family: str, operation: dict[str, Any]) -> tuple[bytes, dict[str, Any], dict[str, Any]]:
+    """Edit current Assault ID and/or one completion flag in the verified 130-byte layout."""
+    decoded_before = decode_assaults(blob, family)
+    data = bytearray(blob)
+    before: dict[str, Any] = {"current": decoded_before["current"]}
+
+    if "current" in operation and operation["current"] is not None:
+        current = int(operation["current"])
+        if not 0 <= current <= 0xFFFF:
+            raise ValueError("current Assault ID must be between 0 and 65535")
+        data[0:2] = current.to_bytes(2, "little")
+
+    completed_id = operation.get("completed_id")
+    if completed_id is not None:
+        completed_id = int(completed_id)
+        if not 0 <= completed_id < 128:
+            raise ValueError("completed_id must be between 0 and 127")
+        if "completed" not in operation:
+            raise ValueError("completed must be supplied when completed_id is supplied")
+        before["completed_id"] = completed_id
+        before["completed"] = completed_id in decoded_before["completed_ids"]
+        data[2 + completed_id] = 1 if bool(operation["completed"]) else 0
+
+    if "current" not in operation and completed_id is None:
+        raise ValueError("At least one of current or completed_id must be supplied")
+
+    after_blob = bytes(data)
+    decoded_after = decode_assaults(after_blob, family)
+    after: dict[str, Any] = {"current": decoded_after["current"]}
+    if completed_id is not None:
+        after["completed_id"] = completed_id
+        after["completed"] = completed_id in decoded_after["completed_ids"]
+    return after_blob, before, after
 
 
 def _bit_value(blob: bytes, key_item_id: int, *, seen: bool) -> bool:
@@ -369,6 +406,8 @@ def build_packed_edit_plan(
                 after_blob, before, after = _mission_edit(before_blob, family, operation)
             elif capability == "quests":
                 after_blob, before, after = _quest_edit(before_blob, family, operation)
+            elif capability == "assaults":
+                after_blob, before, after = _assault_edit(before_blob, family, operation)
             elif capability == "key_items":
                 after_blob, before, after = _key_item_edit(before_blob, family, operation)
             elif capability == "blue_spells":
