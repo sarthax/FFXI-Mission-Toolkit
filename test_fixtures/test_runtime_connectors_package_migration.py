@@ -18,7 +18,7 @@ def _load_root(name: str, path: str):
     module = importlib.util.module_from_spec(spec)
     sys.modules[name] = module
     spec.loader.exec_module(module)
-    return module
+    return sys.modules[name]
 
 
 def main() -> None:
