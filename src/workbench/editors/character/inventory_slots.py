@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-# Retail/LSB container ids; the lower ids are inherited by Topaz/DSP.
+# Stable database/runtime names used by DSP/Topaz/LSB.
 CONTAINERS = {
     0: "inventory",
     1: "safe",
@@ -23,6 +23,28 @@ CONTAINERS = {
     14: "wardrobe6",
     15: "wardrobe7",
     16: "wardrobe8",
+}
+
+# Human-facing FFXI names. Keep separate from CONTAINERS so display polish does not change
+# database/runtime contracts or callers that depend on the stable short names above.
+CONTAINER_LABELS = {
+    0: "Inventory",
+    1: "Mog Safe",
+    2: "Storage",
+    3: "Temporary Items",
+    4: "Mog Locker",
+    5: "Mog Satchel",
+    6: "Mog Sack",
+    7: "Mog Case",
+    8: "Mog Wardrobe",
+    9: "Mog Safe 2",
+    10: "Mog Wardrobe 2",
+    11: "Mog Wardrobe 3",
+    12: "Mog Wardrobe 4",
+    13: "Mog Wardrobe 5",
+    14: "Mog Wardrobe 6",
+    15: "Mog Wardrobe 7",
+    16: "Mog Wardrobe 8",
 }
 
 # char_storage columns that directly carry capacity. Storage (2) is furnishing-derived and
@@ -100,7 +122,6 @@ def inspect_slots(connection, char_id: int, location: int = 0) -> SlotState:
         cursor.close()
 
     occupied_set = set(occupied)
-    # FFXI DB inventory slots are 1-based; slot 0 is not a normal persisted item slot.
     first_free = next((slot for slot in range(1, capacity + 1) if slot not in occupied_set), None)
     return SlotState(
         location=location,
