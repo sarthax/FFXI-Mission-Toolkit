@@ -1,13 +1,15 @@
 """Read payloads for Character Editor tabs.
 
 Row tables are returned as rows and packed fields as their physical raw value plus location.
-Verified scalar tables also expose editable-column metadata; packed/BLOB state remains read-only.
+Verified scalar tables expose editable-column metadata.  Packed mission/key-item state is decoded
+through lineage-aware codecs but remains read-only until guarded packed-state transactions exist.
 """
 from __future__ import annotations
 
 from typing import Any
 
 from .categories import TAB_DEFINITIONS, get_tab
+from .packed_codecs import PackedCodecError, decode_packed_field
 
 _ALIAS_CAPABILITIES = {
     "experience": "jobs",
@@ -50,7 +52,16 @@ def build_category_payload(service, char_id: int, tab_key: str) -> dict[str, Any
         if location and "." in location:
             table_name, column = location.split(".", 1)
             value = identity.get(column) if table_name == "chars" else None
-            packed[capability] = {"location": location, "value": value, "editable": False}
+            entry: dict[str, Any] = {"location": location, "value": value, "editable": False}
+            try:
+                decoded = decode_packed_field(capability, value, service.adapter_family)
+                if decoded is not None:
+                    entry["decoded"] = decoded
+                    entry["codec"] = decoded.get("codec")
+                    entry["layout"] = decoded.get("layout")
+            except PackedCodecError as exc:
+                entry["decode_error"] = str(exc)
+            packed[capability] = entry
 
     if tab.key == "character":
         tables["chars"] = [identity]
