@@ -11,7 +11,6 @@ from typing import Iterable
 
 from workbench.core.schema import Artifact
 from workbench.migrations.package_plan import PackagePlan
-from workbench.migrations.backend_registry import default_backend_registry
 from workbench.migrations.generated_output import GeneratedOutput
 
 
@@ -39,6 +38,12 @@ def build_package_manifest(
 ) -> dict:
     artifact_map={a.artifact_id:a for a in artifacts}
     if backend_registry is None and source_family and target_family:
+        # Backend registry construction still carries legacy converter compatibility
+        # imports. Keep that dependency out of package-manifest readers such as
+        # converter_scope(), which must be safe under an editable install outside the
+        # repository root.
+        from workbench.migrations.backend_registry import default_backend_registry
+
         backend_registry=default_backend_registry()
 
     steps=[]
@@ -138,20 +143,12 @@ def attach_generated_outputs(
         "generated_artifacts":[dict(a) for a in manifest.get("generated_artifacts",[])],
     }
     generated=result["generated_artifacts"]
-    known={str(item.get("output_id")) for item in generated}
+    existing_ids={str(a.get("artifact_id")) for a in generated if a.get("artifact_id")}
     for output in outputs:
-        if output.output_id in known:
-            raise ValueError(f"Duplicate generated output in package manifest: {output.output_id}")
-        generated.append({
-            "output_id":output.output_id,
-            "path":output.relative_path.replace("\\","/"),
-            "artifact_type":output.artifact_type,
-            "generator":output.generator,
-            "metadata":dict(output.metadata),
-            "target_formatted":not bool(output.metadata.get("proposal_only")),
-            "proposal_only":bool(output.metadata.get("proposal_only")),
-            "conversion_status":"NOT_REQUIRED",
-        })
-        known.add(output.output_id)
-    generated.sort(key=lambda item:item["output_id"])
+        item=output.as_manifest_artifact()
+        if item["artifact_id"] in existing_ids:
+            generated[:]=[a for a in generated if str(a.get("artifact_id")) != item["artifact_id"]]
+        generated.append(item)
+        existing_ids.add(item["artifact_id"])
+    generated.sort(key=lambda a:str(a.get("artifact_id") or ""))
     return result
