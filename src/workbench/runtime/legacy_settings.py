@@ -45,6 +45,10 @@ def get_ffxi_install():
     return _module().get_ffxi_install()
 
 
+def get_backport_root():
+    return _module().get_backport_root()
+
+
 def get_zoneplot_server() -> str:
     """Return the persisted Zone Plot server target using legacy settings semantics."""
     module = _module()
