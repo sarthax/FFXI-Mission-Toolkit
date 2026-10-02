@@ -59,12 +59,14 @@ def test_character_editor_progression_wrapper_and_controls():
     wrapper = (ROOT / "gui" / "templates" / "character_editor_progression.html").read_text(encoding="utf-8")
     script = (ROOT / "gui" / "static" / "character_editor_progression.js").read_text(encoding="utf-8")
     bitset = (ROOT / "gui" / "static" / "character_editor_bitset_edit.js").read_text(encoding="utf-8")
+    blue = (ROOT / "gui" / "static" / "character_editor_blue_spells.js").read_text(encoding="utf-8")
     gui = (ROOT / "src" / "workbench" / "editors" / "character" / "gui.py").read_text(encoding="utf-8")
 
     assert '{% extends "character_editor.html" %}' in wrapper
     assert '/static/character_editor_progression.js' in wrapper
     assert '/static/character_editor_bitset_edit.js' in wrapper
-    assert wrapper.index('/static/character_editor_progression.js') < wrapper.index('/static/character_editor_bitset_edit.js')
+    assert '/static/character_editor_blue_spells.js' in wrapper
+    assert wrapper.index('/static/character_editor_progression.js') < wrapper.index('/static/character_editor_bitset_edit.js') < wrapper.index('/static/character_editor_blue_spells.js')
     assert 'name="character_editor_progression.html"' in gui
 
     assert "key === 'missions-quests'" in script
@@ -106,6 +108,16 @@ def test_character_editor_progression_wrapper_and_controls():
     assert "Numeric ID" in bitset
     assert "data-bit-id" in bitset
     assert "Single-bit edits use guarded preview + exact before-SHA confirmation." in bitset
+
+    # Blue spell slots are presentation-only in this slice: no packed preview/apply calls here.
+    assert "key === 'spells-abilities'" in blue
+    assert "activeCategoryData?.packed?.blue_spells" in blue
+    assert "Set Blue Magic" in blue
+    assert "read only" in blue
+    assert "stored 0 · empty" in blue
+    assert "spell ID" in blue and "stored" in blue
+    assert "/packed/preview" not in blue
+    assert "/packed/apply" not in blue
 
 
 def test_character_editor_packed_mutations_preserve_unrelated_bytes():

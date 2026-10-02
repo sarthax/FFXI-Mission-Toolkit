@@ -13,6 +13,7 @@ if str(SRC) not in sys.path:
 
 from workbench.editors.character.progression_catalog import (
     ability_catalog,
+    blue_spell_catalog,
     key_item_catalog,
     mission_catalog,
     title_catalog,
@@ -62,6 +63,14 @@ values:
 ABILITY_SQL = """
 INSERT INTO `abilities` VALUES (16,'mighty_strikes',1,0,1);
 INSERT INTO `abilities` VALUES (97,'phantom_roll',17,5,1);
+"""
+
+SPELL_SQL = """
+INSERT INTO `spell_list` VALUES (512,'not_a_slot_value',0x00);
+INSERT INTO `spell_list` VALUES (513,'pollen',0x00);
+INSERT INTO `spell_list` VALUES (546,'head_butt',0x00);
+INSERT INTO `spell_list` VALUES (767,'last_blue_slot',0x00);
+INSERT INTO `spell_list` VALUES (768,'outside_slot_range',0x00);
 """
 
 WS_UNLOCK_LUA = """
@@ -126,6 +135,15 @@ def main() -> None:
         assert abilities["items"]["16"]["label"] == "Mighty Strikes"
         assert abilities["items"]["97"]["symbol"] == "PHANTOM_ROLL"
 
+        (sql_dir / "spell_list.sql").write_text(SPELL_SQL, encoding="utf-8")
+        blue_spells = blue_spell_catalog(root)
+        assert blue_spells["source"]["kind"] == "spell_list.sql"
+        assert blue_spells["items"]["513"]["label"] == "Pollen"
+        assert blue_spells["items"]["546"]["symbol"] == "HEAD_BUTT"
+        assert blue_spells["items"]["767"]["label"] == "Last Blue Slot"
+        assert "512" not in blue_spells["items"]
+        assert "768" not in blue_spells["items"]
+
         script_enum = root / "scripts" / "enum"
         script_enum.mkdir(parents=True)
         (script_enum / "ws_unlock.lua").write_text(WS_UNLOCK_LUA, encoding="utf-8")
@@ -155,6 +173,9 @@ def main() -> None:
     missing = mission_catalog(Path("/definitely/not/a/server"))
     assert missing["source"]["available"] is False
     assert missing["areas"] == {}
+    missing_blue = blue_spell_catalog(Path("/definitely/not/a/server"))
+    assert missing_blue["source"]["available"] is False
+    assert missing_blue["items"] == {}
 
 
 if __name__ == "__main__":

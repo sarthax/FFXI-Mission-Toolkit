@@ -213,6 +213,30 @@ def ability_catalog(server_root: Path | str | None) -> dict[str, Any]:
     }
 
 
+def blue_spell_catalog(server_root: Path | str | None) -> dict[str, Any]:
+    """Label set-blue-spell slots from checkout-local spell_list IDs 0x201 through 0x2FF."""
+    root = Path(server_root).resolve() if server_root else None
+    path = root / "sql" / "spell_list.sql" if root else None
+    if path is None or not path.is_file():
+        return {"source": CatalogSource("spell_list.sql", path, False).as_dict(), "items": {}}
+
+    pattern = re.compile(r"INSERT\s+INTO\s+`spell_list`\s+VALUES\s*\(\s*(\d+)\s*,\s*'([^']*)'", re.I)
+    rows: dict[int, dict[str, Any]] = {}
+    for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        match = pattern.search(raw)
+        if not match:
+            continue
+        raw_id, name = match.groups()
+        spell_id = int(raw_id)
+        if not 0x201 <= spell_id <= 0x2FF:
+            continue
+        rows[spell_id] = {"id": spell_id, "symbol": name.upper(), "label": _source_label(name)}
+    return {
+        "source": CatalogSource("spell_list.sql", path, True).as_dict(),
+        "items": {str(spell_id): row for spell_id, row in sorted(rows.items())},
+    }
+
+
 def weaponskill_unlock_catalog(server_root: Path | str | None) -> dict[str, Any]:
     """Label learned-weaponskill bits only from explicit unlock-ID enums.
 
@@ -272,6 +296,7 @@ def progression_catalog(server_root: Path | str | None, adapter_family: str) -> 
     return {
         "missions": mission_catalog(server_root),
         "key_items": key_item_catalog(server_root, adapter_family),
+        "blue_spells": blue_spell_catalog(server_root),
         "abilities": ability_catalog(server_root),
         "weaponskills": weaponskill_unlock_catalog(server_root),
         "titles": title_catalog(server_root),
