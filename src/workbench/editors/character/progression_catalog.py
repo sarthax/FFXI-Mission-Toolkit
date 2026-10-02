@@ -1,6 +1,6 @@
-"""Parse mission and key-item names from the configured DSP/Topaz/LSB checkout.
+"""Parse progression/unlock names from the configured DSP/Topaz/LSB checkout.
 
-The connected server checkout is the catalog authority.  This intentionally avoids treating a
+The connected server checkout is the catalog authority. This intentionally avoids treating a
 current LSB enum as valid for an older DSP/Topaz database whose IDs can differ materially.
 """
 from __future__ import annotations
@@ -32,6 +32,14 @@ _LOG_IDS = {
 
 def _label(symbol: str) -> str:
     text = str(symbol or "").strip().replace("_", " ")
+    return " ".join(word.capitalize() for word in text.split())
+
+
+def _source_label(name: str) -> str:
+    """Make SQL names readable without destroying useful mixed-case zone spellings."""
+    text = str(name or "").strip().replace("_", " ")
+    if any(ch.isupper() for ch in text[1:]):
+        return text
     return " ".join(word.capitalize() for word in text.split())
 
 
@@ -112,7 +120,6 @@ def _parse_lua_keyitems(path: Path) -> dict[int, dict[str, Any]]:
 
 
 def _parse_yaml_keyitems(path: Path) -> dict[int, dict[str, Any]]:
-    # LSB's generated enum source is deliberately simple YAML: ``name: integer`` under values:.
     value_pattern = re.compile(r"^\s{2}([A-Za-z][A-Za-z0-9_]*)\s*:\s*(\d+)\s*(?:#.*)?$")
     out: dict[int, dict[str, Any]] = {}
     in_values = False
@@ -155,8 +162,118 @@ def key_item_catalog(server_root: Path | str | None, adapter_family: str) -> dic
     return {"source": CatalogSource("key-items", missing, False).as_dict(), "items": {}}
 
 
+def _parse_lua_enum(path: Path) -> dict[int, dict[str, Any]]:
+    value_pattern = re.compile(r"^\s*([A-Z][A-Z0-9_]*)\s*=\s*(\d+)\s*,?")
+    out: dict[int, dict[str, Any]] = {}
+    for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = raw.split("--", 1)[0]
+        match = value_pattern.match(line)
+        if not match:
+            continue
+        symbol, raw_id = match.groups()
+        item_id = int(raw_id)
+        out[item_id] = {"id": item_id, "symbol": symbol, "label": _label(symbol)}
+    return out
+
+
+def _catalog_from_lua_candidates(root: Path | None, kind: str, relative_paths: tuple[str, ...]) -> dict[str, Any]:
+    candidates = [root / rel for rel in relative_paths] if root else []
+    for path in candidates:
+        if not path.is_file():
+            continue
+        rows = _parse_lua_enum(path)
+        if rows:
+            return {
+                "source": CatalogSource(path.name, path, True).as_dict(),
+                "items": {str(item_id): row for item_id, row in sorted(rows.items())},
+            }
+    missing = candidates[0] if candidates else None
+    return {"source": CatalogSource(kind, missing, False).as_dict(), "items": {}}
+
+
+def ability_catalog(server_root: Path | str | None) -> dict[str, Any]:
+    """Label learned-ability bits from this checkout's ``sql/abilities.sql`` table."""
+    root = Path(server_root).resolve() if server_root else None
+    path = root / "sql" / "abilities.sql" if root else None
+    if path is None or not path.is_file():
+        return {"source": CatalogSource("abilities.sql", path, False).as_dict(), "items": {}}
+
+    pattern = re.compile(r"INSERT\s+INTO\s+`abilities`\s+VALUES\s*\(\s*(\d+)\s*,\s*'([^']*)'", re.I)
+    rows: dict[int, dict[str, Any]] = {}
+    for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        match = pattern.search(raw)
+        if not match:
+            continue
+        raw_id, name = match.groups()
+        item_id = int(raw_id)
+        rows[item_id] = {"id": item_id, "symbol": name.upper(), "label": _source_label(name)}
+    return {
+        "source": CatalogSource("abilities.sql", path, True).as_dict(),
+        "items": {str(item_id): row for item_id, row in sorted(rows.items())},
+    }
+
+
+def weaponskill_unlock_catalog(server_root: Path | str | None) -> dict[str, Any]:
+    """Label learned-weaponskill bits only from explicit unlock-ID enums.
+
+    Normal weaponskill action IDs are a different domain and are intentionally never substituted.
+    """
+    root = Path(server_root).resolve() if server_root else None
+    return _catalog_from_lua_candidates(
+        root,
+        "weaponskill-unlock-enum",
+        (
+            "scripts/enum/ws_unlock.lua",
+            "scripts/globals/ws_unlock.lua",
+            "scripts/globals/weaponskill_unlocks.lua",
+        ),
+    )
+
+
+def title_catalog(server_root: Path | str | None) -> dict[str, Any]:
+    root = Path(server_root).resolve() if server_root else None
+    return _catalog_from_lua_candidates(
+        root,
+        "title-enum",
+        (
+            "scripts/enum/title.lua",
+            "scripts/globals/titles.lua",
+            "scripts/globals/title.lua",
+        ),
+    )
+
+
+def visited_zone_catalog(server_root: Path | str | None) -> dict[str, Any]:
+    """Label visited-zone bits from this checkout's zone_settings rows."""
+    root = Path(server_root).resolve() if server_root else None
+    path = root / "sql" / "zone_settings.sql" if root else None
+    if path is None or not path.is_file():
+        return {"source": CatalogSource("zone_settings.sql", path, False).as_dict(), "items": {}}
+
+    pattern = re.compile(
+        r"INSERT\s+INTO\s+`zone_settings`\s+VALUES\s*\(\s*(\d+)\s*,[^,]*,\s*'[^']*'\s*,[^,]*,\s*'([^']*)'",
+        re.I,
+    )
+    rows: dict[int, dict[str, Any]] = {}
+    for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        match = pattern.search(raw)
+        if not match:
+            continue
+        raw_id, name = match.groups()
+        item_id = int(raw_id)
+        rows[item_id] = {"id": item_id, "symbol": name, "label": _source_label(name)}
+    return {
+        "source": CatalogSource("zone_settings.sql", path, True).as_dict(),
+        "items": {str(item_id): row for item_id, row in sorted(rows.items())},
+    }
+
+
 def progression_catalog(server_root: Path | str | None, adapter_family: str) -> dict[str, Any]:
     return {
         "missions": mission_catalog(server_root),
         "key_items": key_item_catalog(server_root, adapter_family),
+        "abilities": ability_catalog(server_root),
+        "weaponskills": weaponskill_unlock_catalog(server_root),
+        "titles": title_catalog(server_root),
+        "visited_zones": visited_zone_catalog(server_root),
     }
