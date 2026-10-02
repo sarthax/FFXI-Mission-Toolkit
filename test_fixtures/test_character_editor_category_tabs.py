@@ -12,6 +12,7 @@ if str(SRC) not in sys.path:
 
 from workbench.editors.character.categories import build_tab_manifest
 from workbench.editors.character.inventory_slots import CONTAINERS, CONTAINER_KEYS
+from test_character_editor_packed_codecs import main as packed_codec_regression
 
 
 class _Schema:
@@ -59,7 +60,6 @@ def main() -> None:
     }
     assert {key: by_key[key]["label"] for key in required} == required
 
-    # The requested six are the stable primary workflow and appear first in this exact order.
     primary_keys = ["character", "inventory", "profile", "currencies", "missions-quests", "key-items"]
     assert [row["key"] for row in manifest[:6]] == primary_keys
     assert all(row["primary"] is True for row in manifest[:6])
@@ -112,7 +112,12 @@ def main() -> None:
     assert '"containers": _safe(containers)' in gui
     assert "def inventory_containers" in service
     assert '"label": CONTAINER_LABELS.get' in service
-    assert 'packed[capability] = {"location": location, "value": value}' in category_data
+    assert "decode_packed_field" in category_data
+    assert 'entry["decoded"] = decoded' in category_data
+
+    # This focused test is already exercised by Src Layout/Workbench; route the packed codec
+    # vectors through it so the new decoder cannot silently escape the established gates.
+    packed_codec_regression()
 
 
 if __name__ == "__main__":
