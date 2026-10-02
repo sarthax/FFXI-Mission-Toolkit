@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol
 
-import backport_lua_convert as legacy_lua
+from workbench.packages.migration import lua_convert as legacy_lua
 import backport_sql_convert as legacy_sql
 from workbench.migrations.backend_probe import classify_lsb_lua_methods
 
