@@ -29,22 +29,24 @@ MISSION_AREAS = (
 
 MISSION_AREA_COUNT = 15
 MISSION_RECORD_SIZES = {
-    # DarkStar missionlog_t: uint16 current + bool complete[64]
     "dsp": 66,
-    # Topaz/LSB: uint16 current + two uint16 status words + bool complete[64]
     "topaz": 70,
     "lsb": 70,
 }
 KEY_ITEM_TABLE_COUNTS = {
-    # DSP/Topaz keyitems_t: 7 tables, each two 512-bit sets.
     "dsp": 7,
     "topaz": 7,
-    # Current LSB (Dec 2025+): 8 tables.
     "lsb": 8,
 }
 KEY_ITEM_BITS_PER_TABLE = 512
 KEY_ITEM_SET_BYTES = KEY_ITEM_BITS_PER_TABLE // 8
 KEY_ITEM_TABLE_BYTES = KEY_ITEM_SET_BYTES * 2
+
+# ``chars.set_blue_spells`` is copied directly into m_SetBlueSpells in all supported lineages.
+# It is a 20-byte slot array, not a bitset. Each nonzero byte is the blue-magic spell ID minus
+# 0x200; zero means the slot is empty.
+BLUE_SPELL_SLOT_COUNT = 20
+BLUE_SPELL_ID_OFFSET = 0x200
 
 # Raw chars BLOBs copied directly into native character-state members. These sizes come from the
 # corresponding DSP/Topaz/LSB CCharEntity declarations and are intentionally lineage-specific.
@@ -56,7 +58,6 @@ BITSET_BLOB_SIZES: dict[str, dict[str, int]] = {
 }
 BITSET_MEANINGFUL_BITS: dict[str, dict[str, int]] = {
     "abilities": {family: size * 8 for family, size in BITSET_BLOB_SIZES["abilities"].items()},
-    # Legacy std::bitset<49> occupies one 64-bit word; current LSB uses xi::bitset<64>.
     "weaponskills": {"dsp": 49, "topaz": 49, "lsb": 64},
     "titles": {family: size * 8 for family, size in BITSET_BLOB_SIZES["titles"].items()},
     "visited_zones": {family: size * 8 for family, size in BITSET_BLOB_SIZES["visited_zones"].items()},
@@ -103,11 +104,7 @@ def _set_bits(data: bytes) -> list[int]:
 
 
 def decode_missions(value: Any, adapter_family: str) -> dict[str, Any]:
-    """Decode the raw ``chars.missions`` native missionlog_t array.
-
-    Completion entries are one-byte C++ bool values in all three supported lineages. DSP has a
-    66-byte mission record; Topaz and LSB have 70-byte records with two additional status words.
-    """
+    """Decode the raw ``chars.missions`` native missionlog_t array."""
     family = _family(adapter_family)
     blob = _bytes(value)
     record_size = MISSION_RECORD_SIZES[family]
@@ -152,13 +149,7 @@ def decode_missions(value: Any, adapter_family: str) -> dict[str, Any]:
 
 
 def decode_key_items(value: Any, adapter_family: str) -> dict[str, Any]:
-    """Decode ``chars.keyitems`` into owned/seen key-item IDs.
-
-    Each table stores a 512-bit owned set followed by a 512-bit seen set. Key item IDs map as
-    ``table = id // 512`` and ``bit = id % 512``. Current LSB stores eight tables; DSP/Topaz
-    store seven. LSB's xi::bitset explicitly persists least-significant-bit-first bytes. The
-    legacy std::bitset blobs use the same x86/libstdc++ persisted ordering used by those servers.
-    """
+    """Decode ``chars.keyitems`` into owned/seen key-item IDs."""
     family = _family(adapter_family)
     blob = _bytes(value)
     table_count = KEY_ITEM_TABLE_COUNTS[family]
@@ -206,15 +197,48 @@ def decode_key_items(value: Any, adapter_family: str) -> dict[str, Any]:
     }
 
 
-def decode_character_bitset(capability: str, value: Any, adapter_family: str) -> dict[str, Any]:
-    """Decode a byte-backed character bitset using the exact lineage-specific stored size.
+def decode_blue_spells(value: Any, adapter_family: str) -> dict[str, Any]:
+    """Decode the 20-slot ``chars.set_blue_spells`` array.
 
-    ``abilities``, ``titles`` and ``visited_zones`` are native uint8 arrays addressed through the
-    server's ``hasBit(id, array, sizeof(array))`` helpers. ``weaponskills`` is stored as an
-    8-byte bitset in all supported lineages, but only 49 bits are meaningful on DSP/Topaz while
-    current LSB defines 64 bits. Reserved high bits are surfaced separately instead of silently
-    treating them as valid legacy weaponskill IDs.
+    A zero byte is an empty slot. Nonzero values are the client/server blue-spell index and map to
+    the actual spell ID by adding ``0x200``. Duplicate slot values are preserved because this is a
+    positional array, not a set.
     """
+    family = _family(adapter_family)
+    blob = _bytes(value)
+    _validate_size(blob, expected=BLUE_SPELL_SLOT_COUNT, label="set_blue_spells", family=family)
+
+    slots: list[dict[str, Any]] = []
+    set_spell_ids: list[int] = []
+    for slot_index, stored_value in enumerate(blob):
+        spell_id = BLUE_SPELL_ID_OFFSET + stored_value if stored_value else None
+        if spell_id is not None:
+            set_spell_ids.append(spell_id)
+        slots.append(
+            {
+                "slot": slot_index,
+                "stored_value": stored_value,
+                "spell_id": spell_id,
+                "empty": stored_value == 0,
+            }
+        )
+
+    return {
+        "codec": "blue_spells",
+        "family": family,
+        "layout": "dsp-topaz-lsb-blue-spell-slots-v1",
+        "blob_bytes": len(blob),
+        "slot_count": BLUE_SPELL_SLOT_COUNT,
+        "spell_id_offset": BLUE_SPELL_ID_OFFSET,
+        "set_spell_ids": set_spell_ids,
+        "set_count": len(set_spell_ids),
+        "slots": slots,
+        "write_enabled": False,
+    }
+
+
+def decode_character_bitset(capability: str, value: Any, adapter_family: str) -> dict[str, Any]:
+    """Decode a byte-backed character bitset using the exact lineage-specific stored size."""
     capability = str(capability or "").strip()
     if capability not in BITSET_BLOB_SIZES:
         raise PackedCodecError(f"Unsupported character bitset capability: {capability}")
@@ -253,6 +277,8 @@ def decode_packed_field(capability: str, value: Any, adapter_family: str) -> dic
         return decode_missions(value, adapter_family)
     if capability == "key_items":
         return decode_key_items(value, adapter_family)
+    if capability == "blue_spells":
+        return decode_blue_spells(value, adapter_family)
     if capability in BITSET_BLOB_SIZES:
         return decode_character_bitset(capability, value, adapter_family)
     return None
