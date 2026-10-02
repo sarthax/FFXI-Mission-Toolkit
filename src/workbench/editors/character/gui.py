@@ -114,17 +114,15 @@ def character_editor_character(char_id: int):
 def character_editor_inventory(char_id: int):
     try:
         with _context() as ctx:
-            rows = ctx.service.load_table(char_id, "char_inventory")
+            containers = ctx.service.inventory_containers(char_id)
             item_cache: dict[int, dict[str, Any] | None] = {}
-            enriched = []
-            for row in rows:
-                item_id = int(row.get("itemId") or row.get("item_id") or 0)
-                if item_id not in item_cache:
-                    item_cache[item_id] = ctx.service.get_item(item_id) if item_id else None
-                out = dict(row)
-                out["item"] = item_cache[item_id]
-                enriched.append(out)
-            return JSONResponse({"rows": _safe(enriched)})
+            for container in containers:
+                for row in container["rows"]:
+                    item_id = int(row.get("itemId") or row.get("item_id") or 0)
+                    if item_id not in item_cache:
+                        item_cache[item_id] = ctx.service.get_item(item_id) if item_id else None
+                    row["item"] = item_cache[item_id]
+            return JSONResponse({"containers": _safe(containers)})
     except KeyError as exc:
         raise _error(exc, 404)
     except Exception as exc:
