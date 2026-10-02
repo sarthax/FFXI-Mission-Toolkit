@@ -1,8 +1,8 @@
 """Character Editor category/tab organization.
 
-Tabs are logical administration groups.  Each tab declares the capabilities it owns so the UI
-can remain stable while DSP/Topaz/LSB adapters map those capabilities to different physical
-schemas.  Unknown detected character tables are surfaced under Advanced instead of disappearing.
+The first six tabs are the primary administration workflow requested for day-to-day character
+editing.  Secondary tabs cover distinct character-state domains that do not fit cleanly inside
+those six. Unknown/custom-fork tables remain visible under Advanced instead of disappearing.
 """
 from __future__ import annotations
 
@@ -17,25 +17,74 @@ class CharacterTab:
     capabilities: tuple[str, ...]
     description: str
     always_visible: bool = False
+    primary: bool = False
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
 TAB_DEFINITIONS = (
-    CharacterTab("character", "Character", ("identity", "stats"), "Core identity, position, nation, GM/admin state and other scalar character fields.", True),
-    CharacterTab("inventory", "Inventory", ("inventory", "equipment", "storage", "delivery"), "All bags and storage containers, equipment state and delivery-related character items.", True),
-    CharacterTab("profile", "Profile", ("profile", "appearance", "style"), "Rank/fame/profile values plus appearance and style state.", True),
-    CharacterTab("jobs-skills", "Jobs & Skills", ("jobs", "experience", "skills"), "Job levels, job EXP and combat/craft/magic skill values."),
-    CharacterTab("currencies", "Currencies", ("points", "currencies"), "Gil-like progression point stores, conquest currencies and other server point tables.", True),
-    CharacterTab("missions-quests", "Mission Flags", ("missions", "assaults", "campaign", "eminence", "quests"), "Mission, quest and related story/progression flags, including packed representations.", True),
-    CharacterTab("key-items", "Key Items", ("key_items",), "Owned key-item bitsets/records with lineage-specific decoding.", True),
-    CharacterTab("spells-abilities", "Spells & Abilities", ("spells", "blue_spells", "abilities", "weaponskills", "unlocked_weapons"), "Learned spells, blue-magic sets, abilities, weaponskills and weapon unlock state."),
-    CharacterTab("merits-jobpoints", "Merits & Job Points", ("merits", "job_points"), "Merit and job-point progression."),
-    CharacterTab("unlocks-travel", "Unlocks & Travel", ("unlocks", "teleports", "visited_zones", "titles"), "Teleport/home-point/waypoint unlocks, visited zones and titles."),
-    CharacterTab("variables", "Variables", ("variables",), "Character variables (charvars) and script-owned persistent state."),
-    CharacterTab("pets-effects", "Pets & Effects", ("pets", "effects"), "Persisted pet and status-effect state where the connected server exposes it."),
-    CharacterTab("advanced", "Advanced", ("blacklist", "character_other"), "Lineage-specific, custom-fork, or otherwise uncategorized character-owned fields."),
+    # Primary editing workflow. Keep this order stable for the GUI.
+    CharacterTab(
+        "character", "Character", ("identity", "stats"),
+        "Core identity, location, nation, job/runtime stats, GM/admin state and other scalar character fields.",
+        True, True,
+    ),
+    CharacterTab(
+        "inventory", "Inventory", ("inventory", "equipment", "storage", "delivery"),
+        "All carried and Mog House storage: Inventory, Mog Safe/Safe 2, Storage, Mog Locker, Satchel, Sack, Case and Mog Wardrobes 1-8.",
+        True, True,
+    ),
+    CharacterTab(
+        "profile", "Profile", ("profile", "appearance", "style"),
+        "Rank, fame, profile values, character appearance and lockstyle state.",
+        True, True,
+    ),
+    CharacterTab(
+        "currencies", "Currencies", ("points", "currencies"),
+        "Conquest points, seals, guild points, assault points, sparks, accolades and other character point/currency stores.",
+        True, True,
+    ),
+    CharacterTab(
+        "missions-quests", "Mission Flags", ("missions", "assaults", "campaign", "eminence", "quests"),
+        "Mission, quest, Assault, Campaign and Records of Eminence progression flags, including packed representations.",
+        True, True,
+    ),
+    CharacterTab(
+        "key-items", "Key Items", ("key_items",),
+        "Owned key-item state with lineage-aware decoding when a verified codec is available.",
+        True, True,
+    ),
+
+    # Additional groups justified by distinct character-owned data domains.
+    CharacterTab(
+        "jobs-skills", "Jobs & Skills", ("jobs", "experience", "skills"),
+        "Job unlocks/levels, job EXP and combat, craft and magic skill values.",
+    ),
+    CharacterTab(
+        "spells-abilities", "Spells & Abilities", ("spells", "blue_spells", "abilities", "weaponskills", "unlocked_weapons"),
+        "Learned spells, blue-magic sets, abilities, weaponskills and weapon unlock state.",
+    ),
+    CharacterTab(
+        "merits-jobpoints", "Merits & Job Points", ("merits", "job_points"),
+        "Merit upgrades plus capacity-point and job-point progression.",
+    ),
+    CharacterTab(
+        "unlocks-travel", "Unlocks & Travel", ("unlocks", "teleports", "visited_zones", "titles"),
+        "Outposts, runic portals, home points, survival guides, waypoints, visited zones and titles.",
+    ),
+    CharacterTab(
+        "variables", "Variables", ("variables",),
+        "Character variables (charvars) and script-owned persistent state.",
+    ),
+    CharacterTab(
+        "pets-effects", "Pets & Effects", ("pets", "effects"),
+        "Persisted pet/automaton state and status-effect records where the connected server exposes them.",
+    ),
+    CharacterTab(
+        "advanced", "Advanced", ("blacklist", "history", "runtime_flags", "recasts", "character_other"),
+        "Runtime/admin/history data and lineage-specific or custom-fork character tables that do not warrant a primary editing tab.",
+    ),
 )
 
 
