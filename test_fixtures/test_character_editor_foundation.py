@@ -46,13 +46,19 @@ def test_legacy_dsp_detection():
 
 def test_inventory_keeps_packed_state_blocked():
     blob = ColumnInfo("missions", "blob", False, "", None, "")
-    profile = TableInfo("char_profile", [ColumnInfo("charid", "int", False, "PRI", None, ""), blob], "profile", "charid")
+    chars = TableInfo(
+        "chars",
+        [ColumnInfo("charid", "int", False, "PRI", None, ""), blob],
+        "identity",
+        "charid",
+    )
     schema = CharacterSchema(
-        tables={"char_profile": profile},
-        capabilities={"profile": ["char_profile"]},
-        packed_profile_fields={"missions": "missions"},
+        tables={"chars": chars},
+        capabilities={"identity": ["chars"]},
+        packed_profile_fields={"missions": "chars.missions"},
     )
     rows = {r.capability: r for r in build_inventory(schema, "lsb")}
     assert rows["missions"].supported
-    assert rows["missions"].representation == "packed_profile_blob"
+    assert rows["missions"].storage == ("chars",)
+    assert rows["missions"].representation == "packed_blob"
     assert rows["missions"].write_status == "blocked_unverified"
