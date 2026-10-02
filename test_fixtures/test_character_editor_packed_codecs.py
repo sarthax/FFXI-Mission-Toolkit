@@ -11,12 +11,16 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from workbench.editors.character.packed_codecs import (
+    BITSET_BLOB_SIZES,
+    BITSET_MEANINGFUL_BITS,
     KEY_ITEM_TABLE_BYTES,
     MISSION_AREA_COUNT,
     MISSION_RECORD_SIZES,
     PackedCodecError,
+    decode_character_bitset,
     decode_key_items,
     decode_missions,
+    decode_packed_field,
 )
 
 
@@ -52,6 +56,13 @@ def _keyitem_blob(family: str) -> bytes:
     return bytes(data)
 
 
+def _bitset_blob(capability: str, family: str, ids: list[int]) -> bytes:
+    data = bytearray(BITSET_BLOB_SIZES[capability][family])
+    for bit_id in ids:
+        data[bit_id // 8] |= 1 << (bit_id % 8)
+    return bytes(data)
+
+
 def main() -> None:
     dsp = decode_missions(_mission_blob("dsp"), "dsp")
     assert dsp["layout"] == "dsp-missionlog-v1"
@@ -80,6 +91,39 @@ def main() -> None:
         assert decoded["seen_ids"] == decoded["owned_ids"]
         assert decoded["write_enabled"] is False
 
+    # Learned abilities are byte-backed hasBit() arrays whose size grew in current LSB.
+    for family in ("dsp", "topaz", "lsb"):
+        last = BITSET_MEANINGFUL_BITS["abilities"][family] - 1
+        decoded = decode_character_bitset("abilities", _bitset_blob("abilities", family, [0, 9, last]), family)
+        assert decoded["set_ids"] == [0, 9, last]
+        assert decoded["reserved_set_ids"] == []
+        assert decoded["blob_bytes"] == BITSET_BLOB_SIZES["abilities"][family]
+        assert decoded["write_enabled"] is False
+
+    # Titles and visited zones use the same direct bit-index convention with lineage-specific sizes.
+    for capability in ("titles", "visited_zones"):
+        for family in ("dsp", "topaz", "lsb"):
+            last = BITSET_MEANINGFUL_BITS[capability][family] - 1
+            decoded = decode_packed_field(capability, _bitset_blob(capability, family, [1, last]), family)
+            assert decoded is not None
+            assert decoded["set_ids"] == [1, last]
+            assert decoded["storage_bits"] == BITSET_BLOB_SIZES[capability][family] * 8
+            assert decoded["meaningful_bits"] == decoded["storage_bits"]
+
+    # Legacy std::bitset<49> persists in an 8-byte word; bits 49-63 are storage padding/reserved.
+    for family in ("dsp", "topaz"):
+        decoded = decode_character_bitset("weaponskills", _bitset_blob("weaponskills", family, [0, 48, 63]), family)
+        assert decoded["layout"] == "dsp-topaz-learned-weaponskills-49-in-64"
+        assert decoded["set_ids"] == [0, 48]
+        assert decoded["reserved_set_ids"] == [63]
+        assert decoded["meaningful_bits"] == 49
+        assert decoded["storage_bits"] == 64
+
+    lsb_ws = decode_character_bitset("weaponskills", _bitset_blob("weaponskills", "lsb", [0, 48, 63]), "lsb")
+    assert lsb_ws["layout"] == "lsb-learned-weaponskills-64"
+    assert lsb_ws["set_ids"] == [0, 48, 63]
+    assert lsb_ws["reserved_set_ids"] == []
+
     try:
         decode_missions(bytes(1050), "dsp")
     except PackedCodecError as exc:
@@ -93,6 +137,20 @@ def main() -> None:
         assert "does not match lsb layout" in str(exc)
     else:
         raise AssertionError("LSB key-item decoder accepted DSP/Topaz-sized data")
+
+    try:
+        decode_character_bitset("titles", bytes(BITSET_BLOB_SIZES["lsb"]["titles"]), "dsp")
+    except PackedCodecError as exc:
+        assert "does not match dsp layout" in str(exc)
+    else:
+        raise AssertionError("DSP title decoder accepted LSB-sized data")
+
+    try:
+        decode_character_bitset("abilities", bytes(BITSET_BLOB_SIZES["dsp"]["abilities"]), "lsb")
+    except PackedCodecError as exc:
+        assert "does not match lsb layout" in str(exc)
+    else:
+        raise AssertionError("LSB ability decoder accepted DSP/Topaz-sized data")
 
 
 if __name__ == "__main__":
