@@ -26,6 +26,7 @@ KNOWN_CAPABILITIES: dict[str, tuple[str, ...]] = {
     "stats": ("char_stats",),
     "blacklist": ("char_blacklist",),
     "delivery": ("delivery_box",),
+    "sessions": ("accounts_sessions",),
 }
 
 # Packed/logical state is historically stored on `chars` across DSP/Topaz and remains there
@@ -164,7 +165,11 @@ def discover_character_schema(connection) -> CharacterSchema:
         tables: dict[str, TableInfo] = {}
         capabilities: dict[str, list[str]] = {}
         for name in names:
-            if name != "chars" and not name.startswith("char_") and name != "delivery_box":
+            if (
+                name != "chars"
+                and not name.startswith("char_")
+                and name not in ("delivery_box", "accounts_sessions")
+            ):
                 continue
             columns = _describe(cursor, name)
             table = TableInfo(
