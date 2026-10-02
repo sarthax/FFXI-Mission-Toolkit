@@ -257,7 +257,10 @@ class CharacterEditorService:
         inventory = inventory_summary(self.schema, self.adapter_family)
         scalar_tables = {
             name: self.editable_fields(name)
-            for name in ("chars", "char_profile", "char_jobs", "char_exp", "char_stats", "char_skills")
+            for name in (
+                "chars", "char_profile", "char_jobs", "char_exp", "char_stats", "char_skills",
+                "char_points", "char_merit", "char_job_points",
+            )
             if self.schema.table(name) is not None
         }
         return {
