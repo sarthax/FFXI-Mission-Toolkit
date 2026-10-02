@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import hashlib
-import importlib
+import importlib.util
 import sqlite3
 import subprocess
 import sys
@@ -10,10 +10,21 @@ import tempfile
 from pathlib import Path
 
 from workbench.client.snapshots import overview as canonical
+from workbench.runtime.paths import REPO_ROOT
+
+
+def load_root_alias():
+    path = REPO_ROOT / "client_overview.py"
+    spec = importlib.util.spec_from_file_location("client_overview", path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["client_overview"] = module
+    spec.loader.exec_module(module)
+    return sys.modules["client_overview"]
 
 
 def main() -> None:
-    legacy = importlib.import_module("client_overview")
+    legacy = load_root_alias()
     assert legacy is canonical
 
     with tempfile.TemporaryDirectory() as td:
