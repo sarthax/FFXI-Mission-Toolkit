@@ -11,7 +11,6 @@ from typing import Iterable
 
 from workbench.core.schema import Artifact
 from workbench.migrations.package_plan import PackagePlan
-from workbench.migrations.backend_registry import default_backend_registry
 from workbench.migrations.generated_output import GeneratedOutput
 
 
@@ -39,6 +38,7 @@ def build_package_manifest(
 ) -> dict:
     artifact_map={a.artifact_id:a for a in artifacts}
     if backend_registry is None and source_family and target_family:
+        from workbench.migrations.backend_registry import default_backend_registry
         backend_registry=default_backend_registry()
 
     steps=[]
