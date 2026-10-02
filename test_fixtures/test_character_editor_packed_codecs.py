@@ -11,6 +11,8 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from workbench.editors.character.packed_codecs import (
+    ASSAULT_BLOB_BYTES,
+    ASSAULT_COMPLETE_COUNT,
     BITSET_BLOB_SIZES,
     BITSET_MEANINGFUL_BITS,
     BLUE_SPELL_ID_OFFSET,
@@ -22,6 +24,7 @@ from workbench.editors.character.packed_codecs import (
     QUEST_RECORD_BYTES,
     QUEST_SET_BYTES,
     PackedCodecError,
+    decode_assaults,
     decode_blue_spells,
     decode_character_bitset,
     decode_key_items,
@@ -49,17 +52,23 @@ def _mission_blob(family: str) -> bytes:
 
 def _quest_blob() -> bytes:
     data = bytearray(QUEST_AREA_COUNT * QUEST_RECORD_BYTES)
-    # Jeuno area 3: current IDs 0, 17, 255; completed IDs 1, 42, 254.
     start = 3 * QUEST_RECORD_BYTES
     for quest_id in (0, 17, 255):
         data[start + quest_id // 8] |= 1 << (quest_id % 8)
     complete = start + QUEST_SET_BYTES
     for quest_id in (1, 42, 254):
         data[complete + quest_id // 8] |= 1 << (quest_id % 8)
-    # Coalition area 10 high edge coverage.
     start = 10 * QUEST_RECORD_BYTES
     data[start + 31] |= 0x80
     data[start + QUEST_SET_BYTES] |= 0x01
+    return bytes(data)
+
+
+def _assault_blob() -> bytes:
+    data = bytearray(ASSAULT_BLOB_BYTES)
+    data[:2] = (73).to_bytes(2, "little")
+    for assault_id in (0, 7, 63, 127):
+        data[2 + assault_id] = 1
     return bytes(data)
 
 
@@ -112,7 +121,6 @@ def main() -> None:
     assert lsb["record_size"] == 70
     assert lsb["areas"][3]["completed_count"] == 3
 
-    # Quest layout is byte-for-byte identical across DSP, Topaz and LSB.
     for family in ("dsp", "topaz", "lsb"):
         quests = decode_quests(_quest_blob(), family)
         assert quests["layout"] == "dsp-topaz-lsb-questlog-11x256x2"
@@ -131,6 +139,18 @@ def main() -> None:
         assert quests["write_enabled"] is False
         via_dispatch = decode_packed_field("quests", _quest_blob(), family)
         assert via_dispatch is not None and via_dispatch["areas"] == quests["areas"]
+
+    for family in ("dsp", "topaz", "lsb"):
+        assault = decode_assaults(_assault_blob(), family)
+        assert assault["layout"] == "dsp-topaz-lsb-assaultlog-v1"
+        assert assault["blob_bytes"] == ASSAULT_BLOB_BYTES == 130
+        assert assault["complete_slots"] == ASSAULT_COMPLETE_COUNT == 128
+        assert assault["current"] == 73
+        assert assault["completed_ids"] == [0, 7, 63, 127]
+        assert assault["completed_count"] == 4
+        assert assault["write_enabled"] is False
+        via_dispatch = decode_packed_field("assaults", _assault_blob(), family)
+        assert via_dispatch is not None and via_dispatch["completed_ids"] == assault["completed_ids"]
 
     for family, count in (("dsp", 7), ("topaz", 7), ("lsb", 8)):
         decoded = decode_key_items(_keyitem_blob(family), family)
@@ -199,6 +219,12 @@ def main() -> None:
             assert f"does not match {family} layout" in str(exc)
         else:
             raise AssertionError(f"{family} quest decoder accepted a 703-byte BLOB")
+        try:
+            decode_assaults(bytes(ASSAULT_BLOB_BYTES - 1), family)
+        except PackedCodecError as exc:
+            assert f"does not match {family} layout" in str(exc)
+        else:
+            raise AssertionError(f"{family} Assault decoder accepted a 129-byte BLOB")
 
     try:
         decode_key_items(bytes(896), "lsb")
