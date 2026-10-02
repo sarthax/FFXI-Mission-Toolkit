@@ -7,6 +7,8 @@ import re
 import sys
 from pathlib import Path
 
+from workbench.runtime.legacy_settings import get_backport_root
+
 try:
     from luaparser import ast as lua_ast
 except ImportError:
@@ -54,10 +56,7 @@ def check_package(pkg_lua_dsp: Path, include_paths: set[str] | None = None) -> d
 
 
 def _default_packages_root() -> Path:
-    # Keep root settings/bootstrap concerns at the CLI boundary so the validator is importable
-    # from an editable/package install without repository-root participation.
-    import settings
-    return settings.get_backport_root() / "mission-packages"
+    return get_backport_root() / "mission-packages"
 
 
 def main() -> None:
