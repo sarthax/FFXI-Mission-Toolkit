@@ -38,8 +38,10 @@ class CharacterEditorContext:
 def open_character_editor(server_root: Path | str, **connect_kwargs) -> CharacterEditorContext:
     """Open a live Character Editor context for DSP, Topaz, or LSB.
 
-    Detection uses both checkout markers and the connected live schema.  Credentials remain
-    internal to DatabaseProfile and are never included in public_status().
+    Detection uses both checkout markers and the connected live schema. Credentials remain
+    internal to DatabaseProfile and are never included in public_status(). The resolved server
+    root is attached to the service so lineage-local enum/catalog readers can use that exact
+    checkout instead of a bundled/current-LSB fallback.
     """
     profile = discover_database_profile(server_root)
     connection = connect(profile, **connect_kwargs)
@@ -51,6 +53,7 @@ def open_character_editor(server_root: Path | str, **connect_kwargs) -> Characte
             adapter_family=adapter.family,
             adapter_confidence=adapter.confidence,
         )
+        service.server_root = profile.server_root
         return CharacterEditorContext(profile=profile, adapter=adapter, service=service)
     except Exception:
         connection.close()
