@@ -55,5 +55,34 @@ def test_character_editor_template_has_tabs_storage_and_guarded_scalar_flow():
     assert "confirmItem()" in template
 
 
+def test_character_editor_progression_wrapper_and_controls():
+    wrapper = (ROOT / "gui" / "templates" / "character_editor_progression.html").read_text(encoding="utf-8")
+    script = (ROOT / "gui" / "static" / "character_editor_progression.js").read_text(encoding="utf-8")
+    gui = (ROOT / "src" / "workbench" / "editors" / "character" / "gui.py").read_text(encoding="utf-8")
+
+    assert '{% extends "character_editor.html" %}' in wrapper
+    assert '/static/character_editor_progression.js' in wrapper
+    assert 'name="character_editor_progression.html"' in gui
+
+    assert "key === 'missions-quests'" in script
+    assert "key === 'key-items'" in script
+    assert "/packed/preview" in script
+    assert "/packed/apply" in script
+    assert "expected_before_sha256:preview.before_sha256" in script
+    assert "editableOnline()" in script
+    assert "editing locked until offline" in script
+
+    assert "Set current" in script
+    assert "status_upper" in script and "status_lower" in script
+    assert "completed_id" in script and "completed" in script
+    assert "Filter missions" in script
+
+    assert "Search key item name or ID" in script
+    assert "Numeric ID" in script
+    assert "data-kind=\"owned\"" in script
+    assert "data-kind=\"seen\"" in script
+    assert "key_item_id" in script
+
+
 def test_character_editor_packed_mutations_preserve_unrelated_bytes():
     packed_transaction_regression()
