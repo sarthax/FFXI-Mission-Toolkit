@@ -1,8 +1,8 @@
 """Read payloads for Character Editor tabs.
 
 Row tables are returned as rows and packed fields as their physical raw value plus location.
-Verified scalar tables expose editable-column metadata. Packed mission/key-item state is decoded
-through lineage-aware codecs and enriched from the configured server checkout's own catalogs.
+Verified scalar tables expose editable-column metadata. Supported packed state is decoded through
+lineage-aware codecs and enriched from the configured server checkout's own catalogs.
 """
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ _ALIAS_CAPABILITIES = {
     "currencies": "points",
     "teleports": "unlocks",
 }
+_PACKED_EDITABLE = {"missions", "key_items", "abilities", "weaponskills", "titles", "visited_zones"}
 
 
 def build_category_payload(service, char_id: int, tab_key: str) -> dict[str, Any]:
@@ -61,7 +62,7 @@ def build_category_payload(service, char_id: int, tab_key: str) -> dict[str, Any
                     entry["decoded"] = decoded
                     entry["codec"] = decoded.get("codec")
                     entry["layout"] = decoded.get("layout")
-                    entry["editable"] = capability in {"missions", "key_items"}
+                    entry["editable"] = capability in _PACKED_EDITABLE
                     if catalog_cache is None:
                         catalog_cache = progression_catalog(
                             getattr(service, "server_root", None),

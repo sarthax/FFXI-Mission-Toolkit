@@ -58,10 +58,13 @@ def test_character_editor_template_has_tabs_storage_and_guarded_scalar_flow():
 def test_character_editor_progression_wrapper_and_controls():
     wrapper = (ROOT / "gui" / "templates" / "character_editor_progression.html").read_text(encoding="utf-8")
     script = (ROOT / "gui" / "static" / "character_editor_progression.js").read_text(encoding="utf-8")
+    bitset = (ROOT / "gui" / "static" / "character_editor_bitset_edit.js").read_text(encoding="utf-8")
     gui = (ROOT / "src" / "workbench" / "editors" / "character" / "gui.py").read_text(encoding="utf-8")
 
     assert '{% extends "character_editor.html" %}' in wrapper
     assert '/static/character_editor_progression.js' in wrapper
+    assert '/static/character_editor_bitset_edit.js' in wrapper
+    assert wrapper.index('/static/character_editor_progression.js') < wrapper.index('/static/character_editor_bitset_edit.js')
     assert 'name="character_editor_progression.html"' in gui
 
     assert "key === 'missions-quests'" in script
@@ -83,17 +86,26 @@ def test_character_editor_progression_wrapper_and_controls():
     assert "data-kind=\"seen\"" in script
     assert "key_item_id" in script
 
-    # Additional packed bitsets are intentionally display-only until a later guarded write slice.
+    # Base progression rendering remains read-only until the guarded bitset-edit asset augments it.
     assert "renderPackedReadOnly(['abilities','weaponskills'])" in script
     assert "renderPackedReadOnly(['titles','visited_zones'])" in script
-    assert "Learned Abilities" in script
-    assert "Learned Weaponskill Unlocks" in script
-    assert "Obtained Titles" in script
-    assert "Visited Zones" in script
     assert "Labels come only from the selected server checkout." in script
     assert "Reserved legacy bits set:" in script
-    assert "ce-readonly-filter" in script
-    assert "ce-readonly-badge" in script
+
+    # The follow-on asset enables only single-bit, offline, preview-confirmed edits.
+    assert "renderBitsetEditors(['abilities','weaponskills'])" in bitset
+    assert "renderBitsetEditors(['titles','visited_zones'])" in bitset
+    assert "editableOnline() && entry.editable === true" in bitset
+    assert "/packed/preview" in bitset
+    assert "/packed/apply" in bitset
+    assert "expected_before_sha256:preview.before_sha256" in bitset
+    assert "approved:true" in bitset
+    assert "bit_id:id" in bitset
+    assert "enabled:desired" in bitset
+    assert "Reserved legacy bits are set but remain unwritable" in bitset
+    assert "Numeric ID" in bitset
+    assert "data-bit-id" in bitset
+    assert "Single-bit edits use guarded preview + exact before-SHA confirmation." in bitset
 
 
 def test_character_editor_packed_mutations_preserve_unrelated_bytes():

@@ -1,6 +1,6 @@
-"""Guarded mission/key-item BLOB editing for Character Editor.
+"""Guarded packed-BLOB editing for Character Editor.
 
-Only explicitly supported packed fields are writable.  Every write requires an offline character,
+Only explicitly supported packed fields are writable. Every write requires an offline character,
 an exact lineage/layout match, a preview, and a transaction-time byte-for-byte stale-data check.
 """
 from __future__ import annotations
@@ -10,6 +10,8 @@ from hashlib import sha256
 from typing import Any
 
 from .packed_codecs import (
+    BITSET_BLOB_SIZES,
+    BITSET_MEANINGFUL_BITS,
     KEY_ITEM_BITS_PER_TABLE,
     KEY_ITEM_SET_BYTES,
     KEY_ITEM_TABLE_BYTES,
@@ -17,6 +19,7 @@ from .packed_codecs import (
     MISSION_AREA_COUNT,
     MISSION_RECORD_SIZES,
     PackedCodecError,
+    decode_character_bitset,
     decode_key_items,
     decode_missions,
 )
@@ -25,7 +28,14 @@ from .session_state import detect_online_state
 
 
 _VERIFIED_FAMILIES = {"dsp", "topaz", "lsb"}
-_CAPABILITY_COLUMN = {"missions": "missions", "key_items": "keyitems"}
+_CAPABILITY_COLUMN = {
+    "missions": "missions",
+    "key_items": "keyitems",
+    "abilities": "abilities",
+    "weaponskills": "weaponskills",
+    "titles": "titles",
+    "visited_zones": "zones",
+}
 
 
 @dataclass(frozen=True)
@@ -171,7 +181,7 @@ def _set_bit(data: bytearray, key_item_id: int, *, seen: bool, value: bool) -> N
 
 
 def _key_item_edit(blob: bytes, family: str, operation: dict[str, Any]) -> tuple[bytes, dict[str, Any], dict[str, Any]]:
-    decode_key_items(blob, family)  # exact layout validation before mutation
+    decode_key_items(blob, family)
     key_item_id = int(operation.get("key_item_id", -1))
     maximum = KEY_ITEM_TABLE_COUNTS[family] * KEY_ITEM_BITS_PER_TABLE - 1
     if not 0 <= key_item_id <= maximum:
@@ -197,6 +207,39 @@ def _key_item_edit(blob: bytes, family: str, operation: dict[str, Any]) -> tuple
         "seen": _bit_value(after_blob, key_item_id, seen=True),
     }
     return after_blob, before, after
+
+
+def _character_bitset_edit(
+    blob: bytes,
+    family: str,
+    capability: str,
+    operation: dict[str, Any],
+) -> tuple[bytes, dict[str, Any], dict[str, Any]]:
+    """Toggle exactly one verified bit in abilities/weaponskills/titles/visited-zones state."""
+    decode_character_bitset(capability, blob, family)
+    bit_id = int(operation.get("bit_id", -1))
+    maximum = BITSET_MEANINGFUL_BITS[capability][family] - 1
+    if not 0 <= bit_id <= maximum:
+        raise ValueError(f"bit_id must be between 0 and {maximum} for {family} {capability}")
+    if "enabled" not in operation:
+        raise ValueError("enabled must be supplied for a character bitset edit")
+
+    offset = bit_id // 8
+    mask = 1 << (bit_id % 8)
+    before_enabled = bool(blob[offset] & mask)
+    data = bytearray(blob)
+    if bool(operation["enabled"]):
+        data[offset] |= mask
+    else:
+        data[offset] &= ~mask
+    after_blob = bytes(data)
+    decode_character_bitset(capability, after_blob, family)
+    after_enabled = bool(after_blob[offset] & mask)
+    return (
+        after_blob,
+        {"bit_id": bit_id, "enabled": before_enabled},
+        {"bit_id": bit_id, "enabled": after_enabled},
+    )
 
 
 def build_packed_edit_plan(
@@ -247,6 +290,8 @@ def build_packed_edit_plan(
                 after_blob, before, after = _mission_edit(before_blob, family, operation)
             elif capability == "key_items":
                 after_blob, before, after = _key_item_edit(before_blob, family, operation)
+            elif capability in BITSET_BLOB_SIZES:
+                after_blob, before, after = _character_bitset_edit(before_blob, family, capability, operation)
         except (PackedCodecError, TypeError, ValueError) as exc:
             issues.append(PackedIssue("invalid_packed_edit", str(exc)))
 
