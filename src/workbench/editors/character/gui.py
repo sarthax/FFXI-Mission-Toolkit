@@ -167,6 +167,48 @@ async def character_editor_apply_fields(char_id: int, request: Request):
         raise _error(exc)
 
 
+@router.post("/characters/{char_id}/packed/preview")
+async def character_editor_preview_packed(char_id: int, request: Request):
+    try:
+        body = await request.json()
+        with _context() as ctx:
+            result = ctx.service.preview_packed_edit(
+                char_id,
+                str(body.get("capability") or ""),
+                operation=dict(body.get("operation") or {}),
+            )
+            return JSONResponse(_safe(result))
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.post("/characters/{char_id}/packed/apply")
+async def character_editor_apply_packed(char_id: int, request: Request):
+    try:
+        body = await request.json()
+        if body.get("approved") is not True:
+            raise HTTPException(status_code=400, detail="Explicit approved=true confirmation is required")
+        capability = str(body.get("capability") or "")
+        operation = dict(body.get("operation") or {})
+        expected_before_sha256 = str(body.get("expected_before_sha256") or "")
+        with _context() as ctx:
+            if expected_before_sha256:
+                preview = ctx.service.preview_packed_edit(char_id, capability, operation=operation)
+                if preview.get("before_sha256") != expected_before_sha256:
+                    raise HTTPException(status_code=409, detail="Packed character data changed since preview; preview the edit again")
+            result = ctx.service.apply_packed_edit_request(
+                char_id,
+                capability,
+                operation=operation,
+                approved=True,
+            )
+            return JSONResponse(_safe(result))
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise _error(exc)
+
+
 @router.get("/characters/{char_id}/inventory.json")
 def character_editor_inventory(char_id: int):
     try:
@@ -191,7 +233,12 @@ async def character_editor_preview_item(char_id: int, request: Request):
     try:
         body = await request.json()
         with _context() as ctx:
-            plan = ctx.service.preview_add_item(char_id, int(body.get("item_id")), quantity=int(body.get("quantity", 1)), location=int(body.get("location", 0)))
+            plan = ctx.service.preview_add_item(
+                char_id,
+                int(body.get("item_id")),
+                quantity=int(body.get("quantity", 1)),
+                location=int(body.get("location", 0)),
+            )
             return JSONResponse(_safe(plan))
     except Exception as exc:
         raise _error(exc)
