@@ -1,8 +1,8 @@
 """Read payloads for Character Editor tabs.
 
 Row tables are returned as rows and packed fields as their physical raw value plus location.
-Verified scalar tables expose editable-column metadata.  Packed mission/key-item state is decoded
-through lineage-aware codecs but remains read-only until guarded packed-state transactions exist.
+Verified scalar tables expose editable-column metadata. Packed mission/key-item state is decoded
+through lineage-aware codecs and enriched from the configured server checkout's own catalogs.
 """
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from typing import Any
 
 from .categories import TAB_DEFINITIONS, get_tab
 from .packed_codecs import PackedCodecError, decode_packed_field
+from .progression_catalog import progression_catalog
 
 _ALIAS_CAPABILITIES = {
     "experience": "jobs",
@@ -30,6 +31,7 @@ def build_category_payload(service, char_id: int, tab_key: str) -> dict[str, Any
     packed: dict[str, dict[str, Any]] = {}
     editors: dict[str, list[dict[str, Any]]] = {}
     capability_map = service.schema.capabilities or {}
+    catalog_cache: dict[str, Any] | None = None
 
     requested_caps = set(tab.capabilities)
     if tab.key == "advanced":
@@ -59,6 +61,13 @@ def build_category_payload(service, char_id: int, tab_key: str) -> dict[str, Any
                     entry["decoded"] = decoded
                     entry["codec"] = decoded.get("codec")
                     entry["layout"] = decoded.get("layout")
+                    entry["editable"] = capability in {"missions", "key_items"}
+                    if catalog_cache is None:
+                        catalog_cache = progression_catalog(
+                            getattr(service, "server_root", None),
+                            service.adapter_family,
+                        )
+                    entry["catalog"] = catalog_cache.get(capability, {})
             except PackedCodecError as exc:
                 entry["decode_error"] = str(exc)
             packed[capability] = entry
