@@ -8,6 +8,7 @@
     .ce-progress-card h4{margin:0 0 7px}.ce-progress-card select,.ce-progress-card input{max-width:100%}.ce-progress-list{max-height:50vh;overflow:auto;border:1px solid var(--border,#333);border-radius:5px}
     .ce-progress-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:6px 8px;border-bottom:1px solid var(--border,#333)}
     .ce-progress-row:last-child{border-bottom:0}.ce-progress-row small{display:block;opacity:.65}.ce-progress-empty{padding:10px;opacity:.7}.ce-progress-source{font-size:.8em;opacity:.65}
+    .ce-readonly-row{grid-template-columns:minmax(0,1fr) auto}.ce-readonly-badge{font-size:.8em;opacity:.7;white-space:nowrap}
     @media(max-width:720px){.ce-progress-row{grid-template-columns:1fr auto}.ce-progress-row .ce-seen{grid-column:2}.ce-progress-grid{grid-template-columns:1fr}}
   `;
   document.head.appendChild(style);
@@ -17,6 +18,8 @@
     await originalLoadCategory(key);
     if (key === 'missions-quests') renderMissionEditor();
     if (key === 'key-items') renderKeyItemEditor();
+    if (key === 'spells-abilities') renderPackedReadOnly(['abilities','weaponskills']);
+    if (key === 'unlocks-travel') renderPackedReadOnly(['titles','visited_zones']);
   };
 
   function sourceText(catalog) {
@@ -27,6 +30,54 @@
 
   function issueText(preview) {
     return (preview?.issues || []).map(i => `${i.blocking ? 'BLOCK' : 'WARN'}: ${i.message}`).join('\n');
+  }
+
+  const READONLY_NAMES = {
+    abilities:'Learned Abilities',
+    weaponskills:'Learned Weaponskill Unlocks',
+    titles:'Obtained Titles',
+    visited_zones:'Visited Zones'
+  };
+
+  function catalogRow(catalog, id, capability) {
+    const row = catalog?.items?.[String(id)];
+    if (row) return row;
+    const singular = capability === 'visited_zones' ? 'Zone' : capability === 'weaponskills' ? 'Unlock' : capability === 'abilities' ? 'Ability' : 'Title';
+    return {id, label:`${singular} ${id}`};
+  }
+
+  function renderPackedReadOnly(capabilities) {
+    const box = document.getElementById('categoryData');
+    if (!box) return;
+    const available = capabilities.map(capability => [capability, activeCategoryData?.packed?.[capability]]).filter(([,entry]) => entry?.decoded);
+    if (!available.length) return;
+    const shell = document.createElement('div');
+    shell.className = 'ce-progression';
+    shell.innerHTML = `<div class="ce-progress-head"><strong>Decoded Packed State</strong>${pill('read only')}<span class="ce-progress-source">Labels come only from the selected server checkout.</span></div><div class="ce-progress-grid ce-readonly-grid"></div>`;
+    box.prepend(shell);
+    const grid = shell.querySelector('.ce-readonly-grid');
+
+    for (const [capability, entry] of available) {
+      const decoded = entry.decoded || {}, catalog = entry.catalog || {}, ids = (decoded.set_ids || []).map(Number);
+      const card = document.createElement('div');
+      card.className = 'ce-progress-card';
+      const reserved = (decoded.reserved_set_ids || []).map(Number);
+      card.innerHTML = `<h4>${esc(READONLY_NAMES[capability] || capability)} ${pill(`${ids.length} set`,'ok')}</h4>
+        <div class="ce-muted">${esc(decoded.family?.toUpperCase() || '')} · ${esc(decoded.layout || '')} · ${esc(decoded.blob_bytes || 0)} bytes</div>
+        <div class="ce-progress-source" style="margin-top:3px">${esc(sourceText(catalog))}</div>
+        ${reserved.length ? `<div class="warn" style="margin:7px 0">Reserved legacy bits set: ${reserved.map(esc).join(', ')}</div>` : ''}
+        <input class="ce-readonly-filter" type="search" placeholder="Filter name or ID" style="width:100%;margin:7px 0">
+        <div class="ce-progress-list ce-readonly-list"></div>`;
+      grid.appendChild(card);
+      const filter = card.querySelector('.ce-readonly-filter'), list = card.querySelector('.ce-readonly-list');
+      const draw = () => {
+        const q = String(filter.value || '').toLowerCase();
+        const rows = ids.map(id => catalogRow(catalog,id,capability)).filter(row => !q || `${row.label} ${row.symbol || ''} ${row.id}`.toLowerCase().includes(q));
+        list.innerHTML = rows.map(row => `<div class="ce-progress-row ce-readonly-row"><span>${esc(row.label)}<small>ID ${esc(row.id)}${row.symbol ? ' · '+esc(row.symbol) : ''}</small></span><span class="ce-readonly-badge">set</span></div>`).join('') || '<div class="ce-progress-empty">No matching set flags.</div>';
+      };
+      filter.addEventListener('input', draw);
+      draw();
+    }
   }
 
   async function previewAndApply(capability, operation, summary) {
