@@ -1,20 +1,22 @@
 """Read-only Character Editor service foundation.
 
-Writes are intentionally not enabled in this first slice. The service first discovers the live
-schema and exposes exactly what can be administered on the connected server generation.
+Writes remain disabled in this slice. The service discovers the live schema and exposes exactly
+what can be administered on the connected server generation, plus adapter/capability readiness.
 """
 from __future__ import annotations
 
-from dataclasses import asdict
 from typing import Any
 
+from .inventory import inventory_summary
 from .schema import CharacterSchema, discover_character_schema
 
 
 class CharacterEditorService:
-    def __init__(self, connection):
+    def __init__(self, connection, *, adapter_family: str = "unknown", adapter_confidence: str = "unknown"):
         self.connection = connection
         self.schema: CharacterSchema = discover_character_schema(connection)
+        self.adapter_family = str(adapter_family or "unknown")
+        self.adapter_confidence = str(adapter_confidence or "unknown")
 
     @staticmethod
     def _dict_rows(cursor) -> list[dict[str, Any]]:
@@ -72,6 +74,9 @@ class CharacterEditorService:
         finally:
             cursor.close()
 
+    def character_exists(self, char_id: int) -> bool:
+        return self._identity(char_id) is not None
+
     def load_table(self, char_id: int, table_name: str, limit: int = 5000) -> list[dict[str, Any]]:
         table = self.schema.table(table_name)
         if table is None:
@@ -110,14 +115,28 @@ class CharacterEditorService:
                 }
             sections[capability] = section
 
+        inventory = inventory_summary(self.schema, self.adapter_family)
         return {
             "character": identity,
+            "adapter": {
+                "family": self.adapter_family,
+                "confidence": self.adapter_confidence,
+            },
             "sections": sections,
             "packed_profile_fields": dict(self.schema.packed_profile_fields),
             "schema": self.schema.summary(),
+            "inventory": inventory,
             "write_enabled": False,
         }
 
     def capability_manifest(self) -> dict[str, Any]:
         """Stable JSON-friendly manifest for the future GUI and decoder worklist."""
-        return self.schema.summary()
+        return {
+            "adapter": {
+                "family": self.adapter_family,
+                "confidence": self.adapter_confidence,
+            },
+            "schema": self.schema.summary(),
+            "inventory": inventory_summary(self.schema, self.adapter_family),
+            "write_enabled": False,
+        }
