@@ -13,6 +13,7 @@ from pathlib import Path
 
 from workbench.devtools.server import binding_index as source_index
 from workbench.packages.migration import lua_convert
+from workbench.runtime.legacy_settings import get_backport_root, get_dsp_root
 from workbench.validation.packages import binding_index
 
 METHOD_CALL_RE = re.compile(r":([A-Za-z_][A-Za-z0-9_]*)\s*\(")
@@ -111,12 +112,12 @@ def audit_package(
     return {"confirmed": confirmed, "missing": missing}
 
 
-def main() -> None:
-    # Root settings are needed only for operator CLI defaults.
-    import settings
+def _default_paths() -> tuple[Path, Path | None]:
+    return get_backport_root() / "mission-packages", get_dsp_root()
 
-    default_packages_root = settings.get_backport_root() / "mission-packages"
-    default_dsp_root = settings.get_dsp_root()
+
+def main() -> None:
+    default_packages_root, default_dsp_root = _default_paths()
 
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("path", nargs="?", help="A lua-dsp/ directory to audit")
