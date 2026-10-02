@@ -26,6 +26,7 @@ _PACKED_EDITABLE = {
     "missions",
     "quests",
     "assaults",
+    "campaign",
     "key_items",
     "blue_spells",
     "abilities",
