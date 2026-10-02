@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Focused regression for mission/key-item catalogs parsed from a selected server checkout."""
+"""Focused regressions for checkout-local Character Editor progression/unlock catalogs."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -11,7 +11,14 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from workbench.editors.character.progression_catalog import key_item_catalog, mission_catalog
+from workbench.editors.character.progression_catalog import (
+    ability_catalog,
+    key_item_catalog,
+    mission_catalog,
+    title_catalog,
+    visited_zone_catalog,
+    weaponskill_unlock_catalog,
+)
 
 
 MISSION_SAMPLE = """
@@ -52,6 +59,36 @@ values:
   airship_pass: 8
 """
 
+ABILITY_SQL = """
+INSERT INTO `abilities` VALUES (16,'mighty_strikes',1,0,1);
+INSERT INTO `abilities` VALUES (97,'phantom_roll',17,5,1);
+"""
+
+WS_UNLOCK_LUA = """
+xi = xi or {}
+xi.wsUnlock =
+{
+    ASURAN_FISTS = 1,
+    WILDFIRE = 48,
+    UPHEAVAL = 63,
+}
+"""
+
+TITLE_LUA = """
+xi = xi or {}
+xi.title =
+{
+    FODDERCHIEF_FLAYER = 1,
+    CAIT_SITHS_ASSISTANT = 599,
+}
+"""
+
+ZONE_SQL = """
+INSERT INTO `zone_settings` VALUES (0,1,'127.0.0.1',54230,'unknown',0);
+INSERT INTO `zone_settings` VALUES (33,2,'127.0.0.1',54230,'AlTaieu',0);
+INSERT INTO `zone_settings` VALUES (230,1,'127.0.0.1',54230,'Southern_San_dOria',0);
+"""
+
 
 def main() -> None:
     with tempfile.TemporaryDirectory() as temp:
@@ -80,6 +117,40 @@ def main() -> None:
         assert lsb_keys["source"]["kind"] == "key_item.yaml"
         assert lsb_keys["items"]["1"]["symbol"] == "zeruhn_report"
         assert lsb_keys["items"]["8"]["label"] == "Airship Pass"
+
+        sql_dir = root / "sql"
+        sql_dir.mkdir(parents=True)
+        (sql_dir / "abilities.sql").write_text(ABILITY_SQL, encoding="utf-8")
+        abilities = ability_catalog(root)
+        assert abilities["source"]["kind"] == "abilities.sql"
+        assert abilities["items"]["16"]["label"] == "Mighty Strikes"
+        assert abilities["items"]["97"]["symbol"] == "PHANTOM_ROLL"
+
+        script_enum = root / "scripts" / "enum"
+        script_enum.mkdir(parents=True)
+        (script_enum / "ws_unlock.lua").write_text(WS_UNLOCK_LUA, encoding="utf-8")
+        ws = weaponskill_unlock_catalog(root)
+        assert ws["source"]["kind"] == "ws_unlock.lua"
+        assert ws["items"]["1"]["label"] == "Asuran Fists"
+        assert ws["items"]["48"]["symbol"] == "WILDFIRE"
+        assert ws["items"]["63"]["label"] == "Upheaval"
+
+        (script_enum / "title.lua").write_text(TITLE_LUA, encoding="utf-8")
+        titles = title_catalog(root)
+        assert titles["source"]["kind"] == "title.lua"
+        assert titles["items"]["599"]["label"] == "Cait Siths Assistant"
+
+        (sql_dir / "zone_settings.sql").write_text(ZONE_SQL, encoding="utf-8")
+        zones = visited_zone_catalog(root)
+        assert zones["source"]["kind"] == "zone_settings.sql"
+        assert zones["items"]["33"]["label"] == "AlTaieu"
+        assert zones["items"]["230"]["label"] == "Southern San dOria"
+
+        # Never substitute a normal weaponskill table when the explicit unlock-ID enum is absent.
+        (script_enum / "ws_unlock.lua").unlink()
+        unavailable_ws = weaponskill_unlock_catalog(root)
+        assert unavailable_ws["source"]["available"] is False
+        assert unavailable_ws["items"] == {}
 
     missing = mission_catalog(Path("/definitely/not/a/server"))
     assert missing["source"]["available"] is False
