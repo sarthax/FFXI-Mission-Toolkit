@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Focused migration smoke for the canonical dialog drift overview service."""
+"""Focused migration smoke for the canonical dialog reference services."""
 from __future__ import annotations
 
 import importlib.util
@@ -45,7 +45,11 @@ r = d.detect_offset(shifted, real)
 assert r["offset"] == -1 and r["explained"] == 10
 '''
     subprocess.run([sys.executable, "-c", code], cwd=tempfile.gettempdir(), check=True)
-    print("dialog drift overview package migration: OK")
+    subprocess.run(
+        [sys.executable, str(REPO_ROOT / "test_fixtures" / "test_dialog_index_package_migration.py")],
+        check=True,
+    )
+    print("dialog reference package migrations: OK")
 
 
 if __name__ == "__main__":
