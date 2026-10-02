@@ -7,6 +7,8 @@ import re
 import sys
 from pathlib import Path
 
+from workbench.runtime.legacy_settings import get_backport_root, get_dsp_root
+
 LINE_COMMENT_RE = re.compile(r"--(?!\[\[).*$", re.MULTILINE)
 BLOCK_COMMENT_RE = re.compile(r"--\[\[.*?\]\]", re.DOTALL)
 ITEM_CONST_RE = re.compile(r"local\s+[A-Z][A-Z0-9_]*_ITEM\w*\s*=\s*(\d+)")
@@ -119,8 +121,7 @@ def _fmt_files(files: list[Path], base: Path) -> str:
 
 
 def _default_paths() -> tuple[Path, Path | None]:
-    import settings
-    return settings.get_backport_root() / "mission-packages", settings.get_dsp_root()
+    return get_backport_root() / "mission-packages", get_dsp_root()
 
 
 def main() -> None:
