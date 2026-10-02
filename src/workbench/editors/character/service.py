@@ -7,7 +7,7 @@ from .adapters import compare_schema
 from .adapters.inventory import inspect_inventory_contract
 from .categories import build_tab_manifest
 from .inventory import inventory_summary
-from .inventory_slots import CAPACITY_COLUMNS, CONTAINERS
+from .inventory_slots import CAPACITY_COLUMNS, CONTAINERS, CONTAINER_LABELS
 from .item_catalog import ItemCatalogService
 from .item_transactions import apply_item_injection, build_item_injection_plan
 from .scalar_transactions import apply_scalar_edit, build_scalar_edit_plan, editable_columns
@@ -177,9 +177,15 @@ class CharacterEditorService:
             container_rows = sorted(by_location.get(location, []), key=lambda r: int(r.get("slot") or 0))
             if not supported and not container_rows:
                 continue
-            out.append({"location": location, "name": CONTAINERS.get(location, f"container_{location}"),
-                        "capacity": capacity, "count": len(container_rows), "rows": container_rows,
-                        "capacity_source": column or ("furnishing_runtime" if location == 2 else "runtime_or_unknown")})
+            out.append({
+                "location": location,
+                "name": CONTAINERS.get(location, f"container_{location}"),
+                "label": CONTAINER_LABELS.get(location, f"Container {location}"),
+                "capacity": capacity,
+                "count": len(container_rows),
+                "rows": container_rows,
+                "capacity_source": column or ("furnishing_runtime" if location == 2 else "runtime_or_unknown"),
+            })
         return out
 
     def load_character(self, char_id: int, include_rows: bool = False) -> dict[str, Any]:
