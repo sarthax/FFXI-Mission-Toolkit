@@ -2,109 +2,43 @@
 {% block title %}Character Editor{% endblock %}
 {% block shell_mode %}dense{% endblock %}
 {% block main_class %}character-editor-page{% endblock %}
-
 {% block content %}
 <style>
-main.character-editor-page{padding:8px 10px 24px}.ce-grid{display:grid;grid-template-columns:320px minmax(0,1fr);gap:10px}.ce-card{border:1px solid var(--border,#444);border-radius:6px;padding:10px;background:var(--panel,#181818)}.ce-list{max-height:70vh;overflow:auto}.ce-row{display:flex;gap:8px;align-items:center;padding:7px;border-bottom:1px solid var(--border,#333);cursor:pointer}.ce-row:hover,.ce-row.active{background:rgba(255,255,255,.06)}.ce-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.ce-tab{cursor:pointer}.ce-pane{display:none}.ce-pane.active{display:block}.ce-status{display:flex;gap:6px;flex-wrap:wrap}.ce-pill{display:inline-block;padding:2px 7px;border-radius:10px;background:#555;font-size:.85em}.ce-pill.ok{background:#1e7e34}.ce-pill.warn{background:#8a6500}.ce-pill.bad{background:#9b2c2c}.ce-toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.ce-toolbar input{min-width:180px}.ce-item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:7px;max-height:48vh;overflow:auto}.ce-item{display:grid;grid-template-columns:40px 1fr auto;gap:7px;align-items:center;border:1px solid var(--border,#333);padding:6px;border-radius:5px;cursor:pointer}.ce-item:hover{background:rgba(255,255,255,.05)}.ce-icon{width:32px;height:32px;image-rendering:pixelated;object-fit:contain}.ce-muted{opacity:.72}.ce-danger{border-color:#a33}.ce-preview{white-space:pre-wrap;font-family:monospace;font-size:.9em;max-height:240px;overflow:auto}.ce-table{width:100%;border-collapse:collapse}.ce-table th,.ce-table td{padding:5px 7px;border-bottom:1px solid var(--border,#333);text-align:left}.ce-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:900px){.ce-grid,.ce-two{grid-template-columns:1fr}.ce-list{max-height:35vh}}
+main.character-editor-page{padding:8px 10px 24px}.ce-grid{display:grid;grid-template-columns:300px minmax(0,1fr);gap:10px}.ce-card{border:1px solid var(--border,#444);border-radius:6px;padding:10px;background:var(--panel,#181818)}.ce-list{max-height:74vh;overflow:auto}.ce-row{padding:7px;border-bottom:1px solid var(--border,#333);cursor:pointer}.ce-row:hover,.ce-row.active{background:rgba(255,255,255,.06)}.ce-tabs{display:flex;gap:5px;flex-wrap:wrap;margin:9px 0}.ce-tab{cursor:pointer}.ce-tab.active{font-weight:700}.ce-tab.unavailable{opacity:.45}.ce-pane{display:none}.ce-pane.active{display:block}.ce-pill{display:inline-block;padding:2px 7px;border-radius:10px;background:#555;font-size:.85em}.ce-pill.ok{background:#1e7e34}.ce-pill.warn{background:#8a6500}.ce-pill.bad{background:#9b2c2c}.ce-toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.ce-toolbar input{min-width:180px}.ce-muted{opacity:.72}.ce-table{width:100%;border-collapse:collapse}.ce-table th,.ce-table td{padding:5px 7px;border-bottom:1px solid var(--border,#333);text-align:left;vertical-align:top}.ce-icon{width:32px;height:32px;image-rendering:pixelated;object-fit:contain}.ce-item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:7px;max-height:48vh;overflow:auto}.ce-item{display:grid;grid-template-columns:40px 1fr auto;gap:7px;align-items:center;border:1px solid var(--border,#333);padding:6px;border-radius:5px;cursor:pointer}.ce-container{margin:8px 0}.ce-container h4{display:flex;gap:8px;align-items:center;margin:0 0 5px}.ce-preview{white-space:pre-wrap;font-family:monospace;font-size:.9em;max-height:240px;overflow:auto}.ce-data-block{margin:9px 0}.ce-data-block summary{cursor:pointer;font-weight:700}.ce-kv{display:grid;grid-template-columns:minmax(150px,240px) 1fr;gap:4px 10px}.ce-kv>div{padding:3px;border-bottom:1px solid var(--border,#333)}@media(max-width:900px){.ce-grid{grid-template-columns:1fr}.ce-list{max-height:30vh}}
 </style>
-
-<div class="dense-toolbar">
-  <strong>Character Editor</strong>
-  <span class="sp"></span>
-  <span id="serverStatus" class="ce-muted">Connecting…</span>
-</div>
-
+<div class="dense-toolbar"><strong>Character Editor</strong><span class="sp"></span><span id="serverStatus" class="ce-muted">Connecting…</span></div>
 <div class="ce-grid">
-  <section class="ce-card">
-    <div class="ce-toolbar">
-      <input id="characterSearch" placeholder="Character name or ID">
-      <button onclick="searchCharacters()">Search</button>
-    </div>
-    <div id="characterList" class="ce-list"><div class="ce-muted" style="padding:8px">Loading characters…</div></div>
-  </section>
-
-  <section class="ce-card">
-    <div id="emptyState" class="ce-muted">Select a character.</div>
-    <div id="characterWorkspace" style="display:none">
-      <div class="ce-toolbar">
-        <h2 id="characterName" style="margin:0"></h2>
-        <span id="onlineBadge" class="ce-pill"></span>
-        <span id="adapterBadge" class="ce-pill"></span>
-        <span class="sp"></span>
-        <span id="characterId" class="mono ce-muted"></span>
-      </div>
-      <div id="characterSummary" class="ce-status"></div>
-      <div class="ce-tabs">
-        <button class="ce-tab" data-tab="overview">Overview</button>
-        <button class="ce-tab" data-tab="inventory">Inventory</button>
-        <button class="ce-tab" data-tab="capabilities">Capabilities</button>
-      </div>
-
-      <div id="pane-overview" class="ce-pane active">
-        <div class="ce-two">
-          <div class="ce-card"><strong>Character row</strong><div id="identityTable"></div></div>
-          <div class="ce-card"><strong>Schema / lineage</strong><div id="lineageSummary"></div></div>
-        </div>
-      </div>
-
-      <div id="pane-inventory" class="ce-pane">
-        <div class="ce-toolbar" style="margin-bottom:8px">
-          <strong>Inventory</strong><button onclick="loadInventory()">Refresh</button>
-          <span class="sp"></span><button onclick="openItemBrowser()">Add Item</button>
-        </div>
-        <div class="table-wrap"><table class="ce-table"><thead><tr><th>Icon</th><th>Slot</th><th>Item</th><th>Qty</th><th>Location</th><th>Extra</th></tr></thead><tbody id="inventoryRows"></tbody></table></div>
-      </div>
-
-      <div id="pane-capabilities" class="ce-pane">
-        <div class="table-wrap"><table class="ce-table"><thead><tr><th>Capability</th><th>Supported</th><th>Storage</th><th>Representation</th><th>Write</th></tr></thead><tbody id="capabilityRows"></tbody></table></div>
-      </div>
-    </div>
-  </section>
+<section class="ce-card"><div class="ce-toolbar"><input id="characterSearch" placeholder="Character name or ID"><button onclick="searchCharacters()">Search</button></div><div id="characterList" class="ce-list"></div></section>
+<section class="ce-card">
+<div id="emptyState" class="ce-muted">Select a character.</div>
+<div id="characterWorkspace" style="display:none">
+  <div class="ce-toolbar"><h2 id="characterName" style="margin:0"></h2><span id="onlineBadge" class="ce-pill"></span><span id="adapterBadge" class="ce-pill"></span><span class="sp"></span><span id="characterId" class="mono ce-muted"></span></div>
+  <div id="characterSummary" style="margin:5px 0"></div>
+  <div id="categoryTabs" class="ce-tabs"></div>
+  <div id="pane-inventory" class="ce-pane"><div class="ce-toolbar"><strong>All Character Storage</strong><button onclick="loadInventory()">Refresh</button><span class="sp"></span><button onclick="openItemBrowser()">Add Item</button></div><div class="ce-muted">Add Item currently writes only normal Inventory; all detected containers are displayed below.</div><div id="inventoryContainers"></div></div>
+  <div id="pane-category" class="ce-pane active"><div id="categoryDescription" class="ce-muted"></div><div id="categoryData"></div></div>
 </div>
-
-<dialog id="itemDialog" style="width:min(950px,92vw);max-height:88vh">
-  <form method="dialog" style="float:right"><button>Close</button></form>
-  <h3>Add item</h3>
-  <div class="ce-toolbar">
-    <input id="itemSearch" placeholder="Item name or ID">
-    <button type="button" onclick="searchItems()">Search</button>
-    <label>Qty <input id="itemQty" type="number" min="1" value="1" style="width:70px;min-width:0"></label>
-  </div>
-  <div id="itemResults" class="ce-item-grid" style="margin-top:8px"></div>
-  <hr>
-  <div id="selectedItem" class="ce-muted">Select an item.</div>
-  <div id="itemPreview" class="ce-preview"></div>
-  <div class="ce-toolbar" style="margin-top:8px">
-    <button id="previewButton" type="button" onclick="previewItem()" disabled>Preview</button>
-    <button id="confirmButton" type="button" onclick="confirmItem()" disabled>Add to Character</button>
-  </div>
-</dialog>
-
+</section>
+</div>
+<dialog id="itemDialog" style="width:min(950px,92vw);max-height:88vh"><form method="dialog" style="float:right"><button>Close</button></form><h3>Add item</h3><div class="ce-toolbar"><input id="itemSearch" placeholder="Item name or ID"><button type="button" onclick="searchItems()">Search</button><label>Qty <input id="itemQty" type="number" min="1" value="1" style="width:70px;min-width:0"></label></div><div id="itemResults" class="ce-item-grid" style="margin-top:8px"></div><hr><div id="selectedItem" class="ce-muted">Select an item.</div><div id="itemPreview" class="ce-preview"></div><div class="ce-toolbar"><button id="previewButton" type="button" onclick="previewItem()" disabled>Preview</button><button id="confirmButton" type="button" onclick="confirmItem()" disabled>Add to Character</button></div></dialog>
 <script>
-let selectedChar=null, selectedCharacterData=null, selectedItem=null, lastPreview=null;
+let selectedChar=null,selectedCharacterData=null,selectedItem=null,lastPreview=null,activeTab='character';
 const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 async function api(url,opts){const r=await fetch(url,opts);const j=await r.json().catch(()=>({detail:r.statusText}));if(!r.ok)throw new Error(j.detail||r.statusText);return j}
 function pill(text,cls=''){return `<span class="ce-pill ${cls}">${esc(text)}</span>`}
-
-async function loadStatus(){try{const s=await api('/character-editor/status.json');const a=s.adapter||{};const d=s.database||{};document.getElementById('serverStatus').textContent=`${(a.family||'unknown').toUpperCase()} · ${d.database||'database'} · ${d.server_root||''}`;}catch(e){document.getElementById('serverStatus').textContent='Connection error: '+e.message}}
-
-async function searchCharacters(){const q=document.getElementById('characterSearch').value.trim();const box=document.getElementById('characterList');box.innerHTML='<div class="ce-muted" style="padding:8px">Searching…</div>';try{const j=await api('/character-editor/characters.json?q='+encodeURIComponent(q));box.innerHTML='';for(const r of j.rows||[]){const id=r.charid??r.char_id;const name=r.charname??r.name??('Character '+id);const div=document.createElement('div');div.className='ce-row'+(id===selectedChar?' active':'');div.innerHTML=`<div><strong>${esc(name)}</strong><div class="mono ce-muted">${esc(id)}${r.pos_zone!==undefined?' · zone '+esc(r.pos_zone):''}</div></div>`;div.onclick=()=>selectCharacter(id);box.appendChild(div)}if(!(j.rows||[]).length)box.innerHTML='<div class="ce-muted" style="padding:8px">No characters found.</div>'}catch(e){box.innerHTML='<div class="ce-muted" style="padding:8px">'+esc(e.message)+'</div>'}}
-
-async function selectCharacter(id){selectedChar=Number(id);lastPreview=null;document.getElementById('emptyState').style.display='none';document.getElementById('characterWorkspace').style.display='block';try{const j=await api(`/character-editor/characters/${selectedChar}.json`);selectedCharacterData=j;const c=j.character||{};document.getElementById('characterName').textContent=c.charname||c.name||('Character '+selectedChar);document.getElementById('characterId').textContent='ID '+selectedChar;const online=j.online_state?.online;const ob=document.getElementById('onlineBadge');ob.textContent=online===true?'ONLINE':online===false?'OFFLINE':'ONLINE UNKNOWN';ob.className='ce-pill '+(online===false?'ok':online===true?'bad':'warn');const ab=document.getElementById('adapterBadge');ab.textContent=(j.adapter?.family||'unknown').toUpperCase();ab.className='ce-pill '+(j.adapter?.confidence==='high'?'ok':'warn');renderIdentity(c);renderCapabilities(j.inventory?.capabilities||[]);renderLineage(j);await loadInventory();await searchCharacters()}catch(e){alert(e.message)}}
-
-function renderIdentity(c){const box=document.getElementById('identityTable');const rows=Object.entries(c).filter(([k])=>!['missions','quests','keyitems','abilities','weaponskills','titles','zones'].includes(k));box.innerHTML='<table class="ce-table">'+rows.map(([k,v])=>`<tr><th>${esc(k)}</th><td class="mono">${esc(typeof v==='object'?JSON.stringify(v):v)}</td></tr>`).join('')+'</table>'}
-function renderLineage(j){const cmp=j.lineage_comparison||{};document.getElementById('lineageSummary').innerHTML=`<p>${pill(j.adapter?.family||'unknown')} ${pill(j.adapter?.confidence||'unknown')}</p><div class="ce-muted">Missing expected tables: ${esc((cmp.missing_tables||[]).join(', ')||'none')}</div><div class="ce-muted">Extra character tables: ${esc((cmp.extra_tables||[]).join(', ')||'none')}</div>`;document.getElementById('characterSummary').innerHTML=`${pill('write: '+((j.write_capabilities||[]).join(', ')||'none'),'ok')} ${pill('packed fields: '+Object.keys(j.packed_fields||{}).length)}`}
-function renderCapabilities(rows){document.getElementById('capabilityRows').innerHTML=rows.map(r=>`<tr><td>${esc(r.capability)}</td><td>${r.supported?'yes':'no'}</td><td class="mono">${esc((r.storage||[]).join(', '))}</td><td>${esc(r.representation)}</td><td>${esc(r.write_status)}</td></tr>`).join('')}
-
-async function loadInventory(){if(!selectedChar)return;const body=document.getElementById('inventoryRows');body.innerHTML='<tr><td colspan="6" class="ce-muted">Loading…</td></tr>';try{const j=await api(`/character-editor/characters/${selectedChar}/inventory.json`);body.innerHTML=(j.rows||[]).map(r=>{const it=r.item||{};const id=r.itemId??r.item_id??0;const extra=r.extra&&r.extra.bytes!==undefined?`${r.extra.bytes} bytes`:'';return `<tr><td>${id?`<img class="ce-icon" src="/itemedit/${id}/icon.png" onerror="this.style.display='none'">`:''}</td><td>${esc(r.slot)}</td><td><strong>${esc(it.name||('Item '+id))}</strong><div class="mono ce-muted">${esc(id)}</div></td><td>${esc(r.quantity)}</td><td>${esc(r.location)}</td><td class="ce-muted">${esc(extra)}</td></tr>`}).join('')||'<tr><td colspan="6" class="ce-muted">Inventory empty.</td></tr>'}catch(e){body.innerHTML='<tr><td colspan="6">'+esc(e.message)+'</td></tr>'}}
-
+function pretty(v){if(v===null||v===undefined)return '';if(typeof v==='object'){if(v.bytes!==undefined)return `${v.bytes} bytes · ${String(v.hex||'').slice(0,48)}${String(v.hex||'').length>48?'…':''}`;return JSON.stringify(v)}return String(v)}
+async function loadStatus(){try{const s=await api('/character-editor/status.json'),a=s.adapter||{},d=s.database||{};document.getElementById('serverStatus').textContent=`${(a.family||'unknown').toUpperCase()} · ${d.database||'database'} · ${d.server_root||''}`;}catch(e){document.getElementById('serverStatus').textContent='Connection error: '+e.message}}
+async function searchCharacters(){const q=document.getElementById('characterSearch').value.trim(),box=document.getElementById('characterList');box.innerHTML='<div class="ce-muted">Searching…</div>';try{const j=await api('/character-editor/characters.json?q='+encodeURIComponent(q));box.innerHTML=(j.rows||[]).map(r=>{const id=r.charid??r.char_id,n=r.charname??r.name??('Character '+id);return `<div class="ce-row ${id===selectedChar?'active':''}" onclick="selectCharacter(${Number(id)})"><strong>${esc(n)}</strong><div class="mono ce-muted">${esc(id)}${r.pos_zone!==undefined?' · zone '+esc(r.pos_zone):''}</div></div>`}).join('')||'<div class="ce-muted">No characters found.</div>'}catch(e){box.textContent=e.message}}
+async function selectCharacter(id){selectedChar=Number(id);document.getElementById('emptyState').style.display='none';document.getElementById('characterWorkspace').style.display='block';try{const j=await api(`/character-editor/characters/${selectedChar}.json`);selectedCharacterData=j;const c=j.character||{};document.getElementById('characterName').textContent=c.charname||c.name||('Character '+selectedChar);document.getElementById('characterId').textContent='ID '+selectedChar;const online=j.online_state?.online,ob=document.getElementById('onlineBadge');ob.textContent=online===true?'ONLINE':online===false?'OFFLINE':'ONLINE UNKNOWN';ob.className='ce-pill '+(online===false?'ok':online===true?'bad':'warn');const ab=document.getElementById('adapterBadge');ab.textContent=(j.adapter?.family||'unknown').toUpperCase();ab.className='ce-pill '+(j.adapter?.confidence==='high'?'ok':'warn');document.getElementById('characterSummary').innerHTML=`${pill('writes: '+((j.write_capabilities||[]).join(', ')||'none'),'ok')} ${pill('packed: '+Object.keys(j.packed_fields||{}).length)}`;renderTabs(j.tabs||[]);await activateTab((j.tabs||[]).some(t=>t.key===activeTab&&t.available)?activeTab:'character');await searchCharacters()}catch(e){alert(e.message)}}
+function renderTabs(tabs){document.getElementById('categoryTabs').innerHTML=tabs.map(t=>`<button class="ce-tab ${t.key===activeTab?'active':''} ${t.available?'':'unavailable'}" data-key="${esc(t.key)}" ${t.available?'':'disabled'} onclick="activateTab('${esc(t.key)}')">${esc(t.label)}</button>`).join('')}
+async function activateTab(key){activeTab=key;document.querySelectorAll('.ce-tab').forEach(b=>b.classList.toggle('active',b.dataset.key===key));document.getElementById('pane-inventory').classList.toggle('active',key==='inventory');document.getElementById('pane-category').classList.toggle('active',key!=='inventory');if(key==='inventory')await loadInventory();else await loadCategory(key)}
+async function loadCategory(key){if(!selectedChar)return;const tab=(selectedCharacterData?.tabs||[]).find(t=>t.key===key)||{};document.getElementById('categoryDescription').textContent=tab.description||'';const box=document.getElementById('categoryData');box.innerHTML='<div class="ce-muted">Loading…</div>';try{const j=await api(`/character-editor/characters/${selectedChar}/categories/${encodeURIComponent(key)}.json`);let html='';for(const [table,rows] of Object.entries(j.tables||{})){html+=`<details class="ce-data-block" open><summary>${esc(table)} · ${(rows||[]).length} row(s)</summary>`;(rows||[]).forEach((r,i)=>{html+=`<div class="ce-card" style="margin:5px 0"><strong>${rows.length>1?'Row '+(i+1):table}</strong><div class="ce-kv">${Object.entries(r).map(([k,v])=>`<div>${esc(k)}</div><div class="mono">${esc(pretty(v))}</div>`).join('')}</div></div>`});html+='</details>'}for(const [cap,p] of Object.entries(j.packed||{})){html+=`<details class="ce-data-block" open><summary>${esc(cap)} · ${esc(p.location)}</summary><div class="ce-card mono">${esc(pretty(p.value))}</div></details>`}box.innerHTML=html||'<div class="ce-muted">No physical values detected for this category on the connected server.</div>'}catch(e){box.textContent=e.message}}
+async function loadInventory(){if(!selectedChar)return;const box=document.getElementById('inventoryContainers');box.innerHTML='<div class="ce-muted">Loading…</div>';try{const j=await api(`/character-editor/characters/${selectedChar}/inventory.json`);box.innerHTML=(j.containers||[]).map(c=>{const cap=c.capacity===null||c.capacity===undefined?'capacity runtime/unknown':`${c.count}/${c.capacity}`;const rows=(c.rows||[]).map(r=>{const it=r.item||{},id=r.itemId??r.item_id??0,extra=r.extra&&r.extra.bytes!==undefined?`${r.extra.bytes} bytes`:'';return `<tr><td>${id?`<img class="ce-icon" src="/itemedit/${id}/icon.png" onerror="this.style.display='none'">`:''}</td><td>${esc(r.slot)}</td><td><strong>${esc(it.name||('Item '+id))}</strong><div class="mono ce-muted">${esc(id)}</div></td><td>${esc(r.quantity)}</td><td class="ce-muted">${esc(extra)}</td></tr>`}).join('')||'<tr><td colspan="5" class="ce-muted">Empty</td></tr>';return `<div class="ce-container ce-card"><h4>${esc(c.name.replaceAll('_',' '))} ${pill(cap,c.capacity!==null&&c.count>=c.capacity?'warn':'')}</h4><div class="ce-muted">location ${c.location} · ${esc(c.capacity_source)}</div><table class="ce-table"><thead><tr><th>Icon</th><th>Slot</th><th>Item</th><th>Qty</th><th>Extra</th></tr></thead><tbody>${rows}</tbody></table></div>`}).join('')||'<div class="ce-muted">No inventory containers detected.</div>'}catch(e){box.textContent=e.message}}
 function openItemBrowser(){selectedItem=null;lastPreview=null;document.getElementById('selectedItem').textContent='Select an item.';document.getElementById('itemPreview').textContent='';document.getElementById('previewButton').disabled=true;document.getElementById('confirmButton').disabled=true;document.getElementById('itemDialog').showModal();searchItems()}
-async function searchItems(){const q=document.getElementById('itemSearch').value.trim();const box=document.getElementById('itemResults');box.innerHTML='<div class="ce-muted">Searching…</div>';try{const j=await api('/character-editor/items.json?q='+encodeURIComponent(q));box.innerHTML=(j.rows||[]).map(r=>`<div class="ce-item" onclick='pickItem(${JSON.stringify(r).replace(/'/g,"&#39;")})'><img class="ce-icon" src="/itemedit/${r.item_id}/icon.png" onerror="this.style.display='none'"><div><strong>${esc(r.name)}</strong><div class="mono ce-muted">${esc(r.item_id)} · stack ${esc(r.stack_size)}</div></div><div>${r.rare?pill('Rare','warn'):''}${r.exclusive?pill('Ex','warn'):''}</div></div>`).join('')||'<div class="ce-muted">No items found.</div>'}catch(e){box.innerHTML='<div>'+esc(e.message)+'</div>'}}
-function pickItem(r){selectedItem=r;lastPreview=null;document.getElementById('selectedItem').innerHTML=`<strong>${esc(r.name)}</strong> <span class="mono">${esc(r.item_id)}</span> · stack ${esc(r.stack_size)} ${r.rare?pill('Rare','warn'):''} ${r.exclusive?pill('Exclusive','warn'):''}`;document.getElementById('previewButton').disabled=false;document.getElementById('confirmButton').disabled=true;document.getElementById('itemPreview').textContent=''}
-async function previewItem(){if(!selectedChar||!selectedItem)return;const quantity=Number(document.getElementById('itemQty').value||1);try{const j=await api(`/character-editor/characters/${selectedChar}/items/preview`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_id:selectedItem.item_id,quantity,location:0})});lastPreview=j;document.getElementById('itemPreview').textContent=JSON.stringify(j,null,2);document.getElementById('confirmButton').disabled=!j.ready}catch(e){lastPreview=null;document.getElementById('itemPreview').textContent=e.message;document.getElementById('confirmButton').disabled=true}}
-async function confirmItem(){if(!lastPreview?.ready||!selectedItem)return;if(!confirm(`Add ${document.getElementById('itemQty').value} × ${selectedItem.name} to this offline character?`))return;const quantity=Number(document.getElementById('itemQty').value||1);try{const j=await api(`/character-editor/characters/${selectedChar}/items/add`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_id:selectedItem.item_id,quantity,location:0,approved:true})});alert(`Added item ${j.item_id} to slot ${j.slot}`);document.getElementById('itemDialog').close();await selectCharacter(selectedChar)}catch(e){alert(e.message);await previewItem()}}
-
-document.querySelectorAll('.ce-tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.ce-pane').forEach(p=>p.classList.remove('active'));document.getElementById('pane-'+b.dataset.tab).classList.add('active');if(b.dataset.tab==='inventory')loadInventory()});document.getElementById('characterSearch').addEventListener('keydown',e=>{if(e.key==='Enter')searchCharacters()});document.getElementById('itemSearch').addEventListener('keydown',e=>{if(e.key==='Enter')searchItems()});
-loadStatus();searchCharacters();
+async function searchItems(){const q=document.getElementById('itemSearch').value.trim(),box=document.getElementById('itemResults');box.innerHTML='<div class="ce-muted">Searching…</div>';try{const j=await api('/character-editor/items.json?q='+encodeURIComponent(q));box.innerHTML=(j.rows||[]).map(r=>`<div class="ce-item" onclick='pickItem(${JSON.stringify(r).replace(/'/g,"&#39;")})'><img class="ce-icon" src="/itemedit/${r.item_id}/icon.png" onerror="this.style.display='none'"><div><strong>${esc(r.name)}</strong><div class="mono ce-muted">${esc(r.item_id)} · stack ${esc(r.stack_size)}</div></div><div>${r.rare?pill('Rare','warn'):''}${r.exclusive?pill('Ex','warn'):''}</div></div>`).join('')||'<div class="ce-muted">No items found.</div>'}catch(e){box.textContent=e.message}}
+function pickItem(r){selectedItem=r;lastPreview=null;document.getElementById('selectedItem').innerHTML=`<strong>${esc(r.name)}</strong> <span class="mono">${esc(r.item_id)}</span> · stack ${esc(r.stack_size)}`;document.getElementById('previewButton').disabled=false;document.getElementById('confirmButton').disabled=true;document.getElementById('itemPreview').textContent=''}
+async function previewItem(){if(!selectedChar||!selectedItem)return;const quantity=Number(document.getElementById('itemQty').value||1);try{const j=await api(`/character-editor/characters/${selectedChar}/items/preview`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_id:selectedItem.item_id,quantity,location:0})});lastPreview=j;document.getElementById('itemPreview').textContent=JSON.stringify(j,null,2);document.getElementById('confirmButton').disabled=!j.ready}catch(e){document.getElementById('itemPreview').textContent=e.message}}
+async function confirmItem(){if(!lastPreview?.ready||!selectedItem)return;if(!confirm(`Add ${document.getElementById('itemQty').value} × ${selectedItem.name} to normal Inventory?`))return;const quantity=Number(document.getElementById('itemQty').value||1);try{const j=await api(`/character-editor/characters/${selectedChar}/items/add`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_id:selectedItem.item_id,quantity,location:0,approved:true})});alert(`Added item ${j.item_id} to slot ${j.slot}`);document.getElementById('itemDialog').close();await loadInventory()}catch(e){alert(e.message);await previewItem()}}
+document.getElementById('characterSearch').addEventListener('keydown',e=>{if(e.key==='Enter')searchCharacters()});document.getElementById('itemSearch').addEventListener('keydown',e=>{if(e.key==='Enter')searchItems()});loadStatus();searchCharacters();
 </script>
 {% endblock %}
