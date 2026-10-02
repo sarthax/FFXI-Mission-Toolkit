@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import sys
-import settings as _settings
+from workbench.runtime import legacy_settings as _settings
 from workbench.packages.migration.drivers import assault_batch as _canonical
 
 _backport_root = _settings.get_backport_root()
