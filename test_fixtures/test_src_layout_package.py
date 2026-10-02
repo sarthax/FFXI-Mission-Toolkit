@@ -105,7 +105,7 @@ def main() -> None:
     # DAT Inspector and extractor are canonical under Client/DAT. Historical root imports remain
     # zero-logic compatibility aliases for the monolithic GUI and rebuild scripts.
     dat_extractor_wrapper = (ROOT / "dat_extractor_bin.py").read_text(encoding="utf-8")
-    assert "workbench.client.dat.extractor_bin" in dat_extractor_wrapper
+    assert "from workbench.client.dat import extractor_bin" in dat_extractor_wrapper
     assert "Path(__file__)" not in dat_extractor_wrapper
     dat_inspector_wrapper = (ROOT / "dat_inspector.py").read_text(encoding="utf-8")
     assert "workbench.client.dat" in dat_inspector_wrapper
