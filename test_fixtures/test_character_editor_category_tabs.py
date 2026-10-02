@@ -9,10 +9,13 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
+if str(ROOT / "test_fixtures") not in sys.path:
+    sys.path.insert(0, str(ROOT / "test_fixtures"))
 
 from workbench.editors.character.categories import build_tab_manifest
 from workbench.editors.character.inventory_slots import CONTAINERS, CONTAINER_KEYS
 from test_character_editor_packed_codecs import main as packed_codec_regression
+from test_character_editor_progression_catalog import main as progression_catalog_regression
 
 
 class _Schema:
@@ -114,10 +117,10 @@ def main() -> None:
     assert '"label": CONTAINER_LABELS.get' in service
     assert "decode_packed_field" in category_data
     assert 'entry["decoded"] = decoded' in category_data
+    assert 'entry["catalog"] = catalog_cache.get' in category_data
 
-    # This focused test is already exercised by Src Layout/Workbench; route the packed codec
-    # vectors through it so the new decoder cannot silently escape the established gates.
     packed_codec_regression()
+    progression_catalog_regression()
 
 
 if __name__ == "__main__":
