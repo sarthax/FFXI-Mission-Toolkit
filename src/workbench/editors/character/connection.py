@@ -1,7 +1,7 @@
-"""Discover and open the live character database from the active server checkout.
+"""Discover and open the live character database from a configured server checkout.
 
-The Mission Toolkit already uses map.conf / map_darkstar.conf for live MariaDB access.
-Character Editor reuses that convention so administrators do not need to duplicate credentials.
+Supports modern LandSandBoat settings/network.lua plus legacy Topaz/DSP map.conf formats.
+Credentials are never returned by public/status helpers.
 """
 from __future__ import annotations
 
@@ -11,15 +11,23 @@ import re
 from typing import Any
 
 CONF_CANDIDATES = (
-    "conf/map.conf",
-    "conf/map_darkstar.conf",
+    "settings/network.lua",      # modern LandSandBoat
+    "conf/map.conf",            # Topaz-era
+    "conf/map_darkstar.conf",   # DarkStar Project
 )
-_REQUIRED_KEYS = (
+_LEGACY_KEYS = (
     "mysql_host",
     "mysql_port",
     "mysql_login",
     "mysql_password",
     "mysql_database",
+)
+_LSB_KEYS = (
+    "SQL_HOST",
+    "SQL_PORT",
+    "SQL_LOGIN",
+    "SQL_PASSWORD",
+    "SQL_DATABASE",
 )
 
 
@@ -32,9 +40,9 @@ class DatabaseProfile:
     user: str
     password: str
     database: str
+    config_family: str
 
     def public_dict(self) -> dict[str, Any]:
-        """Safe metadata for UI/status surfaces. Never expose the password."""
         return {
             "server_root": str(self.server_root),
             "conf_path": str(self.conf_path),
@@ -42,6 +50,7 @@ class DatabaseProfile:
             "port": self.port,
             "user": self.user,
             "database": self.database,
+            "config_family": self.config_family,
         }
 
 
@@ -52,22 +61,59 @@ def _find_conf(server_root: Path) -> Path:
         if candidate.is_file():
             return candidate
     raise FileNotFoundError(
-        f"No MariaDB map configuration found under {root}; tried "
+        f"No supported MariaDB configuration found under {root}; tried "
         + ", ".join(CONF_CANDIDATES)
     )
 
 
-def _parse_conf(path: Path) -> dict[str, str]:
-    text = path.read_text(encoding="utf-8", errors="ignore")
+def _strip_value(raw: str) -> str:
+    value = raw.strip().rstrip(",").strip()
+    return value.strip('"').strip("'")
+
+
+def _parse_legacy_conf(path: Path, text: str) -> dict[str, str]:
     values: dict[str, str] = {}
-    for key in _REQUIRED_KEYS:
+    for key in _LEGACY_KEYS:
         match = re.search(rf"(?m)^\s*{re.escape(key)}\s*:\s*([^#\r\n]+?)\s*$", text)
         if match:
-            values[key] = match.group(1).strip().strip('"').strip("'")
-    missing = [key for key in _REQUIRED_KEYS if key not in values]
+            values[key] = _strip_value(match.group(1))
+    missing = [key for key in _LEGACY_KEYS if key not in values]
     if missing:
         raise ValueError(f"Missing MariaDB setting(s) in {path}: {', '.join(missing)}")
-    return values
+    return {
+        "host": values["mysql_host"],
+        "port": values["mysql_port"],
+        "user": values["mysql_login"],
+        "password": values["mysql_password"],
+        "database": values["mysql_database"],
+        "config_family": "legacy_conf",
+    }
+
+
+def _parse_lsb_network(path: Path, text: str) -> dict[str, str]:
+    values: dict[str, str] = {}
+    for key in _LSB_KEYS:
+        match = re.search(rf"(?m)^\s*{re.escape(key)}\s*=\s*([^,\r\n]+)", text)
+        if match:
+            values[key] = _strip_value(match.group(1))
+    missing = [key for key in _LSB_KEYS if key not in values]
+    if missing:
+        raise ValueError(f"Missing MariaDB setting(s) in {path}: {', '.join(missing)}")
+    return {
+        "host": values["SQL_HOST"],
+        "port": values["SQL_PORT"],
+        "user": values["SQL_LOGIN"],
+        "password": values["SQL_PASSWORD"],
+        "database": values["SQL_DATABASE"],
+        "config_family": "lsb_settings",
+    }
+
+
+def _parse_conf(path: Path) -> dict[str, str]:
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    if path.as_posix().endswith("settings/network.lua"):
+        return _parse_lsb_network(path, text)
+    return _parse_legacy_conf(path, text)
 
 
 def discover_database_profile(server_root: Path | str) -> DatabaseProfile:
@@ -77,22 +123,20 @@ def discover_database_profile(server_root: Path | str) -> DatabaseProfile:
     return DatabaseProfile(
         server_root=root,
         conf_path=conf,
-        host=values["mysql_host"],
-        port=int(values["mysql_port"]),
-        user=values["mysql_login"],
-        password=values["mysql_password"],
-        database=values["mysql_database"],
+        host=values["host"],
+        port=int(values["port"]),
+        user=values["user"],
+        password=values["password"],
+        database=values["database"],
+        config_family=values["config_family"],
     )
 
 
 def connect(profile: DatabaseProfile, **kwargs):
-    """Open a mysql.connector connection without leaking credentials into logs."""
     try:
         import mysql.connector
-    except ImportError as exc:  # pragma: no cover - environment-specific dependency
-        raise RuntimeError(
-            "Character Editor live database access requires mysql-connector-python"
-        ) from exc
+    except ImportError as exc:  # pragma: no cover
+        raise RuntimeError("Character Editor live database access requires mysql-connector-python") from exc
     return mysql.connector.connect(
         host=profile.host,
         port=profile.port,
