@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import importlib
+import importlib.util
 import subprocess
 import sys
 import tempfile
@@ -11,8 +11,18 @@ from workbench.reference.dialog import audit_drift
 from workbench.runtime.paths import REPO_ROOT, VENDOR_ROOT
 
 
+def _load_root_compatibility_module():
+    name = "_dialog_drift_root_compat_test"
+    spec = importlib.util.spec_from_file_location(name, REPO_ROOT / "audit_dialog_drift.py")
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return sys.modules[name]
+
+
 def main() -> None:
-    legacy = importlib.import_module("audit_dialog_drift")
+    legacy = _load_root_compatibility_module()
     assert legacy is audit_drift
 
     assert audit_drift.dat_id_for_zone(0) == 6420
