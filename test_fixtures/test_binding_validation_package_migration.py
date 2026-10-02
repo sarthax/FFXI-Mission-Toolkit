@@ -23,12 +23,15 @@ def _load_root(name: str, path: Path):
 def main() -> None:
     binding_index = importlib.import_module("workbench.validation.packages.binding_index")
     binding_audit = importlib.import_module("workbench.validation.packages.binding_audit")
+    item_audit = importlib.import_module("workbench.validation.packages.item_audit")
     dev_index = importlib.import_module("workbench.devtools.server.binding_index")
 
     legacy_index = _load_root("backport_binding_index", REPO_ROOT / "backport_binding_index.py")
     legacy_audit = _load_root("backport_binding_audit", REPO_ROOT / "backport_binding_audit.py")
+    legacy_item = _load_root("backport_item_audit", REPO_ROOT / "backport_item_audit.py")
     assert legacy_index is binding_index
     assert legacy_audit is binding_audit
+    assert legacy_item.audit_package is item_audit.audit_package
 
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
@@ -90,9 +93,39 @@ def main() -> None:
         assert [row[0] for row in result["confirmed"]] == ["getID", "setPos"]
         assert [row[0] for row in result["missing"]] == ["missingBinding"]
 
+        # Item/content audit behavior against a synthetic target checkout.
+        (dsp / "sql").mkdir(exist_ok=True)
+        (dsp / "scripts/globals/items").mkdir(parents=True)
+        (dsp / "scripts/globals").mkdir(parents=True, exist_ok=True)
+        (dsp / "sql/item_basic.sql").write_text(
+            "INSERT INTO `item_basic` VALUES (100,0,'good_item');\n"
+            "INSERT INTO `item_basic` VALUES (101,0,'no_script');\n",
+            encoding="utf-8",
+        )
+        (dsp / "scripts/globals/items/good_item.lua").write_text("return {}\n", encoding="utf-8")
+        (dsp / "scripts/globals/keyitems.lua").write_text("GOOD_KEY = 1\n", encoding="utf-8")
+        (dsp / "scripts/globals/shared.lua").write_text("return {}\n", encoding="utf-8")
+        (package / "items.lua").write_text(
+            "local GOOD_ITEM = 100\n"
+            "local WARN_ITEM = 101\n"
+            "local BAD_ITEM = 999\n"
+            "player:hasKeyItem(GOOD_KEY)\n"
+            "player:addKeyItem(MISSING_KEY)\n"
+            "require(\"scripts/globals/shared\")\n"
+            "require(\"scripts/globals/missing\")\n"
+            "GetNPCByID(foo, instance)\n",
+            encoding="utf-8",
+        )
+        item_result = item_audit.audit_package(package, dsp)
+        assert [row[0] for row in item_result["missing_item_rows"]] == [999]
+        assert [(row[0], row[1]) for row in item_result["missing_item_scripts"]] == [(101, "no_script")]
+        assert [row[0] for row in item_result["missing_keyitems"]] == ["MISSING_KEY"]
+        assert [row[0] for row in item_result["dangling_requires"]] == ["scripts/globals/missing"]
+        assert len(item_result["bad_call_shapes"]) == 1
+
     code = (
-        "from workbench.validation.packages import binding_index, binding_audit; "
-        "print(binding_index.classify_diff, binding_audit.audit_package)"
+        "from workbench.validation.packages import binding_index, binding_audit, item_audit; "
+        "print(binding_index.classify_diff, binding_audit.audit_package, item_audit.audit_package)"
     )
     subprocess.run([sys.executable, "-c", code], cwd=tempfile.gettempdir(), check=True)
 
