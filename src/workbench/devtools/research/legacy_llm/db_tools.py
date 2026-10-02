@@ -73,9 +73,9 @@ RELATIONSHIPS = [
     {"from": "item_usable.itemid", "to": "item_basic.itemid",
      "note": "Usable-item-specific detail row for a real item (verified: 2128/2128 dsp rows match)."},
     {"from": "instance_entities.instanceid", "to": "instance_list.instanceid",
-     "note": "LOW CONFIDENCE -- only 46/404 dsp_instance_entities rows match a real instance_list row. Real relationship exists, but most rows don't resolve."},
+     "note": "LOW CONFIDENCE -- only 46/404 dsp_instance_entities rows match a real instance_list row. Real relationship exists (the column names and a nonzero match confirm it), but most rows don't resolve -- don't trust an unmatched instanceid as evidence of absence without checking further."},
     {"from": "instance_entities.id", "to": "npc_list.npcid or mob_spawn_points.mobid",
-     "note": "POLYMORPHIC, not a single table -- instance_entities.id refers to EITHER an NPC or a mob spawn point depending on the entity's real type. Check both."},
+     "note": "POLYMORPHIC, not a single table -- instance_entities.id refers to EITHER an NPC or a mob spawn point depending on the entity's real type (verified: distinct real matches against both npc_list.npcid and mob_spawn_points.mobid, not just one). Check both."},
 ]
 
 
