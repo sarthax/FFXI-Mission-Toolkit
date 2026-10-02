@@ -54,6 +54,10 @@ QUEST_RECORD_BYTES = QUEST_SET_BYTES * 2
 ASSAULT_COMPLETE_COUNT = 128
 ASSAULT_BLOB_BYTES = 2 + ASSAULT_COMPLETE_COUNT
 
+# campaignlog_t is identical across DSP, Topaz, and current LSB: uint16 current + bool complete[512].
+CAMPAIGN_COMPLETE_COUNT = 512
+CAMPAIGN_BLOB_BYTES = 2 + CAMPAIGN_COMPLETE_COUNT
+
 KEY_ITEM_TABLE_COUNTS = {
     "dsp": 7,
     "topaz": 7,
@@ -220,6 +224,26 @@ def decode_assaults(value: Any, adapter_family: str) -> dict[str, Any]:
     }
 
 
+def decode_campaign(value: Any, adapter_family: str) -> dict[str, Any]:
+    """Decode ``chars.campaign`` as the shared native campaignlog_t structure."""
+    family = _family(adapter_family)
+    blob = _bytes(value)
+    _validate_size(blob, expected=CAMPAIGN_BLOB_BYTES, label="campaign", family=family)
+    current = int.from_bytes(blob[:2], "little")
+    completed_ids = [index for index, flag in enumerate(blob[2:]) if flag != 0]
+    return {
+        "codec": "campaign",
+        "family": family,
+        "layout": "dsp-topaz-lsb-campaignlog-v1",
+        "blob_bytes": len(blob),
+        "current": current,
+        "complete_slots": CAMPAIGN_COMPLETE_COUNT,
+        "completed_ids": completed_ids,
+        "completed_count": len(completed_ids),
+        "write_enabled": False,
+    }
+
+
 def decode_key_items(value: Any, adapter_family: str) -> dict[str, Any]:
     family = _family(adapter_family)
     blob = _bytes(value)
@@ -342,6 +366,8 @@ def decode_packed_field(capability: str, value: Any, adapter_family: str) -> dic
         return decode_quests(value, adapter_family)
     if capability == "assaults":
         return decode_assaults(value, adapter_family)
+    if capability == "campaign":
+        return decode_campaign(value, adapter_family)
     if capability == "key_items":
         return decode_key_items(value, adapter_family)
     if capability == "blue_spells":
