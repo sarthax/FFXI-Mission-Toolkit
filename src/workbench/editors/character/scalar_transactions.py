@@ -20,6 +20,8 @@ _ALLOWED_COLUMNS: dict[str, set[str] | None] = {
         "chatfilters_2", "moghancement",
     },
     "char_profile": None,
+    "char_look": None,
+    "char_style": None,
     "char_jobs": None,
     "char_exp": None,
     "char_stats": {
@@ -30,13 +32,19 @@ _ALLOWED_COLUMNS: dict[str, set[str] | None] = {
     "char_points": None,
     "char_merit": {"upgrades"},
     "char_job_points": None,
+    "char_unlocks": {
+        "outpost_sandy", "outpost_bastok", "outpost_windy", "mog_locker", "runic_portal", "maw",
+        "campaign_sandy", "campaign_bastok", "campaign_windy", "traverser_claimed",
+    },
+    "char_vars": {"value", "expiry"},
 }
 _ALLOWED_SELECTORS = {
     "char_skills": {"skillid"},
     "char_merit": {"meritid"},
     "char_job_points": {"jobid"},
+    "char_vars": {"varname"},
 }
-_KEY_COLUMNS = {"charid", "char_id", "character_id", "skillid", "meritid", "jobid"}
+_KEY_COLUMNS = {"charid", "char_id", "character_id", "skillid", "meritid", "jobid", "varname"}
 _VERIFIED_FAMILIES = {"dsp", "topaz", "lsb"}
 
 
