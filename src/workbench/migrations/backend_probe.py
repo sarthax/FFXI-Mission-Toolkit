@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import re
 
-import backport_lua_convert as legacy_lua
+from workbench.packages.migration import lua_convert as legacy_lua
 
 
 LSB_FRAMEWORK_METHODS=frozenset({
