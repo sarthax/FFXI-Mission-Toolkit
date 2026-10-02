@@ -5,7 +5,9 @@ from typing import Any
 
 from .adapters import compare_schema
 from .adapters.inventory import inspect_inventory_contract
+from .categories import build_tab_manifest
 from .inventory import inventory_summary
+from .inventory_slots import CAPACITY_COLUMNS, CONTAINERS
 from .item_catalog import ItemCatalogService
 from .item_transactions import apply_item_injection, build_item_injection_plan
 from .schema import CharacterSchema, discover_character_schema
@@ -88,6 +90,10 @@ class CharacterEditorService:
     def inventory_contract(self) -> dict[str, Any]:
         return inspect_inventory_contract(self.schema, self.adapter_family).as_dict()
 
+    def tab_manifest(self) -> list[dict[str, Any]]:
+        inventory = inventory_summary(self.schema, self.adapter_family)
+        return build_tab_manifest(self.schema, inventory)
+
     def search_items(self, query: str = "", *, limit: int = 100, client_snapshot_id: str | None = None) -> list[dict[str, Any]]:
         catalog = ItemCatalogService(self.connection, client_snapshot_id=client_snapshot_id)
         return [record.as_dict() for record in catalog.search(query, limit=limit)]
@@ -157,6 +163,54 @@ class CharacterEditorService:
         finally:
             cursor.close()
 
+    def inventory_containers(self, char_id: int) -> list[dict[str, Any]]:
+        """Return all known/present character inventory containers, including empty supported bags."""
+        rows = self.load_table(char_id, "char_inventory")
+        by_location: dict[int, list[dict[str, Any]]] = {}
+        for row in rows:
+            location = int(row.get("location") or 0)
+            by_location.setdefault(location, []).append(row)
+
+        storage_row: dict[str, Any] = {}
+        try:
+            storage_rows = self.load_table(char_id, "char_storage", limit=1)
+            if storage_rows:
+                storage_row = storage_rows[0]
+        except (KeyError, RuntimeError):
+            storage_row = {}
+
+        locations = set(CONTAINERS)
+        locations.update(by_location)
+        out = []
+        for location in sorted(locations):
+            column = CAPACITY_COLUMNS.get(location)
+            capacity = None
+            supported = True
+            if column:
+                if column in storage_row:
+                    capacity = max(0, int(storage_row.get(column) or 0))
+                else:
+                    supported = False
+            elif location == 2:
+                # Mog Storage capacity is furnishing-derived in the map server; rows remain viewable.
+                supported = True
+            elif location == 3:
+                # Temporary Items are runtime-managed; show persisted rows if a fork exposes them.
+                supported = bool(by_location.get(location))
+
+            container_rows = sorted(by_location.get(location, []), key=lambda r: int(r.get("slot") or 0))
+            if not supported and not container_rows:
+                continue
+            out.append({
+                "location": location,
+                "name": CONTAINERS.get(location, f"container_{location}"),
+                "capacity": capacity,
+                "count": len(container_rows),
+                "rows": container_rows,
+                "capacity_source": column or ("furnishing_runtime" if location == 2 else "runtime_or_unknown"),
+            })
+        return out
+
     def load_character(self, char_id: int, include_rows: bool = False) -> dict[str, Any]:
         identity = self._identity(char_id)
         if identity is None:
@@ -184,6 +238,7 @@ class CharacterEditorService:
             },
             "online_state": self.session_state(char_id),
             "inventory_contract": self.inventory_contract(),
+            "tabs": build_tab_manifest(self.schema, inventory),
             "sections": sections,
             "packed_fields": dict(self.schema.packed_fields),
             "schema": self.schema.summary(),
@@ -195,6 +250,7 @@ class CharacterEditorService:
 
     def capability_manifest(self) -> dict[str, Any]:
         """Stable JSON-friendly manifest for GUI and decoder worklists."""
+        inventory = inventory_summary(self.schema, self.adapter_family)
         return {
             "adapter": {
                 "family": self.adapter_family,
@@ -203,7 +259,8 @@ class CharacterEditorService:
             "schema": self.schema.summary(),
             "lineage_comparison": compare_schema(self.schema, self.adapter_family),
             "inventory_contract": self.inventory_contract(),
-            "inventory": inventory_summary(self.schema, self.adapter_family),
+            "tabs": build_tab_manifest(self.schema, inventory),
+            "inventory": inventory,
             "write_enabled": False,
             "write_capabilities": ["inventory_basic_offline"],
         }
