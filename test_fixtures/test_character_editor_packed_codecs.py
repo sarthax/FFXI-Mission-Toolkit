@@ -18,12 +18,16 @@ from workbench.editors.character.packed_codecs import (
     KEY_ITEM_TABLE_BYTES,
     MISSION_AREA_COUNT,
     MISSION_RECORD_SIZES,
+    QUEST_AREA_COUNT,
+    QUEST_RECORD_BYTES,
+    QUEST_SET_BYTES,
     PackedCodecError,
     decode_blue_spells,
     decode_character_bitset,
     decode_key_items,
     decode_missions,
     decode_packed_field,
+    decode_quests,
 )
 
 
@@ -40,6 +44,22 @@ def _mission_blob(family: str) -> bytes:
     data[cursor + 0] = 1
     data[cursor + 5] = 1
     data[cursor + 63] = 1
+    return bytes(data)
+
+
+def _quest_blob() -> bytes:
+    data = bytearray(QUEST_AREA_COUNT * QUEST_RECORD_BYTES)
+    # Jeuno area 3: current IDs 0, 17, 255; completed IDs 1, 42, 254.
+    start = 3 * QUEST_RECORD_BYTES
+    for quest_id in (0, 17, 255):
+        data[start + quest_id // 8] |= 1 << (quest_id % 8)
+    complete = start + QUEST_SET_BYTES
+    for quest_id in (1, 42, 254):
+        data[complete + quest_id // 8] |= 1 << (quest_id % 8)
+    # Coalition area 10 high edge coverage.
+    start = 10 * QUEST_RECORD_BYTES
+    data[start + 31] |= 0x80
+    data[start + QUEST_SET_BYTES] |= 0x01
     return bytes(data)
 
 
@@ -67,7 +87,7 @@ def _blue_spell_blob() -> bytes:
     data = bytearray(BLUE_SPELL_SLOT_COUNT)
     data[0] = 1
     data[3] = 0x22
-    data[7] = 1  # Duplicate values are valid slot data and must not be collapsed.
+    data[7] = 1
     data[19] = 0xFF
     return bytes(data)
 
@@ -92,6 +112,26 @@ def main() -> None:
     assert lsb["record_size"] == 70
     assert lsb["areas"][3]["completed_count"] == 3
 
+    # Quest layout is byte-for-byte identical across DSP, Topaz and LSB.
+    for family in ("dsp", "topaz", "lsb"):
+        quests = decode_quests(_quest_blob(), family)
+        assert quests["layout"] == "dsp-topaz-lsb-questlog-11x256x2"
+        assert quests["blob_bytes"] == 704
+        assert quests["record_size"] == 64
+        assert quests["area_count"] == 11
+        assert quests["bits_per_set"] == 256
+        assert quests["areas"][3]["name"] == "Jeuno"
+        assert quests["areas"][3]["current_ids"] == [0, 17, 255]
+        assert quests["areas"][3]["completed_ids"] == [1, 42, 254]
+        assert quests["areas"][3]["current_count"] == 3
+        assert quests["areas"][3]["completed_count"] == 3
+        assert quests["areas"][10]["name"] == "Coalition"
+        assert quests["areas"][10]["current_ids"] == [255]
+        assert quests["areas"][10]["completed_ids"] == [0]
+        assert quests["write_enabled"] is False
+        via_dispatch = decode_packed_field("quests", _quest_blob(), family)
+        assert via_dispatch is not None and via_dispatch["areas"] == quests["areas"]
+
     for family, count in (("dsp", 7), ("topaz", 7), ("lsb", 8)):
         decoded = decode_key_items(_keyitem_blob(family), family)
         assert decoded["table_count"] == count
@@ -100,7 +140,6 @@ def main() -> None:
         assert decoded["seen_ids"] == decoded["owned_ids"]
         assert decoded["write_enabled"] is False
 
-    # Blue-spell set state is the same 20-byte positional slot array in DSP, Topaz and LSB.
     for family in ("dsp", "topaz", "lsb"):
         decoded = decode_blue_spells(_blue_spell_blob(), family)
         assert decoded["layout"] == "dsp-topaz-lsb-blue-spell-slots-v1"
@@ -152,6 +191,14 @@ def main() -> None:
         assert "does not match dsp layout" in str(exc)
     else:
         raise AssertionError("DSP mission decoder accepted Topaz/LSB-sized data")
+
+    for family in ("dsp", "topaz", "lsb"):
+        try:
+            decode_quests(bytes(QUEST_AREA_COUNT * QUEST_RECORD_BYTES - 1), family)
+        except PackedCodecError as exc:
+            assert f"does not match {family} layout" in str(exc)
+        else:
+            raise AssertionError(f"{family} quest decoder accepted a 703-byte BLOB")
 
     try:
         decode_key_items(bytes(896), "lsb")
