@@ -83,6 +83,18 @@ def test_character_editor_progression_wrapper_and_controls():
     assert "data-kind=\"seen\"" in script
     assert "key_item_id" in script
 
+    # Additional packed bitsets are intentionally display-only until a later guarded write slice.
+    assert "renderPackedReadOnly(['abilities','weaponskills'])" in script
+    assert "renderPackedReadOnly(['titles','visited_zones'])" in script
+    assert "Learned Abilities" in script
+    assert "Learned Weaponskill Unlocks" in script
+    assert "Obtained Titles" in script
+    assert "Visited Zones" in script
+    assert "Labels come only from the selected server checkout." in script
+    assert "Reserved legacy bits set:" in script
+    assert "ce-readonly-filter" in script
+    assert "ce-readonly-badge" in script
+
 
 def test_character_editor_packed_mutations_preserve_unrelated_bytes():
     packed_transaction_regression()
