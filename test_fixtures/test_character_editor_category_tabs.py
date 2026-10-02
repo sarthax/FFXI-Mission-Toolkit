@@ -11,7 +11,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from workbench.editors.character.categories import build_tab_manifest
-from workbench.editors.character.inventory_slots import CONTAINERS
+from workbench.editors.character.inventory_slots import CONTAINERS, CONTAINER_KEYS
 
 
 class _Schema:
@@ -23,6 +23,9 @@ class _Schema:
         "inventory": ["char_inventory", "char_storage", "char_equip"],
         "points": ["char_points"],
         "variables": ["char_vars"],
+        "history": ["char_history"],
+        "runtime_flags": ["char_flags"],
+        "recasts": ["char_recast"],
         "character_other": ["char_custom_fork_state"],
     }
 
@@ -34,7 +37,7 @@ def main() -> None:
             "supported": [
                 "identity", "profile", "jobs", "experience", "skills", "inventory",
                 "storage", "equipment", "points", "currencies", "variables", "missions",
-                "key_items", "character_other",
+                "key_items", "history", "runtime_flags", "recasts", "character_other",
             ]
         },
     )
@@ -43,10 +46,10 @@ def main() -> None:
         "character": "Character",
         "inventory": "Inventory",
         "profile": "Profile",
-        "jobs-skills": "Jobs & Skills",
         "currencies": "Currencies",
         "missions-quests": "Mission Flags",
         "key-items": "Key Items",
+        "jobs-skills": "Jobs & Skills",
         "spells-abilities": "Spells & Abilities",
         "merits-jobpoints": "Merits & Job Points",
         "unlocks-travel": "Unlocks & Travel",
@@ -55,35 +58,45 @@ def main() -> None:
         "advanced": "Advanced",
     }
     assert {key: by_key[key]["label"] for key in required} == required
+
+    # The requested six are the stable primary workflow and appear first in this exact order.
+    primary_keys = ["character", "inventory", "profile", "currencies", "missions-quests", "key-items"]
+    assert [row["key"] for row in manifest[:6]] == primary_keys
+    assert all(row["primary"] is True for row in manifest[:6])
+    assert all(row["primary"] is False for row in manifest[6:])
+
     assert by_key["jobs-skills"]["available"] is True
     assert {"jobs", "experience", "skills"}.issubset(set(by_key["jobs-skills"]["supported_capabilities"]))
     assert by_key["missions-quests"]["available"] is True
     assert by_key["key-items"]["available"] is True
-    assert "character_other" in by_key["advanced"]["supported_capabilities"]
+    assert {"history", "runtime_flags", "recasts", "character_other"}.issubset(
+        set(by_key["advanced"]["supported_capabilities"])
+    )
 
-    # FFXI storage locations used by DSP/Topaz/LSB. Storage/temp are viewable even though their
-    # capacity/write semantics are not equivalent to directly-sized bags.
     expected_containers = {
-        0: "inventory",
-        1: "safe",
-        2: "storage",
-        3: "temporary",
-        4: "locker",
-        5: "satchel",
-        6: "sack",
-        7: "case",
-        8: "wardrobe",
-        9: "safe2",
-        10: "wardrobe2",
-        11: "wardrobe3",
-        12: "wardrobe4",
-        13: "wardrobe5",
-        14: "wardrobe6",
-        15: "wardrobe7",
-        16: "wardrobe8",
+        0: "Inventory",
+        1: "Mog Safe",
+        2: "Storage",
+        3: "Temporary Items",
+        4: "Mog Locker",
+        5: "Mog Satchel",
+        6: "Mog Sack",
+        7: "Mog Case",
+        8: "Mog Wardrobe",
+        9: "Mog Safe 2",
+        10: "Mog Wardrobe 2",
+        11: "Mog Wardrobe 3",
+        12: "Mog Wardrobe 4",
+        13: "Mog Wardrobe 5",
+        14: "Mog Wardrobe 6",
+        15: "Mog Wardrobe 7",
+        16: "Mog Wardrobe 8",
     }
     for location, name in expected_containers.items():
         assert CONTAINERS[location] == name
+    assert CONTAINER_KEYS[0] == "inventory"
+    assert CONTAINER_KEYS[9] == "safe2"
+    assert CONTAINER_KEYS[16] == "wardrobe8"
 
     template = (ROOT / "gui" / "templates" / "character_editor.html").read_text(encoding="utf-8")
     gui = (SRC / "workbench" / "editors" / "character" / "gui.py").read_text(encoding="utf-8")
@@ -98,6 +111,7 @@ def main() -> None:
     assert '@router.get("/characters/{char_id}/categories/{tab_key}.json")' in gui
     assert '"containers": _safe(containers)' in gui
     assert "def inventory_containers" in service
+    assert '"label": CONTAINER_LABELS.get' in service
     assert 'packed[capability] = {"location": location, "value": value}' in category_data
 
 
