@@ -121,9 +121,8 @@ def character_editor_inventory(char_id: int):
                 item_id = int(row.get("itemId") or row.get("item_id") or 0)
                 if item_id not in item_cache:
                     item_cache[item_id] = ctx.service.get_item(item_id) if item_id else None
-                item = item_cache[item_id]
                 out = dict(row)
-                out["item"] = item
+                out["item"] = item_cache[item_id]
                 enriched.append(out)
             return JSONResponse({"rows": _safe(enriched)})
     except KeyError as exc:
@@ -154,14 +153,17 @@ async def character_editor_add_item(char_id: int, request: Request):
         body = await request.json()
         if body.get("approved") is not True:
             raise HTTPException(status_code=400, detail="Explicit approved=true confirmation is required")
+        item_id = int(body.get("item_id"))
+        quantity = int(body.get("quantity", 1))
+        location = int(body.get("location", 0))
         with _context() as ctx:
-            plan = ctx.service.preview_add_item(
+            result = ctx.service.add_item(
                 char_id,
-                int(body.get("item_id")),
-                quantity=int(body.get("quantity", 1)),
-                location=int(body.get("location", 0)),
+                item_id,
+                quantity=quantity,
+                location=location,
+                approved=True,
             )
-            result = ctx.service.add_item(plan, approved=True)
             return JSONResponse(_safe(result))
     except HTTPException:
         raise
