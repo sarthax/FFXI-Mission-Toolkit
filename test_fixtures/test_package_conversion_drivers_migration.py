@@ -15,7 +15,14 @@ def _load_root(name: str, path: Path):
     module = importlib.util.module_from_spec(spec)
     sys.modules[name] = module
     assert spec.loader is not None
-    spec.loader.exec_module(module)
+    inserted = str(REPO_ROOT) not in sys.path
+    if inserted:
+        sys.path.insert(0, str(REPO_ROOT))
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        if inserted:
+            sys.path.remove(str(REPO_ROOT))
     return sys.modules[name]
 
 
