@@ -19,7 +19,15 @@ _ALIAS_CAPABILITIES = {
     "currencies": "points",
     "teleports": "unlocks",
 }
-_PACKED_EDITABLE = {"missions", "key_items", "abilities", "weaponskills", "titles", "visited_zones"}
+_PACKED_EDITABLE = {
+    "missions",
+    "key_items",
+    "blue_spells",
+    "abilities",
+    "weaponskills",
+    "titles",
+    "visited_zones",
+}
 
 
 def build_category_payload(service, char_id: int, tab_key: str) -> dict[str, Any]:
