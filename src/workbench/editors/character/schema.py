@@ -12,6 +12,7 @@ KNOWN_CAPABILITIES: dict[str, tuple[str, ...]] = {
     "identity": ("chars",),
     "profile": ("char_profile",),
     "jobs": ("char_jobs", "char_exp"),
+    "job_points": ("char_job_points",),
     "skills": ("char_skills",),
     "inventory": ("char_inventory", "char_equip", "char_storage"),
     "appearance": ("char_look", "char_style"),
@@ -27,19 +28,23 @@ KNOWN_CAPABILITIES: dict[str, tuple[str, ...]] = {
     "delivery": ("delivery_box",),
 }
 
-# Known packed/logical character state commonly stored inside char_profile. Runtime discovery
-# decides whether each field exists and whether it is binary/blob-like on this server.
-PROFILE_LOG_HINTS = {
+# Packed/logical state is historically stored on `chars` across DSP/Topaz and remains there
+# in current LSB.  Some forks may relocate fields, so discovery checks both `chars` and
+# `char_profile` and records the physical table.column location instead of assuming one table.
+PACKED_LOG_HINTS = {
     "missions": "missions",
+    "assault": "assaults",
+    "campaign": "campaign",
+    "eminence": "eminence",
     "quests": "quests",
     "keyitems": "key_items",
     "key_items": "key_items",
-    "titles": "titles",
-    "zones": "visited_zones",
+    "set_blue_spells": "blue_spells",
     "abilities": "abilities",
     "weaponskills": "weaponskills",
-    "campaign": "campaign",
-    "eminence": "eminence",
+    "titles": "titles",
+    "zones": "visited_zones",
+    "unlocked_weapons": "unlocked_weapons",
 }
 
 
@@ -80,6 +85,11 @@ class CharacterSchema:
     capabilities: dict[str, list[str]]
     packed_profile_fields: dict[str, str]
 
+    @property
+    def packed_fields(self) -> dict[str, str]:
+        """Preferred name; packed_profile_fields remains for compatibility with early callers."""
+        return self.packed_profile_fields
+
     def has(self, capability: str) -> bool:
         return bool(self.capabilities.get(capability))
 
@@ -89,6 +99,7 @@ class CharacterSchema:
     def summary(self) -> dict[str, Any]:
         return {
             "capabilities": {k: list(v) for k, v in sorted(self.capabilities.items())},
+            "packed_fields": dict(sorted(self.packed_profile_fields.items())),
             "packed_profile_fields": dict(sorted(self.packed_profile_fields.items())),
             "tables": {
                 name: {
@@ -166,13 +177,15 @@ def discover_character_schema(connection) -> CharacterSchema:
             capabilities.setdefault(table.capability, []).append(name)
 
         packed: dict[str, str] = {}
-        profile = tables.get("char_profile")
-        if profile:
-            by_name = {c.name: c for c in profile.columns}
-            for field_name, logical in PROFILE_LOG_HINTS.items():
+        for table_name in ("chars", "char_profile"):
+            source = tables.get(table_name)
+            if source is None:
+                continue
+            by_name = {c.name: c for c in source.columns}
+            for field_name, logical in PACKED_LOG_HINTS.items():
                 column = by_name.get(field_name)
-                if column and column.is_binary:
-                    packed[logical] = field_name
+                if column and column.is_binary and logical not in packed:
+                    packed[logical] = f"{table_name}.{field_name}"
 
         for values in capabilities.values():
             values.sort()
