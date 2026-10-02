@@ -25,6 +25,8 @@ def main() -> None:
     assert (SRC_PACKAGE / "client" / "identity_snapshot.py").is_file()
     assert (SRC_PACKAGE / "client" / "event_fingerprint.py").is_file()
     assert (SRC_PACKAGE / "client" / "identity_extract.py").is_file()
+    assert (SRC_PACKAGE / "client" / "dat" / "extractor_bin.py").is_file()
+    assert (SRC_PACKAGE / "client" / "dat" / "inspector.py").is_file()
     assert (SRC_PACKAGE / "gui_shell.py").is_file()
     assert (SRC_PACKAGE / "core" / "services" / "feature_candidates.py").is_file()
     assert (SRC_PACKAGE / "core" / "services" / "feature_checker.py").is_file()  # compatibility shim
@@ -100,6 +102,15 @@ def main() -> None:
     assert "Path(__file__)" not in id_bridge_wrapper
     assert "sqlite3.connect" not in id_bridge_wrapper
 
+    # DAT Inspector and extractor are canonical under Client/DAT. Historical root imports remain
+    # zero-logic compatibility aliases for the monolithic GUI and rebuild scripts.
+    dat_extractor_wrapper = (ROOT / "dat_extractor_bin.py").read_text(encoding="utf-8")
+    assert "workbench.client.dat.extractor_bin" in dat_extractor_wrapper
+    assert "Path(__file__)" not in dat_extractor_wrapper
+    dat_inspector_wrapper = (ROOT / "dat_inspector.py").read_text(encoding="utf-8")
+    assert "workbench.client.dat" in dat_inspector_wrapper
+    assert "Path(__file__)" not in dat_inspector_wrapper
+
     workflow = (ROOT / ".github" / "workflows" / "workbench-regression.yml").read_text(encoding="utf-8")
     assert '- "src/workbench/**"' in workflow
     ancient_vows = (ROOT / ".github" / "workflows" / "workbench-ancient-vows.yml").read_text(encoding="utf-8")
@@ -121,6 +132,7 @@ def main() -> None:
             "import workbench.client.binary_index as bi; "
             "import workbench.client.event_fingerprint as ef; "
             "import workbench.client.identity_extract as ie; "
+            "from workbench.client.dat import extractor_bin as de, inspector as di; "
             "import workbench.gui_shell as gs; "
             "from workbench.core.services.feature_candidates import candidates; "
             "from workbench.devtools.features.checker import resolve_feature, check_feature; "
@@ -137,6 +149,11 @@ def main() -> None:
             "assert callable(candidates) and callable(resolve_feature) and callable(check_feature) and callable(analyze); "
             "assert callable(binding_lookup) and callable(dbi.build_topaz_index) and callable(dbi.build_dsp_index); "
             "assert callable(ib.normalize) and ib.DB_PATH == p.DATABASE_PATH, ib.DB_PATH; "
+            "assert de.PROJECT_DIR == p.VENDOR_ROOT / 'dat-extractor', de.PROJECT_DIR; "
+            "assert di.dat_id_for_zone_family(0, 'dialog') == 6420; "
+            "assert di.resource_context(6421) == {'family':'dialog','zone_id':1}; "
+            "assert 'src' in Path(de.__file__).resolve().parts, de.__file__; "
+            "assert 'src' in Path(di.__file__).resolve().parts, di.__file__; "
             "assert 'src' in Path(ib.__file__).resolve().parts, ib.__file__; "
             "assert 'src' in Path(bi.__file__).resolve().parts, bi.__file__; "
             "assert 'src' in Path(ef.__file__).resolve().parts, ef.__file__; "
