@@ -45,10 +45,7 @@ class CharacterEditorService:
         if not id_col or not name_col:
             raise RuntimeError("chars table is missing a recognized character id/name column")
 
-        optional = [
-            c for c in ("accid", "gmlevel", "pos_zone", "nation", "mjob", "sjob", "lastonline")
-            if c in cols
-        ]
+        optional = [c for c in ("accid", "gmlevel", "pos_zone", "nation", "mjob", "sjob", "lastonline") if c in cols]
         selected = [id_col, name_col, *optional]
         sql = "SELECT " + ", ".join(f"`{c}`" for c in selected) + " FROM `chars`"
         params: list[Any] = []
@@ -62,7 +59,6 @@ class CharacterEditorService:
                 params.append(f"%{q}%")
         sql += f" ORDER BY `{name_col}` LIMIT %s"
         params.append(max(1, min(int(limit), 500)))
-
         cursor = self.connection.cursor()
         try:
             cursor.execute(sql, tuple(params))
@@ -100,25 +96,13 @@ class CharacterEditorService:
 
     def preview_scalar_edit(self, char_id: int, table_name: str, *, selector: dict[str, Any] | None = None,
                             changes: dict[str, Any] | None = None) -> dict[str, Any]:
-        return build_scalar_edit_plan(
-            self.connection,
-            char_id=char_id,
-            table_name=table_name,
-            selector=selector,
-            changes=changes,
-            adapter_family=self.adapter_family,
-        ).as_dict()
+        return build_scalar_edit_plan(self.connection, char_id=char_id, table_name=table_name, selector=selector,
+                                      changes=changes, adapter_family=self.adapter_family).as_dict()
 
     def apply_scalar_edit_request(self, char_id: int, table_name: str, *, selector: dict[str, Any] | None = None,
                                   changes: dict[str, Any] | None = None, approved: bool = False) -> dict[str, Any]:
-        plan = build_scalar_edit_plan(
-            self.connection,
-            char_id=char_id,
-            table_name=table_name,
-            selector=selector,
-            changes=changes,
-            adapter_family=self.adapter_family,
-        )
+        plan = build_scalar_edit_plan(self.connection, char_id=char_id, table_name=table_name, selector=selector,
+                                      changes=changes, adapter_family=self.adapter_family)
         return apply_scalar_edit(self.connection, plan, approved=approved)
 
     def search_items(self, query: str = "", *, limit: int = 100, client_snapshot_id: str | None = None) -> list[dict[str, Any]]:
@@ -129,45 +113,18 @@ class CharacterEditorService:
         record = ItemCatalogService(self.connection, client_snapshot_id=client_snapshot_id).get(item_id)
         return record.as_dict() if record else None
 
-    def preview_add_item(
-        self,
-        char_id: int,
-        item_id: int,
-        *,
-        quantity: int = 1,
-        location: int = 0,
-        client_snapshot_id: str | None = None,
-    ) -> dict[str, Any]:
-        plan = build_item_injection_plan(
-            self.connection,
-            char_id=char_id,
-            item_id=item_id,
-            quantity=quantity,
-            location=location,
-            adapter_family=self.adapter_family,
-            client_snapshot_id=client_snapshot_id,
-        )
+    def preview_add_item(self, char_id: int, item_id: int, *, quantity: int = 1, location: int = 0,
+                         client_snapshot_id: str | None = None) -> dict[str, Any]:
+        plan = build_item_injection_plan(self.connection, char_id=char_id, item_id=item_id, quantity=quantity,
+                                         location=location, adapter_family=self.adapter_family,
+                                         client_snapshot_id=client_snapshot_id)
         return plan.as_dict()
 
-    def add_item(
-        self,
-        char_id: int,
-        item_id: int,
-        *,
-        quantity: int = 1,
-        location: int = 0,
-        client_snapshot_id: str | None = None,
-        approved: bool = False,
-    ) -> dict[str, Any]:
-        plan = build_item_injection_plan(
-            self.connection,
-            char_id=char_id,
-            item_id=item_id,
-            quantity=quantity,
-            location=location,
-            adapter_family=self.adapter_family,
-            client_snapshot_id=client_snapshot_id,
-        )
+    def add_item(self, char_id: int, item_id: int, *, quantity: int = 1, location: int = 0,
+                 client_snapshot_id: str | None = None, approved: bool = False) -> dict[str, Any]:
+        plan = build_item_injection_plan(self.connection, char_id=char_id, item_id=item_id, quantity=quantity,
+                                         location=location, adapter_family=self.adapter_family,
+                                         client_snapshot_id=client_snapshot_id)
         return apply_item_injection(self.connection, plan, approved=approved)
 
     def load_table(self, char_id: int, table_name: str, limit: int = 5000) -> list[dict[str, Any]]:
@@ -182,22 +139,18 @@ class CharacterEditorService:
         safe_limit = max(1, min(int(limit), 20000))
         cursor = self.connection.cursor()
         try:
-            cursor.execute(
-                f"SELECT * FROM `{table_name}` WHERE `{table.character_key}` = %s LIMIT %s",
-                (int(char_id), safe_limit),
-            )
+            cursor.execute(f"SELECT * FROM `{table_name}` WHERE `{table.character_key}` = %s LIMIT %s",
+                           (int(char_id), safe_limit))
             return self._dict_rows(cursor)
         finally:
             cursor.close()
 
     def inventory_containers(self, char_id: int) -> list[dict[str, Any]]:
-        """Return all known/present character inventory containers, including empty supported bags."""
         rows = self.load_table(char_id, "char_inventory")
         by_location: dict[int, list[dict[str, Any]]] = {}
         for row in rows:
             location = int(row.get("location") or 0)
             by_location.setdefault(location, []).append(row)
-
         storage_row: dict[str, Any] = {}
         try:
             storage_rows = self.load_table(char_id, "char_storage", limit=1)
@@ -205,7 +158,6 @@ class CharacterEditorService:
                 storage_row = storage_rows[0]
         except (KeyError, RuntimeError):
             storage_row = {}
-
         locations = set(CONTAINERS)
         locations.update(by_location)
         out = []
@@ -222,53 +174,36 @@ class CharacterEditorService:
                 supported = True
             elif location == 3:
                 supported = bool(by_location.get(location))
-
             container_rows = sorted(by_location.get(location, []), key=lambda r: int(r.get("slot") or 0))
             if not supported and not container_rows:
                 continue
-            out.append({
-                "location": location,
-                "name": CONTAINERS.get(location, f"container_{location}"),
-                "capacity": capacity,
-                "count": len(container_rows),
-                "rows": container_rows,
-                "capacity_source": column or ("furnishing_runtime" if location == 2 else "runtime_or_unknown"),
-            })
+            out.append({"location": location, "name": CONTAINERS.get(location, f"container_{location}"),
+                        "capacity": capacity, "count": len(container_rows), "rows": container_rows,
+                        "capacity_source": column or ("furnishing_runtime" if location == 2 else "runtime_or_unknown")})
         return out
 
     def load_character(self, char_id: int, include_rows: bool = False) -> dict[str, Any]:
         identity = self._identity(char_id)
         if identity is None:
             raise KeyError(f"Character {char_id} was not found")
-
         sections: dict[str, Any] = {}
         for capability, table_names in sorted(self.schema.capabilities.items()):
-            section = {
-                "tables": table_names,
-                "available": bool(table_names),
-            }
+            section = {"tables": table_names, "available": bool(table_names)}
             if include_rows:
-                section["rows"] = {
-                    table_name: self.load_table(char_id, table_name)
-                    for table_name in table_names
-                }
+                section["rows"] = {table_name: self.load_table(char_id, table_name) for table_name in table_names}
             sections[capability] = section
-
         inventory = inventory_summary(self.schema, self.adapter_family)
         scalar_tables = {
             name: self.editable_fields(name)
             for name in (
-                "chars", "char_profile", "char_jobs", "char_exp", "char_stats", "char_skills",
-                "char_points", "char_merit", "char_job_points",
+                "chars", "char_profile", "char_look", "char_style", "char_jobs", "char_exp", "char_stats",
+                "char_skills", "char_points", "char_merit", "char_job_points", "char_unlocks", "char_vars",
             )
             if self.schema.table(name) is not None
         }
         return {
             "character": identity,
-            "adapter": {
-                "family": self.adapter_family,
-                "confidence": self.adapter_confidence,
-            },
+            "adapter": {"family": self.adapter_family, "confidence": self.adapter_confidence},
             "online_state": self.session_state(char_id),
             "inventory_contract": self.inventory_contract(),
             "tabs": build_tab_manifest(self.schema, inventory),
@@ -285,10 +220,7 @@ class CharacterEditorService:
     def capability_manifest(self) -> dict[str, Any]:
         inventory = inventory_summary(self.schema, self.adapter_family)
         return {
-            "adapter": {
-                "family": self.adapter_family,
-                "confidence": self.adapter_confidence,
-            },
+            "adapter": {"family": self.adapter_family, "confidence": self.adapter_confidence},
             "schema": self.schema.summary(),
             "lineage_comparison": compare_schema(self.schema, self.adapter_family),
             "inventory_contract": self.inventory_contract(),
