@@ -13,10 +13,13 @@ if str(SRC) not in sys.path:
 from workbench.editors.character.packed_codecs import (
     BITSET_BLOB_SIZES,
     BITSET_MEANINGFUL_BITS,
+    BLUE_SPELL_ID_OFFSET,
+    BLUE_SPELL_SLOT_COUNT,
     KEY_ITEM_TABLE_BYTES,
     MISSION_AREA_COUNT,
     MISSION_RECORD_SIZES,
     PackedCodecError,
+    decode_blue_spells,
     decode_character_bitset,
     decode_key_items,
     decode_missions,
@@ -27,7 +30,6 @@ from workbench.editors.character.packed_codecs import (
 def _mission_blob(family: str) -> bytes:
     record = MISSION_RECORD_SIZES[family]
     data = bytearray(record * MISSION_AREA_COUNT)
-    # Area 3 / Zilart: current mission 17 and completion bits 0, 5, 63.
     start = 3 * record
     data[start : start + 2] = (17).to_bytes(2, "little")
     cursor = start + 2
@@ -44,14 +46,12 @@ def _mission_blob(family: str) -> bytes:
 def _keyitem_blob(family: str) -> bytes:
     tables = 8 if family == "lsb" else 7
     data = bytearray(tables * KEY_ITEM_TABLE_BYTES)
-    # Own IDs 0, 511, 512, and the highest bit available in this family.
     ids = [0, 511, 512, tables * 512 - 1]
     for key_item_id in ids:
         table = key_item_id // 512
         bit = key_item_id % 512
         base = table * KEY_ITEM_TABLE_BYTES
         data[base + bit // 8] |= 1 << (bit % 8)
-        # Mark the same key item as seen in the second 64-byte set.
         data[base + 64 + bit // 8] |= 1 << (bit % 8)
     return bytes(data)
 
@@ -60,6 +60,15 @@ def _bitset_blob(capability: str, family: str, ids: list[int]) -> bytes:
     data = bytearray(BITSET_BLOB_SIZES[capability][family])
     for bit_id in ids:
         data[bit_id // 8] |= 1 << (bit_id % 8)
+    return bytes(data)
+
+
+def _blue_spell_blob() -> bytes:
+    data = bytearray(BLUE_SPELL_SLOT_COUNT)
+    data[0] = 1
+    data[3] = 0x22
+    data[7] = 1  # Duplicate values are valid slot data and must not be collapsed.
+    data[19] = 0xFF
     return bytes(data)
 
 
@@ -91,7 +100,22 @@ def main() -> None:
         assert decoded["seen_ids"] == decoded["owned_ids"]
         assert decoded["write_enabled"] is False
 
-    # Learned abilities are byte-backed hasBit() arrays whose size grew in current LSB.
+    # Blue-spell set state is the same 20-byte positional slot array in DSP, Topaz and LSB.
+    for family in ("dsp", "topaz", "lsb"):
+        decoded = decode_blue_spells(_blue_spell_blob(), family)
+        assert decoded["layout"] == "dsp-topaz-lsb-blue-spell-slots-v1"
+        assert decoded["blob_bytes"] == BLUE_SPELL_SLOT_COUNT
+        assert decoded["slot_count"] == 20
+        assert decoded["spell_id_offset"] == 0x200
+        assert decoded["set_spell_ids"] == [0x201, 0x222, 0x201, 0x2FF]
+        assert decoded["set_count"] == 4
+        assert decoded["slots"][0] == {"slot": 0, "stored_value": 1, "spell_id": 0x201, "empty": False}
+        assert decoded["slots"][1] == {"slot": 1, "stored_value": 0, "spell_id": None, "empty": True}
+        assert decoded["slots"][19]["spell_id"] == BLUE_SPELL_ID_OFFSET + 0xFF
+        assert decoded["write_enabled"] is False
+        via_dispatch = decode_packed_field("blue_spells", _blue_spell_blob(), family)
+        assert via_dispatch is not None and via_dispatch["slots"] == decoded["slots"]
+
     for family in ("dsp", "topaz", "lsb"):
         last = BITSET_MEANINGFUL_BITS["abilities"][family] - 1
         decoded = decode_character_bitset("abilities", _bitset_blob("abilities", family, [0, 9, last]), family)
@@ -100,7 +124,6 @@ def main() -> None:
         assert decoded["blob_bytes"] == BITSET_BLOB_SIZES["abilities"][family]
         assert decoded["write_enabled"] is False
 
-    # Titles and visited zones use the same direct bit-index convention with lineage-specific sizes.
     for capability in ("titles", "visited_zones"):
         for family in ("dsp", "topaz", "lsb"):
             last = BITSET_MEANINGFUL_BITS[capability][family] - 1
@@ -110,7 +133,6 @@ def main() -> None:
             assert decoded["storage_bits"] == BITSET_BLOB_SIZES[capability][family] * 8
             assert decoded["meaningful_bits"] == decoded["storage_bits"]
 
-    # Legacy std::bitset<49> persists in an 8-byte word; bits 49-63 are storage padding/reserved.
     for family in ("dsp", "topaz"):
         decoded = decode_character_bitset("weaponskills", _bitset_blob("weaponskills", family, [0, 48, 63]), family)
         assert decoded["layout"] == "dsp-topaz-learned-weaponskills-49-in-64"
@@ -137,6 +159,14 @@ def main() -> None:
         assert "does not match lsb layout" in str(exc)
     else:
         raise AssertionError("LSB key-item decoder accepted DSP/Topaz-sized data")
+
+    for family in ("dsp", "topaz", "lsb"):
+        try:
+            decode_blue_spells(bytes(BLUE_SPELL_SLOT_COUNT - 1), family)
+        except PackedCodecError as exc:
+            assert f"does not match {family} layout" in str(exc)
+        else:
+            raise AssertionError(f"{family} blue-spell decoder accepted a 19-byte slot array")
 
     try:
         decode_character_bitset("titles", bytes(BITSET_BLOB_SIZES["lsb"]["titles"]), "dsp")
