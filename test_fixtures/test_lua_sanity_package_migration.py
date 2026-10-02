@@ -47,6 +47,12 @@ def main() -> None:
     )
     subprocess.run([sys.executable, "-c", code], cwd=tempfile.gettempdir(), check=True)
 
+    converter_migration = _load_root(
+        "_lua_converter_map_lint_package_migration",
+        REPO_ROOT / "test_fixtures" / "test_lua_converter_map_lint_package_migration.py",
+    )
+    converter_migration.main()
+
 
 if __name__ == "__main__":
     main()
