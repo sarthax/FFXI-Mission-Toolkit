@@ -7,6 +7,7 @@ repository root being on ``sys.path``.
 from __future__ import annotations
 
 import importlib.util
+import sqlite3
 from functools import lru_cache
 from types import ModuleType
 
@@ -42,3 +43,26 @@ def get_dsp_root():
 
 def get_ffxi_install():
     return _module().get_ffxi_install()
+
+
+def get_zoneplot_server() -> str:
+    """Return the persisted Zone Plot server target using legacy settings semantics."""
+    module = _module()
+    con = sqlite3.connect(str(module.DB_PATH))
+    try:
+        value = module.get(con, "zoneplot_server")
+    finally:
+        con.close()
+    return value if value in ("topaz", "dsp") else "topaz"
+
+
+def set_zoneplot_server(server: str) -> None:
+    """Persist the Zone Plot server target without exposing generic settings mutation."""
+    if server not in ("topaz", "dsp"):
+        raise ValueError('server must be "topaz" or "dsp"')
+    module = _module()
+    con = sqlite3.connect(str(module.DB_PATH))
+    try:
+        module.set_many(con, {"zoneplot_server": server})
+    finally:
+        con.close()
