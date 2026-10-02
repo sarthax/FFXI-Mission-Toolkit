@@ -10,8 +10,18 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from workbench.editors.character.packed_codecs import KEY_ITEM_TABLE_BYTES, MISSION_AREA_COUNT, MISSION_RECORD_SIZES
-from workbench.editors.character.packed_transactions import _key_item_edit, _mission_edit
+from workbench.editors.character.packed_codecs import (
+    BITSET_BLOB_SIZES,
+    BITSET_MEANINGFUL_BITS,
+    KEY_ITEM_TABLE_BYTES,
+    MISSION_AREA_COUNT,
+    MISSION_RECORD_SIZES,
+)
+from workbench.editors.character.packed_transactions import (
+    _character_bitset_edit,
+    _key_item_edit,
+    _mission_edit,
+)
 
 
 def mission_blob(family: str) -> bytes:
@@ -22,6 +32,11 @@ def mission_blob(family: str) -> bytes:
 def keyitem_blob(family: str) -> bytes:
     tables = 8 if family == "lsb" else 7
     return bytes((index * 29 + 5) & 0xFF for index in range(tables * KEY_ITEM_TABLE_BYTES))
+
+
+def bitset_blob(capability: str, family: str) -> bytes:
+    size = BITSET_BLOB_SIZES[capability][family]
+    return bytes((index * 13 + 7) & 0xFF for index in range(size))
 
 
 def changed_offsets(before: bytes, after: bytes) -> set[int]:
@@ -85,6 +100,61 @@ def main() -> None:
         assert old["key_item_id"] == key_item_id
         assert new["owned"] is owned_target
         assert new["seen"] is seen_target
+
+    # Simple packed bitsets may alter only the byte containing the requested meaningful bit.
+    cases = (
+        ("abilities", "dsp", 16),
+        ("abilities", "topaz", 200),
+        ("abilities", "lsb", 390),
+        ("weaponskills", "dsp", 48),
+        ("weaponskills", "topaz", 1),
+        ("weaponskills", "lsb", 63),
+        ("titles", "dsp", 700),
+        ("titles", "topaz", 1),
+        ("titles", "lsb", 1100),
+        ("visited_zones", "dsp", 230),
+        ("visited_zones", "topaz", 33),
+        ("visited_zones", "lsb", 300),
+    )
+    for capability, family, bit_id in cases:
+        before = bitset_blob(capability, family)
+        offset = bit_id // 8
+        target = not bool(before[offset] & (1 << (bit_id % 8)))
+        after, old, new = _character_bitset_edit(
+            before,
+            family,
+            capability,
+            {"bit_id": bit_id, "enabled": target},
+        )
+        assert changed_offsets(before, after).issubset({offset})
+        assert old == {"bit_id": bit_id, "enabled": (not target)}
+        assert new == {"bit_id": bit_id, "enabled": target}
+
+    # Legacy learned-weaponskill storage is 64 bits wide but only IDs 0-48 are meaningful.
+    for family in ("dsp", "topaz"):
+        before = bitset_blob("weaponskills", family)
+        try:
+            _character_bitset_edit(before, family, "weaponskills", {"bit_id": 49, "enabled": True})
+        except ValueError as exc:
+            assert "between 0 and 48" in str(exc)
+        else:
+            raise AssertionError(f"{family} accepted reserved learned-weaponskill bit 49")
+
+    # Every capability rejects an ID at or beyond its lineage-specific meaningful range.
+    for capability in BITSET_BLOB_SIZES:
+        for family in ("dsp", "topaz", "lsb"):
+            invalid = BITSET_MEANINGFUL_BITS[capability][family]
+            try:
+                _character_bitset_edit(
+                    bitset_blob(capability, family),
+                    family,
+                    capability,
+                    {"bit_id": invalid, "enabled": True},
+                )
+            except ValueError as exc:
+                assert "bit_id must be between" in str(exc)
+            else:
+                raise AssertionError(f"{family} {capability} accepted out-of-range bit {invalid}")
 
 
 if __name__ == "__main__":
