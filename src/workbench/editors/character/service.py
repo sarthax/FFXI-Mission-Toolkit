@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from .adapters import compare_schema
 from .inventory import inventory_summary
 from .schema import CharacterSchema, discover_character_schema
 
@@ -123,8 +124,9 @@ class CharacterEditorService:
                 "confidence": self.adapter_confidence,
             },
             "sections": sections,
-            "packed_profile_fields": dict(self.schema.packed_profile_fields),
+            "packed_fields": dict(self.schema.packed_fields),
             "schema": self.schema.summary(),
+            "lineage_comparison": compare_schema(self.schema, self.adapter_family),
             "inventory": inventory,
             "write_enabled": False,
         }
@@ -137,6 +139,7 @@ class CharacterEditorService:
                 "confidence": self.adapter_confidence,
             },
             "schema": self.schema.summary(),
+            "lineage_comparison": compare_schema(self.schema, self.adapter_family),
             "inventory": inventory_summary(self.schema, self.adapter_family),
             "write_enabled": False,
         }
