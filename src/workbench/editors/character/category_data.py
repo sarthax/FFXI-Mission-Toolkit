@@ -11,6 +11,7 @@ from typing import Any
 from .categories import TAB_DEFINITIONS, get_tab
 from .packed_codecs import PackedCodecError, decode_packed_field
 from .progression_catalog import progression_catalog
+from .quest_catalog import quest_catalog
 
 _ALIAS_CAPABILITIES = {
     "experience": "jobs",
@@ -71,12 +72,15 @@ def build_category_payload(service, char_id: int, tab_key: str) -> dict[str, Any
                     entry["codec"] = decoded.get("codec")
                     entry["layout"] = decoded.get("layout")
                     entry["editable"] = capability in _PACKED_EDITABLE
-                    if catalog_cache is None:
-                        catalog_cache = progression_catalog(
-                            getattr(service, "server_root", None),
-                            service.adapter_family,
-                        )
-                    entry["catalog"] = catalog_cache.get(capability, {})
+                    if capability == "quests":
+                        entry["catalog"] = quest_catalog(getattr(service, "server_root", None))
+                    else:
+                        if catalog_cache is None:
+                            catalog_cache = progression_catalog(
+                                getattr(service, "server_root", None),
+                                service.adapter_family,
+                            )
+                        entry["catalog"] = catalog_cache.get(capability, {})
             except PackedCodecError as exc:
                 entry["decode_error"] = str(exc)
             packed[capability] = entry
