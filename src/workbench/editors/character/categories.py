@@ -23,97 +23,32 @@ class CharacterTab:
 
 
 TAB_DEFINITIONS = (
-    CharacterTab(
-        "character",
-        "Character",
-        ("identity", "stats"),
-        "Core identity, position, nation, GM/admin state and other scalar character fields.",
-        True,
-    ),
-    CharacterTab(
-        "inventory",
-        "Inventory",
-        ("inventory", "equipment", "storage", "delivery"),
-        "All bags and storage containers, equipment state and delivery-related character items.",
-        True,
-    ),
-    CharacterTab(
-        "profile",
-        "Profile",
-        ("profile", "appearance", "style"),
-        "Rank/fame/profile values plus appearance and style state.",
-        True,
-    ),
-    CharacterTab(
-        "jobs-skills",
-        "Jobs & Skills",
-        ("jobs", "experience", "skills"),
-        "Job levels, job EXP and combat/craft/magic skill values.",
-    ),
-    CharacterTab(
-        "currencies",
-        "Currencies",
-        ("points", "currencies"),
-        "Gil-like progression point stores, conquest currencies and other server point tables.",
-        True,
-    ),
-    CharacterTab(
-        "missions-quests",
-        "Mission Flags",
-        ("missions", "assaults", "campaign", "eminence", "quests"),
-        "Mission, quest and related story/progression flags, including packed representations.",
-        True,
-    ),
-    CharacterTab(
-        "key-items",
-        "Key Items",
-        ("key_items",),
-        "Owned key-item bitsets/records with lineage-specific decoding.",
-        True,
-    ),
-    CharacterTab(
-        "spells-abilities",
-        "Spells & Abilities",
-        ("spells", "blue_spells", "abilities", "weaponskills", "unlocked_weapons"),
-        "Learned spells, blue-magic sets, abilities, weaponskills and weapon unlock state.",
-    ),
-    CharacterTab(
-        "merits-jobpoints",
-        "Merits & Job Points",
-        ("merits", "job_points"),
-        "Merit and job-point progression.",
-    ),
-    CharacterTab(
-        "unlocks-travel",
-        "Unlocks & Travel",
-        ("unlocks", "teleports", "visited_zones", "titles"),
-        "Teleport/home-point/waypoint unlocks, visited zones and titles.",
-    ),
-    CharacterTab(
-        "variables",
-        "Variables",
-        ("variables",),
-        "Character variables (charvars) and script-owned persistent state.",
-    ),
-    CharacterTab(
-        "pets-effects",
-        "Pets & Effects",
-        ("pets", "effects"),
-        "Persisted pet and status-effect state where the connected server exposes it.",
-    ),
-    CharacterTab(
-        "advanced",
-        "Advanced",
-        ("blacklist", "character_other"),
-        "Lineage-specific, custom-fork, or otherwise uncategorized character-owned fields.",
-    ),
+    CharacterTab("character", "Character", ("identity", "stats"), "Core identity, position, nation, GM/admin state and other scalar character fields.", True),
+    CharacterTab("inventory", "Inventory", ("inventory", "equipment", "storage", "delivery"), "All bags and storage containers, equipment state and delivery-related character items.", True),
+    CharacterTab("profile", "Profile", ("profile", "appearance", "style"), "Rank/fame/profile values plus appearance and style state.", True),
+    CharacterTab("jobs-skills", "Jobs & Skills", ("jobs", "experience", "skills"), "Job levels, job EXP and combat/craft/magic skill values."),
+    CharacterTab("currencies", "Currencies", ("points", "currencies"), "Gil-like progression point stores, conquest currencies and other server point tables.", True),
+    CharacterTab("missions-quests", "Mission Flags", ("missions", "assaults", "campaign", "eminence", "quests"), "Mission, quest and related story/progression flags, including packed representations.", True),
+    CharacterTab("key-items", "Key Items", ("key_items",), "Owned key-item bitsets/records with lineage-specific decoding.", True),
+    CharacterTab("spells-abilities", "Spells & Abilities", ("spells", "blue_spells", "abilities", "weaponskills", "unlocked_weapons"), "Learned spells, blue-magic sets, abilities, weaponskills and weapon unlock state."),
+    CharacterTab("merits-jobpoints", "Merits & Job Points", ("merits", "job_points"), "Merit and job-point progression."),
+    CharacterTab("unlocks-travel", "Unlocks & Travel", ("unlocks", "teleports", "visited_zones", "titles"), "Teleport/home-point/waypoint unlocks, visited zones and titles."),
+    CharacterTab("variables", "Variables", ("variables",), "Character variables (charvars) and script-owned persistent state."),
+    CharacterTab("pets-effects", "Pets & Effects", ("pets", "effects"), "Persisted pet and status-effect state where the connected server exposes it."),
+    CharacterTab("advanced", "Advanced", ("blacklist", "character_other"), "Lineage-specific, custom-fork, or otherwise uncategorized character-owned fields."),
 )
+
+
+def get_tab(key: str) -> CharacterTab:
+    for tab in TAB_DEFINITIONS:
+        if tab.key == key:
+            return tab
+    raise KeyError(f"Unknown Character Editor tab: {key}")
 
 
 def build_tab_manifest(schema, capability_inventory: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     inventory = capability_inventory or {}
     supported = set(inventory.get("supported", ()))
-    # Include any raw discovered capabilities even when they were not normalized by inventory.py.
     supported.update((getattr(schema, "capabilities", {}) or {}).keys())
 
     out = []
