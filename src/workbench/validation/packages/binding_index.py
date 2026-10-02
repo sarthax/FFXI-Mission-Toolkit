@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 
 from workbench.devtools.server import binding_index as source_index
+from workbench.runtime.legacy_settings import get_dsp_root, get_topaz_root
 from workbench.runtime.paths import DATA_ROOT
 
 DATA_DIR = DATA_ROOT
@@ -93,10 +94,8 @@ def classify_diff(
 
 
 def main() -> None:
-    import settings
-
-    topaz_root = settings.get_topaz_root()
-    dsp_root = settings.get_dsp_root()
+    topaz_root = get_topaz_root()
+    dsp_root = get_dsp_root()
 
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--build", action="store_true", help="(Re)generate both cached indexes from real source")
