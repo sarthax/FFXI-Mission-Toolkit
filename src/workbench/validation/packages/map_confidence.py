@@ -10,11 +10,11 @@ from pathlib import Path
 from workbench.packages.migration import lua_convert as blc
 from workbench.core.provenance import snapshot_id
 from workbench.core.services.map_confidence_graph import import_map_confidence_results
+from workbench.runtime.legacy_settings import get_dsp_root as _configured_dsp_root, get_topaz_root
 
 
 def get_dsp_root() -> Path | None:
-    import settings
-    configured = settings.get_dsp_root()
+    configured = _configured_dsp_root()
     return configured if configured and configured.exists() else None
 
 
@@ -95,8 +95,6 @@ def run_checks(topaz_root: Path, dsp_root: Path, *, include_confirmed: bool = Fa
 
 
 def main():
-    import settings
-
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--all", action="store_true", help="Also check 'confirmed' families, not just 'confirmed_pattern'")
     ap.add_argument("--family", type=str, default=None, help="Limit to one simple_families family name")
@@ -104,7 +102,7 @@ def main():
     ap.add_argument("--graph-db", type=Path, help="Optionally import results into the canonical Workbench graph.")
     args = ap.parse_args()
 
-    topaz_root = settings.get_topaz_root()
+    topaz_root = get_topaz_root()
     dsp_root = get_dsp_root()
     if dsp_root is None:
         print("ERROR: no DSP checkout found in configured settings", file=sys.stderr)
