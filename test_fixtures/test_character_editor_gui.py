@@ -60,13 +60,15 @@ def test_character_editor_progression_wrapper_and_controls():
     script = (ROOT / "gui" / "static" / "character_editor_progression.js").read_text(encoding="utf-8")
     bitset = (ROOT / "gui" / "static" / "character_editor_bitset_edit.js").read_text(encoding="utf-8")
     blue = (ROOT / "gui" / "static" / "character_editor_blue_spells.js").read_text(encoding="utf-8")
+    blue_edit = (ROOT / "gui" / "static" / "character_editor_blue_spell_edit.js").read_text(encoding="utf-8")
     gui = (ROOT / "src" / "workbench" / "editors" / "character" / "gui.py").read_text(encoding="utf-8")
 
     assert '{% extends "character_editor.html" %}' in wrapper
     assert '/static/character_editor_progression.js' in wrapper
     assert '/static/character_editor_bitset_edit.js' in wrapper
     assert '/static/character_editor_blue_spells.js' in wrapper
-    assert wrapper.index('/static/character_editor_progression.js') < wrapper.index('/static/character_editor_bitset_edit.js') < wrapper.index('/static/character_editor_blue_spells.js')
+    assert '/static/character_editor_blue_spell_edit.js' in wrapper
+    assert wrapper.index('/static/character_editor_progression.js') < wrapper.index('/static/character_editor_bitset_edit.js') < wrapper.index('/static/character_editor_blue_spells.js') < wrapper.index('/static/character_editor_blue_spell_edit.js')
     assert 'name="character_editor_progression.html"' in gui
 
     assert "key === 'missions-quests'" in script
@@ -109,7 +111,7 @@ def test_character_editor_progression_wrapper_and_controls():
     assert "data-bit-id" in bitset
     assert "Single-bit edits use guarded preview + exact before-SHA confirmation." in bitset
 
-    # Blue spell slots are presentation-only in this slice: no packed preview/apply calls here.
+    # Blue spell base view remains presentation-only; the follow-on edit asset owns mutation.
     assert "key === 'spells-abilities'" in blue
     assert "activeCategoryData?.packed?.blue_spells" in blue
     assert "Set Blue Magic" in blue
@@ -118,6 +120,20 @@ def test_character_editor_progression_wrapper_and_controls():
     assert "spell ID" in blue and "stored" in blue
     assert "/packed/preview" not in blue
     assert "/packed/apply" not in blue
+
+    assert "key === 'spells-abilities'" in blue_edit
+    assert "editableOnline() && entry.editable === true" in blue_edit
+    assert "capability:'blue_spells'" in blue_edit
+    assert "/packed/preview" in blue_edit
+    assert "/packed/apply" in blue_edit
+    assert "expected_before_sha256:preview.before_sha256" in blue_edit
+    assert "approved:true" in blue_edit
+    assert "operation = {slot, spell_id:spellId}" in blue_edit
+    assert "spell_id:null" not in blue_edit  # clear flows through previewAndApply(slot, null)
+    assert "previewAndApply(slot, null" in blue_edit
+    assert "min=\"513\" max=\"767\"" in blue_edit
+    assert "Blue spell ID must be between 513 (0x201) and 767 (0x2FF)." in blue_edit
+    assert "editing locked until offline" in blue_edit
 
 
 def test_character_editor_packed_mutations_preserve_unrelated_bytes():
