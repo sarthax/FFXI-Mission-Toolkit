@@ -22,6 +22,7 @@ on:
       - "dialog_drift_overview.py"
       - "ffxiclopedia_adapter.py"
       - "research_gaps.py"
+      - "build_condition_index.py"
       - "test_fixtures/test_src_layout_package.py"
       - "test_fixtures/test_feature_trace_package_migration.py"
       - "test_fixtures/test_dependency_services_package_migration.py"
@@ -52,6 +53,7 @@ on:
       - "test_fixtures/test_dialog_drift_overview_package_migration.py"
       - "test_fixtures/test_ffxiclopedia_adapter_package_migration.py"
       - "test_fixtures/test_research_gaps_package_migration.py"
+      - "test_fixtures/test_build_condition_index_package_migration.py"
       - ".github/workflows/src-layout-regression.yml"
   workflow_dispatch:
 
@@ -101,3 +103,4 @@ jobs:
           python test_fixtures/test_dialog_drift_overview_package_migration.py
           python test_fixtures/test_ffxiclopedia_adapter_package_migration.py
           python test_fixtures/test_research_gaps_package_migration.py
+          python test_fixtures/test_build_condition_index_package_migration.py
