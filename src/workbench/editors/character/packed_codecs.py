@@ -26,13 +26,32 @@ MISSION_AREAS = (
     "Rhapsodies of Vana'diel",
     "Reserved / TVR",
 )
-
 MISSION_AREA_COUNT = 15
 MISSION_RECORD_SIZES = {
     "dsp": 66,
     "topaz": 70,
     "lsb": 70,
 }
+
+# DSP, Topaz and current LSB all persist questlog_t[MAX_QUESTAREA] with 11 areas. Each questlog_t
+# is two 256-bit sets: current/accepted quests followed by completed quests.
+QUEST_AREAS = (
+    "San d'Oria",
+    "Bastok",
+    "Windurst",
+    "Jeuno",
+    "Other Areas",
+    "Outlands",
+    "Aht Urhgan",
+    "Crystal War",
+    "Abyssea",
+    "Adoulin",
+    "Coalition",
+)
+QUEST_AREA_COUNT = 11
+QUEST_SET_BYTES = 32
+QUEST_RECORD_BYTES = QUEST_SET_BYTES * 2
+
 KEY_ITEM_TABLE_COUNTS = {
     "dsp": 7,
     "topaz": 7,
@@ -143,6 +162,48 @@ def decode_missions(value: Any, adapter_family: str) -> dict[str, Any]:
         "blob_bytes": len(blob),
         "record_size": record_size,
         "area_count": MISSION_AREA_COUNT,
+        "areas": areas,
+        "write_enabled": False,
+    }
+
+
+def decode_quests(value: Any, adapter_family: str) -> dict[str, Any]:
+    """Decode ``chars.quests`` as the native questlog_t[11] array.
+
+    Each area stores a 32-byte current/accepted bitset followed by a 32-byte completed bitset.
+    Quest IDs therefore map directly to bit indices 0 through 255 inside their quest-log area.
+    """
+    family = _family(adapter_family)
+    blob = _bytes(value)
+    expected = QUEST_AREA_COUNT * QUEST_RECORD_BYTES
+    _validate_size(blob, expected=expected, label="quests", family=family)
+
+    areas: list[dict[str, Any]] = []
+    for area_id, name in enumerate(QUEST_AREAS):
+        start = area_id * QUEST_RECORD_BYTES
+        current_raw = blob[start : start + QUEST_SET_BYTES]
+        complete_raw = blob[start + QUEST_SET_BYTES : start + QUEST_RECORD_BYTES]
+        current_ids = _set_bits(current_raw)
+        completed_ids = _set_bits(complete_raw)
+        areas.append(
+            {
+                "area_id": area_id,
+                "name": name,
+                "current_ids": current_ids,
+                "current_count": len(current_ids),
+                "completed_ids": completed_ids,
+                "completed_count": len(completed_ids),
+            }
+        )
+
+    return {
+        "codec": "quests",
+        "family": family,
+        "layout": "dsp-topaz-lsb-questlog-11x256x2",
+        "blob_bytes": len(blob),
+        "record_size": QUEST_RECORD_BYTES,
+        "area_count": QUEST_AREA_COUNT,
+        "bits_per_set": QUEST_SET_BYTES * 8,
         "areas": areas,
         "write_enabled": False,
     }
@@ -275,6 +336,8 @@ def decode_packed_field(capability: str, value: Any, adapter_family: str) -> dic
     """Decode a supported packed capability, or return ``None`` for codecs not implemented yet."""
     if capability == "missions":
         return decode_missions(value, adapter_family)
+    if capability == "quests":
+        return decode_quests(value, adapter_family)
     if capability == "key_items":
         return decode_key_items(value, adapter_family)
     if capability == "blue_spells":
