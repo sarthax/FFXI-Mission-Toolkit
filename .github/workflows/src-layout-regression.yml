@@ -28,6 +28,9 @@ on:
       - "cpp_api_index.py"
       - "cpp_dependency_index.py"
       - "build_integration_index.py"
+      - "client_binary_analyze.py"
+      - "client_binary_index.py"
+      - "client_binary_diff.py"
       - "test_fixtures/test_src_layout_package.py"
       - "test_fixtures/test_feature_trace_package_migration.py"
       - "test_fixtures/test_dependency_services_package_migration.py"
@@ -72,6 +75,7 @@ on:
       - "test_fixtures/test_battlefield_lsb_package_migration.py"
       - "test_fixtures/test_battlefield_validation_package_migration.py"
       - "test_fixtures/test_cpp_server_analyzers_package_migration.py"
+      - "test_fixtures/test_client_binary_cli_package_migration.py"
       - ".github/workflows/src-layout-regression.yml"
   workflow_dispatch:
 
@@ -135,3 +139,4 @@ jobs:
           python test_fixtures/test_battlefield_lsb_package_migration.py
           python test_fixtures/test_battlefield_validation_package_migration.py
           python test_fixtures/test_cpp_server_analyzers_package_migration.py
+          python test_fixtures/test_client_binary_cli_package_migration.py
