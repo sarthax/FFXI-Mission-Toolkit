@@ -1,14 +1,14 @@
 """Read payloads for Character Editor tabs.
 
 This is intentionally representation-preserving: row tables are returned as rows and packed
-fields are returned as their physical raw value plus location.  Lineage-specific editors/codecs
+fields are returned as their physical raw value plus location. Lineage-specific editors/codecs
 can replace raw presentation incrementally without hiding data in the meantime.
 """
 from __future__ import annotations
 
 from typing import Any
 
-from .categories import get_tab
+from .categories import TAB_DEFINITIONS, get_tab
 
 _ALIAS_CAPABILITIES = {
     "experience": "jobs",
@@ -31,13 +31,13 @@ def build_category_payload(service, char_id: int, tab_key: str) -> dict[str, Any
 
     requested_caps = set(tab.capabilities)
     if tab.key == "advanced":
-        known = {cap for item in __import__("workbench.editors.character.categories", fromlist=["TAB_DEFINITIONS"]).TAB_DEFINITIONS for cap in item.capabilities}
+        known = {cap for item in TAB_DEFINITIONS for cap in item.capabilities}
         requested_caps.update(cap for cap in capability_map if cap not in known and cap != "other")
 
     loaded_tables: set[str] = set()
     for capability in sorted(requested_caps):
         physical_capability = _ALIAS_CAPABILITIES.get(capability, capability)
-        for table_name in capability_map.get(physical_capability, ()): 
+        for table_name in capability_map.get(physical_capability, ()):
             if table_name in loaded_tables or table_name == "chars":
                 continue
             loaded_tables.add(table_name)
