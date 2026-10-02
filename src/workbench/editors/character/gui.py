@@ -1,6 +1,6 @@
 """FastAPI router for the Character Editor workspace.
 
-The heavy database/schema/item logic stays in the Character Editor services.  This module is a
+The heavy database/schema/item logic stays in the Character Editor services. This module is a
 thin HTTP/presentation adapter so gui_server.py only needs to register one packaged router.
 """
 from __future__ import annotations
@@ -115,6 +115,43 @@ def character_editor_category(char_id: int, tab_key: str):
         raise _error(exc, 404)
     except Exception as exc:
         raise _error(exc, 503)
+
+
+@router.post("/characters/{char_id}/fields/preview")
+async def character_editor_preview_fields(char_id: int, request: Request):
+    try:
+        body = await request.json()
+        with _context() as ctx:
+            result = ctx.service.preview_scalar_edit(
+                char_id,
+                str(body.get("table") or ""),
+                selector=dict(body.get("selector") or {}),
+                changes=dict(body.get("changes") or {}),
+            )
+            return JSONResponse(_safe(result))
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.post("/characters/{char_id}/fields/apply")
+async def character_editor_apply_fields(char_id: int, request: Request):
+    try:
+        body = await request.json()
+        if body.get("approved") is not True:
+            raise HTTPException(status_code=400, detail="Explicit approved=true confirmation is required")
+        with _context() as ctx:
+            result = ctx.service.apply_scalar_edit_request(
+                char_id,
+                str(body.get("table") or ""),
+                selector=dict(body.get("selector") or {}),
+                changes=dict(body.get("changes") or {}),
+                approved=True,
+            )
+            return JSONResponse(_safe(result))
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise _error(exc)
 
 
 @router.get("/characters/{char_id}/inventory.json")
