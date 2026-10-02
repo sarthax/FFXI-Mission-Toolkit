@@ -51,7 +51,7 @@ def _error(exc: Exception, status: int = 400) -> HTTPException:
 
 @router.get("", response_class=HTMLResponse)
 def character_editor_page(request: Request):
-    return templates.TemplateResponse(request=request, name="character_editor.html", context={"title": "Character Editor"})
+    return templates.TemplateResponse(request=request, name="character_editor_progression.html", context={"title": "Character Editor"})
 
 
 @router.get("/status.json")
