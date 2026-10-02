@@ -1,8 +1,7 @@
 """Read payloads for Character Editor tabs.
 
-This is intentionally representation-preserving: row tables are returned as rows and packed
-fields are returned as their physical raw value plus location. Lineage-specific editors/codecs
-can replace raw presentation incrementally without hiding data in the meantime.
+Row tables are returned as rows and packed fields as their physical raw value plus location.
+Verified scalar tables also expose editable-column metadata; packed/BLOB state remains read-only.
 """
 from __future__ import annotations
 
@@ -27,6 +26,7 @@ def build_category_payload(service, char_id: int, tab_key: str) -> dict[str, Any
 
     tables: dict[str, list[dict[str, Any]]] = {}
     packed: dict[str, dict[str, Any]] = {}
+    editors: dict[str, list[dict[str, Any]]] = {}
     capability_map = service.schema.capabilities or {}
 
     requested_caps = set(tab.capabilities)
@@ -42,19 +42,26 @@ def build_category_payload(service, char_id: int, tab_key: str) -> dict[str, Any
                 continue
             loaded_tables.add(table_name)
             tables[table_name] = service.load_table(char_id, table_name)
+            editable = service.editable_fields(table_name)
+            if editable:
+                editors[table_name] = editable
 
         location = (service.schema.packed_fields or {}).get(capability)
         if location and "." in location:
             table_name, column = location.split(".", 1)
             value = identity.get(column) if table_name == "chars" else None
-            packed[capability] = {"location": location, "value": value}
+            packed[capability] = {"location": location, "value": value, "editable": False}
 
     if tab.key == "character":
         tables["chars"] = [identity]
+        editable = service.editable_fields("chars")
+        if editable:
+            editors["chars"] = editable
 
     return {
         "tab": tab.as_dict(),
         "char_id": int(char_id),
         "tables": tables,
         "packed": packed,
+        "editors": editors,
     }
