@@ -23,6 +23,7 @@ on:
       - "ffxiclopedia_adapter.py"
       - "research_gaps.py"
       - "build_condition_index.py"
+      - "mission_event_reconcile.py"
       - "test_fixtures/test_src_layout_package.py"
       - "test_fixtures/test_feature_trace_package_migration.py"
       - "test_fixtures/test_dependency_services_package_migration.py"
@@ -54,6 +55,7 @@ on:
       - "test_fixtures/test_ffxiclopedia_adapter_package_migration.py"
       - "test_fixtures/test_research_gaps_package_migration.py"
       - "test_fixtures/test_build_condition_index_package_migration.py"
+      - "test_fixtures/test_mission_event_reconcile_package_migration.py"
       - ".github/workflows/src-layout-regression.yml"
   workflow_dispatch:
 
@@ -104,3 +106,4 @@ jobs:
           python test_fixtures/test_ffxiclopedia_adapter_package_migration.py
           python test_fixtures/test_research_gaps_package_migration.py
           python test_fixtures/test_build_condition_index_package_migration.py
+          python test_fixtures/test_mission_event_reconcile_package_migration.py
