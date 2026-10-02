@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import model_viewer as legacy
 from workbench.client.models import viewer as canonical
 
@@ -17,10 +15,28 @@ def test_root_module_is_packaged_implementation():
 
 def test_resolve_uses_package_safe_ffxi_lookup(monkeypatch):
     monkeypatch.setattr(canonical, "_db_row", lambda kind, eid, server=None: (bytes(20), "Fixture", None))
-    monkeypatch.setattr(canonical.look, "decode_look_data", lambda blob, familyid=None: {"kind": "prop"})
+    monkeypatch.setattr(
+        canonical.look,
+        "decode_look_data",
+        lambda blob, familyid=None: {"kind": "flat", "modelid": 740},
+    )
     monkeypatch.setattr(canonical, "get_ffxi_install", lambda: "C:/FFXI")
+    monkeypatch.setattr(
+        canonical.client_model_resolver,
+        "resolve_model_id",
+        lambda model_id, ffxi_path: {
+            "file_id": 2040,
+            "mapping_source": "fixture",
+            "mapping_rule": "fixture",
+            "rom_path": "ROM/7/1.DAT",
+            "registered": True,
+        },
+    )
 
-    assert canonical.resolve("n", 1)["name"] == "Fixture"
+    result = canonical.resolve("m", 1)
+    assert result["ffxi_path"] == "C:/FFXI"
+    assert result["resource_file_id"] == 2040
+    assert result["resource_rom_path"] == "ROM/7/1.DAT"
 
 
 def test_client_dat_path_stays_inside_configured_root(tmp_path):
