@@ -10,6 +10,7 @@ from .inventory import inventory_summary
 from .inventory_slots import CAPACITY_COLUMNS, CONTAINERS, CONTAINER_LABELS
 from .item_catalog import ItemCatalogService
 from .item_transactions import apply_item_injection, build_item_injection_plan
+from .packed_transactions import apply_packed_edit, build_packed_edit_plan
 from .scalar_transactions import apply_scalar_edit, build_scalar_edit_plan, editable_columns
 from .schema import CharacterSchema, discover_character_schema
 from .session_state import detect_online_state
@@ -104,6 +105,32 @@ class CharacterEditorService:
         plan = build_scalar_edit_plan(self.connection, char_id=char_id, table_name=table_name, selector=selector,
                                       changes=changes, adapter_family=self.adapter_family)
         return apply_scalar_edit(self.connection, plan, approved=approved)
+
+    def preview_packed_edit(self, char_id: int, capability: str, *, operation: dict[str, Any] | None = None) -> dict[str, Any]:
+        return build_packed_edit_plan(
+            self.connection,
+            char_id=char_id,
+            capability=capability,
+            operation=operation,
+            adapter_family=self.adapter_family,
+        ).as_dict()
+
+    def apply_packed_edit_request(
+        self,
+        char_id: int,
+        capability: str,
+        *,
+        operation: dict[str, Any] | None = None,
+        approved: bool = False,
+    ) -> dict[str, Any]:
+        plan = build_packed_edit_plan(
+            self.connection,
+            char_id=char_id,
+            capability=capability,
+            operation=operation,
+            adapter_family=self.adapter_family,
+        )
+        return apply_packed_edit(self.connection, plan, approved=approved)
 
     def search_items(self, query: str = "", *, limit: int = 100, client_snapshot_id: str | None = None) -> list[dict[str, Any]]:
         catalog = ItemCatalogService(self.connection, client_snapshot_id=client_snapshot_id)
@@ -220,7 +247,11 @@ class CharacterEditorService:
             "inventory": inventory,
             "scalar_editors": scalar_tables,
             "write_enabled": True,
-            "write_capabilities": ["inventory_basic_offline", "scalar_character_offline"],
+            "write_capabilities": [
+                "inventory_basic_offline",
+                "scalar_character_offline",
+                "packed_missions_keyitems_offline",
+            ],
         }
 
     def capability_manifest(self) -> dict[str, Any]:
@@ -233,5 +264,9 @@ class CharacterEditorService:
             "tabs": build_tab_manifest(self.schema, inventory),
             "inventory": inventory,
             "write_enabled": True,
-            "write_capabilities": ["inventory_basic_offline", "scalar_character_offline"],
+            "write_capabilities": [
+                "inventory_basic_offline",
+                "scalar_character_offline",
+                "packed_missions_keyitems_offline",
+            ],
         }

@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 
 from workbench.editors.character.gui import _safe, router
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT / "test_fixtures") not in sys.path:
+    sys.path.insert(0, str(ROOT / "test_fixtures"))
+
+from test_character_editor_packed_transactions import main as packed_transaction_regression
 
 
 def test_character_editor_router_surface():
@@ -18,6 +23,8 @@ def test_character_editor_router_surface():
     assert "/character-editor/characters/{char_id}/categories/{tab_key}.json" in paths
     assert "/character-editor/characters/{char_id}/fields/preview" in paths
     assert "/character-editor/characters/{char_id}/fields/apply" in paths
+    assert "/character-editor/characters/{char_id}/packed/preview" in paths
+    assert "/character-editor/characters/{char_id}/packed/apply" in paths
     assert "/character-editor/characters/{char_id}/inventory.json" in paths
     assert "/character-editor/characters/{char_id}/items/preview" in paths
     assert "/character-editor/characters/{char_id}/items/add" in paths
@@ -46,3 +53,7 @@ def test_character_editor_template_has_tabs_storage_and_guarded_scalar_flow():
     assert "approved:true" in template
     assert "previewScalarRow" in template
     assert "confirmItem()" in template
+
+
+def test_character_editor_packed_mutations_preserve_unrelated_bytes():
+    packed_transaction_regression()
