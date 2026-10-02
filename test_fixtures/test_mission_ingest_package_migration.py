@@ -46,7 +46,7 @@ def main() -> None:
     assert len(machine.transitions) == 2
 
     complete = next(row for row in machine.transitions if row.transition_id == "mission:complete")
-    assert complete.event.key == "TEST_ZONE:Test_NPC:123"
+    assert complete.event.key == "event:TEST_ZONE:Test_NPC:123"
     assert complete.effects[0].effect == "COMPLETE"
 
     gate = next(row for row in machine.transitions if row.transition_id == "mission:branch-gate")
