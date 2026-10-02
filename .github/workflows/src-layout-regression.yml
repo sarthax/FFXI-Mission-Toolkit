@@ -38,6 +38,8 @@ on:
       - "backport_map_confidence_check.py"
       - "backport_binding_index.py"
       - "backport_binding_audit.py"
+      - "backport_sql_convert.py"
+      - "backport_sql_live_check.py"
       - "test_fixtures/test_src_layout_package.py"
       - "test_fixtures/test_feature_trace_package_migration.py"
       - "test_fixtures/test_dependency_services_package_migration.py"
@@ -87,6 +89,8 @@ on:
       - "test_fixtures/test_lua_sanity_package_migration.py"
       - "test_fixtures/test_package_coverage_confidence_migration.py"
       - "test_fixtures/test_binding_validation_package_migration.py"
+      - "test_fixtures/test_sql_convert_package_migration.py"
+      - "test_fixtures/test_sql_live_check_package_migration.py"
       - ".github/workflows/src-layout-regression.yml"
   workflow_dispatch:
 
@@ -155,3 +159,5 @@ jobs:
           python test_fixtures/test_lua_sanity_package_migration.py
           python test_fixtures/test_package_coverage_confidence_migration.py
           python test_fixtures/test_binding_validation_package_migration.py
+          python test_fixtures/test_sql_convert_package_migration.py
+          python test_fixtures/test_sql_live_check_package_migration.py
