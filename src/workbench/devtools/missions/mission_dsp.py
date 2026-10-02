@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, Mapping
+from typing import TYPE_CHECKING, Iterable, Mapping
 
 from workbench.migrations.generated_output import GeneratedOutput
-from workbench.plugins.domain.base import PluginFinding
 
 from .mission_representation import MissionRepresentationPlan
+
+if TYPE_CHECKING:
+    from workbench.plugins.domain.base import PluginFinding
 
 
 @dataclass(frozen=True)
@@ -54,6 +56,8 @@ def mission_proposal_finding(
     proposal_count: int,
 ) -> PluginFinding:
     """Replace a monolithic source mission artifact with reviewable target proposals."""
+    from workbench.plugins.domain.base import PluginFinding
+
     if not plan.missing_requirement_ids:
         return PluginFinding(
             plugin_id="framework.quest_mission",
