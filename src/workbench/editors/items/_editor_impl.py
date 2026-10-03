@@ -47,9 +47,19 @@ TYPE_TABLES = {
 # schema. Only columns with a CONFIRMED bit mapping (verified against C:\topaz source or
 # item_dat_tools' own vendored tables) are listed here -- per project rule, never invent a
 # schema. {table: {column: [(bit_value, label), ...]}}
+# item_basic.flags as the server itself reads it: ITEM_FLAG in src/map/items/item.h (identical in
+# the DSP and Topaz trees). item_dat_tools.ITEM_FLAGS uses different names for the same bits, so the
+# server column is labelled from the server's own enum.
+SERVER_ITEM_FLAGS = {
+    0x0001: 'wall hanging', 0x0002: 'flag 0x2 (unnamed)', 0x0004: 'gobbie mystery box',
+    0x0008: 'mog garden', 0x0010: 'can send via POL', 0x0020: 'inscribable', 0x0040: 'no auction',
+    0x0080: 'scroll', 0x0100: 'linkshell', 0x0200: 'can use', 0x0400: 'can trade to NPC',
+    0x0800: 'can equip', 0x1000: 'no sale', 0x2000: 'no delivery', 0x4000: 'exclusive', 0x8000: 'rare',
+}
+
 BITMASK_SCHEMAS = {
     "item_basic": {
-        "flags": sorted(dat.ITEM_FLAGS.items()),
+        "flags": sorted(SERVER_ITEM_FLAGS.items()),
     },
     "item_equipment": {
         "jobs": [(1 << i, job) for i, job in enumerate(dat.JOBS)],
@@ -789,16 +799,19 @@ def search(q, category="", min_level=-1, max_level=-1, job=-1, skill=-1, client_
     return out
 
 def _server_item_type(rows):
+    """The client DAT item type a server row set should correspond to.
+
+    Checked against real data (item_basic + client DAT, sample of ~165 items): armor that also
+    has a use effect (equipment + usable rows) is client type 3, not 1, and furnishings are
+    client type 0 (the DAT has no furnishing type), so neither is a mismatch."""
     if rows.get('item_weapon') is not None:
         return 4
+    if rows.get('item_equipment') is not None:
+        return 3
     if rows.get('item_usable') is not None:
         return 1
     if rows.get('item_puppet') is not None:
         return 5
-    if rows.get('item_furnishing') is not None:
-        return 6
-    if rows.get('item_equipment') is not None:
-        return 3
     return 0
 
 
