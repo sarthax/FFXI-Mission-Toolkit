@@ -167,7 +167,7 @@ _JOBS = {1: "Warrior", 2: "Monk", 3: "White Mage", 4: "Black Mage", 5: "Red Mage
          17: "Corsair", 18: "Puppetmaster", 19: "Dancer", 20: "Scholar", 21: "Geomancer", 22: "Rune Fencer"}
 
 
-def _latent_condition(latent_id: int, param: int, defs: dict[int, tuple[str, str]]) -> str:
+def _latent_condition(latent_id: int, param: int, defs: dict[int, tuple[str, str]], zones: dict[int, str] | None = None) -> str:
     name, comment = defs.get(latent_id, (None, ""))
     if name is None:
         return f"Condition #{latent_id} (parameter {param})"
@@ -176,6 +176,8 @@ def _latent_condition(latent_id: int, param: int, defs: dict[int, tuple[str, str
     labels = {int(k): v.strip() for k, v in re.findall(r"(\d+):\s*([A-Za-z' \-]+?)(?=\s+\d+:|,|$)", ptext)}
     if latent_id in (8, 22) and param in _JOBS:
         labels = {param: _JOBS[param]}
+    if latent_id == 23 and zones and param in zones:
+        labels = {param: zones[param]}
     if param in labels:
         shown = labels[param].title() if labels[param].isupper() else labels[param]
     else:
@@ -193,6 +195,24 @@ def _latent_condition(latent_id: int, param: int, defs: dict[int, tuple[str, str
     return text[:1].upper() + text[1:]
 
 
+def _zone_names(connection) -> dict[int, str]:
+    """zoneid -> readable zone name from the server's zone_settings table."""
+    cursor = connection.cursor()
+    try:
+        cursor.execute("SELECT `zoneid`,`name` FROM `zone_settings`")
+        rows = cursor.fetchall() or []
+    except Exception:
+        return {}
+    finally:
+        cursor.close()
+    out = {}
+    for zone_id, name in rows:
+        text = str(name or "").replace("_", " ").strip()
+        text = text.replace("dOria", "d'Oria")
+        out[int(zone_id)] = text
+    return out
+
+
 def conditional_bonuses(connection, item_ids, root: Path | str | None) -> dict[int, dict[str, list[dict[str, Any]]]]:
     """Latent (conditional) and pet bonuses per item, from item_latents / item_mods_pet."""
     ids = sorted({int(i) for i in item_ids if i})
@@ -203,6 +223,7 @@ def conditional_bonuses(connection, item_ids, root: Path | str | None) -> dict[i
     mods = _mod_names(root)
     latents = _latent_defs(root)
     pets = _pet_types(root)
+    zones = _zone_names(connection)
 
     def mod_text(mod_id: int, value: int) -> str:
         name, _ = mods.get(mod_id, (None, ""))
@@ -226,9 +247,37 @@ def conditional_bonuses(connection, item_ids, root: Path | str | None) -> dict[i
             for r in rows:
                 bucket = out.setdefault(int(r[0]), {"latent": [], "pet": []})[kind]
                 if kind == "latent":
-                    bucket.append({"when": _latent_condition(int(r[3]), int(r[4]), latents), "text": mod_text(int(r[1]), int(r[2]))})
+                    bucket.append({"when": _latent_condition(int(r[3]), int(r[4]), latents, zones), "text": mod_text(int(r[1]), int(r[2]))})
                 else:
                     bucket.append({"when": f"Pet: {pets.get(int(r[3]), 'Pet type ' + str(r[3]))}", "text": mod_text(int(r[1]), int(r[2]))})
+    return out
+
+
+_JOB_ABBR = {1: "WAR", 2: "MNK", 3: "WHM", 4: "BLM", 5: "RDM", 6: "THF", 7: "PLD", 8: "DRK", 9: "BST", 10: "BRD", 11: "RNG",
+             12: "SAM", 13: "NIN", 14: "DRG", 15: "SMN", 16: "BLU", 17: "COR", 18: "PUP", 19: "DNC", 20: "SCH", 21: "GEO", 22: "RUN"}
+EQUIPPABLE_LOCATIONS = (0, 8, 10, 11, 12)  # containers the core server equips from
+
+
+def _jobs_text(mask: int) -> str:
+    names = [abbr for job, abbr in _JOB_ABBR.items() if mask & (1 << (job - 1))]
+    return "All jobs" if len(names) >= len(_JOB_ABBR) else "/".join(names)
+
+
+def equip_meta(connection, item_ids) -> dict[int, dict[str, Any]]:
+    """itemId -> {slot_mask, level, jobs} from item_armor (weapons carry a row there too)."""
+    ids = sorted({int(i) for i in item_ids if i})
+    out: dict[int, dict[str, Any]] = {}
+    for i in range(0, len(ids), 500):
+        chunk = ids[i:i + 500]
+        cursor = connection.cursor()
+        try:
+            cursor.execute(f"SELECT `itemId`,`slot`,`level`,`jobs` FROM `item_armor` WHERE `itemId` IN ({','.join(['%s'] * len(chunk))})", tuple(chunk))
+            for item_id, mask, level, jobs in cursor.fetchall() or []:
+                out[int(item_id)] = {"slot_mask": int(mask or 0), "level": int(level or 0), "jobs": _jobs_text(int(jobs or 0))}
+        except Exception:
+            pass
+        finally:
+            cursor.close()
     return out
 
 
@@ -236,36 +285,36 @@ def equipment_state(connection, char_id: int, root: Path | str | None = None) ->
     cursor = connection.cursor()
     try:
         cursor.execute("SELECT `equipslotid`,`containerid`,`slotid` FROM `char_equip` WHERE `charid` = %s ORDER BY `equipslotid`", (int(char_id),))
-        refs = cursor.fetchall() or []
+        refs = {int(r[0]): (int(r[1]), int(r[2])) for r in cursor.fetchall() or []}
     finally:
         cursor.close()
     rows = []
-    for equip_slot, location, slot in refs:
-        equip_slot, location, slot = int(equip_slot), int(location), int(slot)
-        if equip_slot >= len(EQUIP_SLOTS):
-            continue  # e.g. the linkshell slot: its extra bytes are not augments
-        row = _inventory_row(connection, char_id, location, slot)
-        item = _item_record(connection, int(row["itemId"])) if row else None
-        if row and not _is_armor_or_weapon(connection, int(row["itemId"])):
+    for equip_slot, slot_name in enumerate(EQUIP_SLOTS):  # slots at or above 16 (linkshell) do not hold augments
+        base = {"equip_slot": equip_slot, "slot_name": slot_name, "location": None, "inventory_slot": None, "item_id": None,
+                "name": None, "item_known": False, "extra_hex": None, "augments": [], "fingerprint": None, "missing_row": False,
+                "empty": True}
+        ref = refs.get(equip_slot)
+        row = _inventory_row(connection, char_id, ref[0], ref[1]) if ref else None
+        if ref and row is None:
+            rows.append({**base, "location": ref[0], "inventory_slot": ref[1], "empty": False, "missing_row": True})
             continue
-        extra = _extra_bytes(row.get("extra")) if row else b""
-        rows.append({
-            "equip_slot": equip_slot,
-            "slot_name": EQUIP_SLOTS[equip_slot] if equip_slot < len(EQUIP_SLOTS) else f"Slot {equip_slot}",
-            "location": location, "inventory_slot": slot,
-            "item_id": int(row["itemId"]) if row else None,
-            "name": item["name"] if item else None,
-            "item_known": item is not None,
-            "extra_hex": extra.hex() if row else None,
-            "augments": decode_augments(extra) if row else [],
-            "fingerprint": _fingerprint(row) if row else None,
-            "missing_row": row is None,
-        })
-    native = native_bonuses(connection, [r["item_id"] for r in rows], root)
+        if row is None or not _is_armor_or_weapon(connection, int(row["itemId"])):
+            rows.append(base)
+            continue
+        item = _item_record(connection, int(row["itemId"]))
+        extra = _extra_bytes(row.get("extra"))
+        rows.append({**base, "empty": False, "location": ref[0], "inventory_slot": ref[1], "item_id": int(row["itemId"]),
+                     "name": item["name"] if item else None, "item_known": item is not None, "extra_hex": extra.hex(),
+                     "augments": decode_augments(extra), "fingerprint": _fingerprint(row)})
+    filled = [r["item_id"] for r in rows if r["item_id"]]
+    native = native_bonuses(connection, filled, root)
+    cond_all = conditional_bonuses(connection, filled, root)
+    meta = equip_meta(connection, filled)
     for r in rows:
         r["native"] = native.get(r["item_id"], [])
-        cond = conditional_bonuses(connection, [r["item_id"]], root).get(r["item_id"], {}) if r["item_id"] else {}
+        cond = cond_all.get(r["item_id"], {})
         r["latent"], r["pet"] = cond.get("latent", []), cond.get("pet", [])
+        r.update(meta.get(r["item_id"], {"slot_mask": 0, "level": 0, "jobs": ""}))
     return {"char_id": int(char_id), "slots": rows}
 
 
@@ -305,7 +354,9 @@ def inventory_augmentables(connection, char_id: int, root: Path | str | None = N
                     "extra_hex": raw.hex(), "augments": decode_augments(raw)})
     native = native_bonuses(connection, [o["item_id"] for o in out], root)
     cond_all = conditional_bonuses(connection, [o["item_id"] for o in out], root)
+    meta = equip_meta(connection, [o["item_id"] for o in out])
     for o in out:
+        o.update(meta.get(o["item_id"], {"slot_mask": 0, "level": 0, "jobs": ""}))
         o["native"] = native.get(o["item_id"], [])
         o["latent"], o["pet"] = cond_all.get(o["item_id"], {}).get("latent", []), cond_all.get(o["item_id"], {}).get("pet", [])
     return {"char_id": int(char_id), "items": out}
@@ -465,6 +516,145 @@ def apply_augment_plan(connection, plan: AugmentPlan, *, approved: bool = False)
             target={"table": "char_inventory", "source_location": plan.location, "source_slot": plan.slot,
                     "item_id": int(now.get("itemId") or 0)},
             before=now, after=after, metadata={"source_fingerprint": plan.source_fingerprint}, undo_supported=True)
+    except Exception:
+        try:
+            connection.rollback()
+        finally:
+            raise
+
+
+@dataclass
+class EquipPlan:
+    char_id: int
+    equip_slot: int
+    location: int | None
+    slot: int | None
+    item: dict[str, Any] | None
+    current: tuple[int, int] | None
+    moved_from: int | None
+    source_fingerprint: str | None
+    online: bool | None
+    adapter_family: str
+    issues: list[AugmentIssue] = field(default_factory=list)
+
+    @property
+    def ready(self) -> bool:
+        return not any(i.blocking for i in self.issues)
+
+    def as_dict(self) -> dict[str, Any]:
+        d = asdict(self)
+        d["slot_name"] = EQUIP_SLOTS[self.equip_slot] if 0 <= self.equip_slot < len(EQUIP_SLOTS) else None
+        d["ready"] = self.ready
+        return d
+
+
+def _equip_refs(connection, char_id: int) -> dict[int, tuple[int, int]]:
+    cursor = connection.cursor()
+    try:
+        cursor.execute("SELECT `equipslotid`,`containerid`,`slotid` FROM `char_equip` WHERE `charid` = %s", (int(char_id),))
+        return {int(r[0]): (int(r[1]), int(r[2])) for r in cursor.fetchall() or []}
+    finally:
+        cursor.close()
+
+
+def build_equip_plan(connection, *, char_id: int, equip_slot: int, location: int | None = None, slot: int | None = None,
+                     adapter_family: str = "unknown") -> EquipPlan:
+    """Plan putting the inventory row (location, slot) into an equipment slot; location/slot None empties the slot."""
+    char_id, equip_slot = int(char_id), int(equip_slot)
+    family = str(adapter_family or "unknown").strip().lower()
+    issues: list[AugmentIssue] = []
+    if not 0 <= equip_slot < len(EQUIP_SLOTS):
+        issues.append(AugmentIssue("equip_slot_invalid", f"Equipment slot must be 0-{len(EQUIP_SLOTS) - 1}."))
+    if family not in _VERIFIED_FAMILIES:
+        issues.append(AugmentIssue("adapter_unverified", "A detected DSP/Topaz/LSB adapter is required for writes."))
+    schema = discover_character_schema(connection)
+    state = detect_online_state(connection, schema, char_id)
+    if state.online is True:
+        issues.append(AugmentIssue("character_online", "Character is online; direct equipment writes are blocked."))
+    elif state.online is None:
+        issues.append(AugmentIssue("online_state_unknown", "Character online state could not be verified."))
+    table = schema.table("char_equip")
+    if table is None or not {"charid", "slotid", "equipslotid", "containerid"}.issubset(table.column_names):
+        issues.append(AugmentIssue("equip_schema_drift", "Connected char_equip schema does not match the verified core contract."))
+
+    refs = _equip_refs(connection, char_id) if not issues else {}
+    current = refs.get(equip_slot)
+    item = None
+    moved_from = None
+    fingerprint = None
+    if location is None or slot is None:
+        location = slot = None
+        if current is None and not issues:
+            issues.append(AugmentIssue("no_change", "That slot is already empty."))
+    else:
+        location, slot = int(location), int(slot)
+        row = _inventory_row(connection, char_id, location, slot)
+        if row is None:
+            issues.append(AugmentIssue("source_missing", "No inventory row exists at that location/slot."))
+        else:
+            fingerprint = _fingerprint(row)
+            item_id = int(row.get("itemId") or 0)
+            item = _item_record(connection, item_id)
+            meta = equip_meta(connection, [item_id]).get(item_id)
+            if item is None:
+                issues.append(AugmentIssue("item_unknown", f"Item ID {item_id} is not in the connected item catalog."))
+            if location not in EQUIPPABLE_LOCATIONS:
+                issues.append(AugmentIssue("container_not_equippable", f"{CONTAINERS.get(location, location)} items cannot be equipped directly; move the item to Inventory or a Wardrobe first."))
+            if meta is None or not meta["slot_mask"]:
+                issues.append(AugmentIssue("not_equippable", "This item is not armor or a weapon."))
+            elif 0 <= equip_slot < len(EQUIP_SLOTS) and not meta["slot_mask"] & (1 << equip_slot):
+                issues.append(AugmentIssue("wrong_slot", f"This item does not go in the {EQUIP_SLOTS[equip_slot]} slot."))
+            if int(row.get("bazaar") or 0):
+                issues.append(AugmentIssue("bazaar_listed", "Bazaar-listed rows are protected from direct changes."))
+            if current == (location, slot):
+                issues.append(AugmentIssue("no_change", "That item is already equipped in this slot."))
+            for other, ref in refs.items():
+                if ref == (location, slot) and other != equip_slot:
+                    moved_from = other  # a row cannot be worn twice, so it leaves its old slot
+    return EquipPlan(char_id, equip_slot, location, slot, item, current, moved_from, fingerprint, state.online, family, issues)
+
+
+def apply_equip_plan(connection, plan: EquipPlan, *, approved: bool = False) -> dict[str, Any]:
+    if not approved:
+        raise PermissionError("Explicit approval is required to apply equipment changes")
+    if not plan.ready:
+        raise RuntimeError("Equipment plan is not write-ready")
+    try:
+        if hasattr(connection, "start_transaction"):
+            connection.start_transaction()
+        else:
+            cursor = connection.cursor()
+            try:
+                cursor.execute("START TRANSACTION")
+            finally:
+                cursor.close()
+        schema = discover_character_schema(connection)
+        if detect_online_state(connection, schema, plan.char_id).online is not False:
+            raise RuntimeError("Character online state changed or cannot be verified")
+        before = _equip_refs(connection, plan.char_id)
+        if before.get(plan.equip_slot) != plan.current:
+            raise RuntimeError("Equipment changed since preview; preview again")
+        if plan.location is not None:
+            now = _inventory_row(connection, plan.char_id, plan.location, plan.slot)
+            if now is None or _fingerprint(now) != plan.source_fingerprint:
+                raise RuntimeError("Inventory row changed since preview; preview again")
+        cursor = connection.cursor()
+        try:
+            for equip_slot in [plan.equip_slot] + ([plan.moved_from] if plan.moved_from is not None else []):
+                cursor.execute("DELETE FROM `char_equip` WHERE `charid` = %s AND `equipslotid` = %s", (plan.char_id, equip_slot))
+            if plan.location is not None:
+                cursor.execute("INSERT INTO `char_equip` (`charid`,`slotid`,`equipslotid`,`containerid`) VALUES (%s,%s,%s,%s)",
+                               (plan.char_id, plan.slot, plan.equip_slot, plan.location))
+        finally:
+            cursor.close()
+        connection.commit()
+        after = _equip_refs(connection, plan.char_id)
+        result = {"status": "committed", "char_id": plan.char_id, "equip_slot": plan.equip_slot}
+        return attach_committed_audit(
+            result, operation="equipment.set", char_id=plan.char_id, adapter_family=plan.adapter_family,
+            target={"table": "char_equip", "equip_slot": plan.equip_slot},
+            before={str(k): list(v) for k, v in before.items()}, after={str(k): list(v) for k, v in after.items()},
+            metadata={"source_fingerprint": plan.source_fingerprint}, undo_supported=False)
     except Exception:
         try:
             connection.rollback()

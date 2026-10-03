@@ -66,7 +66,7 @@
     return r ? r.effects.map(e => effText(e, a.value)).join(', ') : `Unrecognised augment (#${a.id})`;
   };
   const iconImg = (id, size) => `<img class="ce-icon" src="${icon(id)}" loading="lazy" decoding="async" style="width:${size}px;height:${size}px" onerror="this.style.visibility='hidden'">`;
-  const prettyName = s => (s.name || `Item ${s.item_id}`).replace(/_/g, ' ').replace(/\b\w/g, m => m.toUpperCase());
+  const prettyName = s => s.empty ? 'Empty' : (s.name || `Item ${s.item_id}`).replace(/_/g, ' ').replace(/\b\w/g, m => m.toUpperCase());
 
   async function renderEquipment() {
     const box = document.getElementById('categoryData');
@@ -93,6 +93,7 @@
     if (!all.length) { shell.innerHTML = '<div class="ce-progress-empty">This character has no armor or weapons.</div>'; return; }
     if (!all.some(s => s.key === selectedKey)) selectedKey = all[0].key;
     let draft = null; // [{id,value}] for the selected item
+    let pickSearch = '';
 
     shell.innerHTML = `<style>.ce-equip-manager .ce-split{display:grid;grid-template-columns:minmax(260px,38%) minmax(0,1fr);gap:12px;align-items:start}
       .ce-equip-manager .ce-list{max-height:72vh;overflow:auto;padding-right:4px}.ce-equip-manager .ce-list h4{margin:10px 0 4px;font-size:12px;opacity:.8}
@@ -106,6 +107,9 @@
       .ce-equip-manager .ce-augcard select{min-width:0;padding:3px 4px}.ce-equip-manager .ce-augcard.set{border-color:#8a6500;background:rgba(245,197,66,.08)}
       .ce-equip-manager .ce-native{margin-bottom:6px;font-size:12px}.ce-equip-manager .ce-native ul{margin:4px 0 0;padding-left:18px;columns:2}.ce-equip-manager .ce-native ul.ce-cond{columns:1}.ce-equip-manager .ce-augnote{grid-column:1/-1;font-size:12px;opacity:.85}.ce-equip-manager .ce-total{margin:10px 0;padding:8px;border-radius:6px;background:rgba(255,255,255,.06);font-size:13px}
       .ce-equip-manager .ce-aug-actions{display:flex;gap:8px;align-items:center}
+      .ce-equip-manager .ce-tile.empty{border-style:dashed;opacity:.7}.ce-equip-manager .ce-swap{margin:0 0 12px;padding:8px;border:1px solid var(--border,#444);border-radius:6px}
+      .ce-equip-manager .ce-swap-bar{display:flex;gap:8px;align-items:center;margin:6px 0}.ce-equip-manager .ce-swap-bar input[type=search]{flex:1;min-width:0;padding:3px 6px}
+      .ce-equip-manager .ce-swap .ce-tiles{max-height:230px;overflow:auto;grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}.ce-equip-manager .ce-tile .lv{opacity:.65;font-size:9px}
       @media(max-width:860px){.ce-equip-manager .ce-split{grid-template-columns:1fr}.ce-equip-manager .ce-augcard{grid-template-columns:1fr 1fr}}</style>
       <div class="ce-progress-head"><strong>Equipped Items</strong>${offline ? pill('offline editing enabled','ok') : pill('editing locked until offline','warn')}<span class="ce-progress-source">Pick a piece of gear, then choose the bonus stats on it. This changes only this character's copy; the Items editor changes the item for everyone.</span></div>
       <div class="ce-split"><section><div class="ce-find"><input type="search" placeholder="Search gear…" value="${esc(search)}"><label><input type="checkbox" class="ce-augonly" ${augOnly ? 'checked' : ''}> Augmented only</label></div><div class="ce-list"></div></section><section class="ce-split-detail"></section></div>`;
@@ -119,9 +123,9 @@
       shown.forEach(s => { if (!order.includes(s.group)) order.push(s.group); });
       listEl.innerHTML = order.map(gname => `<h4>${esc(gname)}</h4><div class="ce-tiles">${shown.filter(s => s.group === gname).map(s => {
         const n = augCount(s);
-        return `<button class="ce-tile${s.key === selectedKey ? ' active' : ''}" data-k="${s.key}" title="${esc(prettyName(s))}">${n ? `<span class="bd">✦${n}</span>` : ''}${s.item_id ? iconImg(s.item_id, 32) : ''}<span class="nm">${esc(prettyName(s))}</span><span class="sl">${esc(s.slot_name)}</span></button>`;
+        return `<button class="ce-tile${s.key === selectedKey ? ' active' : ''}${s.empty ? ' empty' : ''}" data-k="${s.key}" title="${esc(prettyName(s))}">${n ? `<span class="bd">✦${n}</span>` : ''}${s.item_id ? iconImg(s.item_id, 32) : ''}<span class="nm">${esc(prettyName(s))}</span><span class="sl">${esc(s.slot_name)}</span></button>`;
       }).join('')}</div>`).join('') || '<div class="ce-muted">No gear matches.</div>';
-      listEl.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => { selectedKey = b.dataset.k; draft = null; drawList(); drawDetail(); }));
+      listEl.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => { selectedKey = b.dataset.k; draft = null; draft = null; pickSearch = ''; drawList(); drawDetail(); }));
     };
 
     const groupOf = a => { const k = cat.idGroup.get(a.id); return k ? cat.groups.get(k) : null; };
@@ -145,23 +149,86 @@
       if (!a.id) return '';
       return `<div class="ce-augnote"><strong>${esc(describeAug(a))}</strong>${g && g.comment && g.comment.toLowerCase() !== g.label.toLowerCase() ? ` — ${esc(g.comment)}` : ''}</div>`;
     };
+    const EQUIPPABLE = new Set([0, 8, 10, 11, 12]);
+    const fits = (it, slot) => (it.slot_mask & (1 << slot)) && EQUIPPABLE.has(it.location);
+    const wornAt = new Map(eq.filter(x => !x.empty && !x.missing_row).map(x => [`${x.location}:${x.inventory_slot}`, x.slot_name]));
+    const gearLine = it => `${it.level ? 'Lv' + it.level + ' ' : ''}${it.jobs || ''}`.trim();
+    const pickTiles = s => {
+      const q = pickSearch.trim().toLowerCase().replace(/_/g, ' ');
+      const cands = (inv.items || []).filter(it => fits(it, s.equip_slot) && !(it.location === s.location && it.inventory_slot === s.inventory_slot)
+        && (!q || (it.name || '').toLowerCase().replace(/_/g, ' ').includes(q)));
+      if (!cands.length) return '<div class="ce-muted">No matching gear in the Inventory or Wardrobes.</div>';
+      return `<div class="ce-tiles">${cands.map(it => {
+        const n = it.augments.filter(a => a.id).length, worn = wornAt.get(`${it.location}:${it.inventory_slot}`);
+        return `<button class="ce-tile" data-pick="${it.location}:${it.inventory_slot}" title="${esc(prettyName(it))}" ${offline ? '' : 'disabled'}>${n ? `<span class="bd">✦${n}</span>` : ''}${iconImg(it.item_id, 32)}<span class="nm">${esc(prettyName(it))}</span><span class="lv">${esc(gearLine(it))}</span><span class="sl">${esc(worn ? 'worn: ' + worn : it.container)}</span></button>`;
+      }).join('')}</div>`;
+    };
+    const swapPanel = s => {
+      if (s.carried) {
+        const targets = eq.filter(e => fits(s, e.equip_slot));
+        if (!EQUIPPABLE.has(s.location)) return `<div class="ce-swap ce-muted">To equip this, first move it into the Inventory or a Mog Wardrobe (Inventory tab).</div>`;
+        if (!targets.length) return '';
+        return `<div class="ce-swap"><strong>Equip this item</strong><div class="ce-swap-bar">${targets.map(e => `<button data-equip-to="${e.equip_slot}" ${offline ? '' : 'disabled'}>${esc(e.slot_name)}${e.empty ? '' : ' (replaces ' + esc(prettyName(e)) + ')'}</button>`).join('')}</div></div>`;
+      }
+      return `<div class="ce-swap"><strong>${s.empty ? 'Equip an item' : 'Change item'}</strong> <span class="ce-muted">— gear in Inventory and Wardrobes that fits ${esc(s.slot_name)}</span>
+        <div class="ce-swap-bar"><input type="search" class="ce-pick-search" placeholder="Search…" value="${esc(pickSearch)}">${s.empty ? '' : `<button class="ce-unequip" ${offline ? '' : 'disabled'}>Unequip</button>`}</div>
+        <div class="ce-pick-tiles">${pickTiles(s)}</div></div>`;
+    };
+    async function doEquip(equipSlot, loc, slot, what) {
+      const body = {equip_slot: equipSlot, location: loc, slot};
+      try {
+        const p = await postJson(`${api()}/equipment/preview`, body);
+        if (!p.ready) throw new Error((p.issues || []).filter(i => i.blocking).map(i => i.message).join('; ') || 'not write-ready');
+        const swappedFrom = p.moved_from != null ? `
+
+This item is currently worn in the ${eq.find(e => e.equip_slot === p.moved_from)?.slot_name || 'another'} slot and will leave it.` : '';
+        if (!confirm(`${what}${swappedFrom}`)) return;
+        await postJson(`${api()}/equipment/apply`, {...body, expected_source_fingerprint: p.source_fingerprint || '', approved: true});
+      } catch (e) { alert(`Not changed: ${e.message}`); return; }
+      selectedKey = `e${equipSlot}`; draft = null; pickSearch = '';
+      await selectCharacter(selectedChar);
+      await loadCategory('equipment');
+    }
+    const bindSwap = s => {
+      detail.querySelectorAll('[data-equip-to]').forEach(b => b.addEventListener('click', () => {
+        const slotNo = Number(b.dataset.equipTo);
+        doEquip(slotNo, s.location, s.inventory_slot, `Equip ${prettyName(s)} in the ${eq.find(e => e.equip_slot === slotNo).slot_name} slot?`);
+      }));
+      const un = detail.querySelector('.ce-unequip');
+      if (un) un.addEventListener('click', () => doEquip(s.equip_slot, null, null, `Unequip ${prettyName(s)} from the ${s.slot_name} slot?`));
+      const tiles = detail.querySelector('.ce-pick-tiles');
+      const bindPicks = () => tiles && tiles.querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => {
+        const [loc, slot] = b.dataset.pick.split(':').map(Number);
+        const it = inv.items.find(x => x.location === loc && x.inventory_slot === slot);
+        doEquip(s.equip_slot, loc, slot, `Put ${prettyName(it)} in the ${s.slot_name} slot${s.empty ? '' : ' (replacing ' + prettyName(s) + ')'}?`);
+      }));
+      bindPicks();
+      const box = detail.querySelector('.ce-pick-search');
+      if (box) box.addEventListener('input', () => { pickSearch = box.value; tiles.innerHTML = pickTiles(s); bindPicks(); });
+    };
     const drawDetail = () => {
       const s = all.find(x => x.key === selectedKey);
       if (!s) { detail.innerHTML = ''; return; }
-      if (s.missing_row) { detail.innerHTML = '<div class="ce-progress-empty">This equip slot points at an inventory entry that no longer exists.</div>'; return; }
+      if (s.empty || s.missing_row) {
+        detail.innerHTML = `<div class="ce-head"><div><h3>${esc(s.slot_name)}</h3><div class="ce-muted">${s.missing_row ? 'This slot points at an inventory entry that no longer exists.' : 'Nothing equipped'}</div></div></div>${swapPanel(s)}`;
+        bindSwap(s);
+        return;
+      }
       draft ||= s.augments.map(a => ({id: a.id, value: a.value}));
       const changed = draft.some((a, i) => a.id !== s.augments[i].id || a.value !== s.augments[i].value);
       const totals = draft.filter(a => a.id).map(describeAug).filter(Boolean);
       const nat = (s.native || []).map(n => `<li title="${esc(n.comment || '')}"><strong>${esc(n.name)} ${signed(n.value)}${n.unit === 'percent' ? '%' : n.unit === 'seconds' ? 's' : ''}</strong>${n.comment && n.comment.toLowerCase() !== n.name.toLowerCase() ? ` <span class="ce-muted">— ${esc(n.comment)}</span>` : ''}</li>`).join('');
       const cond = [...(s.latent || []), ...(s.pet || [])];
       const condHtml = cond.length ? `<div class="ce-native"><strong>Conditional &amp; pet bonuses</strong> <span class="ce-muted">(only while the condition is met)</span><ul class="ce-cond">${cond.map(c => `<li><strong>${esc(c.text)}</strong> <span class="ce-muted">— ${esc(c.when)}</span></li>`).join('')}</ul></div>` : '';
-      detail.innerHTML = `<div class="ce-head">${iconImg(s.item_id, 48)}<div><h3>${esc(prettyName(s))}</h3><div class="ce-muted">${esc(s.carried ? s.group + ' · not equipped' : s.slot_name + ' · equipped')}</div></div></div>
+      detail.innerHTML = `<div class="ce-head">${iconImg(s.item_id, 48)}<div><h3>${esc(prettyName(s))}</h3><div class="ce-muted">${esc(s.carried ? s.group + ' · not equipped' : s.slot_name + ' · equipped')}${s.level ? ' · ' + esc(gearLine(s)) : ''}</div></div></div>
+        ${swapPanel(s)}
         <div class="ce-native"><strong>Built-in bonuses</strong> <span class="ce-muted">(every copy of this item has these; edit them in the Items editor)</span>${nat ? `<ul>${nat}</ul>` : '<div class="ce-muted">None defined by the server.</div>'}</div>
         ${condHtml}
         <h4 style="margin:10px 0 6px">Player augments</h4>
         ${draft.map((a, i) => `<div class="ce-augcard${a.id ? ' set' : ''}"><strong>Augment ${i + 1}</strong>${statSelect(a, i)}${amountSelect(a, i)}<button data-i="${i}" data-f="clear" ${a.id && offline ? '' : 'disabled'} title="Remove this augment">Clear</button>${note(a)}</div>`).join('')}
         <div class="ce-total"><strong>Bonuses on this item:</strong> ${totals.length ? esc(totals.join(' · ')) : '<span class="ce-muted">none</span>'}</div>
         <div class="ce-aug-actions"><button class="ce-aug-reset" ${changed ? '' : 'disabled'}>Undo edits</button><button class="ce-aug-apply primary" ${changed && offline ? '' : 'disabled'}>Save augments</button><span class="ce-aug-msg ce-muted">${offline ? '' : 'Log the character out to edit.'}</span></div>`;
+      bindSwap(s);
       detail.querySelectorAll('select[data-f="stat"]').forEach(el => el.addEventListener('change', () => {
         if (el.value === '?') return;
         const i = Number(el.dataset.i);

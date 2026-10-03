@@ -20,7 +20,9 @@ from .audit_gui import router as audit_router
 from .blacklist_transactions import apply_blacklist_edit, blacklist_rows, build_blacklist_edit_plan
 from .category_data import build_category_payload
 from .factory import open_character_editor
-from .equipment_augments import apply_augment_plan, augment_catalog, build_augment_plan, equipment_state, inventory_augmentables
+from .equipment_augments import (
+    apply_augment_plan, apply_equip_plan, augment_catalog, build_augment_plan, build_equip_plan, equipment_state, inventory_augmentables,
+)
 from .inventory_management import apply_inventory_management, build_inventory_management_plan
 
 router = APIRouter(prefix="/character-editor", tags=["Character Editor"])
@@ -494,6 +496,42 @@ async def character_editor_apply_augments(char_id: int, request: Request):
             if plan.source_fingerprint != expected:
                 raise HTTPException(status_code=409, detail="Inventory row changed since preview; preview again")
             return JSONResponse(_safe(apply_augment_plan(ctx.service.connection, plan, approved=True)))
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise _error(exc)
+
+
+def _equip_plan(ctx, char_id: int, body: dict):
+    loc, slot = body.get("location"), body.get("slot")
+    return build_equip_plan(
+        ctx.service.connection, char_id=char_id, equip_slot=int(body.get("equip_slot")),
+        location=None if loc is None else int(loc), slot=None if slot is None else int(slot),
+        adapter_family=ctx.service.adapter_family,
+    )
+
+
+@router.post("/characters/{char_id}/equipment/preview")
+async def character_editor_preview_equip(char_id: int, request: Request):
+    try:
+        body = await request.json()
+        with _context() as ctx:
+            return JSONResponse(_safe(_equip_plan(ctx, char_id, body).as_dict()))
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.post("/characters/{char_id}/equipment/apply")
+async def character_editor_apply_equip(char_id: int, request: Request):
+    try:
+        body = await request.json()
+        if body.get("approved") is not True:
+            raise HTTPException(status_code=400, detail="Explicit approved=true confirmation is required")
+        with _context() as ctx:
+            plan = _equip_plan(ctx, char_id, body)
+            if (plan.source_fingerprint or "") != str(body.get("expected_source_fingerprint") or ""):
+                raise HTTPException(status_code=409, detail="Inventory row changed since preview; preview again")
+            return JSONResponse(_safe(apply_equip_plan(ctx.service.connection, plan, approved=True)))
     except HTTPException:
         raise
     except Exception as exc:
