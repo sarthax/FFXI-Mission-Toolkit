@@ -106,3 +106,26 @@ def trait_rows(server_root: Path | str | None) -> dict[str, Any]:
 
 def mount_names() -> dict[str, str]:
     return json.loads(_REF.read_text(encoding="utf-8"))["mounts"]
+
+
+def jobs_reference(server_root: Path | str | None) -> dict[str, Any]:
+    """Skill names/categories (client) plus per-job skill ranks and level caps (server checkout)."""
+    root = Path(server_root) if server_root else None
+    skills = {k: {"name": v[0], "category": v[1]} for k, v in json.loads(_REF.read_text(encoding="utf-8")).get("skills", {}).items()}
+    ranks: dict[str, dict[str, int]] = {}
+    caps: dict[str, list[int]] = {}
+    if root:
+        rp, cp = root / "sql" / "skill_ranks.sql", root / "sql" / "skill_caps.sql"
+        if rp.is_file():
+            for v in _insert_rows(rp, "skill_ranks"):
+                try:
+                    ranks[v[0]] = {JOB_ABBR[i]: int(x) for i, x in enumerate(v[2:2 + len(JOB_ABBR)])}
+                except (ValueError, IndexError):
+                    continue
+        if cp.is_file():
+            for v in _insert_rows(cp, "skill_caps"):
+                try:
+                    caps[v[0]] = [int(x) for x in v[1:]]
+                except ValueError:
+                    continue
+    return {"skills": skills, "ranks": ranks, "caps": caps, "jobs": list(JOB_ABBR)}

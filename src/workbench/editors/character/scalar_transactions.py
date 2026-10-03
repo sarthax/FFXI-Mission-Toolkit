@@ -46,7 +46,7 @@ _ALLOWED_SELECTORS = {
     "char_vars": {"varname"},
 }
 # Tables where a missing keyed row may be created (e.g. first rank of a merit).
-_INSERTABLE = {"char_merit"}
+_INSERTABLE = {"char_merit", "char_skills"}
 _KEY_COLUMNS = {"charid", "char_id", "character_id", "skillid", "meritid", "jobid", "varname"}
 _VERIFIED_FAMILIES = {"dsp", "topaz", "lsb"}
 

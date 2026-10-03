@@ -88,6 +88,15 @@ def character_editor_spells(q: str = "", limit: int = Query(200, ge=1, le=1000))
         raise _error(exc, 503)
 
 
+@router.get("/reference/jobs-skills.json")
+def character_editor_jobs_reference():
+    try:
+        from .spell_reference import jobs_reference
+        return JSONResponse(_safe(jobs_reference(get_active_server_root())))
+    except Exception as exc:
+        raise _error(exc, 503)
+
+
 @router.get("/reference/spells-abilities.json")
 def character_editor_spell_reference():
     try:
