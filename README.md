@@ -1,12 +1,13 @@
 # FFXI Mission Toolkit / Workbench
 
-A local, browser-based research, reverse-engineering, validation, capture-analysis, and development workbench for Final Fantasy XI private-server work.
+A local, browser-based research, reverse-engineering, validation, capture-analysis, administration, and development workbench for Final Fantasy XI private-server work.
 
-The project began as a mission/data lookup utility. It has grown into a broader evidence-driven toolkit that connects server source, SQL, Lua, client DAT/resources, packet captures, video/OCR evidence, wiki/reference claims, client-build snapshots, migration packages, and runtime observations into one searchable local workspace.
+The project began as a mission/data lookup utility. It has grown into a broader evidence-driven toolkit that connects server source, SQL, Lua, client DAT/resources, packet captures, video/OCR evidence, wiki/reference claims, client-build snapshots, migration packages, runtime observations, and guarded server administration into one searchable local workspace.
 
 The guiding rule is simple: **preserve what was observed, keep inference separate, and do not manufacture certainty when the evidence is incomplete.**
 
 > **Current planning/status:** [`docs/workbench/ROADMAP_CURRENT.md`](docs/workbench/ROADMAP_CURRENT.md)  
+> **Recent merged changes:** [`docs/workbench/RECENT_CHANGES_2026-10-03.md`](docs/workbench/RECENT_CHANGES_2026-10-03.md)  
 > **Historical implementation ledger:** [`docs/workbench/ROADMAP.md`](docs/workbench/ROADMAP.md)
 
 ## What it is for
@@ -15,6 +16,8 @@ The Workbench is designed to answer questions such as:
 
 - Where is this NPC, mob, item, event, CSID, packet, Lua API, or server feature actually implemented?
 - Is a server entity wired correctly across SQL, Lua, instance registration, groups/pools, client identity, and runtime evidence?
+- What does this NPC, mob, door, instance, or mission step actually do in plain language?
+- Which character flags, key items, mission states, titles, inventory rows, spells, merits, or packed fields represent a player state?
 - What changed between two FFXI client builds?
 - Which packet/capture observations support a behavior or implementation claim?
 - What source, capture, client, or reference evidence contradicts another source?
@@ -24,6 +27,41 @@ The Workbench is designed to answer questions such as:
 
 ## Major capability areas
 
+### Server environments and administration
+
+The Workbench now treats server targets as named environments rather than a single Topaz/DSP path.
+
+- Named **Live / Test / Dev / Backup / Other** profiles can point to LandSandBoat, Topaz, DSP, or compatible custom forks.
+- Settings is the canonical place to create, edit, enable, test, activate, and remove server profiles.
+- The active environment is shown in the shared shell and is consumed by generic/admin tooling.
+- Zone Editor, Item Editor, model/client correlation, Entity Profile, and Character Editor use the active profile where appropriate.
+- Multiple environments from the same server family are supported without silently collapsing them into one root.
+- Native server configuration remains authoritative for database credentials; passwords are not surfaced by the toolkit.
+- LIVE-target selections require explicit confirmation in editor workflows that can write.
+- Legacy Topaz/DSP path settings remain only as bootstrap/fallback or lineage-specific comparison roots.
+
+### Character Editor
+
+The Character Editor is now a guarded DSP / Topaz / LandSandBoat administration surface rather than a single-schema prototype.
+
+Current capabilities include:
+
+- Dense character overview with sticky tabs/header, changed-field apply bar, filters, pagination, friendly field labels, units, and compact current-state-first presentation.
+- Inventory browsing and guarded add/move/quantity/remove operations across directly verifiable persistent containers.
+- Client-derived item names/icons with lazy icon loading and persistent client DAT cache support.
+- Scalar character/job/stat/skill/point fields where the detected schema exposes verified editable columns.
+- Packed mission, quest, key-item, Assault, Campaign, Eminence, ability, weaponskill, title, visited-zone, and Blue Magic state through lineage-aware codecs.
+- Learned spell and blacklist administration.
+- Semantic merit catalogs using the active checkout's native metadata, including current LSB data and legacy DSP merit sources where available.
+- Legacy DSP mission/assault name resolution from checkout-local `missions.lua` banners.
+- Mission/quest **State Surface** tracing that links current character state to source-evidenced charvars, key items, items, events, titles, mission/quest state, gil/fame, and source lines.
+- Guarded preview/apply transactions, offline verification, stale-state fingerprints, audit journals, and supported Undo operations.
+- LSB-only administrative fields when an explicit lineage/schema allowlist proves safe persistence semantics.
+
+Runtime-owned status effects, recasts, pet/session state, and unknown lineage-specific fields remain intentionally read-only.
+
+See [`docs/workbench/CHARACTER_EDITOR_CLOSEOUT.md`](docs/workbench/CHARACTER_EDITOR_CLOSEOUT.md).
+
 ### Feature Trace and implementation discovery
 
 - Cross-source **Feature Trace** catalog across server SQL/Lua, LandSandBoat/Topaz/DSP-style sources, client resources, captures, research, validation, and packages.
@@ -31,11 +69,14 @@ The Workbench is designed to answer questions such as:
 - Evidence dossiers with bounded drill-down from canonical features to runtime observations and exact source/capture provenance.
 - Entity identity bridging across server IDs, client ENTITY resources, capture observations, and multiple client builds with fail-closed ambiguity handling.
 - Lua API → C++ binding/registration/implementation evidence where exact source evidence exists.
+- Mission/quest **State Surface** extraction reused by Character Editor for evidence-backed progression inspection.
 
 ### Entity, behavior, mission, and event research
 
 - **Entity Profile / Dossier** combining SQL wiring, Lua behavior, client identity, captures, events/CSIDs, implementation gaps, and related evidence.
 - **Behavior Inspector** for NPCs, mobs, doors, zone scripts, instances, timers, callbacks, state transitions, helpers, conditions, and effects.
+- Behavior Inspector now defaults to a **Plain Behavior** presentation that groups each behavior into **Trigger → Requirements → Actions / Events → Results / State Changes** and translates common Lua/API concepts into end-user language.
+- The technical graph remains available with wheel zoom, drag-pan, fit/reset controls, causal-path highlighting, and a persistent right-side node inspector.
 - Mission/quest extraction with guarded state transitions, prerequisite closure, branch/convergence analysis, timers, trades, key items, event chains, helper calls, and stress metrics.
 - Events/CSID browser with conservative server/client reconciliation and variable-length EVENT decoding where formulas are statically provable.
 - Generic reusable frameworks for multi-zone progression and minigame/puzzle/state-machine content.
@@ -65,6 +106,7 @@ Capture features include:
 - Modular **Evidence Search** for Events/Dialogue, Raw Protocol, Entities, Battle/Actions, Items/KIs, Vendors/Shops, Crafting, Chat/Text, Spatial/Movement, and Environment/World State.
 - Related-evidence handoffs using explicit provenance and identity keys rather than fuzzy timestamp/name proximity.
 - 2D/3D spatial views with paths, entities, labels, IDs, positions, and client mesh context.
+- Campaign/session manifest import support and message-ID shift handling for capture campaigns.
 
 ### Video, OCR, and evidence alignment
 
@@ -81,11 +123,15 @@ Capture features include:
 - Client ENTITY identity extraction and canonical entity reconciliation.
 - Model catalog/viewer and server/capture-aware 3D zone viewing.
 - Item Editor with SQL/client reconciliation, constrained edits, backups, validation, batch workflows, and rollback-oriented client patching.
+- Zone Editor and Item Editor use named active server environments instead of assuming one Topaz/DSP target.
+- Persistent **client item DAT cache** supports lazy extract-on-first-use or optional one-time full prebuild. Parsed metadata is indexed in SQLite and icons are stored as normal PNG assets for browser/filesystem caching.
+- Character inventory defers icon requests for collapsed storage containers and uses lazy image loading.
 - Proposal-first client DAT patch orchestration with fingerprints, drift detection, approval gates, backups, and deterministic rollback for supported record families.
 
 ### Protocol and packet research
 
 - Manual and bulk packet decode, including multiline PacketLogger/PacketViewer-style hex grids.
+- Packetlyzer/XiPackets opcode-reference improvements and corrected packet field handling where verified.
 - PCAP/PCAPNG frame parsing and generic bidirectional TCP reconstruction with gaps/retransmissions/conflicts preserved explicitly.
 - Conservative lobby classification/decoding for known structurally valid commands.
 - World/search/lobby transport research kept separated where protocol evidence is incomplete.
@@ -105,14 +151,15 @@ Capture features include:
 - Patch-plan drift checks, explicit approval states, deterministic file apply journals, and rollback support.
 - Validation dashboard/runs tied back into canonical evidence.
 - Source/target conversion and migration support where transformations are deterministic and audited.
+- Ongoing Phase D source-layout migration has moved major Workbench components under `src/workbench/...` while preserving thin compatibility imports for older entry points.
 
 ### Editors and domain workspaces
 
 - Modern **Zone Editor** (`/zoneplot2`) with spatial editing, detection overlays, navmesh/client-mesh context, bookmarks/templates, review tools, bulk alignment, and server-aware editing workflows.
+- 2D/3D plot/viewer routing is guarded by live-app regressions and integrated handoffs.
 - 3D zone/model viewers integrated into the shared Workbench shell.
-- Nyzul layout tooling modernized onto the Zone Editor interaction model.
+- Nyzul layout tooling uses compatible DSP/Topaz-era source layouts and rejects incompatible modern-LSB layouts instead of parsing them incorrectly.
 - Domain-oriented workflows for Assault, Nyzul, and Salvage rather than forcing every named system into the generic feature list.
-- Salvage currently includes a reconstruction dossier, visual workspace, and conservative unresolved floor/room candidate segmentation; proposal compilation is still under active development.
 
 ## Evidence model and safety philosophy
 
@@ -139,9 +186,9 @@ Different forks are not assumed to be schema-identical. Cross-source normalizati
 
 ## Write behavior
 
-The project is **not globally read-only** anymore.
+The project is **not globally read-only**.
 
-Most research/indexing/capture/client-inspection workflows are read-only, but some explicit development workflows can write when the user chooses them, including server editing, approved package/file application, and supported client patch operations. Those paths use review/approval, validation, backup/journal, fingerprint, or rollback mechanisms where implemented.
+Most research/indexing/capture/client-inspection workflows remain read-only, but explicit development/admin workflows can write when the user chooses them. Character/server editing paths use lineage/schema contracts, offline checks, preview/approval, stale-state checks, audits and Undo where implemented. Package/file and supported client patch workflows use approval, validation, backup/journal, fingerprint, or rollback mechanisms where implemented.
 
 Automatic SQL/Lua application from reconstruction evidence and fully generalized client-record creation are **not** currently claimed as complete.
 
@@ -155,15 +202,15 @@ Typical local use requires:
 - `xi-tinkerer` / `xi-tinkerer-py` for supported DAT/zone/model parsing paths
 - Optional additional server forks, client snapshots, capture archives, local Ollama models, and external tooling depending on the workflows you use
 
-No FFXI game data is distributed with this repository. Client-derived data is read from your own installation.
+No FFXI game data is distributed with this repository. Client-derived caches are generated locally from the user's own installation and are ignored by Git.
 
-See [`docs/guides/TOOLING_OVERVIEW.md`](docs/guides/TOOLING_OVERVIEW.md) for the external/vendor tooling inventory.
+See [`docs/guides/TOOLING_OVERVIEW.md`](docs/guides/TOOLING_OVERVIEW.md) for the current tooling inventory.
 
 ## Quick start
 
 1. Install Python 3.11+ and ensure `python` is available on PATH.
 2. Run `setup.bat` for first-time dependency/configuration setup.
-3. Configure your client/server paths when prompted or through the toolkit configuration/settings workflow.
+3. Configure your FFXI client path and at least one server/source checkout.
 4. Start the toolkit with:
 
 ```bat
@@ -176,37 +223,45 @@ start.bat
 http://127.0.0.1:8420
 ```
 
-The older setup guide still documents the original Topaz-centric installation path and remains useful for setup mechanics, but it does not yet describe the full current Workbench product surface. See [`docs/guides/SETUP.md`](docs/guides/SETUP.md).
+6. Open **Settings → Server Environments** and define the Live/Test/Dev/Backup profiles you intend to use. The active environment becomes the default server context for generic/admin tools.
+7. Optional: under Settings, use **Build all item DAT cache** to pre-extract item metadata/icons once. If you do nothing, the cache fills lazily as assets are requested.
+
+See [`docs/guides/SETUP.md`](docs/guides/SETUP.md) for current setup and environment guidance.
 
 ## Workspace map
 
 The shared Workbench shell organizes the product into these broad areas:
 
 - **Home / Project** — source/configuration overview and project entry points
-- **Features** — Feature Trace, Implementation Path, entity/event behavior and generic feature research
+- **Server** — Character Editor and server administration/environment-aware tools
+- **Features** — Feature Trace, Implementation Path, Entity/Behavior research, Events/CSIDs, and generic feature research
 - **Packages** — dependency scope, package creation/review, migration planning
 - **Validation** — validation runs and evidence-backed checks
 - **Client** — snapshots, DAT inspection, model/item/client-build tooling
 - **Research** — Research Sessions and wiki/reference workflows
 - **Domains** — named systems such as Assault, Nyzul, and Salvage
 - **Captures** — ingestion, Data Explorer, Evidence Search, spatial/network/video evidence
-- **Tools** — lower-level entity, packet, binding, ID-drift, editor, and diagnostic utilities
+- **Tools** — lower-level packet, binding, ID-drift, editor, and diagnostic utilities
+- **Settings** — server environments, client paths/caches, and shared runtime configuration
+
+Top-level category clicks open their section menus; the Sections control exposes the persistent secondary navigation bar.
 
 ## Project status
 
-The toolkit is under active rework and expansion. The root README intentionally summarizes only durable current capability; it does not attempt to duplicate the complete implementation ledger.
+The toolkit is under active rework and expansion. The root README summarizes durable current capability; it does not duplicate the full implementation ledger.
 
-For the authoritative capability inventory, incomplete areas, and active priorities, use:
+For the authoritative capability inventory, current incomplete areas, and recent merged work, use:
 
 - [`docs/workbench/ROADMAP_CURRENT.md`](docs/workbench/ROADMAP_CURRENT.md) — current capability/status roadmap
+- [`docs/workbench/RECENT_CHANGES_2026-10-03.md`](docs/workbench/RECENT_CHANGES_2026-10-03.md) — October 1–3 reconciliation and merged-change summary
 - [`docs/workbench/ROADMAP.md`](docs/workbench/ROADMAP.md) — historical implementation ledger
-- [`docs/workbench/AUDIT_STATUS.md`](docs/workbench/AUDIT_STATUS.md) — implementation/audit notes
+- [`docs/workbench/AUDIT_STATUS.md`](docs/workbench/AUDIT_STATUS.md) — historical/implementation audit notes
 
-Current near-term work is focused on evidence-backed Salvage reconstruction/compiler development, followed by broader behavioral dependency closure, client/server synchronization, protocol/capture research, and additional named-system workflows.
+Near-term work remains focused on richer progression/transition reasoning, broader client/server asset synchronization, protocol/capture research, named-system reconstruction, and continued source-layout cleanup without regressing mature tools.
 
 ## Screenshots
 
-The screenshots currently stored under `docs/screenshots/` represent earlier generations of the UI and are intentionally not embedded here as the primary project presentation. The shared shell, Capture Evidence Search/Data Explorer, Feature Trace, domain workspaces, Zone Editor, client tooling, and research surfaces have changed substantially since those images were captured.
+The screenshots currently stored under `docs/screenshots/` represent earlier generations of the UI and are intentionally not embedded here as the primary project presentation. The shared shell, Character Editor, Behavior Inspector, Capture Evidence Search/Data Explorer, Feature Trace, domain workspaces, Zone Editor, client tooling, and research surfaces have changed substantially since those images were captured.
 
 A refreshed screenshot set should be captured from the current Workbench before screenshots are promoted back onto the project home page.
 
