@@ -137,10 +137,9 @@ def bitmask_schema():
     enum_schemas = ENUM_SCHEMAS
     try:
         from workbench.editors.items import _db_alias
-        if _db_alias.is_dsp():
-            # DSP stores moghancement in tinyint(3) unsigned / uint8, so the 512+ MOGHOUSE_AURA ids can't
-            # be held (and nothing reads the value); drop the enum and edit it as a plain number.
-            enum_schemas = {**ENUM_SCHEMAS, "item_furnishing": {}}
+        if _db_alias.is_dsp():  # DSP's MOGHOUSE_AURA enum differs from Topaz's moghancement ids
+            from workbench.editors.items import _enums_dsp
+            enum_schemas = {**ENUM_SCHEMAS, "item_furnishing": {"moghancement": sorted(_enums_dsp.MOGHANCEMENT.items())}}
     except Exception:
         pass
     for table, cols in enum_schemas.items():
