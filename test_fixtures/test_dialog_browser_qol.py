@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     server = (ROOT / "gui_server.py").read_text(encoding="utf-8")
     template = (ROOT / "gui" / "templates" / "dialog.html").read_text(encoding="utf-8")
-    explore = (ROOT / "explore_event.py").read_text(encoding="utf-8")
+    explore = (ROOT / "src" / "workbench" / "devtools" / "server" / "_explore_event_impl.py").read_text(encoding="utf-8")
 
     assert "def _parse_dialog_id_query(" in server
     assert "value.lower().startswith(\"0x\")" in server
