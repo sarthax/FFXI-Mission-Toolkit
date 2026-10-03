@@ -16,6 +16,8 @@
     return inventoryContainers;
   }
 
+  window.CEInventoryRefreshState = fetchInventoryState;
+
   function invalidateItemPreview() {
     lastPreview = null;
     const confirmButton = document.getElementById('confirmButton');

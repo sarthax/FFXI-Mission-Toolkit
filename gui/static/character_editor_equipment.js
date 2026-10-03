@@ -107,6 +107,7 @@
       .ce-equip-manager .ce-augcard select{min-width:0;padding:3px 4px}.ce-equip-manager .ce-augcard.set{border-color:#8a6500;background:rgba(245,197,66,.08)}
       .ce-equip-manager .ce-native{margin-bottom:6px;font-size:12px}.ce-equip-manager .ce-native ul{margin:4px 0 0;padding-left:18px;columns:2}.ce-equip-manager .ce-native ul.ce-cond{columns:1}.ce-equip-manager .ce-augnote{grid-column:1/-1;font-size:12px;opacity:.85}.ce-equip-manager .ce-total{margin:10px 0;padding:8px;border-radius:6px;background:rgba(255,255,255,.06);font-size:13px}
       .ce-equip-manager .ce-aug-actions{display:flex;gap:8px;align-items:center}
+      .ce-equip-manager .ce-tile .wn{position:absolute;top:2px;left:3px;font-size:10px;font-weight:700}.ce-equip-manager .ce-tile.blocked{opacity:.45;cursor:not-allowed}.ce-equip-manager .ce-tile .bl{color:#ff8a80;font-size:9px;line-height:1.1}.ce-equip-manager .ce-warn{color:#ff8a80;font-size:12px}
       .ce-equip-manager .ce-tile.empty{border-style:dashed;opacity:.7}.ce-equip-manager .ce-swap{margin:0 0 12px;padding:8px;border:1px solid var(--border,#444);border-radius:6px}
       .ce-equip-manager .ce-swap-bar{display:flex;gap:8px;align-items:center;margin:6px 0}.ce-equip-manager .ce-swap-bar input[type=search]{flex:1;min-width:0;padding:3px 6px}
       .ce-equip-manager .ce-swap .ce-tiles{max-height:230px;overflow:auto;grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}.ce-equip-manager .ce-tile .lv{opacity:.65;font-size:9px}
@@ -123,7 +124,7 @@
       shown.forEach(s => { if (!order.includes(s.group)) order.push(s.group); });
       listEl.innerHTML = order.map(gname => `<h4>${esc(gname)}</h4><div class="ce-tiles">${shown.filter(s => s.group === gname).map(s => {
         const n = augCount(s);
-        return `<button class="ce-tile${s.key === selectedKey ? ' active' : ''}${s.empty ? ' empty' : ''}" data-k="${s.key}" title="${esc(prettyName(s))}">${n ? `<span class="bd">✦${n}</span>` : ''}${s.item_id ? iconImg(s.item_id, 32) : ''}<span class="nm">${esc(prettyName(s))}</span><span class="sl">${esc(s.slot_name)}</span></button>`;
+        return `<button class="ce-tile${s.key === selectedKey ? ' active' : ''}${s.empty ? ' empty' : ''}" data-k="${s.key}" title="${esc(prettyName(s))}">${n ? `<span class="bd">✦${n}</span>` : ''}${s.equip_block ? '<span class="wn" style="color:#ff8a80" title="Cannot be worn by this character">⚠</span>' : ''}${s.item_id ? iconImg(s.item_id, 32) : ''}<span class="nm">${esc(prettyName(s))}</span><span class="sl">${esc(s.slot_name)}</span></button>`;
       }).join('')}</div>`).join('') || '<div class="ce-muted">No gear matches.</div>';
       listEl.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => { selectedKey = b.dataset.k; draft = null; draft = null; pickSearch = ''; drawList(); drawDetail(); }));
     };
@@ -158,9 +159,10 @@
       const cands = (inv.items || []).filter(it => fits(it, s.equip_slot) && !(it.location === s.location && it.inventory_slot === s.inventory_slot)
         && (!q || (it.name || '').toLowerCase().replace(/_/g, ' ').includes(q)));
       if (!cands.length) return '<div class="ce-muted">No matching gear in the Inventory or Wardrobes.</div>';
+      cands.sort((a, b) => !!a.equip_block - !!b.equip_block);
       return `<div class="ce-tiles">${cands.map(it => {
         const n = it.augments.filter(a => a.id).length, worn = wornAt.get(`${it.location}:${it.inventory_slot}`);
-        return `<button class="ce-tile" data-pick="${it.location}:${it.inventory_slot}" title="${esc(prettyName(it))}" ${offline ? '' : 'disabled'}>${n ? `<span class="bd">✦${n}</span>` : ''}${iconImg(it.item_id, 32)}<span class="nm">${esc(prettyName(it))}</span><span class="lv">${esc(gearLine(it))}</span><span class="sl">${esc(worn ? 'worn: ' + worn : it.container)}</span></button>`;
+        return `<button class="ce-tile${it.equip_block ? ' blocked' : ''}" data-pick="${it.location}:${it.inventory_slot}" title="${esc(prettyName(it) + (it.equip_block ? ' — ' + it.equip_block : ''))}" ${offline && !it.equip_block ? '' : 'disabled'}>${n ? `<span class="bd">✦${n}</span>` : ''}${iconImg(it.item_id, 32)}<span class="nm">${esc(prettyName(it))}</span><span class="lv">${esc(gearLine(it))}</span><span class="sl">${esc(worn ? 'worn: ' + worn : it.container)}</span>${it.equip_block ? `<span class="bl">${esc(it.equip_block)}</span>` : ''}</button>`;
       }).join('')}</div>`;
     };
     const swapPanel = s => {
@@ -221,6 +223,7 @@ This item is currently worn in the ${eq.find(e => e.equip_slot === p.moved_from)
       const cond = [...(s.latent || []), ...(s.pet || [])];
       const condHtml = cond.length ? `<div class="ce-native"><strong>Conditional &amp; pet bonuses</strong> <span class="ce-muted">(only while the condition is met)</span><ul class="ce-cond">${cond.map(c => `<li><strong>${esc(c.text)}</strong> <span class="ce-muted">— ${esc(c.when)}</span></li>`).join('')}</ul></div>` : '';
       detail.innerHTML = `<div class="ce-head">${iconImg(s.item_id, 48)}<div><h3>${esc(prettyName(s))}</h3><div class="ce-muted">${esc(s.carried ? s.group + ' · not equipped' : s.slot_name + ' · equipped')}${s.level ? ' · ' + esc(gearLine(s)) : ''}</div></div></div>
+        ${s.equip_block && !s.carried ? `<div class="ce-warn" style="margin:0 0 8px">⚠ ${esc(s.equip_block)}. The server will unequip this when the character logs in.</div>` : ''}
         ${swapPanel(s)}
         <div class="ce-native"><strong>Built-in bonuses</strong> <span class="ce-muted">(every copy of this item has these; edit them in the Items editor)</span>${nat ? `<ul>${nat}</ul>` : '<div class="ce-muted">None defined by the server.</div>'}</div>
         ${condHtml}

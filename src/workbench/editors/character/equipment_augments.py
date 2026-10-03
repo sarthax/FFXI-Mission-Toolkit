@@ -263,8 +263,36 @@ def _jobs_text(mask: int) -> str:
     return "All jobs" if len(names) >= len(_JOB_ABBR) else "/".join(names)
 
 
-def equip_meta(connection, item_ids) -> dict[int, dict[str, Any]]:
-    """itemId -> {slot_mask, level, jobs} from item_armor (weapons carry a row there too)."""
+def player_state(connection, char_id: int) -> dict[str, Any]:
+    """Main job and level, which the core server checks before it lets a piece of gear stay equipped."""
+    cursor = connection.cursor()
+    try:
+        cursor.execute("SELECT `mjob`,`mlvl`,`sjob`,`slvl` FROM `char_stats` WHERE `charid` = %s", (int(char_id),))
+        row = cursor.fetchone()
+    except Exception:
+        row = None
+    finally:
+        cursor.close()
+    if not row:
+        return {"mjob": None, "mlvl": None, "job": None}
+    return {"mjob": int(row[0]), "mlvl": int(row[1]), "job": _JOB_ABBR.get(int(row[0]), f"Job {row[0]}"),
+            "sjob": int(row[2]), "slvl": int(row[3])}
+
+
+def equip_block(meta: dict[str, Any] | None, player: dict[str, Any] | None) -> str | None:
+    """Why the character cannot wear this gear (the server unequips it on login), or None if it can."""
+    if not meta or not meta.get("slot_mask") or not player or not player.get("mjob"):
+        return None
+    mask = int(meta.get("jobs_mask") or 0)
+    if mask and not mask & (1 << (int(player["mjob"]) - 1)):
+        return f"{player['job']} cannot use this ({meta.get('jobs') or 'other jobs only'})"
+    if int(meta.get("level") or 0) > int(player["mlvl"] or 0):
+        return f"Needs Lv{meta['level']} (this character's {player['job']} is Lv{player['mlvl']})"
+    return None
+
+
+def equip_meta(connection, item_ids, player: dict[str, Any] | None = None) -> dict[int, dict[str, Any]]:
+    """itemId -> {slot_mask, level, jobs, equip_block} from item_armor (weapons carry a row there too)."""
     ids = sorted({int(i) for i in item_ids if i})
     out: dict[int, dict[str, Any]] = {}
     for i in range(0, len(ids), 500):
@@ -273,7 +301,9 @@ def equip_meta(connection, item_ids) -> dict[int, dict[str, Any]]:
         try:
             cursor.execute(f"SELECT `itemId`,`slot`,`level`,`jobs` FROM `item_armor` WHERE `itemId` IN ({','.join(['%s'] * len(chunk))})", tuple(chunk))
             for item_id, mask, level, jobs in cursor.fetchall() or []:
-                out[int(item_id)] = {"slot_mask": int(mask or 0), "level": int(level or 0), "jobs": _jobs_text(int(jobs or 0))}
+                meta = {"slot_mask": int(mask or 0), "level": int(level or 0), "jobs": _jobs_text(int(jobs or 0)), "jobs_mask": int(jobs or 0)}
+                meta["equip_block"] = equip_block(meta, player)
+                out[int(item_id)] = meta
         except Exception:
             pass
         finally:
@@ -309,13 +339,14 @@ def equipment_state(connection, char_id: int, root: Path | str | None = None) ->
     filled = [r["item_id"] for r in rows if r["item_id"]]
     native = native_bonuses(connection, filled, root)
     cond_all = conditional_bonuses(connection, filled, root)
-    meta = equip_meta(connection, filled)
+    player = player_state(connection, char_id)
+    meta = equip_meta(connection, filled, player)
     for r in rows:
         r["native"] = native.get(r["item_id"], [])
         cond = cond_all.get(r["item_id"], {})
         r["latent"], r["pet"] = cond.get("latent", []), cond.get("pet", [])
-        r.update(meta.get(r["item_id"], {"slot_mask": 0, "level": 0, "jobs": ""}))
-    return {"char_id": int(char_id), "slots": rows}
+        r.update(meta.get(r["item_id"], {"slot_mask": 0, "level": 0, "jobs": "", "jobs_mask": 0, "equip_block": None}))
+    return {"char_id": int(char_id), "player": player, "slots": rows}
 
 
 def inventory_augmentables(connection, char_id: int, root: Path | str | None = None) -> dict[str, Any]:
@@ -354,12 +385,13 @@ def inventory_augmentables(connection, char_id: int, root: Path | str | None = N
                     "extra_hex": raw.hex(), "augments": decode_augments(raw)})
     native = native_bonuses(connection, [o["item_id"] for o in out], root)
     cond_all = conditional_bonuses(connection, [o["item_id"] for o in out], root)
-    meta = equip_meta(connection, [o["item_id"] for o in out])
+    player = player_state(connection, char_id)
+    meta = equip_meta(connection, [o["item_id"] for o in out], player)
     for o in out:
-        o.update(meta.get(o["item_id"], {"slot_mask": 0, "level": 0, "jobs": ""}))
+        o.update(meta.get(o["item_id"], {"slot_mask": 0, "level": 0, "jobs": "", "jobs_mask": 0, "equip_block": None}))
         o["native"] = native.get(o["item_id"], [])
         o["latent"], o["pet"] = cond_all.get(o["item_id"], {}).get("latent", []), cond_all.get(o["item_id"], {}).get("pet", [])
-    return {"char_id": int(char_id), "items": out}
+    return {"char_id": int(char_id), "player": player, "items": out}
 
 
 @dataclass(frozen=True)
@@ -595,7 +627,7 @@ def build_equip_plan(connection, *, char_id: int, equip_slot: int, location: int
             fingerprint = _fingerprint(row)
             item_id = int(row.get("itemId") or 0)
             item = _item_record(connection, item_id)
-            meta = equip_meta(connection, [item_id]).get(item_id)
+            meta = equip_meta(connection, [item_id], player_state(connection, char_id)).get(item_id)
             if item is None:
                 issues.append(AugmentIssue("item_unknown", f"Item ID {item_id} is not in the connected item catalog."))
             if location not in EQUIPPABLE_LOCATIONS:
@@ -604,6 +636,9 @@ def build_equip_plan(connection, *, char_id: int, equip_slot: int, location: int
                 issues.append(AugmentIssue("not_equippable", "This item is not armor or a weapon."))
             elif 0 <= equip_slot < len(EQUIP_SLOTS) and not meta["slot_mask"] & (1 << equip_slot):
                 issues.append(AugmentIssue("wrong_slot", f"This item does not go in the {EQUIP_SLOTS[equip_slot]} slot."))
+            reason = equip_block(meta, player_state(connection, char_id)) if equip_slot != -1 else None
+            if reason:
+                issues.append(AugmentIssue("cannot_equip", f"{reason}. The server would unequip it when the character logs in."))
             if int(row.get("bazaar") or 0):
                 issues.append(AugmentIssue("bazaar_listed", "Bazaar-listed rows are protected from direct changes."))
             if current == (location, slot):
