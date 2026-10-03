@@ -16,6 +16,14 @@
     return inventoryContainers;
   }
 
+  function invalidateItemPreview() {
+    lastPreview = null;
+    const confirmButton = document.getElementById('confirmButton');
+    if (confirmButton) confirmButton.disabled = true;
+    const previewBox = document.getElementById('itemPreview');
+    if (previewBox) previewBox.textContent = '';
+  }
+
   function ensureBagSelector() {
     const dialog = document.getElementById('itemDialog');
     if (!dialog) return null;
@@ -26,7 +34,13 @@
       label.innerHTML = 'Bag <select id="itemLocation" style="min-width:160px"></select>';
       (qty?.closest('.ce-toolbar') || dialog).appendChild(label);
       select = label.querySelector('select');
+      select.addEventListener('change', invalidateItemPreview);
+      if (qty && !qty.dataset.ceInventoryPreviewGuard) {
+        qty.dataset.ceInventoryPreviewGuard = '1';
+        qty.addEventListener('input', invalidateItemPreview);
+      }
     }
+    const prior = select.value;
     const destinations = safeDestinationContainers();
     select.innerHTML = destinations.map(c => {
       const disabled = Number(c.capacity || 0) <= 0 || Number(c.count || 0) >= Number(c.capacity || 0);
@@ -35,8 +49,13 @@
     }).join('');
     if (![...select.options].some(o => !o.disabled)) {
       select.innerHTML = '<option value="0" disabled>No verified destination has free space</option>';
+    } else if ([...select.options].some(o => o.value === prior && !o.disabled)) {
+      select.value = prior;
     } else if ([...select.options].some(o => Number(o.value) === 0 && !o.disabled)) {
       select.value = '0';
+    } else {
+      const first = [...select.options].find(o => !o.disabled);
+      if (first) select.value = first.value;
     }
     return select;
   }
@@ -79,6 +98,11 @@
     if (!selectedChar || !selectedItem || !lastPreview?.ready) return;
     const quantity = Number(document.getElementById('itemQty').value || 1);
     const location = Number(document.getElementById('itemLocation')?.value ?? 0);
+    if (Number(lastPreview.quantity) !== quantity || Number(lastPreview.location) !== location || Number(lastPreview.item?.item_id) !== Number(selectedItem.item_id)) {
+      alert('Item, quantity, or destination changed since preview. Preview the Add Item operation again.');
+      invalidateItemPreview();
+      return;
+    }
     const name = lastPreview.location_name || `location ${location}`;
     if (!confirm(`Add ${quantity} × ${selectedItem.name} to ${name}, slot ${lastPreview.slot}?`)) return;
     try {
