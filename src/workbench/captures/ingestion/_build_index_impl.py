@@ -77,11 +77,16 @@ DB_PATH = TOOLS_ROOT / "ffxi_zone_database.db"
 # alphabetically ascending (user's explicit preference, 2026-09-04) -- keep this order when
 # adding/removing entries rather than appending to the end.
 CAPTURE_TAGS = [
-    "Abyssea", "Assault", "Battle", "Battle Systems", "Battlefields", "Combat", "Conflict", "Escha",
-    "Events", "Events - Holiday", "Events - Temporary", "Hobbies", "Missions", "NPC",
+    "Abyssea", "Assault", "Ballista", "Battle", "Battle Systems", "Battlefields", "Besieged", "Brenner",
+    "Campaign", "Colonization", "Combat", "Conflict", "Escha", "Events", "Events - Holiday",
+    "Events - Temporary", "Expeditionary Force", "Garrison", "Hobbies", "Missions", "NPC",
     "Notorious Monsters", "Quests", "Records of Eminence", "Research", "Salvage", "Shop",
     "Trust", "Uncategorized",
 ]
+# 2026-10-03: tags are FREE-FORM (set_capture_tags accepts any text). CAPTURE_TAGS above is only the
+# suggested default set. Convention: a TYPE tag (Conflict, Assault, Salvage, Abyssea, Events...)
+# mirroring the Discord category, plus a KIND tag mirroring the channel (Campaign, Ballista, Besieged,
+# Brenner, Colonization, Expeditionary Force, Garrison) -- e.g. Conflict + Campaign + Battle.
 
 
 def init_db(con: sqlite3.Connection):
@@ -1270,18 +1275,30 @@ def create_manual_capture(con, label: str, content_type: str, mission_name: str 
 
 
 def set_capture_tags(con, capture_id: int, tags: list[str]):
-    """Replaces this capture's real content-category tags (capture_tags, CAPTURE_TAGS' real
-    taxonomy) wholesale -- delete-then-insert, same idiom as ingest_packetlogger's own
-    replace-on-reingest, so re-saving the tag editor with a different set never leaves stale tags
-    behind. Silently drops anything not in CAPTURE_TAGS rather than accepting arbitrary free text
-    -- keeps the filter dropdown honest (every value shown there is guaranteed to have real rows)."""
-    valid = set(CAPTURE_TAGS)
+    """Replaces this capture's tags wholesale (delete-then-insert). Tags are free-form: any
+    non-empty text is kept (trimmed, case-insensitively de-duplicated, 60 chars max); a tag
+    that matches a known/existing tag case-insensitively reuses that spelling."""
+    known = {t.lower(): t for t in all_tag_choices(con)}
     con.execute("DELETE FROM capture_tags WHERE capture_id=?", (capture_id,))
+    seen = set()
     for tag in tags:
-        if tag in valid:
-            con.execute("INSERT OR IGNORE INTO capture_tags (capture_id, tag) VALUES (?,?)",
-                        (capture_id, tag))
+        tag = re.sub(r"\s+", " ", (tag or "")).strip()[:60]
+        if not tag or tag.lower() in seen:
+            continue
+        seen.add(tag.lower())
+        con.execute("INSERT OR IGNORE INTO capture_tags (capture_id, tag) VALUES (?,?)",
+                    (capture_id, known.get(tag.lower(), tag)))
     con.commit()
+
+
+def all_tag_choices(con) -> list[str]:
+    """Suggested defaults plus every tag actually in use, sorted."""
+    used = [r[0] for r in con.execute("SELECT DISTINCT tag FROM capture_tags")]
+    return sorted(set(CAPTURE_TAGS) | set(used), key=str.lower)
+
+
+def split_tags(raw: str) -> list[str]:
+    return [t for t in re.split(r"[,;\n]", raw or "") if t.strip()]
 
 
 def get_capture_tags(con, capture_id: int) -> list[str]:
@@ -4076,10 +4093,19 @@ def main():
                                           "legacy tables/database Lua sources, without a full "
                                           "re-ingest")
 
+    p6 = sub.add_parser("apply-manifest", help="link ingested captures to their Discord #campaign posts "
+                                                "(uploader, post date, video, type/tags) via campaign_manifest.json")
+    p6.add_argument("--dry-run", action="store_true")
+
     args = ap.parse_args()
     con = sqlite3.connect(str(DB_PATH))
     init_db(con)
 
+    if args.cmd == "apply-manifest":
+        from workbench.core.services import campaign_manifest
+        campaign_manifest.apply(con, dry_run=args.dry_run)
+        con.close()
+        return
     if args.cmd == "ingest":
         ingest(con, args.path, content_type=args.content_type)
     elif args.cmd == "ingest-all":
@@ -4092,6 +4118,11 @@ def main():
         cmd_show(con, args.capture_id)
     elif args.cmd == "backfill-look":
         backfill_npc_fields(con)
+
+    if args.cmd in ("ingest", "ingest-all", "ingest-batch"):
+        from workbench.core.services import campaign_manifest
+        if campaign_manifest.MANIFEST_PATH.exists():
+            campaign_manifest.apply(con)
 
     con.close()
 
