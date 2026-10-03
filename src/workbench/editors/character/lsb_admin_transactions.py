@@ -167,7 +167,7 @@ def apply_lsb_admin_plan(connection, plan: LsbAdminPlan, *, approved: bool = Fal
             before=plan.before,
             after=plan.after,
             metadata={"changes": dict(plan.changes)},
-            undo_supported=False,
+            undo_supported=True,
         )
     except Exception:
         try:
