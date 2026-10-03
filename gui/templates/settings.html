@@ -9,6 +9,38 @@
 <div class="warn" style="{{ 'border-left-color:var(--accent);background:var(--accent-soft);' if backup_ok else '' }}">{{ backup_result }}</div>
 {% endif %}
 
+<section id="server-environments">
+  <h2>Server environments</h2>
+  <p class="muted">Shared server profiles used by Character Editor, Zone/Nyzul tooling, and other profile-aware Server features. Configure Live, Test, Dev, Backup, or other DSP/Topaz/LSB checkouts here; individual tools consume the active environment instead of maintaining their own server list.</p>
+  <div id="envActiveSummary" class="table-wrap" style="padding:12px;margin-bottom:10px;"><span class="muted">Loading active environment…</span></div>
+  <div id="envLoadMessage" class="warn" style="display:block;min-height:0;padding:0;border:0;background:transparent;"></div>
+  <div style="display:grid;grid-template-columns:minmax(300px,.75fr) minmax(420px,1.25fr);gap:12px;align-items:start;">
+    <div class="table-wrap" style="padding:14px;">
+      <h3 id="envFormTitle" style="margin-top:0">Add server environment</h3>
+      <input id="envProfileId" type="hidden">
+      <div style="display:grid;grid-template-columns:120px minmax(0,1fr);gap:9px;align-items:center;">
+        <label for="envName" class="muted">Name</label><input id="envName" placeholder="Live, Test, DSP Legacy…">
+        <label for="envEnvironment" class="muted">Environment</label><select id="envEnvironment"></select>
+        <label for="envFamily" class="muted">Server family</label><select id="envFamily"></select>
+        <label for="envRoot" class="muted">Server root</label><input id="envRoot" style="width:100%" placeholder="D:\Servers\LSB-Test">
+        <span class="muted">Enabled</span><label><input id="envEnabled" type="checkbox" checked> selectable</label>
+        <label for="envNotes" class="muted">Notes</label><textarea id="envNotes" rows="3" style="width:100%" placeholder="Optional notes"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px;">
+        <button type="button" id="envSave">Save environment</button>
+        <button type="button" id="envReset">New</button>
+        <label><input id="envMakeActive" type="checkbox"> make active after save</label>
+      </div>
+      <div id="envFormMessage" class="muted" style="margin-top:8px"></div>
+    </div>
+    <div class="table-wrap" style="padding:14px;">
+      <div style="display:flex;gap:8px;align-items:center;"><strong>Configured environments</strong><span style="flex:1"></span><button type="button" id="envRefresh">Refresh</button></div>
+      <div id="envProfiles" style="margin-top:8px"><span class="muted">Loading…</span></div>
+      <pre id="envTestResult" style="margin-top:10px;white-space:pre-wrap;max-height:220px;overflow:auto"></pre>
+    </div>
+  </div>
+</section>
+
 <form method="post" action="/settings" id="settings-form" enctype="multipart/form-data">
   <h2>Branding</h2>
   <p class="muted">Controls the brand shown in the top-left shell. Changes apply immediately after Save; no restart is required.</p>
@@ -161,4 +193,5 @@
     Rebuild button, or click "Backup now" above.</p>
   {% endif %}
 </div>
+<script src="/static/settings_server_profiles.js"></script>
 {% endblock %}
