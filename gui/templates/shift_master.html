@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Message-ID Shift Master{% endblock %}
+{% block content %}
+<h2>Message-ID shift master</h2>
+<p class="muted">Server packet message id &minus; shift = client DAT dialog index. Measured from packets vs CapLog chat
+(never assumed). Ranges need &ge;3 observations; <b>conflict</b> = captures disagree (likely different client builds).
+Ids outside a range are unverified. Evidence rows: {{ obs_total }} across {{ obs_caps }} captures.
+Rebuild with the button below.</p>
+<form method="post" action="/shift-master/rebuild"><button>Observe all captures &amp; rebuild</button></form>
+<table class="data" style="margin-top:10px"><thead><tr><th>Zone</th><th>Id range</th><th>Shift</th><th>Observations</th><th>Captures</th><th>Gap before</th><th>Conflict</th><th>Other drift data</th></tr></thead><tbody>
+{% for r in rows %}<tr{% if r.conflict %} style="background:rgba(200,100,0,.15)"{% endif %}>
+<td>{{ r.zone_name }} ({{ r.zoneid }})</td><td class="mono">{{ r.id_lo }}&ndash;{{ r.id_hi }}</td><td class="mono">{{ r.shift }}</td>
+<td>{{ r.obs }}</td><td>{{ r.captures }}</td><td>{{ r.gap_before if r.gap_before is not none else "" }}</td>
+<td>{{ "CONFLICT" if r.conflict else "" }}</td>
+<td>{% if r.drift %}{{ r.drift }} server-vs-client drift rows{% endif %}</td></tr>
+{% else %}<tr><td colspan="8" class="muted">No ranges yet &mdash; run the rebuild.</td></tr>{% endfor %}
+</tbody></table>
+{% endblock %}

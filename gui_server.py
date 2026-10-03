@@ -5836,10 +5836,16 @@ def capture_spatial_json(capture_id: int, zone_db: str = "", q: str = ""):
 _SHIFT_CACHE: dict = {}
 
 
-def _msgid_shift(con, capture_id, zone_db):
-    """Measured (never assumed) server-id -> DAT-index shift for this capture+zone.
-    -> (shift or None, info). None = unverified: show raw id. Measured lazily once, cached in DB."""
+def _msgid_shift(con, capture_id, zone_db, msgid=None):
+    """Measured (never assumed) server-id -> DAT-index shift. Order: master range list (all captures,
+    piecewise) -> this capture's own measurement -> unverified. -> (shift|None, info).
+    None = unverified: show raw id."""
     from workbench.captures import msgid_shift
+    zid = zoneid_for_zone_db(con, zone_db) if zone_db else None
+    if zid is not None and msgid is not None:
+        sh, status = msgid_shift.master_lookup(con, zid, msgid)
+        if sh is not None:
+            return sh, {"source": "master", "status": status, "shift": sh}
     key = (capture_id, zone_db)
     if key not in _SHIFT_CACHE:
         shift, info = msgid_shift.lookup(con, capture_id, zone_db)
@@ -5850,7 +5856,10 @@ def _msgid_shift(con, capture_id, zone_db):
                 pass
             shift, info = msgid_shift.lookup(con, capture_id, zone_db)
         _SHIFT_CACHE[key] = (shift, info)
-    return _SHIFT_CACHE[key]
+    sh, info = _SHIFT_CACHE[key]
+    if info is not None:
+        info = dict(info, source="capture")
+    return sh, info
 
 
 def zoneid_for_zone_db(con, zone_db: str) -> int | None:
@@ -6993,7 +7002,7 @@ def captures_search(
             d["dialog_text"] = None
             if d.get("message_id") is not None and zoneid is not None:
                 trow = con.execute(
-                    "SELECT text FROM dialog_text WHERE zoneid=? AND idx=?", (zoneid, d["message_id"] - (_msgid_shift(con, d["capture_id"], zone_db)[0] or 0))
+                    "SELECT text FROM dialog_text WHERE zoneid=? AND idx=?", (zoneid, d["message_id"] - (_msgid_shift(con, d["capture_id"], zone_db, d["message_id"])[0] or 0))
                 ).fetchone()
                 d["dialog_text"] = trow[0] if trow else None
             d["related_row_key"] = capture_integrity.canonical_row_key(
@@ -7825,6 +7834,37 @@ def captures_detail(
     })
 
 
+@app.get("/shift-master", response_class=HTMLResponse)
+def shift_master_page(request: Request):
+    from workbench.captures import msgid_shift
+    con = get_con()
+    try:
+        msgid_shift.ensure_master_tables(con)
+        rows = [dict(r) for r in con.execute(
+            """SELECT m.*, COALESCE(z.name,'?') AS zone_name,
+                      (SELECT COUNT(*) FROM dialog_drift_report d WHERE d.zoneid=m.zoneid AND d.status='mismatch') AS drift
+               FROM msgid_shift_master m LEFT JOIN zones z ON z.zoneid=m.zoneid ORDER BY m.zoneid, m.id_lo""")]
+        o = con.execute("SELECT COUNT(*), COUNT(DISTINCT capture_id) FROM msgid_shift_obs").fetchone()
+    finally:
+        con.close()
+    return templates.TemplateResponse(request, "shift_master.html", {"rows": rows, "obs_total": o[0], "obs_caps": o[1]})
+
+
+@app.post("/shift-master/rebuild")
+def shift_master_rebuild():
+    from workbench.captures import msgid_shift
+    con = get_con()
+    try:
+        ids = [r[0] for r in con.execute("SELECT DISTINCT capture_id FROM capture_caplog_chat")]
+        for cid in ids:
+            msgid_shift.observe(con, cid, zoneid_for_zone_db)
+        msgid_shift.build_master(con)
+        _SHIFT_CACHE.clear()
+    finally:
+        con.close()
+    return RedirectResponse("/shift-master", status_code=303)
+
+
 @app.get("/captures/{capture_id}/timeline", response_class=HTMLResponse)
 def captures_timeline(
     request: Request, capture_id: int,
@@ -7895,10 +7935,10 @@ def captures_timeline(
         d["dialog_text"] = None
         if d.get("message_id") is not None and zoneid is not None:
             trow = con.execute(
-                "SELECT text FROM dialog_text WHERE zoneid=? AND idx=?", (zoneid, d["message_id"] - (_msgid_shift(con, capture_id, zone_db)[0] or 0))
+                "SELECT text FROM dialog_text WHERE zoneid=? AND idx=?", (zoneid, d["message_id"] - (_msgid_shift(con, capture_id, zone_db, d["message_id"])[0] or 0))
             ).fetchone()
             d["dialog_text"] = trow[0] if trow else None
-        sh, info = _msgid_shift(con, capture_id, zone_db)
+        sh, info = _msgid_shift(con, capture_id, zone_db, d["message_id"])
         d["shift_info"] = info
         d["shift_verified"] = sh is not None
         events.append(d)

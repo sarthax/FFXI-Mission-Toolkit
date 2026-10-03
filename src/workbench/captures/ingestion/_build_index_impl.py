@@ -2430,7 +2430,7 @@ def parse_packetlogger_records(text: str, opcode: str) -> list[dict]:
                 if tok != "--":
                     hex_bytes.append(tok)
         if hex_bytes:
-            header_end = text.find("\\n", hstart)
+            header_end = text.find("\n", hstart)
             if header_end < 0 or header_end > block_end:
                 header_end = block_end
             header_line = text[hstart:header_end]
