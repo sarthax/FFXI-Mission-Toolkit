@@ -51,7 +51,7 @@
   function detailText(i) {
     const bits = [];
     if (i.w) bits.push(`Worn: ${i.w}`);
-    if (i.g) { const l = G.gearLine(i.g); if (l) bits.push(l); if (i.g.equip_block) bits.push('⚠ ' + i.g.equip_block); const a = augSummary(i.g); if (a) bits.push('✦ ' + a); }
+    if (i.g) { const l = G.gearLine(i.g); if (i.g.equip_block) bits.push('⚠ ' + i.g.equip_block); else if (l) bits.push(l); const a = augSummary(i.g); if (a) bits.push('✦ ' + a); }
     if (i.rare) bits.push(i.rare);
     if (i.r.bazaar) bits.push('Bazaar');
     return bits.join(' · ');
@@ -84,7 +84,7 @@
       if (filtering && !shown.length) return '';
       const pct = cap ? Math.min(100, Math.round(used / cap * 100)) : 0;
       const body = !shown.length ? '<div class="ce-muted">Empty</div>' : st.view === 'tiles'
-        ? `<div class="ce-tiles">${shown.map(i => `<button class="ce-tile" data-loc="${c.location}" data-slot="${i.r.slot}" title="${esc(i.name)}${i.w ? ' — worn in ' + esc(i.w) : ''}">${i.aug ? `<span class="bd">✦${i.aug}</span>` : ''}${i.w ? '<span class="wn">worn</span>' : ''}${G.iconImg(i.id, 32)}<span class="nm">${esc(i.name)}</span>${i.r.quantity > 1 ? `<span class="qt">${i.r.quantity}</span>` : ''}</button>`).join('')}</div>`
+        ? `<div class="ce-tiles">${shown.map(i => `<button class="ce-tile" data-loc="${c.location}" data-slot="${i.r.slot}">${i.aug ? `<span class="bd">✦${i.aug}</span>` : ''}${i.w ? '<span class="wn">worn</span>' : ''}${G.iconImg(i.id, 32)}<span class="nm">${esc(i.name)}</span>${i.r.quantity > 1 ? `<span class="qt">${i.r.quantity}</span>` : ''}</button>`).join('')}</div>`
         : `<table class="ce-invtable"><thead><tr><th></th><th>Slot</th><th>Item</th><th>Qty</th><th>Details</th></tr></thead><tbody>${shown.map(i => `<tr class="row" data-loc="${c.location}" data-slot="${i.r.slot}"><td>${G.iconImg(i.id, 24)}</td><td>${esc(i.r.slot)}</td><td><strong>${esc(i.name)}</strong></td><td>${esc(i.r.quantity)}</td><td class="ce-muted">${esc(detailText(i))}</td></tr>`).join('')}</tbody></table>`;
       return `<details class="ce-bag" data-loc="${c.location}" ${open ? 'open' : ''}><summary><strong>${esc(c.label || c.name)}</strong>${cap ? `<span class="ce-bar${used >= cap ? ' full' : ''}"><i style="width:${pct}%"></i></span><span class="ce-muted">${used}/${cap}</span>` : `<span class="ce-muted">${used} item${used === 1 ? '' : 's'} · capacity not tracked</span>`}</summary><div class="ce-bagbody">${body}</div></details>`;
     }).join('');
@@ -94,6 +94,13 @@
     box.querySelectorAll('[data-f]').forEach(b => b.addEventListener('click', () => { st.filter = b.dataset.f; render(); }));
     box.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => { st.view = b.dataset.view; try { localStorage.setItem('ceInvView', st.view); } catch (e) {} render(); }));
     box.querySelectorAll('details.ce-bag').forEach(d => d.addEventListener('toggle', () => { st.open[d.dataset.loc] = d.open; }));
+    G.bindTips(box, '[data-loc][data-slot]', el => {
+      const c = data.containers.find(x => x.location === Number(el.dataset.loc));
+      const r = c && c.rows.find(x => x.slot === Number(el.dataset.slot));
+      if (!r) return null;
+      const i = infoFor(c, r);
+      return {id: i.id, name: i.name, where: `${c.label || c.name} · slot ${r.slot}`, qty: Number(r.quantity), worn: i.w, rare: i.rare, g: i.g, describe: describeAug};
+    });
     box.querySelectorAll('[data-loc][data-slot]').forEach(b => b.addEventListener('click', () => {
       const c = data.containers.find(x => x.location === Number(b.dataset.loc));
       const r = c.rows.find(x => x.slot === Number(b.dataset.slot));
@@ -167,5 +174,5 @@
 
   loadInventory = async function () { data = null; await load(); };
   const note = document.querySelector('#pane-inventory > .ce-muted');
-  if (note) note.textContent = 'Click any item to see its details and edit it. Changes are offline-only; Storage and Temporary Items stay protected.';
+  if (note) note.textContent = 'Hover an item for its details; click it to edit. Changes are offline-only; Storage and Temporary Items stay protected.';
 })();

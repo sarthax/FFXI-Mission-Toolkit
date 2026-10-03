@@ -169,5 +169,66 @@ window.CEGear = (() => {
     draw();
   }
 
-  return {api, getJson, postJson, iconImg, prettyName, gearLine, signed, loadCatalog, equip, mountItemBonuses};
+  // ---- hover card: shows an item's details; the click that follows opens the editor ----
+  const metaCache = new Map();
+  const itemMeta = id => {
+    if (!metaCache.has(id)) metaCache.set(id, getJson(`/character-editor/client-cache/items/${id}.json`).then(d => d.metadata || {}).catch(() => ({})));
+    return metaCache.get(id);
+  };
+  let tipEl = null, tipFor = null;
+  const hideTip = () => { if (tipEl) tipEl.style.display = 'none'; tipFor = null; };
+  async function showTip(target, info, x, y) {
+    if (!tipEl) { tipEl = document.createElement('div'); tipEl.className = 'ce-tipcard'; document.body.appendChild(tipEl); }
+    tipFor = target;
+    const meta = await itemMeta(info.id);
+    if (tipFor !== target) return;
+    const g = info.g;
+    const bonus = [...(g?.native || []).map(n => `${n.name} ${signed(n.value)}${n.unit === 'percent' ? '%' : ''}`)];
+    const augs = (g?.augments || []).filter(a => a.id).map(a => info.describe ? info.describe(a) : `Augment #${a.id}`);
+    const cond = [...(g?.latent || []), ...(g?.pet || [])].map(c => c.text);
+    const line = [info.where, info.qty > 1 ? `qty ${info.qty}` : '', info.worn ? `worn in ${info.worn}` : ''].filter(Boolean).join(' · ');
+    tipEl.innerHTML = `<div class="th">${iconImg(info.id, 32)}<div><strong>${esc(info.name)}</strong><div class="ce-muted">${esc(line)}</div></div></div>
+      ${meta.description ? `<div class="td">${esc(meta.description)}</div>` : ''}
+      ${g && !g.equip_block && (g.level || g.jobs) ? `<div>${esc(gearLine(g))}</div>` : ''}
+      ${g && g.equip_block ? `<div class="ce-warn">⚠ ${esc(g.equip_block)}</div>` : ''}
+      ${augs.length ? `<div class="ta">✦ ${esc(augs.join(', '))}</div>` : ''}
+      ${cond.length ? `<div class="ce-muted">Conditional: ${esc(cond.join('; '))}</div>` : ''}
+      ${info.rare ? `<div class="ce-muted">${esc(info.rare)}</div>` : ''}
+      <div class="tc">Click to ${info.action || 'edit'}</div>`;
+    tipEl.style.display = 'block';
+    const w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+    tipEl.style.left = Math.max(4, Math.min(x + 14, innerWidth - w - 8)) + 'px';
+    tipEl.style.top = Math.max(4, Math.min(y + 14, innerHeight - h - 8)) + 'px';
+  }
+  // Delegated: any descendant of `root` matching `selector` shows resolve(el)'s card on hover.
+  function bindTips(root, selector, resolve) {
+    if (root._ceTips) return;
+    root._ceTips = true;
+    root.addEventListener('mouseover', e => {
+      const el = e.target.closest(selector);
+      if (!el || !root.contains(el) || tipFor === el) return;
+      const info = resolve(el);
+      if (info) showTip(el, info, e.clientX, e.clientY);
+    });
+    root.addEventListener('mousemove', e => {
+      if (tipEl && tipEl.style.display === 'block' && tipFor) {
+        const w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+        tipEl.style.left = Math.max(4, Math.min(e.clientX + 14, innerWidth - w - 8)) + 'px';
+        tipEl.style.top = Math.max(4, Math.min(e.clientY + 14, innerHeight - h - 8)) + 'px';
+      }
+    });
+    root.addEventListener('mouseout', e => { const el = e.target.closest(selector); if (el && !el.contains(e.relatedTarget)) hideTip(); });
+    root.addEventListener('click', hideTip);
+  }
+  if (!document.getElementById('ce-tip-styles')) {
+    const t = document.createElement('style');
+    t.id = 'ce-tip-styles';
+    t.textContent = `.ce-tipcard{position:fixed;z-index:10000;display:none;max-width:320px;padding:8px 10px;border:1px solid #6aa9ff;border-radius:6px;background:var(--bg,#1e1e1e);color:inherit;box-shadow:0 4px 18px rgba(0,0,0,.5);font-size:12px;pointer-events:none}
+      .ce-tipcard .th{display:flex;gap:8px;align-items:center;margin-bottom:4px}.ce-tipcard .td{margin:4px 0;padding-left:6px;border-left:2px solid #6aa9ff}.ce-tipcard .ta{color:#f5c542;margin:3px 0}
+      .ce-tipcard .tc{margin-top:6px;color:#6aa9ff;font-weight:700}
+      .ce-gearui .ce-tile:hover{border-color:#6aa9ff;background:rgba(106,169,255,.12)}`;
+    document.head.appendChild(t);
+  }
+
+  return {api, getJson, postJson, iconImg, prettyName, gearLine, signed, loadCatalog, equip, mountItemBonuses, bindTips, hideTip};
 })();

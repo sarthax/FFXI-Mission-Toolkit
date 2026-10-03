@@ -129,27 +129,6 @@
       listEl.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => { selectedKey = b.dataset.k; draft = null; draft = null; pickSearch = ''; drawList(); drawDetail(); }));
     };
 
-    const groupOf = a => { const k = cat.idGroup.get(a.id); return k ? cat.groups.get(k) : null; };
-    const statSelect = (a, i) => {
-      const cur = groupOf(a);
-      const opt = g => `<option value="${esc(g.key)}" title="${esc(g.comment || '')}" ${cur && cur.key === g.key ? 'selected' : ''}>${esc(g.label + g.range)}</option>`;
-      const unknown = a.id && !cur ? `<option value="?" selected>Unrecognised augment (#${a.id})</option>` : '';
-      return `<select data-i="${i}" data-f="stat" ${offline ? '' : 'disabled'}><option value="">— None —</option>${unknown}
-        <optgroup label="Stats">${cat.stats.map(opt).join('')}</optgroup>
-        <optgroup label="Combined &amp; pet augments">${cat.combined.map(opt).join('')}</optgroup></select>`;
-    };
-    const amountSelect = (a, i) => {
-      const g = groupOf(a);
-      if (!a.id) return '<select disabled><option>—</option></select>';
-      if (!g) return `<select disabled><option>Value ${a.value}</option></select>`;
-      return `<select data-i="${i}" data-f="amount" ${offline ? '' : 'disabled'}>${g.sorted.map(o =>
-        `<option value="${o.id}:${o.v}" ${o.id === a.id && o.v === a.value ? 'selected' : ''}>${esc(o.text)}</option>`).join('')}</select>`;
-    };
-    const note = a => {
-      const g = a.id ? groupOf(a) : null;
-      if (!a.id) return '';
-      return `<div class="ce-augnote"><strong>${esc(describeAug(a))}</strong>${g && g.comment && g.comment.toLowerCase() !== g.label.toLowerCase() ? ` — ${esc(g.comment)}` : ''}</div>`;
-    };
     const EQUIPPABLE = new Set([0, 8, 10, 11, 12]);
     const fits = (it, slot) => (it.slot_mask & (1 << slot)) && EQUIPPABLE.has(it.location);
     const wornAt = new Map(eq.filter(x => !x.empty && !x.missing_row).map(x => [`${x.location}:${x.inventory_slot}`, x.slot_name]));
@@ -216,49 +195,20 @@ This item is currently worn in the ${eq.find(e => e.equip_slot === p.moved_from)
         bindSwap(s);
         return;
       }
-      draft ||= s.augments.map(a => ({id: a.id, value: a.value}));
-      const changed = draft.some((a, i) => a.id !== s.augments[i].id || a.value !== s.augments[i].value);
-      const totals = draft.filter(a => a.id).map(describeAug).filter(Boolean);
-      const nat = (s.native || []).map(n => `<li title="${esc(n.comment || '')}"><strong>${esc(n.name)} ${signed(n.value)}${n.unit === 'percent' ? '%' : n.unit === 'seconds' ? 's' : ''}</strong>${n.comment && n.comment.toLowerCase() !== n.name.toLowerCase() ? ` <span class="ce-muted">— ${esc(n.comment)}</span>` : ''}</li>`).join('');
-      const cond = [...(s.latent || []), ...(s.pet || [])];
-      const condHtml = cond.length ? `<div class="ce-native"><strong>Conditional &amp; pet bonuses</strong> <span class="ce-muted">(only while the condition is met)</span><ul class="ce-cond">${cond.map(c => `<li><strong>${esc(c.text)}</strong> <span class="ce-muted">— ${esc(c.when)}</span></li>`).join('')}</ul></div>` : '';
-      detail.innerHTML = `<div class="ce-head">${iconImg(s.item_id, 48)}<div><h3>${esc(prettyName(s))}</h3><div class="ce-muted">${esc(s.carried ? s.group + ' · not equipped' : s.slot_name + ' · equipped')}${s.level ? ' · ' + esc(gearLine(s)) : ''}</div></div></div>
+      const worn = s.carried ? '' : esc(s.slot_name + ' · equipped');
+      const info = s.equip_block ? '' : (s.level ? ' · ' + esc(gearLine(s)) : '');
+      detail.innerHTML = `<div class="ce-head">${iconImg(s.item_id, 48)}<div><h3>${esc(prettyName(s))}</h3><div class="ce-muted">${s.carried ? esc(s.group + ' · not equipped') : worn}${info}</div></div></div>
         ${s.equip_block && !s.carried ? `<div class="ce-warn" style="margin:0 0 8px">⚠ ${esc(s.equip_block)}. The server will unequip this when the character logs in.</div>` : ''}
         ${swapPanel(s)}
-        <div class="ce-native"><strong>Built-in bonuses</strong> <span class="ce-muted">(every copy of this item has these; edit them in the Items editor)</span>${nat ? `<ul>${nat}</ul>` : '<div class="ce-muted">None defined by the server.</div>'}</div>
-        ${condHtml}
-        <h4 style="margin:10px 0 6px">Player augments</h4>
-        ${draft.map((a, i) => `<div class="ce-augcard${a.id ? ' set' : ''}"><strong>Augment ${i + 1}</strong>${statSelect(a, i)}${amountSelect(a, i)}<button data-i="${i}" data-f="clear" ${a.id && offline ? '' : 'disabled'} title="Remove this augment">Clear</button>${note(a)}</div>`).join('')}
-        <div class="ce-total"><strong>Bonuses on this item:</strong> ${totals.length ? esc(totals.join(' · ')) : '<span class="ce-muted">none</span>'}</div>
-        <div class="ce-aug-actions"><button class="ce-aug-reset" ${changed ? '' : 'disabled'}>Undo edits</button><button class="ce-aug-apply primary" ${changed && offline ? '' : 'disabled'}>Save augments</button><span class="ce-aug-msg ce-muted">${offline ? '' : 'Log the character out to edit.'}</span></div>`;
+        <div class="ce-bonuses"></div>`;
       bindSwap(s);
-      detail.querySelectorAll('select[data-f="stat"]').forEach(el => el.addEventListener('change', () => {
-        if (el.value === '?') return;
-        const i = Number(el.dataset.i);
-        if (!el.value) draft[i] = {id: 0, value: 0};
-        else { const gs = cat.groups.get(el.value).sorted; const o = gs.find(x => x.amount > 0) || gs[0]; draft[i] = {id: o.id, value: o.v}; }
-        drawDetail();
-      }));
-      detail.querySelectorAll('select[data-f="amount"]').forEach(el => el.addEventListener('change', () => {
-        const [id, v] = el.value.split(':').map(Number);
-        draft[Number(el.dataset.i)] = {id, value: v};
-        drawDetail();
-      }));
-      detail.querySelectorAll('button[data-f="clear"]').forEach(el => el.addEventListener('click', () => { draft[Number(el.dataset.i)] = {id: 0, value: 0}; drawDetail(); }));
-      detail.querySelector('.ce-aug-reset').addEventListener('click', () => { draft = null; drawDetail(); });
-      detail.querySelector('.ce-aug-apply').addEventListener('click', async () => {
-        const body = {location: s.location, slot: s.inventory_slot, augments: draft};
-        const msg = detail.querySelector('.ce-aug-msg');
-        try {
-          const p = await postJson(`${api()}/augments/preview`, body);
-          if (!p.ready) throw new Error((p.issues || []).filter(i => i.blocking).map(i => i.message).join('; ') || 'not write-ready');
-          if (!confirm(`Save these augments on ${prettyName(s)}?\n\n${totals.length ? totals.join('\n') : 'All augments removed'}`)) return;
-          await postJson(`${api()}/augments/apply`, {...body, expected_source_fingerprint: p.source_fingerprint, approved: true});
-        } catch (e) { msg.textContent = `Not saved: ${e.message}`; return; }
-        await selectCharacter(selectedChar);
-        await loadCategory('equipment');
-      });
+      CEGear.mountItemBonuses(detail.querySelector('.ce-bonuses'), s, {onSaved: async () => { await selectCharacter(selectedChar); await loadCategory('equipment'); }});
     };
+    CEGear.bindTips(listEl, '[data-k]', el => {
+      const s = all.find(x => x.key === el.dataset.k);
+      if (!s || s.empty || !s.item_id) return null;
+      return {id: s.item_id, name: prettyName(s), where: s.carried ? s.group : s.slot_name, g: s, action: 'view and edit', describe: describeAug};
+    });
     shell.querySelector('.ce-find input[type=search]').addEventListener('input', e => { search = e.target.value; drawList(); });
     shell.querySelector('.ce-augonly').addEventListener('change', e => { augOnly = e.target.checked; drawList(); });
     drawList(); drawDetail();
