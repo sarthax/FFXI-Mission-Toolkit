@@ -449,7 +449,7 @@ def character_editor_augment_reference():
 def character_editor_equipment(char_id: int):
     try:
         with _context() as ctx:
-            return JSONResponse(_safe(equipment_state(ctx.service.connection, char_id)))
+            return JSONResponse(_safe(equipment_state(ctx.service.connection, char_id, get_active_server_root())))
     except Exception as exc:
         raise _error(exc, 503)
 
@@ -458,7 +458,7 @@ def character_editor_equipment(char_id: int):
 def character_editor_augmentable_inventory(char_id: int):
     try:
         with _context() as ctx:
-            return JSONResponse(_safe(inventory_augmentables(ctx.service.connection, char_id)))
+            return JSONResponse(_safe(inventory_augmentables(ctx.service.connection, char_id, get_active_server_root())))
     except Exception as exc:
         raise _error(exc, 503)
 

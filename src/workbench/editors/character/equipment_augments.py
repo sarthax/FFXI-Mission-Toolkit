@@ -58,7 +58,7 @@ def _mod_names(root: Path | None) -> dict[int, tuple[str, str]]:
     names: dict[int, tuple[str, str]] = {}
     if path and path.is_file():
         text = path.read_text(encoding="utf-8", errors="replace")
-        for m in re.finditer(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(\d+)\s*,[ 	]*(?://\s*(.*))?", text, re.M):
+        for m in re.finditer(r"^[ 	]*([A-Za-z_][A-Za-z0-9_]*)[ 	]*=[ 	]*(\d+)[ 	]*,[ 	]*(?://[ 	]*(.*))?$", text, re.M):
             names.setdefault(int(m.group(2)), (m.group(1), (m.group(3) or "").strip()))
     return names
 
@@ -113,7 +113,36 @@ def augment_catalog(root: Path | str | None) -> dict[str, Any]:
     return {"available": bool(rows), "rows": rows}
 
 
-def equipment_state(connection, char_id: int) -> dict[str, Any]:
+def native_bonuses(connection, item_ids, root: Path | str | None) -> dict[int, list[dict[str, Any]]]:
+    """Server-defined base stats (``item_mods``) per item, named from the server's modifier.h."""
+    ids = sorted({int(i) for i in item_ids if i})
+    out: dict[int, list[dict[str, Any]]] = {}
+    if not ids:
+        return out
+    mods = _mod_names(Path(root) if root else None)
+    try:
+        from workbench.editors.items._dat_tools_impl import _explicit_mod_unit
+    except Exception:
+        _explicit_mod_unit = lambda _c: None
+    for i in range(0, len(ids), 500):
+        chunk = ids[i:i + 500]
+        cursor = connection.cursor()
+        try:
+            cursor.execute(f"SELECT `itemId`,`modId`,`value` FROM `item_mods` WHERE `itemId` IN ({','.join(['%s'] * len(chunk))}) ORDER BY `itemId`,`modId`", tuple(chunk))
+            rows = cursor.fetchall() or []
+        except Exception:
+            rows = []
+        finally:
+            cursor.close()
+        for item_id, mod_id, value in rows:
+            name, comment = mods.get(int(mod_id), (None, ""))
+            out.setdefault(int(item_id), []).append({
+                "mod": int(mod_id), "name": _friendly(name, int(mod_id)), "value": int(value),
+                "comment": comment or None, "unit": _explicit_mod_unit(comment) if comment else None})
+    return out
+
+
+def equipment_state(connection, char_id: int, root: Path | str | None = None) -> dict[str, Any]:
     cursor = connection.cursor()
     try:
         cursor.execute("SELECT `equipslotid`,`containerid`,`slotid` FROM `char_equip` WHERE `charid` = %s ORDER BY `equipslotid`", (int(char_id),))
@@ -142,10 +171,13 @@ def equipment_state(connection, char_id: int) -> dict[str, Any]:
             "fingerprint": _fingerprint(row) if row else None,
             "missing_row": row is None,
         })
+    native = native_bonuses(connection, [r["item_id"] for r in rows], root)
+    for r in rows:
+        r["native"] = native.get(r["item_id"], [])
     return {"char_id": int(char_id), "slots": rows}
 
 
-def inventory_augmentables(connection, char_id: int) -> dict[str, Any]:
+def inventory_augmentables(connection, char_id: int, root: Path | str | None = None) -> dict[str, Any]:
     """Armor/weapon rows in every container (Temporary Items excluded), with decoded augments."""
     cursor = connection.cursor()
     try:
@@ -179,6 +211,9 @@ def inventory_augmentables(connection, char_id: int) -> dict[str, Any]:
         out.append({"location": int(location), "container": CONTAINERS.get(int(location), f"Container {location}"),
                     "inventory_slot": int(slot), "item_id": item_id, "name": names[item_id],
                     "extra_hex": raw.hex(), "augments": decode_augments(raw)})
+    native = native_bonuses(connection, [o["item_id"] for o in out], root)
+    for o in out:
+        o["native"] = native.get(o["item_id"], [])
     return {"char_id": int(char_id), "items": out}
 
 
