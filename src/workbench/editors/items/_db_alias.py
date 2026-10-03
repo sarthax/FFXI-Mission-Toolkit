@@ -50,6 +50,11 @@ class _Connection:
         self._conn.close()
 
 
+def is_dsp(server=None) -> bool:
+    """True when the connected server is DSP (its armor table is item_armor, Topaz's is item_equipment)."""
+    return item_db(server)._t == "item_armor"
+
+
 def item_db(server=None):
     conn = zone_plot._db(server) if server else zone_plot._db()
     key = str(conn.database)

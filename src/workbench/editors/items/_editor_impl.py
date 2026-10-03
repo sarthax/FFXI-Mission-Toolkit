@@ -50,12 +50,7 @@ TYPE_TABLES = {
 # item_basic.flags as the server itself reads it: ITEM_FLAG in src/map/items/item.h (identical in
 # the DSP and Topaz trees). item_dat_tools.ITEM_FLAGS uses different names for the same bits, so the
 # server column is labelled from the server's own enum.
-SERVER_ITEM_FLAGS = {
-    0x0001: 'wall hanging', 0x0002: 'flag 0x2 (unnamed)', 0x0004: 'gobbie mystery box',
-    0x0008: 'mog garden', 0x0010: 'can send via POL', 0x0020: 'inscribable', 0x0040: 'no auction',
-    0x0080: 'scroll', 0x0100: 'linkshell', 0x0200: 'can use', 0x0400: 'can trade to NPC',
-    0x0800: 'can equip', 0x1000: 'no sale', 0x2000: 'no delivery', 0x4000: 'exclusive', 0x8000: 'rare',
-}
+SERVER_ITEM_FLAGS = dict(dat.ITEM_FLAGS)
 
 BITMASK_SCHEMAS = {
     "item_basic": {
@@ -139,7 +134,15 @@ def bitmask_schema():
                 "width": spec["bits"],
                 "fields": [{"shift": shift, "label": label} for shift, label in spec["fields"]],
             }
-    for table, cols in ENUM_SCHEMAS.items():
+    enum_schemas = ENUM_SCHEMAS
+    try:
+        from workbench.editors.items import _db_alias
+        if _db_alias.is_dsp():  # DSP's MOGHOUSE_AURA enum differs from Topaz's moghancement ids
+            from workbench.editors.items import _enums_dsp
+            enum_schemas = {**ENUM_SCHEMAS, "item_furnishing": {"moghancement": sorted(_enums_dsp.MOGHANCEMENT.items())}}
+    except Exception:
+        pass
+    for table, cols in enum_schemas.items():
         result.setdefault(table, {})
         for col, options in cols.items():
             result[table][col] = {
@@ -908,18 +911,19 @@ def get_item(item_id):
         db.close()
         raise ValueError(f"item_basic.itemid={item_id} not found")
     rows = {"item_basic": basic}
+    _en = _enums()
     for table in ("item_equipment", "item_weapon", "item_usable", "item_puppet", "item_furnishing"):
         row = _fetch(cu, table, [item_id])
         if row is not None:
             rows[table] = row
     cu.execute("select modId, value from item_mods where itemId=%s order by modId", (item_id,))
-    mods = [{"modId": r[0], "value": r[1], "name": dat.MOD_NAMES.get(r[0])} for r in cu.fetchall()]
+    mods = [{"modId": r[0], "value": r[1], "name": _en["MOD_NAMES"].get(r[0])} for r in cu.fetchall()]
     cu.execute("select modId, value, petType from item_mods_pet where itemId=%s order by petType, modId", (item_id,))
     pet_mods = [{"modId": r[0], "value": r[1], "petType": r[2],
-                 "name": dat.MOD_NAMES.get(r[0]), "petTypeName": dat.PET_TYPE_NAMES.get(r[2])} for r in cu.fetchall()]
+                 "name": _en["MOD_NAMES"].get(r[0]), "petTypeName": dat.PET_TYPE_NAMES.get(r[2])} for r in cu.fetchall()]
     cu.execute("select modId, value, latentId, latentParam from item_latents where itemId=%s order by latentId, modId", (item_id,))
     latents = [{"modId": r[0], "value": r[1], "latentId": r[2], "latentParam": r[3],
-                "name": dat.MOD_NAMES.get(r[0]), "latentName": dat.LATENT_NAMES.get(r[2])} for r in cu.fetchall()]
+                "name": _en["MOD_NAMES"].get(r[0]), "latentName": _en["LATENT_NAMES"].get(r[2])} for r in cu.fetchall()]
     db.close()
     client = None
     try:
@@ -984,14 +988,27 @@ def delete_item_mod(item_id, mod_id, comment=""):
     return {"sql": sql, "backup": bid}
 
 
+def _enums():
+    """Mod/LATENT tables for the connected server: DSP's own headers on DSP (ids differ from Topaz), else Topaz's."""
+    try:
+        from workbench.editors.items import _db_alias
+        dsp = _db_alias.is_dsp()
+    except Exception:
+        dsp = False
+    if dsp:
+        from workbench.editors.items import _enums_dsp
+        return {"MOD_NAMES": _enums_dsp.MOD_NAMES, "LATENT_NAMES": _enums_dsp.LATENT_NAMES}
+    return {"MOD_NAMES": dat.MOD_NAMES, "LATENT_NAMES": dat.LATENT_NAMES}
+
+
 def mod_names():
     """{modId: name} for every confirmed mod, for the UI's add-mod dropdown."""
-    return dat.MOD_NAMES
+    return _enums()["MOD_NAMES"]
 
 
 def mod_metadata():
     """Source-backed modifier comments/units for Item Editor presentation."""
-    return dat.mod_metadata()
+    return dat.mod_metadata(_enums()["MOD_NAMES"])
 
 
 # ---- item_mods_pet (one-to-many: multiple (modId,petType,value) rows per item, composite PK) --
@@ -1088,12 +1105,12 @@ def delete_item_latent(item_id, mod_id, value, latent_id, latent_param, comment=
 
 def latent_names():
     """{latentId: name} for the UI's add-latent dropdown."""
-    return dat.LATENT_NAMES
+    return _enums()["LATENT_NAMES"]
 
 
 def latent_metadata():
     """Source-backed latent-condition/parameter semantics for Item Editor presentation."""
-    return dat.latent_metadata()
+    return dat.latent_metadata(_enums()["LATENT_NAMES"])
 
 
 # ---- edits ----------------------------------------------------------------------------------
@@ -1130,18 +1147,19 @@ def _normalize_effects(effects):
 
 def _effect_validation(desired):
     warnings = []
+    _en = _enums()
     for row in desired["mods"]:
-        if row["modId"] not in dat.MOD_NAMES:
+        if row["modId"] not in _en["MOD_NAMES"]:
             warnings.append({"code": "UNKNOWN_MOD_ID", "message": f"item_mods modId {row['modId']} is not present in the confirmed Mod enum map"})
     for row in desired["pet_mods"]:
-        if row["modId"] not in dat.MOD_NAMES:
+        if row["modId"] not in _en["MOD_NAMES"]:
             warnings.append({"code": "UNKNOWN_MOD_ID", "message": f"item_mods_pet modId {row['modId']} is not present in the confirmed Mod enum map"})
         if row["petType"] not in dat.PET_TYPE_NAMES:
             warnings.append({"code": "UNKNOWN_PET_TYPE", "message": f"item_mods_pet petType {row['petType']} is not present in the confirmed PetModType enum map"})
     for row in desired["latents"]:
-        if row["modId"] not in dat.MOD_NAMES:
+        if row["modId"] not in _en["MOD_NAMES"]:
             warnings.append({"code": "UNKNOWN_MOD_ID", "message": f"item_latents modId {row['modId']} is not present in the confirmed Mod enum map"})
-        if row["latentId"] not in dat.LATENT_NAMES:
+        if row["latentId"] not in _en["LATENT_NAMES"]:
             warnings.append({"code": "UNKNOWN_LATENT_ID", "message": f"item_latents latentId {row['latentId']} is not present in the confirmed LATENT enum map"})
     return warnings
 

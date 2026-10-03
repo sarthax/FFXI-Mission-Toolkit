@@ -271,8 +271,8 @@ def main():
     assert "paste is limited to the same logical group" in template
 
     # Source-backed modifier units/comments and latentParam semantics.
-    assert "def mod_metadata() -> dict:" in item_dat
-    assert "def latent_metadata() -> dict:" in item_dat
+    assert "def mod_metadata(names=None) -> dict:" in item_dat
+    assert "def latent_metadata(names=None) -> dict:" in item_dat
     assert "Topaz modifier.h enum comment" in item_dat
     assert "Topaz latent_effect.h enum comment" in item_dat
     assert "def mod_metadata():" in item_edit

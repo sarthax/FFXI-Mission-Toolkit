@@ -142,10 +142,12 @@ TEXT_OFFSETS: dict = {
 JOBS = ['WAR', 'MNK', 'WHM', 'BLM', 'RDM', 'THF', 'PLD', 'DRK', 'BST', 'BRD', 'RNG', 'SAM',
         'NIN', 'DRG', 'SMN', 'BLU', 'COR', 'PUP', 'DNC', 'SCH', 'GEO', 'RUN']
 
+# ITEM_FLAG in the server's src/map/items/item.h (identical in DSP and Topaz); the client DAT stores the same values.
 ITEM_FLAGS = {
-    0x0001: 'rare', 0x0002: 'ex', 0x0004: 'usable', 0x0008: 'npc_only',
-    0x0020: 'deliverable', 0x0040: 'bazaar', 0x0080: 'storage', 0x0200: 'scroll',
-    0x0800: 'temporary', 0x4000: 'trial', 0x8000: 'enchanted',
+    0x0001: 'wall hanging', 0x0002: 'flag 0x2 (unnamed)', 0x0004: 'gobbie mystery box',
+    0x0008: 'mog garden', 0x0010: 'can send via POL', 0x0020: 'inscribable', 0x0040: 'no auction',
+    0x0080: 'scroll', 0x0100: 'linkshell', 0x0200: 'can use', 0x0400: 'can trade to NPC',
+    0x0800: 'can equip', 0x1000: 'no sale', 0x2000: 'no delivery', 0x4000: 'exclusive', 0x8000: 'rare',
 }
 
 # item_equipment.slot / item_dat_tools 'slots' bitmask -- bit index N = SLOT_N from
@@ -938,10 +940,10 @@ def _explicit_mod_unit(comment: str) -> str | None:
     return None
 
 
-def mod_metadata() -> dict:
+def mod_metadata(names=None) -> dict:
     """Structured, conservative metadata derived only from the source enum comment text."""
     out = {}
-    for mod_id, raw in MOD_NAMES.items():
+    for mod_id, raw in (MOD_NAMES if names is None else names).items():
         name, comment = _enum_comment_parts(raw)
         out[int(mod_id)] = {
             "id": int(mod_id),
@@ -953,10 +955,10 @@ def mod_metadata() -> dict:
     return out
 
 
-def latent_metadata() -> dict:
+def latent_metadata(names=None) -> dict:
     """Expose condition and latentParam semantics from latent_effect.h comments without inference."""
     out = {}
-    for latent_id, raw in LATENT_NAMES.items():
+    for latent_id, raw in (LATENT_NAMES if names is None else names).items():
         name, comment = _enum_comment_parts(raw)
         param = None
         lower = comment.lower()
