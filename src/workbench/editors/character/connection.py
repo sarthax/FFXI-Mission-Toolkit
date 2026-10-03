@@ -177,6 +177,10 @@ def connect(profile: DatabaseProfile, **kwargs):
         import mysql.connector
     except ImportError as exc:  # pragma: no cover
         raise RuntimeError("Character Editor live database access requires mysql-connector-python") from exc
+    # mysql.connector defaults to autocommit=False, so any preview/read leaves an implicit transaction open and
+    # every apply path's explicit start_transaction() then fails with "Transaction already in progress". The write
+    # paths all open their own START TRANSACTION ... COMMIT, so reads should not hold a transaction (or a stale snapshot).
+    kwargs.setdefault("autocommit", True)
     return mysql.connector.connect(
         host=profile.host,
         port=profile.port,
