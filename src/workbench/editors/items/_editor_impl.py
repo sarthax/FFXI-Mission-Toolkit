@@ -18,6 +18,7 @@ from pathlib import Path
 
 import item_dat_tools as dat
 import zone_plot
+from workbench.editors.items._db_alias import item_db as _item_db
 
 DATA = Path(__file__).parent / "data"
 BACKUPS = DATA / "item_backups"
@@ -357,7 +358,7 @@ def restore(bid):
     """Restore a backup across SQL and the exact captured client record when available."""
     b = json.loads((BACKUPS / f"{bid}.json").read_text())
     item_id = int(b["item_id"])
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     pre, lines = [], []
     saved_client = b.get("client_record")
     restore_target = saved_client.get("target") if saved_client else None
@@ -587,7 +588,7 @@ def item_usage(item_id: int, source_limit: int = 100) -> dict:
     """
     item_id = int(item_id)
     source_limit = max(0, min(int(source_limit), 500))
-    db = zone_plot._db()
+    db = _item_db()
     cu = db.cursor()
     refs = []
     coverage = {"database": True, "source_scripts": False, "graph": False}
@@ -716,7 +717,7 @@ def search(q, category="", min_level=-1, max_level=-1, job=-1, skill=-1, client_
     if client_state == "dat-only":
         return dat.search_dat_only(q, category=category, limit=limit)
     min_level, max_level, job, skill, limit = int(min_level), int(max_level), int(job), int(skill), int(limit)
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     where = ["b.name like %s"]
     params = [f"%{q}%"]
     if min_level >= 0:
@@ -879,7 +880,7 @@ def get_item(item_id):
     """Full live row(s) for one item, across every table it actually appears in, plus its
     real client-DAT record (level/jobs/etc as the client itself sees them) for comparison."""
     item_id = int(item_id)
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     basic = _fetch(cu, "item_basic", [item_id])
     if basic is None:
         db.close()
@@ -929,7 +930,7 @@ def set_item_mod(item_id, mod_id, value, comment=""):
     """Insert or update one (itemId, modId) row. `value` may be 0 (that's a real value, not a
     delete) -- use delete_item_mod to actually remove a mod row."""
     item_id, mod_id, value = int(item_id), int(mod_id), int(value)
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     cu.execute("select modId, value from item_mods where itemId=%s and modId=%s", (item_id, mod_id))
     before = cu.fetchone()
     bid = _save_backup(f"set item_mods {item_id}/{mod_id}", item_id,
@@ -945,7 +946,7 @@ def set_item_mod(item_id, mod_id, value, comment=""):
 
 def delete_item_mod(item_id, mod_id, comment=""):
     item_id, mod_id = int(item_id), int(mod_id)
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     cu.execute("select value from item_mods where itemId=%s and modId=%s", (item_id, mod_id))
     before = cu.fetchone()
     if before is None:
@@ -980,7 +981,7 @@ def set_item_pet_mod(item_id, mod_id, pet_type, value, comment=""):
     """Insert or update one (itemId, modId, petType) row. `value` may be 0 (real value, not a
     delete) -- use delete_item_pet_mod to actually remove a row."""
     item_id, mod_id, pet_type, value = int(item_id), int(mod_id), int(pet_type), int(value)
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     cu.execute("select value from item_mods_pet where itemId=%s and modId=%s and petType=%s", (item_id, mod_id, pet_type))
     before = cu.fetchone()
     bid = _save_backup(f"set item_mods_pet {item_id}/{mod_id}/{pet_type}", item_id,
@@ -996,7 +997,7 @@ def set_item_pet_mod(item_id, mod_id, pet_type, value, comment=""):
 
 def delete_item_pet_mod(item_id, mod_id, pet_type, comment=""):
     item_id, mod_id, pet_type = int(item_id), int(mod_id), int(pet_type)
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     cu.execute("select value from item_mods_pet where itemId=%s and modId=%s and petType=%s", (item_id, mod_id, pet_type))
     before = cu.fetchone()
     if before is None:
@@ -1028,7 +1029,7 @@ def pet_type_names():
 # condition-specific (see the comment baked into each LATENT_NAMES entry) so it stays a raw number.
 def add_item_latent(item_id, mod_id, value, latent_id, latent_param, comment=""):
     item_id, mod_id, value, latent_id, latent_param = int(item_id), int(mod_id), int(value), int(latent_id), int(latent_param)
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     cu.execute("select 1 from item_latents where itemId=%s and modId=%s and value=%s and latentId=%s and latentParam=%s",
                (item_id, mod_id, value, latent_id, latent_param))
     if cu.fetchone():
@@ -1046,7 +1047,7 @@ def add_item_latent(item_id, mod_id, value, latent_id, latent_param, comment="")
 
 def delete_item_latent(item_id, mod_id, value, latent_id, latent_param, comment=""):
     item_id, mod_id, value, latent_id, latent_param = int(item_id), int(mod_id), int(value), int(latent_id), int(latent_param)
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     cu.execute("select 1 from item_latents where itemId=%s and modId=%s and value=%s and latentId=%s and latentParam=%s",
                (item_id, mod_id, value, latent_id, latent_param))
     if not cu.fetchone():
@@ -1223,7 +1224,7 @@ def preview_batch_edit(item_ids, field, value):
     if len(ids) > 200:
         raise ValueError("batch is limited to 200 unique items")
     table, column = BATCH_SAFE_FIELDS[field]
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     rows, errors, warnings = [], [], []
     try:
         cols = _cols(cu, table)
@@ -1300,7 +1301,7 @@ def apply_batch_edit(item_ids, field, value, comment=""):
         raise ValueError("batch contains no actual changes")
 
     table, column = BATCH_SAFE_FIELDS[field]
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     backup_items = []
     patched_snapshots = []
     sqls = []
@@ -1364,7 +1365,7 @@ def restore_batch_backup(bid, comment=""):
         raise ValueError("batch backup contains no items")
 
     current = []
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     restored_dat = []
     try:
         for entry in items:
@@ -1470,7 +1471,7 @@ def reconcile_item(item_id, field, direction, comment=""):
 def validate_item_changes(item_id, tables, effects=None):
     """Validate a proposed table patch without writing anything."""
     item_id = int(item_id)
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     try:
         rows = {}
         for table in TABLES:
@@ -1517,7 +1518,7 @@ def save_item_atomic(item_id, tables, effects=None, comment=""):
         raise ValueError("tables must be an object")
     desired_effects = _normalize_effects(effects) if effects is not None else None
 
-    db = zone_plot._db()
+    db = _item_db()
     cu = db.cursor()
     ops = []
     normalized = {}
@@ -1665,7 +1666,7 @@ def update_item(item_id, table, fields, comment="", sync_client=True):
     if table not in TABLES:
         raise ValueError(f"unknown item table {table!r}")
     key = TABLES[table][0]
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     op = _capture(cu, table, [item_id])
     if op["row"] is None:
         db.close()
@@ -1745,7 +1746,7 @@ def create_item(category, item_type, entry, effects=None, comment=""):
     item_id = client_result["item_id"]
 
     desired_effects = _normalize_effects(effects) if effects is not None else {"mods": [], "pet_mods": [], "latents": []}
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     cu.execute("select 1 from item_basic where itemid=%s", (item_id,))
     if cu.fetchone():
         db.close()
@@ -1919,7 +1920,7 @@ def delete_item(item_id, comment="", clear_dat=False):
     separately -- matching zone_edit.py's stance of surfacing rather than auto-cleaning
     ambiguous state)."""
     item_id = int(item_id)
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     ops = []
     for table in TABLES:
         op = _capture(cu, table, [item_id])

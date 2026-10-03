@@ -2027,8 +2027,8 @@ def _server_item_ids_in_range(lo: int, hi: int) -> set:
     the DB can't be reached, callers fall back to the DAT-only heuristic rather than hard-failing
     item creation entirely."""
     try:
-        import zone_plot
-        db = zone_plot._db(); cu = db.cursor()
+        from workbench.editors.items._db_alias import item_db as _item_db
+        db = _item_db(); cu = db.cursor()
         try:
             cu.execute("select itemid from item_basic where itemid>=%s and itemid<%s", (lo, hi))
             return {row[0] for row in cu.fetchall()}
