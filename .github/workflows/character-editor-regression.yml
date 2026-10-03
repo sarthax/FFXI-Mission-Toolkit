@@ -30,8 +30,7 @@ jobs:
           python-version: "3.11"
       - name: Install Character Editor regression dependencies
         run: |
-          python -m pip install --disable-pip-version-check -e .
-          python -m pip install --disable-pip-version-check pytest fastapi jinja2 python-multipart httpx pyyaml pillow mysql-connector-python
+          python -m pip install --disable-pip-version-check -e . -r requirements.txt pytest httpx
       - name: Provide CI-only xi_tinkerer import stub
         shell: bash
         run: |
