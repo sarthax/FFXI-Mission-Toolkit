@@ -50,3 +50,9 @@ src = (ROOT / "src/workbench/devtools/features/state_surface.py").read_text(enco
 assert "rule.hook" not in src
 
 print("ok")
+
+# Usability script must be loaded by the editor page, after the loaders it wraps.
+tpl = (ROOT / "gui/templates/character_editor_progression.html").read_text(encoding="utf-8")
+assert tpl.index("character_editor_state_surface.js") < tpl.index("character_editor_usability.js")
+assert "65535" in (ROOT / "gui/static/character_editor_progression.js").read_text(encoding="utf-8")
+print("ui ok")
