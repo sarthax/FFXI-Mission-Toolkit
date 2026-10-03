@@ -9,9 +9,9 @@ def test_item_flag_decode_and_container_ids():
     item = ItemCatalogRecord(1, "Test", RARE_FLAG | EXCLUSIVE_FLAG, 1)
     assert item.rare is True
     assert item.exclusive is True
-    assert CONTAINERS[0] == "inventory"
-    assert CONTAINERS[8] == "wardrobe"
-    assert CONTAINERS[16] == "wardrobe8"
+    assert CONTAINERS[0] == "Inventory"
+    assert CONTAINERS[8] == "Wardrobe"
+    assert CONTAINERS[16] == "Wardrobe 8"
 
 
 class _NoWriteConnection:
