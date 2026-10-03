@@ -364,6 +364,141 @@
   showSection(secs[store.get('ieSection', 'find')] ? store.get('ieSection', 'find') : 'find');
   setTimeout(sizeSections, 300);
 
+  // ---------- Effects tab: current effects on the left, add / copy tools pinned on the right ----------
+  const css3 = document.createElement('style');
+  css3.textContent = `
+    .ie-pane[data-pane=effects]{container-type:inline-size}
+    .ie-pane[data-pane=effects].on{display:block;overflow:hidden}
+    #ieFxWrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px;height:100%}
+    @container (max-width:640px){#ieFxWrap{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);height:100%}#ieFxSide{order:-1;overflow:visible}#ieFxSide>.ie-side-card:first-child{display:grid;grid-template-columns:1fr 1fr 110px;gap:4px 8px;align-items:end}#ieFxSide>.ie-side-card:first-child>h4{display:none}#ieFxSide>.ie-side-card:first-child>.ie-seg,#ieFxSide>.ie-side-card:first-child>#ieFxMsg{grid-column:1/-1;margin-bottom:2px}#ieFxSide>.ie-side-card:first-child>label{margin-bottom:0}#ieFxSide>.ie-side-card:first-child>label:first-of-type{grid-column:1/3}#ieFxSide>.ie-side-card:first-child>#ieAddBtn{grid-column:3}}
+    .ie-fx .nm,.ie-fx .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #ieFx{overflow:auto;min-height:0;padding-right:4px}
+    #ieFxSide{overflow:auto;min-height:0;display:flex;flex-direction:column;gap:10px}
+    .ie-fxgroup{margin-bottom:12px}
+    .ie-fxgroup h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;opacity:.75;display:flex;gap:6px;align-items:baseline}
+    .ie-fxgroup h4 small{text-transform:none;letter-spacing:0;opacity:.8;font-weight:400}
+    .ie-fx{display:flex;align-items:center;gap:10px;padding:6px 10px;border:1px solid var(--border,#555);border-radius:6px;margin-bottom:4px}
+    .ie-fx.new{border-color:#5fb760}.ie-fx.chg{border-color:#f5c542}
+    .ie-fx .tx{flex:1;min-width:0}.ie-fx .nm{font-weight:600}.ie-fx .sub{font-size:11px;opacity:.7}
+    .ie-fx input[type=number]{width:72px}
+    .ie-fx .tag{font-size:10px;padding:0 6px;border-radius:8px;border:1px solid currentColor;color:#f5c542}
+    .ie-fx.new .tag{color:#5fb760}
+    .ie-fx button.rm{padding:1px 8px}
+    .ie-none{opacity:.55;font-size:12px;padding:4px 2px}
+    .ie-side-card{border:1px solid var(--border,#555);border-radius:8px;padding:10px}
+    .ie-side-card h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;opacity:.75}
+    .ie-seg{display:flex;gap:4px;margin-bottom:8px}
+    .ie-seg button{flex:1;padding:4px 6px;border:1px solid var(--border,#555);border-radius:12px;background:transparent;color:inherit;cursor:pointer;font-size:12px}
+    .ie-seg button.on{background:rgba(106,169,255,.22);border-color:#6aa9ff}
+    .ie-side-card label{display:flex;flex-direction:column;gap:2px;font-size:11.5px;margin-bottom:6px;opacity:.95}
+    .ie-side-card input{width:100%}
+    #ieFxMsg{font-size:11.5px;min-height:16px;margin-top:4px;color:#f5c542}
+    #ieFxSide details summary{cursor:pointer;font-size:12px;opacity:.85}
+    #ieFxSide #effectStagingTools{border:0;padding:6px 0 0;margin:0!important}
+    #ieFxSide #effectStagingTools>h3{display:none}`;
+  document.head.appendChild(css3);
+
+  const fx = mk('div', 'ieFx'), side = mk('div', 'ieFxSide');
+  const fxList = byId('editorLists');
+  fxList.style.display = 'block';
+  fx.append(fxList);
+  side.innerHTML = `<div class="ie-side-card"><h4>Add an effect</h4>
+      <div class="ie-seg"><button type="button" data-k="mods" class="on" title="Always-on stat bonus">Bonus</button><button type="button" data-k="pet_mods" title="Bonus given to your pet">Pet bonus</button><button type="button" data-k="latents" title="Bonus only while a condition is met">Conditional</button></div>
+      <label>Effect<input type="text" id="ieAddMod" list="dl_mods" placeholder="type to search, e.g. Attack"></label>
+      <label>Amount<input type="number" id="ieAddVal" value="1"></label>
+      <label data-for="pet_mods" style="display:none">Pet type<input type="text" id="ieAddPet" list="dl_pettypes" placeholder="type to search"></label>
+      <label data-for="latents" style="display:none">Active when<input type="text" id="ieAddLat" list="dl_latents" placeholder="type to search, e.g. HP below X%"></label>
+      <label data-for="latents" style="display:none">Condition value<input type="number" id="ieAddLatP" value="0"></label>
+      <button type="button" id="ieAddBtn" class="primary">Add to item</button><div id="ieFxMsg"></div></div>
+    <div class="ie-side-card"><details><summary>Copy or paste effects in bulk</summary><div id="ieFxBulk"></div></details></div>`;
+  const fxWrap = mk('div', 'ieFxWrap');
+  fxWrap.append(fx, side);
+  panes.effects.append(fxWrap);
+  side.querySelector('#ieFxBulk').append(byId('effectStagingTools'));
+
+  let addKind = 'mods';
+  side.querySelector('.ie-seg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    addKind = b.dataset.k;
+    side.querySelectorAll('.ie-seg button').forEach(x => x.classList.toggle('on', x === b));
+    side.querySelectorAll('[data-for]').forEach(l => l.style.display = l.dataset.for === addKind ? '' : 'none');
+    byId('ieFxMsg').textContent = '';
+  });
+  const fxMsg = t => { byId('ieFxMsg').textContent = t; };
+  byId('ieAddBtn').onclick = () => {
+    const modId = pickerValue('ieAddMod', MOD_NAMES);
+    if (modId === null) return fxMsg('Pick an effect from the list first.');
+    const value = Number(byId('ieAddVal').value) || 0;
+    let row;
+    if (addKind === 'mods') {
+      if (stagedEffects.mods.some(x => Number(x.modId) === modId)) return fxMsg('That effect is already on the item. Edit its amount instead.');
+      row = {modId, value};
+    } else if (addKind === 'pet_mods') {
+      const petType = pickerValue('ieAddPet', PET_TYPE_NAMES);
+      if (petType === null) return fxMsg('Pick a pet type.');
+      if (stagedEffects.pet_mods.some(x => Number(x.modId) === modId && Number(x.petType) === petType)) return fxMsg('That pet effect is already on the item.');
+      row = {modId, petType, value};
+    } else {
+      const latentId = pickerValue('ieAddLat', LATENT_NAMES);
+      if (latentId === null) return fxMsg('Pick the condition when this applies.');
+      row = {modId, value, latentId, latentParam: Number(byId('ieAddLatP').value) || 0};
+      const key = effectSortKey('latents', row);
+      if (stagedEffects.latents.some(x => effectSortKey('latents', x) === key)) return fxMsg('That conditional effect is already on the item.');
+    }
+    stagedEffects[addKind].push(row);
+    fxMsg('');
+    byId('ieAddMod').value = '';
+    rerenderEffects();
+  };
+
+  const mName = id => MOD_NAMES[id] || `Effect #${id}`;
+  const sv = n => (n > 0 ? '+' : '') + n;
+  const status = (kind, row) => {
+    const k = effectSortKey(kind, row), was = (loadedEffects[kind] || []).find(x => effectSortKey(kind, x) === k);
+    if (!was) return 'new';
+    return Number(was.value) !== Number(row.value) ? 'chg' : '';
+  };
+  const fxRow = (kind, row, title, sub) => {
+    const st = status(kind, row);
+    return `<div class="ie-fx ${st}" data-kind="${kind}"><div class="tx"><div class="nm" title="${esc(title)}">${esc(title)}</div>${sub ? `<div class="sub" title="${esc(sub)}">${esc(sub)}</div>` : ''}</div>
+      ${st ? `<span class="tag">${st === 'new' ? 'new' : 'edited'}</span>` : ''}
+      <input type="number" value="${row.value}" title="Amount"><button type="button" class="rm" title="Remove this effect">✕</button></div>`;
+  };
+  rerenderEffects = function () {
+    const sections = [
+      ['mods', 'Bonuses', 'always active while worn', stagedEffects.mods, r => fxRow('mods', r, mName(r.modId), modMetaLine(r.modId))],
+      ['pet_mods', 'Pet bonuses', 'apply to your pet', stagedEffects.pet_mods, r => fxRow('pet_mods', r, mName(r.modId), PET_TYPE_NAMES[r.petType] || 'pet ' + r.petType)],
+      ['latents', 'Conditional bonuses', 'only while the condition is met', stagedEffects.latents, r => fxRow('latents', r, mName(r.modId), 'When: ' + (LATENT_NAMES[r.latentId] || 'condition ' + r.latentId) + (r.latentParam ? ' (' + r.latentParam + ')' : ''))],
+    ];
+    fxList.innerHTML = '';
+    for (const [kind, title, hint, rows, render] of sections) {
+      const g = mk('div', null, 'ie-fxgroup');
+      g.innerHTML = `<h4>${title} (${rows.length}) <small>${hint}</small></h4>` + (rows.length ? rows.map(render).join('') : '<div class="ie-none">None.</div>');
+      g.querySelectorAll('.ie-fx').forEach((el, i) => {
+        const row = rows[i];
+        el.querySelector('input').oninput = e => { row.value = Number(e.target.value) || 0; updateDirtySummary(); renderDecodedSummary(); };
+        el.querySelector('input').onchange = () => rerenderEffects();
+        el.querySelector('.rm').onclick = () => { stagedEffects[kind] = stagedEffects[kind].filter(x => x !== row); rerenderEffects(); };
+      });
+      fxList.appendChild(g);
+    }
+    updateDirtySummary();
+    renderDecodedSummary();
+  };
+  // loadItem() draws the three lists through these; route them to the single combined view
+  renderMods = () => rerenderEffects();
+  renderPetMods = renderLatents = () => {};
+  if (currentItemId) rerenderEffects();
+
+  // the Effects tab fills the visible area under the pinned header so nothing needs page scrolling
+  const fitEffects = () => {
+    const h = right.clientHeight - head.offsetHeight - 14;
+    panes.effects.style.height = Math.max(260, h) + 'px';
+  };
+  new ResizeObserver(fitEffects).observe(head);
+  new ResizeObserver(fitEffects).observe(right);
+  bar.addEventListener('click', () => setTimeout(fitEffects, 0));
+
   // opening a draft (new / clone) jumps to the Create section
   const origStartDraft = startDraft;
   startDraft = function () { const r = origStartDraft.apply(this, arguments); showSection('create'); return r; };
