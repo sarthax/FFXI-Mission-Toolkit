@@ -5833,10 +5833,32 @@ def capture_spatial_json(capture_id: int, zone_db: str = "", q: str = ""):
     })
 
 
+_SHIFT_CACHE: dict = {}
+
+
+def _msgid_shift(con, capture_id, zone_db):
+    """Measured (never assumed) server-id -> DAT-index shift for this capture+zone.
+    -> (shift or None, info). None = unverified: show raw id. Measured lazily once, cached in DB."""
+    from workbench.captures import msgid_shift
+    key = (capture_id, zone_db)
+    if key not in _SHIFT_CACHE:
+        shift, info = msgid_shift.lookup(con, capture_id, zone_db)
+        if info is None:
+            try:
+                msgid_shift.compute(con, capture_id, zoneid_for_zone_db)
+            except Exception:
+                pass
+            shift, info = msgid_shift.lookup(con, capture_id, zone_db)
+        _SHIFT_CACHE[key] = (shift, info)
+    return _SHIFT_CACHE[key]
+
+
 def zoneid_for_zone_db(con, zone_db: str) -> int | None:
     """capture_npc_entries.zone_db is the NPCLogger.db filename stem, spaced ("Ilrusi Atoll");
     zones.name is Topaz's own SCREAMING_SNAKE form ("ILRUSI_ATOLL"). Normalize both to compare."""
-    norm = zone_db.upper().replace(" ", "_").replace("'", "")
+    norm = zone_db.upper().replace(" ", "_").replace("'", "").replace("-", "_")
+    # NPCLogger names [S] zones "Windurst Waters [S]"; zones.name spells them "..._S"
+    norm = re.sub(r"_?\[S\]$", "_S", norm)
     row = con.execute("SELECT zoneid FROM zones WHERE REPLACE(name, ' ', '_') = ?", (norm,)).fetchone()
     return row[0] if row else None
 
@@ -6971,7 +6993,7 @@ def captures_search(
             d["dialog_text"] = None
             if d.get("message_id") is not None and zoneid is not None:
                 trow = con.execute(
-                    "SELECT text FROM dialog_text WHERE zoneid=? AND idx=?", (zoneid, d["message_id"])
+                    "SELECT text FROM dialog_text WHERE zoneid=? AND idx=?", (zoneid, d["message_id"] - (_msgid_shift(con, d["capture_id"], zone_db)[0] or 0))
                 ).fetchone()
                 d["dialog_text"] = trow[0] if trow else None
             d["related_row_key"] = capture_integrity.canonical_row_key(
@@ -7873,9 +7895,12 @@ def captures_timeline(
         d["dialog_text"] = None
         if d.get("message_id") is not None and zoneid is not None:
             trow = con.execute(
-                "SELECT text FROM dialog_text WHERE zoneid=? AND idx=?", (zoneid, d["message_id"])
+                "SELECT text FROM dialog_text WHERE zoneid=? AND idx=?", (zoneid, d["message_id"] - (_msgid_shift(con, capture_id, zone_db)[0] or 0))
             ).fetchone()
             d["dialog_text"] = trow[0] if trow else None
+        sh, info = _msgid_shift(con, capture_id, zone_db)
+        d["shift_info"] = info
+        d["shift_verified"] = sh is not None
         events.append(d)
 
     interaction_candidates = reconstruct_interaction_candidates(events)

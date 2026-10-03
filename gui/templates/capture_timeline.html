@@ -124,7 +124,7 @@
       <td class="mono">{{ e.event_hex or '' }}</td>
       <td class="mono">{{ e.option if e.option is not none else '' }}</td>
       <td class="mono">{{ e.message_id if e.message_id is not none else '' }}</td>
-      <td>{% if e.dialog_text %}{{ e.dialog_text }}{% elif e.message_id is not none %}<span class="muted">(no dialog_text match)</span>{% endif %}</td>
+      <td>{% if e.dialog_text %}{{ e.dialog_text }}{% elif e.message_id is not none %}<span class="muted">(no dialog_text match)</span>{% endif %}{% if e.message_id is not none %}{% if e.shift_verified %} <span class="muted" title="Measured vs CapLog: {{ e.shift_info.hits }}/{{ e.shift_info.total }} packets, runner-up {{ e.shift_info.runner_up }}">[id&minus;{{ e.shift_info.shift }}]</span>{% else %} <span style="color:#c60" title="No confident shift measured against CapLog for this zone; raw packet id used, text may be wrong">[shift unverified]</span>{% endif %}{% endif %}</td>
       <td class="mono muted" style="max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ e.params_raw }}">{{ e.params_raw or '' }}</td>
     </tr>
     {% endfor %}
