@@ -29,6 +29,7 @@ _PACKED_EDITABLE = {
     "quests",
     "assaults",
     "campaign",
+    "eminence",
     "key_items",
     "blue_spells",
     "abilities",
