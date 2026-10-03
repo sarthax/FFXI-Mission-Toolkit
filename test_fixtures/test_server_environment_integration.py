@@ -75,11 +75,29 @@ def test_legacy_zoneplot_selector_reflects_named_topaz_or_dsp_profile(monkeypatc
     assert legacy_settings.get_zoneplot_server() == "dsp"
 
 
-def test_character_editor_loads_server_profile_selector_asset():
+def test_settings_owns_server_environment_management_ui():
+    settings_template = (GUI_ROOT / "templates" / "settings.html").read_text(encoding="utf-8")
+    settings_script = (GUI_ROOT / "static" / "settings_server_profiles.js").read_text(encoding="utf-8")
+
+    assert 'id="server-environments"' in settings_template
+    assert "/static/settings_server_profiles.js" in settings_template
+    assert "Add server environment" in settings_template
+    assert "Configured environments" in settings_template
+    assert "/character-editor/environments" in settings_script
+    assert "Test connection" in settings_script
+    assert "Activate" in settings_script
+    assert "Delete" in settings_script
+
+
+def test_character_editor_only_shows_active_environment_and_settings_link():
     text = (GUI_ROOT / "templates" / "character_editor_progression.html").read_text(encoding="utf-8")
-    assert "/static/character_editor_server_profiles.js" in text
     script = (GUI_ROOT / "static" / "character_editor_server_profiles.js").read_text(encoding="utf-8")
+
+    assert "/static/character_editor_server_profiles.js" in text
+    assert "/static/character_editor_server_profiles_guard.js" not in text
     assert "/character-editor/environments" in script
-    assert "Manage environments" in script
-    assert "Test connection" in script
-    assert "LIVE" in script
+    assert "/settings#server-environments" in script
+    assert "Server settings" in script
+    assert "Manage environments" not in script
+    assert "Test connection" not in script
+    assert "serverEnvironmentSelect" not in script
