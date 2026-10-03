@@ -1,13 +1,13 @@
 """Canonical Development Entity Profile API.
 
 The mature Entity Profile implementation predates the src-layout and historically imported
-repository-root modules by filename.  During Phase C its implementation body lives beside this
+repository-root modules by filename. During Phase C its implementation body lives beside this
 module in ``_profile_impl`` while this entry point binds those legacy absolute import names to
 their canonical component modules for import, then restores ``sys.modules`` immediately.
 
 This keeps the migration behavior-preserving: evidence/provenance/profile assembly is unchanged,
 while callers can now import ``workbench.devtools.entities.profile`` from an editable install
-without depending on the repository root being on ``sys.path``.  The compatibility layer can be
+without depending on the repository root being on ``sys.path``. The compatibility layer can be
 removed after the implementation body's imports are rewritten in a later cleanup slice.
 """
 from __future__ import annotations
@@ -45,7 +45,9 @@ _impl.mob_look_decode = _look_decode
 _impl.settings = _settings
 _impl.import_entity_profile_provenance = _graph_import
 _impl.DB_PATH = DATABASE_PATH
-_impl.TOPAZ_ROOT = _settings.get_topaz_root()
+# Historical implementation name retained for compatibility, but this is now the administered
+# active environment (LSB/Topaz/DSP), matching Entity Lookup and other generic Server tools.
+_impl.TOPAZ_ROOT = _settings.get_active_server_root()
 
 # Re-export the complete legacy module surface, including internal helpers used by older callers.
 # Dunder metadata remains owned by this canonical module.
