@@ -7,6 +7,10 @@ from .inventory import CapabilityInventory, inventory_summary
 from .schema import CharacterSchema, discover_character_schema
 from .service import CharacterEditorService
 
+# Import for route-registration side effects.  The module attaches its API to the existing
+# Character Editor subrouter, which gui.py subsequently mounts on the live application.
+from . import server_profiles_gui as _server_profiles_gui  # noqa: F401,E402
+
 __all__ = [
     "ActionPreview",
     "AddItemRequest",

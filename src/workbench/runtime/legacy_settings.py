@@ -25,11 +25,89 @@ def _module() -> ModuleType:
     return module
 
 
+def _configured_legacy_profile_candidates():
+    """Return explicit legacy server paths without inventing default/fallback profiles."""
+    module = _module()
+    con = sqlite3.connect(str(module.DB_PATH))
+    try:
+        topaz = module.get(con, "topaz_server_path")
+        dsp = module.get(con, "dsp_server_path")
+        active = module.get(con, "zoneplot_server")
+    finally:
+        con.close()
+    candidates = []
+    if topaz:
+        candidates.append(("Topaz", topaz, "topaz"))
+    if dsp:
+        candidates.append(("DSP", dsp, "dsp"))
+    active_name = "DSP" if active == "dsp" else "Topaz"
+    return candidates, active_name
+
+
+def ensure_server_profiles_seeded():
+    """Import the old single-path settings once when no named profiles exist yet."""
+    from workbench.runtime import server_profiles
+
+    con = server_profiles.connect()
+    try:
+        profiles = server_profiles.list_profiles(con)
+        if not profiles:
+            candidates, active_name = _configured_legacy_profile_candidates()
+            if candidates:
+                profiles = server_profiles.seed_legacy_profiles(
+                    con,
+                    candidates,
+                    active_name=active_name,
+                )
+        return profiles
+    finally:
+        con.close()
+
+
+def get_server_profiles(*, include_disabled: bool = True):
+    from workbench.runtime import server_profiles
+
+    ensure_server_profiles_seeded()
+    con = server_profiles.connect()
+    try:
+        return server_profiles.list_profiles(con, include_disabled=include_disabled)
+    finally:
+        con.close()
+
+
+def get_active_server_profile():
+    from workbench.runtime import server_profiles
+
+    ensure_server_profiles_seeded()
+    con = server_profiles.connect()
+    try:
+        return server_profiles.get_active_profile(con)
+    finally:
+        con.close()
+
+
+def set_active_server_profile(profile_id: int | None):
+    from workbench.runtime import server_profiles
+
+    ensure_server_profiles_seeded()
+    con = server_profiles.connect()
+    try:
+        return server_profiles.set_active_profile(con, profile_id)
+    finally:
+        con.close()
+
+
 def get_active_server_root():
+    profile = get_active_server_profile()
+    if profile is not None:
+        return profile.root_path
     return _module().get_active_server_root()
 
 
 def get_active_sql_prefix():
+    profile = get_active_server_profile()
+    if profile is not None and profile.family in ("topaz", "dsp"):
+        return f"{profile.family}_"
     return _module().get_active_sql_prefix()
 
 
