@@ -100,7 +100,11 @@ def main():
 
     zone_edit = (
         Path(__file__).resolve().parents[1]
-        / "zone_edit.py"
+        / "src"
+        / "workbench"
+        / "editors"
+        / "zone"
+        / "_editor_impl.py"
     ).read_text(encoding="utf-8")
     gui_server = (
         Path(__file__).resolve().parents[1]
