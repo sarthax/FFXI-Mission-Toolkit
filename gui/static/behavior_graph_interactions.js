@@ -205,13 +205,13 @@
   svg.addEventListener('pointerup', endPan);
   svg.addEventListener('pointercancel', endPan);
 
-  // Delegation survives the legacy renderer replacing all SVG children on every selection/filter.
+  // Capture selection before the legacy node handler synchronously replaces SVG children.
+  // MutationObserver then reapplies the directed path classes to the freshly rendered graph.
   svg.addEventListener('click', event => {
     const node = event.target.closest?.('.behavior-node');
     if (!node) return;
     selected = node.dataset.id || null;
-    queueMicrotask(applyFocus);
-  });
+  }, true);
   filter?.addEventListener('input', () => queueMicrotask(applyFocus));
   resetSelection?.addEventListener('click', () => {
     selected = null;
