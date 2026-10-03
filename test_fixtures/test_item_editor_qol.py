@@ -311,5 +311,14 @@ def main():
     assert "client_report = dat.patch_client_item(item_id, client_fields)" in item_edit
 
 
+def test_client_job_mask_shift():
+    import item_edit
+    # client DAT job masks leave bit 0 unused (WAR = bit 1); server masks put WAR at bit 0
+    rows = {"item_basic": {}, "item_equipment": {"jobs": 2098561, "level": 1, "slot": 1}}
+    assert not item_edit.compare_server_client(rows, {"jobs": 4197122, "level": 1, "slots": 1})["mismatches"]
+    assert item_edit._map_to_client_fields("item_equipment", {"jobs": 2098561}) == {"jobs": 4197122}
+    assert item_edit._client_jobs_to_server(4197122) == 2098561
+
 if __name__ == "__main__":
+    test_client_job_mask_shift()
     main()
