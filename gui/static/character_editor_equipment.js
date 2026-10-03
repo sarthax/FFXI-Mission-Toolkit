@@ -46,16 +46,16 @@
       let g = groups.get(key);
       if (!g) {
         const label = single ? e.mod_name : r.effects.map(x => x.mod_name + (x.pet ? ' (pet)' : '')).join(' + ');
-        g = {key, label, special: !single, options: new Map()};
+        g = {key, label, special: !single, options: new Map(), comment: single ? (e.comment || '') : r.effects.map(x => x.comment).filter(Boolean).join(' / '), unit: single ? sfx(e) : ''};
         groups.set(key, g);
       }
       idGroup.set(r.id, key);
       for (let v = 0; v < 32; v++) {
         const amount = single ? eff(e, v) : v;
-        if (!g.options.has(amount)) g.options.set(amount, {id: r.id, v, text: single ? `${signed(amount)}${sfx(e)}` : r.effects.map(x => effText(x, v)).join(', ')});
+        if (!g.options.has(amount)) g.options.set(amount, {amount, id: r.id, v, text: single ? `${signed(amount)}${sfx(e)}` : r.effects.map(x => effText(x, v)).join(', ')});
       }
     }
-    for (const g of groups.values()) g.sorted = [...g.options.entries()].sort((a, b) => a[0] - b[0]).map(([, o]) => o);
+    for (const g of groups.values()) { g.sorted = [...g.options.entries()].sort((a, b) => a[0] - b[0]).map(([, o]) => o); g.range = g.special ? '' : ` (${g.sorted[0].text} to ${g.sorted[g.sorted.length - 1].text})`; }
     const list = [...groups.values()].sort((a, b) => a.label.localeCompare(b.label));
     cat = {available: !!d.available, byId, groups, idGroup, stats: list.filter(g => !g.special), combined: list.filter(g => g.special)};
     return cat;
@@ -104,7 +104,7 @@
       .ce-equip-manager .ce-head{display:flex;gap:12px;align-items:center;margin-bottom:8px}.ce-equip-manager .ce-head h3{margin:0}
       .ce-equip-manager .ce-augcard{display:grid;grid-template-columns:90px minmax(130px,1.3fr) minmax(110px,1fr) auto;gap:8px;align-items:center;padding:8px;margin-bottom:6px;border:1px solid var(--border,#444);border-radius:6px}
       .ce-equip-manager .ce-augcard select{min-width:0;padding:3px 4px}.ce-equip-manager .ce-augcard.set{border-color:#8a6500;background:rgba(245,197,66,.08)}
-      .ce-equip-manager .ce-total{margin:10px 0;padding:8px;border-radius:6px;background:rgba(255,255,255,.06);font-size:13px}
+      .ce-equip-manager .ce-augnote{grid-column:1/-1;font-size:12px;opacity:.85}.ce-equip-manager .ce-total{margin:10px 0;padding:8px;border-radius:6px;background:rgba(255,255,255,.06);font-size:13px}
       .ce-equip-manager .ce-aug-actions{display:flex;gap:8px;align-items:center}
       @media(max-width:860px){.ce-equip-manager .ce-split{grid-template-columns:1fr}.ce-equip-manager .ce-augcard{grid-template-columns:1fr 1fr}}</style>
       <div class="ce-progress-head"><strong>Equipped Items</strong>${offline ? pill('offline editing enabled','ok') : pill('editing locked until offline','warn')}<span class="ce-progress-source">Pick a piece of gear, then choose the bonus stats on it. This changes only this character's copy; the Items editor changes the item for everyone.</span></div>
@@ -127,7 +127,7 @@
     const groupOf = a => { const k = cat.idGroup.get(a.id); return k ? cat.groups.get(k) : null; };
     const statSelect = (a, i) => {
       const cur = groupOf(a);
-      const opt = g => `<option value="${esc(g.key)}" ${cur && cur.key === g.key ? 'selected' : ''}>${esc(g.label)}</option>`;
+      const opt = g => `<option value="${esc(g.key)}" title="${esc(g.comment || '')}" ${cur && cur.key === g.key ? 'selected' : ''}>${esc(g.label + g.range)}</option>`;
       const unknown = a.id && !cur ? `<option value="?" selected>Unrecognised augment (#${a.id})</option>` : '';
       return `<select data-i="${i}" data-f="stat" ${offline ? '' : 'disabled'}><option value="">— None —</option>${unknown}
         <optgroup label="Stats">${cat.stats.map(opt).join('')}</optgroup>
@@ -140,6 +140,11 @@
       return `<select data-i="${i}" data-f="amount" ${offline ? '' : 'disabled'}>${g.sorted.map(o =>
         `<option value="${o.id}:${o.v}" ${o.id === a.id && o.v === a.value ? 'selected' : ''}>${esc(o.text)}</option>`).join('')}</select>`;
     };
+    const note = a => {
+      const g = a.id ? groupOf(a) : null;
+      if (!a.id) return '';
+      return `<div class="ce-augnote"><strong>${esc(describeAug(a))}</strong>${g && g.comment && g.comment.toLowerCase() !== g.label.toLowerCase() ? ` — ${esc(g.comment)}` : ''}</div>`;
+    };
     const drawDetail = () => {
       const s = all.find(x => x.key === selectedKey);
       if (!s) { detail.innerHTML = ''; return; }
@@ -148,14 +153,14 @@
       const changed = draft.some((a, i) => a.id !== s.augments[i].id || a.value !== s.augments[i].value);
       const totals = draft.filter(a => a.id).map(describeAug).filter(Boolean);
       detail.innerHTML = `<div class="ce-head">${iconImg(s.item_id, 48)}<div><h3>${esc(prettyName(s))}</h3><div class="ce-muted">${esc(s.carried ? s.group + ' · not equipped' : s.slot_name + ' · equipped')}</div></div></div>
-        ${draft.map((a, i) => `<div class="ce-augcard${a.id ? ' set' : ''}"><strong>Augment ${i + 1}</strong>${statSelect(a, i)}${amountSelect(a, i)}<button data-i="${i}" data-f="clear" ${a.id && offline ? '' : 'disabled'} title="Remove this augment">Clear</button></div>`).join('')}
+        ${draft.map((a, i) => `<div class="ce-augcard${a.id ? ' set' : ''}"><strong>Augment ${i + 1}</strong>${statSelect(a, i)}${amountSelect(a, i)}<button data-i="${i}" data-f="clear" ${a.id && offline ? '' : 'disabled'} title="Remove this augment">Clear</button>${note(a)}</div>`).join('')}
         <div class="ce-total"><strong>Bonuses on this item:</strong> ${totals.length ? esc(totals.join(' · ')) : '<span class="ce-muted">none</span>'}</div>
         <div class="ce-aug-actions"><button class="ce-aug-reset" ${changed ? '' : 'disabled'}>Undo edits</button><button class="ce-aug-apply primary" ${changed && offline ? '' : 'disabled'}>Save augments</button><span class="ce-aug-msg ce-muted">${offline ? '' : 'Log the character out to edit.'}</span></div>`;
       detail.querySelectorAll('select[data-f="stat"]').forEach(el => el.addEventListener('change', () => {
         if (el.value === '?') return;
         const i = Number(el.dataset.i);
         if (!el.value) draft[i] = {id: 0, value: 0};
-        else { const o = cat.groups.get(el.value).sorted[0]; draft[i] = {id: o.id, value: o.v}; }
+        else { const gs = cat.groups.get(el.value).sorted; const o = gs.find(x => x.amount > 0) || gs[0]; draft[i] = {id: o.id, value: o.v}; }
         drawDetail();
       }));
       detail.querySelectorAll('select[data-f="amount"]').forEach(el => el.addEventListener('change', () => {

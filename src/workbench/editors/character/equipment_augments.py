@@ -52,13 +52,14 @@ def encode_augments(extra: Any, augments: list[tuple[int, int]]) -> bytes:
     return bytes(raw)
 
 
-def _mod_names(root: Path | None) -> dict[int, str]:
+def _mod_names(root: Path | None) -> dict[int, tuple[str, str]]:
+    """Mod id -> (enum name, the // comment after it) from the server's own modifier.h."""
     path = root / "src" / "map" / "modifier.h" if root else None
-    names: dict[int, str] = {}
+    names: dict[int, tuple[str, str]] = {}
     if path and path.is_file():
         text = path.read_text(encoding="utf-8", errors="replace")
-        for m in re.finditer(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(\d+)\s*,", text, re.M):
-            names.setdefault(int(m.group(2)), m.group(1))
+        for m in re.finditer(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(\d+)\s*,[ 	]*(?://\s*(.*))?", text, re.M):
+            names.setdefault(int(m.group(2)), (m.group(1), (m.group(3) or "").strip()))
     return names
 
 
@@ -87,10 +88,9 @@ def augment_catalog(root: Path | str | None) -> dict[str, Any]:
     path = root / "sql" / "augments.sql" if root else None
     mods = _mod_names(root)
     try:  # item editor's enum comments; only trusted when the name matches this server's modifier.h
-        from workbench.editors.items._dat_tools_impl import mod_metadata
-        meta = mod_metadata()
+        from workbench.editors.items._dat_tools_impl import _explicit_mod_unit
     except Exception:
-        meta = {}
+        _explicit_mod_unit = lambda _c: None
     entries: dict[int, dict[str, Any]] = {}
     if path and path.is_file():
         pat = re.compile(r"VALUES\s*\(([^)]*)\)", re.I)
@@ -105,11 +105,10 @@ def augment_catalog(root: Path | str | None) -> dict[str, Any]:
             except ValueError:
                 continue
             e = entries.setdefault(aug_id, {"id": aug_id, "effects": []})
-            raw_name = mods.get(mod_id)
-            info = meta.get(mod_id) if meta.get(mod_id, {}).get("name") == raw_name else None
+            raw_name, comment = mods.get(mod_id, (None, ""))
             e["effects"].append({"mod": mod_id, "mod_name": _friendly(raw_name, mod_id), "value": value,
                                  "multiplier": mult, "pet": bool(is_pet),
-                                 "comment": (info or {}).get("comment"), "unit": (info or {}).get("unit")})
+                                 "comment": comment or None, "unit": _explicit_mod_unit(comment) if comment else None})
     rows = [e for _, e in sorted(entries.items())]
     return {"available": bool(rows), "rows": rows}
 
