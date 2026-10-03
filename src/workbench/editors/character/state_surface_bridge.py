@@ -13,13 +13,11 @@ from .quest_catalog import quest_catalog
 def _catalog_row(service, kind: str, area_id: int, entry_id: int) -> dict[str, Any]:
     root = getattr(service, "server_root", None)
     catalog = mission_catalog(root) if kind == "mission" else quest_catalog(root)
-    row = (catalog.get("areas") or {}).get(str(int(area_id)), {}).get(str(int(entry_id)))
-    if row is None:
-        # JSON-like catalogs can retain integer keys in direct Python use.
-        row = (catalog.get("areas") or {}).get(str(int(area_id)), {}).get(int(entry_id))
-    if row is None:
-        area = (catalog.get("areas") or {}).get(int(area_id), {})
-        row = area.get(int(entry_id)) if isinstance(area, dict) else None
+    areas = catalog.get("areas") or {}
+    area = areas.get(str(int(area_id)), areas.get(int(area_id), {}))
+    row = area.get(str(int(entry_id))) if isinstance(area, dict) else None
+    if row is None and isinstance(area, dict):
+        row = area.get(int(entry_id))
     return dict(row or {"id": int(entry_id), "label": f"{kind.title()} {entry_id}", "symbol": None})
 
 
@@ -149,12 +147,12 @@ def build_character_state_surface(service, char_id: int, *, kind: str, area_id: 
         state_type = ref.get("state_type")
         key = str(ref.get("key") or "")
         if state_type == "charvar":
+            # Missing charvars have server semantics equivalent to zero on the supported lineages.
             actual = variables.get(key, 0)
             resolved = True
-        elif state_type == "key_item":
-            if key in packed.get("key_items", {}):
-                actual = bool(packed["key_items"][key])
-                resolved = True
+        elif state_type == "key_item" and key in packed.get("key_items", {}):
+            actual = bool(packed["key_items"][key])
+            resolved = True
         ref["current_value"] = actual if resolved else None
         ref["current_resolved"] = resolved
 
@@ -169,6 +167,13 @@ def build_character_state_surface(service, char_id: int, *, kind: str, area_id: 
                 mismatched += 1
             else:
                 unresolved += 1
+
+    # The extractor groups are snapshots of the pre-enrichment references. Rebuild them so the
+    # Character Editor renders the exact live-state-enriched rows rather than stale copies.
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for ref in surface.get("references", []):
+        groups.setdefault(str(ref.get("state_type") or "other"), []).append(ref)
+    surface["groups"] = groups
 
     target_state: dict[str, Any] = {"resolved": False}
     if kind == "mission":
