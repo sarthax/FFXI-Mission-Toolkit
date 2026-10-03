@@ -1,8 +1,9 @@
 """Guarded direct-DB item injection for Character Editor.
 
-This first write path is intentionally narrow: offline characters, normal Inventory only,
-server-known items, a free slot, quantity within stack size, no Rare duplicate, and no custom
-extra payload. Specialized extra-data initialization remains codec-gated.
+Writes are intentionally limited to offline characters, server-known items, directly sized
+persistent containers, a free slot, quantity within stack size, no Rare duplicate, and no custom
+extra payload. Specialized extra-data initialization remains codec-gated. Storage capacity is
+furnishing-derived and Temporary Items are runtime-managed, so neither is a direct destination.
 """
 from __future__ import annotations
 
@@ -10,7 +11,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from .adapters.inventory import inspect_inventory_contract
-from .inventory_slots import inspect_slots
+from .inventory_slots import CAPACITY_COLUMNS, CONTAINERS, inspect_slots
 from .item_catalog import ItemCatalogRecord, ItemCatalogService
 from .schema import discover_character_schema
 from .session_state import detect_online_state
@@ -46,6 +47,7 @@ class ItemInjectionPlan:
             "item": self.item.as_dict() if self.item else None,
             "quantity": self.quantity,
             "location": self.location,
+            "location_name": CONTAINERS.get(self.location, f"Container {self.location}"),
             "slot": self.slot,
             "online": self.online,
             "adapter_family": self.adapter_family,
@@ -107,8 +109,11 @@ def build_item_injection_plan(
     elif online is None:
         issues.append(TransactionIssue("online_state_unknown", "Character online state could not be verified."))
 
-    if location != 0:
-        issues.append(TransactionIssue("container_not_enabled", "First write slice only permits normal Inventory (location 0)."))
+    if location not in CAPACITY_COLUMNS:
+        issues.append(TransactionIssue(
+            "container_not_enabled",
+            f"{CONTAINERS.get(location, f'Container {location}')} is not a directly sized persistent container and is not enabled for direct injection.",
+        ))
 
     item = None
     try:
@@ -134,14 +139,14 @@ def build_item_injection_plan(
             ))
 
     slot = None
-    if location == 0:
+    if location in CAPACITY_COLUMNS:
         try:
             state = inspect_slots(connection, char_id, location)
             slot = state.first_free_slot
             if state.capacity <= 0:
-                issues.append(TransactionIssue("container_locked", "Inventory capacity is zero."))
+                issues.append(TransactionIssue("container_locked", f"{state.name} capacity is zero."))
             elif slot is None:
-                issues.append(TransactionIssue("container_full", "Inventory has no free slot."))
+                issues.append(TransactionIssue("container_full", f"{state.name} has no free slot."))
         except Exception as exc:
             issues.append(TransactionIssue("slot_discovery_failed", f"Could not resolve a safe destination slot: {exc}"))
 
@@ -174,7 +179,6 @@ def apply_item_injection(connection, plan: ItemInjectionPlan, *, approved: bool 
             finally:
                 cursor.close()
 
-        # Re-discover and recheck all mutable safety gates immediately before mutation.
         schema = discover_character_schema(connection)
         contract = inspect_inventory_contract(schema, plan.adapter_family)
         if not contract.basic_insert_verified:
@@ -182,6 +186,8 @@ def apply_item_injection(connection, plan: ItemInjectionPlan, *, approved: bool 
         state = detect_online_state(connection, schema, plan.char_id)
         if state.online is not False:
             raise RuntimeError("Character online state changed or cannot be verified")
+        if plan.location not in CAPACITY_COLUMNS:
+            raise RuntimeError("Destination container is no longer write-enabled")
         slots = inspect_slots(connection, plan.char_id, plan.location)
         if plan.slot != slots.first_free_slot:
             raise RuntimeError("Inventory changed since preview; rebuild the transaction plan")
@@ -212,6 +218,7 @@ def apply_item_injection(connection, plan: ItemInjectionPlan, *, approved: bool 
             "item_id": plan.item.item_id,
             "quantity": plan.quantity,
             "location": plan.location,
+            "location_name": CONTAINERS.get(plan.location, f"Container {plan.location}"),
             "slot": plan.slot,
         }
     except Exception:
