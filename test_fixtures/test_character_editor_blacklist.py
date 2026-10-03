@@ -20,7 +20,10 @@ def main() -> None:
     assert "Blacklist state changed since preview" in tx
     assert '/static/character_editor_blacklist.js' in wrapper
     assert "key === 'advanced'" in script
-    assert "read only" in script
+    assert "offline editing enabled" in script
+    assert "editing locked until offline" in script
+    assert "/blacklist/preview" in script and "/blacklist/apply" in script
+    assert "expected_present_before" in script and "approved:true" in script
     assert "/packed/preview" not in script and "/fields/apply" not in script
 
 

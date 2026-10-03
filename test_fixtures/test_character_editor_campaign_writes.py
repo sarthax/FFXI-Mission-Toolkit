@@ -1,4 +1,4 @@
-from src.workbench.editors.character.packed_transactions import _campaign_edit
+from workbench.editors.character.packed_transactions import _campaign_edit
 
 
 def _blob(current=7, completed=()):

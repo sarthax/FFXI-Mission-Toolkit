@@ -1,0 +1,54 @@
+name: Character Editor Regression
+
+on:
+  pull_request:
+    paths:
+      - "src/workbench/editors/character/**"
+      - "src/workbench/runtime/server_profiles.py"
+      - "src/workbench/runtime/legacy_settings.py"
+      - "gui/templates/character_editor*.html"
+      - "gui/static/character_editor*.js"
+      - "gui/static/server_environment_selector.js"
+      - "test_fixtures/test_character_editor_*.py"
+      - "test_fixtures/test_server_profiles.py"
+      - "test_fixtures/test_server_environment_integration.py"
+      - "test_fixtures/test_root_settings_server_profiles.py"
+      - ".github/workflows/character-editor-regression.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  character-editor-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Character Editor regression dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -e . -r requirements.txt pytest httpx
+      - name: Provide CI-only xi_tinkerer import stub
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/character-editor-stubs"
+          : > "$RUNNER_TEMP/character-editor-stubs/xi_tinkerer.py"
+          echo "PYTHONPATH=$RUNNER_TEMP/character-editor-stubs:$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/test_fixtures${PYTHONPATH:+:$PYTHONPATH}" >> "$GITHUB_ENV"
+      - name: Run pytest-style Character Editor regressions
+        run: |
+          python -m pytest -q \
+            test_fixtures/test_character_editor_*.py \
+            test_fixtures/test_server_profiles.py \
+            test_fixtures/test_server_environment_integration.py \
+            test_fixtures/test_root_settings_server_profiles.py
+      - name: Run script-style Character Editor regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test_file in test_fixtures/test_character_editor_*.py; do
+            echo "==> $test_file"
+            python "$test_file"
+          done

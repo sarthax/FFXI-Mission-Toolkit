@@ -1,13 +1,20 @@
 from pathlib import Path
 from types import SimpleNamespace
 
+from fastapi import FastAPI
 from workbench.editors.character.gui import router
 from workbench.runtime import legacy_settings
 from workbench.runtime.paths import GUI_ROOT
 
 
+def _router_paths() -> set[str]:
+    app = FastAPI()
+    app.include_router(router)
+    return set(app.openapi()["paths"])
+
+
 def test_environment_api_is_mounted_below_live_character_editor_router():
-    paths = {route.path for route in router.routes}
+    paths = _router_paths()
     assert "/character-editor/environments/profiles.json" in paths
     assert "/character-editor/environments/profiles" in paths
     assert "/character-editor/environments/profiles/{profile_id}/activate" in paths

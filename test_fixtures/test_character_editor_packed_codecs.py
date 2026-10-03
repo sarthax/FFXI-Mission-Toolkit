@@ -242,14 +242,14 @@ def main() -> None:
             raise AssertionError(f"{family} blue-spell decoder accepted a 19-byte slot array")
 
     try:
-        decode_character_bitset("titles", bytes(BITSET_BLOB_SIZES["lsb"]["titles"]), "dsp")
+        decode_character_bitset("titles", bytes(BITSET_BLOB_SIZES["titles"]["lsb"]), "dsp")
     except PackedCodecError as exc:
         assert "does not match dsp layout" in str(exc)
     else:
         raise AssertionError("DSP title decoder accepted LSB-sized data")
 
     try:
-        decode_character_bitset("abilities", bytes(BITSET_BLOB_SIZES["dsp"]["abilities"]), "lsb")
+        decode_character_bitset("abilities", bytes(BITSET_BLOB_SIZES["abilities"]["dsp"]), "lsb")
     except PackedCodecError as exc:
         assert "does not match lsb layout" in str(exc)
     else:
