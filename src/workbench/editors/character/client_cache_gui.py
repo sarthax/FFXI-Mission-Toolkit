@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
+from starlette.concurrency import run_in_threadpool
 
 from workbench.editors.items.client_asset_cache import (
     build_source,
@@ -29,7 +30,7 @@ async def client_cache_build_source(request: Request):
         category = str(body.get("category") or "").strip()
         if not category:
             raise ValueError("category is required")
-        return JSONResponse(build_source(category))
+        return JSONResponse(await run_in_threadpool(build_source, category))
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     except Exception as exc:
