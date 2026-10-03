@@ -61,7 +61,7 @@ References[2]
     browser = (ROOT / "gui" / "templates" / "events.html").read_text(encoding="utf-8")
     detail = (ROOT / "gui" / "templates" / "event_view.html").read_text(encoding="utf-8")
     bridge = (ROOT / "vendor" / "xi-events-py" / "decompile_from_mission_toolkit.py").read_text(encoding="utf-8")
-    explore = (ROOT / "explore_event.py").read_text(encoding="utf-8")
+    explore = (ROOT / "src" / "workbench" / "devtools" / "server" / "_explore_event_impl.py").read_text(encoding="utf-8")
 
     assert "def _event_server_refs(" in server
     assert "def _event_capture_rows(" in server
