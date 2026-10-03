@@ -28,6 +28,20 @@ def test_lsb_admin_writer_rechecks_offline_and_stale_row_then_audits_after_commi
     assert "attach_committed_audit" in text
     assert text.index("connection.commit()") < text.rindex("attach_committed_audit")
     assert 'operation="lsb_admin.update"' in text
+    assert "undo_supported=True" in text
+
+
+def test_lsb_admin_undo_is_lsb_only_stale_safe_and_restores_only_changed_fields():
+    text = (BASE / "lsb_admin_undo.py").read_text(encoding="utf-8")
+    assert 'operation != "lsb_admin.update"' in text
+    assert 'event_family != "lsb" or current_family != "lsb"' in text
+    assert "character_online" in text and "online_state_unknown" in text
+    assert "schema_unverified" in text
+    assert "after_state_drift" in text
+    assert "_ALLOWED[table]" in text
+    assert 'metadata") or {}).get("changes")' in text
+    assert 'params = [plan.before.get(name) for name in changes] + [plan.char_id]' in text
+    assert 'operation="undo.lsb_admin.update"' in text
     assert "undo_supported=False" in text
 
 
@@ -38,6 +52,9 @@ def test_lsb_admin_routes_require_preview_and_explicit_approval():
     assert 'body.get("approved") is not True' in text
     assert 'expected_before = body.get("expected_before")' in text
     assert "Administrative state changed since preview" in text
+    assert "build_lsb_admin_undo_plan" in text
+    assert "apply_lsb_admin_undo" in text
+    assert 'event.get("operation") or "") == "lsb_admin.update"' in text
 
 
 def test_lsb_admin_ui_is_advanced_lsb_only_and_keeps_runtime_state_read_only():
@@ -59,5 +76,6 @@ def test_lsb_admin_ui_is_advanced_lsb_only_and_keeps_runtime_state_read_only():
 if __name__ == "__main__":
     test_lsb_admin_writer_is_narrow_and_lineage_gated()
     test_lsb_admin_writer_rechecks_offline_and_stale_row_then_audits_after_commit()
+    test_lsb_admin_undo_is_lsb_only_stale_safe_and_restores_only_changed_fields()
     test_lsb_admin_routes_require_preview_and_explicit_approval()
     test_lsb_admin_ui_is_advanced_lsb_only_and_keeps_runtime_state_read_only()
