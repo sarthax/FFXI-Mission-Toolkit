@@ -161,4 +161,213 @@
   };
   const origDirty = updateDirtySummary;
   updateDirtySummary = function () { const r = origDirty.apply(this, arguments); markDirty(); return r; };
+
+  // ---------- plain-language labels ----------
+  const L = {
+    'item_basic.name': ['Name', 'The item\'s internal (server) name.'],
+    'item_basic.sortname': ['Sort name', 'Name used for sorting and searching.'],
+    'item_basic.subid': ['Variant ID', 'Legacy sub-record number. Leave alone unless copying a known item.'],
+    'item_basic.stackSize': ['Max stack size', 'How many of this item fit in one inventory slot.'],
+    'item_basic.flags': ['Item properties', 'Rare, Ex, can\'t be sold/traded and similar permission flags.'],
+    'item_basic.aH': ['Auction category', 'Which Auction House category the item is listed under (0 = not sellable).'],
+    'item_basic.NoSale': ['Vendor sale', 'Whether NPC vendors will buy this item.'],
+    'item_basic.BaseSell': ['Sell price (gil)', 'What an NPC vendor pays for this item.'],
+    'item_equipment.name': ['Name', 'The item\'s internal (server) name.'],
+    'item_equipment.level': ['Required level', 'Minimum character level needed to equip.'],
+    'item_equipment.ilevel': ['Item level', 'Item level shown on the item; does not affect who can equip it.'],
+    'item_equipment.jobs': ['Usable by jobs', 'Which jobs can equip this item.'],
+    'item_equipment.slot': ['Equips in', 'Which equipment slot(s) it goes in. Rings and earrings link both sides together.'],
+    'item_equipment.rslot': ['Slot restriction', 'Related slot data; normally leave unchanged.'],
+    'item_equipment.MId': ['Appearance (model ID)', 'Which model the client draws when worn.'],
+    'item_equipment.shieldSize': ['Shield size', 'Shield size class (affects block rate).'],
+    'item_equipment.scriptType': ['Special equip behavior', 'Which equip script category applies.'],
+    'item_weapon.name': ['Name', 'The item\'s internal (server) name.'],
+    'item_weapon.skill': ['Weapon type', 'The combat skill this weapon uses (Hand-to-Hand, Sword, ...).'],
+    'item_weapon.subskill': ['Weapon sub-type', 'Secondary skill/subtype, e.g. for ranged ammo.'],
+    'item_weapon.dmg': ['Damage', 'Base weapon damage (DMG).'],
+    'item_weapon.delay': ['Delay', 'Weapon delay between attacks. Lower is faster.'],
+    'item_weapon.dmgType': ['Damage type', 'Slashing, piercing, blunt or H2H.'],
+    'item_weapon.hit': ['Hits per attack', 'Number of hits per attack round.'],
+    'item_weapon.ilvl_skill': ['Item-level skill bonus', 'Skill bonus granted by item level.'],
+    'item_weapon.ilvl_parry': ['Item-level parry bonus', 'Parry bonus granted by item level.'],
+    'item_weapon.ilvl_macc': ['Item-level magic accuracy bonus', 'Magic accuracy bonus granted by item level.'],
+    'item_weapon.unlock_points': ['Points to unlock', 'Points needed for unlock-style weapons.'],
+    'item_usable.name': ['Name', 'The item\'s internal (server) name.'],
+    'item_usable.validTargets': ['Can be used on', 'Who the item may be used on (self, party, enemy...).'],
+    'item_usable.activation': ['Effect when used (ID)', 'Which use effect fires. Raw ID from the server.'],
+    'item_usable.animation': ['Use animation', 'Animation played when used.'],
+    'item_usable.animationTime': ['Animation length', 'How long the use animation lasts.'],
+    'item_usable.maxCharges': ['Charges', 'Number of uses stored on the item.'],
+    'item_usable.useDelay': ['Delay before use (s)', 'Seconds before the effect takes place.'],
+    'item_usable.reuseDelay': ['Reuse timer (s)', 'Seconds before the item can be used again.'],
+    'item_usable.aoe': ['Area effect', 'Whether the effect hits an area.'],
+    'item_puppet.name': ['Name', 'The item\'s internal (server) name.'],
+    'item_puppet.slot': ['Attachment slot', 'Which automaton attachment slot it fits.'],
+    'item_puppet.element': ['Element', 'Elemental capacity / cost of the attachment.'],
+    'item_furnishing.name': ['Name', 'The item\'s internal (server) name.'],
+    'item_furnishing.storage': ['Storage added', 'Mog House storage this furnishing provides.'],
+    'item_furnishing.moghancement': ['Moghancement', 'Moghancement type.'],
+    'item_furnishing.element': ['Element', 'Furnishing element.'],
+    'item_furnishing.aura': ['Aura strength', 'Elemental aura strength.'],
+  };
+  for (const [k, v] of Object.entries(L)) FIELD_HELP[k] = v[1];
+  Object.assign(TABLE_LABELS, {item_basic: 'General', item_equipment: 'Equipment', item_weapon: 'Weapon', item_usable: 'Usable item', item_puppet: 'Automaton attachment', item_furnishing: 'Furnishing'});
+  const GROUPS = {Identity: 'Name', Inventory: 'Stacking & flags', Economy: 'Price & auction', Requirements: 'Who can equip', Placement: 'Slots', Presentation: 'Appearance & behavior',
+    Combat: 'Combat stats', ItemLevel: 'Item-level bonuses', Unlock: 'Unlocking', Targeting: 'Targets', Timing: 'Timing', Charges: 'Charges', Attachment: 'Attachment', Furnishing: 'Furnishing', Fields: 'Fields', Other: 'Other'};
+  const origField = itemFieldHtml;
+  itemFieldHtml = function (table, row, f, schema) {
+    const lab = L[table + '.' + f]?.[0];
+    const html = origField.apply(this, arguments);
+    return lab ? html.replace('">' + f + '</span>', '">' + lab + '</span>') : html;
+  };
+  const origGrid = buildTablesGrid;
+  buildTablesGrid = function (w) {
+    const r = origGrid.apply(this, arguments);
+    w.querySelectorAll('.logical-group-title').forEach(t => {
+      const n = [...t.childNodes].find(x => x.nodeType === 3);
+      if (n && GROUPS[n.textContent.trim()]) n.textContent = GROUPS[n.textContent.trim()];
+    });
+    w.querySelectorAll('.edit-card > h3 .hint').forEach(h => { if (/^item_/.test(h.textContent)) h.remove(); });
+    return r;
+  };
+  const modeSel = byId('itemEditorMode');
+  if (modeSel) { modeSel.options[0].textContent = 'Common fields'; modeSel.options[1].textContent = 'All fields'; modeSel.previousSibling && (modeSel.closest('label').firstChild.textContent = 'Show '); }
+  const modeHint = modeSel?.closest('.editor-toolbar')?.querySelector('span.muted');
+  if (modeHint) modeHint.textContent = 'Common fields covers everyday gameplay values; All fields shows every raw server column.';
+
+  // the draft editor reuses the editor's field styling, which the page scopes to #editorWrap
+  try {
+    const copies = [];
+    for (const sheet of document.styleSheets) for (const r of sheet.cssRules) if (r.selectorText && r.selectorText.includes('#editorWrap')) copies.push(r.cssText.replace(/#editorWrap/g, '#draftWrap'));
+    const s = document.createElement('style'); s.textContent = copies.join('\n'); document.head.appendChild(s);
+  } catch (e) { console.warn('draft styles', e); }
+
+  // ---------- fixed navigation: Find & edit / Create new / Batch edit ----------
+  const css2 = document.createElement('style');
+  css2.textContent = `
+    #ieNav{display:flex;gap:4px;border-bottom:2px solid var(--border,#555);margin:6px 0 8px}
+    #ieNav button{border:1px solid transparent;border-bottom:0;border-radius:6px 6px 0 0;padding:7px 18px;background:transparent;color:inherit;cursor:pointer;font-size:13px;opacity:.7}
+    #ieNav button.on{opacity:1;font-weight:700;border-color:var(--border,#555);background:rgba(106,169,255,.14)}
+    .ie-section{display:none}.ie-section.on{display:grid;grid-template-columns:360px minmax(0,1fr);gap:12px;overflow:hidden}
+    .ie-section.single.on{display:block;overflow:auto}
+    .ie-col{overflow:auto;min-height:0;padding-right:4px}
+    #ieFind .ie-grid{grid-template-columns:1fr;max-height:none;overflow:visible}
+    #ieFind form.search{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+    #ieFind form.search input[type=text]{min-width:0;width:100%;flex:1 1 100%}
+    #ieFind .ie-more{flex:1 1 100%}
+    #ieFind .ie-more summary{cursor:pointer;opacity:.8;font-size:12px}
+    #ieFind .ie-more>div{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+    .ie-empty{padding:40px 20px;text-align:center;opacity:.6;border:1px dashed var(--border,#555);border-radius:8px}
+    #ieEditHead,#ieDraftHead{position:sticky;top:0;z-index:6;background:var(--bg,#1e1e1e);padding-bottom:4px;border-bottom:1px solid var(--border,#555)}
+    #ieEditHead>*,#ieDraftHead>*{margin-top:4px!important}
+    #ieEditHead #ieTabs{margin:4px 0 0;border-bottom:0}
+    #ieEditHead #itemStatusBar{padding:3px 8px!important;font-size:11px;border-width:1px!important}
+    #ieEditHead #dirtySummary{padding:2px 8px!important;font-size:11px}
+    #ieEditHead #itemSessionHistory{margin:0!important;padding:0!important;font-size:11px}
+    #ieEditHead #editorTitle{font-size:16px}
+    #ieEditHead #editComment{min-width:140px}
+    #ieCreateTabs{display:flex;gap:2px;border-bottom:1px solid var(--border,#555);margin-bottom:8px;flex-wrap:wrap}
+    #ieCreateTabs button{border:1px solid transparent;border-bottom:0;border-radius:6px 6px 0 0;padding:5px 10px;background:transparent;color:inherit;cursor:pointer;opacity:.7}
+    #ieCreateTabs button.on{opacity:1;font-weight:600;border-color:var(--border,#555);background:rgba(106,169,255,.12)}
+    #ieCreate .ie-cpane{display:none;flex-direction:column;gap:8px}#ieCreate .ie-cpane.on{display:flex}
+    #ieCreate .ie-cpane input[type=text],#ieCreate .ie-cpane select{width:100%}`;
+  document.head.appendChild(css2);
+
+  const mk = (tag, id, cls) => { const e = document.createElement(tag); if (id) e.id = id; if (cls) e.className = cls; return e; };
+  const topBar = byId('itemEditorTop');
+  const nav = mk('div', 'ieNav');
+  const secs = {find: mk('div', 'ieFind', 'ie-section'), create: mk('div', 'ieCreate', 'ie-section'), batch: mk('div', 'ieBatch', 'ie-section single')};
+  const navDef = [['find', 'Find & edit'], ['create', 'Create new item'], ['batch', 'Batch edit']];
+  navDef.forEach(([k, t]) => { const b = mk('button'); b.type = 'button'; b.dataset.sec = k; b.textContent = t; nav.appendChild(b); });
+  topBar.after(nav);
+  let prev = nav;
+  for (const s of Object.values(secs)) { prev.after(s); prev = s; }
+
+  // -- Find & edit: search + results left, editor right
+  const form = document.querySelector('form.search');
+  const left = mk('div', 'ieFindLeft', 'ie-col'), right = mk('div', 'ieFindRight', 'ie-col');
+  secs.find.append(left, right);
+  const more = mk('details', null, 'ie-more');
+  more.innerHTML = '<summary>More filters &amp; sorting</summary><div></div>';
+  for (const id of ['searchMinLevel', 'searchMaxLevel', 'searchJob', 'searchSkill', 'searchClientState', 'searchSort', 'searchDir']) more.lastChild.appendChild(byId(id));
+  form.insertBefore(more, form.querySelector('button[type=submit]'));
+  left.append(form, byId('datOnlyPreview'), host);
+  const empty = mk('div', 'ieEmpty', 'ie-empty');
+  empty.innerHTML = '<h3>No item open</h3><p>Search on the left, then click an item to edit it. Hover a result to preview its details.</p>';
+  right.append(empty, wrap);
+  wrap.style.marginTop = '0';
+
+  const head = mk('div', 'ieEditHead');
+  const titleRow = wrap.querySelector(':scope > .dense-toolbar');
+  wrap.prepend(head);
+  head.append(titleRow, byId('itemSessionHistory'), byId('itemStatusBar'), byId('dirtySummary'), bar);
+  byId('itemSessionHistory').style.margin = '0';
+  panes.props.prepend(byId('clientMismatch'), byId('itemValidation'));  // issues belong with the fields they concern
+
+  // -- Create new: start options left (tabbed), draft right
+  const cl = byId('cloneSourceId').parentNode, nw = byId('newName').parentNode;
+  const slot = byId('slotBrowser').closest('.edit-card'), draft = byId('draftWrap');
+  const h2 = [...document.querySelectorAll('h2')].find(h => h.textContent.trim() === 'Create New Item');
+  const intro = h2 && h2.nextElementSibling;
+  const cLeft = mk('div', 'ieCreateLeft', 'ie-col'), cRight = mk('div', 'ieCreateRight', 'ie-col');
+  secs.create.append(cLeft, cRight);
+  const ctabs = mk('div', 'ieCreateTabs');
+  const cpanes = {};
+  for (const [k, t, el, blurb] of [
+    ['blank', 'Blank item', nw, 'Start an empty item of a chosen type, then fill in the fields.'],
+    ['clone', 'Copy an item', cl, 'Use an existing item as the starting point. Pick which of its effects come along.'],
+    ['slots', 'Free ID slots', slot, 'Browse which item IDs are free, taken, or mismatched. Observational only.'],
+  ]) {
+    const b = mk('button'); b.type = 'button'; b.dataset.c = k; b.textContent = t; ctabs.appendChild(b);
+    const p = mk('div', null, 'ie-cpane'); p.dataset.c = k;
+    p.innerHTML = `<div class="muted" style="font-size:12px">${blurb}</div>`;
+    el.style.flexWrap = 'wrap'; p.appendChild(el); cpanes[k] = p;
+  }
+  cLeft.append(ctabs, ...Object.values(cpanes));
+  if (intro) { intro.style.fontSize = '11px'; cLeft.append(intro); }
+  cLeft.append(byId('createStatus'), byId('createPreview'));
+  if (h2) h2.style.display = 'none';
+  const pickC = k => { store.set('ieCTab', k); ctabs.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.c === k)); Object.entries(cpanes).forEach(([n, p]) => p.classList.toggle('on', n === k)); };
+  ctabs.addEventListener('click', e => { const b = e.target.closest('button'); if (b) pickC(b.dataset.c); });
+  pickC(cpanes[store.get('ieCTab', 'blank')] ? store.get('ieCTab', 'blank') : 'blank');
+  const dEmpty = mk('div', 'ieDraftEmpty', 'ie-empty');
+  dEmpty.innerHTML = '<h3>No draft yet</h3><p>Choose a starting point on the left. Nothing is saved until you press Save on the draft.</p>';
+  const dHead = mk('div', 'ieDraftHead');
+  dHead.append(draft.firstElementChild);
+  draft.prepend(dHead);
+  draft.style.marginTop = '0';
+  cRight.append(dEmpty, draft);
+
+  // -- Batch edit
+  secs.batch.append(byId('itemBatchEditor'));
+  byId('itemBatchEditor').open = true;
+
+  // empty-state toggles follow the old show/hide of the editor/draft blocks
+  const sync = () => { empty.style.display = wrap.style.display === 'none' ? '' : 'none'; dEmpty.style.display = draft.style.display === 'none' ? '' : 'none'; };
+  new MutationObserver(sync).observe(wrap, {attributes: true, attributeFilter: ['style']});
+  new MutationObserver(sync).observe(draft, {attributes: true, attributeFilter: ['style']});
+  sync();
+
+  const sizeSections = () => Object.values(secs).forEach(s => {
+    if (!s.classList.contains('on')) return;
+    const top = s.getBoundingClientRect().top + scrollY;
+    s.style.height = Math.max(420, innerHeight - (top - scrollY) - 12) + 'px';
+  });
+  window.showSection = key => {
+    store.set('ieSection', key);
+    nav.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.sec === key));
+    Object.entries(secs).forEach(([k, s]) => s.classList.toggle('on', k === key));
+    sizeSections();
+  };
+  nav.addEventListener('click', e => { const b = e.target.closest('button'); if (b) showSection(b.dataset.sec); });
+  addEventListener('resize', sizeSections);
+  showSection(secs[store.get('ieSection', 'find')] ? store.get('ieSection', 'find') : 'find');
+  setTimeout(sizeSections, 300);
+
+  // opening a draft (new / clone) jumps to the Create section
+  const origStartDraft = startDraft;
+  startDraft = function () { const r = origStartDraft.apply(this, arguments); showSection('create'); return r; };
+  // the batch / item pickers used elsewhere on the page need the right section visible
+  const origLoadItem = loadItem;
+  loadItem = function () { showSection('find'); return origLoadItem.apply(this, arguments); };
 })();

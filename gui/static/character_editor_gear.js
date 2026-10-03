@@ -3,6 +3,7 @@
 window.CEGear = (() => {
   if (!document.querySelector('.character-editor-page, .item-editor-page')) return null;
 
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
   const api = () => `/character-editor/characters/${selectedChar}`;
   const icon = id => `/character-editor/client-cache/icons/${id}.png`;
   async function getJson(url) {
