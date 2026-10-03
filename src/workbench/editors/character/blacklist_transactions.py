@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+from .audit import attach_committed_audit
 from .schema import discover_character_schema
 from .session_state import detect_online_state
 
@@ -135,8 +136,18 @@ def apply_blacklist_edit(connection, plan: BlacklistEditPlan, *, approved: bool 
         finally:
             cursor.close()
         connection.commit()
-        return {"status": "committed", "char_id": plan.char_id, "target_id": plan.target_id, "action": plan.action,
-                "target": plan.target, "present_before": plan.present_before, "present_after": plan.present_after}
+        result = {"status": "committed", "char_id": plan.char_id, "target_id": plan.target_id, "action": plan.action,
+                  "target": plan.target, "present_before": plan.present_before, "present_after": plan.present_after}
+        return attach_committed_audit(
+            result,
+            operation=f"blacklist.{plan.action}",
+            char_id=plan.char_id,
+            adapter_family=plan.adapter_family,
+            target={"table": "char_blacklist", "target_id": plan.target_id, "target": plan.target},
+            before={"present": plan.present_before},
+            after={"present": plan.present_after},
+            undo_supported=True,
+        )
     except Exception:
         try:
             connection.rollback()
