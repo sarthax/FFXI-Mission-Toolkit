@@ -97,6 +97,20 @@ class CharacterEditorService:
     def editable_fields(self, table_name: str) -> list[dict[str, Any]]:
         return editable_columns(self.schema, table_name)
 
+    def write_capabilities(self) -> list[str]:
+        """Guarded mutation families exposed by the current Character Editor."""
+        capabilities = [
+            "inventory_offline",
+            "scalar_rows_offline",
+            "packed_progression_offline",
+            "spells_offline",
+            "blacklist_offline",
+            "audit_undo_offline",
+        ]
+        if self.adapter_family.lower() == "lsb":
+            capabilities.append("lsb_admin_offline")
+        return capabilities
+
     def preview_scalar_edit(self, char_id: int, table_name: str, *, selector: dict[str, Any] | None = None,
                             changes: dict[str, Any] | None = None) -> dict[str, Any]:
         return build_scalar_edit_plan(self.connection, char_id=char_id, table_name=table_name, selector=selector,
@@ -289,12 +303,7 @@ class CharacterEditorService:
             "inventory": inventory,
             "scalar_editors": scalar_tables,
             "write_enabled": True,
-            "write_capabilities": [
-                "inventory_basic_offline",
-                "scalar_character_offline",
-                "packed_missions_keyitems_offline",
-                "spells_offline",
-            ],
+            "write_capabilities": self.write_capabilities(),
         }
 
     def capability_manifest(self) -> dict[str, Any]:
@@ -307,10 +316,5 @@ class CharacterEditorService:
             "tabs": build_tab_manifest(self.schema, inventory),
             "inventory": inventory,
             "write_enabled": True,
-            "write_capabilities": [
-                "inventory_basic_offline",
-                "scalar_character_offline",
-                "packed_missions_keyitems_offline",
-                "spells_offline",
-            ],
+            "write_capabilities": self.write_capabilities(),
         }
