@@ -11,6 +11,8 @@
   const resetSelection = document.getElementById('behavior-reset');
   const status = document.getElementById('behavior-status');
   const controls = document.querySelector('.behavior-inspector .behavior-controls');
+  const detail = document.getElementById('behavior-detail');
+  const canvasWrap = svg.closest('.behavior-canvas-wrap');
   const BASE_VIEW = {x: 0, y: 0, w: 1480, h: 760};
   let view = {...BASE_VIEW};
   let selected = null;
@@ -20,9 +22,22 @@
   const style = document.createElement('style');
   style.id = 'behaviorGraphInteractionStyles';
   style.textContent = `
-    .behavior-canvas-wrap{overflow:hidden;min-height:620px;position:relative}
+    .behavior-workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,380px);gap:12px;align-items:stretch;margin-top:.6rem}
+    .behavior-workspace.inspector-collapsed{grid-template-columns:minmax(0,1fr) 42px}
+    .behavior-canvas-wrap{overflow:hidden;min-height:620px;position:relative;margin:0}
     #behavior-graph{width:100%;height:clamp(620px,70vh,820px);min-width:0;min-height:620px;touch-action:none;cursor:grab;user-select:none}
     #behavior-graph.behavior-panning{cursor:grabbing}
+    .behavior-inspector-pane{min-width:0;height:clamp(620px,70vh,820px);display:flex;flex-direction:column;border:1px solid var(--border);border-radius:6px;background:var(--card,var(--surface));overflow:hidden;position:sticky;top:8px}
+    .behavior-inspector-pane-header{display:flex;align-items:center;gap:8px;padding:8px 9px;border-bottom:1px solid var(--border);background:var(--surface);flex:none}
+    .behavior-inspector-pane-header strong{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+    .behavior-inspector-pane-header .sp{flex:1}
+    .behavior-inspector-pane-header button{min-width:30px;padding:3px 7px;font-size:11px}
+    .behavior-inspector-pane .behavior-detail{margin:0;border:0;border-radius:0;background:transparent;overflow:auto;flex:1;min-height:0;padding:12px}
+    .behavior-workspace.inspector-collapsed .behavior-inspector-pane{width:42px}
+    .behavior-workspace.inspector-collapsed .behavior-inspector-pane-header{height:100%;padding:6px;flex-direction:column;justify-content:flex-start}
+    .behavior-workspace.inspector-collapsed .behavior-inspector-pane-header strong{writing-mode:vertical-rl;transform:rotate(180deg);margin-top:6px}
+    .behavior-workspace.inspector-collapsed .behavior-inspector-pane-header .sp{display:none}
+    .behavior-workspace.inspector-collapsed .behavior-detail{display:none}
     .behavior-edge.path-active{stroke:#38bdf8;stroke-width:3;opacity:1}
     .behavior-edge.path-dim{opacity:.10}
     .behavior-node.path-active{opacity:1}
@@ -30,8 +45,45 @@
     .behavior-node.path-dim{opacity:.16}
     .behavior-node.selected.path-active rect{stroke:#fff;stroke-width:3.2}
     .behavior-view-hint{font-size:11px;color:var(--muted)}
+    @media(max-width:1000px){
+      .behavior-workspace,.behavior-workspace.inspector-collapsed{grid-template-columns:1fr}
+      .behavior-inspector-pane,.behavior-workspace.inspector-collapsed .behavior-inspector-pane{width:auto;height:auto;max-height:420px;position:static}
+      .behavior-workspace.inspector-collapsed .behavior-inspector-pane{display:none}
+      .behavior-workspace.inspector-collapsed .behavior-detail{display:block}
+    }
   `;
   document.head.appendChild(style);
+
+  if (canvasWrap && detail && !document.getElementById('behavior-workspace')) {
+    const workspace = document.createElement('div');
+    workspace.id = 'behavior-workspace';
+    workspace.className = 'behavior-workspace';
+    canvasWrap.parentElement.insertBefore(workspace, canvasWrap);
+    workspace.appendChild(canvasWrap);
+
+    const pane = document.createElement('aside');
+    pane.className = 'behavior-inspector-pane';
+    pane.setAttribute('aria-label', 'Selected behavior node inspector');
+    const paneHeader = document.createElement('div');
+    paneHeader.className = 'behavior-inspector-pane-header';
+    paneHeader.innerHTML = '<strong>Node Inspector</strong><span class="sp"></span>';
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.id = 'behavior-inspector-toggle';
+    toggle.textContent = 'Collapse';
+    toggle.title = 'Collapse or expand the node inspector pane';
+    paneHeader.appendChild(toggle);
+    pane.appendChild(paneHeader);
+    pane.appendChild(detail);
+    workspace.appendChild(pane);
+
+    toggle.addEventListener('click', () => {
+      const collapsed = workspace.classList.toggle('inspector-collapsed');
+      toggle.textContent = collapsed ? '›' : 'Collapse';
+      toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      queueMicrotask(() => { setViewBox(); applyFocus(); });
+    });
+  }
 
   if (controls && !document.getElementById('behavior-fit-view')) {
     const spacer = document.createElement('span');
@@ -61,9 +113,6 @@
   }
   const edgeKey = edge => `${edge.source}|${edge.kind || ''}|${edge.target}`;
 
-  // Unlike the old undirected connected-component walk, traverse upstream and downstream
-  // independently from the selected node. That highlights the selected causal chain without
-  // walking back through an ancestor and lighting unrelated sibling branches.
   function causalPath(id) {
     const nodeIds = new Set();
     const edgeIds = new Set();
@@ -120,7 +169,6 @@
         const active = !selected || (edge && path.edgeIds.has(edgeKey(edge)));
         element.classList.toggle('path-active', Boolean(selected && active));
         element.classList.toggle('path-dim', Boolean(selected && !active));
-        // Override the legacy connected-component dimming with the directed causal path.
         element.classList.toggle('dim', Boolean(selected && !active));
       });
       svg.querySelectorAll('.behavior-node').forEach(element => {
@@ -205,8 +253,6 @@
   svg.addEventListener('pointerup', endPan);
   svg.addEventListener('pointercancel', endPan);
 
-  // Capture selection before the legacy node handler synchronously replaces SVG children.
-  // MutationObserver then reapplies the directed path classes to the freshly rendered graph.
   svg.addEventListener('click', event => {
     const node = event.target.closest?.('.behavior-node');
     if (!node) return;
@@ -226,7 +272,6 @@
     setViewBox();
   });
 
-  // Re-apply view state and path focus after the legacy renderer replaces graph children.
   const observer = new MutationObserver(() => queueMicrotask(applyFocus));
   observer.observe(svg, {childList: true});
   setViewBox();
