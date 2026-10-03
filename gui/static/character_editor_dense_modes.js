@@ -3,6 +3,23 @@
 
   const previousLoadCategory = loadCategory;
 
+  async function applyPacked(capability, operation, summary) {
+    if (!selectedChar) return false;
+    try {
+      const preview = await api(`/character-editor/characters/${selectedChar}/packed/preview`, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({capability, operation})
+      });
+      const issues = (preview?.issues || []).map(i => `${i.blocking ? 'BLOCK' : 'WARN'}: ${i.message}`).join('\n');
+      if (!preview.ready) { alert(issues || 'This change is not write-ready.'); return false; }
+      if (!confirm(`${summary}\n\nBefore: ${pretty(preview.before)}\nAfter: ${pretty(preview.after)}${issues ? '\n\n' + issues : ''}\n\nApply this change?`)) return false;
+      await api(`/character-editor/characters/${selectedChar}/packed/apply`, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({capability, operation, expected_before_sha256:preview.before_sha256, approved:true})
+      });
+      await selectCharacter(selectedChar);
+      return true;
+    } catch (e) { alert(e.message); return false; }
+  }
+
   function installCurrentOnlyMode(card, listSelector, checkedSelector, label) {
     if (!card || card.dataset.ceCurrentModeInstalled === '1') return;
     card.dataset.ceCurrentModeInstalled = '1';
@@ -28,12 +45,6 @@
         const checked = row.querySelector(checkedSelector)?.checked === true;
         row.hidden = currentOnly && !checked;
       }
-      const visible = rows.filter(row => !row.hidden).length;
-      if (!visible && currentOnly) {
-        list.dataset.ceEmptyCurrent = '1';
-      } else {
-        delete list.dataset.ceEmptyCurrent;
-      }
       toggle.textContent = currentOnly ? 'Browse all' : 'Current only';
       note.textContent = currentOnly
         ? `Current ${label} shown · toggle a checkbox to remove`
@@ -50,9 +61,36 @@
     apply();
   }
 
+  function ensureOwnedKeyItemRows(list) {
+    const entry = activeCategoryData?.packed?.key_items;
+    const decoded = entry?.decoded || {};
+    const catalog = entry?.catalog || {};
+    const owned = new Set((decoded.owned_ids || []).map(Number));
+    const seen = new Set((decoded.seen_ids || []).map(Number));
+    const present = new Set([...list.querySelectorAll('input[data-ki]')].map(input => Number(input.dataset.ki)));
+    const offline = editableOnline() && entry?.editable === true;
+
+    for (const id of owned) {
+      if (present.has(id)) continue;
+      const row = catalog.items?.[String(id)] || {id, label:`Key Item ${id}`};
+      const node = document.createElement('div');
+      node.className = 'ce-progress-row';
+      node.innerHTML = `<span>${esc(row.label)}<small>ID ${esc(id)}${row.symbol ? ' · '+esc(row.symbol) : ''}</small></span><label>Owned <input type="checkbox" data-ki="${id}" data-kind="owned" checked ${offline?'':'disabled'}></label><label class="ce-seen">Seen <input type="checkbox" data-ki="${id}" data-kind="seen" ${seen.has(id)?'checked':''} ${offline?'':'disabled'}></label>`;
+      node.querySelectorAll('input[data-ki]').forEach(cb => cb.addEventListener('change', async () => {
+        const kind = cb.dataset.kind, desired = cb.checked, operation = {key_item_id:id};
+        operation[kind] = desired;
+        cb.disabled = true;
+        const ok = await applyPacked('key_items', operation, `${desired?'Set':'Clear'} ${kind}: ${row.label} (${id})`);
+        if (!ok) { cb.checked = !desired; cb.disabled = !offline; }
+      }));
+      list.appendChild(node);
+    }
+  }
+
   function optimizeKeyItems() {
     const list = document.getElementById('ceKeyItemList');
     if (!list) return;
+    ensureOwnedKeyItemRows(list);
     const card = list.closest('.ce-progress-card');
     installCurrentOnlyMode(card, '#ceKeyItemList', 'input[data-kind="owned"]', 'owned key items');
   }
@@ -79,7 +117,7 @@
       learnedOnly.checked = true;
       learnedOnly.dispatchEvent(new Event('change', {bubbles:true}));
       const label = learnedOnly.closest('label');
-      if (label) label.firstChild && (label.firstChild.textContent = ' Current only ');
+      if (label?.lastChild?.nodeType === Node.TEXT_NODE) label.lastChild.textContent = ' Current only';
       const note = document.createElement('span');
       note.className = 'ce-muted';
       note.textContent = 'Clear Current only to browse and learn new spells.';
@@ -88,9 +126,7 @@
   }
 
   function collapseLegacyPackedPanels() {
-    document.querySelectorAll('#categoryData > .ce-raw-storage').forEach(details => {
-      details.open = false;
-    });
+    document.querySelectorAll('#categoryData > .ce-raw-storage').forEach(details => { details.open = false; });
     document.querySelectorAll('#categoryData > .ce-data-block').forEach(details => {
       const text = details.querySelector(':scope > summary')?.textContent || '';
       if (/char_vars|char_effects|char_recast|char_pet/i.test(text)) details.open = false;
