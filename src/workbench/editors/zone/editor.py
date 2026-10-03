@@ -5,6 +5,10 @@ The mature root ``zone_edit.py`` implementation is preserved byte-for-byte in
 ``Path(__file__).parent`` and imports several repository-root compatibility names. Execute it
 with the historical root filename while supplying canonical packaged dependencies so the move
 does not alter server selection, SQL sync, model resolution, or write/backup behavior.
+
+Live/admin server selection now resolves through the named active environment.  The mature
+implementation's historical ``_sql_dir`` helper is overridden below so checked-in SQL sync uses
+the exact same environment root as the live DB instead of assuming every non-DSP target is Topaz.
 """
 from __future__ import annotations
 
@@ -15,13 +19,12 @@ from types import ModuleType
 
 from workbench.client.models import look_decode as _look_decode
 from workbench.client.models import resolver as _model_resolver
-from workbench.devtools.spatial import zone_plot as _zone_plot
+from workbench.devtools.spatial import active_zone_plot as _zone_plot
 from workbench.runtime import legacy_settings as _legacy_settings
 from workbench.runtime.paths import REPO_ROOT
 
 _IMPL_PATH = Path(__file__).with_name("_editor_impl.py")
 _LEGACY_FILE = REPO_ROOT / "zone_edit.py"
-_LEGACY_SETTINGS_MODULE = _legacy_settings._module()
 
 
 def _load_impl() -> ModuleType:
@@ -33,7 +36,7 @@ def _load_impl() -> ModuleType:
     sys.modules[impl_name] = module
 
     aliases = {
-        "settings": _LEGACY_SETTINGS_MODULE,
+        "settings": _legacy_settings,
         "zone_plot": _zone_plot,
         "client_model_resolver": _model_resolver,
         "mob_look_decode": _look_decode,
@@ -54,10 +57,19 @@ def _load_impl() -> ModuleType:
             else:
                 sys.modules[name] = old
 
-    module.settings = _LEGACY_SETTINGS_MODULE
+    module.settings = _legacy_settings
     module.zone_plot = _zone_plot
     module.client_model_resolver = _model_resolver
     module.mob_look_decode = _look_decode
+
+    def _active_sql_dir(server=None) -> Path:
+        root = _zone_plot._server_root(server)
+        sql_dir = root / "sql"
+        if not sql_dir.is_dir():
+            raise ValueError(f"Active server environment has no sql directory: {sql_dir}")
+        return sql_dir
+
+    module._sql_dir = _active_sql_dir
     module.__file__ = str(_LEGACY_FILE)
     module.__package__ = __package__
     return module
