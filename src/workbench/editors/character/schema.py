@@ -155,7 +155,7 @@ def _capability_for_table(name: str) -> str:
 
 
 def _character_key(columns: set[str]) -> str | None:
-    for candidate in ("charid", "char_id", "character_id"):
+    for candidate in ("charid", "char_id", "character_id", "charid_owner"):
         if candidate in columns:
             return candidate
     return None
