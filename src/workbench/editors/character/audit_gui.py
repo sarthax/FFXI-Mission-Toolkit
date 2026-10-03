@@ -1,4 +1,4 @@
-"""Audit history and guarded undo routes for the Character Editor."""
+"""Audit history, guarded undo, and LSB admin routes for the Character Editor."""
 from __future__ import annotations
 
 from contextlib import contextmanager
@@ -12,6 +12,7 @@ from workbench.runtime.legacy_settings import get_active_server_root
 from .audit import read_audit_events
 from .audit_undo import apply_undo, build_undo_plan
 from .factory import open_character_editor
+from .lsb_admin_transactions import apply_lsb_admin_plan, build_lsb_admin_plan
 
 router = APIRouter()
 
@@ -105,6 +106,47 @@ async def character_editor_audit_undo_apply(char_id: int, event_id: str, request
                 raise HTTPException(status_code=404, detail="Audit event does not belong to this character")
             result = apply_undo(ctx.service.connection, event_id=event_id, adapter_family=ctx.service.adapter_family, approved=True)
             return JSONResponse(_safe(result))
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/characters/{char_id}/lsb-admin/preview")
+async def character_editor_lsb_admin_preview(char_id: int, request: Request):
+    try:
+        body = await request.json()
+        with _context() as ctx:
+            plan = build_lsb_admin_plan(
+                ctx.service.connection,
+                char_id=char_id,
+                table=str(body.get("table") or ""),
+                changes=dict(body.get("changes") or {}),
+                adapter_family=ctx.service.adapter_family,
+            )
+            return JSONResponse(_safe(plan.as_dict()))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/characters/{char_id}/lsb-admin/apply")
+async def character_editor_lsb_admin_apply(char_id: int, request: Request):
+    try:
+        body = await request.json()
+        if body.get("approved") is not True:
+            raise HTTPException(status_code=400, detail="Explicit approved=true confirmation is required")
+        with _context() as ctx:
+            plan = build_lsb_admin_plan(
+                ctx.service.connection,
+                char_id=char_id,
+                table=str(body.get("table") or ""),
+                changes=dict(body.get("changes") or {}),
+                adapter_family=ctx.service.adapter_family,
+            )
+            expected_before = body.get("expected_before")
+            if isinstance(expected_before, dict) and _safe(plan.before) != expected_before:
+                raise HTTPException(status_code=409, detail="Administrative state changed since preview; preview the edit again")
+            return JSONResponse(_safe(apply_lsb_admin_plan(ctx.service.connection, plan, approved=True)))
     except HTTPException:
         raise
     except Exception as exc:
