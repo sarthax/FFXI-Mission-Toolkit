@@ -10,8 +10,10 @@ import workbench.editors.character.audit as audit
 def main() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
+        old_data_root = audit.DATA_ROOT
         old_log = audit.AUDIT_LOG_PATH
         old_backups = audit.AUDIT_BACKUP_ROOT
+        audit.DATA_ROOT = root
         audit.AUDIT_LOG_PATH = root / "character_editor_audit.jsonl"
         audit.AUDIT_BACKUP_ROOT = root / "character_editor_backups"
         try:
@@ -27,7 +29,7 @@ def main() -> None:
             )
             assert audit.AUDIT_LOG_PATH.exists()
             assert event.backup_path is not None
-            backup = audit.AUDIT_BACKUP_ROOT / f"{event.event_id}.json"
+            backup = audit.DATA_ROOT / event.backup_path
             assert backup.exists()
 
             row = json.loads(audit.AUDIT_LOG_PATH.read_text(encoding="utf-8").strip())
@@ -43,6 +45,7 @@ def main() -> None:
             assert rows[0]["event_id"] == event.event_id
             assert audit.read_audit_events(char_id=999, limit=10) == []
         finally:
+            audit.DATA_ROOT = old_data_root
             audit.AUDIT_LOG_PATH = old_log
             audit.AUDIT_BACKUP_ROOT = old_backups
 
