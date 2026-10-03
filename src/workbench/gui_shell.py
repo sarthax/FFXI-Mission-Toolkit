@@ -152,6 +152,7 @@ WORKSPACES = (
             {"label": "Entities", "href": "/entity"},
             {"label": "Items", "href": "/items"},
             {"label": "Key Items", "href": "/keyitems"},
+            {"label": "Character Editor", "href": "/character-editor", "mutation": True},
             {"label": "SQL", "href": "/sql"},
             {"label": "Dialog", "href": "/dialog"},
             {"label": "Events / CSIDs", "href": "/events"},
@@ -243,6 +244,15 @@ def route_owners() -> tuple[dict, ...]:
 
 def route_owner(path: str, method: str = "GET") -> dict:
     method = method.upper()
+    if method == "GET" and (path == "/character-editor" or path.startswith("/character-editor/")):
+        return {
+            "home": "Server",
+            "section": "Character Editor",
+            "path": "/character-editor",
+            "method": method,
+            "role": "page",
+            "disposition": "KEEP",
+        }
     for row in route_owners():
         if row["method"] == method and row["pattern"].match(path):
             return {key: value for key, value in row.items() if key not in {"pattern", "parameter_count"}}
