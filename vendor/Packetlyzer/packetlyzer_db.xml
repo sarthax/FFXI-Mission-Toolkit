@@ -319,6 +319,7 @@
       <data type="uint32" name="BtTargetID" pos="44" />
       <data type="bits" name="SubKind" pos="48" bits="3" />
     </packet>
+    <packet type="0x011" desc="GP_SERV_COMMAND_CHAR_DEL" />  <!-- name from atom0s/XiPackets; fields not yet decoded, no capture sample -->
     <packet type="0x012" desc="GP_SERV_COMMAND_GM">
       <data type="a" name="Mes" pos="4" size="248" />
     </packet>
@@ -508,7 +509,8 @@
       <data type="uint16" name="ActIndexCas" pos="20" />
       <data type="uint16" name="ActIndexTar" pos="22" />
       <data type="uint16" name="MessageNum" pos="24" />
-      <data type="byte" name="Type" pos="28" />
+      <data type="byte" name="Type" pos="26" />
+      <data type="byte" name="padding1B" pos="27" />
     </packet>
     <packet type="0x02A" desc="GP_SERV_COMMAND_TALKNUMWORK">
       <data type="uint32" name="UniqueNo" pos="4" />
@@ -2190,6 +2192,7 @@
       <data type="byte" name="ItemIndex" pos="10" />
       <data type="byte" name="TradeIndex" pos="11" />
     </packet>
+    <packet type="0x035" desc="GP_CLI_COMMAND_ITEM_PRESENT" />  <!-- name from atom0s/XiPackets; fields not yet decoded, no capture sample -->
     <packet type="0x036" desc="Synth Start">
       <data type="uint16" name="crystal_item_id" pos="6" />
       <data type="byte" name="ingredient_count" pos="8" />
@@ -2215,6 +2218,7 @@
       <data type="uint16" name="ItemNo" pos="8" />
       <data type="uint16" name="padding0A" pos="10" />
     </packet>
+    <packet type="0x039" desc="GP_CLI_COMAMND_ITEM_LIST" />  <!-- name from atom0s/XiPackets; fields not yet decoded, no capture sample -->
     <packet type="0x03A" desc="GP_CLI_COMMAND_ITEM_STACK">
       <data type="uint32" name="Category" pos="4" />
     </packet>
@@ -2463,19 +2467,6 @@
       <data type="byte" name="Res" pos="4" />
       <data type="byte" name="padding05" pos="5" />
     </packet>
-    <packet type="0x073" desc="GP_SERV_COMMAND_CHOCOBO_TOTEBOARD">
-      <data type="uint32" name="SlotIndex" pos="4" />
-      <data type="uint32" name="Ident" pos="8" />
-      <data type="uint32" name="padding00" pos="12" />
-      <data type="a" name="Odds" pos="16" size="56" />
-    </packet>
-    <packet type="0x074" desc="GP_SERV_COMMAND_CHOCOBO_LIST">
-      <data type="uint32" name="SlotIndex" pos="4" />
-      <data type="a" name="padding04" pos="8" size="8" />
-      <data type="uint16" name="Mode" pos="16" />
-      <data type="uint16" name="ParamSize" pos="18" />
-    </packet>
-    <packet type="0x072" desc="GP_SERV_COMMAND_UNKNOWN_072" />
     <packet type="0x075" desc="GP_CLI_COMMAND_GROUP_TALK">
       <data type="uint16" name="padding04" pos="4" />
       <data type="byte" name="Kind" pos="6" />
@@ -2640,6 +2631,7 @@
       <data type="byte" name="unknown08" pos="8" />
       <data type="byte" name="unknown09" pos="9" />
     </packet>
+    <packet type="0x0D0" desc="GP_CLI_COMMAND_MYROOM_DIARY" />  <!-- name from atom0s/XiPackets; fields not yet decoded, no capture sample -->
     <packet type="0x0D1" desc="GP_CLI_COMMAND_MYROOM_PLACE">
       <data type="uint16" name="ItemNo" pos="4" />
       <data type="int8" name="X" pos="6" />
@@ -2797,6 +2789,7 @@
       <data type="uint32" name="Mode" pos="4" />
     </packet>
     <packet type="0x0EB" desc="GP_CLI_COMMAND_REQSUBMAPNUM" />
+    <packet type="0x0EC" desc="GP_CLI_COMMAND_REQLOGOUTINFO" />  <!-- name from atom0s/XiPackets; fields not yet decoded, no capture sample -->
     <packet type="0x0F0" desc="GP_CLI_COMMAND_RESCUE">
       <data type="uint32" name="State" pos="4" />
     </packet>
@@ -2864,6 +2857,7 @@
       <data type="byte" name="MainJobIndex" pos="4" />
       <data type="byte" name="SupportJobIndex" pos="5" />
     </packet>
+    <packet type="0x101" desc="GP_CLI_COMMAND_MYROOM_DANCER" />  <!-- name from atom0s/XiPackets; fields not yet decoded, no capture sample -->
     <packet type="0x102" desc="GP_CLI_COMMAND_EXTENDED_JOB">
       <data type="a" name="Data" pos="4" size="160" />
     </packet>

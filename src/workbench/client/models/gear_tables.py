@@ -84,7 +84,12 @@ def resolve_gear_file_ids(race: str, gear: dict) -> dict:
     Returns {slot: {"model_id": int, "file_id": int|None}} for every equipped (nonzero) slot."""
     out = {}
     for slot, raw in gear.items():
-        decoded = decode_slot_value(raw)
+        try:
+            decoded = decode_slot_value(raw)
+        except ValueError as exc:
+            # Real mob rows exist whose raw value carries no valid slot index; report, don't abort the whole catalog.
+            out[slot] = {"model_id": None, "file_id": None, "error": str(exc)}
+            continue
         if decoded is None:
             continue
         decoded_slot, model_id = decoded
