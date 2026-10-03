@@ -6,6 +6,7 @@ from typing import Any
 from .adapters import compare_schema
 from .adapters.inventory import inspect_inventory_contract
 from .categories import build_tab_manifest
+from .eminence_transactions import build_eminence_edit_plan
 from .inventory import inventory_summary
 from .inventory_slots import CAPACITY_COLUMNS, CONTAINERS, CONTAINER_LABELS
 from .item_catalog import ItemCatalogService
@@ -107,6 +108,13 @@ class CharacterEditorService:
         return apply_scalar_edit(self.connection, plan, approved=approved)
 
     def preview_packed_edit(self, char_id: int, capability: str, *, operation: dict[str, Any] | None = None) -> dict[str, Any]:
+        if str(capability or "").strip() == "eminence":
+            return build_eminence_edit_plan(
+                self.connection,
+                char_id=char_id,
+                operation=operation,
+                adapter_family=self.adapter_family,
+            ).as_dict()
         return build_packed_edit_plan(
             self.connection,
             char_id=char_id,
@@ -123,13 +131,21 @@ class CharacterEditorService:
         operation: dict[str, Any] | None = None,
         approved: bool = False,
     ) -> dict[str, Any]:
-        plan = build_packed_edit_plan(
-            self.connection,
-            char_id=char_id,
-            capability=capability,
-            operation=operation,
-            adapter_family=self.adapter_family,
-        )
+        if str(capability or "").strip() == "eminence":
+            plan = build_eminence_edit_plan(
+                self.connection,
+                char_id=char_id,
+                operation=operation,
+                adapter_family=self.adapter_family,
+            )
+        else:
+            plan = build_packed_edit_plan(
+                self.connection,
+                char_id=char_id,
+                capability=capability,
+                operation=operation,
+                adapter_family=self.adapter_family,
+            )
         return apply_packed_edit(self.connection, plan, approved=approved)
 
     def search_items(self, query: str = "", *, limit: int = 100, client_snapshot_id: str | None = None) -> list[dict[str, Any]]:
