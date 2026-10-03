@@ -6,6 +6,7 @@ thin HTTP/presentation adapter so gui_server.py only needs to register one packa
 from __future__ import annotations
 
 from contextlib import contextmanager
+from datetime import date, datetime, time
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, Request
@@ -42,6 +43,8 @@ def _safe(value: Any) -> Any:
     if isinstance(value, (bytes, bytearray, memoryview)):
         raw = bytes(value)
         return {"hex": raw.hex(), "bytes": len(raw)}
+    if isinstance(value, (datetime, date, time)):
+        return value.isoformat()
     if isinstance(value, dict):
         return {str(k): _safe(v) for k, v in value.items()}
     if isinstance(value, (list, tuple)):
