@@ -32,6 +32,12 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check -e .
           python -m pip install --disable-pip-version-check pytest fastapi jinja2 python-multipart httpx pyyaml pillow mysql-connector-python
+      - name: Provide CI-only xi_tinkerer import stub
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/character-editor-stubs"
+          : > "$RUNNER_TEMP/character-editor-stubs/xi_tinkerer.py"
+          echo "PYTHONPATH=$RUNNER_TEMP/character-editor-stubs:$GITHUB_WORKSPACE/test_fixtures${PYTHONPATH:+:$PYTHONPATH}" >> "$GITHUB_ENV"
       - name: Run pytest-style Character Editor regressions
         run: |
           python -m pytest -q \
