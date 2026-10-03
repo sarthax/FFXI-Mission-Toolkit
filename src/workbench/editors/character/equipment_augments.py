@@ -62,11 +62,35 @@ def _mod_names(root: Path | None) -> dict[int, str]:
     return names
 
 
+_ACRONYM_MAX = 4
+_KNOWN = {"ACC": "Accuracy", "ATT": "Attack", "DEF": "Defense", "EVA": "Evasion", "RACC": "Ranged Accuracy",
+          "RATT": "Ranged Attack", "MACC": "Magic Accuracy", "MATT": "Magic Attack", "MDEF": "Magic Defense",
+          "MEVA": "Magic Evasion", "FASTCAST": "Fast Cast", "CRITHITRATE": "Critical Hit Rate", "ENMITY": "Enmity"}
+
+
+def _friendly(name: str | None, mod_id: int) -> str:
+    """HP -> HP, DMG_RATING -> Dmg Rating (short all-caps names stay as acronyms)."""
+    if not name:
+        return f"Unnamed stat #{mod_id}"
+    if name in _KNOWN:
+        return _KNOWN[name]
+    if name.endswith("RES") and len(name) > 5 and "_" not in name:
+        return name[:-3].capitalize() + " Resistance"
+    if "_" not in name and len(name) <= _ACRONYM_MAX:
+        return name
+    return " ".join(w if len(w) <= 3 and w.isupper() and len(w) < len(name) and w in {"HP", "MP", "TP", "WS", "XP"} else w.capitalize() for w in name.split("_"))
+
+
 def augment_catalog(root: Path | str | None) -> dict[str, Any]:
     """augmentId -> effects, from the server checkout's ``augments.sql``."""
     root = Path(root) if root else None
     path = root / "sql" / "augments.sql" if root else None
     mods = _mod_names(root)
+    try:  # item editor's enum comments; only trusted when the name matches this server's modifier.h
+        from workbench.editors.items._dat_tools_impl import mod_metadata
+        meta = mod_metadata()
+    except Exception:
+        meta = {}
     entries: dict[int, dict[str, Any]] = {}
     if path and path.is_file():
         pat = re.compile(r"VALUES\s*\(([^)]*)\)", re.I)
@@ -81,8 +105,11 @@ def augment_catalog(root: Path | str | None) -> dict[str, Any]:
             except ValueError:
                 continue
             e = entries.setdefault(aug_id, {"id": aug_id, "effects": []})
-            e["effects"].append({"mod": mod_id, "mod_name": mods.get(mod_id, f"Mod {mod_id}"), "value": value,
-                                 "multiplier": mult, "pet": bool(is_pet)})
+            raw_name = mods.get(mod_id)
+            info = meta.get(mod_id) if meta.get(mod_id, {}).get("name") == raw_name else None
+            e["effects"].append({"mod": mod_id, "mod_name": _friendly(raw_name, mod_id), "value": value,
+                                 "multiplier": mult, "pet": bool(is_pet),
+                                 "comment": (info or {}).get("comment"), "unit": (info or {}).get("unit")})
     rows = [e for _, e in sorted(entries.items())]
     return {"available": bool(rows), "rows": rows}
 
@@ -97,8 +124,12 @@ def equipment_state(connection, char_id: int) -> dict[str, Any]:
     rows = []
     for equip_slot, location, slot in refs:
         equip_slot, location, slot = int(equip_slot), int(location), int(slot)
+        if equip_slot >= len(EQUIP_SLOTS):
+            continue  # e.g. the linkshell slot: its extra bytes are not augments
         row = _inventory_row(connection, char_id, location, slot)
         item = _item_record(connection, int(row["itemId"])) if row else None
+        if row and not _is_armor_or_weapon(connection, int(row["itemId"])):
+            continue
         extra = _extra_bytes(row.get("extra")) if row else b""
         rows.append({
             "equip_slot": equip_slot,
