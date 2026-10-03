@@ -35,7 +35,7 @@ with tempfile.TemporaryDirectory() as td:
     root = _fake_root(Path(td))
     cat = merit_catalog(root, "dsp")
     assert cat["source"]["available"], cat
-    assert [c["label"] for c in cat["categories"]] == ["HP MP", "Attributes", "Combat"], cat["categories"]
+    assert [c["label"] for c in cat["categories"]] == ["Start (HP/MP)", "Attributes", "Combat"], cat["categories"]
     hp = cat["items"]["65"]
     assert hp["max_upgrades"] == 15 and hp["costs"][:4] == [1, 2, 3, 4] and hp["jobs"] == [], hp
     assert cat["items"]["129"]["costs"][:3] == [3, 6, 9]

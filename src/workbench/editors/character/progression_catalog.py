@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import json
 import re
 from typing import Any
 
@@ -164,6 +165,18 @@ def _parse_yaml_keyitems(path: Path) -> dict[int, dict[str, Any]]:
     return out
 
 
+_KEY_ITEM_CATEGORY_FILE = Path(__file__).with_name("key_item_categories.json")
+
+
+def _key_item_categories() -> tuple[list[str], dict[str, int]]:
+    """Client key-item category per id (Permanent / Temporary / Magical Maps ...), from Windower resources."""
+    try:
+        data = json.loads(_KEY_ITEM_CATEGORY_FILE.read_text(encoding="utf-8"))
+        return list(data["categories"]), dict(data["ids"])
+    except (OSError, ValueError, KeyError):
+        return [], {}
+
+
 def key_item_catalog(server_root: Path | str | None, adapter_family: str) -> dict[str, Any]:
     root = Path(server_root).resolve() if server_root else None
     family = str(adapter_family or "unknown").lower()
@@ -177,6 +190,10 @@ def key_item_catalog(server_root: Path | str | None, adapter_family: str) -> dic
         if not path.is_file():
             continue
         rows = _parse_yaml_keyitems(path) if kind.endswith(".yaml") else _parse_lua_keyitems(path)
+        categories, by_id = _key_item_categories()
+        for key_id, row in rows.items():
+            index = by_id.get(str(key_id))
+            row["category"] = categories[index] if index is not None else "Uncategorized"
         return {
             "source": CatalogSource(kind, path, True).as_dict(),
             "items": {str(key_id): row for key_id, row in sorted(rows.items())},

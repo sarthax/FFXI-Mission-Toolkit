@@ -169,11 +169,57 @@
   }
 
   // ---- hook category loading --------------------------------------------------------------------
+  // Missions & Quests: main storylines first, other mission logs in a sub-section, and the
+  // Assault/Campaign panels (progress + editor) merged into one compact group at the bottom.
+  const MAIN_AREAS = [0, 1, 2, 3, 6, 4, 5, 9];
+  function reorganizeMissions(box) {
+    if (box.querySelector('.ce-ac-group')) return;
+    const panels = [...box.querySelectorAll(':scope > .ce-progression')];
+    const title = p => (p.querySelector('.ce-progress-head strong')?.textContent || '').trim();
+    const find = t => panels.find(p => title(p) === t);
+    const flags = find('Mission Flags');
+    if (flags) {
+      const grid = flags.querySelector('#ceMissionAreas');
+      const cards = [...grid.children];
+      const idOf = c => Number((c.querySelector('.ce-muted')?.textContent.match(/Area (\d+)/) || [])[1]);
+      const main = MAIN_AREAS.map(id => cards.find(c => idOf(c) === id)).filter(Boolean);
+      const other = cards.filter(c => !main.includes(c));
+      grid.replaceChildren(...main);
+      if (other.length) {
+        const sub = document.createElement('details');
+        sub.className = 'ce-other-missions';
+        sub.innerHTML = `<summary><strong>Other missions (${other.length})</strong></summary>`;
+        const g2 = document.createElement('div');
+        g2.className = 'ce-progress-grid';
+        g2.append(...other);
+        sub.append(g2);
+        flags.append(sub);
+      }
+    }
+    const group = document.createElement('details');
+    group.className = 'ce-ac-group ce-progression';
+    group.open = true;
+    group.innerHTML = '<summary><strong>Assault &amp; Campaign</strong></summary><div class="ce-progress-grid ce-ac-grid"></div>';
+    const g = group.querySelector('.ce-ac-grid');
+    for (const [head, names] of [['Assault', ['Assault Editor', 'Assault Progress']], ['Campaign', ['Campaign Editor', 'Campaign Progress']]]) {
+      const col = document.createElement('div');
+      col.className = 'ce-ac-col';
+      for (const n of names) { const p = find(n); if (p) col.append(p); }
+      if (col.children.length) g.append(col);
+    }
+    if (g.children.length) {
+      const anchor = flags ? flags.nextSibling : box.firstChild;
+      // Keep it directly below the mission logs, above quests/eminence and raw tables.
+      box.insertBefore(group, anchor);
+    }
+  }
+
   const originalLoadCategory = window.loadCategory;
   window.loadCategory = async function (key) {
     await originalLoadCategory(key);
     const box = document.getElementById('categoryData');
     if (!box) return;
+    if (key === 'missions-quests') reorganizeMissions(box);
     ensureFilterBar(box);
     ensureApplyBar();
     box.querySelectorAll('.ce-field-cell').forEach(enhanceCell);

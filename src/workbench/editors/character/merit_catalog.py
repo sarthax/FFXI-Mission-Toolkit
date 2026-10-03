@@ -101,6 +101,10 @@ def _job_tokens(mask: int) -> list[str]:
     return [abbr for bit, abbr in enumerate(_JOB_ABBR) if mask & (1 << bit)]
 
 
+def _category_label(name: str) -> str:
+    return {"HP_MP": "Start (HP/MP)", "WS": "Weapon Skills"}.get(name, _label(name))
+
+
 def _parse_dsp_legacy(root: Path) -> dict[str, Any] | None:
     """Build the catalog from a DSP/Topaz checkout's own merit definition files.
 
@@ -120,8 +124,10 @@ def _parse_dsp_legacy(root: Path) -> dict[str, Any] | None:
 
     cat_names: dict[int, str] = {}
     for name, value in re.findall(r"MCATEGORY_(\w+)\s*=\s*0x([0-9A-Fa-f]+)", header):
+        # Several enum names alias one value (HP_MP/START, RNG_1/GEO_2, SAM_1/RUN_2); the first
+        # definition is the real category, the later ones are compatibility aliases.
         if name != "COUNT":
-            cat_names[(int(value, 16) >> 6) - 1] = name
+            cat_names.setdefault((int(value, 16) >> 6) - 1, name)
 
     # Rows like ``{4,10,7},  //MCATEGORY_DNC_2`` -> (merits in category, max points, cost group)
     cat_caps = {
@@ -152,7 +158,7 @@ def _parse_dsp_legacy(root: Path) -> dict[str, Any] | None:
             "label": _label(symbol),
             "category": cat_name.lower(),
             "category_id": cat_index,
-            "category_label": _label(cat_name),
+            "category_label": _category_label(cat_name),
             "value_per_upgrade": int(value),
             "upgrade_cost": f"group_{group}",
             "costs": schedule,
@@ -171,7 +177,7 @@ def _parse_dsp_legacy(root: Path) -> dict[str, Any] | None:
         categories.append({
             "key": cat_name.lower(),
             "id": cat_index,
-            "label": _label(cat_name),
+            "label": _category_label(cat_name),
             "max_upgrades": cat_caps.get(cat_name, (0, 0, 0))[1],
             "merits": merits,
         })
