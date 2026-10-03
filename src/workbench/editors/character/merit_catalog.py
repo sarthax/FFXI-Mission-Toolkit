@@ -2,11 +2,13 @@
 
 Modern LandSandBoat exposes an authoritative ``data/merits.yaml`` dataset containing category
 limits, merit IDs, per-upgrade effects, costs, and job/skill applicability. Older DSP/Topaz
-checkouts do not consistently expose the same structured dataset, so this module deliberately
-returns an unavailable catalog instead of applying current-LSB definitions to a legacy database.
+checkouts do not expose that dataset, so they are read from their *own* definition files
+(``sql/merits.sql`` plus ``src/map/merit.h``/``merit.cpp``). If those are missing too, an
+unavailable catalog is returned instead of applying current-LSB definitions to a legacy database.
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -85,6 +87,102 @@ def _parse_lsb_yaml(path: Path) -> dict[str, Any]:
     }
 
 
+# FFXI job ids 1-22 (job mask bit is ``1 << (job_id - 1)``, verified against DSP merit.cpp's
+# ``PMerit->jobs & (1 << (PChar->GetMJob() - 1))``).
+_JOB_ABBR = ("WAR", "MNK", "WHM", "BLM", "RDM", "THF", "PLD", "DRK", "BST", "BRD", "RNG", "SAM",
+             "NIN", "DRG", "SMN", "BLU", "COR", "PUP", "DNC", "SCH", "GEO", "RUN")
+_ALL_JOBS_MASK = (1 << 20) - 1  # DSP/Topaz "every job" value (WAR..SCH)
+
+
+def _job_tokens(mask: int) -> list[str]:
+    """Job abbreviations for a legacy job bitmask; empty when the merit applies to every job."""
+    if mask & _ALL_JOBS_MASK == _ALL_JOBS_MASK:
+        return []
+    return [abbr for bit, abbr in enumerate(_JOB_ABBR) if mask & (1 << bit)]
+
+
+def _parse_dsp_legacy(root: Path) -> dict[str, Any] | None:
+    """Build the catalog from a DSP/Topaz checkout's own merit definition files.
+
+    Uses only that checkout: ``sql/merits.sql`` (id, name, max rank, value, job mask, cost group,
+    category index), ``src/map/merit.h`` (``MCATEGORY_*`` names; category index is ``(id >> 6) - 1``)
+    and ``src/map/merit.cpp`` (per-category point cap and the per-rank upgrade cost table).
+    Returns None when any of those files is absent so callers keep the honest "unavailable" result.
+    """
+    sql_path = root / "sql" / "merits.sql"
+    header_path = root / "src" / "map" / "merit.h"
+    source_path = root / "src" / "map" / "merit.cpp"
+    if not (sql_path.is_file() and header_path.is_file() and source_path.is_file()):
+        return None
+
+    header = header_path.read_text(encoding="utf-8", errors="replace")
+    source = source_path.read_text(encoding="utf-8", errors="replace")
+
+    cat_names: dict[int, str] = {}
+    for name, value in re.findall(r"MCATEGORY_(\w+)\s*=\s*0x([0-9A-Fa-f]+)", header):
+        if name != "COUNT":
+            cat_names[(int(value, 16) >> 6) - 1] = name
+
+    # Rows like ``{4,10,7},  //MCATEGORY_DNC_2`` -> (merits in category, max points, cost group)
+    cat_caps = {
+        name: (int(count), int(points), int(group))
+        for count, points, group, name in re.findall(r"\{\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\}\s*,?\s*//\s*MCATEGORY_(\w+)", source)
+    }
+
+    upgrade_block = re.search(r"static\s+uint8\s+upgrade\[[^\]]*\]\[[^\]]*\]\s*=\s*\{(.*?)\};", source, re.S)
+    cost_groups: list[list[int]] = []
+    if upgrade_block:
+        for row in re.findall(r"\{([^{}]*)\}", upgrade_block.group(1)):
+            cost_groups.append([int(v) for v in re.findall(r"\d+", row)])
+
+    sql_text = sql_path.read_text(encoding="utf-8", errors="replace")
+    rows = re.findall(r"INSERT INTO `merits` VALUES \((\d+),'([^']*)',(\d+),(-?\d+),(\d+),(\d+),(\d+)\);", sql_text)
+    if not rows or not cat_names:
+        return None
+
+    items: dict[str, dict[str, Any]] = {}
+    by_category: dict[int, list[dict[str, Any]]] = {}
+    for merit_id, symbol, max_rank, value, jobs, group, cat_index in rows:
+        merit_id, max_rank, group, cat_index = int(merit_id), int(max_rank), int(group), int(cat_index)
+        cat_name = cat_names.get(cat_index, f"CATEGORY_{cat_index}")
+        schedule = cost_groups[group][:max_rank] if 0 <= group < len(cost_groups) else []
+        row = {
+            "id": merit_id,
+            "symbol": symbol,
+            "label": _label(symbol),
+            "category": cat_name.lower(),
+            "category_id": cat_index,
+            "category_label": _label(cat_name),
+            "value_per_upgrade": int(value),
+            "upgrade_cost": f"group_{group}",
+            "costs": schedule,
+            "max_upgrades": max_rank or None,
+            "jobs": _job_tokens(int(jobs)),
+            "skills": [],
+            "weapon_skill": None,
+        }
+        by_category.setdefault(cat_index, []).append(row)
+        items[str(merit_id)] = row
+
+    categories = []
+    for cat_index in sorted(by_category):
+        cat_name = cat_names.get(cat_index, f"CATEGORY_{cat_index}")
+        merits = sorted(by_category[cat_index], key=lambda r: r["id"])
+        categories.append({
+            "key": cat_name.lower(),
+            "id": cat_index,
+            "label": _label(cat_name),
+            "max_upgrades": cat_caps.get(cat_name, (0, 0, 0))[1],
+            "merits": merits,
+        })
+    return {
+        "source": _source("dsp-merits-sql", sql_path, True),
+        "categories": categories,
+        "items": items,
+        "upgrade_costs": {f"group_{i}": costs for i, costs in enumerate(cost_groups)},
+    }
+
+
 def merit_catalog(server_root: Path | str | None, adapter_family: str) -> dict[str, Any]:
     root = Path(server_root).resolve() if server_root else None
     family = str(adapter_family or "unknown").strip().lower()
@@ -108,6 +206,12 @@ def merit_catalog(server_root: Path | str | None, adapter_family: str) -> dict[s
                 "error": str(exc),
                 "family": family,
             }
+
+    if root is not None:
+        legacy = _parse_dsp_legacy(root)
+        if legacy is not None:
+            legacy["family"] = family
+            return legacy
 
     missing = candidates[0] if candidates else None
     return {

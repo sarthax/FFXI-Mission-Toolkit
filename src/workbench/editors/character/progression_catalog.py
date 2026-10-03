@@ -99,10 +99,34 @@ def mission_catalog(server_root: Path | str | None) -> dict[str, Any]:
             "label": _label(symbol),
         }
 
+    if not result:
+        result = _parse_legacy_missions(path)
+
     return {
         "source": CatalogSource("missions.lua", path, True).as_dict(),
         "areas": {str(area): rows for area, rows in sorted(result.items())},
     }
+
+
+def _parse_legacy_missions(path: Path) -> dict[int, dict[int, dict[str, Any]]]:
+    """DSP/old-Topaz layout: flat ``SYMBOL = id;`` globals under ``--  Area Name (log_id)`` banners."""
+    banner = re.compile(r"^--\s+.*\((\d+)\)\s*$")
+    value = re.compile(r"^\s*([A-Z][A-Z0-9_]*)\s*=\s*(\d+)\s*;")
+    out: dict[int, dict[int, dict[str, Any]]] = {}
+    area: int | None = None
+    for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        match = banner.match(raw.strip())
+        if match:
+            area = int(match.group(1))
+            out.setdefault(area, {})
+            continue
+        match = value.match(raw)
+        if area is None or not match:
+            continue
+        symbol, raw_id = match.groups()
+        mission_id = int(raw_id)
+        out[area][mission_id] = {"id": mission_id, "symbol": symbol, "label": _label(symbol)}
+    return out
 
 
 def _parse_lua_keyitems(path: Path) -> dict[int, dict[str, Any]]:

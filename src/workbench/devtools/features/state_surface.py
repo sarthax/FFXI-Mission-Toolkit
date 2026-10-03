@@ -111,7 +111,7 @@ def _state_flow_refs(text: str, source_path: str, feature_id: str, subject: str)
                 source_path=source_path,
                 source_line=int(meta.get("source_line") or 0),
                 source_text=str(meta.get("source_line_text") or ""),
-                hook=rule.hook,
+                hook=rule.trigger,
                 scope=scope or None,
                 edit_class=_edit_class(state_type, "read"),
             ))
@@ -131,7 +131,7 @@ def _state_flow_refs(text: str, source_path: str, feature_id: str, subject: str)
                 source_path=source_path,
                 source_line=int(meta.get("source_line") or 0),
                 source_text=str(meta.get("source_line_text") or ""),
-                hook=rule.hook,
+                hook=rule.trigger,
                 scope=scope or None,
                 edit_class=_edit_class(state_type, "set"),
             ))

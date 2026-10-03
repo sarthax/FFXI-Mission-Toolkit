@@ -113,6 +113,7 @@
 
   function missionLabel(catalog, areaId, missionId) {
     const row = catalog?.areas?.[String(areaId)]?.[String(missionId)];
+    if (Number(missionId) === 65535) return 'None (not started)';
     return row?.label || `Mission ${missionId}`;
   }
 
