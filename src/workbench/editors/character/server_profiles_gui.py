@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 from workbench.runtime import server_profiles
 from workbench.runtime.legacy_settings import ensure_server_profiles_seeded
 
+from .connection import normalize_server_root
 from .factory import open_character_editor
 
 router = APIRouter(prefix="/environments", tags=["Server Environments"])
@@ -26,6 +27,13 @@ def _store():
 
 def _payload(profile):
     return profile.public_dict() if profile is not None else None
+
+
+def _normalized_root(raw: object) -> str:
+    value = str(raw or "").strip()
+    if not value:
+        return value
+    return str(normalize_server_root(value))
 
 
 @router.get("/profiles.json")
@@ -55,7 +63,7 @@ async def create_server_environment(request: Request):
             profile = server_profiles.create_profile(
                 con,
                 name=str(body.get("name") or ""),
-                server_root=str(body.get("server_root") or ""),
+                server_root=_normalized_root(body.get("server_root")),
                 family=str(body.get("family") or "auto"),
                 environment=str(body.get("environment") or "other"),
                 enabled=bool(body.get("enabled", True)),
@@ -82,7 +90,7 @@ async def update_server_environment(profile_id: int, request: Request):
                 con,
                 profile_id,
                 name=str(body.get("name", current.name)),
-                server_root=str(body.get("server_root", current.server_root)),
+                server_root=_normalized_root(body.get("server_root", current.server_root)),
                 family=str(body.get("family", current.family)),
                 environment=str(body.get("environment", current.environment)),
                 enabled=bool(body.get("enabled", current.enabled)),
@@ -135,7 +143,7 @@ def test_server_environment(profile_id: int):
     if profile is None:
         raise HTTPException(status_code=404, detail="Server profile not found")
 
-    root = Path(profile.server_root).expanduser()
+    root = normalize_server_root(profile.server_root)
     if not root.is_dir():
         raise HTTPException(status_code=400, detail=f"Server root does not exist: {root}")
 
@@ -165,7 +173,7 @@ def test_server_environment(profile_id: int):
         context.close()
 
 
-# ``workbench.editors.character.__init__`` imports this module before ``gui.py``.  Attach this
+# ``workbench.editors.character.__init__`` imports this module before ``gui.py``. Attach this
 # API to the already-included audit subrouter so the live app receives it without another
 # gui_server.py registration hook.
 from .audit_gui import router as _character_subrouter
