@@ -1,189 +1,322 @@
-# FFXI-Tools Complete Inventory
+# Mission Toolkit / Workbench tooling overview
 
-**Note (2026-09-14):** this is a historical snapshot from when these tools lived under a separate
-`D:/Claude/FFXI-Tools/` checkout, since consolidated into this repo. Every directory named below
-(`dat-extractor/`, `xi-tinkerer/`, `XiEvents/`, `Packetlyzer/`, etc.) now lives under this repo's
-own `vendor/` directory instead -- e.g. `dat-extractor/` mentioned below is `vendor/dat-extractor/`
-here. Kept as-is otherwise (not rewritten) since it's a dated snapshot of what changed in one past
-session, not a living reference -- see `TOOLING_OVERVIEW.md`'s own per-tool sections for what each
-one actually does, just resolve its path through `vendor/` first.
+Status: living reference  
+Last reconciled: **2026-10-03**
 
-Full inventory of the FFXI research/tooling pipeline as of 2026-08-31: what existed before, what changed this session, and what was newly built. All paths relative to `D:/Claude/FFXI-Tools/` unless noted. "Ground truth" tools (real client dats, real Topaz source) are called out explicitly vs. reference-only sources (wikis, external retail dumps).
+This file describes the current major tool families in the consolidated `FFXI-Mission-Toolkit` repository. Older documentation may still refer to historical standalone checkouts such as `FFXI-Tools`; those tools have largely been consolidated under this repository, commonly under `vendor/`, `src/workbench/`, or compatibility entry points at the repository root.
 
----
+The Workbench is evidence-driven: direct client/server/capture evidence is preferred over external references, and inferred relationships remain explicitly separate from observed facts.
 
-## Part A — Foundational extraction tools (pre-existing, unchanged unless noted)
+## Workbench shell and runtime
 
-### `dat-extractor/`
-Standalone .NET console app, ported out of POLUtils, for reading FFXI `.DAT` files directly. Two real jobs:
-- `dat-extractor <path.dat> [out.json]` — extract one dialog-table DAT to JSON.
-- `dat-extractor --scan <romRoot> [--min N] [--contains "text"]` — scan a whole ROM tree for dialog tables matching text.
-- `dat-extractor --resolve <ffxiPath> <fileId> [<fileId> ...]` — **the one used everywhere else in this pipeline**: real FTABLE.DAT/VTABLE.DAT-based file-id → physical ROM path resolution, batched. Ground truth, not a guess.
+The browser UI runs locally, normally at:
 
-**Used by:** `mission_toolkit.py`, `model_schedule_dump.py`, `build_database.py --zones`.
-
-### `xi-tinkerer-py/`
-PyO3 (Rust→Python) bindings onto `xi-tinkerer`'s `dats` crate. Exposes native, in-process parsers: `parse_menu_table`, `parse_dmsg_table`, `parse_dialog`, `parse_entity_names`, `parse_events`, `parse_item_info`, `parse_status_info`, `parse_xistring_table`, `parse_auto_translate`, `parse_furniture_data`.
-
-**Changed this session:** `mission_toolkit.py` was rewired from shelling out to a separately-built `xi-tinkerer-cli.exe` + YAML round-trip, to calling these native functions directly. This eliminated a real bug class (PyYAML auto-parsing unquoted hex `byte_code` as a Python int instead of a string).
-
-### `xi-events-py/`
-Real CFG + branch-recovery decompiler: FFXI event bytecode → readable Lua pseudocode. Its own "front door" (`Dataset.from_dist(...)`) expects a released `FFXI-Resources` ndjson dataset.
-
-**Added this session:** `decompile_from_mission_toolkit.py` — a bridge script wiring `mission_toolkit.py`'s own `events.yml`/`dialog.yml` export directly into `xi_events.Fixture`/`decompile()`, so decompilation works against our own zone pulls without needing the separate FFXI-Resources dataset. Verified correct against event 661 (Nafiwaa) both before and after `mission_toolkit.py`'s native rewrite (it already used structural `yaml.safe_load()`, so the rewrite didn't break it — only its docstring needed updating to describe the new pipeline).
-
-### `FFXI-EventsDump/`
-Pre-generated, already-decoded dump of **every** event in the game (based on atom0s' XiEvents opcode parsers). Per zone: `<entity_id> - <name>.md` (full opcode disassembly, human-readable operands), `Zone Events.md` (every event id/entrypoint/size in one table — the fast "who owns this csid" answer), `strings.txt` (dialogue text, same numbering as `mission_toolkit.py`'s `dialog.yml`).
-
-**Unchanged.** First stop for any event/dialogue question — no pipeline to run.
-
-### `XiEvents/`
-Local opcode reference + tooling:
-- `opcode_table.json` / `opcode_docs.json` — 218 documented real opcodes (parsed from atom0s' `OpCodes/*.md` via `decode_opcode_docs.py`).
-- `smart_disassemble.py` — semantic disassembler reading `mission_toolkit.py`'s `events.yml`: resolves message refs, menu opcodes (`0x24`/`0x25`), condition types (`0x02`'s 11 real branch cases), `getworkofs` (Work_Zone/WorkLocal/References resolution).
-
-**Changed this session:** `extract_event()` was rewritten from regex-on-raw-YAML-text to real `yaml.safe_load()` + dict traversal, after `mission_toolkit.py`'s native rewrite changed field order/indentation in the output and silently broke the old regex (no error, no output — just nothing matched). Verified against both a real multi-command event (661) and a known stub case (5030).
-
-### Packetlyzer (`Packetlyzer/`)
-Third-party (Exolis) real-time packet capture/decode tool: Windower/Ashita addon + Python GUI, live 2nd-screen packet viewer with byte tracking, opcode filtering, and built-in DAT-file text resolution for things like campaign status updates.
-
-**Unchanged, evaluated not adopted into the pipeline** — its DB-driven NPC-lookup is hardcoded to LSB's schema (author's own README notes this), and its role (live capture during actual play) doesn't overlap with this pipeline's offline/batch research tools. Kept for when live-capture debugging is needed.
-
-### `Ashita`, `LandSandBoat`, `Lua` (Windower/Lua clone)
-Reference-only client-side/server-side source trees, not standalone tools. Used for cross-checking packet field layouts (`Lua/addons/libs/packets/fields.lua` — this is where the real `0x00E` entity-update packet layout with the `Model`/`Name` fields came from) and porting quest logic (LandSandBoat reference scripts, e.g. the Promotion: Lance Corporal port).
-
----
-
-## Part B — Zone/mission data pipeline
-
-### `mission_toolkit.py`
-One-stop zone/mission puller: given a Topaz zone name/id, resolves geometry dat id (via AltanaViewer's zone CSV), resolves events/dialog/entities dat ids to real ROM paths (`dat-extractor --resolve`), parses them natively (`xi-tinkerer-py`), writes `events.yml`/`dialog.yml`/`entities.yml` to an output folder.
-
-```bash
-python mission_toolkit.py Aht_Urhgan_Whitegate --out-dir mission_reports_v2
+```text
+http://127.0.0.1:8420
 ```
 
-**Rewritten this session** (see Part A, `xi-tinkerer-py`) — output format/shape is unchanged, only the internal extraction mechanism. Fixed a real double-path-prepend bug during the rewrite (`dat-extractor --resolve` already returns an absolute path).
+The shared shell organizes the product into Server, Features, Packages, Validation, Client, Research, Domains, Captures, Tools, and Settings workspaces.
 
-### `build_database.py` → `ffxi_zone_database.db`
-Consolidates every source above into one queryable SQLite DB.
+Top-level category clicks open section menus; the Sections control exposes the persistent secondary navigation bar.
 
-| Table | Source | Purpose |
-|---|---|---|
-| `zones` | `zone.lua` + AltanaViewer CSV | zoneid ↔ name ↔ geometry dat id |
-| `door_props`, `elevators`, `zone_lines` | `FFXI-DATS` JSON | real prop/elevator/zoneline positions, all zones |
-| `entities` | `FFXI-DATS/Entities/*.json` | external (possibly different client version) entity id/name per zone |
-| `entities_ours` | live `xi-tinkerer` pull, per-zone | OUR OWN client's entity id/name, ground truth |
-| `id_drift` | computed | zoneid+server_id pairs where `entities` and `entities_ours` disagree on name |
-| `events` / `events_disasm_flags` | live `xi-tinkerer` pull, per-zone | event bytecode + flagged noteworthy opcodes |
-| `items_external` / `items_ours` | FFXI-Resources vs `item_basic.sql` | **new this session** |
-| `keyitems_external` / `keyitems_ours` | FFXI-Resources vs `keyitems.lua` | **new this session** |
+## Server environment runtime
 
-```bash
-python build_database.py                  # reload all globally-available sources
-python build_database.py --zones 66 68    # also pull live events/entities for specific zones (slow)
-```
+Named server profiles are now the canonical runtime/admin context.
 
-### NPCLogger cross-reference pipeline (`D:/Claude/DSP-Topaz Information/npclogger_crossref/`)
-Three-stage pipeline (`scripts/crossref.py` → `step2_mine.py` → `step3_crossref.py`) cross-referencing real Assault capture data (mined from every NPCLogger `.db` under `D:\Claude\assault_captures\`) against Topaz's own SQL/Lua, to find entities that exist in real captures but aren't fully wired (missing `npc_list`/`mob_spawn_points` row, missing `instance_entities` registration, missing an `IDs.lua` reference).
+Supported profile families include:
 
-**Unchanged this session.** As of last run: 371 real fixes already applied across 20+ missions; 222 entities still have no SQL row at all (tiered by confidence in `TODO.md`); 27 name anomalies and 94 cosmetic missing-Lua-reference entries catalogued but not yet reviewed. Re-run after any further SQL/Lua changes for a fresh findings CSV. **Not yet merged with `build_database.py`/`entities_ours`** — same underlying ground-truth principle, separate pipeline, a real future consolidation opportunity.
+- LandSandBoat
+- Topaz / Topaz-Next
+- DSP / Darkstar
+- compatible custom forks
 
-### Older single-purpose SQL-fix scripts
-- `pull_mob_positions.py` — finds real spawn positions for zero-position `mob_spawn_points` rows by matching a capture's PathLog CSVs by mob id.
-- `fix_zone_door_props.py` — cross-references `npc_list.sql`'s anonymous prop rows against `FFXI-DATS`' real door/object positions via nearest-neighbor XZ match, restricted to ids `FFXI-DATS` confirms belong to that zone; dry-run by default, `--apply` writes the fix.
-- `audit_dialog_drift.py` — cross-references each zone's `IDs.lua` `text` table's inline "expected real text" comments against that zone's real dialog table (from our own client), flagging drift — the same id-offset pattern documented in `topaz_client_id_offset` memory.
+Profiles can represent Live/Test/Dev/Backup/Other environments and are managed under Settings. Generic/admin tools resolve the active profile while older lineage-specific comparison/index tools may still intentionally consume explicit DSP/Topaz reference roots.
 
-**Unchanged this session.** All three follow the same "verify against our own client/capture, never trust an external id" discipline as everything built this session.
+Native server configuration remains authoritative for DB credentials.
 
----
+## Character Editor
 
-## Part C — Item/key-item/wiki research (new this session)
+Location: Server workspace / Character Editor.
 
-### `id_bridge.py`
-LSB/retail → Topaz ID bridge for items and key items, matching by **normalized name**, not by id (ids drift, names mostly don't).
+Major functions:
 
-```bash
-python id_bridge.py item "Chocobo Bedding"
-python id_bridge.py keyitem --id 794
-python id_bridge.py drift-report keyitem --limit 50
-```
+- schema-aware character browsing across DSP/Topaz/LSB,
+- dense scalar-field editing with preview/apply safety,
+- inventory add/move/quantity/remove,
+- mission/key-item/quest/Assault/Campaign/Eminence packed state,
+- abilities, weapon skills, titles, visited zones, Blue Magic state,
+- learned spells and blacklist,
+- lineage-aware mission/key-item catalogs,
+- LSB and legacy DSP merit metadata,
+- audit journals and guarded Undo,
+- mission/quest State Surface trace integration.
 
-**Real finding:** of unambiguous 1:1 name matches, **0 of 14,535 items** have a drifted id (LSB item ids are safe to trust once uniquely named), but **2,910 of 3,242 key items (90%)** have a different id between LSB and Topaz. Never trust an LSB key item id without running it through this tool first.
+The editor is intentionally offline-first for mutation. Runtime-owned effects/recasts/pet/session fields remain read-only unless a future adapter proves safe persistence semantics.
 
-### `wiki_lookup.py`
-Offline query tool over a downloaded BG Wiki dump (`ffxi-wiki-dumps-dist/bg-wiki.jsonl.gz`).
+Detailed contract: `docs/workbench/CHARACTER_EDITOR_CLOSEOUT.md`.
 
-```bash
-python wiki_lookup.py title "Promotion: Lance Corporal"
-python wiki_lookup.py category Assault --zone "Ilrusi"
-```
+## Feature Trace / Implementation Path
 
-**Explicit framing:** reference only, not source of truth — player-written, can be stale or wrong for Topaz's era. Orient with it, verify anything load-bearing against Topaz's own dats/SQL/Lua.
+Feature Trace is the central cross-source implementation-discovery surface.
 
-### `item_id_drift_report.txt`
-Saved full output of `id_bridge.py drift-report item` — the "0 drifted items, 90% drifted key items" finding, with the ambiguous-name and unmatched-name counts, kept for quick reference without re-running the query.
+It indexes and links evidence from:
 
----
+- server SQL/Lua,
+- LSB/Topaz/DSP source adapters,
+- client resources/snapshots,
+- captures,
+- research findings,
+- validation,
+- package/migration records.
 
-## Part D — Model, animation, and look-string ground truth (new this session)
+Implementation Path exposes source-native wiring and bounded drill-down without inventing graph relationships. Entity identity bridging is fail-closed when IDs/names are ambiguous.
 
-### `xi-model-viewer/` (cloned this session, third-party by vekien)
-Full Tauri/WebGL2 FFXI asset browser: zone geometry (weather/time-of-day), NPC/monster/PC model viewer with animation playback and bone-hierarchy inspection, character composer, spell/ability VFX playback, texture/music/SFX browsers, and an FTABLE/VTABLE file-id browser. Its `ui/js/dat.js` (DAT section walker, skeleton/mesh/texture/animation parsers) and `ui/js/dat/modelids.js` (gear/entity model-id resolution tables) are the real, ported-from-`xi-tools` parsing logic this session mined for ground truth — not the Tauri app itself.
+Mission/quest State Surface extraction is also provided here and reused by Character Editor.
 
-**Potential role:** a real AltanaViewer replacement for interactive model/zone browsing — not yet evaluated head-to-head for that role.
+## Behavior Inspector
 
-### `model_schedule_dump.py`
-Pure-Python port of `xi-model-viewer`'s `walkSections`/`parseRoutine`/`matchAnimRef`. Resolves a file id, monster/NPC model id (`98239 + model_id`), or direct ROM path to a real DAT, then dumps every `0x07` schedule's animation commands with absolute start times and resolved clip ids.
+Behavior Inspector analyzes Lua-backed behavior for NPCs, mobs, doors/objects, zone scripts, instances, callbacks, timers, helpers, state variables, conditions, and effects.
 
-```bash
-python model_schedule_dump.py --dat "ROM/27/82.DAT"     # verified: 67 real schedules
-python model_schedule_dump.py --model-id 356
-```
+Current UI modes:
 
-**Closes a real gap:** decompiled event calls like `loadExtSchedulerMain` pass numeric animation-tag arguments with no global lookup table — tags are per-model wildcard clip refs, only resolvable against the specific entity's own model DAT. This script does that resolution.
+- **Plain Behavior** — default; groups evidence as Trigger → Requirements → Actions / Events → Results / State Changes using end-user language.
+- **Technical Graph** — full causal graph with pan/zoom, fit/reset, selected-path highlighting, and technical node identities.
 
-### `mob_look_decode.py`
-Decodes a Topaz `mob_pools.modelid`/`npc_list` look blob using Topaz's own real `look_t` struct (`C:\topaz\src\common\mmo.h`) and `MODELTYPE` enum (`entity_update.h`) — not inferred, read directly from source.
+The right-side inspector remains available in both workflows for exact source/evidence drill-down.
 
-```bash
-python mob_look_decode.py --poolid 649     # Carrion_Crab -> MODEL_STANDARD, flat modelid 356
-python mob_look_decode.py --poolid 1       # 1st_Gold_Musketeer -> MODEL_EQUIPED, HumeFemale, 8 gear ids
-```
+## Entity Profile / Dossier
 
-**Real, confirmed finding:** flat-model monsters (`MODEL_STANDARD`/`AUTOMATON`/`UNK_5`) resolve to exactly one DAT. Humanoid-look entities (`MODEL_EQUIPED`/`CHOCOBO`) have **no single DAT at all** — the client composites a base race-skeleton DAT with one DAT per equipped gear slot, live, the same mechanism as `xi-model-viewer`'s own PC character composer.
+Entity research combines:
 
-**Honestly unresolved, not papered over:** the `98239` flat-model-id offset (sourced from real `xi-model-viewer` code) hasn't been confirmed to resolve against Topaz's actual client for any real monster id tried — `dat-extractor --resolve` returned "not found" for every one, possibly a real sparse FTABLE gap rather than a wrong offset. The `MODEL_EQUIPED` gear-slot numbers also don't match `xi-model-viewer`'s own PC `GEAR_TABLES` ranges. Both need a live-capture cross-check before further automation is built on top.
+- SQL wiring,
+- Lua behavior,
+- instance/group/pool relationships,
+- client identity,
+- capture observations,
+- events/CSIDs,
+- implementation gaps,
+- Feature Trace handoffs.
 
----
+The active server environment is used for administered/runtime context rather than assuming a Topaz-only source root.
 
-## Part E — Other asset tools (pre-existing, unchanged)
+## Events / CSID tools
 
-### `ResourceBuilder/`
-Parses Windower `ResourceExtractor` output and writes edited resources back into real FFXI DAT files (adjust or add, never removes). Used once, for items only — not yet applied to anything in the active pipeline.
+The event toolchain includes:
 
-### `UpdateExtractor/`
-Takes `POLUtils`' `MassExtractor` data dump and sanitizes/applies it to a LandSandBoat-style server install (version strings, item/keyitem/status/entity/title/zone-text updates). Built for LSB, not directly used against Topaz's schema — reference for what a "diff two client versions" tool looks like.
+- client event/DAT extraction,
+- event/CSID browsing,
+- server/client reconciliation,
+- work-area / option flow inspection,
+- conservative variable-length EVENT packet decoding,
+- xi-events style decompilation/reference workflows where available.
 
-### `AltanaViewer/`
-Third-party 3D model/asset viewer (characters, monsters, equipment, animations, artwork, some music/VFX). Long-standing source for `mission_toolkit.py`'s zone-geometry dat-id CSV (`ffxi/reference/AltanaViewer_zones.csv`). Possibly superseded by `xi-model-viewer` for interactive browsing — not yet evaluated.
+Unsupported formulas or ambiguous client/server ownership remain raw/unresolved instead of being guessed.
 
-### `Resources`, `FFXIDat`, `MassExtractor_output`, `ResourceExtractor`
-Supporting/raw output directories from the above tools' extraction runs — not independently invoked, feed the tools above.
+## Capture system
 
----
+The capture system is a canonical evidence source, not only a packet viewer.
 
-## Decision order for a new research question
+Supported families include:
 
-1. **`FFXI-EventsDump/dumps/<zone>/`** — pre-generated, decoded, check first, no pipeline to run.
-2. **`xi-events-py`** (via `decompile_from_mission_toolkit.py`) — need actual Lua-like pseudocode for one specific event.
-3. **`mission_toolkit.py`** — geometry/entity data, or an event `FFXI-EventsDump` doesn't cover clearly.
-4. **NPCLogger crossref pipeline** — is a capture-observed entity actually wired into Topaz's SQL/Lua?
-5. **`id_bridge.py`** — before trusting ANY LSB item/key item id against Topaz.
-6. **`wiki_lookup.py`** — quest/mission orientation, always followed by a Topaz-side verification of anything load-bearing.
-7. **`model_schedule_dump.py` + `mob_look_decode.py`** — when animation/model behavior is in question.
-8. **Packetlyzer** — when the question requires live, real-time capture rather than offline batch analysis.
+- Windower PacketLogger / PacketViewer / z16-style logs,
+- Ashita Packeteer,
+- MalRD PacketDB packets and CHATLOG,
+- NPCLogger SQLite/Lua/Widescan,
+- EventView / ActionView,
+- HPTrack / IDView / KITrack / LevelRange / AttackDelay / PathLog,
+- MissionTrack / ShopStock / GuildStock / SpawnTrack / WeatherTrack / CraftTrack,
+- CheckParam / POITrack / ConquestTrack / PriceLog/findPrice / StatTrack,
+- Windower Logger chat,
+- PCAP / PCAPNG,
+- video/OCR evidence as a separate evidence class.
 
-## Standing rule underneath all of it
+Core capture services provide exact source provenance, duplicate/overlap diagnostics, parser-safe rebuild rules, cross-source packet correlation, Capture Data Explorer, modular Evidence Search, and spatial/network/video alignment.
 
-Never trust an externally-sourced numeric ID, offset, or struct-layout guess without checking it against Topaz's own SQL/Lua/C++ source, a real capture, or `dat-extractor`'s ground truth. Every tool above either confirms this the hard way (2,910 drifted key items, 371 real SQL/Lua gaps found by NPCLogger crossref) or is honest about what it couldn't yet confirm (the model-id offset, the gear-slot numbering) rather than presenting a guess as settled.
+Campaign/session manifest import and message-ID shift handling are also integrated.
+
+Reference: `docs/workbench/CAPTURE_FORMAT_AUDIT.md`.
+
+## Packet / protocol tools
+
+Capabilities include:
+
+- manual packet decode,
+- bulk packet decode,
+- Packet Viewer-style presentation,
+- opcode/reference DB support,
+- Packetlyzer/XiPackets reference data,
+- PCAP/PCAPNG parsing,
+- bidirectional TCP reconstruction,
+- conservative lobby TCP classification/framing/decoding.
+
+World/search/lobby families remain separate when protocol evidence is incomplete.
+
+## Client snapshots and DAT tooling
+
+### Client snapshots
+
+Portable snapshot support allows client-build comparison without assuming one permanently installed retail version. Snapshot-scoped identity is kept separate from canonical identity until equivalence is proven.
+
+### DAT Inspector
+
+DAT Inspector provides file-id/path resolution, parser summaries, family/zone context, decoded previews, and client evidence navigation.
+
+### Client item asset cache
+
+The client item cache accelerates Character Editor inventory and future item/client surfaces.
+
+- Lazy by default: parse/extract on first request, then persist.
+- Optional Settings action: **Build all item DAT cache**.
+- Parsed metadata: SQLite manifest/index.
+- Icons: ordinary PNG files for efficient browser/filesystem caching.
+- Cache is isolated by client installation/snapshot identity.
+- Source DAT size/mtime changes invalidate affected entries.
+- Clearing the cache simply returns to lazy extraction.
+
+This is intentionally an extensible Client Asset Cache foundation; models/textures/maps should only be added when their parser/identity semantics are stable enough to cache safely.
+
+## Item Editor
+
+The Item Editor and its DAT tooling are packaged under `src/workbench/editors/items` with compatibility imports for older entry points.
+
+Capabilities include:
+
+- active named server-environment targeting,
+- SQL/client reconciliation,
+- item browsing/search/editing,
+- validation and constrained writes,
+- backup/journal-oriented server/client changes,
+- client DAT patch proposal/apply workflows for supported record families,
+- rollback/fingerprint/drift safeguards where implemented.
+
+The Item Editor's older direct icon path remains compatible; shared client caching is being generalized incrementally rather than forcing all client tooling through one cache implementation at once.
+
+## Zone Editor / spatial tooling
+
+The modern Zone Editor (`/zoneplot2`) supports:
+
+- SQL-backed entity/spawn editing,
+- active environment targeting,
+- 2D spatial editing,
+- labels/IDs/positions/search,
+- movement/rotation and bulk alignment workflows,
+- detection/spawn/roam visualization where supported,
+- client/navmesh/model context,
+- bookmarks/templates/review helpers,
+- 3D/model handoffs.
+
+Capture 2D/3D spatial views use the same broader spatial/display conventions and are protected by route regression coverage.
+
+The older legacy Zone Editor has been retired from the preferred workflow.
+
+## Model and animation tooling
+
+The Workbench integrates ideas/data structures from open-source FFXI asset tooling, including `xi-model-viewer`/xi-tools derived concepts where licensing permits.
+
+Current model surfaces include:
+
+- model catalog,
+- model metadata correlation,
+- server/capture-aware model selection,
+- zone/model viewing,
+- animation/schedule research,
+- character/equipment model handling where supported.
+
+Unrecognized individual gear-slot/catalog records no longer abort the entire model catalog.
+
+## xi-tinkerer / client parser foundation
+
+`xi-tinkerer` / `xi-tinkerer-py` supplies supported in-process parsing for client DAT/resource families. It is a foundational dependency for several client, event, model, and zone workflows.
+
+No client game data is distributed with this repository.
+
+## Reference/vendor tooling
+
+The repository may include or reference third-party/vendor tools such as:
+
+- xi-tinkerer / xi-tinkerer-py,
+- xi-events related tooling,
+- xi-model-viewer,
+- Packetlyzer,
+- POLUtils-derived/extraction utilities,
+- AltanaViewer data references,
+- Windower/Ashita logging tools,
+- FFXI resource/reference datasets.
+
+Third-party code retains its own license. Vendor/reference tools are not automatically considered authoritative; the Workbench records whether data came from the user's own client/server/capture versus an external reference dataset.
+
+## Video / OCR tooling
+
+Video/OCR capabilities include:
+
+- YouTube/video frame workflows,
+- saved overlay/preprocessing profiles,
+- chat/EventView/NPCLogger/capturebar-style OCR regions,
+- cross-frame consensus,
+- packet-symbol-assisted correction,
+- capture/video timestamp anchors and drift diagnostics.
+
+Raw OCR is retained alongside corrected/derived values.
+
+## Wiki / reference research
+
+BG Wiki and FFXIclopedia are reference evidence, not unquestioned truth.
+
+The Workbench supports claim-level alignment, revision provenance, contradiction detection, and links from reference claims into source/capture/client evidence.
+
+## Research Sessions
+
+Research Sessions provide persistent assisted-research workflows with:
+
+- provider/model selection,
+- permissions and budgets,
+- timeouts,
+- replay/tool transcripts,
+- evidence IDs,
+- proposals/findings,
+- final reports,
+- local Ollama support.
+
+Research proposals remain separate from verified implementation facts.
+
+## Package / migration / validation tooling
+
+The package/validation layer supports:
+
+- dependency-aware package scope,
+- conditional/reviewable dependencies,
+- patch-plan drift detection,
+- approval states,
+- apply journals,
+- rollback,
+- validation runs linked to evidence,
+- deterministic source/target conversion where implemented.
+
+Phase D source-layout work continues to relocate mature root-level modules into logical `src/workbench/...` packages without breaking compatibility entry points.
+
+## Historical standalone tools
+
+Older docs and scripts may still mention standalone names such as:
+
+- `mission_toolkit.py`,
+- `build_database.py`,
+- `id_bridge.py`,
+- `wiki_lookup.py`,
+- `mob_look_decode.py`,
+- `model_schedule_dump.py`,
+- older NPCLogger cross-reference scripts.
+
+Some remain useful compatibility/research entry points, while others have been absorbed into richer Workbench surfaces. Prefer the browser Workbench and canonical `src/workbench/...` modules for current development unless a historical tool is specifically required for a legacy dataset.
+
+## Decision order for current work
+
+For most research/admin questions:
+
+1. Start in **Feature Trace**, **Entity Profile**, **Behavior Inspector**, or the relevant **Server/Client/Capture** workspace.
+2. Use exact server/client/capture evidence before external reference sources.
+3. Use named Server Environments for administered targets rather than hard-coded lineage paths.
+4. Drill into source/native evidence using the technical views only when the simplified view is insufficient.
+5. Keep ambiguous mappings unresolved until another evidence source proves them.
+6. Use package/apply/editor workflows only after preview/validation and with the relevant backup/audit safety path enabled.
+
+For current capability status, see `docs/workbench/ROADMAP_CURRENT.md` rather than historical per-session inventories.
