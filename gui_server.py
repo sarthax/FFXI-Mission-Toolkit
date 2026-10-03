@@ -5807,10 +5807,11 @@ def captures_page(request: Request, content_type: str = "", tag: str = "", q: st
         "SELECT DISTINCT content_type FROM captures ORDER BY 1").fetchall()]
     missions = [r[0] for r in con.execute(
         "SELECT DISTINCT mission_name FROM captures WHERE mission_name IS NOT NULL ORDER BY 1").fetchall()]
+    all_tags = build_capture_index.all_tag_choices(con)
     con.close()
     return templates.TemplateResponse(request, "captures.html", {
         "rows": rows, "content_type": content_type, "content_types": content_types,
-        "tag": tag, "all_tags": build_capture_index.CAPTURE_TAGS,
+        "tag": tag, "all_tags": all_tags,
         "q": q, "missions": missions,
     })
 
@@ -6340,7 +6341,8 @@ def captures_new_form(request: Request):
     it a real captures row with a synthetic source_path, then /captures/{id}/add is where files
     get dropped onto it one at a time (or a whole zip). Registered BEFORE /captures/{capture_id}
     -- that catch-all's int converter would otherwise try (and fail) to parse "new" as an id."""
-    return templates.TemplateResponse(request, "capture_new.html", {"all_tags": build_capture_index.CAPTURE_TAGS})
+    _c = get_con(); _t = build_capture_index.all_tag_choices(_c); _c.close()
+    return templates.TemplateResponse(request, "capture_new.html", {"all_tags": _t})
 
 
 @app.post("/captures/new", response_class=HTMLResponse)
@@ -6349,10 +6351,10 @@ async def captures_new_submit(request: Request):
     label = (form.get("label") or "").strip()
     content_type = form.get("content_type", "instances")
     mission_name = (form.get("mission_name") or "").strip() or None
-    tags = form.getlist("tags")
+    tags = form.getlist("tags") + build_capture_index.split_tags(form.get("new_tags", ""))
     if not label:
         return templates.TemplateResponse(request, "capture_new.html",
-                                           {"error": "A label is required.", "all_tags": build_capture_index.CAPTURE_TAGS})
+                                           {"error": "A label is required.", "all_tags": build_capture_index.CAPTURE_TAGS})  # noqa
     con = get_con()
     capture_id = build_capture_index.create_manual_capture(con, label, content_type, mission_name)
     if tags:
@@ -6367,7 +6369,7 @@ async def captures_tags_save(request: Request, capture_id: int):
     the editor needs to work on captures created long before /captures/new grew a tags field, not
     just new ones."""
     form = await request.form()
-    tags = form.getlist("tags")
+    tags = form.getlist("tags") + build_capture_index.split_tags(form.get("new_tags", ""))
     con = get_con()
     build_capture_index.set_capture_tags(con, capture_id, tags)
     con.close()
@@ -7758,6 +7760,7 @@ def captures_detail(
     ).fetchall()
     detail["pc_path_zones"] = build_capture_index.get_pc_path_zones(con, capture_id)
     detail["tags"] = build_capture_index.get_capture_tags(con, capture_id)
+    _detail_tags = build_capture_index.all_tag_choices(con)
     detail["hp_events"] = con.execute(
         "SELECT mob_name, hp_low, hp_high FROM capture_hp_events WHERE capture_id=? ORDER BY seq",
         (capture_id,)).fetchall()
@@ -7795,7 +7798,7 @@ def captures_detail(
     return templates.TemplateResponse(request, "capture_detail.html", {
         "detail": detail, "content_type": content_type, "q": q,
         "prev_id": prev_id, "next_id": next_id, "position": position,
-        "all_tags": build_capture_index.CAPTURE_TAGS,
+        "all_tags": _detail_tags,
         "rebuild_status": rebuild_status, "rebuild_error": rebuild_error,
     })
 
