@@ -17,6 +17,7 @@ from workbench.runtime.paths import GUI_ROOT
 
 from .category_data import build_category_payload
 from .factory import open_character_editor
+from .spell_transactions import apply_spell_edit, build_spell_edit_plan, list_spells
 
 router = APIRouter(prefix="/character-editor", tags=["Character Editor"])
 templates = Jinja2Templates(directory=str(GUI_ROOT / "templates"))
@@ -258,6 +259,60 @@ async def character_editor_add_item(char_id: int, request: Request):
                 location=int(body.get("location", 0)),
                 approved=True,
             )
+            return JSONResponse(_safe(result))
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.get("/characters/{char_id}/spells.json")
+def character_editor_spells(char_id: int, q: str = "", limit: int = Query(500, ge=1, le=2000)):
+    try:
+        with _context() as ctx:
+            rows = list_spells(ctx.service.connection, char_id=char_id, query=q, limit=limit)
+            return JSONResponse({"rows": _safe(rows), "online_state": _safe(ctx.service.session_state(char_id))})
+    except Exception as exc:
+        raise _error(exc, 503)
+
+
+@router.post("/characters/{char_id}/spells/preview")
+async def character_editor_preview_spell(char_id: int, request: Request):
+    try:
+        body = await request.json()
+        with _context() as ctx:
+            plan = build_spell_edit_plan(
+                ctx.service.connection,
+                char_id=char_id,
+                spell_id=int(body.get("spell_id")),
+                action=str(body.get("action") or ""),
+                adapter_family=ctx.service.adapter_family,
+            )
+            return JSONResponse(_safe(plan.as_dict()))
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.post("/characters/{char_id}/spells/apply")
+async def character_editor_apply_spell(char_id: int, request: Request):
+    try:
+        body = await request.json()
+        if body.get("approved") is not True:
+            raise HTTPException(status_code=400, detail="Explicit approved=true confirmation is required")
+        spell_id = int(body.get("spell_id"))
+        action = str(body.get("action") or "")
+        expected_before = body.get("expected_before_learned")
+        with _context() as ctx:
+            plan = build_spell_edit_plan(
+                ctx.service.connection,
+                char_id=char_id,
+                spell_id=spell_id,
+                action=action,
+                adapter_family=ctx.service.adapter_family,
+            )
+            if expected_before is not None and plan.before_learned is not bool(expected_before):
+                raise HTTPException(status_code=409, detail="Learned-spell state changed since preview; preview the edit again")
+            result = apply_spell_edit(ctx.service.connection, plan, approved=True)
             return JSONResponse(_safe(result))
     except HTTPException:
         raise
