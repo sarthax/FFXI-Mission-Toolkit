@@ -99,6 +99,55 @@
     }
   }
 
+  function repairCapturePlotHandoffs() {
+    const match = location.pathname.match(/^\/captures\/(\d+)$/);
+    if (!match) return;
+    const captureId = Number(match[1]);
+    if (!Number.isInteger(captureId) || captureId <= 0) return;
+
+    // PR #420 added the Zone Editor Paths deep-link by replacing the established standalone
+    // 2D plot handoffs.  Keep Paths as an additional workflow, but restore the direct plot pages:
+    // those pages are also the supported gateway to the standalone 3D path viewer.
+    document.querySelectorAll('a[href^="/zoneplot/from_capture?"]').forEach(link => {
+      const url = new URL(link.getAttribute('href'), location.origin);
+      const entityId = url.searchParams.get('entity_id');
+      const pc = url.searchParams.get('pc');
+      const zoneDb = url.searchParams.get('zone_db');
+
+      if (entityId) {
+        const editor = link.cloneNode(true);
+        editor.textContent = 'editor';
+        editor.title = 'Open this trace in the Zone Editor Paths tab';
+        editor.classList.add('muted');
+        link.insertAdjacentText('afterend', ' · ');
+        link.nextSibling.insertAdjacentElement?.('afterend', editor);
+        if (!editor.isConnected) link.parentNode?.append(' · ', editor);
+        link.href = `/captures/plot?capture_id=${captureId}&entity_id=${encodeURIComponent(entityId)}`;
+        link.textContent = '2D / 3D plot';
+        link.title = 'Open standalone 2D plot; use its 3D view button for the zone viewer';
+        return;
+      }
+
+      if (pc === '1' && zoneDb) {
+        const editor = link.cloneNode(true);
+        editor.textContent = 'Zone Editor';
+        editor.title = 'Open this PC trace in the Zone Editor Paths tab';
+        link.insertAdjacentElement('afterend', editor);
+        link.insertAdjacentText('afterend', ' · ');
+        link.href = `/captures/plot?capture_id=${captureId}&pc=1&zone_db=${encodeURIComponent(zoneDb)}`;
+        link.title = 'Open standalone 2D plot; use its 3D view button for the zone viewer';
+        return;
+      }
+
+      // The capture-wide Paths action remains a Zone Editor action, but label it explicitly so it
+      // is no longer confused with the standalone 2D/3D plot controls beside it.
+      if (!entityId && pc !== '1') {
+        link.textContent = 'Zone Editor Paths';
+        link.title = 'Open all PathLog traces in the Zone Editor Paths tab';
+      }
+    });
+  }
+
   async function loadState() {
     try {
       const response = await fetch('/character-editor/environments/profiles.json');
@@ -111,6 +160,10 @@
   }
 
   async function install() {
+    // Plot/viewer link repair is independent of server-profile availability and must continue to
+    // work even if Character Editor profile discovery is unavailable.
+    repairCapturePlotHandoffs();
+
     const state = await loadState();
     if (!state) return;
 
