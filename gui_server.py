@@ -63,6 +63,8 @@ from workbench.core.services import capture_integrity, capture_spatial, capture_
 from workbench.core.services.server_catalog_identity import sync_server_catalog_entities
 from workbench.runtime.interaction_reconstruction import reconstruct_interaction_candidates
 from workbench.analyzers.server import lua_events
+from workbench.editors.character import gui as character_editor_gui
+character_editor_router = character_editor_gui.router
 import feature_checker
 from workbench.core.services.feature_trace_closure import build_feature_trace_closure
 import ingest_global_tables
@@ -123,6 +125,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(title="Mission Toolkit GUI")
+app.include_router(character_editor_router)
 from workbench.client.animlab.router import router as animlab_router
 app.include_router(animlab_router)
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
@@ -623,6 +626,9 @@ def shell_context(request: Request) -> dict:
 
 
 templates.env.globals["shell_context"] = shell_context
+
+# The packaged Character Editor router owns its own Jinja2Templates; base.html needs the globals above.
+character_editor_gui.templates.env.globals.update(templates.env.globals)
 
 
 @app.get("/help", response_class=HTMLResponse)
