@@ -1,8 +1,8 @@
 """Guarded learn/unlearn transactions for Character Editor spells.
 
-DSP, Topaz, and LSB share the same ``char_spells(charid, spellid)`` row contract.  Writes are
+DSP, Topaz, and LSB share the same ``char_spells(charid, spellid)`` row contract. Writes are
 allowed only for an offline character, a verified table shape, and a spell that exists in the
-connected server's live ``spell_list`` table.  Apply rechecks all mutable state inside the
+connected server's live ``spell_list`` table. Apply rechecks all mutable state inside the
 transaction so a stale preview cannot be committed.
 """
 from __future__ import annotations
@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+from .audit import attach_committed_audit
 from .schema import discover_character_schema
 from .session_state import detect_online_state
 
@@ -250,7 +251,7 @@ def apply_spell_edit(connection, plan: SpellEditPlan, *, approved: bool = False)
             cursor.close()
 
         connection.commit()
-        return {
+        result = {
             "status": "committed",
             "char_id": plan.char_id,
             "spell_id": plan.spell_id,
@@ -259,6 +260,16 @@ def apply_spell_edit(connection, plan: SpellEditPlan, *, approved: bool = False)
             "learned_before": plan.learned_before,
             "learned_after": plan.learned_after,
         }
+        return attach_committed_audit(
+            result,
+            operation=f"spell.{plan.action}",
+            char_id=plan.char_id,
+            adapter_family=plan.adapter_family,
+            target={"table": "char_spells", "spell_id": plan.spell_id, "spell": plan.spell},
+            before={"learned": plan.learned_before},
+            after={"learned": plan.learned_after},
+            undo_supported=True,
+        )
     except Exception:
         try:
             connection.rollback()
