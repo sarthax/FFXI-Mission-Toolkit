@@ -163,3 +163,11 @@ def test_server_environment(profile_id: int):
         )
     finally:
         context.close()
+
+
+# ``workbench.editors.character.__init__`` imports this module before ``gui.py``.  Attach this
+# API to the already-included audit subrouter so the live app receives it without another
+# gui_server.py registration hook.
+from .audit_gui import router as _character_subrouter
+
+_character_subrouter.include_router(router)
