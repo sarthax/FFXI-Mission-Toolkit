@@ -43,20 +43,83 @@
     else select.insertAdjacentElement('afterend', link);
   }
 
+  function installShellContext(state) {
+    const contextList = document.querySelector('#app-shell .context-list');
+    if (!contextList || document.getElementById('shellServerEnvironmentContext')) return;
+    const active = state.active || null;
+    const item = document.createElement('span');
+    item.id = 'shellServerEnvironmentContext';
+    item.className = 'context-item' + (active ? '' : ' unknown');
+    item.title = active
+      ? `${active.server_root}\nProfile ${active.profile_id}`
+      : 'No named server environment is active; legacy path settings are being used.';
+    item.innerHTML = `
+      <span class="context-label">Server environment</span>
+      <span class="context-value">${active ? label(active) : 'LEGACY / Not selected'}</span>`;
+    contextList.prepend(item);
+  }
+
+  function decorateSettings(state) {
+    if (location.pathname !== '/settings' || document.getElementById('serverEnvironmentSettingsCard')) return;
+    const form = document.getElementById('settings-form');
+    if (!form) return;
+    const pathsHeading = [...form.querySelectorAll('h2')].find(h => h.textContent.trim() === 'Paths');
+    if (!pathsHeading) return;
+
+    const active = state.active || null;
+    const enabledCount = (state.profiles || []).filter(profile => profile.enabled).length;
+    const card = document.createElement('div');
+    card.id = 'serverEnvironmentSettingsCard';
+    card.className = 'table-wrap';
+    card.style.cssText = 'padding:14px;margin:10px 0 16px;border-left:4px solid var(--accent);';
+    card.innerHTML = `
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <strong>Server environments</strong>
+        <span class="chip mono">${active ? label(active) : 'No named environment active'}</span>
+        <a class="chip" href="/character-editor">Manage environments</a>
+      </div>
+      <p class="muted" style="margin:8px 0 0">
+        ${enabledCount} enabled profile${enabledCount === 1 ? '' : 's'}. Named environments are the primary live/admin target for Character Editor, Zone Editor, Item Editor, Entity tools, and other server-aware workflows. The Topaz/DSP path fields below remain only for legacy bootstrap, fallback, and lineage-specific comparison/index tools.
+      </p>`;
+    pathsHeading.insertAdjacentElement('beforebegin', card);
+
+    const legacyLabels = [
+      ['topaz_server_path', 'Legacy Topaz compatibility root — bootstrap/fallback and Topaz-specific reference tools'],
+      ['dsp_server_path', 'Legacy DSP compatibility root — bootstrap/fallback and DSP-specific reference tools'],
+    ];
+    for (const [name, text] of legacyLabels) {
+      const input = form.querySelector(`[name="${name}"]`);
+      const labelEl = input?.parentElement?.querySelector('label');
+      if (labelEl) labelEl.textContent = text;
+    }
+
+    const pathsNote = pathsHeading.nextElementSibling;
+    if (pathsNote?.classList.contains('muted')) {
+      pathsNote.innerHTML = 'Named Server Environments are now authoritative for live/admin tools. These path fields are retained for client/reference paths plus legacy server compatibility; changing a legacy server path does <strong>not</strong> switch the active named environment.';
+    }
+  }
+
+  async function loadState() {
+    try {
+      const response = await fetch('/character-editor/environments/profiles.json');
+      if (!response.ok) return null;
+      return await response.json();
+    } catch (error) {
+      console.warn('server environment profiles unavailable', error);
+      return null;
+    }
+  }
+
   async function install() {
+    const state = await loadState();
+    if (!state) return;
+
+    installShellContext(state);
+    decorateSettings(state);
+
     if (!TARGET_PATHS.has(location.pathname)) return;
     const select = document.getElementById('srv');
     if (!select) return;
-
-    let state;
-    try {
-      const response = await fetch('/character-editor/environments/profiles.json');
-      if (!response.ok) return;
-      state = await response.json();
-    } catch (error) {
-      console.warn('server environment profiles unavailable', error);
-      return;
-    }
 
     const profiles = (state.profiles || []).filter(profile => profile.enabled);
     if (!profiles.length) {
