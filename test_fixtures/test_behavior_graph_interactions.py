@@ -32,3 +32,17 @@ def test_behavior_graph_uses_directed_causal_path_focus():
     assert "Selected causal chain:" in script
     assert "MutationObserver" in script
     assert "}, true);" in script  # capture node selection before the legacy renderer replaces the SVG subtree
+
+
+def test_behavior_node_inspector_stays_visible_beside_graph():
+    script = (ROOT / "gui" / "static" / "behavior_graph_interactions.js").read_text(encoding="utf-8")
+
+    assert "behavior-workspace" in script
+    assert "grid-template-columns:minmax(0,1fr) minmax(320px,380px)" in script
+    assert "behavior-inspector-pane" in script
+    assert "Selected behavior node inspector" in script
+    assert "pane.appendChild(detail)" in script
+    assert "overflow:auto;flex:1" in script
+    assert "behavior-inspector-toggle" in script
+    assert "inspector-collapsed" in script
+    assert "@media(max-width:1000px)" in script
