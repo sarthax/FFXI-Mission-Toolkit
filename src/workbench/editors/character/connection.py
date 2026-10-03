@@ -54,8 +54,47 @@ class DatabaseProfile:
         }
 
 
+def normalize_server_root(value: Path | str) -> Path:
+    """Normalize a server root, native config folder, or native config file to the checkout root.
+
+    The environment UI asks for a server root, but in practice users commonly paste ``conf`` or
+    the concrete ``map*.conf`` file for DSP/Topaz. LSB users may similarly paste ``settings`` or
+    ``settings/network.lua``. Accept those native locations and canonicalize them to the checkout
+    root so all profile-aware tools share one stable path.
+    """
+    path = Path(value).expanduser()
+
+    if path.is_file():
+        name = path.name.lower()
+        parent_name = path.parent.name.lower()
+        if name in {"map.conf", "map_darkstar.conf"} and parent_name == "conf":
+            return path.parent.parent.resolve()
+        if name == "network.lua" and parent_name == "settings":
+            return path.parent.parent.resolve()
+        return path.resolve()
+
+    if path.is_dir():
+        leaf = path.name.lower()
+        if leaf == "conf" and any((path / name).is_file() for name in ("map.conf", "map_darkstar.conf")):
+            return path.parent.resolve()
+        if leaf == "settings" and (path / "network.lua").is_file():
+            return path.parent.resolve()
+        return path.resolve()
+
+    # Preserve a non-existent path for a useful validation error later. Also normalize obvious
+    # config-folder/file shapes syntactically so the stored profile does not become conf/conf/....
+    leaf = path.name.lower()
+    if leaf in {"map.conf", "map_darkstar.conf"} and path.parent.name.lower() == "conf":
+        return path.parent.parent
+    if leaf == "network.lua" and path.parent.name.lower() == "settings":
+        return path.parent.parent
+    if leaf in {"conf", "settings"}:
+        return path.parent
+    return path
+
+
 def _find_conf(server_root: Path) -> Path:
-    root = Path(server_root).expanduser().resolve()
+    root = normalize_server_root(server_root)
     for rel in CONF_CANDIDATES:
         candidate = root / rel
         if candidate.is_file():
@@ -63,6 +102,7 @@ def _find_conf(server_root: Path) -> Path:
     raise FileNotFoundError(
         f"No supported MariaDB configuration found under {root}; tried "
         + ", ".join(CONF_CANDIDATES)
+        + ". You may provide the server root, its conf/settings folder, or the native config file."
     )
 
 
@@ -117,7 +157,7 @@ def _parse_conf(path: Path) -> dict[str, str]:
 
 
 def discover_database_profile(server_root: Path | str) -> DatabaseProfile:
-    root = Path(server_root).expanduser().resolve()
+    root = normalize_server_root(server_root)
     conf = _find_conf(root)
     values = _parse_conf(conf)
     return DatabaseProfile(
