@@ -1,7 +1,7 @@
 // Shared gear helpers for the Character Editor: item tiles, the augment / bonus editor and the equip action.
 // Used by the Equipped Items tab and by the Inventory item pop-up so both edit an item the same way.
 window.CEGear = (() => {
-  if (!document.querySelector('.character-editor-page')) return null;
+  if (!document.querySelector('.character-editor-page, .item-editor-page')) return null;
 
   const api = () => `/character-editor/characters/${selectedChar}`;
   const icon = id => `/character-editor/client-cache/icons/${id}.png`;
