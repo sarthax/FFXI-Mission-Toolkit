@@ -499,6 +499,69 @@
   new ResizeObserver(fitEffects).observe(right);
   bar.addEventListener('click', () => setTimeout(fitEffects, 0));
 
+  // ---------- Client record + History tabs: one sub-section at a time inside a fixed-height pane ----------
+  const css4 = document.createElement('style');
+  css4.textContent = `
+    .ie-pane[data-pane=client].on,.ie-pane[data-pane=history].on{display:flex;flex-direction:column;overflow:hidden}
+    .ie-sub{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 8px;flex:none}
+    .ie-sub button{padding:4px 12px;border:1px solid var(--border,#555);border-radius:14px;background:transparent;color:inherit;cursor:pointer;font-size:12px}
+    .ie-sub button.on{background:rgba(106,169,255,.22);border-color:#6aa9ff}
+    .ie-subbody{flex:1;min-height:0;overflow:auto;padding-right:4px}
+    .ie-subpane{display:none}.ie-subpane.on{display:block}
+    .ie-pane[data-pane=client] #datInfoCard,.ie-pane[data-pane=history]>.edit-card{margin-top:0!important}
+    .ie-pane[data-pane=client] #datInfoCard{display:flex;flex-direction:column;min-height:0;flex:1;border:0;padding:0}
+    .ie-pane[data-pane=client] #datInfoCard>h3{display:none}
+    .ie-pane[data-pane=history]>.edit-card>h3 .hint{display:block;font-weight:400}`;
+  document.head.appendChild(css4);
+
+  // groups = [[label, [nodes]]]; builds a chip bar + panes inside `host` and moves the nodes in
+  const subTabs = (host, key, groups) => {
+    const sb = document.createElement('div'); sb.className = 'ie-sub';
+    const body = document.createElement('div'); body.className = 'ie-subbody';
+    const subs = groups.map(([label, nodes], i) => {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = label; sb.appendChild(b);
+      const p = document.createElement('div'); p.className = 'ie-subpane'; body.appendChild(p);
+      nodes.forEach(n => n && p.appendChild(n));
+      return {b, p, i};
+    });
+    const show = i => {
+      store.set('ieSub_' + key, String(i));
+      subs.forEach(s => { s.b.classList.toggle('on', s.i === i); s.p.classList.toggle('on', s.i === i); });
+    };
+    sb.addEventListener('click', e => { const b = e.target.closest('button'); const s = subs.find(x => x.b === b); if (s) show(s.i); });
+    host.append(sb, body);
+    const saved = parseInt(store.get('ieSub_' + key, '0'), 10);
+    show(subs[saved] ? saved : 0);
+    return {show, subs};
+  };
+
+  const dat = byId('datInfoCard');
+  const dk = [...dat.children].filter(c => c.tagName !== 'H3');
+  if (dk.length === 15) {
+    subTabs(dat, 'client', [
+      ['Overview', dk.slice(0, 6)],
+      ['DAT backups', [...dk.slice(8, 12), dk[12]]],
+      ['Live ↔ Xi-Pivot', [dk[6], dk[7], dk[13], dk[14]]],
+    ]);
+  }
+  const hk = ['selectedItemHistory', 'itemBackupsCard', 'itemUsagePanel', 'itemDeleteCard'].map(byId);
+  if (hk.every(Boolean)) {
+    const hostH = document.createElement('div');
+    hostH.style.cssText = 'display:flex;flex-direction:column;flex:1;min-height:0';
+    panes.history.appendChild(hostH);
+    subTabs(hostH, 'history', [
+      ['Changes', [hk[0]]], ['Backups', [hk[1]]], ['Where it\'s used', [hk[2]]], ['Delete', [hk[3]]],
+    ]);
+  }
+
+  const fitPanes = () => {
+    const h = Math.max(260, right.clientHeight - head.offsetHeight - 14) + 'px';
+    panes.client.style.height = h; panes.history.style.height = h;
+  };
+  new ResizeObserver(fitPanes).observe(head);
+  new ResizeObserver(fitPanes).observe(right);
+  bar.addEventListener('click', () => setTimeout(fitPanes, 0));
+
   // opening a draft (new / clone) jumps to the Create section
   const origStartDraft = startDraft;
   startDraft = function () { const r = origStartDraft.apply(this, arguments); showSection('create'); return r; };
