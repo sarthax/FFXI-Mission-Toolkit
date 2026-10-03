@@ -23,17 +23,24 @@ _LEGACY_SETTINGS_MODULE = _legacy_settings._module()
 
 
 def _load_impl() -> ModuleType:
-    spec = importlib.util.spec_from_file_location(f"{__name__}._impl", _IMPL_PATH)
+    impl_name = f"{__name__}._impl"
+    spec = importlib.util.spec_from_file_location(impl_name, _IMPL_PATH)
     if spec is None:
         raise ImportError(f"Unable to create Item DAT implementation spec for {_IMPL_PATH}")
     module = importlib.util.module_from_spec(spec)
 
+    # dataclasses resolves annotations through sys.modules while decorators execute, so the
+    # implementation must be registered under its spec name before its source is evaluated.
+    sys.modules[impl_name] = module
     previous_settings = sys.modules.get("settings")
     sys.modules["settings"] = _LEGACY_SETTINGS_MODULE
     try:
         module.__file__ = str(_LEGACY_FILE)
         source = _IMPL_PATH.read_text(encoding="utf-8")
         exec(compile(source, str(_IMPL_PATH), "exec"), module.__dict__)
+    except Exception:
+        sys.modules.pop(impl_name, None)
+        raise
     finally:
         if previous_settings is None:
             sys.modules.pop("settings", None)
