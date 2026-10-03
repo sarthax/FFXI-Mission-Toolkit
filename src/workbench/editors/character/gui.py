@@ -18,6 +18,7 @@ from workbench.runtime.paths import GUI_ROOT
 from .blacklist_transactions import apply_blacklist_edit, blacklist_rows, build_blacklist_edit_plan
 from .category_data import build_category_payload
 from .factory import open_character_editor
+from .inventory_management import apply_inventory_management, build_inventory_management_plan
 
 router = APIRouter(prefix="/character-editor", tags=["Character Editor"])
 templates = Jinja2Templates(directory=str(GUI_ROOT / "templates"))
@@ -343,6 +344,58 @@ def character_editor_inventory(char_id: int):
         raise _error(exc, 404)
     except Exception as exc:
         raise _error(exc, 503)
+
+
+@router.post("/characters/{char_id}/inventory/preview")
+async def character_editor_preview_inventory_management(char_id: int, request: Request):
+    try:
+        body = await request.json()
+        with _context() as ctx:
+            plan = build_inventory_management_plan(
+                ctx.service.connection,
+                char_id=char_id,
+                source_location=int(body.get("source_location")),
+                source_slot=int(body.get("source_slot")),
+                action=str(body.get("action") or ""),
+                quantity=body.get("quantity"),
+                destination_location=body.get("destination_location"),
+                destination_slot=body.get("destination_slot"),
+                adapter_family=ctx.service.adapter_family,
+            )
+            return JSONResponse(_safe(plan.as_dict()))
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.post("/characters/{char_id}/inventory/apply")
+async def character_editor_apply_inventory_management(char_id: int, request: Request):
+    try:
+        body = await request.json()
+        if body.get("approved") is not True:
+            raise HTTPException(status_code=400, detail="Explicit approved=true confirmation is required")
+        expected_fingerprint = str(body.get("expected_source_fingerprint") or "")
+        if not expected_fingerprint:
+            raise HTTPException(status_code=400, detail="A preview source fingerprint is required")
+        with _context() as ctx:
+            plan = build_inventory_management_plan(
+                ctx.service.connection,
+                char_id=char_id,
+                source_location=int(body.get("source_location")),
+                source_slot=int(body.get("source_slot")),
+                action=str(body.get("action") or ""),
+                quantity=body.get("quantity"),
+                destination_location=body.get("destination_location"),
+                destination_slot=body.get("destination_slot"),
+                adapter_family=ctx.service.adapter_family,
+            )
+            if plan.source_fingerprint != expected_fingerprint:
+                raise HTTPException(status_code=409, detail="Inventory row changed since preview; preview the operation again")
+            result = apply_inventory_management(ctx.service.connection, plan, approved=True)
+            return JSONResponse(_safe(result))
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise _error(exc)
 
 
 @router.post("/characters/{char_id}/items/preview")
