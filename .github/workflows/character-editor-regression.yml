@@ -36,7 +36,7 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/character-editor-stubs"
           : > "$RUNNER_TEMP/character-editor-stubs/xi_tinkerer.py"
-          echo "PYTHONPATH=$RUNNER_TEMP/character-editor-stubs:$GITHUB_WORKSPACE/test_fixtures${PYTHONPATH:+:$PYTHONPATH}" >> "$GITHUB_ENV"
+          echo "PYTHONPATH=$RUNNER_TEMP/character-editor-stubs:$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/test_fixtures${PYTHONPATH:+:$PYTHONPATH}" >> "$GITHUB_ENV"
       - name: Run pytest-style Character Editor regressions
         run: |
           python -m pytest -q \
