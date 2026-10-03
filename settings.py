@@ -5,12 +5,10 @@ settings.py -- small key/value config store for the Mission Toolkit GUI.
 Single-user local tool, so settings live server-side in the same consolidated DB rather than
 per-browser cookies/localStorage -- one source of truth, no flash-of-wrong-theme on load.
 
-`topaz_server_path` and `ffxi_install_path` are consumed by get_topaz_root()/get_ffxi_install()
-below -- lookup_entity.py, build_sql_index.py, entity_profile.py, wiki_compile.py, and
-build_zone_topdown.py all resolve their real root through these instead of a hardcoded
-`C:/topaz`/registry lookup. Each module reads its root at import time, so a change on the
-Settings page takes effect on gui_server.py's next restart, not the next request -- same
-one-time-resolution model as TOOLS_ROOT itself, not a bug.
+Named Server Environments are now authoritative for generic live/admin tooling.  The historical
+Topaz/DSP path settings remain supported as bootstrap/fallback inputs and for lineage-specific
+reference/index workflows.  This root module is itself a compatibility surface, so its generic
+``get_active_*`` helpers also honor the named profile store when the packaged runtime is available.
 """
 import sqlite3
 try:
@@ -33,31 +31,16 @@ DEFAULTS = {
     "shell_brand_enabled": "1",     # 1 = show shell brand, 0 = hide it
     "shell_brand_text": "ValhallaXI",
     "shell_brand_icon": "/static/valhalla_logo.png",
-    "topaz_server_path": "",       # empty = use DEFAULT_TOPAZ_ROOT, see get_topaz_root()
-    "dsp_server_path": "",         # empty = DSP cross-reference disabled, see get_dsp_root()
-    "zoneplot_server": "topaz",    # "topaz" | "dsp" -- which live DB Zone Plot's level editor targets
-    "backport_root": "",           # empty = use the bundled backport-workspace/ scaffold, see get_backport_root()
-    "ffxi_install_path": "",       # empty = detect via Windows registry, see get_ffxi_install()
+    "topaz_server_path": "",       # legacy bootstrap/fallback + Topaz-specific reference root
+    "dsp_server_path": "",         # legacy bootstrap/fallback + DSP-specific reference root
+    "zoneplot_server": "topaz",    # legacy topaz|dsp selector retained for compatibility only
+    "backport_root": "",           # empty = use bundled backport-workspace scaffold
+    "ffxi_install_path": "",       # empty = detect via Windows registry
     "item_dat_target": "live",     # "live" | "pivot" -- see item_dat_tools.dat_target()
     "xi_pivot_root": "",           # empty = bundled default, see item_dat_tools.pivot_root()
-    # xi-model-viewer's own dev server (npm run dev, ui/vite.config.js) -- default matches its
-    # documented default port (5173). Used to build "?npc=<file_id>" deep links (see
-    # xi-model-viewer/ui/js/launch.js) from Entity Lookup's own real per-entity model_file_id.
     "xi_model_viewer_url": "http://localhost:5173",
-    # Read once at gui_server.py's own startup (uvicorn.run), not per-request -- same
-    # one-time-resolution model as topaz_server_path/ffxi_install_path above, so a change here
-    # needs a restart (Settings' own Restart button) to take effect, not just a Save.
     "port": "8420",
-    # Read fresh on every backup_database_file() call (build_database.py), not cached at import
-    # time -- a change here should apply to the very next backup, not need a restart. Each backup
-    # is a full copy of ffxi_zone_database.db (~1.3GB in a fully-built install), so this is a real
-    # disk-space knob, not just a cosmetic list-length limit.
     "backup_retention_count": "10",
-    # Local Open WebUI/Ollama instance (see llm_client.py) -- base URL and default model only.
-    # The API key itself deliberately does NOT live here: this settings table lives inside
-    # ffxi_zone_database.db, which is routinely stripped/backed-up/rebuilt-from-scratch (see
-    # DIST_PACKAGING.md) -- a secret has no business riding along in that file. The key lives in
-    # its own gitignored .openwebui_key file instead (llm_client.save_api_key()/has_api_key()).
     "llm_base_url": "http://127.0.0.1:3000",
     "llm_default_model": "qwen2.5-coder:7b",
 }
@@ -87,16 +70,45 @@ def set_many(con: sqlite3.Connection, values: dict):
     init_db(con)
     for key, value in values.items():
         if key not in DEFAULTS:
-            continue  # ignore unknown keys rather than letting a form typo create silent cruft
+            continue
         con.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (key, value))
     con.commit()
 
 
+def _active_profile():
+    """Best-effort named active profile for root-level compatibility callers.
+
+    Keep this import lazy so the legacy root settings module still works in narrow bootstrap/test
+    contexts where the packaged ``workbench`` namespace is not importable yet.
+    """
+    try:
+        from workbench.runtime import server_profiles
+        con = server_profiles.connect(DB_PATH)
+        try:
+            return server_profiles.get_active_profile(con)
+        finally:
+            con.close()
+    except (ImportError, ModuleNotFoundError, sqlite3.Error):
+        return None
+
+
+def _named_profiles():
+    try:
+        from workbench.runtime import server_profiles
+        con = server_profiles.connect(DB_PATH)
+        try:
+            return server_profiles.list_profiles(con, include_disabled=False)
+        finally:
+            con.close()
+    except (ImportError, ModuleNotFoundError, sqlite3.Error):
+        return []
+
+
 def get_topaz_root() -> Path:
-    """The Topaz server checkout root -- Settings' topaz_server_path if set, else the same
-    C:/topaz default every module used to hardcode. Opens its own short-lived connection since
-    this is called once at each module's import time, before that module has any connection of
-    its own to reuse."""
+    """Legacy/reference Topaz checkout root; named active environments do not replace this.
+
+    Generic live/admin code should call :func:`get_active_server_root` instead.
+    """
     con = sqlite3.connect(str(DB_PATH))
     try:
         value = get(con, "topaz_server_path")
@@ -106,11 +118,7 @@ def get_topaz_root() -> Path:
 
 
 def get_dsp_root() -> Path | None:
-    """The old-DSP server checkout root, if configured -- unlike LandSandBoat (bundled/downloaded
-    into this toolkit's own folder), a real DSP checkout is something the user already has
-    somewhere on disk, so this is a plain path setting with no default and no auto-download.
-    Returns None (not a guessed path) when unset, so build_dsp_index.py can tell "not configured"
-    apart from "configured but wrong"."""
+    """Legacy/reference DSP checkout root, or ``None`` when not configured."""
     con = sqlite3.connect(str(DB_PATH))
     try:
         value = get(con, "dsp_server_path")
@@ -120,37 +128,57 @@ def get_dsp_root() -> Path | None:
 
 
 def get_server_roots() -> list[Path]:
-    """Every configured Topaz/DSP checkout that exists on disk, the user's active server
-    (Zone Plot's `zoneplot_server` setting) first.
+    """Configured server roots, with the named active environment first.
 
-    The toolkit administers whichever server the user points it at -- Topaz or DSP -- so code
-    that reads a server file (scripts/globals/*.lua, sql/*.sql, ...) should walk this list rather
-    than assume Topaz. LandSandBoat is a bundled reference tree, not an administered server, so
-    it is deliberately not part of this list."""
+    Named enabled profiles are authoritative and may include multiple environments of the same
+    family (for example LSB Live and LSB Test).  Legacy Topaz/DSP roots are appended only as
+    compatibility/reference roots and are de-duplicated by normalized path.
+    """
+    out = []
+    seen = set()
+
+    def add(root):
+        if root is None:
+            return
+        path = Path(root).expanduser()
+        key = str(path).replace("\\", "/").casefold()
+        if key in seen:
+            return
+        seen.add(key)
+        if path.is_dir():
+            out.append(path)
+
+    active = _active_profile()
+    if active is not None:
+        add(active.root_path)
+    for profile in _named_profiles():
+        if active is not None and profile.profile_id == active.profile_id:
+            continue
+        add(profile.root_path)
+
+    # Compatibility/reference roots are intentionally lower priority than named environments.
     con = sqlite3.connect(str(DB_PATH))
     try:
-        active = get(con, "zoneplot_server")
+        legacy_active = get(con, "zoneplot_server")
     finally:
         con.close()
-    named = {"topaz": get_topaz_root(), "dsp": get_dsp_root()}
-    order = ["dsp", "topaz"] if active == "dsp" else ["topaz", "dsp"]
-    return [named[k] for k in order if named[k] and Path(named[k]).is_dir()]
+    legacy = {"topaz": get_topaz_root(), "dsp": get_dsp_root()}
+    order = ["dsp", "topaz"] if legacy_active == "dsp" else ["topaz", "dsp"]
+    for family in order:
+        add(legacy[family])
+    return out
 
 
 def get_active_server_root() -> Path:
-    """The single server checkout the user is currently administering (Topaz or DSP, per the
-    `zoneplot_server` setting), falling back to the Topaz default when neither exists on disk."""
+    """Root of the currently administered named environment, with legacy fallback."""
+    active = _active_profile()
+    if active is not None:
+        return active.root_path
     roots = get_server_roots()
     return roots[0] if roots else get_topaz_root()
 
 
 def get_backport_root() -> Path:
-    """The backport checkout root (holds mission-packages/, dsp-engine-changes/, reports/) --
-    Settings' backport_root if set (point this at your own real backport project), else the
-    bundled backport-workspace/ scaffold (real folder shape + one small, real, verified example
-    package, no project-specific content) so the --all-packages CLI tools work turnkey with zero
-    configuration. Unlike get_dsp_root(), this never returns None -- the bundled default always
-    exists on disk (shipped with this repo), so there's always something real to point at."""
     con = sqlite3.connect(str(DB_PATH))
     try:
         value = get(con, "backport_root")
@@ -160,9 +188,6 @@ def get_backport_root() -> Path:
 
 
 def get_ffxi_install() -> str | None:
-    """The FFXI client install directory -- Settings' ffxi_install_path if set, else the same
-    Windows-registry autodetection build_zone_topdown.py already used (PlayOnline's InstallFolder
-    key, tried under each region's subkey). Returns None if neither resolves to a real directory."""
     con = sqlite3.connect(str(DB_PATH))
     try:
         value = get(con, "ffxi_install_path")
@@ -188,16 +213,24 @@ def get_ffxi_install() -> str | None:
 
 
 def get_active_sql_prefix() -> str:
-    """Table prefix of the active server's parsed SQL/Lua tables in ffxi_zone_database.db:
-    "topaz_" or "dsp_" (zoneplot_server). The legacy sql_* tables are LSB-derived, so entity
-    views must not read them when the user manages a Topaz or DSP checkout."""
-    import sqlite3
+    """Parsed SQL/Lua table prefix for the active administered environment.
+
+    LSB uses the historical ``sql_`` tables; Topaz/DSP use their lineage-specific prefixes.
+    ``auto`` profiles retain legacy prefix behavior until their family is explicitly classified.
+    """
+    active = _active_profile()
+    if active is not None:
+        if active.family == "lsb":
+            return "sql_"
+        if active.family in ("topaz", "dsp"):
+            return f"{active.family}_"
+
     try:
         con = sqlite3.connect(str(DB_PATH))
         try:
-            v = get(con, "zoneplot_server")
+            value = get(con, "zoneplot_server")
         finally:
             con.close()
     except Exception:
-        v = None
-    return "dsp_" if v == "dsp" else "topaz_"
+        value = None
+    return "dsp_" if value == "dsp" else "topaz_"
