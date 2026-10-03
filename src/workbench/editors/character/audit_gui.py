@@ -1,4 +1,4 @@
-"""Audit history, guarded undo, and LSB admin routes for the Character Editor."""
+"""Audit history, guarded undo, LSB admin, and read-only runtime routes for Character Editor."""
 from __future__ import annotations
 
 from contextlib import contextmanager
@@ -13,6 +13,7 @@ from .audit import read_audit_events
 from .audit_undo import apply_undo, build_undo_plan
 from .factory import open_character_editor
 from .lsb_admin_transactions import apply_lsb_admin_plan, build_lsb_admin_plan
+from .pet_runtime_summary import build_pet_runtime_summary
 
 router = APIRouter()
 
@@ -71,6 +72,23 @@ def character_editor_audit_history(char_id: int, limit: int = Query(100, ge=1, l
                 raise HTTPException(status_code=404, detail="Character not found")
             events = [_summary(event) for event in read_audit_events(char_id=char_id, limit=limit)]
             return JSONResponse({"events": events})
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@router.get("/characters/{char_id}/pet-runtime.json")
+def character_editor_pet_runtime(char_id: int):
+    try:
+        with _context() as ctx:
+            if not ctx.service.character_exists(char_id):
+                raise HTTPException(status_code=404, detail="Character not found")
+            return JSONResponse(_safe(build_pet_runtime_summary(
+                ctx.service.connection,
+                char_id,
+                adapter_family=ctx.service.adapter_family,
+            )))
     except HTTPException:
         raise
     except Exception as exc:
