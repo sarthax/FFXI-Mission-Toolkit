@@ -88,6 +88,21 @@ def character_editor_spells(q: str = "", limit: int = Query(200, ge=1, le=1000))
         raise _error(exc, 503)
 
 
+@router.get("/reference/spells-abilities.json")
+def character_editor_spell_reference():
+    try:
+        from .spell_reference import ability_rows, spell_rows, trait_rows
+        with _context() as ctx:
+            root = get_active_server_root()
+            return JSONResponse(_safe({
+                "spells": spell_rows(ctx.service.search_spells("", limit=1000)),
+                "abilities": ability_rows(root),
+                "traits": trait_rows(root),
+            }))
+    except Exception as exc:
+        raise _error(exc, 503)
+
+
 @router.get("/characters/{char_id}/spells.json")
 def character_editor_learned_spells(char_id: int):
     try:

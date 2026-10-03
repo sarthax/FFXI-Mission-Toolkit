@@ -56,3 +56,16 @@ tpl = (ROOT / "gui/templates/character_editor_progression.html").read_text(encod
 assert tpl.index("character_editor_state_surface.js") < tpl.index("character_editor_usability.js")
 assert "65535" in (ROOT / "gui/static/character_editor_progression.js").read_text(encoding="utf-8")
 print("ui ok")
+
+
+def test_spell_reference():
+    from workbench.editors.character.spell_reference import SPELL_CATEGORIES, ability_rows, spell_rows, trait_rows
+    out = spell_rows([{"spellid": 1, "name": "cure"}])
+    assert out["rows"][0]["category"] == "WhiteMagic" and out["rows"][0]["on_server"]
+    assert {r["category"] for r in out["rows"]} >= {k for k, _ in SPELL_CATEGORIES}
+    assert ability_rows(None)["rows"] == [] and trait_rows(None)["rows"] == []
+
+
+if __name__ == "__main__":
+    test_spell_reference()
+    print("spell reference ok")
