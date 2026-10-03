@@ -179,3 +179,87 @@
   document.getElementById('envRefresh').addEventListener('click', refresh);
   refresh().then(resetForm);
 })();
+
+(() => {
+  const anchor = document.getElementById('server-environments');
+  if (!anchor) return;
+  const API = '/character-editor/client-cache';
+  const section = document.createElement('section');
+  section.id = 'client-dat-cache';
+  section.innerHTML = `
+    <h2>Client DAT cache</h2>
+    <p class="muted">Item DAT metadata and embedded icons are cached on first use. You can optionally pre-extract the complete item DAT surface once so Character Editor and other item views never parse those records while rendering. Source DAT size/mtime changes invalidate only the affected cached category.</p>
+    <div class="table-wrap" style="padding:14px">
+      <div id="clientCacheSummary" class="muted">Loading cache status…</div>
+      <div id="clientCacheSources" style="margin-top:10px"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <button type="button" id="clientCacheBuildAll">Build all item DAT cache</button>
+        <button type="button" id="clientCacheRefresh">Refresh status</button>
+        <button type="button" id="clientCacheClear">Clear cache</button>
+      </div>
+      <div id="clientCacheProgress" class="muted" style="margin-top:9px"></div>
+    </div>`;
+  anchor.insertAdjacentElement('afterend', section);
+
+  const summary = section.querySelector('#clientCacheSummary');
+  const sourcesBox = section.querySelector('#clientCacheSources');
+  const progress = section.querySelector('#clientCacheProgress');
+  const buildButton = section.querySelector('#clientCacheBuildAll');
+  const fmtBytes = n => {
+    const value = Number(n || 0);
+    if (value < 1024) return `${value} B`;
+    if (value < 1024*1024) return `${(value/1024).toFixed(1)} KB`;
+    return `${(value/1024/1024).toFixed(1)} MB`;
+  };
+  async function call(path, options) {
+    const r = await fetch(API + path, options);
+    const j = await r.json().catch(() => ({detail:r.statusText}));
+    if (!r.ok) throw new Error(j.detail || r.statusText);
+    return j;
+  }
+  async function refreshCache() {
+    try {
+      const j = await call('/status.json');
+      summary.innerHTML = `<strong>${j.cached_rows}/${j.total_records}</strong> records cached · <strong>${j.available_rows}</strong> real item records · <strong>${fmtBytes(j.total_bytes)}</strong> on disk ${j.complete ? '<span class="chip">COMPLETE</span>' : '<span class="chip">LAZY</span>'}<div class="mono muted" style="margin-top:4px">${j.client_root || ''}</div>`;
+      sourcesBox.innerHTML = (j.sources||[]).map(s => `<div style="display:flex;gap:8px;align-items:center;margin:3px 0"><span style="min-width:120px">${s.category}</span><span class="chip">${s.cached_count}/${s.record_count}</span><span class="mono muted">${s.rom_path}</span></div>`).join('');
+      return j;
+    } catch (e) {
+      summary.textContent = `Cache unavailable: ${e.message}`;
+      sourcesBox.innerHTML = '';
+      throw e;
+    }
+  }
+  async function buildAll() {
+    buildButton.disabled = true;
+    try {
+      const status = await refreshCache();
+      const sources = status.sources || [];
+      let done = 0;
+      for (const source of sources) {
+        progress.textContent = `Building ${source.category} (${done+1}/${sources.length})…`;
+        const result = await call('/build-source', {
+          method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({category:source.category})
+        });
+        done += 1;
+        progress.textContent = `Built ${source.category}: ${result.available} items, ${result.empty} empty slots, ${result.failed} failures in ${result.elapsed_seconds}s. (${done}/${sources.length})`;
+        await refreshCache();
+      }
+      progress.textContent = `Complete. Built/refreshed ${sources.length} item DAT categories.`;
+    } catch (e) {
+      progress.textContent = `Build stopped: ${e.message}`;
+    } finally {
+      buildButton.disabled = false;
+    }
+  }
+  section.querySelector('#clientCacheRefresh').addEventListener('click', refreshCache);
+  buildButton.addEventListener('click', buildAll);
+  section.querySelector('#clientCacheClear').addEventListener('click', async () => {
+    if (!confirm('Clear the cached client item metadata and icons? They will be recreated lazily as needed.')) return;
+    try {
+      const result = await call('/clear', {method:'POST'});
+      progress.textContent = `Cleared ${fmtBytes(result.bytes_removed)}. Lazy extraction remains enabled.`;
+      await refreshCache();
+    } catch (e) { progress.textContent = e.message; }
+  });
+  refreshCache();
+})();
