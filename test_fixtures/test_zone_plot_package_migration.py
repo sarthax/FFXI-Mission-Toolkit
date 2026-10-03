@@ -1,18 +1,32 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import zone_plot as legacy
 from workbench.devtools.spatial import zone_plot as canonical
+from workbench.runtime import legacy_settings
 from workbench.runtime.paths import DATA_ROOT
 
 
 def test_root_module_is_packaged_implementation():
+    # The root alias now passes through active_zone_plot, which patches and returns the mature
+    # canonical module rather than maintaining a second backend implementation.
     assert legacy is canonical
     assert canonical.EDIT_LOG == DATA_ROOT / "zoneplot_edit_log.sql"
 
 
-def test_server_root_uses_package_safe_settings_bridge(tmp_path, monkeypatch):
+def test_server_root_uses_named_active_environment_by_default(tmp_path, monkeypatch):
+    active_root = tmp_path / "lsb-test"
+    profile = SimpleNamespace(profile_id=7, family="lsb", root_path=active_root)
+    monkeypatch.setattr(legacy_settings, "get_active_server_profile", lambda: profile)
+    monkeypatch.setattr(legacy_settings, "get_active_server_root", lambda: active_root)
+
+    assert canonical._server_root() == active_root
+    assert canonical.get_server() == "lsb"
+
+
+def test_explicit_topaz_and_dsp_selectors_remain_legacy_compatible(tmp_path, monkeypatch):
     topaz = tmp_path / "topaz"
     dsp = tmp_path / "dsp"
     monkeypatch.setattr(canonical, "get_topaz_root", lambda: topaz)
@@ -22,19 +36,41 @@ def test_server_root_uses_package_safe_settings_bridge(tmp_path, monkeypatch):
     assert canonical._server_root("dsp") == dsp
 
 
-def test_get_and_set_server_delegate_to_narrow_setting_bridge(monkeypatch):
-    stored = {"value": "topaz"}
-    monkeypatch.setattr(canonical, "get_zoneplot_server", lambda: stored["value"])
-    monkeypatch.setattr(canonical, "set_zoneplot_server", lambda value: stored.__setitem__("value", value))
-    monkeypatch.setattr(canonical, "get_dsp_root", lambda: Path("/configured/dsp"))
+def test_unique_family_selector_activates_named_profile(monkeypatch):
+    selected = []
+    profile = SimpleNamespace(profile_id=11, family="dsp", root_path=Path("/configured/dsp"))
+    monkeypatch.setattr(legacy_settings, "get_active_server_profile", lambda: None)
+    monkeypatch.setattr(legacy_settings, "get_server_profiles", lambda include_disabled=False: [profile])
+    monkeypatch.setattr(
+        legacy_settings,
+        "set_active_server_profile",
+        lambda profile_id: selected.append(profile_id) or profile,
+    )
 
-    assert canonical.get_server() == "topaz"
-    canonical.set_server("dsp")
-    assert stored["value"] == "dsp"
-    assert canonical.get_server() == "dsp"
+    result = canonical.set_server("dsp")
+    assert result is profile
+    assert selected == [11]
+
+
+def test_ambiguous_family_selector_requires_named_environment(monkeypatch):
+    profiles = [
+        SimpleNamespace(profile_id=1, family="lsb", root_path=Path("/live")),
+        SimpleNamespace(profile_id=2, family="lsb", root_path=Path("/test")),
+    ]
+    monkeypatch.setattr(legacy_settings, "get_active_server_profile", lambda: None)
+    monkeypatch.setattr(legacy_settings, "get_server_profiles", lambda include_disabled=False: profiles)
+
+    try:
+        canonical.set_server("lsb")
+    except ValueError as exc:
+        assert "Multiple LSB environments" in str(exc)
+    else:
+        raise AssertionError("family-only selection must not guess between Live/Test profiles")
 
 
 def test_set_server_preserves_missing_dsp_guard(monkeypatch):
+    monkeypatch.setattr(legacy_settings, "get_active_server_profile", lambda: None)
+    monkeypatch.setattr(legacy_settings, "get_server_profiles", lambda include_disabled=False: [])
     monkeypatch.setattr(canonical, "get_dsp_root", lambda: None)
 
     try:

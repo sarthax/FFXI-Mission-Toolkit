@@ -5,6 +5,9 @@ The mature root ``item_edit.py`` implementation is preserved byte-for-byte in
 ``Path(__file__).parent`` and imports the root compatibility names ``item_dat_tools`` and
 ``zone_plot``. Execute it with the historical root filename while supplying the canonical
 packaged dependencies so relocation does not alter write, backup, or journal behavior.
+
+Generic live-server access is routed through the active-environment Zone Plot adapter so Item
+Editor follows the same named Live/Test/Dev/Backup profile as Character Editor and Server tools.
 """
 from __future__ import annotations
 
@@ -13,7 +16,7 @@ import sys
 from pathlib import Path
 from types import ModuleType
 
-from workbench.devtools.spatial import zone_plot as _zone_plot
+from workbench.devtools.spatial import active_zone_plot as _zone_plot
 from workbench.editors.items import dat_tools as _dat_tools
 from workbench.runtime.paths import REPO_ROOT
 

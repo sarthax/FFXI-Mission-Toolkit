@@ -22,7 +22,7 @@ from workbench.client.models import look_decode as look
 from workbench.client.models import mob_model_tables
 from workbench.client.models import resolver as client_model_resolver
 from workbench.client.models import schedule_dump as msd
-from workbench.devtools.spatial import zone_plot
+from workbench.devtools.spatial import active_zone_plot as zone_plot
 from workbench.runtime.legacy_settings import get_ffxi_install
 
 
@@ -100,7 +100,7 @@ def _pool_reference_counts(cu) -> dict[int, int]:
             return {}
 
 
-def _collect_server_models(server: str) -> dict[int, dict]:
+def _collect_server_models(server=None) -> dict[int, dict]:
     rows: dict[int, dict] = {}
     db = zone_plot._db(server)
     cu = db.cursor()
@@ -175,10 +175,11 @@ def _collect_server_models(server: str) -> dict[int, dict]:
     return rows
 
 
-def build_catalog(server: str | None = None, refresh: bool = False) -> list[dict]:
-    server = server or zone_plot.get_server()
+def build_catalog(server=None, refresh: bool = False) -> list[dict]:
     ffxi_path = get_ffxi_install() or ""
-    key = (server, ffxi_path)
+    environment = zone_plot.get_environment() if server is None else None
+    source_key = zone_plot.get_environment_key() if server is None else str(server)
+    key = (source_key, ffxi_path)
     if not refresh and key in _CACHE:
         return _CACHE[key]
 
@@ -223,7 +224,9 @@ def build_catalog(server: str | None = None, refresh: bool = False) -> list[dict
         rec["source_kinds"] = sorted(rec["source_kinds"])
         rec["reference_count"] = rec["mob_references"] + rec["npc_references"]
         rec["primary_name"] = rec["names"][0] if rec["names"] else f"Model {mid}"
-        rec["source_server"] = server
+        rec["source_server"] = source_key
+        if environment is not None:
+            rec["source_environment"] = environment
         out.append(rec)
 
     _CACHE[key] = out
@@ -252,7 +255,7 @@ def _haystack(row: dict) -> str:
 def search_catalog(
     q: str = "",
     *,
-    server: str | None = None,
+    server=None,
     limit: int = 100,
     refresh: bool = False,
 ) -> dict:
@@ -261,7 +264,9 @@ def search_catalog(
     matched = rows if not query else [row for row in rows if query in _haystack(row)]
     limit = max(1, min(int(limit), 500))
     return {
-        "server": server or zone_plot.get_server(),
+        "server": str(server) if server is not None else zone_plot.get_server(),
+        "environment": zone_plot.get_environment() if server is None else None,
+        "environment_key": zone_plot.get_environment_key() if server is None else str(server),
         "query": q or "",
         "total": len(rows),
         "matched": len(matched),
@@ -276,7 +281,7 @@ def correlate(
     model_id: int | None = None,
     file_id: int | None = None,
     rom_path: str | None = None,
-    server: str | None = None,
+    server=None,
 ) -> list[dict]:
     rows = build_catalog(server)
     norm_path = (rom_path or "").replace("\\", "/").casefold()
