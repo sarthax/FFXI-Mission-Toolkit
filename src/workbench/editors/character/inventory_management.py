@@ -1,9 +1,9 @@
 """Guarded offline inventory row management for the Character Editor.
 
 This layer manages existing ``char_inventory`` rows without decoding or rewriting the opaque
-``extra`` payload.  DSP, Topaz, and LSB share the verified core row contract.  Operations are
+``extra`` payload. DSP, Topaz, and LSB share the verified core row contract. Operations are
 explicitly limited to quantity changes, moves to containers with directly verifiable capacity,
-and removals.  Equipped or bazaar-listed rows are protected from destructive/move operations.
+and removals. Equipped or bazaar-listed rows are protected from destructive/move operations.
 """
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ from hashlib import sha256
 from typing import Any
 
 from .adapters.inventory import CORE_COLUMNS, inspect_inventory_contract
+from .audit import attach_committed_audit
 from .inventory_slots import CAPACITY_COLUMNS, CONTAINERS, inspect_slots
 from .item_catalog import ItemCatalogService
 from .schema import discover_character_schema
@@ -328,7 +329,13 @@ def apply_inventory_management(connection, plan: InventoryManagementPlan, *, app
             cursor.close()
 
         connection.commit()
-        return {
+        after = None if plan.action == "remove" else dict(source_now)
+        if after is not None and plan.action == "quantity":
+            after["quantity"] = plan.quantity_after
+        if after is not None and plan.action == "move":
+            after["location"] = plan.destination_location
+            after["slot"] = plan.destination_slot
+        result = {
             "status": "committed",
             "char_id": plan.char_id,
             "action": plan.action,
@@ -339,6 +346,24 @@ def apply_inventory_management(connection, plan: InventoryManagementPlan, *, app
             "destination_location": plan.destination_location,
             "destination_slot": plan.destination_slot,
         }
+        return attach_committed_audit(
+            result,
+            operation=f"inventory.{plan.action}",
+            char_id=plan.char_id,
+            adapter_family=plan.adapter_family,
+            target={
+                "table": "char_inventory",
+                "source_location": plan.source_location,
+                "source_slot": plan.source_slot,
+                "destination_location": plan.destination_location,
+                "destination_slot": plan.destination_slot,
+                "item_id": int(plan.source.get("itemId") or 0),
+            },
+            before=source_now,
+            after=after,
+            metadata={"source_fingerprint": plan.source_fingerprint},
+            undo_supported=True,
+        )
     except Exception:
         try:
             connection.rollback()
