@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 241,
+  "route_count": 244,
   "routes": [
     {
       "method": "GET",
@@ -898,6 +898,30 @@
       "home": "Tools",
       "section": "Editors > Zone Editor",
       "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/{zid}/capture_paths.json",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/{zid}/capture_paths/{capture_id}.json",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/zoneplot/from_capture",
+      "home": "Tools",
+      "section": "Editors > Zone Editor",
+      "role": "redirect",
       "disposition": "KEEP"
     },
     {

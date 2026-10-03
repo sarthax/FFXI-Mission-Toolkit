@@ -78,7 +78,7 @@ main.capture-detail-page{padding:8px 10px 24px}
   <div class="item"><div class="k">Client build</div><div class="v mono">{{ detail.client_build or '—' }}</div></div>
   <div class="item"><div class="k">Video / OCR</div><div class="v">{% if detail.video_url %}<a class="inline" href="{{ detail.video_url }}" target="_blank" rel="noopener">Open linked video</a>{% else %}<span class="muted">No linked video</span>{% endif %}{% if detail.ocr_run_id %} &middot; <a class="inline" href="/ocr/{{ detail.ocr_run_id }}">OCR transcript</a>{% endif %}</div></div>
   <div class="item"><div class="k">Source</div><div class="v mono">{{ detail.source_path }}</div></div>
-  <div class="item"><div class="k">PC trace</div><div class="v">{% if detail.pc_path_zones %}{% for zdb in detail.pc_path_zones %}<a class="chip" href="/captures/plot?capture_id={{ detail.capture_id }}&pc=1&zone_db={{ zdb | urlencode }}">{{ zdb }}</a>{% endfor %}{% else %}<span class="muted">none</span>{% endif %}</div></div>
+  <div class="item"><div class="k">PC trace</div><div class="v">{% if detail.pc_path_zones %}{% for zdb in detail.pc_path_zones %}<a class="chip" href="/zoneplot/from_capture?capture_id={{ detail.capture_id }}&pc=1&zone_db={{ zdb | urlencode }}" title="Open in Zone Editor (Paths tab)">{{ zdb }}</a>{% endfor %}{% else %}<span class="muted">none</span>{% endif %}</div></div>
 </div>
 
 {% if detail.health and detail.health.status == "OK" %}
@@ -271,7 +271,8 @@ main.capture-detail-page{padding:8px 10px 24px}
   <input id="capture-npc-filter" type="search" placeholder="filter name / id / zone" style="min-width:190px">
   <span id="capture-npc-visible" class="muted"></span>
   <span class="sp"></span>
-  <a class="chip" href="/captures/plot_all?capture_id={{ detail.capture_id }}">Plot all paths</a>
+  <a class="chip" href="/zoneplot/from_capture?capture_id={{ detail.capture_id }}" title="Open every PathLog trace in the Zone Editor Paths tab">Plot all paths</a>
+  <a class="chip" href="/captures/plot_all?capture_id={{ detail.capture_id }}" title="Legacy 2D overlay">2D</a>
 </div>
 <div class="table-wrap"><table id="capture-npc-table">
   <tr><th>id</th><th>name</th><th>model</th><th>pos</th><th>hp%</th><th>zone</th><th></th></tr>
@@ -283,7 +284,7 @@ main.capture-detail-page{padding:8px 10px 24px}
     <td class="mono">{% if x is not none %}({{ '%.1f'|format(x) }}, {{ '%.1f'|format(y) }}, {{ '%.1f'|format(z) }}){% else %}?{% endif %}</td>
     <td>{{ hpp if hpp is not none else '?' }}</td>
     <td>{{ zone_db }}</td>
-    <td><a class="inline" href="/captures/plot?capture_id={{ detail.capture_id }}&entity_id={{ eid }}">plot path</a></td>
+    <td><a class="inline" href="/zoneplot/from_capture?capture_id={{ detail.capture_id }}&entity_id={{ eid }}">plot path</a></td>
   </tr>
   {% endfor %}
 </table></div>

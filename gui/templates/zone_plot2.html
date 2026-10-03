@@ -83,7 +83,7 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
 </div>
 <div id="zmain">
 <div id="lpanel" class="zpanel dense-panel">
-  <div class="ztabs dense-tabs" id="ltabs"><button class="tabb" data-lt="ents">Entities</button><button class="tabb" data-lt="layers">Layers</button><button class="tabb" data-lt="rev">Review</button><button class="tabb" data-lt="tools">Tools</button></div>
+  <div class="ztabs dense-tabs" id="ltabs"><button class="tabb" data-lt="ents">Entities</button><button class="tabb" data-lt="layers">Layers</button><button class="tabb" data-lt="paths">Paths</button><button class="tabb" data-lt="rev">Review</button><button class="tabb" data-lt="tools">Tools</button></div>
   <div class="zpane" id="lp-ents">
   <h3 id="matchhdr">Matches <span class="muted" id="cnt"></span></h3>
   <div id="listfilters" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:4px;font-size:11px">
@@ -121,6 +121,32 @@ body.zp2-focus #lpanel,body.zp2-focus #rpanel{display:none}
   </details>
   <details class="zdet" open><summary>Summary</summary><div id="sum" class="mono"></div></details>
   </div>
+  </div>
+  <div class="zpane" id="lp-paths" hidden>
+  <div class="muted" style="font-size:10px;margin-bottom:4px">Real PathLog traces from ingested captures, drawn on this zone's mesh. Legs are drawn separately, so teleports and respawns are never joined by a false line.</div>
+  <label>Capture <select id="pcap" style="width:170px"></select></label>
+  <div id="pcapInfo" class="mono muted" style="font-size:10px;margin:2px 0"></div>
+  <div class="chips">
+    <label class="inl"><span>PC trace</span><input type="checkbox" id="pShowPc" checked></label>
+    <label class="inl"><span>Waypoints</span><input type="checkbox" id="pShowPts"></label>
+    <label class="inl"><span>Start / end</span><input type="checkbox" id="pShowEnds" checked></label>
+    <label class="inl"><span>Spawn marks</span><input type="checkbox" id="pShowSpawn" checked></label>
+    <label class="inl"><span>On top of mesh</span><input type="checkbox" id="pOnTop" checked></label>
+  </div>
+  <div style="display:flex;gap:4px;margin:4px 0"><input type="search" id="pFilter" placeholder="filter name / id" style="flex:1;min-width:0"><label class="inl" style="margin:0" title="Hide entities with fewer than 3 samples (fixed NPCs/props)"><span>moving</span><input type="checkbox" id="pMoving" checked></label></div>
+  <div style="display:flex;gap:4px;margin-bottom:4px"><button id="pAll" type="button">All</button><button id="pNone" type="button">None</button><button id="pFrame" type="button" title="Frame the visible paths">Frame</button><span id="pCount" class="muted mono" style="font-size:10px;align-self:center"></span></div>
+  <div id="pList" style="max-height:260px;overflow:auto;font:10px monospace;border:1px solid var(--border)"></div>
+  <details class="zdet" open><summary>Playback (selected path)</summary>
+    <div id="pSelName" class="mono" style="font-size:10px;margin:2px 0">Click a path in the list.</div>
+    <input type="range" id="pScrub" min="0" max="0" value="0" style="width:100%" disabled>
+    <div style="display:flex;gap:4px;align-items:center"><button id="pPlay" type="button" disabled>Play</button><label style="margin:0;gap:3px">speed <select id="pSpeed" style="width:60px"><option>1</option><option selected>4</option><option>16</option><option>64</option></select></label></div>
+    <div id="pReadout" class="mono muted" style="font-size:10px;margin-top:3px"></div>
+  </details>
+  <details class="zdet" open><summary>Export waypoints (selected path)</summary>
+    <label>Min spacing <input type="number" id="pSpacing" value="3" min="0.5" max="50" step="0.5" style="width:60px"></label>
+    <div style="display:flex;gap:4px"><button id="pCopyLua" type="button" disabled>Copy Lua</button><button id="pCopyJson" type="button" disabled>Copy JSON</button></div>
+    <div id="pExportMsg" class="mono muted" style="font-size:10px;margin-top:3px;white-space:pre-wrap">Raw capture x/y/z, thinned by spacing. Verify each point with !checknav before writing it to SQL.</div>
+  </details>
   </div>
   <div class="zpane" id="lp-rev" hidden>
     <details class="zdet" open><summary>Missing scripts (NPCs)</summary>
@@ -1384,6 +1410,133 @@ const liveClock = new THREE.Clock();
 (function loop(){ requestAnimationFrame(loop); controls.update(); updateLabels(); updateHeadingArrow(); updateSelectionVisual(); updateCompass();
   if (waterMaterials.length>0){ const t=liveClock.getElapsedTime(); for(const m of waterMaterials) m.uniforms.time.value=t; }
   renderer.render(scene,camera); lr.render(scene,camera); })();
+
+// ---- Paths tab: real PathLog traces from captures --------------------------------------------
+const pathGroup=new THREE.Group(); pathGroup.renderOrder=24; scene.add(pathGroup);
+const pathCursor=new THREE.Mesh(new THREE.SphereGeometry(1,16,12),new THREE.MeshBasicMaterial({color:0xffffff,depthTest:false,transparent:true})); pathCursor.renderOrder=40; pathCursor.visible=false; scene.add(pathCursor);
+let pathData=null, pathZid=null, pathSel=null, pathVisible=new Set(), pathPlayTimer=null, pathReqGen=0;
+const pathPending=(()=>{ const q=new URLSearchParams(location.search); return q.get('capture')?{capture:+q.get('capture'),entity:+(q.get('entity')||0),pc:q.get('pc')==='1'}:null; })();
+function pathColor(i,n){ return new THREE.Color().setHSL((i/Math.max(n,1))%1,0.7,0.6); }
+function pV(pt,lift){ return new THREE.Vector3(pt[0],-pt[1]+(lift===undefined?0.4:lift),-pt[2]); }
+function pathLen(legs){ let t=0; for(const l of legs) for(let i=1;i<l.points.length;i++){ const a=l.points[i-1],b=l.points[i]; t+=Math.hypot(b[0]-a[0],b[2]-a[2]); } return Math.round(t*10)/10; }
+function pathItems(){
+  if(!pathData) return [];
+  const items=pathData.npcs.map((n,i)=>({key:'n'+n.id,kind:'npc',id:n.id,name:n.name,legs:n.legs,spawn:n.spawn,n:n.n_points,len:n.length,color:pathColor(i,pathData.npcs.length)}));
+  if(pathData.pc.length){ const n=pathData.pc.reduce((a,l)=>a+l.points.length,0); items.unshift({key:'pc',kind:'pc',id:0,name:'PC trace (capturer)',legs:pathData.pc,spawn:null,n,len:pathLen(pathData.pc),color:new THREE.Color(0xe0c840)}); }
+  return items;
+}
+function pathFiltered(){
+  const q=$('pFilter').value.trim().toLowerCase(), mv=$('pMoving').checked;
+  return pathItems().filter(it=>{
+    if(it.kind==='npc'){ if(mv && it.n<3) return false; if(q && !(it.name.toLowerCase().includes(q)||String(it.id).includes(q))) return false; }
+    return true; });
+}
+function clearPathScene(){ while(pathGroup.children.length){ const o=pathGroup.children.pop(); o.geometry?.dispose(); o.material?.dispose?.(); } }
+function drawPaths(){
+  clearPathScene();
+  const top=$('pOnTop').checked, showPts=$('pShowPts').checked, ends=$('pShowEnds').checked, spawn=$('pShowSpawn').checked;
+  for(const it of pathItems()){
+    if(!pathVisible.has(it.key)) continue;
+    if(it.kind==='pc' && !$('pShowPc').checked) continue;
+    const sel=pathSel===it.key, col=sel?new THREE.Color(0xffffff):it.color;
+    for(const leg of it.legs){
+      const pts=leg.points.map(p=>pV(p));
+      if(pts.length>1){ const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:col,depthTest:!top,transparent:true,opacity:sel?1:.85})); l.renderOrder=24; pathGroup.add(l); }
+      if(showPts||pts.length===1||sel){ const m=new THREE.Points(new THREE.BufferGeometry().setFromPoints(pts),new THREE.PointsMaterial({color:col,size:sel?5:3,sizeAttenuation:false,depthTest:!top})); m.renderOrder=25; pathGroup.add(m); }
+      if(ends && pts.length>0){
+        for(const [pt,c] of [[pts[0],0x3f9e5b],[pts[pts.length-1],0xe08080]]){ const m=new THREE.Mesh(new THREE.SphereGeometry(sel?1.1:.7,10,8),new THREE.MeshBasicMaterial({color:c,depthTest:!top,transparent:true})); m.position.copy(pt); m.renderOrder=26; pathGroup.add(m); }
+      }
+    }
+    if(spawn && it.spawn){ const m=new THREE.Mesh(new THREE.OctahedronGeometry(sel?1.4:.9),new THREE.MeshBasicMaterial({color:it.color,wireframe:true,depthTest:!top})); m.position.set(it.spawn.x,-it.spawn.y+.4,-it.spawn.z); m.renderOrder=26; pathGroup.add(m); }
+  }
+}
+function updatePathCount(){ $('pCount').textContent=pathVisible.size+' shown / '+pathItems().length; }
+function renderPathList(){
+  const items=pathFiltered(), box=$('pList'); box.innerHTML='';
+  for(const it of items){
+    const row=document.createElement('div'); row.dataset.key=it.key;
+    row.style.cssText='display:grid;grid-template-columns:16px 10px 1fr auto;gap:4px;align-items:center;padding:2px 4px;border-bottom:1px solid rgba(255,255,255,.08);cursor:pointer'+(pathSel===it.key?';background:#665c16;color:#fff':'');
+    const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=pathVisible.has(it.key);
+    cb.onclick=ev=>{ ev.stopPropagation(); cb.checked?pathVisible.add(it.key):pathVisible.delete(it.key); drawPaths(); updatePathCount(); };
+    const sw=document.createElement('span'); sw.style.cssText='width:10px;height:10px;border-radius:2px;background:#'+it.color.getHexString();
+    const nm=document.createElement('span'); nm.textContent=it.name+(it.kind==='npc'?' #'+it.id:''); nm.style.cssText='overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    const ct=document.createElement('span'); ct.className='muted'; ct.textContent=it.n+'p '+it.len+'y'+(it.legs.length>1?' '+it.legs.length+'L':'');
+    row.append(cb,sw,nm,ct); row.onclick=()=>selectPath(it.key,true); box.appendChild(row);
+  }
+  updatePathCount();
+}
+function frameBox(b){
+  const c=b.getCenter(new THREE.Vector3()), sz=b.getSize(new THREE.Vector3()), d=Math.max(sz.x,sz.z,30);
+  controls.target.copy(c);
+  if(camera.isOrthographicCamera){ camera.position.set(c.x,c.y+d,c.z+.001); camera.zoom=Math.max(.05,Math.min(12,180/d)); camera.lookAt(c); camera.updateProjectionMatrix(); }
+  else camera.position.set(c.x+d*.6,c.y+d*.7,c.z+d*.6);
+  controls.update();
+}
+function framePaths(){
+  const b=new THREE.Box3(); let any=false;
+  for(const it of pathItems()) if(pathVisible.has(it.key)) for(const l of it.legs) for(const p of l.points){ b.expandByPoint(pV(p)); any=true; }
+  if(any) frameBox(b);
+}
+function flatPoints(it){ return it.legs.flatMap(l=>l.points); }
+function selectPath(key,frame){
+  pathSel=key; stopPathPlay(); const it=pathItems().find(x=>x.key===key);
+  pathCursor.visible=false;
+  if(!it){ $('pSelName').textContent='Click a path in the list.'; for(const id of ['pScrub','pPlay','pCopyLua','pCopyJson']) $(id).disabled=true; drawPaths(); renderPathList(); return; }
+  pathVisible.add(key);
+  const pts=flatPoints(it); $('pSelName').textContent=it.name+(it.kind==='npc'?' #'+it.id:'')+' — '+it.n+' samples, '+it.len+' yalms, '+it.legs.length+' leg(s)';
+  $('pScrub').max=Math.max(pts.length-1,0); $('pScrub').value=0; $('pScrub').disabled=pts.length<2; $('pPlay').disabled=pts.length<2; $('pCopyLua').disabled=$('pCopyJson').disabled=pts.length<1;
+  drawPaths(); renderPathList();
+  if(frame){ const b=new THREE.Box3(); pts.forEach(p=>b.expandByPoint(pV(p))); frameBox(b); }
+  setPathCursor(0);
+}
+function setPathCursor(i){
+  const it=pathItems().find(x=>x.key===pathSel); if(!it) return; const pts=flatPoints(it); const p=pts[Math.max(0,Math.min(i,pts.length-1))]; if(!p) return;
+  pathCursor.visible=true; pathCursor.position.copy(pV(p)); pathCursor.scale.setScalar(Math.max(.8,zoneExtent/300));
+  $('pReadout').textContent='#'+i+'/'+(pts.length-1)+'  x '+p[0].toFixed(2)+'  y '+p[1].toFixed(2)+'  z '+p[2].toFixed(2)+'  dir '+p[3];
+}
+function stopPathPlay(){ if(pathPlayTimer){ clearInterval(pathPlayTimer); pathPlayTimer=null; } $('pPlay').textContent='Play'; }
+$('pScrub').oninput=()=>setPathCursor(+$('pScrub').value);
+$('pPlay').onclick=()=>{
+  if(pathPlayTimer){ stopPathPlay(); return; }
+  $('pPlay').textContent='Pause'; const sc=$('pScrub');
+  pathPlayTimer=setInterval(()=>{ let v=+sc.value+ +$('pSpeed').value; if(v>+sc.max){ v=+sc.max; stopPathPlay(); } sc.value=v; setPathCursor(v); },100);
+};
+function exportPts(){
+  const it=pathItems().find(x=>x.key===pathSel); if(!it) return null; const min=+$('pSpacing').value||3; const out=[];
+  for(const leg of it.legs){ let last=null; leg.points.forEach((p,i)=>{ const end=i===leg.points.length-1; if(!last||end||Math.hypot(p[0]-last[0],p[2]-last[2])>=min){ out.push(p); last=p; } }); }
+  return out;
+}
+async function copyText(t,msg){ try{ await navigator.clipboard.writeText(t); $('pExportMsg').textContent=msg; }catch(e){ $('pExportMsg').textContent='Clipboard blocked; text logged to the console.'; console.log(t); } }
+$('pCopyLua').onclick=()=>{ const o=exportPts(); if(!o) return; copyText('{\n'+o.map(p=>'    { x = '+p[0].toFixed(3)+', y = '+p[1].toFixed(3)+', z = '+p[2].toFixed(3)+' },').join('\n')+'\n}',o.length+' waypoints copied (Lua table). Verify each with !checknav before using in SQL.'); };
+$('pCopyJson').onclick=()=>{ const o=exportPts(); if(!o) return; copyText(JSON.stringify(o.map(p=>({x:p[0],y:p[1],z:p[2],dir:p[3]}))),o.length+' waypoints copied (JSON).'); };
+for(const id of ['pShowPc','pShowPts','pShowEnds','pShowSpawn','pOnTop']) $(id).onchange=drawPaths;
+$('pFilter').oninput=renderPathList; $('pMoving').onchange=renderPathList;
+$('pAll').onclick=()=>{ pathFiltered().forEach(it=>pathVisible.add(it.key)); drawPaths(); renderPathList(); };
+$('pNone').onclick=()=>{ pathVisible.clear(); drawPaths(); renderPathList(); };
+$('pFrame').onclick=framePaths;
+async function loadCapturePaths(cid){
+  const gen=++pathReqGen; pathData=null; pathVisible.clear(); pathSel=null; stopPathPlay(); pathCursor.visible=false; clearPathScene();
+  if(!cid){ renderPathList(); $('pcapInfo').textContent=''; return; }
+  $('pcapInfo').textContent='Loading…';
+  const j=await (await fetch(`/zoneplot/${pathZid}/capture_paths/${cid}.json`)).json();
+  if(gen!==pathReqGen) return;
+  pathData=j; const moving=j.npcs.filter(n=>n.n_points>=3).length;
+  $('pcapInfo').textContent=j.npcs.length+' NPC/mob traces ('+moving+' moving), PC trace '+(j.pc.length?pathLen(j.pc)+' yalms':'none');
+  pathItems().forEach(it=>{ if(it.kind==='pc'||(it.n>=3&&pathVisible.size<40)) pathVisible.add(it.key); });
+  renderPathList(); drawPaths();
+}
+async function pathsZoneChanged(){
+  const zid=+$('zone').value; if(pathZid===zid) return; pathZid=zid;
+  pathReqGen++; pathData=null; pathVisible.clear(); pathSel=null; stopPathPlay(); pathCursor.visible=false; clearPathScene(); renderPathList(); $('pcap').innerHTML=''; $('pcapInfo').textContent='';
+  const j=await (await fetch(`/zoneplot/${zid}/capture_paths.json`)).json();
+  if(pathZid!==zid) return;
+  const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  $('pcap').innerHTML='<option value="">— none —</option>'+j.captures.map(c=>`<option value="${c.capture_id}">#${c.capture_id} ${esc(c.mission||c.title)} · ${c.npc_entities} ent${c.pc_points?' + PC':''}</option>`).join('');
+  if(!j.captures.length) $('pcapInfo').textContent='No ingested capture has PathLog data for this zone.';
+  if(pathPending){ const pp=pathPending; pathPending.done=true;
+    if($('pcap').querySelector(`option[value="${pp.capture}"]`)){ $('pcap').value=String(pp.capture); leftTab('paths'); await loadCapturePaths(pp.capture); if(pp.pc||pp.entity){ pathVisible.clear(); updatePathCount(); } if(pp.pc) selectPath('pc',true); else if(pp.entity) selectPath('n'+pp.entity,true); else framePaths(); } }
+}
+$('pcap').onchange=()=>loadCapturePaths(+$('pcap').value||0);
 const qz=new URLSearchParams(location.search); if(qz.get('zone')) $('zone').value=qz.get('zone');
 fillInst();
 if(!qz.get('zone') && savedUiState?.instance && $('inst').querySelector(`option[value="${savedUiState.instance}"]`)) $('inst').value=String(savedUiState.instance);
@@ -1567,7 +1720,7 @@ $('tplStamp').onclick=()=>{ const t=tplAll()[+$('tplSel').value]; if(!t||!Z) ret
   lgItems=t.items.map(i=>({x:c.x+i.dx,y:c.y+i.dy,z:c.z+i.dz,r:i.r,role:i.role,text:i.text,color:i.color})); if($('lgSnap').checked) lgItems.forEach(lgSnapY);
   drawGen(lgItems.map((it,i)=>({x:it.x,y:it.y,z:it.z,color:it.color,text:`${i+1} ${it.text} r${it.r}`}))); $('lgMsg').textContent=`Stamped "${t.name}": ${lgItems.length} marker(s). Place uses the Add source.`; };
 $('tplDel').onclick=()=>{ const l=tplAll(), i=+$('tplSel').value; if(isNaN(i)||!l[i]||!confirm('Delete template "'+l[i].name+'"?')) return; l.splice(i,1); try{ localStorage.setItem(TPL_KEY,JSON.stringify(l)); }catch(e){} renderTemplates(); };
-function zoneChanged(){ scriptInfo=null; scriptInfoZid=null; clearFlags(); $('rvScriptsList').innerHTML=''; $('rvScriptsMsg').textContent=''; $('rvDupList').innerHTML=''; $('rvDupMsg').textContent=''; renderGroups(); renderBookmarks(); renderTemplates(); }
+function zoneChanged(){ if(typeof pathsZoneChanged==='function') pathsZoneChanged(); scriptInfo=null; scriptInfoZid=null; clearFlags(); $('rvScriptsList').innerHTML=''; $('rvScriptsMsg').textContent=''; $('rvDupList').innerHTML=''; $('rvDupMsg').textContent=''; renderGroups(); renderBookmarks(); renderTemplates(); }
 // bulk align / distribute / mirror
 function bulkOp(op){
   if(multiSelected.size<2){ $('bulk-msg').textContent='Select 2+ entities.'; return; }
@@ -1592,7 +1745,7 @@ document.querySelectorAll('[data-bop]').forEach(b=>b.onclick=()=>bulkOp(b.datase
 
 // ---- tabs + editor ----
 function editActive(){ return $('tab-add').hidden; }
-function leftTab(t){ ['ents','layers','rev','tools'].forEach(x=>{ $('lp-'+x).hidden=x!==t; }); document.querySelectorAll('[data-lt]').forEach(b=>b.classList.toggle('on',b.dataset.lt===t)); try{localStorage.setItem('zoneEditor2.leftTab',t);}catch(e){} }
+function leftTab(t){ ['ents','layers','paths','rev','tools'].forEach(x=>{ $('lp-'+x).hidden=x!==t; }); document.querySelectorAll('[data-lt]').forEach(b=>b.classList.toggle('on',b.dataset.lt===t)); try{localStorage.setItem('zoneEditor2.leftTab',t);}catch(e){} }
 function toolTab(t){ $('tt-gen').hidden=t!=='gen'; $('tab-add').hidden=t!=='add'; $('tab-backup').hidden=t!=='backup';
   document.querySelectorAll('[data-tt]').forEach(b=>b.classList.toggle('on',b.dataset.tt===t));
   if(t==='backup') refreshBackups();

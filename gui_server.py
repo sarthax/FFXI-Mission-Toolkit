@@ -60,6 +60,7 @@ from workbench.core.services.scripted_behavior_visualizer import (
 )
 from workbench.core.services import timeline_alignment, packet_correlation
 from workbench.core.services import capture_integrity, capture_spatial, capture_related_evidence
+from workbench.captures import paths as capture_paths
 from workbench.core.services.server_catalog_identity import sync_server_catalog_entities
 from workbench.runtime.interaction_reconstruction import reconstruct_interaction_candidates
 from workbench.analyzers.server import lua_events
@@ -8635,6 +8636,48 @@ def zoneplot_data(zid: int, instance: int = 0):
     d = zone_plot.zone_data(zid, instance)
     d["obj"] = True  # /mesh.zmesh builds the cache on demand; empty response if the zone has no geometry
     return JSONResponse(d)
+
+
+@app.get("/zoneplot/{zid}/capture_paths.json")
+def zoneplot_capture_paths_list(zid: int):
+    """Captures with PathLog data in this zone, for the Zone Editor's Paths tab."""
+    con = get_con()
+    try:
+        return JSONResponse({"captures": capture_paths.captures_for_zone(con, zid)})
+    finally:
+        con.close()
+
+
+@app.get("/zoneplot/{zid}/capture_paths/{capture_id}.json")
+def zoneplot_capture_paths(zid: int, capture_id: int):
+    """Full per-leg PathLog traces (PC + every NPC/mob) for one capture in this zone."""
+    con = get_con()
+    try:
+        return JSONResponse(capture_paths.capture_paths(con, zid, capture_id))
+    finally:
+        con.close()
+
+
+@app.get("/zoneplot/from_capture")
+def captures_zoneplot_redirect(capture_id: int, entity_id: int = 0, pc: int = 0, zone_db: str = ""):
+    """Capture-section entry point into the Zone Editor's Paths tab (replaces the old per-entity
+    2D/3D plot links): resolves the capture's zone and deep-links capture/entity/PC selection."""
+    con = get_con()
+    if not zone_db:
+        if entity_id:
+            row = con.execute("SELECT zone_db FROM capture_npc_entries WHERE capture_id=? AND entity_id=?",
+                              (capture_id, entity_id)).fetchone()
+            zone_db = row[0] if row else ""
+        if not zone_db:
+            cap = con.execute("SELECT zones FROM captures WHERE capture_id=?", (capture_id,)).fetchone()
+            zones = json.loads(cap["zones"]) if cap and cap["zones"] else []
+            zone_db = zones[0] if zones else ""
+    zoneid = zoneid_for_zone_db(con, zone_db) if zone_db else None
+    con.close()
+    if zoneid is None:
+        return PlainTextResponse("Could not resolve this capture's zone to a zone id.", status_code=404)
+    qs = f"zone={zoneid}&capture={capture_id}" + ("&pc=1" if pc else "") + (f"&entity={entity_id}" if entity_id else "")
+    return RedirectResponse(url=f"/zoneplot2?{qs}", status_code=303)
 
 
 @app.get("/zoneplot/{zid}/reach.json")

@@ -439,7 +439,8 @@ def main():
     assert "capture_structured_records" in evidence_search_html
     assert "/captures/9/timeline" in evidence_search_html
     capture_detail_template = (TEMPLATES / "capture_detail.html").read_text(encoding="utf-8")
-    assert "/captures/plot?capture_id={{ detail.capture_id }}" in capture_detail_template
+    # Path plotting now opens the Zone Editor Paths tab; the legacy 2D overlay stays as a secondary link.
+    assert "/zoneplot/from_capture?capture_id={{ detail.capture_id }}" in capture_detail_template
     assert "/captures/plot_all?capture_id={{ detail.capture_id }}" in capture_detail_template
 
     domains_html = render("domain_assault.html", "/domains/assault")
