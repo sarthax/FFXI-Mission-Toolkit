@@ -104,7 +104,7 @@
       .ce-equip-manager .ce-head{display:flex;gap:12px;align-items:center;margin-bottom:8px}.ce-equip-manager .ce-head h3{margin:0}
       .ce-equip-manager .ce-augcard{display:grid;grid-template-columns:90px minmax(130px,1.3fr) minmax(110px,1fr) auto;gap:8px;align-items:center;padding:8px;margin-bottom:6px;border:1px solid var(--border,#444);border-radius:6px}
       .ce-equip-manager .ce-augcard select{min-width:0;padding:3px 4px}.ce-equip-manager .ce-augcard.set{border-color:#8a6500;background:rgba(245,197,66,.08)}
-      .ce-equip-manager .ce-native{margin-bottom:6px;font-size:12px}.ce-equip-manager .ce-native ul{margin:4px 0 0;padding-left:18px;columns:2}.ce-equip-manager .ce-augnote{grid-column:1/-1;font-size:12px;opacity:.85}.ce-equip-manager .ce-total{margin:10px 0;padding:8px;border-radius:6px;background:rgba(255,255,255,.06);font-size:13px}
+      .ce-equip-manager .ce-native{margin-bottom:6px;font-size:12px}.ce-equip-manager .ce-native ul{margin:4px 0 0;padding-left:18px;columns:2}.ce-equip-manager .ce-native ul.ce-cond{columns:1}.ce-equip-manager .ce-augnote{grid-column:1/-1;font-size:12px;opacity:.85}.ce-equip-manager .ce-total{margin:10px 0;padding:8px;border-radius:6px;background:rgba(255,255,255,.06);font-size:13px}
       .ce-equip-manager .ce-aug-actions{display:flex;gap:8px;align-items:center}
       @media(max-width:860px){.ce-equip-manager .ce-split{grid-template-columns:1fr}.ce-equip-manager .ce-augcard{grid-template-columns:1fr 1fr}}</style>
       <div class="ce-progress-head"><strong>Equipped Items</strong>${offline ? pill('offline editing enabled','ok') : pill('editing locked until offline','warn')}<span class="ce-progress-source">Pick a piece of gear, then choose the bonus stats on it. This changes only this character's copy; the Items editor changes the item for everyone.</span></div>
@@ -153,8 +153,11 @@
       const changed = draft.some((a, i) => a.id !== s.augments[i].id || a.value !== s.augments[i].value);
       const totals = draft.filter(a => a.id).map(describeAug).filter(Boolean);
       const nat = (s.native || []).map(n => `<li title="${esc(n.comment || '')}"><strong>${esc(n.name)} ${signed(n.value)}${n.unit === 'percent' ? '%' : n.unit === 'seconds' ? 's' : ''}</strong>${n.comment && n.comment.toLowerCase() !== n.name.toLowerCase() ? ` <span class="ce-muted">— ${esc(n.comment)}</span>` : ''}</li>`).join('');
+      const cond = [...(s.latent || []), ...(s.pet || [])];
+      const condHtml = cond.length ? `<div class="ce-native"><strong>Conditional &amp; pet bonuses</strong> <span class="ce-muted">(only while the condition is met)</span><ul class="ce-cond">${cond.map(c => `<li><strong>${esc(c.text)}</strong> <span class="ce-muted">— ${esc(c.when)}</span></li>`).join('')}</ul></div>` : '';
       detail.innerHTML = `<div class="ce-head">${iconImg(s.item_id, 48)}<div><h3>${esc(prettyName(s))}</h3><div class="ce-muted">${esc(s.carried ? s.group + ' · not equipped' : s.slot_name + ' · equipped')}</div></div></div>
         <div class="ce-native"><strong>Built-in bonuses</strong> <span class="ce-muted">(every copy of this item has these; edit them in the Items editor)</span>${nat ? `<ul>${nat}</ul>` : '<div class="ce-muted">None defined by the server.</div>'}</div>
+        ${condHtml}
         <h4 style="margin:10px 0 6px">Player augments</h4>
         ${draft.map((a, i) => `<div class="ce-augcard${a.id ? ' set' : ''}"><strong>Augment ${i + 1}</strong>${statSelect(a, i)}${amountSelect(a, i)}<button data-i="${i}" data-f="clear" ${a.id && offline ? '' : 'disabled'} title="Remove this augment">Clear</button>${note(a)}</div>`).join('')}
         <div class="ce-total"><strong>Bonuses on this item:</strong> ${totals.length ? esc(totals.join(' · ')) : '<span class="ce-muted">none</span>'}</div>

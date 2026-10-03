@@ -142,6 +142,96 @@ def native_bonuses(connection, item_ids, root: Path | str | None) -> dict[int, l
     return out
 
 
+def _latent_defs(root: Path | None) -> dict[int, tuple[str, str]]:
+    """Latent id -> (enum name, // comment) from the server's latent_effect.h."""
+    path = root / "src" / "map" / "latent_effect.h" if root else None
+    out: dict[int, tuple[str, str]] = {}
+    if path and path.is_file():
+        for m in re.finditer(r"^[ 	]*LATENT_([A-Z0-9_]+)[ 	]*=[ 	]*(\d+)[ 	]*,?[ 	]*(?://[ 	]*(.*))?$", path.read_text(encoding="utf-8", errors="replace"), re.M):
+            out[int(m.group(2))] = (m.group(1), (m.group(3) or "").strip())
+    return out
+
+
+def _pet_types(root: Path | None) -> dict[int, str]:
+    path = root / "src" / "map" / "modifier.h" if root else None
+    out: dict[int, str] = {}
+    if path and path.is_file():
+        block = re.search(r"enum class PetModType\s*\{(.*?)\}", path.read_text(encoding="utf-8", errors="replace"), re.S)
+        for m in re.finditer(r"([A-Za-z_]+)\s*=\s*(\d+)", block.group(1) if block else ""):
+            out[int(m.group(2))] = m.group(1)
+    return out
+
+
+_JOBS = {1: "Warrior", 2: "Monk", 3: "White Mage", 4: "Black Mage", 5: "Red Mage", 6: "Thief", 7: "Paladin", 8: "Dark Knight",
+         9: "Beastmaster", 10: "Bard", 11: "Ranger", 12: "Samurai", 13: "Ninja", 14: "Dragoon", 15: "Summoner", 16: "Blue Mage",
+         17: "Corsair", 18: "Puppetmaster", 19: "Dancer", 20: "Scholar", 21: "Geomancer", 22: "Rune Fencer"}
+
+
+def _latent_condition(latent_id: int, param: int, defs: dict[int, tuple[str, str]]) -> str:
+    name, comment = defs.get(latent_id, (None, ""))
+    if name is None:
+        return f"Condition #{latent_id} (parameter {param})"
+    head, _, ptext = comment.partition("PARAM:")
+    head = head.strip(" -")
+    labels = {int(k): v.strip() for k, v in re.findall(r"(\d+):\s*([A-Za-z' \-]+?)(?=\s+\d+:|,|$)", ptext)}
+    if latent_id in (8, 22) and param in _JOBS:
+        labels = {param: _JOBS[param]}
+    if param in labels:
+        shown = labels[param].title() if labels[param].isupper() else labels[param]
+    else:
+        shown = str(param)
+    if not head:
+        head = name.replace("_", " ").lower()
+    if re.search(r"[%#]", head):
+        text = re.sub(r"[%#]", lambda _m: shown + ("%" if "%" in _m.group(0) else ""), head, count=1)
+    elif ptext.strip():
+        text = f"{head} ({shown})"
+    else:
+        text = head
+    text = re.sub(r"\b(hp|mp|tp)\b", lambda m: m.group(1).upper(), text)
+    text = text.replace("checks if player region is under nation's control", "Region control")
+    return text[:1].upper() + text[1:]
+
+
+def conditional_bonuses(connection, item_ids, root: Path | str | None) -> dict[int, dict[str, list[dict[str, Any]]]]:
+    """Latent (conditional) and pet bonuses per item, from item_latents / item_mods_pet."""
+    ids = sorted({int(i) for i in item_ids if i})
+    out: dict[int, dict[str, list[dict[str, Any]]]] = {}
+    if not ids:
+        return out
+    root = Path(root) if root else None
+    mods = _mod_names(root)
+    latents = _latent_defs(root)
+    pets = _pet_types(root)
+
+    def mod_text(mod_id: int, value: int) -> str:
+        name, _ = mods.get(mod_id, (None, ""))
+        return f"{_friendly(name, mod_id)} {value:+d}"
+
+    queries = (
+        ("latent", "SELECT `itemId`,`modId`,`value`,`latentId`,`latentParam` FROM `item_latents` WHERE `itemId` IN ({q}) ORDER BY `itemId`,`latentId`,`latentParam`,`modId`"),
+        ("pet", "SELECT `itemId`,`modId`,`value`,`petType` FROM `item_mods_pet` WHERE `itemId` IN ({q}) ORDER BY `itemId`,`petType`,`modId`"),
+    )
+    for i in range(0, len(ids), 500):
+        chunk = ids[i:i + 500]
+        for kind, sql in queries:
+            cursor = connection.cursor()
+            try:
+                cursor.execute(sql.format(q=",".join(["%s"] * len(chunk))), tuple(chunk))
+                rows = cursor.fetchall() or []
+            except Exception:
+                rows = []
+            finally:
+                cursor.close()
+            for r in rows:
+                bucket = out.setdefault(int(r[0]), {"latent": [], "pet": []})[kind]
+                if kind == "latent":
+                    bucket.append({"when": _latent_condition(int(r[3]), int(r[4]), latents), "text": mod_text(int(r[1]), int(r[2]))})
+                else:
+                    bucket.append({"when": f"Pet: {pets.get(int(r[3]), 'Pet type ' + str(r[3]))}", "text": mod_text(int(r[1]), int(r[2]))})
+    return out
+
+
 def equipment_state(connection, char_id: int, root: Path | str | None = None) -> dict[str, Any]:
     cursor = connection.cursor()
     try:
@@ -174,6 +264,8 @@ def equipment_state(connection, char_id: int, root: Path | str | None = None) ->
     native = native_bonuses(connection, [r["item_id"] for r in rows], root)
     for r in rows:
         r["native"] = native.get(r["item_id"], [])
+        cond = conditional_bonuses(connection, [r["item_id"]], root).get(r["item_id"], {}) if r["item_id"] else {}
+        r["latent"], r["pet"] = cond.get("latent", []), cond.get("pet", [])
     return {"char_id": int(char_id), "slots": rows}
 
 
@@ -212,8 +304,10 @@ def inventory_augmentables(connection, char_id: int, root: Path | str | None = N
                     "inventory_slot": int(slot), "item_id": item_id, "name": names[item_id],
                     "extra_hex": raw.hex(), "augments": decode_augments(raw)})
     native = native_bonuses(connection, [o["item_id"] for o in out], root)
+    cond_all = conditional_bonuses(connection, [o["item_id"] for o in out], root)
     for o in out:
         o["native"] = native.get(o["item_id"], [])
+        o["latent"], o["pet"] = cond_all.get(o["item_id"], {}).get("latent", []), cond_all.get(o["item_id"], {}).get("pet", [])
     return {"char_id": int(char_id), "items": out}
 
 
