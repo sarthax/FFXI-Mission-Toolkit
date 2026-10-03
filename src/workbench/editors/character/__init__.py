@@ -11,6 +11,7 @@ from .service import CharacterEditorService
 # Character Editor subrouter, which gui.py subsequently mounts on the live application.
 from . import server_profiles_gui as _server_profiles_gui  # noqa: F401,E402
 from . import state_surface_gui as _state_surface_gui  # noqa: F401,E402
+from . import client_cache_gui as _client_cache_gui  # noqa: F401,E402
 
 __all__ = [
     "ActionPreview",
