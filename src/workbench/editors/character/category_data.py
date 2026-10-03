@@ -13,6 +13,7 @@ from .campaign_catalog import campaign_catalog
 from .categories import TAB_DEFINITIONS, get_tab
 from .eminence_catalog import eminence_catalog
 from .eminence_codec import EminenceCodecError, decode_eminence
+from .merit_catalog import merit_catalog
 from .packed_codecs import PackedCodecError, decode_packed_field
 from .progression_catalog import progression_catalog
 from .quest_catalog import quest_catalog
@@ -48,6 +49,7 @@ def build_category_payload(service, char_id: int, tab_key: str) -> dict[str, Any
     tables: dict[str, list[dict[str, Any]]] = {}
     packed: dict[str, dict[str, Any]] = {}
     editors: dict[str, list[dict[str, Any]]] = {}
+    catalogs: dict[str, Any] = {}
     capability_map = service.schema.capabilities or {}
     catalog_cache: dict[str, Any] | None = None
 
@@ -108,10 +110,17 @@ def build_category_payload(service, char_id: int, tab_key: str) -> dict[str, Any
         if editable:
             editors["chars"] = editable
 
+    if tab.key == "merits-jobpoints":
+        catalogs["merits"] = merit_catalog(
+            getattr(service, "server_root", None),
+            service.adapter_family,
+        )
+
     return {
         "tab": tab.as_dict(),
         "char_id": int(char_id),
         "tables": tables,
         "packed": packed,
         "editors": editors,
+        "catalogs": catalogs,
     }
