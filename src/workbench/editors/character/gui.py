@@ -97,6 +97,15 @@ def character_editor_jobs_reference():
         raise _error(exc, 503)
 
 
+@router.get("/reference/appearance.json")
+def character_editor_appearance_reference():
+    try:
+        from .spell_reference import appearance_items
+        return JSONResponse(_safe(appearance_items(get_active_server_root())))
+    except Exception as exc:
+        raise _error(exc, 503)
+
+
 @router.get("/reference/spells-abilities.json")
 def character_editor_spell_reference():
     try:

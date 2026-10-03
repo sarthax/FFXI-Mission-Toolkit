@@ -129,3 +129,25 @@ def jobs_reference(server_root: Path | str | None) -> dict[str, Any]:
                 except ValueError:
                     continue
     return {"skills": skills, "ranks": ranks, "caps": caps, "jobs": list(JOB_ABBR)}
+
+
+def appearance_items(server_root: Path | str | None) -> dict[str, Any]:
+    """Equippable items with their client model id, for the Profile appearance pickers.
+
+    ``char_look`` stores an item's model id (``item_equipment.MId``) per slot; ``char_style`` stores
+    the item id of the lockstyle item. ``slot`` is the item's equip-slot bitmask (1 << slot index).
+    """
+    root = Path(server_root) if server_root else None
+    rows: list[list[Any]] = []
+    # Topaz names the table item_equipment, DSP/LSB item_armor; the columns are identical.
+    for fname, table in (("item_equipment", "item_equipment"), ("item_armor", "item_armor")):
+        path = root / "sql" / f"{fname}.sql" if root else None
+        if not (path and path.is_file()):
+            continue
+        for v in _insert_rows(path, table):
+            try:
+                rows.append([int(v[0]), _title(v[1]), int(v[5]), int(v[6]), int(v[8])])
+            except (ValueError, IndexError):
+                continue
+        break
+    return {"available": bool(rows), "columns": ["id", "name", "model", "shield_size", "slot"], "rows": rows}
