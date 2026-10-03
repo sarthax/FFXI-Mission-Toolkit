@@ -47,6 +47,38 @@ def test_row_write_paths_attach_durable_audit():
         assert "undo_supported=True" in text, name
 
 
+def test_scalar_audit_preserves_full_before_and_after_rows():
+    text = (ROOT / "src" / "workbench" / "editors" / "character" / "scalar_transactions.py").read_text(encoding="utf-8")
+    assert 'operation="scalar.update"' in text
+    assert "after = dict(plan.before or {})" in text
+    assert "after.update(plan.changes)" in text
+    assert 'target={"table": plan.table, "selector": dict(plan.selector)}' in text
+    assert "before=plan.before" in text
+    assert "after=after" in text
+    assert "undo_supported=True" in text
+    assert text.index("connection.commit()") < text.rindex("attach_committed_audit")
+
+
+def test_packed_audit_preserves_raw_blobs_and_decoded_metadata():
+    text = (ROOT / "src" / "workbench" / "editors" / "character" / "packed_transactions.py").read_text(encoding="utf-8")
+    assert 'operation=f"packed.{plan.capability}"' in text
+    assert 'before={"blob": plan.before_blob, "decoded": plan.before}' in text
+    assert 'after={"blob": plan.after_blob, "decoded": plan.after}' in text
+    assert 'target={"table": "chars", "column": plan.column, "capability": plan.capability}' in text
+    assert "undo_supported=True" in text
+    assert text.index("connection.commit()") < text.rindex("attach_committed_audit")
+
+
+def test_eminence_reuses_packed_edit_plan_and_is_covered_by_packed_audit():
+    text = (ROOT / "src" / "workbench" / "editors" / "character" / "eminence_transactions.py").read_text(encoding="utf-8")
+    assert "from .packed_transactions import PackedEditPlan" in text
+    assert "-> PackedEditPlan:" in text
+    assert 'capability = "eminence"' in text
+
+
 if __name__ == "__main__":
     test_audit_failure_does_not_hide_committed_database_result()
     test_row_write_paths_attach_durable_audit()
+    test_scalar_audit_preserves_full_before_and_after_rows()
+    test_packed_audit_preserves_raw_blobs_and_decoded_metadata()
+    test_eminence_reuses_packed_edit_plan_and_is_covered_by_packed_audit()
