@@ -17,6 +17,8 @@ db_backups/
 mission_reports/
 data/zoneplot_backups/
 data/zoneplot_edit_log.sql
+data/character_editor_audit.jsonl
+data/character_editor_backups/
 __pycache__/
 *.pyc
 .venv/
