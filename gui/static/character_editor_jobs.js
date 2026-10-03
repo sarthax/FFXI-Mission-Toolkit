@@ -30,6 +30,11 @@
     shell.className = 'ce-progression ce-jobs-manager';
     shell.innerHTML = '<div class="ce-progress-empty">Loading jobs and skills…</div>';
     box.prepend(shell);
+    // The manager replaces the generic per-table editors for these tables.
+    const sweep = () => box.querySelectorAll('details.ce-data-block').forEach(b => { if (/^\s*char_(exp|jobs|skills)/.test(b.textContent)) b.remove(); });
+    sweep();
+    new MutationObserver(sweep).observe(box, { childList: true });
+    setTimeout(sweep, 1500);
 
     if (!refCache) {
       try { refCache = await (await fetch('/character-editor/reference/jobs-skills.json')).json(); }

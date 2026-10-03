@@ -37,6 +37,10 @@
     shell.className = 'ce-progression ce-spellbook';
     shell.innerHTML = '<div class="ce-progress-empty">Loading spells, abilities, traits and mounts…</div>';
     box.prepend(shell);
+    const sweep = () => box.querySelectorAll('details.ce-data-block').forEach(b => { if (/^\s*char_spells/.test(b.textContent)) b.remove(); });
+    sweep();
+    new MutationObserver(sweep).observe(box, { childList: true });
+    setTimeout(sweep, 1500);
 
     let ref, learnedIds, kiPayload;
     try {
