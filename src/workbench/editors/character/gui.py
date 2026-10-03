@@ -72,6 +72,66 @@ def character_editor_characters(q: str = "", limit: int = Query(50, ge=1, le=200
         raise _error(exc, 503)
 
 
+@router.get("/spells.json")
+def character_editor_spells(q: str = "", limit: int = Query(200, ge=1, le=1000)):
+    try:
+        with _context() as ctx:
+            return JSONResponse({"rows": _safe(ctx.service.search_spells(q, limit=limit))})
+    except Exception as exc:
+        raise _error(exc, 503)
+
+
+@router.get("/characters/{char_id}/spells.json")
+def character_editor_learned_spells(char_id: int):
+    try:
+        with _context() as ctx:
+            return JSONResponse({"spell_ids": ctx.service.learned_spells(char_id)})
+    except Exception as exc:
+        raise _error(exc, 503)
+
+
+@router.post("/characters/{char_id}/spells/preview")
+async def character_editor_preview_spell(char_id: int, request: Request):
+    try:
+        body = await request.json()
+        with _context() as ctx:
+            result = ctx.service.preview_spell_edit(
+                char_id,
+                int(body.get("spell_id")),
+                action=str(body.get("action") or ""),
+            )
+            return JSONResponse(_safe(result))
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.post("/characters/{char_id}/spells/apply")
+async def character_editor_apply_spell(char_id: int, request: Request):
+    try:
+        body = await request.json()
+        if body.get("approved") is not True:
+            raise HTTPException(status_code=400, detail="Explicit approved=true confirmation is required")
+        spell_id = int(body.get("spell_id"))
+        action = str(body.get("action") or "")
+        expected_before = body.get("expected_learned_before")
+        with _context() as ctx:
+            if isinstance(expected_before, bool):
+                preview = ctx.service.preview_spell_edit(char_id, spell_id, action=action)
+                if preview.get("learned_before") is not expected_before:
+                    raise HTTPException(status_code=409, detail="Character spell state changed since preview; preview the edit again")
+            result = ctx.service.apply_spell_edit_request(
+                char_id,
+                spell_id,
+                action=action,
+                approved=True,
+            )
+            return JSONResponse(_safe(result))
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise _error(exc)
+
+
 @router.get("/items.json")
 def character_editor_items(q: str = "", limit: int = Query(100, ge=1, le=500)):
     try:

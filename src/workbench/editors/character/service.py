@@ -15,6 +15,7 @@ from .packed_transactions import apply_packed_edit, build_packed_edit_plan
 from .scalar_transactions import apply_scalar_edit, build_scalar_edit_plan, editable_columns
 from .schema import CharacterSchema, discover_character_schema
 from .session_state import detect_online_state
+from .spell_transactions import apply_spell_edit, build_spell_edit_plan, learned_spell_ids, search_spell_catalog
 
 
 class CharacterEditorService:
@@ -148,6 +149,31 @@ class CharacterEditorService:
             )
         return apply_packed_edit(self.connection, plan, approved=approved)
 
+    def search_spells(self, query: str = "", *, limit: int = 200) -> list[dict[str, Any]]:
+        return search_spell_catalog(self.connection, query, limit=limit)
+
+    def learned_spells(self, char_id: int) -> list[int]:
+        return learned_spell_ids(self.connection, char_id)
+
+    def preview_spell_edit(self, char_id: int, spell_id: int, *, action: str) -> dict[str, Any]:
+        return build_spell_edit_plan(
+            self.connection,
+            char_id=char_id,
+            spell_id=spell_id,
+            action=action,
+            adapter_family=self.adapter_family,
+        ).as_dict()
+
+    def apply_spell_edit_request(self, char_id: int, spell_id: int, *, action: str, approved: bool = False) -> dict[str, Any]:
+        plan = build_spell_edit_plan(
+            self.connection,
+            char_id=char_id,
+            spell_id=spell_id,
+            action=action,
+            adapter_family=self.adapter_family,
+        )
+        return apply_spell_edit(self.connection, plan, approved=approved)
+
     def search_items(self, query: str = "", *, limit: int = 100, client_snapshot_id: str | None = None) -> list[dict[str, Any]]:
         catalog = ItemCatalogService(self.connection, client_snapshot_id=client_snapshot_id)
         return [record.as_dict() for record in catalog.search(query, limit=limit)]
@@ -267,6 +293,7 @@ class CharacterEditorService:
                 "inventory_basic_offline",
                 "scalar_character_offline",
                 "packed_missions_keyitems_offline",
+                "spells_offline",
             ],
         }
 
@@ -284,5 +311,6 @@ class CharacterEditorService:
                 "inventory_basic_offline",
                 "scalar_character_offline",
                 "packed_missions_keyitems_offline",
+                "spells_offline",
             ],
         }
