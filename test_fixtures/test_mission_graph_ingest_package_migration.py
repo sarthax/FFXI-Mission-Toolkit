@@ -29,6 +29,17 @@ def main():
     assert root is canonical
     assert legacy is canonical
 
+    root_source = (REPO_ROOT / "mission_graph_ingest.py").read_text(encoding="utf-8")
+    cli_source = (REPO_ROOT / "src" / "workbench" / "devtools" / "missions" / "graph_ingest_cli.py").read_text(encoding="utf-8")
+    assert "ArgumentParser" not in root_source
+    assert "graph_store.init_db" not in root_source
+    assert "extract_and_project_lsb_mission" not in root_source
+    assert "graph_ingest_cli import main" in root_source
+    assert "ArgumentParser" in cli_source
+    assert '"--write"' in cli_source
+    assert "graph_store.init_db" in cli_source
+    assert "graph_ingest.persist_mission_graph" in cli_source
+
     code = r'''
 from workbench.devtools.missions import graph_ingest
 
