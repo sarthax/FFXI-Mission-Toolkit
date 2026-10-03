@@ -20,6 +20,7 @@ from .audit_gui import router as audit_router
 from .blacklist_transactions import apply_blacklist_edit, blacklist_rows, build_blacklist_edit_plan
 from .category_data import build_category_payload
 from .factory import open_character_editor
+from .equipment_augments import apply_augment_plan, augment_catalog, build_augment_plan, equipment_state
 from .inventory_management import apply_inventory_management, build_inventory_management_plan
 
 router = APIRouter(prefix="/character-editor", tags=["Character Editor"])
@@ -430,6 +431,60 @@ async def character_editor_apply_inventory_management(char_id: int, request: Req
                 raise HTTPException(status_code=409, detail="Inventory row changed since preview; preview the operation again")
             result = apply_inventory_management(ctx.service.connection, plan, approved=True)
             return JSONResponse(_safe(result))
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.get("/reference/augments.json")
+def character_editor_augment_reference():
+    try:
+        return JSONResponse(_safe(augment_catalog(get_active_server_root())))
+    except Exception as exc:
+        raise _error(exc, 503)
+
+
+@router.get("/characters/{char_id}/equipment.json")
+def character_editor_equipment(char_id: int):
+    try:
+        with _context() as ctx:
+            return JSONResponse(_safe(equipment_state(ctx.service.connection, char_id)))
+    except Exception as exc:
+        raise _error(exc, 503)
+
+
+def _augment_plan(ctx, char_id: int, body: dict):
+    return build_augment_plan(
+        ctx.service.connection, char_id=char_id, location=int(body.get("location")), slot=int(body.get("slot")),
+        augments=list(body.get("augments") or []), adapter_family=ctx.service.adapter_family,
+    )
+
+
+@router.post("/characters/{char_id}/augments/preview")
+async def character_editor_preview_augments(char_id: int, request: Request):
+    try:
+        body = await request.json()
+        with _context() as ctx:
+            return JSONResponse(_safe(_augment_plan(ctx, char_id, body).as_dict()))
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.post("/characters/{char_id}/augments/apply")
+async def character_editor_apply_augments(char_id: int, request: Request):
+    try:
+        body = await request.json()
+        if body.get("approved") is not True:
+            raise HTTPException(status_code=400, detail="Explicit approved=true confirmation is required")
+        expected = str(body.get("expected_source_fingerprint") or "")
+        if not expected:
+            raise HTTPException(status_code=400, detail="A preview source fingerprint is required")
+        with _context() as ctx:
+            plan = _augment_plan(ctx, char_id, body)
+            if plan.source_fingerprint != expected:
+                raise HTTPException(status_code=409, detail="Inventory row changed since preview; preview again")
+            return JSONResponse(_safe(apply_augment_plan(ctx.service.connection, plan, approved=True)))
     except HTTPException:
         raise
     except Exception as exc:

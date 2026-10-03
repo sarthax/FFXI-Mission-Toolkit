@@ -36,6 +36,11 @@ TAB_DEFINITIONS = (
         True, True,
     ),
     CharacterTab(
+        "equipment", "Equipped Items", ("equipment",),
+        "Currently equipped gear per slot with its per-character augments (core char_inventory.extra layout).",
+        True, True,
+    ),
+    CharacterTab(
         "profile", "Profile", ("profile", "appearance", "style"),
         "Rank, fame, profile values, character appearance and lockstyle state.",
         True, True,
