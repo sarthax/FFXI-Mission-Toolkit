@@ -802,6 +802,15 @@ def _server_item_type(rows):
     return 0
 
 
+def _server_jobs_to_client(jobs):
+    """Server job masks put WAR at bit 0; the client DAT leaves bit 0 unused and puts WAR at bit 1."""
+    return None if jobs is None else int(jobs) << 1
+
+
+def _client_jobs_to_server(jobs):
+    return None if jobs is None else int(jobs) >> 1
+
+
 def compare_server_client(rows, client):
     """Compare only fields with confirmed server<->client mappings used by the write path."""
     if client is None:
@@ -815,7 +824,7 @@ def compare_server_client(rows, client):
     if eq is not None:
         specs.extend([
             ('level', eq.get('level'), client.get('level')),
-            ('jobs', eq.get('jobs'), client.get('jobs')),
+            ('jobs', _server_jobs_to_client(eq.get('jobs')), client.get('jobs')),
             ('slots', eq.get('slot'), client.get('slots')),
         ])
     weapon = rows.get('item_weapon')
@@ -1440,7 +1449,7 @@ def reconcile_item(item_id, field, direction, comment=""):
     table, column = RECONCILE_SERVER_FIELDS[field]
 
     if direction == "client_to_server":
-        return save_item_atomic(item_id, {table: {column: row["client"]}}, None, comment or f"reconcile {field}: client -> server")
+        return save_item_atomic(item_id, {table: {column: _client_jobs_to_server(row["client"]) if field == "jobs" else row["client"]}}, None, comment or f"reconcile {field}: client -> server")
 
     current = dat.capture_client_record(item_id)
     if current is None:
@@ -1459,7 +1468,7 @@ def reconcile_item(item_id, field, direction, comment=""):
         "flags": "flags", "level": "level", "jobs": "jobs",
         "delay": "delay", "skill": "skill",
     }[field]
-    patch = {client_key: row["server"]}
+    patch = {client_key: _server_jobs_to_client(row["server"]) if field == "jobs" else row["server"]}
     dat.validate_client_patch(item_id, patch)
     report = dat.patch_client_item(item_id, patch)
     _journal(comment or f"reconcile {field}: server -> client", [
@@ -1714,7 +1723,8 @@ def _map_to_client_fields(table, fields):
     if table == "item_equipment":
         for k in ("level", "jobs", "slot", "shieldSize"):
             if k in fields:
-                out["slots" if k == "slot" else ("shield_size" if k == "shieldSize" else k)] = fields[k]
+                v = _server_jobs_to_client(fields[k]) if k == "jobs" else fields[k]
+                out["slots" if k == "slot" else ("shield_size" if k == "shieldSize" else k)] = v
     elif table == "item_weapon":
         for k in ("dmg", "delay", "skill"):
             if k in fields:
@@ -1742,7 +1752,10 @@ def create_item(category, item_type, entry, effects=None, comment=""):
     item_type uses, all at that SAME id. Never invents an id -- the id comes only from a real
     free DAT slot found by item_dat_tools.free_slots(), per CLAUDE.md's core rule."""
     item_type = int(item_type)
-    client_result = dat.inject_client_item(category, entry)
+    client_entry = entry
+    if entry.get("jobs") is not None:
+        client_entry = {**entry, "jobs": _server_jobs_to_client(entry["jobs"])}  # draft carries the server-style mask
+    client_result = dat.inject_client_item(category, client_entry)
     item_id = client_result["item_id"]
 
     desired_effects = _normalize_effects(effects) if effects is not None else {"mods": [], "pet_mods": [], "latents": []}

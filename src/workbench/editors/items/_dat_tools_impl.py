@@ -1557,7 +1557,7 @@ def _patch_record(rec: bytearray, entry: dict, item_type: int, fmt: Optional[str
     layout = layout_for_type(item_type)
 
     if 'jobs_list' in entry and 'jobs' not in entry:
-        entry = {**entry, 'jobs': encode_jobs(entry['jobs_list'])}
+        entry = {**entry, 'jobs': encode_jobs(entry['jobs_list']) << 1}
     if 'flags_decoded' in entry and 'flags' not in entry:
         entry = {**entry, 'flags': encode_flags(entry['flags_decoded'])}
 
@@ -2294,7 +2294,7 @@ def item_to_dict(item: ItemRecord) -> dict:
     d.pop('dat', None)
     d['flags_decoded'] = decode_flags(d['flags'])
     if d.get('jobs'):
-        d['jobs_list'] = decode_jobs(d['jobs'])
+        d['jobs_list'] = decode_jobs(d['jobs'] >> 1)  # client mask: bit 0 unused, WAR = bit 1
     return d
 
 

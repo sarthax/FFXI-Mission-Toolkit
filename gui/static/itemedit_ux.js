@@ -511,6 +511,8 @@
     .ie-pane[data-pane=client] #datInfoCard,.ie-pane[data-pane=history]>.edit-card{margin-top:0!important}
     .ie-pane[data-pane=client] #datInfoCard{display:flex;flex-direction:column;min-height:0;flex:1;border:0;padding:0}
     .ie-pane[data-pane=client] #datInfoCard>h3{display:none}
+    #clientRecordGrid *,#datInfoCard .mono{overflow-wrap:anywhere;word-break:break-all;min-width:0}
+    #clientRecordGrid{max-width:100%}
     .ie-pane[data-pane=history]>.edit-card>h3 .hint{display:block;font-weight:400}`;
   document.head.appendChild(css4);
 
