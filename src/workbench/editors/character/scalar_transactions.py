@@ -9,6 +9,7 @@ from dataclasses import asdict, dataclass, field
 import re
 from typing import Any
 
+from .audit import attach_committed_audit
 from .schema import CharacterSchema, ColumnInfo, discover_character_schema
 from .session_state import detect_online_state
 
@@ -252,7 +253,28 @@ def apply_scalar_edit(connection, plan: ScalarEditPlan, *, approved: bool = Fals
         finally:
             cursor.close()
         connection.commit()
-        return {"status": "committed", "char_id": plan.char_id, "table": plan.table, "selector": plan.selector, "changes": plan.changes}
+        after = dict(plan.before or {})
+        after.update(plan.changes)
+        result = {
+            "status": "committed",
+            "char_id": plan.char_id,
+            "table": plan.table,
+            "selector": plan.selector,
+            "changes": plan.changes,
+            "before": plan.before,
+            "after": after,
+        }
+        return attach_committed_audit(
+            result,
+            operation="scalar.update",
+            char_id=plan.char_id,
+            adapter_family=plan.adapter_family,
+            target={"table": plan.table, "selector": dict(plan.selector)},
+            before=plan.before,
+            after=after,
+            metadata={"changes": dict(plan.changes)},
+            undo_supported=True,
+        )
     except Exception:
         try:
             connection.rollback()
