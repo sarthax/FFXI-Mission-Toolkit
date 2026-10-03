@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import json
 import re
 from typing import Any
 
@@ -99,10 +100,34 @@ def mission_catalog(server_root: Path | str | None) -> dict[str, Any]:
             "label": _label(symbol),
         }
 
+    if not result:
+        result = _parse_legacy_missions(path)
+
     return {
         "source": CatalogSource("missions.lua", path, True).as_dict(),
         "areas": {str(area): rows for area, rows in sorted(result.items())},
     }
+
+
+def _parse_legacy_missions(path: Path) -> dict[int, dict[int, dict[str, Any]]]:
+    """DSP/old-Topaz layout: flat ``SYMBOL = id;`` globals under ``--  Area Name (log_id)`` banners."""
+    banner = re.compile(r"^--\s+.*\((\d+)\)\s*$")
+    value = re.compile(r"^\s*([A-Z][A-Z0-9_]*)\s*=\s*(\d+)\s*;")
+    out: dict[int, dict[int, dict[str, Any]]] = {}
+    area: int | None = None
+    for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        match = banner.match(raw.strip())
+        if match:
+            area = int(match.group(1))
+            out.setdefault(area, {})
+            continue
+        match = value.match(raw)
+        if area is None or not match:
+            continue
+        symbol, raw_id = match.groups()
+        mission_id = int(raw_id)
+        out[area][mission_id] = {"id": mission_id, "symbol": symbol, "label": _label(symbol)}
+    return out
 
 
 def _parse_lua_keyitems(path: Path) -> dict[int, dict[str, Any]]:
@@ -140,6 +165,18 @@ def _parse_yaml_keyitems(path: Path) -> dict[int, dict[str, Any]]:
     return out
 
 
+_KEY_ITEM_CATEGORY_FILE = Path(__file__).with_name("key_item_categories.json")
+
+
+def _key_item_categories() -> tuple[list[str], dict[str, int]]:
+    """Client key-item category per id (Permanent / Temporary / Magical Maps ...), from Windower resources."""
+    try:
+        data = json.loads(_KEY_ITEM_CATEGORY_FILE.read_text(encoding="utf-8"))
+        return list(data["categories"]), dict(data["ids"])
+    except (OSError, ValueError, KeyError):
+        return [], {}
+
+
 def key_item_catalog(server_root: Path | str | None, adapter_family: str) -> dict[str, Any]:
     root = Path(server_root).resolve() if server_root else None
     family = str(adapter_family or "unknown").lower()
@@ -153,6 +190,10 @@ def key_item_catalog(server_root: Path | str | None, adapter_family: str) -> dic
         if not path.is_file():
             continue
         rows = _parse_yaml_keyitems(path) if kind.endswith(".yaml") else _parse_lua_keyitems(path)
+        categories, by_id = _key_item_categories()
+        for key_id, row in rows.items():
+            index = by_id.get(str(key_id))
+            row["category"] = categories[index] if index is not None else "Uncategorized"
         return {
             "source": CatalogSource(kind, path, True).as_dict(),
             "items": {str(key_id): row for key_id, row in sorted(rows.items())},

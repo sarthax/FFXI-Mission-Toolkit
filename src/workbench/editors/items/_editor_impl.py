@@ -18,6 +18,7 @@ from pathlib import Path
 
 import item_dat_tools as dat
 import zone_plot
+from workbench.editors.items._db_alias import item_db as _item_db
 
 DATA = Path(__file__).parent / "data"
 BACKUPS = DATA / "item_backups"
@@ -46,9 +47,14 @@ TYPE_TABLES = {
 # schema. Only columns with a CONFIRMED bit mapping (verified against C:\topaz source or
 # item_dat_tools' own vendored tables) are listed here -- per project rule, never invent a
 # schema. {table: {column: [(bit_value, label), ...]}}
+# item_basic.flags as the server itself reads it: ITEM_FLAG in src/map/items/item.h (identical in
+# the DSP and Topaz trees). item_dat_tools.ITEM_FLAGS uses different names for the same bits, so the
+# server column is labelled from the server's own enum.
+SERVER_ITEM_FLAGS = dict(dat.ITEM_FLAGS)
+
 BITMASK_SCHEMAS = {
     "item_basic": {
-        "flags": sorted(dat.ITEM_FLAGS.items()),
+        "flags": sorted(SERVER_ITEM_FLAGS.items()),
     },
     "item_equipment": {
         "jobs": [(1 << i, job) for i, job in enumerate(dat.JOBS)],
@@ -128,7 +134,15 @@ def bitmask_schema():
                 "width": spec["bits"],
                 "fields": [{"shift": shift, "label": label} for shift, label in spec["fields"]],
             }
-    for table, cols in ENUM_SCHEMAS.items():
+    enum_schemas = ENUM_SCHEMAS
+    try:
+        from workbench.editors.items import _db_alias
+        if _db_alias.is_dsp():  # DSP's MOGHOUSE_AURA enum differs from Topaz's moghancement ids
+            from workbench.editors.items import _enums_dsp
+            enum_schemas = {**ENUM_SCHEMAS, "item_furnishing": {"moghancement": sorted(_enums_dsp.MOGHANCEMENT.items())}}
+    except Exception:
+        pass
+    for table, cols in enum_schemas.items():
         result.setdefault(table, {})
         for col, options in cols.items():
             result[table][col] = {
@@ -357,7 +371,7 @@ def restore(bid):
     """Restore a backup across SQL and the exact captured client record when available."""
     b = json.loads((BACKUPS / f"{bid}.json").read_text())
     item_id = int(b["item_id"])
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     pre, lines = [], []
     saved_client = b.get("client_record")
     restore_target = saved_client.get("target") if saved_client else None
@@ -587,7 +601,7 @@ def item_usage(item_id: int, source_limit: int = 100) -> dict:
     """
     item_id = int(item_id)
     source_limit = max(0, min(int(source_limit), 500))
-    db = zone_plot._db()
+    db = _item_db()
     cu = db.cursor()
     refs = []
     coverage = {"database": True, "source_scripts": False, "graph": False}
@@ -716,7 +730,7 @@ def search(q, category="", min_level=-1, max_level=-1, job=-1, skill=-1, client_
     if client_state == "dat-only":
         return dat.search_dat_only(q, category=category, limit=limit)
     min_level, max_level, job, skill, limit = int(min_level), int(max_level), int(job), int(skill), int(limit)
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     where = ["b.name like %s"]
     params = [f"%{q}%"]
     if min_level >= 0:
@@ -788,17 +802,29 @@ def search(q, category="", min_level=-1, max_level=-1, job=-1, skill=-1, client_
     return out
 
 def _server_item_type(rows):
+    """The client DAT item type a server row set should correspond to.
+
+    Checked against real data (item_basic + client DAT, sample of ~165 items): armor that also
+    has a use effect (equipment + usable rows) is client type 3, not 1, and furnishings are
+    client type 0 (the DAT has no furnishing type), so neither is a mismatch."""
     if rows.get('item_weapon') is not None:
         return 4
+    if rows.get('item_equipment') is not None:
+        return 3
     if rows.get('item_usable') is not None:
         return 1
     if rows.get('item_puppet') is not None:
         return 5
-    if rows.get('item_furnishing') is not None:
-        return 6
-    if rows.get('item_equipment') is not None:
-        return 3
     return 0
+
+
+def _server_jobs_to_client(jobs):
+    """Server job masks put WAR at bit 0; the client DAT leaves bit 0 unused and puts WAR at bit 1."""
+    return None if jobs is None else int(jobs) << 1
+
+
+def _client_jobs_to_server(jobs):
+    return None if jobs is None else int(jobs) >> 1
 
 
 def compare_server_client(rows, client):
@@ -814,7 +840,7 @@ def compare_server_client(rows, client):
     if eq is not None:
         specs.extend([
             ('level', eq.get('level'), client.get('level')),
-            ('jobs', eq.get('jobs'), client.get('jobs')),
+            ('jobs', _server_jobs_to_client(eq.get('jobs')), client.get('jobs')),
             ('slots', eq.get('slot'), client.get('slots')),
         ])
     weapon = rows.get('item_weapon')
@@ -879,24 +905,25 @@ def get_item(item_id):
     """Full live row(s) for one item, across every table it actually appears in, plus its
     real client-DAT record (level/jobs/etc as the client itself sees them) for comparison."""
     item_id = int(item_id)
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     basic = _fetch(cu, "item_basic", [item_id])
     if basic is None:
         db.close()
         raise ValueError(f"item_basic.itemid={item_id} not found")
     rows = {"item_basic": basic}
+    _en = _enums()
     for table in ("item_equipment", "item_weapon", "item_usable", "item_puppet", "item_furnishing"):
         row = _fetch(cu, table, [item_id])
         if row is not None:
             rows[table] = row
     cu.execute("select modId, value from item_mods where itemId=%s order by modId", (item_id,))
-    mods = [{"modId": r[0], "value": r[1], "name": dat.MOD_NAMES.get(r[0])} for r in cu.fetchall()]
+    mods = [{"modId": r[0], "value": r[1], "name": _en["MOD_NAMES"].get(r[0])} for r in cu.fetchall()]
     cu.execute("select modId, value, petType from item_mods_pet where itemId=%s order by petType, modId", (item_id,))
     pet_mods = [{"modId": r[0], "value": r[1], "petType": r[2],
-                 "name": dat.MOD_NAMES.get(r[0]), "petTypeName": dat.PET_TYPE_NAMES.get(r[2])} for r in cu.fetchall()]
+                 "name": _en["MOD_NAMES"].get(r[0]), "petTypeName": dat.PET_TYPE_NAMES.get(r[2])} for r in cu.fetchall()]
     cu.execute("select modId, value, latentId, latentParam from item_latents where itemId=%s order by latentId, modId", (item_id,))
     latents = [{"modId": r[0], "value": r[1], "latentId": r[2], "latentParam": r[3],
-                "name": dat.MOD_NAMES.get(r[0]), "latentName": dat.LATENT_NAMES.get(r[2])} for r in cu.fetchall()]
+                "name": _en["MOD_NAMES"].get(r[0]), "latentName": _en["LATENT_NAMES"].get(r[2])} for r in cu.fetchall()]
     db.close()
     client = None
     try:
@@ -929,7 +956,7 @@ def set_item_mod(item_id, mod_id, value, comment=""):
     """Insert or update one (itemId, modId) row. `value` may be 0 (that's a real value, not a
     delete) -- use delete_item_mod to actually remove a mod row."""
     item_id, mod_id, value = int(item_id), int(mod_id), int(value)
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     cu.execute("select modId, value from item_mods where itemId=%s and modId=%s", (item_id, mod_id))
     before = cu.fetchone()
     bid = _save_backup(f"set item_mods {item_id}/{mod_id}", item_id,
@@ -945,7 +972,7 @@ def set_item_mod(item_id, mod_id, value, comment=""):
 
 def delete_item_mod(item_id, mod_id, comment=""):
     item_id, mod_id = int(item_id), int(mod_id)
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     cu.execute("select value from item_mods where itemId=%s and modId=%s", (item_id, mod_id))
     before = cu.fetchone()
     if before is None:
@@ -961,14 +988,27 @@ def delete_item_mod(item_id, mod_id, comment=""):
     return {"sql": sql, "backup": bid}
 
 
+def _enums():
+    """Mod/LATENT tables for the connected server: DSP's own headers on DSP (ids differ from Topaz), else Topaz's."""
+    try:
+        from workbench.editors.items import _db_alias
+        dsp = _db_alias.is_dsp()
+    except Exception:
+        dsp = False
+    if dsp:
+        from workbench.editors.items import _enums_dsp
+        return {"MOD_NAMES": _enums_dsp.MOD_NAMES, "LATENT_NAMES": _enums_dsp.LATENT_NAMES}
+    return {"MOD_NAMES": dat.MOD_NAMES, "LATENT_NAMES": dat.LATENT_NAMES}
+
+
 def mod_names():
     """{modId: name} for every confirmed mod, for the UI's add-mod dropdown."""
-    return dat.MOD_NAMES
+    return _enums()["MOD_NAMES"]
 
 
 def mod_metadata():
     """Source-backed modifier comments/units for Item Editor presentation."""
-    return dat.mod_metadata()
+    return dat.mod_metadata(_enums()["MOD_NAMES"])
 
 
 # ---- item_mods_pet (one-to-many: multiple (modId,petType,value) rows per item, composite PK) --
@@ -980,7 +1020,7 @@ def set_item_pet_mod(item_id, mod_id, pet_type, value, comment=""):
     """Insert or update one (itemId, modId, petType) row. `value` may be 0 (real value, not a
     delete) -- use delete_item_pet_mod to actually remove a row."""
     item_id, mod_id, pet_type, value = int(item_id), int(mod_id), int(pet_type), int(value)
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     cu.execute("select value from item_mods_pet where itemId=%s and modId=%s and petType=%s", (item_id, mod_id, pet_type))
     before = cu.fetchone()
     bid = _save_backup(f"set item_mods_pet {item_id}/{mod_id}/{pet_type}", item_id,
@@ -996,7 +1036,7 @@ def set_item_pet_mod(item_id, mod_id, pet_type, value, comment=""):
 
 def delete_item_pet_mod(item_id, mod_id, pet_type, comment=""):
     item_id, mod_id, pet_type = int(item_id), int(mod_id), int(pet_type)
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     cu.execute("select value from item_mods_pet where itemId=%s and modId=%s and petType=%s", (item_id, mod_id, pet_type))
     before = cu.fetchone()
     if before is None:
@@ -1028,7 +1068,7 @@ def pet_type_names():
 # condition-specific (see the comment baked into each LATENT_NAMES entry) so it stays a raw number.
 def add_item_latent(item_id, mod_id, value, latent_id, latent_param, comment=""):
     item_id, mod_id, value, latent_id, latent_param = int(item_id), int(mod_id), int(value), int(latent_id), int(latent_param)
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     cu.execute("select 1 from item_latents where itemId=%s and modId=%s and value=%s and latentId=%s and latentParam=%s",
                (item_id, mod_id, value, latent_id, latent_param))
     if cu.fetchone():
@@ -1046,7 +1086,7 @@ def add_item_latent(item_id, mod_id, value, latent_id, latent_param, comment="")
 
 def delete_item_latent(item_id, mod_id, value, latent_id, latent_param, comment=""):
     item_id, mod_id, value, latent_id, latent_param = int(item_id), int(mod_id), int(value), int(latent_id), int(latent_param)
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     cu.execute("select 1 from item_latents where itemId=%s and modId=%s and value=%s and latentId=%s and latentParam=%s",
                (item_id, mod_id, value, latent_id, latent_param))
     if not cu.fetchone():
@@ -1065,12 +1105,12 @@ def delete_item_latent(item_id, mod_id, value, latent_id, latent_param, comment=
 
 def latent_names():
     """{latentId: name} for the UI's add-latent dropdown."""
-    return dat.LATENT_NAMES
+    return _enums()["LATENT_NAMES"]
 
 
 def latent_metadata():
     """Source-backed latent-condition/parameter semantics for Item Editor presentation."""
-    return dat.latent_metadata()
+    return dat.latent_metadata(_enums()["LATENT_NAMES"])
 
 
 # ---- edits ----------------------------------------------------------------------------------
@@ -1107,18 +1147,19 @@ def _normalize_effects(effects):
 
 def _effect_validation(desired):
     warnings = []
+    _en = _enums()
     for row in desired["mods"]:
-        if row["modId"] not in dat.MOD_NAMES:
+        if row["modId"] not in _en["MOD_NAMES"]:
             warnings.append({"code": "UNKNOWN_MOD_ID", "message": f"item_mods modId {row['modId']} is not present in the confirmed Mod enum map"})
     for row in desired["pet_mods"]:
-        if row["modId"] not in dat.MOD_NAMES:
+        if row["modId"] not in _en["MOD_NAMES"]:
             warnings.append({"code": "UNKNOWN_MOD_ID", "message": f"item_mods_pet modId {row['modId']} is not present in the confirmed Mod enum map"})
         if row["petType"] not in dat.PET_TYPE_NAMES:
             warnings.append({"code": "UNKNOWN_PET_TYPE", "message": f"item_mods_pet petType {row['petType']} is not present in the confirmed PetModType enum map"})
     for row in desired["latents"]:
-        if row["modId"] not in dat.MOD_NAMES:
+        if row["modId"] not in _en["MOD_NAMES"]:
             warnings.append({"code": "UNKNOWN_MOD_ID", "message": f"item_latents modId {row['modId']} is not present in the confirmed Mod enum map"})
-        if row["latentId"] not in dat.LATENT_NAMES:
+        if row["latentId"] not in _en["LATENT_NAMES"]:
             warnings.append({"code": "UNKNOWN_LATENT_ID", "message": f"item_latents latentId {row['latentId']} is not present in the confirmed LATENT enum map"})
     return warnings
 
@@ -1223,7 +1264,7 @@ def preview_batch_edit(item_ids, field, value):
     if len(ids) > 200:
         raise ValueError("batch is limited to 200 unique items")
     table, column = BATCH_SAFE_FIELDS[field]
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     rows, errors, warnings = [], [], []
     try:
         cols = _cols(cu, table)
@@ -1300,7 +1341,7 @@ def apply_batch_edit(item_ids, field, value, comment=""):
         raise ValueError("batch contains no actual changes")
 
     table, column = BATCH_SAFE_FIELDS[field]
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     backup_items = []
     patched_snapshots = []
     sqls = []
@@ -1364,7 +1405,7 @@ def restore_batch_backup(bid, comment=""):
         raise ValueError("batch backup contains no items")
 
     current = []
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     restored_dat = []
     try:
         for entry in items:
@@ -1439,7 +1480,7 @@ def reconcile_item(item_id, field, direction, comment=""):
     table, column = RECONCILE_SERVER_FIELDS[field]
 
     if direction == "client_to_server":
-        return save_item_atomic(item_id, {table: {column: row["client"]}}, None, comment or f"reconcile {field}: client -> server")
+        return save_item_atomic(item_id, {table: {column: _client_jobs_to_server(row["client"]) if field == "jobs" else row["client"]}}, None, comment or f"reconcile {field}: client -> server")
 
     current = dat.capture_client_record(item_id)
     if current is None:
@@ -1458,7 +1499,7 @@ def reconcile_item(item_id, field, direction, comment=""):
         "flags": "flags", "level": "level", "jobs": "jobs",
         "delay": "delay", "skill": "skill",
     }[field]
-    patch = {client_key: row["server"]}
+    patch = {client_key: _server_jobs_to_client(row["server"]) if field == "jobs" else row["server"]}
     dat.validate_client_patch(item_id, patch)
     report = dat.patch_client_item(item_id, patch)
     _journal(comment or f"reconcile {field}: server -> client", [
@@ -1470,7 +1511,7 @@ def reconcile_item(item_id, field, direction, comment=""):
 def validate_item_changes(item_id, tables, effects=None):
     """Validate a proposed table patch without writing anything."""
     item_id = int(item_id)
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     try:
         rows = {}
         for table in TABLES:
@@ -1517,7 +1558,7 @@ def save_item_atomic(item_id, tables, effects=None, comment=""):
         raise ValueError("tables must be an object")
     desired_effects = _normalize_effects(effects) if effects is not None else None
 
-    db = zone_plot._db()
+    db = _item_db()
     cu = db.cursor()
     ops = []
     normalized = {}
@@ -1665,7 +1706,7 @@ def update_item(item_id, table, fields, comment="", sync_client=True):
     if table not in TABLES:
         raise ValueError(f"unknown item table {table!r}")
     key = TABLES[table][0]
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     op = _capture(cu, table, [item_id])
     if op["row"] is None:
         db.close()
@@ -1713,7 +1754,8 @@ def _map_to_client_fields(table, fields):
     if table == "item_equipment":
         for k in ("level", "jobs", "slot", "shieldSize"):
             if k in fields:
-                out["slots" if k == "slot" else ("shield_size" if k == "shieldSize" else k)] = fields[k]
+                v = _server_jobs_to_client(fields[k]) if k == "jobs" else fields[k]
+                out["slots" if k == "slot" else ("shield_size" if k == "shieldSize" else k)] = v
     elif table == "item_weapon":
         for k in ("dmg", "delay", "skill"):
             if k in fields:
@@ -1741,11 +1783,14 @@ def create_item(category, item_type, entry, effects=None, comment=""):
     item_type uses, all at that SAME id. Never invents an id -- the id comes only from a real
     free DAT slot found by item_dat_tools.free_slots(), per CLAUDE.md's core rule."""
     item_type = int(item_type)
-    client_result = dat.inject_client_item(category, entry)
+    client_entry = entry
+    if entry.get("jobs") is not None:
+        client_entry = {**entry, "jobs": _server_jobs_to_client(entry["jobs"])}  # draft carries the server-style mask
+    client_result = dat.inject_client_item(category, client_entry)
     item_id = client_result["item_id"]
 
     desired_effects = _normalize_effects(effects) if effects is not None else {"mods": [], "pet_mods": [], "latents": []}
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     cu.execute("select 1 from item_basic where itemid=%s", (item_id,))
     if cu.fetchone():
         db.close()
@@ -1919,7 +1964,7 @@ def delete_item(item_id, comment="", clear_dat=False):
     separately -- matching zone_edit.py's stance of surfacing rather than auto-cleaning
     ambiguous state)."""
     item_id = int(item_id)
-    db = zone_plot._db(); cu = db.cursor()
+    db = _item_db(); cu = db.cursor()
     ops = []
     for table in TABLES:
         op = _capture(cu, table, [item_id])

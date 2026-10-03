@@ -45,6 +45,8 @@ _ALLOWED_SELECTORS = {
     "char_job_points": {"jobid"},
     "char_vars": {"varname"},
 }
+# Tables where a missing keyed row may be created (e.g. first rank of a merit).
+_INSERTABLE = {"char_merit", "char_skills"}
 _KEY_COLUMNS = {"charid", "char_id", "character_id", "skillid", "meritid", "jobid", "varname"}
 _VERIFIED_FAMILIES = {"dsp", "topaz", "lsb"}
 
@@ -66,10 +68,11 @@ class ScalarEditPlan:
     online: bool | None
     adapter_family: str
     issues: list[ScalarIssue] = field(default_factory=list)
+    insert: bool = False
 
     @property
     def ready(self) -> bool:
-        return self.before is not None and bool(self.changes) and not any(i.blocking for i in self.issues)
+        return (self.before is not None or self.insert) and bool(self.changes) and not any(i.blocking for i in self.issues)
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -81,6 +84,7 @@ class ScalarEditPlan:
             "online": self.online,
             "adapter_family": self.adapter_family,
             "issues": [asdict(i) for i in self.issues],
+            "insert": self.insert,
             "ready": self.ready,
         }
 
@@ -189,6 +193,7 @@ def build_scalar_edit_plan(connection, *, char_id: int, table_name: str, selecto
         issues.append(ScalarIssue("online_state_unknown", "Character online state could not be verified."))
 
     before = None
+    insert = False
     normalized: dict[str, Any] = {}
     if table is not None and table_name in _ALLOWED_COLUMNS:
         try:
@@ -196,7 +201,10 @@ def build_scalar_edit_plan(connection, *, char_id: int, table_name: str, selecto
         except ValueError as exc:
             issues.append(ScalarIssue("invalid_selector", str(exc)))
         if before is None and not any(i.code == "invalid_selector" for i in issues):
-            issues.append(ScalarIssue("row_missing", "Target character row does not exist."))
+            if table_name in _INSERTABLE and selector:
+                insert = True
+            else:
+                issues.append(ScalarIssue("row_missing", "Target character row does not exist."))
         columns = {c.name: c for c in table.columns}
         editable = {row["name"] for row in editable_columns(schema, table_name)}
         for name, value in requested.items():
@@ -212,7 +220,7 @@ def build_scalar_edit_plan(connection, *, char_id: int, table_name: str, selecto
             except (TypeError, ValueError) as exc:
                 issues.append(ScalarIssue("invalid_value", str(exc)))
 
-    return ScalarEditPlan(char_id, table_name, selector, normalized, before, online_state.online, family, issues)
+    return ScalarEditPlan(char_id, table_name, selector, normalized, before, online_state.online, family, issues, insert)
 
 
 def apply_scalar_edit(connection, plan: ScalarEditPlan, *, approved: bool = False) -> dict[str, Any]:
@@ -234,11 +242,31 @@ def apply_scalar_edit(connection, plan: ScalarEditPlan, *, approved: bool = Fals
         if state.online is not False:
             raise RuntimeError("Character online state changed or cannot be verified")
         current = _row(connection, schema, plan.char_id, plan.table, plan.selector)
-        if current != plan.before:
+        if current != plan.before:  # for inserts both are None
             raise RuntimeError("Character data changed since preview; rebuild the edit plan")
         table = schema.table(plan.table)
         if table is None or table.character_key is None:
             raise RuntimeError("Target table is no longer available")
+        if plan.insert:
+            columns = [table.character_key, *plan.selector, *plan.changes]
+            values = [plan.char_id, *plan.selector.values(), *plan.changes.values()]
+            cursor = connection.cursor()
+            try:
+                cursor.execute(
+                    f"INSERT INTO `{plan.table}` ({', '.join('`'+c+'`' for c in columns)}) VALUES ({', '.join(['%s'] * len(columns))})",
+                    tuple(values),
+                )
+            finally:
+                cursor.close()
+            connection.commit()
+            after = {table.character_key: plan.char_id, **plan.selector, **plan.changes}
+            result = {"status": "committed", "char_id": plan.char_id, "table": plan.table,
+                      "selector": plan.selector, "changes": plan.changes, "before": None, "after": after}
+            return attach_committed_audit(
+                result, operation="scalar.insert", char_id=plan.char_id, adapter_family=plan.adapter_family,
+                target={"table": plan.table, "selector": dict(plan.selector)}, before=None, after=after,
+                metadata={"changes": dict(plan.changes)}, undo_supported=False,
+            )
         assignments = ", ".join(f"`{name}` = %s" for name in plan.changes)
         clauses = [f"`{table.character_key}` = %s"]
         params: list[Any] = list(plan.changes.values()) + [plan.char_id]

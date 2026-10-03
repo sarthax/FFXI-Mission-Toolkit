@@ -466,7 +466,7 @@ function setEditorFieldValue(table,field,value){
     const width=Number(group.dataset.maskWidth)||4, max=(1<<width)-1;
     group.querySelectorAll('input[data-mask-shift]').forEach(inp=>{ inp.value=(n>>Number(inp.dataset.maskShift))&max; });
   }else{
-    group.querySelectorAll('input[data-mask-bit]').forEach(cb=>{ cb.checked=(n&Number(cb.dataset.maskBit))!==0; });
+    group.querySelectorAll('input[data-mask-bit]').forEach(cb=>{ cb.checked=(n&Number(cb.dataset.maskBit))!==0; }); group.dataset.maskExtra=String(n & ~[...group.querySelectorAll('input[data-mask-bit]')].reduce((m,cb)=>m|Number(cb.dataset.maskBit),0));
   }
   const display=wrap.querySelector('[data-mask-display="'+table+'.'+field+'"]');
   if(display) display.textContent=String(n);
@@ -788,7 +788,7 @@ function itemFieldHtml(table, row, f, schemaForTable) {
   if(schema && schema.type==='bits'){
     return `<div class="mask-row" data-editor-field="${table}.${f}">
       <div class="mask-label"><span>${label}</span><span class="mono">raw: <span data-mask-display="${table}.${f}">${val}</span></span></div>
-      <div class="mask-flags" data-mask-group="${table}.${f}" data-mask-type="bits" data-table="${table}" data-field="${f}">
+      <div class="mask-flags" data-mask-group="${table}.${f}" data-mask-type="bits" data-mask-extra="${val & ~schema.bits.reduce((m,b)=>m|Number(b.bit),0)}" data-table="${table}" data-field="${f}">
       ${schema.bits.map(b=>`<label title="${help.replace(/"/g,'&quot;')}"><input type="checkbox" data-mask-bit="${b.bit}" data-mask-label="${b.label}" ${(val&b.bit)?'checked':''}
         onchange="${table==='item_equipment'&&f==='slot'?`slotCheckboxChanged(this,'${table}','${f}')`:`recomputeMask('${table}','${f}')`}">${b.label}</label>`).join('')}
       </div></div>`;
@@ -1606,6 +1606,8 @@ function recomputeMask(table, field) {
     group.querySelectorAll('input[data-mask-bit]').forEach(cb => {
       if (cb.checked) val |= Number(cb.dataset.maskBit);
     });
+    // bits with no checkbox (unmapped) keep their original value instead of being silently cleared
+    val |= Number(group.dataset.maskExtra) || 0;
   }
   document.querySelector(`[data-mask-display="${table}.${field}"]`).textContent = val;
   group.dataset.maskValue = val;
@@ -1860,4 +1862,6 @@ async function saveDraft() {
   loadItem(j.item_id);
 }
 </script>
+<script src="/static/character_editor_gear.js"></script>
+<script src="/static/itemedit_ux.js"></script>
 {% endblock %}

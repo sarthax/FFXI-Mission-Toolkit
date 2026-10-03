@@ -113,6 +113,7 @@
 
   function missionLabel(catalog, areaId, missionId) {
     const row = catalog?.areas?.[String(areaId)]?.[String(missionId)];
+    if (Number(missionId) === 65535) return 'None (not started)';
     return row?.label || `Mission ${missionId}`;
   }
 
@@ -168,23 +169,36 @@
     const owned = new Set((decoded.owned_ids || []).map(Number)), seen = new Set((decoded.seen_ids || []).map(Number)), offline = editableOnline();
     const shell = document.createElement('div'); shell.className='ce-progression';
     shell.innerHTML = `<div class="ce-progress-head"><strong>Key Items</strong>${pill(decoded.family.toUpperCase())}${pill(`${decoded.owned_count} owned`,'ok')}${pill(`${decoded.seen_count} seen`)}${offline ? pill('offline editing enabled','ok') : pill('editing locked until offline','warn')}<span class="ce-progress-source">${esc(sourceText(catalog))}</span></div>
-      <div class="ce-progress-card"><div class="ce-toolbar"><input id="ceKeyItemFilter" type="search" placeholder="Search key item name or ID"><label>Numeric ID <input id="ceKeyItemId" type="number" min="0" max="${decoded.table_count*decoded.bits_per_table-1}" style="width:100px;min-width:0"></label><button id="ceKeyItemLoad">Show ID</button></div><div id="ceKeyItemList" class="ce-progress-list" style="margin-top:7px"></div></div>`;
+      <div class="ce-progress-card"><div class="ce-toolbar"><input id="ceKeyItemFilter" type="search" placeholder="Search key item name or ID"><label>Numeric ID <input id="ceKeyItemId" type="number" min="0" max="${decoded.table_count*decoded.bits_per_table-1}" style="width:100px;min-width:0"></label><button id="ceKeyItemLoad">Show ID</button><label class="ce-muted"><input id="ceKeyItemShowAll" type="checkbox"> Show all key items (to add)</label></div><div id="ceKeyItemList" class="ce-progress-list" style="margin-top:7px"></div></div>`;
     box.prepend(shell);
-    const filter=shell.querySelector('#ceKeyItemFilter'), list=shell.querySelector('#ceKeyItemList'), numeric=shell.querySelector('#ceKeyItemId');
+    const filter=shell.querySelector('#ceKeyItemFilter'), list=shell.querySelector('#ceKeyItemList'), numeric=shell.querySelector('#ceKeyItemId'), showAll=shell.querySelector('#ceKeyItemShowAll');
     let forcedId = null;
-    const rowFor = id => catalog.items?.[String(id)] || {id,label:`Key Item ${id}`};
+    const rowFor = id => catalog.items?.[String(id)] || {id,label:`Key Item ${id}`,category:'Uncategorized'};
+    const PRIMARY = ['Permanent Key Items','Temporary Key Items'];
+    const lineFor = r => `<div class="ce-progress-row"><span>${esc(r.label)}<small>ID ${esc(r.id)}${r.symbol?' · '+esc(r.symbol):''}</small></span><label>Owned <input type="checkbox" data-ki="${Number(r.id)}" data-kind="owned" ${owned.has(Number(r.id))?'checked':''} ${offline?'':'disabled'}></label><label class="ce-seen">Seen <input type="checkbox" data-ki="${Number(r.id)}" data-kind="seen" ${seen.has(Number(r.id))?'checked':''} ${offline?'':'disabled'}></label></div>`;
     const draw = () => {
       const q=String(filter.value||'').toLowerCase();
-      let rows = items.filter(r=>!q||`${r.label} ${r.symbol||''} ${r.id}`.toLowerCase().includes(q));
+      const everything = showAll.checked || Boolean(q) || forcedId !== null;
+      const pool = new Map(items.map(r=>[Number(r.id),r]));
+      owned.forEach(id=>{if(!pool.has(id))pool.set(id,rowFor(id))});
+      let rows = [...pool.values()].sort((a,b)=>Number(a.id)-Number(b.id)).filter(r=>(everything||owned.has(Number(r.id)))&&(!q||`${r.label} ${r.symbol||''} ${r.id} ${r.category||''}`.toLowerCase().includes(q)));
       if (forcedId !== null && !rows.some(r=>Number(r.id)===forcedId)) rows.unshift(rowFor(forcedId));
-      rows = rows.slice(0,250);
-      list.innerHTML = rows.map(r=>`<div class="ce-progress-row"><span>${esc(r.label)}<small>ID ${esc(r.id)}${r.symbol?' · '+esc(r.symbol):''}</small></span><label>Owned <input type="checkbox" data-ki="${Number(r.id)}" data-kind="owned" ${owned.has(Number(r.id))?'checked':''} ${offline?'':'disabled'}></label><label class="ce-seen">Seen <input type="checkbox" data-ki="${Number(r.id)}" data-kind="seen" ${seen.has(Number(r.id))?'checked':''} ${offline?'':'disabled'}></label></div>`).join('') || '<div class="ce-progress-empty">No matching key items.</div>';
+      const groups = new Map();
+      rows.forEach(r=>{const c=r.category||'Uncategorized';if(!groups.has(c))groups.set(c,[]);groups.get(c).push(r)});
+      const order = [...PRIMARY.filter(c=>groups.has(c)), ...[...groups.keys()].filter(c=>!PRIMARY.includes(c)).sort()];
+      const LIMIT = 300;
+      list.innerHTML = order.map(c=>{
+        const g = groups.get(c), ownedHere = g.filter(r=>owned.has(Number(r.id))).length, shown = g.slice(0,LIMIT);
+        const open = PRIMARY.includes(c) || q || forcedId !== null ? ' open' : '';
+        return `<details class="ce-ki-group"${open}><summary><strong>${esc(c)}</strong> ${pill(`${ownedHere} owned`, ownedHere?'ok':'')}${everything?pill(`${g.length} listed`):''}</summary>${shown.map(lineFor).join('')}${g.length>LIMIT?`<div class="ce-muted">Showing first ${LIMIT} of ${g.length}. Refine the search.</div>`:''}</details>`;
+      }).join('') || `<div class="ce-progress-empty">${everything?'No matching key items.':'This character owns no key items. Tick "Show all key items" or search to add one.'}</div>`;
       list.querySelectorAll('input[data-ki]').forEach(cb=>cb.addEventListener('change',async()=>{
         const id=Number(cb.dataset.ki), kind=cb.dataset.kind, desired=cb.checked, operation={key_item_id:id}; operation[kind]=desired; cb.disabled=true;
         const ok=await previewAndApply('key_items',operation,`${desired?'Set':'Clear'} ${kind}: ${rowFor(id).label} (${id})`);
         if(!ok){cb.checked=!desired;cb.disabled=!offline;}
       }));
     };
+    showAll.addEventListener('change',()=>{forcedId=null;draw()});
     filter.addEventListener('input',()=>{forcedId=null;draw()});
     shell.querySelector('#ceKeyItemLoad').addEventListener('click',()=>{const id=Number(numeric.value);if(!Number.isInteger(id)||id<0||id>decoded.table_count*decoded.bits_per_table-1){alert('Key item ID is outside this server layout.');return}forcedId=id;filter.value='';draw()});
     draw();
