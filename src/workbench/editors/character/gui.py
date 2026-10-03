@@ -15,6 +15,7 @@ from fastapi.templating import Jinja2Templates
 from workbench.runtime.legacy_settings import get_active_server_root
 from workbench.runtime.paths import GUI_ROOT
 
+from .blacklist_transactions import apply_blacklist_edit, blacklist_rows, build_blacklist_edit_plan
 from .category_data import build_category_payload
 from .factory import open_character_editor
 
@@ -126,6 +127,62 @@ async def character_editor_apply_spell(char_id: int, request: Request):
                 approved=True,
             )
             return JSONResponse(_safe(result))
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.get("/characters/{char_id}/blacklist.json")
+def character_editor_blacklist(char_id: int):
+    try:
+        with _context() as ctx:
+            if not ctx.service.character_exists(char_id):
+                raise HTTPException(status_code=404, detail="Character not found")
+            return JSONResponse({"rows": _safe(blacklist_rows(ctx.service.connection, char_id))})
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise _error(exc, 503)
+
+
+@router.post("/characters/{char_id}/blacklist/preview")
+async def character_editor_preview_blacklist(char_id: int, request: Request):
+    try:
+        body = await request.json()
+        with _context() as ctx:
+            plan = build_blacklist_edit_plan(
+                ctx.service.connection,
+                char_id=char_id,
+                target_id=int(body.get("target_id")),
+                action=str(body.get("action") or ""),
+                adapter_family=ctx.service.adapter_family,
+            )
+            return JSONResponse(_safe(plan.as_dict()))
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.post("/characters/{char_id}/blacklist/apply")
+async def character_editor_apply_blacklist(char_id: int, request: Request):
+    try:
+        body = await request.json()
+        if body.get("approved") is not True:
+            raise HTTPException(status_code=400, detail="Explicit approved=true confirmation is required")
+        target_id = int(body.get("target_id"))
+        action = str(body.get("action") or "")
+        expected_before = body.get("expected_present_before")
+        with _context() as ctx:
+            plan = build_blacklist_edit_plan(
+                ctx.service.connection,
+                char_id=char_id,
+                target_id=target_id,
+                action=action,
+                adapter_family=ctx.service.adapter_family,
+            )
+            if isinstance(expected_before, bool) and plan.present_before is not expected_before:
+                raise HTTPException(status_code=409, detail="Blacklist state changed since preview; preview the edit again")
+            return JSONResponse(_safe(apply_blacklist_edit(ctx.service.connection, plan, approved=True)))
     except HTTPException:
         raise
     except Exception as exc:
