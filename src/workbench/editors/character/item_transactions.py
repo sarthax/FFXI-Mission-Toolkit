@@ -11,6 +11,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from .adapters.inventory import inspect_inventory_contract
+from .audit import attach_committed_audit
 from .inventory_slots import CAPACITY_COLUMNS, CONTAINERS, inspect_slots
 from .item_catalog import ItemCatalogRecord, ItemCatalogService
 from .schema import discover_character_schema
@@ -212,7 +213,17 @@ def apply_item_injection(connection, plan: ItemInjectionPlan, *, approved: bool 
         finally:
             cursor.close()
         connection.commit()
-        return {
+        inserted = {
+            "charid": plan.char_id,
+            "location": plan.location,
+            "slot": plan.slot,
+            "itemId": plan.item.item_id,
+            "quantity": plan.quantity,
+            "bazaar": 0,
+            "signature": "",
+            "extra": ZERO_EXTRA,
+        }
+        result = {
             "status": "committed",
             "char_id": plan.char_id,
             "item_id": plan.item.item_id,
@@ -221,6 +232,17 @@ def apply_item_injection(connection, plan: ItemInjectionPlan, *, approved: bool 
             "location_name": CONTAINERS.get(plan.location, f"Container {plan.location}"),
             "slot": plan.slot,
         }
+        return attach_committed_audit(
+            result,
+            operation="inventory.add",
+            char_id=plan.char_id,
+            adapter_family=plan.adapter_family,
+            target={"table": "char_inventory", "location": plan.location, "slot": plan.slot, "item_id": plan.item.item_id},
+            before=None,
+            after=inserted,
+            metadata={"item": plan.item.as_dict()},
+            undo_supported=True,
+        )
     except Exception:
         try:
             connection.rollback()
