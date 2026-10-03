@@ -57,13 +57,20 @@
     setTimeout(sweep, 1500);
 
     let state;
-    try { [state] = await Promise.all([getJson(`${api()}/equipment.json`), loadCatalog()]); }
+    let inv;
+    try { [state, inv] = await Promise.all([getJson(`${api()}/equipment.json`), getJson(`${api()}/augmentable-inventory.json`), loadCatalog()]); }
     catch (e) { shell.innerHTML = `<div class="ce-progress-empty">Could not load equipment: ${esc(e.message)}</div>`; return; }
     const offline = editableOnline();
     const dis = offline ? '' : 'disabled';
-    const slots = state.slots || [];
-    if (!slots.length) { shell.innerHTML = '<div class="ce-progress-empty">This character has nothing equipped.</div>'; return; }
-    if (!slots.some(s => s.equip_slot === selectedSlot)) selectedSlot = slots[0].equip_slot;
+    const eq = state.slots || [];
+    const eqKeys = new Set(eq.map(s => `${s.location}:${s.inventory_slot}`));
+    // Armor/weapons not currently equipped, shown beneath the equipped slots.
+    const carried = (inv.items || []).filter(i => !eqKeys.has(`${i.location}:${i.inventory_slot}`)).map(i => ({
+      ...i, equip_slot: `i${i.location}:${i.inventory_slot}`, slot_name: i.container, missing_row: false, carried: true}));
+    const slots = [...eq, ...carried];
+    if (!eq.length && !carried.length) { shell.innerHTML = '<div class="ce-progress-empty">This character has nothing equipped.</div>'; return; }
+    const keyOf = s => String(s.equip_slot);
+    if (!slots.some(s => keyOf(s) === String(selectedSlot))) selectedSlot = slots[0].equip_slot;
     let draft = null; // augments being edited for the selected slot: [{id,value}]
 
     shell.innerHTML = `<style>.ce-equip-manager .ce-split{display:grid;grid-template-columns:230px minmax(0,1fr);gap:10px;align-items:start}
@@ -73,17 +80,17 @@
       .ce-equip-manager .ce-arow{display:grid;grid-template-columns:50px minmax(160px,1.4fr) 80px minmax(140px,1fr);gap:8px;align-items:center;padding:4px 6px;border-top:1px solid var(--border,#333);font-size:12px}
       .ce-equip-manager .ce-arow input{min-width:0;padding:2px 4px}.ce-equip-manager .ce-aug-actions{display:flex;gap:8px;margin-top:8px;align-items:center}
       @media(max-width:760px){.ce-equip-manager .ce-split{grid-template-columns:1fr}.ce-equip-manager .ce-split-nav{position:static}.ce-equip-manager .ce-arow{grid-template-columns:1fr 1fr}}</style>
-      <div class="ce-progress-head"><strong>Equipped Items</strong>${offline ? pill('offline editing enabled','ok') : pill('editing locked until offline','warn')}<span class="ce-progress-source">Per-character augments are stored in the item's <code>extra</code> bytes (core layout: 4 slots of augment id + value 0-31). The Items editor changes the item for everyone; this changes only this copy.</span></div>
+      <div class="ce-progress-head"><strong>Equipped Items</strong>${offline ? pill('offline editing enabled','ok') : pill('editing locked until offline','warn')}<span class="ce-progress-source">Equipped gear first, then other armor and weapons you carry. Per-character augments are stored in the item's <code>extra</code> bytes (core layout: 4 slots of augment id + value 0-31). The Items editor changes the item for everyone; this changes only this copy.</span></div>
       <div class="ce-split"><nav class="ce-split-nav"></nav><section class="ce-split-detail"></section></div>
       <datalist id="ce-aug-list">${catalog.rows.map(c => `<option value="${c.id}">${esc(c.label)}</option>`).join('')}</datalist>`;
     const navEl = shell.querySelector('.ce-split-nav'), detail = shell.querySelector('.ce-split-detail');
-    const current = () => slots.find(s => s.equip_slot === selectedSlot);
+    const current = () => slots.find(s => keyOf(s) === String(selectedSlot));
     const drawNav = () => {
       navEl.innerHTML = slots.map(s => {
         const n = s.augments.filter(a => a.id).length;
-        return `<button class="ce-split-item${s.equip_slot === selectedSlot ? ' active' : ''}" data-s="${s.equip_slot}"><span><b>${esc(s.slot_name)}</b>: ${esc(s.name || (s.missing_row ? '(missing inventory row)' : `Item ${s.item_id}`))}</span><small>${n ? n + ' augment' + (n > 1 ? 's' : '') : 'no augments'}</small></button>`;
+        return `<button class="ce-split-item${keyOf(s) === String(selectedSlot) ? ' active' : ''}" data-s="${keyOf(s)}"><span><b>${esc(s.slot_name)}</b>${s.carried ? ' ' + s.inventory_slot : ''}: ${esc(s.name || (s.missing_row ? '(missing inventory row)' : `Item ${s.item_id}`))}</span><small>${n ? n + ' augment' + (n > 1 ? 's' : '') : 'no augments'}</small></button>`;
       }).join('');
-      navEl.querySelectorAll('[data-s]').forEach(b => b.addEventListener('click', () => { selectedSlot = Number(b.dataset.s); draft = null; drawNav(); drawDetail(); }));
+      navEl.querySelectorAll('[data-s]').forEach(b => b.addEventListener('click', () => { selectedSlot = b.dataset.s; draft = null; drawNav(); drawDetail(); }));
     };
     const drawDetail = () => {
       const s = current();
@@ -91,7 +98,7 @@
       draft ||= s.augments.map(a => ({id: a.id, value: a.value}));
       const changed = draft.some((a, i) => a.id !== s.augments[i].id || a.value !== s.augments[i].value);
       detail.innerHTML = `<h3>${esc(s.slot_name)}: ${esc(s.name || `Item ${s.item_id}`)}</h3>
-        <div class="ce-muted">Item ID ${s.item_id} · container ${s.location} slot ${s.inventory_slot} · extra <code>${esc(s.extra_hex)}</code></div>
+        <div class="ce-muted">${s.carried ? "Not equipped · " : ""}Item ID ${s.item_id} · container ${s.location} slot ${s.inventory_slot} · extra <code>${esc(s.extra_hex)}</code></div>
         ${draft.map((a, i) => `<div class="ce-arow"><span>Slot ${i + 1}</span>
           <input type="number" min="0" max="2047" list="ce-aug-list" data-i="${i}" data-f="id" value="${a.id}" ${dis} title="Augment ID (0 = empty)">
           <input type="number" min="0" max="31" data-i="${i}" data-f="value" value="${a.value}" ${dis} title="Value 0-31">

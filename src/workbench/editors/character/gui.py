@@ -20,7 +20,7 @@ from .audit_gui import router as audit_router
 from .blacklist_transactions import apply_blacklist_edit, blacklist_rows, build_blacklist_edit_plan
 from .category_data import build_category_payload
 from .factory import open_character_editor
-from .equipment_augments import apply_augment_plan, augment_catalog, build_augment_plan, equipment_state
+from .equipment_augments import apply_augment_plan, augment_catalog, build_augment_plan, equipment_state, inventory_augmentables
 from .inventory_management import apply_inventory_management, build_inventory_management_plan
 
 router = APIRouter(prefix="/character-editor", tags=["Character Editor"])
@@ -450,6 +450,15 @@ def character_editor_equipment(char_id: int):
     try:
         with _context() as ctx:
             return JSONResponse(_safe(equipment_state(ctx.service.connection, char_id)))
+    except Exception as exc:
+        raise _error(exc, 503)
+
+
+@router.get("/characters/{char_id}/augmentable-inventory.json")
+def character_editor_augmentable_inventory(char_id: int):
+    try:
+        with _context() as ctx:
+            return JSONResponse(_safe(inventory_augmentables(ctx.service.connection, char_id)))
     except Exception as exc:
         raise _error(exc, 503)
 

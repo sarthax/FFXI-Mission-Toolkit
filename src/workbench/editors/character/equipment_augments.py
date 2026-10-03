@@ -16,6 +16,7 @@ from typing import Any
 
 from .adapters.inventory import inspect_inventory_contract
 from .audit import attach_committed_audit
+from .inventory_slots import CONTAINERS
 from .inventory_management import _fingerprint, _inventory_row, _item_record
 from .schema import discover_character_schema
 from .session_state import detect_online_state
@@ -112,6 +113,43 @@ def equipment_state(connection, char_id: int) -> dict[str, Any]:
             "missing_row": row is None,
         })
     return {"char_id": int(char_id), "slots": rows}
+
+
+def inventory_augmentables(connection, char_id: int) -> dict[str, Any]:
+    """Armor/weapon rows in every container (Temporary Items excluded), with decoded augments."""
+    cursor = connection.cursor()
+    try:
+        cursor.execute("SELECT `location`,`slot`,`itemId`,`extra` FROM `char_inventory` WHERE `charid` = %s AND `location` <> 3 ORDER BY `location`,`slot`", (int(char_id),))
+        rows = cursor.fetchall() or []
+    finally:
+        cursor.close()
+    ids = sorted({int(r[2]) for r in rows if int(r[2])})
+    gear: set[int] = set()
+    for table in ("item_armor", "item_equipment", "item_weapon"):
+        for i in range(0, len(ids), 500):
+            chunk = ids[i:i + 500]
+            cursor = connection.cursor()
+            try:
+                cursor.execute(f"SELECT `itemId` FROM `{table}` WHERE `itemId` IN ({','.join(['%s'] * len(chunk))})", tuple(chunk))
+                gear.update(int(r[0]) for r in cursor.fetchall() or [])
+            except Exception:
+                pass
+            finally:
+                cursor.close()
+    names: dict[int, Any] = {}
+    out = []
+    for location, slot, item_id, extra in rows:
+        item_id = int(item_id)
+        if item_id not in gear:
+            continue
+        if item_id not in names:
+            rec = _item_record(connection, item_id)
+            names[item_id] = rec["name"] if rec else None
+        raw = _extra_bytes(extra)
+        out.append({"location": int(location), "container": CONTAINERS.get(int(location), f"Container {location}"),
+                    "inventory_slot": int(slot), "item_id": item_id, "name": names[item_id],
+                    "extra_hex": raw.hex(), "augments": decode_augments(raw)})
+    return {"char_id": int(char_id), "items": out}
 
 
 @dataclass(frozen=True)
