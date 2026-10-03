@@ -9,10 +9,11 @@ from fastapi.responses import JSONResponse
 
 from workbench.runtime.legacy_settings import get_active_server_root
 
-from .audit import read_audit_events
+from .audit import get_audit_event, read_audit_events
 from .audit_undo import apply_undo, build_undo_plan
 from .factory import open_character_editor
 from .lsb_admin_transactions import apply_lsb_admin_plan, build_lsb_admin_plan
+from .lsb_admin_undo import apply_lsb_admin_undo, build_lsb_admin_undo_plan
 from .pet_runtime_summary import build_pet_runtime_summary
 
 router = APIRouter()
@@ -64,6 +65,20 @@ def _summary(event: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _undo_preview(connection, *, event_id: str, adapter_family: str):
+    event = get_audit_event(event_id)
+    if event and str(event.get("operation") or "") == "lsb_admin.update":
+        return build_lsb_admin_undo_plan(connection, event_id=event_id, adapter_family=adapter_family)
+    return build_undo_plan(connection, event_id=event_id, adapter_family=adapter_family)
+
+
+def _undo_apply(connection, *, event_id: str, adapter_family: str, approved: bool):
+    event = get_audit_event(event_id)
+    if event and str(event.get("operation") or "") == "lsb_admin.update":
+        return apply_lsb_admin_undo(connection, event_id=event_id, adapter_family=adapter_family, approved=approved)
+    return apply_undo(connection, event_id=event_id, adapter_family=adapter_family, approved=approved)
+
+
 @router.get("/characters/{char_id}/audit.json")
 def character_editor_audit_history(char_id: int, limit: int = Query(100, ge=1, le=500)):
     try:
@@ -99,7 +114,7 @@ def character_editor_pet_runtime(char_id: int):
 def character_editor_audit_undo_preview(char_id: int, event_id: str):
     try:
         with _context() as ctx:
-            plan = build_undo_plan(ctx.service.connection, event_id=event_id, adapter_family=ctx.service.adapter_family)
+            plan = _undo_preview(ctx.service.connection, event_id=event_id, adapter_family=ctx.service.adapter_family)
             if plan.char_id not in (0, int(char_id)):
                 raise HTTPException(status_code=404, detail="Audit event does not belong to this character")
             payload = plan.as_dict()
@@ -119,10 +134,10 @@ async def character_editor_audit_undo_apply(char_id: int, event_id: str, request
         if body.get("approved") is not True:
             raise HTTPException(status_code=400, detail="Explicit approved=true confirmation is required")
         with _context() as ctx:
-            preview = build_undo_plan(ctx.service.connection, event_id=event_id, adapter_family=ctx.service.adapter_family)
+            preview = _undo_preview(ctx.service.connection, event_id=event_id, adapter_family=ctx.service.adapter_family)
             if preview.char_id != int(char_id):
                 raise HTTPException(status_code=404, detail="Audit event does not belong to this character")
-            result = apply_undo(ctx.service.connection, event_id=event_id, adapter_family=ctx.service.adapter_family, approved=True)
+            result = _undo_apply(ctx.service.connection, event_id=event_id, adapter_family=ctx.service.adapter_family, approved=True)
             return JSONResponse(_safe(result))
     except HTTPException:
         raise
