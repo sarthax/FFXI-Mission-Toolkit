@@ -1,12 +1,12 @@
 """Durable local audit history for Character Editor mutations.
 
-Character Editor writes are direct database administration operations.  Successful mutations
+Character Editor writes are direct database administration operations. Successful mutations
 must leave enough local evidence to answer what changed and, when an operation supplies an exact
 before-state snapshot, to support a later guarded restore workflow.
 
 The journal is append-only JSONL under ``data/`` and binary values are encoded losslessly as
-hex objects.  Exact before-state payloads are also written to an individual backup JSON file so
-a future undo implementation does not need to parse or rewrite the journal.  Connection secrets
+hex objects. Exact before-state payloads are also written to an individual backup JSON file so
+a future undo implementation does not need to parse or rewrite the journal. Connection secrets
 are never accepted as record fields by this module.
 """
 from __future__ import annotations
@@ -149,6 +149,48 @@ def append_audit_event(
         handle.flush()
         os.fsync(handle.fileno())
     return event
+
+
+def attach_committed_audit(
+    result: dict[str, Any],
+    *,
+    operation: str,
+    char_id: int,
+    adapter_family: str,
+    target: dict[str, Any] | None = None,
+    before: Any = None,
+    after: Any = None,
+    metadata: dict[str, Any] | None = None,
+    undo_supported: bool = False,
+) -> dict[str, Any]:
+    """Attach audit outcome to an already-committed mutation without ever raising.
+
+    Database commit has already happened when this helper is called. Audit I/O therefore cannot
+    be allowed to make callers believe the mutation rolled back. The returned result always
+    preserves the committed status and carries either ``audit_event_id``/``audit_backup_path``
+    or an explicit ``audit_error`` for operator follow-up.
+    """
+    out = dict(result)
+    try:
+        event = append_audit_event(
+            operation=operation,
+            char_id=char_id,
+            adapter_family=adapter_family,
+            target=target,
+            before=before,
+            after=after,
+            metadata=metadata,
+            status="committed",
+            undo_supported=undo_supported,
+        )
+        out["audit_event_id"] = event.event_id
+        out["audit_backup_path"] = event.backup_path
+        out["audit_error"] = None
+    except Exception as exc:
+        out["audit_event_id"] = None
+        out["audit_backup_path"] = None
+        out["audit_error"] = f"{type(exc).__name__}: {exc}"
+    return out
 
 
 def read_audit_events(*, char_id: int | None = None, limit: int = 200) -> list[dict[str, Any]]:
