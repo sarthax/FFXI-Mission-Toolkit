@@ -15,12 +15,14 @@ from fastapi.templating import Jinja2Templates
 from workbench.runtime.legacy_settings import get_active_server_root
 from workbench.runtime.paths import GUI_ROOT
 
+from .audit_gui import router as audit_router
 from .blacklist_transactions import apply_blacklist_edit, blacklist_rows, build_blacklist_edit_plan
 from .category_data import build_category_payload
 from .factory import open_character_editor
 from .inventory_management import apply_inventory_management, build_inventory_management_plan
 
 router = APIRouter(prefix="/character-editor", tags=["Character Editor"])
+router.include_router(audit_router)
 templates = Jinja2Templates(directory=str(GUI_ROOT / "templates"))
 
 

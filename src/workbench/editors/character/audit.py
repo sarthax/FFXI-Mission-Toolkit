@@ -53,6 +53,16 @@ def _encode(value: Any) -> Any:
     return str(value)
 
 
+def _decode(value: Any) -> Any:
+    if isinstance(value, dict):
+        if "__hex__" in value:
+            return bytes.fromhex(str(value["__hex__"]))
+        return {str(key): _decode(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_decode(item) for item in value]
+    return value
+
+
 @dataclass(frozen=True)
 class AuditEvent:
     event_id: str
@@ -213,3 +223,40 @@ def read_audit_events(*, char_id: int | None = None, limit: int = 200) -> list[d
                 continue
             rows.append(row)
     return rows[-safe_limit:][::-1]
+
+
+def get_audit_event(event_id: str) -> dict[str, Any] | None:
+    wanted = str(event_id or "").strip()
+    if not wanted or not AUDIT_LOG_PATH.exists():
+        return None
+    with AUDIT_LOG_PATH.open("r", encoding="utf-8") as handle:
+        for raw in handle:
+            raw = raw.strip()
+            if not raw:
+                continue
+            try:
+                row = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
+            if str(row.get("event_id") or "") == wanted:
+                return _decode(row)
+    return None
+
+
+def load_audit_backup(event: dict[str, Any]) -> Any:
+    """Load the exact decoded before-state backup for an event when one exists."""
+    rel = str(event.get("backup_path") or "").strip()
+    if not rel:
+        return event.get("before")
+    path = (DATA_ROOT / rel).resolve()
+    root = DATA_ROOT.resolve()
+    try:
+        path.relative_to(root)
+    except ValueError as exc:
+        raise RuntimeError("Audit backup path escapes data root") from exc
+    if not path.is_file():
+        raise FileNotFoundError(f"Audit backup is missing: {rel}")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if str(payload.get("event_id") or "") != str(event.get("event_id") or ""):
+        raise RuntimeError("Audit backup event ID does not match journal event")
+    return _decode(payload.get("before"))
