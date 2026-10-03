@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 
+from fastapi import FastAPI
 from workbench.editors.character.gui import _safe, router
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -12,8 +13,14 @@ if str(ROOT / "test_fixtures") not in sys.path:
 from test_character_editor_packed_transactions import main as packed_transaction_regression
 
 
+def _router_paths() -> set[str]:
+    app = FastAPI()
+    app.include_router(router)
+    return set(app.openapi()["paths"])
+
+
 def test_character_editor_router_surface():
-    paths = {route.path for route in router.routes}
+    paths = _router_paths()
     assert "/character-editor" in paths
     assert "/character-editor/status.json" in paths
     assert "/character-editor/characters.json" in paths
