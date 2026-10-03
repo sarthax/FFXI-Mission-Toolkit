@@ -64,6 +64,13 @@
     return `<div class="ce-card ce-dense-row-card"><div class="ce-dense-row-head"><strong>${esc(rowLabel(table,row,index))}</strong><span class="sp"></span>${(editable||[]).length?pill(`${editable.length} editable`,'ok'):pill('read only')}</div><div class="ce-dense-field-grid">${fields}</div>${action}</div>`;
   }
 
+  function hydrateInventoryIcons(container){
+    (container||document).querySelectorAll('img.ce-icon[data-src]').forEach(img=>{
+      img.src=img.dataset.src;
+      img.removeAttribute('data-src');
+    });
+  }
+
   window.renderScalarRow=function(table,row,index,editable){
     const fieldCount=Object.keys(row||{}).length;
     if(denseTables.has(table)||fieldCount>=7) return denseScalarRow(table,row,index,editable);
@@ -102,16 +109,23 @@
     box.innerHTML='<div class="ce-muted">Loading…</div>';
     try{
       const j=await api(`/character-editor/characters/${selectedChar}/inventory.json`);
+      let openedFirstPopulated=false;
       const cards=(j.containers||[]).map(c=>{
         const cap=c.capacity===null||c.capacity===undefined?'capacity runtime/unknown':`${c.count}/${c.capacity}`;
         const rows=(c.rows||[]).map(r=>{
           const it=r.item||{},id=r.itemId??r.item_id??0,extra=r.extra&&r.extra.bytes!==undefined?`${r.extra.bytes}b`:'';
-          return `<tr><td>${id?`<img class="ce-icon" src="/itemedit/${id}/icon.png" onerror="this.style.display='none'">`:''}</td><td>${esc(r.slot)}</td><td class="ce-inventory-name"><strong>${esc(it.name||('Item '+id))}</strong><div class="mono ce-muted">${esc(id)}</div></td><td>${esc(r.quantity)}</td><td class="ce-muted">${esc(extra)}</td></tr>`;
+          const icon=id?`/character-editor/client-cache/icons/${id}.png`:'';
+          return `<tr><td>${id?`<img class="ce-icon" data-src="${icon}" loading="lazy" decoding="async" onerror="this.style.display='none'">`:''}</td><td>${esc(r.slot)}</td><td class="ce-inventory-name"><strong>${esc(it.name||('Item '+id))}</strong><div class="mono ce-muted">${esc(id)}</div></td><td>${esc(r.quantity)}</td><td class="ce-muted">${esc(extra)}</td></tr>`;
         }).join('')||'<tr><td colspan="5" class="ce-muted">Empty</td></tr>';
-        const open=Number(c.count||0)>0?' open':'';
-        return `<details class="ce-container ce-card"${open}><summary><span>${esc((c.label||c.name||'Container').replaceAll('_',' '))}</span>${pill(cap,c.capacity!==null&&c.count>=c.capacity?'warn':'')}<span class="sp"></span><span class="ce-muted">loc ${esc(c.location)}</span></summary><div class="ce-inventory-scroll"><table class="ce-table"><thead><tr><th></th><th>Slot</th><th>Item</th><th>Qty</th><th>Extra</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
+        const shouldOpen=!openedFirstPopulated&&Number(c.count||0)>0;
+        if(shouldOpen)openedFirstPopulated=true;
+        return `<details class="ce-container ce-card"${shouldOpen?' open':''}><summary><span>${esc((c.label||c.name||'Container').replaceAll('_',' '))}</span>${pill(cap,c.capacity!==null&&c.count>=c.capacity?'warn':'')}<span class="sp"></span><span class="ce-muted">loc ${esc(c.location)}</span></summary><div class="ce-inventory-scroll"><table class="ce-table"><thead><tr><th></th><th>Slot</th><th>Item</th><th>Qty</th><th>Extra</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
       }).join('');
       box.innerHTML=`<div class="ce-inventory-grid">${cards}</div>`;
+      box.querySelectorAll('details.ce-container').forEach(details=>{
+        if(details.open)hydrateInventoryIcons(details);
+        details.addEventListener('toggle',()=>{if(details.open)hydrateInventoryIcons(details)});
+      });
     }catch(e){box.textContent=e.message}
   };
 })();
