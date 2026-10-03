@@ -126,6 +126,8 @@ from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(title="Mission Toolkit GUI")
 app.include_router(character_editor_router)
+from workbench.client.animlab.router import router as animlab_router
+app.include_router(animlab_router)
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # Zone visual-mesh OBJs (build_zone_visual_cache.py) are real but large (tens of MB of ASCII
 # text per zone) -- gzip compresses that ratio very well over the wire, worth it app-wide.
