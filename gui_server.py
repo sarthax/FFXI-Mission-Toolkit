@@ -5821,7 +5821,7 @@ def capture_spatial_json(capture_id: int, zone_db: str = "", q: str = ""):
     cap = con.execute("SELECT zones FROM captures WHERE capture_id=?", (capture_id,)).fetchone()
     zones = json.loads(cap["zones"]) if cap and cap["zones"] else []
     zone_db = zone_db or (zones[0] if zones else "")
-    entities = capture_spatial.capture_spatial.capture_spatial_entities(con, capture_id, zone_db, q) if zone_db else []
+    entities = capture_spatial.capture_spatial_entities(con, capture_id, zone_db, q) if zone_db else []
     zoneid = zoneid_for_zone_db(con, zone_db) if zone_db else None
     con.close()
     return JSONResponse({

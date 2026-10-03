@@ -19,3 +19,6 @@ pytesseract
 # .venv instead of installing into the system Python -- installing this here is safe precisely
 # because it's isolated, not because the conflict stopped being real.
 luaparser>=4.0
+
+# Character Editor live DB access (conf/map.conf credentials)
+mysql-connector-python
