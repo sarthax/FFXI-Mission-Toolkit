@@ -58,20 +58,35 @@ def search_items(service: AuctionHouseService, query: str = "", *, category_id: 
 
 
 def price_trends(service: AuctionHouseService, item_id: int, *, days: int = 30) -> list[dict[str, Any]]:
-    a, qn = service.schema.auction_columns, service.q
+    """Return daily sale bands split by single/stack lot type.
+
+    FFXI single and stack auctions have materially different lot prices, so combining them into a
+    single average is misleading. ``average_unit_price`` normalizes a stack sale by the item's
+    configured stack size while retaining the actual lot-price band for administrative review.
+    """
+    a, i, qn = service.schema.auction_columns, service.schema.item_columns, service.q
     safe_days = max(1, min(int(days), 3650))
     cutoff = int(datetime.now(timezone.utc).timestamp()) - safe_days * 86400
+    stack_size = f"GREATEST(i.{qn(i['stack_size'])}, 1)"
+    unit_expr = (
+        f"CASE WHEN ah.{qn(a['stack'])}=1 THEN ah.{qn(a['sale_price'])}/{stack_size} "
+        f"ELSE ah.{qn(a['sale_price'])} END"
+    )
     c = service.connection.cursor()
     try:
         c.execute(
-            f"SELECT DATE(FROM_UNIXTIME({qn(a['sold_at'])})),COUNT(*),AVG({qn(a['sale_price'])}),"
-            f"MIN({qn(a['sale_price'])}),MAX({qn(a['sale_price'])}) FROM `auction_house` "
-            f"WHERE {qn(a['item_id'])}=%s AND {qn(a['sold_at'])}>=%s GROUP BY 1 ORDER BY 1",
+            f"SELECT DATE(FROM_UNIXTIME(ah.{qn(a['sold_at'])})),ah.{qn(a['stack'])},COUNT(*),"
+            f"AVG(ah.{qn(a['sale_price'])}),MIN(ah.{qn(a['sale_price'])}),MAX(ah.{qn(a['sale_price'])}),"
+            f"AVG({unit_expr}) FROM `auction_house` ah JOIN `item_basic` i "
+            f"ON i.{qn(i['item_id'])}=ah.{qn(a['item_id'])} "
+            f"WHERE ah.{qn(a['item_id'])}=%s AND ah.{qn(a['sold_at'])}>=%s GROUP BY 1,2 ORDER BY 1,2",
             (int(item_id), cutoff),
         )
         return [{
-            "day": r[0].isoformat() if hasattr(r[0], "isoformat") else str(r[0]), "sales": int(r[1]),
-            "average_price": round(float(r[2]), 2), "min_price": int(r[3]), "max_price": int(r[4]),
+            "day": r[0].isoformat() if hasattr(r[0], "isoformat") else str(r[0]),
+            "stack": bool(r[1]), "lot_type": "stack" if r[1] else "single", "sales": int(r[2]),
+            "average_price": round(float(r[3]), 2), "min_price": int(r[4]), "max_price": int(r[5]),
+            "average_unit_price": round(float(r[6]), 2),
         } for r in c.fetchall() or []]
     finally:
         c.close()
