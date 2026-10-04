@@ -19,23 +19,11 @@ from . import client_cache_gui as _client_cache_gui  # noqa: F401,E402
 
 
 def _attach_root_server_admin_routes() -> None:
-    """Bridge packaged server-admin routes into the legacy root router registration.
-
-    ``gui_server.py`` currently has no router registry: it imports the Character Editor router
-    and mounts it directly on the root FastAPI app.  Appending already-built AH route objects
-    here preserves their own ``/auction-house`` paths (rather than nesting them below
-    ``/character-editor``) and avoids another edit point in the monolithic server.  This bridge
-    can disappear once root router registration is moved into a shared registry.
-    """
+    """Bridge modular server-admin routes into the current legacy root registration point."""
     from . import gui as _character_gui
-    from workbench.server_admin.auction_house.gui import router as _auction_house_router
+    from workbench.server_admin.auction_house.integration import install_legacy_gui_bridge
 
-    existing = {(getattr(route, "path", None), tuple(sorted(getattr(route, "methods", ()) or ()))) for route in _character_gui.router.routes}
-    for route in _auction_house_router.routes:
-        key = (getattr(route, "path", None), tuple(sorted(getattr(route, "methods", ()) or ())))
-        if key not in existing:
-            _character_gui.router.routes.append(route)
-            existing.add(key)
+    install_legacy_gui_bridge(_character_gui.router)
 
 
 _attach_root_server_admin_routes()
