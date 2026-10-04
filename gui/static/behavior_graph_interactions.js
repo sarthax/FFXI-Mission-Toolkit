@@ -1,4 +1,6 @@
 (() => {
+  const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+
   function applyPlainContract() {
     const plain = document.getElementById('behavior-plain-view');
     const dataEl = document.getElementById('behavior-data');
@@ -9,21 +11,49 @@
     const contract = graph.plain_behavior;
     if (!contract || !Array.isArray(contract.flows)) return;
 
+    const originalButtons = new Map();
+    for (const button of plain.querySelectorAll('[data-plain-node]')) {
+      if (!originalButtons.has(button.dataset.plainNode)) originalButtons.set(button.dataset.plainNode, button);
+    }
+
     const flows = [...plain.querySelectorAll('.plain-flow')];
     for (let index = 0; index < flows.length; index += 1) {
       const flow = flows[index];
       const expected = contract.flows[index];
       if (!expected) continue;
 
-      const visible = new Set([
-        expected.trigger?.node_id,
-        ...(expected.requirements || []).map(row => row.node_id),
-        ...(expected.actions || []).map(row => row.node_id),
-        ...(expected.results || []).map(row => row.node_id),
-      ].filter(Boolean));
+      const laneElements = [...flow.querySelectorAll('.plain-lane')];
+      const laneRows = [
+        [expected.trigger].filter(Boolean),
+        expected.requirements || [],
+        expected.actions || [],
+        expected.results || [],
+      ];
 
-      for (const card of flow.querySelectorAll('[data-plain-node]')) {
-        card.hidden = !visible.has(card.dataset.plainNode);
+      laneElements.forEach((lane, laneIndex) => {
+        const title = lane.querySelector('.plain-lane-title')?.outerHTML || '';
+        const rows = laneRows[laneIndex] || [];
+        lane.innerHTML = title + (rows.length ? rows.map(row => (
+          `<button type="button" class="plain-card" data-contract-node="${esc(row.node_id)}">` +
+          `<strong>${esc(row.label)}</strong><small>${esc(row.technical_label || row.node_id)}</small></button>`
+        )).join('') : '<div class="plain-empty">No explicit steps identified</div>');
+      });
+
+      for (const button of flow.querySelectorAll('[data-contract-node]')) {
+        button.addEventListener('click', () => {
+          const nodeId = button.dataset.contractNode;
+          const sourceButton = originalButtons.get(nodeId);
+          if (sourceButton) {
+            sourceButton.click();
+            return;
+          }
+          document.getElementById('behavior-mode-technical')?.click();
+          queueMicrotask(() => {
+            const graphNode = [...document.querySelectorAll('.behavior-node')]
+              .find(node => node.dataset.id === nodeId);
+            graphNode?.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+          });
+        });
       }
 
       const summary = flow.querySelector('.plain-summary');
@@ -32,7 +62,7 @@
       const collapsedChip = collapsedCount
         ? `<span class="chip">${collapsedCount} implementation node${collapsedCount === 1 ? '' : 's'} collapsed</span>`
         : '';
-      summary.innerHTML = `${expected.summary || ''}${collapsedChip}`;
+      summary.innerHTML = `${esc(expected.summary || '')}${collapsedChip}`;
     }
   }
 
