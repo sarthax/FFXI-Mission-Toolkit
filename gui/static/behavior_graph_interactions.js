@@ -1,5 +1,5 @@
 (() => {
-  const CONTRACT_VERSION = '4';
+  const CONTRACT_VERSION = '5';
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   let activateClarified = () => {};
 
@@ -9,6 +9,17 @@
     style.id = 'behavior-branch-flow-styles';
     style.textContent = `
       #behavior-clarified-view .plain-branch-intro{margin:0 0 8px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface)}
+      #behavior-clarified-view .plain-lifecycle{margin:10px 0 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden}
+      #behavior-clarified-view .plain-lifecycle>header{padding:9px 11px;background:var(--code-bg);border-bottom:1px solid var(--border)}
+      #behavior-clarified-view .plain-lifecycle>header strong{display:block}
+      #behavior-clarified-view .plain-lifecycle>header .muted{display:block;margin-top:2px;font-size:11px}
+      #behavior-clarified-view .plain-lifecycle-row{display:grid;grid-template-columns:minmax(180px,1fr) minmax(170px,.8fr) minmax(180px,1fr);gap:10px;align-items:stretch;padding:10px 11px;border-top:1px dotted var(--border)}
+      #behavior-clarified-view .plain-lifecycle-row:first-of-type{border-top:0}
+      #behavior-clarified-view .plain-lifecycle-side{display:flex;flex-direction:column;gap:5px;min-width:0}
+      #behavior-clarified-view .plain-lifecycle-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+      #behavior-clarified-view .plain-lifecycle-middle{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;color:var(--muted);font-size:11px;border-left:1px dashed var(--border);border-right:1px dashed var(--border);padding:4px 10px}
+      #behavior-clarified-view .plain-lifecycle-middle strong{font-size:13px;color:var(--text);margin-bottom:3px}
+      #behavior-clarified-view .plain-lifecycle-dots{font-size:18px;letter-spacing:2px;line-height:1.1;margin:2px 0}
       #behavior-clarified-view .plain-branch-group{margin:10px 0;border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden}
       #behavior-clarified-view .plain-branch-trigger{display:flex;gap:8px;align-items:center;padding:9px 10px;background:var(--code-bg);border-bottom:1px solid var(--border)}
       #behavior-clarified-view .plain-branch-trigger button{font-weight:700}
@@ -28,16 +39,9 @@
       #behavior-clarified-view .plain-effect small{color:var(--muted);font-family:ui-monospace,Consolas,monospace;overflow-wrap:anywhere}
       #behavior-clarified-view .plain-branch-children{margin-top:8px;padding-left:7px;border-left:1px dashed var(--border)}
       #behavior-clarified-view .plain-branch-empty{color:var(--muted);font-size:12px;padding:4px 0}
-      #behavior-clarified-view .plain-event-handoffs{margin:12px 0;border:1px dashed var(--border);border-radius:8px;padding:9px 10px;background:var(--surface)}
-      #behavior-clarified-view .plain-event-handoff{display:grid;grid-template-columns:minmax(140px,1fr) auto minmax(160px,1fr);gap:8px;align-items:center;padding:7px 0;border-top:1px dotted var(--border)}
-      #behavior-clarified-view .plain-event-handoff:first-of-type{border-top:0}
-      #behavior-clarified-view .plain-handoff-middle{text-align:center;color:var(--muted);font-size:11px}
-      #behavior-clarified-view .plain-handoff-dots{display:block;font-size:18px;letter-spacing:2px;line-height:1}
-      #behavior-clarified-view .plain-handoff-side{display:flex;gap:5px;flex-wrap:wrap}
-      #behavior-clarified-view .plain-handoff-side button{font-size:11px}
       #behavior-clarified-view .plain-trigger-button{border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);padding:5px 8px;cursor:pointer;text-align:left}
       #behavior-clarified-view[hidden]{display:none!important}
-      @media(max-width:760px){#behavior-clarified-view .plain-event-handoff{grid-template-columns:1fr}.plain-handoff-middle{text-align:left!important}}
+      @media(max-width:820px){#behavior-clarified-view .plain-lifecycle-row{grid-template-columns:1fr}#behavior-clarified-view .plain-lifecycle-middle{align-items:flex-start;text-align:left;border-left:0;border-right:0;border-top:1px dashed var(--border);border-bottom:1px dashed var(--border)}}
     `;
     document.head.appendChild(style);
   }
@@ -120,19 +124,21 @@
       }).join('');
 
       const handoffs = Array.isArray(contract.event_handoffs) ? contract.event_handoffs : [];
-      const handoffHtml = handoffs.length ? (
-        `<section class="plain-event-handoffs"><strong>Cross-hook event identity</strong>` +
-        `<p class="muted">Dotted handoffs mean the same literal event/CSID is started and handled in different hooks. Select either side to jump to that exact clarified branch. They do not assert runtime execution order.</p>` +
+      const lifecycleHtml = handoffs.length ? (
+        `<section class="plain-lifecycle"><header><strong>Event lifecycle</strong>` +
+        `<span class="muted">These rows group the source branch that starts an Event/CSID with branches that handle the same literal Event/CSID. The dotted middle is an identity handoff only; runtime ordering remains unproven.</span></header>` +
         handoffs.map(row => {
-          const starts = (row.start_branches || []).map(ref => `<button type="button" class="plain-trigger-button" data-contract-branch="${esc(ref.branch_id)}">Start: ${esc(ref.trigger_label)}</button>`).join('');
-          const handlers = (row.handler_branches || []).map(ref => `<button type="button" class="plain-trigger-button" data-contract-branch="${esc(ref.branch_id)}">Handler: ${esc(ref.trigger_label)}</button>`).join('');
-          return `<div class="plain-event-handoff"><div class="plain-handoff-side">${starts}</div>` +
-            `<div class="plain-handoff-middle"><strong>Event ${esc(row.event_id)}</strong><span class="plain-handoff-dots">·····►</span>${esc(row.ordering || 'UNPROVEN')} ordering</div>` +
-            `<div class="plain-handoff-side">${handlers}</div></div>`;
+          const starts = (row.start_branches || []).map(ref => `<button type="button" class="plain-trigger-button" data-contract-branch="${esc(ref.branch_id)}">${esc(ref.trigger_label)}</button>`).join('') || '<span class="muted">No start branch indexed</span>';
+          const handlers = (row.handler_branches || []).map(ref => `<button type="button" class="plain-trigger-button" data-contract-branch="${esc(ref.branch_id)}">${esc(ref.trigger_label)}</button>`).join('') || '<span class="muted">No handler branch indexed</span>';
+          return `<div class="plain-lifecycle-row">` +
+            `<div class="plain-lifecycle-side"><span class="plain-lifecycle-label">Starts event</span>${starts}</div>` +
+            `<div class="plain-lifecycle-middle"><strong>Event ${esc(row.event_id)}</strong><span class="plain-lifecycle-dots">·····►</span><span>same literal event identity</span><span>${esc(row.ordering || 'UNPROVEN')} ordering</span></div>` +
+            `<div class="plain-lifecycle-side"><span class="plain-lifecycle-label">Handled by</span>${handlers}</div>` +
+          `</div>`;
         }).join('') + `</section>`
       ) : '';
 
-      clarified.innerHTML = `<div class="plain-branch-intro"><strong>Clarified branch flow</strong><div class="muted">Solid branch connectors preserve source-proven guard → effect relationships. Sibling effects are not shown as ordered unless source evidence proves ordering. Selecting an element updates Behavior Details without leaving this view.</div></div>${groupsHtml}${handoffHtml}`;
+      clarified.innerHTML = `<div class="plain-branch-intro"><strong>Clarified branch flow</strong><div class="muted">Solid branch connectors preserve source-proven guard → effect relationships. Sibling effects are not shown as ordered unless source evidence proves ordering. Event lifecycle rows connect matching literal Event/CSID identities without claiming runtime sequence.</div></div>${lifecycleHtml}${groupsHtml}`;
       for (const button of clarified.querySelectorAll('[data-contract-node]')) {
         button.addEventListener('click', () => selectNode(button.dataset.contractNode));
       }
