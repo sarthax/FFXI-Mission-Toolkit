@@ -7,6 +7,7 @@ from workbench.devtools.features.state_surface_scoped import build_state_surface
 
 from .category_data import build_category_payload
 from .progression_catalog import mission_catalog
+from .progression_inspector import build_progression_inspector
 from .quest_catalog import quest_catalog
 
 
@@ -118,6 +119,11 @@ def _condition_result(actual: Any, operator: str | None, expected: Any) -> bool 
     return None
 
 
+def _feature_var_storage(kind: str, area_id: int, entry_id: int, key: str) -> str:
+    prefix = "Quest" if kind == "quest" else "Mission"
+    return f"{prefix}[{int(area_id)}][{int(entry_id)}]{key}"
+
+
 def build_character_state_surface(service, char_id: int, *, kind: str, area_id: int, entry_id: int) -> dict[str, Any]:
     if not service.character_exists(char_id):
         raise KeyError(f"Character {char_id} was not found")
@@ -150,6 +156,11 @@ def build_character_state_surface(service, char_id: int, *, kind: str, area_id: 
             # Missing charvars have server semantics equivalent to zero on the supported lineages.
             actual = variables.get(key, 0)
             resolved = True
+        elif state_type in {"quest_var", "mission_var"} and "." not in key:
+            storage = _feature_var_storage(kind, area_id, entry_id, key)
+            actual = variables.get(storage, 0)
+            resolved = True
+            ref["storage_key"] = storage
         elif state_type == "key_item" and key in packed.get("key_items", {}):
             actual = bool(packed["key_items"][key])
             resolved = True
@@ -202,4 +213,12 @@ def build_character_state_surface(service, char_id: int, *, kind: str, area_id: 
         "unresolved": unresolved,
         "status": "MISMATCH" if mismatched else ("CONSISTENT" if checked and not unresolved else "PARTIAL"),
     }
+    surface["progression"] = build_progression_inspector(
+        surface,
+        root,
+        variables=variables,
+        packed=packed,
+        mission_catalog=mission_catalog(root),
+        quest_catalog=quest_catalog(root),
+    )
     return surface
