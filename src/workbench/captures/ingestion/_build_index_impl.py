@@ -3149,7 +3149,7 @@ def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = Non
         counts["level_range"] += run1(relname, ingest_level_range_db, con, capture_id, src, relname)
     for relname in sfind(r'AttackDelay/[^/]+\.log$'):
         counts["attack_delay"] += run1(relname, ingest_attackdelay, con, capture_id, src, relname)
-    pl_files = sfind(r'Packet(?:Logger|Viewer)/(incoming|outgoing)/0x[0-9A-Fa-f]{3}\.log$')
+    pl_files = sfind(r'(?:Packet(?:Logger|Viewer)|(?:^|/)logs)/(incoming|outgoing)/0x[0-9A-Fa-f]{3}\.log$')  # bare 'logs/' = 2021 PacketViewer layout (no wrapper folder)
     if pl_files:
         matched_names.update(pl_files)
         try:
