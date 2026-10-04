@@ -181,6 +181,7 @@ def _condition_row(
         "resolved": resolved,
         "matches": match,
         "editor": editor,
+        "runtime_only": not resolved and editor is None,
     }
 
 
@@ -231,15 +232,17 @@ def _action_row(transition, **context) -> dict[str, Any]:
         }
     logical_event_chain = bool(transition.metadata.get("logical_event_chain"))
     progression_score = _progression_score(effects, logical_event_chain)
+    eligibility = _gate_state(gate_rows, transition.gate.logic if transition.gate else "ALL")
     return {
         "transition_id": transition.transition_id,
         "trigger": transition.trigger,
         "event": event,
         "effects": effects,
         "conditions": gate_rows,
-        "eligibility": _gate_state(gate_rows, transition.gate.logic if transition.gate else "ALL"),
+        "eligibility": eligibility,
         "progression": progression_score > 0,
         "progression_score": progression_score,
+        "runtime_requirements": [row for row in gate_rows if row.get("runtime_only")],
         "implementation_status": transition.implementation_status,
         "section_index": transition.metadata.get("section_index"),
         "source_lines": transition.metadata.get("section_source_lines"),
@@ -362,7 +365,7 @@ def build_progression_inspector(
     for index in sorted(sections):
         section = sections[index]
         section["eligibility"] = _gate_state(section["conditions"], "ALL")
-        section["actions"].sort(key=lambda row: (-int(row.get("progression_score", 0)), row["eligibility"] != "MATCH", str(row["transition_id"])))
+        section["actions"].sort(key=lambda row: (-int(row.get("progression_score", 0)), row["eligibility"] == "BLOCKED", str(row["transition_id"])))
         ordered_sections.append(section)
 
     target_completed = status in {"QUEST_COMPLETED", "MISSION_COMPLETED"}
@@ -386,18 +389,29 @@ def build_progression_inspector(
     current_actions: list[dict[str, Any]] = []
     blockers: list[dict[str, Any]] = []
     if current_section is not None:
-        current_actions = [row for row in current_section["actions"] if row["eligibility"] in {"MATCH", "OPEN"}]
-        current_actions.sort(key=lambda row: (-int(row.get("progression_score", 0)), str(row["transition_id"])))
+        # A PARTIAL handler gate often means the database proves the progression state but the
+        # remaining predicate is runtime-only (zone origin, trade payload, battlefield outcome,
+        # etc.). Keep those actions visible and let persistent progression outrank reminders.
+        current_actions = [
+            row for row in current_section["actions"]
+            if row["eligibility"] in {"MATCH", "OPEN"}
+            or (row["eligibility"] == "PARTIAL" and int(row.get("progression_score", 0)) >= 2)
+        ]
+        current_actions.sort(key=lambda row: (-int(row.get("progression_score", 0)), row["eligibility"] == "PARTIAL", str(row["transition_id"])))
         if not current_actions:
             current_actions = current_section["actions"][:3]
         for condition in current_section["conditions"]:
             if condition.get("matches") is False:
                 blockers.append(condition)
-        # Handler-level conditions explain why a specific transition is not currently available.
+        # Handler-level persisted conditions are real blockers. Unknown runtime predicates are
+        # requirements for the player action, not evidence of broken stored character state.
         if not blockers and current_actions and not any(row["progression_score"] >= 3 for row in current_actions):
             for action in current_section["actions"]:
                 if action["progression_score"] >= 3 and action["eligibility"] == "BLOCKED":
-                    blockers.extend(cond for cond in action["conditions"] if cond.get("matches") is False)
+                    blockers.extend(
+                        cond for cond in action["conditions"]
+                        if cond.get("matches") is False and not cond.get("runtime_only")
+                    )
 
     primary_action = max(current_actions, key=lambda row: int(row.get("progression_score", 0)), default=None)
     diagnosis = "COMPLETED" if target_completed else (
