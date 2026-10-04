@@ -74,7 +74,7 @@ Implementation Path exposes source-native wiring and bounded drill-down without 
 
 Focused modes answer implementation, triggers, effects, dependencies, mission progression, runtime, identity, diagnosis, or all-evidence questions without requiring one undifferentiated graph.
 
-Provider-native server traversal now covers deterministic relationships including item-detail → base item, spawn → mob group, mob group → pool, pet → pool, supported Blue Magic wiring, instance membership/entity links, and exact wiki claim-alignment paths.
+Provider-native server traversal covers deterministic relationships including item-detail → base item, spawn → mob group, mob group → pool, pet → pool, supported Blue Magic wiring, instance membership/entity links, and exact wiki claim-alignment paths.
 
 The reconciled drop-chain work adds:
 
@@ -84,9 +84,21 @@ The reconciled drop-chain work adds:
 - end-to-end **spawn → group → pool / drop rows → item** navigation,
 - executable scenario benchmarks proving the chain without synthetic canonical graph edges.
 
+The October 4 closure pass also adds exact forward navigation for:
+
+- reviewed/automatic `MAPPED` reference-wiki mappings → exact implementation rows;
+- captures → exact client snapshots by stored `client_build`/snapshot `version`;
+- Research sessions → explicit canonical feature/entity roots;
+- Research proposals and Validation results → exact canonical subjects only when the literal ID resolves in one namespace;
+- Validation runs and migrations → explicit canonical feature roots;
+- migration actions → explicit canonical artifacts.
+
+All of these links fail closed on missing, duplicate, unresolved, or ambiguous targets. They remain read-only provider/cross-store navigation evidence and do not create canonical graph relationships as a side effect.
+
 Mission/quest State Surface extraction is also provided here and reused by Character Editor.
 
 Detailed workflow/evidence contract: `docs/workbench/BEHAVIOR_FEATURE_TRACE_GUIDE.md`.
+Closure matrix and current testing boundary: `docs/workbench/FEATURE_TRACE_CLOSEOUT_2026-10-04.md`.
 
 ## Behavior Inspector
 
@@ -94,10 +106,13 @@ Behavior Inspector analyzes Lua-backed behavior for NPCs, mobs, doors/objects, z
 
 Current UI modes:
 
-- **Plain Behavior** — default; groups evidence as Trigger → Requirements → Actions / Events → Results / State Changes using end-user language.
+- **Clarified Flow** — default; preserves branch structure and shows source-proven event lifecycle, stage → event → next-stage summaries, and verified same-state continuity without claiming cross-hook runtime ordering.
+- **Plain Behavior** — compact evidence-preserving Trigger → Requirements → Actions / Events → Results / State Changes summary.
 - **Technical Graph** — full causal/evidence graph with pan/zoom, fit/reset, selected-path highlighting, and technical node identities.
 
-Plain Behavior now comes from one backend-generated evidence-preserving projection contract rather than a separate browser interpretation. Internal rule/helper plumbing is collapsed while guards, helper identity/inputs/effects, state, targets, source locations, and exact technical node IDs remain available for drill-down.
+Plain Behavior comes from one backend-generated evidence-preserving projection contract rather than a separate browser interpretation. Internal rule/helper plumbing is collapsed while guards, helper identity/inputs/effects, state, targets, source locations, and exact technical node IDs remain available for drill-down.
+
+Clarified Flow reuses the tested backend contracts for branch grouping, event identity, stage lifecycle, and stage continuity. Cross-hook relationships remain explicitly non-causal/`UNPROVEN` unless independent runtime evidence establishes ordering.
 
 Timer, queue, and listener callbacks are partitioned so the parent shows scheduling/registration and the callback owns its downstream behavior. Duplicate callback-body observations may be suppressed in Plain View using proven source spans while remaining intact in Technical Graph.
 
@@ -284,7 +299,7 @@ Raw OCR is retained alongside corrected/derived values.
 
 BG Wiki and FFXIclopedia are reference evidence, not unquestioned truth.
 
-The Workbench supports claim-level alignment, revision provenance, contradiction detection, and links from reference claims into source/capture/client evidence.
+The Workbench supports claim-level alignment, revision provenance, contradiction detection, and exact fail-closed links from reviewed mappings into implementation records where the mapping ledger proves a unique target.
 
 ## Research Sessions
 
@@ -299,7 +314,7 @@ Research Sessions provide persistent assisted-research workflows with:
 - final reports,
 - local Ollama support.
 
-Research proposals remain separate from verified implementation facts.
+Research proposals remain separate from verified implementation facts. Feature Trace may navigate explicit stored Research references to canonical nodes when the literal ID resolves uniquely; that navigation does not promote a proposal into verified implementation truth.
 
 ## Package / migration / validation tooling
 
@@ -313,6 +328,8 @@ The package/validation layer supports:
 - rollback,
 - validation runs linked to evidence,
 - deterministic source/target conversion where implemented.
+
+Feature Trace can follow explicit stored feature/subject/artifact references from Research, Validation, and Package records back to canonical Workbench nodes under exact-ID/fail-closed rules.
 
 Phase D source-layout work continues to relocate mature root-level modules into logical `src/workbench/...` packages without breaking compatibility entry points.
 
@@ -338,7 +355,7 @@ For most research/admin questions:
 2. Use Feature Trace for cross-source breadth and identity/wiring; use Behavior Inspector for source-proven Lua behavior.
 3. Use exact server/client/capture evidence before external reference sources.
 4. Use named Server Environments for administered targets rather than hard-coded lineage paths.
-5. Drill into Technical Graph or specialized source views when the simplified view is insufficient.
+5. Drill into Clarified Flow/Technical Graph or specialized source views when the simplified view is insufficient.
 6. Keep ambiguous mappings unresolved until another evidence source proves them.
 7. Use package/apply/editor workflows only after preview/validation and with the relevant backup/audit safety path enabled.
 
