@@ -1,8 +1,8 @@
 """Evidence-preserving projection for the Behavior Inspector Plain Behavior view.
 
 This module turns the technical behavior graph into a smaller admin-facing projection without
-inventing gameplay semantics. It deliberately removes implementation scaffolding (rule nodes)
-while keeping the exact technical node IDs needed for drill-down into the graph inspector.
+inventing gameplay semantics. It deliberately removes implementation scaffolding while keeping
+the exact technical node IDs needed for drill-down into the graph inspector.
 """
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from typing import Any
 _TRIGGER_KINDS = {"hook", "callback"}
 _REQUIREMENT_KINDS = {"condition", "helper_input"}
 _RESULT_KINDS = {"state", "target", "helper_effect"}
-_COLLAPSED_KINDS = {"rule"}
+_COLLAPSED_KINDS = {"rule", "helper_call", "shared_helper_callee"}
 _GUARD_EDGE_KINDS = {"GUARDS", "STATE_GUARD", "STATE_READ", "EVENT_GUARD", "EVENT_OUTCOME_GUARD"}
 
 
@@ -197,9 +197,9 @@ def _summary(trigger_label: str, lanes: dict[str, list[dict[str, Any]]]) -> str:
 def build_plain_behavior_projection(graph: dict[str, Any]) -> dict[str, Any]:
     """Return an admin-facing view of a technical behavior graph.
 
-    Rule scaffolding is collapsed, but its incoming guards are deliberately retained as
-    requirements. Conditions, effects, state, helper inputs/effects, callbacks, targets, and exact
-    technical node IDs remain available for evidence drill-down.
+    Rule nodes plus raw helper call/callee plumbing are collapsed, but rule guards are deliberately
+    retained as requirements. Resolved helper identity, helper inputs/effects, conditions, state,
+    callbacks, targets, and exact technical node IDs remain available for evidence drill-down.
     """
     graph_nodes = [row for row in graph.get("nodes", ()) if isinstance(row, dict) and row.get("id")]
     nodes = {str(row["id"]): row for row in graph_nodes}
@@ -237,10 +237,11 @@ def build_plain_behavior_projection(graph: dict[str, Any]) -> dict[str, Any]:
         for node, edge in _descendants(str(trigger["id"]), nodes=nodes, outgoing=outgoing):
             if node.get("kind") in _COLLAPSED_KINDS:
                 collapsed.append(_card(node, "actions"))
-                for requirement, guard_edge in _guard_requirements(
-                    str(node.get("id")), nodes=nodes, incoming=incoming
-                ):
-                    add_visible(requirement, guard_edge, forced_lane="requirements")
+                if node.get("kind") == "rule":
+                    for requirement, guard_edge in _guard_requirements(
+                        str(node.get("id")), nodes=nodes, incoming=incoming
+                    ):
+                        add_visible(requirement, guard_edge, forced_lane="requirements")
                 continue
             add_visible(node, edge)
 

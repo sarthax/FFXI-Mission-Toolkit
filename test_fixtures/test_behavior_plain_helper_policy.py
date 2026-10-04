@@ -27,19 +27,19 @@ def _helper_graph() -> dict:
     }
 
 
-def test_plain_projection_identifies_helper_plumbing_separately_from_semantic_helper_evidence():
+def test_plain_projection_collapses_helper_plumbing_but_keeps_semantic_helper_evidence():
     result = build_plain_behavior_projection(_helper_graph())
     flow = result["flows"][0]
     visible = {row["node_id"] for lane in ("requirements", "actions", "results") for row in flow[lane]}
+    collapsed = {row["node_id"] for row in flow["collapsed_implementation_nodes"]}
 
-    # Resolved helper identity and its source-proven downstream effect are meaningful Plain View evidence.
     assert "shared-helper:xi.test.run" in visible
     assert "shared-helper-effect:xi.test.run:0" in visible
-
-    # These are currently visible implementation-detail candidates; this fixture locks down the
-    # distinction before we collapse them in the next implementation slice.
-    assert "shared-helper-call:xi.test.run:0" in visible
-    assert "shared-helper-callee:xi.test.run:0" in visible
+    assert "shared-helper-call:xi.test.run:0" not in visible
+    assert "shared-helper-callee:xi.test.run:0" not in visible
+    assert "shared-helper-call:xi.test.run:0" in collapsed
+    assert "shared-helper-callee:xi.test.run:0" in collapsed
+    assert result["safety"]["collapsed_kinds"] == ["helper_call", "rule", "shared_helper_callee"]
 
 
 def test_helper_projection_remains_explicitly_evidence_only():
