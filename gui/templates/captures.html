@@ -10,13 +10,13 @@
   <a class="chip" href="/captures/new">+ New capture</a>
   <a class="chip" href="/captures/search">Cross-capture search</a>
   <a class="chip" href="/captures/help">Formats / gaps</a>
-  {% set zr = zone_review_pending() %}
-  <a class="chip" href="/captures/zone-review" style="{% if zr %}background:var(--amber-soft);color:var(--amber);border-color:var(--amber);font-weight:700{% endif %}">{% if zr %}<span aria-hidden="true">&#9888;</span> {% endif %}Zone review{% if zr %} <span style="background:var(--amber);color:var(--amber-soft);border-radius:9px;padding:0 6px;margin-left:2px">{{ zr }}</span>{% endif %}</a>
+  {% set zr = review_pending() %}
+  <a class="chip" href="/captures/review" style="{% if zr %}background:var(--amber-soft);color:var(--amber);border-color:var(--amber);font-weight:700{% endif %}">{% if zr %}<span aria-hidden="true">&#9888;</span> {% endif %}Review queue{% if zr %} <span style="background:var(--amber);color:var(--amber-soft);border-radius:9px;padding:0 6px;margin-left:2px">{{ zr }}</span>{% endif %}</a>
   <span class="sp"></span>
   <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:680px">Indexed capture bundles are explicitly typed and tagged so unrelated content is not silently conflated.</div></details>
 </div>
 
-{% if zr %}<div class="warn" style="display:flex;gap:8px;align-items:center"><span style="font-size:22px" aria-hidden="true">&#9888;</span><span><strong>{{ zr }} packet zone item{{ 's' if zr != 1 }} need manual review.</strong> Affected captures are held out of shift evidence until decided. <a href="/captures/zone-review">Open Zone review</a></span></div>{% endif %}
+{% if zr %}<div class="warn" style="display:flex;gap:8px;align-items:center"><span style="font-size:22px" aria-hidden="true">&#9888;</span><span><strong>{{ zr }} capture exception{{ 's' if zr != 1 }} need manual review.</strong> Captures with blocking exceptions are held out of derived data (shift evidence, etc.) until decided; the raw data stays viewable and is flagged &#9888; below. <a href="/captures/review">Open review queue</a></span></div>{% endif %}
 
 <form class="search dense-toolbar" method="get" style="margin:6px 0">
   <input type="text" name="q" value="{{ q }}" placeholder="filter by mission or label" list="mission-list">
@@ -40,9 +40,10 @@
 
 <div class="dense-toolbar" style="margin:4px 0 6px"><strong>{{ rows|length }} capture(s)</strong><span class="sp"></span><span class="muted">Open a row for detail; Prev/Next preserves the current filtered set.</span></div>
 <div class="table-wrap"><table>
-  <tr><th>id</th><th>type</th><th>tags</th><th>zones</th><th>mission</th><th>npc</th><th>source file</th></tr>
+  <tr><th></th><th>id</th><th>type</th><th>tags</th><th>zones</th><th>mission</th><th>npc</th><th>source file</th></tr>
   {% for r in rows %}
   <tr>
+    <td>{% if r.review %}<a href="/captures/review?status=pending" title="{{ r.review|join(', ') }}" style="color:var(--amber);text-decoration:none">&#9888;</a>{% endif %}</td>
     <td class="mono"><a href="/captures/{{ r.capture_id }}?content_type={{ content_type }}&q={{ q }}">{{ r.capture_id }}</a></td>
     <td><span class="chip">{{ r.content_type or '?' }}</span></td>
     <td>{% for t in r.tags %}<span class="chip">{{ t }}</span>{% endfor %}</td>

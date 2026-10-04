@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Review Queue — Mission Toolkit{% endblock %}
+{% block content %}
+<div class="dense-toolbar">
+  <a class="chip" href="/captures">&larr; Captures</a>
+  <strong><span aria-hidden="true" style="color:var(--amber)">&#9888;</span> Capture review queue</strong>
+  <span class="sp"></span>
+  {% for k in ['pending','resolved','dismissed','auto_resolved','all'] %}
+  <a class="chip{% if status==k %} active{% endif %}" href="/captures/review?status={{k}}&kind={{kind}}">{{k|replace('_',' ')|capitalize}}{% if k!='all' %} ({{counts[k]}}){% endif %}</a>
+  {% endfor %}
+</div>
+<div class="dense-toolbar" style="margin-top:4px">
+  <a class="chip{% if not kind %} active{% endif %}" href="/captures/review?status={{status}}">All kinds</a>
+  {% for k,h in kinds.items() %}<a class="chip{% if kind==k %} active{% endif %}" href="/captures/review?status={{status}}&kind={{k}}">{{h.label}}{% if kind_counts[k] %} ({{kind_counts[k]}} pending){% endif %}{% if h.blocking %} &#9888;{% endif %}</a>{% endfor %}
+</div>
+<p class="muted">Anything ingested with missing, empty, or unverified data lands here instead of sitting in the database looking normal. Kinds marked &#9888; are <strong>blocking</strong>: while one is pending the capture is held out of derived data (msgid-shift evidence, and anything else that calls <code>is_quarantined</code>). Raw data stays browsable and the capture is flagged everywhere. Items clear themselves when the underlying problem is fixed and the capture is re-scanned; decisions are kept and survive re-ingest.</p>
+{% if msg %}<div class="warn">{{msg}}</div>{% endif %}
+<datalist id="zone-list">{% for z in zones %}<option value="{{z}}">{% endfor %}</datalist>
+{% if not rows %}<p class="muted">Nothing here for this filter.</p>{% else %}
+<div class="table-wrap"><table>
+<thead><tr><th>#</th><th>Kind</th><th>Capture</th><th>Detail</th><th>Status</th><th>Decision</th></tr></thead>
+<tbody>
+{% for r in rows %}{% set h = kinds.get(r.kind) %}
+<tr>
+  <td>{{r.review_id}}</td>
+  <td>{{ h.label if h else r.kind }}{% if h and h.blocking %} <span title="blocking: capture held out of derived data" style="color:var(--amber)">&#9888;</span>{% endif %}{% if r.key %}<div class="muted">key {{r.key}}</div>{% endif %}</td>
+  <td>{% if r.capture_id %}<a href="/captures/{{r.capture_id}}">{{r.capture_id}}</a><div class="muted">{{r.capture_label}}</div>{% else %}<div class="muted">{{r.source_path}}</div>{% endif %}</td>
+  <td>{{ r.detail.reason or '' }}
+    {% if r.detail.capture_zones is defined %}<div class="muted">zones in capture: {{ r.detail.capture_zones|join(', ') or '—' }}</div><div class="muted">name hint (not applied): {{ r.detail.name_hint|join(', ') or '—' }}</div>{% endif %}
+    {% if r.detail.candidates is defined %}<div class="muted">closest: {{ r.detail.candidates[:3]|join(' · ') }}</div>{% endif %}
+  </td>
+  <td>{{ r.status|replace('_',' ') }}{% if r.resolution %}<div><strong>{{ r.resolution }}</strong></div>{% endif %}{% if r.note %}<div class="muted">{{ r.note }}</div>{% endif %}</td>
+  <td>{% if r.status == 'pending' and h %}
+    <form method="post" action="/captures/review/{{r.review_id}}" style="display:flex;gap:4px;flex-wrap:wrap">
+      <input type="hidden" name="status" value="{{status}}"><input type="hidden" name="kind" value="{{kind}}">
+      {% if h.value == 'zone' %}<input name="value" list="zone-list" placeholder="zone name" size="20">
+      {% elif h.value == 'title' %}<input name="value" list="cand-{{r.review_id}}" placeholder="manifest title" size="28"><datalist id="cand-{{r.review_id}}">{% for c in r.detail.candidates or [] %}<option value="{{c}}">{% endfor %}</datalist>{% endif %}
+      <input name="note" placeholder="note{% if r.kind=='empty_ingest' %} (required to dismiss){% endif %}" size="18">
+      {% for act,lab in h.actions %}<button name="action" value="{{act}}">{{lab}}</button>{% endfor %}
+    </form>{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+{% endif %}
+{% endblock %}

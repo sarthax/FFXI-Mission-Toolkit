@@ -2974,6 +2974,11 @@ def ingest(con, path_str: str, content_type: str = "instances", subroot: str | N
             _ms.update_after_ingest(con, capture_id)
         except Exception as _ex:
             print(f"  [shift check skipped: {_ex}]")
+        try:
+            from workbench.captures import review_queue as _rq
+            _rq.scan_capture(con, capture_id)   # exception queue: empty ingest / unlinked post / unresolved zones
+        except Exception as _ex:
+            print(f"  [review scan skipped: {_ex}]")
 
         con.commit()
         zones = json.loads(con.execute("SELECT zones FROM captures WHERE capture_id=?", (capture_id,)).fetchone()[0] or "[]")

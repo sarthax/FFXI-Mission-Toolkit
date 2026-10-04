@@ -29,6 +29,10 @@ main.capture-detail-page{padding:8px 10px 24px}
 .capture-more .menu>*{display:block;width:100%;margin:3px 0;text-align:left}
 @media(max-width:850px){.capture-meta{grid-template-columns:1fr}.capture-head .sp{display:none}.capture-actions{width:100%}}
 </style>
+{% set rv = capture_review_items(detail.capture_id) %}
+{% if rv %}<div class="warn" style="border-color:var(--amber)"><span aria-hidden="true" style="font-size:20px">&#9888;</span> <strong>This capture has {{ rv|length }} unreviewed exception{{ 's' if rv|length != 1 }}.</strong>
+  {% for r in rv %}<span class="chip">{{ r.label }}{% if r.blocking %} &middot; held out of derived data{% endif %}</span> {% endfor %}
+  The raw data below is shown as ingested and may be incomplete or unverified. <a href="/captures/review?kind={{ rv[0].kind }}">Open review queue</a></div>{% endif %}
 <div class="capture-head dense-toolbar">
   <a class="chip" href="/captures?content_type={{ content_type }}&q={{ q }}">&larr; Captures</a>
   <span class="title">{{ detail.capture_label }}</span>

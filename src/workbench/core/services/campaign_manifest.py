@@ -107,6 +107,28 @@ def match(con, rows=None, only_ids=None):
     return matches, unmatched, ambiguous
 
 
+def link(con, cid, r, how, commit=True):
+    """Write one capture's post metadata, video_url (only if empty) and real tag names. -> (video_set, tag_rows)."""
+    con.execute("""INSERT OR REPLACE INTO capture_post_meta VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (cid, r["file_url"], r["host"], r["post_date"], r["date_note"], r["uploader"], r["title"],
+                 r["video_url"], r["extra_video_urls"], r["capture_type"], r["secondary_types"], r["tags"],
+                 r["zones"], r["ops_missions"], how))
+    n_vid = n_tags = 0
+    if r["video_url"]:
+        n_vid = con.execute("UPDATE captures SET video_url=? WHERE capture_id=? AND (video_url IS NULL OR video_url='')",
+                            (r["video_url"], cid)).rowcount
+    tags = {"Conflict", "Campaign"}  # type + channel-kind (Discord #campaign)
+    for t in [r["capture_type"]] + [x for x in r["secondary_types"].split(";") if x]:
+        tags.update(_TYPE_TAGS.get(t, []))
+    for t in r["tags"].split(";"):
+        tags.update(_TAG_TAGS.get(t, []))
+    for t in sorted(tags):
+        n_tags += con.execute("INSERT OR IGNORE INTO capture_tags (capture_id, tag) VALUES (?,?)", (cid, t)).rowcount
+    if commit:
+        con.commit()
+    return n_vid, n_tags
+
+
 def apply(con, only_ids=None, dry_run=False, verbose=True):
     ensure_table(con)
     matches, unmatched, ambiguous = match(con, only_ids=only_ids)
@@ -114,20 +136,9 @@ def apply(con, only_ids=None, dry_run=False, verbose=True):
     for cid, r, how in matches:
         if dry_run:
             continue
-        con.execute("""INSERT OR REPLACE INTO capture_post_meta VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                    (cid, r["file_url"], r["host"], r["post_date"], r["date_note"], r["uploader"], r["title"],
-                     r["video_url"], r["extra_video_urls"], r["capture_type"], r["secondary_types"], r["tags"],
-                     r["zones"], r["ops_missions"], how))
-        if r["video_url"]:
-            n_vid += con.execute("UPDATE captures SET video_url=? WHERE capture_id=? AND (video_url IS NULL OR video_url='')",
-                                 (r["video_url"], cid)).rowcount
-        tags = {"Conflict", "Campaign"}  # type + channel-kind (Discord #campaign)
-        for t in [r["capture_type"]] + [x for x in r["secondary_types"].split(";") if x]:
-            tags.update(_TYPE_TAGS.get(t, []))
-        for t in r["tags"].split(";"):
-            tags.update(_TAG_TAGS.get(t, []))
-        for t in sorted(tags):
-            n_tags += con.execute("INSERT OR IGNORE INTO capture_tags (capture_id, tag) VALUES (?,?)", (cid, t)).rowcount
+        v, t = link(con, cid, r, how, commit=False)
+        n_vid += v
+        n_tags += t
     if not dry_run:
         con.commit()
     if verbose:

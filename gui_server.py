@@ -629,19 +629,38 @@ def shell_context(request: Request) -> dict:
 templates.env.globals["shell_context"] = shell_context
 
 
-def zone_review_pending() -> int:
-    """Number of pending packet-zone review items (drives the warning badge); never raises."""
+def review_pending() -> int:
+    """Number of pending capture exceptions (drives the warning badge); never raises."""
     try:
+        from workbench.captures import review_queue as _rq
         con = get_con()
         try:
-            return con.execute("SELECT COUNT(*) FROM shift_zone_review WHERE status='pending'").fetchone()[0]
+            return _rq.pending_count(con)
         finally:
             con.close()
     except Exception:
         return 0
 
 
-templates.env.globals["zone_review_pending"] = zone_review_pending
+templates.env.globals["review_pending"] = review_pending
+
+
+def capture_review_items(capture_id) -> list:
+    """Pending exceptions for one capture (detail-page banner); never raises."""
+    try:
+        from workbench.captures import review_queue as _rq
+        con = get_con()
+        try:
+            return [dict(r, label=_rq.KINDS.get(r["kind"], {}).get("label", r["kind"]),
+                         blocking=_rq.KINDS.get(r["kind"], {}).get("blocking", False))
+                    for r in _rq.items(con, "pending", capture_id=int(capture_id))]
+        finally:
+            con.close()
+    except Exception:
+        return []
+
+
+templates.env.globals["capture_review_items"] = capture_review_items
 
 # The packaged Character Editor router owns its own Jinja2Templates; base.html needs the globals above.
 character_editor_gui.templates.env.globals.update(templates.env.globals)
@@ -658,44 +677,61 @@ def capture_help_page(request: Request):
     return templates.TemplateResponse(request, "capture_help.html", {})
 
 
-def _shift_review_rows():
-    from workbench.captures import msgid_shift as _ms
+@app.get("/captures/review", response_class=HTMLResponse)
+def capture_review_queue(request: Request, status: str = "pending", kind: str = "", msg: str = ""):
+    """Exception queue: captures with missing/unverified data. Blocking kinds are quarantined from derived
+    pipelines until decided; the raw data stays browsable everywhere."""
+    from workbench.captures import review_queue as rq
     con = get_con()
     try:
-        con.execute(_ms.REVIEW_DDL)
-        rows = [dict(r) for r in con.execute(
-            "SELECT r.*, c.capture_label FROM shift_zone_review r LEFT JOIN captures c ON c.capture_id=r.capture_id "
-            "ORDER BY CASE r.status WHEN 'pending' THEN 0 ELSE 1 END, r.capture_id, r.pseudo")]
+        allrows = rq.items(con, "all")
         zones = [r[0] for r in con.execute("SELECT name FROM zones ORDER BY name")]
-        return rows, zones
+        labels = {r[0]: r[1] for r in con.execute("SELECT capture_id, capture_label FROM captures")}
     finally:
         con.close()
+    counts = {k: sum(1 for r in allrows if r["status"] == k) for k in ("pending", "resolved", "dismissed", "auto_resolved")}
+    kind_counts = {k: sum(1 for r in allrows if r["kind"] == k and r["status"] == "pending") for k in rq.KINDS}
+    shown = [r for r in allrows if (status == "all" or r["status"] == status) and (not kind or r["kind"] == kind)]
+    for r in shown:
+        r["capture_label"] = labels.get(r["capture_id"], "")
+    return templates.TemplateResponse(request, "capture_review.html", {
+        "rows": shown, "zones": zones, "counts": counts, "status": status, "kind": kind,
+        "kinds": rq.KINDS, "kind_counts": kind_counts, "msg": msg})
 
 
-@app.get("/captures/zone-review", response_class=HTMLResponse)
-def capture_zone_review(request: Request, status: str = "pending", msg: str = ""):
-    """Review queue for 0x036 packets whose zone no automatic fallback could resolve. Captures with
-    pending items are quarantined from shift evidence until each item is approved or rejected."""
-    rows, zones = _shift_review_rows()
-    counts = {k: sum(1 for r in rows if r["status"] == k) for k in ("pending", "approved", "rejected")}
-    shown = rows if status == "all" else [r for r in rows if r["status"] == status]
-    return templates.TemplateResponse(request, "capture_zone_review.html",
-                                      {"rows": shown, "zones": zones, "counts": counts, "status": status, "msg": msg})
+@app.get("/captures/zone-review")
+def capture_zone_review_legacy():
+    return RedirectResponse(url="/captures/review?kind=zone", status_code=301)
 
 
-@app.post("/captures/zone-review/{review_id}")
-def capture_zone_review_decide(review_id: int, action: str = Form(...), zone: str = Form(""), status: str = Form("pending")):
-    from workbench.captures import msgid_shift as _ms
+@app.post("/captures/review/{review_id}")
+def capture_review_decide(review_id: int, action: str = Form(...), value: str = Form(""), note: str = Form(""),
+                          status: str = Form("pending"), kind: str = Form("")):
+    from workbench.captures import review_queue as rq
+    from urllib.parse import quote
     con = get_con()
     try:
-        _ms.review_decide(con, review_id, action, zone.strip().upper().replace(" ", "_") or None)
-        msg = "Review #%d %s." % (review_id, "approved" if action == "approve" else "rejected")
-    except SystemExit as e:
+        v = value.strip()
+        it = con.execute("SELECT kind FROM review_queue WHERE review_id=?", (review_id,)).fetchone()
+        if it and it[0] == "zone":
+            v = v.upper().replace(" ", "_")
+        rq.decide(con, review_id, action, v or None, note.strip() or None)
+        msg = "Review #%d %s." % (review_id, "resolved" if action == "resolve" else "dismissed")
+    except (ValueError, KeyError) as e:
         msg = "Not saved: %s" % e
     finally:
         con.close()
-    from urllib.parse import quote
-    return RedirectResponse(url="/captures/zone-review?status=%s&msg=%s" % (quote(status), quote(msg)), status_code=303)
+    return RedirectResponse(url="/captures/review?status=%s&kind=%s&msg=%s" % (quote(status), quote(kind), quote(msg)), status_code=303)
+
+
+@app.get("/captures/{capture_id}/review-flags")
+def capture_review_flags(capture_id: int):
+    from workbench.captures import review_queue as rq
+    con = get_con()
+    try:
+        return JSONResponse([{k: r[k] for k in ("review_id", "kind", "status", "key")} for r in rq.items(con, "pending", capture_id=capture_id)])
+    finally:
+        con.close()
 
 
 @app.get("/roadmap", response_class=HTMLResponse)
@@ -5863,6 +5899,10 @@ def captures_page(request: Request, content_type: str = "", tag: str = "", q: st
     missions = [r[0] for r in con.execute(
         "SELECT DISTINCT mission_name FROM captures WHERE mission_name IS NOT NULL ORDER BY 1").fetchall()]
     all_tags = build_capture_index.all_tag_choices(con)
+    from workbench.captures import review_queue as _rq
+    flags = _rq.pending_by_capture(con)
+    for d in rows:
+        d["review"] = flags.get(d["capture_id"], [])
     con.close()
     return templates.TemplateResponse(request, "captures.html", {
         "rows": rows, "content_type": content_type, "content_types": content_types,
