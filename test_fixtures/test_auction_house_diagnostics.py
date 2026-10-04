@@ -1,3 +1,4 @@
+"""Regression coverage for bounded, read-only Auction House live diagnostics."""
 from pathlib import Path
 
 from workbench.server_admin.auction_house import diagnostics as ah_diagnostics
