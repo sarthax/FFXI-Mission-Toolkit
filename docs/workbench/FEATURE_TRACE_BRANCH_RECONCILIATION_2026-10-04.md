@@ -13,7 +13,7 @@ These branches are stale branch references only.
 
 - `feature-trace-scenario-ui` — the alternate scenario-page implementation was superseded by the merged focused modes/provider-evidence integration in the existing Feature Trace page (PRs #448/#449; PR #450 was closed for that reason). No code is transplanted from this branch.
 
-## Transplanted
+## Transplanted and merged
 
 The unique `feature-trace-drop-chain-benchmarks` work was reviewed commit-by-commit and transplanted onto current `main` rather than merged wholesale.
 
@@ -28,4 +28,4 @@ Preserved capabilities:
 
 The transplant deliberately preserves newer `main` work that did not exist on the old branch, including later provider links, instance/entity relationships, pet/pool relationships, wiki alignment links, and other fail-closed provider behavior.
 
-The old branch should be treated as superseded by the transplant once the transplant PR is merged and green.
+The transplant merged through PR #474 after Workbench Regression and Src Layout Regression passed. The old `feature-trace-drop-chain-benchmarks` branch and the temporary transplant branch are therefore superseded/stale references; the merged `main` implementation is authoritative.

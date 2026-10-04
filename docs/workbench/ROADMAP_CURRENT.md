@@ -15,7 +15,7 @@ This is the authoritative current planning and capability inventory for the Miss
 - `[~]` = substantial foundation exists, but the capability is intentionally incomplete or evidence-limited.
 - `[ ]` = planned / not yet implemented.
 - Closed PRs that were superseded, transplanted, or replaced are not roadmap capabilities.
-- As of this reconciliation there are no outstanding feature branches that need promotion; `main` is the product baseline.
+- As of this reconciliation, Behavior Inspector foundation and the reconciled Feature Trace drop-chain work are merged into `main`; current `main` is the product baseline for these capabilities.
 
 ---
 
@@ -106,7 +106,9 @@ These are deliberate safety boundaries, not generic missing editors.
 
 # 4. Feature Trace / Implementation Path
 
-- [x] Cross-source providers for SQL, LSB, Topaz, DSP, Client, Capture, Research, Validation, and Package records.
+Feature Trace is now a mature cross-source implementation/evidence navigator. Provider-native relationships are read-only navigation evidence and remain distinct from canonical graph truth. The combined workflow and evidence boundary are documented in `docs/workbench/BEHAVIOR_FEATURE_TRACE_GUIDE.md`.
+
+- [x] Cross-source providers for SQL, LSB, Topaz, DSP, Client, Capture, Research, Validation, Package, and reference-wiki records.
 - [x] Source-native wiring and bounded provider drill-down.
 - [x] Entity identity bridging across server IDs, client ENTITY snapshots, captures, and client-build drift.
 - [x] Fail-closed ambiguity for numeric collisions and conflicting identities.
@@ -115,12 +117,18 @@ These are deliberate safety boundaries, not generic missing editors.
 - [x] Runtime/capture drill-down to exact normalized observations and source provenance.
 - [x] High-volume traversal bounds/truncation reporting.
 - [x] Mission/quest State Surface extraction reused by Character Editor.
-- [x] Focused Feature Trace modes can generate and display provider-native relationship evidence without writing synthetic canonical graph edges.
-- [~] Continue broader deterministic provider wiring and richer transition-level progression reasoning.
+- [x] Focused Feature Trace modes generate/display provider-native relationship evidence without writing synthetic canonical graph edges.
+- [x] Focused modes cover implementation, triggers, effects, dependencies, mission progression, runtime evidence, identity, diagnosis, and all-evidence navigation.
+- [x] Deterministic server relationships include supported item-detail → base-item, spawn → group, group → pool, pet → pool, Blue Magic spell/skill, instance membership/entity, and exact reference-wiki claim-alignment paths.
+- [x] `mob_droplist` rows are indexed with complete-row read-only composite identity because supported upstream schemas do not provide a stable primary key.
+- [x] Deterministic drop-chain traversal supports **spawn → group → pool / drop rows → item** without creating canonical graph edges as a side effect.
+- [x] Feature Trace branch reconciliation preserved unique drop-chain work by transplanting it onto newer `main` rather than merging a diverged branch wholesale; superseded alternate scenario UI work was deliberately excluded.
+- [x] Executable trace benchmark contracts can verify mode, root kind, relationship concepts/count, and required generators; the NM benchmark proves end-to-end drop/item traversal.
+- [~] Continue broader deterministic provider wiring and richer transition/claim closure only where source/provider evidence supports exact relationships.
 
 # 5. Behavior Inspector / scripted behavior
 
-Behavior Inspector is at closeout state as a mature evidence-first scripted-behavior inspector. Its durable capability and safety contract is documented in `docs/workbench/BEHAVIOR_INSPECTOR_CLOSEOUT.md`.
+Behavior Inspector is at closeout state as a mature evidence-first scripted-behavior inspector. Its durable capability and safety contract is documented in `docs/workbench/BEHAVIOR_INSPECTOR_CLOSEOUT.md`; its relationship to Feature Trace is documented in `docs/workbench/BEHAVIOR_FEATURE_TRACE_GUIDE.md`.
 
 ## Extraction
 
@@ -145,6 +153,7 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 - [x] Technical graph supports wheel zoom, pointer-centered zoom, drag-pan, Zoom +/- controls, Fit, Reset View.
 - [x] Selecting a node highlights upstream prerequisites and downstream effects as a directed causal path while dimming unrelated sibling branches.
 - [x] Node details live in a persistent right-side inspector with independent scrolling, collapse/expand, and responsive stacked fallback.
+- [x] Behavior Inspector and Feature Trace now have an explicit workflow boundary: Behavior explains source-proven Lua behavior; Feature Trace explains cross-source implementation/evidence relationships.
 - [x] Further support for new/dynamic Lua idioms is additive evidence expansion, not unfinished foundational Behavior Inspector work; unsupported semantics remain raw/generic evidence rather than guessed behavior.
 
 # 6. Mission / quest extraction
@@ -268,13 +277,14 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 - [x] Live-app route regressions for sensitive routing surfaces.
 - [x] Character Editor progression regressions cover modern LSB and legacy DSP/Topaz transition-bundle, projected-result, assessment, and UI contracts.
 - [x] Behavior Inspector regressions cover extraction, complex state/event flows, callbacks, shared helpers, Plain View projection, backend/UI contract parity, and source-layout service boundaries.
+- [x] Feature Trace regressions cover deterministic provider relationships, fail-closed ambiguity, focused modes, executable scenario contracts, and end-to-end NM drop/item traversal without synthetic canonical edges.
 - [x] Documentation reconciliation should occur after major multi-PR feature batches rather than allowing README/roadmap drift to accumulate again.
 
 ---
 
 # Highest-value next work
 
-1. **Feature Trace provider breadth / transition closure** — continue deterministic relationship generation and richer cross-source transition reasoning where provider evidence is strong enough.
+1. **Feature Trace provider breadth / transition closure** — extend the now-established provider-native model into additional deterministic server/reference relationships and richer cross-source transition/claim closure; the mob drop/item chain is complete and regression-covered.
 2. **Client Asset Cache expansion** — only for proven asset families where reusing pre-extracted data materially improves interactive tools.
 3. **Native modern-LSB Nyzul adapter** — current Nyzul parser remains legacy-layout-specific by design.
 4. **Capture/protocol research** — continue lobby/world/search classification and evidence-backed decoder coverage.
@@ -288,6 +298,8 @@ Behavior Inspector is at closeout state as a mature evidence-first scripted-beha
 - `docs/workbench/RECENT_CHANGES_2026-10-03.md` — detailed recent reconciliation and merged-change summary through the prior batch.
 - `docs/workbench/CHARACTER_EDITOR_CLOSEOUT.md` — current Character Editor safety/capability contract.
 - `docs/workbench/BEHAVIOR_INSPECTOR_CLOSEOUT.md` — current Behavior Inspector capability/evidence/closeout contract.
+- `docs/workbench/BEHAVIOR_FEATURE_TRACE_GUIDE.md` — combined Behavior Inspector / Feature Trace workflow, evidence boundaries, and October 4 implementation summary.
+- `docs/workbench/FEATURE_TRACE_BRANCH_RECONCILIATION_2026-10-04.md` — branch-level Feature Trace reconciliation and drop-chain transplant record.
 - `docs/guides/SETUP.md` — current user setup and named environment configuration.
 - `docs/guides/TOOLING_OVERVIEW.md` — living tooling/component overview.
 - `docs/workbench/ROADMAP.md` — historical implementation ledger.
