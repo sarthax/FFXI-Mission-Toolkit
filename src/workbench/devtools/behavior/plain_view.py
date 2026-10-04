@@ -56,6 +56,39 @@ def _human_node(node: dict[str, Any]) -> str:
         return "Schedule a timer / delayed action"
     if node.get("kind") == "state":
         return f"Character/game state: {raw.rsplit(':', 1)[-1]}"
+    if node.get("kind") == "event":
+        return f"Event / CSID {meta.get('event_id') if meta.get('event_id') is not None else value or raw}"
+    if node.get("kind") == "event_outcome":
+        selector = meta.get("selector") or "outcome"
+        literal = meta.get("literal") if meta.get("literal") is not None else value
+        return f"{selector} = {literal}"
+    if node.get("kind") == "condition":
+        upper = raw.upper()
+        subject = raw
+        for operator in (
+            "EVENT_OUTCOME_EQUALS", "EVENT_ID_EQUALS", "STATE_EQUALS", "READS_STATE",
+            "HAS_KEY_ITEM", "NOT_HAS_KEY_ITEM", "HAS_ITEM", "TRADE_HAS_EXACTLY", "TRADE_HAS",
+        ):
+            if operator in upper:
+                subject = raw[:upper.index(operator)].strip()
+                if operator == "EVENT_ID_EQUALS":
+                    return f"Event / CSID = {value}"
+                if operator == "EVENT_OUTCOME_EQUALS":
+                    return f"{subject.rsplit(':', 1)[-1] or 'outcome'} = {value}"
+                if operator == "STATE_EQUALS":
+                    return f"{subject.rsplit(':', 1)[-1]} = {value}"
+                if operator == "READS_STATE":
+                    return f"Reads {subject.rsplit(':', 1)[-1]}"
+                if operator == "HAS_KEY_ITEM":
+                    return f"Has key item{': ' + value if value else ''}"
+                if operator == "NOT_HAS_KEY_ITEM":
+                    return f"Does not have key item{': ' + value if value else ''}"
+                if operator == "HAS_ITEM":
+                    return f"Has item{': ' + value if value else ''}"
+                if operator == "TRADE_HAS_EXACTLY":
+                    return f"Trade exactly{': ' + value if value else ''}"
+                if operator == "TRADE_HAS":
+                    return f"Trade contains{': ' + value if value else ''}"
     checks = (
         ("getcharvar", "Check character progress"),
         ("haskeyitem", "Requires a key item"),
@@ -180,8 +213,6 @@ def _descendants(
                 if stop_at_callbacks:
                     continue
             elif blocked_source_ranges and _in_ranges(node, blocked_source_ranges):
-                # Technical graph keeps callback-body observations attributed to their enclosing
-                # hook, but Plain View presents those lines only under the callback subflow.
                 continue
             else:
                 found.append((node, edge))
@@ -223,11 +254,14 @@ def _guard_requirements(
 
 
 def _card(node: dict[str, Any], lane: str) -> dict[str, Any]:
+    meta = node.get("meta") or {}
     return {
         "node_id": node.get("id"),
         "kind": node.get("kind"),
         "label": _human_hook(node) if lane == "trigger" else _human_node(node),
         "technical_label": node.get("label") or node.get("id"),
+        "source_line": _source_line(node),
+        "value": meta.get("value"),
     }
 
 
@@ -248,14 +282,202 @@ def _summary(trigger_label: str, lanes: dict[str, list[dict[str, Any]]]) -> str:
     return " ".join(parts)
 
 
+def _condition_signature(node: dict[str, Any]) -> str:
+    meta = node.get("meta") or {}
+    return f"{node.get('label') or node.get('id')}|{meta.get('value')!r}"
+
+
+def _dedupe_cards(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    result: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for row in rows:
+        key = (str(row.get("label") or ""), str(row.get("technical_label") or ""))
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(row)
+    return result
+
+
+def _branch_groups(
+    triggers: list[dict[str, Any]],
+    *,
+    nodes: dict[str, dict[str, Any]],
+    outgoing: dict[str, list[dict[str, Any]]],
+    incoming: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]]:
+    """Build a branch tree using only exact rule guards and rule-emitted effects.
+
+    A child branch is nested under another branch only when its direct guard set is a strict
+    superset of the parent guard set. This preserves source-proven event -> outcome -> nested guard
+    structure without treating sibling effects as ordered execution steps.
+    """
+    result: list[dict[str, Any]] = []
+    for trigger in triggers:
+        callback_ranges = _scheduled_callback_ranges(str(trigger["id"]), nodes=nodes, outgoing=outgoing)
+        rule_nodes = []
+        for edge in outgoing.get(str(trigger["id"]), ()):
+            target = nodes.get(str(edge.get("target") or ""))
+            if target is not None and target.get("kind") == "rule":
+                rule_nodes.append(target)
+
+        grouped: dict[tuple[str, ...], dict[str, Any]] = {}
+        for rule in rule_nodes:
+            rid = str(rule["id"])
+            direct_guards: list[dict[str, Any]] = []
+            guard_keys: list[str] = []
+            for edge in incoming.get(rid, ()):
+                if str(edge.get("kind") or "") != "GUARDS":
+                    continue
+                condition = nodes.get(str(edge.get("source") or ""))
+                if condition is None or _in_ranges(condition, callback_ranges):
+                    continue
+                direct_guards.append(condition)
+                guard_keys.append(_condition_signature(condition))
+            key = tuple(sorted(set(guard_keys)))
+            entry = grouped.setdefault(key, {
+                "branch_id": rid,
+                "technical_rule_ids": [],
+                "guard_keys": list(key),
+                "direct_requirements": [],
+                "requirements": [],
+                "effects": [],
+                "started_event_ids": [],
+                "guard_event_ids": [],
+                "children": [],
+                "source_line": _source_line(rule),
+            })
+            entry["technical_rule_ids"].append(rid)
+            entry["direct_requirements"].extend(_card(row, "requirements") for row in direct_guards)
+            entry["requirements"].extend(
+                _card(row, "requirements")
+                for row, _edge in _guard_requirements(
+                    rid, nodes=nodes, incoming=incoming, blocked_source_ranges=callback_ranges
+                )
+            )
+            for guard in direct_guards:
+                label = str(guard.get("label") or "")
+                if "EVENT_ID_EQUALS" in label.upper():
+                    value = (guard.get("meta") or {}).get("value")
+                    if value is not None and value not in entry["guard_event_ids"]:
+                        entry["guard_event_ids"].append(value)
+            for edge in outgoing.get(rid, ()):
+                if str(edge.get("kind") or "") != "EMITS":
+                    continue
+                effect = nodes.get(str(edge.get("target") or ""))
+                if effect is None or _in_ranges(effect, callback_ranges):
+                    continue
+                card = _card(effect, _lane(effect, edge))
+                entry["effects"].append(card)
+                meta = effect.get("meta") or {}
+                if meta.get("effect") == "START_EVENT" and meta.get("value") is not None:
+                    event_id = meta.get("value")
+                    if event_id not in entry["started_event_ids"]:
+                        entry["started_event_ids"].append(event_id)
+
+        branches = list(grouped.values())
+        for branch in branches:
+            branch["direct_requirements"] = _dedupe_cards(branch["direct_requirements"])
+            branch["requirements"] = _dedupe_cards(branch["requirements"])
+            branch["effects"] = _dedupe_cards(branch["effects"])
+
+        by_id = {branch["branch_id"]: branch for branch in branches}
+        parent_for: dict[str, str] = {}
+        for branch in branches:
+            keys = set(branch["guard_keys"])
+            if not keys:
+                continue
+            candidates = [
+                candidate for candidate in branches
+                if candidate is not branch
+                and candidate["guard_keys"]
+                and set(candidate["guard_keys"]) < keys
+            ]
+            if candidates:
+                parent = max(candidates, key=lambda row: (len(row["guard_keys"]), -(row.get("source_line") or 0)))
+                parent_for[branch["branch_id"]] = parent["branch_id"]
+
+        roots: list[dict[str, Any]] = []
+        for branch in branches:
+            parent_id = parent_for.get(branch["branch_id"])
+            parent = by_id.get(parent_id) if parent_id else None
+            if parent is None:
+                branch["display_requirements"] = list(branch["direct_requirements"])
+                roots.append(branch)
+                continue
+            parent_keys = set(parent["guard_keys"])
+            branch["display_requirements"] = [
+                row for row in branch["direct_requirements"]
+                if not any(key.startswith(str(row.get("technical_label") or "") + "|") for key in parent_keys)
+            ]
+            if not branch["display_requirements"]:
+                branch["display_requirements"] = list(branch["direct_requirements"])
+            parent["children"].append(branch)
+
+        def sort_tree(rows: list[dict[str, Any]]) -> None:
+            rows.sort(key=lambda row: (row.get("source_line") is None, row.get("source_line") or 0, row["branch_id"]))
+            for row in rows:
+                sort_tree(row["children"])
+
+        sort_tree(roots)
+        result.append({
+            "trigger": _card(trigger, "trigger"),
+            "branches": roots,
+            "branch_count": len(branches),
+        })
+    return result
+
+
+def _flatten_branches(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    result: list[dict[str, Any]] = []
+    stack = list(reversed(rows))
+    while stack:
+        row = stack.pop()
+        result.append(row)
+        stack.extend(reversed(row.get("children") or []))
+    return result
+
+
+def _event_handoffs(graph: dict[str, Any], branch_groups: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    starts: dict[str, list[dict[str, str]]] = {}
+    handlers: dict[str, list[dict[str, str]]] = {}
+    for group in branch_groups:
+        trigger = group.get("trigger") or {}
+        trigger_id = str(trigger.get("node_id") or "")
+        trigger_label = str(trigger.get("label") or trigger_id)
+        for branch in _flatten_branches(group.get("branches") or []):
+            ref = {"branch_id": str(branch.get("branch_id")), "trigger_id": trigger_id, "trigger_label": trigger_label}
+            for event_id in branch.get("started_event_ids") or []:
+                starts.setdefault(str(event_id), []).append(ref)
+            for event_id in branch.get("guard_event_ids") or []:
+                handlers.setdefault(str(event_id), []).append(ref)
+
+    rows: list[dict[str, Any]] = []
+    for link in graph.get("event_links") or []:
+        event_id = link.get("event_id")
+        key = str(event_id)
+        start_refs = starts.get(key, [])
+        handler_refs = handlers.get(key, [])
+        if not start_refs or not handler_refs:
+            continue
+        rows.append({
+            "event_id": event_id,
+            "relationship": link.get("relationship") or "SHARED_EVENT_ID_ACROSS_HOOKS",
+            "ordering": link.get("ordering") or "UNPROVEN",
+            "evidence_basis": link.get("evidence_basis") or "same literal event identity appears across hooks",
+            "start_branches": start_refs,
+            "handler_branches": handler_refs,
+        })
+    return rows
+
+
 def build_plain_behavior_projection(graph: dict[str, Any]) -> dict[str, Any]:
     """Return an admin-facing view of a technical behavior graph.
 
-    Rule nodes plus raw helper call/callee plumbing are collapsed, but rule guards are deliberately
-    retained as requirements. Nested callback nodes are explicit scheduling actions in their parent
-    flow and form their own trigger flows. Callback-body observations that the extractor also keeps
-    under the enclosing hook are suppressed only in Plain View using their exact callback source
-    spans, preventing duplicated effects without deleting technical evidence.
+    The compatibility `flows` contract remains available, while `branch_groups` is the preferred
+    presentation for complex mission/instance logic. Branch nesting is derived only from exact
+    rule guard-set containment. Cross-hook event matches remain identity handoffs with explicitly
+    unproven ordering rather than causal execution edges.
     """
     graph_nodes = [row for row in graph.get("nodes", ()) if isinstance(row, dict) and row.get("id")]
     nodes = {str(row["id"]): row for row in graph_nodes}
@@ -279,9 +501,7 @@ def build_plain_behavior_projection(graph: dict[str, Any]) -> dict[str, Any]:
         lanes: dict[str, list[dict[str, Any]]] = {"requirements": [], "actions": [], "results": []}
         seen_lane_ids: dict[str, set[str]] = {key: set() for key in lanes}
         collapsed: list[dict[str, Any]] = []
-        callback_ranges = _scheduled_callback_ranges(
-            str(trigger["id"]), nodes=nodes, outgoing=outgoing
-        )
+        callback_ranges = _scheduled_callback_ranges(str(trigger["id"]), nodes=nodes, outgoing=outgoing)
 
         def add_visible(node: dict[str, Any], edge: dict[str, Any], *, forced_lane: str | None = None) -> None:
             if callback_ranges and node.get("kind") != "callback" and _in_ranges(node, callback_ranges):
@@ -296,11 +516,8 @@ def build_plain_behavior_projection(graph: dict[str, Any]) -> dict[str, Any]:
             lanes[lane].append(_card(node, lane))
 
         for node, edge in _descendants(
-            str(trigger["id"]),
-            nodes=nodes,
-            outgoing=outgoing,
-            stop_at_callbacks=True,
-            blocked_source_ranges=callback_ranges,
+            str(trigger["id"]), nodes=nodes, outgoing=outgoing,
+            stop_at_callbacks=True, blocked_source_ranges=callback_ranges,
         ):
             if node.get("kind") == "callback":
                 add_visible(node, edge, forced_lane="actions")
@@ -309,9 +526,7 @@ def build_plain_behavior_projection(graph: dict[str, Any]) -> dict[str, Any]:
                 collapsed.append(_card(node, "actions"))
                 if node.get("kind") == "rule":
                     for requirement, guard_edge in _guard_requirements(
-                        str(node.get("id")),
-                        nodes=nodes,
-                        incoming=incoming,
+                        str(node.get("id")), nodes=nodes, incoming=incoming,
                         blocked_source_ranges=callback_ranges,
                     ):
                         add_visible(requirement, guard_edge, forced_lane="requirements")
@@ -330,19 +545,29 @@ def build_plain_behavior_projection(graph: dict[str, Any]) -> dict[str, Any]:
             "collapsed_count": len(collapsed),
         })
 
+    branch_groups = _branch_groups(triggers, nodes=nodes, outgoing=outgoing, incoming=incoming)
+    handoffs = _event_handoffs(graph, branch_groups)
     return {
         "available": bool(flows),
+        "presentation": "branch_tree_v1",
         "flows": flows,
+        "branch_groups": branch_groups,
+        "event_handoffs": handoffs,
         "summary": {
             "flow_count": len(flows),
+            "branch_group_count": len(branch_groups),
+            "branch_count": sum(group.get("branch_count", 0) for group in branch_groups),
+            "event_handoff_count": len(handoffs),
             "collapsed_implementation_nodes": collapsed_total,
             "technical_node_count": len(graph_nodes),
         },
         "safety": {
             "evidence_preserved": True,
+            "branch_nesting_from_guard_containment_only": True,
+            "cross_hook_ordering_inferred": False,
             "callback_flows_partitioned": True,
             "callback_overlap_filtered_by_source_span": True,
             "collapsed_kinds": sorted(_COLLAPSED_KINDS),
-            "semantics": "Projection uses only extracted graph labels/edges/source spans; it does not infer runtime outcomes.",
+            "semantics": "Projection uses only extracted graph labels/edges/source spans; cross-hook event identity does not imply runtime order.",
         },
     }
