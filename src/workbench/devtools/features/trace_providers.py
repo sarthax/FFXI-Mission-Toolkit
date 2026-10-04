@@ -71,6 +71,17 @@ _COMMON_SERVER_TABLES=(
 def _prefixed(prefix: str) -> tuple[CatalogTable,...]:
     return tuple(CatalogTable(f"{prefix}_{t.table}",t.id_column,t.name_column,t.object_type,t.detail_columns,t.inspect_path,t.key_columns,t.search_columns,t.display_template) for t in _COMMON_SERVER_TABLES)
 
+
+def _common_server_links(prefix: str) -> tuple[CatalogLink, ...]:
+    """Exact cross-table links shared by supported server SQL lineages."""
+    return (
+        CatalogLink(f"{prefix}_item_equipment","itemid",f"{prefix}_item_basic","itemid","EXTENDS_ITEM_BASIC"),
+        CatalogLink(f"{prefix}_item_weapon","itemid",f"{prefix}_item_basic","itemid","EXTENDS_ITEM_BASIC"),
+        CatalogLink(f"{prefix}_item_usable","itemid",f"{prefix}_item_basic","itemid","EXTENDS_ITEM_BASIC"),
+        CatalogLink(f"{prefix}_mob_groups","poolid",f"{prefix}_mob_pools","poolid","USES_MOB_POOL"),
+        CatalogLink(f"{prefix}_blue_spell_list","mob_skill_id",f"{prefix}_mob_skills","mob_skill_id","USES_MOB_SKILL"),
+    )
+
 PROVIDERS=(
     CatalogProvider("server-sql","server",_prefixed("sql")),
     CatalogProvider("landsandboat","server",_prefixed("lsb")+(
@@ -157,6 +168,11 @@ def provider_tables():
 
 
 PROVIDER_LINKS=(
+    *(_common_server_links(prefix) for prefix in ()),
+    *_common_server_links("sql"),
+    *_common_server_links("lsb"),
+    *_common_server_links("topaz"),
+    *_common_server_links("dsp"),
     CatalogLink("identity_records","snapshot_id","identity_snapshots","snapshot_id","IN_CLIENT_SNAPSHOT"),
     CatalogLink("research_proposals","research_session_id","research_sessions","research_session_id","FROM_RESEARCH_SESSION"),
     CatalogLink("validation_results","run_id","validation_runs","run_id","FROM_VALIDATION_RUN"),
