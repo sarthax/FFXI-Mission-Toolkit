@@ -3,6 +3,12 @@ from __future__ import annotations
 from fastapi import APIRouter, FastAPI
 
 from workbench import gui_shell
+from workbench.server_admin.auction_house.actions import (
+    ListItemRequest,
+    PurchaseRequest,
+    preview_list_item,
+    preview_purchase,
+)
 from workbench.server_admin.auction_house.categories import category_metadata
 from workbench.server_admin.auction_house.gui import router
 from workbench.server_admin.auction_house.integration import install_legacy_gui_bridge
@@ -87,22 +93,77 @@ def test_service_exposes_no_mutation_contract():
     assert not forbidden.intersection(public)
 
 
-def test_readonly_router_surface_is_registered():
+def test_list_preview_is_explicitly_non_applying_and_stack_aware():
+    preview = preview_list_item(
+        ListItemRequest(item_id=4096, seller_id=12, price=12000, stack=True),
+        adapter_family="lsb-compatible",
+        item={"item_id": 4096, "name": "Fire Crystal", "stack_size": 12, "category_id": 35},
+        seller={"char_id": 12, "char_name": "Admin"},
+    )
+    assert preview.apply_supported is False
+    assert preview.economic_effect["quantity"] == 12
+    assert preview.economic_effect["price_per_item"] == 1000
+    assert any(w.code == "preview_only" and w.blocking for w in preview.warnings)
+
+
+def test_list_preview_blocks_invalid_stack_and_unknown_seller():
+    preview = preview_list_item(
+        ListItemRequest(item_id=1, seller_id=999, price=100, stack=True),
+        adapter_family="legacy-dsp-topaz-compatible",
+        item={"item_id": 1, "name": "Test", "stack_size": 1, "category_id": 1},
+        seller=None,
+    )
+    codes = {w.code for w in preview.warnings if w.blocking}
+    assert {"seller_not_found", "not_stackable", "preview_only"} <= codes
+
+
+def test_purchase_preview_exposes_admin_economy_injection():
+    listing = {"auction_id": 77, "item_id": 4096, "asking_price": 9000, "seller_id": 55, "stack": False}
+    preview = preview_purchase(
+        PurchaseRequest(auction_id=77, mode="admin_cleanup"),
+        adapter_family="lsb-compatible",
+        listing=listing,
+    )
+    assert preview.apply_supported is False
+    assert preview.economic_effect["seller_compensation"] == 9000
+    assert preview.economic_effect["buyer_charge"] == 0
+    assert preview.economic_effect["admin_economy_injection"] == 9000
+
+
+def test_normal_purchase_requires_real_buyer_snapshot():
+    preview = preview_purchase(
+        PurchaseRequest(auction_id=77, buyer_id=100, mode="normal_purchase"),
+        adapter_family="legacy-dsp-topaz-compatible",
+        listing={"auction_id": 77, "asking_price": 5000},
+        buyer=None,
+    )
+    assert any(w.code == "buyer_not_found" and w.blocking for w in preview.warnings)
+
+
+def test_router_surface_has_only_read_and_preview_operations():
     app = FastAPI()
     app.include_router(router)
-    paths = set(app.openapi()["paths"])
-    assert "/auction-house" in paths
-    assert "/auction-house/status.json" in paths
-    assert "/auction-house/overview.json" in paths
-    assert "/auction-house/categories.json" in paths
-    assert "/auction-house/items.json" in paths
-    assert "/auction-house/items/{item_id}.json" in paths
-    assert "/auction-house/items/{item_id}/history.json" in paths
-    assert "/auction-house/items/{item_id}/trends.json" in paths
-    assert "/auction-house/items/{item_id}/icon.png" in paths
+    paths = app.openapi()["paths"]
+    expected = {
+        "/auction-house",
+        "/auction-house/status.json",
+        "/auction-house/overview.json",
+        "/auction-house/categories.json",
+        "/auction-house/items.json",
+        "/auction-house/items/{item_id}.json",
+        "/auction-house/items/{item_id}/history.json",
+        "/auction-house/items/{item_id}/trends.json",
+        "/auction-house/items/{item_id}/icon.png",
+        "/auction-house/admin/list/preview.json",
+        "/auction-house/admin/purchase/preview.json",
+    }
+    assert expected <= set(paths)
 
-    methods = {method for path in app.openapi()["paths"].values() for method in path}
-    assert methods <= {"get"}
+    for path, methods in paths.items():
+        assert set(methods) <= {"get", "post"}
+        if "post" in methods:
+            assert path.endswith("/preview.json")
+    assert not any("apply" in path or "commit" in path or "delete" in path for path in paths)
 
 
 def test_legacy_bridge_keeps_auction_house_at_root_and_in_server_workspace():
