@@ -4179,6 +4179,7 @@ def main():
 
     p7 = sub.add_parser("fingerprint-backfill", help="fingerprint already-ingested captures so duplicate detection covers them")
     p7.add_argument("--dry-run", action="store_true")
+    p7.add_argument("--queue-duplicates", action="store_true", help="raise a review-queue item for each duplicate-content capture")
 
     p8 = sub.add_parser("repoint-sources", help="re-point captures whose source file moved to the same-named file under a new root")
     p8.add_argument("root")
@@ -4200,7 +4201,7 @@ def main():
 
     if args.cmd == "fingerprint-backfill":
         from workbench.captures import source_fingerprint
-        print(source_fingerprint.backfill(con, dry_run=args.dry_run))
+        print(source_fingerprint.backfill(con, dry_run=args.dry_run, queue=args.queue_duplicates))
         con.close()
         return
 

@@ -27,6 +27,8 @@
   <td>{% if r.capture_id %}<a href="/captures/{{r.capture_id}}">{{r.capture_id}}</a><div class="muted">{{r.capture_label}}</div>{% else %}<div class="muted">{{r.source_path}}</div>{% endif %}</td>
   <td>{{ r.detail.reason or '' }}
     {% if r.detail.capture_zones is defined %}<div class="muted">zones in capture: {{ r.detail.capture_zones|join(', ') or '—' }}</div><div class="muted">name hint (not applied): {{ r.detail.name_hint|join(', ') or '—' }}</div>{% endif %}
+    {% if r.detail.duplicate_of and r.detail.this %}<div class="muted">this: <a href="/captures/{{ r.detail.this.capture_id }}">#{{ r.detail.this.capture_id }}</a> {{ r.detail.this.label }} · tags: {{ r.detail.this.tags|join(', ') or '—' }} · post: {{ r.detail.this.post_title or '—' }}</div>
+    <div class="muted">same as: <a href="/captures/{{ r.detail.duplicate_of.capture_id }}">#{{ r.detail.duplicate_of.capture_id }}</a> {{ r.detail.duplicate_of.label }} · tags: {{ r.detail.duplicate_of.tags|join(', ') or '—' }} · post: {{ r.detail.duplicate_of.post_title or '—' }}</div>{% endif %}
     {% if r.detail.error %}<div class="muted"><b>error:</b> <code>{{ r.detail.error }}</code></div>{% endif %}
     {% if r.detail.path %}<div class="muted">source: <code>{{ r.detail.path }}</code></div>{% endif %}
     {% if r.detail.copy_path %}<div class="muted">review copy: <code>{{ r.detail.copy_path }}</code></div>{% elif r.detail.copy_note %}<div class="muted">review copy: {{ r.detail.copy_note }}</div>{% endif %}

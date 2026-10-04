@@ -56,7 +56,7 @@ def record(con, path, capture_id, status="ingested"):
     con.commit()
 
 
-def backfill(con, dry_run=False, say=print):
+def backfill(con, dry_run=False, say=print, queue=False):
     """Fingerprint every already-ingested capture whose source still exists. Bundle subroots ('path::sub'),
     missing sources and unreadable archives are skipped and counted. Two captures with identical content are
     reported (first one keeps the fingerprint). -> summary dict."""
@@ -91,7 +91,28 @@ def backfill(con, dry_run=False, say=print):
                     con.commit()
     if not dry_run:
         con.commit()
+    if queue and not dry_run:
+        out["queued"] = queue_duplicates(con, out["duplicates"])
     return out
+
+
+def queue_duplicates(con, pairs):
+    """Raise a `duplicate_capture` review item on each (duplicate_id, keeper_id) pair. -> number raised."""
+    from workbench.captures import review_queue as rq
+
+    def info(cid):
+        r = con.execute("SELECT source_path, capture_label FROM captures WHERE capture_id=?", (cid,)).fetchone()
+        tags = [t[0] for t in con.execute("SELECT tag FROM capture_tags WHERE capture_id=? ORDER BY tag", (cid,))]
+        pm = con.execute("SELECT title FROM capture_post_meta WHERE capture_id=?", (cid,)).fetchone()
+        return {"capture_id": cid, "source_path": r[0], "label": r[1], "tags": tags, "post_title": pm[0] if pm else None}
+    n = 0
+    for dup, keep in pairs:
+        a, b = info(dup), info(keep)
+        rq.raise_item(con, "duplicate_capture", a["source_path"], dup, str(keep),
+                      {"reason": "capture #%s has content identical to capture #%s" % (dup, keep),
+                       "this": a, "duplicate_of": b})
+        n += 1
+    return n
 
 
 def repoint(con, root, dry_run=False, say=print):
