@@ -87,6 +87,7 @@ def test_effect_summary_and_generic_handoff_are_editor_ready():
     assert handoff["capability"] == "verify-lineage"
     assert handoff["summary"] == "20% damage · fire · amount 25"
     assert "status.lua" in handoff["serverReference"]["mod_enum"]
+    assert "Verify proc numbering" in handoff["warning"]
 
 
 def test_inspect_rows_recognizes_existing_effect_rows_and_ignores_other_mods():
