@@ -61,7 +61,7 @@
       <button id="weaponEffectCopyHandoff" type="button">Copy server handoff</button>
     </div>
     <div id="weaponEffectPreview" class="mono muted" style="font-size:10px;margin-top:6px;white-space:pre-wrap"></div>`;
-  tools.parentNode.insertBefore(card, tools);
+  tools.insertBefore(card, tools.firstChild);
 
   const $ = id => document.getElementById(id);
   function values(){
