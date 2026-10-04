@@ -79,25 +79,11 @@ The Toolkit helper `build_self_buff_blueprint()` produces this handoff data dire
 
 The framework also provides compact summaries and a generic server-handoff export. This is intended for a future UI where an admin can see a readable line such as `20% damage · fire · amount 25`, inspect the exact underlying modifier rows, and copy/export the server implementation requirements when the active lineage is not row-only.
 
-That means the Equipment Editor can eventually present all three layers together:
+That means the Equipment Editor can present all three layers together:
 
 1. human-readable effect summary;
 2. exact SQL modifier/latent rows;
 3. server-code handoff and implementation references when needed.
-
-## Additional enhancement opportunities
-
-The same framework supports or prepares for several useful editor capabilities without touching core server code:
-
-- preset picker that expands to visible modifier rows;
-- raw/structured toggle so expert users can inspect exact mod ids;
-- always-on vs latent/conditional storage toggle;
-- lineage capability badge (`row-only`, `verify-lineage`, `server-code-required`);
-- effect summary such as `20% chance: Fire +25` or `25% chance: self Haste, 45s`;
-- existing-effect recognizer that converts raw `item_mods` rows back into structured fields;
-- validation that blocks unsupported proc ids rather than silently writing them;
-- local-agent handoff export for self-buffs and other scripted effects;
-- future server-code references for absorb-status, instant-death, and NM-specific proc handlers.
 
 ## What this does not mean
 
