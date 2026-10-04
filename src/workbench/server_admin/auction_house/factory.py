@@ -5,17 +5,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-# Reuse the already-audited native DSP/Topaz/LSB database-profile parser. The AH workspace does
-# not depend on Character Editor services or mutation code; this small connection primitive can
-# move to a shared runtime module later without changing the AH contract.
-from workbench.editors.character.connection import DatabaseProfile, connect, discover_database_profile
-
 from .service import AuctionHouseService
 
 
 @dataclass
 class AuctionHouseContext:
-    profile: DatabaseProfile
+    profile: Any
     service: AuctionHouseService
 
     def public_status(self) -> dict[str, Any]:
@@ -29,6 +24,11 @@ class AuctionHouseContext:
 
 
 def open_auction_house(server_root: Path | str, **connect_kwargs) -> AuctionHouseContext:
+    # Reuse the already-audited DSP/Topaz/LSB database-profile parser, but import it lazily so the
+    # standalone AH router can be imported and tested without creating a Character Editor package
+    # initialization cycle. No Character Editor service or mutation code is used here.
+    from workbench.editors.character.connection import connect, discover_database_profile
+
     profile = discover_database_profile(server_root)
     connection = connect(profile, **connect_kwargs)
     try:
