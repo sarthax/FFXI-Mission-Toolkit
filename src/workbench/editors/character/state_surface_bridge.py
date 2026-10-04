@@ -6,6 +6,7 @@ from typing import Any
 from workbench.devtools.features.state_surface_scoped import build_state_surface
 
 from .category_data import build_category_payload
+from .progression_assessment import assess_progression
 from .progression_catalog import mission_catalog
 from .progression_inspector import build_progression_inspector
 from .quest_catalog import quest_catalog
@@ -214,7 +215,7 @@ def build_character_state_surface(service, char_id: int, *, kind: str, area_id: 
         "unresolved": unresolved,
         "status": "MISMATCH" if mismatched else ("CONSISTENT" if checked and not unresolved else "PARTIAL"),
     }
-    surface["progression"] = annotate_transition_bundles(build_progression_inspector(
+    progression = annotate_transition_bundles(build_progression_inspector(
         surface,
         root,
         variables=variables,
@@ -222,4 +223,5 @@ def build_character_state_surface(service, char_id: int, *, kind: str, area_id: 
         mission_catalog=mission_catalog(root),
         quest_catalog=quest_catalog(root),
     ))
+    surface["progression"] = assess_progression(progression)
     return surface
