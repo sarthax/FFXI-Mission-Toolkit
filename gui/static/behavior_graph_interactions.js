@@ -1,4 +1,5 @@
 (() => {
+  const CONTRACT_VERSION = '1';
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 
   function applyPlainContract() {
@@ -20,7 +21,7 @@
     for (let index = 0; index < flows.length; index += 1) {
       const flow = flows[index];
       const expected = contract.flows[index];
-      if (!expected) continue;
+      if (!expected || flow.dataset.plainContractVersion === CONTRACT_VERSION) continue;
 
       const laneElements = [...flow.querySelectorAll('.plain-lane')];
       const laneRows = [
@@ -57,12 +58,14 @@
       }
 
       const summary = flow.querySelector('.plain-summary');
-      if (!summary) continue;
-      const collapsedCount = Number(expected.collapsed_count || 0);
-      const collapsedChip = collapsedCount
-        ? `<span class="chip">${collapsedCount} implementation node${collapsedCount === 1 ? '' : 's'} collapsed</span>`
-        : '';
-      summary.innerHTML = `${esc(expected.summary || '')}${collapsedChip}`;
+      if (summary) {
+        const collapsedCount = Number(expected.collapsed_count || 0);
+        const collapsedChip = collapsedCount
+          ? `<span class="chip">${collapsedCount} implementation node${collapsedCount === 1 ? '' : 's'} collapsed</span>`
+          : '';
+        summary.innerHTML = `${esc(expected.summary || '')}${collapsedChip}`;
+      }
+      flow.dataset.plainContractVersion = CONTRACT_VERSION;
     }
   }
 
