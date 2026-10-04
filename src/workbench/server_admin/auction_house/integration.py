@@ -1,6 +1,6 @@
 """Temporary integration bridge for the legacy monolithic GUI server.
 
-The modern server-admin module owns its routes and navigation metadata here.  The bridge can be
+The modern server-admin module owns its routes and navigation metadata here. The bridge can be
 removed once ``gui_server.py`` gains a root router registry and the shell consumes module-owned
 workspace contributions directly.
 """
@@ -43,3 +43,23 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
         updated["sections"] = tuple(sections)
         workspaces.append(updated)
     gui_shell.WORKSPACES = tuple(workspaces)
+
+    # The shell's approved route map predates this modular route, so teach its runtime owner
+    # resolver about the new workspace without editing the large shared route-map file in this
+    # feature branch. Keep the wrapper idempotent because Character imports occur in many tests.
+    current_owner = gui_shell.route_owner
+    if not getattr(current_owner, "_auction_house_bridge", False):
+        def _route_owner(path: str, method: str = "GET") -> dict:
+            if method.upper() == "GET" and (path == "/auction-house" or path.startswith("/auction-house/")):
+                return {
+                    "home": "Server",
+                    "section": "Auction House",
+                    "path": "/auction-house",
+                    "method": "GET",
+                    "role": "page",
+                    "disposition": "KEEP",
+                }
+            return current_owner(path, method)
+
+        _route_owner._auction_house_bridge = True  # type: ignore[attr-defined]
+        gui_shell.route_owner = _route_owner
