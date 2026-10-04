@@ -6,7 +6,7 @@ WRAPPER = ROOT / "gui" / "static" / "behavior_graph_interactions.js"
 CORE = ROOT / "gui" / "static" / "behavior_graph_interactions_core.js"
 
 
-def test_plain_view_core_still_builds_evidence_drilldown_and_technical_graph():
+def test_plain_view_core_preserves_evidence_drilldown_and_technical_graph():
     core = CORE.read_text(encoding="utf-8")
 
     assert "function recoverRuleRequirements" in core
@@ -23,24 +23,26 @@ def test_plain_view_core_still_builds_evidence_drilldown_and_technical_graph():
     assert "causalPath" in core
 
 
-def test_plain_view_wrapper_consumes_backend_projection_contract():
+def test_plain_view_wrapper_renders_backend_projection_contract():
     wrapper = WRAPPER.read_text(encoding="utf-8")
 
     assert "graph.plain_behavior" in wrapper
-    assert "expected.trigger?.node_id" in wrapper
+    assert "expected.trigger" in wrapper
     assert "expected.requirements" in wrapper
     assert "expected.actions" in wrapper
     assert "expected.results" in wrapper
     assert "expected.collapsed_count" in wrapper
     assert "expected.summary" in wrapper
-    assert "card.hidden = !visible.has(card.dataset.plainNode)" in wrapper
+    assert "data-contract-node" in wrapper
+    assert "originalButtons.get(nodeId)" in wrapper
     assert "behavior_graph_interactions_core.js" in wrapper
 
 
-def test_plain_view_wrapper_does_not_reimplement_helper_or_summary_semantics():
+def test_plain_view_wrapper_does_not_reimplement_projection_semantics():
     wrapper = WRAPPER.read_text(encoding="utf-8")
 
     assert "COLLAPSED_HELPER_KINDS" not in wrapper
     assert "function plainSummary" not in wrapper
     assert "helper_call" not in wrapper
     assert "shared_helper_callee" not in wrapper
+    assert "recoverRuleRequirements" not in wrapper
