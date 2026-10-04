@@ -1,1 +1,0 @@
-Auction House Phase 2 preview-only administration: no mutation endpoints.
