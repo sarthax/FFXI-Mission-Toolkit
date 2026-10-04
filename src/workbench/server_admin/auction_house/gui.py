@@ -1,9 +1,9 @@
-"""FastAPI presentation adapter for read-only Auction House administration."""
+"""FastAPI presentation adapter for Auction House administration."""
 from __future__ import annotations
 
 from contextlib import contextmanager
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Body, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
@@ -11,6 +11,7 @@ from workbench.runtime.legacy_settings import get_active_server_root
 from workbench.runtime.paths import GUI_ROOT
 from workbench.editors.items import client_asset_cache
 
+from .actions import ListItemRequest, PurchaseRequest, preview_list_item, preview_purchase
 from .analytics import economy_summary, price_trends, search_items
 from .factory import open_auction_house
 
@@ -126,3 +127,51 @@ def item_icon(item_id: int):
     if entry is None or entry.icon_path is None:
         raise HTTPException(status_code=404, detail="Client icon is unavailable")
     return FileResponse(entry.icon_path, media_type="image/png")
+
+
+@router.post("/admin/list/preview.json")
+def preview_admin_listing(payload: dict = Body(...)):
+    """Preview a synthetic/admin AH listing. This endpoint performs SELECTs only."""
+    try:
+        request = ListItemRequest(
+            item_id=int(payload.get("item_id", 0)),
+            seller_id=int(payload.get("seller_id", 0)),
+            price=int(payload.get("price", 0)),
+            stack=bool(payload.get("stack", False)),
+        )
+        with _context() as ctx:
+            preview = preview_list_item(
+                request,
+                adapter_family=ctx.service.schema.family_hint,
+                item=ctx.service.item_snapshot(request.item_id),
+                seller=ctx.service.character_snapshot(request.seller_id),
+            )
+            return JSONResponse(preview.as_dict())
+    except (TypeError, ValueError) as exc:
+        raise _error(exc, 400)
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.post("/admin/purchase/preview.json")
+def preview_admin_purchase(payload: dict = Body(...)):
+    """Preview a normal/admin-cleanup purchase. This endpoint performs SELECTs only."""
+    try:
+        request = PurchaseRequest(
+            auction_id=int(payload.get("auction_id", 0)),
+            buyer_id=None if payload.get("buyer_id") in (None, "") else int(payload["buyer_id"]),
+            mode=str(payload.get("mode") or "admin_cleanup"),
+        )
+        with _context() as ctx:
+            buyer = None if request.buyer_id is None else ctx.service.character_snapshot(request.buyer_id)
+            preview = preview_purchase(
+                request,
+                adapter_family=ctx.service.schema.family_hint,
+                listing=ctx.service.active_listing_by_id(request.auction_id),
+                buyer=buyer,
+            )
+            return JSONResponse(preview.as_dict())
+    except (TypeError, ValueError) as exc:
+        raise _error(exc, 400)
+    except Exception as exc:
+        raise _error(exc)
