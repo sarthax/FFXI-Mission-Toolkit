@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Regression for Behavior Inspector shared-helper causal column ordering."""
+"""Regression for Behavior Inspector helper layout and branch-preserving presentation."""
 from __future__ import annotations
 
 from pathlib import Path
 import re
 
+from test_fixtures.test_behavior_branch_flow_projection import main as branch_flow_main
+
 
 TEMPLATE=Path("gui/templates/behavior_visualizer.html")
+WRAPPER=Path("gui/static/behavior_graph_interactions.js")
 
 
 def main():
@@ -38,6 +41,14 @@ def main():
     )
     assert pairs[0] < pairs[4] < pairs[5] < pairs[6],pairs
 
+    wrapper=WRAPPER.read_text(encoding="utf-8")
+    assert "branch_tree_v1" in wrapper,wrapper
+    assert "plain-branch-tree" in wrapper,wrapper
+    assert "Cross-hook event identity" in wrapper,wrapper
+    assert "UNPROVEN" in wrapper,wrapper
+    assert "do not assert runtime execution order" in wrapper,wrapper
+
+    branch_flow_main()
     print("Behavior Inspector helper impact layout regression: PASS")
 
 
