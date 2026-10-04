@@ -2222,6 +2222,12 @@ def ingest_caplog(con, capture_id, src: Source, relname: str) -> tuple[int, int,
 EVENTVIEW_HEADER_RE = re.compile(
     r'^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]\s+(<<|>>)\s+\[(0x[0-9A-Fa-f]{3})\]\s+(\w+)\*?\s+\((\w+)\)\s*$',
     re.MULTILINE)
+# Newer EventView: no [0xNNN]/packet-class in the header -- "[ts] << GP_SERV_COMMAND_X (note)"; the real
+# opcode is the nested header.id in the body (decimal).
+EVENTVIEW_HEADER_NEW_RE = re.compile(
+    r'^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})(?:\.\d+)?\]\s+(<<|>>)\s+(GP_\w+)(?:\s+\(([^)\n]*)\))?\s*$',
+    re.MULTILINE)
+EVENTVIEW_HEADER_ID_RE = re.compile(r'header\s*=\s*\{[^}]*?\bid\s*=\s*(\d+)', re.DOTALL)
 EVENTVIEW_KV_RE = re.compile(r'^(\w+)\s*=\s*(.+?),?\s*$')
 EVENTVIEW_ENTITY_KEYS = ("UniqueNo", "UniqueNoCas", "UniqueNoTar", "UniqueNo1", "UniqueNo2")
 EVENTVIEW_MESNUM_KEYS = ("MesNum", "MesNum1", "MesNum2")
@@ -2270,12 +2276,20 @@ def ingest_eventview(
     source_sha256 = capture_integrity.sha256_bytes(src.read_bytes(relname))
     headers = [(m.start(), m.end(), m.group(1), m.group(2), m.group(3), m.group(4), m.group(5))
                for m in EVENTVIEW_HEADER_RE.finditer(text)]
+    # newer format: opcode is resolved from the body below (marker None)
+    headers += [(m.start(), m.end(), m.group(1), m.group(2), None, m.group(4) or "", m.group(3))
+                for m in EVENTVIEW_HEADER_NEW_RE.finditer(text)]
+    headers.sort(key=lambda h: h[0])
     n = 0
     for hstart, hend, ts, direction, opcode, packet_class, gp_command in headers:
         rest = text[hend:]
         brace_pos = rest.find("{")
         if brace_pos == -1:
             continue
+        if opcode is None:  # newer format: next header must not precede the body's brace
+            nxt = EVENTVIEW_HEADER_NEW_RE.search(rest)
+            if nxt and nxt.start() < brace_pos:
+                continue
         depth = 0
         j = brace_pos
         while j < len(rest):
@@ -2290,6 +2304,11 @@ def ingest_eventview(
             continue  # unterminated block -- skip rather than mis-parse
         body = rest[brace_pos + 1:j]
         fields = _parse_eventview_body(body.splitlines())
+        if opcode is None:
+            hm = EVENTVIEW_HEADER_ID_RE.search(body)
+            if not hm:
+                continue  # no real opcode in the block -- never guess one
+            opcode = "0x%03X" % int(hm.group(1))
 
         entity_id = None
         for k in EVENTVIEW_ENTITY_KEYS:
@@ -2404,7 +2423,7 @@ def ingest_eventview_session_raw(con, capture_id, src: Source, relname: str) -> 
 
 
 PACKETLOGGER_HEADER_RE = re.compile(
-    r'\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]'
+    r'\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})(?:\.\d+)?\]'  # newer PacketLogger adds .mmm; ts stays whole-second
 )
 PACKETLOGGER_HEXROW_RE = re.compile(
     r'^\s*\d+ \|((?:\s+[0-9A-Fa-f]{2}|\s+--){1,16})\s+\d+ \|', re.MULTILINE
