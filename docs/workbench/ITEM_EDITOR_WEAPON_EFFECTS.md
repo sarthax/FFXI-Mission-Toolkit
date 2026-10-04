@@ -85,6 +85,10 @@ That means the Equipment Editor can present all three layers together:
 2. exact SQL modifier/latent rows;
 3. server-code handoff and implementation references when needed.
 
+## Implementation references verified for this pass
+
+The framework references current LandSandBoat's `scripts/globals/additional_effects.lua` attack dispatcher and self-buff handler, and archived DSP's `scripts/globals/status.lua` legacy modifier/proc-type comments. Those references are documentation/handoff anchors only; the Toolkit does not modify the external server repositories in this branch.
+
 ## What this does not mean
 
 These rows configure behavior that the selected server lineage already implements. They do **not** create arbitrary new combat semantics. If a proc type is absent from the target DSP/Topaz/LSB combat scripts/core, a local server-code change is still required.
