@@ -2,7 +2,11 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from workbench.server_admin.auction_house import lsb_validation, validation_report
-from workbench.server_admin.auction_house.lsb_policy import load_lsb_policy, listing_fee
+from workbench.server_admin.auction_house.lsb_policy import (
+    load_lsb_policy,
+    listing_fee,
+    preview_lsb_policy_binding,
+)
 
 
 class Cursor:
@@ -52,6 +56,10 @@ def _root(tmp_path):
     )
     return tmp_path
 
+def _bind(preview, root):
+    preview["policy_binding"] = preview_lsb_policy_binding(load_lsb_policy(root))
+    return preview
+
 def _list_preview(service, stack=False):
     return {
         "action":"list_item","adapter":"lsb-compatible",
@@ -78,16 +86,20 @@ def _stub_evidence(monkeypatch, *, seller_gil=99999, seller_qty=12, listings=0, 
 
 def test_lsb_policy_matches_source_fee_model(tmp_path):
     policy = load_lsb_policy(_root(tmp_path))
+    binding = preview_lsb_policy_binding(policy)
     assert policy.policy_ready is True
     assert listing_fee(policy, price=5000, stack=False) == 51
     assert listing_fee(policy, price=5000, stack=True) == 29
-    assert policy.policy_fingerprint
+    assert binding["family"] == "lsb"
+    assert binding["source_kind"] == "lsb-map-settings"
+    assert binding["policy_fingerprint"] == policy.policy_fingerprint
 
 def test_lsb_listing_invariants_use_inventory_fee_and_limit(tmp_path, monkeypatch):
     service = Service()
+    root = _root(tmp_path)
     _stub_evidence(monkeypatch)
     prepared, evidence, invariants, policy, binding = lsb_validation.prepare_lsb_preview_validation(
-        service=service, operation="list_item", environment=_env(), preview=_list_preview(service), server_root=_root(tmp_path)
+        service=service, operation="list_item", environment=_env(), preview=_bind(_list_preview(service), root), server_root=root
     )
     assert prepared.validation_ready is True
     assert evidence.transaction_mode == "read_only_rolled_back"
@@ -99,57 +111,107 @@ def test_lsb_listing_invariants_use_inventory_fee_and_limit(tmp_path, monkeypatc
 
 def test_lsb_full_stack_quantity_and_fee_funds_fail_closed(tmp_path, monkeypatch):
     service = Service()
+    root = _root(tmp_path)
     _stub_evidence(monkeypatch, seller_gil=10, seller_qty=11, listings=7)
-    _, _, invariants, _, _ = lsb_validation.prepare_lsb_preview_validation(
-        service=service, operation="list_item", environment=_env(), preview=_list_preview(service, stack=True), server_root=_root(tmp_path)
+    _, _, invariants, _, binding = lsb_validation.prepare_lsb_preview_validation(
+        service=service, operation="list_item", environment=_env(), preview=_bind(_list_preview(service, stack=True), root), server_root=root
     )
     codes = {issue.code for issue in invariants.issues}
     assert {"seller_inventory_insufficient", "seller_gil_insufficient", "listing_limit_reached"} <= codes
+    assert binding.binding_ready is True
 
 def test_lsb_purchase_checks_buyer_funds_capacity_and_cheapest_listing(tmp_path, monkeypatch):
     service = Service()
+    root = _root(tmp_path)
     _stub_evidence(monkeypatch, buyer_gil=100, capacity=80, occupied=80, cheapest=54)
-    _, evidence, invariants, _, _ = lsb_validation.prepare_lsb_preview_validation(
-        service=service, operation="purchase_item", environment=_env(), preview=_purchase_preview(service), server_root=_root(tmp_path)
+    _, evidence, invariants, _, binding = lsb_validation.prepare_lsb_preview_validation(
+        service=service, operation="purchase_item", environment=_env(), preview=_bind(_purchase_preview(service), root), server_root=root
     )
     codes = {issue.code for issue in invariants.issues}
     assert {"buyer_gil_insufficient", "buyer_inventory_full", "cheapest_listing_changed"} <= codes
     assert evidence.delivery_row_count == 0
+    assert binding.binding_ready is True
 
 def test_lsb_stale_preview_is_rejected(tmp_path, monkeypatch):
     service = Service()
+    root = _root(tmp_path)
     _stub_evidence(monkeypatch)
-    preview = _list_preview(service)
+    preview = _bind(_list_preview(service), root)
     service.item["stack_size"] = 99
-    prepared, _, _, _, _ = lsb_validation.prepare_lsb_preview_validation(
-        service=service, operation="list_item", environment=_env(), preview=preview, server_root=_root(tmp_path)
+    prepared, _, _, _, binding = lsb_validation.prepare_lsb_preview_validation(
+        service=service, operation="list_item", environment=_env(), preview=preview, server_root=root
     )
     assert prepared.validation_ready is False
+    assert binding.binding_ready is True
     assert "stale_preview" in {issue.code for issue in prepared.issues}
 
 def test_lsb_missing_policy_blocks_validation(tmp_path, monkeypatch):
     service = Service()
     _stub_evidence(monkeypatch)
-    _, _, invariants, policy, _ = lsb_validation.prepare_lsb_preview_validation(
+    _, _, invariants, policy, binding = lsb_validation.prepare_lsb_preview_validation(
         service=service, operation="list_item", environment=_env(), preview=_list_preview(service), server_root=tmp_path
     )
     assert policy.policy_ready is False
+    assert binding.binding_ready is False
+    assert "lsb_active_policy_unavailable" in {issue.code for issue in binding.issues}
     assert "lsb_listing_fee_unavailable" in {issue.code for issue in invariants.issues}
+
+def test_lsb_missing_preview_policy_binding_fails_closed(tmp_path, monkeypatch):
+    service = Service()
+    root = _root(tmp_path)
+    _stub_evidence(monkeypatch)
+    _, _, _, _, binding = lsb_validation.prepare_lsb_preview_validation(
+        service=service, operation="list_item", environment=_env(), preview=_list_preview(service), server_root=root
+    )
+    assert binding.binding_ready is False
+    assert "lsb_policy_binding_missing" in {issue.code for issue in binding.issues}
+
+def test_lsb_policy_drift_after_preview_is_rejected(tmp_path, monkeypatch):
+    service = Service()
+    root = _root(tmp_path)
+    _stub_evidence(monkeypatch)
+    preview = _bind(_list_preview(service), root)
+    settings = root / "settings" / "default" / "map.lua"
+    settings.write_text(settings.read_text(encoding="utf-8").replace("AH_LIST_LIMIT = 7", "AH_LIST_LIMIT = 12"), encoding="utf-8")
+    _, _, _, policy, binding = lsb_validation.prepare_lsb_preview_validation(
+        service=service, operation="list_item", environment=_env(), preview=preview, server_root=root
+    )
+    assert policy.policy_ready is True
+    assert binding.binding_ready is False
+    assert "lsb_policy_drift" in {issue.code for issue in binding.issues}
 
 def test_lsb_unified_report_uses_lsb_trigger_readiness(tmp_path, monkeypatch):
     service = Service()
+    root = _root(tmp_path)
     _stub_evidence(monkeypatch)
     class Probe:
         def as_dict(self):
             return {"database":"xidb","tables":(),"triggers":(),"lsb_listing_ready":True,"lsb_purchase_ready":True,"legacy_listing_shape_present":False,"legacy_purchase_prerequisites_present":True,"notes":()}
     monkeypatch.setattr(validation_report, "probe_write_readiness", lambda connection: Probe())
-    report = validation_report.run_lsb_preview_validation(service=service, environment=_env(), preview=_list_preview(service), server_root=_root(tmp_path))
+    report = validation_report.run_lsb_preview_validation(service=service, environment=_env(), preview=_bind(_list_preview(service), root), server_root=root)
     assert report["status"] == "ready"
     assert report["read_only_validation_ready"] is True
     assert report["validation_model"] == "lsb-source-settings-and-trigger"
     assert report["execution_ready"] is False
     assert report["stages"]["policy"]["ready"] is True
+    assert report["stages"]["policy_binding"]["ready"] is True
     assert report["stages"]["invariants"]["ready"] is True
+
+def test_lsb_unified_report_surfaces_policy_drift(tmp_path, monkeypatch):
+    service = Service()
+    root = _root(tmp_path)
+    _stub_evidence(monkeypatch)
+    preview = _bind(_list_preview(service), root)
+    settings = root / "settings" / "default" / "map.lua"
+    settings.write_text(settings.read_text(encoding="utf-8").replace("AH_MAX_FEE = 10000", "AH_MAX_FEE = 5000"), encoding="utf-8")
+    class Probe:
+        def as_dict(self):
+            return {"database":"xidb","tables":(),"triggers":(),"lsb_listing_ready":True,"lsb_purchase_ready":True,"legacy_listing_shape_present":False,"legacy_purchase_prerequisites_present":True,"notes":()}
+    monkeypatch.setattr(validation_report, "probe_write_readiness", lambda connection: Probe())
+    report = validation_report.run_lsb_preview_validation(service=service, environment=_env(), preview=preview, server_root=root)
+    assert report["status"] == "blocked"
+    assert report["stages"]["policy_binding"]["ready"] is False
+    assert "lsb_policy_drift" in {item["code"] for item in report["blockers"]}
 
 def test_lsb_validation_source_has_no_mutation_or_commit_primitive():
     source = Path("src/workbench/server_admin/auction_house/lsb_validation.py").read_text(encoding="utf-8").upper()
@@ -160,4 +222,4 @@ def test_lsb_validation_source_has_no_mutation_or_commit_primitive():
     assert ".COMMIT(" not in source
 
 if __name__ == "__main__":
-    print("Auction House LSB strong invariant regression: PASS")
+    print("Auction House LSB policy binding regression: PASS")

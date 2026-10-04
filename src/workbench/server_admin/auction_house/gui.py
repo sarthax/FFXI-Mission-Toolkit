@@ -19,6 +19,7 @@ from .diagnostics import run_read_only_diagnostics
 from .factory import open_auction_house
 from .health import economy_health
 from .lineage_semantics import evaluate_lineage_semantics
+from .lsb_policy import load_lsb_policy, preview_lsb_policy_binding
 from .policy_binding import preview_policy_binding
 from .validation_report import run_preview_validation
 from .write_probe import probe_write_readiness
@@ -66,6 +67,8 @@ def _preview_payload_with_policy(preview) -> dict:
         payload["policy_binding"] = preview_policy_binding(
             load_active_legacy_policy(server_root=root, family=family)
         )
+    elif root is not None and family == "lsb":
+        payload["policy_binding"] = preview_lsb_policy_binding(load_lsb_policy(root))
     else:
         payload["policy_binding"] = {
             "family": family or "unknown",
@@ -75,7 +78,7 @@ def _preview_payload_with_policy(preview) -> dict:
             "policy_ready": False,
             "issues": [{
                 "code": "policy_binding_not_applicable",
-                "message": "Legacy DSP/Topaz policy binding is not available for this server family.",
+                "message": "Auction House policy binding is not available for this server family.",
                 "blocking": False,
             }],
             "executor_enabled": False,
