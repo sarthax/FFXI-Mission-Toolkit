@@ -22,8 +22,32 @@ _START_EVENT = re.compile(r"player:startEvent\(\s*(\d+)")
 _CSID = re.compile(r"\bcsid\s*==\s*(\d+)")
 _CHAR_CMP = re.compile(r"player:get(?:Char)?Var\(\s*['\"]([^'\"]+)['\"]\s*\)\s*(==|~=|<=|>=|<|>)\s*(-?\d+)")
 _CHAR_SET = re.compile(r"player:set(?:Char)?Var\(\s*['\"]([^'\"]+)['\"]\s*,\s*(-?\d+)\s*\)")
+_CURRENT_MISSION = re.compile(
+    r"player:getCurrentMission\([^\)]*\)\s*(==|~=|<=|>=|<|>)\s*"
+    r"(?:dsp|tpz|xi)\.mission\.id\.[A-Za-z0-9_]+\.([A-Z0-9_]+)"
+)
+_MISSION_ALIAS = re.compile(r"local\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*player:getCurrentMission\([^\)]*\)")
+_MISSION_ALIAS_CMP = re.compile(
+    r"\b([A-Za-z_][A-Za-z0-9_]*)\s*(==|~=|<=|>=|<|>)\s*"
+    r"(?:dsp|tpz|xi)\.mission\.id\.[A-Za-z0-9_]+\.([A-Z0-9_]+)"
+)
+_COMPLETED_MISSION = re.compile(
+    r"player:hasCompletedMission\([^,]+,\s*(?:dsp|tpz|xi)\.mission\.id\.[A-Za-z0-9_]+\.([A-Z0-9_]+)\s*\)"
+)
+_QUEST_STATUS = re.compile(
+    r"player:getQuestStatus\([^,]+,\s*(?:dsp|tpz|xi)\.quest\.id\.[A-Za-z0-9_]+\.([A-Z0-9_]+)\s*\)"
+    r"\s*(==|~=)\s*(QUEST_AVAILABLE|QUEST_ACCEPTED|QUEST_COMPLETED|\d+)"
+)
+_QUEST_ALIAS = re.compile(r"local\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*player:getQuestStatus\([^,]+,\s*(?:dsp|tpz|xi)\.quest\.id\.[A-Za-z0-9_]+\.([A-Z0-9_]+)\s*\)")
+_QUEST_ALIAS_CMP = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*)\s*(==|~=)\s*(QUEST_AVAILABLE|QUEST_ACCEPTED|QUEST_COMPLETED|\d+)")
+_COMPLETED_QUEST = re.compile(
+    r"player:hasCompletedQuest\([^,]+,\s*(?:dsp|tpz|xi)\.quest\.id\.[A-Za-z0-9_]+\.([A-Z0-9_]+)\s*\)"
+)
 _HAS_KI = re.compile(r"(?<!not\s)player:hasKeyItem\(\s*(?:(?:dsp|tpz)\.ki|xi\.keyItem)\.([A-Z0-9_]+)\s*\)")
 _LACKS_KI = re.compile(r"not\s+player:hasKeyItem\(\s*(?:(?:dsp|tpz)\.ki|xi\.keyItem)\.([A-Z0-9_]+)\s*\)")
+_TRADE_QTY = re.compile(r"trade:hasItemQty\(\s*([^,\)]+)\s*,\s*([^\)]+)\)")
+_TRADE_EXACT = re.compile(r"npcUtil\.tradeHasExactly\(\s*trade\s*,\s*([^\)]+)\)")
+_TRADE_HAS = re.compile(r"npcUtil\.tradeHas\(\s*trade\s*,\s*([^\)]+)\)")
 _ADD_KI = re.compile(r"(?:player:addKeyItem|npcUtil\.giveKeyItem)\(\s*(?:player\s*,\s*)?(?:(?:dsp|tpz)\.ki|xi\.keyItem)\.([A-Z0-9_]+)")
 _DEL_KI = re.compile(r"player:delKeyItem\(\s*(?:(?:dsp|tpz)\.ki|xi\.keyItem)\.([A-Z0-9_]+)")
 _ADD_ITEM = re.compile(r"player:addItem\(\s*((?:dsp|tpz|xi)\.item\.[A-Z0-9_]+|\d+)")
@@ -33,8 +57,10 @@ _COMPLETE_MISSION = re.compile(r"player:completeMission\(([^\)]*)\)")
 _ADD_MISSION = re.compile(r"player:addMission\(([^\)]*)\)")
 _COMPLETE_QUEST = re.compile(r"player:completeQuest\(([^\)]*)\)")
 _ADD_QUEST = re.compile(r"player:addQuest\(([^\)]*)\)")
+_TRADE_COMPLETE = re.compile(r"player:tradeComplete\(\s*\)")
 _OP = {"==":"EQ", "~=":"NE", "<":"LT", "<=":"LE", ">":"GT", ">=":"GE"}
 _TRIGGER = {"onTrigger":"NPC_INTERACT", "onTrade":"TRADE", "onEventFinish":"EVENT_FINISH", "onZoneIn":"ZONE_IN", "onMobDeath":"MOB_DEATH"}
+_QUEST_STATE = {"QUEST_AVAILABLE": 0, "QUEST_ACCEPTED": 1, "QUEST_COMPLETED": 2}
 
 
 def _zone_actor(path: Path) -> tuple[str, str | None]:
@@ -79,16 +105,54 @@ def _normalize_multiline_guards(block: str) -> str:
     return "\n".join(out)
 
 
+def _quest_status_conditions(symbol: str, operator: str, raw_value: str) -> list[StateCondition]:
+    value = _QUEST_STATE.get(raw_value, int(raw_value) if raw_value.isdigit() else -1)
+    rows: list[StateCondition] = []
+    if value == 0:
+        rows.extend((
+            StateCondition(f"quest_active:{symbol}", "COMPLETE", operator == "~="),
+            StateCondition(f"quest_completed:{symbol}", "COMPLETE", operator == "~="),
+        ))
+    elif value == 1:
+        rows.append(StateCondition(f"quest_active:{symbol}", "COMPLETE", operator == "=="))
+    elif value == 2:
+        rows.append(StateCondition(f"quest_completed:{symbol}", "COMPLETE", operator == "=="))
+    return rows
+
+
 def _conditions(texts: Iterable[str]) -> tuple[StateCondition, ...]:
     joined = "\n".join(texts)
     rows: list[StateCondition] = []
     for key, op, value in _CHAR_CMP.findall(joined):
         rows.append(StateCondition(f"charvar:{key}", _OP[op], int(value)))
+    for op, symbol in _CURRENT_MISSION.findall(joined):
+        rows.append(StateCondition(f"mission_current:{symbol}", _OP[op], symbol))
+    mission_aliases = {alias for alias in _MISSION_ALIAS.findall(joined)}
+    for alias, op, symbol in _MISSION_ALIAS_CMP.findall(joined):
+        if alias in mission_aliases:
+            rows.append(StateCondition(f"mission_current:{symbol}", _OP[op], symbol))
+    for symbol in _COMPLETED_MISSION.findall(joined):
+        rows.append(StateCondition(f"mission_completed:{symbol}", "COMPLETE", True))
+    for symbol, op, raw_value in _QUEST_STATUS.findall(joined):
+        rows.extend(_quest_status_conditions(symbol, op, raw_value))
+    quest_aliases = {alias: symbol for alias, symbol in _QUEST_ALIAS.findall(joined)}
+    for alias, op, raw_value in _QUEST_ALIAS_CMP.findall(joined):
+        symbol = quest_aliases.get(alias)
+        if symbol:
+            rows.extend(_quest_status_conditions(symbol, op, raw_value))
+    for symbol in _COMPLETED_QUEST.findall(joined):
+        rows.append(StateCondition(f"quest_completed:{symbol}", "COMPLETE", True))
     lacked = set(_LACKS_KI.findall(joined))
     for symbol in sorted(lacked):
         rows.append(StateCondition(f"key_item:{symbol}", "LACKS", True))
     for symbol in sorted(set(_HAS_KI.findall(joined)) - lacked):
         rows.append(StateCondition(f"key_item:{symbol}", "HAS", True))
+    for item, qty in _TRADE_QTY.findall(joined):
+        rows.append(StateCondition(f"trade:item:{item.strip()}", "TRADE_MATCHES", qty.strip()))
+    for spec in _TRADE_EXACT.findall(joined):
+        rows.append(StateCondition("trade", "TRADE_MATCHES", f"exact:{spec.strip()}"))
+    for spec in _TRADE_HAS.findall(joined):
+        rows.append(StateCondition("trade", "TRADE_MATCHES", spec.strip()))
     unique = []
     for row in rows:
         if row not in unique:
@@ -118,6 +182,8 @@ def _effects(body: str) -> tuple[TransitionEffect, ...]:
         rows.append(TransitionEffect("START", f"quest:{args.strip()}"))
     for args in _COMPLETE_QUEST.findall(body):
         rows.append(TransitionEffect("COMPLETE", f"quest:{args.strip()}"))
+    if _TRADE_COMPLETE.search(body):
+        rows.append(TransitionEffect("COMPLETE_TRADE", "trade"))
     unique = []
     for row in rows:
         if row not in unique:
@@ -218,5 +284,5 @@ def extract_legacy_progression(files: Iterable[Path], *, feature_id: str) -> Mis
             StateChannel(subject, "PERSISTENT", tuple(sorted(values)))
             for subject, values in sorted(channels.items())
         ),
-        metadata={"adapter":"legacy_dsp_topaz", "source_layout":"legacy_handler_scripts"},
+        metadata={"adapter":"legacy_dsp_topaz", "source_layout":"legacy_handler_scripts", "priority_target": True},
     )
