@@ -155,10 +155,11 @@ def extract_legacy_progression(files: Iterable[Path], *, feature_id: str) -> Mis
     if not raw:
         return None
 
-    finishes: dict[int, list[MissionTransition]] = {}
+    finishes: dict[tuple[str, str | None, int], list[MissionTransition]] = {}
     for row in raw:
         if row.trigger == "EVENT_FINISH" and row.event is not None:
-            finishes.setdefault(row.event.event_id, []).append(row)
+            key = (row.event.zone, row.event.actor, row.event.event_id)
+            finishes.setdefault(key, []).append(row)
     chained: list[MissionTransition] = []
     used_finish: set[str] = set()
     for row in raw:
@@ -166,7 +167,8 @@ def extract_legacy_progression(files: Iterable[Path], *, feature_id: str) -> Mis
             continue
         extra = []
         if row.event is not None:
-            for finish in finishes.get(row.event.event_id, ()):
+            key = (row.event.zone, row.event.actor, row.event.event_id)
+            for finish in finishes.get(key, ()):
                 extra.extend(finish.effects)
                 used_finish.add(finish.transition_id)
         meta = dict(row.metadata)
