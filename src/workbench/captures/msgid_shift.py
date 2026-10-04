@@ -45,6 +45,20 @@ def _entmap(con, capture_id):
     return {e: next(iter(v)) for e, v in zs.items() if len(v) == 1}
 
 
+def _decode_zone(con, uid, _cache={}):
+    """Last-resort fallback: NPC entity id = 0x01000000 | zoneid<<12 | targid. Only for real NPC ids
+    (high byte 1) whose decoded zone is a known zone. Instance zones (Assault etc.) use pseudo zone
+    ids in the id, but those always resolve through the tables first."""
+    if (uid >> 24) != 1:
+        return None
+    zid = (uid >> 12) & 0xFFF
+    key = (id(con), zid)
+    if key not in _cache:
+        r = con.execute("SELECT name FROM zones WHERE zoneid=?", (zid,)).fetchone()
+        _cache[key] = r[0] if r else None
+    return _cache[key]
+
+
 def _chat_near(chat, ts, window=2):
     """Chat lines within +-window seconds of a packet timestamp (HH:MM:SS keys)."""
     try:
@@ -73,7 +87,7 @@ def compute(con, capture_id, zoneid_for_zone_db):
             continue
         uid = struct.unpack_from("<I", b, 4)[0]
         m = struct.unpack_from("<H", b, 10)[0] & 0x7FFF
-        zone = (zmap.get((uid, m)) or emap.get(uid))
+        zone = (zmap.get((uid, m)) or emap.get(uid) or _decode_zone(con, uid))
         if zone:
             per[zone].append((m, " | ".join(_chat_near(chat, ts))))
     out = []
@@ -139,7 +153,8 @@ def observe(con, capture_id, zoneid_for_zone_db):
         if len(b) < 12:
             continue
         m = struct.unpack_from("<H", b, 10)[0] & 0x7FFF
-        zone = (zmap.get((struct.unpack_from("<I", b, 4)[0], m)) or emap.get(struct.unpack_from("<I", b, 4)[0]))
+        uid = struct.unpack_from("<I", b, 4)[0]
+        zone = (zmap.get((uid, m)) or emap.get(uid) or _decode_zone(con, uid))
         lines = " | ".join(_chat_near(chat, ts))
         if not zone or not lines:
             continue
