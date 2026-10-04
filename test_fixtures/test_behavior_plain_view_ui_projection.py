@@ -61,9 +61,19 @@ def test_clarified_event_handoffs_jump_to_clarified_branches_not_technical_nodes
     assert "branch.dataset.branchId === String(branchId)" in wrapper
     assert "scrollIntoView({behavior: 'smooth', block: 'center'})" in wrapper
     assert "handoff-focus" in wrapper
-    assert "Start:" in wrapper
-    assert "Handler:" in wrapper
     assert "data-contract-node=\"${esc(ref.branch_id)}\"" not in wrapper
+
+
+def test_clarified_flow_groups_event_lifecycle_without_claiming_runtime_order():
+    wrapper = WRAPPER.read_text(encoding="utf-8")
+
+    assert "Event lifecycle" in wrapper
+    assert "Starts event" in wrapper
+    assert "Handled by" in wrapper
+    assert "same literal event identity" in wrapper
+    assert "row.ordering || 'UNPROVEN'" in wrapper
+    assert "runtime ordering remains unproven" in wrapper
+    assert "${lifecycleHtml}${groupsHtml}" in wrapper
 
 
 def test_clarified_flow_wrapper_contract_render_is_idempotent():
