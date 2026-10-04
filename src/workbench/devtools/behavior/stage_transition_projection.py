@@ -75,7 +75,7 @@ def _direct_event_state_writes(lua: str, event_ids: set[str]) -> list[dict[str, 
                 if re.match(r"^(?:elseif\b|else\b|end\b)", stripped):
                     finish(index - 1)
             match = _LITERAL_BRANCH.match(code)
-            if match:
+            if match and active is None:
                 form, _selector, literal = match.groups()
                 active = {
                     "event_id": int(literal),
