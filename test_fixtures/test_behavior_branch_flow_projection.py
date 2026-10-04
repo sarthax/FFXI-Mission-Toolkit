@@ -6,6 +6,7 @@ from test_fixtures.test_scripted_behavior_noncombat_mission_stress import SCRIPT
 from workbench.plugins.domain.scripted_behavior_lsb_extract import extract_lsb_scripted_behavior
 from workbench.core.services.scripted_behavior_visualizer import _graph_for_behavior
 from workbench.devtools.behavior.plain_view import build_plain_behavior_projection
+from workbench.devtools.behavior.source_branch_projection import apply_source_branch_evidence
 
 
 def _flatten(rows):
@@ -31,11 +32,12 @@ def main():
         source_path="scripts/zones/Test/npcs/Mission_NPC.lua",
     )
     graph=_graph_for_behavior(behavior)
-    plain=build_plain_behavior_projection(graph)
+    plain=apply_source_branch_evidence(build_plain_behavior_projection(graph),graph,SCRIPT)
 
     assert plain["presentation"]=="branch_tree_v1",plain
     assert plain["safety"]["branch_nesting_from_guard_containment_only"] is True,plain
     assert plain["safety"]["cross_hook_ordering_inferred"] is False,plain
+    assert plain["safety"]["source_literal_branch_overlay"] is True,plain
 
     groups={row["trigger"]["technical_label"]:row for row in plain["branch_groups"]}
     assert {"onTrigger","onEventFinish","onEventUpdate"} <= set(groups),groups
