@@ -6,9 +6,14 @@ Core contracts without keeping Development -> product-implementation dependencie
 
 Scenario-driven additions live here as a compatibility-safe facade: existing callers keep the
 unfiltered trace contract, while callers that pass ``mode=`` get focused traversal/presentation.
+The existing GUI can also opt into a mode without route changes by prefixing a query with
+``@implementation``, ``@mission``, ``@triggers``, ``@effects``, ``@dependencies``, ``@runtime``,
+``@identity``, ``@diagnose``, or ``@all``.
 """
 from __future__ import annotations
 
+from contextvars import ContextVar
+import re
 import sys
 
 import workbench.core.services as _legacy_services
@@ -16,7 +21,7 @@ from workbench.core.contracts import capture_row_locators as _capture_row_locato
 from workbench.devtools.features import trace_catalog as _trace_catalog
 from workbench.devtools.features.trace_expansion import provider_candidates
 from workbench.devtools.features.trace_generators import generators_for
-from workbench.devtools.features.trace_modes import edge_allowed, mode_options, normalize_mode
+from workbench.devtools.features.trace_modes import MODE_BY_ID, edge_allowed, mode_options, normalize_mode
 from workbench.devtools.features.trace_resolver import resolve_candidates
 
 _ALIASES = {
@@ -57,12 +62,60 @@ for _export in dir(_impl):
 
 _base_trace = _impl.trace
 _base_search_nodes = _impl.search_nodes
+_base_node_info = _impl.node_info
+_base_entity_query_diagnostics = _impl.entity_query_diagnostics
+_base_entity_implementation_path = _impl.entity_implementation_path
+_QUERY_MODE: ContextVar[str | None] = ContextVar("feature_trace_query_mode", default=None)
+_MODE_PREFIX = re.compile(r"^\s*@([a-z][a-z0-9_-]*)\s+(.*?)\s*$", re.IGNORECASE | re.DOTALL)
+
+
+def split_mode_query(query: str) -> tuple[str | None, str]:
+    """Parse an optional ``@mode query`` prefix without changing ordinary searches."""
+    text = str(query or "").strip()
+    match = _MODE_PREFIX.match(text)
+    if not match:
+        return None, text
+    mode = match.group(1).strip().lower().replace("-", "_")
+    if mode not in MODE_BY_ID:
+        return None, text
+    return mode, match.group(2).strip()
+
+
+def _query_text(query: str) -> str:
+    mode, clean = split_mode_query(query)
+    if mode:
+        _QUERY_MODE.set(mode)
+    return clean
+
+
+def search_nodes(con, term: str, catalog_con=None):
+    return _base_search_nodes(con, _query_text(term), catalog_con)
+
+
+def node_info(con, node_id: str, catalog_con=None):
+    return _base_node_info(con, _query_text(node_id), catalog_con)
+
+
+def entity_query_diagnostics(graph_con, catalog_con, query: str) -> dict:
+    return _base_entity_query_diagnostics(graph_con, catalog_con, _query_text(query))
+
+
+def entity_implementation_path(graph_con, catalog_con, query: str, *, max_provider_depth: int = 4):
+    return _base_entity_implementation_path(
+        graph_con, catalog_con, _query_text(query), max_provider_depth=max_provider_depth
+    )
 
 
 def resolve_query(con, query: str, catalog_con=None) -> dict:
     """Rank and group Feature Trace search matches without manufacturing graph identity."""
-    rows = _base_search_nodes(con, query, catalog_con)
-    return resolve_candidates(query, rows).as_dict()
+    mode, clean = split_mode_query(query)
+    if mode:
+        _QUERY_MODE.set(mode)
+    rows = _base_search_nodes(con, clean, catalog_con)
+    result = resolve_candidates(clean, rows).as_dict()
+    result["requested_mode"] = mode
+    result["original_query"] = query
+    return result
 
 
 def trace(con, root: str, depth: int, direction: str,
@@ -70,11 +123,16 @@ def trace(con, root: str, depth: int, direction: str,
           max_nodes: int = 5000, mode: str | None = None) -> dict:
     """Trace one root, optionally narrowing the returned evidence to a scenario mode.
 
-    ``mode=None`` preserves the historical behavior contract. Focused modes narrow recorded
-    canonical relationships and additionally expose read-only provider-generated relationships.
-    Generated relationships remain separate from ``edges`` and are never persisted implicitly.
+    ``mode=None`` preserves historical behavior unless the current request explicitly used an
+    ``@mode`` query prefix. Generated relationships remain separate from canonical ``edges`` and
+    are never persisted implicitly.
     """
-    if mode is None:
+    prefixed_mode, clean_root = split_mode_query(root)
+    if prefixed_mode:
+        _QUERY_MODE.set(prefixed_mode)
+    root = clean_root
+    requested_mode = mode or prefixed_mode or _QUERY_MODE.get()
+    if requested_mode is None:
         return _base_trace(
             con, root, depth, direction, catalog_con,
             relationships=relationships,
@@ -82,7 +140,10 @@ def trace(con, root: str, depth: int, direction: str,
             max_nodes=max_nodes,
         )
 
-    selected = normalize_mode(mode)
+    # Consume the request-scoped hint when trace starts. ContextVar isolation keeps concurrent
+    # FastAPI requests independent, and ordinary programmatic callers never set this hint.
+    _QUERY_MODE.set(None)
+    selected = normalize_mode(requested_mode)
     effective_direction = direction
     if direction == "both" and selected.direction in {"in", "out"}:
         effective_direction = selected.direction
@@ -144,6 +205,7 @@ def trace(con, root: str, depth: int, direction: str,
         "label": selected.label,
         "question": selected.question,
         "effective_direction": effective_direction,
+        "query_prefix": f"@{selected.mode_id}",
     }
     result["mode_options"] = mode_options()
     result["root_kind"] = root_kind
@@ -179,4 +241,7 @@ def trace(con, root: str, depth: int, direction: str,
     return result
 
 
-__all__ = sorted({name for name in dir(_impl) if not name.startswith("_")} | {"resolve_query", "trace"})
+__all__ = sorted({name for name in dir(_impl) if not name.startswith("_")} | {
+    "resolve_query", "split_mode_query", "search_nodes", "node_info",
+    "entity_query_diagnostics", "entity_implementation_path", "trace",
+})
