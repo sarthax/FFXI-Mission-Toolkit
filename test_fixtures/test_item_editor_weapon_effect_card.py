@@ -24,6 +24,15 @@ def test_weapon_effect_card_uses_structured_additional_effect_mod_ids():
         assert str(mod_id) in js
 
 
+def test_weapon_effect_card_mounts_inside_effect_staging_tools():
+    js = (ROOT / "gui" / "static" / "itemedit_weapon_effects.js").read_text(encoding="utf-8")
+    ux = (ROOT / "gui" / "static" / "itemedit_ux.js").read_text(encoding="utf-8")
+
+    assert "tools.insertBefore(card, tools.firstChild)" in js
+    assert "tools.parentNode.insertBefore(card, tools)" not in js
+    assert "['effects', 'Effects', ['effectStagingTools']]" in ux
+
+
 def test_shared_shell_loads_guarded_weapon_effect_module():
     base = (ROOT / "gui" / "templates" / "base.html").read_text(encoding="utf-8")
     assert '/static/itemedit_weapon_effects.js' in base
