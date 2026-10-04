@@ -14,6 +14,7 @@ import sys
 import workbench.core.services as _legacy_services
 from workbench.core.contracts import capture_row_locators as _capture_row_locators
 from workbench.devtools.features import trace_catalog as _trace_catalog
+from workbench.devtools.features.trace_expansion import provider_candidates
 from workbench.devtools.features.trace_generators import generators_for
 from workbench.devtools.features.trace_modes import edge_allowed, mode_options, normalize_mode
 from workbench.devtools.features.trace_resolver import resolve_candidates
@@ -69,10 +70,9 @@ def trace(con, root: str, depth: int, direction: str,
           max_nodes: int = 5000, mode: str | None = None) -> dict:
     """Trace one root, optionally narrowing the returned evidence to a scenario mode.
 
-    ``mode=None`` preserves the historical byte-for-byte behavior contract as far as callers are
-    concerned.  Focused modes filter presentation after canonical traversal; they never create
-    synthetic graph edges.  Provider/generator expansion is reported separately so later phases
-    can add proven candidates without conflating them with persisted canonical relationships.
+    ``mode=None`` preserves the historical behavior contract. Focused modes narrow recorded
+    canonical relationships and additionally expose read-only provider-generated relationships.
+    Generated relationships remain separate from ``edges`` and are never persisted implicitly.
     """
     if mode is None:
         return _base_trace(
@@ -122,7 +122,6 @@ def trace(con, root: str, depth: int, direction: str,
     root_info = next((node for node in result.get("nodes", ()) if node.get("node_id") == root), None) or _impl.node_info(con, root, catalog_con)
     reps = root_info.get("representations") or []
     root_type = str((reps[0] if reps else {}).get("node_type") or "FEATURE").upper()
-    # Lightweight root-kind mapping aligns the persisted graph with the central resolver/generator registry.
     if root_type in {"NPC", "MOB", "INSTANCE_ENTITY", "CLIENT_IDENTITY", "ENTITY"}:
         root_kind = "entity"
     elif "MISSION" in root_type or "QUEST" in root_type:
@@ -148,18 +147,35 @@ def trace(con, root: str, depth: int, direction: str,
     }
     result["mode_options"] = mode_options()
     result["root_kind"] = root_kind
+
+    generator_specs = generators_for(root_kind, selected.mode_id)
+    source_con = catalog_con or con
+    generated = provider_candidates(
+        source_con,
+        root,
+        mode=selected.mode_id,
+        max_depth=max(1, min(int(depth), 4)),
+        max_nodes=min(max_nodes, 500),
+    )
+    generated_rows = [row.as_dict() for row in generated]
+    active_generators = {row.get("generator") for row in generated_rows}
+    result["generated_relationships"] = generated_rows
+    result["generated_relationship_count"] = len(generated_rows)
     result["generator_plan"] = [
         {
             "id": spec.generator_id,
             "label": spec.label,
             "phase": spec.phase,
             "evidence_domains": list(spec.evidence_domains),
+            "active": spec.generator_id in active_generators,
+            "generated_count": sum(1 for row in generated_rows if row.get("generator") == spec.generator_id),
         }
-        for spec in generators_for(root_kind, selected.mode_id)
+        for spec in generator_specs
     ]
-    result.setdefault("notes", []).append(
-        "Trace mode narrows recorded evidence; generator_plan lists additional evidence adapters eligible for this scenario."
-    )
+    result.setdefault("notes", []).extend((
+        "Trace mode narrows recorded evidence to the selected question.",
+        "generated_relationships are read-only provider-native evidence and are not canonical persisted graph edges.",
+    ))
     return result
 
 
