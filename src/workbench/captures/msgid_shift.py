@@ -59,6 +59,41 @@ def _decode_zone(con, uid, _cache={}):
     return _cache[key]
 
 
+def build_pseudo_map(con, min_n=20, min_share=0.95):
+    """Measure instance pseudo-zone ids (zone bits of the entity id) -> real zone_db from packets that
+    already resolve via the tables. Only unambiguous ids are usable (share>=min_share, n>=min_n);
+    ids shared by several zones (e.g. 109 = all Remnants zones) stay unresolved."""
+    con.execute("""CREATE TABLE IF NOT EXISTS instance_pseudo_zone (
+        pseudo INTEGER PRIMARY KEY, zone_db TEXT, n INTEGER, total INTEGER, usable INTEGER)""")
+    cnt = collections.defaultdict(collections.Counter)
+    ids = [r[0] for r in con.execute("SELECT DISTINCT capture_id FROM capture_raw_packets WHERE UPPER(opcode)='0X036'")]
+    for cid in ids:
+        zm, em = _zmap(con, cid), _entmap(con, cid)
+        for (hx,) in con.execute("SELECT raw_hex FROM capture_raw_packets WHERE capture_id=? AND UPPER(opcode)='0X036'", (cid,)):
+            b = bytes.fromhex(hx.replace(" ", ""))
+            if len(b) < 12:
+                continue
+            uid = struct.unpack_from("<I", b, 4)[0]
+            m = struct.unpack_from("<H", b, 10)[0] & 0x7FFF
+            z = zm.get((uid, m)) or em.get(uid)
+            if z:
+                cnt[(uid >> 12) & 0xFFF][z] += 1
+    con.execute("DELETE FROM instance_pseudo_zone")
+    for ps, c in cnt.items():
+        (z, n), tot = c.most_common(1)[0], sum(c.values())
+        con.execute("INSERT INTO instance_pseudo_zone VALUES (?,?,?,?,?)",
+                    (ps, z, n, tot, int(n >= min_n and n >= min_share * tot)))
+    con.commit()
+
+
+def _pseudo_zone(con, uid):
+    try:
+        r = con.execute("SELECT zone_db FROM instance_pseudo_zone WHERE pseudo=? AND usable=1", ((uid >> 12) & 0xFFF,)).fetchone()
+    except Exception:
+        return None
+    return r[0] if r else None
+
+
 def _chat_near(chat, ts, window=2):
     """Chat lines within +-window seconds of a packet timestamp (HH:MM:SS keys)."""
     try:
@@ -87,7 +122,7 @@ def compute(con, capture_id, zoneid_for_zone_db):
             continue
         uid = struct.unpack_from("<I", b, 4)[0]
         m = struct.unpack_from("<H", b, 10)[0] & 0x7FFF
-        zone = (zmap.get((uid, m)) or emap.get(uid) or _decode_zone(con, uid))
+        zone = (zmap.get((uid, m)) or emap.get(uid) or _decode_zone(con, uid) or _pseudo_zone(con, uid))
         if zone:
             per[zone].append((m, " | ".join(_chat_near(chat, ts))))
     out = []
@@ -154,7 +189,7 @@ def observe(con, capture_id, zoneid_for_zone_db):
             continue
         m = struct.unpack_from("<H", b, 10)[0] & 0x7FFF
         uid = struct.unpack_from("<I", b, 4)[0]
-        zone = (zmap.get((uid, m)) or emap.get(uid) or _decode_zone(con, uid))
+        zone = (zmap.get((uid, m)) or emap.get(uid) or _decode_zone(con, uid) or _pseudo_zone(con, uid))
         lines = " | ".join(_chat_near(chat, ts))
         if not zone or not lines:
             continue
