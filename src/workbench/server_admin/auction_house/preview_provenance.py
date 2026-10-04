@@ -26,44 +26,19 @@ class PreviewProvenanceCheck:
         return not any(issue.blocking for issue in self.issues)
 
     def as_dict(self) -> dict[str, Any]:
-        return {
-            "preview": None if self.preview is None else dict(self.preview),
-            "issues": [asdict(issue) for issue in self.issues],
-            "binding_ready": self.binding_ready,
-            "executor_enabled": False,
-            "executable": False,
-        }
+        return {"preview": None if self.preview is None else dict(self.preview), "issues": [asdict(issue) for issue in self.issues], "binding_ready": self.binding_ready, "executor_enabled": False, "executable": False}
 
 
 def _environment_identity(environment: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "profile_id": environment.get("profile_id"),
-        "name": str(environment.get("name") or ""),
-        "environment": str(environment.get("environment") or ""),
-        "family": str(environment.get("family") or "").strip().lower(),
-    }
+    return {"profile_id": environment.get("profile_id"), "name": str(environment.get("name") or ""), "environment": str(environment.get("environment") or ""), "family": str(environment.get("family") or "").strip().lower()}
 
 
 def _policy_identity(policy_binding: dict[str, Any] | None) -> dict[str, Any]:
     policy = dict(policy_binding or {})
-    return {
-        "family": str(policy.get("family") or "").strip().lower(),
-        "source_kind": policy.get("source_kind"),
-        "source_path": policy.get("source_path"),
-        "policy_fingerprint": policy.get("policy_fingerprint"),
-        "policy_ready": bool(policy.get("policy_ready", False)),
-    }
+    return {"family": str(policy.get("family") or "").strip().lower(), "source_kind": policy.get("source_kind"), "source_path": policy.get("source_path"), "policy_fingerprint": policy.get("policy_fingerprint"), "policy_ready": bool(policy.get("policy_ready", False))}
 
 
-def make_preview_provenance(
-    *,
-    environment: dict[str, Any],
-    schema_family_hint: str,
-    policy_binding: dict[str, Any] | None,
-    action: str,
-    adapter: str,
-) -> dict[str, Any]:
-    """Create the common immutable provenance envelope attached to every AH preview response."""
+def make_preview_provenance(*, environment: dict[str, Any], schema_family_hint: str, policy_binding: dict[str, Any] | None, action: str, adapter: str) -> dict[str, Any]:
     return {
         "version": PROVENANCE_VERSION,
         "preview_id": str(uuid4()),
@@ -78,21 +53,20 @@ def make_preview_provenance(
     }
 
 
-def validate_preview_provenance(
-    preview: dict[str, Any],
-    *,
-    environment: dict[str, Any],
-    schema_family_hint: str,
-    active_policy_binding: dict[str, Any] | None,
-) -> PreviewProvenanceCheck:
-    """Fail closed when common preview provenance no longer matches the selected live context."""
+def validate_preview_provenance(preview: dict[str, Any], *, environment: dict[str, Any], schema_family_hint: str, active_policy_binding: dict[str, Any] | None) -> PreviewProvenanceCheck:
     provenance = preview.get("preview_provenance")
     if not isinstance(provenance, dict):
-        return PreviewProvenanceCheck(None, [
-            PreviewProvenanceIssue("preview_provenance_missing", "Preview has no normalized provenance envelope; regenerate the preview."),
-        ])
+        return PreviewProvenanceCheck(None, [PreviewProvenanceIssue("preview_provenance_missing", "Preview has no normalized provenance envelope; regenerate the preview.")])
 
-    issues: list[PreviewProvenanceIssue] = []
+    env = dict(provenance.get("environment") or {})
+    policy = dict(provenance.get("policy") or {})
+    issues: list[PreviewProvenanceIssue] = [
+        PreviewProvenanceIssue(
+            "preview_provenance_snapshot",
+            f"Preview {provenance.get('preview_id') or 'unknown'} created {provenance.get('created_at_utc') or 'at an unknown time'} for {env.get('name') or 'unknown environment'} / {provenance.get('schema_family_hint') or 'unknown schema'} / policy {str(policy.get('policy_fingerprint') or 'none')[:12]}.",
+            False,
+        )
+    ]
     if provenance.get("version") != PROVENANCE_VERSION:
         issues.append(PreviewProvenanceIssue("preview_provenance_version_mismatch", "Preview provenance version is unsupported; regenerate the preview."))
     if not provenance.get("preview_id"):
@@ -103,20 +77,14 @@ def validate_preview_provenance(
         issues.append(PreviewProvenanceIssue("preview_action_mismatch", "Preview provenance action does not match the preview payload."))
     if str(provenance.get("adapter") or "") != str(preview.get("adapter") or ""):
         issues.append(PreviewProvenanceIssue("preview_adapter_mismatch", "Preview provenance adapter does not match the preview payload."))
-
-    if dict(provenance.get("environment") or {}) != _environment_identity(environment):
+    if env != _environment_identity(environment):
         issues.append(PreviewProvenanceIssue("preview_environment_provenance_mismatch", "Preview provenance was created against a different server environment."))
     if str(provenance.get("schema_family_hint") or "") != str(schema_family_hint or ""):
         issues.append(PreviewProvenanceIssue("preview_schema_provenance_mismatch", "Preview provenance was created against a different Auction House schema family."))
 
     expected_policy = _policy_identity(active_policy_binding)
-    preview_policy = dict(provenance.get("policy") or {})
     for key in ("family", "source_kind", "source_path", "policy_fingerprint"):
-        if preview_policy.get(key) != expected_policy.get(key):
-            issues.append(PreviewProvenanceIssue(
-                "preview_policy_provenance_mismatch",
-                "Preview provenance policy snapshot no longer matches the active Auction House policy.",
-            ))
+        if policy.get(key) != expected_policy.get(key):
+            issues.append(PreviewProvenanceIssue("preview_policy_provenance_mismatch", "Preview provenance policy snapshot no longer matches the active Auction House policy."))
             break
-
     return PreviewProvenanceCheck(dict(provenance), issues)
