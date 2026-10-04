@@ -292,7 +292,7 @@
     button.disabled = true;
     $('ahValidationReport').innerHTML = '<p class="muted">Re-reading current database/configuration state…</p>';
     try {
-      renderValidationReport(await postApi('/auction-house/admin/validate-preview.json', {preview:lastActionPreview}));
+      renderValidationReport(await postApi('/auction-house/admin/validate/preview.json', {preview:lastActionPreview}));
     } catch (error) {
       $('ahValidationReport').innerHTML = `<p>${esc(error.message)}</p>`;
     } finally {
