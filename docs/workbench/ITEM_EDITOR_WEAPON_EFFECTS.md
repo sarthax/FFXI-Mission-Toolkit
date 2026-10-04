@@ -43,7 +43,7 @@ Each effect also receives a lineage capability badge:
 - `server-code-required` — the editor can model the desired behavior and generate a handoff, but server Lua/C++ must be added or extended;
 - `unsupported` — the proc type is unknown to the framework.
 
-This is intentionally fail-closed. Modern LSB proc-type numbers must not be written into DSP/Topaz merely because the logical effect name is the same.
+Only `row-only` effects are considered safe for direct application by the editor. `verify-lineage` and `server-code-required` remain read/preview/handoff states until implementation has been verified. This is intentionally fail-closed.
 
 ## Self-buff framework
 
@@ -55,7 +55,7 @@ For current LandSandBoat, the relevant upstream path is:
 
 The useful implementation points are `xi.additionalEffect.attack`, `xi.additionalEffect.procFunctions`, and the `SELF_BUFF` handler. Current LSB explicitly handles **Blink** and **Haste** in that handler. Blink first checks for existing Blink/Copy Image shadows before applying; Haste currently applies through `attacker:addStatusEffect(...)` with an upstream TODO to verify power/duration/tier/overwrite details. This is why the Toolkit requires the server implementation to declare stacking behavior rather than assuming it.
 
-For LSB the blueprint can safely emit the modern row bundle (`SELF_BUFF=12`) as reference/configuration data, but it still marks the effect `server-code-required` when the requested status is not implemented by the handler.
+The blueprint can emit the modern LSB row shape (`SELF_BUFF=12`) for inspection and handoff, but because arbitrary self-buff statuses are not guaranteed to be implemented, those rows are **not marked safe to apply automatically**.
 
 DSP must be treated differently. Its archived enum/reference file is:
 
