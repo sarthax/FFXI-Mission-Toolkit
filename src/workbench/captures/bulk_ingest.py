@@ -291,3 +291,33 @@ def get_job(job_id):
 
 def recent_jobs(n=10):
     return sorted(_jobs.values(), key=lambda j: j["started"], reverse=True)[:n]
+
+
+# ---------------------------------------------------------------- server-side folder chooser
+def browse(path=""):
+    """List sub-folders of `path` on the machine the server runs on (the browser can't see real paths, and
+    captures are not uploaded). Empty path lists drives. -> {path, parent, dirs, archives, raw, drives}"""
+    import string
+    drives = [d + ":\\" for d in string.ascii_uppercase if os.path.exists(d + ":\\")] if os.name == "nt" else ["/"]
+    path = (path or "").strip().strip('"')
+    if not path:
+        return {"path": "", "parent": None, "dirs": [{"name": d, "path": d} for d in drives], "archives": 0, "raw": 0, "drives": drives}
+    p = os.path.abspath(path)
+    if not os.path.isdir(p):
+        raise ValueError("%r is not a folder this server can open" % path)
+    dirs, arch, raw = [], 0, 0
+    try:
+        for e in sorted(os.scandir(p), key=lambda x: x.name.lower()):
+            try:
+                if e.is_dir():
+                    dirs.append({"name": e.name, "path": e.path})
+                elif os.path.splitext(e.name)[1].lower() in ARCHIVE_EXTS:
+                    arch += 1
+                else:
+                    raw += 1
+            except OSError:
+                continue
+    except OSError as ex:
+        raise ValueError("cannot read %s: %s" % (p, ex))
+    parent = os.path.dirname(p)
+    return {"path": p, "parent": parent if parent != p else "", "dirs": dirs, "archives": arch, "raw": raw, "drives": drives}

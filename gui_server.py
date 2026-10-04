@@ -786,6 +786,15 @@ def capture_bulk_ingest_page(request: Request, error: str = ""):
         "plan": None, "error": error, "running": bi.current_job(), "jobs": bi.recent_jobs()})
 
 
+@app.get("/captures/bulk-ingest/browse")
+def capture_bulk_ingest_browse(path: str = ""):
+    from workbench.captures import bulk_ingest as bi
+    try:
+        return bi.browse(path)
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+
+
 @app.post("/captures/bulk-ingest/scan", response_class=HTMLResponse)
 def capture_bulk_ingest_scan(request: Request, root: str = Form(""), mode: str = Form("archives"),
                              content_type: str = Form("instances"), recursive: str = Form("")):

@@ -8,8 +8,15 @@
 
 <h3>1. Choose what to scan</h3>
 <form method="post" action="/captures/bulk-ingest/scan" style="display:grid;gap:6px;max-width:640px">
-  <label>Directory (any drive or network path, e.g. <code>D:\Captures</code> or <code>\\nas\share\caps</code>)
-    <input name="root" value="{{ plan.root if plan else '' }}" style="width:100%" required></label>
+  <label>Directory (any drive or network path, e.g. <code>D:\Captures</code> or <code>\nas\share\caps</code>)</label>
+  <div style="display:flex;gap:6px"><input name="root" id="root" value="{{ plan.root if plan else '' }}" style="flex:1" required>
+    <button type="button" id="browse-btn">Browse...</button></div>
+  <div id="chooser" hidden style="border:1px solid var(--border,#888);border-radius:6px;padding:8px;max-height:320px;overflow:auto">
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+      <button type="button" id="ch-up">&#8593; Up</button><code id="ch-path" style="flex:1;word-break:break-all"></code>
+      <button type="button" id="ch-pick">Use this folder</button><button type="button" id="ch-close">Close</button></div>
+    <div id="ch-info" class="muted"></div><div id="ch-list"></div>
+  </div>
   <label><input type="radio" name="mode" value="archives" {{ 'checked' if not plan or plan.mode=='archives' }}> Archives only (.zip, .7z; .rar etc. are listed as unsupported)</label>
   <label><input type="radio" name="mode" value="raw" {{ 'checked' if plan and plan.mode=='raw' }}> Raw files and folders only (archives ignored)</label>
   <label><input type="checkbox" name="recursive" value="1" {{ 'checked' if plan and plan.recursive }}> Include subdirectories (archives mode)</label>
@@ -45,4 +52,25 @@
 {% endif %}
 
 {% if jobs %}<h3>Recent jobs</h3><ul>{% for j in jobs %}<li><a href="/captures/bulk-ingest/job/{{ j.id }}">{{ j.id }}</a> — {{ j.state }} — <code>{{ j.root }}</code></li>{% endfor %}</ul>{% endif %}
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)}, cur="", parent=null;
+  function esc(t){var d=document.createElement('div');d.textContent=t;return d.innerHTML}
+  function load(p){
+    fetch('/captures/bulk-ingest/browse?path='+encodeURIComponent(p)).then(function(r){return r.json().then(function(j){return [r.ok,j]})}).then(function(x){
+      if(!x[0]){$('ch-info').textContent=x[1].error;return}
+      var j=x[1]; cur=j.path; parent=j.parent;
+      $('ch-path').textContent=cur||'(drives)'; $('ch-up').disabled=(parent===null);
+      $('ch-pick').disabled=!cur;
+      $('ch-info').textContent=cur?(j.archives+' archive file(s), '+j.raw+' other file(s) here'):'Choose a drive. For a network path, type it in the box.';
+      $('ch-list').innerHTML=j.dirs.map(function(d,i){return '<div><a href="#" data-p="'+esc(d.path).replace(/"/g,'&quot;')+'">&#128193; '+esc(d.name)+'</a></div>'}).join('')||'<div class="muted">No sub-folders.</div>';
+    });
+  }
+  $('browse-btn').onclick=function(){$('chooser').hidden=false;load($('root').value)};
+  $('ch-close').onclick=function(){$('chooser').hidden=true};
+  $('ch-up').onclick=function(){load(parent||'')};
+  $('ch-pick').onclick=function(){$('root').value=cur;$('chooser').hidden=true};
+  $('ch-list').onclick=function(e){var a=e.target.closest('a');if(a){e.preventDefault();load(a.getAttribute('data-p'))}};
+})();
+</script>
 {% endblock %}
