@@ -23,30 +23,44 @@ def test_plain_view_core_preserves_evidence_drilldown_and_technical_graph():
     assert "causalPath" in core
 
 
-def test_plain_view_wrapper_renders_backend_projection_contract():
+def test_clarified_flow_wrapper_renders_backend_branch_projection_without_replacing_plain():
     wrapper = WRAPPER.read_text(encoding="utf-8")
 
     assert "graph.plain_behavior" in wrapper
-    assert "expected.trigger" in wrapper
-    assert "expected.requirements" in wrapper
-    assert "expected.actions" in wrapper
-    assert "expected.results" in wrapper
-    assert "expected.collapsed_count" in wrapper
-    assert "expected.summary" in wrapper
+    assert "contract.branch_groups" in wrapper
+    assert "contract.event_handoffs" in wrapper
+    assert "behavior-clarified-view" in wrapper
+    assert "behavior-mode-clarified" in wrapper
+    assert "Clarified Flow" in wrapper
+    assert "workspace.insertBefore(clarified, plain)" in wrapper
+    assert "plainButton.parentElement.insertBefore(clarifiedButton, plainButton)" in wrapper
     assert "data-contract-node" in wrapper
-    assert "originalButtons.get(nodeId)" in wrapper
+    assert "originalButtons.get(String(nodeId))" in wrapper
     assert "behavior_graph_interactions_core.js" in wrapper
 
 
-def test_plain_view_wrapper_contract_render_is_idempotent():
+def test_clarified_flow_is_default_and_node_selection_keeps_it_active():
+    wrapper = WRAPPER.read_text(encoding="utf-8")
+
+    assert "activateClarified();" in wrapper
+    assert "sourceButton.click();" in wrapper
+    assert "queueMicrotask(activateClarified);" in wrapper
+    assert "clarified.hidden = false" in wrapper
+    assert "plain.hidden = true" in wrapper
+    assert "canvasWrap.hidden = true" in wrapper
+    assert "plainButton.addEventListener('click'" in wrapper
+    assert "technicalButton.addEventListener('click'" in wrapper
+
+
+def test_clarified_flow_wrapper_contract_render_is_idempotent():
     wrapper = WRAPPER.read_text(encoding="utf-8")
 
     assert "CONTRACT_VERSION" in wrapper
-    assert "flow.dataset.plainContractVersion === CONTRACT_VERSION" in wrapper
-    assert "flow.dataset.plainContractVersion = CONTRACT_VERSION" in wrapper
+    assert "clarified.dataset.plainContractVersion === CONTRACT_VERSION" in wrapper
+    assert "clarified.dataset.plainContractVersion = CONTRACT_VERSION" in wrapper
 
 
-def test_plain_view_wrapper_does_not_reimplement_projection_semantics():
+def test_clarified_flow_wrapper_does_not_reimplement_projection_semantics():
     wrapper = WRAPPER.read_text(encoding="utf-8")
 
     assert "COLLAPSED_HELPER_KINDS" not in wrapper
