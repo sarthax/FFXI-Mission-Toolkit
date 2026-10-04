@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 
+from workbench import gui_shell
 from workbench.server_admin.auction_house.gui import router
+from workbench.server_admin.auction_house.integration import install_legacy_gui_bridge
 from workbench.server_admin.auction_house.schema import discover_auction_house_schema
 from workbench.server_admin.auction_house.service import AuctionHouseService
 
@@ -84,3 +86,22 @@ def test_readonly_router_surface_is_registered():
 
     methods = {method for path in app.openapi()["paths"].values() for method in path}
     assert methods <= {"get"}
+
+
+def test_legacy_bridge_keeps_auction_house_at_root_and_in_server_workspace():
+    carrier = APIRouter(prefix="/character-editor")
+    install_legacy_gui_bridge(carrier)
+    install_legacy_gui_bridge(carrier)  # idempotent across repeated package imports
+
+    paths = [getattr(route, "path", "") for route in carrier.routes]
+    assert "/auction-house" in paths
+    assert "/character-editor/auction-house" not in paths
+    assert paths.count("/auction-house") == 1
+
+    server = next(workspace for workspace in gui_shell.WORKSPACES if workspace["name"] == "Server")
+    ah_entries = [section for section in server["sections"] if section.get("href") == "/auction-house"]
+    assert ah_entries == [{"label": "Auction House", "href": "/auction-house"}]
+
+    owner = gui_shell.route_owner("/auction-house/items/123.json")
+    assert owner["home"] == "Server"
+    assert owner["section"] == "Auction House"
