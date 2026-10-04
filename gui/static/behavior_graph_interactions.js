@@ -1,5 +1,5 @@
 (() => {
-  const CONTRACT_VERSION = '7';
+  const CONTRACT_VERSION = '8';
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   let activateClarified = () => {};
 
@@ -9,6 +9,17 @@
     style.id = 'behavior-branch-flow-styles';
     style.textContent = `
       #behavior-clarified-view .plain-branch-intro{margin:0 0 8px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface)}
+      #behavior-clarified-view .plain-stage-chain{margin:10px 0 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden}
+      #behavior-clarified-view .plain-stage-chain>header{padding:9px 11px;background:var(--code-bg);border-bottom:1px solid var(--border)}
+      #behavior-clarified-view .plain-stage-chain>header strong,#behavior-clarified-view .plain-stage-chain>header .muted{display:block}
+      #behavior-clarified-view .plain-stage-chain>header .muted{margin-top:2px;font-size:11px}
+      #behavior-clarified-view .plain-stage-chain-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 11px;border-top:1px dotted var(--border)}
+      #behavior-clarified-view .plain-stage-chain-row:first-of-type{border-top:0}
+      #behavior-clarified-view .plain-stage-chain-step{display:flex;flex-direction:column;gap:2px;min-width:115px;padding:7px 9px;border:1px solid var(--border);border-radius:7px;background:var(--code-bg)}
+      #behavior-clarified-view .plain-stage-chain-step strong{font-size:13px}
+      #behavior-clarified-view .plain-stage-chain-step small{color:var(--muted)}
+      #behavior-clarified-view .plain-stage-chain-arrow{display:flex;flex-direction:column;align-items:center;text-align:center;color:var(--muted);font-size:10px;line-height:1.2}
+      #behavior-clarified-view .plain-stage-chain-arrow b{font-size:18px;line-height:1;color:var(--text)}
       #behavior-clarified-view .plain-stage-overview{margin:10px 0 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden}
       #behavior-clarified-view .plain-stage-overview>header{padding:9px 11px;background:var(--code-bg);border-bottom:1px solid var(--border)}
       #behavior-clarified-view .plain-stage-overview>header strong,#behavior-clarified-view .plain-stage-overview>header .muted{display:block}
@@ -53,7 +64,7 @@
       #behavior-clarified-view .plain-branch-empty{color:var(--muted);font-size:12px;padding:4px 0}
       #behavior-clarified-view .plain-trigger-button{border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);padding:5px 8px;cursor:pointer;text-align:left}
       #behavior-clarified-view[hidden]{display:none!important}
-      @media(max-width:820px){#behavior-clarified-view .plain-stage-row,#behavior-clarified-view .plain-lifecycle-row{grid-template-columns:1fr}#behavior-clarified-view .plain-stage-event,#behavior-clarified-view .plain-lifecycle-middle{align-items:flex-start;text-align:left;border-left:0;border-right:0;border-top:1px dashed var(--border);border-bottom:1px dashed var(--border)}}
+      @media(max-width:820px){#behavior-clarified-view .plain-stage-chain-row{align-items:stretch}#behavior-clarified-view .plain-stage-chain-step{flex:1 1 120px}#behavior-clarified-view .plain-stage-row,#behavior-clarified-view .plain-lifecycle-row{grid-template-columns:1fr}#behavior-clarified-view .plain-stage-event,#behavior-clarified-view .plain-lifecycle-middle{align-items:flex-start;text-align:left;border-left:0;border-right:0;border-top:1px dashed var(--border);border-bottom:1px dashed var(--border)}}
     `;
     document.head.appendChild(style);
   }
@@ -137,6 +148,19 @@
 
       const handoffs = Array.isArray(contract.event_handoffs) ? contract.event_handoffs : [];
       const stageRows = Array.isArray(contract.stage_lifecycles) ? contract.stage_lifecycles : [];
+      const chainLinks = Array.isArray(contract.stage_chain_links) ? contract.stage_chain_links : [];
+      const chainHtml = chainLinks.length ? (
+        `<section class="plain-stage-chain"><header><strong>Verified stage continuity</strong>` +
+        `<span class="muted">A link appears only when one verified direct next-stage literal matches exactly one verified start literal for the same canonical state. This is value continuity across evidence, not proven runtime ordering.</span></header>` +
+        chainLinks.map(link => `<div class="plain-stage-chain-row">` +
+          `<div class="plain-stage-chain-step"><small>Current stage</small><strong>${esc(link.state_name)} = ${esc(link.from_value)}</strong></div>` +
+          `<div class="plain-stage-chain-arrow"><b>→</b><span>Event ${esc(link.via_event_id)}</span></div>` +
+          `<div class="plain-stage-chain-step"><small>Verified next value</small><strong>${esc(link.state_name)} = ${esc(link.next_value)}</strong></div>` +
+          `<div class="plain-stage-chain-arrow"><b>·····►</b><span>same-state literal continuity</span><span>${esc(link.ordering || 'UNPROVEN')} ordering</span></div>` +
+          `<div class="plain-stage-chain-step"><small>Unique matching start</small><strong>Event ${esc(link.next_event_id)}</strong></div>` +
+        `</div>`).join('') + `</section>`
+      ) : '';
+
       const stageHtml = stageRows.length ? (
         `<section class="plain-stage-overview"><header><strong>Stage progression</strong>` +
         `<span class="muted">Rows come from the verified stage lifecycle contract: a literal stage guard starts this Event/CSID, and a matching literal handler directly writes the same canonical state. The dotted cross-hook handoff is identity evidence only; runtime ordering remains unproven.</span></header>` +
@@ -165,7 +189,7 @@
         }).join('') + `</section>`
       ) : '';
 
-      clarified.innerHTML = `<div class="plain-branch-intro"><strong>Clarified branch flow</strong><div class="muted">Solid branch connectors preserve source-proven guard → effect relationships. Sibling effects are not shown as ordered unless source evidence proves ordering. Stage progression and event lifecycle rows use backend evidence contracts and exact literal Event/CSID identity without claiming runtime sequence.</div></div>${stageHtml}${lifecycleHtml}${groupsHtml}`;
+      clarified.innerHTML = `<div class="plain-branch-intro"><strong>Clarified branch flow</strong><div class="muted">Solid branch connectors preserve source-proven guard → effect relationships. Sibling effects are not shown as ordered unless source evidence proves ordering. Stage continuity, stage progression, and event lifecycle rows use backend evidence contracts without claiming runtime sequence.</div></div>${chainHtml}${stageHtml}${lifecycleHtml}${groupsHtml}`;
       for (const button of clarified.querySelectorAll('[data-contract-node]')) {
         button.addEventListener('click', () => selectNode(button.dataset.contractNode));
       }
