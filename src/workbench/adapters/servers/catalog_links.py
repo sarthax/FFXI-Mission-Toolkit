@@ -1,14 +1,20 @@
 """Deterministic source-native links for indexed FFXI server SQL records.
 
-These links describe relationships already encoded by the server schemas. They are
+These links describe relationships already encoded by source schemas. They are
 presentation/navigation evidence only and are not inserted into the canonical graph.
 """
 from __future__ import annotations
 
+import re
 import sqlite3
 
 _SERVER_PREFIXES=("sql","lsb","topaz","dsp")
 _ITEM_DETAIL_SUFFIXES={"item_equipment","item_weapon","item_usable"}
+_SAFE_IDENTIFIER=re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_SINGLE_KEY_COLUMNS=(
+    "itemid","npcid","mobid","keyitem_id","zoneid","id","spellid","abilityid",
+    "weaponskillid","traitid","poolid","groupid","instanceid","petid","mob_skill_id",
+)
 
 
 def _family_prefix(table: str) -> tuple[str,str] | None:
@@ -19,7 +25,17 @@ def _family_prefix(table: str) -> tuple[str,str] | None:
     return None
 
 
+def _table_exists(con: sqlite3.Connection, table: str) -> bool:
+    if not _SAFE_IDENTIFIER.fullmatch(str(table or "")):
+        return False
+    return con.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)
+    ).fetchone() is not None
+
+
 def _columns(con: sqlite3.Connection, table: str) -> set[str]:
+    if not _table_exists(con,table):
+        return set()
     try:
         return {row[1].lower() for row in con.execute(f"PRAGMA table_info({table})")}
     except sqlite3.DatabaseError:
@@ -66,12 +82,52 @@ def _rows(
     ).fetchall()
 
 
+def _reference_mapping_link(
+    con: sqlite3.Connection,
+    source_table: str,
+    source_identity: dict[str,object],
+) -> list[dict]:
+    """Resolve an explicitly mapped wiki claim to one exact indexed target, or fail closed."""
+    if source_table!="reference_wiki_mappings":
+        return []
+    mapping_id=_identity_value(source_identity,"mapping_id")
+    if mapping_id is None:
+        return []
+    row=_single_row(
+        con,source_table,("target_table","target_key","mapping_status"),{"mapping_id":mapping_id},
+    )
+    if not row or str(row[2] or "").upper()!="MAPPED":
+        return []
+    target_table=str(row[0] or "")
+    target_key=row[1]
+    if target_key in (None,"") or not _table_exists(con,target_table):
+        return []
+    cols=_columns(con,target_table)
+    identity_candidates=[column for column in _SINGLE_KEY_COLUMNS if column in cols]
+    if len(identity_candidates)!=1:
+        return []
+    identity_column=identity_candidates[0]
+    target=_single_row(con,target_table,(identity_column,),{identity_column:target_key})
+    if not target:
+        return []
+    return [{
+        "relationship":"REFERENCE_MAPPING_TARGET",
+        "target_table":target_table,
+        "target_identity":{identity_column:target[0]},
+        "basis":"reference_wiki_mappings MAPPED target_table + target_key uniquely resolves",
+    }]
+
+
 def server_source_links(
     con: sqlite3.Connection,
     source_table: str,
     source_identity: dict[str,object],
 ) -> list[dict]:
-    """Return deterministic target identities for a supported indexed server record."""
+    """Return deterministic target identities for a supported indexed source record."""
+    reference_links=_reference_mapping_link(con,source_table,source_identity)
+    if reference_links:
+        return reference_links
+
     family=_family_prefix(source_table)
     if family is None:
         return []

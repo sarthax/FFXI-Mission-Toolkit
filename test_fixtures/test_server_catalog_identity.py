@@ -8,6 +8,7 @@ from pathlib import Path
 
 import feature_trace
 from workbench.core import graph
+from workbench.core.services.feature_trace_catalog import provider_relationships
 from workbench.core.services.server_catalog_identity import (
     SOURCE_MARKER,
     sync_server_catalog_entities,
@@ -16,6 +17,38 @@ from test_fixtures.test_feature_trace_drop_chain_benchmarks import (
     test_drop_row_composite_identity_is_stable_and_navigable,
     test_generic_nm_trace_reaches_drop_rows_and_items,
 )
+
+
+def _assert_wiki_mapping_target_closure() -> None:
+    con=sqlite3.connect(":memory:")
+    con.execute("CREATE TABLE lsb_item_basic(itemid INTEGER, name TEXT)")
+    con.execute("INSERT INTO lsb_item_basic VALUES(2413,'Coiler')")
+    con.execute("""CREATE TABLE reference_wiki_mappings(
+        mapping_id TEXT, claim_id TEXT, target_domain TEXT, target_table TEXT,
+        target_key TEXT, target_label TEXT, mapping_method TEXT,
+        mapping_status TEXT, confidence TEXT
+    )""")
+    con.executemany(
+        "INSERT INTO reference_wiki_mappings VALUES(?,?,?,?,?,?,?,?,?)",
+        [
+            ("map-ok","claim-1","item","lsb_item_basic","2413","Coiler","NORMALIZED_NAME_EXACT","MAPPED","HIGH"),
+            ("map-ambiguous","claim-2","item","lsb_item_basic","2413","Coiler","NORMALIZED_NAME_EXACT","AMBIGUOUS","LOW"),
+        ],
+    )
+    links=provider_relationships(con,"catalog:reference_wiki_mappings:map-ok")
+    target_links=[row for row in links if row.get("relationship")=="REFERENCE_MAPPING_TARGET"]
+    assert len(target_links)==1,target_links
+    assert target_links[0]["target_node"]=="catalog:lsb_item_basic:2413",target_links
+    assert target_links[0]["adapter"]=="server",target_links
+    assert "MAPPED target_table + target_key" in str(target_links[0].get("basis")),target_links
+
+    ambiguous=provider_relationships(con,"catalog:reference_wiki_mappings:map-ambiguous")
+    assert not [row for row in ambiguous if row.get("relationship")=="REFERENCE_MAPPING_TARGET"],ambiguous
+
+    con.execute("INSERT INTO lsb_item_basic VALUES(2413,'Duplicate Coiler')")
+    duplicate=provider_relationships(con,"catalog:reference_wiki_mappings:map-ok")
+    assert not [row for row in duplicate if row.get("relationship")=="REFERENCE_MAPPING_TARGET"],duplicate
+    con.close()
 
 
 def main():
@@ -41,7 +74,6 @@ def main():
         )
 
         g = graph.init_db(graph_db)
-        # Existing evidence-backed root must be reused rather than replaced.
         g.execute(
             "INSERT INTO entities(entity_id,entity_type,display_name,metadata_json) VALUES(?,?,?,?)",
             ("npc:existing", "NPC", "Shared NPC", "{}"),
@@ -52,9 +84,6 @@ def main():
                ) VALUES(?,?,?,?)""",
             ("npc:existing", "npcid", "100", "entity-profile"),
         )
-
-        # Two independent existing roots for the same numeric id are a real ambiguity;
-        # catalog ingestion must not choose between them.
         for node in ("npc:ambiguous-a", "npc:ambiguous-b"):
             g.execute(
                 "INSERT INTO entities(entity_id,entity_type,display_name,metadata_json) VALUES(?,?,?,?)",
@@ -93,13 +122,11 @@ def main():
             ("entity:server-id:200", "numeric_entity_id", SOURCE_MARKER),
         ], generated
 
-        # Feature Trace now gains a canonical root from ingestion, not a page-time identity guess.
         path = feature_trace.entity_implementation_path(g, source, "200")
         assert path and path["canonical_mapped"] is True, path
         assert path["canonical_root"] == "entity:server-id:200", path
         g.close()
 
-        # Rebuild reconciliation removes bridge-owned stale IDs while retaining unrelated roots.
         source.execute("DELETE FROM lsb_mob_spawn_points WHERE mobid=200")
         second = sync_server_catalog_entities(source, graph_db)
         assert second["removed_stale_identifiers"] >= 2, second
@@ -115,9 +142,10 @@ def main():
         g.close()
         source.close()
 
+    _assert_wiki_mapping_target_closure()
     test_generic_nm_trace_reaches_drop_rows_and_items()
     test_drop_row_composite_identity_is_stable_and_navigable()
-    print("server catalog canonical identity sync + drop-chain self-test: PASS")
+    print("server catalog canonical identity sync + Feature Trace closure self-test: PASS")
 
 
 if __name__ == "__main__":
