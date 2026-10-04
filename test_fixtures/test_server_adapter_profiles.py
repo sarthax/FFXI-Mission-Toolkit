@@ -1,11 +1,51 @@
 #!/usr/bin/env python3
 """Regression checks for logical server schema profiles."""
 from pathlib import Path
+import sqlite3
 import tempfile
 from workbench.adapters.servers import (
     CustomForkAdapter, DSPAdapter, LSBAdapter, TOPAZ, TopazAdapter, TopazNextAdapter, adapter_for,
 )
 from workbench.adapters.servers.base import TableShape
+from workbench.runtime import server_profiles
+
+
+def _assert_profile_reads_do_not_take_write_lock() -> None:
+    """Initialized profile reads must work while another connection holds a RESERVED write lock."""
+    with tempfile.TemporaryDirectory() as td:
+        db_path = Path(td) / "profiles.sqlite3"
+        setup = server_profiles.connect(db_path)
+        try:
+            created = server_profiles.create_profile(
+                setup,
+                name="Lock Fixture",
+                server_root=Path(td),
+                family="lsb",
+                environment="test",
+                make_active=True,
+            )
+        finally:
+            setup.close()
+
+        writer = sqlite3.connect(str(db_path), timeout=0.1)
+        reader = None
+        try:
+            writer.execute("BEGIN IMMEDIATE")
+            writer.execute(
+                "UPDATE server_profile_state SET active_profile_id=active_profile_id WHERE singleton=1"
+            )
+
+            reader = server_profiles.connect(db_path)
+            profiles = server_profiles.list_profiles(reader)
+            active = server_profiles.get_active_profile(reader)
+            assert [profile.profile_id for profile in profiles] == [created.profile_id], profiles
+            assert active is not None and active.profile_id == created.profile_id, active
+        finally:
+            if reader is not None:
+                reader.close()
+            writer.rollback()
+            writer.close()
+
 
 def main():
     with tempfile.TemporaryDirectory() as td:
@@ -56,6 +96,8 @@ def main():
         assert custom_record.source_family=="CUSTOM:my-fork",custom_record
         assert custom_record.source_table=="custom_equipment",custom_record
         assert custom_record.identity==( ("item_id",123), ),custom_record
+
+    _assert_profile_reads_do_not_take_write_lock()
     print("server adapter profile self-test: PASS")
 
 if __name__=="__main__":

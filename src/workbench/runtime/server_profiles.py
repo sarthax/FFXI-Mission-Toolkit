@@ -55,7 +55,32 @@ def connect(path: Path | str = DATABASE_PATH) -> sqlite3.Connection:
     return con
 
 
+def _schema_ready(con: sqlite3.Connection) -> bool:
+    """Return True when the profile schema is already usable without taking a write lock.
+
+    Profile lookups are on hot read paths such as Entity Profile.  Running DDL plus
+    ``INSERT OR IGNORE`` for every read turns those lookups into SQLite writers and can collide
+    with an existing transaction on the shared toolkit database.  Keep the common initialized
+    path strictly read-only and reserve schema writes for first-time setup/repair.
+    """
+    rows = con.execute(
+        """
+        SELECT name
+        FROM sqlite_master
+        WHERE type='table' AND name IN ('server_profiles', 'server_profile_state')
+        """
+    ).fetchall()
+    if {str(row[0]) for row in rows} != {"server_profiles", "server_profile_state"}:
+        return False
+    row = con.execute(
+        "SELECT 1 FROM server_profile_state WHERE singleton=1"
+    ).fetchone()
+    return row is not None
+
+
 def init_db(con: sqlite3.Connection) -> None:
+    if _schema_ready(con):
+        return
     con.executescript(
         """
         CREATE TABLE IF NOT EXISTS server_profiles (
