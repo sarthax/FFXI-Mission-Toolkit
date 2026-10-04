@@ -14,7 +14,7 @@
     .ce-prog-card h4{margin:0 0 6px}.ce-prog-value{font-size:1.12em;font-weight:700}.ce-prog-vars{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}.ce-prog-var{border:1px solid var(--border,#444);border-radius:10px;padding:2px 7px;font-size:.84em}
     .ce-prog-condition{display:flex;gap:7px;align-items:center;padding:4px 0;border-top:1px solid var(--border,#333);font-size:.9em}.ce-prog-condition:first-child{border-top:0}.ce-prog-condition.good{border-left:3px solid #4a8;padding-left:6px}.ce-prog-condition.bad{border-left:3px solid #b44;padding-left:6px}.ce-prog-condition.unknown{border-left:3px solid #b98a32;padding-left:6px}
     .ce-prog-action{border:1px solid var(--border,#444);border-radius:6px;padding:7px;margin-top:6px}.ce-prog-action.primary{border-left:4px solid #4a8}.ce-prog-action.blocked{opacity:.75}.ce-prog-action-head{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.ce-prog-effects{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;font-size:.84em}.ce-prog-location{font-size:.86em;opacity:.8;margin-top:3px}
-    .ce-prog-bundle{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:7px;margin-top:8px}.ce-prog-bundle-part{border:1px solid var(--border,#444);border-radius:6px;padding:7px}.ce-prog-bundle-part h5{margin:0 0 5px;font-size:.86em}.ce-prog-bundle-part .ce-muted{font-size:.82em}.ce-prog-outcomes{display:flex;gap:4px;flex-wrap:wrap}.ce-prog-runtime{border-left:3px solid #b98a32}.ce-prog-why{border-left:3px solid #b44}
+    .ce-prog-bundle{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:7px;margin-top:8px}.ce-prog-bundle-part{border:1px solid var(--border,#444);border-radius:6px;padding:7px}.ce-prog-bundle-part h5{margin:0 0 5px;font-size:.86em}.ce-prog-bundle-part .ce-muted{font-size:.82em}.ce-prog-outcomes{display:flex;gap:4px;flex-wrap:wrap}.ce-prog-runtime{border-left:3px solid #b98a32}.ce-prog-why{border-left:3px solid #b44}.ce-prog-projection{border-left:3px solid #4a8}.ce-prog-projection-row{padding:3px 0;border-top:1px solid var(--border,#333);font-size:.86em}.ce-prog-projection-row:first-child{border-top:0}
     .ce-prog-blockers{border:1px solid #805050;border-radius:7px;padding:9px;margin:8px 0}.ce-prog-blockers h4{margin:0 0 5px}.ce-state-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:8px}.ce-state-group{border:1px solid var(--border,#444);border-radius:6px;overflow:hidden}
     .ce-state-group>h4{margin:0;padding:6px 8px;border-bottom:1px solid var(--border,#444)}.ce-state-ref{padding:7px 8px;border-bottom:1px solid var(--border,#333)}.ce-state-ref:last-child{border-bottom:0}
     .ce-state-ref-head{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.ce-state-source{font-size:.8em;opacity:.7;margin-top:3px}.ce-state-mismatch{border-left:4px solid #b44}.ce-state-match{border-left:4px solid #4a8}
@@ -82,6 +82,18 @@
     return `<div class="ce-prog-bundle-part ${cls}"><h5>${esc(title)}</h5><div class="ce-prog-outcomes">${rows.map(row => `<span>${pill(effectText(row), row.effect === 'COMPLETE' ? 'ok' : '')}</span>`).join('')}</div></div>`;
   }
 
+  function projectionText(row) {
+    const subject = row.subject || String(row.effect || '').replaceAll('_',' ').toLowerCase();
+    const before = row.before_known ? pretty(row.before) : 'current unknown';
+    return `${subject}: ${before} → ${pretty(row.after)}`;
+  }
+
+  function projectionHtml(bundle) {
+    const rows = bundle?.projected_changes || [];
+    if (!rows.length) return '';
+    return `<div class="ce-prog-bundle-part ce-prog-projection"><h5>Expected result if this action completes</h5>${rows.map(row => `<div class="ce-prog-projection-row">${esc(projectionText(row))}</div>`).join('')}<div class="ce-muted">Read-only projection from modeled effects; no character state is changed here.</div></div>`;
+  }
+
   function bundleHtml(bundle) {
     if (!bundle) return '';
     const pre = (bundle.preconditions || []).map(conditionHtml).join('');
@@ -103,6 +115,7 @@
       ${effectGroup('Completion', bundle.completion)}
       ${effectGroup('Next activation / movement', bundle.next_activation)}
       ${effectGroup('Timers', bundle.timers)}
+      ${projectionHtml(bundle)}
       ${why ? `<div class="ce-prog-bundle-part ce-prog-why"><h5>Why blocked</h5>${why}</div>` : ''}
     </div>`;
   }
