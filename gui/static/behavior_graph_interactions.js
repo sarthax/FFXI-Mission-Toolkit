@@ -1,51 +1,71 @@
 (() => {
-  const COLLAPSED_HELPER_KINDS = new Set(['helper_call', 'shared_helper_callee']);
+  const CONTRACT_VERSION = '1';
+  const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 
-  function plainSummary(flow) {
-    const lanes = [...flow.querySelectorAll('.plain-lane')];
-    if (!lanes.length) return '';
-    const trigger = flow.querySelector('header')?.textContent?.trim() || 'Behavior';
-    const labels = lane => [...lane.querySelectorAll('.plain-card:not([hidden]) strong')].map(el => el.textContent.trim()).filter(Boolean);
-    const parts = [`${trigger.replace(/[.]$/, '')}.`];
-    const append = (prefix, rows) => {
-      if (!rows.length) return;
-      const shown = rows.slice(0, 2);
-      const suffix = rows.length > 2 ? ` (+${rows.length - 2} more)` : '';
-      parts.push(`${prefix} ${shown.join('; ')}${suffix}.`);
-    };
-    append('Checks', labels(lanes[1]));
-    append('Then', labels(lanes[2]));
-    append('Results:', labels(lanes[3]));
-    return parts.join(' ');
-  }
-
-  function applyHelperParity() {
+  function applyPlainContract() {
     const plain = document.getElementById('behavior-plain-view');
     const dataEl = document.getElementById('behavior-data');
     if (!plain || !dataEl) return;
 
     let graph;
     try { graph = JSON.parse(dataEl.textContent || '{}'); } catch { return; }
-    const kinds = new Map((graph.nodes || []).map(node => [node.id, node.kind]));
+    const contract = graph.plain_behavior;
+    if (!contract || !Array.isArray(contract.flows)) return;
 
-    for (const flow of plain.querySelectorAll('.plain-flow')) {
-      let collapsedHelpers = 0;
-      for (const card of flow.querySelectorAll('[data-plain-node]')) {
-        const kind = kinds.get(card.dataset.plainNode);
-        const shouldCollapse = COLLAPSED_HELPER_KINDS.has(kind);
-        card.hidden = shouldCollapse;
-        if (shouldCollapse) collapsedHelpers += 1;
+    const originalButtons = new Map();
+    for (const button of plain.querySelectorAll('[data-plain-node]')) {
+      if (!originalButtons.has(button.dataset.plainNode)) originalButtons.set(button.dataset.plainNode, button);
+    }
+
+    const flows = [...plain.querySelectorAll('.plain-flow')];
+    for (let index = 0; index < flows.length; index += 1) {
+      const flow = flows[index];
+      const expected = contract.flows[index];
+      if (!expected || flow.dataset.plainContractVersion === CONTRACT_VERSION) continue;
+
+      const laneElements = [...flow.querySelectorAll('.plain-lane')];
+      const laneRows = [
+        [expected.trigger].filter(Boolean),
+        expected.requirements || [],
+        expected.actions || [],
+        expected.results || [],
+      ];
+
+      laneElements.forEach((lane, laneIndex) => {
+        const title = lane.querySelector('.plain-lane-title')?.outerHTML || '';
+        const rows = laneRows[laneIndex] || [];
+        lane.innerHTML = title + (rows.length ? rows.map(row => (
+          `<button type="button" class="plain-card" data-contract-node="${esc(row.node_id)}">` +
+          `<strong>${esc(row.label)}</strong><small>${esc(row.technical_label || row.node_id)}</small></button>`
+        )).join('') : '<div class="plain-empty">No explicit steps identified</div>');
+      });
+
+      for (const button of flow.querySelectorAll('[data-contract-node]')) {
+        button.addEventListener('click', () => {
+          const nodeId = button.dataset.contractNode;
+          const sourceButton = originalButtons.get(nodeId);
+          if (sourceButton) {
+            sourceButton.click();
+            return;
+          }
+          document.getElementById('behavior-mode-technical')?.click();
+          queueMicrotask(() => {
+            const graphNode = [...document.querySelectorAll('.behavior-node')]
+              .find(node => node.dataset.id === nodeId);
+            graphNode?.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+          });
+        });
       }
 
       const summary = flow.querySelector('.plain-summary');
-      if (!summary) continue;
-      const text = plainSummary(flow);
-      const existingRuleChip = [...summary.querySelectorAll('.chip')].find(chip => /internal rule/.test(chip.textContent || ''));
-      const ruleChip = existingRuleChip ? existingRuleChip.outerHTML : '';
-      const helperChip = collapsedHelpers
-        ? `<span class="chip">${collapsedHelpers} helper plumbing node${collapsedHelpers === 1 ? '' : 's'} collapsed</span>`
-        : '';
-      summary.innerHTML = `${text}${ruleChip}${helperChip}`;
+      if (summary) {
+        const collapsedCount = Number(expected.collapsed_count || 0);
+        const collapsedChip = collapsedCount
+          ? `<span class="chip">${collapsedCount} implementation node${collapsedCount === 1 ? '' : 's'} collapsed</span>`
+          : '';
+        summary.innerHTML = `${esc(expected.summary || '')}${collapsedChip}`;
+      }
+      flow.dataset.plainContractVersion = CONTRACT_VERSION;
     }
   }
 
@@ -55,17 +75,17 @@
     const plain = document.getElementById('behavior-plain-view');
     if (!plain) return;
     let queued = false;
-    const queueParity = () => {
+    const queueContract = () => {
       if (queued) return;
       queued = true;
       queueMicrotask(() => {
         queued = false;
-        applyHelperParity();
+        applyPlainContract();
       });
     };
-    const observer = new MutationObserver(queueParity);
+    const observer = new MutationObserver(queueContract);
     observer.observe(plain, { childList: true, subtree: true });
-    applyHelperParity();
+    applyPlainContract();
   };
   document.head.appendChild(core);
 })();

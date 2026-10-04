@@ -120,6 +120,8 @@ These are deliberate safety boundaries, not generic missing editors.
 
 # 5. Behavior Inspector / scripted behavior
 
+Behavior Inspector is at closeout state as a mature evidence-first scripted-behavior inspector. Its durable capability and safety contract is documented in `docs/workbench/BEHAVIOR_INSPECTOR_CLOSEOUT.md`.
+
 ## Extraction
 
 - [x] Generic Lua behavior model for NPCs, mobs, doors/objects, zone scripts, instances, timers, callbacks, state, conditions, effects, shared helpers, entity references, environment checks, and runtime-relative IDs.
@@ -127,18 +129,23 @@ These are deliberate safety boundaries, not generic missing editors.
 - [x] Verified literal state transitions where read/write identity and guards prove the relationship.
 - [x] Shared `xi.<module>.<function>` helper resolution with exact/ambiguous/unresolved states and one-level impact expansion.
 - [x] Bare-global helpers included only when reachable from modeled hooks.
+- [x] Timer, queue, and listener callbacks retain explicit ownership, source spans, and callback-specific behavior while the complete technical evidence remains available for audit.
 
 ## End-user presentation
 
-- [x] **Plain Behavior is now the default view.**
+- [x] **Plain Behavior is the default view.**
 - [x] Behavior chains are grouped as **Trigger → Requirements → Actions / Events → Results / State Changes**.
 - [x] Common Lua/API concepts are translated into end-user language while preserving the technical identity as secondary evidence.
+- [x] Plain Behavior uses one backend-generated evidence-preserving projection contract consumed by the browser rather than a second semantic implementation.
+- [x] Internal rule/helper-call/callee plumbing is collapsed while source-proven guards, helper identity/inputs/effects, state, targets, and exact technical node IDs remain available for drill-down.
+- [x] Callback flows are partitioned: parent hooks show scheduling/registration, callback triggers own their downstream effects, and source-span filtering removes duplicate callback-body presentation without deleting Technical Graph evidence.
+- [x] Concise summaries use only extracted graph labels, relationships, and proven source spans; unsupported runtime semantics remain unknown rather than inferred.
 - [x] Plain Behavior cards drill into the same exact node metadata/evidence rather than creating a separate truth model.
-- [x] Technical Graph remains available as a secondary view.
+- [x] Technical Graph remains available as the detailed evidence/debug view.
 - [x] Technical graph supports wheel zoom, pointer-centered zoom, drag-pan, Zoom +/- controls, Fit, Reset View.
 - [x] Selecting a node highlights upstream prerequisites and downstream effects as a directed causal path while dimming unrelated sibling branches.
 - [x] Node details live in a persistent right-side inspector with independent scrolling, collapse/expand, and responsive stacked fallback.
-- [~] Future refinement: more semantic collapsing of implementation-only helper/rule nodes and richer human-readable behavior summaries for complex state machines.
+- [x] Further support for new/dynamic Lua idioms is additive evidence expansion, not unfinished foundational Behavior Inspector work; unsupported semantics remain raw/generic evidence rather than guessed behavior.
 
 # 6. Mission / quest extraction
 
@@ -260,19 +267,19 @@ These are deliberate safety boundaries, not generic missing editors.
 - [x] Focused GUI/client snapshot/research/DAT inspector jobs.
 - [x] Live-app route regressions for sensitive routing surfaces.
 - [x] Character Editor progression regressions cover modern LSB and legacy DSP/Topaz transition-bundle, projected-result, assessment, and UI contracts.
+- [x] Behavior Inspector regressions cover extraction, complex state/event flows, callbacks, shared helpers, Plain View projection, backend/UI contract parity, and source-layout service boundaries.
 - [x] Documentation reconciliation should occur after major multi-PR feature batches rather than allowing README/roadmap drift to accumulate again.
 
 ---
 
 # Highest-value next work
 
-1. **Behavior Plain View refinement** — reduce low-value implementation noise further and generate concise "what this actor does" summaries without inventing semantics.
-2. **Feature Trace provider breadth / transition closure** — continue deterministic relationship generation and richer cross-source transition reasoning where provider evidence is strong enough.
-3. **Client Asset Cache expansion** — only for proven asset families where reusing pre-extracted data materially improves interactive tools.
-4. **Native modern-LSB Nyzul adapter** — current Nyzul parser remains legacy-layout-specific by design.
-5. **Capture/protocol research** — continue lobby/world/search classification and evidence-backed decoder coverage.
-6. **Broader client/server synchronization and named-system reconstruction** — extend deterministic comparison/validation workflows without weakening provenance rules.
-7. **Phase D source-layout cleanup** — continue in bounded slices with compatibility and regression coverage.
+1. **Feature Trace provider breadth / transition closure** — continue deterministic relationship generation and richer cross-source transition reasoning where provider evidence is strong enough.
+2. **Client Asset Cache expansion** — only for proven asset families where reusing pre-extracted data materially improves interactive tools.
+3. **Native modern-LSB Nyzul adapter** — current Nyzul parser remains legacy-layout-specific by design.
+4. **Capture/protocol research** — continue lobby/world/search classification and evidence-backed decoder coverage.
+5. **Broader client/server synchronization and named-system reconstruction** — extend deterministic comparison/validation workflows without weakening provenance rules.
+6. **Phase D source-layout cleanup** — continue in bounded slices with compatibility and regression coverage.
 
 # Documentation map
 
@@ -280,6 +287,7 @@ These are deliberate safety boundaries, not generic missing editors.
 - `docs/workbench/ROADMAP_CURRENT.md` — this file; authoritative current capability/status inventory.
 - `docs/workbench/RECENT_CHANGES_2026-10-03.md` — detailed recent reconciliation and merged-change summary through the prior batch.
 - `docs/workbench/CHARACTER_EDITOR_CLOSEOUT.md` — current Character Editor safety/capability contract.
+- `docs/workbench/BEHAVIOR_INSPECTOR_CLOSEOUT.md` — current Behavior Inspector capability/evidence/closeout contract.
 - `docs/guides/SETUP.md` — current user setup and named environment configuration.
 - `docs/guides/TOOLING_OVERVIEW.md` — living tooling/component overview.
 - `docs/workbench/ROADMAP.md` — historical implementation ledger.

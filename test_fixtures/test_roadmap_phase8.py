@@ -35,8 +35,8 @@ def main():
     assert "Unified remaining-feature inventory" in text
 
     current = Path("docs/workbench/ROADMAP_CURRENT.md").read_text(encoding="utf-8")
-    # ROADMAP_CURRENT is a durable capability map, not the historical per-PR ledger.  Assert the
-    # current October-3 product families rather than headings from the superseded October-1 snapshot.
+    # ROADMAP_CURRENT is a durable capability map, not the historical per-PR ledger. Assert the
+    # current product families rather than headings from the superseded October-1 snapshot.
     current_sections = [
         "Core Workbench architecture",
         "Server environments and runtime context",
@@ -66,7 +66,8 @@ def main():
     assert reconciled.group(1) >= "2026-10-03", "roadmap reconciliation date regressed before the current baseline"
 
     assert "`main` is the product baseline" in current
-    assert "Plain Behavior is now the default view" in current
+    assert "Plain Behavior is the default view" in current
+    assert "BEHAVIOR_INSPECTOR_CLOSEOUT.md" in current
     assert "Persistent **client item DAT cache**" in current
     assert "Campaign/session manifest import support" in current
     assert "Progression transition bundles group trigger/event" in current

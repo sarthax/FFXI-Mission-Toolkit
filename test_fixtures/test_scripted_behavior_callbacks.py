@@ -123,6 +123,20 @@ def main():
             for node_id in callback_ids
         ),graph["edges"]
 
+        plain=graph.get("plain_behavior")
+        assert plain and plain["available"] is True,plain
+        assert plain["safety"]["callback_flows_partitioned"] is True,plain["safety"]
+        flow_by_trigger={flow["trigger"]["node_id"]:flow for flow in plain["flows"]}
+        spawn=flow_by_trigger["hook:onMobSpawn"]
+        assert any(row["kind"]=="callback" for row in spawn["actions"]),spawn
+        assert not any("ready" in str(row["technical_label"]).lower() for row in spawn["results"]),spawn
+        timer_flow=next(
+            flow for flow in plain["flows"]
+            if flow["trigger"]["kind"]=="callback"
+            and "timer" in str(flow["trigger"]["technical_label"]).lower()
+        )
+        assert any("ready" in str(row["technical_label"]).lower() for row in timer_flow["results"]),timer_flow
+
     print("scripted callback behavior regression: PASS")
 
 

@@ -36,7 +36,7 @@ def test_plain_projection_collapses_rule_scaffolding_but_keeps_semantic_nodes():
     assert result["summary"]["flow_count"] == 1
     assert result["summary"]["collapsed_implementation_nodes"] == 1
     assert result["safety"]["evidence_preserved"] is True
-    assert result["safety"]["collapsed_kinds"] == ["rule"]
+    assert result["safety"]["collapsed_kinds"] == ["helper_call", "rule", "shared_helper_callee"]
 
     flow = result["flows"][0]
     assert flow["trigger"]["label"] == "Player interacts with this actor"
@@ -74,6 +74,48 @@ def test_plain_projection_summary_uses_only_visible_extracted_labels():
     assert "Requires a key item" in summary
     assert "START EVENT" in summary.upper() or "START EVENT" in summary.replace("_", " ").upper()
     assert "runtime" not in summary.lower()
+
+
+def test_plain_projection_partitions_callback_subflows_without_duplicate_effects():
+    graph = {
+        "nodes": [
+            {"id": "behavior:test", "kind": "subject", "label": "Test Mob", "meta": {}},
+            {"id": "hook:onMobSpawn", "kind": "hook", "label": "onMobSpawn", "meta": {}},
+            {"id": "callback:spawn:timer", "kind": "callback", "label": "timer · 3000", "meta": {"callback_type": "timer", "callback_delay_source": "3000"}},
+            {"id": "rule:timer", "kind": "rule", "label": "callback", "meta": {}},
+            {"id": "effect:ready", "kind": "effect", "label": "setLocalVar ready", "meta": {"effect": "WRITE_STATE", "value": 1}},
+            {"id": "state:ready", "kind": "state", "label": "ready", "meta": {}},
+        ],
+        "edges": [
+            {"source": "behavior:test", "target": "hook:onMobSpawn", "kind": "HAS_HOOK"},
+            {"source": "hook:onMobSpawn", "target": "callback:spawn:timer", "kind": "SCHEDULES_CALLBACK"},
+            {"source": "callback:spawn:timer", "target": "rule:timer", "kind": "HAS_RULE"},
+            {"source": "rule:timer", "target": "effect:ready", "kind": "EMITS"},
+            {"source": "effect:ready", "target": "state:ready", "kind": "STATE_WRITE"},
+        ],
+    }
+
+    result = build_plain_behavior_projection(graph)
+    assert result["safety"]["callback_flows_partitioned"] is True
+    assert result["summary"]["flow_count"] == 2
+
+    spawn_flow, callback_flow = result["flows"]
+    assert spawn_flow["trigger"]["node_id"] == "hook:onMobSpawn"
+    assert [row["node_id"] for row in spawn_flow["actions"]] == ["callback:spawn:timer"]
+    assert not spawn_flow["results"]
+    assert "Schedule a timer" in spawn_flow["summary"]
+
+    assert callback_flow["trigger"]["node_id"] == "callback:spawn:timer"
+    callback_visible = {
+        row["node_id"]
+        for lane in ("requirements", "actions", "results")
+        for row in callback_flow[lane]
+    }
+    assert "effect:ready" in callback_visible
+    assert "state:ready" in callback_visible
+    assert "effect:ready" not in {
+        row["node_id"] for lane in ("requirements", "actions", "results") for row in spawn_flow[lane]
+    }
 
 
 def test_plain_projection_falls_back_to_subject_when_no_hook_exists():
