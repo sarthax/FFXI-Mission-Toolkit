@@ -164,4 +164,7 @@ PROVIDER_LINKS=(
     CatalogLink("package_scope_reviews","migration_id","migrations","migration_id","REVIEWS_MIGRATION"),
     CatalogLink("reference_wiki_mappings","claim_id","reference_wiki_claims","claim_id","MAPS_REFERENCE_CLAIM"),
     CatalogLink("reference_wiki_mapping_reviews","mapping_id","reference_wiki_mappings","mapping_id","REVIEWS_REFERENCE_MAPPING"),
+    CatalogLink("reference_wiki_claim_alignments","alignment_id","reference_wiki_page_alignments","alignment_id","IN_REFERENCE_PAGE_ALIGNMENT"),
+    CatalogLink("reference_wiki_claim_alignments","bg_claim_id","reference_wiki_claims","claim_id","ALIGNS_BG_REFERENCE_CLAIM"),
+    CatalogLink("reference_wiki_claim_alignments","ffxiclopedia_claim_id","reference_wiki_claims","claim_id","ALIGNS_FFXICLOPEDIA_REFERENCE_CLAIM"),
 )
