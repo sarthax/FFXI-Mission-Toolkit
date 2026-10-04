@@ -1,6 +1,9 @@
 from types import SimpleNamespace
 
-from src.workbench.server_admin.auction_house.validation_report import build_validation_report
+from src.workbench.server_admin.auction_house.validation_report import (
+    build_validation_report,
+    run_legacy_preview_validation,
+)
 
 
 class Obj(SimpleNamespace):
@@ -44,7 +47,6 @@ def test_healthy_legacy_evidence_is_read_only_ready_but_never_execution_ready():
     assert report["execution_ready"] is False
     assert report["executor_enabled"] is False
     assert report["write_enabled"] is False
-    # DSP/Topaz source semantics deliberately remain an execution blocker.
     assert "lineage_execution_contract_incomplete" in {item["code"] for item in report["blockers"]}
 
 
@@ -92,6 +94,19 @@ def test_unknown_environment_fails_closed():
     codes = {item["code"] for item in report["blockers"]}
     assert "environment_not_active" in codes
     assert "environment_lineage_unknown" in codes
+    assert report["execution_ready"] is False
+
+
+def test_legacy_orchestrator_rejects_non_legacy_scope_without_database_work():
+    service = Obj(schema=Obj(family_hint="lsb-compatible"), connection=object())
+    report = run_legacy_preview_validation(
+        service=service,
+        environment={"family": "lsb", "is_active": True},
+        preview={"action": "list_item"},
+        server_root="/unused",
+    )
+    assert report["status"] == "blocked"
+    assert report["blockers"][0]["code"] == "legacy_validation_scope_unsupported"
     assert report["execution_ready"] is False
 
 
