@@ -12,7 +12,7 @@
   <a class="chip" href="/captures/help">Formats / gaps</a>
   <a class="chip" href="/captures/bulk-ingest">Bulk ingest</a>
   <a class="chip" href="/captures/metadata-import">Source info sheet</a>
-  {% set zr = review_pending() %}
+  {% set zr = review_pending() if review_pending is defined else 0 %}
   <a class="chip" href="/captures/review" style="{% if zr %}background:var(--amber-soft);color:var(--amber);border-color:var(--amber);font-weight:700{% endif %}">{% if zr %}<span aria-hidden="true">&#9888;</span> {% endif %}Review queue{% if zr %} <span style="background:var(--amber);color:var(--amber-soft);border-radius:9px;padding:0 6px;margin-left:2px">{{ zr }}</span>{% endif %}</a>
   <span class="sp"></span>
   <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:680px">Indexed capture bundles are explicitly typed and tagged so unrelated content is not silently conflated.</div></details>
