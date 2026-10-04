@@ -15,6 +15,18 @@
     return payload;
   }
 
+  async function postApi(url, body) {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {'Accept':'application/json','Content-Type':'application/json'},
+      body: JSON.stringify(body),
+    });
+    let payload = null;
+    try { payload = await response.json(); } catch (_) {}
+    if (!response.ok) throw new Error(payload?.detail || `${response.status} ${response.statusText}`);
+    return payload;
+  }
+
   async function loadStatus() {
     const data = await api('/auction-house/status.json');
     const db = data.database || {};
@@ -126,10 +138,47 @@
         <h3>Price & volume</h3><div class="ah-trends">${trendCard(7, data.trends['7'] || [], item.stack_size)}${trendCard(30, data.trends['30'] || [], item.stack_size)}${trendCard(90, data.trends['90'] || [], item.stack_size)}</div>
         <h3>Current listings (${fmt.format(totalListings)}${listingSuffix})</h3>${listingTable(data.active_listings || [], item.stack_size)}
         <h3>Recent sales</h3>${historyTable(data.history || [], item.stack_size)}`;
+      $('ahPreviewItemId').value = item.item_id;
     } catch (error) {
       box.innerHTML = `<h2>Item detail</h2><p>${esc(error.message)}</p>`;
     }
   }
+
+  function renderActionPreview(data) {
+    const box = $('ahActionPreview');
+    const warnings = (data.warnings || []).map(w => `<div class="ah-warning"><strong>${w.blocking ? 'Blocked' : 'Note'} · ${esc(w.code)}</strong><br>${esc(w.message)}</div>`).join('');
+    const effect = data.economic_effect || {};
+    const effectRows = Object.entries(effect).map(([k,v]) => `<tr><td>${esc(k.replaceAll('_',' '))}</td><td>${typeof v === 'number' ? fmt.format(v) : esc(v)}</td></tr>`).join('');
+    box.innerHTML = `<h3>${esc(data.action || 'Action')} preview</h3><p><strong>Adapter:</strong> ${esc(data.adapter || 'unknown')} · <strong>Apply supported:</strong> ${data.apply_supported ? 'yes' : 'no'}</p>${warnings}<table class="ah-table"><tbody>${effectRows}</tbody></table>`;
+  }
+
+  $('ahListPreviewForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    try {
+      renderActionPreview(await postApi('/auction-house/admin/list/preview.json', {
+        item_id: Number($('ahPreviewItemId').value),
+        seller_id: Number($('ahPreviewSellerId').value),
+        price: Number($('ahPreviewPrice').value),
+        stack: $('ahPreviewStack').checked,
+      }));
+    } catch (error) {
+      $('ahActionPreview').innerHTML = `<p>${esc(error.message)}</p>`;
+    }
+  });
+
+  $('ahPurchasePreviewForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    try {
+      const buyer = $('ahPreviewBuyerId').value.trim();
+      renderActionPreview(await postApi('/auction-house/admin/purchase/preview.json', {
+        auction_id: Number($('ahPreviewAuctionId').value),
+        mode: $('ahPreviewPurchaseMode').value,
+        buyer_id: buyer ? Number(buyer) : null,
+      }));
+    } catch (error) {
+      $('ahActionPreview').innerHTML = `<p>${esc(error.message)}</p>`;
+    }
+  });
 
   $('ahSearchButton').addEventListener('click', loadItems);
   $('ahSearch').addEventListener('keydown', e => { if (e.key === 'Enter') loadItems(); });
