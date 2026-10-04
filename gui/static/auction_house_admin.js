@@ -34,6 +34,20 @@
     $('ahStatus').innerHTML = `<strong>${esc(db.database || 'database')}</strong> · ${esc(ah.family_hint || 'unknown schema')} · ${esc(db.host || '')}<br><small>${esc(db.server_root || '')}</small>`;
   }
 
+  async function loadWriteReadiness() {
+    const box = $('ahWriteReadiness');
+    try {
+      const data = await api('/auction-house/write-readiness.json');
+      const notes = (data.notes || []).map(note => `<li>${esc(note)}</li>`).join('');
+      const card = (label, ready) => `<div class="ah-readiness-card"><strong>${esc(label)}</strong><br><span>${ready ? 'Prerequisites present' : 'Prerequisites missing'}</span></div>`;
+      box.innerHTML = `<div><strong>Database:</strong> ${esc(data.database || 'unknown')} · <strong>Executor:</strong> disabled</div>
+        <div class="ah-readiness-grid">${card('LSB listing contract', !!data.lsb_listing_ready)}${card('LSB purchase / cleanup contract', !!data.lsb_purchase_ready)}</div>
+        ${notes ? `<ul>${notes}</ul>` : ''}`;
+    } catch (error) {
+      box.innerHTML = `<p>${esc(error.message)}</p>`;
+    }
+  }
+
   async function loadOverview() {
     const data = await api('/auction-house/overview.json?days=30');
     const values = [fmt.format(data.active_listings || 0), fmt.format(data.sales || 0), money(data.gil_transacted), `${fmt.format(data.unique_buyers || 0)} / ${fmt.format(data.unique_sellers || 0)}`];
@@ -183,7 +197,7 @@
   $('ahSearchButton').addEventListener('click', loadItems);
   $('ahSearch').addEventListener('keydown', e => { if (e.key === 'Enter') loadItems(); });
   $('ahCategory').addEventListener('change', loadItems);
-  Promise.all([loadStatus(), loadOverview(), loadCategories()]).then(loadItems).catch(error => {
+  Promise.all([loadStatus(), loadWriteReadiness(), loadOverview(), loadCategories()]).then(loadItems).catch(error => {
     $('ahStatus').textContent = error.message;
     $('ahItems').innerHTML = '<p class="muted">Auction House data unavailable.</p>';
   });

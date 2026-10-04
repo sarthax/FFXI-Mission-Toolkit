@@ -14,6 +14,7 @@ from workbench.editors.items import client_asset_cache
 from .actions import ListItemRequest, PurchaseRequest, preview_list_item, preview_purchase
 from .analytics import economy_summary, price_trends, search_items
 from .factory import open_auction_house
+from .write_probe import probe_write_readiness
 
 router = APIRouter(prefix="/auction-house", tags=["Auction House Administration"])
 templates = Jinja2Templates(directory=str(GUI_ROOT / "templates"))
@@ -45,6 +46,19 @@ def status():
     try:
         with _context() as ctx:
             return JSONResponse(ctx.public_status())
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.get("/write-readiness.json")
+def write_readiness():
+    """Return live table/trigger prerequisites for future AH writes. Performs SELECT/metadata reads only."""
+    try:
+        with _context() as ctx:
+            payload = probe_write_readiness(ctx.service.connection).as_dict()
+            payload["executor_enabled"] = False
+            payload["write_enabled"] = False
+            return JSONResponse(payload)
     except Exception as exc:
         raise _error(exc)
 
