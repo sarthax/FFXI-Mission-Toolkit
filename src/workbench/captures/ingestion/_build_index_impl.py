@@ -2897,7 +2897,7 @@ def list_top_level_dirs(path_str: str) -> list[str]:
 
 
 def ingest(con, path_str: str, content_type: str = "instances", subroot: str | None = None,
-           mission_name_override: str | None = None) -> int:
+           mission_name_override: str | None = None, force: bool = False) -> int:
     """content_type tags what kind of content this capture is FROM, not just where the file
     happens to live -- explicit and stored per-row rather than assumed from folder structure, so
     a future non-Assault capture (regular field mobs, Dynamis, whatever) ingested into the same
@@ -2934,6 +2934,25 @@ def ingest(con, path_str: str, content_type: str = "instances", subroot: str | N
                   f"{f'::{subroot}' if subroot else ''}) -- skipping. "
                   f"Delete its rows first if you want to re-ingest.")
             return existing[0]
+
+        # Content-fingerprint precheck (zip central directory / folder listing -- no parsing): the same
+        # content under another name/location is a duplicate. Skipped for bundle subroots (the bundle
+        # fingerprint covers every session) and with --force.
+        fp_key = None
+        if not subroot:
+            try:
+                from workbench.captures import source_fingerprint as _sf
+                fp_key, dup = _sf.precheck(con, str(path))
+                if dup and not force and con.execute("SELECT 1 FROM captures WHERE capture_id=?", (dup[0],)).fetchone():
+                    print(f"duplicate content: {path.name} matches capture_id={dup[0]} ({dup[1]}) -- skipping "
+                          f"(re-run with --force to ingest anyway).")
+                    from workbench.captures import review_queue as _rq
+                    _rq.raise_item(con, "duplicate_source", source_path, dup[0], "",
+                                   {"reason": "identical content to capture #%s already ingested from %s -- skipped" % (dup[0], dup[1]),
+                                    "path": str(path), "duplicate_of": dup[0], "duplicate_path": dup[1]})
+                    return dup[0]
+            except Exception as _ex:
+                print(f"  [fingerprint precheck skipped: {_ex}]")
 
         def sfind(pattern):
             hits = src.find(pattern)
@@ -2987,6 +3006,12 @@ def ingest(con, path_str: str, content_type: str = "instances", subroot: str | N
             print(f"  [review scan skipped: {_ex}]")
 
         con.commit()
+        if fp_key:
+            try:
+                from workbench.captures import source_fingerprint as _sf
+                _sf.record(con, str(path), capture_id)
+            except Exception as _ex:
+                print(f"  [fingerprint record skipped: {_ex}]")
         zones = json.loads(con.execute("SELECT zones FROM captures WHERE capture_id=?", (capture_id,)).fetchone()[0] or "[]")
         print(f"[{capture_id}] {label}: {counts['npc_entries']} npc entries, {counts['npc_hist']} history "
               f"deltas, {counts['path']} path points, {counts['actions']} actions, {counts['hp']} hp events, "
@@ -4120,6 +4145,7 @@ def main():
 
     p1 = sub.add_parser("ingest", help="ingest one capture folder or .zip")
     p1.add_argument("path")
+    p1.add_argument("--force", action="store_true", help="ingest even if identical content was already ingested")
     p1.add_argument("--content-type", default="instances", choices=CONTENT_TYPES,
                      help="what kind of content this capture is from (default: assault -- "
                           "everything ingested so far). Pass 'unclassified' for anything else "
@@ -4161,7 +4187,7 @@ def main():
         con.close()
         return
     if args.cmd == "ingest":
-        ingest(con, args.path, content_type=args.content_type)
+        ingest(con, args.path, content_type=args.content_type, force=args.force)
     elif args.cmd == "ingest-all":
         ingest_all(con, args.path, args.pattern, content_type=args.content_type)
     elif args.cmd == "ingest-batch":

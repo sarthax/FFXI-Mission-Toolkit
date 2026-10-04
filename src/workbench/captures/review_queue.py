@@ -238,9 +238,13 @@ KINDS["unrecognized_file"] = {
     "actions": [("resolve", "Reviewed"), ("dismiss", "Ignore")], "value": None,
     "help": "Files in the bundle matched no known capture format and were not ingested (a known gap or a new format)."}
 
+KINDS["duplicate_source"] = {
+    "label": "Duplicate source skipped", "blocking": False, "detect": None, "decide": _decide_noop, "after": None,
+    "actions": [("resolve", "Reviewed"), ("dismiss", "Ignore")], "value": None,
+    "help": "This archive has the same content as an already-ingested capture and was skipped. Re-ingest with --force if it should be separate."}
 
 # ---------------------------------------------------------------- event-driven kinds (raised by ingest, no detector)
-EVENT_KINDS = ("ingest_failed", "file_error", "unrecognized_file")
+EVENT_KINDS = ("ingest_failed", "file_error", "unrecognized_file", "duplicate_source")
 
 
 def copy_for_review(path):
