@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+from .categories import category_metadata
 from .service import AuctionHouseService, epoch_iso
 
 
@@ -41,8 +42,11 @@ def search_items(service: AuctionHouseService, query: str = "", *, category_id: 
         c.execute(sql, tuple(params))
         rows = []
         for r in c.fetchall() or []:
+            category_id_value = int(r[2] or 0)
+            category = category_metadata(category_id_value)
             rows.append({
-                "item_id": int(r[0]), "name": str(r[1] or ""), "category_id": int(r[2] or 0),
+                "item_id": int(r[0]), "name": str(r[1] or ""), "category_id": category_id_value,
+                "category_group": category.group, "category_label": category.label, "category_path": category.path,
                 "stack_size": max(1, int(r[3] or 1)), "active_listings": int(r[4] or 0),
                 "historical_sales": int(r[5] or 0), "last_sold_at": int(r[6] or 0) or None,
                 "last_sold_at_iso": epoch_iso(r[6]),
