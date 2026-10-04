@@ -69,7 +69,7 @@ def main():
     assert "Plain Behavior is now the default view" in current
     assert "Persistent **client item DAT cache**" in current
     assert "Campaign/session manifest import support" in current
-    assert "Progression Transition bundles / inspector" in current
+    assert "Progression transition bundles group trigger/event" in current
     assert "Native modern-LSB Nyzul floor-generation adapter remains future work" in current
 
     print("roadmap reconciliation self-test: PASS")
