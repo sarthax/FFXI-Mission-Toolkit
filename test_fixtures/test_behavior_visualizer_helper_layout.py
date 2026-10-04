@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 
 from test_fixtures.test_behavior_branch_flow_projection import main as branch_flow_main
+from test_fixtures.test_behavior_stage_transition_projection import main as stage_transition_main
 
 
 TEMPLATE=Path("gui/templates/behavior_visualizer.html")
@@ -50,6 +51,7 @@ def main():
     assert "runtime ordering remains unproven" in wrapper,wrapper
 
     branch_flow_main()
+    stage_transition_main()
     print("Behavior Inspector helper impact layout regression: PASS")
 
 
