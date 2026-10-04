@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Scenario Feature Trace — Mission Toolkit{% endblock %}
+{% block shell_mode %}dense{% endblock %}
+{% block content %}
+<style>
+.scenario-trace{padding:8px 10px 24px}.scenario-trace .toolbar{display:flex;gap:7px;align-items:end;flex-wrap:wrap;margin-bottom:10px}.scenario-trace .toolbar label{display:grid;gap:3px}.scenario-trace input[type=text]{min-width:300px}.scenario-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.34fr);gap:10px}.scenario-card{border:1px solid var(--border);border-radius:7px;background:var(--surface);padding:9px}.scenario-card h2,.scenario-card h3{margin:0 0 7px}.candidate{border:1px solid var(--border);border-radius:6px;padding:7px;margin:5px 0;background:var(--code-bg)}.edge-row{display:grid;grid-template-columns:minmax(130px,.38fr) minmax(0,1fr);gap:8px;border-top:1px solid var(--border);padding:6px 0}.edge-row:first-child{border-top:0}.confidence{font-size:10px}.scenario-summary{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0}@media(max-width:1000px){.scenario-grid{grid-template-columns:1fr}}
+</style>
+<div class="scenario-trace">
+  <div class="toolbar">
+    <strong>Scenario Feature Trace</strong>
+    <form method="get" action="/character-editor/scenario-trace" class="toolbar">
+      <label>Search
+        <input type="text" name="q" value="{{ q }}" placeholder="NPC, mob, mission, item, event, ID, capability…">
+      </label>
+      <label>Trace mode
+        <select name="mode">
+          {% for row in mode_options %}<option value="{{ row.id }}"{% if row.id == mode %} selected{% endif %}>{{ row.label }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Depth
+        <select name="depth">{% for n in range(0,9) %}<option value="{{ n }}"{% if n == depth %} selected{% endif %}>{{ n }}</option>{% endfor %}</select>
+      </label>
+      <label>Direction
+        <select name="direction">
+          <option value="both"{% if direction == 'both' %} selected{% endif %}>Automatic / both</option>
+          <option value="out"{% if direction == 'out' %} selected{% endif %}>Outgoing</option>
+          <option value="in"{% if direction == 'in' %} selected{% endif %}>Incoming</option>
+        </select>
+      </label>
+      <button type="submit">Trace</button>
+    </form>
+    <a class="chip" href="/features/trace{% if q %}?q={{ q|urlencode }}{% endif %}">Technical Trace</a>
+  </div>
+
+  <div class="scenario-card" style="margin-bottom:10px">
+    <strong>{{ mode_info.label }}</strong> — {{ mode_info.question }}
+    <div class="muted">The selected mode narrows relationships to the question being asked. Generated provider evidence stays separate from persisted canonical graph edges.</div>
+  </div>
+
+  {% if error %}<div class="warn">{{ error }}</div>{% endif %}
+
+  {% if resolution %}
+  <div class="scenario-grid">
+    <div>
+      <section class="scenario-card">
+        <h2>Resolution</h2>
+        <div class="scenario-summary">
+          <span class="chip">{{ resolution.status }}</span>
+          <span class="chip">{{ resolution.object_kind }}</span>
+          <span class="chip">{{ resolution.confidence }}</span>
+          {% if resolution.root %}<span class="chip mono">{{ resolution.root }}</span>{% endif %}
+        </div>
+        {% for reason in resolution.reasons %}<div class="muted">{{ reason }}</div>{% endfor %}
+        {% if resolution.status == 'AMBIGUOUS' %}<div class="warn">Multiple plausible roots remain. Refine the query or use one of the exact node IDs below; Feature Trace will not guess.</div>{% endif %}
+        {% for candidate in resolution.candidates[:12] %}
+        <div class="candidate">
+          <div><strong>{{ candidate.display_name or candidate.node_id }}</strong> <span class="chip">{{ candidate.node_type }}</span> <span class="chip">score {{ candidate.resolver_score }}</span></div>
+          <div class="mono">{{ candidate.node_id }}</div>
+          <div class="muted">{{ candidate.resolver_reasons|join(', ') }}</div>
+          <a class="chip" href="/character-editor/scenario-trace?q={{ candidate.node_id|urlencode }}&mode={{ mode }}&depth={{ depth }}&direction={{ direction }}">Trace this exact root</a>
+        </div>
+        {% endfor %}
+      </section>
+
+      {% if result %}
+      <section class="scenario-card" style="margin-top:10px">
+        <h2>{{ result.trace_mode.label }}</h2>
+        <div class="scenario-summary">
+          <span class="chip">{{ result.edges|length }} canonical edge{{ '' if result.edges|length == 1 else 's' }}</span>
+          <span class="chip">{{ result.generated_relationship_count or 0 }} generated relationship{{ '' if (result.generated_relationship_count or 0) == 1 else 's' }}</span>
+          <span class="chip">{{ result.nodes|length }} canonical node{{ '' if result.nodes|length == 1 else 's' }}</span>
+          <span class="chip">{{ result.root_kind }}</span>
+          {% if result.truncated %}<span class="pill unannotated">truncated</span>{% endif %}
+        </div>
+
+        <h3>Recorded graph relationships</h3>
+        {% for edge in result.edges %}
+        <div class="edge-row">
+          <div><strong>{{ edge.relationship }}</strong><br><span class="chip confidence">{{ edge.confidence or 'UNKNOWN' }}</span></div>
+          <div><code>{{ edge.source_node }}</code> → <code>{{ edge.target_node }}</code>{% if edge.evidence_id %}<br><span class="muted">evidence {{ edge.evidence_id }}</span>{% endif %}</div>
+        </div>
+        {% else %}<p class="muted">No persisted canonical relationship matches this trace mode in the current depth window.</p>{% endfor %}
+
+        <h3 style="margin-top:12px">Generated provider relationships</h3>
+        {% for edge in result.generated_relationships or [] %}
+        <div class="edge-row">
+          <div><strong>{{ edge.relationship }}</strong><br><span class="chip confidence">{{ edge.confidence }}</span> <span class="chip confidence">{{ edge.generator_id }}</span></div>
+          <div><code>{{ edge.source_node }}</code> → <code>{{ edge.target_node }}</code><br><span class="muted">{{ edge.basis }}</span></div>
+        </div>
+        {% else %}<p class="muted">No active provider generated additional evidence for this root yet.</p>{% endfor %}
+      </section>
+      {% endif %}
+    </div>
+
+    <aside>
+      {% if result %}
+      <section class="scenario-card">
+        <h3>Evidence providers</h3>
+        {% for row in result.generator_plan %}
+        <div class="candidate">
+          <strong>{{ row.label }}</strong>
+          {% if row.active %}<span class="pill match">active</span>{% endif %}
+          <div class="muted">{{ row.evidence_domains|join(', ') }}</div>
+        </div>
+        {% endfor %}
+      </section>
+      {% endif %}
+      <section class="scenario-card" style="margin-top:10px">
+        <h3>Trace modes</h3>
+        {% for row in mode_options %}
+          <a class="chip" style="margin:2px" href="/character-editor/scenario-trace?q={{ q|urlencode }}&mode={{ row.id }}&depth={{ depth }}&direction=both">{{ row.label }}</a>
+        {% endfor %}
+      </section>
+    </aside>
+  </div>
+  {% elif q %}<div class="warn">No resolver result was produced.</div>{% endif %}
+</div>
+{% endblock %}
