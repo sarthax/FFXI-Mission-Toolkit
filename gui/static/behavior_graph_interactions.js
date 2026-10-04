@@ -1,5 +1,5 @@
 (() => {
-  const CONTRACT_VERSION = '3';
+  const CONTRACT_VERSION = '4';
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   let activateClarified = () => {};
 
@@ -13,10 +13,11 @@
       #behavior-clarified-view .plain-branch-trigger{display:flex;gap:8px;align-items:center;padding:9px 10px;background:var(--code-bg);border-bottom:1px solid var(--border)}
       #behavior-clarified-view .plain-branch-trigger button{font-weight:700}
       #behavior-clarified-view .plain-branch-tree{padding:10px 12px 12px}
-      #behavior-clarified-view .plain-branch{position:relative;margin:7px 0 7px 18px;padding:8px 9px 8px 12px;border-left:3px solid var(--border);border-radius:0 6px 6px 0;background:var(--code-bg)}
+      #behavior-clarified-view .plain-branch{position:relative;margin:7px 0 7px 18px;padding:8px 9px 8px 12px;border-left:3px solid var(--border);border-radius:0 6px 6px 0;background:var(--code-bg);transition:outline-color .15s ease,box-shadow .15s ease}
       #behavior-clarified-view .plain-branch::before{content:'';position:absolute;left:-18px;top:18px;width:15px;border-top:2px solid var(--border)}
       #behavior-clarified-view .plain-branch.root{margin-left:4px;border-left-color:var(--accent,#5684a5)}
       #behavior-clarified-view .plain-branch.root::before{display:none}
+      #behavior-clarified-view .plain-branch.handoff-focus{outline:2px solid var(--accent,#5684a5);outline-offset:2px;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent,#5684a5) 18%,transparent)}
       #behavior-clarified-view .plain-branch-gate{display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;margin-bottom:7px}
       #behavior-clarified-view .plain-branch-gate-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding-top:5px}
       #behavior-clarified-view .plain-guard{display:inline-flex;text-align:left;border:1px solid var(--border);border-radius:999px;padding:4px 8px;background:var(--surface);color:var(--text);cursor:pointer}
@@ -71,6 +72,19 @@
       queueMicrotask(activateClarified);
     };
 
+    const focusBranch = branchId => {
+      if (!branchId) return;
+      activateClarified();
+      queueMicrotask(() => {
+        for (const branch of clarified.querySelectorAll('[data-branch-id]')) {
+          branch.classList.toggle('handoff-focus', branch.dataset.branchId === String(branchId));
+        }
+        const target = [...clarified.querySelectorAll('[data-branch-id]')]
+          .find(branch => branch.dataset.branchId === String(branchId));
+        target?.scrollIntoView({behavior: 'smooth', block: 'center'});
+      });
+    };
+
     const cardButton = (row, className) => (
       `<button type="button" class="${className}" data-contract-node="${esc(row.node_id)}">` +
       `<strong>${esc(row.label)}</strong>${row.technical_label ? `<small>${esc(row.technical_label)}</small>` : ''}</button>`
@@ -108,10 +122,10 @@
       const handoffs = Array.isArray(contract.event_handoffs) ? contract.event_handoffs : [];
       const handoffHtml = handoffs.length ? (
         `<section class="plain-event-handoffs"><strong>Cross-hook event identity</strong>` +
-        `<p class="muted">Dotted handoffs mean the same literal event/CSID is started and handled in different hooks. They do not assert runtime execution order.</p>` +
+        `<p class="muted">Dotted handoffs mean the same literal event/CSID is started and handled in different hooks. Select either side to jump to that exact clarified branch. They do not assert runtime execution order.</p>` +
         handoffs.map(row => {
-          const starts = (row.start_branches || []).map(ref => `<button type="button" class="plain-trigger-button" data-contract-node="${esc(ref.branch_id)}">${esc(ref.trigger_label)}</button>`).join('');
-          const handlers = (row.handler_branches || []).map(ref => `<button type="button" class="plain-trigger-button" data-contract-node="${esc(ref.branch_id)}">${esc(ref.trigger_label)}</button>`).join('');
+          const starts = (row.start_branches || []).map(ref => `<button type="button" class="plain-trigger-button" data-contract-branch="${esc(ref.branch_id)}">Start: ${esc(ref.trigger_label)}</button>`).join('');
+          const handlers = (row.handler_branches || []).map(ref => `<button type="button" class="plain-trigger-button" data-contract-branch="${esc(ref.branch_id)}">Handler: ${esc(ref.trigger_label)}</button>`).join('');
           return `<div class="plain-event-handoff"><div class="plain-handoff-side">${starts}</div>` +
             `<div class="plain-handoff-middle"><strong>Event ${esc(row.event_id)}</strong><span class="plain-handoff-dots">·····►</span>${esc(row.ordering || 'UNPROVEN')} ordering</div>` +
             `<div class="plain-handoff-side">${handlers}</div></div>`;
@@ -121,6 +135,9 @@
       clarified.innerHTML = `<div class="plain-branch-intro"><strong>Clarified branch flow</strong><div class="muted">Solid branch connectors preserve source-proven guard → effect relationships. Sibling effects are not shown as ordered unless source evidence proves ordering. Selecting an element updates Behavior Details without leaving this view.</div></div>${groupsHtml}${handoffHtml}`;
       for (const button of clarified.querySelectorAll('[data-contract-node]')) {
         button.addEventListener('click', () => selectNode(button.dataset.contractNode));
+      }
+      for (const button of clarified.querySelectorAll('[data-contract-branch]')) {
+        button.addEventListener('click', () => focusBranch(button.dataset.contractBranch));
       }
       clarified.dataset.plainContractVersion = CONTRACT_VERSION;
       return;
