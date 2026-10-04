@@ -1,7 +1,7 @@
 # Current Workbench Roadmap
 
 Status: ACTIVE REWORK  
-Last fully reconciled against merged PR and branch history: **2026-10-03**  
+Last fully reconciled against merged PR and branch history: **2026-10-04**  
 Authoritative repository: `sarthax/FFXI-Mission-Toolkit`  
 Authoritative branch: `main`
 
@@ -86,7 +86,12 @@ The Character Editor is now a mature guarded administration surface across DSP /
 - [x] UI exposes Trace Current/per-entry trace for mission and quest rows.
 - [x] State Surface can hand off to existing Key Item, Variables, Inventory, and Unlock editors.
 - [x] Mission trace regression in the State Surface pipeline was fixed in the October 3 usability pass.
-- [~] Progression Transition bundles are the next layer: explicit trigger/precondition/event/effect/reward/next-state grouping with "why blocked" reasoning.
+- [x] Progression transition bundles group trigger/event, persisted preconditions, runtime-only requirements, state changes, rewards, removals/consumption, completion, next activation/transport, timers, source evidence, and `why blocked` reasoning.
+- [x] Transition bundles expose conservative read-only projected results with known before-values only where character evidence resolves them; no mutation is performed or implied.
+- [x] Concise progression assessment classifies the selected state as Ready, Waiting on runtime input, Blocked by persisted state, Inconsistent, Completed, No modeled next action, or Unavailable where the evidence supports it.
+- [x] Persisted blockers can hand off to their guarded Character Editor surfaces while runtime-only requirements remain diagnostic.
+- [x] The progression bundle/result/assessment contract is regression-covered on modern LSB and legacy DSP/Topaz flows, including trade-gated runtime requirements and completed prerequisite chains.
+- [~] Continue expanding deterministic progression reasoning only where source/runtime evidence proves additional helper-generated or cross-feature behavior.
 
 ## Intentionally read-only
 
@@ -95,6 +100,7 @@ The Character Editor is now a mature guarded administration surface across DSP /
 - [~] Pet IDs/runtime pet BLOB state.
 - [~] Runtime disconnect/session state.
 - [~] Unknown lineage-specific fields without a verified persistence contract.
+- [x] Progression transition/result previews and assessments are explicitly diagnostic/read-only and do not add an automatic reset/advance write path.
 
 These are deliberate safety boundaries, not generic missing editors.
 
@@ -109,6 +115,7 @@ These are deliberate safety boundaries, not generic missing editors.
 - [x] Runtime/capture drill-down to exact normalized observations and source provenance.
 - [x] High-volume traversal bounds/truncation reporting.
 - [x] Mission/quest State Surface extraction reused by Character Editor.
+- [x] Focused Feature Trace modes can generate and display provider-native relationship evidence without writing synthetic canonical graph edges.
 - [~] Continue broader deterministic provider wiring and richer transition-level progression reasoning.
 
 # 5. Behavior Inspector / scripted behavior
@@ -141,7 +148,9 @@ These are deliberate safety boundaries, not generic missing editors.
 - [x] Cross-feature prerequisite closure with explicit unresolved symbols.
 - [x] Stress metrics and tested complex WotG mission/quest chains.
 - [x] Reusable multi-zone progression and minigame/state-machine frameworks.
-- [~] Transition bundles that combine persistent state writes with event side effects, rewards/removals, and next-state activation remain the highest-value next progression feature.
+- [x] Transition bundles combine persistent state writes with event side effects, rewards/removals, completion/next-state activation, runtime requirements, projected outcomes, and blocker reasoning for Character Editor diagnosis.
+- [x] Legacy DSP/Topaz handler normalization feeds the same progression-inspector contract for supported patterns.
+- [~] Continue extracting helper-generated or highly dynamic transitions only when deterministic evidence supports them; do not infer runtime ordering from static mentions alone.
 
 # 7. Entity / Event / CSID research
 
@@ -250,14 +259,15 @@ These are deliberate safety boundaries, not generic missing editors.
 - [x] Dedicated Character Editor Regression suite, including pytest fixtures and executable regression scripts.
 - [x] Focused GUI/client snapshot/research/DAT inspector jobs.
 - [x] Live-app route regressions for sensitive routing surfaces.
+- [x] Character Editor progression regressions cover modern LSB and legacy DSP/Topaz transition-bundle, projected-result, assessment, and UI contracts.
 - [x] Documentation reconciliation should occur after major multi-PR feature batches rather than allowing README/roadmap drift to accumulate again.
 
 ---
 
 # Highest-value next work
 
-1. **Progression Transition bundles / inspector** — translate State Surface facts into explicit transition units: trigger, preconditions, event/option, persistent effects, rewards/removals, completion/next activation, source evidence, and "why blocked" evaluation.
-2. **Behavior Plain View refinement** — reduce low-value implementation noise further and generate concise "what this actor does" summaries without inventing semantics.
+1. **Behavior Plain View refinement** — reduce low-value implementation noise further and generate concise "what this actor does" summaries without inventing semantics.
+2. **Feature Trace provider breadth / transition closure** — continue deterministic relationship generation and richer cross-source transition reasoning where provider evidence is strong enough.
 3. **Client Asset Cache expansion** — only for proven asset families where reusing pre-extracted data materially improves interactive tools.
 4. **Native modern-LSB Nyzul adapter** — current Nyzul parser remains legacy-layout-specific by design.
 5. **Capture/protocol research** — continue lobby/world/search classification and evidence-backed decoder coverage.
@@ -268,7 +278,7 @@ These are deliberate safety boundaries, not generic missing editors.
 
 - `README.md` — durable product overview and quick start.
 - `docs/workbench/ROADMAP_CURRENT.md` — this file; authoritative current capability/status inventory.
-- `docs/workbench/RECENT_CHANGES_2026-10-03.md` — detailed recent reconciliation and merged-change summary.
+- `docs/workbench/RECENT_CHANGES_2026-10-03.md` — detailed recent reconciliation and merged-change summary through the prior batch.
 - `docs/workbench/CHARACTER_EDITOR_CLOSEOUT.md` — current Character Editor safety/capability contract.
 - `docs/guides/SETUP.md` — current user setup and named environment configuration.
 - `docs/guides/TOOLING_OVERVIEW.md` — living tooling/component overview.
