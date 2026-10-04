@@ -11,7 +11,8 @@ import json
 from typing import Any, Iterable
 
 
-_VERIFIED_FAMILIES = {"lsb-compatible", "legacy-dsp-topaz-compatible"}
+_VERIFIED_FAMILIES = {"lsb-compatible"}
+_KNOWN_UNVERIFIED_FAMILIES = {"legacy-dsp-topaz-compatible"}
 _LSB_REQUIRED_TRIGGERS = {
     "list_item": ("auction_house_list",),
     "purchase_item": ("auction_house_buy", "delivery_box_insert"),
@@ -105,9 +106,14 @@ def _environment_issues(identity: dict[str, Any], *, live_confirmation: str | No
 
 def _family_issues(adapter_family: str) -> list[WriteIssue]:
     family = str(adapter_family or "unknown")
-    if family not in _VERIFIED_FAMILIES:
-        return [WriteIssue("adapter_unverified", f"Unsupported Auction House adapter family: {family}")]
-    return []
+    if family in _VERIFIED_FAMILIES:
+        return []
+    if family in _KNOWN_UNVERIFIED_FAMILIES:
+        return [WriteIssue(
+            "adapter_semantics_unverified",
+            "DSP/Topaz Auction House writes are read/preview-only until listing inventory, seller proceeds, buyer debit, and delivery-box semantics are independently verified for the selected lineage.",
+        )]
+    return [WriteIssue("adapter_unverified", f"Unsupported Auction House adapter family: {family}")]
 
 
 def _missing_required(found: Iterable[str], required: Iterable[str], *, kind: str) -> list[WriteIssue]:
