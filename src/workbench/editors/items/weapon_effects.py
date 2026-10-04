@@ -4,10 +4,6 @@ This module deliberately stays above the server-core layer. It describes the exi
 item_mods / item_latents rows used by DSP/Topaz/LSB additional-effect handling and gives the
 editor a safe way to build or recognize those bundles without pretending that arbitrary new
 core behavior can be created from SQL alone.
-
-Known legacy/common modifier ids are supported directly. Lineage-specific extensions that
-require Lua/C++ work remain explicit handoff cases rather than silently generating rows the
-server will not understand.
 """
 from __future__ import annotations
 
@@ -24,62 +20,20 @@ MOD_ADDEFFECT_STATUS = 951
 MOD_ADDEFFECT_POWER = 952
 MOD_ADDEFFECT_DURATION = 953
 
-
-ELEMENTS = {
-    0: "none",
-    1: "fire",
-    2: "ice",
-    3: "wind",
-    4: "earth",
-    5: "lightning",
-    6: "water",
-    7: "light",
-    8: "dark",
-}
-
+ELEMENTS = {0: "none", 1: "fire", 2: "ice", 3: "wind", 4: "earth", 5: "lightning", 6: "water", 7: "light", 8: "dark"}
 SUBEFFECTS = {
-    1: "fire damage",
-    2: "ice damage",
-    3: "wind damage",
-    4: "earth damage",
-    5: "lightning damage",
-    6: "water damage",
-    7: "light damage",
-    8: "dark damage / dispel",
-    9: "sleep",
-    10: "poison",
-    11: "paralysis / amnesia",
-    12: "blind",
-    13: "silence",
-    14: "petrify",
-    15: "plague",
-    16: "stun",
-    17: "curse",
-    18: "attack/defense/evasion down",
-    19: "death",
-    20: "shield",
-    21: "hp drain",
-    22: "mp/tp drain",
-    23: "haste",
+    1: "fire damage", 2: "ice damage", 3: "wind damage", 4: "earth damage",
+    5: "lightning damage", 6: "water damage", 7: "light damage", 8: "dark damage / dispel",
+    9: "sleep", 10: "poison", 11: "paralysis / amnesia", 12: "blind", 13: "silence",
+    14: "petrify", 15: "plague", 16: "stun", 17: "curse", 18: "attack/defense/evasion down",
+    19: "death", 20: "shield", 21: "hp drain", 22: "mp/tp drain", 23: "haste",
 }
 
-# Modern LSB proc-type numbering. Older DSP/Topaz trees use a smaller legacy numbering scheme,
-# so the editor must check lineage before assuming these ids are portable.
+# Modern LSB proc-type numbering. Older DSP/Topaz trees use a smaller legacy numbering scheme.
 PROC_TYPES = {
-    1: "damage",
-    2: "debuff",
-    3: "hp heal",
-    4: "mp heal",
-    5: "hp drain",
-    6: "mp drain",
-    7: "tp drain",
-    8: "hp+mp drain",
-    9: "hp+mp+tp drain",
-    10: "dispel",
-    11: "absorb status",
-    12: "self buff",
-    13: "death",
-    14: "nm specific",
+    1: "damage", 2: "debuff", 3: "hp heal", 4: "mp heal", 5: "hp drain",
+    6: "mp drain", 7: "tp drain", 8: "hp+mp drain", 9: "hp+mp+tp drain",
+    10: "dispel", 11: "absorb status", 12: "self buff", 13: "death", 14: "nm specific",
 }
 
 SERVER_REFERENCES = {
@@ -89,134 +43,50 @@ SERVER_REFERENCES = {
         "proc_registry": "xi.additionalEffect.procFunctions",
         "self_buff_handler": "xi.additionalEffect.procFunctions[xi.additionalEffect.procType.SELF_BUFF]",
         "status_api": "attacker:addStatusEffect(...) / attacker:hasStatusEffect(...) / attacker:delStatusEffect(...)",
-        "notes": (
-            "Current LSB SELF_BUFF handler explicitly handles Blink and Haste. New self-buffs "
-            "must be added to that handler or routed through a new proc function."
-        ),
+        "notes": "Current LSB SELF_BUFF handler explicitly handles Blink and Haste. New self-buffs must extend that handler or add a deliberate proc function.",
     },
     "DSP": {
         "mod_enum": "scripts/globals/status.lua",
         "legacy_type_comment": "ITEM_ADDEFFECT_TYPE: 1=status/dmg/hp drain, 2=mp drain, 3=tp drain, 4=dispel, 5=self-buff, 6=instant death",
         "status_api": "target:addStatusEffect(...) style Lua/core API",
-        "notes": (
-            "DSP is archived and predates modern LSB proc numbering. Verify the target fork's "
-            "additional-effect dispatcher before writing type ids."
-        ),
+        "notes": "DSP is archived and predates modern LSB proc numbering. Verify the target fork's additional-effect dispatcher before writing type ids.",
     },
     "Topaz": {
-        "notes": (
-            "Topaz lineage inherits the legacy DSP-era item modifier model but fork/version "
-            "behavior can drift. Verify the active server tree before enabling modern proc types."
-        ),
+        "notes": "Topaz inherits the legacy DSP-era item modifier model but fork/version behavior can drift. Verify the active server tree before enabling modern proc types.",
     },
 }
 
-# Capability labels are intentionally conservative. A row-only label means the data model is
-# established; it does not promise identical formulas/edge cases across every fork revision.
 LINEAGE_CAPABILITIES = {
     "LSB": {
-        "damage": "row-only",
-        "debuff": "row-only",
-        "hp heal": "row-only",
-        "mp heal": "row-only",
-        "hp drain": "row-only",
-        "mp drain": "row-only",
-        "tp drain": "row-only",
-        "hp+mp drain": "row-only",
-        "hp+mp+tp drain": "row-only",
-        "dispel": "row-only",
-        "absorb status": "verify-lineage",
-        "self buff": "server-code-required",
-        "death": "verify-lineage",
-        "nm specific": "server-code-required",
+        "damage": "row-only", "debuff": "row-only", "hp heal": "row-only", "mp heal": "row-only",
+        "hp drain": "row-only", "mp drain": "row-only", "tp drain": "row-only",
+        "hp+mp drain": "row-only", "hp+mp+tp drain": "row-only", "dispel": "row-only",
+        "absorb status": "verify-lineage", "self buff": "server-code-required",
+        "death": "verify-lineage", "nm specific": "server-code-required",
     },
     "DSP": {
-        "damage": "verify-lineage",
-        "debuff": "verify-lineage",
-        "hp drain": "verify-lineage",
-        "mp drain": "verify-lineage",
-        "tp drain": "verify-lineage",
-        "dispel": "verify-lineage",
-        "self buff": "server-code-required",
-        "death": "verify-lineage",
+        "damage": "verify-lineage", "debuff": "verify-lineage", "hp drain": "verify-lineage",
+        "mp drain": "verify-lineage", "tp drain": "verify-lineage", "dispel": "verify-lineage",
+        "self buff": "server-code-required", "death": "verify-lineage",
     },
     "TOPAZ": {
-        "damage": "verify-lineage",
-        "debuff": "verify-lineage",
-        "hp drain": "verify-lineage",
-        "mp drain": "verify-lineage",
-        "tp drain": "verify-lineage",
-        "dispel": "verify-lineage",
-        "self buff": "server-code-required",
-        "death": "verify-lineage",
+        "damage": "verify-lineage", "debuff": "verify-lineage", "hp drain": "verify-lineage",
+        "mp drain": "verify-lineage", "tp drain": "verify-lineage", "dispel": "verify-lineage",
+        "self buff": "server-code-required", "death": "verify-lineage",
     },
 }
 
 PRESETS = {
-    "fire_damage": {
-        "label": "Fire damage",
-        "proc_type": 1,
-        "subeffect": 1,
-        "element": 1,
-        "defaults": {"chance": 20, "damage": 25},
-    },
-    "ice_damage": {
-        "label": "Ice damage",
-        "proc_type": 1,
-        "subeffect": 2,
-        "element": 2,
-        "defaults": {"chance": 20, "damage": 25},
-    },
-    "hp_drain": {
-        "label": "HP drain",
-        "proc_type": 5,
-        "subeffect": 21,
-        "element": 8,
-        "defaults": {"chance": 20, "damage": 20},
-    },
-    "mp_drain": {
-        "label": "MP drain",
-        "proc_type": 6,
-        "subeffect": 22,
-        "element": 8,
-        "defaults": {"chance": 20, "damage": 10},
-    },
-    "tp_drain": {
-        "label": "TP drain",
-        "proc_type": 7,
-        "subeffect": 22,
-        "element": 8,
-        "defaults": {"chance": 20, "damage": 100},
-    },
-    "dispel": {
-        "label": "Dispel",
-        "proc_type": 10,
-        "subeffect": 8,
-        "defaults": {"chance": 20},
-    },
-    "self_buff": {
-        "label": "Self buff",
-        "proc_type": 12,
-        "defaults": {"chance": 20, "power": 1, "duration": 30},
-        "requires_server_code": True,
-    },
-    "absorb_status": {
-        "label": "Absorb status",
-        "proc_type": 11,
-        "defaults": {"chance": 20},
-    },
-    "death": {
-        "label": "Instant death",
-        "proc_type": 13,
-        "subeffect": 19,
-        "defaults": {"chance": 1},
-    },
-    "nm_specific": {
-        "label": "NM-specific scripted behavior",
-        "proc_type": 14,
-        "defaults": {"chance": 100},
-        "requires_server_code": True,
-    },
+    "fire_damage": {"label": "Fire damage", "proc_type": 1, "subeffect": 1, "element": 1, "defaults": {"chance": 20, "damage": 25}},
+    "ice_damage": {"label": "Ice damage", "proc_type": 1, "subeffect": 2, "element": 2, "defaults": {"chance": 20, "damage": 25}},
+    "hp_drain": {"label": "HP drain", "proc_type": 5, "subeffect": 21, "element": 8, "defaults": {"chance": 20, "damage": 20}},
+    "mp_drain": {"label": "MP drain", "proc_type": 6, "subeffect": 22, "element": 8, "defaults": {"chance": 20, "damage": 10}},
+    "tp_drain": {"label": "TP drain", "proc_type": 7, "subeffect": 22, "element": 8, "defaults": {"chance": 20, "damage": 100}},
+    "dispel": {"label": "Dispel", "proc_type": 10, "subeffect": 8, "defaults": {"chance": 20}},
+    "self_buff": {"label": "Self buff", "proc_type": 12, "defaults": {"chance": 20, "power": 1, "duration": 30}, "requires_server_code": True},
+    "absorb_status": {"label": "Absorb status", "proc_type": 11, "defaults": {"chance": 20}},
+    "death": {"label": "Instant death", "proc_type": 13, "subeffect": 19, "defaults": {"chance": 1}},
+    "nm_specific": {"label": "NM-specific scripted behavior", "proc_type": 14, "defaults": {"chance": 100}, "requires_server_code": True},
 }
 
 
@@ -239,13 +109,10 @@ FIELDS = (
     EffectField("power", MOD_ADDEFFECT_POWER, "Status power", ("debuff", "self buff")),
     EffectField("duration", MOD_ADDEFFECT_DURATION, "Status duration (s)", ("debuff", "self buff")),
 )
-
-FIELD_BY_KEY = {field.key: field for field in FIELDS}
 FIELD_BY_MOD = {field.mod_id: field for field in FIELDS}
 
 
 def capability_for(lineage: str, proc_type: int) -> str:
-    """Return the conservative editor badge for a proc on a server lineage."""
     lineage = str(lineage).upper()
     label = PROC_TYPES.get(int(proc_type))
     if label is None:
@@ -257,18 +124,8 @@ def capability_for(lineage: str, proc_type: int) -> str:
 
 
 def catalog() -> dict:
-    """Return editor-facing metadata for the structured additional-effect panel."""
     return {
-        "fields": [
-            {
-                "key": f.key,
-                "modId": f.mod_id,
-                "label": f.label,
-                "requiredFor": list(f.required_for),
-                "notes": f.notes,
-            }
-            for f in FIELDS
-        ],
+        "fields": [{"key": f.key, "modId": f.mod_id, "label": f.label, "requiredFor": list(f.required_for), "notes": f.notes} for f in FIELDS],
         "procTypes": [{"value": value, "label": label} for value, label in sorted(PROC_TYPES.items())],
         "elements": [{"value": value, "label": label} for value, label in sorted(ELEMENTS.items())],
         "subeffects": [{"value": value, "label": label} for value, label in sorted(SUBEFFECTS.items())],
@@ -277,10 +134,7 @@ def catalog() -> dict:
         "lineageCapabilities": LINEAGE_CAPABILITIES,
         "storage": "item_mods or item_latents",
         "clientCoupled": False,
-        "coreBoundary": (
-            "Existing proc types/fields can be configured here. New proc semantics still require "
-            "server Lua/C++ support; the editor must not invent a new type and assume it works."
-        ),
+        "coreBoundary": "Existing proc types/fields can be configured here. New proc semantics still require server Lua/C++ support; the editor must not invent a new type and assume it works.",
     }
 
 
@@ -292,17 +146,8 @@ def build_mod_rows(*, proc_type: int, chance: int, subeffect: int = 0, damage: i
         raise ValueError(f"unsupported additional-effect proc type: {proc_type}")
     if not 0 <= chance <= 100:
         raise ValueError("proc chance must be between 0 and 100")
-
-    values = {
-        "type": proc_type,
-        "subeffect": int(subeffect),
-        "damage": int(damage),
-        "chance": chance,
-        "element": int(element),
-        "status": int(status),
-        "power": int(power),
-        "duration": int(duration),
-    }
+    values = {"type": proc_type, "subeffect": int(subeffect), "damage": int(damage), "chance": chance,
+              "element": int(element), "status": int(status), "power": int(power), "duration": int(duration)}
     rows = []
     for field in FIELDS:
         value = values[field.key]
@@ -312,7 +157,6 @@ def build_mod_rows(*, proc_type: int, chance: int, subeffect: int = 0, damage: i
 
 
 def build_preset_rows(preset: str, **overrides) -> list[dict]:
-    """Build rows from a named editor preset without hiding the underlying modifier bundle."""
     try:
         spec = PRESETS[preset]
     except KeyError as exc:
@@ -330,25 +174,13 @@ def build_latent_rows(*, latent_id: int, latent_param: int, **effect) -> list[di
     latent_param = int(latent_param)
     if latent_id < 0:
         raise ValueError("latent id must be non-negative")
-    return [
-        {**row, "latentId": latent_id, "latentParam": latent_param}
-        for row in build_mod_rows(**effect)
-    ]
+    return [{**row, "latentId": latent_id, "latentParam": latent_param} for row in build_mod_rows(**effect)]
 
 
 def build_self_buff_blueprint(*, status: int, chance: int = 20, power: int = 1,
-                              duration: int = 30, subeffect: int = 0,
-                              lineage: str = "LSB") -> dict:
-    """Return row data plus a concrete server-code handoff for a self-buff weapon proc."""
+                              duration: int = 30, subeffect: int = 0, lineage: str = "LSB") -> dict:
     lineage = str(lineage).upper()
-    modern_rows = build_mod_rows(
-        proc_type=12,
-        chance=chance,
-        subeffect=subeffect,
-        status=status,
-        power=power,
-        duration=duration,
-    )
+    modern_rows = build_mod_rows(proc_type=12, chance=chance, subeffect=subeffect, status=status, power=power, duration=duration)
     reference = SERVER_REFERENCES.get(lineage, SERVER_REFERENCES["Topaz"])
     return {
         "kind": "self_buff",
@@ -360,10 +192,7 @@ def build_self_buff_blueprint(*, status: int, chance: int = 20, power: int = 1,
         "serverReference": reference,
         "implementationContract": {
             "trigger": "successful eligible weapon attack after ITEM_ADDEFFECT_CHANCE roll",
-            "target": "attacker/self",
-            "statusId": int(status),
-            "power": int(power),
-            "durationSeconds": int(duration),
+            "target": "attacker/self", "statusId": int(status), "power": int(power), "durationSeconds": int(duration),
             "message": "additional-effect self-buff battle message/subeffect",
             "stacking": "must be defined explicitly per status; do not blindly overwrite existing effects",
         },
@@ -375,6 +204,41 @@ def build_self_buff_blueprint(*, status: int, chance: int = 20, power: int = 1,
             "Return the correct additional-effect subeffect/message tuple.",
             "Add a focused server regression for proc chance, duration, power, and stacking behavior.",
         ],
+    }
+
+
+def summarize_effect(effect: dict) -> str:
+    """Compact UI/history summary for a structured effect."""
+    proc_type = int(effect.get("type", 0) or 0)
+    label = PROC_TYPES.get(proc_type, f"proc {proc_type}")
+    chance = int(effect.get("chance", 0) or 0)
+    parts = [f"{chance}% {label}"]
+    if effect.get("element"):
+        parts.append(ELEMENTS.get(int(effect["element"]), f"element {effect['element']}"))
+    if effect.get("damage"):
+        parts.append(f"amount {int(effect['damage'])}")
+    if effect.get("status"):
+        parts.append(f"status {int(effect['status'])}")
+    if effect.get("power"):
+        parts.append(f"power {int(effect['power'])}")
+    if effect.get("duration"):
+        parts.append(f"{int(effect['duration'])}s")
+    return " · ".join(parts)
+
+
+def export_server_handoff(effect: dict, lineage: str) -> dict:
+    """Create a generic local-agent handoff for any effect needing lineage verification/code."""
+    proc_type = int(effect.get("type", 0) or 0)
+    lineage = str(lineage).upper()
+    return {
+        "lineage": lineage,
+        "procType": proc_type,
+        "procTypeLabel": PROC_TYPES.get(proc_type, f"unknown ({proc_type})"),
+        "capability": capability_for(lineage, proc_type),
+        "effect": dict(effect),
+        "summary": summarize_effect(effect),
+        "serverReference": SERVER_REFERENCES.get(lineage, SERVER_REFERENCES["Topaz"]),
+        "warning": "Verify proc numbering and handler semantics in the active server tree before applying generated rows.",
     }
 
 
@@ -393,15 +257,13 @@ def inspect_rows(rows: Iterable[dict]) -> dict:
         return {"recognized": False, "effect": {}, "modIds": []}
     proc_type = effect.get("type")
     return {
-        "recognized": True,
-        "effect": effect,
-        "modIds": sorted(set(matched)),
+        "recognized": True, "effect": effect, "modIds": sorted(set(matched)),
         "procTypeLabel": PROC_TYPES.get(proc_type, f"unknown ({proc_type})" if proc_type is not None else "not set"),
         "elementLabel": ELEMENTS.get(effect.get("element", 0), f"unknown ({effect.get('element')})"),
         "subeffectLabel": SUBEFFECTS.get(effect.get("subeffect", 0), f"unknown ({effect.get('subeffect')})"),
+        "summary": summarize_effect(effect),
     }
 
 
 def requires_server_code(proc_type: int) -> bool:
-    """Generic conservative boundary when lineage is unknown."""
     return int(proc_type) not in {1, 2, 5, 6, 7, 10}
