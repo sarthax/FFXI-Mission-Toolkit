@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+import sys
 
 from fastapi import APIRouter, Body, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
@@ -19,6 +20,27 @@ from .write_probe import probe_write_readiness
 
 router = APIRouter(prefix="/auction-house", tags=["Auction House Administration"])
 templates = Jinja2Templates(directory=str(GUI_ROOT / "templates"))
+
+
+def _sync_host_template_globals() -> None:
+    """Reuse the monolithic GUI's shared base.html globals before rendering this modular page.
+
+    The legacy host configures helpers such as ``current_theme`` and ``shell_context`` after the
+    Character/Auction House packages have already been imported. Character Editor is explicitly
+    synchronized by gui_server.py, but Auction House owns a separate Jinja environment and was not,
+    causing /auction-house to fail during base.html rendering before any AH data request ran.
+
+    Resolve the already-running host lazily so this module stays importable in standalone router
+    tests and works whether gui_server.py was imported as ``gui_server`` or executed as ``__main__``.
+    """
+    for module_name in ("gui_server", "__main__"):
+        host = sys.modules.get(module_name)
+        host_templates = getattr(host, "templates", None) if host is not None else None
+        host_env = getattr(host_templates, "env", None)
+        host_globals = getattr(host_env, "globals", None)
+        if host_globals:
+            templates.env.globals.update(host_globals)
+            return
 
 
 @contextmanager
@@ -39,6 +61,7 @@ def _error(exc: Exception, status: int = 503) -> HTTPException:
 
 @router.get("", response_class=HTMLResponse)
 def auction_house_page(request: Request):
+    _sync_host_template_globals()
     return templates.TemplateResponse(request=request, name="auction_house.html", context={"title": "Auction House Admin"})
 
 
