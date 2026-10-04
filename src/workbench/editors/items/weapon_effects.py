@@ -10,7 +10,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable
 
-
 MOD_ADDEFFECT_TYPE = 431
 MOD_SUBEFFECT = 499
 MOD_ADDEFFECT_DMG = 500
@@ -22,18 +21,16 @@ MOD_ADDEFFECT_DURATION = 953
 
 ELEMENTS = {0: "none", 1: "fire", 2: "ice", 3: "wind", 4: "earth", 5: "lightning", 6: "water", 7: "light", 8: "dark"}
 SUBEFFECTS = {
-    1: "fire damage", 2: "ice damage", 3: "wind damage", 4: "earth damage",
-    5: "lightning damage", 6: "water damage", 7: "light damage", 8: "dark damage / dispel",
-    9: "sleep", 10: "poison", 11: "paralysis / amnesia", 12: "blind", 13: "silence",
-    14: "petrify", 15: "plague", 16: "stun", 17: "curse", 18: "attack/defense/evasion down",
-    19: "death", 20: "shield", 21: "hp drain", 22: "mp/tp drain", 23: "haste",
+    1: "fire damage", 2: "ice damage", 3: "wind damage", 4: "earth damage", 5: "lightning damage",
+    6: "water damage", 7: "light damage", 8: "dark damage / dispel", 9: "sleep", 10: "poison",
+    11: "paralysis / amnesia", 12: "blind", 13: "silence", 14: "petrify", 15: "plague", 16: "stun",
+    17: "curse", 18: "attack/defense/evasion down", 19: "death", 20: "shield", 21: "hp drain",
+    22: "mp/tp drain", 23: "haste",
 }
-
-# Modern LSB proc-type numbering. Older DSP/Topaz trees use a smaller legacy numbering scheme.
 PROC_TYPES = {
-    1: "damage", 2: "debuff", 3: "hp heal", 4: "mp heal", 5: "hp drain",
-    6: "mp drain", 7: "tp drain", 8: "hp+mp drain", 9: "hp+mp+tp drain",
-    10: "dispel", 11: "absorb status", 12: "self buff", 13: "death", 14: "nm specific",
+    1: "damage", 2: "debuff", 3: "hp heal", 4: "mp heal", 5: "hp drain", 6: "mp drain", 7: "tp drain",
+    8: "hp+mp drain", 9: "hp+mp+tp drain", 10: "dispel", 11: "absorb status", 12: "self buff",
+    13: "death", 14: "nm specific",
 }
 
 SERVER_REFERENCES = {
@@ -59,20 +56,17 @@ SERVER_REFERENCES = {
 LINEAGE_CAPABILITIES = {
     "LSB": {
         "damage": "row-only", "debuff": "row-only", "hp heal": "row-only", "mp heal": "row-only",
-        "hp drain": "row-only", "mp drain": "row-only", "tp drain": "row-only",
-        "hp+mp drain": "row-only", "hp+mp+tp drain": "row-only", "dispel": "row-only",
-        "absorb status": "verify-lineage", "self buff": "server-code-required",
-        "death": "verify-lineage", "nm specific": "server-code-required",
+        "hp drain": "row-only", "mp drain": "row-only", "tp drain": "row-only", "hp+mp drain": "row-only",
+        "hp+mp+tp drain": "row-only", "dispel": "row-only", "absorb status": "verify-lineage",
+        "self buff": "server-code-required", "death": "verify-lineage", "nm specific": "server-code-required",
     },
     "DSP": {
-        "damage": "verify-lineage", "debuff": "verify-lineage", "hp drain": "verify-lineage",
-        "mp drain": "verify-lineage", "tp drain": "verify-lineage", "dispel": "verify-lineage",
-        "self buff": "server-code-required", "death": "verify-lineage",
+        "damage": "verify-lineage", "debuff": "verify-lineage", "hp drain": "verify-lineage", "mp drain": "verify-lineage",
+        "tp drain": "verify-lineage", "dispel": "verify-lineage", "self buff": "server-code-required", "death": "verify-lineage",
     },
     "TOPAZ": {
-        "damage": "verify-lineage", "debuff": "verify-lineage", "hp drain": "verify-lineage",
-        "mp drain": "verify-lineage", "tp drain": "verify-lineage", "dispel": "verify-lineage",
-        "self buff": "server-code-required", "death": "verify-lineage",
+        "damage": "verify-lineage", "debuff": "verify-lineage", "hp drain": "verify-lineage", "mp drain": "verify-lineage",
+        "tp drain": "verify-lineage", "dispel": "verify-lineage", "self buff": "server-code-required", "death": "verify-lineage",
     },
 }
 
@@ -89,7 +83,6 @@ PRESETS = {
     "nm_specific": {"label": "NM-specific scripted behavior", "proc_type": 14, "defaults": {"chance": 100}, "requires_server_code": True},
 }
 
-
 @dataclass(frozen=True)
 class EffectField:
     key: str
@@ -97,7 +90,6 @@ class EffectField:
     label: str
     required_for: tuple[str, ...] = ()
     notes: str = ""
-
 
 FIELDS = (
     EffectField("type", MOD_ADDEFFECT_TYPE, "Proc type", notes="Selects the server additional-effect handler."),
@@ -121,6 +113,11 @@ def capability_for(lineage: str, proc_type: int) -> str:
     if caps is None:
         return "verify-lineage"
     return caps.get(label, "verify-lineage")
+
+
+def rows_safe_to_apply(lineage: str, proc_type: int) -> bool:
+    """Only row-only effects are eligible for direct editor application without server verification."""
+    return capability_for(lineage, proc_type) == "row-only"
 
 
 def catalog() -> dict:
@@ -183,16 +180,12 @@ def build_self_buff_blueprint(*, status: int, chance: int = 20, power: int = 1,
     modern_rows = build_mod_rows(proc_type=12, chance=chance, subeffect=subeffect, status=status, power=power, duration=duration)
     reference = SERVER_REFERENCES.get(lineage, SERVER_REFERENCES["Topaz"])
     return {
-        "kind": "self_buff",
-        "lineage": lineage,
-        "modernLsbRows": modern_rows,
-        "rowsAreSafeToApply": lineage == "LSB",
-        "capability": capability_for(lineage, 12),
-        "requiresServerCode": True,
-        "serverReference": reference,
+        "kind": "self_buff", "lineage": lineage, "modernLsbRows": modern_rows,
+        "rowsAreSafeToApply": rows_safe_to_apply(lineage, 12), "capability": capability_for(lineage, 12),
+        "requiresServerCode": True, "serverReference": reference,
         "implementationContract": {
-            "trigger": "successful eligible weapon attack after ITEM_ADDEFFECT_CHANCE roll",
-            "target": "attacker/self", "statusId": int(status), "power": int(power), "durationSeconds": int(duration),
+            "trigger": "successful eligible weapon attack after ITEM_ADDEFFECT_CHANCE roll", "target": "attacker/self",
+            "statusId": int(status), "power": int(power), "durationSeconds": int(duration),
             "message": "additional-effect self-buff battle message/subeffect",
             "stacking": "must be defined explicitly per status; do not blindly overwrite existing effects",
         },
@@ -208,7 +201,6 @@ def build_self_buff_blueprint(*, status: int, chance: int = 20, power: int = 1,
 
 
 def summarize_effect(effect: dict) -> str:
-    """Compact UI/history summary for a structured effect."""
     proc_type = int(effect.get("type", 0) or 0)
     label = PROC_TYPES.get(proc_type, f"proc {proc_type}")
     chance = int(effect.get("chance", 0) or 0)
@@ -227,16 +219,13 @@ def summarize_effect(effect: dict) -> str:
 
 
 def export_server_handoff(effect: dict, lineage: str) -> dict:
-    """Create a generic local-agent handoff for any effect needing lineage verification/code."""
     proc_type = int(effect.get("type", 0) or 0)
     lineage = str(lineage).upper()
     return {
-        "lineage": lineage,
-        "procType": proc_type,
+        "lineage": lineage, "procType": proc_type,
         "procTypeLabel": PROC_TYPES.get(proc_type, f"unknown ({proc_type})"),
-        "capability": capability_for(lineage, proc_type),
-        "effect": dict(effect),
-        "summary": summarize_effect(effect),
+        "capability": capability_for(lineage, proc_type), "rowsAreSafeToApply": rows_safe_to_apply(lineage, proc_type),
+        "effect": dict(effect), "summary": summarize_effect(effect),
         "serverReference": SERVER_REFERENCES.get(lineage, SERVER_REFERENCES["Topaz"]),
         "warning": "Verify proc numbering and handler semantics in the active server tree before applying generated rows.",
     }
