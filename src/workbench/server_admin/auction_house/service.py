@@ -17,7 +17,7 @@ def epoch_iso(value: Any) -> str | None:
 
 
 class AuctionHouseService:
-    """Normalized live AH reader. Phase 1 intentionally exposes no mutation methods."""
+    """Normalized live AH reader. Administrative preview helpers remain SELECT-only."""
 
     def __init__(self, connection, *, schema: AuctionHouseSchema | None = None):
         self.connection = connection
@@ -51,6 +51,77 @@ class AuctionHouseService:
                     "item_count": int(r[1]),
                 })
             return rows
+        finally:
+            c.close()
+
+    def item_snapshot(self, item_id: int) -> dict[str, Any] | None:
+        i = self.schema.item_columns
+        c = self.connection.cursor()
+        try:
+            c.execute(
+                f"SELECT {self.q(i['item_id'])}, {self.q(i['name'])}, {self.q(i['stack_size'])}, "
+                f"{self.q(i['ah_category'])} FROM `item_basic` WHERE {self.q(i['item_id'])}=%s LIMIT 1",
+                (int(item_id),),
+            )
+            r = c.fetchone()
+            if not r:
+                return None
+            category_id = int(r[3] or 0)
+            meta = category_metadata(category_id)
+            return {
+                "item_id": int(r[0]),
+                "name": str(r[1] or ""),
+                "stack_size": max(1, int(r[2] or 1)),
+                "category_id": category_id,
+                "category_path": meta.path,
+            }
+        finally:
+            c.close()
+
+    def character_snapshot(self, char_id: int) -> dict[str, Any] | None:
+        """Resolve the common DSP/Topaz/LSB chars identity shape without assuming extra fields."""
+        c = self.connection.cursor()
+        try:
+            c.execute("DESCRIBE `chars`")
+            columns = {str(row[0]) for row in c.fetchall() or []}
+            id_col = next((name for name in ("charid", "charId", "char_id", "id") if name in columns), None)
+            name_col = next((name for name in ("charname", "charName", "char_name", "name") if name in columns), None)
+            if not id_col or not name_col:
+                return None
+            c.execute(
+                f"SELECT {self.q(id_col)}, {self.q(name_col)} FROM `chars` WHERE {self.q(id_col)}=%s LIMIT 1",
+                (int(char_id),),
+            )
+            r = c.fetchone()
+            return None if not r else {"char_id": int(r[0]), "char_name": str(r[1] or "")}
+        finally:
+            c.close()
+
+    def active_listing_by_id(self, auction_id: int) -> dict[str, Any] | None:
+        a = self.schema.auction_columns
+        seller_name = self.q(a["seller_name"]) if a.get("seller_name") else "NULL"
+        c = self.connection.cursor()
+        try:
+            c.execute(
+                "SELECT "
+                f"{self.q(a['id'])}, {self.q(a['item_id'])}, {self.q(a['stack'])}, {self.q(a['seller_id'])}, "
+                f"{seller_name}, {self.q(a['listed_at'])}, {self.q(a['asking_price'])} FROM `auction_house` "
+                f"WHERE {self.q(a['id'])}=%s AND {self.q(a['sold_at'])}=0 LIMIT 1",
+                (int(auction_id),),
+            )
+            r = c.fetchone()
+            if not r:
+                return None
+            return {
+                "auction_id": int(r[0]),
+                "item_id": int(r[1]),
+                "stack": bool(r[2]),
+                "seller_id": int(r[3] or 0),
+                "seller_name": r[4],
+                "listed_at": int(r[5] or 0) or None,
+                "listed_at_iso": epoch_iso(r[5]),
+                "asking_price": int(r[6] or 0),
+            }
         finally:
             c.close()
 
