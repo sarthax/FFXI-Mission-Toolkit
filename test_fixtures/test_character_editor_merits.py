@@ -67,8 +67,13 @@ def test_merit_catalog_is_attached_only_as_checkout_catalog_and_ui_renders_all_d
     assert 'if tab.key == "merits-jobpoints"' in category_data
     assert 'catalogs["merits"] = merit_catalog' in category_data
     assert "activeCategoryData?.catalogs?.merits" in script
-    assert "category.merits || []" in script
+    # Current UI groups checkout catalog definitions through each category's `merits` list
+    # rather than the older `category.merits || []` local variable shape.
+    assert "c.merits || []" in script
+    assert "cat.merits || []" in script
     assert "Rank" in script and "Next cost" in script and "value_per_upgrade" in script
-    assert "Allocated only" in script
+    assert "Apply merit changes" in script
+    assert "const base = `/character-editor/characters/${selectedChar}/fields`" in script
+    assert "`${base}/preview`" in script and "`${base}/apply`" in script
     assert "/static/character_editor_merits.js" in template
     assert template.index('/static/character_editor_merits.js') < template.index('/static/character_editor_dense_modes.js')

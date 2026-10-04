@@ -34,34 +34,35 @@ def main():
     assert "Unified remaining-feature inventory" in text
 
     current = Path("docs/workbench/ROADMAP_CURRENT.md").read_text(encoding="utf-8")
+    # ROADMAP_CURRENT is a durable capability map, not the historical per-PR ledger.  Assert the
+    # current October-3 product families rather than headings from the superseded October-1 snapshot.
     current_sections = [
-        "Core Workbench architecture, evidence model and source adapters",
-        "Feature Trace, Implementation Path and implementation discovery",
-        "Mission / quest extraction and dependency closure",
-        "Generic scripted behavior / Behavior Inspector",
-        "Acquisition / obtainability / crafting closure",
-        "Capture ingestion, integrity and provenance",
-        "Capture graph linkage, correlation and Evidence Search",
-        "Video OCR, screenshots and capture/video evidence alignment",
-        "PCAP/network/lobby protocol research",
-        "Client snapshots, DAT inspection, item editing and client migration",
-        "Research Sessions and evidence-aware research",
-        "Wiki/reference evidence",
-        "Packages, migration and validation",
-        "Zone Editor, spatial viewers and development workspaces",
-        "Packet tools",
-        "Named domains / system workspaces",
-        "Shared shell, navigation and UX",
-        "Superseded / deprecated history intentionally excluded",
+        "Core Workbench architecture",
+        "Server environments and runtime context",
+        "Character Editor",
+        "Feature Trace / Implementation Path",
+        "Behavior Inspector / scripted behavior",
+        "Mission / quest extraction",
+        "Entity / Event / CSID research",
+        "Character/client DAT assets and Item Editor",
+        "Zone Editor / spatial viewers",
+        "Capture ingestion and evidence",
+        "Packet / protocol research",
+        "Video / OCR / temporal evidence",
+        "Research Sessions and wiki/reference evidence",
+        "Package / migration / validation",
+        "CI / regression safety",
+        "Highest-value next work",
     ]
     missing_sections = [name for name in current_sections if name not in current]
-    assert not missing_sections, f"ROADMAP_CURRENT.md missing capability families: {missing_sections}"
-    for pr in ("PR #74", "PR #85", "PR #103", "PR #125", "PR #154", "PR #180", "PR #183"):
-        assert pr in current, f"ROADMAP_CURRENT.md must document superseded history boundary for {pr}"
-    assert "merged `main`" in current
-    assert "Search/cache TCP decoder" in current
-    assert "generalized new-item DAT allocation/injection" in current
-    assert "Salvage reconstruction compiler path" in current
+    assert not missing_sections, f"ROADMAP_CURRENT.md missing current capability families: {missing_sections}"
+    assert "Last fully reconciled against merged PR and branch history: **2026-10-03**" in current
+    assert "`main` is the product baseline" in current
+    assert "Plain Behavior is now the default view" in current
+    assert "Persistent **client item DAT cache**" in current
+    assert "Campaign/session manifest import support" in current
+    assert "Progression Transition bundles / inspector" in current
+    assert "Native modern-LSB Nyzul floor-generation adapter remains future work" in current
 
     print("roadmap reconciliation self-test: PASS")
 

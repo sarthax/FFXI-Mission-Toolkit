@@ -49,6 +49,7 @@ def main() -> None:
     required = {
         "character": "Character",
         "inventory": "Inventory",
+        "equipment": "Equipped Items",
         "profile": "Profile",
         "currencies": "Currencies",
         "missions-quests": "Mission Flags",
@@ -63,10 +64,17 @@ def main() -> None:
     }
     assert {key: by_key[key]["label"] for key in required} == required
 
-    primary_keys = ["character", "inventory", "profile", "currencies", "missions-quests", "key-items"]
-    assert [row["key"] for row in manifest[:6]] == primary_keys
-    assert all(row["primary"] is True for row in manifest[:6])
-    assert all(row["primary"] is False for row in manifest[6:])
+    primary_keys = [
+        "character", "inventory", "equipment", "profile", "currencies",
+        "missions-quests", "key-items",
+    ]
+    actual_primary = [row["key"] for row in manifest if row["primary"] is True]
+    actual_secondary = [row["key"] for row in manifest if row["primary"] is False]
+    assert actual_primary == primary_keys
+    assert actual_secondary == [
+        "jobs-skills", "spells-abilities", "merits-jobpoints", "unlocks-travel",
+        "variables", "pets-effects", "advanced",
+    ]
 
     assert by_key["jobs-skills"]["available"] is True
     assert {"jobs", "experience", "skills"}.issubset(set(by_key["jobs-skills"]["supported_capabilities"]))

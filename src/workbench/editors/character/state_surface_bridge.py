@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from workbench.devtools.features.state_surface import build_state_surface
+from workbench.devtools.features.state_surface_scoped import build_state_surface
 
 from .category_data import build_category_payload
 from .progression_catalog import mission_catalog
