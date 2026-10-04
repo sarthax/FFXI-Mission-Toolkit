@@ -7,9 +7,12 @@ commit Auction House mutations.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import Any
 
 from .lineage_semantics import evaluate_lineage_semantics
+from .validation_pipeline import prepare_validate_from_active_config
+from .write_probe import probe_write_readiness
 
 
 @dataclass(frozen=True)
@@ -129,3 +132,53 @@ def build_validation_report(
         "stages": stages,
         "blockers": [asdict(item) for item in blockers],
     }
+
+
+def run_legacy_preview_validation(
+    *,
+    service,
+    environment: dict[str, Any],
+    preview: dict[str, Any],
+    server_root: Path | str,
+) -> dict[str, Any]:
+    """Run every legacy DSP/Topaz read-only gate in the required order and return one report."""
+    family = str(environment.get("family") or "").strip().lower()
+    if family not in {"dsp", "topaz"}:
+        return {
+            "status": "blocked",
+            "read_only_validation_ready": False,
+            "execution_ready": False,
+            "executor_enabled": False,
+            "write_enabled": False,
+            "operation": str(preview.get("action") or "unknown"),
+            "environment": dict(environment),
+            "schema_family_hint": service.schema.family_hint,
+            "stages": {},
+            "blockers": [{
+                "stage": "environment",
+                "code": "legacy_validation_scope_unsupported",
+                "message": "This validation orchestrator currently supports explicit DSP and Topaz environments only.",
+            }],
+        }
+
+    operation = str(preview.get("action") or "").strip().lower()
+    prepared, evidence, invariants, policy_load, policy_binding = prepare_validate_from_active_config(
+        service=service,
+        family=family,
+        operation=operation,
+        environment=environment,
+        preview=preview,
+        server_root=server_root,
+        preview_environment=preview.get("environment") if isinstance(preview.get("environment"), dict) else None,
+    )
+    readiness = probe_write_readiness(service.connection).as_dict()
+    return build_validation_report(
+        environment=environment,
+        schema_family_hint=service.schema.family_hint,
+        readiness=readiness,
+        prepared=prepared,
+        evidence=evidence,
+        invariants=invariants,
+        policy_load=policy_load,
+        policy_binding=policy_binding,
+    )
