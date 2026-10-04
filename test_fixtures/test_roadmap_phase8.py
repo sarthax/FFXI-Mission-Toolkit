@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Documentation regression: historical Phase 8 and current roadmap inventory stay coherent."""
+import re
 from pathlib import Path
 
 
@@ -56,7 +57,14 @@ def main():
     ]
     missing_sections = [name for name in current_sections if name not in current]
     assert not missing_sections, f"ROADMAP_CURRENT.md missing current capability families: {missing_sections}"
-    assert "Last fully reconciled against merged PR and branch history: **2026-10-03**" in current
+
+    reconciled = re.search(
+        r"Last fully reconciled against merged PR and branch history: \*\*(\d{4}-\d{2}-\d{2})\*\*",
+        current,
+    )
+    assert reconciled, "ROADMAP_CURRENT.md must declare its last full reconciliation date"
+    assert reconciled.group(1) >= "2026-10-03", "roadmap reconciliation date regressed before the current baseline"
+
     assert "`main` is the product baseline" in current
     assert "Plain Behavior is now the default view" in current
     assert "Persistent **client item DAT cache**" in current
