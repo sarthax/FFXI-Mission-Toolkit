@@ -94,6 +94,126 @@ def _pseudo_zone(con, uid):
     return r[0] if r else None
 
 
+REVIEW_DDL = """CREATE TABLE IF NOT EXISTS shift_zone_review (
+    review_id INTEGER PRIMARY KEY AUTOINCREMENT, source_path TEXT, capture_id INTEGER, pseudo INTEGER,
+    packets INTEGER, capture_zones TEXT, name_hint TEXT, status TEXT DEFAULT 'pending',
+    approved_zone TEXT, note TEXT, reviewed_at TEXT, UNIQUE(source_path, pseudo))"""
+
+
+def _has(con, t):
+    return con.execute("SELECT 1 FROM sqlite_master WHERE name=?", (t,)).fetchone() is not None
+
+
+def _src(con, capture_id):
+    r = con.execute("SELECT source_path FROM captures WHERE capture_id=?", (capture_id,)).fetchone()
+    return r[0] if r else None
+
+
+def _pending(con, capture_id):
+    if not _has(con, "shift_zone_review"):
+        return 0
+    return con.execute("SELECT COUNT(*) FROM shift_zone_review WHERE source_path=? AND status='pending'",
+                       (_src(con, capture_id),)).fetchone()[0]
+
+
+def is_quarantined(con, capture_id):
+    """True while a capture has undecided zone-review items. Other consumers of capture data may call this."""
+    return bool(_pending(con, capture_id))
+
+
+def _purge(con, capture_id):
+    ensure_table(con)
+    ensure_master_tables(con)
+    con.execute("DELETE FROM capture_msgid_shift WHERE capture_id=?", (capture_id,))
+    con.execute("DELETE FROM msgid_shift_obs WHERE capture_id=?", (capture_id,))
+    con.commit()
+
+
+def _approved(con, capture_id):
+    if not _has(con, "shift_zone_review"):
+        return {}
+    return dict(con.execute("SELECT pseudo, approved_zone FROM shift_zone_review WHERE source_path=? AND status='approved'",
+                            (_src(con, capture_id),)))
+
+
+def _resolve(con, zmap, emap, appr, uid, m):
+    return (zmap.get((uid, m)) or emap.get(uid) or _decode_zone(con, uid) or _pseudo_zone(con, uid)
+            or appr.get((uid >> 12) & 0xFFF))
+
+
+def _name_hint(con, capture_id):
+    """Zone names mentioned in the capture's label/path. A HINT for the reviewer only -- many captures cover several zones."""
+    r = con.execute("SELECT capture_label, source_path FROM captures WHERE capture_id=?", (capture_id,)).fetchone()
+    flat = lambda t: re.sub(r"[^a-z0-9]+", "", (t or "").lower())
+    h = flat(" ".join(x or "" for x in r)) if r else ""
+    out = []
+    for (n,) in con.execute("SELECT name FROM zones"):
+        k = flat(n)
+        if len(k) >= 5 and k in h and n not in out:
+            out.append(n)
+    return ",".join(out)
+
+
+def refresh_review(con, capture_id):
+    """Rebuild the pending review rows: one per pseudo-zone id whose 0x036 packets no automatic fallback resolves.
+    Decided rows are kept. Returns the number of pending rows."""
+    con.execute(REVIEW_DDL)
+    src = _src(con, capture_id)
+    zmap, emap = _zmap(con, capture_id), _entmap(con, capture_id)
+    left = collections.Counter()
+    for (hx,) in con.execute("SELECT raw_hex FROM capture_raw_packets WHERE capture_id=? AND UPPER(opcode)='0X036'", (capture_id,)):
+        b = bytes.fromhex(hx.replace(" ", ""))
+        if len(b) < 12:
+            continue
+        uid = struct.unpack_from("<I", b, 4)[0]
+        m = struct.unpack_from("<H", b, 10)[0] & 0x7FFF
+        if not _resolve(con, zmap, emap, {}, uid, m):
+            left[(uid >> 12) & 0xFFF] += 1
+    con.execute("UPDATE shift_zone_review SET capture_id=? WHERE source_path=?", (capture_id, src))
+    zones = ",".join(sorted(set(emap.values())))
+    hint = _name_hint(con, capture_id)
+    for ps, n in left.items():
+        con.execute("""INSERT INTO shift_zone_review (source_path,capture_id,pseudo,packets,capture_zones,name_hint)
+                       VALUES (?,?,?,?,?,?) ON CONFLICT(source_path,pseudo) DO UPDATE SET packets=excluded.packets, capture_zones=excluded.capture_zones, name_hint=excluded.name_hint""",
+                    (src, capture_id, ps, n, zones, hint))
+    for rid, ps in con.execute("SELECT review_id,pseudo FROM shift_zone_review WHERE source_path=?", (src,)).fetchall():
+        if ps not in left:
+            con.execute("DELETE FROM shift_zone_review WHERE review_id=?", (rid,))
+    con.commit()
+    return con.execute("SELECT COUNT(*) FROM shift_zone_review WHERE source_path=? AND status='pending'", (src,)).fetchone()[0]
+
+
+def review_decide(con, review_id, action, zone=None, note=None):
+    import datetime
+    con.execute(REVIEW_DDL)
+    row = con.execute("SELECT capture_id FROM shift_zone_review WHERE review_id=?", (review_id,)).fetchone()
+    if not row:
+        raise SystemExit("no such review_id %s" % review_id)
+    if action == "approve" and (not zone or zoneid_for_zone_db(con, zone) is None):
+        raise SystemExit("approve needs a zone that exists in zones (got %r)" % zone)
+    con.execute("UPDATE shift_zone_review SET status=?, approved_zone=?, note=?, reviewed_at=? WHERE review_id=?",
+                ("approved" if action == "approve" else "rejected", zone if action == "approve" else None, note,
+                 datetime.datetime.now().isoformat(timespec="seconds"), review_id))
+    con.commit()
+    return update_after_ingest(con, row[0])
+
+
+def _cli(argv):
+    import sqlite3
+    con = sqlite3.connect(r"D:\Claude\mission_toolkit\ffxi_zone_database.db", timeout=60)
+    con.execute(REVIEW_DDL)
+    cmd = argv[0] if argv else "list"
+    if cmd == "list":
+        for r in con.execute("SELECT review_id,capture_id,pseudo,packets,status,approved_zone,capture_zones,name_hint "
+                             "FROM shift_zone_review ORDER BY status,review_id"):
+            print("#%s cap %s pseudo %s pk %s [%s] -> %s | capture zones: %s | name hint: %s" % r)
+    elif cmd in ("approve", "reject"):
+        for l in review_decide(con, int(argv[1]), cmd, argv[2] if cmd == "approve" else None):
+            print(l)
+    else:
+        print("usage: python -m workbench.captures.msgid_shift list | approve <review_id> <ZONE_NAME> | reject <review_id>")
+
+
 def _chat_near(chat, ts, window=2):
     """Chat lines within +-window seconds of a packet timestamp (HH:MM:SS keys)."""
     try:
@@ -112,6 +232,10 @@ def compute(con, capture_id, zoneid_for_zone_db):
     ensure_table(con)
     zmap = _zmap(con, capture_id)
     emap = _entmap(con, capture_id)
+    appr = _approved(con, capture_id)
+    if _pending(con, capture_id):
+        _purge(con, capture_id)
+        return []
     chat = collections.defaultdict(list)
     for ts, t in con.execute("SELECT ts,text FROM capture_caplog_chat WHERE capture_id=?", (capture_id,)):
         chat[ts].append(t or "")
@@ -122,7 +246,7 @@ def compute(con, capture_id, zoneid_for_zone_db):
             continue
         uid = struct.unpack_from("<I", b, 4)[0]
         m = struct.unpack_from("<H", b, 10)[0] & 0x7FFF
-        zone = (zmap.get((uid, m)) or emap.get(uid) or _decode_zone(con, uid) or _pseudo_zone(con, uid))
+        zone = _resolve(con, zmap, emap, appr, uid, m)
         if zone:
             per[zone].append((m, " | ".join(_chat_near(chat, ts))))
     out = []
@@ -179,6 +303,10 @@ def observe(con, capture_id, zoneid_for_zone_db):
     ensure_master_tables(con)
     zmap = _zmap(con, capture_id)
     emap = _entmap(con, capture_id)
+    appr = _approved(con, capture_id)
+    if _pending(con, capture_id):
+        _purge(con, capture_id)
+        return 0
     chat = collections.defaultdict(list)
     for ts, t in con.execute("SELECT ts,text FROM capture_caplog_chat WHERE capture_id=?", (capture_id,)):
         chat[ts].append(t or "")
@@ -189,7 +317,7 @@ def observe(con, capture_id, zoneid_for_zone_db):
             continue
         m = struct.unpack_from("<H", b, 10)[0] & 0x7FFF
         uid = struct.unpack_from("<I", b, 4)[0]
-        zone = (zmap.get((uid, m)) or emap.get(uid) or _decode_zone(con, uid) or _pseudo_zone(con, uid))
+        zone = _resolve(con, zmap, emap, appr, uid, m)
         lines = " | ".join(_chat_near(chat, ts))
         if not zone or not lines:
             continue
@@ -287,9 +415,16 @@ def update_after_ingest(con, capture_id, report_path=None):
     path = report_path or REPORT_PATH
     lines = ["[%s] capture %s" % (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), capture_id)]
     try:
+        npend = refresh_review(con, capture_id)
         n = observe(con, capture_id, zoneid_for_zone_db)
         per = compute(con, capture_id, zoneid_for_zone_db)
         build_master(con)
+        if npend:
+            lines.append("  QUARANTINED: %d zone-review item(s) pending -- excluded from shift evidence "
+                         "(python -m workbench.captures.msgid_shift list)" % npend)
+            for rid, ps, pk, hint in con.execute("SELECT review_id,pseudo,packets,name_hint FROM shift_zone_review "
+                                                 "WHERE source_path=? AND status='pending'", (_src(con, capture_id),)):
+                lines.append("    review #%s pseudo-zone %s, %s packets, name hint: %s" % (rid, ps, pk, hint or "none"))
         lines.append("  observations: %d" % n)
         for zone, zid, best, bh, tot, ru, conf in per:
             lines.append("  %s (zone %s): shift %s hits %d/%d runner-up %d %s" % (
@@ -308,3 +443,8 @@ def update_after_ingest(con, capture_id, report_path=None):
     with open(path, "a", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
     return lines
+
+
+if __name__ == "__main__":
+    import sys
+    _cli(sys.argv[1:])
