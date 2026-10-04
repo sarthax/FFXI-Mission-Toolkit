@@ -31,6 +31,7 @@ def _human_hook(node: dict[str, Any]) -> str:
         (("oneventfinish",), "A cutscene or event finishes"),
         (("oneventupdate",), "A cutscene or event updates"),
         (("timer",), "A timer or delayed action fires"),
+        (("queue",), "A queued action fires"),
         (("listener",), "A registered game event fires"),
     )
     for needles, label in mappings:
@@ -45,6 +46,14 @@ def _human_node(node: dict[str, Any]) -> str:
     low = raw.lower()
     value = "" if meta.get("value") is None else str(meta.get("value"))
 
+    if node.get("kind") == "callback":
+        callback_type = str(meta.get("callback_type") or raw).lower()
+        if "listener" in callback_type:
+            event = meta.get("callback_event")
+            return f"Register event listener{': ' + str(event) if event else ''}"
+        if "queue" in callback_type:
+            return "Queue a delayed action"
+        return "Schedule a timer / delayed action"
     if node.get("kind") == "state":
         return f"Character/game state: {raw.rsplit(':', 1)[-1]}"
     checks = (
@@ -112,7 +121,9 @@ def _descendants(
     *,
     nodes: dict[str, dict[str, Any]],
     outgoing: dict[str, list[dict[str, Any]]],
+    stop_at_callbacks: bool = False,
 ) -> list[tuple[dict[str, Any], dict[str, Any]]]:
+    """Return bounded descendants, optionally treating nested callbacks as flow boundaries."""
     found: list[tuple[dict[str, Any], dict[str, Any]]] = []
     seen = {seed}
     queue: deque[str] = deque([seed])
@@ -123,10 +134,13 @@ def _descendants(
             if not target or target in seen:
                 continue
             seen.add(target)
-            queue.append(target)
             node = nodes.get(target)
-            if node is not None:
-                found.append((node, edge))
+            if node is None:
+                continue
+            found.append((node, edge))
+            if stop_at_callbacks and node.get("kind") == "callback":
+                continue
+            queue.append(target)
     return found
 
 
@@ -136,13 +150,7 @@ def _guard_requirements(
     nodes: dict[str, dict[str, Any]],
     incoming: dict[str, list[dict[str, Any]]],
 ) -> list[tuple[dict[str, Any], dict[str, Any]]]:
-    """Collect source-visible guards that feed a rule even though they are upstream edges.
-
-    The technical graph models conditions as ``condition -> rule``. A trigger-only descendant walk
-    therefore cannot see them. Pull those guard nodes back into the Plain Behavior requirement lane
-    and include one additional upstream evidence node (state/event/helper input) when the graph
-    explicitly connects it to the condition.
-    """
+    """Collect source-visible guards that feed a rule even though they are upstream edges."""
     rows: list[tuple[dict[str, Any], dict[str, Any]]] = []
     seen: set[str] = set()
     for edge in incoming.get(rule_id, ()):
@@ -198,8 +206,10 @@ def build_plain_behavior_projection(graph: dict[str, Any]) -> dict[str, Any]:
     """Return an admin-facing view of a technical behavior graph.
 
     Rule nodes plus raw helper call/callee plumbing are collapsed, but rule guards are deliberately
-    retained as requirements. Resolved helper identity, helper inputs/effects, conditions, state,
-    callbacks, targets, and exact technical node IDs remain available for evidence drill-down.
+    retained as requirements. Nested callback nodes are explicit scheduling actions in their parent
+    flow and form their own trigger flows, preventing callback effects from being duplicated in the
+    scheduling hook. Resolved helper identity, helper inputs/effects, conditions, state, callbacks,
+    targets, and exact technical node IDs remain available for evidence drill-down.
     """
     graph_nodes = [row for row in graph.get("nodes", ()) if isinstance(row, dict) and row.get("id")]
     nodes = {str(row["id"]): row for row in graph_nodes}
@@ -234,7 +244,12 @@ def build_plain_behavior_projection(graph: dict[str, Any]) -> dict[str, Any]:
             seen_lane_ids[lane].add(node_id)
             lanes[lane].append(_card(node, lane))
 
-        for node, edge in _descendants(str(trigger["id"]), nodes=nodes, outgoing=outgoing):
+        for node, edge in _descendants(
+            str(trigger["id"]), nodes=nodes, outgoing=outgoing, stop_at_callbacks=True
+        ):
+            if node.get("kind") == "callback":
+                add_visible(node, edge, forced_lane="actions")
+                continue
             if node.get("kind") in _COLLAPSED_KINDS:
                 collapsed.append(_card(node, "actions"))
                 if node.get("kind") == "rule":
@@ -267,6 +282,7 @@ def build_plain_behavior_projection(graph: dict[str, Any]) -> dict[str, Any]:
         },
         "safety": {
             "evidence_preserved": True,
+            "callback_flows_partitioned": True,
             "collapsed_kinds": sorted(_COLLAPSED_KINDS),
             "semantics": "Projection uses only extracted graph labels/edges; it does not infer runtime outcomes.",
         },
