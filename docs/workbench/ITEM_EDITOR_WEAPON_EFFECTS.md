@@ -75,6 +75,16 @@ The local server agent should perform this sequence for a new self-buff:
 
 The Toolkit helper `build_self_buff_blueprint()` produces this handoff data directly so the Equipment Editor can show both the SQL-side configuration and the server work still required.
 
+## Editor-facing helper output
+
+The framework also provides compact summaries and a generic server-handoff export. This is intended for a future UI where an admin can see a readable line such as `20% damage · fire · amount 25`, inspect the exact underlying modifier rows, and copy/export the server implementation requirements when the active lineage is not row-only.
+
+That means the Equipment Editor can eventually present all three layers together:
+
+1. human-readable effect summary;
+2. exact SQL modifier/latent rows;
+3. server-code handoff and implementation references when needed.
+
 ## Additional enhancement opportunities
 
 The same framework supports or prepares for several useful editor capabilities without touching core server code:
