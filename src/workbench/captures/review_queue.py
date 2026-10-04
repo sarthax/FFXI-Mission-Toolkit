@@ -332,6 +332,21 @@ def decide(con, review_id, action, value=None, note=None):
     return row
 
 
+# ---------------------------------------------------------------- consumer helper
+def exclude_sql(con, col="capture_id"):
+    """SQL fragment ' AND <col> NOT IN (<quarantined captures>)' for cross-capture AGGREGATE readers
+    (statistics, derived graphs, rollups). Per-capture browse pages should stay unfiltered and show the flag
+    instead. '' when the queue table doesn't exist yet (old DBs) -- never raises."""
+    try:
+        if not con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='review_queue'").fetchone():
+            return ""
+        blocking = ",".join("'%s'" % k for k, h in KINDS.items() if h["blocking"])
+        return (" AND %s NOT IN (SELECT capture_id FROM review_queue WHERE status='pending' AND capture_id IS NOT NULL "
+                "AND kind IN (%s))" % (col, blocking))
+    except Exception:
+        return ""
+
+
 # ---------------------------------------------------------------- scan
 def scan_capture(con, capture_id):
     """Run every detector for one capture. Never raises (must not break ingestion). Returns pending items."""

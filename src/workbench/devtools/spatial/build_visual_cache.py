@@ -86,7 +86,8 @@ def main():
     con = sqlite3.connect(str(DB_PATH))
 
     if args.all:
-        rows = con.execute("SELECT DISTINCT zone_db FROM capture_npc_entries").fetchall()
+        from workbench.captures import review_queue as _rq   # skip quarantined captures
+        rows = con.execute("SELECT DISTINCT zone_db FROM capture_npc_entries WHERE 1=1" + _rq.exclude_sql(con)).fetchall()
         zoneids = set()
         for (zone_db,) in rows:
             norm = zone_db.upper().replace(" ", "_").replace("'", "")

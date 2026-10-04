@@ -54,6 +54,12 @@ CONFIDENCE = {
 }
 
 
+
+def _qx(con):
+    """Exclude captures with a pending blocking review item from per-entity capture statistics."""
+    from workbench.captures import review_queue as rq
+    return rq.exclude_sql(con)
+
 def _P() -> str:
     return settings.get_active_sql_prefix()
 
@@ -224,10 +230,10 @@ def get_mission_rollup(con: sqlite3.Connection, mission_id: int, mission_name: s
             return 0
 
     n_captured = _safe_count(
-        f"SELECT COUNT(DISTINCT entity_id) FROM capture_npc_entries WHERE entity_id IN ({placeholders})"
+        f"SELECT COUNT(DISTINCT entity_id) FROM capture_npc_entries WHERE entity_id IN ({placeholders})" + _qx(con)
     )
     n_with_abilities = _safe_count(
-        f"SELECT COUNT(DISTINCT actor) FROM capture_actions WHERE actor IN ({placeholders})"
+        f"SELECT COUNT(DISTINCT actor) FROM capture_actions WHERE actor IN ({placeholders})" + _qx(con)
     )
     n_with_drops = con.execute(
         f"""SELECT COUNT(DISTINCT msp.mobid) FROM {_P()}mob_spawn_points msp
@@ -648,7 +654,7 @@ def build_profile(con: sqlite3.Connection, npcid: int) -> dict:
     # not a guarantee of Topaz's own scripted behavior for it.
     ability_rows = con.execute(
         """SELECT name, action_type, animation, category, message, COUNT(*) as n
-           FROM capture_actions WHERE actor = ?
+           FROM capture_actions WHERE actor = ?""" + _qx(con) + """
            GROUP BY name, action_type, animation, category, message ORDER BY n DESC""",
         (npcid,),
     ).fetchall()
@@ -667,7 +673,7 @@ def build_profile(con: sqlite3.Connection, npcid: int) -> dict:
     # fired against a real client, not a guess at what CSID/message a menu uses.
     event_rows = con.execute(
         """SELECT event_hex, message_id, COUNT(*) as n FROM capture_events
-           WHERE entity_id = ? AND (event_hex IS NOT NULL OR message_id IS NOT NULL)
+           WHERE entity_id = ? AND (event_hex IS NOT NULL OR message_id IS NOT NULL)""" + _qx(con) + """
            GROUP BY event_hex, message_id ORDER BY n DESC""",
         (npcid,),
     ).fetchall()
@@ -685,7 +691,7 @@ def build_profile(con: sqlite3.Connection, npcid: int) -> dict:
     # class name, the real GP_SERV_COMMAND_* constant, and real message ids, with real timestamps.
     eventview_rows = con.execute(
         """SELECT packet_class, gp_command, mes_num, message_number, COUNT(*) as n
-           FROM capture_eventview WHERE entity_id = ?
+           FROM capture_eventview WHERE entity_id = ?""" + _qx(con) + """
            GROUP BY packet_class, gp_command, mes_num, message_number ORDER BY n DESC""",
         (npcid,),
     ).fetchall()
@@ -707,7 +713,7 @@ def build_profile(con: sqlite3.Connection, npcid: int) -> dict:
     # -- an independent live-client cross-check against sql_mob_groups.minLevel/maxLevel, not just
     # a restatement of what Topaz's own SQL says the range should be.
     lvl_rows = con.execute(
-        "SELECT DISTINCT level_min, level_max FROM capture_level_range WHERE entity_id = ?",
+        "SELECT DISTINCT level_min, level_max FROM capture_level_range WHERE entity_id = ?" + _qx(con),
         (npcid,),
     ).fetchall()
     if lvl_rows:
@@ -725,7 +731,7 @@ def build_profile(con: sqlite3.Connection, npcid: int) -> dict:
     ad_rows = con.execute(
         """SELECT capture_id, hit_count, delay_min, delay_max, delay_avg, delay_median,
                   reverse_calc_delay, reverse_calc_samples, multihit_raw, slots_raw
-           FROM capture_attack_delay WHERE LOWER(mob_name) = LOWER(?) ORDER BY capture_id""",
+           FROM capture_attack_delay WHERE LOWER(mob_name) = LOWER(?)""" + _qx(con) + " ORDER BY capture_id",
         (real_name,),
     ).fetchall()
     if ad_rows:

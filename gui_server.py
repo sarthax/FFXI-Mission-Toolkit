@@ -629,6 +629,12 @@ def shell_context(request: Request) -> dict:
 templates.env.globals["shell_context"] = shell_context
 
 
+def _rq_exclude(con, col="capture_id"):
+    """' AND col NOT IN (<quarantined captures>)' for cross-capture statistics (see review_queue.exclude_sql)."""
+    from workbench.captures import review_queue as rq
+    return rq.exclude_sql(con, col)
+
+
 def review_pending() -> int:
     """Number of pending capture exceptions (drives the warning badge); never raises."""
     try:
@@ -3010,7 +3016,8 @@ def _enrich_dialog_rows(con: sqlite3.Connection, rows: list[dict], zone_name: st
         if has_capture_events:
             item["runtime_count"] = con.execute(
                 "SELECT COUNT(*) FROM capture_events WHERE message_id=? AND "
-                "(zone_db=? OR replace(lower(zone_db),' ','_')=replace(lower(?),' ','_'))",
+                "(zone_db=? OR replace(lower(zone_db),' ','_')=replace(lower(?),' ','_'))"
+                + _rq_exclude(con),
                 (idx, item["zone"], item["zone"]),
             ).fetchone()[0]
             item["runtime_rows"] = [
@@ -3020,7 +3027,8 @@ def _enrich_dialog_rows(con: sqlite3.Connection, rows: list[dict], zone_name: st
                        FROM capture_events e
                        LEFT JOIN captures c ON c.capture_id=e.capture_id
                        WHERE e.message_id=?
-                         AND (e.zone_db=? OR replace(lower(e.zone_db),' ','_')=replace(lower(?),' ','_'))
+                         AND (e.zone_db=? OR replace(lower(e.zone_db),' ','_')=replace(lower(?),' ','_'))"""
+                    + _rq_exclude(con, "e.capture_id") + """
                        ORDER BY e.capture_id,e.seq LIMIT 5""",
                     (idx, item["zone"], item["zone"]),
                 ).fetchall()
@@ -4446,7 +4454,7 @@ def keyitems(request: Request, q: str = "", page: int = 1):
             # reliable join key here, not either id.
             capture_events = con.execute(
                 """SELECT capture_id, event_type, x, y, z, zone_name FROM capture_ki_events
-                   WHERE LOWER(keyitem_name) = LOWER(?) ORDER BY capture_id""",
+                   WHERE LOWER(keyitem_name) = LOWER(?)""" + _rq_exclude(con) + " ORDER BY capture_id",
                 (r["name"],),
             ).fetchall()
             rows.append({
@@ -4958,7 +4966,8 @@ def events_browse(request: Request, zone: str = "", q: str = ""):
             for row in con.execute(
                 """SELECT entity_id,event_hex,COUNT(*) AS n
                    FROM capture_events
-                   WHERE replace(lower(zone_db),' ','_')=replace(lower(?),' ','_')
+                   WHERE replace(lower(zone_db),' ','_')=replace(lower(?),' ','_')"""
+                + _rq_exclude(con) + """
                    GROUP BY entity_id,event_hex""",
                 (zone,),
             ).fetchall():

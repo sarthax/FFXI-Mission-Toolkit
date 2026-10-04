@@ -46,7 +46,9 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
     src=sqlite3.connect(db)
     dst=workbench_graph.init_db(graph_db)
     counts={"capture_events":0,"entity_observations":0,"raw_packet_observations":0,"eventview_observations":0,"packet_observations":0,"video_ocr_observations":0,"packet_correlations":0,"packet_correlations_ambiguous":0,"key_evidence":0,"event_nodes":0,"event_refs":0,"edges":0,"action_nodes":0,"lua_functions":0,"lua_calls":0,"binding_candidates":0}
-    where="" if capture_id is None else " WHERE capture_id=?"
+    from workbench.captures import review_queue as _rq
+    _ex=_rq.exclude_sql(src)   # captures with a pending blocking review item never feed the derived graph
+    where=" WHERE 1=1"+_ex+("" if capture_id is None else " AND capture_id=?")
     args=() if capture_id is None else (capture_id,)
 
     # Refresh cross-source packet correlations before graph emission so re-ingestion/rebuild and
@@ -55,10 +57,10 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
     for table in ("capture_raw_packets","capture_eventview","capture_events","capture_video_observations"):
         if not table_exists(src,table):
             continue
-        sql=f"SELECT DISTINCT capture_id FROM {table}"
+        sql=f"SELECT DISTINCT capture_id FROM {table} WHERE 1=1"+_ex
         params=()
         if capture_id is not None:
-            sql+=" WHERE capture_id=?"
+            sql+=" AND capture_id=?"
             params=(capture_id,)
         packet_capture_ids.update(int(row[0]) for row in src.execute(sql,params))
     for cid_value in sorted(packet_capture_ids):
@@ -196,8 +198,9 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
         rq=f"""SELECT capture_id,seq,ts,direction,opcode,raw_hex,{zone},{size},{sync},{sf},{sn}
               FROM capture_raw_packets"""
         rargs=()
+        rq+=" WHERE 1=1"+_ex
         if capture_id is not None:
-            rq+=" WHERE capture_id=?"
+            rq+=" AND capture_id=?"
             rargs=(capture_id,)
         rq+=" ORDER BY capture_id,seq"
         for cap,seq,ts,direction,opcode,raw_hex,zone_id,packet_size,sync_id,source_format,source_native_id in src.execute(rq,rargs):
@@ -255,8 +258,9 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
                     entity_id,mes_num,message_number,fields_json
               FROM capture_eventview"""
         eargs=()
+        eq+=" WHERE 1=1"+_ex
         if capture_id is not None:
-            eq+=" WHERE capture_id=?"
+            eq+=" AND capture_id=?"
             eargs=(capture_id,)
         eq+=" ORDER BY capture_id,zone_db,seq"
         for cap,zone,seq,ts,direction,opcode,packet_class,gp_command,entity_id,mes_num,message_number,fields_json in src.execute(eq,eargs):
@@ -319,8 +323,9 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
                     raw_text,corrected_text,ocr_confidence,provenance_json
              FROM capture_video_observations"""
         vargs=()
+        vq+=" WHERE 1=1"+_ex
         if capture_id is not None:
-            vq+=" WHERE capture_id=?"
+            vq+=" AND capture_id=?"
             vargs=(capture_id,)
         vq+=" ORDER BY capture_id,video_ts,observation_id"
         for cap,obs_id,run_id,section,frame,video_ts,source_url,obs_type,direction,opcode,gp_command,packet_class,fields_json,raw_text,corrected_text,ocr_confidence,provenance_json in src.execute(vq,vargs):
@@ -386,8 +391,9 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
                     anchor_id,source_ref,file_ref,mime_type,confidence,notes,metadata_json
              FROM capture_key_evidence"""
         kargs=()
+        kq+=" WHERE 1=1"+_ex
         if capture_id is not None:
-            kq+=" WHERE capture_id=?"
+            kq+=" AND capture_id=?"
             kargs=(capture_id,)
         kq+=" ORDER BY capture_id,created_at,evidence_id"
         for cap,evidence_id,evidence_type,label,video_ts,capture_ts,clock_kind,anchor_id,source_ref,file_ref,mime_type,declared_confidence,notes,metadata_json in src.execute(kq,kargs):
@@ -471,8 +477,7 @@ def connect(db: Path, graph_db: Path, capture_id: int | None = None, lua_json: P
     # Capture actions can be traced to server mob skills when names match exactly. Keep this as a
     # candidate relationship; names alone do not prove the runtime action used that skill.
     if table_exists(src,"capture_actions") and table_exists(src,"topaz_mob_skills"):
-        aq="SELECT capture_id,action_key,actor,actor_name,action_type,animation,category,message,name FROM capture_actions"
-        if capture_id is not None: aq+=" WHERE capture_id=?"
+        aq="SELECT capture_id,action_key,actor,actor_name,action_type,animation,category,message,name FROM capture_actions"+where
         for cap,key,actor,actor_name,atype,animation,category,message,name in src.execute(aq,args):
             if not name: continue
             cand=src.execute("SELECT mob_skill_id,mob_skill_name,mob_anim_id FROM topaz_mob_skills WHERE lower(mob_skill_name)=lower(?)",(name,)).fetchall()

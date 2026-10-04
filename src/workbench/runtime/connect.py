@@ -50,6 +50,9 @@ def _edge(con, rid, src, dst, rel, evidence_id, confidence="VERIFIED", status="D
     )
 
 
+from workbench.captures import review_queue as _rq   # quarantined captures never feed the graph
+
+
 def connect(db: Path, graph_db: Path, limit: int | None = None) -> dict:
     src = sqlite3.connect(db)
     dst = workbench_graph.init_db(graph_db)
@@ -82,7 +85,7 @@ def connect(db: Path, graph_db: Path, limit: int | None = None) -> dict:
             ev = f"evidence:topaz-npc:{npcid}"
             add_evidence(ev, "SERVER_DB", "ffxi_zone_database", "npc_names", "Indexed NPC identity")
             for cap_id, cap_name in src.execute(
-                "SELECT DISTINCT capture_id,name FROM capture_npc_entries WHERE entity_id=? ORDER BY capture_id",
+                "SELECT DISTINCT capture_id,name FROM capture_npc_entries WHERE entity_id=?" + _rq.exclude_sql(src) + " ORDER BY capture_id",
                 (npcid,),
             ):
                 cid = f"capture:{cap_id}"
@@ -137,7 +140,7 @@ def connect(db: Path, graph_db: Path, limit: int | None = None) -> dict:
                 if optional in packet_cols:
                     select_cols.append(optional)
             rows = src.execute(
-                f"SELECT {','.join(select_cols)} FROM capture_raw_packets ORDER BY capture_id,seq"
+                f"SELECT {','.join(select_cols)} FROM capture_raw_packets WHERE 1=1{_rq.exclude_sql(src)} ORDER BY capture_id,seq"
             )
             for row in rows:
                 values = dict(zip(select_cols, row))
@@ -176,8 +179,8 @@ def connect(db: Path, graph_db: Path, limit: int | None = None) -> dict:
                 )
         else:
             for cap_id, opcode, direction in src.execute(
-                "SELECT DISTINCT capture_id,opcode,direction FROM capture_raw_packets "
-                "ORDER BY capture_id,opcode,direction"
+                "SELECT DISTINCT capture_id,opcode,direction FROM capture_raw_packets WHERE 1=1"
+                + _rq.exclude_sql(src) + " ORDER BY capture_id,opcode,direction"
             ):
                 pid = packet_node_id(opcode)
                 if pid is None:
