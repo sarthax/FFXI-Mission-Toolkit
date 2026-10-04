@@ -1,6 +1,11 @@
 {% extends "character_editor.html" %}
 {% block content %}
 {{ super() }}
+<div class="dense-toolbar" style="margin:8px 0 0;">
+  <span class="muted">Cross-feature research</span>
+  <a class="chip" href="/character-editor/scenario-trace">Scenario Feature Trace</a>
+  <a class="chip" href="/features/trace">Technical Feature Trace</a>
+</div>
 <script src="/static/character_editor_server_profiles.js"></script>
 <script src="/static/character_editor_dense_ux.js"></script>
 <script src="/static/character_editor_progression.js"></script>
