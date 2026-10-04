@@ -21,97 +21,66 @@ Common DSP/Topaz/LSB modifier ids used by the helper:
 
 Example: an always-on 20% Fire-damage proc for 25 base damage is the bundle `431=1`, `499=1`, `500=25`, `501=20`, `950=1`. A latent version stores the same bundle in `item_latents` with one shared condition.
 
-## Presets the editor can expose
+## Presets and lineage safety
 
-The framework includes named presets that expand to explicit modifier rows instead of hiding the underlying data:
+The framework includes presets for Fire/Ice damage, HP/MP/TP drain, Dispel, self-buff, absorb-status, instant-death, and NM-specific behavior. Presets expand to explicit modifier rows rather than hiding the underlying data.
 
-- Fire damage
-- Ice damage
-- HP drain
-- MP drain
-- TP drain
-- Dispel
-- Self buff
-- Absorb status
-- Instant death
-- NM-specific scripted behavior
+Each effect receives a capability badge:
 
-Each effect also receives a lineage capability badge:
+- `row-only` — safe for direct editor application on that lineage;
+- `verify-lineage` — the model exists, but the target fork must be verified first;
+- `server-code-required` — the editor can model/export the desired behavior, but server Lua/C++ must be added or extended;
+- `unsupported` — unknown to the framework.
 
-- `row-only` — the selected lineage has the modern row-driven handler for this proc type;
-- `verify-lineage` — the data model exists, but the target DSP/Topaz/fork implementation must be checked before writing type ids;
-- `server-code-required` — the editor can model the desired behavior and generate a handoff, but server Lua/C++ must be added or extended;
-- `unsupported` — the proc type is unknown to the framework.
-
-Only `row-only` effects are considered safe for direct application by the editor. `verify-lineage` and `server-code-required` remain read/preview/handoff states until implementation has been verified. This is intentionally fail-closed.
+Only `row-only` effects are considered safe to apply automatically. This is intentionally fail-closed.
 
 ## Self-buff framework
 
-Self-buffs are represented as a structured handoff rather than pretending SQL alone is sufficient. A blueprint carries proc chance, client battle subeffect, status-effect id, power, duration, attacker/self target semantics, a stacking/overwrite requirement, lineage-specific server references, and a local-agent implementation checklist.
+Self-buffs are represented as a structured server handoff. A blueprint carries chance, battle subeffect, status id, power, duration, attacker/self target semantics, stacking/overwrite requirements, lineage-specific code references, and a local-agent checklist.
 
-For current LandSandBoat, the relevant upstream path is:
+Current LandSandBoat reference:
 
 `https://github.com/LandSandBoat/server/blob/base/scripts/globals/additional_effects.lua`
 
-The useful implementation points are `xi.additionalEffect.attack`, `xi.additionalEffect.procFunctions`, and the `SELF_BUFF` handler. Current LSB explicitly handles **Blink** and **Haste** in that handler. Blink first checks for existing Blink/Copy Image shadows before applying; Haste currently applies through `attacker:addStatusEffect(...)` with an upstream TODO to verify power/duration/tier/overwrite details. This is why the Toolkit requires the server implementation to declare stacking behavior rather than assuming it.
+Relevant implementation points are `xi.additionalEffect.attack`, `xi.additionalEffect.procFunctions`, and the `SELF_BUFF` handler. Current LSB explicitly handles **Blink** and **Haste**. Blink checks existing Blink/Copy Image shadows; Haste applies with `attacker:addStatusEffect(...)`, with an upstream TODO around power/duration/tier/overwrite semantics. Arbitrary self-buff statuses therefore remain `server-code-required` until implemented and tested.
 
-The blueprint can emit the modern LSB row shape (`SELF_BUFF=12`) for inspection and handoff, but because arbitrary self-buff statuses are not guaranteed to be implemented, those rows are **not marked safe to apply automatically**.
-
-DSP must be treated differently. Its archived enum/reference file is:
+Archived DSP reference:
 
 `https://github.com/DarkstarProject/darkstar/blob/master/scripts/globals/status.lua`
 
-That file documents the legacy `ITEM_ADDEFFECT_TYPE` mapping as `1=status/damage/HP drain`, `2=MP drain`, `3=TP drain`, `4=dispel`, `5=self-buff`, `6=instant death`. Modern LSB uses a larger proc-type enum where `SELF_BUFF=12`. A DSP self-buff blueprint therefore carries modern rows only as a reference shape and marks them **not safe to apply** until the local agent maps the logical effect to the target server's actual numbering.
+DSP documents the older `ITEM_ADDEFFECT_TYPE` mapping as `1=status/damage/HP drain`, `2=MP drain`, `3=TP drain`, `4=dispel`, `5=self-buff`, `6=instant death`. Modern LSB uses a larger enum where `SELF_BUFF=12`. Modern LSB type ids must not be written into DSP/Topaz solely because the logical effect name matches.
 
-The local server agent should perform this sequence for a new self-buff:
+A local server agent implementing a new self-buff should:
 
-1. identify the active server lineage and exact additional-effect dispatcher;
-2. verify that lineage's proc-type numbering;
-3. add or verify the desired status branch in the self-buff handler;
-4. define stacking/replacement behavior explicitly;
-5. call the lineage's status-effect API on the attacker/self;
-6. return the correct additional-effect subeffect/message tuple;
-7. add a focused server regression covering chance, power, duration and stacking.
+1. identify the active lineage and exact additional-effect dispatcher;
+2. verify proc-type numbering;
+3. add/verify the desired status branch;
+4. define stacking/replacement behavior;
+5. apply the status to the attacker/self with the lineage API;
+6. return the correct battle subeffect/message tuple;
+7. add focused server tests for chance, power, duration, and stacking.
 
-The Toolkit helper `build_self_buff_blueprint()` produces this handoff data directly so the Equipment Editor can show both the SQL-side configuration and the server work still required.
+`build_self_buff_blueprint()` produces this handoff data directly.
 
-## Editor-facing helper output
+## Editor-facing output
 
-The framework also provides compact summaries and a generic server-handoff export. This is intended for a future UI where an admin can see a readable line such as `20% damage · fire · amount 25`, inspect the exact underlying modifier rows, and copy/export the server implementation requirements when the active lineage is not row-only.
+The helper also provides:
 
-That means the Equipment Editor can present all three layers together:
+- preset expansion into exact rows;
+- recognition of existing raw effect rows;
+- compact summaries such as `20% damage · fire · amount 25`;
+- lineage capability checks;
+- explicit `rows_safe_to_apply()` gating;
+- generic server-handoff export for effects needing verification or code.
 
-1. human-readable effect summary;
-2. exact SQL modifier/latent rows;
-3. server-code handoff and implementation references when needed.
-
-## Implementation references verified for this pass
-
-The framework references current LandSandBoat's `scripts/globals/additional_effects.lua` attack dispatcher and self-buff handler, and archived DSP's `scripts/globals/status.lua` legacy modifier/proc-type comments. Those references are documentation/handoff anchors only; the Toolkit does not modify the external server repositories in this branch.
-
-## What this does not mean
-
-These rows configure behavior that the selected server lineage already implements. They do **not** create arbitrary new combat semantics. If a proc type is absent from the target DSP/Topaz/LSB combat scripts/core, a local server-code change is still required.
+This allows the GUI to eventually show three layers together: human-readable behavior, exact SQL rows, and server-code requirements.
 
 ## Client DAT boundary
 
-The combat proc itself is server driven and is not a charge/enchantment DAT feature. Existing battle subeffects can be displayed by the stock client. DAT editing is only needed when changing client-owned item identity/presentation such as item name, description, icon, equip metadata, or a custom textual description of the effect.
+The combat proc is server driven and is not a charge/enchantment DAT feature. Existing battle subeffects can be displayed by the stock client. DAT editing is only needed for client-owned item identity/presentation such as name, description, icon, equip metadata, or custom descriptive text.
 
 ## Intended GUI pass
 
-The Item Editor should render this as a dedicated **Weapon Effects** panel rather than mixing it into the normal MOD/augment list:
+The Item Editor should render a dedicated **Weapon Effects** panel with preset/custom mode, proc chance/type, subeffect, damage/amount, element, status/power/duration, always-on vs latent storage, latent condition, lineage capability badge, and generated server handoff when needed.
 
-- preset / custom mode
-- proc type
-- proc chance
-- subeffect / battle presentation
-- base damage or amount
-- element
-- status id / power / duration when applicable
-- always-on (`item_mods`) vs conditional (`item_latents`)
-- latent condition and parameter
-- lineage capability badge
-- explicit warning when the selected effect requires lineage-specific server code
-- generated local-agent implementation handoff for scripted effects
-
-The implementation helper lives at `src/workbench/editors/items/weapon_effects.py`. It builds and recognizes the row bundles but intentionally leaves live writes to the Item Editor's existing backup/journal/validation path.
+The implementation helper lives at `src/workbench/editors/items/weapon_effects.py`. It intentionally leaves live writes to the Item Editor's existing backup/journal/validation path.
