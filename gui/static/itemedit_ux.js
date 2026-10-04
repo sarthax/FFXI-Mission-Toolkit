@@ -395,7 +395,11 @@
     #ieFxMsg{font-size:11.5px;min-height:16px;margin-top:4px;color:#f5c542}
     #ieFxSide details summary{cursor:pointer;font-size:12px;opacity:.85}
     #ieFxSide #effectStagingTools{border:0;padding:6px 0 0;margin:0!important}
-    #ieFxSide #effectStagingTools>h3{display:none}`;
+    #ieFxSide #effectStagingTools>h3{display:none}
+    #ieFxSide #weaponEffectsPresetCard{border:0;padding:0;margin:0}
+    #ieFxSide #weaponEffectsPresetCard>h3{font-size:12px;margin:0 0 6px}
+    #ieFxSide #weaponEffectsPresetCard label{display:flex;flex-direction:column;gap:2px;font-size:11.5px}
+    #ieFxSide #weaponEffectsPresetCard input,#ieFxSide #weaponEffectsPresetCard select{max-width:100%}`;
   document.head.appendChild(css3);
 
   const fx = mk('div', 'ieFx'), side = mk('div', 'ieFxSide');
@@ -410,11 +414,30 @@
       <label data-for="latents" style="display:none">Active when<input type="text" id="ieAddLat" list="dl_latents" placeholder="type to search, e.g. HP below X%"></label>
       <label data-for="latents" style="display:none">Condition value<input type="number" id="ieAddLatP" value="0"></label>
       <button type="button" id="ieAddBtn" class="primary">Add to item</button><div id="ieFxMsg"></div></div>
-    <div class="ie-side-card"><details><summary>Copy or paste effects in bulk</summary><div id="ieFxBulk"></div></details></div>`;
+    <div class="ie-side-card" id="ieFxMore"><h4>More ways to add effects</h4>
+      <div class="ie-seg" id="ieFxMoreTabs"><button type="button" data-t="proc" title="Extra effect that can trigger when a weapon hits (fire damage, drain, ...)">Weapon proc</button><button type="button" data-t="copy" title="Copy effects from another item, or paste a list of rows">Copy / paste</button></div>
+      <div data-tp="proc"><div id="ieFxProcNote" class="ie-none" style="display:none">Weapon procs only apply to weapons. This item has no weapon record.</div><div id="ieFxProc"></div></div>
+      <div data-tp="copy" style="display:none"><div id="ieFxBulk"></div></div></div>`;
   const fxWrap = mk('div', 'ieFxWrap');
   fxWrap.append(fx, side);
   panes.effects.append(fxWrap);
   side.querySelector('#ieFxBulk').append(byId('effectStagingTools'));
+  { const early = byId('weaponEffectsPresetCard'); if (early) byId('ieFxProc').append(early); }  // card may have been built before this panel existed
+  const moreTab = t => {
+    store.set('ieFxMore', t);
+    side.querySelectorAll('#ieFxMoreTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+    side.querySelectorAll('#ieFxMore [data-tp]').forEach(d => d.style.display = d.dataset.tp === t ? '' : 'none');
+  };
+  side.querySelector('#ieFxMoreTabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) moreTab(b.dataset.t); });
+  const syncProc = () => {
+    const isWeapon = !!(typeof loadedServerState !== 'undefined' && loadedServerState && loadedServerState.item_weapon);
+    byId('ieFxProcNote').style.display = isWeapon ? 'none' : '';
+    const card = byId('weaponEffectsPresetCard'); if (card) card.style.display = isWeapon ? '' : 'none';
+    moreTab(isWeapon ? 'proc' : 'copy');
+  };
+  moreTab('copy'); syncProc();
+  const loadItemForFx = loadItem;
+  loadItem = async function () { const r = await loadItemForFx.apply(this, arguments); syncProc(); return r; };
 
   let addKind = 'mods';
   side.querySelector('.ie-seg').addEventListener('click', e => {

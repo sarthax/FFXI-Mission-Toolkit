@@ -43,8 +43,8 @@
   card.className = 'edit-card wide';
   card.style.marginBottom = '10px';
   card.innerHTML = `
-    <h3>Weapon Effects <span class="hint">structured additional-effect presets; staged only, never saved directly</span></h3>
-    <div style="display:grid;grid-template-columns:minmax(180px,1fr) repeat(4,minmax(90px,120px));gap:6px;align-items:end">
+    <h3>Weapon Effects <span class="hint">extra effect that can trigger on hit; staged only until you Save Item</span></h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;align-items:end">
       <label>Preset<select id="weaponEffectPreset">${Object.entries(PRESETS).map(([k,p])=>`<option value="${k}">${p.label}</option>`).join('')}</select></label>
       <label>Chance %<input id="weaponEffectChance" type="number" min="0" max="100" value="20"></label>
       <label>Damage / amount<input id="weaponEffectDamage" type="number" value="25"></label>
@@ -62,6 +62,7 @@
     </div>
     <div id="weaponEffectPreview" class="mono muted" style="font-size:10px;margin-top:6px;white-space:pre-wrap"></div>`;
   tools.insertBefore(card, tools.firstChild);
+  { const procHost = document.getElementById('ieFxProc'); if (procHost) procHost.append(card); }  // Effects tab moves it into the Weapon proc panel
 
   const $ = id => document.getElementById(id);
   function values(){

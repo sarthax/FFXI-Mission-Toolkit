@@ -36,3 +36,13 @@ def test_weapon_effect_card_mounts_inside_effect_staging_tools():
 def test_shared_shell_loads_guarded_weapon_effect_module():
     base = (ROOT / "gui" / "templates" / "base.html").read_text(encoding="utf-8")
     assert '/static/itemedit_weapon_effects.js' in base
+
+
+def test_weapon_proc_has_its_own_visible_tab_in_effects():
+    ux = (ROOT / "gui" / "static" / "itemedit_ux.js").read_text(encoding="utf-8")
+    js = (ROOT / "gui" / "static" / "itemedit_weapon_effects.js").read_text(encoding="utf-8")
+
+    assert 'data-t="proc"' in ux and 'id="ieFxProc"' in ux
+    assert "Copy or paste effects in bulk" not in ux  # no longer buried in a collapsed <details>
+    assert "loadedServerState.item_weapon" in ux
+    assert "ieFxProc" in js
