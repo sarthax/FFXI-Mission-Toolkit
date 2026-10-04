@@ -33,12 +33,24 @@ def _zmap(con, capture_id):
     zm.update({(r[0], r[1]): r[2] for r in con.execute(
         "SELECT entity_id, message_id, zone_db FROM capture_events WHERE capture_id=? "
         "AND message_id IS NOT NULL AND opcode_name LIKE '%Chat%'", (capture_id,))})
-    return zm
+    return {k: v for k, v in zm.items() if v and v != "__UNKNOWN__"}   # sentinel zone == unknown, never a real zone
+
+
+def _entmap(con, capture_id):
+    """entity_id -> zone_db from capture_npc_entries, only where the entity sits in exactly one
+    zone. Fallback for captures with no EventView (no (entity, msgid) zone rows)."""
+    zs = {}
+    for eid, z in con.execute("SELECT DISTINCT entity_id, zone_db FROM capture_npc_entries WHERE capture_id=? AND entity_id IS NOT NULL", (capture_id,)):
+        zs.setdefault(eid, set()).add(z)
+    return {e: next(iter(v)) for e, v in zs.items() if len(v) == 1}
 
 
 def _chat_near(chat, ts, window=2):
     """Chat lines within +-window seconds of a packet timestamp (HH:MM:SS keys)."""
-    h, m, s = (int(x) for x in (ts or "")[11:19].split(":"))
+    try:
+        h, m, s = (int(x) for x in (ts or "")[11:19].split(":"))
+    except ValueError:
+        return []   # packet has no usable timestamp
     base = h * 3600 + m * 60 + s
     out = []
     for d in range(-window, window + 1):
@@ -50,17 +62,18 @@ def _chat_near(chat, ts, window=2):
 def compute(con, capture_id, zoneid_for_zone_db):
     ensure_table(con)
     zmap = _zmap(con, capture_id)
+    emap = _entmap(con, capture_id)
     chat = collections.defaultdict(list)
     for ts, t in con.execute("SELECT ts,text FROM capture_caplog_chat WHERE capture_id=?", (capture_id,)):
         chat[ts].append(t or "")
     per = collections.defaultdict(list)
-    for ts, hx in con.execute("SELECT ts, raw_hex FROM capture_raw_packets WHERE capture_id=? AND opcode='0X036'", (capture_id,)):
+    for ts, hx in con.execute("SELECT ts, raw_hex FROM capture_raw_packets WHERE capture_id=? AND UPPER(opcode)='0X036'", (capture_id,)):
         b = bytes.fromhex(hx.replace(" ", ""))
         if len(b) < 12:
             continue
         uid = struct.unpack_from("<I", b, 4)[0]
         m = struct.unpack_from("<H", b, 10)[0] & 0x7FFF
-        zone = zmap.get((uid, m))
+        zone = (zmap.get((uid, m)) or emap.get(uid))
         if zone:
             per[zone].append((m, " | ".join(_chat_near(chat, ts))))
     out = []
@@ -116,16 +129,17 @@ def observe(con, capture_id, zoneid_for_zone_db):
     """Store unambiguous (msgid -> shift) observations for one capture. Cheap; run at/after ingest."""
     ensure_master_tables(con)
     zmap = _zmap(con, capture_id)
+    emap = _entmap(con, capture_id)
     chat = collections.defaultdict(list)
     for ts, t in con.execute("SELECT ts,text FROM capture_caplog_chat WHERE capture_id=?", (capture_id,)):
         chat[ts].append(t or "")
     dcache, found = {}, collections.Counter()
-    for ts, hx in con.execute("SELECT ts, raw_hex FROM capture_raw_packets WHERE capture_id=? AND opcode='0X036'", (capture_id,)):
+    for ts, hx in con.execute("SELECT ts, raw_hex FROM capture_raw_packets WHERE capture_id=? AND UPPER(opcode)='0X036'", (capture_id,)):
         b = bytes.fromhex(hx.replace(" ", ""))
         if len(b) < 12:
             continue
         m = struct.unpack_from("<H", b, 10)[0] & 0x7FFF
-        zone = zmap.get((struct.unpack_from("<I", b, 4)[0], m))
+        zone = (zmap.get((struct.unpack_from("<I", b, 4)[0], m)) or emap.get(struct.unpack_from("<I", b, 4)[0]))
         lines = " | ".join(_chat_near(chat, ts))
         if not zone or not lines:
             continue
