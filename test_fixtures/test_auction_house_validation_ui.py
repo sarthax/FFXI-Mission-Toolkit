@@ -16,6 +16,14 @@ def test_validation_ui_exposes_read_only_preview_validation():
     assert 'payload["environment"] = identity' in gui
 
 
+def test_preview_generation_attaches_lineage_specific_policy_binding():
+    gui = Path("src/workbench/server_admin/auction_house/gui.py").read_text(encoding="utf-8")
+    assert "preview_policy_binding" in gui
+    assert "preview_lsb_policy_binding" in gui
+    assert "load_lsb_policy" in gui
+    assert 'payload["policy_binding"]' in gui
+
+
 def test_validation_ui_renders_all_unified_report_stages():
     script = Path("gui/static/auction_house_admin.js").read_text(encoding="utf-8")
     for stage in (
@@ -47,6 +55,7 @@ def test_validation_surface_remains_non_executable():
 
 if __name__ == "__main__":
     test_validation_ui_exposes_read_only_preview_validation()
+    test_preview_generation_attaches_lineage_specific_policy_binding()
     test_validation_ui_renders_all_unified_report_stages()
     test_validation_surface_remains_non_executable()
     print("Auction House validation UI regression: PASS")

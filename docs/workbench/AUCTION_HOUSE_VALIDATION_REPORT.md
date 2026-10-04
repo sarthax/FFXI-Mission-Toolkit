@@ -9,7 +9,7 @@ Auction House administration uses one read-only validation surface with lineage-
 3. Live Auction House table/trigger prerequisites.
 4. Fresh database reread and stale-preview checks.
 5. Lineage-specific policy gate.
-6. Lineage-specific policy binding.
+6. Preview policy binding/drift validation.
 7. Listing or purchase invariants.
 
 The orchestrator returns each stage separately plus a flattened blocker list so an administrator can see exactly why a preview is blocked.
@@ -28,6 +28,8 @@ LSB uses its own source-backed settings model from `settings/default/map.lua`; i
 - `AH_LIST_LIMIT`
 
 Missing or malformed LSB settings fail closed rather than falling back to toolkit defaults.
+
+LSB previews are now bound at preview creation time to the active settings source path, source kind, lineage family, and SHA-256 policy fingerprint. Validation reloads the active LSB policy and blocks the preview if that binding is missing, points at a different policy source, identifies a different lineage/source kind, or has a different fingerprint. This prevents a preview generated under one AH fee/listing policy from later being treated as current after server settings change.
 
 The LSB path also validates:
 
@@ -58,7 +60,7 @@ DSP/Topaz retain `lineage_execution_contract_incomplete` as an execution blocker
 
 ## Fail-closed behavior
 
-Validation is blocked for stale database state, wrong/missing environment binding, lineage/schema mismatch, missing required tables/triggers, unresolved policy/settings, insufficient inventory or gil, listing-limit exhaustion, buyer inventory capacity problems, cheapest-listing drift, unverifiable seller settlement state, or unsupported lineage.
+Validation is blocked for stale database state, wrong/missing environment binding, lineage/schema mismatch, missing required tables/triggers, unresolved policy/settings, missing or drifted policy binding, insufficient inventory or gil, listing-limit exhaustion, buyer inventory capacity problems, cheapest-listing drift, unverifiable seller settlement state, or unsupported lineage.
 
 ## Safety
 

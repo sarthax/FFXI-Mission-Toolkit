@@ -9,7 +9,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
-from .lsb_policy import LSBPolicy, listing_fee, load_lsb_policy
+from .lsb_policy import LSBPolicy, LSBPolicyBinding, listing_fee, load_lsb_policy, validate_lsb_policy_binding
 from .write_plans import snapshot_fingerprint
 
 
@@ -313,8 +313,8 @@ def prepare_lsb_preview_validation(
     environment: dict[str, Any],
     preview: dict[str, Any],
     server_root: Path | str,
-) -> tuple[LSBPreparedValidation, LSBRereadEvidence, LSBInvariantResult, LSBPolicy, LSBPolicy]:
-    """Re-read one LSB preview and evaluate fail-closed source-backed invariants."""
+) -> tuple[LSBPreparedValidation, LSBRereadEvidence, LSBInvariantResult, LSBPolicy, LSBPolicyBinding]:
+    """Re-read one LSB preview and evaluate fail-closed source-backed invariants and policy binding."""
     op = str(operation or "").strip().lower()
     evidence = _collect_snapshot(service, op, preview)
     payload = dict(preview.get("payload") or {})
@@ -337,6 +337,7 @@ def prepare_lsb_preview_validation(
         issues.append(LSBValidationIssue("stale_preview", "Mutation-relevant LSB state changed after preview; generate a fresh preview."))
 
     policy = load_lsb_policy(server_root)
+    binding = validate_lsb_policy_binding(preview.get("policy_binding"), policy)
     prepared = LSBPreparedValidation(op, preview_fp, current_fp, issues)
     invariants = _evaluate_invariants(operation=op, payload=payload, evidence=evidence, policy=policy)
-    return prepared, evidence, invariants, policy, policy
+    return prepared, evidence, invariants, policy, binding
