@@ -17,6 +17,7 @@ def test_catalog_exposes_existing_additional_effect_fields():
     assert catalog["storage"] == "item_mods or item_latents"
     assert catalog["clientCoupled"] is False
     assert "LSB" in catalog["serverReferences"]
+    assert "DSP" in catalog["lineageCapabilities"]
     assert any(p["key"] == "self_buff" for p in catalog["presets"])
 
 
@@ -78,19 +79,32 @@ def test_self_buff_blueprint_is_explicit_server_handoff():
     )
     assert blueprint["requiresServerCode"] is True
     assert blueprint["lineage"] == "LSB"
+    assert blueprint["rowsAreSafeToApply"] is True
+    assert blueprint["capability"] == "server-code-required"
     assert "additional_effects.lua" in blueprint["serverReference"]["additional_effects"]
     assert blueprint["implementationContract"]["target"] == "attacker/self"
     assert blueprint["implementationContract"]["statusId"] == 33
     assert "stacking" in blueprint["implementationContract"]
     assert len(blueprint["localAgentTasks"]) >= 5
-    by_mod = {row["modId"]: row["value"] for row in blueprint["rows"]}
+    by_mod = {row["modId"]: row["value"] for row in blueprint["modernLsbRows"]}
     assert by_mod == {431: 12, 499: 23, 501: 25, 951: 33, 952: 150, 953: 45}
 
 
-def test_dsp_reference_warns_about_legacy_proc_numbering():
+def test_dsp_self_buff_blueprint_does_not_mark_modern_lsb_rows_safe():
     blueprint = effects.build_self_buff_blueprint(status=33, lineage="DSP")
+    assert blueprint["rowsAreSafeToApply"] is False
+    assert blueprint["capability"] == "server-code-required"
     assert "5=self-buff" in blueprint["serverReference"]["legacy_type_comment"]
     assert "predates modern LSB proc numbering" in blueprint["serverReference"]["notes"]
+
+
+def test_lineage_capability_badges_are_fail_closed():
+    assert effects.capability_for("LSB", 1) == "row-only"
+    assert effects.capability_for("LSB", 12) == "server-code-required"
+    assert effects.capability_for("DSP", 1) == "verify-lineage"
+    assert effects.capability_for("DSP", 12) == "server-code-required"
+    assert effects.capability_for("unknown-fork", 1) == "verify-lineage"
+    assert effects.capability_for("LSB", 999) == "unsupported"
 
 
 def test_inspect_rows_recognizes_existing_effect_rows_and_ignores_other_mods():
