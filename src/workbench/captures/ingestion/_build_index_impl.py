@@ -4177,9 +4177,18 @@ def main():
                                                 "(uploader, post date, video, type/tags) via campaign_manifest.json")
     p6.add_argument("--dry-run", action="store_true")
 
+    p7 = sub.add_parser("fingerprint-backfill", help="fingerprint already-ingested captures so duplicate detection covers them")
+    p7.add_argument("--dry-run", action="store_true")
+
     args = ap.parse_args()
     con = sqlite3.connect(str(DB_PATH))
     init_db(con)
+
+    if args.cmd == "fingerprint-backfill":
+        from workbench.captures import source_fingerprint
+        print(source_fingerprint.backfill(con, dry_run=args.dry_run))
+        con.close()
+        return
 
     if args.cmd == "apply-manifest":
         from workbench.core.services import campaign_manifest

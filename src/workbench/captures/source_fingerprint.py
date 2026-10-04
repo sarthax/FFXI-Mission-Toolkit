@@ -54,3 +54,41 @@ def record(con, path, capture_id, status="ingested"):
     con.execute("INSERT OR REPLACE INTO capture_source_fingerprint (fingerprint,capture_id,source_path,file_count,total_bytes,status) VALUES (?,?,?,?,?,?)",
                 (fp, capture_id, path, n, b, status))
     con.commit()
+
+
+def backfill(con, dry_run=False, say=print):
+    """Fingerprint every already-ingested capture whose source still exists. Bundle subroots ('path::sub'),
+    missing sources and unreadable archives are skipped and counted. Two captures with identical content are
+    reported (first one keeps the fingerprint). -> summary dict."""
+    ensure_table(con)
+    have = {r[0] for r in con.execute("SELECT capture_id FROM capture_source_fingerprint")}
+    out = dict(added=0, already=0, subroot=0, missing=0, unreadable=0, duplicates=[])
+    seen = {r[0]: r[1] for r in con.execute("SELECT fingerprint, capture_id FROM capture_source_fingerprint")}
+    for cid, sp in con.execute("SELECT capture_id, source_path FROM captures ORDER BY capture_id").fetchall():
+        if cid in have:
+            out["already"] += 1
+        elif "::" in sp.split(":", 1)[-1] and sp.rsplit("::", 1)[-1] and os.path.splitdrive(sp)[1].count("::"):
+            out["subroot"] += 1
+        elif not os.path.exists(sp):
+            out["missing"] += 1
+        else:
+            try:
+                fp, n, b = fingerprint(sp)
+            except Exception as ex:
+                out["unreadable"] += 1
+                say("  #%s unreadable (%s): %s" % (cid, ex.__class__.__name__, sp))
+                continue
+            if fp in seen:
+                out["duplicates"].append((cid, seen[fp]))
+                say("  #%s has identical content to #%s" % (cid, seen[fp]))
+                continue
+            seen[fp] = cid
+            out["added"] += 1
+            if not dry_run:
+                con.execute("INSERT INTO capture_source_fingerprint (fingerprint,capture_id,source_path,file_count,total_bytes,status) VALUES (?,?,?,?,?,?)",
+                            (fp, cid, sp, n, b, "backfill"))
+                if out["added"] % 25 == 0:
+                    con.commit()
+    if not dry_run:
+        con.commit()
+    return out
