@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, FastAPI
 
 from workbench import gui_shell
+from workbench.server_admin.auction_house.categories import category_metadata
 from workbench.server_admin.auction_house.gui import router
 from workbench.server_admin.auction_house.integration import install_legacy_gui_bridge
 from workbench.server_admin.auction_house.schema import discover_auction_house_schema
@@ -62,6 +63,22 @@ def test_legacy_dsp_topaz_schema_does_not_require_numeric_buyer():
     assert schema.auction("buyer_id") is None
     assert "buyer_ids" not in schema.capabilities
     assert "sale_history" in schema.capabilities
+
+
+def test_canonical_auction_house_category_hierarchy_and_custom_fallback():
+    sword = category_metadata(3)
+    assert sword.group == "Weapons"
+    assert sword.label == "Sword"
+    assert sword.path == "Weapons → Sword"
+
+    meat = category_metadata(52)
+    assert meat.group == "Food"
+    assert meat.path == "Food → Meals → Meat & Eggs"
+
+    custom = category_metadata(99)
+    assert custom.group == "Custom / Unknown"
+    assert custom.label == "Category 99"
+    assert custom.id == 99
 
 
 def test_service_exposes_no_mutation_contract():
