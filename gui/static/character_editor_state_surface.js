@@ -12,6 +12,7 @@
     .ce-state-trace{font-size:.82em;padding:3px 6px}.ce-state-summary{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0}
     .ce-prog-overview{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin:10px 0}.ce-prog-card{border:1px solid var(--border,#444);border-radius:7px;padding:9px;background:rgba(255,255,255,.025)}
     .ce-prog-card h4{margin:0 0 6px}.ce-prog-value{font-size:1.12em;font-weight:700}.ce-prog-vars{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}.ce-prog-var{border:1px solid var(--border,#444);border-radius:10px;padding:2px 7px;font-size:.84em}
+    .ce-prog-assessment{border:1px solid var(--border,#444);border-left:4px solid #777;border-radius:7px;padding:9px;margin:8px 0}.ce-prog-assessment.ok{border-left-color:#4a8}.ce-prog-assessment.warn{border-left-color:#b98a32}.ce-prog-assessment.bad{border-left-color:#b44}.ce-prog-assessment-head{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.ce-prog-assessment-actions{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
     .ce-prog-condition{display:flex;gap:7px;align-items:center;padding:4px 0;border-top:1px solid var(--border,#333);font-size:.9em}.ce-prog-condition:first-child{border-top:0}.ce-prog-condition.good{border-left:3px solid #4a8;padding-left:6px}.ce-prog-condition.bad{border-left:3px solid #b44;padding-left:6px}.ce-prog-condition.unknown{border-left:3px solid #b98a32;padding-left:6px}
     .ce-prog-action{border:1px solid var(--border,#444);border-radius:6px;padding:7px;margin-top:6px}.ce-prog-action.primary{border-left:4px solid #4a8}.ce-prog-action.blocked{opacity:.75}.ce-prog-action-head{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.ce-prog-effects{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;font-size:.84em}.ce-prog-location{font-size:.86em;opacity:.8;margin-top:3px}
     .ce-prog-bundle{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:7px;margin-top:8px}.ce-prog-bundle-part{border:1px solid var(--border,#444);border-radius:6px;padding:7px}.ce-prog-bundle-part h5{margin:0 0 5px;font-size:.86em}.ce-prog-bundle-part .ce-muted{font-size:.82em}.ce-prog-outcomes{display:flex;gap:4px;flex-wrap:wrap}.ce-prog-runtime{border-left:3px solid #b98a32}.ce-prog-why{border-left:3px solid #b44}.ce-prog-projection{border-left:3px solid #4a8}.ce-prog-projection-row{padding:3px 0;border-top:1px solid var(--border,#333);font-size:.86em}.ce-prog-projection-row:first-child{border-top:0}
@@ -54,6 +55,20 @@
 
   function statusText(status) {
     return ({QUEST_ACCEPTED:'Active',QUEST_COMPLETED:'Completed',QUEST_AVAILABLE:'Available',MISSION_CURRENT:'Current',MISSION_COMPLETED:'Completed',MISSION_NOT_CURRENT:'Not current'})[status] || status || 'Unknown';
+  }
+
+  function assessmentText(state) {
+    return ({READY:'Ready',WAITING_RUNTIME:'Waiting on runtime input',BLOCKED_PERSISTED:'Blocked by persisted state',INCONSISTENT:'Inconsistent state',COMPLETED:'Completed',NO_MODELED_ACTION:'No modeled next action',UNAVAILABLE:'Model unavailable',UNKNOWN:'Assessment unknown'})[state] || String(state || 'Assessment unknown').replaceAll('_',' ').toLowerCase();
+  }
+
+  function assessmentHtml(assessment) {
+    if (!assessment) return '';
+    const tone = ['ok','warn','bad'].includes(assessment.tone) ? assessment.tone : '';
+    const targets = (assessment.correction_targets || []).map(editorButton).join('');
+    const counts = [];
+    if (assessment.persisted_blockers) counts.push(`${assessment.persisted_blockers} persisted blocker${assessment.persisted_blockers === 1 ? '' : 's'}`);
+    if (assessment.runtime_requirements) counts.push(`${assessment.runtime_requirements} runtime requirement${assessment.runtime_requirements === 1 ? '' : 's'}`);
+    return `<section class="ce-prog-assessment ${tone}"><div class="ce-prog-assessment-head"><strong>${esc(assessmentText(assessment.state))}</strong>${pill(assessment.state || 'UNKNOWN', tone)}</div><div>${esc(assessment.summary || '')}</div>${counts.length ? `<div class="ce-muted">${esc(counts.join(' · '))}</div>` : ''}${targets ? `<div class="ce-prog-assessment-actions">${targets}</div>` : ''}</section>`;
   }
 
   function conditionHtml(row) {
@@ -156,8 +171,10 @@
     const blockers = (progression.blockers || []).map(conditionHtml).join('');
     const diagnosisTone = progression.diagnosis === 'CURRENT' || progression.diagnosis === 'COMPLETED' ? 'ok' : 'warn';
     const stepLabel = progression.diagnosis === 'COMPLETED' ? 'Mission/quest complete' : step.section_index ? `Section ${step.section_index}` : 'No matching section';
+    const assessment = assessmentHtml(progression.assessment);
 
     body.innerHTML = `<div class="ce-state-summary">${pill(statusText(progression.status), progression.status?.includes('COMPLETED') ? 'ok' : '')}${pill(progression.diagnosis || 'UNKNOWN', diagnosisTone)}${pill(`${progression.summary?.transition_count || 0} modeled transitions`)}${pill(`${progression.summary?.transition_bundle_count || 0} transition bundles`)}</div>
+      ${assessment}
       <div class="ce-prog-overview">
         <section class="ce-prog-card"><h4>Current state</h4><div class="ce-prog-value">${esc(statusText(progression.status))}</div><div class="ce-prog-vars">${vars || '<span class="ce-muted">No persisted feature variables modeled.</span>'}</div></section>
         <section class="ce-prog-card"><h4>Current step</h4><div class="ce-prog-value">${esc(stepLabel)}</div><div class="ce-muted">${step.source_lines ? `Source lines ${esc(step.source_lines.join('–'))}` : 'Structured from the active server mission definition.'}</div></section>
