@@ -91,10 +91,13 @@
     try {
       const data = await api(`/auction-house/items/${itemId}.json?history_limit=100`);
       const item = data.item;
+      const returnedListings = (data.active_listings || []).length;
+      const totalListings = Number(item.active_listings || 0);
+      const listingSuffix = totalListings > returnedListings ? ` · showing ${fmt.format(returnedListings)}` : '';
       box.innerHTML = `
         <div class="page-head"><div><h2>${esc(item.name)}</h2><div class="muted">Item ${item.item_id} · AH category ${item.category_id} · stack ${item.stack_size}</div></div><img class="ah-icon" src="/auction-house/items/${item.item_id}/icon.png" alt=""></div>
         <h3>Price & volume</h3><div class="ah-trends">${trendCard(7, data.trends['7'] || [])}${trendCard(30, data.trends['30'] || [])}${trendCard(90, data.trends['90'] || [])}</div>
-        <h3>Current listings (${fmt.format((data.active_listings || []).length)})</h3>${listingTable(data.active_listings || [])}
+        <h3>Current listings (${fmt.format(totalListings)}${listingSuffix})</h3>${listingTable(data.active_listings || [])}
         <h3>Recent sales</h3>${historyTable(data.history || [])}`;
     } catch (error) {
       box.innerHTML = `<h2>Item detail</h2><p>${esc(error.message)}</p>`;
