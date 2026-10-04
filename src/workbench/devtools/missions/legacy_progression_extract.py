@@ -1,7 +1,7 @@
 """Conservative DSP/Topaz mission and quest progression normalization.
 
 Legacy server trees generally spread progression across zone/NPC scripts instead of one
-Mission:new/Quest:new definition.  This adapter consumes only files already selected by the
+Mission:new/Quest:new definition. This adapter consumes only files already selected by the
 State Surface target scan and projects literal handler guards/effects into MissionStateMachine.
 It never executes Lua and intentionally leaves unsupported runtime expressions unresolved.
 """
@@ -49,6 +49,34 @@ def _zone_actor(path: Path) -> tuple[str, str | None]:
     except (ValueError, IndexError):
         pass
     return zone, actor
+
+
+def _normalize_multiline_guards(block: str) -> str:
+    """Join multiline if/elseif headers while preserving the original line count."""
+    lines = block.splitlines()
+    out = list(lines)
+    index = 0
+    while index < len(lines):
+        stripped = lines[index].strip()
+        if not re.match(r"^(?:if|elseif)\b", stripped) or re.search(r"\bthen\s*(?:--.*)?$", stripped):
+            index += 1
+            continue
+        parts = [lines[index].rstrip()]
+        end = index
+        while end + 1 < len(lines):
+            end += 1
+            parts.append(lines[end].strip())
+            if re.search(r"\bthen\s*(?:--.*)?$", lines[end].strip()):
+                break
+        if end > index and re.search(r"\bthen\s*(?:--.*)?$", parts[-1]):
+            indent = lines[index][:len(lines[index]) - len(lines[index].lstrip())]
+            out[index] = indent + " ".join(part.strip() for part in parts)
+            for pos in range(index + 1, end + 1):
+                out[pos] = ""
+            index = end + 1
+        else:
+            index += 1
+    return "\n".join(out)
 
 
 def _conditions(texts: Iterable[str]) -> tuple[StateCondition, ...]:
@@ -115,7 +143,8 @@ def extract_legacy_progression(files: Iterable[Path], *, feature_id: str) -> Mis
             if not match:
                 continue
             handler = match.group(1)
-            for path_index, branch in enumerate(_handler_paths(block, start_line=start), 1):
+            normalized = _normalize_multiline_guards(block)
+            for path_index, branch in enumerate(_handler_paths(normalized, start_line=start), 1):
                 conditions = _conditions((*branch.guard_texts, *branch.guard_prefix_texts))
                 for condition in conditions:
                     if condition.subject.startswith("charvar:") and isinstance(condition.value, int):
