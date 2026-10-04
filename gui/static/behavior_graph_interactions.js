@@ -1,5 +1,5 @@
 (() => {
-  const CONTRACT_VERSION = '6';
+  const CONTRACT_VERSION = '7';
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   let activateClarified = () => {};
 
@@ -136,21 +136,17 @@
       }).join('');
 
       const handoffs = Array.isArray(contract.event_handoffs) ? contract.event_handoffs : [];
-      const handoffsByEvent = new Map(handoffs.map(row => [String(row.event_id), row]));
-      const sourceStages = Array.isArray(contract.source_branch_evidence) ? contract.source_branch_evidence : [];
-      const stageRows = sourceStages.filter(row => handoffsByEvent.has(String(row.event_id)));
+      const stageRows = Array.isArray(contract.stage_lifecycles) ? contract.stage_lifecycles : [];
       const stageHtml = stageRows.length ? (
-        `<section class="plain-stage-overview"><header><strong>Stage → event overview</strong>` +
-        `<span class="muted">Only verified literal named-state branches are shown here. Each row preserves the exact stage guard that starts an Event/CSID, then points to handlers with the same literal event identity. The handler relationship is not runtime ordering.</span></header>` +
+        `<section class="plain-stage-overview"><header><strong>Stage progression</strong>` +
+        `<span class="muted">Rows come from the verified stage lifecycle contract: a literal stage guard starts this Event/CSID, and a matching literal handler directly writes the same canonical state. The dotted cross-hook handoff is identity evidence only; runtime ordering remains unproven.</span></header>` +
         stageRows.map(row => {
-          const handoff = handoffsByEvent.get(String(row.event_id)) || {};
-          const start = (handoff.start_branches || []).find(ref => String(ref.trigger_id || '') === String(row.hook || '')) || (handoff.start_branches || [])[0];
-          const handlers = (handoff.handler_branches || []).map(ref => `<button type="button" class="plain-trigger-button" data-contract-branch="${esc(ref.branch_id)}">${esc(ref.trigger_label)}</button>`).join('') || '<span class="muted">No handler branch indexed</span>';
-          const startButton = start ? `<button type="button" class="plain-trigger-button" data-contract-branch="${esc(start.branch_id)}">Open start branch</button>` : '';
+          const handlers = (row.handler_branches || []).map(ref => `<button type="button" class="plain-trigger-button" data-contract-branch="${esc(ref.branch_id)}">${esc(ref.trigger_label)}</button>`).join('') || '<span class="muted">No handler branch indexed</span>';
+          const writes = (row.handler_writes || []).map(write => `<span class="plain-stage-value">${esc(write.state_name || row.state_name)} = ${esc(write.value)}</span><span class="muted">${esc(write.hook || '')}${write.source_line ? ` · line ${esc(write.source_line)}` : ''}</span>`).join('') || '<span class="muted">No verified direct same-state write</span>';
           return `<div class="plain-stage-row">` +
-            `<div class="plain-stage-cell"><span class="plain-stage-label">Verified stage guard</span><span class="plain-stage-value">${esc(row.state_name)} = ${esc(row.literal)}</span>${startButton}<span class="muted">${esc(row.hook || '')}</span></div>` +
-            `<div class="plain-stage-event"><strong>Event ${esc(row.event_id)}</strong><span class="muted">starts under this guard</span><span class="muted">·····► same event identity</span></div>` +
-            `<div class="plain-stage-cell"><span class="plain-stage-label">Matching handlers</span>${handlers}<span class="muted">${esc(handoff.ordering || 'UNPROVEN')} ordering</span></div>` +
+            `<div class="plain-stage-cell"><span class="plain-stage-label">Current stage</span><span class="plain-stage-value">${esc(row.state_name)} = ${esc(row.from_value)}</span><span class="muted">verified source guard · ${esc(row.start_hook || '')}</span></div>` +
+            `<div class="plain-stage-event"><strong>Event ${esc(row.event_id)}</strong><span class="muted">started by this stage guard</span><span class="plain-lifecycle-dots">·····►</span><span class="muted">same literal event identity · ${esc(row.ordering || 'UNPROVEN')} ordering</span></div>` +
+            `<div class="plain-stage-cell"><span class="plain-stage-label">Verified next-stage write</span>${writes}${handlers}</div>` +
           `</div>`;
         }).join('') + `</section>`
       ) : '';
@@ -169,7 +165,7 @@
         }).join('') + `</section>`
       ) : '';
 
-      clarified.innerHTML = `<div class="plain-branch-intro"><strong>Clarified branch flow</strong><div class="muted">Solid branch connectors preserve source-proven guard → effect relationships. Sibling effects are not shown as ordered unless source evidence proves ordering. Stage and event overview rows use exact source evidence and matching literal Event/CSID identity without claiming runtime sequence.</div></div>${stageHtml}${lifecycleHtml}${groupsHtml}`;
+      clarified.innerHTML = `<div class="plain-branch-intro"><strong>Clarified branch flow</strong><div class="muted">Solid branch connectors preserve source-proven guard → effect relationships. Sibling effects are not shown as ordered unless source evidence proves ordering. Stage progression and event lifecycle rows use backend evidence contracts and exact literal Event/CSID identity without claiming runtime sequence.</div></div>${stageHtml}${lifecycleHtml}${groupsHtml}`;
       for (const button of clarified.querySelectorAll('[data-contract-node]')) {
         button.addEventListener('click', () => selectNode(button.dataset.contractNode));
       }
