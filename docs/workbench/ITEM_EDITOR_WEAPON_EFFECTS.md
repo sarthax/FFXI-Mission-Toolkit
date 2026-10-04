@@ -21,9 +21,9 @@ Common DSP/Topaz/LSB modifier ids used by the helper:
 
 Example: an always-on 20% Fire-damage proc for 25 base damage is the bundle `431=1`, `499=1`, `500=25`, `501=20`, `950=1`. A latent version stores the same bundle in `item_latents` with one shared condition.
 
-## Presets the editor can safely expose
+## Presets the editor can expose
 
-The framework now includes named presets that expand to explicit modifier rows instead of hiding the underlying data:
+The framework includes named presets that expand to explicit modifier rows instead of hiding the underlying data:
 
 - Fire damage
 - Ice damage
@@ -36,7 +36,14 @@ The framework now includes named presets that expand to explicit modifier rows i
 - Instant death
 - NM-specific scripted behavior
 
-The first group can be represented with the mature existing row model. The special group is intentionally marked `requires_server_code` because the target fork still has to implement the semantics.
+Each effect also receives a lineage capability badge:
+
+- `row-only` — the selected lineage has the modern row-driven handler for this proc type;
+- `verify-lineage` — the data model exists, but the target DSP/Topaz/fork implementation must be checked before writing type ids;
+- `server-code-required` — the editor can model the desired behavior and generate a handoff, but server Lua/C++ must be added or extended;
+- `unsupported` — the proc type is unknown to the framework.
+
+This is intentionally fail-closed. Modern LSB proc-type numbers must not be written into DSP/Topaz merely because the logical effect name is the same.
 
 ## Self-buff framework
 
@@ -58,11 +65,13 @@ For current LandSandBoat, the relevant upstream path is:
 
 The useful implementation points are `xi.additionalEffect.attack`, `xi.additionalEffect.procFunctions`, and the `SELF_BUFF` handler. Current LSB explicitly handles Blink and Haste in that handler; adding another self-buff means extending that branch (or introducing a deliberate new proc handler), applying the status to the attacker, and returning the appropriate additional-effect battle message/subeffect.
 
+For LSB the blueprint can safely emit the modern row bundle (`SELF_BUFF=12`) as reference/configuration data, but it still marks the effect `server-code-required` when the requested status is not implemented by the handler.
+
 DSP must be treated differently. Its archived enum/reference file is:
 
 `https://github.com/DarkstarProject/darkstar/blob/master/scripts/globals/status.lua`
 
-That file documents the legacy `ITEM_ADDEFFECT_TYPE` mapping as `1=status/damage/HP drain`, `2=MP drain`, `3=TP drain`, `4=dispel`, `5=self-buff`, `6=instant death`. Modern LSB uses a larger proc-type enum where `SELF_BUFF=12`. The editor therefore must never write a modern LSB type id to DSP/Topaz merely because the logical effect name matches.
+That file documents the legacy `ITEM_ADDEFFECT_TYPE` mapping as `1=status/damage/HP drain`, `2=MP drain`, `3=TP drain`, `4=dispel`, `5=self-buff`, `6=instant death`. Modern LSB uses a larger proc-type enum where `SELF_BUFF=12`. A DSP self-buff blueprint therefore carries modern rows only as a reference shape and marks them **not safe to apply** until the local agent maps the logical effect to the target server's actual numbering.
 
 The local server agent should perform this sequence for a new self-buff:
 
@@ -83,7 +92,7 @@ The same framework can support several useful editor capabilities without touchi
 - preset picker that expands to visible modifier rows;
 - raw/structured toggle so expert users can inspect exact mod ids;
 - always-on vs latent/conditional storage toggle;
-- lineage capability badge (`row-only`, `verify lineage`, `server code required`);
+- lineage capability badge (`row-only`, `verify-lineage`, `server-code-required`);
 - effect summary such as `20% chance: Fire +25` or `25% chance: self Haste, 45s`;
 - existing-effect recognizer that converts raw `item_mods` rows back into structured fields;
 - validation that blocks unsupported proc ids rather than silently writing them;
@@ -93,8 +102,6 @@ The same framework can support several useful editor capabilities without touchi
 ## What this does not mean
 
 These rows configure behavior that the selected server lineage already implements. They do **not** create arbitrary new combat semantics. If a proc type is absent from the target DSP/Topaz/LSB combat scripts/core, a local server-code change is still required.
-
-The helper therefore treats mature portable legacy cases (damage, debuff, HP/MP/TP drains, dispel) as row-configurable and flags newer/special handlers such as self-buff or NM-specific behavior for lineage verification / server-code handoff.
 
 ## Client DAT boundary
 
