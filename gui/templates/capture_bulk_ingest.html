@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Bulk ingest — Mission Toolkit{% endblock %}
+{% block content %}
+{% macro mb(n) %}{{ '%.1f'|format(n/1048576) }} MB{% endmacro %}
+<h1>Bulk ingest</h1>
+{% if error %}<p style="color:var(--amber)"><b>{{ error }}</b></p>{% endif %}
+{% if running %}<p>A job is running: <a href="/captures/bulk-ingest/job/{{ running.id }}">view progress</a>. Only one job can run at a time.</p>{% endif %}
+
+<h3>1. Choose what to scan</h3>
+<form method="post" action="/captures/bulk-ingest/scan" style="display:grid;gap:6px;max-width:640px">
+  <label>Directory (any drive or network path, e.g. <code>D:\Captures</code> or <code>\\nas\share\caps</code>)
+    <input name="root" value="{{ plan.root if plan else '' }}" style="width:100%" required></label>
+  <label><input type="radio" name="mode" value="archives" {{ 'checked' if not plan or plan.mode=='archives' }}> Archives only (.zip, .7z; .rar etc. are listed as unsupported)</label>
+  <label><input type="radio" name="mode" value="raw" {{ 'checked' if plan and plan.mode=='raw' }}> Raw files and folders only (archives ignored)</label>
+  <label><input type="checkbox" name="recursive" value="1" {{ 'checked' if plan and plan.recursive }}> Include subdirectories (archives mode)</label>
+  <label>Content type <input name="content_type" list="ct" value="{{ plan.content_type if plan else 'instances' }}" size="14">
+    <datalist id="ct"><option value="instances"><option value="overworld"></datalist></label>
+  <button>Scan (read-only, nothing is ingested)</button>
+</form>
+
+{% if plan %}
+<h3>2. Review the plan</h3>
+{% set todo = plan.entries|selectattr('action','equalto','ingest')|list %}
+<p>{{ todo|length }} to ingest · {{ plan.entries|selectattr('action','equalto','skip')|list|length }} skipped · {{ plan.entries|selectattr('action','equalto','unsupported')|list|length }} unsupported.</p>
+<table><thead><tr><th>Item</th><th>Type</th><th>Size</th><th>Action</th><th>Why</th></tr></thead><tbody>
+{% for e in plan.entries %}<tr><td><code>{{ e.path }}</code></td><td>{{ e.kind }}</td><td>{{ mb(e.bytes) }}</td>
+<td>{{ e.action }}</td><td class="muted">{{ e.reason }}</td></tr>{% endfor %}
+</tbody></table>
+
+<h4>Disk space (limit {{ '%.0f'|format(plan.disk.max_pct) }}% full)</h4>
+<ul>{% for d in plan.disk.drives %}<li {% if d.over %}style="color:var(--amber)"{% endif %}><code>{{ d.path }}</code> ({{ d.role }}): needs about {{ mb(d.need_bytes) }}, {{ mb(d.free_bytes) }} free;
+ {{ d.now_pct }}% full now → about {{ d.after_pct }}% after{% if d.over %} <b>⚠ over the limit</b>{% endif %}</li>{% endfor %}</ul>
+<p class="muted">The size estimate is a conservative guess (database growth ≈ uncompressed size of each capture).</p>
+
+{% if todo %}
+<h3>3. Run</h3>
+<form method="post" action="/captures/bulk-ingest/run" enctype="multipart/form-data" style="display:grid;gap:6px;max-width:640px">
+  <input type="hidden" name="token" value="{{ plan.token }}">
+  {% if plan.disk.over %}<label style="color:var(--amber)"><input type="checkbox" name="override" value="1"> <b>Override the disk-space warning and run anyway</b></label>{% endif %}
+  <label>Optional: source-information sheet (CSV) to apply after ingest <input type="file" name="sheet" accept=".csv"></label>
+  <label><input type="checkbox" name="overwrite_sheet" value="1"> Sheet replaces existing source information</label>
+  <button {% if running %}disabled{% endif %}>Ingest {{ todo|length }} item(s)</button>
+</form>
+{% endif %}
+{% endif %}
+
+{% if jobs %}<h3>Recent jobs</h3><ul>{% for j in jobs %}<li><a href="/captures/bulk-ingest/job/{{ j.id }}">{{ j.id }}</a> — {{ j.state }} — <code>{{ j.root }}</code></li>{% endfor %}</ul>{% endif %}
+{% endblock %}

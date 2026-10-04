@@ -779,6 +779,60 @@ async def capture_metadata_import(request: Request, sheet: UploadFile = File(...
         "types": types, "columns": si.COLUMNS, "npend": npend, "rep": rep, "applied_mode": mode == "apply"})
 
 
+@app.get("/captures/bulk-ingest", response_class=HTMLResponse)
+def capture_bulk_ingest_page(request: Request, error: str = ""):
+    from workbench.captures import bulk_ingest as bi
+    return templates.TemplateResponse(request, "capture_bulk_ingest.html", {
+        "plan": None, "error": error, "running": bi.current_job(), "jobs": bi.recent_jobs()})
+
+
+@app.post("/captures/bulk-ingest/scan", response_class=HTMLResponse)
+def capture_bulk_ingest_scan(request: Request, root: str = Form(""), mode: str = Form("archives"),
+                             content_type: str = Form("instances"), recursive: str = Form("")):
+    from workbench.captures import bulk_ingest as bi
+    con = get_con()
+    plan, error = None, ""
+    try:
+        plan = bi.scan(con, root, mode, content_type.strip() or "instances", bool(recursive))
+    except (ValueError, OSError) as e:
+        error = str(e)
+    finally:
+        con.close()
+    return templates.TemplateResponse(request, "capture_bulk_ingest.html", {
+        "plan": plan, "error": error, "running": bi.current_job(), "jobs": bi.recent_jobs()})
+
+
+@app.post("/captures/bulk-ingest/run")
+async def capture_bulk_ingest_run(token: str = Form(...), override: str = Form(""), overwrite_sheet: str = Form(""),
+                                  sheet: UploadFile = File(None)):
+    from workbench.captures import bulk_ingest as bi
+    from urllib.parse import quote
+    text = None
+    if sheet is not None and sheet.filename:
+        text = (await sheet.read()).decode("utf-8-sig", errors="replace")
+    try:
+        job = bi.start(token, bool(override), text, bool(overwrite_sheet))
+    except (ValueError, PermissionError, RuntimeError) as e:
+        return RedirectResponse("/captures/bulk-ingest?error=" + quote(str(e)), status_code=303)
+    return RedirectResponse("/captures/bulk-ingest/job/" + job["id"], status_code=303)
+
+
+@app.get("/captures/bulk-ingest/job/{job_id}", response_class=HTMLResponse)
+def capture_bulk_ingest_job(request: Request, job_id: str):
+    from workbench.captures import bulk_ingest as bi
+    job = bi.get_job(job_id)
+    if not job:
+        raise HTTPException(404, "unknown job (jobs are kept in memory; finished jobs are also saved under bulk_ingest_jobs/)")
+    return templates.TemplateResponse(request, "capture_bulk_job.html", {"job": job, "summary": bi.summary(job)})
+
+
+@app.post("/captures/bulk-ingest/job/{job_id}/cancel")
+def capture_bulk_ingest_cancel(job_id: str):
+    from workbench.captures import bulk_ingest as bi
+    bi.cancel(job_id)
+    return RedirectResponse("/captures/bulk-ingest/job/" + job_id, status_code=303)
+
+
 @app.get("/captures/{capture_id}/review-flags")
 def capture_review_flags(capture_id: int):
     from workbench.captures import review_queue as rq

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Bulk ingest job — Mission Toolkit{% endblock %}
+{% block content %}
+<h1>Bulk ingest job {{ job.id }}</h1>
+{% if job.state == 'running' %}<meta http-equiv="refresh" content="3">{% endif %}
+<p><b>{{ job.state }}</b> · <code>{{ job.root }}</code> · mode {{ job.mode }} · content type {{ job.content_type }}{% if job.override %} · disk warning overridden{% endif %}</p>
+<p>{% for k,v in summary.items() %}{{ k }}: {{ v }} · {% endfor %}</p>
+{% if job.state == 'running' %}<form method="post" action="/captures/bulk-ingest/job/{{ job.id }}/cancel"><button>Cancel after the current capture</button></form>{% endif %}
+{% if job.fatal %}<p style="color:var(--amber)"><b>Job stopped: {{ job.fatal }}</b></p>{% endif %}
+{% set failed = job['items']|selectattr('status','equalto','FAILED')|list %}
+{% if failed %}<h3>Failed ({{ failed|length }})</h3><ul>{% for it in failed %}<li><code>{{ it.path }}</code> — {{ it.error }}</li>{% endfor %}</ul>
+<p class="muted">Failed captures are also in the <a href="/captures/review?kind=ingest_failed">review queue</a> with a copy for diagnosis.</p>{% endif %}
+{% if job.sheet %}<h3>Source-information sheet</h3><p>{{ job.sheet.applied }} row(s) applied, {{ job.sheet.skipped|length }} skipped, {{ job.sheet.errors|length }} with errors.</p>
+{% if job.sheet.errors %}<ul>{% for line,msg in job.sheet.errors %}<li>line {{ line }}: {{ msg }}</li>{% endfor %}</ul>{% endif %}{% endif %}
+<h3>All items</h3>
+<table><thead><tr><th>Item</th><th>Status</th><th>Capture</th><th>Secs</th><th>Notes</th></tr></thead><tbody>
+{% for it in job['items'] %}<tr><td><code>{{ it.path }}</code></td><td>{{ it.status }}</td>
+<td>{% if it.capture_id %}<a href="/captures/{{ it.capture_id }}">#{{ it.capture_id }}</a>{% endif %}</td><td>{{ it.secs or '' }}</td><td class="muted">{{ it.error or it.reason }}</td></tr>{% endfor %}
+</tbody></table>
+<p><a href="/captures/bulk-ingest">Back</a></p>
+{% endblock %}
