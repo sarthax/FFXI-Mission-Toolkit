@@ -1,8 +1,9 @@
 """Compatibility bridge that extends the Character Editor progression inspector to DSP/Topaz.
 
-The core inspector stays framework-neutral once it receives MissionStateMachine.  This module
+The core inspector stays framework-neutral once it receives MissionStateMachine. This module
 registers a legacy machine provider for State Surface's `legacy_reference_scan` mode and teaches
-condition evaluation/display about legacy charvars.  LSB's exact-definition path is unchanged.
+condition evaluation/display about legacy persisted mission/quest state. LSB's exact-definition
+path is unchanged.
 """
 from __future__ import annotations
 
@@ -39,10 +40,61 @@ def _machine_for_surface(surface: dict[str, Any], root: Path):
 
 
 def _condition_value(subject: str, **context):
+    variables = context.get("variables") or {}
+    packed = context.get("packed") or {}
+    mission_symbols = context.get("mission_symbols") or {}
+    mission_ids = context.get("mission_ids") or {}
+    quest_symbols = context.get("quest_symbols") or {}
+
     if subject.startswith("charvar:"):
         key = subject.split(":", 1)[1]
-        variables = context.get("variables") or {}
         return True, variables.get(key, 0), "Variables"
+
+    if subject.startswith("mission_current:"):
+        symbol = subject.split(":", 1)[1]
+        target = mission_symbols.get(symbol)
+        if target is None:
+            return False, None, "Mission Flags"
+        area_id, _entry_id, _label = target
+        area = (packed.get("mission") or {}).get(area_id, {})
+        if not area:
+            return False, None, "Mission Flags"
+        current_id = int(area.get("current", -1))
+        return True, mission_ids.get((area_id, current_id), current_id), "Mission Flags"
+
+    if subject.startswith("mission_completed:"):
+        symbol = subject.split(":", 1)[1]
+        target = mission_symbols.get(symbol)
+        if target is None:
+            return False, None, "Mission Flags"
+        area_id, entry_id, _label = target
+        area = (packed.get("mission") or {}).get(area_id, {})
+        if not area:
+            return False, None, "Mission Flags"
+        return True, entry_id in set(area.get("completed", ())), "Mission Flags"
+
+    if subject.startswith("quest_active:"):
+        symbol = subject.split(":", 1)[1]
+        target = quest_symbols.get(symbol)
+        if target is None:
+            return False, None, "Mission Flags"
+        area_id, entry_id, _label = target
+        area = (packed.get("quest") or {}).get(area_id, {})
+        if not area:
+            return False, None, "Mission Flags"
+        return True, entry_id in set(area.get("current", ())), "Mission Flags"
+
+    if subject.startswith("quest_completed:"):
+        symbol = subject.split(":", 1)[1]
+        target = quest_symbols.get(symbol)
+        if target is None:
+            return False, None, "Mission Flags"
+        area_id, entry_id, _label = target
+        area = (packed.get("quest") or {}).get(area_id, {})
+        if not area:
+            return False, None, "Mission Flags"
+        return True, entry_id in set(area.get("completed", ())), "Mission Flags"
+
     return _ORIGINAL_CONDITION_VALUE(subject, **context)
 
 
@@ -76,8 +128,9 @@ def _build(surface: dict[str, Any], server_root, **kwargs):
     result["feature_vars"] = rows
     result["source_adapter"] = "DSP/Topaz legacy handlers"
     result["note"] = (
-        "Read-only legacy diagnosis. Handler guards/effects are normalized from target-matched "
-        "DSP/Topaz Lua; use guarded Character Editor surfaces for state changes."
+        "Read-only DSP/Topaz diagnosis. Persisted mission/quest flags and character variables are "
+        "evaluated from the selected character; runtime-only interaction/trade requirements remain "
+        "instructions rather than database blockers."
     )
     return result
 
