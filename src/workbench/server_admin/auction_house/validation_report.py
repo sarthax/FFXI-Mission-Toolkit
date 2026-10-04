@@ -1,9 +1,4 @@
-"""Unified read-only Auction House validation reporting.
-
-Combines environment, lineage, live schema prerequisites, database reread freshness, active policy
-freshness, and invariant checks into one fail-closed status payload. This module cannot execute or
-commit Auction House mutations.
-"""
+"""Unified read-only Auction House validation reporting."""
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, is_dataclass
@@ -12,6 +7,7 @@ from typing import Any
 
 from .lineage_semantics import evaluate_lineage_semantics
 from .lsb_validation import prepare_lsb_preview_validation
+from .preview_provenance import validate_preview_provenance
 from .validation_pipeline import prepare_validate_from_active_config
 from .write_probe import probe_write_readiness
 
@@ -34,38 +30,25 @@ def _issues(value: Any) -> list[dict[str, Any]]:
         elif is_dataclass(item):
             out.append(asdict(item))
         else:
-            out.append({
-                "code": getattr(item, "code", "unknown"),
-                "message": getattr(item, "message", "Blocked"),
-                "blocking": getattr(item, "blocking", True),
-            })
+            out.append({"code": getattr(item, "code", "unknown"), "message": getattr(item, "message", "Blocked"), "blocking": getattr(item, "blocking", True)})
     return out
 
 
 def _blocking(stage: str, issues: list[dict[str, Any]]) -> list[ValidationBlocker]:
-    return [
-        ValidationBlocker(stage, str(item.get("code") or "unknown"), str(item.get("message") or "Blocked"))
-        for item in issues
-        if bool(item.get("blocking", True))
-    ]
+    return [ValidationBlocker(stage, str(item.get("code") or "unknown"), str(item.get("message") or "Blocked")) for item in issues if bool(item.get("blocking", True))]
 
 
-def build_validation_report(
-    *,
-    environment: dict[str, Any],
-    schema_family_hint: str,
-    readiness: dict[str, Any],
-    prepared: Any,
-    evidence: Any,
-    invariants: Any | None,
-    policy_load: Any,
-    policy_binding: Any,
-) -> dict[str, Any]:
+def build_validation_report(*, environment: dict[str, Any], schema_family_hint: str, readiness: dict[str, Any], prepared: Any, evidence: Any, invariants: Any | None, policy_load: Any, policy_binding: Any, preview: dict[str, Any]) -> dict[str, Any]:
     family = str(environment.get("family") or "").strip().lower()
     operation = str(getattr(prepared, "operation", "") or "unknown")
     lineage = evaluate_lineage_semantics(profile_family=family, schema_family_hint=schema_family_hint)
-
     blockers: list[ValidationBlocker] = []
+
+    active_policy = getattr(policy_load, "as_dict", lambda: {})()
+    provenance = validate_preview_provenance(preview, environment=environment, schema_family_hint=schema_family_hint, active_policy_binding=active_policy)
+    provenance_issues = _issues(provenance)
+    blockers.extend(_blocking("preview_provenance", provenance_issues))
+
     env_issues: list[dict[str, Any]] = []
     if not environment.get("is_active"):
         env_issues.append({"code": "environment_not_active", "message": "The selected server environment is not active.", "blocking": True})
@@ -104,38 +87,19 @@ def build_validation_report(
     else:
         blockers.extend(_blocking("invariants", invariant_issues))
 
-    evidence_blockers = [
-        blocker for blocker in blockers
-        if not (blocker.stage == "lineage" and blocker.code == "lineage_execution_contract_incomplete")
-    ]
-    read_only_validation_ready = not evidence_blockers
-
+    evidence_blockers = [b for b in blockers if not (b.stage == "lineage" and b.code == "lineage_execution_contract_incomplete")]
+    ready = not evidence_blockers
     stages = {
+        "preview_provenance": {"ready": provenance.binding_ready, "issues": provenance_issues, "details": provenance.as_dict()},
         "environment": {"ready": not _blocking("environment", env_issues), "issues": env_issues},
         "lineage": {"ready": not _blocking("lineage", lineage_issues), "issues": lineage_issues, "details": lineage},
         "schema_readiness": {"ready": not readiness_issues, "issues": readiness_issues, "details": readiness},
-        "database_freshness": {
-            "ready": bool(getattr(prepared, "validation_ready", False)) and str(getattr(evidence, "transaction_mode", "")) == "read_only_rolled_back",
-            "issues": prepared_issues,
-            "details": getattr(prepared, "as_dict", lambda: {})(),
-        },
-        "policy": {"ready": bool(getattr(policy_load, "policy_ready", False)), "issues": policy_issues, "details": getattr(policy_load, "as_dict", lambda: {})()},
+        "database_freshness": {"ready": bool(getattr(prepared, "validation_ready", False)) and str(getattr(evidence, "transaction_mode", "")) == "read_only_rolled_back", "issues": prepared_issues, "details": getattr(prepared, "as_dict", lambda: {})()},
+        "policy": {"ready": bool(getattr(policy_load, "policy_ready", False)), "issues": policy_issues, "details": active_policy},
         "policy_binding": {"ready": bool(getattr(policy_binding, "binding_ready", False)), "issues": binding_issues, "details": getattr(policy_binding, "as_dict", lambda: {})()},
         "invariants": {"ready": bool(invariants is not None and getattr(invariants, "invariants_ready", False)), "issues": invariant_issues, "details": None if invariants is None else invariants.as_dict()},
     }
-
-    return {
-        "status": "ready" if read_only_validation_ready else "blocked",
-        "read_only_validation_ready": read_only_validation_ready,
-        "execution_ready": False,
-        "executor_enabled": False,
-        "write_enabled": False,
-        "operation": operation,
-        "environment": dict(environment),
-        "schema_family_hint": schema_family_hint,
-        "stages": stages,
-        "blockers": [asdict(item) for item in blockers],
-    }
+    return {"status": "ready" if ready else "blocked", "read_only_validation_ready": ready, "execution_ready": False, "executor_enabled": False, "write_enabled": False, "operation": operation, "environment": dict(environment), "schema_family_hint": schema_family_hint, "preview_provenance": provenance.as_dict(), "stages": stages, "blockers": [asdict(item) for item in blockers]}
 
 
 def run_legacy_preview_validation(*, service, environment: dict[str, Any], preview: dict[str, Any], server_root: Path | str) -> dict[str, Any]:
@@ -145,7 +109,7 @@ def run_legacy_preview_validation(*, service, environment: dict[str, Any], previ
     operation = str(preview.get("action") or "").strip().lower()
     prepared, evidence, invariants, policy_load, policy_binding = prepare_validate_from_active_config(service=service, family=family, operation=operation, environment=environment, preview=preview, server_root=server_root, preview_environment=preview.get("environment") if isinstance(preview.get("environment"), dict) else None)
     readiness = probe_write_readiness(service.connection).as_dict()
-    return build_validation_report(environment=environment, schema_family_hint=service.schema.family_hint, readiness=readiness, prepared=prepared, evidence=evidence, invariants=invariants, policy_load=policy_load, policy_binding=policy_binding)
+    return build_validation_report(environment=environment, schema_family_hint=service.schema.family_hint, readiness=readiness, prepared=prepared, evidence=evidence, invariants=invariants, policy_load=policy_load, policy_binding=policy_binding, preview=preview)
 
 
 def run_lsb_preview_validation(*, service, environment: dict[str, Any], preview: dict[str, Any], server_root: Path | str) -> dict[str, Any]:
@@ -154,7 +118,7 @@ def run_lsb_preview_validation(*, service, environment: dict[str, Any], preview:
     operation = str(preview.get("action") or "").strip().lower()
     prepared, evidence, invariants, policy_load, policy_binding = prepare_lsb_preview_validation(service=service, operation=operation, environment=environment, preview=preview, server_root=server_root)
     readiness = probe_write_readiness(service.connection).as_dict()
-    report = build_validation_report(environment=environment, schema_family_hint=service.schema.family_hint, readiness=readiness, prepared=prepared, evidence=evidence, invariants=invariants, policy_load=policy_load, policy_binding=policy_binding)
+    report = build_validation_report(environment=environment, schema_family_hint=service.schema.family_hint, readiness=readiness, prepared=prepared, evidence=evidence, invariants=invariants, policy_load=policy_load, policy_binding=policy_binding, preview=preview)
     report["validation_model"] = "lsb-source-settings-and-trigger"
     return report
 

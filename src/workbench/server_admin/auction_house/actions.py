@@ -44,6 +44,34 @@ class ActionPreview:
     def as_dict(self) -> dict[str, Any]:
         out = asdict(self)
         out["warnings"] = [asdict(w) for w in self.warnings]
+        # Presentation-time provenance is best-effort here so isolated unit callers that have no
+        # configured server environment retain the original pure preview contract. The AH GUI
+        # always has an active environment and therefore receives the normalized envelope.
+        try:
+            from workbench.runtime.legacy_settings import get_active_server_identity, get_active_server_root
+            from .config_policy import load_active_legacy_policy
+            from .lsb_policy import load_lsb_policy, preview_lsb_policy_binding
+            from .policy_binding import preview_policy_binding
+            from .preview_provenance import make_preview_provenance
+
+            identity = get_active_server_identity()
+            root = get_active_server_root()
+            family = str(identity.get("family") or "").strip().lower()
+            policy_binding: dict[str, Any] | None = None
+            if root is not None and family in {"dsp", "topaz"}:
+                policy_binding = preview_policy_binding(load_active_legacy_policy(server_root=root, family=family))
+            elif root is not None and family == "lsb":
+                policy_binding = preview_lsb_policy_binding(load_lsb_policy(root))
+            if identity and root is not None:
+                out["preview_provenance"] = make_preview_provenance(
+                    environment=identity,
+                    schema_family_hint=self.adapter,
+                    policy_binding=policy_binding,
+                    action=self.action,
+                    adapter=self.adapter,
+                )
+        except Exception:
+            pass
         return out
 
 
