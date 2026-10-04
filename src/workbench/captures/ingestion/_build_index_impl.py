@@ -4180,9 +4180,23 @@ def main():
     p7 = sub.add_parser("fingerprint-backfill", help="fingerprint already-ingested captures so duplicate detection covers them")
     p7.add_argument("--dry-run", action="store_true")
 
+    p8 = sub.add_parser("repoint-sources", help="re-point captures whose source file moved to the same-named file under a new root")
+    p8.add_argument("root")
+    p8.add_argument("--dry-run", action="store_true")
+
     args = ap.parse_args()
     con = sqlite3.connect(str(DB_PATH))
     init_db(con)
+
+    if args.cmd == "repoint-sources":
+        from workbench.captures import source_fingerprint
+        res = source_fingerprint.repoint(con, args.root, dry_run=args.dry_run)
+        print({k: (len(v) if isinstance(v, list) else v) for k, v in res.items()})
+        for k in ("ambiguous", "mismatch"):
+            for r in res[k]:
+                print(" ", k, r)
+        con.close()
+        return
 
     if args.cmd == "fingerprint-backfill":
         from workbench.captures import source_fingerprint

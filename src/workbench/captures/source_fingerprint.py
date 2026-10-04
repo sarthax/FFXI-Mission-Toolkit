@@ -92,3 +92,53 @@ def backfill(con, dry_run=False, say=print):
     if not dry_run:
         con.commit()
     return out
+
+
+def repoint(con, root, dry_run=False, say=print):
+    """Re-point captures whose source_path no longer exists to the same-named file/folder under `root`.
+    Only a UNIQUE basename match is applied, or several matches whose content fingerprints are identical.
+    If the capture already has a recorded fingerprint the candidate must match it. Bundle subroots
+    ('x.zip::sub') keep their '::sub' suffix. Updates captures, capture_source_fingerprint and review_queue.
+    -> summary dict (unmatched/ambiguous/mismatch are listed, never guessed)."""
+    import collections
+    idx = collections.defaultdict(list)
+    for r, ds, fs in os.walk(root):
+        for n in ds + fs:
+            idx[n.lower()].append(os.path.join(r, n))
+    ensure_table(con)
+    out = dict(repointed=0, exists=0, none=[], ambiguous=[], mismatch=[])
+    for cid, sp in con.execute("SELECT capture_id, source_path FROM captures ORDER BY capture_id").fetchall():
+        base, sep, sub = sp.rpartition("::") if "::" in sp else (sp, "", "")
+        if os.path.exists(base):
+            out["exists"] += 1
+            continue
+        cands = idx.get(os.path.basename(base).lower(), [])
+        if not cands:
+            out["none"].append((cid, sp))
+            continue
+        fps = set()
+        for c in cands:
+            try:
+                fps.add(fingerprint(c)[0])
+            except Exception:
+                fps.add(None)
+        if len(cands) > 1 and (len(fps) != 1 or None in fps):
+            out["ambiguous"].append((cid, sp, cands))
+            continue
+        new = cands[0]
+        have = con.execute("SELECT fingerprint FROM capture_source_fingerprint WHERE capture_id=?", (cid,)).fetchone()
+        if have and not sub and fps != {have[0]}:
+            out["mismatch"].append((cid, sp, new))
+            continue
+        new_sp = new + (sep + sub if sub else "")
+        if con.execute("SELECT 1 FROM captures WHERE source_path=? AND capture_id<>?", (new_sp, cid)).fetchone():
+            out["ambiguous"].append((cid, sp, [new_sp + "  (already used by another capture)"]))
+            continue
+        out["repointed"] += 1
+        if not dry_run:
+            con.execute("UPDATE captures SET source_path=? WHERE capture_id=?", (new_sp, cid))
+            con.execute("UPDATE capture_source_fingerprint SET source_path=? WHERE capture_id=? AND source_path=?", (new, cid, base))
+            con.execute("UPDATE review_queue SET source_path=? WHERE source_path=?", (new_sp, sp))
+    if not dry_run:
+        con.commit()
+    return out
