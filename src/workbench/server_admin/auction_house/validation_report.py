@@ -4,7 +4,9 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, is_dataclass
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
+from .audit_ledger import append_validation_event, replay_status
 from .lineage_semantics import evaluate_lineage_semantics
 from .lsb_validation import prepare_lsb_preview_validation
 from .preview_provenance import validate_preview_provenance
@@ -126,7 +128,23 @@ def run_lsb_preview_validation(*, service, environment: dict[str, Any], preview:
 def run_preview_validation(*, service, environment: dict[str, Any], preview: dict[str, Any], server_root: Path | str) -> dict[str, Any]:
     family = str(environment.get("family") or "").strip().lower()
     if family == "lsb":
-        return run_lsb_preview_validation(service=service, environment=environment, preview=preview, server_root=server_root)
-    if family in {"dsp", "topaz"}:
-        return run_legacy_preview_validation(service=service, environment=environment, preview=preview, server_root=server_root)
-    return {"status":"blocked","read_only_validation_ready":False,"execution_ready":False,"executor_enabled":False,"write_enabled":False,"operation":str(preview.get("action") or "unknown"),"environment":dict(environment),"schema_family_hint":service.schema.family_hint,"stages":{},"blockers":[{"stage":"environment","code":"validation_lineage_unsupported","message":"Preview validation requires an explicit LSB, DSP, or Topaz environment."}]}
+        report = run_lsb_preview_validation(service=service, environment=environment, preview=preview, server_root=server_root)
+    elif family in {"dsp", "topaz"}:
+        report = run_legacy_preview_validation(service=service, environment=environment, preview=preview, server_root=server_root)
+    else:
+        report = {"status":"blocked","read_only_validation_ready":False,"execution_ready":False,"executor_enabled":False,"write_enabled":False,"operation":str(preview.get("action") or "unknown"),"environment":dict(environment),"schema_family_hint":service.schema.family_hint,"stages":{},"blockers":[{"stage":"environment","code":"validation_lineage_unsupported","message":"Preview validation requires an explicit LSB, DSP, or Topaz environment."}]}
+
+    provenance = preview.get("preview_provenance") if isinstance(preview.get("preview_provenance"), dict) else {}
+    preview_id = str(provenance.get("preview_id") or "unknown")
+    event_id = f"validation:{preview_id}:{uuid4()}"
+    event_seq = append_validation_event(preview, report, event_id=event_id)
+    replay_id = provenance.get("replay_id")
+    replay = replay_status(str(replay_id)).as_dict() if replay_id else {"replay_id": None, "consumed": False, "consumed_at_utc": None, "audit_id": None, "executor_ref": None}
+    report["audit_ledger"] = {
+        "recorded": True,
+        "event_id": event_id,
+        "event_seq": event_seq,
+        "replay": replay,
+        "execution_enabled": False,
+    }
+    return report
