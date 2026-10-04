@@ -73,6 +73,7 @@ def test_merit_catalog_is_attached_only_as_checkout_catalog_and_ui_renders_all_d
     assert "cat.merits || []" in script
     assert "Rank" in script and "Next cost" in script and "value_per_upgrade" in script
     assert "Apply merit changes" in script
-    assert "/fields/preview" in script and "/fields/apply" in script
+    assert "const base = `/character-editor/characters/${selectedChar}/fields`" in script
+    assert "`${base}/preview`" in script and "`${base}/apply`" in script
     assert "/static/character_editor_merits.js" in template
     assert template.index('/static/character_editor_merits.js') < template.index('/static/character_editor_dense_modes.js')
