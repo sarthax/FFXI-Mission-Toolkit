@@ -52,9 +52,17 @@ Self-buffs are represented as a structured handoff rather than pretending SQL al
 - lineage-specific server reference
 - local-agent implementation checklist
 
-For current LandSandBoat, the relevant path is `scripts/globals/additional_effects.lua`, specifically `xi.additionalEffect.attack`, `xi.additionalEffect.procFunctions`, and the `SELF_BUFF` handler. Current LSB explicitly handles Blink and Haste in that handler; adding another self-buff means extending that branch (or introducing a deliberate new proc handler), applying the status to the attacker, and returning the appropriate additional-effect battle message/subeffect.
+For current LandSandBoat, the relevant upstream path is:
 
-DSP must be treated differently. Its archived `scripts/globals/status.lua` documents the legacy `ITEM_ADDEFFECT_TYPE` mapping as `1=status/damage/HP drain`, `2=MP drain`, `3=TP drain`, `4=dispel`, `5=self-buff`, `6=instant death`. Modern LSB uses a larger proc-type enum where `SELF_BUFF=12`. The editor therefore must never write a modern LSB type id to DSP/Topaz merely because the logical effect name matches.
+`https://github.com/LandSandBoat/server/blob/base/scripts/globals/additional_effects.lua`
+
+The useful implementation points are `xi.additionalEffect.attack`, `xi.additionalEffect.procFunctions`, and the `SELF_BUFF` handler. Current LSB explicitly handles Blink and Haste in that handler; adding another self-buff means extending that branch (or introducing a deliberate new proc handler), applying the status to the attacker, and returning the appropriate additional-effect battle message/subeffect.
+
+DSP must be treated differently. Its archived enum/reference file is:
+
+`https://github.com/DarkstarProject/darkstar/blob/master/scripts/globals/status.lua`
+
+That file documents the legacy `ITEM_ADDEFFECT_TYPE` mapping as `1=status/damage/HP drain`, `2=MP drain`, `3=TP drain`, `4=dispel`, `5=self-buff`, `6=instant death`. Modern LSB uses a larger proc-type enum where `SELF_BUFF=12`. The editor therefore must never write a modern LSB type id to DSP/Topaz merely because the logical effect name matches.
 
 The local server agent should perform this sequence for a new self-buff:
 
