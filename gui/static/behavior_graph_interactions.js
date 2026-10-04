@@ -1,5 +1,5 @@
 (() => {
-  const CONTRACT_VERSION = '5';
+  const CONTRACT_VERSION = '6';
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   let activateClarified = () => {};
 
@@ -9,6 +9,18 @@
     style.id = 'behavior-branch-flow-styles';
     style.textContent = `
       #behavior-clarified-view .plain-branch-intro{margin:0 0 8px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface)}
+      #behavior-clarified-view .plain-stage-overview{margin:10px 0 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden}
+      #behavior-clarified-view .plain-stage-overview>header{padding:9px 11px;background:var(--code-bg);border-bottom:1px solid var(--border)}
+      #behavior-clarified-view .plain-stage-overview>header strong,#behavior-clarified-view .plain-stage-overview>header .muted{display:block}
+      #behavior-clarified-view .plain-stage-overview>header .muted{margin-top:2px;font-size:11px}
+      #behavior-clarified-view .plain-stage-row{display:grid;grid-template-columns:minmax(170px,.9fr) minmax(150px,.7fr) minmax(180px,1fr);gap:10px;align-items:stretch;padding:10px 11px;border-top:1px dotted var(--border)}
+      #behavior-clarified-view .plain-stage-row:first-of-type{border-top:0}
+      #behavior-clarified-view .plain-stage-cell{display:flex;flex-direction:column;gap:5px;min-width:0}
+      #behavior-clarified-view .plain-stage-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+      #behavior-clarified-view .plain-stage-value{font-weight:700}
+      #behavior-clarified-view .plain-stage-event{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;border-left:1px dashed var(--border);border-right:1px dashed var(--border);padding:4px 10px}
+      #behavior-clarified-view .plain-stage-event strong{font-size:13px}
+      #behavior-clarified-view .plain-stage-event .muted{font-size:11px;margin-top:3px}
       #behavior-clarified-view .plain-lifecycle{margin:10px 0 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface);overflow:hidden}
       #behavior-clarified-view .plain-lifecycle>header{padding:9px 11px;background:var(--code-bg);border-bottom:1px solid var(--border)}
       #behavior-clarified-view .plain-lifecycle>header strong{display:block}
@@ -41,7 +53,7 @@
       #behavior-clarified-view .plain-branch-empty{color:var(--muted);font-size:12px;padding:4px 0}
       #behavior-clarified-view .plain-trigger-button{border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);padding:5px 8px;cursor:pointer;text-align:left}
       #behavior-clarified-view[hidden]{display:none!important}
-      @media(max-width:820px){#behavior-clarified-view .plain-lifecycle-row{grid-template-columns:1fr}#behavior-clarified-view .plain-lifecycle-middle{align-items:flex-start;text-align:left;border-left:0;border-right:0;border-top:1px dashed var(--border);border-bottom:1px dashed var(--border)}}
+      @media(max-width:820px){#behavior-clarified-view .plain-stage-row,#behavior-clarified-view .plain-lifecycle-row{grid-template-columns:1fr}#behavior-clarified-view .plain-stage-event,#behavior-clarified-view .plain-lifecycle-middle{align-items:flex-start;text-align:left;border-left:0;border-right:0;border-top:1px dashed var(--border);border-bottom:1px dashed var(--border)}}
     `;
     document.head.appendChild(style);
   }
@@ -124,6 +136,25 @@
       }).join('');
 
       const handoffs = Array.isArray(contract.event_handoffs) ? contract.event_handoffs : [];
+      const handoffsByEvent = new Map(handoffs.map(row => [String(row.event_id), row]));
+      const sourceStages = Array.isArray(contract.source_branch_evidence) ? contract.source_branch_evidence : [];
+      const stageRows = sourceStages.filter(row => handoffsByEvent.has(String(row.event_id)));
+      const stageHtml = stageRows.length ? (
+        `<section class="plain-stage-overview"><header><strong>Stage → event overview</strong>` +
+        `<span class="muted">Only verified literal named-state branches are shown here. Each row preserves the exact stage guard that starts an Event/CSID, then points to handlers with the same literal event identity. The handler relationship is not runtime ordering.</span></header>` +
+        stageRows.map(row => {
+          const handoff = handoffsByEvent.get(String(row.event_id)) || {};
+          const start = (handoff.start_branches || []).find(ref => String(ref.trigger_id || '') === String(row.hook || '')) || (handoff.start_branches || [])[0];
+          const handlers = (handoff.handler_branches || []).map(ref => `<button type="button" class="plain-trigger-button" data-contract-branch="${esc(ref.branch_id)}">${esc(ref.trigger_label)}</button>`).join('') || '<span class="muted">No handler branch indexed</span>';
+          const startButton = start ? `<button type="button" class="plain-trigger-button" data-contract-branch="${esc(start.branch_id)}">Open start branch</button>` : '';
+          return `<div class="plain-stage-row">` +
+            `<div class="plain-stage-cell"><span class="plain-stage-label">Verified stage guard</span><span class="plain-stage-value">${esc(row.state_name)} = ${esc(row.literal)}</span>${startButton}<span class="muted">${esc(row.hook || '')}</span></div>` +
+            `<div class="plain-stage-event"><strong>Event ${esc(row.event_id)}</strong><span class="muted">starts under this guard</span><span class="muted">·····► same event identity</span></div>` +
+            `<div class="plain-stage-cell"><span class="plain-stage-label">Matching handlers</span>${handlers}<span class="muted">${esc(handoff.ordering || 'UNPROVEN')} ordering</span></div>` +
+          `</div>`;
+        }).join('') + `</section>`
+      ) : '';
+
       const lifecycleHtml = handoffs.length ? (
         `<section class="plain-lifecycle"><header><strong>Event lifecycle</strong>` +
         `<span class="muted">These rows group the source branch that starts an Event/CSID with branches that handle the same literal Event/CSID. The dotted middle is an identity handoff only; runtime ordering remains unproven.</span></header>` +
@@ -138,7 +169,7 @@
         }).join('') + `</section>`
       ) : '';
 
-      clarified.innerHTML = `<div class="plain-branch-intro"><strong>Clarified branch flow</strong><div class="muted">Solid branch connectors preserve source-proven guard → effect relationships. Sibling effects are not shown as ordered unless source evidence proves ordering. Event lifecycle rows connect matching literal Event/CSID identities without claiming runtime sequence.</div></div>${lifecycleHtml}${groupsHtml}`;
+      clarified.innerHTML = `<div class="plain-branch-intro"><strong>Clarified branch flow</strong><div class="muted">Solid branch connectors preserve source-proven guard → effect relationships. Sibling effects are not shown as ordered unless source evidence proves ordering. Stage and event overview rows use exact source evidence and matching literal Event/CSID identity without claiming runtime sequence.</div></div>${stageHtml}${lifecycleHtml}${groupsHtml}`;
       for (const button of clarified.querySelectorAll('[data-contract-node]')) {
         button.addEventListener('click', () => selectNode(button.dataset.contractNode));
       }
