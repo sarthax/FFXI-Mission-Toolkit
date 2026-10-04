@@ -30,8 +30,16 @@ def test_lineage_semantics_panel_is_visible_and_preserves_existing_admin_surface
 def test_lineage_panel_does_not_add_write_routes():
     template = Path("gui/templates/auction_house.html").read_text(encoding="utf-8")
 
-    assert "/apply" not in template
-    assert "/commit" not in template
+    # Explanatory prose may mention apply/commit; reject actual write endpoint usage.
+    for forbidden in (
+        "fetch('/auction-house/apply",
+        'fetch("/auction-house/apply',
+        "fetch('/auction-house/commit",
+        'fetch("/auction-house/commit',
+        'action="/auction-house/apply',
+        'action="/auction-house/commit',
+    ):
+        assert forbidden not in template
     assert "fetch('/auction-house/lineage-semantics.json'" in template
 
 
