@@ -13,10 +13,11 @@ from workbench.devtools.missions.mission_lsb_extract import chain_event_transiti
 from workbench.devtools.missions.quest_lsb_extract import chain_quest_event_transitions, correlate_lsb_quest_handlers
 
 
-_PROGRESS_EFFECTS = {
+_PERSISTENT_PROGRESS_EFFECTS = {
     "SET_STATE", "SET_VAR", "SET_CHANNEL", "GRANT", "CONSUME", "REMOVE", "REISSUE",
-    "COMPLETE", "START", "GRANT_TITLE", "COMPLETE_TRADE", "TELEPORT", "START_TIMER",
+    "COMPLETE", "GRANT_TITLE", "COMPLETE_TRADE", "START_TIMER", "CANCEL_TIMER",
 }
+_SECONDARY_PROGRESS_EFFECTS = {"START", "ENTER", "EXIT", "TELEPORT", "CLIENT_TRANSPORT"}
 
 
 def _feature_var_name(kind: str, area_id: int, entry_id: int, key: str) -> str:
@@ -127,7 +128,6 @@ def _condition_value(
             return False, None, "Mission Flags"
         return True, q_id in set(area.get("completed", ())), "Mission Flags"
     if subject.startswith("mission:") and subject.endswith(":current"):
-        parts = subject.split(":")
         expected_area = int(area_id)
         area = (packed.get("mission") or {}).get(expected_area, {})
         if not area:
@@ -203,6 +203,19 @@ def _gate_state(rows: list[dict[str, Any]], logic: str = "ALL") -> str:
     return "PARTIAL"
 
 
+def _progression_score(effects: list[dict[str, Any]], logical_event_chain: bool) -> int:
+    names = {str(effect.get("effect") or "") for effect in effects}
+    if names & _PERSISTENT_PROGRESS_EFFECTS:
+        return 4
+    if logical_event_chain and effects:
+        return 3
+    if logical_event_chain:
+        return 2
+    if names & _SECONDARY_PROGRESS_EFFECTS:
+        return 1
+    return 0
+
+
 def _action_row(transition, **context) -> dict[str, Any]:
     gate_rows = _gate_rows(transition.gate, **context)
     effects = [
@@ -216,7 +229,8 @@ def _action_row(transition, **context) -> dict[str, Any]:
             "actor": transition.event.actor,
             "event_id": transition.event.event_id,
         }
-    is_progression = any(effect["effect"] in _PROGRESS_EFFECTS for effect in effects)
+    logical_event_chain = bool(transition.metadata.get("logical_event_chain"))
+    progression_score = _progression_score(effects, logical_event_chain)
     return {
         "transition_id": transition.transition_id,
         "trigger": transition.trigger,
@@ -224,11 +238,12 @@ def _action_row(transition, **context) -> dict[str, Any]:
         "effects": effects,
         "conditions": gate_rows,
         "eligibility": _gate_state(gate_rows, transition.gate.logic if transition.gate else "ALL"),
-        "progression": is_progression,
+        "progression": progression_score > 0,
+        "progression_score": progression_score,
         "implementation_status": transition.implementation_status,
         "section_index": transition.metadata.get("section_index"),
         "source_lines": transition.metadata.get("section_source_lines"),
-        "logical_event_chain": bool(transition.metadata.get("logical_event_chain")),
+        "logical_event_chain": logical_event_chain,
     }
 
 
@@ -347,7 +362,7 @@ def build_progression_inspector(
     for index in sorted(sections):
         section = sections[index]
         section["eligibility"] = _gate_state(section["conditions"], "ALL")
-        section["actions"].sort(key=lambda row: (not row["progression"], row["eligibility"] != "MATCH", str(row["transition_id"])))
+        section["actions"].sort(key=lambda row: (-int(row.get("progression_score", 0)), row["eligibility"] != "MATCH", str(row["transition_id"])))
         ordered_sections.append(section)
 
     target_completed = status in {"QUEST_COMPLETED", "MISSION_COMPLETED"}
@@ -372,18 +387,19 @@ def build_progression_inspector(
     blockers: list[dict[str, Any]] = []
     if current_section is not None:
         current_actions = [row for row in current_section["actions"] if row["eligibility"] in {"MATCH", "OPEN"}]
+        current_actions.sort(key=lambda row: (-int(row.get("progression_score", 0)), str(row["transition_id"])))
         if not current_actions:
             current_actions = current_section["actions"][:3]
         for condition in current_section["conditions"]:
             if condition.get("matches") is False:
                 blockers.append(condition)
         # Handler-level conditions explain why a specific transition is not currently available.
-        if not blockers and current_actions and not any(row["progression"] for row in current_actions):
+        if not blockers and current_actions and not any(row["progression_score"] >= 3 for row in current_actions):
             for action in current_section["actions"]:
-                if action["progression"] and action["eligibility"] == "BLOCKED":
+                if action["progression_score"] >= 3 and action["eligibility"] == "BLOCKED":
                     blockers.extend(cond for cond in action["conditions"] if cond.get("matches") is False)
 
-    primary_action = next((row for row in current_actions if row["progression"]), current_actions[0] if current_actions else None)
+    primary_action = max(current_actions, key=lambda row: int(row.get("progression_score", 0)), default=None)
     diagnosis = "COMPLETED" if target_completed else (
         "CURRENT" if current_section is not None and current_section["eligibility"] in {"MATCH", "OPEN"} else "INCONSISTENT"
     )
