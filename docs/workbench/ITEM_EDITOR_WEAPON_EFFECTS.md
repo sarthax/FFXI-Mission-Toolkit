@@ -47,23 +47,13 @@ This is intentionally fail-closed. Modern LSB proc-type numbers must not be writ
 
 ## Self-buff framework
 
-Self-buffs are represented as a structured handoff rather than pretending SQL alone is sufficient. A blueprint carries:
-
-- proc chance
-- client battle subeffect
-- status-effect id
-- power
-- duration
-- target = attacker/self
-- stacking/overwrite behavior requirement
-- lineage-specific server reference
-- local-agent implementation checklist
+Self-buffs are represented as a structured handoff rather than pretending SQL alone is sufficient. A blueprint carries proc chance, client battle subeffect, status-effect id, power, duration, attacker/self target semantics, a stacking/overwrite requirement, lineage-specific server references, and a local-agent implementation checklist.
 
 For current LandSandBoat, the relevant upstream path is:
 
 `https://github.com/LandSandBoat/server/blob/base/scripts/globals/additional_effects.lua`
 
-The useful implementation points are `xi.additionalEffect.attack`, `xi.additionalEffect.procFunctions`, and the `SELF_BUFF` handler. Current LSB explicitly handles **Blink** and **Haste** in that handler. Blink first checks for existing Blink/Copy Image shadows before applying; Haste currently applies through `attacker:addStatusEffect(...)` with a TODO upstream to verify power/duration/tier/overwrite details. That is exactly why the Toolkit requires the server implementation to declare stacking behavior rather than assuming it.
+The useful implementation points are `xi.additionalEffect.attack`, `xi.additionalEffect.procFunctions`, and the `SELF_BUFF` handler. Current LSB explicitly handles **Blink** and **Haste** in that handler. Blink first checks for existing Blink/Copy Image shadows before applying; Haste currently applies through `attacker:addStatusEffect(...)` with an upstream TODO to verify power/duration/tier/overwrite details. This is why the Toolkit requires the server implementation to declare stacking behavior rather than assuming it.
 
 For LSB the blueprint can safely emit the modern row bundle (`SELF_BUFF=12`) as reference/configuration data, but it still marks the effect `server-code-required` when the requested status is not implemented by the handler.
 
@@ -87,7 +77,7 @@ The Toolkit helper `build_self_buff_blueprint()` produces this handoff data dire
 
 ## Additional enhancement opportunities
 
-The same framework can support several useful editor capabilities without touching core server code:
+The same framework supports or prepares for several useful editor capabilities without touching core server code:
 
 - preset picker that expands to visible modifier rows;
 - raw/structured toggle so expert users can inspect exact mod ids;
