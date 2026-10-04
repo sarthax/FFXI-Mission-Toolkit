@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Capture source information - spreadsheet</h1>
+<p class="muted">Some captures have no source information (who posted them, when, the video link, the type). Fill these in with a spreadsheet instead of one at a time.
+{{ npend }} capture(s) are waiting for it. <a href="/captures/review?kind=manifest_link">See the list</a>.</p>
+
+<h3>1. Download the template</h3>
+<p><a href="/captures/metadata-template.csv?scope=pending">Pre-filled with the {{ npend }} captures that need it</a> &middot;
+<a href="/captures/metadata-template.csv?scope=blank">Blank template</a></p>
+<p class="muted">Open in Excel or any editor. Each row is one capture, identified by <code>capture_id</code> or <code>capture_file</code>.
+Fill in at least one of <code>uploader</code>, <code>title</code>, <code>video_url</code>. <code>post_date</code> is YYYY-MM-DD. Separate several tags with <code>;</code>.</p>
+<p class="muted">Columns: {{ columns|join(', ') }}<br>Allowed capture_type values: {{ types|join(', ') }}</p>
+
+<h3>2. Upload it</h3>
+<form method="post" action="/captures/metadata-import" enctype="multipart/form-data" style="display:grid;gap:6px;max-width:480px">
+  <input type="file" name="sheet" accept=".csv,text/csv" required>
+  <label><input type="radio" name="mode" value="validate" checked> Check only (nothing is saved)</label>
+  <label><input type="radio" name="mode" value="apply"> Check and save</label>
+  <label><input type="checkbox" name="overwrite" value="1"> Replace source information that already exists</label>
+  <button>Upload</button>
+</form>
+
+{% if rep %}
+<h3>Result {{ '(saved)' if applied_mode else '(check only - nothing saved)' }}</h3>
+<p>{{ rep.applied|length }} row(s) {{ 'saved' if applied_mode else 'ready to save' }}, {{ rep.skipped|length }} skipped, {{ rep.errors|length }} with errors.</p>
+{% if rep.errors %}<h4>Rows with problems (not saved)</h4>
+<ul>{% for line,msg in rep.errors %}<li>{% if line %}line {{ line }}: {% endif %}{{ msg }}</li>{% endfor %}</ul>{% endif %}
+{% if rep.skipped %}<h4>Skipped</h4><ul>{% for line,msg in rep.skipped %}<li>line {{ line }}: {{ msg }}</li>{% endfor %}</ul>{% endif %}
+{% endif %}
+{% endblock %}

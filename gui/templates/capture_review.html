@@ -33,14 +33,32 @@
     {% if r.detail.path %}<div class="muted">source: <code>{{ r.detail.path }}</code></div>{% endif %}
     {% if r.detail.copy_path %}<div class="muted">review copy: <code>{{ r.detail.copy_path }}</code></div>{% elif r.detail.copy_note %}<div class="muted">review copy: {{ r.detail.copy_note }}</div>{% endif %}
     {% if r.detail.files %}<ul class="muted">{% for f in r.detail.files %}<li><code>{{ f.filename }}</code> — {{ f.error }}</li>{% endfor %}</ul>{% endif %}
-    {% if r.detail.candidates is defined %}<div class="muted">closest: {{ r.detail.candidates[:3]|join(' · ') }}</div>{% endif %}
+    {% if r.detail.missing %}<div class="muted">Missing: {{ r.detail.missing|join(', ') }}. Fill them in on the right, or <a href="/captures/metadata-import">import a spreadsheet</a>.</div>{% endif %}
   </td>
   <td>{{ r.status|replace('_',' ') }}{% if r.resolution %}<div><strong>{{ r.resolution }}</strong></div>{% endif %}{% if r.note %}<div class="muted">{{ r.note }}</div>{% endif %}</td>
-  <td>{% if r.status == 'pending' and h %}
+  <td>{% if r.status == 'pending' and h and r.kind == 'manifest_link' %}
+    <form method="post" action="/captures/review/{{r.review_id}}" style="display:flex;flex-direction:column;gap:4px;max-width:420px">
+      <input type="hidden" name="status" value="{{status}}"><input type="hidden" name="kind" value="{{kind}}">
+      {% if r.detail.candidates %}<label><b>Option 1 - pick the Discord post this capture came from</b></label>
+      <select name="value"><option value="">- choose a post -</option>
+        {% for c in r.detail.candidates %}<option value="{{ c.title }}">{{ c.uploader or '?' }} · {{ c.post_date or 'no date' }} · {{ c.title[:70] }}{% if c.video_url %} · video{% endif %}</option>{% endfor %}
+      </select>
+      <button name="action" value="resolve">Use this post</button>{% endif %}
+      <details><summary><b>{{ 'Option 2 - ' if r.detail.candidates else '' }}Type the source information yourself</b></summary>
+        <div style="display:grid;gap:4px;margin-top:4px">
+          <input name="uploader" placeholder="Uploader (who posted it)">
+          <input name="post_date" placeholder="Post date YYYY-MM-DD">
+          <input name="video_url" placeholder="Video link https://...">
+          <input name="capture_type" placeholder="Capture type (e.g. campaign-battle) - optional">
+          <button name="action" value="enter">Save what I typed</button>
+        </div></details>
+      <input name="note" placeholder="note (optional)" size="18">
+      <button name="action" value="dismiss" title="Not a campaign capture - no source information is needed">Not a campaign capture - dismiss</button>
+    </form>
+  {% elif r.status == 'pending' and h %}
     <form method="post" action="/captures/review/{{r.review_id}}" style="display:flex;gap:4px;flex-wrap:wrap">
       <input type="hidden" name="status" value="{{status}}"><input type="hidden" name="kind" value="{{kind}}">
-      {% if h.value == 'zone' %}<input name="value" list="zone-list" placeholder="zone name" size="20">
-      {% elif h.value == 'title' %}<input name="value" list="cand-{{r.review_id}}" placeholder="manifest title" size="28"><datalist id="cand-{{r.review_id}}">{% for c in r.detail.candidates or [] %}<option value="{{c}}">{% endfor %}</datalist>{% endif %}
+      {% if h.value == 'zone' %}<input name="value" list="zone-list" placeholder="zone name" size="20">{% endif %}
       <input name="note" placeholder="note{% if r.kind=='empty_ingest' %} (required to dismiss){% endif %}" size="18">
       {% for act,lab in h.actions %}<button name="action" value="{{act}}">{{lab}}</button>{% endfor %}
     </form>{% endif %}</td>

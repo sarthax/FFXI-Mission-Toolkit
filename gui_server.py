@@ -34,7 +34,7 @@ from datetime import datetime
 from pathlib import Path
 
 from urllib.parse import quote
-from fastapi import FastAPI, Form, HTTPException, Query, Request
+from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
@@ -700,6 +700,8 @@ def capture_review_queue(request: Request, status: str = "pending", kind: str = 
     shown = [r for r in allrows if (status == "all" or r["status"] == status) and (not kind or r["kind"] == kind)]
     for r in shown:
         r["capture_label"] = labels.get(r["capture_id"], "")
+        if isinstance(r["detail"].get("candidates"), list):      # items stored before post details were added
+            r["detail"]["candidates"] = [c if isinstance(c, dict) else {"title": c} for c in r["detail"]["candidates"]]
     return templates.TemplateResponse(request, "capture_review.html", {
         "rows": shown, "zones": zones, "counts": counts, "status": status, "kind": kind,
         "kinds": rq.KINDS, "kind_counts": kind_counts, "msg": msg})
@@ -712,7 +714,8 @@ def capture_zone_review_legacy():
 
 @app.post("/captures/review/{review_id}")
 def capture_review_decide(review_id: int, action: str = Form(...), value: str = Form(""), note: str = Form(""),
-                          status: str = Form("pending"), kind: str = Form("")):
+                          status: str = Form("pending"), kind: str = Form(""), uploader: str = Form(""),
+                          post_date: str = Form(""), video_url: str = Form(""), capture_type: str = Form("")):
     from workbench.captures import review_queue as rq
     from urllib.parse import quote
     con = get_con()
@@ -721,6 +724,10 @@ def capture_review_decide(review_id: int, action: str = Form(...), value: str = 
         it = con.execute("SELECT kind FROM review_queue WHERE review_id=?", (review_id,)).fetchone()
         if it and it[0] == "zone":
             v = v.upper().replace(" ", "_")
+        if action == "enter":                      # manual source info typed on the review page
+            import json as _json
+            action, v = "resolve", _json.dumps({"uploader": uploader, "post_date": post_date,
+                                                "video_url": video_url, "capture_type": capture_type})
         rq.decide(con, review_id, action, v or None, note.strip() or None)
         msg = "Review #%d %s." % (review_id, "resolved" if action == "resolve" else "dismissed")
     except (ValueError, KeyError) as e:
@@ -728,6 +735,48 @@ def capture_review_decide(review_id: int, action: str = Form(...), value: str = 
     finally:
         con.close()
     return RedirectResponse(url="/captures/review?status=%s&kind=%s&msg=%s" % (quote(status), quote(kind), quote(msg)), status_code=303)
+
+
+@app.get("/captures/metadata-template.csv")
+def capture_metadata_template(scope: str = "pending"):
+    """CSV sheet to fill in capture source info (uploader, date, video, type) and re-import."""
+    from workbench.captures import source_info as si
+    con = get_con()
+    try:
+        body = si.template_csv(con, "blank" if scope == "blank" else "pending")
+    finally:
+        con.close()
+    return Response(body, media_type="text/csv", headers={
+        "Content-Disposition": 'attachment; filename="capture_source_info_%s.csv"' % ("blank" if scope == "blank" else "pending")})
+
+
+@app.get("/captures/metadata-import", response_class=HTMLResponse)
+def capture_metadata_import_page(request: Request):
+    from workbench.captures import source_info as si
+    con = get_con()
+    try:
+        types = si.allowed_types(con)
+        npend = con.execute("SELECT COUNT(*) FROM review_queue WHERE kind='manifest_link' AND status='pending'").fetchone()[0]
+    finally:
+        con.close()
+    return templates.TemplateResponse(request, "capture_metadata_import.html", {
+        "types": types, "columns": si.COLUMNS, "npend": npend, "rep": None})
+
+
+@app.post("/captures/metadata-import", response_class=HTMLResponse)
+async def capture_metadata_import(request: Request, sheet: UploadFile = File(...), mode: str = Form("validate"),
+                                  overwrite: str = Form("")):
+    from workbench.captures import source_info as si
+    text = (await sheet.read()).decode("utf-8-sig", errors="replace")
+    con = get_con()
+    try:
+        rep = si.import_csv(con, text, dry_run=(mode != "apply"), overwrite=bool(overwrite))
+        types = si.allowed_types(con)
+        npend = con.execute("SELECT COUNT(*) FROM review_queue WHERE kind='manifest_link' AND status='pending'").fetchone()[0]
+    finally:
+        con.close()
+    return templates.TemplateResponse(request, "capture_metadata_import.html", {
+        "types": types, "columns": si.COLUMNS, "npend": npend, "rep": rep, "applied_mode": mode == "apply"})
 
 
 @app.get("/captures/{capture_id}/review-flags")

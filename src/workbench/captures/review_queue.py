@@ -165,14 +165,21 @@ def detect_manifest(con, capture_id):
     except Exception:
         return {}
     _, _, amb = cm.match(con, rows=rows, only_ids={capture_id})
+    brief = lambda x: {"title": x.get("title", ""), "uploader": x.get("uploader", ""),
+                       "post_date": x.get("post_date", ""), "video_url": x.get("video_url", "")}
+    by_title = {x.get("title", ""): x for x in rows}
     tail = cm._norm(re.split(r"campaign - |:: ", r[0] or "", flags=re.I)[-1])
     if amb:
-        cands, why = amb[0][1], "ambiguous: more than one manifest title matches"
+        cands = [brief(by_title.get(t, {"title": t})) for t in amb[0][1]]
+        why = "More than one Discord post looks like a match - pick the right one."
     else:
         sc = sorted(((difflib.SequenceMatcher(None, tail, cm._norm(x.get("title", ""))).ratio(), x.get("title", ""))
                      for x in rows), reverse=True)[:8]
-        cands, why = [t for _, t in sc], "no confident manifest match; closest titles listed"
-    return {"": {"reason": why, "candidates": cands}}
+        cands = [brief(by_title[t]) for _, t in sc if t in by_title]
+        why = "No Discord post matched automatically - the closest posts are listed."
+    return {"": {"reason": "No source information is recorded for this capture (who posted it, when, video link, "
+                           "capture type). " + why,
+                 "missing": ["uploader", "post date", "video link", "capture type"], "candidates": cands}}
 
 
 def link_manifest(con, capture_id, title):
@@ -202,6 +209,13 @@ def _after_zone(con, row):
 
 def _decide_manifest(con, row, action, value):
     if action == "resolve":
+        if value and value.lstrip().startswith("{"):          # typed in by hand on the review page
+            from workbench.captures import source_info as si
+            clean, err = si.validate(con, json.loads(value), si.allowed_types(con))
+            if err:
+                raise ValueError(err)
+            si.apply_one(con, row["capture_id"], clean, "manual-review")
+            return "entered by hand: " + (clean["uploader"] or clean["title"] or clean["video_url"])
         link_manifest(con, row["capture_id"], value)
         return value
     return None
@@ -218,10 +232,10 @@ KINDS = {
     "empty_ingest": {"label": "Empty ingest", "blocking": True, "detect": detect_empty, "decide": _decide_noop,
                      "after": None, "actions": [("dismiss", "Confirm empty / ignore")], "value": None,
                      "help": "Ingest produced no data at all. Fix the source/parser and re-scan (it clears itself), or dismiss with a note if the capture really is empty."},
-    "manifest_link": {"label": "Campaign post not linked", "blocking": False, "detect": detect_manifest,
+    "manifest_link": {"label": "No source information", "blocking": False, "detect": detect_manifest,
                       "decide": _decide_manifest, "after": None,
-                      "actions": [("resolve", "Link to post"), ("dismiss", "Not a campaign capture")], "value": "title",
-                      "help": "Discord #campaign capture with no post metadata. Pick the matching manifest title."},
+                      "actions": [("resolve", "Use this post"), ("dismiss", "Not a campaign capture")], "value": "title",
+                      "help": "This capture has no source information (uploader, post date, video link, type). Pick its Discord post, type the details, or import a spreadsheet."},
 }
 
 
