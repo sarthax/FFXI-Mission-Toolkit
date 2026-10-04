@@ -116,14 +116,52 @@ def _lane(node: dict[str, Any], edge: dict[str, Any] | None = None) -> str:
     return "actions"
 
 
+def _source_line(node: dict[str, Any]) -> int | None:
+    meta = node.get("meta") or {}
+    nested = meta.get("metadata") or {}
+    for value in (nested.get("source_line"), meta.get("source_line")):
+        try:
+            return int(value) if value is not None else None
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
+def _in_ranges(node: dict[str, Any], ranges: tuple[tuple[int, int], ...]) -> bool:
+    line = _source_line(node)
+    return line is not None and any(start <= line <= end for start, end in ranges)
+
+
+def _scheduled_callback_ranges(
+    seed: str,
+    *,
+    nodes: dict[str, dict[str, Any]],
+    outgoing: dict[str, list[dict[str, Any]]],
+) -> tuple[tuple[int, int], ...]:
+    ranges: list[tuple[int, int]] = []
+    for edge in outgoing.get(seed, ()):
+        target = nodes.get(str(edge.get("target") or ""))
+        if target is None or target.get("kind") != "callback":
+            continue
+        source_lines = (target.get("meta") or {}).get("source_lines")
+        if not isinstance(source_lines, (list, tuple)) or len(source_lines) != 2:
+            continue
+        try:
+            ranges.append((int(source_lines[0]), int(source_lines[1])))
+        except (TypeError, ValueError):
+            continue
+    return tuple(ranges)
+
+
 def _descendants(
     seed: str,
     *,
     nodes: dict[str, dict[str, Any]],
     outgoing: dict[str, list[dict[str, Any]]],
     stop_at_callbacks: bool = False,
+    blocked_source_ranges: tuple[tuple[int, int], ...] = (),
 ) -> list[tuple[dict[str, Any], dict[str, Any]]]:
-    """Return bounded descendants, optionally treating nested callbacks as flow boundaries."""
+    """Return bounded descendants while respecting callback presentation boundaries."""
     found: list[tuple[dict[str, Any], dict[str, Any]]] = []
     seen = {seed}
     queue: deque[str] = deque([seed])
@@ -137,9 +175,16 @@ def _descendants(
             node = nodes.get(target)
             if node is None:
                 continue
-            found.append((node, edge))
-            if stop_at_callbacks and node.get("kind") == "callback":
+            if node.get("kind") == "callback":
+                found.append((node, edge))
+                if stop_at_callbacks:
+                    continue
+            elif blocked_source_ranges and _in_ranges(node, blocked_source_ranges):
+                # Technical graph keeps callback-body observations attributed to their enclosing
+                # hook, but Plain View presents those lines only under the callback subflow.
                 continue
+            else:
+                found.append((node, edge))
             queue.append(target)
     return found
 
@@ -149,6 +194,7 @@ def _guard_requirements(
     *,
     nodes: dict[str, dict[str, Any]],
     incoming: dict[str, list[dict[str, Any]]],
+    blocked_source_ranges: tuple[tuple[int, int], ...] = (),
 ) -> list[tuple[dict[str, Any], dict[str, Any]]]:
     """Collect source-visible guards that feed a rule even though they are upstream edges."""
     rows: list[tuple[dict[str, Any], dict[str, Any]]] = []
@@ -158,7 +204,7 @@ def _guard_requirements(
             continue
         source_id = str(edge.get("source") or "")
         condition = nodes.get(source_id)
-        if condition is None:
+        if condition is None or _in_ranges(condition, blocked_source_ranges):
             continue
         if source_id not in seen:
             seen.add(source_id)
@@ -169,7 +215,7 @@ def _guard_requirements(
                 continue
             upstream_id = str(upstream.get("source") or "")
             upstream_node = nodes.get(upstream_id)
-            if upstream_node is None or upstream_id in seen:
+            if upstream_node is None or upstream_id in seen or _in_ranges(upstream_node, blocked_source_ranges):
                 continue
             seen.add(upstream_id)
             rows.append((upstream_node, upstream))
@@ -207,9 +253,9 @@ def build_plain_behavior_projection(graph: dict[str, Any]) -> dict[str, Any]:
 
     Rule nodes plus raw helper call/callee plumbing are collapsed, but rule guards are deliberately
     retained as requirements. Nested callback nodes are explicit scheduling actions in their parent
-    flow and form their own trigger flows, preventing callback effects from being duplicated in the
-    scheduling hook. Resolved helper identity, helper inputs/effects, conditions, state, callbacks,
-    targets, and exact technical node IDs remain available for evidence drill-down.
+    flow and form their own trigger flows. Callback-body observations that the extractor also keeps
+    under the enclosing hook are suppressed only in Plain View using their exact callback source
+    spans, preventing duplicated effects without deleting technical evidence.
     """
     graph_nodes = [row for row in graph.get("nodes", ()) if isinstance(row, dict) and row.get("id")]
     nodes = {str(row["id"]): row for row in graph_nodes}
@@ -233,8 +279,13 @@ def build_plain_behavior_projection(graph: dict[str, Any]) -> dict[str, Any]:
         lanes: dict[str, list[dict[str, Any]]] = {"requirements": [], "actions": [], "results": []}
         seen_lane_ids: dict[str, set[str]] = {key: set() for key in lanes}
         collapsed: list[dict[str, Any]] = []
+        callback_ranges = _scheduled_callback_ranges(
+            str(trigger["id"]), nodes=nodes, outgoing=outgoing
+        )
 
         def add_visible(node: dict[str, Any], edge: dict[str, Any], *, forced_lane: str | None = None) -> None:
+            if callback_ranges and node.get("kind") != "callback" and _in_ranges(node, callback_ranges):
+                return
             lane = forced_lane or _lane(node, edge)
             if lane == "trigger" or lane not in lanes:
                 return
@@ -245,7 +296,11 @@ def build_plain_behavior_projection(graph: dict[str, Any]) -> dict[str, Any]:
             lanes[lane].append(_card(node, lane))
 
         for node, edge in _descendants(
-            str(trigger["id"]), nodes=nodes, outgoing=outgoing, stop_at_callbacks=True
+            str(trigger["id"]),
+            nodes=nodes,
+            outgoing=outgoing,
+            stop_at_callbacks=True,
+            blocked_source_ranges=callback_ranges,
         ):
             if node.get("kind") == "callback":
                 add_visible(node, edge, forced_lane="actions")
@@ -254,7 +309,10 @@ def build_plain_behavior_projection(graph: dict[str, Any]) -> dict[str, Any]:
                 collapsed.append(_card(node, "actions"))
                 if node.get("kind") == "rule":
                     for requirement, guard_edge in _guard_requirements(
-                        str(node.get("id")), nodes=nodes, incoming=incoming
+                        str(node.get("id")),
+                        nodes=nodes,
+                        incoming=incoming,
+                        blocked_source_ranges=callback_ranges,
                     ):
                         add_visible(requirement, guard_edge, forced_lane="requirements")
                 continue
@@ -283,7 +341,8 @@ def build_plain_behavior_projection(graph: dict[str, Any]) -> dict[str, Any]:
         "safety": {
             "evidence_preserved": True,
             "callback_flows_partitioned": True,
+            "callback_overlap_filtered_by_source_span": True,
             "collapsed_kinds": sorted(_COLLAPSED_KINDS),
-            "semantics": "Projection uses only extracted graph labels/edges; it does not infer runtime outcomes.",
+            "semantics": "Projection uses only extracted graph labels/edges/source spans; it does not infer runtime outcomes.",
         },
     }
