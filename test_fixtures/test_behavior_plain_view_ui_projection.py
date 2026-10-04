@@ -83,6 +83,21 @@ def test_clarified_flow_renders_backend_verified_stage_continuity_chain():
     assert "${chainHtml}${stageHtml}${lifecycleHtml}${groupsHtml}" in wrapper
 
 
+def test_clarified_stage_continuity_cards_navigate_to_detailed_stage_rows():
+    wrapper = WRAPPER.read_text(encoding="utf-8")
+
+    assert "focusStageEvent" in wrapper
+    assert "data-contract-stage-event" in wrapper
+    assert "button.dataset.contractStageEvent" in wrapper
+    assert "data-stage-event-id" in wrapper
+    assert "row.dataset.stageEventId === String(eventId)" in wrapper
+    assert "row.classList.toggle('stage-focus'" in wrapper
+    assert "stage-focus" in wrapper
+    assert "Select a stage or event card to jump to its detailed progression row." in wrapper
+    assert "data-contract-stage-event=\"${esc(link.via_event_id)}\"" in wrapper
+    assert "data-contract-stage-event=\"${esc(link.next_event_id)}\"" in wrapper
+
+
 def test_clarified_flow_renders_backend_verified_stage_progression_contract():
     wrapper = WRAPPER.read_text(encoding="utf-8")
 

@@ -1,5 +1,5 @@
 (() => {
-  const CONTRACT_VERSION = '8';
+  const CONTRACT_VERSION = '9';
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   let activateClarified = () => {};
 
@@ -15,7 +15,9 @@
       #behavior-clarified-view .plain-stage-chain>header .muted{margin-top:2px;font-size:11px}
       #behavior-clarified-view .plain-stage-chain-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 11px;border-top:1px dotted var(--border)}
       #behavior-clarified-view .plain-stage-chain-row:first-of-type{border-top:0}
-      #behavior-clarified-view .plain-stage-chain-step{display:flex;flex-direction:column;gap:2px;min-width:115px;padding:7px 9px;border:1px solid var(--border);border-radius:7px;background:var(--code-bg)}
+      #behavior-clarified-view .plain-stage-chain-step{display:flex;flex-direction:column;gap:2px;min-width:115px;padding:7px 9px;border:1px solid var(--border);border-radius:7px;background:var(--code-bg);color:var(--text);text-align:left}
+      #behavior-clarified-view button.plain-stage-chain-step{cursor:pointer}
+      #behavior-clarified-view button.plain-stage-chain-step:hover{border-color:var(--accent,#5684a5)}
       #behavior-clarified-view .plain-stage-chain-step strong{font-size:13px}
       #behavior-clarified-view .plain-stage-chain-step small{color:var(--muted)}
       #behavior-clarified-view .plain-stage-chain-arrow{display:flex;flex-direction:column;align-items:center;text-align:center;color:var(--muted);font-size:10px;line-height:1.2}
@@ -24,8 +26,9 @@
       #behavior-clarified-view .plain-stage-overview>header{padding:9px 11px;background:var(--code-bg);border-bottom:1px solid var(--border)}
       #behavior-clarified-view .plain-stage-overview>header strong,#behavior-clarified-view .plain-stage-overview>header .muted{display:block}
       #behavior-clarified-view .plain-stage-overview>header .muted{margin-top:2px;font-size:11px}
-      #behavior-clarified-view .plain-stage-row{display:grid;grid-template-columns:minmax(170px,.9fr) minmax(150px,.7fr) minmax(180px,1fr);gap:10px;align-items:stretch;padding:10px 11px;border-top:1px dotted var(--border)}
+      #behavior-clarified-view .plain-stage-row{display:grid;grid-template-columns:minmax(170px,.9fr) minmax(150px,.7fr) minmax(180px,1fr);gap:10px;align-items:stretch;padding:10px 11px;border-top:1px dotted var(--border);transition:outline-color .15s ease,box-shadow .15s ease}
       #behavior-clarified-view .plain-stage-row:first-of-type{border-top:0}
+      #behavior-clarified-view .plain-stage-row.stage-focus{outline:2px solid var(--accent,#5684a5);outline-offset:-3px;box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent,#5684a5) 16%,transparent)}
       #behavior-clarified-view .plain-stage-cell{display:flex;flex-direction:column;gap:5px;min-width:0}
       #behavior-clarified-view .plain-stage-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
       #behavior-clarified-view .plain-stage-value{font-weight:700}
@@ -112,6 +115,19 @@
       });
     };
 
+    const focusStageEvent = eventId => {
+      if (eventId === undefined || eventId === null || eventId === '') return;
+      activateClarified();
+      queueMicrotask(() => {
+        for (const row of clarified.querySelectorAll('[data-stage-event-id]')) {
+          row.classList.toggle('stage-focus', row.dataset.stageEventId === String(eventId));
+        }
+        const target = [...clarified.querySelectorAll('[data-stage-event-id]')]
+          .find(row => row.dataset.stageEventId === String(eventId));
+        target?.scrollIntoView({behavior: 'smooth', block: 'center'});
+      });
+    };
+
     const cardButton = (row, className) => (
       `<button type="button" class="${className}" data-contract-node="${esc(row.node_id)}">` +
       `<strong>${esc(row.label)}</strong>${row.technical_label ? `<small>${esc(row.technical_label)}</small>` : ''}</button>`
@@ -151,13 +167,14 @@
       const chainLinks = Array.isArray(contract.stage_chain_links) ? contract.stage_chain_links : [];
       const chainHtml = chainLinks.length ? (
         `<section class="plain-stage-chain"><header><strong>Verified stage continuity</strong>` +
-        `<span class="muted">A link appears only when one verified direct next-stage literal matches exactly one verified start literal for the same canonical state. This is value continuity across evidence, not proven runtime ordering.</span></header>` +
+        `<span class="muted">A link appears only when one verified direct next-stage literal matches exactly one verified start literal for the same canonical state. This is value continuity across evidence, not proven runtime ordering. Select a stage or event card to jump to its detailed progression row.</span></header>` +
         chainLinks.map(link => `<div class="plain-stage-chain-row">` +
-          `<div class="plain-stage-chain-step"><small>Current stage</small><strong>${esc(link.state_name)} = ${esc(link.from_value)}</strong></div>` +
-          `<div class="plain-stage-chain-arrow"><b>→</b><span>Event ${esc(link.via_event_id)}</span></div>` +
-          `<div class="plain-stage-chain-step"><small>Verified next value</small><strong>${esc(link.state_name)} = ${esc(link.next_value)}</strong></div>` +
+          `<button type="button" class="plain-stage-chain-step" data-contract-stage-event="${esc(link.via_event_id)}"><small>Current stage</small><strong>${esc(link.state_name)} = ${esc(link.from_value)}</strong></button>` +
+          `<button type="button" class="plain-stage-chain-step" data-contract-stage-event="${esc(link.via_event_id)}"><small>Starts</small><strong>Event ${esc(link.via_event_id)}</strong></button>` +
+          `<div class="plain-stage-chain-arrow"><b>→</b><span>verified direct same-state write</span></div>` +
+          `<button type="button" class="plain-stage-chain-step" data-contract-stage-event="${esc(link.next_event_id)}"><small>Verified next value</small><strong>${esc(link.state_name)} = ${esc(link.next_value)}</strong></button>` +
           `<div class="plain-stage-chain-arrow"><b>·····►</b><span>same-state literal continuity</span><span>${esc(link.ordering || 'UNPROVEN')} ordering</span></div>` +
-          `<div class="plain-stage-chain-step"><small>Unique matching start</small><strong>Event ${esc(link.next_event_id)}</strong></div>` +
+          `<button type="button" class="plain-stage-chain-step" data-contract-stage-event="${esc(link.next_event_id)}"><small>Unique matching start</small><strong>Event ${esc(link.next_event_id)}</strong></button>` +
         `</div>`).join('') + `</section>`
       ) : '';
 
@@ -167,7 +184,7 @@
         stageRows.map(row => {
           const handlers = (row.handler_branches || []).map(ref => `<button type="button" class="plain-trigger-button" data-contract-branch="${esc(ref.branch_id)}">${esc(ref.trigger_label)}</button>`).join('') || '<span class="muted">No handler branch indexed</span>';
           const writes = (row.handler_writes || []).map(write => `<span class="plain-stage-value">${esc(write.state_name || row.state_name)} = ${esc(write.value)}</span><span class="muted">${esc(write.hook || '')}${write.source_line ? ` · line ${esc(write.source_line)}` : ''}</span>`).join('') || '<span class="muted">No verified direct same-state write</span>';
-          return `<div class="plain-stage-row">` +
+          return `<div class="plain-stage-row" data-stage-event-id="${esc(row.event_id)}">` +
             `<div class="plain-stage-cell"><span class="plain-stage-label">Current stage</span><span class="plain-stage-value">${esc(row.state_name)} = ${esc(row.from_value)}</span><span class="muted">verified source guard · ${esc(row.start_hook || '')}</span></div>` +
             `<div class="plain-stage-event"><strong>Event ${esc(row.event_id)}</strong><span class="muted">started by this stage guard</span><span class="plain-lifecycle-dots">·····►</span><span class="muted">same literal event identity · ${esc(row.ordering || 'UNPROVEN')} ordering</span></div>` +
             `<div class="plain-stage-cell"><span class="plain-stage-label">Verified next-stage write</span>${writes}${handlers}</div>` +
@@ -195,6 +212,9 @@
       }
       for (const button of clarified.querySelectorAll('[data-contract-branch]')) {
         button.addEventListener('click', () => focusBranch(button.dataset.contractBranch));
+      }
+      for (const button of clarified.querySelectorAll('[data-contract-stage-event]')) {
+        button.addEventListener('click', () => focusStageEvent(button.dataset.contractStageEvent));
       }
       clarified.dataset.plainContractVersion = CONTRACT_VERSION;
       return;
