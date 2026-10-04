@@ -6,7 +6,7 @@ commit Auction House mutations.
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, is_dataclass
 from pathlib import Path
 from typing import Any
 
@@ -29,9 +29,15 @@ def _issues(value: Any) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for item in raw or []:
         if isinstance(item, dict):
-            out.append(item)
-        else:
+            out.append(dict(item))
+        elif is_dataclass(item):
             out.append(asdict(item))
+        else:
+            out.append({
+                "code": getattr(item, "code", "unknown"),
+                "message": getattr(item, "message", "Blocked"),
+                "blocking": getattr(item, "blocking", True),
+            })
     return out
 
 
