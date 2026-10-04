@@ -1,7 +1,8 @@
 """Scenario-focused traversal modes for Feature Trace.
 
-Modes do not invent relationships.  They rank/filter already recorded or provider-generated
+Modes do not invent relationships. They rank/filter already recorded or provider-generated
 relationships so the trace answers one question at a time instead of returning one giant graph.
+Confidence ranks evidence within a relevant scenario; it never bypasses the selected mode.
 """
 from __future__ import annotations
 
@@ -53,11 +54,7 @@ def relationship_relevance(relationship: str | None, mode: str | TraceMode | Non
     if selected.mode_id == "all":
         return 100
     text = str(relationship or "").replace("_", " ").replace("-", " ").casefold()
-    score = 0
-    for term in selected.preferred_relationship_terms:
-        if term.casefold() in text:
-            score += 20
-    return score
+    return sum(20 for term in selected.preferred_relationship_terms if term.casefold() in text)
 
 
 def edge_allowed(edge: dict, mode: str | TraceMode | None) -> bool:
@@ -66,12 +63,10 @@ def edge_allowed(edge: dict, mode: str | TraceMode | None) -> bool:
         return True
     if edge.get("runtime_only") and not selected.include_runtime:
         return False
-    # Keep exact/high-confidence edges even when their historical relationship names predate modes.
-    confidence = str(edge.get("confidence") or "").upper()
     status = str(edge.get("status") or "").upper()
-    if relationship_relevance(edge.get("relationship"), selected):
-        return True
-    return confidence in {"VERIFIED", "EXACT"} and status not in {"REJECTED", "INVALID"}
+    if status in {"REJECTED", "INVALID"}:
+        return selected.mode_id == "diagnose"
+    return relationship_relevance(edge.get("relationship"), selected) > 0
 
 
 def mode_options() -> list[dict]:
