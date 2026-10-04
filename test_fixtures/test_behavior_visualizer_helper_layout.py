@@ -44,9 +44,10 @@ def main():
     wrapper=WRAPPER.read_text(encoding="utf-8")
     assert "branch_tree_v1" in wrapper,wrapper
     assert "plain-branch-tree" in wrapper,wrapper
-    assert "Cross-hook event identity" in wrapper,wrapper
+    assert "Event lifecycle" in wrapper,wrapper
+    assert "same literal event identity" in wrapper,wrapper
     assert "UNPROVEN" in wrapper,wrapper
-    assert "do not assert runtime execution order" in wrapper,wrapper
+    assert "runtime ordering remains unproven" in wrapper,wrapper
 
     branch_flow_main()
     print("Behavior Inspector helper impact layout regression: PASS")
