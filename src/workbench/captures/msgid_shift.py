@@ -24,11 +24,32 @@ def _norm(s):
     return re.sub(r"[\r\n\x07\s]+", " ", re.sub(r"\u227a.*?\u227b", " ", s or "")).strip()[:25]
 
 
+def _zmap(con, capture_id):
+    """(entity_id, msgid) -> zone_db. capture_events for older ingests; capture_eventview
+    (0x036 rows, mes_num) for newer-format EventView captures that never filled capture_events."""
+    zm = {(r[0], r[1]): r[2] for r in con.execute(
+        "SELECT entity_id, mes_num, zone_db FROM capture_eventview WHERE capture_id=? "
+        "AND opcode='0x036' AND mes_num IS NOT NULL AND entity_id IS NOT NULL", (capture_id,))}
+    zm.update({(r[0], r[1]): r[2] for r in con.execute(
+        "SELECT entity_id, message_id, zone_db FROM capture_events WHERE capture_id=? "
+        "AND message_id IS NOT NULL AND opcode_name LIKE '%Chat%'", (capture_id,))})
+    return zm
+
+
+def _chat_near(chat, ts, window=2):
+    """Chat lines within +-window seconds of a packet timestamp (HH:MM:SS keys)."""
+    h, m, s = (int(x) for x in (ts or "")[11:19].split(":"))
+    base = h * 3600 + m * 60 + s
+    out = []
+    for d in range(-window, window + 1):
+        t = (base + d) % 86400
+        out += chat.get("%02d:%02d:%02d" % (t // 3600, t % 3600 // 60, t % 60), [])
+    return out
+
+
 def compute(con, capture_id, zoneid_for_zone_db):
     ensure_table(con)
-    zmap = {(r[0], r[1]): r[2] for r in con.execute(
-        "SELECT entity_id, message_id, zone_db FROM capture_events WHERE capture_id=? "
-        "AND message_id IS NOT NULL AND opcode_name LIKE '%Chat%'", (capture_id,))}
+    zmap = _zmap(con, capture_id)
     chat = collections.defaultdict(list)
     for ts, t in con.execute("SELECT ts,text FROM capture_caplog_chat WHERE capture_id=?", (capture_id,)):
         chat[ts].append(t or "")
@@ -41,7 +62,7 @@ def compute(con, capture_id, zoneid_for_zone_db):
         m = struct.unpack_from("<H", b, 10)[0] & 0x7FFF
         zone = zmap.get((uid, m))
         if zone:
-            per[zone].append((m, " | ".join(chat.get((ts or "")[11:], []))))
+            per[zone].append((m, " | ".join(_chat_near(chat, ts))))
     out = []
     for zone, pk in per.items():
         zid = zoneid_for_zone_db(con, zone)
@@ -94,9 +115,7 @@ def ensure_master_tables(con):
 def observe(con, capture_id, zoneid_for_zone_db):
     """Store unambiguous (msgid -> shift) observations for one capture. Cheap; run at/after ingest."""
     ensure_master_tables(con)
-    zmap = {(r[0], r[1]): r[2] for r in con.execute(
-        "SELECT entity_id, message_id, zone_db FROM capture_events WHERE capture_id=? "
-        "AND message_id IS NOT NULL AND opcode_name LIKE '%Chat%'", (capture_id,))}
+    zmap = _zmap(con, capture_id)
     chat = collections.defaultdict(list)
     for ts, t in con.execute("SELECT ts,text FROM capture_caplog_chat WHERE capture_id=?", (capture_id,)):
         chat[ts].append(t or "")
@@ -107,7 +126,7 @@ def observe(con, capture_id, zoneid_for_zone_db):
             continue
         m = struct.unpack_from("<H", b, 10)[0] & 0x7FFF
         zone = zmap.get((struct.unpack_from("<I", b, 4)[0], m))
-        lines = " | ".join(chat.get((ts or "")[11:], []))
+        lines = " | ".join(_chat_near(chat, ts))
         if not zone or not lines:
             continue
         zid = zoneid_for_zone_db(con, zone)
