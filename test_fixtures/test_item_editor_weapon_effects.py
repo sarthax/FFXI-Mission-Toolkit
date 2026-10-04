@@ -51,7 +51,7 @@ def test_self_buff_blueprint_is_explicit_server_handoff():
     blueprint = effects.build_self_buff_blueprint(status=33, chance=25, power=150, duration=45, subeffect=23, lineage="lsb")
     assert blueprint["requiresServerCode"] is True
     assert blueprint["lineage"] == "LSB"
-    assert blueprint["rowsAreSafeToApply"] is True
+    assert blueprint["rowsAreSafeToApply"] is False
     assert blueprint["capability"] == "server-code-required"
     assert "additional_effects.lua" in blueprint["serverReference"]["additional_effects"]
     assert "Blink and Haste" in blueprint["serverReference"]["notes"]
@@ -78,6 +78,9 @@ def test_lineage_capability_badges_are_fail_closed():
     assert effects.capability_for("DSP", 12) == "server-code-required"
     assert effects.capability_for("unknown-fork", 1) == "verify-lineage"
     assert effects.capability_for("LSB", 999) == "unsupported"
+    assert effects.rows_safe_to_apply("LSB", 1) is True
+    assert effects.rows_safe_to_apply("LSB", 12) is False
+    assert effects.rows_safe_to_apply("DSP", 1) is False
 
 
 def test_effect_summary_and_generic_handoff_are_editor_ready():
@@ -85,6 +88,7 @@ def test_effect_summary_and_generic_handoff_are_editor_ready():
     assert effects.summarize_effect(effect) == "20% damage · fire · amount 25"
     handoff = effects.export_server_handoff(effect, "DSP")
     assert handoff["capability"] == "verify-lineage"
+    assert handoff["rowsAreSafeToApply"] is False
     assert handoff["summary"] == "20% damage · fire · amount 25"
     assert "status.lua" in handoff["serverReference"]["mod_enum"]
     assert "Verify proc numbering" in handoff["warning"]
