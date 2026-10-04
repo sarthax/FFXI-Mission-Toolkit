@@ -14,6 +14,7 @@ _TRIGGER_KINDS = {"hook", "callback"}
 _REQUIREMENT_KINDS = {"condition", "helper_input"}
 _RESULT_KINDS = {"state", "target", "helper_effect"}
 _COLLAPSED_KINDS = {"rule"}
+_GUARD_EDGE_KINDS = {"GUARDS", "STATE_GUARD", "STATE_READ", "EVENT_GUARD", "EVENT_OUTCOME_GUARD"}
 
 
 def _human_hook(node: dict[str, Any]) -> str:
@@ -106,7 +107,12 @@ def _lane(node: dict[str, Any], edge: dict[str, Any] | None = None) -> str:
     return "actions"
 
 
-def _descendants(seed: str, *, nodes: dict[str, dict[str, Any]], outgoing: dict[str, list[dict[str, Any]]]) -> list[tuple[dict[str, Any], dict[str, Any]]]:
+def _descendants(
+    seed: str,
+    *,
+    nodes: dict[str, dict[str, Any]],
+    outgoing: dict[str, list[dict[str, Any]]],
+) -> list[tuple[dict[str, Any], dict[str, Any]]]:
     found: list[tuple[dict[str, Any], dict[str, Any]]] = []
     seen = {seed}
     queue: deque[str] = deque([seed])
@@ -122,6 +128,44 @@ def _descendants(seed: str, *, nodes: dict[str, dict[str, Any]], outgoing: dict[
             if node is not None:
                 found.append((node, edge))
     return found
+
+
+def _guard_requirements(
+    rule_id: str,
+    *,
+    nodes: dict[str, dict[str, Any]],
+    incoming: dict[str, list[dict[str, Any]]],
+) -> list[tuple[dict[str, Any], dict[str, Any]]]:
+    """Collect source-visible guards that feed a rule even though they are upstream edges.
+
+    The technical graph models conditions as ``condition -> rule``. A trigger-only descendant walk
+    therefore cannot see them. Pull those guard nodes back into the Plain Behavior requirement lane
+    and include one additional upstream evidence node (state/event/helper input) when the graph
+    explicitly connects it to the condition.
+    """
+    rows: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    seen: set[str] = set()
+    for edge in incoming.get(rule_id, ()):
+        if str(edge.get("kind") or "") != "GUARDS":
+            continue
+        source_id = str(edge.get("source") or "")
+        condition = nodes.get(source_id)
+        if condition is None:
+            continue
+        if source_id not in seen:
+            seen.add(source_id)
+            rows.append((condition, edge))
+        for upstream in incoming.get(source_id, ()):
+            upstream_kind = str(upstream.get("kind") or "")
+            if upstream_kind not in _GUARD_EDGE_KINDS:
+                continue
+            upstream_id = str(upstream.get("source") or "")
+            upstream_node = nodes.get(upstream_id)
+            if upstream_node is None or upstream_id in seen:
+                continue
+            seen.add(upstream_id)
+            rows.append((upstream_node, upstream))
+    return rows
 
 
 def _card(node: dict[str, Any], lane: str) -> dict[str, Any]:
@@ -153,16 +197,21 @@ def _summary(trigger_label: str, lanes: dict[str, list[dict[str, Any]]]) -> str:
 def build_plain_behavior_projection(graph: dict[str, Any]) -> dict[str, Any]:
     """Return an admin-facing view of a technical behavior graph.
 
-    Only rule scaffolding is collapsed in this first refinement. Conditions, effects, state,
-    helper inputs/effects, callbacks, targets, and technical node IDs remain available.
+    Rule scaffolding is collapsed, but its incoming guards are deliberately retained as
+    requirements. Conditions, effects, state, helper inputs/effects, callbacks, targets, and exact
+    technical node IDs remain available for evidence drill-down.
     """
     graph_nodes = [row for row in graph.get("nodes", ()) if isinstance(row, dict) and row.get("id")]
     nodes = {str(row["id"]): row for row in graph_nodes}
     outgoing: dict[str, list[dict[str, Any]]] = {}
+    incoming: dict[str, list[dict[str, Any]]] = {}
     for edge in graph.get("edges", ()):
         if not isinstance(edge, dict):
             continue
-        outgoing.setdefault(str(edge.get("source") or ""), []).append(edge)
+        source = str(edge.get("source") or "")
+        target = str(edge.get("target") or "")
+        outgoing.setdefault(source, []).append(edge)
+        incoming.setdefault(target, []).append(edge)
 
     triggers = [row for row in graph_nodes if row.get("kind") in _TRIGGER_KINDS]
     if not triggers:
@@ -174,18 +223,26 @@ def build_plain_behavior_projection(graph: dict[str, Any]) -> dict[str, Any]:
         lanes: dict[str, list[dict[str, Any]]] = {"requirements": [], "actions": [], "results": []}
         seen_lane_ids: dict[str, set[str]] = {key: set() for key in lanes}
         collapsed: list[dict[str, Any]] = []
+
+        def add_visible(node: dict[str, Any], edge: dict[str, Any], *, forced_lane: str | None = None) -> None:
+            lane = forced_lane or _lane(node, edge)
+            if lane == "trigger" or lane not in lanes:
+                return
+            node_id = str(node.get("id"))
+            if node_id in seen_lane_ids[lane]:
+                return
+            seen_lane_ids[lane].add(node_id)
+            lanes[lane].append(_card(node, lane))
+
         for node, edge in _descendants(str(trigger["id"]), nodes=nodes, outgoing=outgoing):
             if node.get("kind") in _COLLAPSED_KINDS:
                 collapsed.append(_card(node, "actions"))
+                for requirement, guard_edge in _guard_requirements(
+                    str(node.get("id")), nodes=nodes, incoming=incoming
+                ):
+                    add_visible(requirement, guard_edge, forced_lane="requirements")
                 continue
-            lane = _lane(node, edge)
-            if lane == "trigger" or lane not in lanes:
-                continue
-            node_id = str(node.get("id"))
-            if node_id in seen_lane_ids[lane]:
-                continue
-            seen_lane_ids[lane].add(node_id)
-            lanes[lane].append(_card(node, lane))
+            add_visible(node, edge)
 
         trigger_card = _card(trigger, "trigger")
         collapsed_total += len(collapsed)
