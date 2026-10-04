@@ -18,6 +18,9 @@ mission_reports/
 data/zoneplot_backups/
 data/zoneplot_edit_log.sql
 data/character_editor_audit.jsonl
+data/auction_house_audit.db
+data/auction_house_audit.db-wal
+data/auction_house_audit.db-shm
 data/character_editor_backups/
 data/client_asset_cache/
 __pycache__/
