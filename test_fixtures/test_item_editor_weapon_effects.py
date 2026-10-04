@@ -82,6 +82,7 @@ def test_self_buff_blueprint_is_explicit_server_handoff():
     assert blueprint["rowsAreSafeToApply"] is True
     assert blueprint["capability"] == "server-code-required"
     assert "additional_effects.lua" in blueprint["serverReference"]["additional_effects"]
+    assert "Blink and Haste" in blueprint["serverReference"]["notes"]
     assert blueprint["implementationContract"]["target"] == "attacker/self"
     assert blueprint["implementationContract"]["statusId"] == 33
     assert "stacking" in blueprint["implementationContract"]
