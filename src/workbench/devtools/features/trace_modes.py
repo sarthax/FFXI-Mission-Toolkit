@@ -22,14 +22,14 @@ class TraceMode:
 
 MODES = (
     TraceMode("implementation", "How is this implemented?", "Show source/server/client implementation wiring.",
-              ("implement", "script", "bind", "source", "spawn", "group", "pool", "instance", "wiring", "uses", "defines"),
-              ("FUNCTION", "BINDING", "ARTIFACT", "NPC", "MOB", "MOB_GROUP", "MOB_POOL", "INSTANCE")),
+              ("implement", "script", "bind", "source", "spawn", "group", "pool", "drop", "item", "instance", "wiring", "uses", "defines"),
+              ("FUNCTION", "BINDING", "ARTIFACT", "NPC", "MOB", "MOB_GROUP", "MOB_POOL", "MOB_DROP", "ITEM", "INSTANCE")),
     TraceMode("triggers", "What triggers this?", "Show prerequisites, callers, interactions, events and inbound activation paths.",
               ("trigger", "require", "prereq", "depends", "call", "event", "interact", "trade", "zone", "spawn"), direction="in"),
     TraceMode("effects", "What does this change?", "Show downstream state changes, rewards, spawns and consequences.",
-              ("effect", "set", "grant", "remove", "complete", "reward", "drop", "spawn", "start", "next", "changes"), direction="out"),
+              ("effect", "set", "grant", "remove", "complete", "reward", "drop", "item", "spawn", "start", "next", "changes"), direction="out"),
     TraceMode("dependencies", "What depends on this?", "Show downstream consumers and dependency closure.",
-              ("depend", "require", "uses", "references", "consumes", "maps", "contains"), direction="out"),
+              ("depend", "require", "uses", "references", "consumes", "maps", "contains", "drop", "item", "recipe", "vendor", "shop"), direction="out"),
     TraceMode("mission", "Mission progression", "Show mission/quest prerequisites, state, events, rewards and next steps.",
               ("mission", "quest", "event", "state", "var", "key_item", "prereq", "complete", "reward", "next", "interact", "trade")),
     TraceMode("runtime", "Runtime evidence", "Show capture/runtime observations and their implementation anchors.",

@@ -26,6 +26,14 @@ def _columns(con: sqlite3.Connection, table: str) -> set[str]:
         return set()
 
 
+def _identity_value(identity: dict[str,object], *names: str):
+    folded={str(key).casefold():value for key,value in identity.items()}
+    for name in names:
+        if name.casefold() in folded:
+            return folded[name.casefold()]
+    return None
+
+
 def _single_row(con: sqlite3.Connection, table: str, select: tuple[str,...], where: dict[str,object]):
     cols=_columns(con,table)
     if not set(column.lower() for column in (*select,*where)).issubset(cols):
@@ -36,6 +44,26 @@ def _single_row(con: sqlite3.Connection, table: str, select: tuple[str,...], whe
         tuple(str(value) for value in where.values()),
     ).fetchall()
     return rows[0] if len(rows)==1 else None
+
+
+def _rows(
+    con: sqlite3.Connection,
+    table: str,
+    select: tuple[str,...],
+    where: dict[str,object],
+    *,
+    limit: int = 500,
+):
+    """Return a bounded deterministic row set for one schema-native non-unique relationship."""
+    cols=_columns(con,table)
+    if not set(column.lower() for column in (*select,*where)).issubset(cols):
+        return []
+    clause=" AND ".join(f"CAST({column} AS TEXT)=?" for column in where)
+    order=",".join(select)
+    return con.execute(
+        f"SELECT {','.join(select)} FROM {table} WHERE {clause} ORDER BY {order} LIMIT ?",
+        (*tuple(str(value) for value in where.values()),int(limit)),
+    ).fetchall()
 
 
 def server_source_links(
@@ -50,20 +78,21 @@ def server_source_links(
     prefix,suffix=family
     links=[]
 
-    if suffix in _ITEM_DETAIL_SUFFIXES and source_identity.get("itemid") is not None:
+    itemid=_identity_value(source_identity,"itemid")
+    if suffix in _ITEM_DETAIL_SUFFIXES and itemid is not None:
         links.append({
             "relationship":"ITEM_DETAIL_FOR",
             "target_table":f"{prefix}_item_basic",
-            "target_identity":{"itemid":source_identity["itemid"]},
+            "target_identity":{"itemid":itemid},
             "basis":"same itemid in source schema",
         })
 
     if suffix=="mob_groups":
-        zoneid=source_identity.get("zoneid")
-        groupid=source_identity.get("groupid")
+        zoneid=_identity_value(source_identity,"zoneid")
+        groupid=_identity_value(source_identity,"groupid")
         if zoneid is not None and groupid is not None:
             row=_single_row(
-                con,source_table,("poolid",),
+                con,source_table,("poolid","dropid"),
                 {"zoneid":zoneid,"groupid":groupid},
             )
             if row and row[0] is not None:
@@ -73,9 +102,31 @@ def server_source_links(
                     "target_identity":{"poolid":row[0]},
                     "basis":"mob_groups.poolid",
                 })
+            if row and row[1] not in (None,0,"0"):
+                drop_table=f"{prefix}_mob_droplist"
+                drop_columns=("dropid","dropType","groupId","groupRate","itemId","itemRate")
+                for drop_row in _rows(con,drop_table,drop_columns,{"dropid":row[1]}):
+                    links.append({
+                        "relationship":"GROUP_HAS_DROP",
+                        "target_table":drop_table,
+                        "target_identity":dict(zip(drop_columns,drop_row)),
+                        "basis":"mob_groups.dropid -> mob_droplist.dropid",
+                    })
+
+    if suffix=="mob_droplist":
+        item_id=_identity_value(source_identity,"itemId","itemid")
+        if item_id not in (None,0,"0"):
+            item_table=f"{prefix}_item_basic"
+            if _single_row(con,item_table,("itemid",),{"itemid":item_id}):
+                links.append({
+                    "relationship":"DROP_GIVES_ITEM",
+                    "target_table":item_table,
+                    "target_identity":{"itemid":item_id},
+                    "basis":"mob_droplist.itemId -> item_basic.itemid",
+                })
 
     if suffix=="blue_spell_list":
-        spellid=source_identity.get("spellid")
+        spellid=_identity_value(source_identity,"spellid")
         if spellid is not None:
             row=_single_row(con,source_table,("mob_skill_id",),{"spellid":spellid})
             if row and row[0] is not None:
@@ -93,8 +144,8 @@ def server_source_links(
                 })
 
     if suffix=="instance_entities":
-        instanceid=source_identity.get("instanceid")
-        entity_id=source_identity.get("id")
+        instanceid=_identity_value(source_identity,"instanceid")
+        entity_id=_identity_value(source_identity,"id")
         if instanceid is not None:
             links.append({
                 "relationship":"INSTANCE_MEMBER_OF",
@@ -123,7 +174,7 @@ def server_source_links(
                 })
 
     if suffix=="pet_list":
-        petid=source_identity.get("petid")
+        petid=_identity_value(source_identity,"petid")
         if petid is not None:
             row=_single_row(con,source_table,("poolid",),{"petid":petid})
             if row and row[0] is not None:
@@ -135,7 +186,7 @@ def server_source_links(
                 })
 
     if suffix=="mob_spawn_points":
-        mobid=source_identity.get("mobid")
+        mobid=_identity_value(source_identity,"mobid")
         if mobid is not None:
             row=_single_row(con,source_table,("groupid",),{"mobid":mobid})
             if row and row[0] is not None:
