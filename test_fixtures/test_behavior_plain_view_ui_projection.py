@@ -64,6 +64,22 @@ def test_clarified_event_handoffs_jump_to_clarified_branches_not_technical_nodes
     assert "data-contract-node=\"${esc(ref.branch_id)}\"" not in wrapper
 
 
+def test_clarified_flow_groups_stage_event_handler_overview_from_existing_evidence():
+    wrapper = WRAPPER.read_text(encoding="utf-8")
+
+    assert "contract.source_branch_evidence" in wrapper
+    assert "handoffsByEvent" in wrapper
+    assert "handoffsByEvent.has(String(row.event_id))" in wrapper
+    assert "Stage → event overview" in wrapper
+    assert "Verified stage guard" in wrapper
+    assert "starts under this guard" in wrapper
+    assert "Matching handlers" in wrapper
+    assert "same event identity" in wrapper
+    assert "handoff.ordering || 'UNPROVEN'" in wrapper
+    assert "not runtime ordering" in wrapper
+    assert "${stageHtml}${lifecycleHtml}${groupsHtml}" in wrapper
+
+
 def test_clarified_flow_groups_event_lifecycle_without_claiming_runtime_order():
     wrapper = WRAPPER.read_text(encoding="utf-8")
 
@@ -73,7 +89,7 @@ def test_clarified_flow_groups_event_lifecycle_without_claiming_runtime_order():
     assert "same literal event identity" in wrapper
     assert "row.ordering || 'UNPROVEN'" in wrapper
     assert "runtime ordering remains unproven" in wrapper
-    assert "${lifecycleHtml}${groupsHtml}" in wrapper
+    assert "${stageHtml}${lifecycleHtml}${groupsHtml}" in wrapper
 
 
 def test_clarified_flow_wrapper_contract_render_is_idempotent():
