@@ -2,7 +2,9 @@ from pathlib import Path
 
 from workbench.devtools.features.state_surface_scoped import build_state_surface
 from workbench.devtools.missions.legacy_progression_extract import extract_legacy_progression
+from workbench.editors.character.progression_assessment import assess_progression
 from workbench.editors.character.progression_inspector import build_progression_inspector
+from workbench.editors.character.transition_bundles import annotate_transition_bundles
 
 
 def _catalog(kind: str, area: int, entry: int, symbol: str, label: str) -> dict:
@@ -77,6 +79,14 @@ end
     assert inspector["primary_action"]["progression_score"] >= 4
     assert any(row["storage_key"] == "LegacyStatus" and row["value"] == 2 for row in inspector["feature_vars"])
 
+    assessed = assess_progression(annotate_transition_bundles(inspector))
+    assert assessed["assessment"]["state"] == "READY"
+    bundle = assessed["primary_bundle"]
+    assert bundle["event"]["event_id"] == 100
+    assert any(row["subject"] == "charvar:LegacyStatus" and row["after"] == 3 for row in bundle["projected_changes"])
+    assert any(row["subject"] == "key_item:TEST_KEY" and row["kind"] == "removal" for row in bundle["projected_changes"])
+    assert bundle["projection_is_read_only"] is True
+
 
 def test_dsp_namespace_key_items_and_getvar_setvar_are_normalized(tmp_path: Path):
     root = tmp_path / "server"
@@ -141,6 +151,12 @@ end
     active = next(row for row in inspector["primary_action"]["conditions"] if row["subject"] == "quest_active:LEGACY_QUEST")
     assert active["resolved"] is True and active["matches"] is True
 
+    assessed = assess_progression(annotate_transition_bundles(inspector))
+    assert assessed["assessment"]["state"] == "WAITING_RUNTIME"
+    assert assessed["assessment"]["persisted_blockers"] == 0
+    assert assessed["assessment"]["runtime_requirements"] >= 1
+    assert any(row["kind"] == "runtime_requirement" and row["subject"] == "trade:item:1127" for row in assessed["primary_bundle"]["why_blocked"])
+
 
 def test_dsp_completed_prerequisites_and_aliases_resolve(tmp_path: Path):
     root = tmp_path / "server"
@@ -184,3 +200,7 @@ end
     )
     assert inspector["primary_action"]["event"]["event_id"] == 400
     assert all(row["matches"] is True for row in inspector["primary_action"]["conditions"] if row["resolved"])
+
+    assessed = assess_progression(annotate_transition_bundles(inspector))
+    assert assessed["assessment"]["state"] == "READY"
+    assert assessed["assessment"]["persisted_blockers"] == 0
