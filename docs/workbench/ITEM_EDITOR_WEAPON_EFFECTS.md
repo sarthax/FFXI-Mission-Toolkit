@@ -63,7 +63,7 @@ For current LandSandBoat, the relevant upstream path is:
 
 `https://github.com/LandSandBoat/server/blob/base/scripts/globals/additional_effects.lua`
 
-The useful implementation points are `xi.additionalEffect.attack`, `xi.additionalEffect.procFunctions`, and the `SELF_BUFF` handler. Current LSB explicitly handles Blink and Haste in that handler; adding another self-buff means extending that branch (or introducing a deliberate new proc handler), applying the status to the attacker, and returning the appropriate additional-effect battle message/subeffect.
+The useful implementation points are `xi.additionalEffect.attack`, `xi.additionalEffect.procFunctions`, and the `SELF_BUFF` handler. Current LSB explicitly handles **Blink** and **Haste** in that handler. Blink first checks for existing Blink/Copy Image shadows before applying; Haste currently applies through `attacker:addStatusEffect(...)` with a TODO upstream to verify power/duration/tier/overwrite details. That is exactly why the Toolkit requires the server implementation to declare stacking behavior rather than assuming it.
 
 For LSB the blueprint can safely emit the modern row bundle (`SELF_BUFF=12`) as reference/configuration data, but it still marks the effect `server-code-required` when the requested status is not implemented by the handler.
 
