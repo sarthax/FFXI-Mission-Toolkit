@@ -72,6 +72,85 @@ def _assert_capture_client_build_closure() -> None:
     con.close()
 
 
+def _assert_provider_canonical_closure() -> None:
+    graph_con=sqlite3.connect(":memory:")
+    graph_con.execute("""CREATE TABLE entity_relationships(
+        relationship_id TEXT, source_node TEXT, target_node TEXT, relationship TEXT,
+        evidence_id TEXT, confidence TEXT, status TEXT, metadata_json TEXT,
+        source_snapshot_id TEXT
+    )""")
+    graph_con.execute("CREATE TABLE entities(entity_id TEXT, entity_type TEXT, display_name TEXT, metadata_json TEXT)")
+    graph_con.execute("CREATE TABLE features(feature_id TEXT, feature_type TEXT, name TEXT, metadata_json TEXT)")
+    graph_con.execute("CREATE TABLE artifacts(artifact_id TEXT, artifact_type TEXT, path TEXT, metadata_json TEXT)")
+    graph_con.executemany(
+        "INSERT INTO entities VALUES(?,?,?,?)",
+        [
+            ("npc:raustigne","NPC","Raustigne","{}"),
+            ("shared:1","NPC","Shared entity","{}"),
+        ],
+    )
+    graph_con.executemany(
+        "INSERT INTO features VALUES(?,?,?,?)",
+        [
+            ("feature:wotg-25","MISSION","Crossroads of Time","{}"),
+            ("shared:1","FEATURE","Shared feature","{}"),
+        ],
+    )
+    graph_con.execute(
+        "INSERT INTO artifacts VALUES(?,?,?,?)",
+        ("artifact:raustigne-lua","LUA","scripts/zones/Southern_San_dOria_S/npcs/Raustigne.lua","{}"),
+    )
+
+    provider_con=sqlite3.connect(":memory:")
+    provider_con.execute("CREATE TABLE research_sessions(research_session_id TEXT, question TEXT, feature_root TEXT, entity_root TEXT)")
+    provider_con.execute("INSERT INTO research_sessions VALUES('research:1','Why does this differ?','feature:wotg-25','npc:raustigne')")
+    provider_con.execute("CREATE TABLE research_proposals(proposal_id TEXT, subject_id TEXT)")
+    provider_con.execute("INSERT INTO research_proposals VALUES('proposal:1','npc:raustigne')")
+    provider_con.execute("CREATE TABLE validation_results(validation_id TEXT, validation_type TEXT, subject_id TEXT)")
+    provider_con.execute("INSERT INTO validation_results VALUES('validation:ambiguous','EVENT_MATCH','shared:1')")
+    provider_con.execute("CREATE TABLE migration_actions(action_id TEXT, action TEXT, artifact_id TEXT)")
+    provider_con.execute("INSERT INTO migration_actions VALUES('action:1','COPY_FILE','artifact:raustigne-lua')")
+
+    research=feature_trace.trace(graph_con,"catalog:research_sessions:research:1",1,"both",provider_con)
+    research_links={(row["relationship"],row["target_node"]) for row in research["provider_relationships"]}
+    assert ("RESEARCH_FEATURE_ROOT","feature:wotg-25") in research_links,research_links
+    assert ("RESEARCH_ENTITY_ROOT","npc:raustigne") in research_links,research_links
+    assert not research["edges"],research["edges"]
+
+    proposal=feature_trace.trace(graph_con,"catalog:research_proposals:proposal:1",1,"both",provider_con)
+    assert any(
+        row.get("relationship")=="RESEARCH_PROPOSAL_SUBJECT" and row.get("target_node")=="npc:raustigne"
+        for row in proposal["provider_relationships"]
+    ),proposal["provider_relationships"]
+
+    # Generic subject ids fail closed when the same literal exists in more than one canonical namespace.
+    ambiguous=feature_trace.trace(graph_con,"catalog:validation_results:validation:ambiguous",1,"both",provider_con)
+    assert not [
+        row for row in ambiguous["provider_relationships"]
+        if row.get("relationship")=="VALIDATION_SUBJECT"
+    ],ambiguous["provider_relationships"]
+
+    action=feature_trace.trace(graph_con,"catalog:migration_actions:action:1",1,"both",provider_con)
+    assert any(
+        row.get("relationship")=="MIGRATION_ACTION_ARTIFACT"
+        and row.get("target_node")=="artifact:raustigne-lua"
+        and row.get("cross_store") is True
+        for row in action["provider_relationships"]
+    ),action["provider_relationships"]
+
+    # Same-database provider records are supported too; no separate catalog DB is required.
+    graph_con.execute("CREATE TABLE validation_runs(run_id TEXT, name TEXT, feature_id TEXT)")
+    graph_con.execute("INSERT INTO validation_runs VALUES('run:local','WotG validation','feature:wotg-25')")
+    local=feature_trace.trace(graph_con,"catalog:validation_runs:run:local",1,"both")
+    assert any(
+        row.get("relationship")=="VALIDATES_FEATURE" and row.get("target_node")=="feature:wotg-25"
+        for row in local["provider_relationships"]
+    ),local["provider_relationships"]
+
+    provider_con.close()
+    graph_con.close()
+
+
 def main():
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
@@ -165,6 +244,7 @@ def main():
 
     _assert_wiki_mapping_target_closure()
     _assert_capture_client_build_closure()
+    _assert_provider_canonical_closure()
     test_generic_nm_trace_reaches_drop_rows_and_items()
     test_drop_row_composite_identity_is_stable_and_navigable()
     print("server catalog canonical identity sync + Feature Trace closure self-test: PASS")
