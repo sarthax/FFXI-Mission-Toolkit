@@ -19,6 +19,7 @@ import sys
 import workbench.core.services as _legacy_services
 from workbench.core.contracts import capture_row_locators as _capture_row_locators
 from workbench.devtools.features import trace_catalog as _trace_catalog
+from workbench.devtools.features.canonical_closure import provider_canonical_relationships
 from workbench.devtools.features.trace_expansion import provider_candidates
 from workbench.devtools.features.trace_generators import generators_for
 from workbench.devtools.features.trace_modes import MODE_BY_ID, edge_allowed, mode_options, normalize_mode
@@ -144,6 +145,23 @@ def _generated_display_edge(row: dict) -> dict:
     }
 
 
+def _attach_provider_canonical_links(result: dict, graph_con, root: str, catalog_con=None) -> dict:
+    """Attach exact cross-store provider links without adding canonical graph edges."""
+    links = list(result.get("provider_relationships") or ())
+    candidates = list(provider_canonical_relationships(graph_con, graph_con, root))
+    if catalog_con is not None and catalog_con is not graph_con:
+        candidates.extend(provider_canonical_relationships(graph_con, catalog_con, root))
+    seen = {(row.get("relationship"), row.get("target_node")) for row in links}
+    for row in candidates:
+        key = (row.get("relationship"), row.get("target_node"))
+        if key in seen:
+            continue
+        seen.add(key)
+        links.append(row)
+    result["provider_relationships"] = links
+    return result
+
+
 def trace(con, root: str, depth: int, direction: str,
           catalog_con=None, relationships=None, include_runtime_edges: bool = False,
           max_nodes: int = 5000, mode: str | None = None) -> dict:
@@ -160,12 +178,13 @@ def trace(con, root: str, depth: int, direction: str,
     root = clean_root
     requested_mode = mode or prefixed_mode or _QUERY_MODE.get()
     if requested_mode is None:
-        return _base_trace(
+        result = _base_trace(
             con, root, depth, direction, catalog_con,
             relationships=relationships,
             include_runtime_edges=include_runtime_edges,
             max_nodes=max_nodes,
         )
+        return _attach_provider_canonical_links(result, con, root, catalog_con)
 
     _QUERY_MODE.set(None)
     selected = normalize_mode(requested_mode)
@@ -178,6 +197,7 @@ def trace(con, root: str, depth: int, direction: str,
         include_runtime_edges=include_runtime_edges or selected.include_runtime,
         max_nodes=max_nodes,
     )
+    result = _attach_provider_canonical_links(result, con, root, catalog_con)
 
     kept_edges = [edge for edge in result.get("edges", ()) if edge_allowed(edge, selected)]
     kept_ids = {root}
