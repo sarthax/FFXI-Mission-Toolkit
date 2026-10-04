@@ -9,6 +9,7 @@ from .category_data import build_category_payload
 from .progression_catalog import mission_catalog
 from .progression_inspector import build_progression_inspector
 from .quest_catalog import quest_catalog
+from .transition_bundles import annotate_transition_bundles
 
 
 def _catalog_row(service, kind: str, area_id: int, entry_id: int) -> dict[str, Any]:
@@ -213,12 +214,12 @@ def build_character_state_surface(service, char_id: int, *, kind: str, area_id: 
         "unresolved": unresolved,
         "status": "MISMATCH" if mismatched else ("CONSISTENT" if checked and not unresolved else "PARTIAL"),
     }
-    surface["progression"] = build_progression_inspector(
+    surface["progression"] = annotate_transition_bundles(build_progression_inspector(
         surface,
         root,
         variables=variables,
         packed=packed,
         mission_catalog=mission_catalog(root),
         quest_catalog=quest_catalog(root),
-    )
+    ))
     return surface
