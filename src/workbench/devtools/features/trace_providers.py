@@ -52,6 +52,14 @@ _COMMON_SERVER_TABLES=(
     CatalogTable("mob_pools","poolid","name","MOB_POOL",
                  detail_columns=("familyid","modelid"),
                  search_columns=("familyid","modelid")),
+    # mob_droplist has no primary key in the upstream server schemas. Use the complete row as
+    # its read-only catalog identity so Feature Trace can navigate deterministic group -> drop ->
+    # item relationships without inventing a synthetic persistent ID.
+    CatalogTable("mob_droplist","dropid",None,"MOB_DROP",
+                 detail_columns=("dropType","groupId","groupRate","itemId","itemRate"),
+                 key_columns=("dropid","dropType","groupId","groupRate","itemId","itemRate"),
+                 search_columns=("itemId",),
+                 display_template="Drop {dropid} item {itemId}"),
     CatalogTable("mob_skills","mob_skill_id","name","MOB_SKILL"),
     CatalogTable("pet_list","petid","name","PET"),
     CatalogTable("instance_list","instanceid","instance_name","INSTANCE"),
