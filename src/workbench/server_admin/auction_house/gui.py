@@ -14,6 +14,7 @@ from workbench.editors.items import client_asset_cache
 from .actions import ListItemRequest, PurchaseRequest, preview_list_item, preview_purchase
 from .analytics import economy_summary, price_trends, search_items
 from .factory import open_auction_house
+from .health import economy_health
 from .write_probe import probe_write_readiness
 
 router = APIRouter(prefix="/auction-house", tags=["Auction House Administration"])
@@ -68,6 +69,31 @@ def overview(days: int = Query(30, ge=1, le=3650)):
     try:
         with _context() as ctx:
             return JSONResponse(economy_summary(ctx.service, days=days))
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.get("/health.json")
+def health(
+    days: int = Query(30, ge=1, le=3650),
+    stale_days: int = Query(30, ge=1, le=3650),
+    recent_days: int = Query(7, ge=1, le=365),
+    baseline_days: int = Query(30, ge=2, le=3650),
+):
+    """Return read-only economy-health signals for administrative review."""
+    if baseline_days <= recent_days:
+        raise HTTPException(status_code=400, detail="baseline_days must be greater than recent_days")
+    try:
+        with _context() as ctx:
+            return JSONResponse(economy_health(
+                ctx.service,
+                days=days,
+                stale_days=stale_days,
+                recent_days=recent_days,
+                baseline_days=baseline_days,
+            ))
+    except HTTPException:
+        raise
     except Exception as exc:
         raise _error(exc)
 
