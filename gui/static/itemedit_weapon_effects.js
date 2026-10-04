@@ -54,17 +54,20 @@
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-top:7px">
       <label>Duration (s)<input id="weaponEffectDuration" type="number" min="0" value="30" style="width:90px"></label>
       <label><input id="weaponEffectConditional" type="checkbox"> conditional / latent</label>
-      <input id="weaponEffectLatentId" type="number" min="0" placeholder="latent ID" style="width:100px" disabled>
-      <input id="weaponEffectLatentParam" type="number" placeholder="latent param" style="width:110px" disabled>
+      <label>Active when<input id="weaponEffectLatentName" type="text" list="dl_latents" placeholder="type to search, e.g. HP under" style="width:200px" disabled></label>
+      <label><span id="weaponEffectLatentParamLabel">Condition value</span><input id="weaponEffectLatentParam" type="number" value="0" style="width:110px" disabled></label>
       <span id="weaponEffectCapability" class="chip mono"></span>
-      <button id="weaponEffectPrimary" type="button">Stage rows</button>
+      <button id="weaponEffectPrimary" type="button">Add to item</button>
       <button id="weaponEffectCopyHandoff" type="button">Copy server handoff</button>
     </div>
+    <div id="weaponEffectLatentHelp" class="muted" style="font-size:11px;margin-top:6px;display:none"></div>
+    <div id="weaponEffectNote" class="muted" style="font-size:11px;margin-top:6px"></div>
     <div id="weaponEffectPreview" class="mono muted" style="font-size:10px;margin-top:6px;white-space:pre-wrap"></div>`;
   tools.insertBefore(card, tools.firstChild);
   { const procHost = document.getElementById('ieFxProc'); if (procHost) procHost.append(card); }  // Effects tab moves it into the Weapon proc panel
 
   const $ = id => document.getElementById(id);
+  const latentId = () => (typeof pickerValue === 'function' && typeof LATENT_NAMES !== 'undefined') ? pickerValue('weaponEffectLatentName', LATENT_NAMES) : null;
   function values(){
     const key=$('weaponEffectPreset').value, p=PRESETS[key], proc=p.proc || 1;
     const vals={key,p,proc,chance:Number($('weaponEffectChance').value),damage:Number($('weaponEffectDamage').value),status:Number($('weaponEffectStatus').value),power:Number($('weaponEffectPower').value),duration:Number($('weaponEffectDuration').value)};
@@ -88,17 +91,23 @@
   }
   function refresh(){
     const v=values(), lineage=currentLineage(), cap=capability(v.p,lineage), conditional=$('weaponEffectConditional').checked;
-    $('weaponEffectLatentId').disabled=!conditional; $('weaponEffectLatentParam').disabled=!conditional;
+    $('weaponEffectLatentName').disabled=!conditional; $('weaponEffectLatentParam').disabled=!conditional;
+    const lid=latentId(), meta=(typeof LATENT_META!=='undefined' && lid!=null)?LATENT_META[lid]:null, help=$('weaponEffectLatentHelp');
+    help.style.display=conditional?'':'none';
+    $('weaponEffectLatentParamLabel').textContent=meta&&meta.param_semantics?('Value: '+meta.param_semantics.replace(/\)\s*$/,'')):'Condition value';
+    help.textContent=!conditional?'':lid==null?'Pick a condition above. The effect only applies while that condition is true; the value is the threshold the condition checks.':
+      meta?`Condition ${lid} ${meta.name}: ${meta.comment||'no description'}${meta.param_semantics?'':' - the server source does not document what the value means; leave 0 unless you know.'}`:`Condition ${lid}: no description available in the active server tree.`;
     $('weaponEffectCapability').textContent=`${lineage} · ${cap}`;
-    $('weaponEffectPrimary').textContent=cap==='row-only'?'Stage rows':'Server handoff';
+    $('weaponEffectPrimary').textContent='Add to item';
     $('weaponEffectPrimary').disabled=cap==='unsupported';
     $('weaponEffectCopyHandoff').style.display=cap==='row-only'?'none':'';
+    $('weaponEffectNote').textContent=cap==='row-only'?'':cap==='server-code-required'?'This effect type needs server-side handler code. Adding writes the rows, but nothing will happen in game until that handler exists; use Copy server handoff for the spec.':cap==='verify-lineage'?'Rows are added to the item; confirm the active server tree has a handler for this proc type before relying on it.':'';
     $('weaponEffectPreview').textContent=`${v.p.label} · ${v.chance}%${v.damage?` · amount ${v.damage}`:''}${v.status?` · status ${v.status}`:''}\n`+
       `${conditional?'item_latents':'item_mods'}: `+v.rows.map(r=>`${r.modId}=${r.value}`).join(', ')+(cap==='row-only'?'':'\nNot auto-staged: verify/implement the selected lineage handler first.');
   }
   function handoffPayload(){
     const v=values(), lineage=currentLineage();
-    return {kind:'weapon-additional-effect',lineage,preset:v.key,label:v.p.label,capability:capability(v.p,lineage),effect:{procType:v.proc,chance:v.chance,damage:v.damage,status:v.status,power:v.power,duration:v.duration},rows:v.rows,storage:$('weaponEffectConditional').checked?'item_latents':'item_mods',latentId:$('weaponEffectConditional').checked?Number($('weaponEffectLatentId').value):null,latentParam:$('weaponEffectConditional').checked?Number($('weaponEffectLatentParam').value):null,warning:'Verify proc numbering, handler semantics, stacking/overwrite rules, target, messages, and status behavior in the active server tree before implementation.'};
+    return {kind:'weapon-additional-effect',lineage,preset:v.key,label:v.p.label,capability:capability(v.p,lineage),effect:{procType:v.proc,chance:v.chance,damage:v.damage,status:v.status,power:v.power,duration:v.duration},rows:v.rows,storage:$('weaponEffectConditional').checked?'item_latents':'item_mods',latentId:$('weaponEffectConditional').checked?latentId():null,latentParam:$('weaponEffectConditional').checked?Number($('weaponEffectLatentParam').value):null,warning:'Verify proc numbering, handler semantics, stacking/overwrite rules, target, messages, and status behavior in the active server tree before implementation.'};
   }
   async function copyHandoff(){
     const text=JSON.stringify(handoffPayload(),null,2);
@@ -107,20 +116,20 @@
   }
   function stage(){
     const v=values(), lineage=currentLineage(), cap=capability(v.p,lineage);
-    if(cap!=='row-only'){ copyHandoff(); return; }
+    if(cap==='unsupported'){ return; }
     let rows=v.rows;
     const conditional=$('weaponEffectConditional').checked;
     if(conditional){
-      const latentId=Number($('weaponEffectLatentId').value), latentParam=Number($('weaponEffectLatentParam').value);
-      if(!Number.isInteger(latentId) || latentId<0){ alert('Enter a valid latent ID.'); return; }
-      rows=rows.map(r=>({...r,latentId,latentParam}));
+      const lid=latentId(), latentParam=Number($('weaponEffectLatentParam').value)||0;
+      if(lid==null){ alert('Pick the condition (Active when) from the list.'); return; }
+      rows=rows.map(r=>({...r,latentId:lid,latentParam}));
       mergeEffectRows('latents',rows);
     }else mergeEffectRows('mods',rows);
     $('weaponEffectPreview').textContent+='\nStaged through the existing Item Editor effect payload. Save Item still performs normal validation and atomic backup/journal handling.';
   }
 
   $('weaponEffectPreset').addEventListener('change',applyPresetDefaults);
-  ['weaponEffectChance','weaponEffectDamage','weaponEffectStatus','weaponEffectPower','weaponEffectDuration','weaponEffectConditional','weaponEffectLatentId','weaponEffectLatentParam'].forEach(id=>$(id).addEventListener('input',refresh));
+  ['weaponEffectChance','weaponEffectDamage','weaponEffectStatus','weaponEffectPower','weaponEffectDuration','weaponEffectConditional','weaponEffectLatentName','weaponEffectLatentParam'].forEach(id=>$(id).addEventListener('input',refresh));
   document.getElementById('srv')?.addEventListener('change',refresh);
   $('weaponEffectPrimary').onclick=stage;
   $('weaponEffectCopyHandoff').onclick=copyHandoff;
