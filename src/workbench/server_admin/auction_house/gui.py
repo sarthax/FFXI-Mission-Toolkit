@@ -8,7 +8,7 @@ from fastapi import APIRouter, Body, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from workbench.runtime.legacy_settings import get_active_server_root
+from workbench.runtime.legacy_settings import get_active_server_identity, get_active_server_root
 from workbench.runtime.paths import GUI_ROOT
 from workbench.editors.items import client_asset_cache
 
@@ -17,6 +17,7 @@ from .analytics import economy_summary, price_trends, search_items
 from .diagnostics import run_read_only_diagnostics
 from .factory import open_auction_house
 from .health import economy_health
+from .lineage_semantics import evaluate_lineage_semantics
 from .write_probe import probe_write_readiness
 
 router = APIRouter(prefix="/auction-house", tags=["Auction House Administration"])
@@ -91,6 +92,24 @@ def write_readiness():
     try:
         with _context() as ctx:
             payload = probe_write_readiness(ctx.service.connection).as_dict()
+            payload["executor_enabled"] = False
+            payload["write_enabled"] = False
+            return JSONResponse(payload)
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.get("/lineage-semantics.json")
+def lineage_semantics():
+    """Return the evidence-backed mutation-semantics gate for the active server lineage."""
+    try:
+        identity = get_active_server_identity()
+        with _context() as ctx:
+            payload = evaluate_lineage_semantics(
+                profile_family=identity.get("family"),
+                schema_family_hint=ctx.service.schema.family_hint,
+            )
+            payload["environment"] = identity
             payload["executor_enabled"] = False
             payload["write_enabled"] = False
             return JSONResponse(payload)
