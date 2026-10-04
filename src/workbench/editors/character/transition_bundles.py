@@ -52,6 +52,80 @@ def _why_blocked(action: dict[str, Any]) -> list[dict[str, Any]]:
     return reasons
 
 
+def _known_current_values(action: dict[str, Any]) -> dict[str, Any]:
+    values: dict[str, Any] = {}
+    for condition in action.get("conditions", ()):
+        subject = condition.get("subject")
+        if subject and condition.get("resolved"):
+            values[str(subject)] = condition.get("actual")
+    return values
+
+
+def _projected_changes(action: dict[str, Any]) -> list[dict[str, Any]]:
+    """Describe the direct modeled result of an action without claiming the write has occurred."""
+    current = _known_current_values(action)
+    projected: list[dict[str, Any]] = []
+    for effect in action.get("effects", ()):
+        name = str(effect.get("effect") or "")
+        subject = effect.get("subject")
+        value = effect.get("value")
+        if name in _STATE_EFFECTS:
+            projected.append({
+                "kind": "state_change",
+                "effect": name,
+                "subject": subject,
+                "before": current.get(str(subject)) if subject is not None else None,
+                "before_known": subject is not None and str(subject) in current,
+                "after": value,
+            })
+        elif name in _REWARD_EFFECTS:
+            projected.append({
+                "kind": "grant",
+                "effect": name,
+                "subject": subject,
+                "before": current.get(str(subject)) if subject is not None else None,
+                "before_known": subject is not None and str(subject) in current,
+                "after": value if value is not None else True,
+            })
+        elif name in _REMOVAL_EFFECTS:
+            projected.append({
+                "kind": "removal",
+                "effect": name,
+                "subject": subject,
+                "before": current.get(str(subject)) if subject is not None else None,
+                "before_known": subject is not None and str(subject) in current,
+                "after": False if name in {"CONSUME", "REMOVE"} else "completed",
+            })
+        elif name in _COMPLETION_EFFECTS:
+            projected.append({
+                "kind": "completion",
+                "effect": name,
+                "subject": subject,
+                "before": current.get(str(subject)) if subject is not None else None,
+                "before_known": subject is not None and str(subject) in current,
+                "after": "completed",
+            })
+        elif name in _NEXT_EFFECTS:
+            projected.append({
+                "kind": "next_activation",
+                "effect": name,
+                "subject": subject,
+                "before": None,
+                "before_known": False,
+                "after": value if value is not None else "activated",
+            })
+        elif name in _TIMER_EFFECTS:
+            projected.append({
+                "kind": "timer",
+                "effect": name,
+                "subject": subject,
+                "before": None,
+                "before_known": False,
+                "after": value if value is not None else ("cancelled" if name == "CANCEL_TIMER" else "started"),
+            })
+    return projected
+
+
 def build_transition_bundle(action: dict[str, Any]) -> dict[str, Any]:
     """Group one normalized progression action into an evidence-preserving transition unit."""
     conditions = list(action.get("conditions", ()))
@@ -83,6 +157,8 @@ def build_transition_bundle(action: dict[str, Any]) -> dict[str, Any]:
         "completion": _effect_rows(action, _COMPLETION_EFFECTS),
         "next_activation": _effect_rows(action, _NEXT_EFFECTS),
         "timers": _effect_rows(action, _TIMER_EFFECTS),
+        "projected_changes": _projected_changes(action),
+        "projection_is_read_only": True,
         "why_blocked": blocked,
         "correction_targets": correction_targets,
         "source_lines": action.get("source_lines"),

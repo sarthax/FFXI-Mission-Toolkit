@@ -30,6 +30,16 @@ def _action() -> dict:
                 "runtime_only": False,
             },
             {
+                "subject": "key_item:TEST_KEY",
+                "operator": "HAS",
+                "expected": True,
+                "actual": True,
+                "resolved": True,
+                "matches": True,
+                "editor": "Key Items",
+                "runtime_only": False,
+            },
+            {
                 "subject": "trade:item:1234",
                 "operator": "HAS",
                 "expected": True,
@@ -61,7 +71,7 @@ def test_transition_bundle_groups_progression_semantics_without_losing_evidence(
     assert [row["effect"] for row in bundle["removals"]] == ["REMOVE"]
     assert [row["effect"] for row in bundle["completion"]] == ["COMPLETE"]
     assert [row["effect"] for row in bundle["next_activation"]] == ["START"]
-    assert len(bundle["preconditions"]) == 1
+    assert len(bundle["preconditions"]) == 2
     assert len(bundle["runtime_requirements"]) == 1
     assert bundle["correction_targets"] == ["Variables"]
     assert bundle["why_blocked"] == [
@@ -82,6 +92,27 @@ def test_transition_bundle_groups_progression_semantics_without_losing_evidence(
             "editor": None,
         },
     ]
+
+
+def test_transition_bundle_projects_direct_result_without_claiming_mutation():
+    bundle = build_transition_bundle(_action())
+    rows = {(row["kind"], row["subject"]): row for row in bundle["projected_changes"]}
+
+    progress = rows[("state_change", "quest_var:Prog")]
+    assert progress["before_known"] is True
+    assert progress["before"] == 2
+    assert progress["after"] == 4
+
+    removal = rows[("removal", "key_item:TEST_KEY")]
+    assert removal["before_known"] is True
+    assert removal["before"] is True
+    assert removal["after"] is False
+
+    completion = rows[("completion", "quest:FIRES_OF_DISCONTENT")]
+    assert completion["after"] == "completed"
+    next_feature = rows[("next_activation", "quest:LIGHT_IN_THE_DARKNESS")]
+    assert next_feature["after"] is True
+    assert bundle["projection_is_read_only"] is True
 
 
 def test_progression_annotation_exposes_primary_and_current_bundles():
