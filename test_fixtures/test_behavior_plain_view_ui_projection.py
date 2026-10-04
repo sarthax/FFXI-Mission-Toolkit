@@ -64,20 +64,28 @@ def test_clarified_event_handoffs_jump_to_clarified_branches_not_technical_nodes
     assert "data-contract-node=\"${esc(ref.branch_id)}\"" not in wrapper
 
 
-def test_clarified_flow_groups_stage_event_handler_overview_from_existing_evidence():
+def test_clarified_flow_renders_backend_verified_stage_progression_contract():
     wrapper = WRAPPER.read_text(encoding="utf-8")
 
-    assert "contract.source_branch_evidence" in wrapper
-    assert "handoffsByEvent" in wrapper
-    assert "handoffsByEvent.has(String(row.event_id))" in wrapper
-    assert "Stage → event overview" in wrapper
-    assert "Verified stage guard" in wrapper
-    assert "starts under this guard" in wrapper
-    assert "Matching handlers" in wrapper
-    assert "same event identity" in wrapper
-    assert "handoff.ordering || 'UNPROVEN'" in wrapper
-    assert "not runtime ordering" in wrapper
+    assert "contract.stage_lifecycles" in wrapper
+    assert "Stage progression" in wrapper
+    assert "Current stage" in wrapper
+    assert "Verified next-stage write" in wrapper
+    assert "row.state_name" in wrapper
+    assert "row.from_value" in wrapper
+    assert "row.handler_writes" in wrapper
+    assert "write.state_name || row.state_name" in wrapper
+    assert "write.value" in wrapper
+    assert "same literal event identity" in wrapper
+    assert "row.ordering || 'UNPROVEN'" in wrapper
+    assert "runtime ordering remains unproven" in wrapper
     assert "${stageHtml}${lifecycleHtml}${groupsHtml}" in wrapper
+
+    # The browser must consume the tested backend lifecycle contract rather than rebuilding
+    # progression from lower-level evidence collections.
+    assert "contract.source_branch_evidence" not in wrapper
+    assert "handoffsByEvent" not in wrapper
+    assert "sourceStages.filter" not in wrapper
 
 
 def test_clarified_flow_groups_event_lifecycle_without_claiming_runtime_order():
