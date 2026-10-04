@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+from .categories import category_metadata
 from .schema import AuctionHouseSchema, discover_auction_house_schema
 
 
@@ -38,7 +39,18 @@ class AuctionHouseService:
                 f"WHERE {self.q(i['ah_category'])} > 0 GROUP BY {self.q(i['ah_category'])} "
                 f"ORDER BY {self.q(i['ah_category'])}"
             )
-            return [{"category_id": int(r[0]), "item_count": int(r[1])} for r in c.fetchall() or []]
+            rows = []
+            for r in c.fetchall() or []:
+                category_id = int(r[0])
+                meta = category_metadata(category_id)
+                rows.append({
+                    "category_id": category_id,
+                    "group": meta.group,
+                    "label": meta.label,
+                    "path": meta.path,
+                    "item_count": int(r[1]),
+                })
+            return rows
         finally:
             c.close()
 
