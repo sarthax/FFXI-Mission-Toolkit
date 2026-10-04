@@ -88,7 +88,7 @@ SERVER_REFERENCES = {
         "attack_dispatch": "xi.additionalEffect.attack",
         "proc_registry": "xi.additionalEffect.procFunctions",
         "self_buff_handler": "xi.additionalEffect.procFunctions[xi.additionalEffect.procType.SELF_BUFF]",
-        "status_api": "attacker:addStatusEffect(...) / attacker:hasStatusEffect(...) / attacker:delStatusEffect(...) ",
+        "status_api": "attacker:addStatusEffect(...) / attacker:hasStatusEffect(...) / attacker:delStatusEffect(...)",
         "notes": (
             "Current LSB SELF_BUFF handler explicitly handles Blink and Haste. New self-buffs "
             "must be added to that handler or routed through a new proc function."
@@ -111,6 +111,47 @@ SERVER_REFERENCES = {
     },
 }
 
+# Capability labels are intentionally conservative. A row-only label means the data model is
+# established; it does not promise identical formulas/edge cases across every fork revision.
+LINEAGE_CAPABILITIES = {
+    "LSB": {
+        "damage": "row-only",
+        "debuff": "row-only",
+        "hp heal": "row-only",
+        "mp heal": "row-only",
+        "hp drain": "row-only",
+        "mp drain": "row-only",
+        "tp drain": "row-only",
+        "hp+mp drain": "row-only",
+        "hp+mp+tp drain": "row-only",
+        "dispel": "row-only",
+        "absorb status": "verify-lineage",
+        "self buff": "server-code-required",
+        "death": "verify-lineage",
+        "nm specific": "server-code-required",
+    },
+    "DSP": {
+        "damage": "verify-lineage",
+        "debuff": "verify-lineage",
+        "hp drain": "verify-lineage",
+        "mp drain": "verify-lineage",
+        "tp drain": "verify-lineage",
+        "dispel": "verify-lineage",
+        "self buff": "server-code-required",
+        "death": "verify-lineage",
+    },
+    "TOPAZ": {
+        "damage": "verify-lineage",
+        "debuff": "verify-lineage",
+        "hp drain": "verify-lineage",
+        "mp drain": "verify-lineage",
+        "tp drain": "verify-lineage",
+        "dispel": "verify-lineage",
+        "self buff": "server-code-required",
+        "death": "verify-lineage",
+    },
+}
+
 PRESETS = {
     "fire_damage": {
         "label": "Fire damage",
@@ -118,7 +159,6 @@ PRESETS = {
         "subeffect": 1,
         "element": 1,
         "defaults": {"chance": 20, "damage": 25},
-        "portable": True,
     },
     "ice_damage": {
         "label": "Ice damage",
@@ -126,7 +166,6 @@ PRESETS = {
         "subeffect": 2,
         "element": 2,
         "defaults": {"chance": 20, "damage": 25},
-        "portable": True,
     },
     "hp_drain": {
         "label": "HP drain",
@@ -134,7 +173,6 @@ PRESETS = {
         "subeffect": 21,
         "element": 8,
         "defaults": {"chance": 20, "damage": 20},
-        "portable": True,
     },
     "mp_drain": {
         "label": "MP drain",
@@ -142,7 +180,6 @@ PRESETS = {
         "subeffect": 22,
         "element": 8,
         "defaults": {"chance": 20, "damage": 10},
-        "portable": True,
     },
     "tp_drain": {
         "label": "TP drain",
@@ -150,42 +187,34 @@ PRESETS = {
         "subeffect": 22,
         "element": 8,
         "defaults": {"chance": 20, "damage": 100},
-        "portable": True,
     },
     "dispel": {
         "label": "Dispel",
         "proc_type": 10,
         "subeffect": 8,
         "defaults": {"chance": 20},
-        "portable": True,
     },
     "self_buff": {
         "label": "Self buff",
         "proc_type": 12,
         "defaults": {"chance": 20, "power": 1, "duration": 30},
-        "portable": False,
         "requires_server_code": True,
     },
     "absorb_status": {
         "label": "Absorb status",
         "proc_type": 11,
         "defaults": {"chance": 20},
-        "portable": False,
-        "requires_server_code": True,
     },
     "death": {
         "label": "Instant death",
         "proc_type": 13,
         "subeffect": 19,
         "defaults": {"chance": 1},
-        "portable": False,
-        "requires_server_code": True,
     },
     "nm_specific": {
         "label": "NM-specific scripted behavior",
         "proc_type": 14,
         "defaults": {"chance": 100},
-        "portable": False,
         "requires_server_code": True,
     },
 }
@@ -215,6 +244,18 @@ FIELD_BY_KEY = {field.key: field for field in FIELDS}
 FIELD_BY_MOD = {field.mod_id: field for field in FIELDS}
 
 
+def capability_for(lineage: str, proc_type: int) -> str:
+    """Return the conservative editor badge for a proc on a server lineage."""
+    lineage = str(lineage).upper()
+    label = PROC_TYPES.get(int(proc_type))
+    if label is None:
+        return "unsupported"
+    caps = LINEAGE_CAPABILITIES.get(lineage)
+    if caps is None:
+        return "verify-lineage"
+    return caps.get(label, "verify-lineage")
+
+
 def catalog() -> dict:
     """Return editor-facing metadata for the structured additional-effect panel."""
     return {
@@ -233,6 +274,7 @@ def catalog() -> dict:
         "subeffects": [{"value": value, "label": label} for value, label in sorted(SUBEFFECTS.items())],
         "presets": [{"key": key, **value} for key, value in PRESETS.items()],
         "serverReferences": SERVER_REFERENCES,
+        "lineageCapabilities": LINEAGE_CAPABILITIES,
         "storage": "item_mods or item_latents",
         "clientCoupled": False,
         "coreBoundary": (
@@ -297,13 +339,9 @@ def build_latent_rows(*, latent_id: int, latent_param: int, **effect) -> list[di
 def build_self_buff_blueprint(*, status: int, chance: int = 20, power: int = 1,
                               duration: int = 30, subeffect: int = 0,
                               lineage: str = "LSB") -> dict:
-    """Return row data plus a concrete server-code handoff for a self-buff weapon proc.
-
-    This does not claim the target lineage implements the status. The local-agent handoff tells
-    the server implementer exactly where the dispatcher/handler must be extended.
-    """
+    """Return row data plus a concrete server-code handoff for a self-buff weapon proc."""
     lineage = str(lineage).upper()
-    rows = build_mod_rows(
+    modern_rows = build_mod_rows(
         proc_type=12,
         chance=chance,
         subeffect=subeffect,
@@ -315,7 +353,9 @@ def build_self_buff_blueprint(*, status: int, chance: int = 20, power: int = 1,
     return {
         "kind": "self_buff",
         "lineage": lineage,
-        "rows": rows,
+        "modernLsbRows": modern_rows,
+        "rowsAreSafeToApply": lineage == "LSB",
+        "capability": capability_for(lineage, 12),
         "requiresServerCode": True,
         "serverReference": reference,
         "implementationContract": {
@@ -363,4 +403,5 @@ def inspect_rows(rows: Iterable[dict]) -> dict:
 
 
 def requires_server_code(proc_type: int) -> bool:
+    """Generic conservative boundary when lineage is unknown."""
     return int(proc_type) not in {1, 2, 5, 6, 7, 10}
