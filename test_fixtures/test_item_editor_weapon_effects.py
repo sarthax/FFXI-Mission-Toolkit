@@ -22,13 +22,7 @@ def test_catalog_exposes_existing_additional_effect_fields():
 
 
 def test_build_fire_damage_rows_uses_normal_item_mods_bundle():
-    rows = effects.build_mod_rows(
-        proc_type=1,
-        chance=20,
-        subeffect=1,
-        damage=25,
-        element=1,
-    )
+    rows = effects.build_mod_rows(proc_type=1, chance=20, subeffect=1, damage=25, element=1)
     by_mod = {row["modId"]: row["value"] for row in rows}
     assert by_mod == {431: 1, 499: 1, 500: 25, 501: 20, 950: 1}
 
@@ -40,15 +34,7 @@ def test_named_fire_preset_builds_same_bundle_and_accepts_overrides():
 
 
 def test_build_latent_rows_adds_condition_without_changing_effect_bundle():
-    rows = effects.build_latent_rows(
-        latent_id=28,
-        latent_param=0,
-        proc_type=1,
-        chance=35,
-        subeffect=1,
-        damage=40,
-        element=1,
-    )
+    rows = effects.build_latent_rows(latent_id=28, latent_param=0, proc_type=1, chance=35, subeffect=1, damage=40, element=1)
     assert rows
     assert all(row["latentId"] == 28 for row in rows)
     assert all(row["latentParam"] == 0 for row in rows)
@@ -56,27 +42,13 @@ def test_build_latent_rows_adds_condition_without_changing_effect_bundle():
 
 
 def test_debuff_bundle_preserves_status_power_and_duration():
-    rows = effects.build_mod_rows(
-        proc_type=2,
-        chance=100,
-        subeffect=11,
-        status=4,
-        power=30,
-        duration=30,
-    )
+    rows = effects.build_mod_rows(proc_type=2, chance=100, subeffect=11, status=4, power=30, duration=30)
     by_mod = {row["modId"]: row["value"] for row in rows}
     assert by_mod == {431: 2, 499: 11, 501: 100, 951: 4, 952: 30, 953: 30}
 
 
 def test_self_buff_blueprint_is_explicit_server_handoff():
-    blueprint = effects.build_self_buff_blueprint(
-        status=33,
-        chance=25,
-        power=150,
-        duration=45,
-        subeffect=23,
-        lineage="lsb",
-    )
+    blueprint = effects.build_self_buff_blueprint(status=33, chance=25, power=150, duration=45, subeffect=23, lineage="lsb")
     assert blueprint["requiresServerCode"] is True
     assert blueprint["lineage"] == "LSB"
     assert blueprint["rowsAreSafeToApply"] is True
@@ -108,6 +80,15 @@ def test_lineage_capability_badges_are_fail_closed():
     assert effects.capability_for("LSB", 999) == "unsupported"
 
 
+def test_effect_summary_and_generic_handoff_are_editor_ready():
+    effect = {"type": 1, "chance": 20, "element": 1, "damage": 25}
+    assert effects.summarize_effect(effect) == "20% damage · fire · amount 25"
+    handoff = effects.export_server_handoff(effect, "DSP")
+    assert handoff["capability"] == "verify-lineage"
+    assert handoff["summary"] == "20% damage · fire · amount 25"
+    assert "status.lua" in handoff["serverReference"]["mod_enum"]
+
+
 def test_inspect_rows_recognizes_existing_effect_rows_and_ignores_other_mods():
     summary = effects.inspect_rows([
         {"modId": 25, "value": 10},
@@ -121,6 +102,7 @@ def test_inspect_rows_recognizes_existing_effect_rows_and_ignores_other_mods():
     assert summary["procTypeLabel"] == "damage"
     assert summary["elementLabel"] == "fire"
     assert summary["subeffectLabel"] == "fire damage"
+    assert summary["summary"] == "20% damage · fire · amount 25"
     assert 25 not in summary["modIds"]
 
 
