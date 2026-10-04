@@ -31,11 +31,19 @@
   async function loadCategories() {
     const data = await api('/auction-house/categories.json');
     const select = $('ahCategory');
+    const groups = new Map();
     for (const row of data.rows || []) {
+      const groupName = row.group || 'Custom / Unknown';
+      if (!groups.has(groupName)) {
+        const optgroup = document.createElement('optgroup');
+        optgroup.label = groupName;
+        groups.set(groupName, optgroup);
+        select.appendChild(optgroup);
+      }
       const option = document.createElement('option');
       option.value = row.category_id;
-      option.textContent = `Category ${row.category_id} (${fmt.format(row.item_count)})`;
-      select.appendChild(option);
+      option.textContent = `${row.path || row.label || `Category ${row.category_id}`} (${fmt.format(row.item_count)})`;
+      groups.get(groupName).appendChild(option);
     }
   }
 
@@ -57,7 +65,7 @@
       box.innerHTML = (data.rows || []).map(row => `
         <button type="button" class="ah-item" data-item-id="${row.item_id}">
           <img src="/auction-house/items/${row.item_id}/icon.png" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-          <span><strong>${esc(row.name)}</strong><small>ID ${row.item_id} · AH ${row.category_id} · stack ${row.stack_size}</small></span>
+          <span><strong>${esc(row.name)}</strong><small>ID ${row.item_id} · ${esc(row.category_path || `AH ${row.category_id}`)} · stack ${row.stack_size}</small></span>
           <span class="ah-count"><strong>${fmt.format(row.active_listings)}</strong> listed<br>${row.average_sale_price == null ? 'no sales' : money(row.average_sale_price)}</span>
         </button>`).join('');
       box.querySelectorAll('[data-item-id]').forEach(button => button.addEventListener('click', () => loadDetail(Number(button.dataset.itemId))));
@@ -95,7 +103,7 @@
       const totalListings = Number(item.active_listings || 0);
       const listingSuffix = totalListings > returnedListings ? ` · showing ${fmt.format(returnedListings)}` : '';
       box.innerHTML = `
-        <div class="page-head"><div><h2>${esc(item.name)}</h2><div class="muted">Item ${item.item_id} · AH category ${item.category_id} · stack ${item.stack_size}</div></div><img class="ah-icon" src="/auction-house/items/${item.item_id}/icon.png" alt=""></div>
+        <div class="page-head"><div><h2>${esc(item.name)}</h2><div class="muted">Item ${item.item_id} · ${esc(item.category_path || `AH category ${item.category_id}`)} · stack ${item.stack_size}</div></div><img class="ah-icon" src="/auction-house/items/${item.item_id}/icon.png" alt=""></div>
         <h3>Price & volume</h3><div class="ah-trends">${trendCard(7, data.trends['7'] || [])}${trendCard(30, data.trends['30'] || [])}${trendCard(90, data.trends['90'] || [])}</div>
         <h3>Current listings (${fmt.format(totalListings)}${listingSuffix})</h3>${listingTable(data.active_listings || [])}
         <h3>Recent sales</h3>${historyTable(data.history || [])}`;
