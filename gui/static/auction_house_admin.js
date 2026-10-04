@@ -74,23 +74,42 @@
     }
   }
 
-  function historyTable(rows) {
+  const unitPrice = (price, isStack, stackSize) => isStack && Number(stackSize) > 1 ? Number(price) / Number(stackSize) : Number(price);
+
+  function historyTable(rows, stackSize) {
     if (!rows.length) return '<p class="muted">No completed sale history found.</p>';
-    return `<table class="ah-table"><thead><tr><th>Date</th><th>Seller</th><th>Buyer</th><th>Lot</th><th class="ah-price">Sale</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(when(r.sold_at_iso))}</td><td>${esc(r.seller_name || `#${r.seller_id}`)}</td><td>${esc(r.buyer_name || (r.buyer_id ? `#${r.buyer_id}` : '—'))}</td><td>${r.stack ? 'Stack' : 'Single'}</td><td class="ah-price">${money(r.sale_price)}</td></tr>`).join('')}</tbody></table>`;
+    return `<table class="ah-table"><thead><tr><th>Date</th><th>Seller</th><th>Buyer</th><th>Lot</th><th class="ah-price">Sale</th><th class="ah-price">Per item</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(when(r.sold_at_iso))}</td><td>${esc(r.seller_name || `#${r.seller_id}`)}</td><td>${esc(r.buyer_name || (r.buyer_id ? `#${r.buyer_id}` : '—'))}</td><td>${r.stack ? `Stack ×${stackSize}` : 'Single'}</td><td class="ah-price">${money(r.sale_price)}</td><td class="ah-price">${money(Math.round(unitPrice(r.sale_price, r.stack, stackSize)))}</td></tr>`).join('')}</tbody></table>`;
   }
 
-  function listingTable(rows) {
+  function listingTable(rows, stackSize) {
     if (!rows.length) return '<p class="muted">No current listings.</p>';
-    return `<table class="ah-table"><thead><tr><th>Listed</th><th>Seller</th><th>Lot</th><th class="ah-price">Asking</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(when(r.listed_at_iso))}</td><td>${esc(r.seller_name || `#${r.seller_id}`)}</td><td>${r.stack ? 'Stack' : 'Single'}</td><td class="ah-price">${money(r.asking_price)}</td></tr>`).join('')}</tbody></table>`;
+    return `<table class="ah-table"><thead><tr><th>Listed</th><th>Seller</th><th>Lot</th><th class="ah-price">Asking</th><th class="ah-price">Per item</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(when(r.listed_at_iso))}</td><td>${esc(r.seller_name || `#${r.seller_id}`)}</td><td>${r.stack ? `Stack ×${stackSize}` : 'Single'}</td><td class="ah-price">${money(r.asking_price)}</td><td class="ah-price">${money(Math.round(unitPrice(r.asking_price, r.stack, stackSize)))}</td></tr>`).join('')}</tbody></table>`;
   }
 
-  function trendCard(days, rows) {
+  function summarizeTrend(rows) {
     const sales = rows.reduce((n, r) => n + Number(r.sales || 0), 0);
-    const weighted = rows.reduce((n, r) => n + Number(r.average_price || 0) * Number(r.sales || 0), 0);
-    const avg = sales ? weighted / sales : null;
-    const low = rows.length ? Math.min(...rows.map(r => Number(r.min_price))) : null;
-    const high = rows.length ? Math.max(...rows.map(r => Number(r.max_price))) : null;
-    return `<div class="ah-trend"><strong>${days} days</strong><br>${fmt.format(sales)} sales<br>avg ${money(avg == null ? null : Math.round(avg))}<br><small>${money(low)} – ${money(high)}</small></div>`;
+    if (!sales) return null;
+    return {
+      sales,
+      average: rows.reduce((n, r) => n + Number(r.average_price || 0) * Number(r.sales || 0), 0) / sales,
+      averageUnit: rows.reduce((n, r) => n + Number(r.average_unit_price || 0) * Number(r.sales || 0), 0) / sales,
+      low: Math.min(...rows.map(r => Number(r.min_price))),
+      high: Math.max(...rows.map(r => Number(r.max_price))),
+    };
+  }
+
+  function trendLine(label, summary, showUnit) {
+    if (!summary) return `<small>${label}: no sales</small>`;
+    const unit = showUnit ? ` · ${money(Math.round(summary.averageUnit))}/item` : '';
+    return `<small><strong>${label}</strong>: ${fmt.format(summary.sales)} · avg ${money(Math.round(summary.average))}${unit}<br>${money(summary.low)}–${money(summary.high)}</small>`;
+  }
+
+  function trendCard(days, rows, stackSize) {
+    const singles = summarizeTrend(rows.filter(r => !r.stack));
+    const stacks = summarizeTrend(rows.filter(r => r.stack));
+    const total = (singles?.sales || 0) + (stacks?.sales || 0);
+    const stackLine = Number(stackSize) > 1 ? `<br>${trendLine(`Stack ×${stackSize}`, stacks, true)}` : '';
+    return `<div class="ah-trend"><strong>${days} days · ${fmt.format(total)} sales</strong><br>${trendLine('Single', singles, false)}${stackLine}</div>`;
   }
 
   async function loadDetail(itemId) {
@@ -104,9 +123,9 @@
       const listingSuffix = totalListings > returnedListings ? ` · showing ${fmt.format(returnedListings)}` : '';
       box.innerHTML = `
         <div class="page-head"><div><h2>${esc(item.name)}</h2><div class="muted">Item ${item.item_id} · ${esc(item.category_path || `AH category ${item.category_id}`)} · stack ${item.stack_size}</div></div><img class="ah-icon" src="/auction-house/items/${item.item_id}/icon.png" alt=""></div>
-        <h3>Price & volume</h3><div class="ah-trends">${trendCard(7, data.trends['7'] || [])}${trendCard(30, data.trends['30'] || [])}${trendCard(90, data.trends['90'] || [])}</div>
-        <h3>Current listings (${fmt.format(totalListings)}${listingSuffix})</h3>${listingTable(data.active_listings || [])}
-        <h3>Recent sales</h3>${historyTable(data.history || [])}`;
+        <h3>Price & volume</h3><div class="ah-trends">${trendCard(7, data.trends['7'] || [], item.stack_size)}${trendCard(30, data.trends['30'] || [], item.stack_size)}${trendCard(90, data.trends['90'] || [], item.stack_size)}</div>
+        <h3>Current listings (${fmt.format(totalListings)}${listingSuffix})</h3>${listingTable(data.active_listings || [], item.stack_size)}
+        <h3>Recent sales</h3>${historyTable(data.history || [], item.stack_size)}`;
     } catch (error) {
       box.innerHTML = `<h2>Item detail</h2><p>${esc(error.message)}</p>`;
     }
