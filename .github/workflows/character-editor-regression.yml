@@ -4,12 +4,16 @@ on:
   pull_request:
     paths:
       - "src/workbench/editors/character/**"
+      - "src/workbench/server_admin/auction_house/**"
       - "src/workbench/runtime/server_profiles.py"
       - "src/workbench/runtime/legacy_settings.py"
       - "gui/templates/character_editor*.html"
+      - "gui/templates/auction_house.html"
       - "gui/static/character_editor*.js"
       - "gui/static/server_environment_selector.js"
+      - "gui/static/auction_house_admin.js"
       - "test_fixtures/test_character_editor_*.py"
+      - "test_fixtures/test_auction_house_readonly.py"
       - "test_fixtures/test_server_profiles.py"
       - "test_fixtures/test_server_environment_integration.py"
       - "test_fixtures/test_root_settings_server_profiles.py"
@@ -37,10 +41,11 @@ jobs:
           mkdir -p "$RUNNER_TEMP/character-editor-stubs"
           : > "$RUNNER_TEMP/character-editor-stubs/xi_tinkerer.py"
           echo "PYTHONPATH=$RUNNER_TEMP/character-editor-stubs:$GITHUB_WORKSPACE:$GITHUB_WORKSPACE/test_fixtures${PYTHONPATH:+:$PYTHONPATH}" >> "$GITHUB_ENV"
-      - name: Run pytest-style Character Editor regressions
+      - name: Run pytest-style Character Editor and server-admin regressions
         run: |
           python -m pytest -q \
             test_fixtures/test_character_editor_*.py \
+            test_fixtures/test_auction_house_readonly.py \
             test_fixtures/test_server_profiles.py \
             test_fixtures/test_server_environment_integration.py \
             test_fixtures/test_root_settings_server_profiles.py

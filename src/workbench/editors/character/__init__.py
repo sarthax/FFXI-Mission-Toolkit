@@ -17,6 +17,18 @@ from . import server_profiles_gui as _server_profiles_gui  # noqa: F401,E402
 from . import state_surface_gui as _state_surface_gui  # noqa: F401,E402
 from . import client_cache_gui as _client_cache_gui  # noqa: F401,E402
 
+
+def _attach_root_server_admin_routes() -> None:
+    """Bridge modular server-admin routes into the current legacy root registration point."""
+    from . import gui as _character_gui
+    from workbench.server_admin.auction_house.integration import install_legacy_gui_bridge
+
+    install_legacy_gui_bridge(_character_gui.router)
+
+
+_attach_root_server_admin_routes()
+
+
 __all__ = [
     "ActionPreview",
     "AddItemRequest",
