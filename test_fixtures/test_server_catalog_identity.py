@@ -12,6 +12,10 @@ from workbench.core.services.server_catalog_identity import (
     SOURCE_MARKER,
     sync_server_catalog_entities,
 )
+from test_fixtures.test_feature_trace_drop_chain_benchmarks import (
+    test_drop_row_composite_identity_is_stable_and_navigable,
+    test_generic_nm_trace_reaches_drop_rows_and_items,
+)
 
 
 def main():
@@ -111,7 +115,9 @@ def main():
         g.close()
         source.close()
 
-    print("server catalog canonical identity sync self-test: PASS")
+    test_generic_nm_trace_reaches_drop_rows_and_items()
+    test_drop_row_composite_identity_is_stable_and_navigable()
+    print("server catalog canonical identity sync + drop-chain self-test: PASS")
 
 
 if __name__ == "__main__":
