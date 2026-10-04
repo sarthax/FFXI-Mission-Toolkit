@@ -14,6 +14,7 @@ from workbench.editors.items import client_asset_cache
 
 from .actions import ListItemRequest, PurchaseRequest, preview_list_item, preview_purchase
 from .analytics import economy_summary, price_trends, search_items
+from .diagnostics import run_read_only_diagnostics
 from .factory import open_auction_house
 from .health import economy_health
 from .write_probe import probe_write_readiness
@@ -70,6 +71,16 @@ def status():
     try:
         with _context() as ctx:
             return JSONResponse(ctx.public_status())
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.get("/diagnostics.json")
+def diagnostics():
+    """Run bounded, SELECT-only smoke probes across the Auction House admin surface."""
+    try:
+        with _context() as ctx:
+            return JSONResponse(run_read_only_diagnostics(ctx.service))
     except Exception as exc:
         raise _error(exc)
 
