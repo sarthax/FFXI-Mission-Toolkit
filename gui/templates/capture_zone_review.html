@@ -3,7 +3,7 @@
 {% block content %}
 <div class="dense-toolbar">
   <a class="chip" href="/captures">&larr; Captures</a>
-  <strong>Packet zone review</strong>
+  <strong><span aria-hidden="true" style="color:var(--amber)">&#9888;</span> Packet zone review</strong>
   <span class="sp"></span>
   {% for k in ['pending','approved','rejected','all'] %}
   <a class="chip{% if status==k %} active{% endif %}" href="/captures/zone-review?status={{k}}">{{k|capitalize}}{% if k!='all' %} ({{counts[k]}}){% endif %}</a>

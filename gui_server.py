@@ -628,6 +628,21 @@ def shell_context(request: Request) -> dict:
 
 templates.env.globals["shell_context"] = shell_context
 
+
+def zone_review_pending() -> int:
+    """Number of pending packet-zone review items (drives the warning badge); never raises."""
+    try:
+        con = get_con()
+        try:
+            return con.execute("SELECT COUNT(*) FROM shift_zone_review WHERE status='pending'").fetchone()[0]
+        finally:
+            con.close()
+    except Exception:
+        return 0
+
+
+templates.env.globals["zone_review_pending"] = zone_review_pending
+
 # The packaged Character Editor router owns its own Jinja2Templates; base.html needs the globals above.
 character_editor_gui.templates.env.globals.update(templates.env.globals)
 

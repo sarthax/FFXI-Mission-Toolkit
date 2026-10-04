@@ -10,10 +10,13 @@
   <a class="chip" href="/captures/new">+ New capture</a>
   <a class="chip" href="/captures/search">Cross-capture search</a>
   <a class="chip" href="/captures/help">Formats / gaps</a>
-  <a class="chip" href="/captures/zone-review">Zone review</a>
+  {% set zr = zone_review_pending() %}
+  <a class="chip" href="/captures/zone-review" style="{% if zr %}background:var(--amber-soft);color:var(--amber);border-color:var(--amber);font-weight:700{% endif %}">{% if zr %}<span aria-hidden="true">&#9888;</span> {% endif %}Zone review{% if zr %} <span style="background:var(--amber);color:var(--amber-soft);border-radius:9px;padding:0 6px;margin-left:2px">{{ zr }}</span>{% endif %}</a>
   <span class="sp"></span>
   <details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:680px">Indexed capture bundles are explicitly typed and tagged so unrelated content is not silently conflated.</div></details>
 </div>
+
+{% if zr %}<div class="warn" style="display:flex;gap:8px;align-items:center"><span style="font-size:22px" aria-hidden="true">&#9888;</span><span><strong>{{ zr }} packet zone item{{ 's' if zr != 1 }} need manual review.</strong> Affected captures are held out of shift evidence until decided. <a href="/captures/zone-review">Open Zone review</a></span></div>{% endif %}
 
 <form class="search dense-toolbar" method="get" style="margin:6px 0">
   <input type="text" name="q" value="{{ q }}" placeholder="filter by mission or label" list="mission-list">
