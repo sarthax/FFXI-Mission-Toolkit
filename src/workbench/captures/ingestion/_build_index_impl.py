@@ -2968,6 +2968,12 @@ def ingest(con, path_str: str, content_type: str = "instances", subroot: str | N
 
         counts = ingest_from_source(con, capture_id, src, subroot=subroot)
         recompute_zones(con, capture_id)
+        try:
+            from workbench.captures import msgid_shift as _ms
+            con.commit()
+            _ms.update_after_ingest(con, capture_id)
+        except Exception as _ex:
+            print(f"  [shift check skipped: {_ex}]")
 
         con.commit()
         zones = json.loads(con.execute("SELECT zones FROM captures WHERE capture_id=?", (capture_id,)).fetchone()[0] or "[]")

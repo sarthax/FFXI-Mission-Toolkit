@@ -200,3 +200,47 @@ def master_lookup(con, zoneid, msgid):
         if a[1] < msgid < b[0]:
             return (a[2], "extended") if a[2] == b[2] else (None, "boundary")
     return None, "outside"
+
+
+def zoneid_for_zone_db(con, zone_db):
+    """Same normalization gui_server uses: NPCLogger spaced names / '[S]' -> zones.name form."""
+    import re
+    n = zone_db.upper().replace(" ", "_").replace("'", "").replace("-", "_")
+    n = re.sub(r"_?\[S\]$", "_S", n)
+    r = con.execute("SELECT zoneid FROM zones WHERE REPLACE(name,' ','_')=?", (n,)).fetchone()
+    return r[0] if r else None
+
+
+REPORT_PATH = r"D:\Claude\mission_toolkit\docs\shift_report.log"
+
+
+def update_after_ingest(con, capture_id, report_path=None):
+    """Run at the end of every capture ingest: record this capture's observations, refresh the
+    per-capture measurement and the piecewise master, and APPEND one report block (never
+    overwrites). Failures are reported in the log, never raised -- must not break ingestion."""
+    import datetime
+    import os
+    path = report_path or REPORT_PATH
+    lines = ["[%s] capture %s" % (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), capture_id)]
+    try:
+        n = observe(con, capture_id, zoneid_for_zone_db)
+        per = compute(con, capture_id, zoneid_for_zone_db)
+        build_master(con)
+        lines.append("  observations: %d" % n)
+        for zone, zid, best, bh, tot, ru, conf in per:
+            lines.append("  %s (zone %s): shift %s hits %d/%d runner-up %d %s" % (
+                zone, zid, ("%+d" % best) if conf else "unverified", bh, tot, ru,
+                "CONFIDENT" if conf else "no confident shift"))
+        if not per:
+            lines.append("  no 0x036 chat packets matched to a zone (no shift evidence)")
+        for zid, in con.execute("SELECT DISTINCT zoneid FROM msgid_shift_obs WHERE capture_id=?", (capture_id,)):
+            for lo, hi, sh, ob, caps, cf in con.execute(
+                    "SELECT id_lo,id_hi,shift,obs,captures,conflict FROM msgid_shift_master WHERE zoneid=? ORDER BY id_lo", (zid,)):
+                lines.append("  master zone %s %d-%d: %+d (obs %d, captures %d)%s" % (
+                    zid, lo, hi, sh, ob, caps, " CONFLICT" if cf else ""))
+    except Exception as ex:
+        lines.append("  shift check FAILED: %r" % (ex,))
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "a", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+    return lines
