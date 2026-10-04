@@ -50,7 +50,24 @@ def test_lsb_probe_reports_listing_and_purchase_prerequisites_present():
     assert probe.database == "xidb"
     assert probe.lsb_listing_ready is True
     assert probe.lsb_purchase_ready is True
+    assert probe.legacy_listing_shape_present is False
+    assert probe.legacy_purchase_prerequisites_present is True
     assert any("execution remains disabled" in note for note in probe.notes)
+
+
+def test_legacy_probe_recognizes_application_managed_listing_shape_without_enabling_writes():
+    probe = probe_write_readiness(_Connection(
+        tables={"auction_house", "item_basic", "chars", "delivery_box"},
+        triggers={"auction_house_buy", "delivery_box_insert"},
+    ))
+    assert probe.lsb_listing_ready is False
+    assert probe.lsb_purchase_ready is True
+    assert probe.legacy_listing_shape_present is True
+    assert probe.legacy_purchase_prerequisites_present is True
+    joined = " | ".join(probe.notes)
+    assert "application-managed listing behavior" in joined
+    assert "execution remains disabled" in joined
+    assert "lineage-specific verification" in joined
 
 
 def test_probe_reports_each_missing_prerequisite_without_guessing():
@@ -60,9 +77,11 @@ def test_probe_reports_each_missing_prerequisite_without_guessing():
     ))
     assert probe.lsb_listing_ready is False
     assert probe.lsb_purchase_ready is False
+    assert probe.legacy_listing_shape_present is False
+    assert probe.legacy_purchase_prerequisites_present is False
     joined = " | ".join(probe.notes)
     assert "listing missing table: item_basic" in joined
-    assert "listing missing trigger: auction_house_list" in joined
+    assert "LSB listing missing trigger: auction_house_list" in joined
     assert "purchase missing table: delivery_box" in joined
     assert "purchase missing trigger: delivery_box_insert" in joined
 
