@@ -4,6 +4,7 @@
   const $ = (id) => document.getElementById(id);
   const fmt = new Intl.NumberFormat();
   const money = (v) => v == null ? '—' : `${fmt.format(Number(v))}g`;
+  const pct = (v) => v == null ? '—' : `${Number(v) >= 0 ? '+' : ''}${Number(v).toFixed(1)}%`;
   const when = (v) => v ? new Date(v).toLocaleString() : '—';
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -52,6 +53,62 @@
     const data = await api('/auction-house/overview.json?days=30');
     const values = [fmt.format(data.active_listings || 0), fmt.format(data.sales || 0), money(data.gil_transacted), `${fmt.format(data.unique_buyers || 0)} / ${fmt.format(data.unique_sellers || 0)}`];
     document.querySelectorAll('#ahMetrics .metric strong').forEach((node, i) => node.textContent = values[i]);
+  }
+
+  function renderHealthList(rows, renderer, emptyText) {
+    if (!(rows || []).length) return `<p class="muted">${esc(emptyText)}</p>`;
+    return `<ul class="ah-health-list">${rows.slice(0, 8).map(renderer).join('')}</ul>${rows.length > 8 ? `<p class="muted">Showing 8 of ${fmt.format(rows.length)} signals.</p>` : ''}`;
+  }
+
+  function renderHealth(data) {
+    const counts = data.counts || {};
+    $('ahHealthSummary').innerHTML = `
+      <div class="metric"><span>Stale listings</span><strong>${fmt.format(counts.stale_listings || 0)}</strong></div>
+      <div class="metric"><span>Market movements</span><strong>${fmt.format(counts.market_movements || 0)}</strong></div>
+      <div class="metric"><span>Transaction outliers</span><strong>${fmt.format(counts.transaction_outliers || 0)}</strong></div>`;
+
+    $('ahHealthStale').innerHTML = renderHealthList(data.stale_listings || [], row =>
+      `<li><strong>${esc(row.item_name)}</strong> · ${esc(row.lot_type)} · ${Number(row.age_days || 0).toFixed(1)}d old · ${money(row.asking_price)}<br><small>${esc(row.seller_name || `seller #${row.seller_id}`)} · ${esc(row.category_path || '')}</small></li>`,
+      'No stale listings at this threshold.'
+    );
+
+    $('ahHealthMovement').innerHTML = renderHealthList(data.market_movements || [], row =>
+      `<li><strong>${esc(row.item_name)}</strong> · ${esc(row.lot_type)} · price ${pct(row.price_change_pct)} · volume ${pct(row.volume_change_pct)}<br><small>${fmt.format(row.recent_sales)} recent vs ${fmt.format(row.baseline_sales)} baseline sales</small></li>`,
+      'No price/volume movements met the sample thresholds.'
+    );
+
+    const concentration = data.participant_concentration || {};
+    const sellerTop = (concentration.sellers || [])[0];
+    const buyerTop = (concentration.buyers || [])[0];
+    const concentrationParts = [];
+    if (sellerTop) concentrationParts.push(`<li><strong>Top seller:</strong> ${esc(sellerTop.name || `#${sellerTop.id}`)} · ${pct(sellerTop.gil_share_pct)} of ranked gil · ${fmt.format(sellerTop.sales)} sales</li>`);
+    if (buyerTop) concentrationParts.push(`<li><strong>Top buyer:</strong> ${esc(buyerTop.name || `#${buyerTop.id}`)} · ${pct(buyerTop.gil_share_pct)} of ranked gil · ${fmt.format(buyerTop.sales)} sales</li>`);
+    if (!concentration.buyer_identity_available) concentrationParts.push('<li class="muted">Buyer identity is unavailable in this schema.</li>');
+    $('ahHealthConcentration').innerHTML = concentrationParts.length ? `<ul class="ah-health-list">${concentrationParts.join('')}</ul>` : '<p class="muted">No completed-sale concentration data.</p>';
+
+    $('ahHealthOutliers').innerHTML = renderHealthList(data.transaction_outliers || [], row =>
+      `<li><strong>${esc(row.item_name)}</strong> · ${esc(row.signal.replaceAll('_',' '))} · ${money(row.sale_price)} vs median ${money(row.peer_median_price)}<br><small>${Number(row.severity_ratio || 0).toFixed(2)}× median distance · ${fmt.format(row.peer_sales)} peer sales</small></li>`,
+      'No transaction outliers met the current threshold.'
+    );
+
+    if (data.disclaimer) $('ahHealthDisclaimer').textContent = data.disclaimer;
+  }
+
+  async function loadHealth() {
+    const days = Number($('ahHealthDays').value || 30);
+    const staleDays = Number($('ahStaleDays').value || 30);
+    const summary = $('ahHealthSummary');
+    summary.innerHTML = '<p class="muted">Loading economy-health diagnostics…</p>';
+    try {
+      const qs = new URLSearchParams({days:String(days), stale_days:String(staleDays), recent_days:'7', baseline_days:'30'});
+      renderHealth(await api(`/auction-house/health.json?${qs}`));
+    } catch (error) {
+      summary.innerHTML = `<p>${esc(error.message)}</p>`;
+      $('ahHealthStale').innerHTML = '';
+      $('ahHealthMovement').innerHTML = '';
+      $('ahHealthConcentration').innerHTML = '';
+      $('ahHealthOutliers').innerHTML = '';
+    }
   }
 
   async function loadCategories() {
@@ -197,7 +254,10 @@
   $('ahSearchButton').addEventListener('click', loadItems);
   $('ahSearch').addEventListener('keydown', e => { if (e.key === 'Enter') loadItems(); });
   $('ahCategory').addEventListener('change', loadItems);
-  Promise.all([loadStatus(), loadWriteReadiness(), loadOverview(), loadCategories()]).then(loadItems).catch(error => {
+  $('ahHealthRefresh').addEventListener('click', loadHealth);
+  $('ahHealthDays').addEventListener('change', loadHealth);
+  $('ahStaleDays').addEventListener('change', loadHealth);
+  Promise.all([loadStatus(), loadWriteReadiness(), loadOverview(), loadHealth(), loadCategories()]).then(loadItems).catch(error => {
     $('ahStatus').textContent = error.message;
     $('ahItems').innerHTML = '<p class="muted">Auction House data unavailable.</p>';
   });
