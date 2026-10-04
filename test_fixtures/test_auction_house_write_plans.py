@@ -7,12 +7,12 @@ from workbench.server_admin.auction_house.write_plans import (
 )
 
 
-def _env(environment="test", name="Test"):
+def _env(environment="test", name="Test", family="lsb"):
     return {
         "profile_id": 7,
         "name": name,
         "environment": environment,
-        "family": "lsb",
+        "family": family,
         "enabled": True,
         "is_active": True,
         "legacy": False,
@@ -67,6 +67,7 @@ def test_lsb_listing_plan_requires_trigger_and_never_becomes_executable():
         schema_triggers={"auction_house_list"},
     )
     assert plan.required_triggers == ("auction_house_list",)
+    assert not any(issue.code.startswith("lineage_") for issue in plan.issues)
     assert plan.executor_enabled is False
     assert plan.executable is False
     assert any(issue.code == "executor_not_enabled" for issue in plan.issues)
@@ -110,36 +111,58 @@ def test_live_environment_requires_exact_profile_name_confirmation():
 
 
 def test_legacy_fallback_environment_is_never_write_ready():
-    identity = _env("legacy", "DSP")
+    identity = _env("legacy", "DSP", family="dsp")
     identity["legacy"] = True
     plan = build_purchase_write_plan(
         adapter_family="legacy-dsp-topaz-compatible",
         environment=identity,
         preview=_purchase_preview(),
         schema_tables={"auction_house", "chars", "delivery_box"},
-        schema_triggers=set(),
+        schema_triggers={"auction_house_buy", "delivery_box_insert"},
     )
     assert any(issue.code == "legacy_environment_unclassified" for issue in plan.issues)
-    assert any(issue.code == "adapter_semantics_unverified" for issue in plan.issues)
+    assert any(issue.code == "lineage_execution_contract_incomplete" for issue in plan.issues)
     assert plan.contract_ready is False
     assert plan.executable is False
 
 
-def test_named_dsp_topaz_environment_stays_blocked_until_semantics_are_verified():
-    identity = _env("test", "Topaz Test")
-    identity["family"] = "topaz"
-    plan = build_list_write_plan(
+def test_named_dsp_topaz_environment_reports_execution_contract_incomplete():
+    for family in ("topaz", "dsp"):
+        identity = _env("test", f"{family} Test", family=family)
+        plan = build_list_write_plan(
+            adapter_family="legacy-dsp-topaz-compatible",
+            environment=identity,
+            preview=_list_preview(),
+            schema_tables={"auction_house", "item_basic", "chars"},
+            schema_triggers={"auction_house_buy", "delivery_box_insert"},
+        )
+        issue = next(issue for issue in plan.issues if issue.code == "lineage_execution_contract_incomplete")
+        assert family.capitalize() in issue.message or family.upper() in issue.message
+        assert not any(issue.code == "lineage_semantics_unverified" for issue in plan.issues)
+        assert plan.contract_ready is False
+        assert plan.executor_enabled is False
+        assert plan.executable is False
+
+
+def test_profile_schema_mismatch_and_auto_profile_fail_closed():
+    mismatch = build_list_write_plan(
         adapter_family="legacy-dsp-topaz-compatible",
-        environment=identity,
+        environment=_env(family="lsb"),
         preview=_list_preview(),
         schema_tables={"auction_house", "item_basic", "chars"},
         schema_triggers=set(),
     )
-    issue = next(issue for issue in plan.issues if issue.code == "adapter_semantics_unverified")
-    assert "DSP/Topaz" in issue.message
-    assert plan.contract_ready is False
-    assert plan.executor_enabled is False
-    assert plan.executable is False
+    assert any(issue.code == "lineage_schema_mismatch" for issue in mismatch.issues)
+
+    auto = build_list_write_plan(
+        adapter_family="lsb-compatible",
+        environment=_env(family="auto"),
+        preview=_list_preview(),
+        schema_tables={"auction_house", "item_basic", "chars"},
+        schema_triggers={"auction_house_list"},
+    )
+    assert any(issue.code == "lineage_not_explicit" for issue in auto.issues)
+    assert auto.executable is False
 
 
 def test_normal_purchase_requires_exact_buyer_snapshot():

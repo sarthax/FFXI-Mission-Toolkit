@@ -10,9 +10,9 @@ import hashlib
 import json
 from typing import Any, Iterable
 
+from .lineage_semantics import evaluate_lineage_semantics
 
-_VERIFIED_FAMILIES = {"lsb-compatible"}
-_KNOWN_UNVERIFIED_FAMILIES = {"legacy-dsp-topaz-compatible"}
+
 _LSB_REQUIRED_TRIGGERS = {
     "list_item": ("auction_house_list",),
     "purchase_item": ("auction_house_buy", "delivery_box_insert"),
@@ -104,16 +104,25 @@ def _environment_issues(identity: dict[str, Any], *, live_confirmation: str | No
     return issues
 
 
-def _family_issues(adapter_family: str) -> list[WriteIssue]:
-    family = str(adapter_family or "unknown")
-    if family in _VERIFIED_FAMILIES:
-        return []
-    if family in _KNOWN_UNVERIFIED_FAMILIES:
-        return [WriteIssue(
-            "adapter_semantics_unverified",
-            "DSP/Topaz Auction House writes are read/preview-only until listing inventory, seller proceeds, buyer debit, and delivery-box semantics are independently verified for the selected lineage.",
-        )]
-    return [WriteIssue("adapter_unverified", f"Unsupported Auction House adapter family: {family}")]
+def _lineage_issues(adapter_family: str, identity: dict[str, Any]) -> list[WriteIssue]:
+    """Reuse the source-lineage gate instead of maintaining a second semantics model.
+
+    ``adapter_family`` is the live schema-family hint. The named environment supplies the
+    concrete lineage. This deliberately fails closed for auto/legacy/custom profiles and keeps
+    source-verified DSP/Topaz preview-only until their execution contracts are implemented.
+    """
+    result = evaluate_lineage_semantics(
+        profile_family=identity.get("family") if identity else None,
+        schema_family_hint=adapter_family,
+    )
+    return [
+        WriteIssue(
+            str(issue.get("code") or "lineage_gate_blocked"),
+            str(issue.get("message") or "Auction House lineage gate blocked this write plan."),
+            bool(issue.get("blocking", True)),
+        )
+        for issue in result.get("issues", [])
+    ]
 
 
 def _missing_required(found: Iterable[str], required: Iterable[str], *, kind: str) -> list[WriteIssue]:
@@ -137,7 +146,10 @@ def build_list_write_plan(
     """Build a non-executable write contract for a future single listing."""
     snapshot = dict(preview.get("snapshot") or {})
     payload = dict(preview.get("payload") or {})
-    issues = _family_issues(adapter_family) + _environment_issues(environment, live_confirmation=live_confirmation)
+    issues = _lineage_issues(adapter_family, environment) + _environment_issues(
+        environment,
+        live_confirmation=live_confirmation,
+    )
     if not snapshot.get("item"):
         issues.append(WriteIssue("item_snapshot_missing", "Listing preview does not contain an item snapshot."))
     if not snapshot.get("seller"):
@@ -201,7 +213,10 @@ def build_purchase_write_plan(
     snapshot = dict(preview.get("snapshot") or {})
     payload = dict(preview.get("payload") or {})
     listing = snapshot.get("listing")
-    issues = _family_issues(adapter_family) + _environment_issues(environment, live_confirmation=live_confirmation)
+    issues = _lineage_issues(adapter_family, environment) + _environment_issues(
+        environment,
+        live_confirmation=live_confirmation,
+    )
     if not listing:
         issues.append(WriteIssue("listing_snapshot_missing", "Purchase preview does not contain an active listing snapshot."))
     if not payload.get("auction_id"):
