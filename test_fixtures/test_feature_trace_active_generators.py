@@ -43,7 +43,21 @@ def test_provider_expansion_walks_generic_topaz_spawn_group_pool_chain():
     assert {row["relationship"] for row in generated} >= {"SPAWN_USES_GROUP", "GROUP_USES_POOL"}
     assert traced["generated_relationship_count"] >= 2
     assert any(row["id"] == "lua-sql" and row["active"] for row in traced["generator_plan"])
-    assert not traced["edges"]  # provider evidence remains separate from canonical persisted edges
+    # Focused display graph now includes read-only generated provider evidence, while the
+    # persisted-only collection stays empty for this provider-only fixture.
+    assert traced["canonical_edges"] == []
+    assert {row["relationship"] for row in traced["edges"]} >= {"SPAWN_USES_GROUP", "GROUP_USES_POOL"}
+    assert all(row.get("generated") is True for row in traced["edges"])
+    assert all(row["status"] == "GENERATED_EVIDENCE" for row in traced["edges"])
+    node_ids = {row["node_id"] for row in traced["nodes"]}
+    assert f"catalog:topaz_mob_groups:zoneid={zoneid if False else 100}&groupid=7" not in node_ids  # encoded ID form varies; names below are stable
+    names = {
+        rep.get("display_name")
+        for node in traced["nodes"]
+        for rep in (node.get("representations") or [])
+    }
+    assert "Trace Test Group" in names
+    assert "Trace Test Pool" in names
     con.close()
 
 
