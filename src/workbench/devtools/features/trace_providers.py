@@ -182,6 +182,7 @@ PROVIDER_LINKS=(
     *_common_server_links("topaz"),
     *_common_server_links("dsp"),
     CatalogLink("identity_records","snapshot_id","identity_snapshots","snapshot_id","IN_CLIENT_SNAPSHOT"),
+    CatalogLink("captures","client_build","identity_snapshots","version","CAPTURE_CLIENT_BUILD"),
     CatalogLink("research_proposals","research_session_id","research_sessions","research_session_id","FROM_RESEARCH_SESSION"),
     CatalogLink("validation_results","run_id","validation_runs","run_id","FROM_VALIDATION_RUN"),
     CatalogLink("migration_actions","migration_id","migrations","migration_id","IN_MIGRATION"),
