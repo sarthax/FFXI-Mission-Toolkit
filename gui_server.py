@@ -643,6 +643,46 @@ def capture_help_page(request: Request):
     return templates.TemplateResponse(request, "capture_help.html", {})
 
 
+def _shift_review_rows():
+    from workbench.captures import msgid_shift as _ms
+    con = get_con()
+    try:
+        con.execute(_ms.REVIEW_DDL)
+        rows = [dict(r) for r in con.execute(
+            "SELECT r.*, c.capture_label FROM shift_zone_review r LEFT JOIN captures c ON c.capture_id=r.capture_id "
+            "ORDER BY CASE r.status WHEN 'pending' THEN 0 ELSE 1 END, r.capture_id, r.pseudo")]
+        zones = [r[0] for r in con.execute("SELECT name FROM zones ORDER BY name")]
+        return rows, zones
+    finally:
+        con.close()
+
+
+@app.get("/captures/zone-review", response_class=HTMLResponse)
+def capture_zone_review(request: Request, status: str = "pending", msg: str = ""):
+    """Review queue for 0x036 packets whose zone no automatic fallback could resolve. Captures with
+    pending items are quarantined from shift evidence until each item is approved or rejected."""
+    rows, zones = _shift_review_rows()
+    counts = {k: sum(1 for r in rows if r["status"] == k) for k in ("pending", "approved", "rejected")}
+    shown = rows if status == "all" else [r for r in rows if r["status"] == status]
+    return templates.TemplateResponse(request, "capture_zone_review.html",
+                                      {"rows": shown, "zones": zones, "counts": counts, "status": status, "msg": msg})
+
+
+@app.post("/captures/zone-review/{review_id}")
+def capture_zone_review_decide(review_id: int, action: str = Form(...), zone: str = Form(""), status: str = Form("pending")):
+    from workbench.captures import msgid_shift as _ms
+    con = get_con()
+    try:
+        _ms.review_decide(con, review_id, action, zone.strip().upper().replace(" ", "_") or None)
+        msg = "Review #%d %s." % (review_id, "approved" if action == "approve" else "rejected")
+    except SystemExit as e:
+        msg = "Not saved: %s" % e
+    finally:
+        con.close()
+    from urllib.parse import quote
+    return RedirectResponse(url="/captures/zone-review?status=%s&msg=%s" % (quote(status), quote(msg)), status_code=303)
+
+
 @app.get("/roadmap", response_class=HTMLResponse)
 def roadmap_page(request: Request):
     """Static status/roadmap page -- mirrors the 'Mission Toolkit GUI' status-report artifact

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Zone Review — Mission Toolkit{% endblock %}
+{% block content %}
+<div class="dense-toolbar">
+  <a class="chip" href="/captures">&larr; Captures</a>
+  <strong>Packet zone review</strong>
+  <span class="sp"></span>
+  {% for k in ['pending','approved','rejected','all'] %}
+  <a class="chip{% if status==k %} active{% endif %}" href="/captures/zone-review?status={{k}}">{{k|capitalize}}{% if k!='all' %} ({{counts[k]}}){% endif %}</a>
+  {% endfor %}
+</div>
+<p class="muted">0x036 chat packets whose zone could not be resolved automatically (packet tables, NPC entries, entity-id decode, measured pseudo-zone map). A capture with any <strong>pending</strong> item is quarantined from msgid-shift evidence until every item here is decided. The name hint comes from the capture's label or path and is only a clue: many captures span several zones, so choose the zone yourself.</p>
+{% if msg %}<div class="warn">{{msg}}</div>{% endif %}
+<datalist id="zone-list">{% for z in zones %}<option value="{{z}}">{% endfor %}</datalist>
+{% if not rows %}<p class="muted">Nothing {{status if status!='all' else ''}} to review.</p>{% else %}
+<div class="table-wrap"><table>
+<thead><tr><th>#</th><th>Capture</th><th>Pseudo-zone id</th><th>Packets</th><th>Zones in capture</th><th>Name hint</th><th>Status</th><th>Decision</th></tr></thead>
+<tbody>
+{% for r in rows %}
+<tr>
+  <td>{{r.review_id}}</td>
+  <td><a href="/captures/{{r.capture_id}}">{{r.capture_id}}</a><div class="muted">{{r.capture_label}}</div></td>
+  <td>{{r.pseudo}}</td>
+  <td>{{r.packets}}</td>
+  <td>{{r.capture_zones or '—'}}</td>
+  <td>{{r.name_hint or '—'}}</td>
+  <td>{{r.status}}{% if r.approved_zone %}<div><strong>{{r.approved_zone}}</strong></div>{% endif %}</td>
+  <td>
+    <form method="post" action="/captures/zone-review/{{r.review_id}}" style="display:flex;gap:4px;flex-wrap:wrap">
+      <input type="hidden" name="status" value="{{status}}">
+      <input name="zone" list="zone-list" placeholder="zone name" value="{{r.approved_zone or ''}}" size="22">
+      <button name="action" value="approve">Approve</button>
+      <button name="action" value="reject">Reject</button>
+    </form>
+  </td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+{% endif %}
+{% endblock %}
