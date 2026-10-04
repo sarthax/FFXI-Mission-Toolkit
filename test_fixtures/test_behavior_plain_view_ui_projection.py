@@ -38,6 +38,14 @@ def test_plain_view_wrapper_renders_backend_projection_contract():
     assert "behavior_graph_interactions_core.js" in wrapper
 
 
+def test_plain_view_wrapper_contract_render_is_idempotent():
+    wrapper = WRAPPER.read_text(encoding="utf-8")
+
+    assert "CONTRACT_VERSION" in wrapper
+    assert "flow.dataset.plainContractVersion === CONTRACT_VERSION" in wrapper
+    assert "flow.dataset.plainContractVersion = CONTRACT_VERSION" in wrapper
+
+
 def test_plain_view_wrapper_does_not_reimplement_projection_semantics():
     wrapper = WRAPPER.read_text(encoding="utf-8")
 
