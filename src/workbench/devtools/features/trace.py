@@ -118,14 +118,41 @@ def resolve_query(con, query: str, catalog_con=None) -> dict:
     return result
 
 
+def _generated_display_edge(row: dict) -> dict:
+    """Adapt one read-only generated candidate to the historical edge presentation shape."""
+    metadata = dict(row.get("metadata") or {})
+    metadata.update({
+        "generated": True,
+        "generator": row.get("generator"),
+        "provider_evidence": True,
+    })
+    evidence = list(row.get("evidence") or ())
+    return {
+        "relationship_id": None,
+        "source_node": row.get("source_node"),
+        "target_node": row.get("target_node"),
+        "relationship": row.get("relationship"),
+        "evidence_id": None,
+        "confidence": row.get("confidence") or "STRONG",
+        "status": "GENERATED_EVIDENCE",
+        "metadata": metadata,
+        "metadata_json": None,
+        "source_snapshot_id": None,
+        "generated": True,
+        "generator": row.get("generator"),
+        "evidence": evidence,
+    }
+
+
 def trace(con, root: str, depth: int, direction: str,
           catalog_con=None, relationships=None, include_runtime_edges: bool = False,
           max_nodes: int = 5000, mode: str | None = None) -> dict:
     """Trace one root, optionally narrowing the returned evidence to a scenario mode.
 
     ``mode=None`` preserves historical behavior unless the current request explicitly used an
-    ``@mode`` query prefix. Generated relationships remain separate from canonical ``edges`` and
-    are never persisted implicitly.
+    ``@mode`` query prefix. Focused trace ``edges`` are presentation edges: persisted canonical
+    edges plus clearly marked read-only generated provider evidence. ``canonical_edges`` retains
+    the persisted-only subset, and nothing generated here is written to the graph database.
     """
     prefixed_mode, clean_root = split_mode_query(root)
     if prefixed_mode:
@@ -140,8 +167,6 @@ def trace(con, root: str, depth: int, direction: str,
             max_nodes=max_nodes,
         )
 
-    # Consume the request-scoped hint when trace starts. ContextVar isolation keeps concurrent
-    # FastAPI requests independent, and ordinary programmatic callers never set this hint.
     _QUERY_MODE.set(None)
     selected = normalize_mode(requested_mode)
     effective_direction = direction
@@ -159,7 +184,7 @@ def trace(con, root: str, depth: int, direction: str,
     for edge in kept_edges:
         kept_ids.add(edge.get("source_node"))
         kept_ids.add(edge.get("target_node"))
-    result["edges"] = kept_edges
+    result["canonical_edges"] = list(kept_edges)
     result["nodes"] = [node for node in result.get("nodes", ()) if node.get("node_id") in kept_ids]
     result["paths"] = [
         path for path in result.get("paths", ())
@@ -220,9 +245,24 @@ def trace(con, root: str, depth: int, direction: str,
         max_nodes=min(max_nodes, 500),
     )
     generated_rows = [row.as_dict() for row in generated]
+    generated_edges = [_generated_display_edge(row) for row in generated_rows]
     active_generators = {row.get("generator") for row in generated_rows}
     result["generated_relationships"] = generated_rows
     result["generated_relationship_count"] = len(generated_rows)
+    result["edges"] = [*kept_edges, *generated_edges]
+
+    existing_nodes = {node.get("node_id") for node in result.get("nodes", ())}
+    for node_id in sorted({
+        str(value) for edge in generated_edges
+        for value in (edge.get("source_node"), edge.get("target_node")) if value
+    }):
+        if node_id in existing_nodes:
+            continue
+        info = _impl.node_info(con, node_id, catalog_con)
+        if info.get("known"):
+            result.setdefault("nodes", []).append(info)
+            existing_nodes.add(node_id)
+
     result["generator_plan"] = [
         {
             "id": spec.generator_id,
@@ -236,7 +276,8 @@ def trace(con, root: str, depth: int, direction: str,
     ]
     result.setdefault("notes", []).extend((
         "Trace mode narrows recorded evidence to the selected question.",
-        "generated_relationships are read-only provider-native evidence and are not canonical persisted graph edges.",
+        "Focused display edges may include read-only generated provider evidence; canonical_edges contains only persisted graph relationships.",
+        "Generated provider evidence is never silently written into the canonical graph.",
     ))
     return result
 
