@@ -10,15 +10,35 @@
 <div class="table-wrap"><table>
 <thead><tr><th>Goal</th><th>Start with</th><th>What to do next</th></tr></thead>
 <tbody>
-<tr><td>Trace everything known about an NPC, item, mission, capability, or other object</td><td><a class="zonelink" href="/features/trace">Feature Trace</a></td><td>Search by name or ID, then follow dependency, implementation, client, runtime, validation, and evidence relationships.</td></tr>
+<tr><td>Trace everything known about an NPC, item, mission, capability, or other object</td><td><a class="zonelink" href="/features/trace">Feature Trace</a></td><td>Search by name or ID, then follow implementation, identity, dependency, runtime, validation, research, and package evidence.</td></tr>
+<tr><td>Understand what a Lua-backed NPC, mob, door, zone script, or instance controller does</td><td><a class="zonelink" href="/behavior">Behavior Inspector</a></td><td>Use Plain Behavior first, then drill into Technical Graph for exact guards, callbacks, state, helper, source, and node evidence.</td></tr>
 <tr><td>Check whether a feature has the evidence it needs</td><td><a class="zonelink" href="/features/check">Feature Checker</a></td><td>Review coverage across server, client, packets, captures, and other available evidence domains.</td></tr>
 <tr><td>Investigate recorded gameplay</td><td><a class="zonelink" href="/captures">Captures</a></td><td>Open a capture, timeline, packets, events, entities, and position data; use Search/Query for cross-capture work.</td></tr>
-<tr><td>Inspect server data directly</td><td><a class="zonelink" href="/entity">Entities</a> / <a class="zonelink" href="/sql">SQL</a></td><td>Resolve IDs and names, then follow links into dialog, events, zones, items, packets, or Feature Trace.</td></tr>
+<tr><td>Inspect server data directly</td><td><a class="zonelink" href="/entity">Entities</a> / <a class="zonelink" href="/sql">SQL</a></td><td>Resolve IDs and names, then follow links into behavior, dialog, events, zones, items, packets, or Feature Trace.</td></tr>
 <tr><td>Compare or backport server content</td><td><a class="zonelink" href="/iddrift">ID Drift</a></td><td>Use Bindings, Lua Converter, SQL Converter, and Packages as the task requires.</td></tr>
 <tr><td>Inspect the installed FFXI client</td><td><a class="zonelink" href="/clientoverview">Client Overview</a></td><td>Continue into Model Viewer, DAT Inspector, Binary Inspector, Dialog Drift, or Research Gaps.</td></tr>
 <tr><td>Validate expected behavior against evidence</td><td><a class="zonelink" href="/validation">Validation</a></td><td>Review runs/results or use Live Target when appropriate.</td></tr>
 <tr><td>Research an unresolved question</td><td><a class="zonelink" href="/research">Research Sessions</a></td><td>Keep source evidence and contradictions visible; use Wiki/LLM research as supporting evidence, not authority over primary sources.</td></tr>
 </tbody></table></div>
+
+<h2>Feature Trace vs. Behavior Inspector</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Tool</th><th>Primary question</th><th>Important boundary</th></tr></thead>
+<tbody>
+<tr><td><a class="zonelink" href="/features/trace"><strong>Feature Trace</strong></a></td><td>Where is this implemented and how is it connected across server, client, capture, research, validation, and package evidence?</td><td>Provider-native links are evidence navigation. Ambiguous identities fail closed and generated links do not become synthetic canonical truth.</td></tr>
+<tr><td><a class="zonelink" href="/behavior"><strong>Behavior Inspector</strong></a></td><td>What does this Lua-backed actor/controller do according to source evidence?</td><td>It is static source analysis, not a Lua runtime simulator. Unsupported order, helper behavior, or dynamic predicates remain unknown/raw evidence.</td></tr>
+</tbody></table></div>
+<p class="muted">A common workflow is Feature Trace / Entity Dossier → Behavior Inspector → Technical Graph when needed → back to Feature Trace for client/runtime/validation/dependency context.</p>
+
+<h3>Feature Trace provider-native wiring</h3>
+<p>Feature Trace can follow deterministic source-native relationships without writing canonical graph edges. Current server-side examples include item-detail → base item, spawn → group, group → pool, instance entity → instance/entity records, pet → pool, Blue Magic wiring, wiki claim alignments, and the recovered mob-drop chain:</p>
+<p><strong>spawn → group → pool / drop rows → item</strong></p>
+<p><code>mob_droplist</code> has no stable upstream primary key, so the Workbench uses the complete source row as a read-only catalog identity instead of inventing a persistent ID.</p>
+
+<h3>Behavior Inspector Plain Behavior</h3>
+<p>Plain Behavior is the default view and uses one backend-generated projection contract:</p>
+<p><strong>Trigger → Requirements → Actions / Events → Results / State Changes</strong></p>
+<p>Internal rule/helper plumbing is collapsed, but guards, state, resolved helper evidence, targets, source locations, and exact technical node identity remain available. Timer/queue/listener callbacks own their downstream behavior separately so delayed actions are not incorrectly shown as synchronous parent-hook results.</p>
 
 <h2>Workspaces</h2>
 <p class="muted">The top navigation is organized by job rather than by individual database table.</p>
@@ -26,7 +46,7 @@
 <thead><tr><th>Workspace</th><th>Purpose</th></tr></thead>
 <tbody>
 <tr><td><strong>Home / Project</strong></td><td>Project status, roadmap, Help, and the Data &amp; Tools controls used to build or refresh local indexes.</td></tr>
-<tr><td><strong>Features</strong></td><td>Mission Explorer, Feature Trace, and Feature Checker. Start here when the question is about a feature rather than a particular file or table.</td></tr>
+<tr><td><strong>Features</strong></td><td>Mission Explorer, Feature Trace, Behavior Inspector, and Feature Checker. Start here when the question is about a feature or implementation path rather than a particular file or table.</td></tr>
 <tr><td><strong>Domains</strong></td><td>Domain-specific views for missions, quests, battle systems, Abyssea, battlefields, conflict systems, and other FFXI content. Domain plugins add specialized interpretation without changing the generic core.</td></tr>
 <tr><td><strong>Backport &amp; Migration</strong></td><td>ID drift, binding comparison, Lua/SQL conversion, and legacy backport tooling.</td></tr>
 <tr><td><strong>Captures</strong></td><td>Import and investigate runtime gameplay evidence. Library, Search, and Query are the main entry points.</td></tr>
@@ -43,8 +63,10 @@
 <thead><tr><th>Concept</th><th>Meaning</th></tr></thead>
 <tbody>
 <tr><td>Catalog / indexed object</td><td>A source says the object exists. Catalog discovery does not invent a dependency relationship.</td></tr>
+<tr><td>Provider-native relationship</td><td>A deterministic relationship encoded by the source schema or indexed evidence. Feature Trace may navigate it without converting it into a canonical graph edge.</td></tr>
 <tr><td>Canonical relationship</td><td>A recorded evidence-backed relationship such as REQUIRES, REFERENCES, BINDS, USES_ID, or VALIDATED_BY.</td></tr>
 <tr><td>Runtime observation</td><td>A capture observed an entity, packet, event, state transition, or other runtime fact. Repeated observations are evidence, not thousands of new semantic dependencies.</td></tr>
+<tr><td>Behavior projection</td><td>A source-evidenced readable projection of the technical behavior graph. It simplifies presentation without deleting the underlying Technical Graph.</td></tr>
 <tr><td>Dependency closure</td><td>A recursive view of supported prerequisites or access/obtainability relationships, including AND/OR gates where represented.</td></tr>
 <tr><td>Validation</td><td>Expected-versus-observed evidence and results. A disagreement remains visible rather than being silently resolved.</td></tr>
 <tr><td>Package</td><td>A proposed migration unit. A feature and a package are related concepts, but they are not the same thing.</td></tr>
@@ -52,7 +74,10 @@
 
 <h2>Common workflows</h2>
 <details open><summary><strong>Trace a feature or entity</strong></summary>
-<p>Open <a class="zonelink" href="/features/trace">Feature Trace</a> and search by a known name, numeric ID, or canonical ID. Select the correct match when a name is ambiguous. Use the semantic relationships and dependency map for meaning; drill into captures or packet tooling only when runtime evidence is relevant.</p>
+<p>Open <a class="zonelink" href="/features/trace">Feature Trace</a> and search by a known name, numeric ID, or canonical ID. Select the correct match when a name is ambiguous. Use focused modes to answer implementation, trigger, effect, dependency, mission, runtime, identity, or diagnosis questions. Follow provider-native links for source wiring and canonical relationships for recorded graph truth.</p>
+</details>
+<details><summary><strong>Understand an NPC/mob/controller behavior</strong></summary>
+<p>Open <a class="zonelink" href="/behavior">Behavior Inspector</a>. Start in Plain Behavior for the source-proven flow. Use Technical Graph when you need exact callback ownership, guards, state edges, helper resolution, source spans, or raw API evidence. Return to Feature Trace for cross-source implementation or runtime context.</p>
 </details>
 <details><summary><strong>Investigate an ID mismatch during a backport</strong></summary>
 <p>Start with <a class="zonelink" href="/iddrift">ID Drift</a>, then verify the object in <a class="zonelink" href="/sql">SQL</a> or <a class="zonelink" href="/entity">Entity Lookup</a>. Follow source-specific evidence instead of assuming DSP, Topaz, Topaz-Next, and LSB share a schema or ID layout.</p>
@@ -74,10 +99,11 @@
 <h2>Useful navigation rules</h2>
 <ul>
 <li><strong>Follow links instead of re-searching.</strong> IDs and objects cross-link into their dedicated views where a safe route exists.</li>
-<li><strong>Use Feature Trace for breadth; specialized pages for depth.</strong> For example, Feature Trace can summarize runtime evidence, while Captures/Packets are better for individual observations.</li>
+<li><strong>Use Feature Trace for breadth; Behavior Inspector and specialized pages for depth.</strong></li>
 <li><strong>Keep provenance visible.</strong> Server forks, client builds, captures, reference sources, and research evidence can disagree.</li>
+<li><strong>Do not convert missing evidence into absence.</strong> Missing provider links, unsupported Lua idioms, or unknown packet fields stay unresolved until evidence proves more.</li>
 <li><strong>Editors and mutation actions are marked.</strong> Read-only investigation should remain distinguishable from actions that create or modify migration/editor state.</li>
 </ul>
 
-<p class="muted" style="margin-top:24px;">For implementation status and planned work, see the <a class="zonelink" href="/roadmap">Roadmap</a>.</p>
+<p class="muted" style="margin-top:24px;">For the detailed Behavior/Feature Trace evidence model, see <code>docs/workbench/BEHAVIOR_FEATURE_TRACE_GUIDE.md</code>. For implementation status and planned work, see the <a class="zonelink" href="/roadmap">Roadmap</a>.</p>
 {% endblock %}
