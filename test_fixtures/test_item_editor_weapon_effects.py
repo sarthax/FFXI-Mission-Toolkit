@@ -5,14 +5,8 @@ def test_catalog_exposes_existing_additional_effect_fields():
     catalog = effects.catalog()
     fields = {row["key"]: row["modId"] for row in catalog["fields"]}
     assert fields == {
-        "type": 431,
-        "subeffect": 499,
-        "damage": 500,
-        "chance": 501,
-        "element": 950,
-        "status": 951,
-        "power": 952,
-        "duration": 953,
+        "type": 431, "subeffect": 499, "damage": 500, "chance": 501,
+        "element": 950, "status": 951, "power": 952, "duration": 953,
     }
     assert catalog["storage"] == "item_mods or item_latents"
     assert catalog["clientCoupled"] is False
@@ -23,28 +17,25 @@ def test_catalog_exposes_existing_additional_effect_fields():
 
 def test_build_fire_damage_rows_uses_normal_item_mods_bundle():
     rows = effects.build_mod_rows(proc_type=1, chance=20, subeffect=1, damage=25, element=1)
-    by_mod = {row["modId"]: row["value"] for row in rows}
-    assert by_mod == {431: 1, 499: 1, 500: 25, 501: 20, 950: 1}
+    assert {row["modId"]: row["value"] for row in rows} == {431: 1, 499: 1, 500: 25, 501: 20, 950: 1}
+    assert effects.rows_safe_to_apply("LSB", 1) is True
 
 
 def test_named_fire_preset_builds_same_bundle_and_accepts_overrides():
     rows = effects.build_preset_rows("fire_damage", chance=35, damage=60)
-    by_mod = {row["modId"]: row["value"] for row in rows}
-    assert by_mod == {431: 1, 499: 1, 500: 60, 501: 35, 950: 1}
+    assert {row["modId"]: row["value"] for row in rows} == {431: 1, 499: 1, 500: 60, 501: 35, 950: 1}
 
 
 def test_build_latent_rows_adds_condition_without_changing_effect_bundle():
     rows = effects.build_latent_rows(latent_id=28, latent_param=0, proc_type=1, chance=35, subeffect=1, damage=40, element=1)
     assert rows
-    assert all(row["latentId"] == 28 for row in rows)
-    assert all(row["latentParam"] == 0 for row in rows)
+    assert all(row["latentId"] == 28 and row["latentParam"] == 0 for row in rows)
     assert {row["modId"] for row in rows} == {431, 499, 500, 501, 950}
 
 
 def test_debuff_bundle_preserves_status_power_and_duration():
     rows = effects.build_mod_rows(proc_type=2, chance=100, subeffect=11, status=4, power=30, duration=30)
-    by_mod = {row["modId"]: row["value"] for row in rows}
-    assert by_mod == {431: 2, 499: 11, 501: 100, 951: 4, 952: 30, 953: 30}
+    assert {row["modId"]: row["value"] for row in rows} == {431: 2, 499: 11, 501: 100, 951: 4, 952: 30, 953: 30}
 
 
 def test_self_buff_blueprint_is_explicit_server_handoff():
@@ -59,8 +50,7 @@ def test_self_buff_blueprint_is_explicit_server_handoff():
     assert blueprint["implementationContract"]["statusId"] == 33
     assert "stacking" in blueprint["implementationContract"]
     assert len(blueprint["localAgentTasks"]) >= 5
-    by_mod = {row["modId"]: row["value"] for row in blueprint["modernLsbRows"]}
-    assert by_mod == {431: 12, 499: 23, 501: 25, 951: 33, 952: 150, 953: 45}
+    assert {row["modId"]: row["value"] for row in blueprint["modernLsbRows"]} == {431: 12, 499: 23, 501: 25, 951: 33, 952: 150, 953: 45}
 
 
 def test_dsp_self_buff_blueprint_does_not_mark_modern_lsb_rows_safe():
@@ -78,7 +68,6 @@ def test_lineage_capability_badges_are_fail_closed():
     assert effects.capability_for("DSP", 12) == "server-code-required"
     assert effects.capability_for("unknown-fork", 1) == "verify-lineage"
     assert effects.capability_for("LSB", 999) == "unsupported"
-    assert effects.rows_safe_to_apply("LSB", 1) is True
     assert effects.rows_safe_to_apply("LSB", 12) is False
     assert effects.rows_safe_to_apply("DSP", 1) is False
 
@@ -96,12 +85,8 @@ def test_effect_summary_and_generic_handoff_are_editor_ready():
 
 def test_inspect_rows_recognizes_existing_effect_rows_and_ignores_other_mods():
     summary = effects.inspect_rows([
-        {"modId": 25, "value": 10},
-        {"modId": 431, "value": 1},
-        {"modId": 499, "value": 1},
-        {"modId": 500, "value": 25},
-        {"modId": 501, "value": 20},
-        {"modId": 950, "value": 1},
+        {"modId": 25, "value": 10}, {"modId": 431, "value": 1}, {"modId": 499, "value": 1},
+        {"modId": 500, "value": 25}, {"modId": 501, "value": 20}, {"modId": 950, "value": 1},
     ])
     assert summary["recognized"] is True
     assert summary["procTypeLabel"] == "damage"
