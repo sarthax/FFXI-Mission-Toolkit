@@ -38,6 +38,44 @@
     return 'unsupported';
   };
 
+  const ELE={1:['FIRE','FIRE'],2:['ICE','ICE'],3:['WIND','WIND'],4:['EARTH','EARTH'],5:['LIGHTNING','LIGHTNING'],6:['WATER','WATER'],7:['LIGHT','LIGHT'],8:['DARK','DARKNESS']};
+  // DSP resolves a weapon proc in scripts/globals/items/<item>.lua onAdditionalEffect; the item only needs mod 431 = 1.
+  const dspLua = v => {
+    const e=ELE[v.p.element]; if(!e || v.p.kind!=='damage') return null;
+    const dmg=Math.max(1,Math.round(v.damage)), lo=Math.max(1,Math.round(dmg*0.5));
+    return `-----------------------------------------
+-- Additional Effect: ${v.p.label}
+-----------------------------------------
+require("scripts/globals/status");
+require("scripts/globals/magic");
+require("scripts/globals/msg");
+
+function onAdditionalEffect(player,target,damage)
+    local chance = ${v.chance};
+
+    if (math.random(0,99) >= chance) then
+        return 0,0,0;
+    else
+        local dmg = math.random(${lo},${dmg});
+        local params = {};
+        params.bonusmab = 0;
+        params.includemab = false;
+        dmg = addBonusesAbility(player, ELE_${e[0]}, target, dmg, params);
+        dmg = dmg * applyResistanceAddEffect(player,target,ELE_${e[0]},0);
+        dmg = adjustForTarget(target,dmg,ELE_${e[0]});
+        dmg = finalMagicNonSpellAdjustments(player,target,ELE_${e[0]},dmg);
+
+        local message = msgBasic.ADD_EFFECT_DMG;
+        if (dmg < 0) then
+            message = msgBasic.ADD_EFFECT_HEAL;
+        end
+
+        return SUBEFFECT_${e[1]}_DAMAGE,message,dmg;
+    end
+end;
+`;
+  };
+
   const card = document.createElement('div');
   card.id = 'weaponEffectsPresetCard';
   card.className = 'edit-card wide';
@@ -79,7 +117,7 @@
     if(['status'].includes(p.kind) && vals.status) rows.push(row(951,vals.status));
     if(['status'].includes(p.kind) && vals.power) rows.push(row(952,vals.power));
     if(['status'].includes(p.kind) && vals.duration) rows.push(row(953,vals.duration));
-    return {...vals,rows};
+    return {...vals,rows:currentLineage()==='DSP'?[row(431,1)]:rows};
   }
   function applyPresetDefaults(){
     const p=PRESETS[$('weaponEffectPreset').value];
@@ -101,7 +139,7 @@
     $('weaponEffectPrimary').textContent='Add to item';
     $('weaponEffectPrimary').disabled=cap==='unsupported';
     $('weaponEffectCopyHandoff').style.display=cap==='row-only'?'none':'';
-    $('weaponEffectNote').textContent=cap==='row-only'?'':cap==='server-code-required'?'This effect type needs server-side handler code. Adding writes the rows, but nothing will happen in game until that handler exists; use Copy server handoff for the spec.':cap==='verify-lineage'?'Rows are added to the item; confirm the active server tree has a handler for this proc type before relying on it.':'';
+    $('weaponEffectNote').textContent=cap==='row-only'?'':cap==='server-code-required'?'This effect type needs server-side handler code. Adding writes the rows, but nothing will happen in game until that handler exists; use Copy server handoff for the spec.':cap==='verify-lineage'?(lineage==='DSP'?'DSP: the item only gets effect 431 = 1, which means "this item has a script-driven proc". The actual effect (chance, damage, message) lives in scripts/globals/items/<item>.lua onAdditionalEffect; use Copy server handoff to get a ready Lua file for elemental damage presets. Chance/amount here only fill that script.':'Rows are added to the item; confirm the active server tree has a handler for this proc type before relying on it.'):'';
     $('weaponEffectPreview').textContent=`${v.p.label} · ${v.chance}%${v.damage?` · amount ${v.damage}`:''}${v.status?` · status ${v.status}`:''}\n`+
       `${conditional?'item_latents':'item_mods'}: `+v.rows.map(r=>`${r.modId}=${r.value}`).join(', ')+(cap==='row-only'?'':'\nNot auto-staged: verify/implement the selected lineage handler first.');
   }
@@ -110,7 +148,8 @@
     return {kind:'weapon-additional-effect',lineage,preset:v.key,label:v.p.label,capability:capability(v.p,lineage),effect:{procType:v.proc,chance:v.chance,damage:v.damage,status:v.status,power:v.power,duration:v.duration},rows:v.rows,storage:$('weaponEffectConditional').checked?'item_latents':'item_mods',latentId:$('weaponEffectConditional').checked?latentId():null,latentParam:$('weaponEffectConditional').checked?Number($('weaponEffectLatentParam').value):null,warning:'Verify proc numbering, handler semantics, stacking/overwrite rules, target, messages, and status behavior in the active server tree before implementation.'};
   }
   async function copyHandoff(){
-    const text=JSON.stringify(handoffPayload(),null,2);
+    const v0=values(), lua=currentLineage()==='DSP'?dspLua(v0):null;
+    const text=lua||JSON.stringify(handoffPayload(),null,2);
     try{ await navigator.clipboard.writeText(text); $('weaponEffectPreview').textContent+='\nServer handoff copied to clipboard.'; }
     catch{ $('weaponEffectPreview').textContent+='\n'+text; }
   }
