@@ -1,8 +1,10 @@
 """Read-only Auction House validation pipeline for legacy DSP/Topaz lineages."""
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
+from .config_policy import ConfigPolicyLoad, load_active_legacy_policy
 from .database_reread import RereadEvidence, prepare_from_database_reread
 from .invariants import InvariantReport, LegacyAuctionPolicy, validate_legacy_invariants
 from .transactional_adapter import PreparedTransaction
@@ -39,3 +41,39 @@ def prepare_validate_from_database_reread(
         policy=policy,
     )
     return prepared, evidence, invariants
+
+
+def prepare_validate_from_active_config(
+    *,
+    service,
+    family: str,
+    operation: str,
+    environment: dict[str, Any],
+    preview: dict[str, Any],
+    server_root: Path | str,
+    preview_environment: dict[str, Any] | None = None,
+) -> tuple[PreparedTransaction, RereadEvidence, InvariantReport | None, ConfigPolicyLoad]:
+    """Run the legacy validation pipeline using the exact active server AH configuration.
+
+    Missing, incomplete, invalid, or ambiguous active configuration is fail-closed: database
+    reread/freshness evidence is still returned, but semantic invariant validation is not run with
+    guessed defaults.
+    """
+    policy_load = load_active_legacy_policy(server_root=server_root, family=family)
+    prepared, evidence = prepare_from_database_reread(
+        service=service,
+        family=family,
+        operation=operation,
+        environment=environment,
+        preview=preview,
+        preview_environment=preview_environment,
+    )
+    if not policy_load.policy_ready or policy_load.policy is None:
+        return prepared, evidence, None, policy_load
+    invariants = validate_legacy_invariants(
+        operation=operation,
+        preview=preview,
+        evidence=evidence,
+        policy=policy_load.policy,
+    )
+    return prepared, evidence, invariants, policy_load
