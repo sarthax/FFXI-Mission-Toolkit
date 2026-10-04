@@ -49,8 +49,6 @@ def test_provider_expansion_walks_generic_topaz_spawn_group_pool_chain():
     assert {row["relationship"] for row in traced["edges"]} >= {"SPAWN_USES_GROUP", "GROUP_USES_POOL"}
     assert all(row.get("generated") is True for row in traced["edges"])
     assert all(row["status"] == "GENERATED_EVIDENCE" for row in traced["edges"])
-    node_ids = {row["node_id"] for row in traced["nodes"]}
-    assert f"catalog:topaz_mob_groups:zoneid={zoneid if False else 100}&groupid=7" not in node_ids  # encoded ID form varies; names below are stable
     names = {
         rep.get("display_name")
         for node in traced["nodes"]
