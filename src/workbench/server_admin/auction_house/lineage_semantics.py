@@ -128,8 +128,8 @@ _TOPAZ = LineageSemantics(
     ),
     writes_allowed_by_semantics=False,
     reason=(
-        "Topaz mutation behavior is source-verified, but the toolkit does not yet have a lineage-specific "
-        "transaction/execution contract covering concurrency, rollback, stale-preview protection, and audit."
+        "Topaz mutation behavior is source-verified and its execution contract is specified, but the "
+        "transactional adapter and real-server validation are not yet implemented."
     ),
 )
 
@@ -158,8 +158,8 @@ _DSP = LineageSemantics(
     ),
     writes_allowed_by_semantics=False,
     reason=(
-        "DSP mutation behavior is source-verified, but the toolkit does not yet have a lineage-specific "
-        "transaction/execution contract covering concurrency, rollback, stale-preview protection, and audit."
+        "DSP mutation behavior is source-verified and its execution contract is specified, but the "
+        "transactional adapter and real-server validation are not yet implemented."
     ),
 )
 
