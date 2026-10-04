@@ -53,6 +53,8 @@
     .plain-intro strong{font-size:15px}.plain-intro p{margin:3px 0 0;color:var(--muted);font-size:12px}
     .plain-flow{border:1px solid var(--border);border-radius:7px;margin:0 0 12px;background:var(--bg)}
     .plain-flow>header{height:auto;min-height:0;padding:8px 10px;border-bottom:1px solid var(--border);background:var(--code-bg);font-weight:700}
+    .plain-summary{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--muted);font-size:11px;line-height:1.4}
+    .plain-summary .chip{margin-left:5px}
     .plain-lanes{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:8px;padding:9px}
     .plain-lane{min-width:0}.plain-lane-title{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 5px}
     .plain-card{display:block;width:100%;text-align:left;background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:6px;padding:7px 8px;margin:0 0 6px;cursor:pointer;line-height:1.25}
@@ -159,8 +161,8 @@
     if (low.includes('addquest')) return 'Start quest';
     if (low.includes('title')) return `Change title${value ? `: ${value}` : ''}`;
     if (low.includes('gil')) return `Change gil${value ? `: ${value}` : ''}`;
-    if (low.includes('spawn')) return 'Spawn or enable an actor';
     if (low.includes('despawn')) return 'Despawn or disable an actor';
+    if (low.includes('spawn')) return 'Spawn or enable an actor';
     if (low.includes('status')) return `Change actor status${value ? `: ${value}` : ''}`;
     return raw.replace(/^.*[:.]/, '').replace(/[_-]+/g, ' ');
   }
@@ -171,7 +173,7 @@
     const edgeKind = String(edge?.kind || '').toLowerCase();
     if (kind === 'hook' || kind === 'callback' || kind === 'subject') return 'trigger';
     if (kind === 'condition' || kind === 'helper_input' || edgeKind.includes('read') || text.includes('getcharvar') || text.includes('hasitem') || text.includes('haskeyitem') || text.includes('getquest') || text.includes('getcurrentmission')) return 'requirements';
-    if (kind === 'state' || edgeKind.includes('write') || text.includes('setcharvar') || text.includes('give') || text.includes('additem') || text.includes('delitem') || text.includes('addmission') || text.includes('completemission') || text.includes('addquest') || text.includes('completequest') || text.includes('title') || kind === 'target') return 'results';
+    if (kind === 'state' || kind === 'helper_effect' || edgeKind.includes('write') || text.includes('setcharvar') || text.includes('give') || text.includes('additem') || text.includes('delitem') || text.includes('addmission') || text.includes('completemission') || text.includes('addquest') || text.includes('completequest') || text.includes('title') || kind === 'target') return 'results';
     return 'actions';
   }
 
@@ -195,6 +197,55 @@
     return hooks.length ? hooks : (data.nodes || []).filter(node => node.kind === 'subject').slice(0, 1);
   }
 
+  function addPlainNode(lanes, seen, node, edge = null) {
+    const lane = laneFor(node, edge);
+    if (lane === 'trigger' || !lanes[lane] || seen[lane].has(node.id)) return;
+    seen[lane].add(node.id);
+    lanes[lane].push(node);
+  }
+
+  function recoverRuleRequirements(rule, lanes, seen) {
+    for (const edge of (incoming.get(rule.id) || [])) {
+      if (edge.kind !== 'GUARDS') continue;
+      const condition = nodes.get(edge.source);
+      if (!condition) continue;
+      addPlainNode(lanes, seen, condition, edge);
+      for (const upstream of (incoming.get(condition.id) || [])) {
+        const source = nodes.get(upstream.source);
+        if (source) addPlainNode(lanes, seen, source, upstream);
+      }
+    }
+  }
+
+  function summarizePlain(trigger, lanes) {
+    const parts = [`${humanHook(trigger).replace(/[.]$/, '')}.`];
+    const segment = (prefix, rows) => {
+      if (!rows.length) return;
+      const labels = rows.slice(0, 2).map(humanNode);
+      const suffix = rows.length > 2 ? ` (+${rows.length - 2} more)` : '';
+      parts.push(`${prefix} ${labels.join('; ')}${suffix}.`);
+    };
+    segment('Checks', lanes.requirements);
+    segment('Then', lanes.actions);
+    segment('Results:', lanes.results);
+    return parts.join(' ');
+  }
+
+  function projectPlain(trigger) {
+    const lanes = {requirements: [], actions: [], results: []};
+    const seen = {requirements: new Set(), actions: new Set(), results: new Set()};
+    let collapsedRules = 0;
+    for (const item of descendants(trigger.id)) {
+      if (item.node.kind === 'rule') {
+        collapsedRules += 1;
+        recoverRuleRequirements(item.node, lanes, seen);
+        continue;
+      }
+      addPlainNode(lanes, seen, item.node, item.edge);
+    }
+    return {lanes, collapsedRules, summary: summarizePlain(trigger, lanes)};
+  }
+
   function card(node, lane) {
     const technical = node.id || node.label || '';
     return `<button type="button" class="plain-card${selected === node.id ? ' selected' : ''}" data-plain-node="${esc(node.id)}"><strong>${esc(lane === 'trigger' ? humanHook(node) : humanNode(node))}</strong><small>${esc(technical)}</small></button>`;
@@ -203,15 +254,13 @@
   function renderPlain() {
     if (!plainView) return;
     const triggers = triggerNodes();
-    let html = `<div class="plain-intro"><div><strong>What this behavior does</strong><p>Read left to right: what starts it, what must be true, what it does, and what changes afterward.</p></div><button type="button" id="plain-open-technical">Open technical graph</button></div>`;
+    let html = `<div class="plain-intro"><div><strong>What this behavior does</strong><p>Read left to right: what starts it, what must be true, what it does, and what changes afterward. Internal rule scaffolding is collapsed; exact extracted nodes remain available for drill-down.</p></div><button type="button" id="plain-open-technical">Open technical graph</button></div>`;
     if (!triggers.length) html += '<div class="plain-empty">No trigger chain was identified in this source.</div>';
     for (const trigger of triggers) {
-      const lanes = {requirements: [], actions: [], results: []};
-      for (const item of descendants(trigger.id)) {
-        const lane = laneFor(item.node, item.edge);
-        if (lane !== 'trigger' && !lanes[lane].some(existing => existing.id === item.node.id)) lanes[lane].push(item.node);
-      }
-      html += `<section class="plain-flow"><header>${esc(humanHook(trigger))}</header><div class="plain-lanes">`;
+      const projection = projectPlain(trigger);
+      const lanes = projection.lanes;
+      const collapsed = projection.collapsedRules ? `<span class="chip">${projection.collapsedRules} internal rule${projection.collapsedRules === 1 ? '' : 's'} collapsed</span>` : '';
+      html += `<section class="plain-flow"><header>${esc(humanHook(trigger))}</header><div class="plain-summary">${esc(projection.summary)}${collapsed}</div><div class="plain-lanes">`;
       html += `<div class="plain-lane"><div class="plain-lane-title">Trigger</div>${card(trigger, 'trigger')}</div>`;
       for (const [lane, title] of [['requirements','Requirements'],['actions','Actions / Events'],['results','Results / State Changes']]) {
         html += `<div class="plain-lane"><div class="plain-lane-title">${title}</div>${lanes[lane].length ? lanes[lane].map(node => card(node, lane)).join('') : '<div class="plain-empty">No explicit steps identified</div>'}</div>`;
