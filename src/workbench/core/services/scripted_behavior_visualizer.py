@@ -11,6 +11,7 @@ from workbench.devtools.behavior.visualizer import _graph_for_behavior  # noqa: 
 from workbench.devtools.behavior.visualizer import inspect_lsb_behavior as _inspect_lsb_behavior
 from workbench.devtools.behavior.plain_view import build_plain_behavior_projection
 from workbench.devtools.behavior.source_branch_projection import apply_source_branch_evidence
+from workbench.devtools.behavior.stage_transition_projection import apply_stage_transition_evidence
 
 
 def inspect_lsb_behavior(root, relative):
@@ -30,5 +31,6 @@ def inspect_lsb_behavior(root, relative):
             lua = ""
         if lua:
             projection = apply_source_branch_evidence(projection, graph, lua)
+            projection = apply_stage_transition_evidence(projection, lua)
         graph["plain_behavior"] = projection
     return result
