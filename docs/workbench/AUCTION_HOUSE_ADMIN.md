@@ -10,7 +10,8 @@ The read-only service provides:
 
 - active server/environment resolution through the toolkit's existing server configuration;
 - live `auction_house` and `item_basic` schema discovery instead of assuming one upstream revision;
-- AH-category browsing and item search by name or item ID;
+- canonical FFXI AH-category browsing (Weapons, Armor, Scrolls, Materials, Food, and related client submenus) while preserving numeric category IDs and unknown custom-fork values;
+- item search by name or item ID;
 - local client/DAT item icons through the existing persistent item asset cache;
 - active listings with seller, listing time, lot type, and asking price;
 - completed-sale history with seller, buyer, sale time, lot type, and sale price;
@@ -18,7 +19,7 @@ The read-only service provides:
 - economy totals such as active listings, recent sales, transacted gil, and distinct buyers/sellers;
 - explicit capability reporting for schema-dependent fields such as LandSandBoat's numeric buyer ID.
 
-The current category UI intentionally exposes verified numeric AH category IDs when no authoritative category-name source is available. A later read-only enhancement may attach human-readable client/server category labels once they are sourced and tested.
+The canonical category labels follow the server/client AH category values used by LandSandBoat and retained by the DSP/Topaz lineage. The live `item_basic` category value remains authoritative. Unknown values from custom forks are surfaced as `Custom / Unknown` instead of being rejected or mislabelled.
 
 ## Safety contract
 
