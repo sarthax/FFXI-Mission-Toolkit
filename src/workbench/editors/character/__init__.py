@@ -16,6 +16,7 @@ from . import progression_compat as _progression_compat  # noqa: F401,E402
 from . import server_profiles_gui as _server_profiles_gui  # noqa: F401,E402
 from . import state_surface_gui as _state_surface_gui  # noqa: F401,E402
 from . import client_cache_gui as _client_cache_gui  # noqa: F401,E402
+from . import feature_trace_scenario_gui as _feature_trace_scenario_gui  # noqa: F401,E402
 
 __all__ = [
     "ActionPreview",
