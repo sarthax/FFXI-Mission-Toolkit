@@ -10,8 +10,8 @@ def test_validation_ui_exposes_read_only_preview_validation():
     assert 'id="ahValidationReport"' in template
     assert "Read-only preview validation" in template
     assert "EXECUTION DISABLED" in script
-    assert "/auction-house/admin/validate-preview.json" in script
-    assert '@router.post("/admin/validate-preview.json")' in gui
+    assert "/auction-house/admin/validate/preview.json" in script
+    assert '@router.post("/admin/validate/preview.json")' in gui
     assert "run_legacy_preview_validation" in gui
     assert 'payload["environment"] = identity' in gui
 
