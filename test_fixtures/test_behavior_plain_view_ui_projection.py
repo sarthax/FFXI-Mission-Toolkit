@@ -64,6 +64,25 @@ def test_clarified_event_handoffs_jump_to_clarified_branches_not_technical_nodes
     assert "data-contract-node=\"${esc(ref.branch_id)}\"" not in wrapper
 
 
+def test_clarified_flow_renders_backend_verified_stage_continuity_chain():
+    wrapper = WRAPPER.read_text(encoding="utf-8")
+
+    assert "contract.stage_chain_links" in wrapper
+    assert "Verified stage continuity" in wrapper
+    assert "Current stage" in wrapper
+    assert "Verified next value" in wrapper
+    assert "Unique matching start" in wrapper
+    assert "link.state_name" in wrapper
+    assert "link.from_value" in wrapper
+    assert "link.via_event_id" in wrapper
+    assert "link.next_value" in wrapper
+    assert "link.next_event_id" in wrapper
+    assert "same-state literal continuity" in wrapper
+    assert "link.ordering || 'UNPROVEN'" in wrapper
+    assert "not proven runtime ordering" in wrapper
+    assert "${chainHtml}${stageHtml}${lifecycleHtml}${groupsHtml}" in wrapper
+
+
 def test_clarified_flow_renders_backend_verified_stage_progression_contract():
     wrapper = WRAPPER.read_text(encoding="utf-8")
 
@@ -79,10 +98,10 @@ def test_clarified_flow_renders_backend_verified_stage_progression_contract():
     assert "same literal event identity" in wrapper
     assert "row.ordering || 'UNPROVEN'" in wrapper
     assert "runtime ordering remains unproven" in wrapper
-    assert "${stageHtml}${lifecycleHtml}${groupsHtml}" in wrapper
+    assert "${chainHtml}${stageHtml}${lifecycleHtml}${groupsHtml}" in wrapper
 
-    # The browser must consume the tested backend lifecycle contract rather than rebuilding
-    # progression from lower-level evidence collections.
+    # The browser must consume tested backend contracts rather than rebuilding progression from
+    # lower-level evidence collections.
     assert "contract.source_branch_evidence" not in wrapper
     assert "handoffsByEvent" not in wrapper
     assert "sourceStages.filter" not in wrapper
@@ -97,7 +116,7 @@ def test_clarified_flow_groups_event_lifecycle_without_claiming_runtime_order():
     assert "same literal event identity" in wrapper
     assert "row.ordering || 'UNPROVEN'" in wrapper
     assert "runtime ordering remains unproven" in wrapper
-    assert "${stageHtml}${lifecycleHtml}${groupsHtml}" in wrapper
+    assert "${chainHtml}${stageHtml}${lifecycleHtml}${groupsHtml}" in wrapper
 
 
 def test_clarified_flow_wrapper_contract_render_is_idempotent():
