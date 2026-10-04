@@ -22,13 +22,13 @@ _START_EVENT = re.compile(r"player:startEvent\(\s*(\d+)")
 _CSID = re.compile(r"\bcsid\s*==\s*(\d+)")
 _CHAR_CMP = re.compile(r"player:get(?:Char)?Var\(\s*['\"]([^'\"]+)['\"]\s*\)\s*(==|~=|<=|>=|<|>)\s*(-?\d+)")
 _CHAR_SET = re.compile(r"player:set(?:Char)?Var\(\s*['\"]([^'\"]+)['\"]\s*,\s*(-?\d+)\s*\)")
-_HAS_KI = re.compile(r"(?<!not\s)player:hasKeyItem\(\s*(?:tpz\.ki|xi\.keyItem)\.([A-Z0-9_]+)\s*\)")
-_LACKS_KI = re.compile(r"not\s+player:hasKeyItem\(\s*(?:tpz\.ki|xi\.keyItem)\.([A-Z0-9_]+)\s*\)")
-_ADD_KI = re.compile(r"(?:player:addKeyItem|npcUtil\.giveKeyItem)\(\s*(?:player\s*,\s*)?(?:tpz\.ki|xi\.keyItem)\.([A-Z0-9_]+)")
-_DEL_KI = re.compile(r"player:delKeyItem\(\s*(?:tpz\.ki|xi\.keyItem)\.([A-Z0-9_]+)")
-_ADD_ITEM = re.compile(r"player:addItem\(\s*((?:tpz|xi)\.item\.[A-Z0-9_]+|\d+)")
-_DEL_ITEM = re.compile(r"player:delItem\(\s*((?:tpz|xi)\.item\.[A-Z0-9_]+|\d+)")
-_TITLE = re.compile(r"player:addTitle\(\s*(?:tpz\.title|xi\.title)\.([A-Z0-9_]+)")
+_HAS_KI = re.compile(r"(?<!not\s)player:hasKeyItem\(\s*(?:(?:dsp|tpz)\.ki|xi\.keyItem)\.([A-Z0-9_]+)\s*\)")
+_LACKS_KI = re.compile(r"not\s+player:hasKeyItem\(\s*(?:(?:dsp|tpz)\.ki|xi\.keyItem)\.([A-Z0-9_]+)\s*\)")
+_ADD_KI = re.compile(r"(?:player:addKeyItem|npcUtil\.giveKeyItem)\(\s*(?:player\s*,\s*)?(?:(?:dsp|tpz)\.ki|xi\.keyItem)\.([A-Z0-9_]+)")
+_DEL_KI = re.compile(r"player:delKeyItem\(\s*(?:(?:dsp|tpz)\.ki|xi\.keyItem)\.([A-Z0-9_]+)")
+_ADD_ITEM = re.compile(r"player:addItem\(\s*((?:dsp|tpz|xi)\.item\.[A-Z0-9_]+|\d+)")
+_DEL_ITEM = re.compile(r"player:delItem\(\s*((?:dsp|tpz|xi)\.item\.[A-Z0-9_]+|\d+)")
+_TITLE = re.compile(r"player:addTitle\(\s*(?:(?:dsp|tpz)\.title|xi\.title)\.([A-Z0-9_]+)")
 _COMPLETE_MISSION = re.compile(r"player:completeMission\(([^\)]*)\)")
 _ADD_MISSION = re.compile(r"player:addMission\(([^\)]*)\)")
 _COMPLETE_QUEST = re.compile(r"player:completeQuest\(([^\)]*)\)")
@@ -61,7 +61,6 @@ def _conditions(texts: Iterable[str]) -> tuple[StateCondition, ...]:
         rows.append(StateCondition(f"key_item:{symbol}", "LACKS", True))
     for symbol in sorted(set(_HAS_KI.findall(joined)) - lacked):
         rows.append(StateCondition(f"key_item:{symbol}", "HAS", True))
-    # Runtime-only event identity is represented by EventIdentity, not as a DB-state condition.
     unique = []
     for row in rows:
         if row not in unique:
@@ -134,9 +133,7 @@ def extract_legacy_progression(files: Iterable[Path], *, feature_id: str) -> Mis
                     started = _START_EVENT.findall(branch.body)
                     if started:
                         event_id = int(started[-1])
-                gate = DependencyGate(
-                    f"legacy:{counter}:gate", "ALL", conditions
-                ) if conditions else None
+                gate = DependencyGate(f"legacy:{counter}:gate", "ALL", conditions) if conditions else None
                 counter += 1
                 raw.append(MissionTransition(
                     transition_id=f"legacy:{path.name}:{handler}:{start+1}:{path_index}",
@@ -158,9 +155,6 @@ def extract_legacy_progression(files: Iterable[Path], *, feature_id: str) -> Mis
     if not raw:
         return None
 
-    # Attach literal event-finish effects to the interaction that starts the same event.  This makes
-    # the admin-facing "next action" describe the persistent result instead of selecting the finish
-    # callback as if the cutscene had already happened.
     finishes: dict[int, list[MissionTransition]] = {}
     for row in raw:
         if row.trigger == "EVENT_FINISH" and row.event is not None:
@@ -183,8 +177,6 @@ def extract_legacy_progression(files: Iterable[Path], *, feature_id: str) -> Mis
             tuple((*row.effects, *extra)), row.confidence, row.evidence_ids,
             row.implementation_status, meta, row.post_effect_gate,
         ))
-    # Keep unmatched finish callbacks visible because their starter may live in a helper/file that
-    # the target scan did not select.
     chained.extend(row for row in raw if row.trigger == "EVENT_FINISH" and row.transition_id not in used_finish)
 
     return MissionStateMachine(
