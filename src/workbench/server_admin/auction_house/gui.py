@@ -293,7 +293,7 @@ def preview_admin_purchase(payload: dict = Body(...)):
         raise _error(exc)
 
 
-@router.post("/admin/validate-preview.json")
+@router.post("/admin/validate/preview.json")
 def validate_admin_preview(payload: dict = Body(...)):
     """Run every DSP/Topaz preview safety gate using SELECT/read-only database work only."""
     try:
