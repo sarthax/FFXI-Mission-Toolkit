@@ -42,6 +42,28 @@ _DSL_EVENT = re.compile(
 )
 _DSL_LIFECYCLE = re.compile(r"(quest|mission):(begin|complete)\(\s*player\s*\)")
 _EVENT_FINISH = re.compile(r"\[(\d+)\]\s*=\s*function\(\s*player\s*,\s*csid")
+_COMPLETED_QUEST = re.compile(
+    r"player:hasCompletedQuest\([^\)]*?xi\.quest\.id\.[A-Za-z0-9_]+\.([A-Z0-9_]+)\)"
+)
+_COMPLETED_MISSION = re.compile(
+    r"player:hasCompletedMission\(\s*xi\.mission\.log_id\.([A-Z0-9_]+)\s*,\s*"
+    r"xi\.mission\.id\.[A-Za-z0-9_]+\.([A-Z0-9_]+)\s*\)"
+)
+_CURRENT_MISSION = re.compile(
+    r"player:getCurrentMission\(\s*xi\.mission\.log_id\.([A-Z0-9_]+)\s*\)\s*"
+    r"(==|~=|>=|<=|>|<)\s*xi\.mission\.id\.[A-Za-z0-9_]+\.([A-Z0-9_]+)"
+)
+_XQUEST_SET_VAR = re.compile(
+    r"xi\.quest\.setVar\(\s*player\s*,\s*xi\.questLog\.[A-Z0-9_]+\s*,\s*"
+    r"xi\.quest\.id\.[A-Za-z0-9_]+\.([A-Z0-9_]+)\s*,\s*['\"]([^'\"]+)['\"]\s*,\s*([^\)]+)\)"
+)
+_REWARD_ITEM = re.compile(r"^\s*item\s*=\s*xi\.item\.([A-Z0-9_]+)\s*,?\s*$")
+_REWARD_TITLE = re.compile(r"^\s*title\s*=\s*xi\.title\.([A-Z0-9_]+)\s*,?\s*$")
+_REWARD_GIL = re.compile(r"^\s*gil\s*=\s*(\d+)\s*,?\s*$")
+_NEXT_MISSION = re.compile(
+    r"^\s*nextMission\s*=\s*\{\s*xi\.mission\.log_id\.([A-Z0-9_]+)\s*,\s*"
+    r"xi\.mission\.id\.[A-Za-z0-9_]+\.([A-Z0-9_]+)\s*\}\s*,?\s*$"
+)
 
 
 def _clean_lines(text: str) -> list[str]:
@@ -70,9 +92,8 @@ def _dsl_refs(
 
         for match in _FEATURE_VAR_COMPARE.finditer(line):
             owner, key, operator, expected = match.groups()
-            state_type = f"{owner}_var"
             refs.append(StateReference(
-                state_type, key, "require", None, source_path, line_no, raw.strip(),
+                f"{owner}_var", key, "require", None, source_path, line_no, raw.strip(),
                 scope="FEATURE_STATE", edit_class="derived_runtime",
                 expectation_operator=operator, expectation_value=expected,
             ))
@@ -102,6 +123,13 @@ def _dsl_refs(
                 scope="FEATURE_STATE", edit_class="derived_runtime",
             ))
 
+        for match in _XQUEST_SET_VAR.finditer(line):
+            target_symbol, key, value = match.groups()
+            refs.append(StateReference(
+                "quest_var", f"{target_symbol}.{key}", "set", value.strip(), source_path, line_no, raw.strip(),
+                scope="CROSS_FEATURE_STATE", edit_class="derived_runtime",
+            ))
+
         if kind == "quest":
             for match in _QUEST_STATUS_COMPARE.finditer(line):
                 operator, expected = match.groups()
@@ -110,6 +138,25 @@ def _dsl_refs(
                     scope="FEATURE_STATE", edit_class="derived_runtime",
                     expectation_operator=operator, expectation_value=expected,
                 ))
+
+        for match in _COMPLETED_QUEST.finditer(line):
+            refs.append(StateReference(
+                "quest", match.group(1), "require", None, source_path, line_no, raw.strip(),
+                scope="FEATURE_PREREQUISITE", edit_class="verified_editor",
+            ))
+        for match in _COMPLETED_MISSION.finditer(line):
+            log_symbol, mission_symbol = match.groups()
+            refs.append(StateReference(
+                "mission", f"{log_symbol}:{mission_symbol}", "require", None, source_path, line_no, raw.strip(),
+                scope="FEATURE_PREREQUISITE", edit_class="verified_editor",
+            ))
+        for match in _CURRENT_MISSION.finditer(line):
+            log_symbol, operator, mission_symbol = match.groups()
+            refs.append(StateReference(
+                "mission", f"{log_symbol}:{mission_symbol}", "require", None, source_path, line_no, raw.strip(),
+                scope="FEATURE_PREREQUISITE", edit_class="verified_editor",
+                expectation_operator=operator, expectation_value=mission_symbol,
+            ))
 
         for match in _DSL_EVENT.finditer(line):
             owner, method, event_id = match.groups()
@@ -136,6 +183,32 @@ def _dsl_refs(
             refs.append(StateReference(
                 kind, symbol or "SELF", operation, None, source_path, line_no, raw.strip(),
                 scope="FEATURE_STATE", edit_class=_edit_class(kind, operation),
+            ))
+
+        match = _REWARD_ITEM.search(line)
+        if match:
+            refs.append(StateReference(
+                "item", match.group(1), "grant", None, source_path, line_no, raw.strip(),
+                scope="FEATURE_REWARD", edit_class="verified_editor",
+            ))
+        match = _REWARD_TITLE.search(line)
+        if match:
+            refs.append(StateReference(
+                "title", match.group(1), "grant", None, source_path, line_no, raw.strip(),
+                scope="FEATURE_REWARD", edit_class="verified_editor",
+            ))
+        match = _REWARD_GIL.search(line)
+        if match:
+            refs.append(StateReference(
+                "gil", "reward", "grant", match.group(1), source_path, line_no, raw.strip(),
+                scope="FEATURE_REWARD", edit_class="derived_runtime",
+            ))
+        match = _NEXT_MISSION.search(line)
+        if match:
+            log_symbol, next_symbol = match.groups()
+            refs.append(StateReference(
+                "mission", f"{log_symbol}:{next_symbol}", "next", None, source_path, line_no, raw.strip(),
+                scope="FEATURE_REWARD", edit_class="verified_editor",
             ))
 
     return refs
