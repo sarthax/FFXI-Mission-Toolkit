@@ -7,6 +7,7 @@
   const pct = (v) => v == null ? '—' : `${Number(v) >= 0 ? '+' : ''}${Number(v).toFixed(1)}%`;
   const when = (v) => v ? new Date(v).toLocaleString() : '—';
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let lastActionPreview = null;
 
   async function api(url) {
     const response = await fetch(url, {headers:{Accept:'application/json'}});
@@ -215,12 +216,46 @@
     }
   }
 
+  function resetValidationForPreview(data) {
+    lastActionPreview = data;
+    $('ahValidatePreview').disabled = false;
+    $('ahValidationReport').innerHTML = '<p class="muted">Preview generated. Run read-only validation to re-read current server state and all safety gates.</p>';
+  }
+
   function renderActionPreview(data) {
+    resetValidationForPreview(data);
     const box = $('ahActionPreview');
     const warnings = (data.warnings || []).map(w => `<div class="ah-warning"><strong>${w.blocking ? 'Blocked' : 'Note'} · ${esc(w.code)}</strong><br>${esc(w.message)}</div>`).join('');
     const effect = data.economic_effect || {};
     const effectRows = Object.entries(effect).map(([k,v]) => `<tr><td>${esc(k.replaceAll('_',' '))}</td><td>${typeof v === 'number' ? fmt.format(v) : esc(v)}</td></tr>`).join('');
-    box.innerHTML = `<h3>${esc(data.action || 'Action')} preview</h3><p><strong>Adapter:</strong> ${esc(data.adapter || 'unknown')} · <strong>Apply supported:</strong> ${data.apply_supported ? 'yes' : 'no'}</p>${warnings}<table class="ah-table"><tbody>${effectRows}</tbody></table>`;
+    const binding = data.policy_binding || {};
+    const policy = binding.policy_fingerprint ? `${esc(binding.family || 'legacy')} · ${esc(String(binding.policy_fingerprint).slice(0,12))}…` : 'not available';
+    box.innerHTML = `<h3>${esc(data.action || 'Action')} preview</h3><p><strong>Adapter:</strong> ${esc(data.adapter || 'unknown')} · <strong>Apply supported:</strong> ${data.apply_supported ? 'yes' : 'no'} · <strong>Policy:</strong> ${policy}</p>${warnings}<table class="ah-table"><tbody>${effectRows}</tbody></table>`;
+  }
+
+  function stageLabel(name) {
+    return ({
+      environment:'Environment',
+      lineage:'Lineage semantics',
+      schema_readiness:'Schema / triggers',
+      database_freshness:'Database freshness',
+      policy:'Active policy',
+      policy_binding:'Policy binding',
+      invariants:'Economic / inventory invariants',
+    })[name] || name.replaceAll('_',' ');
+  }
+
+  function renderValidationReport(data) {
+    const box = $('ahValidationReport');
+    const stages = Object.entries(data.stages || {}).map(([name, stage]) => {
+      const issues = (stage.issues || []).map(issue => `<li><strong>${esc(issue.code || 'issue')}</strong> — ${esc(issue.message || '')}</li>`).join('');
+      return `<div class="ah-validation-stage"><strong>${stage.ready ? 'PASS' : 'BLOCKED'} · ${esc(stageLabel(name))}</strong>${issues ? `<ul>${issues}</ul>` : '<p class="muted">No blocking issue reported.</p>'}</div>`;
+    }).join('');
+    const blockers = (data.blockers || []).map(item => `<li><strong>${esc(stageLabel(item.stage || 'gate'))} · ${esc(item.code || 'blocked')}</strong> — ${esc(item.message || '')}</li>`).join('');
+    const evidenceState = data.read_only_validation_ready ? 'READ-ONLY VALIDATION READY' : 'VALIDATION BLOCKED';
+    box.innerHTML = `<div class="ah-validation-summary"><span class="badge">${esc(evidenceState)}</span><span class="badge">EXECUTION DISABLED</span><strong>${esc(data.operation || 'preview')}</strong></div>
+      <div class="ah-validation-grid">${stages || '<p class="muted">No validation stages returned.</p>'}</div>
+      <h4>Blocking reasons</h4>${blockers ? `<ul class="ah-validation-blockers">${blockers}</ul>` : '<p class="muted">No read-only evidence blockers. Execution remains disabled.</p>'}`;
   }
 
   $('ahListPreviewForm').addEventListener('submit', async (event) => {
@@ -248,6 +283,20 @@
       }));
     } catch (error) {
       $('ahActionPreview').innerHTML = `<p>${esc(error.message)}</p>`;
+    }
+  });
+
+  $('ahValidatePreview').addEventListener('click', async () => {
+    if (!lastActionPreview) return;
+    const button = $('ahValidatePreview');
+    button.disabled = true;
+    $('ahValidationReport').innerHTML = '<p class="muted">Re-reading current database/configuration state…</p>';
+    try {
+      renderValidationReport(await postApi('/auction-house/admin/validate-preview.json', {preview:lastActionPreview}));
+    } catch (error) {
+      $('ahValidationReport').innerHTML = `<p>${esc(error.message)}</p>`;
+    } finally {
+      button.disabled = !lastActionPreview;
     }
   });
 
