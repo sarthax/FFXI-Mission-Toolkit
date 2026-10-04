@@ -61,7 +61,6 @@ def build_validation_report(
     policy_load: Any,
     policy_binding: Any,
 ) -> dict[str, Any]:
-    """Return one administrator-facing validation status without enabling execution."""
     family = str(environment.get("family") or "").strip().lower()
     operation = str(getattr(prepared, "operation", "") or "unknown")
     lineage = evaluate_lineage_semantics(profile_family=family, schema_family_hint=schema_family_hint)
@@ -105,7 +104,6 @@ def build_validation_report(
     else:
         blockers.extend(_blocking("invariants", invariant_issues))
 
-    # DSP/Topaz source semantics may be healthy while the future executable adapter remains blocked.
     evidence_blockers = [
         blocker for blocker in blockers
         if not (blocker.stage == "lineage" and blocker.code == "lineage_execution_contract_incomplete")
@@ -140,134 +138,31 @@ def build_validation_report(
     }
 
 
-def run_legacy_preview_validation(
-    *,
-    service,
-    environment: dict[str, Any],
-    preview: dict[str, Any],
-    server_root: Path | str,
-) -> dict[str, Any]:
-    """Run every legacy DSP/Topaz read-only gate in the required order and return one report."""
+def run_legacy_preview_validation(*, service, environment: dict[str, Any], preview: dict[str, Any], server_root: Path | str) -> dict[str, Any]:
     family = str(environment.get("family") or "").strip().lower()
     if family not in {"dsp", "topaz"}:
-        return {
-            "status": "blocked",
-            "read_only_validation_ready": False,
-            "execution_ready": False,
-            "executor_enabled": False,
-            "write_enabled": False,
-            "operation": str(preview.get("action") or "unknown"),
-            "environment": dict(environment),
-            "schema_family_hint": service.schema.family_hint,
-            "stages": {},
-            "blockers": [{
-                "stage": "environment",
-                "code": "legacy_validation_scope_unsupported",
-                "message": "This validation orchestrator supports explicit DSP and Topaz environments only.",
-            }],
-        }
-
+        return {"status":"blocked","read_only_validation_ready":False,"execution_ready":False,"executor_enabled":False,"write_enabled":False,"operation":str(preview.get("action") or "unknown"),"environment":dict(environment),"schema_family_hint":service.schema.family_hint,"stages":{},"blockers":[{"stage":"environment","code":"legacy_validation_scope_unsupported","message":"This validation orchestrator supports explicit DSP and Topaz environments only."}]}
     operation = str(preview.get("action") or "").strip().lower()
-    prepared, evidence, invariants, policy_load, policy_binding = prepare_validate_from_active_config(
-        service=service,
-        family=family,
-        operation=operation,
-        environment=environment,
-        preview=preview,
-        server_root=server_root,
-        preview_environment=preview.get("environment") if isinstance(preview.get("environment"), dict) else None,
-    )
+    prepared, evidence, invariants, policy_load, policy_binding = prepare_validate_from_active_config(service=service, family=family, operation=operation, environment=environment, preview=preview, server_root=server_root, preview_environment=preview.get("environment") if isinstance(preview.get("environment"), dict) else None)
     readiness = probe_write_readiness(service.connection).as_dict()
-    return build_validation_report(
-        environment=environment,
-        schema_family_hint=service.schema.family_hint,
-        readiness=readiness,
-        prepared=prepared,
-        evidence=evidence,
-        invariants=invariants,
-        policy_load=policy_load,
-        policy_binding=policy_binding,
-    )
+    return build_validation_report(environment=environment, schema_family_hint=service.schema.family_hint, readiness=readiness, prepared=prepared, evidence=evidence, invariants=invariants, policy_load=policy_load, policy_binding=policy_binding)
 
 
-def run_lsb_preview_validation(
-    *,
-    service,
-    environment: dict[str, Any],
-    preview: dict[str, Any],
-) -> dict[str, Any]:
-    """Run LSB-specific read-only validation without applying legacy config-policy assumptions."""
+def run_lsb_preview_validation(*, service, environment: dict[str, Any], preview: dict[str, Any], server_root: Path | str) -> dict[str, Any]:
     if str(environment.get("family") or "").strip().lower() != "lsb":
-        return {
-            "status": "blocked",
-            "read_only_validation_ready": False,
-            "execution_ready": False,
-            "executor_enabled": False,
-            "write_enabled": False,
-            "operation": str(preview.get("action") or "unknown"),
-            "environment": dict(environment),
-            "schema_family_hint": service.schema.family_hint,
-            "stages": {},
-            "blockers": [{
-                "stage": "environment",
-                "code": "lsb_validation_scope_unsupported",
-                "message": "The LSB validation orchestrator requires an explicit LandSandBoat environment.",
-            }],
-        }
-
+        return {"status":"blocked","read_only_validation_ready":False,"execution_ready":False,"executor_enabled":False,"write_enabled":False,"operation":str(preview.get("action") or "unknown"),"environment":dict(environment),"schema_family_hint":service.schema.family_hint,"stages":{},"blockers":[{"stage":"environment","code":"lsb_validation_scope_unsupported","message":"The LSB validation orchestrator requires an explicit LandSandBoat environment."}]}
     operation = str(preview.get("action") or "").strip().lower()
-    prepared, evidence, invariants, policy_load, policy_binding = prepare_lsb_preview_validation(
-        service=service,
-        operation=operation,
-        environment=environment,
-        preview=preview,
-    )
+    prepared, evidence, invariants, policy_load, policy_binding = prepare_lsb_preview_validation(service=service, operation=operation, environment=environment, preview=preview, server_root=server_root)
     readiness = probe_write_readiness(service.connection).as_dict()
-    report = build_validation_report(
-        environment=environment,
-        schema_family_hint=service.schema.family_hint,
-        readiness=readiness,
-        prepared=prepared,
-        evidence=evidence,
-        invariants=invariants,
-        policy_load=policy_load,
-        policy_binding=policy_binding,
-    )
-    report["validation_model"] = "lsb-source-and-trigger"
+    report = build_validation_report(environment=environment, schema_family_hint=service.schema.family_hint, readiness=readiness, prepared=prepared, evidence=evidence, invariants=invariants, policy_load=policy_load, policy_binding=policy_binding)
+    report["validation_model"] = "lsb-source-settings-and-trigger"
     return report
 
 
-def run_preview_validation(
-    *,
-    service,
-    environment: dict[str, Any],
-    preview: dict[str, Any],
-    server_root: Path | str,
-) -> dict[str, Any]:
-    """Dispatch preview validation to the active lineage without cross-applying lineage assumptions."""
+def run_preview_validation(*, service, environment: dict[str, Any], preview: dict[str, Any], server_root: Path | str) -> dict[str, Any]:
     family = str(environment.get("family") or "").strip().lower()
     if family == "lsb":
-        return run_lsb_preview_validation(service=service, environment=environment, preview=preview)
+        return run_lsb_preview_validation(service=service, environment=environment, preview=preview, server_root=server_root)
     if family in {"dsp", "topaz"}:
-        return run_legacy_preview_validation(
-            service=service,
-            environment=environment,
-            preview=preview,
-            server_root=server_root,
-        )
-    return {
-        "status": "blocked",
-        "read_only_validation_ready": False,
-        "execution_ready": False,
-        "executor_enabled": False,
-        "write_enabled": False,
-        "operation": str(preview.get("action") or "unknown"),
-        "environment": dict(environment),
-        "schema_family_hint": service.schema.family_hint,
-        "stages": {},
-        "blockers": [{
-            "stage": "environment",
-            "code": "validation_lineage_unsupported",
-            "message": "Preview validation requires an explicit LSB, DSP, or Topaz environment.",
-        }],
-    }
+        return run_legacy_preview_validation(service=service, environment=environment, preview=preview, server_root=server_root)
+    return {"status":"blocked","read_only_validation_ready":False,"execution_ready":False,"executor_enabled":False,"write_enabled":False,"operation":str(preview.get("action") or "unknown"),"environment":dict(environment),"schema_family_hint":service.schema.family_hint,"stages":{},"blockers":[{"stage":"environment","code":"validation_lineage_unsupported","message":"Preview validation requires an explicit LSB, DSP, or Topaz environment."}]}

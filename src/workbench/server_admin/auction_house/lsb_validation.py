@@ -1,14 +1,15 @@
 """LandSandBoat-specific read-only Auction House preview validation.
 
-LSB does not use the legacy DSP/Topaz external Auction House fee policy contract. This module
-therefore validates live LSB lineage/schema/trigger state and preview freshness without importing
-legacy config-policy assumptions. It starts a READ ONLY transaction and always rolls it back.
+The validator mirrors source-observable LSB listing/purchase prerequisites while remaining unable
+to mutate server state. Every database reread is performed inside READ ONLY and rolled back.
 """
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+from pathlib import Path
 from typing import Any
 
+from .lsb_policy import LSBPolicy, listing_fee, load_lsb_policy
 from .write_plans import snapshot_fingerprint
 
 
@@ -46,38 +47,32 @@ class LSBPreparedValidation:
 class LSBRereadEvidence:
     operation: str
     snapshot: dict[str, Any]
+    seller_gil: int | None = None
+    buyer_gil: int | None = None
+    seller_active_listing_count: int | None = None
+    seller_item_quantity: int | None = None
+    buyer_inventory_capacity: int | None = None
+    buyer_inventory_occupied: int | None = None
+    cheapest_qualifying_auction_id: int | None = None
+    delivery_row_count: int | None = None
     transaction_mode: str = "read_only_rolled_back"
 
-    def as_dict(self) -> dict[str, Any]:
-        return asdict(self)
-
-
-@dataclass(frozen=True)
-class LSBNotApplicableGate:
-    gate: str
-    issues: tuple[dict[str, Any], ...]
-
     @property
-    def policy_ready(self) -> bool:
-        return True
-
-    @property
-    def binding_ready(self) -> bool:
-        return True
+    def buyer_inventory_free_slots(self) -> int | None:
+        if self.buyer_inventory_capacity is None or self.buyer_inventory_occupied is None:
+            return None
+        return max(0, self.buyer_inventory_capacity - self.buyer_inventory_occupied)
 
     def as_dict(self) -> dict[str, Any]:
-        return {
-            "gate": self.gate,
-            "applicable": False,
-            "issues": [dict(item) for item in self.issues],
-            "executor_enabled": False,
-            "executable": False,
-        }
+        out = asdict(self)
+        out["buyer_inventory_free_slots"] = self.buyer_inventory_free_slots
+        return out
 
 
 @dataclass(frozen=True)
 class LSBInvariantResult:
     issues: tuple[LSBValidationIssue, ...]
+    details: dict[str, Any]
 
     @property
     def invariants_ready(self) -> bool:
@@ -87,6 +82,7 @@ class LSBInvariantResult:
         return {
             "invariants_ready": self.invariants_ready,
             "issues": [asdict(issue) for issue in self.issues],
+            "details": dict(self.details),
             "executor_enabled": False,
             "executable": False,
         }
@@ -105,6 +101,109 @@ def _fingerprint(payload: dict[str, Any], snapshot: dict[str, Any]) -> str:
     return snapshot_fingerprint({"payload": payload, "snapshot": snapshot})
 
 
+def _columns(connection, table: str) -> set[str]:
+    cursor = connection.cursor()
+    try:
+        cursor.execute(f"DESCRIBE `{table}`")
+        return {str(row[0]) for row in (cursor.fetchall() or [])}
+    finally:
+        cursor.close()
+
+
+def _pick(columns: set[str], *names: str) -> str | None:
+    return next((name for name in names if name in columns), None)
+
+
+def _scalar(connection, sql: str, params: tuple[Any, ...]) -> Any:
+    cursor = connection.cursor()
+    try:
+        cursor.execute(sql, params)
+        row = cursor.fetchone()
+        return None if not row else row[0]
+    finally:
+        cursor.close()
+
+
+def _character_gil(connection, char_id: int | None) -> int | None:
+    if not char_id:
+        return None
+    cols = _columns(connection, "chars")
+    id_col = _pick(cols, "charid", "charId", "char_id", "id")
+    gil_col = _pick(cols, "gil")
+    if not id_col or not gil_col:
+        return None
+    value = _scalar(connection, f"SELECT `{gil_col}` FROM `chars` WHERE `{id_col}`=%s LIMIT 1", (int(char_id),))
+    return None if value is None else int(value)
+
+
+def _seller_item_quantity(connection, seller_id: int | None, item_id: int | None) -> int | None:
+    if not seller_id or not item_id:
+        return None
+    cols = _columns(connection, "char_inventory")
+    char_col = _pick(cols, "charid", "charId", "char_id")
+    item_col = _pick(cols, "itemId", "itemid", "item_id")
+    qty_col = _pick(cols, "quantity", "qty")
+    loc_col = _pick(cols, "location")
+    if not char_col or not item_col or not qty_col:
+        return None
+    where = f"`{char_col}`=%s AND `{item_col}`=%s"
+    params: tuple[Any, ...] = (int(seller_id), int(item_id))
+    if loc_col:
+        where += f" AND `{loc_col}`=0"
+    value = _scalar(connection, f"SELECT COALESCE(SUM(`{qty_col}`),0) FROM `char_inventory` WHERE {where}", params)
+    return int(value or 0)
+
+
+def _seller_active_listings(service, seller_id: int | None) -> int | None:
+    if not seller_id:
+        return None
+    a = service.schema.auction_columns
+    value = _scalar(service.connection, f"SELECT COUNT(*) FROM `auction_house` WHERE `{a['seller_id']}`=%s AND `{a['sold_at']}`=0", (int(seller_id),))
+    return int(value or 0)
+
+
+def _buyer_inventory_state(connection, buyer_id: int | None) -> tuple[int | None, int | None]:
+    if not buyer_id:
+        return None, None
+    storage_cols = _columns(connection, "char_storage")
+    inv_col = _pick(storage_cols, "inventory")
+    char_col = _pick(storage_cols, "charid", "charId", "char_id")
+    if not inv_col or not char_col:
+        return None, None
+    capacity = _scalar(connection, f"SELECT `{inv_col}` FROM `char_storage` WHERE `{char_col}`=%s LIMIT 1", (int(buyer_id),))
+    inv_cols = _columns(connection, "char_inventory")
+    inv_char = _pick(inv_cols, "charid", "charId", "char_id")
+    location = _pick(inv_cols, "location")
+    slot = _pick(inv_cols, "slot")
+    if not inv_char or not location or not slot:
+        return None if capacity is None else int(capacity), None
+    occupied = _scalar(connection, f"SELECT COUNT(DISTINCT `{slot}`) FROM `char_inventory` WHERE `{inv_char}`=%s AND `{location}`=0", (int(buyer_id),))
+    return (None if capacity is None else int(capacity), int(occupied or 0))
+
+
+def _cheapest_qualifying(service, listing: dict[str, Any] | None) -> int | None:
+    if not listing:
+        return None
+    a = service.schema.auction_columns
+    value = _scalar(
+        service.connection,
+        f"SELECT `{a['id']}` FROM `auction_house` WHERE `{a['item_id']}`=%s AND `{a['stack']}`=%s AND `{a['sold_at']}`=0 AND `{a['asking_price']}`<=%s ORDER BY `{a['asking_price']}` ASC, `{a['id']}` ASC LIMIT 1",
+        (int(listing.get("item_id") or 0), 1 if listing.get("stack") else 0, int(listing.get("asking_price") or 0)),
+    )
+    return None if value is None else int(value)
+
+
+def _delivery_count(connection, seller_id: int | None) -> int | None:
+    if not seller_id:
+        return None
+    cols = _columns(connection, "delivery_box")
+    char_col = _pick(cols, "charid", "charId", "char_id")
+    if not char_col:
+        return None
+    value = _scalar(connection, f"SELECT COUNT(*) FROM `delivery_box` WHERE `{char_col}`=%s", (int(seller_id),))
+    return int(value or 0)
+
+
 def _collect_snapshot(service, operation: str, preview: dict[str, Any]) -> LSBRereadEvidence:
     connection = service.connection
     cursor = connection.cursor()
@@ -116,21 +215,95 @@ def _collect_snapshot(service, operation: str, preview: dict[str, Any]) -> LSBRe
     try:
         payload = dict(preview.get("payload") or {})
         if operation == "list_item":
-            snapshot = {
-                "item": service.item_snapshot(int(payload.get("item_id") or 0)),
-                "seller": service.character_snapshot(int(payload.get("seller_id") or 0)),
-            }
-        elif operation in {"purchase_item", "admin_cleanup"}:
+            seller_id = int(payload.get("seller_id") or 0) or None
+            item_id = int(payload.get("item_id") or 0) or None
+            item = service.item_snapshot(int(item_id or 0))
+            seller = service.character_snapshot(int(seller_id or 0))
+            return LSBRereadEvidence(
+                operation=operation,
+                snapshot={"item": item, "seller": seller},
+                seller_gil=_character_gil(connection, seller_id),
+                seller_active_listing_count=_seller_active_listings(service, seller_id),
+                seller_item_quantity=_seller_item_quantity(connection, seller_id, item_id),
+                delivery_row_count=_delivery_count(connection, seller_id),
+            )
+        if operation in {"purchase_item", "admin_cleanup"}:
             buyer_id = int(payload.get("buyer_id") or 0) or None
-            snapshot = {
-                "listing": service.active_listing_by_id(int(payload.get("auction_id") or 0)),
-                "buyer": None if buyer_id is None else service.character_snapshot(buyer_id),
-            }
-        else:
-            raise ValueError(f"Unsupported LSB validation operation: {operation or 'unknown'}")
-        return LSBRereadEvidence(operation=operation, snapshot=snapshot)
+            listing = service.active_listing_by_id(int(payload.get("auction_id") or 0))
+            buyer = None if buyer_id is None else service.character_snapshot(buyer_id)
+            seller_id = int((listing or {}).get("seller_id") or 0) or None
+            capacity, occupied = _buyer_inventory_state(connection, buyer_id)
+            return LSBRereadEvidence(
+                operation=operation,
+                snapshot={"listing": listing, "buyer": buyer},
+                buyer_gil=_character_gil(connection, buyer_id),
+                buyer_inventory_capacity=capacity,
+                buyer_inventory_occupied=occupied,
+                cheapest_qualifying_auction_id=_cheapest_qualifying(service, listing),
+                delivery_row_count=_delivery_count(connection, seller_id),
+            )
+        raise ValueError(f"Unsupported LSB validation operation: {operation or 'unknown'}")
     finally:
         connection.rollback()
+
+
+def _evaluate_invariants(*, operation: str, payload: dict[str, Any], evidence: LSBRereadEvidence, policy: LSBPolicy) -> LSBInvariantResult:
+    issues: list[LSBValidationIssue] = []
+    details: dict[str, Any] = {"policy_fingerprint": policy.policy_fingerprint}
+    if operation == "list_item":
+        item = evidence.snapshot.get("item") or {}
+        seller = evidence.snapshot.get("seller") or {}
+        if not item:
+            issues.append(LSBValidationIssue("item_missing", "The previewed item is no longer available in the live item catalog."))
+        if not seller:
+            issues.append(LSBValidationIssue("seller_missing", "The previewed seller character no longer exists."))
+        stack_size = max(1, int(item.get("stack_size") or 1))
+        required_qty = stack_size if bool(payload.get("stack")) else 1
+        details["required_quantity"] = required_qty
+        details["seller_item_quantity"] = evidence.seller_item_quantity
+        if evidence.seller_item_quantity is None or evidence.seller_item_quantity < required_qty:
+            issues.append(LSBValidationIssue("seller_inventory_insufficient", "Seller inventory does not contain the required single item or full stack quantity."))
+        fee = listing_fee(policy, price=int(payload.get("price") or 0), stack=bool(payload.get("stack")))
+        details["listing_fee"] = fee
+        details["seller_gil"] = evidence.seller_gil
+        if fee is None:
+            issues.append(LSBValidationIssue("lsb_listing_fee_unavailable", "The active LSB AH fee policy could not be resolved."))
+        elif evidence.seller_gil is None or evidence.seller_gil < fee:
+            issues.append(LSBValidationIssue("seller_gil_insufficient", "Seller does not have enough gil to pay the current LSB Auction House listing fee."))
+        limit = int(policy.values.get("AH_LIST_LIMIT", 0)) if policy.policy_ready else None
+        details["listing_limit"] = limit
+        details["seller_active_listing_count"] = evidence.seller_active_listing_count
+        if limit and evidence.seller_active_listing_count is not None and evidence.seller_active_listing_count >= limit:
+            issues.append(LSBValidationIssue("listing_limit_reached", "Seller has reached the active LSB Auction House listing limit."))
+    else:
+        listing = evidence.snapshot.get("listing") or {}
+        mode = str(payload.get("mode") or "").strip().lower()
+        if not listing:
+            issues.append(LSBValidationIssue("listing_missing", "The previewed auction is no longer active."))
+        elif listing.get("sold_at") not in (None, 0, "", False):
+            issues.append(LSBValidationIssue("listing_already_sold", "The previewed auction has already been sold."))
+        if mode == "normal_purchase":
+            buyer = evidence.snapshot.get("buyer") or {}
+            if not buyer:
+                issues.append(LSBValidationIssue("buyer_missing", "A normal LSB purchase requires a live buyer character."))
+            asking = int(listing.get("asking_price") or 0)
+            details["buyer_gil"] = evidence.buyer_gil
+            details["asking_price"] = asking
+            if evidence.buyer_gil is None or evidence.buyer_gil < asking:
+                issues.append(LSBValidationIssue("buyer_gil_insufficient", "Buyer does not have enough gil for the previewed purchase price."))
+            details["buyer_inventory_free_slots"] = evidence.buyer_inventory_free_slots
+            if evidence.buyer_inventory_free_slots is None:
+                issues.append(LSBValidationIssue("buyer_inventory_capacity_unknown", "Buyer inventory capacity could not be verified."))
+            elif evidence.buyer_inventory_free_slots <= 0:
+                issues.append(LSBValidationIssue("buyer_inventory_full", "Buyer inventory has no free slot for the purchased item."))
+            auction_id = int(payload.get("auction_id") or 0)
+            details["cheapest_qualifying_auction_id"] = evidence.cheapest_qualifying_auction_id
+            if evidence.cheapest_qualifying_auction_id not in (None, auction_id):
+                issues.append(LSBValidationIssue("cheapest_listing_changed", "The previewed auction is no longer the cheapest qualifying active listing."))
+        details["seller_delivery_row_count"] = evidence.delivery_row_count
+        if evidence.delivery_row_count is None:
+            issues.append(LSBValidationIssue("seller_settlement_unverifiable", "Seller delivery-box settlement state could not be read."))
+    return LSBInvariantResult(tuple(issues), details)
 
 
 def prepare_lsb_preview_validation(
@@ -139,8 +312,9 @@ def prepare_lsb_preview_validation(
     operation: str,
     environment: dict[str, Any],
     preview: dict[str, Any],
-) -> tuple[LSBPreparedValidation, LSBRereadEvidence, LSBInvariantResult, LSBNotApplicableGate, LSBNotApplicableGate]:
-    """Re-read one LSB preview and evaluate fail-closed freshness/basic semantic invariants."""
+    server_root: Path | str,
+) -> tuple[LSBPreparedValidation, LSBRereadEvidence, LSBInvariantResult, LSBPolicy, LSBPolicy]:
+    """Re-read one LSB preview and evaluate fail-closed source-backed invariants."""
     op = str(operation or "").strip().lower()
     evidence = _collect_snapshot(service, op, preview)
     payload = dict(preview.get("payload") or {})
@@ -156,40 +330,13 @@ def prepare_lsb_preview_validation(
         issues.append(LSBValidationIssue("preview_environment_missing", "The preview is not bound to a server environment."))
     elif _environment_key(preview_environment) != _environment_key(environment):
         issues.append(LSBValidationIssue("preview_environment_mismatch", "The preview was generated for a different server environment."))
-
     supplied_fp = str(preview.get("snapshot_fingerprint") or "")
     if supplied_fp and supplied_fp != preview_fp:
         issues.append(LSBValidationIssue("preview_fingerprint_invalid", "The supplied preview fingerprint does not match the preview payload and snapshot."))
     if preview_fp != current_fp:
         issues.append(LSBValidationIssue("stale_preview", "Mutation-relevant LSB state changed after preview; generate a fresh preview."))
 
-    invariant_issues: list[LSBValidationIssue] = []
-    if op == "list_item":
-        if not evidence.snapshot.get("item"):
-            invariant_issues.append(LSBValidationIssue("item_missing", "The previewed item is no longer available in the live item catalog."))
-        if not evidence.snapshot.get("seller"):
-            invariant_issues.append(LSBValidationIssue("seller_missing", "The previewed seller character no longer exists."))
-    elif op in {"purchase_item", "admin_cleanup"}:
-        listing = evidence.snapshot.get("listing") or {}
-        if not listing:
-            invariant_issues.append(LSBValidationIssue("listing_missing", "The previewed auction is no longer active."))
-        elif listing.get("sold_at") not in (None, 0, "", False):
-            invariant_issues.append(LSBValidationIssue("listing_already_sold", "The previewed auction has already been sold."))
-        if str(payload.get("mode") or "").strip().lower() == "normal_purchase" and not evidence.snapshot.get("buyer"):
-            invariant_issues.append(LSBValidationIssue("buyer_missing", "A normal LSB purchase requires a live buyer character."))
-
-    prepared = LSBPreparedValidation(
-        operation=op,
-        preview_fingerprint=preview_fp,
-        current_fingerprint=current_fp,
-        issues=issues,
-    )
-    invariants = LSBInvariantResult(tuple(invariant_issues))
-    not_applicable = ({
-        "code": "lsb_legacy_policy_not_applicable",
-        "message": "DSP/Topaz external AH fee-policy configuration is not part of the LSB validation contract.",
-        "blocking": False,
-    },)
-    policy = LSBNotApplicableGate("policy", not_applicable)
-    binding = LSBNotApplicableGate("policy_binding", not_applicable)
-    return prepared, evidence, invariants, policy, binding
+    policy = load_lsb_policy(server_root)
+    prepared = LSBPreparedValidation(op, preview_fp, current_fp, issues)
+    invariants = _evaluate_invariants(operation=op, payload=payload, evidence=evidence, policy=policy)
+    return prepared, evidence, invariants, policy, policy

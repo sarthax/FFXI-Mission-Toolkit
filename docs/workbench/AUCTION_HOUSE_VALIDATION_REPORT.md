@@ -18,14 +18,33 @@ The orchestrator returns each stage separately plus a flattened blocker list so 
 
 DSP/Topaz validation loads the active legacy Auction House fee/tax/listing-limit configuration and binds the preview to that configuration fingerprint.
 
-LSB validation deliberately does **not** import those legacy configuration assumptions. Its policy and policy-binding stages report the DSP/Topaz external fee-policy model as not applicable, while the LSB path validates:
+LSB uses its own source-backed settings model from `settings/default/map.lua`; it does not reuse the DSP/Topaz `.conf` parser. The LSB validator reads and fingerprints:
+
+- `AH_BASE_FEE_SINGLE`
+- `AH_BASE_FEE_STACKS`
+- `AH_TAX_RATE_SINGLE`
+- `AH_TAX_RATE_STACKS`
+- `AH_MAX_FEE`
+- `AH_LIST_LIMIT`
+
+Missing or malformed LSB settings fail closed rather than falling back to toolkit defaults.
+
+The LSB path also validates:
 
 - explicit `lsb` environment identity,
 - `lsb-compatible` schema agreement,
 - `auction_house_list`, `auction_house_buy`, and `delivery_box_insert` readiness as appropriate to the operation,
-- a fresh read-only reread of item/seller or listing/buyer state,
+- fresh read-only item/seller or listing/buyer snapshots,
 - preview environment/fingerprint freshness,
-- basic live listing, seller, item, and buyer invariants.
+- seller inventory quantity for singles/full stacks,
+- source-matched listing fee and seller gil sufficiency,
+- active listing limit,
+- buyer gil sufficiency,
+- buyer inventory free-slot readiness,
+- cheapest qualifying active listing stability,
+- seller delivery-box settlement readability.
+
+These checks mirror the source-observable prerequisites in LandSandBoat `auctionutils.cpp`; they do not execute those operations.
 
 Every lineage-specific reread starts `START TRANSACTION READ ONLY` and rolls back unconditionally.
 
@@ -35,11 +54,11 @@ Every lineage-specific reread starts `START TRANSACTION READ ONLY` and rolls bac
 
 `execution_ready`, `executor_enabled`, and `write_enabled` remain `false` in this phase for every lineage.
 
-DSP/Topaz retain `lineage_execution_contract_incomplete` as an execution blocker even when their complete read-only evidence chain is healthy. LSB source semantics are verified, but this validation parity work still does not introduce an executor or mutation route.
+DSP/Topaz retain `lineage_execution_contract_incomplete` as an execution blocker even when their complete read-only evidence chain is healthy. LSB source semantics are verified, but the stronger LSB validation path still does not introduce an executor or mutation route.
 
 ## Fail-closed behavior
 
-Validation is blocked for stale database state, wrong/missing environment binding, lineage/schema mismatch, missing required tables/triggers, missing live item/seller/listing/buyer state, legacy policy drift where applicable, or any unsupported lineage.
+Validation is blocked for stale database state, wrong/missing environment binding, lineage/schema mismatch, missing required tables/triggers, unresolved policy/settings, insufficient inventory or gil, listing-limit exhaustion, buyer inventory capacity problems, cheapest-listing drift, unverifiable seller settlement state, or unsupported lineage.
 
 ## Safety
 
