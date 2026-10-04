@@ -14,10 +14,12 @@ from workbench.editors.items import client_asset_cache
 
 from .actions import ListItemRequest, PurchaseRequest, preview_list_item, preview_purchase
 from .analytics import economy_summary, price_trends, search_items
+from .config_policy import load_active_legacy_policy
 from .diagnostics import run_read_only_diagnostics
 from .factory import open_auction_house
 from .health import economy_health
 from .lineage_semantics import evaluate_lineage_semantics
+from .policy_binding import preview_policy_binding
 from .write_probe import probe_write_readiness
 
 router = APIRouter(prefix="/auction-house", tags=["Auction House Administration"])
@@ -25,16 +27,7 @@ templates = Jinja2Templates(directory=str(GUI_ROOT / "templates"))
 
 
 def _sync_host_template_globals() -> None:
-    """Reuse the monolithic GUI's shared base.html globals before rendering this modular page.
-
-    The legacy host configures helpers such as ``current_theme`` and ``shell_context`` after the
-    Character/Auction House packages have already been imported. Character Editor is explicitly
-    synchronized by gui_server.py, but Auction House owns a separate Jinja environment and was not,
-    causing /auction-house to fail during base.html rendering before any AH data request ran.
-
-    Resolve the already-running host lazily so this module stays importable in standalone router
-    tests and works whether gui_server.py was imported as ``gui_server`` or executed as ``__main__``.
-    """
+    """Reuse the monolithic GUI's shared base.html globals before rendering this modular page."""
     for module_name in ("gui_server", "__main__"):
         host = sys.modules.get(module_name)
         host_templates = getattr(host, "templates", None) if host is not None else None
@@ -59,6 +52,34 @@ def _context():
 
 def _error(exc: Exception, status: int = 503) -> HTTPException:
     return HTTPException(status_code=status, detail=str(exc))
+
+
+def _preview_payload_with_policy(preview) -> dict:
+    """Attach active DSP/Topaz AH policy provenance to a preview without enabling writes."""
+    payload = preview.as_dict()
+    identity = get_active_server_identity()
+    family = str(identity.get("family") or "").strip().lower()
+    root = get_active_server_root()
+    if root is not None and family in {"dsp", "topaz"}:
+        payload["policy_binding"] = preview_policy_binding(
+            load_active_legacy_policy(server_root=root, family=family)
+        )
+    else:
+        payload["policy_binding"] = {
+            "family": family or "unknown",
+            "source_path": None,
+            "source_kind": "unsupported",
+            "policy_fingerprint": None,
+            "policy_ready": False,
+            "issues": [{
+                "code": "policy_binding_not_applicable",
+                "message": "Legacy DSP/Topaz policy binding is not available for this server family.",
+                "blocking": False,
+            }],
+            "executor_enabled": False,
+            "executable": False,
+        }
+    return payload
 
 
 @router.get("", response_class=HTMLResponse)
@@ -239,7 +260,7 @@ def preview_admin_listing(payload: dict = Body(...)):
                 item=ctx.service.item_snapshot(request.item_id),
                 seller=ctx.service.character_snapshot(request.seller_id),
             )
-            return JSONResponse(preview.as_dict())
+            return JSONResponse(_preview_payload_with_policy(preview))
     except (TypeError, ValueError) as exc:
         raise _error(exc, 400)
     except Exception as exc:
@@ -263,7 +284,7 @@ def preview_admin_purchase(payload: dict = Body(...)):
                 listing=ctx.service.active_listing_by_id(request.auction_id),
                 buyer=buyer,
             )
-            return JSONResponse(preview.as_dict())
+            return JSONResponse(_preview_payload_with_policy(preview))
     except (TypeError, ValueError) as exc:
         raise _error(exc, 400)
     except Exception as exc:
