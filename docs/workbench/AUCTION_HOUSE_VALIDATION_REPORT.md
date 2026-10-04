@@ -10,9 +10,18 @@ Auction House administration uses one read-only validation surface with lineage-
 4. Fresh database reread and stale-preview checks.
 5. Lineage-specific policy gate.
 6. Preview policy binding/drift validation.
-7. Listing or purchase invariants.
+7. Common preview provenance, lifetime, and replay-contract validation.
+8. Listing or purchase invariants.
 
 The orchestrator returns each stage separately plus a flattened blocker list so an administrator can see exactly why a preview is blocked.
+
+## Common preview provenance and lifetime
+
+DSP, Topaz, and LSB previews share the same provenance envelope. It records the preview version, unique preview ID, UTC creation/expiry timestamps, validation TTL, active environment identity, schema family, policy provenance/fingerprint, durable audit ID, and one-time replay ID.
+
+The default preview validation lifetime is 300 seconds. Administrators can override it with `FFXI_MISSION_TOOLKIT_AH_PREVIEW_TTL_SECONDS`; values are clamped to 30 seconds through 24 hours. Invalid values fall back to the 300-second default.
+
+Validation fails closed when a preview is expired, has malformed or contradictory timestamps/TTL, is missing its audit or replay ID, or does not declare the `consume-on-execute` replay contract. The current read-only phase does **not** persist replay consumption because no executor exists. A future executor must atomically consume the replay ID exactly once before any server mutation and bind its append-only audit record to the preview audit ID.
 
 ## Lineage separation
 
@@ -29,7 +38,7 @@ LSB uses its own source-backed settings model from `settings/default/map.lua`; i
 
 Missing or malformed LSB settings fail closed rather than falling back to toolkit defaults.
 
-LSB previews are now bound at preview creation time to the active settings source path, source kind, lineage family, and SHA-256 policy fingerprint. Validation reloads the active LSB policy and blocks the preview if that binding is missing, points at a different policy source, identifies a different lineage/source kind, or has a different fingerprint. This prevents a preview generated under one AH fee/listing policy from later being treated as current after server settings change.
+LSB previews are bound at preview creation time to the active settings source path, source kind, lineage family, and SHA-256 policy fingerprint. Validation reloads the active LSB policy and blocks the preview if that binding is missing, points at a different policy source, identifies a different lineage/source kind, or has a different fingerprint. This prevents a preview generated under one AH fee/listing policy from later being treated as current after server settings change.
 
 The LSB path also validates:
 
@@ -60,7 +69,7 @@ DSP/Topaz retain `lineage_execution_contract_incomplete` as an execution blocker
 
 ## Fail-closed behavior
 
-Validation is blocked for stale database state, wrong/missing environment binding, lineage/schema mismatch, missing required tables/triggers, unresolved policy/settings, missing or drifted policy binding, insufficient inventory or gil, listing-limit exhaustion, buyer inventory capacity problems, cheapest-listing drift, unverifiable seller settlement state, or unsupported lineage.
+Validation is blocked for stale database state, expired preview lifetime, invalid replay/audit provenance, wrong/missing environment binding, lineage/schema mismatch, missing required tables/triggers, unresolved policy/settings, missing or drifted policy binding, insufficient inventory or gil, listing-limit exhaustion, buyer inventory capacity problems, cheapest-listing drift, unverifiable seller settlement state, or unsupported lineage.
 
 ## Safety
 
