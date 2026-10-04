@@ -52,6 +52,20 @@ def test_clarified_flow_is_default_and_node_selection_keeps_it_active():
     assert "technicalButton.addEventListener('click'" in wrapper
 
 
+def test_clarified_event_handoffs_jump_to_clarified_branches_not_technical_nodes():
+    wrapper = WRAPPER.read_text(encoding="utf-8")
+
+    assert "data-contract-branch" in wrapper
+    assert "focusBranch" in wrapper
+    assert "button.dataset.contractBranch" in wrapper
+    assert "branch.dataset.branchId === String(branchId)" in wrapper
+    assert "scrollIntoView({behavior: 'smooth', block: 'center'})" in wrapper
+    assert "handoff-focus" in wrapper
+    assert "Start:" in wrapper
+    assert "Handler:" in wrapper
+    assert "data-contract-node=\"${esc(ref.branch_id)}\"" not in wrapper
+
+
 def test_clarified_flow_wrapper_contract_render_is_idempotent():
     wrapper = WRAPPER.read_text(encoding="utf-8")
 
