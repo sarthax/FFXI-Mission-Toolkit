@@ -51,6 +51,27 @@ def _assert_wiki_mapping_target_closure() -> None:
     con.close()
 
 
+def _assert_capture_client_build_closure() -> None:
+    con=sqlite3.connect(":memory:")
+    con.execute("CREATE TABLE identity_snapshots(snapshot_id TEXT, version TEXT)")
+    con.execute("CREATE TABLE captures(capture_id INTEGER, capture_label TEXT, client_build TEXT)")
+    con.execute("INSERT INTO identity_snapshots VALUES('client:2022','30120222_1')")
+    con.execute("INSERT INTO captures VALUES(17,'Ancient Vows retail','30120222_1')")
+
+    links=provider_relationships(con,"catalog:captures:17")
+    build_links=[row for row in links if row.get("relationship")=="CAPTURE_CLIENT_BUILD"]
+    assert len(build_links)==1,build_links
+    assert build_links[0]["target_node"]=="catalog:identity_snapshots:client:2022",build_links
+    assert build_links[0]["target_type"]=="CLIENT_SNAPSHOT",build_links
+    assert build_links[0]["provider_native"] is True,build_links
+
+    # A build string shared by more than one client snapshot is not a unique identity bridge.
+    con.execute("INSERT INTO identity_snapshots VALUES('client:2022-copy','30120222_1')")
+    ambiguous=provider_relationships(con,"catalog:captures:17")
+    assert not [row for row in ambiguous if row.get("relationship")=="CAPTURE_CLIENT_BUILD"],ambiguous
+    con.close()
+
+
 def main():
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
@@ -143,6 +164,7 @@ def main():
         source.close()
 
     _assert_wiki_mapping_target_closure()
+    _assert_capture_client_build_closure()
     test_generic_nm_trace_reaches_drop_rows_and_items()
     test_drop_row_composite_identity_is_stable_and_navigable()
     print("server catalog canonical identity sync + Feature Trace closure self-test: PASS")
