@@ -1,7 +1,7 @@
 # Character Editor closeout
 
 Status: **mature guarded administration surface**  
-Last reconciled: **2026-10-03**
+Last reconciled: **2026-10-04**
 
 The Character Editor now supports DSP / Topaz / LandSandBoat through named server environments and lineage-aware schema/codec adapters. It is no longer a single-schema prototype.
 
@@ -81,7 +81,7 @@ Raw rows remain available below the semantic presentation for evidence/debugging
 
 Verified persistent `char_flags` / `char_history` administrative fields are available only under explicit LSB allowlists. They are not generalized to DSP/Topaz without equivalent schema evidence.
 
-## Mission / quest State Surface integration
+## Mission / quest State Surface and progression inspector
 
 Character Editor integrates Feature Trace's read-only State Surface analysis for mission/quest progression.
 
@@ -96,9 +96,17 @@ For a selected mission/quest it can show source-evidenced references to:
 - gil/fame,
 - relevant hooks and source lines.
 
-Current character state is overlaid where the storage semantics are known. Literal charvar guards can be evaluated and surfaced as matching/mismatching. State Surface remains evidence-first: static source references do not prove runtime ordering or helper-generated dynamic state.
+Current character state is overlaid where the storage semantics are known. Literal guards can be evaluated and surfaced as matching/mismatching. State Surface remains evidence-first: static source references do not prove runtime ordering or helper-generated dynamic state.
 
-Trace actions can hand off to existing Key Items, Variables, Inventory, and Unlocks editors. Expensive source scanning is opt-in rather than part of normal tab load.
+The progression inspector now groups normalized behavior into transition bundles containing the modeled trigger/event, persisted preconditions, runtime-only requirements, state changes, rewards, removals/consumption, completion, next activation/transport, timers, and source evidence. Persisted blockers are kept distinct from runtime requirements so a trade payload, zone context, or other live condition is not misreported as corrupt database state.
+
+For direct modeled effects, the inspector also exposes a conservative read-only result preview. Known before-values are shown only when character evidence resolves them; unknown values remain unknown. The preview never performs a write or claims that runtime side effects have occurred.
+
+A concise assessment summarizes the current state as **Ready**, **Waiting on runtime input**, **Blocked by persisted state**, **Inconsistent**, **Completed**, **No modeled next action**, or **Unavailable** where evidence supports that classification. Known persisted correction targets can hand off to the existing guarded Character Editor tabs.
+
+Modern LSB and legacy DSP/Topaz progression fixtures cover these bundle/result/assessment semantics, including legacy event-finish chains, completed prerequisites, and trade-gated runtime requirements.
+
+Trace actions can hand off to existing Key Items, Variables, Inventory, and Unlocks editors. Expensive source scanning remains opt-in rather than part of normal tab load.
 
 ## Safety model
 
@@ -130,7 +138,8 @@ The following remain observation/diagnostic surfaces until runtime ownership and
 - recast timers,
 - pet IDs and pet relationship/runtime BLOB state,
 - LSB disconnecting/runtime session state,
-- unknown or fork-specific fields not on an explicit edit allowlist.
+- unknown or fork-specific fields not on an explicit edit allowlist,
+- progression transition/result previews and assessments.
 
 These are not generic unfinished editors. The server/game may own or rewrite this state while running.
 
@@ -147,6 +156,6 @@ Character inventory uses the shared client item DAT cache for names/icons where 
 
 ## Regression baseline
 
-Character Editor changes have a dedicated CI workflow in addition to Workbench regression. Coverage includes backend services, transaction safety, codecs, route registration, environment/profile integration, GUI assets, semantic catalogs, State Surface integration, and executable regression scripts.
+Character Editor changes have a dedicated CI workflow in addition to Workbench regression. Coverage includes backend services, transaction safety, codecs, route registration, environment/profile integration, GUI assets, semantic catalogs, State Surface integration, transition bundles/result previews/assessment, legacy DSP/Topaz compatibility, and executable regression scripts.
 
 Future Character Editor mutation work should require new evidence for target-field semantics, a lineage/schema contract, offline/stale-state guards, audit coverage, and focused regression vectors before it is advertised as writable.
