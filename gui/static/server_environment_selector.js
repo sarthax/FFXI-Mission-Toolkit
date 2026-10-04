@@ -395,3 +395,79 @@
 
   window.addEventListener('DOMContentLoaded', installShellNavigation, {once: true});
 })();
+
+// Feature Trace modes are injected here because this script is already loaded by the shared shell.
+// The server route remains unchanged: the canonical Feature Trace facade consumes @mode prefixes.
+(() => {
+  const MODES = [
+    ['implementation', 'How is this implemented?'],
+    ['triggers', 'What triggers this?'],
+    ['effects', 'What does this change?'],
+    ['dependencies', 'What depends on this?'],
+    ['mission', 'Mission progression'],
+    ['runtime', 'Runtime evidence'],
+    ['identity', 'Client ↔ server identity'],
+    ['diagnose', 'Why is this broken?'],
+    ['all', 'Everything recorded'],
+  ];
+  const MODE_IDS = new Set(MODES.map(([id]) => id));
+
+  function parseQuery(value) {
+    const text = String(value || '').trim();
+    const match = text.match(/^@([a-z][a-z0-9_-]*)\s+([\s\S]+)$/i);
+    if (!match) return {mode: 'implementation', query: text};
+    const mode = match[1].toLowerCase().replaceAll('-', '_');
+    return MODE_IDS.has(mode) ? {mode, query: match[2].trim()} : {mode: 'implementation', query: text};
+  }
+
+  function installFeatureTraceModes() {
+    if (location.pathname !== '/features/trace' || document.getElementById('featureTraceMode')) return;
+    const form = document.querySelector('#featureTraceTop form[action="/features/trace"]');
+    const input = form?.querySelector('input[name="q"]');
+    if (!form || !input) return;
+
+    const parsed = parseQuery(input.value);
+    input.value = parsed.query;
+    input.placeholder = 'Feature, entity, mission, item, event, ID, or source name';
+
+    const select = document.createElement('select');
+    select.id = 'featureTraceMode';
+    select.setAttribute('aria-label', 'Trace mode');
+    select.title = 'Choose the question Feature Trace should answer; this narrows unrelated relationships.';
+    select.innerHTML = MODES.map(([id, label]) => `<option value="${id}">${label}</option>`).join('');
+    select.value = parsed.mode;
+    input.insertAdjacentElement('afterend', select);
+
+    const hint = document.createElement('span');
+    hint.id = 'featureTraceModeHint';
+    hint.className = 'chip';
+    hint.style.whiteSpace = 'nowrap';
+    const refreshHint = () => {
+      const label = MODES.find(([id]) => id === select.value)?.[1] || select.value;
+      hint.textContent = label;
+      hint.title = select.value === 'all'
+        ? 'Unfiltered recorded evidence; use a focused mode when the graph is noisy.'
+        : 'Focused trace: unrelated relationship families are suppressed.';
+    };
+    refreshHint();
+    select.addEventListener('change', refreshHint);
+    select.insertAdjacentElement('afterend', hint);
+
+    form.addEventListener('submit', () => {
+      const query = input.value.trim();
+      if (!query) return;
+      input.value = `@${select.value} ${query}`;
+    });
+
+    const about = document.querySelector('#featureTraceTop details .muted');
+    if (about) {
+      about.insertAdjacentHTML('beforeend', '<br><strong>Trace modes</strong> narrow the graph to the question you are asking. Generated provider relationships remain read-only evidence and are not silently written into the canonical graph.');
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', installFeatureTraceModes, {once: true});
+  } else {
+    installFeatureTraceModes();
+  }
+})();
