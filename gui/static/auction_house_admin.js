@@ -66,7 +66,7 @@
         <button type="button" class="ah-item" data-item-id="${row.item_id}">
           <img src="/auction-house/items/${row.item_id}/icon.png" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
           <span><strong>${esc(row.name)}</strong><small>ID ${row.item_id} · ${esc(row.category_path || `AH ${row.category_id}`)} · stack ${row.stack_size}</small></span>
-          <span class="ah-count"><strong>${fmt.format(row.active_listings)}</strong> listed<br>${row.average_sale_price == null ? 'no sales' : money(row.average_sale_price)}</span>
+          <span class="ah-count"><strong>${fmt.format(row.active_listings)}</strong> listed<br>${row.historical_sales ? `${fmt.format(row.historical_sales)} recorded sales` : 'no recorded sales'}</span>
         </button>`).join('');
       box.querySelectorAll('[data-item-id]').forEach(button => button.addEventListener('click', () => loadDetail(Number(button.dataset.itemId))));
     } catch (error) {
