@@ -120,6 +120,25 @@ def test_legacy_fallback_environment_is_never_write_ready():
         schema_triggers=set(),
     )
     assert any(issue.code == "legacy_environment_unclassified" for issue in plan.issues)
+    assert any(issue.code == "adapter_semantics_unverified" for issue in plan.issues)
+    assert plan.contract_ready is False
+    assert plan.executable is False
+
+
+def test_named_dsp_topaz_environment_stays_blocked_until_semantics_are_verified():
+    identity = _env("test", "Topaz Test")
+    identity["family"] = "topaz"
+    plan = build_list_write_plan(
+        adapter_family="legacy-dsp-topaz-compatible",
+        environment=identity,
+        preview=_list_preview(),
+        schema_tables={"auction_house", "item_basic", "chars"},
+        schema_triggers=set(),
+    )
+    issue = next(issue for issue in plan.issues if issue.code == "adapter_semantics_unverified")
+    assert "DSP/Topaz" in issue.message
+    assert plan.contract_ready is False
+    assert plan.executor_enabled is False
     assert plan.executable is False
 
 
