@@ -18,6 +18,7 @@ import datetime
 import json
 import os
 import re
+import shutil
 import sqlite3
 import struct
 
@@ -29,6 +30,9 @@ DDL = """CREATE TABLE IF NOT EXISTS review_queue (
     resolution TEXT, note TEXT, created_at TEXT, reviewed_at TEXT, UNIQUE(kind, source_path, key))"""
 
 # status: pending | resolved | dismissed | auto_resolved
+# Failed/partial ingests: a copy of the source archive is kept here for manual inspection (files only; folders stay in place).
+COPY_DIR = os.environ.get("CAPTURE_REVIEW_COPY_DIR", "D:/Claude/review_quarantine")
+MAX_COPY_BYTES = 4 * 1024 ** 3
 _SKIP_TABLES = {"captures", "capture_tags", "capture_post_meta", "capture_msgid_shift", "msgid_shift_obs", "review_queue"}
 
 
@@ -221,6 +225,82 @@ KINDS = {
 }
 
 
+KINDS["ingest_failed"] = {
+    "label": "Ingest failed", "blocking": True, "detect": None, "decide": _decide_noop, "after": None,
+    "actions": [("resolve", "Mark fixed"), ("dismiss", "Ignore")], "value": None, "needs_note": True,
+    "help": "The source could not be ingested. A copy of the archive is in the review folder for manual inspection; fix the parser/source and re-ingest (this clears itself), or dismiss with a note."}
+KINDS["file_error"] = {
+    "label": "File failed to parse", "blocking": True, "detect": None, "decide": _decide_noop, "after": None,
+    "actions": [("resolve", "Mark fixed"), ("dismiss", "Ignore")], "value": None, "needs_note": True,
+    "help": "A recognized log file threw while parsing, so its data is missing from this capture."}
+KINDS["unrecognized_file"] = {
+    "label": "Unrecognized file", "blocking": False, "detect": None, "decide": _decide_noop, "after": None,
+    "actions": [("resolve", "Reviewed"), ("dismiss", "Ignore")], "value": None,
+    "help": "Files in the bundle matched no known capture format and were not ingested (a known gap or a new format)."}
+
+
+# ---------------------------------------------------------------- event-driven kinds (raised by ingest, no detector)
+EVENT_KINDS = ("ingest_failed", "file_error", "unrecognized_file")
+
+
+def copy_for_review(path):
+    """Copy a failed archive into COPY_DIR so it can be opened by hand. -> {copy_path, copy_note}. Never raises."""
+    try:
+        p = os.path.abspath(str(path))
+        if not os.path.exists(p):
+            return {"copy_path": None, "copy_note": "source no longer exists at %s" % p}
+        if os.path.isdir(p):
+            return {"copy_path": None, "copy_note": "source is a folder; original left in place"}
+        size = os.path.getsize(p)
+        if size > MAX_COPY_BYTES:
+            return {"copy_path": None, "copy_note": "source is %.1f GB (> %.0f GB limit); original left in place" % (size / 1e9, MAX_COPY_BYTES / 1e9)}
+        os.makedirs(COPY_DIR, exist_ok=True)
+        dest = os.path.join(COPY_DIR, datetime.datetime.now().strftime("%Y%m%d-%H%M%S_") + os.path.basename(p))
+        shutil.copy2(p, dest)
+        return {"copy_path": dest, "copy_note": "copied %.1f MB" % (size / 1e6)}
+    except Exception as ex:
+        return {"copy_path": None, "copy_note": "copy failed: %r" % (ex,)}
+
+
+def _reopen_event(con, source_path):
+    """A new ingest attempt supersedes earlier event-driven items for this source (kept as auto_resolved)."""
+    ensure(con)
+    con.execute("UPDATE review_queue SET status='auto_resolved', reviewed_at=? WHERE source_path=? AND status='pending' AND kind IN (%s)"
+                % ",".join("?" * len(EVENT_KINDS)), [_now(), source_path] + list(EVENT_KINDS))
+    con.commit()
+
+
+def report_ingest_failure(con, source_path, path, error, capture_id=None, content_type=None, subroot=None):
+    """Ingest of this source threw. Records the error, the ingest parameters (so it can be retried) and a copy of
+    the archive. Any half-written capture row stays but is quarantined by this blocking item."""
+    _reopen_event(con, source_path)
+    detail = {"reason": "ingest failed -- nothing (or only part) of this source reached the database",
+              "error": "%s: %s" % (type(error).__name__, error), "path": str(path),
+              "content_type": content_type, "subroot": subroot}
+    detail.update(copy_for_review(path))
+    raise_item(con, "ingest_failed", source_path, capture_id, "", detail)
+
+
+_BENIGN = ("manifest.txt", "thumbs.db", "desktop.ini", ".ds_store")
+
+
+def report_file_results(con, source_path, capture_id, file_results):
+    """Per-file outcome of an ingest. Files that matched a known format but threw -> blocking `file_error`
+    (data is missing); files matching no known format -> non-blocking `unrecognized_file` (visible, listed)."""
+    _reopen_event(con, source_path)
+    errs = [{"filename": f["filename"], "error": f["error"]} for f in file_results
+            if f.get("error") and not f["error"].startswith("not a recognized capture-log format")]
+    unrec = [{"filename": f["filename"], "error": f["error"]} for f in file_results
+             if f.get("error") and f["error"].startswith("not a recognized capture-log format")
+             and f["filename"].rsplit("/", 1)[-1].lower() not in _BENIGN]
+    if errs:
+        raise_item(con, "file_error", source_path, capture_id, "",
+                   {"reason": "%d recognized file(s) failed to parse; their data is missing" % len(errs), "files": errs})
+    if unrec:
+        raise_item(con, "unrecognized_file", source_path, capture_id, "",
+                   {"reason": "%d file(s) matched no known capture format and were not ingested" % len(unrec), "files": unrec})
+
+
 def decide(con, review_id, action, value=None, note=None):
     """action: 'resolve' | 'dismiss'. Returns the item. Raises ValueError on invalid input (nothing saved)."""
     ensure(con)
@@ -233,8 +313,8 @@ def decide(con, review_id, action, value=None, note=None):
         raise ValueError("unknown kind %r" % row["kind"])
     if action not in dict(h["actions"]):
         raise ValueError("%s does not support %r" % (row["kind"], action))
-    if action == "dismiss" and row["kind"] == "empty_ingest" and not (note or "").strip():
-        raise ValueError("dismissing an empty ingest needs a note saying why")
+    if action == "dismiss" and (row["kind"] == "empty_ingest" or h.get("needs_note")) and not (note or "").strip():
+        raise ValueError("dismissing needs a note saying why")
     resolution = h["decide"](con, row, action, value)
     con.execute("UPDATE review_queue SET status=?, resolution=?, note=?, reviewed_at=? WHERE review_id=?",
                 ("resolved" if action == "resolve" else "dismissed", resolution, note, _now(), review_id))
@@ -252,6 +332,8 @@ def scan_capture(con, capture_id):
     if src is None:
         return []
     for kind, h in KINDS.items():
+        if h["detect"] is None:      # event-driven kinds are raised by ingest, never closed by a scan
+            continue
         try:
             live = h["detect"](con, capture_id)
             for key, detail in live.items():

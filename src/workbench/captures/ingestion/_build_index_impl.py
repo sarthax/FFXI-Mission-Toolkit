@@ -2920,9 +2920,13 @@ def ingest(con, path_str: str, content_type: str = "instances", subroot: str | N
     path = Path(path_str)
     if not path.exists():
         raise SystemExit(f"not found: {path}")
-    src = Source(path)
+    source_path = f"{path}::{subroot}" if subroot else str(path)
     try:
-        source_path = f"{path}::{subroot}" if subroot else str(path)
+        src = Source(path)
+    except Exception as _ex:      # unreadable/corrupt archive: nothing parsed -- put it in the exception queue
+        _report_ingest_failure(con, source_path, path, _ex, content_type, subroot)
+        raise
+    try:
         existing = con.execute("SELECT capture_id FROM captures WHERE source_path=?",
                                 (source_path,)).fetchone()
         if existing:
@@ -2966,7 +2970,8 @@ def ingest(con, path_str: str, content_type: str = "instances", subroot: str | N
              meta.get("start_time")))
         capture_id = cur.lastrowid
 
-        counts = ingest_from_source(con, capture_id, src, subroot=subroot)
+        file_results: list[dict] = []
+        counts = ingest_from_source(con, capture_id, src, subroot=subroot, file_results=file_results)
         recompute_zones(con, capture_id)
         try:
             from workbench.captures import msgid_shift as _ms
@@ -2976,6 +2981,7 @@ def ingest(con, path_str: str, content_type: str = "instances", subroot: str | N
             print(f"  [shift check skipped: {_ex}]")
         try:
             from workbench.captures import review_queue as _rq
+            _rq.report_file_results(con, source_path, capture_id, file_results)   # per-file parse errors / unrecognized files
             _rq.scan_capture(con, capture_id)   # exception queue: empty ingest / unlinked post / unresolved zones
         except Exception as _ex:
             print(f"  [review scan skipped: {_ex}]")
@@ -2989,8 +2995,26 @@ def ingest(con, path_str: str, content_type: str = "instances", subroot: str | N
               f"content_type={content_type} zones={zones} mission={mission_name!r} "
               f"(capturer={capturer}, build={meta.get('client_build', '?')!r})")
         return capture_id
+    except Exception as _ex:
+        try:
+            con.rollback()
+        except Exception:
+            pass
+        _report_ingest_failure(con, source_path, path, _ex, content_type, subroot)
+        raise
     finally:
         src.close()
+
+
+def _report_ingest_failure(con, source_path, path, ex, content_type, subroot):
+    """Ingest threw: record it in the exception queue (with a copy of the archive for manual review).
+    Never raises -- the caller re-raises the original error."""
+    try:
+        from workbench.captures import review_queue as _rq
+        row = con.execute("SELECT capture_id FROM captures WHERE source_path=?", (source_path,)).fetchone()
+        _rq.report_ingest_failure(con, source_path, path, ex, row[0] if row else None, content_type, subroot)
+    except Exception as _e2:
+        print(f"  [could not queue ingest failure for {source_path}: {_e2}]")
 
 
 def ingest_from_source(con, capture_id, src: "Source", subroot: str | None = None,

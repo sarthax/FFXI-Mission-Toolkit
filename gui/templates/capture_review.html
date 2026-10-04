@@ -27,6 +27,10 @@
   <td>{% if r.capture_id %}<a href="/captures/{{r.capture_id}}">{{r.capture_id}}</a><div class="muted">{{r.capture_label}}</div>{% else %}<div class="muted">{{r.source_path}}</div>{% endif %}</td>
   <td>{{ r.detail.reason or '' }}
     {% if r.detail.capture_zones is defined %}<div class="muted">zones in capture: {{ r.detail.capture_zones|join(', ') or '—' }}</div><div class="muted">name hint (not applied): {{ r.detail.name_hint|join(', ') or '—' }}</div>{% endif %}
+    {% if r.detail.error %}<div class="muted"><b>error:</b> <code>{{ r.detail.error }}</code></div>{% endif %}
+    {% if r.detail.path %}<div class="muted">source: <code>{{ r.detail.path }}</code></div>{% endif %}
+    {% if r.detail.copy_path %}<div class="muted">review copy: <code>{{ r.detail.copy_path }}</code></div>{% elif r.detail.copy_note %}<div class="muted">review copy: {{ r.detail.copy_note }}</div>{% endif %}
+    {% if r.detail.files %}<ul class="muted">{% for f in r.detail.files %}<li><code>{{ f.filename }}</code> — {{ f.error }}</li>{% endfor %}</ul>{% endif %}
     {% if r.detail.candidates is defined %}<div class="muted">closest: {{ r.detail.candidates[:3]|join(' · ') }}</div>{% endif %}
   </td>
   <td>{{ r.status|replace('_',' ') }}{% if r.resolution %}<div><strong>{{ r.resolution }}</strong></div>{% endif %}{% if r.note %}<div class="muted">{{ r.note }}</div>{% endif %}</td>
