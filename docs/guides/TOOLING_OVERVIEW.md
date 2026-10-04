@@ -1,7 +1,7 @@
 # Mission Toolkit / Workbench tooling overview
 
 Status: living reference  
-Last reconciled: **2026-10-03**
+Last reconciled: **2026-10-04**
 
 This file describes the current major tool families in the consolidated `FFXI-Mission-Toolkit` repository. Older documentation may still refer to historical standalone checkouts such as `FFXI-Tools`; those tools have largely been consolidated under this repository, commonly under `vendor/`, `src/workbench/`, or compatibility entry points at the repository root.
 
@@ -67,11 +67,26 @@ It indexes and links evidence from:
 - captures,
 - research findings,
 - validation,
-- package/migration records.
+- package/migration records,
+- reference-wiki claims/alignment evidence.
 
 Implementation Path exposes source-native wiring and bounded drill-down without inventing graph relationships. Entity identity bridging is fail-closed when IDs/names are ambiguous.
 
+Focused modes answer implementation, triggers, effects, dependencies, mission progression, runtime, identity, diagnosis, or all-evidence questions without requiring one undifferentiated graph.
+
+Provider-native server traversal now covers deterministic relationships including item-detail → base item, spawn → mob group, mob group → pool, pet → pool, supported Blue Magic wiring, instance membership/entity links, and exact wiki claim-alignment paths.
+
+The reconciled drop-chain work adds:
+
+- complete-row read-only identity for `mob_droplist` rows where upstream schemas provide no stable primary key,
+- `mob_groups.dropid → mob_droplist`,
+- `mob_droplist.itemId → item_basic`,
+- end-to-end **spawn → group → pool / drop rows → item** navigation,
+- executable scenario benchmarks proving the chain without synthetic canonical graph edges.
+
 Mission/quest State Surface extraction is also provided here and reused by Character Editor.
+
+Detailed workflow/evidence contract: `docs/workbench/BEHAVIOR_FEATURE_TRACE_GUIDE.md`.
 
 ## Behavior Inspector
 
@@ -80,9 +95,16 @@ Behavior Inspector analyzes Lua-backed behavior for NPCs, mobs, doors/objects, z
 Current UI modes:
 
 - **Plain Behavior** — default; groups evidence as Trigger → Requirements → Actions / Events → Results / State Changes using end-user language.
-- **Technical Graph** — full causal graph with pan/zoom, fit/reset, selected-path highlighting, and technical node identities.
+- **Technical Graph** — full causal/evidence graph with pan/zoom, fit/reset, selected-path highlighting, and technical node identities.
 
-The right-side inspector remains available in both workflows for exact source/evidence drill-down.
+Plain Behavior now comes from one backend-generated evidence-preserving projection contract rather than a separate browser interpretation. Internal rule/helper plumbing is collapsed while guards, helper identity/inputs/effects, state, targets, source locations, and exact technical node IDs remain available for drill-down.
+
+Timer, queue, and listener callbacks are partitioned so the parent shows scheduling/registration and the callback owns its downstream behavior. Duplicate callback-body observations may be suppressed in Plain View using proven source spans while remaining intact in Technical Graph.
+
+The right-side inspector remains available for exact source/evidence drill-down. Unsupported dynamic semantics remain raw/unknown rather than guessed.
+
+Detailed closeout contract: `docs/workbench/BEHAVIOR_INSPECTOR_CLOSEOUT.md`.
+Combined Feature Trace workflow: `docs/workbench/BEHAVIOR_FEATURE_TRACE_GUIDE.md`.
 
 ## Entity Profile / Dossier
 
@@ -90,7 +112,7 @@ Entity research combines:
 
 - SQL wiring,
 - Lua behavior,
-- instance/group/pool relationships,
+- instance/group/pool/drop relationships,
 - client identity,
 - capture observations,
 - events/CSIDs,
@@ -313,10 +335,11 @@ Some remain useful compatibility/research entry points, while others have been a
 For most research/admin questions:
 
 1. Start in **Feature Trace**, **Entity Profile**, **Behavior Inspector**, or the relevant **Server/Client/Capture** workspace.
-2. Use exact server/client/capture evidence before external reference sources.
-3. Use named Server Environments for administered targets rather than hard-coded lineage paths.
-4. Drill into source/native evidence using the technical views only when the simplified view is insufficient.
-5. Keep ambiguous mappings unresolved until another evidence source proves them.
-6. Use package/apply/editor workflows only after preview/validation and with the relevant backup/audit safety path enabled.
+2. Use Feature Trace for cross-source breadth and identity/wiring; use Behavior Inspector for source-proven Lua behavior.
+3. Use exact server/client/capture evidence before external reference sources.
+4. Use named Server Environments for administered targets rather than hard-coded lineage paths.
+5. Drill into Technical Graph or specialized source views when the simplified view is insufficient.
+6. Keep ambiguous mappings unresolved until another evidence source proves them.
+7. Use package/apply/editor workflows only after preview/validation and with the relevant backup/audit safety path enabled.
 
 For current capability status, see `docs/workbench/ROADMAP_CURRENT.md` rather than historical per-session inventories.
