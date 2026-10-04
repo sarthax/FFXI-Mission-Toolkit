@@ -88,9 +88,39 @@ def main():
     assert "99" not in values, row102
     assert all(write["state_id"] == row102["state_id"] for write in row102["handler_writes"]), row102
 
+    links = result["stage_chain_links"]
+    assert len(links) == 1, links
+    link = links[0]
+    assert link["state_id"] == "state:PLAYER_CHAR:player:MissionStage", link
+    assert link["from_value"] == "0", link
+    assert link["via_event_id"] == 101, link
+    assert link["next_value"] == "1", link
+    assert link["next_event_id"] == 102, link
+    assert link["relationship"] == "SAME_STATE_LITERAL_CONTINUITY", link
+    assert link["ordering"] == "UNPROVEN", link
+
     assert result["summary"]["stage_lifecycle_count"] == 2, result["summary"]
+    assert result["summary"]["stage_chain_link_count"] == 1, result["summary"]
     assert result["safety"]["stage_lifecycle_cross_hook_ordering"] == "UNPROVEN", result["safety"]
+    assert result["safety"]["stage_chain_ordering"] == "UNPROVEN", result["safety"]
     assert "direct same-state write" in result["safety"]["stage_lifecycle_scope"], result["safety"]
+    assert "unique direct next-state literal" in result["safety"]["stage_chain_scope"], result["safety"]
+
+    ambiguous = {
+        "source_branch_evidence": [
+            {"hook": "onTrigger", "state_id": "state:PLAYER_CHAR:player:MissionStage", "state_name": "MissionStage", "literal": "1", "event_id": 102},
+            {"hook": "onTrigger", "state_id": "state:PLAYER_CHAR:player:MissionStage", "state_name": "MissionStage", "literal": "1", "event_id": 202},
+        ],
+        "event_handoffs": [
+            {"event_id": 102, "ordering": "UNPROVEN", "handler_branches": []},
+            {"event_id": 202, "ordering": "UNPROVEN", "handler_branches": []},
+        ],
+        "summary": {},
+        "safety": {},
+    }
+    ambiguous_script = SCRIPT.replace("player:startEvent(101)", "player:startEvent(202)")
+    ambiguous_result = apply_stage_transition_evidence(ambiguous, ambiguous_script)
+    assert ambiguous_result["stage_chain_links"] == [], ambiguous_result["stage_chain_links"]
 
     print("Behavior Inspector stage transition projection regression: PASS")
 
