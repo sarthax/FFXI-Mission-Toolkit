@@ -20,6 +20,7 @@ from .factory import open_auction_house
 from .health import economy_health
 from .lineage_semantics import evaluate_lineage_semantics
 from .policy_binding import preview_policy_binding
+from .validation_report import run_legacy_preview_validation
 from .write_probe import probe_write_readiness
 
 router = APIRouter(prefix="/auction-house", tags=["Auction House Administration"])
@@ -55,9 +56,10 @@ def _error(exc: Exception, status: int = 503) -> HTTPException:
 
 
 def _preview_payload_with_policy(preview) -> dict:
-    """Attach active DSP/Topaz AH policy provenance to a preview without enabling writes."""
+    """Attach active DSP/Topaz AH policy/environment provenance without enabling writes."""
     payload = preview.as_dict()
     identity = get_active_server_identity()
+    payload["environment"] = identity
     family = str(identity.get("family") or "").strip().lower()
     root = get_active_server_root()
     if root is not None and family in {"dsp", "topaz"}:
@@ -285,6 +287,31 @@ def preview_admin_purchase(payload: dict = Body(...)):
                 buyer=buyer,
             )
             return JSONResponse(_preview_payload_with_policy(preview))
+    except (TypeError, ValueError) as exc:
+        raise _error(exc, 400)
+    except Exception as exc:
+        raise _error(exc)
+
+
+@router.post("/admin/validate/preview.json")
+def validate_admin_preview(payload: dict = Body(...)):
+    """Run every DSP/Topaz preview safety gate using SELECT/read-only database work only."""
+    try:
+        preview = dict(payload.get("preview") or payload)
+        if not preview.get("action"):
+            raise ValueError("A complete Auction House preview payload is required")
+        root = get_active_server_root()
+        if root is None:
+            raise RuntimeError("No active DSP/Topaz server environment is configured")
+        environment = get_active_server_identity()
+        with _context() as ctx:
+            report = run_legacy_preview_validation(
+                service=ctx.service,
+                environment=environment,
+                preview=preview,
+                server_root=root,
+            )
+            return JSONResponse(report)
     except (TypeError, ValueError) as exc:
         raise _error(exc, 400)
     except Exception as exc:
