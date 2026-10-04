@@ -13,7 +13,7 @@ on:
       - "gui/static/server_environment_selector.js"
       - "gui/static/auction_house_admin.js"
       - "test_fixtures/test_character_editor_*.py"
-      - "test_fixtures/test_auction_house_readonly.py"
+      - "test_fixtures/test_auction_house_*.py"
       - "test_fixtures/test_server_profiles.py"
       - "test_fixtures/test_server_environment_integration.py"
       - "test_fixtures/test_root_settings_server_profiles.py"
@@ -45,7 +45,7 @@ jobs:
         run: |
           python -m pytest -q \
             test_fixtures/test_character_editor_*.py \
-            test_fixtures/test_auction_house_readonly.py \
+            test_fixtures/test_auction_house_*.py \
             test_fixtures/test_server_profiles.py \
             test_fixtures/test_server_environment_integration.py \
             test_fixtures/test_root_settings_server_profiles.py
