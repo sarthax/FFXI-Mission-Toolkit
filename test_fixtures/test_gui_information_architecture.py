@@ -12,6 +12,7 @@ from workbench.gui_shell import WORKSPACES, build_shell_context
 ROOT=Path(__file__).resolve().parents[1]
 GUI=ROOT/"gui_server.py"
 ROUTE_MAP=ROOT/"docs"/"workbench"/"GUI_ROUTE_MAP.json"
+AUX_ROUTE_MAP=ROOT/"docs"/"workbench"/"GUI_ROUTE_MAP_AUXILIARY.json"
 TEMPLATES=ROOT/"gui"/"templates"
 
 
@@ -26,19 +27,21 @@ def main():
         )
     ]
     payload=json.loads(ROUTE_MAP.read_text(encoding="utf-8"))
-    mapped=[(row["method"],row["path"]) for row in payload["routes"]]
+    auxiliary=json.loads(AUX_ROUTE_MAP.read_text(encoding="utf-8"))
+    rows=[*payload["routes"],*auxiliary["routes"]]
+    mapped=[(row["method"],row["path"]) for row in rows]
+    missing=sorted(set(registered)-set(mapped))
+    stale=sorted(set(mapped)-set(registered))
 
-    assert payload["route_count"]==len(registered),payload["route_count"]
+    assert not missing and not stale,{"missing_from_map":missing,"stale_in_map":stale}
+    documented_count=payload["route_count"]+auxiliary["route_count"]
+    assert documented_count==len(registered),{"documented":documented_count,"registered":len(registered)}
     assert len(registered)>0,len(registered)
     assert len(mapped)==len(registered),len(mapped)
     assert len(set(mapped))==len(mapped),"duplicate method/path mapping"
-    assert set(registered)==set(mapped),{
-        "missing_from_map":sorted(set(registered)-set(mapped)),
-        "stale_in_map":sorted(set(mapped)-set(registered)),
-    }
-    assert all(row.get("home") for row in payload["routes"]),"empty canonical home"
-    assert all(row.get("section") for row in payload["routes"]),"empty section"
-    assert all(row.get("disposition") in {"KEEP","REWORK","MERGE","LEGACY"} for row in payload["routes"])
+    assert all(row.get("home") for row in rows),"empty canonical home"
+    assert all(row.get("section") for row in rows),"empty section"
+    assert all(row.get("disposition") in {"KEEP","REWORK","MERGE","LEGACY"} for row in rows)
 
     # Features must remain generic; Assault mission coverage belongs to the Assault domain.
     features=next(workspace for workspace in WORKSPACES if workspace["name"]=="Features")

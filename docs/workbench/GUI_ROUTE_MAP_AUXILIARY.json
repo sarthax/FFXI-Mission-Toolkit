@@ -1,0 +1,127 @@
+{
+  "schema": 1,
+  "source": "gui_server.py",
+  "route_count": 15,
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/captures/bulk-ingest",
+      "home": "Captures",
+      "section": "Import",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/bulk-ingest/browse",
+      "home": "Captures",
+      "section": "Import",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/bulk-ingest/job/{job_id}",
+      "home": "Captures",
+      "section": "Import",
+      "role": "detail",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/captures/bulk-ingest/scan",
+      "home": "Captures",
+      "section": "Import",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/captures/bulk-ingest/run",
+      "home": "Captures",
+      "section": "Import",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/captures/bulk-ingest/job/{job_id}/cancel",
+      "home": "Captures",
+      "section": "Import",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/metadata-import",
+      "home": "Captures",
+      "section": "Import",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/captures/metadata-import",
+      "home": "Captures",
+      "section": "Import",
+      "role": "action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/metadata-template.csv",
+      "home": "Captures",
+      "section": "Import",
+      "role": "api/action",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/review",
+      "home": "Captures",
+      "section": "Review Queue",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/zone-review",
+      "home": "Captures",
+      "section": "Review Queue",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/captures/{capture_id}/review-flags",
+      "home": "Captures",
+      "section": "Review Queue",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/captures/review/{review_id}",
+      "home": "Captures",
+      "section": "Review Queue",
+      "role": "mutation",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/shift-master",
+      "home": "Captures",
+      "section": "Diagnostics",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "POST",
+      "path": "/shift-master/rebuild",
+      "home": "Captures",
+      "section": "Diagnostics",
+      "role": "action",
+      "disposition": "KEEP"
+    }
+  ]
+}
