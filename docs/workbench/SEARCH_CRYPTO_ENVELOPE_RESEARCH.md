@@ -157,7 +157,56 @@ The helper refuses mismatched wire/decrypted lengths or an inbound candidate tha
 5. decrypts the same aligned packet region;
 6. validates the post-decrypt MD5.
 
-A successful result is cryptographically verified, but **response payload semantics remain `unknown_opaque`**. This branch does not assign party/search/AH response schemas merely because the ciphertext can be validated.
+A successful result is cryptographically verified. Cryptographic validation by itself still assigns no response semantics; semantic promotion is a separate layer.
+
+## Validated non-AH server response semantics
+
+`search_response_decode.decode_validated_outbound()` structurally parses only responses whose outbound crypto result already passed the explicit predecessor-state, framing, decrypt, and post-decrypt MD5 gates. `search_response_evidence.decode_validated_outbound()` is the semantic trust gate layered above that structural parser.
+
+Current source-backed response families are:
+
+- `0x80` — search list. LSB writes `uint16 total_results` at `0x0E`, data size at `0x08`, and a size-prefixed packed entity stream beginning at `0x18`.
+- `0x88` — search comment. Current LSB fixes total wire length `204`, byte `0x08 = 154`, `0x0A = 0x80`, `0x0E = 1`, player ID at `0x18`, comment-length constant `124` at `0x1C`, comment region beginning at `0x1E`, and a zero terminator at `0x9A`.
+- `0x82` — shared party/linkshell list discriminator. The type alone is deliberately insufficient to choose a family.
+
+### Packed response entities
+
+The list decoders mirror the LSB packet constructors and `packBitsLE()` ordering. Each entity is preceded by its encoded byte count. Supported source-emitted fields are:
+
+- Name: 4-bit length + 7-bit characters;
+- Area: 10 bits;
+- Nation: 2 bits;
+- Job: main 5 bits + sub 5 bits;
+- Level: main 8 bits + sub 8 bits;
+- Race: 4 bits;
+- Rank: 8 bits;
+- Flags1: 16 bits;
+- Id: 20 bits;
+- LinkshellRank: three 8-bit ranks + three 32-bit linkshell IDs;
+- Unknown0E: preserved 32-bit raw value;
+- Comment: 32-bit search-comment type;
+- Flags2: 32 bits;
+- Language: 16 bits.
+
+Unknown packed entity types stop semantic decoding for that entity and preserve the raw remainder rather than guessing a width. Nonzero byte-alignment padding is retained as a diagnostic.
+
+### Shared `0x82` evidence policy
+
+Party and linkshell constructors both emit response type `0x82`, so the toolkit never labels an otherwise ambiguous packet from the discriminator alone.
+
+Strong promotion paths are:
+
+- an exact validated `GROUP_LIST` predecessor with nonzero party/alliance ID -> party list;
+- an exact validated `GROUP_LIST` predecessor with nonzero linkshell ID -> linkshell list;
+- without predecessor context, a fully decoded entity containing the source-unique `LinkshellRank` layout may structurally infer linkshell list.
+
+A well-formed `0x82` lacking either exact predecessor evidence or the unique linkshell structure remains `party_or_linkshell_list`. If exact predecessor fields and payload structure contradict each other, `search_response_evidence` downgrades the result to `ambiguous_conflicting_predecessor_and_payload_structure`, clears the family-dependent total-results interpretation, preserves both `uint8` and `uint16` observations at `0x0E`, and sets semantic promotion false.
+
+### Fixed-layout `0x88` evidence policy
+
+For search-comment responses, crypto validation is not enough. The semantic gate additionally requires all source-fixed constructor facts to match. A crypto-valid `0x88` with a wrong packet length, fixed size byte, final flag, count byte, comment-length constant, or terminator remains preserved but loses decoded semantic fields and is marked `crypto_validated_source_layout_mismatch`.
+
+Auction House response types remain deliberately opaque and are not decoded by this slice.
 
 ## Regression coverage
 
@@ -177,9 +226,15 @@ Synthetic coverage includes:
 - packed `SEARCH` and `SEARCH_ALL` filters spanning name/area/nation/job/level/race/rank/flags/comment/friend entries;
 - friend ID-tail extraction and count cap;
 - known-but-unhandled SearchType preservation;
-- declared query-block truncation failing closed.
+- declared query-block truncation failing closed;
+- validated `0x80` search-list entity decoding;
+- ambiguous and predecessor-resolved `0x82` party/linkshell handling;
+- source-unique `LinkshellRank` structural inference;
+- predecessor/payload conflict downgrade;
+- validated `0x88` search-comment decoding plus fixed-layout mismatch rejection;
+- unsupported crypto-valid response types remaining opaque.
 
-The CI-enumerated lobby/capture regression exercises the integrated search classification/decryption imports and normal flow path. Focused crypto/filter fixtures retain the positive protocol vectors.
+The CI-enumerated lobby/capture regression exercises the integrated search classification/decryption imports and normal flow path. Focused crypto/filter/response fixtures retain the positive protocol vectors.
 
 ## Current non-goals
 
@@ -187,12 +242,12 @@ This slice does not:
 
 - auto-pair outbound frames with predecessor requests by timestamps or heuristics;
 - infer or guess missing rolling state;
-- decode server response payload semantics;
 - invent widths or semantics for SearchType values current LSB itself leaves unhandled;
 - decode Auction House search/history request or response bodies;
-- promote request/response semantics when endpoint direction, framing, decryption, state, or MD5 validation fails;
+- decode unsupported/unknown search response families from resemblance alone;
+- promote request/response semantics when endpoint direction, framing, decryption, state, MD5, or source-layout evidence fails;
 - classify a search flow from framing alone without the independent verified lobby `cache_ip/cache_port` handoff.
 
 ## Next safe step
 
-The highest-value next input is a **real search/cache capture tied to a verified lobby handoff**. The toolkit can now validate inbound crypto and decode both fixed-field and packed search requests, while explicit predecessor state can validate outbound crypto. Automated session sequencing should wait for real capture evidence with frame-level ordering strong enough to associate responses with the correct inbound state without heuristics.
+The highest-value next input is a **real search/cache capture tied to a verified lobby handoff**. The toolkit can now validate inbound crypto, decode fixed/packed search requests, validate explicit outbound state, and decode supported non-AH response families without heuristic predecessor pairing. Automated session sequencing should wait for real capture evidence with frame-level ordering strong enough to associate responses with the correct inbound state without guessing.
