@@ -10,7 +10,7 @@ This layer sits above generic PCAP/PCAPNG parsing and bidirectional TCP reconstr
 |---|---|---|---|
 | Lobby / character service | `IXFF`, declared size, known command/layout, MD5, command direction | `ffxi_lobby`, verified only when all structural checks pass | Known lobby fields only; raw bytes retained |
 | Search / cache endpoint | Exact verified `ResponseNextLogin.cache_ip/cache_port` TCP handoff plus clear length/`IXFF` framing | `ffxi_search_endpoint`, structurally inferred at flow level | Raw/framed bytes always retained |
-| Search inbound request | Verified cache endpoint role + client->server direction + FFXI cipher decrypt + framing + post-decrypt MD5 | per-frame verified inbound evidence | Request type; fixed fields for `ID_LIST`, `GROUP_LIST`, `SEARCH_COMMENT` only |
+| Search inbound request | Verified cache endpoint role + client->server direction + FFXI cipher decrypt + framing + post-decrypt MD5 | per-frame verified inbound evidence | Fixed fields plus source-backed `SEARCH/SEARCH_ALL` packed filters |
 | Search outbound response | Explicit 24-byte state derived from the exact validated inbound predecessor + matching state seed + decrypt + framing + MD5 | cryptographically verified only when explicit predecessor state is supplied | Response payload remains opaque |
 | Map / game endpoint | Exact verified `ResponseNextLogin.server_ip/server_port` and UDP transport | `ffxi_map_endpoint`, structurally inferred from endpoint alone | Raw UDP payload retained |
 | Map initial login | Exact verified map endpoint as UDP destination plus valid client `0x000A` structure | verified map-handshake evidence | Handshake structure only; semantic fields remain opaque |
@@ -55,8 +55,15 @@ For metadata compatibility, flow-level search classification remains structurall
 - `ID_LIST (0x01)`: requested count at `0x10`, character IDs from `0x12`, with the 20-entry/data-length cap.
 - `GROUP_LIST (0x02)`: party/alliance/linkshell IDs at `0x10`, `0x14`, `0x18`, `0x1C`.
 - `SEARCH_COMMENT (0x08)`: player ID at `0x10`.
+- `SEARCH (0x03)` / `SEARCH_ALL (0x00)`: source-backed packed query grammar from `frame[0x11:]`, with query byte count at `0x10`.
 
-`SEARCH/SEARCH_ALL` bit-packed bodies remain opaque. Auction House request/history bodies remain deliberately opaque on this branch.
+For packed search requests, each entry retains exact bit start/end offsets, 5-bit `SearchType`, ordinary sort/present control bits where current LSB consumes them, decoded width/value where current LSB assigns one, and an explicit status.
+
+Current decoded packed fields are Name, Area, Nation, Job, Level range, Race, Flags1, Rank range, Comment, Linkshell/Linkshell2 ID, Friend marker, and Flags2. Friend searches additionally decode the source-defined post-query `uint16` count plus `uint32` character-ID tail, capped to 200 and available complete IDs.
+
+SearchType enum members that current LSB defines but leaves to `_HandleSearchRequest()`'s default branch (`Id`, `Party`, `LinkshellRank`, `Unknown0E`, `Language`) remain named but semantically unassigned. Unknown numeric types remain numeric/unknown. The toolkit does not guess missing widths for either category.
+
+Auction House request/history bodies remain deliberately opaque on this branch.
 
 ### Explicit search outbound state
 
@@ -116,6 +123,8 @@ Synthetic coverage includes:
 - reverse-direction traffic remaining untouched by automatic inbound logic;
 - validated `SEARCH_COMMENT` field extraction from encrypted wire evidence;
 - fixed-field `ID_LIST`, `GROUP_LIST`, `SEARCH_COMMENT` validation;
+- packed `SEARCH` / `SEARCH_ALL` filters including friend-tail IDs and source caps;
+- known-but-unhandled SearchType preservation and packed-block truncation fail-closed behavior;
 - exact 24-byte outbound state extraction from a validated inbound request;
 - synthetic server response -> stateful decrypt -> framing + MD5 validation with semantics still opaque;
 - wrong predecessor state rejection;
@@ -132,7 +141,7 @@ This slice does **not** claim:
 
 - automatic response/predecessor pairing from timestamps or proximity;
 - search server-response payload semantics;
-- `SEARCH/SEARCH_ALL` bit-packed filter semantics;
+- semantics/widths for SearchType values current LSB itself does not decode;
 - Auction House search/history request or response semantics;
 - post-login encrypted map/game semantics;
 - world/map TCP framing;
@@ -140,6 +149,6 @@ This slice does **not** claim:
 - storage/account subflow semantics;
 - automatic cross-capture session merging.
 
-The highest-value next validation target is a real search/cache capture tied to a verified lobby handoff. Inbound frames can be decoded directly; outbound frames can be cryptographically validated when the exact predecessor state is known. Automated session sequencing should wait for real evidence with sufficiently precise frame ordering to avoid heuristic state association.
+The highest-value next validation target is a real search/cache capture tied to a verified lobby handoff. Inbound frames can now be decoded through both fixed-field and packed query paths; outbound frames can be cryptographically validated when the exact predecessor state is known. Automated session sequencing should wait for real evidence with sufficiently precise frame ordering to avoid heuristic state association.
 
 See `SEARCH_CRYPTO_ENVELOPE_RESEARCH.md` and `MAP_UDP_HANDSHAKE_RESEARCH.md` for focused evidence notes.
