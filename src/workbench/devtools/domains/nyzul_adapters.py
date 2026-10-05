@@ -188,12 +188,6 @@ def _required_runtime_defs(
     ranges: dict[str, dict[int, dict[str, str]]],
     defs: dict[str, dict[str, dict[str, Any]]],
 ) -> dict[str, dict[str, dict[str, Any]]]:
-    """Select only IDs.lua symbols needed by Nyzul Investigation generation.
-
-    Nyzul Isle hosts other instances whose IDs.lua symbols are unrelated to floor
-    generation. A mismatch in those definitions must not make this adapter reject
-    otherwise-valid Nyzul Investigation data.
-    """
     required: dict[str, set[str]] = {"mob": {"ARCHAIC_RAMPART_OFFSET", "DAHAK", "GEAR_OFFSET"}, "npc": set()}
     symbol_re = re.compile(r"ID\.(mob|npc)\.([A-Z][A-Z0-9_]*)")
     for table in ranges.values():
@@ -210,6 +204,25 @@ def _required_runtime_defs(
                 raise ValueError(f"modern LSB Nyzul floor generation references undefined ID.{section}.{key}")
             selected[section][key] = definition
     return selected
+
+
+def _resolve_runtime_ids_with_optional(
+    required_defs: dict[str, dict[str, dict[str, Any]]],
+    all_defs: dict[str, dict[str, dict[str, Any]]],
+    entity_index,
+) -> dict[str, dict[str, int | list[int]]]:
+    """Resolve required generation symbols strictly and unrelated zone symbols best-effort."""
+    resolved = resolve_runtime_ids(required_defs, entity_index)
+    for section in ("mob", "npc"):
+        for key, definition in all_defs.get(section, {}).items():
+            if key in resolved[section]:
+                continue
+            try:
+                optional = resolve_runtime_ids({section: {key: definition}}, entity_index)
+            except ValueError:
+                continue
+            resolved[section].update(optional[section])
+    return resolved
 
 
 def load_lsb_data(root: Path) -> dict[str, Any]:
@@ -244,7 +257,7 @@ def load_lsb_data(root: Path) -> dict[str, Any]:
     runtime_defs = parse_runtime_id_defs(ids_text)
     required_defs = _required_runtime_defs(raw_ranges, runtime_defs)
     entity_index = load_entity_index(root)
-    resolved_ids = resolve_runtime_ids(required_defs, entity_index)
+    resolved_ids = _resolve_runtime_ids_with_optional(required_defs, runtime_defs, entity_index)
     resolved_ranges = {name: resolve_ranges(table, resolved_ids) for name, table in raw_ranges.items()}
     numeric = legacy_numeric_view(resolved_ranges, resolved_ids, entity_index)
 
