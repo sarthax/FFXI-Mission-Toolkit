@@ -9,9 +9,9 @@ import argparse
 import json
 
 from workbench.runtime.legacy_settings import get_active_server_identity, get_active_server_root
-from workbench.server_admin.auction_house.dsp_myisam_listing import (
-    dsp_myisam_listing_readiness,
-    execute_dsp_myisam_test_player_listing,
+from workbench.server_admin.auction_house.dsp_myisam_listing import dsp_myisam_listing_readiness
+from workbench.server_admin.auction_house.dsp_myisam_runner import (
+    execute_dsp_myisam_test_player_listing_with_connection_guard,
 )
 from workbench.server_admin.auction_house.factory import open_auction_house
 
@@ -40,7 +40,7 @@ def main() -> int:
             result = dsp_myisam_listing_readiness(service=ctx.service, environment=environment)
             result["server_root"] = str(root)
         else:
-            result = execute_dsp_myisam_test_player_listing(
+            result = execute_dsp_myisam_test_player_listing_with_connection_guard(
                 service=ctx.service,
                 server_root=root,
                 environment=environment,
