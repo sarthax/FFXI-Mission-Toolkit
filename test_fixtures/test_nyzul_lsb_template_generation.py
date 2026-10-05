@@ -51,7 +51,29 @@ def test_lsb_boss_and_gear_rules_are_adapter_driven():
     assert "p:BOSS_POS" in TEXT
     assert "p:RAMPART_POS" in TEXT
     assert "rnd() < GEAR_PROB" in TEXT
-    assert "IS_LSB && boss ? 0" in TEXT
+    assert "nativeStage !== D.objectives?.FREE_FLOOR" in TEXT
+
+
+def test_lsb_normal_floor_uses_one_shared_spawn_pool_and_fodder_phase():
+    assert "const shared = IS_LSB || $('shared').checked" in TEXT
+    assert "$('shared').checked = true" in TEXT
+    assert "$('shared').disabled = true" in TEXT
+    assert "function lsbFodder(markTarget=false)" in TEXT
+    assert "rint(6,12)" in TEXT
+    assert "lsbFodder(stage===6)" in TEXT
+    assert "regular fodder" in TEXT
+    assert "if (!IS_LSB || lsbNormalFloor)" in TEXT
+
+
+def test_lsb_specified_group_uses_random_subset_not_entire_group():
+    assert "const amount=Math.min(g.count,rint(2,g.count))" in TEXT
+    assert "ids.splice(mi,1)" in TEXT
+    assert "else { enemyLayout();" in TEXT
+
+
+def test_clear_resets_lsb_run_state():
+    assert "lsbFreeFloorSeen=false" in TEXT
+    assert "lsbPreviousNativeStage=null" in TEXT
 
 
 if __name__ == "__main__":
@@ -59,4 +81,7 @@ if __name__ == "__main__":
     test_legacy_generation_values_are_explicit_fallbacks_only()
     test_lsb_random_objectives_model_native_selection_rules()
     test_lsb_boss_and_gear_rules_are_adapter_driven()
+    test_lsb_normal_floor_uses_one_shared_spawn_pool_and_fodder_phase()
+    test_lsb_specified_group_uses_random_subset_not_entire_group()
+    test_clear_resets_lsb_run_state()
     print("nyzul LSB template generation regression: ok")
