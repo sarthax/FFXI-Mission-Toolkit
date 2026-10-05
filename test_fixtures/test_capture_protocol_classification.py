@@ -6,6 +6,7 @@ import struct
 
 from workbench.captures import lobby_ingest
 from workbench.captures import protocol_classification
+from workbench.captures import search_framing
 
 
 def lobby_packet(command: int, size: int, body_writer=None) -> bytes:
@@ -32,6 +33,14 @@ def response_next_login(*, server=(203, 0, 113, 10), server_port=54230,
         packet[64:68] = bytes(cache)
         struct.pack_into("<I", packet, 68, cache_port)
     return lobby_packet(0x000B, 0x48, write)
+
+
+def search_frame(size=32, fill=0xA5) -> bytes:
+    packet = bytearray([fill] * size)
+    struct.pack_into("<H", packet, 0, size)
+    packet[2:4] = b"\x00\x00"
+    packet[4:8] = b"IXFF"
+    return bytes(packet)
 
 
 def directions(payload: bytes, seq=1000):
@@ -88,6 +97,20 @@ def main():
     unknown_scan = lobby_ingest.scan_range_detailed(bytes(unknown), 6000)
     assert any(d["kind"] == "unknown_message_type" for d in unknown_scan["diagnostics"]), unknown_scan
 
+    # Search framing is deliberately weaker than lobby decoding: clear total length + IXFF can be
+    # recovered from source-backed structure, but bytes after offset 8 remain opaque/encrypted.
+    sf = search_frame()
+    search_scan = search_framing.scan_range(b"\xFE\xED" + sf, 7000)
+    assert len(search_scan["frames"]) == 1, search_scan
+    assert search_scan["frames"][0]["seq_start"] == 7002, search_scan
+    assert search_scan["frames"][0]["declared_size"] == len(sf), search_scan
+    assert search_scan["frames"][0]["decoder_status"] == "encrypted_or_opaque", search_scan
+    assert search_scan["frames"][0]["opaque_payload_hex"] == sf[8:].hex().upper(), search_scan
+    assert any(d["kind"] == "framing_resynchronization" for d in search_scan["diagnostics"]), search_scan
+    truncated_search = search_framing.scan_range(sf[:-3], 8000)
+    assert truncated_search["frames"] == [], truncated_search
+    assert any(d["kind"] == "truncated_frame_candidate" for d in truncated_search["diagnostics"]), truncated_search
+
     lobby_flow = flow(
         "lobby",
         ("10.0.0.2", 40000),
@@ -108,7 +131,7 @@ def main():
         "search",
         ("10.0.0.2", 42000),
         ("203.0.113.11", 54002),
-        directions(b"opaque-search-bytes", 10000),
+        directions(sf, 10000),
     )
     unknown_flow = flow(
         "other",
@@ -116,8 +139,14 @@ def main():
         ("192.0.2.55", 12345),
         directions(b"opaque", 11000),
     )
+    signature_only_flow = flow(
+        "signature-only",
+        ("10.0.0.2", 43001),
+        ("192.0.2.56", 12346),
+        directions(sf, 11500),
+    )
     results = {r["flow_id"]: r for r in protocol_classification.classify_reconstructed_flows(
-        [lobby_flow, world_flow, search_flow, unknown_flow]
+        [lobby_flow, world_flow, search_flow, unknown_flow, signature_only_flow]
     )}
     assert results["lobby"]["protocol_family"] == "ffxi_lobby", results["lobby"]
     assert results["lobby"]["classification_certainty"] == "verified", results["lobby"]
@@ -125,19 +154,26 @@ def main():
     assert results["world"]["classification_validated"] is False, results["world"]
     assert results["world"]["decoder_status"] == "unknown_opaque", results["world"]
     assert results["search"]["protocol_family"] == "ffxi_search_endpoint", results["search"]
-    assert results["search"]["classification_scope"] == "exact_endpoint_association_only_payload_opaque", results["search"]
+    assert results["search"]["classification_scope"] == "verified_handoff_endpoint_plus_source_backed_search_framing", results["search"]
+    assert results["search"]["decoder_status"] == "encrypted_or_opaque", results["search"]
+    assert results["search"]["framing_evidence"]["frame_count"] == 1, results["search"]
+    assert results["search"]["framing_evidence"]["payload_semantics"] == "unknown_opaque", results["search"]
     assert results["other"]["protocol_family"] == "unknown_tcp", results["other"]
     assert results["other"]["protocol_candidates"] == [], results["other"]
+    # A search-looking clear header is not enough by itself to classify a protocol family.
+    assert results["signature-only"]["protocol_family"] == "unknown_tcp", results["signature-only"]
+    assert results["signature-only"]["classification_scope"] == "insufficient_evidence", results["signature-only"]
 
     same = response_next_login(server=(203, 0, 113, 20), server_port=55000,
                                cache=(203, 0, 113, 20), cache_port=55000)
     ambiguous_results = protocol_classification.classify_reconstructed_flows([
         flow("lobby2", ("10.0.0.2", 44000), ("198.51.100.5", 54001), directions(same)),
-        flow("ambiguous", ("10.0.0.2", 45000), ("203.0.113.20", 55000), directions(b"opaque", 12000)),
+        flow("ambiguous", ("10.0.0.2", 45000), ("203.0.113.20", 55000), directions(sf, 12000)),
     ])
     ambiguous = next(r for r in ambiguous_results if r["flow_id"] == "ambiguous")
     assert ambiguous["protocol_family"] == "unknown_tcp", ambiguous
     assert ambiguous["classification_certainty"] == "ambiguous", ambiguous
+    assert ambiguous["framing_evidence"] is None, ambiguous
     assert any(d["kind"] == "ambiguous_protocol_family_classification" for d in ambiguous["diagnostics"]), ambiguous
 
     print("Capture protocol classification regression: PASS")
