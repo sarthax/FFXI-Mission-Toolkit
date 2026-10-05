@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import sqlite3
 
-from workbench.captures import protocol_classification
+from workbench.captures import map_framing, protocol_classification
 
 
 _CLASSIFICATION_KEYS = (
@@ -156,6 +156,36 @@ def _annotate_udp_handoffs(
         payload["decoder_status"] = "raw_udp_payload_preserved"
         payload["classification_metadata_provenance"] = "same_source_file_lobby_handoff_to_udp_frame"
         payload["cross_source_merge_performed"] = False
+
+        raw_hex = payload.get("transport_payload_hex") or ""
+        try:
+            raw_payload = bytes.fromhex(raw_hex) if raw_hex else b""
+        except ValueError:
+            raw_payload = b""
+        handshake = map_framing.inspect_login_datagram(raw_payload)
+        payload["map_handshake_probe"] = {
+            "recognized": handshake["recognized"],
+            "message_type": handshake["message_type"],
+            "certainty": handshake["certainty"],
+            "validation_basis": handshake["validation_basis"],
+            "diagnostics": handshake["diagnostics"],
+            "field_evidence": handshake["field_evidence"],
+        }
+        if handshake["recognized"]:
+            payload["classification_validated"] = True
+            payload["classification_certainty"] = "verified"
+            payload["classification_scope"] = "verified_lobby_handoff_plus_verified_map_0x000A_udp_handshake"
+            payload["validation_basis"] = "exact_verified_map_endpoint_and_source_backed_0x000A_structure"
+            payload["decoder_status"] = handshake["decoder_status"]
+            payload["framing_evidence"] = {
+                "protocol_family": "ffxi_map",
+                "message_type": handshake["message_type"],
+                "certainty": "verified",
+                "validation_basis": handshake["validation_basis"],
+                "field_evidence": handshake["field_evidence"],
+                "opaque_inner_hex": handshake["opaque_inner_hex"],
+            }
+
         con.execute(
             """UPDATE capture_structured_records
                SET payload_json=?
