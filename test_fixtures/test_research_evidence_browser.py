@@ -54,6 +54,10 @@ def main() -> int:
         graph.insert_record(con,Evidence("evidence:capture","CAPTURE","packet capture","capture:7","runtime:test","capture evidence"))
         graph.insert_record(con,Evidence("evidence:other-a","SERVER","Other A","scripts/other_a.lua","other:a","other evidence a"))
         graph.insert_record(con,Evidence("evidence:other-b","CLIENT","Other B","ROM/other.DAT","other:b","other evidence b"))
+        graph.insert_record(con,Evidence(
+            "evidence:wiki-claim:test","REFERENCE","bg-wiki","Test Page#Walkthrough","revision:42",
+            "Reference-only claim excerpt",
+        ))
         graph.insert_record(con,Finding(
             "finding:a","analysis:a","feature:test","implementation_state","IMPLEMENTED",
             "VERIFIED","HIGH","evidence:server","lsb:test"
@@ -81,6 +85,13 @@ def main() -> int:
         con.execute(
             "INSERT INTO capability_observations VALUES (?,?,?,?,?,?,?)",
             ("obs:dst","capability:test","client:test","MISSING",'{"value":false}',"evidence:client","[]"),
+        )
+        con.execute(
+            "INSERT INTO entity_relationships VALUES (?,?,?,?,?,?,?,?,?)",
+            (
+                "wiki-reference:wiki-map:test","reference-claim:wiki-claim:test","item:2413","MENTIONS",
+                "evidence:wiki-claim:test","INFERRED","DISCOVERED",'{"mapping_status":"MAPPED"}',None,
+            ),
         )
         con.commit()
         con.close()
@@ -172,6 +183,13 @@ def main() -> int:
         assert "client:test" in detail["referenced_snapshots"],detail
         assert "feature:test" in detail["referenced_subjects"],detail
 
+        wiki_detail=evidence_record(db,"evidence:wiki-claim:test")
+        assert wiki_detail is not None
+        assert wiki_detail["evidence_type"]=="REFERENCE",wiki_detail
+        wiki_relationship=next(ref for ref in wiki_detail["references"] if ref["kind"]=="entity_relationships")
+        assert wiki_relationship["record_id"]=="wiki-reference:wiki-map:test",wiki_relationship
+        assert wiki_relationship["subject_id"]=="reference-claim:wiki-claim:test",wiki_relationship
+
         contradictions_html=render(
             "research_contradictions.html","/research/contradictions",
             report=report,session_id="",subject_id="",evidence_type="",
@@ -206,6 +224,20 @@ def main() -> int:
         assert "/features/trace?q=feature%3Atest" in evidence_html
         # ResearchSession references keep their dedicated session route instead of being rewritten as traces.
         assert "/research/research%3Aevidence" in evidence_html
+
+        wiki_html=render(
+            "research_evidence.html","/research/evidence",
+            evidence=wiki_detail,
+        )
+        assert "Reference Claim Provenance" in wiki_html
+        assert "wiki-claim:test" in wiki_html
+        assert "Test Page#Walkthrough" in wiki_html
+        assert "revision:42" in wiki_html
+        assert "Reference-only claim excerpt" in wiki_html
+        assert "/features/trace?q=wiki-claim%3Atest" in wiki_html
+        assert "wiki-map:test" in wiki_html
+        assert "/features/trace?q=wiki-map%3Atest" in wiki_html
+        assert "Feature Trace remains authoritative" in wiki_html
 
         session_data=store.get("research:evidence")
         session_html=render(
