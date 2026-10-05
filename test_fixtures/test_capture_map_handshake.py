@@ -13,18 +13,18 @@ def map_login_datagram() -> bytes:
     struct.pack_into("<H", inner, 0, header)
     struct.pack_into("<H", inner, 2, 0x1234)  # observed sync bytes; semantics not used by classifier
 
-    # Keep all semantic fields opaque, but populate deterministic bytes so the two documented
-    # checksums exercise real data rather than an all-zero body.
-    for i in range(map_framing.LOGIN_PACKET_CHECK_SUM_START, map_framing.LOGIN_BODY_SIZE):
+    # Keep all semantic fields opaque, but populate deterministic bytes so the documented
+    # LoginPacketCheck and transport MD5 exercise real data rather than an all-zero packet.
+    for i in range(map_framing.LOGIN_PACKET_CHECK_SUM_START, map_framing.LOGIN_PACKET_SIZE):
         inner[i] = (i * 17 + 3) & 0xFF
 
     inner[map_framing.LOGIN_PACKET_CHECK_OFFSET] = (
-        sum(inner[map_framing.LOGIN_PACKET_CHECK_SUM_START:map_framing.LOGIN_BODY_SIZE]) & 0xFF
+        sum(inner[map_framing.LOGIN_PACKET_CHECK_SUM_START:map_framing.LOGIN_PACKET_SIZE]) & 0xFF
     )
-    inner[map_framing.LOGIN_BODY_SIZE:] = hashlib.md5(inner[:map_framing.LOGIN_BODY_SIZE]).digest()
 
     outer = bytearray(map_framing.FFXI_HEADER_SIZE)
-    return bytes(outer + inner)
+    trailer = hashlib.md5(inner).digest()
+    return bytes(outer + inner + trailer)
 
 
 def main():
@@ -50,10 +50,9 @@ def main():
     bad_sum = bytearray(packet)
     check_pos = map_framing.FFXI_HEADER_SIZE + map_framing.LOGIN_PACKET_CHECK_OFFSET
     bad_sum[check_pos] ^= 0x01
-    checksum_start = map_framing.FFXI_HEADER_SIZE + map_framing.LOGIN_BODY_SIZE
-    bad_sum[checksum_start:] = hashlib.md5(
-        bad_sum[map_framing.FFXI_HEADER_SIZE:checksum_start]
-    ).digest()
+    inner_start = map_framing.FFXI_HEADER_SIZE
+    inner_end = inner_start + map_framing.LOGIN_PACKET_SIZE
+    bad_sum[inner_end:] = hashlib.md5(bad_sum[inner_start:inner_end]).digest()
     rejected_sum = map_framing.inspect_login_datagram(bytes(bad_sum))
     assert rejected_sum["recognized"] is False, rejected_sum
     assert any(d["kind"] == "map_login_packet_check_mismatch" for d in rejected_sum["diagnostics"]), rejected_sum
@@ -61,10 +60,9 @@ def main():
     wrong_opcode = bytearray(packet)
     header = 0x000B | ((map_framing.LOGIN_PACKET_SIZE // 4) << 9)
     struct.pack_into("<H", wrong_opcode, map_framing.FFXI_HEADER_SIZE, header)
-    checksum_start = map_framing.FFXI_HEADER_SIZE + map_framing.LOGIN_BODY_SIZE
-    wrong_opcode[checksum_start:] = hashlib.md5(
-        wrong_opcode[map_framing.FFXI_HEADER_SIZE:checksum_start]
-    ).digest()
+    inner_start = map_framing.FFXI_HEADER_SIZE
+    inner_end = inner_start + map_framing.LOGIN_PACKET_SIZE
+    wrong_opcode[inner_end:] = hashlib.md5(wrong_opcode[inner_start:inner_end]).digest()
     rejected_opcode = map_framing.inspect_login_datagram(bytes(wrong_opcode))
     assert rejected_opcode["recognized"] is False, rejected_opcode
     assert any(d["kind"] == "map_non_login_datagram" for d in rejected_opcode["diagnostics"]), rejected_opcode
