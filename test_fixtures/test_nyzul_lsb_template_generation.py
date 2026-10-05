@@ -71,6 +71,12 @@ def test_lsb_specified_group_uses_random_subset_not_entire_group():
     assert "else { enemyLayout();" in TEXT
 
 
+def test_lsb_free_and_boss_floors_skip_random_gear_and_nms():
+    assert "const lsbNormalFloor = !IS_LSB || (!boss && nativeStage !== D.objectives?.FREE_FLOOR);" in TEXT
+    assert "gear<0) gear = lsbNormalFloor && rnd() < GEAR_PROB" in TEXT
+    assert "if (!IS_LSB || lsbNormalFloor)" in TEXT
+
+
 def test_clear_resets_lsb_run_state():
     assert "lsbFreeFloorSeen=false" in TEXT
     assert "lsbPreviousNativeStage=null" in TEXT
@@ -83,5 +89,6 @@ if __name__ == "__main__":
     test_lsb_boss_and_gear_rules_are_adapter_driven()
     test_lsb_normal_floor_uses_one_shared_spawn_pool_and_fodder_phase()
     test_lsb_specified_group_uses_random_subset_not_entire_group()
+    test_lsb_free_and_boss_floors_skip_random_gear_and_nms()
     test_clear_resets_lsb_run_state()
     print("nyzul LSB template generation regression: ok")
