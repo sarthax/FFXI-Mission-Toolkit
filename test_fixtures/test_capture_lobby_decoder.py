@@ -92,18 +92,15 @@ def main():
     build_capture_index.init_db(con)
     cid = build_capture_index.create_manual_capture(con, "lobby tcp", "Research", None)
 
-    # C->S RequestQueryWorldList (0x24, fixed 0x2C)
     req_worlds = lobby_packet(0x0024, b"\x00" * 16)
     assert len(req_worlds) == 0x2C
 
-    # S->C ResponseKey (0x05, fixed 0x28) with wardrobes 3-8 enabled.
     response_key = lobby_packet(
         0x0005,
         struct.pack("<III", 0x11223344, 0x00000FFF, 0x000000FD),
     )
     assert len(response_key) == 0x28
 
-    # S->C ResponseNextLogin (0x0B, fixed 0x48)
     body = bytearray()
     body += struct.pack("<I", 0x01020304)
     body += struct.pack("<I", 0x00081234)
@@ -116,12 +113,11 @@ def main():
     next_login = lobby_packet(0x000B, bytes(body))
     assert len(next_login) == 0x48
 
-    # A separate flow with IXFF + known command but invalid MD5 must remain unknown_tcp.
     false_packet = bytearray(req_worlds)
     false_packet[12] ^= 0xFF
+    sf = search_frame()
 
     frames = [
-        # Split request across two TCP segments to ensure classification happens after reassembly.
         (1_700_000_000, 100_000, ipv4_tcp_frame(
             req_worlds[:17], sport=CLIENT_PORT, dport=SERVER_PORT, seq=1000,
             src=CLIENT_IP, dst=SERVER_IP,
@@ -130,7 +126,6 @@ def main():
             req_worlds[17:], sport=CLIENT_PORT, dport=SERVER_PORT, seq=1017,
             src=CLIENT_IP, dst=SERVER_IP,
         )),
-        # Two valid server responses back-to-back across separate segments.
         (1_700_000_000, 300_000, ipv4_tcp_frame(
             response_key, sport=SERVER_PORT, dport=CLIENT_PORT, seq=5000,
             src=SERVER_IP, dst=CLIENT_IP,
@@ -144,10 +139,15 @@ def main():
             seq=5000 + len(response_key) + 31,
             src=SERVER_IP, dst=CLIENT_IP,
         )),
-        # False-positive candidate on another TCP flow/port.
         (1_700_000_001, 100_000, ipv4_tcp_frame(
             bytes(false_packet), sport=41000, dport=65000, seq=9000,
             src=CLIENT_IP, dst=SERVER_IP,
+        )),
+        # Exact cache endpoint learned from ResponseNextLogin, carrying only source-backed clear
+        # search framing plus intentionally opaque payload bytes.
+        (1_700_000_001, 200_000, ipv4_tcp_frame(
+            sf, sport=42000, dport=54002, seq=12000,
+            src=CLIENT_IP, dst=(55, 66, 77, 88),
         )),
     ]
 
@@ -163,7 +163,7 @@ def main():
            ORDER BY flow_id""",
         (cid,),
     ).fetchall()
-    assert len(flows) == 2, flows
+    assert len(flows) == 3, flows
 
     lobby_flow = next(row for row in flows if row[2] == CLIENT_PORT and row[4] == SERVER_PORT)
     lobby_meta = json.loads(lobby_flow[5])
@@ -171,11 +171,21 @@ def main():
     assert lobby_meta["classification_validated"] is True, lobby_meta
     assert lobby_meta["endpoint_roles"] == {"client": "a", "server": "b"}, lobby_meta
     assert lobby_meta["role_status"] == "validated_from_command_direction", lobby_meta
+    assert lobby_meta["cross_source_merge_performed"] is False, lobby_meta
 
     false_flow = next(row for row in flows if row[2] == 41000)
     false_meta = json.loads(false_flow[5])
     assert false_meta["protocol_family"] == "unknown_tcp", false_meta
     assert false_meta["classification_validated"] is False, false_meta
+
+    ingested_search_flow = next(row for row in flows if row[2] == 42000 and row[4] == 54002)
+    ingested_search_meta = json.loads(ingested_search_flow[5])
+    assert ingested_search_meta["protocol_family"] == "ffxi_search_endpoint", ingested_search_meta
+    assert ingested_search_meta["classification_validated"] is False, ingested_search_meta
+    assert ingested_search_meta["classification_scope"] == "verified_handoff_endpoint_plus_source_backed_search_framing", ingested_search_meta
+    assert ingested_search_meta["framing_evidence"]["frame_count"] == 1, ingested_search_meta
+    assert ingested_search_meta["decoder_status"] == "encrypted_or_opaque", ingested_search_meta
+    assert ingested_search_meta["cross_source_merge_performed"] is False, ingested_search_meta
 
     messages = con.execute(
         """SELECT direction,command,command_name,validation_status,fields_json,provenance_json
@@ -208,7 +218,6 @@ def main():
     assert next_fields["cache_ip"] == "55.66.77.88", next_fields
     assert next_fields["cache_port"] == 54002, next_fields
 
-    # Evidence metadata and framing diagnostics remain separate from decoded semantics.
     decoded_next = lobby_ingest.decode_packet(next_login)
     assert decoded_next["field_evidence"]["server_ip"]["certainty"] == "verified", decoded_next
     resync = lobby_ingest.scan_range_detailed(b"\xAA\xBB" + next_login, 7000)
@@ -218,8 +227,6 @@ def main():
     assert truncated["messages"] == [], truncated
     assert any(d["kind"] == "truncated_frame_candidate" for d in truncated["diagnostics"]), truncated
 
-    # Search framing can be structurally recovered while encrypted payload bytes remain opaque.
-    sf = search_frame()
     search_scan = search_framing.scan_range(b"\xFE" + sf, 8500)
     assert len(search_scan["frames"]) == 1, search_scan
     assert search_scan["frames"][0]["seq_start"] == 8501, search_scan
@@ -228,7 +235,6 @@ def main():
     assert search_truncated["frames"] == [], search_truncated
     assert any(d["kind"] == "truncated_frame_candidate" for d in search_truncated["diagnostics"]), search_truncated
 
-    # Exact handoff endpoints can classify later flows without decoding their opaque payloads.
     research_lobby_flow = {
         "flow_id": "research-lobby",
         "endpoint_a": {"ip": "10.0.0.2", "port": 40000},
@@ -295,7 +301,6 @@ def main():
     assert req_prov["frame_numbers"] == [1, 2], req_prov
     assert req_prov["sensitive_field_policy"].startswith("raw_packet_retained"), req_prov
 
-    # Invalid-MD5 traffic must never become a decoded lobby message.
     assert con.execute(
         """SELECT COUNT(*) FROM capture_network_messages
            WHERE capture_id=? AND flow_id=?""",
@@ -314,11 +319,15 @@ def main():
     assert all(row[0] == "pcap-tcp-message" for row in locators), locators
     assert all(json.loads(row[1])["md5_valid"] is True for row in locators), locators
 
-    # Reingestion remains idempotent.
     again = build_capture_index.ingest_single_file(con, cid, "lobby-session.pcap", pcap)
     assert again["error"] is None, again
     assert con.execute(
         """SELECT COUNT(*) FROM capture_network_messages
+           WHERE capture_id=? AND source_file='lobby-session.pcap'""",
+        (cid,),
+    ).fetchone()[0] == 3
+    assert con.execute(
+        """SELECT COUNT(*) FROM capture_network_flows
            WHERE capture_id=? AND source_file='lobby-session.pcap'""",
         (cid,),
     ).fetchone()[0] == 3
