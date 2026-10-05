@@ -66,7 +66,7 @@ def main():
     assert reconciled.group(1) >= "2026-10-03", "roadmap reconciliation date regressed before the current baseline"
 
     assert "`main` is the product baseline" in current
-    assert "Plain Behavior is the default view" in current
+    assert "Clarified Flow is the default view" in current
     assert "BEHAVIOR_INSPECTOR_CLOSEOUT.md" in current
     assert "Persistent **client item DAT cache**" in current
     assert "Campaign/session manifest import support" in current

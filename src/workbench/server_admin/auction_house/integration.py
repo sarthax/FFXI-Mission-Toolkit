@@ -14,18 +14,20 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
     from workbench import gui_shell
 
     from .gui import router as auction_house_router
+    from .legacy_test_api import router as auction_house_test_write_router
 
     existing_routes = {
         (getattr(route, "path", None), tuple(sorted(getattr(route, "methods", ()) or ())))
         for route in root_router.routes
     }
-    for route in auction_house_router.routes:
-        key = (getattr(route, "path", None), tuple(sorted(getattr(route, "methods", ()) or ())))
-        if key not in existing_routes:
-            # Deliberately append the already-rooted route object. Calling include_router() on the
-            # Character Editor carrier would incorrectly prepend /character-editor.
-            root_router.routes.append(route)
-            existing_routes.add(key)
+    for carrier in (auction_house_router, auction_house_test_write_router):
+        for route in carrier.routes:
+            key = (getattr(route, "path", None), tuple(sorted(getattr(route, "methods", ()) or ())))
+            if key not in existing_routes:
+                # Append the already-rooted route object. include_router() would prepend a carrier
+                # prefix in legacy integration paths and can double-prefix modular routes.
+                root_router.routes.append(route)
+                existing_routes.add(key)
 
     workspaces = []
     for workspace in gui_shell.WORKSPACES:
@@ -50,13 +52,13 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
     current_owner = gui_shell.route_owner
     if not getattr(current_owner, "_auction_house_bridge", False):
         def _route_owner(path: str, method: str = "GET") -> dict:
-            if method.upper() == "GET" and (path == "/auction-house" or path.startswith("/auction-house/")):
+            if path == "/auction-house" or path.startswith("/auction-house/"):
                 return {
                     "home": "Server",
                     "section": "Auction House",
                     "path": "/auction-house",
-                    "method": "GET",
-                    "role": "page",
+                    "method": method.upper(),
+                    "role": "page" if method.upper() == "GET" else "action",
                     "disposition": "KEEP",
                 }
             return current_owner(path, method)
