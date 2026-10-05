@@ -19,8 +19,31 @@ def _make_compatible_root(root: Path) -> Path:
     return root
 
 
+def _make_lsb_root(root: Path) -> Path:
+    files = {
+        "scripts/globals/nyzul/floor_generation.lua": """local lampSpawnPoints =\n{\n    [1] =\n    {\n        [1] = { 1, 2, 3 },\n    },\n}\nlocal layoutSpawnPoints =\n{\n    [1] =\n    {\n        [1] = { x = 4, y = 5, z = 6 },\n    },\n}\n""",
+        "scripts/globals/nyzul.lua": """xi = xi or {}\nxi.nyzul = xi.nyzul or {}\nxi.nyzul.FloorLayout =\n{\n    [0] = { -20, -0.5, -380 },\n    [1] = { 10, 20, 30 },\n}\n""",
+        "scripts/zones/Nyzul_Isle/IDs.lua": "zones = zones or {}\n",
+    }
+    for rel, text in files.items():
+        path = root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+    nav = root / "navmeshes/Nyzul_Isle.nav"
+    nav.parent.mkdir(parents=True, exist_ok=True)
+    nav.write_bytes(b"TESM")
+    return root
+
+
 def _profile(root: Path, *, enabled: bool = True):
     return SimpleNamespace(root_path=root, enabled=enabled)
+
+
+def _patch_profiles(monkeypatch, *, active, profiles=(), legacy_dsp=None):
+    resolver = canonical._configured_server_source
+    monkeypatch.setitem(resolver.__globals__, "get_active_server_profile", lambda: active)
+    monkeypatch.setitem(resolver.__globals__, "get_server_profiles", lambda include_disabled=False: list(profiles))
+    monkeypatch.setitem(resolver.__globals__, "get_dsp_root", lambda: legacy_dsp)
 
 
 def test_root_module_is_packaged_implementation():
@@ -28,14 +51,13 @@ def test_root_module_is_packaged_implementation():
     assert canonical.EXCL_FILE == DATA_ROOT / "nyzul_exclusions.json"
 
 
-def test_nyzul_gui_prefers_active_compatible_environment(tmp_path, monkeypatch):
+def test_nyzul_gui_prefers_active_legacy_environment(tmp_path, monkeypatch):
     active_root = _make_compatible_root(tmp_path / "active")
     other_root = _make_compatible_root(tmp_path / "other")
-    resolver = canonical._configured_server_root
-    monkeypatch.setitem(resolver.__globals__, "get_active_server_profile", lambda: _profile(active_root))
-    monkeypatch.setitem(resolver.__globals__, "get_server_profiles", lambda include_disabled=False: [_profile(other_root)])
-    monkeypatch.setitem(resolver.__globals__, "get_dsp_root", lambda: None)
+    _patch_profiles(monkeypatch, active=_profile(active_root), profiles=[_profile(other_root)])
 
+    source = canonical._configured_server_source()
+    assert source.adapter == "legacy-dsp-topaz"
     assert canonical._dsp_root() == active_root
     assert canonical._floor_layouts() == active_root / "scripts/globals/nyzul/floor_layouts.lua"
     assert canonical._nyzul_lua() == active_root / "scripts/globals/nyzul.lua"
@@ -43,39 +65,41 @@ def test_nyzul_gui_prefers_active_compatible_environment(tmp_path, monkeypatch):
     assert canonical._default_nav() == active_root / "navmeshes/Nyzul_Isle.nav"
 
 
-def test_nyzul_gui_falls_back_from_incompatible_active_profile(tmp_path, monkeypatch):
-    lsb_root = tmp_path / "lsb"
-    floor_generation = lsb_root / "scripts/globals/nyzul/floor_generation.lua"
-    floor_generation.parent.mkdir(parents=True, exist_ok=True)
-    floor_generation.write_text("-- modern LSB layout", encoding="utf-8")
+def test_nyzul_gui_uses_native_lsb_adapter_for_active_lsb(tmp_path, monkeypatch):
+    lsb_root = _make_lsb_root(tmp_path / "lsb")
     compatible_root = _make_compatible_root(tmp_path / "dsp")
-
-    resolver = canonical._configured_server_root
-    monkeypatch.setitem(resolver.__globals__, "get_active_server_profile", lambda: _profile(lsb_root))
-    monkeypatch.setitem(
-        resolver.__globals__,
-        "get_server_profiles",
-        lambda include_disabled=False: [_profile(lsb_root), _profile(compatible_root)],
+    _patch_profiles(
+        monkeypatch,
+        active=_profile(lsb_root),
+        profiles=[_profile(lsb_root), _profile(compatible_root)],
     )
-    monkeypatch.setitem(resolver.__globals__, "get_dsp_root", lambda: None)
 
-    assert canonical._dsp_root() == compatible_root
+    source = canonical._configured_server_source()
+    assert source.root == lsb_root
+    assert source.adapter == "modern-lsb"
+    data = canonical.load_data()
+    assert data["adapter"]["lineage"] == "lsb"
+    assert data["points"][1] == [[4.0, 5.0, 6.0]]
+    assert data["lamps"][1] == [[1.0, 2.0, 3.0]]
+    assert data["entrances"][1] == [10.0, 20.0, 30.0]
 
 
 def test_missing_compatible_nyzul_environment_has_actionable_error(tmp_path, monkeypatch):
-    resolver = canonical._configured_server_root
-    monkeypatch.setitem(resolver.__globals__, "get_active_server_profile", lambda: _profile(tmp_path / "lsb"))
-    monkeypatch.setitem(resolver.__globals__, "get_server_profiles", lambda include_disabled=False: [])
-    monkeypatch.setitem(resolver.__globals__, "get_dsp_root", lambda: None)
+    broken = tmp_path / "custom"
+    marker = broken / "scripts/globals/nyzul/floor_generation.lua"
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    marker.write_text("-- incomplete custom layout", encoding="utf-8")
+    _patch_profiles(monkeypatch, active=_profile(broken))
 
     try:
-        canonical._dsp_root()
+        canonical._configured_server_source()
     except ValueError as exc:
         text = str(exc)
-        assert "configured server environment" in text
-        assert "Nyzul layout files" in text
+        assert "supported Nyzul source layout" in text
+        assert "floor_generation.lua" in text
+        assert "Checked:" in text
     else:
-        raise AssertionError("missing compatible Nyzul source must remain a hard error")
+        raise AssertionError("unknown Nyzul source must remain a hard error")
 
 
 def test_exclusions_round_trip_at_configured_runtime_path(tmp_path, monkeypatch):
