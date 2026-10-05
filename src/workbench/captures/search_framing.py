@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import struct
 
-from workbench.captures import search_crypto_envelope
+from workbench.captures import search_crypto_envelope, search_request_decode
 
 SEARCH_MIN_FRAME_SIZE = 28
 SEARCH_MARKER = b"IXFF"
@@ -154,4 +154,9 @@ def resolve_crypto_direction(scanned: dict, server_role: str) -> dict:
         if decryption.get("validated"):
             frame["validated_packet_type"] = decryption.get("packet_type")
             frame["validated_packet_type_name"] = decryption.get("packet_type_name")
+            decrypted_hex = decryption.get("decrypted_hex") or ""
+            if decrypted_hex:
+                frame["validated_request"] = search_request_decode.decode_validated_request(
+                    bytes.fromhex(decrypted_hex)
+                )
     return scanned
