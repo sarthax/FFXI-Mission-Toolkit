@@ -95,8 +95,18 @@ def _block(text: str, start_pat: str) -> str:
 
 
 def _indexed_subtables(block: str) -> dict[int, str]:
+    """Return only direct ``[n] = { ... }`` children of an outer Lua table.
+
+    Spawn tables themselves contain indexed rows, so a regex-only split would
+    silently reinterpret point indexes as layout indexes. The depth guard keeps
+    those nested rows inside their owning layout.
+    """
     out: dict[int, str] = {}
-    for match in re.finditer(r"(?m)^\s*\[(\d+)\]\s*=\s*(?:--[^\n]*\n\s*)?\{", block):
+    pattern = re.compile(r"(?m)^[ \t]*\[(\d+)\][ \t]*=[ \t]*(?:--[^\n]*\n[ \t]*)?\{")
+    for match in pattern.finditer(block):
+        prefix = block[: match.start()]
+        if prefix.count("{") - prefix.count("}") != 1:
+            continue
         start = match.end() - 1
         depth = 0
         for j in range(start, len(block)):
