@@ -5,6 +5,7 @@ TCP ranges and raw per-frame network records, and never merges flows across file
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 
@@ -111,6 +112,63 @@ def _map_handoff_endpoints(classified: list[dict]) -> list[dict]:
     return endpoints
 
 
+def _hex_bytes(value: str | None) -> bytes | None:
+    text = "".join(str(value or "").split())
+    if text.lower().startswith("0x"):
+        text = text[2:]
+    if not text or len(text) % 2:
+        return None
+    try:
+        return bytes.fromhex(text)
+    except ValueError:
+        return None
+
+
+def _exact_raw_packet_correlation(con: sqlite3.Connection, capture_id: int, inner_packet: bytes) -> dict:
+    """Find byte-identical normalized raw-packet evidence without fuzzy/time-based matching."""
+    columns = {row[1] for row in con.execute("PRAGMA table_info(capture_raw_packets)").fetchall()}
+    required = {"capture_id", "seq", "raw_hex"}
+    digest = hashlib.sha256(inner_packet).hexdigest()
+    if not required.issubset(columns):
+        return {
+            "status": "unavailable",
+            "basis": "exact_raw_inner_packet_bytes",
+            "sha256": digest,
+            "matches": [],
+            "automatic_merge_performed": False,
+        }
+
+    optional = [name for name in ("ts", "direction", "opcode", "source_file", "source_format", "source_native_id") if name in columns]
+    select_cols = ["seq", "raw_hex", *optional]
+    rows = con.execute(
+        f"SELECT {','.join(select_cols)} FROM capture_raw_packets WHERE capture_id=? ORDER BY seq",
+        (capture_id,),
+    ).fetchall()
+    matches = []
+    for row in rows:
+        values = dict(zip(select_cols, row))
+        candidate = _hex_bytes(values.pop("raw_hex", None))
+        if candidate != inner_packet:
+            continue
+        match = {
+            "peer_kind": "capture_raw_packets",
+            "peer_ref": f"raw-packet:{values['seq']}",
+            "seq": values.pop("seq"),
+        }
+        for key, value in values.items():
+            if value is not None:
+                match[key] = value
+        matches.append(match)
+
+    return {
+        "status": "matched" if len(matches) == 1 else ("ambiguous" if len(matches) > 1 else "unmatched"),
+        "basis": "exact_raw_inner_packet_bytes",
+        "sha256": digest,
+        "matches": matches,
+        "automatic_merge_performed": False,
+    }
+
+
 def _annotate_udp_handoffs(
     con: sqlite3.Connection,
     capture_id: int,
@@ -140,10 +198,7 @@ def _annotate_udp_handoffs(
                 if endpoint[0] is None or endpoint[1] is None:
                     continue
                 if (str(endpoint[0]), int(endpoint[1])) == hint["endpoint"]:
-                    matches.append({
-                        **hint,
-                        "matched_endpoint_side": side,
-                    })
+                    matches.append({**hint, "matched_endpoint_side": side})
         if not matches:
             continue
 
@@ -157,11 +212,7 @@ def _annotate_udp_handoffs(
         payload["classification_metadata_provenance"] = "same_source_file_lobby_handoff_to_udp_frame"
         payload["cross_source_merge_performed"] = False
 
-        raw_hex = payload.get("transport_payload_hex") or ""
-        try:
-            raw_payload = bytes.fromhex(raw_hex) if raw_hex else b""
-        except ValueError:
-            raw_payload = b""
+        raw_payload = _hex_bytes(payload.get("transport_payload_hex")) or b""
         handshake = map_framing.inspect_login_datagram(raw_payload)
         endpoint_is_destination = any(match["matched_endpoint_side"] == "dst" for match in matches)
         probe_diagnostics = list(handshake["diagnostics"])
@@ -188,6 +239,7 @@ def _annotate_udp_handoffs(
             payload["classification_scope"] = "verified_lobby_handoff_plus_verified_map_0x000A_udp_handshake"
             payload["validation_basis"] = "exact_verified_map_endpoint_and_source_backed_0x000A_structure_and_direction"
             payload["decoder_status"] = handshake["decoder_status"]
+            inner_packet = bytes.fromhex(handshake["opaque_inner_hex"])
             payload["framing_evidence"] = {
                 "protocol_family": "ffxi_map",
                 "message_type": handshake["message_type"],
@@ -197,6 +249,9 @@ def _annotate_udp_handoffs(
                 "field_evidence": handshake["field_evidence"],
                 "opaque_inner_hex": handshake["opaque_inner_hex"],
             }
+            payload["normalized_packet_correlation"] = _exact_raw_packet_correlation(
+                con, capture_id, inner_packet
+            )
 
         con.execute(
             """UPDATE capture_structured_records
@@ -231,10 +286,5 @@ def refresh_source_flow_metadata(con: sqlite3.Connection, capture_id: int, sourc
         )
         count += 1
 
-    _annotate_udp_handoffs(
-        con,
-        capture_id,
-        source_file,
-        _map_handoff_endpoints(classified),
-    )
+    _annotate_udp_handoffs(con, capture_id, source_file, _map_handoff_endpoints(classified))
     return count
