@@ -80,10 +80,10 @@ def packed_search_request(packet_type: int = 0x03) -> bytes:
     ordinary(0x01, 10, 230)       # Area
     ordinary(0x02, 2, 1)          # Nation
     ordinary(0x03, 5, 12)         # Job
-    ordinary(0x04, 16, (75 << 8) | 50)  # two sequential uint8 bit fields: min=50, max=75
+    ordinary(0x04, 16, (50 << 8) | 75)  # sequential reads yield min=50, max=75
     ordinary(0x05, 4, 3)          # Race
     ordinary(0x06, 16, 0x1234)    # Flags1
-    ordinary(0x10, 16, (10 << 8) | 2)   # Rank min=2 max=10
+    ordinary(0x10, 16, (2 << 8) | 10)   # sequential reads yield min=2, max=10
 
     # Comment and Flags2 do not carry sort/present bits in LSB.
     bit = _pack_bits_le(packed, 0x11, bit, 5)
@@ -190,14 +190,14 @@ def main():
     # Current LSB defines Language but its _HandleSearchRequest default branch assigns it no value
     # semantics. Keep the enum identity and control bits, but do not guess a payload width/value.
     def write_known_unhandled(packet: bytearray):
-        packet[0x10] = 1
-        bits = bytearray(1)
+        packet[0x10] = 2
+        bits = bytearray(2)
         off = _pack_bits_le(bits, 0x17, 0, 5)
         off = _pack_bits_le(bits, 1, off, 1)
         _pack_bits_le(bits, 1, off, 1)
-        packet[0x11] = bits[0]
+        packet[0x11:0x13] = bits
 
-    known_unhandled = search_request_decode.decode_validated_request(decrypted_request(0x03, write_known_unhandled, 38))
+    known_unhandled = search_request_decode.decode_validated_request(decrypted_request(0x03, write_known_unhandled, 39))
     assert known_unhandled["validated"] is True, known_unhandled
     assert any(e["type_name"] == "Language" for e in known_unhandled["entries"]), known_unhandled
     assert any(d["kind"] == "known_enum_unhandled_by_lsb_parser" for d in known_unhandled["diagnostics"]), known_unhandled
