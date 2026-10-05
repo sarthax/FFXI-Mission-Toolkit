@@ -143,8 +143,6 @@ def main():
             bytes(false_packet), sport=41000, dport=65000, seq=9000,
             src=CLIENT_IP, dst=SERVER_IP,
         )),
-        # Exact cache endpoint learned from ResponseNextLogin, carrying only source-backed clear
-        # search framing plus intentionally opaque payload bytes.
         (1_700_000_001, 200_000, ipv4_tcp_frame(
             sf, sport=42000, dport=54002, seq=12000,
             src=CLIENT_IP, dst=(55, 66, 77, 88),
@@ -182,7 +180,7 @@ def main():
     ingested_search_meta = json.loads(ingested_search_flow[5])
     assert ingested_search_meta["protocol_family"] == "ffxi_search_endpoint", ingested_search_meta
     assert ingested_search_meta["classification_validated"] is False, ingested_search_meta
-    assert ingested_search_meta["classification_scope"] == "verified_handoff_endpoint_plus_source_backed_search_framing", ingested_search_meta
+    assert ingested_search_meta["classification_scope"] == "verified_search_handoff_plus_source_backed_search_framing", ingested_search_meta
     assert ingested_search_meta["framing_evidence"]["frame_count"] == 1, ingested_search_meta
     assert ingested_search_meta["decoder_status"] == "encrypted_or_opaque", ingested_search_meta
     assert ingested_search_meta["cross_source_merge_performed"] is False, ingested_search_meta
@@ -246,8 +244,8 @@ def main():
             "b_to_a": _single_range_direction(next_login, 9000),
         },
     }
-    world_flow = {
-        "flow_id": "world-handoff",
+    map_tcp_flow = {
+        "flow_id": "map-handoff-tcp",
         "endpoint_a": {"ip": "10.0.0.2", "port": 41000},
         "endpoint_b": {"ip": "11.22.33.44", "port": 54230},
         "transport": "tcp",
@@ -280,14 +278,15 @@ def main():
         },
     }
     classified = {row["flow_id"]: row for row in protocol_classification.classify_reconstructed_flows(
-        [research_lobby_flow, world_flow, search_flow, signature_only_flow]
+        [research_lobby_flow, map_tcp_flow, search_flow, signature_only_flow]
     )}
     assert classified["research-lobby"]["protocol_family"] == "ffxi_lobby", classified
-    assert classified["world-handoff"]["protocol_family"] == "ffxi_world_endpoint", classified
-    assert classified["world-handoff"]["classification_validated"] is False, classified
-    assert classified["world-handoff"]["decoder_status"] == "unknown_opaque", classified
+    assert classified["map-handoff-tcp"]["protocol_family"] == "unknown_tcp", classified
+    assert classified["map-handoff-tcp"]["classification_scope"] == "handoff_endpoint_transport_mismatch", classified
+    assert classified["map-handoff-tcp"]["protocol_candidates"][0]["protocol_family"] == "ffxi_map_endpoint", classified
+    assert classified["map-handoff-tcp"]["protocol_candidates"][0]["expected_transport"] == "udp", classified
     assert classified["search-handoff"]["protocol_family"] == "ffxi_search_endpoint", classified
-    assert classified["search-handoff"]["classification_scope"] == "verified_handoff_endpoint_plus_source_backed_search_framing", classified
+    assert classified["search-handoff"]["classification_scope"] == "verified_search_handoff_plus_source_backed_search_framing", classified
     assert classified["search-handoff"]["framing_evidence"]["frame_count"] == 1, classified
     assert classified["search-handoff"]["decoder_status"] == "encrypted_or_opaque", classified
     assert classified["signature-only"]["protocol_family"] == "unknown_tcp", classified
