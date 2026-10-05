@@ -102,7 +102,9 @@ def _indexed_subtables(block: str) -> dict[int, str]:
     those nested rows inside their owning layout.
     """
     out: dict[int, str] = {}
-    pattern = re.compile(r"(?m)^[ \t]*\[(\d+)\][ \t]*=[ \t]*(?:--[^\n]*\n[ \t]*)?\{")
+    pattern = re.compile(
+        r"(?m)^[ \t]*\[(\d+)\][ \t]*=[ \t]*(?:--[^\n]*)?(?:\r?\n[ \t]*)?\{"
+    )
     for match in pattern.finditer(block):
         prefix = block[: match.start()]
         if prefix.count("{") - prefix.count("}") != 1:
