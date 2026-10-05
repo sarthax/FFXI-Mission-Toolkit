@@ -29,8 +29,8 @@ def _sync_host_template_globals() -> None:
             return
 
 
-@router.get("/auction-house/status.json")
-def auction_house_status():
+@router.get("/auction-house/capability-status.json")
+def auction_house_capability_status():
     environment = get_active_server_identity() or {}
     root = get_active_server_root()
     if root is None:
