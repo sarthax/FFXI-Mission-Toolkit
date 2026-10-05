@@ -3,8 +3,11 @@
 {% block shell_mode %}dense{% endblock %}
 {% block main_class %}research-contradictions-page{% endblock %}
 {% block content %}
-<style>main.research-contradictions-page{padding:8px 10px 24px}.contradiction-card{border:1px solid var(--border);border-radius:7px;padding:8px;margin:7px 0;background:var(--surface)}</style>
-<div class="dense-toolbar"><strong>Research Contradictions</strong><span class="sp"></span><a class="chip" href="/research">Sessions</a><a class="chip" href="/researchgaps">Gaps</a><details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:700px">Read-only contradictions/conflicting canonical observations. Filters never promote one source over another.</div></details></div>
+<style>
+main.research-contradictions-page{padding:8px 10px 24px}.contradiction-card{border:1px solid var(--border);border-radius:7px;padding:8px;margin:7px 0;background:var(--surface)}
+.contradiction-sides{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:7px;margin:7px 0}.contradiction-side{border:1px solid var(--border);border-radius:6px;padding:7px;background:var(--bg)}.contradiction-side p{margin:4px 0}.evidence-link{display:block;margin:3px 0}
+</style>
+<div class="dense-toolbar"><strong>Research Contradictions</strong><span class="sp"></span><a class="chip" href="/research">Sessions</a><a class="chip" href="/researchgaps">Gaps</a><details class="dense-card" style="margin:0;padding:0 6px"><summary>About</summary><div class="muted" style="padding:6px 2px;max-width:700px">Read-only contradictions/conflicting canonical observations. Sides group existing evidence; this view never chooses a winner or changes confidence.</div></details></div>
 
 <form class="dense-toolbar" method="get" action="/research/contradictions" style="margin:6px 0;flex-wrap:wrap">
   <input name="session_id" value="{{ session_id }}" placeholder="research session id">
@@ -20,8 +23,10 @@
 </form>
 
 <div class="dense-toolbar" style="margin:4px 0;flex-wrap:wrap">
-  <span class="chip">Contradictions {{ report.total }}</span>
+  <span class="chip">Showing {{ report.total }}{% if report.matched_total != report.total %} / {{ report.matched_total }}{% endif %}</span>
+  {% if report.truncated %}<span class="chip">Truncated at {{ report.limit }}</span>{% endif %}
   {% for kind,count in report.type_counts.items() %}<span class="chip">{{ kind }} {{ count }}</span>{% endfor %}
+  {% for state,count in report.state_counts.items() %}<span class="chip">{{ state }} {{ count }}</span>{% endfor %}
 </div>
 
 {% if not report['items'] %}
@@ -29,20 +34,41 @@
 {% else %}
 {% for item in report['items'] %}
 <section class="contradiction-card">
-  <div class="dense-toolbar"><strong>{{ item.kind }}</strong><span class="sp"></span>{% if item.field %}<span class="chip mono">{{ item.field }}</span>{% endif %}</div>
-  <p><strong>Subject:</strong> <code>{{ item.subject_id }}</code>{% if item.field %} · <strong>Field:</strong> <code>{{ item.field }}</code>{% endif %}</p>
+  <div class="dense-toolbar"><strong>{{ item.kind }}</strong><span class="chip">{{ item.comparison_state }}</span><span class="sp"></span>{% if item.field %}<span class="chip mono">{{ item.field }}</span>{% endif %}</div>
+  <p><strong>Subject:</strong> <code>{{ item.subject_id }}</code> <a class="chip" href="/features/trace?q={{ item.subject_id|urlencode }}">Feature Trace</a>{% if item.field %} · <strong>Field:</strong> <code>{{ item.field }}</code>{% endif %}</p>
   <p>{{ item.summary }}</p>
-  {% if item.research_session_id %}<p><a href="/research/{{ item.research_session_id|urlencode }}">Open research session</a></p>{% endif %}
-  {% if item.evidence %}
-  <p><strong>Evidence:</strong>
-    {% for e in item.evidence %}
-      <a href="/research/evidence?evidence_id={{ e.evidence_id|urlencode }}"><code>{{ e.evidence_id }}</code></a>
-      <span class="muted">({{ e.evidence_type }} · {{ e.source }})</span>{% if not loop.last %}<br>{% endif %}
-    {% endfor %}
+  {% if item.sources or item.snapshots %}
+  <p class="muted">
+    {% if item.sources %}<strong>Sources:</strong> {{ item.sources|join(", ") }}{% endif %}
+    {% if item.sources and item.snapshots %} · {% endif %}
+    {% if item.snapshots %}<strong>Snapshots:</strong> {{ item.snapshots|join(", ") }}{% endif %}
   </p>
   {% endif %}
+  {% if item.research_session_id %}<p><a href="/research/{{ item.research_session_id|urlencode }}">Open research session</a></p>{% endif %}
+
+  {% if item.sides %}
+  <div class="contradiction-sides">
+    {% for side in item.sides %}
+    <div class="contradiction-side">
+      <div class="dense-toolbar"><strong>{{ side.label }}</strong>{% for status in side.statuses %}<span class="chip">{{ status }}</span>{% endfor %}</div>
+      {% if side.value is not none %}<p><strong>Value:</strong> <code>{{ side.value|tojson }}</code></p>{% endif %}
+      {% if side.source_snapshots %}<p class="muted"><strong>Record snapshots:</strong> {{ side.source_snapshots|join(", ") }}</p>{% endif %}
+      {% if side.confidence %}<p class="muted"><strong>Confidence:</strong> {{ side.confidence|join(", ") }}</p>{% endif %}
+      {% if side.evidence_types %}<p class="muted"><strong>Evidence types:</strong> {{ side.evidence_types|join(", ") }}</p>{% endif %}
+      {% if side.evidence %}
+        {% for e in side.evidence %}
+        <a class="evidence-link" href="/research/evidence?evidence_id={{ e.evidence_id|urlencode }}"><code>{{ e.evidence_id }}</code> <span class="muted">{{ e.evidence_type }} · {{ e.source }}{% if e.snapshot %} · {{ e.snapshot }}{% endif %}</span></a>
+        {% endfor %}
+      {% else %}<p class="muted">No canonical Evidence row is attached to this side.</p>{% endif %}
+      {% if side.missing_evidence_ids %}<p class="muted">Missing Evidence rows: <code>{{ side.missing_evidence_ids|join(", ") }}</code></p>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if item.missing_evidence_ids %}<p class="muted"><strong>Incomplete evidence:</strong> {{ item.missing_evidence_ids|join(", ") }}</p>{% endif %}
   <details>
-    <summary>Show conflicting records ({{ item.records|length }})</summary>
+    <summary>Show raw conflicting records ({{ item.records|length }})</summary>
     <pre style="max-height:420px;overflow:auto;">{{ item.records|tojson(indent=2) }}</pre>
   </details>
 </section>
