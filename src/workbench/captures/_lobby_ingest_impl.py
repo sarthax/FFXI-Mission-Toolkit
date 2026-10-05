@@ -7,6 +7,9 @@ Classification is structural. Ports are never sufficient. A message is accepted 
 - packet_size is sane and command-size constraints match when fixed,
 - the 16-byte MD5 identifier validates after zeroing bytes 12..27.
 
+Unknown, malformed, and truncated candidates are retained as diagnostics rather than silently
+promoted or discarded. Decoded fields carry explicit certainty/provenance metadata.
+
 References: atom0s/XiPackets lobby documentation and matching LandSandBoat packet structs.
 """
 from __future__ import annotations
@@ -35,6 +38,16 @@ COMMANDS = {
     0x0026: {"name": "RequestLobbyLogin", "direction": "c2s", "size": 0x98},
     0x0028: {"name": "RequestRenameChr", "direction": "c2s", "size": 0x44},
     0x002B: {"name": "RequestMoveGMChr", "direction": "c2s", "size": None},
+}
+
+_PHASE_BY_COMMAND = {
+    0x0026: "login_setup",
+    0x001F: "character_query",
+    0x0020: "character_list",
+    0x0024: "world_query",
+    0x0023: "world_list",
+    0x0007: "character_select",
+    0x000B: "world_search_handoff",
 }
 
 
@@ -84,7 +97,7 @@ def _variable_layout_valid(command: int, packet: bytes) -> bool:
 def validate_packet(packet: bytes) -> dict:
     if len(packet) < LOBBY_HEADER_SIZE:
         return {"valid": False, "reason": "too_short"}
-    packet_size, terminator, command = struct.unpack_from("<III", packet, 0)
+    packet_size, _terminator_u32, command = struct.unpack_from("<III", packet, 0)
     if packet_size != len(packet):
         return {"valid": False, "reason": "size_mismatch", "packet_size": packet_size}
     if packet[4:8] != LOBBY_TERMINATOR:
@@ -109,10 +122,26 @@ def validate_packet(packet: bytes) -> dict:
     }
 
 
+def _field_evidence(fields: dict) -> dict:
+    out = {}
+    for name in fields:
+        if name.startswith("unknown"):
+            out[name] = {
+                "certainty": "unknown_opaque",
+                "provenance": "known_struct_offset_semantics_unassigned",
+            }
+        else:
+            out[name] = {
+                "certainty": "verified",
+                "provenance": "XiPackets_and_matching_LandSandBoat_lobby_struct",
+            }
+    return out
+
+
 def decode_packet(packet: bytes) -> dict:
     validation = validate_packet(packet)
     if not validation.get("valid"):
-        return {"validation": validation, "fields": {}}
+        return {"validation": validation, "fields": {}, "field_evidence": {}}
 
     command = validation["command"]
     fields: dict = {}
@@ -209,31 +238,87 @@ def decode_packet(packet: bytes) -> dict:
             "new_name": _cstr(packet[36:52]),
         })
 
-    return {"validation": validation, "fields": fields}
+    return {
+        "validation": validation,
+        "fields": fields,
+        "field_evidence": _field_evidence(fields),
+    }
 
 
-def scan_range(payload: bytes, seq_start: int) -> list[dict]:
-    """Recover complete validated lobby packets from an observed contiguous TCP range."""
+def scan_range_detailed(payload: bytes, seq_start: int) -> dict:
+    """Scan one contiguous observed TCP range and retain framing diagnostics.
+
+    The scanner never joins across a sequence gap. Unknown/malformed candidates remain opaque
+    diagnostics with exact offsets and raw observed slices; they are not promoted as messages.
+    """
     messages = []
+    diagnostics = []
     pos = 0
+    skipped_start = None
     while pos + LOBBY_HEADER_SIZE <= len(payload):
-        # Fast structural prefilter before MD5 work.
         if payload[pos + 4:pos + 8] != LOBBY_TERMINATOR:
+            skipped_start = pos if skipped_start is None else skipped_start
             pos += 1
             continue
         declared = struct.unpack_from("<I", payload, pos)[0]
         command = struct.unpack_from("<I", payload, pos + 8)[0]
-        if command not in COMMANDS or declared < LOBBY_HEADER_SIZE or declared > 0x10000:
+        if command not in COMMANDS:
+            diagnostics.append({
+                "kind": "unknown_message_type",
+                "range_offset": pos,
+                "seq_start": seq_start + pos,
+                "declared_size": declared,
+                "command": command,
+                "certainty": "unknown_opaque",
+                "raw_slice_hex": payload[pos:min(len(payload), pos + max(LOBBY_HEADER_SIZE, min(declared, 64)))].hex().upper(),
+            })
+            skipped_start = pos if skipped_start is None else skipped_start
+            pos += 1
+            continue
+        if declared < LOBBY_HEADER_SIZE or declared > 0x10000:
+            diagnostics.append({
+                "kind": "invalid_declared_size",
+                "range_offset": pos,
+                "seq_start": seq_start + pos,
+                "declared_size": declared,
+                "command": command,
+                "certainty": "verified_structural_rejection",
+                "raw_slice_hex": payload[pos:min(len(payload), pos + LOBBY_HEADER_SIZE)].hex().upper(),
+            })
+            skipped_start = pos if skipped_start is None else skipped_start
             pos += 1
             continue
         end = pos + declared
         if end > len(payload):
-            # Candidate begins here but is incomplete within this observed range.
+            diagnostics.append({
+                "kind": "truncated_frame_candidate",
+                "range_offset": pos,
+                "seq_start": seq_start + pos,
+                "declared_size": declared,
+                "observed_size": len(payload) - pos,
+                "command": command,
+                "command_name": COMMANDS[command]["name"],
+                "certainty": "structurally_inferred",
+                "raw_slice_hex": payload[pos:].hex().upper(),
+            })
+            skipped_start = pos if skipped_start is None else skipped_start
             pos += 1
             continue
         packet = payload[pos:end]
         decoded = decode_packet(packet)
         if decoded["validation"].get("valid"):
+            if skipped_start is not None and skipped_start < pos:
+                diagnostics.append({
+                    "kind": "framing_resynchronization",
+                    "range_offset_start": skipped_start,
+                    "range_offset_end": pos,
+                    "seq_start": seq_start + skipped_start,
+                    "seq_end": seq_start + pos,
+                    "skipped_length": pos - skipped_start,
+                    "certainty": "verified_observation",
+                    "raw_slice_hex": payload[skipped_start:pos].hex().upper(),
+                })
+            skipped_start = None
             messages.append({
                 "range_offset": pos,
                 "seq_start": seq_start + pos,
@@ -243,17 +328,66 @@ def scan_range(payload: bytes, seq_start: int) -> list[dict]:
             })
             pos = end
         else:
+            diagnostics.append({
+                "kind": "rejected_frame_candidate",
+                "range_offset": pos,
+                "seq_start": seq_start + pos,
+                "seq_end": seq_start + end,
+                "declared_size": declared,
+                "command": command,
+                "command_name": COMMANDS[command]["name"],
+                "reason": decoded["validation"].get("reason"),
+                "certainty": "verified_structural_rejection",
+                "raw_slice_hex": packet.hex().upper(),
+            })
+            skipped_start = pos if skipped_start is None else skipped_start
             pos += 1
-    return messages
+    if skipped_start is not None and skipped_start < len(payload):
+        diagnostics.append({
+            "kind": "opaque_trailing_bytes",
+            "range_offset_start": skipped_start,
+            "range_offset_end": len(payload),
+            "seq_start": seq_start + skipped_start,
+            "seq_end": seq_start + len(payload),
+            "certainty": "unknown_opaque",
+            "raw_slice_hex": payload[skipped_start:].hex().upper(),
+        })
+    return {"messages": messages, "diagnostics": diagnostics}
+
+
+def scan_range(payload: bytes, seq_start: int) -> list[dict]:
+    """Compatibility wrapper returning complete validated lobby packets only."""
+    return scan_range_detailed(payload, seq_start)["messages"]
 
 
 def classify_flow(directions: dict[str, dict]) -> dict:
     """Classify a reconstructed flow from complete MD5-valid lobby messages only."""
     messages = []
+    diagnostics = []
+    phases = []
     for direction in ("a_to_b", "b_to_a"):
         for range_index, rr in enumerate(directions.get(direction, {}).get("ranges", [])):
             payload = bytes.fromhex(rr["payload_hex"])
-            for message_index, message in enumerate(scan_range(payload, int(rr["seq_start"]))):
+            scanned = scan_range_detailed(payload, int(rr["seq_start"]))
+            for diagnostic_index, diagnostic in enumerate(scanned["diagnostics"]):
+                diagnostics.append({
+                    "direction": direction,
+                    "range_index": range_index,
+                    "diagnostic_index": diagnostic_index,
+                    **diagnostic,
+                })
+            for message_index, message in enumerate(scanned["messages"]):
+                command = message["validation"]["command"]
+                phase = _PHASE_BY_COMMAND.get(command)
+                if phase:
+                    phases.append({
+                        "phase": phase,
+                        "command": command,
+                        "command_name": message["validation"]["command_name"],
+                        "direction": direction,
+                        "certainty": "verified",
+                        "provenance": "validated_lobby_command",
+                    })
                 messages.append({
                     "direction": direction,
                     "range_index": range_index,
@@ -265,7 +399,10 @@ def classify_flow(directions: dict[str, dict]) -> dict:
         return {
             "protocol_family": "unknown_tcp",
             "classification_validated": False,
+            "classification_certainty": "unknown_opaque",
             "messages": [],
+            "diagnostics": diagnostics,
+            "session_phase_evidence": [],
             "endpoint_roles": None,
             "role_status": "unresolved",
         }
@@ -288,8 +425,11 @@ def classify_flow(directions: dict[str, dict]) -> dict:
     return {
         "protocol_family": "ffxi_lobby",
         "classification_validated": True,
+        "classification_certainty": "verified",
         "validation_basis": "complete_known_command+IXFF+declared_size+MD5",
         "messages": messages,
+        "diagnostics": diagnostics,
+        "session_phase_evidence": phases,
         "endpoint_roles": None if conflict else role_votes,
         "role_status": "conflicting" if conflict else "validated_from_command_direction",
     }
