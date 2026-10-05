@@ -53,6 +53,21 @@ def ipv4_tcp_frame(payload: bytes, *, sport: int, dport: int, seq: int, src, dst
     return eth + bytes(ip) + bytes(tcp) + payload
 
 
+def ipv4_udp_frame(payload: bytes, *, sport: int, dport: int, src, dst) -> bytes:
+    eth = bytes.fromhex("00112233445566778899AABB0800")
+    total_len = 20 + 8 + len(payload)
+    ip = bytearray(20)
+    ip[0] = 0x45
+    struct.pack_into("!H", ip, 2, total_len)
+    ip[8] = 64
+    ip[9] = 17
+    ip[12:16] = bytes(src)
+    ip[16:20] = bytes(dst)
+    udp = bytearray(8)
+    struct.pack_into("!HHHH", udp, 0, sport, dport, 8 + len(payload), 0)
+    return eth + bytes(ip) + bytes(udp) + payload
+
+
 def make_pcap(frames):
     out = bytearray()
     out += b"\xd4\xc3\xb2\xa1"
@@ -116,6 +131,7 @@ def main():
     false_packet = bytearray(req_worlds)
     false_packet[12] ^= 0xFF
     sf = search_frame()
+    map_udp_payload = b"\xDE\xAD\xBE\xEFmap-opaque"
 
     frames = [
         (1_700_000_000, 100_000, ipv4_tcp_frame(
@@ -146,6 +162,12 @@ def main():
         (1_700_000_001, 200_000, ipv4_tcp_frame(
             sf, sport=42000, dport=54002, seq=12000,
             src=CLIENT_IP, dst=(55, 66, 77, 88),
+        )),
+        # Exact zone/map endpoint learned from ResponseNextLogin, observed on the source-backed UDP
+        # transport. Payload stays opaque and is not assigned gameplay semantics.
+        (1_700_000_001, 300_000, ipv4_udp_frame(
+            map_udp_payload, sport=43000, dport=54230,
+            src=CLIENT_IP, dst=(11, 22, 33, 44),
         )),
     ]
 
@@ -184,6 +206,22 @@ def main():
     assert ingested_search_meta["framing_evidence"]["frame_count"] == 1, ingested_search_meta
     assert ingested_search_meta["decoder_status"] == "encrypted_or_opaque", ingested_search_meta
     assert ingested_search_meta["cross_source_merge_performed"] is False, ingested_search_meta
+
+    udp_rows = con.execute(
+        """SELECT payload_json FROM capture_structured_records
+           WHERE capture_id=? AND source_file='lobby-session.pcap'
+             AND family='pcap_network' AND record_type='UDP'""",
+        (cid,),
+    ).fetchall()
+    assert len(udp_rows) == 1, udp_rows
+    udp_meta = json.loads(udp_rows[0][0])
+    assert udp_meta["protocol_family"] == "ffxi_map_endpoint", udp_meta
+    assert udp_meta["classification_validated"] is False, udp_meta
+    assert udp_meta["classification_scope"] == "exact_udp_endpoint_from_verified_lobby_ResponseNextLogin", udp_meta
+    assert udp_meta["classification_certainty"] == "structurally_inferred", udp_meta
+    assert udp_meta["transport_payload_hex"] == map_udp_payload.hex().upper(), udp_meta
+    assert udp_meta["decoder_status"] == "raw_udp_payload_preserved", udp_meta
+    assert udp_meta["cross_source_merge_performed"] is False, udp_meta
 
     messages = con.execute(
         """SELECT direction,command,command_name,validation_status,fields_json,provenance_json
@@ -332,7 +370,7 @@ def main():
     ).fetchone()[0] == 3
 
     con.close()
-    print("Validated lobby/search TCP classifier regression: PASS")
+    print("Validated lobby/search/map endpoint classifier regression: PASS")
     return 0
 
 
