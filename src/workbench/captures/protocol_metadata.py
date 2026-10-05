@@ -163,24 +163,36 @@ def _annotate_udp_handoffs(
         except ValueError:
             raw_payload = b""
         handshake = map_framing.inspect_login_datagram(raw_payload)
+        endpoint_is_destination = any(match["matched_endpoint_side"] == "dst" for match in matches)
+        probe_diagnostics = list(handshake["diagnostics"])
+        if handshake["recognized"] and not endpoint_is_destination:
+            probe_diagnostics.append({
+                "kind": "map_login_direction_mismatch",
+                "expected_server_endpoint_side": "dst",
+                "observed_server_endpoint_sides": sorted({match["matched_endpoint_side"] for match in matches}),
+                "certainty": "verified_conflict",
+            })
+
         payload["map_handshake_probe"] = {
-            "recognized": handshake["recognized"],
+            "recognized": bool(handshake["recognized"] and endpoint_is_destination),
             "message_type": handshake["message_type"],
-            "certainty": handshake["certainty"],
+            "certainty": handshake["certainty"] if endpoint_is_destination else "ambiguous",
             "validation_basis": handshake["validation_basis"],
-            "diagnostics": handshake["diagnostics"],
+            "diagnostics": probe_diagnostics,
             "field_evidence": handshake["field_evidence"],
+            "direction_basis": "client_0x000A_requires_verified_map_endpoint_as_udp_destination",
         }
-        if handshake["recognized"]:
+        if handshake["recognized"] and endpoint_is_destination:
             payload["classification_validated"] = True
             payload["classification_certainty"] = "verified"
             payload["classification_scope"] = "verified_lobby_handoff_plus_verified_map_0x000A_udp_handshake"
-            payload["validation_basis"] = "exact_verified_map_endpoint_and_source_backed_0x000A_structure"
+            payload["validation_basis"] = "exact_verified_map_endpoint_and_source_backed_0x000A_structure_and_direction"
             payload["decoder_status"] = handshake["decoder_status"]
             payload["framing_evidence"] = {
                 "protocol_family": "ffxi_map",
                 "message_type": handshake["message_type"],
                 "certainty": "verified",
+                "direction": "client_to_map",
                 "validation_basis": handshake["validation_basis"],
                 "field_evidence": handshake["field_evidence"],
                 "opaque_inner_hex": handshake["opaque_inner_hex"],
