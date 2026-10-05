@@ -5,10 +5,11 @@
   <div class="page-head">
     <div>
       <h1>Auction House Administration</h1>
-      <p class="muted">Economy health, listings, history, price trends, and preview-only administrative actions for the active server environment.</p>
+      <p class="muted">Economy health, listings, history, price trends, and guarded DSP/Topaz Test administration for the active server environment.</p>
     </div>
-    <span class="badge" id="ahReadOnlyBadge">PREVIEW ONLY</span>
+    <span class="badge" id="ahReadOnlyBadge">READ + SCOPED TEST WRITE</span>
   </div>
+  {% include "_auction_house_nav.html" %}
 
   <section class="panel ah-status">
     <div id="ahStatus">Connecting to active server environment…</div>
@@ -16,7 +17,7 @@
   </section>
 
   <section class="panel">
-    <div class="page-head"><div><h2>Write readiness</h2><p class="muted">Live database and source-lineage prerequisite checks only. Execution remains disabled.</p></div><span class="badge">NO EXECUTOR</span></div>
+    <div class="page-head"><div><h2>Write readiness</h2><p class="muted">Live database/source-lineage checks plus scoped DSP/Topaz Test-write gates. Unrestricted and Live writes remain disabled.</p></div><span class="badge">SCOPED TEST WRITES</span></div>
     <div id="ahLineageSemantics" class="ah-semantic-gate"><p class="muted">Verifying server-lineage semantics…</p></div>
     <div id="ahWriteReadiness"><p class="muted">Checking database prerequisites…</p></div>
   </section>
@@ -49,7 +50,7 @@
   </section>
 
   <section class="panel">
-    <div class="page-head"><div><h2>Administrative action preview</h2><p class="muted">These controls perform validation and SELECT-only snapshots. No apply/commit route exists yet.</p></div><span class="badge">NO WRITES</span></div>
+    <div class="page-head"><div><h2>Administrative action preview</h2><p class="muted">These controls remain preview/validation surfaces. Supported writes are executed from the dedicated Listings, Seeder, Cleanup, or Rewards pages through their guarded Test-only endpoints.</p></div><span class="badge">PREVIEW / VALIDATE</span></div>
     <div class="ah-preview-grid">
       <form id="ahListPreviewForm" class="ah-preview-form">
         <h3>Preview listing</h3>
@@ -69,7 +70,7 @@
     </div>
     <div id="ahActionPreview" class="ah-action-preview"><p class="muted">No administrative action previewed yet.</p></div>
     <div class="ah-validation-head">
-      <div><h3>Read-only preview validation</h3><p class="muted">Re-read live state and evaluate every safety gate against the preview. This never applies or commits changes.</p></div>
+      <div><h3>Read-only preview validation</h3><p class="muted">Re-read live state and evaluate every safety gate against the preview. This validation step never applies changes.</p></div>
       <button type="button" id="ahValidatePreview" disabled>Validate current preview</button>
     </div>
     <div id="ahValidationReport" class="ah-validation-report"><p class="muted">Generate a preview first, then run validation.</p></div>
