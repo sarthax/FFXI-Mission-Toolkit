@@ -157,6 +157,8 @@ if (IS_LSB) {
   const gearPct = Math.round(GEAR_PROB * 1000) / 10;
   $('gear').options[0].textContent = `Roll (${gearPct}%)`;
   $('objective').options[0].textContent = 'Random (native LSB rules)';
+  $('shared').checked = true;
+  $('shared').disabled = true;
 }
 
 // ---------- RNG (mulberry32) ----------
@@ -185,7 +187,7 @@ function randomEditorObjective(){
   let choices = Object.keys(OBJ_NATIVE).map(Number).filter(editorId => {
     const n = OBJ_NATIVE[editorId]; return Number.isFinite(n) && Number.isFinite(lo) && Number.isFinite(hi) && n >= lo && n <= hi;
   });
-  if (!choices.length) choices = [2,3,4,5,6].filter(id=>id!==1);
+  if (!choices.length) choices = [2,3,4,5,6];
   if (normal.suppress_immediate_repeat && lsbPreviousNativeStage != null && choices.length > 1) {
     choices = choices.filter(id => OBJ_NATIVE[id] !== lsbPreviousNativeStage);
   }
@@ -199,7 +201,7 @@ function generate(){
   let L = parseInt($('layout').value);
   if (!L) L = boss ? (BOSS_RULE.layout ?? 16) : rint(NON_BOSS_LAYOUT.first ?? 1, NON_BOSS_LAYOUT.last ?? 15);
   const items = [], log = [];
-  const shared = $('shared').checked; let sharedPool = freshPool(L);
+  const shared = IS_LSB || $('shared').checked; let sharedPool = freshPool(L);
   const pool = () => shared ? sharedPool : freshPool(L);
   const take = (pl, tag) => { if(!pl.length) return null; const k=rint(0,pl.length-1); const o=pl[k]; pl.splice(k,1); return o; };
   const add = (kind,label,o,extra={}) => o && items.push({kind,label,L,idx:o.i,p:o.p,...extra});
@@ -207,6 +209,8 @@ function generate(){
   const pickFam = () => { const s=parseInt($('family').value); const k = s? String(s): fams[rint(0,fams.length-1)]; return {k, f:D.families[k]}; };
   function enemyLayout(){ const {k,f}=pickFam(); log.push('family '+k+' '+f.label); const pl=pool(); let n=0;
     for(const m of famMobs(f)){ const o=take(pl); if(!o) break; add('mob',m.name,o,{id:m.id}); n++; } return n; }
+  function lsbFodder(markTarget=false){ const {k,f}=pickFam(); log.push('family '+k+' '+f.label); const mobs=famMobs(f), pp=pool(); const amt=Math.min(mobs.length,rint(6,12)); let n=0;
+    for(let i=0;i<amt;i++){ if(!pp.length||!mobs.length)break; const mi=rint(0,mobs.length-1); const m=mobs.splice(mi,1)[0]; const o=take(pp); const target=markTarget&&n===0; add(target?'target':'mob',(target?'TARGET ':'')+m.name,o,{id:m.id}); n++; } return n; }
   function leaderPick(){ const s=parseInt($('leader').value); const l = D.leaders[s>=0?s:rint(0,D.leaders.length-1)]; const o=D.points[L]?null:null; return l; }
   let stage;
   let nativeStage = null;
@@ -221,10 +225,12 @@ function generate(){
     const manual = parseInt($('objective').value);
     let roll = manual || randomEditorObjective(); stage = roll; nativeStage = nativeObjective(stage); nativeStageSymbol = nativeSymbol(stage);
     log.push('objective '+roll+' '+OBJ[roll] + (IS_LSB ? ` -> native ${nativeStage} ${nativeStageSymbol||''}` : ''));
-    if (roll===2){ const n=enemyLayout(); log.push('Eliminate count '+n); }
+    if (roll===2){ if (!IS_LSB){ const n=enemyLayout(); log.push('Eliminate count '+n); } }
     else if (roll===3){ const l=leaderPick(); const o=take(pool()); add('leader',l.name,o,{id:l.id}); }
-    else if (roll===4){ enemyLayout(); const gi=parseInt($('group').value); const g=D.groups[gi>=0?gi:rint(0,D.groups.length-1)]; log.push('group '+g.name);
-      const pl=pool(); for(let k=0;k<g.count;k++){ const o=take(pl); if(!o) break; add('spec',g.name+' #'+(k+1),o,{id:g.id+k}); } }
+    else if (roll===4){ const gi=parseInt($('group').value); const g=D.groups[gi>=0?gi:rint(0,D.groups.length-1)]; log.push('group '+g.name);
+      if (IS_LSB){ const ids=[...Array(g.count).keys()].map(k=>({id:g.id+k,name:g.name})); const pp=pool(); const amount=Math.min(g.count,rint(2,g.count));
+        for(let k=0;k<amount;k++){ if(!ids.length||!pp.length)break; const mi=rint(0,ids.length-1); const m=ids.splice(mi,1)[0]; const o=take(pp); add('spec',m.name+' #'+(k+1),o,{id:m.id}); } }
+      else { enemyLayout(); const pl=pool(); for(let k=0;k<g.count;k++){ const o=take(pl); if(!o) break; add('spec',g.name+' #'+(k+1),o,{id:g.id+k}); } } }
     else if (roll===5){
       let m=parseInt($('lampmode').value)||rint(1,3); log.push('lamp mode '+LAMPMODE[m]);
       const ex=exSet('lamps',L); let lp=(D.lamps[L]||[]).map((p,i)=>({i:i+1,p})).filter(o=>!ex.has(o.i));
@@ -233,25 +239,26 @@ function generate(){
       else if (m===2){ const n=rint(2,Math.max(2,party-1))+1; for(let k=0;k<n;k++){ const o=take(lp); if(!o)break; add('lamp','Lamp '+(k+1),o);} }
       else { const n=rint(2,4)+1; const ord=[...Array(n).keys()].map(k=>k+1); for(let k=0;k<n;k++){ const o=take(lp); const r=rint(0,ord.length-1); const ordv=ord.splice(r,1)[0]; if(o) add('lamp','Lamp order '+ordv,o);} }
     }
-    else if (roll===6){ const {k,f}=pickFam(); log.push('family '+k+' '+f.label); const pl=famMobs(f); const pp=pool();
+    else if (roll===6 && !IS_LSB){ const {k,f}=pickFam(); log.push('family '+k+' '+f.label); const pl=famMobs(f); const pp=pool();
       const amt=Math.min(pl.length, rint(6,12)); let first=true;
       for(let n=0;n<amt;n++){ if(!pp.length||!pl.length)break; const mi=rint(0,pl.length-1); const m=pl.splice(mi,1)[0]; const o=take(pp); add(first?'target':'mob',(first?'TARGET ':'')+m.name,o,{id:m.id}); first=false; } }
     else if (roll===1){ log.push('free floor: 3 crates, positions fixed by npc_list (not in pool)'); }
   }
   if (IS_LSB) lsbPreviousNativeStage = nativeStage;
+  const lsbNormalFloor = !IS_LSB || (!boss && nativeStage !== D.objectives?.FREE_FLOOR);
   // gear
-  let gear = parseInt($('gear').value);
-  if (gear<0) gear = IS_LSB && boss ? 0 : (rnd() < GEAR_PROB ? rint(1,2) : 0);
+  let gear = parseInt($('gear').value); if (gear<0) gear = lsbNormalFloor && rnd() < GEAR_PROB ? rint(1,2) : 0;
   if (gear>0){ log.push('gear objective '+gear); const pl=pool(); for(let k=0;k<6;k++){ const o=take(pl); if(!o)break; add('gear',(k<3?'Archaic Gear ':'Archaic Gears ')+(k%3+1),o,{id:B.GEAR_OFFSET+2+k}); } }
   // NMs
   const nmMode = parseInt($('nm').value);
-  if (!boss || true){
+  if (!IS_LSB || lsbNormalFloor){
     const sect=Math.min(5,Math.floor((floor-1)/20)+1); const ids=(floor%2===0?D.nm.NM_EVEN:D.nm.NM_ODD)[sect-1];
     const nmPool=[...Array(9).keys()].map(k=>ids+k); const pp=pool();
     for(let n=0;n<2;n++){ const hit = nmMode===2 ? true : nmMode===0 ? false : rnd()*100<=20;
       if(hit && pp.length && nmPool.length){ const mi=rint(0,nmPool.length-1); const id=nmPool.splice(mi,1)[0]; const o=take(pp); add('nm','NM '+id,o,{id}); } }
     if (stage===2 && nmMode!==0 && pp.length && rnd()*100<=20){ const o=take(pp); add('nm','Dahak',o,{id:B.DAHAK}); }
   }
+  if (IS_LSB && lsbNormalFloor){ const n=lsbFodder(stage===6); log.push('regular fodder '+n); }
   return {L, floor, stage, nativeStage, nativeStageSymbol, items, log};
 }
 
@@ -340,7 +347,7 @@ renderer.domElement.addEventListener('pointerup', async ev => {
   redraw();
 });
 $('gen').onclick=run; $('rnd').onclick=()=>{ $('seed').value=(parseInt($('seed').value)||0)+1; run(); };
-$('clr').onclick=()=>{ lastRes=null; $('out').textContent=''; redraw(); };
+$('clr').onclick=()=>{ lastRes=null; lsbFreeFloorSeen=false; lsbPreviousNativeStage=null; $('out').textContent=''; redraw(); };
 ['showpts','showidx','shownav','showdoors','lift'].forEach(id=>$(id).addEventListener('input',redraw));
 $('opac').addEventListener('input',setOpacity);
 $('layout').addEventListener('change',()=>{ const L=parseInt($('layout').value); if(L){ lastRes=null; redraw(); frame(L);} });
