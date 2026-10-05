@@ -183,6 +183,7 @@ def main() -> int:
         assert "Supporting evidence" in contradictions_html
         assert "Contradicting evidence" in contradictions_html
         assert "evidence%3Aclient" in contradictions_html
+        # Canonical subjects use the existing exact Feature Trace query route.
         assert "/features/trace?q=feature%3Atest" in contradictions_html
 
         limited_html=render(
@@ -203,6 +204,7 @@ def main() -> int:
         assert "CONTRADICTING" in evidence_html
         assert "graph.search" in evidence_html
         assert "/features/trace?q=feature%3Atest" in evidence_html
+        # ResearchSession references keep their dedicated session route instead of being rewritten as traces.
         assert "/research/research%3Aevidence" in evidence_html
 
         session_data=store.get("research:evidence")
