@@ -20,6 +20,7 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
     from .listing_api import router as auction_house_listing_router
     from .player_listing_api import router as auction_house_player_listing_router
     from .player_purchase_api import router as auction_house_player_purchase_router
+    from .synthetic_seed_api import router as auction_house_synthetic_seed_router
 
     existing_routes = {
         (getattr(route, "path", None), tuple(sorted(getattr(route, "methods", ()) or ())))
@@ -33,6 +34,7 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
         auction_house_player_purchase_router,
         auction_house_player_listing_router,
         auction_house_batch_router,
+        auction_house_synthetic_seed_router,
     ):
         for route in carrier.routes:
             key = (getattr(route, "path", None), tuple(sorted(getattr(route, "methods", ()) or ())))
