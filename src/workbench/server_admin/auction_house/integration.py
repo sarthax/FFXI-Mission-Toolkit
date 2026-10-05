@@ -15,6 +15,7 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
 
     from .admin_buy_api import router as auction_house_admin_buy_router
     from .batch_api import router as auction_house_batch_router
+    from .cleanup_api import router as auction_house_cleanup_router
     from .gui import router as auction_house_router
     from .legacy_test_api import router as auction_house_test_write_router
     from .listing_api import router as auction_house_listing_router
@@ -37,6 +38,7 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
         auction_house_batch_router,
         auction_house_synthetic_seed_router,
         auction_house_seeder_ui_router,
+        auction_house_cleanup_router,
     ):
         for route in carrier.routes:
             key = (getattr(route, "path", None), tuple(sorted(getattr(route, "methods", ()) or ())))
@@ -68,6 +70,12 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
                 len(sections),
             )
             sections.insert(insert_at, {"label": "AH Seeder", "href": "/auction-house/seeder"})
+        if not any(section.get("href") == "/auction-house/cleanup" for section in sections):
+            insert_at = next(
+                (index + 1 for index, section in enumerate(sections) if section.get("href") == "/auction-house/seeder"),
+                len(sections),
+            )
+            sections.insert(insert_at, {"label": "AH Cleanup", "href": "/auction-house/cleanup"})
         updated = dict(workspace)
         updated["sections"] = tuple(sections)
         workspaces.append(updated)
