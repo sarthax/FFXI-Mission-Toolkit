@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 
 from workbench.runtime.legacy_settings import get_active_server_identity, get_active_server_root
 
+from .activity import record_executor_result
 from .factory import open_auction_house
 from .legacy_test_executor import LegacyTestExecutionBlocked
 from .player_purchase import execute_legacy_test_player_purchase, probe_player_purchase_engines
@@ -49,7 +50,11 @@ def player_purchase(payload: dict = Body(...)):
                 buyer_id=int(payload.get("buyer_id") or 0),
                 confirmation=str(payload.get("confirmation") or ""),
             )
-            return JSONResponse(result)
+        try:
+            record_executor_result(environment=environment, result=result, request_payload=payload, operation="player_purchase")
+        except Exception:
+            pass
+        return JSONResponse(result)
     except LegacyTestExecutionBlocked as exc:
         raise HTTPException(status_code=409, detail=str(exc))
     except (TypeError, ValueError) as exc:

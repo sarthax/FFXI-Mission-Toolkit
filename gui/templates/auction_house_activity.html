@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Auction House Activity{% endblock %}
+{% block content %}
+<main class="ah-activity" id="ahActivity">
+  <div class="page-head">
+    <div>
+      <h1>Auction House Activity</h1>
+      <p class="muted">Unified read-only timeline of executor outcomes, preview/replay evidence, and reward campaigns.</p>
+    </div>
+    <div><a href="/auction-house">Auction House</a> · <a href="/auction-house/reward-history">Reward History</a></div>
+  </div>
+
+  <section class="panel">
+    <h2>Filters</h2>
+    <div class="form-grid">
+      <label>Environment <input id="aaEnvironment" type="text" placeholder="Test"></label>
+      <label>Operation <input id="aaOperation" type="text" placeholder="player_purchase"></label>
+      <label>Status <input id="aaStatus" type="text" placeholder="committed"></label>
+      <label>Character ID <input id="aaCharacter" type="number" min="1"></label>
+      <label>Item ID <input id="aaItem" type="number" min="1"></label>
+      <label>Since UTC <input id="aaSince" type="datetime-local"></label>
+      <label>Until UTC <input id="aaUntil" type="datetime-local"></label>
+      <label>Limit <input id="aaLimit" type="number" min="1" max="1000" value="200"></label>
+      <label class="check"><input id="aaEvidence" type="checkbox" checked> Include preview/replay evidence</label>
+      <label class="check"><input id="aaCampaigns" type="checkbox" checked> Include reward campaigns</label>
+    </div>
+    <div class="actions"><button id="aaLoad" type="button">Load activity</button><button id="aaClear" type="button">Clear filters</button></div>
+  </section>
+
+  <section class="panel">
+    <div class="summary" id="aaSummary">No activity loaded.</div>
+    <div class="table-wrap">
+      <table class="activity-table">
+        <thead><tr><th>Time</th><th>Source</th><th>Operation</th><th>Status</th><th>Environment</th><th>Character</th><th>Item</th><th>Auction</th><th>Details</th></tr></thead>
+        <tbody id="aaRows"><tr><td colspan="9" class="muted">Load activity to begin.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<style>
+.ah-activity{padding:10px 14px 24px}.page-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.muted{opacity:.72}.panel{border:1px solid var(--border-color,#5555);border-radius:8px;padding:12px;margin:10px 0}.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:10px 0}.form-grid label{display:grid;gap:4px;font-size:12px}.form-grid .check{display:flex;align-items:center;gap:6px}.actions{display:flex;gap:8px}.summary{margin-bottom:8px}.table-wrap{overflow:auto}.activity-table{width:100%;border-collapse:collapse;font-size:12px;min-width:1050px}.activity-table th,.activity-table td{padding:6px;border-bottom:1px solid var(--border-color,#5554);text-align:left;vertical-align:top}.activity-table button{font-size:11px}.activity-detail{white-space:pre-wrap;max-width:520px;max-height:300px;overflow:auto}@media(max-width:800px){.page-head{flex-direction:column}}
+</style>
+<script src="/static/auction_house_activity.js"></script>
+{% endblock %}

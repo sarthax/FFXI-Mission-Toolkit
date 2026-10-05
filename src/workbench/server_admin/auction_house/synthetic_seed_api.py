@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 
 from workbench.runtime.legacy_settings import get_active_server_identity, get_active_server_root
 
+from .activity import record_executor_result
 from .factory import open_auction_house
 from .legacy_test_executor import LegacyTestExecutionBlocked
 from .synthetic_seed import execute_synthetic_category_seed, preview_synthetic_category_seed
@@ -52,7 +53,7 @@ def synthetic_category_seed(payload: dict = Body(...)):
     try:
         environment = get_active_server_identity()
         with _context() as ctx:
-            return JSONResponse(execute_synthetic_category_seed(
+            result = execute_synthetic_category_seed(
                 service=ctx.service,
                 environment=environment,
                 seller_id=int(payload.get("seller_id") or 0),
@@ -62,7 +63,12 @@ def synthetic_category_seed(payload: dict = Body(...)):
                 copies_per_item=int(payload.get("copies_per_item") or 1),
                 limit_items=int(payload.get("limit_items") or 100),
                 confirmation=str(payload.get("confirmation") or ""),
-            ))
+            )
+        try:
+            record_executor_result(environment=environment, result=result, request_payload=payload, operation="synthetic_category_seed")
+        except Exception:
+            pass
+        return JSONResponse(result)
     except LegacyTestExecutionBlocked as exc:
         raise HTTPException(status_code=409, detail=str(exc))
     except (TypeError, ValueError) as exc:

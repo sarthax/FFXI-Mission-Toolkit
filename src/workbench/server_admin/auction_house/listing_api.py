@@ -11,6 +11,7 @@ from fastapi.templating import Jinja2Templates
 from workbench.runtime.legacy_settings import get_active_server_identity, get_active_server_root
 from workbench.runtime.paths import GUI_ROOT
 
+from .activity import record_executor_result
 from .factory import open_auction_house
 from .legacy_test_executor import LegacyTestExecutionBlocked
 from .listing_management import ListingFilter, browse_active_listings
@@ -62,22 +63,15 @@ def active_listing_browser(
     q: str | None = None,
     limit: int = Query(default=200, ge=1, le=1000),
 ):
-    """Browse exact active AH rows by seller, category, item, or search text."""
     try:
         filters = ListingFilter(
-            seller_id=seller_id,
-            seller_name=seller_name,
-            category_id=category_id,
-            item_id=item_id,
-            q=q,
-            limit=limit,
+            seller_id=seller_id, seller_name=seller_name, category_id=category_id,
+            item_id=item_id, q=q, limit=limit,
         )
         with _context() as ctx:
             rows = browse_active_listings(ctx.service, filters)
             return JSONResponse({
-                "filters": filters.as_dict(),
-                "count": len(rows),
-                "rows": rows,
+                "filters": filters.as_dict(), "count": len(rows), "rows": rows,
                 "actions": {
                     "preview_buy": "/auction-house/admin/purchase/preview.json",
                     "return_to_seller": "/auction-house/test-write/return-to-seller.json",
@@ -89,19 +83,20 @@ def active_listing_browser(
 
 @router.post("/auction-house/test-write/return-to-seller.json")
 def return_listing_to_seller(payload: dict = Body(...)):
-    """Cancel one DSP/Topaz Test listing using the safest verified return strategy."""
     try:
         auction_id = int(payload.get("auction_id") or 0)
         confirmation = str(payload.get("confirmation") or "")
         environment = get_active_server_identity()
         with _context() as ctx:
             result = execute_legacy_test_safe_return(
-                service=ctx.service,
-                environment=environment,
-                auction_id=auction_id,
+                service=ctx.service, environment=environment, auction_id=auction_id,
                 confirmation=confirmation,
             )
-            return JSONResponse(result)
+        try:
+            record_executor_result(environment=environment, result=result, request_payload=payload, operation="return_to_seller")
+        except Exception:
+            pass
+        return JSONResponse(result)
     except LegacyTestExecutionBlocked as exc:
         raise HTTPException(status_code=409, detail=str(exc))
     except (TypeError, ValueError) as exc:
