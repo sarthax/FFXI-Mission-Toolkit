@@ -7,12 +7,12 @@
       <h1>Auction House Listing Manager</h1>
       <p class="muted">Browse exact active listings by player, category, item, or auction ID and perform guarded administrative actions.</p>
     </div>
-    <a href="/auction-house">Back to Auction House</a>
   </div>
+  {% include "_auction_house_nav.html" %}
 
   <section class="panel">
     <div class="page-head">
-      <div><h2>Active listings</h2><p class="muted">Granular DSP/Topaz administration. Test writes remain gated by the active Test profile and feature flag.</p></div>
+      <div><h2>Active listings</h2><p class="muted">Granular DSP/Topaz administration. Scoped Test writes require the active Test profile, feature flag, and exact confirmation.</p></div>
       <span class="badge">DSP / TOPAZ</span>
     </div>
     <div class="filters">
