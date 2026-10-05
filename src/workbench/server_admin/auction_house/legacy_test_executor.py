@@ -1,13 +1,13 @@
 """Guarded DSP/Topaz Auction House executor for TEST environments only.
 
-The first supported mutation is intentionally narrow: change the asking price on one already-
-active legacy Auction House row. This proves transactional write safety without duplicating the
-legacy map-server inventory/gil/listing/purchase machinery.
+Supported mutations are intentionally narrow and admin-oriented so the toolkit can prove real
+write safety without duplicating the legacy map-server player transaction machinery.
 """
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 import os
+import time
 from typing import Any
 
 LEGACY_TEST_WRITE_ENV = "FFXI_MISSION_TOOLKIT_AH_LEGACY_TEST_WRITES"
@@ -45,7 +45,7 @@ class LegacyTestWriteGate:
             "test_only": True,
             "live_permitted": False,
             "supported_families": sorted(_SUPPORTED_FAMILIES),
-            "supported_operations": ["price_change"],
+            "supported_operations": ["price_change", "synthetic_listing"],
             "feature_flag": LEGACY_TEST_WRITE_ENV,
         }
 
@@ -87,6 +87,18 @@ def evaluate_legacy_test_write_gate(
     return LegacyTestWriteGate(dict(environment), schema, issues)
 
 
+def _require_gate(*, service, environment: dict[str, Any], confirmation: str, feature_enabled: bool | None) -> None:
+    gate = evaluate_legacy_test_write_gate(
+        environment=environment,
+        schema_family_hint=service.schema.family_hint,
+        confirmation=confirmation,
+        feature_enabled=feature_enabled,
+    )
+    if not gate.ready:
+        codes = ", ".join(issue.code for issue in gate.issues if issue.blocking)
+        raise LegacyTestExecutionBlocked(f"Auction House legacy TEST execution blocked: {codes}")
+
+
 def execute_legacy_test_price_change(
     *,
     service,
@@ -98,15 +110,7 @@ def execute_legacy_test_price_change(
     feature_enabled: bool | None = None,
 ) -> dict[str, Any]:
     """Change one active DSP/Topaz Auction House asking price in one transaction."""
-    gate = evaluate_legacy_test_write_gate(
-        environment=environment,
-        schema_family_hint=service.schema.family_hint,
-        confirmation=confirmation,
-        feature_enabled=feature_enabled,
-    )
-    if not gate.ready:
-        codes = ", ".join(issue.code for issue in gate.issues if issue.blocking)
-        raise LegacyTestExecutionBlocked(f"Auction House legacy TEST execution blocked: {codes}")
+    _require_gate(service=service, environment=environment, confirmation=confirmation, feature_enabled=feature_enabled)
 
     auction_id = int(auction_id)
     expected_price = int(expected_price)
@@ -178,5 +182,125 @@ def execute_legacy_test_price_change(
         "environment": dict(environment),
         "before": before,
         "after": after,
+        "write_feature": LEGACY_TEST_WRITE_ENV,
+    }
+
+
+def execute_legacy_test_synthetic_listing(
+    *,
+    service,
+    environment: dict[str, Any],
+    item_id: int,
+    seller_id: int,
+    price: int,
+    stack: bool,
+    confirmation: str,
+    feature_enabled: bool | None = None,
+    listed_at: int | None = None,
+) -> dict[str, Any]:
+    """Insert one explicit admin-created DSP/Topaz active listing.
+
+    This is not a simulated player listing: no inventory is removed and no listing fee is charged.
+    It intentionally injects supply for administration/testing and reports that economic effect.
+    """
+    _require_gate(service=service, environment=environment, confirmation=confirmation, feature_enabled=feature_enabled)
+
+    item_id = int(item_id)
+    seller_id = int(seller_id)
+    price = int(price)
+    stack = bool(stack)
+    if item_id <= 0 or seller_id <= 0 or price <= 0:
+        raise LegacyTestExecutionBlocked("item_id, seller_id, and price must be positive")
+
+    item = service.item_snapshot(item_id)
+    seller = service.character_snapshot(seller_id)
+    if not item:
+        raise LegacyTestExecutionBlocked("The requested item does not exist")
+    if int(item.get("category_id") or 0) <= 0:
+        raise LegacyTestExecutionBlocked("The requested item is not assigned to an Auction House category")
+    stack_size = max(1, int(item.get("stack_size") or 1))
+    if stack and stack_size <= 1:
+        raise LegacyTestExecutionBlocked("The requested item cannot be listed as a stack")
+    if not seller:
+        raise LegacyTestExecutionBlocked("The requested seller character does not exist")
+
+    columns = service.schema.auction_columns
+    required = ("id", "item_id", "stack", "seller_id", "listed_at", "asking_price", "sale_price", "sold_at")
+    if any(not columns.get(name) for name in required):
+        raise LegacyTestExecutionBlocked("The live legacy Auction House schema is missing required synthetic-listing columns")
+
+    insert_fields = [columns["item_id"], columns["stack"], columns["seller_id"]]
+    params: list[Any] = [item_id, 1 if stack else 0, seller_id]
+    if columns.get("seller_name"):
+        insert_fields.append(columns["seller_name"])
+        params.append(str(seller.get("char_name") or ""))
+    insert_fields.extend([columns["listed_at"], columns["asking_price"]])
+    timestamp = int(listed_at if listed_at is not None else time.time())
+    if timestamp <= 0:
+        raise LegacyTestExecutionBlocked("listed_at must be a positive epoch timestamp")
+    params.extend([timestamp, price])
+
+    quoted_fields = ",".join(f"`{name}`" for name in insert_fields)
+    placeholders = ",".join(["%s"] * len(insert_fields))
+    connection = service.connection
+    cursor = connection.cursor()
+    auction_id: int | None = None
+    try:
+        cursor.execute("START TRANSACTION")
+        cursor.execute(
+            f"INSERT INTO `auction_house`({quoted_fields}) VALUES({placeholders})",
+            tuple(params),
+        )
+        if int(getattr(cursor, "rowcount", 0) or 0) != 1:
+            raise LegacyTestExecutionBlocked("Synthetic listing insert did not create exactly one row")
+        auction_id = int(getattr(cursor, "lastrowid", 0) or 0)
+        if auction_id <= 0:
+            raise LegacyTestExecutionBlocked("Synthetic listing insert did not return an auction ID")
+
+        cursor.execute(
+            f"SELECT `{columns['item_id']}`,`{columns['stack']}`,`{columns['seller_id']}`,`{columns['asking_price']}`,`{columns['sale_price']}`,`{columns['sold_at']}` "
+            f"FROM `auction_house` WHERE `{columns['id']}`=%s FOR UPDATE",
+            (auction_id,),
+        )
+        row = cursor.fetchone()
+        if not row:
+            raise LegacyTestExecutionBlocked("Synthetic listing disappeared during post-state verification")
+        if (
+            int(row[0]) != item_id
+            or bool(row[1]) != stack
+            or int(row[2]) != seller_id
+            or int(row[3]) != price
+            or int(row[4] or 0) != 0
+            or int(row[5] or 0) != 0
+        ):
+            raise LegacyTestExecutionBlocked("Synthetic listing post-state verification failed")
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        cursor.close()
+
+    quantity = stack_size if stack else 1
+    return {
+        "status": "committed",
+        "operation": "synthetic_listing",
+        "test_only": True,
+        "family": str(environment.get("family") or "").strip().lower(),
+        "environment": dict(environment),
+        "auction_id": auction_id,
+        "item_id": item_id,
+        "seller_id": seller_id,
+        "seller_name": seller.get("char_name"),
+        "price": price,
+        "stack": stack,
+        "quantity": quantity,
+        "listed_at": timestamp,
+        "economic_effect": {
+            "synthetic_supply_injected": quantity,
+            "listing_fee_charged": 0,
+            "seller_inventory_removed": 0,
+            "seller_proceeds_on_sale": "auction_house_buy trigger path",
+        },
         "write_feature": LEGACY_TEST_WRITE_ENV,
     }
