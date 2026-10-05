@@ -90,18 +90,31 @@ def main():
     decrypted = validated_decrypted_candidate(0x03)
     validated = search_crypto_envelope.validate_decrypted_frame(decrypted)
     assert validated["validated"] is True, validated
+    assert validated["framing_validation"]["valid"] is True, validated
     assert validated["direction_scope"] == "client_to_search_server_only", validated
     assert validated["post_decrypt_md5"]["valid"] is True, validated
     assert validated["packet_type"] == 0x03, validated
     assert validated["packet_type_name"] == "SEARCH", validated
     assert validated["packet_type_evidence"]["known_request_type"] is True, validated
-    assert validated["packet_type_evidence"]["certainty"] == "verified_after_post_decrypt_md5", validated
+    assert validated["packet_type_evidence"]["certainty"] == "verified_after_framing_and_post_decrypt_md5", validated
 
     unknown_type = search_crypto_envelope.validate_decrypted_frame(validated_decrypted_candidate(0x7F))
     assert unknown_type["validated"] is True, unknown_type
     assert unknown_type["packet_type"] == 0x7F, unknown_type
     assert unknown_type["packet_type_name"] == "UNKNOWN", unknown_type
     assert unknown_type["packet_type_evidence"]["known_request_type"] is False, unknown_type
+
+    bad_length = bytearray(decrypted)
+    struct.pack_into("<H", bad_length, 0, len(bad_length) + 4)
+    rejected_length = search_crypto_envelope.validate_decrypted_frame(bytes(bad_length))
+    assert rejected_length["validated"] is False, rejected_length
+    assert any(d["kind"] == "search_declared_length_mismatch" for d in rejected_length["diagnostics"]), rejected_length
+
+    bad_marker = bytearray(decrypted)
+    bad_marker[4:8] = b"NOPE"
+    rejected_marker = search_crypto_envelope.validate_decrypted_frame(bytes(bad_marker))
+    assert rejected_marker["validated"] is False, rejected_marker
+    assert any(d["kind"] == "search_marker_mismatch" for d in rejected_marker["diagnostics"]), rejected_marker
 
     corrupted = bytearray(decrypted)
     corrupted[8] ^= 0xFF
