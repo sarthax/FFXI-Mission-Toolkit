@@ -25,6 +25,8 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
     from .preset_api import router as auction_house_preset_api_router
     from .preset_ui import router as auction_house_preset_ui_router
     from .reward_api import router as auction_house_reward_api_router
+    from .reward_history_api import router as auction_house_reward_history_api_router
+    from .reward_history_ui import router as auction_house_reward_history_ui_router
     from .reward_ui import router as auction_house_reward_ui_router
     from .seeder_ui import router as auction_house_seeder_ui_router
     from .synthetic_seed_api import router as auction_house_synthetic_seed_router
@@ -49,6 +51,8 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
         auction_house_economy_router,
         auction_house_reward_api_router,
         auction_house_reward_ui_router,
+        auction_house_reward_history_api_router,
+        auction_house_reward_history_ui_router,
     ):
         for route in carrier.routes:
             key = (getattr(route, "path", None), tuple(sorted(getattr(route, "methods", ()) or ())))
@@ -63,47 +67,29 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
             continue
         sections = list(workspace.get("sections", ()))
         if not any(section.get("href") == "/auction-house" for section in sections):
-            insert_at = next(
-                (index + 1 for index, section in enumerate(sections) if section.get("href") == "/character-editor"),
-                len(sections),
-            )
+            insert_at = next((index + 1 for index, section in enumerate(sections) if section.get("href") == "/character-editor"), len(sections))
             sections.insert(insert_at, {"label": "Auction House", "href": "/auction-house"})
         if not any(section.get("href") == "/auction-house/listing-manager" for section in sections):
-            insert_at = next(
-                (index + 1 for index, section in enumerate(sections) if section.get("href") == "/auction-house"),
-                len(sections),
-            )
+            insert_at = next((index + 1 for index, section in enumerate(sections) if section.get("href") == "/auction-house"), len(sections))
             sections.insert(insert_at, {"label": "AH Listing Manager", "href": "/auction-house/listing-manager"})
         if not any(section.get("href") == "/auction-house/seeder" for section in sections):
-            insert_at = next(
-                (index + 1 for index, section in enumerate(sections) if section.get("href") == "/auction-house/listing-manager"),
-                len(sections),
-            )
+            insert_at = next((index + 1 for index, section in enumerate(sections) if section.get("href") == "/auction-house/listing-manager"), len(sections))
             sections.insert(insert_at, {"label": "AH Seeder", "href": "/auction-house/seeder"})
         if not any(section.get("href") == "/auction-house/cleanup" for section in sections):
-            insert_at = next(
-                (index + 1 for index, section in enumerate(sections) if section.get("href") == "/auction-house/seeder"),
-                len(sections),
-            )
+            insert_at = next((index + 1 for index, section in enumerate(sections) if section.get("href") == "/auction-house/seeder"), len(sections))
             sections.insert(insert_at, {"label": "AH Cleanup", "href": "/auction-house/cleanup"})
         if not any(section.get("href") == "/auction-house/presets" for section in sections):
-            insert_at = next(
-                (index + 1 for index, section in enumerate(sections) if section.get("href") == "/auction-house/cleanup"),
-                len(sections),
-            )
+            insert_at = next((index + 1 for index, section in enumerate(sections) if section.get("href") == "/auction-house/cleanup"), len(sections))
             sections.insert(insert_at, {"label": "AH Presets", "href": "/auction-house/presets"})
         if not any(section.get("href") == "/auction-house/economy" for section in sections):
-            insert_at = next(
-                (index + 1 for index, section in enumerate(sections) if section.get("href") == "/auction-house/presets"),
-                len(sections),
-            )
+            insert_at = next((index + 1 for index, section in enumerate(sections) if section.get("href") == "/auction-house/presets"), len(sections))
             sections.insert(insert_at, {"label": "AH Economy", "href": "/auction-house/economy"})
         if not any(section.get("href") == "/auction-house/rewards" for section in sections):
-            insert_at = next(
-                (index + 1 for index, section in enumerate(sections) if section.get("href") == "/auction-house/economy"),
-                len(sections),
-            )
+            insert_at = next((index + 1 for index, section in enumerate(sections) if section.get("href") == "/auction-house/economy"), len(sections))
             sections.insert(insert_at, {"label": "AH Rewards", "href": "/auction-house/rewards"})
+        if not any(section.get("href") == "/auction-house/reward-history" for section in sections):
+            insert_at = next((index + 1 for index, section in enumerate(sections) if section.get("href") == "/auction-house/rewards"), len(sections))
+            sections.insert(insert_at, {"label": "AH Reward History", "href": "/auction-house/reward-history"})
         updated = dict(workspace)
         updated["sections"] = tuple(sections)
         workspaces.append(updated)
