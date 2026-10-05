@@ -38,13 +38,51 @@
     return 'unsupported';
   };
 
+  const ELE={1:['FIRE','FIRE'],2:['ICE','ICE'],3:['WIND','WIND'],4:['EARTH','EARTH'],5:['LIGHTNING','LIGHTNING'],6:['WATER','WATER'],7:['LIGHT','LIGHT'],8:['DARK','DARKNESS']};
+  // DSP resolves a weapon proc in scripts/globals/items/<item>.lua onAdditionalEffect; the item only needs mod 431 = 1.
+  const dspLua = v => {
+    const e=ELE[v.p.element]; if(!e || v.p.kind!=='damage') return null;
+    const dmg=Math.max(1,Math.round(v.damage)), lo=Math.max(1,Math.round(dmg*0.5));
+    return `-----------------------------------------
+-- Additional Effect: ${v.p.label}
+-----------------------------------------
+require("scripts/globals/status");
+require("scripts/globals/magic");
+require("scripts/globals/msg");
+
+function onAdditionalEffect(player,target,damage)
+    local chance = ${v.chance};
+
+    if (math.random(0,99) >= chance) then
+        return 0,0,0;
+    else
+        local dmg = math.random(${lo},${dmg});
+        local params = {};
+        params.bonusmab = 0;
+        params.includemab = false;
+        dmg = addBonusesAbility(player, ELE_${e[0]}, target, dmg, params);
+        dmg = dmg * applyResistanceAddEffect(player,target,ELE_${e[0]},0);
+        dmg = adjustForTarget(target,dmg,ELE_${e[0]});
+        dmg = finalMagicNonSpellAdjustments(player,target,ELE_${e[0]},dmg);
+
+        local message = msgBasic.ADD_EFFECT_DMG;
+        if (dmg < 0) then
+            message = msgBasic.ADD_EFFECT_HEAL;
+        end
+
+        return SUBEFFECT_${e[1]}_DAMAGE,message,dmg;
+    end
+end;
+`;
+  };
+
   const card = document.createElement('div');
   card.id = 'weaponEffectsPresetCard';
   card.className = 'edit-card wide';
   card.style.marginBottom = '10px';
   card.innerHTML = `
-    <h3>Weapon Effects <span class="hint">structured additional-effect presets; staged only, never saved directly</span></h3>
-    <div style="display:grid;grid-template-columns:minmax(180px,1fr) repeat(4,minmax(90px,120px));gap:6px;align-items:end">
+    <h3>Weapon Effects <span class="hint">extra effect that can trigger on hit; staged only until you Save Item</span></h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;align-items:end">
       <label>Preset<select id="weaponEffectPreset">${Object.entries(PRESETS).map(([k,p])=>`<option value="${k}">${p.label}</option>`).join('')}</select></label>
       <label>Chance %<input id="weaponEffectChance" type="number" min="0" max="100" value="20"></label>
       <label>Damage / amount<input id="weaponEffectDamage" type="number" value="25"></label>
@@ -54,16 +92,20 @@
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-top:7px">
       <label>Duration (s)<input id="weaponEffectDuration" type="number" min="0" value="30" style="width:90px"></label>
       <label><input id="weaponEffectConditional" type="checkbox"> conditional / latent</label>
-      <input id="weaponEffectLatentId" type="number" min="0" placeholder="latent ID" style="width:100px" disabled>
-      <input id="weaponEffectLatentParam" type="number" placeholder="latent param" style="width:110px" disabled>
+      <label>Active when<input id="weaponEffectLatentName" type="text" list="dl_latents" placeholder="type to search, e.g. HP under" style="width:200px" disabled></label>
+      <label><span id="weaponEffectLatentParamLabel">Condition value</span><input id="weaponEffectLatentParam" type="number" value="0" style="width:110px" disabled></label>
       <span id="weaponEffectCapability" class="chip mono"></span>
-      <button id="weaponEffectPrimary" type="button">Stage rows</button>
+      <button id="weaponEffectPrimary" type="button">Add to item</button>
       <button id="weaponEffectCopyHandoff" type="button">Copy server handoff</button>
     </div>
+    <div id="weaponEffectLatentHelp" class="muted" style="font-size:11px;margin-top:6px;display:none"></div>
+    <div id="weaponEffectNote" class="muted" style="font-size:11px;margin-top:6px"></div>
     <div id="weaponEffectPreview" class="mono muted" style="font-size:10px;margin-top:6px;white-space:pre-wrap"></div>`;
   tools.insertBefore(card, tools.firstChild);
+  { const procHost = document.getElementById('ieFxProc'); if (procHost) procHost.append(card); }  // Effects tab moves it into the Weapon proc panel
 
   const $ = id => document.getElementById(id);
+  const latentId = () => (typeof pickerValue === 'function' && typeof LATENT_NAMES !== 'undefined') ? pickerValue('weaponEffectLatentName', LATENT_NAMES) : null;
   function values(){
     const key=$('weaponEffectPreset').value, p=PRESETS[key], proc=p.proc || 1;
     const vals={key,p,proc,chance:Number($('weaponEffectChance').value),damage:Number($('weaponEffectDamage').value),status:Number($('weaponEffectStatus').value),power:Number($('weaponEffectPower').value),duration:Number($('weaponEffectDuration').value)};
@@ -75,7 +117,7 @@
     if(['status'].includes(p.kind) && vals.status) rows.push(row(951,vals.status));
     if(['status'].includes(p.kind) && vals.power) rows.push(row(952,vals.power));
     if(['status'].includes(p.kind) && vals.duration) rows.push(row(953,vals.duration));
-    return {...vals,rows};
+    return {...vals,rows:currentLineage()==='DSP'?[row(431,1)]:rows};
   }
   function applyPresetDefaults(){
     const p=PRESETS[$('weaponEffectPreset').value];
@@ -87,39 +129,46 @@
   }
   function refresh(){
     const v=values(), lineage=currentLineage(), cap=capability(v.p,lineage), conditional=$('weaponEffectConditional').checked;
-    $('weaponEffectLatentId').disabled=!conditional; $('weaponEffectLatentParam').disabled=!conditional;
+    $('weaponEffectLatentName').disabled=!conditional; $('weaponEffectLatentParam').disabled=!conditional;
+    const lid=latentId(), meta=(typeof LATENT_META!=='undefined' && lid!=null)?LATENT_META[lid]:null, help=$('weaponEffectLatentHelp');
+    help.style.display=conditional?'':'none';
+    $('weaponEffectLatentParamLabel').textContent=meta&&meta.param_semantics?('Value: '+meta.param_semantics.replace(/\)\s*$/,'')):'Condition value';
+    help.textContent=!conditional?'':lid==null?'Pick a condition above. The effect only applies while that condition is true; the value is the threshold the condition checks.':
+      meta?`Condition ${lid} ${meta.name}: ${meta.comment||'no description'}${meta.param_semantics?'':' - the server source does not document what the value means; leave 0 unless you know.'}`:`Condition ${lid}: no description available in the active server tree.`;
     $('weaponEffectCapability').textContent=`${lineage} · ${cap}`;
-    $('weaponEffectPrimary').textContent=cap==='row-only'?'Stage rows':'Server handoff';
+    $('weaponEffectPrimary').textContent='Add to item';
     $('weaponEffectPrimary').disabled=cap==='unsupported';
     $('weaponEffectCopyHandoff').style.display=cap==='row-only'?'none':'';
+    $('weaponEffectNote').textContent=cap==='row-only'?'':cap==='server-code-required'?'This effect type needs server-side handler code. Adding writes the rows, but nothing will happen in game until that handler exists; use Copy server handoff for the spec.':cap==='verify-lineage'?(lineage==='DSP'?'DSP: the item only gets effect 431 = 1, which means "this item has a script-driven proc". The actual effect (chance, damage, message) lives in scripts/globals/items/<item>.lua onAdditionalEffect; use Copy server handoff to get a ready Lua file for elemental damage presets. Chance/amount here only fill that script.':'Rows are added to the item; confirm the active server tree has a handler for this proc type before relying on it.'):'';
     $('weaponEffectPreview').textContent=`${v.p.label} · ${v.chance}%${v.damage?` · amount ${v.damage}`:''}${v.status?` · status ${v.status}`:''}\n`+
       `${conditional?'item_latents':'item_mods'}: `+v.rows.map(r=>`${r.modId}=${r.value}`).join(', ')+(cap==='row-only'?'':'\nNot auto-staged: verify/implement the selected lineage handler first.');
   }
   function handoffPayload(){
     const v=values(), lineage=currentLineage();
-    return {kind:'weapon-additional-effect',lineage,preset:v.key,label:v.p.label,capability:capability(v.p,lineage),effect:{procType:v.proc,chance:v.chance,damage:v.damage,status:v.status,power:v.power,duration:v.duration},rows:v.rows,storage:$('weaponEffectConditional').checked?'item_latents':'item_mods',latentId:$('weaponEffectConditional').checked?Number($('weaponEffectLatentId').value):null,latentParam:$('weaponEffectConditional').checked?Number($('weaponEffectLatentParam').value):null,warning:'Verify proc numbering, handler semantics, stacking/overwrite rules, target, messages, and status behavior in the active server tree before implementation.'};
+    return {kind:'weapon-additional-effect',lineage,preset:v.key,label:v.p.label,capability:capability(v.p,lineage),effect:{procType:v.proc,chance:v.chance,damage:v.damage,status:v.status,power:v.power,duration:v.duration},rows:v.rows,storage:$('weaponEffectConditional').checked?'item_latents':'item_mods',latentId:$('weaponEffectConditional').checked?latentId():null,latentParam:$('weaponEffectConditional').checked?Number($('weaponEffectLatentParam').value):null,warning:'Verify proc numbering, handler semantics, stacking/overwrite rules, target, messages, and status behavior in the active server tree before implementation.'};
   }
   async function copyHandoff(){
-    const text=JSON.stringify(handoffPayload(),null,2);
+    const v0=values(), lua=currentLineage()==='DSP'?dspLua(v0):null;
+    const text=lua||JSON.stringify(handoffPayload(),null,2);
     try{ await navigator.clipboard.writeText(text); $('weaponEffectPreview').textContent+='\nServer handoff copied to clipboard.'; }
     catch{ $('weaponEffectPreview').textContent+='\n'+text; }
   }
   function stage(){
     const v=values(), lineage=currentLineage(), cap=capability(v.p,lineage);
-    if(cap!=='row-only'){ copyHandoff(); return; }
+    if(cap==='unsupported'){ return; }
     let rows=v.rows;
     const conditional=$('weaponEffectConditional').checked;
     if(conditional){
-      const latentId=Number($('weaponEffectLatentId').value), latentParam=Number($('weaponEffectLatentParam').value);
-      if(!Number.isInteger(latentId) || latentId<0){ alert('Enter a valid latent ID.'); return; }
-      rows=rows.map(r=>({...r,latentId,latentParam}));
+      const lid=latentId(), latentParam=Number($('weaponEffectLatentParam').value)||0;
+      if(lid==null){ alert('Pick the condition (Active when) from the list.'); return; }
+      rows=rows.map(r=>({...r,latentId:lid,latentParam}));
       mergeEffectRows('latents',rows);
     }else mergeEffectRows('mods',rows);
     $('weaponEffectPreview').textContent+='\nStaged through the existing Item Editor effect payload. Save Item still performs normal validation and atomic backup/journal handling.';
   }
 
   $('weaponEffectPreset').addEventListener('change',applyPresetDefaults);
-  ['weaponEffectChance','weaponEffectDamage','weaponEffectStatus','weaponEffectPower','weaponEffectDuration','weaponEffectConditional','weaponEffectLatentId','weaponEffectLatentParam'].forEach(id=>$(id).addEventListener('input',refresh));
+  ['weaponEffectChance','weaponEffectDamage','weaponEffectStatus','weaponEffectPower','weaponEffectDuration','weaponEffectConditional','weaponEffectLatentName','weaponEffectLatentParam'].forEach(id=>$(id).addEventListener('input',refresh));
   document.getElementById('srv')?.addEventListener('change',refresh);
   $('weaponEffectPrimary').onclick=stage;
   $('weaponEffectCopyHandoff').onclick=copyHandoff;

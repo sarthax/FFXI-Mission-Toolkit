@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Item Script Health{% endblock %}
+{% block content %}
+<main>
+  <div class="page-head"><div><h1>Item Script Health</h1>
+    <p class="muted">For the active server tree: does each scripted item have a script file, is it a stub, and does it contain real behavior? <a href="/itembrowser">Item Browser</a></p></div>
+    <span class="badge">READ ONLY</span></div>
+  <section class="panel" id="ihSummary"><p class="muted">Scanning…</p></section>
+  <section class="panel"><h2>Report &amp; LandSandBoat cross-check</h2>
+    <p class="muted">LSB runs these procs from item data, so it has no script files to copy. It can only supply parameters, and only for some items. Download the report to share it.</p>
+    <p><a href="/itemhealth/report.md" download><button type="button">Download report (.md)</button></a> <a href="/itemhealth/report.json" download>JSON</a></p>
+    <div id="ihRepair"><p class="muted">Loading cross-check…</p></div>
+    <pre id="ihPreview" style="display:none;max-height:22rem;overflow:auto"></pre>
+  </section>
+  <section class="panel"><h2>Items with a proc switch (effect 431) that need attention</h2><div id="ihFlagged"></div></section>
+  <section class="panel"><h2>Script files that are stubs, check-only or carry a TODO</h2><div id="ihFiles"></div></section>
+  <section class="panel"><details><summary>Script files no item name matches (<span id="ihOrphanN">0</span>)</summary><div id="ihOrphans"></div></details></section>
+</main>
+<script>
+(async () => {
+  const $ = id => document.getElementById(id), esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const cls = {behavior: 'ok', stub: 'bad', missing: 'bad', 'check-only': 'warn', 'no-onAdditionalEffect': 'bad'};
+  const r = await fetch('/itemedit/script-health.json'), d = await r.json();
+  const chips = o => Object.entries(o).map(([k, v]) => '<span class="' + (cls[k] || '') + '"><b>' + v + '</b> ' + esc(k) + '</span>').join(' &nbsp; ');
+  $('ihSummary').innerHTML = '<p>Proc-flagged items: ' + chips(d.flagged_counts) + '</p><p>Script files: ' + chips(d.file_counts) + '</p>';
+  const bad = d.flagged_items.filter(i => i.state !== 'behavior');
+  $('ihFlagged').innerHTML = bad.length ? '<table><tr><th>Item</th><th>State</th><th>Expected script</th></tr>' +
+    bad.map(i => '<tr><td><a href="/itembrowser#' + i.item_id + '">' + esc(i.name) + '</a> <span class="muted">#' + i.item_id + '</span></td><td class="' + (cls[i.state] || '') + '">' + esc(i.state) + '</td><td><code>' + esc(i.path) + '</code></td></tr>').join('') + '</table>'
+    : '<p class="ok">Every proc-flagged item has a script with behavior.</p>';
+  const weak = d.script_files.filter(f => f.state !== 'behavior' || f.todo);
+  $('ihFiles').innerHTML = weak.length ? '<table><tr><th>File</th><th>State</th><th>TODO marker</th></tr>' +
+    weak.map(f => '<tr><td><code>' + esc(f.path) + '</code></td><td class="' + (cls[f.state] || '') + '">' + esc(f.state) + '</td><td>' + (f.todo ? 'yes' : '') + '</td></tr>').join('') + '</table>' : '<p class="ok">None.</p>';
+  const pc = {misnamed: 'ok', generate: 'ok', 'needs-data': 'warn', manual: 'warn', 'no-lsb-data': 'bad'};
+  async function loadRepair() {
+    const rr = await (await fetch('/itemhealth/report.json')).json();
+    $('ihRepair').innerHTML = '<p>Repair plan: ' + chips(rr.summary.repair_states) + '</p><table><tr><th>Item</th><th>LSB</th><th>Plan</th><th></th></tr>' +
+      rr.broken_items.map(i => { const l = i.plan.lsb || {}, sup = ['damage','chance','element','status','power','duration'].filter(k => k in l).map(k => k + '=' + l[k]).join(', ');
+        return '<tr><td>' + esc(i.name) + ' <span class="muted">#' + i.item_id + '</span></td><td>' + esc(l.type_name || '-') + (sup ? ' <span class="muted">' + esc(sup) + '</span>' : '') +
+        '</td><td class="' + (pc[i.plan.state] || '') + '"><b>' + esc(i.plan.state) + '</b> ' + esc(i.plan.reason) + '</td><td>' +
+        (i.has_draft ? '<button data-prev="' + i.item_id + '">Preview repair</button>' : '') + '</td></tr>'; }).join('') + '</table>';
+  }
+  $('ihRepair').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-prev],button[data-apply]'); if (!b) return;
+    const pre = $('ihPreview'); pre.style.display = 'block';
+    if (b.dataset.prev) {
+      const j = await (await fetch('/itemhealth/repair.json?item_id=' + b.dataset.prev)).json();
+      pre.innerHTML = j.ok ? '<b>' + esc(j.path) + '</b> (replaces ' + esc(j.replaces) + ')\n\n' + esc(j.lua) + '\n<button data-apply="' + b.dataset.prev + '">Write this file</button>' : '<span class="bad">' + esc(j.error) + '</span>';
+    } else if (confirm('Write the generated script to the server tree? Existing stubs are backed up.')) {
+      const j = await (await fetch('/itemhealth/repair.json?apply=1&item_id=' + b.dataset.apply)).json();
+      pre.innerHTML = j.ok ? '<span class="ok">Wrote ' + esc(j.path) + (j.backup ? ' (backup ' + esc(j.backup) + ')' : '') + '. Restart the game server to load it.</span>' : '<span class="bad">' + esc(j.error) + '</span>';
+    }
+  });
+  loadRepair();
+  $('ihOrphanN').textContent = d.orphan_files.length;
+  $('ihOrphans').innerHTML = '<ul>' + d.orphan_files.map(p => '<li><code>' + esc(p) + '</code></li>').join('') + '</ul>';
+})();
+</script>
+{% endblock %}

@@ -306,7 +306,12 @@
   $('ahHealthRefresh').addEventListener('click', loadHealth);
   $('ahHealthDays').addEventListener('change', loadHealth);
   $('ahStaleDays').addEventListener('change', loadHealth);
-  Promise.all([loadStatus(), loadWriteReadiness(), loadOverview(), loadHealth(), loadCategories()]).then(loadItems).catch(error => {
+  // Deep link from the Item Browser: /auction-house?item=<id> opens that item's detail.
+  const linkedItem = Number(new URLSearchParams(location.search).get('item'));
+  if (linkedItem > 0) $('ahSearch').value = String(linkedItem);
+  Promise.all([loadStatus(), loadWriteReadiness(), loadOverview(), loadHealth(), loadCategories()]).then(loadItems).then(() => {
+    if (linkedItem > 0) { loadDetail(linkedItem); $('ahDetail').scrollIntoView({block: 'start'}); }
+  }).catch(error => {
     $('ahStatus').textContent = error.message;
     $('ahItems').innerHTML = '<p class="muted">Auction House data unavailable.</p>';
   });

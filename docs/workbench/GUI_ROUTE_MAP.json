@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source": "gui_server.py",
-  "route_count": 244,
+  "route_count": 257,
   "routes": [
     {
       "method": "GET",
@@ -57,7 +57,7 @@
       "home": "Server",
       "section": "Items & Server Data",
       "role": "page",
-      "disposition": "REWORK"
+      "disposition": "LEGACY"
     },
     {
       "method": "GET",
@@ -65,7 +65,47 @@
       "home": "Server",
       "section": "Items & Server Data",
       "role": "detail",
-      "disposition": "REWORK"
+      "disposition": "LEGACY"
+    },
+    {
+      "method": "GET",
+      "path": "/itembrowser",
+      "home": "Server",
+      "section": "Items & Server Data",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itembrowser/facets.json",
+      "home": "Server",
+      "section": "Items & Server Data",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itembrowser/browse.json",
+      "home": "Server",
+      "section": "Items & Server Data",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itembrowser/reference.json",
+      "home": "Server",
+      "section": "Items & Server Data",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itembrowser/reference-counts.json",
+      "home": "Server",
+      "section": "Items & Server Data",
+      "role": "data",
+      "disposition": "KEEP"
     },
     {
       "method": "GET",
@@ -1145,6 +1185,70 @@
       "path": "/itemedit/search.json",
       "home": "Tools",
       "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/proc-script.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/script-health.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/special-cases.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemedit/summary.json",
+      "home": "Tools",
+      "section": "Editors > Item Editor",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemhealth",
+      "home": "Server",
+      "section": "Items & Server Data",
+      "role": "page",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemhealth/repair.json",
+      "home": "Server",
+      "section": "Items & Server Data",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemhealth/report.json",
+      "home": "Server",
+      "section": "Items & Server Data",
+      "role": "data",
+      "disposition": "KEEP"
+    },
+    {
+      "method": "GET",
+      "path": "/itemhealth/report.md",
+      "home": "Server",
+      "section": "Items & Server Data",
       "role": "data",
       "disposition": "KEEP"
     },

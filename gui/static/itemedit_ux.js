@@ -187,7 +187,7 @@
     'item_weapon.dmg': ['Damage', 'Base weapon damage (DMG).'],
     'item_weapon.delay': ['Delay', 'Weapon delay between attacks. Lower is faster.'],
     'item_weapon.dmgType': ['Damage type', 'Slashing, piercing, blunt or H2H.'],
-    'item_weapon.hit': ['Hits per attack', 'Number of hits per attack round.'],
+    'item_weapon.hit': ['Max hits per attack ("occasionally attacks twice")', 'Not a fixed count. 1 = always one hit. 2 = "occasionally attacks twice" (about 55% one hit, 45% two hits). 3 = one to three hits, 4+ = more. Weapons like Joyeuse get their multi-hit text from this field, not from an effect.'],
     'item_weapon.ilvl_skill': ['Item-level skill bonus', 'Skill bonus granted by item level.'],
     'item_weapon.ilvl_parry': ['Item-level parry bonus', 'Parry bonus granted by item level.'],
     'item_weapon.ilvl_macc': ['Item-level magic accuracy bonus', 'Magic accuracy bonus granted by item level.'],
@@ -305,7 +305,7 @@
   panes.props.prepend(byId('clientMismatch'), byId('itemValidation'));  // issues belong with the fields they concern
 
   // -- Create new: start options left (tabbed), draft right
-  const cl = byId('cloneSourceId').parentNode, nw = byId('newName').parentNode;
+  const cl = byId('cloneSourceId').closest('.edit-card'), nw = byId('newName').closest('.edit-card');
   const slot = byId('slotBrowser').closest('.edit-card'), draft = byId('draftWrap');
   const h2 = [...document.querySelectorAll('h2')].find(h => h.textContent.trim() === 'Create New Item');
   const intro = h2 && h2.nextElementSibling;
@@ -395,7 +395,11 @@
     #ieFxMsg{font-size:11.5px;min-height:16px;margin-top:4px;color:#f5c542}
     #ieFxSide details summary{cursor:pointer;font-size:12px;opacity:.85}
     #ieFxSide #effectStagingTools{border:0;padding:6px 0 0;margin:0!important}
-    #ieFxSide #effectStagingTools>h3{display:none}`;
+    #ieFxSide #effectStagingTools>h3{display:none}
+    #ieFxSide #weaponEffectsPresetCard{border:0;padding:0;margin:0}
+    #ieFxSide #weaponEffectsPresetCard>h3{font-size:12px;margin:0 0 6px}
+    #ieFxSide #weaponEffectsPresetCard label{display:flex;flex-direction:column;gap:2px;font-size:11.5px}
+    #ieFxSide #weaponEffectsPresetCard input,#ieFxSide #weaponEffectsPresetCard select{max-width:100%}`;
   document.head.appendChild(css3);
 
   const fx = mk('div', 'ieFx'), side = mk('div', 'ieFxSide');
@@ -410,11 +414,30 @@
       <label data-for="latents" style="display:none">Active when<input type="text" id="ieAddLat" list="dl_latents" placeholder="type to search, e.g. HP below X%"></label>
       <label data-for="latents" style="display:none">Condition value<input type="number" id="ieAddLatP" value="0"></label>
       <button type="button" id="ieAddBtn" class="primary">Add to item</button><div id="ieFxMsg"></div></div>
-    <div class="ie-side-card"><details><summary>Copy or paste effects in bulk</summary><div id="ieFxBulk"></div></details></div>`;
+    <div class="ie-side-card" id="ieFxMore"><h4>More ways to add effects</h4>
+      <div class="ie-seg" id="ieFxMoreTabs"><button type="button" data-t="proc" title="Extra effect that can trigger when a weapon hits (fire damage, drain, ...)">Weapon proc</button><button type="button" data-t="copy" title="Copy effects from another item, or paste a list of rows">Copy / paste</button></div>
+      <div data-tp="proc"><div id="ieFxProcNote" class="ie-none" style="display:none">Weapon procs only apply to weapons. This item has no weapon record.</div><div id="ieFxProc"></div></div>
+      <div data-tp="copy" style="display:none"><div id="ieFxBulk"></div></div></div>`;
   const fxWrap = mk('div', 'ieFxWrap');
   fxWrap.append(fx, side);
   panes.effects.append(fxWrap);
   side.querySelector('#ieFxBulk').append(byId('effectStagingTools'));
+  { const early = byId('weaponEffectsPresetCard'); if (early) byId('ieFxProc').append(early); }  // card may have been built before this panel existed
+  const moreTab = t => {
+    store.set('ieFxMore', t);
+    side.querySelectorAll('#ieFxMoreTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+    side.querySelectorAll('#ieFxMore [data-tp]').forEach(d => d.style.display = d.dataset.tp === t ? '' : 'none');
+  };
+  side.querySelector('#ieFxMoreTabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) moreTab(b.dataset.t); });
+  const syncProc = () => {
+    const isWeapon = !!(typeof loadedServerState !== 'undefined' && loadedServerState && loadedServerState.item_weapon);
+    byId('ieFxProcNote').style.display = isWeapon ? 'none' : '';
+    const card = byId('weaponEffectsPresetCard'); if (card) card.style.display = isWeapon ? '' : 'none';
+    moreTab(isWeapon ? 'proc' : 'copy');
+  };
+  moreTab('copy'); syncProc();
+  const loadItemForFx = loadItem;
+  loadItem = async function () { const r = await loadItemForFx.apply(this, arguments); syncProc(); return r; };
 
   let addKind = 'mods';
   side.querySelector('.ie-seg').addEventListener('click', e => {
@@ -451,7 +474,73 @@
     rerenderEffects();
   };
 
-  const mName = id => MOD_NAMES[id] || `Effect #${id}`;
+  const isScriptFlag = id => Number(id) === 431 && /^ADDITIONAL_EFFECT/.test(MOD_NAMES[431] || '');
+  const mName = id => isScriptFlag(id) ? 'Runs an item script (additional effect)' : (MOD_NAMES[id] || `Effect #${id}`);
+  let procScript = null, procScriptKey = '';
+  const HOOK_TEXT = { onAdditionalEffect: 'extra effect when it hits (proc)', onItemUse: 'what happens when the item is used', onItemCheck: 'extra rules for using/equipping it', onEffectGain: 'applies bonuses while the effect it grants is active (food, medicine, buffs)', onEffectLose: 'removes those bonuses when the effect ends', onEffectTick: 'repeating effect while active' };
+  const scriptBanner = () => {
+    const flag = (stagedEffects.mods || []).some(r => isScriptFlag(r.modId) && Number(r.value) > 0);
+    const nm = (typeof loadedServerState !== 'undefined' && loadedServerState && loadedServerState.item_basic && loadedServerState.item_basic.name) || '';
+    const c = procScript && procScriptKey === nm && procScript.candidates && procScript.candidates[0];
+    if (!flag && !(c && c.exists)) return '';
+    let state = '<span class="muted">checking server for the script...</span>', hooks = '';
+    if (c) {
+      if (c.exists) {
+        state = '<b>Script found.</b>';
+        hooks = (c.hooks || []).map(h => `<li><code>${esc(h)}</code> - ${esc(HOOK_TEXT[h] || 'custom hook')}</li>`).join('');
+        if (flag && !c.has_additional_effect) state += ' <b>But it has no onAdditionalEffect, so the proc switch does nothing.</b>';
+      } else state = '<b>No script found</b> - the proc switch does nothing until this file is created.';
+    }
+    const src = c && c.exists ? `<details><summary>View script source${c.truncated ? ' (first 6000 characters)' : ''}</summary><pre class="mono" style="max-height:260px;overflow:auto;font-size:11px;white-space:pre-wrap">${esc(c.source || '')}</pre></details>` : '';
+    return `<div class="ie-fxgroup"><h4>Item script <small>effects written in Lua, not stored as numbers on the item</small></h4>
+      <div class="ie-fx"><div class="tx"><div class="nm">${flag ? 'Effect 431 switches on a scripted proc.' : 'This item has a server script.'}</div>
+      <div class="sub">File: <code>${esc(c ? c.path : 'scripts/.../items/' + (nm || '&lt;item&gt;') + '.lua')}</code>. Chance, damage, duration and food/use bonuses live there, so the fields here cannot edit them. ${state}</div>${hooks ? `<ul class="sub" style="margin:4px 0 0 16px">${hooks}</ul>` : ''}${src}</div></div></div>`;
+  };
+  let special = null, specialKey = '';
+  const specialBanner = () => {
+    const nm = (typeof loadedServerState !== 'undefined' && loadedServerState && loadedServerState.item_basic && loadedServerState.item_basic.name) || '';
+    if (!special || specialKey !== (currentItemId + '|' + nm)) return '';
+    const nice = m => esc(String(m).replace(/^(xi\.mod\.|tpz\.mod\.|MOD_)/, ''));
+    let html = '';
+    if ((special.gear_sets || []).length) html += special.gear_sets.map(g => {
+      const mods = g.mods.map(m => `${nice(m.mod)} ${m.value > 0 ? '+' : ''}${m.value}${m.per_extra_match ? ` (+${m.per_extra_match} per extra piece)` : ''}${m.full_set_bonus ? ` (+${m.full_set_bonus} full set)` : ''}`).join(', ');
+      return `<div class="ie-fx"><div class="tx"><div class="nm">Set bonus: ${esc(g.comment || 'set #' + g.set_id)}</div><div class="sub">Needs ${g.matches_required} of ${g.items.length} pieces (${g.items.map(i => '#' + i).join(', ')}). Gives ${esc(mods || 'unparsed mods')}. Defined in scripts/globals/gear_sets.lua, not on the item.</div></div></div>`;
+    }).join('');
+    if ((special.effect_gain_mods || []).length) html += `<div class="ie-fx"><div class="tx"><div class="nm">Bonuses granted while its effect is active (food / use effect)</div><div class="sub">${special.effect_gain_mods.map(m => nice(m.mod) + ' ' + (m.value > 0 ? '+' : '') + m.value).join(', ')}. Read from the script's onEffectGain, so edit the script to change them.</div></div></div>`;
+    if ((special.code_references || []).length) html += `<div class="ie-fx"><div class="tx"><div class="nm">Special-cased in server code (${special.code_references.length})</div><div class="sub">The server has rules for this exact item id that no table here can show. Check them before trusting the stats:</div><ul class="sub" style="margin:4px 0 0 16px">${special.code_references.map(r => `<li><code>${esc(r.file)}:${r.line}</code> ${esc(r.text)}</li>`).join('')}</ul></div></div>`;
+    return html ? `<div class="ie-fxgroup"><h4>Beyond the item's own data <small>behavior defined in server scripts/code</small></h4>${html}</div>` : '';
+  };
+  const loadSpecial = () => {
+    const nm = (typeof loadedServerState !== 'undefined' && loadedServerState && loadedServerState.item_basic && loadedServerState.item_basic.name) || '';
+    const k = currentItemId + '|' + nm;
+    if (!nm || specialKey === k) return;
+    specialKey = k; special = null;
+    fetch('/itemedit/special-cases.json?item_id=' + (currentItemId || 0) + '&name=' + encodeURIComponent(nm)).then(r => r.json()).then(j => { special = j; rerenderEffects(); }).catch(() => {});
+  };
+  const loadProcScript = () => {
+    const nm = (typeof loadedServerState !== 'undefined' && loadedServerState && loadedServerState.item_basic && loadedServerState.item_basic.name) || '';
+    if (!nm || procScriptKey === nm) return;
+    procScript = null;
+    procScriptKey = nm;
+    fetch('/itemedit/proc-script.json?item_id=' + (currentItemId || 0) + '&name=' + encodeURIComponent(nm)).then(r => r.json()).then(j => { procScript = j; rerenderEffects(); }).catch(() => {});
+  };
+  let summaryData = null, summaryKey = null;
+  const loadSummary = () => {
+    const key = currentItemId + '|' + JSON.stringify(loadedEffects || {}) + JSON.stringify((loadedServerState && loadedServerState.item_weapon) || {});
+    if (!currentItemId || summaryKey === key) return;
+    summaryKey = key; summaryData = null;
+    const want = currentItemId;
+    fetch('/itemedit/summary.json?compare=1&item_id=' + want).then(r => r.json()).then(j => { if (want === currentItemId && !j.error) { summaryData = j; rerenderEffects(); } }).catch(() => {});
+  };
+  const summaryPanel = () => {
+    if (!summaryData || !window.ItemSummaryView) return null;
+    const d = mk('details', null, 'ie-fxgroup');
+    const warn = (summaryData.notes || []).length;
+    d.innerHTML = '<summary><b>Server summary &amp; health</b> <small>saved server state, read-only' + (warn ? ' &mdash; ' + warn + ' warning' + (warn > 1 ? 's' : '') : '') + '</small></summary>';
+    d.open = warn > 0;
+    d.appendChild(ItemSummaryView.render(summaryData, summaryData.lsb_compare));
+    return d;
+  };
   const sv = n => (n > 0 ? '+' : '') + n;
   const status = (kind, row) => {
     const k = effectSortKey(kind, row), was = (loadedEffects[kind] || []).find(x => effectSortKey(kind, x) === k);
@@ -471,6 +560,14 @@
       ['latents', 'Conditional bonuses', 'only while the condition is met', stagedEffects.latents, r => fxRow('latents', r, mName(r.modId), 'When: ' + (LATENT_NAMES[r.latentId] || 'condition ' + r.latentId) + (r.latentParam ? ' (' + r.latentParam + ')' : ''))],
     ];
     fxList.innerHTML = '';
+    loadProcScript(); loadSpecial(); loadSummary();
+    { const w = (typeof loadedServerState !== 'undefined' && loadedServerState && loadedServerState.item_weapon) || null, h = w ? Number(w.hit) : 0;
+      if (h > 1) {
+        const dist = { 2: '1 hit 55%, 2 hits 45%', 3: '1 hit 30%, 2 hits 50%, 3 hits 20%', 4: '1 hit 20%, 2 hits 30%, 3 hits 30%, 4 hits 20%' }[h] || ('up to ' + h + ' hits per attack');
+        fxList.insertAdjacentHTML('beforeend', `<div class="ie-fxgroup"><h4>Multi-hit <small>built into the weapon, not an effect row</small></h4><div class="ie-fx"><div class="tx"><div class="nm">${h === 2 ? 'Occasionally attacks twice' : 'Occasionally attacks up to ' + h + ' times'}</div><div class="sub">Weapon stat Max hits = ${h} (${esc(dist)}). Change it under Weapon combat → Max hits per attack.</div></div></div></div>`);
+      } }
+    { const sb = scriptBanner() + specialBanner(); if (sb) fxList.insertAdjacentHTML('beforeend', sb); }
+    { const sp = summaryPanel(); if (sp) fxList.appendChild(sp); }
     for (const [kind, title, hint, rows, render] of sections) {
       const g = mk('div', null, 'ie-fxgroup');
       g.innerHTML = `<h4>${title} (${rows.length}) <small>${hint}</small></h4>` + (rows.length ? rows.map(render).join('') : '<div class="ie-none">None.</div>');

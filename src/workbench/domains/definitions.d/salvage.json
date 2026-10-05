@@ -59,7 +59,7 @@
         "kind": "Pathos / cell progression",
         "fields": ["restriction", "cell item", "drop source", "removal rule", "party/player scope", "floor-specific availability"],
         "server_globs": ["scripts/zones/*Remnants/instances/*.lua", "scripts/zones/*Remnants/mobs/*.lua", "sql/mob_droplist.sql"],
-        "edit": "/items"
+        "edit": "/itembrowser"
       },
       {
         "kind": "Capture evidence",

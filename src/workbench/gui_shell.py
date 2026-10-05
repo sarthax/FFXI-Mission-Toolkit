@@ -150,7 +150,7 @@ WORKSPACES = (
         "sections": (
             {"label": "Zones", "href": "/zones"},
             {"label": "Entities", "href": "/entity"},
-            {"label": "Items", "href": "/items"},
+            {"label": "Item Browser", "href": "/itembrowser", "active_patterns": (r"^/itembrowser", r"^/itemhealth"),},
             {"label": "Key Items", "href": "/keyitems"},
             {"label": "Character Editor", "href": "/character-editor", "mutation": True},
             {"label": "SQL", "href": "/sql"},

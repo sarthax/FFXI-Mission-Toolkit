@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Item Browser{% endblock %}
+{% block content %}
+<main class="ib-page">
+  <div class="page-head"><div><h1>Item Browser</h1>
+    <p class="muted">Find items by name, AH category, job, slot, weapon skill, level, rarity or mod, then open one in the focused <a href="/itemedit">Item Editor</a>. Read-only. <a href="/itemhealth">Script health report</a></p></div>
+    <span class="badge">READ ONLY</span></div>
+
+  <section class="panel ib-filters">
+    <form id="ibForm" onsubmit="return false">
+      <div class="ib-row">
+        <input id="ibQ" type="search" placeholder="Name or item id" autofocus style="flex:1;min-width:220px">
+        <div id="ibTypes" class="ib-chips" role="group" aria-label="Item type"></div>
+        <select id="ibSort" title="Sort by"><option value="name">sort: name</option><option value="id">sort: id</option><option value="level">sort: level</option><option value="dmg">sort: damage</option><option value="delay">sort: delay</option><option value="ah">sort: AH category</option></select>
+        <select id="ibDir"><option value="0">ascending</option><option value="1">descending</option></select>
+      </div>
+      <div class="ib-row ib-grid">
+        <label>AH category <select id="ibAh"><option value="-1">any</option></select></label>
+        <label>Job <select id="ibJob"><option value="-1">any</option></select></label>
+        <label>Equip slot <select id="ibSlot"><option value="-1">any</option></select></label>
+        <label>Weapon skill <select id="ibSkill"><option value="-1">any</option></select></label>
+        <label>Min level <input id="ibMin" type="number" min="0" max="99"></label>
+        <label>Max level <input id="ibMax" type="number" min="0" max="99"></label>
+        <label>Has mod id <input id="ibMod" type="number" min="0" placeholder="e.g. 431"></label>
+        <label>Reference catalogue <select id="ibRef"><option value="">any</option></select></label>
+        <label class="ib-check"><input id="ibRare" type="checkbox"> Rare</label>
+        <label class="ib-check"><input id="ibEx" type="checkbox"> Exclusive</label>
+        <button type="button" id="ibReset">Reset</button>
+      </div>
+    </form>
+  </section>
+
+  <div class="ib-cols">
+    <section class="panel" id="ibResults">
+      <div class="ib-meta"><span id="ibCount" class="muted">Loading…</span><span class="sp"></span><span id="ibPager"></span></div>
+      <div class="table-wrap"><table id="ibTable">
+        <thead><tr><th></th><th>Item</th><th>AH / type</th><th>Lv</th><th>Jobs</th><th>Slot / skill</th><th>Dmg / delay</th><th></th></tr></thead>
+        <tbody id="ibBody"></tbody>
+      </table></div>
+      <div class="ib-meta"><span class="sp"></span><span id="ibPager2"></span></div>
+    </section>
+    <section class="panel ib-detail" id="ibDetail"><p class="muted">Select an item to see what it does and how it compares to LandSandBoat.</p></section>
+  </div>
+</main>
+<style>
+  .ib-page{max-width:none}
+  .ib-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px}
+  .ib-grid label{display:flex;flex-direction:column;gap:2px;font-size:11px;opacity:.9}
+  .ib-grid input[type=number]{width:84px}
+  .ib-grid select{max-width:190px}
+  .ib-check{flex-direction:row !important;align-items:center;gap:4px !important;padding-bottom:4px}
+  .ib-chips{display:flex;gap:2px}
+  .ib-chips button{padding:4px 9px;border:1px solid var(--border,#555);background:transparent;color:inherit;border-radius:12px;cursor:pointer;opacity:.75}
+  .ib-chips button.on{opacity:1;background:rgba(106,169,255,.2);font-weight:600}
+  .ib-cols{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(320px,1fr);gap:12px;align-items:start}
+  @media (max-width:1100px){.ib-cols{grid-template-columns:1fr;height:auto}.ib-cols>.panel{height:auto}}
+  .ib-cols{height:600px}
+  .ib-cols>.panel{height:100%;overflow:auto;box-sizing:border-box}
+  .ib-ref{margin-top:10px;padding:8px;border:1px solid rgba(128,128,128,.3);border-radius:6px;font-size:12px}
+  .ib-st-drift{color:#e0a030}.ib-st-ours_only{color:#8aa}.ib-st-external_only{color:#6aa9ff}.ib-st-matched{color:#6c6}
+  .ib-meta{display:flex;align-items:center;gap:8px;margin:2px 0 6px}
+  .ib-meta .sp{flex:1}
+  #ibTable{width:100%;font-size:12px;border-collapse:collapse}
+  #ibTable th{text-align:left;font-size:10.5px;text-transform:uppercase;opacity:.65;padding:3px 6px}
+  #ibTable td{padding:3px 6px;vertical-align:middle;border-top:1px solid rgba(128,128,128,.18)}
+  #ibTable tr.sel{background:rgba(106,169,255,.14)}
+  #ibTable tbody tr{cursor:pointer}
+  #ibTable tbody tr:hover{background:rgba(128,128,128,.12)}
+  .ib-icon{width:32px;height:32px;object-fit:contain;background:rgba(0,0,0,.2);border-radius:3px;display:block}
+  .ib-tag{display:inline-block;font-size:10px;padding:0 5px;border:1px solid var(--border,#555);border-radius:8px;margin-left:3px;opacity:.85}
+  .ib-id{font-size:10.5px;opacity:.6}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const $ = id => document.getElementById(id), esc = ItemSummaryView.esc;
+  const LS = 'ibFilters', PAGE = 60;
+  const ids = ['ibQ','ibSort','ibDir','ibAh','ibJob','ibSlot','ibSkill','ibMin','ibMax','ibMod','ibRef'];
+  const ST = {matched:'matched', drift:'ID drift', ours_only:'server only', external_only:'catalogue only'};
+  function fit() { const c = document.querySelector('.ib-cols'); if (!c || innerWidth <= 1100) return; c.style.height = Math.max(320, innerHeight - c.getBoundingClientRect().top - 12) + 'px'; }
+  addEventListener('resize', fit);
+  let type = '', offset = 0, seq = 0, timer = null, selected = null;
+  const save = () => { try { localStorage.setItem(LS, JSON.stringify({type, v: Object.fromEntries(ids.map(i => [i, $(i).value])), rare: $('ibRare').checked, ex: $('ibEx').checked})); } catch (e) {} };
+  const restore = () => { try { const s = JSON.parse(localStorage.getItem(LS) || 'null'); if (!s) return; type = s.type || ''; ids.forEach(i => { if (s.v && s.v[i] != null) $(i).value = s.v[i]; }); $('ibRare').checked = !!s.rare; $('ibEx').checked = !!s.ex; } catch (e) {} };
+
+  function drawTypes(types) {
+    $('ibTypes').innerHTML = ['', ...types].map(t => '<button type="button" data-t="' + t + '"' + (t === type ? ' class="on"' : '') + '>' + (t || 'All') + '</button>').join('');
+  }
+  async function loadFacets() {
+    const f = await (await fetch('/itembrowser/facets.json')).json();
+    if (f.error) { $('ibCount').textContent = f.error; return false; }
+    const fill = (id, arr, fmt) => { const el = $(id), cur = el.value; arr.forEach(o => el.insertAdjacentHTML('beforeend', '<option value="' + o.value + '">' + esc(fmt(o)) + '</option>')); if (cur) el.value = cur; };
+    restore();
+    fill('ibAh', f.ah.filter(o => o.count > 0 || o.value === 0), o => o.label + ' (' + o.count + ')');
+    fill('ibJob', f.jobs, o => o.label); fill('ibSlot', f.slots, o => o.label); fill('ibSkill', f.skills, o => o.label);
+    drawTypes(f.types);
+    try { const rc = await (await fetch('/itembrowser/reference-counts.json')).json(); if (!rc.error) { const el = $('ibRef'), cur = el.value; Object.keys(ST).forEach(k => el.insertAdjacentHTML('beforeend', '<option value="' + k + '">' + ST[k] + ' (' + (rc[k] || 0) + ')</option>')); el.value = cur; } } catch (e) {}
+    return true;
+  }
+  function params() {
+    const u = new URLSearchParams({q: $('ibQ').value.trim(), type, ah: $('ibAh').value, job: $('ibJob').value, slot: $('ibSlot').value, skill: $('ibSkill').value,
+      min_level: $('ibMin').value || -1, max_level: $('ibMax').value || -1, mod: $('ibMod').value || -1, rare: $('ibRare').checked ? 1 : 0, ex: $('ibEx').checked ? 1 : 0,
+      ref: $('ibRef').value, sort: $('ibSort').value, desc: $('ibDir').value, limit: PAGE, offset});
+    return u;
+  }
+  function pager(d) {
+    const from = d.total ? d.offset + 1 : 0, to = Math.min(d.offset + d.limit, d.total);
+    const h = '<button type="button" data-pg="-1"' + (d.offset <= 0 ? ' disabled' : '') + '>◀ Prev</button> <span class="muted">' + from + '–' + to + ' of ' + d.total + '</span> <button type="button" data-pg="1"' + (to >= d.total ? ' disabled' : '') + '>Next ▶</button>';
+    $('ibPager').innerHTML = h; $('ibPager2').innerHTML = h;
+    $('ibCount').textContent = d.total.toLocaleString() + ' item' + (d.total === 1 ? '' : 's');
+  }
+  function row(i) {
+    const tags = (i.rare ? '<span class="ib-tag">Rare</span>' : '') + (i.ex ? '<span class="ib-tag">Ex</span>' : '');
+    const jobs = i.level == null ? '' : i.all_jobs ? 'All' : i.jobs.length > 6 ? i.jobs.length + ' jobs' : i.jobs.join(' ');
+    const what = i.skill_name || i.slots.join(', ');
+    const ext = i.itemid == null, key = ext ? 'x' + i.ext_id : i.itemid;
+    const st = i.ref_status ? '<span class="ib-tag ib-st-' + i.ref_status + '">' + ST[i.ref_status] + '</span>' : '';
+    return '<tr data-id="' + key + '"' + (String(key) === String(selected) ? ' class="sel"' : '') + '>' +
+      '<td>' + (ext ? '' : '<img class="ib-icon" loading="lazy" src="/itemedit/' + i.itemid + '/icon.png" alt="" onerror="this.style.visibility=\'hidden\'">') + '</td>' +
+      '<td><b>' + esc((i.name || '').replace(/_/g, ' ')) + '</b>' + tags + st + '<br><span class="ib-id">' + (ext ? 'catalogue #' + i.ext_id : '#' + i.itemid) + '</span></td>' +
+      '<td>' + esc(i.ah_name || '') + '<br><span class="muted">' + esc(i.type_name) + '</span></td>' +
+      '<td>' + (i.level != null ? i.level : '') + '</td><td>' + esc(jobs) + '</td><td>' + esc(what) + '</td>' +
+      '<td>' + (i.dmg != null ? i.dmg + ' / ' + i.delay : '') + '</td>' +
+      '<td>' + (ext ? '' : '<a href="/itemedit#' + i.itemid + '" title="Open in Item Editor" onclick="event.stopPropagation()">Edit</a> <a href="/auction-house?item=' + i.itemid + '" title="Open in Auction House" onclick="event.stopPropagation()">AH</a>') + '</td></tr>';
+  }
+  async function run() {
+    const my = ++seq; $('ibCount').textContent = 'Searching…';
+    let d;
+    try { d = await (await fetch('/itembrowser/browse.json?' + params())).json(); } catch (e) { $('ibCount').textContent = 'Request failed'; return; }
+    if (my !== seq) return;
+    if (d.error) { $('ibCount').textContent = d.error; $('ibBody').innerHTML = ''; return; }
+    $('ibBody').innerHTML = d.items.length ? d.items.map(row).join('') : '<tr><td colspan="8" class="muted">No items match these filters.</td></tr>';
+    pager(d); fit();
+  }
+  const go = () => { offset = 0; save(); clearTimeout(timer); timer = setTimeout(run, 220); };
+  async function refPanel(id) {
+    const r = await (await fetch('/itembrowser/reference.json?item_id=' + id)).json();
+    if (r.error || !r.status) return '';
+    let h = '<div class="ib-ref"><b>Reference catalogue:</b> <span class="ib-st-' + r.status + '">' + ST[r.status] + '</span>';
+    (r.matches || []).forEach(m => { h += '<div style="margin-top:4px">#' + m.id + ' ' + esc((m.name || '').replace(/_/g, ' ')) + (m.type ? ' &middot; ' + esc(m.type) : '') + ((m.targets && m.targets.length) ? ' &middot; targets ' + esc([].concat(m.targets).join(', ')) : '') + (m.description ? '<br><span class="muted">' + esc(m.description) + '</span>' : '') + '</div>'; });
+    if (r.topaz) h += '<div style="margin-top:6px"><b>Topaz:</b> #' + r.topaz.itemid + (r.topaz.drift ? ' <span class="ib-st-drift">(id differs from server)</span>' : ' (same id)') + '</div>';
+    return h + '</div>';
+  }
+  async function show(id) {
+    const ext = String(id).startsWith('x');
+    selected = ext ? String(id) : Number(id);
+    document.querySelectorAll('#ibBody tr').forEach(tr => tr.classList.toggle('sel', tr.dataset.id === String(selected)));
+    if (ext) { $('ibDetail').innerHTML = '<p class="muted">This catalogue item has no server entry (catalogue #' + esc(String(id).slice(1)) + ').</p>'; return; }
+    $('ibDetail').innerHTML = '<p class="muted">Loading…</p>';
+    const s = await (await fetch('/itemedit/summary.json?compare=1&item_id=' + id)).json();
+    if (s.error) { $('ibDetail').textContent = s.error; return; }
+    $('ibDetail').replaceChildren(ItemSummaryView.render(s, s.lsb_compare));
+    $('ibDetail').insertAdjacentHTML('afterbegin', '<p style="display:flex;gap:10px;align-items:center;margin:0 0 6px"><img class="ib-icon" style="width:48px;height:48px" src="/itemedit/' + id + '/icon.png" alt="" onerror="this.style.display=\'none\'"><a href="/itemedit#' + id + '"><button type="button">Open in Item Editor</button></a><a href="/auction-house?item=' + id + '"><button type="button">Open in Auction House</button></a></p>');
+    refPanel(id).then(h => { if (h && selected === Number(id)) $('ibDetail').insertAdjacentHTML('beforeend', h); }).catch(() => {});
+  }
+  ids.forEach(i => $(i).addEventListener(i === 'ibQ' || i === 'ibMin' || i === 'ibMax' || i === 'ibMod' ? 'input' : 'change', go));
+  ['ibRare', 'ibEx'].forEach(i => $(i).addEventListener('change', go));
+  $('ibTypes').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; type = b.dataset.t; $('ibTypes').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); go(); });
+  $('ibReset').addEventListener('click', () => { ids.forEach(i => { $(i).value = (i === 'ibSort' ? 'name' : i === 'ibDir' ? '0' : ['ibAh','ibJob','ibSlot','ibSkill'].includes(i) ? '-1' : i === 'ibRef' ? '' : ''); }); $('ibRare').checked = $('ibEx').checked = false; type = ''; $('ibTypes').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.t === '')); go(); });
+  document.addEventListener('click', e => { const b = e.target.closest('button[data-pg]'); if (!b) return; offset = Math.max(0, offset + Number(b.dataset.pg) * PAGE); run(); $('ibResults').scrollTop = 0; });
+  $('ibBody').addEventListener('click', e => { const tr = e.target.closest('tr[data-id]'); if (tr) { history.replaceState(null, '', '#' + tr.dataset.id); show(tr.dataset.id); } });
+  const qs = new URLSearchParams(location.search);
+  loadFacets().then(ok => { if (!ok) return; if (qs.has('q')) $('ibQ').value = qs.get('q'); if (qs.has('ref')) $('ibRef').value = qs.get('ref'); fit(); run(); if (/^#\d+$/.test(location.hash)) show(location.hash.slice(1)); });
+});
+</script>
+{% endblock %}
