@@ -19,6 +19,7 @@
 {% if evidence.reference_kinds or evidence.referenced_subjects or evidence.referenced_snapshots %}
 <div class="evidence-context">
   {% for kind in evidence.reference_kinds %}<span class="chip">{{ kind }}</span>{% endfor %}
+  {% for subject in evidence.referenced_subjects %}<a class="chip mono" href="/features/trace?q={{ subject|urlencode }}">trace {{ subject }}</a>{% endfor %}
   {% for snapshot in evidence.referenced_snapshots %}<span class="chip mono">snapshot {{ snapshot }}</span>{% endfor %}
 </div>
 {% endif %}
@@ -35,7 +36,8 @@
     <td><code>{{ r.record_id }}</code></td>
     <td>
       {% if r.research_session_id %}<a href="/research/{{ r.research_session_id|urlencode }}"><code>{{ r.subject_id }}</code></a>
-      {% else %}<code>{{ r.subject_id or "-" }}</code>{% endif %}
+      {% elif r.subject_id %}<a href="/features/trace?q={{ r.subject_id|urlencode }}"><code>{{ r.subject_id }}</code></a>
+      {% else %}-{% endif %}
     </td>
     <td>
       {% if r.field %}<code>{{ r.field }}</code>{% if r.value is defined %}<br><span class="muted">{{ r.value|tojson }}</span>{% endif %}
