@@ -91,7 +91,13 @@ def scan_range(payload: bytes, seq_start: int = 0) -> dict:
 
 
 def scan_directions(directions: dict[str, dict]) -> dict:
-    """Scan reconstructed ranges in both directions without assigning endpoint roles."""
+    """Scan reconstructed ranges in both directions without assigning endpoint roles.
+
+    Range-level frame-number provenance is copied onto each recovered application frame. It is
+    intentionally coarse: a reconstructed range may contain bytes contributed by several packet
+    records, so consumers may use the interval only when it proves ordering (for example when one
+    range's latest frame number is strictly before another range's earliest frame number).
+    """
     frames: list[dict] = []
     diagnostics: list[dict] = []
     for direction in ("a_to_b", "b_to_a"):
@@ -99,17 +105,33 @@ def scan_directions(directions: dict[str, dict]) -> dict:
             payload_hex = rr.get("payload_hex") or ""
             payload = bytes.fromhex(payload_hex) if payload_hex else b""
             scanned = scan_range(payload, int(rr.get("seq_start") or 0))
+            frame_numbers = sorted({int(value) for value in (rr.get("frame_numbers") or [])})
+            range_anomalies = rr.get("anomalies") or {}
+            provenance = {
+                "frame_numbers": frame_numbers,
+                "frame_number_min": min(frame_numbers) if frame_numbers else None,
+                "frame_number_max": max(frame_numbers) if frame_numbers else None,
+                "first_timestamp_seconds": rr.get("first_timestamp_seconds"),
+                "last_timestamp_seconds": rr.get("last_timestamp_seconds"),
+                "range_seq_start": rr.get("seq_start"),
+                "range_seq_end": rr.get("seq_end"),
+                "range_has_gap_before": bool(rr.get("gap_before")),
+                "range_anomalies": range_anomalies,
+                "ordering_scope": "range_level_capture_frame_interval_only",
+            }
             for frame_index, frame in enumerate(scanned["frames"]):
                 frames.append({
                     "direction": direction,
                     "range_index": range_index,
                     "frame_index": frame_index,
+                    "range_provenance": provenance,
                     **frame,
                 })
             for diagnostic in scanned["diagnostics"]:
                 diagnostics.append({
                     "direction": direction,
                     "range_index": range_index,
+                    "range_provenance": provenance,
                     **diagnostic,
                 })
     return {"frames": frames, "diagnostics": diagnostics}
