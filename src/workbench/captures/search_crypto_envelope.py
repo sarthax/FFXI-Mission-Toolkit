@@ -24,6 +24,20 @@ SEARCH_SEED_SIZE = 4
 SEARCH_TRAILER_SIZE = SEARCH_HASH_SIZE + SEARCH_SEED_SIZE
 SEARCH_MIN_FRAME_SIZE = 28
 
+# LandSandBoat SearchHandler::TCPREQUESTTYPE. These names are exposed only after the caller supplies
+# decrypted bytes that pass the exact post-decrypt MD5 validation contract.
+SEARCH_REQUEST_TYPES = {
+    0x00: "SEARCH_ALL",
+    0x01: "ID_LIST",
+    0x02: "GROUP_LIST",
+    0x03: "SEARCH",
+    0x05: "AH_HISTORY_SINGLE",
+    0x06: "AH_HISTORY_STACK",
+    0x08: "SEARCH_COMMENT",
+    0x10: "AH_REQUEST_MORE",
+    0x15: "AH_REQUEST",
+}
+
 
 def inspect_frame(raw: bytes) -> dict:
     """Describe LSB's inbound search crypto envelope without decrypting it.
@@ -112,6 +126,7 @@ def inspect_frame(raw: bytes) -> dict:
             "offset": 0x0B,
             "readable_only_after_decryption_and_hash_validation": True,
             "value": None,
+            "name": None,
             "certainty": "not_decoded",
         },
         "server_key_continuation_contract": {
@@ -142,6 +157,7 @@ def validate_decrypted_frame(decrypted: bytes) -> dict:
         "direction_scope": "client_to_search_server_only",
         "diagnostics": [],
         "packet_type": None,
+        "packet_type_name": None,
     }
     if len(decrypted) < SEARCH_MIN_FRAME_SIZE:
         result["diagnostics"].append({
@@ -166,13 +182,18 @@ def validate_decrypted_frame(decrypted: bytes) -> dict:
         result["diagnostics"].append({"kind": "search_post_decrypt_md5_mismatch"})
         return result
 
+    packet_type = decrypted[0x0B]
+    packet_type_name = SEARCH_REQUEST_TYPES.get(packet_type)
     result["validated"] = True
     result["certainty"] = "verified"
-    result["packet_type"] = decrypted[0x0B]
+    result["packet_type"] = packet_type
+    result["packet_type_name"] = packet_type_name or "UNKNOWN"
     result["packet_type_evidence"] = {
         "offset": 0x0B,
-        "value": decrypted[0x0B],
+        "value": packet_type,
+        "name": packet_type_name or "UNKNOWN",
+        "known_request_type": packet_type_name is not None,
         "certainty": "verified_after_post_decrypt_md5",
-        "provenance": "LandSandBoat SearchHandler::read_func after decrypt()+validatePacket()",
+        "provenance": "LandSandBoat SearchHandler::TCPREQUESTTYPE read by read_func after decrypt()+validatePacket()",
     }
     return result
