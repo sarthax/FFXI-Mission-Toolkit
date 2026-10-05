@@ -23,9 +23,10 @@ SEARCH_HASH_SIZE = 16
 SEARCH_SEED_SIZE = 4
 SEARCH_TRAILER_SIZE = SEARCH_HASH_SIZE + SEARCH_SEED_SIZE
 SEARCH_MIN_FRAME_SIZE = 28
+SEARCH_MARKER = b"IXFF"
 
 # LandSandBoat SearchHandler::TCPREQUESTTYPE. These names are exposed only after the caller supplies
-# decrypted bytes that pass the exact post-decrypt MD5 validation contract.
+# decrypted bytes that pass the exact framing + post-decrypt MD5 validation contract.
 SEARCH_REQUEST_TYPES = {
     0x00: "SEARCH_ALL",
     0x01: "ID_LIST",
@@ -145,11 +146,11 @@ def inspect_frame(raw: bytes) -> dict:
 
 
 def validate_decrypted_frame(decrypted: bytes) -> dict:
-    """Validate an externally decrypted *inbound* candidate using LSB's post-decrypt MD5 contract.
+    """Validate an externally decrypted *inbound* candidate against the complete LSB gate.
 
-    This helper does not perform or trust decryption itself. It only promotes packet-type evidence if
-    the supplied bytes have a valid length and post-decrypt MD5. The first 8 clear bytes and final
-    4-byte seed are expected to remain in their wire positions.
+    This helper does not perform or trust decryption itself. It repeats the clear framing checks from
+    `read_func()` and then the post-decrypt MD5 from `validatePacket()`. Packet type is exposed only
+    after all of those checks pass.
     """
     result = {
         "validated": False,
@@ -166,6 +167,30 @@ def validate_decrypted_frame(decrypted: bytes) -> dict:
             "observed_length": len(decrypted),
         })
         return result
+
+    declared = int.from_bytes(decrypted[0:2], "little")
+    if declared != len(decrypted):
+        result["diagnostics"].append({
+            "kind": "search_declared_length_mismatch",
+            "declared_length": declared,
+            "observed_length": len(decrypted),
+        })
+        return result
+    if decrypted[4:8] != SEARCH_MARKER:
+        result["diagnostics"].append({
+            "kind": "search_marker_mismatch",
+            "observed_hex": decrypted[4:8].hex().upper(),
+            "expected_ascii": "IXFF",
+        })
+        return result
+
+    result["framing_validation"] = {
+        "declared_length": declared,
+        "observed_length": len(decrypted),
+        "marker": "IXFF",
+        "valid": True,
+        "certainty": "verified",
+    }
 
     hash_offset = len(decrypted) - SEARCH_TRAILER_SIZE
     seed_offset = len(decrypted) - SEARCH_SEED_SIZE
@@ -193,7 +218,7 @@ def validate_decrypted_frame(decrypted: bytes) -> dict:
         "value": packet_type,
         "name": packet_type_name or "UNKNOWN",
         "known_request_type": packet_type_name is not None,
-        "certainty": "verified_after_post_decrypt_md5",
+        "certainty": "verified_after_framing_and_post_decrypt_md5",
         "provenance": "LandSandBoat SearchHandler::TCPREQUESTTYPE read by read_func after decrypt()+validatePacket()",
     }
     return result
