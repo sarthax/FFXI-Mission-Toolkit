@@ -14,8 +14,7 @@ FFXI_HEADER_SIZE = 0x1C
 LOGIN_OPCODE = 0x000A
 LOGIN_PACKET_SIZE = 0x005C
 CHECKSUM_SIZE = 16
-LOGIN_BODY_SIZE = LOGIN_PACKET_SIZE - CHECKSUM_SIZE
-MIN_DATAGRAM_SIZE = FFXI_HEADER_SIZE + LOGIN_PACKET_SIZE
+MIN_DATAGRAM_SIZE = FFXI_HEADER_SIZE + LOGIN_PACKET_SIZE + CHECKSUM_SIZE
 LOGIN_PACKET_CHECK_OFFSET = 0x04
 LOGIN_PACKET_CHECK_SUM_START = 0x08
 
@@ -24,11 +23,11 @@ def inspect_login_datagram(payload: bytes) -> dict:
     """Return evidence for a source-backed non-encrypted map 0x000A datagram.
 
     Verified structural facts:
-    - outer common header is 0x1C bytes;
-    - client 0x000A declares size 0x5C, including the 16-byte checksum trailer;
-    - the final 16 bytes are MD5 over the 0x4C-byte pre-trailer inner packet body;
+    - outer common transport header is 0x1C bytes;
+    - client 0x000A declares inner packet size 0x5C;
+    - a separate final 16-byte transport checksum is MD5 over the complete 0x5C inner packet;
     - the first inner uint16 carries opcode in the low 9 bits and size in 4-byte words;
-    - LoginPacketCheck is the byte-sum of the packet body beginning at inner offset 0x08.
+    - LoginPacketCheck is the byte-sum of the inner packet beginning at offset 0x08.
 
     No character/account/ticket/platform fields are decoded here.
     """
@@ -53,6 +52,10 @@ def inspect_login_datagram(payload: bytes) -> dict:
         return result
 
     inner_start = FFXI_HEADER_SIZE
+    inner_end = inner_start + LOGIN_PACKET_SIZE
+    checksum_start = inner_end
+    checksum_end = checksum_start + CHECKSUM_SIZE
+
     inner_header = struct.unpack_from("<H", payload, inner_start)[0]
     opcode = inner_header & 0x01FF
     size_words = (inner_header >> 9) & 0x7F
@@ -89,11 +92,9 @@ def inspect_login_datagram(payload: bytes) -> dict:
         return result
     result["validation_basis"].append("XiPackets GP_CLI_COMMAND_LOGIN declared size 0x005C")
 
-    checksum_start = inner_start + LOGIN_BODY_SIZE
-    checksum_end = checksum_start + CHECKSUM_SIZE
-    inner_body = payload[inner_start:checksum_start]
+    inner_packet = payload[inner_start:inner_end]
     observed_md5 = payload[checksum_start:checksum_end]
-    computed_md5 = hashlib.md5(inner_body).digest()
+    computed_md5 = hashlib.md5(inner_packet).digest()
     md5_valid = observed_md5 == computed_md5
     result["field_evidence"]["outer_md5"] = {
         "offset": checksum_start,
@@ -108,10 +109,10 @@ def inspect_login_datagram(payload: bytes) -> dict:
             "checksum_offset": checksum_start,
         })
         return result
-    result["validation_basis"].append("LandSandBoat recv_parse outer MD5 validation")
+    result["validation_basis"].append("LandSandBoat recv_parse MD5 over complete inner packet before trailer")
 
     observed_check = payload[inner_start + LOGIN_PACKET_CHECK_OFFSET]
-    computed_check = sum(payload[inner_start + LOGIN_PACKET_CHECK_SUM_START:checksum_start]) & 0xFF
+    computed_check = sum(payload[inner_start + LOGIN_PACKET_CHECK_SUM_START:inner_end]) & 0xFF
     packet_check_valid = observed_check == computed_check
     result["field_evidence"]["LoginPacketCheck"] = {
         "offset": inner_start + LOGIN_PACKET_CHECK_OFFSET,
@@ -133,7 +134,7 @@ def inspect_login_datagram(payload: bytes) -> dict:
     result["recognized"] = True
     result["certainty"] = "verified"
     result["decoder_status"] = "verified_handshake_structure_payload_fields_opaque"
-    result["opaque_inner_hex"] = inner_body.hex().upper()
+    result["opaque_inner_hex"] = inner_packet.hex().upper()
     if len(payload) > checksum_end:
         result["diagnostics"].append({
             "kind": "opaque_trailing_bytes",
