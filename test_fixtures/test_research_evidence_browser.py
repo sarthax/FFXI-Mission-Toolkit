@@ -106,6 +106,25 @@ def main() -> int:
         assert "EXPLICIT_FINDING_CONTRADICTION" in kinds,report
         assert "CAPABILITY_OBSERVATION_CONFLICT" in kinds,report
         assert "RESEARCH_PROPOSAL_CONTRADICTION" in kinds,report
+        assert report["state_counts"],report
+
+        finding_conflict=next(item for item in report["items"] if item["kind"]=="FINDING_VALUE_CONFLICT")
+        assert finding_conflict["comparison_state"]=="EVIDENCE_BACKED_SIDES",finding_conflict
+        assert len(finding_conflict["sides"])==2,finding_conflict
+        assert {side["value"] for side in finding_conflict["sides"]}=={"IMPLEMENTED","MISSING"},finding_conflict
+        assert {snapshot for side in finding_conflict["sides"] for snapshot in side["source_snapshots"]}=={"lsb:test","client:test"},finding_conflict
+        assert all(side["evidence"] for side in finding_conflict["sides"]),finding_conflict
+
+        explicit=next(item for item in report["items"] if item["kind"]=="EXPLICIT_FINDING_CONTRADICTION")
+        assert explicit["comparison_state"]=="FLAGGED_ONLY",explicit
+        assert len(explicit["sides"])==1,explicit
+
+        proposal=next(item for item in report["items"] if item["kind"]=="RESEARCH_PROPOSAL_CONTRADICTION")
+        assert proposal["comparison_state"]=="EVIDENCE_BACKED_SIDES",proposal
+        assert [side["label"] for side in proposal["sides"]]==["Supporting evidence","Contradicting evidence"],proposal
+        assert set(proposal["evidence_ids"])=={"evidence:server","evidence:client"},proposal
+        assert proposal["sides"][0]["evidence_ids"]==["evidence:server"],proposal
+        assert proposal["sides"][1]["evidence_ids"]==["evidence:client"],proposal
 
         session_report=list_contradictions(db,research_session_id="research:evidence")
         assert any(item["kind"]=="RESEARCH_PROPOSAL_CONTRADICTION" for item in session_report["items"]),session_report
@@ -122,8 +141,17 @@ def main() -> int:
         assert "capability_observations" in kinds,detail
         assert "research_tool_call" in kinds,detail
         assert "research_proposal" in kinds,detail
+        finding_ref=next(ref for ref in detail["references"] if ref["kind"]=="findings")
+        assert finding_ref["field"]=="implementation_state",finding_ref
+        assert finding_ref["value"]=="MISSING",finding_ref
+        assert finding_ref["source_snapshot_id"]=="client:test",finding_ref
+        capability_ref=next(ref for ref in detail["references"] if ref["kind"]=="capability_observations")
+        assert capability_ref["value"]=={"value":False},capability_ref
+        assert capability_ref["source_snapshot_id"]=="client:test",capability_ref
         proposal_ref=next(ref for ref in detail["references"] if ref["kind"]=="research_proposal")
         assert "CONTRADICTING" in proposal_ref["evidence_roles"],proposal_ref
+        assert "client:test" in detail["referenced_snapshots"],detail
+        assert "feature:test" in detail["referenced_subjects"],detail
 
         contradictions_html=render(
             "research_contradictions.html","/research/contradictions",
@@ -131,6 +159,10 @@ def main() -> int:
         )
         assert "Research Contradictions" in contradictions_html
         assert "FINDING_VALUE_CONFLICT" in contradictions_html
+        assert "EVIDENCE_BACKED_SIDES" in contradictions_html
+        assert "Recorded value 1" in contradictions_html
+        assert "Supporting evidence" in contradictions_html
+        assert "Contradicting evidence" in contradictions_html
         assert "evidence%3Aclient" in contradictions_html
 
         evidence_html=render(
@@ -139,6 +171,8 @@ def main() -> int:
         )
         assert "Evidence Detail" in evidence_html
         assert "FFXI DAT" in evidence_html
+        assert "implementation_state" in evidence_html
+        assert "client:test" in evidence_html
         assert "CONTRADICTING" in evidence_html
         assert "graph.search" in evidence_html
 
