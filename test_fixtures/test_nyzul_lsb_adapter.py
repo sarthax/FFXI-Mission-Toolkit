@@ -86,6 +86,11 @@ local pTableFloorRandomEntities =
 {
     [1] = { ID.mob.MOB_OFFSET, ID.mob.MOB_OFFSET + 11 }, -- Aquans
 }
+
+local function bossFloor(instance, floorBoss)
+    GetMobByID(ID.mob.ARCHAIC_RAMPART_OFFSET, instance):setSpawn(-36, 0, -362, 0)
+    GetMobByID(floorBoss, instance):setSpawn(-55.000, 1, -380.000, 250)
+end
 """,
     )
     _write(
@@ -96,7 +101,11 @@ xi.nyzul = xi.nyzul or {}
 xi.nyzul.objective =
 {
     ELIMINATE_ENEMY_LEADER = 1,
+    ELIMINATE_SPECIFIED_ENEMIES = 2,
+    ACTIVATE_ALL_LAMPS = 3,
+    ELIMINATE_SPECIFIED_ENEMY = 4,
     ELIMINATE_ALL_ENEMIES = 5,
+    FREE_FLOOR = 6,
 }
 xi.nyzul.FloorLayout =
 {
@@ -168,8 +177,16 @@ def test_modern_lsb_spatial_objective_and_entity_data_are_normalized(tmp_path):
     assert data["lamps"][1] == [[1.5, 0.0, -2.5], [3.0, -0.5, 4.0]]
     assert data["points"][1] == [[10.5, 0.0, -11.5], [12.0, -0.5, 13.0]]
     assert data["entrances"] == {0: [-20.0, -0.5, -380.0], 1: [380.0, -0.5, -500.0]}
-    assert data["objectives"] == {"ELIMINATE_ENEMY_LEADER": 1, "ELIMINATE_ALL_ENEMIES": 5}
+    assert data["objectives"] == {
+        "ELIMINATE_ENEMY_LEADER": 1,
+        "ELIMINATE_SPECIFIED_ENEMIES": 2,
+        "ACTIVATE_ALL_LAMPS": 3,
+        "ELIMINATE_SPECIFIED_ENEMY": 4,
+        "ELIMINATE_ALL_ENEMIES": 5,
+        "FREE_FLOOR": 6,
+    }
     assert data["adapter"]["capabilities"]["numeric_entity_ids"] is True
+    assert data["adapter"]["capabilities"]["native_generation_semantics"] is True
     assert data["adapter"]["capabilities"]["entity_id_source"] == "zone-yaml"
 
     assert data["leaders"][0] == {"id": 200, "name": "Leader_0"}
@@ -185,6 +202,24 @@ def test_modern_lsb_spatial_objective_and_entity_data_are_normalized(tmp_path):
         {"id": 504, "count": 4, "name": "Scorpion"},
         {"id": 508, "count": 4, "name": "Pugil"},
     ]
+
+
+def test_modern_lsb_generation_semantics_are_native_and_source_derived(tmp_path):
+    root = _lsb_fixture(tmp_path / "lsb")
+    data = load_lsb_data(root)
+
+    assert data["generation"]["editor_objective_to_native"] == {
+        1: 6,
+        2: 5,
+        3: 1,
+        4: 2,
+        5: 3,
+        6: 4,
+    }
+    boss_floor = data["generation"]["boss_floor"]
+    assert boss_floor["floor_layout"] == 0
+    assert boss_floor["rampart_spawn"] == {"position": [-36.0, 0.0, -362.0], "rotation": 0}
+    assert boss_floor["boss_spawn"] == {"position": [-55.0, 1.0, -380.0], "rotation": 250}
 
 
 def test_modern_lsb_preserves_runtime_id_lineage_and_resolved_ids(tmp_path):
@@ -207,6 +242,20 @@ def test_missing_zone_entity_mapping_fails_closed(tmp_path):
     mobs.write_text(mobs.read_text(encoding="utf-8").replace("template: Heraldic_Imp", "template: Other_Imp"), encoding="utf-8")
 
     with pytest.raises(ValueError, match="SPECIFIED_OFFSET"):
+        load_lsb_data(root)
+
+
+def test_missing_native_generation_semantics_fail_closed(tmp_path):
+    root = _lsb_fixture(tmp_path / "lsb")
+    floor = root / "scripts/globals/nyzul/floor_generation.lua"
+    floor.write_text(
+        floor.read_text(encoding="utf-8").replace(
+            "GetMobByID(floorBoss, instance):setSpawn(-55.000, 1, -380.000, 250)",
+            "-- missing boss spawn",
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="floor boss fixed spawn"):
         load_lsb_data(root)
 
 
