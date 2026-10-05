@@ -71,6 +71,10 @@ def main():
     assert truncated["recognized"] is False, truncated
     assert any(d["kind"] == "truncated_map_login_candidate" for d in truncated["diagnostics"]), truncated
 
+    oversized = map_framing.inspect_login_datagram(packet + b"\x00")
+    assert oversized["recognized"] is False, oversized
+    assert any(d["kind"] == "map_login_unexpected_datagram_length" for d in oversized["diagnostics"]), oversized
+
     print("Map UDP 0x000A handshake regression: PASS")
     return 0
 
