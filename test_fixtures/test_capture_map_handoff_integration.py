@@ -112,6 +112,20 @@ def main():
     handoff = response_next_login()
     map_login = map_login_datagram()
     assert len(map_login) == map_framing.MIN_DATAGRAM_SIZE
+
+    # Independent normalized evidence: an exact inner 0x5C packet from another supported capture
+    # path. Correlation must be byte-for-byte only; no timestamp proximity is used.
+    inner_packet = map_login[
+        map_framing.FFXI_HEADER_SIZE:
+        map_framing.FFXI_HEADER_SIZE + map_framing.LOGIN_PACKET_SIZE
+    ]
+    con.execute(
+        """INSERT INTO capture_raw_packets(capture_id,seq,ts,direction,opcode,raw_hex)
+           VALUES(?,?,?,?,?,?)""",
+        (cid, 99, "2026-10-05 12:00:00", "outgoing", "0x00A", inner_packet.hex().upper()),
+    )
+    con.commit()
+
     frames = [
         (1_700_000_000, 100_000, ipv4_tcp_frame(
             handoff,
@@ -139,7 +153,8 @@ def main():
         )),
     ]
 
-    result = build_capture_index.ingest_single_file(con, cid, "map-handshake.pcap", make_pcap(frames))
+    pcap = make_pcap(frames)
+    result = build_capture_index.ingest_single_file(con, cid, "map-handshake.pcap", pcap)
     assert result["error"] is None, result
 
     rows = con.execute(
@@ -165,19 +180,28 @@ def main():
     assert forward["transport_payload_hex"] == map_login.hex().upper(), forward
     assert forward["cross_source_merge_performed"] is False, forward
 
+    correlation = forward["normalized_packet_correlation"]
+    assert correlation["status"] == "matched", correlation
+    assert correlation["basis"] == "exact_raw_inner_packet_bytes", correlation
+    assert correlation["automatic_merge_performed"] is False, correlation
+    assert len(correlation["matches"]) == 1, correlation
+    assert correlation["matches"][0]["peer_ref"] == "raw-packet:99", correlation
+    assert correlation["matches"][0]["opcode"] == "0x00A", correlation
+
     reverse = next(row for row in decoded if row["src_ip"] == "11.22.33.44")
     assert reverse["protocol_family"] == "ffxi_map_endpoint", reverse
     assert reverse["classification_validated"] is False, reverse
     assert reverse["classification_certainty"] == "structurally_inferred", reverse
     assert reverse["map_handshake_probe"]["recognized"] is False, reverse
+    assert "normalized_packet_correlation" not in reverse, reverse
     assert any(
         d["kind"] == "map_login_direction_mismatch"
         for d in reverse["map_handshake_probe"]["diagnostics"]
     ), reverse
     assert reverse["transport_payload_hex"] == map_login.hex().upper(), reverse
 
-    # Reingestion remains deterministic and does not duplicate network records.
-    again = build_capture_index.ingest_single_file(con, cid, "map-handshake.pcap", make_pcap(frames))
+    # Reingestion remains deterministic and does not duplicate network records or raw evidence.
+    again = build_capture_index.ingest_single_file(con, cid, "map-handshake.pcap", pcap)
     assert again["error"] is None, again
     assert con.execute(
         """SELECT COUNT(*) FROM capture_structured_records
@@ -185,6 +209,10 @@ def main():
              AND family='pcap_network' AND record_type='UDP'""",
         (cid,),
     ).fetchone()[0] == 2
+    assert con.execute(
+        "SELECT COUNT(*) FROM capture_raw_packets WHERE capture_id=? AND seq=99",
+        (cid,),
+    ).fetchone()[0] == 1
 
     con.close()
     print("Map handoff/0x000A PCAP integration regression: PASS")
