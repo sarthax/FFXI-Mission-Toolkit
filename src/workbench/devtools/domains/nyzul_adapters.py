@@ -13,18 +13,16 @@ from pathlib import Path
 from typing import Any
 
 NUM = r"(-?\d+(?:\.\d+)?)"
-
-LEGACY_FILES = (
+NAVMESH_FILE = "navmeshes/Nyzul_Isle.nav"
+LEGACY_SOURCE_FILES = (
     "scripts/globals/nyzul/floor_layouts.lua",
     "scripts/globals/nyzul.lua",
     "scripts/zones/Nyzul_Isle/IDs.lua",
-    "navmeshes/Nyzul_Isle.nav",
 )
-LSB_FILES = (
+LSB_SOURCE_FILES = (
     "scripts/globals/nyzul/floor_generation.lua",
     "scripts/globals/nyzul.lua",
     "scripts/zones/Nyzul_Isle/IDs.lua",
-    "navmeshes/Nyzul_Isle.nav",
 )
 
 
@@ -35,30 +33,46 @@ class NyzulSource:
     root: Path
 
 
+def navmesh_available(root: Path) -> bool:
+    """Return whether the optional xiNavmeshes checkout is initialized for Nyzul."""
+    return (Path(root) / NAVMESH_FILE).is_file()
+
+
 def has_legacy_layout(root: Path) -> bool:
     root = Path(root)
-    return all((root / rel).is_file() for rel in LEGACY_FILES)
+    return all((root / rel).is_file() for rel in LEGACY_SOURCE_FILES)
 
 
 def has_lsb_layout(root: Path) -> bool:
     root = Path(root)
-    if not all((root / rel).is_file() for rel in LSB_FILES):
+    if not all((root / rel).is_file() for rel in LSB_SOURCE_FILES):
         return False
     # Fail closed: floor_generation.lua alone is not enough to identify the
     # current native LSB shape. Require the modern local-table declarations.
-    text = (root / LSB_FILES[0]).read_text(encoding="utf-8", errors="replace")
+    text = (root / LSB_SOURCE_FILES[0]).read_text(encoding="utf-8", errors="replace")
     return bool(
         re.search(r"(?m)^local\s+lampSpawnPoints\s*=", text)
         and re.search(r"(?m)^local\s+layoutSpawnPoints\s*=", text)
     )
 
 
-def classify_root(root: Path) -> NyzulSource | None:
+def classify_root(root: Path, family: str = "auto") -> NyzulSource | None:
+    """Classify *root* using both its configured family and concrete source shape.
+
+    An explicitly configured family never falls through to another lineage parser.
+    ``auto`` may identify either native LSB or the historical DSP/Topaz shape.
+    """
     root = Path(root)
+    family = (family or "auto").strip().lower()
+    if family == "lsb":
+        return NyzulSource("lsb", "modern-lsb", root) if has_lsb_layout(root) else None
+    if family in {"dsp", "topaz"}:
+        return NyzulSource(family, f"legacy-{family}", root) if has_legacy_layout(root) else None
+    if family != "auto":
+        return None
     if has_lsb_layout(root):
         return NyzulSource("lsb", "modern-lsb", root)
     if has_legacy_layout(root):
-        # DSP and Topaz intentionally share the historical representation.
         return NyzulSource("legacy", "legacy-dsp-topaz", root)
     return None
 
@@ -178,7 +192,7 @@ def load_lsb_data(root: Path) -> dict[str, Any]:
         raise ValueError(
             "Configured LSB source is not a recognized modern Nyzul layout; expected "
             "scripts/globals/nyzul/floor_generation.lua with local lampSpawnPoints/layoutSpawnPoints, "
-            "scripts/globals/nyzul.lua, scripts/zones/Nyzul_Isle/IDs.lua, and navmeshes/Nyzul_Isle.nav"
+            "scripts/globals/nyzul.lua, and scripts/zones/Nyzul_Isle/IDs.lua"
         )
 
     floor_path = root / "scripts/globals/nyzul/floor_generation.lua"
@@ -194,6 +208,7 @@ def load_lsb_data(root: Path) -> dict[str, Any]:
     if not lamps or not points:
         raise ValueError("modern LSB Nyzul spatial tables were recognized but contained no deterministic data")
 
+    has_nav = navmesh_available(root)
     return {
         "lamps": lamps,
         "points": points,
@@ -214,11 +229,13 @@ def load_lsb_data(root: Path) -> dict[str, Any]:
                 "floor_entrances": True,
                 "objectives": True,
                 "numeric_entity_ids": False,
+                "navmesh_reachability": has_nav,
             },
             "provenance": {
                 "floor_generation": str(floor_path.relative_to(root)),
                 "floor_layout": str(nyzul_path.relative_to(root)),
                 "ids": str(ids_path.relative_to(root)),
+                "navmesh": NAVMESH_FILE if has_nav else None,
             },
         },
         "objectives": _parse_objectives(nyzul_text),
