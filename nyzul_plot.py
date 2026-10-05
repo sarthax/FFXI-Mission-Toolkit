@@ -20,11 +20,14 @@ from workbench.devtools.domains.nyzul_adapters import (
     load_lsb_data,
     navmesh_available,
 )
+from workbench.devtools.domains.nyzul_lsb_instance import parse_instance_selection
 from workbench.runtime.legacy_settings import (
     get_active_server_profile,
     get_dsp_root,
     get_server_profiles,
 )
+
+LSB_INSTANCE_FILE = "scripts/zones/Nyzul_Isle/instances/nyzul_isle_investigation.lua"
 
 
 def _has_nyzul_layout(root: Path) -> bool:
@@ -117,10 +120,35 @@ _legacy_reachability = _canonical.reachability
 _legacy_nav_triangles_bytes = _canonical.nav_triangles_bytes
 
 
+def _lsb_selection_contract(root: Path, data: dict) -> dict:
+    """Derive instance-level LSB floor/objective selection semantics from source."""
+    instance_path = Path(root) / LSB_INSTANCE_FILE
+    if not instance_path.is_file():
+        raise ValueError(
+            "Configured LSB Nyzul source is missing scripts/zones/Nyzul_Isle/instances/"
+            "nyzul_isle_investigation.lua; native selection semantics cannot be verified"
+        )
+    selection = parse_instance_selection(instance_path.read_text(encoding="utf-8", errors="replace"))
+
+    positive_layouts = sorted(int(k) for k in data.get("entrances", {}) if int(k) > 0)
+    if not positive_layouts or positive_layouts != list(range(1, positive_layouts[-1] + 1)):
+        raise ValueError("modern LSB Nyzul FloorLayout positive keys are not contiguous from 1")
+    subtract = int(selection["non_boss_layout"]["floor_layout_count_subtract"])
+    last_layout = positive_layouts[-1] - subtract
+    first_layout = int(selection["non_boss_layout"]["first"])
+    if last_layout < first_layout or last_layout not in positive_layouts:
+        raise ValueError("modern LSB Nyzul non-boss layout range resolves outside FloorLayout")
+    selection["non_boss_layout"]["last"] = last_layout
+    return selection
+
+
 def _load_data():
     source = _configured_server_source()
     if source.adapter == "modern-lsb":
-        return load_lsb_data(source.root)
+        data = load_lsb_data(source.root)
+        data.setdefault("generation", {})["selection"] = _lsb_selection_contract(source.root, data)
+        data.setdefault("adapter", {}).setdefault("provenance", {})["instance"] = LSB_INSTANCE_FILE
+        return data
     has_nav = navmesh_available(source.root)
     data = _legacy_load_data()
     data.setdefault("adapter", {
