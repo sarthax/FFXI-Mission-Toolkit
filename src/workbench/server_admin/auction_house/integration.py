@@ -13,6 +13,7 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
     """Expose AH at root paths and add it to the Server workspace exactly once."""
     from workbench import gui_shell
 
+    from .activity_api import router as auction_house_activity_router
     from .admin_buy_api import router as auction_house_admin_buy_router
     from .batch_api import router as auction_house_batch_router
     from .cleanup_api import router as auction_house_cleanup_router
@@ -53,6 +54,7 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
         auction_house_reward_ui_router,
         auction_house_reward_history_api_router,
         auction_house_reward_history_ui_router,
+        auction_house_activity_router,
     ):
         for route in carrier.routes:
             key = (getattr(route, "path", None), tuple(sorted(getattr(route, "methods", ()) or ())))
@@ -90,6 +92,9 @@ def install_legacy_gui_bridge(root_router: APIRouter) -> None:
         if not any(section.get("href") == "/auction-house/reward-history" for section in sections):
             insert_at = next((index + 1 for index, section in enumerate(sections) if section.get("href") == "/auction-house/rewards"), len(sections))
             sections.insert(insert_at, {"label": "AH Reward History", "href": "/auction-house/reward-history"})
+        if not any(section.get("href") == "/auction-house/activity" for section in sections):
+            insert_at = next((index + 1 for index, section in enumerate(sections) if section.get("href") == "/auction-house/reward-history"), len(sections))
+            sections.insert(insert_at, {"label": "AH Activity", "href": "/auction-house/activity"})
         updated = dict(workspace)
         updated["sections"] = tuple(sections)
         workspaces.append(updated)
