@@ -23,7 +23,8 @@ main.research-contradictions-page{padding:8px 10px 24px}.contradiction-card{bord
 </form>
 
 <div class="dense-toolbar" style="margin:4px 0;flex-wrap:wrap">
-  <span class="chip">Contradictions {{ report.total }}</span>
+  <span class="chip">Showing {{ report.total }}{% if report.matched_total != report.total %} / {{ report.matched_total }}{% endif %}</span>
+  {% if report.truncated %}<span class="chip">Truncated at {{ report.limit }}</span>{% endif %}
   {% for kind,count in report.type_counts.items() %}<span class="chip">{{ kind }} {{ count }}</span>{% endfor %}
   {% for state,count in report.state_counts.items() %}<span class="chip">{{ state }} {{ count }}</span>{% endfor %}
 </div>
