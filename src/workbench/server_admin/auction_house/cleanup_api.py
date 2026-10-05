@@ -11,6 +11,7 @@ from fastapi.templating import Jinja2Templates
 from workbench.runtime.legacy_settings import get_active_server_identity, get_active_server_root
 from workbench.runtime.paths import GUI_ROOT
 
+from .activity import record_executor_result
 from .factory import open_auction_house
 from .legacy_test_executor import LegacyTestExecutionBlocked
 from .rule_cleanup import criteria_from_payload, execute_cleanup, preview_cleanup
@@ -75,14 +76,24 @@ def cleanup_execute(payload: dict = Body(...)):
         confirmation = str(payload.get("confirmation") or "")
         environment = get_active_server_identity()
         with _context() as ctx:
-            return JSONResponse(execute_cleanup(
+            result = execute_cleanup(
                 service=ctx.service,
                 environment=environment,
                 criteria=criteria,
                 preview_token=token,
                 action=action,
                 confirmation=confirmation,
-            ))
+            )
+        try:
+            record_executor_result(
+                environment=environment,
+                result=result,
+                request_payload=payload,
+                operation=f"cleanup_{action or 'unknown'}",
+            )
+        except Exception:
+            pass
+        return JSONResponse(result)
     except LegacyTestExecutionBlocked as exc:
         raise HTTPException(status_code=409, detail=str(exc))
     except (TypeError, ValueError) as exc:
