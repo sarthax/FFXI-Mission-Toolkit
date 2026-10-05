@@ -514,6 +514,11 @@
     ];
     fxList.innerHTML = '';
     loadProcScript();
+    { const w = (typeof loadedServerState !== 'undefined' && loadedServerState && loadedServerState.item_weapon) || null, h = w ? Number(w.hit) : 0;
+      if (h > 1) {
+        const dist = { 2: '1 hit 55%, 2 hits 45%', 3: '1 hit 30%, 2 hits 50%, 3 hits 20%', 4: '1 hit 20%, 2 hits 30%, 3 hits 30%, 4 hits 20%' }[h] || ('up to ' + h + ' hits per attack');
+        fxList.insertAdjacentHTML('beforeend', `<div class="ie-fxgroup"><h4>Multi-hit <small>built into the weapon, not an effect row</small></h4><div class="ie-fx"><div class="tx"><div class="nm">${h === 2 ? 'Occasionally attacks twice' : 'Occasionally attacks up to ' + h + ' times'}</div><div class="sub">Weapon stat Max hits = ${h} (${esc(dist)}). Change it under Weapon combat → Max hits per attack.</div></div></div></div>`);
+      } }
     { const sb = scriptBanner(); if (sb) fxList.insertAdjacentHTML('beforeend', sb); }
     for (const [kind, title, hint, rows, render] of sections) {
       const g = mk('div', null, 'ie-fxgroup');
