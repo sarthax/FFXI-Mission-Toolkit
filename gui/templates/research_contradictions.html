@@ -35,7 +35,7 @@ main.research-contradictions-page{padding:8px 10px 24px}.contradiction-card{bord
 {% for item in report['items'] %}
 <section class="contradiction-card">
   <div class="dense-toolbar"><strong>{{ item.kind }}</strong><span class="chip">{{ item.comparison_state }}</span><span class="sp"></span>{% if item.field %}<span class="chip mono">{{ item.field }}</span>{% endif %}</div>
-  <p><strong>Subject:</strong> <code>{{ item.subject_id }}</code>{% if item.field %} · <strong>Field:</strong> <code>{{ item.field }}</code>{% endif %}</p>
+  <p><strong>Subject:</strong> <code>{{ item.subject_id }}</code> <a class="chip" href="/features/trace?q={{ item.subject_id|urlencode }}">Feature Trace</a>{% if item.field %} · <strong>Field:</strong> <code>{{ item.field }}</code>{% endif %}</p>
   <p>{{ item.summary }}</p>
   {% if item.sources or item.snapshots %}
   <p class="muted">
