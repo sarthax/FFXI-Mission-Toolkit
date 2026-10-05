@@ -156,6 +156,61 @@ def _parse_objectives(text: str) -> dict[str, int]:
     }
 
 
+def _parse_generation_semantics(floor_text: str, objectives: dict[str, int]) -> dict[str, Any]:
+    """Derive native LSB objective IDs and fixed boss-floor spawns from source.
+
+    The editor keeps its historical six-option control numbering for DSP/Topaz
+    compatibility.  This map records the corresponding native LSB stage value so
+    UI/export code never has to assume the two enums are numerically identical.
+    """
+    editor_to_symbol = {
+        1: "FREE_FLOOR",
+        2: "ELIMINATE_ALL_ENEMIES",
+        3: "ELIMINATE_ENEMY_LEADER",
+        4: "ELIMINATE_SPECIFIED_ENEMIES",
+        5: "ACTIVATE_ALL_LAMPS",
+        6: "ELIMINATE_SPECIFIED_ENEMY",
+    }
+    missing = [symbol for symbol in editor_to_symbol.values() if symbol not in objectives]
+    if missing:
+        raise ValueError(
+            "modern LSB Nyzul objective mapping is incomplete: missing " + ", ".join(sorted(missing))
+        )
+
+    def spawn(pattern: str, label: str) -> dict[str, Any]:
+        match = re.search(pattern, floor_text)
+        if not match:
+            raise ValueError(f"modern LSB Nyzul {label} fixed spawn could not be mapped deterministically")
+        x, y, z, rotation = match.groups()
+        return {
+            "position": [float(x), float(y), float(z)],
+            "rotation": int(float(rotation)),
+        }
+
+    rampart = spawn(
+        r"GetMobByID\(ID\.mob\.ARCHAIC_RAMPART_OFFSET\s*,\s*instance\)\s*:setSpawn\(\s*"
+        + NUM + r"\s*,\s*" + NUM + r"\s*,\s*" + NUM + r"\s*,\s*" + NUM + r"\s*\)",
+        "Archaic Rampart",
+    )
+    boss = spawn(
+        r"GetMobByID\(floorBoss\s*,\s*instance\)\s*:setSpawn\(\s*"
+        + NUM + r"\s*,\s*" + NUM + r"\s*,\s*" + NUM + r"\s*,\s*" + NUM + r"\s*\)",
+        "floor boss",
+    )
+
+    return {
+        "editor_objective_to_native": {
+            editor_id: objectives[symbol] for editor_id, symbol in editor_to_symbol.items()
+        },
+        "editor_objective_symbols": editor_to_symbol,
+        "boss_floor": {
+            "floor_layout": 0,
+            "rampart_spawn": rampart,
+            "boss_spawn": boss,
+        },
+    }
+
+
 def _runtime_id_provenance(defs: dict[str, dict[str, dict[str, Any]]]) -> dict[str, dict[str, str]]:
     out: dict[str, dict[str, str]] = {"mob": {}, "npc": {}}
     for section in ("mob", "npc"):
@@ -244,6 +299,8 @@ def load_lsb_data(root: Path) -> dict[str, Any]:
     lamps = _parse_lamp_points(_block(floor_text, r"(?m)^local\s+lampSpawnPoints\s*="))
     points = _parse_layout_points(_block(floor_text, r"(?m)^local\s+layoutSpawnPoints\s*="))
     entrances = _parse_floor_layout(nyzul_text)
+    objectives = _parse_objectives(nyzul_text)
+    generation = _parse_generation_semantics(floor_text, objectives)
     if not lamps or not points:
         raise ValueError("modern LSB Nyzul spatial tables were recognized but contained no deterministic data")
 
@@ -275,6 +332,7 @@ def load_lsb_data(root: Path) -> dict[str, Any]:
                 "lamp_spawn_points": True,
                 "floor_entrances": True,
                 "objectives": True,
+                "native_generation_semantics": True,
                 "numeric_entity_ids": True,
                 "entity_id_source": "zone-yaml",
                 "navmesh_reachability": has_nav,
@@ -288,7 +346,8 @@ def load_lsb_data(root: Path) -> dict[str, Any]:
                 "navmesh": NAVMESH_FILE if has_nav else None,
             },
         },
-        "objectives": _parse_objectives(nyzul_text),
+        "objectives": objectives,
+        "generation": generation,
         "lineage": {
             "runtime_ids": _runtime_id_provenance(runtime_defs),
             "resolved_runtime_ids": resolved_ids,
