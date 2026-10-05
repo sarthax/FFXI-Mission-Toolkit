@@ -97,8 +97,6 @@ def main():
     unknown_scan = lobby_ingest.scan_range_detailed(bytes(unknown), 6000)
     assert any(d["kind"] == "unknown_message_type" for d in unknown_scan["diagnostics"]), unknown_scan
 
-    # Search framing is deliberately weaker than lobby decoding: clear total length + IXFF can be
-    # recovered from source-backed structure, but bytes after offset 8 remain opaque/encrypted.
     sf = search_frame()
     search_scan = search_framing.scan_range(b"\xFE\xED" + sf, 7000)
     assert len(search_scan["frames"]) == 1, search_scan
@@ -119,8 +117,8 @@ def main():
         [{"frame_no": 1, "direction": "b_to_a", "payload_len": len(packet),
           "flags": {"syn": False, "ack": True, "fin": False, "rst": False}}],
     )
-    world_flow = flow(
-        "world",
+    map_tcp_flow = flow(
+        "map-tcp",
         ("10.0.0.2", 41000),
         ("203.0.113.10", 54230),
         directions(b"opaque-world-bytes", 9000),
@@ -146,35 +144,42 @@ def main():
         directions(sf, 11500),
     )
     results = {r["flow_id"]: r for r in protocol_classification.classify_reconstructed_flows(
-        [lobby_flow, world_flow, search_flow, unknown_flow, signature_only_flow]
+        [lobby_flow, map_tcp_flow, search_flow, unknown_flow, signature_only_flow]
     )}
     assert results["lobby"]["protocol_family"] == "ffxi_lobby", results["lobby"]
     assert results["lobby"]["classification_certainty"] == "verified", results["lobby"]
-    assert results["world"]["protocol_family"] == "ffxi_world_endpoint", results["world"]
-    assert results["world"]["classification_validated"] is False, results["world"]
-    assert results["world"]["decoder_status"] == "unknown_opaque", results["world"]
+    # ResponseNextLogin.server_* is a zone/map UDP handoff in modern LSB; an exact TCP endpoint
+    # match must therefore remain unknown rather than being promoted to a world/map TCP family.
+    assert results["map-tcp"]["protocol_family"] == "unknown_tcp", results["map-tcp"]
+    assert results["map-tcp"]["classification_scope"] == "handoff_endpoint_transport_mismatch", results["map-tcp"]
+    assert any(d["kind"] == "handoff_endpoint_transport_not_proven" for d in results["map-tcp"]["diagnostics"]), results["map-tcp"]
+    assert results["map-tcp"]["protocol_candidates"][0]["protocol_family"] == "ffxi_map_endpoint", results["map-tcp"]
+    assert results["map-tcp"]["protocol_candidates"][0]["expected_transport"] == "udp", results["map-tcp"]
+
     assert results["search"]["protocol_family"] == "ffxi_search_endpoint", results["search"]
-    assert results["search"]["classification_scope"] == "verified_handoff_endpoint_plus_source_backed_search_framing", results["search"]
+    assert results["search"]["classification_scope"] == "verified_search_handoff_plus_source_backed_search_framing", results["search"]
     assert results["search"]["decoder_status"] == "encrypted_or_opaque", results["search"]
     assert results["search"]["framing_evidence"]["frame_count"] == 1, results["search"]
     assert results["search"]["framing_evidence"]["payload_semantics"] == "unknown_opaque", results["search"]
     assert results["other"]["protocol_family"] == "unknown_tcp", results["other"]
     assert results["other"]["protocol_candidates"] == [], results["other"]
-    # A search-looking clear header is not enough by itself to classify a protocol family.
     assert results["signature-only"]["protocol_family"] == "unknown_tcp", results["signature-only"]
     assert results["signature-only"]["classification_scope"] == "insufficient_evidence", results["signature-only"]
 
+    # When map and search handoff endpoints are numerically identical, transport resolves the TCP
+    # path: search is compatible; map remains a preserved transport-mismatch candidate.
     same = response_next_login(server=(203, 0, 113, 20), server_port=55000,
                                cache=(203, 0, 113, 20), cache_port=55000)
-    ambiguous_results = protocol_classification.classify_reconstructed_flows([
+    same_results = protocol_classification.classify_reconstructed_flows([
         flow("lobby2", ("10.0.0.2", 44000), ("198.51.100.5", 54001), directions(same)),
-        flow("ambiguous", ("10.0.0.2", 45000), ("203.0.113.20", 55000), directions(sf, 12000)),
+        flow("same-endpoint", ("10.0.0.2", 45000), ("203.0.113.20", 55000), directions(sf, 12000)),
     ])
-    ambiguous = next(r for r in ambiguous_results if r["flow_id"] == "ambiguous")
-    assert ambiguous["protocol_family"] == "unknown_tcp", ambiguous
-    assert ambiguous["classification_certainty"] == "ambiguous", ambiguous
-    assert ambiguous["framing_evidence"] is None, ambiguous
-    assert any(d["kind"] == "ambiguous_protocol_family_classification" for d in ambiguous["diagnostics"]), ambiguous
+    same_endpoint = next(r for r in same_results if r["flow_id"] == "same-endpoint")
+    assert same_endpoint["protocol_family"] == "ffxi_search_endpoint", same_endpoint
+    assert same_endpoint["framing_evidence"]["frame_count"] == 1, same_endpoint
+    assert any(c["protocol_family"] == "ffxi_map_endpoint" and c["expected_transport"] == "udp"
+               for c in same_endpoint["protocol_candidates"]), same_endpoint
+    assert any(d["kind"] == "handoff_endpoint_transport_not_proven" for d in same_endpoint["diagnostics"]), same_endpoint
 
     print("Capture protocol classification regression: PASS")
     return 0
