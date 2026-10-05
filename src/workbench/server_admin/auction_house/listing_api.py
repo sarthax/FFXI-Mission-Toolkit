@@ -3,16 +3,19 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 
-from fastapi import APIRouter, HTTPException, Query, Body
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, HTTPException, Query, Body, Request
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.templating import Jinja2Templates
 
 from workbench.runtime.legacy_settings import get_active_server_identity, get_active_server_root
+from workbench.runtime.paths import GUI_ROOT
 
 from .factory import open_auction_house
 from .legacy_test_executor import LegacyTestExecutionBlocked
 from .listing_management import ListingFilter, browse_active_listings, execute_legacy_test_return_to_seller
 
 router = APIRouter(tags=["Auction House Listing Management"])
+templates = Jinja2Templates(directory=str(GUI_ROOT / "templates"))
 
 
 @contextmanager
@@ -25,6 +28,15 @@ def _context():
         yield ctx
     finally:
         ctx.close()
+
+
+@router.get("/auction-house/listing-manager", response_class=HTMLResponse)
+def listing_manager_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="auction_house_listing_manager.html",
+        context={"title": "Auction House Listing Manager"},
+    )
 
 
 @router.get("/auction-house/listings.json")
