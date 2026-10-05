@@ -4,7 +4,13 @@ from __future__ import annotations
 import hashlib
 import struct
 
-from workbench.captures import ffxi_blowfish, search_crypto_envelope, search_request_decode, search_response_decode
+from workbench.captures import (
+    ffxi_blowfish,
+    search_crypto_envelope,
+    search_request_decode,
+    search_response_decode,
+    search_response_evidence,
+)
 
 
 def _pack_bits_be(target: bytearray, value: int, bit_offset: int, length: int) -> None:
@@ -84,28 +90,28 @@ def _entity_block(*, linkshell: bool = False) -> bytes:
     buf = bytearray(96)
     bit = 0
 
-    bit = _pack_bits_le(buf, 0x00, bit, 5)  # Name
+    bit = _pack_bits_le(buf, 0x00, bit, 5)
     bit = _pack_bits_le(buf, 4, bit, 4)
     for char in b"Test":
         bit = _pack_bits_le(buf, char, bit, 7)
 
-    bit = _pack_bits_le(buf, 0x01, bit, 5)  # Area
+    bit = _pack_bits_le(buf, 0x01, bit, 5)
     bit = _pack_bits_le(buf, 230, bit, 10)
-    bit = _pack_bits_le(buf, 0x02, bit, 5)  # Nation
+    bit = _pack_bits_le(buf, 0x02, bit, 5)
     bit = _pack_bits_le(buf, 1, bit, 2)
-    bit = _pack_bits_le(buf, 0x03, bit, 5)  # Main/sub job
+    bit = _pack_bits_le(buf, 0x03, bit, 5)
     bit = _pack_bits_le(buf, 12, bit, 5)
     bit = _pack_bits_le(buf, 6, bit, 5)
-    bit = _pack_bits_le(buf, 0x04, bit, 5)  # Main/sub level
+    bit = _pack_bits_le(buf, 0x04, bit, 5)
     bit = _pack_bits_le(buf, 75, bit, 8)
     bit = _pack_bits_le(buf, 37, bit, 8)
-    bit = _pack_bits_le(buf, 0x05, bit, 5)  # Race
+    bit = _pack_bits_le(buf, 0x05, bit, 5)
     bit = _pack_bits_le(buf, 3, bit, 4)
-    bit = _pack_bits_le(buf, 0x10, bit, 5)  # Rank
+    bit = _pack_bits_le(buf, 0x10, bit, 5)
     bit = _pack_bits_le(buf, 10, bit, 8)
-    bit = _pack_bits_le(buf, 0x06, bit, 5)  # Flags1
+    bit = _pack_bits_le(buf, 0x06, bit, 5)
     bit = _pack_bits_le(buf, 0x1234, bit, 16)
-    bit = _pack_bits_le(buf, 0x08, bit, 5)  # 20-bit character id
+    bit = _pack_bits_le(buf, 0x08, bit, 5)
     bit = _pack_bits_le(buf, 0xABCDE, bit, 20)
 
     if linkshell:
@@ -171,10 +177,11 @@ def main():
     state = bytes.fromhex(state_evidence["state_hex"])
 
     search_plain = _list_response(0x80, state)
-    search_result = search_response_decode.decode_validated_outbound(_validated_outbound(search_plain, state_evidence))
+    search_outbound = _validated_outbound(search_plain, state_evidence)
+    search_result = search_response_evidence.decode_validated_outbound(search_outbound)
     assert search_result["decoded"] is True, search_result
+    assert search_result["semantic_promotion_validated"] is True, search_result
     assert search_result["response_type_name"] == "search_list", search_result
-    assert search_result["classification_certainty"] == "verified_from_source_packet_discriminator", search_result
     assert search_result["fields"]["total_results"] == 1, search_result
     assert search_result["entities"][0]["fields"]["name"] == "Test", search_result
     assert search_result["entities"][0]["fields"]["area"] == 230, search_result
@@ -187,12 +194,14 @@ def main():
 
     party_plain = _list_response(0x82, state)
     party_outbound = _validated_outbound(party_plain, state_evidence)
-    ambiguous_party = search_response_decode.decode_validated_outbound(party_outbound)
+    ambiguous_party = search_response_evidence.decode_validated_outbound(party_outbound)
     assert ambiguous_party["response_type_name"] == "party_or_linkshell_list", ambiguous_party
-    party_result = search_response_decode.decode_validated_outbound(party_outbound, group_party)
+    assert ambiguous_party["semantic_promotion_validated"] is False, ambiguous_party
+    party_result = search_response_evidence.decode_validated_outbound(party_outbound, group_party)
     assert party_result["decoded"] is True, party_result
+    assert party_result["semantic_promotion_validated"] is True, party_result
     assert party_result["response_type_name"] == "party_list", party_result
-    assert party_result["classification_certainty"] == "verified_from_exact_GROUP_LIST_predecessor_fields", party_result
+    assert party_result["classification_certainty"] == "verified_from_crypto_exact_predecessor_and_source_layout", party_result
     assert party_result["fields"]["total_results"] == 1, party_result
 
     ls_wire, ls_plain_req, group_ls = _inbound_group_request(ls1=0x11112222)
@@ -201,37 +210,76 @@ def main():
     ls_state = bytes.fromhex(ls_state_evidence["state_hex"])
     ls_plain = _list_response(0x82, ls_state, linkshell=True)
     ls_outbound = _validated_outbound(ls_plain, ls_state_evidence)
-    ls_structural = search_response_decode.decode_validated_outbound(ls_outbound)
+    ls_structural = search_response_evidence.decode_validated_outbound(ls_outbound)
     assert ls_structural["response_type_name"] == "linkshell_list", ls_structural
-    assert ls_structural["classification_certainty"] == "structurally_inferred_from_LinkshellRank_entries", ls_structural
+    assert ls_structural["semantic_promotion_validated"] is True, ls_structural
+    assert ls_structural["classification_certainty"] == "structurally_inferred_from_source_unique_LinkshellRank_layout", ls_structural
     assert ls_structural["entities"][0]["fields"]["linkshell_ranks"] == [2, 1, 0], ls_structural
     assert ls_structural["entities"][0]["fields"]["linkshell_ids"] == [0x11112222, 0x33334444, 0], ls_structural
-    ls_result = search_response_decode.decode_validated_outbound(ls_outbound, group_ls)
+    ls_result = search_response_evidence.decode_validated_outbound(ls_outbound, group_ls)
     assert ls_result["response_type_name"] == "linkshell_list", ls_result
-    assert ls_result["classification_certainty"] == "verified_from_exact_GROUP_LIST_predecessor_fields", ls_result
+    assert ls_result["semantic_promotion_validated"] is True, ls_result
+    assert ls_result["classification_certainty"] == "verified_from_crypto_exact_predecessor_and_source_layout", ls_result
+
+    # Exact predecessor evidence cannot override contradictory payload structure.
+    conflict = search_response_evidence.decode_validated_outbound(ls_outbound, group_party)
+    assert conflict["decoded"] is False, conflict
+    assert conflict["semantic_promotion_validated"] is False, conflict
+    assert conflict["response_type_name"] == "party_or_linkshell_list", conflict
+    assert conflict["classification_certainty"] == "ambiguous_conflicting_predecessor_and_payload_structure", conflict
+    assert any(d["kind"] == "search_0x82_predecessor_structure_conflict" for d in conflict["diagnostics"]), conflict
+    assert "total_results_u8" in conflict["fields"] and "total_results_u16" in conflict["fields"], conflict
+
+    # The inverse conflict is also fail-closed: linkshell predecessor + a fully decoded party layout.
+    inverse_conflict = search_response_evidence.decode_validated_outbound(party_outbound, group_ls)
+    assert inverse_conflict["decoded"] is False, inverse_conflict
+    assert inverse_conflict["classification_certainty"] == "ambiguous_conflicting_predecessor_and_payload_structure", inverse_conflict
 
     comment_plain = _search_comment_response(state)
-    comment_result = search_response_decode.decode_validated_outbound(_validated_outbound(comment_plain, state_evidence))
+    comment_outbound = _validated_outbound(comment_plain, state_evidence)
+    comment_result = search_response_evidence.decode_validated_outbound(comment_outbound)
     assert comment_result["decoded"] is True, comment_result
+    assert comment_result["semantic_promotion_validated"] is True, comment_result
+    assert comment_result["classification_certainty"] == "verified_from_crypto_and_source_fixed_layout", comment_result
     assert comment_result["response_type_name"] == "search_comment", comment_result
     assert comment_result["fields"]["player_id"] == 0x11223344, comment_result
     assert comment_result["fields"]["declared_comment_length"] == 124, comment_result
     assert comment_result["fields"]["comment"] == "Looking for party", comment_result
 
+    # Crypto-valid but source-inconsistent 0x88 bytes are preserved but not semantically promoted.
+    bad_comment_plain = bytearray(comment_plain)
+    bad_comment_plain[0x08] = 153
+    bad_comment_plain = _finalize_plain(bad_comment_plain, state[16:20])
+    bad_comment = search_response_evidence.decode_validated_outbound(
+        _validated_outbound(bad_comment_plain, state_evidence)
+    )
+    assert bad_comment["validated_crypto"] is True, bad_comment
+    assert bad_comment["decoded"] is False, bad_comment
+    assert bad_comment["semantic_promotion_validated"] is False, bad_comment
+    assert bad_comment["fields"] == {}, bad_comment
+    assert any(d["kind"] == "search_comment_source_layout_mismatch" for d in bad_comment["diagnostics"]), bad_comment
+
     unknown_plain = bytearray(_list_response(0x80, state))
     unknown_plain[0x0B] = 0xFE
     unknown_plain = bytearray(_finalize_plain(unknown_plain, state[16:20]))
-    unknown_result = search_response_decode.decode_validated_outbound(_validated_outbound(bytes(unknown_plain), state_evidence))
+    unknown_result = search_response_evidence.decode_validated_outbound(
+        _validated_outbound(bytes(unknown_plain), state_evidence)
+    )
     assert unknown_result["validated_crypto"] is True, unknown_result
     assert unknown_result["decoded"] is False, unknown_result
     assert unknown_result["response_type_name"] == "UNKNOWN", unknown_result
     assert any(d["kind"] == "validated_search_response_type_not_supported" for d in unknown_result["diagnostics"]), unknown_result
 
-    rejected = search_response_decode.decode_validated_outbound({"validated": False})
+    rejected = search_response_evidence.decode_validated_outbound({"validated": False})
     assert rejected["validated_crypto"] is False, rejected
     assert any(d["kind"] == "search_response_requires_validated_outbound_crypto" for d in rejected["diagnostics"]), rejected
 
-    print("Validated non-AH search response decode regression: PASS")
+    # Structural decoder remains separately usable as raw evidence, but semantic promotion should
+    # always go through search_response_evidence.
+    raw_structural = search_response_decode.decode_validated_outbound(search_outbound)
+    assert raw_structural["decoded"] is True, raw_structural
+
+    print("Validated non-AH search response evidence regression: PASS")
     return 0
 
 
