@@ -40,13 +40,13 @@ def test_validation_ui_renders_all_unified_report_stages():
     assert "Blocking reasons" in script
 
 
-def test_validation_surface_remains_non_executable():
+def test_validation_surface_remains_non_mutating():
     template = Path("gui/templates/auction_house.html").read_text(encoding="utf-8")
     script = Path("gui/static/auction_house_admin.js").read_text(encoding="utf-8")
     gui = Path("src/workbench/server_admin/auction_house/gui.py").read_text(encoding="utf-8")
     combined = "\n".join((template, script, gui)).lower()
 
-    assert "no writes" in combined
+    assert "read-only preview validation" in combined
     assert "/apply" not in script
     assert "/commit" not in script
     assert "executor_enabled = true" not in combined
@@ -57,5 +57,5 @@ if __name__ == "__main__":
     test_validation_ui_exposes_read_only_preview_validation()
     test_preview_generation_attaches_lineage_specific_policy_binding()
     test_validation_ui_renders_all_unified_report_stages()
-    test_validation_surface_remains_non_executable()
+    test_validation_surface_remains_non_mutating()
     print("Auction House validation UI regression: PASS")
