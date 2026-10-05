@@ -87,13 +87,54 @@ Failed candidates remain evidence but do not expose trusted request semantics. T
 
 After framing + direction + decryption + MD5 succeed, request types are named from the maintained `TCPREQUESTTYPE` values. Unknown validated values remain numeric and `UNKNOWN`.
 
-The fixed-offset non-AH subset currently decoded is:
+The fixed-offset non-AH subset decoded is:
 
 - `ID_LIST (0x01)`: requested count at `0x10`, `uint32` character IDs from `0x12`, capped to 20 and available complete entries;
 - `GROUP_LIST (0x02)`: party/alliance/linkshell IDs at `0x10`, `0x14`, `0x18`, `0x1C`;
 - `SEARCH_COMMENT (0x08)`: player ID at `0x10`.
 
-`SEARCH`/`SEARCH_ALL` remain body-opaque because their bit-packed filter grammar is a larger parser. All Auction House request/history bodies remain deliberately opaque in this branch.
+### `SEARCH` / `SEARCH_ALL` packed filter grammar
+
+Current LSB `_HandleSearchRequest()` defines the packed block as:
+
+```text
+uint8 query_size at frame[0x10]
+packed query bytes at frame[0x11 : 0x11 + query_size]
+```
+
+Entries begin with a 5-bit `SearchType`. Most entry types then consume one `sortDescending` bit and one `isPresent` bit. `Friend`, `Linkshell`, `Linkshell2`, `Comment`, and `Flags2` skip those two ordinary control bits.
+
+The toolkit independently mirrors LSB `unpackBitsLE()` and decodes only fields whose widths are directly used by the maintained parser:
+
+| SearchType | Value width / behavior |
+|---|---|
+| `Name (0x00)` | 5-bit raw name length, then 7 bits per character; store at most 15 chars while still consuming the declared raw length |
+| `Area (0x01)` | 10-bit area ID; store at most 15 areas while still consuming later entries |
+| `Nation (0x02)` | 2 bits |
+| `Job (0x03)` | 5 bits |
+| `Level (0x04)` | 8-bit minimum + 8-bit maximum |
+| `Race (0x05)` | 4 bits |
+| `Flags1 (0x06)` | 16 bits |
+| `Rank (0x10)` | 8-bit minimum + 8-bit maximum |
+| `Comment (0x11)` | 32 bits, no ordinary sort/present bits |
+| `Linkshell (0x0B)` / `Linkshell2 (0x13)` | 32-bit linkshell ID, no ordinary sort/present bits |
+| `Friend (0x0C)` | zero-width marker setting `friends_only=true` |
+| `Flags2 (0x16)` | 32 bits, no ordinary sort/present bits; replaces the final flags value exactly as LSB does |
+
+For friend searches, the parser also follows LSB's post-query tail:
+
+```text
+uint16 requested_count at 0x11 + query_size
+uint32 character IDs immediately after it
+```
+
+The toolkit caps decoded friend IDs to LSB's source limit of 200 and to the number of complete IDs available before the 20-byte search trailer.
+
+Current enum values `Id`, `Party`, `LinkshellRank`, `Unknown0E`, and `Language` are preserved by numeric/name identity but remain `known_enum_unhandled_by_lsb_parser` because current `_HandleSearchRequest()` assigns no payload semantics to them. Unknown numeric entry types remain explicit `unknown_entry_type`. No width is guessed for either category.
+
+Every packed entry retains its bit start/end offsets, type ID/name, control bits, decoded value, and status. Truncated value fields stop at the declared query boundary and produce diagnostics instead of reading into the trailer or guessing missing bits.
+
+Auction House request/history bodies remain deliberately opaque in this branch.
 
 ## Explicit outbound state handoff
 
@@ -132,9 +173,13 @@ Synthetic coverage includes:
 - exact 24-byte outbound state extraction from a validated inbound request;
 - synthetic server response encrypted with that state -> decrypt -> framing + MD5 validation;
 - wrong predecessor state rejected before outbound decryption;
-- existing ID-list/group-list/search-comment fixed-field validation.
+- fixed-field ID-list/group-list/search-comment validation;
+- packed `SEARCH` and `SEARCH_ALL` filters spanning name/area/nation/job/level/race/rank/flags/comment/friend entries;
+- friend ID-tail extraction and count cap;
+- known-but-unhandled SearchType preservation;
+- declared query-block truncation failing closed.
 
-The CI-enumerated lobby/capture regression exercises the integrated search classification/decryption imports and normal flow path. Focused crypto fixtures retain the positive cipher/state vectors.
+The CI-enumerated lobby/capture regression exercises the integrated search classification/decryption imports and normal flow path. Focused crypto/filter fixtures retain the positive protocol vectors.
 
 ## Current non-goals
 
@@ -143,11 +188,11 @@ This slice does not:
 - auto-pair outbound frames with predecessor requests by timestamps or heuristics;
 - infer or guess missing rolling state;
 - decode server response payload semantics;
-- decode `SEARCH`/`SEARCH_ALL` bit-packed request grammar;
+- invent widths or semantics for SearchType values current LSB itself leaves unhandled;
 - decode Auction House search/history request or response bodies;
 - promote request/response semantics when endpoint direction, framing, decryption, state, or MD5 validation fails;
 - classify a search flow from framing alone without the independent verified lobby `cache_ip/cache_port` handoff.
 
 ## Next safe step
 
-The highest-value next input is a **real search/cache capture tied to a verified lobby handoff**. The toolkit can now validate inbound frames directly and can validate outbound encryption when the exact predecessor state is known. Automated session sequencing should wait for real capture evidence with frame-level ordering strong enough to associate responses with the correct inbound state without heuristics.
+The highest-value next input is a **real search/cache capture tied to a verified lobby handoff**. The toolkit can now validate inbound crypto and decode both fixed-field and packed search requests, while explicit predecessor state can validate outbound crypto. Automated session sequencing should wait for real capture evidence with frame-level ordering strong enough to associate responses with the correct inbound state without heuristics.
