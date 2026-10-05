@@ -26,6 +26,18 @@ def validated_decrypted_candidate(packet_type: int = 0x03) -> bytes:
     return bytes(packet)
 
 
+def _range(payload: bytes, seq: int) -> dict:
+    return {
+        "seq_start": seq,
+        "seq_end": seq + len(payload),
+        "length": len(payload),
+        "payload_hex": payload.hex().upper(),
+        "frame_numbers": [1],
+        "first_timestamp_seconds": 1.0,
+        "last_timestamp_seconds": 1.0,
+    }
+
+
 def main():
     wire = framed_wire_candidate()
     scanned = search_framing.scan_range(wire, 9000)
@@ -56,6 +68,23 @@ def main():
     assert envelope["packet_type_contract"]["offset"] == 0x0B, envelope
     assert envelope["packet_type_contract"]["value"] is None, envelope
     assert envelope["outbound_warning"]["independently_derivable_from_outbound_frame"] is False, envelope
+
+    bidirectional = search_framing.scan_directions({
+        "a_to_b": {"ranges": [_range(wire, 10000)]},
+        "b_to_a": {"ranges": [_range(wire, 11000)]},
+    })
+    # Endpoint role b means a_to_b is the client -> verified search server direction.
+    search_framing.resolve_crypto_direction(bidirectional, "b")
+    inbound = next(f for f in bidirectional["frames"] if f["direction"] == "a_to_b")
+    outbound = next(f for f in bidirectional["frames"] if f["direction"] == "b_to_a")
+    assert inbound["crypto_envelope"]["applicable_to_observed_direction"] is True, inbound
+    assert inbound["crypto_envelope"]["key_derivation"]["applicable_to_observed_direction"] is True, inbound
+    assert outbound["crypto_envelope"]["applicable_to_observed_direction"] is False, outbound
+    assert outbound["crypto_envelope"]["key_derivation"]["applicable_to_observed_direction"] is False, outbound
+    assert any(
+        d["kind"] == "search_inbound_crypto_contract_direction_mismatch"
+        for d in outbound["crypto_envelope"]["diagnostics"]
+    ), outbound
 
     decrypted = validated_decrypted_candidate(0x03)
     validated = search_crypto_envelope.validate_decrypted_frame(decrypted)
