@@ -1,16 +1,17 @@
 """Evidence-backed classification for reconstructed FFXI network flows.
 
-This layer intentionally separates three claims:
+This layer intentionally separates four claims:
 
 1. a lobby stream can be *verified* from its framing/MD5/known command structure;
-2. a later flow can be associated with an exact world or search/cache endpoint learned from a
-   verified lobby ResponseNextLogin handoff;
-3. that endpoint association alone does *not* prove framing or message semantics for the later
-   protocol family.
+2. a later endpoint can be associated with an exact map or search/cache handoff learned from a
+   verified lobby ResponseNextLogin;
+3. endpoint association is transport-sensitive and does not by itself prove protocol semantics;
+4. search/cache framing candidates may be recognized from source-backed clear-header structure,
+   but only after an exact verified search handoff association.
 
-Search/cache framing candidates may additionally be recognized from source-backed clear-header
-structure, but only an exact verified lobby handoff is allowed to attribute those candidates to the
-search family. Payload bytes after the clear header remain encrypted/opaque here.
+Modern LandSandBoat fills ResponseNextLogin.server_* from the selected zone endpoint, which is the
+map/game UDP service. Therefore a reconstructed TCP flow matching that IP/port is not promoted to a
+world/map TCP family. The endpoint match is retained as evidence with a transport-mismatch diagnostic.
 
 No default retail/private-server port numbers are used as proof. Unknown and ambiguous flows fail
 closed and retain their raw reconstructed ranges in the caller.
@@ -64,9 +65,9 @@ def _handoff_hints(lobby_results: list[dict]) -> list[dict]:
             if int(validation.get("command") or -1) != 0x000B:
                 continue
             fields = message.get("fields") or {}
-            for family, ip_key, port_key, field_name in (
-                ("ffxi_world_endpoint", "server_ip", "server_port", "ResponseNextLogin.server_*"),
-                ("ffxi_search_endpoint", "cache_ip", "cache_port", "ResponseNextLogin.cache_*"),
+            for family, transport, ip_key, port_key, field_name in (
+                ("ffxi_map_endpoint", "udp", "server_ip", "server_port", "ResponseNextLogin.server_*"),
+                ("ffxi_search_endpoint", "tcp", "cache_ip", "cache_port", "ResponseNextLogin.cache_*"),
             ):
                 ip = fields.get(ip_key)
                 port = fields.get(port_key)
@@ -74,6 +75,7 @@ def _handoff_hints(lobby_results: list[dict]) -> list[dict]:
                     continue
                 hints.append({
                     "protocol_family": family,
+                    "expected_transport": transport,
                     "endpoint": (str(ip), int(port)),
                     "certainty": "verified",
                     "provenance": field_name,
@@ -87,10 +89,10 @@ def _handoff_hints(lobby_results: list[dict]) -> list[dict]:
 def classify_reconstructed_flows(flows: list[dict]) -> list[dict]:
     """Classify reconstructed TCP flows conservatively and correlate exact lobby handoffs.
 
-    Search/world endpoint matches are useful classification evidence, but endpoint association alone
-    does not validate payload semantics. Search flows may gain source-backed framing evidence from
-    their clear length/IXFF header while their encrypted payload remains opaque. If an endpoint is
-    claimed by more than one family, the flow remains unknown and candidates are reported explicitly.
+    Only transport-compatible handoff evidence can classify a reconstructed flow. Search TCP flows
+    may gain source-backed framing evidence from their clear length/IXFF header while the encrypted
+    payload remains opaque. A map/game handoff learned from modern LSB is UDP evidence and therefore
+    cannot promote a TCP flow even when IP/port happen to match.
     """
     lobby_results = []
     for flow in flows:
@@ -100,15 +102,17 @@ def classify_reconstructed_flows(flows: list[dict]) -> list[dict]:
     hints = _handoff_hints(lobby_results)
     out = []
     for flow, lobby in zip(flows, lobby_results):
+        transport = flow.get("transport") or "tcp"
         lifecycle = summarize_tcp_lifecycle(flow.get("frames") or [])
         if lobby.get("protocol_family") == "ffxi_lobby" and lobby.get("classification_validated"):
             out.append({
                 **lobby,
                 "flow_id": flow.get("flow_id"),
-                "transport": flow.get("transport") or "tcp",
+                "transport": transport,
                 "classification_scope": "framing_and_known_message_structure",
                 "protocol_candidates": [{
                     "protocol_family": "ffxi_lobby",
+                    "expected_transport": "tcp",
                     "certainty": "verified",
                     "provenance": lobby.get("validation_basis"),
                 }],
@@ -125,13 +129,25 @@ def classify_reconstructed_flows(flows: list[dict]) -> list[dict]:
             for label, endpoint in endpoints.items():
                 if endpoint == hint["endpoint"]:
                     matches.append({**hint, "matched_endpoint_role": label})
-        families = sorted({match["protocol_family"] for match in matches})
+
+        compatible = [m for m in matches if m.get("expected_transport") == transport]
+        incompatible = [m for m in matches if m.get("expected_transport") != transport]
+        families = sorted({match["protocol_family"] for match in compatible})
+        transport_diagnostics = [{
+            "kind": "handoff_endpoint_transport_not_proven",
+            "protocol_family": match["protocol_family"],
+            "observed_transport": transport,
+            "expected_transport": match.get("expected_transport"),
+            "endpoint": {"ip": match["endpoint"][0], "port": match["endpoint"][1]},
+            "certainty": "verified_endpoint_transport_mismatch",
+        } for match in incompatible]
+
         if len(families) == 1:
             family = families[0]
-            matched = [m for m in matches if m["protocol_family"] == family]
-            diagnostics = list(lobby.get("diagnostics") or [])
+            matched = [m for m in compatible if m["protocol_family"] == family]
+            diagnostics = list(lobby.get("diagnostics") or []) + transport_diagnostics
             framing_evidence = None
-            classification_scope = "exact_endpoint_association_only_payload_opaque"
+            classification_scope = "exact_transport_compatible_endpoint_association_only_payload_opaque"
             decoder_status = "unknown_opaque"
 
             if family == "ffxi_search_endpoint":
@@ -146,23 +162,23 @@ def classify_reconstructed_flows(flows: list[dict]) -> list[dict]:
                         "provenance": "LandSandBoat SearchHandler clear uint16 length + IXFF before encrypted payload",
                         "payload_semantics": "unknown_opaque",
                     }
-                    classification_scope = "verified_handoff_endpoint_plus_source_backed_search_framing"
+                    classification_scope = "verified_search_handoff_plus_source_backed_search_framing"
                     decoder_status = "encrypted_or_opaque"
 
             out.append({
                 "flow_id": flow.get("flow_id"),
-                "transport": flow.get("transport") or "tcp",
+                "transport": transport,
                 "protocol_family": family,
                 "classification_validated": False,
                 "classification_certainty": "structurally_inferred",
                 "classification_scope": classification_scope,
-                "validation_basis": "exact_endpoint_from_verified_lobby_ResponseNextLogin",
-                "protocol_candidates": matched,
+                "validation_basis": "exact_transport_compatible_endpoint_from_verified_lobby_ResponseNextLogin",
+                "protocol_candidates": compatible + incompatible,
                 "endpoint_roles": {
                     "server": matched[0]["matched_endpoint_role"],
                     "peer": "b" if matched[0]["matched_endpoint_role"] == "a" else "a",
                 },
-                "role_status": "inferred_from_verified_handoff_endpoint",
+                "role_status": "inferred_from_verified_handoff_endpoint_and_transport",
                 "messages": [],
                 "diagnostics": diagnostics,
                 "session_phase_evidence": [],
@@ -173,16 +189,16 @@ def classify_reconstructed_flows(flows: list[dict]) -> list[dict]:
         elif len(families) > 1:
             out.append({
                 "flow_id": flow.get("flow_id"),
-                "transport": flow.get("transport") or "tcp",
+                "transport": transport,
                 "protocol_family": "unknown_tcp",
                 "classification_validated": False,
                 "classification_certainty": "ambiguous",
-                "classification_scope": "conflicting_exact_endpoint_associations",
-                "protocol_candidates": matches,
+                "classification_scope": "conflicting_transport_compatible_endpoint_associations",
+                "protocol_candidates": compatible + incompatible,
                 "endpoint_roles": None,
                 "role_status": "ambiguous",
                 "messages": [],
-                "diagnostics": (lobby.get("diagnostics") or []) + [{
+                "diagnostics": (lobby.get("diagnostics") or []) + transport_diagnostics + [{
                     "kind": "ambiguous_protocol_family_classification",
                     "families": families,
                     "certainty": "verified_conflict",
@@ -192,11 +208,30 @@ def classify_reconstructed_flows(flows: list[dict]) -> list[dict]:
                 "framing_evidence": None,
                 "tcp_lifecycle": lifecycle,
             })
+        elif incompatible:
+            out.append({
+                **lobby,
+                "flow_id": flow.get("flow_id"),
+                "transport": transport,
+                "protocol_family": "unknown_tcp",
+                "classification_validated": False,
+                "classification_certainty": "unknown_opaque",
+                "classification_scope": "handoff_endpoint_transport_mismatch",
+                "protocol_candidates": incompatible,
+                "endpoint_roles": None,
+                "role_status": "transport_not_proven",
+                "messages": [],
+                "diagnostics": (lobby.get("diagnostics") or []) + transport_diagnostics,
+                "session_phase_evidence": [],
+                "decoder_status": "unknown_opaque",
+                "framing_evidence": None,
+                "tcp_lifecycle": lifecycle,
+            })
         else:
             out.append({
                 **lobby,
                 "flow_id": flow.get("flow_id"),
-                "transport": flow.get("transport") or "tcp",
+                "transport": transport,
                 "classification_certainty": lobby.get("classification_certainty", "unknown_opaque"),
                 "classification_scope": "insufficient_evidence",
                 "protocol_candidates": [],
