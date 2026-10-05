@@ -67,6 +67,7 @@ def main():
     assert envelope["post_decrypt_hash_contract"]["expected_md5_offset"] == 12, envelope
     assert envelope["packet_type_contract"]["offset"] == 0x0B, envelope
     assert envelope["packet_type_contract"]["value"] is None, envelope
+    assert envelope["packet_type_contract"]["name"] is None, envelope
     assert envelope["outbound_warning"]["independently_derivable_from_outbound_frame"] is False, envelope
 
     bidirectional = search_framing.scan_directions({
@@ -92,13 +93,22 @@ def main():
     assert validated["direction_scope"] == "client_to_search_server_only", validated
     assert validated["post_decrypt_md5"]["valid"] is True, validated
     assert validated["packet_type"] == 0x03, validated
+    assert validated["packet_type_name"] == "SEARCH", validated
+    assert validated["packet_type_evidence"]["known_request_type"] is True, validated
     assert validated["packet_type_evidence"]["certainty"] == "verified_after_post_decrypt_md5", validated
+
+    unknown_type = search_crypto_envelope.validate_decrypted_frame(validated_decrypted_candidate(0x7F))
+    assert unknown_type["validated"] is True, unknown_type
+    assert unknown_type["packet_type"] == 0x7F, unknown_type
+    assert unknown_type["packet_type_name"] == "UNKNOWN", unknown_type
+    assert unknown_type["packet_type_evidence"]["known_request_type"] is False, unknown_type
 
     corrupted = bytearray(decrypted)
     corrupted[8] ^= 0xFF
     rejected = search_crypto_envelope.validate_decrypted_frame(bytes(corrupted))
     assert rejected["validated"] is False, rejected
     assert rejected["packet_type"] is None, rejected
+    assert rejected["packet_type_name"] is None, rejected
     assert any(d["kind"] == "search_post_decrypt_md5_mismatch" for d in rejected["diagnostics"]), rejected
 
     short = search_crypto_envelope.inspect_frame(b"\x00" * 20)
