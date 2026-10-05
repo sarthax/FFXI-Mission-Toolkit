@@ -6,6 +6,8 @@
   const fmt = new Intl.NumberFormat();
   const gil = value => `${fmt.format(Number(value || 0))}g`;
   const when = value => value ? new Date(Number(value) * 1000).toLocaleString() : '—';
+  let currentRows = [];
+  const selected = new Set();
 
   async function request(url, options = {}) {
     const response = await fetch(url, {
@@ -45,6 +47,17 @@
     $('lmAction').innerHTML = `<div class="action-result"><strong>${esc(title)}</strong><pre>${esc(failed ? String(data) : JSON.stringify(data, null, 2))}</pre></div>`;
   }
 
+  function updateSelectionUi() {
+    const count = selected.size;
+    $('lmSelectedCount').textContent = `${fmt.format(count)} selected`;
+    $('lmBatchAdmin').disabled = count === 0;
+    $('lmBatchReturn').disabled = count === 0;
+  }
+
+  function selectedRows() {
+    return currentRows.filter(row => selected.has(Number(row.auction_id)));
+  }
+
   async function adminClose(row) {
     const confirmation = window.prompt(`Close auction #${row.auction_id} as an administrative sale at ${gil(row.asking_price)}?\nType the active Test profile name exactly to continue:`);
     if (!confirmation) return;
@@ -61,7 +74,7 @@
   }
 
   async function returnListing(row) {
-    const confirmation = window.prompt(`Return auction #${row.auction_id} to ${row.seller_name || `seller #${row.seller_id}`}?\nThe item returns to Inventory. The original listing fee is not restored.\nType the active Test profile name exactly to continue:`);
+    const confirmation = window.prompt(`Return auction #${row.auction_id} to ${row.seller_name || `seller #${row.seller_id}`}?\nThe toolkit will use Inventory when rollback-safe, otherwise the seller delivery box. The original listing fee is not restored.\nType the active Test profile name exactly to continue:`);
     if (!confirmation) return;
     try {
       const data = await request('/auction-house/test-write/return-to-seller.json', {
@@ -97,12 +110,7 @@
     try {
       const data = await request('/auction-house/test-write/player-purchase.json', {
         method: 'POST',
-        body: JSON.stringify({
-          auction_id: row.auction_id,
-          expected_price: row.asking_price,
-          buyer_id: Number(buyerId),
-          confirmation,
-        }),
+        body: JSON.stringify({auction_id: row.auction_id, expected_price: row.asking_price, buyer_id: Number(buyerId), confirmation}),
       });
       showAction('Player purchase committed', data);
       await loadListings();
@@ -111,13 +119,37 @@
     }
   }
 
+  async function batchAction(action) {
+    const rows = selectedRows();
+    if (!rows.length) return;
+    const label = action === 'admin_buy' ? 'Admin Buy' : 'Return';
+    const confirmation = window.prompt(`${label} ${rows.length} selected listing(s)?\nEach listing commits independently and partial success is possible.\nType the active Test profile name exactly to continue:`);
+    if (!confirmation) return;
+    const targets = rows.map(row => ({auction_id: row.auction_id, expected_price: row.asking_price}));
+    try {
+      const data = await request('/auction-house/test-write/batch-listings.json', {
+        method: 'POST',
+        body: JSON.stringify({action, targets, confirmation}),
+      });
+      showAction(`${label} batch ${data.status || 'completed'}`, data);
+      await loadListings();
+    } catch (error) {
+      showAction(`${label} batch blocked`, error.message, true);
+    }
+  }
+
   function render(rows) {
+    currentRows = rows;
+    const visibleIds = new Set(rows.map(row => Number(row.auction_id)));
+    for (const id of Array.from(selected)) if (!visibleIds.has(id)) selected.delete(id);
+    updateSelectionUi();
     if (!rows.length) {
       $('lmResults').innerHTML = '<p class="muted">No active listings matched.</p>';
       return;
     }
-    $('lmResults').innerHTML = `<table class="lm-table"><thead><tr><th>Auction</th><th>Item</th><th>Category</th><th>Seller</th><th>Lot</th><th>Listed</th><th class="price">Asking</th><th>Actions</th></tr></thead><tbody>${rows.map((row, index) => `
+    $('lmResults').innerHTML = `<table class="lm-table"><thead><tr><th class="select-col"></th><th>Auction</th><th>Item</th><th>Category</th><th>Seller</th><th>Lot</th><th>Listed</th><th class="price">Asking</th><th>Actions</th></tr></thead><tbody>${rows.map((row, index) => `
       <tr>
+        <td class="select-col"><input type="checkbox" data-select-index="${index}" ${selected.has(Number(row.auction_id)) ? 'checked' : ''} aria-label="Select auction ${row.auction_id}"></td>
         <td>#${row.auction_id}</td>
         <td><strong>${esc(row.item_name)}</strong><br><small>ID ${row.item_id}</small></td>
         <td>${esc(row.category_path || row.category_id)}</td>
@@ -133,6 +165,14 @@
         </div></td>
       </tr>`).join('')}</tbody></table>`;
 
+    $('lmResults').querySelectorAll('input[data-select-index]').forEach(input => {
+      input.addEventListener('change', () => {
+        const row = rows[Number(input.dataset.selectIndex)];
+        const id = Number(row.auction_id);
+        if (input.checked) selected.add(id); else selected.delete(id);
+        updateSelectionUi();
+      });
+    });
     $('lmResults').querySelectorAll('button[data-action]').forEach(button => {
       button.addEventListener('click', () => {
         const row = rows[Number(button.dataset.index)];
@@ -151,12 +191,25 @@
       $('lmSummary').textContent = `${fmt.format(data.count || 0)} active listing(s) returned.`;
       render(data.rows || []);
     } catch (error) {
+      currentRows = [];
+      selected.clear();
+      updateSelectionUi();
       $('lmSummary').textContent = error.message;
       $('lmResults').innerHTML = '';
     }
   }
 
   $('lmRefresh').addEventListener('click', loadListings);
+  $('lmSelectAll').addEventListener('click', () => {
+    for (const row of currentRows) selected.add(Number(row.auction_id));
+    render(currentRows);
+  });
+  $('lmClearSelection').addEventListener('click', () => {
+    selected.clear();
+    render(currentRows);
+  });
+  $('lmBatchAdmin').addEventListener('click', () => batchAction('admin_buy'));
+  $('lmBatchReturn').addEventListener('click', () => batchAction('return_to_seller'));
   for (const id of ['lmSellerId', 'lmSellerName', 'lmItemId', 'lmQuery']) {
     $(id).addEventListener('keydown', event => {
       if (event.key === 'Enter') {
