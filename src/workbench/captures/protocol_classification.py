@@ -90,9 +90,9 @@ def classify_reconstructed_flows(flows: list[dict]) -> list[dict]:
     """Classify reconstructed TCP flows conservatively and correlate exact lobby handoffs.
 
     Only transport-compatible handoff evidence can classify a reconstructed flow. Search TCP flows
-    may gain source-backed framing evidence from their clear length/IXFF header while the encrypted
-    payload remains opaque. A map/game handoff learned from modern LSB is UDP evidence and therefore
-    cannot promote a TCP flow even when IP/port happen to match.
+    may gain source-backed framing and crypto-envelope evidence from their clear length/IXFF header
+    while the encrypted payload remains undecoded. A map/game handoff learned from modern LSB is UDP
+    evidence and therefore cannot promote a TCP flow even when IP/port happen to match.
     """
     lobby_results = []
     for flow in flows:
@@ -159,11 +159,11 @@ def classify_reconstructed_flows(flows: list[dict]) -> list[dict]:
                         "frame_count": len(scanned["frames"]),
                         "frames": scanned["frames"],
                         "certainty": "structurally_inferred",
-                        "provenance": "LandSandBoat SearchHandler clear uint16 length + IXFF before encrypted payload",
+                        "provenance": "LandSandBoat SearchHandler clear framing plus source-backed crypto envelope",
                         "payload_semantics": "unknown_opaque",
                     }
                     classification_scope = "verified_search_handoff_plus_source_backed_search_framing"
-                    decoder_status = "encrypted_or_opaque"
+                    decoder_status = "crypto_envelope_only_not_decrypted"
 
             out.append({
                 "flow_id": flow.get("flow_id"),
