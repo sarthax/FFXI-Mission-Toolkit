@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 
 from workbench.runtime.legacy_settings import get_active_server_identity, get_active_server_root
 
+from .activity import record_executor_result
 from .batch_actions import execute_legacy_test_batch
 from .factory import open_auction_house
 from .legacy_test_executor import LegacyTestExecutionBlocked
@@ -39,7 +40,16 @@ def batch_listing_action(payload: dict = Body(...)):
                 targets=list(payload.get("targets") or []),
                 confirmation=str(payload.get("confirmation") or ""),
             )
-            return JSONResponse(result)
+        try:
+            record_executor_result(
+                environment=environment,
+                result=result,
+                request_payload=payload,
+                operation=f"batch_{str(payload.get('action') or 'unknown')}",
+            )
+        except Exception:
+            pass
+        return JSONResponse(result)
     except LegacyTestExecutionBlocked as exc:
         raise HTTPException(status_code=409, detail=str(exc))
     except (TypeError, ValueError) as exc:
