@@ -1,8 +1,7 @@
-"""Post-process persisted PCAP TCP flows with conservative protocol-family metadata.
+"""Post-process persisted PCAP evidence with conservative protocol-family metadata.
 
-This intentionally works only inside one capture source file at a time. It reuses the exact
-reconstructed ranges already persisted by PCAP ingestion and never merges flows across files or
-captures.
+This intentionally works only inside one capture source file at a time. It reuses exact persisted
+TCP ranges and raw per-frame network records, and never merges flows across files or captures.
 """
 from __future__ import annotations
 
@@ -88,8 +87,87 @@ def _load_flows(con: sqlite3.Connection, capture_id: int, source_file: str) -> l
     return flows
 
 
+def _map_handoff_endpoints(classified: list[dict]) -> list[dict]:
+    endpoints = []
+    for result in classified:
+        if result.get("protocol_family") != "ffxi_lobby" or not result.get("classification_validated"):
+            continue
+        for message in result.get("messages") or []:
+            validation = message.get("validation") or {}
+            if int(validation.get("command") or -1) != 0x000B:
+                continue
+            fields = message.get("fields") or {}
+            ip, port = fields.get("server_ip"), fields.get("server_port")
+            if ip is None or port is None:
+                continue
+            endpoints.append({
+                "endpoint": (str(ip), int(port)),
+                "protocol_family": "ffxi_map_endpoint",
+                "expected_transport": "udp",
+                "certainty": "verified",
+                "provenance": "ResponseNextLogin.server_*",
+                "source_flow_id": result.get("flow_id"),
+            })
+    return endpoints
+
+
+def _annotate_udp_handoffs(
+    con: sqlite3.Connection,
+    capture_id: int,
+    source_file: str,
+    map_endpoints: list[dict],
+) -> int:
+    if not map_endpoints:
+        return 0
+    rows = con.execute(
+        """SELECT record_key,payload_json
+           FROM capture_structured_records
+           WHERE capture_id=? AND source_file=? AND family='pcap_network'""",
+        (capture_id, source_file),
+    ).fetchall()
+    updated = 0
+    for record_key, payload_raw in rows:
+        payload = json.loads(payload_raw or "{}")
+        if payload.get("transport") != "udp":
+            continue
+        observed = {
+            "src": (payload.get("src_ip"), payload.get("src_port")),
+            "dst": (payload.get("dst_ip"), payload.get("dst_port")),
+        }
+        matches = []
+        for hint in map_endpoints:
+            for side, endpoint in observed.items():
+                if endpoint[0] is None or endpoint[1] is None:
+                    continue
+                if (str(endpoint[0]), int(endpoint[1])) == hint["endpoint"]:
+                    matches.append({
+                        **hint,
+                        "matched_endpoint_side": side,
+                    })
+        if not matches:
+            continue
+
+        payload["protocol_family"] = "ffxi_map_endpoint"
+        payload["classification_validated"] = False
+        payload["classification_certainty"] = "structurally_inferred"
+        payload["classification_scope"] = "exact_udp_endpoint_from_verified_lobby_ResponseNextLogin"
+        payload["validation_basis"] = "transport_compatible_exact_endpoint_from_verified_lobby_handoff"
+        payload["protocol_candidates"] = matches
+        payload["decoder_status"] = "raw_udp_payload_preserved"
+        payload["classification_metadata_provenance"] = "same_source_file_lobby_handoff_to_udp_frame"
+        payload["cross_source_merge_performed"] = False
+        con.execute(
+            """UPDATE capture_structured_records
+               SET payload_json=?
+               WHERE capture_id=? AND source_file=? AND family='pcap_network' AND record_key=?""",
+            (json.dumps(payload, sort_keys=True), capture_id, source_file, record_key),
+        )
+        updated += 1
+    return updated
+
+
 def refresh_source_flow_metadata(con: sqlite3.Connection, capture_id: int, source_file: str) -> int:
-    """Merge classifier output into stored flow metadata for one exact PCAP source file."""
+    """Merge classifier output into same-source TCP flow metadata and correlate map UDP endpoints."""
     flows = _load_flows(con, capture_id, source_file)
     if not flows:
         return 0
@@ -110,4 +188,11 @@ def refresh_source_flow_metadata(con: sqlite3.Connection, capture_id: int, sourc
             (json.dumps(metadata, sort_keys=True), capture_id, source_file, flow["flow_id"]),
         )
         count += 1
+
+    _annotate_udp_handoffs(
+        con,
+        capture_id,
+        source_file,
+        _map_handoff_endpoints(classified),
+    )
     return count
