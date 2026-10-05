@@ -3,7 +3,7 @@
 {% block shell_mode %}dense{% endblock %}
 {% block main_class %}research-evidence-page{% endblock %}
 {% block content %}
-<style>main.research-evidence-page{padding:8px 10px 24px}</style>
+<style>main.research-evidence-page{padding:8px 10px 24px}.evidence-context{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0}</style>
 <div class="dense-toolbar"><a class="chip" href="/research/contradictions">← Contradictions</a><strong>Evidence Detail</strong><span class="chip mono">{{ evidence.evidence_id }}</span><span class="sp"></span><span class="chip">{{ evidence.evidence_type }}</span></div>
 
 <div class="table-wrap"><table>
@@ -16,12 +16,19 @@
   <tr><th>References</th><td>{{ evidence.reference_count }}</td></tr>
 </table></div>
 
+{% if evidence.reference_kinds or evidence.referenced_subjects or evidence.referenced_snapshots %}
+<div class="evidence-context">
+  {% for kind in evidence.reference_kinds %}<span class="chip">{{ kind }}</span>{% endfor %}
+  {% for snapshot in evidence.referenced_snapshots %}<span class="chip mono">snapshot {{ snapshot }}</span>{% endfor %}
+</div>
+{% endif %}
+
 <div class="dense-toolbar" style="margin:8px 0 5px"><strong>Known References</strong><span class="chip">{{ evidence.reference_count }}</span></div>
 {% if not evidence.references %}
 <p class="muted">No canonical or ResearchSession records currently reference this evidence ID.</p>
 {% else %}
 <div class="table-wrap"><table>
-  <tr><th>Kind</th><th>Record</th><th>Subject / Session</th><th>Status</th><th>Role / Tool</th></tr>
+  <tr><th>Kind</th><th>Record</th><th>Subject / Session</th><th>Field / Value</th><th>Status</th><th>Snapshot</th><th>Role / Tool</th></tr>
   {% for r in evidence.references %}
   <tr>
     <td>{{ r.kind }}</td>
@@ -30,7 +37,12 @@
       {% if r.research_session_id %}<a href="/research/{{ r.research_session_id|urlencode }}"><code>{{ r.subject_id }}</code></a>
       {% else %}<code>{{ r.subject_id or "-" }}</code>{% endif %}
     </td>
-    <td>{{ r.status or "-" }}</td>
+    <td>
+      {% if r.field %}<code>{{ r.field }}</code>{% if r.value is defined %}<br><span class="muted">{{ r.value|tojson }}</span>{% endif %}
+      {% else %}-{% endif %}
+    </td>
+    <td>{{ r.status or "-" }}{% if r.confidence %}<br><span class="muted">{{ r.confidence }}</span>{% endif %}</td>
+    <td>{% if r.source_snapshot_id %}<code>{{ r.source_snapshot_id }}</code>{% else %}-{% endif %}</td>
     <td>
       {% if r.evidence_roles %}{{ r.evidence_roles|join(", ") }}
       {% elif r.tool_name %}<code>{{ r.tool_name }}</code>
