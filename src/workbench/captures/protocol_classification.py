@@ -152,6 +152,7 @@ def classify_reconstructed_flows(flows: list[dict]) -> list[dict]:
 
             if family == "ffxi_search_endpoint":
                 scanned = search_framing.scan_directions(flow.get("directions") or {})
+                scanned = search_framing.resolve_crypto_direction(scanned, matched[0]["matched_endpoint_role"])
                 diagnostics.extend(scanned["diagnostics"])
                 if scanned["frames"]:
                     framing_evidence = {
