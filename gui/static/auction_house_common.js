@@ -2,6 +2,24 @@
   const boxes = Array.from(document.querySelectorAll('[data-ah-shared-status]'));
   if (!boxes.length) return;
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  const rewriteLegacyReadiness = () => {
+    const box = document.getElementById('ahWriteReadiness');
+    if (!box) return;
+    const first = box.firstElementChild;
+    if (first && /Executor:\s*disabled/i.test(first.textContent || '')) {
+      first.innerHTML = first.innerHTML.replace(
+        /<strong>Executor:<\/strong>\s*disabled/i,
+        '<strong>Global executor:</strong> disabled · <strong>Scoped DSP/Topaz Test executors:</strong> available when their gates pass'
+      );
+    }
+  };
+  const legacyBox = document.getElementById('ahWriteReadiness');
+  if (legacyBox) {
+    new MutationObserver(rewriteLegacyReadiness).observe(legacyBox, {childList:true, subtree:true});
+    rewriteLegacyReadiness();
+  }
+
   fetch('/auction-house/capability-status.json', {headers:{Accept:'application/json'}})
     .then(async response => {
       const payload = await response.json().catch(() => ({}));
