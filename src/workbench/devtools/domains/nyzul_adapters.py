@@ -57,8 +57,6 @@ def has_lsb_layout(root: Path) -> bool:
     root = Path(root)
     if not all((root / rel).is_file() for rel in LSB_SOURCE_FILES):
         return False
-    # Fail closed: floor_generation.lua alone is not enough to identify the
-    # current native LSB shape. Require the modern local-table declarations.
     text = (root / LSB_SOURCE_FILES[0]).read_text(encoding="utf-8", errors="replace")
     return bool(
         re.search(r"(?m)^local\s+lampSpawnPoints\s*=", text)
@@ -67,11 +65,6 @@ def has_lsb_layout(root: Path) -> bool:
 
 
 def classify_root(root: Path, family: str = "auto") -> NyzulSource | None:
-    """Classify *root* using both its configured family and concrete source shape.
-
-    An explicitly configured family never falls through to another lineage parser.
-    ``auto`` may identify either native LSB or the historical DSP/Topaz shape.
-    """
     root = Path(root)
     family = (family or "auto").strip().lower()
     if family == "lsb":
@@ -105,15 +98,10 @@ def _block(text: str, start_pat: str) -> str:
 
 
 def _indexed_subtables(block: str) -> dict[int, str]:
-    """Return only direct ``[n] = { ... }`` children of an outer Lua table.
-
-    Spawn tables themselves contain indexed rows, so a regex-only split would
-    silently reinterpret point indexes as layout indexes. The depth guard keeps
-    those nested rows inside their owning layout.
-    """
+    """Return only direct ``[n] = { ... }`` children of an outer Lua table."""
     out: dict[int, str] = {}
     pattern = re.compile(
-        r"(?m)^[ \t]*\[(\d+)\][ \t]*=[ \t]*(?:--[^\n]*)?(?:\r?\n[ \t]*)?\{"
+        r"(?m)^[ \t]*\[\s*(\d+)\s*\][ \t]*=[ \t]*(?:--[^\n]*)?(?:\r?\n[ \t]*)?\{"
     )
     for match in pattern.finditer(block):
         prefix = block[: match.start()]
@@ -187,7 +175,10 @@ def _parse_range_table(text: str, name: str) -> dict[int, dict[str, str]]:
     except ValueError:
         return {}
     out: dict[int, dict[str, str]] = {}
-    for match in re.finditer(r"(?m)^\s*\[(\d+)\]\s*=\s*\{\s*([^,{}]+)\s*,\s*([^{}]+?)\s*\}\s*,?\s*(?:--\s*(.*))?$", block):
+    pattern = re.compile(
+        r"(?m)^\s*\[\s*(\d+)\s*\]\s*=\s*\{\s*([^,{}]+)\s*,\s*([^{}]+?)\s*\}\s*,?\s*(?:--\s*(.*))?$"
+    )
+    for match in pattern.finditer(block):
         out[int(match.group(1))] = {
             "first": match.group(2).strip(),
             "last": match.group(3).strip(),
@@ -197,12 +188,7 @@ def _parse_range_table(text: str, name: str) -> dict[int, dict[str, str]]:
 
 
 def load_lsb_data(root: Path) -> dict[str, Any]:
-    """Normalize deterministic modern-LSB Nyzul data into the editor view model.
-
-    Spatial/layout semantics map directly. Runtime IDs are resolved only from the
-    current checkout's Nyzul zone-data YAML, matching LSB's name-based lookup
-    contract. Original expressions remain available under ``lineage``.
-    """
+    """Normalize deterministic modern-LSB Nyzul data into the editor view model."""
     root = Path(root)
     if not has_lsb_layout(root):
         raise ValueError(
