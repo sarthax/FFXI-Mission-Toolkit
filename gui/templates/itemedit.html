@@ -8,6 +8,8 @@
   <strong>Item Editor</strong>
   <label>Server <select id="srv" onchange="setItemServer()"><option value="topaz">Topaz</option><option value="dsp">DSP</option></select></label>
   <span class="sp"></span>
+  <a href="/itembrowser" title="Read-only browser with summaries and LSB compare">Item Browser</a>
+  <a href="/itemhealth" title="Which proc items have working scripts">Script Health</a>
   <details class="dense-card" style="margin:0;padding:0 6px;">
     <summary>About</summary>
     <div class="muted" style="padding:6px 2px;max-width:760px;">Search and edit live item_* rows. Client-enforced fields are mirrored into the client DAT, with backup and SQL journaling before writes. The server selector shares the same live DB target used by the Zone Editor.</div>
@@ -49,11 +51,11 @@
   </div>
 </div>
 
-<details id="itemBatchEditor" class="edit-card wide dense-card" style="margin-top:8px;">
-  <summary><strong>Constrained batch editor</strong> <span class="hint">same value across many items; proven synchronized fields only</span></summary>
-  <div style="padding-top:6px;">
-  <div style="display:grid;grid-template-columns:minmax(260px,1fr) 150px 120px;gap:8px;align-items:start;">
-    <textarea id="batchItemIds" rows="4" placeholder="Item IDs, separated by spaces, commas, or new lines"></textarea>
+<div id="itemBatchEditor" class="edit-card wide">
+  <h3>Batch edit <span class="hint">apply one value to many items. Proven synchronized fields only. Nothing is written until you preview, then apply; the last batch can be restored.</span></h3>
+  <div class="field-row" style="align-items:flex-start"><label for="batchItemIds"><span class="step-num">1</span>Item IDs</label>
+    <textarea id="batchItemIds" rows="4" placeholder="Item IDs, separated by spaces, commas, or new lines"></textarea></div>
+  <div class="field-row"><label for="batchField"><span class="step-num">2</span>Field</label>
     <select id="batchField">
       <option value="flags">flags</option>
       <option value="stack">stack</option>
@@ -63,20 +65,19 @@
       <option value="damage">damage</option>
       <option value="delay">delay</option>
       <option value="skill">skill</option>
-    </select>
-    <input type="number" id="batchValue" value="0">
-  </div>
-  <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;">
-    <input type="text" id="batchComment" placeholder="Batch journal comment" style="flex:1;min-width:220px;">
-    <button type="button" id="batchPreviewBtn">Preview batch</button>
-    <button type="button" id="batchApplyBtn" disabled>Apply validated batch</button>
+    </select></div>
+  <div class="field-row"><label for="batchValue">New value</label><input type="number" id="batchValue" value="0"></div>
+  <div class="field-row"><label for="batchComment">Journal comment</label><input type="text" id="batchComment" placeholder="Batch journal comment"></div>
+  <div class="action-row">
+    <button type="button" id="batchPreviewBtn"><span class="step-num">3</span>Preview batch</button>
+    <button type="button" id="batchApplyBtn" disabled><span class="step-num">4</span>Apply validated batch</button>
     <button type="button" id="batchRestoreBtn" disabled>Restore last batch</button>
   </div>
   <div id="batchSummary" class="muted" style="margin-top:6px;"></div>
   <div id="batchPreview" class="rowtable-wrap table-wrap" style="margin-top:6px;"></div>
   <div id="batchMsg" class="mono muted" style="margin-top:6px;white-space:pre-wrap;font-size:11px;"></div>
-  </div>
-</details>
+  <p class="muted" style="font-size:10.5px;margin:8px 0 0">To add mods, pet mods or latents to many rows of one item, use <em>Effect staging tools</em> on the Find &amp; edit tab.</p>
+</div>
 
 <div id="itemSessionHistory" class="dense-toolbar" style="display:flex;gap:6px;align-items:center;margin:8px 0;">
   <span class="muted">Session history</span>
@@ -96,6 +97,15 @@
   #editorWrap .edit-card.wide { grid-column: 1 / -1; }
   #editorWrap .edit-card h3 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; opacity: .75; }
   #editorWrap .edit-card h3 .hint { display: block; text-transform: none; letter-spacing: 0; font-size: 10.5px; opacity: .85; margin-top: 2px; }
+  /* shared by Edit, Create and Batch sections */
+  .item-editor-page .edit-card { border: 1px solid rgba(128,128,128,.35); border-radius: 6px; padding: 8px 12px 10px; margin: 0 0 10px; }
+  .item-editor-page .edit-card h3 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; opacity: .75; }
+  .item-editor-page .edit-card h3 .hint { display: block; text-transform: none; letter-spacing: 0; font-size: 10.5px; opacity: .85; margin-top: 2px; }
+  .item-editor-page .field-row { display: flex; align-items: center; gap: 8px; padding: 2px 0; font-size: 12px; }
+  .item-editor-page .field-row > label { flex: 0 0 128px; opacity: .7; white-space: nowrap; }
+  .item-editor-page .field-row input[type=text], .item-editor-page .field-row input[type=number], .item-editor-page .field-row select, .item-editor-page .field-row textarea { flex: 1; min-width: 0; font-size: 12px; padding: 2px 4px; }
+  .item-editor-page .action-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+  .item-editor-page .step-num { display:inline-block; width:18px; height:18px; line-height:18px; text-align:center; border-radius:50%; background:rgba(106,169,255,.2); font-size:11px; margin-right:4px; }
   #editorWrap .field-row { display: flex; align-items: center; gap: 8px; padding: 2px 0; font-size: 12px; }
   #editorWrap .field-row > label { flex: 0 0 128px; color: inherit; opacity: .7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #editorWrap .field-row input[type=text], #editorWrap .field-row input[type=number], #editorWrap .field-row select { flex: 1; min-width: 0; font-size: 12px; padding: 2px 4px; }
@@ -279,37 +289,41 @@
 <h2>Create New Item</h2>
 <p class="muted">Allocates a real free client-DAT slot (never a fabricated id), writes the new
 record there, then inserts matching rows server-side at that same id.</p>
-<div style="display:flex; gap:10px; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
-  <input type="number" id="cloneSourceId" placeholder="clone from item ID" style="width:150px;">
-  <button type="button" onclick="loadCloneTemplate()">Load as template</button>
-  <select id="cloneEffectScope" title="Effects copied into the new item transaction">
-    <option value="none">template only · no effects</option>
-    <option value="mods">+ item mods</option>
-    <option value="mods_pet">+ item mods + pet mods</option>
-    <option value="all" selected>+ mods + pet mods + latents</option>
-  </select>
-  <span id="cloneStatus" class="muted"></span>
+<div class="edit-card">
+  <h3>Copy an existing item <span class="hint">use another item as the starting point and choose which effects come along</span></h3>
+  <div class="field-row"><label for="cloneSourceId">Source item ID</label><input type="number" id="cloneSourceId" placeholder="clone from item ID"></div>
+  <div class="field-row"><label for="cloneEffectScope">Effects to copy</label>
+    <select id="cloneEffectScope" title="Effects copied into the new item transaction">
+      <option value="none">template only · no effects</option>
+      <option value="mods">+ item mods</option>
+      <option value="mods_pet">+ item mods + pet mods</option>
+      <option value="all" selected>+ mods + pet mods + latents</option>
+    </select></div>
+  <div class="action-row"><button type="button" onclick="loadCloneTemplate()">Load as template</button><span id="cloneStatus" class="muted"></span></div>
 </div>
-<div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
-  <select id="newCategory">
-    <option value="Items_1">Items_1 (general)</option>
-    <option value="Items_2">Items_2 (general)</option>
-    <option value="Consumable">Consumable</option>
-    <option value="Armor_1">Armor_1</option>
-    <option value="Armor_2">Armor_2</option>
-    <option value="Weapons">Weapons</option>
-    <option value="Puppet">Puppet</option>
-  </select>
-  <select id="newType">
-    <option value="0">general (0)</option>
-    <option value="1">consumable (1)</option>
-    <option value="3">armor (3)</option>
-    <option value="4">weapon (4)</option>
-    <option value="5">puppet (5)</option>
-    <option value="6">furnishing (6)</option>
-  </select>
-  <input type="text" id="newName" placeholder="item name">
-  <button onclick="startDraft()">Load into editor</button>
+<div class="edit-card">
+  <h3>Blank item <span class="hint">start empty, then fill in every field in the draft</span></h3>
+  <div class="field-row"><label for="newCategory">DAT category</label>
+    <select id="newCategory">
+      <option value="Items_1">Items_1 (general)</option>
+      <option value="Items_2">Items_2 (general)</option>
+      <option value="Consumable">Consumable</option>
+      <option value="Armor_1">Armor_1</option>
+      <option value="Armor_2">Armor_2</option>
+      <option value="Weapons">Weapons</option>
+      <option value="Puppet">Puppet</option>
+    </select></div>
+  <div class="field-row"><label for="newType">Item type</label>
+    <select id="newType">
+      <option value="0">general (0)</option>
+      <option value="1">consumable (1)</option>
+      <option value="3">armor (3)</option>
+      <option value="4">weapon (4)</option>
+      <option value="5">puppet (5)</option>
+      <option value="6">furnishing (6)</option>
+    </select></div>
+  <div class="field-row"><label for="newName">Item name</label><input type="text" id="newName" placeholder="item name"></div>
+  <div class="action-row"><button type="button" onclick="startDraft()">Load into editor</button></div>
 </div>
 <div id="createStatus" class="muted"></div>
 <div id="createPreview" class="mono" style="margin:6px 0 10px;padding:7px;border:1px solid var(--border);border-radius:4px;font-size:11px;white-space:pre-wrap;"></div>

@@ -276,7 +276,7 @@ def main():
         for marker in markers:
             assert marker in source,(template_name,marker)
     library_search_contracts = {
-        "items.html": ["{% block shell_mode %}dense{% endblock %}", "item-browser-page", "Item Editor"],
+        "itembrowser.html": ["Item Browser", "ib-page"],
         "keyitems.html": ["{% block shell_mode %}dense{% endblock %}", "keyitems-page"],
         "dialog.html": ["{% block shell_mode %}dense{% endblock %}", "dialog-browser-page", "Dialog Drift Overview"],
         "dialog_drift.html": ["{% block shell_mode %}dense{% endblock %}", "dialog-drift-page", "Dialog Browser"],
@@ -561,7 +561,7 @@ def main():
     assert "Specialized: Nyzul" not in editor_html
     assert '<body class="shell-dense">' in editor_html
     assert 'id="itemEditorTop" class="dense-toolbar"' in editor_html
-    assert '<details id="itemBatchEditor"' in editor_html
+    assert '<div id="itemBatchEditor"' in editor_html
     assert 'id="itemSessionHistory" class="dense-toolbar"' in editor_html
     assert 'class="editor-toolbar dense-toolbar"' in editor_html
     assert any(

@@ -1015,134 +1015,18 @@ def _external_item_by_id(ext_id: int) -> dict | None:
     return None
 
 
-@app.get("/items", response_class=HTMLResponse)
-def items_search(request: Request, q: str = "", status: str = "all", page: int = 1):
-    """Compares our own server's items (items_ours + the richer sql_item_basic/equipment/weapon/
-    usable tables) against the bundled external reference catalogue (items_external) by
-    normalized name -- same real norm_name join build_database.py's own compute_id_drift() uses
-    for entities. SQLite has no FULL OUTER JOIN, so this is our-anchored rows UNIONed in Python
-    with the external-only rows a LEFT JOIN the other direction reveals."""
-    con = get_con()
-    page = max(1, page)
-
-    # A purely-numeric query also matches by exact item ID (ours or external), in addition to the
-    # existing name-substring match -- lets a user paste a known itemid straight in, not just a name.
-    q_id = int(q) if q.strip().isdigit() else None
-
-    if q_id is not None:
-        name_params = [f"%{q}%", f"%{q}%", q_id, q_id]
-        name_clause = "AND (io.name LIKE ? OR ie.name LIKE ? OR io.itemid = ? OR ie.id = ?)"
-    elif q:
-        name_params = [f"%{q}%", f"%{q}%"]
-        name_clause = "AND (io.name LIKE ? OR ie.name LIKE ?)"
-    else:
-        name_params = []
-        name_clause = ""
-    rows = con.execute(f"""
-        SELECT io.itemid AS our_id, io.name AS our_name,
-               ie.id AS ext_id, ie.name AS ext_name,
-               sb.stackSize, sb.flags, sb.BaseSell,
-               CASE WHEN se.itemid IS NOT NULL THEN 'equipment'
-                    WHEN sw.itemid IS NOT NULL THEN 'weapon'
-                    WHEN su.itemid IS NOT NULL THEN 'usable'
-                    ELSE 'basic' END AS category
-        FROM items_ours io
-        LEFT JOIN items_external ie ON ie.norm_name = io.norm_name
-        LEFT JOIN sql_item_basic sb ON sb.itemid = io.itemid
-        LEFT JOIN sql_item_equipment se ON se.itemid = io.itemid
-        LEFT JOIN sql_item_weapon sw ON sw.itemid = io.itemid
-        LEFT JOIN sql_item_usable su ON su.itemid = io.itemid
-        WHERE 1=1 {name_clause}
-        ORDER BY io.itemid
-    """, name_params).fetchall()
-
-    if q_id is not None:
-        ext_params = [f"%{q}%", q_id]
-        ext_clause = "AND (ie.name LIKE ? OR ie.id = ?)"
-    elif q:
-        ext_params = [f"%{q}%"]
-        ext_clause = "AND ie.name LIKE ?"
-    else:
-        ext_params = []
-        ext_clause = ""
-    ext_only_rows = con.execute(f"""
-        SELECT ie.id AS ext_id, ie.name AS ext_name
-        FROM items_external ie
-        LEFT JOIN items_ours io ON io.norm_name = ie.norm_name
-        WHERE io.itemid IS NULL {ext_clause}
-        ORDER BY ie.id
-    """, ext_params).fetchall()
-    con.close()
-
-    all_items = []
-    for r in rows:
-        if r["ext_id"] is None:
-            item_status = "ours_only"
-        elif r["our_id"] == r["ext_id"]:
-            item_status = "matched"
-        else:
-            item_status = "drift"
-        all_items.append({**dict(r), "status": item_status})
-    for r in ext_only_rows:
-        all_items.append({
-            "our_id": None, "our_name": None, "ext_id": r["ext_id"], "ext_name": r["ext_name"],
-            "stackSize": None, "flags": None, "BaseSell": None, "category": None,
-            "status": "external_only",
-        })
-
-    counts = {"all": len(all_items)}
-    for s in ("matched", "drift", "ours_only", "external_only"):
-        counts[s] = sum(1 for i in all_items if i["status"] == s)
-
-    items = all_items if status == "all" else [i for i in all_items if i["status"] == status]
-    total = len(items)
-    total_pages = max(1, (total + ITEMS_PAGE_SIZE - 1) // ITEMS_PAGE_SIZE)
-    offset = (page - 1) * ITEMS_PAGE_SIZE
-    page_items = items[offset:offset + ITEMS_PAGE_SIZE]
-
-    return templates.TemplateResponse(request, "items.html", {
-        "q": q, "status": status, "items": page_items,
-        "page": page, "total_pages": total_pages, "total": total, "counts": counts,
-    })
+@app.get("/items")
+def items_search(q: str = "", status: str = "all"):
+    """Retired: the LSB-vs-external catalogue table now lives in the Item Browser (Reference filter)."""
+    from urllib.parse import urlencode
+    qs = {k: v for k, v in (("q", q), ("ref", "" if status == "all" else status)) if v}
+    return RedirectResponse(url="/itembrowser" + ("?" + urlencode(qs) if qs else ""), status_code=301)
 
 
-@app.get("/items/{itemid}", response_class=HTMLResponse)
-def item_detail(request: Request, itemid: int):
-    con = get_con()
-    our_row = con.execute(
-        "SELECT itemid, name, norm_name FROM items_ours WHERE itemid = ?", (itemid,)
-    ).fetchone()
-    basic = con.execute("SELECT * FROM sql_item_basic WHERE itemid = ?", (itemid,)).fetchone()
-    equipment = con.execute("SELECT * FROM sql_item_equipment WHERE itemid = ?", (itemid,)).fetchone()
-    weapon = con.execute("SELECT * FROM sql_item_weapon WHERE itemid = ?", (itemid,)).fetchone()
-    usable = con.execute("SELECT * FROM sql_item_usable WHERE itemid = ?", (itemid,)).fetchone()
-    ext_row = None
-    topaz_row = None
-    if our_row:
-        ext_row = con.execute(
-            "SELECT id, name FROM items_external WHERE norm_name = ?", (our_row["norm_name"],)
-        ).fetchone()
-        # 2026-09-08: this used to be a "LandSandBoat (backport source)" panel querying
-        # lsb_item_basic, distinct from "our server" (items_ours) back when items_ours meant
-        # Topaz. Since items_ours now means LSB itself (see build_database.py's LSB_ROOT rework),
-        # that panel had collapsed into showing the same LSB data twice under two different
-        # labels, and its "id drift: LSB uses X, we use Y" line was comparing LSB against itself.
-        # The genuinely useful second comparison now is Topaz (the real backport source), only
-        # queried/shown when the backport module is actually relevant -- same gating
-        # backport_enabled() already applies to ID Drift and the Keyitems page's Topaz section.
-        if backport_enabled():
-            topaz_row = con.execute(
-                "SELECT itemid, name FROM topaz_item_basic WHERE norm_name = ?", (our_row["norm_name"],)
-            ).fetchone()
-    con.close()
-
-    external_detail = _external_item_by_id(ext_row["id"]) if ext_row else None
-
-    return templates.TemplateResponse(request, "item_detail.html", {
-        "itemid": itemid, "our_row": our_row, "basic": basic, "equipment": equipment,
-        "weapon": weapon, "usable": usable, "ext_row": ext_row, "external_detail": external_detail,
-        "topaz_row": topaz_row,
-    })
+@app.get("/items/{itemid}")
+def item_detail(itemid: int):
+    """Retired: per-item detail and the catalogue/Topaz comparison are in the Item Browser panel."""
+    return RedirectResponse(url=f"/itembrowser#{itemid}", status_code=301)
 
 
 def _iddrift_events(con, q):
@@ -9309,6 +9193,15 @@ def zoneplot_nav_meta(zid: int):
 # independently enforces (level etc.) -- see item_edit.py's module docstring. Separate from the
 # existing /items page, which is a read-only LSB<->external id-drift comparison tool.
 
+# Import once at startup: the editor page fires several /itemedit/*.json requests at once, and
+# the threadpool used to import item_edit concurrently on first load, so some threads saw the
+# module half-initialised ("module 'item_edit' has no attribute 'mod_names'", HTTP 500).
+try:
+    import item_edit  # noqa: F401
+except Exception as _ex:  # surfaced per-request instead of blocking startup
+    print(f"WARNING: item_edit preload failed: {_ex}")
+
+
 @app.get("/itemedit", response_class=HTMLResponse)
 def itemedit_page(request: Request):
     return templates.TemplateResponse(request, "itemedit.html", {})
@@ -9426,6 +9319,128 @@ def itemedit_special_cases(item_id: int = 0, name: str = ""):
     except Exception:
         return JSONResponse({"item_id": item_id, "gear_sets": [], "effect_gain_mods": [], "code_references": []})
     return JSONResponse(_special_cases.special_cases(root, item_id, name))
+
+
+@app.get("/itemedit/summary.json")
+def itemedit_summary(item_id: int, compare: int = 0):
+    """One unified 'what does this item do' summary (see workbench.editors.items.item_summary).
+    compare=1 also attaches the LandSandBoat reference comparison."""
+    from workbench.editors.items import item_summary, item_lsb_compare, editor as _ed
+    try:
+        s = item_summary.describe_item(item_id)
+        s["lines"] = item_summary.summary_lines(s)
+        if compare:
+            s["lsb_compare"] = item_lsb_compare.compare_with_lsb(item_id, _ed.get_item(item_id))
+        return s
+    except ValueError as ex:
+        return JSONResponse({"error": str(ex)}, status_code=404)
+
+
+@app.get("/itemedit/script-health.json")
+def itemedit_script_health():
+    """Bulk item-script health: proc-flagged items (effect 431) and every item script file
+    classified as behavior / check-only / stub, plus script files no item name maps to."""
+    from workbench.editors.items import item_summary
+    return item_summary.health_report()
+
+
+@app.get("/itemhealth/report.json")
+def itemhealth_report_json():
+    from workbench.editors.items import item_proc_sync
+    return item_proc_sync.build_report()
+
+
+@app.get("/itemhealth/report.md")
+def itemhealth_report_md():
+    from fastapi.responses import PlainTextResponse
+    from workbench.editors.items import item_proc_sync
+    md = item_proc_sync.render_markdown(item_proc_sync.build_report())
+    return PlainTextResponse(md, headers={"Content-Disposition": 'attachment; filename="item_script_health_report.md"'})
+
+
+@app.get("/itemhealth/repair.json")
+def itemhealth_repair(item_id: int = 0, apply: int = 0):
+    """Preview (apply=0) or write (apply=1) a generated DSP onAdditionalEffect script for one item.
+    Never overwrites a script that already has behavior; stubs are backed up first."""
+    from workbench.editors.items import item_proc_sync
+    try:
+        return item_proc_sync.repair_item(item_id, apply=bool(apply))
+    except Exception as ex:
+        return JSONResponse({"ok": False, "error": str(ex)}, status_code=500)
+
+
+@app.get("/itembrowser/facets.json")
+def itembrowser_facets():
+    from workbench.editors.items import item_browse
+    try:
+        return JSONResponse(item_browse.facets())
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+
+
+@app.get("/itembrowser/browse.json")
+def itembrowser_browse(q: str = "", type: str = "", ah: int = -1, job: int = -1, slot: int = -1, skill: int = -1,
+                       min_level: int = -1, max_level: int = -1, rare: int = 0, ex: int = 0, mod: int = -1,
+                       ref: str = "", sort: str = "name", desc: int = 0, limit: int = 60, offset: int = 0):
+    from workbench.editors.items import item_browse
+    con = None
+    try:
+        try:
+            con = get_con()  # reference catalogue lives in the toolkit's own SQLite DB; optional
+        except Exception:
+            con = None
+        return JSONResponse(item_browse.browse(q, type, ah, job, slot, skill, min_level, max_level,
+                                               bool(rare), bool(ex), mod, sort, bool(desc), limit, offset,
+                                               ref=ref, ref_con=con))
+    except Exception as ex_:
+        return JSONResponse({"error": str(ex_)}, status_code=400)
+    finally:
+        if con is not None:
+            con.close()
+
+
+@app.get("/itembrowser/reference.json")
+def itembrowser_reference(item_id: int, name: str = ""):
+    """External-catalogue match (id agreement, description) and Topaz match for one item."""
+    from workbench.editors.items import item_reference
+    con = None
+    try:
+        con = get_con()
+        if not name:
+            from workbench.editors.items import item_browse
+            r = item_browse.browse(str(item_id), limit=5)
+            name = next((i["name"] for i in r["items"] if i["itemid"] == item_id), "")
+        return JSONResponse(item_reference.reference(con, item_id, name, _external_item_by_id, backport_enabled()))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+    finally:
+        if con is not None:
+            con.close()
+
+
+@app.get("/itembrowser/reference-counts.json")
+def itembrowser_reference_counts():
+    from workbench.editors.items import item_reference, _db_alias
+    con = None
+    try:
+        con = get_con()
+        db = _db_alias.item_db(); cu = db.cursor(); cu.execute("select itemid, name from item_basic"); rows = cu.fetchall(); db.close()
+        return JSONResponse(item_reference.counts(con, rows))
+    except Exception as ex:
+        return JSONResponse({"error": str(ex)}, status_code=400)
+    finally:
+        if con is not None:
+            con.close()
+
+
+@app.get("/itembrowser", response_class=HTMLResponse)
+def itembrowser_page(request: Request):
+    return templates.TemplateResponse(request, "itembrowser.html", {})
+
+
+@app.get("/itemhealth", response_class=HTMLResponse)
+def itemhealth_page(request: Request):
+    return templates.TemplateResponse(request, "itemhealth.html", {})
 
 
 @app.get("/itemedit/proc-script.json")

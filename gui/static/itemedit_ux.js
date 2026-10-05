@@ -305,7 +305,7 @@
   panes.props.prepend(byId('clientMismatch'), byId('itemValidation'));  // issues belong with the fields they concern
 
   // -- Create new: start options left (tabbed), draft right
-  const cl = byId('cloneSourceId').parentNode, nw = byId('newName').parentNode;
+  const cl = byId('cloneSourceId').closest('.edit-card'), nw = byId('newName').closest('.edit-card');
   const slot = byId('slotBrowser').closest('.edit-card'), draft = byId('draftWrap');
   const h2 = [...document.querySelectorAll('h2')].find(h => h.textContent.trim() === 'Create New Item');
   const intro = h2 && h2.nextElementSibling;
@@ -524,6 +524,23 @@
     procScriptKey = nm;
     fetch('/itemedit/proc-script.json?item_id=' + (currentItemId || 0) + '&name=' + encodeURIComponent(nm)).then(r => r.json()).then(j => { procScript = j; rerenderEffects(); }).catch(() => {});
   };
+  let summaryData = null, summaryKey = null;
+  const loadSummary = () => {
+    const key = currentItemId + '|' + JSON.stringify(loadedEffects || {}) + JSON.stringify((loadedServerState && loadedServerState.item_weapon) || {});
+    if (!currentItemId || summaryKey === key) return;
+    summaryKey = key; summaryData = null;
+    const want = currentItemId;
+    fetch('/itemedit/summary.json?compare=1&item_id=' + want).then(r => r.json()).then(j => { if (want === currentItemId && !j.error) { summaryData = j; rerenderEffects(); } }).catch(() => {});
+  };
+  const summaryPanel = () => {
+    if (!summaryData || !window.ItemSummaryView) return null;
+    const d = mk('details', null, 'ie-fxgroup');
+    const warn = (summaryData.notes || []).length;
+    d.innerHTML = '<summary><b>Server summary &amp; health</b> <small>saved server state, read-only' + (warn ? ' &mdash; ' + warn + ' warning' + (warn > 1 ? 's' : '') : '') + '</small></summary>';
+    d.open = warn > 0;
+    d.appendChild(ItemSummaryView.render(summaryData, summaryData.lsb_compare));
+    return d;
+  };
   const sv = n => (n > 0 ? '+' : '') + n;
   const status = (kind, row) => {
     const k = effectSortKey(kind, row), was = (loadedEffects[kind] || []).find(x => effectSortKey(kind, x) === k);
@@ -543,13 +560,14 @@
       ['latents', 'Conditional bonuses', 'only while the condition is met', stagedEffects.latents, r => fxRow('latents', r, mName(r.modId), 'When: ' + (LATENT_NAMES[r.latentId] || 'condition ' + r.latentId) + (r.latentParam ? ' (' + r.latentParam + ')' : ''))],
     ];
     fxList.innerHTML = '';
-    loadProcScript(); loadSpecial();
+    loadProcScript(); loadSpecial(); loadSummary();
     { const w = (typeof loadedServerState !== 'undefined' && loadedServerState && loadedServerState.item_weapon) || null, h = w ? Number(w.hit) : 0;
       if (h > 1) {
         const dist = { 2: '1 hit 55%, 2 hits 45%', 3: '1 hit 30%, 2 hits 50%, 3 hits 20%', 4: '1 hit 20%, 2 hits 30%, 3 hits 30%, 4 hits 20%' }[h] || ('up to ' + h + ' hits per attack');
         fxList.insertAdjacentHTML('beforeend', `<div class="ie-fxgroup"><h4>Multi-hit <small>built into the weapon, not an effect row</small></h4><div class="ie-fx"><div class="tx"><div class="nm">${h === 2 ? 'Occasionally attacks twice' : 'Occasionally attacks up to ' + h + ' times'}</div><div class="sub">Weapon stat Max hits = ${h} (${esc(dist)}). Change it under Weapon combat → Max hits per attack.</div></div></div></div>`);
       } }
     { const sb = scriptBanner() + specialBanner(); if (sb) fxList.insertAdjacentHTML('beforeend', sb); }
+    { const sp = summaryPanel(); if (sp) fxList.appendChild(sp); }
     for (const [kind, title, hint, rows, render] of sections) {
       const g = mk('div', null, 'ie-fxgroup');
       g.innerHTML = `<h4>${title} (${rows.length}) <small>${hint}</small></h4>` + (rows.length ? rows.map(render).join('') : '<div class="ie-none">None.</div>');
