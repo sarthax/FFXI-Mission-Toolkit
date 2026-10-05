@@ -96,7 +96,7 @@ def scan_range(payload: bytes, seq_start: int = 0) -> dict:
             "opaque_payload_hex": raw[8:].hex().upper(),
             "framing_certainty": "structurally_inferred",
             "framing_provenance": "LandSandBoat SearchHandler read_func/encrypt clear length+IXFF",
-            "decoder_status": "crypto_envelope_only_not_decrypted",
+            "decoder_status": "encrypted_or_opaque",
             "crypto_envelope": search_crypto_envelope.inspect_frame(raw),
         })
         pos = end
