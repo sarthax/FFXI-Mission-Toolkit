@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from workbench.server_admin.auction_house.preset_api import _preset_preview_token
 from workbench.server_admin.auction_house.presets import (
     PresetError,
     delete_preset,
@@ -85,15 +86,56 @@ def test_preset_update_preserves_identity_and_creation_time(tmp_path: Path):
     assert updated["config"]["min_age_days"] == 60.0
 
 
+def test_cleanup_preview_token_ignores_generated_timestamp_but_binds_targets():
+    preset = {
+        "preset_id": "p1",
+        "updated_at_utc": "2026-10-05T00:00:00Z",
+        "kind": "cleanup",
+        "config": {"min_age_days": 90},
+    }
+    preview = {
+        "criteria": {"listed_before": 123, "limit": 100},
+        "preview_token": "exact-live-targets",
+        "generated_at": 1000,
+    }
+    token1 = _preset_preview_token(preset, preview)
+    token2 = _preset_preview_token(preset, {**preview, "generated_at": 2000})
+    token3 = _preset_preview_token(preset, {**preview, "preview_token": "changed-targets"})
+    assert token1 == token2
+    assert token1 != token3
+
+
+def test_seed_preview_token_binds_expanded_item_set():
+    preset = {
+        "preset_id": "p2",
+        "updated_at_utc": "2026-10-05T00:00:00Z",
+        "kind": "synthetic_seed",
+        "config": {"seller_id": 1, "category_id": 2, "price": 100, "stack_mode": "auto"},
+    }
+    preview = {
+        "category_id": 2,
+        "price": 100,
+        "stack_mode": "auto",
+        "copies_per_item": 1,
+        "limit_items": 100,
+        "items": [{"item_id": 10, "stack": False, "copies": 1, "price": 100}],
+    }
+    token1 = _preset_preview_token(preset, preview)
+    changed = {**preview, "items": [{"item_id": 11, "stack": False, "copies": 1, "price": 100}]}
+    assert token1 != _preset_preview_token(preset, changed)
+
+
 def test_preset_ui_and_api_are_mounted():
     integration = Path("src/workbench/server_admin/auction_house/integration.py").read_text(encoding="utf-8")
     template = Path("gui/templates/auction_house_presets.html").read_text(encoding="utf-8")
     script = Path("gui/static/auction_house_presets.js").read_text(encoding="utf-8")
+    api = Path("src/workbench/server_admin/auction_house/preset_api.py").read_text(encoding="utf-8")
     assert "auction_house_preset_api_router" in integration
     assert "auction_house_preset_ui_router" in integration
     assert '"AH Presets"' in integration
     assert "/auction-house/presets" in integration
     assert "/auction-house/presets/preview.json" in script
-    assert "/auction-house/test-write/cleanup.json" in script
-    assert "/auction-house/test-write/synthetic-category-seed.json" in script
+    assert "/auction-house/presets/execute.json" in script
+    assert "preset_preview_token" in api
+    assert "Saved preset preview is stale" in api
     assert "Presets never store execution confirmation" in template
