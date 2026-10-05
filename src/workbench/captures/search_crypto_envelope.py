@@ -1,22 +1,23 @@
-"""Source-backed cryptographic envelope metadata for FFXI search/cache TCP frames.
+"""Source-backed cryptographic envelope metadata and inbound decode for FFXI search/cache TCP.
 
-This module deliberately does not implement Blowfish. It records the exact clear/encrypted/hash/key
-regions and per-frame key derivation used by LandSandBoat's *inbound client-to-search-server*
-SearchHandler path so a later decoder can prove decryption before exposing packet type or semantic
-fields.
+The client-to-search-server path uses a source-defined per-frame key derivation plus the FFXI
+Blowfish variant implemented in :mod:`workbench.captures.ffxi_blowfish`. Packet type and semantic
+fields remain gated behind the same clear framing and post-decrypt MD5 checks used by LandSandBoat.
 
 Server-to-client encryption is different: it uses additional rolling key state populated only after a
-previous inbound packet has been decrypted. Therefore an outbound frame cannot be independently
-derived from its own bytes with this helper.
+previous inbound packet has been decrypted. Therefore outbound decryption remains intentionally out
+of scope for this stateless helper.
 """
 from __future__ import annotations
 
 import hashlib
 
+from workbench.captures import ffxi_blowfish
+
 
 # LandSandBoat SearchHandler::key[0:16]. Inbound decrypt copies the frame's final uint32 into
 # key[16:20], hashes exactly those first 20 bytes with MD5, and uses the resulting 16-byte digest
-# to initialize Blowfish for that one frame.
+# to initialize the FFXI Blowfish variant for that one frame.
 _SEARCH_BASE_KEY = bytes.fromhex("30733D6D3C31495A327A424363387B7E")
 SEARCH_HEADER_SIZE = 8
 SEARCH_HASH_SIZE = 16
@@ -25,8 +26,8 @@ SEARCH_TRAILER_SIZE = SEARCH_HASH_SIZE + SEARCH_SEED_SIZE
 SEARCH_MIN_FRAME_SIZE = 28
 SEARCH_MARKER = b"IXFF"
 
-# LandSandBoat SearchHandler::TCPREQUESTTYPE. These names are exposed only after the caller supplies
-# decrypted bytes that pass the exact framing + post-decrypt MD5 validation contract.
+# LandSandBoat SearchHandler::TCPREQUESTTYPE. These names are exposed only after decrypted bytes
+# pass the exact framing + post-decrypt MD5 validation contract.
 SEARCH_REQUEST_TYPES = {
     0x00: "SEARCH_ALL",
     0x01: "ID_LIST",
@@ -43,9 +44,8 @@ SEARCH_REQUEST_TYPES = {
 def inspect_frame(raw: bytes) -> dict:
     """Describe LSB's inbound search crypto envelope without decrypting it.
 
-    The caller is expected to have already established the clear search framing. Direction is not
-    known at this layer, so the returned derivation is explicitly marked client-to-server-only and
-    unresolved until endpoint roles are available. Packet type is never interpreted here.
+    Direction is not known at this layer, so the returned derivation is explicitly marked
+    client-to-server-only and unresolved until endpoint roles are available.
     """
     result = {
         "valid_envelope": False,
@@ -70,7 +70,7 @@ def inspect_frame(raw: bytes) -> dict:
     hashed_plaintext_start = SEARCH_HEADER_SIZE
     hashed_plaintext_end = hash_offset
 
-    # Mirrors: tmp = (length - 12) / 4; tmp -= tmp % 2; each pair is one 8-byte BF block.
+    # Mirrors: tmp = (length - 12) / 4; tmp -= tmp % 2; each pair is one 8-byte block.
     encrypted_word_count = (length - 12) // 4
     encrypted_word_count -= encrypted_word_count % 2
     encrypted_length = encrypted_word_count * 4
@@ -146,12 +146,7 @@ def inspect_frame(raw: bytes) -> dict:
 
 
 def validate_decrypted_frame(decrypted: bytes) -> dict:
-    """Validate an externally decrypted *inbound* candidate against the complete LSB gate.
-
-    This helper does not perform or trust decryption itself. It repeats the clear framing checks from
-    `read_func()` and then the post-decrypt MD5 from `validatePacket()`. Packet type is exposed only
-    after all of those checks pass.
-    """
+    """Validate a decrypted *inbound* candidate against the complete LSB gate."""
     result = {
         "validated": False,
         "certainty": "unknown_opaque",
@@ -221,4 +216,48 @@ def validate_decrypted_frame(decrypted: bytes) -> dict:
         "certainty": "verified_after_framing_and_post_decrypt_md5",
         "provenance": "LandSandBoat SearchHandler::TCPREQUESTTYPE read by read_func after decrypt()+validatePacket()",
     }
+    return result
+
+
+def decrypt_inbound_frame(raw: bytes) -> dict:
+    """Decrypt one client->search-server frame and validate it fail-closed.
+
+    Callers must establish client/server direction from independent endpoint evidence before using
+    this helper. A decrypted candidate is always retained for diagnostics, but request type becomes
+    trusted only when :func:`validate_decrypted_frame` succeeds.
+    """
+    envelope = inspect_frame(raw)
+    result = {
+        "decryption_performed": False,
+        "validated": False,
+        "certainty": "unknown_opaque",
+        "direction_scope": "client_to_search_server_only",
+        "decoder_status": "rejected_before_decryption",
+        "envelope": envelope,
+        "validation": None,
+        "decrypted_hex": None,
+        "diagnostics": list(envelope.get("diagnostics") or []),
+    }
+    if not envelope.get("valid_envelope"):
+        return result
+
+    start = int(envelope["encrypted_region"]["offset_start"])
+    end = int(envelope["encrypted_region"]["offset_end"])
+    key = bytes.fromhex(envelope["key_derivation"]["derived_blowfish_key_hex"])
+    decrypted = bytearray(raw)
+    decrypted[start:end] = ffxi_blowfish.decrypt_blocks(raw[start:end], key)
+    validation = validate_decrypted_frame(bytes(decrypted))
+
+    result.update({
+        "decryption_performed": True,
+        "validated": bool(validation.get("validated")),
+        "certainty": "verified" if validation.get("validated") else "decrypted_candidate_unverified",
+        "decoder_status": "decrypted_and_validated" if validation.get("validated") else "decrypted_candidate_rejected",
+        "validation": validation,
+        "decrypted_hex": bytes(decrypted).hex().upper(),
+        "diagnostics": list(validation.get("diagnostics") or []),
+    })
+    if validation.get("validated"):
+        result["packet_type"] = validation.get("packet_type")
+        result["packet_type_name"] = validation.get("packet_type_name")
     return result
