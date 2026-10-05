@@ -9,12 +9,12 @@ This note documents the deliberately conservative next layer above generic PCAP/
 | Family | Current evidence | Classification state | Decoder state |
 |---|---|---|---|
 | Lobby / character service | IXFF framing, declared size, known command, fixed/validated variable layout, MD5 identifier, command direction | `ffxi_lobby` only when all structural checks pass | Known lobby fields only; raw packet always retained |
-| World / map handoff | Exact `server_ip` + `server_port` learned from a verified lobby `ResponseNextLogin` | `ffxi_world_endpoint`, **structurally inferred endpoint association only** | Opaque; no TCP/world framing semantics asserted |
-| Search / cache handoff | Exact `cache_ip` + `cache_port` learned from a verified lobby `ResponseNextLogin`, plus LandSandBoat source-backed clear search framing when present | `ffxi_search_endpoint`, **structurally inferred**; clear framing is recognized only after the verified handoff association | Clear 8-byte framing header recognized; encrypted/opaque payload retained without packet-type semantics |
+| Map/game handoff | Exact `server_ip` + `server_port` learned from verified lobby `ResponseNextLogin`; modern LSB fills these from selected zone IP/port and exposes map/game on UDP | preserved as `ffxi_map_endpoint` handoff evidence, but **not** used to classify reconstructed TCP flows | Existing UDP chunk path remains separate; no new map framing semantics asserted |
+| Search / cache handoff | Exact `cache_ip` + `cache_port` learned from verified lobby `ResponseNextLogin`, plus LandSandBoat source-backed clear search framing when present | `ffxi_search_endpoint`, **structurally inferred**; clear framing is recognized only after the verified TCP handoff association | Clear 8-byte framing header recognized; encrypted/opaque payload retained without packet-type semantics |
 | Other reconstructed TCP | No sufficient structural evidence | `unknown_tcp` | Opaque |
 | Plaintext world/map UDP chunks | Existing complete-known-chunk-stream promotion in PCAP ingestion | Existing behavior unchanged | Existing packet-reference decoder path |
 
-Default retail/private-server port numbers are not proof and are not used by the new classifier.
+Default retail/private-server port numbers are not proof and are not used by the classifier.
 
 ## Certainty vocabulary
 
@@ -24,7 +24,7 @@ New research metadata uses the following values:
 - `verified_observation` — transport fact directly present in the capture, such as SYN/FIN/RST or payload direction;
 - `structurally_inferred` — association or framing follows from verified source/structure, but message semantics are not proven;
 - `unknown_opaque` — bytes are retained without assigned semantics;
-- `ambiguous` — more than one supported family has equally valid evidence, so classification fails closed.
+- `ambiguous` — more than one transport-compatible family has equally valid evidence, so classification fails closed.
 
 Lobby decoded fields additionally distinguish `unknown_opaque` fields whose offsets are known but semantics remain intentionally unnamed.
 
@@ -69,11 +69,31 @@ It retains:
 
 It does **not** expose packet type, request meaning, auction/search/group semantics, MD5 result, Blowfish key material, or decrypted fields.
 
-The signature alone is deliberately insufficient to name a flow `ffxi_search_endpoint`, because lobby traffic also uses IXFF-style clear framing. Search framing is attached to a family only when the same flow endpoint exactly matches `cache_ip/cache_port` from a verified lobby `ResponseNextLogin`.
+The signature alone is deliberately insufficient to name a flow `ffxi_search_endpoint`, because lobby traffic also uses IXFF-style clear framing. Search framing is attached to a family only when the same TCP endpoint exactly matches `cache_ip/cache_port` from a verified lobby `ResponseNextLogin`.
+
+## Map/game handoff transport correction
+
+LandSandBoat `src/login/data_session.cpp` assigns `ResponseNextLogin.server_ip/server_port` from the selected zone IP/port. Maintained LSB deployment configuration exposes the map/game service on UDP. Therefore the TCP classifier treats a TCP flow whose IP/port matches `server_*` as **transport-mismatched evidence**, not as a verified or inferred world/map TCP family.
+
+Such a TCP flow remains:
+
+```text
+protocol_family = unknown_tcp
+classification_scope = handoff_endpoint_transport_mismatch
+```
+
+and carries a candidate like:
+
+```text
+protocol_family = ffxi_map_endpoint
+expected_transport = udp
+```
+
+plus a `handoff_endpoint_transport_not_proven` diagnostic. This preserves the handoff evidence for a future UDP correlation pass without inventing world/map TCP semantics.
 
 ## Session/transport observations
 
-Known lobby commands can contribute verified phase evidence such as login setup, character/world query/list, character selection, and world/search handoff.
+Known lobby commands can contribute verified phase evidence such as login setup, character/world query/list, character selection, and map/search handoff.
 
 TCP lifecycle metadata is intentionally application-neutral and records only observed SYN/FIN/RST events and payload-frame counts per direction. It does not name a gameplay phase from TCP flags.
 
@@ -82,16 +102,17 @@ TCP lifecycle metadata is intentionally application-neutral and records only obs
 `protocol_classification.classify_reconstructed_flows()` performs a staged pass:
 
 1. validate lobby flows independently;
-2. collect exact world/search endpoint tuples only from verified `ResponseNextLogin` messages;
-3. compare reconstructed flows against those tuples;
-4. only for an exact search-endpoint match, inspect reconstructed ranges for the source-backed clear search framing described above.
+2. collect exact map/search endpoint tuples only from verified `ResponseNextLogin` messages;
+3. attach expected transport from source-backed evidence (`udp` for modern-LSB map/game, `tcp` for search/cache);
+4. compare reconstructed TCP flows against those tuples;
+5. only for an exact transport-compatible search endpoint match, inspect reconstructed ranges for the source-backed clear search framing described above.
 
-An exact handoff match proves an endpoint association, not packet semantics. A search endpoint with no recognized clear frame keeps:
+A search endpoint with no recognized clear frame keeps:
 
 ```text
 classification_validated = false
 classification_certainty = structurally_inferred
-classification_scope = exact_endpoint_association_only_payload_opaque
+classification_scope = exact_transport_compatible_endpoint_association_only_payload_opaque
 decoder_status = unknown_opaque
 ```
 
@@ -100,13 +121,26 @@ A search endpoint that also contains source-backed clear frame candidates uses:
 ```text
 classification_validated = false
 classification_certainty = structurally_inferred
-classification_scope = verified_handoff_endpoint_plus_source_backed_search_framing
+classification_scope = verified_search_handoff_plus_source_backed_search_framing
 decoder_status = encrypted_or_opaque
 ```
 
-If one endpoint is simultaneously claimed as both world and search, classification remains `unknown_tcp` and emits `ambiguous_protocol_family_classification`.
+If multiple transport-compatible families ever claim the same endpoint, classification remains fail-closed and emits `ambiguous_protocol_family_classification`. A transport-incompatible endpoint is preserved as a candidate and diagnostic rather than being treated as a competing family.
 
 No fuzzy merge is attempted across captures, hosts, nearby timestamps, similar payloads, or common port numbers.
+
+## PCAP flow metadata integration
+
+Normal PCAP ingestion still owns frame parsing, TCP reconstruction, range persistence, lobby message insertion, and raw evidence. After one source file is ingested, `protocol_metadata.refresh_source_flow_metadata()` reloads only that source file's persisted TCP flow/range rows, runs the conservative classifier, and merges classification fields back into `capture_network_flows.metadata_json`.
+
+This post-pass explicitly records:
+
+```text
+classification_metadata_provenance = same_source_file_reconstructed_flow_ranges
+cross_source_merge_performed = false
+```
+
+No routes, templates, global navigation, or database schema changes are required for downstream flow viewers to inspect the metadata.
 
 ## Raw evidence policy
 
@@ -123,13 +157,12 @@ The caller's reconstructed TCP ranges remain authoritative raw evidence. New dia
 - unknown lobby command preservation;
 - search clear-header framing and opaque payload retention;
 - search framing resynchronization and truncation;
-- exact world endpoint correlation;
+- map handoff TCP transport mismatch failing closed;
 - exact search endpoint correlation;
 - proof that a search-looking header without verified handoff evidence remains `unknown_tcp`;
-- insufficient-evidence fail-closed behavior;
-- ambiguous world/search endpoint collision.
+- same numeric map/search endpoint with transport selecting search for TCP while preserving map as mismatched evidence.
 
-The CI-enumerated `test_fixtures/test_capture_lobby_decoder.py` also exercises the search framing/handoff path so the normal Workbench core regression protects this slice without CI workflow changes.
+The CI-enumerated `test_fixtures/test_capture_lobby_decoder.py` also exercises the search framing/handoff path and verifies that PCAP ingestion surfaces the search classification metadata without producing synthetic search messages.
 
 Existing PCAP parser and TCP reconstruction tests remain the authority for frame parsing, gaps, retransmissions, overlap conflicts, and raw range preservation.
 
@@ -140,9 +173,10 @@ This slice still does **not** claim:
 - decrypted search/cache message types or field semantics;
 - that every packet generation/server fork uses identical search payload encryption details;
 - a world/map TCP message framing format;
+- automatic map/game UDP endpoint correlation from `ResponseNextLogin.server_*`;
 - gameplay meaning for changing unknown fields;
 - storage/account subflow semantics;
 - automatic cross-capture session merging;
 - retail protocol identity from a port number or IXFF signature alone.
 
-The highest-value next decoder work is a real search/cache capture tied to a verified lobby handoff. That would allow the source-backed clear framing to be compared against observed packet boundaries before attempting any decryption/key or message-type research.
+The highest-value next decoder work is a real search/cache capture tied to a verified lobby handoff. In parallel, a bounded UDP correlation pass can safely test whether captured game UDP traffic lands on the exact `server_ip/server_port` handoff endpoint before adding any new map/game framing semantics.
