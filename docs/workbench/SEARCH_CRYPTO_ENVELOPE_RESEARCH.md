@@ -42,9 +42,9 @@ Only after that validation succeeds does LSB read the request type at offset `0x
 
 ## FFXI Blowfish compatibility
 
-The FFXI/LandSandBoat packet cipher is **not wire-compatible with a generic textbook Blowfish library**. The key schedule uses the standard Blowfish P/S seed constants, but the packet primitive uses the FFXI-specific round function represented by the maintained server implementation.
+The FFXI/LandSandBoat packet cipher is **not wire-compatible with a generic textbook Blowfish library**. The key schedule uses the standard Blowfish P/S seed constants, but the packet primitive uses the FFXI-specific round behavior represented by the maintained server protocol implementation.
 
-`workbench.captures.ffxi_blowfish` is an independent, dependency-free implementation of that behavior. It uses standard Blowfish pi constants as data, the FFXI round behavior, and little-endian `uint32` packet words matching the server wire path. No GPL implementation code is copied into the MIT toolkit.
+`workbench.captures.ffxi_blowfish` is a clean, dependency-free implementation of the protocol behavior. It uses the published standard Blowfish pi-derived seed constants as algorithm data, independently implements the FFXI round behavior, and uses little-endian `uint32` packet words matching the observed server wire path. It does not vendor or copy the maintained server's GPL implementation source.
 
 A deterministic compatibility vector is retained in the focused regression fixture:
 
@@ -83,7 +83,7 @@ applicability_requires_endpoint_role = true
 - packet-type offset `0x0B` with its value withheld until validation;
 - outbound rolling-state dependency.
 
-`search_crypto_envelope.decrypt_inbound_frame()` now performs the source-backed inbound operation:
+`search_crypto_envelope.decrypt_inbound_frame()` performs the source-backed inbound operation:
 
 1. inspect the envelope;
 2. derive the per-frame key;
