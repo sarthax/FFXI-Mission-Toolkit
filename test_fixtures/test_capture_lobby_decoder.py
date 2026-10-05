@@ -7,6 +7,7 @@ import sqlite3
 import struct
 
 import build_capture_index
+from workbench.captures import lobby_ingest, protocol_classification
 
 
 CLIENT_IP = (10, 0, 0, 2)
@@ -57,6 +58,25 @@ def make_pcap(frames):
 def encode_ip_u32(ip):
     packed = bytes(ip)
     return struct.unpack("<I", packed)[0]
+
+
+def _empty_direction():
+    return {"ranges": [], "gaps": [], "retransmissions": [], "overlaps": [], "conflicting_overlaps": []}
+
+
+def _single_range_direction(payload: bytes, seq: int):
+    return {
+        "ranges": [{
+            "seq_start": seq,
+            "seq_end": seq + len(payload),
+            "length": len(payload),
+            "payload_hex": payload.hex().upper(),
+            "frame_numbers": [1],
+            "first_timestamp_seconds": 1.0,
+            "last_timestamp_seconds": 1.0,
+        }],
+        "gaps": [], "retransmissions": [], "overlaps": [], "conflicting_overlaps": [],
+    }
 
 
 def main():
@@ -179,6 +199,60 @@ def main():
     assert next_fields["server_port"] == 54230, next_fields
     assert next_fields["cache_ip"] == "55.66.77.88", next_fields
     assert next_fields["cache_port"] == 54002, next_fields
+
+    # Evidence metadata and framing diagnostics remain separate from decoded semantics.
+    decoded_next = lobby_ingest.decode_packet(next_login)
+    assert decoded_next["field_evidence"]["server_ip"]["certainty"] == "verified", decoded_next
+    resync = lobby_ingest.scan_range_detailed(b"\xAA\xBB" + next_login, 7000)
+    assert len(resync["messages"]) == 1, resync
+    assert any(d["kind"] == "framing_resynchronization" for d in resync["diagnostics"]), resync
+    truncated = lobby_ingest.scan_range_detailed(next_login[:40], 8000)
+    assert truncated["messages"] == [], truncated
+    assert any(d["kind"] == "truncated_frame_candidate" for d in truncated["diagnostics"]), truncated
+
+    # Exact handoff endpoints can classify later flows without decoding their opaque payloads.
+    research_lobby_flow = {
+        "flow_id": "research-lobby",
+        "endpoint_a": {"ip": "10.0.0.2", "port": 40000},
+        "endpoint_b": {"ip": "203.0.113.10", "port": 54001},
+        "transport": "tcp",
+        "frames": [],
+        "directions": {
+            "a_to_b": _empty_direction(),
+            "b_to_a": _single_range_direction(next_login, 9000),
+        },
+    }
+    world_flow = {
+        "flow_id": "world-handoff",
+        "endpoint_a": {"ip": "10.0.0.2", "port": 41000},
+        "endpoint_b": {"ip": "11.22.33.44", "port": 54230},
+        "transport": "tcp",
+        "frames": [],
+        "directions": {
+            "a_to_b": _single_range_direction(b"opaque-world", 10000),
+            "b_to_a": _empty_direction(),
+        },
+    }
+    search_flow = {
+        "flow_id": "search-handoff",
+        "endpoint_a": {"ip": "10.0.0.2", "port": 42000},
+        "endpoint_b": {"ip": "55.66.77.88", "port": 54002},
+        "transport": "tcp",
+        "frames": [],
+        "directions": {
+            "a_to_b": _single_range_direction(b"opaque-search", 11000),
+            "b_to_a": _empty_direction(),
+        },
+    }
+    classified = {row["flow_id"]: row for row in protocol_classification.classify_reconstructed_flows(
+        [research_lobby_flow, world_flow, search_flow]
+    )}
+    assert classified["research-lobby"]["protocol_family"] == "ffxi_lobby", classified
+    assert classified["world-handoff"]["protocol_family"] == "ffxi_world_endpoint", classified
+    assert classified["world-handoff"]["classification_validated"] is False, classified
+    assert classified["world-handoff"]["decoder_status"] == "unknown_opaque", classified
+    assert classified["search-handoff"]["protocol_family"] == "ffxi_search_endpoint", classified
+    assert classified["search-handoff"]["classification_scope"] == "exact_endpoint_association_only_payload_opaque", classified
 
     req_msg = next(row for row in messages if row[1] == 0x0024)
     assert req_msg[0] == "a_to_b", req_msg
