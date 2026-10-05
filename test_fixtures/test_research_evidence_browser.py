@@ -52,6 +52,8 @@ def main() -> int:
         graph.insert_record(con,Evidence("evidence:server","SERVER","LSB","scripts/a.lua","lsb:test","server evidence"))
         graph.insert_record(con,Evidence("evidence:client","CLIENT","FFXI DAT","ROM/1/2.DAT","client:test","client evidence"))
         graph.insert_record(con,Evidence("evidence:capture","CAPTURE","packet capture","capture:7","runtime:test","capture evidence"))
+        graph.insert_record(con,Evidence("evidence:other-a","SERVER","Other A","scripts/other_a.lua","other:a","other evidence a"))
+        graph.insert_record(con,Evidence("evidence:other-b","CLIENT","Other B","ROM/other.DAT","other:b","other evidence b"))
         graph.insert_record(con,Finding(
             "finding:a","analysis:a","feature:test","implementation_state","IMPLEMENTED",
             "VERIFIED","HIGH","evidence:server","lsb:test"
@@ -63,6 +65,14 @@ def main() -> int:
         graph.insert_record(con,Finding(
             "finding:explicit","analysis:c","feature:other","notes","conflict",
             "CONTRADICTED","HIGH","evidence:capture","runtime:test"
+        ))
+        graph.insert_record(con,Finding(
+            "finding:unrelated-a","analysis:u1","feature:unrelated","implementation_state","IMPLEMENTED",
+            "VERIFIED","HIGH","evidence:other-a","other:a"
+        ))
+        graph.insert_record(con,Finding(
+            "finding:unrelated-b","analysis:u2","feature:unrelated","implementation_state","MISSING",
+            "VERIFIED","HIGH","evidence:other-b","other:b"
         ))
         con.execute(
             "INSERT INTO capability_observations VALUES (?,?,?,?,?,?,?)",
@@ -107,8 +117,9 @@ def main() -> int:
         assert "CAPABILITY_OBSERVATION_CONFLICT" in kinds,report
         assert "RESEARCH_PROPOSAL_CONTRADICTION" in kinds,report
         assert report["state_counts"],report
+        assert any(item["subject_id"]=="feature:unrelated" for item in report["items"]),report
 
-        finding_conflict=next(item for item in report["items"] if item["kind"]=="FINDING_VALUE_CONFLICT")
+        finding_conflict=next(item for item in report["items"] if item["kind"]=="FINDING_VALUE_CONFLICT" and item["subject_id"]=="feature:test")
         assert finding_conflict["comparison_state"]=="EVIDENCE_BACKED_SIDES",finding_conflict
         assert len(finding_conflict["sides"])==2,finding_conflict
         assert {side["value"] for side in finding_conflict["sides"]}=={"IMPLEMENTED","MISSING"},finding_conflict
@@ -128,10 +139,18 @@ def main() -> int:
 
         session_report=list_contradictions(db,research_session_id="research:evidence")
         assert any(item["kind"]=="RESEARCH_PROPOSAL_CONTRADICTION" for item in session_report["items"]),session_report
+        assert any(item["kind"]=="FINDING_VALUE_CONFLICT" for item in session_report["items"]),session_report
+        assert all(item["subject_id"]!="feature:unrelated" for item in session_report["items"]),session_report
 
         client_only=list_contradictions(db,evidence_type="CLIENT")
         assert client_only["items"],client_only
         assert all("CLIENT" in item["evidence_types"] for item in client_only["items"]),client_only
+
+        limited=list_contradictions(db,limit=1)
+        assert limited["total"]==1,limited
+        assert limited["matched_total"]>limited["total"],limited
+        assert limited["truncated"] is True,limited
+        assert limited["limit"]==1,limited
 
         detail=evidence_record(db,"evidence:client")
         assert detail is not None
@@ -164,6 +183,13 @@ def main() -> int:
         assert "Supporting evidence" in contradictions_html
         assert "Contradicting evidence" in contradictions_html
         assert "evidence%3Aclient" in contradictions_html
+
+        limited_html=render(
+            "research_contradictions.html","/research/contradictions",
+            report=limited,session_id="",subject_id="",evidence_type="",
+        )
+        assert "Truncated at 1" in limited_html
+        assert "Showing 1 /" in limited_html
 
         evidence_html=render(
             "research_evidence.html","/research/evidence",
